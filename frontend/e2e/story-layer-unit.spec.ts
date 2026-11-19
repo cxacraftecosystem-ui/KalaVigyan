@@ -78,8 +78,8 @@ test("a rainfall layer shades the story in the rain ramp, and an unnamed variabl
   const soil = layer("soil-ph", values);
   expect(layerRamp(rain.layer)).toBe("rain");
   expect(layerRamp(soil.layer)).toBe("density");
-  expect(drawn.context.map((shape) => storyLayerFill(drawn, rain)(shape)).every((tone) => tone.includes("--rain-"))).toBe(true);
-  expect(drawn.context.map((shape) => storyLayerFill(drawn, soil)(shape)).every((tone) => tone.includes("--density-"))).toBe(true);
+  expect(drawn.context.map((shape) => storyLayerFill(drawn, rain)(shape)).every((tone) => tone !== null && tone.includes("--rain-"))).toBe(true);
+  expect(drawn.context.map((shape) => storyLayerFill(drawn, soil)(shape)).every((tone) => tone !== null && tone.includes("--density-"))).toBe(true);
 });
 
 test("districts are classed over the values on the map, by inclusive quantiles cut to three figures, as the server classes India", () => {
