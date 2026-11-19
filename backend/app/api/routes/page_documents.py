@@ -46,28 +46,36 @@ def page_ref(kind: SubjectKind, slug: Slug) -> PageRef:
     return PageRef(kind, slug)
 
 
+@dataclass(frozen=True)
+class AskedDocument:
+    slug: str
+    language: str | None
+
+
+def asked_document(slug: Slug, lang: AskedLanguage = None) -> AskedDocument:
+    return AskedDocument(slug, lang)
+
+
 @router.get("/categories/{slug}/monograph")
 async def get_category_monograph(
     request: Request,
     response: Response,
-    slug: Slug,
-    lang: AskedLanguage = None,
+    asked: AskedDocument = Depends(asked_document),
     reader: User | None = Depends(public_reader),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
-    return _served(request, response, reader, await _document(session, CATEGORY, slug))
+    return _served(request, response, reader, await _document(session, CATEGORY, asked.slug))
 
 
 @router.get("/families/{slug}/monograph")
 async def get_family_monograph(
     request: Request,
     response: Response,
-    slug: Slug,
-    lang: AskedLanguage = None,
+    asked: AskedDocument = Depends(asked_document),
     reader: User | None = Depends(public_reader),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
-    return _served(request, response, reader, await _document(session, FAMILY, slug))
+    return _served(request, response, reader, await _document(session, FAMILY, asked.slug))
 
 
 @router.get("/pages/{kind}/{slug}/layout")
