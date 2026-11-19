@@ -118,7 +118,7 @@ test("a managed key shows only its last characters, and only a saved or unreadab
 });
 
 test("a status in a table carries an icon and words, and pages count what they list", () => {
-  const status = html(createElement(StatusBadge, { tone: "error", note: "since 18 Nov 2026" }, "Suspended"));
+  const status = html(createElement(StatusBadge, { tone: "error", note: "since 18 Nov 2026", children: "Suspended" }));
   expect(status).toContain("lucide-octagon-alert");
   expect(words(status)).toBe("Suspended since 18 Nov 2026");
   const pages = html(createElement(Pagination, { page: 2, pages: 3, total: 41, onPage: () => undefined, noun: { one: "account", many: "accounts" } }));
