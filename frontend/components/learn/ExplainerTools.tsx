@@ -8,6 +8,7 @@ import { FieldBlock } from "@/components/FormControls";
 import { ExplainerExport } from "@/components/learn/ExplainerExport";
 import { SaveButton } from "@/components/learn/SaveButton";
 import { ShareControl } from "@/components/learn/ShareControl";
+import { buttonLook } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import type { ExplainerRef, SectionView } from "@/lib/explainerState";
 import { versionChanges, versionOptions } from "@/lib/explainerVersions";
@@ -31,8 +32,8 @@ export function ExplainerActions({ explainer, user }: { explainer: ExplainerRef;
       <ExplainerExport explainer={explainer} />
       <ShareControl sharePath={EXPLAINER_SHARE_PATH(explainer.explainerId, explainer.version)} kind="answer" />
       {canBuildLessons(user) ? (
-        <Link href={newLessonHref(explainer)} className="field-button-secondary min-h-10 rounded-full px-4" data-testid="make-lesson">
-          <Presentation className="h-4 w-4" aria-hidden />
+        <Link href={newLessonHref(explainer)} {...buttonLook({ variant: "quiet", size: "sm" })} data-testid="make-lesson">
+          <Presentation aria-hidden />
           Make a lesson
         </Link>
       ) : null}
@@ -46,18 +47,18 @@ export function VersionPicker({ choice, sections }: { choice: VersionChoice; sec
   const latest = versions[versions.length - 1].version;
   const changes = versionChanges(viewing, sections);
   return (
-    <section className="grid min-w-0 gap-2 rounded-lg border border-line-200 bg-surface-50 p-3 sm:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] sm:items-end sm:gap-4" data-testid="version-picker">
+    <section className="grid min-w-0 gap-3 border-y border-rule py-4 sm:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] sm:items-end sm:gap-6" data-testid="version-picker">
       <FieldBlock label="Version">
         <SearchableSelect value={String(viewing.version)} options={versionOptions(versions)} onChange={(next) => onPick(Number(next))} searchable advanceOnSelect={false} />
       </FieldBlock>
-      <div className="grid min-w-0 gap-1 text-sm">
+      <div className="grid min-w-0 justify-items-start gap-1.5 font-ui text-ui">
         {changes.length > 0 ? (
-          <p className="text-ink-700" data-testid="version-changes">
+          <p className="font-normal text-ink-2" data-testid="version-changes">
             {changes.join(" · ")}
           </p>
         ) : null}
         {viewing.version < latest ? (
-          <button type="button" className="w-fit text-sm font-semibold text-purple-700 underline-offset-2 hover:underline dark:text-purple-300" onClick={() => onPick(latest)} data-testid="version-latest">
+          <button type="button" className="kv-link pointer-coarse:min-h-11" data-standalone="" onClick={() => onPick(latest)} data-testid="version-latest">
             Read the latest
           </button>
         ) : null}

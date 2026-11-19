@@ -2,7 +2,6 @@
 
 import { Suspense, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Mic } from "lucide-react";
 
 import { useRemote, type RemoteFailure } from "@/components/hooks/useRemote";
 import { PageHeader } from "@/components/PageHeader";
@@ -32,8 +31,8 @@ function FieldInterviewScreen() {
   const load = useCallback(() => fetchFieldTranscript(id), [id]);
   const remote = useRemote(id ? load : null);
   return (
-    <div className="grid gap-4">
-      <PageHeader title={remote.data?.title ?? "Field interview"} description={remote.data?.publisher} icon={<Mic className="h-5 w-5" aria-hidden />} />
+    <div className="grid min-w-0 gap-4">
+      <PageHeader title={remote.data?.title ?? "Field interview"} />
       <RemoteView remote={remote} failed={transcriptFailure}>
         {(transcript) => <FieldTranscriptView transcript={transcript} />}
       </RemoteView>

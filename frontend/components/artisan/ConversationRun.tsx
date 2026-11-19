@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { FormAlert } from "@/components/auth/FormAlert";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { apiErrorMessage } from "@/lib/api";
@@ -76,32 +77,30 @@ export function ConversationRun({ started, onEnded }: { started: RelayConversati
   }
 
   return (
-    <div className="grid gap-4" data-testid="conversation-run">
-      <ol className="grid gap-2" aria-live="polite">
+    <div className="grid gap-5" data-testid="conversation-run">
+      <ol className="grid border-t border-rule" aria-live="polite">
         {lines.map((line, index) => (
-          <li key={index} lang={line.speaker === "ARTISAN" ? started.language : undefined} className={line.speaker === "ARTISAN" ? "text-sm text-ink-900" : "text-sm text-ink-700"}>
-            <span className="font-semibold">{line.speaker === "ARTISAN" ? "You" : "KalaVigyan"}: </span>
-            {line.text}
+          <li key={index} className="grid gap-1 border-b border-rule py-3">
+            <span className="font-ui text-label font-semibold text-ink-3">{line.speaker === "ARTISAN" ? "You" : "KalaVigyan"}</span>
+            <span lang={line.speaker === "ARTISAN" ? started.language : undefined} dir="auto" className={line.speaker === "ARTISAN" ? "font-reading text-body text-ink-1" : "font-reading text-body-sm text-ink-2"}>
+              {line.text}
+            </span>
           </li>
         ))}
       </ol>
-      {!type ? <p className="text-sm text-error-600">This browser can&apos;t record sound.</p> : null}
-      {error ? (
-        <p role="alert" className="text-sm text-error-600">
-          {error}
-        </p>
-      ) : null}
+      {!type ? <FormAlert>This browser can&apos;t record sound. Open this page in another browser to record.</FormAlert> : null}
+      {error ? <FormAlert>{error}</FormAlert> : null}
       <ActionGroup>
         {phase === "recording" ? (
-          <Button type="button" onClick={() => void send(false)}>
+          <Button type="button" variant="primary" onClick={() => void send(false)}>
             Send
           </Button>
         ) : (
-          <Button type="button" disabled={phase !== "ready" || !type} onClick={() => void record()}>
-            {phase === "sending" ? "Listening…" : "Speak"}
+          <Button type="button" variant="primary" disabled={phase !== "ready" || !type} busy={phase === "sending"} busyLabel="Listening" onClick={() => void record()}>
+            Speak
           </Button>
         )}
-        <Button type="button" variant="outline" disabled={phase === "ended"} onClick={() => void end()}>
+        <Button type="button" variant="quiet" disabled={phase === "ended"} onClick={() => void end()}>
           End
         </Button>
       </ActionGroup>

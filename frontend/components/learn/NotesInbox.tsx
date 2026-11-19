@@ -1,75 +1,77 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
 
-import { riseItem, staggerParent } from "@/components/guide/guideMotion";
+import { EmptyState } from "@/components/EmptyState";
+import { RowFacts } from "@/components/learn/RowFacts";
 import { ActionGroup } from "@/components/ui/ActionGroup";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/format";
 import type { Notification } from "@/lib/learningContract";
 import { explainerHref, newsText, notesCapText, NOTE_TITLE } from "@/lib/savedView";
-import { cn } from "@/lib/utils";
 
 export type NotesActions = { busy: string | null; onUpdate: (note: Notification) => void; onRead: (note: Notification) => void };
 
-function NoteCard({ note, actions, reduce }: { note: Notification; actions: NotesActions; reduce: boolean }) {
+export const NOTES_EMPTY_TITLE = "Notes on your saved answers";
+export const NOTES_EMPTY_BODY = "When the sources behind a saved answer grow, a note here says what they add and offers the update.";
+
+function NoteCard({ note, actions }: { note: Notification; actions: NotesActions }) {
   const unread = note.readAt === null;
   const { payload } = note;
   return (
-    <motion.li
-      variants={riseItem(reduce, 10)}
-      className={cn("panel grid min-w-0 gap-3 p-4 md:p-5", unread && "border-purple-300 dark:border-purple-800")}
-      data-testid="note"
-      data-unread={unread ? "true" : "false"}
-    >
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200">
-          <Sparkles className="h-4 w-4" aria-hidden />
-        </span>
-        <h3 className="min-w-0 font-display text-base font-bold text-ink-900">{NOTE_TITLE}</h3>
-        {unread ? <span className="rounded-pill bg-sunk px-2 py-0.5 font-ui text-caption font-semibold text-ink-1">New</span> : null}
-        <span className="ml-auto text-xs text-ink-500">{formatDate(note.createdAt)}</span>
+    <li className="grid min-w-0 gap-2.5 border-b border-rule py-4" data-testid="note" data-unread={unread ? "true" : "false"}>
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+        <h3 className="min-w-0 font-ui text-h4 text-ink-1">{NOTE_TITLE}</h3>
+        {unread ? <Badge>New</Badge> : null}
+        <span className="ms-auto font-ui text-label text-ink-3 tabular-nums">{formatDate(note.createdAt)}</span>
       </div>
-      <Link href={explainerHref(payload.explainerId)} className="min-w-0 break-words text-sm font-semibold text-ink-900 underline-offset-2 hover:text-purple-700 hover:underline">
-        {payload.question}
-      </Link>
-      <p className="text-sm text-ink-700">
-        <span className="font-medium">{payload.craft.name}</span>
-        <span className="text-ink-500"> · </span>
-        <span data-testid="note-news">{newsText(payload.news)}</span>
+      <p className="min-w-0 font-reading text-body-sm [overflow-wrap:anywhere]">
+        <Link href={explainerHref(payload.explainerId)} className="kv-link font-normal">
+          {payload.question}
+        </Link>
       </p>
+      <p className="font-ui text-ui font-normal text-ink-1" data-testid="note-news">
+        {newsText(payload.news)}
+      </p>
+      <RowFacts
+        facts={[
+          { label: "Craft", value: payload.craft.name },
+          { label: "Version", value: payload.version },
+          { label: "Checked", value: formatDate(payload.checkedAt) }
+        ]}
+      />
       <ActionGroup align="start">
-        <button type="button" className="field-button" disabled={actions.busy !== null} onClick={() => actions.onUpdate(note)} data-testid="note-update">
+        <Button type="button" variant="quiet" size="sm" disabled={actions.busy !== null} onClick={() => actions.onUpdate(note)} data-testid="note-update">
           Update the answer
-        </button>
+        </Button>
         {unread ? (
-          <button type="button" className="field-button-secondary" disabled={actions.busy !== null} onClick={() => actions.onRead(note)} data-testid="note-read">
+          <Button type="button" variant="text" size="sm" disabled={actions.busy !== null} onClick={() => actions.onRead(note)} data-testid="note-read">
             Mark read
-          </button>
+          </Button>
         ) : null}
       </ActionGroup>
-    </motion.li>
+    </li>
   );
 }
 
-export function NotesInbox({ notes, actions, reduce }: { notes: readonly Notification[]; actions: NotesActions; reduce: boolean }) {
+export function NotesInbox({ notes, actions }: { notes: readonly Notification[]; actions: NotesActions; reduce?: boolean }) {
   if (notes.length === 0) {
     return (
-      <p className="panel p-5 text-sm text-ink-500" data-testid="notes-empty">
-        Nothing new yet.
-      </p>
+      <div data-testid="notes-empty">
+        <EmptyState headingLevel={3} title={NOTES_EMPTY_TITLE} body={NOTES_EMPTY_BODY} />
+      </div>
     );
   }
   const cap = notesCapText(notes.length);
   return (
     <>
-      <motion.ul variants={staggerParent(reduce)} initial="hidden" animate="show" className="grid min-w-0 gap-3" data-testid="notes">
+      <ul className="grid min-w-0 border-t border-ink-1" data-testid="notes">
         {notes.map((note) => (
-          <NoteCard key={note.id} note={note} actions={actions} reduce={reduce} />
+          <NoteCard key={note.id} note={note} actions={actions} />
         ))}
-      </motion.ul>
-      {cap ? <p className="text-xs text-ink-500">{cap}</p> : null}
+      </ul>
+      {cap ? <p className="font-ui text-label text-ink-3">{cap}</p> : null}
     </>
   );
 }

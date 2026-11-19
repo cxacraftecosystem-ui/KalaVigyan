@@ -2,17 +2,17 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { MessageCircleQuestion, Presentation } from "lucide-react";
+import { MessageCircleQuestion } from "lucide-react";
 
 import { CitedReading } from "@/components/answer/CitedReading";
 import { ExplainerView } from "@/components/answer/ExplainerView";
 import type { UnderstoodChange } from "@/components/answer/UnderstoodLine";
 import { useAskHref } from "@/components/ask/useAskHref";
-import { useAppReducedMotion } from "@/components/guide/useAppReducedMotion";
 import { useRemote, type RemoteFailure } from "@/components/hooks/useRemote";
 import { LessonPackView } from "@/components/learn/LessonPackView";
 import { PageHeader } from "@/components/PageHeader";
 import { RemoteView } from "@/components/RemotePanels";
+import { buttonLook } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { ENGLISH, languageFor } from "@/lib/answerLanguages";
 import { listedSourceNumbers } from "@/lib/citations";
@@ -49,8 +49,8 @@ function SharedAnswer({ document }: { document: ExplainerVersionDocument }) {
   const state = useMemo(() => explainerStateOf(document), [document]);
   const askHref = useAskHref({ craft: document.explainer.understood.crafts[0]?.slug ?? null });
   const ask = (
-    <Link href={askHref} className="field-button-secondary min-h-10 rounded-full px-4" data-testid="shared-ask">
-      <MessageCircleQuestion className="h-4 w-4" aria-hidden />
+    <Link href={askHref} {...buttonLook({ variant: "quiet", size: "sm" })} data-testid="shared-ask">
+      <MessageCircleQuestion aria-hidden />
       Ask your own question
     </Link>
   );
@@ -74,7 +74,7 @@ export function SharedLessonScreen({ token }: { token: string }) {
   const remote = useRemote(load);
   return (
     <div data-testid="shared-lesson">
-      <PageHeader title={remote.data?.title ?? "Lesson"} icon={<Presentation className="h-5 w-5" aria-hidden />} />
+      <PageHeader title={remote.data?.title ?? "Shared lesson"} />
       <RemoteView remote={remote} failed={sharedFailure("lesson")}>
         {(pack) => <SharedLesson pack={pack} />}
       </RemoteView>
@@ -83,11 +83,10 @@ export function SharedLessonScreen({ token }: { token: string }) {
 }
 
 function SharedLesson({ pack }: { pack: LessonPack }) {
-  const reduce = useAppReducedMotion();
   const numbers = useMemo(() => listedSourceNumbers(pack.sources), [pack]);
   return (
     <CitedReading sources={pack.sources} numbers={numbers} language={languageFor(pack.language, READING_LANGUAGES)}>
-      <LessonPackView pack={pack} reduce={reduce} />
+      <LessonPackView pack={pack} />
     </CitedReading>
   );
 }

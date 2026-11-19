@@ -8,6 +8,8 @@ import { KeyRound, Lock, SearchX, ServerOff, TriangleAlert, WifiOff } from "luci
 import { useAuth } from "@/components/AuthProvider";
 import { DynamicIslandNav } from "@/components/DynamicIslandNav";
 import { ErrorBrand, ErrorPanel, type ErrorTone } from "@/components/ErrorPanel";
+import { SkipLink } from "@/components/shell/ShellFrame";
+import { Button, buttonLook } from "@/components/ui/button";
 import { errorCopy, errorKindOf, retryDelaySeconds, type ErrorKind } from "@/lib/errorKind";
 import { signInHref } from "@/lib/sessionReturn";
 
@@ -17,19 +19,14 @@ export function DeadEndFrame({ nav, children }: { nav: boolean; children: ReactN
   const brand = !nav || (!loading && !user);
 
   return (
-    <div className="min-h-screen bg-bg-0">
+    <div className="kv-shell">
       {nav ? (
         <>
-          <a
-            href="#main-content"
-            className="sr-only left-3 top-3 z-60 rounded-md bg-purple-700 px-3 py-2 text-sm font-medium text-white focus:not-sr-only focus:fixed"
-          >
-            Skip to content
-          </a>
+          <SkipLink />
           <DynamicIslandNav />
         </>
       ) : null}
-      <main id="main-content" tabIndex={-1} className="mx-auto max-w-7xl px-4 pb-12 pt-24">
+      <main id="main-content" tabIndex={-1} className="kv-shell-main kv-shell-wrap">
         {brand ? <ErrorBrand /> : null}
         {children}
       </main>
@@ -54,6 +51,9 @@ const TONE: Record<ErrorKind, ErrorTone> = {
   offline: "quiet",
   unavailable: "quiet"
 };
+
+const PRIMARY = buttonLook({ variant: "primary" });
+const QUIET = buttonLook({ variant: "quiet" });
 
 function useHere(): string | null {
   const [here, setHere] = useState<string | null>(null);
@@ -93,6 +93,65 @@ function useCountdown(active: boolean, onDone: () => void): number | null {
   return left;
 }
 
+type Ways = { home: string; requestHref?: string | null; signIn: string; goBack: () => void; retry: () => void };
+
+function errorActions(kind: ErrorKind, ways: Ways): ReactNode {
+  switch (kind) {
+    case "not-found":
+      return (
+        <>
+          <Button type="button" variant="quiet" onClick={ways.goBack}>
+            Go back
+          </Button>
+          <Link href={ways.home} {...PRIMARY}>
+            Home
+          </Link>
+        </>
+      );
+    case "forbidden":
+      return ways.requestHref ? (
+        <Link href={ways.requestHref} {...PRIMARY}>
+          Request access
+        </Link>
+      ) : (
+        <Link href={ways.home} {...PRIMARY}>
+          Home
+        </Link>
+      );
+    case "session":
+      return (
+        <Link href={ways.signIn} {...PRIMARY}>
+          Sign in again
+        </Link>
+      );
+    case "server":
+      return (
+        <>
+          <Button type="button" variant="primary" onClick={ways.retry}>
+            Try again
+          </Button>
+          <Link href={ways.home} {...QUIET}>
+            Home
+          </Link>
+        </>
+      );
+    default:
+      return (
+        <Button type="button" variant="primary" onClick={ways.retry}>
+          Try again
+        </Button>
+      );
+  }
+}
+
+function Countdown({ seconds }: { seconds: number }) {
+  return (
+    <span data-testid="error-countdown">
+      Retrying in <span className="font-code tabular-nums">{seconds}s</span>
+    </span>
+  );
+}
+
 export function ErrorState({
   kind,
   noun,
@@ -125,65 +184,12 @@ export function ErrorState({
   }, [kind, retry]);
 
   const seconds = useCountdown(kind === "unavailable", retry);
-
   const goBack = () => {
     if (window.history.length > 1) router.back();
     else router.push(home);
   };
-
   const copy = errorCopy(kind, { noun, canRequest: Boolean(requestHref) });
-
-  let actions: ReactNode;
-  switch (kind) {
-    case "not-found":
-      actions = (
-        <>
-          <button type="button" onClick={goBack} className="field-button-secondary">
-            Go back
-          </button>
-          <Link href={home} className="field-button">
-            Home
-          </Link>
-        </>
-      );
-      break;
-    case "forbidden":
-      actions = requestHref ? (
-        <Link href={requestHref} className="field-button">
-          Request access
-        </Link>
-      ) : (
-        <Link href={home} className="field-button">
-          Home
-        </Link>
-      );
-      break;
-    case "session":
-      actions = (
-        <Link href={signInHref(next ?? here)} className="field-button">
-          Sign in again
-        </Link>
-      );
-      break;
-    case "server":
-      actions = (
-        <>
-          <button type="button" onClick={retry} className="field-button">
-            Try again
-          </button>
-          <Link href={home} className="field-button-secondary">
-            Home
-          </Link>
-        </>
-      );
-      break;
-    default:
-      actions = (
-        <button type="button" onClick={retry} className="field-button">
-          Try again
-        </button>
-      );
-  }
+  const ways: Ways = { home, requestHref, signIn: signInHref(next ?? here), goBack, retry };
 
   return (
     <ErrorPanel
@@ -193,15 +199,9 @@ export function ErrorState({
       title={copy.title}
       line={copy.line}
       reference={kind === "server" ? reference : null}
-      status={
-        kind === "unavailable" && seconds !== null ? (
-          <span data-testid="error-countdown">
-            Retrying in <span className="font-mono tabular-nums">{seconds}s</span>
-          </span>
-        ) : null
-      }
+      status={kind === "unavailable" && seconds !== null ? <Countdown seconds={seconds} /> : null}
     >
-      {actions}
+      {errorActions(kind, ways)}
     </ErrorPanel>
   );
 }

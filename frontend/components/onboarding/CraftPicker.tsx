@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 
+import { FormAlert } from "@/components/auth/FormAlert";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { isReaderCraft, loadCraftCatalogue, searchCatalogue } from "@/lib/craftCatalogue";
 import type { CatalogueCraft, CraftCatalogue } from "@/lib/craftCatalogueContract";
@@ -53,7 +54,7 @@ export function CraftPicker({ picked, onChange }: { picked: PickedCraft[]; onCha
     setTerm("");
   }
 
-  if (failed) return <p className="text-sm text-error-600">Couldn&apos;t load the crafts. Reload the page.</p>;
+  if (failed) return <FormAlert>Couldn&apos;t load the crafts. Reload the page.</FormAlert>;
 
   return (
     <div className="grid gap-2" data-testid="craft-picker">
@@ -69,15 +70,15 @@ export function CraftPicker({ picked, onChange }: { picked: PickedCraft[]; onCha
       {picked.length ? (
         <ul className="flex flex-wrap gap-2" aria-label="Your crafts">
           {picked.map((craft) => (
-            <li key={craft.slug} className="inline-flex items-center gap-1 rounded-full border border-line-200 bg-surface-50 py-1 pl-3 pr-1 text-sm text-ink-900">
-              {craft.displayName}
+            <li key={craft.slug} className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-pill border border-rule-strong bg-raised pe-1 ps-3 font-ui text-label text-ink-1">
+              <span className="min-w-0 truncate">{craft.displayName}</span>
               <button
                 type="button"
                 aria-label={`Remove ${craft.displayName}`}
                 onClick={() => onChange(picked.filter((each) => each.slug !== craft.slug))}
-                className="grid h-7 w-7 place-items-center rounded-full text-ink-500 hover:bg-card"
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-3 transition-colors duration-state hover:bg-sunk hover:text-ink-1 pointer-coarse:h-11 pointer-coarse:w-11"
               >
-                <X className="h-3.5 w-3.5" aria-hidden />
+                <X className="h-4 w-4" aria-hidden />
               </button>
             </li>
           ))}

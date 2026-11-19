@@ -3,12 +3,13 @@
 import { Suspense, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Presentation } from "lucide-react";
 
+import { EmptyState } from "@/components/EmptyState";
 import { failureMessage, useRemote } from "@/components/hooks/useRemote";
 import { LessonBuilder } from "@/components/learn/LessonBuilder";
 import { PageHeader } from "@/components/PageHeader";
 import { LoadingPanel, RetryPanel } from "@/components/RemotePanels";
+import { buttonLook } from "@/components/ui/button";
 import { fetchExplainerDocument } from "@/lib/learningApi";
 import { lessonHref } from "@/lib/lessonView";
 import { EXPLAINER_PARAM, SAVED_PATH, VERSION_PARAM } from "@/lib/savedView";
@@ -22,6 +23,20 @@ export default function NewLessonPage() {
   );
 }
 
+function ChooseAnswer() {
+  return (
+    <EmptyState
+      title="A lesson starts from an answer"
+      body="Open a saved answer and choose Make a lesson. Its finished sections become slides, a handout and a quiz."
+      actions={
+        <Link href={SAVED_PATH} {...buttonLook({ variant: "primary" })}>
+          Open saved answers
+        </Link>
+      }
+    />
+  );
+}
+
 function NewLesson() {
   const params = useSearchParams();
   const router = useRouter();
@@ -29,18 +44,13 @@ function NewLesson() {
   const version = positiveParam(params.get(VERSION_PARAM));
   const load = useMemo(() => (explainerId ? () => fetchExplainerDocument(explainerId, version) : null), [explainerId, version]);
   const document = useRemote(load);
-  const header = <PageHeader title="Make a lesson" description={document.data?.explainer.question} icon={<Presentation className="h-5 w-5" aria-hidden />} />;
+  const header = <PageHeader title="Make a lesson" description={document.data?.explainer.question} />;
 
   if (!explainerId) {
     return (
       <>
         {header}
-        <div className="panel grid justify-items-center gap-3 p-6 text-center">
-          <p className="text-sm text-ink-700">Choose an explainer first.</p>
-          <Link href={SAVED_PATH} className="field-button">
-            Open saved answers
-          </Link>
-        </div>
+        <ChooseAnswer />
       </>
     );
   }
@@ -52,7 +62,7 @@ function NewLesson() {
       ) : document.data ? (
         <LessonBuilder document={document.data} onBuilt={(pack) => router.replace(lessonHref(pack.id))} />
       ) : (
-        <LoadingPanel />
+        <LoadingPanel label="Opening the answer" />
       )}
     </>
   );

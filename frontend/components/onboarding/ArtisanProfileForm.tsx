@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { FormAlert } from "@/components/auth/FormAlert";
+import { FieldBlock } from "@/components/FormControls";
 import { CraftPicker, type PickedCraft } from "@/components/onboarding/CraftPicker";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
@@ -73,36 +75,42 @@ export function ArtisanProfileForm({ current, accountName, action, onSaved }: { 
   }
 
   return (
-    <div className="grid gap-4" data-testid="artisan-profile-form">
+    <div className="grid gap-5" data-testid="artisan-profile-form">
       <div className="grid gap-1.5">
         <span className="field-label">Which crafts do you practise?</span>
         <CraftPicker picked={crafts} onChange={setCrafts} />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <SearchableSelect value={stateLgd} onChange={(next) => { setStateLgd(next); setDistrictLgd(""); }} options={stateOptions} ariaLabel="State" placeholder="State" disabled={!places} />
-        <SearchableSelect value={districtLgd} onChange={setDistrictLgd} options={districtOptions} ariaLabel="District" placeholder="District" disabled={!state} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FieldBlock label="State">
+          <SearchableSelect value={stateLgd} onChange={(next) => { setStateLgd(next); setDistrictLgd(""); }} options={stateOptions} ariaLabel="State" placeholder="Choose a state" disabled={!places} />
+        </FieldBlock>
+        <FieldBlock label="District">
+          <SearchableSelect value={districtLgd} onChange={setDistrictLgd} options={districtOptions} ariaLabel="District" placeholder="Choose a district" disabled={!state} />
+        </FieldBlock>
       </div>
-      <SearchableSelect value={language} onChange={setLanguage} options={languageOptions} ariaLabel="Which language do you speak?" placeholder="Which language do you speak?" />
-      <label className="flex items-start gap-2.5 text-sm text-ink-900">
-        <input type="checkbox" checked={adult} onChange={(event) => setAdult(event.target.checked)} className="mt-1 h-4 w-4 shrink-0 rounded border-line-200" />
+      <FieldBlock label="Which language do you speak?">
+        <SearchableSelect value={language} onChange={setLanguage} options={languageOptions} ariaLabel="Which language do you speak?" placeholder="Choose a language" />
+      </FieldBlock>
+      <label className="flex min-h-target items-center gap-2.5 font-ui text-ui font-normal text-ink-1">
+        <input type="checkbox" checked={adult} onChange={(event) => setAdult(event.target.checked)} className="h-4 w-4 shrink-0 accent-indigo" />
         I am 18 or older
       </label>
-      <div className="grid gap-1.5">
+      <div className="grid gap-2">
         <span className="field-label">How should we credit you?</span>
         <SegmentedChoice label="How should we credit you?" value={mode} options={CREDIT_OPTIONS} onChange={(next) => setMode(next as CreditMode)} />
-        {mode === "FULL_NAME" ? <input aria-label="Your full name" value={name} onChange={(event) => setName(event.target.value)} maxLength={120} className="field-input" /> : null}
-        {mode === "FIRST_NAME" ? <input aria-label="Your first name" value={shortName} onChange={(event) => setShortName(event.target.value)} maxLength={60} className="field-input" /> : null}
-        {mode === "CRAFT_AND_DISTRICT" ? <p className="text-sm text-ink-600">{FEW_ARTISANS}</p> : null}
-        {preview ? <p className="text-sm text-ink-700" data-testid="credit-preview">Shown as: {preview}</p> : null}
+        {mode === "FULL_NAME" ? <input aria-label="Your full name" value={name} onChange={(event) => setName(event.target.value)} maxLength={120} className="kv-input" /> : null}
+        {mode === "FIRST_NAME" ? <input aria-label="Your first name" value={shortName} onChange={(event) => setShortName(event.target.value)} maxLength={60} className="kv-input" /> : null}
+        {mode === "CRAFT_AND_DISTRICT" ? <p className="font-ui text-label text-ink-2">{FEW_ARTISANS}</p> : null}
+        {preview ? (
+          <p className="font-ui text-ui font-normal text-ink-1" data-testid="credit-preview">
+            <span className="text-ink-3">Shown as:</span> {preview}
+          </p>
+        ) : null}
       </div>
-      {error ? (
-        <p role="alert" className="text-sm text-error-600">
-          {error}
-        </p>
-      ) : null}
-      <ActionGroup>
-        <Button type="button" disabled={busy || !ready} onClick={() => void save()}>
-          {busy ? "Saving…" : action}
+      {error ? <FormAlert>{error}</FormAlert> : null}
+      <ActionGroup fill>
+        <Button type="button" variant="primary" disabled={!ready} busy={busy} busyLabel="Saving" onClick={() => void save()}>
+          {action}
         </Button>
       </ActionGroup>
     </div>

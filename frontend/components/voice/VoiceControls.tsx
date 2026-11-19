@@ -3,6 +3,7 @@
 import { PhoneOff, RotateCw } from "lucide-react";
 
 import { ActionGroup } from "@/components/ui/ActionGroup";
+import { Button } from "@/components/ui/button";
 import type { VoicePhase } from "@/lib/voiceCall";
 
 export function VoiceControls({
@@ -19,23 +20,23 @@ export function VoiceControls({
   if (phase === "starting" || phase === "live") {
     return (
       <ActionGroup fill>
-        <button type="button" className="field-button" onClick={onEnd} data-testid="voice-end">
-          <PhoneOff className="h-4 w-4" aria-hidden />
+        <Button type="button" variant="primary" onClick={onEnd} data-testid="voice-end">
+          <PhoneOff aria-hidden />
           End
-        </button>
+        </Button>
       </ActionGroup>
     );
   }
   if (phase === "ended" || phase === "failed") {
     return (
       <ActionGroup>
-        <button type="button" className="field-button-secondary" onClick={onClose}>
+        <Button type="button" variant="quiet" onClick={onClose}>
           Close
-        </button>
-        <button type="button" className="field-button" onClick={onAgain}>
-          <RotateCw className="h-4 w-4" aria-hidden />
+        </Button>
+        <Button type="button" variant="primary" onClick={onAgain}>
+          <RotateCw aria-hidden />
           {phase === "failed" ? "Try again" : "Talk again"}
-        </button>
+        </Button>
       </ActionGroup>
     );
   }

@@ -5,11 +5,12 @@ import { Link2 } from "lucide-react";
 
 import { useConfirm } from "@/components/dialogs/ConfirmDialog";
 import { useRemote } from "@/components/hooks/useRemote";
+import { buttonLook } from "@/components/ui/button";
 import { apiErrorMessage } from "@/lib/api";
 import { fetchShareLink, sharedAddress, startSharing, stopSharing, type ShareLink } from "@/lib/shareContract";
 import { SHARE_NOTICE, type SharedKind } from "@/lib/shareNotice";
 
-const PILL = "field-button-secondary min-h-10 rounded-full px-4";
+const PILL = buttonLook({ variant: "quiet", size: "sm" });
 const SHARE_FAILED = "Couldn't change the share link. Try again.";
 
 export function ShareControl({ sharePath, kind }: { sharePath: string; kind: SharedKind }) {
@@ -56,21 +57,21 @@ export function ShareControl({ sharePath, kind }: { sharePath: string; kind: Sha
     <>
       {link.shared ? (
         <>
-          <button type="button" className={PILL} disabled={busy} onClick={() => void run(async () => link, copy)} data-testid="share-copy">
+          <button type="button" {...PILL} disabled={busy} onClick={() => void run(async () => link, copy)} data-testid="share-copy">
             <Link2 className="h-4 w-4" aria-hidden />
             Copy link
           </button>
-          <button type="button" className={PILL} disabled={busy} onClick={() => void run(() => stopSharing(sharePath), async () => "Sharing stopped. The link no longer opens.")} data-testid="share-stop">
+          <button type="button" {...PILL} disabled={busy} onClick={() => void run(() => stopSharing(sharePath), async () => "Sharing stopped. The link no longer opens.")} data-testid="share-stop">
             Stop sharing
           </button>
         </>
       ) : (
-        <button type="button" className={PILL} disabled={busy} onClick={() => void share()} data-testid="share-start">
+        <button type="button" {...PILL} disabled={busy} onClick={() => void share()} data-testid="share-start">
           <Link2 className="h-4 w-4" aria-hidden />
           Share link
         </button>
       )}
-      <span role="status" aria-live="polite" className="basis-full text-body-sm text-ink-2 [overflow-wrap:anywhere] empty:hidden" data-testid="share-note">
+      <span role="status" aria-live="polite" className="basis-full font-ui text-label text-ink-2 [overflow-wrap:anywhere] empty:hidden" data-testid="share-note">
         {note}
       </span>
     </>

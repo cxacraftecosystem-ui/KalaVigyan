@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { openedSource, SourceDialog, type OpenCitation } from "@/components/answer/SourceDialog";
 import { SourcesList } from "@/components/answer/SourcesList";
+import { FormAlert } from "@/components/auth/FormAlert";
 import { useRevealRow } from "@/components/hooks/useRevealRow";
 import { orbLabel, statusWord } from "@/components/voice/voiceWords";
 import { VoiceOrb } from "@/components/voice/VoiceOrb";
@@ -54,18 +55,14 @@ export function VoiceCallBody({ call, state, language, host }: { call: VoiceCall
       {state.phase === "ended" || state.phase === "failed" ? null : (
         <div className="grid justify-items-center gap-3 py-2">
           <VoiceOrb activity={state.phase === "live" ? activity : "connecting"} level={level} label={orbLabel(activity) ?? word} onPress={pressable ? () => call.talk() : undefined} />
-          <p role="status" className="min-h-5 text-center text-sm font-medium text-ink-700" data-testid="voice-status">
+          <p role="status" className="min-h-5 text-center font-ui text-ui text-ink-2" data-testid="voice-status">
             {word}
           </p>
         </div>
       )}
-      {state.phase === "failed" && state.message ? (
-        <p role="alert" className="rounded-md border border-red-200 bg-error-100 px-3 py-2 text-sm text-error-600">
-          {state.message}
-        </p>
-      ) : null}
-      {state.phase === "ended" && state.message ? <p className="text-center text-sm font-medium text-ink-500">{state.message}</p> : null}
-      {conversation.problem ? <p className="text-center text-sm text-error-600">{conversation.problem}</p> : null}
+      {state.phase === "failed" && state.message ? <FormAlert>{state.message}</FormAlert> : null}
+      {state.phase === "ended" && state.message ? <p className="text-center font-ui text-ui text-ink-2">{state.message}</p> : null}
+      {conversation.problem ? <FormAlert>{conversation.problem}</FormAlert> : null}
       <VoiceTranscript conversation={conversation} language={language} citing={{ numbers, sourcesById, onOpen }} actions={(turn) => <VoiceTurnActions turn={turn} context={context} />} />
       {entries.length > 0 ? (
         <div ref={registerRow("sources")}>

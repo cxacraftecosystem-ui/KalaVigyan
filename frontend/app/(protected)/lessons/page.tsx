@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Presentation } from "lucide-react";
 
+import { FormAlert } from "@/components/auth/FormAlert";
 import { deleteConfirm, useConfirm } from "@/components/dialogs/ConfirmDialog";
 import { failureMessage, useRemote } from "@/components/hooks/useRemote";
 import { LessonList } from "@/components/learn/LessonList";
@@ -13,6 +13,7 @@ import { deleteLesson, fetchLessons } from "@/lib/lessonApi";
 import type { LessonSummary } from "@/lib/lessonContract";
 
 const DELETE_FAILED = "Couldn't delete the lesson. Try again.";
+const LESSONS_LINE = "Slides, a handout, a quiz and a reading list, each built from a saved answer and cited to its sources.";
 
 export default function LessonsPage() {
   const lessons = useRemote(fetchLessons);
@@ -22,7 +23,7 @@ export default function LessonsPage() {
   const [error, setError] = useState<string | null>(null);
 
   async function remove(lesson: LessonSummary) {
-    if (!(await confirm(deleteConfirm(`Delete “${lesson.title}”?`, "Its slides and files go with it.")))) return;
+    if (!(await confirm({ ...deleteConfirm(`Delete “${lesson.title}”?`, "Its slides and files go for good. The answer it was built from stays."), confirmLabel: "Delete lesson" }))) return;
     setBusy(lesson.id);
     setError(null);
     try {
@@ -37,18 +38,14 @@ export default function LessonsPage() {
 
   return (
     <>
-      <PageHeader title="Lessons" icon={<Presentation className="h-5 w-5" aria-hidden />} back={false} />
-      {error ? (
-        <p role="alert" className="mb-4 rounded-md border border-red-200 bg-error-100 px-3 py-2 text-sm text-error-600">
-          {error}
-        </p>
-      ) : null}
+      <PageHeader title="Lessons" description={LESSONS_LINE} back={false} />
+      {error ? <FormAlert className="mb-4">{error}</FormAlert> : null}
       {lessons.failure ? (
         <RetryPanel message={failureMessage(lessons.failure, "Couldn't load your lessons.")} onRetry={lessons.retry} />
       ) : lessons.data ? (
         <LessonList lessons={lessons.data.items.filter((lesson) => !gone.has(lesson.id))} busy={busy} onDelete={(lesson) => void remove(lesson)} />
       ) : (
-        <LoadingPanel />
+        <LoadingPanel label="Opening your lessons" />
       )}
     </>
   );

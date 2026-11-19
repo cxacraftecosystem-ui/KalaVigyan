@@ -1,17 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Mic } from "lucide-react";
 
 import { ConversationRun } from "@/components/artisan/ConversationRun";
 import { ConversationSetup } from "@/components/artisan/ConversationSetup";
 import { MyContributions } from "@/components/artisan/MyContributions";
+import { FormAlert } from "@/components/auth/FormAlert";
 import { PageHeader } from "@/components/PageHeader";
 import { fetchAskConfig } from "@/lib/askConfig";
 import { availabilityShape, type ConversationAvailability, type RelayConversationStarted } from "@/lib/conversationContract";
 import { fetchProfile } from "@/lib/profileContract";
 import { parseShape } from "@/lib/shape";
 import { fetchContributions, type ContributionList } from "@/lib/testimonyContract";
+
+const CONTRIBUTE_LINE = "Talk about your craft in the language you speak. A reviewer reads every line before it is shown, and you can take any line back.";
 
 export default function ContributePage() {
   const [offered, setOffered] = useState<ConversationAvailability | null>(null);
@@ -36,10 +38,10 @@ export default function ContributePage() {
 
   return (
     <>
-      <PageHeader title="Your craft in your words" icon={<Mic className="h-5 w-5" aria-hidden />} back={false} />
-      <div className="grid gap-6">
+      <PageHeader title="Your craft in your words" description={CONTRIBUTE_LINE} back={false} />
+      <div className="grid gap-10">
         {offered && offered.configured && offered.transport === "RELAY" ? (
-          <section className="panel grid gap-4 p-5" data-testid="talk">
+          <section aria-label="Record" className="grid max-w-measure gap-4 border-t border-ink-1 pt-5" data-testid="talk">
             {started ? (
               <ConversationRun started={started} onEnded={() => { setStarted(null); load(); }} />
             ) : (
@@ -47,7 +49,7 @@ export default function ContributePage() {
             )}
           </section>
         ) : null}
-        {failed ? <p className="text-sm text-error-600">Couldn&apos;t load what you shared. Reload the page.</p> : null}
+        {failed ? <FormAlert>Couldn&apos;t load what you shared. Reload the page.</FormAlert> : null}
         {listed ? <MyContributions listed={listed} onChanged={load} /> : null}
       </div>
     </>

@@ -1,20 +1,20 @@
 import { safeOutboundUrl } from "@/lib/citations";
 import type { RegionDataset } from "@/lib/regionContract";
 
-const LINK = "underline-offset-2 hover:text-purple-700 hover:underline dark:hover:text-purple-300";
+const LINK = "kv-link font-normal";
 
 export function DatasetCredit({ dataset, methods = [] }: { dataset: RegionDataset; methods?: readonly string[] }) {
   const href = safeOutboundUrl(dataset.url);
   const licenceHref = safeOutboundUrl(dataset.licenceUrl);
   return (
-    <span className="grid gap-0.5 text-[11px] leading-4 text-ink-500" data-testid="dataset-credit">
+    <span className="grid gap-0.5 font-ui text-caption text-ink-3" data-testid="dataset-credit">
       <span>
         {href ? (
-          <a href={href} target="_blank" rel="noopener noreferrer" className={`font-medium text-ink-700 ${LINK}`}>
+          <a href={href} target="_blank" rel="noopener noreferrer" className={LINK}>
             {dataset.title}
           </a>
         ) : (
-          <span className="font-medium text-ink-700">{dataset.title}</span>
+          <span className="font-medium text-ink-2">{dataset.title}</span>
         )}
         {[dataset.publisher, dataset.edition].filter(Boolean).map((part) => ` · ${part}`)}
       </span>

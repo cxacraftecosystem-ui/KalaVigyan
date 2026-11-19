@@ -3,13 +3,14 @@
 import { TriangleAlert } from "lucide-react";
 
 import { ErrorBrand, ErrorPanel } from "@/components/ErrorPanel";
+import { Button } from "@/components/ui/button";
 import { errorCopy } from "@/lib/errorKind";
 
 const COPY = errorCopy("global");
 
 export function GlobalErrorView({ reference }: { reference?: string | null }) {
   return (
-    <main id="main-content" className="mx-auto max-w-7xl px-4 pb-12 pt-24">
+    <main id="main-content" className="kv-shell-main kv-shell-wrap min-h-dvh">
       <ErrorBrand />
       <ErrorPanel
         screen="global"
@@ -19,9 +20,9 @@ export function GlobalErrorView({ reference }: { reference?: string | null }) {
         line={COPY.line}
         reference={reference}
       >
-        <button type="button" onClick={() => window.location.reload()} className="field-button">
+        <Button type="button" variant="primary" onClick={() => window.location.reload()}>
           Reload
-        </button>
+        </Button>
       </ErrorPanel>
     </main>
   );

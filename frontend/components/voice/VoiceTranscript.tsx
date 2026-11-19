@@ -14,7 +14,7 @@ type Citing = { numbers: Map<string, number>; sourcesById: Map<string, SourceRef
 function Heard({ text, language }: { text: string; language: AnswerLanguage | null }) {
   const shown = attributesForText(text, language);
   return (
-    <p className="max-w-[85%] justify-self-end rounded-lg rounded-br-sm bg-field-100 px-3 py-2 text-sm leading-6 text-ink-900">
+    <p className="max-w-[85%] justify-self-end rounded-card bg-sunk px-3 py-2 font-ui text-ui font-normal text-ink-1">
       <span className="sr-only">You: </span>
       <span lang={shown.lang} dir={shown.dir}>
         {text}
@@ -31,7 +31,7 @@ function Reply({ id, sentences, spoken, language, citing }: { id: string; senten
   if (!spoken) return null;
   const shown = attributesForText(spoken, language);
   return (
-    <p lang={shown.lang} dir={shown.dir} className="text-sm leading-6 text-ink-500">
+    <p lang={shown.lang} dir={shown.dir} className="font-reading text-body-sm text-ink-2">
       {spoken}
     </p>
   );

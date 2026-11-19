@@ -1,36 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import { Bookmark } from "lucide-react";
 
+import { EmptyState } from "@/components/EmptyState";
+import { RowFacts, type RowFact } from "@/components/learn/RowFacts";
 import { ActionGroup } from "@/components/ui/ActionGroup";
+import { Badge } from "@/components/ui/Badge";
+import { Button, buttonLook } from "@/components/ui/button";
+import { languageName } from "@/lib/craftRecord";
+import { DISCIPLINE_LABEL } from "@/lib/explainerView";
 import { formatDate } from "@/lib/format";
 import { hasNewerVersion, type SavedExplainer } from "@/lib/learningContract";
 import { ASK_PATH, explainerHref } from "@/lib/savedView";
 
+export const SAVED_EMPTY_TITLE = "Your saved answers";
+export const SAVED_EMPTY_BODY = "Save an answer and it waits here with its version, and a note when its sources grow.";
+
+function savedFacts(item: SavedExplainer): RowFact[] {
+  const facts: (RowFact | null)[] = [
+    item.craft ? { label: "Craft", value: item.craft.name } : null,
+    item.facets.length > 0 ? { label: "About", value: item.facets.map((facet) => DISCIPLINE_LABEL[facet]).join(", ") } : null,
+    { label: "Language", value: languageName(item.language) },
+    { label: "Version", value: item.latestVersion },
+    { label: "Saved", value: formatDate(item.savedAt) },
+    item.checkedAt ? { label: "Checked", value: formatDate(item.checkedAt) } : null
+  ];
+  return facts.filter((fact): fact is RowFact => fact !== null);
+}
+
 function SavedRow({ item, busy, onRemove }: { item: SavedExplainer; busy: boolean; onRemove: (id: string) => void }) {
-  const newer = hasNewerVersion(item);
   return (
-    <li className="panel grid min-w-0 gap-2 p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-4 md:p-5" data-testid="saved-explainer">
-      <div className="grid min-w-0 gap-1">
-        <Link href={explainerHref(item.explainerId)} className="min-w-0 break-words font-display text-base font-bold text-ink-900 underline-offset-2 hover:text-purple-700 hover:underline">
-          {item.question}
-        </Link>
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500">
-          {item.craft ? <span className="font-medium text-ink-700">{item.craft.name}</span> : null}
-          <span>Saved {formatDate(item.savedAt)}</span>
-          <span>Version {item.latestVersion}</span>
-          {newer ? (
-            <span className="rounded-full border border-purple-300 bg-purple-50 px-2 py-0.5 font-semibold text-purple-800 dark:border-purple-800 dark:bg-purple-950/50 dark:text-purple-200" data-testid="saved-newer">
-              Newer version
-            </span>
-          ) : null}
-        </p>
+    <li className="grid min-w-0 gap-3 border-b border-rule py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6" data-testid="saved-explainer">
+      <div className="grid min-w-0 gap-1.5">
+        <h3 className="min-w-0 font-reading text-h3 [overflow-wrap:anywhere]">
+          <Link href={explainerHref(item.explainerId)} className="kv-link font-normal">
+            {item.question}
+          </Link>
+        </h3>
+        <RowFacts facts={savedFacts(item)} />
+        {hasNewerVersion(item) ? (
+          <span data-testid="saved-newer">
+            <Badge>Newer version</Badge>
+          </span>
+        ) : null}
       </div>
       <ActionGroup inline align="end">
-        <button type="button" data-danger className="field-button-secondary" disabled={busy} onClick={() => onRemove(item.explainerId)} data-testid="saved-remove">
-          Remove
-        </button>
+        <Button type="button" variant="quiet" size="sm" disabled={busy} busy={busy} busyLabel="Removing" onClick={() => onRemove(item.explainerId)} data-testid="saved-remove">
+          Remove<span className="sr-only"> {item.question}</span>
+        </Button>
       </ActionGroup>
     </li>
   );
@@ -39,17 +56,22 @@ function SavedRow({ item, busy, onRemove }: { item: SavedExplainer; busy: boolea
 export function SavedList({ items, busy, onRemove }: { items: readonly SavedExplainer[]; busy: string | null; onRemove: (id: string) => void }) {
   if (items.length === 0) {
     return (
-      <div className="panel grid justify-items-center gap-3 p-6 text-center" data-testid="saved-empty">
-        <Bookmark className="h-5 w-5 text-purple-700 dark:text-purple-300" aria-hidden />
-        <p className="text-sm text-ink-700">Nothing saved yet.</p>
-        <Link href={ASK_PATH} className="field-button">
-          Ask a question
-        </Link>
+      <div data-testid="saved-empty">
+        <EmptyState
+          headingLevel={3}
+          title={SAVED_EMPTY_TITLE}
+          body={SAVED_EMPTY_BODY}
+          actions={
+            <Link href={ASK_PATH} {...buttonLook({ variant: "primary" })}>
+              Ask a question
+            </Link>
+          }
+        />
       </div>
     );
   }
   return (
-    <ul className="grid min-w-0 gap-3" data-testid="saved-list">
+    <ul className="grid min-w-0 border-t border-ink-1" data-testid="saved-list">
       {items.map((item) => (
         <SavedRow key={item.explainerId} item={item} busy={busy === item.explainerId} onRemove={onRemove} />
       ))}

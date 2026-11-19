@@ -3,25 +3,24 @@
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { cn } from "@/lib/utils";
+
+const LINK = "kv-link";
+
 const components: Components = {
-  p: ({ children }) => <p className="mb-2 leading-6 last:mb-0">{children}</p>,
-  strong: ({ children }) => <strong className="font-semibold text-ink-900">{children}</strong>,
+  p: ({ children }) => <p className="mb-[1.05em] last:mb-0">{children}</p>,
+  strong: ({ children }) => <strong className="font-semibold text-ink-1">{children}</strong>,
   em: ({ children }) => <em className="italic">{children}</em>,
-  hr: () => <hr className="my-3 border-line-200" />,
-  ul: ({ children }) => <ul className="mb-2 list-disc space-y-1 pl-5 last:mb-0">{children}</ul>,
-  ol: ({ children }) => <ol className="mb-2 list-decimal space-y-1 pl-5 last:mb-0">{children}</ol>,
-  li: ({ children }) => <li className="leading-6">{children}</li>,
-  h1: ({ children }) => <h1 className="mb-2 mt-4 font-display text-lg font-bold text-ink-900 first:mt-0">{children}</h1>,
-  h2: ({ children }) => <h2 className="mb-2 mt-4 font-display text-base font-bold text-ink-900 first:mt-0">{children}</h2>,
-  h3: ({ children }) => <h3 className="mb-1.5 mt-3 font-display text-sm font-bold text-ink-900 first:mt-0">{children}</h3>,
-  h4: ({ children }) => <h4 className="mb-1.5 mt-3 font-display text-sm font-semibold text-ink-700 first:mt-0">{children}</h4>,
+  hr: () => <hr className="my-4 border-rule" />,
+  ul: ({ children }) => <ul className="mb-[1.05em] list-disc space-y-1 ps-5 last:mb-0">{children}</ul>,
+  ol: ({ children }) => <ol className="mb-[1.05em] list-decimal space-y-1 ps-5 last:mb-0">{children}</ol>,
+  li: ({ children }) => <li>{children}</li>,
+  h1: ({ children }) => <h1 className="mb-2 mt-6 font-headline text-h3 text-ink-1 first:mt-0">{children}</h1>,
+  h2: ({ children }) => <h2 className="mb-2 mt-6 font-reading text-h3 text-ink-1 first:mt-0">{children}</h2>,
+  h3: ({ children }) => <h3 className="mb-1.5 mt-4 font-ui text-h4 text-ink-1 first:mt-0">{children}</h3>,
+  h4: ({ children }) => <h4 className="mb-1.5 mt-4 font-ui text-label font-semibold text-ink-2 first:mt-0">{children}</h4>,
   a: ({ href, children }) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="font-medium text-purple-700 dark:text-purple-300 underline decoration-purple-300 underline-offset-2 hover:text-purple-800 dark:hover:text-purple-200"
-    >
+    <a href={href} target="_blank" rel="noreferrer" className={LINK}>
       {children}
     </a>
   ),
@@ -29,41 +28,30 @@ const components: Components = {
     const href = typeof src === "string" && /^https?:/i.test(src.trim()) ? src.trim() : "";
     const label = alt?.trim() || "Image";
     return href ? (
-      <a
-        href={href}
-        target="_blank"
-        rel="noreferrer noopener"
-        className="font-medium text-purple-700 dark:text-purple-300 underline decoration-purple-300 underline-offset-2"
-      >
+      <a href={href} target="_blank" rel="noreferrer noopener" className={LINK}>
         {label}
       </a>
     ) : (
       <span>{label}</span>
     );
   },
-  code: ({ children }) => (
-    <code className="rounded border border-line-200 bg-surface-50 px-1 py-0.5 font-mono text-[0.85em] text-ink-700">{children}</code>
-  ),
-  pre: ({ children }) => (
-    <pre className="mb-2 overflow-x-auto rounded-md border border-line-200 bg-surface-50 p-3 text-xs leading-5 last:mb-0">{children}</pre>
-  ),
-  blockquote: ({ children }) => (
-    <blockquote className="mb-2 rounded-lg bg-surface-50 px-3 py-1.5 italic text-ink-500 last:mb-0">{children}</blockquote>
-  ),
+  code: ({ children }) => <code className="rounded-control border border-rule bg-sunk px-1 py-0.5 font-code text-[0.88em] text-ink-1">{children}</code>,
+  pre: ({ children }) => <pre className="mb-[1.05em] overflow-x-auto rounded-control border border-rule bg-sunk p-3 font-code text-caption last:mb-0">{children}</pre>,
+  blockquote: ({ children }) => <blockquote className="mb-[1.05em] border-s-2 border-rule-strong ps-3 font-reading text-quote italic text-ink-2 last:mb-0">{children}</blockquote>,
   table: ({ children }) => (
-    <div className="mb-2 overflow-x-auto last:mb-0">
-      <table className="w-full border-collapse text-left">{children}</table>
+    <div className="mb-[1.05em] overflow-x-auto last:mb-0">
+      <table className="w-full border-collapse text-start font-ui text-ui [font-variant-numeric:lining-nums_tabular-nums]">{children}</table>
     </div>
   ),
-  th: ({ children }) => (
-    <th className="border-b border-line-200 py-1.5 pr-4 text-xs font-semibold uppercase tracking-wide text-ink-500">{children}</th>
-  ),
-  td: ({ children }) => <td className="border-b border-line-200 py-1.5 pr-4 align-top">{children}</td>
+  th: ({ children }) => <th className="border-b border-ink-1 py-1.5 pe-4 text-start font-ui text-label font-semibold text-ink-2">{children}</th>,
+  td: ({ children }) => <td className="border-b border-rule py-1.5 pe-4 align-top text-ink-1">{children}</td>
 };
 
-export function Markdown({ text, className }: { text: string; className?: string }) {
+const SIZE = { body: "text-body", small: "text-body-sm" } as const;
+
+export function Markdown({ text, className, size = "small" }: { text: string; className?: string; size?: keyof typeof SIZE }) {
   return (
-    <div className={`text-sm leading-6 text-ink-900 ${className ?? ""}`.trim()}>
+    <div className={cn("font-reading text-ink-1", SIZE[size], className)}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {text}
       </ReactMarkdown>

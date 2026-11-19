@@ -81,7 +81,7 @@ test("the lesson builder starts with every finished section chosen and the quiz 
 });
 
 test("a built pack previews its slides in order with the picture, quiz, reading list and files", () => {
-  const html = withApp(createElement(LessonPackView, { pack: PACK, reduce: true }), lookupOf(PACK.sources));
+  const html = withApp(createElement(LessonPackView, { pack: PACK }), lookupOf(PACK.sources));
   expect(attribute(html, "slide", "data-kind")).toEqual(["TITLE", "SECTION", "SECTION", "SECTION", "SECTION", ...Array<string>(9).fill("QUIZ"), "READING", "SOURCES"]);
   expect(text(html)).toContain("Slide 1 of 16");
   expect(html.match(/data-display="INLINE"/g)).toHaveLength(1);
@@ -95,11 +95,10 @@ test("a built pack previews its slides in order with the picture, quiz, reading 
   fitsAPhone(html);
 });
 
-test("slides rise in unless motion is reduced", () => {
-  const moving = withApp(createElement(SlidePreview, { pack: PACK, reduce: false }), lookupOf(PACK.sources));
-  const still = withApp(createElement(SlidePreview, { pack: PACK, reduce: true }), lookupOf(PACK.sources));
-  expect(moving).toContain("translateY(10px)");
-  expect(still).not.toContain("translateY");
+test("slides are drawn finished at first paint, with no rise-in", () => {
+  const html = withApp(createElement(SlidePreview, { pack: PACK }), lookupOf(PACK.sources));
+  expect(attribute(html, "slide", "data-kind")).toHaveLength(16);
+  expect(html).not.toMatch(/translateY|opacity:\s*0/);
 });
 
 test("the lesson list shows each pack and a way forward when there is none", () => {
@@ -108,7 +107,9 @@ test("the lesson list shows each pack and a way forward when there is none", () 
   expect(text(html)).toContain("16 slides");
   expect(html).toContain(`href="/lessons/${PACK.id}"`);
   const none = renderToStaticMarkup(createElement(LessonList, { lessons: [], busy: null, onDelete: () => undefined }));
-  expect(text(none)).toContain("No lessons yet.");
+  expect(text(none)).toContain("Your lessons");
+  expect(text(none)).not.toMatch(/no lessons|yet/i);
+  expect(none).toContain('href="/saved"');
 });
 
 test("the lesson routes are a professor's, as the server's BUILD_LESSONS is", () => {

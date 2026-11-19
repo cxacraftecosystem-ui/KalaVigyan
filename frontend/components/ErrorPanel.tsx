@@ -1,15 +1,15 @@
 import { useId, type ReactNode } from "react";
 
+import { BrandLockup } from "@/components/BrandMark";
 import { ActionGroup } from "@/components/ui/ActionGroup";
-import { BrandMark } from "@/components/BrandMark";
 import type { ErrorScreen } from "@/lib/errorKind";
 
 export type ErrorTone = "alert" | "notice" | "quiet";
 
 const TONE: Record<ErrorTone, string> = {
-  alert: "bg-error-100 text-red-800 dark:bg-red-950/50 dark:text-red-300",
-  notice: "bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300",
-  quiet: "bg-surface-50 text-ink-700 ring-1 ring-line-200"
+  alert: "bg-error-wash text-error",
+  notice: "bg-info-wash text-info",
+  quiet: "bg-sunk text-ink-2"
 };
 
 export function ErrorPanel({
@@ -33,21 +33,17 @@ export function ErrorPanel({
 }) {
   const heading = useId();
   return (
-    <section
-      aria-labelledby={heading}
-      data-testid={`error-${screen}`}
-      className="panel mx-auto w-full max-w-xl px-6 py-12 text-center sm:px-10 sm:py-14"
-    >
-      <div className={`mx-auto mb-5 grid h-12 w-12 place-items-center rounded-full ${TONE[tone]}`}>{icon}</div>
-      <h1 id={heading} className="font-display text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">
+    <section aria-labelledby={heading} data-testid={`error-${screen}`} className="mx-auto grid w-full max-w-xl justify-items-center border-y border-rule px-4 py-12 text-center sm:px-8 sm:py-14">
+      <div className={`mb-5 grid h-12 w-12 place-items-center rounded-full ${TONE[tone]}`}>{icon}</div>
+      <h1 id={heading} className="font-headline text-h2 text-ink-1 [overflow-wrap:anywhere]">
         {title}
       </h1>
-      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-ink-500">{line}</p>
-      {status ? <div className="mt-2 text-sm leading-6 text-ink-700">{status}</div> : null}
-      {children ? <ActionGroup className="mt-7">{children}</ActionGroup> : null}
+      <p className="mt-3 max-w-[44ch] font-ui text-ui-lg text-ink-2">{line}</p>
+      {status ? <div className="mt-2 font-ui text-ui text-ink-2">{status}</div> : null}
+      {children ? <ActionGroup className="mt-7 w-full">{children}</ActionGroup> : null}
       {reference ? (
-        <p className="mt-6 text-[11px] leading-4 text-ink-500" data-testid="error-reference">
-          Ref <code className="break-all font-mono text-ink-700">{reference}</code>
+        <p className="mt-6 font-ui text-caption text-ink-3" data-testid="error-reference">
+          Ref <code className="break-all font-code text-ink-2">{reference}</code>
         </p>
       ) : null}
     </section>
@@ -56,9 +52,8 @@ export function ErrorPanel({
 
 export function ErrorBrand() {
   return (
-    <div className="mb-8 flex items-center justify-center gap-2 text-ink-900" data-testid="error-brand">
-      <BrandMark className="h-8 w-8 rounded-lg" />
-      <span className="font-display text-base font-bold tracking-tight">KalaVigyan</span>
+    <div className="mb-8 flex justify-center" data-testid="error-brand">
+      <BrandLockup />
     </div>
   );
 }

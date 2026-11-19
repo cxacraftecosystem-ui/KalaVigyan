@@ -215,14 +215,16 @@ test("a note says what got better, links to its explainer and offers the update"
   const read = withReading(createElement(NotesInbox, { notes: [{ ...note, readAt: "2026-11-19T08:00:00Z" }], actions: NO_ACTIONS, reduce: true }));
   expect(attribute(read, "note", "data-unread")).toEqual(["false"]);
   expect(read).not.toContain('data-testid="note-read"');
-  expect(text(withReading(createElement(NotesInbox, { notes: [], actions: NO_ACTIONS, reduce: true })))).toContain("Nothing new yet.");
+  const empty = text(withReading(createElement(NotesInbox, { notes: [], actions: NO_ACTIONS })));
+  expect(empty).toContain("Notes on your saved answers");
+  expect(empty).not.toMatch(/nothing|yet/i);
 });
 
-test("notes rise in unless motion is reduced", () => {
+test("notes are drawn finished at first paint, whatever the motion setting", () => {
   const moving = withReading(createElement(NotesInbox, { notes: NOTES.items, actions: NO_ACTIONS, reduce: false }));
   const still = withReading(createElement(NotesInbox, { notes: NOTES.items, actions: NO_ACTIONS, reduce: true }));
-  expect(moving).toContain("translateY(10px)");
-  expect(still).not.toContain("translateY");
+  expect(moving).toBe(still);
+  expect(moving).not.toMatch(/translateY|opacity:\s*0/);
 });
 
 test("saved answers list their version, mark a newer one and say when there are none", () => {
@@ -234,7 +236,8 @@ test("saved answers list their version, mark a newer one and say when there are 
   const newer = renderToStaticMarkup(createElement(SavedList, { items: [{ ...saved, seenVersion: 1 }], busy: null, onRemove: () => undefined }));
   expect(newer).toContain('data-testid="saved-newer"');
   const none = renderToStaticMarkup(createElement(SavedList, { items: [], busy: null, onRemove: () => undefined }));
-  expect(text(none)).toContain("Nothing saved yet.");
+  expect(text(none)).toContain("Your saved answers");
+  expect(text(none)).not.toMatch(/nothing|yet/i);
   expect(none).toContain('href="/ask"');
 });
 

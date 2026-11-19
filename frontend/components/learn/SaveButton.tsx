@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bookmark, BookmarkCheck } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { apiErrorMessage } from "@/lib/api";
 import { fetchSavedExplainers, saveExplainer, unsaveExplainer } from "@/lib/learningApi";
 
@@ -50,12 +51,12 @@ export function SaveButton({ explainerId }: { explainerId: string }) {
 
   return (
     <span className="grid min-w-0 justify-items-start gap-1" data-testid="save-explainer" data-saved={state.saved ? "true" : "false"}>
-      <button type="button" className="field-button-secondary min-h-10 rounded-full px-4" aria-label="Save" aria-pressed={state.saved} disabled={!state.known || busy} onClick={() => void toggle()}>
-        {state.saved ? <BookmarkCheck className="h-4 w-4 text-purple-700 dark:text-purple-300" aria-hidden /> : <Bookmark className="h-4 w-4" aria-hidden />}
+      <Button type="button" variant="quiet" size="sm" aria-pressed={state.saved} disabled={!state.known} busy={busy} onClick={() => void toggle()}>
+        {state.saved ? <BookmarkCheck aria-hidden /> : <Bookmark aria-hidden />}
         {state.saved ? "Saved" : "Save"}
-      </button>
+      </Button>
       {error ? (
-        <span role="alert" className="text-xs text-error-600">
+        <span role="alert" className="font-ui text-label text-error">
           {error}
         </span>
       ) : null}

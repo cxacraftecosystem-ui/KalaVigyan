@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { BookMarked, ListOrdered, MapPinned } from "lucide-react";
 
-import { ActionGroup } from "@/components/ui/ActionGroup";
 import type { ClientToolCall, VoiceTurn } from "@/lib/voiceContract";
 import { toolCallSignature } from "@/lib/voiceRules";
 
@@ -15,7 +14,7 @@ export type TurnActionContext = {
   showSources: (answerId: string) => void;
 };
 
-const CHIP = "field-button-secondary min-h-9 px-3 py-1.5 text-xs";
+const CHIP = "kv-chip";
 
 function chipFor(call: ClientToolCall, turn: VoiceTurn, context: TurnActionContext) {
   const key = toolCallSignature(call);
@@ -68,9 +67,7 @@ export function VoiceTurnActions({ turn, context }: { turn: VoiceTurn; context: 
     seen.add(signature);
     return true;
   });
-  return (
-    <ActionGroup align="start" inline>
-      {unique.map((call) => chipFor(call, turn, context))}
-    </ActionGroup>
-  );
+  const chips = unique.map((call) => chipFor(call, turn, context)).filter((chip) => chip !== null);
+  if (chips.length === 0) return null;
+  return <div className="flex min-w-0 flex-wrap gap-2">{chips}</div>;
 }

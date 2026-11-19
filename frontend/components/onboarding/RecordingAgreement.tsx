@@ -2,11 +2,26 @@
 
 import { useEffect, useState } from "react";
 
+import { FormAlert } from "@/components/auth/FormAlert";
 import { Markdown } from "@/components/Markdown";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { apiErrorMessage } from "@/lib/api";
+import { formatDate } from "@/lib/format";
 import { agreeToRecording, fetchRecordingNotice, type RecordingNotice } from "@/lib/profileContract";
+
+function NoticeText({ notice }: { notice: RecordingNotice }) {
+  return (
+    <div lang={notice.language} className="grid max-h-80 gap-2 overflow-y-auto overscroll-contain rounded-control bg-sunk p-4">
+      <h2 className="font-reading text-h3 text-ink-1">{notice.title}</h2>
+      <p lang="en" className="font-ui text-label text-ink-3 lining-nums tabular-nums">
+        Version {notice.version} · {formatDate(notice.publishedAt)}
+      </p>
+      <Markdown text={notice.body} />
+    </div>
+  );
+}
 
 export function RecordingAgreement({ language, onDone, notNow }: { language: string; onDone: () => void; notNow?: () => void }) {
   const [notice, setNotice] = useState<RecordingNotice | null>(null);
@@ -35,25 +50,14 @@ export function RecordingAgreement({ language, onDone, notNow }: { language: str
 
   return (
     <div className="grid gap-4" data-testid="recording-agreement">
-      {notice ? (
-        <div lang={notice.language} className="max-h-80 overflow-y-auto rounded-md border border-line-200 bg-surface-50 p-4 text-sm">
-          <h3 className="mb-2 font-display font-bold text-ink-900">{notice.title}</h3>
-          <Markdown text={notice.body} />
-        </div>
-      ) : (
-        <p className="text-sm text-ink-500">Loading…</p>
-      )}
-      {error ? (
-        <p role="alert" className="text-sm text-error-600">
-          {error}
-        </p>
-      ) : null}
+      {notice ? <NoticeText notice={notice} /> : error ? null : <Skeleton shape="lede" label="Opening the recording notice" />}
+      {error ? <FormAlert>{error}</FormAlert> : null}
       <ActionGroup>
-        <Button type="button" disabled={!notice || busy} onClick={() => void agree()}>
+        <Button type="button" variant="primary" disabled={!notice} busy={busy} busyLabel="Saving" onClick={() => void agree()}>
           I agree
         </Button>
         {notNow ? (
-          <Button type="button" variant="outline" disabled={busy} onClick={notNow}>
+          <Button type="button" variant="quiet" disabled={busy} onClick={notNow}>
             Not now
           </Button>
         ) : null}

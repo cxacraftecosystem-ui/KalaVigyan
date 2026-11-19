@@ -1,7 +1,11 @@
 "use client";
 
+import { FormAlert } from "@/components/auth/FormAlert";
 import { Markdown } from "@/components/Markdown";
 import { ActionGroup } from "@/components/ui/ActionGroup";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { formatDate } from "@/lib/format";
 import type { VoiceNotice } from "@/lib/voiceContract";
 
 export function VoiceConsent({
@@ -17,31 +21,27 @@ export function VoiceConsent({
   onAccept: () => void;
   onDecline: () => void;
 }) {
-  if (!notice) {
-    return (
-      <p role="status" className="py-6 text-center text-sm text-ink-500">
-        Loading…
-      </p>
-    );
-  }
+  if (!notice) return <Skeleton shape="lede" label="Opening the voice notice" />;
   return (
     <div className="grid gap-4" data-testid="voice-consent">
-      <h3 className="font-display text-base font-bold text-ink-900">{notice.title}</h3>
-      <div className="max-h-[40dvh] overflow-y-auto overscroll-contain rounded-md border border-line-200 bg-surface-50 p-3">
+      <div className="grid gap-1">
+        <h3 className="font-reading text-h3 text-ink-1">{notice.title}</h3>
+        <p className="font-ui text-label text-ink-3 lining-nums tabular-nums">
+          Version {notice.version}
+          {notice.publishedAt ? ` · ${formatDate(notice.publishedAt)}` : ""}
+        </p>
+      </div>
+      <div className="max-h-[40dvh] overflow-y-auto overscroll-contain rounded-control bg-sunk p-3">
         <Markdown text={notice.body} />
       </div>
-      {problem ? (
-        <p role="alert" className="rounded-md border border-red-200 bg-error-100 px-3 py-2 text-sm text-error-600">
-          {problem}
-        </p>
-      ) : null}
+      {problem ? <FormAlert>{problem}</FormAlert> : null}
       <ActionGroup>
-        <button type="button" className="field-button-secondary" onClick={onDecline}>
+        <Button type="button" variant="quiet" onClick={onDecline}>
           Not now
-        </button>
-        <button type="button" className="field-button" onClick={onAccept} disabled={busy} aria-busy={busy || undefined}>
-          {busy ? "Saving…" : "Agree and start"}
-        </button>
+        </Button>
+        <Button type="button" variant="primary" onClick={onAccept} busy={busy} busyLabel="Saving">
+          Agree and start
+        </Button>
       </ActionGroup>
     </div>
   );

@@ -1,11 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { motion } from "framer-motion";
 import { Mic } from "lucide-react";
 
-import { riseItem } from "@/components/guide/guideMotion";
-import { useAppReducedMotion } from "@/components/guide/useAppReducedMotion";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { useThemePreferences } from "@/components/ThemeProvider";
 import { useVoiceCall } from "@/components/voice/useVoiceCall";
@@ -46,7 +43,6 @@ function runAction(action: ClientToolCall, host: VoiceHost | undefined): void {
 }
 
 export function VoicePanel({ open, onClose, craftSlug, mode, question = "", availability, host, onTranscript }: VoicePanelProps) {
-  const reduce = useAppReducedMotion();
   const frame = useRef<HTMLElement | null>(null);
   const stages = host?.stages ?? NO_STAGES;
   const { preferences, update } = useThemePreferences();
@@ -75,24 +71,19 @@ export function VoicePanel({ open, onClose, craftSlug, mode, question = "", avai
   const pickable = chosen !== null && detected !== null && availability.languages.length > 1 && LANGUAGE_PHASES.has(state.phase);
 
   return (
-    <motion.section
+    <section
       ref={frame}
       tabIndex={-1}
-      variants={riseItem(reduce, 12)}
-      initial="hidden"
-      animate="show"
       aria-label="Voice"
-      className="fixed inset-x-3 bottom-[calc(var(--bottom-nav-h,0px)+0.75rem)] z-40 sm:left-auto sm:right-6 sm:w-[26rem] lg:bottom-6"
+      className="fixed inset-x-3 bottom-3 z-popover sm:start-auto sm:end-6 sm:w-[26rem] lg:bottom-6"
       data-testid="voice-panel"
     >
-      <div className="panel flex max-h-[min(40rem,calc(100dvh-8rem))] flex-col shadow-panel">
-        <header className="flex items-center gap-3 border-b border-line-200 px-4 py-3">
-          <span aria-hidden className="grid h-8 w-8 place-items-center rounded-full bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300">
-            <Mic className="h-4 w-4" />
-          </span>
-          <h2 className="min-w-0 flex-1 truncate font-display text-base font-bold text-ink-900">{craftName ? `Voice · ${craftName}` : "Voice"}</h2>
+      <div className="flex max-h-[min(40rem,calc(100dvh-8rem))] flex-col rounded-card border border-rule bg-raised shadow-pop">
+        <header className="flex items-center gap-3 border-b border-rule px-4 py-3">
+          <Mic className="h-4 w-4 shrink-0 text-ink-3" aria-hidden />
+          <h2 className="min-w-0 flex-1 truncate font-ui text-h4 text-ink-1">{craftName ? `Voice · ${craftName}` : "Voice"}</h2>
           {left !== null ? (
-            <span className="font-display text-sm font-semibold tabular-nums text-ink-500">
+            <span className="font-ui text-ui text-ink-2 lining-nums tabular-nums">
               <span aria-hidden>{formatClock(left)}</span>
               <span className="sr-only">{`${spokenClock(left)} left`}</span>
             </span>
@@ -114,10 +105,10 @@ export function VoicePanel({ open, onClose, craftSlug, mode, question = "", avai
         ) : (
           <VoiceCallBody call={call} state={state} language={spokenIn} host={{ stages, showOnMap: host?.showOnMap, openStage: host?.openStage }} />
         )}
-        <footer className="border-t border-line-200 px-4 py-3 empty:hidden">
+        <footer className="border-t border-rule px-4 py-3 empty:hidden">
           <VoiceControls phase={state.phase} onEnd={() => (state.phase === "live" ? void call.end() : onClose())} onAgain={() => call.retry()} onClose={onClose} />
         </footer>
       </div>
-    </motion.section>
+    </section>
   );
 }

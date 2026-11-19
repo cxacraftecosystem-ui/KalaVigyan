@@ -3,24 +3,22 @@
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { IconButton } from "@/components/ui/IconButton";
 import { useLeaveInterceptor } from "@/components/UnsavedChangesGuard";
 
 export function BackButton({ href }: { href?: string }) {
   const router = useRouter();
   const interceptLeave = useLeaveInterceptor();
   return (
-    <button
-      type="button"
-      aria-label="Go back"
-      title="Go back"
+    <IconButton
+      label="Go back"
+      edge
+      icon={<ArrowLeft className="h-5 w-5 rtl:-scale-x-100" />}
       onClick={() => {
         const go = href ? () => router.push(href) : () => router.back();
         if (interceptLeave(go)) return;
         go();
       }}
-      className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line-200 bg-card text-purple-700 dark:text-purple-300 shadow-sm transition hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 pointer-coarse:h-11 pointer-coarse:w-11"
-    >
-      <ArrowLeft className="h-5 w-5" aria-hidden />
-    </button>
+    />
   );
 }
