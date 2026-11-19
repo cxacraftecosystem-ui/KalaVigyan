@@ -2,6 +2,7 @@ import logging
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
 from sqlalchemy import func, select, update
@@ -278,6 +279,36 @@ async def test_an_archived_version_is_read_without_its_field_voices(session: Asy
     assert archived["voices"] == [] and archived["fieldPhotos"] == []
 
 
+async def stored_bodies(session: AsyncSession, craft: Craft) -> dict[str, Any]:
+    rows = await session.scalars(
+        select(CraftPageSnapshot)
+        .where(CraftPageSnapshot.craftId == craft.id)
+        .execution_options(populate_existing=True)
+    )
+    return {row.variant: row.body for row in rows}
+
+
+def moved_paths(before: Any, after: Any, path: str = "$", limit: int = 12) -> list[str]:
+    if type(before) is not type(after):
+        return [path]
+    if isinstance(before, dict):
+        keys = sorted(set(before) | set(after))
+        found = [
+            p for key in keys for p in moved_paths(before.get(key), after.get(key), f"{path}.{key}", limit)
+        ]
+        return found[:limit]
+    if isinstance(before, list):
+        if len(before) != len(after):
+            return [f"{path}[{len(before)}->{len(after)}]"]
+        found = [
+            p
+            for i, (a, b) in enumerate(zip(before, after, strict=True))
+            for p in moved_paths(a, b, f"{path}[{i}]", limit)
+        ]
+        return found[:limit]
+    return [] if before == after else [f"{path}: {str(before)[:80]!r} -> {str(after)[:80]!r}"]
+
+
 class KeptConformers:
     def __init__(self) -> None:
         self.asked: list[int] = []
@@ -305,6 +336,12 @@ async def test_the_chapters_job_keeps_each_conformer_once_and_rebuilds_the_pages
         .where(Compound.id.in_(craft_compound_ids(craft)), Compound.conformerKeptAt.is_not(None))
     )
     assert kept == first.conformers_kept
+    built = await stored_bodies(session, craft)
     again = await build_craft_chapters(session, [craft], lookups=(keeper, NoPoints()), now=datetime.now(UTC))
+    moved = {
+        variant: moved_paths(body, (await stored_bodies(session, craft))[variant])
+        for variant, body in built.items()
+    }
+    assert moved == {variant: [] for variant in built}
     assert (again.conformers_kept, again.pages_changed) == (0, 0)
     assert len(keeper.asked) == first.conformers_kept
