@@ -146,7 +146,7 @@ async def test_each_section_researches_its_own_field_within_a_share_of_the_depth
     )
     shares = {r.focus: (r.share.queries, r.share.native_queries, r.share.fetches) for r in research.requests}
     assert shares == {"CHEMISTRY": (1, 0, 2), "HISTORY": (1, 0, 2), "CLIMATE": (0, 0, 1)}
-    assert {request.seats for request in research.requests} == {("CHEMIST",)}
+    assert {request.seats for request in research.requests} == {("CHEMIST", "HISTORIAN")}
 
 
 async def test_a_section_whose_research_fails_ends_empty_while_the_others_answer() -> None:
