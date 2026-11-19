@@ -1,28 +1,23 @@
 "use client";
 
-import { motion } from "framer-motion";
-
-import { CitationChip } from "@/components/answer/CitationChip";
-import { riseItem } from "@/components/guide/guideMotion";
+import { Cite } from "@/components/editorial/CitationCluster";
+import { sentenceAnchor } from "@/lib/answerEssay";
 import { headingView, paragraphAttributes, sentenceView, type AnswerLanguage } from "@/lib/answerLanguages";
-import { citationsBySource } from "@/lib/citations";
-import type { AnswerSection, AnswerSentence, Citation, SourceRef } from "@/lib/types";
+import type { AnswerSection, AnswerSentence, SourceRef } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+type Citing = { numbers: ReadonlyMap<string, number>; sourcesById: ReadonlyMap<string, SourceRef> };
 
 export function SectionBlock({
   section,
-  reduce,
   numbers,
   sourcesById,
-  onOpen,
   compact = false,
   language = null,
   original = false
-}: {
+}: Citing & {
   section: AnswerSection;
-  reduce: boolean;
-  numbers: Map<string, number>;
-  sourcesById: Map<string, SourceRef>;
-  onOpen: (citations: readonly Citation[]) => void;
+  reduce?: boolean;
   compact?: boolean;
   language?: AnswerLanguage | null;
   original?: boolean;
@@ -30,57 +25,29 @@ export function SectionBlock({
   const heading = headingView(section, language, original);
   const paragraph = paragraphAttributes(section, language, original);
   return (
-    <section className={compact ? "" : "panel p-5 md:p-6"}>
+    <section className={compact ? "min-w-0" : "min-w-0 border-t border-rule pt-4"}>
       {heading.text ? (
-        <h2 lang={heading.lang} dir={heading.dir} className="font-display text-lg font-bold text-ink-900">
+        <h3 lang={heading.lang} dir={heading.dir} className="font-reading text-h3 text-ink-1">
           {heading.text}
-        </h2>
+        </h3>
       ) : null}
-      <p lang={paragraph.lang} dir={paragraph.dir} className={heading.text ? "mt-2 text-[15px] leading-8 text-ink-700" : "text-[15px] leading-8 text-ink-700"}>
+      <p lang={paragraph.lang} dir={paragraph.dir} className={cn("font-reading text-body-sm text-ink-1", heading.text ? "mt-2" : null)}>
         {section.sentences.map((sentence) => (
-          <SentenceRun
-            key={sentence.id}
-            sentence={sentence}
-            reduce={reduce}
-            numbers={numbers}
-            sourcesById={sourcesById}
-            onOpen={onOpen}
-            language={language}
-            original={original}
-          />
+          <SentenceRun key={sentence.id} sentence={sentence} numbers={numbers} sourcesById={sourcesById} language={language} original={original} />
         ))}
       </p>
     </section>
   );
 }
 
-function SentenceRun({
-  sentence,
-  reduce,
-  numbers,
-  sourcesById,
-  onOpen,
-  language,
-  original
-}: {
-  sentence: AnswerSentence;
-  reduce: boolean;
-  numbers: Map<string, number>;
-  sourcesById: Map<string, SourceRef>;
-  onOpen: (citations: readonly Citation[]) => void;
-  language: AnswerLanguage | null;
-  original: boolean;
-}) {
-  const groups = citationsBySource(sentence.citations, numbers);
+function SentenceRun({ sentence, numbers, sourcesById, language, original }: Citing & { sentence: AnswerSentence; language: AnswerLanguage | null; original: boolean }) {
   const shown = sentenceView(sentence, language, original);
   return (
-    <motion.span variants={riseItem(reduce, 4)} initial="hidden" animate="show" className="inline" data-testid="answer-sentence" data-sentence-id={sentence.id} data-level={sentence.level}>
+    <span id={sentenceAnchor(sentence.id)} className="kv-sentence inline" data-testid="answer-sentence" data-sentence-id={sentence.id} data-level={sentence.level}>
       <span lang={shown.lang} dir={shown.dir}>
         {shown.text}
       </span>
-      {groups.map((group) => (
-        <CitationChip key={group.sourceId} group={group} title={sourcesById.get(group.sourceId)?.title ?? null} onOpen={onOpen} />
-      ))}{" "}
-    </motion.span>
+      <Cite citations={sentence.citations} numbers={numbers} sourcesById={sourcesById} />{" "}
+    </span>
   );
 }

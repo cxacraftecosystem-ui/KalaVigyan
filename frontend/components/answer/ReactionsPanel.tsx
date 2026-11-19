@@ -1,50 +1,42 @@
 "use client";
 
-import { FlaskConical } from "lucide-react";
-
 import { ChemEquation } from "@/components/answer/ChemEquation";
-import { CitationChip } from "@/components/answer/CitationChip";
-import { EvidenceLevelBadge, EvidenceSignalBadge } from "@/components/answer/EvidenceBadge";
-import { citationsBySource } from "@/lib/citations";
-import type { AnswerReaction, Citation, SourceRef } from "@/lib/types";
+import { EvidenceTag } from "@/components/editorial/EvidenceMark";
+import { Cite } from "@/components/editorial/CitationCluster";
+import { evidenceState } from "@/lib/citationCluster";
+import type { AnswerReaction, SourceRef } from "@/lib/types";
 
-export function ReactionsPanel({
-  reactions,
-  numbers,
-  sourcesById,
-  onOpen
-}: {
-  reactions: AnswerReaction[];
-  numbers: Map<string, number>;
-  sourcesById: Map<string, SourceRef>;
-  onOpen: (citations: readonly Citation[]) => void;
-}) {
+function ReactionRow({ reaction, numbers, sourcesById }: { reaction: AnswerReaction; numbers: ReadonlyMap<string, number>; sourcesById: ReadonlyMap<string, SourceRef> }) {
+  const state = evidenceState({ evidence: "QUOTED", level: reaction.level });
   return (
-    <section className="panel p-5 md:p-6" aria-labelledby="reactions-heading">
-      <h2 id="reactions-heading" className="flex items-center gap-2 font-display text-lg font-bold text-ink-900">
-        <FlaskConical className="h-5 w-5 text-purple-700 dark:text-purple-300" aria-hidden />
+    <li className="min-w-0 border-t border-rule py-4" data-testid="reaction">
+      <p className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span className="font-ui text-h4 text-ink-1">{reaction.label}</span>
+        <span className="flex flex-wrap items-center gap-3">
+          {state !== "verified" ? <EvidenceTag state={state} /> : null}
+          {reaction.balanced ? null : <span className="kv-tag">Unbalanced as written</span>}
+        </span>
+      </p>
+      <ChemEquation equation={reaction.equation} className="mt-3 font-reading text-body" />
+      {reaction.conditions || reaction.citations.length > 0 ? (
+        <p className="mt-2 font-ui text-label text-ink-3" data-cite-host="">
+          {reaction.conditions}
+          <Cite citations={reaction.citations} numbers={numbers} sourcesById={sourcesById} />
+        </p>
+      ) : null}
+    </li>
+  );
+}
+
+export function ReactionsPanel({ reactions, numbers, sourcesById }: { reactions: AnswerReaction[]; numbers: ReadonlyMap<string, number>; sourcesById: ReadonlyMap<string, SourceRef> }) {
+  return (
+    <section className="min-w-0" aria-labelledby="reactions-heading">
+      <h2 id="reactions-heading" className="font-headline text-h2 text-ink-1">
         Reactions
       </h2>
-      <ol className="mt-3 grid grid-cols-1 gap-3">
+      <ol className="mt-4 grid grid-cols-1 border-b border-rule">
         {reactions.map((reaction) => (
-          <li key={reaction.id} className="min-w-0 rounded-md border border-line-200 bg-surface-50 p-4" data-testid="reaction">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm font-semibold text-ink-900">{reaction.label}</span>
-              <span className="flex flex-wrap items-center gap-1.5">
-                <EvidenceLevelBadge level={reaction.level} />
-                {reaction.balanced ? null : <EvidenceSignalBadge signal="UNBALANCED" />}
-              </span>
-            </div>
-            <ChemEquation equation={reaction.equation} className="mt-3 text-base" />
-            {reaction.conditions ? <p className="mt-2 text-xs text-ink-500">{reaction.conditions}</p> : null}
-            {reaction.citations.length > 0 ? (
-              <p className="mt-2 text-xs">
-                {citationsBySource(reaction.citations, numbers).map((group) => (
-                  <CitationChip key={group.sourceId} group={group} title={sourcesById.get(group.sourceId)?.title ?? null} onOpen={onOpen} />
-                ))}
-              </p>
-            ) : null}
-          </li>
+          <ReactionRow key={reaction.id} reaction={reaction} numbers={numbers} sourcesById={sourcesById} />
         ))}
       </ol>
     </section>

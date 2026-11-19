@@ -12,7 +12,7 @@ export function ChemEquation({ equation, display = true, label, className }: { e
     <span
       role="math"
       aria-label={label ?? equation}
-      className={cn("block max-w-full overflow-x-auto text-ink-900", !display && "inline-block align-middle", className)}
+      className={cn("block max-w-full overflow-x-auto text-ink-1", !display && "inline-block align-middle", className)}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

@@ -1,11 +1,10 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
-
-import { EvidenceKindBadge, EvidenceLevelBadge } from "@/components/answer/EvidenceBadge";
 import { FieldDialog } from "@/components/dialogs/FieldDialog";
-import { ActionGroup } from "@/components/ui/ActionGroup";
-import { highlightQuote, sourceByline, sourceHost, sourceHref, sourceKindLabel, sourceReliabilityLabel } from "@/lib/citations";
+import { EvidenceTag, ReliabilityMark } from "@/components/editorial/EvidenceMark";
+import { Button } from "@/components/ui/button";
+import { entryRights, evidenceState } from "@/lib/citationCluster";
+import { highlightQuote, sourceByline, sourceHost, sourceHref, sourceKindLabel } from "@/lib/citations";
 import type { Citation, SourceRef } from "@/lib/types";
 
 export type OpenCitation = { citations: readonly Citation[]; source: SourceRef | null; number: number | null };
@@ -17,72 +16,51 @@ export function openedSource(citations: readonly Citation[], numbers: ReadonlyMa
 
 function Passage({ citation }: { citation: Citation }) {
   const parts = highlightQuote(citation.context, citation.quote);
+  const state = evidenceState(citation);
   return (
-    <div className="grid gap-2" data-testid="source-quote">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <EvidenceKindBadge kind={citation.evidence} />
-        <EvidenceLevelBadge level={citation.level} />
-        {citation.locator ? <span className="text-xs text-ink-500">{citation.locator}</span> : null}
-      </div>
+    <div className="grid gap-1.5 border-t border-rule pt-3" data-testid="source-quote">
       {parts.length > 0 ? (
-        <blockquote className="rounded-md border-l-4 border-purple-300 bg-surface-50 px-4 py-3 text-sm leading-7 text-ink-700" data-testid="source-passage">
+        <p className="kv-quote mt-0" data-testid="source-passage">
           {parts.map((part, index) =>
             part.mark ? (
-              <mark key={index} className="rounded-sm bg-purple-100 px-0.5 font-medium text-ink-900 dark:bg-purple-800/60 dark:text-white">
+              <mark key={index} className="bg-turmeric-wash text-ink-1">
                 {part.text}
               </mark>
             ) : (
               <span key={index}>{part.text}</span>
             )
           )}
-        </blockquote>
+        </p>
       ) : (
-        <p className="text-sm text-ink-500">Inferred from the cited source; no passage is quoted.</p>
+        <p className="font-ui text-caption text-ink-2">Inferred from the cited source; no passage is quoted.</p>
       )}
+      {citation.locator ? <p className="kv-meta">{citation.locator}</p> : null}
+      {state !== "verified" ? (
+        <p>
+          <EvidenceTag state={state} />
+        </p>
+      ) : null}
     </div>
   );
 }
 
 export function SourceDetails({ open }: { open: OpenCitation }) {
   const source = open.source;
+  const rights = entryRights(source);
   return (
-    <div className="grid gap-4">
-      {open.number ? <span className="font-display text-sm font-bold tabular-nums text-purple-700 dark:text-purple-300">[{open.number}]</span> : null}
+    <div className="grid gap-3 font-ui text-ink-1">
+      {open.number ? <p className="kicker">Source {open.number}</p> : null}
       {open.citations.map((citation, index) => (
         <Passage key={`${citation.id}:${index}`} citation={citation} />
       ))}
-      <dl className="grid grid-cols-[7rem_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-xs">
-        {source ? (
-          <>
-            <dt className="text-ink-500">Type</dt>
-            <dd className="text-ink-900">{sourceKindLabel(source.kind)}</dd>
-          </>
-        ) : null}
-        {source?.reliability ? (
-          <>
-            <dt className="text-ink-500">Reliability</dt>
-            <dd className="text-ink-900">{sourceReliabilityLabel(source.reliability)}</dd>
-          </>
-        ) : null}
-        {source?.licence ? (
-          <>
-            <dt className="text-ink-500">Licence</dt>
-            <dd className="text-ink-900">{source.licence}</dd>
-          </>
-        ) : null}
-        {source?.attribution ? (
-          <>
-            <dt className="text-ink-500">Attribution</dt>
-            <dd className="text-ink-900">{source.attribution}</dd>
-          </>
-        ) : null}
-        {source?.doi ? (
-          <>
-            <dt className="text-ink-500">DOI</dt>
-            <dd className="break-all text-ink-900">{source.doi}</dd>
-          </>
-        ) : null}
-      </dl>
+      {source ? (
+        <p className="border-t border-rule pt-3 font-ui text-label text-ink-3">
+          {sourceKindLabel(source.kind)}
+          {rights ? ` · ${rights}` : null}
+          {source.doi ? <span className="block break-all">DOI {source.doi}</span> : null}
+        </p>
+      ) : null}
+      {source?.reliability ? <ReliabilityMark reliability={source.reliability} /> : null}
     </div>
   );
 }
@@ -90,8 +68,6 @@ export function SourceDetails({ open }: { open: OpenCitation }) {
 export function SourceDialog({ open, onClose }: { open: OpenCitation | null; onClose: () => void }) {
   const source = open?.source ?? null;
   const href = source ? sourceHref(source) : null;
-  const host = sourceHost(href);
-
   return (
     <FieldDialog
       open={open !== null}
@@ -100,18 +76,17 @@ export function SourceDialog({ open, onClose }: { open: OpenCitation | null; onC
       description={source ? sourceByline(source) || undefined : undefined}
       className="max-w-xl"
       footer={
-        <ActionGroup align="end">
+        <>
           {href ? (
-            <a href={href} target="_blank" rel="noopener noreferrer" className="field-button" data-testid="source-outbound">
-              Read at {host ?? "source"}
-              <ExternalLink className="h-4 w-4" aria-hidden />
-              <span className="sr-only">(opens in a new tab)</span>
+            <a href={href} target="_blank" rel="noopener noreferrer" className="kv-btn" data-variant="quiet" data-testid="source-outbound">
+              Read at {sourceHost(href) ?? "the source"}
+              <span className="sr-only"> (opens in a new tab)</span>
             </a>
           ) : null}
-          <button type="button" className="field-button-secondary" onClick={onClose}>
+          <Button variant="quiet" onClick={onClose}>
             Close
-          </button>
-        </ActionGroup>
+          </Button>
+        </>
       }
     >
       {open && open.citations.length > 0 ? <SourceDetails open={open} /> : null}

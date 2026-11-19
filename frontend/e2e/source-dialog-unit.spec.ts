@@ -47,7 +47,7 @@ test("a source cited twice in one sentence opens with both passages, each with i
   expect(found[0]).toContain("p. 14");
   expect(found[1]).toContain("washed in the river Saran");
   expect(found[1]).toContain("p. 15");
-  expect(html).toContain("[3]");
+  expect(html).toContain(">Source 3<");
 });
 
 test("a passage without a quote still shows its locator and says it was inferred", () => {

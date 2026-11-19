@@ -1,22 +1,22 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 
 import { CitationChips } from "@/components/answer/CitationContext";
-import { EvidenceLevelBadge } from "@/components/answer/EvidenceBadge";
 import { ExplainerSentence } from "@/components/answer/ExplainerSentence";
+import { EvidenceTag, SourcesDifferNote } from "@/components/editorial/EvidenceMark";
+import { TextLink } from "@/components/ui/TextLink";
 import type { CraftLink } from "@/lib/answerShapes";
+import { evidenceState } from "@/lib/citationCluster";
 import type { LadderStage } from "@/lib/explainerContract";
 import { MATERIAL_KIND_LABEL, MATERIAL_ROLE_LABEL, STAGE_TYPE_LABEL } from "@/lib/processView";
 import { cn } from "@/lib/utils";
 
 function StageFacts({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mt-3">
-      <h4 className="field-label mb-1.5">{title}</h4>
-      <ul className="grid gap-1.5 text-sm leading-6 text-ink-700">{children}</ul>
+    <section className="mt-3 min-w-0">
+      <h4 className="font-ui text-label text-ink-3">{title}</h4>
+      <ul className="mt-1 grid gap-1 font-reading text-body-sm text-ink-1">{children}</ul>
     </section>
   );
 }
@@ -31,61 +31,93 @@ function reactionLabel(count: number): string {
   return count === 1 ? "See the reaction" : `See the ${count} reactions`;
 }
 
-export function LadderStageCard({ stage, craft, reached }: { stage: LadderStage; craft: CraftLink; reached: boolean }) {
+function Materials({ stage }: { stage: LadderStage }) {
+  if (stage.materials.length === 0) return null;
   return (
-    <li className="grid grid-cols-[var(--rail)_minmax(0,1fr)] gap-x-3 sm:gap-x-4" data-testid="ladder-stage" data-reached={reached ? "true" : "false"}>
-      <span
-        aria-hidden
-        className={cn(
-          "relative z-10 mt-3 grid h-10 w-10 place-items-center justify-self-center rounded-full font-display text-sm font-bold tabular-nums transition-colors duration-300",
-          reached ? "bg-purple-700 text-white ring-4 ring-purple-100 dark:ring-purple-950" : "bg-card text-ink-500 ring-2 ring-line-200"
-        )}
-      >
+    <StageFacts title="Materials">
+      {stage.materials.map((material) => (
+        <li key={material.materialId}>
+          <span>{material.name}</span>
+          {material.botanicalName ? <i className="text-ink-2"> {material.botanicalName}</i> : null}
+          <span className="font-ui text-label text-ink-3"> · {materialRole(material)}</span>
+          <CitationChips citations={material.citations} />
+        </li>
+      ))}
+    </StageFacts>
+  );
+}
+
+function Conditions({ stage }: { stage: LadderStage }) {
+  const tools = stage.tools ?? [];
+  if (stage.conditions.length === 0 && tools.length === 0) return null;
+  return (
+    <StageFacts title="Conditions and tools">
+      {stage.conditions.map((condition, index) => (
+        <li key={`${condition.label}:${index}`} data-testid="ladder-condition">
+          <span className="font-ui text-label text-ink-3">{condition.label}: </span>
+          {condition.stated}
+          <CitationChips citations={condition.citations} />
+        </li>
+      ))}
+      {tools.map((tool) => (
+        <li key={tool.toolId}>
+          {tool.name}
+          {tool.localNames.length > 0 ? <i className="text-ink-2"> {tool.localNames.join(", ")}</i> : null}
+          <CitationChips citations={tool.citations} />
+        </li>
+      ))}
+    </StageFacts>
+  );
+}
+
+function Differs({ stage }: { stage: LadderStage }) {
+  return (stage.differs ?? []).map((differ) => (
+    <SourcesDifferNote key={differ.key} summary={differ.about}>
+      {differ.readings.map((reading, index) => (reading.sentence ? <ExplainerSentence key={`${differ.key}:${index}`} sentence={reading.sentence} /> : null))}
+    </SourcesDifferNote>
+  ));
+}
+
+export function LadderStageCard({ stage, craft, reached }: { stage: LadderStage; craft: CraftLink; reached: boolean }) {
+  const state = evidenceState({ evidence: "QUOTED", level: stage.level });
+  return (
+    <li className={cn("grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)] gap-x-3 border-b border-s-2 border-b-rule py-4 ps-3 sm:grid-cols-[3rem_minmax(0,1fr)]", reached ? "border-s-ink-1" : "border-s-transparent")} data-testid="ladder-stage" data-reached={reached ? "true" : "false"}>
+      <span aria-hidden className={cn("grid h-8 w-8 place-items-center rounded-plate font-ui text-label tabular-nums", reached ? "bg-ink-1 text-ground" : "bg-sunk text-ink-3")}>
         {stage.ordinal}
       </span>
-      <div className={cn("min-w-0 rounded-lg border p-3.5 transition-colors duration-300 sm:p-4 md:p-5", reached ? "border-purple-200 bg-card dark:border-purple-900" : "border-line-200 bg-card")}>
-        <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
-          <h3 className="min-w-0 break-words font-display text-base font-bold text-ink-900 md:text-lg">
-            <span className="sr-only">Step {stage.ordinal}: </span>
-            {stage.name}
-          </h3>
-          <span className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-medium text-ink-500">{STAGE_TYPE_LABEL[stage.stageType]}</span>
-            <EvidenceLevelBadge level={stage.level} />
-          </span>
-        </header>
-        <p className="mt-2 text-[15px] leading-7 text-ink-700">
+      <div className="min-w-0">
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-ui text-caption text-ink-3">
+          {STAGE_TYPE_LABEL[stage.stageType]}
+          {state !== "verified" ? <EvidenceTag state={state} /> : null}
+        </p>
+        <h3 className="mt-0.5 break-words font-reading text-h3 text-ink-1">
+          <span className="sr-only">Step {stage.ordinal}: </span>
+          {stage.localName ? <i>{stage.localName}</i> : null}
+          {stage.localName ? " · " : null}
+          {stage.name}
+        </h3>
+        <p className="mt-1.5 font-reading text-body-sm text-ink-1">
           {stage.sentences.map((sentence) => (
             <ExplainerSentence key={sentence.id} sentence={sentence} />
           ))}
+          {stage.why ? <ExplainerSentence sentence={stage.why} /> : null}
         </p>
-        {stage.materials.length > 0 ? (
-          <StageFacts title="Materials">
-            {stage.materials.map((material) => (
-              <li key={material.materialId}>
-                <span className="font-medium text-ink-900">{material.name}</span>
-                <span className="text-ink-500"> · {materialRole(material)}</span>
-                <CitationChips citations={material.citations} />
-              </li>
-            ))}
-          </StageFacts>
+        <Differs stage={stage} />
+        {stage.after ? (
+          <p className="mt-2 font-reading text-body-sm text-ink-2" data-cite-host="">
+            <span className="font-ui text-label text-ink-3">Cloth after: </span>
+            {stage.after.text}
+            <CitationChips citations={stage.after.citations} />
+          </p>
         ) : null}
-        {stage.conditions.length > 0 ? (
-          <StageFacts title="Conditions">
-            {stage.conditions.map((condition, index) => (
-              <li key={`${condition.label}:${index}`} data-testid="ladder-condition">
-                <span className="font-medium text-ink-900">{condition.label}</span>
-                <span>: {condition.stated}</span>
-                <CitationChips citations={condition.citations} />
-              </li>
-            ))}
-          </StageFacts>
-        ) : null}
+        <Materials stage={stage} />
+        <Conditions stage={stage} />
         {stage.reactionIds.length > 0 ? (
-          <Link href={`${craft.path}?tab=process`} className="mt-3 inline-flex min-h-9 items-center gap-1 text-sm font-semibold text-purple-700 hover:underline dark:text-purple-300">
-            {reactionLabel(stage.reactionIds.length)}
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-          </Link>
+          <p className="mt-3">
+            <TextLink href={`${craft.path}?tab=process`} standalone>
+              {reactionLabel(stage.reactionIds.length)}
+            </TextLink>
+          </p>
         ) : null}
       </div>
     </li>

@@ -40,7 +40,7 @@ function FilmBody({ film, language, reduce }: { film: Film; language: AnswerLang
   const { scene, clock } = film;
   const mark = useMemo(() => filmMark(scene, clock.time), [scene, clock.time]);
   if (film.load === "failed") return <RetryLine message={film.error ?? "Couldn't start the film. Try again."} onRetry={film.retry} />;
-  if (!scene) return <div role="status" aria-label="Preparing the film" className="aspect-[16/9] w-full animate-pulse rounded-lg bg-field-100 motion-reduce:animate-none" />;
+  if (!scene) return <div role="status" aria-label="Preparing the film" className="motion-pulse aspect-[16/9] w-full rounded-card bg-sunk" />;
   return (
     <>
       <FilmStage scene={scene} progress={film.progress} mark={mark} reduce={reduce} />

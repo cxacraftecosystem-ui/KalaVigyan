@@ -20,13 +20,13 @@ export function FilmCaption({ caption }: { caption: Caption }) {
     <p
       lang={caption.lang}
       dir={caption.dir}
-      className="min-h-[3.5rem] text-balance text-center font-display text-base font-semibold leading-7 text-ink-900 md:min-h-[4rem] md:text-lg"
+      className="min-h-[3.5rem] text-balance text-center font-reading text-lede text-ink-1 md:min-h-[4rem]"
       data-testid="film-caption"
       data-narrated={caption.narrated ? "true" : "false"}
     >
       {before}
       {word ? (
-        <mark className="rounded-sm bg-purple-200 text-ink-900 dark:bg-purple-800 dark:text-white" data-testid="film-caption-word">
+        <mark className="rounded-plate bg-turmeric-wash text-ink-1" data-testid="film-caption-word">
           {word}
         </mark>
       ) : null}
@@ -40,8 +40,8 @@ function SceneHeading({ scene }: { scene: FilmScene }) {
   const title = headingView({ id: scene.section.id, heading: scene.section.title, original: scene.section.original, sentences: [] }, language, false);
   return (
     <div className="mb-3 min-w-0">
-      <p className="eyebrow">{DISCIPLINE_LABEL[scene.section.discipline]}</p>
-      <p lang={title.lang} dir={title.dir} className="mt-0.5 font-display text-lg font-bold text-ink-900">
+      <p className="kicker">{DISCIPLINE_LABEL[scene.section.discipline]}</p>
+      <p lang={title.lang} dir={title.dir} className="mt-1 font-headline text-h3 text-ink-1">
         {title.text}
       </p>
     </div>
@@ -54,7 +54,7 @@ export function FilmStage({ scene, progress, mark, reduce }: { scene: FilmScene;
   const shown = useMemo(() => ({ progress }), [progress]);
   const content = useMemo(() => renderBlock(scene.block), [scene.block]);
   return (
-    <div className="relative min-w-0 overflow-y-auto overscroll-contain rounded-lg border border-line-200 bg-card p-3 sm:p-5 max-h-[46dvh] lg:max-h-[58dvh]" data-testid="film-stage">
+    <div className="relative max-h-[46dvh] min-w-0 overflow-y-auto overscroll-contain rounded-card border border-rule bg-ground p-3 sm:p-5 lg:max-h-[58dvh]" data-testid="film-stage">
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={scene.block.id} variants={swapVariants(reduce)} initial="hidden" animate="show" exit="exit" className="min-w-0" data-testid="film-scene" data-kind={scene.block.kind} data-block-id={scene.block.id}>
           <SceneHeading scene={scene} />

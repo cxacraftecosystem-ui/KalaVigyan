@@ -27,7 +27,7 @@ export function focusAskOption(part: UnderstoodPart): void {
 export function AskOptions({ understood, craft, depth, language }: AskOptionsProps) {
   const detected = detectedLanguage(language.question, language.languages) ?? englishOf(language.languages);
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-line-200 pt-3.5" data-testid="ask-options">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-3" data-testid="ask-options">
       <div id={ASK_OPTION_IDS.craft} className="contents">
         <CraftChoice pick={craft.pick} options={craft.options} offer={craftOffer(understood, craft.pick)} onPick={craft.onPick} />
       </div>
@@ -45,7 +45,7 @@ export function AskOptions({ understood, craft, depth, language }: AskOptionsPro
       ) : null}
       {language.languages.length > 1 ? (
         <div id={ASK_OPTION_IDS.language} className="flex min-w-0 items-center gap-2">
-          <span className="text-xs font-medium text-ink-500">Answer in</span>
+          <span className="font-ui text-label text-ink-3">Answer in</span>
           <LanguagePicker value={language.choice} languages={language.languages} detected={detected} onChange={language.onPick} />
         </div>
       ) : null}

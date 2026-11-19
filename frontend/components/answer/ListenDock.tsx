@@ -1,17 +1,18 @@
 "use client";
 
-import { Loader2, Pause, Play, RotateCw, X } from "lucide-react";
+import { CircleAlert, Pause, Play, X } from "lucide-react";
 
 import { ListenAudio } from "@/components/answer/ListenAudio";
 import type { Listen } from "@/components/answer/useListen";
+import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/IconButton";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import type { AnswerLanguage } from "@/lib/answerLanguages";
 import { formatClock } from "@/lib/format";
 import { elapsedOf, scriptDuration } from "@/lib/listen";
 
-const ROUND_BUTTON = "grid h-12 w-12 shrink-0 place-items-center rounded-full bg-purple-700 text-white transition hover:bg-purple-800 disabled:bg-line-200 disabled:text-ink-500";
-const SMALL_BUTTON =
-  "inline-flex min-h-9 items-center justify-center rounded-full border border-line-200 bg-card px-3 text-xs font-semibold text-ink-900 transition hover:border-purple-300 pointer-coarse:min-h-11";
+const PLAY_BUTTON = "grid h-12 w-12 shrink-0 place-items-center rounded-full bg-indigo text-indigo-on transition-colors duration-state hover:bg-indigo-hover disabled:bg-sunk disabled:text-ink-3";
+const DOCK_PLACE = { bottom: "calc(var(--bottom-nav-h, 0px) + 0.75rem)" };
 
 function Timing({ listen }: { listen: Listen }) {
   if (!listen.script) return null;
@@ -21,9 +22,25 @@ function Timing({ listen }: { listen: Listen }) {
   return (
     <div className="grid min-w-0 flex-1 gap-1.5">
       <ProgressBar percent={percent} role="progressbar" aria-label="Played" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} className="h-1.5" />
-      <span className="text-xs tabular-nums text-ink-500">
+      <span className="font-ui text-caption tabular-nums text-ink-3">
         {formatClock(elapsed)} of {formatClock(total)}
       </span>
+    </div>
+  );
+}
+
+function Player({ listen }: { listen: Listen }) {
+  const playing = listen.status === "playing";
+  const loading = listen.status === "loading";
+  return (
+    <div className="flex items-center gap-3">
+      <button type="button" className={PLAY_BUTTON} aria-label={playing ? "Pause" : "Play"} disabled={loading} onClick={listen.toggle}>
+        {loading ? <span className="kv-spin" aria-hidden /> : playing ? <Pause className="h-5 w-5" aria-hidden /> : <Play className="h-5 w-5" aria-hidden />}
+      </button>
+      {loading ? <span className="flex-1 font-ui text-ui text-ink-3">Preparing the audio…</span> : <Timing listen={listen} />}
+      <Button variant="quiet" size="sm" aria-label={`Speed ${listen.rate} times`} onClick={listen.cycleRate}>
+        {listen.rate}×
+      </Button>
     </div>
   );
 }
@@ -31,46 +48,30 @@ function Timing({ listen }: { listen: Listen }) {
 export function ListenDock({ listen, language }: { listen: Listen; language: AnswerLanguage }) {
   if (listen.status === "idle") return null;
   const track = listen.script?.tracks[listen.position.track] ?? null;
-  const playing = listen.status === "playing";
   return (
     <aside
       aria-label="Listen"
-      className="panel fixed inset-x-3 bottom-[calc(var(--bottom-nav-h,0px)+0.75rem)] z-40 grid gap-2 p-3 shadow-lg sm:left-auto sm:right-6 sm:w-[26rem] lg:bottom-6"
+      style={DOCK_PLACE}
+      className="fixed inset-x-3 z-sticky grid gap-2 rounded-card border border-rule bg-raised p-3 shadow-pop sm:start-auto sm:end-6 sm:w-[26rem]"
       data-testid="listen-dock"
       data-status={listen.status}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="field-label" lang={language.code}>
+        <span className="font-ui text-label text-ink-2" lang={language.code}>
           Listen · {language.autonym}
         </span>
-        <button type="button" className="-m-1 rounded-md p-1 text-ink-500 transition hover:text-ink-900" aria-label="Stop listening" onClick={listen.stop}>
-          <X className="h-4 w-4" aria-hidden />
-        </button>
+        <IconButton label="Stop listening" icon={<X />} onClick={listen.stop} />
       </div>
       {listen.status === "failed" ? (
-        <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-error-600">
+        <div role="alert" className="flex flex-wrap items-center gap-3 font-ui text-ui text-ink-1">
+          <CircleAlert className="h-4 w-4 shrink-0 text-error" aria-hidden />
           <span className="min-w-0 flex-1">{listen.error}</span>
-          <button type="button" className={SMALL_BUTTON} onClick={listen.start}>
-            <RotateCw className="mr-1 h-3.5 w-3.5" aria-hidden />
+          <Button variant="quiet" size="sm" onClick={listen.start}>
             Try again
-          </button>
+          </Button>
         </div>
       ) : (
-        <div className="flex items-center gap-3">
-          <button type="button" className={ROUND_BUTTON} aria-label={playing ? "Pause" : "Play"} disabled={listen.status === "loading"} onClick={listen.toggle}>
-            {listen.status === "loading" ? (
-              <Loader2 className="h-5 w-5 animate-spin motion-reduce:animate-none" aria-hidden />
-            ) : playing ? (
-              <Pause className="h-5 w-5" aria-hidden />
-            ) : (
-              <Play className="h-5 w-5" aria-hidden />
-            )}
-          </button>
-          {listen.status === "loading" ? <span className="flex-1 text-sm text-ink-500">Preparing the audio…</span> : <Timing listen={listen} />}
-          <button type="button" className={SMALL_BUTTON} aria-label={`Speed ${listen.rate} times`} onClick={listen.cycleRate}>
-            {listen.rate}×
-          </button>
-        </div>
+        <Player listen={listen} />
       )}
       {track ? (
         <ListenAudio

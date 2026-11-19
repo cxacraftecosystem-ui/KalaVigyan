@@ -12,10 +12,10 @@ function VolumeSlider({ label, value, onChange, testId }: { label: string; value
   return (
     <div className="grid min-w-0 gap-0.5">
       <div className="flex min-w-0 items-baseline justify-between gap-3">
-        <label htmlFor={id} className="text-xs font-medium text-ink-700">
+        <label htmlFor={id} className="font-ui text-label text-ink-2">
           {label}
         </label>
-        <span className="text-xs tabular-nums text-ink-500">{percent}%</span>
+        <span className="font-ui text-caption tabular-nums text-ink-3">{percent}%</span>
       </div>
       <input
         id={id}
@@ -26,7 +26,7 @@ function VolumeSlider({ label, value, onChange, testId }: { label: string; value
         value={percent}
         aria-valuetext={`${percent}%`}
         onChange={(event) => onChange(Number(event.currentTarget.value) / 100)}
-        className="h-9 w-full min-w-0 cursor-pointer accent-purple-700 dark:accent-purple-400"
+        className="h-9 w-full min-w-0 cursor-pointer accent-indigo"
         data-testid={testId}
       />
     </div>
@@ -36,7 +36,7 @@ function VolumeSlider({ label, value, onChange, testId }: { label: string; value
 export function FilmScoreControls({ score, mix, onMix }: { score: FilmScoreState; mix: FilmMix; onMix: (mix: FilmMix) => void }) {
   const status = score.score ? scoreCredit(score.score) : undefined;
   return (
-    <div className="grid min-w-0 gap-2 border-t border-line-200 pt-3" data-testid="film-score">
+    <div className="grid min-w-0 gap-2 border-t border-rule pt-3" data-testid="film-score">
       <Toggle label="Music and sound" status={status} checked={score.on} busy={score.loading} busyLabel="Preparing the music…" onChange={score.toggle} testId="film-score-toggle" />
       {score.on && score.score ? (
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -45,7 +45,7 @@ export function FilmScoreControls({ score, mix, onMix }: { score: FilmScoreState
         </div>
       ) : null}
       {score.error ? (
-        <p role="alert" className="text-sm text-error-600" data-testid="film-score-failed">
+        <p role="alert" className="font-ui text-ui text-error" data-testid="film-score-failed">
           {score.error}
         </p>
       ) : null}

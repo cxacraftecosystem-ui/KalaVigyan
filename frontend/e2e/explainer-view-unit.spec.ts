@@ -173,15 +173,15 @@ test("a settled answer ignores late understanding and status, and an error clear
   expect(reduced([{ type: "understood", data: document().understood }], failed)).toBe(failed);
 });
 
-test("under reduced motion the ladder shows its filled end state; otherwise it fills with the scroll", () => {
+test("the ladder rests complete and fills only with a film's scene, never with the scroll", () => {
   expect([0, 0.2, 0.5, 1].map((progress) => ladderReach(progress, 4, true))).toEqual([4, 4, 4, 4]);
   expect([0, 0.3, 1 / 3, 0.5, 0.99, 1].map((progress) => ladderReach(progress, 4, false))).toEqual([1, 1, 2, 2, 3, 4]);
   expect(ladderReach(Number.NaN, 4, false)).toBe(1);
   expect(ladderReach(0, 1, false)).toBe(1);
   expect(ladderReach(1, 0, false)).toBe(0);
   const ladder = read("frontend", "components", "answer", "ProcessLadder.tsx");
-  expect(ladder).toContain("scaleY: reduce ? 1 : film ? film.progress : fill");
-  expect(ladder).toContain("const shown = reduce ? count : film ? ladderReach(film.progress, count, false) : reached;");
+  expect(ladder).toContain("const shown = reduce || !film ? count : ladderReach(film.progress, count, false);");
+  expect(ladder).not.toContain("useScroll");
 });
 
 test("a sentence underlines each marked term once, at its first occurrence", () => {

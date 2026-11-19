@@ -1,39 +1,30 @@
-import { BadgeCheck, Check, Clock, GitCompareArrows, Lightbulb, MinusCircle, Quote, Scale, TriangleAlert, type LucideIcon } from "lucide-react";
-
+import type { EvidenceState } from "@/lib/citationCluster";
 import type { EvidenceKind, EvidenceLevel } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-type BadgeMeta = { label: string; Icon: LucideIcon; className: string };
-
-const BADGE = "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold";
-
-const ATTENTION = "border-amber-500/30 bg-amber-100 text-amber-800";
+type BadgeMeta = { label: string; state: EvidenceState };
 
 const LEVEL: Record<EvidenceLevel, BadgeMeta> = {
-  VERIFIED: {
-    label: "Verified",
-    Icon: BadgeCheck,
-    className: "border-evidence-300 bg-evidence-100 text-evidence-800 dark:border-evidence-800 dark:bg-evidence-950 dark:text-evidence-200"
-  },
-  REVIEWED: { label: "Reviewed", Icon: Check, className: "border-evidence-300 bg-card text-evidence-700 dark:border-evidence-800 dark:text-evidence-300" },
-  PROVISIONAL: { label: "Provisional", Icon: Clock, className: "border-purple-300 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300" },
-  HYPOTHESIS: { label: "Hypothesis", Icon: Lightbulb, className: ATTENTION },
-  UNAVAILABLE: { label: "No source found", Icon: MinusCircle, className: "border-line-200 bg-surface-50 text-ink-500" }
+  VERIFIED: { label: "Verified", state: "verified" },
+  REVIEWED: { label: "Reviewed", state: "verified" },
+  PROVISIONAL: { label: "Provisional", state: "provisional" },
+  HYPOTHESIS: { label: "Hypothesis", state: "hypothesis" },
+  UNAVAILABLE: { label: "No source found", state: "provisional" }
 };
 
 const KIND: Record<EvidenceKind, BadgeMeta> = {
-  QUOTED: { label: "Quoted source", Icon: Quote, className: "border-purple-300 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300" },
-  INFERRED: { label: "Model-inferred", Icon: Lightbulb, className: ATTENTION }
+  QUOTED: { label: "Quoted source", state: "verified" },
+  INFERRED: { label: "Model-inferred", state: "inferred" }
 };
 
 export type EvidenceSignal = "SOURCES_DIFFER" | "EXPERTS_DIFFER" | "OUTSIDE_RANGE" | "UNBALANCED" | "BALANCED";
 
 const SIGNAL: Record<EvidenceSignal, BadgeMeta> = {
-  SOURCES_DIFFER: { label: "Sources differ", Icon: GitCompareArrows, className: ATTENTION },
-  EXPERTS_DIFFER: { label: "Experts differ", Icon: GitCompareArrows, className: ATTENTION },
-  OUTSIDE_RANGE: { label: "Outside usual range", Icon: TriangleAlert, className: ATTENTION },
-  UNBALANCED: { label: "Unbalanced", Icon: Scale, className: ATTENTION },
-  BALANCED: { label: "Balanced", Icon: Scale, className: "border-line-200 bg-card text-ink-700" }
+  SOURCES_DIFFER: { label: "Sources differ", state: "differ" },
+  EXPERTS_DIFFER: { label: "Experts differ", state: "differ" },
+  OUTSIDE_RANGE: { label: "Outside usual range", state: "provisional" },
+  UNBALANCED: { label: "Unbalanced", state: "provisional" },
+  BALANCED: { label: "Balanced", state: "verified" }
 };
 
 export function evidenceLevelLabel(level: EvidenceLevel): string {
@@ -46,8 +37,7 @@ export function evidenceKindLabel(kind: EvidenceKind): string {
 
 function MetaBadge({ meta, className }: { meta: BadgeMeta; className?: string }) {
   return (
-    <span className={cn(BADGE, meta.className, className)}>
-      <meta.Icon className="h-3 w-3" aria-hidden />
+    <span className={cn("kv-ev-tag", className)} data-level={meta.state}>
       {meta.label}
     </span>
   );

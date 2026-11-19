@@ -64,7 +64,7 @@ function sentenceChips(html: string): [string, string[]][] {
 }
 
 function listedSources(html: string): [string, string][] {
-  return [...html.matchAll(/<li id="source-(\d+)"[^>]*>.*?class="[^"]*font-medium text-ink-900[^"]*">([^<]*)/g)].map((found) => [found[1], shownText(found[2])]);
+  return [...html.matchAll(/<li id="source-(\d+)"[^>]*>.*?data-testid="source-title">([^<]*)/g)].map((found) => [found[1], shownText(found[2])]);
 }
 
 function at(html: string, testId: string): number {
@@ -141,16 +141,18 @@ test("the whole explainer view draws the researched answer with its pictures and
   expect(html.match(/data-testid="term-span"/g)?.length).toBe(4);
 });
 
-test("the lede opens the answer under the understood line: the question as its headline, its sentences cited and its sources numbered first", () => {
+test("the essay opens under the understood line: the question as its h1, then the cited lede, its sources numbered first, and the research trail only while it streams", () => {
   const expected = document("explainer.lede.golden.json");
   const [trail] = streamed("explainer.stream.golden.sse").filter((event) => event.type === "trail");
   const state = reduceExplainer(streamed("explainer.lede.golden.sse").reduce(reduceExplainer, askingExplainer(LEDE_QUESTION, "en")), trail);
   const html = drawn(state);
   expect(html.match(/data-testid="answer-lede"/g)?.length).toBe(1);
-  expect(at(html, "understood-line")).toBeLessThan(at(html, "answer-lede"));
-  expect(at(html, "answer-lede")).toBeLessThan(at(html, "research-trail"));
-  expect(at(html, "research-trail")).toBeLessThan(at(html, "section-bar"));
-  const headline = /<h2 id="[^"]+" lang="([^"]*)" dir="([^"]*)"[^>]*>([^<]*)<\/h2>/.exec(html.slice(at(html, "answer-lede")));
+  expect(html.match(/<h1[ >]/g)?.length).toBe(1);
+  expect(at(html, "understood-line")).toBeLessThan(at(html, "answer-question"));
+  expect(at(html, "answer-question")).toBeLessThan(at(html, "answer-lede"));
+  expect(html).not.toContain('data-testid="research-trail"');
+  expect(drawn(state, true)).toContain('data-testid="research-trail"');
+  const headline = /<h1 lang="([^"]*)" dir="([^"]*)"[^>]*>([^<]*)<\/h1>/.exec(html);
   expect(headline?.slice(1)).toEqual(["en", "ltr", LEDE_QUESTION]);
   expect(sentenceChips(html)).toEqual([
     ["lede.1", ["1"]],
@@ -161,7 +163,7 @@ test("the lede opens the answer under the understood line: the question as its h
   expect(listedSources(html)).toEqual(expected.sources.map((source, index) => [String(index + 1), source.title]));
 });
 
-test("the lede paragraph runs the panel's full width like the headline and section prose, so a right-to-left lede ends at the headline's edge", () => {
+test("the lede paragraph runs the reading column's full width like the section prose, so a right-to-left lede ends at the column's edge", () => {
   const html = drawn(streamed("explainer.lede.golden.sse").reduce(reduceExplainer, askingExplainer(LEDE_QUESTION, "en")));
   const paragraph = /<p[^>]* class="([^"]*)"/.exec(html.slice(at(html, "answer-lede")));
   expect(paragraph?.[1].split(" ").filter((name) => name.startsWith("max-w-"))).toEqual([]);

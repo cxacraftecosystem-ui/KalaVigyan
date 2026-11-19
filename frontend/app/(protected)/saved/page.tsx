@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bookmark } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 
 import { useAuth } from "@/components/AuthProvider";
 import { useAppReducedMotion } from "@/components/guide/useAppReducedMotion";
@@ -12,6 +12,7 @@ import { SavedList } from "@/components/learn/SavedList";
 import { readAllNotes, readNote, refreshNotes, useNotes } from "@/components/learn/useNotes";
 import { PageHeader } from "@/components/PageHeader";
 import { LoadingPanel, RetryPanel } from "@/components/RemotePanels";
+import { Button } from "@/components/ui/button";
 import { apiErrorMessage } from "@/lib/api";
 import { fetchSavedExplainers, unsaveExplainer } from "@/lib/learningApi";
 import { unreadText, updateHref } from "@/lib/savedView";
@@ -71,23 +72,23 @@ export default function SavedPage() {
       <PageHeader
         title="Saved"
         description={unreadText(unread) ?? undefined}
-        icon={<Bookmark className="h-5 w-5" aria-hidden />}
         back={false}
         actions={
           unread > 0 ? (
-            <button type="button" className="field-button-secondary" disabled={busy !== null} onClick={() => void act("all", readAllNotes)} data-testid="notes-read-all">
+            <Button variant="quiet" size="sm" disabled={busy !== null} onClick={() => void act("all", readAllNotes)} data-testid="notes-read-all">
               Mark all read
-            </button>
+            </Button>
           ) : null
         }
       />
       {error ? (
-        <p role="alert" className="mb-4 rounded-md border border-red-200 bg-error-100 px-3 py-2 text-sm text-error-600">
+        <p role="alert" className="mb-4 flex items-start gap-2 rounded-control bg-error-wash px-3 py-2.5 font-ui text-ui text-ink-1">
+          <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-error" aria-hidden />
           {error}
         </p>
       ) : null}
-      <section aria-labelledby="notes-heading" className="grid min-w-0 gap-3">
-        <h2 id="notes-heading" className="field-label">
+      <section aria-labelledby="notes-heading" className="grid min-w-0 gap-3 border-t border-ink-1 pt-4">
+        <h2 id="notes-heading" className="font-headline text-h3 text-ink-1">
           Notes
         </h2>
         {notes.list ? (
@@ -98,8 +99,8 @@ export default function SavedPage() {
           <LoadingPanel />
         )}
       </section>
-      <section aria-labelledby="saved-heading" className="mt-8 grid min-w-0 gap-3">
-        <h2 id="saved-heading" className="field-label">
+      <section aria-labelledby="saved-heading" className="mt-12 grid min-w-0 gap-3 border-t border-ink-1 pt-4">
+        <h2 id="saved-heading" className="font-headline text-h3 text-ink-1">
           Saved answers
         </h2>
         {saved.failure ? (

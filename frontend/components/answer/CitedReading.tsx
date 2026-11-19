@@ -1,16 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 
 import { CitationProvider, type CitationLookup } from "@/components/answer/CitationContext";
 import { ExplainerReadingProvider, type ExplainerReading } from "@/components/answer/ExplainerReading";
-import { openedSource, SourceDialog, type OpenCitation } from "@/components/answer/SourceDialog";
 import { SourcesList } from "@/components/answer/SourcesList";
 import { TermSheet } from "@/components/answer/TermSheet";
 import { useTermState } from "@/components/answer/useTermState";
 import { ENGLISH, type AnswerLanguage } from "@/lib/answerLanguages";
 import { listedSourceNumbers } from "@/lib/citations";
-import type { Citation, SourceRef } from "@/lib/types";
+import type { SourceRef } from "@/lib/types";
 
 export type CitedReadingProps = {
   sources: readonly SourceRef[];
@@ -20,14 +19,9 @@ export type CitedReadingProps = {
 };
 
 export function CitedReading({ sources, numbers, language = ENGLISH, children }: CitedReadingProps) {
-  const [opened, setOpened] = useState<OpenCitation | null>(null);
   const terms = useTermState();
   const sourcesById = useMemo(() => new Map(sources.map((source) => [source.id, source])), [sources]);
-  const onOpen = useCallback(
-    (citations: readonly Citation[]) => setOpened(openedSource(citations, numbers, sourcesById)),
-    [numbers, sourcesById]
-  );
-  const lookup = useMemo<CitationLookup>(() => ({ numbers, sourcesById, onOpen }), [numbers, sourcesById, onOpen]);
+  const lookup = useMemo<CitationLookup>(() => ({ numbers, sourcesById }), [numbers, sourcesById]);
   const reading = useMemo<ExplainerReading>(
     () => ({ language, original: false, hiddenTerms: terms.hidden, onTerm: terms.open, listen: null }),
     [language, terms.hidden, terms.open]
@@ -36,8 +30,7 @@ export function CitedReading({ sources, numbers, language = ENGLISH, children }:
     <ExplainerReadingProvider value={reading}>
       <CitationProvider value={lookup}>
         {children}
-        <SourceDialog open={opened} onClose={() => setOpened(null)} />
-        <TermSheet span={terms.span} language={language.code} onClose={terms.close} onMissing={terms.missing} onAsk={null} onOpenCitation={setOpened} />
+        <TermSheet span={terms.span} language={language.code} onClose={terms.close} onMissing={terms.missing} onAsk={null} />
       </CitationProvider>
     </ExplainerReadingProvider>
   );
