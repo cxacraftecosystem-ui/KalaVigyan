@@ -3,7 +3,8 @@
 import { useId, useState } from "react";
 import { CircleAlert } from "lucide-react";
 
-import { CiteAnswer, type CitedAnswer } from "@/components/answer/CiteAnswer";
+import { CiteAnswer } from "@/components/answer/CiteAnswer";
+import type { CitedAnswer } from "@/lib/answerCitation";
 import { useAnswerSaved, type AnswerSaved } from "@/components/answer/useAnswerSaved";
 import { useAuth } from "@/components/AuthProvider";
 import { ActionGroup } from "@/components/ui/ActionGroup";

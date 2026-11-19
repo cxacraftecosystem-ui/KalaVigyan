@@ -6,7 +6,7 @@ import { AnswerActions } from "@/components/answer/AnswerActions";
 import { AnswerIdProvider } from "@/components/answer/AnswerContext";
 import { AnswerHead } from "@/components/answer/AnswerHead";
 import { CitationProvider, type CitationLookup } from "@/components/answer/CitationContext";
-import type { CitedAnswer } from "@/components/answer/CiteAnswer";
+import type { CitedAnswer } from "@/lib/answerCitation";
 import { ExplainerBody } from "@/components/answer/ExplainerBody";
 import { ExplainerHeader, ORIGINAL_TEXT, ReadingToolsBand } from "@/components/answer/ExplainerHeader";
 import { ExplainerReadingProvider, type ExplainerReading } from "@/components/answer/ExplainerReading";
@@ -54,7 +54,7 @@ function useCitationLookup(state: ExplainerState): CitationLookup {
 function citedAnswer(state: ExplainerState): CitedAnswer | null {
   const ref = explainerRef(state);
   if (state.phase !== "done" || !ref) return null;
-  return { explainerId: ref.explainerId, version: ref.version, question: state.question, answeredAt: state.mark?.createdAt ?? null, sources: state.sources.length };
+  return { explainerId: ref.explainerId, version: ref.version, question: state.question };
 }
 
 function Essay({ state, streaming, reduce, active, onActive, onFollowUp, direction, lang }: { state: ExplainerState; streaming: boolean; reduce: boolean; active: string | null; onActive: (id: string) => void; onFollowUp: ((question: string) => void) | null; direction: "ltr" | "rtl"; lang: string | undefined }) {

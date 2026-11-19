@@ -1,7 +1,6 @@
 import { TextLink } from "@/components/ui/TextLink";
 import { answerProvenance } from "@/lib/answerEssay";
 import type { CraftLink } from "@/lib/answerShapes";
-import { isCraftMonograph } from "@/lib/craftMonographs";
 import type { SourceRef } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -24,10 +23,6 @@ function ReliabilityStrip({ sources }: { sources: readonly SourceRef[] }) {
   );
 }
 
-function craftLabel(craft: CraftLink): string {
-  return isCraftMonograph(craft.slug) ? `${craft.name} monograph` : craft.name;
-}
-
 export function AnswerProvenance({ facts, inline = false, className }: { facts: ProvenanceFacts; inline?: boolean; className?: string }) {
   return (
     <p
@@ -41,7 +36,7 @@ export function AnswerProvenance({ facts, inline = false, className }: { facts: 
       <span className="kicker text-ink-1">Answer</span>
       {facts.sources.length > 0 ? <span>{answerProvenance(facts.sources).sources}</span> : null}
       <ReliabilityStrip sources={facts.sources} />
-      {facts.craft ? <TextLink href={facts.craft.path}>{craftLabel(facts.craft)}</TextLink> : null}
+      {facts.craft ? <TextLink href={facts.craft.path}>{facts.craft.name}</TextLink> : null}
       {facts.answered ? <span>{facts.answered}</span> : null}
     </p>
   );
