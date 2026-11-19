@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { getPathMatch } from "next/dist/shared/lib/router/utils/path-match";
 
-import nextConfig, { CONTENT_SECURITY_POLICY, MEDIA_BUCKET_ORIGIN, WEB_PICTURE_SOURCE } from "../next.config";
+import nextConfig, { APPROVED_MONOGRAPHS, CONTENT_SECURITY_POLICY, MEDIA_BUCKET_ORIGIN, WEB_PICTURE_SOURCE } from "../next.config";
 
 const COMPONENTS = join(__dirname, "..", "components");
 
@@ -30,9 +30,9 @@ test("every page lets pictures load from https sites, so a move to the ask page 
   expect(WEB_PICTURE_SOURCE).toBe("https:");
   expect(imageSources(CONTENT_SECURITY_POLICY)).toEqual(["'self'", "data:", MEDIA_BUCKET_ORIGIN, WEB_PICTURE_SOURCE]);
   expect(CONTENT_SECURITY_POLICY).not.toMatch(/img-src[^;]*(\*|http:)/);
-  for (const path of ["/", "/ask", "/settings", "/crafts/Kutch-Ajrakh", "/map"]) expect(await policyFor(path), path).toBe(CONTENT_SECURITY_POLICY);
+  for (const path of ["/", "/ask", "/settings", "/crafts/Kutch-Ajrakh", "/map", "/monographs/kutch-ajrakh/index.html"]) expect(await policyFor(path), path).toBe(CONTENT_SECURITY_POLICY);
   const rules = await nextConfig.headers!();
-  expect(rules.map((rule) => rule.source)).toEqual(["/:path*"]);
+  expect(rules.map((rule) => rule.source)).toEqual(["/:path*", APPROVED_MONOGRAPHS]);
 });
 
 test("every component that draws a picture from the web sends no referrer to its site", () => {

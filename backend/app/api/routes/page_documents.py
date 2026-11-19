@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.public_deps import cached_read, public_reader
@@ -11,7 +11,7 @@ from app.core.errors import InvalidInput, Refused
 from app.core.roles import ADMIN, has_rank
 from app.models import User
 from app.research.crafts import SLUG_MAX_CHARS
-from app.research.monograph_document import LANGUAGE_MAX_CHARS, SUBJECT_KINDS
+from app.research.monograph_document import SUBJECT_KINDS
 from app.research.page_layout import LayoutWrite
 from app.services.monograph_generated import generated_document
 from app.services.open_work_subjects import subject_by_key
@@ -27,7 +27,6 @@ CONTENT_LANGUAGE = "Content-Language"
 
 SubjectKind = Literal[*SUBJECT_KINDS]
 Slug = Annotated[str, Path(min_length=1, max_length=SLUG_MAX_CHARS, pattern=r"^[A-Za-z0-9-]+$")]
-AskedLanguage = Annotated[str | None, Query(alias="lang", max_length=LANGUAGE_MAX_CHARS)]
 
 
 @dataclass(frozen=True)
@@ -51,7 +50,6 @@ async def get_category_monograph(
     request: Request,
     response: Response,
     slug: Slug,
-    lang: AskedLanguage = None,
     reader: User | None = Depends(public_reader),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
@@ -63,7 +61,6 @@ async def get_family_monograph(
     request: Request,
     response: Response,
     slug: Slug,
-    lang: AskedLanguage = None,
     reader: User | None = Depends(public_reader),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
