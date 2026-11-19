@@ -10,6 +10,8 @@ from pydantic import ValidationError
 
 from app.research.chapter_keys import CHAPTER_KEYS, DISCIPLINE_CHAPTERS
 from app.research.component_specs import checked_spec
+from app.research.coverage import FieldCoverage
+from app.research.coverage_chapters import field_chapter
 from app.research.media_refs import MediaRef
 from app.research.monograph_document import MonographDocument
 from app.research.monograph_page import CitedSource, ComponentEntry, LayoutEntry, MonographContent, TextUnit
@@ -17,6 +19,7 @@ from app.research.page_layout import PageLayout, PageLayoutEntry, arranged_layou
 
 from .knowledge_view import ClaimView
 from .monograph_generated_drawings import Drawings
+from .monograph_generated_grids import StatedValue, fact_grid
 from .monograph_generated_parts import PlacedPicture, RegisteredComponent, StoredSection
 from .monograph_generated_units import (
     LEDE_FIELD,
@@ -64,6 +67,8 @@ class GeneratedParts:
     components: tuple[RegisteredComponent, ...] = ()
     pictures: tuple[PlacedPicture, ...] = ()
     layout: PageLayout | None = None
+    coverage: FieldCoverage | None = None
+    values: Mapping[uuid.UUID, StatedValue] = field(default_factory=dict)
 
 
 @dataclass
@@ -117,6 +122,7 @@ def assembled_document(parts: GeneratedParts, drawings: Drawings) -> MonographDo
         specs=page.specs,
         fragments=page.fragments,
         page_url=parts.page_url,
+        coverage=parts.coverage,
     )
 
 
@@ -129,13 +135,21 @@ def _texts(parts: GeneratedParts, page: _Page) -> dict[str, list[str]]:
         page.drafts.update((draft.unit_id, draft) for draft in drafts)
         if section.field == LEDE_FIELD and not page.lede:
             page.lede = [draft.unit_id for draft in drafts if draft.unit_id not in named][:LEDE_SENTENCES]
-        body = [draft.unit_id for draft in drafts if draft.unit_id not in page.lede]
+        body = [draft for draft in drafts if draft.unit_id not in page.lede]
         if not body:
             continue
-        refs = by_chapter.setdefault(DISCIPLINE_CHAPTERS[section.field], [])
+        refs = by_chapter.setdefault(field_chapter(section.field), [])
         refs.extend(_section_heading(section.field, parts.record, page))
-        refs.extend(body)
+        refs.extend(draft.unit_id for draft in body)
+        refs.extend(_grid(body, parts, page))
     return by_chapter
+
+
+def _grid(body: Sequence[DraftUnit], parts: GeneratedParts, page: _Page) -> tuple[str, ...]:
+    grid = fact_grid(body, parts.values)
+    page.units.update(grid.terms)
+    page.drafts.update((draft.unit_id, draft) for draft in grid.values)
+    return grid.refs
 
 
 def _section_heading(field: str, record: SubjectRecord, page: _Page) -> list[str]:
@@ -182,7 +196,7 @@ def _components(parts: GeneratedParts, page: _Page, drawings: Drawings) -> dict[
             page.reused[component.label] = component.monograph
         else:
             continue
-        chapter = DISCIPLINE_CHAPTERS[component.field]
+        chapter = field_chapter(component.field)
         page.components[component.label] = ComponentEntry(
             label=component.label,
             chapter=chapter,

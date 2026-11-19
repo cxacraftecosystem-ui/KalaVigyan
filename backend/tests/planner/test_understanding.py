@@ -250,7 +250,7 @@ async def test_a_failed_craft_lookup_never_blocks_the_question(any_craft: bool) 
     understander = ModelUnderstander(model=model, resolve=resolver)
     found = await understander.understand(ask(any_craft=any_craft))
     assert (found.craft, found.candidates, found.basis) == (None, [], "MODEL")
-    assert (found.disciplines, found.seats) == (["CHEMISTRY", "HISTORY"], ["CHEMIST"])
+    assert (found.disciplines, found.seats) == (["CHEMISTRY", "HISTORY"], ["CHEMIST", "HISTORIAN"])
     assert model.calls[0]["schema"]["properties"]["craft"]["enum"] == [""]
     assert [query.text for query in resolver.queries] == [QUESTION, *([] if any_craft else ["Kutch Ajrakh"])]
 

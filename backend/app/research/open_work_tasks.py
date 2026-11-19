@@ -50,7 +50,7 @@ def subject_priority(standing: SubjectStanding) -> str:
         return "LOW"
     if standing.subject.slug in OWNER_RANK or standing.demand >= HIGH_DEMAND_ANSWERS:
         return "HIGH"
-    if standing.gi or standing.demand >= MEDIUM_DEMAND_ANSWERS:
+    if standing.gi or standing.curated or standing.demand >= MEDIUM_DEMAND_ANSWERS:
         return "MEDIUM"
     return "LOW"
 
@@ -131,13 +131,14 @@ def _matches(task: OpenTask, filters: WorkFilters) -> bool:
     return filters.field is None or task.field == filters.field
 
 
-def _subject_order(standing: SubjectStanding) -> tuple[int, int, int, bool, int, str, str]:
+def _subject_order(standing: SubjectStanding) -> tuple[int, int, bool, bool, int, int, str, str]:
     subject = standing.subject
     return (
         PRIORITY_RANK[subject_priority(standing)],
         OWNER_RANK.get(subject.slug, len(OWNER_RANK)),
-        -standing.demand,
         not standing.gi,
+        not standing.curated,
+        -standing.demand,
         SUBJECT_RANK[subject.kind],
         subject.name.casefold(),
         subject.slug,

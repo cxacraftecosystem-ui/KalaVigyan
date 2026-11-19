@@ -9,6 +9,7 @@ from .base import ContractModel
 from .blocks import BlockBase
 from .blocks_component import ComponentBlock
 from .citations import AnswerSentence, SourceRef
+from .coverage_answers import ConsultedField, consulted_fields
 from .crafts import CraftRef
 from .explainer import Explainer
 from .explainer_versions import ExplainerVersionDocument
@@ -99,6 +100,7 @@ class AskedAnswer(ContractModel):
     language: AnswerLanguage
     opening: list[AskedSentence]
     sections: list[AskedSection]
+    fields: list[ConsultedField]
     sources: list[AskedSource]
     follow_ups: list[str]
     answer_url: str
@@ -125,6 +127,7 @@ def asked_answer(document: ExplainerVersionDocument, *, site: str, data_note: st
         language=explainer.understood.language,
         opening=[_sentence(sentence, numbers) for sentence in opening],
         sections=_sections(explainer, numbers, site),
+        fields=consulted_fields(explainer),
         sources=[_source(source, numbers[source.id]) for source in explainer.sources],
         follow_ups=list(explainer.follow_ups),
         answer_url=answer_url(site, document.mark.explainer_id, document.mark.version),

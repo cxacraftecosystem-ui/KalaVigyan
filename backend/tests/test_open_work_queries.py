@@ -5,6 +5,7 @@ from typing import Any
 from sqlalchemy.dialects import postgresql
 
 from app.research.open_work import Viewer, WorkFilters
+from app.services.coverage import subject_holdings
 from app.services.open_work import list_open_work
 from app.services.open_work_components import craft_component_kinds
 from app.services.open_work_counts import Owners, subject_counts
@@ -66,18 +67,34 @@ async def test_every_open_work_query_compiles_for_postgres_and_an_empty_catalogu
         assert table in joined
 
 
-async def test_the_counts_file_facts_under_every_field_and_keep_twenty_ids_in_order() -> None:
+async def test_the_counts_keep_twenty_ids_in_order_per_field() -> None:
     session = RecordingSession()
     counts = await subject_counts(session, Owners(crafts=(CRAFT,), categories=(CATEGORY,)))  # type: ignore[arg-type]
-    assert counts.facts == {} and counts.links == {}
+    assert counts.one_source == {} and counts.links == {}
     joined = "\n".join(session.statements)
-    assert "unnest(owned.fields)" in joined
     assert (
         "array_agg(per_fact.claim ORDER BY per_fact.claim))[%(param_1)s::INTEGER:%(param_2)s::INTEGER]"
         in joined
     )
-    assert "jsonb_array_length" in joined
     assert '"CuratedCategoryClaim"' in joined
+
+
+async def test_the_coverage_reads_claims_structure_sections_and_figures_of_crafts_and_categories() -> None:
+    session = RecordingSession()
+    held = await subject_holdings(session, Owners(crafts=(CRAFT,), categories=(CATEGORY,)))  # type: ignore[arg-type]
+    assert held == {}
+    joined = "\n".join(session.statements)
+    for table in (
+        '"CraftGiRecord"',
+        '"CuratedCraft"',
+        '"CuratedCategory"',
+        '"ArticleSection"',
+        '"KnowledgePiece"',
+    ):
+        assert table in joined
+    assert "jsonb_array_length" in joined
+    assert '"Source".sensitivity != ' in joined
+    assert "= ANY (" in joined
 
 
 async def test_component_kinds_reach_a_craft_through_every_key_the_library_uses() -> None:

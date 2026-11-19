@@ -14,8 +14,10 @@ the server", and item 16's `propose_component`. The endpoint, framing and read t
 | Source link rule (dead, unarchived) | `research/open_work_links.py` |
 | Component proposal contract and the close-match rule | `research/component_proposals.py` |
 | Subjects and filters | `services/open_work_subjects.py` |
-| Counts per subject (facts, sections, sources, demand) | `services/open_work_counts.py` |
+| Facts and sections per field (the field coverage) | `services/coverage.py` (`coverage.md`) |
+| Counts per subject (one source, sources differ, links, demand) | `services/open_work_counts.py` |
 | Component kinds per craft | `services/open_work_components.py` |
+| The nightly refresh of field work | `services/open_work_refresh.py` |
 | Pages in the monograph form | `services/open_work_pages.py` |
 | Listing, standings, review queues, live reservations | `services/open_work.py` |
 | Claim, release, complete | `services/task_reservations.py` |
@@ -40,7 +42,7 @@ at most 20 ids; `count` is the whole number.
 
 | Kind | When | Key | `count` | Prompt |
 |---|---|---|---|---|
-| `MISSING_FIELD` | a core field holds no facts and no section | `MISSING_FIELD:<subject>:<slug>:<FIELD>` | facts wanted | `research_field` |
+| `MISSING_FIELD` | a field holds no cited facts and no section | `MISSING_FIELD:<subject>:<slug>:<FIELD>` | facts wanted | `research_field` |
 | `THIN_FIELD` | a field holds facts or a section but fewer facts than the target | `THIN_FIELD:...:<FIELD>` | facts still wanted | `research_field` |
 | `SECTION` | a field meets its facts target, but its published section is missing or shorter than the target | `SECTION:...:<FIELD>` | facts held | `write_section` |
 | `MISSING_COMPONENT` | a craft or family has no registered component of a need's kinds | `MISSING_COMPONENT:...:<need>` | 0 | `propose_component` |
@@ -57,15 +59,16 @@ the field part.
 
 **Targets** are the curation targets (`curation/limits.py`, the contract's Coverage table): a field
 wants `DISCIPLINE_CLAIMS_MIN` (3) facts and a section of `SECTION_SENTENCES_MIN` (3) sentences;
-the core fields are `OVERVIEW`, `HISTORY`, `PROCESS`, `MATERIALS` for a craft or family and
-`OVERVIEW`, `HISTORY`, `MATERIALS` for a category; quotes are 25 to 300 characters. Any other field
-becomes a task only once it holds a fact or a section.
+every one of the 16 fields is a core field of every craft, family and category (owner, 2026-11-20:
+a missing field is research, not a hole), so each field without cited facts is a `MISSING_FIELD`
+task and each under 3 a `THIN_FIELD` task; quotes are 25 to 300 characters.
 
 **What is counted.**
-- Facts: claims shown on the page (`SHOWN_CLAIM_STATUSES`), not hypotheses, `OPEN`; a craft's are
-  those about its open concepts, a category's those its dossier links (`CuratedCategoryClaim`). A
-  fact counts under its primary field and each secondary field.
-- Sections: the `PUBLISHED` `ArticleSection` per field and its sentence count.
+- Facts and sections per field are the field coverage (`coverage.md`): cited claims shown on the
+  page, a craft's those about its open concepts, a category's those its dossier links
+  (`CuratedCategoryClaim`), under the primary field and each secondary field, with the communities'
+  claims counted for `SOCIETY` and the GI record's for `POLICY`; the `PUBLISHED` `ArticleSection`
+  per field and its sentence count.
 - One source: distinct `ClaimSource.sourceId` equal to 1. Sources differ: `Claim.sourcesDiffer`.
 - Sources with a link: an archive is a stored snapshot (`Source.snapshotKey`) or a curated
   `externalIds.archivedUrl`; dead is the latest `WebFetch` of the link answering 404 or 410.
@@ -95,11 +98,18 @@ becomes a task only once it holds a fact or a section.
 - `HIGH`: on the owner's first list (`kalavigyan-craft-pages` skill, "Order": Bidriware, Blue Pottery
   of Jaipur, Kutch Bandhani, Machilipatnam Kalamkari, Madhubani, Orissa Pattachitra, Bastar Dhokra,
   Channapatna), or 25 or more stored answers about the craft. Every review queue is `HIGH`.
-- `MEDIUM`: GI-registered (`Craft.giStatus` `GI`), or 5 or more stored answers.
+- `MEDIUM`: GI-registered (`Craft.giStatus` `GI`), curated (a `CuratedCraft` or `CuratedCategory`
+  row), or 5 or more stored answers.
 - `LOW`: every other craft and family, and every category.
-- Order: priority; then the owner's list order; then reader demand, most first; GI before not;
-  crafts, families, categories; name. Within a subject: fields in vocabulary order, components,
-  page, corroboration, links. Review queues lead the `HIGH` tasks.
+- Order (the subject's prominence): priority; then the owner's list order; GI before not; curated
+  before not; then reader demand, most first; crafts, families, categories; name. Within a subject:
+  fields in vocabulary order, components, page, corroboration, links. Review queues lead the `HIGH`
+  tasks.
+- **The nightly upkeep** (`services/open_work_refresh.refresh_field_work`, the `fieldWork` part of
+  its report) counts every open `MISSING_FIELD` and `THIN_FIELD` task by kind and priority and ends,
+  as `COMPLETED`, each live reservation of a field task that is no longer open (its field was filled
+  by an import or another way). Tasks themselves are computed on every call, so they are never
+  stale.
 
 **Filters**: `craftSlug` (one craft; a family's slug is refused), `familySlug` (the family's page
 and the crafts sharing its sub-category), `categorySlug` (the category's page and its crafts and

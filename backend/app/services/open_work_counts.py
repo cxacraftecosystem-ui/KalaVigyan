@@ -6,29 +6,19 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from sqlalchemy import CTE, ColumnElement, Text, and_, cast, distinct, func, or_, select, union_all
+from sqlalchemy import CTE, ColumnElement, and_, distinct, func, select, union_all
 from sqlalchemy.dialects.postgresql import aggregate_order_by
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import (
-    Answer,
-    ArticleSection,
-    Claim,
-    ClaimSource,
-    Concept,
-    CuratedCategoryClaim,
-    Source,
-    WebFetch,
-)
+from app.models import Answer, Claim, ClaimSource, Concept, CuratedCategoryClaim, Source, WebFetch
 from app.research.open_work import TASK_ITEMS_MAX, Items
 from app.research.open_work_links import ARCHIVED_URL_KEY, SourceLink
 from app.research.retrieval import SHOWN_CLAIM_STATUSES, VISIBLE_SENSITIVITY
 from app.research.vocabulary import FACT_LEVELS
 
-__all__ = ["Owners", "SubjectCounts", "subject_counts"]
+__all__ = ["Owners", "SubjectCounts", "owned_facts", "subject_counts"]
 
 CONCEPT_SUBJECT = "CONCEPT"
-PUBLISHED = "PUBLISHED"
 ONE_SOURCE = 1
 
 FieldItems = dict[uuid.UUID, dict[str | None, Items]]
@@ -42,8 +32,6 @@ class Owners:
 
 @dataclass(frozen=True)
 class SubjectCounts:
-    facts: dict[uuid.UUID, dict[str, int]] = field(default_factory=dict)
-    sections: dict[uuid.UUID, dict[str, int]] = field(default_factory=dict)
     one_source: FieldItems = field(default_factory=dict)
     differing: FieldItems = field(default_factory=dict)
     links: dict[uuid.UUID, list[SourceLink]] = field(default_factory=dict)
@@ -51,11 +39,9 @@ class SubjectCounts:
 
 
 async def subject_counts(session: AsyncSession, owners: Owners) -> SubjectCounts:
-    owned = _owned_facts(owners)
+    owned = owned_facts(owners)
     per_fact = _per_fact(owned)
     return SubjectCounts(
-        facts=await _field_facts(session, owned),
-        sections=await _sections(session, owners),
         one_source=await _field_items(session, per_fact, per_fact.c.sources == ONE_SOURCE),
         differing=await _field_items(session, per_fact, per_fact.c.differ.is_(True)),
         links=await _source_links(session, owned),
@@ -63,15 +49,7 @@ async def subject_counts(session: AsyncSession, owners: Owners) -> SubjectCounts
     )
 
 
-def _fact_conditions() -> list[ColumnElement[bool]]:
-    return [
-        Claim.status.in_(SHOWN_CLAIM_STATUSES),
-        Claim.evidenceLevel.in_(FACT_LEVELS),
-        Claim.sensitivity == VISIBLE_SENSITIVITY,
-    ]
-
-
-def _owned_facts(owners: Owners) -> CTE:
+def owned_facts(owners: Owners) -> CTE:
     columns = (Claim.id.label("claim"), Claim.field.label("field"), Claim.fields, Claim.sourcesDiffer)
     of_crafts = (
         select(Concept.craftId.label("owner"), *columns)
@@ -90,6 +68,14 @@ def _owned_facts(owners: Owners) -> CTE:
     return union_all(of_crafts, of_categories).cte("owned")
 
 
+def _fact_conditions() -> list[ColumnElement[bool]]:
+    return [
+        Claim.status.in_(SHOWN_CLAIM_STATUSES),
+        Claim.evidenceLevel.in_(FACT_LEVELS),
+        Claim.sensitivity == VISIBLE_SENSITIVITY,
+    ]
+
+
 def _per_fact(owned: CTE) -> Any:
     sources = func.count(distinct(ClaimSource.sourceId)).label("sources")
     return (
@@ -98,23 +84,6 @@ def _per_fact(owned: CTE) -> Any:
         .group_by(owned.c.owner, owned.c.claim, owned.c.field, owned.c.sourcesDiffer)
         .subquery("per_fact")
     )
-
-
-async def _field_facts(session: AsyncSession, owned: CTE) -> dict[uuid.UUID, dict[str, int]]:
-    primary = select(owned.c.owner, owned.c.claim, cast(owned.c.field, Text).label("filed")).where(
-        owned.c.field.is_not(None)
-    )
-    further = select(owned.c.owner, owned.c.claim, func.unnest(owned.c.fields).label("filed"))
-    filed = union_all(primary, further).subquery("filed")
-    rows = await session.execute(
-        select(filed.c.owner, filed.c.filed, func.count(distinct(filed.c.claim))).group_by(
-            filed.c.owner, filed.c.filed
-        )
-    )
-    found: dict[uuid.UUID, dict[str, int]] = defaultdict(dict)
-    for owner, discipline, count in rows.all():
-        found[owner][discipline] = int(count)
-    return dict(found)
 
 
 async def _field_items(session: AsyncSession, per_fact: Any, condition: ColumnElement[bool]) -> FieldItems:
@@ -127,23 +96,6 @@ async def _field_items(session: AsyncSession, per_fact: Any, condition: ColumnEl
     found: FieldItems = defaultdict(dict)
     for owner, discipline, count, first in rows.all():
         found[owner][discipline] = Items(count=int(count), ids=tuple(str(claim_id) for claim_id in first))
-    return dict(found)
-
-
-async def _sections(session: AsyncSession, owners: Owners) -> dict[uuid.UUID, dict[str, int]]:
-    rows = await session.execute(
-        select(
-            func.coalesce(ArticleSection.craftId, ArticleSection.categoryId),
-            ArticleSection.field,
-            func.jsonb_array_length(ArticleSection.sentences),
-        ).where(
-            ArticleSection.status == PUBLISHED,
-            or_(ArticleSection.craftId.in_(owners.crafts), ArticleSection.categoryId.in_(owners.categories)),
-        )
-    )
-    found: dict[uuid.UUID, dict[str, int]] = defaultdict(dict)
-    for owner, discipline, sentences in rows.all():
-        found[owner][discipline] = int(sentences)
     return dict(found)
 
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from collections import defaultdict
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Any
 
 from sqlalchemy import ColumnElement, Select, func, select, union
@@ -20,16 +21,26 @@ from app.models import (
 )
 from app.models.enums import DISTRICT_PLACE_PREFIX
 
-__all__ = ["craft_component_kinds", "registered_pieces"]
+__all__ = ["CraftPiece", "craft_component_kinds", "craft_pieces", "registered_pieces"]
 
 DISTRICT_KEY_PREFIX = f"{DISTRICT_PLACE_PREFIX}:"
 
 
-async def craft_component_kinds(
-    session: AsyncSession, craft_ids: Sequence[uuid.UUID]
-) -> dict[uuid.UUID, frozenset[str]]:
+@dataclass(frozen=True)
+class CraftPiece:
+    craft_id: uuid.UUID
+    label: str
+    kind: str
+    field: str
+    fields: tuple[str, ...]
+
+    def filed_under(self) -> tuple[str, ...]:
+        return (self.field, *(other for other in self.fields if other != self.field))
+
+
+async def craft_pieces(session: AsyncSession, craft_ids: Sequence[uuid.UUID]) -> list[CraftPiece]:
     if not craft_ids:
-        return {}
+        return []
     crafts = list(craft_ids)
     rows = await session.execute(
         union(
@@ -42,9 +53,18 @@ async def craft_component_kinds(
             _by_district(crafts),
         )
     )
+    return [
+        CraftPiece(craft_id, str(label), kind, facet, tuple(fields or ()))
+        for craft_id, label, kind, facet, fields in rows.all()
+    ]
+
+
+async def craft_component_kinds(
+    session: AsyncSession, craft_ids: Sequence[uuid.UUID]
+) -> dict[uuid.UUID, frozenset[str]]:
     found: dict[uuid.UUID, set[str]] = defaultdict(set)
-    for craft_id, kind in rows.all():
-        found[craft_id].add(kind)
+    for piece in await craft_pieces(session, craft_ids):
+        found[piece.craft_id].add(piece.kind)
     return {craft_id: frozenset(kinds) for craft_id, kinds in found.items()}
 
 
@@ -56,23 +76,27 @@ def registered_pieces() -> list[ColumnElement[bool]]:
     ]
 
 
+def _piece_columns() -> tuple[Any, ...]:
+    return (KnowledgePiece.label, KnowledgePiece.kind, KnowledgePiece.facet, KnowledgePiece.fields)
+
+
 def _keyed(craft: Any) -> Select[Any]:
     return (
-        select(craft.label("craft"), KnowledgePiece.kind)
+        select(craft.label("craft"), *_piece_columns())
         .select_from(Subject)
         .join(KnowledgePiece, KnowledgePiece.id == Subject.pieceId)
     )
 
 
 def _own(crafts: list[uuid.UUID]) -> Select[Any]:
-    return select(KnowledgePiece.craftId.label("craft"), KnowledgePiece.kind).where(
+    return select(KnowledgePiece.craftId.label("craft"), *_piece_columns()).where(
         KnowledgePiece.craftId.in_(crafts), *registered_pieces()
     )
 
 
 def _linked(crafts: list[uuid.UUID]) -> Select[Any]:
     return (
-        select(Subject.craftId.label("craft"), KnowledgePiece.kind)
+        select(Subject.craftId.label("craft"), *_piece_columns())
         .join(KnowledgePiece, KnowledgePiece.id == Subject.pieceId)
         .where(Subject.craftId.in_(crafts), *registered_pieces())
     )

@@ -10,13 +10,7 @@ from typing import Any
 from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.curation.limits import (
-    CATEGORY_CORE_DISCIPLINES,
-    CURATED_QUOTE_MIN_CHARS,
-    DISCIPLINE_CLAIMS_MIN,
-    FULL_CORE_DISCIPLINES,
-    SECTION_SENTENCES_MIN,
-)
+from app.curation.limits import CURATED_QUOTE_MIN_CHARS, DISCIPLINE_CLAIMS_MIN, SECTION_SENTENCES_MIN
 from app.models import (
     ArtisanContribution,
     Claim,
@@ -25,14 +19,17 @@ from app.models import (
     LayoutProposal,
     TaskReservation,
 )
+from app.models.enums import DISCIPLINES
 from app.models.knowledge import QUOTE_MAX_CHARS
 from app.models.open_work import LIVE_PROPOSALS
+from app.research.coverage import FieldCount, FieldCoverage
 from app.research.open_work import (
     NO_ITEMS,
     RESERVATION_TIME,
     CoverageTargets,
     FieldStanding,
     Hold,
+    Items,
     OpenTask,
     OpenWork,
     QueueStanding,
@@ -44,8 +41,9 @@ from app.research.open_work import (
 from app.research.open_work_links import DEAD_SOURCE, UNARCHIVED_SOURCE, sources_in_state
 from app.research.open_work_tasks import chosen_tasks, open_tasks, reviewed_queues, subject_tasks
 
+from .coverage import owners_of, subject_coverage
 from .open_work_components import craft_component_kinds
-from .open_work_counts import Owners, SubjectCounts, subject_counts
+from .open_work_counts import SubjectCounts, subject_counts
 from .open_work_pages import monograph_layouts
 from .open_work_subjects import CATEGORY, WorkSubject, subject_by_key, work_subjects
 
@@ -61,7 +59,7 @@ __all__ = [
 ]
 
 CRAFT_TARGETS = CoverageTargets(
-    core_fields=FULL_CORE_DISCIPLINES,
+    core_fields=DISCIPLINES,
     facts_min=DISCIPLINE_CLAIMS_MIN,
     section_sentences_min=SECTION_SENTENCES_MIN,
     quote_chars_min=CURATED_QUOTE_MIN_CHARS,
@@ -72,7 +70,7 @@ SUBJECT_TARGETS: Mapping[str, CoverageTargets] = MappingProxyType(
     {
         "craft": CRAFT_TARGETS,
         "family": CRAFT_TARGETS,
-        CATEGORY: replace(CRAFT_TARGETS, core_fields=CATEGORY_CORE_DISCIPLINES, components=False),
+        CATEGORY: replace(CRAFT_TARGETS, components=False),
     }
 )
 RESERVATION_MINUTES = int(RESERVATION_TIME.total_seconds() // 60)
@@ -83,6 +81,7 @@ FACT_REVIEW_STATUSES = ("PROPOSED", "IN_REVIEW")
 @dataclass(frozen=True)
 class _Gathered:
     counts: SubjectCounts
+    coverage: Mapping[uuid.UUID, FieldCoverage]
     kinds: Mapping[uuid.UUID, frozenset[str]]
     layouts: Mapping[str, bool]
     site: str
@@ -120,12 +119,10 @@ async def open_task(session: AsyncSession, key: TaskKey, *, site: str) -> OpenTa
 async def subject_standings(
     session: AsyncSession, subjects: Sequence[WorkSubject], *, site: str
 ) -> list[SubjectStanding]:
-    owners = Owners(
-        crafts=tuple(subject.id for subject in subjects if subject.kind != CATEGORY),
-        categories=tuple(subject.id for subject in subjects if subject.kind == CATEGORY),
-    )
+    owners = owners_of(subjects)
     gathered = _Gathered(
         counts=await subject_counts(session, owners),
+        coverage=await subject_coverage(session, subjects),
         kinds=await craft_component_kinds(session, owners.crafts),
         layouts=monograph_layouts(),
         site=site,
@@ -173,29 +170,43 @@ def _standing(subject: WorkSubject, gathered: _Gathered) -> SubjectStanding:
     return SubjectStanding(
         subject=subject.task_subject(gathered.site),
         targets=SUBJECT_TARGETS[subject.kind],
-        fields=_fields(subject.id, counts),
+        fields=_fields(subject.id, counts, gathered.coverage.get(subject.id)),
         component_kinds=gathered.kinds.get(subject.id, frozenset()),
         new_form=subject.slug in gathered.layouts,
         layout=gathered.layouts.get(subject.slug, False),
         dead_sources=sources_in_state(links, DEAD_SOURCE),
         unarchived_sources=sources_in_state(links, UNARCHIVED_SOURCE),
         gi=subject.gi,
+        curated=subject.curated,
         demand=counts.demand.get(subject.id, 0),
     )
 
 
-def _fields(owner: uuid.UUID, counts: SubjectCounts) -> dict[str | None, FieldStanding]:
-    facts = counts.facts.get(owner, {})
-    sections = counts.sections.get(owner, {})
+def _fields(
+    owner: uuid.UUID, counts: SubjectCounts, coverage: FieldCoverage | None
+) -> dict[str | None, FieldStanding]:
+    held = (
+        {count.field: count for count in coverage.fields if count.claims or count.sections}
+        if coverage
+        else {}
+    )
     one_source = counts.one_source.get(owner, {})
     differing = counts.differing.get(owner, {})
-    filed: set[str | None] = {*facts, *sections, *one_source, *differing}
+    filed: set[str | None] = {*held, *one_source, *differing}
     return {
-        discipline: FieldStanding(
-            facts=facts.get(discipline, 0) if discipline is not None else 0,
-            section_sentences=sections.get(discipline, 0) if discipline is not None else 0,
-            one_source=one_source.get(discipline, NO_ITEMS),
-            differing=differing.get(discipline, NO_ITEMS),
+        discipline: _field_standing(
+            held.get(discipline) if discipline else None,
+            one_source.get(discipline, NO_ITEMS),
+            differing.get(discipline, NO_ITEMS),
         )
         for discipline in filed
     }
+
+
+def _field_standing(count: FieldCount | None, one_source: Items, differing: Items) -> FieldStanding:
+    return FieldStanding(
+        facts=count.claims if count is not None else 0,
+        section_sentences=count.sentences if count is not None else 0,
+        one_source=one_source,
+        differing=differing,
+    )

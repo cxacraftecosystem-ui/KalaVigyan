@@ -1,3 +1,5 @@
+import type { FieldCoverage } from "@/lib/fieldCoverage";
+
 export const MONOGRAPH_DOCUMENT_PATH = (slug: string) => `/crafts/${encodeURIComponent(slug)}/monograph`;
 export const MONOGRAPH_KIT_CSS = "/monographs/kit/monograph.css";
 export const MONOGRAPH_KIT_JS = "/monographs/kit/monograph.js";
@@ -56,4 +58,5 @@ export type MonographDocument = {
   fragments: Record<string, string>;
   shell: string | null;
   pageUrl: string;
+  coverage?: FieldCoverage;
 };

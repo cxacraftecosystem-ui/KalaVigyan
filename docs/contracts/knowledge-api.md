@@ -7,7 +7,7 @@ tools; the other tools are in their own contracts:
 
 | Tools | Scope | Contract |
 |---|---|---|
-| `list_fields`, `find_crafts`, `get_facts`, `get_section`, `list_components`, `get_layout`, `list_open_work` | read (anyone) | this file, `page-layout.md`, `open-work.md` |
+| `list_fields`, `find_crafts`, `get_facts`, `get_section`, `get_coverage`, `list_components`, `get_layout`, `list_open_work` | read (anyone) | this file, `coverage.md`, `page-layout.md`, `open-work.md` |
 | `ask` | ask | `mcp-ask-and-upload.md` |
 | `propose_fact`, `propose_component`, `propose_layout`, `claim_task`, `release_task`, `start_image_upload` | contribute | `knowledge-writes.md`, `open-work.md`, `mcp-ask-and-upload.md` |
 | review queues in `list_open_work` | review | `open-work.md`, `review-queue.md` |
@@ -70,10 +70,11 @@ instructions. Wrong arguments, or a craft slug that does not exist, come back as
 
 | Tool | Arguments | Returns |
 |---|---|---|
-| `list_fields` | none | `FieldList {schemaVersion 1, fields[{field, title, covers, chapter}]}`, the 16 fields in vocabulary order |
-| `find_crafts` | `query` (1 to 1,000 characters) | `FoundCrafts {schemaVersion 1, query, crafts[{craft {slug, name, path}, score, pageUrl}]}`, at most five, from the craft resolver's lexical match (no embedding call) |
-| `get_facts` | `craft_slug`, `field?`, `query?`, `limit?` (1 to 50, default 20) | `CraftFacts {schemaVersion 1, craft, field, query, facts[{id, text, level, field, fields[], citations[{sourceId, quote, locator}]}], sources[{id, kind, title, authors, year, doi, url, publisher, licence, attribution}], pageUrl, attribution}` |
-| `get_section` | `craft_slug`, `field` | `CraftSection {schemaVersion 1, craft, field, section: ArticleSection or null, pageUrl, attribution}`, the published version only |
+| `list_fields` | `craft_slug?` | `FieldList {schemaVersion 1, craftSlug?, fields[{field, title, covers, chapter, held?}]}`, the 16 fields in vocabulary order; `chapter` is where a page places the field (`coverage_chapters.FIELD_CHAPTERS`, rule 23); with `craft_slug`, `held` is the craft's `FieldCount` in the field (`coverage.md`) |
+| `find_crafts` | `query` (1 to 1,000 characters) | `FoundCrafts {schemaVersion 1, query, crafts[{craft {slug, name, path}, score, pageUrl, fields?}]}`, at most five, from the craft resolver's lexical match (no embedding call); `fields` is each active craft's `{claims, covered[], thin[], missing[], fieldClaims {FIELD: n}}` |
+| `get_facts` | `craft_slug`, `field?`, `query?`, `limit?` (1 to 50, default 20) | `CraftFacts {schemaVersion 1, craft, field, query, facts[{id, text, level, field, fields[], citations[{sourceId, quote, locator}], quantity?, readings[]?, figures[]?}], byField[{field, count, shown[]}], openWork[OpenTask], sources[{id, kind, title, authors, year, doi, url, publisher, licence, attribution}], pageUrl, attribution}` |
+| `get_section` | `craft_slug`, `field?` | `CraftSection {schemaVersion 1, craft, field, section: ArticleSection or null, sections[], byField[{field, sentences, claims}], openWork[OpenTask], pageUrl, attribution}`, the published versions only: one field's in `section`, or, without `field`, every field's in `sections` with their counts |
+| `get_coverage` | `craft_slug` or `category_slug`, exactly one | `SubjectCoverage {schemaVersion 1, coverage: FieldCoverage, openWork[OpenTask], pageUrl, attribution}` (`coverage.md`) |
 | `list_components` | `query?`, `craft_slug?`, `field?`, `kind?` | `CraftComponents {schemaVersion 1, craftSlug, field, kind, query, components[{label, title, description, kind, field, fields[], craftSlug, subjects[{kind, key, name}]}]}`, registered, visible and current pieces, at most 100 |
 
 - **Facts** are the claims a signed-out reader of the craft page may see: shown statuses, every
@@ -83,6 +84,15 @@ instructions. Wrong arguments, or a craft slug that does not exist, come back as
   fields. With `query`, facts are ranked by its words, then level; without, in the craft page's
   section order.
 - **Sources** list only those the returned facts cite, with their licence.
+- **Dense by field** (owner, 2026-11-20). `byField` groups the craft's facts by field (primary or
+  secondary): `count` every fact the craft holds in the field, `shown` the ids of this result's. A
+  fact carries what is stored about it: `quantity {value, unit}` (`Claim.valueNum`, `valueUnit`),
+  `readings[{label, stated, low, high, unit}]` (the process conditions its citations read) and
+  `figures[{label, kind, title}]` (the registered components resting on it); each is left out when
+  nothing is stored. A field with no stored facts, or fewer than three, is never an empty list: it is
+  in `openWork` as its `MISSING_FIELD` or `THIN_FIELD` task (`open-work.md`), with the key to
+  `claim_task` and the prompt to follow; `get_section` adds the `SECTION` tasks of fields whose
+  section is missing or short. Only the requested `field`'s tasks when one is named.
 - **The component library.** `list_components` is the search an agent runs before it makes or
   proposes a component (decision 0101, item 16).
   - `craft_slug` brings the craft's own components and every shared component that applies to it:
@@ -97,6 +107,12 @@ instructions. Wrong arguments, or a craft slug that does not exist, come back as
 - **Attribution.** `CraftFacts` and `CraftSection` carry the sentence asking anyone who shows the
   content to name KalaVigyan and the Centre and link the craft's page; the server's
   `instructions` say the same.
+
+## Coverage
+
+`get_coverage` and `GET /api/crafts/{slug}/coverage` (also `/api/categories/{slug}/coverage`) serve
+the same count, the one `coverage.md` defines and the generated monograph document carries as
+`coverage`; `list_open_work` files the missing and thin fields it finds as tasks.
 
 ## Bulk export (decision 0101, item 9)
 

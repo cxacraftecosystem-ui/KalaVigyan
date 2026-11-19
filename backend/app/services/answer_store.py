@@ -45,6 +45,7 @@ from .answer_translation import AnswerTranslation, english_question
 from .answering import AnswerAsk, AnswerPipeline
 from .block_builders import BlockBuilders
 from .builder_interface import BuilderTools
+from .coverage import held_field_lookup
 from .craft_process import process_records
 from .craft_resolver import CraftIndexStore, DatabaseCraftResolver
 from .explainer_history import StaleVersion
@@ -63,6 +64,7 @@ __all__ = [
     "EXPLAINER_PAYLOAD_KEY",
     "READING_STYLE_KEY",
     "SqlAnswerStore",
+    "answer_understander",
     "build_answer_enrichment",
     "build_answer_pipeline",
     "build_answer_translation",
@@ -217,10 +219,6 @@ def build_answer_pipeline(
         sessions, embed=embed, english=lambda text: english_question(text, translation)
     )
 
-    async def resolve(query: CraftQuery) -> CraftResolution:
-        async with sessions() as session:
-            return await DatabaseCraftResolver(session, store=index, embed=embed).resolve(query)
-
     async def research(
         request: PlanRequest, progress: ResearchProgress, trail: ResearchTrail
     ) -> EvidencePack:
@@ -232,7 +230,7 @@ def build_answer_pipeline(
     )
     composer = ModelComposer(model=models.compose)
     return AnswerPipeline(
-        understand=ModelUnderstander(model=models.plan, resolve=resolve).understand,
+        understand=answer_understander(sessions, index, embed=embed, model=models.plan).understand,
         research=research,
         compose=composer.compose,
         store=SqlAnswerStore(sessions, embed=embed, shield=shield, judge=models.judge),
@@ -243,6 +241,20 @@ def build_answer_pipeline(
         lede=LedeTools(compose=composer.lede, figures=signature_figures(sessions)),
         catalogue=catalogue_lookup(sessions),
     )
+
+
+def answer_understander(
+    sessions: async_sessionmaker[AsyncSession],
+    index: CraftIndexStore,
+    *,
+    embed: TextEmbedder,
+    model: StructuredModel,
+) -> ModelUnderstander:
+    async def resolve(query: CraftQuery) -> CraftResolution:
+        async with sessions() as session:
+            return await DatabaseCraftResolver(session, store=index, embed=embed).resolve(query)
+
+    return ModelUnderstander(model=model, resolve=resolve, held=held_field_lookup(sessions))
 
 
 def build_answer_enrichment(

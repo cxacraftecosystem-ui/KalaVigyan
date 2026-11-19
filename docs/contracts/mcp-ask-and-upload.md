@@ -55,12 +55,14 @@ loses its client also runs to the end and is kept.
 ### `AskedAnswer`
 
 `{schemaVersion: 1, answerId, version, question, crafts[{slug, name, pageUrl}], depth, language,
-opening[], sections[{id, field, title, sentences[], components[]}], sources[], followUps[],
+opening[], sections[{id, field, title, sentences[], components[]}], fields[], sources[], followUps[],
 answerUrl, view{resourceUri, mimeType}, attribution, dataNote}`
 
 - A sentence: `{text, level, claimIds[], sourceIds[], cites[]}`: the facts and sources it rests on
   and its citation numbers, sorted and de-duplicated, numbered in the order of `sources`.
 - `opening` is the lede's sentences; sections are the ready ones, in order.
+- `fields` is the answer's provenance by field: each field a ready section consulted, in vocabulary
+  order, `{field, sections, sentences, sources, figures, seats[]}` (`answer-eval.md`).
 - A placed component: `{label, title, kind, url}`, the registered component by label and its link
   on the site.
 - A source: `{number, id, kind, title, authors, year, doi, url, publisher, licence, attribution,

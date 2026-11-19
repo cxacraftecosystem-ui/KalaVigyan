@@ -5,8 +5,10 @@ from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 
 from app.core.errors import AppError, ExternalFailure, spend_refusal
+from app.research.coverage_seats import covering_seats, relevant_fields
 from app.research.crafts import COMPARED_CRAFTS_MAX, MAX_CANDIDATES, CraftQuery, CraftRef, CraftResolution
 from app.research.depth import depth_policy, effective_depth
+from app.research.expert_panel import WIDENED_DEPTHS
 from app.research.structured import StructuredModel
 from app.research.understanding import UnderstandAsk, Understanding, UnknownCraft
 
@@ -18,11 +20,21 @@ from .understanding_prompt import (
     understand_schema,
 )
 
-__all__ = ["CraftChoice", "ModelUnderstander", "Reading", "Resolve", "chosen_craft", "compared_choice"]
+__all__ = [
+    "CraftChoice",
+    "HeldFields",
+    "ModelUnderstander",
+    "Reading",
+    "Resolve",
+    "chosen_craft",
+    "compared_choice",
+    "understood_seats",
+]
 
 logger = logging.getLogger(__name__)
 
 Resolve = Callable[[CraftQuery], Awaitable[CraftResolution]]
+HeldFields = Callable[[str], Awaitable[Sequence[str]]]
 
 
 @dataclass(frozen=True)
@@ -40,9 +52,10 @@ class CraftChoice:
 
 
 class ModelUnderstander:
-    def __init__(self, *, model: StructuredModel, resolve: Resolve) -> None:
+    def __init__(self, *, model: StructuredModel, resolve: Resolve, held: HeldFields | None = None) -> None:
         self._model = model
         self._resolve = resolve
+        self._held = held
 
     async def understand(self, ask: UnderstandAsk) -> Understanding:
         resolution = await self._resolution(ask)
@@ -53,7 +66,19 @@ class ModelUnderstander:
         choice = chosen_craft(ask, resolution, reading.reply)
         if choice.craft is None and not ask.any_craft and reading.reply is not None:
             choice = await self._named(reading.reply, offered)
-        return _understanding(ask, compared_choice(ask, choice, reading.reply, offered), reading)
+        chosen = compared_choice(ask, choice, reading.reply, offered)
+        return _understanding(ask, chosen, reading, await self._held_fields(chosen.craft, reading))
+
+    async def _held_fields(self, craft: CraftRef | None, reading: Reading) -> tuple[str, ...] | None:
+        if self._held is None or craft is None or reading.reply is None:
+            return None
+        try:
+            return tuple(await self._held(craft.slug))
+        except AppError as error:
+            logger.warning(
+                "the fields %s holds were not read, so seats follow the question: %s", craft.slug, error
+            )
+            return None
 
     async def _resolution(self, ask: UnderstandAsk) -> CraftResolution | None:
         query = CraftQuery(text=ask.question, craft_slug=ask.craft_slug, language=ask.language)
@@ -126,7 +151,18 @@ def compared_choice(
     return CraftChoice(craft=lead, others=_distinct(rest, without=None, leaving=kept), compared=compared)
 
 
-def _understanding(ask: UnderstandAsk, choice: CraftChoice, reading: Reading) -> Understanding:
+def understood_seats(
+    disciplines: Sequence[str], seats: Sequence[str], *, depth: str, held: Sequence[str] | None
+) -> list[str]:
+    limit = depth_policy(depth).max_experts
+    if depth in WIDENED_DEPTHS:
+        return list(seats[:limit])
+    return list(covering_seats(relevant_fields(disciplines, held), seats, limit=limit))
+
+
+def _understanding(
+    ask: UnderstandAsk, choice: CraftChoice, reading: Reading, held: Sequence[str] | None = None
+) -> Understanding:
     depth = effective_depth(ask.depth, ask.role, past_degrade=reading.degraded)
     reply = reading.reply
     return Understanding(
@@ -134,7 +170,7 @@ def _understanding(ask: UnderstandAsk, choice: CraftChoice, reading: Reading) ->
         candidates=list(choice.others[:MAX_CANDIDATES]),
         compared=list(choice.compared) if reply else [],
         disciplines=list(reply.disciplines) if reply else [],
-        seats=list(reply.seats[: depth_policy(depth).max_experts]) if reply else [],
+        seats=understood_seats(reply.disciplines, reply.seats, depth=depth, held=held) if reply else [],
         depth=depth,
         language=ask.language,
         basis="MODEL" if reply else "RESOLVER",

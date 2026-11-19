@@ -31,6 +31,7 @@ The workflow runs `python -m app.scripts.nightly_upkeep` as the `kalavigyan` use
 | 3a. Remove abandoned MCP client registrations | `services/upkeep_clients.py` | `ABANDONED_CLIENTS_PER_NIGHT` = 1,000, oldest first; a client is abandoned `ABANDONED_CLIENT_AGE` = 30 days after registering | the `OAuthClient` rows deleted (their unexchanged codes go with them) |
 | 4. Reload monographs | `services/upkeep_pages.py` through `services/monograph_load.py` | `MONOGRAPHS_PER_NIGHT` = 20, a window that rotates by night | `ArticleSection`, `KnowledgePiece` (only what changed) |
 | 5. Rebuild stale craft pages | `services/upkeep_pages.py` through `services/craft_page_snapshots.py` | `PAGES_PER_NIGHT` = 60, oldest snapshot first | `CraftPageSnapshot` |
+| 5a. Refresh the field work | `services/open_work_refresh.py` | every subject, once | `TaskReservation.ending` `COMPLETED` for a live reservation of a `MISSING_FIELD` or `THIN_FIELD` task no longer open (`open-work.md`) |
 | 6. Trigger the site build | `services/site_build.py` | one deploy-hook call | `AuditLog` action `site_build.triggered` |
 
 The orchestration is `services/nightly_upkeep.py` (`run_nightly_upkeep`, and the read-only
@@ -132,6 +133,7 @@ The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
  orphans {orphansFound, orphansRemoved, orphansReported, orphans[{id, name, type, craftId}]},
  clients {abandonedRemoved},
  pages {monographs[load report], pagesStale, pagesRebuilt, pagesChanged, pagesFailed[]},
+ fieldWork {subjects, tasks {MISSING_FIELD, THIN_FIELD}, priorities {HIGH, MEDIUM, LOW}, reservationsClosed},
  build {ok, triggered, reason?}}
 ```
 

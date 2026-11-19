@@ -55,6 +55,7 @@ tag of at most 16 characters) and `version` (optional, from 1).
 | `specs` | for each component whose spec file exists, that spec (a JSON object) |
 | `fragments` | for every other component, its markup with its unit and data slots filled |
 | `pageUrl` | `<site>/crafts/<slug>`; the site is `PUBLIC_WEB_URL` when stored, `PREVIEW_SITE` offline |
+| `coverage` | a generated document's field coverage (`coverage.md`); left out when absent, as in an authored document |
 
 Every component is drawn exactly once, from its spec or its fragment; a spec or fragment for a
 component the content lacks is refused (`MonographDocument`'s validator). A fragment's unit slots
@@ -100,7 +101,9 @@ from its published sections, registered components, curated pictures and `PageLa
   sentences of the OVERVIEW section that the layout does not place elsewhere;
 - every other chapter opens with its title, an `h2` unit `chapter-<key>` (`chapter_title`: "Why
   <first state>" or "Where it is made", "Market and GI" only with a GI), then its pictures, its
-  sections (an `h3` section title unless it repeats the chapter's) and its components;
+  sections (an `h3` section title unless it repeats the chapter's; a field's section, its fact grid
+  and its components sit in the chapter `coverage_chapters.FIELD_CHAPTERS` names, rule 23 of the
+  page checklist, `coverage.md`) and its components;
 - a closing `sources` chapter with its `h2`, under which the renderer lists the sources.
 
 A picture's spec is the full `PicturePlateSpec` (`checked_spec`, every field written); a picture

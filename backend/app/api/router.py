@@ -7,6 +7,7 @@ from app.api.routes import (
     auth,
     categories,
     contributed_pictures,
+    coverage,
     craft_monograph,
     crafts,
     explainer_exports,
@@ -66,6 +67,7 @@ api_router.include_router(users.router)
 api_router.include_router(categories.router)
 api_router.include_router(crafts.router)
 api_router.include_router(craft_monograph.router)
+api_router.include_router(coverage.router)
 api_router.include_router(contributed_pictures.router)
 api_router.include_router(explainers.router)
 api_router.include_router(explainer_exports.router)

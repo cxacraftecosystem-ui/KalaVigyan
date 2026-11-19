@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from pydantic import Field
+from typing import Self
+
+from pydantic import Field, model_validator
 
 from app.research.crafts import QUESTION_MAX_CHARS, SLUG_MAX_CHARS
 from app.research.knowledge_api import (
@@ -11,13 +13,26 @@ from app.research.knowledge_api import (
     CraftSection,
     FieldList,
     FoundCrafts,
+    SubjectCoverage,
 )
 from app.research.vocabulary import Discipline, PieceKind
-from app.services import component_library, knowledge_api
+from app.services import component_library, coverage_reads, knowledge_api
 
-from .mcp_tool_base import Arguments, NoArguments, Tool, ToolContext
+from .mcp_tool_base import Arguments, Tool, ToolContext
 
 __all__ = ["READ_TOOLS"]
+
+CRAFT, CATEGORY = "craft", "category"
+ONE_SUBJECT = "name a craft_slug or a category_slug, one of them"
+
+
+class ListFields(Arguments):
+    craft_slug: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=SLUG_MAX_CHARS,
+        description="A slug from find_crafts; each field then carries what that craft holds in it",
+    )
 
 
 class FindCrafts(Arguments):
@@ -37,7 +52,20 @@ class GetFacts(Arguments):
 
 class GetSection(Arguments):
     craft_slug: str = Field(min_length=1, max_length=SLUG_MAX_CHARS)
-    field: Discipline
+    field: Discipline | None = Field(
+        default=None, description="One of list_fields; every section when absent"
+    )
+
+
+class GetCoverage(Arguments):
+    craft_slug: str | None = Field(default=None, min_length=1, max_length=SLUG_MAX_CHARS)
+    category_slug: str | None = Field(default=None, min_length=1, max_length=SLUG_MAX_CHARS)
+
+    @model_validator(mode="after")
+    def _one_subject(self) -> Self:
+        if (self.craft_slug is None) == (self.category_slug is None):
+            raise ValueError(ONE_SUBJECT)
+        return self
 
 
 class ListComponents(Arguments):
@@ -60,8 +88,10 @@ class ListComponents(Arguments):
     kind: PieceKind | None = Field(default=None, description="One kind of component")
 
 
-async def _list_fields(context: ToolContext, arguments: NoArguments) -> FieldList:
-    return knowledge_api.field_list()
+async def _list_fields(context: ToolContext, arguments: ListFields) -> FieldList:
+    if arguments.craft_slug is None:
+        return knowledge_api.field_list()
+    return await knowledge_api.held_field_list(context.session, arguments.craft_slug)
 
 
 async def _find_crafts(context: ToolContext, arguments: FindCrafts) -> FoundCrafts:
@@ -82,9 +112,18 @@ async def _get_facts(context: ToolContext, arguments: GetFacts) -> CraftFacts:
 
 
 async def _get_section(context: ToolContext, arguments: GetSection) -> CraftSection:
+    if arguments.field is None:
+        return await knowledge_api.craft_sections(context.session, arguments.craft_slug, site=context.site)
     return await knowledge_api.craft_section(
         context.session, arguments.craft_slug, arguments.field, site=context.site
     )
+
+
+async def _get_coverage(context: ToolContext, arguments: GetCoverage) -> SubjectCoverage:
+    kind, slug = (
+        (CRAFT, arguments.craft_slug) if arguments.craft_slug else (CATEGORY, arguments.category_slug)
+    )
+    return await coverage_reads.read_subject_coverage(context.session, kind, str(slug), site=context.site)
 
 
 async def _list_components(context: ToolContext, arguments: ListComponents) -> CraftComponents:
@@ -101,15 +140,18 @@ READ_TOOLS: tuple[Tool, ...] = (
     Tool(
         "list_fields",
         "List the fields",
-        "The 16 fields every fact and section is filed under, with what each covers and its chapter.",
-        NoArguments,
+        "The 16 fields every fact and section is filed under, with what each covers and its chapter; "
+        "with a craft_slug, each field also carries the craft's cited claims, sources, section and "
+        "figures in it.",
+        ListFields,
         FieldList,
         _list_fields,
     ),
     Tool(
         "find_crafts",
         "Find crafts",
-        "Up to five crafts matching a name, a local name, a place or a kind, each with its slug and page.",
+        "Up to five crafts matching a name, a local name, a place or a kind, each with its slug, page "
+        "and its cited claims per field: which fields are covered, thin or missing.",
         FindCrafts,
         FoundCrafts,
         _find_crafts,
@@ -118,19 +160,32 @@ READ_TOOLS: tuple[Tool, ...] = (
         "get_facts",
         "Get a craft's facts",
         "The cited facts of one craft, optionally one field and ranked by words, each with its "
-        "evidence level, verbatim quotes, locators and sources with their licences.",
+        "evidence level, verbatim quotes, locators, stored quantities and the figures resting on it; "
+        "grouped by field with counts, and every field the craft holds too few facts in named as "
+        "open work with its task key.",
         GetFacts,
         CraftFacts,
         _get_facts,
     ),
     Tool(
         "get_section",
-        "Get a craft's section",
-        "The published prose of one craft's field, each sentence with the facts it rests on; "
-        "null where the section is not written yet.",
+        "Get a craft's sections",
+        "The published prose of one craft's field, or of every field when none is named, each "
+        "sentence with the facts it rests on, the sentence and fact counts per field, and each field "
+        "still to research or write named as open work with its task key.",
         GetSection,
         CraftSection,
         _get_section,
+    ),
+    Tool(
+        "get_coverage",
+        "Get a page's field coverage",
+        "For one craft, family or category, the cited claims, structure-cited claims, sources, "
+        "published section and figures it holds in each of the 16 fields, which fields are covered, "
+        "thin or missing, and the open field work with task keys to claim.",
+        GetCoverage,
+        SubjectCoverage,
+        _get_coverage,
     ),
     Tool(
         "list_components",

@@ -12,7 +12,8 @@ import {
   type MonographSource,
   type MonographUnit
 } from "@/lib/monographDocument";
-import { dictionary, integer, list, matching, nullable, object, oneOf, parseShape, ShapeError, text, type Shape } from "@/lib/shape";
+import { fieldCoverageShape } from "@/lib/fieldCoverage";
+import { dictionary, integer, list, matching, nullable, object, oneOf, optional, parseShape, ShapeError, text, type Shape } from "@/lib/shape";
 
 export const CATEGORY_MONOGRAPH_DOCUMENT_PATH = (slug: string) => `/categories/${encodeURIComponent(slug)}/monograph`;
 export const MONOGRAPH_PREVIEW_SUBJECTS = ["craft", "category"] as const;
@@ -118,7 +119,8 @@ export const monographDocumentShape: Shape<MonographDocument> = object<Monograph
   specs: dictionary(ANY_KEY, record),
   fragments: dictionary(ANY_KEY, text),
   shell: nullable(text),
-  pageUrl: text
+  pageUrl: text,
+  coverage: optional(fieldCoverageShape)
 });
 
 export function checkedMonographDocument(document: MonographDocument): MonographDocument {

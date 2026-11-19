@@ -4,7 +4,8 @@ from typing import Any, Literal, Self
 
 from pydantic import Field, model_validator
 
-from .base import ContractModel
+from .base import ContractModel, absent
+from .coverage import FieldCoverage
 from .monograph_page import MonographContent
 
 __all__ = [
@@ -46,6 +47,7 @@ class MonographDocument(ContractModel):
     fragments: dict[str, str] = Field(default_factory=dict)
     shell: str | None = None
     page_url: str
+    coverage: FieldCoverage | None = Field(default=None, exclude_if=absent)
 
     @model_validator(mode="after")
     def _each_component_drawn_once(self) -> Self:

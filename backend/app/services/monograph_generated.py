@@ -8,8 +8,10 @@ from app.core.config import get_settings
 from app.research.monograph_document import MonographDocument
 
 from . import knowledge_view
+from .coverage import coverage_of
 from .monograph_generated_assembly import GeneratedParts, assembled_document
 from .monograph_generated_drawings import Drawings
+from .monograph_generated_grids import stated_values
 from .monograph_generated_parts import subject_components, subject_pictures, subject_record, subject_sections
 from .monograph_generated_units import stored_source
 from .open_work_subjects import WorkSubject, subject_by_key
@@ -56,6 +58,8 @@ async def generated_parts(session: AsyncSession, subject: WorkSubject) -> Genera
         components=tuple(await subject_components(session, subject, list(visible))),
         pictures=tuple(await subject_pictures(session, subject)),
         layout=await layout_of(session, subject),
+        coverage=await coverage_of(session, subject),
+        values=await stated_values(session, list(visible)),
     )
 
 

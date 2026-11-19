@@ -10,11 +10,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput
 from app.data.craft_master_loader import ACTIVE, ALL_INDIA
-from app.models import Craft, CraftCategory, CraftSubCategory
+from app.models import Craft, CraftCategory, CraftSubCategory, CuratedCategory, CuratedCraft
 from app.research.category_page import category_path
 from app.research.open_work import SUBJECT_KINDS, TaskSubject
 
-__all__ = ["CATEGORY", "WorkSubject", "is_family", "subject_by_key", "work_subjects"]
+__all__ = [
+    "CATEGORY",
+    "WorkSubject",
+    "craft_subject",
+    "craft_subjects",
+    "is_family",
+    "subject_by_key",
+    "work_subjects",
+]
 
 CRAFT, FAMILY, CATEGORY = SUBJECT_KINDS
 GI = "GI"
@@ -29,6 +37,7 @@ class WorkSubject:
     slug: str
     name: str
     gi: bool
+    curated: bool = False
 
     def task_subject(self, site: str) -> TaskSubject:
         path = category_path(self.slug) if self.kind == CATEGORY else f"/crafts/{self.slug}"
@@ -57,14 +66,36 @@ async def subject_by_key(session: AsyncSession, kind: str, slug: str) -> WorkSub
     return await _craft(session, slug, kind)
 
 
+async def craft_subject(session: AsyncSession, slug: str) -> WorkSubject:
+    rows = await _crafts(session, Craft.slug == slug)
+    if not rows:
+        raise InvalidInput(UNKNOWN.format(kind=CRAFT, slug=slug))
+    return rows[0]
+
+
+async def craft_subjects(session: AsyncSession, slugs: Sequence[str]) -> list[WorkSubject]:
+    if not slugs:
+        return []
+    return await _crafts(session, Craft.slug.in_(list(dict.fromkeys(slugs))))
+
+
 def is_family(catch_all: bool, practice: Sequence[str]) -> bool:
     return catch_all or tuple(practice) == (ALL_INDIA,)
 
 
 async def _crafts(session: AsyncSession, *conditions: ColumnElement[bool]) -> list[WorkSubject]:
     rows = await session.execute(
-        select(Craft.id, Craft.slug, Craft.name, Craft.giStatus, Craft.isCatchAll, Craft.stateOfPractice)
+        select(
+            Craft.id,
+            Craft.slug,
+            Craft.name,
+            Craft.giStatus,
+            Craft.isCatchAll,
+            Craft.stateOfPractice,
+            CuratedCraft.craftId.label("curated"),
+        )
         .outerjoin(CraftSubCategory, CraftSubCategory.id == Craft.subCategoryId)
+        .outerjoin(CuratedCraft, CuratedCraft.craftId == Craft.id)
         .where(Craft.status == ACTIVE, *conditions)
         .order_by(Craft.slug)
     )
@@ -72,33 +103,34 @@ async def _crafts(session: AsyncSession, *conditions: ColumnElement[bool]) -> li
 
 
 async def _craft(session: AsyncSession, slug: str, kind: str) -> WorkSubject:
-    rows = await _crafts(session, Craft.slug == slug)
-    if not rows:
-        raise InvalidInput(UNKNOWN.format(kind=kind, slug=slug))
-    found = rows[0]
+    found = await craft_subject(session, slug)
     if found.kind != kind:
         raise InvalidInput(WRONG_KIND.format(slug=slug, found=found.kind, kind=kind))
     return found
 
 
-async def _categories(session: AsyncSession) -> list[WorkSubject]:
+async def _categories(session: AsyncSession, *conditions: ColumnElement[bool]) -> list[WorkSubject]:
     rows = await session.execute(
-        select(CraftCategory.id, CraftCategory.slug, CraftCategory.name).order_by(CraftCategory.sortOrder)
+        select(CraftCategory.id, CraftCategory.slug, CraftCategory.name, CuratedCategory.categoryId)
+        .outerjoin(CuratedCategory, CuratedCategory.categoryId == CraftCategory.id)
+        .where(*conditions)
+        .order_by(CraftCategory.sortOrder)
     )
-    return [WorkSubject(row.id, CATEGORY, row.slug, row.name, gi=False) for row in rows.all()]
+    return [
+        WorkSubject(row[0], CATEGORY, row[1], row[2], gi=False, curated=row[3] is not None)
+        for row in rows.all()
+    ]
 
 
 async def _category(session: AsyncSession, slug: str) -> WorkSubject:
-    row = (
-        await session.execute(
-            select(CraftCategory.id, CraftCategory.slug, CraftCategory.name).where(CraftCategory.slug == slug)
-        )
-    ).first()
-    if row is None:
+    found = await _categories(session, CraftCategory.slug == slug)
+    if not found:
         raise InvalidInput(f"No category has the slug {slug}.")
-    return WorkSubject(row.id, CATEGORY, row.slug, row.name, gi=False)
+    return found[0]
 
 
 def _craft_subject(row: Any) -> WorkSubject:
     kind = FAMILY if is_family(bool(row.isCatchAll), row.stateOfPractice or ()) else CRAFT
-    return WorkSubject(row.id, kind, row.slug, row.name, gi=row.giStatus == GI)
+    return WorkSubject(
+        row.id, kind, row.slug, row.name, gi=row.giStatus == GI, curated=row.curated is not None
+    )

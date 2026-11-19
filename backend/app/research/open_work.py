@@ -266,6 +266,7 @@ class SubjectStanding:
     dead_sources: Items = NO_ITEMS
     unarchived_sources: Items = NO_ITEMS
     gi: bool = False
+    curated: bool = False
     demand: int = 0
 
 

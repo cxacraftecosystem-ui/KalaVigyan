@@ -148,6 +148,18 @@ async def test_ask_returns_each_section_with_its_cited_sentences_components_and_
     ]
 
 
+async def test_ask_names_each_field_it_consulted_with_its_cited_sentences_sources_and_figures() -> None:
+    shown = await finished()
+    (consulted,) = shown["fields"]
+    assert (consulted["field"], consulted["sections"], consulted["sentences"], consulted["sources"]) == (
+        "CHEMISTRY",
+        1,
+        3,
+        3,
+    )
+    assert consulted["figures"] >= 1 and consulted["seats"] == []
+
+
 async def test_ask_runs_the_pipeline_in_the_person_s_name_at_their_own_depth() -> None:
     asked = answered_with_player()
     user = person()

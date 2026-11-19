@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "questions": [
+    {
+      "id": "ajrakh-indigo-blue",
+      "question": "Why does Ajrakh cloth turn blue only after it leaves the indigo vat?",
+      "craftSlug": "Kutch-Ajrakh",
+      "fields": ["CHEMISTRY", "PROCESS"]
+    },
+    {
+      "id": "ajrakh-water-and-climate",
+      "question": "How do the water, rivers and climate of Kachchh shape where and when Ajrakh is printed?",
+      "craftSlug": "Kutch-Ajrakh",
+      "fields": ["GEOGRAPHY", "CLIMATE", "ECOLOGY"]
+    },
+    {
+      "id": "ajrakh-dye-plants",
+      "question": "Which plants give Ajrakh its red and blue, and which parts of them are used?",
+      "craftSlug": "Kutch-Ajrakh",
+      "fields": ["BOTANY", "MATERIALS", "CHEMISTRY"]
+    },
+    {
+      "id": "ajrakh-makers-and-market",
+      "question": "Who makes Ajrakh today, how is it sold and how is the name protected?",
+      "craftSlug": "Kutch-Ajrakh",
+      "fields": ["SOCIETY", "ECONOMICS", "POLICY"]
+    },
+    {
+      "id": "bidri-black-and-soil",
+      "question": "Why is Bidriware black, and what part does the soil used in its finishing play?",
+      "craftSlug": "Bidriware",
+      "fields": ["CHEMISTRY", "GEOLOGY", "MATERIALS"]
+    },
+    {
+      "id": "bidri-designs-history",
+      "question": "How did the inlay designs of Bidriware develop, and under whose patronage?",
+      "craftSlug": "Bidriware",
+      "fields": ["HISTORY", "DESIGN"]
+    },
+    {
+      "id": "bidri-making-stages",
+      "question": "What are the stages of making a Bidri vessel, from casting the alloy to setting the silver?",
+      "craftSlug": "Bidriware",
+      "fields": ["PROCESS", "PHYSICS", "MATERIALS"]
+    },
+    {
+      "id": "blue-pottery-body-and-glaze",
+      "question": "What is the body of Jaipur blue pottery made of, and what gives its glaze the blue?",
+      "craftSlug": "Blue-Pottery-Of-Jaipur",
+      "fields": ["MATERIALS", "CHEMISTRY", "PHYSICS"]
+    },
+    {
+      "id": "blue-pottery-safe-handling",
+      "question": "What hazards do Jaipur blue pottery makers face from glazes and kilns, and how are they handled safely?",
+      "craftSlug": "Blue-Pottery-Of-Jaipur",
+      "fields": ["HEALTH", "PROCESS"]
+    },
+    {
+      "id": "blue-pottery-place",
+      "question": "How do the climate, the ground and the place of Jaipur shape blue pottery making?",
+      "craftSlug": "Blue-Pottery-Of-Jaipur",
+      "fields": ["CLIMATE", "GEOLOGY", "GEOGRAPHY"]
+    },
+    {
+      "id": "bandhani-tie-and-dye",
+      "question": "How do Kutch Bandhani artisans tie and dye the dots, and why do the colours stay where they are?",
+      "craftSlug": "Kutch-Bandhani",
+      "fields": ["PROCESS", "CHEMISTRY", "DESIGN"]
+    },
+    {
+      "id": "bandhani-communities",
+      "question": "Which communities practise Kutch Bandhani, and what does the work earn them?",
+      "craftSlug": "Kutch-Bandhani",
+      "fields": ["SOCIETY", "ECONOMICS", "HISTORY"]
+    },
+    {
+      "id": "bandhani-gi",
+      "question": "What does the Geographical Indication for Kutch Bandhani protect, and who may use it?",
+      "craftSlug": "Kutch-Bandhani",
+      "fields": ["POLICY", "ECONOMICS"]
+    },
+    {
+      "id": "kalamkari-mordants",
+      "question": "How do mordants and myrobalan fix the colours of Machilipatnam Kalamkari?",
+      "craftSlug": "Machilipatnam-Kalamkari",
+      "fields": ["CHEMISTRY", "BOTANY", "MATERIALS"]
+    },
+    {
+      "id": "kalamkari-water-and-place",
+      "question": "Why did Kalamkari printing grow at Machilipatnam, and what part did its water play?",
+      "craftSlug": "Machilipatnam-Kalamkari",
+      "fields": ["GEOGRAPHY", "ECOLOGY", "HISTORY"]
+    },
+    {
+      "id": "madhubani-colours",
+      "question": "Where do the colours of Madhubani paintings come from, and how are they prepared?",
+      "craftSlug": "Madhubani-Paintings",
+      "fields": ["MATERIALS", "BOTANY", "PROCESS"]
+    },
+    {
+      "id": "madhubani-overview",
+      "question": "What is Madhubani painting, who paints it, and how have its styles changed over time?",
+      "craftSlug": "Madhubani-Paintings",
+      "fields": ["OVERVIEW", "HISTORY", "SOCIETY", "DESIGN"]
+    },
+    {
+      "id": "pattachitra-canvas",
+      "question": "How is the cloth canvas of Orissa Pattachitra prepared and painted?",
+      "craftSlug": "Orissa-Pattachitra",
+      "fields": ["PROCESS", "MATERIALS", "CHEMISTRY"]
+    },
+    {
+      "id": "pattachitra-temple-and-market",
+      "question": "How is Orissa Pattachitra tied to temple traditions, and who buys it today?",
+      "craftSlug": "Orissa-Pattachitra",
+      "fields": ["HISTORY", "ECONOMICS", "SOCIETY"]
+    },
+    {
+      "id": "dhokra-lost-wax",
+      "question": "How does lost-wax casting work in Bastar Dhokra, and what happens to the metal in the fire?",
+      "craftSlug": "Bastar-Dhokra",
+      "fields": ["PROCESS", "PHYSICS", "CHEMISTRY"]
+    },
+    {
+      "id": "dhokra-metal-and-clay",
+      "question": "Where do the metal and the clay used in Bastar Dhokra come from?",
+      "craftSlug": "Bastar-Dhokra",
+      "fields": ["GEOLOGY", "MATERIALS", "ECOLOGY"]
+    },
+    {
+      "id": "channapatna-wood-and-lac",
+      "question": "Which wood are Channapatna toys turned from, and how does the lac finish make them shine?",
+      "craftSlug": "Channapatna-Toys-Dolls",
+      "fields": ["BOTANY", "MATERIALS", "CHEMISTRY"]
+    },
+    {
+      "id": "channapatna-forests",
+      "question": "What does making Channapatna toys take from the forests, and how is the supply kept going?",
+      "craftSlug": "Channapatna-Toys-Dolls",
+      "fields": ["ECOLOGY", "ECONOMICS", "POLICY"]
+    },
+    {
+      "id": "firozabad-furnace",
+      "question": "What does furnace heat do to the glass of Firozabad bangles, and what does the work do to the workers' health?",
+      "craftSlug": "Firozabad-Glass",
+      "fields": ["PHYSICS", "HEALTH", "CHEMISTRY"]
+    }
+  ]
+}

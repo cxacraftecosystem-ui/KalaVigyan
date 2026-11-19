@@ -6,7 +6,8 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from app.research.chapter_keys import CHAPTER_TITLES, DISCIPLINE_CHAPTERS
+from app.research.chapter_keys import CHAPTER_TITLES
+from app.research.coverage_chapters import field_chapter
 from app.research.monograph_page import CitedSource, Quote, TextUnit
 from app.research.sections import DISCIPLINE_TITLES
 
@@ -68,6 +69,7 @@ class DraftUnit:
     field: str
     text: str
     claim_ids: tuple[uuid.UUID, ...]
+    tag: str = SENTENCE_TAG
 
 
 class SourceBook:
@@ -107,7 +109,7 @@ def section_units(
     visible: Mapping[uuid.UUID, ClaimView],
     taken: set[str],
 ) -> list[DraftUnit]:
-    chapter = DISCIPLINE_CHAPTERS[field]
+    chapter = field_chapter(field)
     units = []
     for sentence in sentences:
         claim_ids = tuple(dict.fromkeys(uuid.UUID(str(claim)) for claim in sentence["claimIds"]))
@@ -129,7 +131,7 @@ def chapter_heading(chapter: str, record: SubjectRecord) -> tuple[str, TextUnit]
 
 def heading_unit(field: str) -> tuple[str, TextUnit]:
     return f"{HEADING_PREFIX}{field.lower()}", TextUnit(
-        chapter=DISCIPLINE_CHAPTERS[field],
+        chapter=field_chapter(field),
         tag=HEADING_TAG,
         field=field,
         nodes=[DISCIPLINE_TITLES[field]],
@@ -157,7 +159,7 @@ def cited_unit(
                 quotes.append(quote)
     unit = TextUnit(
         chapter=draft.chapter,
-        tag=SENTENCE_TAG,
+        tag=draft.tag,
         field=draft.field,
         nodes=cited_nodes(draft.text, draft.unit_id, list(dict.fromkeys(keys))),
         claim_ids=[str(claim_id) for claim_id in draft.claim_ids],
