@@ -1,8 +1,11 @@
 import type { ThHTMLAttributes } from "react";
 
-export function ResizableTh({ className = "", children, ...rest }: ThHTMLAttributes<HTMLTableCellElement>) {
+import { RECORD_HEAD_CELL } from "@/components/records/recordTable";
+import { cn } from "@/lib/utils";
+
+export function ResizableTh({ className, children, ...rest }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th {...rest} className={`resize-x cursor-col-resize overflow-hidden px-4 py-3 ${className}`}>
+    <th scope="col" {...rest} className={cn(RECORD_HEAD_CELL, "resize-x overflow-hidden", className)}>
       {children}
     </th>
   );

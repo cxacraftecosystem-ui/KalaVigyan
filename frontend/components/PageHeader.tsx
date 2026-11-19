@@ -1,38 +1,27 @@
+import type { ReactNode } from "react";
+
 import { BackButton } from "@/components/BackButton";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 
-export function PageHeader({
-  title,
-  description,
-  actions,
-  icon,
-  back = true
-}: {
+export type PageHeaderProps = {
   title: string;
-  description?: string;
-  actions?: React.ReactNode;
-  icon?: React.ReactNode;
+  description?: ReactNode;
+  kicker?: string;
+  actions?: ReactNode;
+  icon?: ReactNode;
   back?: boolean;
-}) {
+};
+
+export function PageHeader({ title, description, kicker, actions, back = true }: PageHeaderProps) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="flex min-w-0 items-start gap-3">
-        {back ? (
-          <div className="mt-1">
-            <BackButton />
-          </div>
-        ) : null}
-        {icon ? (
-          <div className="field-header-chip mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-field-200 text-field-600 dark:text-purple-300 max-sm:hidden">
-            {icon}
-          </div>
-        ) : null}
-        <div className="min-w-0">
-          <h1 className="display-title text-2xl [overflow-wrap:anywhere] sm:text-3xl md:text-4xl">{title}</h1>
-          {description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">{description}</p> : null}
-        </div>
+    <header className="mb-10 grid gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+      <div className="grid min-w-0 justify-items-start gap-3">
+        {back ? <BackButton /> : null}
+        {kicker ? <p className="kicker">{kicker}</p> : null}
+        <h1 className="max-w-full break-words font-headline text-h1 text-ink-1">{title}</h1>
+        {description ? <p className="max-w-measure font-reading text-lede text-ink-2">{description}</p> : null}
       </div>
       {actions ? <ActionGroup align="end">{actions}</ActionGroup> : null}
-    </div>
+    </header>
   );
 }

@@ -8,8 +8,8 @@ import type { Preferences } from "@/lib/preferences";
 export const KIT_PREFERENCES_EVENT = "kv-prefs";
 export const READER_ATTRIBUTES = ["data-theme", "data-high-contrast", "data-larger-text", "data-reduced-motion"] as const;
 
-type Flag = "highContrast" | "largerText" | "reducedMotion";
-type Tool = { key: "theme" | Flag; label: string; icon: ReactNode };
+type Flag = "largerText" | "reducedMotion";
+type Tool = { key: "theme" | "highContrast" | Flag; label: string; icon: ReactNode };
 
 const TOOLS: readonly Tool[] = [
   {
@@ -51,12 +51,13 @@ const TOOLS: readonly Tool[] = [
 
 export function toolPatch(key: Tool["key"], pressed: boolean): Partial<Preferences> {
   if (key === "theme") return { theme: pressed ? "light" : "dark" };
+  if (key === "highContrast") return { highContrast: pressed ? "standard" : "high" };
   return { [key]: !pressed };
 }
 
 export function ReaderTools() {
   const { preferences, resolvedTheme, update } = useThemePreferences();
-  const pressed = (key: Tool["key"]) => (key === "theme" ? resolvedTheme === "dark" : preferences[key]);
+  const pressed = (key: Tool["key"]) => (key === "theme" ? resolvedTheme === "dark" : key === "highContrast" ? preferences.highContrast === "high" : preferences[key]);
   return (
     <div className="kv-menu-tools" role="group" aria-label="Display">
       {TOOLS.map((tool) => (

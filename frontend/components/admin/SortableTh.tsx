@@ -9,6 +9,7 @@ import {
   type RosterFilters,
   type RosterKind
 } from "@/components/admin/rosterFilters";
+import { cn } from "@/lib/utils";
 
 export type RosterSortControl = {
   kind: RosterKind;
@@ -20,7 +21,7 @@ export function SortableTh({
   control,
   column,
   label,
-  className = ""
+  className
 }: {
   control: RosterSortControl;
   column: string;
@@ -32,21 +33,18 @@ export function SortableTh({
   const Icon = active ? (filters.dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
 
   return (
-    <ResizableTh
-      aria-sort={active ? (filters.dir === "asc" ? "ascending" : "descending") : "none"}
-      className={className}
-    >
+    <ResizableTh aria-sort={active ? (filters.dir === "asc" ? "ascending" : "descending") : "none"} className={className}>
       <button
         type="button"
         title={sortActionLabel(kind, filters, column, label)}
         onClick={() => onChange(nextRosterSort(kind, filters, column))}
-        className="-my-1 inline-flex max-w-full items-center gap-1.5 rounded py-1 text-left font-medium text-ink-500 transition-colors hover:text-purple-700 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-600/40"
+        className={cn(
+          "-my-1 inline-flex min-h-target max-w-full items-center gap-1.5 rounded-control text-start font-ui text-label transition-colors duration-state hover:text-indigo-hover",
+          active ? "text-ink-1" : "text-ink-2"
+        )}
       >
         <span className="min-w-0 truncate">{label}</span>
-        <Icon
-          className={`h-3.5 w-3.5 shrink-0 ${active ? "text-purple-700 dark:text-purple-300" : "text-ink-300"}`}
-          aria-hidden
-        />
+        <Icon className={cn("size-3.5 shrink-0", active ? "text-ink-1" : "text-ink-3")} aria-hidden />
       </button>
     </ResizableTh>
   );

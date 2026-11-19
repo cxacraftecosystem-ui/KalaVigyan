@@ -112,13 +112,11 @@ function meridiemLabel(hhmm: string) {
   return `${twelve}:${minuteText} ${suffix}`;
 }
 
-const INPUT_WITH_ICON = "field-input pr-10";
+const INPUT_WITH_ICON = "kv-input pe-12";
 
 const ICON_BUTTON =
-  "absolute right-1 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-ink-500 transition " +
-  "hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-950 dark:hover:text-purple-200 " +
-  "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-700 focus-visible:ring-offset-1 focus-visible:ring-offset-card " +
-  "disabled:pointer-events-none disabled:text-ink-300";
+  "absolute end-1 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-control text-ink-3 transition-colors duration-state " +
+  "hover:bg-sunk hover:text-ink-1 disabled:pointer-events-none disabled:text-ink-3";
 
 type TriggerInputProps = {
   inputRef: RefObject<HTMLInputElement | null>;
@@ -344,7 +342,7 @@ export function DateField({
         className={className}
       />
       {refusal ? (
-        <p id={refusalId} aria-live="polite" className="mt-1 text-xs font-medium leading-5 text-error-600">
+        <p id={refusalId} aria-live="polite" className="kv-field-error mt-1">
           {boundRefusalMessage(
             refusal.date,
             refusal.bound,
@@ -522,7 +520,7 @@ export function DateRangePicker({
             action={
               <button
                 type="button"
-                className="rounded-md px-2 py-1 font-medium text-purple-700 transition hover:bg-purple-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-700 dark:text-purple-300 dark:hover:bg-purple-950"
+                className="kv-link inline-flex min-h-target items-center font-ui text-ui"
                 onClick={() => {
                   setOpen(false);
                   (lastTriggerRef.current ?? startRef.current)?.focus({ preventScroll: true });
@@ -715,15 +713,12 @@ export function TimeField({
                   inputRef.current?.focus({ preventScroll: true });
                 }}
                 className={cn(
-                  "flex items-center justify-between gap-3 rounded-md px-3 py-1.5 text-left text-sm tabular-nums transition",
-                  "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-700 focus-visible:ring-offset-1 focus-visible:ring-offset-card",
-                  chosen
-                    ? "bg-purple-700 font-semibold text-white"
-                    : "text-ink-900 hover:bg-purple-50 dark:hover:bg-purple-950"
+                  "flex min-h-target items-center justify-between gap-3 rounded-control px-3 py-1.5 text-start font-ui text-ui tabular-nums lining-nums transition-colors duration-state",
+                  chosen ? "bg-indigo-wash font-semibold text-indigo-hover" : "text-ink-1 hover:bg-sunk"
                 )}
               >
                 <span>{slot}</span>
-                <span className={cn("text-xs", chosen ? "text-white/75" : "text-ink-500")}>{meridiemLabel(slot)}</span>
+                <span className={cn("font-ui text-caption", chosen ? "text-indigo-hover" : "text-ink-3")}>{meridiemLabel(slot)}</span>
               </button>
             );
           })}
@@ -735,7 +730,7 @@ export function TimeField({
 
 function SelectionSummary({ text, action }: { text: string; action?: ReactNode }) {
   return (
-    <div className="mt-2 flex items-center justify-between gap-3 rounded-md bg-surface-50 px-3 py-2 text-sm text-ink-700">
+    <div className="mt-2 flex items-center justify-between gap-3 rounded-control bg-sunk px-3 py-2 font-ui text-ui font-normal text-ink-2">
       <span aria-live="polite">{text}</span>
       {action}
     </div>

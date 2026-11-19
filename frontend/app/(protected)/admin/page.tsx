@@ -1,65 +1,61 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowRight, BarChart3, ClipboardCheck, KeyRound, Route, ShieldCheck, SlidersHorizontal, UserCog, type LucideIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { ReviewSwitchCard } from "@/components/admin/ReviewSwitchCard";
 import { SiteBuildCard } from "@/components/admin/SiteBuildCard";
 import { useAuth } from "@/components/AuthProvider";
-import { riseItem, staggerParent } from "@/components/guide/guideMotion";
-import { useAppReducedMotion } from "@/components/guide/useAppReducedMotion";
 import { usePendingAccessCount } from "@/components/hooks/usePendingAccessCount";
 import { PageHeader } from "@/components/PageHeader";
+import { StatusBadge } from "@/components/StatusBadge";
+import { byCount } from "@/lib/format";
 import { canAccessRoute, canManageAccessRoster, canManageRouting } from "@/lib/permissions";
 
-type HubCard = {
-  href: string;
-  title: string;
-  note: string;
-  icon: LucideIcon;
-};
+type HubTool = { href: string; title: string; note: string };
 
-const CARDS: HubCard[] = [
-  { href: "/admin/review", title: "Review", note: "Decide what other people give: facts, testimony, pictures, components.", icon: ClipboardCheck },
-  { href: "/admin/access", title: "Who may sign in", note: "Approve requests and add addresses.", icon: ShieldCheck },
-  { href: "/admin/users", title: "Manage users", note: "Change roles, suspend accounts.", icon: UserCog },
-  { href: "/admin/keys", title: "API keys", note: "Set and test provider keys.", icon: KeyRound },
-  { href: "/admin/routing", title: "AI routing", note: "Model order for each task.", icon: Route },
-  { href: "/admin/usage", title: "Usage", note: "Calls, tokens and spend.", icon: BarChart3 }
+const TOOLS: HubTool[] = [
+  { href: "/admin/review", title: "Review", note: "Decide what other people give: facts, testimony, pictures, components and layouts." },
+  { href: "/admin/access", title: "Who may sign in", note: "Approve requests and add addresses." },
+  { href: "/admin/users", title: "Manage users", note: "Change roles, suspend accounts, reset two-step verification." },
+  { href: "/admin/keys", title: "API keys", note: "Set and test the provider keys." },
+  { href: "/admin/routing", title: "AI routing", note: "The model order for each task." },
+  { href: "/admin/usage", title: "Usage", note: "Calls, tokens and spend, by task, model and day." }
 ];
+
+function ToolRow({ tool, waiting }: { tool: HubTool; waiting: number }) {
+  return (
+    <li className="min-w-0 border-b border-rule">
+      <Link href={tool.href} className="group grid h-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1.5 py-5 pe-1 transition-colors duration-state hover:bg-sunk md:px-3">
+        <span className="font-ui text-h4 text-ink-1 underline-offset-3 group-hover:text-indigo-hover group-hover:underline">{tool.title}</span>
+        <ArrowRight className="row-span-2 mt-0.5 size-4 text-ink-3 transition-colors duration-state group-hover:text-indigo-hover" aria-hidden />
+        <span className="font-ui text-label text-ink-2">{tool.note}</span>
+        {waiting > 0 ? (
+          <span className="col-span-2 mt-1">
+            <StatusBadge tone="waiting">{`${waiting} ${byCount(waiting, "request", "requests")} waiting`}</StatusBadge>
+          </span>
+        ) : null}
+      </Link>
+    </li>
+  );
+}
 
 export default function SettingsHubPage() {
   const { user } = useAuth();
-  const reduce = useAppReducedMotion();
-  const visible = CARDS.filter((card) => canAccessRoute(user, card.href));
+  const visible = TOOLS.filter((tool) => canAccessRoute(user, tool.href));
   const pending = usePendingAccessCount(canManageAccessRoster(user));
   const description = canManageRouting(user) ? "Accounts, keys and model routing." : "Accounts, access and usage.";
 
   return (
     <>
-      <PageHeader title="Settings hub" description={description} icon={<SlidersHorizontal className="h-5 w-5" aria-hidden />} />
-      <motion.ul variants={staggerParent(reduce)} initial="hidden" animate="show" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {visible.map((card) => (
-          <motion.li key={card.href} variants={riseItem(reduce)}>
-            <Link href={card.href} className="panel group flex h-full items-start gap-4 p-5 transition hover:border-purple-300">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-purple-950 text-purple-100">
-                <card.icon className="h-5 w-5" aria-hidden />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2 font-display text-base font-bold text-ink-900">
-                  {card.title}
-                  {card.href === "/admin/access" && pending && pending.pending > 0 ? (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">{pending.pending} waiting</span>
-                  ) : null}
-                </span>
-                <span className="mt-1 block text-sm leading-6 text-ink-500">{card.note}</span>
-              </span>
-              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-ink-300 transition group-hover:text-purple-700" aria-hidden />
-            </Link>
-          </motion.li>
-        ))}
-      </motion.ul>
+      <PageHeader title="Settings hub" kicker="Admin" description={description} />
+      <nav aria-label="Admin tools">
+        <ul className="grid border-t border-ink-1 md:grid-cols-2 md:gap-x-8 lg:grid-cols-3">
+          {visible.map((tool) => (
+            <ToolRow key={tool.href} tool={tool} waiting={tool.href === "/admin/access" ? (pending?.pending ?? 0) : 0} />
+          ))}
+        </ul>
+      </nav>
       <ReviewSwitchCard />
       <SiteBuildCard />
     </>

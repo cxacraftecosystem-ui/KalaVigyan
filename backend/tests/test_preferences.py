@@ -41,3 +41,19 @@ def test_answer_language_refuses_anything_else(language: str) -> None:
 def test_the_digest_opt_in_is_a_preference_kept_only_when_sent() -> None:
     assert PreferencesUpdate(alertDigest=True).model_dump(exclude_unset=True) == {"alertDigest": True}
     assert "alertDigest" not in PreferencesUpdate(theme="dark").model_dump(exclude_unset=True)
+
+
+@pytest.mark.parametrize("contrast", ["system", "standard", "high"])
+def test_contrast_takes_the_device_standard_or_high(contrast: str) -> None:
+    assert PreferencesUpdate(highContrast=contrast).highContrast == contrast
+
+
+@pytest.mark.parametrize(("flag", "contrast"), [(True, "high"), (False, "system")])
+def test_an_old_client_s_contrast_flag_reads_as_high_or_the_device(flag: bool, contrast: str) -> None:
+    assert PreferencesUpdate(highContrast=flag).highContrast == contrast
+
+
+@pytest.mark.parametrize("contrast", ["more", "HIGH", "", 1])
+def test_contrast_refuses_anything_else(contrast: object) -> None:
+    with pytest.raises(ValidationError):
+        PreferencesUpdate(highContrast=contrast)

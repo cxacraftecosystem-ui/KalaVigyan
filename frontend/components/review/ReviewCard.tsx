@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { Field, TextArea } from "@/components/FormControls";
+import { RecordNotice } from "@/components/records/RecordNotice";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
@@ -48,45 +50,51 @@ export function ReviewCard({ item, onDecided }: { item: ReviewItem; onDecided: (
   const reject = () => run(async () => { if (reason) await rejectItem(current, reason, note.trim() || null); onDecided(); });
 
   return (
-    <li className="grid gap-3 rounded-md border border-line-200 bg-card p-4" data-testid="review-card">
-      <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">
-        {current.craft.name} · {current.speaker.district} · {current.locator}
-      </p>
-      <p className="text-sm text-ink-700">{current.line}</p>
-      {current.context.before.text ? <p className="text-sm text-ink-500">Asked: {current.context.before.english ?? current.context.before.text}</p> : null}
-      {current.quote ? (
-        <p lang={current.language} dir={current.direction} className="text-base text-ink-900">
-          “{current.quote}”
+    <li className="grid gap-4 border-t border-rule pt-5 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-8" data-testid="review-card">
+      <div className="grid content-start gap-2">
+        <p className="kicker">
+          {current.craft.name} · {current.speaker.district} · {current.locator}
         </p>
-      ) : null}
-      {current.context.audio ? <audio controls preload="none" src={`${current.context.audio.url}#t=${current.context.audio.startMs / 1000},${current.context.audio.endMs / 1000}`} className="w-full" /> : null}
-      <label className="grid gap-1">
-        <span className="field-label">English</span>
-        <textarea value={english} onChange={(event) => setEnglish(event.target.value)} maxLength={600} rows={2} className="field-input" />
-      </label>
-      <label className="grid gap-1">
-        <span className="field-label">Fact</span>
-        <textarea value={claimText} onChange={(event) => setClaimText(event.target.value)} maxLength={300} rows={2} className="field-input" />
-      </label>
-      {current.screens.map((screen) => (
-        <p key={screen} role="alert" className="text-sm text-error-600">
-          {SCREEN_LABELS[screen] ?? screen}
-        </p>
-      ))}
-      <Toggle label="English checked" checked={checked} onChange={setChecked} disabled={busy} />
-      {error ? <p role="alert" className="text-sm text-error-600">{error}</p> : null}
-      <ActionGroup align="start">
-        {edited ? <Button type="button" variant="outline" disabled={busy} onClick={() => void saveEdit()}>Save edit</Button> : null}
-        <Button type="button" disabled={busy || edited || current.screens.length > 0} onClick={() => void approve()}>
-          Approve
-        </Button>
-      </ActionGroup>
-      <div className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]">
-        <SearchableSelect value={reason} onChange={(next) => setReason(next as RejectReason)} options={REASON_OPTIONS} ariaLabel="Reason" placeholder="Reason" searchable={false} />
-        <input value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} placeholder="Note for the artisan" aria-label="Note for the artisan" className="field-input" />
-        <Button type="button" variant="outline" disabled={busy || !reason || (reason === "OTHER" && !note.trim())} onClick={() => void reject()}>
-          Reject
-        </Button>
+        <p className="font-ui text-ui font-normal text-ink-2">{current.line}</p>
+        {current.context.before.text ? <p className="font-ui text-label text-ink-3">Asked: {current.context.before.english ?? current.context.before.text}</p> : null}
+        {current.quote ? (
+          <blockquote lang={current.language} dir={current.direction} className="font-reading text-quote italic text-ink-1">
+            {current.quote}
+          </blockquote>
+        ) : null}
+        {current.context.audio ? <audio controls preload="none" src={`${current.context.audio.url}#t=${current.context.audio.startMs / 1000},${current.context.audio.endMs / 1000}`} className="mt-1 w-full" /> : null}
+      </div>
+      <div className="grid content-start gap-4">
+        <Field label="English">
+          <TextArea value={english} onChange={(event) => setEnglish(event.target.value)} maxLength={600} rows={2} />
+        </Field>
+        <Field label="Fact">
+          <TextArea value={claimText} onChange={(event) => setClaimText(event.target.value)} maxLength={300} rows={2} />
+        </Field>
+        {current.screens.map((screen) => (
+          <RecordNotice key={screen} tone="error">
+            {SCREEN_LABELS[screen] ?? screen}
+          </RecordNotice>
+        ))}
+        <Toggle label="English checked" checked={checked} onChange={setChecked} disabled={busy} />
+        {error ? <RecordNotice tone="error">{error}</RecordNotice> : null}
+        <ActionGroup align="start">
+          {edited ? (
+            <Button type="button" variant="quiet" disabled={busy} onClick={() => void saveEdit()}>
+              Save edit
+            </Button>
+          ) : null}
+          <Button type="button" variant="primary" disabled={busy || edited || current.screens.length > 0} onClick={() => void approve()}>
+            Approve
+          </Button>
+        </ActionGroup>
+        <div className="grid gap-3 border-t border-rule pt-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] sm:items-end">
+          <SearchableSelect value={reason} onChange={(next) => setReason(next as RejectReason)} options={REASON_OPTIONS} ariaLabel="Reason" placeholder="Reason" searchable={false} />
+          <input value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} placeholder="Note for the artisan" aria-label="Note for the artisan" className="kv-input" />
+          <Button type="button" variant="danger" data-danger disabled={busy || !reason || (reason === "OTHER" && !note.trim())} onClick={() => void reject()}>
+            Reject
+          </Button>
+        </div>
       </div>
     </li>
   );

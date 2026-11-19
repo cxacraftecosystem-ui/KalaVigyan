@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useConfirm } from "@/components/dialogs/ConfirmDialog";
+import { RecordSection } from "@/components/records/RecordSection";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -16,15 +17,17 @@ const REVOKE_FAILED = "Couldn't revoke the app. Try again.";
 
 function ConnectedClientRow({ item, busy, onRevoke }: { item: Connection; busy: boolean; onRevoke: (item: Connection) => void }) {
   return (
-    <li className="grid gap-1 border-t border-rule pt-3" data-testid="connected-app">
-      <p className="text-ui font-ui font-semibold text-ink-1">
-        {item.clientName} <span className="font-normal text-ink-3">· {item.clientHost}</span>
-      </p>
-      <p className="text-label font-ui text-ink-2">May {scopeList(item.scopes)}</p>
-      <p className="text-label font-ui text-ink-3">
-        Connected {formatDateTime(item.connectedAt)} · {item.lastUsedAt ? `last used ${formatDateTime(item.lastUsedAt)}` : "not used yet"}
-      </p>
-      <ActionGroup align="start">
+    <li className="grid gap-x-8 gap-y-2 border-t border-rule py-4 first:border-t-0 first:pt-0 md:grid-cols-[minmax(0,1fr)_auto] md:items-start" data-testid="connected-app">
+      <div className="grid min-w-0 gap-1">
+        <p className="font-ui text-h4 text-ink-1">
+          {item.clientName} <span className="font-ui text-label text-ink-3">· {item.clientHost}</span>
+        </p>
+        <p className="font-ui text-label text-ink-2">May {scopeList(item.scopes)}</p>
+        <p className="font-ui text-label text-ink-3 tabular-nums lining-nums">
+          Connected {formatDateTime(item.connectedAt)} · {item.lastUsedAt ? `last used ${formatDateTime(item.lastUsedAt)}` : "never used"}
+        </p>
+      </div>
+      <ActionGroup align="end">
         <Button type="button" variant="danger" size="sm" busy={busy} busyLabel="Revoking" onClick={() => onRevoke(item)} data-danger>
           Revoke
         </Button>
@@ -76,10 +79,7 @@ export function ConnectedClientsCard() {
   }
 
   return (
-    <section className="flex h-full flex-col gap-3 rounded-card border border-rule bg-raised p-5" aria-labelledby="connected-apps-h" data-testid="connected-apps">
-      <h2 id="connected-apps-h" className="text-h4 font-ui text-ink-1">
-        Connected apps
-      </h2>
+    <RecordSection title="Connected apps" description="Apps that use KalaVigyan in your name through its MCP server." testId="connected-apps">
       {!list && !failed ? <Skeleton shape="lede" label="Fetching your connected apps" /> : null}
       {failed ? (
         <div role="alert" className="grid justify-items-start gap-2">
@@ -102,6 +102,6 @@ export function ConnectedClientsCard() {
         </ul>
       ) : null}
       {error ? <p role="alert" className="text-ui font-ui text-error">{error}</p> : null}
-    </section>
+    </RecordSection>
   );
 }

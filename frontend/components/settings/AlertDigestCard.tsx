@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Mail } from "lucide-react";
 
+import { RecordSection } from "@/components/records/RecordSection";
 import { Toggle } from "@/components/ui/Toggle";
 import { apiErrorMessage, apiFetch } from "@/lib/api";
 import { PREFERENCES_PATH } from "@/lib/preferences";
@@ -44,19 +44,15 @@ export function AlertDigestCard() {
   }
 
   return (
-    <section className="panel flex h-full flex-col gap-3 p-5" data-testid="alert-digest">
-      <div className="flex items-center gap-2.5">
-        <span className="grid h-8 w-8 place-items-center rounded-md bg-purple-950 text-purple-100">
-          <Mail className="h-4 w-4" aria-hidden />
-        </span>
-        <h2 className="font-display font-bold text-ink-900">Updates</h2>
+    <RecordSection title="Updates" testId="alert-digest">
+      <div className="max-w-measure">
+        <Toggle label="Weekly email" description="When a saved answer gets better." checked={choice.on} busy={busy} onChange={(next) => void change(next)} />
       </div>
-      <Toggle label="Weekly email" description="When a saved answer gets better." checked={choice.on} busy={busy} onChange={(next) => void change(next)} />
       {error ? (
-        <p role="alert" className="text-sm text-error-600">
+        <p role="alert" className="font-ui text-ui font-normal text-error">
           {error}
         </p>
       ) : null}
-    </section>
+    </RecordSection>
   );
 }

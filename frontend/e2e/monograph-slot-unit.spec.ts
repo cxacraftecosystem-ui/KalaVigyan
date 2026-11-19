@@ -104,6 +104,7 @@ test("the whole page draws one h1, the rail of chapters with their numerals and 
 test("the display tools change the app's own settings", () => {
   expect(toolPatch("theme", true)).toEqual({ theme: "light" });
   expect(toolPatch("theme", false)).toEqual({ theme: "dark" });
-  expect(toolPatch("highContrast", false)).toEqual({ highContrast: true });
+  expect(toolPatch("highContrast", false)).toEqual({ highContrast: "high" });
+  expect(toolPatch("highContrast", true)).toEqual({ highContrast: "standard" });
   expect(toolPatch("reducedMotion", true)).toEqual({ reducedMotion: false });
 });

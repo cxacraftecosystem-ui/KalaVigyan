@@ -2,7 +2,6 @@
 
 import { Suspense, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ClipboardCheck } from "lucide-react";
 
 import { useAuth } from "@/components/AuthProvider";
 import { PageHeader } from "@/components/PageHeader";
@@ -43,7 +42,7 @@ function ReviewScreen() {
 
   return (
     <>
-      <PageHeader title="Review" description={DESCRIPTION} icon={<ClipboardCheck className="h-5 w-5" aria-hidden />} />
+      <PageHeader title="Review" kicker="Admin" description={DESCRIPTION} />
       <div className="grid gap-6">
         <QueueFilterBar filters={filters} onChange={change} />
         {queue.page ? (

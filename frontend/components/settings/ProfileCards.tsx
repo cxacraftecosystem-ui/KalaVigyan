@@ -1,25 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Mic, UserRound } from "lucide-react";
 
 import { useAuth } from "@/components/AuthProvider";
 import { ArtisanProfileForm } from "@/components/onboarding/ArtisanProfileForm";
 import { RecordingAgreement } from "@/components/onboarding/RecordingAgreement";
 import { StudentProfileForm } from "@/components/onboarding/StudentProfileForm";
+import { RecordSection } from "@/components/records/RecordSection";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { apiErrorMessage } from "@/lib/api";
 import { fetchProfile, withdrawRecording, type ProfileView } from "@/lib/profileContract";
-
-function CardTitle({ icon, title }: { icon: React.ReactNode; title: string }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className="grid h-8 w-8 place-items-center rounded-md bg-purple-950 text-purple-100">{icon}</span>
-      <h2 className="font-display font-bold text-ink-900">{title}</h2>
-    </div>
-  );
-}
 
 function RecordingStatus({ profile, onChanged }: { profile: ProfileView; onChanged: () => void }) {
   const [confirming, setConfirming] = useState(false);
@@ -43,22 +34,23 @@ function RecordingStatus({ profile, onChanged }: { profile: ProfileView; onChang
   }
 
   return (
-    <div className="grid gap-2">
-      <p className="text-sm text-ink-700">You agreed to be recorded.</p>
-      {confirming ? <p className="text-sm text-ink-900">This deletes every recording and takes back every fact you shared.</p> : null}
-      {message ? <p role="status" className="text-sm text-ink-700">{message}</p> : null}
-      <ActionGroup>
+    <div className="grid gap-3 border-t border-rule pt-5">
+      <h3 className="font-ui text-h4 text-ink-1">Recording</h3>
+      <p className="font-ui text-ui font-normal text-ink-2">You agreed to be recorded.</p>
+      {confirming ? <p className="rounded-card bg-madder-wash px-4 py-3 font-ui text-ui font-normal text-ink-1">This deletes every recording and takes back every fact you shared.</p> : null}
+      {message ? <p role="status" className="font-ui text-ui font-normal text-ink-2">{message}</p> : null}
+      <ActionGroup align="start">
         {confirming ? (
           <>
-            <Button type="button" variant="destructive" onClick={() => void withdraw()}>
-              Withdraw
+            <Button type="button" variant="quiet" onClick={() => setConfirming(false)}>
+              Keep my recordings
             </Button>
-            <Button type="button" variant="outline" onClick={() => setConfirming(false)}>
-              Keep
+            <Button type="button" variant="destroy" data-danger onClick={() => void withdraw()}>
+              Withdraw and delete
             </Button>
           </>
         ) : (
-          <Button type="button" variant="outline" onClick={() => setConfirming(true)}>
+          <Button type="button" variant="danger" onClick={() => setConfirming(true)}>
             Withdraw agreement
           </Button>
         )}
@@ -86,20 +78,20 @@ export function ProfileCards() {
   if (!user || !profile) return null;
   if (profile.student) {
     return (
-      <section className="panel flex h-full flex-col gap-3 p-5" data-testid="student-profile-card">
-        <CardTitle icon={<UserRound className="h-4 w-4" aria-hidden />} title="Your profile" />
-        <StudentProfileForm ageBand={profile.student.ageBand} gender={profile.student.gender} action="Save" onSaved={stored} />
-        {saved ? <p role="status" className="text-sm text-ink-700">Saved.</p> : null}
-      </section>
+      <RecordSection title="Your profile" testId="student-profile-card">
+        <div className="max-w-measure">
+          <StudentProfileForm ageBand={profile.student.ageBand} gender={profile.student.gender} action="Save" onSaved={stored} />
+        </div>
+        {saved ? <p role="status" className="font-ui text-label text-ink-2">Saved.</p> : null}
+      </RecordSection>
     );
   }
   if (!profile.artisan) return null;
   return (
-    <section className="panel flex h-full flex-col gap-3 p-5 lg:col-span-2" data-testid="artisan-profile-card">
-      <CardTitle icon={<Mic className="h-4 w-4" aria-hidden />} title="Your craft profile" />
+    <RecordSection title="Your craft profile" testId="artisan-profile-card">
       <ArtisanProfileForm current={profile.artisan} accountName={user.name} action="Save" onSaved={stored} />
-      {saved ? <p role="status" className="text-sm text-ink-700">Saved.</p> : null}
+      {saved ? <p role="status" className="font-ui text-label text-ink-2">Saved.</p> : null}
       <RecordingStatus profile={profile} onChanged={load} />
-    </section>
+    </RecordSection>
   );
 }

@@ -1,20 +1,130 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BarChart3, RotateCw } from "lucide-react";
 
 import { PageHeader } from "@/components/PageHeader";
+import { RecordNotice } from "@/components/records/RecordNotice";
+import { RecordSection } from "@/components/records/RecordSection";
+import { RECORD_CELL, RECORD_HEAD_CELL, RECORD_HEAD_ROW, RECORD_NUMBER_CELL, RECORD_ROW, RECORD_TABLE } from "@/components/records/recordTable";
+import { Button } from "@/components/ui/button";
+import { Figure } from "@/components/ui/Figure";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { SegmentedChoice } from "@/components/ui/SegmentedChoice";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { resolveRange, type RangeId } from "@/lib/dateRange";
-import { formatDate } from "@/lib/format";
-import { ceilingShare, fetchUsage, formatCount, formatUsd, money, monthlyCeiling, type UsageReport } from "@/lib/usage";
+import { byCount, formatDate } from "@/lib/format";
+import { ceilingShare, fetchUsage, formatCount, formatUsd, money, monthlyCeiling, type UsageDayRow, type UsageReport } from "@/lib/usage";
 
 const PERIODS: { value: RangeId; label: string }[] = [
   { value: "7d", label: "7 days" },
   { value: "30d", label: "30 days" },
   { value: "month", label: "This month" }
 ];
+
+type Stat = { label: string; value: string; note: string };
+
+function usageStats(report: UsageReport): Stat[] {
+  const ceiling = monthlyCeiling(report);
+  const share = ceilingShare(report);
+  return [
+    { label: "Spend", value: formatUsd(report.spentUsd), note: `${formatDate(report.from)} to ${formatDate(report.to)}` },
+    { label: "Calls", value: formatCount(report.calls), note: report.failures > 0 ? `${formatCount(report.failures)} failed` : "None failed" },
+    {
+      label: ceiling === null ? "This month" : "Monthly ceiling",
+      value: formatUsd(report.spentThisMonthUsd),
+      note: ceiling === null ? "No monthly ceiling" : `of ${formatUsd(report.ceilingUsd)}${share === null ? "" : `, ${Math.round(share)}% used`}`
+    }
+  ];
+}
+
+function UsageStats({ report }: { report: UsageReport }) {
+  const share = ceilingShare(report);
+  return (
+    <dl className="grid border-t border-ink-1 sm:grid-cols-3 sm:gap-x-8" data-testid="usage-stats">
+      {usageStats(report).map((stat, index) => (
+        <div key={stat.label} className="grid content-start gap-1.5 border-b border-rule py-5">
+          <dt className="font-ui text-label text-ink-3">{stat.label}</dt>
+          <dd className="font-headline text-stat text-ink-1 tabular-nums lining-nums">{stat.value}</dd>
+          <dd className="font-ui text-label text-ink-2 tabular-nums lining-nums">{stat.note}</dd>
+          {index === 2 && share !== null ? (
+            <dd>
+              <ProgressBar className="mt-1 h-2" percent={share} role="progressbar" aria-label="Monthly ceiling used" aria-valuenow={Math.round(share)} aria-valuemin={0} aria-valuemax={100} />
+            </dd>
+          ) : null}
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function UsageTable({ title, head, rows, textColumns = 1 }: { title: string; head: string[]; rows: string[][]; textColumns?: number }) {
+  return (
+    <RecordSection title={title}>
+      {rows.length === 0 ? (
+        <p className="font-ui text-ui font-normal text-ink-2">Calls in this period appear here, with their tokens and spend.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className={`${RECORD_TABLE} min-w-xl`}>
+            <caption className="sr-only">{title}</caption>
+            <thead>
+              <tr className={RECORD_HEAD_ROW}>
+                {head.map((cell, index) => (
+                  <th key={cell} scope="col" className={index < textColumns ? RECORD_HEAD_CELL : `${RECORD_HEAD_CELL} text-end`}>
+                    {cell}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                <tr key={`${row[0]}-${rowIndex}`} className={RECORD_ROW}>
+                  {row.map((cell, index) =>
+                    index === 0 ? (
+                      <th key={index} scope="row" className={`${RECORD_CELL} text-start font-medium`}>
+                        {cell}
+                      </th>
+                    ) : index < textColumns ? (
+                      <td key={index} className={`${RECORD_CELL} text-ink-2`}>
+                        {cell}
+                      </td>
+                    ) : (
+                      <td key={index} className={`${RECORD_NUMBER_CELL} text-ink-2`}>
+                        {cell}
+                      </td>
+                    )
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </RecordSection>
+  );
+}
+
+function SpendByDay({ report }: { report: UsageReport }) {
+  const busiest = useMemo(() => report.byDay.reduce<UsageDayRow | null>((top, row) => ((money(row.costUsd) ?? 0) > (top ? (money(top.costUsd) ?? 0) : -1) ? row : top), null), [report]);
+  if (!busiest || report.byDay.length === 0) return null;
+  const peak = money(busiest.costUsd) ?? 0;
+  return (
+    <Figure number={1} title={`The busiest day was ${formatDate(busiest.day)}, at ${formatUsd(busiest.costUsd)}`} dek="Calls and spend per day in the period. Each bar is a day's spend against the busiest day.">
+      <ol className="grid gap-2">
+        {report.byDay.map((row) => {
+          const cost = money(row.costUsd) ?? 0;
+          return (
+            <li key={row.day} className="grid grid-cols-[5.5rem_minmax(0,1fr)_auto_auto] sm:grid-cols-[6.5rem_minmax(0,1fr)_6rem_5rem] items-center gap-3 font-ui text-label tabular-nums lining-nums">
+              <span className="text-ink-2">{formatDate(row.day)}</span>
+              <ProgressBar percent={peak > 0 ? (cost / peak) * 100 : 0} aria-hidden />
+              <span className="text-end text-ink-3">{`${formatCount(row.calls)} ${byCount(row.calls, "call", "calls")}`}</span>
+              <span className="text-end text-ink-1">{formatUsd(row.costUsd)}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </Figure>
+  );
+}
 
 export default function UsagePage() {
   const [period, setPeriod] = useState<RangeId>("month");
@@ -37,160 +147,38 @@ export default function UsagePage() {
       });
   }, [period, round]);
 
-  const share = report ? ceilingShare(report) : null;
-  const busiestDay = useMemo(() => Math.max(0, ...(report?.byDay ?? []).map((row) => money(row.costUsd) ?? 0)), [report]);
-
   return (
     <>
       <PageHeader
         title="Usage"
+        kicker="Admin"
         description="Model calls and spend."
-        icon={<BarChart3 className="h-5 w-5" aria-hidden />}
         actions={<SegmentedChoice label="Period" value={period} options={PERIODS} onChange={(next) => setPeriod(next as RangeId)} />}
       />
-
       {error ? (
-        <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <RecordNotice tone="error" className="mb-8" action={<Button variant="quiet" size="sm" onClick={() => setRound((value) => value + 1)}>Try again</Button>}>
           {error}
-          <button type="button" className="field-button-secondary min-h-8 px-3 py-1 text-xs" onClick={() => setRound((value) => value + 1)}>
-            <RotateCw className="h-3.5 w-3.5" aria-hidden />
-            Try again
-          </button>
-        </div>
+        </RecordNotice>
       ) : null}
-
       {report === null ? (
-        error ? null : <section className="panel p-6 text-sm text-ink-500">Loading…</section>
+        error ? null : <Skeleton shape="chart" label="Reading the usage" />
       ) : (
-        <div className="grid gap-4">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Stat label="Spend" value={formatUsd(report.spentUsd)} note={`${formatDate(report.from)} – ${formatDate(report.to)}`} />
-            <Stat label="Calls" value={formatCount(report.calls)} note={report.failures > 0 ? `${formatCount(report.failures)} failed` : "None failed"} />
-            {monthlyCeiling(report) === null ? (
-              <Stat label="This month" value={formatUsd(report.spentThisMonthUsd)} note="No monthly ceiling" />
-            ) : (
-              <CeilingPanel report={report} share={share} />
-            )}
-          </div>
-
+        <div className="grid gap-12">
+          <UsageStats report={report} />
+          <SpendByDay report={report} />
           <UsageTable
             title="By task"
-            empty="No calls in this period."
             head={["Task", "Calls", "Failed", "Tokens in", "Tokens out", "Spend"]}
-            rows={report.byTask.map((row) => [
-              row.label,
-              formatCount(row.calls),
-              formatCount(row.failures),
-              formatCount(row.inputTokens),
-              formatCount(row.outputTokens),
-              formatUsd(row.costUsd)
-            ])}
+            rows={report.byTask.map((row) => [row.label, formatCount(row.calls), formatCount(row.failures), formatCount(row.inputTokens), formatCount(row.outputTokens), formatUsd(row.costUsd)])}
           />
-
           <UsageTable
             title="By model"
-            empty="No calls in this period."
             head={["Model", "Provider", "Calls", "Failed", "p95", "Spend"]}
-            rows={report.byProvider.map((row) => [
-              row.model,
-              row.name,
-              formatCount(row.calls),
-              formatCount(row.failures),
-              row.p95LatencyMs === null ? "—" : `${(row.p95LatencyMs / 1000).toFixed(1)} s`,
-              formatUsd(row.costUsd)
-            ])}
+            textColumns={2}
+            rows={report.byProvider.map((row) => [row.model, row.name, formatCount(row.calls), formatCount(row.failures), row.p95LatencyMs === null ? "-" : `${(row.p95LatencyMs / 1000).toFixed(1)} s`, formatUsd(row.costUsd)])}
           />
-
-          {report.byDay.length > 0 ? (
-            <section className="panel p-5">
-              <h2 className="font-display font-bold text-ink-900">By day</h2>
-              <ol className="mt-3 grid gap-1.5">
-                {report.byDay.map((row) => {
-                  const cost = money(row.costUsd) ?? 0;
-                  return (
-                    <li key={row.day} className="grid grid-cols-[6.5rem_minmax(0,1fr)_5rem] items-center gap-3 text-xs">
-                      <span className="tabular-nums text-ink-500">{formatDate(row.day)}</span>
-                      <ProgressBar percent={busiestDay > 0 ? (cost / busiestDay) * 100 : 0} aria-hidden />
-                      <span className="text-right tabular-nums text-ink-700">{formatUsd(row.costUsd)}</span>
-                    </li>
-                  );
-                })}
-              </ol>
-            </section>
-          ) : null}
         </div>
       )}
     </>
-  );
-}
-
-function CeilingPanel({ report, share }: { report: UsageReport; share: number | null }) {
-  return (
-    <section className="panel p-5">
-      <p className="field-label">Monthly ceiling</p>
-      <p className="mt-2 font-display text-2xl font-bold tabular-nums text-ink-900">
-        {formatUsd(report.spentThisMonthUsd)} <span className="text-sm font-medium text-ink-500">of {formatUsd(report.ceilingUsd)}</span>
-      </p>
-      {share !== null ? (
-        <>
-          <ProgressBar
-            className="mt-3 h-2"
-            percent={share}
-            role="progressbar"
-            aria-label="Monthly ceiling used"
-            aria-valuenow={Math.round(share)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          />
-          <p className="mt-1.5 text-xs tabular-nums text-ink-500">{Math.round(share)}% used</p>
-        </>
-      ) : null}
-    </section>
-  );
-}
-
-function Stat({ label, value, note }: { label: string; value: string; note: string }) {
-  return (
-    <section className="panel p-5">
-      <p className="field-label">{label}</p>
-      <p className="mt-2 font-display text-2xl font-bold tabular-nums text-ink-900">{value}</p>
-      <p className="mt-1 text-xs text-ink-500">{note}</p>
-    </section>
-  );
-}
-
-function UsageTable({ title, head, rows, empty }: { title: string; head: string[]; rows: string[][]; empty: string }) {
-  return (
-    <section className="panel overflow-hidden">
-      <h2 className="border-b border-line-200 px-4 py-3 font-display font-bold text-ink-900">{title}</h2>
-      {rows.length === 0 ? (
-        <p className="px-4 py-5 text-sm text-ink-500">{empty}</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px] text-left text-sm">
-            <thead className="bg-surface-50 text-xs uppercase tracking-wide text-ink-500">
-              <tr>
-                {head.map((cell, index) => (
-                  <th key={cell} className={index === 0 ? "px-4 py-2.5" : "px-4 py-2.5 text-right"}>
-                    {cell}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line-200">
-              {rows.map((row, rowIndex) => (
-                <tr key={`${row[0]}-${rowIndex}`}>
-                  {row.map((cell, index) => (
-                    <td key={index} className={index === 0 ? "px-4 py-2.5 font-medium text-ink-900" : "px-4 py-2.5 text-right tabular-nums text-ink-700"}>
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
   );
 }

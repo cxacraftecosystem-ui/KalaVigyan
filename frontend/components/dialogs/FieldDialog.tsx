@@ -67,7 +67,7 @@ export function FieldDialog({
     <div
       data-field-dialog-overlay=""
       className="kv-overlay"
-      style={{ zIndex, paddingRight: "calc(1rem + var(--nav-scroll-gutter, 0px))" }}
+      style={{ zIndex, paddingInlineEnd: "calc(1rem + var(--nav-scroll-gutter, 0px))" }}
       onMouseDown={(event) => {
         if (event.target !== event.currentTarget) return;
         if (canDismiss && backdropCloses) onClose();

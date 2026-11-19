@@ -6,6 +6,7 @@ import { Children, isValidElement, useId, useMemo, useState, type ReactNode, typ
 import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown";
 import { FieldLabelProvider, FieldStateProvider, useFieldState, type FieldState } from "@/components/ui/fieldLabel";
 import { RequiredMark } from "@/components/ui/RequiredMark";
+import { cn } from "@/lib/utils";
 
 export function FieldMessages({ id, hint, error }: { id: string; hint?: ReactNode; error?: ReactNode }) {
   return (
@@ -100,12 +101,12 @@ function useFieldAria(props: { "aria-describedby"?: string; "aria-invalid"?: Rea
 
 export function TextInput(props: React.ComponentProps<"input">) {
   const aria = useFieldAria(props);
-  return <input {...props} {...aria} className={`field-input ${props.className ?? ""}`} />;
+  return <input {...props} {...aria} className={cn("kv-input", props.className)} />;
 }
 
 export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const aria = useFieldAria(props);
-  return <textarea {...props} {...aria} className={`field-input min-h-24 ${props.className ?? ""}`} />;
+  return <textarea {...props} {...aria} className={cn("kv-input min-h-24", props.className)} />;
 }
 
 function optionText(node: ReactNode): string {

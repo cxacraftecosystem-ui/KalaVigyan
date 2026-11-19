@@ -6,6 +6,8 @@ import { CalendarRange, FilterX, Search, X } from "lucide-react";
 
 import { CappedListNotice } from "@/components/data/CappedListNotice";
 import { CUT_NOTICE_LIVE_REGION } from "@/components/data/cappedList";
+import { ActionGroup } from "@/components/ui/ActionGroup";
+import { Button } from "@/components/ui/button";
 import { Dropdown, MultiSelectDropdown } from "@/components/ui/Dropdown";
 import {
   ACCESS_INSTITUTION_NOTE,
@@ -136,9 +138,9 @@ export function RosterFilterBar({
     <section
       role="search"
       aria-label={access ? "Filter the allow-list" : "Filter the designer roster"}
-      className={`mb-4 grid gap-3 ${className}`}
+      className={`grid gap-4 ${className}`}
     >
-      <div className="grid gap-2 sm:grid-cols-[1fr_18rem]">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_18rem] sm:items-end">
         <RosterSearchBox
           inputRef={searchRef}
           value={draft}
@@ -184,7 +186,7 @@ export function RosterFilterBar({
           label={rolesLabel}
           hint={
             access ? null : (
-              <p id={roleHintId} className="text-[11px] leading-4 text-ink-500">
+              <p id={roleHintId} className="font-ui text-caption text-ink-3">
                 {DESIGNER_ROLE_HINT}
               </p>
             )
@@ -228,7 +230,7 @@ export function RosterFilterBar({
 
         <fieldset className="min-w-0">
           <legend className="field-label inline-flex items-center gap-1.5">
-            <CalendarRange className="h-3.5 w-3.5" aria-hidden />
+            <CalendarRange className="size-3.5" aria-hidden />
             {ROSTER_LABELS.dateRange}
           </legend>
           <div className="mt-1 grid gap-2 sm:grid-cols-2">
@@ -278,14 +280,14 @@ export function RosterFilterBar({
       </div>
 
       {access ? (
-        <p className="text-[11px] leading-4 text-ink-500">{ACCESS_INSTITUTION_NOTE}</p>
+        <p className="font-ui text-caption text-ink-3">{ACCESS_INSTITUTION_NOTE}</p>
       ) : null}
 
       {filtered ? (
-        <div>
-          <button
-            type="button"
-            className="field-button-secondary min-h-8 px-3 py-1.5 text-xs"
+        <ActionGroup align="start">
+          <Button
+            variant="quiet"
+            size="sm"
             onClick={() => {
               clearTimer();
               pushed.current = "";
@@ -294,10 +296,10 @@ export function RosterFilterBar({
               searchRef.current?.focus();
             }}
           >
-            <FilterX className="h-3.5 w-3.5" aria-hidden />
+            <FilterX className="size-3.5" aria-hidden />
             {ROSTER_LABELS.clearAll}
-          </button>
-        </div>
+          </Button>
+        </ActionGroup>
       ) : null}
     </section>
   );
@@ -340,10 +342,7 @@ function RosterSearchBox({
 }) {
   return (
     <div className="relative">
-      <Search
-        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-300"
-        aria-hidden
-      />
+      <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" aria-hidden />
       <input
         ref={inputRef}
         type="text"
@@ -358,7 +357,7 @@ function RosterSearchBox({
             onSubmit();
           }
         }}
-        className="field-input pl-9 pr-9"
+        className="kv-input ps-10 pe-12"
       />
       {value ? (
         <button
@@ -366,9 +365,9 @@ function RosterSearchBox({
           aria-label="Clear search"
           title="Clear search"
           onClick={onClear}
-          className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-error-600 transition hover:bg-error-100"
+          className="kv-close absolute end-1 top-1/2 -translate-y-1/2"
         >
-          <X className="h-4 w-4" aria-hidden />
+          <X aria-hidden />
         </button>
       ) : null}
     </div>

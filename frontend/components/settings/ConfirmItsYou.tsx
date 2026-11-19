@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useGoogleNonce } from "@/components/auth/useGoogleNonce";
+import { ActionGroup } from "@/components/ui/ActionGroup";
+import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { googleClientId } from "@/lib/googleIdentity";
 import { beginSignIn, callbackErrorMessage, configuredOidcProviders, type OidcProvider } from "@/lib/oidcSignIn";
@@ -27,11 +29,11 @@ export function ConfirmItsYou({ provider, onProof, onError }: { provider: Confir
   const oidc = provider === "GOOGLE" ? null : (configuredOidcProviders().find((item) => item.id === provider) ?? null);
 
   return (
-    <div className="grid gap-2 rounded-md border border-line-200 bg-surface-50 p-3">
-      <p className="text-sm text-ink-700">{confirmPrompt(provider)}</p>
+    <div className="grid gap-3 rounded-card bg-sunk px-4 py-4">
+      <p className="font-ui text-ui font-normal text-ink-1">{confirmPrompt(provider)}</p>
       {google ? <GoogleConfirm onProof={onProof} onError={onError} /> : null}
       {oidc ? <ProviderConfirm provider={oidc} onError={onError} /> : null}
-      {!google && !oidc ? <p className="text-xs leading-5 text-ink-500">{NO_PROVIDER_HERE}</p> : null}
+      {!google && !oidc ? <p className="font-ui text-label text-ink-2">{NO_PROVIDER_HERE}</p> : null}
     </div>
   );
 }
@@ -54,9 +56,9 @@ function GoogleConfirm({ onProof, onError }: ConfirmEvents) {
         onLoadError={() => events.current.onError(GOOGLE_UNREACHABLE)}
       />
       {failed ? (
-        <button type="button" onClick={renew} className="w-full text-center text-xs font-medium text-purple-700 hover:underline dark:text-purple-300">
+        <Button variant="text" onClick={renew} className="justify-self-center">
           Retry Google sign-in
-        </button>
+        </Button>
       ) : null}
     </>
   );
@@ -77,10 +79,10 @@ function ProviderConfirm({ provider, onError }: { provider: OidcProvider; onErro
   }
 
   return (
-    <div>
-      <button type="button" className="field-button-secondary w-full" disabled={leaving} onClick={() => void leaveForProvider()}>
-        {leaving ? "Opening…" : `Continue with ${provider.label}`}
-      </button>
-    </div>
+    <ActionGroup fill>
+      <Button variant="quiet" busy={leaving} busyLabel="Opening" onClick={() => void leaveForProvider()}>
+        {`Continue with ${provider.label}`}
+      </Button>
+    </ActionGroup>
   );
 }

@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, KeyRound } from "lucide-react";
 
 import { useAuth } from "@/components/AuthProvider";
+import { RecordSection } from "@/components/records/RecordSection";
+import { NewPasswordFields, type PasswordDraft } from "@/components/settings/NewPasswordFields";
 import { TwoStepCodeEntry, type TwoStepCodeKind } from "@/components/TwoStepCodeEntry";
 import { ConfirmItsYou } from "@/components/settings/ConfirmItsYou";
+import { ActionGroup } from "@/components/ui/ActionGroup";
+import { Button } from "@/components/ui/button";
 import { isCompleteCode } from "@/components/ui/otpCode";
 import { isUnreachable } from "@/lib/failureTriage";
 import { CONFIRM_STATE_PREFIX, parseCallbackFragment } from "@/lib/oidcSignIn";
@@ -26,7 +29,6 @@ import {
 } from "@/lib/passwordChange";
 import {
   MAX_PASSWORD_LENGTH,
-  MIN_PASSWORD_LENGTH,
   type ProviderProof,
   changeOwnPassword,
   passwordRuleLine,
@@ -36,6 +38,7 @@ import {
 const CHANGED_HERE_ONLY = "Password changed. You are still signed in here; everywhere else, sign in with the new one.";
 const CHANGED = "Password changed. Use the new one the next time you sign in.";
 const PASSWORD_ADDED = "Password set. You can now sign in with your email address and this password too.";
+const NOTE_SHOWN = "rounded-card px-4 py-3 font-ui text-ui font-normal text-ink-1";
 
 export function ChangePasswordCard() {
   const { user, refreshMe } = useAuth();
@@ -77,6 +80,7 @@ export function ChangePasswordCard() {
   const settingFirst = canSetFirstPassword(user);
   const askCode = settingFirst && firstPasswordNeedsCode(user);
   const confirmWith = askedProvider ?? confirmProviderFor(user);
+  const draft: PasswordDraft = { next, confirm, show, onNext: setNext, onConfirm: setConfirm, onShow: setShow };
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -145,27 +149,21 @@ export function ChangePasswordCard() {
   }
 
   return (
-    <section ref={section} className="panel scroll-mt-28 p-5">
-      <div className="flex items-center gap-2.5">
-        <span className="grid h-8 w-8 place-items-center rounded-md bg-purple-950 text-purple-100">
-          <KeyRound className="h-4 w-4" aria-hidden />
-        </span>
-        <h2 className="font-display font-bold text-ink-900">{settingFirst ? "Set a password" : "Change password"}</h2>
-      </div>
-      <p className="mt-1.5 text-xs leading-5 text-ink-500">
-        {settingFirst
+    <RecordSection
+      ref={section}
+      className="scroll-mt-28"
+      title={settingFirst ? "Set a password" : "Change password"}
+      description={
+        settingFirst
           ? "You sign in with Google, Microsoft or Yahoo. Add a password to sign in with your email address as well."
-          : "The password you sign in with. You need the current one to choose another."}
-      </p>
-
-      <form onSubmit={submit} className="mt-3 grid max-w-md gap-3">
+          : "The password you sign in with. You need the current one to choose another."
+      }
+      testId="change-password"
+    >
+      <form onSubmit={submit} className="grid max-w-md gap-4">
         <input type="text" name="username" autoComplete="username" value={user.email} readOnly hidden />
 
-        <div
-          role="alert"
-          aria-live="assertive"
-          className={error ? "rounded-md border border-red-200 bg-error-100 px-3 py-2 text-sm text-error-600" : "sr-only"}
-        >
+        <div role="alert" aria-live="assertive" className={error ? `${NOTE_SHOWN} bg-error-wash` : "sr-only"}>
           {error ?? ""}
         </div>
         {settingFirst && !proof ? (
@@ -179,110 +177,56 @@ export function ChangePasswordCard() {
             onError={setError}
           />
         ) : null}
-        <p
-          role="status"
-          aria-live="polite"
-          className={changed ? "rounded-md border border-line-200 bg-surface-50 px-3 py-2 text-sm text-ink-700" : "sr-only"}
-        >
+        <p role="status" aria-live="polite" className={changed ? `${NOTE_SHOWN} bg-sunk` : "sr-only"}>
           {changed ?? ""}
         </p>
 
         {settingFirst ? null : (
-        <div>
-          <label htmlFor="settings-current-password" className="field-label">
-            Current password
-          </label>
-          <input
-            id="settings-current-password"
-            ref={currentBox}
-            type={show ? "text" : "password"}
-            autoComplete="current-password"
-            required
-            maxLength={MAX_PASSWORD_LENGTH}
-            value={current}
-            onChange={(event) => setCurrent(event.target.value)}
-            className="field-input mt-1.5"
-          />
-        </div>
+          <div className="grid gap-1.5">
+            <label htmlFor="settings-current-password" className="field-label">
+              Current password
+            </label>
+            <input
+              id="settings-current-password"
+              ref={currentBox}
+              type={show ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              maxLength={MAX_PASSWORD_LENGTH}
+              value={current}
+              onChange={(event) => setCurrent(event.target.value)}
+              className="kv-input"
+            />
+          </div>
         )}
 
         {settingFirst && !proof ? null : (
-        <>
-        <div>
-          <label htmlFor="settings-new-password" className="field-label">
-            New password
-          </label>
-          <div className="relative mt-1.5">
-            <input
-              id="settings-new-password"
-              type={show ? "text" : "password"}
-              autoComplete="new-password"
-              required
-              minLength={MIN_PASSWORD_LENGTH}
-              maxLength={MAX_PASSWORD_LENGTH}
-              value={next}
-              onChange={(event) => setNext(event.target.value)}
-              className="field-input pr-11"
-            />
-            <button
-              type="button"
-              aria-label={show ? "Hide passwords" : "Show passwords"}
-              aria-pressed={show}
-              onClick={() => setShow((value) => !value)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-ink-300 hover:text-ink-500"
-            >
-              {show ? <EyeOff size={20} aria-hidden /> : <Eye size={20} aria-hidden />}
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="settings-confirm-password" className="field-label">
-            Repeat password
-          </label>
-          <input
-            id="settings-confirm-password"
-            type={show ? "text" : "password"}
-            autoComplete="new-password"
-            required
-            minLength={MIN_PASSWORD_LENGTH}
-            maxLength={MAX_PASSWORD_LENGTH}
-            value={confirm}
-            onChange={(event) => setConfirm(event.target.value)}
-            className="field-input mt-1.5"
-          />
-        </div>
-
-        {askCode ? (
-          <div className="grid gap-1">
-            <TwoStepCodeEntry
-              idPrefix="settings-two-factor"
-              kind={codeKind}
-              onKindChange={setCodeKind}
-              value={code}
-              onChange={setCode}
-              allowRecovery
-              totpLabel="Code from your authenticator app"
-              totpHint="Two-step verification is on for your account."
-              error={codeErrorKey > 0 && !code}
-              errorKey={codeErrorKey}
-              disabled={saving}
-            />
-          </div>
-        ) : null}
-
-        <p className="text-xs leading-5 text-ink-500">
-          {passwordRuleLine(settingFirst ? FIRST_PASSWORD_NOTE : PASSWORD_CHANGE_SESSIONS)}
-        </p>
-
-        <div>
-          <button type="submit" className="field-button" disabled={saving}>
-            {saving ? "Saving…" : settingFirst ? "Set password" : "Change password"}
-          </button>
-        </div>
-        </>
+          <>
+            <NewPasswordFields draft={draft} />
+            {askCode ? (
+              <TwoStepCodeEntry
+                idPrefix="settings-two-factor"
+                kind={codeKind}
+                onKindChange={setCodeKind}
+                value={code}
+                onChange={setCode}
+                allowRecovery
+                totpLabel="Code from your authenticator app"
+                totpHint="Two-step verification is on for your account."
+                error={codeErrorKey > 0 && !code}
+                errorKey={codeErrorKey}
+                disabled={saving}
+              />
+            ) : null}
+            <p className="font-ui text-label text-ink-3">{passwordRuleLine(settingFirst ? FIRST_PASSWORD_NOTE : PASSWORD_CHANGE_SESSIONS)}</p>
+            <ActionGroup align="start">
+              <Button type="submit" variant="primary" busy={saving} busyLabel="Saving">
+                {settingFirst ? "Set password" : "Change password"}
+              </Button>
+            </ActionGroup>
+          </>
         )}
       </form>
-    </section>
+    </RecordSection>
   );
 }
