@@ -24,16 +24,12 @@ export type EntryHandlers = {
 function Standing({ entry }: { entry: AccessRosterEntry }) {
   if (entry.status === "ACTIVE") {
     return (
-      <StatusBadge tone="success" note={entry.admitRole ? `as ${roleLabel(entry.admitRole)}` : "with the default role"}>
-        May sign in
-      </StatusBadge>
+      <StatusBadge tone="success" note={entry.admitRole ? `as ${roleLabel(entry.admitRole)}` : "with the default role"} label="May sign in" />
     );
   }
-  if (entry.status === "PENDING") return <StatusBadge tone="waiting">Waiting for a decision</StatusBadge>;
+  if (entry.status === "PENDING") return <StatusBadge tone="waiting" label="Waiting for a decision" />;
   return (
-    <StatusBadge tone="error" note={entry.decidedAt ? `since ${formatDate(entry.decidedAt)}` : "date not recorded"}>
-      {entry.status === "REJECTED" ? "Refused" : "Suspended"}
-    </StatusBadge>
+    <StatusBadge tone="error" note={entry.decidedAt ? `since ${formatDate(entry.decidedAt)}` : "date not recorded"} label={entry.status === "REJECTED" ? "Refused" : "Suspended"} />
   );
 }
 

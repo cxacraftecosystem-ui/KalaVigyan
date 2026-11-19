@@ -67,7 +67,7 @@ function UserRow({ viewer, account, busy, on }: { viewer: User | null; account: 
         {roleLabel(account.role)}
         {guardianConsentMissing(account) ? (
           <span className="mt-1 block">
-            <StatusBadge tone="warning">Guardian consent not confirmed</StatusBadge>
+            <StatusBadge tone="warning" label="Guardian consent not confirmed" />
           </span>
         ) : null}
       </td>
@@ -77,7 +77,7 @@ function UserRow({ viewer, account, busy, on }: { viewer: User | null; account: 
         {account.firstLoginAt ? <span className={RECORD_NOTE}>First {formatDateTime(account.firstLoginAt)}</span> : null}
       </td>
       <td className={RECORD_CELL}>
-        <StatusBadge tone={suspended ? "error" : "success"}>{STANDING_LABEL[accountStanding(account)]}</StatusBadge>
+        <StatusBadge tone={suspended ? "error" : "success"} label={STANDING_LABEL[accountStanding(account)]} />
       </td>
       <td className={RECORD_CELL}>
         <UserActions viewer={viewer} account={account} busy={busy} on={on} />

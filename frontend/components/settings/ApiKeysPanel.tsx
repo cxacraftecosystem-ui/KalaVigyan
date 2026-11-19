@@ -43,14 +43,10 @@ function KeyRow({ secret, testing, on }: { secret: ManagedSecret; testing: boole
       </th>
       <td className={`${RECORD_CELL} font-code text-label text-ink-2`}>{maskedValue(secret)}</td>
       <td className={RECORD_CELL}>
-        <StatusBadge tone={source.tone} note={secret.overrideUnreadable ? "Unreadable, so not in use. Enter it again or clear it." : source.help}>
-          {source.label}
-        </StatusBadge>
+        <StatusBadge tone={source.tone} note={secret.overrideUnreadable ? "Unreadable, so not in use. Enter it again or clear it." : source.help} label={source.label} />
       </td>
       <td className={RECORD_CELL}>
-        <StatusBadge tone={status.tone} note={secret.lastCheckedAt ? `Checked ${formatDateTime(secret.lastCheckedAt)}` : "Never tested"}>
-          {status.label}
-        </StatusBadge>
+        <StatusBadge tone={status.tone} note={secret.lastCheckedAt ? `Checked ${formatDateTime(secret.lastCheckedAt)}` : "Never tested"} label={status.label} />
         {secret.lastError ? <span className={`${RECORD_NOTE} max-w-56 text-error`}>{secret.lastError}</span> : null}
       </td>
       <td className={RECORD_CELL}>

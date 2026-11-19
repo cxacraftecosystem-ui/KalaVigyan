@@ -32,7 +32,7 @@ function ToolRow({ tool, waiting }: { tool: HubTool; waiting: number }) {
         <span className="font-ui text-label text-ink-2">{tool.note}</span>
         {waiting > 0 ? (
           <span className="col-span-2 mt-1">
-            <StatusBadge tone="waiting">{`${waiting} ${byCount(waiting, "request", "requests")} waiting`}</StatusBadge>
+            <StatusBadge tone="waiting" label={`${waiting} ${byCount(waiting, "request", "requests")} waiting`} />
           </span>
         ) : null}
       </Link>

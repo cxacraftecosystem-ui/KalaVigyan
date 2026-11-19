@@ -64,7 +64,7 @@ export default function TestimonyReviewPage() {
             ) : (
               <li key={item.id} className="flex flex-wrap items-baseline justify-between gap-3 border-t border-rule pt-4">
                 <span className="font-ui text-h4 text-ink-1">{item.craft.name}</span>
-                <StatusBadge tone={DECIDED_TONE[item.status]}>{STATUS_LABELS[item.status]}</StatusBadge>
+                <StatusBadge tone={DECIDED_TONE[item.status]} label={STATUS_LABELS[item.status]} />
               </li>
             )
           )}

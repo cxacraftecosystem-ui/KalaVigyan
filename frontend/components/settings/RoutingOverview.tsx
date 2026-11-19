@@ -29,7 +29,7 @@ export function RoutingOverview({ tasks }: { tasks: TaskRoute[] }) {
                 <th scope="row" className={`${RECORD_CELL} text-start font-ui text-ui font-medium text-ink-1`}>
                   {task.label}
                 </th>
-                <td className={`${RECORD_CELL} text-ink-2`}>{task.effectiveChain.length > 0 ? task.effectiveChain.join(" → ") : <StatusBadge tone="error">No working model</StatusBadge>}</td>
+                <td className={`${RECORD_CELL} text-ink-2`}>{task.effectiveChain.length > 0 ? task.effectiveChain.join(" → ") : <StatusBadge tone="error" label="No working model" />}</td>
                 <td className={RECORD_NUMBER_CELL}>{`${task.routes.filter((route) => route.enabled).length} of ${task.routes.length}`}</td>
               </tr>
             ))}

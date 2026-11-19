@@ -51,9 +51,7 @@ function RouteItem({ row, index, count, names, on }: { row: RouteRow; index: num
           <span className="font-ui text-h4 text-ink-1">{model}</span>
           <span className="font-ui text-label text-ink-3">{names.provider(row)}</span>
         </p>
-        <StatusBadge tone={state.tone} note={row.testedAt ? `Tested ${formatDateTime(row.testedAt)}` : undefined}>
-          {state.label}
-        </StatusBadge>
+        <StatusBadge tone={state.tone} note={row.testedAt ? `Tested ${formatDateTime(row.testedAt)}` : undefined} label={state.label} />
         {row.testError ? <p className="font-ui text-label text-error">{row.testError}</p> : null}
         <ToggleSwitch label="Use this model" showLabel checked={row.enabled} onChange={(next) => on.onEnable(row, next)} />
       </div>
