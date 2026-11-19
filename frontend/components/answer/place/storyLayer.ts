@@ -1,8 +1,9 @@
 import type { StoryGeometry } from "@/components/answer/place/storyGeometry";
-import { choroplethTone } from "@/components/map/ChoroplethLegend";
 import { NO_DATA_TONE, type DistrictFill } from "@/components/map/DistrictLayer";
+import { rampFill } from "@/components/map/rampFills";
 import type { DistrictShape } from "@/components/map/shapeGeometry";
 import { layerInView } from "@/lib/layerClasses";
+import { layerRamp, rampStep } from "@/lib/mapRamps";
 import type { MapLayer } from "@/lib/regionContract";
 import { layerFills } from "@/lib/regionView";
 
@@ -15,9 +16,10 @@ export function storyLayerInView(geometry: StoryGeometry, layer: MapLayer): MapL
 
 export function shownLayerFill(shown: MapLayer): DistrictFill {
   const fills = layerFills(shown);
+  const ramp = layerRamp(shown.layer);
   return (shape: DistrictShape) => {
     const index = fills.get(shape.lgd);
-    return index === undefined ? NO_DATA_TONE : choroplethTone(index, shown.classes.length);
+    return index === undefined ? NO_DATA_TONE : rampFill(ramp, rampStep(index, shown.classes.length));
   };
 }
 

@@ -18,8 +18,10 @@ import { blockCitations, blockSentences, blockSourceIds, explainerSourceNumbers 
 import { materialRoleText } from "@/lib/processView";
 import {
   carriedKeys,
+  changeMotion,
   colourChange,
   colourChangeLine,
+  DYE_FILL,
   PLAYBACK_START,
   playable,
   playbackStep,
@@ -147,10 +149,22 @@ test("each step shows its stage, the conditions and colours its sources state, a
   expect(html).toContain("At first bright green, the cloth rapidly becomes blue");
   expect(attribute(html, "step-condition", "data-testid")).toHaveLength(2);
   expect(html).toContain("Fermenting the iron paste");
-  expect(html).toContain(": ten to fifteen days");
+  expect(html).toContain(">ten to fifteen days");
   expect(attribute(html, "step-why", "data-testid")).toHaveLength(4);
   expect(html.match(/data-testid="answer-sentence"/g)).toHaveLength(12);
   expect(html).toContain("Redox · Indigo dyeing (kun me burana)");
+});
+
+test("a stated colour is drawn as its depicted material, green turning blue oxidises from the top and other changes dip", () => {
+  const [, , oxidation, lake] = player().steps;
+  expect(changeMotion(colourChange(oxidation)!)).toBe("oxidise");
+  expect(changeMotion(colourChange(lake)!)).toBe("dip");
+  expect([DYE_FILL.BLUE, DYE_FILL.GREEN, DYE_FILL.BLACK, DYE_FILL.RED]).toEqual(["var(--dye-indigo)", "var(--dye-leuco)", "var(--dye-kut)", "var(--dye-madder-bright)"]);
+  const tokens = readFileSync(join(FRONTEND, "app", "tokens.css"), "utf8");
+  for (const fill of Object.values(DYE_FILL)) for (const name of fill.match(/--dye-[a-z-]+/g) ?? []) expect(tokens, name).toContain(`${name}:`);
+  const html = withReading(createElement(ReactionPlayerView, { block: player(), reduce: true }));
+  expect(attribute(html, "step-cloth", "data-motion")).toEqual(["oxidise", "dip"]);
+  expect(html).not.toContain("opacity:0");
 });
 
 test("a colour change reads before and after, and the species one step makes for the next is the intermediate", () => {

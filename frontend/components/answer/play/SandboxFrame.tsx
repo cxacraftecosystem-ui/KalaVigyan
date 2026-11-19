@@ -25,7 +25,7 @@ export function SandboxFrame({ block }: { block: Pick<SimulationBlock, "title" |
       sandbox={SANDBOX_ATTRIBUTE}
       srcDoc={srcDoc}
       title={block.title}
-      className="block w-full min-w-0 max-w-full rounded-md border border-line-200 bg-white"
+      className="block w-full min-w-0 max-w-full rounded-plate border border-rule bg-white"
       style={{ height }}
       data-testid="sandbox-frame"
     />

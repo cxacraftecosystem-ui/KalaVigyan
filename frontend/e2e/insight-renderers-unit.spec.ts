@@ -5,7 +5,8 @@ import { BLOCK_RENDERERS } from "@/components/answer/blockRenderers";
 import { ClimateRiskView } from "@/components/answer/insight/ClimateRiskView";
 import { MarketGiView } from "@/components/answer/insight/MarketGiView";
 import { MeasureView } from "@/components/answer/insight/MeasureView";
-import { groundwaterReading, niceCeiling, TREND_SIGNIFICANCE, trendBar, trendGroups } from "@/lib/climateView";
+import { matchingTrend, median, seriesDomain, seriesPoints, theilSenIntercept, trendLine } from "@/lib/climateSeries";
+import { groundwaterReading, niceCeiling, TREND_SIGNIFICANCE, trendBar, trendFinding, trendGroups } from "@/lib/climateView";
 import { BLOCK_SHAPES } from "@/lib/explainerContract";
 import type { ClimateRiskBlock, MarketGiBlock, MeasureBlock } from "@/lib/explainerInsight";
 import { blockCitations, blockSentences } from "@/lib/explainerView";
@@ -172,8 +173,48 @@ test("a climate trend is drawn as its slope per decade from zero, with its signi
   for (const sentence of block.meaning) expect(text(html)).toContain(sentence.text);
   expect(html.match(/data-testid="citation-chip"/g)).toHaveLength(2);
   expect(attribute(html, "trend-bar", "style").join("")).not.toContain("scaleX(0)");
+  expect(text(html)).toContain("Rainfall in Kachchh has risen by 70.76 mm/year per decade");
   const moving = withReading(createElement(ClimateRiskView, { block, reduce: false }));
-  expect(attribute(moving, "trend-bar", "style").join("")).toContain("scaleX(0)");
+  expect(moving).toBe(html);
+});
+
+test("a trend chart titles its finding: one district's rise or fall, or how many districts moved significantly", () => {
+  const block = warmingClimate();
+  const [temperature] = trendGroups(block.trends).filter((group) => group.variable === "annual_mean_temperature");
+  expect(trendFinding(temperature)).toBe("Mean temperature in Kachchh shows no significant trend");
+  const rain = trendGroups(climate().trends)[0];
+  const twoDistricts = { ...rain, trends: [rain.trends[0], { ...rain.trends[0], district: { ...KACHCHH, districtLgd: 450, name: "Banaskantha" }, slopePerDecade: 12, significant: false }] };
+  expect(trendFinding(twoDistricts)).toBe("Rainfall has risen significantly in 1 of 2 districts");
+  const none = { ...rain, trends: twoDistricts.trends.map((trend) => ({ ...trend, significant: false })) };
+  expect(trendFinding(none)).toBe("Rainfall shows no significant trend in any of the 2 districts");
+});
+
+test("an annual series draws its Theil–Sen line through the median residual, on an axis from zero for rain", () => {
+  expect(median([3, 1, 2])).toBe(2);
+  expect(median([4, 1, 3, 2])).toBe(2.5);
+  expect(() => median([])).toThrow(RangeError);
+  const points = [
+    { year: 2000, value: 10 },
+    { year: 2001, value: 12 },
+    { year: 2002, value: 30 },
+    { year: 2003, value: 16 }
+  ];
+  expect(theilSenIntercept(points, 2)).toBe(-3990);
+  expect(trendLine(points, { slopePerDecade: 20 })).toEqual({ from: { year: 2000, value: 10 }, to: { year: 2003, value: 16 } });
+  expect(seriesDomain([69.47, 843.67], true)).toEqual({ low: 0, high: 1000, ticks: [0, 500, 1000] });
+  expect(seriesDomain([26.06, 27.97], false)).toEqual({ low: 26, high: 28, ticks: [26, 27, 28] });
+  const series = { district: KACHCHH, variable: "annual_precipitation" as const, datasetCode: "CHIRPS_3_0", unit: "mm/year", firstYear: 1981, values: [500, null, 520] };
+  expect(seriesPoints(series)).toEqual([
+    { year: 1981, value: 500 },
+    { year: 1983, value: 520 }
+  ]);
+  expect(matchingTrend(series, climate().trends)?.slopePerDecade).toBe(70.760167);
+  expect(matchingTrend({ ...series, variable: "annual_mean_temperature" }, climate().trends)).toBeNull();
+  const drawn = withReading(createElement(ClimateRiskView, { block: { ...climate(), series: [series] } }));
+  expect(attribute(drawn, "trend-series", "data-variable")).toEqual(["annual_precipitation"]);
+  expect(attribute(drawn, "trend-series-trend", "data-testid")).toHaveLength(1);
+  expect(text(drawn)).toContain("1983 · 520 mm/year");
+  expect(text(drawn)).toContain("All 2 values");
 });
 
 test("trends are grouped by variable in a fixed order, and groundwater is shown only where a dataset gives it", () => {

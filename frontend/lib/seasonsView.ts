@@ -34,3 +34,13 @@ export function rainShares(rain: MonthlyRain): number[] {
 export function monthReading(rain: MonthlyRain, month: number): string {
   return `${MONTH_NAMES[month - 1]} · ${rainText(rain.millimetres[month - 1])}`;
 }
+
+export function annualRain(rain: MonthlyRain): number {
+  return rain.millimetres.reduce((total, value) => total + value, 0);
+}
+
+export function rainfallFinding(rain: MonthlyRain): string {
+  const wettest = wettestMonth(rain);
+  const month = MONTH_NAMES[wettest - 1];
+  return `${month} is the wettest month in ${rain.district.name}: ${rainText(rain.millimetres[wettest - 1])} of a ${rainText(annualRain(rain))} year`;
+}

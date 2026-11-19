@@ -17,7 +17,7 @@ export function StripLine({ label, children, className }: { label: ReactNode; ch
 export function MonthHeader() {
   return (
     <StripLine label={null}>
-      <div aria-hidden className={cn(MONTH_GRID, "text-center text-[11px] font-semibold text-ink-500")} data-testid="month-header">
+      <div aria-hidden className={cn(MONTH_GRID, "text-center font-ui text-caption text-ink-3 [font-variant-numeric:lining-nums_tabular-nums]")} data-testid="month-header">
         {MONTHS.map((month) => (
           <span key={month}>{monthInitial(month)}</span>
         ))}

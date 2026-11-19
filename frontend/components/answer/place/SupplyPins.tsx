@@ -2,10 +2,16 @@
 
 import { useMemo, useState } from "react";
 
+import { AnswerFigure } from "@/components/answer/place/AnswerFigure";
+import { AnswerMapSource } from "@/components/answer/place/AnswerMapSource";
 import { IndiaMap } from "@/components/map/IndiaMap";
 import type { MapPoint } from "@/components/map/layout";
-import { MapAttribution } from "@/components/map/MapAttribution";
+import { listText } from "@/lib/format";
 import type { PlacedOrigin } from "@/lib/supplyView";
+
+export function supplyTitle(origins: readonly PlacedOrigin[]): string {
+  return listText([...new Set(origins.map((origin) => origin.origin))]);
+}
 
 export function SupplyPins({ origins }: { origins: readonly PlacedOrigin[] }) {
   const [hovered, setHovered] = useState<string | null>(null);
@@ -24,17 +30,10 @@ export function SupplyPins({ origins }: { origins: readonly PlacedOrigin[] }) {
       })),
     [origins]
   );
+  const texts = { title: supplyTitle(origins), source: <AnswerMapSource boundary={null} districts={false} coordinates /> };
   return (
-    <figure className="min-w-0" data-testid="supply-pins">
-      <IndiaMap
-        points={points}
-        hoveredKey={hovered}
-        selectedKey={pinned}
-        onHover={setHovered}
-        onSelect={(key) => setPinned((current) => (current === key ? null : key))}
-      />
-      <p className="mt-2 text-[11px] leading-4 text-ink-500">Coordinates: Wikidata</p>
-      <MapAttribution />
-    </figure>
+    <AnswerFigure texts={texts} data-testid="supply-pins">
+      <IndiaMap points={points} hoveredKey={hovered} selectedKey={pinned} onHover={setHovered} onSelect={(key) => setPinned((current) => (current === key ? null : key))} />
+    </AnswerFigure>
   );
 }

@@ -31,20 +31,26 @@ export const COLOUR_LABEL: Record<ColourWord, string> = {
   MAROON: "Maroon"
 };
 
-export const DYE_SWATCH: Record<ColourWord, string> = {
-  RED: "bg-dye-red",
-  BLUE: "bg-dye-blue",
-  BLACK: "bg-dye-black",
-  WHITE: "bg-dye-white",
-  GREEN: "bg-dye-green",
-  YELLOW: "bg-dye-yellow",
-  BROWN: "bg-dye-brown",
-  GREY: "bg-dye-grey",
-  PINK: "bg-dye-pink",
-  PURPLE: "bg-dye-purple",
-  ORANGE: "bg-dye-orange",
-  MAROON: "bg-dye-maroon"
+export const DYE_FILL: Record<ColourWord, string> = {
+  RED: "var(--dye-madder-bright)",
+  BLUE: "var(--dye-indigo)",
+  BLACK: "var(--dye-kut)",
+  WHITE: "var(--dye-cloth)",
+  GREEN: "var(--dye-leuco)",
+  YELLOW: "var(--dye-harda)",
+  BROWN: "var(--dye-mud)",
+  GREY: "var(--dye-lime-edge)",
+  PINK: "var(--dye-pink)",
+  PURPLE: "color-mix(in srgb, var(--dye-madder) 55%, var(--dye-indigo))",
+  ORANGE: "var(--dye-kesari)",
+  MAROON: "var(--dye-madder)"
 };
+
+export type ChangeMotion = "oxidise" | "dip";
+
+export function changeMotion(change: ColourChange): ChangeMotion {
+  return change.before?.colour === "GREEN" && change.after?.colour === "BLUE" ? "oxidise" : "dip";
+}
 
 function stepIndex(index: number, count: number): number {
   return Math.min(Math.max(0, Math.trunc(index)), Math.max(0, count - 1));

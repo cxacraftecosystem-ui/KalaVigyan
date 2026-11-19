@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ExternalLink, TriangleAlert } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 
 import { ChemEquation } from "@/components/answer/ChemEquation";
 import { CitedText } from "@/components/answer/ProseBlockView";
@@ -9,80 +9,82 @@ import type { MaterialCardBlock } from "@/lib/explainerMatter";
 import { materialRoleText, pubchemHref } from "@/lib/processView";
 import { wikidataUrl } from "@/lib/supplyView";
 
-const OUTBOUND = "inline-flex items-center gap-0.5 text-xs font-semibold text-purple-700 underline-offset-2 hover:underline dark:text-purple-300";
-
 function Outbound({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className={OUTBOUND}>
+    <a href={href} target="_blank" rel="noopener noreferrer" className="kv-link w-fit font-ui text-caption">
       {children}
-      <ExternalLink className="h-3 w-3" aria-hidden />
-      <span className="sr-only">(opens in a new tab)</span>
+      <span className="sr-only"> (opens in a new tab)</span>
     </a>
   );
 }
 
-function Tile({ label, children }: { label: string; children: ReactNode }) {
+function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="grid min-w-0 content-start gap-1 rounded-md border border-line-200 bg-surface-50 p-3" data-testid="material-tile">
-      <span className="field-label">{label}</span>
-      {children}
+    <div className="grid min-w-0 content-start gap-1 border-b border-rule py-3" data-testid="material-tile">
+      <dt className="font-ui text-label text-ink-3">{label}</dt>
+      <dd className="grid min-w-0 gap-1">{children}</dd>
     </div>
   );
 }
 
-function MaterialTiles({ block }: { block: MaterialCardBlock }) {
+function MaterialFacts({ block }: { block: MaterialCardBlock }) {
   const role = materialRoleText(block.role, block.materialKind);
   const pubchem = pubchemHref(block.pubchemCid);
   if (!block.formula && !role) return null;
   return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-[repeat(2,minmax(0,1fr))]">
+    <dl className="grid min-w-0 grid-cols-[minmax(0,1fr)] border-t border-ink-1 sm:grid-cols-[repeat(2,minmax(0,1fr))] sm:gap-x-8">
       {block.formula ? (
-        <Tile label="Formula">
-          <ChemEquation equation={block.formula} display={false} label={block.formula} className="text-base" />
+        <Fact label="Formula">
+          <ChemEquation equation={block.formula} display={false} label={block.formula} className="text-body" />
           {pubchem ? <Outbound href={pubchem}>PubChem</Outbound> : null}
-        </Tile>
+        </Fact>
       ) : null}
       {role ? (
-        <Tile label="Role">
-          <span className="text-sm font-medium text-ink-900">{role}</span>
-        </Tile>
+        <Fact label="Role">
+          <span className="font-ui text-ui-lg text-ink-1">{role}</span>
+        </Fact>
       ) : null}
-    </div>
+    </dl>
   );
 }
 
 function Handling({ block }: { block: MaterialCardBlock }) {
   if (block.handling.length === 0) return null;
   return (
-    <div className="grid min-w-0 gap-1.5 rounded-md border border-amber-500/40 p-3" data-testid="material-handling">
-      <span className="inline-flex w-fit items-center gap-1 rounded-full border border-amber-500/30 bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-        <TriangleAlert className="h-3 w-3" aria-hidden />
+    <div className="grid min-w-0 gap-1.5 border-s-2 border-madder bg-madder-wash px-4 py-3" data-testid="material-handling">
+      <p className="inline-flex items-center gap-1.5 font-ui text-label font-semibold text-madder">
+        <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden />
         Handling
-      </span>
-      <CitedText id={`${block.id}-handling`} sentences={block.handling} className="text-sm leading-7 text-ink-700" />
+      </p>
+      <CitedText id={`${block.id}-handling`} sentences={block.handling} className="max-w-measure font-reading text-body-sm text-ink-1" />
     </div>
+  );
+}
+
+function LocalNames({ block }: { block: MaterialCardBlock }) {
+  if (block.localNames.length === 0 && !block.wikidataId) return null;
+  return (
+    <p className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5 font-ui text-ui font-normal text-ink-2" data-testid="material-local-names">
+      {block.localNames.length > 0 ? (
+        <span className="min-w-0 break-words font-reading italic">
+          <span className="sr-only">Local names: </span>
+          {block.localNames.join(" · ")}
+        </span>
+      ) : null}
+      {block.wikidataId ? <Outbound href={wikidataUrl(block.wikidataId)}>Wikidata</Outbound> : null}
+    </p>
   );
 }
 
 export function MaterialCardView({ block }: { block: MaterialCardBlock }) {
   return (
-    <article className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 rounded-lg border border-line-200 bg-card p-4 sm:p-5" data-testid="material-card">
+    <article className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4" data-testid="material-card">
       <header className="min-w-0">
-        <h3 className="break-words font-display text-lg font-bold text-ink-900">{block.name}</h3>
-        {block.localNames.length > 0 || block.wikidataId ? (
-          <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-ink-500" data-testid="material-local-names">
-            {block.localNames.length > 0 ? (
-              <span className="min-w-0 break-words">
-                <span className="sr-only">Local names: </span>
-                {block.localNames.join(" · ")}
-              </span>
-            ) : null}
-            {block.wikidataId ? <Outbound href={wikidataUrl(block.wikidataId)}>Wikidata</Outbound> : null}
-          </p>
-        ) : null}
+        <h3 className="break-words font-reading text-h3 text-ink-1">{block.name}</h3>
+        <LocalNames block={block} />
       </header>
-      <MaterialTiles block={block} />
-      <CitedText id={`${block.id}-facts`} sentences={block.facts} className="text-sm leading-7 text-ink-700" />
+      <MaterialFacts block={block} />
+      <CitedText id={`${block.id}-facts`} sentences={block.facts} className="max-w-measure font-reading text-body text-ink-1" />
       <Handling block={block} />
     </article>
   );

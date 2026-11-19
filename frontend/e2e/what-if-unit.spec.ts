@@ -68,12 +68,11 @@ test("an option with no cited outcome is shown as Unknown and given none", () =>
   expect(html).not.toContain('data-testid="citation-chip"');
 });
 
-test("reduced motion swaps the outcomes in place with no motion and the same content", () => {
+test("the outcomes swap in place with no motion, so reduced motion draws the same lab", () => {
   const moving = lab(whatIf(), false);
   const still = lab(whatIf(), true);
-  expect(attribute(moving, "what-if-outcomes", "data-motion")).toEqual(["swap"]);
-  expect(attribute(still, "what-if-outcomes", "data-motion")).toEqual(["none"]);
-  expect(still.replace('data-motion="none"', "")).toBe(moving.replace('data-motion="swap"', ""));
+  expect(moving).not.toContain("data-motion");
+  expect(still).toBe(moving);
 });
 
 test("the play blocks join the answer's one numbering: values by their citations, outcomes by their sentences", () => {

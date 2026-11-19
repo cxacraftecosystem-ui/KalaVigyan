@@ -80,6 +80,11 @@ export function storySummary(block: RegionStoryBlock): string {
   return block.river ? `${riverLabel(block)} from its source to its outlet, with ${places}.` : `${places}.`;
 }
 
+export function storyTitle(block: RegionStoryBlock): string {
+  const places = listText(block.districts.map((district) => district.name));
+  return block.river?.name ? `${block.river.name} and ${places}` : places;
+}
+
 export function districtLine(block: RegionStoryBlock, lgd: number | null): string | null {
   const district = lgd === null ? undefined : block.districts.find((entry) => entry.districtLgd === lgd);
   return district ? `${district.name} · ${district.stateName}` : null;

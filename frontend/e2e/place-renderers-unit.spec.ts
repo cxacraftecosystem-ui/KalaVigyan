@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
 import { motionValue } from "framer-motion";
-import { createElement, useRef } from "react";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { BLOCK_RENDERERS } from "@/components/answer/blockRenderers";
@@ -11,11 +11,14 @@ import { MapLayerBlockView } from "@/components/answer/place/MapLayerBlockView";
 import { RegionStory } from "@/components/answer/place/RegionStory";
 import { RiverStage, type StageFocus } from "@/components/answer/place/RiverStage";
 import { SeasonsStrip } from "@/components/answer/place/SeasonsStrip";
-import { storyGeometry, storyTone, type StoryGeometry } from "@/components/answer/place/storyGeometry";
+import { boxesMeet, saltInView, storyGeometry, storyTone, type StoryGeometry } from "@/components/answer/place/storyGeometry";
+import { PLACE_KEY, StoryKey } from "@/components/answer/place/StoryKey";
 import { StorySteps } from "@/components/answer/place/StorySteps";
 import { SupplyMapView } from "@/components/answer/place/SupplyMapView";
 import { useRiverFlow, type RiverFlow } from "@/components/answer/place/useRiverFlow";
+import { SALT_EXTRA } from "@/components/map/ChoroplethLegend";
 import { DISTRICTS_INDICATIVE, SURVEY_OF_INDIA_CAPTION } from "@/components/map/MapAttribution";
+import { PLACE_PATTERN } from "@/components/map/MapBase";
 import { project } from "@/components/map/projection";
 import { decodeShapes, type DistrictShape, type ShapesFile } from "@/components/map/shapeGeometry";
 import { ApiError } from "@/lib/api";
@@ -27,7 +30,7 @@ import { BOUNDARY_DATASET_CODE, type RegionDataset } from "@/lib/regionContract"
 import { ALL_PASSED, districtEntries, flowThresholds, NOT_YET, passedFraction, playingStep, stepBadges, stretchOf, type Course } from "@/lib/regionStory";
 import { cumulativeLengths, framedView, insideRings, joinLines, orientDownstream, pointAlong, type Point } from "@/lib/riverGeometry";
 import { riverBasinOf } from "@/lib/riverTopology";
-import { monthsText, rainText, wettestMonth } from "@/lib/seasonsView";
+import { annualRain, monthsText, rainfallFinding, rainText, wettestMonth } from "@/lib/seasonsView";
 import { parseShape, ShapeError } from "@/lib/shape";
 import { supplyGroups } from "@/lib/supplyView";
 
@@ -210,20 +213,20 @@ test("the Kutch Ajrakh story is drawn from its basin and the real Kachchh polygo
   expect(geometry.river?.stretches.get(KACHCHH)).toMatch(/^M/);
 });
 
-test("reduced motion draws the full river, every reached district and every step at once", () => {
-  function Probe({ reduce }: { reduce: boolean }) {
-    const ref = useRef<HTMLElement | null>(null);
-    const flow = useRiverFlow(ref, [0, 1], { expected: true, drawn: true }, reduce);
+test("the story rests complete, with the full river, every reached district and every step; the flow plays only when asked", () => {
+  function Probe({ reduce, drawn = true }: { reduce: boolean; drawn?: boolean }) {
+    const flow = useRiverFlow([0, 1], { expected: true, drawn }, reduce);
     return createElement("span", { "data-moving": String(flow.moving), "data-passed": flow.passed, "data-replay": String(flow.replay !== null) });
   }
   expect(renderToStaticMarkup(createElement(Probe, { reduce: true }))).toContain('data-moving="false" data-passed="1" data-replay="false"');
-  expect(renderToStaticMarkup(createElement(Probe, { reduce: false }))).toContain('data-moving="true" data-passed="-1" data-replay="false"');
+  expect(renderToStaticMarkup(createElement(Probe, { reduce: false }))).toContain('data-moving="false" data-passed="1" data-replay="true"');
+  expect(renderToStaticMarkup(createElement(Probe, { reduce: false, drawn: false }))).toContain('data-moving="false" data-passed="1" data-replay="false"');
 
   const full = stage(still());
   expect(attribute(full, "river-course", "data-flow")).toEqual(["still"]);
   const course = /<path[^>]*data-testid="river-course"[^>]*>/.exec(full)?.[0] ?? "";
   expect(course).not.toContain("stroke-dasharray");
-  expect(/<path[^>]*data-lgd="449"[^>]*>/.exec(full)?.[0]).toContain("fill-archive-200");
+  expect(/<path[^>]*data-lgd="449"[^>]*>/.exec(full)?.[0]).toContain(`url(#${PLACE_PATTERN})`);
   expect(attribute(full, "story-badge", "data-reached")).toEqual(["true"]);
   expect(full).toContain(">Source<");
   expect(full).toContain(">Outlet<");
@@ -231,7 +234,8 @@ test("reduced motion draws the full river, every reached district and every step
   const flowing = stage(moving());
   expect(attribute(flowing, "river-course", "data-flow")).toEqual(["moving"]);
   expect(/<path[^>]*data-testid="river-course"[^>]*>/.exec(flowing)?.[0]).toContain('stroke-dasharray="0 1"');
-  expect(/<path[^>]*data-lgd="449"[^>]*>/.exec(flowing)?.[0]).not.toContain("fill-archive-200");
+  expect(/<path[^>]*data-lgd="449"[^>]*>/.exec(flowing)?.[0]).not.toContain(`url(#${PLACE_PATTERN})`);
+  expect(/<path[^>]*data-lgd="449"[^>]*>/.exec(flowing)?.[0]).toContain("stroke-terracotta");
   expect(attribute(flowing, "story-badge", "data-reached")).toEqual(["false"]);
 
   const geometry = storyGeometryOfFixture();
@@ -325,6 +329,10 @@ test("rainfall draws twelve months with the wettest month read out, and a month 
   expect(cells.map((on, index) => (on ? index + 1 : 0)).filter(Boolean)).toEqual([6, 7, 8, 9]);
   expect(html).toContain("June–September");
   expect(html.replace(/<[^>]+>/g, "")).toContain("Rainfall · Kachchh, Gujarat · monthly normal · 1991-2020");
+  expect(annualRain(rainy.rainfall!)).toBeCloseTo(1 + 0.5 + 2 + 40 + 120 + 80 + 30 + 5 + 1, 9);
+  expect(rainfallFinding(rainy.rainfall!)).toBe("July is the wettest month in Kachchh: 120 mm of a 280 mm year");
+  expect(html).toContain(">July is the wettest month in Kachchh: 120 mm of a 280 mm year<");
+  expect(html).toContain(">All 12 values<");
   expect(html).toContain(CHIRPS.title);
 });
 
@@ -390,4 +398,18 @@ test("place renderers lay out in shrinkable columns so nothing widens a phone pa
     for (const track of template.split("_")) expect(track, template).toMatch(/^(minmax\(0,|repeat\(\d+,minmax\(0,)/);
   }
   expect(html).not.toMatch(/\b(min-)?w-\[\d{3,}px\]/);
+});
+
+test("the story key explains the salt stipple only where the Rann is in the frame, beside the place hatch", () => {
+  const kachchh = storyGeometryOfFixture();
+  expect(saltInView(kachchh.view)).toBe(true);
+  const kolkata = project(88.36, 22.57);
+  expect(saltInView({ x: kolkata.x - 20, y: kolkata.y - 15, width: 40, height: 30 })).toBe(false);
+  expect(boxesMeet({ x: 0, y: 0, width: 2, height: 2 }, { x: 1, y: 1, width: 2, height: 2 })).toBe(true);
+  expect(boxesMeet({ x: 0, y: 0, width: 1, height: 1 }, { x: 2, y: 2, width: 1, height: 1 })).toBe(false);
+  const key = renderToStaticMarkup(createElement(StoryKey, { block: placedStory(), geometry: kachchh, layered: false }));
+  expect(key).toContain(SALT_EXTRA.label);
+  expect(key).toContain(PLACE_KEY);
+  const layered = renderToStaticMarkup(createElement(StoryKey, { block: placedStory(), geometry: kachchh, layered: true }));
+  expect(layered).not.toContain(PLACE_KEY);
 });

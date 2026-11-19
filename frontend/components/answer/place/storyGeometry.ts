@@ -1,3 +1,5 @@
+import { boardBox, RANN_SALT_FLATS, type MapBox } from "@/components/map/boardGeometry";
+import { PLACE_TONE } from "@/components/map/DistrictLayer";
 import { project } from "@/components/map/projection";
 import type { DistrictShape } from "@/components/map/shapeGeometry";
 import type { RegionStoryBlock } from "@/lib/explainerPlace";
@@ -18,12 +20,12 @@ import type { LonLat, RiverBasin } from "@/lib/riverTopology";
 
 const CONTEXT_MARGIN = 100;
 
-export const STORY_TONES = {
-  context: "fill-surface-50",
-  waiting: "fill-surface-50 transition-colors duration-[600ms]",
-  reached: "fill-archive-200 transition-colors duration-[600ms] dark:fill-archive-800",
-  story: "fill-purple-100 dark:fill-purple-900/60"
-} as const;
+export const STORY_TONES: Record<"context" | "waiting" | "reached" | "story", string> = {
+  context: "fill-transparent",
+  waiting: "fill-transparent stroke-terracotta [stroke-width:1.25px]",
+  reached: PLACE_TONE,
+  story: PLACE_TONE
+};
 
 export type StoryDistrict = { lgd: number; shape: DistrictShape; rings: Rings; label: Point };
 export type Tributaries = { order: number; d: string };
@@ -100,4 +102,20 @@ export function storyTone(geometry: StoryGeometry, lgd: number, passed: number):
   const entry = geometry.entries.get(lgd);
   if (entry !== undefined) return entry <= passed ? STORY_TONES.reached : STORY_TONES.waiting;
   return geometry.districts.has(lgd) ? STORY_TONES.story : STORY_TONES.context;
+}
+
+function pathBox(path: string): MapBox {
+  const numbers = (path.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+  const xs = numbers.filter((_, at) => at % 2 === 0);
+  const ys = numbers.filter((_, at) => at % 2 === 1);
+  const [minX, minY] = [Math.min(...xs), Math.min(...ys)];
+  return { x: minX, y: minY, width: Math.max(...xs) - minX, height: Math.max(...ys) - minY };
+}
+
+export function boxesMeet(a: MapBox, b: MapBox): boolean {
+  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+}
+
+export function saltInView(view: View): boolean {
+  return boxesMeet(boardBox(pathBox(RANN_SALT_FLATS)), view);
 }

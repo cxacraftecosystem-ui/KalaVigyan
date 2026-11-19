@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, type RefObject } from "react";
-import { animate, useInView, useMotionValue, useMotionValueEvent, type MotionValue } from "framer-motion";
+import { useEffect, useState } from "react";
+import { animate, useMotionValue, useMotionValueEvent, type MotionValue } from "framer-motion";
 
 import { ALL_PASSED, FLOW_EASE, FLOW_SECONDS, NOT_YET, passedFraction } from "@/lib/regionStory";
 
@@ -14,14 +14,12 @@ export type RiverFlow = {
 
 export type FlowReadiness = { expected: boolean; drawn: boolean };
 
-const IN_VIEW = { once: true, amount: 0.35 } as const;
-
-export function useRiverFlow(frameRef: RefObject<HTMLElement | null>, thresholds: readonly number[], river: FlowReadiness, reduce: boolean): RiverFlow {
-  const inView = useInView(frameRef, IN_VIEW);
-  const progress = useMotionValue(0);
-  const [passed, setPassed] = useState(NOT_YET);
+export function useRiverFlow(thresholds: readonly number[], river: FlowReadiness, reduce: boolean): RiverFlow {
+  const progress = useMotionValue(ALL_PASSED);
+  const [passed, setPassed] = useState(ALL_PASSED);
   const [round, setRound] = useState(0);
-  const moving = river.expected && !reduce;
+  const allowed = river.expected && river.drawn && !reduce;
+  const moving = allowed && round > 0;
 
   useMotionValueEvent(progress, "change", (value) => {
     const next = passedFraction(thresholds, value);
@@ -29,14 +27,14 @@ export function useRiverFlow(frameRef: RefObject<HTMLElement | null>, thresholds
   });
 
   useEffect(() => {
-    if (!moving || !river.drawn || !inView) return;
+    if (!moving) return;
     progress.jump(0);
     setPassed(NOT_YET);
-    const controls = animate(progress, 1, { duration: FLOW_SECONDS, ease: [...FLOW_EASE] });
+    const controls = animate(progress, ALL_PASSED, { duration: FLOW_SECONDS, ease: [...FLOW_EASE] });
     return () => controls.stop();
-  }, [moving, river.drawn, inView, round, progress]);
+  }, [moving, round, progress]);
 
   const shown = moving ? passed : ALL_PASSED;
-  const replay = moving && shown >= ALL_PASSED ? () => setRound((value) => value + 1) : null;
+  const replay = allowed && shown >= ALL_PASSED ? () => setRound((value) => value + 1) : null;
   return { progress, moving, passed: shown, replay };
 }

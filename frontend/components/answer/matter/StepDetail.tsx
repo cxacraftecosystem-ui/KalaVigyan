@@ -15,15 +15,17 @@ function StepConditions({ step }: { step: ReactionStep }) {
   const conditions = step.conditions ?? [];
   if (conditions.length === 0) return null;
   return (
-    <ul className="grid gap-1 text-xs text-ink-700" aria-label="Conditions">
+    <dl className="grid min-w-0 grid-cols-[minmax(0,1fr)] border-t border-rule font-ui text-label font-normal sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]" aria-label="Conditions">
       {conditions.map((condition, index) => (
-        <li key={`${condition.label}:${index}`} data-testid="step-condition">
-          <span className="font-semibold text-ink-900">{condition.label}</span>
-          <span>: {condition.stated}</span>
-          <CitationChips citations={condition.citations} />
-        </li>
+        <div key={`${condition.label}:${index}`} className="contents" data-testid="step-condition">
+          <dt className="pt-2 font-semibold text-ink-1 sm:border-b sm:border-rule sm:pb-2">{condition.label}</dt>
+          <dd className="border-b border-rule pb-2 text-ink-2 sm:pt-2">
+            {condition.stated}
+            <CitationChips citations={condition.citations} />
+          </dd>
+        </div>
       ))}
-    </ul>
+    </dl>
   );
 }
 
@@ -31,8 +33,8 @@ function StepWhy({ id, notes }: { id: string; notes: readonly ExplainerSentence[
   if (notes.length === 0) return null;
   return (
     <div className="min-w-0" data-testid="step-why">
-      <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">What happens and why</p>
-      <CitedText id={id} sentences={notes} className="mt-1 text-sm leading-7 text-ink-700" />
+      <p className="kicker">What happens and why</p>
+      <CitedText id={id} sentences={notes} className="mt-1 max-w-measure font-reading text-body-sm text-ink-1" />
     </div>
   );
 }
@@ -40,15 +42,15 @@ function StepWhy({ id, notes }: { id: string; notes: readonly ExplainerSentence[
 export function StepDetail({ step, notes, animate }: { step: ReactionStep; notes: readonly ExplainerSentence[]; animate: boolean }) {
   const signal = stepSignal(step);
   return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2.5 px-3 pb-3 sm:pl-[3.25rem]" data-testid="reaction-step-detail">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 pb-3 sm:ps-11" data-testid="reaction-step-detail">
       <span className="flex flex-wrap items-center gap-1.5">
         {signal ? <EvidenceSignalBadge signal={signal} /> : null}
         <EvidenceLevelBadge level={step.level} />
       </span>
       {step.equation ? (
         <>
-          <ChemEquation equation={step.equation} label={reactionSpoken(step)} className="text-base" />
-          <p className="text-xs text-ink-500">{speciesNamesLine(step)}</p>
+          <ChemEquation equation={step.equation} label={reactionSpoken(step)} className="text-body" />
+          <p className="font-ui text-caption text-ink-3">{speciesNamesLine(step)}</p>
         </>
       ) : (
         <SpeciesRow reaction={step} />
@@ -56,7 +58,7 @@ export function StepDetail({ step, notes, animate }: { step: ReactionStep; notes
       <StepColours step={step} animate={animate} />
       <StepConditions step={step} />
       <StepWhy id={`${step.reactionId}.why`} notes={notes} />
-      <p className="text-xs">
+      <p className="font-ui text-label">
         <CitationChips citations={step.citations} />
       </p>
     </div>

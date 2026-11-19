@@ -4,11 +4,11 @@ import type { DistrictShape } from "@/components/map/shapeGeometry";
 export const MAX_ZOOM = 3;
 export const ZOOM_ROOM = 2.5;
 export const EDGE_MARGIN = 10;
-export const POST_FONT = 17;
-export const POST_HEIGHT = 32;
+export const POST_FONT = 13;
+export const POST_HEIGHT = 26;
 
 export type ZoomFrame = { scale: number; x: string; y: string };
-export type EdgePost = { left: number; top: number; width: number; angle: number; middle: number };
+export type EdgePost = { left: number; top: number; width: number; height: number; angle: number; middle: number };
 
 const AT_REST: ZoomFrame = { scale: 1, x: "0%", y: "0%" };
 
@@ -38,12 +38,13 @@ export function inFrame(longitude: number, latitude: number): { x: number; y: nu
   return { x: clamp(x, EDGE_MARGIN, VIEW_BOX.width - EDGE_MARGIN), y: clamp(y, EDGE_MARGIN, VIEW_BOX.height - EDGE_MARGIN) };
 }
 
-export function edgePost(longitude: number, latitude: number, text: string): EdgePost {
+export function edgePost(longitude: number, latitude: number, text: string, scale = 1): EdgePost {
   const anchor = project(longitude, latitude);
   const { x, y } = inFrame(longitude, latitude);
   const angle = Math.round((Math.atan2(anchor.y - y, anchor.x - x) * 180) / Math.PI);
-  const width = Math.round(text.length * POST_FONT * 0.58 + 48);
+  const height = POST_HEIGHT * scale;
+  const width = Math.round((text.length * POST_FONT * 0.58 + 34) * scale);
   const left = clamp(x >= VIEW_BOX.width / 2 ? x - width : x, EDGE_MARGIN, VIEW_BOX.width - width - EDGE_MARGIN);
-  const top = clamp(y - POST_HEIGHT / 2, EDGE_MARGIN, VIEW_BOX.height - POST_HEIGHT - EDGE_MARGIN);
-  return { left, top, width, angle, middle: top + POST_HEIGHT / 2 };
+  const top = clamp(y - height / 2, EDGE_MARGIN, VIEW_BOX.height - height - EDGE_MARGIN);
+  return { left, top, width, height, angle, middle: top + height / 2 };
 }

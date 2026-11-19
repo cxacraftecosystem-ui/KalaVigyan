@@ -5,6 +5,7 @@ import { useState } from "react";
 import { PictureView } from "@/components/answer/ImageStrip";
 import { ZoomDistrict } from "@/components/answer/journey/ZoomDistrict";
 import { MoleculeView } from "@/components/answer/matter/MoleculeView";
+import { READING_PROSE } from "@/components/answer/place/figureMarks";
 import { CitedText } from "@/components/answer/ProseBlockView";
 import type { MediaRef } from "@/lib/explainerBlockBase";
 import type { ZoomLevel, ZoomStoryBlock } from "@/lib/explainerPlay";
@@ -33,11 +34,11 @@ export function ZoomLevelView({ block, index, moving }: { block: ZoomStoryBlock;
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3" data-testid="zoom-level" data-level={level.level}>
       <div className="min-w-0">
-        <p className="eyebrow">{zoomLevelLine(level, index, block.levels.length)}</p>
-        {level.compound ? null : <h3 className="mt-0.5 break-words font-display text-lg font-bold text-ink-900">{zoomLevelName(level)}</h3>}
+        <p className="kicker">{zoomLevelLine(level, index, block.levels.length)}</p>
+        {level.compound ? null : <h3 className="mt-1 break-words font-reading text-h3 text-ink-1">{zoomLevelName(level)}</h3>}
       </div>
       <LevelVisual block={block} level={level} moving={moving} />
-      <CitedText id={level.sentence.id} sentences={[level.sentence]} className="text-sm leading-7 text-ink-700 md:text-[15px]" />
+      <CitedText id={level.sentence.id} sentences={[level.sentence]} className={READING_PROSE} />
     </div>
   );
 }

@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 
+import { READING_PROSE } from "@/components/answer/place/figureMarks";
 import { CitedText } from "@/components/answer/ProseBlockView";
 import type { CraftLink } from "@/lib/answerShapes";
 import { compareLayout, rowTitle, type CompareLayout } from "@/lib/compareView";
 import type { CompareBlock, CompareCell, CompareRow } from "@/lib/explainerLearning";
 import { listText } from "@/lib/format";
 import { cn } from "@/lib/utils";
-
-const CRAFT_LINK = "min-w-0 break-words font-display text-sm font-bold text-purple-700 underline-offset-2 hover:underline dark:text-purple-300";
 
 function HeadRow({ crafts, layout }: { crafts: readonly CraftLink[]; layout: CompareLayout }) {
   return (
@@ -19,7 +18,7 @@ function HeadRow({ crafts, layout }: { crafts: readonly CraftLink[]; layout: Com
       </span>
       {crafts.map((craft) => (
         <span key={craft.slug} role="columnheader" className="min-w-0">
-          <Link href={craft.path} className={CRAFT_LINK}>
+          <Link href={craft.path} className="kv-link min-w-0 break-words font-ui text-h4">
             {craft.name}
           </Link>
         </span>
@@ -31,11 +30,11 @@ function HeadRow({ crafts, layout }: { crafts: readonly CraftLink[]; layout: Com
 function Cell({ cell, craft, layout }: { cell: CompareCell | null; craft: CraftLink; layout: CompareLayout }) {
   return (
     <div role="cell" className={layout.cell} data-testid="compare-cell" data-filled={cell ? "true" : "false"}>
-      <span className={cn("text-xs font-semibold text-ink-500", layout.cellName)}>{craft.name}</span>
+      <span className={cn("font-ui text-caption font-semibold text-ink-3", layout.cellName)}>{craft.name}</span>
       {cell ? (
-        <CitedText id={cell.sentence.id} sentences={[cell.sentence]} className="text-sm leading-7 text-ink-700" />
+        <CitedText id={cell.sentence.id} sentences={[cell.sentence]} className={READING_PROSE} />
       ) : (
-        <span className="text-sm text-ink-300">
+        <span className="font-ui text-ui text-ink-3">
           <span aria-hidden>—</span>
           <span className="sr-only">Not stated</span>
         </span>
@@ -49,8 +48,8 @@ function Row({ row, crafts, layout }: { row: CompareRow; crafts: readonly CraftL
   return (
     <div role="row" className={layout.row} data-testid="compare-row">
       <div role="rowheader" className="grid min-w-0 content-start gap-0.5">
-        {title.facet ? <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">{title.facet}</span> : null}
-        <span className="break-words text-sm font-bold text-ink-900">{title.title}</span>
+        {title.facet ? <span className="kicker">{title.facet}</span> : null}
+        <span className="break-words font-ui text-h4 text-ink-1">{title.title}</span>
       </div>
       {crafts.map((craft, index) => (
         <Cell key={craft.slug} cell={row.cells[index] ?? null} craft={craft} layout={layout} />
@@ -63,7 +62,7 @@ export function CompareTable({ block }: { block: CompareBlock }) {
   const layout = compareLayout(block.crafts.length);
   const names = listText(block.crafts.map((craft) => craft.name));
   return (
-    <div role="table" aria-label={`${names} compared`} className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3" data-testid="compare" data-crafts={block.crafts.length}>
+    <div role="table" aria-label={`${names} compared`} className="grid min-w-0 grid-cols-[minmax(0,1fr)] border-t border-ink-1 pt-3" data-testid="compare" data-crafts={block.crafts.length}>
       <HeadRow crafts={block.crafts} layout={layout} />
       {block.rows.map((row) => (
         <Row key={`${row.facet}-${row.term?.key ?? ""}`} row={row} crafts={block.crafts} layout={layout} />

@@ -94,9 +94,8 @@ test("a finished quiz states its score and offers to start again; a question tak
   expect(text(done)).toContain("2 of 3 right");
   expect(text(done)).not.toContain("to go");
   expect(done).toContain('data-testid="quiz-again"');
-  const styles = attribute(done, "quiz-reveal", "style");
-  expect(styles).toHaveLength(3);
-  expect(styles.every((style) => style.includes("opacity:0"))).toBe(true);
+  expect(attribute(done, "quiz-reveal", "data-right")).toEqual(["true", "false", "true"]);
+  expect(done).not.toContain("opacity:0");
   expect(quizScore(block.questions, [0, 1, 0])).toEqual({ right: 2, answered: 3, total: 3 });
   expect(picked([0, null, null], 0, 2)).toEqual([0, null, null]);
   expect(picked([0, null, null], 1, 2)).toEqual([0, 2, null]);
@@ -163,7 +162,7 @@ test("the concept graph draws its term at the hub with each sharing craft around
 
   const indigo = withReading(createElement(ConceptGraphView, { focus: block.focus, nodes: block.nodes, reduce: false, initialTermKey: "indigo" }));
   expect(attribute(indigo, "concept-list-craft", "data-testid")).toHaveLength(5);
-  expect(indigo).toContain("opacity:0");
+  expect(indigo).not.toContain("opacity:0");
 });
 
 test("a concept shared by many crafts draws seven and a count, and lists six with a way to all of them", () => {

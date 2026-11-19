@@ -1,23 +1,22 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 
 import { useExplainerReading } from "@/components/answer/ExplainerReading";
+import { READING_PROSE } from "@/components/answer/place/figureMarks";
 import { CitedText } from "@/components/answer/ProseBlockView";
-import { riseItem } from "@/components/guide/guideMotion";
 import { sentenceView } from "@/lib/answerLanguages";
 import type { QuizQuestion } from "@/lib/explainerLearning";
 import { optionMark, optionOrder, promptParts, type OptionMark, type QuizPick } from "@/lib/quizView";
 import { cn } from "@/lib/utils";
 
-const OPTION = "flex min-h-12 w-full min-w-0 items-center justify-between gap-2 rounded-md border-2 px-4 py-2 text-left text-[15px] font-semibold transition-colors";
+const OPTION = "flex min-h-12 w-full min-w-0 items-center justify-between gap-2 rounded-control border px-4 py-2 text-start font-ui text-ui-lg transition-colors duration-state";
 
 const MARK_CLASS: Record<OptionMark, string> = {
-  open: "border-line-200 bg-card text-ink-900 hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40",
-  right: "border-evidence-600 bg-evidence-100 text-evidence-800 dark:border-evidence-400 dark:bg-evidence-950 dark:text-evidence-200",
-  wrong: "border-steward-600 bg-steward-100 text-steward-800 dark:border-steward-400 dark:bg-steward-950 dark:text-steward-200",
-  other: "border-line-200 bg-surface-50 text-ink-500"
+  open: "border-rule-strong bg-raised text-ink-1 hover:border-ink-1",
+  right: "border-success bg-success-wash font-semibold text-ink-1",
+  wrong: "border-error bg-error-wash text-ink-1",
+  other: "border-rule text-ink-3"
 };
 
 const MARK_WORDS: Partial<Record<OptionMark, string>> = { right: "right answer", wrong: "your answer" };
@@ -28,11 +27,11 @@ function Prompt({ question, id }: { question: QuizQuestion; id: string }) {
   const shown = keyed ? sentenceView(keyed.sentence, language, false) : null;
   const parts = promptParts(question.prompt);
   return (
-    <p id={id} lang={shown?.lang} dir={shown?.dir} className="break-words font-display text-base font-semibold leading-7 text-ink-900 md:text-lg">
+    <p id={id} lang={shown?.lang} dir={shown?.dir} className="break-words font-reading text-body text-ink-1">
       {parts ? (
         <>
           {parts[0]}
-          <span aria-hidden className="mx-0.5 inline-block w-16 border-b-2 border-purple-400 align-baseline dark:border-purple-300" data-testid="quiz-blank" />
+          <span aria-hidden className="mx-0.5 inline-block w-16 border-b-2 border-ink-2 align-baseline" data-testid="quiz-blank" />
           <span className="sr-only">blank</span>
           {parts[1]}
         </>
@@ -48,55 +47,35 @@ function OptionButton({ text, mark, onPick }: { text: string; mark: OptionMark; 
   return (
     <button type="button" onClick={onPick} aria-disabled={mark !== "open"} className={cn(OPTION, MARK_CLASS[mark])} data-testid="quiz-option" data-mark={mark}>
       <span className="min-w-0 break-words">{text}</span>
-      {mark === "right" ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : null}
-      {mark === "wrong" ? <X className="h-4 w-4 shrink-0" aria-hidden /> : null}
+      {mark === "right" ? <Check className="h-4 w-4 shrink-0 text-success" aria-hidden /> : null}
+      {mark === "wrong" ? <X className="h-4 w-4 shrink-0 text-error" aria-hidden /> : null}
       {words ? <span className="sr-only">, {words}</span> : null}
     </button>
   );
 }
 
-function Reveal({ question, pick, id, reduce }: { question: QuizQuestion; pick: number; id: string; reduce: boolean }) {
+function Reveal({ question, pick, id }: { question: QuizQuestion; pick: number; id: string }) {
   const keyed = question.options[question.answer];
   const right = pick === question.answer;
+  const Icon = right ? Check : X;
   return (
-    <motion.div
-      variants={riseItem(reduce, 8)}
-      initial={reduce ? false : "hidden"}
-      animate="show"
-      className={cn(
-        "grid min-w-0 gap-1 rounded-md border px-3 py-2.5",
-        right ? "border-evidence-300 bg-evidence-50 dark:border-evidence-800 dark:bg-evidence-950/50" : "border-amber-500/40 bg-surface-50"
-      )}
-      data-testid="quiz-reveal"
-      data-right={right ? "true" : "false"}
-    >
-      <p className={cn("text-sm font-semibold", right ? "text-evidence-800 dark:text-evidence-200" : "text-amber-800 dark:text-amber-200")}>
+    <div className={cn("grid min-w-0 gap-1 border-s-2 px-4 py-3", right ? "border-success bg-success-wash" : "border-error bg-error-wash")} data-testid="quiz-reveal" data-right={right ? "true" : "false"}>
+      <p className="inline-flex items-center gap-1.5 font-ui text-ui font-semibold text-ink-1">
+        <Icon className={cn("h-4 w-4 shrink-0", right ? "text-success" : "text-error")} aria-hidden />
         {right ? "Right." : `Not quite. It is ${keyed.text}.`}
       </p>
-      <CitedText id={id} sentences={[keyed.sentence]} className="text-sm leading-7 text-ink-700" />
-    </motion.div>
+      <CitedText id={id} sentences={[keyed.sentence]} className={READING_PROSE} />
+    </div>
   );
 }
 
-export function QuizQuestionCard({
-  question,
-  id,
-  position,
-  pick,
-  reduce,
-  onPick
-}: {
-  question: QuizQuestion;
-  id: string;
-  position: string;
-  pick: QuizPick;
-  reduce: boolean;
-  onPick: (index: number) => void;
-}) {
+type CardProps = { question: QuizQuestion; id: string; position: string; pick: QuizPick; onPick: (index: number) => void };
+
+export function QuizQuestionCard({ question, id, position, pick, onPick }: CardProps) {
   const promptId = `${id}-prompt`;
   return (
-    <li className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 rounded-lg border border-line-200 bg-card p-4" data-testid="quiz-question" data-answered={pick === null ? "false" : "true"}>
-      <span className="text-xs font-semibold text-ink-500">{position}</span>
+    <li className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 border-t border-rule pt-4" data-testid="quiz-question" data-answered={pick === null ? "false" : "true"}>
+      <span className="kicker">{position}</span>
       <Prompt question={question} id={promptId} />
       <div role="group" aria-labelledby={promptId} className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-[repeat(2,minmax(0,1fr))]">
         {optionOrder(question.options).map((index) => (
@@ -104,7 +83,7 @@ export function QuizQuestionCard({
         ))}
       </div>
       <div aria-live="polite" className="min-w-0">
-        {pick !== null ? <Reveal question={question} pick={pick} id={`${id}-answer`} reduce={reduce} /> : null}
+        {pick !== null ? <Reveal question={question} pick={pick} id={`${id}-answer`} /> : null}
       </div>
     </li>
   );
