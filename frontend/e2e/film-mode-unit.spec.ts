@@ -185,7 +185,7 @@ test("captions are in the answer language even while the page shows the English 
   expect(filmCaption({ ...scene, tracks: [] }, 0.6, HINDI)).toMatchObject({ text: "पानी", lang: "hi", narrated: false });
   const html = withReading(createElement(FilmCaption, { caption: filmCaption(scene, 0.6, HINDI) }));
   expect(html).toContain('lang="hi"');
-  expect(html).toContain('<mark class="rounded-sm bg-purple-200 text-ink-900 dark:bg-purple-800 dark:text-white" data-testid="film-caption-word">पानी</mark>');
+  expect(html).toContain('<mark class="rounded-plate bg-turmeric-wash text-ink-1" data-testid="film-caption-word">पानी</mark>');
 });
 
 test("keys play, pause, step and mute the film, and leave buttons and sliders their own keys", () => {

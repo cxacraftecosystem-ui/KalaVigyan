@@ -69,10 +69,11 @@ export function essaySections(sections: readonly SectionView[], streaming: boole
   return sections.filter((section) => section.blocks.length > 0 || (streaming && section.state !== "READY" && section.state !== "EMPTY"));
 }
 
-export function mediaCredit(media: Pick<MediaRef, "author" | "licence" | "site" | "credit">): string {
-  if (media.credit && !media.author) return media.credit;
-  const named = [media.author, media.licence].filter(Boolean).join(", ");
-  return named ? `Photo: ${named}, via ${media.site}` : `Via ${media.site}`;
+export type CreditParts = { holder: string } | { author: string | null; licence: string | null; site: string };
+
+export function creditParts(media: Pick<MediaRef, "author" | "licence" | "site" | "credit">): CreditParts {
+  if (media.credit && !media.author) return { holder: media.credit };
+  return { author: media.author, licence: media.licence, site: media.site };
 }
 
 export function marginPicture(blocks: readonly TypedBlock[]): { blockId: string; media: MediaRef } | null {

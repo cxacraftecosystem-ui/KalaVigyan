@@ -1,8 +1,7 @@
 "use client";
 
-import { MediaPlate } from "@/components/answer/MediaPlate";
+import { MediaCredit, MediaPlate } from "@/components/answer/MediaPlate";
 import { pictureSources } from "@/components/editorial/Plate";
-import { mediaCredit } from "@/lib/answerEssay";
 import type { MediaRef } from "@/lib/explainerBlockBase";
 import type { ImagesBlock } from "@/lib/explainerContract";
 
@@ -15,7 +14,9 @@ export function PictureView({ media, onBroken }: { media: MediaRef; onBroken: ()
         <img src={sources.src} srcSet={sources.srcSet} sizes={sources.sizes} alt={media.alt} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={onBroken} />
         <span className="sr-only"> (opens in a new tab)</span>
       </a>
-      <figcaption className="break-words font-ui text-caption text-ink-3">{mediaCredit(media)}</figcaption>
+      <figcaption className="break-words font-ui text-caption text-ink-3">
+        <MediaCredit media={media} />
+      </figcaption>
     </figure>
   );
 }

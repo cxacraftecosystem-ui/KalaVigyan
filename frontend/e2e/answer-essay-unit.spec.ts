@@ -1,6 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
-import { answerProvenance, essayDirection, essayScript, essaySections, essaySourceNumbers, marginPicture, mediaCredit, scriptLeading, sectionNotes, sentenceMark, shownQuestion, textScript } from "@/lib/answerEssay";
+import { MediaCredit } from "@/components/answer/MediaPlate";
+
+import { answerProvenance, essayDirection, essayScript, essaySections, essaySourceNumbers, creditParts, marginPicture, scriptLeading, sectionNotes, sentenceMark, shownQuestion, textScript } from "@/lib/answerEssay";
 import { firingTitle, lostWaxTitle, mordantLabel, mordantTitle, signatureStepLabel } from "@/lib/answerSignature";
 import type { ExplainerSentence, MediaRef } from "@/lib/explainerBlockBase";
 import type { ExplainerBlock } from "@/lib/explainerContract";
@@ -99,9 +103,13 @@ test("margin notes list a section's sources once each, in the order its sentence
 });
 
 test("a picture's credit puts the author and licence first, or the holder's own credit", () => {
-  expect(mediaCredit(media("m1", "SMarndi", "CC BY-SA 4.0", null))).toBe("Photo: SMarndi, CC BY-SA 4.0, via Wikimedia Commons");
-  expect(mediaCredit(media("m2", null, null, "© Victoria and Albert Museum, London"))).toBe("© Victoria and Albert Museum, London");
-  expect(mediaCredit(media("m3", null, null, null))).toBe("Via Wikimedia Commons");
+  expect(creditParts(media("m1", "SMarndi", "CC BY-SA 4.0", null))).toEqual({ author: "SMarndi", licence: "CC BY-SA 4.0", site: "Wikimedia Commons" });
+  expect(creditParts(media("m2", null, null, "© Victoria and Albert Museum, London"))).toEqual({ holder: "© Victoria and Albert Museum, London" });
+  const credit = (shown: MediaRef) => renderToStaticMarkup(createElement(MediaCredit, { media: shown }));
+  const licensed = credit({ ...media("m1", "SMarndi", "CC BY-SA 4.0", null), licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0" });
+  expect(licensed.replace(/<[^>]+>/g, "").replace(" (opens in a new tab)", "")).toBe("Photo: SMarndi, CC BY-SA 4.0, via Wikimedia Commons");
+  expect(licensed).toContain('href="https://creativecommons.org/licenses/by-sa/4.0"');
+  expect(credit(media("m3", null, null, null))).toBe("Via Wikimedia Commons");
 });
 
 test("a section's lone picture becomes its margin plate; a gallery stays in the column", () => {

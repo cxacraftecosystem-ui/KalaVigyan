@@ -4,15 +4,39 @@ import { useState } from "react";
 
 import { pictureSources } from "@/components/editorial/Plate";
 import { Lightbox } from "@/components/ui/Lightbox";
-import { mediaCredit } from "@/lib/answerEssay";
+import { creditParts } from "@/lib/answerEssay";
 import type { PictureRole } from "@/lib/commonsPicture";
 import type { MediaRef } from "@/lib/explainerBlockBase";
 import { cn } from "@/lib/utils";
 
+function Licence({ media }: { media: MediaRef }) {
+  if (!media.licence) return null;
+  if (!media.licenceUrl) return <>{media.licence}</>;
+  return (
+    <a href={media.licenceUrl} target="_blank" rel="noopener noreferrer" className="kv-link font-normal">
+      {media.licence}
+      <span className="sr-only"> (opens in a new tab)</span>
+    </a>
+  );
+}
+
+export function MediaCredit({ media }: { media: MediaRef }) {
+  const parts = creditParts(media);
+  if ("holder" in parts) return <>{parts.holder}</>;
+  if (!parts.author && !parts.licence) return <>Via {parts.site}</>;
+  return (
+    <>
+      Photo: {parts.author ? `${parts.author}, ` : null}
+      <Licence media={media} />
+      {parts.licence ? ", " : null}via {parts.site}
+    </>
+  );
+}
+
 function Credit({ media }: { media: MediaRef }) {
   return (
     <>
-      {mediaCredit(media)}
+      <MediaCredit media={media} />
       {" · "}
       <a href={media.pageUrl} target="_blank" rel="noopener noreferrer" className="kv-link font-normal">
         {media.title}
