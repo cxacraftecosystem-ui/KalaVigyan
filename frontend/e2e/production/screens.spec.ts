@@ -5,24 +5,31 @@ import { CRAFT_TAB_LABEL, type CraftTab } from "@/lib/craftPageView";
 import { recordLoadFailure } from "@/lib/recordView";
 import type { User } from "@/lib/types";
 
+import { barProblems, menuProblems, readingBarProblems } from "./appbarChecks";
+import { TEMPLATE_NOTES, craftOutcome, craftPageResponse, documentOutcome, openCraftTab, recordOutcome, type CraftTemplate } from "./craftChecks";
 import type { Scheme } from "./matrix";
 import { passPreviewProtection } from "./preview";
 import {
   ALL_INDIA_CRAFT_SLUG,
+  CATEGORY_FAMILY,
+  CATEGORY_SLUG,
   COMPARED_CRAFTS,
   CRAFT_SLUG,
   EMPTY_CRAFT_SLUG,
   NOT_FOUND_PATH,
   PRINTED_CRAFT_SLUG,
   SCREENS_TIMEOUT_MS,
+  UNCURATED_CRAFT_SLUG,
   UNKNOWN_CRAFT_SLUG,
   baseUrl,
   credentials,
   previewBypassToken
 } from "./run";
-import { barProblems, chooseFirstLayer, comparisonProblems, craftPageResponse, depthProblems, menuProblems, openCraftTab, overviewOutcome } from "./screenChecks";
+import { chooseFirstLayer, comparisonProblems, depthProblems, essayOutcome, hubOutcome, mapProblems, savedAnswerHref } from "./screenChecks";
 import { ScreenRun } from "./screenRun";
 import { submitSignIn } from "./signIn";
+
+type CraftVisit = { name: string; slug: string; expected: readonly CraftTemplate[] };
 
 const CRAFT_TABS_SHOWN: readonly [CraftTab, string][] = [
   ["process", "process-stage"],
@@ -31,18 +38,41 @@ const CRAFT_TABS_SHOWN: readonly [CraftTab, string][] = [
   ["sources", "craft-source"],
   ["evidence", "evidence-entry"]
 ];
-const OTHER_CRAFTS: readonly [string, string][] = [
-  ["Empty craft", EMPTY_CRAFT_SLUG],
-  ["All India craft", ALL_INDIA_CRAFT_SLUG]
+const CURATED: readonly CraftTemplate[] = ["document", "tabbed"];
+const UNCURATED: readonly CraftTemplate[] = ["record", "document"];
+const OTHER_CRAFTS: readonly CraftVisit[] = [
+  { name: "Empty craft", slug: EMPTY_CRAFT_SLUG, expected: CURATED },
+  { name: "All India craft", slug: ALL_INDIA_CRAFT_SLUG, expected: CURATED },
+  { name: "Craft without a monograph", slug: UNCURATED_CRAFT_SLUG, expected: UNCURATED }
 ];
 const MONOGRAPH_ASK = 'a[href^="/ask?"]';
 const UNKNOWN_CRAFT_TEXT = recordLoadFailure("craft", 404);
+const CRAFTS_LINK = "Crafts";
 
 function heading(page: Page, name: string | null): () => Promise<string[]> {
   return async () => {
     await expect(name ? page.getByRole("heading", { name, level: 1 }) : page.getByRole("heading", { level: 1 }).first()).toBeVisible();
     return [];
   };
+}
+
+function templateProblems(visit: CraftVisit, drawn: CraftTemplate | null): string[] {
+  if (drawn === null || visit.expected.includes(drawn)) return [];
+  return [`${visit.slug} is ${TEMPLATE_NOTES[drawn]}; it should be ${visit.expected.map((template) => TEMPLATE_NOTES[template]).join(" or ")}`];
+}
+
+async function signedOutReading(run: ScreenRun, page: Page): Promise<void> {
+  await run.visit("Craft monograph", `/crafts/${CRAFT_SLUG}`, async () => {
+    await expect(page.getByRole("heading", { level: 1, name: /Ajrakh/ })).toBeVisible();
+    await expect(page.locator(MONOGRAPH_ASK).first()).toBeVisible();
+    return [...(await documentOutcome(page)), ...(await readingBarProblems(page, CRAFTS_LINK))];
+  });
+  await run.visit("Craft without a monograph", `/crafts/${UNCURATED_CRAFT_SLUG}`, async () => [...(await recordOutcome(page)), ...(await readingBarProblems(page, CRAFTS_LINK))]);
+  await run.visit("Category hub", `/categories/${CATEGORY_SLUG}`, async () => {
+    const hub = await hubOutcome(page, CATEGORY_FAMILY);
+    run.note(...hub.notes);
+    return hub.problems;
+  });
 }
 
 async function signedOutScreens(run: ScreenRun, page: Page): Promise<void> {
@@ -54,24 +84,23 @@ async function signedOutScreens(run: ScreenRun, page: Page): Promise<void> {
     await expect(page.getByTestId("error-session")).toBeVisible();
     return [];
   });
-  await run.visit("Craft monograph", `/crafts/${CRAFT_SLUG}`, async () => {
-    await expect(page.getByRole("heading", { level: 1, name: /Ajrakh/ })).toBeVisible();
-    await expect(page.locator(MONOGRAPH_ASK).first()).toBeVisible();
-    return [];
-  });
+  await signedOutReading(run, page);
   await run.visit("Login", "/login", async () => {
     await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
     return [];
   });
 }
 
-async function craftScreens(run: ScreenRun, page: Page, slug: string, name: string): Promise<void> {
-  const served = craftPageResponse(page, slug);
-  await run.visit(name, `/crafts/${slug}`, async () => {
-    const outcome = await overviewOutcome(page, served);
-    if (outcome.note) run.note(outcome.note);
-    return outcome.problems;
+async function craftScreen(run: ScreenRun, page: Page, visit: CraftVisit): Promise<CraftTemplate | null> {
+  const seen: { template: CraftTemplate | null } = { template: null };
+  const served = craftPageResponse(page, visit.slug);
+  await run.visit(visit.name, `/crafts/${visit.slug}`, async () => {
+    const outcome = await craftOutcome(page, served);
+    seen.template = outcome.template;
+    run.note(...outcome.notes);
+    return [...outcome.problems, ...templateProblems(visit, outcome.template)];
   });
+  return seen.template;
 }
 
 async function craftTabs(run: ScreenRun, page: Page): Promise<void> {
@@ -84,12 +113,10 @@ async function craftTabs(run: ScreenRun, page: Page): Promise<void> {
   }
 }
 
-async function readingScreens(run: ScreenRun, page: Page, user: User): Promise<void> {
-  await run.visit("Ask", "/ask", async () => [...(await barProblems(page, user)), ...(await depthProblems(page, user))]);
-  await run.visit("Crafts", "/crafts", heading(page, "Crafts"));
-  await craftScreens(run, page, PRINTED_CRAFT_SLUG, `Craft ${CRAFT_TAB_LABEL.overview}`);
-  await craftTabs(run, page);
-  for (const [name, slug] of OTHER_CRAFTS) await craftScreens(run, page, slug, name);
+async function craftPages(run: ScreenRun, page: Page): Promise<void> {
+  const printed = await craftScreen(run, page, { name: `Craft ${CRAFT_TAB_LABEL.overview}`, slug: PRINTED_CRAFT_SLUG, expected: CURATED });
+  if (printed === "tabbed") await craftTabs(run, page);
+  for (const visit of OTHER_CRAFTS) await craftScreen(run, page, visit);
   await run.visit(
     "Unknown craft",
     `/crafts/${UNKNOWN_CRAFT_SLUG}`,
@@ -101,11 +128,33 @@ async function readingScreens(run: ScreenRun, page: Page, user: User): Promise<v
   );
 }
 
+async function readingScreens(run: ScreenRun, page: Page, user: User): Promise<void> {
+  await run.visit("Ask", "/ask", async () => [...(await barProblems(page, user, "Ask")), ...(await depthProblems(page, user))]);
+  await run.visit("Atlas", "/crafts", heading(page, "The atlas"));
+  await craftPages(run, page);
+  await run.visit("Category hub", `/categories/${CATEGORY_SLUG}`, async () => {
+    const hub = await hubOutcome(page, CATEGORY_FAMILY);
+    run.note(...hub.notes);
+    return hub.problems;
+  });
+}
+
+async function savedScreens(run: ScreenRun, page: Page): Promise<void> {
+  const saved: { href: string | null } = { href: null };
+  await run.visit("Saved", "/saved", async () => {
+    await expect(page.getByRole("heading", { name: "Saved", level: 1 })).toBeVisible();
+    saved.href = await savedAnswerHref(page);
+    if (saved.href === null) run.note("nothing is saved, so no answer essay was opened");
+    return [];
+  });
+  if (saved.href !== null) await run.visit("Answer essay", saved.href, () => essayOutcome(page));
+}
+
 async function toolScreens(run: ScreenRun, page: Page): Promise<void> {
   await run.visit("Compare", "/compare", heading(page, "Compare crafts"));
   await run.visit("Compare pair", compareHref(COMPARED_CRAFTS), () => comparisonProblems(page));
-  await run.visit("Saved", "/saved", heading(page, "Saved"));
-  await run.visit("Map", "/map");
+  await savedScreens(run, page);
+  await run.visit("Map", "/map", () => mapProblems(page));
   await run.step("Map layer", async () => {
     const chosen = await chooseFirstLayer(page);
     if (chosen.layer) run.note(`layer: ${chosen.layer}`);

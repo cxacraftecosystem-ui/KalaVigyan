@@ -1,9 +1,13 @@
 import type { UserRole } from "@/lib/types";
 
-export const DESKTOP_NAV_MIN_WIDTH = 1024;
+export const APPBAR_NAV_MIN_WIDTH = 768;
+export const MAIN_NAV_LABEL = "Main";
+export const ACCOUNT_LABEL = "Account";
+export const MENU_LABEL = "Menu";
 export const NO_LAYER_LABEL = "Craft places";
 export const CITED_CONTENT = [
   "[data-level]",
+  "[data-src]",
   '[data-testid="answer-sentence"]',
   '[data-testid="source-passage"]',
   '[id^="source-"]',
@@ -33,15 +37,18 @@ export const GAP_COPY_PATTERNS: readonly RegExp[] = [
   /\bnothing (?:here|to show) yet\b/gi
 ];
 
-export type NavExpectation = { bar: string[]; menu: string[]; depths: string[] };
+export type NavExpectation = { bar: string[]; account: string[]; menu: string[]; depths: string[] };
 
 const LEARNER_BAR = ["Ask", "Crafts", "Map", "Saved"];
-const LEARNER_MENU = ["Ask", "Crafts", "Map", "Saved", "Settings"];
+const RESEARCHER_TOOLS = ["Give a picture", "Propose knowledge"];
+const ACCOUNT_LINKS = ["Settings"];
 const EVERY_DEPTH = ["Basic", "Detailed", "Expert"];
 
+export const READING_BAR = ["Crafts", "Map", "Compare"];
+
 export const NAV_BY_ROLE: Partial<Record<UserRole, NavExpectation>> = {
-  STUDENT: { bar: LEARNER_BAR, menu: LEARNER_MENU, depths: EVERY_DEPTH },
-  RESEARCHER: { bar: LEARNER_BAR, menu: LEARNER_MENU, depths: EVERY_DEPTH }
+  STUDENT: { bar: LEARNER_BAR, account: ACCOUNT_LINKS, menu: [...LEARNER_BAR, ...ACCOUNT_LINKS], depths: EVERY_DEPTH },
+  RESEARCHER: { bar: LEARNER_BAR, account: [...RESEARCHER_TOOLS, ...ACCOUNT_LINKS], menu: [...LEARNER_BAR, ...RESEARCHER_TOOLS, ...ACCOUNT_LINKS], depths: EVERY_DEPTH }
 };
 
 export function navExpectation(role: UserRole): NavExpectation | null {

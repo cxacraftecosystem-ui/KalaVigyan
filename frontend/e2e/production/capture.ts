@@ -39,6 +39,7 @@ const UNTRACKED_REQUESTS: ReadonlySet<string> = new Set(["eventsource", "websock
 const MOLECULE = '[data-testid="molecule-3d"]';
 const MOLECULE_PENDING: ReadonlySet<string> = new Set(["waiting", "loading"]);
 const SEGMENT_SCREENS = 8;
+const MAX_CAPTURE_DEVICE_PX = 16_384;
 
 async function busyNow(page: Page): Promise<string[] | null> {
   return page.evaluate(busyText, { citedSelector: CITED_CONTENT, pattern: BUSY_PATTERN }).catch(() => null);
@@ -162,11 +163,16 @@ async function sheetOf(page: Page): Promise<Sheet> {
   return { ...measured, screen: page.viewportSize()?.height ?? 0 };
 }
 
+export function segmentScreens(sheet: Pick<Sheet, "screen" | "ratio">): number {
+  return Math.max(1, Math.min(SEGMENT_SCREENS, Math.floor(MAX_CAPTURE_DEVICE_PX / (sheet.screen * sheet.ratio))));
+}
+
 async function paintedFlat(page: Page, sheet: Sheet, tileHeight: number, fromTile: number): Promise<number[]> {
   const flat: number[] = [];
-  for (let tile = fromTile; tile * sheet.screen < sheet.height; tile += SEGMENT_SCREENS) {
+  const span = segmentScreens(sheet);
+  for (let tile = fromTile; tile * sheet.screen < sheet.height; tile += span) {
     const top = tile * sheet.screen;
-    const clip = { x: 0, y: top, width: sheet.width, height: Math.min(sheet.screen * SEGMENT_SCREENS, sheet.height - top) };
+    const clip = { x: 0, y: top, width: sheet.width, height: Math.min(sheet.screen * span, sheet.height - top) };
     const scan = await scanTiles(await page.screenshot({ fullPage: true, clip }), tileHeight);
     flat.push(...scan.flat.map((index) => index + tile));
   }

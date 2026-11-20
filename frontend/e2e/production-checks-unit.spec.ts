@@ -265,8 +265,18 @@ test("gap copy is found with its context and ordinary copy is not", () => {
 test("nav labels must match the role exactly and in order", () => {
   expect(labelProblems("the menu", ["Ask", "Map"], [" Ask ", "Map"])).toEqual([]);
   expect(labelProblems("the menu", ["Ask", "Map"], ["Map", "Ask"])).toEqual(["the menu shows [Map, Ask]; this role should see [Ask, Map]"]);
-  expect(NAV_BY_ROLE.RESEARCHER?.depths).toEqual(["Basic", "Detailed", "Expert"]);
-  expect(NAV_BY_ROLE.STUDENT?.depths).toEqual(["Basic", "Detailed", "Expert"]);
+  expect(NAV_BY_ROLE.STUDENT).toEqual({
+    bar: ["Ask", "Crafts", "Map", "Saved"],
+    account: ["Settings"],
+    menu: ["Ask", "Crafts", "Map", "Saved", "Settings"],
+    depths: ["Basic", "Detailed", "Expert"]
+  });
+  expect(NAV_BY_ROLE.RESEARCHER).toEqual({
+    bar: ["Ask", "Crafts", "Map", "Saved"],
+    account: ["Give a picture", "Propose knowledge", "Settings"],
+    menu: ["Ask", "Crafts", "Map", "Saved", "Give a picture", "Propose knowledge", "Settings"],
+    depths: ["Basic", "Detailed", "Expert"]
+  });
   expect(NAV_BY_ROLE.PROFESSOR).toBeUndefined();
 });
 

@@ -1,19 +1,22 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { readingBarProblems } from "./appbarChecks";
 import { passPreviewProtection } from "./preview";
-import { COMPARED_CRAFTS, CRAFT_SLUG, baseUrl, previewBypassToken, type Credentials } from "./run";
+import { CATEGORY_SLUG, COMPARED_CRAFTS, CRAFT_SLUG, UNCURATED_CRAFT_SLUG, baseUrl, previewBypassToken, type Credentials } from "./run";
 import { submitSignIn } from "./signIn";
 
-type ReadingPage = { name: string; path: string; heading: RegExp; way: "sign-in" | "ask" };
+type ReadingPage = { name: string; path: string; heading: RegExp; way: "sign-in" | "ask"; current: string | null };
 
 const REFUSED_STATUSES = new Set([401, 403]);
 const MONOGRAPH_ASK = 'a[href^="/ask?"]';
 
 const ANONYMOUS_PAGES: readonly ReadingPage[] = [
-  { name: "the atlas", path: "/crafts", heading: /^Crafts$/, way: "sign-in" },
-  { name: "Kutch Ajrakh", path: `/crafts/${CRAFT_SLUG}`, heading: /Ajrakh/, way: "ask" },
-  { name: "the map", path: "/map", heading: /^Map$/, way: "sign-in" },
-  { name: "compare", path: `/compare?${COMPARED_CRAFTS.map((slug) => `crafts=${slug}`).join("&")}`, heading: /^Compare crafts$/, way: "sign-in" }
+  { name: "the atlas", path: "/crafts", heading: /^The atlas$/, way: "sign-in", current: "Crafts" },
+  { name: "Kutch Ajrakh", path: `/crafts/${CRAFT_SLUG}`, heading: /Ajrakh/, way: "ask", current: "Crafts" },
+  { name: "a craft without a monograph", path: `/crafts/${UNCURATED_CRAFT_SLUG}`, heading: /\S/, way: "ask", current: "Crafts" },
+  { name: "a category hub", path: `/categories/${CATEGORY_SLUG}`, heading: /\S/, way: "sign-in", current: null },
+  { name: "the map", path: "/map", heading: /^Map$/, way: "sign-in", current: "Map" },
+  { name: "compare", path: `/compare?${COMPARED_CRAFTS.map((slug) => `crafts=${slug}`).join("&")}`, heading: /^Compare crafts$/, way: "sign-in", current: "Compare" }
 ];
 
 function watchRefusals(page: Page): string[] {
@@ -43,6 +46,7 @@ for (const reading of ANONYMOUS_PAGES) {
     await page.waitForLoadState("networkidle");
     expect(new URL(page.url()).pathname).toBe(reading.path.split("?")[0]);
     await expect(reading.way === "ask" ? page.locator(MONOGRAPH_ASK).first() : page.getByTestId("sign-in-link")).toBeVisible();
+    expect(await readingBarProblems(page, reading.current)).toEqual([]);
     expect(refused).toEqual([]);
   });
 }
