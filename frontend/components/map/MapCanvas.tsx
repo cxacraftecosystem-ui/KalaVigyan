@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 export const LABEL_SIZE = "calc(var(--text-caption) * var(--k, 1))";
 export const HALO_WIDTH = "calc(3px * var(--k, 1))";
+export const PHONE_HIDDEN = "max-sm:hidden";
 
 const WATER_LABELS = [
   { key: "arabian", text: "Arabian Sea", longitude: 66.1, latitude: 15.2 },
@@ -43,9 +44,11 @@ function WaterLabels() {
   const rann = boardBox(RANN_LABEL);
   return (
     <>
-      <MapText x={rann.x} y={rann.y} anchor="end" tone="var(--ink-2)" italic>
-        Great Rann
-      </MapText>
+      <g className={PHONE_HIDDEN}>
+        <MapText x={rann.x} y={rann.y} anchor="end" tone="var(--ink-2)" italic>
+          Great Rann
+        </MapText>
+      </g>
       {WATER_LABELS.map((label) => {
         const at = project(label.longitude, label.latitude);
         return (

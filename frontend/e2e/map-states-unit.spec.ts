@@ -5,7 +5,9 @@ import { expect, test } from "@playwright/test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { BOARD_INDIA_BOX, boardBox } from "@/components/map/boardGeometry";
+import { BOARD_FRAME, BOARD_INDIA_BOX, boardBox } from "@/components/map/boardGeometry";
+import { MapCanvas } from "@/components/map/MapCanvas";
+import { KachchhPin, placedCircles, StateCircles } from "@/components/map/StateCircles";
 import { MapLegend, NO_READING_EXTRA } from "@/components/map/ChoroplethLegend";
 import { CircleKey, circleKeyBox } from "@/components/map/CirclesLegend";
 import { VIEW_BOX } from "@/components/map/projection";
@@ -61,6 +63,19 @@ test("circles are drawn by area, and the key takes round values below the larges
   expect(circleKeys(64)).toEqual([10, 30, 60]);
   expect(circleKeys(3)).toEqual([1, 3]);
   expect(circleKeys(0)).toEqual([]);
+});
+
+test("below 640px the map keeps its circles and the place pin but drops the state labels and the Rann's name, as the board does", () => {
+  const scene = { frame: boardBox(BOARD_FRAME), scale: 1 };
+  const circles = placedCircles([{ name: "Madhya Pradesh", count: 19, longitude: 78.6, latitude: 23.5 }]);
+  const states = renderToStaticMarkup(createElement("svg", null, createElement(StateCircles, { circles, emphKey: null, scene })));
+  expect(states).toContain('<g class="max-sm:hidden" data-testid="state-labels">');
+  expect(states).toMatch(/data-testid="state-labels">.*Madhya Pradesh/);
+  expect(states.match(/<circle/g)).toHaveLength(1);
+  const pin = renderToStaticMarkup(createElement("svg", null, createElement(KachchhPin, { lines: ["Kachchh, home of", "Kutch Ajrakh"], scene })));
+  expect(pin).not.toContain("max-sm:hidden");
+  const canvas = renderToStaticMarkup(createElement(MapCanvas, { title: "Map", description: "India" }));
+  expect(canvas).toMatch(/<g class="max-sm:hidden"><text[^>]*>Great Rann<\/text><\/g>/);
 });
 
 test("the circle key leaves room above its largest circle for that circle's 12px label", () => {

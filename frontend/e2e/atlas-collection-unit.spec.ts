@@ -5,7 +5,9 @@ import { expect, test } from "@playwright/test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
+import { CategoryHub } from "@/components/crafts/CategoryHub";
 import { CollectionShelf } from "@/components/crafts/CollectionShelf";
+import { shelfAnchor } from "@/components/crafts/HubHeader";
 import { heroCredit } from "@/components/crafts/PhotoCard";
 import { ledFamilyShelves, ledSubFamilyShelves } from "@/components/crafts/shelfLead";
 import { familyShelves, findFamily, indexSubLine, isCatchAllKind, plateMaterial, shelfSubLine, subFamilyShelves } from "@/lib/atlasCollection";
@@ -77,6 +79,20 @@ test("a category hub shelves each sub-family and keeps the rest behind Show all"
   expect(shelves[0].more).toEqual([]);
   expect(shelves[1].lead).toBeNull();
   expect(findFamily(body, "Nowhere")).toBeNull();
+});
+
+test("a family hub indexes its sub-families beside its plate, each row a link to its own shelf", () => {
+  const body = catalogue();
+  const textiles = findFamily(body, "textiles-based-craft-category");
+  if (!textiles) throw new Error("the golden catalogue has the textiles family");
+  const html = renderToStaticMarkup(createElement(CategoryHub, { catalogue: body, category: textiles, science: null }));
+  expect(html.match(/<h1/g)).toHaveLength(1);
+  expect(html).toContain('aria-label="Sub-families"');
+  const anchors = [...html.matchAll(/href="#(shelf-[^"]+)"/g)].map((found) => found[1]);
+  expect(anchors).toHaveLength(2);
+  for (const anchor of anchors) expect(html).toContain(`id="${anchor}"`);
+  expect(html).toMatch(/>Hand block printing<\/span><b[^>]*>3<\/b>/);
+  expect(shelfAnchor({ id: "a b/c" })).toBe("shelf-abc");
 });
 
 test("a shelf with no photographed craft leads with its first plate, so the lead and four plates fill a six-column row", () => {

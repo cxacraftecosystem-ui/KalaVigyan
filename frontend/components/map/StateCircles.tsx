@@ -1,7 +1,7 @@
 "use client";
 
 import { boardBox, boardScale, type MapBox } from "@/components/map/boardGeometry";
-import { MapText, type MapScene } from "@/components/map/MapCanvas";
+import { MapText, PHONE_HIDDEN, type MapScene } from "@/components/map/MapCanvas";
 import { project } from "@/components/map/projection";
 import { circleRadius, placeLabels, type LabelAsk, type StateMark } from "@/lib/mapStates";
 
@@ -60,11 +60,13 @@ export function StateCircles({ circles, emphKey, scene }: { circles: readonly Pl
           vectorEffect="non-scaling-stroke"
         />
       ))}
-      {spots.map((spot) => (
-        <MapText key={spot.key} x={spot.x} y={spot.y} anchor={spot.anchor}>
-          <tspan className="font-semibold [font-variant-numeric:tabular-nums]">{counts.get(spot.key)}</tspan> {spot.key}
-        </MapText>
-      ))}
+      <g className={PHONE_HIDDEN} data-testid="state-labels">
+        {spots.map((spot) => (
+          <MapText key={spot.key} x={spot.x} y={spot.y} anchor={spot.anchor}>
+            <tspan className="font-semibold [font-variant-numeric:tabular-nums]">{counts.get(spot.key)}</tspan> {spot.key}
+          </MapText>
+        ))}
+      </g>
     </g>
   );
 }

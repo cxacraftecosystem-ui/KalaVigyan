@@ -54,7 +54,7 @@ function ShelfHead({ shelf, level, more }: { shelf: AtlasShelf; level: 2 | 3; mo
   );
 }
 
-export function CollectionShelf({ shelf, level = 3, all, names, priority = false }: { shelf: AtlasShelf; level?: 2 | 3; all?: ShelfAll; names?: ShelfNames; priority?: boolean }) {
+export function CollectionShelf({ id, shelf, level = 3, all, names, priority = false }: { id?: string; shelf: AtlasShelf; level?: 2 | 3; all?: ShelfAll; names?: ShelfNames; priority?: boolean }) {
   const [open, setOpen] = useState(false);
   const gridId = useId();
   const href = all && "href" in all ? all.href : null;
@@ -62,7 +62,7 @@ export function CollectionShelf({ shelf, level = 3, all, names, priority = false
   const extra = open ? expand : [];
   const more = { href, expandable: expand.length > 0, open, onToggle: () => setOpen((value) => !value), gridId };
   return (
-    <section aria-label={shelf.name} className="min-w-0" data-testid="collection-shelf" data-big={shelf.big || undefined}>
+    <section id={id} aria-label={shelf.name} className="min-w-0 scroll-mt-6" data-testid="collection-shelf" data-big={shelf.big || undefined}>
       <ShelfHead shelf={shelf} level={level} more={more} />
       <div id={gridId} className={GRID}>
         <Lead shelf={shelf} names={names} priority={priority} />
