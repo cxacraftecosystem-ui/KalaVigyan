@@ -49,5 +49,5 @@ async def _started_picture(
     return UploadStart.model_validate(started.model_dump())
 
 
-def _spend(user: User, kind: str) -> None:
-    refuse_tool_when_spent(kind, user)
+async def _spend(user: User, kind: str) -> None:
+    await refuse_tool_when_spent(kind, user)

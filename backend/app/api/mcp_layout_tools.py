@@ -78,7 +78,7 @@ async def _propose_layout(context: ToolContext, arguments: ProposeLayout) -> Lay
     user = context.user
     if user is None or not can(user, Capability.PROPOSE_KNOWLEDGE):
         raise InvalidInput(NEEDS_PROPOSER)
-    refuse_tool_when_spent(LAYOUT_PROPOSALS, user)
+    await refuse_tool_when_spent(LAYOUT_PROPOSALS, user)
     try:
         return await propose_layout(
             context.session, user, arguments.proposal, origin=AGENT, site=context.site, now=datetime.now(UTC)

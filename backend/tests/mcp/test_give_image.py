@@ -154,9 +154,10 @@ async def test_a_picture_needs_one_source_the_person_s_words_and_a_whole_declara
 async def test_a_spent_upload_limit_refuses_the_picture_without_reading_it(
     given: list[Giving], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(
-        mcp_picture_tools, "spent_limit", lambda kind, user: type("Spent", (), {"message": "spent"})()
-    )
+    async def spent(kind: str, user: Any) -> Any:
+        return type("Spent", (), {"message": "spent"})()
+
+    monkeypatch.setattr(mcp_picture_tools, "spent_limit", spent)
     await call("give_image", one(), context())
     (file,) = given[0].files
     assert (file.data, file.refused) == (None, "spent")

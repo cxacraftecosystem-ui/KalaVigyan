@@ -10,6 +10,7 @@ from app.models.ai import (
     UsageEvent,
 )
 from app.models.alerts import AlertDigestSend, Notification
+from app.models.allowances import AllowanceBucket
 from app.models.article_sections import ArticleSection
 from app.models.base import Base
 from app.models.candidate_checks import CandidateCheck
@@ -125,6 +126,7 @@ __all__ = [
     "AdminDistrict",
     "AdminState",
     "AlertDigestSend",
+    "AllowanceBucket",
     "Answer",
     "AnswerCitation",
     "AnswerSentence",

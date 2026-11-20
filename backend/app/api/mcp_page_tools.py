@@ -103,7 +103,7 @@ def _proposer(context: ToolContext, tool: str) -> User:
 
 async def _propose_component(context: ToolContext, arguments: ProposeComponent) -> ComponentProposalResult:
     user = _proposer(context, "propose_component")
-    refuse_tool_when_spent(COMPONENT_PROPOSALS, user)
+    await refuse_tool_when_spent(COMPONENT_PROPOSALS, user)
     return await component_proposals.propose_component(
         context.session, user, arguments, now=datetime.now(UTC)
     )
@@ -111,14 +111,14 @@ async def _propose_component(context: ToolContext, arguments: ProposeComponent) 
 
 async def _propose_page(context: ToolContext, arguments: ProposePage) -> PageToolReply:
     user = _proposer(context, "propose_page")
-    refuse_tool_when_spent(PAGE_PROPOSALS, user)
+    await refuse_tool_when_spent(PAGE_PROPOSALS, user)
     result = await page_proposed(context.session, arguments.proposal, user, origin=AGENT, site=context.site)
     return PageToolReply.model_validate({**result.model_dump(), "notices": arguments.notices()})
 
 
 async def _preview_page(context: ToolContext, arguments: ProposePage) -> PreviewToolReply:
     user = _proposer(context, "preview_page")
-    refuse_tool_when_spent(PAGE_PREVIEWS, user)
+    await refuse_tool_when_spent(PAGE_PREVIEWS, user)
     result = await page_preview.preview_page(
         context.session, user, arguments.proposal, site=context.site, now=datetime.now(UTC)
     )

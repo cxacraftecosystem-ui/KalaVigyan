@@ -4,12 +4,14 @@ import threading
 import time
 from collections import OrderedDict, deque
 from collections.abc import Mapping
+from datetime import datetime
 from ipaddress import ip_address
 from types import MappingProxyType
 from typing import Any
 
 from starlette.requests import HTTPConnection
 
+from app.core.allowances import Taken, take
 from app.core.config import get_settings
 from app.core.roles import ADMIN, has_rank
 
@@ -42,7 +44,6 @@ IMAGE_UPLOADS_PER_WINDOW = 20
 STRUCTURE_PROPOSALS_PER_WINDOW = 20
 PAGE_PROPOSALS_PER_WINDOW = 10
 PAGE_PREVIEWS_PER_WINDOW = 30
-PROPOSAL_WINDOW_SECONDS = 3600
 PROPOSAL_LIMITS: Mapping[str, int] = MappingProxyType(
     {
         FACT_PROPOSALS: FACT_PROPOSALS_PER_WINDOW,
@@ -59,7 +60,6 @@ SOURCE_READS = "source reads"
 PAID_SEARCHES = "paid searches"
 SOURCE_ARCHIVES = "source archives"
 LOOKUP_TIERS = ("NEW", "ESTABLISHED", "PROVEN")
-LOOKUP_WINDOW_SECONDS = 3600
 ANONYMOUS_HOLDER = "anonymous"
 LOOKUP_LIMITS: Mapping[str, Mapping[str, int]] = MappingProxyType(
     {
@@ -95,23 +95,6 @@ class SlidingWindow:
             while len(self._hits) > _MAX_KEYS:
                 self._hits.popitem(last=False)
             return True, 0.0
-
-    def take(
-        self, key: str, wanted: int, limit: int, window_seconds: float, now: float | None = None
-    ) -> tuple[int, float]:
-        moment = time.monotonic() if now is None else now
-        with self._lock:
-            hits = self._hits.setdefault(key, deque())
-            self._hits.move_to_end(key)
-            while hits and hits[0] <= moment - window_seconds:
-                hits.popleft()
-            granted = max(0, min(wanted, limit - len(hits)))
-            hits.extend([moment] * granted)
-            while len(self._hits) > _MAX_KEYS:
-                self._hits.popitem(last=False)
-            if granted == wanted or not hits:
-                return granted, 0.0
-            return granted, max(0.0, hits[0] + window_seconds - moment)
 
     def refund(self, key: str) -> None:
         with self._lock:
@@ -254,21 +237,21 @@ def client_registration_attempt(connection: HTTPConnection) -> tuple[bool, float
     )
 
 
-def proposal_attempt(kind: str, user: Any) -> tuple[bool, float]:
-    if has_rank(user, ADMIN):
-        return True, 0.0
-    return _windows.attempt(f"propose-{kind}:{user.id}", PROPOSAL_LIMITS[kind], PROPOSAL_WINDOW_SECONDS)
+async def proposal_attempt(kind: str, user: Any, *, now: datetime | None = None) -> Taken:
+    return await proposal_slots(kind, user, 1, now=now)
 
 
-def proposal_slots(kind: str, user: Any, wanted: int, *, limit: int | None = None) -> tuple[int, float]:
+async def proposal_slots(
+    kind: str, user: Any, wanted: int, *, limit: int | None = None, now: datetime | None = None
+) -> Taken:
     if has_rank(user, ADMIN):
-        return wanted, 0.0
+        return Taken(granted=wanted)
     allowed = PROPOSAL_LIMITS[kind] if limit is None else limit
-    return _windows.take(f"propose-{kind}:{user.id}", wanted, allowed, PROPOSAL_WINDOW_SECONDS)
+    return await take(str(user.id), kind, wanted, allowed, now=now)
 
 
-def lookup_attempt(kind: str, holder: str, limit: int) -> tuple[bool, float]:
-    return _windows.attempt(f"lookup-{kind}:{holder}", limit, LOOKUP_WINDOW_SECONDS)
+async def lookup_attempt(kind: str, holder: str, limit: int, *, now: datetime | None = None) -> Taken:
+    return await take(holder, kind, 1, limit, now=now)
 
 
 def public_read_attempt(connection: HTTPConnection) -> tuple[bool, float]:

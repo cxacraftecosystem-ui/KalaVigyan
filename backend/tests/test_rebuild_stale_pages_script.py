@@ -30,6 +30,7 @@ def patched(monkeypatch: pytest.MonkeyPatch, rebuild: Any) -> Session:
     monkeypatch.setattr(script, "session_scope", scope)
     monkeypatch.setattr(script, "dispose_engine", disposed)
     monkeypatch.setattr(script, "rebuild_stale_pages", rebuild)
+    monkeypatch.setattr(script, "page_code_fingerprint", lambda: "c1")
     return session
 
 
@@ -45,6 +46,7 @@ def test_every_stale_page_is_rebuilt_and_reported(monkeypatch: pytest.MonkeyPatc
     assert script.main(["--seconds", "5"]) == 0
     printed = json.loads(capsys.readouterr().out)
     assert (printed["pagesStale"], printed["pagesRebuilt"], printed["finished"]) == (2, 2, True)
+    assert printed["pageCode"] == "c1"
     assert asked == {"skip": (), "limit": 100_000}
 
 

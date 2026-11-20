@@ -79,13 +79,17 @@ def unused(*_: Any, **__: Any) -> Any:
     raise AssertionError("this bundle needs no fetch, gate or upload")
 
 
+async def spent_nothing(kind: str) -> None:
+    return None
+
+
 def tools() -> PageTools:
     nothing: Any = unused
     return PageTools(
         gates=nothing,
         fetcher=nothing,
         start_picture=nothing,
-        spend=lambda kind: None,
+        spend=spent_nothing,
         origin="AGENT",
         site=SITE,
     )

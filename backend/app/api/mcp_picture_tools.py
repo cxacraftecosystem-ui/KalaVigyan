@@ -160,7 +160,7 @@ def signed_in(context: ToolContext) -> User:
 async def _start_image_upload(context: ToolContext, arguments: StartImageUpload) -> UploadStart:
     user = signed_in(context)
     slot = _slot(arguments)
-    refuse_tool_when_spent(IMAGE_UPLOADS, user)
+    await refuse_tool_when_spent(IMAGE_UPLOADS, user)
     issued = await upload_links.start_upload(
         context.session, user, slot, arguments.declaration, now=datetime.now(UTC)
     )
@@ -239,7 +239,7 @@ async def _given(
 
 async def _file(position: int, item: GivenItem, fetcher: PictureFetcher, user: User) -> GivenFile:
     picture = BatchPicture.model_validate(item.model_dump(exclude={"image_url", "image_base64"}))
-    spent = spent_limit(IMAGE_UPLOADS, user)
+    spent = await spent_limit(IMAGE_UPLOADS, user)
     if spent is not None:
         return GivenFile(position, picture, None, spent.message)
     try:
