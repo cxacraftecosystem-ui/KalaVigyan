@@ -30,6 +30,10 @@ export function goldenDocument(): MonographDocument {
   return golden;
 }
 
+export function fragmentDocumentText(version: number): string {
+  return JSON.stringify({ ...JSON.parse(goldenText()), version, specs: {}, shell: servedMain() });
+}
+
 export function nativeComponents(document: MonographDocument = goldenDocument()): MonographComponent[] {
   return document.content.components.filter((component) => Object.hasOwn(document.specs, component.label));
 }

@@ -3,7 +3,7 @@ import { createServer, type Server } from "node:http";
 
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
-import { goldenText, nativeComponents } from "./monographNative";
+import { fragmentDocumentText, goldenText, nativeComponents } from "./monographNative";
 import { anchorPlans, mainLines, markAnchors, nativeDocumentPath, openedPage, pageAnswers, type AnchorPlan } from "./monographNativeBrowser";
 import { lineDiff, pixelDifference, type PixelDifference } from "./parity/parityMeasure";
 import { alignPhase } from "./parity/parityPhase";
@@ -11,17 +11,19 @@ import { selfHostedFaces, servedFaces } from "./parity/parityStyles";
 import { contextOptions, DESKTOP, SCHEMES, SMALL_PHONE, TABLET, type Scheme, type Width } from "./production/matrix";
 
 const APPROVED = "/monographs/kutch-ajrakh/index.html";
-const RENDERED = "/crafts/Kutch-Ajrakh/monograph";
+const NATIVE = "/crafts/Kutch-Ajrakh/monograph";
+const FRAGMENT_VERSION = 2;
+const FRAGMENTS = `/crafts/Kutch-Ajrakh/v${FRAGMENT_VERSION}`;
 const PIXEL_TOLERANCE = 0.02;
 const SHOT_TIMEOUT_MS = 10_000;
-const RUN_TIMEOUT_MS = 17 * 60_000;
+const RUN_TIMEOUT_MS = 15 * 60_000;
 const WIDTHS: readonly Width[] = [SMALL_PHONE, TABLET, DESKTOP];
 const SMOKE_PROJECT = "desktop";
 const LOCAL_API = /^http:\/\/(127\.0\.0\.1|localhost):\d+$/;
 const REACT_FAILURE = /Minified React error|hydrat/i;
 
 type Shot = PixelDifference | "missing" | "hidden";
-type Pages = { approved: Page; rendered: Page; errors: string[] };
+type Pages = { approved: Page; native: Page; fragments: Page; errors: string[] };
 type Run = { key: string; width: Width; scheme: Scheme };
 
 let api: Server | null = null;
@@ -32,11 +34,13 @@ function apiAddress(): URL | null {
 }
 
 async function servedApi(address: URL): Promise<Server> {
-  const body = goldenText();
+  const native = goldenText();
+  const fragments = fragmentDocumentText(FRAGMENT_VERSION);
   const server = createServer((request, response) => {
-    if (request.method === "GET" && (request.url ?? "").split("?")[0] === nativeDocumentPath()) {
+    const [path, query = ""] = (request.url ?? "").split("?");
+    if (request.method === "GET" && path === nativeDocumentPath()) {
       response.writeHead(200, { "content-type": "application/json", "content-language": "en" });
-      response.end(body);
+      response.end(new URLSearchParams(query).get("version") === String(FRAGMENT_VERSION) ? fragments : native);
       return;
     }
     request.socket.destroy();
@@ -68,58 +72,67 @@ function keep(name: string, body: Buffer | string): void {
 
 async function componentShot(pages: Pages, plan: AnchorPlan, run: Run): Promise<Shot> {
   const selector = `[data-native-parity="${plan.index}"]`;
-  const before = pages.approved.locator(selector);
+  const before = pages.fragments.locator(selector);
   if (!(await before.count()) || !(await before.isVisible())) return "hidden";
   const left = await before.screenshot({ animations: "disabled", timeout: SHOT_TIMEOUT_MS }).catch(() => null);
-  const right = await pages.rendered.locator(selector).screenshot({ animations: "disabled", timeout: SHOT_TIMEOUT_MS }).catch(() => null);
+  const right = await pages.native.locator(selector).screenshot({ animations: "disabled", timeout: SHOT_TIMEOUT_MS }).catch(() => null);
   if (!left || !right) return "missing";
   const shot = await pixelDifference(left, right);
   if (differs(shot)) {
-    keep(`${run.key}-${plan.index}.approved.png`, left);
-    keep(`${run.key}-${plan.index}.rendered.png`, right);
+    keep(`${run.key}-${plan.index}.fragment.png`, left);
+    keep(`${run.key}-${plan.index}.native.png`, right);
+    keep(`${run.key}-${plan.index}.fragment.html`, await before.evaluate((element) => element.outerHTML));
+    keep(`${run.key}-${plan.index}.native.html`, await pages.native.locator(selector).evaluate((element) => element.outerHTML));
   }
   return shot;
 }
 
-async function bothPages(browser: Browser, run: Run): Promise<Pages> {
+async function reactPage(browser: Browser, run: Run, path: string, errors: string[]): Promise<Page> {
   const context = await browser.newContext(contextOptions(run.width, run.scheme));
-  const rendered = await context.newPage();
-  const errors: string[] = [];
-  rendered.on("pageerror", (error) => errors.push(error.message));
-  rendered.on("console", (message) => {
-    if (message.type() === "error" && REACT_FAILURE.test(message.text())) errors.push(message.text());
+  const page = await context.newPage();
+  page.on("pageerror", (error) => errors.push(`${path}: ${error.message}`));
+  page.on("console", (message) => {
+    if (message.type() === "error" && REACT_FAILURE.test(message.text())) errors.push(`${path}: ${message.text()}`);
   });
-  await openedPage(rendered, RENDERED);
-  const approved = await context.newPage();
-  await servedFaces(approved, await selfHostedFaces(rendered));
+  await openedPage(page, path);
+  return page;
+}
+
+async function allPages(browser: Browser, run: Run): Promise<Pages> {
+  const errors: string[] = [];
+  const native = await reactPage(browser, run, NATIVE, errors);
+  const fragments = await reactPage(browser, run, FRAGMENTS, errors);
+  const approved = await native.context().newPage();
+  await servedFaces(approved, await selfHostedFaces(native));
   await openedPage(approved, APPROVED);
-  return { approved, rendered, errors };
+  return { approved, native, fragments, errors };
 }
 
 async function componentShots(pages: Pages, run: Run): Promise<Record<string, Shot>> {
   const plans = anchorPlans(nativeComponents());
-  await markAnchors(pages.approved, plans);
-  await markAnchors(pages.rendered, plans);
+  await markAnchors(pages.fragments, plans);
+  await markAnchors(pages.native, plans);
   const shots: Record<string, Shot> = {};
   for (const plan of plans) shots[`${plan.index} ${plan.label}`] = await componentShot(pages, plan, run);
   return shots;
 }
 
 async function checkRun(browser: Browser, run: Run): Promise<void> {
-  const pages = await bothPages(browser, run);
-  const text = lineDiff(await mainLines(pages.approved), await mainLines(pages.rendered));
-  await alignPhase(pages.approved, pages.rendered);
+  const pages = await allPages(browser, run);
+  const text = lineDiff(await mainLines(pages.approved), await mainLines(pages.native));
+  await alignPhase(pages.native, pages.fragments);
   const shots = await componentShots(pages, run);
-  const answers = { approved: await pageAnswers(pages.approved), rendered: await pageAnswers(pages.rendered) };
+  const answers = { approved: await pageAnswers(pages.approved), native: await pageAnswers(pages.native) };
   keep(`${run.key}-native-parity.json`, JSON.stringify({ text, shots, answers, errors: pages.errors }, null, 1));
-  await pages.rendered.context().close();
-  expect.soft(pages.errors, `${run.key}: errors the React page threw`).toEqual([]);
-  expect.soft(text.onlyApproved.length + text.onlyRendered.length, `${run.key}: lines that differ`).toBe(0);
-  expect.soft(answers.rendered, `${run.key}: a citation and the first figure answer as on the approved page`).toEqual(answers.approved);
-  expect.soft(Object.keys(shots).filter((key) => differs(shots[key])), `${run.key}: native views that differ`).toEqual([]);
+  await pages.native.context().close();
+  await pages.fragments.context().close();
+  expect.soft(pages.errors, `${run.key}: errors the React pages threw`).toEqual([]);
+  expect.soft(text.onlyApproved.length + text.onlyRendered.length, `${run.key}: lines that differ from the approved page`).toBe(0);
+  expect.soft(answers.native, `${run.key}: a citation and the first figure answer as on the approved page`).toEqual(answers.approved);
+  expect.soft(Object.keys(shots).filter((key) => differs(shots[key])), `${run.key}: native views that differ from their fragments`).toEqual([]);
 }
 
-test("Kutch Ajrakh's native views read, look and answer as the approved page at 360, 834 and 1440 in light and dark", async ({ browser }) => {
+test("Kutch Ajrakh's native views read and answer as the approved page and look as their fragments at 360, 834 and 1440 in light and dark", async ({ browser }) => {
   test.setTimeout(RUN_TIMEOUT_MS);
   for (const width of WIDTHS) {
     for (const scheme of SCHEMES) {
