@@ -88,8 +88,8 @@ Shapes that share a border are simplified together, so they still meet.
   never as zero. Zero is shown only where the dataset counts and found none, and then it says so
   ("none recorded in the Mineral Resources Data System", not "no deposits").
 - A place is drawn where a source puts it: a district-level place at its district, a point at the
-  coordinates of an open gazetteer record (Wikidata, CC0) of that village or town, never a guessed
-  or estimated position. A craft's place is shown only with the source that names it.
+  coordinates of an open gazetteer record (Wikidata, CC0) of that village or town, read with
+  `lookup_entity`, never a guessed or estimated position. A craft's place is shown only with the source that names it.
 - A trend is the dataset's series fitted by its stated method, with its period; never a line drawn
   by eye.
 

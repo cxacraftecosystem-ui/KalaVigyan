@@ -43,7 +43,8 @@ vocabulary of sixteen. A page is organised by them, and every field a source cov
 - **ECOLOGY**: the species and habitats the materials come from, harvesting and its effects,
   effluents and waste.
 - **BOTANY**: the dye, fibre and resin plants: botanical names, the part used, cultivation and
-  harvest.
+  harvest. `lookup_entity` gives a plant's taxon name as Wikidata records it, a check on the name
+  a quote spells.
 - **HISTORY**: origins, dated records, migrations, patronage, decline and revival.
 - **ECONOMICS**: prices with their dates, markets, wages, production and exports, the size of the
   workforce.

@@ -54,6 +54,22 @@ PROPOSAL_LIMITS: Mapping[str, int] = MappingProxyType(
         PAGE_PREVIEWS: PAGE_PREVIEWS_PER_WINDOW,
     }
 )
+SOURCE_SEARCHES = "source searches"
+SOURCE_READS = "source reads"
+PAID_SEARCHES = "paid searches"
+SOURCE_ARCHIVES = "source archives"
+LOOKUP_TIERS = ("NEW", "ESTABLISHED", "PROVEN")
+LOOKUP_WINDOW_SECONDS = 3600
+ANONYMOUS_HOLDER = "anonymous"
+LOOKUP_LIMITS: Mapping[str, Mapping[str, int]] = MappingProxyType(
+    {
+        SOURCE_SEARCHES: MappingProxyType({"NEW": 30, "ESTABLISHED": 60, "PROVEN": 120}),
+        SOURCE_READS: MappingProxyType({"NEW": 120, "ESTABLISHED": 240, "PROVEN": 480}),
+        PAID_SEARCHES: MappingProxyType({"NEW": 5, "ESTABLISHED": 15, "PROVEN": 30}),
+        SOURCE_ARCHIVES: MappingProxyType({"NEW": 5, "ESTABLISHED": 10, "PROVEN": 20}),
+    }
+)
+ANONYMOUS_LOOKUP_LIMITS: Mapping[str, int] = MappingProxyType({SOURCE_SEARCHES: 120, SOURCE_READS: 600})
 
 
 class SlidingWindow:
@@ -249,6 +265,10 @@ def proposal_slots(kind: str, user: Any, wanted: int, *, limit: int | None = Non
         return wanted, 0.0
     allowed = PROPOSAL_LIMITS[kind] if limit is None else limit
     return _windows.take(f"propose-{kind}:{user.id}", wanted, allowed, PROPOSAL_WINDOW_SECONDS)
+
+
+def lookup_attempt(kind: str, holder: str, limit: int) -> tuple[bool, float]:
+    return _windows.attempt(f"lookup-{kind}:{holder}", limit, LOOKUP_WINDOW_SECONDS)
 
 
 def public_read_attempt(connection: HTTPConnection) -> tuple[bool, float]:

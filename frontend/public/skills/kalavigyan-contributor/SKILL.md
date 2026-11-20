@@ -1,6 +1,6 @@
 ---
 name: kalavigyan-contributor
-description: How to research and contribute to KalaVigyan, the cited reference on the crafts of India and the science behind them, through its MCP server - find and reserve open work, read what is held, search for sources yourself, propose facts with verbatim quotes and locators one at a time or in batches and follow them through the queue, give structure and new sources, deliver finished components and whole page bundles after previewing them, and give pictures with the person's own declaration. The rules live in six references served beside it (the page checklist, sources, quotes and locators, the fields, components, datasets). Load it before proposing anything to KalaVigyan, and before researching or writing about a craft for it.
+description: How to research and contribute to KalaVigyan, the cited reference on the crafts of India and the science behind them, through its MCP server - find and reserve open work, read what is held, search, read and check sources with the same registries, reader and quote matcher KalaVigyan uses itself (search_sources, read_source, check_quote, lookup_compound, lookup_entity, find_pictures, archive_source), propose facts with verbatim quotes and locators one at a time or in batches and follow them through the queue, give structure and new sources, deliver finished components and whole page bundles after previewing them, and give pictures with the person's own declaration. The rules live in six references served beside it (the page checklist, sources, quotes and locators, the fields, components, datasets). Load it before proposing anything to KalaVigyan, and before researching or writing about a craft for it.
 ---
 
 # Contributing to KalaVigyan
@@ -32,12 +32,24 @@ prompts carry them as well.
 
 For data behind a figure, load the datasets skill too: `kalavigyan://skills/kalavigyan-datasets/SKILL.md`.
 
+The protocols your client follows are served whole as well, each the same text as the contract in
+KalaVigyan's repository: `kalavigyan://contracts/knowledge-writes.md` (the write path and its
+gates), `kalavigyan://contracts/open-work.md` (tasks, pages, previews and the source tools),
+`kalavigyan://contracts/component-specs-general.md` (the general component kinds),
+`kalavigyan://contracts/image-contributions.md` (pictures) and
+`kalavigyan://contracts/mcp-ask-and-upload.md` (asking and upload links). `kalavigyan://index.md`
+names every tool, prompt and resource in a line each.
+
 ## Connect
 
-- Add the KalaVigyan MCP server to your client. Reading needs no sign-in.
-- Reserving tasks and proposing need a signed-in connection: the client opens our site, you sign
-  in, accept the MCP terms of use and approve the contribute scope. Only accounts admitted on the
-  access roster can sign in, and only a Researcher, Professor or Admin can contribute.
+- Add the KalaVigyan MCP server to your client. Reading needs no sign-in: `find_crafts` gives a
+  craft's slug and page, `list_fields` the sixteen fields with what a craft holds in each.
+- Reserving tasks, proposing, and searching, reading and archiving sources need a signed-in
+  connection: the client opens our site, you sign in, accept the MCP terms of use and approve the
+  contribute scope. Only accounts admitted on the access roster can sign in, and only a Researcher,
+  Professor or Admin can contribute.
+- `ask` answers a question in the signed-in person's name, as the site does, and counts against
+  their asks; it is for reading, never a source for a fact.
 - Contributions show no contributor name. Who proposed what is kept privately, for moderation and
   audit only. A published contribution stays published; only what still waits for review can be
   withdrawn.
@@ -55,7 +67,10 @@ For data behind a figure, load the datasets skill too: `kalavigyan://skills/kala
    propose a fact that is held; a second source for a held fact goes to `propose_source`.
 4. `list_components` first, before anything about a component: place an existing component by
    its label rather than proposing another.
-5. Your own search for sources, by `sources.md`.
+5. Find and read sources with KalaVigyan's own tools first (Finding and reading sources):
+   `search_sources` and `find_pictures` to find, `lookup_compound` and `lookup_entity` for
+   compounds, places and plants, `read_source` to read, `check_quote` on every quote, then your own
+   search where they find nothing, by `sources.md`.
 6. Propose: `propose_facts` (or `propose_fact`) for new facts, `propose_source` for a new source of
    a held fact, `propose_structure` for a curated page's structure, `propose_component` for a
    component the library lacks, `give_image` for a picture; or a page's parts together, with
@@ -114,6 +129,47 @@ its own kind:
 
 A spent allowance says how long to wait; nothing was stored.
 
+## Finding and reading sources
+
+KalaVigyan's own research runs through a set of source adapters, and the server lends you the same
+set: the same registries, keys and politeness, and the very reader and matcher its gates use. Reach
+for them before any search of your own.
+
+- `search_sources` with words for what is missing, and `craft_slug` to add the craft's name: every
+  registry, reference work and web route that `sources.md` lists under Where to look, merged and
+  ranked. Each result has its grade, whether KalaVigyan holds it already, its licence and whether
+  that licence is open, an open-access copy where Unpaywall knows one, and its DOI or address.
+  `kinds` narrows the search to `scholarly`, `reference` or `web`.
+- `read_source` with a result's `url` or `doi`: the text exactly as the gates will fetch and match
+  it, a page at a time (`start`, then the reply's `nextStart`) or every passage holding the words you give
+  (`around`), each passage with its locator. It names the licence the page states, the grade the
+  gates will record and an archived copy where one exists, and its `url` is the address to cite.
+  Copy every quote from these passages.
+- `check_quote` with each quote before you propose it: the QUOTES gate's own verdict. A failure
+  shows the nearest passage and how much of the quote it holds; mend the quote from the passage.
+- `lookup_compound` with a name, synonym, formula or PubChem CID: the PubChem record, its GHS
+  hazards, and the name and synonyms KalaVigyan holds. `lookup_entity` with a name or a Wikidata Q
+  number: the items for a place, a plant (with its taxon name) or a craft, with their statements.
+- `find_pictures`: open-licence pictures on Wikimedia Commons and Openverse with their author,
+  licence, credit line, size and the widths the site draws. They come from elsewhere: KalaVigyan's
+  team places them, credited to their authors, and `give_image` takes only a picture the person
+  holds.
+- `archive_source` with a page's address: the Wayback Machine saves it and the reply gives the
+  snapshot to cite beside the live page.
+
+`lookup_compound`, `lookup_entity` and `find_pictures` need no sign-in; the other four need a
+signed-in Researcher or above. Each use has its own allowance an hour, by trust tier:
+
+| Use | Tools | NEW | ESTABLISHED | PROVEN |
+|---|---|---|---|---|
+| source searches | `search_sources`, `find_pictures` | 30 | 60 | 120 |
+| source reads | `read_source`, `check_quote`, `lookup_compound`, `lookup_entity` | 120 | 240 | 480 |
+| paid searches | the Brave and Elsevier routes of `search_sources` | 5 | 15 | 30 |
+| source archives | `archive_source` | 5 | 10 | 20 |
+
+A search whose paid searches are spent still runs over the free routes and says so. Signed-out
+callers share one allowance between them.
+
 ## Stewardship
 
 - `adopt_craft` makes your account a steward of a craft or family: its open work comes back as one
@@ -152,7 +208,8 @@ A spent allowance says how long to wait; nothing was stored.
 - Always `preview_page` first. Give one bundle for one craft, family or category page: facts (as
   `propose_fact` takes them), structure items (as `propose_structure` takes them), components
   (each `{proposal, cites}`, the cites naming the bundle's facts a unit rests on as `fact:0`,
-  `fact:1` and on), the layout (built on the version `get_layout` gave) and pictures: a new one
+  `fact:1` and on), the layout (built on the version `get_layout` gave; `propose_layout` sends a
+  layout alone) and pictures: a new one
   with the facts it shows, or one you gave with `give_image`, named by its `contribution_id`.
 - The preview proposes nothing. It returns a private link, for your account only and for 24 hours,
   to the page drawn exactly as the site draws it, a picture you gave in its place, and says for
@@ -211,6 +268,8 @@ still found is a `CORROBORATE_FACT` task; facts resting only on pages that stopp
 
 - Never propose prose or HTML: facts, structure, components, pictures and page bundles only.
 - Never submit a page bundle you have not previewed.
+- Never propose a quote `check_quote` refused, or one you did not copy from the text `read_source`
+  returned or the source itself.
 - Never fill in a picture's declaration for the person, and never give a picture they do not hold
   the right to share.
 - Never break a rule of the references to pass a gate: a refused fact is fixed from its sources or

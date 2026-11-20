@@ -38,12 +38,14 @@ __all__ = [
     "METHOD_REFERENCES",
     "METHOD_SECTIONS",
     "PROMPTS",
+    "SOURCES_SECTION",
     "prompt_list",
     "prompt_result",
 ]
 
 DELIVER_DATASET_PROMPT = "deliver_dataset"
-METHOD_SECTIONS = ("Proposals and their progress",)
+SOURCES_SECTION = "Finding and reading sources"
+METHOD_SECTIONS = ("Proposals and their progress", SOURCES_SECTION)
 METHOD_REFERENCES = ("sources", "quotes", "fields", "page-checklist")
 FIGURE_REFERENCES = (*METHOD_REFERENCES, "components")
 CLOSING_SECTION = "Never"
@@ -236,7 +238,7 @@ PROMPTS: Mapping[str, Prompt] = MappingProxyType(
                 "the person who holds it."
             ),
             picture_steps,
-            ("Pictures",),
+            ("Pictures", SOURCES_SECTION),
             (),
         ),
         DELIVER_DATASET_PROMPT: Prompt(

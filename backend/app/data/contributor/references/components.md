@@ -32,7 +32,7 @@ Choose by what the reader must see:
 | places, with or without a value each | `general_map_layer` |
 | a mechanism, a section, a tool or an object | `general_drawing`, or `diagram` for a chain of linked steps |
 | one stated equation | `equation_card` |
-| molecules | `structure_diagram` (flat, with their PubChem records) or `molecule_3d` |
+| molecules | `structure_diagram` (flat, with their PubChem records from `lookup_compound`) or `molecule_3d` |
 | a reaction a source states step by step | `reaction_player` |
 | what each material is and does | `material_cards` |
 | sources that disagree | `source_disagreements` |

@@ -19,6 +19,11 @@ fact, or a unit of a delivered component.
 - The gates fetch every source themselves and refuse a quote they cannot find in the fetched text.
   Typographic quotes and dashes, line-break hyphens and spacing are folded before matching; nothing
   else is, so never correct, shorten or translate a quote.
+- Take a quote from what `read_source` returns: its passages are the fetched text after that same
+  folding, so a quote copied whole from one passage, or across the neighbouring lines of a PDF, is
+  found. `check_quote` gives the gate's verdict on a quote before it is proposed, and on a miss the
+  closest run of words the text holds; a quote is mended from that run, never the text from the
+  quote.
 
 ## Locators
 
@@ -26,6 +31,9 @@ fact, or a unit of a delivered component.
   timestamp (`p. 14`, `section 2.3, paragraph 4`, `Table 3, row 7`, `12:40`).
 - A locator points at the quote itself, not at the document: a reader who follows it finds the
   words.
+- `read_source` numbers the fetched text by paragraph for a web page and by line for a PDF. Give
+  the page or section the source itself shows when it has one, and that paragraph or line when it
+  has none.
 
 ## One fact per sentence
 

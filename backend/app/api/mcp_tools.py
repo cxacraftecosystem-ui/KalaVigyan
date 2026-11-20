@@ -11,6 +11,7 @@ from app.core.errors import InvalidInput, Refused
 from .mcp_ask_tools import ASK_TOOLS
 from .mcp_fact_tools import FACT_TOOLS
 from .mcp_layout_tools import LAYOUT_TOOLS
+from .mcp_lookup_tools import LOOKUP_TOOLS
 from .mcp_page_tools import PAGE_TOOLS
 from .mcp_picture_tools import PICTURE_TOOLS
 from .mcp_prompts import prompt_list, prompt_result
@@ -51,6 +52,7 @@ TOOLS: Mapping[str, Tool] = MappingProxyType(
             *STRUCTURE_TOOLS,
             *SOURCE_TOOLS,
             *PAGE_TOOLS,
+            *LOOKUP_TOOLS,
         )
     }
 )

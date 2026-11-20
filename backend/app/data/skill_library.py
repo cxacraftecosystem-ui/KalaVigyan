@@ -10,14 +10,21 @@ from types import MappingProxyType
 from .contributor_kit import CONTRIBUTOR_SKILL_PATH
 
 __all__ = [
+    "CONTRACTS",
+    "CONTRACTS_DIR",
     "DATASETS_SITE_PATH",
     "DATASETS_SKILL_PATH",
+    "INDEX_PATH",
+    "INDEX_URI",
     "REFERENCES",
     "REFERENCES_DIR",
+    "Contract",
     "Reference",
+    "contract_text",
     "datasets_skill",
     "prompt_reference",
     "reference_text",
+    "server_index",
 ]
 
 CONTRIBUTOR_DIR = CONTRIBUTOR_SKILL_PATH.parent
@@ -26,6 +33,11 @@ DATASETS_SKILL_PATH = CONTRIBUTOR_DIR / "kalavigyan-datasets" / "SKILL.md"
 DATASETS_SITE_PATH = "/skills/kalavigyan-datasets/SKILL.md"
 REFERENCE_URI_PREFIX = "kalavigyan://skills/references/"
 REFERENCE_SITE_PREFIX = "/skills/references/"
+CONTRACTS_DIR = CONTRIBUTOR_DIR / "contracts"
+CONTRACT_URI_PREFIX = "kalavigyan://contracts/"
+CONTRACT_REPOSITORY_PREFIX = "docs/contracts/"
+INDEX_PATH = CONTRIBUTOR_DIR / "index.md"
+INDEX_URI = "kalavigyan://index.md"
 HEADING = re.compile(r"^(#+) ", re.MULTILINE)
 
 
@@ -91,9 +103,80 @@ REFERENCES: Mapping[str, Reference] = MappingProxyType(
 )
 
 
+@dataclass(frozen=True)
+class Contract:
+    name: str
+    title: str
+    holds: str
+
+    @property
+    def file_name(self) -> str:
+        return f"{self.name}.md"
+
+    @property
+    def path(self) -> Path:
+        return CONTRACTS_DIR / self.file_name
+
+    @property
+    def uri(self) -> str:
+        return CONTRACT_URI_PREFIX + self.file_name
+
+    @property
+    def repository_path(self) -> str:
+        return CONTRACT_REPOSITORY_PREFIX + self.file_name
+
+
+CONTRACTS: Mapping[str, Contract] = MappingProxyType(
+    {
+        contract.name: contract
+        for contract in (
+            Contract(
+                "knowledge-writes",
+                "The knowledge write path",
+                "How a proposed fact, structure item, source and layout are checked and stored: the gates, "
+                "their reasons, the queue, idempotency keys, trust tiers and the hourly limits",
+            ),
+            Contract(
+                "open-work",
+                "Open work and the method on the MCP server",
+                "Tasks and their keys, reservations, stewardship, delivered components and pages, previews, "
+                "the prompts and resources, and the source tools",
+            ),
+            Contract(
+                "component-specs-general",
+                "The general component kinds",
+                "The five general kinds a contributor delivers (drawing, chart, table, timeline, map layer): "
+                "their specs, units, citations and the checks a delivered spec passes",
+            ),
+            Contract(
+                "image-contributions",
+                "Picture contributions",
+                "How a picture is given: the declaration, the formats accepted, the screens it passes, review "
+                "and where an approved picture is drawn",
+            ),
+            Contract(
+                "mcp-ask-and-upload",
+                "Asking and uploading over MCP",
+                "The ask tool, the answer view, single-use upload links and give_image",
+            ),
+        )
+    }
+)
+
+
 @cache
 def reference_text(name: str) -> str:
     return REFERENCES[name].path.read_bytes().decode("utf-8")
+
+
+@cache
+def contract_text(name: str) -> str:
+    return CONTRACTS[name].path.read_bytes().decode("utf-8")
+
+
+@cache
+def server_index() -> str:
+    return INDEX_PATH.read_bytes().decode("utf-8")
 
 
 def prompt_reference(name: str) -> str:
