@@ -9,7 +9,15 @@ from app.core.errors import InvalidInput
 
 from .extract_specs_files import Extractor, Found
 from .extract_specs_markup import Element, has_classes, is_tag
-from .extract_specs_parts import drawing, figure_head, held_text, slot_unit, style_of, text_line
+from .extract_specs_parts import (
+    drawing,
+    figure_head,
+    held_text,
+    held_text_or_unit,
+    slot_unit,
+    style_of,
+    text_line,
+)
 
 __all__ = ["MAP_EXTRACTORS", "axis_event_label", "pick_label"]
 
@@ -115,7 +123,7 @@ def _sequence_item(item: Element, found: Found) -> dict[str, Any]:
 def _differs(details: Element, found: Found) -> dict[str, Any]:
     return {
         "summary": held_text(details.first(is_tag("summary")), found.sources),
-        "body": held_text(details.first(has_classes("differs-body")), found.sources),
+        "body": held_text_or_unit(details.first(has_classes("differs-body")), found.sources),
     }
 
 

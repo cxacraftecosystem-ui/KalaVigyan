@@ -12,6 +12,7 @@ from .component_specs_plates_parts import (
     DomId,
     DrawingElement,
     FileName,
+    HeldOrUnit,
     HeldText,
     UnitRef,
     ViewBox,
@@ -83,7 +84,7 @@ class FilmSpec(ContractModel):
 
 class ComicPanel(ContractModel):
     layout: ClassName | None = None
-    caption: HeldText
+    caption: HeldOrUnit
     art: DrawingElement
     tag: str = Field(min_length=1)
 
@@ -103,7 +104,7 @@ class AudioPlayerSpec(ContractModel):
 
 class VoiceEcho(ContractModel):
     quote: UnitRef
-    attribution: HeldText
+    attribution: HeldOrUnit
 
 
 class VoiceTestimony(ContractModel):

@@ -11,8 +11,9 @@ from .extract_specs_markup import Element, has_classes, is_tag
 from .extract_specs_parts import (
     drawing,
     dye_variable,
-    held_nodes,
+    held_or_unit,
     held_text,
+    held_text_or_unit,
     picture,
     shown_day,
     slot_unit,
@@ -55,7 +56,7 @@ def picture_plate(found: Found) -> dict[str, Any]:
             "classes": element.classes,
             "box": PULL_BOX,
             "quote": slot_unit(quote.first(is_tag("p"))),
-            "attribution": held_text(quote.first(is_tag("footer")), found.sources),
+            "attribution": held_text_or_unit(quote.first(is_tag("footer")), found.sources),
         }
         return {**spec, "setting": "pull", "pull": pull}
     return {**spec, "setting": "figure"}
@@ -111,7 +112,7 @@ def _masthead(figure: Element, found: Found) -> dict[str, Any]:
         "kicker": slot_unit(label.first(has_classes("lc-k"))),
         "title": slot_unit(label.first(has_classes("lc-title"))),
         "seal": drawing(seal.first(is_tag("svg"))),
-        "registration": held_nodes(
+        "registration": held_or_unit(
             [child for child in seal.children if not _is_drawing(child)], found.sources
         ),
         "place": meta[1].text(),

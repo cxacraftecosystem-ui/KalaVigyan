@@ -1,7 +1,7 @@
 import { createElement, type ReactNode } from "react";
 
 import { clusterName } from "@/lib/citationCluster";
-import type { HeldMark, HeldNode, ShownSource } from "@/lib/componentSpecsPlates";
+import type { HeldMark, HeldNode, HeldOrUnit, ShownSource } from "@/lib/componentSpecsPlates";
 
 const PLAIN_MARKS = ["b", "sub", "sup", "mark"];
 
@@ -62,4 +62,8 @@ function heldMark(mark: HeldMark, key: number): ReactNode {
 
 export function HeldText({ nodes }: { nodes: HeldNode[] }) {
   return <>{nodes.map((node, index) => (typeof node === "string" ? node : heldMark(node, index)))}</>;
+}
+
+export function HeldOrUnitText({ value, renderUnit }: { value: HeldOrUnit; renderUnit: (ref: string) => ReactNode }) {
+  return typeof value === "string" ? <>{renderUnit(value)}</> : <HeldText nodes={value} />;
 }

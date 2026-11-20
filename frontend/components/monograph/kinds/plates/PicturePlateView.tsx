@@ -4,7 +4,7 @@ import { picturePlateShape, type ChapterOpener, type Picture, type PlateFigure }
 import type { ComponentViewProps } from "@/lib/componentViewContract";
 import { parseShape } from "@/lib/shape";
 
-import { HeldText } from "./HeldText";
+import { HeldOrUnitText } from "./HeldText";
 import { PlateMasthead } from "./PlateMasthead";
 import { SpecPicture } from "./SpecPicture";
 
@@ -87,7 +87,7 @@ export function PicturePlateView({ spec, renderUnit }: ComponentViewProps) {
           <blockquote className="kv-pull">
             <p>{renderUnit(plate.pull.quote)}</p>
             <footer>
-              <HeldText nodes={plate.pull.attribution} />
+              <HeldOrUnitText value={plate.pull.attribution} renderUnit={renderUnit} />
             </footer>
           </blockquote>
         </div>

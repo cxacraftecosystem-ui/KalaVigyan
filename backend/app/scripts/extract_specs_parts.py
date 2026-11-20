@@ -17,7 +17,9 @@ __all__ = [
     "dye_variable",
     "figure_head",
     "held_nodes",
+    "held_or_unit",
     "held_text",
+    "held_text_or_unit",
     "picture",
     "placed",
     "shown_day",
@@ -134,6 +136,17 @@ def placed(element: Element, sources: Mapping[str, CitedSource]) -> dict[str, An
 
 def held_nodes(nodes: Iterable[Node], sources: Mapping[str, CitedSource]) -> list[Any]:
     return [_held(node, sources) for node in nodes]
+
+
+def held_or_unit(nodes: Iterable[Node], sources: Mapping[str, CitedSource]) -> str | list[Any]:
+    found = [node for node in nodes if not (isinstance(node, str) and not node.strip())]
+    if len(found) == 1 and isinstance(found[0], Element) and found[0].name == SLOT_TAG:
+        return found[0].attrs[SLOT_KIND]
+    return held_nodes(nodes, sources)
+
+
+def held_text_or_unit(element: Element, sources: Mapping[str, CitedSource]) -> str | list[Any]:
+    return held_or_unit(element.children, sources)
 
 
 def url_reference(value: str) -> str:

@@ -8,7 +8,15 @@ from app.core.errors import InvalidInput
 
 from .extract_specs_files import Extractor, Found
 from .extract_specs_markup import Element, has_classes, is_tag
-from .extract_specs_parts import drawing, held_nodes, held_text, shown_day, slot_unit, url_reference
+from .extract_specs_parts import (
+    drawing,
+    held_or_unit,
+    held_text,
+    held_text_or_unit,
+    shown_day,
+    slot_unit,
+    url_reference,
+)
 
 __all__ = ["MEDIA_EXTRACTORS", "clock"]
 
@@ -106,7 +114,7 @@ def comic(found: Found) -> dict[str, Any]:
         panels.append(
             {
                 "layout": " ".join(cls for cls in panel.classes if cls != "panel") or None,
-                "caption": held_nodes(told, found.sources),
+                "caption": held_or_unit(told, found.sources),
                 "art": drawing(panel.first(is_tag("svg"))),
                 "tag": panel.first(has_classes("ai-tag")).text(),
             }
@@ -150,7 +158,7 @@ def voice(found: Found) -> dict[str, Any]:
 def _echo(quote: Element, found: Found) -> dict[str, Any]:
     return {
         "quote": slot_unit(quote.first(is_tag("p"))),
-        "attribution": held_text(quote.first(is_tag("footer")), found.sources),
+        "attribution": held_text_or_unit(quote.first(is_tag("footer")), found.sources),
     }
 
 

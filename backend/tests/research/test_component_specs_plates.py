@@ -263,3 +263,18 @@ def test_a_drawing_keeps_the_spaces_of_its_text_and_refuses_handlers_and_foreign
         DrawingElement.model_validate({"tag": "rect", "attrs": {"fill": "JavaScript: go()"}})
     with pytest.raises(ValidationError):
         DrawingElement.model_validate({"tag": "foreignObject"})
+
+
+def test_a_cited_passage_may_be_a_text_unit_but_not_any_other_text() -> None:
+    comic = SPEC_MODELS_PLATES["comic"].model_validate(
+        {**VALID["comic"], "panels": [{**VALID["comic"]["panels"][0], "caption": "u1104"}]}
+    )
+    assert comic.model_dump(mode="json")["panels"][0]["caption"] == "u1104"
+    plate = SPEC_MODELS_PLATES["picture_plate"].model_validate(
+        {**VALID["picture_plate"], "masthead": {**MASTHEAD, "registration": "u1110"}}
+    )
+    assert plate.model_dump(mode="json")["masthead"]["registration"] == "u1110"
+    with pytest.raises(ValidationError):
+        SPEC_MODELS_PLATES["comic"].model_validate(
+            {**VALID["comic"], "panels": [{**VALID["comic"]["panels"][0], "caption": "Panel one"}]}
+        )

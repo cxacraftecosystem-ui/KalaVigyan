@@ -132,13 +132,22 @@ export const heldTextShape: Shape<HeldNode[]> = {
   }
 };
 
+export type HeldOrUnit = string | HeldNode[];
+
+export const heldOrUnitShape: Shape<HeldOrUnit> = {
+  expected: "a unit id or held text",
+  parse(value, path) {
+    return typeof value === "string" ? unitRef.parse(value, path) : heldTextShape.parse(value, path);
+  }
+};
+
 export type CaptionLine = { unit: string; look: boolean };
 export type PlateFigure = { classes: string[]; crop: string | null; captions: CaptionLine[]; credit: string };
 export type PlateRow = { classes: string[]; note: string };
-export type PlatePull = { classes: string[]; box: string; quote: string; attribution: HeldNode[] };
+export type PlatePull = { classes: string[]; box: string; quote: string; attribution: HeldOrUnit };
 export type ChapterOpener = { chapterNo: string; kicker: string; title: string; titleId: string; dek: string; credit: string };
 export type GradeCount = { grade: (typeof GRADES)[number]; count: number };
-export type MastheadLabel = { kicker: string; title: string; seal: DrawingElement; registration: HeldNode[]; place: string; sources: number; grades: GradeCount[]; curated: string };
+export type MastheadLabel = { kicker: string; title: string; seal: DrawingElement; registration: HeldOrUnit; place: string; sources: number; grades: GradeCount[]; curated: string };
 export type PicturePlateSpec = {
   setting: (typeof PLATE_SETTINGS)[number];
   picture: Picture;
@@ -159,7 +168,7 @@ const mastheadShape = object<MastheadLabel>({
   kicker: unitRef,
   title: unitRef,
   seal: drawingShape,
-  registration: heldTextShape,
+  registration: heldOrUnitShape,
   place: text,
   sources: integer,
   grades: list(object<GradeCount>({ grade: oneOf(GRADES), count: integer }), 1),
@@ -171,7 +180,7 @@ export const picturePlateShape = object<PicturePlateSpec>({
   picture: pictureShape,
   figure: nullable(plateFigureShape),
   row: nullable(object<PlateRow>({ classes: list(className, 1), note: unitRef })),
-  pull: nullable(object<PlatePull>({ classes: list(className, 1), box: className, quote: unitRef, attribution: heldTextShape })),
+  pull: nullable(object<PlatePull>({ classes: list(className, 1), box: className, quote: unitRef, attribution: heldOrUnitShape })),
   opener: nullable(object<ChapterOpener>({ chapterNo: unitRef, kicker: unitRef, title: unitRef, titleId: domId, dek: unitRef, credit: unitRef })),
   masthead: nullable(mastheadShape)
 });
@@ -306,17 +315,17 @@ export const filmShape = object<FilmSpec>({
   subtitlesName: fileName
 });
 
-export type ComicPanel = { layout: string | null; caption: HeldNode[]; art: DrawingElement; tag: string };
+export type ComicPanel = { layout: string | null; caption: HeldOrUnit; art: DrawingElement; tag: string };
 export type ComicSpec = { label: string; panels: ComicPanel[] };
 export const comicShape = object<ComicSpec>({
   label: text,
-  panels: list(object<ComicPanel>({ layout: nullable(className), caption: heldTextShape, art: drawingShape, tag: text }), 1)
+  panels: list(object<ComicPanel>({ layout: nullable(className), caption: heldOrUnitShape, art: drawingShape, tag: text }), 1)
 });
 
 export type AudioPlayerSpec = { title: string; description: string; action: string; minutes: number; playerId: string };
 export const audioPlayerShape = object<AudioPlayerSpec>({ title: unitRef, description: unitRef, action: text, minutes: integer, playerId: domId });
 
-export type VoiceEcho = { quote: string; attribution: HeldNode[] };
+export type VoiceEcho = { quote: string; attribution: HeldOrUnit };
 export type VoiceTestimony = { kicker: string; kickerId: string; evidence: string; quote: string; credit: string; meta: string; echo: VoiceEcho | null };
 export type VoiceCoda = { label: string; viewBox: string; tile: string; weave: string; kicker: string; quote: string; caption: string; note: string };
 export type VoiceSpec = { setting: (typeof VOICE_SETTINGS)[number]; testimony: VoiceTestimony | null; coda: VoiceCoda | null };
@@ -330,7 +339,7 @@ export const voiceShape = object<VoiceSpec>({
       quote: unitRef,
       credit: unitRef,
       meta: unitRef,
-      echo: nullable(object<VoiceEcho>({ quote: unitRef, attribution: heldTextShape }))
+      echo: nullable(object<VoiceEcho>({ quote: unitRef, attribution: heldOrUnitShape }))
     })
   ),
   coda: nullable(object<VoiceCoda>({ label: text, viewBox, tile: domId, weave: domId, kicker: unitRef, quote: unitRef, caption: unitRef, note: unitRef }))

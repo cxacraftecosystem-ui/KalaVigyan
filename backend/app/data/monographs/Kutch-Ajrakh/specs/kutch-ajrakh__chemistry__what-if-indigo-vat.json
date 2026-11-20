@@ -17,6 +17,16 @@
      "unit": "u0866"
     },
     {
+     "part": "differs",
+     "differs": {
+      "summary": "Sources differ: months, or about one month",
+      "body": [
+       "u1102",
+       "u1103"
+      ]
+     }
+    },
+    {
      "part": "text",
      "unit": "u0867"
     }

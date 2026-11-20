@@ -30863,6 +30863,819 @@
     "Indigo: PubChem’s main record is CID 10215; the 3D model and the formula cards use CID 5318432, the same molecule in its (2E), C=O form."
    ],
    "claimIds": []
+  },
+  "u1087": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S10 S06",
+     "c": [
+      "Clifford records ",
+      {
+       "m": "i",
+       "c": [
+        "saaj"
+       ]
+      },
+      " and drying repeated 7 to 9 times, until the cloth foams when rubbed, before a wash in plain ",
+      {
+       "m": "cite",
+       "key": "pt:C065",
+       "g": [
+        "g14",
+        "g15"
+       ],
+       "c": [
+        "water."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C065"
+   ]
+  },
+  "u1088": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S01",
+     "c": [
+      "bright white and ",
+      {
+       "m": "cite",
+       "key": "pt:C064",
+       "g": [
+        "g1"
+       ],
+       "c": [
+        "soft"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C064"
+   ]
+  },
+  "u1089": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S20 S12",
+     "c": [
+      "pale ",
+      {
+       "m": "cite",
+       "key": "pt:C041",
+       "g": [
+        "g16",
+        "g17"
+       ],
+       "c": [
+        "yellow"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C041"
+   ]
+  },
+  "u1090": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S04 S01",
+     "c": [
+      "white outlines in lime ",
+      {
+       "m": "cite",
+       "key": "pt:C070",
+       "g": [
+        "g7",
+        "g1"
+       ],
+       "c": [
+        "resist"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C070"
+   ]
+  },
+  "u1091": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S04",
+     "c": [
+      "dry on both ",
+      {
+       "m": "cite",
+       "key": "pt:C074",
+       "g": [
+        "g7"
+       ],
+       "c": [
+        "faces"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C074"
+   ]
+  },
+  "u1092": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S01",
+     "c": [
+      "The GI journal describes ",
+      {
+       "m": "i",
+       "c": [
+        "kut"
+       ]
+      },
+      " as a fine paste of jaggery or molasses in which scrap iron and gram flour have fermented for ten to fifteen ",
+      {
+       "m": "cite",
+       "key": "pt:C076",
+       "g": [
+        "g1"
+       ],
+       "c": [
+        "days."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C076"
+   ]
+  },
+  "u1093": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S06",
+     "c": [
+      "The iron, jaggery and gram flour mixture for kat ferments in about one week in the hot season and two weeks in the cold ",
+      {
+       "m": "cite",
+       "key": "pt:C077",
+       "g": [
+        "g15"
+       ],
+       "c": [
+        "season."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C077"
+   ]
+  },
+  "u1094": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S01 S14",
+     "c": [
+      "chocolate-black where ",
+      {
+       "m": "cite",
+       "key": "pt:C078",
+       "g": [
+        "g1",
+        "g3"
+       ],
+       "c": [
+        "printed"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C078"
+   ]
+  },
+  "u1095": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S04",
+     "c": [
+      {
+       "m": "i",
+       "c": [
+        "kesari"
+       ]
+      },
+      "-tinted stars of ",
+      {
+       "m": "cite",
+       "key": "pt:C079",
+       "g": [
+        "g7"
+       ],
+       "c": [
+        "alum"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C079"
+   ]
+  },
+  "u1096": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S01",
+     "c": [
+      "clay over the parts that must stay out of the ",
+      {
+       "m": "cite",
+       "key": "pt:C082",
+       "g": [
+        "g1"
+       ],
+       "c": [
+        "blue"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C082"
+   ]
+  },
+  "u1097": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S01 S14",
+     "c": [
+      "green, then blue in the ",
+      {
+       "m": "cite",
+       "key": "pt:C086",
+       "g": [
+        "g1",
+        "g3"
+       ],
+       "c": [
+        "air"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C086"
+   ]
+  },
+  "u1098": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S04",
+     "c": [
+      "stiff, the ",
+      {
+       "m": "i",
+       "c": [
+        "khor"
+       ]
+      },
+      " resist ",
+      {
+       "m": "cite",
+       "key": "pt:C088",
+       "g": [
+        "g7"
+       ],
+       "c": [
+        "kept"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C088"
+   ]
+  },
+  "u1099": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S01",
+     "c": [
+      "In the GI journal’s method, the madder or ",
+      {
+       "m": "i",
+       "c": [
+        "al"
+       ]
+      },
+      " dyeing comes straight after the alum ",
+      {
+       "m": "i",
+       "c": [
+        "pa"
+       ]
+      },
+      " printing and before the ",
+      {
+       "m": "i",
+       "c": [
+        "gach"
+       ]
+      },
+      " resists and indigo ",
+      {
+       "m": "cite",
+       "key": "pt:C149",
+       "g": [
+        "g1"
+       ],
+       "c": [
+        "dyeing."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C149"
+   ]
+  },
+  "u1100": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S01",
+     "c": [
+      "red where alum was ",
+      {
+       "m": "cite",
+       "key": "pt:C093",
+       "g": [
+        "g1"
+       ],
+       "c": [
+        "printed"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C093"
+   ]
+  },
+  "u1101": {
+   "chapter": "made",
+   "tag": "span",
+   "field": "PROCESS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S04",
+     "c": [
+      "brighter red and ",
+      {
+       "m": "cite",
+       "key": "pt:C091",
+       "g": [
+        "g7"
+       ],
+       "c": [
+        "blue"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C091"
+   ]
+  },
+  "u1102": {
+   "chapter": "what-if",
+   "tag": "span",
+   "field": "CHEMISTRY",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S04",
+     "c": [
+      "Karolia and Buch leave the indigo and seeds in the ",
+      {
+       "m": "i",
+       "c": [
+        "naand"
+       ]
+      },
+      " for ",
+      {
+       "m": "cite",
+       "key": "pt:C083",
+       "g": [
+        "g7"
+       ],
+       "c": [
+        "months."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C083"
+   ]
+  },
+  "u1103": {
+   "chapter": "what-if",
+   "tag": "span",
+   "field": "CHEMISTRY",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S06",
+     "c": [
+      "Clifford records about one ",
+      {
+       "m": "cite",
+       "key": "pt:C085",
+       "g": [
+        "g15"
+       ],
+       "c": [
+        "month."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C085"
+   ]
+  },
+  "u1104": {
+   "chapter": "reading",
+   "tag": "span",
+   "field": "CHEMISTRY",
+   "nodes": [
+    {
+     "m": "s",
+     "c": [
+      "In Kachchh, ajrakh was mainly made in Khavda and Dhamadka, villages known for rich blue and red ",
+      {
+       "m": "cite",
+       "key": "sa:khamir10_1,dua1",
+       "g": [
+        "g14",
+        "g12"
+       ],
+       "c": [
+        "cloth."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C034"
+   ]
+  },
+  "u1105": {
+   "chapter": "reading",
+   "tag": "span",
+   "field": "CHEMISTRY",
+   "nodes": [
+    {
+     "m": "s",
+     "c": [
+      "Traditionally, the cloth goes into a naand, a V-shaped vat dug into the ground, for 10 to 15 ",
+      {
+       "m": "cite",
+       "key": "sa:kb_naand1,kb_naand2",
+       "g": [
+        "g7"
+       ],
+       "c": [
+        "minutes."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C083"
+   ]
+  },
+  "u1106": {
+   "chapter": "reading",
+   "tag": "span",
+   "field": "CHEMISTRY",
+   "nodes": [
+    {
+     "m": "s",
+     "c": [
+      "Bacteria in the vat turn indigo, which will not dissolve in water, into leucoindigo, which ",
+      {
+       "m": "cite",
+       "key": "sa:aino1",
+       "g": [
+        "g9"
+       ],
+       "c": [
+        "does."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C154"
+   ]
+  },
+  "u1107": {
+   "chapter": "reading",
+   "tag": "span",
+   "field": "CHEMISTRY",
+   "nodes": [
+    {
+     "m": "s",
+     "c": [
+      "It comes out bright green, and turns blue as oxygen in the air meets the ",
+      {
+       "m": "cite",
+       "key": "sa:impart1,gi_green",
+       "g": [
+        "g3",
+        "g1"
+       ],
+       "c": [
+        "dye."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C086"
+   ]
+  },
+  "u1108": {
+   "chapter": "reading",
+   "tag": "span",
+   "field": "CHEMISTRY",
+   "nodes": [
+    {
+     "m": "s",
+     "c": [
+      "For the darkest blue, the cloth goes into the vat three or four times in ",
+      {
+       "m": "cite",
+       "key": "sa:gi_dips",
+       "g": [
+        "g1"
+       ],
+       "c": [
+        "all."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C087"
+   ]
+  },
+  "u1109": {
+   "chapter": "reading",
+   "tag": "span",
+   "field": "CHEMISTRY",
+   "nodes": [
+    {
+     "m": "s",
+     "c": [
+      "In its blue form the dye does not dissolve, and it stays fixed to the ",
+      {
+       "m": "cite",
+       "key": "sa:met1",
+       "g": [
+        "g10"
+       ],
+       "c": [
+        "fibres."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "category:Textiles-Based-Craft-Category:C108",
+    "craft:Dabu-Hand-Block-Printing:C112"
+   ]
+  },
+  "u1110": {
+   "chapter": "answer",
+   "tag": "span",
+   "field": "DESIGN",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "aj:S02 aj:S03",
+     "c": [
+      "Registered geographical indication, 22 April ",
+      {
+       "m": "cite",
+       "key": "mb:aj:C134",
+       "g": [
+        "g4",
+        "g5"
+       ],
+       "c": [
+        "2024"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C134"
+   ]
+  },
+  "u1111": {
+   "chapter": "why-kachchh",
+   "tag": "div",
+   "field": "GEOGRAPHY",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S20",
+     "c": [
+      "Mongabay reports that the entire village of a hundred families moved from Dhamadka after the devastating earthquake of ",
+      {
+       "m": "cite",
+       "key": "pt:C060",
+       "g": [
+        "g16"
+       ],
+       "c": [
+        "2001."
+       ]
+      }
+     ]
+    },
+    " ",
+    {
+     "m": "s",
+     "src": "S08 S01",
+     "c": [
+      "The GI journal still names Dhamadka, with Ajrakhpur and Khavda, as one of the three villages that keep up the ",
+      {
+       "m": "cite",
+       "key": "pt:C003",
+       "g": [
+        "g12",
+        "g1"
+       ],
+       "c": [
+        "tradition."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C060",
+    "C003"
+   ]
+  },
+  "u1112": {
+   "chapter": "people",
+   "tag": "footer",
+   "field": "SOCIETY",
+   "nodes": [
+    {
+     "m": "s",
+     "c": [
+      "The same, in another voice, in Khamir’s Ajrakh ",
+      {
+       "m": "cite",
+       "key": "sa:kh_iron",
+       "g": [
+        "g17"
+       ],
+       "c": [
+        "exhibition."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C041"
+   ]
+  },
+  "u1113": {
+   "chapter": "why-kachchh",
+   "tag": "footer",
+   "field": "GEOGRAPHY",
+   "nodes": [
+    {
+     "m": "s",
+     "c": [
+      "Khamir, ",
+      {
+       "m": "i",
+       "c": [
+        "Khatris & Community"
+       ]
+      },
+      ", “Voices across Kachchh: ",
+      {
+       "m": "cite",
+       "key": "pt:C035",
+       "g": [
+        "g14",
+        "g1"
+       ],
+       "c": [
+        "Dhamadka”"
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C035"
+   ]
   }
  },
  "components": [
@@ -32239,6 +33052,12 @@
   {
    "chapter": "answer",
    "kind": "unit",
+   "ref": "u1110",
+   "within": "kutch-ajrakh/design/cloth-field-and-borders-photo"
+  },
+  {
+   "chapter": "answer",
+   "kind": "unit",
    "ref": "u0007",
    "within": "kutch-ajrakh/design/cloth-field-and-borders-photo"
   },
@@ -32995,6 +33814,18 @@
   {
    "chapter": "made",
    "kind": "unit",
+   "ref": "u1087",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
+   "ref": "u1088",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
    "ref": "u0126",
    "within": "kutch-ajrakh/process/cloth-after-each-stage"
   },
@@ -33020,6 +33851,12 @@
    "chapter": "made",
    "kind": "unit",
    "ref": "u0130",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
+   "ref": "u1089",
    "within": "kutch-ajrakh/process/cloth-after-each-stage"
   },
   {
@@ -33055,6 +33892,12 @@
   {
    "chapter": "made",
    "kind": "unit",
+   "ref": "u1090",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
    "ref": "u0136",
    "within": "kutch-ajrakh/process/cloth-after-each-stage"
   },
@@ -33085,6 +33928,12 @@
   {
    "chapter": "made",
    "kind": "unit",
+   "ref": "u1091",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
    "ref": "u0141",
    "within": "kutch-ajrakh/process/cloth-after-each-stage"
   },
@@ -33104,6 +33953,24 @@
    "chapter": "made",
    "kind": "unit",
    "ref": "u0144",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
+   "ref": "u1092",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
+   "ref": "u1093",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
+   "ref": "u1094",
    "within": "kutch-ajrakh/process/cloth-after-each-stage"
   },
   {
@@ -33139,6 +34006,12 @@
   {
    "chapter": "made",
    "kind": "unit",
+   "ref": "u1095",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
    "ref": "u0150",
    "within": "kutch-ajrakh/process/cloth-after-each-stage"
   },
@@ -33164,6 +34037,12 @@
    "chapter": "made",
    "kind": "unit",
    "ref": "u0154",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
+   "ref": "u1096",
    "within": "kutch-ajrakh/process/cloth-after-each-stage"
   },
   {
@@ -33199,6 +34078,12 @@
   {
    "chapter": "made",
    "kind": "unit",
+   "ref": "u1097",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
    "ref": "u0160",
    "within": "kutch-ajrakh/process/cloth-after-each-stage"
   },
@@ -33218,6 +34103,12 @@
    "chapter": "made",
    "kind": "unit",
    "ref": "u0163",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
+   "ref": "u1098",
    "within": "kutch-ajrakh/process/cloth-after-each-stage"
   },
   {
@@ -33253,6 +34144,18 @@
   {
    "chapter": "made",
    "kind": "unit",
+   "ref": "u1099",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
+   "ref": "u1100",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
    "ref": "u0169",
    "within": "kutch-ajrakh/process/cloth-after-each-stage"
   },
@@ -33278,6 +34181,12 @@
    "chapter": "made",
    "kind": "unit",
    "ref": "u0173",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
+   "ref": "u1101",
    "within": "kutch-ajrakh/process/cloth-after-each-stage"
   },
   {
@@ -36108,6 +37017,12 @@
   },
   {
    "chapter": "why-kachchh",
+   "kind": "unit",
+   "ref": "u1111",
+   "within": "kutch-ajrakh/geography/suran-earthquake-ajrakhpur-cards"
+  },
+  {
+   "chapter": "why-kachchh",
    "kind": "component",
    "ref": "kutch-ajrakh/geology/ajrakhpur-borewell-depth",
    "within": "kutch-ajrakh/geography/suran-earthquake-ajrakhpur-cards"
@@ -36752,6 +37667,12 @@
    "chapter": "why-kachchh",
    "kind": "unit",
    "ref": "u0722",
+   "within": "shared/geography/banni-grasslands-photo"
+  },
+  {
+   "chapter": "why-kachchh",
+   "kind": "unit",
+   "ref": "u1113",
    "within": "shared/geography/banni-grasslands-photo"
   },
   {
@@ -37657,6 +38578,18 @@
   {
    "chapter": "what-if",
    "kind": "unit",
+   "ref": "u1102",
+   "within": "kutch-ajrakh/chemistry/what-if-indigo-vat"
+  },
+  {
+   "chapter": "what-if",
+   "kind": "unit",
+   "ref": "u1103",
+   "within": "kutch-ajrakh/chemistry/what-if-indigo-vat"
+  },
+  {
+   "chapter": "what-if",
+   "kind": "unit",
    "ref": "u0867",
    "within": "kutch-ajrakh/chemistry/what-if-indigo-vat"
   },
@@ -37988,6 +38921,12 @@
    "chapter": "people",
    "kind": "unit",
    "ref": "u0915",
+   "within": "kutch-ajrakh/society/sufian-khatri-iron-water-voice"
+  },
+  {
+   "chapter": "people",
+   "kind": "unit",
+   "ref": "u1112",
    "within": "kutch-ajrakh/society/sufian-khatri-iron-water-voice"
   },
   {
@@ -38727,6 +39666,42 @@
    "kind": "component",
    "ref": "kutch-ajrakh/chemistry/indigo-dip-story-panels",
    "within": null
+  },
+  {
+   "chapter": "reading",
+   "kind": "unit",
+   "ref": "u1104",
+   "within": "kutch-ajrakh/chemistry/indigo-dip-story-panels"
+  },
+  {
+   "chapter": "reading",
+   "kind": "unit",
+   "ref": "u1105",
+   "within": "kutch-ajrakh/chemistry/indigo-dip-story-panels"
+  },
+  {
+   "chapter": "reading",
+   "kind": "unit",
+   "ref": "u1106",
+   "within": "kutch-ajrakh/chemistry/indigo-dip-story-panels"
+  },
+  {
+   "chapter": "reading",
+   "kind": "unit",
+   "ref": "u1107",
+   "within": "kutch-ajrakh/chemistry/indigo-dip-story-panels"
+  },
+  {
+   "chapter": "reading",
+   "kind": "unit",
+   "ref": "u1108",
+   "within": "kutch-ajrakh/chemistry/indigo-dip-story-panels"
+  },
+  {
+   "chapter": "reading",
+   "kind": "unit",
+   "ref": "u1109",
+   "within": "kutch-ajrakh/chemistry/indigo-dip-story-panels"
   },
   {
    "chapter": "media",

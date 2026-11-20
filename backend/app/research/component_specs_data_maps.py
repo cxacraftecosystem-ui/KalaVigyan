@@ -12,7 +12,7 @@ from .component_specs_data_parts import (
     TextLine,
     ToggleGroup,
 )
-from .component_specs_plates_parts import ClassName, DomId, DrawingElement, HeldText, UnitRef
+from .component_specs_plates_parts import ClassName, DomId, DrawingElement, HeldOrUnit, HeldText, UnitRef
 
 __all__ = ["MAP_SETTINGS", "MapLayerSpec", "MapSequenceSpec", "TimelineMapSpec"]
 
@@ -64,7 +64,7 @@ class MapLayerSpec(ContractModel):
 
 class SourcesDiffer(ContractModel):
     summary: HeldText
-    body: HeldText
+    body: HeldOrUnit
 
 
 class SequenceCard(ContractModel):

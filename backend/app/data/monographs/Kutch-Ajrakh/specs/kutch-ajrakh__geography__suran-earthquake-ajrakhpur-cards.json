@@ -169,60 +169,7 @@
      "summary": [
       "Sources differ on whether Dhamadka was left"
      ],
-     "body": [
-      {
-       "m": "s",
-       "src": "S20",
-       "c": [
-        "Mongabay reports that the entire village of a hundred families moved from Dhamadka after the devastating earthquake of ",
-        {
-         "m": "cite",
-         "key": "pt:C060",
-         "g": [
-          "g16"
-         ],
-         "shown": [
-          {
-           "number": 16,
-           "title": "Water woes: Kutch's age-old Ajrakh craft"
-          }
-         ],
-         "c": [
-          "2001."
-         ]
-        }
-       ]
-      },
-      " ",
-      {
-       "m": "s",
-       "src": "S08 S01",
-       "c": [
-        "The GI journal still names Dhamadka, with Ajrakhpur and Khavda, as one of the three villages that keep up the ",
-        {
-         "m": "cite",
-         "key": "pt:C003",
-         "g": [
-          "g12",
-          "g1"
-         ],
-         "shown": [
-          {
-           "number": 1,
-           "title": "GI Journal No. 188: Kutch Ajrakh"
-          },
-          {
-           "number": 12,
-           "title": "AJRAKH- A Textile Tradition in Transition"
-          }
-         ],
-         "c": [
-          "tradition."
-         ]
-        }
-       ]
-      }
-     ]
+     "body": "u1111"
     }
    },
    "component": null

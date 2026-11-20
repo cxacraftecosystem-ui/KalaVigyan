@@ -159,6 +159,60 @@ A fragment carries everything its markup needs to look and act as on the approve
 drawn here does not reproduce the template's per-chapter wrappers, so a fragment brings its
 `div.bx.bx-<scope>` (and any ancestor its styles or script select through).
 
+## Native views on the authored page
+
+Kutch Ajrakh's document carries its authored shell (decision 0106, the first parity run): the
+approved main markup with every unit filled and every component inlined from its fragment, except
+the components listed in `backend/app/data/monographs/Kutch-Ajrakh/native.json`. Those are drawn
+by their native views from their specs, and the shell keeps a `<kv-slot component="<label>">` where
+each one stands (one placed by another native view has no slot: its owner draws it).
+
+- **The shell is React elements.** `AuthoredShell` reads the shell with `shellTree`
+  (`lib/monographShellTree.ts`): each element on the way to a native slot becomes a React element
+  (its attributes as `shellProps` converts them, `lib/monographShellProps.ts`), every other element
+  keeps its inner HTML as written (`dangerouslySetInnerHTML`, which React never re-renders), and the
+  slot itself becomes the native view. `components/monograph/ShellTree.tsx` draws the plan.
+- **A native view is server-rendered where its fragment stood, with no wrapper.** `SlotRoot bare`
+  makes `BundleView` draw the view without `div.kv-slot.contents`, so the page's DOM is the
+  fragment's DOM, `authoredShell.css` treats it as the rest of the shell, and the kit's script,
+  which runs after hydration, binds it as it binds a fragment. The kinds drawn natively here are
+  pure markup: their behaviour stays the kit's until the views take it over (debt "Fragments are a
+  bridge").
+- **A native view's placed components are native too**, since the shell holds no fragment for
+  them.
+- **Proof.** `e2e/monograph-native-unit.spec.ts` renders the whole shell from
+  `shared/monograph.document.golden.json` and compares it with the approved page's `main`, element
+  by element and text node by text node, for each native component and for the whole page.
+  `e2e/monograph-native.smoke.spec.ts` runs in the smoke job against the built site with a local API
+  that serves the golden document, and as edition 2 the same document drawn entirely from fragments.
+  At 360, 834 and 1440 in light and dark it checks that the page reads as the approved page (every
+  line of `#kv-main`), that the first citation's popover and Fig. 1 answer as there, and that each
+  native view looks as its fragment does on the same React page. A Vercel preview cannot show a
+  branch's `native.json`, because it reads the production API's stored document.
+- **Native (70 of 79, 2026-11-20).** All except: the stage player
+  `kutch-ajrakh/process/cloth-after-each-stage` (one "Why" line, stage 11, is still held text); the
+  two structure diagrams (their cited descriptions are the answer's held sentences); and the six
+  page tools (`explainer`, `quiz`, `ask_next`, `language_switch`, `reading_level`, `generator`), whose
+  views draw their own markup and behaviour on purpose.
+- **To serve it**, after the deploy that carries `native.json` and the content, run
+  `python -m app.scripts.load_monograph` on the box (RUNBOOK, Monographs), then run **Monograph
+  parity** on production.
+
+### Cited passages held outside text units
+
+28 of the cited sentences the template held outside text units are text units now (27 units, ids
+`u1087` to `u1113`): each stage's "Cloth after" line and the stage player's sources-differ notes,
+the what-if vat's differs note, the six comic captions, the masthead's GI line, the Suran card's
+differs note, and the two quote attributions. The specs name them (`afterSentence`, `differs.body`,
+and `caption`, `registration`, `attribution` and `body` as a unit id or held text), the database
+loads them with the other units, and the sources chapter's "Supports N sentences" counts
+(`sentenceCounts`) take them in (`e2e/monograph-units-unit.spec.ts`). Still held: 16 sentences whose
+page text writes an apostrophe as `&#x27;` (a unit renders it as `'`, so making them units would
+change the approved page's bytes; the stage player's stage 11 "Why", the timeline's four card
+lines, the shared-science atlas's three sentences, two lines of the Suran cards, the climate map's
+side line, and five in the shell), and the answer's own sentences in the language panels, the
+generator and the structure diagrams.
+
 ## The page-tool kinds
 
 | Kind | Spec (`component_specs_tools`, `componentSpecsTools`) | View |

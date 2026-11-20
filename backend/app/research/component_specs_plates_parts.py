@@ -21,6 +21,7 @@ __all__ = [
     "DrawingElement",
     "DyeName",
     "FileName",
+    "HeldOrUnit",
     "HeldText",
     "Picture",
     "UnitRef",
@@ -118,6 +119,7 @@ def held_text(nodes: list[Any]) -> list[Any]:
 
 
 HeldText = Annotated[list[Any], AfterValidator(held_text)]
+HeldOrUnit = UnitRef | HeldText
 
 
 class Picture(ContractModel):

@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 
-import { HeldText } from "@/components/monograph/kinds/plates/HeldText";
+import { HeldOrUnitText, HeldText } from "@/components/monograph/kinds/plates/HeldText";
 import { heldComponent, type NestingViewProps } from "@/components/monograph/kinds/plates/nesting";
 import { mapSequenceShape, type SequenceCard, type SequenceItem } from "@/lib/componentSpecsData";
 import { parseShape } from "@/lib/shape";
@@ -21,7 +21,7 @@ function Card({ card, props }: { card: SequenceCard; props: NestingViewProps }) 
             <HeldText nodes={card.differs.summary} />
           </summary>
           <div className="differs-body">
-            <HeldText nodes={card.differs.body} />
+            <HeldOrUnitText value={card.differs.body} renderUnit={renderUnit} />
           </div>
         </details>
       ) : null}

@@ -2,11 +2,11 @@ import { comicShape } from "@/lib/componentSpecsPlates";
 import type { ComponentViewProps } from "@/lib/componentViewContract";
 import { parseShape } from "@/lib/shape";
 
-import { HeldText } from "./HeldText";
+import { HeldOrUnitText } from "./HeldText";
 import { panelCount } from "./mediaCopy";
 import { SpecDrawing } from "./SpecDrawing";
 
-export function ComicView({ spec }: ComponentViewProps) {
+export function ComicView({ spec, renderUnit }: ComponentViewProps) {
   const comic = parseShape(comicShape, spec);
   const total = comic.panels.length;
   return (
@@ -19,7 +19,7 @@ export function ComicView({ spec }: ComponentViewProps) {
                 {index + 1}
               </span>
               <span className="vh">{panelCount(index + 1, total)}</span>
-              <HeldText nodes={panel.caption} />
+              <HeldOrUnitText value={panel.caption} renderUnit={renderUnit} />
             </figcaption>
             <div className="pan-box">
               <SpecDrawing element={panel.art} />

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { GradeCount, MastheadLabel } from "@/lib/componentSpecsPlates";
 import { formatCalendarDay } from "@/lib/format";
 
-import { HeldText } from "./HeldText";
+import { HeldOrUnitText } from "./HeldText";
 import { SpecDrawing } from "./SpecDrawing";
 
 export function reliabilityLabel(sources: number, grades: readonly GradeCount[]): string {
@@ -18,7 +18,7 @@ export function PlateMasthead({ label, renderUnit }: { label: MastheadLabel; ren
       <div className="lc-meta">
         <span className="seal">
           <SpecDrawing element={label.seal} />
-          <HeldText nodes={label.registration} />
+          <HeldOrUnitText value={label.registration} renderUnit={renderUnit} />
         </span>
         <span>{label.place}</span>
       </div>

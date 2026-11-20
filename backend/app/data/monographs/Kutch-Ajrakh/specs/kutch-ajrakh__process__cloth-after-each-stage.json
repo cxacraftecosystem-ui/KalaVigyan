@@ -140,8 +140,13 @@
     "u0124"
    ],
    "why": "u0125",
-   "differs": null,
-   "afterSentence": null,
+   "differs": {
+    "summary": "Sources differ on how many times",
+    "body": [
+     "u1087"
+    ]
+   },
+   "afterSentence": "u1088",
    "materials": "u0126"
   },
   {
@@ -156,7 +161,7 @@
    ],
    "why": "u0130",
    "differs": null,
-   "afterSentence": null,
+   "afterSentence": "u1089",
    "materials": "u0131"
   },
   {
@@ -171,7 +176,7 @@
    ],
    "why": "u0135",
    "differs": null,
-   "afterSentence": null,
+   "afterSentence": "u1090",
    "materials": "u0136"
   },
   {
@@ -186,7 +191,7 @@
    ],
    "why": "u0140",
    "differs": null,
-   "afterSentence": null,
+   "afterSentence": "u1091",
    "materials": null
   },
   {
@@ -200,8 +205,14 @@
     "u0143"
    ],
    "why": "u0144",
-   "differs": null,
-   "afterSentence": null,
+   "differs": {
+    "summary": "Sources differ on the paste and its fermenting",
+    "body": [
+     "u1092",
+     "u1093"
+    ]
+   },
+   "afterSentence": "u1094",
    "materials": "u0145"
   },
   {
@@ -216,7 +227,7 @@
    ],
    "why": "u0149",
    "differs": null,
-   "afterSentence": null,
+   "afterSentence": "u1095",
    "materials": "u0150"
   },
   {
@@ -231,7 +242,7 @@
    ],
    "why": "u0154",
    "differs": null,
-   "afterSentence": null,
+   "afterSentence": "u1096",
    "materials": "u0155"
   },
   {
@@ -246,7 +257,7 @@
    ],
    "why": "u0159",
    "differs": null,
-   "afterSentence": null,
+   "afterSentence": "u1097",
    "materials": "u0160"
   },
   {
@@ -261,7 +272,7 @@
    ],
    "why": null,
    "differs": null,
-   "afterSentence": null,
+   "afterSentence": "u1098",
    "materials": "u0164"
   },
   {
@@ -275,8 +286,13 @@
     "u0167"
    ],
    "why": "u0168",
-   "differs": null,
-   "afterSentence": null,
+   "differs": {
+    "summary": "Sources differ on the order",
+    "body": [
+     "u1099"
+    ]
+   },
+   "afterSentence": "u1100",
    "materials": "u0169"
   },
   {
@@ -292,7 +308,7 @@
    ],
    "why": null,
    "differs": null,
-   "afterSentence": null,
+   "afterSentence": "u1101",
    "materials": "u0174"
   }
  ],

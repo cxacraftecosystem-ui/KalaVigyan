@@ -22,6 +22,7 @@ from .component_specs_plates_parts import (
     DomId,
     DrawingElement,
     DyeName,
+    HeldOrUnit,
     HeldText,
     Picture,
     UnitRef,
@@ -64,7 +65,7 @@ class PlatePull(ContractModel):
     classes: list[ClassName] = Field(min_length=1)
     box: ClassName
     quote: UnitRef
-    attribution: HeldText
+    attribution: HeldOrUnit
 
 
 class ChapterOpener(ContractModel):
@@ -85,7 +86,7 @@ class MastheadLabel(ContractModel):
     kicker: UnitRef
     title: UnitRef
     seal: DrawingElement
-    registration: HeldText
+    registration: HeldOrUnit
     place: str = Field(min_length=1)
     sources: int = Field(ge=1)
     grades: list[GradeCount] = Field(min_length=1)

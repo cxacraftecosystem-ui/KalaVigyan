@@ -25,14 +25,9 @@ NESTED = {
 }
 STAGES = "kutch-ajrakh/process/cloth-after-each-stage"
 HELD = [
-    *[
-        (STAGES, f"pt:C{number:03d}")
-        for number in (65, 64, 41, 70, 74, 76, 77, 78, 79, 82, 86, 88, 149, 93, 131, 91)
-    ],
+    (STAGES, "pt:C131"),
     ("shared/chemistry/alizarin-aluminium-ring-structures", "rm:mol.1"),
     ("shared/chemistry/alizarin-aluminium-ring-structures", "rm:mol.6683"),
-    ("kutch-ajrakh/chemistry/what-if-indigo-vat", "pt:C083"),
-    ("kutch-ajrakh/chemistry/what-if-indigo-vat", "pt:C085"),
     ("shared/chemistry/alizarin-purpurin-structures-hindi", "rm:mol.1"),
     ("shared/chemistry/alizarin-purpurin-structures-hindi", "rm:mol.6683"),
 ]

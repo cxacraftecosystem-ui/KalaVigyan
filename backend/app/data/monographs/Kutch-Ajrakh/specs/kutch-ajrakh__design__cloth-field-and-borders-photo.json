@@ -55,36 +55,7 @@
     }
    ]
   },
-  "registration": [
-   {
-    "m": "s",
-    "src": "aj:S02 aj:S03",
-    "c": [
-     "Registered geographical indication, 22 April ",
-     {
-      "m": "cite",
-      "key": "mb:aj:C134",
-      "g": [
-       "g4",
-       "g5"
-      ],
-      "shown": [
-       {
-        "number": 4,
-        "title": "GI Registry record, application 1050"
-       },
-       {
-        "number": 5,
-        "title": "Registration details of Geographical Indications"
-       }
-      ],
-      "c": [
-       "2024"
-      ]
-     }
-    ]
-   }
-  ],
+  "registration": "u1110",
   "place": "Kachchh, Gujarat",
   "sources": 20,
   "grades": [

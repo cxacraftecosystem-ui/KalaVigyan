@@ -4,7 +4,7 @@ import { voiceShape, type VoiceCoda, type VoiceTestimony } from "@/lib/component
 import type { ComponentViewProps } from "@/lib/componentViewContract";
 import { parseShape } from "@/lib/shape";
 
-import { HeldText } from "./HeldText";
+import { HeldOrUnitText } from "./HeldText";
 
 type RenderUnit = (ref: string) => ReactNode;
 
@@ -33,7 +33,7 @@ function Testimony({ voice, renderUnit }: { voice: VoiceTestimony; renderUnit: R
         <blockquote className="voice-q2">
           <p>{renderUnit(voice.echo.quote)}</p>
           <footer>
-            <HeldText nodes={voice.echo.attribution} />
+            <HeldOrUnitText value={voice.echo.attribution} renderUnit={renderUnit} />
           </footer>
         </blockquote>
       ) : null}

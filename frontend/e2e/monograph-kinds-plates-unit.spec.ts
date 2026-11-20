@@ -3,11 +3,11 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { VIEWS as DATA_VIEWS } from "@/components/monograph/kinds/data";
-import { HeldText } from "@/components/monograph/kinds/plates/HeldText";
+import { HeldOrUnitText, HeldText } from "@/components/monograph/kinds/plates/HeldText";
 import { VIEWS } from "@/components/monograph/kinds/plates";
 import { playerClock } from "@/components/monograph/kinds/plates/mediaCopy";
 import { reliabilityLabel } from "@/components/monograph/kinds/plates/PlateMasthead";
-import { drawingShape, heldTextShape, picturePlateShape, swatchPairShape } from "@/lib/componentSpecsPlates";
+import { drawingShape, heldOrUnitShape, heldTextShape, picturePlateShape, swatchPairShape } from "@/lib/componentSpecsPlates";
 import type { ComponentViews } from "@/lib/componentViewContract";
 import { parseShape, ShapeError } from "@/lib/shape";
 
@@ -83,4 +83,14 @@ test("a player's clock reads minutes and seconds, and the reliability strip name
   expect(playerClock(8000)).toBe("0:08");
   expect(playerClock(125000)).toBe("2:05");
   expect(reliabilityLabel(20, [{ grade: "A", count: 9 }, { grade: "B", count: 7 }, { grade: "C", count: 4 }])).toBe("Reliability of the 20 sources: 9 graded A, 7 graded B, 4 graded C");
+});
+
+test("a cited passage in a spec is a text unit or held text, and a unit is drawn by the page's own renderer", () => {
+  expect(parseShape(heldOrUnitShape, "u1104")).toBe("u1104");
+  expect(parseShape(heldOrUnitShape, ["Khamir"])).toEqual(["Khamir"]);
+  expect(() => parseShape(heldOrUnitShape, "Panel one")).toThrow(ShapeError);
+  expect(() => parseShape(heldOrUnitShape, [])).toThrow(ShapeError);
+  const unit = (ref: string) => createElement("kv-slot", { unit: ref });
+  expect(renderToStaticMarkup(createElement(HeldOrUnitText, { value: "u1104", renderUnit: unit }))).toBe('<kv-slot unit="u1104"></kv-slot>');
+  expect(renderToStaticMarkup(createElement(HeldOrUnitText, { value: ["Khamir, ", { m: "i", c: ["Khatris"] }], renderUnit: unit }))).toBe("Khamir, <i>Khatris</i>");
 });

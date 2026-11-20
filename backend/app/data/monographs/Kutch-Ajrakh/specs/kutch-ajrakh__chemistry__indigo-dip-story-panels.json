@@ -3,35 +3,7 @@
  "panels": [
   {
    "layout": "p-wide",
-   "caption": [
-    {
-     "m": "s",
-     "c": [
-      "In Kachchh, ajrakh was mainly made in Khavda and Dhamadka, villages known for rich blue and red ",
-      {
-       "m": "cite",
-       "key": "sa:khamir10_1,dua1",
-       "g": [
-        "g14",
-        "g12"
-       ],
-       "shown": [
-        {
-         "number": 12,
-         "title": "AJRAKH- A Textile Tradition in Transition"
-        },
-        {
-         "number": 14,
-         "title": "Khatris & Community"
-        }
-       ],
-       "c": [
-        "cloth."
-       ]
-      }
-     ]
-    }
-   ],
+   "caption": "u1104",
    "art": {
     "tag": "svg",
     "attrs": {
@@ -986,30 +958,7 @@
   },
   {
    "layout": null,
-   "caption": [
-    {
-     "m": "s",
-     "c": [
-      "Traditionally, the cloth goes into a naand, a V-shaped vat dug into the ground, for 10 to 15 ",
-      {
-       "m": "cite",
-       "key": "sa:kb_naand1,kb_naand2",
-       "g": [
-        "g7"
-       ],
-       "shown": [
-        {
-         "number": 7,
-         "title": "Ajarkh, the resist printed fabric of Gujarat"
-        }
-       ],
-       "c": [
-        "minutes."
-       ]
-      }
-     ]
-    }
-   ],
+   "caption": "u1105",
    "art": {
     "tag": "svg",
     "attrs": {
@@ -1597,30 +1546,7 @@
   },
   {
    "layout": null,
-   "caption": [
-    {
-     "m": "s",
-     "c": [
-      "Bacteria in the vat turn indigo, which will not dissolve in water, into leucoindigo, which ",
-      {
-       "m": "cite",
-       "key": "sa:aino1",
-       "g": [
-        "g9"
-       ],
-       "shown": [
-        {
-         "number": 9,
-         "title": "Microbial Communities Associated With Indigo Fermentation"
-        }
-       ],
-       "c": [
-        "does."
-       ]
-      }
-     ]
-    }
-   ],
+   "caption": "u1106",
    "art": {
     "tag": "svg",
     "attrs": {
@@ -2543,35 +2469,7 @@
   },
   {
    "layout": "panel-ox",
-   "caption": [
-    {
-     "m": "s",
-     "c": [
-      "It comes out bright green, and turns blue as oxygen in the air meets the ",
-      {
-       "m": "cite",
-       "key": "sa:impart1,gi_green",
-       "g": [
-        "g3",
-        "g1"
-       ],
-       "shown": [
-        {
-         "number": 1,
-         "title": "GI Journal No. 188: Kutch Ajrakh"
-        },
-        {
-         "number": 3,
-         "title": "Ajrakh"
-        }
-       ],
-       "c": [
-        "dye."
-       ]
-      }
-     ]
-    }
-   ],
+   "caption": "u1107",
    "art": {
     "tag": "svg",
     "attrs": {
@@ -3203,30 +3101,7 @@
   },
   {
    "layout": null,
-   "caption": [
-    {
-     "m": "s",
-     "c": [
-      "For the darkest blue, the cloth goes into the vat three or four times in ",
-      {
-       "m": "cite",
-       "key": "sa:gi_dips",
-       "g": [
-        "g1"
-       ],
-       "shown": [
-        {
-         "number": 1,
-         "title": "GI Journal No. 188: Kutch Ajrakh"
-        }
-       ],
-       "c": [
-        "all."
-       ]
-      }
-     ]
-    }
-   ],
+   "caption": "u1108",
    "art": {
     "tag": "svg",
     "attrs": {
@@ -3749,30 +3624,7 @@
   },
   {
    "layout": "p-hero",
-   "caption": [
-    {
-     "m": "s",
-     "c": [
-      "In its blue form the dye does not dissolve, and it stays fixed to the ",
-      {
-       "m": "cite",
-       "key": "sa:met1",
-       "g": [
-        "g10"
-       ],
-       "shown": [
-        {
-         "number": 10,
-         "title": "Indian Block-Printed Textiles: Past and Present"
-        }
-       ],
-       "c": [
-        "fibres."
-       ]
-      }
-     ]
-    }
-   ],
+   "caption": "u1109",
    "art": {
     "tag": "svg",
     "attrs": {

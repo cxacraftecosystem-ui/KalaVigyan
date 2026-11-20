@@ -130,6 +130,16 @@ def test_a_plate_with_a_pull_quote_becomes_its_picture_units_and_held_attributio
     }
 
 
+def test_an_attribution_that_is_a_text_unit_is_named_by_its_unit() -> None:
+    footer = re.search(r"<footer>.*</footer>", PLATE_MARKUP)
+    assert footer is not None
+    markup = PLATE_MARKUP.replace(footer.group(0), '<footer> <kv-slot unit="u0723"></kv-slot> </footer>')
+    specs = extracted_specs(PLATES, _content("picture_plate", '[class="kv-banni wrap"]'), markup)
+    spec = specs["shared/geography/banni-photo"].model_dump(mode="json", by_alias=True)
+    assert spec["pull"]["attribution"] == "u0723"
+    assert _units(spec) == {"u0720", "u0721", "u0722", "u0723"}
+
+
 def test_a_held_citation_showing_other_numbers_than_its_sources_is_refused() -> None:
     wrong = PLATE_MARKUP.replace('aria-label="Source 3">3<', 'aria-label="Source 4">4<')
     with pytest.raises(InvalidInput, match="other numbers"):

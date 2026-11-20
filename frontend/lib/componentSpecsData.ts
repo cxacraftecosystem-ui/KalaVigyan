@@ -1,4 +1,4 @@
-import { className, componentLabel, domId, drawingShape, heldTextShape, unitRef, type DrawingElement, type HeldNode } from "@/lib/componentSpecsPlates";
+import { className, componentLabel, domId, drawingShape, heldOrUnitShape, heldTextShape, unitRef, type DrawingElement, type HeldNode, type HeldOrUnit } from "@/lib/componentSpecsPlates";
 import { boolean, dictionary, integer, list, matching, nullable, number, object, oneOf, text } from "@/lib/shape";
 
 export const LINE_TAGS = ["p", "h3", "li", "span", "dt", "dd", "figcaption", "td", "th"] as const;
@@ -124,7 +124,7 @@ export const mapLayerShape = object<MapLayerSpec>({
   )
 });
 
-export type SourcesDiffer = { summary: HeldNode[]; body: HeldNode[] };
+export type SourcesDiffer = { summary: HeldNode[]; body: HeldOrUnit };
 export type SequenceCard = { visual: string | null; when: string; title: string; lines: TextLine[]; differs: SourcesDiffer | null };
 export type SequenceItem = { card: SequenceCard | null; component: string | null };
 export type MapSequenceSpec = { head: FigureHead; first: SequenceItem[]; source: TextLine; more: SequenceItem[] };
@@ -135,7 +135,7 @@ const sequenceItemShape = object<SequenceItem>({
       when: unitRef,
       title: unitRef,
       lines: list(textLineShape, 1),
-      differs: nullable(object<SourcesDiffer>({ summary: heldTextShape, body: heldTextShape }))
+      differs: nullable(object<SourcesDiffer>({ summary: heldTextShape, body: heldOrUnitShape }))
     })
   ),
   component: nullable(componentLabel)
