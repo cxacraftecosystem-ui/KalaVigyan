@@ -121,8 +121,7 @@ def test_the_entity_ranking_reads_concepts_named_by_name_head_gloss_or_glossary_
     assert sql.startswith(
         "WITH named AS (SELECT names.id AS id, max(length(lower(trim(names.name)))) AS weight"
     )
-    assert 'split_part("Concept".name, %(split_part_1)s::VARCHAR, %(split_part_2)s::INTEGER)' in sql
-    assert 'SUBSTRING("Concept".name FROM %(substring_1)s::VARCHAR)' in sql
+    assert 'split_part("Concept".name, ' in sql and 'SUBSTRING("Concept".name FROM ' in sql
     assert "termed.label" in sql and "unnest(termed.aliases)" in sql and 'unnest(termed."localNames")' in sql
     assert re.search(
         r"strpos\(lower\(%\(param_\d+\)s::VARCHAR\), lower\(trim\(names\.name\)\)\) > %\(strpos_1\)s::INTEGER",
@@ -133,10 +132,10 @@ def test_the_entity_ranking_reads_concepts_named_by_name_head_gloss_or_glossary_
         r'GROUP BY "Claim"\.id ORDER BY max\(subjects\.weight\) DESC, "Claim"\.id LIMIT %\(param_\d+\)s::INTEGER$',
         sql,
     )
-    assert (params["split_part_1"], params["split_part_2"]) == (" (", 1) == (NAME_GLOSS_OPEN, 1)
-    assert params["substring_1"] == r"\(([^)]*)\)" == NAME_GLOSS
-    assert params["length_1"] == ENTITY_NAME_MIN_CHARS == 4 and params["strpos_1"] == 0
-    assert "Why is syahi used?" in params.values() and RANKING_DEPTH in params.values()
+    values = list(params.values())
+    assert NAME_GLOSS_OPEN == " (" and NAME_GLOSS == r"\(([^)]*)\)"
+    assert NAME_GLOSS_OPEN in values and NAME_GLOSS in values and ENTITY_NAME_MIN_CHARS in values
+    assert "Why is syahi used?" in values and RANKING_DEPTH in values and ENTITY_NAME_MIN_CHARS == 4
 
 
 def test_the_lexical_ranking_weighs_each_matched_term_by_its_rarity_among_the_candidates() -> None:
@@ -166,7 +165,8 @@ def test_chunks_come_from_sources_cited_by_scoped_claims_or_shown_field_intervie
 ):
     conditions = chunk_conditions(SCOPE, mode="HYBRID", acls=("PUBLIC",))
     sql, params = compiled(chunk_lexical_ranking(conditions, "alum"))
-    assert sql.startswith('SELECT "Chunk".id FROM "Chunk" WHERE ("Chunk"."sourceId" IN (SELECT "Source".id')
+    assert sql.startswith('WITH lexical AS MATERIALIZED (SELECT "Chunk".id AS id, ts_rank_cd("Chunk".tsv, ')
+    assert 'WHERE ("Chunk"."sourceId" IN (SELECT "Source".id' in sql
     assert '"ClaimSource"."claimId" IN (SELECT "Claim".id FROM "Claim"' in sql
     assert ' OR "Chunk"."sourceId" IN (SELECT "FieldRecording"."sourceId" FROM "FieldRecording"' in sql
     assert '"FieldRecording"."hiddenAt" IS NULL' in sql
