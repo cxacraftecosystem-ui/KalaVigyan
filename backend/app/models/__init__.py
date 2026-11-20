@@ -118,6 +118,7 @@ from app.models.science import (
 )
 from app.models.source_upkeep import SourceUpkeep
 from app.models.structure_proposals import StructureProposal
+from app.models.studio import PageDraft, SuppliedSource
 from app.models.testimony import ArtisanContribution, ArtisanConversation, ArtisanConversationAudio
 from app.models.upload_links import UploadLink
 
@@ -213,6 +214,7 @@ __all__ = [
     "OAuthGrant",
     "OAuthToken",
     "Objection",
+    "PageDraft",
     "PageLayout",
     "PagePreview",
     "PasswordResetRequest",
@@ -239,6 +241,7 @@ __all__ = [
     "StageMaterial",
     "StructureProposal",
     "StudentProfile",
+    "SuppliedSource",
     "TaskReservation",
     "Term",
     "TermConcept",

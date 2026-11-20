@@ -58,6 +58,11 @@ CURATION_TOOLS = (
     "lookup_entity",
     "find_pictures",
     "archive_source",
+    "supply_source",
+    "create_draft",
+    "add_to_draft",
+    "preview_draft",
+    "submit_draft",
 )
 INDEX_LINE = re.compile(r"^- `(?P<name>[^`]+)`: \S.*$")
 INDEX_SECTIONS = ("Tools", "Prompts", "Resources")

@@ -2,7 +2,7 @@ import { Fragment, type ReactNode } from "react";
 
 import { CiteThis } from "@/components/craft/CiteThis";
 import { AuthoredShell } from "@/components/monograph/AuthoredShell";
-import { ComponentSlot, slotDrawing } from "@/components/monograph/ComponentSlot";
+import { ComponentSlot } from "@/components/monograph/ComponentSlot";
 import { DocumentMasthead } from "@/components/monograph/DocumentMasthead";
 import { KitScript } from "@/components/monograph/KitScript";
 import { KitShellTail } from "@/components/monograph/KitShellTail";
@@ -14,47 +14,18 @@ import { KitPreferences } from "@/components/monograph/ReaderSettings";
 import { SourceList } from "@/components/monograph/SourceList";
 import { citeKey, versionedUrl, type Citable } from "@/lib/monographCite";
 import { MONOGRAPH_KIT_CSS, type MonographDocument } from "@/lib/monographDocument";
-import { componentKind, pagePlan, railChapters, type ChapterBlock, type ChapterPlan, type LabelMasthead, type MastheadPlan, type PagePlan } from "@/lib/monographRenderLayout";
+import { numberedDocument } from "@/lib/monographRenderFigures";
+import { pagePlan, railChapters, type ChapterBlock, type ChapterPlan, type LabelMasthead, type MastheadPlan, type PagePlan } from "@/lib/monographRenderLayout";
+import { placedPlan } from "@/lib/monographRenderNear";
 import { shellRestPath } from "@/lib/monographRenderShell";
-import { componentPlace, type KitFrame } from "@/lib/monographScopes";
 
 const CITED_SUBJECT = "craft";
-
-function framed(frame: KitFrame, children: ReactNode): ReactNode {
-  if (frame === "bare") return children;
-  if (frame === "screen") return <div className="screen">{children}</div>;
-  const inner = frame === "column" ? (
-    <div className="spread">
-      <div className="main">{children}</div>
-    </div>
-  ) : (
-    children
-  );
-  return (
-    <div className="screen">
-      <div className="wrap kv-passage">{inner}</div>
-    </div>
-  );
-}
-
-function ComponentScope({ kind, children }: { kind: string | null; children: ReactNode }) {
-  const place = componentPlace(kind);
-  return (
-    <div className={`bx bx-${place.scope}`} data-kind={kind ?? undefined}>
-      {framed(place.frame, children)}
-    </div>
-  );
-}
 
 type BlockProps = { document: MonographDocument; chapter: ChapterPlan; block: ChapterBlock; labelled: boolean };
 
 function BlockView({ document, chapter, block, labelled }: BlockProps) {
   if (block.kind === "passage") return <MonographPassage document={document} chapter={chapter} passage={block} />;
-  if (block.kind === "component") {
-    const slot = <ComponentSlot document={document} label={block.label} />;
-    if (slotDrawing(document, block.label) !== "view") return slot;
-    return <ComponentScope kind={componentKind(document, block.label)}>{slot}</ComponentScope>;
-  }
+  if (block.kind === "component") return <ComponentSlot document={document} label={block.label} />;
   return labelled ? <MonographSources document={document} /> : <SourceList document={document} />;
 }
 
@@ -110,10 +81,15 @@ export function deferredRest(document: MonographDocument, deferred: boolean): st
   return deferred && document.shell !== null && document.subjectKind === CITED_SUBJECT ? shellRestPath(document.subjectSlug, document.version) : null;
 }
 
+export function shownPage(document: MonographDocument): { document: MonographDocument; plan: PagePlan } {
+  const plan = placedPlan(document, pagePlan(document));
+  return { document: numberedDocument(document, plan), plan };
+}
+
 type MonographPageProps = { document: MonographDocument; masthead?: boolean; deferred?: boolean };
 
-export function MonographPage({ document, masthead = true, deferred = false }: MonographPageProps) {
-  const plan = pagePlan(document);
+export function MonographPage({ document: given, masthead = true, deferred = false }: MonographPageProps) {
+  const { document, plan } = shownPage(given);
   const rail = <MonographRail chapters={railChapters(plan)} />;
   const later = railAfterMasthead(document, plan, masthead);
   const rest = deferredRest(document, deferred);

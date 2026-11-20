@@ -19,6 +19,8 @@ fact, or a unit of a delivered component.
 - The gates fetch every source themselves and refuse a quote they cannot find in the fetched text.
   Typographic quotes and dashes, line-break hyphens and spacing are folded before matching; nothing
   else is, so never correct, shorten or translate a quote.
+- A source the contributor supplied is read from the supplied text instead: quote it exactly as
+  supplied, with the locator of its passage.
 - Take a quote from what `read_source` returns: its passages are the fetched text after that same
   folding, so a quote copied whole from one passage, or across the neighbouring lines of a PDF, is
   found. `check_quote` gives the gate's verdict on a quote before it is proposed, and on a miss the

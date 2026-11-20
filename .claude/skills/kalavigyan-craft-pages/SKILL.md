@@ -1,6 +1,6 @@
 ---
 name: kalavigyan-craft-pages
-description: How to make or deepen a KalaVigyan craft, family or category page to the Kutch Ajrakh bar through the KalaVigyan MCP server, by the same method and references every contributor follows - sources found, read and checked with the same registries, reader and quote matcher the gates use (search_sources, read_source, check_quote, lookup_compound, lookup_entity, find_pictures, archive_source), facts through propose_facts and get_proposal, structure (a stage's colour after and its why, native names, reactions, botanical names, the GI record, glossary, conflicts, open questions) through propose_structure, new sources through propose_source, components delivered finished as spec and units, whole pages through preview_page then propose_page, pictures through start_image_upload, and Commons pictures still placed through the dossier import - cheaply, one page per agent, with the gates, the checker and the preview as the judges. The rules are the shared references (the page checklist and its 26 rules, sources and licences, quotes and locators, the sixteen fields, components, datasets); the dossiers in backend/app/data/curation are the database's export, edited by hand only for a bulk import. Load it before creating, deepening, fixing or reviewing any page's content, dossier, check file or proposed fact, and before briefing an agent to do so.
+description: How to make or deepen a KalaVigyan craft, family or category page to the Kutch Ajrakh bar through the KalaVigyan MCP server, by the same method and references every contributor follows - sources found, read and checked with the same registries, reader and quote matcher the gates use (search_sources, read_source, check_quote, lookup_compound, lookup_entity, find_pictures, archive_source), facts through propose_facts and get_proposal, structure (a stage's colour after and its why, native names, reactions, botanical names, the GI record, glossary, conflicts, open questions) through propose_structure, new sources through propose_source, components delivered finished as spec and units, whole pages built in a draft (curate_page, preview_draft's checklist report, submit_draft) or through preview_page then propose_page, sources only the contributor can open through supply_source, pictures through start_image_upload, and Commons pictures still placed through the dossier import - cheaply, one page per agent, with the gates, the checker and the preview as the judges. The rules are the shared references (the page checklist and its 26 rules, sources and licences, quotes and locators, the sixteen fields, components, datasets); the dossiers in backend/app/data/curation are the database's export, edited by hand only for a bulk import. Load it before creating, deepening, fixing or reviewing any page's content, dossier, check file or proposed fact, and before briefing an agent to do so.
 ---
 
 # KalaVigyan craft and category pages
@@ -58,7 +58,9 @@ and `kalavigyan://index.md`, one line for each tool, prompt and resource.
 | A new source for a held fact, or for a fact that lost its quotes | `propose_source`, naming the fact as `claim_id` |
 | A stage's after or why, a native name, a reaction, a botanical name, a glossary term, an open question, the GI record, a conflict | `propose_structure`, one item with the fact and the quotes that state it |
 | A component | `list_components` first, then delivered finished as spec and units (the component guide), in a page bundle or with `propose_component` |
-| A whole page's additions: facts, structure, components, layout, pictures | `preview_page`, then `propose_page` with the same bundle |
+| A whole page built over many calls | the `curate_page` prompt: `create_draft`, `add_to_draft` part by part, `preview_draft` and its checklist report until nothing fails, then `submit_draft` |
+| A whole page's additions given at once: facts, structure, components, layout, pictures | `preview_page`, then `propose_page` with the same bundle |
+| A source only your own access opens: a paywalled paper, a book or PDF you hold, an archive, a site that refuses the fetcher | `supply_source`, then `check_quote` against your text; cite it as its `cite_as` gives it |
 | A picture a person took or made | `start_image_upload`, or `give_image` when it is in the chat, with the declaration the person confirms |
 | A Wikimedia Commons picture: its placement, focal box, size and stand-in | the dossier route, a new dossier version imported on deploy, while it remains the import path for pictures from elsewhere |
 | A new craft's first dossier, or any bulk import | the dossier route |
@@ -123,9 +125,10 @@ A category page has no stages, native names or GI record; it has pictures placed
    `propose_source`, components by the component guide, figures from data by the datasets skill,
    and Commons pictures by the dossier route (`fetch.py --picture` gives a picture's address, size,
    author and licence).
-4. **See the page before sending it.** Build the page's additions as one bundle, call
-   `preview_page`, read the preview against the page checklist, fix and preview again, then
-   `propose_page` with the same bundle.
+4. **See the page before sending it.** Build the page in a draft (`create_draft`, `add_to_draft`),
+   call `preview_draft`, fix every rule its report fails, judge the rest on the private link at
+   360 and 1440 px in both themes, preview again, then `submit_draft`. A page given in one call
+   goes through `preview_page` and `propose_page` the same way.
 5. **Follow every proposal** with `get_proposal` or `my_tasks`. A refused fact is fixed from its
    sources or dropped, never reworded past its quotes to slip a gate.
 6. **Hand the lead what only the dossier route carries**: Commons pictures with their placements and

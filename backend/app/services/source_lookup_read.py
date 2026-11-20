@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -61,7 +62,12 @@ async def source_address(locator: OpenAccessLocator | None, *, url: str | None, 
 
 
 async def read_page(
-    session: AsyncSession, sources: LookupSources, address: Address, quotes: Sequence[ProposedQuote] = ()
+    session: AsyncSession,
+    sources: LookupSources,
+    address: Address,
+    quotes: Sequence[ProposedQuote] = (),
+    *,
+    reader_id: uuid.UUID | None = None,
 ) -> ReadSource:
     if quotes:
         proposed = ProposedSource(
@@ -71,7 +77,7 @@ async def read_page(
         proposed = ProposedSource.model_construct(
             url=address.url, title=address.url, licence=address.licence, quotes=[]
         )
-    return await read_source(session, sources.fetcher, proposed)
+    return await read_source(session, sources.fetcher, proposed, proposer_id=reader_id)
 
 
 def gate_lines(read: ReadSource) -> list[str]:
@@ -79,9 +85,14 @@ def gate_lines(read: ReadSource) -> list[str]:
 
 
 async def source_text(
-    session: AsyncSession, sources: LookupSources, address: Address, view: TextView
+    session: AsyncSession,
+    sources: LookupSources,
+    address: Address,
+    view: TextView,
+    *,
+    reader_id: uuid.UUID | None = None,
 ) -> SourceText:
-    read = await read_page(session, sources, address)
+    read = await read_page(session, sources, address, reader_id=reader_id)
     archived = await archived_copy(session, read.stored, address.url, sources.snapshots)
     licence = read.cited.stated_licence or read.cited.declared_licence
     head = SourceText(
@@ -100,9 +111,14 @@ async def source_text(
 
 
 async def checked_quote(
-    session: AsyncSession, sources: LookupSources, address: Address, quote: ProposedQuote
+    session: AsyncSession,
+    sources: LookupSources,
+    address: Address,
+    quote: ProposedQuote,
+    *,
+    reader_id: uuid.UUID | None = None,
 ) -> QuoteCheck:
-    read = await read_page(session, sources, address, [quote])
+    read = await read_page(session, sources, address, [quote], reader_id=reader_id)
     outcome = quote_gate("", [read.cited])
     lines, unit = gate_lines(read), _unit(read)
     licence = read.cited.stated_licence or read.cited.declared_licence

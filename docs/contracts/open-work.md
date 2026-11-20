@@ -207,7 +207,8 @@ MCP except for a `SUBJECT_LINK`, which carries none (`component-specs-general.md
 
 ## MCP
 
-Last reviewed: 2026-11-21 (round 7: delivered components and pages, and the source tools).
+Last reviewed: 2026-11-21 (round 7: delivered components and pages, the source tools, and supplied
+sources, drafts and the checklist report, decision 0110).
 
 | Tool | Scope | Hints | Returns |
 |---|---|---|---|
@@ -222,7 +223,14 @@ Last reviewed: 2026-11-21 (round 7: delivered components and pages, and the sour
 | `propose_component` | contribute | writes | `ComponentProposalResult {schemaVersion, outcome, proposalId, status, label, message, matches, waysOn}` |
 | `propose_source` | contribute | writes | `SourceProposalReply {schemaVersion, outcome, claimId, quotesAdded, held, gates, message}` |
 | `propose_page` | contribute | writes | `PageProposalResult {schemaVersion, subject, pageUrl, accepted, refused, parts[], message}` |
-| `preview_page` | contribute | writes (a preview, never a proposal) | `PagePreviewResult {schemaVersion, subject, pageUrl, previewUrl, expiresAt, chapters[], components, sources, parts[], message}` |
+| `preview_page` | contribute | writes (a preview, never a proposal) | `PagePreviewResult {schemaVersion, subject, pageUrl, previewUrl, expiresAt, chapters[], components, sources, parts[], message}` with `report` (`PageReport`, below) and `notices`; `_meta.ui` names `ui://kalavigyan/page-preview.html` |
+| `supply_source` | contribute | writes | `SuppliedSourceReply` with `draftId` and `notices` (`knowledge-writes.md`, Supplied sources) |
+| `create_draft` | contribute | writes | `DraftView` (below) |
+| `add_to_draft` | contribute | writes | `DraftView` |
+| `remove_from_draft` | contribute | writes | `DraftView` |
+| `get_draft` | contribute | read-only | `DraftView` with the whole `draft` |
+| `preview_draft` | contribute | writes (a preview, never a proposal) | `PagePreviewResult` with `draftId`, `report` and `notices`; `_meta.ui` names `ui://kalavigyan/page-preview.html` |
+| `submit_draft` | contribute | writes | `PageProposalResult` with `draftId`, `nextStep` and `notices` |
 | `search_sources` | contribute | read-only, open-world | `FoundSources` (`knowledge-api.md`, Source tools) |
 | `read_source` | contribute | read-only, open-world | `SourceText` |
 | `check_quote` | contribute | read-only, open-world | `QuoteCheck` |
@@ -231,8 +239,8 @@ Last reviewed: 2026-11-21 (round 7: delivered components and pages, and the sour
 | `find_pictures` | read | read-only, open-world | `FoundPictures` |
 | `archive_source` | contribute | writes (a Wayback snapshot), open-world | `ArchivedSource` |
 
-The three page tools and the four contribute source tools need an account of Researcher or above
-(`PROPOSE_KNOWLEDGE`).
+The page, draft and source tools and the four contribute source tools need an account of Researcher or
+above (`PROPOSE_KNOWLEDGE`).
 
 - A write tool's changes are committed by the dispatch when it succeeds and rolled back when it
   refuses (`InvalidInput` or `Refused`, both a tool result with `isError`).
@@ -260,6 +268,17 @@ The three page tools and the four contribute source tools need an account of Res
   and Finding and reading sources) and, whole, the references the prompt names (`Prompt.references`: sources,
   quotes, fields and the page checklist; components for a component or a page; datasets for
   `deliver_dataset`; none for `give_picture`). A wrong prompt or argument is `-32602`.
+- `curate_page {subject_kind?, slug?}` (decision 0110, `api/mcp_prompt_curate.py`) walks the whole
+  job of one page in order: pick the page (`my_crafts`, `list_open_work`, `adopt_craft`) or read the
+  named one (`get_coverage`, `list_open_work`), claim its tasks, derive its lists (`get_facts`,
+  `get_section`, `get_layout`) and `create_draft` with them, research with the agent's own reach and
+  the sources tools (`search_sources`, `lookup_compound`, `lookup_entity`, `find_pictures`), read and
+  check every quote (`read_source`, `supply_source` for a source only the agent can read, `check_quote`,
+  `archive_source`), `propose_facts` in batches, then structure, components and dataset figures and
+  the layout with `add_to_draft`, pictures with `give_image` and `add_to_draft`, `preview_draft` and
+  fix against the report until no fixable failure is left, `submit_draft` once, follow with
+  `get_proposal`, `my_tasks` and `get_draft`, and what to do when each gate refuses. Its sections are
+  those of `deliver_page`; its references are all six.
 - `resources/list`, `resources/read`, `resources/templates/list` (empty): the index
   `kalavigyan://index.md` (round 7: every tool, prompt and resource with one line each), the skills
   `kalavigyan://skills/kalavigyan-contributor/SKILL.md` and
@@ -269,7 +288,14 @@ The three page tools and the four contribute source tools need an account of Res
   `kalavigyan://contracts/<name>.md` (round 7: `knowledge-writes`, `open-work`,
   `component-specs-general`, `image-contributions`, `mcp-ask-and-upload`, each the same text as
   `docs/contracts/<name>.md`; all `text/markdown`), `kalavigyan://design/tokens.json`
-  (`application/json`) and the answer kit and view. An unknown uri is `-32002`.
+  (`application/json`), the answer kit and view, and the page preview view
+  `ui://kalavigyan/page-preview.html` (`text/html;profile=mcp-app`, `data/design/page-preview-view.html`
+  through `data/page_preview_view.py`: one self-contained page, `default-src 'none'` and its one script
+  allowed by hash, the four themes' colours and the status colours inlined from `tokens.json`, every
+  text set as text, `https` links opened through `ui/open-link`; it draws a `preview_page` or
+  `preview_draft` result: the private link, the rules failed first with their evidence, coverage by
+  field, figures, sources by grade, pictures by licence and each part's outcome). An unknown uri is
+  `-32002`.
 - The server's `instructions` name the source tools and the index (`api/mcp_protocol.py`).
 
 ## HTTP
@@ -355,6 +381,82 @@ with `Cache-Control: private, no-store` and `X-Robots-Tag: noindex, nofollow`. H
 (`app/(reading)/preview/[token]`) reads it with the reader's session and draws it with
 `MonographPage` exactly as the site draws its pages, `noindex`; signed out it sends the reader to
 sign in and back, and any other answer is the not-found page.
+
+## The checklist report (decision 0110)
+
+Over MCP, `preview_page` and `preview_draft` read back the stored preview document
+(`services/page_report.preview_report`) and report it against the page checklist
+(`research/page_report.py`, the rules in `research/page_report_rules.py`); a preview whose document
+cannot be read back carries `report: null`. The rule titles are read from the checklist reference
+(`services/page_report.checklist_titles`), its one copy.
+
+`PageReport {schemaVersion 1, passed, failed, judged, rules[{rule, title, verdict PASS | FAIL | JUDGE,
+evidence[] (at most 12 lines)}] (all 26, in order), sentences, ledeSentences, fields[{field, chapter,
+sentences, figures, held, standing DENSE | THIN | ABSENT}] (the sixteen, in vocabulary order),
+figures[{number, label, kind, title, field, chapter, cited}] (every component but pictures, numbered in
+reading order), figureKinds, sources, sourcesByGrade (A to D, or UNGRADED for a source the gates grade
+when it is proposed), suppliedSources, pictures[{label, chapter, caption, credit, licence}],
+picturesByLicence, message}`. A sentence is a placed `p` unit with facts outside a component; the lede
+is the sentences of the opening; a picture is a `picture_plate`.
+
+| Rule | Checked |
+|---|---|
+| 1 | no page or component title ends with a question mark; the lede holds at most 3 sentences |
+| 2 | a craft's or family's masthead holds a picture (a category's is judged) |
+| 3 | at most one picture in the masthead |
+| 4 | every number a sentence states is in a quote it cites (`quotes.unsupported_figures`) |
+| 6 | the signature fact (the draft's lists: `fact:N` matched by its statement, or a stored fact's id) is on exactly one sentence; judged without lists |
+| 7 | no picture file is drawn twice |
+| 9 | every figure cites through its units, its spec's sources or its borrowed fragment |
+| 10 | no text shows a progress state ("writing section", "n of m scenes", "70 % done") |
+| 14 | every picture carries its credit |
+| 15 | every figure holds text or cites |
+| 17 | every chart is a `general_chart` (drawn from zero by the site); any other chart is judged |
+| 18 | judged, with the number of sentences using each ambiguous term of the lists |
+| 20 | each mechanism of the lists is named in 2 or more sentences; judged without lists |
+| 21 | each reaction of the bundle's structure with every formula has the same elements on both sides; judged without one |
+| 23 | every sentence sits in its field's chapter, and every field holding facts has a sentence |
+| 24 | every field on the page has 3 or more sentences |
+| 25 | no sentence is told twice, and no figure's unit of 40 characters or more repeats one |
+| 26 | no text admits a gap ("not yet", "coming soon", "no data") and no field heading stands without a sentence |
+| 5, 8, 11, 12, 13, 16, 19, 22 | judged, each with what to look at |
+
+## Drafts (decision 0110)
+
+A draft is a page bundle built over many calls (`research/page_drafts.py`, `services/page_drafts.py`,
+`api/mcp_studio_tools.py`, `api/mcp_studio_arguments.py`, `models/studio.py`).
+
+- `create_draft {subject_kind, slug, lists?, note?}` opens one draft per account and page (the subject
+  found as `preview_page` finds it), or gives back the open one; an account holds at most 10 open
+  drafts (`DRAFTS_OPEN_MAX`), and its drafts past their expiry are deleted when it creates one.
+- `add_to_draft {draft_id, facts?, structure?, components?, layout?, pictures?, supplied_sources?,
+  lists?, note?}` appends parts (a layout, lists or note replaces the draft's) and refuses a draft past
+  the bundle's limits (20 facts, 20 structure items, 10 components, 10 pictures), 40 supplied sources,
+  600,000 bytes of JSON (`DRAFT_BYTES_MAX`), a `fact:N` beyond its facts, or a supplied source of another
+  account. `lists {mechanisms (up to 12), ambiguous_terms (up to 12), signature (fact:N or a fact id)}`.
+- `remove_from_draft {draft_id, part, index}`: `part` one of `fact`, `structure`, `component`, `layout`,
+  `picture`, `supplied_source`; removing `fact:i` refuses while a component, picture or the signature
+  names it, and renumbers every later `fact:N`.
+- `get_draft {draft_id}` reads the draft whole, submitted ones too, until it expires.
+- `preview_draft {draft_id}` previews the draft's bundle with `preview_page` (`PAGE_PREVIEWS`) and
+  reports it with its lists; the draft keeps the link and the report's counts.
+- `submit_draft {draft_id}` proposes the draft's bundle with `propose_page`'s checks
+  (`page_proposal_deps.page_proposed`, origin `AGENT`, `PAGE_PROPOSALS` and each part's own allowance)
+  and keeps the result; the draft is then `SUBMITTED` and no longer changes.
+- Each change bumps `version`, moves `expiresAt` to 14 days on (`DRAFT_LIFETIME`) and drops the last
+  preview. Another account's draft, or an expired one, is "no open draft of yours".
+
+`DraftView {schemaVersion 1, draftId, subject, state OPEN | SUBMITTED, version, updatedAt, expiresAt,
+bytes, bytesMax, counts and limits {facts, structure, components, layout, pictures, suppliedSources},
+parts[{part, index, summary}], lists, preview {url, expiresAt, passed, failed, judged} | null, result
+(PageProposalResult) | null, draft (the whole parts, from get_draft) | null, message, nextStep}` and
+`notices`.
+
+Table `PageDraft` (migration `0052_drafts_and_supplied_sources`, row level security on, no grants to the
+public roles): `userId` (cascading), `subjectKind`, `subjectSlug`, `state`, `parts` (JSONB), `bytes`,
+`version`, `previewUrl`, `previewExpiresAt`, `report`, `result`, `submittedAt`, `expiresAt`; one open
+draft per account and page by a partial unique index; `SUBMITTED` exactly with `submittedAt` and
+`result`.
 
 ## The contributor skill
 

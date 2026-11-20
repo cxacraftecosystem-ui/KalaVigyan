@@ -31,6 +31,7 @@ from .mcp_resources import resource_list, resource_read, resource_templates
 from .mcp_source_tools import SOURCE_TOOLS
 from .mcp_steward_tools import STEWARD_TOOLS
 from .mcp_structure_tools import STRUCTURE_TOOLS
+from .mcp_studio_tools import STUDIO_TOOLS
 from .mcp_task_tools import TASK_TOOLS
 from .mcp_tool_base import Tool, ToolContext, scope_refusal
 from .mcp_work_tools import WORK_TOOLS
@@ -53,6 +54,7 @@ TOOLS: Mapping[str, Tool] = MappingProxyType(
             *SOURCE_TOOLS,
             *PAGE_TOOLS,
             *LOOKUP_TOOLS,
+            *STUDIO_TOOLS,
         )
     }
 )

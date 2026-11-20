@@ -20,6 +20,8 @@ confirmed there.
 | Fetching a picture's link | the fetcher's `POST /fetch-picture` (`fetcher/pictures.py`), its client `services/upload_links_fetch.py`, contract `research/image_intake_fetch.py` |
 | The vision screen's call | `api/picture_vision.py` |
 | The answer kit and the answer view resources | `api/mcp_resources.py`, `data/answer_kit.py`, `data/design/answer-kit.md`, `data/design/answer-view.html` |
+| The page preview view (decision 0110) | `data/page_preview_view.py`, `data/design/page-preview-view.html`, named by `preview_page` and `preview_draft` |
+| A supplied source's file slot (decision 0110) | `services/supplied_sources.py`, `api/routes/supplied_sources.py` (`knowledge-writes.md`, Supplied sources) |
 | Upload link contract, states, addresses | `research/upload_links.py` |
 | Issuing, reading, renewing and filling a link or slot | `services/upload_links.py` |
 | HTTP routes | `api/routes/upload_links.py` |
@@ -85,6 +87,7 @@ naming `ui://kalavigyan/answer.html`, with visibility `model` and `app`.
 |---|---|---|
 | `kalavigyan://design/answer-kit.md` | `text/markdown` | How an answer is drawn: the order, sentences and citation clusters, component cards, sources, the rules, and a table of the light and dark values of the colours an answer uses and the font stacks, generated from `tokens.json` |
 | `ui://kalavigyan/answer.html` | `text/html;profile=mcp-app` | The MCP App that draws an `ask` result in our design |
+| `ui://kalavigyan/page-preview.html` | `text/html;profile=mcp-app` | The MCP App that draws a `preview_page` or `preview_draft` result: the private link, the checklist report and each part's outcome (`open-work.md`) |
 
 The view is one self-contained page: no network (`_meta.ui.csp` lists no domains; its own
 Content-Security-Policy is `default-src 'none'` with the one inline script allowed by its SHA-256),
@@ -92,7 +95,8 @@ the four themes' colours inlined from `tokens.json`. It speaks the MCP Apps prot
 `postMessage`: `ui/initialize`, then it draws the `structuredContent` of
 `ui/notifications/tool-result`, follows the host theme, reports its size, and opens links through
 `ui/open-link`. Every text is set with `textContent`, never as markup; only `https` links are
-made.
+made. The page preview view is built the same way and also inlines the status colours (`success`,
+`error`, `info` and their washes) for the verdicts, each always drawn with an icon and words.
 
 ## `start_image_upload` (scope `contribute`, signed in, a write)
 

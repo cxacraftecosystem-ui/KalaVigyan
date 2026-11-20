@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 import pytest
@@ -7,6 +8,7 @@ from app.research.candidate_gates import quote_gate
 from app.research.fetcher import FetchRefused
 from app.research.knowledge_writes import ProposedQuote, ProposedSource
 from app.research.quotes import quote_key
+from app.services import source_lookup_read
 from app.services.candidate_sources import read_source
 from app.services.source_lookup_sources import LookupSources
 from app.services.source_lookup_text import best_window
@@ -144,6 +146,22 @@ async def test_a_quote_the_gate_would_refuse_fails_with_the_nearest_passage(
     }
     short = await tool("check_quote", {"url": PAGE_URL, "quote": "lime and gum"})
     assert short["passed"] is False and "shorter than 20 characters" in short["reasons"][0]
+
+
+async def test_reading_and_checking_use_the_text_the_signed_in_person_supplied(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    serve(monkeypatch, reading(FakeFetcher({PAGE_URL: page()})))
+    readers: list[uuid.UUID | None] = []
+
+    async def spy(session: Any, fetcher: Any, proposed: Any, *, proposer_id: uuid.UUID | None = None) -> Any:
+        readers.append(proposer_id)
+        return await read_source(session, fetcher, proposed)
+
+    monkeypatch.setattr(source_lookup_read, "read_source", spy)
+    await tool("read_source", {"url": PAGE_URL})
+    await tool("check_quote", {"url": PAGE_URL, "quote": PAGE_LINES[1]})
+    assert readers == [uuid.UUID(int=41), uuid.UUID(int=41)]
 
 
 def test_the_nearest_window_is_the_run_sharing_most_of_the_quote_s_words() -> None:

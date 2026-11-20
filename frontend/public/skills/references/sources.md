@@ -50,8 +50,13 @@ KalaVigyan does not hold yet. Either way, choose by the grades above.
 
 ## Never used
 
-Shadow libraries, AI-generated content farms, social media posts, unattributed blog posts, anything
-behind a login, and screenshots of other sites.
+Shadow libraries, AI-generated content farms, social media posts, unattributed blog posts,
+screenshots of other sites, and anything behind a login, unless the contributor supplies its text
+with `supply_source` (decision 0110): a paywalled paper read through their own subscription or
+library, a book or PDF they hold, an archive, or a site that refuses our fetcher. Its identity is
+confirmed in Crossref, OpenAlex or Semantic Scholar where it can be; a work found nowhere is graded
+C at most (D with no named author or publisher). The text is kept privately for reviewers and
+never shown; pages show only the short quote and its citation.
 
 ## Recording a source
 
@@ -61,7 +66,7 @@ behind a login, and screenshots of other sites.
 - **Language**: Indian-language sources are welcome; quote them in their own language and record
   the language code (`gu`, `hi`, `sd`).
 - **Access**: open, abstract only, or restricted. A restricted source is cited from its open
-  abstract only.
+  abstract, or from text the contributor supplied.
 - **Archive**: when the live page blocks automated reading, give its Wayback Machine snapshot
   (`https://web.archive.org/web/<timestamp>/<url>`) as well. The same page at a new address, or its
   snapshot, is a source like any other when the quote is found in it. `archive_source` asks the

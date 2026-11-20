@@ -21,6 +21,7 @@ from app.research.open_work import (
 )
 from app.research.sections import DISCIPLINE_FIELDS
 
+from .mcp_prompt_curate import CURATE_PAGE_PROMPT, curate_page_prompt
 from .mcp_prompt_steps import (
     DATA_KINDS,
     component_steps,
@@ -252,5 +253,6 @@ PROMPTS: Mapping[str, Prompt] = MappingProxyType(
             (*METHOD_SECTIONS, "Components", "Pages"),
             (*FIGURE_REFERENCES, "datasets"),
         ),
+        CURATE_PAGE_PROMPT: curate_page_prompt(Prompt, PromptArgument),
     }
 )

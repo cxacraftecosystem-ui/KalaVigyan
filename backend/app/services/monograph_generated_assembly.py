@@ -15,6 +15,7 @@ from app.research.page_layout import PageLayout, arranged_layout, picture_label
 
 from .component_proposals_drawn import drawn_delivery
 from .document_components import DocumentStructure, StructureBlock
+from .document_components_data import borrowed_data, merged_data, monograph_data
 from .knowledge_view import ClaimView
 from .monograph_generated_drawings import Drawings
 from .monograph_generated_grids import StatedValue, fact_grid
@@ -76,6 +77,7 @@ class _Page:
     lede: list[str] = field(default_factory=list)
     hero: str | None = None
     blocks: dict[str, StructureBlock] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
 
 
 def assembled_document(parts: GeneratedParts, drawings: Drawings) -> MonographDocument | None:
@@ -98,7 +100,10 @@ def assembled_document(parts: GeneratedParts, drawings: Drawings) -> MonographDo
         sources=book.sources,
         citations=citations,
         citation_claims=claims,
-        data={LAYOUT_DATA: parts.layout.model_dump(mode="json", by_alias=True)} if parts.layout else {},
+        data={
+            **page.data,
+            **({LAYOUT_DATA: parts.layout.model_dump(mode="json", by_alias=True)} if parts.layout else {}),
+        },
         units=page.units,
         components=[page.components[e.ref] for e in arranged if e.kind == "component"],
         layout=arranged,
@@ -247,6 +252,16 @@ def _borrow(
             page.units[key] = unit
         citations.update(named.citations)
         claims.update(named.citation_claims)
+    _borrow_data(page, drawings)
+
+
+def _borrow_data(page: _Page, drawings: Drawings) -> None:
+    read: dict[str, dict[str, Any]] = {}
+    for label, monograph in {**page.reused, **page.borrowed_specs}.items():
+        if monograph not in read:
+            read[monograph] = monograph_data(drawings.root, monograph)
+        found = borrowed_data(read[monograph], page.components[label].kind, page.specs.get(label))
+        merged_data(page.data, found)
 
 
 def _lay_out(page: _Page, found: Sequence[Mapping[str, list[str]]]) -> None:

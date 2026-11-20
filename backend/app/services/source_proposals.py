@@ -55,7 +55,9 @@ async def propose_source(
             session, proposal.task_key, claim.id, {source for source, _ in cited}, site=ask.site
         )
     was_held = await is_held(session, claim.id)
-    read = tuple([await read_source(session, ask.fetcher, source) for source in proposal.sources])
+    read = tuple(
+        [await read_source(session, ask.fetcher, s, proposer_id=ask.proposer.id) for s in proposal.sources]
+    )
     outcomes = first_gates(
         Candidate(ref=SOURCE_REF, statement=claim.text, field=claim.field), [r.cited for r in read]
     )
