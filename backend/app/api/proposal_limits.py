@@ -15,6 +15,7 @@ from app.core.rate_limit import (
     IMAGE_UPLOADS,
     LAYOUT_PROPOSALS,
     PROPOSAL_LIMITS,
+    STRUCTURE_PROPOSALS,
     proposal_attempt,
     retry_after_value,
 )
@@ -36,6 +37,7 @@ LIMIT_NOUNS: Mapping[str, str] = MappingProxyType(
         COMPONENT_PROPOSALS: "component proposals",
         LAYOUT_PROPOSALS: "layout proposals",
         IMAGE_UPLOADS: "picture uploads",
+        STRUCTURE_PROPOSALS: "structure proposals",
     }
 )
 SPENT = "This account made {limit} {noun} in the last hour, the most one account may. Try again in {wait}."

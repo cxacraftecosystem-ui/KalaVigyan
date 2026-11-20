@@ -6,7 +6,7 @@ from pathlib import Path
 from design.build import build, render
 from design.colour import contrast, delta_e, from_oklch
 from design.system import load_system
-from design_tokens import REPO_ROOT, stale_outputs
+from design_tokens import REPO_ROOT, stale_outputs, write_outputs
 
 SYSTEM = load_system()
 OUTPUTS, VIOLATIONS = render(SYSTEM)
@@ -74,6 +74,16 @@ def test_the_numeral_size_is_fluid_only_from_the_rail_breakpoint() -> None:
 
 
 def test_the_outputs_are_written_where_the_app_and_the_skill_read_them(tmp_path: Path) -> None:
-    for folder in (".claude/skills/kalavigyan-design/references", "frontend/app"):
+    for folder in (".claude/skills/kalavigyan-design/references", "frontend/app", "backend/app/data/design"):
         (tmp_path / folder).mkdir(parents=True)
-    assert len(stale_outputs(tmp_path, OUTPUTS)) == 4
+    assert len(stale_outputs(tmp_path, OUTPUTS)) == 5
+
+
+def test_the_backend_s_tokens_resource_is_written_by_the_generator_as_the_skill_s(tmp_path: Path) -> None:
+    for folder in (".claude/skills/kalavigyan-design/references", "frontend/app", "backend/app/data/design"):
+        (tmp_path / folder).mkdir(parents=True)
+    write_outputs(tmp_path, OUTPUTS)
+    served = tmp_path / "backend/app/data/design/tokens.json"
+    skill = tmp_path / ".claude/skills/kalavigyan-design/references/tokens.json"
+    assert served.read_bytes() == skill.read_bytes() == OUTPUTS["tokens.json"].encode("utf-8")
+    assert stale_outputs(tmp_path, OUTPUTS) == []

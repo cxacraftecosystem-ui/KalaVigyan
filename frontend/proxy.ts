@@ -11,6 +11,7 @@ import {
   upstreamHeaders,
   upstreamUrl
 } from "@/lib/server/apiProxy";
+import { REVALIDATE_ROUTE } from "@/lib/server/revalidation";
 
 const SESSION_ROUTES = new Set([
   "/api/auth/login",
@@ -18,7 +19,8 @@ const SESSION_ROUTES = new Set([
   "/api/auth/change-password",
   "/api/auth/logout",
   "/api/session/adopt",
-  "/api/session/end"
+  "/api/session/end",
+  REVALIDATE_ROUTE
 ]);
 
 export function proxy(request: NextRequest) {

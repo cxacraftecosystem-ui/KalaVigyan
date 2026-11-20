@@ -2,7 +2,8 @@
 
 Decision 0101's Knowledge API and MCP server: item 15 "Open work" and "The method travels with
 the server", and item 16's `propose_component`. The endpoint, framing and read tools are in
-`docs/contracts/knowledge-api.md`; `propose_fact` and `propose_layout` are in `knowledge-writes.md`.
+`docs/contracts/knowledge-api.md`; `propose_fact`, `propose_layout` and `propose_structure` are in
+`knowledge-writes.md`.
 
 ## Code
 
@@ -13,12 +14,12 @@ the server", and item 16's `propose_component`. The endpoint, framing and read t
 | Task wording (what is needed, acceptance) | `research/open_work_texts.py` |
 | Source link rule (dead, unarchived) | `research/open_work_links.py` |
 | Component proposal contract and the close-match rule | `research/component_proposals.py` |
-| Subjects and filters | `services/open_work_subjects.py` |
+| Subjects and filters | `services/open_work_subjects.py`; the family rule is `data/curation_scopes.is_family` |
 | Facts and sections per field (the field coverage) | `services/coverage.py` (`coverage.md`) |
 | Counts per subject (one source, sources differ, links, demand) | `services/open_work_counts.py` |
-| Component kinds per craft | `services/open_work_components.py` |
+| Component kinds per craft | `services/open_work_components.py`, over the library's one applies-to query (`services/component_library.applies_to`, with `registered_pieces`) |
 | The nightly refresh of field work | `services/open_work_refresh.py` |
-| Pages in the monograph form | `services/open_work_pages.py` |
+| Pages in the monograph form | `services/open_work_pages.py`; the folder is `data/monograph_files.MONOGRAPHS_DIR` |
 | Listing, standings, review queues, live reservations | `services/open_work.py` |
 | Claim, release, complete | `services/task_reservations.py` |
 | `propose_component` | `services/component_proposals.py` |
@@ -27,7 +28,7 @@ the server", and item 16's `propose_component`. The endpoint, framing and read t
 | MCP prompts and resources | `api/mcp_prompts.py`, `api/mcp_resources.py`, dispatched in `api/mcp_tools.py` |
 | HTTP routes | `api/routes/open_work.py` |
 | The contributor skill | `data/contributor/SKILL.md`, served at `frontend/public/skills/kalavigyan-contributor/SKILL.md` |
-| The design tokens resource | `data/design/tokens.json`, a copy of `.claude/skills/kalavigyan-design/references/tokens.json` |
+| The design tokens resource | `data/design/tokens.json`, written by `tools/design_tokens.py` beside the design skill's `references/tokens.json` |
 
 ## Subjects
 
@@ -92,7 +93,8 @@ task and each under 3 a `THIN_FIELD` task; quotes are 25 to 300 characters.
   Professor and above), `TESTIMONY` (pending artisans' testimony; `REVIEW_TESTIMONY`), `IMAGES`
   (pending pictures; `REVIEW_CONTRIBUTIONS`, Admin and above), `COMPONENTS` (pending component
   proposals; `REVIEW_CONTRIBUTIONS`), `LAYOUTS` (pending page layout proposals;
-  `REVIEW_CONTRIBUTIONS`). Queues are listed only without a subject filter.
+  `REVIEW_CONTRIBUTIONS`), `STRUCTURE` (pending page structure proposals; `MARK_CLAIM_LEVEL`,
+  Professor and above). Queues are listed only without a subject filter.
 
 **Priority** per subject, then ordered:
 - `HIGH`: on the owner's first list (`kalavigyan-craft-pages` skill, "Order": Bidriware, Blue Pottery
@@ -134,6 +136,9 @@ its key.
   `taskKey` ends the proposer's reservation `COMPLETED` once the fact passes the gates (published or
   waiting for review), and gives it back (`RELEASED`) when the fact is refused, so the task returns
   to the list (`knowledge-writes.md`). The `research_field` prompt asks the agent to pass it.
+- A `propose_structure` (or `POST /api/knowledge/structure`) naming a field or corroboration task of
+  its page and field ends the proposer's reservation `COMPLETED` once its checks pass, and gives it
+  back when they refuse (`knowledge-writes.md`, Structure proposals).
 - One live reservation per key: a partial unique index on `taskKey` where `endedAt` is null.
   `userId` is kept for the reservation only and never shown to another account.
 
@@ -204,13 +209,14 @@ extended label; `VARIANT` takes a new one), `task_key?`.
 `data/contributor/SKILL.md` is the one copy that is written; `frontend/public/skills/
 kalavigyan-contributor/SKILL.md` is served from the site, and `tests/mcp/test_contributor_kit.py`
 holds the two byte for byte, the field table equal to the vocabulary, and the tokens resource equal
-to the design skill's `tokens.json`. After editing the skill or regenerating the tokens, copy the
-file to its served place.
+to the design skill's `tokens.json`. After editing the skill, copy it to its served place; the tokens
+are regenerated into both places by `tools/design_tokens.py`.
 
 ## Around open work
 
-- Facts close their tasks (above); page layouts are proposed with `propose_layout` and wait in the
-  `LAYOUTS` queue (`knowledge-writes.md`).
+- Facts and structure proposals close their tasks (above); page layouts are proposed with
+  `propose_layout` and wait in the `LAYOUTS` queue, page structure with `propose_structure` in the
+  `STRUCTURE` queue (`knowledge-writes.md`).
 - Component and layout proposals are decided on the review page, `/admin/review`
   (`review-queue.md`). An approved component proposal waits for a builder, who builds it and
   registers it in the library outside the server; an approved layout is written at once.

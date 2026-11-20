@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from .craft_master_loader import ALL_INDIA, MasterCraft, load_master
 from .portal_craft_register import PortalCraft, load_portal_crafts
 
-__all__ = ["CategoryScope", "CraftScope", "SubCategory", "category_scopes", "craft_scopes"]
+__all__ = ["CategoryScope", "CraftScope", "SubCategory", "category_scopes", "craft_scopes", "is_family"]
 
 
 @dataclass(frozen=True)
@@ -40,7 +40,7 @@ def craft_scopes(
         craft.slug: CraftScope(
             craft.slug,
             craft.name,
-            _family(craft.is_catch_all, craft.state_of_practice),
+            is_family(craft.is_catch_all, craft.state_of_practice),
             category_slug=craft.category_slug,
         )
         for craft in listed
@@ -51,7 +51,7 @@ def craft_scopes(
         scopes[craft.slug] = CraftScope(
             craft.slug,
             craft.name,
-            _family(False, craft.state_of_practice),
+            is_family(False, craft.state_of_practice),
             category_slug=category_of_sub.get(craft.sub_category_slug or ""),
             merged_into=craft.merged_into,
         )
@@ -70,5 +70,5 @@ def category_scopes(master: Sequence[MasterCraft] | None = None) -> dict[str, Ca
     }
 
 
-def _family(catch_all: bool, practice: Sequence[str]) -> bool:
+def is_family(catch_all: bool, practice: Sequence[str]) -> bool:
     return catch_all or tuple(practice) == (ALL_INDIA,)

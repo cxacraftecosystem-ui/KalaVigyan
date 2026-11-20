@@ -19,6 +19,8 @@ from .image_contributions import REVIEW_NOTE_MAX_CHARS as PICTURE_NOTE_MAX_CHARS
 from .layout_proposals import LayoutReview
 from .open_work import REVIEW_QUEUES
 from .review_queue_components import ComponentReview
+from .review_queue_parts import FactSource, GateCheck, RelatedFact, SourceQuote
+from .review_queue_structure import StructureReview
 from .review_switch import (
     AGENT,
     APPROVED_STATUS,
@@ -57,6 +59,7 @@ __all__ = [
     "REVIEWED_LEVEL",
     "REVIEW_ORIGINS",
     "REVIEW_QUEUE_SCHEMA_VERSION",
+    "STRUCTURE",
     "TESTIMONY",
     "TESTIMONY_ORIGIN",
     "ComponentItem",
@@ -83,6 +86,7 @@ __all__ = [
     "ReviewOrigin",
     "ReviewQueuePage",
     "SourceQuote",
+    "StructureQueueItem",
     "TestimonyItem",
     "cursor_text",
     "decision_capability",
@@ -97,7 +101,7 @@ __all__ = [
 
 REVIEW_QUEUE_SCHEMA_VERSION = 1
 QUEUE_KINDS: tuple[str, ...] = tuple(REVIEW_QUEUES)
-FACTS, TESTIMONY, IMAGES, COMPONENTS, LAYOUTS = QUEUE_KINDS
+FACTS, TESTIMONY, IMAGES, COMPONENTS, LAYOUTS, STRUCTURE = QUEUE_KINDS
 TESTIMONY_ORIGIN = "TESTIMONY"
 REVIEW_ORIGINS: tuple[str, ...] = (*PROPOSAL_ORIGINS, TESTIMONY_ORIGIN)
 KIND_ORIGINS: Mapping[str, tuple[str, ...]] = MappingProxyType(
@@ -107,6 +111,7 @@ KIND_ORIGINS: Mapping[str, tuple[str, ...]] = MappingProxyType(
         IMAGES: (CONTRIBUTION,),
         COMPONENTS: (AGENT,),
         LAYOUTS: (CONTRIBUTION, AGENT),
+        STRUCTURE: (CONTRIBUTION, AGENT),
     }
 )
 APPROVE, REJECT, RAISE, RETRACT = "approve", "reject", "raise", "retract"
@@ -236,32 +241,6 @@ class Proposer(ContractModel):
     role: str
 
 
-class SourceQuote(ContractModel):
-    text: str
-    locator: str | None
-
-
-class FactSource(ContractModel):
-    title: str
-    url: str | None
-    licence: str | None
-    reliability: str
-    quotes: list[SourceQuote]
-
-
-class RelatedFact(ContractModel):
-    id: uuid.UUID
-    text: str
-
-
-class GateCheck(ContractModel):
-    gate: str
-    passed: bool
-    reasons: list[str]
-    model: str | None
-    related: list[RelatedFact]
-
-
 class FactConcept(ContractModel):
     name: str
     type: str
@@ -312,8 +291,14 @@ class LayoutItem(_QueueItem):
     layout: LayoutReview
 
 
+class StructureQueueItem(_QueueItem):
+    kind: Literal["STRUCTURE"] = "STRUCTURE"
+    structure: StructureReview
+
+
 QueueItem = Annotated[
-    FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem, Field(discriminator="kind")
+    FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem | StructureQueueItem,
+    Field(discriminator="kind"),
 ]
 
 

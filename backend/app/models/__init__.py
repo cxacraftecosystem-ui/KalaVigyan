@@ -113,6 +113,7 @@ from app.models.science import (
     StageMaterial,
 )
 from app.models.source_upkeep import SourceUpkeep
+from app.models.structure_proposals import StructureProposal
 from app.models.testimony import ArtisanContribution, ArtisanConversation, ArtisanConversationAudio
 from app.models.upload_links import UploadLink
 
@@ -225,6 +226,7 @@ __all__ = [
     "Source",
     "SourceUpkeep",
     "StageMaterial",
+    "StructureProposal",
     "StudentProfile",
     "TaskReservation",
     "Term",

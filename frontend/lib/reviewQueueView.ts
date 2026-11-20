@@ -22,7 +22,8 @@ export const KIND_LABELS: Record<QueueKind, string> = {
   TESTIMONY: "Testimony",
   IMAGES: "Pictures",
   COMPONENTS: "Components",
-  LAYOUTS: "Layouts"
+  LAYOUTS: "Layouts",
+  STRUCTURE: "Structure"
 };
 
 export const KIND_NOUNS: Record<QueueKind, string> = {
@@ -30,7 +31,8 @@ export const KIND_NOUNS: Record<QueueKind, string> = {
   TESTIMONY: "Testimony",
   IMAGES: "Picture",
   COMPONENTS: "Component proposal",
-  LAYOUTS: "Layout proposal"
+  LAYOUTS: "Layout proposal",
+  STRUCTURE: "Structure proposal"
 };
 
 export const ORIGIN_LABELS: Record<ReviewOrigin, string> = {
@@ -53,6 +55,7 @@ export const FACT_STATUS_LABELS: Record<string, string> = {
 };
 
 export const GATE_LABELS: Record<string, string> = {
+  STATED: "Every name and number given is in a quote",
   QUOTES: "Quotes found in the source",
   SOURCE: "Source graded and its licence allows it",
   DUPLICATE: "Not a duplicate of a fact held",

@@ -10,6 +10,7 @@ from app.core.errors import Refused
 from app.models import Craft, KnowledgePiece as PieceRow, MediaAsset, MediaJob, User
 
 from . import audit
+from .page_revalidation import craft_owners, refresh_pages
 
 __all__ = [
     "MEDIA_HIDDEN_ACTION",
@@ -50,7 +51,8 @@ async def set_page_piece_hidden(
     row = await session.scalar(select(PieceRow).where(*where).with_for_update())
     if row is None:
         return None
-    if hidden != (row.hiddenAt is not None):
+    changed = hidden != (row.hiddenAt is not None)
+    if changed:
         row.hiddenAt = now if hidden else None
         row.hiddenById = user.id if hidden else None
         await audit.record(
@@ -62,6 +64,8 @@ async def set_page_piece_hidden(
             detail={"craft": craft.slug, "kind": row.kind},
         )
     await session.commit()
+    if changed:
+        await refresh_pages(await craft_owners(session, [craft.id]))
     return hidden
 
 
@@ -77,7 +81,8 @@ async def set_page_media_hidden(
     if not hidden and row.depictsNamedCluster and row.secondApprovedById is None:
         raise Refused(NAMED_CLUSTER_REASON, NAMED_CLUSTER_REFUSAL)
     wanted = PRIVATE if hidden else SHARED
-    if row.visibility != wanted:
+    changed = row.visibility != wanted
+    if changed:
         row.visibility = wanted
         await audit.record(
             session,
@@ -88,4 +93,6 @@ async def set_page_media_hidden(
             detail={"craft": craft.slug},
         )
     await session.commit()
+    if changed:
+        await refresh_pages(await craft_owners(session, [craft.id]))
     return hidden

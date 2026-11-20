@@ -10,7 +10,7 @@ from design.system import load_system
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REFERENCES = Path(".claude/skills/kalavigyan-design/references")
 DESTINATIONS = {
-    "tokens.json": (REFERENCES / "tokens.json",),
+    "tokens.json": (REFERENCES / "tokens.json", Path("backend/app/data/design/tokens.json")),
     "tokens.css": (REFERENCES / "tokens.css", Path("frontend/app/tokens.css")),
     "tailwind.config.ts": (REFERENCES / "tailwind.config.ts",),
 }

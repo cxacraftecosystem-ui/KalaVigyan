@@ -17,6 +17,7 @@ from app.models import (
     ComponentProposal,
     ImageContribution,
     LayoutProposal,
+    StructureProposal,
     TaskReservation,
 )
 from app.models.enums import DISCIPLINES
@@ -137,6 +138,7 @@ async def review_queues(session: AsyncSession, queues: Sequence[str]) -> dict[st
         "IMAGES": (ImageContribution.createdAt, ImageContribution.status == PENDING),
         "COMPONENTS": (ComponentProposal.createdAt, ComponentProposal.status == PENDING),
         "LAYOUTS": (LayoutProposal.createdAt, LayoutProposal.status == PENDING),
+        "STRUCTURE": (StructureProposal.createdAt, StructureProposal.status == PENDING),
     }
     return {queue: await _queue(session, *waiting[queue]) for queue in queues}
 

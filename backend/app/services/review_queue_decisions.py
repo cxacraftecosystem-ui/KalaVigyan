@@ -23,6 +23,7 @@ from app.research.review_queue import (
     RAISE,
     REJECT,
     RETRACT,
+    STRUCTURE,
     TESTIMONY,
     FactLevelRaise,
     FactRetraction,
@@ -37,6 +38,7 @@ from .review_queue_components import approve_component, reject_component
 from .review_queue_errors import DecisionConflict, NotYourQueue, OwnItem, UnknownItem
 from .review_queue_facts import FactDecision, decide_fact
 from .review_queue_layouts import approve_layout, reject_layout
+from .review_queue_structure import approve_structure_item, reject_structure_item
 from .testimony_store import MoveRefused, OwnContribution, StaleContribution, UnknownContribution
 
 __all__ = ["ItemRef", "approve_item", "raise_fact", "reject_item", "retract_fact"]
@@ -129,6 +131,18 @@ async def _reject_layout(
     session: AsyncSession, item_id: uuid.UUID, reviewer: User, decision: QueueRejection, *, now: datetime
 ) -> QueueDecision:
     return await reject_layout(session, item_id, reviewer, reason=decision.reason, now=now)
+
+
+async def _approve_structure(
+    session: AsyncSession, item_id: uuid.UUID, reviewer: User, decision: QueueApproval, *, now: datetime
+) -> QueueDecision:
+    return await approve_structure_item(session, item_id, reviewer, note=decision.note, now=now)
+
+
+async def _reject_structure(
+    session: AsyncSession, item_id: uuid.UUID, reviewer: User, decision: QueueRejection, *, now: datetime
+) -> QueueDecision:
+    return await reject_structure_item(session, item_id, reviewer, reason=decision.reason, now=now)
 
 
 async def _approve_testimony(
@@ -244,6 +258,7 @@ _APPROVERS: Mapping[str, Decide] = MappingProxyType(
         IMAGES: _approve_picture,
         COMPONENTS: _approve_component,
         LAYOUTS: _approve_layout,
+        STRUCTURE: _approve_structure,
     }
 )
 _REJECTERS: Mapping[str, Decide] = MappingProxyType(
@@ -253,5 +268,6 @@ _REJECTERS: Mapping[str, Decide] = MappingProxyType(
         IMAGES: _reject_picture,
         COMPONENTS: _reject_component,
         LAYOUTS: _reject_layout,
+        STRUCTURE: _reject_structure,
     }
 )

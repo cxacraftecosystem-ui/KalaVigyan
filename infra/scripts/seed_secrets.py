@@ -31,6 +31,7 @@ GENERATED = (
     "SECRETS_ENCRYPTION_KEY",
     "TWO_FACTOR_ENCRYPTION_KEY",
     "WEB_PROXY_SECRET",
+    "WEB_REVALIDATE_SECRET",
     "TRANSCRIPT_ENCRYPTION_KEY",
     "VOICE_SESSION_HMAC_KEY",
     "VOICE_LLM_BEARER",
@@ -39,6 +40,7 @@ GENERATED = (
 TOKEN_GENERATED = (
     "JWT_SECRET",
     "WEB_PROXY_SECRET",
+    "WEB_REVALIDATE_SECRET",
     "VOICE_SESSION_HMAC_KEY",
     "VOICE_LLM_BEARER",
     "MEDIA_BUNDLE_HMAC_KEY",
@@ -325,7 +327,7 @@ def main():
         ):
             if current.get(public) and current.get(live_with):
                 envs[f"NEXT_PUBLIC_{public}"] = current[public]
-        server_only = {"WEB_PROXY_SECRET": current["WEB_PROXY_SECRET"]}
+        server_only = {key: current[key] for key in ("WEB_PROXY_SECRET", "WEB_REVALIDATE_SECRET")}
         for key, value in {**envs, **server_only}.items():
             kind = "sensitive" if key in server_only else "encrypted"
             st, out = vercel(

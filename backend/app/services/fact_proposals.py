@@ -28,7 +28,7 @@ from .candidate_writes import mark_sources_differ, record_checks
 from .proposal_writes import ProposedClaim, cite_proposal, proposal_level, write_proposed_claim
 from .task_reservations import complete_task, give_back_task
 
-__all__ = ["NO_ACCOUNT", "ProposalAdapters", "propose_fact"]
+__all__ = ["NO_ACCOUNT", "ProposalAdapters", "propose_fact", "role_now"]
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ async def propose_fact(
     adapters: ProposalAdapters,
     now: datetime,
 ) -> ProposalReply:
-    role = await _role_now(session, proposer.id)
+    role = await role_now(session, proposer.id)
     subject = await proposal_subject(session, proposal.subject)
     read = await read_sources(session, adapters.fetcher, proposal)
     run = await _gated(proposal, read, adapters, SqlHeldFacts(session, subject))
@@ -92,7 +92,7 @@ def _placed(run: GateRun, switch: ReviewSwitch, origin: str, role: str) -> Place
     return placement(switch.mode(origin), proposer_reviews=has_rank(role, PROFESSOR))
 
 
-async def _role_now(session: AsyncSession, user_id: uuid.UUID) -> str:
+async def role_now(session: AsyncSession, user_id: uuid.UUID) -> str:
     role = await session.scalar(select(User.role).where(User.id == user_id))
     if role is None:
         raise Refused(NO_ACCOUNT, "The account behind this proposal no longer exists.")

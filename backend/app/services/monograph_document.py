@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput
-from app.data.craft_master_loader import DATA_DIR
+from app.data.monograph_files import CONTENT_FILE, MONOGRAPHS_DIR
 from app.models import MonographDocument as DocumentRow
 from app.research.monograph_document import ENGLISH, MonographDocument, fragment_file_name, spec_file_name
 from app.research.monograph_page import (
@@ -48,9 +48,7 @@ __all__ = [
     "stored_document",
 ]
 
-MONOGRAPHS_DIR = DATA_DIR / "monographs"
 KIT_DIR = MONOGRAPHS_DIR / "kit"
-CONTENT_FILE = "content.json"
 TEMPLATE_FILE = "template.html"
 FRAGMENTS_FOLDER = "fragments"
 SPECS_FOLDER = "specs"

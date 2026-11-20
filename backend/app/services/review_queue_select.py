@@ -18,6 +18,7 @@ from app.models import (
     Craft,
     ImageContribution,
     LayoutProposal,
+    StructureProposal,
 )
 from app.research.review_queue import (
     COMPONENTS,
@@ -25,6 +26,7 @@ from app.research.review_queue import (
     IMAGES,
     LAYOUTS,
     PENDING_FACT_STATUSES,
+    STRUCTURE,
     TESTIMONY,
     ComponentItem,
     FactItem,
@@ -32,6 +34,7 @@ from app.research.review_queue import (
     PictureItem,
     QueueEntry,
     QueueKey,
+    StructureQueueItem,
     TestimonyItem,
 )
 from app.research.review_switch import AGENT, RESEARCH
@@ -60,11 +63,12 @@ QUEUE_MODELS: Mapping[str, Any] = MappingProxyType(
         IMAGES: ImageContribution,
         COMPONENTS: ComponentProposal,
         LAYOUTS: LayoutProposal,
+        STRUCTURE: StructureProposal,
     }
 )
 
 
-RenderedItem = FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem
+RenderedItem = FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem | StructureQueueItem
 
 
 @dataclass(frozen=True)
@@ -175,6 +179,18 @@ def _layout_conditions(scope: QueueScope) -> list[ColumnElement[bool]]:
     return conditions
 
 
+def _structure_conditions(scope: QueueScope) -> list[ColumnElement[bool]]:
+    conditions = [
+        StructureProposal.status == PENDING,
+        StructureProposal.proposerId.is_distinct_from(scope.viewer_id),
+    ]
+    if scope.craft is not None:
+        conditions.append(StructureProposal.craftId == scope.craft.id)
+    if scope.origin is not None:
+        conditions.append(StructureProposal.origin == scope.origin)
+    return conditions
+
+
 _CONDITIONS: Mapping[str, Callable[[QueueScope], list[ColumnElement[bool]]]] = MappingProxyType(
     {
         FACTS: _fact_conditions,
@@ -182,5 +198,6 @@ _CONDITIONS: Mapping[str, Callable[[QueueScope], list[ColumnElement[bool]]]] = M
         IMAGES: _picture_conditions,
         COMPONENTS: _component_conditions,
         LAYOUTS: _layout_conditions,
+        STRUCTURE: _structure_conditions,
     }
 )

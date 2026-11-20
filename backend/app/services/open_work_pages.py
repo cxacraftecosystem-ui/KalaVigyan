@@ -5,12 +5,10 @@ from collections.abc import Mapping
 from functools import lru_cache
 from types import MappingProxyType
 
-from app.data.craft_master_loader import DATA_DIR
+from app.data.monograph_files import CONTENT_FILE, MONOGRAPHS_DIR
 
-__all__ = ["MONOGRAPHS_DIR", "monograph_layouts"]
+__all__ = ["CONTENT_FILE", "MONOGRAPHS_DIR", "monograph_layouts"]
 
-MONOGRAPHS_DIR = DATA_DIR / "monographs"
-CONTENT_FILE = "content.json"
 LAYOUT_KEY = "layout"
 
 

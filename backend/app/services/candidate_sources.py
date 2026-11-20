@@ -20,7 +20,14 @@ from app.sources.adapter import build_document
 from app.sources.fetcher_client import FetcherClient
 from app.sources.web.page import page_item
 
-__all__ = ["PROPOSAL_ADAPTER", "ReadSource", "proposal_fetcher", "read_sources", "stored_source"]
+__all__ = [
+    "PROPOSAL_ADAPTER",
+    "ReadSource",
+    "proposal_fetcher",
+    "read_source",
+    "read_sources",
+    "stored_source",
+]
 
 PROPOSAL_ADAPTER = "proposal"
 FULL_TEXT = "FULL_TEXT"
@@ -50,7 +57,7 @@ async def proposal_fetcher() -> AsyncIterator[Fetcher]:
 async def read_sources(
     session: AsyncSession, fetcher: Fetcher, proposal: FactProposal
 ) -> tuple[ReadSource, ...]:
-    return tuple([await _read(session, fetcher, proposed) for proposed in proposal.sources])
+    return tuple([await read_source(session, fetcher, proposed) for proposed in proposal.sources])
 
 
 async def stored_source(session: AsyncSession, url: str) -> Source | None:
@@ -60,7 +67,7 @@ async def stored_source(session: AsyncSession, url: str) -> Source | None:
     )
 
 
-async def _read(session: AsyncSession, fetcher: Fetcher, proposed: ProposedSource) -> ReadSource:
+async def read_source(session: AsyncSession, fetcher: Fetcher, proposed: ProposedSource) -> ReadSource:
     stored = await stored_source(session, proposed.url)
     fetched = await _fetched(fetcher, proposed.url)
     document = _document(proposed, fetched.page) if fetched.page is not None else None

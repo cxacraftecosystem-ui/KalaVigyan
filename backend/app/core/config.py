@@ -99,6 +99,7 @@ class Settings(BaseSettings):
     )
     forwarded_client_hops: int = Field(default=2, ge=1, le=5, alias="FORWARDED_CLIENT_HOPS")
     web_proxy_secret: str | None = Field(default=None, alias="WEB_PROXY_SECRET")
+    web_revalidate_secret: str | None = Field(default=None, alias="WEB_REVALIDATE_SECRET")
     backend_expose_docs: bool = Field(default=False, alias="BACKEND_EXPOSE_DOCS")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     release: str = Field(default="dev", alias="RELEASE")

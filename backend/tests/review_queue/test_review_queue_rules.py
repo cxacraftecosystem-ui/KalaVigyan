@@ -19,6 +19,7 @@ from app.research.review_queue import (
     RAISE,
     REJECT,
     RETRACT,
+    STRUCTURE,
     TESTIMONY,
     FactRetraction,
     QueueEntry,
@@ -37,7 +38,7 @@ from app.research.review_queue import (
 )
 from app.research.review_queue_components import closest_components
 
-ALL_KINDS = ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS")
+ALL_KINDS = ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE")
 NOON = datetime(2026, 11, 19, 12, 0, 0, 123456, tzinfo=UTC)
 
 
@@ -47,7 +48,7 @@ NOON = datetime(2026, 11, 19, 12, 0, 0, 123456, tzinfo=UTC)
         ("STUDENT", ()),
         ("ARTISAN", ()),
         ("RESEARCHER", ()),
-        ("PROFESSOR", ("FACTS", "TESTIMONY")),
+        ("PROFESSOR", ("FACTS", "TESTIMONY", "STRUCTURE")),
         ("ADMIN", ALL_KINDS),
         ("MASTER_ADMIN", ALL_KINDS),
     ],
@@ -65,8 +66,8 @@ def test_only_admins_and_master_admins_see_who_proposed(role: str, shown: bool) 
     ("origin", "kinds"),
     [
         ("RESEARCH", ("FACTS",)),
-        ("CONTRIBUTION", ("FACTS", "IMAGES", "LAYOUTS")),
-        ("AGENT", ("FACTS", "COMPONENTS", "LAYOUTS")),
+        ("CONTRIBUTION", ("FACTS", "IMAGES", "LAYOUTS", "STRUCTURE")),
+        ("AGENT", ("FACTS", "COMPONENTS", "LAYOUTS", "STRUCTURE")),
         ("TESTIMONY", ("TESTIMONY",)),
         (None, ALL_KINDS),
     ],
@@ -93,6 +94,8 @@ def test_a_kind_filter_never_reaches_past_the_viewers_kinds() -> None:
         (COMPONENTS, APPROVE, Capability.REVIEW_CONTRIBUTIONS),
         (LAYOUTS, APPROVE, Capability.REVIEW_CONTRIBUTIONS),
         (LAYOUTS, REJECT, Capability.REVIEW_CONTRIBUTIONS),
+        (STRUCTURE, APPROVE, Capability.MARK_CLAIM_LEVEL),
+        (STRUCTURE, REJECT, Capability.MARK_CLAIM_LEVEL),
     ],
 )
 def test_each_decision_needs_its_kinds_capability(kind: str, action: str, capability: Capability) -> None:
@@ -100,7 +103,8 @@ def test_each_decision_needs_its_kinds_capability(kind: str, action: str, capabi
 
 
 @pytest.mark.parametrize(
-    ("kind", "action"), [(IMAGES, RAISE), (TESTIMONY, RETRACT), (COMPONENTS, RAISE), (LAYOUTS, RETRACT)]
+    ("kind", "action"),
+    [(IMAGES, RAISE), (TESTIMONY, RETRACT), (COMPONENTS, RAISE), (LAYOUTS, RETRACT), (STRUCTURE, RAISE)],
 )
 def test_only_a_fact_is_raised_or_retracted(kind: str, action: str) -> None:
     with pytest.raises(InvalidInput):

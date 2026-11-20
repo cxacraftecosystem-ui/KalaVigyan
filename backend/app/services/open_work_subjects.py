@@ -9,7 +9,8 @@ from sqlalchemy import ColumnElement, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput
-from app.data.craft_master_loader import ACTIVE, ALL_INDIA
+from app.data.craft_master_loader import ACTIVE
+from app.data.curation_scopes import is_family
 from app.models import Craft, CraftCategory, CraftSubCategory, CuratedCategory, CuratedCraft
 from app.research.category_page import category_path
 from app.research.open_work import SUBJECT_KINDS, TaskSubject
@@ -77,10 +78,6 @@ async def craft_subjects(session: AsyncSession, slugs: Sequence[str]) -> list[Wo
     if not slugs:
         return []
     return await _crafts(session, Craft.slug.in_(list(dict.fromkeys(slugs))))
-
-
-def is_family(catch_all: bool, practice: Sequence[str]) -> bool:
-    return catch_all or tuple(practice) == (ALL_INDIA,)
 
 
 async def _crafts(session: AsyncSession, *conditions: ColumnElement[bool]) -> list[WorkSubject]:

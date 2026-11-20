@@ -27,6 +27,7 @@ __all__ = [
     "PROPOSAL_PREDICATE",
     "ProposedClaim",
     "cite_proposal",
+    "mark_contributed",
     "proposal_level",
     "write_proposed_claim",
 ]
@@ -104,7 +105,7 @@ async def cite_proposal(
             continue
         source_id = await keep_document(session, source.document)
         if source.stored is None:
-            await _mark_contributed(session, source_id, proposer_id)
+            await mark_contributed(session, source_id, proposer_id)
         for quote in source.proposed.quotes:
             chunk = await chunk_for_quote(session, source_id, quote.text)
             session.add(
@@ -136,7 +137,7 @@ async def _concept(session: AsyncSession, subject: FactSubject, field: str) -> u
     return await concept_id_for(session, keys, named)
 
 
-async def _mark_contributed(session: AsyncSession, source_id: uuid.UUID, proposer_id: uuid.UUID) -> None:
+async def mark_contributed(session: AsyncSession, source_id: uuid.UUID, proposer_id: uuid.UUID) -> None:
     await session.execute(
         update(Source)
         .where(Source.id == source_id, Source.origin == WRITE_BACK_ORIGIN, Source.addedById.is_(None))

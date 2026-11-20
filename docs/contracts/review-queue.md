@@ -1,20 +1,24 @@
 # Review queue (decision 0101, items 5, 12, 13 and 14)
 
 One review path for everything other people give: proposed and researched facts, artisans'
-testimony, contributed pictures, component proposals and page layout proposals, whatever their
-origin (the site, the
+testimony, contributed pictures, component proposals, page layout proposals and page structure
+proposals, whatever their origin (the site, the
 Knowledge API, the MCP server, an artisan's conversation). Reviewers see one page of pending items,
 newest first, and decide each through one route per action. A reviewer's own contribution is
 approved at once by its own write path (`knowledge-writes.md`, `image-contributions.md`,
 `open-work.md`) and never enters the queue; the queue also leaves out anything the viewer proposed.
 
 Contract: `backend/app/research/review_queue.py`, with the component body in
-`research/review_queue_components.py` and the layout body in `research/layout_proposals.py`.
+`research/review_queue_components.py`, the layout body in `research/layout_proposals.py`, the
+structure body in `research/review_queue_structure.py` and the shared source and check parts in
+`research/review_queue_parts.py`.
 Services: `services/review_queue.py` (the page), `review_queue_select.py` (what is pending, per kind),
-`review_queue_fact_views.py`, `review_queue_components.py` and `review_queue_layouts.py` (what a
-reviewer needs to judge an item, and the component and layout decisions), `review_queue_decisions.py`,
-`review_queue_facts.py` (decisions) and `review_queue_errors.py`. Route: `api/routes/review_queue.py`.
-No table or column of its own: the queue reads the rows each kind already keeps.
+`review_queue_fact_views.py`, `review_queue_components.py`, `review_queue_layouts.py` and
+`review_queue_structure.py` (what a reviewer needs to judge an item, and the component, layout and
+structure decisions), `review_queue_decisions.py`, `review_queue_facts.py` (decisions),
+`review_queue_refresh.py` (the signed-out pages a decision refreshes) and `review_queue_errors.py`.
+Route: `api/routes/review_queue.py`. No table or column of its own: the queue reads the rows each kind
+already keeps.
 
 ## Who sees which kind
 
@@ -27,8 +31,10 @@ Each kind follows the capability its queue names in `research/open_work.py` (`RE
 | `IMAGES` | `REVIEW_CONTRIBUTIONS` | Admin and above |
 | `COMPONENTS` | `REVIEW_CONTRIBUTIONS` | Admin and above |
 | `LAYOUTS` | `REVIEW_CONTRIBUTIONS` | Admin and above |
+| `STRUCTURE` | `MARK_CLAIM_LEVEL` | Professor and above |
 
-So an Admin or Master Admin sees every kind (item 12); a Professor sees facts and testimony. An
+So an Admin or Master Admin sees every kind (item 12); a Professor sees facts, testimony and
+structure. An
 account that reviews no kind is refused the route (403).
 
 **Who proposed it is kept privately** (item 13). An item carries `proposer {name, role}` only when
@@ -46,21 +52,22 @@ review already shows.
 | `IMAGES` | `ImageContribution` | `status` `PENDING`, not the viewer's |
 | `COMPONENTS` | `ComponentProposal` | `status` `PENDING`, not the viewer's |
 | `LAYOUTS` | `LayoutProposal` | `status` `PENDING`, not the viewer's |
+| `STRUCTURE` | `StructureProposal` | `status` `PENDING` (it passed its checks; a refused one is `REFUSED`), not the viewer's |
 
 **Origins.** A fact's origin is `RESEARCH` when it was written back from an answer's research
 (`Claim.origin` `LIVE_RESEARCH`), `AGENT` when a source was found by an agent
 (`ClaimSource.foundBy` `AGENT`), else `CONTRIBUTION`. Testimony is `TESTIMONY`, a picture
 `CONTRIBUTION`, a component proposal `AGENT`, a layout proposal its own `origin` (`CONTRIBUTION`
-from the site or the Knowledge API, `AGENT` from the MCP server).
+from the site or the Knowledge API, `AGENT` from the MCP server), a structure proposal likewise.
 
 **Craft.** A fact belongs to a craft through its concept (the craft's own concepts and edges, as
 retrieval scopes them); testimony and pictures by `craftId`; a component proposal by `craftId` or a
 `CRAFT` subject naming the craft's slug; a layout proposal by `craftId` (a craft's or family's page;
-a category's page has no craft).
+a category's page has no craft); a structure proposal by `craftId`.
 
 ## `GET /api/review-queue`
 
-Query: `kind` (`FACTS`, `TESTIMONY`, `IMAGES`, `COMPONENTS`, `LAYOUTS`), `craft` (a craft slug), `origin`
+Query: `kind` (`FACTS`, `TESTIMONY`, `IMAGES`, `COMPONENTS`, `LAYOUTS`, `STRUCTURE`), `craft` (a craft slug), `origin`
 (`RESEARCH`, `CONTRIBUTION`, `AGENT`, `TESTIMONY`), `cursor`, `limit` (1 to 50, default 25).
 
 Answer `ReviewQueuePage`:
@@ -90,6 +97,13 @@ Each item has `id`, `kind`, `origin`, `submittedAt`, `craft {slug, name, path}` 
   `entryCount` and `changes [{ref, change (ADDED, CHANGED, REMOVED), before, after}]`: the proposal
   against the current layout, entry by entry, in reading order (chapter, then place), each side a
   `PageLayoutEntry` (`research/layout_proposals.layout_changes`).
+- `structure`: `kind`, `subject {kind, slug}`, `subjectName`, `pageUrl` (the craft page's path),
+  `target` ("Stage P03, Mordanting", "Material M02, Indigo" or `null`), `current` (what the page holds
+  now for a stage's after or why or a material's botanical name, else `null`), `item` (as proposed,
+  `knowledge-writes.md`), `statement`, `field`, `note`, `taskKey`, `sources` (as a fact's, graded by
+  the kept source), `checks [{check, passed, reasons}]` (STATED, QUOTES, SOURCE), `conflicting [{id,
+  text}]` (a conflict's facts) and `stale`: why approval would be refused now (the page moved on), or
+  `null`.
 - `picture`: the `ImageContributionView` of `image-contributions.md`.
 - `testimony`: the review item of the testimony review (`/api/testimony/review/{id}`).
 
@@ -134,6 +148,13 @@ written; when the page's layout has moved past `baseVersion` it is refused (409)
 can only be rejected. Reject records `REJECTED` with the reason; nothing is written. Audit
 `review.layout_<...>` with the version.
 
+**Structure proposals** (`review_queue_structure.py`, `structure_proposals_review.py`): approve
+writes the item and its fact into the page and its dossier (`knowledge-writes.md`, Structure
+proposals) and records `APPROVED` with the reviewer, the time, the note and `claimId`; when the page
+has moved on (the stage or material is gone, the name or conflict is already there) it is refused
+(409) and the proposal can only be rejected. Reject records `REJECTED` with the reason; nothing is
+written. Audit `review.structure_<approved|rejected>` with the kind and the fact.
+
 **Pictures** go through `image_contributions.approve` and `.reject` (the reason is the note), with
 an audit entry `review.image_<...>`. **Testimony** goes through `testimony_writes.approve` and
 `.reject`: a testimony decision names the `version` it was read at (422 without it; 409 when the
@@ -145,6 +166,30 @@ Refusals: 403 for a kind the account does not review or for one's own item, 404 
 (and for a fact that never went through the gates), 409 for a decision the item's state does not
 allow or a stale testimony version, 422 for a bad body or an action a kind does not have (only a
 fact is raised or retracted). Every refusal rolls the session back.
+
+## Refreshing signed-out pages
+
+Once a decision is committed, the route asks the web app to refresh the signed-out pages it changed
+(`review_queue_refresh.refresh_after_decision`, `services/page_revalidation.py`): a fact rejected or
+retracted (it may have been live), testimony rejected (approved words are retracted with it) and a
+structure proposal approved. The pages are those of the fact's concept, or of the item's craft: the
+craft, the families of its sub-category (a catch-all, or practised in All India only) and its
+category, each with its monograph document; a fact about a sub-category's shared concept reaches the
+families and the category, and a category's curated fact its category. The craft page's hide routes
+(`services/craft_page_hiding.py`: a piece, an explainer simulation or a picture hidden or shown again)
+do the same after their commit, and so does a structure proposal written at once.
+
+`POST <PUBLIC_WEB_URL>/api/revalidate` with header `x-revalidate-secret: <WEB_REVALIDATE_SECRET>` and
+body `{paths, tags}`: for a craft `/crafts/<slug>` and `/crafts/<slug>/monograph` with tags
+`craft-page:<slug>` and `monograph-document:craft:<slug>`; for a category `/categories/<slug>` and
+`/categories/<slug>/monograph` with `monograph-document:category:<slug>` (`research/page_revalidation.py`).
+The web app's route (`frontend/app/api/revalidate/route.ts`, rules in `lib/server/revalidation.ts`,
+served by the web app itself rather than proxied) compares the secret in constant time (SHA-256 of
+both, `timingSafeEqual`), answers 503 when it has no secret, 401 for a wrong one and 422 for anything
+but up to 40 such paths and tags, then revalidates each path and expires each tag at once. Without
+the secret on the API nothing is sent; a refusal or an unreachable web app is logged as a warning and
+the change stays, the pages refreshing on their daily schedule. The secret lives in Parameter Store
+and the Vercel env (`docs/RUNBOOK.md`, Secrets).
 
 ## Erased testimony takes its orphaned concepts
 
@@ -170,10 +215,16 @@ kept in the address (`?kind=&origin=&craft=`). A card per item:
   the proposer's note, which version it builds on and what approving writes, and each change ("Placed",
   "Moved from ... to ...", "Taken out"), the first 12 and then "Show all N changes"; a stale proposal
   offers Reject only (`frontend/lib/layoutReviewView.ts`);
+- a structure proposal (`StructureReviewCard.tsx`, rules in `frontend/lib/structureReviewView.ts`,
+  shapes in `frontend/lib/structureReviewContract.ts`): the kind, the page and the stage or material
+  it changes, the proposer's note, the item's parts (a native name or term in its own language and
+  script), what the page holds now, the field, the statement, the facts that disagree for a
+  conflict, the sources with their quotes and the checks, and what approving writes; a stale proposal
+  offers Reject only;
 - a picture: `PictureReviewCard.tsx`; testimony: the testimony `ReviewCard.tsx`, both reused with
   their own decision routes.
 
-Facts, component proposals and layout proposals decide through `QueueDecisionBar.tsx`: an `ActionGroup` of Approve, Approve as
+Facts, component, layout and structure proposals decide through `QueueDecisionBar.tsx`: an `ActionGroup` of Approve, Approve as
 reviewed (facts), then Reject (waiting) or Retract (live) last as the destructive action, with a
 Reason field required for either. The client contract is `frontend/lib/reviewQueueContract.ts`;
 pure rules are in `frontend/lib/reviewQueueView.ts`. `/admin/pictures` and `/admin/testimony`
@@ -183,5 +234,8 @@ stay, and list decided items.
 
 `backend/tests/review_queue/` (rules and routes), `backend/tests/db/test_review_queue_db.py` and
 `test_review_queue_decisions_db.py`, `test_layout_proposals_db.py`, `backend/tests/layouts/`
-(layout proposal rules and routes), `frontend/e2e/review-queue-unit.spec.ts` and
-`review-layouts-unit.spec.ts`.
+(layout proposal rules and routes), `backend/tests/structure/` and
+`tests/db/test_structure_proposals_db.py`, `test_structure_writes_db.py`, `test_structure_export_db.py`
+(structure proposals), `tests/test_page_revalidation.py` and `tests/db/test_page_revalidation_db.py`,
+`frontend/e2e/review-queue-unit.spec.ts`, `review-layouts-unit.spec.ts`,
+`review-structure-unit.spec.ts` and `revalidate-unit.spec.ts`.

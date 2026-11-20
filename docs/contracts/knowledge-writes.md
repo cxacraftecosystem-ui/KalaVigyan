@@ -16,7 +16,13 @@ rules), `research/review_switch.py` (the switch and where a fact is placed);
 setting); `api/routes/knowledge_writes.py`, `api/mcp_fact_tools.py`, `api/proposal_deps.py`; the
 limits `core/rate_limit.py` and `api/proposal_limits.py`; layout proposals `research/layout_proposals.py`,
 `services/page_layout_proposals.py`, `services/review_queue_layouts.py`, `api/mcp_layout_tools.py`,
-`models/layout_proposals.py`.
+`models/layout_proposals.py`; structure proposals `research/structure_proposals.py` (the contract),
+`research/structure_proposals_values.py` (the STATED check), `services/structure_proposals.py` (the
+proposal), `services/structure_proposals_dossier.py` (the dossier's own rules),
+`services/structure_proposals_page.py` (where an item lands on the page index),
+`services/structure_proposals_write.py` and `services/structure_proposals_claims.py` (what approval
+writes), `services/structure_proposals_review.py` (approve, reject), `api/routes/structure_proposals.py`,
+`api/mcp_structure_tools.py`, `api/structure_proposal_deps.py`, `models/structure_proposals.py`.
 
 ## Who may do what
 
@@ -24,6 +30,7 @@ limits `core/rate_limit.py` and `api/proposal_limits.py`; layout proposals `rese
 |---|---|---|
 | Propose a fact (`POST /api/knowledge/facts`, MCP `propose_fact`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
 | Propose a page layout (`POST /api/knowledge/layouts`, MCP `propose_layout`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
+| Propose page structure (`POST /api/knowledge/structure`, MCP `propose_structure`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
 | Read and set the review switch (`/api/knowledge/review-switch`) | `REVIEW_CONTRIBUTIONS` | Admin, Master Admin |
 
 The MCP tools also need a signed-in connection holding the `contribute` scope
@@ -160,6 +167,7 @@ account has a sliding hour per kind (`core/rate_limit.proposal_attempt`, `PROPOS
 | `FACT_PROPOSALS` | `FACT_PROPOSALS_PER_WINDOW` = 30 | `POST /api/knowledge/facts` (after the terms), MCP `propose_fact` |
 | `COMPONENT_PROPOSALS` | `COMPONENT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/contributions/proposals/components`, MCP `propose_component` |
 | `LAYOUT_PROPOSALS` | `LAYOUT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/knowledge/layouts` (after the terms), MCP `propose_layout` |
+| `STRUCTURE_PROPOSALS` | `STRUCTURE_PROPOSALS_PER_WINDOW` = 20 | `POST /api/knowledge/structure` (after the terms), MCP `propose_structure` |
 | `IMAGE_UPLOADS` | `IMAGE_UPLOADS_PER_WINDOW` = 20 | `POST /api/contributions/images` (a picture declared on the site), MCP `start_image_upload` (a link and slot issued; the picture given through it is not counted again) |
 
 - Admins and Master Admins are never limited. A proposal refused at a gate still counts. A request
@@ -199,6 +207,102 @@ version.
   reviewer (audited `PAGE_LAYOUT_WRITTEN` and `review.layout_approved`) while the page is still at
   `baseVersion`, else 409 and the proposal can only be rejected; rejecting keeps the reason
   (`review.layout_rejected`).
+
+## Structure proposals (round 6; debt "Structure still enters by bulk import")
+
+The parts of a curated craft or family page that are not plain facts can be proposed one at a time,
+each with the fact that states it, and pass the same gates; they wait in the review queue as kind
+`STRUCTURE`, and approval writes them into the page index (`CuratedCraft.page`) and the rows the craft
+page, the generated documents and the dossier export read. A craft without a curated page is refused
+(422): its structure arrives with its first dossier.
+
+`StructureProposal` (schema version 1, camelCase): `subject {kind craft, slug}` (a craft or family by
+slug, merges followed), `item` (one of the kinds below, by `kind`), `field`, `statement` (20 characters
+and up, at most 600 because it becomes a dossier sentence; no personal data), `sources` (1 to 5, each
+named once: `{url, title, licence?, language (a language tag such as en or gu-Gujr), quotes [{text,
+locator}]}`, every quote with its locator), `taskKey?` (a field or corroboration task of the same page
+naming `field`, as for a fact), `note?` (1 to 500 characters). A `CONFLICT` item gives no field,
+statement, sources or task.
+
+| Item `kind` | Parts | The fact is about |
+|---|---|---|
+| `STAGE_AFTER` | `stageKey`, `text` (at most 120), `colours` (up to 3 colour words) | the stage's concept |
+| `STAGE_WHY` | `stageKey`; `field` one of the dossier's why fields (CHEMISTRY, MATERIALS, PHYSICS, BOTANY, PROCESS) | the stage's concept |
+| `NATIVE_NAME` | `text`, `language`, `script?` (ISO 15924) | the craft's concept for `field` |
+| `REACTION` | `reactionKind`, `stageKey?`, `reactants` and `products` (1 to 8 `{name, formula?}`) | the stage's concept, else the craft's |
+| `BOTANICAL_NAME` | `materialKey`, `botanicalName` | the material's concept |
+| `GLOSSARY_TERM` | `term`, `meaning` (at most 600), `language?`, `script?` | a new term concept under the next `W` key |
+| `CONFLICT` | `about`, `claimIds` (2 to 6 facts of the page's dossier) | none: no new fact |
+| `OPEN_QUESTION` | `question`, `settledBy?` | the craft's concept for `field` |
+| `GI_RECORD` | any of `applicationNumber`, `certificateNumber`, `filedOn`, `registeredOn`, `journalIssue`, `proprietors`, `authorisedUserCount` (at least one) | the craft's concept for `field` |
+
+**Refused before any check (422, or a tool error):** a malformed body; an unknown craft or one with no
+curated page; an item the dossier's own models refuse (`services/structure_proposals_dossier.py` builds
+the dossier part: language and script patterns, sentence and name lengths, the why fields); an item that
+does not fit the page (`structure_proposals_page.target_problem`): an unknown stage or material, a native
+name the page already gives in that language, a glossary term or an open question it already holds, a
+conflict naming a fact outside the page's claim order or one it already shows.
+
+**Checks, in order** (`StructureCheck {check, passed, reasons[]}`; a refusal stops the run):
+
+1. `STATED`: every name, colour and number the item gives is in one of the proposal's own quotes (case
+   folded, whole words): the native name, the term, the botanical name, each reactant and product by
+   name or formula, each colour word, and of a GI record its numbers, journal issue, proprietors, the
+   count of authorised users and the year of each date. Nothing is fetched when it fails.
+2. `QUOTES` and 3. `SOURCE`: the fact gates of the same name, on the statement and the sources.
+
+The duplicate and novelty gates do not run: the item, not the sentence, is what is new. A `CONFLICT`
+has no checks.
+
+**Placement.** Passed: the fetched pages are kept (`keep_document`, a new page marked `CONTRIBUTION`
+with the proposer) and the proposal is stored `PENDING`, or written at once (`APPROVED`) when the
+proposer is a Professor, Admin or Master Admin (the role read from the account row). Refused: stored
+`REFUSED` with its checks for audit, nothing kept. A claimed task is completed when the checks pass and
+given back when they refuse, as for a fact.
+
+**Approval** (`services/structure_proposals_write.write_structure`, the page row locked) re-checks that
+the item still fits the page (409 otherwise, and the proposal can only be rejected), then:
+
+- the fact becomes a curated fact of the dossier: claim id `curated_id(slug, C<next>)` (the next key
+  after the craft's highest `C` key, three digits), `APPROVED` at `PROVISIONAL`, origin `CONTRIBUTION`,
+  `createdById` the proposer, a `CuratedClaim` marker with the key and field, one `CandidateCheck` per
+  QUOTES and SOURCE outcome, a `ReviewEvent` by the reviewer, and its place at the end of the page's
+  claim order;
+- each quote is a `ClaimSource` found by `curation` (the dossier's own citation; the channel stays on
+  the proposal's `origin`), id `claim_source_id(slug, key, S<key>, quote)`, from a source the dossier
+  keeps: one it already keeps by that address, else the kept page marked `externalIds.curation
+  <slug>:S<next>` with the proposal's language and access `OPEN`, else, when another dossier keeps the
+  page, a copy row `curated_id(slug, S<next>)` (refused with 409 when that page is named by its DOI);
+- the item joins the page index under the next key of its letter (`R`, `W`, `O`, two digits): a stage's
+  `after` or `whyClaimId` (replacing what was there), a native name, a reaction (no stored science row),
+  a botanical name with its fact added to the material's, a glossary term (no shared glossary entry), a
+  conflict (both facts marked `sourcesDiffer`), an open question; a GI record writes `CraftGiRecord`
+  (the parts given replace, proprietors and facts are added); a concept missing for the fact is created
+  as the import would (`curation:<slug>:craft:<FIELD>` or `curation:<slug>:W<nn>`);
+- the proposal is `APPROVED` with the reviewer, the time, the note and `claimId`, audited
+  `review.structure_approved`; a rejection keeps the reason, audited `review.structure_rejected`.
+
+Exporting the dossier afterwards gives the new fact, its quote and its source under their keys, and the
+item under its key (`tests/db/test_structure_export_db.py`); importing that export again moves the
+fact's quotes to the dossier's own source rows.
+
+`StructureProposalResult {schemaVersion 1, outcome STORED | WRITTEN | REFUSED, proposalId, status,
+kind, subject, claimId, checks[], pageUrl, message}`. A refused proposal is a 200 whose checks say why.
+
+Table `StructureProposal` (migration `0047_structure_proposals`): `proposerId`, `craftId`, `kind`,
+`item` (JSONB), `field`, `statement`, `sources` (JSONB: each with its quotes, language and the kept
+`sourceId`), `checks` (JSONB), `taskKey`, `note`, `origin` (`CONTRIBUTION`, `AGENT`), `status`
+(`PENDING`, `APPROVED`, `REJECTED`, `REFUSED`), `reviewedById`, `reviewedAt`, `reviewNote`, `claimId`,
+row level security on and no grants to the public roles.
+
+| Route | Body | Answer |
+|---|---|---|
+| `POST /api/knowledge/structure` | `StructureProposal` | 200 `StructureProposalResult` (origin `CONTRIBUTION`); 401 or 403 without the capability or the terms; 422 malformed; 409 when an at-once write meets a moved page or a source named by DOI elsewhere; 429 when the limit is spent; 503 when the fetcher could not run |
+
+MCP `propose_structure` (`api/mcp_structure_tools.py`, in `STRUCTURE_TOOLS`), scope `contribute`,
+`readOnlyHint false`, arguments `{proposal: StructureProposal}`, origin `AGENT`; refusals are tool
+errors. Approving a structure proposal, at once or from the queue, refreshes the craft's signed-out
+pages (`review-queue.md`, Refreshing signed-out pages).
 
 ## The research write-back
 

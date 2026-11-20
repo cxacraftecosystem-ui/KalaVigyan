@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import ColumnElement, Select, and_, false, func, or_, select
+from sqlalchemy import ColumnElement, CompoundSelect, Select, and_, false, func, or_, select, union
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
@@ -32,11 +32,36 @@ from app.retrieval.text import or_tsquery
 
 from .knowledge_api import known_craft
 
-__all__ = ["library_components"]
+__all__ = ["APPLIED_CRAFT", "APPLIED_PIECE", "applies_to", "library_components", "registered_pieces"]
 
 OPEN_CONCEPT = "OPEN"
 DISTRICT_KEY_PREFIX = f"{DISTRICT_PLACE_PREFIX}:"
 LABEL_SEPARATORS = "/-"
+APPLIED_CRAFT = "craft"
+APPLIED_PIECE = "piece"
+
+
+def registered_pieces() -> list[ColumnElement[bool]]:
+    return [
+        KnowledgePiece.label.is_not(None),
+        KnowledgePiece.hiddenAt.is_(None),
+        KnowledgePiece.supersededById.is_(None),
+    ]
+
+
+def applies_to(craft_ids: Sequence[uuid.UUID]) -> CompoundSelect[Any]:
+    crafts = list(craft_ids)
+    own = select(KnowledgePiece.craftId.label(APPLIED_CRAFT), KnowledgePiece.id.label(APPLIED_PIECE))
+    by_concept = _keyed(Concept.craftId).join(Concept, Concept.id == Subject.conceptId)
+    return union(
+        own.where(KnowledgePiece.craftId.in_(crafts)),
+        _keyed(Subject.craftId).where(Subject.craftId.in_(crafts)),
+        by_concept.where(Concept.craftId.in_(crafts)),
+        _by_stage_concept(crafts),
+        _by_material(crafts, Material.conceptId, Subject.conceptId),
+        _by_material(crafts, Material.compoundId, Subject.compoundId),
+        _by_district(crafts),
+    )
 
 
 async def library_components(
@@ -48,14 +73,11 @@ async def library_components(
     query: str | None = None,
     limit: int = COMPONENTS_LIMIT_MAX,
 ) -> CraftComponents:
-    conditions = [
-        KnowledgePiece.label.is_not(None),
-        KnowledgePiece.hiddenAt.is_(None),
-        KnowledgePiece.supersededById.is_(None),
-    ]
+    conditions = registered_pieces()
     if slug is not None:
         craft = await known_craft(session, slug)
-        conditions.append(or_(KnowledgePiece.craftId == craft.id, KnowledgePiece.id.in_(_applying(craft.id))))
+        applying = applies_to([craft.id]).subquery()
+        conditions.append(KnowledgePiece.id.in_(select(applying.c[APPLIED_PIECE])))
     if field is not None:
         conditions.append(or_(KnowledgePiece.facet == field, KnowledgePiece.fields.any(field)))
     if kind is not None:
@@ -99,29 +121,36 @@ def _document() -> ColumnElement[Any]:
     return func.to_tsvector(TEXT_SEARCH_CONFIG, words)
 
 
-def _applying(craft_id: uuid.UUID) -> Select[tuple[uuid.UUID]]:
-    stages = (
-        select(ProcessStage.id)
+def _keyed(craft: Any) -> Select[Any]:
+    return select(craft.label(APPLIED_CRAFT), Subject.pieceId.label(APPLIED_PIECE)).select_from(Subject)
+
+
+def _by_stage_concept(crafts: list[uuid.UUID]) -> Select[Any]:
+    return (
+        _keyed(Process.craftId)
+        .join(ProcessStage, ProcessStage.conceptId == Subject.conceptId)
         .join(Process, Process.id == ProcessStage.processId)
-        .where(Process.craftId == craft_id)
+        .where(Process.craftId.in_(crafts))
     )
-    materials = select(StageMaterial.materialId).where(StageMaterial.stageId.in_(stages))
-    concepts = (
-        select(Concept.id).where(Concept.craftId == craft_id),
-        select(ProcessStage.conceptId).where(ProcessStage.id.in_(stages)),
-        select(Material.conceptId).where(Material.id.in_(materials)),
+
+
+def _by_material(crafts: list[uuid.UUID], material_key: Any, subject_key: Any) -> Select[Any]:
+    return (
+        _keyed(Process.craftId)
+        .join(Material, material_key == subject_key)
+        .join(StageMaterial, StageMaterial.materialId == Material.id)
+        .join(ProcessStage, ProcessStage.id == StageMaterial.stageId)
+        .join(Process, Process.id == ProcessStage.processId)
+        .where(Process.craftId.in_(crafts))
     )
-    compounds = select(Material.compoundId).where(Material.id.in_(materials))
-    places = select(func.concat(DISTRICT_KEY_PREFIX, CraftLocation.districtLgd)).where(
-        CraftLocation.craftId == craft_id, CraftLocation.districtLgd.is_not(None)
-    )
-    return select(Subject.pieceId).where(
-        or_(
-            Subject.craftId == craft_id,
-            *(Subject.conceptId.in_(found) for found in concepts),
-            Subject.compoundId.in_(compounds),
-            Subject.placeKey.in_(places),
-        )
+
+
+def _by_district(crafts: list[uuid.UUID]) -> Select[Any]:
+    place = func.concat(DISTRICT_KEY_PREFIX, CraftLocation.districtLgd)
+    return (
+        _keyed(CraftLocation.craftId)
+        .join(CraftLocation, place == Subject.placeKey)
+        .where(CraftLocation.craftId.in_(crafts), CraftLocation.districtLgd.is_not(None))
     )
 
 

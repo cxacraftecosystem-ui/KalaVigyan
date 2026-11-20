@@ -211,3 +211,42 @@ async def test_a_testimony_decision_names_the_version_it_was_read_at() -> None:
         await decisions.approve_item(
             NO_SESSION, decisions.ItemRef(TESTIMONY, ITEM), person("ADMIN"), QueueApproval(), now=NOW
         )
+
+
+def test_a_retracted_fact_refreshes_signed_out_pages_once_it_is_committed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    retracted = DECIDED.model_copy(update={"status": "RETRACTED"})
+    order: list[str] = []
+    session = Recorded()
+
+    async def decided(opened: Any, claim_id: uuid.UUID, user: User, body: Any, *, now: datetime) -> Any:
+        return retracted
+
+    async def refreshed(opened: Any, decision: QueueDecision) -> bool:
+        order.append(f"refresh:{decision.status}:{session.commits}")
+        return True
+
+    monkeypatch.setattr(decisions, "retract_fact", decided)
+    monkeypatch.setattr(route, "refresh_after_decision", refreshed)
+    path = f"/api/review-queue/FACTS/{ITEM}/retract"
+    response = client("PROFESSOR", session).post(path, json={"reason": "Wrong."})
+    assert response.status_code == 200
+    assert order == ["refresh:RETRACTED:1"]
+
+
+def test_a_refused_decision_refreshes_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
+    refreshed: list[Any] = []
+
+    async def refused(*args: Any, **kwargs: Any) -> Any:
+        raise DecisionConflict("decided")
+
+    async def refresh(opened: Any, decision: QueueDecision) -> bool:
+        refreshed.append(decision)
+        return True
+
+    monkeypatch.setattr(decisions, "retract_fact", refused)
+    monkeypatch.setattr(route, "refresh_after_decision", refresh)
+    path = f"/api/review-queue/FACTS/{ITEM}/retract"
+    response = client("PROFESSOR").post(path, json={"reason": "Wrong."})
+    assert response.status_code == 409 and refreshed == []

@@ -37,6 +37,7 @@ from app.services.review_queue_errors import (
     UnknownCraft,
     UnknownItem,
 )
+from app.services.review_queue_refresh import refresh_after_decision
 from app.services.testimony_views import Turns
 
 router = APIRouter(prefix="/review-queue", tags=["review"])
@@ -152,4 +153,5 @@ async def _decided(session: AsyncSession, change: Awaitable[QueueDecision]) -> Q
         await session.rollback()
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(invalid)) from None
     await session.commit()
+    await refresh_after_decision(session, decided)
     return decided
