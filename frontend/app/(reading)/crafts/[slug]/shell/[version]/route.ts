@@ -1,15 +1,15 @@
 import { craftEdition } from "@/lib/craftPageContract";
-import { serverCraftDocument } from "@/lib/monographRenderServer";
+import { prerenderedShells, serverCraftDocument, type ShellParams } from "@/lib/monographRenderServer";
 import { shellRest } from "@/lib/monographRenderShell";
 
-type ShellRoute = { params: Promise<{ slug: string; version: string }> };
+type ShellRoute = { params: Promise<ShellParams> };
 
 export const dynamic = "force-static";
 export const revalidate = 86400;
 export const dynamicParams = true;
 
-export async function generateStaticParams(): Promise<{ slug: string; version: string }[]> {
-  return [];
+export async function generateStaticParams(): Promise<ShellParams[]> {
+  return prerenderedShells();
 }
 
 export async function GET(_request: Request, { params }: ShellRoute): Promise<Response> {

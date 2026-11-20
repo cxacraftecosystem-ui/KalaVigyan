@@ -44,6 +44,17 @@ export const serverMonographDocument = cache(async (subject: MonographPreviewSub
   documentRead(monographDocumentPath(subject, slug), monographDocumentTag(subject, slug))
 );
 
+export type ShellParams = { slug: string; version: string };
+
+export function shellParams(documents: readonly (MonographDocument | null)[]): ShellParams[] {
+  return documents.flatMap((document) => (document && document.shell !== null ? [{ slug: document.subjectSlug, version: `v${document.version}` }] : []));
+}
+
+export async function prerenderedShells(): Promise<ShellParams[]> {
+  const crafts = await prerenderedPages("crafts");
+  return shellParams(await Promise.all(crafts.map(({ slug }) => serverCraftDocument(slug))));
+}
+
 export const serverCraftDocument = cache(async (slug: string, version: number | null = null): Promise<MonographDocument | null> =>
   documentRead(versionedDocumentPath(monographDocumentPath("craft", slug), version), monographDocumentTag("craft", slug))
 );
