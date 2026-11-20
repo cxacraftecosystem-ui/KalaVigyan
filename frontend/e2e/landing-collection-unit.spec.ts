@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { categoriesHeading, monographLine } from "@/components/landing/CategoriesSection";
 import { collectionDek } from "@/components/landing/CollectionSection";
-import { coveragePath } from "@/components/landing/fieldCoverageServer";
+import { batches, COVERAGE_BATCH, coveragePath } from "@/components/landing/fieldCoverageServer";
 import { FIELD_CHAPTER, fieldHoldings, fieldsFinding } from "@/components/landing/fieldHoldings";
 import { FieldsSection, fieldsDek, leadLine } from "@/components/landing/FieldsSection";
 import { collectionStats, documentPlates, familyBlocks, interleaved, landingCollection } from "@/components/landing/landingCollection";
@@ -57,6 +57,8 @@ test("a field opens at the chapter the backend files it under", () => {
   expect(FIELD_CHAPTER).toEqual(filed);
   expect(Object.keys(filed)).toHaveLength(16);
   expect(coveragePath("Kutch-Ajrakh")).toBe("/crafts/Kutch-Ajrakh/coverage");
+  expect(batches([1, 2, 3, 4, 5, 6, 7], 3)).toEqual([[1, 2, 3], [4, 5, 6], [7]]);
+  expect(COVERAGE_BATCH).toBeLessThanOrEqual(8);
 });
 
 test("the fields section draws sixteen rows from coverage, and the sixteen names when coverage cannot be read", () => {
