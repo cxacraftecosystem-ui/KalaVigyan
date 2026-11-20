@@ -32,6 +32,7 @@ The workflow runs `python -m app.scripts.nightly_upkeep` as the `kalavigyan` use
 | 2. Archive sources at risk | `services/upkeep_archive.py`, adapter `sources/wayback_save.py` | `ARCHIVES_PER_NIGHT` = 10; a failed save is retried after `ARCHIVE_RETRY_AFTER` = 30 days | `SourceUpkeep.archiveUrl`, `archivedAt`, `archiveTriedAt` |
 | 3. Sweep orphaned concepts | `services/orphan_concepts.py` | `ORPHANS_PER_NIGHT` = 500; a concept stands at least `ORPHAN_MIN_AGE` = 7 days | `AuditLog` action `upkeep.orphans_reported` with the ids reported |
 | 3a. Remove abandoned MCP client registrations | `services/upkeep_clients.py` | `ABANDONED_CLIENTS_PER_NIGHT` = 1,000, oldest first; a client is abandoned `ABANDONED_CLIENT_AGE` = 30 days after registering | the `OAuthClient` rows deleted (their unexchanged codes go with them) |
+| 3b. Delete old allowance buckets | `services/upkeep_allowances.py`, `core/allowances.delete_old_buckets` | the buckets of hours that ended more than `KEPT_HOURS` = 24 hours ago | the `AllowanceBucket` rows deleted |
 | 4. Reload monographs | `services/upkeep_pages.py` through `services/monograph_load.py` | `MONOGRAPHS_PER_NIGHT` = 20, a window that rotates by night | `ArticleSection`, `KnowledgePiece` (only what changed) |
 | 5. Rebuild stale craft pages | `services/upkeep_pages.py` through `services/craft_page_snapshots.py` | `PAGES_PER_NIGHT` = 60, oldest snapshot first | `CraftPageSnapshot` |
 | 5a. Refresh the field work | `services/open_work_refresh.py` | every subject, once | `TaskReservation.ending` `COMPLETED` for a live reservation of a `MISSING_FIELD` or `THIN_FIELD` task no longer open (`open-work.md`) |
@@ -135,7 +136,8 @@ the audit still name it (`mcp-oauth.md`).
   from git (`build_monograph`), not here.
 - Every other curated or snapshotted craft is stale when a variant has no snapshot, an older
   schema or a stamp other than the current one (`craft_page_stamp.page_stamp`, which moves with
-  the craft's facts, pictures, places and the release). The oldest stale pages are rebuilt.
+  the craft's facts, pictures, places and the code that builds a page, not with each release).
+  The oldest stale pages are rebuilt.
 
 ### 6. The build
 
@@ -171,6 +173,7 @@ The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
  clients {abandonedRemoved},
  pages {monographs[load report], pagesStale, pagesRebuilt, pagesChanged, pagesFailed[]},
  fieldWork {subjects, tasks {MISSING_FIELD, THIN_FIELD}, priorities {HIGH, MEDIUM, LOW}, reservationsClosed},
+ allowances {bucketsDeleted},
  build {ok, triggered, reason?}}
 ```
 
