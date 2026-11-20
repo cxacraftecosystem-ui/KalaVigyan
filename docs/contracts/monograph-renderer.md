@@ -173,7 +173,10 @@ draws nothing. `AnswerBlockView` draws the block with the answer's own renderer
 `CitedReading`, whose numerals are the document's: each listed source's number is the slot's source
 under its key (`sourceNumbers`), and its popover the answer's. A block with a figure head sits in
 `ui/Figure` ("Fig. N" or "Table N" and its title); the region story and seasons, which title
-themselves, get the numeral only. The kind has no kit place of its own (`mb`, `wrap`), and
+themselves, get the numeral only. The block sits in the spread (`div.spread`): a map or a series
+(`WIDE_KINDS`: region story, timeline map, zoom story, supply map, climate, seasons, concept graph)
+in `div.wide`, across the reading column and its margin from 1200px, any other in `div.main`, the
+reading column. The kind has no kit place of its own (`mb`, `wrap`), and
 `answerBlock.css` gives the block's elements back the app's own margins, padding, colour, fonts and
 lists (`revert-layer` over the kit's scope resets), so it is drawn as on the answer page.
 
