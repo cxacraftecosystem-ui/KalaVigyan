@@ -63,11 +63,13 @@ export function abortedRequest(failure: string): boolean {
 }
 
 export const WEBKIT_LOAD_FAILED = "TypeError: Load failed";
-const WEBKIT_LEFT_FETCH = / due to access control checks\.?$/;
+const WEBKIT_LEFT_FETCH = / due to access control checks\.?\s*$/;
+const WEBKIT_UNKNOWN_WEBRTC = "Unrecognized Content-Security-Policy directive 'webrtc'";
 
 export function webkitLeavingNoise(text: string, origin: string): boolean {
-  if (text === WEBKIT_LOAD_FAILED) return true;
-  return WEBKIT_LEFT_FETCH.test(text) && text.includes(`${origin}/`);
+  const said = text.trim();
+  if (said === WEBKIT_LOAD_FAILED || said.startsWith(WEBKIT_UNKNOWN_WEBRTC)) return true;
+  return WEBKIT_LEFT_FETCH.test(said) && said.includes(`${new URL(origin).host}/`);
 }
 
 export function clip(text: string, limit = TEXT_LIMIT): string {

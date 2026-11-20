@@ -106,6 +106,8 @@ test("WebKit's words for a fetch it dropped on leaving a page are told apart fro
   const site = "https://kalavigyan-ab12cd34e-cxacraftecosystem-8028s-projects.vercel.app";
   expect(webkitLeavingNoise(`Fetch API cannot load ${site}/api/map/layers due to access control checks.`, site)).toBe(true);
   expect(webkitLeavingNoise("TypeError: Load failed", site)).toBe(true);
+  expect(webkitLeavingNoise("Fetch API cannot load https: //kalavigyan-ab12cd34e-cxacraftecosystem-8028s-projects.vercel.app/ask?_rsc=1 due to access control checks.", site)).toBe(true);
+  expect(webkitLeavingNoise("Unrecognized Content-Security-Policy directive 'webrtc'.\n", site)).toBe(true);
   expect(webkitLeavingNoise("Fetch API cannot load https://evil.example/x due to access control checks.", site)).toBe(false);
   expect(webkitLeavingNoise("TypeError: undefined is not an object", site)).toBe(false);
 });

@@ -41,6 +41,7 @@ const MOLECULE_PENDING: ReadonlySet<string> = new Set(["waiting", "loading"]);
 const SEGMENT_SCREENS = 8;
 const MAX_CAPTURE_DEVICE_PX = 16_384;
 const MAX_WEBKIT_SHOT_DEVICE_PX = 32_767;
+const SHOT_TIMEOUT_MS = 90_000;
 
 async function busyNow(page: Page): Promise<string[] | null> {
   return page.evaluate(busyText, { citedSelector: CITED_CONTENT, pattern: BUSY_PATTERN }).catch(() => null);
@@ -200,7 +201,7 @@ export async function captureScreen(page: Page, path: string): Promise<Captured>
   const webkit = page.context().browser()?.browserType().name() === "webkit";
   const sheet = await sheetOf(page);
   const capped = webkit ? shotHeight(sheet.height, sheet.ratio) : null;
-  if (capped === null) return judgeCapture(page, await page.screenshot({ path, fullPage: true }));
-  const judged = await judgeCapture(page, await page.screenshot({ path, fullPage: true, clip: { x: 0, y: 0, width: sheet.width, height: capped } }));
+  if (capped === null) return judgeCapture(page, await page.screenshot({ path, fullPage: true, timeout: SHOT_TIMEOUT_MS }));
+  const judged = await judgeCapture(page, await page.screenshot({ path, fullPage: true, timeout: SHOT_TIMEOUT_MS, clip: { x: 0, y: 0, width: sheet.width, height: capped } }));
   return { ...judged, notes: [...judged.notes, `the page runs ${sheet.height}px, taller than one WebKit screenshot holds, so the capture keeps its first ${capped}px`] };
 }

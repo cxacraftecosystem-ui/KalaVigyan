@@ -210,7 +210,7 @@ export class ScreenRun {
   }
 
   private onPageError(error: Error): void {
-    if (this.webkit && webkitLeavingNoise(error.message, this.origin)) return;
+    if (this.webkit && webkitLeavingNoise(`${error.name}: ${error.message}`, this.origin)) return;
     this.flag(`uncaught error: ${errorHeadline(error)}`);
   }
 
@@ -219,7 +219,7 @@ export class ScreenRun {
     const text = message.text();
     const from = message.location().url;
     if (text.startsWith("Failed to load resource") && from && this.sameOrigin(from)) return;
-    if (text === UNKNOWN_WEBRTC_DIRECTIVE && (from.startsWith("about:srcdoc") || this.webkit)) return;
+    if (text === UNKNOWN_WEBRTC_DIRECTIVE && from.startsWith("about:srcdoc")) return;
     if (this.webkit && webkitLeavingNoise(text, this.origin)) return;
     if (this.preview && previewConsoleNoise(text, from)) return;
     this.flag(`console error: ${clip(text)}`);
