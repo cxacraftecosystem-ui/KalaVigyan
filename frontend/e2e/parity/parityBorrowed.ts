@@ -12,8 +12,9 @@ export type HomeEntry = HomeRecord;
 export const AUTHORED_PATH = "/crafts/Kutch-Ajrakh";
 const PAGES_PATH = "/api/site/pages";
 const STRUCTURE_KIND = "answer_block";
-const FETCHES_AT_ONCE = 4;
-const RETRY_WAITS_MS = [1000, 3000, 8000, 15000];
+const CATALOGUE_PATH = "/api/crafts/catalogue";
+const FETCHES_AT_ONCE = 3;
+const RETRY_WAITS_MS = [2000, 5000, 15000, 30000, 60000];
 
 type DocumentBody = { subjectKind?: string; subjectSlug?: string; shell?: string | null; content?: { components?: DocumentComponent[] } };
 
@@ -64,10 +65,23 @@ async function documentOf(request: APIRequestContext, origin: string, [asked, sl
   return body ? subjectPage(body as DocumentBody, asked, slug) : null;
 }
 
+type CatalogueCraft = { slug?: unknown; depth?: { claims?: unknown } | null };
+
+export function craftsWithClaims(crafts: readonly CatalogueCraft[]): string[] {
+  return crafts.flatMap((craft) => (typeof craft.slug === "string" && typeof craft.depth?.claims === "number" && craft.depth.claims > 0 ? [craft.slug] : []));
+}
+
+async function askedSubjects(request: APIRequestContext, origin: string): Promise<["craft" | "category", string][]> {
+  const listed = ((await read(request, `${origin}${PAGES_PATH}`)) ?? {}) as { crafts?: string[]; categories?: string[] };
+  const catalogue = ((await read(request, `${origin}${CATALOGUE_PATH}`)) ?? {}) as { crafts?: CatalogueCraft[] };
+  const known = new Set(listed.crafts ?? []);
+  const crafts = craftsWithClaims(catalogue.crafts ?? []).filter((slug) => known.has(slug));
+  return [...(listed.categories ?? []).map((slug) => ["category", slug] as ["category", string]), ...crafts.map((slug) => ["craft", slug] as ["craft", string])];
+}
+
 export async function subjectPages(request: APIRequestContext, site: string): Promise<SubjectPage[]> {
   const origin = apiOrigin(site);
-  const listed = ((await read(request, `${origin}${PAGES_PATH}`)) ?? {}) as { crafts?: string[]; categories?: string[] };
-  const asked: ["craft" | "category", string][] = [...(listed.categories ?? []).map((slug) => ["category", slug] as ["category", string]), ...(listed.crafts ?? []).map((slug) => ["craft", slug] as ["craft", string])];
+  const asked = await askedSubjects(request, origin);
   const found: SubjectPage[] = [];
   for (let at = 0; at < asked.length; at += FETCHES_AT_ONCE) {
     const batch = await Promise.all(asked.slice(at, at + FETCHES_AT_ONCE).map((item) => documentOf(request, origin, item)));

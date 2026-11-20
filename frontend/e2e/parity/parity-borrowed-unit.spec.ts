@@ -1,7 +1,12 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { expect, test } from "@playwright/test";
 
-import { borrowedCases, pageKind, pagesToVisit, sameText, subjectPage, type SubjectPage } from "./parityBorrowed";
+import { apiOrigin, borrowedCases, craftsWithClaims, pageKind, pagesToVisit, sameText, subjectPage, type SubjectPage } from "./parityBorrowed";
 import { gatedDifferences } from "./parityComponent";
+import { sharedOnce } from "./parityShared";
 
 const CHAIN = "shared/chemistry/indigo-leaf-to-cloth-chain";
 const PLAYER = "shared/chemistry/indigo-reduction-player";
@@ -46,4 +51,23 @@ test("a drawing differs where a style differs, or where a box, a graphic or the 
     "1:p.t font-size",
     "2:svg box-width"
   ]);
+});
+
+test("only crafts that hold claims are read for a document, from the API a preview reads", () => {
+  expect(craftsWithClaims([{ slug: "Bagru", depth: { claims: 324 } }, { slug: "Tharu", depth: { claims: 0 } }, { slug: "Sundari", depth: null }, { depth: { claims: 3 } }])).toEqual(["Bagru"]);
+  expect(apiOrigin("https://kalavigyan-abc123def-cxacraftecosystem-8028s-projects.vercel.app")).toBe("https://kalavigyan.vercel.app");
+  expect(apiOrigin("")).toBe("https://kalavigyan.vercel.app");
+});
+
+test("the documents are read once a run, however many workers ask", async () => {
+  const folder = mkdtempSync(join(tmpdir(), "kv-parity-"));
+  let made = 0;
+  const make = async () => {
+    made += 1;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    return { pages: made };
+  };
+  const found = await Promise.all([sharedOnce(folder, "pages", make), sharedOnce(folder, "pages", make), sharedOnce(folder, "pages", make)]);
+  expect(made).toBe(1);
+  expect(found).toEqual([{ pages: 1 }, { pages: 1 }, { pages: 1 }]);
 });

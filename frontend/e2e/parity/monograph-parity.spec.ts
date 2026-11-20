@@ -13,6 +13,7 @@ import { alignPhase } from "./parityPhase";
 import { fullSizePictures } from "./parityPictures";
 import { playersAtRest, restingVat } from "./parityRest";
 import { borrowedPass, failures, type PassReport } from "./parityRun";
+import { sharedOnce } from "./parityShared";
 import { ancestorLayers, chapterOffsets, elementStyles, fontReport, selfHostedFaces, servedFaces, styleDifferences, type StyleDifference } from "./parityStyles";
 
 const APPROVED = "/monographs/kutch-ajrakh/index.html";
@@ -161,7 +162,7 @@ async function wideContext(browser: Browser, scheme: Scheme): Promise<BrowserCon
 test("every component borrowed from Kutch Ajrakh draws on each page that places it as on Kutch Ajrakh's page", async ({ browser, context, page }) => {
   test.skip(CHECK === "monograph", "this run checks the Kutch Ajrakh page only");
   test.setTimeout(BORROWED_TIMEOUT_MS);
-  const pages = await subjectPages(context.request, process.env.E2E_BASE_URL ?? "");
+  const pages = await sharedOnce(REPORT_DIR, "borrowed-enumeration", () => subjectPages(context.request, process.env.E2E_BASE_URL ?? ""));
   const cases = borrowedCases(pages);
   const visits = pagesToVisit(cases, pages);
   report("borrowed-pages.json", { pages: pages.map(({ components, ...page }) => ({ ...page, components: components.map((found) => `${found.kind} ${found.label}`) })), cases: cases.map((found) => `${found.label} on ${found.page.path}`) });
