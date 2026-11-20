@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthProvider } from "@/components/AuthProvider";
+import { SourcesDifferNote } from "@/components/editorial/EvidenceMark";
 import { NAV_ITEMS, isNavItemVisible } from "@/components/DynamicIslandNav";
 import { DNS_NAMESPACE, curatedClaimId, uuidV5 } from "@/components/landing/curatedClaim";
 import { InstitutionFooter } from "@/components/landing/Footer";
@@ -108,6 +109,14 @@ test("the appbar keeps the reading entries inline and moves tools, admin and acc
   expect(NAV_ITEMS.find((item) => item.href === "/lessons")?.group).toBe("Tools");
   expect(currentHref(["/admin", "/admin/access", "/ask"], "/admin/access/requests")).toBe("/admin/access");
   expect(currentHref(["/ask"], "/asked")).toBeNull();
+});
+
+test("a disagreement reads as the board writes it: on a topic for the landing's colours, after a colon for a quantity", () => {
+  const about = renderToStaticMarkup(createElement(SourcesDifferNote, { on: true, summary: "what the colours mean" }, "Both readings."));
+  expect(about).toContain("<summary>Sources differ on what the colours mean</summary>");
+  const quantity = renderToStaticMarkup(createElement(SourcesDifferNote, { summary: "months, or about one month" }, "Both readings."));
+  expect(quantity).toContain("<summary>Sources differ: months, or about one month</summary>");
+  expect(landing(landingContent(PAGE, idOf))).toContain("<summary>Sources differ on what the colours mean</summary>");
 });
 
 test("below 768px the reading bar is the full wordmark and Menu alone, and signing in waits in the menu's sheet", () => {

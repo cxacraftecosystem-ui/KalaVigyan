@@ -29,10 +29,10 @@ export function HypothesisText({ children }: { children: ReactNode }) {
   );
 }
 
-export function SourcesDifferNote({ summary, children }: { summary: string; children: ReactNode }) {
+export function SourcesDifferNote({ summary, on = false, children }: { summary: string; on?: boolean; children: ReactNode }) {
   return (
     <details className="kv-differ" data-testid="sources-differ">
-      <summary>Sources differ: {summary}</summary>
+      <summary>{on ? `Sources differ on ${summary}` : `Sources differ: ${summary}`}</summary>
       <div className="kv-differ-body">{children}</div>
     </details>
   );

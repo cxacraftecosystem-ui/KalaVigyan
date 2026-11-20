@@ -481,7 +481,7 @@
   }
 
   .kv-plate[data-size="masthead"] .kv-plate-name[data-latin] {
-    font-size: clamp(2rem, 7.5cqi, 5.5rem);
+    font-size: clamp(1.25rem, 9.6cqi, 2.375rem);
   }
 
   .kv-plate[data-size="small"] .kv-plate-name {

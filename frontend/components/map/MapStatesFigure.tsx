@@ -27,6 +27,11 @@ export function stateTableRows(counts: StateCounts): DataRow[] {
   return counts.allIndia > 0 ? [...rows, { key: ALL_INDIA, cells: { state: ALL_INDIA, crafts: counts.allIndia } }] : rows;
 }
 
+export const SIDE_BY_SIDE =
+  "lg:grid lg:grid-cols-[minmax(0,6.6fr)_minmax(0,4.4fr)] lg:grid-rows-[auto_1fr] lg:gap-x-12 lg:[&>figcaption]:col-start-2 lg:[&>figcaption]:row-start-1 lg:[&>div]:contents lg:[&>p]:col-span-2 lg:[&>details]:col-span-2";
+export const MAP_PLACE = "min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1";
+export const SIDE_PLACE = "mt-8 grid content-start gap-[18px] lg:col-start-2 lg:row-start-2 lg:mt-6";
+
 function StatesSide({ ranking }: { ranking: StateRanking }) {
   const { counts, rows, circles } = ranking;
   if (!counts) {
@@ -37,11 +42,11 @@ function StatesSide({ ranking }: { ranking: StateRanking }) {
     );
   }
   return (
-    <div className="grid gap-[18px]">
+    <>
       <p className="font-ui text-ui font-normal text-ink-2">{rankDek(counts.allIndia)}</p>
       <RankedList rows={rows} label={STATES_TITLE} emphKey={rows[0]?.key ?? null} all={{ label: `Show all ${rows.length}` }} />
       <CirclesLegend largest={circles[0]?.count ?? 0} label={CIRCLES_LABEL} extras={[SALT_EXTRA, WATER_EXTRA]} />
-    </div>
+    </>
   );
 }
 
@@ -59,12 +64,13 @@ export function MapStatesFigure({ ranking, boundary }: { ranking: StateRanking; 
       source={<MapSourceLine boundary={boundary} districts={false} counts />}
       table={table}
       valueCount={tableRows?.length}
+      className={SIDE_BY_SIDE}
     >
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,6.6fr)_minmax(0,4.4fr)] lg:items-start lg:gap-12">
-        <div className="min-w-0">
-          <MapCanvas title={STATES_TITLE} description={mapDescription(circles, false)} over={(scene) => <StateCircles circles={circles} emphKey={circles[0]?.name ?? null} scene={scene} />} />
-          {ranking.points.failure ? <MapRetry message="The state positions could not be loaded. Try again in a moment." onRetry={ranking.points.retry} className="mt-3" /> : null}
-        </div>
+      <div className={MAP_PLACE} data-testid="map-states-plot">
+        <MapCanvas title={STATES_TITLE} description={mapDescription(circles, false)} over={(scene) => <StateCircles circles={circles} emphKey={circles[0]?.name ?? null} scene={scene} />} />
+        {ranking.points.failure ? <MapRetry message="The state positions could not be loaded. Try again in a moment." onRetry={ranking.points.retry} className="mt-3" /> : null}
+      </div>
+      <div className={SIDE_PLACE} data-testid="map-states-side">
         <StatesSide ranking={ranking} />
       </div>
     </Figure>

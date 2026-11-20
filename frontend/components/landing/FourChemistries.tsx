@@ -109,7 +109,7 @@ function ColourKey({ content, cite }: { content: LandingContent; cite: CiteMaps 
         </p>
       ) : null}
       {content.differ ? (
-        <SourcesDifferNote summary="what the colours mean">
+        <SourcesDifferNote on summary="what the colours mean">
           <CitedText sentence={content.differ} cite={cite} />
         </SourcesDifferNote>
       ) : null}
