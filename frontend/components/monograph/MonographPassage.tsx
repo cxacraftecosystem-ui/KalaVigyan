@@ -39,7 +39,7 @@ function Piece({ document, chapter, piece, titled }: PieceProps) {
   if (piece.kind === "terms") return <TermGroupView units={units} sources={sources} piece={piece} />;
   if (piece.kind === "paragraph") {
     return (
-      <p className="t-body">
+      <p className={piece.lede ? "t-lede" : "t-body"}>
         {piece.refs.map((ref, at) => (
           <Fragment key={ref}>
             {at ? " " : null}

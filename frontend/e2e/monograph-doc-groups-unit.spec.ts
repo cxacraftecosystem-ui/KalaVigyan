@@ -110,12 +110,20 @@ test("a field's cited sentences are read as paragraphs of three, never joined ac
   document.content.layout.push(...["chapter-made", "h-process", "p1", "p2", "p3", "p4", "m1"].map((ref) => at("made", ref)));
   const made = pagePlan(document).chapters.find((chapter) => chapter.key === "made")!;
   expect((made.blocks[0] as Passage).pieces.slice(2)).toEqual([
-    { kind: "paragraph", refs: ["p1", "p2", "p3"] },
-    { kind: "paragraph", refs: ["p4"] },
-    { kind: "paragraph", refs: ["m1"] }
+    { kind: "paragraph", refs: ["p1", "p2", "p3"], lede: false },
+    { kind: "paragraph", refs: ["p4"], lede: false },
+    { kind: "paragraph", refs: ["m1"], lede: false }
+  ]);
+  document.content.layout = document.content.layout.filter((entry) => entry.ref !== "h-process");
+  const ledes = (pagePlan(document).chapters.find((chapter) => chapter.key === "made")!.blocks[0] as Passage).pieces.slice(1);
+  expect(ledes).toEqual([
+    { kind: "paragraph", refs: ["p1", "p2", "p3"], lede: true },
+    { kind: "paragraph", refs: ["p4"], lede: false },
+    { kind: "paragraph", refs: ["m1"], lede: false }
   ]);
   const html = provided(createElement(MonographPage, { document }));
-  expect(html.match(/<p class="t-body"><span class="s">Sentence p1 of the /g)).toHaveLength(1);
+  expect(html.match(/<p class="t-lede"><span class="s">Sentence p1 of the /g)).toHaveLength(1);
+  expect(html.match(/<p class="t-body"><span class="s">Sentence p4 of the /g)).toHaveLength(1);
   expect(html).toMatch(/Sentence p1 of the [\s\S]*?<\/span> <span class="s">Sentence p2 of the /);
 });
 
