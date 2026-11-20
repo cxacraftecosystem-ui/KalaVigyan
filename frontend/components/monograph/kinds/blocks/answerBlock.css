@@ -1,0 +1,10 @@
+[data-kind="answer_block"] .kv-answer-block
+  :is(a, p, h1, h2, h3, h4, h5, ul, ol, dl, dd, figure, blockquote, li, button, input, select, textarea, table) {
+  margin: revert-layer;
+  padding: revert-layer;
+  color: revert-layer;
+  font: revert-layer;
+  list-style: revert-layer;
+  text-wrap: revert-layer;
+  border-collapse: revert-layer;
+}

@@ -15,7 +15,12 @@ when it changed), `models/monograph_documents.py` and migration `0041_monograph_
 table), `api/routes/craft_monograph.py` (the route), `scripts/build_monograph.py` (the static page,
 the served kit and the golden), `scripts/split_monograph.py` (the split); the web shapes are
 `frontend/lib/monographDocument.ts` and `frontend/lib/componentViewContract.ts`. Migration
-`0045_document_language` keys stored documents by language (all rows English).
+`0045_document_language` keys stored documents by language (all rows English). A curated craft's
+structure: `services/document_components.py` (the structure read from the craft page),
+`document_components_parts.py` (its records as text units), `document_components_store.py` (the
+page it reads), `monograph_generated_structure.py` (placing it), `research/component_specs_blocks.py`
+(the `answer_block` kind); the sections: `services/monograph_generated_sections.py` (the one
+writer), `services/curation_sections.py` and `scripts/publish_curated_sections.py`.
 
 ## GET /api/crafts/{slug}/monograph
 
@@ -109,6 +114,55 @@ from its published sections, registered components, curated pictures and `PageLa
 A picture's spec is the full `PicturePlateSpec` (`checked_spec`, every field written); a picture
 whose file is off the picture contract is left out.
 
+### A curated craft's sections
+
+The curation import (`import_dossier`, and `import_category` for a category) publishes one
+`ArticleSection` per field its dossier covers, after the claims are written
+(`curation_sections.publish_dossier_sections`): the dossier's claims in dossier order, each
+sentence the stored claim's text citing that one claim (`claimIds: [curated_id(slug, key)]`), for
+every claim that is visible and cited (`knowledge_view.claims_by_id`) and not a hypothesis. The
+writer is `monograph_generated_sections.publish_section`, which `load_monograph` shares: an equal
+section is left alone, a changed one is `SUPERSEDED` by the next version, and a field the dossier no
+longer covers has its section superseded (`retire_sections`). A craft with authored content (Kutch
+Ajrakh) is skipped: its monograph writes its sections. The outcome's `changed` counts `sections`
+written or retired, so a second import changes nothing. `python -m app.scripts.publish_curated_sections`
+(optional `--directory`) publishes them for every dossier file without importing it again (the
+backfill of the live database); it prints `{written, unchanged, waiting, refused}` (waiting: a
+subject the database does not hold yet) and exits 2 when a file does not parse.
+
+### A curated craft's structure
+
+A curated craft's generated document also carries what its craft page draws from the dossier's
+structure (`document_components_store.subject_structure`): the page's stored `OPEN` snapshot when
+its stamp is current, else the page built from the stored rows (`craft_page_snapshots.built_page`),
+read into a `DocumentStructure` (`document_components.document_structure`). Items an answer or a
+contribution brought (`origin`) are left out.
+
+- **Figures**: each block of a kind the web draws (`DRAWN_BLOCK_KINDS`: the process ladder, reaction
+  player, region story, climate, seasons, supply map, timeline map, market and GI record, material
+  cards, molecules, measures, concept graph, zoom story and the four signature figures) becomes one
+  component of kind `answer_block` (`research/component_specs_blocks.AnswerBlockSpec`): `block`
+  (the answer `Block`), `figure` (`{kind FIGURE or TABLE, number, title}` from the chapter item's
+  figure head, numbered through the page in layout order, figures and tables apart, or null) and
+  `sources` (`[{key, ref}]`: every source any citation inside the block names, as the
+  `SourceRef`, and its key in the document's source book, so the block's numerals are the page's).
+  A source the page does not list is read from `Source` (never a restricted one); a block citing a
+  source that cannot be read is left out. The label is `<slug>/blocks/<block id>`, in the chapter
+  the page puts it; `answer_block` is a document kind (`component_kinds.DOCUMENT_KINDS`), never a
+  stored piece.
+- **Records as text**: key facts (`dt` label, `dd` cited value) lead At a glance; the record
+  ("In the record", or "The place and its resources" when its entries name a factor), places,
+  communities, where the sources differ and open questions follow their chapter's prose under one
+  `h3` each, as `dt`/`dd` runs (a repeated label is written once); each `dd` cites the claims its
+  sentence cites. Hypotheses no figure shows close the sources chapter as `li` units under
+  "Hypotheses". A run whose claims are not all visible is dropped, with its label and heading.
+- **No repetition**: a section sentence whose claims a figure or record already shows is not
+  repeated in its field's prose (the lede keeps its three); a picture a figure shows is not placed
+  again as a plate, unless it is the masthead photograph.
+- **Every claim the page shows**: a cited claim of the page that no section and no structure
+  shows is added to its field's text (`with_page_claims`), so the document shows every cited claim
+  the tabbed page showed.
+
 ## The authored files
 
 ```
@@ -166,6 +220,12 @@ to `specs`).
 
 ## Tests
 
+`tests/research/test_component_specs_blocks.py` (the answer block spec),
+`tests/layouts/test_document_structure.py` and `tests/layouts/test_generated_structure.py` (the
+structure from Kutch Ajrakh's golden craft page, every claim of the page in the document),
+`tests/db/test_curated_sections_db.py` (sections at import, in order, a supersede, a category, the
+backfill), `tests/db/test_curated_documents_db.py` (every cited claim and figure of the craft page
+of Bastar Dhokra, Kutch Bandhani and Bagru in its document),
 `tests/research/test_monograph_slots.py` (the slots and the kit format),
 `tests/research/test_monograph_split.py` (the split's rules, its round trip on Ajrakh, one fragment
 per component that is the element its anchor selects, every slot where the layout puts it, the kit

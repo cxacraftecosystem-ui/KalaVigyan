@@ -10,13 +10,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.errors import InvalidInput
 from app.models import (
-    ArticleSection,
     ClaimSource,
     Compound,
     Craft,
@@ -31,12 +30,11 @@ from app.research.monograph_page import ComponentEntry, MonographContent, TextUn
 
 from . import knowledge_view
 from .monograph_document import authored_document, craft_page_url, has_authored_content, store_document
+from .monograph_generated_sections import SectionOwner, publish_section
 
 __all__ = ["SECTION_TAGS", "MonographLoad", "load_monograph"]
 
 SECTION_TAGS = frozenset({"p", "li", "blockquote", "dd", "figcaption", "td"})
-PUBLISHED = "PUBLISHED"
-SUPERSEDED = "SUPERSEDED"
 SHARED_PREFIX = "shared/"
 TOPIC_PREFIX = "monograph:"
 TOPIC_KEY_MAX = 200
@@ -96,7 +94,7 @@ async def load_monograph(session: AsyncSession, content: MonographContent, *, no
     claims = await _facts(session, craft.id, content)
     sections = _sections(content, claims, report)
     for discipline, sentences in sections.items():
-        written = await _write_section(session, craft.id, discipline, sentences)
+        written = await publish_section(session, SectionOwner.craft(craft.id), discipline, sentences)
         (report.sections_written if written else report.sections_unchanged).append(discipline)
     loading = _Loading(craft=craft, content=content, claims=claims, report=report)
     for component in content.components:
@@ -194,35 +192,6 @@ def _cites(nodes: Sequence[Any]) -> list[str]:
 
 def _stored_facts(content: MonographContent, keys: Iterable[str], claims: Mapping[str, _Fact]) -> list[_Fact]:
     return [claims[ref] for cite in keys for ref in content.citation_claims.get(cite, []) if ref in claims]
-
-
-async def _write_section(
-    session: AsyncSession, craft_id: uuid.UUID, discipline: str, sentences: list[SectionSentence]
-) -> bool:
-    stored = [sentence.model_dump(mode="json", by_alias=True) for sentence in sentences]
-    current = await session.scalar(
-        select(ArticleSection).where(
-            ArticleSection.craftId == craft_id,
-            ArticleSection.field == discipline,
-            ArticleSection.status == PUBLISHED,
-        )
-    )
-    if current is not None and current.sentences == stored:
-        return False
-    latest = await session.scalar(
-        select(func.max(ArticleSection.version)).where(
-            ArticleSection.craftId == craft_id, ArticleSection.field == discipline
-        )
-    )
-    if current is not None:
-        current.status = SUPERSEDED
-        await session.flush()
-    session.add(
-        ArticleSection(
-            craftId=craft_id, field=discipline, version=(latest or 0) + 1, sentences=stored, status=PUBLISHED
-        )
-    )
-    return True
 
 
 async def _register(session: AsyncSession, loading: _Loading, component: ComponentEntry) -> None:

@@ -3,7 +3,7 @@ import json
 import pytest
 
 from app.core.errors import InvalidInput
-from app.models.component_kinds import COMPONENT_KINDS, PIECE_KINDS
+from app.models.component_kinds import COMPONENT_KINDS, DOCUMENT_KINDS, PIECE_KINDS
 from app.research.component_specs import SPEC_MODELS, checked_spec
 from app.research.monograph_document import spec_file_name
 from app.services.monograph_document import MONOGRAPHS_DIR, monograph_content
@@ -11,8 +11,10 @@ from app.services.monograph_document import MONOGRAPHS_DIR, monograph_content
 AJRAKH = "Kutch-Ajrakh"
 
 
-def test_every_component_kind_has_a_spec_model_and_every_model_is_a_piece_kind() -> None:
-    assert set(COMPONENT_KINDS) <= set(SPEC_MODELS) <= set(PIECE_KINDS)
+def test_every_component_kind_has_a_spec_model_and_every_model_is_a_piece_or_document_kind() -> None:
+    assert set(COMPONENT_KINDS) <= set(SPEC_MODELS) <= set(PIECE_KINDS) | set(DOCUMENT_KINDS)
+    assert set(DOCUMENT_KINDS) <= set(SPEC_MODELS)
+    assert set(DOCUMENT_KINDS).isdisjoint(PIECE_KINDS)
 
 
 def test_every_ajrakh_component_has_a_spec_its_kind_validates() -> None:

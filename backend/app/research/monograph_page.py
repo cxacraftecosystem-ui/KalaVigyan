@@ -12,6 +12,7 @@ from typing import Any, Literal
 from pydantic import Field
 
 from app.core.errors import InvalidInput
+from app.models.component_kinds import DOCUMENT_KINDS
 
 from .base import ContractModel
 from .vocabulary import Discipline, PieceKind
@@ -99,7 +100,7 @@ class ComponentEntry(ContractModel):
     label: str = Field(pattern=COMPONENT_LABEL_PATTERN)
     chapter: str
     anchor: str
-    kind: PieceKind
+    kind: PieceKind | Literal[*DOCUMENT_KINDS]
     title: str
     description: str
     field: Discipline

@@ -30,8 +30,10 @@ from .curation_claims import craft_curated_claims, withdraw_seed_edges, write_cl
 from .curation_overview import OverviewPieces, indexed_overview, overview_pieces
 from .curation_plan import CurationPlan, curation_plan
 from .curation_rows import CraftTarget
+from .curation_sections import publish_dossier_sections
 from .curation_store import source_aliases, write_evidence, write_records, write_structure
 from .curation_writes import insert_missing, stored_values, sync_rows
+from .monograph_generated_sections import SectionOwner
 from .piece_lookup import craft_districts
 from .piece_store import piece_values
 
@@ -156,6 +158,7 @@ async def import_dossier(
     changed |= await write_structure(session, plan, previous)
     changed |= await write_records(session, plan, previous)
     await session.flush()
+    changed["sections"] = await publish_dossier_sections(session, dossier, SectionOwner.craft(craft.id))
     overview = await _overview(session, plan, craft)
     changed["pieces"] = await write_pieces(session, overview, previous.piece_ids() if previous else {})
     changed["curatedCraft"] = await _write_page(session, plan, overview, (digest, stored.get(craft.id)))

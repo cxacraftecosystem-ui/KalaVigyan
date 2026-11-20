@@ -3,12 +3,11 @@ from __future__ import annotations
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from types import MappingProxyType
 from typing import Any
 
 from pydantic import ValidationError
 
-from app.research.chapter_keys import CHAPTER_KEYS, DISCIPLINE_CHAPTERS
+from app.research.chapter_keys import CHAPTER_KEYS
 from app.research.component_specs import checked_spec
 from app.research.coverage import FieldCoverage
 from app.research.coverage_chapters import field_chapter
@@ -17,10 +16,12 @@ from app.research.monograph_document import MonographDocument
 from app.research.monograph_page import CitedSource, ComponentEntry, LayoutEntry, MonographContent, TextUnit
 from app.research.page_layout import PageLayout, PageLayoutEntry, arranged_layout, picture_label
 
+from .document_components import DocumentStructure, StructureBlock
 from .knowledge_view import ClaimView
 from .monograph_generated_drawings import Drawings
 from .monograph_generated_grids import StatedValue, fact_grid
 from .monograph_generated_parts import PlacedPicture, RegisteredComponent, StoredSection
+from .monograph_generated_structure import CHAPTER_FIELDS, BlockSpecs, PlacedStructure, placed_structure
 from .monograph_generated_units import (
     LEDE_FIELD,
     LEDE_SENTENCES,
@@ -47,12 +48,6 @@ PLATE_UNIT_START = 9001
 HERO = "HERO"
 CRAFT_SUBJECTS = frozenset({"craft", "family"})
 DEFAULT_FIELD = "OVERVIEW"
-CHAPTER_FIELDS: Mapping[str, str] = MappingProxyType(
-    {
-        chapter: next((f for f, c in DISCIPLINE_CHAPTERS.items() if c == chapter), DEFAULT_FIELD)
-        for chapter in CHAPTER_KEYS
-    }
-)
 
 
 @dataclass(frozen=True)
@@ -69,6 +64,7 @@ class GeneratedParts:
     layout: PageLayout | None = None
     coverage: FieldCoverage | None = None
     values: Mapping[uuid.UUID, StatedValue] = field(default_factory=dict)
+    structure: DocumentStructure | None = None
 
 
 @dataclass
@@ -83,6 +79,7 @@ class _Page:
     held: dict[str, list[str]] = field(default_factory=dict)
     lede: list[str] = field(default_factory=list)
     hero: str | None = None
+    blocks: dict[str, StructureBlock] = field(default_factory=dict)
 
 
 def assembled_document(parts: GeneratedParts, drawings: Drawings) -> MonographDocument | None:
@@ -90,9 +87,10 @@ def assembled_document(parts: GeneratedParts, drawings: Drawings) -> MonographDo
     texts = _texts(parts, page)
     if not page.drafts:
         return None
+    placed = _structure(parts, page)
     pictures = _pictures(parts, page)
     components = _components(parts, page, drawings)
-    _lay_out(page, (texts, pictures, components))
+    _lay_out(page, (texts, pictures, components, placed.leading, placed.trailing))
     arranged = _headed(
         parts.record, page, [*_opening(parts, page), *arranged_layout(page.default, parts.layout)]
     )
@@ -129,13 +127,14 @@ def assembled_document(parts: GeneratedParts, drawings: Drawings) -> MonographDo
 def _texts(parts: GeneratedParts, page: _Page) -> dict[str, list[str]]:
     taken: set[str] = set()
     named = {entry.ref for entry in parts.layout.entries} if parts.layout is not None else set()
+    shown = parts.structure.claim_ids() if parts.structure is not None else set()
     by_chapter: dict[str, list[str]] = {}
     for section in parts.sections:
         drafts = section_units(section.field, section.sentences, parts.visible, taken)
         page.drafts.update((draft.unit_id, draft) for draft in drafts)
         if section.field == LEDE_FIELD and not page.lede:
             page.lede = [draft.unit_id for draft in drafts if draft.unit_id not in named][:LEDE_SENTENCES]
-        body = [draft for draft in drafts if draft.unit_id not in page.lede]
+        body = [d for d in drafts if d.unit_id not in page.lede and not set(d.claim_ids) <= shown]
         if not body:
             continue
         refs = by_chapter.setdefault(field_chapter(section.field), [])
@@ -161,13 +160,25 @@ def _section_heading(field: str, record: SubjectRecord, page: _Page) -> list[str
     return [heading_id]
 
 
+def _structure(parts: GeneratedParts, page: _Page) -> PlacedStructure:
+    placed = placed_structure(parts.structure, parts.visible, parts.subject_slug)
+    page.drafts.update(placed.drafts)
+    page.units.update(placed.units)
+    page.components.update(placed.components)
+    page.blocks.update(placed.blocks)
+    return placed
+
+
 def _pictures(parts: GeneratedParts, page: _Page) -> dict[str, list[str]]:
     by_chapter: dict[str, list[tuple[bool, str]]] = {}
+    shown = parts.structure.media_urls() if parts.structure is not None else set()
     for placed in parts.pictures:
         label = picture_label(parts.subject_slug, placed.picture.key)
         chapter, role = picture_placement(placed.picture)
         entry = parts.layout.entry(label) if parts.layout is not None else None
         role = entry.role if entry is not None else role
+        if role != HERO and str(placed.media.image_url) in shown:
+            continue
         plate = _picture_plate(placed, entry, len(page.held))
         if plate is None:
             continue
@@ -213,12 +224,17 @@ def _components(parts: GeneratedParts, page: _Page, drawings: Drawings) -> dict[
 
 
 def _lay_out(page: _Page, found: Sequence[Mapping[str, list[str]]]) -> None:
-    texts, pictures, components = found
-    chapters = dict.fromkeys([*CHAPTER_KEYS, *pictures, *texts, *components])
+    texts, pictures, components, leading, trailing = found
+    chapters = dict.fromkeys([*CHAPTER_KEYS, *pictures, *leading, *texts, *trailing, *components])
     for chapter in chapters:
-        refs = [*(ref for ref in pictures.get(chapter, []) if ref != page.hero), *texts.get(chapter, [])]
+        refs = [
+            *(ref for ref in pictures.get(chapter, []) if ref != page.hero),
+            *leading.get(chapter, []),
+            *texts.get(chapter, []),
+            *trailing.get(chapter, []),
+            *components.get(chapter, []),
+        ]
         page.default += [e for ref in refs for e in _entry(chapter, ref, None, page)]
-        page.default += [e for ref in components.get(chapter, []) for e in _entry(chapter, ref, None, page)]
 
 
 def _opening(parts: GeneratedParts, page: _Page) -> list[LayoutEntry]:
@@ -264,10 +280,13 @@ def _cite(
 ) -> tuple[dict[str, Any], dict[str, list[str]]]:
     citations: dict[str, Any] = {}
     claims: dict[str, list[str]] = {}
+    specs = BlockSpecs(parts.structure.sources if parts.structure is not None else {})
     for entry in arranged:
         if entry.kind == "component":
             settled = page.components[entry.ref].model_copy(update={"chapter": entry.chapter})
             page.components[entry.ref] = settled
+            if entry.ref in page.blocks:
+                page.specs[entry.ref] = specs.spec(page.blocks[entry.ref], book)
             continue
         draft = page.drafts.get(entry.ref)
         if draft is None:

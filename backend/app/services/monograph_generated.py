@@ -9,10 +9,12 @@ from app.research.monograph_document import MonographDocument
 
 from . import knowledge_view
 from .coverage import coverage_of
+from .document_components_store import subject_structure
 from .monograph_generated_assembly import GeneratedParts, assembled_document
 from .monograph_generated_drawings import Drawings
 from .monograph_generated_grids import stated_values
 from .monograph_generated_parts import subject_components, subject_pictures, subject_record, subject_sections
+from .monograph_generated_structure import structure_claim_ids, with_page_claims
 from .monograph_generated_units import stored_source
 from .open_work_subjects import WorkSubject, subject_by_key
 from .page_layouts import layout_of, subject_path
@@ -33,9 +35,11 @@ async def generated_document(session: AsyncSession, subject_kind: str, slug: str
 
 
 async def generated_parts(session: AsyncSession, subject: WorkSubject) -> GeneratedParts | None:
-    sections = await subject_sections(session, subject)
-    if not enough_sections(subject.kind, len(sections)):
+    stored = await subject_sections(session, subject)
+    if not enough_sections(subject.kind, len(stored)):
         return None
+    structure = await subject_structure(session, subject)
+    sections = with_page_claims(stored, structure)
     claim_ids = [
         uuid.UUID(str(claim))
         for section in sections
@@ -44,7 +48,7 @@ async def generated_parts(session: AsyncSession, subject: WorkSubject) -> Genera
     ]
     if not claim_ids:
         return None
-    visible, rows = await knowledge_view.claims_by_id(session, claim_ids)
+    visible, rows = await knowledge_view.claims_by_id(session, [*claim_ids, *structure_claim_ids(structure)])
     if not visible:
         return None
     return GeneratedParts(
@@ -60,6 +64,7 @@ async def generated_parts(session: AsyncSession, subject: WorkSubject) -> Genera
         layout=await layout_of(session, subject),
         coverage=await coverage_of(session, subject),
         values=await stated_values(session, list(visible)),
+        structure=structure,
     )
 
 

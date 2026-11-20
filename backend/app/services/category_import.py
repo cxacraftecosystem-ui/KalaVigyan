@@ -26,8 +26,10 @@ from .curated_category_index import CuratedCategoryPage, indexed_category_overvi
 from .curation_claims import write_claims
 from .curation_import import IMPORTED, REFUSED, dossier_digest, write_pieces
 from .curation_overview import OverviewPieces, overview_pieces
+from .curation_sections import publish_dossier_sections
 from .curation_store import source_aliases, write_evidence, write_media_and_terms
 from .curation_writes import stored_values, sync_rows
+from .monograph_generated_sections import SectionOwner
 
 __all__ = [
     "CategoryImportReport",
@@ -125,6 +127,7 @@ async def import_category(
     shown = {picture.media_ref_id for picture in previous.pictures} if previous else set()
     changed |= await write_media_and_terms(session, plan, previous_media=shown, marked=marked)
     await session.flush()
+    changed["sections"] = await publish_dossier_sections(session, dossier, SectionOwner.category(category.id))
     overview = await _overview(session, plan)
     changed["pieces"] = await write_pieces(session, overview, previous.piece_ids() if previous else {})
     index = indexed_category_overview(plan.index, overview)

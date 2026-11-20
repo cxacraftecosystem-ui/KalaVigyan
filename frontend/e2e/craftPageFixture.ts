@@ -1,16 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { createElement, type ReactElement } from "react";
-
-import type { CitationLookup } from "@/components/answer/CitationContext";
-import { CraftClaimsProvider } from "@/components/craft/CraftClaims";
 import { checkedCraftPage, craftPageShape, type CraftPage, type OverviewSection, type PageClaim, type PageEvidence } from "@/lib/craftPageContract";
 import type { PageGi } from "@/lib/craftPageContext";
-import { claimIndex, pageSourceNumbers, pageSourcesById } from "@/lib/craftPageView";
 import { parseShape } from "@/lib/shape";
-
-import { withApp } from "./explainerRender";
 
 export const CRAFT_PAGE_GOLDEN = join(__dirname, "..", "..", "shared", "craft.page.golden.json");
 export const REGISTER_PAGE_GOLDEN = join(__dirname, "..", "..", "shared", "craft.page.register.golden.json");
@@ -100,12 +93,4 @@ export function emptyPage(): CraftPage {
       { key: "glance", title: "At a glance", opener: null, items: [{ block: null, part: { kind: "start_research", questions: body.suggestedQuestions.slice(0, 3) }, figure: null, origin: null, pieceId: null }] }
     ];
   });
-}
-
-export function pageLookup(page: CraftPage): CitationLookup {
-  return { numbers: pageSourceNumbers(page, []), sourcesById: pageSourcesById(page, []), onOpen: () => undefined };
-}
-
-export function drawn(page: CraftPage, child: ReactElement): string {
-  return withApp(createElement(CraftClaimsProvider, { value: claimIndex(page) }, child), pageLookup(page));
 }

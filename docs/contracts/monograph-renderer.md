@@ -3,8 +3,8 @@
 The web app draws a `MonographDocument` (`lib/monographDocument.ts`, mirrored from
 `research/monograph_document.py`) with one React renderer, so the approved Kutch Ajrakh page can
 become the template for every craft, family and category page. Every craft page is its document
-now (decision 0106, round 3c), except Kutch Ajrakh, whose approved static page is served until the
-parity proof (decision 0106, item 5) switches it.
+now (decision 0106, round 3c); curated crafts too since round 6, whose documents carry their
+structure, so the tabbed craft screen is retired.
 
 Last reviewed: 2026-11-20.
 
@@ -16,7 +16,9 @@ reads), `lib/monographRenderServer.ts` (the server fetch and the preview metadat
 of each kind), `lib/monographCite.ts` (Cite this), `lib/monographMetadata.ts` (a craft page's
 metadata), `lib/craftRecord.ts` and `lib/craftPlate.ts` (the craft without a monograph),
 `components/craft/CiteThis.tsx`, `components/craft/CraftWithoutMonograph.tsx`,
+`app/(reading)/crafts/[slug]/craftRecordPage.ts` (the craft list's record),
 `components/monograph/` (the page), `components/monograph/kinds/tools/` (the page-tool views),
+`components/monograph/kinds/blocks/` (the answer block kind),
 `lib/componentSpecsTools.ts` and `backend/app/research/component_specs_tools.py` (the tool specs),
 `backend/app/scripts/extract_specs_tools.py` with `extract_specs_tools_markup.py` (Ajrakh's tool
 specs from its template).
@@ -25,7 +27,7 @@ specs from its template).
 
 | Page | Route | Reads |
 |---|---|---|
-| a craft | `/crafts/<slug>` | `GET /api/crafts/{slug}/monograph`, else `GET /api/crafts/{slug}/page` |
+| a craft | `/crafts/<slug>` | `GET /api/crafts/{slug}/monograph`, else the record of `GET /api/crafts/{slug}/page` |
 | a craft's cited edition | `/crafts/<slug>/v<N>` | `GET /api/crafts/{slug}/monograph?version=N` |
 | a craft's monograph (alias) | `/crafts/<slug>/monograph` | `GET /api/crafts/{slug}/monograph` |
 | a category's monograph | `/categories/<slug>/monograph` | `GET /api/categories/{slug}/monograph` |
@@ -34,11 +36,13 @@ All are server components in `app/(reading)`, read through `publicFetch` (tag
 `monograph-document:<subject>:<slug>`, revalidated daily, static params from `/site/pages`).
 
 - **`/crafts/<slug>`**: a craft with a document (stored or generated; Kutch Ajrakh since the parity
-  proof passed, 2026-11-20) draws it; a curated craft without one keeps the tabbed `CraftScreen` from
-  its page snapshot until its generated document carries its stages, reactions and places (debt);
-  any other craft draws its document (`serverCraftDocument`: 404 is "no document", any other
-  failure is thrown so a cached page stands) with `MonographPage`; without one, the craft list's
-  record from the craft page endpoint draws `CraftWithoutMonograph`; an unknown craft is a 404.
+  proof passed, 2026-11-20; every curated craft since round 6) draws it with `MonographPage`
+  (`serverCraftDocument`: 404 is "no document", any other failure is thrown so a cached page
+  stands); without one, the craft list's record from the craft page endpoint (`craftRecordPage`,
+  read the same way: 404 is an unknown craft, any other failure is thrown) draws
+  `CraftWithoutMonograph`; an unknown craft is a 404. The tabbed `CraftScreen`, `CraftTabs` and
+  the components, hooks, lib files and specs only they used are deleted (round 6); the craft page
+  endpoints stay.
   Metadata: `monographMetadata` (title, the lede as description, the canonical `/crafts/<slug>`,
   the masthead photograph at 1280 with its caption and credit as Open Graph and Twitter image), or
   `craftPageMetadata` for a craft without a monograph.
@@ -158,6 +162,20 @@ element as a `kv-slot` was filled.
 A fragment carries everything its markup needs to look and act as on the approved page: the shell
 drawn here does not reproduce the template's per-chapter wrappers, so a fragment brings its
 `div.bx.bx-<scope>` (and any ancestor its styles or script select through).
+
+## The answer block kind
+
+A curated craft's figures arrive as components of kind `answer_block` (`monograph-document.md`, "A
+curated craft's structure"). `kinds/blocks/answerBlockSpec.ts` parses the spec (`block` by the
+craft page's `pageBlockShape`, `figure` or null, `sources` `[{key, ref}]`); a spec off its shape
+draws nothing. `AnswerBlockView` draws the block with the answer's own renderer
+(`blockRenderers.renderBlock`, or `SignatureFigure` for the four signature figures) inside
+`CitedReading`, whose numerals are the document's: each listed source's number is the slot's source
+under its key (`sourceNumbers`), and its popover the answer's. A block with a figure head sits in
+`ui/Figure` ("Fig. N" or "Table N" and its title); the region story and seasons, which title
+themselves, get the numeral only. The kind has no kit place of its own (`mb`, `wrap`), and
+`answerBlock.css` gives the block's elements back the app's own margins, padding, colour, fonts and
+lists (`revert-layer` over the kit's scope resets), so it is drawn as on the answer page.
 
 ## The page-tool kinds
 
