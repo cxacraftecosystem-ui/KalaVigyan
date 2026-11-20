@@ -1485,6 +1485,425 @@
           ]
         ]
       }
+    },
+    "earth": {
+      "kind": "sequential",
+      "label": "Soil and bare earth",
+      "hue": "khaki for little to chocolate for much in light, flipped in dark; low chroma where terracotta sits, so no step reads as place",
+      "use": "Soil organic carbon, clay, sand, cation exchange capacity, bare ground and forest loss on maps. Bars and lines take --chart-series, not a ramp step.",
+      "breaks": "Classes from the data (quantiles) in the dataset's unit.",
+      "spec": {
+        "light": [
+          [
+            0.74,
+            0.06,
+            108
+          ],
+          [
+            0.65,
+            0.055,
+            84
+          ],
+          [
+            0.57,
+            0.015,
+            70
+          ],
+          [
+            0.48,
+            0.04,
+            58
+          ],
+          [
+            0.39,
+            0.06,
+            50
+          ],
+          [
+            0.3,
+            0.075,
+            44
+          ]
+        ],
+        "dark": [
+          [
+            0.36,
+            0.065,
+            46
+          ],
+          [
+            0.45,
+            0.06,
+            52
+          ],
+          [
+            0.54,
+            0.05,
+            60
+          ],
+          [
+            0.63,
+            0.035,
+            70
+          ],
+          [
+            0.79,
+            0.03,
+            92
+          ],
+          [
+            0.91,
+            0.06,
+            98
+          ]
+        ],
+        "hcLight": [
+          [
+            0.72,
+            0.07,
+            110
+          ],
+          [
+            0.63,
+            0.06,
+            86
+          ],
+          [
+            0.54,
+            0.035,
+            72
+          ],
+          [
+            0.33,
+            0.035,
+            50
+          ],
+          [
+            0.24,
+            0.06,
+            46
+          ],
+          [
+            0.15,
+            0.05,
+            40
+          ]
+        ],
+        "hcDark": [
+          [
+            0.3,
+            0.075,
+            42
+          ],
+          [
+            0.38,
+            0.07,
+            48
+          ],
+          [
+            0.46,
+            0.06,
+            54
+          ],
+          [
+            0.54,
+            0.05,
+            62
+          ],
+          [
+            0.62,
+            0.04,
+            72
+          ],
+          [
+            0.7,
+            0.03,
+            95
+          ]
+        ]
+      }
+    },
+    "cover": {
+      "kind": "sequential",
+      "label": "Vegetation and cropland",
+      "hue": "spring yellow-green for little cover to forest green for much, never the rain ramp's teal",
+      "use": "Tree cover, cropland and other vegetation shares on maps. Bars and lines take --chart-series.",
+      "breaks": "Classes from the data (quantiles) in per cent of the district's area.",
+      "spec": {
+        "light": [
+          [
+            0.82,
+            0.11,
+            125
+          ],
+          [
+            0.73,
+            0.12,
+            128
+          ],
+          [
+            0.64,
+            0.12,
+            136
+          ],
+          [
+            0.55,
+            0.115,
+            143
+          ],
+          [
+            0.46,
+            0.1,
+            150
+          ],
+          [
+            0.37,
+            0.075,
+            156
+          ]
+        ],
+        "dark": [
+          [
+            0.37,
+            0.085,
+            152
+          ],
+          [
+            0.46,
+            0.1,
+            146
+          ],
+          [
+            0.55,
+            0.115,
+            140
+          ],
+          [
+            0.64,
+            0.13,
+            133
+          ],
+          [
+            0.73,
+            0.12,
+            127
+          ],
+          [
+            0.88,
+            0.06,
+            120
+          ]
+        ],
+        "hcLight": [
+          [
+            0.84,
+            0.125,
+            120
+          ],
+          [
+            0.7,
+            0.12,
+            128
+          ],
+          [
+            0.6,
+            0.12,
+            136
+          ],
+          [
+            0.5,
+            0.115,
+            143
+          ],
+          [
+            0.4,
+            0.1,
+            150
+          ],
+          [
+            0.3,
+            0.08,
+            156
+          ]
+        ],
+        "hcDark": [
+          [
+            0.38,
+            0.09,
+            152
+          ],
+          [
+            0.48,
+            0.105,
+            146
+          ],
+          [
+            0.58,
+            0.115,
+            140
+          ],
+          [
+            0.68,
+            0.12,
+            133
+          ],
+          [
+            0.78,
+            0.12,
+            127
+          ],
+          [
+            0.93,
+            0.1,
+            130
+          ]
+        ]
+      }
+    },
+    "mineral": {
+      "kind": "categorical",
+      "label": "Mineral deposit classes",
+      "hue": "six hues apart from every identity colour, each class also drawn in its own shape so no reading depends on hue alone",
+      "use": "Mineral deposits by class on the map's mineral layer: point symbols with a 1px ink-1 edge, never area fills.",
+      "breaks": "Classes by the deposit's first-listed commodity in the USGS Mineral Resources Data System: iron; manganese, chromium and alloy metals; aluminium; copper, lead, zinc and precious metals; titanium, zirconium and rare earths; industrial minerals.",
+      "classes": [
+        "Iron",
+        "Manganese, chromium and alloy metals",
+        "Aluminium",
+        "Copper, lead, zinc and precious metals",
+        "Titanium, zirconium and rare earths",
+        "Industrial minerals"
+      ],
+      "spec": {
+        "light": [
+          [
+            0.5,
+            0.035,
+            250
+          ],
+          [
+            0.52,
+            0.12,
+            322
+          ],
+          [
+            0.72,
+            0.1,
+            5
+          ],
+          [
+            0.58,
+            0.1,
+            178
+          ],
+          [
+            0.76,
+            0.13,
+            128
+          ],
+          [
+            0.62,
+            0.11,
+            230
+          ]
+        ],
+        "dark": [
+          [
+            0.7,
+            0.035,
+            250
+          ],
+          [
+            0.7,
+            0.12,
+            322
+          ],
+          [
+            0.84,
+            0.08,
+            5
+          ],
+          [
+            0.72,
+            0.1,
+            178
+          ],
+          [
+            0.84,
+            0.13,
+            133
+          ],
+          [
+            0.66,
+            0.12,
+            215
+          ]
+        ],
+        "hcLight": [
+          [
+            0.42,
+            0.035,
+            250
+          ],
+          [
+            0.45,
+            0.13,
+            322
+          ],
+          [
+            0.64,
+            0.11,
+            5
+          ],
+          [
+            0.5,
+            0.1,
+            178
+          ],
+          [
+            0.7,
+            0.14,
+            128
+          ],
+          [
+            0.52,
+            0.12,
+            230
+          ]
+        ],
+        "hcDark": [
+          [
+            0.76,
+            0.035,
+            250
+          ],
+          [
+            0.76,
+            0.12,
+            322
+          ],
+          [
+            0.7,
+            0.12,
+            355
+          ],
+          [
+            0.8,
+            0.1,
+            178
+          ],
+          [
+            0.9,
+            0.13,
+            133
+          ],
+          [
+            0.8,
+            0.12,
+            230
+          ]
+        ]
+      }
     }
   },
   "familyOrder": [
@@ -1750,11 +2169,20 @@
       "rule-strong",
       "rule-strong",
       "rule-strong"
+    ],
+    [
+      "map-relief-shade",
+      "decorative",
+      "Shadow of the shaded relief on the physical layer, drawn through the hillshade mask at --map-hillshade-opacity.",
+      "#1C1815",
+      "#000000",
+      "#000000",
+      "#000000"
     ]
   ],
   "mapHillshade": {
     "cssVar": "--map-hillshade",
-    "use": "Relief shading: ink-1 at 6 per cent multiplied over land (9 per cent in dark). Never terracotta, which means place. Off in high contrast."
+    "use": "Relief shading on the physical layer: --map-relief-shade through the hillshade mask at 45 per cent over the elevation tints (60 per cent in dark). Never terracotta, which means place. Off in high contrast."
   },
   "mapRules": [
     "Water, land and salt flat are three different fills: water is 10 or more delta E from land; salt is brighter than land and always carries its stipple, dotted edge and italic label.",
@@ -2689,8 +3117,8 @@
     ]
   },
   "hillshadeOpacity": {
-    "light": ".06",
-    "dark": ".09",
+    "light": ".45",
+    "dark": ".6",
     "hcLight": "0",
     "hcDark": "0"
   },

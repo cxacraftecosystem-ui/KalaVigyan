@@ -14,7 +14,7 @@ import { monographCount } from "@/lib/atlasIndex";
 import type { PlateMaterial } from "@/components/editorial/TypographicPlate";
 import type { CatalogueCraft, CraftCatalogue } from "@/lib/craftCatalogueContract";
 
-export const DOCUMENTS_SHOWN = 8;
+export const DOCUMENTS_SHOWN = 12;
 export const FAMILY_PLATES = 2;
 
 export type LandingStat = { key: string; value: number; label: string };

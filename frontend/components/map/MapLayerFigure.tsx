@@ -9,7 +9,7 @@ import { FOREIGN_EXTRA, MapLegend, NO_READING_EXTRA, SALT_EXTRA, WATER_EXTRA, ty
 import { DistrictFills, DistrictTag, SelectedDistrict } from "@/components/map/DistrictLayer";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { MapRetry } from "@/components/map/MapRetry";
-import { useLayerFill, type DistrictName, type MapLayerData } from "@/components/map/MapLayerView";
+import { usePaletteFill, type DistrictName, type MapLayerData } from "@/components/map/MapLayerView";
 import { MapSourceLine } from "@/components/map/MapSourceLine";
 import { MarkControls } from "@/components/map/MarkControls";
 import { PlaceMarkers, placeMapMarks } from "@/components/map/PlaceMarkers";
@@ -19,11 +19,10 @@ import type { DistrictShape } from "@/components/map/shapeGeometry";
 import { Figure } from "@/components/ui/Figure";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { markerFamilies, type PlaceMarker } from "@/lib/mapFamilies";
-import { layerColours, layerRamp } from "@/lib/mapRamps";
+import { layerPalette, paletteClasses, paletteColour, paletteSeries } from "@/lib/mapPalettes";
 import type { BoundaryNote, MapLayer } from "@/lib/regionContract";
-import { districtReading, layerCaption, layerClassLabels, layerSummary } from "@/lib/regionView";
+import { districtReading, layerCaption, layerSummary } from "@/lib/regionView";
 
-const SERIES = { rain: "var(--series-rain)", heat: "var(--series-heat)", density: "var(--chart-series)" } as const;
 const PLACE_MARKS_LABEL = "Craft places on the map";
 const COLUMNS = [
   { key: "district", label: "District" },
@@ -50,12 +49,11 @@ export function markerExtras(markers: readonly PlaceMarker[]): LegendExtra[] {
 
 function LayerSide({ layer, names, markers, pick }: { layer: MapLayer; names: Names; markers: readonly PlaceMarker[]; pick: DistrictPick }) {
   const rows: RankedRow[] = layerRows(layer, names).map((row) => ({ key: String(row.lgd), name: row.name, value: row.value, display: districtReading(layer, row.lgd), onPick: () => pick.onPick(row.lgd) }));
-  const labels = layerClassLabels(layer);
-  const colours = layerColours(layer);
-  const steps = labels.map((label, at) => ({ label, colour: colours[at] }));
+  const palette = layerPalette(layer.layer);
+  const steps = paletteClasses(layer).map((band) => ({ label: band.label, colour: paletteColour(palette.ramp, band.step) }));
   return (
     <div className="grid gap-[18px]">
-      {rows.length ? <RankedList rows={rows} label={layer.layer.title} series={SERIES[layerRamp(layer.layer)]} all={{ label: `Show all ${rows.length}` }} /> : null}
+      {rows.length ? <RankedList rows={rows} label={layer.layer.title} series={paletteSeries(palette)} all={{ label: `Show all ${rows.length}` }} /> : null}
       <MapLegend title={layer.layer.title} steps={steps} extras={[NO_READING_EXTRA, SALT_EXTRA, FOREIGN_EXTRA, WATER_EXTRA, ...markerExtras(markers)]} caption={layerCaption(layer)} summary={layerSummary(layer)} />
       <DatasetCredit dataset={layer.dataset} />
     </div>
@@ -71,7 +69,7 @@ function tagText(layer: MapLayer, names: Names, lgd: number): string {
 function LayerMap({ layer, shapes, names, markers, pick }: { layer: MapLayer; shapes: DistrictShape[]; names: Names; markers: readonly PlaceMarker[]; pick: DistrictPick }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const focus = useMarkFocus();
-  const fillOf = useLayerFill(layer);
+  const fillOf = usePaletteFill(layer);
   const select = (lgd: number) => pick.onPick(pick.lgd === lgd ? null : lgd);
   const active = hovered ?? pick.lgd;
   const activeShape = active === null ? undefined : shapes.find((shape) => shape.lgd === active);
@@ -98,7 +96,7 @@ function districtTable(layer: MapLayer, names: Names): { rows: DataRow[]; table:
   return { rows, table: rows.length ? <DataTable caption={layer.layer.title} columns={COLUMNS} rows={rows} /> : undefined };
 }
 
-export function MapLayerFigure({ data, markers, boundary, pick }: { data: MapLayerData; markers: readonly PlaceMarker[]; boundary: BoundaryNote | null; pick: DistrictPick }) {
+export function MapLayerFigure({ data, markers, boundary, pick, controls }: { data: MapLayerData; markers: readonly PlaceMarker[]; boundary: BoundaryNote | null; pick: DistrictPick; controls?: ReactNode }) {
   const layer = data.layer.data;
   const shapes = data.shapes.data;
   const names = data.names.data;
@@ -108,11 +106,14 @@ export function MapLayerFigure({ data, markers, boundary, pick }: { data: MapLay
     <Figure number={1} kind="map" id="map-figure" title={layer?.layer.title ?? "District values"} dek={layer ? layerCaption(layer) : undefined} source={<MapSourceLine boundary={boundary} districts counts={false} />} table={shown?.table} valueCount={shown?.rows.length}>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,6.6fr)_minmax(0,4.4fr)] lg:items-start lg:gap-12">
         <div className="min-w-0">{layer && shapes ? <LayerMap layer={layer} shapes={shapes} names={names} markers={markers} pick={pick} /> : <Skeleton shape="chart" label="Drawing the district values" />}</div>
-        {failure ? (
-          <MapRetry message={failureMessage(failure, "This layer could not be drawn. Try again in a moment.")} onRetry={data.layer.failure ? data.layer.retry : data.shapes.retry} />
-        ) : layer ? (
-          <LayerSide layer={layer} names={names} markers={markers} pick={pick} />
-        ) : null}
+        <div className="grid content-start gap-[18px]">
+          {controls}
+          {failure ? (
+            <MapRetry message={failureMessage(failure, "This layer could not be drawn. Try again in a moment.")} onRetry={data.layer.failure ? data.layer.retry : data.shapes.retry} />
+          ) : layer ? (
+            <LayerSide layer={layer} names={names} markers={markers} pick={pick} />
+          ) : null}
+        </div>
       </div>
     </Figure>
   );

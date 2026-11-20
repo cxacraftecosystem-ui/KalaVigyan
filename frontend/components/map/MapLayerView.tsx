@@ -6,8 +6,9 @@ import { failureMessage, useRemote, type Remote } from "@/components/hooks/useRe
 import { ChoroplethLegend } from "@/components/map/ChoroplethLegend";
 import { NO_DATA_TONE, type DistrictFill } from "@/components/map/DistrictLayer";
 import { MapRetry } from "@/components/map/MapRetry";
-import { rampFill } from "@/components/map/rampFills";
+import { paletteFill, rampFill } from "@/components/map/rampFills";
 import { loadShapes, type DistrictShape } from "@/components/map/shapeGeometry";
+import { districtSteps, layerPalette } from "@/lib/mapPalettes";
 import { layerRamp, rampStep } from "@/lib/mapRamps";
 import { fetchMapLayer } from "@/lib/mapLayers";
 import { fetchDistricts } from "@/lib/profileContract";
@@ -39,6 +40,18 @@ export function useLayerFill(data: MapLayer | null): DistrictFill {
       return index === undefined ? NO_DATA_TONE : rampFill(layerRamp(data.layer), rampStep(index, data.classes.length));
     },
     [data, fills]
+  );
+}
+
+export function usePaletteFill(data: MapLayer | null): DistrictFill {
+  const shown = useMemo(() => (data ? { ramp: layerPalette(data.layer).ramp, steps: districtSteps(data).steps } : null), [data]);
+  return useCallback(
+    (shape: DistrictShape) => {
+      const step = shown?.steps.get(shape.lgd);
+      if (!shown) return null;
+      return step === undefined ? NO_DATA_TONE : paletteFill(shown.ramp, step);
+    },
+    [shown]
   );
 }
 

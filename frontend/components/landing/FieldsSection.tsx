@@ -9,7 +9,7 @@ export const FIELDS_HEADING = "Sixteen fields";
 
 export function fieldsDek(holdings: FieldHoldings | null): string {
   if (!holdings) return "Each craft is read across the same sixteen fields, from how it is made to the policy around it, and every sentence carries its sources.";
-  return `Each bar counts the ${holdings.monographs} monographs that hold cited facts in a field; the craft holding the most opens at that field’s chapter.`;
+  return `Each count is the number of the ${holdings.monographs} monographs that hold cited facts in a field; the craft holding the most opens at that field’s chapter.`;
 }
 
 export function leadLine(holding: FieldHolding): string | null {
@@ -17,21 +17,30 @@ export function leadLine(holding: FieldHolding): string | null {
   return `${holding.lead.facts} cited ${holding.lead.facts === 1 ? "fact" : "facts"}`;
 }
 
-function FieldRow({ holding, total }: { holding: FieldHolding; total: number }) {
+export function fieldNumber(at: number): string {
+  return String(at + 1).padStart(2, "0");
+}
+
+function FieldCell({ holding, total, at }: { holding: FieldHolding; total: number; at: number }) {
   const share = total > 0 ? holding.crafts / total : 0;
   const facts = leadLine(holding);
   return (
-    <li className="grid grid-cols-[minmax(7.5rem,10rem)_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-t border-rule py-2.5" data-testid="landing-field">
-      <span className="font-ui text-ui font-medium text-ink-1">{holding.label}</span>
-      <span className="relative h-2 bg-rule" aria-hidden>
-        <i className="absolute inset-y-0 start-0" style={{ width: `${(share * 100).toFixed(1)}%`, backgroundColor: "var(--series-count)" }} />
+    <li className="kv-field" data-testid="landing-field">
+      <p className="kv-field-head">
+        <span className="kv-field-no" aria-hidden>
+          {fieldNumber(at)}
+        </span>
+        <span className="kv-field-name">{holding.label}</span>
+      </p>
+      <p className="kv-field-count">
+        <b>{holding.crafts}</b>
+        <span>{` of ${total} monographs`}</span>
+      </p>
+      <span className="kv-field-bar" aria-hidden>
+        <i style={{ width: `${(share * 100).toFixed(1)}%` }} />
       </span>
-      <b className="text-end font-ui text-ui font-medium text-ink-2 [font-variant-numeric:lining-nums_tabular-nums]">
-        {holding.crafts}
-        <span className="sr-only">{` of ${total} monographs`}</span>
-      </b>
       {holding.lead ? (
-        <p className="col-span-3 font-ui text-label text-ink-3">
+        <p className="kv-field-lead">
           Most in{" "}
           <Link href={holding.lead.href} className="kv-link font-normal">
             {holding.lead.name}
@@ -73,9 +82,9 @@ export function FieldsSection({ holdings }: { holdings: FieldHoldings | null }) 
           </div>
         </div>
         {holdings ? (
-          <ol className="mt-8 grid border-b border-rule md:grid-cols-2 md:gap-x-12" aria-label="Monographs holding cited facts in each field" data-testid="landing-field-list">
-            {holdings.fields.map((holding) => (
-              <FieldRow key={holding.field} holding={holding} total={holdings.monographs} />
+          <ol className="kv-field-index" aria-label="Monographs holding cited facts in each field" data-testid="landing-field-list">
+            {holdings.fields.map((holding, at) => (
+              <FieldCell key={holding.field} holding={holding} total={holdings.monographs} at={at} />
             ))}
           </ol>
         ) : (

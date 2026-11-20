@@ -154,6 +154,9 @@
   --heat-1: #FFB3AD; --heat-2: #E58D95; --heat-3: #C56A84; --heat-4: #A04C74; --heat-5: #7A3163; --heat-6: #531A4F;
   --ph-1: #8B3B74; --ph-2: #C182A5; --ph-3: #B0A389; --ph-4: #76AF77; --ph-5: #2F743D;
   --elevation-1: #99C68B; --elevation-2: #D2D6A1; --elevation-3: #ECDCC1; --elevation-4: #D5B89D; --elevation-5: #C29C80; --elevation-6: #A28572; --elevation-7: #A79EC4;
+  --earth-1: #AEAE82; --earth-2: #9F8D69; --earth-3: #7D766E; --earth-4: #6F5847; --earth-5: #5F3B27; --earth-6: #4B1F09;
+  --cover-1: #B4D181; --cover-2: #92B661; --cover-3: #6A9C50; --cover-4: #458242; --cover-5: #266739; --cover-6: #164B2E;
+  --mineral-1: #546577; --mineral-2: #884F91; --mineral-3: #DA8A9C; --mineral-4: #1C8D7A; --mineral-5: #99C163; --mineral-6: #2A92BB;
   --fam-textiles: #B3487E; --fam-metal: #A1942F; --fam-wood: #664610; --fam-paper: #569CD4; --fam-clay: #E75E70; --fam-stone: #00A0B4; --fam-leather: #69344A; --fam-fibre: #529E41; --fam-other: #8A8F88;
   --chart-axis-text: #59534E;
   --chart-axis-line: #1C1815;
@@ -189,9 +192,10 @@
   --map-marker-ring: #1C1815;
   --map-place: #B05A36;
   --map-nodata: #767C74;
+  --map-relief-shade: #1C1815;
   --shadow-pop: 0 1px 0 rgba(28,24,21,.05), 0 18px 40px -18px rgba(28,24,21,.30); --shadow-label: 0 24px 48px -24px rgba(8,10,16,.45); --shadow-sheet: 0 -12px 32px -12px rgba(28,24,21,.28);
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0 0.08 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-  --map-hillshade-opacity: .06;
+  --map-hillshade-opacity: .45;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -240,6 +244,9 @@
   --heat-1: #5B161D; --heat-2: #802E41; --heat-3: #A34A6B; --heat-4: #C36999; --heat-5: #DF8CC8; --heat-6: #F9B2F6;
   --ph-1: #E093CF; --ph-2: #A46B91; --ph-3: #575343; --ph-4: #5E9660; --ph-5: #88CF8A;
   --elevation-1: #2C4526; --elevation-2: #4C512D; --elevation-3: #675D39; --elevation-4: #806B4A; --elevation-5: #957B61; --elevation-6: #A28A77; --elevation-7: #9BA6B1;
+  --earth-1: #59311E; --earth-2: #704C36; --earth-3: #856851; --earth-4: #978673; --earth-5: #C1BAA5; --earth-6: #EBE2B5;
+  --cover-1: #124C28; --cover-2: #2D6634; --cover-3: #4A823E; --cover-4: #6C9D45; --cover-5: #93B660; --cover-6: #D2DEB2;
+  --mineral-1: #8EA1B4; --mineral-2: #C184CB; --mineral-3: #F9B5C3; --mineral-4: #54B9A5; --mineral-5: #A9DD83; --mineral-6: #00A4C0;
   --fam-textiles: #CE6196; --fam-metal: #989018; --fam-wood: #805B2C; --fam-paper: #5399D1; --fam-clay: #D75063; --fam-stone: #0092A4; --fam-leather: #894667; --fam-fibre: #55A144; --fam-other: #7E8496;
   --chart-axis-text: #A5A198;
   --chart-axis-line: #ECEAE3;
@@ -275,9 +282,10 @@
   --map-marker-ring: #ECEAE3;
   --map-place: #E0916C;
   --map-nodata: #7A849A;
+  --map-relief-shade: #000000;
   --shadow-pop: 0 1px 0 rgba(0,0,0,.5), 0 24px 48px -18px rgba(0,0,0,.75); --shadow-label: 0 24px 48px -20px rgba(0,0,0,.8); --shadow-sheet: 0 -12px 32px -8px rgba(0,0,0,.7);
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.93 0 0 0 0 0.92 0 0 0 0 0.89 0 0 0 0.030 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-  --map-hillshade-opacity: .09;
+  --map-hillshade-opacity: .6;
   }
 }
 :root[data-theme="dark"] {
@@ -326,6 +334,9 @@
   --heat-1: #5B161D; --heat-2: #802E41; --heat-3: #A34A6B; --heat-4: #C36999; --heat-5: #DF8CC8; --heat-6: #F9B2F6;
   --ph-1: #E093CF; --ph-2: #A46B91; --ph-3: #575343; --ph-4: #5E9660; --ph-5: #88CF8A;
   --elevation-1: #2C4526; --elevation-2: #4C512D; --elevation-3: #675D39; --elevation-4: #806B4A; --elevation-5: #957B61; --elevation-6: #A28A77; --elevation-7: #9BA6B1;
+  --earth-1: #59311E; --earth-2: #704C36; --earth-3: #856851; --earth-4: #978673; --earth-5: #C1BAA5; --earth-6: #EBE2B5;
+  --cover-1: #124C28; --cover-2: #2D6634; --cover-3: #4A823E; --cover-4: #6C9D45; --cover-5: #93B660; --cover-6: #D2DEB2;
+  --mineral-1: #8EA1B4; --mineral-2: #C184CB; --mineral-3: #F9B5C3; --mineral-4: #54B9A5; --mineral-5: #A9DD83; --mineral-6: #00A4C0;
   --fam-textiles: #CE6196; --fam-metal: #989018; --fam-wood: #805B2C; --fam-paper: #5399D1; --fam-clay: #D75063; --fam-stone: #0092A4; --fam-leather: #894667; --fam-fibre: #55A144; --fam-other: #7E8496;
   --chart-axis-text: #A5A198;
   --chart-axis-line: #ECEAE3;
@@ -361,9 +372,10 @@
   --map-marker-ring: #ECEAE3;
   --map-place: #E0916C;
   --map-nodata: #7A849A;
+  --map-relief-shade: #000000;
   --shadow-pop: 0 1px 0 rgba(0,0,0,.5), 0 24px 48px -18px rgba(0,0,0,.75); --shadow-label: 0 24px 48px -20px rgba(0,0,0,.8); --shadow-sheet: 0 -12px 32px -8px rgba(0,0,0,.7);
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.93 0 0 0 0 0.92 0 0 0 0 0.89 0 0 0 0.030 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-  --map-hillshade-opacity: .09;
+  --map-hillshade-opacity: .6;
 }
 @media (prefers-contrast: more) {
   :root:not([data-high-contrast="false"]) {
@@ -411,6 +423,9 @@
   --heat-1: #FFB5B3; --heat-2: #E8929E; --heat-3: #C76E8A; --heat-4: #9F4C77; --heat-5: #752E61; --heat-6: #4A1147;
   --ph-1: #782963; --ph-2: #B7739A; --ph-3: #ADA086; --ph-4: #65A467; --ph-5: #1B622D;
   --elevation-1: #92C082; --elevation-2: #CED39A; --elevation-3: #EEDBBD; --elevation-4: #CCAE94; --elevation-5: #B89377; --elevation-6: #967562; --elevation-7: #A099BB;
+  --earth-1: #A7A975; --earth-2: #99875F; --earth-3: #7C6C59; --earth-4: #443025; --earth-5: #351404; --earth-6: #1B0300;
+  --cover-1: #C0D776; --cover-2: #89AC58; --cover-3: #5E9044; --cover-4: #367334; --cover-5: #115629; --cover-6: #00391C;
+  --mineral-1: #3F4F60; --mineral-2: #75387F; --mineral-3: #C46E83; --mineral-4: #007563; --mineral-5: #85AE47; --mineral-6: #0074A0;
   --fam-textiles: #9F366C; --fam-metal: #8F8214; --fam-wood: #473418; --fam-paper: #3786C3; --fam-clay: #C94358; --fam-stone: #00839A; --fam-leather: #4A1F32; --fam-fibre: #408C2D; --fam-other: #5E645C;
   --chart-axis-text: #2E2925;
   --chart-axis-line: #000000;
@@ -446,6 +461,7 @@
   --map-marker-ring: #000000;
   --map-place: #7D3519;
   --map-nodata: #3D433C;
+  --map-relief-shade: #000000;
   --shadow-pop: 0 0 0 2px var(--ink-1); --shadow-label: 0 0 0 2px var(--ink-1); --shadow-sheet: 0 0 0 2px var(--ink-1);
   --grain: none;
   --map-hillshade-opacity: 0;
@@ -497,6 +513,9 @@
   --heat-1: #541400; --heat-2: #7D2B2A; --heat-3: #A3465A; --heat-4: #C5658F; --heat-5: #E189C7; --heat-6: #F8B1FF;
   --ph-1: #EEA0DC; --ph-2: #AE6E99; --ph-3: #575343; --ph-4: #62A164; --ph-5: #98DF9A;
   --elevation-1: #294223; --elevation-2: #494E27; --elevation-3: #655B32; --elevation-4: #7E6843; --elevation-5: #94775A; --elevation-6: #A58975; --elevation-7: #A8B2BE;
+  --earth-1: #4C1E0B; --earth-2: #60361F; --earth-3: #724F37; --earth-4: #846851; --earth-5: #96836C; --earth-6: #A49F8A;
+  --cover-1: #104F29; --cover-2: #306D37; --cover-3: #538B47; --cover-4: #7BA858; --cover-5: #A3C66F; --cover-6: #D2F6AF;
+  --mineral-1: #A1B3C7; --mineral-2: #D597DE; --mineral-3: #D87DA2; --mineral-4: #6FD3BE; --mineral-5: #BCF196; --mineral-6: #60CCFC;
   --fam-textiles: #E47FAD; --fam-metal: #B0A941; --fam-wood: #9C703A; --fam-paper: #69AFE8; --fam-clay: #ED6576; --fam-stone: #25AEC5; --fam-leather: #A66082; --fam-fibre: #6EBB5D; --fam-other: #A9B0C0;
   --chart-axis-text: #D9D6CE;
   --chart-axis-line: #FFFFFF;
@@ -532,6 +551,7 @@
   --map-marker-ring: #FFFFFF;
   --map-place: #F5AE8C;
   --map-nodata: #C4CBD8;
+  --map-relief-shade: #000000;
   --shadow-pop: 0 0 0 2px var(--ink-1); --shadow-label: 0 0 0 2px var(--ink-1); --shadow-sheet: 0 0 0 2px var(--ink-1);
   --grain: none;
   --map-hillshade-opacity: 0;
@@ -583,6 +603,9 @@
   --heat-1: #541400; --heat-2: #7D2B2A; --heat-3: #A3465A; --heat-4: #C5658F; --heat-5: #E189C7; --heat-6: #F8B1FF;
   --ph-1: #EEA0DC; --ph-2: #AE6E99; --ph-3: #575343; --ph-4: #62A164; --ph-5: #98DF9A;
   --elevation-1: #294223; --elevation-2: #494E27; --elevation-3: #655B32; --elevation-4: #7E6843; --elevation-5: #94775A; --elevation-6: #A58975; --elevation-7: #A8B2BE;
+  --earth-1: #4C1E0B; --earth-2: #60361F; --earth-3: #724F37; --earth-4: #846851; --earth-5: #96836C; --earth-6: #A49F8A;
+  --cover-1: #104F29; --cover-2: #306D37; --cover-3: #538B47; --cover-4: #7BA858; --cover-5: #A3C66F; --cover-6: #D2F6AF;
+  --mineral-1: #A1B3C7; --mineral-2: #D597DE; --mineral-3: #D87DA2; --mineral-4: #6FD3BE; --mineral-5: #BCF196; --mineral-6: #60CCFC;
   --fam-textiles: #E47FAD; --fam-metal: #B0A941; --fam-wood: #9C703A; --fam-paper: #69AFE8; --fam-clay: #ED6576; --fam-stone: #25AEC5; --fam-leather: #A66082; --fam-fibre: #6EBB5D; --fam-other: #A9B0C0;
   --chart-axis-text: #D9D6CE;
   --chart-axis-line: #FFFFFF;
@@ -618,6 +641,7 @@
   --map-marker-ring: #FFFFFF;
   --map-place: #F5AE8C;
   --map-nodata: #C4CBD8;
+  --map-relief-shade: #000000;
   --shadow-pop: 0 0 0 2px var(--ink-1); --shadow-label: 0 0 0 2px var(--ink-1); --shadow-sheet: 0 0 0 2px var(--ink-1);
   --grain: none;
   --map-hillshade-opacity: 0;
@@ -668,6 +692,9 @@
   --heat-1: #FFB5B3; --heat-2: #E8929E; --heat-3: #C76E8A; --heat-4: #9F4C77; --heat-5: #752E61; --heat-6: #4A1147;
   --ph-1: #782963; --ph-2: #B7739A; --ph-3: #ADA086; --ph-4: #65A467; --ph-5: #1B622D;
   --elevation-1: #92C082; --elevation-2: #CED39A; --elevation-3: #EEDBBD; --elevation-4: #CCAE94; --elevation-5: #B89377; --elevation-6: #967562; --elevation-7: #A099BB;
+  --earth-1: #A7A975; --earth-2: #99875F; --earth-3: #7C6C59; --earth-4: #443025; --earth-5: #351404; --earth-6: #1B0300;
+  --cover-1: #C0D776; --cover-2: #89AC58; --cover-3: #5E9044; --cover-4: #367334; --cover-5: #115629; --cover-6: #00391C;
+  --mineral-1: #3F4F60; --mineral-2: #75387F; --mineral-3: #C46E83; --mineral-4: #007563; --mineral-5: #85AE47; --mineral-6: #0074A0;
   --fam-textiles: #9F366C; --fam-metal: #8F8214; --fam-wood: #473418; --fam-paper: #3786C3; --fam-clay: #C94358; --fam-stone: #00839A; --fam-leather: #4A1F32; --fam-fibre: #408C2D; --fam-other: #5E645C;
   --chart-axis-text: #2E2925;
   --chart-axis-line: #000000;
@@ -703,6 +730,7 @@
   --map-marker-ring: #000000;
   --map-place: #7D3519;
   --map-nodata: #3D433C;
+  --map-relief-shade: #000000;
   --shadow-pop: 0 0 0 2px var(--ink-1); --shadow-label: 0 0 0 2px var(--ink-1); --shadow-sheet: 0 0 0 2px var(--ink-1);
   --grain: none;
   --map-hillshade-opacity: 0;
@@ -753,6 +781,9 @@
   --heat-1: #541400; --heat-2: #7D2B2A; --heat-3: #A3465A; --heat-4: #C5658F; --heat-5: #E189C7; --heat-6: #F8B1FF;
   --ph-1: #EEA0DC; --ph-2: #AE6E99; --ph-3: #575343; --ph-4: #62A164; --ph-5: #98DF9A;
   --elevation-1: #294223; --elevation-2: #494E27; --elevation-3: #655B32; --elevation-4: #7E6843; --elevation-5: #94775A; --elevation-6: #A58975; --elevation-7: #A8B2BE;
+  --earth-1: #4C1E0B; --earth-2: #60361F; --earth-3: #724F37; --earth-4: #846851; --earth-5: #96836C; --earth-6: #A49F8A;
+  --cover-1: #104F29; --cover-2: #306D37; --cover-3: #538B47; --cover-4: #7BA858; --cover-5: #A3C66F; --cover-6: #D2F6AF;
+  --mineral-1: #A1B3C7; --mineral-2: #D597DE; --mineral-3: #D87DA2; --mineral-4: #6FD3BE; --mineral-5: #BCF196; --mineral-6: #60CCFC;
   --fam-textiles: #E47FAD; --fam-metal: #B0A941; --fam-wood: #9C703A; --fam-paper: #69AFE8; --fam-clay: #ED6576; --fam-stone: #25AEC5; --fam-leather: #A66082; --fam-fibre: #6EBB5D; --fam-other: #A9B0C0;
   --chart-axis-text: #D9D6CE;
   --chart-axis-line: #FFFFFF;
@@ -788,6 +819,7 @@
   --map-marker-ring: #FFFFFF;
   --map-place: #F5AE8C;
   --map-nodata: #C4CBD8;
+  --map-relief-shade: #000000;
   --shadow-pop: 0 0 0 2px var(--ink-1); --shadow-label: 0 0 0 2px var(--ink-1); --shadow-sheet: 0 0 0 2px var(--ink-1);
   --grain: none;
   --map-hillshade-opacity: 0;
@@ -838,6 +870,9 @@
   --heat-1: #541400; --heat-2: #7D2B2A; --heat-3: #A3465A; --heat-4: #C5658F; --heat-5: #E189C7; --heat-6: #F8B1FF;
   --ph-1: #EEA0DC; --ph-2: #AE6E99; --ph-3: #575343; --ph-4: #62A164; --ph-5: #98DF9A;
   --elevation-1: #294223; --elevation-2: #494E27; --elevation-3: #655B32; --elevation-4: #7E6843; --elevation-5: #94775A; --elevation-6: #A58975; --elevation-7: #A8B2BE;
+  --earth-1: #4C1E0B; --earth-2: #60361F; --earth-3: #724F37; --earth-4: #846851; --earth-5: #96836C; --earth-6: #A49F8A;
+  --cover-1: #104F29; --cover-2: #306D37; --cover-3: #538B47; --cover-4: #7BA858; --cover-5: #A3C66F; --cover-6: #D2F6AF;
+  --mineral-1: #A1B3C7; --mineral-2: #D597DE; --mineral-3: #D87DA2; --mineral-4: #6FD3BE; --mineral-5: #BCF196; --mineral-6: #60CCFC;
   --fam-textiles: #E47FAD; --fam-metal: #B0A941; --fam-wood: #9C703A; --fam-paper: #69AFE8; --fam-clay: #ED6576; --fam-stone: #25AEC5; --fam-leather: #A66082; --fam-fibre: #6EBB5D; --fam-other: #A9B0C0;
   --chart-axis-text: #D9D6CE;
   --chart-axis-line: #FFFFFF;
@@ -873,6 +908,7 @@
   --map-marker-ring: #FFFFFF;
   --map-place: #F5AE8C;
   --map-nodata: #C4CBD8;
+  --map-relief-shade: #000000;
   --shadow-pop: 0 0 0 2px var(--ink-1); --shadow-label: 0 0 0 2px var(--ink-1); --shadow-sheet: 0 0 0 2px var(--ink-1);
   --grain: none;
   --map-hillshade-opacity: 0;
@@ -950,6 +986,9 @@
   --heat-1: #FFB3AD; --heat-2: #E58D95; --heat-3: #C56A84; --heat-4: #A04C74; --heat-5: #7A3163; --heat-6: #531A4F;
   --ph-1: #8B3B74; --ph-2: #C182A5; --ph-3: #B0A389; --ph-4: #76AF77; --ph-5: #2F743D;
   --elevation-1: #99C68B; --elevation-2: #D2D6A1; --elevation-3: #ECDCC1; --elevation-4: #D5B89D; --elevation-5: #C29C80; --elevation-6: #A28572; --elevation-7: #A79EC4;
+  --earth-1: #AEAE82; --earth-2: #9F8D69; --earth-3: #7D766E; --earth-4: #6F5847; --earth-5: #5F3B27; --earth-6: #4B1F09;
+  --cover-1: #B4D181; --cover-2: #92B661; --cover-3: #6A9C50; --cover-4: #458242; --cover-5: #266739; --cover-6: #164B2E;
+  --mineral-1: #546577; --mineral-2: #884F91; --mineral-3: #DA8A9C; --mineral-4: #1C8D7A; --mineral-5: #99C163; --mineral-6: #2A92BB;
   --fam-textiles: #B3487E; --fam-metal: #A1942F; --fam-wood: #664610; --fam-paper: #569CD4; --fam-clay: #E75E70; --fam-stone: #00A0B4; --fam-leather: #69344A; --fam-fibre: #529E41; --fam-other: #8A8F88;
   --chart-axis-text: #59534E;
   --chart-axis-line: #1C1815;
@@ -985,9 +1024,10 @@
   --map-marker-ring: #1C1815;
   --map-place: #B05A36;
   --map-nodata: #767C74;
+  --map-relief-shade: #1C1815;
   --shadow-pop: 0 1px 0 rgba(28,24,21,.05), 0 18px 40px -18px rgba(28,24,21,.30); --shadow-label: 0 24px 48px -24px rgba(8,10,16,.45); --shadow-sheet: 0 -12px 32px -12px rgba(28,24,21,.28);
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0 0.08 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-  --map-hillshade-opacity: .06;
+  --map-hillshade-opacity: .45;
   --ground: rgb(var(--c-ground)); --raised: rgb(var(--c-raised)); --sunk: rgb(var(--c-sunk)); --rule: rgb(var(--c-rule)); --rule-strong: rgb(var(--c-rule-strong)); --ink-1: rgb(var(--c-ink-1)); --ink-2: rgb(var(--c-ink-2)); --ink-3: rgb(var(--c-ink-3)); --indigo: rgb(var(--c-indigo)); --indigo-hover: rgb(var(--c-indigo-hover)); --indigo-wash: rgb(var(--c-indigo-wash)); --on-indigo: rgb(var(--c-on-indigo)); --madder: rgb(var(--c-madder)); --madder-wash: rgb(var(--c-madder-wash)); --on-madder: rgb(var(--c-on-madder)); --turmeric: rgb(var(--c-turmeric)); --turmeric-wash: rgb(var(--c-turmeric-wash)); --turmeric-text: rgb(var(--c-turmeric-text)); --terracotta: rgb(var(--c-terracotta)); --error: rgb(var(--c-error)); --error-wash: rgb(var(--c-error-wash)); --warning: rgb(var(--c-warning)); --warning-wash: rgb(var(--c-warning-wash)); --info: rgb(var(--c-info)); --info-wash: rgb(var(--c-info-wash)); --success: rgb(var(--c-success)); --success-wash: rgb(var(--c-success-wash));
   color: var(--ink-1);
 }
@@ -1037,6 +1077,9 @@
   --heat-1: #5B161D; --heat-2: #802E41; --heat-3: #A34A6B; --heat-4: #C36999; --heat-5: #DF8CC8; --heat-6: #F9B2F6;
   --ph-1: #E093CF; --ph-2: #A46B91; --ph-3: #575343; --ph-4: #5E9660; --ph-5: #88CF8A;
   --elevation-1: #2C4526; --elevation-2: #4C512D; --elevation-3: #675D39; --elevation-4: #806B4A; --elevation-5: #957B61; --elevation-6: #A28A77; --elevation-7: #9BA6B1;
+  --earth-1: #59311E; --earth-2: #704C36; --earth-3: #856851; --earth-4: #978673; --earth-5: #C1BAA5; --earth-6: #EBE2B5;
+  --cover-1: #124C28; --cover-2: #2D6634; --cover-3: #4A823E; --cover-4: #6C9D45; --cover-5: #93B660; --cover-6: #D2DEB2;
+  --mineral-1: #8EA1B4; --mineral-2: #C184CB; --mineral-3: #F9B5C3; --mineral-4: #54B9A5; --mineral-5: #A9DD83; --mineral-6: #00A4C0;
   --fam-textiles: #CE6196; --fam-metal: #989018; --fam-wood: #805B2C; --fam-paper: #5399D1; --fam-clay: #D75063; --fam-stone: #0092A4; --fam-leather: #894667; --fam-fibre: #55A144; --fam-other: #7E8496;
   --chart-axis-text: #A5A198;
   --chart-axis-line: #ECEAE3;
@@ -1072,9 +1115,10 @@
   --map-marker-ring: #ECEAE3;
   --map-place: #E0916C;
   --map-nodata: #7A849A;
+  --map-relief-shade: #000000;
   --shadow-pop: 0 1px 0 rgba(0,0,0,.5), 0 24px 48px -18px rgba(0,0,0,.75); --shadow-label: 0 24px 48px -20px rgba(0,0,0,.8); --shadow-sheet: 0 -12px 32px -8px rgba(0,0,0,.7);
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.93 0 0 0 0 0.92 0 0 0 0 0.89 0 0 0 0.030 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-  --map-hillshade-opacity: .09;
+  --map-hillshade-opacity: .6;
   --ground: rgb(var(--c-ground)); --raised: rgb(var(--c-raised)); --sunk: rgb(var(--c-sunk)); --rule: rgb(var(--c-rule)); --rule-strong: rgb(var(--c-rule-strong)); --ink-1: rgb(var(--c-ink-1)); --ink-2: rgb(var(--c-ink-2)); --ink-3: rgb(var(--c-ink-3)); --indigo: rgb(var(--c-indigo)); --indigo-hover: rgb(var(--c-indigo-hover)); --indigo-wash: rgb(var(--c-indigo-wash)); --on-indigo: rgb(var(--c-on-indigo)); --madder: rgb(var(--c-madder)); --madder-wash: rgb(var(--c-madder-wash)); --on-madder: rgb(var(--c-on-madder)); --turmeric: rgb(var(--c-turmeric)); --turmeric-wash: rgb(var(--c-turmeric-wash)); --turmeric-text: rgb(var(--c-turmeric-text)); --terracotta: rgb(var(--c-terracotta)); --error: rgb(var(--c-error)); --error-wash: rgb(var(--c-error-wash)); --warning: rgb(var(--c-warning)); --warning-wash: rgb(var(--c-warning-wash)); --info: rgb(var(--c-info)); --info-wash: rgb(var(--c-info-wash)); --success: rgb(var(--c-success)); --success-wash: rgb(var(--c-success-wash));
   color: var(--ink-1);
 }
@@ -1124,6 +1168,9 @@
   --heat-1: #FFB5B3; --heat-2: #E8929E; --heat-3: #C76E8A; --heat-4: #9F4C77; --heat-5: #752E61; --heat-6: #4A1147;
   --ph-1: #782963; --ph-2: #B7739A; --ph-3: #ADA086; --ph-4: #65A467; --ph-5: #1B622D;
   --elevation-1: #92C082; --elevation-2: #CED39A; --elevation-3: #EEDBBD; --elevation-4: #CCAE94; --elevation-5: #B89377; --elevation-6: #967562; --elevation-7: #A099BB;
+  --earth-1: #A7A975; --earth-2: #99875F; --earth-3: #7C6C59; --earth-4: #443025; --earth-5: #351404; --earth-6: #1B0300;
+  --cover-1: #C0D776; --cover-2: #89AC58; --cover-3: #5E9044; --cover-4: #367334; --cover-5: #115629; --cover-6: #00391C;
+  --mineral-1: #3F4F60; --mineral-2: #75387F; --mineral-3: #C46E83; --mineral-4: #007563; --mineral-5: #85AE47; --mineral-6: #0074A0;
   --fam-textiles: #9F366C; --fam-metal: #8F8214; --fam-wood: #473418; --fam-paper: #3786C3; --fam-clay: #C94358; --fam-stone: #00839A; --fam-leather: #4A1F32; --fam-fibre: #408C2D; --fam-other: #5E645C;
   --chart-axis-text: #2E2925;
   --chart-axis-line: #000000;
@@ -1159,6 +1206,7 @@
   --map-marker-ring: #000000;
   --map-place: #7D3519;
   --map-nodata: #3D433C;
+  --map-relief-shade: #000000;
   --shadow-pop: 0 0 0 2px var(--ink-1); --shadow-label: 0 0 0 2px var(--ink-1); --shadow-sheet: 0 0 0 2px var(--ink-1);
   --grain: none;
   --map-hillshade-opacity: 0;
@@ -1211,6 +1259,9 @@
   --heat-1: #541400; --heat-2: #7D2B2A; --heat-3: #A3465A; --heat-4: #C5658F; --heat-5: #E189C7; --heat-6: #F8B1FF;
   --ph-1: #EEA0DC; --ph-2: #AE6E99; --ph-3: #575343; --ph-4: #62A164; --ph-5: #98DF9A;
   --elevation-1: #294223; --elevation-2: #494E27; --elevation-3: #655B32; --elevation-4: #7E6843; --elevation-5: #94775A; --elevation-6: #A58975; --elevation-7: #A8B2BE;
+  --earth-1: #4C1E0B; --earth-2: #60361F; --earth-3: #724F37; --earth-4: #846851; --earth-5: #96836C; --earth-6: #A49F8A;
+  --cover-1: #104F29; --cover-2: #306D37; --cover-3: #538B47; --cover-4: #7BA858; --cover-5: #A3C66F; --cover-6: #D2F6AF;
+  --mineral-1: #A1B3C7; --mineral-2: #D597DE; --mineral-3: #D87DA2; --mineral-4: #6FD3BE; --mineral-5: #BCF196; --mineral-6: #60CCFC;
   --fam-textiles: #E47FAD; --fam-metal: #B0A941; --fam-wood: #9C703A; --fam-paper: #69AFE8; --fam-clay: #ED6576; --fam-stone: #25AEC5; --fam-leather: #A66082; --fam-fibre: #6EBB5D; --fam-other: #A9B0C0;
   --chart-axis-text: #D9D6CE;
   --chart-axis-line: #FFFFFF;
@@ -1246,6 +1297,7 @@
   --map-marker-ring: #FFFFFF;
   --map-place: #F5AE8C;
   --map-nodata: #C4CBD8;
+  --map-relief-shade: #000000;
   --shadow-pop: 0 0 0 2px var(--ink-1); --shadow-label: 0 0 0 2px var(--ink-1); --shadow-sheet: 0 0 0 2px var(--ink-1);
   --grain: none;
   --map-hillshade-opacity: 0;

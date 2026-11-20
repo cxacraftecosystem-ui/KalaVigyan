@@ -7,6 +7,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { SpecimenLabel } from "@/components/editorial/SpecimenLabel";
 import { CitedText, useCiteMaps } from "@/components/landing/CitedText";
 import { HERO_SPECIMEN, HeroCredit, HeroPhoto } from "@/components/landing/heroPicture";
+import type { LandingStat } from "@/components/landing/landingCollection";
 import type { LandingContent } from "@/components/landing/landingContent";
 import { VAT_PLAYED_KEY, VatSteps } from "@/components/landing/VatSteps";
 import { useVatMoment } from "@/components/motion/useVatMoment";
@@ -74,7 +75,20 @@ function HeroActions() {
   );
 }
 
-function HeroText({ craftCount }: { craftCount: number | null }) {
+function HeroLedger({ stats }: { stats: readonly LandingStat[] }) {
+  return (
+    <dl className="kv-hero-ledger" data-testid="landing-stats">
+      {stats.map((stat) => (
+        <div key={stat.key} data-testid="landing-stat">
+          <dt>{stat.label}</dt>
+          <dd>{stat.value.toLocaleString("en-IN")}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function HeroText({ craftCount, stats }: { craftCount: number | null; stats: readonly LandingStat[] | null }) {
   return (
     <div className="kv-hero-in kv-on-photo">
       <p className="kicker kv-hero-kicker">Science behind craft</p>
@@ -83,11 +97,12 @@ function HeroText({ craftCount }: { craftCount: number | null }) {
       </h1>
       <p className="kv-hero-dek font-reading text-lede">{fieldsLine(craftCount)}</p>
       <HeroActions />
+      {stats?.length ? <HeroLedger stats={stats} /> : null}
     </div>
   );
 }
 
-export function LandingHero({ craftCount, content }: { craftCount: number | null; content: LandingContent }) {
+export function LandingHero({ craftCount, content, stats = null }: { craftCount: number | null; content: LandingContent; stats?: readonly LandingStat[] | null }) {
   const cite = useCiteMaps(content.sources);
   const host = useRef<HTMLElement | null>(null);
   const shown = usePhotoShown(host);
@@ -98,7 +113,7 @@ export function LandingHero({ craftCount, content }: { craftCount: number | null
       <div className="vat-tint kv-hero-tint" aria-hidden />
       <div className="kv-hero-scrim" aria-hidden />
       <div className="kv-shell-wrap kv-hero-grid">
-        <HeroText craftCount={craftCount} />
+        <HeroText craftCount={craftCount} stats={stats} />
         <SpecimenLabel
           variant="landing"
           onPhoto
