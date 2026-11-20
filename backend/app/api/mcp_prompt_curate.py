@@ -23,7 +23,14 @@ CURATE_DESCRIPTION = (
     "supply and check sources, build facts, structure, components, figures and pictures in a draft, preview it "
     "against the checklist report, fix, submit once and follow the outcome."
 )
-CURATE_SECTIONS = ("Proposals and their progress", "Structure and sources", "Components", "Pages", "Pictures")
+CURATE_SECTIONS = (
+    "Proposals and their progress",
+    "Finding and reading sources",
+    "Structure and sources",
+    "Components",
+    "Pages",
+    "Pictures",
+)
 CURATE_REFERENCES = ("sources", "quotes", "fields", "page-checklist", "components", "datasets")
 SOURCES_LANE_TOOLS = (
     "search_sources",
@@ -89,7 +96,9 @@ def curate_steps(values: Mapping[str, str]) -> list[str]:
         "read (a paywalled paper through your subscription, a PDF or book you hold, an archive, a site that "
         "refuses the fetcher), call `supply_source` with its identity, how and when you read it, and its "
         "passages with their locators (or the whole text, or upload pdf), with draft_id; cite it as its cite_as "
-        "gives it. Test each quote with `check_quote` before you propose it; `archive_source` keeps a page at risk.",
+        "gives it. Test each quote of a page KalaVigyan reads with `check_quote` before you propose it; a supplied "
+        "source's quotes are checked against your text when you propose them, so copy them from it exactly. "
+        "`archive_source` keeps a page at risk.",
         "Call `propose_facts` with batches of up to 25 facts for the fields the page lacks, each with its quotes, "
         "locators, an idempotency_key and the task it completes as task_key. Facts a figure or component of the "
         "page will cite go into the draft instead, with `add_to_draft`, so the preview draws them and the figure "

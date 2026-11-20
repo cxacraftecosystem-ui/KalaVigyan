@@ -31,6 +31,8 @@ the server", and item 16's `propose_component`. The endpoint, framing and read t
 | Tables | `models/open_work.py` (`TaskReservation`, `ComponentProposal`), migration `0038_open_work`; the delivered spec's columns and `models/page_previews.py` (`PagePreview`), migration `0049_delivered_components` |
 | MCP tools | `api/mcp_work_tools.py` (`WORK_TOOLS`), `api/mcp_task_tools.py` (`TASK_TOOLS`), `api/mcp_steward_tools.py` (`STEWARD_TOOLS`) and `api/mcp_page_tools.py` (`PAGE_TOOLS`: `propose_component`, `propose_page`, `preview_page`), registered in `api/mcp_tools.py` |
 | MCP prompts and resources | `api/mcp_prompts.py`, `api/mcp_resources.py`, dispatched in `api/mcp_tools.py` |
+| Source tools (`search_sources`, `read_source`, `check_quote`, `lookup_compound`, `lookup_entity`, `find_pictures`, `archive_source`) | `api/mcp_lookup_tools.py` (`LOOKUP_TOOLS`), `services/source_lookup*.py`, limits `core/rate_limit.LOOKUP_LIMITS` (`knowledge-api.md`, Source tools) |
+| The contract resources and the index | `data/contributor/contracts/<name>.md`, copies of `docs/contracts/<name>.md`; `data/contributor/index.md`; read by `data/skill_library.py` |
 | HTTP routes | `api/routes/open_work.py`; `api/routes/page_proposals.py` (bundles and previews, `api/page_proposal_deps.py`) |
 | The contributor skill | `data/contributor/SKILL.md`, served at `frontend/public/skills/kalavigyan-contributor/SKILL.md` |
 | The references and the datasets skill | `data/contributor/references/<name>.md` and `data/contributor/kalavigyan-datasets/SKILL.md` (from `.claude/skills/kalavigyan-datasets`), read by `data/skill_library.py`, served at `frontend/public/skills/references/` and `frontend/public/skills/kalavigyan-datasets/` |
@@ -205,8 +207,8 @@ MCP except for a `SUBJECT_LINK`, which carries none (`component-specs-general.md
 
 ## MCP
 
-Last reviewed: 2026-11-21 (round 7: delivered components and pages; supplied sources, drafts and the
-checklist report, decision 0110).
+Last reviewed: 2026-11-21 (round 7: delivered components and pages, the source tools, and supplied
+sources, drafts and the checklist report, decision 0110).
 
 | Tool | Scope | Hints | Returns |
 |---|---|---|---|
@@ -229,8 +231,16 @@ checklist report, decision 0110).
 | `get_draft` | contribute | read-only | `DraftView` with the whole `draft` |
 | `preview_draft` | contribute | writes (a preview, never a proposal) | `PagePreviewResult` with `draftId`, `report` and `notices`; `_meta.ui` names `ui://kalavigyan/page-preview.html` |
 | `submit_draft` | contribute | writes | `PageProposalResult` with `draftId`, `nextStep` and `notices` |
+| `search_sources` | contribute | read-only, open-world | `FoundSources` (`knowledge-api.md`, Source tools) |
+| `read_source` | contribute | read-only, open-world | `SourceText` |
+| `check_quote` | contribute | read-only, open-world | `QuoteCheck` |
+| `lookup_compound` | read | read-only, open-world | `CompoundLookup` |
+| `lookup_entity` | read | read-only, open-world | `EntityLookup` |
+| `find_pictures` | read | read-only, open-world | `FoundPictures` |
+| `archive_source` | contribute | writes (a Wayback snapshot), open-world | `ArchivedSource` |
 
-The page, draft and source tools need an account of Researcher or above (`PROPOSE_KNOWLEDGE`).
+The page, draft and source tools and the four contribute source tools need an account of Researcher or
+above (`PROPOSE_KNOWLEDGE`).
 
 - A write tool's changes are committed by the dispatch when it succeeds and rolled back when it
   refuses (`InvalidInput` or `Refused`, both a tool result with `isError`).
@@ -244,13 +254,18 @@ The page, draft and source tools need an account of Researcher or above (`PROPOS
   {craft_slug}`, the prompt of `MISSING_PICTURE` tasks, and `deliver_dataset {craft_slug, kind?}`
   (`kind` one of the general kinds but `general_drawing`). Each returns one user message: the task, the
   steps naming the tools in order (`list_open_work`, `claim_task` or `claim_tasks`, `get_facts` and
-  `get_section`, `list_components` first for a component, the agent's own search, `propose_facts`
-  with idempotency keys and the claimed task as `task_key`, then `get_proposal` or `my_tasks` for
-  the outcome; a component or page is built finished and seen with `preview_page` before
-  `propose_page` or `propose_component`; a picture is given with `give_image` only after the person
-  confirms the declaration in their own words), the method sections of the contributor skill
-  (Proposals and their progress and Never; plus Writing a section, Components, Pages, Structure and
-  sources or Pictures) and, whole, the references the prompt names (`Prompt.references`: sources,
+  `get_section`, `list_components` first for a component, the source steps (round 7:
+  `search_sources`, then `lookup_compound` and `lookup_entity`, `read_source` for the text the gates
+  will read and `check_quote` on every quote, with the agent's own search where they find nothing;
+  `write_section`, `propose_component` and `deliver_dataset` name the same tools in their own
+  steps, and `give_picture` ends on `find_pictures` for open pictures the team places),
+  `propose_facts` with idempotency keys and the claimed task as `task_key`, then `get_proposal` or
+  `my_tasks` for the outcome; a component or page is built finished and seen with `preview_page`
+  before `propose_page` or `propose_component`; a picture is given with `give_image` only after the
+  person confirms the declaration in their own words), the method sections of the contributor
+  skill (Proposals and their progress, Finding and reading sources and Never; plus Writing a
+  section, Components, Pages, Structure and sources or Pictures; `give_picture` carries Pictures
+  and Finding and reading sources) and, whole, the references the prompt names (`Prompt.references`: sources,
   quotes, fields and the page checklist; components for a component or a page; datasets for
   `deliver_dataset`; none for `give_picture`). A wrong prompt or argument is `-32602`.
 - `curate_page {subject_kind?, slug?}` (decision 0110, `api/mcp_prompt_curate.py`) walks the whole
@@ -264,11 +279,15 @@ The page, draft and source tools need an account of Researcher or above (`PROPOS
   fix against the report until no fixable failure is left, `submit_draft` once, follow with
   `get_proposal`, `my_tasks` and `get_draft`, and what to do when each gate refuses. Its sections are
   those of `deliver_page`; its references are all six.
-- `resources/list`, `resources/read`, `resources/templates/list` (empty): the skills
+- `resources/list`, `resources/read`, `resources/templates/list` (empty): the index
+  `kalavigyan://index.md` (round 7: every tool, prompt and resource with one line each), the skills
   `kalavigyan://skills/kalavigyan-contributor/SKILL.md` and
   `kalavigyan://skills/kalavigyan-datasets/SKILL.md`, the six references
   `kalavigyan://skills/references/<name>.md` (`page-checklist`, `sources`, `quotes`, `fields`,
-  `components`, `datasets`; all `text/markdown`), `kalavigyan://design/tokens.json`
+  `components`, `datasets`), the five contracts a contributor's client follows
+  `kalavigyan://contracts/<name>.md` (round 7: `knowledge-writes`, `open-work`,
+  `component-specs-general`, `image-contributions`, `mcp-ask-and-upload`, each the same text as
+  `docs/contracts/<name>.md`; all `text/markdown`), `kalavigyan://design/tokens.json`
   (`application/json`), the answer kit and view, and the page preview view
   `ui://kalavigyan/page-preview.html` (`text/html;profile=mcp-app`, `data/design/page-preview-view.html`
   through `data/page_preview_view.py`: one self-contained page, `default-src 'none'` and its one script
@@ -277,6 +296,7 @@ The page, draft and source tools need an account of Researcher or above (`PROPOS
   `preview_draft` result: the private link, the rules failed first with their evidence, coverage by
   field, figures, sources by grade, pictures by licence and each part's outcome). An unknown uri is
   `-32002`.
+- The server's `instructions` name the source tools and the index (`api/mcp_protocol.py`).
 
 ## HTTP
 
@@ -461,6 +481,13 @@ a run of eight words or a heading with a reference, or when a skill stops naming
 words, sources and quotes, the 42 kinds, the delivery limits, the map's frame and the layers'
 tolerances, the bundle's facts, the gaps script's bar) to the constant the server or the build
 applies. After editing a reference, copy it to its served places.
+
+**Every tool taught (round 7).** `tests/mcp/test_contributor_kit.py` also fails when a tool of
+`api/mcp_tools.TOOLS` is not named in the contributor skill, and holds the skill's source-tool
+allowance table equal to `core/rate_limit.LOOKUP_LIMITS`; `tests/mcp/test_skill_references.py`
+fails when the curation skill stops naming a source tool, when the index stops naming exactly the
+server's tools, prompts and resources, one line each, or when a contract resource differs from
+`docs/contracts`. After editing one of the five contracts, copy it to `data/contributor/contracts/`.
 
 ## Around open work
 

@@ -11,6 +11,8 @@ tools; the other tools are in their own contracts:
 | `ask` | ask | `mcp-ask-and-upload.md` |
 | `propose_fact`, `propose_facts`, `propose_source`, `get_proposal`, `propose_structure`, `propose_component`, `propose_layout`, `claim_task`, `claim_tasks`, `release_task`, `my_tasks`, `adopt_craft`, `drop_craft`, `my_crafts`, `start_image_upload` | contribute | `knowledge-writes.md`, `open-work.md`, `mcp-ask-and-upload.md`, decision 0108 |
 | review queues in `list_open_work` | review | `open-work.md`, `review-queue.md` |
+| `search_sources`, `read_source`, `check_quote`, `archive_source` | contribute | this file, Source tools |
+| `lookup_compound`, `lookup_entity`, `find_pictures` | read (anyone) | this file, Source tools |
 
 ## The endpoint
 
@@ -123,6 +125,86 @@ instructions. Wrong arguments, or a craft slug that does not exist, come back as
 - **Attribution.** `CraftFacts` and `CraftSection` carry the sentence asking anyone who shows the
   content to name KalaVigyan and the Centre and link the craft's page; the server's
   `instructions` say the same.
+
+## Source tools (round 7)
+
+Contributors over MCP use the sources, standards and protocols KalaVigyan uses itself (owner,
+2026-11-21). Seven tools (`api/mcp_lookup_tools.py`, `LOOKUP_TOOLS`; the work in
+`services/source_lookup*.py`) run the planner's own adapters through `services/live_sources.
+LiveSourcesStore`: the same keys from the managed secrets, the same `SourceHttp` pacing, retries and
+ten-minute response caches. One process-wide store (`services/source_lookup_store.LOOKUP_STORE`)
+keeps them between calls, and a fetched page is kept ten minutes (`source_lookup_sources.
+CachedFetcher`), so reading a page and checking its quotes fetch it once. No adapter is implemented
+twice.
+
+| Tool | Scope | Arguments | Returns |
+|---|---|---|---|
+| `search_sources` | contribute | `query` (2 to 300 characters), `craft_slug?`, `kinds?` (`scholarly`, `reference`, `web`; all three when absent) | `FoundSources {schemaVersion 1, query, kinds[], sources[{title, url, doi, kind, foundBy[], published, authors[], publisher, grade, held, licence, openLicence, openCopy? {status, url, landingUrl, pdfUrl, licence, openLicence, version}, excerpts[]}], searched[], unavailable[], notices[]}` |
+| `read_source` | contribute | `url` or `doi`, `around?` (2 to 200 characters), `start?` (1 on) | `SourceText {schemaVersion 1, url, doi, readable, unread, title, authors[], published, publisher, licence, openLicence, grade, held, restricted, truncated, archivedUrl, lines, around, found, passages[{locator, start, text, cut}], nextStart}` |
+| `check_quote` | contribute | `url` or `doi`, `quote`, `locator?` | `QuoteCheck {schemaVersion 1, url, doi, quote, locator, passed, reasons[], foundAt[], nearest? {locator, text, shared}, grade, held, licence, openLicence}` |
+| `lookup_compound` | read (anyone) | `name` or `cid` | `CompoundLookup {schemaVersion 1, query, compounds[{cid, title, formula, molecularWeight, iupacName, inchikey, smiles, url, licence, grade, held, heldName, synonyms[], hazards? {title, url, publisher, licence, openLicence, attribution, lines[]}}], notices[]}` |
+| `lookup_entity` | read (anyone) | `name` or `qid` | `EntityLookup {schemaVersion 1, query, entities[{qid, label, url, licence, openLicence, grade, taxonName, pubchemCid, lines[]}]}` |
+| `find_pictures` | read (anyone) | `query`, `craft_slug?` | `FoundPictures {schemaVersion 1, query, pictures[{provider, pageUrl, imageUrl, originalUrl, width, height, title, description, author, site, licence, licenceUrl, openLicence, credit, widths[{width, url}]}], searched[], unavailable[]}` |
+| `archive_source` | contribute | `url` | `ArchivedSource {schemaVersion 1, url, archivedUrl, message}` |
+
+- **Who.** The four contribute tools need a signed-in account of Researcher or above
+  (`PROPOSE_KNOWLEDGE`): they spend the Centre's keys, its fetcher and the Wayback Machine's
+  goodwill. A signed-out call is challenged for sign-in like every contribute tool. The three read
+  tools are open to anyone: PubChem, Wikidata, Commons and Openverse are free and their results
+  public. All seven are read-only but `archive_source`, and all are open-world (`openWorldHint`).
+- **Allowances** (`core/rate_limit.LOOKUP_LIMITS`, an hour, per account by the trust tier
+  `my_tasks` reports, Professors and up at proven; the tiers are `research/trust_tiers`): source
+  searches (`search_sources`, `find_pictures`) 30, 60 and 120; source reads (`read_source`,
+  `check_quote`, `lookup_compound`, `lookup_entity`) 120, 240 and 480; paid searches 5, 15 and 30;
+  source archives 5, 10 and 20. Signed-out calls share one allowance across every caller
+  (`ANONYMOUS_LOOKUP_LIMITS`: 120 searches and 600 reads an hour). A spent allowance is a tool error
+  saying how long to wait; nothing was fetched. An unknown `craft_slug` is refused before anything
+  is spent.
+- **Paid routes.** Brave (the web search's fallback when SearXNG finds fewer than three) and
+  Elsevier run only within the paid searches: a search that could reach them spends one, and when
+  none is left it runs over the free routes and says so in `notices`.
+- **Search.** Each searcher runs once for 5 results within the planner's search timeout (30
+  seconds), concurrently. Results are merged by DOI or canonical address and ordered by the
+  planner's evidence rank (`planner/live_search.evidence_rank`: grade, then how many searchers found
+  it, then rank), at most 30. `grade` is the adapter's grade by the source rubric, or the held
+  source's grade when KalaVigyan holds it (`held`, matched by address or DOI). `openLicence` is
+  `research/licences.open_licence`. Up to 10 DOIs are located with Unpaywall; `openCopy` is the best
+  open copy. `craft_slug` adds the craft's name to the query. A searcher that fails is listed in
+  `unavailable`; when every one fails the call is an error.
+- **Reading as the gate reads.** `read_source` and `check_quote` call `services/candidate_sources.
+  read_source`, the function the QUOTES and SOURCE gates read every proposed source with, so the
+  text is the fetched page's text, `grade` is the one the gates record (the held source's, else C
+  for a fetched page) and `licence` is the page's stated licence (else the open copy's).
+  `passages` are lines of `research/quotes.normalise_quote_lines`, the gate's normalisation: a page
+  of up to 8,000 characters from `start` (`nextStart` continues; a longer line is `cut`), or with
+  `around`, up to 8 windows holding the words (a PDF's with the line before and after, a long
+  paragraph trimmed to 500 characters each side), `found` counting every match. A locator is
+  `paragraph N` for a web page and `line N` for a PDF, counted in that text. A `doi` is read at its
+  Unpaywall open copy, else at `https://doi.org/<doi>`; `url` is the address to cite.
+  `archivedUrl` is the url itself when it is a Wayback snapshot, else the held source's snapshot,
+  else the Wayback Machine's closest (`https://archive.org/wayback/available`). An unreadable page
+  answers `readable` false with the fetcher's reason.
+- **Checking a quote.** `check_quote` runs `research/candidate_gates.quote_gate` on the one quote:
+  `passed` and `reasons` are the gate's. A passing quote gives where it stands (`foundAt`, at most
+  3, the lines joined as the gate joins them); a failing one gives the nearest run of words in the
+  text, the window of the quote's length sharing most of its words, with the share it holds.
+- **Compounds and entities.** `lookup_compound` uses `PubChemAdapter.compounds` (a name, synonym or
+  formula; up to 3) or `.compound` (a CID), the attributed GHS document (`pubchem:<cid>:ghs`) for
+  `hazards`, and KalaVigyan's `Compound` row for `heldName` and `synonyms`, as the science engine
+  holds them; hazards that could not be read are a notice. `lookup_entity` uses `WikidataAdapter`'s
+  search (up to 3 items) or the `qid`, each item's document (label, description, aliases and
+  statements) as `lines`, a plant's `taxon name` statement as `taxonName`.
+- **Pictures.** `find_pictures` runs the Commons and Openverse image sources (12 each), keeps only
+  pictures `research/images.openly_licensed` accepts that name an author, credits each as the
+  sources reference asks ("Photo: author, licence, via site"), and gives a Commons file's
+  thumbnails at the widths the site draws (`source_lookup_pictures.COMMONS_WIDTHS`, the same as
+  `frontend/lib/commonsPicture.ts`), never wider than the file. They are pictures from elsewhere,
+  placed by the team through the dossier route; `give_image` is only for a picture a person holds.
+- **Archiving.** `archive_source` asks `sources/wayback_save.WaybackSaver`, as the nightly upkeep
+  does, and returns the snapshot.
+- A source or the fetcher that cannot be reached is a tool error naming it; nothing was stored.
+  Tests: `tests/mcp/test_lookup_tools.py`, `test_lookup_reading.py` and `test_lookup_references.py`,
+  with fake adapters.
 
 ## Argument names (round 7)
 

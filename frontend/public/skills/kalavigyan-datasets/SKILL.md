@@ -1,6 +1,6 @@
 ---
 name: kalavigyan-datasets
-description: How to bring data into KalaVigyan - the open datasets behind its charts, tables, timelines and map layers, from river, relief, mineral, climate, soil and cover layers to the places each craft is practised - for an agent over the KalaVigyan MCP server or an engineer in its repository. Finding an open dataset whose licence allows redistribution, recording it with its version and citation, keeping provenance, units and the map's projection and Survey of India outline, simplifying no further than allowed, never inventing or interpolating a value, and turning the data into a delivered component (general_chart, general_table, general_timeline or general_map_layer) or a layer of the site's own maps, checked before it ships. The rules are in the shared dataset guide and component guide; this skill is the method. Load it before using any dataset, building a chart, table, timeline or map layer from data, or adding a source to etl/geo or tools/maplayers.
+description: How to bring data into KalaVigyan - the open datasets behind its charts, tables, timelines and map layers, from river, relief, mineral, climate, soil and cover layers to the places each craft is practised - for an agent over the KalaVigyan MCP server or an engineer in its repository. Finding an open dataset whose licence allows redistribution (with search_sources, read_source and check_quote over MCP, as KalaVigyan's own research does), recording it with its version and citation, keeping provenance, units and the map's projection and Survey of India outline, simplifying no further than allowed, never inventing or interpolating a value, and turning the data into a delivered component (general_chart, general_table, general_timeline or general_map_layer) or a layer of the site's own maps, checked before it ships. The rules are in the shared dataset guide and component guide; this skill is the method. Load it before using any dataset, building a chart, table, timeline or map layer from data, or adding a source to etl/geo or tools/maplayers.
 ---
 
 # Datasets for KalaVigyan
@@ -39,11 +39,14 @@ The tools, tiers and allowances of the MCP server are in the contributor skill
 
 1. Claim the task of the field the data fills (`list_open_work`, then `claim_task`): a
    `MISSING_FIELD` or `THIN_FIELD` task, which the facts name as their `task_key`.
-2. Find the dataset yourself and check its licence against the dataset guide before reading a
-   value. Note its record as the guide lists it; you give it as the source of every fact.
-3. Read the rows the figure needs, no more, and write each value as a fact, as `propose_fact` takes
+2. Find the dataset with `search_sources` (kinds `web` and `scholarly`) or yourself, and check its
+   licence against the dataset guide before reading a value. Note its record as the guide lists
+   it; you give it as the source of every fact. A dataset page that may change gets a snapshot
+   from `archive_source`.
+3. Read the rows the figure needs, no more, with `read_source` (`around` each row's words), pass
+   each row's quote through `check_quote`, and write each value as a fact, as `propose_fact` takes
    one: the row quoted with its locator, the dataset's page as the source, an `idempotency_key` per
-   fact and the task as `task_key`.
+   fact and the task as `task_key`. A place's coordinates come from its item in `lookup_entity`.
 4. Choose the general kind by the component guide and write its spec and units: every value stated
    by its reading unit, every reading unit citing its fact, every label short and uncited.
 5. Bundle the new facts with the component, cite the facts as `fact:0` and on, and call

@@ -4,14 +4,21 @@ from typing import Any
 
 import pytest
 
+from app.api.mcp_prompts import PROMPTS
+from app.api.mcp_resources import RESOURCES
 from app.api.mcp_tools import TOOLS, ToolContext, answer
 from app.data.contributor_kit import CONTRIBUTOR_SKILL_PATH
 from app.data.skill_library import (
+    CONTRACTS,
+    CONTRACTS_DIR,
     DATASETS_SKILL_PATH,
+    INDEX_URI,
     REFERENCES,
     REFERENCES_DIR,
+    contract_text,
     datasets_skill,
     reference_text,
+    server_index,
 )
 from app.services.craft_resolver import CraftIndexStore
 
@@ -44,7 +51,16 @@ CURATION_TOOLS = (
     "propose_page",
     "start_image_upload",
     "give_image",
+    "search_sources",
+    "read_source",
+    "check_quote",
+    "lookup_compound",
+    "lookup_entity",
+    "find_pictures",
+    "archive_source",
 )
+INDEX_LINE = re.compile(r"^- `(?P<name>[^`]+)`: \S.*$")
+INDEX_SECTIONS = ("Tools", "Prompts", "Resources")
 
 
 def text_of(path: Path) -> str:
@@ -154,3 +170,50 @@ async def test_every_reference_and_the_datasets_skill_are_resources_read_back_wh
     assert f"{SITE}/skills/kalavigyan-datasets/SKILL.md" in skill["description"]
     read = await result("resources/read", {"uri": DATASETS_URI})
     assert read["contents"][0]["text"] == datasets_skill()
+
+
+@pytest.mark.parametrize("name", sorted(CONTRACTS))
+def test_each_contract_resource_is_the_repository_s_contract(name: str) -> None:
+    contract = CONTRACTS[name]
+    assert contract.path.read_bytes() == (REPOSITORY / contract.repository_path).read_bytes()
+
+
+def test_the_contracts_folder_holds_only_the_served_contracts() -> None:
+    assert {path.name for path in CONTRACTS_DIR.iterdir()} == {c.file_name for c in CONTRACTS.values()}
+    assert set(CONTRACTS) == {
+        "knowledge-writes",
+        "open-work",
+        "component-specs-general",
+        "image-contributions",
+        "mcp-ask-and-upload",
+    }
+
+
+async def test_every_contract_and_the_index_are_resources_read_back_whole() -> None:
+    listed = {resource["uri"]: resource for resource in (await result("resources/list"))["resources"]}
+    for contract in CONTRACTS.values():
+        resource = listed[contract.uri]
+        assert resource["mimeType"] == "text/markdown"
+        assert resource["size"] == contract.path.stat().st_size
+        assert contract.repository_path in resource["description"]
+        read = await result("resources/read", {"uri": contract.uri})
+        assert read["contents"][0]["text"] == contract_text(contract.name)
+    read = await result("resources/read", {"uri": INDEX_URI})
+    assert read["contents"][0]["text"] == server_index()
+
+
+def index_names(section: str) -> list[str]:
+    text = server_index().split(f"\n## {section}\n")[1].split("\n## ")[0]
+    lines = [line for line in text.splitlines() if line.strip()]
+    found = [INDEX_LINE.match(line) for line in lines]
+    assert all(found), [line for line, match in zip(lines, found, strict=True) if match is None]
+    return [match.group("name") for match in found if match is not None]
+
+
+def test_the_index_names_every_tool_prompt_and_resource_once_with_one_line_each() -> None:
+    offered = {"Tools": list(TOOLS), "Prompts": list(PROMPTS), "Resources": list(RESOURCES)}
+    for section in INDEX_SECTIONS:
+        named = index_names(section)
+        assert len(named) == len(set(named)), section
+        assert sorted(named) == sorted(offered[section]), section
+    assert server_index().startswith("# The KalaVigyan MCP server\n\n")
