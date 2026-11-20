@@ -161,7 +161,7 @@ async function wideContext(browser: Browser, scheme: Scheme): Promise<BrowserCon
 test("every component borrowed from Kutch Ajrakh draws on each page that places it as on Kutch Ajrakh's page", async ({ browser, context, page }) => {
   test.skip(CHECK === "monograph", "this run checks the Kutch Ajrakh page only");
   test.setTimeout(BORROWED_TIMEOUT_MS);
-  const pages = await subjectPages(context.request);
+  const pages = await subjectPages(context.request, process.env.E2E_BASE_URL ?? "");
   const cases = borrowedCases(pages);
   const visits = pagesToVisit(cases, pages);
   report("borrowed-pages.json", { pages: pages.map(({ components, ...page }) => ({ ...page, components: components.map((found) => `${found.kind} ${found.label}`) })), cases: cases.map((found) => `${found.label} on ${found.page.path}`) });

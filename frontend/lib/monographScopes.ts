@@ -1,4 +1,6 @@
-import HOMES from "@/lib/componentHomes.json";
+import { COMPONENT_HOMES, type FrameStep, type HomeRecord } from "@/lib/componentHomes";
+
+export type { FrameStep };
 
 export type KitScope = "mb" | "chem" | "pt" | "rm" | "sa" | "ask";
 
@@ -6,17 +8,11 @@ export type KitFrame = "bare" | "screen" | "wrap" | "column";
 
 export type ComponentPlace = { scope: KitScope; frame: KitFrame };
 
-export type FrameStep = { classes: string[]; box: boolean };
-
 export type HomeSource = "home" | "kind" | "app";
 
 export type ComponentHome = { scope: KitScope | null; frame: FrameStep[]; source: HomeSource };
 
-type HomeRecord = { kind: string; scope: string | null; frame: FrameStep[]; root: string | null; within?: string };
-type KindRecord = { scope: string | null; keys: string[] };
-type HomeBook = { homes: Record<string, HomeRecord>; kinds: Record<string, KindRecord[]> };
-
-const BOOK = HOMES as HomeBook;
+const BOOK = COMPONENT_HOMES;
 
 const PLACES: Readonly<Record<string, ComponentPlace>> = {
   ask_next: { scope: "rm", frame: "wrap" },

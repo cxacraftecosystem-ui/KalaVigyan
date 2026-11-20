@@ -1,12 +1,13 @@
 import type { APIRequestContext } from "@playwright/test";
 
-import HOMES from "../../lib/componentHomes.json";
+import { COMPONENT_HOMES, type HomeRecord } from "../../lib/componentHomes";
+import { isPreview, PRODUCTION_ORIGIN } from "../production/preview";
 
 export type SubjectKind = "craft" | "family" | "category";
 export type DocumentComponent = { label: string; kind: string };
 export type SubjectPage = { path: string; slug: string; subject: SubjectKind; curated: boolean; authored: boolean; components: DocumentComponent[] };
 export type BorrowedCase = { label: string; kind: string; page: SubjectPage; root: string | null; frame: number };
-export type HomeEntry = { kind: string; scope: string | null; frame: { classes: string[]; box: boolean }[]; root: string | null; within?: string };
+export type HomeEntry = HomeRecord;
 
 export const AUTHORED_PATH = "/crafts/Kutch-Ajrakh";
 const PAGES_PATH = "/api/site/pages";
@@ -14,12 +15,10 @@ const STRUCTURE_KIND = "answer_block";
 const FETCHES_AT_ONCE = 4;
 const RETRY_WAITS_MS = [1000, 3000, 8000, 15000];
 
-const BOOK = HOMES as { homes: Record<string, HomeEntry> };
-
 type DocumentBody = { subjectKind?: string; subjectSlug?: string; shell?: string | null; content?: { components?: DocumentComponent[] } };
 
 export function homeOf(label: string): HomeEntry | null {
-  return Object.hasOwn(BOOK.homes, label) ? BOOK.homes[label] : null;
+  return Object.hasOwn(COMPONENT_HOMES.homes, label) ? COMPONENT_HOMES.homes[label] : null;
 }
 
 export function subjectPath(subject: SubjectKind, slug: string): string {
@@ -55,18 +54,23 @@ async function read(request: APIRequestContext, path: string): Promise<unknown> 
   throw new Error(`the site did not answer ${path}`);
 }
 
-async function documentOf(request: APIRequestContext, asked: "craft" | "category", slug: string): Promise<SubjectPage | null> {
+export function apiOrigin(site: string): string {
+  return !site || isPreview(site) ? PRODUCTION_ORIGIN : new URL(site).origin;
+}
+
+async function documentOf(request: APIRequestContext, origin: string, [asked, slug]: ["craft" | "category", string]): Promise<SubjectPage | null> {
   const path = asked === "category" ? `/api/categories/${encodeURIComponent(slug)}/monograph` : `/api/crafts/${encodeURIComponent(slug)}/monograph`;
-  const body = await read(request, path);
+  const body = await read(request, `${origin}${path}`);
   return body ? subjectPage(body as DocumentBody, asked, slug) : null;
 }
 
-export async function subjectPages(request: APIRequestContext): Promise<SubjectPage[]> {
-  const listed = ((await read(request, PAGES_PATH)) ?? {}) as { crafts?: string[]; categories?: string[] };
+export async function subjectPages(request: APIRequestContext, site: string): Promise<SubjectPage[]> {
+  const origin = apiOrigin(site);
+  const listed = ((await read(request, `${origin}${PAGES_PATH}`)) ?? {}) as { crafts?: string[]; categories?: string[] };
   const asked: ["craft" | "category", string][] = [...(listed.categories ?? []).map((slug) => ["category", slug] as ["category", string]), ...(listed.crafts ?? []).map((slug) => ["craft", slug] as ["craft", string])];
   const found: SubjectPage[] = [];
   for (let at = 0; at < asked.length; at += FETCHES_AT_ONCE) {
-    const batch = await Promise.all(asked.slice(at, at + FETCHES_AT_ONCE).map(([subject, slug]) => documentOf(request, subject, slug)));
+    const batch = await Promise.all(asked.slice(at, at + FETCHES_AT_ONCE).map((item) => documentOf(request, origin, item)));
     found.push(...batch.filter((page): page is SubjectPage => page !== null));
   }
   return found;

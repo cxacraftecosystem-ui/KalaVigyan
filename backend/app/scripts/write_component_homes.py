@@ -1,16 +1,38 @@
 import argparse
 import json
+from typing import Any
 
 from app.data.craft_master_loader import DATA_DIR
 from app.services.document_components_homes import authored_homes
 
 __all__ = ["HOMES_FILE", "homes_text", "main"]
 
-HOMES_FILE = DATA_DIR.parents[2] / "frontend" / "lib" / "componentHomes.json"
+HOMES_FILE = DATA_DIR.parents[2] / "frontend" / "lib" / "componentHomes.ts"
+TYPES = (
+    "export type FrameStep = { classes: string[]; box: boolean };\n"
+    "export type HomeRecord = { kind: string; scope: string | null; frame: FrameStep[]; root: string | null; "
+    "within?: string };\n"
+    "export type KindRecord = { scope: string | null; keys: string[] };\n"
+    "export type HomeBook = { homes: Readonly<Record<string, HomeRecord>>; "
+    "kinds: Readonly<Record<string, KindRecord[]>> };\n"
+)
+
+
+def _entries(values: dict[str, Any]) -> str:
+    return ",\n".join(
+        f"    {json.dumps(key)}: {json.dumps(value, ensure_ascii=False)}" for key, value in values.items()
+    )
 
 
 def homes_text() -> str:
-    return json.dumps(authored_homes(), indent=1, ensure_ascii=False) + "\n"
+    body = authored_homes()
+    return (
+        f"{TYPES}\n"
+        "export const COMPONENT_HOMES: HomeBook = {\n"
+        f"  homes: {{\n{_entries(body['homes'])}\n  }},\n"
+        f"  kinds: {{\n{_entries(body['kinds'])}\n  }}\n"
+        "};\n"
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
