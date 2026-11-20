@@ -7,7 +7,9 @@ import { RecordSection } from "@/components/records/RecordSection";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { TextLink } from "@/components/ui/TextLink";
 import { apiErrorMessage } from "@/lib/api";
+import { CONNECT_PATH, CONNECT_TITLE } from "@/lib/connectClients";
 import { formatDateTime } from "@/lib/format";
 import { scopeList } from "@/lib/oauthConsent";
 import { fetchConnections, revokeConnection, type Connection, type ConnectionList } from "@/lib/oauthContract";
@@ -79,7 +81,7 @@ export function ConnectedClientsCard() {
   }
 
   return (
-    <RecordSection title="Connected apps" description="Apps that use KalaVigyan in your name through its MCP server." testId="connected-apps">
+    <RecordSection title="Connected apps" description="Apps that use KalaVigyan in your name through its MCP server." aside={<TextLink href={CONNECT_PATH} standalone>{CONNECT_TITLE}</TextLink>} testId="connected-apps">
       {!list && !failed ? <Skeleton shape="lede" label="Fetching your connected apps" /> : null}
       {failed ? (
         <div role="alert" className="grid justify-items-start gap-2">

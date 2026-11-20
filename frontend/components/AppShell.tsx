@@ -21,14 +21,22 @@ import { ShellFrame } from "@/components/shell/ShellFrame";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button, buttonLook } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { CONNECT_PATH } from "@/lib/connectClients";
 import { browserOffline } from "@/lib/errorKind";
 import { hasAdminView, routeGuardFor } from "@/lib/permissions";
 import { signInHref } from "@/lib/sessionReturn";
 import type { User } from "@/lib/types";
 
+export const FIRST_PAINT_PATHS: readonly string[] = ["/ask", CONNECT_PATH];
+
+export function drawsBeforeAccount(pathname: string | null): boolean {
+  return FIRST_PAINT_PATHS.includes(pathname ?? "");
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading, reach, retryMe } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!loading && !user && reach === "ok") router.replace(signInHref(`${window.location.pathname}${window.location.search}`));
@@ -37,7 +45,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <ShellFrame nav={<Appbar brandHref="/ask" />} onRetry={null}>
-        <Skeleton shape="lede" label="Opening your account" />
+        {drawsBeforeAccount(pathname) ? children : <Skeleton shape="lede" label="Opening your account" />}
       </ShellFrame>
     );
   }

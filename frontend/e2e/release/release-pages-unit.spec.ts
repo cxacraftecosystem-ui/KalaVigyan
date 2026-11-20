@@ -29,7 +29,7 @@ test("the key pages are about twenty, each named and reached once", () => {
 
 test("the key pages cover the landing, atlas, Kutch Ajrakh, three more curated crafts, a record, a family, a hub, the map, sign-in and the answer page", () => {
   const paths = KEY_PAGES.map((page) => page.path);
-  for (const path of ["/", "/crafts", "/crafts/Kutch-Ajrakh", "/crafts/Kasuti-Embroidery", "/crafts/Cane-Bamboo-Craft", "/categories/Textiles-Based-Craft-Category", "/map", "/login", "/ask"]) {
+  for (const path of ["/", "/crafts", "/crafts/Kutch-Ajrakh", "/crafts/Kasuti-Embroidery", "/crafts/Cane-Bamboo-Craft", "/categories/Textiles-Based-Craft-Category", "/map", "/login", "/ask", "/connect"]) {
     expect(paths).toContain(path);
   }
   const documents = KEY_PAGES.filter((page) => page.marker.kind === "document" && page.path !== "/crafts/Kutch-Ajrakh" && page.path !== "/crafts/Cane-Bamboo-Craft");

@@ -41,7 +41,7 @@ export type NavExpectation = { bar: string[]; account: string[]; menu: string[];
 
 const LEARNER_BAR = ["Ask", "Crafts", "Map", "Saved"];
 const RESEARCHER_TOOLS = ["Give a picture", "Propose knowledge"];
-const ACCOUNT_LINKS = ["Settings"];
+const ACCOUNT_LINKS = ["Connect your AI", "Settings"];
 const EVERY_DEPTH = ["Basic", "Detailed", "Expert"];
 
 export const READING_BAR = ["Crafts", "Map", "Compare"];

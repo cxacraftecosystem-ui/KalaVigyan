@@ -47,6 +47,7 @@ export const KEY_PAGES: readonly KeyPage[] = [
   { name: "Sign in", path: SIGN_IN_PATH, marker: { kind: "sign-in" }, audit: true },
   { name: "The answer page", path: "/ask", marker: { kind: "shell" }, audit: true },
   { name: "Connect an app", path: "/oauth/authorize", marker: { kind: "shell" }, audit: false },
+  { name: "Connect your AI", path: "/connect", marker: { kind: "shell" }, audit: false },
   { name: "Sign up", path: "/signup", marker: { kind: "heading", heading: ANY_HEADING }, audit: false },
   { name: "Forgot password", path: "/forgot-password", marker: { kind: "heading", heading: ANY_HEADING }, audit: false },
   { name: "Privacy", path: "/privacy", marker: { kind: "heading", heading: /privacy/i }, audit: false },

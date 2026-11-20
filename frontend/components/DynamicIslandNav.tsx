@@ -14,6 +14,7 @@ import {
   MessageCircleQuestion,
   MessageSquareQuote,
   Mic,
+  Plug,
   Presentation,
   Route,
   Settings as SettingsIcon,
@@ -31,6 +32,7 @@ import { AccountMenu, AccountPanel, type AccountView } from "@/components/nav/Ac
 import { Appbar, AppNav, currentHref } from "@/components/nav/Appbar";
 import { MenuGroup, MenuLinks, MenuSheet, type MenuEntry } from "@/components/nav/MenuSheet";
 import { PendingAccessBadge, UnreadBadge } from "@/components/nav/navBadges";
+import { CONNECT_PATH, CONNECT_TITLE } from "@/lib/connectClients";
 import { canManageAccessRoster, hasAdminView, roleLabel, routeAllows } from "@/lib/permissions";
 import { SAVED_PATH } from "@/lib/savedView";
 import type { User } from "@/lib/types";
@@ -72,6 +74,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/admin/routing", label: "AI routing", icon: Route, group: "Admin", can: routeAllows("/admin/routing"), gate: "require_master_admin", adminSurface: true },
   { href: "/admin/usage", label: "Usage", icon: BarChart3, group: "Admin", can: routeAllows("/admin/usage"), gate: "require_view_usage", adminSurface: true },
 
+  { href: CONNECT_PATH, label: CONNECT_TITLE, icon: Plug, group: "Account", can: everyone, gate: "get_current_user" },
   { href: "/settings", label: "Settings", icon: SettingsIcon, group: "Account", can: everyone, gate: "get_current_user" }
 ];
 
