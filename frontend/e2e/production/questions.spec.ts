@@ -13,6 +13,7 @@ import { ANSWER_WIDTHS, QUESTIONS_SCHEME, QUESTIONS_WIDTH, SCHEMES, contextOptio
 import { passPreviewProtection } from "./preview";
 import type { AnswersReport } from "./report";
 import { QUESTIONS_TIMEOUT_MS, SCREENSHOT_DIR, baseUrl, credentials, previewBypassToken, questionsRequested, runFileName, runId, runStartedAt, writeReport } from "./run";
+import { essayOutcome } from "./screenChecks";
 import { ScreenRun } from "./screenRun";
 import { signIn } from "./signIn";
 import { installStreamTap } from "./streamTap";
@@ -34,6 +35,21 @@ async function capturedAnswer(page: Page, network: NetworkQuiet, label: string, 
   return { problems: [...ready, ...seen, ...captured.problems], notes: captured.notes };
 }
 
+async function keepFirstAnswer(page: Page, records: readonly AnswerRecord[]): Promise<string[]> {
+  const first = records.find((record) => record.answerId !== null);
+  if (!first?.answerId) return [];
+  try {
+    await page.goto(explainerHref(first.answerId), { waitUntil: "domcontentloaded" });
+    const save = page.getByTestId("save-answer");
+    await expect(save).toBeEnabled({ timeout: ANSWER_VIEW_TIMEOUT_MS });
+    if ((await save.getAttribute("aria-pressed")) !== "true") await save.click();
+    await expect(save).toHaveAttribute("aria-pressed", "true", { timeout: ANSWER_VIEW_TIMEOUT_MS });
+    return [];
+  } catch (error) {
+    return [`${first.label}: could not save the answer, so the screens runs have no essay to open: ${clip(String(error))}`];
+  }
+}
+
 async function answerViews(browser: Browser, page: Page, records: readonly AnswerRecord[], role: string): Promise<string[]> {
   const answered = records.filter((record): record is AnswerRecord & { answerId: string } => record.answerId !== null);
   if (answered.length === 0) return [];
@@ -50,7 +66,8 @@ async function answerViews(browser: Browser, page: Page, records: readonly Answe
         for (const record of answered) {
           await run.visit(`Question ${record.label}`, explainerHref(record.answerId), async () => {
             await expect(view.getByTestId("answer-view")).toBeVisible({ timeout: ANSWER_VIEW_TIMEOUT_MS });
-            return savedLedeProblems(record.lede, await view.getByTestId("answer-lede").getByTestId("answer-sentence").count());
+            const essay = await essayOutcome(view);
+            return [...savedLedeProblems(record.lede, await view.getByTestId("answer-lede").getByTestId("answer-sentence").count()), ...essay];
           });
         }
         run.write();
@@ -105,9 +122,10 @@ test("four known-answer questions: the mordant in English and Hindi and Kachchh'
   }
   exports = await proveExports(page, records, user);
   write();
+  const kept = await keepFirstAnswer(page, records);
   const viewed = await answerViews(browser, page, records, user.role);
 
   const exported = exports.problems.map((problem) => `Exports: ${problem}`);
-  const problems = [...unasked, ...records.flatMap((record) => record.problems.map((problem) => `${record.label}: ${problem}`)), ...exported, ...viewed];
+  const problems = [...unasked, ...records.flatMap((record) => record.problems.map((problem) => `${record.label}: ${problem}`)), ...exported, ...kept, ...viewed];
   expect(problems.length, problems.join("\n")).toBe(0);
 });
