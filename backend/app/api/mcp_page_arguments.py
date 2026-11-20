@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from pydantic import Field, model_validator
+from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode
 
 from app.research.component_proposals import SUBJECT_LINK
 from app.research.knowledge_writes import FactProposal
+from app.research.monograph_document import SUBJECT_KINDS
 from app.research.page_drafts import DRAFT_PARTS, SUPPLIED_PER_DRAFT_MAX, DraftAddition, PageLists
 from app.research.page_proposals import (
     COMPONENTS_MAX,
@@ -35,10 +37,16 @@ __all__ = [
     "EditDraft",
     "PageWork",
     "bundle_parts",
+    "bundle_schema",
     "undelivered",
 ]
 
 FACT = "fact"
+BUNDLE = (
+    "One page's parts: subject {kind, slug} and any of facts, structure, components ({proposal, cites}), "
+    "layout {base_version, entries}, pictures and a note, each part exactly as edit_draft's add takes it "
+    "(its input schema holds every part's fields); one part alone works"
+)
 NEEDS_SPEC = (
     "a component is delivered finished: give its spec (the kind's spec data) and the units it places, each "
     "unit's text with the ids of the facts it rests on; only a SUBJECT_LINK carries none"
@@ -143,14 +151,35 @@ class EditDraft(StudioArguments):
         return DraftAddition.model_validate({**given, "lists": self.lists})
 
 
+def _parts(most: int) -> dict[str, Any]:
+    return {"type": "array", "items": {"type": "object"}, "maxItems": most}
+
+
+def bundle_schema() -> dict[str, Any]:
+    subject = {
+        "type": "object",
+        "properties": {"kind": {"type": "string", "enum": list(SUBJECT_KINDS)}, "slug": {"type": "string"}},
+        "required": ["kind", "slug"],
+    }
+    parts = {
+        "facts": _parts(FACTS_MAX),
+        "structure": _parts(STRUCTURE_MAX),
+        "components": _parts(COMPONENTS_MAX),
+        "layout": {"type": "object"},
+        "pictures": _parts(PICTURES_MAX),
+        "note": {"type": "string", "maxLength": NOTE_MAX_CHARS},
+    }
+    return {
+        "type": ["object", "null"],
+        "description": BUNDLE,
+        "properties": {"subject": subject, **parts},
+        "required": ["subject"],
+        "additionalProperties": False,
+    }
+
+
 class PageWork(StudioArguments):
-    bundle: PageBundle | None = Field(
-        default=None,
-        description=(
-            "subject {kind, slug} and any of facts, structure, components ({proposal, cites}), layout "
-            "{base_version, entries}, pictures and a note, each as edit_draft's add takes it; one part alone works"
-        ),
-    )
+    bundle: PageBundle | None = Field(default=None, description=BUNDLE)
     draft_id: uuid.UUID | None = Field(default=None, description="Or an open draft's id, from edit_draft")
 
     @model_validator(mode="after")
@@ -161,3 +190,19 @@ class PageWork(StudioArguments):
         if problem is not None:
             raise ValueError(problem)
         return self
+
+    @classmethod
+    def model_json_schema(
+        cls,
+        by_alias: bool | None = None,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
+        schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
+        mode: JsonSchemaMode = "validation",
+        *,
+        union_format: Literal["any_of", "primitive_type_array"] = "any_of",
+    ) -> dict[str, Any]:
+        schema = super().model_json_schema(
+            by_alias, ref_template, schema_generator, mode, union_format=union_format
+        )
+        schema.pop("$defs", None)
+        return {**schema, "properties": {**schema["properties"], "bundle": bundle_schema()}}

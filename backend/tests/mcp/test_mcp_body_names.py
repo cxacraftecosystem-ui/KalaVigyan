@@ -120,11 +120,28 @@ def test_the_proposal_body_is_described_and_schemed_in_snake_case(name: str) -> 
     assert "task_key" in listed["description"]
 
 
-@pytest.mark.parametrize("name", ["propose_page", "preview_page", "edit_draft"])
-def test_a_page_bundle_is_schemed_in_snake_case_too(name: str) -> None:
-    names = property_names(TOOLS[name].listed()["inputSchema"])
+def test_a_draft_s_parts_are_schemed_in_snake_case_too() -> None:
+    names = property_names(TOOLS["edit_draft"].listed()["inputSchema"])
     assert {"base_version", "contribution_id", "claim_ids", "task_key"} <= names
     assert [each for each in names if each != each.lower()] == []
+
+
+@pytest.mark.parametrize("name", ["propose_page", "preview_page"])
+def test_a_bundle_names_its_parts_and_points_to_edit_draft_for_their_fields(name: str) -> None:
+    schema = TOOLS[name].listed()["inputSchema"]
+    bundle = schema["properties"]["bundle"]
+    assert "$defs" not in schema and bundle["required"] == ["subject"]
+    assert set(bundle["properties"]) == {
+        "subject",
+        "facts",
+        "structure",
+        "components",
+        "layout",
+        "pictures",
+        "note",
+    }
+    assert bundle["properties"]["facts"]["maxItems"] == 20 and "edit_draft's add" in bundle["description"]
+    assert bundle["properties"]["subject"]["properties"]["kind"]["enum"] == ["craft", "family", "category"]
 
 
 async def test_an_old_camel_case_name_in_a_bundle_says_so(monkeypatch: pytest.MonkeyPatch) -> None:

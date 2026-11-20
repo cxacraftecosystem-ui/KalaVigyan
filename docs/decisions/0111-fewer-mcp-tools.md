@@ -69,7 +69,11 @@ for one page). No outside contributor used the server yet, so the names change n
      (`Tool.records`), as `my_work`'s record of a steward's last look is.
    - The camelCase names inside a body keep working for one release and say so, as before.
 3. **Small schemas.** `api/mcp_schemas` drops each generated `title` and every `null` default from
-   the input schemas and folds a nullable simple type into one `type` list. A component's spec stays
+   the input schemas and folds a nullable simple type into one `type` list. A page's part schemas
+   appear once, in `edit_draft`'s `add` (17 KB); `preview_page` and `propose_page` name a bundle's
+   parts and their limits and point to it, while the server still validates the whole bundle, which
+   took 32 KB off the list at the first measurement (85 KB of input schemas and descriptions down to
+   about 55 KB). A component's spec stays
    an object, validated on the server by its kind's spec model, and each kind's JSON schema is a
    resource, `kalavigyan://components/<kind>.schema.json` (47 kinds, a template in
    `resources/templates/list`, listed in `kalavigyan://index.md` and named in the components

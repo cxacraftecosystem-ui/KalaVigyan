@@ -240,7 +240,10 @@ Knowledge API's camelCase.
 
 `tools/list` is what a client may load into every conversation, so it is kept small:
 `api/mcp_schemas.input_schema` drops each node's generated `title` and a `null` default and folds a
-nullable simple type into `type: [T, "null"]`; a component's spec is an object in the input schemas,
+nullable simple type into `type: [T, "null"]`; the part schemas of a page appear once, in
+`edit_draft`'s `add`, and `preview_page` and `propose_page` list a bundle's parts by name and kind and
+point there (`mcp_page_arguments.bundle_schema`), while the server validates the whole bundle as
+before; a component's spec is an object in the input schemas,
 validated on the server by its kind's spec model, whose JSON schema is served as the resource
 `kalavigyan://components/<kind>.schema.json` (listed in `resources/list`, in
 `resources/templates/list` as `kalavigyan://components/{kind}.schema.json`, and in

@@ -25,7 +25,7 @@ from app.main import create_app
 
 REPO = Path(__file__).resolve().parents[3]
 EDGE_SECONDS = 20
-CALL = {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "list_fields", "arguments": {}}}
+CALL = {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "get_page", "arguments": {}}}
 BOTH = "application/json, text/event-stream"
 
 
