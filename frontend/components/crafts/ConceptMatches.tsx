@@ -10,12 +10,23 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/Chip";
 import { craftHref } from "@/lib/atlasCollection";
 import { conceptNeighbours } from "@/lib/atlasIndex";
-import { conceptDek, conceptRows, conceptTerms, craftMeta, fetchSharedConcept, isTermKey, markTerms, RESULT_ROWS_SHOWN, type ConceptRow } from "@/lib/atlasSearch";
+import { conceptDek, conceptRows, conceptTerms, craftMeta, fetchSharedConcept, isTermKey, markTerms, RESULT_ROWS_SHOWN, type ConceptRow, type MarkedPart } from "@/lib/atlasSearch";
 import type { ConceptHit } from "@/lib/craftCatalogue";
 import type { CraftCatalogue } from "@/lib/craftCatalogueContract";
 import type { SourceRef } from "@/lib/types";
 
 type Lookup = { numbers: ReadonlyMap<string, number>; sourcesById: ReadonlyMap<string, SourceRef> };
+
+const WORD_GOES_ON = /^[\p{L}\p{N}]/u;
+const PLURAL_END = /^e?s(?![\p{L}\p{N}])/u;
+
+export function wholeWordMarks(parts: readonly MarkedPart[]): MarkedPart[] {
+  return parts.map((part, at) => {
+    const next = parts[at + 1]?.text ?? "";
+    if (!part.mark || !WORD_GOES_ON.test(next) || PLURAL_END.test(next)) return part;
+    return { ...part, mark: false };
+  });
+}
 
 function CitedLine({ row, terms, lookup }: { row: ConceptRow; terms: readonly string[]; lookup: Lookup }) {
   if (!row.cited) return null;
@@ -23,7 +34,7 @@ function CitedLine({ row, terms, lookup }: { row: ConceptRow; terms: readonly st
   return (
     <p className="mt-1 font-reading text-body-sm text-ink-2">
       <span data-cite-host="">
-        {markTerms(sentence.text, terms).map((part, at) =>
+        {wholeWordMarks(markTerms(sentence.text, terms)).map((part, at) =>
           part.mark ? (
             <mark key={at} className="bg-turmeric-wash px-px text-inherit">
               {part.text}
@@ -40,7 +51,7 @@ function CitedLine({ row, terms, lookup }: { row: ConceptRow; terms: readonly st
 
 function ResultRow({ row, catalogue, terms, lookup }: { row: ConceptRow; catalogue: CraftCatalogue; terms: readonly string[]; lookup: Lookup }) {
   return (
-    <li className="grid min-w-0 gap-0.5 border-t border-rule py-3.5" data-testid="concept-row">
+    <li className="grid min-w-0 content-start gap-0.5 border-t border-rule py-3.5" data-testid="concept-row">
       <Link href={craftHref(row.craft)} className="w-fit font-reading text-body font-medium text-ink-1 hover:text-indigo hover:underline hover:underline-offset-3">
         {row.craft.displayName}
       </Link>

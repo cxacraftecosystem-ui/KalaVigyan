@@ -255,13 +255,6 @@
     line-height: 1.4;
   }
 
-  .kv-auth-caption {
-    color: var(--photo-ink-1);
-    font-family: var(--font-reading);
-    font-size: var(--text-figcaption);
-    font-style: italic;
-  }
-
   .kv-auth-main {
     display: flex;
     min-width: 0;

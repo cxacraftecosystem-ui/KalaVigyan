@@ -18,7 +18,7 @@ function AuthPhoto() {
         <SpecimenLabel variant="landing" onPhoto kicker={HERO_SPECIMEN.kicker} family={HERO_SPECIMEN.family} name={HERO_SPECIMEN.name} credit={<HeroCredit />} />
       </div>
       <p className="kv-auth-credit kv-shell-wrap" data-testid="auth-photo-credit">
-        <span className="kv-auth-caption">{`${HERO_SPECIMEN.name}. `}</span>
+        <span className="font-reading text-figcaption italic">{`${HERO_SPECIMEN.name}. `}</span>
         <HeroCredit />
       </p>
     </div>

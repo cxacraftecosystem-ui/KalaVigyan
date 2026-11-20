@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { CategoryHub } from "@/components/crafts/CategoryHub";
 import { CollectionShelf } from "@/components/crafts/CollectionShelf";
+import { wholeWordMarks } from "@/components/crafts/ConceptMatches";
 import { shelfAnchor } from "@/components/crafts/HubHeader";
 import { heroCredit } from "@/components/crafts/PhotoCard";
 import { ledFamilyShelves, ledSubFamilyShelves } from "@/components/crafts/shelfLead";
@@ -150,6 +151,20 @@ test("Try offers one idea a family first, and neighbours share crafts", () => {
     ["printing-the-mordants", 1]
   ]);
   expect(searchHref("lost wax")).toBe("/crafts?q=lost%20wax#atlas-search");
+});
+
+test("a concept result marks a whole word or its plural, never the start of a longer word", () => {
+  expect(wholeWordMarks(markTerms("Indigo blue is extracted from Indigofera tinctoria.", ["Indigo"]))).toEqual([
+    { text: "Indigo", mark: true },
+    { text: " blue is extracted from ", mark: false },
+    { text: "Indigo", mark: false },
+    { text: "fera tinctoria.", mark: false }
+  ]);
+  expect(wholeWordMarks(markTerms("Two mordants fix it.", ["mordant"])).filter((part) => part.mark)).toEqual([{ text: "mordant", mark: true }]);
+  expect(wholeWordMarks(markTerms("The indigo", ["indigo"]))).toEqual([
+    { text: "The ", mark: false },
+    { text: "indigo", mark: true }
+  ]);
 });
 
 test("a concept result marks the term in its cited sentence and reads its count", () => {
