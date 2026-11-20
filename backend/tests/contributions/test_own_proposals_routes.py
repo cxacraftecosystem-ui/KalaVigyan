@@ -206,7 +206,11 @@ def test_the_form_offers_the_terms_every_field_every_kind_and_what_each_need_tak
     }
     assert {"what_if", "molecule_3d", "reaction_player", "picture_plate"} <= set(form["kinds"])
     assert form["subjectKinds"] == ["CRAFT", "CONCEPT", "PLACE", "COMPOUND"]
-    assert (form["needs"]["molecules"], form["needs"]["what-if"]) == (["molecule_3d"], ["what_if"])
+    assert (form["needs"]["molecules"], form["needs"]["what-if"]) == (
+        ["molecule_3d"],
+        ["what_if", "experiment_lab"],
+    )
+    assert form["needs"]["map"][-1] == "general_map_layer"
     assert form["needs"]["pictures"] == ["images", "picture_plate", "specimen_plate"]
 
 

@@ -109,9 +109,16 @@ REVIEW_QUEUE_LABELS: Mapping[str, str] = MappingProxyType(
 )
 COMPONENT_NEEDS: Mapping[str, tuple[str, ...]] = MappingProxyType(
     {
-        "what-if": ("what_if",),
+        "what-if": ("what_if", "experiment_lab"),
         "molecules": ("molecule_3d",),
-        "map": ("map_layer", "region_story", "timeline_map", "supply_map", "map_sequence"),
+        "map": (
+            "map_layer",
+            "region_story",
+            "timeline_map",
+            "supply_map",
+            "map_sequence",
+            "general_map_layer",
+        ),
         "reaction-player": (
             "reaction_player",
             "indigo_vat",

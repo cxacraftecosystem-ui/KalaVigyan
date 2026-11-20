@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { ApiError, apiErrorMessage } from "@/lib/api";
+import { settledFor, UNSETTLED, type RemoteFailure, type Settled } from "@/lib/remoteSettled";
 
-export type RemoteFailure = { cause: unknown };
+export type { RemoteFailure } from "@/lib/remoteSettled";
 
 export function failureMessage(failure: RemoteFailure, fallback: string): string {
   return failure.cause instanceof ApiError ? apiErrorMessage(failure.cause, fallback) : fallback;
@@ -12,24 +13,21 @@ export function failureMessage(failure: RemoteFailure, fallback: string): string
 
 export type Remote<T> = { data: T | null; failure: RemoteFailure | null; retry: () => void };
 
-type Settled<T> = { data: T | null; failure: RemoteFailure | null };
-
 export function useRemote<T>(load: (() => Promise<T>) | null): Remote<T> {
-  const [settled, setSettled] = useState<Settled<T>>({ data: null, failure: null });
+  const [settled, setSettled] = useState<Settled<() => Promise<T>, T>>(UNSETTLED);
   const [round, setRound] = useState(0);
 
   useEffect(() => {
-    setSettled({ data: null, failure: null });
     if (!load) return;
     let cancelled = false;
     load()
       .then((data) => {
-        if (!cancelled) setSettled({ data, failure: null });
+        if (!cancelled) setSettled({ load, round, data, failure: null });
       })
       .catch((cause: unknown) => {
         if (cancelled) return;
         if (!(cause instanceof ApiError)) console.error(cause);
-        setSettled({ data: null, failure: { cause } });
+        setSettled({ load, round, data: null, failure: { cause } });
       });
     return () => {
       cancelled = true;
@@ -37,5 +35,6 @@ export function useRemote<T>(load: (() => Promise<T>) | null): Remote<T> {
   }, [load, round]);
 
   const retry = useCallback(() => setRound((value) => value + 1), []);
-  return { ...settled, retry };
+  const shown = settledFor(settled, load, round);
+  return { data: shown.data, failure: shown.failure, retry };
 }

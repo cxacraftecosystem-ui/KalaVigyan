@@ -17,7 +17,8 @@ component contracts; where it is silent, they decide.
   label of its own). Never a copy: a close match in the library refuses a new proposal with the
   matches and the two ways on.
 - A `MISSING_COMPONENT` task names its need: `what-if`, `molecules`, `map`, `reaction-player` or
-  `pictures`, and only a component of a kind that need lists completes it. Pictures are given, not
+  `pictures`, and only a component of a kind that need lists completes it. An `experiment_lab`
+  completes `what-if`, and a delivered `general_map_layer` completes `map`. Pictures are given, not
   delivered as components (the contributor skill, Pictures).
 
 ## Choosing a kind

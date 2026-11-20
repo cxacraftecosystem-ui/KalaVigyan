@@ -3232,8 +3232,48 @@ Last reviewed: 2026-11-18.
 
 ### Leftovers of the map rebuild
 
-- **What:** `components/answer/place/RiverStage.tsx` still renders `StateLines`, which now draws
-  nothing, and `answer/place/storyGeometry.ts` imports `boardBox` and `RANN_SALT_FLATS` from the
+- **What:** `answer/place/storyGeometry.ts` imports `boardBox` and `RANN_SALT_FLATS` from the
   pass-through `boardGeometry.ts`. The landing asks for field coverage once per monograph every five
-  minutes (30 requests today).
+  minutes (30 requests today). (`StateLines` draws the Survey of India state borders again on every
+  map, as the owner asked on 2026-11-21.)
 - **Clears it:** drop the import and the pass-through; a collection-wide coverage route.
+
+### Speed left after the quality lane
+
+- **What:** on a phone Kutch Ajrakh scores 90 with an LCP of 3.6 s, not 2.5 s. Before LCP it loads
+  about 470 KB of fonts (Newsreader italic 144 KB, and Newsreader latin-ext 96 KB pulled in by the
+  one arrow, U+2192, in the vat equation) and about 450 KB of JavaScript, because the craft route
+  imports the uncurated-craft page and the full renderer statically. The Textiles hub inlines its
+  whole category document (LCP 8.4 s, score 73), and `/ask` draws its picture only after hydration
+  because the protected shell renders on the client.
+- **Clears it:** subset the Newsreader faces and give the arrow a face whose latin subset holds it;
+  dynamic imports for the uncurated page and the answer renderers; split curated documents the way
+  Ajrakh's shell is split; a server-rendered shell for `/ask`.
+
+### The reaction player's step buttons read as one word
+
+- **What:** axe finds four label mismatches on the hub, because a step button's visible text reads
+  "1In the leaf" with no space between the numeral and the name. The approved template and the native
+  view both hold it.
+- **Clears it:** change the template and the native view together, with a parity check.
+
+### Source tools: what they do not cover yet
+
+- **What:** the lookup allowances are counted in each process's memory, as the proposal limits are,
+  so each worker keeps its own count. The production `LookupStore` (`source_lookup_store.from_live`)
+  has no test, since every tool test uses fake adapters. PubChem synonyms come only from a stored
+  Compound, because the PubChem adapter has no synonyms call. `kalavigyan://index.md` and the
+  contributor skill are written by hand and must name every tool, which the tests enforce; the five
+  contract copies in `backend/app/data/contributor/contracts` must stay byte-identical to
+  `docs/contracts`.
+- **Clears it:** allowances in the shared store the trust tiers use; a contract test of the live store
+  against recorded adapter responses; a synonyms call on the PubChem adapter; the index generated from
+  the server's registry.
+
+### No MCP path for a new map layer's dataset
+
+- **What:** a contributor can deliver a `general_map_layer` for one page, but a new layer of the
+  site's own maps (groundwater, a soil series) is added only in `etl/geo` or `tools/maplayers` in the
+  repository, as the datasets skill says.
+- **Clears it:** a dataset proposal over MCP that carries the source, licence, version and the
+  simplified geometry, checked by the same rules before an engineer ships it.
