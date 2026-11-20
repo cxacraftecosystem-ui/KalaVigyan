@@ -125,21 +125,42 @@ def ajrakh() -> MonographDocument:
     return authored.authored_document(content, title="Kutch Ajrakh", page_url=PAGE_URL)
 
 
+def _placed_by_natives(document: MonographDocument) -> set[str]:
+    folder = authored.MONOGRAPHS_DIR / document.subject_slug / authored.FRAGMENTS_FOLDER
+    placed: set[str] = set()
+    for label in document.specs:
+        fragment = (folder / fragment_file_name(label)).read_bytes().decode("utf-8")
+        placed |= set(slot_keys(fragment, COMPONENT_SLOT))
+    return placed
+
+
+def _drawn_natively(document: MonographDocument) -> set[str]:
+    return set(document.specs) | _placed_by_natives(document)
+
+
 def test_the_ajrakh_document_draws_every_component_once_and_validates_from_its_json(
     ajrakh: MonographDocument,
 ) -> None:
     labels = {c.label for c in ajrakh.content.components}
     assert len(labels) == 79
     assert ajrakh.shell is not None and ajrakh.fragments == {}
-    assert sorted(slot_keys(ajrakh.shell, COMPONENT_SLOT)) == sorted(ajrakh.specs)
+    assert set(ajrakh.specs) == authored.native_views("Kutch-Ajrakh")
+    placed = _placed_by_natives(ajrakh)
+    assert placed <= set(ajrakh.specs), "a native view places only native views"
+    assert sorted(slot_keys(ajrakh.shell, COMPONENT_SLOT)) == sorted(set(ajrakh.specs) - placed)
     assert MonographDocument.model_validate(json.loads(authored.document_json(ajrakh))) == ajrakh
 
 
-def test_the_ajrakh_shell_holds_every_units_text_and_no_other_slot(ajrakh: MonographDocument) -> None:
+def test_the_ajrakh_shell_holds_every_units_text_outside_its_native_views_and_no_other_slot(
+    ajrakh: MonographDocument,
+) -> None:
     content, shell = ajrakh.content, ajrakh.shell or ""
-    assert len(SLOT_PATTERN.findall(shell)) == len(ajrakh.specs)
+    native = _drawn_natively(ajrakh)
+    assert len(SLOT_PATTERN.findall(shell)) == len(set(ajrakh.specs) - _placed_by_natives(ajrakh))
+    within = {entry.ref: entry.within for entry in content.layout if entry.kind == "unit"}
     for ref, unit in content.units.items():
-        assert render_nodes(unit.nodes, content.sources) in shell, ref
+        if within.get(ref) not in native:
+            assert render_nodes(unit.nodes, content.sources) in shell, ref
 
 
 def test_the_shared_golden_document_is_what_the_documented_command_writes() -> None:

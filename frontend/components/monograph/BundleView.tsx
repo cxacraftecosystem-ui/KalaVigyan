@@ -13,23 +13,27 @@ import { fragmentSlots, slotId, type ComponentBundle } from "@/lib/monographRend
 export const SLOT_CLASS = "kv-slot contents";
 export const SLOT_ELEMENT = "kv-slot[component]";
 
-export function SlotRoot({ sources, bundles, children }: MonographSlotValue & { children: ReactNode }) {
-  const value = useMemo(() => ({ sources, bundles }), [sources, bundles]);
+export function SlotRoot({ sources, bundles, bare = false, children }: MonographSlotValue & { children: ReactNode }) {
+  const value = useMemo(() => ({ sources, bundles, bare }), [sources, bundles, bare]);
   return <MonographSlotProvider value={value}>{children}</MonographSlotProvider>;
 }
 
 export function BundleView({ label }: { label: string }) {
-  const { bundles, sources } = useMonographSlot();
+  const { bundles, sources, bare } = useMonographSlot();
   const bundle: ComponentBundle | undefined = bundles[label];
   const renderUnit = useMemo(() => unitRenderer(bundle, sources), [bundle, sources]);
   if (!bundle) return null;
   const View = bundle.spec ? COMPONENT_VIEWS[bundle.component.kind] : undefined;
   if (bundle.spec && View) {
+    const view = (
+      <NestedComponents.Provider value={renderNested}>
+        <View component={bundle.component} spec={bundle.spec} unitRefs={Object.keys(bundle.units)} renderUnit={renderUnit} renderComponent={renderNested} />
+      </NestedComponents.Provider>
+    );
+    if (bare) return view;
     return (
       <div className={SLOT_CLASS} data-component={label} data-kind={bundle.component.kind}>
-        <NestedComponents.Provider value={renderNested}>
-          <View component={bundle.component} spec={bundle.spec} unitRefs={Object.keys(bundle.units)} renderUnit={renderUnit} renderComponent={renderNested} />
-        </NestedComponents.Provider>
+        {view}
       </div>
     );
   }
