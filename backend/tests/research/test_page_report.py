@@ -100,7 +100,7 @@ def test_a_repeated_sentence_a_progress_state_and_an_admitted_gap_fail() -> None
 
 def test_a_long_lede_a_question_title_and_a_second_masthead_picture_fail() -> None:
     lede = {
-        f"overview-{n}": sentence("OVERVIEW", f"Test craft is printed in {n} towns.", f"o{n}")
+        f"overview-{n}": sentence("OVERVIEW", f"Test craft is printed in {n} towns.", f"o{n}", "opening")
         for n in (2, 3, 4)
     }
     document = page_document(extra=lede, chapter=dict.fromkeys(lede, "opening"), title="Why is it red?")

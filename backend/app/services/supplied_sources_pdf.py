@@ -3,11 +3,13 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
-
-from pypdf import PdfReader
+from typing import TYPE_CHECKING
 
 from app.core.errors import InvalidInput
 from app.research.fetcher import PDF_MAX_DECOMPRESSED_BYTES
+
+if TYPE_CHECKING:
+    from pypdf import PdfReader
 
 __all__ = ["FILE_BYTES_MAX", "FILE_TYPES", "PDF", "PDF_PAGES_MAX", "TEXT", "file_text"]
 
@@ -45,6 +47,8 @@ def _plain(data: bytes) -> str:
 
 
 def _pdf_text(data: bytes) -> str:
+    from pypdf import PdfReader
+
     try:
         reader = PdfReader(io.BytesIO(data), strict=False)
         if reader.is_encrypted and not reader.decrypt(""):

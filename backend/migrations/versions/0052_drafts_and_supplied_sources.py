@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Any
 
 import sqlalchemy as sa
 from alembic import op
@@ -13,6 +12,8 @@ depends_on: str | Sequence[str] | None = None
 DRAFTS = "PageDraft"
 SUPPLIED = "SuppliedSource"
 STAMP = sa.DateTime(timezone=True)
+JSONB = postgresql.JSONB(astext_type=sa.Text())
+UUIDS = postgresql.ARRAY(sa.UUID())
 SUBJECT_KINDS = ("craft", "family", "category")
 DRAFT_STATES = ("OPEN", "SUBMITTED")
 SUPPLIED_STATES = ("READY", "AWAITING_FILE")
@@ -71,10 +72,7 @@ def _create_drafts() -> None:
         sa.Column("createdAt", STAMP, server_default=sa.text("now()"), nullable=False),
         sa.Column("updatedAt", STAMP, server_default=sa.text("now()"), nullable=False),
         *_checks(DRAFTS, _draft_checks()),
-        sa.ForeignKeyConstraint(
-            ["userId"], ["User.id"], name=op.f(f"{DRAFTS}_userId_fkey"), ondelete="CASCADE"
-        ),
-        sa.PrimaryKeyConstraint("id", name=op.f(f"{DRAFTS}_pkey")),
+        *_keys(DRAFTS),
     )
     op.create_index(
         "PageDraft_userId_subject_open_key",
@@ -93,13 +91,19 @@ def _create_supplied() -> None:
         sa.Column("userId", sa.UUID(), nullable=False),
         sa.Column("userTokenVersion", sa.Integer(), server_default=sa.text("0"), nullable=False),
         sa.Column("state", sa.String(length=20), nullable=False),
-        *_identity_columns(),
-        sa.Column(
-            "passages",
-            postgresql.JSONB(astext_type=sa.Text()),
-            server_default=sa.text("'[]'::jsonb"),
-            nullable=False,
-        ),
+        sa.Column("citeUrl", sa.String(length=2048), nullable=False),
+        sa.Column("title", sa.String(length=500), nullable=False),
+        sa.Column("doi", sa.String(length=255), nullable=True),
+        sa.Column("isbn", sa.String(length=13), nullable=True),
+        sa.Column("identity", JSONB, nullable=False),
+        sa.Column("confirmation", JSONB, nullable=True),
+        sa.Column("accessKind", sa.String(length=20), nullable=False),
+        sa.Column("accessedOn", sa.Date(), nullable=False),
+        sa.Column("accessNote", sa.String(length=300), nullable=True),
+        sa.Column("licence", sa.String(length=200), nullable=True),
+        sa.Column("grade", sa.String(length=1), nullable=False),
+        sa.Column("gradeReason", sa.String(length=400), nullable=False),
+        sa.Column("passages", JSONB, server_default=sa.text("'[]'::jsonb"), nullable=False),
         sa.Column("text", sa.Text(), nullable=True),
         sa.Column("textSha256", sa.String(length=64), nullable=True),
         sa.Column("fileSha256", sa.String(length=64), nullable=True),
@@ -107,40 +111,22 @@ def _create_supplied() -> None:
         sa.Column("upload", sa.String(length=10), nullable=True),
         sa.Column("slotHash", sa.String(length=64), nullable=True),
         sa.Column("slotExpiresAt", STAMP, nullable=True),
-        sa.Column(
-            "sourceIds",
-            postgresql.ARRAY(sa.UUID()),
-            server_default=sa.text("ARRAY[]::uuid[]"),
-            nullable=False,
-        ),
+        sa.Column("sourceIds", UUIDS, server_default=sa.text("ARRAY[]::uuid[]"), nullable=False),
         sa.Column("createdAt", STAMP, server_default=sa.text("now()"), nullable=False),
         sa.Column("updatedAt", STAMP, server_default=sa.text("now()"), nullable=False),
         *_checks(SUPPLIED, _supplied_checks()),
-        sa.ForeignKeyConstraint(
-            ["userId"], ["User.id"], name=op.f(f"{SUPPLIED}_userId_fkey"), ondelete="CASCADE"
-        ),
-        sa.PrimaryKeyConstraint("id", name=op.f(f"{SUPPLIED}_pkey")),
+        *_keys(SUPPLIED),
         sa.UniqueConstraint("slotHash", name=op.f(f"{SUPPLIED}_slotHash_key")),
     )
     op.create_index(op.f(f"{SUPPLIED}_userId_citeUrl_idx"), SUPPLIED, ["userId", "citeUrl"])
     op.create_index(op.f(f"{SUPPLIED}_userId_createdAt_idx"), SUPPLIED, ["userId", "createdAt"])
 
 
-def _identity_columns() -> list[sa.Column[Any]]:
-    return [
-        sa.Column("citeUrl", sa.String(length=2048), nullable=False),
-        sa.Column("title", sa.String(length=500), nullable=False),
-        sa.Column("doi", sa.String(length=255), nullable=True),
-        sa.Column("isbn", sa.String(length=13), nullable=True),
-        sa.Column("identity", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column("confirmation", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column("accessKind", sa.String(length=20), nullable=False),
-        sa.Column("accessedOn", sa.Date(), nullable=False),
-        sa.Column("accessNote", sa.String(length=300), nullable=True),
-        sa.Column("licence", sa.String(length=200), nullable=True),
-        sa.Column("grade", sa.String(length=1), nullable=False),
-        sa.Column("gradeReason", sa.String(length=400), nullable=False),
-    ]
+def _keys(table: str) -> list[sa.Constraint]:
+    owner = sa.ForeignKeyConstraint(
+        ["userId"], ["User.id"], name=op.f(f"{table}_userId_fkey"), ondelete="CASCADE"
+    )
+    return [owner, sa.PrimaryKeyConstraint("id", name=op.f(f"{table}_pkey"))]
 
 
 def _draft_checks() -> dict[str, str]:
