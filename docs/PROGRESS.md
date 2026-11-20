@@ -1119,6 +1119,32 @@ Last updated: 2026-11-20.
     Open work shares one applies-to query, one monographs folder and one family rule.
   - **Proof and guard:** the production E2E suite and the design guard follow the redesign.
 
+- **Round 7 (2026-11-20): MCP as the place knowledge is created, the landing and map rebuilt.**
+  The owner's rule: content arrives through MCP from many contributors at once, at minimal cost to the
+  centre, and every MCP gap is resolved.
+  - **Contribution at scale:** proposals queue for the `kv-contributions` worker and answer at once
+    with an id (`get_proposal`); `propose_facts` takes 25 facts with idempotency keys; `my_tasks`,
+    `claim_tasks` and trust tiers (proven contributors publish, one in five sampled for review);
+    craft stewardship; a cost ledger per account and day; one set of argument names; `find_crafts`
+    ranks by what a craft holds.
+  - **Delivered pages:** `propose_component` takes the full spec and units for any of 42 kinds or
+    five general kinds (drawing, chart, table, timeline, map layer), registered on approval with no
+    builder; `propose_page` checks a bundle part by part; `preview_page` returns a private link to
+    the assembled page.
+  - **Pictures:** an imaging library (HEIC, TIFF, BMP to WebP; AVIF; GIF; SVG cleaned), upload by
+    URL or inline after the person confirms the declaration, screens before review (duplicates by
+    perceptual hash, ID documents, faces in AI images, unsafe content), picture tasks and targets
+    (decision 0109).
+  - **Healing and experts:** a fact whose quotes stop verifying is held and re-sourced, link rot and
+    lone quotes become tasks, pages refresh as their facts change, and an expert seat whose field is
+    thin runs one capped live search and read (decision 0099 amended).
+  - **Home and map:** reading leads from the landing for everyone, sixteen fields with real counts,
+    the whole collection; the map drawn from Natural Earth on the Survey of India outline, no state
+    lines, pressable places listing their crafts, every state in the ranking.
+  - **Releases:** round 6 went live after two fixes: generated documents carry the units a borrowed
+    spec names, and each deploy rebuilds stale page snapshots (curated crafts first) before the web
+    build.
+
 ## Next
 
 0. The redesign, owner-approved 2026-11-18: Direction A "Alum & Indigo" as the system with

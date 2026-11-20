@@ -13,7 +13,7 @@ from app.services.candidate_sources import proposal_fetcher
 from app.services.craft_resolver import CraftIndexStore
 from app.services.page_proposals import PageTools, propose_page
 
-from .mcp_ask_tools import START_IMAGE_UPLOAD, StartImageUpload
+from .mcp_picture_tools import START_IMAGE_UPLOAD, StartImageUpload
 from .mcp_tool_base import ToolContext
 from .proposal_deps import gate_adapters
 from .proposal_limits import refuse_tool_when_spent

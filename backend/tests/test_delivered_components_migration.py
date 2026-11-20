@@ -8,9 +8,9 @@ from app.models.page_previews import PREVIEW_SUBJECT_KINDS
 from .migration_scripts import migration
 
 
-def test_the_delivered_components_migration_follows_the_contribution_queue() -> None:
+def test_the_delivered_components_migration_follows_the_image_screens() -> None:
     step = migration("0049_delivered_components")
-    assert (step.revision, step.down_revision) == ("0049_delivered_components", "0048_contribution_queue")
+    assert (step.revision, step.down_revision) == ("0049_delivered_components", "0050_image_screens")
 
 
 def test_it_widens_both_kind_checks_by_the_general_kinds_only() -> None:

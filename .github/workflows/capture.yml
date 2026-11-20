@@ -11,13 +11,13 @@ on:
         description: Comma-separated paths to capture (empty captures the default set)
         required: false
         default: ""
+      audit:
+        description: Also run Lighthouse and axe on those paths at 360 and 1440 against the budgets
+        type: boolean
+        default: true
 
 permissions:
   contents: read
-
-concurrency:
-  group: capture-screens
-  cancel-in-progress: false
 
 jobs:
   capture:
@@ -25,6 +25,9 @@ jobs:
     if: github.repository == 'cxacraftecosystem-ui/KalaVigyan'
     runs-on: ubuntu-26.04
     timeout-minutes: 30
+    concurrency:
+      group: capture-screens
+      cancel-in-progress: false
     defaults:
       run:
         working-directory: frontend
@@ -64,5 +67,66 @@ jobs:
         with:
           name: capture-${{ github.run_id }}
           path: frontend/capture-run
+          if-no-files-found: warn
+          retention-days: 30
+
+  audit:
+    name: Lighthouse and axe at 360 and 1440 within the budgets
+    if: github.repository == 'cxacraftecosystem-ui/KalaVigyan' && inputs.audit
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      E2E_BASE_URL: ${{ inputs.base_url || vars.WEB_ORIGIN || 'https://kalavigyan.vercel.app' }}
+      E2E_SCREEN_PATHS: ${{ inputs.paths }}
+      E2E_VERCEL_BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      E2E_REPORT_DIR: audit-run
+      E2E_REPORT_TITLE: Lighthouse and axe
+      E2E_WORKERS: "3"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: frontend/package.json
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install npm 12
+        run: npm install --global npm@12 && npm --version
+
+      - name: Install
+        run: npm ci
+
+      - name: Install Chromium
+        id: browser
+        run: npx playwright install --with-deps chromium
+
+      - name: axe at 360 and 1440 in light and dark
+        run: npx playwright test -c e2e/release/release.config.ts --project='axe-*'
+
+      - name: Lighthouse at 360 and 1440, one page at a time
+        if: ${{ !cancelled() && steps.browser.outcome == 'success' }}
+        run: npx playwright test -c e2e/release/release.config.ts --project=lighthouse --workers=1
+
+      - name: Say what was measured
+        if: always()
+        run: |
+          if [ -f audit-run/summary.md ]; then
+            cat audit-run/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No audit summary was written; see the steps above." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: audit-${{ github.run_id }}
+          path: frontend/audit-run
           if-no-files-found: warn
           retention-days: 30

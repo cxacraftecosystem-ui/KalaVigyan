@@ -451,6 +451,28 @@ also exits 2. The category goldens are regenerated, from `backend/`, with:
 `tests/contracts/test_category_contract.py` fails until they are rerun after a change to the
 fixture or the category page (`docs/contracts/category-page.md`).
 
+## Release gate (round 7)
+
+- **Post-deploy check** (`.github/workflows/post-deploy.yml`): runs after Deploy web app and Deploy
+  backend on main, hourly (is production serving the newest main commit?), in full daily at 03:17
+  UTC, and by hand: `gh workflow run post-deploy.yml -R cxacraftecosystem-ui/KalaVigyan -f
+  commit=<sha>`. It reads 20 key pages and the public MCP tools, and keeps two issues: `Production is
+  not serving main` and `Production pages or MCP tools are failing`, each closed when its check
+  passes.
+- **`/api/version`**: `curl -s https://kalavigyan.vercel.app/api/version` names the commit production
+  was built from.
+- **MCP client** (`mcp-client.yml`): the official MCP TypeScript SDK signs in through OAuth (dynamic
+  registration, PKCE, the consent page with the E2E account) and calls tools against production,
+  daily and after each post-deploy check. It needs the secrets `E2E_EMAIL` and `E2E_PASSWORD` and the
+  variable `API_BASE_URL`, and keeps the issue `The MCP client cannot sign in to production`.
+- **Retrieval evaluation** (`retrieval-eval.yml`): runs `app.scripts.eval_retrieval` on the box,
+  weekly and by hand, from main only (the deploy role trusts main):
+  `gh workflow run retrieval-eval.yml -R cxacraftecosystem-ui/KalaVigyan --ref main`.
+- **Capture audit**: axe (WCAG A and AA) and Lighthouse at 360 and 1440 on every Capture run;
+  `-f audit=false` skips it. To ratchet the budgets, copy `audit-baseline.candidate.json` from a
+  production run's artifact over `frontend/e2e/release/audit-baseline.json`. A new axe rule on a
+  recorded page is fixed, never accepted by the candidate.
+
 ## Roll back
 
 Backend, on the box. This is instant: the previous release is still in the other slot.

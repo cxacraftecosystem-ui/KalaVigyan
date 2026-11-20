@@ -20,6 +20,7 @@ const SESSION_ROUTES = new Set([
   "/api/auth/logout",
   "/api/session/adopt",
   "/api/session/end",
+  "/api/version",
   REVALIDATE_ROUTE
 ]);
 
