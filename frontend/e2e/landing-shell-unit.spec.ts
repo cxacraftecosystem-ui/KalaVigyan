@@ -169,7 +169,8 @@ test("the institution footer is one line naming IIT Kharagpur and the citation p
 test("the landing ends on its partners' marks, each named in its alt text and drawn from a web-weight file", () => {
   const markup = renderToStaticMarkup(createElement(PartnersFooter));
   expect(markup).toContain('data-testid="institution-footer"');
-  expect(markup).toContain("KalaVigyan, from IIT Kharagpur and its Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform.");
+  expect(markup.replace(/<[^>]+>/g, "")).toContain("KalaVigyan, from IIT Kharagpur and its Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform.");
+  expect(markup).toContain('<span class="whitespace-nowrap">AI-Enabled</span>');
   expect(markup).toContain('alt="Indian Institute of Technology Kharagpur"');
   expect(markup).toContain('alt="Development Commissioner (Handicrafts), Ministry of Textiles, Government of India"');
   expect(markup.match(/data-testid="partner-mark"/g)).toHaveLength(2);

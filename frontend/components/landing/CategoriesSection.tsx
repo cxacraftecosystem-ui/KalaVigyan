@@ -46,12 +46,14 @@ export function CategoriesSection({ families }: { families: readonly FamilyBlock
   return (
     <section id={CATEGORIES_ID} className="scroll-mt-6 border-t border-rule py-section" aria-labelledby="categories-h" data-testid="landing-categories">
       <div className="kv-shell-wrap">
-        <div className="max-w-measure">
-          <p className="kv-chapter-no">Categories</p>
-          <h2 id="categories-h" className="m-0 font-headline text-h2 text-ink-1">
-            {categoriesHeading(families.length)}
-          </h2>
-          <p className="mt-4 font-reading text-body text-ink-2">Each family has its own page with the science its crafts share, its sub-families and every craft in it.</p>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-end lg:gap-16">
+          <div className="min-w-0">
+            <p className="kv-chapter-no">Categories</p>
+            <h2 id="categories-h" className="m-0 font-headline text-h2 text-ink-1">
+              {categoriesHeading(families.length)}
+            </h2>
+          </div>
+          <p className="max-w-measure font-reading text-body text-ink-2">Each family has its own page with the science its crafts share, its sub-families and every craft in it.</p>
         </div>
         <ul className="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
           {families.map((family) => (

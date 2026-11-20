@@ -49,7 +49,8 @@ export function CraftsMapScreen() {
   const requested = params.get(LAYER_PARAM);
   const physical = physicalLayerId(requested);
   const layerId = physical ? null : chosenLayerId(layers.data, requested);
-  const [showPlaces, setShowPlaces] = useState(true);
+  const [chosenPlaces, setShowPlaces] = useState<boolean | null>(null);
+  const showPlaces = chosenPlaces ?? physical === null;
   const layerData = useMapLayer(layerId);
   const districtLgd = layerId ? positiveParam(params.get(DISTRICT_PARAM)) : null;
   const district = useDistrict(districtLgd);

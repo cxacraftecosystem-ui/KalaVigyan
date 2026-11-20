@@ -6,6 +6,19 @@ import { CITATION_PROMISE, INSTITUTION_LINE } from "@/components/landing/Footer"
 export type PartnerMark = { key: string; name: string; src: string; width: number; height: number; shape: "seal" | "wide" };
 
 export const PARTNERS_LABEL = "Partners";
+const KEPT_WHOLE = "AI-Enabled";
+
+export function InstitutionLine() {
+  const at = INSTITUTION_LINE.indexOf(KEPT_WHOLE);
+  if (at < 0) return <>{INSTITUTION_LINE}</>;
+  return (
+    <>
+      {INSTITUTION_LINE.slice(0, at)}
+      <span className="whitespace-nowrap">{KEPT_WHOLE}</span>
+      {INSTITUTION_LINE.slice(at + KEPT_WHOLE.length)}
+    </>
+  );
+}
 
 export const PARTNER_MARKS: readonly PartnerMark[] = [
   { key: "iit-kharagpur", name: "Indian Institute of Technology Kharagpur", src: "/partners/iit-kharagpur.svg", width: 268, height: 300, shape: "seal" },
@@ -39,7 +52,9 @@ export function PartnersFooter() {
         <div className="kv-partners-grid">
           <div className="kv-partners-text">
             <p className="kicker">{PARTNERS_LABEL}</p>
-            <p className="kv-partners-line font-reading text-lede text-ink-1">{INSTITUTION_LINE}</p>
+            <p className="kv-partners-line font-reading text-lede text-ink-1">
+              <InstitutionLine />
+            </p>
           </div>
           <ul className="kv-partner-marks" aria-label={PARTNERS_LABEL}>
             {PARTNER_MARKS.map((mark) => (
