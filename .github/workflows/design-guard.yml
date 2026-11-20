@@ -1,0 +1,77 @@
+name: Design guard
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/design-guard.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: design-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  shrink:
+    name: Record the lower design guard counts
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: frontend/package.json
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install npm 12
+        run: npm install --global npm@12 && npm --version
+
+      - name: Install
+        run: npm ci
+
+      - name: Run the guard and rewrite its baseline
+        env:
+          DESIGN_GUARD_SHRINK: "1"
+        run: npx playwright test --project=unit --workers=1 e2e/design-guard-unit.spec.ts
+
+      - name: Say what the baseline records
+        if: always()
+        run: |
+          set -euo pipefail
+          baseline=e2e/design-guard-baseline.json
+          {
+            echo "## Design guard"
+            echo ""
+            if git diff --quiet -- "$baseline"; then
+              echo "The baseline already records the lowest counts on ${GITHUB_REF_NAME}."
+            else
+              echo "The baseline on ${GITHUB_REF_NAME} is rewritten with lower counts. Download the design-guard-baseline artifact, replace frontend/${baseline} with it and commit it."
+              echo ""
+              echo '```'
+              git diff --stat -- "$baseline"
+              echo '```'
+            fi
+            echo ""
+            echo "Files still counted: $(grep -c '^  "' "$baseline" || true)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the baseline
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: design-guard-baseline-${{ github.run_id }}
+          path: frontend/e2e/design-guard-baseline.json
+          if-no-files-found: error
+          retention-days: 30

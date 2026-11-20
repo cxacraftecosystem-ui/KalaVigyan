@@ -55,6 +55,11 @@ test("the guard finds physical left and right utilities and properties, and spar
   expect(physicalUtilities(".a { padding-right: 1rem; left: 0; text-align: right; padding-inline-end: 1rem; inset-inline-start: 0; }", true)).toEqual(["padding-right:", "left:", "text-align: right"]);
 });
 
+test("the guard spares locale tags, whose region is upper case, and still finds the utility beside them", () => {
+  expect(physicalUtilities('{ mr: "mr-IN", ml: "ml-IN", lang: "pl-PL" }')).toEqual([]);
+  expect(physicalUtilities('className="ml-4 mr-[2px]" lang="mr-IN"')).toEqual(["ml-4", "mr-[2px]"]);
+});
+
 test("the guard rejects media queries off the breakpoint list, in CSS, in variants and in matchMedia", () => {
   expect(offListMedia("@media (min-width: 700px) {} @media (min-width: 40rem) {} @media (width < 1024px) {} @media (max-width: 639.98px) {} @media (max-height: 560px) {}", true)).toEqual(["min-width: 700px", "min-width: 40rem"]);
   expect(offListMedia('className="min-[700px]:grid max-[639px]:hidden md:flex" matchMedia("(min-width: 1100px)") matchMedia("(min-width: 1200px)")')).toEqual(["min-[700px]:", "min-width: 1100px"]);

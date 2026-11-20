@@ -10,7 +10,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
       <head>
         <title>Something went wrong · KalaVigyan</title>
       </head>
-      <body className="min-h-screen bg-bg-0 font-sans text-ink-900">
+      <body className="min-h-screen">
         <script dangerouslySetInnerHTML={{ __html: PREFERENCES_BOOT_SCRIPT }} />
         <GlobalErrorView reference={error.digest} />
       </body>

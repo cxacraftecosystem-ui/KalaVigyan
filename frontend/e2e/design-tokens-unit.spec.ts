@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 
 import { CHOROPLETH_TONES } from "@/components/map/DistrictLayer";
 import { PREFERENCES_BOOT_SCRIPT, THEME_COLOR } from "@/lib/preferences";
-import { APPEARANCE_RAMPS, DARK_APPEARANCE_RAMPS } from "../tailwind.migration";
+import { retiredColors, retiredUtilityColors } from "../tailwind.migration";
 import { FRONTEND } from "./moduleGraph";
 
 const read = (...parts: string[]) => readFileSync(join(FRONTEND, ...parts), "utf8");
@@ -140,8 +140,10 @@ test("every token the Tailwind config and its migration aliases name is defined"
   const named = [read("tailwind.config.ts"), read("tailwind.migration.ts")].flatMap((source) => [...source.matchAll(/\bc\("([a-z0-9-]+)"/g)].map((found) => found[1]));
   expect(named.length).toBeGreaterThan(40);
   expect(named.filter((name) => !root.has(`--c-${name}`))).toEqual([]);
-  const ramped = [...Object.values(APPEARANCE_RAMPS), ...Object.values(DARK_APPEARANCE_RAMPS)].flat();
-  expect(ramped.filter((name) => !root.has(`--${name}`))).toEqual([]);
+  const leaves = (value: unknown): string[] => (typeof value === "string" ? [value] : Object.values(value as Record<string, unknown>).flatMap(leaves));
+  const aliased = leaves([retiredColors((name) => name), retiredUtilityColors((name) => name)]);
+  expect(aliased.length).toBeGreaterThan(40);
+  expect(aliased.filter((name) => !root.has(`--c-${name}`))).toEqual([]);
 });
 
 test("every self-hosted face is named in a font stack, and every script stack opens on a hosted face", () => {

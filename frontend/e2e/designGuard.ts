@@ -38,7 +38,7 @@ const ALIAS_CLASS = new RegExp(
   ].join("|"),
   "g"
 );
-const SUFFIX = "-[\\w./[\\]%()-]+";
+const SUFFIX = "-(?![A-Z])[\\w./[\\]%()-]+";
 const PHYSICAL_CLASS = new RegExp(
   `(?<![\\w-])(?:-?(?:m[lr]|p[lr]|scroll-m[lr]|scroll-p[lr]|left|right)${SUFFIX}|(?:border-[lr]|rounded-(?:[lr]|[tb][lr]))(?:${SUFFIX})?|(?:text|float|clear)-(?:left|right))(?![\\w-])`,
   "g"

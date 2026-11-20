@@ -34,8 +34,8 @@ export function measureParts(unit: string): MeasureParts {
 
 export function decimalsOf(value: number): number {
   if (!Number.isFinite(value)) throw new RangeError(`${value} is not a finite number`);
-  const rounded = Number(value.toFixed(MAX_DECIMALS));
-  const text = String(rounded);
+  const fixed = Number(value.toFixed(MAX_DECIMALS));
+  const text = String(fixed);
   const point = text.indexOf(".");
   return point < 0 ? 0 : Math.min(MAX_DECIMALS, text.length - point - 1);
 }
