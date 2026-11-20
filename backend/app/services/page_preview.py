@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import uuid
 from datetime import datetime
 from functools import partial
 
@@ -39,6 +40,7 @@ from .page_layout_proposals import STALE, current_version
 from .page_layouts import subject_path
 from .page_preview_links import preview_path, store_preview
 from .page_preview_parts import PreviewDraft, previewed_component
+from .page_preview_pictures import given_plates
 from .page_proposals_parts import (
     checked_part,
     fact_subject_problem,
@@ -72,7 +74,13 @@ LISTED_CONFLICT = "A conflict changes no sentence until a reviewer decides it, s
 SHOWN_COMPONENT = "Drawn from its spec where the page will draw it once it is registered."
 NO_SPEC = "A component of a page bundle carries its spec, so that it is drawn as delivered."
 SHOWN_LAYOUT = "The page is ordered by this layout, as the next version would order it."
-LISTED_PICTURE = "A picture is drawn once its file is uploaded and approved; propose_page starts its upload."
+LISTED_PICTURE = (
+    "A new picture is drawn once its file is given: give it with give_image and name it here as "
+    "contribution_id to see it in place, or propose_page starts its upload."
+)
+SHOWN_PICTURE = (
+    "Drawn in its place as the page will draw it once an Admin approves it; until then only you see it."
+)
 READY = (
     "The preview draws the page as the site will once every shown part is accepted. It is private to you "
     "for 24 hours."
@@ -86,7 +94,10 @@ async def preview_page(
     if has_authored_content(subject.slug):
         raise InvalidInput(AUTHORED.format(slug=subject.slug))
     draft = PreviewDraft(digest=hashlib.sha256(bundle.model_dump_json().encode("utf-8")).hexdigest())
-    reports = await _reports(session, bundle, subject, draft)
+    reports = [
+        *await _reports(session, bundle, subject, draft),
+        *await _pictures(session, user, bundle, subject, draft),
+    ]
     parts = await generated_parts(session, subject, draft.additions())
     document = None if parts is None else assembled_document(parts, Drawings())
     if document is None:
@@ -123,8 +134,32 @@ async def _reports(
     if bundle.layout is not None:
         work = partial(_layout, session, subject, draft, bundle.layout)
         reports.append(await checked_part(session, LAYOUT, 0, work))
-    reports += [_report(PICTURE, index, LISTED, LISTED_PICTURE) for index in range(len(bundle.pictures))]
     return reports
+
+
+async def _pictures(
+    session: AsyncSession, user: User, bundle: PageBundle, subject: WorkSubject, draft: PreviewDraft
+) -> list[PartReport]:
+    reports: list[PartReport] = []
+    for index, picture in enumerate(bundle.pictures):
+        if picture.contribution_id is None:
+            reports.append(_report(PICTURE, index, LISTED, LISTED_PICTURE))
+            continue
+        work = partial(_given, session, (user, subject), draft, index, picture.contribution_id)
+        reports.append(await checked_part(session, PICTURE, index, work))
+    return reports
+
+
+async def _given(
+    session: AsyncSession,
+    owner: tuple[User, WorkSubject],
+    draft: PreviewDraft,
+    index: int,
+    contribution_id: uuid.UUID,
+) -> PartReport:
+    user, subject = owner
+    draft.pictures += await given_plates(session, user, subject, [contribution_id])
+    return _report(PICTURE, index, SHOWN, SHOWN_PICTURE)
 
 
 async def _fact(

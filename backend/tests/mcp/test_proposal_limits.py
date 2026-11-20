@@ -21,6 +21,9 @@ from app.core.rate_limit import (
     FACT_PROPOSALS,
     IMAGE_UPLOADS,
     LAYOUT_PROPOSALS,
+    PAGE_PREVIEWS,
+    PAGE_PROPOSALS,
+    STRUCTURE_PROPOSALS,
     proposal_attempt,
 )
 from app.main import create_app
@@ -29,7 +32,21 @@ from app.services import upload_links
 from app.services.craft_resolver import CraftIndexStore
 
 HOUR = 3600
-LIMITS = {FACT_PROPOSALS: 30, COMPONENT_PROPOSALS: 10, LAYOUT_PROPOSALS: 10, IMAGE_UPLOADS: 20}
+LIMITS = {
+    FACT_PROPOSALS: 30,
+    COMPONENT_PROPOSALS: 10,
+    LAYOUT_PROPOSALS: 10,
+    IMAGE_UPLOADS: 20,
+    STRUCTURE_PROPOSALS: 20,
+    PAGE_PROPOSALS: 10,
+    PAGE_PREVIEWS: 30,
+}
+BUNDLE = {
+    "proposal": {
+        "subject": {"kind": "craft", "slug": "Kutch-Ajrakh"},
+        "layout": {"baseVersion": 0, "entries": []},
+    }
+}
 
 
 def person(role: str, number: int = 31) -> User:
@@ -148,6 +165,23 @@ async def test_spent_component_layout_and_picture_limits_are_tool_errors(
         assert result["isError"] is True and noun in result["content"][0]["text"], (name, result)
 
 
+async def test_page_bundles_and_page_previews_have_their_own_hourly_allowances(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    researcher = person("RESEARCHER")
+    monkeypatch.setattr(mcp_page_tools, "page_proposed", never_called)
+    monkeypatch.setattr(mcp_page_tools.page_preview, "preview_page", never_called)
+    spend(PAGE_PROPOSALS, researcher)
+    proposed = await tool_text("propose_page", BUNDLE, researcher)
+    assert proposed["isError"] is True and "10 page bundles" in proposed["content"][0]["text"]
+    assert proposal_attempt(PAGE_PREVIEWS, researcher)[0] is True
+    for _ in range(LIMITS[PAGE_PREVIEWS] - 1):
+        assert proposal_attempt(PAGE_PREVIEWS, researcher)[0] is True
+    previewed = await tool_text("preview_page", BUNDLE, researcher)
+    assert previewed["isError"] is True and "30 page previews" in previewed["content"][0]["text"]
+    assert proposal_attempt(COMPONENT_PROPOSALS, researcher)[0] is True
+
+
 def test_a_spent_fact_limit_answers_429_with_retry_after(monkeypatch: pytest.MonkeyPatch) -> None:
     researcher = person("RESEARCHER")
 
@@ -176,6 +210,8 @@ def test_a_spent_fact_limit_answers_429_with_retry_after(monkeypatch: pytest.Mon
     [
         ("/api/contributions/images", IMAGE_UPLOADS),
         ("/api/contributions/proposals/components", COMPONENT_PROPOSALS),
+        ("/api/knowledge/pages", PAGE_PROPOSALS),
+        ("/api/knowledge/pages/preview", PAGE_PREVIEWS),
     ],
 )
 def test_the_site_s_picture_and_component_routes_share_the_limits(path: str, kind: str) -> None:

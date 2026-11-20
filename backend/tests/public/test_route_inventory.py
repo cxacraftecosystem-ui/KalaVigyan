@@ -179,6 +179,7 @@ ADMIN_ROUTES = {
     ("POST", "/api/knowledge/pages"),
     ("POST", "/api/knowledge/pages/preview"),
     ("GET", "/api/knowledge/pages/previews/{token}"),
+    ("GET", "/api/knowledge/pages/pictures/{contribution_id}"),
     ("POST", "/api/knowledge/open-work/claim"),
     ("POST", "/api/knowledge/open-work/release"),
     ("GET", "/api/knowledge/review-switch"),

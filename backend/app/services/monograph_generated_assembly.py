@@ -5,24 +5,21 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from pydantic import ValidationError
-
 from app.core.errors import InvalidInput
 from app.research.chapter_keys import CHAPTER_KEYS
-from app.research.component_specs import checked_spec
 from app.research.coverage import FieldCoverage
 from app.research.coverage_chapters import field_chapter
-from app.research.media_refs import MediaRef
 from app.research.monograph_document import MonographDocument
 from app.research.monograph_page import CitedSource, ComponentEntry, LayoutEntry, MonographContent, TextUnit
-from app.research.page_layout import PageLayout, PageLayoutEntry, arranged_layout, picture_label
+from app.research.page_layout import PageLayout, arranged_layout, picture_label
 
 from .component_proposals_drawn import drawn_delivery
 from .document_components import DocumentStructure, StructureBlock
 from .knowledge_view import ClaimView
 from .monograph_generated_drawings import Drawings
 from .monograph_generated_grids import StatedValue, fact_grid
-from .monograph_generated_parts import PlacedPicture, RegisteredComponent, StoredSection
+from .monograph_generated_parts import RegisteredComponent, StoredSection
+from .monograph_generated_pictures import PICTURE_KIND, PlateSource, plate_spec
 from .monograph_generated_structure import CHAPTER_FIELDS, BlockSpecs, PlacedStructure, placed_structure
 from .monograph_generated_units import (
     LEDE_FIELD,
@@ -38,15 +35,11 @@ from .monograph_generated_units import (
     masthead_units,
     section_units,
 )
-from .page_layouts_backfill import LEADING_ROLES, picture_placement
+from .page_layouts_backfill import LEADING_ROLES
 
 __all__ = ["LAYOUT_DATA", "GeneratedParts", "assembled_document"]
 
 LAYOUT_DATA = "page-layout"
-PICTURE_KIND = "picture_plate"
-PLATE_CLASS = "plate"
-PLATE_UNIT_PREFIX = "u"
-PLATE_UNIT_START = 9001
 HERO = "HERO"
 CRAFT_SUBJECTS = frozenset({"craft", "family"})
 DEFAULT_FIELD = "OVERVIEW"
@@ -62,7 +55,7 @@ class GeneratedParts:
     visible: Mapping[uuid.UUID, ClaimView]
     sources: Mapping[str, CitedSource]
     components: tuple[RegisteredComponent, ...] = ()
-    pictures: tuple[PlacedPicture, ...] = ()
+    pictures: tuple[PlateSource, ...] = ()
     layout: PageLayout | None = None
     coverage: FieldCoverage | None = None
     values: Mapping[uuid.UUID, StatedValue] = field(default_factory=dict)
@@ -171,23 +164,22 @@ def _structure(parts: GeneratedParts, page: _Page) -> PlacedStructure:
 def _pictures(parts: GeneratedParts, page: _Page) -> dict[str, list[str]]:
     by_chapter: dict[str, list[tuple[bool, str]]] = {}
     shown = parts.structure.media_urls() if parts.structure is not None else set()
-    for placed in parts.pictures:
-        label = picture_label(parts.subject_slug, placed.picture.key)
-        chapter, role = picture_placement(placed.picture)
+    for source in parts.pictures:
+        label = picture_label(parts.subject_slug, source.key)
         entry = parts.layout.entry(label) if parts.layout is not None else None
-        role = entry.role if entry is not None else role
-        if role != HERO and str(placed.media.image_url) in shown:
+        role = entry.role if entry is not None else source.role
+        if (role != HERO and source.src in shown) or not source.shown_with(parts.visible):
             continue
-        plate = _picture_plate(placed, entry, len(page.held))
+        plate = plate_spec(source, entry, len(page.held))
         if plate is None:
             continue
         if role == HERO and page.hero is None:
             page.hero = label
-        page.components[label] = _picture_entry(parts, placed, label, chapter)
+        page.components[label] = _picture_entry(parts, source, label)
         page.specs[label], held = plate
         page.units.update(held)
         page.held[label] = list(held)
-        by_chapter.setdefault(chapter, []).append((role not in LEADING_ROLES, label))
+        by_chapter.setdefault(source.chapter, []).append((role not in LEADING_ROLES, label))
     return {
         chapter: [label for _, label in sorted(found, key=lambda item: item[0])]
         for chapter, found in by_chapter.items()
@@ -334,55 +326,19 @@ def _cite(
     return citations, claims
 
 
-def _picture_entry(parts: GeneratedParts, placed: PlacedPicture, label: str, chapter: str) -> ComponentEntry:
-    picture, media = placed.picture, placed.media
-    credit = ", ".join(part for part in (media.author, media.licence) if part)
+def _picture_entry(parts: GeneratedParts, source: PlateSource, label: str) -> ComponentEntry:
     return ComponentEntry(
         label=label,
-        chapter=chapter,
+        chapter=source.chapter,
         anchor=_anchor(label),
         kind=PICTURE_KIND,
-        title=picture.caption,
-        description=f"A picture for {parts.record.name}: {picture.caption}"
-        + (f" ({credit})." if credit else "."),
-        field=CHAPTER_FIELDS.get(chapter, DEFAULT_FIELD),
+        title=source.caption,
+        description=f"A picture for {parts.record.name}: {source.caption}"
+        + (f" ({source.attribution})." if source.attribution else "."),
+        field=CHAPTER_FIELDS.get(source.chapter, DEFAULT_FIELD),
         fields=[],
         subjects=[f"craft:{parts.subject_slug}"] if parts.subject_kind in CRAFT_SUBJECTS else [],
     )
-
-
-def _picture_plate(
-    placed: PlacedPicture, entry: PageLayoutEntry | None, pictures: int
-) -> tuple[dict[str, Any], dict[str, TextUnit]] | None:
-    picture, media = placed.picture, placed.media
-    if media.width is None or media.height is None:
-        return None
-    caption_id, credit_id = (f"{PLATE_UNIT_PREFIX}{PLATE_UNIT_START + 2 * pictures + n}" for n in (0, 1))
-    caption = entry.caption if entry is not None and entry.caption else picture.caption
-    units = {caption_id: _plain_unit(caption), credit_id: _plain_unit(_credit_line(media))}
-    crop = entry.crop if entry is not None and entry.crop is not None else picture.focal
-    shown = {"src": media.image_url, "width": media.width, "height": media.height, "alt": media.alt}
-    if crop is not None:
-        shown["focal"] = crop.model_dump(mode="json")
-    spec = {
-        "setting": "figure",
-        "picture": shown,
-        "figure": {"classes": [PLATE_CLASS], "captions": [{"unit": caption_id}], "credit": credit_id},
-    }
-    try:
-        checked = checked_spec(PICTURE_KIND, spec)
-    except ValidationError:
-        return None
-    return checked.model_dump(mode="json", by_alias=True), units
-
-
-def _plain_unit(text: str) -> TextUnit:
-    return TextUnit(chapter=MASTHEAD_CHAPTER, tag="span", field=None, nodes=[text], claim_ids=[])
-
-
-def _credit_line(media: MediaRef) -> str:
-    named = ", ".join(part for part in (media.author, media.licence) if part)
-    return f"Photo: {named}, via {media.site}" if named else f"Photo: {media.site}"
 
 
 def _anchor(label: str) -> str:

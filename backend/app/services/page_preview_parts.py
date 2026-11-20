@@ -15,6 +15,7 @@ from app.research.page_layout import PageLayout
 from .component_proposals_spec import CheckedDelivery
 from .knowledge_view import ClaimView
 from .monograph_generated_parts import RegisteredComponent
+from .monograph_generated_pictures import PlateSource
 from .page_preview_additions import PageAdditions
 from .page_proposals_parts import BundleFacts
 
@@ -34,6 +35,7 @@ class PreviewDraft:
     sources: dict[str, CitedSource] = field(default_factory=dict)
     components: list[RegisteredComponent] = field(default_factory=list)
     layout: PageLayout | None = None
+    pictures: list[PlateSource] = field(default_factory=list)
 
     def drafted(
         self, key: str, field_name: str, statement: str, sources: Sequence[ProposedSource]
@@ -62,6 +64,7 @@ class PreviewDraft:
             sources=dict(self.sources),
             delivered=tuple(self.components),
             layout=self.layout,
+            given=tuple(self.pictures),
         )
 
     def _source(self, source: ProposedSource) -> uuid.UUID:

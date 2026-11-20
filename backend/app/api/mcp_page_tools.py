@@ -7,7 +7,7 @@ from pydantic import Field, model_validator
 
 from app.core.errors import InvalidInput
 from app.core.mcp_scopes import CONTRIBUTE_SCOPE
-from app.core.rate_limit import COMPONENT_PROPOSALS
+from app.core.rate_limit import COMPONENT_PROPOSALS, PAGE_PREVIEWS, PAGE_PROPOSALS
 from app.core.roles import Capability, can
 from app.models import User
 from app.research.component_proposals import SUBJECT_LINK, ComponentProposalDraft, ComponentProposalResult
@@ -98,11 +98,13 @@ async def _propose_component(context: ToolContext, arguments: ProposeComponent) 
 
 async def _propose_page(context: ToolContext, arguments: ProposePage) -> PageProposalResult:
     user = _proposer(context, "propose_page")
+    refuse_tool_when_spent(PAGE_PROPOSALS, user)
     return await page_proposed(context.session, arguments.proposal, user, origin=AGENT, site=context.site)
 
 
 async def _preview_page(context: ToolContext, arguments: ProposePage) -> PagePreviewResult:
     user = _proposer(context, "preview_page")
+    refuse_tool_when_spent(PAGE_PREVIEWS, user)
     return await page_preview.preview_page(
         context.session, user, arguments.proposal, site=context.site, now=datetime.now(UTC)
     )

@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Craft, ImageContribution, Material, Process, ProcessStage, StageMaterial
 from app.research.image_contributions_tasks import CRAFT_SUBJECT, PICTURE_TASK, PictureAim, picture_detail
-from app.research.open_work import OpenTask, SubjectStanding, task_key
+from app.research.open_work import TASK_PROMPTS, OpenTask, SubjectStanding, task_key
 from app.research.open_work_tasks import subject_priority
 
 __all__ = ["PICTURE_ACCEPTANCE", "PICTURE_HOLDING", "craft_materials", "picture_tasks"]
@@ -92,6 +92,7 @@ def _task(standing: SubjectStanding, detail: str, needed: str) -> OpenTask:
         needed=needed,
         acceptance=PICTURE_ACCEPTANCE,
         count=1,
+        prompt=TASK_PROMPTS.get(PICTURE_TASK),
     )
 
 

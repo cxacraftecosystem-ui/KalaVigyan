@@ -14,7 +14,7 @@ from app.research.embedding import TextEmbedder
 from app.research.evidence import SourceDocument
 from app.research.evidence_pack import EvidencePack
 from app.research.structured import StructuredModel
-from app.research.write_back import FoundBy, WriteBackResult
+from app.research.write_back import ClaimWriteBack, FoundBy, WriteBackResult
 from app.retrieval.indexing import EmbeddedCounts, embed_written
 
 from .claim_pages import refresh_claim_pages
@@ -24,11 +24,31 @@ from .live_source_store import keep_document
 from .write_back_gates import gate_write_back, record_write_back_runs, research_placement
 from .write_back_plan import SkippedSentence, composed_sentences, write_back_plan
 
-__all__ = ["NOTHING_EMBEDDED", "StoredResearch", "sentence_claim_ids", "shown_results", "store_live_research"]
+__all__ = [
+    "NOTHING_EMBEDDED",
+    "GatedWrite",
+    "StoredResearch",
+    "sentence_claim_ids",
+    "shown_results",
+    "store_live_research",
+    "write_through_gates",
+]
 
 logger = logging.getLogger(__name__)
 
 NOTHING_EMBEDDED = EmbeddedCounts(claims=0, chunks=0)
+
+
+@dataclass(frozen=True)
+class GatedWrite:
+    results: tuple[WriteBackResult, ...]
+    held_instead: tuple[WriteBackResult, ...]
+    skipped: tuple[SkippedSentence, ...]
+    vectored: int
+    live: bool
+
+    def claim_ids(self) -> dict[str, uuid.UUID]:
+        return {result.dedupe_key: result.claim_id for result in (*self.held_instead, *self.results)}
 
 
 @dataclass(frozen=True)
@@ -58,23 +78,43 @@ async def store_live_research(
     source_ids = [await keep_document(session, document) for document in pack.documents]
     fields = await field_documents(session, pack)
     plan = write_back_plan(pack, answer, found_by=found_by, answer_id=answer_id, field_documents=fields)
-    gated = await gate_write_back(session, plan.claims, _documents(pack, fields), embed=embed, judge=judge)
+    written = await write_through_gates(
+        session, plan.claims, _documents(pack, fields), embed=embed, judge=judge
+    )
+    await session.commit()
+    await refresh_claim_pages(session, shown_results(written.results, live=written.live))
+    kept = tuple(dict.fromkeys(source_ids))
+    embedded, error = await _embed_written(session, embed, list(written.results), kept)
+    return StoredResearch(
+        source_ids=kept,
+        results=(*written.results, *written.held_instead),
+        skipped=(*plan.skipped, *written.skipped),
+        embedded=EmbeddedCounts(claims=embedded.claims + written.vectored, chunks=embedded.chunks),
+        sentence_keys=plan.sentence_keys,
+        embedding_error=error,
+    )
+
+
+async def write_through_gates(
+    session: AsyncSession,
+    claims: Sequence[ClaimWriteBack],
+    documents: Mapping[str, SourceDocument],
+    *,
+    embed: TextEmbedder | None,
+    judge: StructuredModel | None,
+) -> GatedWrite:
+    gated = await gate_write_back(session, claims, documents, embed=embed, judge=judge)
     placed = await research_placement(session)
     results = await SqlClaimWriter(session, status=placed.status).write(gated.claims)
     vectored = await record_write_back_runs(
         session, results, gated.runs, live=placed.live, checked_at=datetime.now(UTC)
     )
-    await session.commit()
-    await refresh_claim_pages(session, shown_results(results, live=placed.live))
-    kept = tuple(dict.fromkeys(source_ids))
-    embedded, error = await _embed_written(session, embed, results, kept)
-    return StoredResearch(
-        source_ids=kept,
-        results=(*results, *gated.held_instead),
-        skipped=(*plan.skipped, *gated.skipped),
-        embedded=EmbeddedCounts(claims=embedded.claims + vectored, chunks=embedded.chunks),
-        sentence_keys=plan.sentence_keys,
-        embedding_error=error,
+    return GatedWrite(
+        results=tuple(results),
+        held_instead=gated.held_instead,
+        skipped=gated.skipped,
+        vectored=vectored,
+        live=placed.live,
     )
 
 

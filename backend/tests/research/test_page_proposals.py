@@ -75,6 +75,15 @@ def test_a_picture_may_rest_on_a_fact_of_the_bundle() -> None:
         bundle(pictures=[picture])
 
 
+def test_a_picture_is_new_with_its_facts_or_given_already_by_its_id_alone() -> None:
+    given = {"contributionId": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e5f"}
+    assert str(bundle(pictures=[given]).pictures[0].contribution_id) == given["contributionId"]
+    with pytest.raises(ValidationError, match="names the facts it shows"):
+        bundle(pictures=[{}])
+    with pytest.raises(ValidationError, match="carries its own facts"):
+        bundle(facts=[FACT], pictures=[{**given, "claimIds": ["fact:0"]}])
+
+
 def test_a_layout_part_follows_the_layout_rules() -> None:
     hero = {"ref": "kutch-ajrakh/pictures/i01", "chapter": "glance", "order": 1, "role": "HERO"}
     twice = {**hero, "order": 2}
