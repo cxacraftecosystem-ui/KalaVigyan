@@ -74,7 +74,9 @@ def _mark_unhinted(font: TTFont) -> None:
 
 
 def build_face(output: Output, source: bytes) -> bytes:
-    font = instancer.instantiateVariableFont(TTFont(BytesIO(source)), {"wght": WEIGHT_RANGE})
+    font = instancer.instantiateVariableFont(
+        TTFont(BytesIO(source), recalcTimestamp=False), {"wght": WEIGHT_RANGE}
+    )
     options = _subset_options()
     subsetter = subset.Subsetter(options)
     subsetter.populate(unicodes=sorted(codepoints(output.spans)))
@@ -82,6 +84,7 @@ def build_face(output: Output, source: bytes) -> bytes:
     _mark_unhinted(font)
     written = BytesIO()
     font.flavor = options.flavor
+    font.recalcTimestamp = False
     font.save(written)
     return written.getvalue()
 
