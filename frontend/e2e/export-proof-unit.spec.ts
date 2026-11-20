@@ -112,11 +112,18 @@ test("a Researcher's run reports that lesson packs need a Professor instead of f
   expect(markdown).toContain(`- ${note}`);
 });
 
-test("the production nav expectation for learners is what the client draws for them", () => {
+const LEARNER_CAPABILITIES = ["ASK_STANDARD", "VOICE", "GENERATE_IMAGE", "SAVE_EXPORT"];
+const SERVED_CAPABILITIES: Record<"STUDENT" | "RESEARCHER", string[]> = {
+  STUDENT: LEARNER_CAPABILITIES,
+  RESEARCHER: [...LEARNER_CAPABILITIES, "GENERATE_VIDEO", "READ_RESEARCHER_QUOTES", "PROPOSE_KNOWLEDGE", "RUN_ENRICHMENT", "ACCEPT_ALIASES"]
+};
+
+test("the production nav expectation for learners is what the client draws for them with the capabilities the server grants", () => {
   for (const role of ["STUDENT", "RESEARCHER"] as const satisfies readonly UserRole[]) {
-    const user: User = { id: role, email: `${role}@example.org`, name: role, role };
+    const user: User = { id: role, email: `${role}@example.org`, name: role, role, capabilities: SERVED_CAPABILITIES[role] };
     const shown = NAV_ITEMS.filter((item) => isNavItemVisible(item, user, false));
     expect(NAV_BY_ROLE[role]?.menu).toEqual(shown.map((item) => item.label));
     expect(NAV_BY_ROLE[role]?.bar).toEqual(shown.filter((item) => item.group === null).map((item) => item.label));
+    expect(NAV_BY_ROLE[role]?.account).toEqual(shown.filter((item) => item.group !== null).map((item) => item.label));
   }
 });
