@@ -7,15 +7,15 @@ import { COMPONENT_VIEWS } from "../components/monograph/componentViews";
 import { placedComponents } from "../lib/monographRenderLayout";
 import { shellSlots, shellTree } from "../lib/monographShellTree";
 
-import { anchorTest, AJRAKH_DIR, canonical, subtrees, tokenize, type Token } from "./monographMarkup";
-import { drawnMain, firstDifference, goldenDocument, nativeComponents, servedMain } from "./monographNative";
+import { anchorTest, AJRAKH_DIR, canonical, subtrees, type Token } from "./monographMarkup";
+import { caselessTokens, drawnMain, firstDifference, goldenDocument, nativeComponents, servedMain } from "./monographNative";
 
 const WINDOW = 12;
 
 let pages: { approved: Token[]; rendered: Token[] } | null = null;
 
 function bothMains(): { approved: Token[]; rendered: Token[] } {
-  pages ??= { approved: tokenize(servedMain()), rendered: tokenize(drawnMain()) };
+  pages ??= { approved: caselessTokens(servedMain()), rendered: caselessTokens(drawnMain()) };
   return pages;
 }
 

@@ -34,7 +34,7 @@ test("the shell keeps every element without a native slot as written and opens o
 test("a slot no native view takes, text, comments, void and raw-text elements are read as a browser reads them", () => {
   const html = `<div id="w">Fish &#x27;n&#39; chips<!-- note --><img src="/a.jpg" alt="A &quot;cloth&quot;"><svg viewBox="0 0 2 2"><path d="M0 0"/></svg><style>.x>.y{color:red}</style><kv-slot component="${PLATE}"></kv-slot><kv-slot component="a/b/other"></kv-slot></div>`;
   expect(drawn(html)).toBe(
-    `<div><div id="w">Fish &#x27;n&#x27; chips<img src="/a.jpg" alt="A &quot;cloth&quot;"/><svg viewBox="0 0 2 2"><path d="M0 0"></path></svg><style>.x>.y{color:red}</style><figure data-native="${PLATE}"></figure><kv-slot component="a/b/other"></kv-slot></div></div>`
+    `<div><div id="w">Fish &#x27;n&#x27; chips<img src="/a.jpg" alt="A &quot;cloth&quot;"/><svg viewBox="0 0 2 2"><path d="M0 0"/></svg><style>.x>.y{color:red}</style><figure data-native="${PLATE}"></figure><kv-slot component="a/b/other"></kv-slot></div></div>`
   );
 });
 

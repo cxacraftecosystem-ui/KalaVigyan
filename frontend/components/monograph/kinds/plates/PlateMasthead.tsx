@@ -28,7 +28,7 @@ export function PlateMasthead({ label, renderUnit }: { label: MastheadLabel; ren
           {label.grades.map((grade) => (
             <span key={grade.grade} className="rs-g">
               <span className={`rel ${grade.grade}`} aria-hidden="true"></span>
-              {`${grade.grade} ${grade.count}`}
+              {`${grade.grade} ${grade.count}`}
             </span>
           ))}
         </span>

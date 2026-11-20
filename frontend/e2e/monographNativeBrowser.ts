@@ -10,6 +10,7 @@ export type AnchorPlan = { label: string; index: number; id: string | null; attr
 const BY_ID = /^#([\w-]+)$/;
 const BY_ATTRIBUTE = /^\[([\w-]+)="([^"]*)"\]$/;
 const SETTLE_MS = 1500;
+const KIT_TIMEOUT_MS = 30_000;
 const SCROLL_PAUSE_MS = 30;
 const AJRAKH = "Kutch-Ajrakh";
 
@@ -56,6 +57,7 @@ export async function markAnchors(page: Page, plans: readonly AnchorPlan[]): Pro
 
 export async function openedPage(page: Page, path: string): Promise<void> {
   await page.goto(path, { waitUntil: "networkidle" });
+  await page.waitForFunction(() => "KV" in window, undefined, { timeout: KIT_TIMEOUT_MS }).catch(() => undefined);
   await page.evaluate(async (pause) => {
     for (let y = 0; y < document.body.scrollHeight; y += window.innerHeight) {
       window.scrollTo(0, y);

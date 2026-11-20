@@ -14,13 +14,15 @@ const APPROVED = "/monographs/kutch-ajrakh/index.html";
 const RENDERED = "/crafts/Kutch-Ajrakh/monograph";
 const PIXEL_TOLERANCE = 0.02;
 const SHOT_TIMEOUT_MS = 10_000;
-const RUN_TIMEOUT_MS = 12 * 60_000;
+const RUN_TIMEOUT_MS = 17 * 60_000;
 const WIDTHS: readonly Width[] = [SMALL_PHONE, TABLET, DESKTOP];
 const SMOKE_PROJECT = "desktop";
 const LOCAL_API = /^http:\/\/(127\.0\.0\.1|localhost):\d+$/;
+const REACT_FAILURE = /Minified React error|hydrat/i;
 
 type Shot = PixelDifference | "missing" | "hidden";
 type Pages = { approved: Page; rendered: Page; errors: string[] };
+type Run = { key: string; width: Width; scheme: Scheme };
 
 let api: Server | null = null;
 
@@ -43,8 +45,6 @@ async function servedApi(address: URL): Promise<Server> {
   return server;
 }
 
-test.describe.configure({ mode: "serial" });
-
 test.beforeAll(async () => {
   const address = apiAddress();
   test.skip(test.info().project.name !== SMOKE_PROJECT || address === null, "runs once, against the local build with its API at a local address");
@@ -66,7 +66,7 @@ function keep(name: string, body: Buffer | string): void {
   writeFileSync(test.info().outputPath(name), body);
 }
 
-async function componentShot(pages: Pages, plan: AnchorPlan): Promise<Shot> {
+async function componentShot(pages: Pages, plan: AnchorPlan, run: Run): Promise<Shot> {
   const selector = `[data-native-parity="${plan.index}"]`;
   const before = pages.approved.locator(selector);
   if (!(await before.count()) || !(await before.isVisible())) return "hidden";
@@ -75,17 +75,20 @@ async function componentShot(pages: Pages, plan: AnchorPlan): Promise<Shot> {
   if (!left || !right) return "missing";
   const shot = await pixelDifference(left, right);
   if (differs(shot)) {
-    keep(`${plan.index}.approved.png`, left);
-    keep(`${plan.index}.rendered.png`, right);
+    keep(`${run.key}-${plan.index}.approved.png`, left);
+    keep(`${run.key}-${plan.index}.rendered.png`, right);
   }
   return shot;
 }
 
-async function bothPages(browser: Browser, width: Width, scheme: Scheme): Promise<Pages> {
-  const context = await browser.newContext(contextOptions(width, scheme));
+async function bothPages(browser: Browser, run: Run): Promise<Pages> {
+  const context = await browser.newContext(contextOptions(run.width, run.scheme));
   const rendered = await context.newPage();
   const errors: string[] = [];
   rendered.on("pageerror", (error) => errors.push(error.message));
+  rendered.on("console", (message) => {
+    if (message.type() === "error" && REACT_FAILURE.test(message.text())) errors.push(message.text());
+  });
   await openedPage(rendered, RENDERED);
   const approved = await context.newPage();
   await servedFaces(approved, await selfHostedFaces(rendered));
@@ -93,29 +96,35 @@ async function bothPages(browser: Browser, width: Width, scheme: Scheme): Promis
   return { approved, rendered, errors };
 }
 
-async function componentShots(pages: Pages): Promise<Record<string, Shot>> {
+async function componentShots(pages: Pages, run: Run): Promise<Record<string, Shot>> {
   const plans = anchorPlans(nativeComponents());
   await markAnchors(pages.approved, plans);
   await markAnchors(pages.rendered, plans);
   const shots: Record<string, Shot> = {};
-  for (const plan of plans) shots[`${plan.index} ${plan.label}`] = await componentShot(pages, plan);
+  for (const plan of plans) shots[`${plan.index} ${plan.label}`] = await componentShot(pages, plan, run);
   return shots;
 }
 
-for (const width of WIDTHS) {
-  for (const scheme of SCHEMES) {
-    test(`Kutch Ajrakh's native views read, look and answer as the approved page at ${width.label} ${scheme}`, async ({ browser }) => {
-      test.setTimeout(RUN_TIMEOUT_MS);
-      const pages = await bothPages(browser, width, scheme);
-      const text = lineDiff(await mainLines(pages.approved), await mainLines(pages.rendered));
-      await alignPhase(pages.approved, pages.rendered);
-      const shots = await componentShots(pages);
-      const answers = { approved: await pageAnswers(pages.approved), rendered: await pageAnswers(pages.rendered) };
-      keep("native-parity.json", JSON.stringify({ text, shots, answers, errors: pages.errors }, null, 1));
-      expect.soft(pages.errors, "errors the React page threw").toEqual([]);
-      expect.soft(text.onlyApproved.length + text.onlyRendered.length, "lines that differ (see native-parity.json)").toBe(0);
-      expect.soft(answers.rendered, "a citation and the first figure answer as on the approved page").toEqual(answers.approved);
-      expect(Object.keys(shots).filter((key) => differs(shots[key])), "native views that differ (see native-parity.json)").toEqual([]);
-    });
-  }
+async function checkRun(browser: Browser, run: Run): Promise<void> {
+  const pages = await bothPages(browser, run);
+  const text = lineDiff(await mainLines(pages.approved), await mainLines(pages.rendered));
+  await alignPhase(pages.approved, pages.rendered);
+  const shots = await componentShots(pages, run);
+  const answers = { approved: await pageAnswers(pages.approved), rendered: await pageAnswers(pages.rendered) };
+  keep(`${run.key}-native-parity.json`, JSON.stringify({ text, shots, answers, errors: pages.errors }, null, 1));
+  await pages.rendered.context().close();
+  expect.soft(pages.errors, `${run.key}: errors the React page threw`).toEqual([]);
+  expect.soft(text.onlyApproved.length + text.onlyRendered.length, `${run.key}: lines that differ`).toBe(0);
+  expect.soft(answers.rendered, `${run.key}: a citation and the first figure answer as on the approved page`).toEqual(answers.approved);
+  expect.soft(Object.keys(shots).filter((key) => differs(shots[key])), `${run.key}: native views that differ`).toEqual([]);
 }
+
+test("Kutch Ajrakh's native views read, look and answer as the approved page at 360, 834 and 1440 in light and dark", async ({ browser }) => {
+  test.setTimeout(RUN_TIMEOUT_MS);
+  for (const width of WIDTHS) {
+    for (const scheme of SCHEMES) {
+      const run = { key: `${width.key}-${scheme}`, width, scheme };
+      await test.step(run.key, () => checkRun(browser, run));
+    }
+  }
+});

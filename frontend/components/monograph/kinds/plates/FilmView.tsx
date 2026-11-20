@@ -72,9 +72,7 @@ function FilmLabels({ film }: { film: FilmSpec }) {
           </span>
         ))}
       </span>
-      <span className="fl-text" id="film-note">
-        {film.note}
-      </span>
+      <span className="fl-text" id="film-note">{`${film.note} `}</span>
       <span className="fl-act">
         <button className="dl" type="button" id="film-dl" data-name={film.downloadName}>
           <DownloadIcon />
