@@ -86,8 +86,8 @@ class ComponentProposal(Base):
     )
     reviewedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     reviewNote: Mapped[str | None] = mapped_column(String(REVIEW_NOTE_CHARS))
-    spec: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
-    units: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    spec: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
+    units: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
     claimIds: Mapped[list[uuid.UUID]] = mapped_column(
         ARRAY(UUID(as_uuid=True)), nullable=False, server_default=text("ARRAY[]::uuid[]")
     )

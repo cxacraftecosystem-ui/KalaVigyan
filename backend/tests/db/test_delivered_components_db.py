@@ -114,6 +114,20 @@ async def test_approval_registers_it_and_the_craft_s_document_draws_it_with_its_
     assert (component.kind, component.chapter) == ("general_table", "chem")
 
 
+async def test_a_proposal_without_a_spec_stores_no_delivery_as_sql_null(session: AsyncSession) -> None:
+    stored = await propose_component(
+        session, await person(session, RESEARCHER), draft(spec=None, units={}), now=NOW
+    )
+    assert stored.message.startswith("Stored for review: an Admin approves or rejects it.")
+    empty = await session.scalars(
+        select(ComponentProposal.id).where(
+            ComponentProposal.spec.is_(None), ComponentProposal.units.is_(None)
+        )
+    )
+    assert empty.all() == [stored.proposal_id]
+    assert await session.scalar(select(ComponentProposal.claimIds)) == []
+
+
 async def test_a_professor_s_delivered_component_is_registered_at_once(session: AsyncSession) -> None:
     stored = await propose_component(session, await person(session, PROFESSOR), draft(), now=NOW)
     assert (stored.status, stored.message) == (
