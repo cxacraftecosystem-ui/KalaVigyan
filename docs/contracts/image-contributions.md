@@ -121,7 +121,7 @@ file. `screen` is `{verdict, flags, reasons}` or null for a picture without its 
 
 ## Screens
 
-- `/contributions/pictures` (Researcher and above): the declaration and the upload in one form (craft, what it is, the AI tool and prompt, the craft's facts to choose from, caption, description, the picture with a preview of it as it will be shown, caption first and credit after, the declaration), and the contributor's own pictures with the screen's reasons while one is held, and Take it back while one still waits.
+- `/contributions/pictures` (Researcher and above): the declaration and the upload in one form (craft, what it is, the AI tool and prompt, the craft's facts to choose from, caption, description, the picture with a preview of it as it will be shown, caption first and credit after, the declaration; or up to ten pictures of one craft under one declaration through `POST /batch`, each with its own caption, description and prompt, sent one by one), and the contributor's own pictures with the screen's reasons while one is held, and Take it back while one still waits.
 - `/admin/pictures` (Admin and Master Admin): the queue by status, each picture with its label, caption, description, prompt, facts, AI mark and the screen's reasons, Approve, and Refuse with a note.
 
 ## On craft pages
