@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { CollectionShelf } from "@/components/crafts/CollectionShelf";
 import { heroCredit } from "@/components/crafts/PhotoCard";
+import { ledFamilyShelves, ledSubFamilyShelves } from "@/components/crafts/shelfLead";
 import { familyShelves, findFamily, indexSubLine, isCatchAllKind, plateMaterial, shelfSubLine, subFamilyShelves } from "@/lib/atlasCollection";
 import { allPlacesLabel, atlasDek, conceptNeighbours, monographCount, numberWord, searchHref, stateCounts, tryQueries } from "@/lib/atlasIndex";
 import { namesByState, offersNamesWall, shownName, type NamedCraft } from "@/lib/atlasNames";
@@ -76,6 +77,27 @@ test("a category hub shelves each sub-family and keeps the rest behind Show all"
   expect(shelves[0].more).toEqual([]);
   expect(shelves[1].lead).toBeNull();
   expect(findFamily(body, "Nowhere")).toBeNull();
+});
+
+test("a shelf with no photographed craft leads with its first plate, so the lead and four plates fill a six-column row", () => {
+  const body = catalogue();
+  const [base] = familyShelves(body);
+  const plate = (slug: string) => ({ ...base.plates[0], craft: { ...base.plates[0].craft, slug, id: slug } });
+  const shelf = { ...base, lead: null, plates: ["a", "b", "c", "d"].map(plate), more: ["e", "f"].map(plate) };
+  const [filled] = ledSubFamilyShelves([shelf]);
+  expect(filled.lead?.craft.slug).toBe("a");
+  expect(filled.plates.map((entry) => entry.craft.slug)).toEqual(["b", "c", "d", "e"]);
+  expect(filled.more.map((entry) => entry.craft.slug)).toEqual(["f"]);
+  expect(ledSubFamilyShelves([base])[0]).toBe(base);
+  const textiles = findFamily(body, "textiles-based-craft-category");
+  if (!textiles) throw new Error("the golden catalogue has the textiles family");
+  const [, embroidery] = ledSubFamilyShelves(subFamilyShelves(body, textiles));
+  expect(embroidery.lead?.craft.slug).toBe("Phulkari");
+  expect(embroidery.plates).toEqual([]);
+  expect(ledFamilyShelves(body).every((family) => family.lead !== null)).toBe(true);
+  const html = renderToStaticMarkup(createElement(CollectionShelf, { shelf: filled, all: { expand: filled.more } }));
+  expect(html.match(/data-lead="true"/g)).toHaveLength(1);
+  expect(html.match(/data-testid="collection-plate"/g)).toHaveLength(5);
 });
 
 test("states count each reader craft once, all of India apart", () => {

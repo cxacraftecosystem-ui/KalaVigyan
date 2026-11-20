@@ -8,13 +8,19 @@ const KEY_X = 27.6;
 const KEY_LINE_END = 63.1;
 const KEY_TEXT_X = 67.1;
 const KEY_PAD = 1.5;
+const KEY_TEXT_ROOM = 8;
+
+export function circleKeyBox(): string {
+  const bottom = KEY_RADIUS * 2 + KEY_PAD;
+  return `0 ${-KEY_TEXT_ROOM} 85 ${bottom + KEY_PAD + KEY_TEXT_ROOM}`;
+}
 
 export function CircleKey({ largest }: { largest: number }) {
   const keys = circleKeys(largest);
   const top = keys[keys.length - 1] ?? 1;
   const bottom = KEY_RADIUS * 2 + KEY_PAD;
   return (
-    <svg viewBox={`0 0 85 ${bottom + KEY_PAD}`} className="h-auto w-[85px] shrink-0" aria-hidden data-testid="circle-key">
+    <svg viewBox={circleKeyBox()} className="h-auto w-[85px] shrink-0" aria-hidden data-testid="circle-key">
       {keys.map((value) => {
         const r = KEY_RADIUS * Math.sqrt(value / top);
         const crown = bottom - 2 * r;

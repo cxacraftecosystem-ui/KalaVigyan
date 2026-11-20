@@ -17,7 +17,7 @@ export function atlasLine(craftCount: number | null): string | null {
 }
 
 export function Landing({ craftCount, content }: { craftCount: number | null; content: LandingContent }) {
-  const cite = useCiteMaps(content.sources);
+  const cite = useCiteMaps(content.sources, content.botanical);
   const atlas = atlasLine(craftCount);
   return (
     <div className="kv-shell">

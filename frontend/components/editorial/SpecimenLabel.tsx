@@ -42,7 +42,7 @@ export function SealGlyph() {
 }
 
 export function SpecimenLabel({ variant, kicker, family, name, nativeName, sentence, gi, place, provenance, credit, steps, onPhoto = false, headingLevel, nameId, className }: SpecimenLabelProps) {
-  const meta = [gi, place, provenance].filter(Boolean);
+  const meta = [gi, place].filter(Boolean);
   const Frame = variant === "masthead" ? "div" : "aside";
   return (
     <Frame aria-label={variant === "masthead" ? undefined : "Specimen label"} className={cn("kv-label", className)} data-on-photo={onPhoto ? "" : undefined} data-variant={variant} data-testid="specimen-label">
@@ -62,9 +62,9 @@ export function SpecimenLabel({ variant, kicker, family, name, nativeName, sente
             </span>
           ) : null}
           {place ? <span>{place}</span> : null}
-          {provenance ? <span>{provenance}</span> : null}
         </div>
       ) : null}
+      {provenance ? <div className="kv-label-prov">{provenance}</div> : null}
       {credit ? <p className="mt-2 font-ui text-caption text-ink-3 [&_a]:underline-offset-2">{credit}</p> : null}
     </Frame>
   );

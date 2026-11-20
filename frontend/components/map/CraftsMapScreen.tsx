@@ -47,7 +47,7 @@ export function CraftsMapScreen() {
 
   return (
     <article className="grid min-w-0 gap-8 pb-section" data-testid="crafts-map">
-      <header className="grid gap-6 border-b border-rule pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-16">
+      <header className="grid gap-6 pt-8 md:pt-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-16">
         <div className="min-w-0">
           <p className="kicker">The atlas</p>
           <h1 className="mt-3 font-headline text-h1 text-ink-1">{MAP_TITLE}</h1>

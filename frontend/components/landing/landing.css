@@ -80,6 +80,7 @@
     max-width: 12.5em;
     margin: 0;
     color: var(--photo-ink-1);
+    text-wrap: balance;
   }
 
   .kv-hero-title em {
@@ -91,6 +92,7 @@
     max-width: 34ch;
     margin: 22px 0 0;
     color: var(--photo-ink-2);
+    text-wrap: pretty;
   }
 
   .kv-hero-actions {
@@ -244,6 +246,22 @@
     display: none;
   }
 
+  .kv-auth-credit {
+    margin: auto 0 0;
+    padding-block: 2.5rem 0.875rem;
+    color: var(--photo-ink-2);
+    font-family: var(--font-ui);
+    font-size: var(--text-caption);
+    line-height: 1.4;
+  }
+
+  .kv-auth-caption {
+    color: var(--photo-ink-1);
+    font-family: var(--font-reading);
+    font-size: var(--text-figcaption);
+    font-style: italic;
+  }
+
   .kv-auth-main {
     display: flex;
     min-width: 0;
@@ -252,7 +270,7 @@
 
   .kv-auth-body {
     width: 100%;
-    max-width: 28rem;
+    max-width: 25rem;
     margin-inline: auto;
     padding-block: 2rem 3rem;
   }
@@ -273,6 +291,10 @@
       display: block;
       margin-top: auto;
       padding: 0 2.5rem 2.5rem;
+    }
+
+    .kv-auth-credit {
+      display: none;
     }
 
     .kv-auth-label .kv-label {

@@ -40,26 +40,42 @@ export function PlateGround({ material }: { material: PlateMaterial }) {
   );
 }
 
+export type PlateSize = "card" | "masthead" | "small";
+
 export type TypographicPlateProps = {
   material: PlateMaterial;
   englishName: string;
   nativeName?: NativeName | null;
   kicker?: string | null;
-  size?: "card" | "masthead" | "small";
+  size?: PlateSize;
   strip?: ReactNode;
   decorative?: boolean;
   className?: string;
+};
+
+const PLATE_HEIGHT: Record<PlateSize, string> = { card: "min-h-44", small: "min-h-24", masthead: "min-h-0" };
+
+const PLATE_BODY: Record<PlateSize, string> = {
+  card: "items-start px-4 pt-3.5 pb-4",
+  small: "items-start p-2.5",
+  masthead: "items-end px-6 py-[22px] text-end lg:px-11 lg:py-[34px]"
+};
+
+const NAME_BOX: Record<PlateSize, string> = {
+  card: "mt-auto pt-5",
+  small: "mt-auto pt-5",
+  masthead: "order-first lg:max-w-[52%]"
 };
 
 export function TypographicPlate({ material, englishName, nativeName, kicker, size = "card", strip, decorative = false, className }: TypographicPlateProps) {
   const shown = shownNativeName(nativeName);
   const name = shown?.text ?? englishName;
   return (
-    <div className={cn("kv-plate", `g-${material}`, size === "masthead" ? "min-h-0" : "min-h-44", className)} data-size={size} data-material={material} aria-hidden={decorative || undefined} data-testid="typographic-plate">
+    <div className={cn("kv-plate", `g-${material}`, PLATE_HEIGHT[size], className)} data-size={size} data-material={material} aria-hidden={decorative || undefined} data-testid="typographic-plate">
       <PlateGround material={material} />
-      <div className={cn("flex flex-1 flex-col items-start", size === "small" ? "p-2.5" : size === "masthead" ? "p-6 lg:items-end lg:p-10 lg:text-end" : "px-4 pt-3.5 pb-4")}>
-        {kicker && size !== "small" ? <span className="kv-knock kicker m-0.5 text-inherit">{kicker}</span> : null}
-        <span className="mt-auto max-w-full min-w-0 pt-5">
+      <div className={cn("flex flex-1 flex-col", PLATE_BODY[size])}>
+        {kicker && size !== "small" ? <span className={cn("kv-knock kicker m-0.5 text-inherit", size === "masthead" && "mt-auto")}>{kicker}</span> : null}
+        <span className={cn("max-w-full min-w-0", NAME_BOX[size])}>
           {shown ? (
             <span lang={shown.lang} data-script={shown.script} dir={shown.dir} className="kv-plate-name kv-knock" data-long={name.length > LONG_NAME ? "" : undefined}>
               {name}

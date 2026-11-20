@@ -5,15 +5,17 @@ import { expect, test } from "@playwright/test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
+import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthProvider } from "@/components/AuthProvider";
 import { NAV_ITEMS, isNavItemVisible } from "@/components/DynamicIslandNav";
 import { DNS_NAMESPACE, curatedClaimId, uuidV5 } from "@/components/landing/curatedClaim";
 import { InstitutionFooter } from "@/components/landing/Footer";
 import { Landing, atlasLine } from "@/components/landing/Landing";
-import { LANDING_CRAFT_SLUG, emptyLanding, giDay, landingContent, ribbonStages, type LandingContent } from "@/components/landing/landingContent";
+import { LANDING_CRAFT_SLUG, botanicalNames, emptyLanding, giDay, italicParts, landingContent, ribbonStages, rulerWord, type LandingContent } from "@/components/landing/landingContent";
 import { craftsLine } from "@/components/landing/LandingHero";
 import { currentVatStep } from "@/components/landing/VatSteps";
 import { currentHref } from "@/components/nav/Appbar";
+import { ReadingBarView } from "@/components/nav/ReadingBar";
 import type { User } from "@/lib/types";
 
 import { rawPage } from "./craftPageFixture";
@@ -49,9 +51,28 @@ test("the landing reads its specimen, its four colours and its demonstration fro
   expect(new Set(content.sources.map((source) => source.id)).size).toBe(content.sources.length);
 });
 
-test("the ribbon draws Kutch Ajrakh's eleven ordered stages under their first local name", () => {
-  expect(ribbonStages(PAGE.process.stages).map((stage) => stage.label)).toEqual(["saaj", "kasanu", "rekh", "Drying the outline print", "kat", "kan", "gach", "Indigo dyeing", "vichharnu", "rang", "minakari"]);
+test("the ribbon draws Kutch Ajrakh's eleven ordered stages under their first local name, or the first word of the English name in lower case", () => {
+  expect(ribbonStages(PAGE.process.stages).map((stage) => stage.label)).toEqual(["saaj", "kasanu", "rekh", "drying", "kat", "kan", "gach", "indigo", "vichharnu", "rang", "minakari"]);
+  expect(ribbonStages(PAGE.process.stages).filter((stage) => !stage.local).map((stage) => stage.order)).toEqual([4, 8]);
   expect(ribbonStages(PAGE.process.stages.slice(0, 5))).toEqual([]);
+  expect(rulerWord("  Drying the outline print")).toBe("drying");
+});
+
+test("a botanical name the stored stages record is set in italic wherever a landing sentence names it, and only as a whole word", () => {
+  const names = botanicalNames(PAGE.process.stages);
+  expect(names).toContain("Rubia cordifolia");
+  expect(names).toContain("Indigofera tinctoria");
+  expect(new Set(names).size).toBe(names.length);
+  const red = "The long thin roots of Indian madder, Rubia cordifolia or majeeta, give a dye.";
+  expect(italicParts(red, names)).toEqual([
+    { text: "The long thin roots of Indian madder, ", italic: false },
+    { text: "Rubia cordifolia", italic: true },
+    { text: " or majeeta, give a dye.", italic: false }
+  ]);
+  expect(italicParts("Tamarixes grow here.", ["Tamarix"])).toEqual([{ text: "Tamarixes grow here.", italic: false }]);
+  expect(italicParts("plain", [])).toEqual([{ text: "plain", italic: false }]);
+  const markup = landing(landingContent(PAGE, idOf));
+  expect(markup).toContain("<i>Rubia cordifolia</i>");
 });
 
 test("without the stored page the landing still stands and shows no sentence it cannot cite", () => {
@@ -87,6 +108,24 @@ test("the appbar keeps the reading entries inline and moves tools, admin and acc
   expect(NAV_ITEMS.find((item) => item.href === "/lessons")?.group).toBe("Tools");
   expect(currentHref(["/admin", "/admin/access", "/ask"], "/admin/access/requests")).toBe("/admin/access");
   expect(currentHref(["/ask"], "/asked")).toBeNull();
+});
+
+test("below 768px the reading bar is the full wordmark and Menu alone, and signing in waits in the menu's sheet", () => {
+  const links = [{ href: "/crafts", label: "Crafts", current: true }];
+  const account = createElement("a", { href: "/login" }, "Sign in");
+  const markup = renderToStaticMarkup(createElement(ReadingBarView, { links, account }));
+  expect(markup).toContain('<span class="contents max-md:hidden"><a href="/login">Sign in</a></span>');
+  expect(markup).not.toContain("sm:hidden");
+  expect(markup).toContain('data-testid="menu-button"');
+  expect(markup).toContain('aria-current="page"');
+  expect(renderToStaticMarkup(createElement(ReadingBarView, { links, account: null }))).not.toContain("max-md:hidden");
+});
+
+test("a sign-in screen credits its photograph where it shows: under the photograph on a phone, in the label from 1024px", () => {
+  const markup = renderToStaticMarkup(createElement(AuthShell, { title: "Welcome back", subtitle: "Sign in to your account" }));
+  expect(markup.match(/SMarndi, CC BY-SA 4.0, via Wikimedia Commons/g)).toHaveLength(2);
+  expect(markup).toContain('data-testid="auth-photo-credit"');
+  expect(markup.match(/<h1/g)).toHaveLength(1);
 });
 
 test("the vat rests on blue in the air, and the copy counts only what the catalogue counts", () => {

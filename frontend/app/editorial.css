@@ -371,6 +371,22 @@
     font-variant-numeric: lining-nums;
   }
 
+  .kv-label[data-variant="masthead"] .kv-label-meta {
+    margin-top: 1rem;
+  }
+
+  .kv-label-prov {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem 0.875rem;
+    margin-top: 0.625rem;
+    color: var(--ink-3);
+    font-size: var(--text-label);
+    line-height: 1.4;
+    font-variant-numeric: lining-nums;
+  }
+
   .kv-tag {
     display: inline-block;
     padding: 1px 5px;
@@ -457,15 +473,22 @@
   }
 
   .kv-plate[data-size="masthead"] .kv-plate-name {
-    font-size: clamp(2rem, 9cqi, 6rem);
+    font-size: clamp(3.5rem, 22cqi, 12rem);
+  }
+
+  .kv-plate[data-size="masthead"] .kv-plate-name[data-long] {
+    font-size: clamp(2.25rem, 12cqi, 7rem);
   }
 
   .kv-plate[data-size="masthead"] .kv-plate-name[data-latin] {
     font-size: clamp(2rem, 7.5cqi, 5.5rem);
   }
 
-  .kv-plate[data-size="small"] .kv-plate-name,
-  .kv-plate[data-size="small"] .kv-plate-name[data-latin] {
+  .kv-plate[data-size="small"] .kv-plate-name {
+    font-size: 2rem;
+  }
+
+  .kv-plate[data-size="small"] .kv-plate-name:is([data-latin], [data-long]) {
     font-size: 1rem;
   }
 
@@ -778,9 +801,18 @@
     }
   }
 
-  .kv-doc-open,
-  .kv-unc-head {
+  .kv-doc-open {
     padding-top: 1.75rem;
+  }
+
+  .kv-unc-head {
+    padding-top: 0.25rem;
+  }
+
+  @media (min-width: 768px) {
+    .kv-unc-head {
+      padding-top: 0;
+    }
   }
 
   .kv-prov {

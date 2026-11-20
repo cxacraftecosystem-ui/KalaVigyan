@@ -26,7 +26,7 @@ export type CraftRecordView = {
   material: ReturnType<typeof plateMaterial>;
   gi: string | null;
   place: string | null;
-  provenance: string;
+  provenance: string[];
   facts: RecordFact[];
   start: string;
   questions: RecordQuestion[];
@@ -47,10 +47,14 @@ export function languageName(lang: string): string {
   }
 }
 
-export function recordProvenance(name: RecordName | null): string {
+export function provenanceParts(name: RecordName | null): string[] {
   const shown = shownNativeName(recordNativeName(name));
-  if (!shown || !name) return RECORD_PROVENANCE;
-  return `${RECORD_PROVENANCE} · ${languageName(shown.lang)} name: ${NAME_SOURCES[name.sourceKind]}`;
+  if (!shown || !name) return [RECORD_PROVENANCE];
+  return [RECORD_PROVENANCE, `${languageName(shown.lang)} name: ${NAME_SOURCES[name.sourceKind]}`];
+}
+
+export function recordProvenance(name: RecordName | null): string {
+  return provenanceParts(name).join(" · ");
 }
 
 export function recordFacts(page: CraftPage): RecordFact[] {
@@ -82,7 +86,7 @@ export function craftRecordView(page: CraftPage): CraftRecordView {
     material: plateMaterial(family, kind),
     gi: masthead.gi ? GI_WORDS[masthead.gi.status] : null,
     place: masthead.place,
-    provenance: recordProvenance(masthead.nativeName),
+    provenance: provenanceParts(masthead.nativeName),
     facts: recordFacts(page),
     start: `Start the research on ${masthead.name}`,
     questions: recordQuestions(page)

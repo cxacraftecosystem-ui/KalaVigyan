@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { CollectionShelf } from "@/components/crafts/CollectionShelf";
+import { ledSubFamilyShelves } from "@/components/crafts/shelfLead";
 import { PlateGround } from "@/components/editorial/TypographicPlate";
 import { atlasPlate, familyCrafts, familyMaterial, familyName, isMonograph, shelfLead, subFamilyShelves, type AtlasShelf } from "@/lib/atlasCollection";
 import { numberWord } from "@/lib/atlasIndex";
@@ -55,7 +56,7 @@ function HubHeader({ catalogue, category }: { catalogue: CraftCatalogue; categor
 
 export function CategoryHub({ catalogue, category, science }: { catalogue: CraftCatalogue; category: CraftCatalogueCategory; science: ReactNode }) {
   const monographs = monographShelf(catalogue, category);
-  const shelves = subFamilyShelves(catalogue, category);
+  const shelves = ledSubFamilyShelves(subFamilyShelves(catalogue, category));
   return (
     <div className="grid gap-14 pb-section" data-testid="category-hub">
       <HubHeader catalogue={catalogue} category={category} />

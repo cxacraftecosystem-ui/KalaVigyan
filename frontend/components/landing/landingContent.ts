@@ -36,8 +36,11 @@ export type LandingContent = {
   differ: LandingSentence | null;
   demo: LandingSentence | null;
   stages: LandingStage[];
+  botanical: string[];
   sources: SourceRef[];
 };
+
+export type TextPart = { text: string; italic: boolean };
 
 export type ClaimIdOf = (key: string) => string;
 
@@ -66,13 +69,41 @@ function sentenceOf(claim: PageClaim | undefined): LandingSentence | null {
   return { id: claim.id, text: claim.text, citations: claim.citations };
 }
 
+export function rulerWord(name: string): string {
+  return (name.trim().split(/\s+/)[0] ?? "").toLowerCase();
+}
+
 export function ribbonStages(stages: readonly PageStage[]): LandingStage[] {
   const ordered = stages.filter((stage): stage is PageStage & { order: number } => stage.order !== null).sort((a, b) => a.order - b.order);
   if (ordered.length !== RIBBON_STAGE_COUNT) return [];
   return ordered.map((stage) => {
     const local = stage.localName?.split(",")[0]?.trim() ?? "";
-    return { order: stage.order, label: local || stage.name, local: local !== "" };
+    return { order: stage.order, label: local || rulerWord(stage.name), local: local !== "" };
   });
+}
+
+export function botanicalNames(stages: readonly PageStage[]): string[] {
+  const names = stages.flatMap((stage) => [...stage.materials, ...stage.tools]).flatMap((item) => (item.botanicalName?.trim() ? [item.botanicalName.trim()] : []));
+  return [...new Set(names)].sort((a, b) => b.length - a.length);
+}
+
+function escapedTerm(term: string): string {
+  return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function italicParts(text: string, terms: readonly string[]): TextPart[] {
+  if (terms.length === 0) return [{ text, italic: false }];
+  const pattern = new RegExp(`(?<![\\p{L}\\p{N}])(${terms.map(escapedTerm).join("|")})(?![\\p{L}\\p{N}])`, "gu");
+  const parts: TextPart[] = [];
+  let at = 0;
+  for (const match of text.matchAll(pattern)) {
+    const start = match.index ?? 0;
+    if (start > at) parts.push({ text: text.slice(at, start), italic: false });
+    parts.push({ text: match[0], italic: true });
+    at = start + match[0].length;
+  }
+  if (at < text.length) parts.push({ text: text.slice(at), italic: false });
+  return parts;
 }
 
 export function sourcesInOrder(sentences: readonly (LandingSentence | null)[], sources: readonly SourceRef[]): SourceRef[] {
@@ -105,7 +136,7 @@ function colours(pick: (key: string) => LandingSentence | null): LandingColour[]
 }
 
 export function emptyLanding(): LandingContent {
-  return { craftPath: null, name: LANDING_CRAFT_NAME, family: null, place: null, gi: null, vat: null, intro: null, colours: [], meanings: null, differ: null, demo: null, stages: [], sources: [] };
+  return { craftPath: null, name: LANDING_CRAFT_NAME, family: null, place: null, gi: null, vat: null, intro: null, colours: [], meanings: null, differ: null, demo: null, stages: [], botanical: [], sources: [] };
 }
 
 export function landingContent(page: CraftPage | null, claimIdOf: ClaimIdOf): LandingContent {
@@ -126,6 +157,7 @@ export function landingContent(page: CraftPage | null, claimIdOf: ClaimIdOf): La
     differ: pick(LANDING_CLAIMS.differ),
     demo: pick(LANDING_CLAIMS.demo),
     stages: ribbonStages(page.process.stages),
+    botanical: botanicalNames(page.process.stages),
     sources: []
   };
   const order = [content.vat, content.gi, content.intro, ...content.colours.flatMap((colour) => colour.sentences), content.meanings, content.differ, content.demo];

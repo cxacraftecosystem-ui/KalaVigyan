@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { BOARD_INDIA_BOX, boardBox } from "@/components/map/boardGeometry";
 import { MapLegend, NO_READING_EXTRA } from "@/components/map/ChoroplethLegend";
+import { CircleKey, circleKeyBox } from "@/components/map/CirclesLegend";
 import { VIEW_BOX } from "@/components/map/projection";
 import { rampFill } from "@/components/map/rampFills";
 import { RankedList } from "@/components/map/RankedList";
@@ -60,6 +61,17 @@ test("circles are drawn by area, and the key takes round values below the larges
   expect(circleKeys(64)).toEqual([10, 30, 60]);
   expect(circleKeys(3)).toEqual([1, 3]);
   expect(circleKeys(0)).toEqual([]);
+});
+
+test("the circle key leaves room above its largest circle for that circle's 12px label", () => {
+  const [, minY, width, height] = circleKeyBox().split(" ").map(Number);
+  const largestLabelBaseline = 1.5 + 4;
+  expect(minY).toBeLessThanOrEqual(largestLabelBaseline - 12);
+  expect(width).toBe(85);
+  expect(minY + height).toBeGreaterThanOrEqual(25.6 * 2 + 1.5);
+  const markup = renderToStaticMarkup(createElement(CircleKey, { largest: 64 }));
+  expect(markup).toContain(`viewBox="${circleKeyBox()}"`);
+  expect(markup).toContain(">60</text>");
 });
 
 test("state circles sit on the state points the API serves, matched by name", () => {

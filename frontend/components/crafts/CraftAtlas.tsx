@@ -6,9 +6,9 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AtlasCollection } from "@/components/crafts/AtlasCollection";
 import { AtlasIndex } from "@/components/crafts/AtlasIndex";
 import { AtlasResults, AtlasSearchBox } from "@/components/crafts/AtlasSearch";
+import { ledFamilyShelves } from "@/components/crafts/shelfLead";
 import { MapRetry } from "@/components/map/MapRetry";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { familyShelves } from "@/lib/atlasCollection";
 import { atlasDek, stateCounts } from "@/lib/atlasIndex";
 import type { NamedCraft } from "@/lib/atlasNames";
 import { useCraftCatalogue } from "@/lib/craftCatalogue";
@@ -20,10 +20,10 @@ const WRITE_DELAY_MS = 300;
 
 export function CraftAtlasHeader({ dek, search }: { dek?: string | null; search?: ReactNode }) {
   return (
-    <header className="grid grid-cols-1 gap-6 pt-14 pb-7 lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:items-end lg:gap-16">
+    <header className="grid grid-cols-1 gap-6 pt-8 pb-7 md:pt-6 lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:items-end lg:gap-16">
       <div className="min-w-0">
         <h1 className="font-headline text-h1 text-ink-1">{ATLAS_HEADING}</h1>
-        {dek ? <p className="mt-[18px] max-w-[44ch] font-reading text-lede text-ink-2">{dek}</p> : null}
+        {dek ? <p className="mt-[18px] max-w-[44ch] font-reading text-body text-ink-2">{dek}</p> : null}
       </div>
       {search}
     </header>
@@ -58,7 +58,7 @@ function useQueryParam(): [string, (next: string) => void] {
 }
 
 function AtlasBody({ catalogue, names, query, onQuery }: { catalogue: CraftCatalogue; names: readonly NamedCraft[]; query: string; onQuery: (next: string) => void }) {
-  const shelves = useMemo(() => familyShelves(catalogue), [catalogue]);
+  const shelves = useMemo(() => ledFamilyShelves(catalogue), [catalogue]);
   const counts = useMemo(() => stateCounts(catalogue), [catalogue]);
   return (
     <>

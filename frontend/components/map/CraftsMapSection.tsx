@@ -72,7 +72,7 @@ export function CraftsMapSection() {
   const ranking = useStateRanking();
   return (
     <section className="border-t border-rule pt-20 pb-[88px]" aria-labelledby="crafts-map-heading" data-testid="crafts-map-section">
-      <div className="mx-auto w-full max-w-content px-4 sm:px-6 md:px-10 rail:px-12 xl:px-16">
+      <div className="kv-shell-wrap">
         <div className="grid grid-cols-1 gap-9 lg:grid-cols-[minmax(0,4.4fr)_minmax(0,6.6fr)] lg:items-start lg:gap-16">
           <div className="min-w-0">
             <p className="kicker flex items-center gap-3 after:h-px after:w-10 after:flex-none after:bg-ink-3 after:content-['']">The atlas</p>

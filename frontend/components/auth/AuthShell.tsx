@@ -17,6 +17,10 @@ function AuthPhoto() {
       <div className="kv-auth-label">
         <SpecimenLabel variant="landing" onPhoto kicker={HERO_SPECIMEN.kicker} family={HERO_SPECIMEN.family} name={HERO_SPECIMEN.name} credit={<HeroCredit />} />
       </div>
+      <p className="kv-auth-credit kv-shell-wrap" data-testid="auth-photo-credit">
+        <span className="kv-auth-caption">{`${HERO_SPECIMEN.name}. `}</span>
+        <HeroCredit />
+      </p>
     </div>
   );
 }
@@ -38,7 +42,7 @@ export function AuthFrame({ children }: { children: ReactNode }) {
   );
 }
 
-export function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
+export function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children?: ReactNode }) {
   return (
     <AuthFrame>
       <h1 className="m-0 font-headline text-h2 text-ink-1">{title}</h1>

@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { CraftWithoutMonograph } from "../components/craft/CraftWithoutMonograph";
 import { checkedCraftPage, craftPageShape, type CraftPage, type NativeName } from "../lib/craftPageContract";
 import { plateMaterial } from "../lib/craftPlate";
-import { craftRecordView, recordNativeName, recordProvenance } from "../lib/craftRecord";
+import { craftRecordView, provenanceParts, recordNativeName, recordProvenance } from "../lib/craftRecord";
 import { parseShape } from "../lib/shape";
 
 const REGISTER_PAGE = join(__dirname, "..", "..", "shared", "craft.page.register.golden.json");
@@ -32,7 +32,7 @@ test("a craft without a monograph reads its label, its record and three question
     material: "textile",
     gi: "Registered geographical indication",
     place: "Uttar Pradesh",
-    provenance: "From the KalaVigyan craft list",
+    provenance: ["From the KalaVigyan craft list"],
     start: "Start the research on Farrukhabad Prints"
   });
   expect(record.facts).toEqual([
@@ -51,11 +51,25 @@ test("a craft without a monograph reads its label, its record and three question
 test("a sourced, reviewed own-script name stands with the English name and names its source; any other is held back", () => {
   expect(recordNativeName(KASUTI)).toEqual({ text: "ಕಸೂತಿ", lang: "kn", script: "Knda", sourceId: "wikidata-label", sourceKind: "wikidata", reviewed: true });
   expect(recordProvenance(KASUTI)).toBe("From the KalaVigyan craft list · Kannada name: Wikidata, CC0");
+  expect(provenanceParts(KASUTI)).toEqual(["From the KalaVigyan craft list", "Kannada name: Wikidata, CC0"]);
   expect(recordProvenance({ ...KASUTI, reviewed: false })).toBe("From the KalaVigyan craft list");
   expect(recordNativeName({ ...KASUTI, script: null })).toBeNull();
   const named = craftRecordView(registerPage((page) => (page.masthead.nativeName = KASUTI)));
   const html = renderToStaticMarkup(createElement(CraftWithoutMonograph, { record: named }));
   expect(html).toContain('<span lang="kn" data-script="Knda" dir="ltr">ಕಸೂತಿ</span>');
+  expect(html).toContain('<div class="kv-label-prov"><span>From the KalaVigyan craft list</span><span>Kannada name: Wikidata, CC0</span></div>');
+});
+
+test("the masthead plate sets the name at the top end and the kicker at the bottom, and the page sits in the shell's one column", () => {
+  const html = renderToStaticMarkup(createElement(CraftWithoutMonograph, { record: craftRecordView(registerPage()) }));
+  const plate = html.slice(html.indexOf('data-size="masthead"'));
+  expect(plate).toContain('<div class="flex flex-1 flex-col items-end px-6');
+  expect(plate).toContain('<span class="kv-knock kicker m-0.5 text-inherit mt-auto">Hand block printing</span>');
+  expect(plate).toContain('<span class="max-w-full min-w-0 order-first lg:max-w-[52%]"><span class="kv-plate-name kv-knock" data-latin="">Farrukhabad Prints</span>');
+  expect(html).not.toContain("kv-page");
+  const label = html.slice(html.indexOf('data-testid="specimen-label"'));
+  expect(label.indexOf("kv-label-meta")).toBeGreaterThan(0);
+  expect(label.indexOf("kv-label-meta")).toBeLessThan(label.indexOf("kv-label-prov"));
 });
 
 test("the page is the plate at the masthead, the label as h1, what the list records and research to start, with no rail or citation", () => {

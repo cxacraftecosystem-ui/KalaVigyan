@@ -8,17 +8,18 @@ import { buttonLook } from "@/components/ui/button";
 import { RECORD_HEADING, RECORD_KICKER, START_BODY, type CraftRecordView } from "@/lib/craftRecord";
 
 export function CraftWithoutMonograph({ record }: { record: CraftRecordView }) {
-  const plate = <TypographicPlate material={record.material} englishName={record.name} nativeName={record.nativeName} size="small" decorative className="min-h-24" />;
+  const plate = <TypographicPlate material={record.material} englishName={record.name} nativeName={record.nativeName} size="small" decorative />;
+  const provenance = record.provenance.map((part) => <span key={part}>{part}</span>);
   return (
     <article lang="en" data-testid="craft-without-monograph">
-      <div className="kv-page kv-unc-head">
+      <div className="kv-unc-head">
         <Masthead
           material={record.material}
           plateKicker={record.plateKicker}
-          label={{ kicker: RECORD_KICKER, family: record.family, name: record.name, nativeName: record.nativeName, gi: record.gi, place: record.place, provenance: record.provenance }}
+          label={{ kicker: RECORD_KICKER, family: record.family, name: record.name, nativeName: record.nativeName, gi: record.gi, place: record.place, provenance }}
         />
       </div>
-      <div className="kv-page kv-unc-body">
+      <div className="kv-unc-body">
         {record.facts.length ? (
           <section className="kv-unc-facts" aria-labelledby="craft-record-h">
             <h2 id="craft-record-h" className="kicker">
