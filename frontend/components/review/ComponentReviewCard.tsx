@@ -1,3 +1,4 @@
+import { DeliveredComponentView } from "@/components/review/DeliveredComponentView";
 import { QueueDecisionBar } from "@/components/review/QueueDecisionBar";
 import { QueueItemHeader } from "@/components/review/QueueItemHeader";
 import { ReviewTerm } from "@/components/review/ReviewTerm";
@@ -23,6 +24,7 @@ export function ComponentReviewCard({ item, onDecide }: { item: ComponentItem; o
         {proposal.extends ? <ReviewTerm term={`${codeLabel(proposal.extension ?? "Extends")} of`} value={proposal.extends} /> : null}
         <ReviewTerm term="Library components considered" value={proposal.consideredLabels.join(", ") || "None named"} />
       </dl>
+      {proposal.delivery ? <DeliveredComponentView label={proposal.label} delivery={proposal.delivery} /> : null}
       <ClosestMatches closest={proposal.closest} />
       <QueueDecisionBar actions={componentActions()} onDecide={onDecide} />
     </article>

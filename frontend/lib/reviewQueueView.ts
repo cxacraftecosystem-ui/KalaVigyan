@@ -4,6 +4,7 @@ import {
   REASON_MAX,
   REASON_MIN,
   REVIEW_ORIGINS,
+  type DeliveredFact,
   type GateCheck,
   type Proposer,
   type QueueAction,
@@ -157,4 +158,16 @@ export function overlapLine(overlap: number): string {
 
 export function proposerLine(proposer: Proposer | null): string | null {
   return proposer ? `Proposed by ${proposer.name}, ${roleLabel(proposer.role)}` : null;
+}
+
+export function factNumbersLine(claimIds: readonly string[], numbers: ReadonlyMap<string, number>): string {
+  const cited = claimIds.map((claim) => numbers.get(claim)).filter((number): number is number => number !== undefined);
+  const found = [...new Set(cited)].sort((a, b) => a - b);
+  if (!found.length) return "A heading or label, resting on no fact";
+  return found.length === 1 ? `Rests on fact ${found[0]}` : `Rests on facts ${found.join(", ")}`;
+}
+
+export function deliveredFactLine(number: number, fact: DeliveredFact): string {
+  const level = fact.level ? ` · ${codeLabel(fact.level)}` : "";
+  return `Fact ${number}${level} · ${fact.shown ? "shown on the page" : "held from the page"}`;
 }

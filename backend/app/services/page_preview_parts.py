@@ -19,7 +19,7 @@ from .monograph_generated_pictures import PlateSource
 from .page_preview_additions import PageAdditions
 from .page_proposals_parts import BundleFacts
 
-__all__ = ["PREVIEW_LEVEL", "PREVIEW_NAMESPACE", "PreviewDraft", "previewed_component"]
+__all__ = ["PREVIEW_LEVEL", "PREVIEW_NAMESPACE", "SUBJECT_PREFIXES", "PreviewDraft", "previewed_component"]
 
 PREVIEW_NAMESPACE = uuid.UUID("5d1c2c5e-7a3f-4c1b-9a8e-0b6f3e2d7c41")
 PREVIEW_LEVEL = "PROVISIONAL"

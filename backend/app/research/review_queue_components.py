@@ -13,6 +13,7 @@ from .component_proposals import (
     word_overlap,
 )
 from .knowledge_api import ComponentSummary
+from .review_queue_delivery import DeliveredReview
 from .vocabulary import Discipline
 
 __all__ = ["CLOSEST_SHOWN", "ClosestComponent", "ComponentReview", "closest_components"]
@@ -60,3 +61,4 @@ class ComponentReview(ContractModel):
     extension: str | None
     task_key: str | None
     closest: list[ClosestComponent]
+    delivery: DeliveredReview | None = None

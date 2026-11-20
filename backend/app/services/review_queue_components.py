@@ -18,6 +18,7 @@ from . import audit
 from .component_library import library_components
 from .component_proposals_register import register_component, registers
 from .knowledge_view import craft_ref
+from .review_queue_delivery import delivered_review
 from .review_queue_errors import DecisionConflict, OwnItem, UnknownItem
 from .review_queue_select import PENDING, Rendered, rows_by_id
 
@@ -120,6 +121,7 @@ async def _item(session: AsyncSession, row: ComponentProposal, craft: Craft | No
             extension=row.extension,
             task_key=row.taskKey,
             closest=await _closest(session, draft),
+            delivery=await delivered_review(session, row, draft.craft_slug),
         ),
     )
 

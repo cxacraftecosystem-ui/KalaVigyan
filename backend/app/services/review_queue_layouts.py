@@ -20,11 +20,13 @@ from .knowledge_view import craft_ref
 from .open_work_subjects import WorkSubject, subject_by_key
 from .page_layout_proposals import APPROVED, PENDING, REJECTED, current_version, proposal_subject
 from .page_layouts import layout_of, store_layout, subject_path
+from .review_queue_delivery import placed_deliveries
 from .review_queue_errors import DecisionConflict, OwnItem, UnknownItem
 from .review_queue_select import Rendered, rows_by_id
 
 __all__ = ["approve_layout", "layout_items", "reject_layout"]
 
+CATEGORY_SUBJECT = "category"
 STALE_REVIEW = (
     "The page's layout is at version {current} now, not the version {base} this was built on. Reject it, "
     "and the proposer can build on version {current}."
@@ -152,6 +154,12 @@ async def _review(session: AsyncSession, row: LayoutProposal, subject: WorkSubje
         note=row.note,
         entry_count=len(proposed),
         changes=layout_changes([] if current is None else current.entries, proposed),
+        placed=await placed_deliveries(
+            session,
+            row.proposerId,
+            [entry.ref for entry in proposed],
+            None if subject.kind == CATEGORY_SUBJECT else subject.slug,
+        ),
     )
 
 
