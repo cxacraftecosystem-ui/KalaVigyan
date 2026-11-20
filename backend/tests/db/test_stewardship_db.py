@@ -17,6 +17,9 @@ from .open_work_seed import NOW, OTHER, RESEARCHER, SITE, SLUG, opened_session
 pytestmark = pytest.mark.db
 
 PREFIX = f"craft:{SLUG}"
+FIELD_AND_SOURCE_TASKS = 26
+PICTURE_SLOT_TASKS = 2
+OPEN_TASKS = FIELD_AND_SOURCE_TASKS + PICTURE_SLOT_TASKS
 
 
 @pytest.fixture
@@ -40,7 +43,7 @@ async def test_an_adopted_craft_comes_back_as_one_package_with_every_gap_new(ses
         1,
         None,
     )
-    assert package.tasks == [] and len(package.new_tasks) == package.total == 26
+    assert package.tasks == [] and len(package.new_tasks) == package.total == OPEN_TASKS
     assert package.new_tasks[0].key == f"MISSING_FIELD:{PREFIX}:OVERVIEW"
 
 
@@ -57,7 +60,7 @@ async def test_the_next_look_shows_only_the_gaps_opened_since_the_last_one_first
     later = NOW + timedelta(hours=1)
     (package,) = (await my_crafts(session, steward, site=SITE, now=later)).crafts
     assert [task.key for task in package.new_tasks] == [gap]
-    assert len(package.tasks) == 25 and package.seen_at == NOW
+    assert len(package.tasks) == OPEN_TASKS - 1 and package.seen_at == NOW
     (again,) = (await my_crafts(session, steward, site=SITE, now=later)).crafts
     assert (again.new_tasks, again.seen_at) == ([], later)
 
@@ -66,7 +69,7 @@ async def test_stewardship_never_blocks_another_account(session: AsyncSession) -
     first = await adopt_craft(session, await account(session, RESEARCHER), SLUG, site=SITE, now=NOW)
     second = await adopt_craft(session, await account(session, OTHER), SLUG, site=SITE, now=NOW)
     assert (first.stewards, second.stewards) == (1, 2)
-    assert len(second.new_tasks) == 26
+    assert len(second.new_tasks) == OPEN_TASKS
     again = await adopt_craft(session, await account(session, OTHER), SLUG, site=SITE, now=NOW)
     assert again.stewards == 2
 

@@ -229,13 +229,19 @@ The three page tools need an account of Researcher or above (`PROPOSE_KNOWLEDGE`
   the account's role.
 - `initialize` declares `tools`, `prompts` (`listChanged` false) and `resources` (`subscribe` and
   `listChanged` false).
-- `prompts/list` and `prompts/get`: `research_field {craft_slug, field}`, `write_section
-  {craft_slug, field}`, `propose_component {craft_slug, need?}`. Each returns one user message: the
-  task, the steps naming the tools in order (`list_open_work`, `claim_task`, `get_facts` and
-  `get_section`, `list_components` first for a component, the agent's own search, then
-  `propose_fact` with the claimed task's key, or `propose_component`) and the method sections of the contributor skill (What
-  counts as a source, Quotes and locators, One fact per sentence, The fields, The page checklist,
-  Never; plus Writing a section or Components). A wrong prompt or argument is `-32602`.
+- `prompts/list` and `prompts/get` (`api/mcp_prompts.py`, steps in `api/mcp_prompt_steps.py`):
+  `research_field {craft_slug, field}`, `write_section {craft_slug, field}`, `propose_component
+  {craft_slug, need?}`, and (round 7) `deliver_page {subject_kind, slug}` and `give_picture
+  {craft_slug}`, the prompt of `MISSING_PICTURE` tasks. Each returns one user message: the task, the
+  steps naming the tools in order (`list_open_work`, `claim_task` or `claim_tasks`, `get_facts` and
+  `get_section`, `list_components` first for a component, the agent's own search, `propose_facts`
+  with idempotency keys and the claimed task as `task_key`, then `get_proposal` or `my_tasks` for
+  the outcome; a component or page is built finished and seen with `preview_page` before
+  `propose_page` or `propose_component`; a picture is given with `give_image` only after the person
+  confirms the declaration in their own words) and the method sections of the contributor skill
+  (Proposals and their progress, What counts as a source, Quotes and locators, One fact per
+  sentence, The fields, The page checklist, Never; plus Writing a section, Components, Pages,
+  Structure and sources or Pictures). A wrong prompt or argument is `-32602`.
 - `resources/list`, `resources/read`, `resources/templates/list` (empty):
   `kalavigyan://skills/kalavigyan-contributor/SKILL.md` (`text/markdown`) and
   `kalavigyan://design/tokens.json` (`application/json`). An unknown uri is `-32002`.

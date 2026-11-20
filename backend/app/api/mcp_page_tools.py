@@ -51,9 +51,11 @@ PAGE_DESCRIPTION = (
     "Deliver one bundle for one craft, family or category page: facts (as propose_fact takes them), structure "
     "items (as propose_structure takes them), components (each {proposal, cites}, cites naming the bundle's "
     "facts a unit rests on as fact:0, fact:1 and on), the page's layout (base_version and entries) and pictures "
-    "(a new one starts an upload, one given already is named by contribution_id). Each part is checked on its own, as its own tool would check it, and stored when it "
-    "passes; a refused part leaves the others standing. One report gives every part's outcome and reason. Call "
-    "preview_page first to see the page the bundle makes."
+    "(a new one starts an upload, one given already is named by contribution_id). Each part is checked on its "
+    "own, as its own tool would check it, and stored when it passes; a refused part leaves the others standing. "
+    "One report gives every part's outcome and reason. Call preview_page first to see the page the bundle makes. "
+    "Every name inside the bundle is snake_case; the old camelCase names work until the next release and say so "
+    "in notices."
 )
 PREVIEW_DESCRIPTION = (
     "Assemble the page a bundle would make, the stored page with the bundle's facts, structure, components and "
