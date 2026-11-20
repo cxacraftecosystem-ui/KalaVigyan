@@ -20,7 +20,7 @@ from ..contracts.golden import golden_json
 from .category_support import LEATHER, PAGE_GOLDEN, PAPER, leather_checked, leather_plain, recheck, registered
 
 CURATED = (LEATHER, PAPER)
-ONE_READ_EACH = {"categories": 1, "pages": 1, "pieces": 1, "claims": 1, "facts": 1, "media": 1}
+ONE_READ_EACH = {"categories": 1, "pages": 1, "pieces": 1, "claims": 1, "holds": 1, "facts": 1, "media": 1}
 
 
 def curated_as(slug: str) -> tuple[CategoryPageRecords, Mapping[uuid.UUID, Any], Mapping[uuid.UUID, Any]]:
@@ -75,7 +75,12 @@ def reads(monkeypatch: pytest.MonkeyPatch, stored: dict[str, Any]) -> Counter[st
         cited = {uuid.UUID(c["sourceId"]) for view in found.values() for c in view.citations}
         return found, {key: sources[key] for key in cited}
 
+    async def unheld(_session: Any, found: Mapping[uuid.UUID, Any]) -> dict[uuid.UUID, Any]:
+        counted["holds"] += 1
+        return dict(found)
+
     monkeypatch.setattr(category_records, "stored_categories", categories)
+    monkeypatch.setattr(category_records, "unheld_by_id", unheld)
     monkeypatch.setattr(category_records.knowledge_view, "claims_by_id", claims)
     monkeypatch.setattr(
         category_records, "_curated_pages", lookup("pages", {k: r.curated for k, r in records.items()})

@@ -1,9 +1,15 @@
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any
+
+import pytest
 
 from app.research.knowledge_writes import ProposalReply
+from app.research.page_revalidation import PageOwners
+from app.research.review_queue import QueueDecision
 from app.research.review_queue_parts import GateCheck
 from app.research.write_back import WriteBackResult
+from app.services import review_queue_refresh
 from app.services.claim_holds import kept_verdict
 from app.services.claim_holds_review import HOLD_MODEL, hold_reason, with_hold_evidence
 from app.services.claim_pages import published_claims
@@ -102,3 +108,26 @@ def test_a_write_back_refreshes_its_live_claims_and_the_ones_it_re_found() -> No
     found = WriteBackResult(dedupe_key=key, claim_id=B, created=False)
     assert shown_results([created, found], live=True) == [A, B]
     assert shown_results([created, found], live=False) == [B]
+
+
+async def test_every_fact_decision_refreshes_the_fact_s_pages(monkeypatch: pytest.MonkeyPatch) -> None:
+    asked: list[list[uuid.UUID]] = []
+    sent: list[PageOwners] = []
+
+    async def owners(session: Any, claim_ids: Any) -> PageOwners:
+        asked.append(list(claim_ids))
+        return PageOwners(crafts=("Kutch-Ajrakh",))
+
+    async def refresh(found: PageOwners) -> bool:
+        sent.append(found)
+        return True
+
+    monkeypatch.setattr(review_queue_refresh, "claim_owners", owners)
+    monkeypatch.setattr(review_queue_refresh, "refresh_pages", refresh)
+    for status in ("APPROVED", "REJECTED", "RETRACTED"):
+        decided = QueueDecision(
+            kind="FACTS", id=A, status=status, level="REVIEWED", sources_differ=False, message="m"
+        )
+        assert await review_queue_refresh.refresh_after_decision(None, decided) is True  # type: ignore[arg-type]
+    assert asked == [[A], [A], [A]]
+    assert sent == [PageOwners(crafts=("Kutch-Ajrakh",))] * 3

@@ -125,12 +125,20 @@ def test_an_approval_is_committed_and_answered(monkeypatch: pytest.MonkeyPatch) 
         seen.append((ref, body))
         return DECIDED
 
+    refreshed: list[QueueDecision] = []
+
+    async def refresh(opened: Any, decision: QueueDecision) -> bool:
+        refreshed.append(decision)
+        return True
+
     monkeypatch.setattr(decisions, "approve_item", approved)
+    monkeypatch.setattr(route, "refresh_after_decision", refresh)
     session = Recorded()
     response = client("ADMIN", session).post(
         f"/api/review-queue/IMAGES/{ITEM}/approve", json={"note": "Clear."}
     )
     assert response.status_code == 200 and response.json()["status"] == "APPROVED"
+    assert refreshed == [DECIDED]
     assert seen == [(decisions.ItemRef(IMAGES, ITEM), QueueApproval(note="Clear."))]
     assert (session.commits, session.rollbacks) == (1, 0)
 
@@ -177,15 +185,20 @@ def test_raising_and_retracting_reach_their_own_services(monkeypatch: pytest.Mon
 
         return decided
 
+    async def refresh(opened: Any, decision: QueueDecision) -> bool:
+        reached.append(f"refresh:{decision.status}")
+        return True
+
     monkeypatch.setattr(decisions, "raise_fact", recording("raise"))
     monkeypatch.setattr(decisions, "retract_fact", recording("retract"))
+    monkeypatch.setattr(route, "refresh_after_decision", refresh)
     professor = client("PROFESSOR")
     assert professor.post(f"/api/review-queue/FACTS/{ITEM}/raise", json={}).status_code == 200
     assert (
         professor.post(f"/api/review-queue/FACTS/{ITEM}/retract", json={"reason": "Wrong."}).status_code
         == 200
     )
-    assert reached == [f"raise:{ITEM}", f"retract:{ITEM}"]
+    assert reached == [f"raise:{ITEM}", "refresh:APPROVED", f"retract:{ITEM}", "refresh:APPROVED"]
 
 
 @pytest.mark.parametrize("kind", [IMAGES, COMPONENTS])
