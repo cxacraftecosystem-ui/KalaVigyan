@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "site": "https://kalavigyan.vercel.app",
   "recordedAt": "2026-11-20",
-  "run": 44752031241,
+  "run": 44786061062,
   "lighthouse": {
     "/": {
       "desktop": {
@@ -12,15 +12,15 @@
         "lcpMs": 347,
         "cls": 0.009,
         "tbtMs": 0,
-        "bytes": 2710828
+        "bytes": 2364423
       },
       "mobile": {
-        "performance": 73,
+        "performance": 98,
         "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 6787,
-        "cls": 0.093,
-        "tbtMs": 146,
+        "lcpMs": 1229,
+        "cls": 0.084,
+        "tbtMs": 39,
         "bytes": 1544239
       }
     },
@@ -29,79 +29,79 @@
         "performance": 96,
         "accessibility": 100,
         "best-practices": 96,
-        "lcpMs": 1431,
+        "lcpMs": 1407,
         "cls": 0.005,
         "tbtMs": 0,
-        "bytes": 1929692
+        "bytes": 1382805
       },
       "mobile": {
-        "performance": 70,
+        "performance": 78,
         "accessibility": 100,
         "best-practices": 96,
-        "lcpMs": 9913,
-        "cls": 0.012,
-        "tbtMs": 245,
-        "bytes": 2010252
+        "lcpMs": 6028,
+        "cls": 0,
+        "tbtMs": 88,
+        "bytes": 1454521
       }
     },
     "/categories/Textiles-Based-Craft-Category": {
       "desktop": {
-        "performance": 93,
-        "accessibility": 96,
-        "best-practices": 77,
-        "lcpMs": 1703,
+        "performance": 96,
+        "accessibility": 99,
+        "best-practices": 96,
+        "lcpMs": 1387,
         "cls": 0.001,
-        "tbtMs": 3,
+        "tbtMs": 0,
         "bytes": 3244347
       },
       "mobile": {
-        "performance": 63,
-        "accessibility": 96,
-        "best-practices": 77,
-        "lcpMs": 9923,
+        "performance": 73,
+        "accessibility": 99,
+        "best-practices": 96,
+        "lcpMs": 8427,
         "cls": 0,
-        "tbtMs": 250,
-        "bytes": 2630449
+        "tbtMs": 39,
+        "bytes": 2224506
       }
     },
     "/crafts": {
       "desktop": {
-        "performance": 97,
+        "performance": 100,
         "accessibility": 100,
-        "best-practices": 77,
-        "lcpMs": 351,
-        "cls": 0.106,
+        "best-practices": 100,
+        "lcpMs": 347,
+        "cls": 0.001,
         "tbtMs": 0,
-        "bytes": 2702182
+        "bytes": 2542596
       },
       "mobile": {
-        "performance": 71,
+        "performance": 77,
         "accessibility": 100,
-        "best-practices": 77,
+        "best-practices": 100,
         "lcpMs": 5124,
-        "cls": 0.154,
-        "tbtMs": 219,
-        "bytes": 2474366
+        "cls": 0.036,
+        "tbtMs": 61,
+        "bytes": 2454299
       }
     },
     "/crafts/Bastar-Dhokra": {
       "desktop": {
-        "performance": 96,
-        "accessibility": 93,
+        "performance": 99,
+        "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 1430,
+        "lcpMs": 866,
         "cls": 0.001,
         "tbtMs": 0,
-        "bytes": 2270936
+        "bytes": 1974770
       },
       "mobile": {
-        "performance": 65,
-        "accessibility": 93,
+        "performance": 97,
+        "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 7074,
+        "lcpMs": 1828,
         "cls": 0,
-        "tbtMs": 427,
-        "bytes": 2099958
+        "tbtMs": 126,
+        "bytes": 1975104
       }
     },
     "/crafts/Kasuti-Embroidery": {
@@ -112,99 +112,89 @@
         "lcpMs": 310,
         "cls": 0.001,
         "tbtMs": 0,
-        "bytes": 1248502
+        "bytes": 1142393
       },
       "mobile": {
-        "performance": 86,
+        "performance": 100,
         "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 4073,
+        "lcpMs": 1078,
         "cls": 0,
-        "tbtMs": 117,
+        "tbtMs": 15,
         "bytes": 1076889
       }
     },
     "/crafts/Kutch-Ajrakh": {
       "desktop": {
-        "performance": 78,
-        "accessibility": 96,
+        "performance": 97,
+        "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 3710,
+        "lcpMs": 1267,
         "cls": 0.001,
-        "tbtMs": 17,
-        "bytes": 6152015
+        "tbtMs": 0,
+        "bytes": 1939470
       },
       "mobile": {
-        "performance": 50,
-        "accessibility": 96,
+        "performance": 90,
+        "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 21031,
+        "lcpMs": 3628,
         "cls": 0,
-        "tbtMs": 405,
-        "bytes": 5981125
+        "tbtMs": 26,
+        "bytes": 1586722
       }
     },
     "/login": {
       "desktop": {
-        "performance": 99,
+        "performance": 100,
         "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 954,
+        "lcpMs": 657,
         "cls": 0.005,
         "tbtMs": 0,
-        "bytes": 1406607
+        "bytes": 1026696
       },
       "mobile": {
-        "performance": 77,
+        "performance": 94,
         "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 5580,
-        "cls": 0.02,
-        "tbtMs": 185,
-        "bytes": 1550456
+        "lcpMs": 3028,
+        "cls": 0.001,
+        "tbtMs": 19,
+        "bytes": 1094777
       }
     },
     "/map": {
       "desktop": {
-        "performance": 97,
+        "performance": 100,
         "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 1149,
-        "cls": 0.074,
-        "tbtMs": 2,
-        "bytes": 1374595
+        "lcpMs": 387,
+        "cls": 0.001,
+        "tbtMs": 0,
+        "bytes": 1354381
       },
       "mobile": {
-        "performance": 79,
+        "performance": 99,
         "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 2871,
-        "cls": 0.225,
-        "tbtMs": 249,
+        "lcpMs": 1558,
+        "cls": 0.025,
+        "tbtMs": 106,
         "bytes": 1321810
       }
     }
   },
   "axe": {
-    "/": {
-      "label-content-name-mismatch": 6
-    },
+    "/": {},
     "/ask": {},
     "/categories/Textiles-Based-Craft-Category": {
-      "label-content-name-mismatch": 48,
-      "target-size": 67
+      "label-content-name-mismatch": 4
     },
     "/crafts": {},
-    "/crafts/Bastar-Dhokra": {
-      "color-contrast": 1,
-      "label-content-name-mismatch": 63,
-      "target-size": 22
-    },
+    "/crafts/Bastar-Dhokra": {},
     "/crafts/Kasuti-Embroidery": {},
-    "/crafts/Kutch-Ajrakh": {
-      "label-content-name-mismatch": 121,
-      "target-size": 44
-    },
+    "/crafts/Kutch-Ajrakh": {},
     "/login": {},
     "/map": {}
   }
