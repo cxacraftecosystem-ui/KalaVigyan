@@ -44,7 +44,8 @@ const RESEARCHER_TOOLS = ["Give a picture", "Propose knowledge"];
 const ACCOUNT_LINKS = ["Settings"];
 const EVERY_DEPTH = ["Basic", "Detailed", "Expert"];
 
-export const READING_BAR = ["Crafts", "Map", "Compare"];
+export const READING_NAV_LABEL = "Reading";
+export const READING_BAR = ["Atlas", "Map", "Categories", "Compare"];
 
 export const NAV_BY_ROLE: Partial<Record<UserRole, NavExpectation>> = {
   STUDENT: { bar: LEARNER_BAR, account: ACCOUNT_LINKS, menu: [...LEARNER_BAR, ...ACCOUNT_LINKS], depths: EVERY_DEPTH },

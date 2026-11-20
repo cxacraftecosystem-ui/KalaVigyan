@@ -2,7 +2,6 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { compareHref } from "@/lib/comparePage";
 import { CRAFT_TAB_LABEL, type CraftTab } from "@/lib/craftPageView";
-import { recordLoadFailure } from "@/lib/recordView";
 import type { User } from "@/lib/types";
 
 import { barProblems, menuProblems, readingBarProblems } from "./appbarChecks";
@@ -46,8 +45,7 @@ const OTHER_CRAFTS: readonly CraftVisit[] = [
   { name: "Craft without a monograph", slug: UNCURATED_CRAFT_SLUG, expected: UNCURATED }
 ];
 const MONOGRAPH_ASK = 'a[href^="/ask?"]';
-const UNKNOWN_CRAFT_TEXT = recordLoadFailure("craft", 404);
-const CRAFTS_LINK = "Crafts";
+const ATLAS_LINK = "Atlas";
 
 function heading(page: Page, name: string | null): () => Promise<string[]> {
   return async () => {
@@ -65,9 +63,9 @@ async function signedOutReading(run: ScreenRun, page: Page): Promise<void> {
   await run.visit("Craft monograph", `/crafts/${CRAFT_SLUG}`, async () => {
     await expect(page.getByRole("heading", { level: 1, name: /Ajrakh/ })).toBeVisible();
     await expect(page.locator(MONOGRAPH_ASK).first()).toBeVisible();
-    return [...(await documentOutcome(page)), ...(await readingBarProblems(page, CRAFTS_LINK))];
+    return [...(await documentOutcome(page)), ...(await readingBarProblems(page, ATLAS_LINK))];
   });
-  await run.visit("Craft without a monograph", `/crafts/${UNCURATED_CRAFT_SLUG}`, async () => [...(await recordOutcome(page)), ...(await readingBarProblems(page, CRAFTS_LINK))]);
+  await run.visit("Craft without a monograph", `/crafts/${UNCURATED_CRAFT_SLUG}`, async () => [...(await recordOutcome(page)), ...(await readingBarProblems(page, ATLAS_LINK))]);
   await run.visit("Category hub", `/categories/${CATEGORY_SLUG}`, async () => {
     const hub = await hubOutcome(page, CATEGORY_FAMILY);
     run.note(...hub.notes);
@@ -121,10 +119,10 @@ async function craftPages(run: ScreenRun, page: Page): Promise<void> {
     "Unknown craft",
     `/crafts/${UNKNOWN_CRAFT_SLUG}`,
     async () => {
-      await expect(page.getByRole("alert").filter({ hasText: UNKNOWN_CRAFT_TEXT })).toBeVisible();
+      await expect(page.getByTestId("error-not-found")).toBeVisible();
       return [];
     },
-    { expectedResponses: [{ pathPrefix: `/api/crafts/${UNKNOWN_CRAFT_SLUG}`, status: 404 }], expectedAlert: UNKNOWN_CRAFT_TEXT }
+    { expectStatus: 404, expectedResponses: [{ pathPrefix: `/api/crafts/${UNKNOWN_CRAFT_SLUG}`, status: 404 }] }
   );
 }
 

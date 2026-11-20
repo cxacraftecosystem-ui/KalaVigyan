@@ -11,10 +11,10 @@ const REFUSED_STATUSES = new Set([401, 403]);
 const MONOGRAPH_ASK = 'a[href^="/ask?"]';
 
 const ANONYMOUS_PAGES: readonly ReadingPage[] = [
-  { name: "the atlas", path: "/crafts", heading: /^The atlas$/, way: "sign-in", current: "Crafts" },
-  { name: "Kutch Ajrakh", path: `/crafts/${CRAFT_SLUG}`, heading: /Ajrakh/, way: "ask", current: "Crafts" },
-  { name: "a craft without a monograph", path: `/crafts/${UNCURATED_CRAFT_SLUG}`, heading: /\S/, way: "ask", current: "Crafts" },
-  { name: "a category hub", path: `/categories/${CATEGORY_SLUG}`, heading: /\S/, way: "sign-in", current: null },
+  { name: "the atlas", path: "/crafts", heading: /^The atlas$/, way: "sign-in", current: "Atlas" },
+  { name: "Kutch Ajrakh", path: `/crafts/${CRAFT_SLUG}`, heading: /Ajrakh/, way: "ask", current: "Atlas" },
+  { name: "a craft without a monograph", path: `/crafts/${UNCURATED_CRAFT_SLUG}`, heading: /\S/, way: "ask", current: "Atlas" },
+  { name: "a category hub", path: `/categories/${CATEGORY_SLUG}`, heading: /\S/, way: "sign-in", current: "Categories" },
   { name: "the map", path: "/map", heading: /^Map$/, way: "sign-in", current: "Map" },
   { name: "compare", path: `/compare?${COMPARED_CRAFTS.map((slug) => `crafts=${slug}`).join("&")}`, heading: /^Compare crafts$/, way: "sign-in", current: "Compare" }
 ];

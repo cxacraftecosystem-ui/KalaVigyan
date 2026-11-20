@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   citationMode,
+  endsOnItsOwn,
   expectedProblems,
   flippedTheme,
   layerSwitches,
@@ -13,6 +14,7 @@ import {
   unchangedProblems,
   type LayerChoice
 } from "./controlPlan";
+import { designedAnswer } from "./controlWatch";
 
 const land = (index: number): LayerChoice => ({ kind: "land", index });
 const districts = (index: number): LayerChoice => ({ kind: "districts", index });
@@ -62,6 +64,8 @@ test("the theme toggle, the dip player and a player's steps each move to a diffe
   expect(otherStep(1, 4)).toBe(2);
   expect(otherStep(4, 4)).toBe(1);
   expect(otherStep(1, 1)).toBeNull();
+  expect(endsOnItsOwn(2, 2)).toBe(true);
+  expect(endsOnItsOwn(2, 4)).toBe(false);
   expect(otherChoice(["Basic", "Detailed", "Expert"], "Detailed")).toBe("Basic");
   expect(otherChoice(["Plates", "Names"], "Plates")).toBe("Names");
   expect(otherChoice(["Plates"], "Plates")).toBeNull();
@@ -72,4 +76,11 @@ test("a control fails when its state is unchanged or not the state it should rea
   expect(unchangedProblems("the dip player", "2", "3")).toEqual([]);
   expect(expectedProblems("the theme toggle", "dark", "light")).toEqual(['the theme toggle shows "light"; it should show "dark"']);
   expect(expectedProblems("the theme toggle", "dark", "dark")).toEqual([]);
+});
+
+test("only a term no two crafts' cited sentences share may answer 404, as the learning contract says; every other failure counts", () => {
+  expect(designedAnswer("/api/shared-science/buffalo-horn-hammer", 404)).toBe(true);
+  expect(designedAnswer("/api/shared-science/alum", 500)).toBe(false);
+  expect(designedAnswer("/api/crafts/Kutch-Ajrakh/shared-science", 404)).toBe(false);
+  expect(designedAnswer("/api/map-layers/relief", 404)).toBe(false);
 });

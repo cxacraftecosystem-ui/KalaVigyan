@@ -3,7 +3,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
 import { ROLE_LABELS } from "@/lib/permissions";
 import type { User } from "@/lib/types";
 
-import { ACCOUNT_LABEL, APPBAR_NAV_MIN_WIDTH, MAIN_NAV_LABEL, MENU_LABEL, READING_BAR, labelProblems, navExpectation } from "./checks";
+import { ACCOUNT_LABEL, APPBAR_NAV_MIN_WIDTH, MAIN_NAV_LABEL, MENU_LABEL, READING_BAR, READING_NAV_LABEL, labelProblems, navExpectation } from "./checks";
 import { clickProblems } from "./clicks";
 
 const BADGES = '[data-testid="unread-notes"], .kv-bar-count, .sr-only, [title]';
@@ -65,16 +65,6 @@ export async function barProblems(page: Page, user: User, current: string | null
   return problems;
 }
 
-async function sheetProblems(page: Page, expected: readonly string[]): Promise<string[]> {
-  const refused = await clickProblems(page, menuButton(page), `the ${MENU_LABEL} button`);
-  if (refused.length > 0) return refused;
-  const panel = page.getByRole("dialog", { name: MENU_LABEL, exact: true });
-  await expect(panel).toBeVisible();
-  const problems = labelProblems("the menu", expected, await labelsOf(panel.locator("a")));
-  await closePanel(page, panel);
-  return problems;
-}
-
 async function closePanel(page: Page, panel: Locator): Promise<void> {
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();
@@ -82,9 +72,12 @@ async function closePanel(page: Page, panel: Locator): Promise<void> {
 }
 
 export async function readingBarProblems(page: Page, current: string | null): Promise<string[]> {
-  const problems = await barShape(page, READING_BAR, current);
-  if (wideBar(page) || problems.length > 0) return problems;
-  return sheetProblems(page, READING_BAR);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const nav = page.getByRole("navigation", { name: READING_NAV_LABEL, exact: true });
+  await expect(nav).toBeVisible();
+  const problems = [...labelProblems("the reading bar", READING_BAR, await labelsOf(nav.locator("a"))), ...(await currentProblems(nav, current))];
+  if ((await mainNav(page).count()) > 0) problems.push("a signed-out reader sees the Main navigation of an account");
+  return problems;
 }
 
 async function panelProblems(panel: Locator, where: string, user: User): Promise<string[]> {

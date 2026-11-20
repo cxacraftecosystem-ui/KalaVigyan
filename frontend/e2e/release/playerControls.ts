@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 
-import { expectedProblems, nextDips, otherStep, unchangedProblems } from "./controlPlan";
+import { endsOnItsOwn, expectedProblems, nextDips, otherStep, unchangedProblems } from "./controlPlan";
 import { changedFrom, reached, type ControlWatch } from "./controlWatch";
 
 const QUICK_MS = 5_000;
@@ -24,27 +24,35 @@ async function present(page: Page, kit: string, answer: string): Promise<Present
   return { kit: (await page.locator(kit).count()) > 0, answer: (await page.locator(answer).count()) > 0 };
 }
 
+async function pauseProblems(play: Locator, at: number, steps: number): Promise<string[]> {
+  const pressed = attribute(play, "aria-pressed");
+  if (endsOnItsOwn(at, steps)) return expectedProblems("the reaction player at its last step", "false", await reached(pressed, "false", QUICK_MS));
+  await play.click();
+  return expectedProblems("the reaction player's Pause", "false", await reached(pressed, "false", QUICK_MS));
+}
+
 export async function kitReactionPlayer(page: Page): Promise<string[]> {
   const player = page.locator(KIT_PLAYER).first();
   await player.scrollIntoViewIfNeeded();
   const step = attribute(player, "data-step");
   const steps = Number(await player.getAttribute("data-steps"));
-  const before = Number(await step());
-  const target = otherStep(before, steps);
+  const target = otherStep(Number(await step()), steps);
   if (target === null) return [`the reaction player has ${steps} step`];
-  await player.locator(".rp-rail button").nth(target - 1).click();
+  const rail = player.locator(".rp-rail button");
+  await rail.nth(target - 1).click();
   const chosen = await reached(step, String(target), QUICK_MS);
+  await rail.first().click();
+  const first = await reached(step, "1", QUICK_MS);
   const play = player.locator(".rp-play");
   await play.click();
   const playing = await reached(attribute(play, "aria-pressed"), "true", QUICK_MS);
-  const moved = await changedFrom(step, chosen, PLAY_MS);
-  await play.click();
-  const paused = await reached(attribute(play, "aria-pressed"), "false", QUICK_MS);
+  const moved = await changedFrom(step, first, PLAY_MS);
   return [
     ...expectedProblems(`the reaction player's step ${target}`, String(target), chosen),
+    ...expectedProblems("the reaction player's first step", "1", first),
     ...expectedProblems("the reaction player's Play", "true", playing),
-    ...unchangedProblems("the reaction player while playing", chosen, moved),
-    ...expectedProblems("the reaction player's Pause", "false", paused)
+    ...unchangedProblems("the reaction player while playing", first, moved),
+    ...(await pauseProblems(play, Number(moved), steps))
   ];
 }
 
@@ -84,19 +92,22 @@ export async function dipPlayer(page: Page): Promise<string[]> {
   return expectedProblems("the dip player", String(nextDips(before)), after);
 }
 
+async function pressPinned(page: Page, pinned: string, label: string): Promise<string[]> {
+  const control = page.locator(pinned).first();
+  await control.scrollIntoViewIfNeeded();
+  await control.click();
+  return expectedProblems(label, "true", await reached(attribute(control, "aria-pressed"), "true", QUICK_MS));
+}
+
 export async function whatIf(page: Page): Promise<string[]> {
   const problems: string[] = [];
   const experiment = page.locator(`${EXPERIMENT}:visible`).first();
-  if (await experiment.count()) {
-    await experiment.scrollIntoViewIfNeeded();
-    await experiment.click();
-    problems.push(...expectedProblems("an experiment's tab", "true", await reached(attribute(experiment, "aria-pressed"), "true", QUICK_MS)));
-  }
+  if (await experiment.count()) problems.push(...(await pressPinned(page, `[data-x="${await experiment.getAttribute("data-x")}"]`, "an experiment's tab")));
   const choice = page.locator(`${CHOICE}:visible`).first();
   if ((await choice.count()) === 0) return [...problems, "the document offers no what-if choice to press"];
-  await choice.scrollIntoViewIfNeeded();
-  await choice.click();
-  return [...problems, ...expectedProblems("a what-if choice", "true", await reached(attribute(choice, "aria-pressed"), "true", QUICK_MS))];
+  const group = await choice.evaluate((node) => node.closest("[data-choice]")?.getAttribute("data-choice") ?? "");
+  const pinned = `.seg[data-choice="${group}"] button[data-v="${await choice.getAttribute("data-v")}"]`;
+  return [...problems, ...(await pressPinned(page, pinned, "a what-if choice"))];
 }
 
 export async function kitMolecule(page: Page): Promise<string[]> {

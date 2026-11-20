@@ -10,6 +10,10 @@ export const CONTROLS_CHECK = "controls";
 
 export type ControlStep = { name: string; problems: string[]; notes: string[] };
 
+export type DesignedAnswer = { pathPrefix: string; status: number };
+
+export const DESIGNED_ANSWERS: readonly DesignedAnswer[] = [{ pathPrefix: "/api/shared-science/", status: 404 }];
+
 const SAME_ORIGIN_RESOURCE = "Failed to load resource";
 const UNKNOWN_WEBRTC_DIRECTIVE = "Unrecognized Content-Security-Policy directive 'webrtc'.";
 const CHANGE_POLL_MS = 100;
@@ -30,6 +34,10 @@ export async function reached(read: () => Promise<string>, wanted: string, timeo
     if (now === wanted || Date.now() >= deadline) return now;
     await new Promise((resolve) => setTimeout(resolve, CHANGE_POLL_MS));
   }
+}
+
+export function designedAnswer(path: string, status: number): boolean {
+  return DESIGNED_ANSWERS.some((answer) => answer.status === status && path.startsWith(answer.pathPrefix));
 }
 
 export class ControlWatch {
@@ -113,6 +121,7 @@ export class ControlWatch {
     const status = response.status();
     if (!url || status < 400) return;
     if (!this.signedIn && status === 401 && url.pathname.startsWith("/api/")) return;
+    if (designedAnswer(url.pathname, status)) return;
     this.flag(`${response.request().method()} ${url.pathname} answered ${status}`);
   }
 }

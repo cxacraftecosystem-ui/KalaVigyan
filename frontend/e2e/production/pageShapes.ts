@@ -48,7 +48,7 @@ export function documentShape(options: { root: string; rail: string }): Document
     chapters: Array.from(root.querySelectorAll("section.kv-ch")).map((chapter) => chapter.getAttribute("data-label") ?? ""),
     railTargets,
     missingTargets: railTargets.filter((target) => !target || document.getElementById(target) === null),
-    citedSentences: root.querySelectorAll("[data-src]").length
+    citedSentences: root.querySelectorAll(".s[data-src], .s:has(.kcite)").length
   };
 }
 

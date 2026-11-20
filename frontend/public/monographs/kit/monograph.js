@@ -2148,7 +2148,9 @@ KV.boot('mb', function (document) {
 KV.boot('rm', function (document) {
 (function () {
   'use strict';
-  var D = JSON.parse(document.getElementById('kv-data').textContent);
+  var kvData = document.getElementById('kv-data');
+  if (!kvData) return;
+  var D = JSON.parse(kvData.textContent);
   (function () {
     var q = null; try { q = new URLSearchParams(location.search).get('screens'); } catch (e) {}
     if (!q) return;
