@@ -36,7 +36,6 @@ async def _decided(
 ) -> None:
     status, note, now = decision
     row.status, row.reviewedById, row.reviewedAt, row.reviewNote = status, reviewer.id, now, note
-    await session.flush()
     await audit.record(
         session,
         action=f"review.structure_{status.lower()}",
@@ -50,3 +49,4 @@ async def _decided(
             "claim": None if row.claimId is None else str(row.claimId),
         },
     )
+    await session.flush()
