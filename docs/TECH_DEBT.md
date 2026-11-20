@@ -3211,3 +3211,29 @@ Last reviewed: 2026-11-18.
   imported by 16 files; `SourceDialog`, `openedSource`, `EvidenceBadge` and `TermSheet`'s
   `onOpenCitation` stay for the restored tabbed craft page and the voice screens.
 - **Clears it:** drop each when its last caller moves (the craft bridge's retirement clears most).
+
+## Round 7 (2026-11-20)
+
+### Live research write-backs skipped the candidate gates
+
+- **What:** every live-research write-back of the 14 days to 2026-11-20 is `APPROVED` with no
+  `CandidateCheck` rows, where `knowledge-writes.md` expects `IN_REVIEW` with checks under the
+  RESEARCH `AUTO` switch. The last write-back ran on 2026-11-17; production has had no answers since
+  2026-11-18, so the path has not been exercised since.
+- **Clears it:** route write-back through the same gates as proposals (the contribution queue), prove
+  it with one real question in production, and re-check the earlier write-backs.
+
+### Nested proposal bodies keep camelCase keys
+
+- **What:** MCP tool arguments use one set of snake_case names (`craft_slug`, `task_key`, ...), but
+  `propose_structure` and `propose_source` take the Knowledge API's camelCase body, so their
+  descriptions still say `taskKey`.
+- **Clears it:** snake_case the MCP forms of those bodies with the old names accepted for a release.
+
+### Leftovers of the map rebuild
+
+- **What:** `components/answer/place/RiverStage.tsx` still renders `StateLines`, which now draws
+  nothing, and `answer/place/storyGeometry.ts` imports `boardBox` and `RANN_SALT_FLATS` from the
+  pass-through `boardGeometry.ts`. The landing asks for field coverage once per monograph every five
+  minutes (30 requests today).
+- **Clears it:** drop the import and the pass-through; a collection-wide coverage route.

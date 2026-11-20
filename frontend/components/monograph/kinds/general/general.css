@@ -1,0 +1,21 @@
+[data-general="general_drawing"] .kv-general-sheet {
+  background: var(--dye-cloth);
+  forced-color-adjust: none;
+}
+
+[data-general] .kv-general-bar {
+  background: var(--chart-series);
+}
+
+[data-general] .kv-general-bar[data-emph] {
+  background: var(--chart-emph);
+}
+
+[data-general] .kv-general-track {
+  background: var(--chart-grid);
+}
+
+[data-general] svg text {
+  font-family: var(--font-ui);
+  font-variant-numeric: lining-nums tabular-nums;
+}

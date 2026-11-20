@@ -111,6 +111,10 @@ from its published sections, registered components, curated pictures and `PageLa
   page checklist, `coverage.md`) and its components;
 - a closing `sources` chapter with its `h2`, under which the renderer lists the sources.
 
+A registered component a contributor delivered (`component-specs-general.md`) is drawn from the
+spec it was approved with: its units become the page's units `u5001` and on, held within it and
+cited from the facts they rest on, so its numerals are the page's like every sentence's.
+
 A picture's spec is the full `PicturePlateSpec` (`checked_spec`, every field written); a picture
 whose file is off the picture contract is left out.
 

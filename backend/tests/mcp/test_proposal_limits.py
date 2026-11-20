@@ -5,7 +5,11 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api import mcp_layout_tools, mcp_picture_tools, mcp_work_tools
+from app.api import (
+    mcp_layout_tools,
+    mcp_page_tools,
+    mcp_picture_tools,
+)
 from app.api.mcp_tools import ToolContext, answer
 from app.api.proposal_limits import wait_words
 from app.api.routes import knowledge_writes
@@ -116,7 +120,7 @@ async def test_spent_component_layout_and_picture_limits_are_tool_errors(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     researcher = person("RESEARCHER")
-    monkeypatch.setattr(mcp_work_tools.component_proposals, "propose_component", never_called)
+    monkeypatch.setattr(mcp_page_tools.component_proposals, "propose_component", never_called)
     monkeypatch.setattr(mcp_layout_tools, "propose_layout", never_called)
     monkeypatch.setattr(upload_links, "start_upload", never_called)
     monkeypatch.setattr(mcp_picture_tools, "endpoints_or_none", lambda: None)
@@ -129,6 +133,7 @@ async def test_spent_component_layout_and_picture_limits_are_tool_errors(
         "kind": "molecule_3d",
         "field": "CHEMISTRY",
         "subjects": [{"kind": "CRAFT", "key": "Kutch-Ajrakh"}],
+        "spec": {},
     }
     layout = {
         "proposal": {"subject": {"kind": "craft", "slug": "Kutch-Ajrakh"}, "baseVersion": 0, "entries": []}

@@ -52,6 +52,11 @@ also writes the kit to `frontend/public/monographs/kit/`. After a change to the 
 rewrite the golden document with
 `python -m app.scripts.build_monograph --document Kutch-Ajrakh --out ../shared/monograph.document.golden.json`.
 
+Each backend deploy rebuilds the stale craft page snapshots after the import (`app.scripts.rebuild_stale_pages`,
+at most `PAGES_SECONDS`, 480 by default), because a curated craft's document reads its snapshot and a
+stale one is rebuilt on every read (about 9 s), which times the web build out. The nightly upkeep
+rebuilds whatever a deploy leaves.
+
 Each curated craft's document is generated from the sections its dossier's claims publish at import
 (round 6). The backend deploy's `import_curation` writes them; to write them without a deploy, run
 `python -m app.scripts.publish_curated_sections` on the box (it prints written, unchanged, waiting
@@ -255,6 +260,20 @@ origins; the issuer is the API origin and the consent page is `<PUBLIC_WEB_URL>/
 2. Check: `curl -s -X POST <PUBLIC_API_URL>/api/mcp -H 'content-type: application/json' -d
    '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'` lists the read, proposal and open-work tools.
 3. Switch off: `MCP_SERVER_ENABLED=false` and re-render; the route answers 404.
+
+### Contributions at scale (round 7)
+
+- **The contribution worker** `kv-contributions` (a systemd unit beside `kv-worker` and `kv-fetcher`,
+  restarted by every deploy) takes queued proposals and runs their gates off the request
+  (`docs/contracts/knowledge-writes.md`). Read it with `journalctl -u kv-contributions`. Its
+  concurrency is `CONTRIBUTION_WORKERS` in `/opt/kalavigyan/.env` (optional). To drain the queue by
+  hand: `python -m app.scripts.contribution_worker --once` (Shell on the box).
+- **Picture screens** need an enabled CAPTION route (a vision model, Settings, Routing). Without
+  one, every picture waits for a person as `UNSCREENED`. After the deploy that adds them, run
+  `python -m app.scripts.fingerprint_pictures` once so stored pictures get their perceptual
+  hashes, and restart `kv-fetcher` if a deploy did not.
+- **Live research write-back** can be checked read-only with `python -m app.scripts.write_back_report`
+  (the runs of the last 14 days, their gate checks and states).
 
 ## Nightly upkeep and page builds
 

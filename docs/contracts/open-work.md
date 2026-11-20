@@ -26,11 +26,12 @@ the server", and item 16's `propose_component`. The endpoint, framing and read t
 | Claim, claim several, release, complete | `services/task_reservations.py` |
 | My tasks (held, completed, outcomes) | `services/contribution_queue_tasks.py`, contract `research/my_tasks.py` |
 | Stewardship | `services/stewardship.py`, contract `research/stewardship.py`, table `CraftSteward` (`models/contributions.py`, migration `0048_contribution_queue`) |
-| `propose_component` | `services/component_proposals.py` |
-| Tables | `models/open_work.py` (`TaskReservation`, `ComponentProposal`), migration `0038_open_work` |
-| MCP tools | `api/mcp_work_tools.py` (`WORK_TOOLS`), `api/mcp_task_tools.py` (`TASK_TOOLS`), `api/mcp_steward_tools.py` (`STEWARD_TOOLS`), registered in `api/mcp_tools.py` |
+| `propose_component` | `services/component_proposals.py`; the delivered spec `component_proposals_spec.py`, registration `component_proposals_register.py` (`component-specs-general.md`) |
+| `propose_page` and `preview_page` | `research/page_proposals.py` (the bundle and its reports), `services/page_proposals.py` with `page_proposals_parts.py`, `services/page_preview.py` with `page_preview_parts.py`, `page_preview_additions.py` and `page_preview_links.py` |
+| Tables | `models/open_work.py` (`TaskReservation`, `ComponentProposal`), migration `0038_open_work`; the delivered spec's columns and `models/page_previews.py` (`PagePreview`), migration `0049_delivered_components` |
+| MCP tools | `api/mcp_work_tools.py` (`WORK_TOOLS`), `api/mcp_task_tools.py` (`TASK_TOOLS`), `api/mcp_steward_tools.py` (`STEWARD_TOOLS`) and `api/mcp_page_tools.py` (`PAGE_TOOLS`: `propose_component`, `propose_page`, `preview_page`), registered in `api/mcp_tools.py` |
 | MCP prompts and resources | `api/mcp_prompts.py`, `api/mcp_resources.py`, dispatched in `api/mcp_tools.py` |
-| HTTP routes | `api/routes/open_work.py` |
+| HTTP routes | `api/routes/open_work.py`; `api/routes/page_proposals.py` (bundles and previews, `api/page_proposal_deps.py`) |
 | The contributor skill | `data/contributor/SKILL.md`, served at `frontend/public/skills/kalavigyan-contributor/SKILL.md` |
 | The design tokens resource | `data/design/tokens.json`, written by `tools/design_tokens.py` beside the design skill's `references/tokens.json` |
 
@@ -171,7 +172,9 @@ Arguments: `label` (`<craft-or-shared>/<field>/<name>`, the registry's pattern),
 `fields[]`, `craft_slug?` (the owning craft; none for a shared component), `subjects[{kind, key}]`
 (1 to 20: a craft by slug, a concept or compound by id, a place by `lgd:<code>` or `basin:<id>`),
 `considered_labels[]` (registered labels only), `extends?` with `extension` (`SUBJECT_LINK` keeps the
-extended label; `VARIANT` takes a new one), `task_key?`.
+extended label; `VARIANT` takes a new one), `task_key?`, and the delivery: `spec` (the kind's spec
+data, any of the 42 kinds or a general kind) and `units` (`{u0001: {text, claimIds}}`), required on
+MCP except for a `SUBJECT_LINK`, which carries none (`component-specs-general.md`).
 
 - Checks, failing with a sentence the agent can act on: a `task_key` names a `MISSING_COMPONENT`
   task whose need the proposal's kind meets and whose craft the proposal is keyed to (so a proposal
@@ -188,11 +191,20 @@ extended label; `VARIANT` takes a new one), `task_key?`.
 - A close match returns `{outcome REFUSED, matches[{component, reasons[]}], waysOn[2]}` and stores
   nothing. The two ways on: place the existing component by its label, or propose an extension (a
   new subject link or a variant). Never a copy.
+- A delivery is then checked (`component-specs-general.md`, The checks): the spec against its
+  kind's model, its units against the spec, every cited fact stored and shown, every number a unit
+  states in its facts. A refusal names every problem in one sentence and stores nothing.
 - Otherwise it is stored: `PENDING` for review by an Admin, or `APPROVED` at once when the account
   is a Professor, Admin or Master Admin (decision 0101 item 12, the role read from the signed-in
   account). The proposer is kept in `proposerId` for moderation only and never shown (item 13).
+- **Approval registers it** (no builder step): a delivered component becomes a `KnowledgePiece` of
+  the library that every page it applies to draws from its spec, and a `SUBJECT_LINK` keys the
+  registered component to its new subjects; approved at once means registered at once. A proposal
+  without a spec (the site's form) is approved for a builder as before.
 
 ## MCP
+
+Last reviewed: 2026-11-20 (round 7: delivered components and pages).
 
 | Tool | Scope | Hints | Returns |
 |---|---|---|---|
@@ -206,6 +218,10 @@ extended label; `VARIANT` takes a new one), `task_key?`.
 | `my_crafts` | contribute | writes (records what was seen) | `MyCrafts {schemaVersion 1, crafts[StewardPackage], adopted, adoptedMax, message}` |
 | `propose_component` | contribute | writes | `ComponentProposalResult {schemaVersion, outcome, proposalId, status, label, message, matches, waysOn}` |
 | `propose_source` | contribute | writes | `SourceProposalReply {schemaVersion, outcome, claimId, quotesAdded, held, gates, message}` |
+| `propose_page` | contribute | writes | `PageProposalResult {schemaVersion, subject, pageUrl, accepted, refused, parts[], message}` |
+| `preview_page` | contribute | writes (a preview, never a proposal) | `PagePreviewResult {schemaVersion, subject, pageUrl, previewUrl, expiresAt, chapters[], components, sources, parts[], message}` |
+
+The three page tools need an account of Researcher or above (`PROPOSE_KNOWLEDGE`).
 
 - A write tool's changes are committed by the dispatch when it succeeds and rolled back when it
   refuses (`InvalidInput` or `Refused`, both a tool result with `isError`).
@@ -251,6 +267,63 @@ blocks anyone: other accounts list, claim and complete the craft's tasks as befo
 any number of stewards. Table `CraftSteward` (`userId`, `craftId`, `adoptedAt`, `droppedAt`,
 `seenTaskKeys`, `seenAt`; one live row per account and craft by a partial unique index).
 
+## Pages delivered whole (`propose_page`)
+
+One bundle builds one page: `PageBundle {schemaVersion 1, subject {kind craft, family or category,
+slug}, facts[] (each a `propose_fact` proposal, at most 20), structure[] (each a `propose_structure`
+proposal, at most 20), components[] ({proposal, cites}, at most 10), layout? ({baseVersion,
+entries, note?}), pictures[] ({stageId?, claimIds, declaration?}, at most 10), note?}`, holding at
+least one part. A component's `cites` names, per unit, the bundle's facts it rests on besides its
+`claimIds`, as `fact:0`, `fact:1` and on (the facts' places in `facts`); a picture's `claimIds` may
+name them the same way. A reference beyond the bundle's facts, or to a unit the component lacks, is
+an argument error.
+
+Parts run in order (facts, structure, components, layout, pictures), each in its own savepoint and
+checked exactly as its own tool checks it: a fact through the gates (`knowledge-writes.md`), a
+structure item through its checks, a component through the delivery checks and the library search,
+the layout against the page's current version (stored for review, or written at once by an
+Admin), and a picture by starting its upload (`start_image_upload`'s link and slot, reported in
+the part's `upload`). Each part counts against its own kind's hourly limit. A part is also refused
+when it names another page (a fact's or structure item's subject), when a category's bundle carries
+structure or pictures, when a component is keyed to another craft (`craft_slug` or a `CRAFT`
+subject), or when it cites a bundle fact that was refused. A refused part rolls back only itself:
+the others stand, and one report lists every part `{part, index, outcome ACCEPTED or REFUSED,
+status, id, message, upload?}` with the counts. A component citing a bundle fact that waits for
+review is stored, and its approval waits until that fact is shown. HTTP: `POST
+/api/knowledge/pages` (`PROPOSE_KNOWLEDGE`, the contribution terms accepted), 422 for an argument
+or subject error.
+
+## Previews before submitting (`preview_page`)
+
+`preview_page` takes the same bundle and assembles the document it would produce, without
+proposing anything: the page's generated document (`page-layout.md`) built from the stored page
+plus the bundle (`PageAdditions` into `monograph_generated.generated_parts`):
+
+- each fact, and each structure item that states a fact, is one more sentence at the end of its
+  field's section, citing its proposed sources (unstored sources, numbered after the page's); a
+  conflict is listed only;
+- each component is drawn from its delivered spec where the page will draw it once registered;
+  the delivery checks run, so a component that would be refused is refused here;
+- the layout replaces the page's own as its next version, refused when its base version is stale;
+- pictures are listed: they are drawn once uploaded and approved.
+
+No source is fetched, so the gates' verdicts are only known when the bundle is proposed. Each part
+reports `SHOWN`, `LISTED` or `REFUSED`. A page with authored content (Kutch Ajrakh) is not
+previewed, and a page that would still hold too few published fields to be a monograph (3 for a
+craft, 1 for a family or category) is refused with how to grow it.
+
+The document is kept as a `PagePreview` row (`userId`, subject, `document`, `expiresAt` 24 hours
+on; an account keeps at most 20 live previews and expired ones are deleted when it previews again)
+and reached through a private link, `<site>/preview/<token>`. The token is
+`<preview id hex>.<expiry epoch>.<HMAC-SHA256>`, signed for the account with a key derived from the
+JWT secret (`page_preview_links.preview_key`); `GET /api/knowledge/pages/previews/{token}` returns
+the document only to that signed-in account before it expires (404 otherwise, never saying which),
+with `Cache-Control: private, no-store` and `X-Robots-Tag: noindex, nofollow`. HTTP: `POST
+/api/knowledge/pages/preview` (`PROPOSE_KNOWLEDGE`). The web route `/preview/<token>`
+(`app/(reading)/preview/[token]`) reads it with the reader's session and draws it with
+`MonographPage` exactly as the site draws its pages, `noindex`; signed out it sends the reader to
+sign in and back, and any other answer is the not-found page.
+
 ## The contributor skill
 
 `data/contributor/SKILL.md` is the one copy that is written; `frontend/public/skills/
@@ -265,8 +338,9 @@ are regenerated into both places by `tools/design_tokens.py`.
   `propose_layout` and wait in the `LAYOUTS` queue, page structure with `propose_structure` in the
   `STRUCTURE` queue (`knowledge-writes.md`).
 - Component and layout proposals are decided on the review page, `/admin/review`
-  (`review-queue.md`). An approved component proposal waits for a builder, who builds it and
-  registers it in the library outside the server; an approved layout is written at once.
+  (`review-queue.md`). An approved delivered component is registered in the library at once and
+  drawn by every page it applies to; a proposal without a spec still waits for a builder; an
+  approved layout is written at once.
 - The nightly upkeep re-verifies quotes, archives sources at risk and counts dead links
   (`nightly-upkeep.md`), which feed the `DEAD_SOURCE` and `UNARCHIVED_SOURCE` tasks, and its verdicts
   and failure counts feed the three healing tasks; the site's contribution screens parse the kinds

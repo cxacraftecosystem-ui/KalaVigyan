@@ -15,6 +15,7 @@ die() { say "::error::$*"; exit 1; }
 NGINX_SWITCH_SECONDS="${NGINX_SWITCH_SECONDS:-20}"
 EMBED_SECONDS="${EMBED_SECONDS:-240}"
 EMBED_GRACE="${EMBED_GRACE:-60}"
+PAGES_SECONDS="${PAGES_SECONDS:-480}"
 
 other() { if [ "$1" = 8000 ]; then echo 8001; else echo 8000; fi; }
 active() { systemctl is-active --quiet "$1" 2>/dev/null; }
@@ -61,6 +62,16 @@ seed() {
   sync_portal_crafts "$tree"
   embed_seeded "$tree" app.scripts.embed_craft_descriptors
   embed_seeded "$tree" app.scripts.embed_knowledge
+  rebuild_pages "$tree"
+}
+
+rebuild_pages() {
+  local tree="$1" report
+  if report="$(cd "$tree" && timeout "$((PAGES_SECONDS + EMBED_GRACE))" runuser -u "$RUN_AS" -- bash -c "set -a; . '$ENV_FILE'; set +a; exec ./.venv/bin/python -m app.scripts.rebuild_stale_pages --seconds $PAGES_SECONDS")"; then
+    say "app.scripts.rebuild_stale_pages done: $report"
+  else
+    say "::warning::app.scripts.rebuild_stale_pages did not finish (${report:-no report}); the release goes on and the nightly upkeep rebuilds what is left, but the web build reads stale pages slowly until then."
+  fi
 }
 
 sync_portal_crafts() {

@@ -20,9 +20,11 @@ from app.models import (
     KnowledgePieceSubject as Subject,
 )
 from app.models.enums import DISCIPLINES
+from app.research.component_specs_general_delivery import DeliveredComponent
 from app.research.media_refs import MediaRef
 
 from .component_library import library_components
+from .component_proposals_drawn import stored_delivery
 from .craft_page_family import family_place, reader_name
 from .curated_index import IndexPicture
 from .knowledge_export import EXPORT_COMPONENTS_MAX
@@ -68,6 +70,7 @@ class RegisteredComponent:
     subjects: tuple[str, ...]
     monograph: str | None
     anchor: str | None
+    delivered: DeliveredComponent | None = None
 
 
 @dataclass(frozen=True)
@@ -205,4 +208,5 @@ def _component(row: KnowledgePiece, subjects: tuple[str, ...]) -> RegisteredComp
         subjects=subjects,
         monograph=monograph if isinstance(monograph, str) else None,
         anchor=anchor if isinstance(anchor, str) else None,
+        delivered=stored_delivery(str(row.label), payload),
     )

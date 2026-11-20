@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import uuid
 from collections.abc import Iterable, Sequence
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -11,6 +11,7 @@ from app.models.knowledge_pieces import DESCRIPTION_MAX_CHARS, LABEL_PATTERN, TI
 from app.models.open_work import PROPOSAL_EXTENSIONS, PROPOSAL_STATUSES
 
 from .base import ContractModel
+from .component_specs_general_delivery import UNITS_MAX, DeliveredUnit, UnitKey
 from .crafts import SLUG_MAX_CHARS
 from .knowledge_api import ComponentSummary
 from .open_work import COMPONENT_NEEDS, TASK_KEY_MAX_CHARS, parse_task_key
@@ -112,6 +113,12 @@ class ComponentProposalDraft(BaseModel):
     extends: str | None = Field(default=None, max_length=TITLE_COLUMN_CHARS, pattern=LABEL_PATTERN)
     extension: Extension | None = None
     task_key: str | None = Field(default=None, min_length=1, max_length=TASK_KEY_MAX_CHARS)
+    spec: dict[str, Any] | None = None
+    units: dict[UnitKey, DeliveredUnit] = Field(default_factory=dict, max_length=UNITS_MAX)
+
+    @property
+    def delivered(self) -> bool:
+        return self.spec is not None
 
     @model_validator(mode="after")
     def _consistent(self) -> Self:
@@ -128,6 +135,12 @@ class ComponentProposalDraft(BaseModel):
             raise ValueError("each subject is named once")
         if len(set(self.considered_labels)) != len(self.considered_labels):
             raise ValueError("each considered label is named once")
+        if self.units and self.spec is None:
+            raise ValueError("units come with the spec that places them")
+        if self.extension == SUBJECT_LINK and self.spec is not None:
+            raise ValueError(
+                "a SUBJECT_LINK keys the registered component to new subjects and carries no spec"
+            )
         return self
 
 
