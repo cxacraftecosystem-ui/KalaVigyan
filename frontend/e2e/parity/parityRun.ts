@@ -14,6 +14,7 @@ const STEP_MS = 30;
 const SHOWN_DIFFERENCES = 40;
 const SHOT_TIMEOUT_MS = 20_000;
 const CHAPTER = "#chem";
+const CHAPTER_QUALITY = 70;
 
 export async function readPage(page: Page, path: string): Promise<void> {
   await page.goto(path, { waitUntil: "networkidle", timeout: 120_000 });
@@ -32,9 +33,10 @@ function fileName(label: string): string {
   return label.replace(/[^A-Za-z0-9-]+/g, "_");
 }
 
-async function shot(root: ElementHandle<Element>): Promise<Buffer | null> {
+async function shot(root: ElementHandle<Element>, type: "png" | "jpeg" = "png"): Promise<Buffer | null> {
   await root.scrollIntoViewIfNeeded().catch(() => undefined);
-  return root.screenshot({ animations: "disabled", timeout: SHOT_TIMEOUT_MS }).catch(() => null);
+  const quality = type === "jpeg" ? CHAPTER_QUALITY : undefined;
+  return root.screenshot({ animations: "disabled", timeout: SHOT_TIMEOUT_MS, scale: "css", type, quality }).catch(() => null);
 }
 
 async function pixels(approved: ElementHandle<Element>, rendered: ElementHandle<Element>, name: string, save: Shots): Promise<number | null> {
@@ -79,8 +81,8 @@ export async function pageSanity(page: Page, subject: SubjectPage): Promise<Sani
 export async function chapterShot(page: Page, subject: SubjectPage, save: Shots): Promise<boolean> {
   const chapter = await page.$(CHAPTER);
   if (!chapter) return false;
-  const image = await shot(chapter);
-  if (image) save(`${fileName(subject.slug)}--chemistry.png`, image);
+  const image = await shot(chapter, "jpeg");
+  if (image) save(`${fileName(subject.slug)}--chemistry.jpg`, image);
   return image !== null;
 }
 

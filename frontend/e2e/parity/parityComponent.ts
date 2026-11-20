@@ -38,6 +38,7 @@ export const GRAPHIC_TAGS = ["svg", "img", "canvas", "video", "picture"];
 const NODE_CAP = 500;
 const BOX_TOLERANCE_PX = 2;
 const ICON_VIEW_MAX = 32;
+const ICON_VIEW_LEAST = 8;
 const ICON_WIDTH_MAX_PX = 64;
 const FIGURE_TEXT_MAX_PX = 96;
 const SVG_TEXT_MAX_PX = 48;
@@ -117,7 +118,7 @@ export async function sanityProblems(page: Page, label: string, root: ElementHan
       for (const svg of element.querySelectorAll("svg")) {
         const view = (svg as SVGSVGElement).viewBox?.baseVal;
         const width = svg.getBoundingClientRect().width;
-        if (view && view.width > 0 && view.width <= limits.icon && width > limits.iconWidth) problems.push(`an icon of ${view.width} units draws ${Math.round(width)}px wide`);
+        if (view && view.width >= limits.iconLeast && view.width <= limits.icon && width > limits.iconWidth) problems.push(`an icon of ${view.width} units draws ${Math.round(width)}px wide`);
       }
       for (const node of element.querySelectorAll("*")) {
         const size = parseFloat(getComputedStyle(node).fontSize);
@@ -128,7 +129,7 @@ export async function sanityProblems(page: Page, label: string, root: ElementHan
       }
       return [...new Set(problems)].slice(0, 12);
     },
-    { icon: ICON_VIEW_MAX, iconWidth: ICON_WIDTH_MAX_PX, text: FIGURE_TEXT_MAX_PX, svgText: SVG_TEXT_MAX_PX }
+    { icon: ICON_VIEW_MAX, iconLeast: ICON_VIEW_LEAST, iconWidth: ICON_WIDTH_MAX_PX, text: FIGURE_TEXT_MAX_PX, svgText: SVG_TEXT_MAX_PX }
   );
   return found.map((problem) => ({ label: `${page.url()} ${label}`, problem }));
 }

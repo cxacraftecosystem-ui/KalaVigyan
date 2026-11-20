@@ -11,7 +11,8 @@ export type HomeEntry = { kind: string; scope: string | null; frame: { classes: 
 export const AUTHORED_PATH = "/crafts/Kutch-Ajrakh";
 const PAGES_PATH = "/api/site/pages";
 const STRUCTURE_KIND = "answer_block";
-const FETCHES_AT_ONCE = 8;
+const FETCHES_AT_ONCE = 4;
+const RETRY_WAITS_MS = [1000, 3000, 8000, 15000];
 
 const BOOK = HOMES as { homes: Record<string, HomeEntry> };
 
@@ -40,19 +41,32 @@ export function subjectPage(body: DocumentBody, asked: "craft" | "category", slu
   };
 }
 
+export function retryable(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
+async function read(request: APIRequestContext, path: string): Promise<unknown> {
+  for (let attempt = 0; attempt < RETRY_WAITS_MS.length; attempt += 1) {
+    const response = await request.get(path, { failOnStatusCode: false, timeout: 60_000 }).catch(() => null);
+    if (response?.ok()) return response.json();
+    if (response && !retryable(response.status())) return null;
+    await new Promise((resolve) => setTimeout(resolve, RETRY_WAITS_MS[attempt]));
+  }
+  throw new Error(`the site did not answer ${path}`);
+}
+
 async function documentOf(request: APIRequestContext, asked: "craft" | "category", slug: string): Promise<SubjectPage | null> {
   const path = asked === "category" ? `/api/categories/${encodeURIComponent(slug)}/monograph` : `/api/crafts/${encodeURIComponent(slug)}/monograph`;
-  const response = await request.get(path, { failOnStatusCode: false, timeout: 60_000 });
-  if (!response.ok()) return null;
-  return subjectPage((await response.json()) as DocumentBody, asked, slug);
+  const body = await read(request, path);
+  return body ? subjectPage(body as DocumentBody, asked, slug) : null;
 }
 
 export async function subjectPages(request: APIRequestContext): Promise<SubjectPage[]> {
-  const listed = (await (await request.get(PAGES_PATH, { timeout: 60_000 })).json()) as { crafts?: string[]; categories?: string[] };
+  const listed = ((await read(request, PAGES_PATH)) ?? {}) as { crafts?: string[]; categories?: string[] };
   const asked: ["craft" | "category", string][] = [...(listed.categories ?? []).map((slug) => ["category", slug] as ["category", string]), ...(listed.crafts ?? []).map((slug) => ["craft", slug] as ["craft", string])];
   const found: SubjectPage[] = [];
   for (let at = 0; at < asked.length; at += FETCHES_AT_ONCE) {
-    const batch = await Promise.all(asked.slice(at, at + FETCHES_AT_ONCE).map(([subject, slug]) => documentOf(request, subject, slug).catch(() => null)));
+    const batch = await Promise.all(asked.slice(at, at + FETCHES_AT_ONCE).map(([subject, slug]) => documentOf(request, subject, slug)));
     found.push(...batch.filter((page): page is SubjectPage => page !== null));
   }
   return found;
