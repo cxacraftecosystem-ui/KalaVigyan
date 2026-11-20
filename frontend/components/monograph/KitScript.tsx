@@ -26,13 +26,13 @@ function appendKit(onReady: () => void): void {
 function afterLoadIdle(start: () => void): () => void {
   let idle = 0;
   const later = () => {
-    idle = "requestIdleCallback" in window ? window.requestIdleCallback(start, { timeout: KIT_IDLE_TIMEOUT_MS }) : window.setTimeout(start, 0);
+    idle = typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(start, { timeout: KIT_IDLE_TIMEOUT_MS }) : window.setTimeout(start, 0);
   };
   if (document.readyState === "complete") later();
   else window.addEventListener("load", later, { once: true });
   return () => {
     window.removeEventListener("load", later);
-    if ("cancelIdleCallback" in window) window.cancelIdleCallback(idle);
+    if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idle);
     window.clearTimeout(idle);
   };
 }
