@@ -3,7 +3,9 @@ from typing import Any
 
 import pytest
 
+from app.api.mcp_prompts import PROMPTS
 from app.api.mcp_tools import TOOLS, ToolContext, answer
+from app.data.skill_library import prompt_reference
 from app.services.craft_resolver import CraftIndexStore
 
 BACKEND = Path(__file__).resolve().parents[2]
@@ -15,12 +17,19 @@ METHOD = (
     "## Proposals and their progress",
     "## What counts as a source",
     "## Quotes and locators",
-    "## One fact per sentence",
+    "### One fact per sentence",
     "## The fields",
     "## The page checklist",
     "## Never",
 )
-PROMPT_NAMES = {"research_field", "write_section", "propose_component", "deliver_page", "give_picture"}
+PROMPT_NAMES = {
+    "research_field",
+    "write_section",
+    "propose_component",
+    "deliver_page",
+    "give_picture",
+    "deliver_dataset",
+}
 
 
 def request(method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -59,10 +68,11 @@ async def every_prompt() -> list[str]:
         await prompt_text("propose_component", {**craft, "need": "molecules"}),
         await prompt_text("deliver_page", {"subject_kind": "craft", "slug": "Kutch-Ajrakh"}),
         await prompt_text("give_picture", craft),
+        await prompt_text("deliver_dataset", {**craft, "kind": "general_table"}),
     ]
 
 
-async def test_the_five_prompts_are_listed_with_their_arguments() -> None:
+async def test_the_six_prompts_are_listed_with_their_arguments() -> None:
     listed = {prompt["name"]: prompt for prompt in (await result("prompts/list"))["prompts"]}
     assert set(listed) == PROMPT_NAMES
     arguments = {
@@ -73,6 +83,7 @@ async def test_the_five_prompts_are_listed_with_their_arguments() -> None:
     assert arguments["propose_component"] == [("craft_slug", True), ("need", False)]
     assert arguments["deliver_page"] == [("subject_kind", True), ("slug", True)]
     assert arguments["give_picture"] == [("craft_slug", True)]
+    assert arguments["deliver_dataset"] == [("craft_slug", True), ("kind", False)]
 
 
 async def test_research_a_field_carries_the_method_and_names_the_tools_in_order() -> None:
@@ -151,6 +162,46 @@ async def test_a_picture_is_given_only_with_the_person_s_own_declaration() -> No
     assert "HEIC, HEIF, TIFF or BMP" in picture
 
 
+async def test_a_figure_from_a_dataset_rests_on_cited_facts_and_is_previewed_first() -> None:
+    figure = await prompt_text("deliver_dataset", {"craft_slug": "Kutch-Ajrakh", "kind": "general_chart"})
+    assert figure.startswith("Deliver a general_chart built from an open dataset for the craft Kutch-Ajrakh")
+    assert all(heading in figure for heading in ("## Datasets", "## Authoring a component", "## Never"))
+    assert in_order(
+        figure,
+        "THIN_FIELD",
+        "`claim_task`",
+        "`get_facts`",
+        "`list_components`",
+        "the dataset guide below",
+        "Build a general_chart",
+        "Call `preview_page`",
+        "Call `propose_page`",
+    )
+    either = await prompt_text("deliver_dataset", {"craft_slug": "Kutch-Ajrakh"})
+    assert "general_chart, general_table, general_timeline, general_map_layer" in either
+    assert "general_drawing" not in either.split("## Proposals and their progress")[0]
+
+
+async def test_each_prompt_carries_the_whole_of_every_reference_it_names_and_no_other() -> None:
+    every = ("sources", "quotes", "fields", "page-checklist", "components", "datasets")
+    for prompt in PROMPTS.values():
+        given = {argument.name: _sample(argument.name) for argument in prompt.arguments if argument.required}
+        text = await prompt_text(prompt.name, given)
+        for name in every:
+            assert (prompt_reference(name) in text) == (name in prompt.references), (prompt.name, name)
+    assert set(PROMPTS["research_field"].references) == {"sources", "quotes", "fields", "page-checklist"}
+    assert PROMPTS["give_picture"].references == ()
+
+
+def _sample(name: str) -> str:
+    return {
+        "craft_slug": "Kutch-Ajrakh",
+        "field": "CHEMISTRY",
+        "subject_kind": "craft",
+        "slug": "Kutch-Ajrakh",
+    }.get(name, "")
+
+
 async def test_every_prompt_uses_the_one_set_of_argument_names_and_names_real_tools() -> None:
     texts = await every_prompt()
     for text in texts:
@@ -187,6 +238,13 @@ async def test_every_prompt_uses_the_one_set_of_argument_names_and_names_real_to
         ({"name": "deliver_page", "arguments": {"subject_kind": "state", "slug": "Gujarat"}}, "subject_kind"),
         ({"name": "deliver_page", "arguments": {"subject_kind": "craft", "slug": "a b"}}, "slug: is a slug"),
         ({"name": "give_picture", "arguments": {}}, "craft_slug: is required"),
+        (
+            {
+                "name": "deliver_dataset",
+                "arguments": {"craft_slug": "Kutch-Ajrakh", "kind": "general_drawing"},
+            },
+            "kind: is one of",
+        ),
     ],
 )
 async def test_a_wrong_prompt_or_argument_is_an_invalid_params_error(

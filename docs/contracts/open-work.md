@@ -33,6 +33,7 @@ the server", and item 16's `propose_component`. The endpoint, framing and read t
 | MCP prompts and resources | `api/mcp_prompts.py`, `api/mcp_resources.py`, dispatched in `api/mcp_tools.py` |
 | HTTP routes | `api/routes/open_work.py`; `api/routes/page_proposals.py` (bundles and previews, `api/page_proposal_deps.py`) |
 | The contributor skill | `data/contributor/SKILL.md`, served at `frontend/public/skills/kalavigyan-contributor/SKILL.md` |
+| The references and the datasets skill | `data/contributor/references/<name>.md` and `data/contributor/kalavigyan-datasets/SKILL.md` (from `.claude/skills/kalavigyan-datasets`), read by `data/skill_library.py`, served at `frontend/public/skills/references/` and `frontend/public/skills/kalavigyan-datasets/` |
 | The design tokens resource | `data/design/tokens.json`, written by `tools/design_tokens.py` beside the design skill's `references/tokens.json` |
 
 ## Subjects
@@ -231,20 +232,25 @@ The three page tools need an account of Researcher or above (`PROPOSE_KNOWLEDGE`
   `listChanged` false).
 - `prompts/list` and `prompts/get` (`api/mcp_prompts.py`, steps in `api/mcp_prompt_steps.py`):
   `research_field {craft_slug, field}`, `write_section {craft_slug, field}`, `propose_component
-  {craft_slug, need?}`, and (round 7) `deliver_page {subject_kind, slug}` and `give_picture
-  {craft_slug}`, the prompt of `MISSING_PICTURE` tasks. Each returns one user message: the task, the
+  {craft_slug, need?}`, and (round 7) `deliver_page {subject_kind, slug}`, `give_picture
+  {craft_slug}`, the prompt of `MISSING_PICTURE` tasks, and `deliver_dataset {craft_slug, kind?}`
+  (`kind` one of the general kinds but `general_drawing`). Each returns one user message: the task, the
   steps naming the tools in order (`list_open_work`, `claim_task` or `claim_tasks`, `get_facts` and
   `get_section`, `list_components` first for a component, the agent's own search, `propose_facts`
   with idempotency keys and the claimed task as `task_key`, then `get_proposal` or `my_tasks` for
   the outcome; a component or page is built finished and seen with `preview_page` before
   `propose_page` or `propose_component`; a picture is given with `give_image` only after the person
-  confirms the declaration in their own words) and the method sections of the contributor skill
-  (Proposals and their progress, What counts as a source, Quotes and locators, One fact per
-  sentence, The fields, The page checklist, Never; plus Writing a section, Components, Pages,
-  Structure and sources or Pictures). A wrong prompt or argument is `-32602`.
-- `resources/list`, `resources/read`, `resources/templates/list` (empty):
-  `kalavigyan://skills/kalavigyan-contributor/SKILL.md` (`text/markdown`) and
-  `kalavigyan://design/tokens.json` (`application/json`). An unknown uri is `-32002`.
+  confirms the declaration in their own words), the method sections of the contributor skill
+  (Proposals and their progress and Never; plus Writing a section, Components, Pages, Structure and
+  sources or Pictures) and, whole, the references the prompt names (`Prompt.references`: sources,
+  quotes, fields and the page checklist; components for a component or a page; datasets for
+  `deliver_dataset`; none for `give_picture`). A wrong prompt or argument is `-32602`.
+- `resources/list`, `resources/read`, `resources/templates/list` (empty): the skills
+  `kalavigyan://skills/kalavigyan-contributor/SKILL.md` and
+  `kalavigyan://skills/kalavigyan-datasets/SKILL.md`, the six references
+  `kalavigyan://skills/references/<name>.md` (`page-checklist`, `sources`, `quotes`, `fields`,
+  `components`, `datasets`; all `text/markdown`), `kalavigyan://design/tokens.json`
+  (`application/json`) and the answer kit and view. An unknown uri is `-32002`.
 
 ## HTTP
 
@@ -334,9 +340,25 @@ sign in and back, and any other answer is the not-found page.
 
 `data/contributor/SKILL.md` is the one copy that is written; `frontend/public/skills/
 kalavigyan-contributor/SKILL.md` is served from the site, and `tests/mcp/test_contributor_kit.py`
-holds the two byte for byte, the field table equal to the vocabulary, and the tokens resource equal
-to the design skill's `tokens.json`. After editing the skill, copy it to its served place; the tokens
-are regenerated into both places by `tools/design_tokens.py`.
+holds the two byte for byte, the tier and allowance tables equal to the server's constants, and the
+tokens resource equal to the design skill's `tokens.json`. After editing the skill, copy it to its
+served place; the tokens are regenerated into both places by `tools/design_tokens.py`.
+
+**One source per rule (round 7).** The rules every contributor follows, over MCP or in the
+repository, are six references in `data/contributor/references/`: the page checklist (its 26
+rules), what counts as a source (grades and licences), quotes and locators (with one fact per
+sentence), the fields, authoring a component, and datasets. The contributor skill, the curation
+skill (`.claude/skills/kalavigyan-craft-pages`) and the datasets skill
+(`.claude/skills/kalavigyan-datasets`, its served copy `data/contributor/kalavigyan-datasets/
+SKILL.md`) name them and restate none of them; the prompts carry them whole. Copies: each reference
+at `frontend/public/skills/references/`, the datasets skill at `frontend/public/skills/
+kalavigyan-datasets/`, and the checklist at `.claude/skills/kalavigyan-craft-pages/references/`.
+`tests/mcp/test_skill_references.py` fails when a copy differs from its source, when a skill shares
+a run of eight words or a heading with a reference, or when a skill stops naming a reference;
+`tests/mcp/test_reference_limits.py` ties each number a reference states (quote lengths, fact
+words, sources and quotes, the 42 kinds, the delivery limits, the map's frame and the layers'
+tolerances, the bundle's facts, the gaps script's bar) to the constant the server or the build
+applies. After editing a reference, copy it to its served places.
 
 ## Around open work
 

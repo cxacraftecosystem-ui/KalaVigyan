@@ -9,6 +9,7 @@ from app.data.contributor_kit import (
     SITE_SKILL_PATH,
     skill_section,
 )
+from app.data.skill_library import reference_text
 from app.models.enums import DISCIPLINES
 from app.research.sections import DISCIPLINE_FIELDS, DISCIPLINE_TITLES
 from app.research.trust_tiers import TIER_FACTS_PER_HOUR, TIER_TASKS_HELD, TRUST_TIERS
@@ -60,8 +61,8 @@ def test_the_skill_names_itself_for_agents_that_load_skills() -> None:
     assert "description:" in head
 
 
-def test_the_skill_lists_every_field_with_its_title_and_what_it_covers() -> None:
-    rows = [match.groupdict() for match in ROW.finditer(skill_section("The fields"))]
+def test_the_fields_reference_lists_every_field_with_its_title_and_what_it_covers() -> None:
+    rows = [match.groupdict() for match in ROW.finditer(reference_text("fields"))]
     assert [row["field"] for row in rows] == list(DISCIPLINES)
     assert {row["field"]: row["title"] for row in rows} == dict(DISCIPLINE_TITLES)
     assert {row["field"]: row["covers"] for row in rows} == dict(DISCIPLINE_FIELDS)

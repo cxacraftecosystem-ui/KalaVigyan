@@ -3,16 +3,21 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from app.models.component_kinds import GENERAL_KINDS
+from app.research.component_specs_general import GENERAL_DRAWING
 
 __all__ = [
     "CLAIM_STEP",
+    "DATA_KINDS",
     "OWN_SEARCH",
     "component_steps",
+    "dataset_steps",
     "page_steps",
     "picture_steps",
     "research_steps",
     "section_steps",
 ]
+
+DATA_KINDS = tuple(kind for kind in GENERAL_KINDS if kind != GENERAL_DRAWING)
 
 CLAIM_STEP = (
     "Call `claim_task` with the key of the task you take, or `claim_tasks` with up to 10 keys: each stays yours "
@@ -69,9 +74,9 @@ def component_steps(values: Mapping[str, str]) -> list[str]:
         f'Call `list_components` first, with craft_slug "{craft}" and with words for what the component shows; '
         "when one fits, place it by its label and stop.",
         "Search for sources yourself for anything the component needs that is not held.",
-        "Build it finished: the spec of its kind, or of a general kind for anything new "
-        f"({', '.join(GENERAL_KINDS)}), and its units, each text by its unit id (u0001 and on) with the ids of "
-        "the shown facts it rests on.",
+        "Build it finished by the component guide below: the spec of its kind, or of a general kind for "
+        f"anything new ({', '.join(GENERAL_KINDS)}), and its units, each text by its unit id (u0001 and on) with "
+        "the ids of the shown facts it rests on.",
         f'Call `preview_page` with a bundle for the craft "{craft}" holding the component and any new facts it '
         "rests on (cited as fact:0 and on), open the private link, and check it is drawn as you meant.",
         "Call `propose_page` with that bundle, or `propose_component` with the labels you considered, its "
@@ -92,8 +97,8 @@ def page_steps(values: Mapping[str, str]) -> list[str]:
         "it completes as task_key), structure items, finished components (each {proposal, cites}, citing the "
         "bundle's facts as fact:0 and on), the layout on get_layout's version, and the pictures the person "
         "declared.",
-        "Call `preview_page` with the bundle, open the private link, and read each part's report: fix what is "
-        "refused or drawn wrong, and preview again.",
+        "Call `preview_page` with the bundle, open the private link, and read each part's report and the page "
+        "against the page checklist below: fix what is refused or drawn wrong, and preview again.",
         "Call `propose_page` with the same bundle once the preview is right. Follow its facts with "
         "`get_proposal` or `my_tasks`, and send the person each picture part's upload link.",
     ]
@@ -115,6 +120,29 @@ def picture_steps(values: Mapping[str, str]) -> list[str]:
         "otherwise call `start_image_upload` with the task as task_key and send the person its link.",
         "The reply says whether the picture waits for review or was refused, and why; `my_tasks` shows the task "
         "closed once an Admin approves it, and the picture is then drawn in its place on the page.",
+    ]
+
+
+def dataset_steps(values: Mapping[str, str]) -> list[str]:
+    craft, kind = values["craft_slug"], values.get("kind")
+    shape = f"a {kind}" if kind else f"one of {', '.join(DATA_KINDS)}"
+    return [
+        f'Call `list_open_work` with craft_slug "{craft}" for the field the data fills (a MISSING_FIELD or '
+        "THIN_FIELD task), then `claim_task` with its key.",
+        f'Call `get_facts`, `get_coverage` and `get_layout` for the craft "{craft}", and `list_components` with '
+        f'craft_slug "{craft}" and words for the data: when a component already draws it, place it by its '
+        "label and stop.",
+        "Find the dataset yourself and check its licence against the dataset guide below before you read a "
+        "value; values measured by district over the land are the site's own layers, never this figure's.",
+        "Write each value the figure needs as a fact, as propose_fact takes one, quoting its row with its "
+        "locator, with the dataset's page as the source, an idempotency_key of your own and that field task "
+        "as task_key.",
+        f"Build {shape} by the component guide below: every value stated by its reading unit, and every reading "
+        "unit citing its fact as fact:0 and on.",
+        f'Call `preview_page` with one bundle for the craft "{craft}" holding the facts and the component, open '
+        "the private link, and check the figure against the page checklist below.",
+        "Call `propose_page` with the same bundle once the preview is right, and follow its parts with "
+        "`get_proposal` or `my_tasks`.",
     ]
 
 

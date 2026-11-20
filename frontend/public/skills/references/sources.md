@@ -1,0 +1,64 @@
+# What counts as a source
+
+How KalaVigyan chooses, grades and records the sources its facts rest on, and which licences let a
+source's material be shown. Every contributor follows it, over the MCP server or in the repository.
+The gates read each source again themselves: they fetch it, grade it and read its licence, so a
+source chosen against these rules is refused, never argued.
+
+## The grades
+
+Grade every source before quoting it, and prefer A and B:
+
+- **A**: primary or authoritative. The GI journal and registry, peer-reviewed papers, museum
+  collection records, government reports (Textiles Committee, Development Commissioner
+  (Handicrafts), state handicraft boards), academic books.
+- **B**: theses, conference papers, edited encyclopedias, established craft institutions with named
+  authors.
+- **C**: reputable press features, artisan organisations' pages with a named author, and a page a
+  named organisation publishes about its own work, author named or not (a cooperative about its
+  members).
+- **D**: other web pages, and any shop, sales or retail page (a page that sells the craft, or links
+  its visitors to a shop for it).
+
+A fact whose quotes all come from D sources is refused, except an ECONOMICS fact stating a price in
+a currency from a dated page (a price on that date). A source without a named author is never
+graded B: it is A when it is one of the A kinds (a registry, a government report) and C or D
+otherwise. A recorded field interview held by KalaVigyan's own portals is graded A for what the
+speaker says of their own practice, and reaches facts only through the site's own write-back, never
+through a proposal.
+
+## Never used
+
+Shadow libraries, AI-generated content farms, social media posts, unattributed blog posts, anything
+behind a login, and screenshots of other sites.
+
+## Recording a source
+
+- **Address**: the canonical page, over https, with no tracking parameters (`utm_*`, `fbclid`,
+  `gclid`), never a search result or a redirect page. Give the DOI when there is one.
+- **Title, authors, publisher and year** as the source states them, never guessed.
+- **Language**: Indian-language sources are welcome; quote them in their own language and record
+  the language code (`gu`, `hi`, `sd`).
+- **Access**: open, abstract only, or restricted. A restricted source is cited from its open
+  abstract only.
+- **Archive**: when the live page blocks automated reading, give its Wayback Machine snapshot
+  (`https://web.archive.org/web/<timestamp>/<url>`) as well. The same page at a new address, or its
+  snapshot, is a source like any other when the quote is found in it.
+- **The day you read it**, as `YYYY-MM-DD`.
+- **Independence**: a near-verbatim rewrite of another source is not independent support, and two
+  quotes corroborate a fact only when their publishers differ.
+
+## Licences
+
+- **A source's own licence** is recorded as the source states it. Any source may be quoted in
+  short verbatim quotes; its licence decides whether those quotes are shown to the public or kept
+  for researchers. A licence declared open that the page itself contradicts is refused.
+- **A picture from elsewhere** (Wikimedia Commons) needs an open licence that allows reuse and
+  changes: CC0, the public domain or the public domain mark, PDDL, CC BY or CC BY-SA, any version.
+  Never a non-commercial (NC) or no-derivatives (ND) licence, "all rights reserved", or a picture
+  whose page states no licence. It is credited where it is shown: "Photo: Author, licence, via
+  Wikimedia Commons".
+- **A picture a person gives** carries the person's own declaration instead of a licence (the
+  contributor skill, Pictures).
+- **A dataset** follows the dataset guide (`datasets.md`): the licences it may carry, how it is
+  recorded, and which values belong to a dataset rather than to a fact.

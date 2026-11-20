@@ -124,10 +124,13 @@ From the repository root: `python tools/curation/propose.py <working dossier> [-
 - `--dry-run` needs neither and prints what would be sent. Exit 0 when every new fact got a
   reply, 1 when any was not sent or not stored, 2 for a usage problem or a stopped run.
 
-The API takes facts only. Structure (picture placements, a stage's `after` or why, native names,
-reactions, glossary, conflicts, open questions, the GI record) and the facts it cites still enter
-through a bulk import: a new dossier version, verified and checked, committed by the lead and
-imported on deploy, after which `--diff` reports `SAME` for it.
+The API and the MCP server also take structure (`propose_structure`: a stage's `after` or why,
+native names, reactions, botanical names, glossary, conflicts, open questions, the GI record), new
+sources for held facts (`propose_source`), components and whole page bundles (`knowledge-writes.md`,
+`open-work.md`), and the curation skill sends every change it can that way. The placements of
+open-licence pictures from elsewhere and a new craft's first dossier still enter through a bulk
+import: a new dossier version, verified and checked, committed by the lead and imported on deploy,
+after which `--diff` reports `SAME` for it.
 
 ## Versioning
 
