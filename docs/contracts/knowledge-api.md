@@ -134,6 +134,14 @@ so: `api/mcp_argument_names.RenamedArguments` maps the old names (`craftSlug`, `
 `notices()` gives the sentence "<old> is the old name of <new>; it works until the next release, so
 pass <new> from now on." The old names are not listed in `inputSchema`.
 
+The bodies a tool takes under `proposal` follow the same rule (round 7): `propose_structure`,
+`propose_source`, `propose_page` and `preview_page` scheme and describe their bodies in snake_case
+(`task_key`, `claim_id`, `claim_ids`, `stage_key`, `base_version`, `contribution_id`), through
+`mcp_argument_names.SnakeBodyArguments` (its `inputSchema` is generated without aliases). A
+camelCase name of the body's own models anywhere in it (`model_aliases`, `camel_keys`; free-form
+spec data is never read as a name) still validates for one release and adds the same sentence to the
+reply's `notices[]`. The site's HTTP bodies keep the Knowledge API's camelCase.
+
 ## Coverage
 
 `get_coverage` and `GET /api/crafts/{slug}/coverage` (also `/api/categories/{slug}/coverage`) serve

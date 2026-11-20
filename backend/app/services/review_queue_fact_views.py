@@ -26,7 +26,7 @@ from .claim_holds_review import hold_evidence, with_hold_evidence
 from .knowledge_view import craft_ref
 from .review_queue_select import Rendered, rows_by_id
 
-__all__ = ["fact_items"]
+__all__ = ["fact_items", "fact_sources"]
 
 CONCEPT_SUBJECT = "CONCEPT"
 
@@ -48,7 +48,7 @@ async def fact_items(session: AsyncSession, ids: Sequence[uuid.UUID]) -> list[Re
     context = _Context(
         concepts=concepts,
         crafts=await rows_by_id(session, Craft, [concept.craftId for concept in concepts.values()]),
-        sources=await _sources(session, ids),
+        sources=await fact_sources(session, ids),
         found_by=await _found_by(session, ids),
         checks=with_hold_evidence(await _checks(session, ids), await hold_evidence(session, ids)),
     )
@@ -77,7 +77,7 @@ def _item(claim: Claim, context: _Context) -> FactItem:
     )
 
 
-async def _sources(session: AsyncSession, ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, list[FactSource]]:
+async def fact_sources(session: AsyncSession, ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, list[FactSource]]:
     rows = await session.execute(
         select(ClaimSource, Source)
         .join(Source, Source.id == ClaimSource.sourceId)

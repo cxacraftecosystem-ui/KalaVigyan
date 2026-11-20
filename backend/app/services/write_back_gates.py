@@ -50,7 +50,7 @@ async def gate_write_back(
     claims: Sequence[ClaimWriteBack],
     documents: Mapping[str, SourceDocument],
     *,
-    embed: TextEmbedder,
+    embed: TextEmbedder | None,
     judge: StructuredModel | None,
 ) -> GatedWriteBack:
     held = await _held_keys(session, claims)
@@ -97,7 +97,7 @@ async def _runs(
     claims: Sequence[ClaimWriteBack],
     documents: Mapping[str, SourceDocument],
     *,
-    embed: TextEmbedder,
+    embed: TextEmbedder | None,
     judge: StructuredModel | None,
 ) -> dict[str, GateRun]:
     candidates = {claim.dedupe_key: _candidate(claim) for claim in claims}
@@ -111,7 +111,11 @@ async def _runs(
 
 
 async def _later(
-    store: HeldFacts, candidates: Sequence[Candidate], *, embed: TextEmbedder, judge: StructuredModel | None
+    store: HeldFacts,
+    candidates: Sequence[Candidate],
+    *,
+    embed: TextEmbedder | None,
+    judge: StructuredModel | None,
 ) -> dict[str, LaterGates]:
     try:
         return await later_gates(store, candidates, embed=embed, judge=judge)

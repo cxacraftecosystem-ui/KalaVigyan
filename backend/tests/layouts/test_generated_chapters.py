@@ -6,7 +6,8 @@ import pytest
 from app.services.monograph_generated import CRAFT_SECTIONS_MIN, enough_sections
 from app.services.monograph_generated_assembly import assembled_document
 from app.services.monograph_generated_drawings import Drawings
-from app.services.monograph_generated_parts import PlacedPicture, StoredSection
+from app.services.monograph_generated_parts import StoredSection
+from app.services.monograph_generated_pictures import curated_plate
 from app.services.monograph_generated_units import SubjectRecord, chapter_heading
 
 from .generated_parts import ALUM, BAGH, RECORD, generated, media
@@ -71,7 +72,7 @@ def test_a_picture_plate_carries_every_field_of_its_spec_and_one_off_the_picture
     assert hero["figure"]["captions"][0]["look"] is False and hero["figure"]["crop"] is None
     assert (hero["picture"]["loading"], hero["picture"]["fetchPriority"]) == (None, None)
     elsewhere = media("I05").model_copy(update={"image_url": "https://example.org/a.jpg"})
-    shown = PlacedPicture(picture("I05", role="PLATE", chapter="made"), elsewhere)
+    shown = curated_plate(picture("I05", role="PLATE", chapter="made"), elsewhere)
     with_elsewhere = dataclasses.replace(generated(), pictures=(*generated().pictures, shown))
     rebuilt = assembled_document(with_elsewhere, Drawings(root=tmp_path))
     assert rebuilt is not None

@@ -10,7 +10,8 @@ from app.research.monograph_page import CitedSource
 from app.research.page_layout import PageLayout
 from app.services.knowledge_view import ClaimView
 from app.services.monograph_generated_assembly import GeneratedParts
-from app.services.monograph_generated_parts import PlacedPicture, RegisteredComponent, StoredSection
+from app.services.monograph_generated_parts import RegisteredComponent, StoredSection
+from app.services.monograph_generated_pictures import PlateSource, curated_plate
 from app.services.monograph_generated_units import SubjectRecord
 
 from .pictures import picture
@@ -142,9 +143,9 @@ RECORD = SubjectRecord(
 )
 
 
-def pictures() -> tuple[PlacedPicture, ...]:
+def pictures() -> tuple[PlateSource, ...]:
     return tuple(
-        PlacedPicture(built, media(built.key))
+        curated_plate(built, media(built.key))
         for built in (
             picture("I01", role="PLATE", chapter="glance"),
             picture("I02", role="MASTHEAD", chapter="glance", focal=FOCAL),

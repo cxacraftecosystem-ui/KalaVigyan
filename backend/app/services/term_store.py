@@ -27,8 +27,8 @@ from app.research.terms import Term
 from app.research.write_back import ClaimWriteBack, WriteBackCitation, WriteBackSubject
 
 from . import knowledge_view
-from .claim_writer import SqlClaimWriter
 from .live_source_store import keep_document
+from .research_write_back import write_through_gates
 from .term_research import GlossaryTerm, ResearchedSummary, TermConceptRef
 from .term_summaries import StoredClaims, cites_only_shown
 from .write_back_plan import QUOTED_REASON, WRITE_BACK_PREDICATE
@@ -110,10 +110,10 @@ class SqlTermStore:
         async with self._sessions() as session:
             for document in researched.documents:
                 await keep_document(session, document)
-            results = await SqlClaimWriter(session).write(claims)
+            gated = await write_through_gates(session, claims, documents, embed=None, judge=None)
             await session.commit()
-        written = {result.dedupe_key: result.claim_id for result in results}
-        return [written[claim.dedupe_key] for claim in claims]
+        written = gated.claim_ids()
+        return [written[claim.dedupe_key] for claim in claims if claim.dedupe_key in written]
 
     async def cited(self, claim_ids: Sequence[uuid.UUID]) -> StoredClaims:
         async with self._sessions() as session:

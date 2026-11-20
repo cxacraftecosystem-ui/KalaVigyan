@@ -21,20 +21,19 @@ from app.models import (
 )
 from app.models.enums import DISCIPLINES
 from app.research.component_specs_general_delivery import DeliveredComponent
-from app.research.media_refs import MediaRef
 
 from .component_library import library_components
 from .component_proposals_drawn import stored_delivery
 from .craft_page_family import family_place, reader_name
-from .curated_index import IndexPicture
 from .knowledge_export import EXPORT_COMPONENTS_MAX
 from .media_ref_store import stored_media_refs
+from .monograph_generated_pictures import PlateSource, contributed_plates, curated_plate
 from .monograph_generated_units import SubjectRecord
 from .open_work_subjects import CATEGORY, WorkSubject
 from .page_layouts_backfill import curated_pictures
 
 __all__ = [
-    "PlacedPicture",
+    "PlateSource",
     "RegisteredComponent",
     "StoredSection",
     "subject_components",
@@ -71,12 +70,6 @@ class RegisteredComponent:
     monograph: str | None
     anchor: str | None
     delivered: DeliveredComponent | None = None
-
-
-@dataclass(frozen=True)
-class PlacedPicture:
-    picture: IndexPicture
-    media: MediaRef
 
 
 async def subject_sections(session: AsyncSession, subject: WorkSubject) -> list[StoredSection]:
@@ -130,14 +123,16 @@ async def subject_components(
     )
 
 
-async def subject_pictures(session: AsyncSession, subject: WorkSubject) -> list[PlacedPicture]:
+async def subject_pictures(session: AsyncSession, subject: WorkSubject) -> list[PlateSource]:
     pictures = await curated_pictures(session, subject)
     media = await stored_media_refs(session, [picture.media_ref_id for picture in pictures])
-    return [
-        PlacedPicture(picture, media[picture.media_ref_id])
+    curated = [
+        curated_plate(picture, media[picture.media_ref_id])
         for picture in pictures
         if picture.media_ref_id in media and media[picture.media_ref_id].display == INLINE
     ]
+    contributed = [] if subject.kind == CATEGORY else await contributed_plates(session, subject.id)
+    return [*curated, *contributed]
 
 
 async def _category_pieces(

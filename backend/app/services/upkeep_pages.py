@@ -8,10 +8,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
-from app.models import Craft, CraftPageSnapshot
+from app.models import Craft, CraftPageSnapshot, CuratedCraft
 from app.research.craft_page import CRAFT_PAGE_SCHEMA_VERSION
 from app.research.monograph_page import MonographContent
 
@@ -25,7 +26,9 @@ __all__ = [
     "PAGES_PER_NIGHT",
     "MonographLoader",
     "PagesReport",
+    "StalePage",
     "rebuild_monographs",
+    "rebuild_order",
     "rebuild_stale_pages",
     "rotating_window",
     "stale_crafts",
@@ -88,15 +91,27 @@ async def rebuild_monographs(
 
 
 async def stale_crafts(session: AsyncSession, *, skip: Collection[str]) -> list[tuple[uuid.UUID, str]]:
-    found: list[tuple[datetime, str, uuid.UUID]] = []
+    curated = set((await session.scalars(select(CuratedCraft.craftId))).all())
+    found: list[StalePage] = []
     for craft in await chapter_crafts(session, None):
         if craft.slug in skip:
             continue
         built = await _stale_since(session, craft)
         if built is not None:
-            found.append((built, craft.slug, craft.id))
-    found.sort(key=lambda row: (row[0], row[1]))
-    return [(craft_id, slug) for _, slug, craft_id in found]
+            found.append(StalePage(craft.id, craft.slug, built, craft.id in curated))
+    return [(page.craft_id, page.slug) for page in rebuild_order(found)]
+
+
+@dataclass(frozen=True)
+class StalePage:
+    craft_id: uuid.UUID
+    slug: str
+    built_at: datetime
+    curated: bool
+
+
+def rebuild_order(pages: Sequence[StalePage]) -> list[StalePage]:
+    return sorted(pages, key=lambda page: (not page.curated, page.built_at, page.slug))
 
 
 async def rebuild_stale_pages(

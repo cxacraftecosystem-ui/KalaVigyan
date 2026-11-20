@@ -210,6 +210,8 @@ account has a sliding hour per kind (`core/rate_limit.proposal_attempt`, `PROPOS
 | `LAYOUT_PROPOSALS` | `LAYOUT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/knowledge/layouts` (after the terms), MCP `propose_layout` |
 | `STRUCTURE_PROPOSALS` | `STRUCTURE_PROPOSALS_PER_WINDOW` = 20 | `POST /api/knowledge/structure` (after the terms), MCP `propose_structure` |
 | `IMAGE_UPLOADS` | `IMAGE_UPLOADS_PER_WINDOW` = 20 | `POST /api/contributions/images` (a picture declared on the site), MCP `start_image_upload` (a link and slot issued; the picture given through it is not counted again) |
+| `PAGE_PROPOSALS` | `PAGE_PROPOSALS_PER_WINDOW` = 10 | `POST /api/knowledge/pages`, MCP `propose_page` (round 7; each part also counts against its own kind) |
+| `PAGE_PREVIEWS` | `PAGE_PREVIEWS_PER_WINDOW` = 30 | `POST /api/knowledge/pages/preview`, MCP `preview_page` (round 7) |
 
 - Admins and Master Admins are never limited. A proposal refused at a gate still counts. A request
   without the capability never counts; on the Knowledge API routes and over MCP neither does a
@@ -486,6 +488,18 @@ hypothesis), with no gates. A refused claim is not written: the write-back's `sk
 carries the gate and its first reason, and when the duplicate or novelty gate named held facts the
 answer's sentence cites the first of them instead. A written claim's checks and its vector are
 stored; its status follows the switch for `RESEARCH`.
+
+Every write-back goes through `research_write_back.write_through_gates` (round 7): the answer's and
+the coverage enrichment's (`store_live_research`) and the glossary term's
+(`term_store.SqlTermStore.write_back`, with no embedder, so the duplicate gate refuses identical
+texts only); no path writes a live-research claim without its checks. The write-backs stored before
+the gates (production showed every write-back of the 14 days to 2026-11-20 as `APPROVED` with no
+`CandidateCheck` rows) are re-checked read-only by
+`python -m app.scripts.write_back_report --gate-less` (`services/write_back_audit.py`): for each
+`LIVE_RESEARCH` claim of the window with no checks, the quote gate against the text kept for its
+sources, the source gate with the stored grade and licence, and the identical-text duplicate check
+against the subject's held facts; it reports `claims`, `byStatus`, `wouldPass`, `wouldBeRefusedAt`
+and the first 50 with their verdicts, and writes nothing.
 
 Without a judge (the default until the callers pass one), the duplicate gate refuses only
 identical texts and records that no judge compared the close facts, and the novelty gate is

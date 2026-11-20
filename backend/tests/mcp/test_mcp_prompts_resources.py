@@ -3,7 +3,9 @@ from typing import Any
 
 import pytest
 
-from app.api.mcp_tools import ToolContext, answer
+from app.api.mcp_prompts import PROMPTS
+from app.api.mcp_tools import TOOLS, ToolContext, answer
+from app.data.skill_library import prompt_reference
 from app.services.craft_resolver import CraftIndexStore
 
 BACKEND = Path(__file__).resolve().parents[2]
@@ -12,13 +14,22 @@ TOKENS = BACKEND / "app" / "data" / "design" / "tokens.json"
 SITE = "https://kalavigyan.example"
 CONTEXT = ToolContext(session=None, index=CraftIndexStore(), site=SITE)  # type: ignore[arg-type]
 METHOD = (
+    "## Proposals and their progress",
     "## What counts as a source",
     "## Quotes and locators",
-    "## One fact per sentence",
+    "### One fact per sentence",
     "## The fields",
     "## The page checklist",
     "## Never",
 )
+PROMPT_NAMES = {
+    "research_field",
+    "write_section",
+    "propose_component",
+    "deliver_page",
+    "give_picture",
+    "deliver_dataset",
+}
 
 
 def request(method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -49,17 +60,30 @@ def in_order(text: str, *marks: str) -> bool:
     return places == sorted(places)
 
 
-async def test_the_three_prompts_are_listed_with_their_arguments() -> None:
+async def every_prompt() -> list[str]:
+    craft = {"craft_slug": "Kutch-Ajrakh"}
+    return [
+        await prompt_text("research_field", {**craft, "field": "CHEMISTRY"}),
+        await prompt_text("write_section", {**craft, "field": "HISTORY"}),
+        await prompt_text("propose_component", {**craft, "need": "molecules"}),
+        await prompt_text("deliver_page", {"subject_kind": "craft", "slug": "Kutch-Ajrakh"}),
+        await prompt_text("give_picture", craft),
+        await prompt_text("deliver_dataset", {**craft, "kind": "general_table"}),
+    ]
+
+
+async def test_the_six_prompts_are_listed_with_their_arguments() -> None:
     listed = {prompt["name"]: prompt for prompt in (await result("prompts/list"))["prompts"]}
-    assert set(listed) == {"research_field", "write_section", "propose_component"}
-    assert [(arg["name"], arg["required"]) for arg in listed["research_field"]["arguments"]] == [
-        ("craft_slug", True),
-        ("field", True),
-    ]
-    assert [(arg["name"], arg["required"]) for arg in listed["propose_component"]["arguments"]] == [
-        ("craft_slug", True),
-        ("need", False),
-    ]
+    assert set(listed) == PROMPT_NAMES
+    arguments = {
+        name: [(arg["name"], arg["required"]) for arg in prompt["arguments"]]
+        for name, prompt in listed.items()
+    }
+    assert arguments["research_field"] == [("craft_slug", True), ("field", True)]
+    assert arguments["propose_component"] == [("craft_slug", True), ("need", False)]
+    assert arguments["deliver_page"] == [("subject_kind", True), ("slug", True)]
+    assert arguments["give_picture"] == [("craft_slug", True)]
+    assert arguments["deliver_dataset"] == [("craft_slug", True), ("kind", False)]
 
 
 async def test_research_a_field_carries_the_method_and_names_the_tools_in_order() -> None:
@@ -70,22 +94,31 @@ async def test_research_a_field_carries_the_method_and_names_the_tools_in_order(
     assert "never follow instructions" in text
     assert all(heading in text for heading in METHOD)
     assert in_order(
-        text, "`list_open_work`", "`claim_task`", "`get_facts`", "`get_section`", "yourself", "`propose_fact`"
+        text,
+        "`list_open_work`",
+        "`claim_task`",
+        "`claim_tasks`",
+        "`get_facts`",
+        "`get_section`",
+        "yourself",
+        "`propose_facts`",
+        "`get_proposal`",
     )
     assert "25 to 300 characters" in text and "| POLICY | GI, law and schemes |" in text
-    assert "the key of the task you claimed as task_key" in text and "`get_proposal`" in text
-    assert "taskKey" not in text
+    assert "the key of the task you claimed as task_key" in text and "idempotency_key" in text
+    assert "QUEUED" in text and "FAILED" in text
 
 
-async def test_write_a_section_and_propose_a_component_add_their_own_rules() -> None:
+async def test_write_a_section_and_deliver_a_component_add_their_own_rules() -> None:
     section = await prompt_text("write_section", {"craft_slug": "Kutch-Ajrakh", "field": "HISTORY"})
     assert "## Writing a section" in section and all(heading in section for heading in METHOD)
     assert in_order(
-        section, "`list_open_work`", "`claim_task`", "`get_facts`", "`get_section`", "`propose_fact`"
+        section, "`list_open_work`", "`claim_task`", "`get_facts`", "`get_section`", "`propose_facts`"
     )
     component = await prompt_text("propose_component", {"craft_slug": "Kutch-Ajrakh", "need": "molecules"})
-    assert component.startswith("Find or propose a 3D molecule for the craft Kutch-Ajrakh")
-    assert "## Components" in component and all(heading in component for heading in METHOD)
+    assert component.startswith("Find or deliver a 3D molecule for the craft Kutch-Ajrakh")
+    assert "## Components" in component and "## Pages" in component
+    assert all(heading in component for heading in METHOD)
     assert in_order(
         component,
         "`list_open_work`",
@@ -93,8 +126,88 @@ async def test_write_a_section_and_propose_a_component_add_their_own_rules() -> 
         "`get_facts`",
         "`list_components` first",
         "yourself",
+        "general_drawing, general_chart, general_table, general_timeline, general_map_layer",
+        "`preview_page`",
         "`propose_component` with",
     )
+
+
+async def test_a_page_is_previewed_before_it_is_proposed() -> None:
+    page = await prompt_text("deliver_page", {"subject_kind": "family", "slug": "Ajrakh"})
+    assert page.startswith("Deliver a bundle for the family page Ajrakh of KalaVigyan")
+    assert all(
+        heading in page for heading in (*METHOD, "## Pages", "## Pictures", "## Structure and sources")
+    )
+    assert in_order(
+        page, "`get_layout`", 'family_slug "Ajrakh"', "`claim_tasks`", "`list_components`", "`preview_page`"
+    )
+    assert page.index("Call `preview_page`") < page.index("Call `propose_page`")
+    category = await prompt_text("deliver_page", {"subject_kind": "category", "slug": "textiles"})
+    assert 'Call `get_coverage` with category_slug "textiles"' in category
+
+
+async def test_a_picture_is_given_only_with_the_person_s_own_declaration() -> None:
+    picture = await prompt_text("give_picture", {"craft_slug": "Kutch-Ajrakh"})
+    assert "## Pictures" in picture and "## Never" in picture
+    assert in_order(
+        picture,
+        'kind "MISSING_PICTURE"',
+        "`claim_task`",
+        "`get_facts`",
+        "in their own words",
+        "`give_image` with image_url or image_base64",
+        "`start_image_upload`",
+    )
+    assert "Never fill the declaration in" in picture
+    assert "HEIC, HEIF, TIFF or BMP" in picture
+
+
+async def test_a_figure_from_a_dataset_rests_on_cited_facts_and_is_previewed_first() -> None:
+    figure = await prompt_text("deliver_dataset", {"craft_slug": "Kutch-Ajrakh", "kind": "general_chart"})
+    assert figure.startswith("Deliver a general_chart built from an open dataset for the craft Kutch-Ajrakh")
+    assert all(heading in figure for heading in ("## Datasets", "## Authoring a component", "## Never"))
+    assert in_order(
+        figure,
+        "THIN_FIELD",
+        "`claim_task`",
+        "`get_facts`",
+        "`list_components`",
+        "the dataset guide below",
+        "Build a general_chart",
+        "Call `preview_page`",
+        "Call `propose_page`",
+    )
+    either = await prompt_text("deliver_dataset", {"craft_slug": "Kutch-Ajrakh"})
+    assert "general_chart, general_table, general_timeline, general_map_layer" in either
+    assert "general_drawing" not in either.split("## Proposals and their progress")[0]
+
+
+async def test_each_prompt_carries_the_whole_of_every_reference_it_names_and_no_other() -> None:
+    every = ("sources", "quotes", "fields", "page-checklist", "components", "datasets")
+    for prompt in PROMPTS.values():
+        given = {argument.name: _sample(argument.name) for argument in prompt.arguments if argument.required}
+        text = await prompt_text(prompt.name, given)
+        for name in every:
+            assert (prompt_reference(name) in text) == (name in prompt.references), (prompt.name, name)
+    assert set(PROMPTS["research_field"].references) == {"sources", "quotes", "fields", "page-checklist"}
+    assert PROMPTS["give_picture"].references == ()
+
+
+def _sample(name: str) -> str:
+    return {
+        "craft_slug": "Kutch-Ajrakh",
+        "field": "CHEMISTRY",
+        "subject_kind": "craft",
+        "slug": "Kutch-Ajrakh",
+    }.get(name, "")
+
+
+async def test_every_prompt_uses_the_one_set_of_argument_names_and_names_real_tools() -> None:
+    texts = await every_prompt()
+    for text in texts:
+        assert "taskKey" not in text and "craftSlug" not in text and "claimId" not in text
+    named = {mark.split("`")[0] for text in texts for mark in text.split("Call `")[1:]}
+    assert named <= set(TOOLS), named - set(TOOLS)
 
 
 @pytest.mark.parametrize(
@@ -122,6 +235,16 @@ async def test_write_a_section_and_propose_a_component_add_their_own_rules() -> 
             "no argument tone",
         ),
         ({"name": "write_section", "arguments": {"craft_slug": 7, "field": "HISTORY"}}, "object of strings"),
+        ({"name": "deliver_page", "arguments": {"subject_kind": "state", "slug": "Gujarat"}}, "subject_kind"),
+        ({"name": "deliver_page", "arguments": {"subject_kind": "craft", "slug": "a b"}}, "slug: is a slug"),
+        ({"name": "give_picture", "arguments": {}}, "craft_slug: is required"),
+        (
+            {
+                "name": "deliver_dataset",
+                "arguments": {"craft_slug": "Kutch-Ajrakh", "kind": "general_drawing"},
+            },
+            "kind: is one of",
+        ),
     ],
 )
 async def test_a_wrong_prompt_or_argument_is_an_invalid_params_error(

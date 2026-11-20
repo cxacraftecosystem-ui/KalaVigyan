@@ -133,6 +133,19 @@ page. Each plate shows the caption first and the credit after, with the alt text
 The credit never names the contributor: "Contributed to KalaVigyan" for a photograph or drawing,
 "Illustration, made with <generator>" for an AI image, which is never shown as a photograph.
 
+In a generated document (round 7, `services/monograph_generated_pictures.py`), an approved picture
+is a `picture_plate` labelled `<craft>/pictures/contributed-<first 12 hex of its id>`, after the
+curated pictures: `MASTHEAD` as the hero when the page has none (else leading At a glance),
+`RECORD` in Market and GI, a stage's in How it is made, a material's in its field's chapter, one for
+facts in the chapter most of them belong to, any other At a glance. Caption first, the credit after
+(the same two lines), the alt text on the picture; an AI image only when every fact it was made from
+is shown. A page bundle's picture may name a picture this account already gave
+(`contributionId`, waiting or approved): `preview_page` draws it in place from
+`GET /api/knowledge/pages/pictures/{id}`, which serves its bytes to its own contributor only
+(`private, no-store`, `nosniff`, the SVG policy), and `propose_page` accepts it as given, starting no
+second upload. The spec's `src` pattern admits both addresses (`component_specs_plates_parts.py`,
+`lib/componentSpecsPlates.ts`).
+
 The picture is served by `GET /api/crafts/contributed/{id}` (public asset): the stored bytes with
 their MIME type, `private, max-age=300`, an `ETag` of the SHA-256, `nosniff` and
 `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox`, so an SVG opened

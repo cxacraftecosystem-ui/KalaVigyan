@@ -38,6 +38,7 @@ from .fact_proposals import ProposalAdapters, propose_fact
 from .open_work_subjects import WorkSubject, subject_by_key
 from .page_layout_proposals import propose_layout
 from .page_layouts import subject_path
+from .page_preview_pictures import given_picture_report
 from .page_proposals_parts import (
     BundleFacts,
     accepted,
@@ -166,6 +167,8 @@ async def _layout(run: _Run, part: PageLayoutPart) -> PartReport:
 async def _picture(run: _Run, index: int, picture: PagePicture) -> PartReport:
     if run.subject.kind == "category":
         raise InvalidInput("A picture is given to a craft's page; a category's bundle carries none.")
+    if picture.contribution_id is not None:
+        return await given_picture_report(run.session, run.user, run.subject, index, picture.contribution_id)
     claim_ids = picture_claims(picture, run.facts)
     slot = UploadSlot(craft_slug=run.subject.slug, stage_id=picture.stage_id, claim_ids=claim_ids)
     started = await run.tools.start_picture(slot, picture.declaration)

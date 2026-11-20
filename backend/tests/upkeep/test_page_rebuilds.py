@@ -5,7 +5,13 @@ import pytest
 
 from app.core.errors import InvalidInput, NotConfigured
 from app.services import upkeep_pages
-from app.services.upkeep_pages import PagesReport, rebuild_monographs, rebuild_stale_pages
+from app.services.upkeep_pages import (
+    PagesReport,
+    StalePage,
+    rebuild_monographs,
+    rebuild_order,
+    rebuild_stale_pages,
+)
 
 from .fakes import NIGHT
 
@@ -95,3 +101,19 @@ async def test_the_oldest_stale_pages_are_rebuilt_up_to_the_bound(monkeypatch: p
         "pagesFailed": ["page:Bidri-Ware"],
     }
     assert (session.commits, session.rollbacks) == (1, 1)
+
+
+def test_curated_crafts_are_rebuilt_first_then_the_oldest() -> None:
+    early, late = NIGHT.replace(hour=1), NIGHT.replace(hour=2)
+    pages = [
+        StalePage(uuid.UUID(int=1), "Agra-Durrie", early, curated=False),
+        StalePage(uuid.UUID(int=2), "Bidriware", late, curated=True),
+        StalePage(uuid.UUID(int=3), "Bastar-Dhokra", late, curated=True),
+        StalePage(uuid.UUID(int=4), "Aari-Work", late, curated=False),
+    ]
+    assert [page.slug for page in rebuild_order(pages)] == [
+        "Bastar-Dhokra",
+        "Bidriware",
+        "Agra-Durrie",
+        "Aari-Work",
+    ]

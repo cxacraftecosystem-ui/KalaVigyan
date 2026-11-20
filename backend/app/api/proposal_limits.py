@@ -14,6 +14,8 @@ from app.core.rate_limit import (
     FACT_PROPOSALS,
     IMAGE_UPLOADS,
     LAYOUT_PROPOSALS,
+    PAGE_PREVIEWS,
+    PAGE_PROPOSALS,
     PROPOSAL_LIMITS,
     STRUCTURE_PROPOSALS,
     proposal_attempt,
@@ -38,6 +40,8 @@ LIMIT_NOUNS: Mapping[str, str] = MappingProxyType(
         LAYOUT_PROPOSALS: "layout proposals",
         IMAGE_UPLOADS: "picture uploads",
         STRUCTURE_PROPOSALS: "structure proposals",
+        PAGE_PROPOSALS: "page bundles",
+        PAGE_PREVIEWS: "page previews",
     }
 )
 SPENT = "This account made {limit} {noun} in the last hour, the most one account may. Try again in {wait}."

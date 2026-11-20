@@ -91,7 +91,13 @@ Each item has `id`, `kind`, `origin`, `submittedAt`, `craft {slug, name, path}` 
 - `component`: the proposal (`label`, `title`, `description`, `kind`, `field`, `fields`,
   `subjects`, `consideredLabels`, `extends`, `extension`, `taskKey`) and `closest`: up to three
   library components, most matching reasons first, then the most words shared (`overlap` 0 to 1),
-  never the one it extends.
+  never the one it extends. A delivered component also carries `delivery` (round 7,
+  `services/review_queue_delivery.py`): `drawing`, a one-component `MonographDocument` drawn from its
+  checked spec with its units cited as the page would cite them (null while a fact it rests on is
+  not shown), `units [{unit, text, claimIds}]` as delivered, and `facts [{id, text, level, shown,
+  sources}]`, the facts the units rest on with their sources and verbatim quotes.
+- A `layout` item's `placed [{label, title, kind, delivery}]` (round 7): the waiting components of
+  the same proposer that the layout places, as a page bundle delivers them, each with its `delivery`.
 - `layout`: `subject {kind, slug}`, `subjectName`, `pageUrl`, `baseVersion`, `currentVersion` (the
   page's layout now, 0 for none), `stale` (the two differ, so approval is refused), `note`,
   `entryCount` and `changes [{ref, change (ADDED, CHANGED, REMOVED), before, after}]`: the proposal
@@ -171,8 +177,11 @@ fact is raised or retracted). Every refusal rolls the session back.
 
 Once a decision is committed, the route asks the web app to refresh the signed-out pages it changed
 (`review_queue_refresh.refresh_after_decision`, `services/page_revalidation.py`): every fact decision
-(approved, raised, rejected or retracted: each changes what the page shows; round 7), testimony rejected (approved words are retracted with it) and a
-structure proposal approved. The pages are those of the fact's concept, or of the item's craft: the
+(approved, raised, rejected or retracted: each changes what the page shows; round 7), testimony rejected (approved words are retracted with it), a
+structure proposal approved, and (round 7) a component approved (its craft, the crafts its CRAFT
+subjects name, the crafts and sub-category members of its CONCEPT subjects, and the pages of the
+facts its units rest on), a layout approved (its craft or family, or its category alone) and a
+picture approved (its craft). The pages are those of the fact's concept, or of the item's craft: the
 craft, the families of its sub-category (a catch-all, or practised in All India only) and its
 category, each with its monograph document; a fact about a sub-category's shared concept reaches the
 families and the category, and a category's curated fact its category. The craft page's hide routes
@@ -209,7 +218,10 @@ kept in the address (`?kind=&origin=&craft=`). A card per item:
   concept, "sources differ", sources with their verbatim quotes, and each automatic check with its
   reasons and the facts it was compared with;
 - a component proposal (`ComponentReviewCard.tsx`): the proposal, the labels its proposer
-  considered and the closest library components;
+  considered and the closest library components, and a delivered one drawn by its real view
+  (`DeliveredComponentView.tsx`: `ComponentSlot` with `COMPONENT_VIEWS` and `BundleView`), its units
+  with the numbered facts each rests on, and those facts with their sources and quotes; a layout
+  proposal draws the waiting components it places the same way;
 - a layout proposal (`LayoutReviewCard.tsx`, `LayoutChangeList.tsx`): the page (linked from the header
   for a craft or family, from its name for a category), the kind of page and the number of entries,
   the proposer's note, which version it builds on and what approving writes, and each change ("Placed",

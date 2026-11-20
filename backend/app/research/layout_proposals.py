@@ -11,6 +11,7 @@ from .chapter_keys import CHAPTER_KEYS
 from .crafts import SLUG_MAX_CHARS
 from .monograph_document import SUBJECT_KINDS
 from .page_layout import LAYOUT_ENTRIES_MAX, PageLayoutEntry, check_entries
+from .review_queue_delivery import PlacedDelivery
 
 __all__ = [
     "CHANGE_KINDS",
@@ -85,6 +86,7 @@ class LayoutReview(ContractModel):
     note: str | None
     entry_count: int = Field(ge=0)
     changes: list[LayoutChange]
+    placed: list[PlacedDelivery] = Field(default_factory=list)
 
 
 def layout_changes(

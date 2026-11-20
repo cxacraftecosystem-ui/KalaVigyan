@@ -1,6 +1,8 @@
 import { apiFetch } from "@/lib/api";
 import { craftLinkShape, INSTANT, storedLevelShape, type CraftLink, type StoredLevel } from "@/lib/answerShapes";
 import { imageContributionShape, type ImageContribution } from "@/lib/imageContributionContract";
+import type { MonographDocument } from "@/lib/monographDocument";
+import { monographDocumentShape } from "@/lib/monographDocumentShape";
 import { boolean, dictionary, integer, list, nullable, number, object, oneOf, optional, parseShape, tagged, text, type Shape } from "@/lib/shape";
 import {
   STRUCTURE_KINDS,
@@ -58,6 +60,10 @@ export type LibraryComponent = {
 };
 export type ClosestComponent = { component: LibraryComponent; overlap: number; reasons: string[] };
 export type ProposedSubject = { kind: string; key: string };
+export type DeliveredUnitReview = { unit: string; text: string; claimIds: string[] };
+export type DeliveredFact = { id: string; text: string; level: StoredLevel | null; shown: boolean; sources: FactSource[] };
+export type DeliveredReview = { drawing: MonographDocument | null; units: DeliveredUnitReview[]; facts: DeliveredFact[] };
+export type PlacedDelivery = { label: string; title: string; kind: string; delivery: DeliveredReview };
 
 export type ComponentReview = {
   label: string;
@@ -72,6 +78,7 @@ export type ComponentReview = {
   extension: string | null;
   taskKey: string | null;
   closest: ClosestComponent[];
+  delivery?: DeliveredReview | null;
 };
 
 export type LayoutCrop = { x: number; y: number; width: number; height: number };
@@ -97,6 +104,7 @@ export type LayoutReview = {
   note: string | null;
   entryCount: number;
   changes: LayoutChange[];
+  placed?: PlacedDelivery[];
 };
 
 export type StructureReview = {
@@ -194,6 +202,16 @@ const libraryShape: Shape<LibraryComponent> = object<LibraryComponent>({
   subjects: list(object<LibrarySubject>({ kind: text, key: text, name: text }))
 });
 
+const deliveryShape: Shape<DeliveredReview> = object<DeliveredReview>({
+  drawing: nullable(monographDocumentShape),
+  units: list(object<DeliveredUnitReview>({ unit: text, text, claimIds: list(text) })),
+  facts: list(
+    object<DeliveredFact>({ id: text, text, level: nullable(storedLevelShape), shown: boolean, sources: list(sourceShape) })
+  )
+});
+
+const placedShape: Shape<PlacedDelivery> = object<PlacedDelivery>({ label: text, title: text, kind: text, delivery: deliveryShape });
+
 const componentShape: Shape<ComponentReview> = object<ComponentReview>({
   label: text,
   title: text,
@@ -206,7 +224,8 @@ const componentShape: Shape<ComponentReview> = object<ComponentReview>({
   extends: nullable(text),
   extension: nullable(text),
   taskKey: nullable(text),
-  closest: list(object<ClosestComponent>({ component: libraryShape, overlap: number, reasons: list(text) }))
+  closest: list(object<ClosestComponent>({ component: libraryShape, overlap: number, reasons: list(text) })),
+  delivery: optional(nullable(deliveryShape))
 });
 
 const cropShape: Shape<LayoutCrop> = object<LayoutCrop>({ x: number, y: number, width: number, height: number });
@@ -232,7 +251,8 @@ const layoutShape: Shape<LayoutReview> = object<LayoutReview>({
   entryCount: integer,
   changes: list(
     object<LayoutChange>({ ref: text, change: oneOf(LAYOUT_CHANGES), before: nullable(layoutEntryShape), after: nullable(layoutEntryShape) })
-  )
+  ),
+  placed: optional(list(placedShape))
 });
 
 const structureShape: Shape<StructureReview> = object<StructureReview>({

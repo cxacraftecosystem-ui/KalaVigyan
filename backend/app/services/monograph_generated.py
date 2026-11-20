@@ -70,7 +70,7 @@ async def generated_parts(
         visible=visible,
         sources={**sources, **additions.sources},
         components=components,
-        pictures=tuple(await subject_pictures(session, subject)),
+        pictures=additions.pictures(await subject_pictures(session, subject)),
         layout=additions.layout if additions.layout is not None else await layout_of(session, subject),
         coverage=await coverage_of(session, subject),
         values=await stated_values(session, list(visible)),

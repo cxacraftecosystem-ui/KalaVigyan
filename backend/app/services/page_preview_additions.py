@@ -12,6 +12,7 @@ from app.research.page_layout import PageLayout
 
 from .knowledge_view import ClaimView
 from .monograph_generated_parts import RegisteredComponent, StoredSection
+from .monograph_generated_pictures import PlateSource
 
 __all__ = ["NO_ADDITIONS", "PageAdditions"]
 
@@ -26,6 +27,11 @@ class PageAdditions:
     sources: Mapping[str, CitedSource] = field(default_factory=dict)
     delivered: tuple[RegisteredComponent, ...] = ()
     layout: PageLayout | None = None
+    given: tuple[PlateSource, ...] = ()
+
+    def pictures(self, found: Sequence[PlateSource]) -> tuple[PlateSource, ...]:
+        held = {picture.key for picture in found}
+        return (*found, *(picture for picture in self.given if picture.key not in held))
 
     def sections(self, stored: Sequence[StoredSection]) -> list[StoredSection]:
         by_field = {section.field: section for section in stored}

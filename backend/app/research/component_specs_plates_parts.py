@@ -34,6 +34,8 @@ CLASS_PATTERN = r"^[A-Za-z][A-Za-z0-9_-]*$"
 DOM_ID_PATTERN = r"^[A-Za-z][A-Za-z0-9_:.-]*$"
 PICTURE_PATTERN = (
     r"^(/monographs/[a-z0-9-]+/img/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)"
+    r"|/api/(crafts/contributed|knowledge/pages/pictures)/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
     r"|https://upload\.wikimedia\.org/wikipedia/commons/[0-9a-f]/[0-9a-f]{2}/[^\s/?#]+)$"
 )
 DRAWING_ATTRIBUTE = re.compile(r"[A-Za-z][A-Za-z0-9:_-]*")

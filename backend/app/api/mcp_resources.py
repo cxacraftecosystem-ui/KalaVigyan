@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from functools import partial
 from types import MappingProxyType
 from typing import Any
 
 from app.data.answer_kit import answer_kit, answer_view
 from app.data.contributor_kit import SITE_SKILL_PATH, contributor_skill, design_tokens
+from app.data.skill_library import DATASETS_SITE_PATH, REFERENCES, Reference, datasets_skill, reference_text
 from app.research.mcp_ask import ANSWER_VIEW_MIME, ANSWER_VIEW_URI
 
 from .mcp_protocol import INVALID_PARAMS, RESOURCE_NOT_FOUND, RequestError
@@ -15,6 +17,7 @@ __all__ = [
     "ANSWER_KIT_URI",
     "ANSWER_VIEW_URI",
     "CONTRIBUTOR_SKILL_URI",
+    "DATASETS_SKILL_URI",
     "DESIGN_TOKENS_URI",
     "RESOURCES",
     "VIEW_META",
@@ -24,6 +27,7 @@ __all__ = [
 ]
 
 CONTRIBUTOR_SKILL_URI = "kalavigyan://skills/kalavigyan-contributor/SKILL.md"
+DATASETS_SKILL_URI = "kalavigyan://skills/kalavigyan-datasets/SKILL.md"
 DESIGN_TOKENS_URI = "kalavigyan://design/tokens.json"
 ANSWER_KIT_URI = "kalavigyan://design/answer-kit.md"
 MARKDOWN = "text/markdown"
@@ -59,50 +63,75 @@ class Resource:
         return {**content, "_meta": dict(self.meta)} if self.meta else content
 
 
+def _reference(reference: Reference) -> Resource:
+    return Resource(
+        reference.uri,
+        f"kalavigyan-reference-{reference.name}",
+        f"{reference.title}, a KalaVigyan reference",
+        f"{reference.holds}. One of the references the KalaVigyan skills follow, one source for each rule. "
+        f"Also at {{site}}{reference.site_path}.",
+        MARKDOWN,
+        partial(reference_text, reference.name),
+    )
+
+
+SKILLS = (
+    Resource(
+        CONTRIBUTOR_SKILL_URI,
+        "kalavigyan-contributor",
+        "The KalaVigyan contributor skill",
+        "The method for researching and proposing to KalaVigyan, for agents that load skills: the tools in "
+        "order, proposals and their progress, trust tiers and allowances, structure, components, pages and "
+        "pictures. Its rules are the references it names. Also at {site}" + SITE_SKILL_PATH + ".",
+        MARKDOWN,
+        contributor_skill,
+    ),
+    Resource(
+        DATASETS_SKILL_URI,
+        "kalavigyan-datasets",
+        "The KalaVigyan datasets skill",
+        "The method for the data behind KalaVigyan's charts, tables, timelines and map layers: open datasets "
+        "and their licences, provenance, units and projection, and how a dataset becomes a delivered "
+        "component. Also at {site}" + DATASETS_SITE_PATH + ".",
+        MARKDOWN,
+        datasets_skill,
+    ),
+)
+DESIGN = (
+    Resource(
+        DESIGN_TOKENS_URI,
+        "kalavigyan-design-tokens",
+        "The KalaVigyan design tokens",
+        "The design system's tokens (Alum & Indigo): colours by role for light, dark and high contrast, "
+        "type, spacing, motion and the components' specs, for agents that draw KalaVigyan content "
+        "themselves.",
+        JSON,
+        design_tokens,
+    ),
+    Resource(
+        ANSWER_KIT_URI,
+        "kalavigyan-answer-kit",
+        "How a KalaVigyan answer is drawn",
+        "For agents that draw an ask result themselves: the order of an answer, its sections, citation "
+        "clusters, component cards, sources and credit, with the light and dark tokens they use.",
+        MARKDOWN,
+        answer_kit,
+    ),
+    Resource(
+        ANSWER_VIEW_URI,
+        "kalavigyan-answer-view",
+        "A KalaVigyan answer",
+        "The MCP App that draws an ask result in KalaVigyan's design, from the result's structured data "
+        "alone: it loads nothing from the network and shows every text as text.",
+        ANSWER_VIEW_MIME,
+        answer_view,
+        VIEW_META,
+    ),
+)
 RESOURCES: Mapping[str, Resource] = MappingProxyType(
     {
         resource.uri: resource
-        for resource in (
-            Resource(
-                CONTRIBUTOR_SKILL_URI,
-                "kalavigyan-contributor",
-                "The KalaVigyan contributor skill",
-                "The method for researching and proposing to KalaVigyan, for agents that load skills: the tools "
-                "in order, what counts as a source, verbatim quotes with locators, one fact per sentence, the "
-                "fields and the page checklist. Also at {site}" + SITE_SKILL_PATH + ".",
-                MARKDOWN,
-                contributor_skill,
-            ),
-            Resource(
-                DESIGN_TOKENS_URI,
-                "kalavigyan-design-tokens",
-                "The KalaVigyan design tokens",
-                "The design system's tokens (Alum & Indigo): colours by role for light, dark and high contrast, "
-                "type, spacing, motion and the components' specs, for agents that draw KalaVigyan content "
-                "themselves.",
-                JSON,
-                design_tokens,
-            ),
-            Resource(
-                ANSWER_KIT_URI,
-                "kalavigyan-answer-kit",
-                "How a KalaVigyan answer is drawn",
-                "For agents that draw an ask result themselves: the order of an answer, its sections, citation "
-                "clusters, component cards, sources and credit, with the light and dark tokens they use.",
-                MARKDOWN,
-                answer_kit,
-            ),
-            Resource(
-                ANSWER_VIEW_URI,
-                "kalavigyan-answer-view",
-                "A KalaVigyan answer",
-                "The MCP App that draws an ask result in KalaVigyan's design, from the result's structured data "
-                "alone: it loads nothing from the network and shows every text as text.",
-                ANSWER_VIEW_MIME,
-                answer_view,
-                VIEW_META,
-            ),
-        )
+        for resource in (*SKILLS, *(_reference(reference) for reference in REFERENCES.values()), *DESIGN)
     }
 )
 

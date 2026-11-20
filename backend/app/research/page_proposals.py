@@ -112,8 +112,19 @@ class PageLayoutPart(ContractModel):
 
 class PagePicture(ContractModel):
     stage_id: uuid.UUID | None = None
-    claim_ids: list[ClaimRef] = Field(min_length=1, max_length=CLAIMS_MAX)
+    claim_ids: list[ClaimRef] = Field(default_factory=list, max_length=CLAIMS_MAX)
     declaration: SlotDeclaration | None = None
+    contribution_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def _new_or_given(self) -> Self:
+        if self.contribution_id is None and not self.claim_ids:
+            raise ValueError("a new picture names the facts it shows (claim_ids)")
+        if self.contribution_id is not None and (self.claim_ids or self.declaration or self.stage_id):
+            raise ValueError(
+                "a picture given already (contribution_id) carries its own facts, stage and declaration"
+            )
+        return self
 
 
 class PageBundle(ContractModel):
