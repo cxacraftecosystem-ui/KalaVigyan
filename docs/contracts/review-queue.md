@@ -47,7 +47,7 @@ review already shows.
 
 | Kind | Row | Pending when |
 |---|---|---|
-| `FACTS` | `Claim` | `status` is `DRAFT` (waiting, hidden: the review switch said `APPROVAL`) or `IN_REVIEW` (live and unreviewed: `AUTO`), it went through the candidate gates (it has `CandidateCheck` rows), and the viewer did not write it |
+| `FACTS` | `Claim` | `status` is `DRAFT` (waiting, hidden: the review switch said `APPROVAL`) or `IN_REVIEW` (live and unreviewed: `AUTO`), it went through the candidate gates (it has `CandidateCheck` rows), and the viewer did not write it; or it is a shown fact held from its pages because none of its quotes is found any more (`nightly-upkeep.md` 1a), whose `QUOTES` check is the night's evidence, one reason per failing quote |
 | `TESTIMONY` | `ArtisanContribution` | `status` `PENDING`, not the viewer's |
 | `IMAGES` | `ImageContribution` | `status` `PENDING`, not the viewer's |
 | `COMPONENTS` | `ComponentProposal` | `status` `PENDING`, not the viewer's |
@@ -170,8 +170,8 @@ fact is raised or retracted). Every refusal rolls the session back.
 ## Refreshing signed-out pages
 
 Once a decision is committed, the route asks the web app to refresh the signed-out pages it changed
-(`review_queue_refresh.refresh_after_decision`, `services/page_revalidation.py`): a fact rejected or
-retracted (it may have been live), testimony rejected (approved words are retracted with it) and a
+(`review_queue_refresh.refresh_after_decision`, `services/page_revalidation.py`): every fact decision
+(approved, raised, rejected or retracted: each changes what the page shows; round 7), testimony rejected (approved words are retracted with it) and a
 structure proposal approved. The pages are those of the fact's concept, or of the item's craft: the
 craft, the families of its sub-category (a catch-all, or practised in All India only) and its
 category, each with its monograph document; a fact about a sub-category's shared concept reaches the

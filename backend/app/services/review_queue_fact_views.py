@@ -22,6 +22,7 @@ from app.research.review_queue import (
     fact_origin,
 )
 
+from .claim_holds_review import hold_evidence, with_hold_evidence
 from .knowledge_view import craft_ref
 from .review_queue_select import Rendered, rows_by_id
 
@@ -49,7 +50,7 @@ async def fact_items(session: AsyncSession, ids: Sequence[uuid.UUID]) -> list[Re
         crafts=await rows_by_id(session, Craft, [concept.craftId for concept in concepts.values()]),
         sources=await _sources(session, ids),
         found_by=await _found_by(session, ids),
-        checks=await _checks(session, ids),
+        checks=with_hold_evidence(await _checks(session, ids), await hold_evidence(session, ids)),
     )
     return [Rendered(_item(claim, context), claim.createdById) for claim in claims]
 

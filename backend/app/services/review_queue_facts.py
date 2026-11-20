@@ -26,6 +26,7 @@ from app.research.review_switch import WAITING_STATUS
 
 from . import audit
 from .candidate_writes import mark_sources_differ
+from .claim_holds import is_held
 from .review_queue_errors import DecisionConflict, OwnItem, UnknownItem
 
 __all__ = ["FactDecision", "decide_fact"]
@@ -75,7 +76,7 @@ async def decide_fact(
 async def _gated_claim(session: AsyncSession, claim_id: uuid.UUID, reviewer: User) -> Claim:
     claim = await session.get(Claim, claim_id, with_for_update=True)
     gated = await session.scalar(select(exists().where(CandidateCheck.claimId == claim_id)))
-    if claim is None or not gated:
+    if claim is None or not (gated or await is_held(session, claim_id)):
         raise UnknownItem(f"No proposed or researched fact has the id {claim_id}.")
     if claim.createdById == reviewer.id:
         raise OwnItem("A reviewer does not decide their own fact.")

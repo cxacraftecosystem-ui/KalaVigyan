@@ -57,6 +57,7 @@ def subject_priority(standing: SubjectStanding) -> str:
 
 def subject_tasks(standing: SubjectStanding) -> list[OpenTask]:
     return [
+        *standing.healing,
         *_field_tasks(standing),
         *_component_tasks(standing),
         *_page_tasks(standing),

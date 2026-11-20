@@ -31,6 +31,7 @@ writes), `services/structure_proposals_review.py` (approve, reject), `api/routes
 | Propose a fact (`POST /api/knowledge/facts`, MCP `propose_fact`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
 | Propose a page layout (`POST /api/knowledge/layouts`, MCP `propose_layout`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
 | Propose page structure (`POST /api/knowledge/structure`, MCP `propose_structure`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
+| Propose a source for a held fact (MCP `propose_source`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
 | Read and set the review switch (`/api/knowledge/review-switch`) | `REVIEW_CONTRIBUTIONS` | Admin, Master Admin |
 
 The MCP tools also need a signed-in connection holding the `contribute` scope
@@ -303,6 +304,59 @@ MCP `propose_structure` (`api/mcp_structure_tools.py`, in `STRUCTURE_TOOLS`), sc
 `readOnlyHint false`, arguments `{proposal: StructureProposal}`, origin `AGENT`; refusals are tool
 errors. Approving a structure proposal, at once or from the queue, refreshes the craft's signed-out
 pages (`review-queue.md`, Refreshing signed-out pages).
+
+## Source proposals (round 7)
+
+A fact that lost its quotes (held from its page by the nightly upkeep, `nightly-upkeep.md` 1a), one
+whose quote failed, one resting on a rotten link or on a single source is repaired on the fact
+itself: a new source with quotes that state it, never a restated fact (the duplicate gate would
+refuse the restatement, and two facts would say one thing).
+
+`SourceProposal` (schema version 1, camelCase): `claimId` (a shown, open fact), `sources` (1 to 5,
+each named once by canonical URL: `{url, title, licence?, quotes [{text, locator?}]}`, as for a fact),
+`taskKey?` (a `RESOURCE_FACT`, `CORROBORATE_FACT`, `FIND_ANOTHER_SOURCE`, `SECOND_SOURCE` or
+`DEAD_SOURCE` task; another kind is malformed, `research/source_proposals.source_task_problem`).
+
+- **Refused before any fetch** (a tool error): an unknown fact or one not shown (`DRAFT`, rejected,
+  retracted, superseded or withdrawn, or not open); a quote the fact already cites; a task key whose
+  task is not open now, or that lists other facts than this one (`services/source_proposals.task_problem`;
+  a task that lists fewer ids than its count lets any fact through, a `DEAD_SOURCE` task the facts
+  citing one of its sources).
+- **Checks**: the `QUOTES` and `SOURCE` gates of a fact, run on the fact's own statement with the new
+  sources (`candidate_gates.first_gates`). The duplicate and novelty gates do not run: the statement is
+  already held.
+- **Passed**: each fetched page is kept (`keep_document`, a new page marked `CONTRIBUTION` with the
+  proposer) and each quote becomes a `ClaimSource` with `quoteCheck PASS`, `checkedAt` now and `foundBy`
+  the origin (`AGENT`), at once: the statement was reviewed when it was published and every quote is
+  found verbatim by our fetcher, the same proof the nightly re-check trusts. A held fact is no longer
+  held and returns to its pages, which are refreshed after the commit. Audited
+  `knowledge.source_added` (actor, the fact, the kept sources, the origin).
+- **Refused at a gate**: nothing is stored; the reply carries the gate's reasons.
+- A claimed task is completed when the quotes pass and given back when they refuse, as for a fact.
+- Counted against the account's `FACT_PROPOSALS` hour (a source costs a fetch like a fact).
+
+`SourceProposalReply {schemaVersion 1, outcome ADDED | REFUSED, claimId, quotesAdded, held, gates[],
+message}`. MCP `propose_source` (`api/mcp_source_tools.py`, in `SOURCE_TOOLS`), scope `contribute`,
+`readOnlyHint false`, arguments `{proposal: SourceProposal}`, origin `AGENT`; an outage is a tool error
+asking to call again. There is no site route yet: contributions of this kind arrive over MCP.
+
+## Pages follow their facts (round 7)
+
+A fact that changes what a page shows refreshes the page's signed-out copy at once, through the
+revalidation route of `review-queue.md` (`services/claim_pages.refresh_claim_pages`: the fact's page
+owners by `page_revalidation.claim_owners`, then `refresh_pages`), always after the commit:
+
+| The fact | Where |
+|---|---|
+| published by a proposal (`PUBLISHED`, at once or unreviewed), with the facts it differs from | `api/proposal_deps.proposed`, for the route and `propose_fact` |
+| written or re-found by a live research write-back (written ones only when the switch shows them) | `services/research_write_back.store_live_research` |
+| approved, raised, rejected or retracted in the review queue | `services/review_queue_refresh.refresh_after_decision` (every fact decision) |
+| held or lifted by the nightly upkeep | `services/upkeep_healing.heal` |
+| given a new source | `api/mcp_source_tools.source_proposed` |
+
+The page stamp moves with the fact's row (`Claim.updatedAt`, `ClaimSource.updatedAt`), so the refreshed
+page is rebuilt from the database on its next read; the nightly 60-page rebuild stays for the backlog.
+Without the secret nothing is sent and the pages refresh on their daily schedule.
 
 ## The research write-back
 

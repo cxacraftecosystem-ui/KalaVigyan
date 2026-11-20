@@ -60,3 +60,44 @@ evidence in its own field, and the artisan's seat never spoke.
   section showed is dropped there, and two seats resting on one new claim keep the first.
 - The old single-call API (`PanelAsk`, `compose_takes`, `panel_message`, `panel_schema`,
   `parsed_panel`, `PanelDraft`) is removed.
+
+## Amendment, 2026-11-20 (round 7): a seat with a gap researches live
+
+The owner approved on 2026-11-20 that an expert seat whose own field is missing or thin for the
+craft researches live, so that Expert answers grow the knowledge where it is thinnest. It replaces
+the "No live search, no fetch and no new claim" of point 1 for such a seat only.
+
+1. **Which seats.** A seat's own field is its lead field (`SeatBrief.fields[0]`). When the craft's
+   field coverage (`coverage.md`, round 5) has that field `MISSING` or `THIN`, the seat has a gap
+   (`planner/policy.seat_gap_field`). Only Expert answers research for their seats
+   (`SEAT_RESEARCH_DEPTHS`, the `WIDENED_DEPTHS` of point 3), so Basic and Detailed answers keep their
+   pace; a seat whose field is `COVERED`, an answer without a craft and a section built from reused
+   pieces stay on stored evidence as in point 1.
+2. **One search, one source, within the answer's budget.** The seat takes
+   `SEAT_LIVE_SHARE` = 1 query and 1 fetch from the answer's research ledger (`ResearchLedger`, the
+   same budget every section draws on); when the ledger cannot give both, the seat stays on stored
+   evidence and nothing is taken. It runs the planner's research with that share, `fresh`, focused
+   on its field and seated alone, so the reading order prefers its source kinds; the ledger is
+   settled with what the research used, and given back in full when the research fails
+   (`services/seat_research.GapResearch`).
+3. **Written back through the gates.** When a source was read, the composer writes at most
+   `SEAT_SENTENCES_MAX` = 3 sentences from it for the field, and the section store keeps them as any
+   live research: `store_live_research`, the four gates and the review switch for `RESEARCH`
+   (`knowledge-writes.md`). The claims it wrote or re-found are the seat's own evidence, offered
+   before its stored findings (`services/seat_search.with_live`), and the take is composed and
+   checked as before.
+4. **Time.** Each gap seat's research is bounded by `SEAT_RESEARCH_SECONDS` = 55 s, within the
+   builder's 90 s; a seat that runs out of time or fails is logged and keeps its stored evidence, and
+   the other seats are not held up. The searches of all gap seats run at once, beside the stored
+   searches.
+5. **Wiring.** `BuildAsk.research` (a `SeatResearch`) carries the section's research to its
+   builders (`seat_research.section_ask`, from `answer_sections`); a build without it researches
+   nothing live. Spend is recorded as every other call (point 6).
+
+**Consequences.** An Expert answer about a thinly covered craft makes up to one more plan call, one
+search, one read, one compose call and one write-back per gap seat while the ledger lasts, and its
+findings land in the database through the same gates as any answer's research. A production report
+of the fourteen days to 2026-11-20 (`app/scripts/write_back_report.py`, run read-only on the box)
+showed 35 answers, one of them with live research, and 136 claims written back by live research
+with 136 quoted citations, 133 found by the background coverage enrichment and 3 by answers, the
+latest on 2026-11-17; the seats' research raises the share that answers write.

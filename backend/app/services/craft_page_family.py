@@ -21,6 +21,7 @@ from app.research.knowledge_pieces import KnowledgePiece
 from app.research.media_refs import MediaRef
 
 from . import knowledge_view
+from .claim_holds import unheld_by_id
 from .craft_claim_counts import craft_claim_counts
 from .curated_index import CuratedPage, stored_curated_page
 from .media_ref_store import stored_media_refs
@@ -253,6 +254,7 @@ async def _cited(
         for citation in sentence.citations
     ]
     views, sources = await knowledge_view.claims_by_id(session, [*claim_ids, *pictured])
+    views = await unheld_by_id(session, views)
     refs = {
         str(key): SourceRef.model_validate(knowledge_view.source_ref(row)) for key, row in sources.items()
     }

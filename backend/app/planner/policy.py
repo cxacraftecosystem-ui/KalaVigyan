@@ -4,9 +4,10 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 
+from app.research.coverage import FieldCoverage
 from app.research.depth import depth_policy, research_budget
 from app.research.evidence import SEARCH_MAX_K
-from app.research.expert_panel import EXPERT_PANEL, speaking_seats
+from app.research.expert_panel import EXPERT_PANEL, WIDENED_DEPTHS, SeatBrief, speaking_seats
 from app.research.planning import MODE_POLICIES, PlanRequest, ResearchShare
 from app.research.vocabulary import CANONICAL_LANGUAGE
 from app.sources.reference.wikidata import WikidataAdapter
@@ -25,11 +26,16 @@ __all__ = [
     "REFERENCES_PER_DOCUMENT",
     "SEARCH_CONCURRENCY",
     "SEARCH_TIMEOUT_SECONDS",
+    "SEAT_LIVE_SHARE",
+    "SEAT_RESEARCH_DEPTHS",
+    "SEAT_RESEARCH_SECONDS",
+    "SEAT_SENTENCES_MAX",
     "STORED_PACK_LIMIT",
     "TierBudget",
     "native_query_limit",
     "reference_reserve",
     "request_limits",
+    "seat_gap_field",
     "seat_reading_kinds",
     "stored_pack_limit",
 ]
@@ -46,6 +52,10 @@ DEEP_REFERENCE_RESERVE = 15
 REFERENCES_PER_DOCUMENT = 5
 DEGRADED_MODES: Mapping[str, str] = MappingProxyType({"DEEP": "HYBRID"})
 NATIVE_QUERY_SEARCHERS = frozenset({WikipediaAdapter.name, WikidataAdapter.name})
+SEAT_LIVE_SHARE = ResearchShare(queries=1, native_queries=0, fetches=1)
+SEAT_RESEARCH_DEPTHS = WIDENED_DEPTHS
+SEAT_RESEARCH_SECONDS = 55.0
+SEAT_SENTENCES_MAX = 3
 
 
 @dataclass(frozen=True)
@@ -85,6 +95,13 @@ def native_query_limit(language: str, mode: str) -> int:
 
 def reference_reserve(max_fetches: int) -> int:
     return max_fetches * DEEP_REFERENCE_RESERVE // MODE_POLICIES["DEEP"].max_fetches
+
+
+def seat_gap_field(brief: SeatBrief, coverage: FieldCoverage | None) -> str | None:
+    if coverage is None:
+        return None
+    own = brief.fields[0]
+    return None if own in coverage.covered else own
 
 
 def seat_reading_kinds(request: PlanRequest) -> tuple[tuple[str, ...], ...]:

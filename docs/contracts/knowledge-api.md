@@ -9,7 +9,7 @@ tools; the other tools are in their own contracts:
 |---|---|---|
 | `list_fields`, `find_crafts`, `get_facts`, `get_section`, `get_coverage`, `list_components`, `get_layout`, `list_open_work` | read (anyone) | this file, `coverage.md`, `page-layout.md`, `open-work.md` |
 | `ask` | ask | `mcp-ask-and-upload.md` |
-| `propose_fact`, `propose_structure`, `propose_component`, `propose_layout`, `claim_task`, `release_task`, `start_image_upload` | contribute | `knowledge-writes.md`, `open-work.md`, `mcp-ask-and-upload.md`, decision 0108 |
+| `propose_fact`, `propose_source`, `propose_structure`, `propose_component`, `propose_layout`, `claim_task`, `release_task`, `start_image_upload` | contribute | `knowledge-writes.md`, `open-work.md`, `mcp-ask-and-upload.md`, decision 0108 |
 | review queues in `list_open_work` | review | `open-work.md`, `review-queue.md` |
 
 ## The endpoint

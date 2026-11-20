@@ -7,6 +7,7 @@ from typing import Any, Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.research.expert_panel import SeatBrief
 from app.research.explainer import Block
 from app.research.planning import PlanRequest
 from app.research.retrieval import KnowledgeRetriever
@@ -16,7 +17,7 @@ from app.research.structured import StructuredModel
 from .answer_events import CitedClaims
 from .live_sources import LiveSourcesStore
 
-__all__ = ["BlockBuilder", "BuildAsk", "BuilderTools", "Built", "SourceRefs"]
+__all__ = ["BlockBuilder", "BuildAsk", "BuilderTools", "Built", "SeatResearch", "SourceRefs"]
 
 SourceRefs = Mapping[str, Mapping[str, Any]]
 
@@ -31,6 +32,10 @@ class BuilderTools:
     retriever: KnowledgeRetriever | None = None
 
 
+class SeatResearch(Protocol):
+    async def __call__(self, brief: SeatBrief, discipline: str) -> CitedClaims: ...
+
+
 @dataclass(frozen=True)
 class BuildAsk:
     answer_id: uuid.UUID
@@ -38,6 +43,7 @@ class BuildAsk:
     request: PlanRequest
     blocks: tuple[Block, ...]
     cited: CitedClaims
+    research: SeatResearch | None = None
 
 
 @dataclass(frozen=True)

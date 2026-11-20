@@ -31,6 +31,7 @@ from app.research.retrieval import OPEN_CHUNK_ACLS
 from app.science.records import ProcessRecords
 
 from . import knowledge_view
+from .claim_holds import unheld_views
 from .contributed_pictures import ContributedRecord, approved_pictures
 from .craft_page_family import family_place, family_relatives, reader_name
 from .craft_page_market import MarketFacts, market_facts
@@ -126,6 +127,7 @@ async def craft_page_records(
 ) -> CraftPageRecords:
     curated = await _curated(session, craft.id)
     views, sources = await knowledge_view.claims_for(session, craft, mode=PAGE_MODE, acls=acls)
+    views = await unheld_views(session, views)
     records = CraftPageRecords(
         craft=page_craft(craft, await _names(session, craft)),
         curated=curated,

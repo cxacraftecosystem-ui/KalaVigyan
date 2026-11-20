@@ -26,11 +26,11 @@ from .answer_catalogue import CatalogueLookup, SectionCatalogue, no_catalogue
 from .answer_events import CitedClaims, joined_claims
 from .answer_translation import AnswerTranslation
 from .block_builders import AddedBlocks, BlockBuilders, SectionBuilds
-from .builder_interface import BuildAsk
 from .claim_ledger import COVERED_NOTE
 from .explainer_events import ExplainerStream
 from .research_ledger import ResearchLedger, may_research_fresh
 from .reuse_enrichment import Floor, claim_texts, floor_sent, process_sources
+from .seat_research import BuildAsk, section_ask
 from .section_blocks import (
     BlockRefused,
     KeptSentence,
@@ -173,7 +173,7 @@ async def _section(
         spec,
         shown,
         context,
-        BuildAsk(context.answer_id, spec, context.base, (*floor.placed.blocks, *shown.blocks), cited),
+        section_ask(context, spec, (*floor.placed.blocks, *shown.blocks), cited),
     )
     packs = tuple(attempt.pack for attempt in attempts)
     searched = _searched(blocks, shown, packs)

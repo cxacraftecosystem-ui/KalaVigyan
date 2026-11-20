@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -17,13 +17,14 @@ from app.research.structured import StructuredModel
 from app.research.write_back import FoundBy, WriteBackResult
 from app.retrieval.indexing import EmbeddedCounts, embed_written
 
+from .claim_pages import refresh_claim_pages
 from .claim_writer import SqlClaimWriter
 from .field_voices_citations import field_documents
 from .live_source_store import keep_document
 from .write_back_gates import gate_write_back, record_write_back_runs, research_placement
 from .write_back_plan import SkippedSentence, composed_sentences, write_back_plan
 
-__all__ = ["NOTHING_EMBEDDED", "StoredResearch", "sentence_claim_ids", "store_live_research"]
+__all__ = ["NOTHING_EMBEDDED", "StoredResearch", "sentence_claim_ids", "shown_results", "store_live_research"]
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ async def store_live_research(
         session, results, gated.runs, live=placed.live, checked_at=datetime.now(UTC)
     )
     await session.commit()
+    await refresh_claim_pages(session, shown_results(results, live=placed.live))
     kept = tuple(dict.fromkeys(source_ids))
     embedded, error = await _embed_written(session, embed, results, kept)
     return StoredResearch(
@@ -74,6 +76,10 @@ async def store_live_research(
         sentence_keys=plan.sentence_keys,
         embedding_error=error,
     )
+
+
+def shown_results(results: Sequence[WriteBackResult], *, live: bool) -> list[uuid.UUID]:
+    return [result.claim_id for result in results if live or not result.created]
 
 
 def _documents(pack: EvidencePack, fields: Mapping[str, SourceDocument]) -> dict[str, SourceDocument]:

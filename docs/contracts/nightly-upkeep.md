@@ -1,8 +1,10 @@
 # Nightly upkeep and the nightly static build (decision 0101, items 5 and 11)
 
 Every night the database looks after what it already holds, then the web app is rebuilt from it:
-quotes are re-verified against their sources, live open sources are archived before their links
-rot, orphaned research concepts are swept, MCP client registrations that never signed anyone in are
+quotes are re-verified against their sources, a fact none of whose quotes is found any more is held
+from its pages until a quote is found again, a link that keeps failing gets its archived copy or
+becomes work, live open sources are archived before their links rot, orphaned research concepts are
+swept, MCP client registrations that never signed anyone in are
 removed, the monograph sections and components and the craft
 page snapshots whose facts moved are rebuilt, and one production build pre-renders the craft pages
 from those snapshots onto the CDN. Answers stay live. Every step is bounded per night by a named
@@ -25,7 +27,8 @@ The workflow runs `python -m app.scripts.nightly_upkeep` as the `kalavigyan` use
 
 | Step | Module | Bound (constant) | Records |
 |---|---|---|---|
-| 1. Re-verify quotes | `services/upkeep_quotes.py` | `QUOTE_SOURCES_PER_NIGHT` = 50 sources; a source is due again after `QUOTE_RECHECK_AFTER` = 30 days | `ClaimSource.quoteCheck` (`PASS`/`FAIL`) and `checkedAt`; `SourceUpkeep` (outcome, failures, problem) |
+| 1. Re-verify quotes | `services/upkeep_quotes.py` | `QUOTE_SOURCES_PER_NIGHT` = 50 sources; a source is due again after `QUOTE_RECHECK_AFTER` = 30 days, or after `FAILING_RECHECK_AFTER` = 7 days when its last fetch failed or one of its quotes failed | `ClaimSource.quoteCheck` (`PASS`/`FAIL`) and `checkedAt`; `SourceUpkeep` (outcome, failures, problem) |
+| 1a. Hold and heal | `services/upkeep_healing.py`, `services/claim_holds.py`, `services/upkeep_links.py` | every claim, once; `ARCHIVES_ATTACHED_PER_NIGHT` = 200 | `AuditLog` actions `upkeep.claims_held` and `upkeep.claims_lifted` with the ids; `Source.externalIds.archivedUrl` for a rotten source with a saved snapshot |
 | 2. Archive sources at risk | `services/upkeep_archive.py`, adapter `sources/wayback_save.py` | `ARCHIVES_PER_NIGHT` = 10; a failed save is retried after `ARCHIVE_RETRY_AFTER` = 30 days | `SourceUpkeep.archiveUrl`, `archivedAt`, `archiveTriedAt` |
 | 3. Sweep orphaned concepts | `services/orphan_concepts.py` | `ORPHANS_PER_NIGHT` = 500; a concept stands at least `ORPHAN_MIN_AGE` = 7 days | `AuditLog` action `upkeep.orphans_reported` with the ids reported |
 | 3a. Remove abandoned MCP client registrations | `services/upkeep_clients.py` | `ABANDONED_CLIENTS_PER_NIGHT` = 1,000, oldest first; a client is abandoned `ABANDONED_CLIENT_AGE` = 30 days after registering | the `OAuthClient` rows deleted (their unexchanged codes go with them) |
@@ -55,6 +58,39 @@ The orchestration is `services/nightly_upkeep.py` (`run_nightly_upkeep`, and the
   `FETCHER_OUTAGE_MIN` = 3 due sources failed as unreachable with no HTTP status, nothing is
   recorded, the report says `fetcherUnavailable`, and the run is not `ok`. The night's results are
   written together at the end of the step.
+
+### 1a. Holds, corroboration and link rot (round 7)
+
+- **Held**: a claim is held when it cites at least one quote and every quote it cites is `FAIL`
+  (`services/claim_holds.held_claim`). The hold is derived from the stored verdicts, so it needs no
+  table and lifts by itself the moment one quote is `PASS` again: a later re-check that finds it, a
+  research write-back that re-finds the claim with a quoted citation, or a quote added with
+  `propose_source` (`knowledge-writes.md`). A held claim is not deleted and keeps its status.
+- **What a hold does**: the craft page (`craft_page_records`, `craft_page_family`), the category
+  page (`category_records`) and the generated document (`monograph_generated`) leave it out, as
+  they leave out a retracted claim; the field coverage and open work stop counting it
+  (`open_work_counts.owned_facts`); it waits in the `FACTS` review queue whatever its status, with
+  the night's evidence as its `QUOTES` check (`services/claim_holds_review.py`, one reason per
+  failing quote: the day, the quote and the page), and a reviewer may retract it there; and it
+  becomes a `RESOURCE_FACT` task (`open-work.md`). Answers and the Knowledge API's reads still find
+  it, so a contributor can read the fact they re-source.
+- **Corroborate**: a shown claim with a `FAIL` quote and at least one quote that is not `FAIL`
+  keeps showing and becomes a `CORROBORATE_FACT` task.
+- **The night**: the held claims are read before the re-check and again after it
+  (`hold_changes`); the newly held and the lifted are audited, committed, and their pages refreshed
+  at once (`services/claim_pages.refresh_claim_pages`, the revalidation route of `review-queue.md`),
+  so they do not wait for step 5's bound. The verdict update moves `ClaimSource.updatedAt`, so the
+  page stamp moves too.
+- **Link rot**: a source is rotten when `SourceUpkeep.failures` reaches `ROTTEN_AFTER_FAILURES` = 3
+  (three failed fetches in a row, a week apart at least) and it has no archived copy. A rotten source
+  whose Wayback save succeeded earlier (`SourceUpkeep.archiveUrl`) gets that snapshot attached as
+  `Source.externalIds.archivedUrl`, the curation convention, so the dossier export carries it and it
+  is no longer unarchived. The facts that rest only on rotten sources become a
+  `FIND_ANOTHER_SOURCE` task.
+- **A re-import keeps the night's verdict**: the curated import rewrites a quote's `quoteCheck` and
+  `checkedAt` only when the dossier's check is later than the stored verdict
+  (`claim_holds.with_kept_verdicts`, called from `curation_store.write_evidence`), so a deploy no
+  longer resets a failed quote to `PASS`.
 
 ### 2. Archives
 
@@ -129,6 +165,7 @@ The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
 ```
 {ok, quotes {sourcesChecked, fetched, refused, unreachable, quotesPassed, quotesFailed, quotesUndecided,
          fetcherUnavailable},
+ healing {claimsHeld, claimsLifted, heldNow, corroborate, sourcesRotten, archivesAttached, pagesRefreshed},
  archive {archived, archiveFailed},
  orphans {orphansFound, orphansRemoved, orphansReported, orphans[{id, name, type, craftId}]},
  clients {abandonedRemoved},
@@ -141,7 +178,8 @@ The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
 refused; an unreachable source or a failed archive is expected and only counted. An unset deploy
 hook is
 reported (`triggered: false`) and is not a failure. `--dry-run` prints `{ok, dryRun, sourcesDue,
-sourcesAtRisk, monographs, pagesStale, clientsAbandoned, orphans[]}` and writes nothing.
+sourcesAtRisk, claimsHeld, sourcesRotten, monographs, pagesStale, clientsAbandoned, orphans[]}` and writes
+nothing.
 
 ## What the owner sets
 
@@ -168,4 +206,8 @@ the build as not triggered, and the admin control says so.
   craft pages link to `/categories/<slug>`). `GET /api/site/pages` already lists the categories so
   the route, when it is built, pre-renders from the same list with the same day-long revalidate.
 - Coverage gaps turned into research tasks (item 5's third point) belong to open work
-  (`list_open_work`), not to this job.
+  (`list_open_work`), not to this job; so do the healing tasks, which open work computes from the
+  verdicts and the link counts this job records.
+- A page whose facts move between nights (a published, approved, retracted or re-sourced fact) is
+  refreshed when the fact moves (`knowledge-writes.md`, Pages follow their facts); step 5's bound of
+  60 pages is for the backlog only.

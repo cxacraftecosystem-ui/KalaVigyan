@@ -15,6 +15,7 @@ from app.research.media_refs import MediaRef
 from . import knowledge_view
 from .category_page import CategoryClaimFacts, CategoryPageRecords
 from .category_register import CategoryRecord, stored_categories
+from .claim_holds import unheld_by_id
 from .curated_category_index import CuratedCategoryPage, stored_category_page
 from .media_ref_store import stored_media_refs
 from .piece_lookup import stored_pieces
@@ -83,6 +84,7 @@ async def _records(session: AsyncSession, wanted: Sequence[_Wanted]) -> list[Cat
 
 async def _fetched(session: AsyncSession, wanted: Sequence[_Wanted]) -> _Fetched:
     views, sources = await knowledge_view.claims_by_id(session, (c for one in wanted for c in one.claim_ids))
+    views = await unheld_by_id(session, views)
     media_ids = [picture.media_ref_id for one in wanted for picture in one.curated.pictures]
     return _Fetched(
         views=views,

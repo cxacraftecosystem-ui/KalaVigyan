@@ -12,6 +12,7 @@ from app.research.fetcher import Fetcher
 from app.sources.fetcher_client import FetcherClient
 from app.sources.wayback_save import WaybackSaver
 
+from .claim_holds import shown_held_ids
 from .open_work_refresh import FieldWorkReport, refresh_field_work
 from .orphan_concepts import OrphansReport, orphan_concepts, sweep_orphans
 from .upkeep_archive import (
@@ -22,6 +23,8 @@ from .upkeep_archive import (
     sources_at_risk,
 )
 from .upkeep_clients import ClientsReport, abandoned_client_count, remove_abandoned_clients
+from .upkeep_healing import HealingReport, heal
+from .upkeep_links import rotten_count
 from .upkeep_pages import (
     MONOGRAPHS_PER_NIGHT,
     MonographLoader,
@@ -58,6 +61,7 @@ def upkeep_tools(
 @dataclass
 class UpkeepReport:
     quotes: QuotesReport = field(default_factory=QuotesReport)
+    healing: HealingReport = field(default_factory=HealingReport)
     archive: ArchiveReport = field(default_factory=ArchiveReport)
     orphans: OrphansReport = field(default_factory=OrphansReport)
     clients: ClientsReport = field(default_factory=ClientsReport)
@@ -72,6 +76,7 @@ class UpkeepReport:
         return {
             "ok": self.ok,
             "quotes": self.quotes.as_dict(),
+            "healing": self.healing.as_dict(),
             "archive": self.archive.as_dict(),
             "orphans": self.orphans.as_dict(),
             "clients": self.clients.as_dict(),
@@ -82,7 +87,9 @@ class UpkeepReport:
 
 async def run_nightly_upkeep(session: AsyncSession, tools: UpkeepTools, *, now: datetime) -> UpkeepReport:
     report = UpkeepReport()
+    before = await shown_held_ids(session)
     report.quotes = await recheck_quotes(session, tools.fetcher, now=now)
+    report.healing = await heal(session, before=before)
     report.archive = await archive_sources(session, tools.archiver, now=now)
     report.orphans = await sweep_orphans(session, now=now)
     report.clients = await remove_abandoned_clients(session, now=now)
@@ -104,6 +111,8 @@ async def plan_nightly_upkeep(
         "dryRun": True,
         "sourcesDue": len(due),
         "sourcesAtRisk": len(at_risk),
+        "claimsHeld": len(await shown_held_ids(session)),
+        "sourcesRotten": await rotten_count(session),
         "monographs": rotating_window(sorted(monographs), MONOGRAPHS_PER_NIGHT, now.date().toordinal()),
         "pagesStale": len(stale),
         "clientsAbandoned": await abandoned_client_count(session, now=now),

@@ -75,6 +75,9 @@ TASK_KINDS = (
     "SOURCES_DIFFER",
     "DEAD_SOURCE",
     "UNARCHIVED_SOURCE",
+    "RESOURCE_FACT",
+    "CORROBORATE_FACT",
+    "FIND_ANOTHER_SOURCE",
     "REVIEW",
 )
 UNRESERVABLE_KINDS = frozenset({"REVIEW"})
@@ -270,6 +273,7 @@ class SubjectStanding:
     gi: bool = False
     curated: bool = False
     demand: int = 0
+    healing: tuple[OpenTask, ...] = ()
 
 
 @dataclass(frozen=True)

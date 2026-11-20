@@ -16,7 +16,9 @@ from app.research.open_work_links import ARCHIVED_URL_KEY, SourceLink
 from app.research.retrieval import SHOWN_CLAIM_STATUSES, VISIBLE_SENSITIVITY
 from app.research.vocabulary import FACT_LEVELS
 
-__all__ = ["Owners", "SubjectCounts", "owned_facts", "subject_counts"]
+from .claim_holds import held_claim
+
+__all__ = ["Owners", "SubjectCounts", "owned_claims", "owned_facts", "subject_counts"]
 
 CONCEPT_SUBJECT = "CONCEPT"
 ONE_SOURCE = 1
@@ -50,6 +52,10 @@ async def subject_counts(session: AsyncSession, owners: Owners) -> SubjectCounts
 
 
 def owned_facts(owners: Owners) -> CTE:
+    return owned_claims(owners, ~held_claim())
+
+
+def owned_claims(owners: Owners, condition: ColumnElement[bool]) -> CTE:
     columns = (Claim.id.label("claim"), Claim.field.label("field"), Claim.fields, Claim.sourcesDiffer)
     of_crafts = (
         select(Concept.craftId.label("owner"), *columns)
@@ -58,12 +64,13 @@ def owned_facts(owners: Owners) -> CTE:
             Concept.craftId.in_(owners.crafts),
             Concept.sensitivity == VISIBLE_SENSITIVITY,
             *_fact_conditions(),
+            condition,
         )
     )
     of_categories = (
         select(CuratedCategoryClaim.categoryId.label("owner"), *columns)
         .join(Claim, Claim.id == CuratedCategoryClaim.claimId)
-        .where(CuratedCategoryClaim.categoryId.in_(owners.categories), *_fact_conditions())
+        .where(CuratedCategoryClaim.categoryId.in_(owners.categories), *_fact_conditions(), condition)
     )
     return union_all(of_crafts, of_categories).cte("owned")
 

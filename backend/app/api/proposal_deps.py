@@ -12,6 +12,7 @@ from app.research.fetcher import Fetcher
 from app.research.knowledge_writes import FactProposal, ProposalReply
 from app.services.ai_providers import AiTask
 from app.services.candidate_sources import proposal_fetcher
+from app.services.claim_pages import published_claims, refresh_claim_pages
 from app.services.fact_proposals import ProposalAdapters, propose_fact
 
 __all__ = ["JUDGE_TASK", "gate_adapters", "proposed"]
@@ -38,4 +39,5 @@ async def proposed(session: AsyncSession, proposal: FactProposal, user: User, or
             await session.rollback()
             raise
     await session.commit()
+    await refresh_claim_pages(session, published_claims(reply))
     return reply

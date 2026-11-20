@@ -29,6 +29,7 @@ from app.models import (
     TermCraft,
 )
 
+from .claim_holds import with_kept_verdicts
 from .curated_compounds import linked_compounds
 from .curated_index import CuratedPage
 from .curation_claims import craft_curated_claims
@@ -72,7 +73,9 @@ async def write_evidence(
         "sources": await sync_rows(session, Source, plan.part("sources")),
         "concepts": await sync_rows(session, Concept, plan.part("concepts")),
         "curatedClaims": await sync_rows(session, marker, plan.part("curatedClaims"), key="claimId"),
-        "claimSources": await sync_rows(session, ClaimSource, plan.part("claimSources")),
+        "claimSources": await sync_rows(
+            session, ClaimSource, await with_kept_verdicts(session, plan.part("claimSources"))
+        ),
         "droppedQuotes": await delete_rows(
             session, ClaimSource, ClaimSource.claimId.in_(claim_ids), keep_only(ClaimSource.id, kept)
         ),

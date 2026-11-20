@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from pydantic import ValidationError
-from sqlalchemy import exists, or_, select, update
+from sqlalchemy import ColumnElement, and_, exists, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ExternalFailure
@@ -16,9 +16,10 @@ from app.curation.matching import match_key, quote_found
 from app.models import ClaimSource, Source, SourceUpkeep
 from app.research.fetcher import Fetcher, FetchRefused, FetchRequest
 
-from .upkeep_records import record_fetch
+from .upkeep_records import FAILED, record_fetch
 
 __all__ = [
+    "FAILING_RECHECK_AFTER",
     "FETCHER_OUTAGE_MIN",
     "QUOTE_RECHECK_AFTER",
     "QUOTE_SOURCES_PER_NIGHT",
@@ -34,6 +35,7 @@ __all__ = [
 
 QUOTE_SOURCES_PER_NIGHT = 50
 QUOTE_RECHECK_AFTER = timedelta(days=30)
+FAILING_RECHECK_AFTER = timedelta(days=7)
 FETCHER_OUTAGE_MIN = 3
 HTTPS_PREFIX = "https://"
 PASS = "PASS"
@@ -124,7 +126,7 @@ async def sources_due(session: AsyncSession, *, now: datetime, limit: int) -> li
         .where(
             Source.url.startswith(HTTPS_PREFIX),
             exists().where(ClaimSource.sourceId == Source.id),
-            or_(SourceUpkeep.checkedAt.is_(None), SourceUpkeep.checkedAt < now - QUOTE_RECHECK_AFTER),
+            _due(now),
         )
         .order_by(SourceUpkeep.checkedAt.asc().nulls_first(), Source.id)
         .limit(limit)
@@ -132,6 +134,18 @@ async def sources_due(session: AsyncSession, *, now: datetime, limit: int) -> li
     rows = (await session.execute(statement)).all()
     quotes = await _quotes_of(session, [row.id for row in rows])
     return [DueSource(row.id, row.url, tuple(quotes.get(row.id, ()))) for row in rows]
+
+
+def _due(now: datetime) -> ColumnElement[bool]:
+    failing = or_(
+        SourceUpkeep.outcome == FAILED,
+        exists().where(ClaimSource.sourceId == Source.id, ClaimSource.quoteCheck == FAIL),
+    )
+    return or_(
+        SourceUpkeep.checkedAt.is_(None),
+        SourceUpkeep.checkedAt < now - QUOTE_RECHECK_AFTER,
+        and_(failing, SourceUpkeep.checkedAt < now - FAILING_RECHECK_AFTER),
+    )
 
 
 async def recheck_quotes(

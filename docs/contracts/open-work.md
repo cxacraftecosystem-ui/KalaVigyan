@@ -13,6 +13,8 @@ the server", and item 16's `propose_component`. The endpoint, framing and read t
 | Task rules: per subject, review queues, priority, order, selection | `research/open_work_tasks.py` |
 | Task wording (what is needed, acceptance) | `research/open_work_texts.py` |
 | Source link rule (dead, unarchived) | `research/open_work_links.py` |
+| Healing work: held, failing and rotting facts per subject, and their wording | `services/open_work_healing.py`, `services/open_work_healing_texts.py`, over `services/claim_holds.py` and `services/upkeep_links.py` |
+| `propose_source` | `research/source_proposals.py`, `services/source_proposals.py`, `api/mcp_source_tools.py` (`SOURCE_TOOLS`) |
 | Component proposal contract and the close-match rule | `research/component_proposals.py` |
 | Subjects and filters | `services/open_work_subjects.py`; the family rule is `data/curation_scopes.is_family` |
 | Facts and sections per field (the field coverage) | `services/coverage.py` (`coverage.md`) |
@@ -53,6 +55,9 @@ at most 20 ids; `count` is the whole number.
 | `SOURCES_DIFFER` | facts marked sources differ, per primary field | `SOURCES_DIFFER:...[:<FIELD>]` | facts | `research_field` |
 | `DEAD_SOURCE` | cited sources with no archive whose last fetch answered 404 or 410 | `DEAD_SOURCE:<subject>:<slug>` | sources | `research_field` |
 | `UNARCHIVED_SOURCE` | cited sources with a link and no archive, not dead | `UNARCHIVED_SOURCE:<subject>:<slug>` | sources | `research_field` |
+| `RESOURCE_FACT` | facts held from the page because none of their quotes is found any more, per primary field | `RESOURCE_FACT:...[:<FIELD>]` | facts | none (`propose_source`) |
+| `CORROBORATE_FACT` | shown facts with a quote that failed and another that holds, per primary field | `CORROBORATE_FACT:...[:<FIELD>]` | facts | none (`propose_source`) |
+| `FIND_ANOTHER_SOURCE` | shown facts resting only on rotten sources (`nightly-upkeep.md`, 1a); `factIds` the facts, `sourceIds` the sources | `FIND_ANOTHER_SOURCE:<subject>:<slug>` | facts | none (`propose_source`) |
 | `REVIEW` | a review queue holds items, shown to its reviewers only | `REVIEW:<QUEUE>` | items waiting | none |
 
 `<subject>` is `craft`, `family` or `category`. A fact with no primary field gives a key without
@@ -73,6 +78,11 @@ task and each under 3 a `THIN_FIELD` task; quotes are 25 to 300 characters.
 - One source: distinct `ClaimSource.sourceId` equal to 1. Sources differ: `Claim.sourcesDiffer`.
 - Sources with a link: an archive is a stored snapshot (`Source.snapshotKey`) or a curated
   `externalIds.archivedUrl`; dead is the latest `WebFetch` of the link answering 404 or 410.
+- Held facts (every cited quote `FAIL`, `services/claim_holds.held_claim`) are left out of every count
+  above, the field coverage among them: a held fact is research, not a fact the page shows. They are
+  counted for `RESOURCE_FACT`. Failing facts (a `FAIL` quote, not held) for `CORROBORATE_FACT`. Rotten
+  sources (`SourceUpkeep.failures` at least 3, no archive of any kind) for `FIND_ANOTHER_SOURCE`, over
+  the facts that cite nothing else.
 - Components: registered pieces (a label, not hidden, not superseded) of the craft, linked to it, or
   keyed to its concepts (its own, its stages', its materials'), its materials' compounds or its
   districts, as the library search reaches them. Needs and the kinds that meet them:
@@ -89,8 +99,8 @@ task and each under 3 a `THIN_FIELD` task; quotes are 25 to 300 characters.
   compounds, never to a category.
 - Monograph form: a folder `data/monographs/<slug>` with `content.json`; a layout is a non-empty
   `layout` in it. Only `Kutch-Ajrakh` is in the form.
-- Review queues and who sees them: `FACTS` (claims `PROPOSED` or `IN_REVIEW`; `MARK_CLAIM_LEVEL`,
-  Professor and above), `TESTIMONY` (pending artisans' testimony; `REVIEW_TESTIMONY`), `IMAGES`
+- Review queues and who sees them: `FACTS` (claims `PROPOSED` or `IN_REVIEW`, and every shown held
+  claim; `MARK_CLAIM_LEVEL`, Professor and above), `TESTIMONY` (pending artisans' testimony; `REVIEW_TESTIMONY`), `IMAGES`
   (pending pictures; `REVIEW_CONTRIBUTIONS`, Admin and above), `COMPONENTS` (pending component
   proposals; `REVIEW_CONTRIBUTIONS`), `LAYOUTS` (pending page layout proposals;
   `REVIEW_CONTRIBUTIONS`), `STRUCTURE` (pending page structure proposals; `MARK_CLAIM_LEVEL`,
@@ -105,8 +115,9 @@ task and each under 3 a `THIN_FIELD` task; quotes are 25 to 300 characters.
 - `LOW`: every other craft and family, and every category.
 - Order (the subject's prominence): priority; then the owner's list order; GI before not; curated
   before not; then reader demand, most first; crafts, families, categories; name. Within a subject:
-  fields in vocabulary order, components, page, corroboration, links. Review queues lead the `HIGH`
-  tasks.
+  healing first (re-source, corroborate, find another source; fields in vocabulary order), then
+  fields in vocabulary order, components, page, corroboration, links. A page that lost a fact is
+  the first repair of its subject. Review queues lead the `HIGH` tasks.
 - **The nightly upkeep** (`services/open_work_refresh.refresh_field_work`, the `fieldWork` part of
   its report) counts every open `MISSING_FIELD` and `THIN_FIELD` task by kind and priority and ends,
   as `COMPLETED`, each live reservation of a field task that is no longer open (its field was filled
@@ -136,6 +147,10 @@ its key.
   `taskKey` ends the proposer's reservation `COMPLETED` once the fact passes the gates (published or
   waiting for review), and gives it back (`RELEASED`) when the fact is refused, so the task returns
   to the list (`knowledge-writes.md`). The `research_field` prompt asks the agent to pass it.
+- A `propose_source` naming a `RESOURCE_FACT`, `CORROBORATE_FACT`, `FIND_ANOTHER_SOURCE`,
+  `SECOND_SOURCE` or `DEAD_SOURCE` task ends the proposer's reservation `COMPLETED` when its quotes
+  pass and gives it back when they refuse; the task must be open and list the fact (or one of its
+  sources, for `DEAD_SOURCE`), or list more than it shows (`knowledge-writes.md`, Source proposals).
 - A `propose_structure` (or `POST /api/knowledge/structure`) naming a field or corroboration task of
   its page and field ends the proposer's reservation `COMPLETED` once its checks pass, and gives it
   back when they refuse (`knowledge-writes.md`, Structure proposals).
@@ -178,6 +193,7 @@ extended label; `VARIANT` takes a new one), `task_key?`.
 | `claim_task` | contribute | writes | `TaskHold {schemaVersion, taskKey, held, reservedUntil, task}` |
 | `release_task` | contribute | writes | `TaskHold` with `held` false |
 | `propose_component` | contribute | writes | `ComponentProposalResult {schemaVersion, outcome, proposalId, status, label, message, matches, waysOn}` |
+| `propose_source` | contribute | writes | `SourceProposalReply {schemaVersion, outcome, claimId, quotesAdded, held, gates, message}` |
 
 - A write tool's changes are committed by the dispatch when it succeeds and rolled back when it
   refuses (`InvalidInput` or `Refused`, both a tool result with `isError`).
@@ -221,5 +237,7 @@ are regenerated into both places by `tools/design_tokens.py`.
   (`review-queue.md`). An approved component proposal waits for a builder, who builds it and
   registers it in the library outside the server; an approved layout is written at once.
 - The nightly upkeep re-verifies quotes, archives sources at risk and counts dead links
-  (`nightly-upkeep.md`), which feed the `DEAD_SOURCE` and `UNARCHIVED_SOURCE` tasks.
+  (`nightly-upkeep.md`), which feed the `DEAD_SOURCE` and `UNARCHIVED_SOURCE` tasks, and its verdicts
+  and failure counts feed the three healing tasks; the site's contribution screens parse the kinds
+  in `frontend/lib/ownProposalsContract.ts` (`TASK_KINDS`).
 - Proposals are limited per account and hour (`knowledge-writes.md`, Proposal limits).

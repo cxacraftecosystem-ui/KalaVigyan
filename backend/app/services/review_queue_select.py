@@ -41,6 +41,8 @@ from app.research.review_switch import AGENT, RESEARCH
 from app.research.write_back import WRITE_BACK_ORIGIN
 from app.retrieval.statements import CraftScope, scope_claims
 
+from .claim_holds import held_in_queue
+
 __all__ = [
     "PENDING",
     "QUEUE_MODELS",
@@ -120,8 +122,7 @@ async def rows_by_id(
 
 def _fact_conditions(scope: QueueScope) -> list[ColumnElement[bool]]:
     conditions = [
-        Claim.status.in_(PENDING_FACT_STATUSES),
-        gated_fact(),
+        or_(and_(Claim.status.in_(PENDING_FACT_STATUSES), gated_fact()), held_in_queue()),
         Claim.createdById.is_distinct_from(scope.viewer_id),
     ]
     if scope.craft is not None:

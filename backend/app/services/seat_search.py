@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import uuid
 from collections.abc import Awaitable, Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from app.core.errors import InvalidInput
+from app.planner.policy import SEAT_RESEARCH_DEPTHS, SEAT_RESEARCH_SECONDS, seat_gap_field
+from app.research.coverage import FieldCoverage
 from app.research.crafts import QUESTION_MAX_CHARS
 from app.research.expert_panel import SeatBrief
 from app.research.retrieval import SIGNED_IN_CHUNK_ACLS, KnowledgeHits, KnowledgeQuery
@@ -12,8 +18,9 @@ from app.research.sections import DISCIPLINE_FIELDS
 from app.research.vocabulary import FACT_LEVELS
 
 from . import knowledge_view
-from .answer_events import CitedClaims, cited_claims
+from .answer_events import CitedClaims, cited_claims, joined_claims
 from .builder_interface import BuildAsk, BuilderTools
+from .coverage import craft_coverage
 from .knowledge_view import ClaimView
 
 __all__ = [
@@ -22,10 +29,15 @@ __all__ = [
     "SEAT_SEARCH_LIMIT",
     "SeatEvidence",
     "SeatSearch",
+    "live_findings",
     "seat_findings",
+    "seat_gaps",
     "seat_query",
     "stored_seat_search",
+    "with_live",
 ]
+
+logger = logging.getLogger(__name__)
 
 SEAT_SEARCH_LIMIT = 12
 SEAT_CLAIMS_MAX = 6
@@ -70,14 +82,71 @@ def stored_seat_search(tools: BuilderTools) -> SeatSearch:
         retriever = tools.retriever
         if retriever is None or tools.sessions is None or not briefs:
             return SeatEvidence()
-        hits = await asyncio.gather(*(retriever.search(seat_query(ask, brief)) for brief in briefs))
+        gaps = await seat_gaps(tools.sessions, ask, briefs)
+        hits, live = await asyncio.gather(
+            asyncio.gather(*(retriever.search(seat_query(ask, brief)) for brief in briefs)),
+            live_findings(ask, gaps),
+        )
         wanted = [hit.claim_id for found in hits for hit in found.claims]
         async with tools.sessions() as session:
             views, sources = await knowledge_view.claims_by_id(session, wanted, acls=SEAT_READING_ACLS)
-        cited = cited_claims(list(views.values()), sources)
-        return SeatEvidence(seat_findings(briefs, hits, cited, shown), cited)
+        cited = joined_claims(cited_claims(list(views.values()), sources), *live.values())
+        found = seat_findings(briefs, hits, cited, shown)
+        return SeatEvidence(with_live(found, live, shown), cited)
 
     return search
+
+
+async def seat_gaps(
+    sessions: async_sessionmaker[AsyncSession], ask: BuildAsk, briefs: Sequence[SeatBrief]
+) -> dict[str, tuple[SeatBrief, str]]:
+    craft = ask.request.craft
+    if ask.research is None or craft is None or ask.request.depth not in SEAT_RESEARCH_DEPTHS:
+        return {}
+    async with sessions() as session:
+        coverage = await _coverage(session, craft.slug)
+    gaps = {brief.seat: (brief, seat_gap_field(brief, coverage)) for brief in briefs}
+    return {seat: (brief, gap) for seat, (brief, gap) in gaps.items() if gap is not None}
+
+
+async def live_findings(ask: BuildAsk, gaps: Mapping[str, tuple[SeatBrief, str]]) -> dict[str, CitedClaims]:
+    research = ask.research
+    if research is None or not gaps:
+        return {}
+    results = await asyncio.gather(
+        *(asyncio.wait_for(research(brief, gap), SEAT_RESEARCH_SECONDS) for brief, gap in gaps.values()),
+        return_exceptions=True,
+    )
+    found: dict[str, CitedClaims] = {}
+    for seat, result in zip(gaps, results, strict=True):
+        if isinstance(result, CitedClaims):
+            found[seat] = result
+        elif isinstance(result, Exception):
+            logger.warning("the %s seat of %s stays on stored evidence: %s", seat, ask.section.id, result)
+        else:
+            raise result
+    return found
+
+
+def with_live(
+    found: Mapping[str, tuple[ClaimView, ...]], live: Mapping[str, CitedClaims], shown: Collection[str]
+) -> dict[str, tuple[ClaimView, ...]]:
+    merged = dict(found)
+    for seat, cited in live.items():
+        own = [
+            view for view in cited.views.values() if str(view.id) not in shown and view.level in FACT_LEVELS
+        ]
+        mine = {view.id for view in own}
+        rest = [view for view in found.get(seat, ()) if view.id not in mine]
+        merged[seat] = tuple([*own, *rest][:SEAT_CLAIMS_MAX])
+    return merged
+
+
+async def _coverage(session: AsyncSession, slug: str) -> FieldCoverage | None:
+    try:
+        return await craft_coverage(session, slug)
+    except InvalidInput:
+        return None
 
 
 def _found(

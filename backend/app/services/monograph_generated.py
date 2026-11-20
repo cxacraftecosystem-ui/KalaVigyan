@@ -8,6 +8,7 @@ from app.core.config import get_settings
 from app.research.monograph_document import MonographDocument
 
 from . import knowledge_view
+from .claim_holds import unheld_by_id
 from .coverage import coverage_of
 from .document_components_store import subject_structure
 from .monograph_generated_assembly import GeneratedParts, assembled_document
@@ -49,6 +50,7 @@ async def generated_parts(session: AsyncSession, subject: WorkSubject) -> Genera
     if not claim_ids:
         return None
     visible, rows = await knowledge_view.claims_by_id(session, [*claim_ids, *structure_claim_ids(structure)])
+    visible = await unheld_by_id(session, visible)
     if not visible:
         return None
     return GeneratedParts(

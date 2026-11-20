@@ -7,7 +7,7 @@ from datetime import datetime
 from types import MappingProxyType
 from typing import Any
 
-from sqlalchemy import ColumnElement, func, select
+from sqlalchemy import ColumnElement, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.curation.limits import CURATED_QUOTE_MIN_CHARS, DISCIPLINE_CLAIMS_MIN, SECTION_SENTENCES_MIN
@@ -42,9 +42,11 @@ from app.research.open_work import (
 from app.research.open_work_links import DEAD_SOURCE, UNARCHIVED_SOURCE, sources_in_state
 from app.research.open_work_tasks import chosen_tasks, open_tasks, reviewed_queues, subject_tasks
 
+from .claim_holds import held_in_queue
 from .coverage import owners_of, subject_coverage
 from .open_work_components import craft_component_kinds
 from .open_work_counts import SubjectCounts, subject_counts
+from .open_work_healing import Healing, subject_healing, with_healing
 from .open_work_pages import monograph_layouts
 from .open_work_subjects import CATEGORY, WorkSubject, subject_by_key, work_subjects
 
@@ -86,6 +88,7 @@ class _Gathered:
     kinds: Mapping[uuid.UUID, frozenset[str]]
     layouts: Mapping[str, bool]
     site: str
+    healing: Mapping[uuid.UUID, Healing]
 
 
 async def list_open_work(
@@ -127,13 +130,16 @@ async def subject_standings(
         kinds=await craft_component_kinds(session, owners.crafts),
         layouts=monograph_layouts(),
         site=site,
+        healing=await subject_healing(session, owners),
     )
-    return [_standing(subject, gathered) for subject in subjects]
+    return [
+        with_healing(_standing(subject, gathered), gathered.healing.get(subject.id)) for subject in subjects
+    ]
 
 
 async def review_queues(session: AsyncSession, queues: Sequence[str]) -> dict[str, QueueStanding]:
     waiting: dict[str, tuple[Any, ColumnElement[bool]]] = {
-        "FACTS": (Claim.createdAt, Claim.status.in_(FACT_REVIEW_STATUSES)),
+        "FACTS": (Claim.createdAt, or_(Claim.status.in_(FACT_REVIEW_STATUSES), held_in_queue())),
         "TESTIMONY": (ArtisanContribution.createdAt, ArtisanContribution.status == PENDING),
         "IMAGES": (ImageContribution.createdAt, ImageContribution.status == PENDING),
         "COMPONENTS": (ComponentProposal.createdAt, ComponentProposal.status == PENDING),
