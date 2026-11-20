@@ -71,7 +71,8 @@ def _queue() -> None:
         sa.Column("failure", sa.String(length=500), nullable=True),
         sa.Column("modelCalls", sa.Integer(), server_default=sa.text("0"), nullable=False),
         sa.Column("costUsd", sa.Numeric(10, 6), server_default=sa.text("0"), nullable=False),
-        *_stamps(),
+        sa.Column("createdAt", STAMP, server_default=sa.text("now()"), nullable=False),
+        sa.Column("updatedAt", STAMP, server_default=sa.text("now()"), nullable=False),
         *_queue_rules(),
     )
     op.create_index(
@@ -101,7 +102,8 @@ def _stewards() -> None:
             nullable=False,
         ),
         sa.Column("seenAt", STAMP, nullable=True),
-        *_stamps(),
+        sa.Column("createdAt", STAMP, server_default=sa.text("now()"), nullable=False),
+        sa.Column("updatedAt", STAMP, server_default=sa.text("now()"), nullable=False),
         _check(STEWARD, "dropped", '"droppedAt" IS NULL OR "droppedAt" >= "adoptedAt"'),
         _fk(STEWARD, "userId", "User", "CASCADE"),
         _fk(STEWARD, "craftId", "Craft", "CASCADE"),
@@ -126,20 +128,14 @@ def _overrides() -> None:
         sa.Column("note", sa.String(length=500), nullable=True),
         sa.Column("setById", sa.UUID(), nullable=True),
         sa.Column("setAt", STAMP, nullable=False),
-        *_stamps(),
+        sa.Column("createdAt", STAMP, server_default=sa.text("now()"), nullable=False),
+        sa.Column("updatedAt", STAMP, server_default=sa.text("now()"), nullable=False),
         _check(OVERRIDE, "tier", _listed("tier", TIERS)),
         _fk(OVERRIDE, "userId", "User", "CASCADE"),
         _fk(OVERRIDE, "setById", "User", "SET NULL"),
         sa.PrimaryKeyConstraint("userId", name=op.f(f"{OVERRIDE}_pkey")),
     )
     op.create_index(op.f(f"{OVERRIDE}_setById_idx"), OVERRIDE, ["setById"])
-
-
-def _stamps() -> tuple[sa.Column, ...]:
-    return (
-        sa.Column("createdAt", STAMP, server_default=sa.text("now()"), nullable=False),
-        sa.Column("updatedAt", STAMP, server_default=sa.text("now()"), nullable=False),
-    )
 
 
 def _queue_rules() -> tuple[sa.Constraint, ...]:
