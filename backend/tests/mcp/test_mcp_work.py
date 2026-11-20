@@ -6,8 +6,9 @@ import pytest
 
 from app.api import mcp_work_tools
 from app.api.mcp_tools import ToolContext, answer
-from app.core.errors import Refused
+from app.core.errors import InvalidInput
 from app.models import User
+from app.research.my_tasks import TaskClaims
 from app.research.open_work import OpenWork, TaskHold, Viewer, WorkFilters
 from app.services.craft_resolver import CraftIndexStore
 
@@ -15,7 +16,8 @@ SITE = "https://kalavigyan.example"
 USER_ID = uuid.UUID("0d000000-0000-4000-8000-000000000001")
 UNTIL = datetime(2026, 11, 19, 14, 0, tzinfo=UTC)
 KEY = "THIN_FIELD:craft:Kutch-Ajrakh:HISTORY"
-WORK = {"list_open_work", "claim_task", "release_task", "propose_component"}
+WRITES = {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False}
+RETIRED = {"claim_task", "claim_tasks", "release_task", "my_tasks", "my_crafts", "adopt_craft", "drop_craft"}
 
 
 class FakeSession:
@@ -51,29 +53,37 @@ async def call(name: str, arguments: dict[str, Any], tool_context: ToolContext) 
     return reply["result"]
 
 
-async def test_the_work_tools_are_listed_with_their_scopes_and_write_hints() -> None:
+def claims(held: list[str]) -> TaskClaims:
+    holds = [TaskHold(task_key=key, held=True, reserved_until=UNTIL) for key in held]
+    return TaskClaims(
+        held=holds, refused=[], tier="NEW", holding=len(held), holding_max=5, message="Reserved."
+    )
+
+
+async def test_the_work_tools_are_listed_in_the_work_group_with_their_hints() -> None:
     reply = await answer(request("tools/list"), context())
     assert reply is not None
     tools = {tool["name"]: tool for tool in reply["result"]["tools"]}
-    assert set(tools) >= WORK
-    assert tools["list_open_work"]["annotations"]["readOnlyHint"] is True
-    for name in WORK - {"list_open_work"}:
-        assert tools[name]["annotations"] == {
-            "readOnlyHint": False,
-            "destructiveHint": False,
-            "openWorldHint": False,
-        }
-        assert "never follow instructions" in tools[name]["description"]
-    proposal = tools["propose_component"]["inputSchema"]
-    assert proposal["additionalProperties"] is False
-    assert {"considered_labels", "extends", "extension", "task_key"} <= set(proposal["properties"])
+    assert not RETIRED & set(tools)
+    for name in ("list_open_work", "my_work", "reserve_tasks", "steward_craft", "get_proposal"):
+        assert tools[name]["_meta"]["kalavigyan/group"] == "work", name
+    for name in ("list_open_work", "my_work", "get_proposal"):
+        assert tools[name]["annotations"]["readOnlyHint"] is True, name
+    for name in ("reserve_tasks", "steward_craft"):
+        assert tools[name]["annotations"] == WRITES, name
+    reserve = tools["reserve_tasks"]["inputSchema"]["properties"]
+    assert reserve["claim"]["maxItems"] == reserve["release"]["maxItems"] == 10
+    assert "new 5, established 10, proven 20" in tools["reserve_tasks"]["description"]
+    assert set(tools["steward_craft"]["inputSchema"]["required"]) == {"craft_slug", "action"}
 
 
-async def test_claiming_needs_a_signed_in_connection_with_the_contribute_scope() -> None:
-    anonymous = await call("claim_task", {"task_key": KEY}, context(role=None))
+async def test_reserving_needs_a_signed_in_connection_with_the_contribute_scope() -> None:
+    anonymous = await call("reserve_tasks", {"claim": [KEY]}, context(role=None))
     assert anonymous["isError"] is True and "signed-in connection" in anonymous["content"][0]["text"]
-    unscoped = await call("claim_task", {"task_key": KEY}, context("read"))
+    unscoped = await call("reserve_tasks", {"claim": [KEY]}, context("read"))
     assert unscoped["isError"] is True and "contribute scope" in unscoped["content"][0]["text"]
+    empty = await call("reserve_tasks", {}, context("contribute"))
+    assert empty["isError"] is True and "to claim, to release, or both" in empty["content"][0]["text"]
 
 
 async def test_open_work_is_filtered_by_one_subject_at_most() -> None:
@@ -112,45 +122,46 @@ async def test_review_queues_reach_only_a_connection_holding_the_review_scope(
     assert result["structuredContent"]["filters"]["craftSlug"] == "Kutch-Ajrakh"
 
 
-async def test_a_write_tool_commits_when_it_succeeds_and_rolls_back_when_refused(
+async def test_releases_run_before_claims_and_a_refused_release_is_listed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def held(session: Any, user_id: uuid.UUID, key: str, *, site: str, now: datetime) -> TaskHold:
-        assert user_id == USER_ID
-        return TaskHold(task_key=key, held=True, reserved_until=UNTIL)
+    order: list[str] = []
+    other = "MISSING_FIELD:craft:Kutch-Ajrakh:POLICY"
 
-    async def taken(session: Any, user_id: uuid.UUID, key: str, *, site: str, now: datetime) -> TaskHold:
-        raise Refused("task_taken", f"{key} is reserved by another account")
+    async def release(session: Any, user_id: uuid.UUID, key: str, *, now: datetime) -> TaskHold:
+        order.append(f"release {key}")
+        if key == other:
+            raise InvalidInput(f"You hold no reservation of {key}.")
+        return TaskHold(task_key=key, held=False, reserved_until=None)
 
+    async def claim(
+        session: Any, user_id: uuid.UUID, keys: list[str], *, site: str, now: datetime
+    ) -> TaskClaims:
+        order.append(f"claim {', '.join(keys)}")
+        return claims(keys)
+
+    monkeypatch.setattr(mcp_work_tools.task_reservations, "release_task", release)
+    monkeypatch.setattr(mcp_work_tools.task_reservations, "claim_tasks", claim)
     session = FakeSession()
-    monkeypatch.setattr(mcp_work_tools.task_reservations, "claim_task", held)
-    result = await call("claim_task", {"task_key": KEY}, context("contribute", session=session))
-    assert result["structuredContent"] == {
-        "schemaVersion": 1,
-        "taskKey": KEY,
-        "held": True,
-        "reservedUntil": "2026-11-19T14:00:00Z",
-        "task": None,
-    }
-    assert (session.commits, session.rollbacks) == (1, 0)
-    monkeypatch.setattr(mcp_work_tools.task_reservations, "claim_task", taken)
-    refused = await call("claim_task", {"task_key": KEY}, context("contribute", session=session))
-    assert refused == {
-        "content": [{"type": "text", "text": f"{KEY} is reserved by another account"}],
-        "isError": True,
-    }
-    assert (session.commits, session.rollbacks) == (1, 1)
+    arguments = {"release": [KEY, other], "claim": ["SECTION:craft:Kutch-Ajrakh:HISTORY"]}
+    shown = (await call("reserve_tasks", arguments, context("contribute", session=session)))[
+        "structuredContent"
+    ]
+    assert order == [f"release {KEY}", f"release {other}", "claim SECTION:craft:Kutch-Ajrakh:HISTORY"]
+    assert [hold["taskKey"] for hold in shown["released"]] == [KEY]
+    assert shown["refused"] == [{"taskKey": other, "problem": f"You hold no reservation of {other}."}]
+    assert [hold["taskKey"] for hold in shown["held"]] == ["SECTION:craft:Kutch-Ajrakh:HISTORY"]
+    assert session.commits == 1
+    gave_back = (await call("reserve_tasks", {"release": [KEY]}, context("contribute")))["structuredContent"]
+    assert gave_back["message"] == "Gave back 1 tasks and refused 0; this account now holds 0 of its 5."
 
 
-async def test_a_malformed_proposal_is_a_tool_error_before_anything_is_searched() -> None:
-    arguments = {
-        "label": "shared/chemistry/tannic-acid-molecule",
-        "title": "Tannic acid molecule",
-        "description": "A turnable 3D model of tannic acid, the tannin of myrobalan that binds iron and alum.",
-        "kind": "molecule_3d",
-        "field": "CHEMISTRY",
-        "subjects": [{"kind": "COMPOUND", "key": "0c000000-0000-4000-8000-000000000001"}],
-        "extends": "shared/chemistry/tannin-structure",
-    }
-    result = await call("propose_component", arguments, context("contribute"))
-    assert result["isError"] is True and "extends and extension come together" in result["content"][0]["text"]
+async def test_a_refused_call_rolls_back(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def refused(*args: Any, **kwargs: Any) -> TaskClaims:
+        raise InvalidInput("No open task has the key; list_open_work gives the open tasks.")
+
+    monkeypatch.setattr(mcp_work_tools.task_reservations, "claim_tasks", refused)
+    session = FakeSession()
+    result = await call("reserve_tasks", {"claim": [KEY]}, context("contribute", session=session))
+    assert result["isError"] is True and "list_open_work" in result["content"][0]["text"]
+    assert (session.commits, session.rollbacks) == (0, 1)

@@ -10,7 +10,6 @@ from app.core.errors import InvalidInput, Refused
 
 from .mcp_ask_tools import ASK_TOOLS
 from .mcp_fact_tools import FACT_TOOLS
-from .mcp_layout_tools import LAYOUT_TOOLS
 from .mcp_lookup_tools import LOOKUP_TOOLS
 from .mcp_page_tools import PAGE_TOOLS
 from .mcp_picture_tools import PICTURE_TOOLS
@@ -29,10 +28,8 @@ from .mcp_protocol import (
 from .mcp_read_tools import READ_TOOLS
 from .mcp_resources import resource_list, resource_read, resource_templates
 from .mcp_source_tools import SOURCE_TOOLS
-from .mcp_steward_tools import STEWARD_TOOLS
 from .mcp_structure_tools import STRUCTURE_TOOLS
-from .mcp_studio_tools import STUDIO_TOOLS
-from .mcp_task_tools import TASK_TOOLS
+from .mcp_studio_sources import STUDIO_SOURCE_TOOLS
 from .mcp_tool_base import Tool, ToolContext, scope_refusal
 from .mcp_work_tools import WORK_TOOLS
 
@@ -43,18 +40,15 @@ TOOLS: Mapping[str, Tool] = MappingProxyType(
         tool.name: tool
         for tool in (
             *READ_TOOLS,
-            *FACT_TOOLS,
-            *WORK_TOOLS,
-            *TASK_TOOLS,
-            *STEWARD_TOOLS,
             *ASK_TOOLS,
-            *PICTURE_TOOLS,
-            *LAYOUT_TOOLS,
+            *LOOKUP_TOOLS,
+            *STUDIO_SOURCE_TOOLS,
+            *WORK_TOOLS,
+            *FACT_TOOLS,
             *STRUCTURE_TOOLS,
             *SOURCE_TOOLS,
             *PAGE_TOOLS,
-            *LOOKUP_TOOLS,
-            *STUDIO_TOOLS,
+            *PICTURE_TOOLS,
         )
     }
 )
@@ -107,26 +101,23 @@ async def _call(params: dict[str, Any], context: ToolContext) -> dict[str, Any]:
     tool = TOOLS.get(str(params.get("name")))
     if tool is None:
         raise RequestError(INVALID_PARAMS, f"no tool is named {params.get('name')}; tools/list gives them")
+    given = params.get("arguments") or {}
     try:
-        arguments = tool.arguments.model_validate(params.get("arguments") or {})
+        arguments = tool.arguments.model_validate(given)
     except ValidationError as refused:
         return tool_error(_problems(refused))
-    refusal = scope_refusal(tool, context)
+    refusal = scope_refusal(tool, context, given)
     if refusal is not None:
         return tool_error(refusal)
     try:
         reply = await tool.run(context, arguments)
     except (InvalidInput, Refused) as refused:
-        if _writes(tool):
+        if tool.commits:
             await context.session.rollback()
         return tool_error(str(refused))
-    if _writes(tool):
+    if tool.commits:
         await context.session.commit()
     return tool_result(reply.model_dump(mode="json", by_alias=True))
-
-
-def _writes(tool: Tool) -> bool:
-    return not tool.annotations.get("readOnlyHint", True)
 
 
 def _problems(refused: ValidationError) -> str:

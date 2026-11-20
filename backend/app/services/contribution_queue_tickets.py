@@ -23,7 +23,7 @@ from app.research.knowledge_writes import FactProposal, ProposalReply
 
 __all__ = ["NOT_YOURS", "own_ticket", "queue_position", "recent_tickets", "ticket_of"]
 
-NOT_YOURS = "No proposal of this account has the id {proposal_id}; propose_facts and my_tasks give the ids."
+NOT_YOURS = "No proposal of this account has the id {proposal_id}; propose_facts and my_work give the ids."
 QUEUED_WORDS = (
     "Queued: {ahead} proposals are ahead of it. The gates run off the request; call get_proposal with this "
     "proposalId to see them finish."

@@ -23,6 +23,13 @@ from app.data.skill_library import (
 )
 from app.research.mcp_ask import ANSWER_VIEW_MIME, ANSWER_VIEW_URI
 
+from .mcp_component_schemas import (
+    COMPONENT_KINDS,
+    SCHEMA_MIME,
+    component_schema_template,
+    component_schema_text,
+    component_schema_uri,
+)
 from .mcp_protocol import INVALID_PARAMS, RESOURCE_NOT_FOUND, RequestError
 
 __all__ = [
@@ -100,6 +107,17 @@ def _contract(contract: Contract) -> Resource:
     )
 
 
+def _component_schema(kind: str) -> Resource:
+    return Resource(
+        component_schema_uri(kind),
+        f"kalavigyan-component-{kind}",
+        f"The {kind} spec schema",
+        f"The JSON schema of a {kind} component's spec, checked by the server when a draft or bundle delivers one.",
+        SCHEMA_MIME,
+        partial(component_schema_text, kind),
+    )
+
+
 INDEX = Resource(
     INDEX_URI,
     "kalavigyan-index",
@@ -171,6 +189,7 @@ RESOURCES: Mapping[str, Resource] = MappingProxyType(
             *(_reference(reference) for reference in REFERENCES.values()),
             *(_contract(contract) for contract in CONTRACTS.values()),
             *DESIGN,
+            *(_component_schema(kind) for kind in COMPONENT_KINDS),
         )
     }
 )
@@ -181,7 +200,7 @@ def resource_list(site: str) -> dict[str, Any]:
 
 
 def resource_templates() -> dict[str, Any]:
-    return {"resourceTemplates": []}
+    return {"resourceTemplates": [component_schema_template()]}
 
 
 def resource_read(params: Mapping[str, Any]) -> dict[str, Any]:

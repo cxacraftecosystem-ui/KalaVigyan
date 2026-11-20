@@ -118,7 +118,7 @@ From the repository root: `python tools/curation/propose.py <working dossier> [-
 - **Token and address**: the token is read from `KALAVIGYAN_TOKEN` and is a signed-in session
   token of a Researcher or above (the `accessToken` that `POST <origin>/api/auth/login` returns,
   or the site's session cookie; it lives as long as the session). An MCP OAuth access token is
-  for `/api/mcp` only: an agent there proposes through `propose_fact`. The address is
+  for `/api/mcp` only: an agent there proposes through `propose_facts`. The address is
   `KALAVIGYAN_API` or `--api`, the API origin (`PUBLIC_API_URL`), not the site, which refuses a
   write that does not come from its own pages.
 - `--dry-run` needs neither and prints what would be sent. Exit 0 when every new fact got a

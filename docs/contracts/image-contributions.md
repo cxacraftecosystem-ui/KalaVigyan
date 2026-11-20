@@ -156,11 +156,11 @@ work (`craft-page.md`).
 
 ## From MCP
 
-`start_image_upload` hands back the upload page's link and a presigned slot; `give_image` and
-`give_images` take the picture from the chat itself (`docs/contracts/mcp-ask-and-upload.md`). A page
-draft (decision 0110, `open-work.md`, Drafts) holds pictures as a bundle does: `{contribution_id}` for
-a picture the account gave, drawn in its place by `preview_draft`, or a new picture's facts and
-declaration, whose upload starts when the draft is submitted. The draft's report counts the page's
+`give_pictures` takes a picture from the chat itself, or with `upload: true` hands back the upload
+page's link and a presigned slot (`docs/contracts/mcp-ask-and-upload.md`). A page draft (decision
+0110, `open-work.md`, Drafts) holds pictures as a bundle does: `{contribution_id}` for a picture the
+account gave, drawn in its place by `preview_page`, or a new picture's facts and declaration, whose
+upload starts when the draft is proposed with `propose_page`. The draft's report counts the page's
 pictures by licence from each plate's credit: `CONTRIBUTED` ("Contributed to KalaVigyan"),
 `AI_ILLUSTRATION` ("Illustration, made with ..."), the licence a Commons credit names (CC BY-SA 4.0,
 CC0, Public domain), or `NAMED_IN_CREDIT`.

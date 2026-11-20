@@ -13,12 +13,12 @@ from app.services import page_drafts, supplied_sources
 from app.services.supplied_sources_identity import scholarly_lookup
 from app.services.supplied_sources_views import slot_path, supplied_reply
 
-from .mcp_studio_arguments import SupplySourceArguments, contributor
-from .mcp_tool_base import WRITES, Tool, ToolContext
+from .mcp_studio_arguments import STUDIO_DOES, SupplySourceArguments
+from .mcp_tool_base import SOURCES, WRITES, Tool, ToolContext, contributor
 from .oauth_hosts import endpoints_or_none
 from .proposal_limits import refuse_tool_when_spent
 
-__all__ = ["SUPPLY_SOURCE", "SuppliedReply"]
+__all__ = ["STUDIO_SOURCE_TOOLS", "SUPPLY_SOURCE", "SuppliedReply"]
 
 NO_UPLOADS = "Files cannot be uploaded to this server; give the source's passages or its whole text instead."
 DESCRIPTION = (
@@ -29,9 +29,9 @@ DESCRIPTION = (
     "to PUT the file to. The identity is looked up in Crossref, OpenAlex and Semantic Scholar and the source is "
     "graded by the rubric (a confirmed paper or book A, a work found nowhere C at most). The text is kept "
     "privately for reviewers, hashed, and never shown or republished: pages show only short cited quotes. Cite it "
-    "in a fact's sources as cite_as gives it; the QUOTES gate then checks each quote verbatim against your text, "
-    "and the review queue shows that the fact rests on text you supplied. Counts against the hour's fact "
-    "proposals, like a source proposal."
+    "in a fact's sources as cite_as gives it: the QUOTES gate checks each quote verbatim against your text (test "
+    "them first with read_source's quotes), and the review queue shows that the fact rests on text you supplied. "
+    "Counts against the hour's fact proposals, like a source proposal."
 )
 
 
@@ -41,7 +41,7 @@ class SuppliedReply(SuppliedSourceReply):
 
 
 async def _supply_source(context: ToolContext, arguments: SupplySourceArguments) -> SuppliedReply:
-    user = contributor(context, "supply_source")
+    user = contributor(context, "supply_source", STUDIO_DOES)
     endpoints = endpoints_or_none()
     if arguments.upload is not None and endpoints is None:
         raise InvalidInput(NO_UPLOADS)
@@ -71,4 +71,7 @@ SUPPLY_SOURCE = Tool(
     _supply_source,
     scope=CONTRIBUTE_SCOPE,
     annotations=WRITES,
+    group=SOURCES,
 )
+
+STUDIO_SOURCE_TOOLS = (SUPPLY_SOURCE,)

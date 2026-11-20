@@ -40,32 +40,25 @@ RULE = re.compile(r"^(?P<number>\d+)\. \*\*", re.MULTILINE)
 CHECKLIST_RULES = 26
 DATASET_REFERENCES = ("datasets", "components", "sources", "quotes", "page-checklist")
 CURATION_TOOLS = (
-    "get_coverage",
+    "get_page",
+    "get_facts",
     "propose_facts",
     "get_proposal",
     "propose_structure",
     "propose_source",
     "list_components",
-    "propose_component",
     "preview_page",
     "propose_page",
-    "start_image_upload",
-    "give_image",
+    "give_pictures",
     "search_sources",
     "read_source",
-    "check_quote",
-    "lookup_compound",
-    "lookup_entity",
-    "find_pictures",
-    "archive_source",
+    "lookup",
     "supply_source",
-    "create_draft",
-    "add_to_draft",
-    "preview_draft",
-    "submit_draft",
+    "edit_draft",
 )
 INDEX_LINE = re.compile(r"^- `(?P<name>[^`]+)`: \S.*$")
-INDEX_SECTIONS = ("Tools", "Prompts", "Resources")
+INDEX_SECTIONS = ("Tools", "Prompts", "Resources", "Component schemas")
+COMPONENT_SCHEMA = "kalavigyan://components/"
 
 
 def text_of(path: Path) -> str:
@@ -216,7 +209,12 @@ def index_names(section: str) -> list[str]:
 
 
 def test_the_index_names_every_tool_prompt_and_resource_once_with_one_line_each() -> None:
-    offered = {"Tools": list(TOOLS), "Prompts": list(PROMPTS), "Resources": list(RESOURCES)}
+    offered = {
+        "Tools": list(TOOLS),
+        "Prompts": list(PROMPTS),
+        "Resources": [uri for uri in RESOURCES if not uri.startswith(COMPONENT_SCHEMA)],
+        "Component schemas": [uri for uri in RESOURCES if uri.startswith(COMPONENT_SCHEMA)],
+    }
     for section in INDEX_SECTIONS:
         named = index_names(section)
         assert len(named) == len(set(named)), section

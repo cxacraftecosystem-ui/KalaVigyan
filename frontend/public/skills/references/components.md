@@ -33,7 +33,7 @@ Choose by what the reader must see:
 | places, with or without a value each | `general_map_layer` |
 | a mechanism, a section, a tool or an object | `general_drawing`, or `diagram` for a chain of linked steps |
 | one stated equation | `equation_card` |
-| molecules | `structure_diagram` (flat, with their PubChem records from `lookup_compound`) or `molecule_3d` |
+| molecules | `structure_diagram` (flat, with their PubChem records from `lookup`) or `molecule_3d` |
 | a reaction a source states step by step | `reaction_player` |
 | what each material is and does | `material_cards` |
 | sources that disagree | `source_disagreements` |
@@ -54,7 +54,9 @@ The 42 kinds of the approved page, by group:
 
 Their specs follow the approved Kutch Ajrakh page part for part, and each is checked against its
 kind's model (the repository's `docs/contracts/component-specs-plates.md`, `-data.md` and
-`-science.md`). Deliver one when its form is exactly what the page needs and every part can be
+`-science.md`). The MCP server publishes that model for every kind, the five general ones too, as a
+JSON schema resource named `kalavigyan://components/<kind>.schema.json`: read the one for your kind
+before you write its spec. Deliver one when its form is exactly what the page needs and every part can be
 filled from facts, most often as a `VARIANT` of a registered component. Deliver knowledge, not the
 page's apparatus: the masthead, the citation tool, source lists, credits and the reading tools are
 the page's own.

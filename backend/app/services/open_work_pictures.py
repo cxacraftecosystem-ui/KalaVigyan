@@ -19,7 +19,7 @@ PICTURE_HOLDING = ("PENDING", "APPROVED")
 MASTHEAD = "MASTHEAD"
 RECORD = "RECORD"
 PICTURE_ACCEPTANCE = (
-    "Give it with give_image, or start_image_upload, naming this task_key: a photograph, a drawing or an AI "
+    "Give it with give_pictures, naming this task_key: a photograph, a drawing or an AI "
     "illustration, with its caption, its description and the declaration the person confirmed. The task closes "
     "when the picture is approved."
 )

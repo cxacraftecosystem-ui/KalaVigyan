@@ -157,7 +157,7 @@ CONTRACTS: Mapping[str, Contract] = MappingProxyType(
             Contract(
                 "mcp-ask-and-upload",
                 "Asking and uploading over MCP",
-                "The ask tool, the answer view, single-use upload links and give_image",
+                "The ask tool, the answer view, single-use upload links and give_pictures",
             ),
         )
     }

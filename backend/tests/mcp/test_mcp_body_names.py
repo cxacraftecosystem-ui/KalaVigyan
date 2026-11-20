@@ -120,7 +120,7 @@ def test_the_proposal_body_is_described_and_schemed_in_snake_case(name: str) -> 
     assert "task_key" in listed["description"]
 
 
-@pytest.mark.parametrize("name", ["propose_page", "preview_page"])
+@pytest.mark.parametrize("name", ["propose_page", "preview_page", "edit_draft"])
 def test_a_page_bundle_is_schemed_in_snake_case_too(name: str) -> None:
     names = property_names(TOOLS[name].listed()["inputSchema"])
     assert {"base_version", "contribution_id", "claim_ids", "task_key"} <= names
@@ -143,13 +143,13 @@ async def test_an_old_camel_case_name_in_a_bundle_says_so(monkeypatch: pytest.Mo
 
     monkeypatch.setattr(mcp_page_tools.page_preview, "preview_page", previewed)
     bundle = {"subject": {"kind": "craft", "slug": SLUG}, "layout": {"baseVersion": 0, "entries": []}}
-    result = await call("preview_page", {"proposal": bundle})
+    result = await call("preview_page", {"bundle": bundle})
     assert result["structuredContent"]["notices"] == [
         "baseVersion is the old name of base_version; it works until the next release, so pass base_version "
         "from now on."
     ]
     snake = {"subject": {"kind": "craft", "slug": SLUG}, "layout": {"base_version": 0, "entries": []}}
-    assert (await call("preview_page", {"proposal": snake}))["structuredContent"]["notices"] == []
+    assert (await call("preview_page", {"bundle": snake}))["structuredContent"]["notices"] == []
 
 
 def test_the_structure_items_name_their_parts_in_snake_case() -> None:

@@ -19,14 +19,12 @@ __all__ = ["CRAFTS_ADOPTED", "adopt_craft", "drop_craft", "my_crafts"]
 
 CRAFTS_ADOPTED = "crafts_adopted"
 FAMILY = "family"
-TOO_MANY = (
-    "This account stewards {count} crafts, the most one account may; drop_craft one before adopting another."
-)
-NOT_ADOPTED = "This account does not steward {slug}; my_crafts lists the crafts it stewards."
+TOO_MANY = "This account stewards {count} crafts, the most one account may; drop one with steward_craft before adopting another."
+NOT_ADOPTED = "This account does not steward {slug}; my_work lists the crafts it stewards."
 DROPPED = "This account no longer stewards {slug}; its open work stays open to everyone."
 LISTED = (
     "This account stewards {count} of at most {most} crafts; each craft's tasks not open at your last look "
-    "come first, as new gaps. Stewardship never reserves a task: claim_task or claim_tasks does."
+    "come first, as new gaps. Stewardship never reserves a task: reserve_tasks does."
 )
 
 

@@ -147,7 +147,8 @@ async def _component(run: _Run, index: int, component: PageComponent) -> PartRep
         run.session, run.user, draft, now=run.now, known=known_texts(run.facts, draft)
     )
     made = refused if result.outcome == REFUSED else accepted
-    return made(COMPONENT, index, status=result.status, ident=result.proposal_id, message=result.message)
+    report = made(COMPONENT, index, status=result.status, ident=result.proposal_id, message=result.message)
+    return report.model_copy(update={"matches": result.matches, "ways_on": result.ways_on})
 
 
 async def _layout(run: _Run, part: PageLayoutPart) -> PartReport:

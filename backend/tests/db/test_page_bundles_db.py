@@ -15,7 +15,7 @@ from app.services.page_preview_links import UnknownPreview, preview_document
 from app.services.page_proposals import PageTools, propose_page
 
 from ..research.general_spec_fixtures import TABLE, table_units
-from .page_documents_seed import BARE_SLUG, CRAFT_CLAIM as FACT, CRAFT_SLUG, seed
+from .page_documents_seed import BARE_SLUG, CRAFT_CLAIM as FACT, CRAFT_PLAYER, CRAFT_SLUG, seed
 from .testimony_seed import rolled_back_session
 
 pytestmark = pytest.mark.db
@@ -177,3 +177,17 @@ async def test_a_thin_page_cannot_be_previewed(session: AsyncSession) -> None:
     )
     with pytest.raises(InvalidInput, match="too few published fields"):
         await preview_page(session, await person(session, RESEARCHER), bundle, site=SITE, now=NOW)
+
+
+async def test_a_component_part_refused_for_a_close_match_names_the_matches_and_the_ways_on(
+    session: AsyncSession,
+) -> None:
+    bundle = PageBundle.model_validate(
+        {"subject": SUBJECT, "components": [{**component(CRAFT_PLAYER), "cites": {}}]}
+    )
+    result = await propose_page(session, await person(session, RESEARCHER), bundle, tools=tools(), now=NOW)
+    (part,) = result.parts
+    assert (part.part, part.outcome, part.id) == ("component", "REFUSED", None)
+    assert CRAFT_PLAYER in [match.component.label for match in part.matches]
+    assert len(part.ways_on) == 2 and part.ways_on[0].startswith("Place the existing component by its label")
+    assert await session.scalar(select(ComponentProposal.id)) is None

@@ -89,7 +89,7 @@ Shapes that share a border are simplified together, so they still meet.
   ("none recorded in the Mineral Resources Data System", not "no deposits").
 - A place is drawn where a source puts it: a district-level place at its district, a point at the
   coordinates of an open gazetteer record (Wikidata, CC0) of that village or town, read with
-  `lookup_entity`, never a guessed or estimated position. A craft's place is shown only with the source that names it.
+  `lookup`, never a guessed or estimated position. A craft's place is shown only with the source that names it.
 - A trend is the dataset's series fitted by its stated method, with its period; never a line drawn
   by eye.
 
@@ -99,7 +99,7 @@ Over the MCP server, for a dataset about the craft itself (a census of artisans,
 export tables, a registry's records, prices over the years):
 
 - Write each value as a fact quoting its row, with the dataset's published table or record as the
-  source, as `propose_fact` takes one.
+  source, as `propose_facts` takes each.
 - Build the component from those facts by the component guide (`components.md`): a series over
   years or places is a `general_chart`, rows of attributes a `general_table`, dated events a
   `general_timeline`, places with readings a `general_map_layer`. Each value is stated by its

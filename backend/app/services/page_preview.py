@@ -58,7 +58,7 @@ __all__ = ["preview_page"]
 
 AUTHORED = (
     "{slug}'s page is authored and drawn from its stored document, so a bundle cannot be previewed on it: "
-    "propose its parts with propose_fact and propose_component."
+    "propose its parts with propose_facts and propose_page."
 )
 THIN = (
     "With this bundle the page still holds too few published fields to be drawn as a monograph: a craft's "
@@ -75,7 +75,7 @@ SHOWN_COMPONENT = "Drawn from its spec where the page will draw it once it is re
 NO_SPEC = "A component of a page bundle carries its spec, so that it is drawn as delivered."
 SHOWN_LAYOUT = "The page is ordered by this layout, as the next version would order it."
 LISTED_PICTURE = (
-    "A new picture is drawn once its file is given: give it with give_image and name it here as "
+    "A new picture is drawn once its file is given: give it with give_pictures and name it here as "
     "contribution_id to see it in place, or propose_page starts its upload."
 )
 SHOWN_PICTURE = (

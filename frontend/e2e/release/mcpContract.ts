@@ -7,8 +7,8 @@ export const PROTOCOL_VERSION = "2025-11-25";
 export const SERVER_NAME = "kalavigyan";
 export const CHECKED_CRAFT = "Kutch-Ajrakh";
 export const CHECKED_QUERY = "Ajrakh";
-export const PUBLIC_TOOLS = ["list_fields", "find_crafts", "get_facts", "get_section", "get_coverage", "list_components"] as const;
-export const SCOPED_TOOL = "propose_fact";
+export const PUBLIC_TOOLS = ["find_crafts", "get_page", "get_facts", "list_components"] as const;
+export const SCOPED_TOOL = "propose_facts";
 export const PKCE_METHOD = "S256";
 export const STANDINGS = { COVERED: "covered", THIN: "thin", MISSING: "missing" } as const;
 
@@ -112,14 +112,14 @@ function standingProblems(coverage: Json, counts: Json[]): string[] {
 
 export function coverageProblems(answer: Json, slug: string): string[] {
   const coverage = record(answer.coverage);
-  if (!coverage) return ["get_coverage carries no coverage"];
-  if (coverage.subjectSlug !== slug || coverage.subjectKind !== "craft") return [`get_coverage answered for ${String(coverage.subjectKind)} ${String(coverage.subjectSlug)}; it was asked for craft ${slug}`];
+  if (!coverage) return ["get_page carries no coverage"];
+  if (coverage.subjectSlug !== slug || coverage.subjectKind !== "craft") return [`get_page answered for ${String(coverage.subjectKind)} ${String(coverage.subjectSlug)}; it was asked for craft ${slug}`];
   const counts = records(coverage.fields) ?? [];
   const order = counts.map((count) => String(count.field));
-  if (order.join() !== DISCIPLINES.join()) return [`get_coverage lists the fields [${order.join(", ")}]; it should list the ${DISCIPLINES.length} fields in order`];
+  if (order.join() !== DISCIPLINES.join()) return [`get_page lists the fields [${order.join(", ")}]; it should list the ${DISCIPLINES.length} fields in order`];
   const problems = standingProblems(coverage, counts);
-  if (typeof coverage.claims !== "number" || coverage.claims <= 0) problems.push(`get_coverage counts ${String(coverage.claims)} cited claims for a curated craft`);
-  if (!Array.isArray(answer.openWork)) problems.push("get_coverage carries no open work list");
+  if (typeof coverage.claims !== "number" || coverage.claims <= 0) problems.push(`get_page counts ${String(coverage.claims)} cited claims for a curated craft`);
+  if (!Array.isArray(answer.openWork)) problems.push("get_page carries no open work list");
   return problems;
 }
 

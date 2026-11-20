@@ -11,8 +11,8 @@ and a contribution never breaks one.
 ## First, derive the page's own lists
 
 Before researching or building, write down three lists for this craft, family or category. Derive
-them from what the page holds (its facts, stages, reactions and materials: `get_facts`,
-`get_section` and `get_coverage` on the MCP server, or the exported dossier), never from memory.
+them from what the page holds (its facts, stages, reactions and materials: `get_facts` and
+`get_page` on the MCP server, or the exported dossier), never from memory.
 The rules below refer to them.
 
 - **Mechanisms**: the distinct pieces of science that make the craft what it is, one per

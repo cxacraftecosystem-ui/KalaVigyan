@@ -8,7 +8,8 @@ from typing import Annotated, Literal, Self
 
 from pydantic import Field, model_validator
 
-from .base import ContractModel
+from .base import ContractModel, empty
+from .component_proposals import ComponentMatch
 from .component_specs_general_delivery import CLAIMS_PER_UNIT_MAX, UnitKey
 from .crafts import SLUG_MAX_CHARS
 from .knowledge_writes import FactProposal
@@ -161,6 +162,8 @@ class PartReport(ContractModel):
     id: str | None = None
     message: str
     upload: UploadStart | None = None
+    matches: list[ComponentMatch] = Field(default_factory=list, exclude_if=empty)
+    ways_on: list[str] = Field(default_factory=list, exclude_if=empty)
 
 
 class PageProposalResult(ContractModel):

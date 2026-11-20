@@ -79,8 +79,8 @@ layout, and a new unit or component lands at the end of its chapter until a layo
 
 `kind` is `craft`, `family` or `category`. The routes are `api/routes/page_documents.py`.
 
-MCP read tool `get_layout {subject_kind, slug}` (`api/mcp_layout_tools.py`, any connection):
-`LayoutReply {schemaVersion 1, subjectKind, subjectSlug, layout (PageLayout or null), pageUrl}`; an
+MCP read tool `get_page {subject {kind, slug}, parts ["layout"]}` (`api/mcp_page_read.py`, any connection):
+its `PageRead` carries `layout` (PageLayout or null) and `pageUrl` (`knowledge-api.md`); an
 unknown slug or a wrong kind is a tool error naming `find_crafts`.
 
 ## Generated documents (`services/monograph_generated*.py`)

@@ -1,170 +1,175 @@
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime
-from typing import Self
 
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from app.core.errors import InvalidInput
 from app.core.mcp_scopes import CONTRIBUTE_SCOPE
-from app.core.rate_limit import COMPONENT_PROPOSALS, PAGE_PREVIEWS, PAGE_PROPOSALS
-from app.core.roles import Capability, can
+from app.core.rate_limit import PAGE_PREVIEWS, PAGE_PROPOSALS
 from app.data.page_preview_view import PAGE_PREVIEW_VIEW_URI
-from app.models import User
-from app.research.component_proposals import SUBJECT_LINK, ComponentProposalDraft, ComponentProposalResult
+from app.models import PageDraft, User
+from app.research.page_drafts import DraftView, PageLists, parts_counts
 from app.research.page_proposals import PageBundle, PagePreviewResult, PageProposalResult
 from app.research.page_report import PageReport
 from app.research.review_switch import AGENT
-from app.services import component_proposals, page_preview, page_report
+from app.services import page_drafts, page_preview, page_report
 
-from .mcp_argument_names import SnakeBodyArguments
-from .mcp_ask_tools import ViewedTool
-from .mcp_tool_base import WRITES, Arguments, Tool, ToolContext
+from .mcp_page_arguments import ONE_PAGE, ONE_WORK, EditDraft, PageWork, bundle_parts
+from .mcp_page_texts import (
+    ADD,
+    CREATED,
+    EDIT_DESCRIPTION,
+    FOLLOW,
+    HELD,
+    PREVIEW,
+    PREVIEW_DESCRIPTION,
+    PROPOSE_DESCRIPTION,
+    SUBMITTED,
+)
+from .mcp_studio_arguments import STUDIO_DOES
+from .mcp_tool_base import PAGES, READ_ONLY, WRITES, Tool, ToolContext, contributor
 from .page_proposal_deps import page_proposed
 from .proposal_limits import refuse_tool_when_spent
 
-__all__ = [
-    "PAGE_TOOLS",
-    "PREVIEW_PAGE",
-    "PROPOSE_COMPONENT",
-    "PROPOSE_PAGE",
-    "ProposeComponent",
-    "ProposePage",
-]
-
-NEEDS_PROPOSER = (
-    "{tool} needs an account of Researcher or above; this account cannot propose pages or components."
-)
-NEEDS_SPEC = (
-    "a component is delivered finished: give its spec (the kind's spec data) and the units it places, each "
-    "unit's text with the ids of the facts it rests on; only a SUBJECT_LINK carries none"
-)
-COMPONENT_DESCRIPTION = (
-    "Deliver a finished component, or an extension of one, after searching the library with list_components; "
-    "name the labels you considered. Give its spec, the data of its kind (any of the 42 kinds of the approved "
-    "page, or a general kind for anything new: general_drawing, general_chart, general_table, general_timeline "
-    "or general_map_layer), and units: each text the spec places by its unit id (u0001 and on), with the ids of "
-    "the shown facts it rests on. The spec is checked against its kind's model, every unit's facts must be shown, "
-    "every number a unit states must be in its facts, and a drawing's SVG is cleaned of scripts, event handlers, "
-    "foreign objects and outside references. A close match in the library refuses it with the matches and two "
-    "ways on, never a copy. Otherwise it waits for an Admin, whose approval registers it so every page it applies "
-    "to draws it; a Professor's or Admin's own is registered at once. Who proposed it is kept privately."
-)
-PAGE_DESCRIPTION = (
-    "Deliver one bundle for one craft, family or category page: facts (as propose_fact takes them), structure "
-    "items (as propose_structure takes them), components (each {proposal, cites}, cites naming the bundle's "
-    "facts a unit rests on as fact:0, fact:1 and on), the page's layout (base_version and entries) and pictures "
-    "(a new one starts an upload, one given already is named by contribution_id). Each part is checked on its "
-    "own, as its own tool would check it, and stored when it passes; a refused part leaves the others standing. "
-    "One report gives every part's outcome and reason. Call preview_page first to see the page the bundle makes. "
-    "Every name inside the bundle is snake_case; the old camelCase names work until the next release and say so "
-    "in notices."
-)
-PREVIEW_DESCRIPTION = (
-    "Assemble the page a bundle would make, the stored page with the bundle's facts, structure, components and "
-    "layout, without proposing anything, and return a private link to it: signed, for this account only, for 24 "
-    "hours, drawn exactly as the site draws its pages. Each part reports whether it is shown, listed or would be "
-    "refused by the checks that run without fetching sources; the gates read the sources when it is proposed. "
-    "A picture this account gave with give_image, named by its contribution_id, is drawn in its place. The "
-    "result carries the page checklist report (each mechanical rule passed or failed with its evidence, the "
-    "rest to judge, coverage by field, figures, sources by grade, pictures by licence), drawn by "
-    "ui://kalavigyan/page-preview.html in clients that show MCP Apps; create_draft builds a page over many calls."
-)
+__all__ = ["PAGE_TOOLS", "DraftReply", "PageReply", "PreviewReply"]
 
 
-class ProposeComponent(Arguments, ComponentProposalDraft):
-    @model_validator(mode="after")
-    def _delivered(self) -> Self:
-        paired = (self.extends is None) == (self.extension is None)
-        if paired and self.spec is None and self.extension != SUBJECT_LINK:
-            raise ValueError(NEEDS_SPEC)
-        return self
-
-
-class ProposePage(SnakeBodyArguments):
-    proposal: PageBundle = Field(
-        description=(
-            "subject {kind craft, family or category, slug}, and any of facts[], structure[], components[] "
-            "({proposal, cites}), layout {base_version, entries}, pictures[] ({stage_id, claim_ids, "
-            "declaration} for a new one, or {contribution_id} for one this account gave with give_image), note; "
-            "the old camelCase names work until the next release and say so in notices"
-        )
-    )
-
-
-class PageToolReply(PageProposalResult):
+class DraftReply(DraftView):
     notices: list[str] = Field(default_factory=list)
 
 
-class PreviewToolReply(PagePreviewResult):
+class PreviewReply(PagePreviewResult):
+    draft_id: uuid.UUID | None = None
     report: PageReport | None = None
     notices: list[str] = Field(default_factory=list)
 
 
-def _proposer(context: ToolContext, tool: str) -> User:
-    user = context.user
-    if user is None or not can(user, Capability.PROPOSE_KNOWLEDGE):
-        raise InvalidInput(NEEDS_PROPOSER.format(tool=tool))
-    return user
+class PageReply(PageProposalResult):
+    draft_id: uuid.UUID | None = None
+    next_step: str | None = None
+    notices: list[str] = Field(default_factory=list)
 
 
-async def _propose_component(context: ToolContext, arguments: ProposeComponent) -> ComponentProposalResult:
-    user = _proposer(context, "propose_component")
-    refuse_tool_when_spent(COMPONENT_PROPOSALS, user)
-    return await component_proposals.propose_component(
-        context.session, user, arguments, now=datetime.now(UTC)
+def _held(row: PageDraft) -> str:
+    counts = parts_counts(page_drafts.held_parts(row))
+    return HELD.format(
+        facts=counts.facts, structure=counts.structure, components=counts.components, pictures=counts.pictures
     )
 
 
-async def _propose_page(context: ToolContext, arguments: ProposePage) -> PageToolReply:
-    user = _proposer(context, "propose_page")
-    refuse_tool_when_spent(PAGE_PROPOSALS, user)
-    result = await page_proposed(context.session, arguments.proposal, user, origin=AGENT, site=context.site)
-    return PageToolReply.model_validate({**result.model_dump(), "notices": arguments.notices()})
+async def _opened(
+    context: ToolContext, user: User, arguments: EditDraft, now: datetime
+) -> tuple[PageDraft, str]:
+    if arguments.draft_id is not None:
+        changing = arguments.changes()
+        row = await page_drafts.own_draft(
+            context.session, user, arguments.draft_id, now=now, open_only=changing
+        )
+        return row, ""
+    if arguments.subject is None:
+        raise InvalidInput(ONE_PAGE)
+    row = await page_drafts.create_draft(context.session, user, arguments.subject, now=now)
+    return row, CREATED.format(kind=row.subjectKind, slug=row.subjectSlug) + " "
 
 
-async def _preview_page(context: ToolContext, arguments: ProposePage) -> PreviewToolReply:
-    user = _proposer(context, "preview_page")
+async def _edit_draft(context: ToolContext, arguments: EditDraft) -> DraftReply:
+    user, now = contributor(context, "edit_draft", STUDIO_DOES), datetime.now(UTC)
+    row, opened = await _opened(context, user, arguments, now)
+    for removed in arguments.removals():
+        row = await page_drafts.remove_from_draft(context.session, user, row.id, removed, now=now)
+    addition = arguments.addition()
+    if addition is not None:
+        row = await page_drafts.add_to_draft(context.session, user, row.id, addition, now=now)
+    changed = arguments.changes()
+    step = SUBMITTED if row.result else (PREVIEW if changed else ADD)
+    view = page_drafts.draft_view(row, message=f"{opened}{_held(row)}", next_step=step, full=not changed)
+    return DraftReply.model_validate({**view.model_dump(), "notices": arguments.notices()})
+
+
+async def _work(
+    context: ToolContext, user: User, arguments: PageWork, now: datetime
+) -> tuple[PageBundle, PageDraft | None, PageLists | None]:
+    if arguments.draft_id is None:
+        if arguments.bundle is None:
+            raise InvalidInput(ONE_WORK)
+        return arguments.bundle, None, None
+    row = await page_drafts.own_draft(context.session, user, arguments.draft_id, now=now, lock=True)
+    return page_drafts.bundle_of(row), row, page_drafts.held_parts(row).lists
+
+
+async def _preview_page(context: ToolContext, arguments: PageWork) -> PreviewReply:
+    user, now = contributor(context, "preview_page", STUDIO_DOES), datetime.now(UTC)
+    bundle, row, lists = await _work(context, user, arguments, now)
     refuse_tool_when_spent(PAGE_PREVIEWS, user)
-    now = datetime.now(UTC)
-    result = await page_preview.preview_page(
-        context.session, user, arguments.proposal, site=context.site, now=now
-    )
-    report = await page_report.preview_report(context.session, user, arguments.proposal, result, now=now)
-    return PreviewToolReply.model_validate(
-        {**result.model_dump(), "report": report, "notices": arguments.notices()}
+    previewed = await page_preview.preview_page(context.session, user, bundle, site=context.site, now=now)
+    report = await page_report.preview_report(context.session, user, bundle, previewed, lists=lists, now=now)
+    if row is not None:
+        await page_drafts.record_preview(context.session, row, previewed, report)
+    return PreviewReply.model_validate(
+        {
+            **previewed.model_dump(),
+            "draftId": arguments.draft_id,
+            "report": report,
+            "notices": arguments.notices(),
+        }
     )
 
 
-PROPOSE_COMPONENT = Tool(
-    "propose_component",
-    "Deliver a component",
-    COMPONENT_DESCRIPTION,
-    ProposeComponent,
-    ComponentProposalResult,
-    _propose_component,
-    scope=CONTRIBUTE_SCOPE,
-    annotations=WRITES,
+async def _propose_page(context: ToolContext, arguments: PageWork) -> PageReply:
+    user, now = contributor(context, "propose_page", STUDIO_DOES), datetime.now(UTC)
+    bundle, row, _ = await _work(context, user, arguments, now)
+    if row is not None or bundle_parts(bundle) > 1:
+        refuse_tool_when_spent(PAGE_PROPOSALS, user)
+    result = await page_proposed(context.session, bundle, user, origin=AGENT, site=context.site)
+    if row is not None:
+        await page_drafts.record_submission(context.session, row, result, now=now)
+    return PageReply.model_validate(
+        {
+            **result.model_dump(),
+            "draftId": arguments.draft_id,
+            "nextStep": FOLLOW if row is None else SUBMITTED,
+            "notices": arguments.notices(),
+        }
+    )
+
+
+PAGE_TOOLS: tuple[Tool, ...] = (
+    Tool(
+        "edit_draft",
+        "Build a page in a draft",
+        EDIT_DESCRIPTION,
+        EditDraft,
+        DraftReply,
+        _edit_draft,
+        CONTRIBUTE_SCOPE,
+        WRITES,
+        group=PAGES,
+    ),
+    Tool(
+        "preview_page",
+        "Preview a page",
+        PREVIEW_DESCRIPTION,
+        PageWork,
+        PreviewReply,
+        _preview_page,
+        CONTRIBUTE_SCOPE,
+        READ_ONLY,
+        group=PAGES,
+        view=PAGE_PREVIEW_VIEW_URI,
+        records=True,
+        shows_output=True,
+    ),
+    Tool(
+        "propose_page",
+        "Propose a page or one of its parts",
+        PROPOSE_DESCRIPTION,
+        PageWork,
+        PageReply,
+        _propose_page,
+        CONTRIBUTE_SCOPE,
+        WRITES,
+        group=PAGES,
+    ),
 )
-PROPOSE_PAGE = Tool(
-    "propose_page",
-    "Deliver a page bundle",
-    PAGE_DESCRIPTION,
-    ProposePage,
-    PageToolReply,
-    _propose_page,
-    scope=CONTRIBUTE_SCOPE,
-    annotations=WRITES,
-)
-PREVIEW_PAGE = ViewedTool(
-    "preview_page",
-    "Preview a page bundle",
-    PREVIEW_DESCRIPTION,
-    ProposePage,
-    PreviewToolReply,
-    _preview_page,
-    scope=CONTRIBUTE_SCOPE,
-    annotations=WRITES,
-    view_uri=PAGE_PREVIEW_VIEW_URI,
-)
-PAGE_TOOLS: tuple[Tool, ...] = (PROPOSE_COMPONENT, PROPOSE_PAGE, PREVIEW_PAGE)

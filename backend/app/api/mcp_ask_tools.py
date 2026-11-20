@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Self
+from typing import Self
 
 from pydantic import Field, model_validator
 
@@ -25,10 +24,9 @@ from .mcp_ask_run import (
     throttle_refusal,
     withheld_terms,
 )
-from .mcp_picture_tools import START_IMAGE_UPLOAD, signed_in
-from .mcp_tool_base import DATA_NOTE, WRITES, Arguments, Tool, ToolContext
+from .mcp_tool_base import DATA_NOTE, READING, WRITES, Arguments, Tool, ToolContext, signed_in
 
-__all__ = ["ASK_TOOLS", "Ask", "ViewedTool", "ask_tool"]
+__all__ = ["ASK_TOOLS", "Ask", "ask_tool"]
 
 NOT_KEPT = "The answer was written but could not be read back. Open your answers on the site."
 ASK_DESCRIPTION = (
@@ -68,15 +66,6 @@ class Ask(Arguments):
         return self
 
 
-@dataclass(frozen=True)
-class ViewedTool(Tool):
-    view_uri: str = ANSWER_VIEW_URI
-
-    def listed(self) -> dict[str, Any]:
-        view = {"resourceUri": self.view_uri, "visibility": ["model", "app"]}
-        return {**super().listed(), "_meta": {"ui": view, "ui/resourceUri": self.view_uri}}
-
-
 def ask_tool(tools: AskTools) -> Tool:
     async def run(context: ToolContext, arguments: Ask) -> AskedAnswer:
         user = signed_in(context)
@@ -90,7 +79,19 @@ def ask_tool(tools: AskTools) -> Tool:
             raise InvalidInput(NOT_KEPT) from None
         return asked_answer(document, site=context.site, data_note=DATA_NOTE)
 
-    return ViewedTool("ask", "Ask KalaVigyan", ASK_DESCRIPTION, Ask, AskedAnswer, run, ASK_SCOPE, WRITES)
+    return Tool(
+        "ask",
+        "Ask KalaVigyan",
+        ASK_DESCRIPTION,
+        Ask,
+        AskedAnswer,
+        run,
+        ASK_SCOPE,
+        WRITES,
+        group=READING,
+        view=ANSWER_VIEW_URI,
+        shows_output=True,
+    )
 
 
 async def _asked(context: ToolContext, user: User, arguments: Ask) -> AnswerAsk:
@@ -116,4 +117,4 @@ async def _asked(context: ToolContext, user: User, arguments: Ask) -> AnswerAsk:
     )
 
 
-ASK_TOOLS: tuple[Tool, ...] = (ask_tool(AskTools()), START_IMAGE_UPLOAD)
+ASK_TOOLS: tuple[Tool, ...] = (ask_tool(AskTools()),)

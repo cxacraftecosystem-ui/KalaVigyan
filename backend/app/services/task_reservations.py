@@ -41,7 +41,7 @@ NOT_OPEN = "No open task has the key {key}; list_open_work gives the open tasks.
 QUEUE_NOT_RESERVED = "A review queue is worked item by item in admin settings; it is never reserved."
 TOO_MANY = (
     "This account holds {held} tasks, the most an account of its trust tier ({tier}) may hold at once; "
-    "release_task one, or finish one, before claiming another."
+    "give one back with reserve_tasks, or finish one, before claiming another."
 )
 CLAIMED = "Reserved {held} tasks and refused {refused}; this account now holds {count} of its {most}."
 

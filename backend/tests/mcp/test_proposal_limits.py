@@ -1,17 +1,14 @@
 import uuid
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api import (
-    mcp_layout_tools,
-    mcp_page_tools,
-    mcp_picture_tools,
-)
+from app.api import mcp_page_tools, mcp_picture_tools
 from app.api.mcp_tools import ToolContext, answer
-from app.api.proposal_limits import wait_words
+from app.api.proposal_limits import refuse_tool_when_spent, wait_words
 from app.api.routes import knowledge_writes
 from app.core.db import get_session
 from app.core.deps import get_current_user
@@ -28,8 +25,13 @@ from app.core.rate_limit import (
 )
 from app.main import create_app
 from app.models import User
-from app.services import upload_links
+from app.research.page_proposals import PageBundle
+from app.services import page_proposals, upload_links
 from app.services.craft_resolver import CraftIndexStore
+from app.services.open_work_subjects import WorkSubject
+from app.services.page_proposals import PageTools
+
+from ..research.general_spec_fixtures import TABLE
 
 HOUR = 3600
 LIMITS = {
@@ -41,12 +43,34 @@ LIMITS = {
     PAGE_PROPOSALS: 10,
     PAGE_PREVIEWS: 30,
 }
+SUBJECT = {"kind": "craft", "slug": "Kutch-Ajrakh"}
 BUNDLE = {
-    "proposal": {
-        "subject": {"kind": "craft", "slug": "Kutch-Ajrakh"},
-        "layout": {"baseVersion": 0, "entries": []},
+    "bundle": {
+        "subject": SUBJECT,
+        "layout": {"base_version": 0, "entries": []},
+        "pictures": [{"contribution_id": str(uuid.UUID(int=9))}],
     }
 }
+AJRAKH = WorkSubject(uuid.UUID(int=2), "craft", "Kutch-Ajrakh", "Kutch Ajrakh", gi=True)
+COMPONENT = {
+    "label": "kutch-ajrakh/chemistry/vat-surface",
+    "title": "Indigo vat surface",
+    "description": "Shows the blue film forming where the vat meets the air, step by step, with its reaction.",
+    "kind": "general_table",
+    "field": "CHEMISTRY",
+    "craftSlug": "Kutch-Ajrakh",
+    "subjects": [{"kind": "CRAFT", "key": "Kutch-Ajrakh"}],
+    "spec": TABLE,
+    "units": {ref: {"text": "Alum"} for ref in ("u0001", "u0002", "u0003", "u0004", "u0005", "u0006")},
+}
+
+
+class Nested:
+    async def __aenter__(self) -> Nested:
+        return self
+
+    async def __aexit__(self, *problem: Any) -> bool:
+        return False
 
 
 def person(role: str, number: int = 31) -> User:
@@ -61,6 +85,9 @@ def spend(kind: str, user: User) -> None:
 class FakeSession:
     async def commit(self) -> None:
         return None
+
+    def begin_nested(self) -> Nested:
+        return Nested()
 
     async def rollback(self) -> None:
         return None
@@ -133,36 +160,57 @@ def test_the_wait_is_said_in_whole_seconds_or_minutes(seconds: float, words: str
     assert wait_words(seconds) == words
 
 
-async def test_spent_component_layout_and_picture_limits_are_tool_errors(
+async def test_spent_component_and_layout_limits_refuse_their_bundle_parts(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    researcher = person("RESEARCHER")
-    monkeypatch.setattr(mcp_page_tools.component_proposals, "propose_component", never_called)
-    monkeypatch.setattr(mcp_layout_tools, "propose_layout", never_called)
+    researcher = person("RESEARCHER", 34)
+    for kind in (COMPONENT_PROPOSALS, LAYOUT_PROPOSALS):
+        spend(kind, researcher)
+
+    async def subject(session: Any, kind: str, slug: str) -> WorkSubject:
+        return AJRAKH
+
+    monkeypatch.setattr(page_proposals, "subject_by_key", subject)
+    monkeypatch.setattr(page_proposals, "propose_component", never_called)
+    monkeypatch.setattr(page_proposals, "propose_layout", never_called)
+    nothing: Any = never_called
+    tools = PageTools(
+        gates=nothing,
+        fetcher=nothing,
+        start_picture=never_called,
+        spend=lambda kind: refuse_tool_when_spent(kind, researcher),
+        origin="AGENT",
+        site="https://k.example",
+    )
+    bundle = PageBundle.model_validate(
+        {
+            "subject": SUBJECT,
+            "components": [{"proposal": COMPONENT}],
+            "layout": {"baseVersion": 0, "entries": []},
+        }
+    )
+    session: Any = FakeSession()
+    result = await page_proposals.propose_page(
+        session, researcher, bundle, tools=tools, now=datetime(2026, 11, 21, tzinfo=UTC)
+    )
+    component, layout = result.parts
+    assert (component.outcome, layout.outcome) == ("REFUSED", "REFUSED")
+    assert "10 component proposals" in component.message and "10 layout proposals" in layout.message
+
+
+async def test_a_spent_picture_limit_refuses_the_upload_before_a_slot_is_opened(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    researcher = person("RESEARCHER", 35)
     monkeypatch.setattr(upload_links, "start_upload", never_called)
     monkeypatch.setattr(mcp_picture_tools, "endpoints_or_none", lambda: None)
-    for kind in (COMPONENT_PROPOSALS, LAYOUT_PROPOSALS, IMAGE_UPLOADS):
-        spend(kind, researcher)
-    component = {
-        "label": "kutch-ajrakh/chemistry/vat-surface",
-        "title": "Indigo vat surface",
-        "description": "Shows the blue film forming where the vat meets the air, step by step, with its reaction.",
-        "kind": "molecule_3d",
-        "field": "CHEMISTRY",
-        "subjects": [{"kind": "CRAFT", "key": "Kutch-Ajrakh"}],
-        "spec": {},
-    }
-    layout = {
-        "proposal": {"subject": {"kind": "craft", "slug": "Kutch-Ajrakh"}, "baseVersion": 0, "entries": []}
-    }
-    picture = {"craft_slug": "Kutch-Ajrakh", "claim_ids": [str(uuid.UUID(int=5))]}
-    for name, arguments, noun in (
-        ("propose_component", component, "10 component proposals"),
-        ("propose_layout", layout, "10 layout proposals"),
-        ("start_image_upload", picture, "20 picture uploads"),
-    ):
-        result = await tool_text(name, arguments, researcher)
-        assert result["isError"] is True and noun in result["content"][0]["text"], (name, result)
+    spend(IMAGE_UPLOADS, researcher)
+    picture = {"upload": True, "claim_ids": [str(uuid.UUID(int=5))]}
+    result = await tool_text(
+        "give_pictures", {"craft_slug": "Kutch-Ajrakh", "pictures": [picture]}, researcher
+    )
+    (place,) = result["structuredContent"]["uploads"]
+    assert result["isError"] is False and "20 picture uploads" in place["refused"]
 
 
 async def test_page_bundles_and_page_previews_have_their_own_hourly_allowances(

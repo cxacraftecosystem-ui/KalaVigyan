@@ -145,7 +145,7 @@ connection, an access token only itself. An unknown token, or one of another cli
 |---|---|---|
 | `read` | everyone, always given | read what a signed-out reader sees |
 | `ask` | `ASK_STANDARD` (every role) | ask and receive cited answers in the person's name |
-| `contribute` | `PROPOSE_KNOWLEDGE` (Researcher and above) | propose facts (one or up to 25 at once) and follow them (`get_proposal`), sources, structure, layouts and components; claim and release tasks and list its own (`my_tasks`); steward crafts (`adopt_craft`, `drop_craft`, `my_crafts`) |
+| `contribute` | `PROPOSE_KNOWLEDGE` (Researcher and above) | propose facts (one to 25 at once) and follow them (`get_proposal`), sources, structure, pages and their parts (`edit_draft`, `preview_page`, `propose_page`) and pictures (`give_pictures`); search and read sources (`search_sources`, `read_source`, `supply_source`); claim and release tasks (`reserve_tasks`) and list its own work (`my_work`); steward crafts (`steward_craft`) |
 | `review` | Professor, Admin, Master Admin | review proposals |
 
 The rule is `research/oauth_rules.may_hold`; the words shown are `research/oauth_contract.SCOPE_TEXT`.
