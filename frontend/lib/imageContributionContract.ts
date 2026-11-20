@@ -5,6 +5,7 @@ export const IMAGE_CONTRIBUTIONS_PATH = "/contributions/images";
 export const IMAGE_FILE_PATH = (id: string) => `/contributions/images/${encodeURIComponent(id)}/file`;
 export const IMAGE_WITHDRAW_PATH = (id: string) => `/contributions/images/${encodeURIComponent(id)}/withdraw`;
 export const IMAGE_MINE_PATH = "/contributions/images/mine";
+export const IMAGE_BATCH_PATH = "/contributions/images/batch";
 export const IMAGE_REVIEW_PATH = "/contributions/images/review";
 export const IMAGE_DECISION_PATH = (id: string, decision: "approve" | "reject") =>
   `/contributions/images/review/${encodeURIComponent(id)}/${decision}`;
@@ -12,18 +13,32 @@ export const IMAGE_DECISION_PATH = (id: string, decision: "approve" | "reject") 
 export const IMAGE_ORIGINS = ["PHOTOGRAPH", "DRAWING", "AI_GENERATED"] as const;
 export const IMAGE_STATUSES = ["AWAITING_FILE", "PENDING", "APPROVED", "REJECTED", "WITHDRAWN"] as const;
 export const IMAGE_TERMS_VERSION = "2026-11-19";
-export const IMAGE_ACCEPT = "image/png,image/jpeg,image/webp";
+export const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/avif", "image/gif", "image/heic", "image/heif", "image/tiff", "image/bmp", "image/svg+xml"] as const;
+export const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".avif", ".gif", ".heic", ".heif", ".tif", ".tiff", ".bmp", ".svg"] as const;
+export const IMAGE_ACCEPT = [...IMAGE_TYPES, ...IMAGE_EXTENSIONS].join(",");
+export const PREVIEWED_TYPES: readonly string[] = ["image/png", "image/jpeg", "image/webp", "image/avif", "image/gif", "image/bmp", "image/svg+xml"];
+export const PICTURE_SLOTS = ["MASTHEAD", "RECORD"] as const;
+export const SCREEN_VERDICTS = ["CLEAR", "FLAGGED", "UNSCREENED"] as const;
+export const FORMATS_HINT = "PNG, JPEG, WebP, AVIF, GIF, HEIC, TIFF, BMP or SVG, up to 10 MB. Location and camera details are removed.";
 export const IMAGE_BYTES_MAX = 10 * 1024 * 1024;
 export const IMAGE_TEXT_MAX = 300;
 export const IMAGE_FACTS_MAX = 20;
 
 export type ImageOrigin = (typeof IMAGE_ORIGINS)[number];
 export type ImageStatus = (typeof IMAGE_STATUSES)[number];
+export type PictureSlot = (typeof PICTURE_SLOTS)[number];
+export type ScreenVerdict = (typeof SCREEN_VERDICTS)[number];
+export type ScreenSummary = { verdict: ScreenVerdict; flags: string[]; reasons: string[] };
 
 export const ORIGIN_LABELS: Record<ImageOrigin, string> = {
   PHOTOGRAPH: "Photograph",
   DRAWING: "Drawing",
   AI_GENERATED: "Made with AI"
+};
+
+export const SLOT_LABELS: Record<PictureSlot, string> = {
+  MASTHEAD: "The first picture of the page",
+  RECORD: "The GI record's picture"
 };
 
 export const IMAGE_STATUS_LABELS: Record<ImageStatus, string> = {
@@ -53,6 +68,9 @@ export type ImageContribution = {
   craftSlug: string;
   craftName: string;
   stageId: string | null;
+  materialId: string | null;
+  slot: PictureSlot | null;
+  taskKey: string | null;
   claimIds: string[];
   origin: ImageOrigin;
   label: string;
@@ -66,6 +84,7 @@ export type ImageContribution = {
   width: number | null;
   height: number | null;
   fileUrl: string | null;
+  screen: ScreenSummary | null;
   createdAt: string;
   reviewedAt: string | null;
   reviewNote: string | null;
@@ -73,11 +92,16 @@ export type ImageContribution = {
 
 export type ImageQueue = { status: ImageStatus; items: ImageContribution[] };
 
+const screenSummaryShape: Shape<ScreenSummary> = object<ScreenSummary>({ verdict: oneOf(SCREEN_VERDICTS), flags: list(text), reasons: list(text) });
+
 export const imageContributionShape: Shape<ImageContribution> = object<ImageContribution>({
   id: text,
   craftSlug: text,
   craftName: text,
   stageId: nullable(text),
+  materialId: nullable(text),
+  slot: nullable(oneOf(PICTURE_SLOTS)),
+  taskKey: nullable(text),
   claimIds: list(text),
   origin: oneOf(IMAGE_ORIGINS),
   label: text,
@@ -91,6 +115,7 @@ export const imageContributionShape: Shape<ImageContribution> = object<ImageCont
   width: nullable(integer),
   height: nullable(integer),
   fileUrl: nullable(text),
+  screen: nullable(screenSummaryShape),
   createdAt: text,
   reviewedAt: nullable(text),
   reviewNote: nullable(text)
@@ -128,10 +153,34 @@ export function declarationBody(declaration: ImageDeclaration): Record<string, u
   };
 }
 
-export function fileProblem(file: File): string | null {
-  if (!IMAGE_ACCEPT.split(",").includes(file.type)) return "Choose a PNG, JPEG or WebP picture.";
+export function fileProblem(file: Pick<File, "type" | "size" | "name">): string | null {
+  if (!isPictureFile(file)) return "Choose a PNG, JPEG, WebP, AVIF, GIF, HEIC, TIFF, BMP or SVG picture.";
   if (file.size > IMAGE_BYTES_MAX) return "Choose a picture of 10 MB or less.";
   return null;
+}
+
+export function isPictureFile(file: Pick<File, "type" | "name">): boolean {
+  const name = file.name.toLowerCase();
+  return (IMAGE_TYPES as readonly string[]).includes(file.type) || IMAGE_EXTENSIONS.some((extension) => name.endsWith(extension));
+}
+
+export function previewable(file: Pick<File, "type">): boolean {
+  return PREVIEWED_TYPES.includes(file.type);
+}
+
+export function shownCredit(origin: ImageOrigin, generator: string | null): string {
+  const tool = generator?.trim();
+  return origin === "AI_GENERATED" ? `Illustration, made with ${tool || "the AI tool you name"}` : "Contributed to KalaVigyan";
+}
+
+export function heldReasons(item: Pick<ImageContribution, "screen">): string[] {
+  return item.screen && item.screen.verdict !== "CLEAR" ? item.screen.reasons : [];
+}
+
+export function sentNotice(sent: ImageContribution): string {
+  if (sent.status === "APPROVED") return "Your picture is approved and shown.";
+  const held = heldReasons(sent);
+  return held.length ? `${IMAGE_STATUS_LABELS[sent.status]}: an Admin looks at it first. ${held.join(" ")}` : `${IMAGE_STATUS_LABELS[sent.status]}. An Admin will look at it.`;
 }
 
 export function canWithdraw(item: ImageContribution): boolean {

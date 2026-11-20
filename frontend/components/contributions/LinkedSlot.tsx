@@ -1,10 +1,10 @@
 import { formatDateTime } from "@/lib/format";
-import type { UploadLinkView } from "@/lib/uploadLinkContract";
+import { slotKicker, type UploadLinkView } from "@/lib/uploadLinkContract";
 
 export function LinkedSlot({ view }: { view: UploadLinkView }) {
   return (
     <section className="grid gap-3 border-t border-ink-1 pt-4" aria-labelledby="linked-slot-h" data-testid="linked-slot">
-      <p className="kicker">{view.stage ? `${view.craft.name} · ${view.stage.name}` : view.craft.name}</p>
+      <p className="kicker">{slotKicker(view)}</p>
       <h2 id="linked-slot-h" className="text-h3 font-reading text-ink-1">
         What the picture shows
       </h2>

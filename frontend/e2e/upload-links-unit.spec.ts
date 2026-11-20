@@ -7,6 +7,7 @@ import {
   closedLinkTitle,
   slotDeclarationBody,
   slotDeclarationProblems,
+  slotKicker,
   UPLOAD_LINK_PICTURE_PATH,
   UPLOAD_LINK_RENEW_PATH,
   uploadLinkShape,
@@ -20,6 +21,9 @@ const VIEW: UploadLinkView = {
   state: "OPEN",
   craft: { slug: "Kutch-Ajrakh", name: "Kutch Ajrakh" },
   stage: { id: "5b1c2d3e-0000-4000-8000-000000000005", name: "Printing the resist" },
+  material: null,
+  slot: null,
+  taskKey: null,
   facts: [{ id: "4d1c2b3a-0000-4000-8000-000000000001", text: "The resist paste holds lime and gum." }],
   expiresAt: "2026-11-19T12:30:00Z",
   contributionId: null
@@ -72,6 +76,13 @@ test("the server's link view parses, and an unknown state or a link without fact
   expect(parseShape(uploadLinkShape, { ...VIEW, stage: null })).toEqual({ ...VIEW, stage: null });
   expect(() => parseShape(uploadLinkShape, { ...VIEW, state: "REVOKED" })).toThrow();
   expect(() => parseShape(uploadLinkShape, { ...VIEW, facts: [] })).toThrow();
+});
+
+test("the link names the stage, material or page slot its picture is for", () => {
+  expect(slotKicker(VIEW)).toBe("Kutch Ajrakh · Printing the resist");
+  expect(slotKicker({ ...VIEW, stage: null, material: { id: "m1", name: "Harda" } })).toBe("Kutch Ajrakh · Harda");
+  expect(slotKicker({ ...VIEW, stage: null, slot: "MASTHEAD" })).toBe("Kutch Ajrakh · The first picture of the page");
+  expect(slotKicker({ ...VIEW, stage: null })).toBe("Kutch Ajrakh");
 });
 
 test("a used or expired link says so and what a new link gives", () => {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { PictureFactsPicker } from "@/components/contributions/PictureFactsPicker";
+import { PicturePreview } from "@/components/contributions/PicturePreview";
 import { Field, TextArea, TextInput } from "@/components/FormControls";
 import { CraftPicker, type PickedCraft } from "@/components/onboarding/CraftPicker";
 import { ActionGroup } from "@/components/ui/ActionGroup";
@@ -13,10 +14,10 @@ import {
   declarationProblems,
   declareImage,
   fileProblem,
+  FORMATS_HINT,
   IMAGE_ACCEPT,
   IMAGE_DECLARATION,
   IMAGE_ORIGINS,
-  IMAGE_STATUS_LABELS,
   ORIGIN_LABELS,
   uploadImageFile,
   type ImageContribution,
@@ -91,9 +92,10 @@ export function PictureForm({ onSent }: { onSent: (sent: ImageContribution) => v
       <Field label="Description for readers who cannot see it">
         <TextArea value={altText} onChange={(event) => setAltText(event.target.value)} maxLength={300} rows={2} />
       </Field>
-      <Field label="Picture" hint="PNG, JPEG or WebP, up to 10 MB. Location and camera details are removed.">
+      <Field label="Picture" hint={FORMATS_HINT}>
         <input type="file" accept={IMAGE_ACCEPT} className="text-ui font-ui text-ink-1" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
       </Field>
+      <PicturePreview file={file} origin={origin} generator={generator} caption={caption} altText={altText} />
       <label className="flex items-start gap-3 text-body-sm font-reading text-ink-2">
         <input type="checkbox" className="mt-1.5 h-4 w-4 shrink-0" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
         <span>{IMAGE_DECLARATION}</span>
@@ -108,8 +110,4 @@ export function PictureForm({ onSent }: { onSent: (sent: ImageContribution) => v
       </ActionGroup>
     </form>
   );
-}
-
-export function sentNotice(sent: ImageContribution): string {
-  return sent.status === "APPROVED" ? "Your picture is approved." : `${IMAGE_STATUS_LABELS[sent.status]}. An Admin will look at it.`;
 }

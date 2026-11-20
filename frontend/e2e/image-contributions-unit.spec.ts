@@ -5,8 +5,12 @@ import {
   declarationBody,
   declarationProblems,
   fileProblem,
+  heldReasons,
   IMAGE_TERMS_VERSION,
   imageContributionShape,
+  previewable,
+  sentNotice,
+  shownCredit,
   type ImageContribution,
   type ImageDeclaration
 } from "../lib/imageContributionContract";
@@ -29,6 +33,9 @@ const VIEW: ImageContribution = {
   craftSlug: "Kutch-Ajrakh",
   craftName: "Kutch Ajrakh",
   stageId: null,
+  materialId: null,
+  slot: "MASTHEAD",
+  taskKey: "MISSING_PICTURE:craft:Kutch-Ajrakh:slot-masthead",
   claimIds: ["4d1c2b3a-0000-4000-8000-000000000001"],
   origin: "AI_GENERATED",
   label: "Illustration, made with ChatGPT, gpt-image-1",
@@ -42,6 +49,7 @@ const VIEW: ImageContribution = {
   width: 800,
   height: 600,
   fileUrl: "https://bucket.example/media/x.png",
+  screen: { verdict: "CLEAR", flags: [], reasons: [] },
   createdAt: "2026-11-19T10:00:00Z",
   reviewedAt: null,
   reviewNote: null
@@ -73,11 +81,34 @@ test("a photograph needs a craft, a caption and a description, and sends no tool
   });
 });
 
-test("only PNG, JPEG or WebP pictures of 10 MB or less are sent", () => {
-  const picture = (type: string, size: number) => ({ type, size }) as File;
+test("pictures in every accepted format of 10 MB or less are sent, a HEIC known by its name too", () => {
+  const picture = (type: string, size: number, name = "picture") => ({ type, size, name });
   expect(fileProblem(picture("image/png", 2_000_000))).toBeNull();
-  expect(fileProblem(picture("image/gif", 2_000))).toBe("Choose a PNG, JPEG or WebP picture.");
+  expect(fileProblem(picture("image/gif", 2_000))).toBeNull();
+  expect(fileProblem(picture("image/svg+xml", 2_000))).toBeNull();
+  expect(fileProblem(picture("", 3_000_000, "IMG_0042.HEIC"))).toBeNull();
+  expect(fileProblem(picture("application/pdf", 2_000, "notes.pdf"))).toBe("Choose a PNG, JPEG, WebP, AVIF, GIF, HEIC, TIFF, BMP or SVG picture.");
   expect(fileProblem(picture("image/jpeg", 11 * 1024 * 1024))).toBe("Choose a picture of 10 MB or less.");
+});
+
+test("a browser draws the chosen picture before it is sent unless it is converted on arrival", () => {
+  expect(previewable({ type: "image/avif" })).toBe(true);
+  expect(previewable({ type: "image/heic" })).toBe(false);
+  expect(previewable({ type: "image/tiff" })).toBe(false);
+});
+
+test("the preview credits a photograph to KalaVigyan and an AI picture to its tool, never the contributor", () => {
+  expect(shownCredit("PHOTOGRAPH", null)).toBe("Contributed to KalaVigyan");
+  expect(shownCredit("AI_GENERATED", " ChatGPT, gpt-image-1 ")).toBe("Illustration, made with ChatGPT, gpt-image-1");
+});
+
+test("a picture held by the screen says why, and a clear or approved one does not", () => {
+  const held = { ...VIEW, screen: { verdict: "FLAGGED" as const, flags: ["ID_DOCUMENT"], reasons: ["It may show an identity document, or a card with a face and a number."] } };
+  expect(heldReasons(VIEW)).toEqual([]);
+  expect(heldReasons(held)).toEqual(["It may show an identity document, or a card with a face and a number."]);
+  expect(sentNotice(held)).toBe("Waiting for review: an Admin looks at it first. It may show an identity document, or a card with a face and a number.");
+  expect(sentNotice(VIEW)).toBe("Waiting for review. An Admin will look at it.");
+  expect(sentNotice({ ...VIEW, status: "APPROVED" })).toBe("Your picture is approved and shown.");
 });
 
 test("a picture can be taken back only while it waits, because consent cannot be revoked", () => {
@@ -90,6 +121,8 @@ test("a picture can be taken back only while it waits, because consent cannot be
 test("the server's picture view parses, and an unknown status is refused", () => {
   expect(parseShape(imageContributionShape, VIEW)).toEqual(VIEW);
   expect(() => parseShape(imageContributionShape, { ...VIEW, status: "HIDDEN" })).toThrow();
+  expect(() => parseShape(imageContributionShape, { ...VIEW, slot: "COVER" })).toThrow();
+  expect(parseShape(imageContributionShape, { ...VIEW, screen: null })).toEqual({ ...VIEW, screen: null });
 });
 
 test("the picture pages are guarded by the capabilities the API requires", () => {

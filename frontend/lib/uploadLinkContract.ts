@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api";
-import { declarationBody, declarationProblems, imageContributionShape, type ImageContribution, type ImageOrigin } from "@/lib/imageContributionContract";
+import { declarationBody, declarationProblems, imageContributionShape, PICTURE_SLOTS, SLOT_LABELS, type ImageContribution, type ImageOrigin, type PictureSlot } from "@/lib/imageContributionContract";
 import { list, nullable, object, oneOf, parseShape, text, type Shape } from "@/lib/shape";
 
 export const UPLOAD_LINK_PARAM = "link";
@@ -17,12 +17,16 @@ const SLOT_FIELDS = ["origin", "generator", "prompt", "caption", "altText", "rig
 export type UploadLinkState = (typeof UPLOAD_LINK_STATES)[number];
 export type SlotCraft = { slug: string; name: string };
 export type SlotStage = { id: string; name: string };
+export type SlotMaterial = { id: string; name: string };
 export type SlotFact = { id: string; text: string };
 
 export type UploadLinkView = {
   state: UploadLinkState;
   craft: SlotCraft;
   stage: SlotStage | null;
+  material: SlotMaterial | null;
+  slot: PictureSlot | null;
+  taskKey: string | null;
   facts: SlotFact[];
   expiresAt: string;
   contributionId: string | null;
@@ -42,6 +46,9 @@ export const uploadLinkShape: Shape<UploadLinkView> = object<UploadLinkView>({
   state: oneOf(UPLOAD_LINK_STATES),
   craft: object<SlotCraft>({ slug: text, name: text }),
   stage: nullable(object<SlotStage>({ id: text, name: text })),
+  material: nullable(object<SlotMaterial>({ id: text, name: text })),
+  slot: nullable(oneOf(PICTURE_SLOTS)),
+  taskKey: nullable(text),
   facts: list(object<SlotFact>({ id: text, text }), 1),
   expiresAt: text,
   contributionId: nullable(text)
@@ -64,6 +71,11 @@ export function slotDeclarationProblems(view: UploadLinkView, declaration: SlotD
 export function slotDeclarationBody(declaration: SlotDeclaration): Record<string, unknown> {
   const body = declarationBody({ ...declaration, craftSlug: "", stageId: null, claimIds: [] });
   return Object.fromEntries(Object.entries(body).filter(([field]) => SLOT_FIELDS.includes(field)));
+}
+
+export function slotKicker(view: UploadLinkView): string {
+  const shown = view.stage?.name ?? view.material?.name ?? (view.slot ? SLOT_LABELS[view.slot] : null);
+  return shown ? `${view.craft.name} · ${shown}` : view.craft.name;
 }
 
 export function closedLinkTitle(view: UploadLinkView): string {

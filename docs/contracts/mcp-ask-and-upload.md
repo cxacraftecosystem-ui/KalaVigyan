@@ -1,9 +1,11 @@
-# MCP ask and start_image_upload (decision 0101, items 15 and 17)
+# MCP ask and the picture tools (decision 0101, items 15 and 17; decision 0109)
 
-Two signed-in MCP tools. `ask` runs our answer pipeline for the signed-in person and returns the
+Four signed-in MCP tools. `ask` runs our answer pipeline for the signed-in person and returns the
 finished answer as structured data, with a design kit and an MCP App view to draw it.
 `start_image_upload` hands out a single-use link to our site (and, for agents with a shell, a
-presigned upload slot), so a picture travels outside the chat.
+presigned upload slot), so a picture travels outside the chat. `give_image` and `give_images` take
+a picture that is already in the chat, by link or as base64, with the declaration the person
+confirmed there.
 
 ## Code
 
@@ -12,13 +14,17 @@ presigned upload slot), so a picture travels outside the chat.
 | The ask result contract, the answer link, the view's URI and MIME type | `research/mcp_ask.py` |
 | Running the pipeline to the end and collecting its outcome | `services/answer_runs.py` |
 | The web route's guards, the pipeline per call, the timeout | `api/mcp_ask_run.py` |
-| The tools `ask` and `start_image_upload` (`ASK_TOOLS`) | `api/mcp_ask_tools.py`, registered in `api/mcp_tools.py` |
+| The tool `ask` (`ASK_TOOLS`, which also lists `start_image_upload`) | `api/mcp_ask_tools.py`, registered in `api/mcp_tools.py` |
+| The tools `start_image_upload`, `give_image`, `give_images` (`PICTURE_TOOLS`) and their texts | `api/mcp_picture_tools.py`, `api/mcp_picture_texts.py`, registered in `api/mcp_tools.py` |
+| Giving pictures from the chat: per picture checks, screens, one declaration | `services/upload_links_give.py`, contracts in `research/image_contributions_give.py` |
+| Fetching a picture's link | the fetcher's `POST /fetch-picture` (`fetcher/pictures.py`), its client `services/upload_links_fetch.py`, contract `research/image_intake_fetch.py` |
+| The vision screen's call | `api/picture_vision.py` |
 | The answer kit and the answer view resources | `api/mcp_resources.py`, `data/answer_kit.py`, `data/design/answer-kit.md`, `data/design/answer-view.html` |
 | Upload link contract, states, addresses | `research/upload_links.py` |
 | Issuing, reading, renewing and filling a link or slot | `services/upload_links.py` |
 | HTTP routes | `api/routes/upload_links.py` |
-| Table | `models/upload_links.py` (`UploadLink`), migration `0040_upload_links` (after `0039_upkeep`) |
-| The landing page | `frontend/app/(protected)/contributions/pictures/upload/page.tsx`, `components/contributions/LinkedSlot.tsx`, `LinkedPictureForm.tsx`, `ClosedUploadLink.tsx`, `lib/uploadLinkContract.ts` |
+| Table | `models/upload_links.py` (`UploadLink`), migration `0040_upload_links` (after `0039_upkeep`); `materialId`, `slot`, `taskKey` from `0050_image_screens` |
+| The landing page | `frontend/app/(protected)/contributions/pictures/upload/page.tsx`, `components/contributions/LinkedSlot.tsx`, `LinkedPictureForm.tsx`, `PicturePreview.tsx`, `HeldReasons.tsx`, `ClosedUploadLink.tsx`, `lib/uploadLinkContract.ts` |
 
 ## `ask` (scope `ask`, signed in, a write)
 
@@ -90,14 +96,19 @@ made.
 
 ## `start_image_upload` (scope `contribute`, signed in, a write)
 
-Arguments: `craft_slug`, optional `stage_id` (one of the craft's stages), `claim_ids` (1 to 20,
-each a fact a signed-out reader is shown, each once), and an optional `declaration`
+Arguments: `craft_slug`, at most one of `stage_id` (one of the craft's stages), `material_id`
+(one of its materials) and `slot` (`MASTHEAD`, `RECORD`), an optional `task_key` (a
+`MISSING_PICTURE` task of the craft, whose target is used when none is given), `claim_ids` (1 to
+20, each a fact a signed-out reader is shown, each once), and an optional `declaration`
 `{origin, generator, prompt, caption, altText, rightsConfirmed: true, termsVersion: "2026-11-19"}`
 (the rules of `ImageDeclaration` in `image-contributions.md`; the agent passes it only after the
 person confirmed it).
 
 `UploadStart`: `{schemaVersion: 1, link, expiresAt, uploadUrl, uploadMethod: "PUT", uploadTypes,
-uploadMaxBytes, craft, stage, facts[{id, text}], declared, nextStep}`.
+uploadMaxBytes, craft, stage, material, slot, taskKey, facts[{id, text}], declared, nextStep}`.
+`uploadTypes` lists every accepted type: `image/png`, `image/jpeg`, `image/webp`, `image/avif`,
+`image/gif`, `image/heic`, `image/heif`, `image/tiff`, `image/bmp`, `image/svg+xml`
+(`image-contributions.md`, what the file goes through).
 
 - `link` is `<site>/contributions/pictures/upload?link=<token>`, valid 30 minutes, tied to the
   person, the craft, the stage and the facts.
@@ -113,6 +124,40 @@ A slot stops working when its account's sessions are ended (signing out everywhe
 the account is deleted, checked as an access token is (`token_matches_user` against the token
 version and the moment of issue), or when the account loses the capability.
 
+## `give_image` and `give_images` (scope `contribute`, signed in, open-world writes)
+
+For a picture that is already in the chat, an AI tool's for one. The agent asks the person first,
+in their words, for the declaration: that they took or made the picture or hold the right to share
+it, that the Centre may publish it without their name (which cannot be revoked once approved), and
+for an AI image the tool and model and the prompt. It never fills the declaration in for them.
+
+- `give_image`: `craft_slug`, a target as for `start_image_upload` (`stage_id`, `material_id`,
+  `slot`, `task_key`), `claim_ids` (0 to 20; an AI image names one), `declaration` (the slot
+  declaration: origin, generator and prompt for an AI image, caption, altText, rightsConfirmed true,
+  termsVersion), `confirmation` (the person's words, 2 to 500 characters), and exactly one of
+  `image_url` (https) or `image_base64` (base64 or a `data:` URI, at most 6 MB decoded).
+- `give_images`: `craft_slug`, `declaration` (the shared part: origin, generator, rightsConfirmed,
+  termsVersion), `confirmation`, and `pictures[]`, one to ten, each with its own target, `claimIds`,
+  `prompt`, `caption`, `altText` and `imageUrl` or `imageBase64` (12 MB of base64 at most in one
+  call).
+
+A link is fetched by the fetcher process, never by the API: `POST /fetch-picture` with `{url,
+maxBytes}` checks the URL (https, port 443, no credentials), resolves it to public addresses only,
+pins TLS to the named host, follows at most three redirects, streams at most 10 MB, and answers the
+bytes with their type read from the bytes and `X-Final-Url`, or the fetcher's refusal (403) or
+failure (502) body. A link that is refused, or gives no picture, refuses that picture only.
+
+Each picture is checked and screened on its own, in order: the upload limit (`IMAGE_UPLOADS`, one
+count a picture), its declaration, target and facts, then the screens of `image-contributions.md`
+(the intake, an exact or perceptual repeat, within the call too, and the vision call). The pictures
+that pass are filed together under one `PictureDeclaration` (channel `MCP`, with the person's words)
+and stored as contributions, so they reach the review queue and the person's pictures like any
+other.
+
+`GivenPictures`: `{schemaVersion: 1, craft, declarationId, given, refused, pictures[{position,
+contributionId, status, label, received, mime, width, height, screen{verdict, flags, reasons},
+refused}], nextStep}`. A refused picture carries only its position and the reason.
+
 ## HTTP routes (`/api/upload-links`)
 
 | Route | Who | Body | Answer |
@@ -126,15 +171,16 @@ version and the moment of issue), or when the account loses the capability.
 a token that is not the caller's or does not exist, 409 for renewing an open link or a repeat
 picture, 410 with the reason for a used or expired link or a slot whose account changed, 413 over
 10 MB, 422 for a declaration or file that fails its checks, 503 without the media bucket. The
-picture goes through `image_contributions.declare` and `receive_file` (cleaning, AI mark, repeats,
-storage, approval at once for Professors and above), so it lands in the review queue and in the
+picture is screened before the link is locked (cleaning, AI mark, repeats, the vision call), then
+goes through `image_contributions.declare` and `store_screened` (storage, approval at once for a
+Professor and above when the screen clears it), so it lands in the review queue and in the
 contributor's own pictures like any other. In the route inventory the three owner routes are
 `ADMIN` class (refused to a Student) and the slot is `SERVICE`.
 
 ## `UploadLink`
 
-`{id, userId, userTokenVersion, craftId, stageId, claimIds[], linkHash, slotHash, declaration,
-expiresAt, usedAt, contributionId, createdAt, updatedAt}`. Checks: a slot hash exactly when a
+`{id, userId, userTokenVersion, craftId, stageId, materialId, slot, taskKey, claimIds[], linkHash,
+slotHash, declaration, expiresAt, usedAt, contributionId, createdAt, updatedAt}`. Checks: a slot hash exactly when a
 declaration is stored; at least one fact; a contribution only on a used link. Unique link and slot
 hashes, an index on `(userId, expiresAt)` and on `contributionId`. Row level security is on and
 the public roles have no grants.
@@ -143,7 +189,10 @@ the public roles have no grants.
 
 `/contributions/pictures/upload?link=<token>`, inside the signed-in shell, so a signed-out reader
 (a phone too) signs in and comes back to the same address; the page needs Researcher access. It
-shows the craft, the stage and the facts already chosen, and the existing picture declaration:
-what it is, the AI tool and model and the prompt for an AI picture, the caption, the description,
-the file and the declaration (version 2026-11-19). A used or expired link says so and offers Get a
+shows the craft, the stage, material or picture slot and the facts already chosen, and the
+existing picture declaration: what it is, the AI tool and model and the prompt for an AI picture,
+the caption, the description, the file with a preview of it as it will be shown (caption first,
+credit after; a file the browser cannot draw says it is made WebP on arrival) and the
+declaration (version 2026-11-19). Once sent it says whether the picture is shown or waits, and
+why the screen held it. A used or expired link says so and offers Get a
 new link; a link of another account says so and points to the picture page without a link.

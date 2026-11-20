@@ -7,7 +7,8 @@ import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { SegmentedChoice } from "@/components/ui/SegmentedChoice";
 import { ApiError, apiErrorMessage } from "@/lib/api";
-import { fileProblem, IMAGE_ACCEPT, IMAGE_DECLARATION, IMAGE_ORIGINS, ORIGIN_LABELS, type ImageContribution, type ImageOrigin } from "@/lib/imageContributionContract";
+import { PicturePreview } from "@/components/contributions/PicturePreview";
+import { fileProblem, FORMATS_HINT, IMAGE_ACCEPT, IMAGE_DECLARATION, IMAGE_ORIGINS, ORIGIN_LABELS, type ImageContribution, type ImageOrigin } from "@/lib/imageContributionContract";
 import { giveLinkedPicture, slotDeclarationProblems, type SlotDeclaration, type UploadLinkView } from "@/lib/uploadLinkContract";
 
 const ORIGIN_OPTIONS = IMAGE_ORIGINS.map((value) => ({ value, label: ORIGIN_LABELS[value] }));
@@ -24,9 +25,10 @@ export function LinkedPictureForm(props: Sending) {
   return (
     <form className="grid gap-5" onSubmit={(event) => { event.preventDefault(); void send(declaration, file, agreed); }} data-testid="linked-picture-form">
       <DeclarationFields declaration={declaration} busy={busy} onChange={setDeclaration} />
-      <Field label="Picture" hint="PNG, JPEG or WebP, up to 10 MB. Location and camera details are removed.">
+      <Field label="Picture" hint={FORMATS_HINT}>
         <input type="file" accept={IMAGE_ACCEPT} className="text-ui font-ui text-ink-1" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
       </Field>
+      <PicturePreview file={file} origin={declaration.origin} generator={declaration.generator} caption={declaration.caption} altText={declaration.altText} />
       <label className="flex items-start gap-3 text-body-sm font-reading text-ink-2">
         <input type="checkbox" className="mt-1.5 h-4 w-4 shrink-0" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
         <span>{IMAGE_DECLARATION}</span>

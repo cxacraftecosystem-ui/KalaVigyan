@@ -7,7 +7,6 @@ import { ImagePlus } from "lucide-react";
 import { ClosedUploadLink } from "@/components/contributions/ClosedUploadLink";
 import { LinkedPictureForm } from "@/components/contributions/LinkedPictureForm";
 import { LinkedSlot } from "@/components/contributions/LinkedSlot";
-import { sentNotice } from "@/components/contributions/PictureForm";
 import { failureMessage, useRemote, type Remote } from "@/components/hooks/useRemote";
 import { PageHeader } from "@/components/PageHeader";
 import { ActionGroup } from "@/components/ui/ActionGroup";
@@ -15,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TextLink } from "@/components/ui/TextLink";
 import { ApiError } from "@/lib/api";
-import type { ImageContribution } from "@/lib/imageContributionContract";
+import { sentNotice, type ImageContribution } from "@/lib/imageContributionContract";
 import { fetchUploadLink, PICTURES_PATH, UPLOAD_LINK_PARAM, uploadLinkToken, uploadPageHref, type UploadLinkView } from "@/lib/uploadLinkContract";
 
 const DESCRIPTION = "The craft and the facts were chosen when the link was made. Say what the picture is, confirm the declaration and add the file.";

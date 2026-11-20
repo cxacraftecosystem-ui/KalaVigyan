@@ -3,6 +3,7 @@ import zlib
 
 import pytest
 from PIL import Image
+from pillow_heif import register_heif_opener
 
 from app.core.errors import InvalidInput
 from app.research.image_intake import inspected_image
@@ -29,6 +30,8 @@ SVG_IN = (
     b"<style>@import url(https://evil.example/a.css); rect { fill: url(#g) }</style>"
     b"</svg>"
 )
+
+register_heif_opener()
 
 
 def _saved(made: Image.Image, kind: str, **options: object) -> bytes:

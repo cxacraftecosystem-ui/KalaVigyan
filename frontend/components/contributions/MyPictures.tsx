@@ -2,7 +2,8 @@
 
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
-import { canWithdraw, IMAGE_STATUS_LABELS, type ImageContribution } from "@/lib/imageContributionContract";
+import { HeldReasons } from "@/components/contributions/HeldReasons";
+import { canWithdraw, heldReasons, IMAGE_STATUS_LABELS, type ImageContribution } from "@/lib/imageContributionContract";
 
 export function MyPictures({
   items,
@@ -32,6 +33,7 @@ export function MyPictures({
             <p className="kicker">{item.craftName} · {item.label}</p>
             <p className="text-body-sm font-reading text-ink-1">{item.caption}</p>
             <p className="text-label font-ui text-ink-3">{IMAGE_STATUS_LABELS[item.status]}</p>
+            {item.status === "PENDING" ? <HeldReasons reasons={heldReasons(item)} /> : null}
             {item.reviewNote ? <p className="text-label font-ui text-ink-2">{item.reviewNote}</p> : null}
             {canWithdraw(item) ? (
               <ActionGroup align="start">

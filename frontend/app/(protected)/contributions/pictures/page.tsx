@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { ImagePlus } from "lucide-react";
 
 import { MyPictures } from "@/components/contributions/MyPictures";
-import { PictureForm, sentNotice } from "@/components/contributions/PictureForm";
+import { PictureForm } from "@/components/contributions/PictureForm";
 import { PageHeader } from "@/components/PageHeader";
 import { apiErrorMessage } from "@/lib/api";
-import { fetchMyImages, withdrawImage, type ImageContribution } from "@/lib/imageContributionContract";
+import { fetchMyImages, sentNotice, withdrawImage, type ImageContribution } from "@/lib/imageContributionContract";
 
 export default function GivePicturePage() {
   const [items, setItems] = useState<ImageContribution[]>([]);

@@ -6,7 +6,8 @@ import { Field, TextInput } from "@/components/FormControls";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { apiErrorMessage } from "@/lib/api";
-import { decideImage, type ImageContribution } from "@/lib/imageContributionContract";
+import { HeldReasons } from "@/components/contributions/HeldReasons";
+import { decideImage, heldReasons, type ImageContribution } from "@/lib/imageContributionContract";
 
 export function PictureReviewCard({ item, onDecided }: { item: ImageContribution; onDecided: () => void }) {
   const [note, setNote] = useState("");
@@ -48,6 +49,7 @@ export function PictureReviewCard({ item, onDecided }: { item: ImageContribution
           {item.claimIds.length} {item.claimIds.length === 1 ? "fact" : "facts"} · {item.width && item.height ? `${item.width} × ${item.height}` : "no file"}
           {item.aiMarked ? " · its own metadata says an AI made it" : ""}
         </p>
+        <HeldReasons reasons={heldReasons(item)} />
         {item.reviewNote ? <p className="text-label font-ui text-ink-2">Note: {item.reviewNote}</p> : null}
         {open ? (
           <>
