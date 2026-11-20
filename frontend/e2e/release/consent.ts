@@ -13,7 +13,7 @@ const CONSENT_TIMEOUT_MS = 60_000;
 const CONSENT_FORM = "consent-form";
 const RETURNED = "<!doctype html><title>Signed in</title><p>Signed in.</p>";
 
-type Approval = { kind?: unknown; redirectTo?: unknown; detail?: unknown };
+type Refusal = { detail?: unknown };
 
 async function consentShown(page: Page): Promise<void> {
   const form = page.getByTestId(CONSENT_FORM);
@@ -41,14 +41,17 @@ async function acceptTermsIfAsked(page: Page): Promise<boolean> {
   return true;
 }
 
-async function approved(page: Page): Promise<string> {
+async function approved(page: Page, returnOrigin: string): Promise<string> {
+  const returning = page.waitForRequest((request) => new URL(request.url()).origin === returnOrigin, { timeout: CONSENT_TIMEOUT_MS });
+  returning.catch(() => undefined);
   const answered = page.waitForResponse((response) => new URL(response.url()).pathname === APPROVE_PATH && response.request().method() === "POST", { timeout: CONSENT_TIMEOUT_MS });
   await page.getByRole("button", { name: "Approve", exact: true }).click();
   const response = await answered;
-  const body = (await response.json()) as Approval;
-  if (!response.ok()) throw new Error(`Approve answered ${response.status()}: ${typeof body.detail === "string" ? body.detail : "no detail"}`);
-  if (body.kind !== "redirect" || typeof body.redirectTo !== "string") throw new Error("Approve answered without a redirect back to the app");
-  return body.redirectTo;
+  if (!response.ok()) {
+    const body = (await response.json()) as Refusal;
+    throw new Error(`Approve answered ${response.status()}: ${typeof body.detail === "string" ? body.detail : "no detail"}`);
+  }
+  return (await returning).url();
 }
 
 export async function approveInBrowser(page: Page, authorizationUrl: URL, account: Credentials, redirectUri: string): Promise<{ redirectTo: string; acceptedTerms: boolean }> {
@@ -58,5 +61,5 @@ export async function approveInBrowser(page: Page, authorizationUrl: URL, accoun
   await signInIfAsked(page, account);
   await consentShown(page);
   const acceptedTerms = await acceptTermsIfAsked(page);
-  return { redirectTo: await approved(page), acceptedTerms };
+  return { redirectTo: await approved(page, returnOrigin), acceptedTerms };
 }
