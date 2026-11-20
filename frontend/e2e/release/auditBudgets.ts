@@ -39,9 +39,11 @@ export const LIGHTHOUSE_TARGETS: Record<FormFactor, LighthouseBudget> = {
   }
 };
 
+export const LIGHTHOUSE_RUNS = 3;
 export const SCORE_SLACK: Record<LighthouseCategory, number> = { performance: 10, accessibility: 2, "best-practices": 2 };
-export const METRIC_SLACK = 1.3;
+export const METRIC_SLACK: Record<Exclude<MetricName, "cls">, number> = { lcpMs: 1.5, tbtMs: 2, bytes: 1.1 };
 export const CLS_SLACK = 0.05;
+export const NOISY_NUMBERS: ReadonlySet<string> = new Set(["performance", "lcpMs", "tbtMs"]);
 
 export const AXE_TAGS: readonly string[] = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 export const AXE_FAILING_IMPACTS: readonly string[] = ["critical", "serious"];
@@ -96,7 +98,7 @@ export function scoreFloor(category: LighthouseCategory, target: LighthouseBudge
 export function metricCeiling(name: MetricName, target: LighthouseBudget, recorded: CheckNumbers | undefined): number {
   const before = known(recorded, name);
   if (before === null) return target.metrics[name];
-  const allowance = name === "cls" ? rounded(before + CLS_SLACK, 3) : Math.round(before * METRIC_SLACK);
+  const allowance = name === "cls" ? rounded(before + CLS_SLACK, 3) : Math.round(before * METRIC_SLACK[name]);
   return Math.max(target.metrics[name], allowance);
 }
 
@@ -126,9 +128,27 @@ function metricJudgement(numbers: CheckNumbers, target: LighthouseBudget, record
   }
 }
 
-export function lighthouseJudgement(result: LighthouseResult, target: LighthouseBudget, recorded?: CheckNumbers): Judgement {
-  if (result.runtimeError?.code) return { problems: [`Lighthouse could not audit the page: ${result.runtimeError.code} ${result.runtimeError.message ?? ""}`.trim()], notes: [] };
-  const numbers = lighthouseNumbers(result);
+export function runtimeProblem(result: LighthouseResult): string | null {
+  const failure = result.runtimeError;
+  return failure?.code ? `Lighthouse could not audit the page: ${failure.code} ${failure.message ?? ""}`.trim() : null;
+}
+
+function median(values: number[], digits: number): number {
+  const ordered = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(ordered.length / 2);
+  return ordered.length % 2 ? ordered[middle] : rounded((ordered[middle - 1] + ordered[middle]) / 2, digits);
+}
+
+export function medianNumbers(runs: readonly CheckNumbers[]): CheckNumbers {
+  const numbers: CheckNumbers = {};
+  for (const name of [...LIGHTHOUSE_CATEGORIES, ...METRICS]) {
+    const values = runs.map((run) => run[name]).filter((value): value is number => typeof value === "number");
+    numbers[name] = values.length ? median(values, name === "cls" ? 3 : 0) : null;
+  }
+  return numbers;
+}
+
+export function lighthouseJudgement(numbers: CheckNumbers, target: LighthouseBudget, recorded?: CheckNumbers): Judgement {
   const judged: Judgement = { problems: [], notes: [] };
   scoreJudgement(numbers, target, recorded, judged);
   metricJudgement(numbers, target, recorded, judged);

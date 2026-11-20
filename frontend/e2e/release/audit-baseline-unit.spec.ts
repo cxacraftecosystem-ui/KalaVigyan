@@ -39,13 +39,13 @@ test("a baseline of another schema or without its tables is refused", () => {
   expect(() => checkedBaseline({ schemaVersion: 1, lighthouse: {} })).toThrow(/lighthouse and an axe table/);
 });
 
-test("the candidate keeps the better of each recorded and measured Lighthouse number and records new pages as measured", () => {
+test("the candidate re-records the noisy timings as measured, keeps the better of each steady number and records new pages as measured", () => {
   const records = [
-    lighthouse("/", "mobile", { performance: 80, accessibility: 100, "best-practices": 96, lcpMs: 7000, cls: 0.05, tbtMs: 100, bytes: 1_600_000 }),
+    lighthouse("/", "mobile", { performance: 70, accessibility: 100, "best-practices": 96, lcpMs: 7000, cls: 0.05, tbtMs: 100, bytes: 1_600_000 }),
     lighthouse("/new", "desktop", { performance: 91, accessibility: 98, "best-practices": 100, lcpMs: 900, cls: 0, tbtMs: 0, bytes: 900_000 })
   ];
   const candidate = baselineCandidate(BASELINE, records, META);
-  expect(candidate.lighthouse["/"]?.mobile).toEqual({ performance: 80, accessibility: 100, "best-practices": 100, lcpMs: 6787, cls: 0.05, tbtMs: 100, bytes: 1_544_239 });
+  expect(candidate.lighthouse["/"]?.mobile).toEqual({ performance: 70, accessibility: 100, "best-practices": 100, lcpMs: 7000, cls: 0.05, tbtMs: 100, bytes: 1_544_239 });
   expect(candidate.lighthouse["/new"]?.desktop).toEqual({ performance: 91, accessibility: 98, "best-practices": 100, lcpMs: 900, cls: 0, tbtMs: 0, bytes: 900_000 });
   expect(candidate).toMatchObject({ schemaVersion: 1, ...META });
 });

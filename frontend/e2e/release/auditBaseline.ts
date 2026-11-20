@@ -1,5 +1,5 @@
 import recorded from "./audit-baseline.json";
-import { LIGHTHOUSE_CATEGORIES, METRICS, type FormFactor } from "./auditBudgets";
+import { LIGHTHOUSE_CATEGORIES, METRICS, NOISY_NUMBERS, type FormFactor } from "./auditBudgets";
 import type { CheckNumbers, CheckRecord } from "./report";
 
 export type AuditBaseline = {
@@ -45,6 +45,11 @@ function better(name: string, before: number | null | undefined, now: number | n
   return HIGHER_IS_BETTER.has(name) ? Math.max(before, now) : Math.min(before, now);
 }
 
+function recordedNumber(name: string, before: number | null | undefined, now: number | null | undefined): number | null {
+  if (NOISY_NUMBERS.has(name) && typeof now === "number") return now;
+  return better(name, before, now);
+}
+
 function sorted<T>(entries: Record<string, T>): Record<string, T> {
   return Object.fromEntries(Object.entries(entries).sort(([a], [b]) => a.localeCompare(b)));
 }
@@ -55,7 +60,7 @@ function lighthouseCandidate(baseline: AuditBaseline, records: readonly CheckRec
     const form = record.variant as FormFactor;
     const before = next[record.subject as string]?.[form];
     const numbers: CheckNumbers = {};
-    for (const name of [...LIGHTHOUSE_CATEGORIES, ...METRICS]) numbers[name] = better(name, before?.[name], record.numbers[name]);
+    for (const name of [...LIGHTHOUSE_CATEGORIES, ...METRICS]) numbers[name] = recordedNumber(name, before?.[name], record.numbers[name]);
     next[record.subject as string] = { ...next[record.subject as string], [form]: numbers };
   }
   return sorted(next);

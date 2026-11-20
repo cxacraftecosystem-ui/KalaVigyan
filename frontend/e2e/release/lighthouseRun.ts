@@ -4,28 +4,20 @@ import { promisify } from "node:util";
 
 import { LIGHTHOUSE_CATEGORIES, type LighthouseForm, type LighthouseResult } from "./auditBudgets";
 
-export type LighthouseRun = { url: string; port: number; form: LighthouseForm; outputBase: string };
+export type LighthouseRun = { url: string; port: number; form: LighthouseForm; outputBase: string; html: boolean };
 
 const run = promisify(execFile);
 const RUN_TIMEOUT_MS = 4 * 60_000;
 const OUTPUT_BYTES = 64 * 1024 * 1024;
 const JSON_SUFFIX = ".report.json";
 
-export function lighthouseArgs(audit: LighthouseRun): string[] {
-  return [
-    audit.url,
-    `--port=${audit.port}`,
-    "--output=json",
-    "--output=html",
-    `--output-path=${audit.outputBase}`,
-    `--only-categories=${LIGHTHOUSE_CATEGORIES.join(",")}`,
-    "--quiet",
-    ...audit.form.flags
-  ];
-}
-
 export function reportPath(audit: Pick<LighthouseRun, "outputBase">): string {
   return `${audit.outputBase}${JSON_SUFFIX}`;
+}
+
+export function lighthouseArgs(audit: LighthouseRun): string[] {
+  const outputs = audit.html ? ["--output=json", "--output=html", `--output-path=${audit.outputBase}`] : ["--output=json", `--output-path=${reportPath(audit)}`];
+  return [audit.url, `--port=${audit.port}`, ...outputs, `--only-categories=${LIGHTHOUSE_CATEGORIES.join(",")}`, "--quiet", ...audit.form.flags];
 }
 
 export async function runLighthouse(audit: LighthouseRun): Promise<LighthouseResult> {

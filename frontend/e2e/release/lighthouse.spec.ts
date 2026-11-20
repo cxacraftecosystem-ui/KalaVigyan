@@ -7,22 +7,38 @@ import { chromium, expect, test } from "@playwright/test";
 import { passPreviewProtection } from "../production/preview";
 
 import { LIGHTHOUSE_CHECK, recordedLighthouse } from "./auditBaseline";
-import { LIGHTHOUSE_FORMS, LIGHTHOUSE_TARGETS, lighthouseJudgement, lighthouseNumbers, type LighthouseForm } from "./auditBudgets";
+import { LIGHTHOUSE_FORMS, LIGHTHOUSE_RUNS, LIGHTHOUSE_TARGETS, lighthouseJudgement, lighthouseNumbers, medianNumbers, runtimeProblem, type LighthouseForm } from "./auditBudgets";
 import { auditPaths } from "./keyPages";
 import { runLighthouse } from "./lighthouseRun";
-import { checkRecord, keepRecord, pathFileName, reportDir } from "./report";
+import { checkRecord, keepRecord, pathFileName, reportDir, type CheckNumbers } from "./report";
 import { bypassToken, siteOrigin } from "./site";
 
 const DEBUGGING_PORT = 9333;
-const FORM_TIMEOUT_MS = 40 * 60_000;
+const FORM_TIMEOUT_MS = 50 * 60_000;
 
-async function auditPage(form: LighthouseForm, path: string, port: number): Promise<string[]> {
+type Measured = { runs: CheckNumbers[]; failures: string[] };
+
+async function measure(form: LighthouseForm, path: string, port: number): Promise<Measured> {
   const folder = join(reportDir(), LIGHTHOUSE_CHECK, form.key);
   mkdirSync(folder, { recursive: true });
-  const result = await runLighthouse({ url: new URL(path, siteOrigin()).href, port, form, outputBase: join(folder, pathFileName(path, "lighthouse")) });
-  const { problems, notes } = lighthouseJudgement(result, LIGHTHOUSE_TARGETS[form.key], recordedLighthouse(path, form.key));
-  keepRecord(checkRecord(LIGHTHOUSE_CHECK, `${path} at ${form.width} (${form.key})`, problems, { subject: path, variant: form.key, notes, numbers: lighthouseNumbers(result) }));
-  return problems.map((problem) => `${path}: ${problem}`);
+  const measured: Measured = { runs: [], failures: [] };
+  for (let run = 1; run <= LIGHTHOUSE_RUNS; run += 1) {
+    const outputBase = join(folder, pathFileName(path, `lighthouse-${run}`));
+    const result = await runLighthouse({ url: new URL(path, siteOrigin()).href, port, form, outputBase, html: run === 1 });
+    const failure = runtimeProblem(result);
+    if (failure) measured.failures.push(`run ${run}: ${failure}`);
+    else measured.runs.push(lighthouseNumbers(result));
+  }
+  return measured;
+}
+
+async function auditPage(form: LighthouseForm, path: string, port: number): Promise<string[]> {
+  const { runs, failures } = await measure(form, path, port);
+  const numbers = medianNumbers(runs);
+  const judged = runs.length ? lighthouseJudgement(numbers, LIGHTHOUSE_TARGETS[form.key], recordedLighthouse(path, form.key)) : { problems: failures, notes: [] };
+  const notes = runs.length ? [`median of ${runs.length} runs`, ...failures, ...judged.notes] : judged.notes;
+  keepRecord(checkRecord(LIGHTHOUSE_CHECK, `${path} at ${form.width} (${form.key})`, judged.problems, { subject: path, variant: form.key, notes, numbers }));
+  return judged.problems.map((problem) => `${path}: ${problem}`);
 }
 
 LIGHTHOUSE_FORMS.forEach((form, index) => {

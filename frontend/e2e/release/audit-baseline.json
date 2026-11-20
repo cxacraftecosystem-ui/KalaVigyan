@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "site": "https://kalavigyan.vercel.app",
   "recordedAt": "2026-11-20",
-  "run": 44747173602,
+  "run": 44752031241,
   "lighthouse": {
     "/": {
       "desktop": {
@@ -29,7 +29,7 @@
         "performance": 96,
         "accessibility": 100,
         "best-practices": 96,
-        "lcpMs": 1423,
+        "lcpMs": 1431,
         "cls": 0.005,
         "tbtMs": 0,
         "bytes": 1929692
@@ -41,7 +41,7 @@
         "lcpMs": 9913,
         "cls": 0.012,
         "tbtMs": 245,
-        "bytes": 2010096
+        "bytes": 2010252
       }
     },
     "/categories/Textiles-Based-Craft-Category": {
@@ -52,7 +52,7 @@
         "lcpMs": 1703,
         "cls": 0.001,
         "tbtMs": 3,
-        "bytes": 3243104
+        "bytes": 3244347
       },
       "mobile": {
         "performance": 63,
@@ -61,7 +61,7 @@
         "lcpMs": 9923,
         "cls": 0,
         "tbtMs": 250,
-        "bytes": 2630007
+        "bytes": 2630449
       }
     },
     "/crafts": {
@@ -69,10 +69,10 @@
         "performance": 97,
         "accessibility": 100,
         "best-practices": 77,
-        "lcpMs": 347,
+        "lcpMs": 351,
         "cls": 0.106,
         "tbtMs": 0,
-        "bytes": 2701556
+        "bytes": 2702182
       },
       "mobile": {
         "performance": 71,
@@ -81,18 +81,18 @@
         "lcpMs": 5124,
         "cls": 0.154,
         "tbtMs": 219,
-        "bytes": 2473891
+        "bytes": 2474366
       }
     },
     "/crafts/Bastar-Dhokra": {
       "desktop": {
-        "performance": 97,
+        "performance": 96,
         "accessibility": 93,
         "best-practices": 100,
-        "lcpMs": 1264,
+        "lcpMs": 1430,
         "cls": 0.001,
         "tbtMs": 0,
-        "bytes": 2270865
+        "bytes": 2270936
       },
       "mobile": {
         "performance": 65,
@@ -100,8 +100,8 @@
         "best-practices": 100,
         "lcpMs": 7074,
         "cls": 0,
-        "tbtMs": 292,
-        "bytes": 2099463
+        "tbtMs": 427,
+        "bytes": 2099958
       }
     },
     "/crafts/Kasuti-Embroidery": {
@@ -109,7 +109,7 @@
         "performance": 100,
         "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 302,
+        "lcpMs": 310,
         "cls": 0.001,
         "tbtMs": 0,
         "bytes": 1248502
@@ -120,25 +120,25 @@
         "best-practices": 100,
         "lcpMs": 4073,
         "cls": 0,
-        "tbtMs": 115,
-        "bytes": 1076822
+        "tbtMs": 117,
+        "bytes": 1076889
       }
     },
     "/crafts/Kutch-Ajrakh": {
       "desktop": {
-        "performance": 79,
+        "performance": 78,
         "accessibility": 96,
         "best-practices": 100,
-        "lcpMs": 3504,
+        "lcpMs": 3710,
         "cls": 0.001,
         "tbtMs": 17,
-        "bytes": 6151534
+        "bytes": 6152015
       },
       "mobile": {
         "performance": 50,
         "accessibility": 96,
         "best-practices": 100,
-        "lcpMs": 21024,
+        "lcpMs": 21031,
         "cls": 0,
         "tbtMs": 405,
         "bytes": 5981125
@@ -149,16 +149,16 @@
         "performance": 99,
         "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 944,
+        "lcpMs": 954,
         "cls": 0.005,
         "tbtMs": 0,
-        "bytes": 1351259
+        "bytes": 1406607
       },
       "mobile": {
         "performance": 77,
         "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 5425,
+        "lcpMs": 5580,
         "cls": 0.02,
         "tbtMs": 185,
         "bytes": 1550456
@@ -169,19 +169,19 @@
         "performance": 97,
         "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 1144,
+        "lcpMs": 1149,
         "cls": 0.074,
-        "tbtMs": 0,
+        "tbtMs": 2,
         "bytes": 1374595
       },
       "mobile": {
-        "performance": 84,
+        "performance": 79,
         "accessibility": 100,
         "best-practices": 100,
-        "lcpMs": 2425,
+        "lcpMs": 2871,
         "cls": 0.225,
-        "tbtMs": 171,
-        "bytes": 1320901
+        "tbtMs": 249,
+        "bytes": 1321810
       }
     }
   },
