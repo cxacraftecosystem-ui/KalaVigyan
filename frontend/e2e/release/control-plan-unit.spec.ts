@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { shotHeight } from "../production/capture";
-import { abortedRequest } from "../production/checks";
+import { abortedRequest, webkitLeavingNoise } from "../production/checks";
 
 import {
   citationMode,
@@ -100,6 +100,14 @@ test("a request the browser dropped on leaving a page is not a failure, in Chrom
   expect(abortedRequest("NS_BINDING_ABORTED")).toBe(true);
   expect(abortedRequest("net::ERR_CONNECTION_RESET")).toBe(false);
   expect(abortedRequest("Could not connect to the server.")).toBe(false);
+});
+
+test("WebKit's words for a fetch it dropped on leaving a page are told apart from a real failure", () => {
+  const site = "https://kalavigyan-ab12cd34e-cxacraftecosystem-8028s-projects.vercel.app";
+  expect(webkitLeavingNoise(`Fetch API cannot load ${site}/api/map/layers due to access control checks.`, site)).toBe(true);
+  expect(webkitLeavingNoise("TypeError: Load failed", site)).toBe(true);
+  expect(webkitLeavingNoise("Fetch API cannot load https://evil.example/x due to access control checks.", site)).toBe(false);
+  expect(webkitLeavingNoise("TypeError: undefined is not an object", site)).toBe(false);
 });
 
 test("a WebKit capture keeps the first 32767 device pixels of a page taller than that", () => {

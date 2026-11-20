@@ -62,6 +62,14 @@ export function abortedRequest(failure: string): boolean {
   return ABORTED_REQUESTS.includes(failure);
 }
 
+export const WEBKIT_LOAD_FAILED = "TypeError: Load failed";
+const WEBKIT_LEFT_FETCH = / due to access control checks\.?$/;
+
+export function webkitLeavingNoise(text: string, origin: string): boolean {
+  if (text === WEBKIT_LOAD_FAILED) return true;
+  return WEBKIT_LEFT_FETCH.test(text) && text.includes(`${origin}/`);
+}
+
 export function clip(text: string, limit = TEXT_LIMIT): string {
   const flat = text.replace(/\s+/g, " ").trim();
   return flat.length > limit ? `${flat.slice(0, limit - 1)}…` : flat;

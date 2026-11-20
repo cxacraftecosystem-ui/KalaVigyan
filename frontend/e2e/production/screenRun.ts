@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { CDPSession, ConsoleMessage, Page, Request, Response } from "@playwright/test";
 
 import { NetworkQuiet, captureScreen, readyForCapture, settle, sightProblems } from "./capture";
-import { CITED_CONTENT, OVERFLOW_LIMIT, abortedRequest, clip, errorHeadline, gapCopyFindings } from "./checks";
+import { CITED_CONTENT, OVERFLOW_LIMIT, abortedRequest, clip, errorHeadline, gapCopyFindings, webkitLeavingNoise } from "./checks";
 import type { Scheme } from "./matrix";
 import { auditPage } from "./pageAudit";
 import { isPreview, previewConsoleNoise } from "./preview";
@@ -30,6 +30,7 @@ export class ScreenRun {
   private readonly scheme: Scheme | null;
   private readonly origin: string;
   private readonly preview: boolean;
+  private readonly webkit: boolean;
   private readonly network: NetworkQuiet;
   private signedIn = false;
   private expected: VisitOptions = {};
@@ -45,9 +46,10 @@ export class ScreenRun {
     this.scheme = options.scheme ?? null;
     this.origin = new URL(baseUrl()).origin;
     this.preview = isPreview(baseUrl());
+    this.webkit = page.context().browser()?.browserType().name() === "webkit";
     this.network = new NetworkQuiet(page);
     page.on("console", (message) => this.onConsole(message));
-    page.on("pageerror", (error) => this.flag(`uncaught error: ${errorHeadline(error)}`));
+    page.on("pageerror", (error) => this.onPageError(error));
     page.on("requestfailed", (request) => this.onRequestFailed(request));
     page.on("response", (response) => this.onResponse(response));
   }
@@ -207,12 +209,18 @@ export class ScreenRun {
     return parsed.origin === this.origin ? parsed : null;
   }
 
+  private onPageError(error: Error): void {
+    if (this.webkit && webkitLeavingNoise(error.message, this.origin)) return;
+    this.flag(`uncaught error: ${errorHeadline(error)}`);
+  }
+
   private onConsole(message: ConsoleMessage): void {
     if (message.type() !== "error") return;
     const text = message.text();
     const from = message.location().url;
     if (text.startsWith("Failed to load resource") && from && this.sameOrigin(from)) return;
-    if (text === UNKNOWN_WEBRTC_DIRECTIVE && from.startsWith("about:srcdoc")) return;
+    if (text === UNKNOWN_WEBRTC_DIRECTIVE && (from.startsWith("about:srcdoc") || this.webkit)) return;
+    if (this.webkit && webkitLeavingNoise(text, this.origin)) return;
     if (this.preview && previewConsoleNoise(text, from)) return;
     this.flag(`console error: ${clip(text)}`);
   }
