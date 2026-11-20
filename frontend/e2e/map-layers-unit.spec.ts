@@ -144,4 +144,5 @@ test("mineral deposits keep one class and one shape each, and the finding is cou
   expect(markup.match(/data-class="/g)).toHaveLength(sites.length);
   expect(markup).toContain('fill="var(--mineral-1)"');
   expect(MINERALS.source.licence).toContain("Public domain");
+  expect(new Set(sites.map((site) => site.status))).toEqual(new Set(MINERALS.statuses.map((status) => `${status[0]}${status.slice(1).toLowerCase()}`)));
 });

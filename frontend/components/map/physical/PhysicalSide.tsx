@@ -2,7 +2,6 @@
 
 import { FOREIGN_EXTRA, MapLegend, SALT_EXTRA, WATER_EXTRA, type LegendExtra } from "@/components/map/ChoroplethLegend";
 import { MineralSymbol, mineralColour } from "@/components/map/physical/MineralsLayer";
-import { PEAK_TIERS } from "@/components/map/physical/ReliefLayer";
 import { RankedList, type RankedRow } from "@/components/map/RankedList";
 import { safeOutboundUrl } from "@/lib/citations";
 import { formatRange } from "@/lib/measure";
@@ -45,13 +44,12 @@ export function peakRows(file: ReliefFile): RankedRow[] {
 }
 
 export function ReliefSide({ file }: { file: ReliefFile }) {
-  const shown = file.peaks.filter((peak) => PEAK_TIERS[peak.name]).length;
   return (
     <>
       <MapLegend title="Elevation" steps={reliefSteps(file)} extras={[FOREIGN_EXTRA, WATER_EXTRA]} note="Band edges are the contours; the shading is lit from the north-west." />
       <div className="grid gap-2">
         <p className="font-ui text-label text-ink-1">Spot heights</p>
-        <p className="font-ui text-caption text-ink-3">{`${shown} of ${file.peaks.length} named summits inside the outline are labelled on the map.`}</p>
+        <p className="font-ui text-caption text-ink-3">{`The ${file.peaks.length} named summits inside the outline, by height; the highest are marked on the map.`}</p>
         <RankedList rows={peakRows(file)} label="Named summits by height" series="var(--chart-series)" all={{ label: `Show all ${file.peaks.length}` }} />
       </div>
       <LayerCredits datasets={file.datasets} />

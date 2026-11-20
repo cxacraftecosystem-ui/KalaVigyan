@@ -34,6 +34,10 @@ export function physicalOptions(): { value: string; label: string; group: string
   return PHYSICAL_LAYERS.map((layer) => ({ value: layer.id, label: layer.title, group: PHYSICAL_GROUP, hint: layer.hint }));
 }
 
+export function sentenceCase(text: string): string {
+  return text ? `${text.charAt(0).toUpperCase()}${text.slice(1).toLowerCase()}` : text;
+}
+
 export function mineralSites(file: MineralsFile): MineralSite[] {
   return file.sites.map(([depId, name, state, longitude, latitude, classIndex, statusIndex, commodities]) => ({
     depId,
@@ -42,7 +46,7 @@ export function mineralSites(file: MineralsFile): MineralSite[] {
     longitude,
     latitude,
     classIndex,
-    status: file.statuses[statusIndex] ?? "Unknown",
+    status: sentenceCase(file.statuses[statusIndex] ?? "Unknown"),
     commodities
   }));
 }
@@ -60,7 +64,7 @@ export function mineralFinding(sites: readonly MineralSite[], classes: readonly 
   const leading = tally(sites.map((site) => String(site.classIndex)));
   if (!states.length || !leading.length) return null;
   const top = classes[Number(leading[0].key)]?.label.toLowerCase() ?? "";
-  return `${states[0].label} holds ${states[0].count} of the ${sites.length.toLocaleString("en-IN")} recorded deposits; ${top} leads the classes with ${leading[0].count}.`;
+  return `${states[0].label} holds ${states[0].count} of the ${sites.length.toLocaleString("en-IN")} recorded deposits; the largest class, with ${leading[0].count}, is ${top}.`;
 }
 
 export function riverWidth(rank: number): number {

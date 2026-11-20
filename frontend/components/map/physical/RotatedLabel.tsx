@@ -11,7 +11,7 @@ export type RotatedLabelProps = {
   angle: number;
   children: ReactNode;
   tone?: string;
-  anchor?: "start" | "middle";
+  anchor?: "start" | "middle" | "end";
   dx?: number;
   lift?: boolean;
   italic?: boolean;

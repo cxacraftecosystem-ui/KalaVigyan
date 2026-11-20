@@ -14,11 +14,10 @@ import { monographCount } from "@/lib/atlasIndex";
 import type { PlateMaterial } from "@/components/editorial/TypographicPlate";
 import type { CatalogueCraft, CraftCatalogue } from "@/lib/craftCatalogueContract";
 
-export const DOCUMENTS_SHOWN = 12;
-export const FAMILY_PLATES = 2;
+export const DOCUMENTS_SHOWN = 8;
 
 export type LandingStat = { key: string; value: number; label: string };
-export type FamilyBlock = { id: string; name: string; href: string; material: PlateMaterial; count: number; documents: number; subFamilies: SubFamilyCount[]; plates: AtlasPlate[] };
+export type FamilyBlock = { id: string; name: string; href: string; material: PlateMaterial; count: number; documents: number; subFamilies: SubFamilyCount[] };
 export type LandingCollection = { stats: LandingStat[]; documents: AtlasPlate[]; families: FamilyBlock[]; crafts: number };
 
 function slim(craft: CatalogueCraft): CatalogueCraft {
@@ -45,7 +44,6 @@ export function documentPlates(catalogue: CraftCatalogue): AtlasPlate[] {
 export function familyBlocks(catalogue: CraftCatalogue): FamilyBlock[] {
   return sortedFamilies(catalogue).map((family) => {
     const crafts = familyCrafts(catalogue, family);
-    const shown = crafts.filter((craft) => !isMonograph(craft)).slice(0, FAMILY_PLATES);
     return {
       id: family.id,
       name: familyName(family),
@@ -53,8 +51,7 @@ export function familyBlocks(catalogue: CraftCatalogue): FamilyBlock[] {
       material: familyMaterial(family),
       count: family.readerCount,
       documents: crafts.filter(isMonograph).length,
-      subFamilies: subFamilyCounts(family),
-      plates: shown.map((craft) => slimPlate(atlasPlate(family, craft)))
+      subFamilies: subFamilyCounts(family)
     };
   });
 }

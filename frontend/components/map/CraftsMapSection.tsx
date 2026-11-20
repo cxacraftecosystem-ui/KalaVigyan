@@ -11,6 +11,8 @@ import { StatesMapCanvas } from "@/components/map/StatesMapCanvas";
 import { useStateRanking, type StateRanking } from "@/components/map/useStateRanking";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TextLink } from "@/components/ui/TextLink";
+import { LAYER_PARAM } from "@/lib/mapLayers";
+import { PHYSICAL_LAYERS } from "@/lib/mapPhysical";
 import { allCraftsLabel, allStatesLabel, rankDek, rankFinding } from "@/lib/mapStates";
 
 export const CRAFTS_MAP_HEADING = "Where the crafts are practised";
@@ -18,20 +20,47 @@ export const CRAFTS_MAP_SOURCE = `${SURVEY_OF_INDIA_CAPTION} ${NATURAL_EARTH_CRE
 export const CIRCLES_LABEL = "Crafts in a state; circle area to scale";
 export const MAP_EXTRAS = [SALT_EXTRA, FOREIGN_EXTRA, WATER_EXTRA];
 
+export const MAP_LAYERS_LABEL = "On the full map";
+export const SHOWN_DISTRICT_LAYERS = [
+  { id: "annual-precipitation", title: "Annual rainfall" },
+  { id: "soil-ph-0-5cm", title: "Soil pH" },
+  { id: "tree-cover-share", title: "Tree cover" }
+] as const;
+
+export function layerHref(id: string): string {
+  return `/map?${LAYER_PARAM}=${encodeURIComponent(id)}`;
+}
+
+function MapLayerLinks() {
+  const layers = [...PHYSICAL_LAYERS.map((layer) => ({ id: layer.id, title: layer.title })), ...SHOWN_DISTRICT_LAYERS];
+  return (
+    <nav aria-label={MAP_LAYERS_LABEL} className="grid gap-2 border-t border-rule pt-3" data-testid="map-layer-links">
+      <p className="font-ui text-label text-ink-3">{MAP_LAYERS_LABEL}</p>
+      <ul className="flex flex-wrap gap-x-5 gap-y-2">
+        {layers.map((layer) => (
+          <li key={layer.id}>
+            <TextLink href={layerHref(layer.id)} standalone>
+              {layer.title}
+            </TextLink>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 export function MapSideLinks({ crafts, withMap }: { crafts: number | null; withMap: boolean }) {
   return (
-    <p className="flex flex-wrap gap-x-6 gap-y-2">
+    <div className="grid gap-4">
       {crafts ? (
-        <TextLink href="/crafts" standalone>
-          {allCraftsLabel(crafts)}
-        </TextLink>
+        <p>
+          <TextLink href="/crafts" standalone>
+            {allCraftsLabel(crafts)}
+          </TextLink>
+        </p>
       ) : null}
-      {withMap ? (
-        <TextLink href="/map" standalone>
-          Soil, climate and terrain on the full map
-        </TextLink>
-      ) : null}
-    </p>
+      {withMap ? <MapLayerLinks /> : null}
+    </div>
   );
 }
 

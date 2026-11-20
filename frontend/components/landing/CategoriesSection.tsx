@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { CollectionPlate } from "@/components/crafts/CollectionPlate";
 import { FamilySwatch } from "@/components/crafts/FamilySwatch";
 import type { FamilyBlock } from "@/components/landing/landingCollection";
 import { TextLink } from "@/components/ui/TextLink";
@@ -33,15 +32,6 @@ function Family({ family }: { family: FamilyBlock }) {
         </Link>
       </h3>
       {family.subFamilies.length ? <p className="font-ui text-label text-ink-3">{shelfSubLine(family.subFamilies)}</p> : null}
-      {family.plates.length ? (
-        <ul className="grid grid-cols-2 gap-2.5 max-sm:hidden">
-          {family.plates.map((plate) => (
-            <li key={plate.craft.id} className="min-w-0">
-              <CollectionPlate plate={plate} className="h-full" />
-            </li>
-          ))}
-        </ul>
-      ) : null}
       <p>
         <TextLink href={family.href} standalone>
           {`All ${family.count}`}
@@ -63,7 +53,7 @@ export function CategoriesSection({ families }: { families: readonly FamilyBlock
           </h2>
           <p className="mt-4 font-reading text-body text-ink-2">Each family has its own page with the science its crafts share, its sub-families and every craft in it.</p>
         </div>
-        <ul className="mt-10 grid gap-x-10 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
           {families.map((family) => (
             <Family key={family.id} family={family} />
           ))}

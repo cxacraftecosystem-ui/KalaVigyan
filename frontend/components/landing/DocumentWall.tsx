@@ -33,7 +33,7 @@ export function DocumentWall({ documents }: { documents: readonly AtlasPlate[] }
           </TextLink>
         ) : null}
       </div>
-      <ul id={gridId} className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-3.5 lg:grid-cols-4 lg:gap-4 xl:grid-cols-6">
+      <ul id={gridId} className="grid grid-cols-2 gap-3 md:gap-3.5 lg:grid-cols-4 lg:gap-4">
         {shown.map((plate) => (
           <li key={plate.craft.id} className="min-w-0">
             <DocumentCard plate={plate} />

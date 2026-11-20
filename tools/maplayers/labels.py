@@ -43,16 +43,16 @@ Placement = tuple[float, float, float]
 
 RANGES: dict[str, tuple[str, int, Placement | None]] = {
     "Himalayas": ("Himalaya", 1, (78.35, 31.65, 32.0)),
-    "Karakoram": ("Karakoram", 1, (78.3, 35.15, 26.0)),
+    "Karakoram": ("Karakoram", 2, (78.25, 35.1, 0.0)),
     "Western Ghats": ("Western Ghats", 1, (74.55, 15.2, 72.0)),
     "Eastern Ghats": ("Eastern Ghats", 1, (81.3, 17.35, -46.0)),
-    "Vindhya Range": ("Vindhya Range", 1, None),
-    "Satpura Range": ("Satpura Range", 1, None),
-    "Aravalli Range": ("Aravalli Range", 1, None),
+    "Vindhya Range": ("Vindhya Range", 2, None),
+    "Satpura Range": ("Satpura Range", 2, None),
+    "Aravalli Range": ("Aravalli Range", 2, None),
     "Deccan Plateau": ("Deccan Plateau", 1, (77.6, 17.3, 0.0)),
     "Thar Desert": ("Thar Desert", 2, (71.6, 27.4, 0.0)),
     "Chota Nagpur Plateau": ("Chota Nagpur Plateau", 2, None),
-    "Indo-Gangetic Plain": ("Indo-Gangetic Plain", 2, None),
+    "Indo-Gangetic Plain": ("Indo-Gangetic Plain", 3, None),
 }
 
 PEAKS_HELD_BACK = frozenset({"Shahi Kangri"})

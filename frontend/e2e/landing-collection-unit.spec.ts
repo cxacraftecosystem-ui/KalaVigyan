@@ -82,9 +82,9 @@ test("the collection shows the monographs across families, the families with pla
   expect(documentPlates(CATALOGUE).map((plate) => plate.craft.slug)).toEqual(["Kutch-Ajrakh", "Bastar-Dhokra"]);
   expect(documentPlates(CATALOGUE)[0].craft.aliases).toEqual([]);
   const families = familyBlocks(CATALOGUE);
-  expect(families.map((family) => [family.name, family.href, family.count, family.documents, family.plates.map((plate) => plate.craft.slug)])).toEqual([
-    ["Textiles", "/categories/Textiles-Based-Craft-Category", 4, 1, ["Bagru-Hand-Block-Print", "Phulkari"]],
-    ["Metal", "/categories/Metal-Craft-Category", 3, 1, ["Brass-And-Bell-Metal-Craft", "Metal-Embosing"]]
+  expect(families.map((family) => [family.name, family.href, family.count, family.documents])).toEqual([
+    ["Textiles", "/categories/Textiles-Based-Craft-Category", 4, 1],
+    ["Metal", "/categories/Metal-Craft-Category", 3, 1]
   ]);
   expect(collectionStats(CATALOGUE).map((stat) => [stat.key, stat.value])).toEqual([
     ["crafts", 7],

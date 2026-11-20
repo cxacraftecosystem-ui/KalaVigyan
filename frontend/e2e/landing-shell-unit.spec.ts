@@ -87,7 +87,7 @@ test("the hero names all sixteen fields' breadth and every reader, not three fie
   expect(fieldsLine(1)).toContain("across 1 craft,");
 });
 
-test("the landing is about the whole collection: monographs from every family, the families with their plates, and one labelled example", () => {
+test("the landing is about the whole collection: monographs from every family, the families with their counts, and one labelled example", () => {
   const markup = landing(landingContent(PAGE, idOf), landingCollection(CATALOGUE));
   for (const gone of ["kv-ribbon", "One cloth, four chemistries", "kv-four", "Kachchh, home of", "place this page is about"]) expect(markup).not.toContain(gone);
   expect(markup).toContain("An example from Kutch Ajrakh");
