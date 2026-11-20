@@ -121,7 +121,10 @@ What it holds (`MonographDocument`, `docs/decisions/0106`):
   visible component keyed to a concept its curated or section facts are about, or resting on one of
   those facts. Of these only the subject's own components and shared ones (no owning craft) are
   placed: another craft's own component that shares a place or a concept stays on that craft's
-  page. Each is placed at the end of its field's chapter, sorted by label, and drawn from
+  page. Each is placed at the end of its field's chapter, sorted by label, and drawn from its
+  delivered spec when it has one (`payload.delivered`, a component a contributor delivered and an
+  approval registered, its units renamed `u5001` and on and cited within it;
+  `docs/contracts/component-specs-general.md`), else from
   `backend/app/data/monographs/<registering monograph>/specs/<label with / as __>.json` when that
   spec exists, else from that monograph's fragment
   `backend/app/data/monographs/<registering monograph>/fragments/<label with / as __>.html`, its
@@ -136,6 +139,13 @@ What it holds (`MonographDocument`, `docs/decisions/0106`):
 - **Version**: the sum of the subject's published section versions, so a new version of any
   section moves it. `title` is the subject's name; `pageUrl` is `/crafts/<slug>` for a craft or
   family and `/categories/<slug>` for a category on `PUBLIC_WEB_URL`.
+
+**A page and a bundle.** `generated_parts(session, subject, additions)` takes optional
+`PageAdditions` (`services/page_preview_additions.py`): sentences added to their fields' sections
+(a new section at version 0), the facts and sources they rest on, delivered components that join or
+replace the registered ones by label, and a layout that replaces the page's. `preview_page` builds
+a bundle's preview with it (`open-work.md`, Previews before submitting); without additions the
+document is the page's own.
 
 ## The nightly static build
 

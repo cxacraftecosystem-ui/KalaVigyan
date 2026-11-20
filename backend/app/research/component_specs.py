@@ -9,6 +9,7 @@ from app.core.errors import InvalidInput
 from .base import ContractModel
 from .component_specs_blocks import SPEC_MODELS_BLOCKS
 from .component_specs_data import SPEC_MODELS_DATA
+from .component_specs_general import SPEC_MODELS_GENERAL
 from .component_specs_plates import SPEC_MODELS_PLATES
 from .component_specs_science import SPEC_MODELS_SCIENCE
 from .component_specs_tools import SPEC_MODELS_TOOLS
@@ -21,6 +22,7 @@ SPEC_GROUPS: tuple[Mapping[str, type[ContractModel]], ...] = (
     SPEC_MODELS_SCIENCE,
     SPEC_MODELS_TOOLS,
     SPEC_MODELS_BLOCKS,
+    SPEC_MODELS_GENERAL,
 )
 
 

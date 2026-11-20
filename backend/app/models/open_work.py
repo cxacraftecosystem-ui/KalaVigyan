@@ -20,6 +20,10 @@ PROPOSAL_EXTENSIONS = ("SUBJECT_LINK", "VARIANT")
 LIVE_PROPOSALS = ("PENDING", "APPROVED")
 REVIEWED_PROPOSALS = ("APPROVED", "REJECTED")
 NEW_COMPONENT = "\"extension\" IS DISTINCT FROM 'SUBJECT_LINK'"
+DELIVERED_SPEC = (
+    '("spec" IS NULL AND "units" IS NULL) OR '
+    "(jsonb_typeof(\"spec\") = 'object' AND jsonb_typeof(\"units\") = 'object')"
+)
 
 
 class TaskReservation(Base):
@@ -82,11 +86,17 @@ class ComponentProposal(Base):
     )
     reviewedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     reviewNote: Mapped[str | None] = mapped_column(String(REVIEW_NOTE_CHARS))
+    spec: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
+    units: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
+    claimIds: Mapped[list[uuid.UUID]] = mapped_column(
+        ARRAY(UUID(as_uuid=True)), nullable=False, server_default=text("ARRAY[]::uuid[]")
+    )
     createdAt: Mapped[datetime] = created_at()
     updatedAt: Mapped[datetime] = updated_at()
 
     __table_args__ = (
         CheckConstraint(one_of("kind", PIECE_KINDS), name="kind"),
+        CheckConstraint(DELIVERED_SPEC, name="delivered"),
         CheckConstraint(one_of("field", DISCIPLINES), name="field"),
         CheckConstraint(subset_of("fields", DISCIPLINES), name="fields"),
         CheckConstraint('NOT ("field" = ANY ("fields"))', name="field_once"),

@@ -73,7 +73,8 @@ async def test_research_a_field_carries_the_method_and_names_the_tools_in_order(
         text, "`list_open_work`", "`claim_task`", "`get_facts`", "`get_section`", "yourself", "`propose_fact`"
     )
     assert "25 to 300 characters" in text and "| POLICY | GI, law and schemes |" in text
-    assert "the key of the task you claimed as taskKey" in text
+    assert "the key of the task you claimed as task_key" in text and "`get_proposal`" in text
+    assert "taskKey" not in text
 
 
 async def test_write_a_section_and_propose_a_component_add_their_own_rules() -> None:

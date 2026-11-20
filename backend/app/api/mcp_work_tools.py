@@ -7,10 +7,8 @@ from pydantic import Field, model_validator
 
 from app.core.errors import InvalidInput
 from app.core.mcp_scopes import CONTRIBUTE_SCOPE, REVIEW_SCOPE
-from app.core.rate_limit import COMPONENT_PROPOSALS
 from app.core.roles import role_value
 from app.models import User
-from app.research.component_proposals import ComponentProposalDraft, ComponentProposalResult
 from app.research.crafts import SLUG_MAX_CHARS
 from app.research.open_work import (
     TASK_KEY_MAX_CHARS,
@@ -25,10 +23,9 @@ from app.research.open_work import (
     several_subjects,
 )
 from app.research.vocabulary import Discipline
-from app.services import component_proposals, open_work, task_reservations
+from app.services import open_work, task_reservations
 
 from .mcp_tool_base import WRITES, Arguments, Tool, ToolContext
-from .proposal_limits import refuse_tool_when_spent
 
 __all__ = ["WORK_TOOLS"]
 
@@ -73,10 +70,6 @@ class TaskKeyArguments(Arguments):
     )
 
 
-class ProposeComponent(Arguments, ComponentProposalDraft):
-    pass
-
-
 async def _list_open_work(context: ToolContext, arguments: ListOpenWork) -> OpenWork:
     filters = WorkFilters.model_validate(arguments.model_dump())
     return await open_work.list_open_work(
@@ -93,14 +86,6 @@ async def _claim_task(context: ToolContext, arguments: TaskKeyArguments) -> Task
 async def _release_task(context: ToolContext, arguments: TaskKeyArguments) -> TaskHold:
     return await task_reservations.release_task(
         context.session, _signed_in(context).id, arguments.task_key, now=datetime.now(UTC)
-    )
-
-
-async def _propose_component(context: ToolContext, arguments: ProposeComponent) -> ComponentProposalResult:
-    user = _signed_in(context)
-    refuse_tool_when_spent(COMPONENT_PROPOSALS, user)
-    return await component_proposals.propose_component(
-        context.session, user, arguments, now=datetime.now(UTC)
     )
 
 
@@ -151,20 +136,6 @@ WORK_TOOLS: tuple[Tool, ...] = (
         TaskKeyArguments,
         TaskHold,
         _release_task,
-        scope=CONTRIBUTE_SCOPE,
-        annotations=WRITES,
-    ),
-    Tool(
-        "propose_component",
-        "Propose a component",
-        "Propose a new interactive component, or an extension of one, after searching the library with "
-        "list_components; name the labels you considered. The proposal's title, description and subjects are "
-        "searched the same way: a close match refuses it with the matches and two ways on (place the existing "
-        "component by its label, or propose an extension: a new subject link or a variant), never a copy. "
-        "Otherwise it is stored for review, and who proposed it is kept privately.",
-        ProposeComponent,
-        ComponentProposalResult,
-        _propose_component,
         scope=CONTRIBUTE_SCOPE,
         annotations=WRITES,
     ),
