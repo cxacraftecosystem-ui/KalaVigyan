@@ -94,7 +94,9 @@ def test_a_block_carries_every_source_and_claim_its_citations_name(
         if not isinstance(item, StructureBlock):
             continue
         cited = citations(drawn[item.block.id])
-        assert set(item.source_ids) == {cite["sourceId"] for cite in cited}
+        assert set(item.source_ids) == {cite["sourceId"] for cite in cited} | set(
+            item.block.cited_source_ids()
+        )
         assert item.claims == {uuid.UUID(cite["claimId"]) for cite in cited}
         assert set(item.source_ids) <= set(structure.sources)
 
@@ -120,20 +122,27 @@ def test_places_communities_differences_and_questions_follow_their_chapters_unde
     assert texts(glance, "h3") == ["Where the sources differ"]
     assert "Communities" in texts(structure.trailing["people"], "h3")
     sources = structure.trailing["sources"]
-    assert texts(sources, "h3") == ["Open questions", "Hypotheses"]
+    assert texts(sources, "h3")[0] == "Open questions"
 
 
-def test_every_hypothesis_no_figure_shows_is_listed_once_as_a_hypothesis(
+def held(structure: Any) -> list[StructureText]:
+    found = structure.trailing.get("sources", ())
+    return [item for item in found if isinstance(item, StructureText) and item.tag == "li"]
+
+
+def test_every_hypothesis_is_shown_by_a_figure_or_record_or_listed_once_as_a_hypothesis(
     raw: dict[str, Any], page: CraftPage
 ) -> None:
-    structure = document_structure(page)
-    held = [
-        item for item in structure.trailing["sources"] if isinstance(item, StructureText) and item.tag == "li"
-    ]
     hypotheses = {claim["id"] for claim in raw["claims"] if claim["level"] == "HYPOTHESIS"}
     assert len(hypotheses) == HYPOTHESES
-    assert {str(claim) for item in held for claim in item.claim_ids} == hypotheses
-    assert Counter(item.text for item in held) == Counter(
+    structure = document_structure(page)
+    assert hypotheses <= {str(claim) for claim in structure.claim_ids()}
+    assert {str(claim) for item in held(structure) for claim in item.claim_ids} <= hypotheses
+    bare = document_structure(page.model_copy(update={"chapters": []}))
+    listed = held(bare)
+    assert texts(bare.trailing["sources"], "h3") == ["Hypotheses"]
+    assert {str(claim) for item in listed for claim in item.claim_ids} == hypotheses
+    assert Counter(item.text for item in listed) == Counter(
         claim["text"] for claim in raw["claims"] if claim["id"] in hypotheses
     )
 
