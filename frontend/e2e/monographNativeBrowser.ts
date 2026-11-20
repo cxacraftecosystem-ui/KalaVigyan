@@ -5,6 +5,7 @@ import { MONOGRAPH_DOCUMENT_PATH, type MonographComponent } from "../lib/monogra
 import { tokenize, type Open } from "./monographMarkup";
 import { servedMain } from "./monographNative";
 import { fullSizePictures } from "./parity/parityPictures";
+import { playersAtRest } from "./parity/parityRest";
 
 export type AnchorPlan = { label: string; index: number; id: string | null; attribute: [string, string] | null; classes: string[]; nth: number };
 
@@ -68,6 +69,7 @@ export async function openedPage(page: Page, path: string): Promise<void> {
   }, SCROLL_PAUSE_MS);
   await page.waitForTimeout(SETTLE_MS);
   await fullSizePictures(page);
+  await playersAtRest(page);
 }
 
 export async function mainLines(page: Page): Promise<string[]> {

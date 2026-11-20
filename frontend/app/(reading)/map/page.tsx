@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 
 import { CraftsMapScreen } from "@/components/map/CraftsMapScreen";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { serverCraftCatalogue } from "@/lib/server/readingPages";
 
 export const metadata: Metadata = {
@@ -11,10 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default async function MapPage() {
-  const initial = await serverCraftCatalogue();
-  return (
-    <Suspense fallback={<Skeleton shape="chart" label="Drawing the map" />}>
-      <CraftsMapScreen initial={initial} />
-    </Suspense>
-  );
+  return <CraftsMapScreen initial={await serverCraftCatalogue()} />;
 }
