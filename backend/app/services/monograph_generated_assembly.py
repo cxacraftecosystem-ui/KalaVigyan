@@ -7,6 +7,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from app.core.errors import InvalidInput
 from app.research.chapter_keys import CHAPTER_KEYS
 from app.research.component_specs import checked_spec
 from app.research.coverage import FieldCoverage
@@ -76,6 +77,7 @@ class _Page:
     specs: dict[str, dict[str, Any]] = field(default_factory=dict)
     fragments: dict[str, str] = field(default_factory=dict)
     reused: dict[str, str] = field(default_factory=dict)
+    borrowed_specs: dict[str, str] = field(default_factory=dict)
     default: list[LayoutEntry] = field(default_factory=list)
     held: dict[str, list[str]] = field(default_factory=dict)
     lede: list[str] = field(default_factory=list)
@@ -97,11 +99,7 @@ def assembled_document(parts: GeneratedParts, drawings: Drawings) -> MonographDo
     )
     book = SourceBook()
     citations, claims = _cite(parts, page, arranged, book)
-    for label, monograph in page.reused.items():
-        filled = drawings.fragment(monograph, label, book)
-        page.fragments[label] = filled.markup
-        citations.update(filled.citations)
-        claims.update(filled.citation_claims)
+    _borrow(page, drawings, book, citations, claims)
     content = MonographContent(
         craft_slug=parts.subject_slug,
         sources=book.sources,
@@ -233,11 +231,30 @@ def _drawn(parts: GeneratedParts, page: _Page, drawings: Drawings, component: Re
     spec = drawings.spec(component.monograph, component.label)
     if spec is not None:
         page.specs[component.label] = spec
+        page.borrowed_specs[component.label] = component.monograph
     elif drawings.has_fragment(component.monograph, component.label):
         page.reused[component.label] = component.monograph
     else:
         return False
     return True
+
+
+def _borrow(
+    page: _Page, drawings: Drawings, book: SourceBook, citations: dict[str, Any], claims: dict[str, list[str]]
+) -> None:
+    for label, monograph in page.reused.items():
+        filled = drawings.fragment(monograph, label, book)
+        page.fragments[label] = filled.markup
+        citations.update(filled.citations)
+        claims.update(filled.citation_claims)
+    for label, monograph in page.borrowed_specs.items():
+        named = drawings.spec_units(monograph, page.specs[label], book)
+        for key, unit in named.units.items():
+            if page.units.get(key, unit) != unit:
+                raise InvalidInput(f"The spec of {label} names unit {key}, which this page already holds")
+            page.units[key] = unit
+        citations.update(named.citations)
+        claims.update(named.citation_claims)
 
 
 def _lay_out(page: _Page, found: Sequence[Mapping[str, list[str]]]) -> None:

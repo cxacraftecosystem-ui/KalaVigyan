@@ -229,3 +229,39 @@ def test_without_a_layout_the_dossier_placement_and_focal_box_stand(tmp_path: Pa
 
 def test_a_subject_with_no_visible_sentence_has_no_document(tmp_path: Path) -> None:
     assert assembled_document(generated(visible={}), Drawings(root=tmp_path)) is None
+
+
+UNIT_ID = re.compile(r"^u\d{1,}$")
+
+
+def spec_strings(value: object) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        return [found for item in value.values() for found in spec_strings(item)]
+    if isinstance(value, list):
+        return [found for item in value for found in spec_strings(item)]
+    return []
+
+
+def test_a_borrowed_spec_brings_the_units_it_names_with_their_citations(tmp_path: Path) -> None:
+    root = fragment_monograph(tmp_path)
+    (root / "Kutch-Ajrakh" / "specs" / "shared__chemistry__alum-player.json").write_text(
+        '{"steps": [1, 2], "caption": "u9", "note": "not a unit"}', encoding="utf-8"
+    )
+    built = assembled_document(generated(), Drawings(root=root))
+    assert built is not None
+    named = [value for spec in built.specs.values() for value in spec_strings(spec) if UNIT_ID.match(value)]
+    assert "u9" in named and set(named) <= set(built.content.units)
+    unit = built.content.units["u9"]
+    cite = unit.nodes[0]["c"][1]
+    assert (unit.chapter, unit.claim_ids, cite["key"], cite["c"]) == (
+        "chemistry",
+        ["C086"],
+        "kutch-ajrakh:chem:q6",
+        ["first."],
+    )
+    quotes = built.content.citations["kutch-ajrakh:chem:q6"]
+    assert [(q.locator, q.quote) for q in quotes] == [("p. 8", "bright green")]
+    assert cite["g"] == [quotes[0].source] and quotes[0].source in built.content.sources
+    assert built.content.citation_claims["kutch-ajrakh:chem:q6"] == ["C086"]

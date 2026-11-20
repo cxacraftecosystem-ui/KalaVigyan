@@ -44,3 +44,20 @@ def test_a_monograph_name_that_is_not_a_folder_slug_is_refused(tmp_path: Path) -
         Drawings(root=tmp_path).spec("../Kutch-Ajrakh", VAT_DIP)
     assert Drawings(root=tmp_path).spec("Kutch-Ajrakh", VAT_DIP) is None
     assert Drawings(root=tmp_path).has_fragment("Kutch-Ajrakh", VAT_DIP) is False
+
+
+def test_a_specs_units_are_the_strings_that_name_its_monographs_units(tmp_path: Path) -> None:
+    root = fragment_monograph(tmp_path)
+    named = Drawings(root=root).spec_units(
+        "Kutch-Ajrakh", {"a": ["u9", "u404"], "b": {"c": "u9"}, "n": 9}, SourceBook()
+    )
+    assert list(named.units) == ["u9"]
+    cite = named.units["u9"].nodes[0]["c"][1]
+    assert cite["key"] == "kutch-ajrakh:chem:q6"
+    assert list(named.citations) == ["kutch-ajrakh:chem:q6"]
+    assert named.citation_claims == {"kutch-ajrakh:chem:q6": ["C086"]}
+    assert Drawings(root=root).spec_units("Kutch-Ajrakh", {"steps": [1, 2]}, SourceBook()).units == {}
+    assert (
+        Drawings(root=tmp_path / "none").spec_units("Kutch-Ajrakh", {"steps": ["vat"]}, SourceBook()).units
+        == {}
+    )

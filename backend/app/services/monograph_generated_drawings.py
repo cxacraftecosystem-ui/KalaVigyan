@@ -19,6 +19,7 @@ __all__ = [
     "SPECS_FOLDER",
     "Drawings",
     "FilledFragment",
+    "FilledUnits",
     "fragment_file_name",
     "remapped_nodes",
 ]
@@ -29,6 +30,7 @@ FRAGMENT_SUFFIX = ".html"
 MONOGRAPH_SLUG = re.compile(r"^[A-Za-z0-9-]+$")
 UNIT_SLOT = "unit"
 CITE_MARK = "cite"
+UNIT_NAME = re.compile(r"^u\d+$")
 
 
 def fragment_file_name(label: str) -> str:
@@ -38,6 +40,13 @@ def fragment_file_name(label: str) -> str:
 @dataclass(frozen=True)
 class FilledFragment:
     markup: str
+    citations: dict[str, list[Quote]]
+    citation_claims: dict[str, list[str]]
+
+
+@dataclass(frozen=True)
+class FilledUnits:
+    units: dict[str, TextUnit]
     citations: dict[str, list[Quote]]
     citation_claims: dict[str, list[str]]
 
@@ -62,25 +71,37 @@ class Drawings:
     def fragment(self, monograph: str, label: str, book: SourceBook) -> FilledFragment:
         raw = self._fragment_path(monograph, label).read_bytes().decode("utf-8")
         content = self._content(monograph)
-        prefix = f"{monograph.lower()}:"
         keys = [key for kind, key in SLOT_PATTERN.findall(raw) if kind == UNIT_SLOT]
         missing = sorted(key for key in keys if key not in content.units)
         if missing:
             raise InvalidInput(f"The fragment of {label} has slots for units {monograph} lacks: {missing}")
+        filled = self._filled(monograph, keys, book)
+        filling = content.model_copy(
+            update={
+                "sources": dict(book.sources),
+                "citations": filled.citations,
+                "citation_claims": filled.citation_claims,
+                "units": filled.units,
+            }
+        )
+        return FilledFragment(render_page(raw, filling), filled.citations, filled.citation_claims)
+
+    def spec_units(self, monograph: str, spec: Mapping[str, Any], book: SourceBook) -> FilledUnits:
+        named = {value for value in _strings(spec) if UNIT_NAME.fullmatch(value)}
+        if not named:
+            return FilledUnits({}, {}, {})
+        content = self._content(monograph)
+        return self._filled(monograph, sorted(named & set(content.units)), book)
+
+    def _filled(self, monograph: str, keys: Sequence[str], book: SourceBook) -> FilledUnits:
+        content = self._content(monograph)
+        prefix = f"{monograph.lower()}:"
         rename = _renamer(content, book)
         units = {key: _remapped_unit(content.units[key], rename, prefix) for key in keys}
         cited = sorted({cite for unit in units.values() for cite in _cite_keys(unit.nodes)})
         citations = {key: _quotes(content, key.removeprefix(prefix), rename) for key in cited}
         claims = {key: list(content.citation_claims.get(key.removeprefix(prefix), [])) for key in cited}
-        filling = content.model_copy(
-            update={
-                "sources": dict(book.sources),
-                "citations": citations,
-                "citation_claims": claims,
-                "units": units,
-            }
-        )
-        return FilledFragment(render_page(raw, filling), citations, claims)
+        return FilledUnits(units, citations, claims)
 
     def _fragment_path(self, monograph: str, label: str) -> Path:
         return self._folder(monograph) / FRAGMENTS_FOLDER / fragment_file_name(label)
@@ -141,3 +162,13 @@ def _cite_keys(nodes: Sequence[Any]) -> list[str]:
                 found.append(str(node["key"]))
             found += _cite_keys(node.get("c", []))
     return found
+
+
+def _strings(value: Any) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, Mapping):
+        return [found for item in value.values() for found in _strings(item)]
+    if isinstance(value, list | tuple):
+        return [found for item in value for found in _strings(item)]
+    return []
