@@ -257,6 +257,14 @@
   }
 
   @media (max-width: 639px) {
+    .kv-partner-marks {
+      gap: 16px 12px;
+    }
+
+    .kv-partner-name {
+      max-width: 19ch;
+    }
+
     .kv-partner-plate {
       height: 96px;
       padding: 10px 12px;

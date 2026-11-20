@@ -10,7 +10,7 @@ import type { Peak, ReliefFile } from "@/lib/mapPhysical";
 export type PeakPlacement = { tier: number; side: "start" | "end" };
 
 export const PEAK_TIERS: Readonly<Record<string, PeakPlacement>> = {
-  "Nanda Devi": { tier: 1, side: "start" },
+  "Nanda Devi": { tier: 2, side: "start" },
   Anamudi: { tier: 1, side: "start" },
   K2: { tier: 2, side: "start" },
   Kanchenjunga: { tier: 2, side: "end" },

@@ -68,7 +68,7 @@ function PhysicalMap({ id, view, markers }: { id: PhysicalLayerId; view: Drawn; 
   return (
     <MapCanvas
       title={title}
-      description={`${view.dek} Craft places are marked as discs.`}
+      description={markers.length ? `${view.dek} Craft places are marked as discs.` : view.dek}
       under={view.under}
       over={(scene) => (
         <>

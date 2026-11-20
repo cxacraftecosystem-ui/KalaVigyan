@@ -49,7 +49,7 @@ RANGES: dict[str, tuple[str, int, Placement | None]] = {
     "Vindhya Range": ("Vindhya Range", 2, None),
     "Satpura Range": ("Satpura Range", 2, None),
     "Aravalli Range": ("Aravalli Range", 2, None),
-    "Deccan Plateau": ("Deccan Plateau", 1, (77.6, 17.3, 0.0)),
+    "Deccan Plateau": ("Deccan Plateau", 2, (77.6, 17.3, 0.0)),
     "Thar Desert": ("Thar Desert", 2, (71.6, 27.4, 0.0)),
     "Chota Nagpur Plateau": ("Chota Nagpur Plateau", 2, None),
     "Indo-Gangetic Plain": ("Indo-Gangetic Plain", 3, None),
