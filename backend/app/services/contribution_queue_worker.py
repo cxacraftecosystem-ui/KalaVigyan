@@ -29,7 +29,7 @@ from app.research.contribution_queue import (
 from app.research.knowledge_writes import FactProposal, ProposalReply
 
 from .cost_ledger import stream_spend
-from .fact_proposals import ProposalAdapters, propose_fact_run
+from .fact_proposals import ProposalAdapters, ProposalRun, embed_sources, propose_fact_run
 
 __all__ = ["AdaptersFor", "ContributionWorker", "WorkerSettings", "claim_next", "drain", "work_on"]
 
@@ -96,15 +96,16 @@ async def work_on(
         _ended(row, FAILED, NO_PROPOSER, now=clock())
         await session.commit()
         return row.state
+    adapters = adapters_for(proposer)
     try:
         async with session.begin_nested():
             with request_id_scope(stream_request_id(proposal_id)):
-                reply = await propose_fact_run(
+                ran = await propose_fact_run(
                     session,
                     FactProposal.model_validate(row.proposal),
                     proposer,
                     row.origin,
-                    adapters=adapters_for(proposer),
+                    adapters=adapters,
                     now=clock(),
                     ticket=proposal_id,
                 )
@@ -116,7 +117,9 @@ async def work_on(
         logger.warning("queued proposal %s could not be checked: %s", proposal_id, failure)
         _retried(await _fresh(session, row), str(failure) or type(failure).__name__, now=clock())
     else:
-        await _done(session, row, reply, now=clock())
+        await _done(session, row, ran.reply, now=clock())
+        await session.commit()
+        await _embedded(session, adapters, ran, row)
     await session.commit()
     return row.state
 
@@ -187,6 +190,14 @@ async def _done(session: AsyncSession, row: QueuedProposal, reply: ProposalReply
     row.reply = reply.model_dump(mode="json", by_alias=True)
     row.finishedAt, row.leaseUntil, row.failure = now, None, None
     row.modelCalls, row.costUsd = calls, cost
+
+
+async def _embedded(
+    session: AsyncSession, adapters: ProposalAdapters, ran: ProposalRun, row: QueuedProposal
+) -> None:
+    with request_id_scope(stream_request_id(row.id)):
+        await embed_sources(session, adapters.embed, ran.kept_sources)
+    row.modelCalls, row.costUsd = await stream_spend(session, row.id)
 
 
 async def _fresh(session: AsyncSession, row: QueuedProposal) -> QueuedProposal:

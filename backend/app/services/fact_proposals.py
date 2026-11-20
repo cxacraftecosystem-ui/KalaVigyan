@@ -31,7 +31,15 @@ from .fact_proposals_words import placement_message, placement_note
 from .proposal_writes import ProposedClaim, cite_proposal, proposal_level, write_proposed_claim
 from .task_reservations import complete_task, give_back_task
 
-__all__ = ["NO_ACCOUNT", "ProposalAdapters", "propose_fact", "propose_fact_run", "role_now"]
+__all__ = [
+    "NO_ACCOUNT",
+    "ProposalAdapters",
+    "ProposalRun",
+    "embed_sources",
+    "propose_fact",
+    "propose_fact_run",
+    "role_now",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +56,12 @@ class ProposalAdapters:
     thrift: GateThrift | None = None
 
 
+@dataclass(frozen=True)
+class ProposalRun:
+    reply: ProposalReply
+    kept_sources: tuple[uuid.UUID, ...] = ()
+
+
 async def propose_fact(
     session: AsyncSession,
     proposal: FactProposal,
@@ -57,9 +71,11 @@ async def propose_fact(
     adapters: ProposalAdapters,
     now: datetime,
 ) -> ProposalReply:
-    return await propose_fact_run(
+    ran = await propose_fact_run(
         session, proposal, proposer, origin, adapters=adapters, now=now, ticket=uuid.uuid4()
     )
+    await embed_sources(session, adapters.embed, ran.kept_sources)
+    return ran.reply
 
 
 async def propose_fact_run(
@@ -71,7 +87,7 @@ async def propose_fact_run(
     adapters: ProposalAdapters,
     now: datetime,
     ticket: uuid.UUID,
-) -> ProposalReply:
+) -> ProposalRun:
     role = await role_now(session, proposer.id)
     standing = await trust_tiers.account_standing(session, proposer.id)
     subject = await proposal_subject(session, proposal.subject)
@@ -83,16 +99,16 @@ async def propose_fact_run(
     written = ProposedClaim(proposal, subject, proposer.id, tiered.placed, run, note)
     claim_id = await write_proposed_claim(session, written)
     await record_checks(session, claim_id, run.outcomes, checked_at=now)
-    if run.passed:
-        kept = await cite_proposal(
-            session, claim_id, read, found_by=origin, proposer_id=proposer.id, checked_at=now
-        )
-        await _embed_chunks(session, adapters.embed, kept)
+    kept = (
+        await cite_proposal(session, claim_id, read, found_by=origin, proposer_id=proposer.id, checked_at=now)
+        if run.passed
+        else []
+    )
     differ = await mark_sources_differ(session, claim_id) if tiered.placed.live else []
     if proposal.task_key is not None:
         settle = complete_task if run.passed else give_back_task
         await settle(session, proposer.id, proposal.task_key, now=now)
-    return _reply(claim_id, written, tiered, differ)
+    return ProposalRun(reply=_reply(claim_id, written, tiered, differ), kept_sources=tuple(kept))
 
 
 async def _gated(
@@ -133,7 +149,9 @@ async def role_now(session: AsyncSession, user_id: uuid.UUID) -> str:
     return str(role)
 
 
-async def _embed_chunks(session: AsyncSession, embed: TextEmbedder, source_ids: list[uuid.UUID]) -> None:
+async def embed_sources(session: AsyncSession, embed: TextEmbedder, source_ids: Sequence[uuid.UUID]) -> None:
+    if not source_ids:
+        return
     try:
         await embed_written(session, embed, claim_ids=[], source_ids=source_ids)
     except AppError as error:

@@ -128,6 +128,7 @@ async def set_tier(
         target_id=user_id,
         detail={"tier": update.tier, "note": update.note},
     )
+    await session.flush()
     return await account_standing(session, user_id)
 
 

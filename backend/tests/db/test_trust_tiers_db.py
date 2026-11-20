@@ -141,9 +141,10 @@ async def test_a_new_contributor_waits_for_review_even_with_the_switch_on_auto(s
     researcher = await person(session, "RESEARCHER")
     admin = await person(session, "ADMIN")
     await app_settings.set_review_switch(session, ReviewSwitchUpdate(agent="AUTO"), admin.id)
-    reply = await propose_fact_run(
+    ran = await propose_fact_run(
         session, fact(), researcher, "AGENT", adapters=adapters(), now=NOW, ticket=uuid.uuid4()
     )
+    reply = ran.reply
     assert (reply.outcome, reply.status, reply.in_review_queue) == ("WAITING", "DRAFT", True)
     assert reply.message.endswith("as a new contributor's facts do.")
     (event,) = await session.scalars(select(ReviewEvent).where(ReviewEvent.claimId == reply.claim_id))
@@ -164,9 +165,10 @@ async def test_a_proven_contributor_publishes_at_once_and_a_drawn_share_enters_t
     await trust_tiers.set_tier(session, admin, researcher.id, TierUpdate(tier="PROVEN"), now=NOW)
     tokens = (uuid.uuid5(uuid.NAMESPACE_URL, f"draw/{number}") for number in range(200))
     ticket = next(token for token in tokens if drawn_for_review(token) is drawn)
-    reply = await propose_fact_run(
+    ran = await propose_fact_run(
         session, fact(), researcher, "AGENT", adapters=adapters(), now=NOW, ticket=ticket
     )
+    reply = ran.reply
     assert (reply.outcome, reply.status, reply.in_review_queue, reply.approved_at_once) == (
         "PUBLISHED",
         status,
