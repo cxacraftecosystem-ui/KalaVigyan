@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterator
 from xml.etree import ElementTree
+from xml.sax.saxutils import escape
 
 __all__ = ["DRAWING_MAX_CHARS", "KEPT_DRAWING_TAGS", "cleaned_svg", "drawing_tags", "svg_view_box"]
 
@@ -47,6 +48,7 @@ SCRIPTED = re.compile(r"javascript:|expression\(|@import", re.IGNORECASE)
 REFERENCES = frozenset({"href", f"{{{XLINK_NS}}}href"})
 SIZE_ATTRIBUTES = frozenset({"width", "height"})
 EVENT_PREFIX = "on"
+QUOTED = {'"': "&quot;"}
 
 
 def cleaned_svg(markup: str) -> str:
@@ -65,7 +67,9 @@ def cleaned_svg(markup: str) -> str:
     _clean(root)
     for name in SIZE_ATTRIBUTES:
         root.attrib.pop(name, None)
-    return ElementTree.tostring(root, encoding="unicode", default_namespace=SVG_NS)
+    linked = any(_namespace(key) == XLINK_NS for element in root.iter() for key in element.attrib)
+    declared = f' xmlns="{SVG_NS}"' + (f' xmlns:xlink="{XLINK_NS}"' if linked else "")
+    return _markup(root, declared)
 
 
 def svg_view_box(value: str | None) -> tuple[float, float, float, float] | None:
@@ -105,6 +109,23 @@ def _safe_attribute(name: str, value: str) -> bool:
         return value.strip().startswith("#")
     folded = "".join(value.split())
     return not (EXTERNAL_URL.search(folded) or SCRIPTED.search(folded))
+
+
+def _markup(element: ElementTree.Element, declared: str = "") -> str:
+    name = _local(element.tag)
+    attributes = "".join(
+        f' {_attribute_name(key)}="{escape(value, QUOTED)}"' for key, value in element.attrib.items()
+    )
+    inner = escape(element.text or "") + "".join(
+        _markup(child) + escape(child.tail or "") for child in element
+    )
+    if not inner:
+        return f"<{name}{declared}{attributes} />"
+    return f"<{name}{declared}{attributes}>{inner}</{name}>"
+
+
+def _attribute_name(key: str) -> str:
+    return f"xlink:{_local(key)}" if _namespace(key) == XLINK_NS else key
 
 
 def _namespace(name: str) -> str:

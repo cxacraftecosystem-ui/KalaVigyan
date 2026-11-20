@@ -107,10 +107,14 @@ $do$
 def upgrade() -> None:
     for table in KIND_CHECKS:
         _check_kinds(table, PIECE_KINDS)
-    op.add_column(PROPOSALS, sa.Column("spec", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column(PROPOSALS, sa.Column("units", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
     op.add_column(
-        PROPOSALS,
+        "ComponentProposal", sa.Column("spec", postgresql.JSONB(astext_type=sa.Text()), nullable=True)
+    )
+    op.add_column(
+        "ComponentProposal", sa.Column("units", postgresql.JSONB(astext_type=sa.Text()), nullable=True)
+    )
+    op.add_column(
+        "ComponentProposal",
         sa.Column(
             "claimIds", postgresql.ARRAY(sa.UUID()), server_default=sa.text("ARRAY[]::uuid[]"), nullable=False
         ),
@@ -131,7 +135,7 @@ def downgrade() -> None:
 
 def _create_previews() -> None:
     op.create_table(
-        PREVIEWS,
+        "PagePreview",
         sa.Column("id", sa.UUID(), server_default=sa.text("gen_random_uuid()"), nullable=False),
         sa.Column("userId", sa.UUID(), nullable=False),
         sa.Column("subjectKind", sa.String(length=20), nullable=False),
