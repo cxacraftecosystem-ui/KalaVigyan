@@ -101,7 +101,7 @@ function tag(node: string): string {
 }
 
 const ROOT = "0:";
-const ROOT_PLACEMENT = new Set(["margin-block-start", "margin-block-end", "box-height"]);
+const ROOT_PLACEMENT = new Set(["margin-block-start", "margin-block-end", "margin-inline-start", "box-height"]);
 
 function gatedBox(difference: StyleDifference, approved: StyleRecord): boolean {
   const delta = Math.abs(Number(difference.approved) - Number(difference.rendered));
