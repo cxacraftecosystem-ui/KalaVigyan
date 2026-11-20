@@ -1,0 +1,56 @@
+name: Track a release issue
+description: Keeps one open issue with the given title while a release check fails, adds each new failure to it, and closes it once the check passes.
+inputs:
+  title:
+    description: The issue's exact title, one per check
+    required: true
+  outcome:
+    description: failing opens or updates the issue, passing closes it, anything else leaves it as it is
+    required: true
+  body-file:
+    description: A Markdown file saying what failed or what recovered
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Open, update or close the issue
+      shell: bash
+      env:
+        TITLE: ${{ inputs.title }}
+        OUTCOME: ${{ inputs.outcome }}
+        BODY_FILE: ${{ inputs.body-file }}
+      run: |
+        set -euo pipefail
+        [ -n "${GH_TOKEN:-}" ] || { echo "::error::pass GH_TOKEN to the release issue step"; exit 1; }
+        [ -s "$BODY_FILE" ] || { echo "::error::the release issue body $BODY_FILE is empty"; exit 1; }
+        number="$(gh issue list -R "$GITHUB_REPOSITORY" --state open --limit 200 --json number,title --jq 'map(select(.title == env.TITLE)) | first | .number // empty')"
+        headline="$(head -n 1 "$BODY_FILE")"
+        case "$OUTCOME" in
+          failing)
+            if [ -n "$number" ]; then
+              latest="$(gh issue view "$number" -R "$GITHUB_REPOSITORY" --json body,comments --jq '(.comments | last | .body) // .body')"
+              last="${latest%%$'\n'*}"
+              if [ "$last" = "$headline" ]; then
+                echo "::warning::issue #$number already records this failure, $TITLE"
+              else
+                gh issue comment "$number" -R "$GITHUB_REPOSITORY" --body-file "$BODY_FILE" > /dev/null
+                echo "::warning::added this failure to issue #$number, $TITLE"
+              fi
+            else
+              url="$(gh issue create -R "$GITHUB_REPOSITORY" --title "$TITLE" --body-file "$BODY_FILE")"
+              echo "::warning::opened $url, $TITLE"
+            fi
+            ;;
+          passing)
+            if [ -n "$number" ]; then
+              gh issue comment "$number" -R "$GITHUB_REPOSITORY" --body-file "$BODY_FILE" > /dev/null
+              gh issue close "$number" -R "$GITHUB_REPOSITORY" --reason completed > /dev/null
+              echo "closed issue #$number, $TITLE"
+            else
+              echo "no open issue named $TITLE"
+            fi
+            ;;
+          *)
+            echo "the check neither failed nor passed; issue ${number:+#$number }left as it is"
+            ;;
+        esac

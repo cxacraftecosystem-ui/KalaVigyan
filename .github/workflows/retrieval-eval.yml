@@ -1,0 +1,105 @@
+name: Retrieval evaluation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "11 4 * * 1"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: retrieval-eval
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    name: Score live retrieval on the golden questions
+    if: github.repository == 'cxacraftecosystem-ui/KalaVigyan'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+      BUCKET: ${{ vars.MEDIA_BUCKET }}
+    steps:
+      - name: Check the repository variables
+        run: |
+          set -euo pipefail
+          for v in AWS_REGION INSTANCE_ID BUCKET; do
+            [ -n "${!v}" ] || { echo "::error::repository variable for $v is not set (see docs/RUNBOOK.md)"; exit 1; }
+          done
+
+      - name: Assume the deploy role
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: retrieval-eval-${{ github.run_id }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Ask the golden questions of the live index on the box and keep the report
+        run: |
+          set -euo pipefail
+          script=$(cat <<'EOF'
+          set -euo pipefail
+          cd /opt/kalavigyan/current/backend
+          runuser -u kalavigyan -- bash -c "set -a; . /opt/kalavigyan/.env; set +a; exec ./.venv/bin/python -m app.scripts.eval_retrieval"
+          EOF
+          )
+          prefix="deploy/logs/retrieval-eval/$GITHUB_RUN_ID"
+          jq -n --arg s "$script" '{commands: [$s], executionTimeout: ["1200"]}' > "$RUNNER_TEMP/params.json"
+          cid="$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --comment "retrieval evaluation run ${GITHUB_RUN_ID}" \
+            --timeout-seconds 300 \
+            --parameters "file://$RUNNER_TEMP/params.json" \
+            --output-s3-bucket-name "$BUCKET" \
+            --output-s3-key-prefix "$prefix" \
+            --query Command.CommandId --output text)"
+          echo "SSM command $cid"
+          deadline=$(( $(date +%s) + 1260 ))
+          while :; do
+            sleep 15
+            status="$(aws ssm get-command-invocation --command-id "$cid" --instance-id "$INSTANCE_ID" --query Status --output text 2>/dev/null || echo Pending)"
+            case "$status" in
+              Pending|InProgress|Delayed) ;;
+              *) break ;;
+            esac
+            [ "$(date +%s)" -lt "$deadline" ] || { echo "::error::the retrieval evaluation did not finish in 21 minutes"; status=TimedOut; break; }
+          done
+          echo "status: $status"
+          base="$prefix/$cid/$INSTANCE_ID/awsrunShellScript/0.awsrunShellScript"
+          out="$RUNNER_TEMP/retrieval-eval"
+          mkdir -p "$out"
+          aws s3 cp --only-show-errors "s3://$BUCKET/$base/stdout" "$out/stdout.txt" \
+            || aws ssm get-command-invocation --command-id "$cid" --instance-id "$INSTANCE_ID" --query StandardOutputContent --output text > "$out/stdout.txt"
+          echo "::group::box stderr"
+          aws s3 cp --only-show-errors "s3://$BUCKET/$base/stderr" - 2>/dev/null \
+            || aws ssm get-command-invocation --command-id "$cid" --instance-id "$INSTANCE_ID" --query StandardErrorContent --output text
+          echo "::endgroup::"
+          if [ -s "$out/stdout.txt" ] && tail -n 1 "$out/stdout.txt" | jq -e . > "$out/report.json" 2> /dev/null; then
+            jq . "$out/report.json"
+            {
+              echo "### Retrieval evaluation"
+              echo ""
+              jq -r '"Questions \(.questions // "none"), recall at 5 \(.recallAt5 // "none"), mean reciprocal rank \(.meanReciprocalRank // "none"), \((.absent // []) | length) expected claims absent, \((.misses // {}) | length) questions missing a claim in the top 5\(if .ok then "" else ", error: \(.error)" end)"' "$out/report.json"
+              echo ""
+              echo "| Question | Claims missed in the top 5 |"
+              echo "|---|---|"
+              jq -r '(.misses // {}) | to_entries[] | "| \(.key) | \(.value | join(", ")) |"' "$out/report.json"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::the box printed no JSON report"
+          fi
+          [ "$status" = Success ] || { echo "::error::the retrieval evaluation ended $status; the report, when written, is kept as the retrieval-eval artifact"; exit 1; }
+
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: retrieval-eval-${{ github.run_id }}
+          path: ${{ runner.temp }}/retrieval-eval/
+          if-no-files-found: warn
+          retention-days: 90

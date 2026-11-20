@@ -1,0 +1,334 @@
+name: Post-deploy check
+
+on:
+  workflow_run:
+    workflows: [Deploy web app, Deploy backend]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "47 * * * *"
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: A commit of main production must serve within 20 minutes (empty checks that production is not behind main)
+        type: string
+        default: ""
+  pull_request:
+    paths:
+      - ".github/workflows/post-deploy.yml"
+      - ".github/actions/release-issue/**"
+      - "frontend/e2e/release/**"
+      - "frontend/app/api/version/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: post-deploy-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+env:
+  WEB_ORIGIN: ${{ vars.WEB_ORIGIN || 'https://kalavigyan.vercel.app' }}
+
+jobs:
+  served:
+    name: Production serves the pushed commit
+    if: github.repository == 'cxacraftecosystem-ui/KalaVigyan' && github.event_name != 'pull_request'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      mode: ${{ steps.want.outputs.mode }}
+      expected: ${{ steps.want.outputs.expected }}
+      trigger: ${{ steps.want.outputs.trigger }}
+      verdict: ${{ steps.serve.outputs.verdict }}
+      served: ${{ steps.serve.outputs.served }}
+    steps:
+      - name: Check out main with its history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Name the commit production must serve
+        id: want
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          TRIGGER_RUN: ${{ github.event.workflow_run.id }}
+          TRIGGER_SHA: ${{ github.event.workflow_run.head_sha }}
+          TRIGGER_NAME: ${{ github.event.workflow_run.name }}
+          TRIGGER_URL: ${{ github.event.workflow_run.html_url }}
+          ASKED: ${{ inputs.commit }}
+        run: |
+          set -euo pipefail
+          mode=latest
+          expected=""
+          trigger=""
+          if [ "$EVENT" = workflow_run ]; then
+            trigger="[$TRIGGER_NAME]($TRIGGER_URL)"
+            build="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$TRIGGER_RUN/jobs" --jq '[.jobs[].steps[]? | select(.name | startswith("Build the web app")) | .conclusion | select(. != null)] | first // "none"')"
+            echo "$TRIGGER_NAME started the web build: $build"
+            case "$build" in
+              success) mode=wait; expected="$TRIGGER_SHA" ;;
+              failure) mode=refused; expected="$TRIGGER_SHA" ;;
+              *) mode=none ;;
+            esac
+          elif [ -n "$ASKED" ]; then
+            [[ "$ASKED" =~ ^[0-9a-f]{7,40}$ ]] || { echo "::error::commit must be a hexadecimal commit id"; exit 1; }
+            expected="$(git rev-parse --verify --quiet "$ASKED^{commit}")" || { echo "::error::$ASKED is not a commit of this repository"; exit 1; }
+            git merge-base --is-ancestor "$expected" origin/main || { echo "::error::$ASKED is not on main"; exit 1; }
+            mode=wait
+          fi
+          if [ "$mode" = latest ]; then
+            command -v yq > /dev/null || { echo "::error::yq is not on the runner; cannot read the deploy workflows' push paths"; exit 1; }
+            specs=()
+            for workflow in deploy-web backend-checks; do
+              mapfile -t globs < <(yq -r '.on.push.paths[]' ".github/workflows/$workflow.yml")
+              [ "${#globs[@]}" -gt 0 ] || { echo "::error::$workflow.yml lists no push paths"; exit 1; }
+              for glob in "${globs[@]}"; do specs+=(":(glob)$glob"); done
+            done
+            expected="$(git log -1 --format=%H origin/main -- "${specs[@]}")"
+            [ -n "$expected" ] || { echo "::error::no commit of main touches what the deploys build"; exit 1; }
+          fi
+          {
+            echo "mode=$mode"
+            echo "expected=$expected"
+            echo "trigger=$trigger"
+          } >> "$GITHUB_OUTPUT"
+          echo "mode $mode; production must serve ${expected:-no particular commit}"
+
+      - name: Read the commit production serves
+        id: serve
+        env:
+          MODE: ${{ steps.want.outputs.mode }}
+          EXPECTED: ${{ steps.want.outputs.expected }}
+          WAIT_SECONDS: "1200"
+          GRACE_SECONDS: "5400"
+        run: |
+          set -euo pipefail
+          served() {
+            curl -fsS -m 15 -H 'cache-control: no-cache' "$WEB_ORIGIN/api/version" 2> /dev/null | jq -r '.commit // empty' 2> /dev/null || true
+          }
+          descends() {
+            [ "$1" = "$2" ] && return 0
+            git cat-file -e "$2^{commit}" 2> /dev/null || git fetch --quiet origin main
+            git cat-file -e "$2^{commit}" 2> /dev/null && git merge-base --is-ancestor "$1" "$2"
+          }
+          have=""
+          case "$MODE" in
+            none) have="$(served)"; verdict=no-build ;;
+            refused) have="$(served)"; verdict=refused ;;
+            wait)
+              deadline=$(( $(date +%s) + WAIT_SECONDS ))
+              while :; do
+                have="$(served)"
+                if [ -n "$have" ] && descends "$EXPECTED" "$have"; then verdict=served; break; fi
+                if [ "$(date +%s)" -ge "$deadline" ]; then verdict=behind; break; fi
+                echo "production serves ${have:-no commit}; waiting for ${EXPECTED:0:12}"
+                sleep 20
+              done
+              ;;
+            latest)
+              have="$(served)"
+              age=$(( $(date +%s) - $(git log -1 --format=%ct "$EXPECTED") ))
+              if [ -z "$have" ]; then verdict=silent
+              elif descends "$EXPECTED" "$have"; then verdict=served
+              elif [ "$age" -lt "$GRACE_SECONDS" ]; then verdict=building
+              else verdict=behind
+              fi
+              ;;
+            *) echo "::error::unknown mode $MODE"; exit 1 ;;
+          esac
+          {
+            echo "verdict=$verdict"
+            echo "served=$have"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "### Production commit"
+            echo ""
+            echo "Production serves \`${have:-no commit}\`; it should serve \`${EXPECTED:-any commit}\` or a later commit of main. Verdict: $verdict."
+          } >> "$GITHUB_STEP_SUMMARY"
+          case "$verdict" in
+            served) echo "production serves $have" ;;
+            no-build) echo "::notice::this deploy started no web build; production serves ${have:-no commit}" ;;
+            building) echo "::notice::the newest deployable commit ${EXPECTED:0:12} is younger than $(( GRACE_SECONDS / 60 )) minutes; its build may still be running" ;;
+            behind) echo "::error::production serves ${have:-no commit}, not ${EXPECTED:0:12} or a later commit of main: its Vercel build failed or never started"; exit 1 ;;
+            silent) echo "::error::$WEB_ORIGIN/api/version reports no commit"; exit 1 ;;
+            refused) echo "::error::the deploy hook did not start the build of ${EXPECTED:0:12}"; exit 1 ;;
+          esac
+
+  pages:
+    name: Key pages and the public MCP tools answer
+    needs: served
+    if: >-
+      !cancelled() && github.repository == 'cxacraftecosystem-ui/KalaVigyan' &&
+      (github.event_name != 'schedule' || github.event.schedule == '17 3 * * *')
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      E2E_BASE_URL: ${{ vars.WEB_ORIGIN || 'https://kalavigyan.vercel.app' }}
+      E2E_API_URL: ${{ vars.API_BASE_URL }}
+      E2E_REPORT_DIR: post-deploy-run
+      E2E_REPORT_TITLE: Post-deploy check
+      E2E_WORKERS: "4"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: frontend/package.json
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install npm 12
+        run: npm install --global npm@12 && npm --version
+
+      - name: Install
+        run: npm ci
+
+      - name: Check the repository variables
+        run: |
+          set -euo pipefail
+          [ -n "$E2E_API_URL" ] || { echo "::error::repository variable API_BASE_URL is not set (docs/RUNBOOK.md)"; exit 1; }
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Read the key pages and call the public MCP tools
+        run: npx playwright test -c e2e/release/release.config.ts --project=post-deploy
+
+      - name: Say what was read
+        if: always()
+        run: |
+          if [ -f post-deploy-run/summary.md ]; then
+            cat post-deploy-run/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No post-deploy summary was written; see the step above." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: post-deploy-${{ github.run_id }}
+          path: frontend/post-deploy-run
+          if-no-files-found: warn
+          retention-days: 30
+
+  alert:
+    name: Open or close the production issues
+    needs: [served, pages]
+    if: >-
+      !cancelled() && github.repository == 'cxacraftecosystem-ui/KalaVigyan' && github.event_name != 'pull_request'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Check out the release issue action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          sparse-checkout: .github/actions
+
+      - name: Fetch the page report
+        if: needs.pages.result == 'success' || needs.pages.result == 'failure'
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: post-deploy-${{ github.run_id }}
+          path: ${{ runner.temp }}/post-deploy-run
+
+      - name: Say what the checks found
+        id: found
+        env:
+          SERVED_RESULT: ${{ needs.served.result }}
+          PAGES_RESULT: ${{ needs.pages.result }}
+          VERDICT: ${{ needs.served.outputs.verdict }}
+          EXPECTED: ${{ needs.served.outputs.expected }}
+          SERVED: ${{ needs.served.outputs.served }}
+          TRIGGER: ${{ needs.served.outputs.trigger }}
+        run: |
+          set -euo pipefail
+          commit_md="$RUNNER_TEMP/commit.md"
+          pages_md="$RUNNER_TEMP/pages.md"
+          case "$SERVED_RESULT:$VERDICT" in
+            success:served) commit=passing ;;
+            failure:*) commit=failing ;;
+            *) commit=unchanged ;;
+          esac
+          case "$VERDICT" in
+            behind) why="Production still serves \`${SERVED:-no commit}\` after waiting: the Vercel production build of \`$EXPECTED\` failed or never started." ;;
+            silent) why="$WEB_ORIGIN/api/version reports no commit, so nobody can tell what production serves." ;;
+            refused) why="The deploy hook did not start the production build of \`$EXPECTED\`." ;;
+            served) why="Production serves \`$SERVED\`, which is \`$EXPECTED\` or a later commit of main." ;;
+            *) why="The commit check itself failed before it could read production." ;;
+          esac
+          {
+            echo "$why"
+            echo ""
+            echo "- Commit production should serve: \`${EXPECTED:-unknown}\`"
+            echo "- Commit production serves: \`${SERVED:-none}\`"
+            [ -z "$TRIGGER" ] || echo "- After: $TRIGGER"
+            echo "- Check: $RUN_URL"
+          } > "$commit_md"
+          case "$PAGES_RESULT" in
+            success) pages=passing ;;
+            failure) pages=failing ;;
+            *) pages=unchanged ;;
+          esac
+          report="$RUNNER_TEMP/post-deploy-run/summary.md"
+          {
+            if [ "$pages" = failing ]; then echo "A key page or a public MCP tool failed after production served \`${SERVED:-an unknown commit}\`."; else echo "Every key page and public MCP tool answered on production \`${SERVED:-an unknown commit}\`."; fi
+            echo ""
+            echo "Check: $RUN_URL"
+            echo ""
+            if [ "$pages" = failing ] && [ -f "$report" ]; then grep -E '^\| Check|^\|---|failed:' "$report" || true; fi
+          } > "$pages_md"
+          {
+            echo "commit=$commit"
+            echo "pages=$pages"
+            echo "commit_md=$commit_md"
+            echo "pages_md=$pages_md"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Track the commit issue
+        uses: ./.github/actions/release-issue
+        with:
+          title: Production is not serving main
+          outcome: ${{ steps.found.outputs.commit }}
+          body-file: ${{ steps.found.outputs.commit_md }}
+
+      - name: Track the page issue
+        uses: ./.github/actions/release-issue
+        with:
+          title: Production pages or MCP tools are failing
+          outcome: ${{ steps.found.outputs.pages }}
+          body-file: ${{ steps.found.outputs.pages_md }}
+
+  client:
+    name: Run the MCP client against the new production
+    needs: [served, pages]
+    if: >-
+      !cancelled() && github.event_name == 'workflow_run' && needs.served.outputs.verdict == 'served'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Dispatch MCP client on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run mcp-client.yml -R "$GITHUB_REPOSITORY" --ref main

@@ -33,11 +33,14 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@modelcontextprotocol/client": "2.4.0",
     "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4.3.5",
     "@typescript/native": "npm:typescript@^7.0.2",
     "eslint": "^10.15.0",
     "eslint-config-next": "^16.4.6",
+    "lighthouse": "13.6.0",
     "postcss": "^8.5.33",
     "tailwindcss": "^4.3.5",
     "typescript": "npm:@typescript/typescript6@^6.0.2"
