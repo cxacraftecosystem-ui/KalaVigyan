@@ -44,10 +44,10 @@ test("the authored copy of a component is the one whose words match, numbers asi
 });
 
 test("a drawing differs where a style differs, or where a box, a graphic or the root moves more than two pixels", () => {
-  const record = (fontSize: string, width: string) => ({ "font-size": fontSize, "box-width": width, "box-x": "0" });
-  const approved = { "0:figure.rp": record("19px", "900"), "1:p.t": record("13px", "300"), "2:svg": record("19px", "20") };
-  expect(gatedDifferences(approved, { "0:figure.rp": record("19px", "901"), "1:p.t": record("13px", "320"), "2:svg": record("19px", "21") })).toEqual([]);
-  expect(gatedDifferences(approved, { "0:figure.rp": record("19px", "900"), "1:p.t": record("40px", "300"), "2:svg": record("19px", "900") }).map((found) => `${found.node} ${found.property}`)).toEqual([
+  const record = (fontSize: string, width: string, x = "0", display = "block") => ({ display, "font-size": fontSize, "box-width": width, "box-x": x });
+  const approved = { "0:figure.rp": record("19px", "900"), "1:p.t": record("13px", "300"), "2:svg": record("19px", "20"), "3:a.inline": record("13px", "40", "520", "inline") };
+  expect(gatedDifferences(approved, { "0:figure.rp": record("19px", "901"), "1:p.t": record("13px", "320"), "2:svg": record("19px", "21"), "3:a.inline": record("13px", "40", "528", "inline") })).toEqual([]);
+  expect(gatedDifferences(approved, { "0:figure.rp": record("19px", "900"), "1:p.t": record("40px", "300"), "2:svg": record("19px", "900"), "3:a.inline": record("13px", "40", "520", "inline") }).map((found) => `${found.node} ${found.property}`)).toEqual([
     "1:p.t font-size",
     "2:svg box-width"
   ]);

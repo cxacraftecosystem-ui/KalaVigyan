@@ -6,6 +6,7 @@ const UNIT_REF = /^u\d{4,}$/;
 const FIGURE_KEY = /^[a-z]+:\d+$/;
 const NUMBER_TEXT = /^(Fig\.|Table)\s+\d+$/;
 const NUMBER_IN_TEXT = /(Fig\.|Table)\s+\d+/;
+const DIGITS = /\d+/;
 const ANSWER_BLOCK = "answer_block";
 const TABLE_KIND = "TABLE";
 const FIGURE_WORD = "Fig.";
@@ -77,6 +78,21 @@ function refigured(nodes: readonly MonographNode[], labels: ReadonlyMap<string, 
   });
 }
 
+export function renumbered(nodes: readonly MonographNode[], digits: string): MonographNode[] {
+  let done = false;
+  const walk = (list: readonly MonographNode[]): MonographNode[] =>
+    list.map((node) => {
+      if (done) return node;
+      if (typeof node === "string") {
+        if (!DIGITS.test(node)) return node;
+        done = true;
+        return node.replace(DIGITS, digits);
+      }
+      return node.c ? { ...node, c: walk(node.c) } : node;
+    });
+  return walk(nodes);
+}
+
 function playerFigures(document: MonographDocument): Map<string, string> {
   const found = new Map<string, string>();
   for (const spec of Object.values(document.specs)) {
@@ -110,7 +126,7 @@ export function numberedDocument(document: MonographDocument, plan: PagePlan): M
   const numbers = new Map(figures.flatMap((figure) => (figure.unit ? [[figure.unit, figure.label] as const] : [])));
   const players = playerFigures(document);
   const units: Record<string, MonographUnit> = Object.fromEntries(
-    Object.entries(document.content.units).map(([ref, unit]) => [ref, numbers.has(ref) ? { ...unit, nodes: [numbers.get(ref) ?? ""] } : { ...unit, nodes: refigured(unit.nodes, labels) }])
+    Object.entries(document.content.units).map(([ref, unit]) => [ref, numbers.has(ref) ? { ...unit, nodes: renumbered(unit.nodes, (numbers.get(ref) ?? "").split(" ")[1] ?? "") } : { ...unit, nodes: refigured(unit.nodes, labels) }])
   );
   const specs = Object.fromEntries(
     Object.entries(document.specs).map(([label, spec]) => [label, blockNumbered(relabelled(spec, labels, players) as Record<string, unknown>, labels.get(`${label}#figure`))])

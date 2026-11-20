@@ -105,7 +105,8 @@ export function gatedDifferences(approved: StyleRecord, rendered: StyleRecord): 
     if (!difference.property.startsWith("box-")) return true;
     const delta = Math.abs(Number(difference.approved) - Number(difference.rendered));
     if (!(delta > BOX_TOLERANCE_PX)) return false;
-    return GRAPHIC_TAGS.includes(tag(difference.node)) || difference.property === "box-x" || difference.node.startsWith("0:");
+    if (GRAPHIC_TAGS.includes(tag(difference.node)) || difference.node.startsWith("0:")) return true;
+    return difference.property === "box-x" && approved[difference.node]?.display !== "inline";
   });
 }
 

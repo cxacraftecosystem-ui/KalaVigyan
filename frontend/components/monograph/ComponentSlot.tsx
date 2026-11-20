@@ -5,15 +5,21 @@ import { DrawnBundle } from "@/components/monograph/ServerBundle";
 import { SLOT_CLASS } from "@/components/monograph/slotClass";
 import type { MonographComponent, MonographDocument } from "@/lib/monographDocument";
 import { bundleSources } from "@/lib/monographRenderKit";
-import { componentBundles, placedComponents, slotId } from "@/lib/monographRenderLayout";
+import { componentBundles, placedComponents, slotId, specStrings } from "@/lib/monographRenderLayout";
 import { APP_KINDS, componentHome } from "@/lib/monographScopes";
 
 export type SlotDrawing = "view" | "fragment" | "none";
 
+const UNIT_REF = /^u\d{4,}$/;
+
+export function unitsHeld(document: MonographDocument, label: string): boolean {
+  return Object.values(componentBundles(document, label)).every((bundle) => specStrings(bundle.spec).every((value) => !UNIT_REF.test(value) || Object.hasOwn(document.content.units, value)));
+}
+
 export function slotDrawing(document: MonographDocument, label: string): SlotDrawing {
   const component = document.content.components.find((found) => found.label === label);
   if (!component) return "none";
-  if (Object.hasOwn(document.specs, label) && COMPONENT_VIEWS[component.kind]) return "view";
+  if (Object.hasOwn(document.specs, label) && COMPONENT_VIEWS[component.kind] && unitsHeld(document, label)) return "view";
   if (Object.hasOwn(document.fragments, label)) return "fragment";
   return "none";
 }

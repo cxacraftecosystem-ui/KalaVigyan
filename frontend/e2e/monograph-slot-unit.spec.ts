@@ -24,6 +24,15 @@ test("a component with a spec and a registered view is drawn natively, any other
   expect(slotDrawing(document, QUIZ)).toBe("none");
 });
 
+test("a view whose spec names a unit the document does not hold is not drawn, so a stale document never breaks the page", () => {
+  const document = fixtureDocument();
+  const named = JSON.stringify(document.specs[QUIZ]).match(/"(u\d{4})"/)?.[1] ?? "";
+  document.content.units = Object.fromEntries(Object.entries(document.content.units).filter(([ref]) => ref !== named));
+  expect(named).not.toBe("");
+  expect(slotDrawing(document, QUIZ)).toBe("none");
+  expect(markup(createElement(ComponentSlot, { document, label: QUIZ }))).toBe("");
+});
+
 test("a fragment is drawn as written inside a slot container React never re-renders", () => {
   const html = markup(createElement(ComponentSlot, { document: fixtureDocument(), label: PICTURE, scoped: false }));
   expect(html).toBe(
