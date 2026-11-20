@@ -146,13 +146,15 @@ A spent allowance says how long to wait; nothing was stored.
 - Always `preview_page` first. Give one bundle for one craft, family or category page: facts (as
   `propose_fact` takes them), structure items (as `propose_structure` takes them), components
   (each `{proposal, cites}`, the cites naming the bundle's facts a unit rests on as `fact:0`,
-  `fact:1` and on), the layout (built on the version `get_layout` gave) and pictures.
+  `fact:1` and on), the layout (built on the version `get_layout` gave) and pictures: a new one
+  with the facts it shows, or one you gave with `give_image`, named by its `contribution_id`.
 - The preview proposes nothing. It returns a private link, for your account only and for 24 hours,
-  to the page drawn exactly as the site draws it, and says for each part whether it is shown,
-  listed or would be refused. Open it, fix what is refused or wrong, and preview again.
+  to the page drawn exactly as the site draws it, a picture you gave in its place, and says for
+  each part whether it is shown, listed or would be refused. Open it, fix what is refused or wrong,
+  and preview again.
 - Then `propose_page` with the same bundle. Each part is checked as its own tool checks it and
   stored when it passes; a refused part leaves the others standing. One report gives every part's
-  outcome and reason, and each picture part starts an upload.
+  outcome and reason; a new picture part starts an upload, and a given one waits for review as given.
 - A craft's page is drawn once it holds sentences in at least three fields, a family's or a
   category's in one.
 

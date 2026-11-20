@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from types import MappingProxyType
-from typing import Any, ClassVar, Literal, Self
+from typing import Any, ClassVar, Literal, Self, get_args
 
-from pydantic import ModelWrapValidatorHandler, PrivateAttr, ValidationError, model_validator
+from pydantic import BaseModel, ModelWrapValidatorHandler, PrivateAttr, ValidationError, model_validator
 from pydantic.alias_generators import to_snake
 from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode
 
@@ -17,6 +17,7 @@ __all__ = [
     "RenamedArguments",
     "SnakeBodyArguments",
     "camel_keys",
+    "model_aliases",
     "problems",
     "renamed",
 ]
@@ -46,17 +47,39 @@ def renamed(data: Mapping[str, Any], names: Mapping[str, str]) -> tuple[dict[str
     return moved, tuple(used)
 
 
-def camel_keys(value: Any) -> tuple[str, ...]:
+def camel_keys(value: Any, aliases: frozenset[str]) -> tuple[str, ...]:
     found: list[str] = []
     pending = [value]
     while pending:
         current = pending.pop(0)
         if isinstance(current, Mapping):
-            found += [key for key in current if isinstance(key, str) and to_snake(key) != key]
+            found += [key for key in current if key in aliases]
             pending += list(current.values())
         elif isinstance(current, list):
             pending += current
     return tuple(dict.fromkeys(found))
+
+
+def model_aliases(annotation: Any) -> frozenset[str]:
+    aliases: set[str] = set()
+    seen: set[type[BaseModel]] = set()
+    pending = _models_in(annotation)
+    while pending:
+        model = pending.pop()
+        if model in seen:
+            continue
+        seen.add(model)
+        for name, info in model.model_fields.items():
+            if info.alias and info.alias != name:
+                aliases.add(info.alias)
+            pending += _models_in(info.annotation)
+    return frozenset(aliases)
+
+
+def _models_in(annotation: Any) -> list[type[BaseModel]]:
+    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+        return [annotation]
+    return [model for argument in get_args(annotation) for model in _models_in(argument)]
 
 
 def problems(refused: ValidationError) -> str:
@@ -98,7 +121,8 @@ class SnakeBodyArguments(RenamedArguments):
     @classmethod
     def reshaped(cls, data: Mapping[str, Any]) -> tuple[dict[str, Any], tuple[str, ...]]:
         moved, used = super().reshaped(data)
-        return moved, (*used, *camel_keys(moved.get(BODY_ARGUMENT)))
+        aliases = model_aliases(cls.model_fields[BODY_ARGUMENT].annotation)
+        return moved, (*used, *camel_keys(moved.get(BODY_ARGUMENT), aliases))
 
     @classmethod
     def model_json_schema(

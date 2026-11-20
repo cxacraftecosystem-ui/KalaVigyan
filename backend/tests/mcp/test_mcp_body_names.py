@@ -1,13 +1,15 @@
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
 
-from app.api import mcp_source_tools, mcp_structure_tools
-from app.api.mcp_argument_names import camel_keys
+from app.api import mcp_page_tools, mcp_source_tools, mcp_structure_tools
+from app.api.mcp_argument_names import camel_keys, model_aliases
 from app.api.mcp_tools import TOOLS, ToolContext, answer
 from app.core.mcp_scopes import CONTRIBUTE_SCOPE, READ_SCOPE
 from app.models import User
+from app.research.page_proposals import PagePreviewResult, PageSubject
 from app.research.source_proposals import SourceProposal, SourceProposalReply
 from app.research.structure_proposals import StructureProposal, StructureProposalResult, StructureSubject
 from app.services.craft_resolver import CraftIndexStore
@@ -118,6 +120,38 @@ def test_the_proposal_body_is_described_and_schemed_in_snake_case(name: str) -> 
     assert "task_key" in listed["description"]
 
 
+@pytest.mark.parametrize("name", ["propose_page", "preview_page"])
+def test_a_page_bundle_is_schemed_in_snake_case_too(name: str) -> None:
+    names = property_names(TOOLS[name].listed()["inputSchema"])
+    assert {"base_version", "contribution_id", "claim_ids", "task_key"} <= names
+    assert [each for each in names if each != each.lower()] == []
+
+
+async def test_an_old_camel_case_name_in_a_bundle_says_so(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def previewed(session: Any, user: User, bundle: Any, *, site: str, now: Any) -> PagePreviewResult:
+        return PagePreviewResult(
+            subject=PageSubject(kind="craft", slug=SLUG),
+            page_url=f"{SITE}/crafts/{SLUG}",
+            preview_url=f"{SITE}/preview/token",
+            expires_at=datetime(2026, 11, 21, tzinfo=UTC),
+            chapters=["opening"],
+            components=0,
+            sources=0,
+            parts=[],
+            message="Private to you for 24 hours.",
+        )
+
+    monkeypatch.setattr(mcp_page_tools.page_preview, "preview_page", previewed)
+    bundle = {"subject": {"kind": "craft", "slug": SLUG}, "layout": {"baseVersion": 0, "entries": []}}
+    result = await call("preview_page", {"proposal": bundle})
+    assert result["structuredContent"]["notices"] == [
+        "baseVersion is the old name of base_version; it works until the next release, so pass base_version "
+        "from now on."
+    ]
+    snake = {"subject": {"kind": "craft", "slug": SLUG}, "layout": {"base_version": 0, "entries": []}}
+    assert (await call("preview_page", {"proposal": snake}))["structuredContent"]["notices"] == []
+
+
 def test_the_structure_items_name_their_parts_in_snake_case() -> None:
     names = property_names(TOOLS["propose_structure"].listed()["inputSchema"])
     assert {
@@ -157,10 +191,19 @@ async def test_old_camel_case_names_still_work_and_say_so(seen: list[Any]) -> No
 
 
 def test_camel_keys_are_found_once_each_at_any_depth_in_the_order_met() -> None:
+    aliases = frozenset({"claimId", "claimIds", "pageNumber"})
     body = {
         "claimId": 1,
         "sources": [{"url": "u", "quotes": [{"text": "t", "pageNumber": 2}]}, {"pageNumber": 3}],
-        "item": {"claimIds": [], "stage_key": "S01"},
+        "item": {"claimIds": [], "stage_key": "S01", "rowHeaders": []},
     }
-    assert camel_keys(body) == ("claimId", "claimIds", "pageNumber")
-    assert camel_keys(None) == () and camel_keys(["taskKey"]) == ()
+    assert camel_keys(body, aliases) == ("claimId", "claimIds", "pageNumber")
+    assert camel_keys(None, aliases) == () and camel_keys(["claimId"], aliases) == ()
+
+
+def test_only_the_body_s_own_camel_case_names_are_old_names() -> None:
+    structure = model_aliases(StructureProposal)
+    assert {"schemaVersion", "taskKey", "stageKey", "claimIds", "materialKey", "settledBy"} <= structure
+    assert {"stage_key", "url", "quotes"}.isdisjoint(structure)
+    assert model_aliases(SourceProposal) == {"schemaVersion", "claimId", "taskKey"}
+    assert model_aliases(list[SourceProposal]) == model_aliases(SourceProposal)

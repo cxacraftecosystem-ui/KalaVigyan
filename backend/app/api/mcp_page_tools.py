@@ -15,6 +15,7 @@ from app.research.page_proposals import PageBundle, PagePreviewResult, PagePropo
 from app.research.review_switch import AGENT
 from app.services import component_proposals, page_preview
 
+from .mcp_argument_names import SnakeBodyArguments
 from .mcp_tool_base import WRITES, Arguments, Tool, ToolContext
 from .page_proposal_deps import page_proposed
 from .proposal_limits import refuse_tool_when_spent
@@ -49,8 +50,8 @@ COMPONENT_DESCRIPTION = (
 PAGE_DESCRIPTION = (
     "Deliver one bundle for one craft, family or category page: facts (as propose_fact takes them), structure "
     "items (as propose_structure takes them), components (each {proposal, cites}, cites naming the bundle's "
-    "facts a unit rests on as fact:0, fact:1 and on), the page's layout (baseVersion and entries) and pictures "
-    "(each starts an upload). Each part is checked on its own, as its own tool would check it, and stored when it "
+    "facts a unit rests on as fact:0, fact:1 and on), the page's layout (base_version and entries) and pictures "
+    "(a new one starts an upload, one given already is named by contribution_id). Each part is checked on its own, as its own tool would check it, and stored when it "
     "passes; a refused part leaves the others standing. One report gives every part's outcome and reason. Call "
     "preview_page first to see the page the bundle makes."
 )
@@ -58,7 +59,8 @@ PREVIEW_DESCRIPTION = (
     "Assemble the page a bundle would make, the stored page with the bundle's facts, structure, components and "
     "layout, without proposing anything, and return a private link to it: signed, for this account only, for 24 "
     "hours, drawn exactly as the site draws its pages. Each part reports whether it is shown, listed or would be "
-    "refused by the checks that run without fetching sources; the gates read the sources when it is proposed."
+    "refused by the checks that run without fetching sources; the gates read the sources when it is proposed. "
+    "A picture this account gave with give_image, named by its contribution_id, is drawn in its place."
 )
 
 
@@ -71,14 +73,23 @@ class ProposeComponent(Arguments, ComponentProposalDraft):
         return self
 
 
-class ProposePage(Arguments):
+class ProposePage(SnakeBodyArguments):
     proposal: PageBundle = Field(
         description=(
             "subject {kind craft, family or category, slug}, and any of facts[], structure[], components[] "
-            "({proposal, cites}), layout {baseVersion, entries}, pictures[] ({stageId, claimIds, declaration}), "
-            "note"
+            "({proposal, cites}), layout {base_version, entries}, pictures[] ({stage_id, claim_ids, "
+            "declaration} for a new one, or {contribution_id} for one this account gave with give_image), note; "
+            "the old camelCase names work until the next release and say so in notices"
         )
     )
+
+
+class PageToolReply(PageProposalResult):
+    notices: list[str] = Field(default_factory=list)
+
+
+class PreviewToolReply(PagePreviewResult):
+    notices: list[str] = Field(default_factory=list)
 
 
 def _proposer(context: ToolContext, tool: str) -> User:
@@ -96,18 +107,20 @@ async def _propose_component(context: ToolContext, arguments: ProposeComponent) 
     )
 
 
-async def _propose_page(context: ToolContext, arguments: ProposePage) -> PageProposalResult:
+async def _propose_page(context: ToolContext, arguments: ProposePage) -> PageToolReply:
     user = _proposer(context, "propose_page")
     refuse_tool_when_spent(PAGE_PROPOSALS, user)
-    return await page_proposed(context.session, arguments.proposal, user, origin=AGENT, site=context.site)
+    result = await page_proposed(context.session, arguments.proposal, user, origin=AGENT, site=context.site)
+    return PageToolReply.model_validate({**result.model_dump(), "notices": arguments.notices()})
 
 
-async def _preview_page(context: ToolContext, arguments: ProposePage) -> PagePreviewResult:
+async def _preview_page(context: ToolContext, arguments: ProposePage) -> PreviewToolReply:
     user = _proposer(context, "preview_page")
     refuse_tool_when_spent(PAGE_PREVIEWS, user)
-    return await page_preview.preview_page(
+    result = await page_preview.preview_page(
         context.session, user, arguments.proposal, site=context.site, now=datetime.now(UTC)
     )
+    return PreviewToolReply.model_validate({**result.model_dump(), "notices": arguments.notices()})
 
 
 PROPOSE_COMPONENT = Tool(
@@ -125,7 +138,7 @@ PROPOSE_PAGE = Tool(
     "Deliver a page bundle",
     PAGE_DESCRIPTION,
     ProposePage,
-    PageProposalResult,
+    PageToolReply,
     _propose_page,
     scope=CONTRIBUTE_SCOPE,
     annotations=WRITES,
@@ -135,7 +148,7 @@ PREVIEW_PAGE = Tool(
     "Preview a page bundle",
     PREVIEW_DESCRIPTION,
     ProposePage,
-    PagePreviewResult,
+    PreviewToolReply,
     _preview_page,
     scope=CONTRIBUTE_SCOPE,
     annotations=WRITES,
