@@ -10,12 +10,22 @@ export const CONSENT_PATH = "/oauth/authorize";
 export const APPROVE_PATH = "/api/oauth/authorize/approve";
 
 const CONSENT_TIMEOUT_MS = 60_000;
+const CONSENT_FORM = "consent-form";
 const RETURNED = "<!doctype html><title>Signed in</title><p>Signed in.</p>";
 
 type Approval = { kind?: unknown; redirectTo?: unknown; detail?: unknown };
 
+async function consentShown(page: Page): Promise<void> {
+  const form = page.getByTestId(CONSENT_FORM);
+  const alert = page.locator("main").getByRole("alert");
+  await expect(form.or(alert).first()).toBeVisible({ timeout: CONSENT_TIMEOUT_MS });
+  if (!(await form.isVisible())) throw new Error(`the consent page refused the request: ${await alert.first().innerText()}`);
+}
+
 async function signInIfAsked(page: Page, account: Credentials): Promise<void> {
-  await page.waitForURL((url) => url.pathname === SIGN_IN_PATH || url.pathname === CONSENT_PATH, { timeout: CONSENT_TIMEOUT_MS });
+  const form = page.getByTestId(CONSENT_FORM);
+  const alert = page.locator("main").getByRole("alert");
+  await expect(form.or(alert).or(page.getByLabel("Password", { exact: true })).first()).toBeVisible({ timeout: CONSENT_TIMEOUT_MS });
   if (new URL(page.url()).pathname !== SIGN_IN_PATH) return;
   await settle(page);
   await submitSignIn(page, account);
@@ -46,7 +56,7 @@ export async function approveInBrowser(page: Page, authorizationUrl: URL, accoun
   await page.route((url) => url.origin === returnOrigin, (route) => route.fulfill({ status: 200, contentType: "text/html", body: RETURNED }));
   await page.goto(authorizationUrl.href, { waitUntil: "domcontentloaded" });
   await signInIfAsked(page, account);
-  await expect(page.getByTestId("consent-form")).toBeVisible({ timeout: CONSENT_TIMEOUT_MS });
+  await consentShown(page);
   const acceptedTerms = await acceptTermsIfAsked(page);
   return { redirectTo: await approved(page), acceptedTerms };
 }

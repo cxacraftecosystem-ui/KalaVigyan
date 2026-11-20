@@ -14,7 +14,7 @@ function seen(overrides: Partial<PageSeen> = {}): PageSeen {
     drawn: true,
     heading: "Kutch Ajrakh",
     errorPanels: [],
-    shape: { heading: "Kutch Ajrakh", chapters: 9, citedSentences: 120 },
+    shape: { heading: "Kutch Ajrakh", chapters: 9, citations: 120 },
     signInFields: false,
     crashes: [],
     ...overrides
@@ -42,7 +42,7 @@ test("a page that should not exist must answer 404 and every other page 200", ()
   expect(expectedStatus({ kind: "shell" })).toBe(200);
 });
 
-test("a monograph that answers 200 and draws its chapters and cited sentences passes", () => {
+test("a monograph that answers 200 and draws its chapters and citations passes", () => {
   expect(pageProblems(DOCUMENT_PAGE, seen())).toEqual([]);
 });
 
@@ -51,9 +51,9 @@ test("a server error, a crash and an error panel are each named", () => {
   expect(problems).toEqual(["the page answered 500; it should answer 200", "the page threw: TypeError: x is undefined", "the page shows the error-server panel"]);
 });
 
-test("a monograph with the wrong heading, no chapters and no cited sentences fails on each", () => {
-  const problems = pageProblems(DOCUMENT_PAGE, seen({ shape: { heading: "Bagru", chapters: 0, citedSentences: 0 } }));
-  expect(problems).toEqual(['the monograph is headed "Bagru"; it should match /Ajrakh/', "the monograph draws no chapter", "the monograph draws no cited sentence"]);
+test("a monograph with the wrong heading, no chapters and no citations fails on each", () => {
+  const problems = pageProblems(DOCUMENT_PAGE, seen({ shape: { heading: "Bagru", chapters: 0, citations: 0 } }));
+  expect(problems).toEqual(['the monograph is headed "Bagru"; it should match /Ajrakh/', "the monograph draws no chapter", "the monograph draws no citation"]);
 });
 
 test("a craft page that draws no monograph at all says so", () => {

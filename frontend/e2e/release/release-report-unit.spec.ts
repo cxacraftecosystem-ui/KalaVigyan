@@ -7,7 +7,8 @@ import { expect, test } from "@playwright/test";
 import { checkRecord, keepRecord, pathFileName, readRecords, recordFileName, summaryMarkdown, writeSummary } from "./report";
 
 test("a record passes exactly when it names no problem", () => {
-  expect(checkRecord("page", "Map (/map)", [])).toEqual({ check: "page", target: "Map (/map)", ok: true, problems: [], notes: [], numbers: {} });
+  expect(checkRecord("page", "Map (/map)", [])).toEqual({ check: "page", target: "Map (/map)", subject: null, variant: null, ok: true, problems: [], notes: [], numbers: {} });
+  expect(checkRecord("axe", "/map at axe-desktop-dark", [], { subject: "/map", variant: "axe-desktop-dark" })).toMatchObject({ subject: "/map", variant: "axe-desktop-dark" });
   expect(checkRecord("page", "Map (/map)", ["the page answered 500; it should answer 200"]).ok).toBe(false);
 });
 

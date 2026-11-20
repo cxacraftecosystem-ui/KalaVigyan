@@ -8,6 +8,7 @@ import type { DrawnShape, KeyPage, PageSeen } from "./keyPages";
 const DRAW_TIMEOUT_MS = 20_000;
 const QUIET_TIMEOUT_MS = 15_000;
 const DRAWN = 'h1, section[data-testid^="error-"]';
+const CITATION_LABEL = /^Sources? \d/;
 
 export async function quiet(page: Page): Promise<void> {
   try {
@@ -27,19 +28,26 @@ async function drawn(page: Page): Promise<boolean> {
   }
 }
 
+async function citations(page: Page, root: string): Promise<number> {
+  return page.evaluate(
+    ({ scope, label }) => Array.from(document.querySelectorAll(`${scope} button[aria-label]`)).filter((node) => new RegExp(label).test(node.getAttribute("aria-label") ?? "")).length,
+    { scope: root, label: CITATION_LABEL.source }
+  );
+}
+
 async function drawnShape(page: Page, keyPage: KeyPage): Promise<DrawnShape | null> {
   switch (keyPage.marker.kind) {
     case "document": {
       const shape = await page.evaluate(documentShape, { root: DOCUMENT_ROOT, rail: RAIL_LINKS });
-      return shape && { heading: shape.heading, chapters: shape.chapters.length, citedSentences: shape.citedSentences };
+      return shape && { heading: shape.heading, chapters: shape.chapters.length, citations: await citations(page, DOCUMENT_ROOT) };
     }
     case "record": {
       const shape = await page.evaluate(recordShape, { root: RECORD_ROOT, rail: RAIL_LINKS });
-      return shape && { heading: shape.heading, chapters: 0, citedSentences: 0 };
+      return shape && { heading: shape.heading, chapters: 0, citations: 0 };
     }
     case "hub": {
       const shape = await page.evaluate(hubShape, HUB_ROOT);
-      return shape && { heading: shape.heading, chapters: shape.chapters, citedSentences: 0 };
+      return shape && { heading: shape.heading, chapters: shape.chapters, citations: 0 };
     }
     default:
       return null;

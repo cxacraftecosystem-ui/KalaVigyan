@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "site": "https://kalavigyan.vercel.app",
+  "recordedAt": "2026-11-20",
+  "run": 44747173602,
+  "lighthouse": {
+    "/": {
+      "desktop": {
+        "performance": 100,
+        "accessibility": 100,
+        "best-practices": 100,
+        "lcpMs": 347,
+        "cls": 0.009,
+        "tbtMs": 0,
+        "bytes": 2710828
+      },
+      "mobile": {
+        "performance": 73,
+        "accessibility": 100,
+        "best-practices": 100,
+        "lcpMs": 6787,
+        "cls": 0.093,
+        "tbtMs": 146,
+        "bytes": 1544239
+      }
+    },
+    "/ask": {
+      "desktop": {
+        "performance": 96,
+        "accessibility": 100,
+        "best-practices": 96,
+        "lcpMs": 1423,
+        "cls": 0.005,
+        "tbtMs": 0,
+        "bytes": 1929692
+      },
+      "mobile": {
+        "performance": 70,
+        "accessibility": 100,
+        "best-practices": 96,
+        "lcpMs": 9913,
+        "cls": 0.012,
+        "tbtMs": 245,
+        "bytes": 2010096
+      }
+    },
+    "/categories/Textiles-Based-Craft-Category": {
+      "desktop": {
+        "performance": 93,
+        "accessibility": 96,
+        "best-practices": 77,
+        "lcpMs": 1703,
+        "cls": 0.001,
+        "tbtMs": 3,
+        "bytes": 3243104
+      },
+      "mobile": {
+        "performance": 63,
+        "accessibility": 96,
+        "best-practices": 77,
+        "lcpMs": 9923,
+        "cls": 0,
+        "tbtMs": 250,
+        "bytes": 2630007
+      }
+    },
+    "/crafts": {
+      "desktop": {
+        "performance": 97,
+        "accessibility": 100,
+        "best-practices": 77,
+        "lcpMs": 347,
+        "cls": 0.106,
+        "tbtMs": 0,
+        "bytes": 2701556
+      },
+      "mobile": {
+        "performance": 71,
+        "accessibility": 100,
+        "best-practices": 77,
+        "lcpMs": 5124,
+        "cls": 0.154,
+        "tbtMs": 219,
+        "bytes": 2473891
+      }
+    },
+    "/crafts/Bastar-Dhokra": {
+      "desktop": {
+        "performance": 97,
+        "accessibility": 93,
+        "best-practices": 100,
+        "lcpMs": 1264,
+        "cls": 0.001,
+        "tbtMs": 0,
+        "bytes": 2270865
+      },
+      "mobile": {
+        "performance": 65,
+        "accessibility": 93,
+        "best-practices": 100,
+        "lcpMs": 7074,
+        "cls": 0,
+        "tbtMs": 292,
+        "bytes": 2099463
+      }
+    },
+    "/crafts/Kasuti-Embroidery": {
+      "desktop": {
+        "performance": 100,
+        "accessibility": 100,
+        "best-practices": 100,
+        "lcpMs": 302,
+        "cls": 0.001,
+        "tbtMs": 0,
+        "bytes": 1248502
+      },
+      "mobile": {
+        "performance": 86,
+        "accessibility": 100,
+        "best-practices": 100,
+        "lcpMs": 4073,
+        "cls": 0,
+        "tbtMs": 115,
+        "bytes": 1076822
+      }
+    },
+    "/crafts/Kutch-Ajrakh": {
+      "desktop": {
+        "performance": 79,
+        "accessibility": 96,
+        "best-practices": 100,
+        "lcpMs": 3504,
+        "cls": 0.001,
+        "tbtMs": 17,
+        "bytes": 6151534
+      },
+      "mobile": {
+        "performance": 50,
+        "accessibility": 96,
+        "best-practices": 100,
+        "lcpMs": 21024,
+        "cls": 0,
+        "tbtMs": 405,
+        "bytes": 5981125
+      }
+    },
+    "/login": {
+      "desktop": {
+        "performance": 99,
+        "accessibility": 100,
+        "best-practices": 100,
+        "lcpMs": 944,
+        "cls": 0.005,
+        "tbtMs": 0,
+        "bytes": 1351259
+      },
+      "mobile": {
+        "performance": 77,
+        "accessibility": 100,
+        "best-practices": 100,
+        "lcpMs": 5425,
+        "cls": 0.02,
+        "tbtMs": 185,
+        "bytes": 1550456
+      }
+    },
+    "/map": {
+      "desktop": {
+        "performance": 97,
+        "accessibility": 100,
+        "best-practices": 100,
+        "lcpMs": 1144,
+        "cls": 0.074,
+        "tbtMs": 0,
+        "bytes": 1374595
+      },
+      "mobile": {
+        "performance": 84,
+        "accessibility": 100,
+        "best-practices": 100,
+        "lcpMs": 2425,
+        "cls": 0.225,
+        "tbtMs": 171,
+        "bytes": 1320901
+      }
+    }
+  },
+  "axe": {
+    "/": {
+      "label-content-name-mismatch": 6
+    },
+    "/ask": {},
+    "/categories/Textiles-Based-Craft-Category": {
+      "label-content-name-mismatch": 48,
+      "target-size": 67
+    },
+    "/crafts": {},
+    "/crafts/Bastar-Dhokra": {
+      "color-contrast": 1,
+      "label-content-name-mismatch": 63,
+      "target-size": 22
+    },
+    "/crafts/Kasuti-Embroidery": {},
+    "/crafts/Kutch-Ajrakh": {
+      "label-content-name-mismatch": 121,
+      "target-size": 44
+    },
+    "/login": {},
+    "/map": {}
+  }
+}

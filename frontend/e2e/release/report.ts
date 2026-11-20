@@ -6,11 +6,15 @@ export type CheckNumbers = Record<string, number | null>;
 export type CheckRecord = {
   check: string;
   target: string;
+  subject: string | null;
+  variant: string | null;
   ok: boolean;
   problems: string[];
   notes: string[];
   numbers: CheckNumbers;
 };
+
+type RecordExtra = Partial<Pick<CheckRecord, "subject" | "variant" | "notes" | "numbers">>;
 
 export const SUMMARY_FILE = "summary.md";
 
@@ -30,8 +34,17 @@ export function pathFileName(path: string, extension: string): string {
   return `${name}.${extension}`;
 }
 
-export function checkRecord(check: string, target: string, problems: string[], extra: Partial<Pick<CheckRecord, "notes" | "numbers">> = {}): CheckRecord {
-  return { check, target, ok: problems.length === 0, problems, notes: extra.notes ?? [], numbers: extra.numbers ?? {} };
+export function checkRecord(check: string, target: string, problems: string[], extra: RecordExtra = {}): CheckRecord {
+  return {
+    check,
+    target,
+    subject: extra.subject ?? null,
+    variant: extra.variant ?? null,
+    ok: problems.length === 0,
+    problems,
+    notes: extra.notes ?? [],
+    numbers: extra.numbers ?? {}
+  };
 }
 
 export function keepRecord(record: CheckRecord, dir: string = reportDir()): void {

@@ -11,7 +11,7 @@ export type Marker =
 
 export type KeyPage = { name: string; path: string; marker: Marker; audit: boolean };
 
-export type DrawnShape = { heading: string; chapters: number; citedSentences: number };
+export type DrawnShape = { heading: string; chapters: number; citations: number };
 
 export type PageSeen = {
   status: number | null;
@@ -73,7 +73,7 @@ function shapeProblems(marker: Extract<Marker, { kind: "document" | "record" | "
   if (!shape) return [`the page draws no ${what.replace(/^the /, "")}`];
   const problems = headingProblems(what, shape.heading, marker.heading);
   if (marker.kind === "document" && shape.chapters === 0) problems.push("the monograph draws no chapter");
-  if (marker.kind === "document" && shape.citedSentences === 0) problems.push("the monograph draws no cited sentence");
+  if (marker.kind === "document" && shape.citations === 0) problems.push("the monograph draws no citation");
   return problems;
 }
 

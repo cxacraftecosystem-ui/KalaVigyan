@@ -6,6 +6,7 @@ export type MetricName = "lcpMs" | "cls" | "tbtMs" | "bytes";
 
 export type LighthouseForm = { key: FormFactor; width: number; flags: readonly string[] };
 export type LighthouseBudget = { scores: Record<LighthouseCategory, number>; metrics: Record<MetricName, number> };
+export type Judgement = { problems: string[]; notes: string[] };
 
 export type LighthouseResult = {
   runtimeError?: { code?: string; message?: string };
@@ -16,6 +17,7 @@ export type LighthouseResult = {
 export type AxeViolation = { id: string; impact?: string | null; help: string; nodes: readonly unknown[] };
 
 export const LIGHTHOUSE_CATEGORIES: readonly LighthouseCategory[] = ["performance", "accessibility", "best-practices"];
+export const METRICS: readonly MetricName[] = ["lcpMs", "cls", "tbtMs", "bytes"];
 
 export const LIGHTHOUSE_FORMS: readonly LighthouseForm[] = [
   {
@@ -26,20 +28,25 @@ export const LIGHTHOUSE_FORMS: readonly LighthouseForm[] = [
   { key: "desktop", width: 1440, flags: ["--preset=desktop", "--screenEmulation.width=1440", "--screenEmulation.height=900"] }
 ];
 
-export const LIGHTHOUSE_BUDGETS: Record<FormFactor, LighthouseBudget> = {
+export const LIGHTHOUSE_TARGETS: Record<FormFactor, LighthouseBudget> = {
   mobile: {
-    scores: { performance: 0.5, accessibility: 0.95, "best-practices": 0.9 },
-    metrics: { lcpMs: 4000, cls: 0.1, tbtMs: 600, bytes: 5_000_000 }
+    scores: { performance: 0.8, accessibility: 0.95, "best-practices": 0.9 },
+    metrics: { lcpMs: 2500, cls: 0.1, tbtMs: 200, bytes: 3_000_000 }
   },
   desktop: {
-    scores: { performance: 0.8, accessibility: 0.95, "best-practices": 0.9 },
-    metrics: { lcpMs: 2500, cls: 0.1, tbtMs: 300, bytes: 5_000_000 }
+    scores: { performance: 0.9, accessibility: 0.95, "best-practices": 0.9 },
+    metrics: { lcpMs: 2500, cls: 0.1, tbtMs: 200, bytes: 3_000_000 }
   }
 };
 
+export const SCORE_SLACK: Record<LighthouseCategory, number> = { performance: 10, accessibility: 2, "best-practices": 2 };
+export const METRIC_SLACK = 1.3;
+export const CLS_SLACK = 0.05;
+
 export const AXE_TAGS: readonly string[] = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 export const AXE_FAILING_IMPACTS: readonly string[] = ["critical", "serious"];
-export const AXE_IMPACTS: readonly string[] = ["critical", "serious", "moderate", "minor"];
+export const UNRECORDED = "not recorded yet, ";
+export const RECORDED = "recorded, ";
 
 const METRIC_AUDITS: Record<MetricName, string> = {
   lcpMs: "largest-contentful-paint",
@@ -62,57 +69,95 @@ function rounded(value: number, digits: number): number {
   return Math.round(value * scale) / scale;
 }
 
-function score(result: LighthouseResult, category: LighthouseCategory): number | null {
-  const value = result.categories?.[category]?.score;
+function known(recorded: CheckNumbers | undefined, name: string): number | null {
+  const value = recorded?.[name];
   return typeof value === "number" ? value : null;
-}
-
-function metric(result: LighthouseResult, name: MetricName): number | null {
-  const value = result.audits?.[METRIC_AUDITS[name]]?.numericValue;
-  return typeof value === "number" && Number.isFinite(value) ? rounded(value, METRIC_DIGITS[name]) : null;
 }
 
 export function lighthouseNumbers(result: LighthouseResult): CheckNumbers {
   const numbers: CheckNumbers = {};
   for (const category of LIGHTHOUSE_CATEGORIES) {
-    const value = score(result, category);
-    numbers[category] = value === null ? null : Math.round(value * 100);
+    const value = result.categories?.[category]?.score;
+    numbers[category] = typeof value === "number" ? Math.round(value * 100) : null;
   }
-  for (const name of Object.keys(METRIC_AUDITS) as MetricName[]) numbers[name] = metric(result, name);
+  for (const name of METRICS) {
+    const value = result.audits?.[METRIC_AUDITS[name]]?.numericValue;
+    numbers[name] = typeof value === "number" && Number.isFinite(value) ? rounded(value, METRIC_DIGITS[name]) : null;
+  }
   return numbers;
 }
 
-export function lighthouseProblems(result: LighthouseResult, budget: LighthouseBudget): string[] {
-  if (result.runtimeError?.code) return [`Lighthouse could not audit the page: ${result.runtimeError.code} ${result.runtimeError.message ?? ""}`.trim()];
-  const problems: string[] = [];
+export function scoreFloor(category: LighthouseCategory, target: LighthouseBudget, recorded: CheckNumbers | undefined): number {
+  const wanted = Math.round(target.scores[category] * 100);
+  const before = known(recorded, category);
+  return before === null ? wanted : Math.min(wanted, before - SCORE_SLACK[category]);
+}
+
+export function metricCeiling(name: MetricName, target: LighthouseBudget, recorded: CheckNumbers | undefined): number {
+  const before = known(recorded, name);
+  if (before === null) return target.metrics[name];
+  const allowance = name === "cls" ? rounded(before + CLS_SLACK, 3) : Math.round(before * METRIC_SLACK);
+  return Math.max(target.metrics[name], allowance);
+}
+
+function breach(judged: Judgement, recorded: CheckNumbers | undefined, text: string): void {
+  if (recorded) judged.problems.push(text);
+  else judged.notes.push(`${UNRECORDED}${text}`);
+}
+
+function scoreJudgement(numbers: CheckNumbers, target: LighthouseBudget, recorded: CheckNumbers | undefined, judged: Judgement): void {
   for (const category of LIGHTHOUSE_CATEGORIES) {
-    const value = score(result, category);
-    const floor = Math.round(budget.scores[category] * 100);
-    if (value === null) problems.push(`Lighthouse gave no ${category} score`);
-    else if (Math.round(value * 100) < floor) problems.push(`${category} scores ${Math.round(value * 100)}; the budget is ${floor}`);
+    const value = numbers[category];
+    const floor = scoreFloor(category, target, recorded);
+    const wanted = Math.round(target.scores[category] * 100);
+    if (value === null) judged.problems.push(`Lighthouse gave no ${category} score`);
+    else if (value < floor) breach(judged, recorded, `${category} scores ${value}; the budget is ${floor}`);
+    else if (value < wanted) judged.notes.push(`${category} ${value} is under the target ${wanted}`);
   }
-  for (const name of Object.keys(METRIC_AUDITS) as MetricName[]) {
-    const value = metric(result, name);
-    if (value === null) problems.push(`Lighthouse measured no ${METRIC_LABELS[name].toLowerCase()}`);
-    else if (value > budget.metrics[name]) problems.push(`${METRIC_LABELS[name]} is ${value}; the budget is ${budget.metrics[name]}`);
-  }
-  return problems;
 }
 
-export function axeNumbers(violations: readonly AxeViolation[]): CheckNumbers {
+function metricJudgement(numbers: CheckNumbers, target: LighthouseBudget, recorded: CheckNumbers | undefined, judged: Judgement): void {
+  for (const name of METRICS) {
+    const value = numbers[name];
+    const ceiling = metricCeiling(name, target, recorded);
+    if (value === null) judged.problems.push(`Lighthouse measured no ${METRIC_LABELS[name].toLowerCase()}`);
+    else if (value > ceiling) breach(judged, recorded, `${METRIC_LABELS[name]} is ${value}; the budget is ${ceiling}`);
+    else if (value > target.metrics[name]) judged.notes.push(`${METRIC_LABELS[name]} ${value} is over the target ${target.metrics[name]}`);
+  }
+}
+
+export function lighthouseJudgement(result: LighthouseResult, target: LighthouseBudget, recorded?: CheckNumbers): Judgement {
+  if (result.runtimeError?.code) return { problems: [`Lighthouse could not audit the page: ${result.runtimeError.code} ${result.runtimeError.message ?? ""}`.trim()], notes: [] };
+  const numbers = lighthouseNumbers(result);
+  const judged: Judgement = { problems: [], notes: [] };
+  scoreJudgement(numbers, target, recorded, judged);
+  metricJudgement(numbers, target, recorded, judged);
+  return judged;
+}
+
+function failing(violation: AxeViolation): boolean {
+  return AXE_FAILING_IMPACTS.includes(violation.impact ?? "");
+}
+
+function elements(count: number): string {
+  return `${count} ${count === 1 ? "element" : "elements"}`;
+}
+
+export function axeRuleNodes(violations: readonly AxeViolation[]): CheckNumbers {
   const numbers: CheckNumbers = {};
-  for (const impact of AXE_IMPACTS) numbers[impact] = violations.filter((violation) => violation.impact === impact).length;
+  for (const violation of violations.filter(failing)) numbers[violation.id] = violation.nodes.length;
   return numbers;
 }
 
-export function axeProblems(violations: readonly AxeViolation[]): string[] {
-  return violations
-    .filter((violation) => AXE_FAILING_IMPACTS.includes(violation.impact ?? ""))
-    .map((violation) => `${violation.id} (${violation.impact}) on ${violation.nodes.length} ${violation.nodes.length === 1 ? "element" : "elements"}: ${violation.help}`);
-}
-
-export function axeNotes(violations: readonly AxeViolation[]): string[] {
-  return violations
-    .filter((violation) => !AXE_FAILING_IMPACTS.includes(violation.impact ?? ""))
-    .map((violation) => `${violation.id} (${violation.impact ?? "no impact"}) on ${violation.nodes.length}`);
+export function axeJudgement(violations: readonly AxeViolation[], recorded?: CheckNumbers): Judgement {
+  const judged: Judgement = { problems: [], notes: [] };
+  for (const violation of violations) {
+    const count = violation.nodes.length;
+    const before = known(recorded, violation.id);
+    if (!failing(violation)) judged.notes.push(`${violation.id} (${violation.impact ?? "no impact"}) on ${elements(count)}`);
+    else if (before === null) breach(judged, recorded, `${violation.id} (${violation.impact}) on ${elements(count)}: ${violation.help}`);
+    else if (count > before) judged.problems.push(`${violation.id} (${violation.impact}) grew to ${elements(count)} from the recorded ${before}: ${violation.help}`);
+    else judged.notes.push(`${RECORDED}${violation.id} (${violation.impact}) on ${elements(count)}`);
+  }
+  return judged;
 }

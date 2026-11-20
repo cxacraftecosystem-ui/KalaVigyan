@@ -6,27 +6,27 @@ import { chromium, expect, test } from "@playwright/test";
 
 import { passPreviewProtection } from "../production/preview";
 
-import { LIGHTHOUSE_BUDGETS, LIGHTHOUSE_FORMS, lighthouseNumbers, lighthouseProblems, type LighthouseForm } from "./auditBudgets";
+import { LIGHTHOUSE_CHECK, recordedLighthouse } from "./auditBaseline";
+import { LIGHTHOUSE_FORMS, LIGHTHOUSE_TARGETS, lighthouseJudgement, lighthouseNumbers, type LighthouseForm } from "./auditBudgets";
 import { auditPaths } from "./keyPages";
 import { runLighthouse } from "./lighthouseRun";
 import { checkRecord, keepRecord, pathFileName, reportDir } from "./report";
 import { bypassToken, siteOrigin } from "./site";
 
-const CHECK = "lighthouse";
 const DEBUGGING_PORT = 9333;
 const FORM_TIMEOUT_MS = 40 * 60_000;
 
 async function auditPage(form: LighthouseForm, path: string, port: number): Promise<string[]> {
-  const folder = join(reportDir(), CHECK, form.key);
+  const folder = join(reportDir(), LIGHTHOUSE_CHECK, form.key);
   mkdirSync(folder, { recursive: true });
   const result = await runLighthouse({ url: new URL(path, siteOrigin()).href, port, form, outputBase: join(folder, pathFileName(path, "lighthouse")) });
-  const problems = lighthouseProblems(result, LIGHTHOUSE_BUDGETS[form.key]);
-  keepRecord(checkRecord(CHECK, `${path} at ${form.width} (${form.key})`, problems, { numbers: lighthouseNumbers(result) }));
+  const { problems, notes } = lighthouseJudgement(result, LIGHTHOUSE_TARGETS[form.key], recordedLighthouse(path, form.key));
+  keepRecord(checkRecord(LIGHTHOUSE_CHECK, `${path} at ${form.width} (${form.key})`, problems, { subject: path, variant: form.key, notes, numbers: lighthouseNumbers(result) }));
   return problems.map((problem) => `${path}: ${problem}`);
 }
 
 LIGHTHOUSE_FORMS.forEach((form, index) => {
-  test(`Lighthouse at ${form.width} keeps every page within the ${form.key} budget`, async () => {
+  test(`Lighthouse at ${form.width} keeps every page within its ${form.key} budget`, async () => {
     test.setTimeout(FORM_TIMEOUT_MS);
     const port = DEBUGGING_PORT + index;
     const profile = mkdtempSync(join(tmpdir(), "kv-lighthouse-"));

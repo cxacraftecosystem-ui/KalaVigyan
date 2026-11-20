@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { resolve } from "node:path";
 
 import { defineConfig, devices, type Project } from "@playwright/test";
 
@@ -24,7 +24,7 @@ function browserProject(name: string, spec: RegExp, width: Width, scheme: Scheme
 export default defineConfig({
   testDir: ".",
   testIgnore: /-unit\.spec\.ts$/,
-  outputDir: join(reportDir(), "test-results"),
+  outputDir: resolve(reportDir(), "test-results"),
   timeout: 120_000,
   expect: { timeout: 15_000 },
   fullyParallel: true,
