@@ -17,6 +17,7 @@ function seen(overrides: Partial<PageSeen> = {}): PageSeen {
     shape: { heading: "Kutch Ajrakh", chapters: 9, citations: 120 },
     signInFields: false,
     crashes: [],
+    appbars: 1,
     ...overrides
   };
 }
@@ -63,6 +64,12 @@ test("a craft page that draws no monograph at all says so", () => {
 test("a page that should be missing passes only on 404 with the page-not-found panel", () => {
   expect(pageProblems(MISSING_PAGE, seen({ status: 404, errorPanels: ["error-not-found"], shape: null }))).toEqual([]);
   expect(pageProblems(MISSING_PAGE, seen({ status: 200, errorPanels: [], shape: null }))).toEqual(["the page answered 200; it should answer 404", "the page does not show the page-not-found panel"]);
+});
+
+test("a page draws at most one app bar, so a missing craft inside the reading shell does not stack a second", () => {
+  expect(pageProblems(MISSING_PAGE, seen({ status: 404, errorPanels: ["error-not-found"], shape: null, appbars: 2 }))).toEqual(["the page draws 2 app bars, one above the other"]);
+  expect(pageProblems(MISSING_PAGE, seen({ status: 404, errorPanels: ["error-not-found"], shape: null, appbars: 1 }))).toEqual([]);
+  expect(pageProblems(LOGIN_PAGE, seen({ signInFields: true, appbars: 0 }))).toEqual([]);
 });
 
 test("a page that drew nothing within the wait or answered nothing is named", () => {

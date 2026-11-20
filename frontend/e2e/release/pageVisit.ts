@@ -65,6 +65,10 @@ async function errorPanels(page: Page): Promise<string[]> {
   return page.evaluate(() => Array.from(document.querySelectorAll('section[data-testid^="error-"]')).map((node) => node.getAttribute("data-testid") ?? ""));
 }
 
+async function appbars(page: Page): Promise<number> {
+  return page.evaluate(() => Array.from(document.querySelectorAll('[data-testid="appbar"]')).filter((node) => node.getClientRects().length > 0).length);
+}
+
 async function signInFields(page: Page): Promise<boolean> {
   const email = page.getByLabel("Email", { exact: true });
   const password = page.getByLabel("Password", { exact: true });
@@ -86,6 +90,7 @@ export async function visitKeyPage(page: Page, keyPage: KeyPage): Promise<PageSe
     errorPanels: await errorPanels(page),
     shape: await drawnShape(page, keyPage),
     signInFields: keyPage.marker.kind === "sign-in" ? await signInFields(page) : false,
+    appbars: await appbars(page),
     crashes
   };
 }

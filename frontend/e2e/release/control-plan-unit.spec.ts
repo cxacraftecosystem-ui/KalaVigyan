@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+import { shotHeight } from "../production/capture";
+import { abortedRequest } from "../production/checks";
+
 import {
   citationMode,
   endsOnItsOwn,
@@ -89,4 +92,19 @@ test("only a term no two crafts' cited sentences share may answer 404, as the le
 test("a preview reads production's API, so the API's sign-in metadata names production's site", () => {
   expect(servedSiteOrigin("https://kalavigyan-ab12cd34e-cxacraftecosystem-8028s-projects.vercel.app")).toBe("https://kalavigyan.vercel.app");
   expect(servedSiteOrigin("https://kalavigyan.vercel.app")).toBe("https://kalavigyan.vercel.app");
+});
+
+test("a request the browser dropped on leaving a page is not a failure, in Chromium, WebKit or Firefox words", () => {
+  expect(abortedRequest("net::ERR_ABORTED")).toBe(true);
+  expect(abortedRequest("Load request cancelled")).toBe(true);
+  expect(abortedRequest("NS_BINDING_ABORTED")).toBe(true);
+  expect(abortedRequest("net::ERR_CONNECTION_RESET")).toBe(false);
+  expect(abortedRequest("Could not connect to the server.")).toBe(false);
+});
+
+test("a WebKit capture keeps the first 32767 device pixels of a page taller than that", () => {
+  expect(shotHeight(20_000, 3)).toBe(10_922);
+  expect(shotHeight(10_922, 3)).toBeNull();
+  expect(shotHeight(40_000, 1)).toBe(32_767);
+  expect(shotHeight(5_000, 2)).toBeNull();
 });

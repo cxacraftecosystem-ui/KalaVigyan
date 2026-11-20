@@ -56,6 +56,12 @@ export function navExpectation(role: UserRole): NavExpectation | null {
   return NAV_BY_ROLE[role] ?? null;
 }
 
+export const ABORTED_REQUESTS: readonly string[] = ["net::ERR_ABORTED", "Load request cancelled", "NS_BINDING_ABORTED"];
+
+export function abortedRequest(failure: string): boolean {
+  return ABORTED_REQUESTS.includes(failure);
+}
+
 export function clip(text: string, limit = TEXT_LIMIT): string {
   const flat = text.replace(/\s+/g, " ").trim();
   return flat.length > limit ? `${flat.slice(0, limit - 1)}…` : flat;

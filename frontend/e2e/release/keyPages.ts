@@ -22,6 +22,7 @@ export type PageSeen = {
   shape: DrawnShape | null;
   signInFields: boolean;
   crashes: string[];
+  appbars: number;
 };
 
 export const NOT_FOUND_PANEL = "error-not-found";
@@ -110,5 +111,6 @@ export function pageProblems(page: KeyPage, seen: PageSeen): string[] {
   if (!seen.drawn) problems.push("the page drew nothing within the wait");
   const unexpected = seen.errorPanels.filter((panel) => page.marker.kind !== "not-found" || panel !== NOT_FOUND_PANEL);
   for (const panel of unexpected) problems.push(`the page shows the ${panel} panel`);
+  if (seen.appbars > 1) problems.push(`the page draws ${seen.appbars} app bars, one above the other`);
   return [...problems, ...markerProblems(page, seen)];
 }

@@ -1,6 +1,6 @@
 import type { ConsoleMessage, Page, Request, Response } from "@playwright/test";
 
-import { clip, errorHeadline } from "../production/checks";
+import { abortedRequest, clip, errorHeadline } from "../production/checks";
 import { isPreview, previewConsoleNoise } from "../production/preview";
 
 import { checkRecord, keepRecord } from "./report";
@@ -112,7 +112,7 @@ export class ControlWatch {
   private onRequestFailed(request: Request): void {
     const url = this.sameOrigin(request.url());
     const failure = request.failure()?.errorText ?? "failed";
-    if (!url || failure === "net::ERR_ABORTED") return;
+    if (!url || abortedRequest(failure)) return;
     this.flag(`${request.method()} ${url.pathname} failed: ${failure}`);
   }
 

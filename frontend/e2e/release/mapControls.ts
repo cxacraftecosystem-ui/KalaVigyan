@@ -43,9 +43,10 @@ async function pickOption(page: Page, choice: LayerChoice): Promise<string> {
   return label;
 }
 
-async function chooseLayer(page: Page, choice: LayerChoice, kind: string): Promise<string[]> {
+async function chooseLayer(watch: ControlWatch, page: Page, choice: LayerChoice, kind: string): Promise<string[]> {
   const before = param(page, LAYER_PARAM);
   const label = await pickOption(page, choice);
+  watch.note(`chose "${label}"`);
   const after = await changedFrom(async () => param(page, LAYER_PARAM), before, LAYER_TIMEOUT_MS);
   const moved = unchangedProblems(`choosing "${label}" (${kind})`, before || NO_LAYER_LABEL, after || NO_LAYER_LABEL);
   if (moved.length) return moved;
@@ -73,7 +74,7 @@ export async function walkMapLayers(watch: ControlWatch, page: Page): Promise<vo
   const kinds = switchKinds(walk);
   const seen = new Set<LayerChoice["kind"]>();
   for (const [at, choice] of walk.entries()) {
-    await watch.step(`Map layer switch ${at + 1}, ${kinds[at]}`, () => chooseLayer(page, choice, kinds[at]));
+    await watch.step(`Map layer switch ${at + 1}, ${kinds[at]}`, () => chooseLayer(watch, page, choice, kinds[at]));
     if (seen.has(choice.kind)) continue;
     seen.add(choice.kind);
     await firstOnLayer(watch, page, choice.kind);

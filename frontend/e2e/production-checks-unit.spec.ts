@@ -587,6 +587,7 @@ test("on a preview, only Google's refusal and the blocked Vercel toolbar frame a
   const toolbar = "Framing 'https://vercel.live/' violates the following Content Security Policy directive: \"frame-src https://accounts.google.com/gsi/\". The request has been blocked.";
   expect(previewConsoleNoise(toolbar, "https://kalavigyan-ab12cd34e-cxacraftecosystem-8028s-projects.vercel.app/crafts")).toBe(true);
   expect(previewConsoleNoise(GOOGLE_ORIGIN_REFUSED, "https://accounts.google.com/gsi/client")).toBe(true);
+  expect(previewConsoleNoise("Refused to load https://vercel.live/_next-live/feedback/feedback.html?dpl=dpl_1 because it does not appear in the frame-src directive of the Content Security Policy.", "")).toBe(true);
   expect(previewConsoleNoise("Framing 'https://evil.example/' violates the following Content Security Policy directive: \"frame-src 'none'\".", "")).toBe(false);
   expect(previewConsoleNoise("TypeError: Cannot read properties of null (reading 'textContent')", "")).toBe(false);
 });

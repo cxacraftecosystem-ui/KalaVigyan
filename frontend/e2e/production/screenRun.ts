@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { CDPSession, ConsoleMessage, Page, Request, Response } from "@playwright/test";
 
 import { NetworkQuiet, captureScreen, readyForCapture, settle, sightProblems } from "./capture";
-import { CITED_CONTENT, OVERFLOW_LIMIT, clip, errorHeadline, gapCopyFindings } from "./checks";
+import { CITED_CONTENT, OVERFLOW_LIMIT, abortedRequest, clip, errorHeadline, gapCopyFindings } from "./checks";
 import type { Scheme } from "./matrix";
 import { auditPage } from "./pageAudit";
 import { isPreview, previewConsoleNoise } from "./preview";
@@ -220,7 +220,7 @@ export class ScreenRun {
   private onRequestFailed(request: Request): void {
     const url = this.sameOrigin(request.url());
     const failure = request.failure()?.errorText ?? "failed";
-    if (!url || failure === "net::ERR_ABORTED") return;
+    if (!url || abortedRequest(failure)) return;
     this.flag(`${request.method()} ${url.pathname} failed: ${failure}`);
   }
 
