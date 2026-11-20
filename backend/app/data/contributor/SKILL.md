@@ -220,6 +220,36 @@ callers share one allowance between them.
   outcome and reason; a new picture part starts an upload, and a given one waits for review as given.
 - A craft's page is drawn once it holds sentences in at least three fields, a family's or a
   category's in one.
+- The preview's `report` checks the page against the page checklist: each rule a machine can check
+  passes or fails with its evidence, and the rest are yours to judge on the link. Clients that draw
+  MCP Apps show it from `ui://kalavigyan/page-preview.html`. Fix every failure before you propose.
+
+## Drafts
+
+A page built over more than one call lives in a draft, and the `curate_page` prompt walks the whole
+job in order.
+
+- `create_draft` opens a private draft of one page (one a page, ten at once, kept 14 days after its
+  last change), with the page's lists: its mechanisms, its ambiguous terms and its signature fact
+  (`fact:N` of the draft, or a stored fact's id). Calling it again gives back the open draft.
+- `add_to_draft` adds facts, structure items, components and dataset figures (`{proposal, cites}`),
+  the layout, pictures (`{contribution_id}` for one you gave) and supplied sources;
+  `remove_from_draft` removes one part by its kind and index and renumbers the later facts;
+  `get_draft` reads the draft whole.
+- `preview_draft` draws the draft's page behind a private link with its checklist report: fix every
+  failure, judge the other rules on the link, on a phone and a desktop in both themes, and preview again.
+- `submit_draft` submits it once, each part through its own checks, and the draft keeps the
+  outcome; follow each part with `get_proposal`.
+
+## Sources only you can read
+
+When your own access opens a source the fetcher cannot (a paywalled paper through your subscription
+or library, a book or PDF you hold, an archive, a site that refuses automated reading), give it with
+`supply_source`: its identity (DOI, ISBN or address, title, authors, year, publisher), how and when
+you read it, and its words: the passages you will quote with their locators, the whole text, or
+`upload` pdf for a private slot to PUT the file to. Cite it in a fact's sources as its `cite_as` gives
+it, and copy each quote from your text exactly: the gates check your quotes against it, the review
+queue shows that the fact rests on text you supplied, and the text itself is never shown.
 
 ## Pictures
 
