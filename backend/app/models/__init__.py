@@ -13,6 +13,7 @@ from app.models.alerts import AlertDigestSend, Notification
 from app.models.article_sections import ArticleSection
 from app.models.base import Base
 from app.models.candidate_checks import CandidateCheck
+from app.models.contributions import CraftSteward, QueuedProposal, TrustTierOverride
 from app.models.conversation import (
     Answer,
     AnswerCitation,
@@ -158,6 +159,7 @@ __all__ = [
     "CraftPageSnapshot",
     "CraftPrice",
     "CraftSpelling",
+    "CraftSteward",
     "CraftSubCategory",
     "CraftWorkforce",
     "CuratedCategory",
@@ -212,6 +214,7 @@ __all__ = [
     "ProcessCondition",
     "ProcessStage",
     "Provider",
+    "QueuedProposal",
     "QuotaLedger",
     "QuotaPolicy",
     "Reaction",
@@ -233,6 +236,7 @@ __all__ = [
     "TermConcept",
     "TermCraft",
     "TermSummary",
+    "TrustTierOverride",
     "TwoFactorChallenge",
     "UploadLink",
     "UsageEvent",

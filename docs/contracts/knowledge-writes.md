@@ -96,7 +96,7 @@ The subject's facts are the craft's (its own concepts and its sub-category's), o
 (its curated claims and the shared concepts named for it). All text sent to the judge is quoted
 data in `untrusted_source` blocks.
 
-## The review switch
+## The review switch and trust tiers
 
 One admin setting, `knowledge.review_switch`, per origin:
 
@@ -108,10 +108,37 @@ One admin setting, `knowledge.review_switch`, per origin:
 
 | Case | Claim status | Shown | In the review queue | Reply `outcome` |
 |---|---|---|---|---|
-| Passed, `AUTO` | `IN_REVIEW` (live, unreviewed) | yes, at its level | yes | `PUBLISHED` |
-| Passed, `APPROVAL` | `DRAFT` (hidden) | no | yes | `WAITING` |
 | Passed, proposed by a Professor, Admin or Master Admin | `APPROVED` | yes | no | `PUBLISHED`, `approvedAtOnce` |
+| Passed, a `PROVEN` contributor, not drawn for review | `APPROVED` (at `PROVISIONAL`) | yes | no | `PUBLISHED`, `approvedAtOnce` |
+| Passed, a `PROVEN` contributor, drawn for review | `IN_REVIEW` (live, unreviewed) | yes | yes | `PUBLISHED` |
+| Passed, a `NEW` contributor, whatever the switch | `DRAFT` (hidden) | no | yes | `WAITING` |
+| Passed, an `ESTABLISHED` contributor, `AUTO` | `IN_REVIEW` (live, unreviewed) | yes, at its level | yes | `PUBLISHED` |
+| Passed, an `ESTABLISHED` contributor, `APPROVAL` | `DRAFT` (hidden) | no | yes | `WAITING` |
 | Refused at a gate | `REJECTED`, kept only for audit | no | no | `REFUSED` |
+
+**Trust tiers** (round 7; `research/trust_tiers.py`, `services/trust_tiers.py`). An account's tier is
+read from its record at the moment of the write: its contributed facts (`Claim.origin`
+`CONTRIBUTION`, `createdById` the account) counted as accepted (`APPROVED`, `IN_REVIEW`, `PROPOSED`),
+refused (`REJECTED`, `RETRACTED`) and waiting (`DRAFT`, never counted for the tier).
+
+| Tier | Earned when | Tasks held at once | Facts an hour | Placement |
+|---|---|---|---|---|
+| `NEW` | otherwise | 5 (`RESERVATIONS_HELD_MAX`) | 30 (`FACT_PROPOSALS_PER_WINDOW`) | waits for review, even under `AUTO` |
+| `ESTABLISHED` | 5 or more accepted and at least 75 % of the decided ones accepted | 10 | 60 | the review switch decides |
+| `PROVEN` | 25 or more accepted and at least 90 % of the decided ones accepted | 20 | 150 | published at once, `AUTO` under any switch; one in five (`REVIEW_SAMPLE_PERCENT` 20) is drawn into the review queue |
+
+- Drawn for review: the first four bytes of the SHA-256 of the proposal's id, read as a number, modulo
+  100, below 20 (`drawn_for_review`); the queue passes its proposal id, the site's single form a fresh
+  one. Unpredictable to the proposer, the same on every retry.
+- Professors and above keep their own rule (approved at once) and hold the `PROVEN` allowances.
+- An admin holds an account at a tier whatever its record (`TrustTierOverride`, audited
+  `knowledge.trust_tier_set`) or gives it back to its record (`tier: null`). The standing an admin
+  reads is `TrustStanding {schemaVersion 1, userId, name, role, tier, earned, accepted, refused,
+  waiting, tasksHeldMax, factsPerHour, reviewSamplePercent (0 for a reviewer, 20 for proven, 100
+  otherwise), override {tier, note, setAt, setBy} | null}`.
+- The ReviewEvent note says why (`... approved at once: a proven contributor's fact not drawn for
+  review`, `... drawn for review (one in 5); it waits in the review queue`, `... waits hidden for a
+  Professor's or Admin's approval: a new contributor's fact`), and the reply's message says the same.
 
 - The proposer's role is read from their account row at the moment of the write, never from the
   request or the token.
@@ -150,11 +177,24 @@ still a 200: the reply's outcome and the failing gate's reasons say why.
 
 ## MCP
 
-`propose_fact` (`api/mcp_fact_tools.py`, in `FACT_TOOLS`), scope `contribute`, annotations
-`readOnlyHint false`. Arguments `{proposal: FactProposal}`; the result is `ProposalReply` as
-structured content. Origin `AGENT`. A missing sign-in, scope or rank, a malformed proposal, a spent
-limit or an outage comes back as a tool error the agent can act on. The `research_field` prompt tells
-the agent to pass the task key it claimed.
+The fact tools (`api/mcp_fact_tools.py`, arguments in `api/mcp_fact_arguments.py`, in `FACT_TOOLS`),
+scope `contribute`, origin `AGENT`. A missing sign-in, scope or rank, or a malformed fact comes back
+as a tool error the agent can act on. The gates run in the contribution queue (below), so the reply
+comes at once.
+
+| Tool | Arguments | Result | Hints |
+|---|---|---|---|
+| `propose_fact` | `craft_slug` or `category_slug` (one), `field`, `fields?`, `statement`, `sources`, `task_key?`, `idempotency_key?` | `ProposalTicket` | writes |
+| `propose_facts` | `facts` (1 to 25, each as `propose_fact` takes one) | `ProposalBatch` | writes |
+| `get_proposal` | `proposal_id` | `ProposalTicket` (the account's own; an admin's any) | read-only |
+
+- **Old forms.** `{proposal: FactProposal}`, the first release's form, and the camelCase names
+  (`craftSlug`, `categorySlug`, `taskKey`, `idempotencyKey`) keep working until the next release, and
+  the result's `notices[]` says so (`api/mcp_argument_names.RenamedArguments`, which any tool file may
+  use for its own old names).
+- **Each fact on its own.** In `propose_facts` a malformed fact is refused by its index with the
+  problem (`BatchItem {index, accepted false, idempotencyKey, problem}`) and the rest go on; more than
+  25 facts refuse the call. The `research_field` prompt tells the agent to pass the task key it claimed.
 
 ## Proposal limits
 
@@ -164,7 +204,7 @@ account has a sliding hour per kind (`core/rate_limit.proposal_attempt`, `PROPOS
 
 | Kind (`core/rate_limit`) | Per hour (constant) | Counted at |
 |---|---|---|
-| `FACT_PROPOSALS` | `FACT_PROPOSALS_PER_WINDOW` = 30 | `POST /api/knowledge/facts` (after the terms), MCP `propose_fact` |
+| `FACT_PROPOSALS` | `FACT_PROPOSALS_PER_WINDOW` = 30; for a queued fact the account's tier allowance (`TIER_FACTS_PER_HOUR`: 30, 60, 150) | `POST /api/knowledge/facts` (after the terms); each new fact queued by MCP `propose_fact` and `propose_facts` and `POST /api/knowledge/proposals/facts` (`core/rate_limit.proposal_slots`: a batch takes what is left of the same window, and each fact beyond it is refused on its own; a fact sent again with its key takes nothing) |
 | `COMPONENT_PROPOSALS` | `COMPONENT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/contributions/proposals/components`, MCP `propose_component` |
 | `LAYOUT_PROPOSALS` | `LAYOUT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/knowledge/layouts` (after the terms), MCP `propose_layout` |
 | `STRUCTURE_PROPOSALS` | `STRUCTURE_PROPOSALS_PER_WINDOW` = 20 | `POST /api/knowledge/structure` (after the terms), MCP `propose_structure` |
@@ -178,6 +218,84 @@ account has a sliding hour per kind (`core/rate_limit.proposal_attempt`, `PROPOS
   made 30 fact proposals in the last hour, the most one account may. Try again in 12 minutes."; over
   MCP the same sentence is a tool error (`api/proposal_limits.py`: `proposal_limit` for routes,
   `refuse_tool_when_spent` for tools).
+
+## The contribution queue (round 7)
+
+Content arrives through MCP from many contributors at once, so the gates run off the request. Code:
+`research/contribution_queue.py` (tickets, batches, keys, retries), `services/contribution_queue.py`
+(queueing), `services/contribution_queue_tickets.py` (progress), `services/contribution_queue_worker.py`
+(the worker), `app/scripts/contribution_worker.py` (its entry and adapters), `models/contributions.py`
+(`QueuedProposal`), migration `0048_contribution_queue`, `infra/deploy/units/kv-contributions.service`.
+
+**Queueing.** A proposed fact is checked at the door for what costs nothing: its shape, its subject
+(an unknown craft or category is refused), its idempotency key and the hour's allowance. It is then
+stored `QUEUED` and the reply comes at once: `ProposalTicket {schemaVersion 1, proposalId, kind FACT,
+state, idempotencyKey, replayed, subject, field, statement, taskKey, position (proposals ahead while
+QUEUED), attempts, queuedAt, startedAt, finishedAt, nextTryAt, outcome, reply (the ProposalReply once
+DONE), modelCalls, costUsd, message, notices[]}`. `ProposalBatch {schemaVersion 1, accepted, refused,
+items[BatchItem {index, accepted, idempotencyKey, ticket, problem}], message, notices[]}`.
+
+**Idempotency.** Every fact has a key per account: the one given (8 to 120 letters, digits, `.`, `_`,
+`:` or `-`), else `fact:` and the first 40 hex digits of the SHA-256 of the proposal's canonical JSON.
+A key sent again with the same fact returns the first proposal (`replayed`; nothing added, no
+allowance taken); with another fact it is refused; given twice in one call the second is refused. A
+`FAILED` proposal sent again with its key is queued once more. A unique index on `(proposerId,
+idempotencyKey)` holds this under concurrent retries.
+
+**States.** `QUEUED`, then `CHECKING` (a worker holds it for `LEASE_TIME`, 15 minutes; a lease that
+runs out returns it to the queue), then `DONE` (the gates ran: `outcome` PUBLISHED, WAITING or
+REFUSED, the `reply`, `claimId`) or `FAILED` (the checks could not run `ATTEMPTS_MAX` = 5 times, or the
+account or subject went; nothing was stored). A check that cannot run (the fetcher, the embedding route
+or the judge down) is queued again after 30 seconds, doubling each try up to 30 minutes (`retry_delay`).
+
+**The worker** (`kv-contributions`, started and stopped with the other workers by
+`infra/deploy/blue_green.sh`) claims one proposal at a time (`SELECT ... FOR UPDATE SKIP LOCKED`,
+oldest first; the facts of one call keep their order) and checks up to `--concurrency` (4,
+`CONTRIBUTION_WORKERS` in the box's `.env`) at once, never two of the same subject together, so the
+duplicate gate sees the first before the second. Each check is `services/fact_proposals.propose_fact_run`
+in a savepoint, under the request id `contribution-<proposal id hex>`;
+`python -m app.scripts.contribution_worker --once` checks what is queued and stops.
+
+**Cost at the centre.** The worker's gates are thrifty (`research/gate_thrift.py`): the deterministic
+gates decide first, and the judge is asked only when they cannot.
+- QUOTES and SOURCE as above; a refusal there spends no model call.
+- DUPLICATE: the identical text as above; a held fact at cosine similarity 0.97 or more
+  (`VECTOR_TWIN_SIMILARITY`) with the same figures, the same negations and 80 % of the same content
+  stems (`TWIN_STEM_OVERLAP`) is refused without the judge; no held fact at 0.8 or more passes
+  without it.
+- NOVELTY: when every held fact of the field is below 0.75 (`NOVELTY_JUDGE_SIMILARITY`), the fact adds
+  to the section without the judge.
+- The judge runs first on the cheapest route that may judge: each provider's least priced verified
+  model for `EVAL_JUDGE` (`services/candidate_judge_routes.cheapest_judge_models`: OpenAI `gpt-6-luna`,
+  Gemini `gemini-3.5-flash-lite`, Anthropic `claude-haiku-5-5`, through `RouteTuning.models`), and only
+  when its reply fails the judge's checks (not JSON, off its schema, a pair or candidate left
+  unanswered) on the configured route (`later_gates(..., escalate=...)`).
+- The site's single form (`POST /api/knowledge/facts`) keeps the gates as they were.
+
+**The cost ledger** (`research/cost_ledger.py`, `services/cost_ledger.py`). Every model call a queued
+proposal causes is a `UsageEvent` of the proposer carrying the proposal's request id, and the proposal
+keeps its own `modelCalls` and `costUsd`. `GET /api/knowledge/contribution-costs?from&to` (days in
+India time, by default the last 7, at most 92; `VIEW_USAGE`, Admin and above) answers `CostLedger
+{schemaVersion 1, dayFrom, dayTo, timeZone, days[{day, userId, name, role, proposals (checks
+finished), calls, judgeCalls, embedCalls, failures, costUsd}], accounts[{userId, name, proposals,
+calls, costUsd}], calls, costUsd}`, days in order and the costliest account first.
+
+| Route | Who | Answer |
+|---|---|---|
+| `POST /api/knowledge/proposals/facts` | `PROPOSE_KNOWLEDGE` and the terms | body `{facts: [{idempotencyKey?, proposal: FactProposal}]}` (1 to 25); `ProposalBatch`, origin `CONTRIBUTION`; 403 without the terms, 422 malformed |
+| `GET /api/knowledge/proposals?limit` | `PROPOSE_KNOWLEDGE` | `ProposalTickets {schemaVersion 1, proposals[]}`, the account's latest (at most 50) |
+| `GET /api/knowledge/proposals/{proposalId}` | `PROPOSE_KNOWLEDGE` | `ProposalTicket`; 404 when it is not the account's |
+| `GET /api/knowledge/trust-tiers?limit` | `REVIEW_CONTRIBUTIONS` | `TrustStandings {schemaVersion 1, accounts[]}`, every account with a record or a held tier, most accepted first |
+| `GET /api/knowledge/trust-tiers/{userId}` | `REVIEW_CONTRIBUTIONS` | `TrustStanding` |
+| `PUT /api/knowledge/trust-tiers/{userId}` | `REVIEW_CONTRIBUTIONS` | body `TierUpdate {tier: NEW, ESTABLISHED, PROVEN or null, note?}`; `TrustStanding` |
+| `GET /api/knowledge/contribution-costs` | `VIEW_USAGE` | `CostLedger`; 422 for a range that runs backwards or is too long |
+
+Tables (migration `0048_contribution_queue`, row level security on, no grants to the public roles):
+`QueuedProposal` (`proposerId` cascading, `kind` `FACT`, `origin` `CONTRIBUTION` or `AGENT`,
+`idempotencyKey`, `fingerprint`, `subjectKey` `<kind>:<slug folded>`, `taskKey`, `proposal` JSONB,
+`state`, `attempts`, `availableAt`, `leaseUntil`, `startedAt`, `finishedAt`, `outcome` set exactly when
+`DONE`, `claimId`, `reply` JSONB, `failure`, `modelCalls`, `costUsd`), `TrustTierOverride` (`userId`
+key, `tier`, `note`, `setById`, `setAt`) and `CraftSteward` (`open-work.md`).
 
 ## Layout proposals (decision 0101, item 14)
 

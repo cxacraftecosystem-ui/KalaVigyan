@@ -1,0 +1,30 @@
+[Unit]
+Description=KalaVigyan contribution queue (the gates of proposals sent through MCP and the Knowledge API)
+After=network-online.target kv-fetcher.service
+Wants=network-online.target
+ConditionPathExists=/opt/kalavigyan/current/backend/app/scripts/contribution_worker.py
+
+[Service]
+User=kalavigyan
+Group=kalavigyan
+WorkingDirectory=/opt/kalavigyan/current/backend
+Environment=MALLOC_ARENA_MAX=2
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/opt/kalavigyan/.env
+Environment=KV_PROCESS=contributions
+Environment=CONTRIBUTION_WORKERS=4
+ExecStart=/opt/kalavigyan/current/backend/.venv/bin/python -m app.scripts.contribution_worker --concurrency ${CONTRIBUTION_WORKERS}
+MemoryAccounting=yes
+MemoryHigh=900M
+MemoryMax=1200M
+Restart=always
+RestartSec=10
+KillMode=control-group
+TimeoutStopSec=60
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

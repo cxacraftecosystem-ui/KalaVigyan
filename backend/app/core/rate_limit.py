@@ -74,6 +74,23 @@ class SlidingWindow:
                 self._hits.popitem(last=False)
             return True, 0.0
 
+    def take(
+        self, key: str, wanted: int, limit: int, window_seconds: float, now: float | None = None
+    ) -> tuple[int, float]:
+        moment = time.monotonic() if now is None else now
+        with self._lock:
+            hits = self._hits.setdefault(key, deque())
+            self._hits.move_to_end(key)
+            while hits and hits[0] <= moment - window_seconds:
+                hits.popleft()
+            granted = max(0, min(wanted, limit - len(hits)))
+            hits.extend([moment] * granted)
+            while len(self._hits) > _MAX_KEYS:
+                self._hits.popitem(last=False)
+            if granted == wanted or not hits:
+                return granted, 0.0
+            return granted, max(0.0, hits[0] + window_seconds - moment)
+
     def refund(self, key: str) -> None:
         with self._lock:
             hits = self._hits.get(key)
@@ -219,6 +236,13 @@ def proposal_attempt(kind: str, user: Any) -> tuple[bool, float]:
     if has_rank(user, ADMIN):
         return True, 0.0
     return _windows.attempt(f"propose-{kind}:{user.id}", PROPOSAL_LIMITS[kind], PROPOSAL_WINDOW_SECONDS)
+
+
+def proposal_slots(kind: str, user: Any, wanted: int, *, limit: int | None = None) -> tuple[int, float]:
+    if has_rank(user, ADMIN):
+        return wanted, 0.0
+    allowed = PROPOSAL_LIMITS[kind] if limit is None else limit
+    return _windows.take(f"propose-{kind}:{user.id}", wanted, allowed, PROPOSAL_WINDOW_SECONDS)
 
 
 def public_read_attempt(connection: HTTPConnection) -> tuple[bool, float]:

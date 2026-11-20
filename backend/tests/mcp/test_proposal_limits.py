@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api import mcp_ask_tools, mcp_fact_tools, mcp_layout_tools, mcp_work_tools
+from app.api import mcp_ask_tools, mcp_layout_tools, mcp_work_tools
 from app.api.mcp_tools import ToolContext, answer
 from app.api.proposal_limits import wait_words
 from app.api.routes import knowledge_writes
@@ -110,23 +110,6 @@ def test_admins_are_never_limited(role: str) -> None:
 )
 def test_the_wait_is_said_in_whole_seconds_or_minutes(seconds: float, words: str) -> None:
     assert wait_words(seconds) == words
-
-
-async def test_a_spent_fact_limit_is_a_tool_error_and_runs_no_gates(monkeypatch: pytest.MonkeyPatch) -> None:
-    researcher = person("RESEARCHER")
-    monkeypatch.setattr(mcp_fact_tools, "proposed", never_called)
-    spend(FACT_PROPOSALS, researcher)
-    proposal = {
-        "subject": {"kind": "craft", "slug": "Kutch-Ajrakh"},
-        "field": "PROCESS",
-        "statement": "The cloth is printed with a lime and gum resist before dyeing.",
-        "sources": [
-            {"url": "https://example.org/a", "title": "A", "quotes": [{"text": "lime and gum resist"}]}
-        ],
-    }
-    spent = await tool_text("propose_fact", {"proposal": proposal}, researcher)
-    assert spent["isError"] is True
-    assert spent["content"][0]["text"].startswith("This account made 30 fact proposals in the last hour")
 
 
 async def test_spent_component_layout_and_picture_limits_are_tool_errors(

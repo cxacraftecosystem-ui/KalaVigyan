@@ -17,8 +17,9 @@ from app.models import (
     KnowledgePiece,
     Source,
 )
+from app.services.craft_finder import find_crafts
 from app.services.craft_resolver import CraftIndexStore
-from app.services.knowledge_api import craft_facts, craft_section, found_crafts
+from app.services.knowledge_api import craft_facts, craft_section
 from app.services.knowledge_export import craft_export, exported_slugs
 
 pytestmark = pytest.mark.db
@@ -141,7 +142,7 @@ async def test_a_section_is_null_until_one_is_published(session: AsyncSession) -
 
 
 async def test_find_crafts_names_the_craft_by_its_name(session: AsyncSession) -> None:
-    found = await found_crafts(session, CraftIndexStore(), "Knowledge Api Test Craft", site=SITE)
+    found = await find_crafts(session, CraftIndexStore(), "Knowledge Api Test Craft", site=SITE)
     assert found.crafts and found.crafts[0].craft.slug == SLUG
     assert found.crafts[0].page_url == f"{SITE}/crafts/{SLUG}"
 

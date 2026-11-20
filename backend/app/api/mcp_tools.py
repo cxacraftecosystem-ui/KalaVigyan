@@ -25,7 +25,9 @@ from .mcp_protocol import (
 )
 from .mcp_read_tools import READ_TOOLS
 from .mcp_resources import resource_list, resource_read, resource_templates
+from .mcp_steward_tools import STEWARD_TOOLS
 from .mcp_structure_tools import STRUCTURE_TOOLS
+from .mcp_task_tools import TASK_TOOLS
 from .mcp_tool_base import Tool, ToolContext, scope_refusal
 from .mcp_work_tools import WORK_TOOLS
 
@@ -34,7 +36,16 @@ __all__ = ["TOOLS", "ToolContext", "answer", "tool_list"]
 TOOLS: Mapping[str, Tool] = MappingProxyType(
     {
         tool.name: tool
-        for tool in (*READ_TOOLS, *FACT_TOOLS, *WORK_TOOLS, *ASK_TOOLS, *LAYOUT_TOOLS, *STRUCTURE_TOOLS)
+        for tool in (
+            *READ_TOOLS,
+            *FACT_TOOLS,
+            *WORK_TOOLS,
+            *TASK_TOOLS,
+            *STEWARD_TOOLS,
+            *ASK_TOOLS,
+            *LAYOUT_TOOLS,
+            *STRUCTURE_TOOLS,
+        )
     }
 )
 

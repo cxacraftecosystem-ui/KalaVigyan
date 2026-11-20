@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
+from app.core.errors import ExternalFailure
 from app.research.candidate_gates import (
     DUPLICATE_GATE,
     NOVELTY_GATE,
@@ -30,6 +31,13 @@ from app.research.candidate_judge import (
     parsed_novelty,
 )
 from app.research.embedding import TextEmbedder, checked_vectors
+from app.research.gate_thrift import (
+    GateThrift,
+    distant_novelty,
+    novel_by_distance,
+    vector_twin,
+    vector_twin_outcome,
+)
 from app.research.structured import StructuredModel, reply_object
 from app.retrieval.text import document_text
 
@@ -93,6 +101,18 @@ class _Held:
     twin: HeldFact | None
     nearest: tuple[HeldFact, ...]
     close: tuple[HeldFact, ...]
+    near_twin: HeldFact | None = None
+    distant: bool = False
+
+    @property
+    def compared(self) -> bool:
+        return self.twin is None and self.near_twin is None and bool(self.close)
+
+
+@dataclass(frozen=True)
+class _Judging:
+    ladder: tuple[StructuredModel, ...]
+    thrift: GateThrift | None
 
 
 def first_gates(candidate: Candidate, sources: Sequence[CitedSource]) -> tuple[GateOutcome, ...]:
@@ -114,16 +134,17 @@ async def later_gates(
     *,
     embed: TextEmbedder | None,
     judge: StructuredModel | None,
+    thrift: GateThrift | None = None,
+    escalate: Sequence[StructuredModel] = (),
 ) -> dict[str, LaterGates]:
     if not candidates:
         return {}
+    judging = _Judging(ladder=() if judge is None else (judge, *escalate), thrift=thrift)
     vectors = await _vectors(embed, candidates)
-    held = {
-        candidate.ref: await _held(store, candidate, vectors.get(candidate.ref)) for candidate in candidates
-    }
-    duplicates = await _duplicates(judge, candidates, held, vectored=embed is not None)
+    held = {c.ref: await _held(store, c, vectors.get(c.ref), thrift) for c in candidates}
+    duplicates = await _duplicates(judging, candidates, held, vectored=embed is not None)
     passing = [candidate for candidate in candidates if duplicates[candidate.ref].passed]
-    novelty = await _novelty(judge, passing, held, duplicates) if embed is not None else {}
+    novelty = await _novelty(judging, passing, held, duplicates) if embed is not None else {}
     return {
         candidate.ref: LaterGates(
             outcomes=tuple(
@@ -143,59 +164,78 @@ async def _vectors(embed: TextEmbedder | None, candidates: Sequence[Candidate]) 
     return {candidate.ref: vector for candidate, vector in zip(candidates, found, strict=True)}
 
 
-async def _held(store: HeldFacts, candidate: Candidate, vector: list[float] | None) -> _Held:
+async def _held(
+    store: HeldFacts, candidate: Candidate, vector: list[float] | None, thrift: GateThrift | None
+) -> _Held:
     nearest = tuple(await store.nearest(candidate.field, vector, NOVELTY_FACTS_MAX)) if vector else ()
     twins = await store.twins(candidate.field, candidate.statement)
     twin = held_twin(candidate.statement, [*twins, *nearest])
-    return _Held(twin=twin, nearest=nearest, close=tuple(close_facts(nearest)))
+    close = tuple(close_facts(nearest))
+    if thrift is None or twin is not None:
+        return _Held(twin=twin, nearest=nearest, close=close)
+    return _Held(
+        twin=None,
+        nearest=nearest,
+        close=close,
+        near_twin=vector_twin(candidate.statement, close, at_least=thrift.twin_similarity),
+        distant=novel_by_distance(nearest, below=thrift.novelty_similarity),
+    )
 
 
 async def _duplicates(
-    judge: StructuredModel | None,
+    judging: _Judging,
     candidates: Sequence[Candidate],
     held: Mapping[str, _Held],
     *,
     vectored: bool,
 ) -> dict[str, GateOutcome]:
-    asks = [
-        JudgeAsk(c, held[c.ref].close) for c in candidates if held[c.ref].twin is None and held[c.ref].close
-    ]
+    asks = [JudgeAsk(c, held[c.ref].close) for c in candidates if held[c.ref].compared]
     compared: dict[str, list[FactComparison]] = {}
     model = None
-    if asks and judge is not None:
-        reply, model = await _judged(judge, comparison_request(asks))
-        compared = parsed_comparisons(reply, asks)
-    return {
-        candidate.ref: duplicate_outcome(
+    if asks and judging.ladder:
+        compared, model = await _asked(
+            judging.ladder, comparison_request(asks), lambda reply: parsed_comparisons(reply, asks)
+        )
+    found: dict[str, GateOutcome] = {}
+    for candidate in candidates:
+        mine = held[candidate.ref]
+        if mine.near_twin is not None:
+            found[candidate.ref] = vector_twin_outcome(mine.near_twin)
+            continue
+        found[candidate.ref] = duplicate_outcome(
             candidate,
-            twin=held[candidate.ref].twin,
-            close=held[candidate.ref].close,
+            twin=mine.twin,
+            close=mine.close,
             comparisons=compared.get(candidate.ref),
             model=model,
             vectored=vectored,
         )
-        for candidate in candidates
-    }
+    return found
 
 
 async def _novelty(
-    judge: StructuredModel | None,
+    judging: _Judging,
     candidates: Sequence[Candidate],
     held: Mapping[str, _Held],
     duplicates: Mapping[str, GateOutcome],
 ) -> dict[str, GateOutcome]:
+    settled = {c.ref for c in candidates if held[c.ref].distant and not duplicates[c.ref].related}
     asks = [
-        JudgeAsk(candidate, held[candidate.ref].nearest)
-        for candidate in candidates
-        if held[candidate.ref].nearest and not duplicates[candidate.ref].related
+        JudgeAsk(c, held[c.ref].nearest)
+        for c in candidates
+        if held[c.ref].nearest and not duplicates[c.ref].related and c.ref not in settled
     ]
     verdicts: dict[str, NoveltyVerdict] = {}
     model = None
-    if asks and judge is not None:
-        reply, model = await _judged(judge, novelty_request(asks))
-        verdicts = parsed_novelty(reply, asks)
+    if asks and judging.ladder:
+        verdicts, model = await _asked(
+            judging.ladder, novelty_request(asks), lambda reply: parsed_novelty(reply, asks)
+        )
     found: dict[str, GateOutcome] = {}
     for candidate in candidates:
+        if candidate.ref in settled:
+            found[candidate.ref] = distant_novelty(candidate, held[candidate.ref].nearest)
+            continue
         outcome = novelty_outcome(
             candidate,
             differs=duplicates[candidate.ref].related,
@@ -208,6 +248,16 @@ async def _novelty(
     return found
 
 
-async def _judged(judge: StructuredModel, request: JudgeRequest) -> tuple[dict[str, object], str | None]:
-    reply = await judge(system=request.system, user=request.user, schema=request.schema)
-    return reply_object(reply), reply.model
+async def _asked[T](
+    ladder: Sequence[StructuredModel], request: JudgeRequest, parse: Callable[[dict[str, Any]], T]
+) -> tuple[T, str | None]:
+    failure: ExternalFailure | None = None
+    for judge in ladder:
+        reply = await judge(system=request.system, user=request.user, schema=request.schema)
+        try:
+            return parse(reply_object(reply)), reply.model
+        except ExternalFailure as refused:
+            failure = refused
+    if failure is None:
+        raise ExternalFailure("no judge was given to ask", service="model")
+    raise failure

@@ -135,8 +135,9 @@ WORK_TOOLS: tuple[Tool, ...] = (
         "claim_task",
         "Reserve a task",
         "Reserve an open task for this signed-in account for two hours so no other agent does the same work; "
-        "claiming it again renews it, and an expired reservation returns the task to the list. One account "
-        "holds at most five tasks at once.",
+        "claiming it again renews it, and an expired reservation returns the task to the list. How many "
+        "tasks an account holds at once is set by its trust tier (my_tasks says it); claim_tasks reserves "
+        "several in one call.",
         TaskKeyArguments,
         TaskHold,
         _claim_task,

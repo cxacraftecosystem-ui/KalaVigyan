@@ -9,18 +9,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput, Refused
 from app.models import TaskReservation
+from app.research.my_tasks import RefusedClaim, TaskClaims
 from app.research.open_work import (
     RESERVATION_TIME,
-    RESERVATIONS_HELD_MAX,
     UNRESERVABLE_KINDS,
     OpenTask,
     TaskHold,
     parse_task_key,
 )
 
+from . import trust_tiers
 from .open_work import open_task, proposed_tasks
 
-__all__ = ["TASKS_HELD", "TASK_TAKEN", "claim_task", "complete_task", "give_back_task", "release_task"]
+__all__ = [
+    "TASKS_HELD",
+    "TASK_TAKEN",
+    "claim_task",
+    "claim_tasks",
+    "complete_task",
+    "give_back_task",
+    "holding",
+    "release_task",
+]
 
 TASK_TAKEN = "task_taken"
 TASKS_HELD = "tasks_held"
@@ -29,6 +39,11 @@ RELEASED = "RELEASED"
 COMPLETED = "COMPLETED"
 NOT_OPEN = "No open task has the key {key}; list_open_work gives the open tasks."
 QUEUE_NOT_RESERVED = "A review queue is worked item by item in admin settings; it is never reserved."
+TOO_MANY = (
+    "This account holds {held} tasks, the most an account of its trust tier ({tier}) may hold at once; "
+    "release_task one, or finish one, before claiming another."
+)
+CLAIMED = "Reserved {held} tasks and refused {refused}; this account now holds {count} of its {most}."
 
 
 async def claim_task(
@@ -57,6 +72,44 @@ async def claim_task(
     except IntegrityError as taken:
         raise Refused(TASK_TAKEN, f"{key} was reserved by another account a moment ago.") from taken
     return _held(key, task, reservation.expiresAt)
+
+
+async def claim_tasks(
+    session: AsyncSession, user_id: uuid.UUID, keys: list[str], *, site: str, now: datetime
+) -> TaskClaims:
+    held: list[TaskHold] = []
+    refused: list[RefusedClaim] = []
+    for key in dict.fromkeys(keys):
+        try:
+            async with session.begin_nested():
+                held.append(await claim_task(session, user_id, key, site=site, now=now))
+        except Refused as problem:
+            refused.append(RefusedClaim(task_key=key, problem=problem.message))
+        except InvalidInput as problem:
+            refused.append(RefusedClaim(task_key=key, problem=str(problem)))
+    standing = await trust_tiers.account_standing(session, user_id)
+    count = await holding(session, user_id, now=now)
+    return TaskClaims(
+        held=held,
+        refused=refused,
+        tier=standing.tier,
+        holding=count,
+        holding_max=standing.tasks_held_max,
+        message=CLAIMED.format(
+            held=len(held), refused=len(refused), count=count, most=standing.tasks_held_max
+        ),
+    )
+
+
+async def holding(session: AsyncSession, user_id: uuid.UUID, *, now: datetime) -> int:
+    held = await session.scalar(
+        select(func.count(TaskReservation.id)).where(
+            TaskReservation.userId == user_id,
+            TaskReservation.endedAt.is_(None),
+            TaskReservation.expiresAt > now,
+        )
+    )
+    return int(held or 0)
 
 
 async def release_task(session: AsyncSession, user_id: uuid.UUID, key: str, *, now: datetime) -> TaskHold:
@@ -113,19 +166,10 @@ async def _live(session: AsyncSession, key: str) -> TaskReservation | None:
 
 
 async def _refuse_too_many(session: AsyncSession, user_id: uuid.UUID, *, now: datetime) -> None:
-    held = await session.scalar(
-        select(func.count(TaskReservation.id)).where(
-            TaskReservation.userId == user_id,
-            TaskReservation.endedAt.is_(None),
-            TaskReservation.expiresAt > now,
-        )
-    )
-    if (held or 0) >= RESERVATIONS_HELD_MAX:
-        raise Refused(
-            TASKS_HELD,
-            f"This account holds {held} tasks, the most one account may hold at once; release_task one "
-            "before claiming another.",
-        )
+    held = await holding(session, user_id, now=now)
+    standing = await trust_tiers.account_standing(session, user_id)
+    if held >= standing.tasks_held_max:
+        raise Refused(TASKS_HELD, TOO_MANY.format(held=held, tier=standing.tier.lower()))
 
 
 def _given_back(reservation: TaskReservation, now: datetime) -> str:

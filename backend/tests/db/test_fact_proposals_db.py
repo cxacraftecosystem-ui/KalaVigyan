@@ -23,7 +23,8 @@ from app.models import (
 from app.research.knowledge_writes import FactProposal
 from app.research.retrieval import EVERY_CHUNK_ACLS
 from app.research.review_switch import ReviewSwitchUpdate
-from app.services import app_settings
+from app.research.trust_tiers import TierUpdate
+from app.services import app_settings, trust_tiers
 from app.services.candidate_writes import checks_of
 from app.services.fact_proposals import ProposalAdapters, propose_fact
 from app.services.knowledge_view import claims_for
@@ -139,6 +140,11 @@ async def proposed(session: AsyncSession, user: User, origin: str, gates: Propos
     return await propose_fact(session, proposal(**changes), user, origin, adapters=gates, now=NOW)
 
 
+async def held_at(session: AsyncSession, people: People, tier: str) -> None:
+    update = TierUpdate(tier=tier, note="Held for the test.")
+    await trust_tiers.set_tier(session, people.professor, people.researcher.id, update, now=NOW)
+
+
 async def shown_ids(session: AsyncSession) -> set[uuid.UUID]:
     views, _ = await claims_for(
         session, await session.get(Craft, CRAFT), mode="HYBRID", acls=EVERY_CHUNK_ACLS
@@ -207,12 +213,13 @@ async def test_the_quote_is_cited_from_a_contributed_source_with_its_locator(
     assert (event.actorKind, event.actorId, event.toStatus) == ("USER", people.researcher.id, "DRAFT")
 
 
-async def test_with_the_switch_on_auto_a_contribution_goes_live_unreviewed(
+async def test_with_the_switch_on_auto_an_established_contribution_goes_live_unreviewed(
     session: AsyncSession, people: People
 ) -> None:
     await app_settings.set_review_switch(
         session, ReviewSwitchUpdate(contribution="AUTO"), people.professor.id
     )
+    await held_at(session, people, "ESTABLISHED")
     reply = await proposed(session, people.researcher, "CONTRIBUTION", adapters(ADDS))
     assert (reply.outcome, reply.status, reply.approved_at_once, reply.in_review_queue) == (
         "PUBLISHED",

@@ -10,33 +10,33 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError, Refused
-from app.core.roles import PROFESSOR, ROLE_LABELS, has_rank
+from app.core.roles import PROFESSOR, has_rank
 from app.models import User
 from app.research.candidate_gates import Candidate
 from app.research.embedding import TextEmbedder
 from app.research.fetcher import Fetcher
+from app.research.gate_thrift import GateThrift
 from app.research.knowledge_writes import FactProposal, ProposalReply, gate_reports
-from app.research.review_switch import Placement, ReviewSwitch, placement, refused_placement
+from app.research.review_switch import ReviewSwitch, refused_placement
 from app.research.structured import StructuredModel
+from app.research.trust_tiers import SWITCH, TierPlacement, drawn_for_review, tier_placement
 from app.retrieval.indexing import embed_written
 
-from . import app_settings
+from . import app_settings, trust_tiers
 from .candidate_gates import GateRun, HeldFacts, first_gates, gate_run, later_gates
 from .candidate_sources import ReadSource, read_sources
 from .candidate_store import SqlHeldFacts, proposal_subject
 from .candidate_writes import mark_sources_differ, record_checks
+from .fact_proposals_words import placement_message, placement_note
 from .proposal_writes import ProposedClaim, cite_proposal, proposal_level, write_proposed_claim
 from .task_reservations import complete_task, give_back_task
 
-__all__ = ["NO_ACCOUNT", "ProposalAdapters", "propose_fact", "role_now"]
+__all__ = ["NO_ACCOUNT", "ProposalAdapters", "propose_fact", "propose_fact_run", "role_now"]
 
 logger = logging.getLogger(__name__)
 
 NO_ACCOUNT = "no_account"
 PROPOSAL_REF = "proposal"
-PUBLISHED_APPROVED = "Published, and approved at once because your account reviews contributions."
-PUBLISHED_UNREVIEWED = "Published as unreviewed; a Professor or Admin will review it."
-WAITING_MESSAGE = "Received. It stays hidden until a Professor or Admin approves it."
 
 
 @dataclass(frozen=True)
@@ -44,6 +44,8 @@ class ProposalAdapters:
     fetcher: Fetcher
     embed: TextEmbedder
     judge: StructuredModel
+    escalate: tuple[StructuredModel, ...] = ()
+    thrift: GateThrift | None = None
 
 
 async def propose_fact(
@@ -55,12 +57,30 @@ async def propose_fact(
     adapters: ProposalAdapters,
     now: datetime,
 ) -> ProposalReply:
+    return await propose_fact_run(
+        session, proposal, proposer, origin, adapters=adapters, now=now, ticket=uuid.uuid4()
+    )
+
+
+async def propose_fact_run(
+    session: AsyncSession,
+    proposal: FactProposal,
+    proposer: User,
+    origin: str,
+    *,
+    adapters: ProposalAdapters,
+    now: datetime,
+    ticket: uuid.UUID,
+) -> ProposalReply:
     role = await role_now(session, proposer.id)
+    standing = await trust_tiers.account_standing(session, proposer.id)
     subject = await proposal_subject(session, proposal.subject)
     read = await read_sources(session, adapters.fetcher, proposal)
     run = await _gated(proposal, read, adapters, SqlHeldFacts(session, subject))
-    placed = _placed(run, await app_settings.review_switch(session), origin, role)
-    written = ProposedClaim(proposal, subject, proposer.id, placed, run, _note(origin, placed, run, role))
+    switch = await app_settings.review_switch(session)
+    tiered = _placed(run, switch, origin, role=role, tier=standing.tier, ticket=ticket)
+    note = placement_note(origin, tiered, run, role)
+    written = ProposedClaim(proposal, subject, proposer.id, tiered.placed, run, note)
     claim_id = await write_proposed_claim(session, written)
     await record_checks(session, claim_id, run.outcomes, checked_at=now)
     if run.passed:
@@ -68,11 +88,11 @@ async def propose_fact(
             session, claim_id, read, found_by=origin, proposer_id=proposer.id, checked_at=now
         )
         await _embed_chunks(session, adapters.embed, kept)
-    differ = await mark_sources_differ(session, claim_id) if placed.live else []
+    differ = await mark_sources_differ(session, claim_id) if tiered.placed.live else []
     if proposal.task_key is not None:
         settle = complete_task if run.passed else give_back_task
         await settle(session, proposer.id, proposal.task_key, now=now)
-    return _reply(claim_id, written, differ)
+    return _reply(claim_id, written, tiered, differ)
 
 
 async def _gated(
@@ -82,14 +102,28 @@ async def _gated(
     first = first_gates(candidate, [source.cited for source in read])
     if not all(outcome.passed for outcome in first):
         return gate_run(candidate, first, None)
-    later = await later_gates(held, [candidate], embed=adapters.embed, judge=adapters.judge)
+    later = await later_gates(
+        held,
+        [candidate],
+        embed=adapters.embed,
+        judge=adapters.judge,
+        thrift=adapters.thrift,
+        escalate=adapters.escalate,
+    )
     return gate_run(candidate, first, later[candidate.ref])
 
 
-def _placed(run: GateRun, switch: ReviewSwitch, origin: str, role: str) -> Placement:
+def _placed(
+    run: GateRun, switch: ReviewSwitch, origin: str, *, role: str, tier: str, ticket: uuid.UUID
+) -> TierPlacement:
     if not run.passed:
-        return refused_placement()
-    return placement(switch.mode(origin), proposer_reviews=has_rank(role, PROFESSOR))
+        return TierPlacement(refused_placement(), SWITCH)
+    return tier_placement(
+        switch.mode(origin),
+        proposer_reviews=has_rank(role, PROFESSOR),
+        tier=tier,
+        drawn=drawn_for_review(ticket),
+    )
 
 
 async def role_now(session: AsyncSession, user_id: uuid.UUID) -> str:
@@ -106,18 +140,9 @@ async def _embed_chunks(session: AsyncSession, embed: TextEmbedder, source_ids: 
         logger.warning("proposal sources stored without vectors, left for embed_knowledge: %s", error)
 
 
-def _note(origin: str, placed: Placement, run: GateRun, role: str) -> str:
-    refused = run.refused_at
-    if refused is not None:
-        return f"{origin} proposal refused at the {refused.gate} gate"
-    if placed.approved_at_once:
-        return f"{origin} proposal approved at once: proposed by a {ROLE_LABELS.get(role, role)} account"
-    if placed.live:
-        return f"{origin} proposal published unreviewed by the review switch (AUTO); it waits in the review queue"
-    return f"{origin} proposal waits hidden for a Professor's or Admin's approval (review switch APPROVAL)"
-
-
-def _reply(claim_id: uuid.UUID, written: ProposedClaim, differ: list[uuid.UUID]) -> ProposalReply:
+def _reply(
+    claim_id: uuid.UUID, written: ProposedClaim, tiered: TierPlacement, differ: list[uuid.UUID]
+) -> ProposalReply:
     run, placed = written.run, written.placed
     return ProposalReply(
         outcome=placed.outcome,
@@ -129,14 +154,5 @@ def _reply(claim_id: uuid.UUID, written: ProposedClaim, differ: list[uuid.UUID])
         sources_differ=bool(differ),
         differs_from=run.differs_from,
         gates=gate_reports(list(run.outcomes)),
-        message=_message(placed, run),
+        message=placement_message(tiered, run),
     )
-
-
-def _message(placed: Placement, run: GateRun) -> str:
-    refused = run.refused_at
-    if refused is not None:
-        return f"Not added: the {refused.gate} gate refused it. {refused.reasons[0]}"
-    if placed.approved_at_once:
-        return PUBLISHED_APPROVED
-    return PUBLISHED_UNREVIEWED if placed.live else WAITING_MESSAGE

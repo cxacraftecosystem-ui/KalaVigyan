@@ -21,10 +21,12 @@ the server", and item 16's `propose_component`. The endpoint, framing and read t
 | The nightly refresh of field work | `services/open_work_refresh.py` |
 | Pages in the monograph form | `services/open_work_pages.py`; the folder is `data/monograph_files.MONOGRAPHS_DIR` |
 | Listing, standings, review queues, live reservations | `services/open_work.py` |
-| Claim, release, complete | `services/task_reservations.py` |
+| Claim, claim several, release, complete | `services/task_reservations.py` |
+| My tasks (held, completed, outcomes) | `services/contribution_queue_tasks.py`, contract `research/my_tasks.py` |
+| Stewardship | `services/stewardship.py`, contract `research/stewardship.py`, table `CraftSteward` (`models/contributions.py`, migration `0048_contribution_queue`) |
 | `propose_component` | `services/component_proposals.py` |
 | Tables | `models/open_work.py` (`TaskReservation`, `ComponentProposal`), migration `0038_open_work` |
-| MCP tools | `api/mcp_work_tools.py` (`WORK_TOOLS`), registered in `api/mcp_tools.py` |
+| MCP tools | `api/mcp_work_tools.py` (`WORK_TOOLS`), `api/mcp_task_tools.py` (`TASK_TOOLS`), `api/mcp_steward_tools.py` (`STEWARD_TOOLS`), registered in `api/mcp_tools.py` |
 | MCP prompts and resources | `api/mcp_prompts.py`, `api/mcp_resources.py`, dispatched in `api/mcp_tools.py` |
 | HTTP routes | `api/routes/open_work.py` |
 | The contributor skill | `data/contributor/SKILL.md`, served at `frontend/public/skills/kalavigyan-contributor/SKILL.md` |
@@ -127,7 +129,12 @@ its key.
 
 - `claim_task` reserves an open task for 2 hours; claiming it again renews it from now. The key must
   name a task open now (computed for its subject) and not closed by a proposal; a review queue is
-  never reserved. One account holds at most 5 live reservations.
+  never reserved. How many live reservations one account holds at once is set by its trust tier
+  (`knowledge-writes.md`, Trust tiers: `NEW` 5, `ESTABLISHED` 10, `PROVEN` 20; Professors and above
+  20); the refusal names the tier. The reservation length (2 hours) and renewal are unchanged.
+- `claim_tasks` claims up to 10 keys in one call, each in its own savepoint: a key taken, closed or
+  over the cap is refused with its reason and the rest are held (`TaskClaims {schemaVersion 1,
+  held[TaskHold], refused[{taskKey, problem}], tier, holding, holdingMax, message, notices[]}`).
 - A live reservation of another account refuses the claim with its end. An expired one is ended
   (`EXPIRED`, at its expiry) by the next claim, and the task returns to the list by itself.
 - `release_task` ends the caller's own reservation (`RELEASED`, or `EXPIRED` once past its time).
@@ -177,6 +184,11 @@ extended label; `VARIANT` takes a new one), `task_key?`.
 | `list_open_work` | read | read-only | `OpenWork` |
 | `claim_task` | contribute | writes | `TaskHold {schemaVersion, taskKey, held, reservedUntil, task}` |
 | `release_task` | contribute | writes | `TaskHold` with `held` false |
+| `claim_tasks` | contribute | writes | `TaskClaims` |
+| `my_tasks` | contribute | read-only | `MyTasks {schemaVersion 1, tier, holding, holdingMax, reservationMinutes, claimed[{taskKey, reservedUntil, task (OpenTask, or null once closed)}], completed[{taskKey, ending COMPLETED, endedAt}] (the last 30 days, at most 50), outcomes[ProposalTicket] (the latest 20)}` |
+| `adopt_craft` | contribute | writes | `StewardPackage` |
+| `drop_craft` | contribute | writes | `Stewardship {schemaVersion 1, craftSlug, adopted false, message}` |
+| `my_crafts` | contribute | writes (records what was seen) | `MyCrafts {schemaVersion 1, crafts[StewardPackage], adopted, adoptedMax, message}` |
 | `propose_component` | contribute | writes | `ComponentProposalResult {schemaVersion, outcome, proposalId, status, label, message, matches, waysOn}` |
 
 - A write tool's changes are committed by the dispatch when it succeeds and rolled back when it
@@ -203,6 +215,25 @@ extended label; `VARIANT` takes a new one), `task_key?`.
   the review queues. Wrong filters 422.
 - `POST /api/knowledge/open-work/claim` and `/release`, body `{taskKey}`: `PROPOSE_KNOWLEDGE`
   (Researcher and above). A reservation conflict or the held maximum 409, a key that is not open 422.
+- `POST /api/knowledge/open-work/claims`, body `{taskKeys}` (1 to 10): `TaskClaims`.
+  `GET /api/knowledge/open-work/mine`: `MyTasks`. Both `PROPOSE_KNOWLEDGE`.
+- `GET /api/knowledge/stewardship` (`MyCrafts`), `PUT /api/knowledge/stewardship/{slug}` (adopt,
+  `StewardPackage`), `DELETE /api/knowledge/stewardship/{slug}` (drop, `Stewardship`):
+  `PROPOSE_KNOWLEDGE`; more than 10 crafts 409, a craft not stewarded or not known 422.
+
+## Stewardship (round 7)
+
+A contributor adopts crafts and families (`adopt_craft {craft_slug}`, at most `STEWARD_CRAFTS_MAX` =
+10 live at once) and drops them (`drop_craft`). A steward sees each craft's open work as one package:
+`StewardPackage {craft (TaskSubject), adoptedAt, seenAt (the steward's last look, null before the
+first), stewards (how many accounts steward it; never who), newTasks[OpenTask] (open now and not open
+at the last look: the craft's new gaps, first), tasks[OpenTask] (the rest), total}`, the tasks
+`list_open_work` gives for the craft (a family with its crafts) to that account, at most 200. Each
+look records the keys it showed (`CraftSteward.seenTaskKeys`, `seenAt`), so the next look's new gaps
+are those opened since; at adoption every gap is new. Stewardship never reserves a task and never
+blocks anyone: other accounts list, claim and complete the craft's tasks as before, and a craft has
+any number of stewards. Table `CraftSteward` (`userId`, `craftId`, `adoptedAt`, `droppedAt`,
+`seenTaskKeys`, `seenAt`; one live row per account and craft by a partial unique index).
 
 ## The contributor skill
 

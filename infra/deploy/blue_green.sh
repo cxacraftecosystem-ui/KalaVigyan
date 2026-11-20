@@ -7,7 +7,7 @@ ENV_FILE="${ENV_FILE:-$APP/.env}"
 HEALTH_LIMIT="${HEALTH_LIMIT:-300}"
 DRAIN="${DRAIN:-5}"
 UNIT=kv-api
-WORKERS=(kv-worker kv-fetcher)
+WORKERS=(kv-worker kv-fetcher kv-contributions)
 RUN_AS=kalavigyan
 
 say() { printf '%s\n' "$*" >&2; }

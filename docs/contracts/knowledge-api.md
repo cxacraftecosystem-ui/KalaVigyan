@@ -9,7 +9,7 @@ tools; the other tools are in their own contracts:
 |---|---|---|
 | `list_fields`, `find_crafts`, `get_facts`, `get_section`, `get_coverage`, `list_components`, `get_layout`, `list_open_work` | read (anyone) | this file, `coverage.md`, `page-layout.md`, `open-work.md` |
 | `ask` | ask | `mcp-ask-and-upload.md` |
-| `propose_fact`, `propose_structure`, `propose_component`, `propose_layout`, `claim_task`, `release_task`, `start_image_upload` | contribute | `knowledge-writes.md`, `open-work.md`, `mcp-ask-and-upload.md`, decision 0108 |
+| `propose_fact`, `propose_facts`, `get_proposal`, `propose_structure`, `propose_component`, `propose_layout`, `claim_task`, `claim_tasks`, `release_task`, `my_tasks`, `adopt_craft`, `drop_craft`, `my_crafts`, `start_image_upload` | contribute | `knowledge-writes.md`, `open-work.md`, `mcp-ask-and-upload.md`, decision 0108 |
 | review queues in `list_open_work` | review | `open-work.md`, `review-queue.md` |
 
 ## The endpoint
@@ -71,7 +71,7 @@ instructions. Wrong arguments, or a craft slug that does not exist, come back as
 | Tool | Arguments | Returns |
 |---|---|---|
 | `list_fields` | `craft_slug?` | `FieldList {schemaVersion 1, craftSlug?, fields[{field, title, covers, chapter, held?}]}`, the 16 fields in vocabulary order; `chapter` is where a page places the field (`coverage_chapters.FIELD_CHAPTERS`, rule 23); with `craft_slug`, `held` is the craft's `FieldCount` in the field (`coverage.md`) |
-| `find_crafts` | `query` (1 to 1,000 characters) | `FoundCrafts {schemaVersion 1, query, crafts[{craft {slug, name, path}, score, pageUrl, fields?}]}`, at most five, from the craft resolver's lexical match (no embedding call); `fields` is each active craft's `{claims, covered[], thin[], missing[], fieldClaims {FIELD: n}}` |
+| `find_crafts` | `query` (1 to 1,000 characters) | `FoundCrafts {schemaVersion 1, query, crafts[{craft {slug, name, path}, score, pageUrl, fields?}]}`, at most five, ranked by the content-aware finder below (no embedding call); `fields` is each active craft's `{claims, covered[], thin[], missing[], fieldClaims {FIELD: n}}` |
 | `get_facts` | `craft_slug`, `field?`, `query?`, `limit?` (1 to 50, default 20) | `CraftFacts {schemaVersion 1, craft, field, query, facts[{id, text, level, field, fields[], citations[{sourceId, quote, locator}], quantity?, readings[]?, figures[]?}], byField[{field, count, shown[]}], openWork[OpenTask], sources[{id, kind, title, authors, year, doi, url, publisher, licence, attribution}], pageUrl, attribution}` |
 | `get_section` | `craft_slug`, `field?` | `CraftSection {schemaVersion 1, craft, field, section: ArticleSection or null, sections[], byField[{field, sentences, claims}], openWork[OpenTask], pageUrl, attribution}`, the published versions only: one field's in `section`, or, without `field`, every field's in `sections` with their counts |
 | `get_coverage` | `craft_slug` or `category_slug`, exactly one | `SubjectCoverage {schemaVersion 1, coverage: FieldCoverage, openWork[OpenTask], pageUrl, attribution}` (`coverage.md`) |
@@ -93,6 +93,22 @@ instructions. Wrong arguments, or a craft slug that does not exist, come back as
   in `openWork` as its `MISSING_FIELD` or `THIN_FIELD` task (`open-work.md`), with the key to
   `claim_task` and the prompt to follow; `get_section` adds the `SECTION` tasks of fields whose
   section is missing or short. Only the requested `field`'s tasks when one is named.
+- **The craft finder** (`services/craft_finder.py`, the pure ranking `research/craft_finding.py`;
+  round 7). The query's content words (three letters or more, generic words such as craft, art,
+  traditional and India dropped, at most 8) are matched two ways. By name: the resolver's lexical match
+  over names, local names, aliases and spellings (every candidate, not only its top five), plus the
+  crafts practised in a place the query names (score 0.6). By knowledge: Postgres full-text search
+  (English stemming) over the claims shown about each craft's concepts, the craft's concept names and
+  its registered components' titles, labels and topics. Each candidate scores `0.55 x lexical score x
+  the share of query words its matched names cover` (a word covers when it equals a name's token or
+  shares its first four letters), `+ 0.10` when an exact name (0.95 and up) covers every word, `+ 0.30 x
+  the share of query words its knowledge holds`, `+ 0.15 x standing` (1 for a curated craft; 0.5 to 1
+  for a craft holding claims, by how many fields they reach of 16; 0 for an empty row). A candidate
+  that covers or holds none of the words is left out; ties go to curated, then more claims, then name.
+  So "bell metal casting" finds Bastar Dhokra (its claims hold all three words, curated) above the
+  empty Metal-Casting row (its name covers two of three), while "Metal Casting" puts that row first.
+  The golden list is in `tests/contribution_scale/test_craft_finding.py` and
+  `tests/db/test_craft_finder_db.py`.
 - **The component library.** `list_components` is the search an agent runs before it makes or
   proposes a component (decision 0101, item 16).
   - `craft_slug` brings the craft's own components and every shared component that applies to it:
@@ -107,6 +123,16 @@ instructions. Wrong arguments, or a craft slug that does not exist, come back as
 - **Attribution.** `CraftFacts` and `CraftSection` carry the sentence asking anyone who shows the
   content to name KalaVigyan and the Centre and link the craft's page; the server's
   `instructions` say the same.
+
+## Argument names (round 7)
+
+Every MCP tool takes the same names for the same things: `craft_slug`, `category_slug`,
+`family_slug`, `field`, `task_key` (and `task_keys`, `proposal_id`, `idempotency_key`). A tool whose
+first release took other names keeps taking them for one release, and its result's `notices[]` says
+so: `api/mcp_argument_names.RenamedArguments` maps the old names (`craftSlug`, `categorySlug`,
+`familySlug`, `taskKey`, and a tool's own `OLD_NAMES` and `OLD_FORMS`) before validation, and
+`notices()` gives the sentence "<old> is the old name of <new>; it works until the next release, so
+pass <new> from now on." The old names are not listed in `inputSchema`.
 
 ## Coverage
 

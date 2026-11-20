@@ -47,7 +47,7 @@ review already shows.
 
 | Kind | Row | Pending when |
 |---|---|---|
-| `FACTS` | `Claim` | `status` is `DRAFT` (waiting, hidden: the review switch said `APPROVAL`) or `IN_REVIEW` (live and unreviewed: `AUTO`), it went through the candidate gates (it has `CandidateCheck` rows), and the viewer did not write it |
+| `FACTS` | `Claim` | `status` is `DRAFT` (waiting, hidden: the review switch said `APPROVAL`, or a new contributor proposed it) or `IN_REVIEW` (live and unreviewed: `AUTO`, or a proven contributor's fact drawn for review, one in five), it went through the candidate gates (it has `CandidateCheck` rows), and the viewer did not write it; a proven contributor's fact not drawn is `APPROVED` at `PROVISIONAL` and does not wait here (`knowledge-writes.md`, Trust tiers) |
 | `TESTIMONY` | `ArtisanContribution` | `status` `PENDING`, not the viewer's |
 | `IMAGES` | `ImageContribution` | `status` `PENDING`, not the viewer's |
 | `COMPONENTS` | `ComponentProposal` | `status` `PENDING`, not the viewer's |

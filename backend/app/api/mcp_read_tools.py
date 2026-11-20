@@ -16,7 +16,7 @@ from app.research.knowledge_api import (
     SubjectCoverage,
 )
 from app.research.vocabulary import Discipline, PieceKind
-from app.services import component_library, coverage_reads, knowledge_api
+from app.services import component_library, coverage_reads, craft_finder, knowledge_api
 
 from .mcp_tool_base import Arguments, Tool, ToolContext
 
@@ -37,7 +37,9 @@ class ListFields(Arguments):
 
 class FindCrafts(Arguments):
     query: str = Field(
-        min_length=1, max_length=QUESTION_MAX_CHARS, description="A craft's name, place or kind"
+        min_length=1,
+        max_length=QUESTION_MAX_CHARS,
+        description="A craft's name, place or kind, or what it is made of or done with",
     )
 
 
@@ -95,9 +97,7 @@ async def _list_fields(context: ToolContext, arguments: ListFields) -> FieldList
 
 
 async def _find_crafts(context: ToolContext, arguments: FindCrafts) -> FoundCrafts:
-    return await knowledge_api.found_crafts(
-        context.session, context.index, arguments.query, site=context.site
-    )
+    return await craft_finder.find_crafts(context.session, context.index, arguments.query, site=context.site)
 
 
 async def _get_facts(context: ToolContext, arguments: GetFacts) -> CraftFacts:
@@ -150,8 +150,10 @@ READ_TOOLS: tuple[Tool, ...] = (
     Tool(
         "find_crafts",
         "Find crafts",
-        "Up to five crafts matching a name, a local name, a place or a kind, each with its slug, page "
-        "and its cited claims per field: which fields are covered, thin or missing.",
+        "Up to five crafts for a name, a local name, a place, a kind or what a craft is made of or done "
+        "with (bell metal casting, indigo resist), ranked by the names and places matched and by the "
+        "concepts, cited claims and components each craft holds, curated and covered crafts first; each "
+        "with its slug, page and its cited claims per field: which fields are covered, thin or missing.",
         FindCrafts,
         FoundCrafts,
         _find_crafts,

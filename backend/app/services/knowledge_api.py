@@ -24,8 +24,6 @@ from app.research.knowledge_api import (
     FieldInfo,
     FieldList,
     FieldSection,
-    FoundCraft,
-    FoundCrafts,
 )
 from app.research.retrieval import OPEN_CHUNK_ACLS
 from app.research.sections import DISCIPLINE_FIELDS, DISCIPLINE_TITLES
@@ -39,10 +37,7 @@ from .coverage_reads import (
     FactDetails,
     craft_field_work,
     fact_details,
-    found_coverage,
 )
-from .craft_matching import lexical_match, resolution_from
-from .craft_resolver import CraftIndexStore
 
 __all__ = [
     "UNKNOWN_CRAFT",
@@ -51,7 +46,6 @@ __all__ = [
     "craft_sections",
     "every_fact",
     "field_list",
-    "found_crafts",
     "held_field_list",
     "known_craft",
 ]
@@ -82,26 +76,6 @@ def field_list(coverage: FieldCoverage | None = None) -> FieldList:
 async def held_field_list(session: AsyncSession, slug: str) -> FieldList:
     craft = await known_craft(session, slug)
     return field_list(await craft_coverage(session, craft.slug))
-
-
-async def found_crafts(
-    session: AsyncSession, store: CraftIndexStore, query: str, *, site: str
-) -> FoundCrafts:
-    index = await store.get(session)
-    resolution = resolution_from(index, lexical_match(index, query))
-    held = await found_coverage(session, [candidate.craft.slug for candidate in resolution.candidates])
-    return FoundCrafts(
-        query=query,
-        crafts=[
-            FoundCraft(
-                craft=candidate.craft,
-                score=candidate.score,
-                page_url=f"{site}{candidate.craft.path}",
-                fields=held.get(candidate.craft.slug),
-            )
-            for candidate in resolution.candidates
-        ],
-    )
 
 
 async def craft_facts(

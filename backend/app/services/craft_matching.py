@@ -29,6 +29,7 @@ __all__ = [
     "LexicalMatch",
     "SemanticHit",
     "lexical_match",
+    "ranked_candidates",
     "resolution_from",
     "slug_resolution",
 ]
@@ -135,6 +136,10 @@ def resolution_from(
     if shown:
         return CraftResolution(status="AMBIGUOUS", craft=None, candidates=shown, **base)
     return CraftResolution(status="NONE", craft=None, candidates=[], **base)
+
+
+def ranked_candidates(index: CraftIndex, match: LexicalMatch) -> list[CraftCandidate]:
+    return _rank(index, match.reasons, match.hints)
 
 
 def _phrases(text: str, max_tokens: int) -> list[Phrase]:

@@ -7,6 +7,7 @@ from app.api.routes import (
     auth,
     categories,
     contributed_pictures,
+    contribution_streams,
     coverage,
     craft_monograph,
     crafts,
@@ -78,6 +79,7 @@ api_router.include_router(film.router)
 api_router.include_router(knowledge.router)
 api_router.include_router(knowledge_export.router)
 api_router.include_router(knowledge_writes.router)
+api_router.include_router(contribution_streams.router)
 api_router.include_router(learning_views.router)
 api_router.include_router(lessons.router)
 api_router.include_router(listen.router)
