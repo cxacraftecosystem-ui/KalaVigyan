@@ -15,6 +15,7 @@ const BOARD_SCREENS = ["landing", "atlas", "craft", "answer", "uncurated", "urdu
 const PARTS = [".kv-alt-comic", ".kv-doc-open", "dl.glance", ".kv-differs", ".rec-list", ".kv-entries"];
 const PARTS_PER_SELECTOR = 3;
 const MAX_HEIGHT_PX = 6000;
+const SLICE_QUALITY = 72;
 const RAIL_SHOT_PX = 320;
 const SETTLE_MS = 1200;
 const PART_SETTLE_MS = 700;
@@ -47,9 +48,10 @@ async function settled(page: Page): Promise<void> {
   await page.waitForTimeout(SETTLE_MS);
 }
 
-async function capture(page: Page, top: number, height: number): Promise<Buffer> {
+async function capture(page: Page, top: number, height: number, type: "png" | "jpeg" = "png"): Promise<Buffer> {
   const width = page.viewportSize()?.width ?? 0;
-  return page.screenshot({ fullPage: true, animations: "disabled", clip: { x: 0, y: top, width, height: Math.min(height, MAX_HEIGHT_PX) } });
+  const quality = type === "jpeg" ? SLICE_QUALITY : undefined;
+  return page.screenshot({ fullPage: true, animations: "disabled", type, quality, clip: { x: 0, y: top, width, height: Math.min(height, MAX_HEIGHT_PX) } });
 }
 
 async function partShots(page: Page, stem: string): Promise<void> {
@@ -89,7 +91,7 @@ for (const path of screenPaths()) {
     await settled(page);
     const height = await page.evaluate(() => document.documentElement.scrollHeight);
     const stem = fileStem(path);
-    for (const [at, top] of sliceTops(height, MAX_HEIGHT_PX).entries()) save(at ? `${stem}-${at + 1}.png` : `${stem}.png`, await capture(page, top, height - top));
+    for (const [at, top] of sliceTops(height, MAX_HEIGHT_PX).entries()) save(at ? `${stem}-${at + 1}.jpg` : `${stem}.png`, await capture(page, top, height - top, at ? "jpeg" : "png"));
     await partShots(page, stem);
     await railShots(page, stem);
   });
