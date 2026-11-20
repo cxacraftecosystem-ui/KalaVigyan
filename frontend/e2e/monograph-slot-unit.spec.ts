@@ -25,10 +25,18 @@ test("a component with a spec and a registered view is drawn natively, any other
 });
 
 test("a fragment is drawn as written inside a slot container React never re-renders", () => {
-  const html = markup(createElement(ComponentSlot, { document: fixtureDocument(), label: PICTURE }));
+  const html = markup(createElement(ComponentSlot, { document: fixtureDocument(), label: PICTURE, scoped: false }));
   expect(html).toBe(
     '<div class="kv-slot contents" id="kv-slot-test-craft__design__cloth-photo" data-component="test-craft/design/cloth-photo">' +
       '<figure class="plate" id="photo"><img src="/x.jpg" alt="A cloth"><figcaption><p class="credit">Photo: test</p></figcaption></figure></div>'
+  );
+});
+
+test("a fragment on a page sits in its scope, its last frame holding the markup", () => {
+  const html = markup(createElement(ComponentSlot, { document: fixtureDocument(), label: PICTURE }));
+  expect(html).toBe(
+    `<div class="bx bx-pt" data-component="${PICTURE}" data-component-kind="picture_plate" data-home="kind"><div class="screen"><div class="wrap kv-passage"><div class="spread">` +
+      '<div class="main" id="kv-slot-test-craft__design__cloth-photo"><figure class="plate" id="photo"><img src="/x.jpg" alt="A cloth"><figcaption><p class="credit">Photo: test</p></figcaption></figure></div></div></div></div></div>'
   );
 });
 
@@ -40,7 +48,8 @@ test("a fragment keeps the slot of the component placed inside it for its native
 
 test("the quiz's native view draws its first question from the spec with the page's units", () => {
   const html = markup(createElement(ComponentSlot, { document: fixtureDocument(), label: QUIZ }));
-  expect(html).toContain(`data-component="${QUIZ}" data-kind="quiz"`);
+  expect(html).toContain(`data-component="${QUIZ}" data-component-kind="quiz" data-home="kind"`);
+  expect(html).not.toContain("data-kind=");
   expect(html).toContain('<div class="bx bx-rm" data-native-view="">');
   expect(html).toContain("<h3>Check yourself</h3>");
   expect(html).toContain("Question 1 of 1");

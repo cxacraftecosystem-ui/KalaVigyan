@@ -1,14 +1,17 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
+import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 
+import { contextOptions, DESKTOP, WIDE, type Scheme } from "../production/matrix";
 import { passPreviewProtection } from "../production/preview";
 
+import { borrowedCases, pagesToVisit, subjectPages } from "./parityBorrowed";
 import { driftSteps, heightDifferences, sectionHeights, type DriftReport } from "./parityDrift";
 import { chapterIds, lineDiff, pixelDifference, type PixelDifference } from "./parityMeasure";
 import { alignPhase } from "./parityPhase";
 import { playersAtRest, restingVat } from "./parityRest";
+import { borrowedPass, failures, type PassReport } from "./parityRun";
 import { ancestorLayers, chapterOffsets, elementStyles, fontReport, selfHostedFaces, servedFaces, styleDifferences, type StyleDifference } from "./parityStyles";
 
 const APPROVED = "/monographs/kutch-ajrakh/index.html";
@@ -18,6 +21,9 @@ const SETTLE_MS = 1500;
 const PIXEL_TOLERANCE = 0.02;
 const SHOT_TIMEOUT_MS = 10_000;
 const CHAPTERS_TIMEOUT_MS = 15 * 60_000;
+const BORROWED_TIMEOUT_MS = 40 * 60_000;
+const CHECK = process.env.E2E_PARITY_CHECK ?? "all";
+const BORROWED_ONLY = CHECK === "borrowed";
 
 async function opened(page: Page, path: string): Promise<void> {
   await page.goto(path, { waitUntil: "networkidle" });
@@ -58,6 +64,7 @@ test.beforeEach(async ({ context }) => {
 });
 
 test("the React page reads exactly as the approved page", async ({ context }) => {
+  test.skip(BORROWED_ONLY, "this run checks the borrowed components only");
   const { approved, rendered } = await bothPages(context);
   const diff = lineDiff(await mainText(approved), await mainText(rendered));
   report("text.json", diff);
@@ -75,6 +82,7 @@ async function driftReports(approved: Page, rendered: Page, offsets: { approved:
 }
 
 test("every chapter of the React page looks as the approved page does", async ({ context }) => {
+  test.skip(BORROWED_ONLY, "this run checks the borrowed components only");
   test.setTimeout(CHAPTERS_TIMEOUT_MS);
   const { approved, rendered } = await bothPages(context);
   report("phase.json", { marginPx: await alignPhase(approved, rendered) });
@@ -117,6 +125,7 @@ test("every chapter of the React page looks as the approved page does", async ({
 });
 
 test("a citation and the first figure answer as on the approved page", async ({ context }) => {
+  test.skip(BORROWED_ONLY, "this run checks the borrowed components only");
   const pages = { approved: await context.newPage(), rendered: await context.newPage() };
   const answers: Record<string, Record<string, string | null>> = {};
   for (const [name, page] of Object.entries(pages)) {
@@ -135,4 +144,29 @@ test("a citation and the first figure answer as on the approved page", async ({ 
   }
   report("interactions.json", answers);
   expect(answers.rendered).toEqual(answers.approved);
+});
+
+async function wideContext(browser: Browser, scheme: Scheme): Promise<BrowserContext> {
+  const base = process.env.E2E_BASE_URL ?? "";
+  const context = await browser.newContext({ ...contextOptions(WIDE, scheme), baseURL: base || undefined });
+  await passPreviewProtection(context, base, process.env.E2E_VERCEL_BYPASS ?? "");
+  await restingVat(context);
+  return context;
+}
+
+test("every component borrowed from Kutch Ajrakh draws on each page that places it as on Kutch Ajrakh's page", async ({ browser, context, page }) => {
+  test.skip(CHECK === "monograph", "this run checks the Kutch Ajrakh page only");
+  test.setTimeout(BORROWED_TIMEOUT_MS);
+  const pages = await subjectPages(context.request);
+  const cases = borrowedCases(pages);
+  const visits = pagesToVisit(cases, pages);
+  report("borrowed-pages.json", { pages: pages.map(({ components, ...page }) => ({ ...page, components: components.map((found) => `${found.kind} ${found.label}`) })), cases: cases.map((found) => `${found.label} on ${found.page.path}`) });
+  const scheme: Scheme = test.info().project.use.colorScheme === "dark" ? "dark" : "light";
+  const passes: { width: number; context: BrowserContext }[] = [{ width: page.viewportSize()?.width ?? 0, context }];
+  if (page.viewportSize()?.width === DESKTOP.viewport.width) passes.push({ width: WIDE.viewport.width, context: await wideContext(browser, scheme) });
+  const reports: Record<string, PassReport> = {};
+  for (const pass of passes) reports[String(pass.width)] = await borrowedPass(pass.context, cases, visits, (name, image) => report(`${pass.width}-${name}`, image));
+  report("borrowed.json", reports);
+  expect(cases.length, "components borrowed from Kutch Ajrakh (see borrowed-pages.json)").toBeGreaterThan(0);
+  expect(Object.values(reports).flatMap(failures), "borrowed components that draw unlike their home (see borrowed.json)").toEqual([]);
 });
