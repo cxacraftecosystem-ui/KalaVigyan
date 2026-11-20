@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { gunzipSync } from "node:zlib";
 
 import { expect, test } from "@playwright/test";
 import { createElement, type ReactElement } from "react";
@@ -25,8 +26,8 @@ const chapterIds = (html: string) => [...html.matchAll(/<section class="kv-ch" i
 const MAIN_END = '</div><footer class="kv-foot">';
 const REACT_IDS = /_r_[0-9a-z]+_|«r[0-9a-z]+»|:r[0-9a-z]+:/gi;
 const sameIds = (html: string) => html.replace(REACT_IDS, "react-id");
-const HUB_DOCUMENT = join(__dirname, "textilesHubDocument.json");
-const HUB_FIGURES = ["shared/chemistry/alizarin-purpurin-3d", "shared/chemistry/indigo-leaf-to-cloth-chain"];
+const HUB_DOCUMENT = join(__dirname, "textilesHubDocument.json.gz");
+const HUB_FIGURES = ["shared/chemistry/alizarin-purpurin-3d", "shared/chemistry/indigo-leaf-to-cloth-chain", "shared/chemistry/indigo-reduction-player", "shared/chemistry/indigo-vat-dip"];
 const drawnLabels = (html: string) => [...new Set([...html.matchAll(/data-component="([^"]+)"/g)].map((found) => found[1]))].sort();
 
 function restOf(document: MonographDocument): string {
@@ -86,9 +87,12 @@ test("the rest of a generated document carries the whole document for its versio
 });
 
 test("the rest of the Textiles hub draws every borrowed figure its whole page draws", () => {
-  const document = parseNamedDocument(JSON.parse(readFileSync(HUB_DOCUMENT, "utf8")));
+  const document = parseNamedDocument(JSON.parse(gunzipSync(readFileSync(HUB_DOCUMENT)).toString("utf8")));
   const whole = provided(createElement(MonographPage, { document, masthead: false }));
   const rest = provided(createElement(DeferredDocument, { part: JSON.parse(JSON.stringify(documentRest(document))), jump: null }));
   for (const label of HUB_FIGURES) expect(drawnLabels(whole), label).toContain(label);
   expect(drawnLabels(rest)).toEqual(drawnLabels(whole));
+  const split = provided(createElement(MonographPage, { document, masthead: false, deferred: true }));
+  expect(split).toContain('data-kv-deferred=""');
+  expect(drawnLabels(split)).toEqual([]);
 });
