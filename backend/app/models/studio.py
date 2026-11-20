@@ -37,6 +37,7 @@ def _stamp() -> Mapped[datetime | None]:
 
 class PageDraft(Base):
     __tablename__ = "PageDraft"
+    __mapper_args__ = {"eager_defaults": True}
 
     id: Mapped[uuid.UUID] = uuid_pk()
     userId: Mapped[uuid.UUID] = mapped_column(
@@ -80,6 +81,7 @@ class PageDraft(Base):
 
 class SuppliedSource(Base):
     __tablename__ = "SuppliedSource"
+    __mapper_args__ = {"eager_defaults": True}
 
     id: Mapped[uuid.UUID] = uuid_pk()
     userId: Mapped[uuid.UUID] = mapped_column(
