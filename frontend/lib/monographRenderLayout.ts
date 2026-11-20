@@ -11,7 +11,8 @@ const HEADINGS = new Set(["h2", "h3", "h4"]);
 export type UnitRole = "numeral" | "kicker" | "title" | "lede" | "label" | "text";
 export type TermGroup = "facts" | "record" | "differ" | "entries";
 export type TermsPiece = { kind: "terms"; refs: string[]; group: TermGroup; heading: string | null };
-export type PassagePiece = { kind: "unit"; ref: string; role: UnitRole } | { kind: "list"; refs: string[] } | TermsPiece;
+export type PassagePiece = { kind: "unit"; ref: string; role: UnitRole } | { kind: "list"; refs: string[] } | { kind: "paragraph"; refs: string[] } | TermsPiece;
+export const PARAGRAPH_SENTENCES = 3;
 export type MarginNote = { ref: string; source: string };
 export type Passage = { kind: "passage"; head: boolean; pieces: PassagePiece[]; notes: MarginNote[] };
 export type ChapterBlock = Passage | { kind: "component"; label: string } | { kind: "sources"; replaces: string[] };
@@ -209,9 +210,17 @@ function pieces(units: Readonly<Record<string, MonographUnit>>, refs: readonly s
     else if (tag === "li") out.push({ kind: "list", refs: [ref] });
     else if ((tag === "dt" || tag === "dd") && last?.kind === "terms") last.refs.push(ref);
     else if (tag === "dt" || tag === "dd") out.push({ kind: "terms", refs: [ref], group: "entries", heading: null });
-    else out.push({ kind: "unit", ref, role: unitRole(units, refs, at, { number, titleAt }) });
+    else placeUnit(units, out, ref, unitRole(units, refs, at, { number, titleAt }));
   });
   return groupedTerms(units, out);
+}
+
+function placeUnit(units: Readonly<Record<string, MonographUnit>>, out: PassagePiece[], ref: string, role: UnitRole): void {
+  const unit = units[ref];
+  const last = out[out.length - 1];
+  if (role !== "text" || unit.tag !== "p" || !hasSentence(unit.nodes)) out.push({ kind: "unit", ref, role });
+  else if (last?.kind === "paragraph" && last.refs.length < PARAGRAPH_SENTENCES && units[last.refs[0]].field === unit.field) last.refs.push(ref);
+  else out.push({ kind: "paragraph", refs: [ref] });
 }
 
 function groupedTerms(units: Readonly<Record<string, MonographUnit>>, found: readonly PassagePiece[]): PassagePiece[] {

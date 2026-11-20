@@ -5537,6 +5537,8 @@ body.kv-has-player #toasts { bottom: 112px; }
   .bx-rm .kv-readtools .end-main > .end-block:nth-child(3) { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; padding-top: 24px; border-top: 1px solid var(--ink-1); }
 }
 
+.bx-pt .main.prose > h3 { margin-top: 1.6em; }
+.bx-pt .main.prose > h4 { margin-top: 1.4em; }
 .bx-pt .kv-group { margin-top: 40px; min-width: 0; }
 .bx-pt .sec-head + .kv-group { margin-top: 8px; }
 .bx-pt .kv-group + .kv-group { margin-top: 48px; }

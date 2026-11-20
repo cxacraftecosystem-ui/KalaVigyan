@@ -95,6 +95,30 @@ test("a curated page's rail follows its masthead and lede, and the masthead keep
   expect(html.match(/class="kv-rail"/g)).toHaveLength(1);
 });
 
+test("a field's cited sentences are read as paragraphs of three, never joined across fields", () => {
+  const document = groupedDocument();
+  const sentence = (ref: string, field: string) => ({ ...unit("made", "p", [cited(`Sentence ${ref} of the `, "stage.", ref)]), field });
+  Object.assign(document.content.units, {
+    "chapter-made": unit("made", "h2", ["How it is made"]),
+    "h-process": unit("made", "h3", ["Process"]),
+    p1: sentence("p1", "PROCESS"),
+    p2: sentence("p2", "PROCESS"),
+    p3: sentence("p3", "PROCESS"),
+    p4: sentence("p4", "PROCESS"),
+    m1: sentence("m1", "MATERIALS")
+  });
+  document.content.layout.push(...["chapter-made", "h-process", "p1", "p2", "p3", "p4", "m1"].map((ref) => at("made", ref)));
+  const made = pagePlan(document).chapters.find((chapter) => chapter.key === "made")!;
+  expect((made.blocks[0] as Passage).pieces.slice(2)).toEqual([
+    { kind: "paragraph", refs: ["p1", "p2", "p3"] },
+    { kind: "paragraph", refs: ["p4"] },
+    { kind: "paragraph", refs: ["m1"] }
+  ]);
+  const html = provided(createElement(MonographPage, { document }));
+  expect(html.match(/<p class="t-body"><span class="s">Sentence p1 of the /g)).toHaveLength(1);
+  expect(html).toMatch(/Sentence p1 of the [\s\S]*?<\/span> <span class="s">Sentence p2 of the /);
+});
+
 test("a disagreement's topic reads in sentence case without touching a name or a capital", () => {
   expect(sentenceCased(["whether Dhokra is the local name"])).toEqual(["Whether Dhokra is the local name"]);
   expect(sentenceCased(["Which colours are traditional"])).toEqual(["Which colours are traditional"]);
@@ -104,7 +128,11 @@ test("a disagreement's topic reads in sentence case without touching a name or a
 test("a placed masthead or opener photograph comes to the masthead when the opening holds none", () => {
   const document = generatedDocument();
   expect(placedMastheadPicture(document)).toBeNull();
-  document.content.layout = document.content.layout.map((entry) => (entry.ref === HERO || entry.within === HERO ? { ...entry, chapter: "chem" } : entry));
+  const placed = (entry: { ref: string; within: string | null }) => entry.ref === HERO || entry.within === HERO;
+  const moved = document.content.layout.filter(placed).map((entry) => ({ ...entry, chapter: "chem" }));
+  const kept = document.content.layout.filter((entry) => !placed(entry));
+  const chemAt = kept.findIndex((entry) => entry.chapter === "chem");
+  document.content.layout = [...kept.slice(0, chemAt + 1), ...moved, ...kept.slice(chemAt + 1)];
   document.content.data["page-layout"] = { entries: [{ ref: HERO, chapter: "chem", order: 1, role: "OPENER" }, { ref: "other/pictures/i09", chapter: "chem", order: 2, role: "HERO" }] };
   expect(placedMastheadPicture(document)).toBe(HERO);
   const plan = pagePlan(document);

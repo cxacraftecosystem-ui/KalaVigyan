@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+
 import { TermGroupView } from "@/components/monograph/TermGroups";
 import { UnitView } from "@/components/monograph/UnitView";
 import type { MonographDocument, MonographUnit } from "@/lib/monographDocument";
@@ -35,6 +37,18 @@ function Piece({ document, chapter, piece, titled }: PieceProps) {
     return <ul className="kv-list">{piece.refs.map((ref) => <li key={ref}>{nodeElements(units[ref].nodes, sources)}</li>)}</ul>;
   }
   if (piece.kind === "terms") return <TermGroupView units={units} sources={sources} piece={piece} />;
+  if (piece.kind === "paragraph") {
+    return (
+      <p className="t-body">
+        {piece.refs.map((ref, at) => (
+          <Fragment key={ref}>
+            {at ? " " : null}
+            {nodeElements(units[ref].nodes, sources)}
+          </Fragment>
+        ))}
+      </p>
+    );
+  }
   const unit = units[piece.ref];
   const drawn = drawing(unit, piece.role);
   const id = piece.role === "title" && titled ? `${chapter.key}-h` : undefined;

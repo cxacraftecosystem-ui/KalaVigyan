@@ -2,15 +2,18 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
-import { createElement } from "react";
+import { createElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
+import { AuthProvider } from "../components/AuthProvider";
 import { ChapterRail } from "../components/editorial/ChapterRail";
 import { MonographRail, RAIL_ARROWS, RAIL_LIST_ID } from "../components/monograph/MonographRail";
+import { ThemeProvider } from "../components/ThemeProvider";
 import { railArrowShown, railEnds, railMask, railStep, railTarget } from "../lib/monographRail";
 import type { ChapterPlan } from "../lib/monographRenderLayout";
 
 const chapter = (key: string, number: number | null, label: string): ChapterPlan => ({ key, index: number ?? 0, number, label, blocks: [] });
+const provided = (element: ReactElement) => renderToStaticMarkup(createElement(AuthProvider, null, createElement(ThemeProvider, null, element)));
 const CHAPTERS = [chapter("answer", null, "Answer"), chapter("cloth", 1, "The cloth"), chapter("sources", 2, "Sources")];
 
 test("a rail that fits shows no fade and no arrows, and one that overflows fades each edge that hides chapters", () => {
@@ -38,7 +41,7 @@ test("an arrow scrolls about one view, and the current chapter is brought into v
 });
 
 test("the monograph rail carries two labelled arrow buttons, hidden until the list overflows, that control the list", () => {
-  const html = renderToStaticMarkup(createElement(MonographRail, { chapters: CHAPTERS }));
+  const html = provided(createElement(MonographRail, { chapters: CHAPTERS }));
   expect(html).toContain(`<ol id="${RAIL_LIST_ID}">`);
   expect(html).toContain(`<button class="kv-rail-go" type="button" data-go="back" aria-label="${RAIL_ARROWS.back.label}" aria-controls="${RAIL_LIST_ID}" hidden="">`);
   expect(html).toContain(`<button class="kv-rail-go" type="button" data-go="on" aria-label="${RAIL_ARROWS.on.label}" aria-controls="${RAIL_LIST_ID}" hidden="">`);
@@ -48,7 +51,7 @@ test("the monograph rail carries two labelled arrow buttons, hidden until the li
 
 test("the approved page's rail carries the same arrows as the React rail", () => {
   const template = readFileSync(join(__dirname, "..", "..", "backend", "app", "data", "monographs", "Kutch-Ajrakh", "template.html"), "utf8");
-  const react = renderToStaticMarkup(createElement(MonographRail, { chapters: CHAPTERS }));
+  const react = provided(createElement(MonographRail, { chapters: CHAPTERS }));
   for (const go of ["back", "on"] as const) {
     const button = react.match(new RegExp(`<button class="kv-rail-go"[^>]*data-go="${go}"[\\s\\S]*?</button>`))?.[0] ?? "";
     const authored = template.match(new RegExp(`<button class="kv-rail-go"[^>]*data-go="${go}"[\\s\\S]*?</button>`))?.[0] ?? "";

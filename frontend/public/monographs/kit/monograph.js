@@ -428,6 +428,8 @@
     });
     $$('#kv-menu a').forEach(function (a) { if (a.getAttribute('href') === '#' + id) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); });
     var ch = document.getElementById(id);
+    var railed = railLinks.some(function (a) { return a.getAttribute('href') === '#' + id; });
+    if (!railed && railLinks.length) ch = document.getElementById(railLinks[0].getAttribute('href').slice(1));
     if (ch && menuLabel) {
       var n = +ch.getAttribute('data-ch');
       menuLabel.innerHTML = (n ? '<b>' + n + '</b>' : '') + '<span>' + esc(ch.getAttribute('data-label')) + '</span>';
