@@ -5314,7 +5314,7 @@ body.kv-has-player .kv-foot { padding-bottom: 120px; }
 .kv-alt-comic .comic { margin-top: 0; display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .kv-alt-comic .panel.p-wide, .kv-alt-comic .panel.p-hero { grid-column: 1 / -1; }
 @media (min-width: 1024px) { .kv-alt-comic .comic { grid-template-columns: repeat(3, minmax(0, 1fr)); } .kv-alt-comic .panel.p-wide { grid-column: span 2; } }
-@media (max-width: 639px) { .kv-alt-comic .comic { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 82%; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; } .kv-alt-comic .panel { scroll-snap-align: start; } .kv-alt-comic .panel.p-wide, .kv-alt-comic .panel.p-hero { grid-column: span 2; } }
+@media (max-width: 639px) { .kv-alt-comic .comic { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 82%; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 6px; } .kv-alt-comic .panel { scroll-snap-align: start; } .kv-alt-comic .panel.p-wide, .kv-alt-comic .panel.p-hero { grid-column: span 2; } .kv-alt-comic .panel.p-wide .pcap, .kv-alt-comic .panel.p-hero .pcap { padding-inline-end: calc(50% + 15px); } }
 .kv-alt-comic .panel .pan-box { aspect-ratio: 4 / 3; }
 .kv-alt-comic .panel.p-wide .pan-box { aspect-ratio: 980 / 360; }
 .kv-alt-comic .panel.p-hero .pan-box { aspect-ratio: 1440 / 460; }
