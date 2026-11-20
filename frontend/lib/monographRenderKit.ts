@@ -36,12 +36,12 @@ export function dataByScope(content: MonographContent): { scoped: Record<string,
   return { scoped, loose };
 }
 
-export type KitDataBlock = { id: string; value: unknown };
+export type KitDataBlock = { id: string; value: unknown; scope: string | null };
 
 export function kitDataBlocks(content: MonographContent): KitDataBlock[] {
   const { scoped, loose } = dataByScope(content);
-  const keys = [...KIT_HIDDEN_SCOPES.flatMap((scope) => scoped[scope]), ...loose];
-  return [...keys.map((id) => ({ id, value: content.data[id] })), { id: KIT_CITES_ID, value: kitCites(content) }];
+  const inScopes = KIT_HIDDEN_SCOPES.flatMap((scope) => scoped[scope].map((id) => ({ id, value: content.data[id], scope })));
+  return [...inScopes, ...loose.map((id) => ({ id, value: content.data[id], scope: null })), { id: KIT_CITES_ID, value: kitCites(content), scope: null }];
 }
 
 export type GradeTally = { total: number; grades: { grade: string; count: number }[] };

@@ -34,6 +34,7 @@ export function SpecPicture({ picture, className }: { picture: Picture; classNam
       loading={picture.loading ?? undefined}
       fetchPriority={picture.fetchPriority ?? undefined}
       decoding={picture.decoding ?? undefined}
+      crossOrigin={picture.src.startsWith(COMMONS_UPLOAD) ? "anonymous" : undefined}
       style={picture.focal ? { objectPosition: focalPosition(picture) } : undefined}
     />
   );

@@ -1,5 +1,6 @@
 import { BundleView, SlotRoot } from "@/components/monograph/BundleView";
 import { DeferredShellSlot } from "@/components/monograph/DeferredShellSlot";
+import { DrawnBundle, type BundleSet } from "@/components/monograph/ServerBundle";
 import { shellNodes } from "@/components/monograph/ShellTree";
 import type { MonographDocument } from "@/lib/monographDocument";
 import { bundleSources } from "@/lib/monographRenderKit";
@@ -22,13 +23,14 @@ export function AuthoredShell({ document, shell, rest = null }: AuthoredShellPro
   const tree = shellTree(shell, new Set(natives));
   if (rest !== null) {
     const lead = shellPart(document, tree.slice(0, leadLength(tree)));
+    const set: BundleSet = { bundles: lead.bundles, sources: lead.sources, bare: true };
     return (
-      <SlotRoot sources={lead.sources} bundles={lead.bundles} bare>
-        <div id={SHELL_ID}>
-          {shellNodes(lead.tree, slot)}
-          <DeferredShellSlot src={rest} version={document.version} />
-        </div>
-      </SlotRoot>
+      <div id={SHELL_ID}>
+        {shellNodes(lead.tree, (label) => (
+          <DrawnBundle label={label} set={set} />
+        ))}
+        <DeferredShellSlot src={rest} version={document.version} />
+      </div>
     );
   }
   const bundles = Object.assign({}, ...natives.map((label) => componentBundles(document, label)));

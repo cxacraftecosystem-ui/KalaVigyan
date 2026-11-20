@@ -1,5 +1,7 @@
-import { BundleView, NestedSlots, SLOT_CLASS, SlotRoot } from "@/components/monograph/BundleView";
+import { NestedSlots, SlotRoot } from "@/components/monograph/BundleView";
 import { COMPONENT_VIEWS } from "@/components/monograph/componentViews";
+import { DrawnBundle } from "@/components/monograph/ServerBundle";
+import { SLOT_CLASS } from "@/components/monograph/slotClass";
 import type { MonographDocument } from "@/lib/monographDocument";
 import { bundleSources } from "@/lib/monographRenderKit";
 import { componentBundles, placedComponents, slotId } from "@/lib/monographRenderLayout";
@@ -18,11 +20,7 @@ export function ComponentSlot({ document, label }: { document: MonographDocument
   const drawing = slotDrawing(document, label);
   if (drawing === "view") {
     const bundles = componentBundles(document, label);
-    return (
-      <SlotRoot sources={bundleSources(document, bundles)} bundles={bundles}>
-        <BundleView label={label} />
-      </SlotRoot>
-    );
+    return <DrawnBundle label={label} set={{ bundles, sources: bundleSources(document, bundles), bare: false }} />;
   }
   if (drawing === "none") return null;
   const nested = placedComponents(document, label);

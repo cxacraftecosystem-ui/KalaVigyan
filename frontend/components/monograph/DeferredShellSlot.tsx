@@ -12,7 +12,7 @@ type RestView = ComponentType<{ part: ShellRest; jump: string | null }>;
 type Shown = { View: RestView; part: ShellRest; jump: string | null };
 
 async function readRest(src: string, version: number): Promise<{ View: RestView; part: ShellRest }> {
-  const [loaded, response] = await Promise.all([import("@/components/monograph/DeferredShell"), fetch(src, { credentials: "omit" })]);
+  const [loaded, response] = await Promise.all([import("@/components/monograph/DeferredShell"), fetch(src)]);
   if (!response.ok) throw new Error(`${REST_UNREAD} (${response.status})`);
   return { View: loaded.DeferredShell, part: checkedShellRest(await response.json(), version) };
 }

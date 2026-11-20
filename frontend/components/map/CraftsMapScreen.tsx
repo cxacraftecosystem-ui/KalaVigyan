@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useRemote } from "@/components/hooks/useRemote";
+import { useUrlSearch } from "@/components/hooks/useUrlSearch";
 import { DistrictPanel, useDistrict } from "@/components/map/DistrictPanel";
 import { LayerPicker } from "@/components/map/LayerPicker";
 import { MapLayerFigure } from "@/components/map/MapLayerFigure";
@@ -14,6 +15,7 @@ import { StateCraftsList } from "@/components/map/StateCraftsList";
 import { useStateRanking } from "@/components/map/useStateRanking";
 import { Toggle } from "@/components/ui/Toggle";
 import { placedCountLine } from "@/lib/craftCatalogue";
+import type { CraftCatalogue } from "@/lib/craftCatalogueContract";
 import { DISTRICT_PARAM } from "@/lib/districtView";
 import { placeMarkers } from "@/lib/mapFamilies";
 import { chosenLayerId, fetchMapLayers, LAYER_PARAM } from "@/lib/mapLayers";
@@ -27,8 +29,7 @@ export function placesNote(count: number): string {
   return `${count.toLocaleString("en-IN")} ${count === 1 ? "place" : "places"} where the listed crafts are practised, drawn over the layer as discs`;
 }
 
-function useParamWriter() {
-  const params = useSearchParams();
+function useParamWriter(params: URLSearchParams) {
   const router = useRouter();
   const pathname = usePathname();
   return (param: string, value: string | null) => {
@@ -41,10 +42,10 @@ function useParamWriter() {
   };
 }
 
-export function CraftsMapScreen() {
-  const params = useSearchParams();
-  const write = useParamWriter();
-  const ranking = useStateRanking();
+export function CraftsMapScreen({ initial = null }: { initial?: CraftCatalogue | null }) {
+  const { params, reader } = useUrlSearch();
+  const write = useParamWriter(params);
+  const ranking = useStateRanking(initial);
   const layers = useRemote(fetchMapLayers);
   const requested = params.get(LAYER_PARAM);
   const physical = physicalLayerId(requested);
@@ -62,6 +63,7 @@ export function CraftsMapScreen() {
 
   return (
     <article className="grid min-w-0 gap-8 pb-section" data-testid="crafts-map">
+      {reader}
       <header className="grid gap-6 pt-8 md:pt-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-16">
         <div className="min-w-0">
           <p className="kicker">The atlas</p>

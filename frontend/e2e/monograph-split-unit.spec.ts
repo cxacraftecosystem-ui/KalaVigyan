@@ -3,10 +3,16 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { AuthoredShell } from "../components/monograph/AuthoredShell";
+import { BundleView, SlotRoot } from "../components/monograph/BundleView";
+import { COMPONENT_VIEWS } from "../components/monograph/componentViews";
+import { scopedBlocks } from "../components/monograph/DeferredShell";
 import { heldCitation, SHELL_COMPLETE_EVENT, whenShellComplete } from "../components/monograph/kitGate";
 import { deferredRest } from "../components/monograph/MonographPage";
+import { ServerBundle, serverDrawn } from "../components/monograph/ServerBundle";
+import { SERVER_VIEWS } from "../components/monograph/serverViews";
 import { hashTargetMissing } from "../components/monograph/useShellTrigger";
-import { KIT_CITES_ID } from "../lib/monographRenderKit";
+import { bundleSources, KIT_CITES_ID } from "../lib/monographRenderKit";
+import { componentBundles } from "../lib/monographRenderLayout";
 import { checkedShellRest, documentTree, isChapter, lazyPictures, shellParts, shellRest, shellRestPath } from "../lib/monographRenderShell";
 import { shellSlots } from "../lib/monographShellTree";
 
@@ -37,11 +43,43 @@ test("the page draws only its first chapter and a reserved place for the rest, a
   expect(split.length * 5).toBeLessThan(whole.length);
 });
 
+test("the first chapter drawn on the server reads exactly as the client views draw it, and the server views are the registry's own", () => {
+  const document = goldenDocument();
+  const split = renderToStaticMarkup(createElement(AuthoredShell, { document, shell: document.shell ?? "", rest: shellRestPath(document.subjectSlug, document.version) }));
+  const whole = renderToStaticMarkup(createElement(AuthoredShell, { document, shell: document.shell ?? "" }));
+  const opening = '<section class="kv-ch" id="answer"';
+  const lead = split.slice(split.indexOf(opening), split.indexOf('<div class="min-h-[300vh]"'));
+  const first = whole.slice(whole.indexOf(opening), whole.indexOf('<section class="kv-ch" id="cloth"'));
+  expect(lead.length).toBeGreaterThan(1000);
+  expect(lead).toBe(first);
+  for (const [kind, view] of Object.entries(SERVER_VIEWS)) expect(view, kind).toBe(COMPONENT_VIEWS[kind]);
+});
+
+test("a component of a server kind is drawn in the same slot markup as its client view draws", () => {
+  const document = goldenDocument();
+  const label = "shared/chemistry/indigo-reduction-player";
+  const bundles = componentBundles(document, label);
+  const set = { bundles, sources: bundleSources(document, bundles), bare: false };
+  expect(serverDrawn(bundles, label)).toBe(true);
+  const server = renderToStaticMarkup(createElement(ServerBundle, { label, set }));
+  const root = { bundles, sources: set.sources, bare: false } as Parameters<typeof SlotRoot>[0];
+  const client = renderToStaticMarkup(createElement(SlotRoot, root, createElement(BundleView, { label })));
+  expect(server).toContain('class="kv-slot contents"');
+  expect(server).toBe(client);
+});
+
 test("the rest carries its own bundles, every picture in it lazy, and the kit's data, for one version only", () => {
   const document = goldenDocument();
   const rest = shellRest(document);
   expect(rest.version).toBe(document.version);
   expect(rest.data.map((block) => block.id)).toContain(KIT_CITES_ID);
+  expect(rest.data.find((block) => block.id === KIT_CITES_ID)?.scope).toBeNull();
+  expect(rest.data.find((block) => block.id === "kv-data")?.scope).toBe("rm");
+  expect(rest.data.find((block) => block.id === "rs-data")?.scope).toBe("pt");
+  expect(scopedBlocks([{ id: "a", value: 1, scope: "rm" }, { id: "b", value: 2, scope: null }, { id: "c", value: 3, scope: "rm" }]).map(([scope, held]) => [scope, held.map((block) => block.id)])).toEqual([
+    ["rm", ["a", "c"]],
+    [null, ["b"]]
+  ]);
   const pictures = JSON.stringify(rest.bundles).match(/"loading":"[a-z]+"/g) ?? [];
   expect(pictures.length).toBeGreaterThan(0);
   expect(new Set(pictures)).toEqual(new Set(['"loading":"lazy"']));

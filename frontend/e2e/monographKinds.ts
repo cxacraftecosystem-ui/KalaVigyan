@@ -9,7 +9,7 @@ import { componentsHeldBy } from "@/lib/componentSpecsData";
 import type { ComponentView, ComponentViews } from "@/lib/componentViewContract";
 import type { MonographComponent, MonographContent } from "@/lib/monographDocument";
 
-import { assembledTemplate } from "./monographMarkup";
+import { assembledTemplate, PICTURE_DELIVERY } from "./monographMarkup";
 
 const MONOGRAPH = join(__dirname, "..", "..", "backend", "app", "data", "monographs", "Kutch-Ajrakh");
 const TOKEN = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][a-zA-Z0-9:-]*)((?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*(\/?)>/g;
@@ -139,6 +139,7 @@ export function canonical(markup: string): string[] {
       continue;
     }
     const attrs = Object.keys(tag.attrs)
+      .filter((name) => tag.name !== "img" || !PICTURE_DELIVERY.has(name.toLowerCase()))
       .sort()
       .map((name) => `${name}="${canonicalValue(name, tag.attrs[name])}"`);
     out.push(`<${[tag.name, ...attrs].join(" ")}>`);
