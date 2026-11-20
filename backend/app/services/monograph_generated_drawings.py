@@ -10,6 +10,7 @@ from typing import Any
 from app.core.errors import InvalidInput
 from app.research.monograph_document import FILE_SEPARATOR, LABEL_SEPARATOR, spec_file_name
 from app.research.monograph_page import SLOT_PATTERN, MonographContent, Quote, TextUnit, render_page
+from app.research.page_report_rules import node_text
 
 from .monograph_generated_units import SourceBook
 from .open_work_pages import CONTENT_FILE, MONOGRAPHS_DIR
@@ -22,6 +23,7 @@ __all__ = [
     "FilledUnits",
     "fragment_file_name",
     "remapped_nodes",
+    "spec_unit_keys",
 ]
 
 SPECS_FOLDER = "specs"
@@ -35,6 +37,10 @@ UNIT_NAME = re.compile(r"^u\d+$")
 
 def fragment_file_name(label: str) -> str:
     return label.replace(LABEL_SEPARATOR, FILE_SEPARATOR) + FRAGMENT_SUFFIX
+
+
+def spec_unit_keys(spec: Mapping[str, Any]) -> set[str]:
+    return {value for value in _strings(spec) if UNIT_NAME.fullmatch(value)}
 
 
 @dataclass(frozen=True)
@@ -86,12 +92,34 @@ class Drawings:
         )
         return FilledFragment(render_page(raw, filling), filled.citations, filled.citation_claims)
 
+    def unit_texts(self, monograph: str, label: str) -> list[str]:
+        spec = self.spec(monograph, label)
+        if spec is not None:
+            keys = spec_unit_keys(spec)
+        elif self.has_fragment(monograph, label):
+            raw = self._fragment_path(monograph, label).read_bytes().decode("utf-8")
+            keys = {key for kind, key in SLOT_PATTERN.findall(raw) if kind == UNIT_SLOT}
+        else:
+            return []
+        if not keys:
+            return []
+        units = self._content(monograph).units
+        return [node_text(units[key].nodes) for key in sorted(keys) if key in units]
+
     def spec_units(self, monograph: str, spec: Mapping[str, Any], book: SourceBook) -> FilledUnits:
-        named = {value for value in _strings(spec) if UNIT_NAME.fullmatch(value)}
+        named = spec_unit_keys(spec)
         if not named:
             return FilledUnits({}, {}, {})
         content = self._content(monograph)
         return self._filled(monograph, sorted(named & set(content.units)), book)
+
+    def source_numbers(self, monograph: str, book: SourceBook) -> dict[int, int]:
+        numbers: dict[int, int] = {}
+        for source in self._content(monograph).sources.values():
+            key = book.known(source)
+            if key is not None:
+                numbers[source.number] = book.sources[key].number
+        return numbers
 
     def _filled(self, monograph: str, keys: Sequence[str], book: SourceBook) -> FilledUnits:
         content = self._content(monograph)

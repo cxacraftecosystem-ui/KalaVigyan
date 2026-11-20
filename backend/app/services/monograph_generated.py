@@ -9,6 +9,7 @@ from app.research.monograph_document import MonographDocument
 
 from . import knowledge_view
 from .claim_holds import unheld_by_id
+from .component_places_held import subject_places
 from .component_proposals_drawn import with_delivered_claims
 from .coverage import coverage_of
 from .document_components_store import subject_structure
@@ -75,6 +76,7 @@ async def generated_parts(
         coverage=await coverage_of(session, subject),
         values=await stated_values(session, list(visible)),
         structure=structure,
+        places=await subject_places(session, subject),
     )
 
 

@@ -1,74 +1,25 @@
-import { Fragment, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
-import { CiteThis } from "@/components/craft/CiteThis";
 import { AuthoredShell } from "@/components/monograph/AuthoredShell";
-import { ComponentSlot } from "@/components/monograph/ComponentSlot";
-import { DocumentMasthead } from "@/components/monograph/DocumentMasthead";
+import { DeferredShellSlot } from "@/components/monograph/DeferredShellSlot";
 import { KitScript } from "@/components/monograph/KitScript";
 import { KitShellTail } from "@/components/monograph/KitShellTail";
-import { MonographMasthead } from "@/components/monograph/MonographMasthead";
-import { MonographPassage } from "@/components/monograph/MonographPassage";
+import { ChapterRun, PageCitation, shownPage } from "@/components/monograph/MonographChapters";
 import { MonographRail } from "@/components/monograph/MonographRail";
-import { MonographSources } from "@/components/monograph/MonographSources";
 import { KitPreferences } from "@/components/monograph/ReaderSettings";
-import { SourceList } from "@/components/monograph/SourceList";
-import { citeKey, versionedUrl, type Citable } from "@/lib/monographCite";
 import { MONOGRAPH_KIT_CSS, type MonographDocument } from "@/lib/monographDocument";
-import { numberedDocument } from "@/lib/monographRenderFigures";
-import { pagePlan, railChapters, type ChapterBlock, type ChapterPlan, type LabelMasthead, type MastheadPlan, type PagePlan } from "@/lib/monographRenderLayout";
-import { placedPlan } from "@/lib/monographRenderNear";
-import { shellRestPath } from "@/lib/monographRenderShell";
+import { railChapters, type PagePlan } from "@/lib/monographRenderLayout";
+import { leadChapters, shellRestPath } from "@/lib/monographRenderShell";
 
 const CITED_SUBJECT = "craft";
 
-type BlockProps = { document: MonographDocument; chapter: ChapterPlan; block: ChapterBlock; labelled: boolean };
+type ChaptersProps = { document: MonographDocument; plan: PagePlan; masthead: boolean; rail: ReactNode; rest: string | null };
 
-function BlockView({ document, chapter, block, labelled }: BlockProps) {
-  if (block.kind === "passage") return <MonographPassage document={document} chapter={chapter} passage={block} />;
-  if (block.kind === "component") return <ComponentSlot document={document} label={block.label} />;
-  return labelled ? <MonographSources document={document} /> : <SourceList document={document} />;
-}
-
-function blockKey(block: ChapterBlock, at: number): string {
-  return block.kind === "component" ? block.label : `${block.kind}-${at}`;
-}
-
-type ChapterProps = { document: MonographDocument; chapter: ChapterPlan; masthead: MastheadPlan | null; label?: LabelMasthead | null; labelled?: boolean };
-
-export function MonographChapter({ document, chapter, masthead, label = null, labelled = false }: ChapterProps) {
-  return (
-    <section className="kv-ch" id={chapter.key} data-ch={chapter.index} data-label={chapter.label} aria-label={chapter.label}>
-      {label ? <DocumentMasthead document={document} label={label} /> : masthead ? <MonographMasthead document={document} masthead={masthead} /> : null}
-      {chapter.blocks.map((block, at) => (
-        <BlockView key={blockKey(block, at)} document={document} chapter={chapter} block={block} labelled={labelled} />
-      ))}
-    </section>
-  );
-}
-
-export function documentCitation(document: MonographDocument): Citable | null {
-  if (document.subjectKind !== CITED_SUBJECT) return null;
-  return { kind: "monograph", title: document.title, version: document.version, url: versionedUrl(document.pageUrl, document.version), key: citeKey(document.subjectSlug, document.version) };
-}
-
-type ChaptersProps = { document: MonographDocument; plan: PagePlan; masthead: boolean; rail: ReactNode };
-
-function DocumentChapters({ document, plan, masthead, rail }: ChaptersProps) {
-  const labelled = plan.label !== null;
-  const cite = labelled ? documentCitation(document) : null;
+function DocumentChapters({ document, plan, masthead, rail, rest }: ChaptersProps) {
   return (
     <div id="kv-main">
-      {plan.chapters.map((chapter) => (
-        <Fragment key={chapter.key}>
-          <MonographChapter document={document} chapter={chapter} masthead={masthead && chapter.index === 0 ? plan.masthead : null} label={masthead && chapter.index === 0 ? plan.label : null} labelled={labelled} />
-          {chapter.index === 0 ? rail : null}
-        </Fragment>
-      ))}
-      {cite ? (
-        <div className="kv-page kv-citethis-place" data-app="">
-          <CiteThis cite={cite} />
-        </div>
-      ) : null}
+      <ChapterRun document={document} plan={plan} chapters={rest === null ? plan.chapters : leadChapters(plan.chapters)} masthead={masthead} rail={rail} />
+      {rest === null ? <PageCitation document={document} plan={plan} /> : <DeferredShellSlot src={rest} version={document.version} part="document" />}
     </div>
   );
 }
@@ -77,13 +28,10 @@ export function railAfterMasthead(document: MonographDocument, plan: PagePlan, m
   return document.shell === null && masthead && plan.label !== null && plan.chapters[0]?.index === 0;
 }
 
-export function deferredRest(document: MonographDocument, deferred: boolean): string | null {
-  return deferred && document.shell !== null && document.subjectKind === CITED_SUBJECT ? shellRestPath(document.subjectSlug, document.version) : null;
-}
-
-export function shownPage(document: MonographDocument): { document: MonographDocument; plan: PagePlan } {
-  const plan = placedPlan(document, pagePlan(document));
-  return { document: numberedDocument(document, plan), plan };
+export function deferredRest(document: MonographDocument, plan: PagePlan, deferred: boolean): string | null {
+  if (!deferred) return null;
+  if (document.shell !== null) return document.subjectKind === CITED_SUBJECT ? shellRestPath(document.subjectSlug, document.version) : null;
+  return plan.chapters.length > leadChapters(plan.chapters).length ? shellRestPath(document.subjectSlug, document.version, document.subjectKind) : null;
 }
 
 type MonographPageProps = { document: MonographDocument; masthead?: boolean; deferred?: boolean };
@@ -92,12 +40,12 @@ export function MonographPage({ document: given, masthead = true, deferred = fal
   const { document, plan } = shownPage(given);
   const rail = <MonographRail chapters={railChapters(plan)} />;
   const later = railAfterMasthead(document, plan, masthead);
-  const rest = deferredRest(document, deferred);
+  const rest = deferredRest(document, plan, deferred);
   return (
     <div className="kv-monograph ms-[calc(50%-50vw)] w-screen" lang={document.language} data-subject={`${document.subjectKind}:${document.subjectSlug}`} data-version={document.version}>
       <link rel="stylesheet" href={MONOGRAPH_KIT_CSS} precedence="default" />
       {later ? null : rail}
-      {document.shell !== null ? <AuthoredShell document={document} shell={document.shell} rest={rest} /> : <DocumentChapters document={document} plan={plan} masthead={masthead} rail={later ? rail : null} />}
+      {document.shell !== null ? <AuthoredShell document={document} shell={document.shell} rest={rest} /> : <DocumentChapters document={document} plan={plan} masthead={masthead} rail={later ? rail : null} rest={rest} />}
       <KitShellTail document={document} dataDeferred={rest !== null} />
       <KitPreferences />
       <KitScript />

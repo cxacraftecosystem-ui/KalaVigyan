@@ -11,8 +11,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import KnowledgePiece
 
 from .component_library_applies import APPLIED_CRAFT, APPLIED_PIECE, applies_to, registered_pieces
+from .component_places_held import PieceFacts, held_pieces
 
 __all__ = ["CraftPiece", "craft_component_kinds", "craft_pieces", "registered_pieces"]
+
+PIECE_COLUMNS = (
+    KnowledgePiece.id,
+    KnowledgePiece.craftId,
+    KnowledgePiece.kind,
+    KnowledgePiece.facet,
+    KnowledgePiece.title,
+    KnowledgePiece.description,
+    KnowledgePiece.label,
+    KnowledgePiece.fields,
+)
 
 
 @dataclass(frozen=True)
@@ -31,21 +43,19 @@ async def craft_pieces(session: AsyncSession, craft_ids: Sequence[uuid.UUID]) ->
     if not craft_ids:
         return []
     applying = applies_to(craft_ids).subquery()
-    rows = await session.execute(
-        select(
-            applying.c[APPLIED_CRAFT],
-            KnowledgePiece.label,
-            KnowledgePiece.kind,
-            KnowledgePiece.facet,
-            KnowledgePiece.fields,
+    rows = (
+        await session.execute(
+            select(applying.c[APPLIED_CRAFT], *PIECE_COLUMNS)
+            .join(KnowledgePiece, KnowledgePiece.id == applying.c[APPLIED_PIECE])
+            .where(*registered_pieces())
+            .distinct()
         )
-        .join(KnowledgePiece, KnowledgePiece.id == applying.c[APPLIED_PIECE])
-        .where(*registered_pieces())
-        .distinct()
-    )
+    ).all()
+    held = await held_pieces(session, [(row[0], PieceFacts(*row[1:7])) for row in rows])
     return [
-        CraftPiece(craft_id, str(label), kind, facet, tuple(fields or ()))
-        for craft_id, label, kind, facet, fields in rows.all()
+        CraftPiece(row.craft, str(row.label), row.kind, row.facet, tuple(row.fields or ()))
+        for row in rows
+        if (row.craft, row.id) in held
     ]
 
 

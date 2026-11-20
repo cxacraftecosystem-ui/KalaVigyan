@@ -11,6 +11,7 @@ import { driftSteps, heightDifferences, sectionHeights, type DriftReport } from 
 import { chapterIds, lineDiff, pixelDifference, type PixelDifference } from "./parityMeasure";
 import { alignPhase } from "./parityPhase";
 import { fullSizePictures } from "./parityPictures";
+import { placeBorrows, placeFacts, strayBorrows } from "./parityPlaces";
 import { playersAtRest, restingVat } from "./parityRest";
 import { borrowedPass, failures, type PassReport } from "./parityRun";
 import { sharedOnce } from "./parityShared";
@@ -174,4 +175,15 @@ test("every component borrowed from Kutch Ajrakh draws on each page that places 
   report("borrowed.json", reports);
   expect(cases.length, "components borrowed from Kutch Ajrakh (see borrowed-pages.json)").toBeGreaterThan(0);
   expect(Object.values(reports).flatMap(failures), "borrowed components that draw unlike their home (see borrowed.json)").toEqual([]);
+});
+
+test("no page draws a borrowed figure of a place it is not about", async ({ context, page }) => {
+  test.skip(CHECK === "monograph", "this run checks the Kutch Ajrakh page only");
+  test.skip(page.viewportSize()?.width !== DESKTOP.viewport.width || test.info().project.use.colorScheme === "dark", "one project reads the documents' places");
+  const site = process.env.E2E_BASE_URL ?? "";
+  const pages = await sharedOnce(REPORT_DIR, "borrowed-enumeration", () => subjectPages(context.request, site));
+  const borrows = placeBorrows(pages);
+  const stray = strayBorrows(borrows, await placeFacts(context.request, site, borrows));
+  report("places.json", { borrows, stray });
+  expect(stray, "borrowed figures of a place the page is not about (see places.json)").toEqual([]);
 });

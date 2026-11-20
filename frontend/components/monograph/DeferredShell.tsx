@@ -20,13 +20,24 @@ function settled(then: () => void): () => void {
   };
 }
 
+export function useRestShown(jump: string | null): void {
+  useEffect(
+    () =>
+      settled(() => {
+        if (jump) document.getElementById(jump)?.scrollIntoView({ block: "start" });
+        announce(window, SHELL_COMPLETE_EVENT);
+      }),
+    [jump]
+  );
+}
+
 export function scopedBlocks(blocks: readonly KitDataBlock[]): [string | null, KitDataBlock[]][] {
   const scopes = new Map<string | null, KitDataBlock[]>();
   for (const block of blocks) scopes.set(block.scope, [...(scopes.get(block.scope) ?? []), block]);
   return [...scopes];
 }
 
-function KitData({ blocks }: { blocks: readonly KitDataBlock[] }) {
+export function KitData({ blocks }: { blocks: readonly KitDataBlock[] }) {
   return (
     <>
       {scopedBlocks(blocks).map(([scope, held]) => (
@@ -41,14 +52,7 @@ function KitData({ blocks }: { blocks: readonly KitDataBlock[] }) {
 }
 
 export function DeferredShell({ part, jump }: { part: ShellRest; jump: string | null }) {
-  useEffect(
-    () =>
-      settled(() => {
-        if (jump) document.getElementById(jump)?.scrollIntoView({ block: "start" });
-        announce(window, SHELL_COMPLETE_EVENT);
-      }),
-    [jump]
-  );
+  useRestShown(jump);
   return (
     <SlotRoot sources={part.sources} bundles={part.bundles} bare>
       {shellNodes(part.tree, (label) => (

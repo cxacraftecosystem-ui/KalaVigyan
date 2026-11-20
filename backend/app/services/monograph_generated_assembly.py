@@ -13,13 +13,23 @@ from app.research.monograph_document import MonographDocument
 from app.research.monograph_page import CitedSource, ComponentEntry, LayoutEntry, MonographContent, TextUnit
 from app.research.page_layout import PageLayout, arranged_layout, picture_label
 
+from .component_places import PlacesHeld
 from .component_proposals_drawn import drawn_delivery
 from .document_components import DocumentStructure, StructureBlock
-from .document_components_data import borrowed_data, merged_data, monograph_data
+from .document_components_data import (
+    READER_SCOPE,
+    borrowed_data,
+    fragment_sentences,
+    merged_data,
+    monograph_data,
+    reader_data,
+    unit_sentences,
+)
+from .document_components_homes import home_scopes
 from .knowledge_view import ClaimView
-from .monograph_generated_drawings import Drawings
+from .monograph_generated_drawings import Drawings, spec_unit_keys
 from .monograph_generated_grids import StatedValue, fact_grid
-from .monograph_generated_parts import RegisteredComponent, StoredSection
+from .monograph_generated_parts import RegisteredComponent, StoredSection, component_binding_of
 from .monograph_generated_pictures import PICTURE_KIND, PlateSource, plate_spec
 from .monograph_generated_structure import CHAPTER_FIELDS, BlockSpecs, PlacedStructure, placed_structure
 from .monograph_generated_units import (
@@ -61,6 +71,7 @@ class GeneratedParts:
     coverage: FieldCoverage | None = None
     values: Mapping[uuid.UUID, StatedValue] = field(default_factory=dict)
     structure: DocumentStructure | None = None
+    places: PlacesHeld = field(default_factory=PlacesHeld)
 
 
 @dataclass
@@ -213,6 +224,8 @@ def _components(parts: GeneratedParts, page: _Page, drawings: Drawings) -> dict[
 
 
 def _drawn(parts: GeneratedParts, page: _Page, drawings: Drawings, component: RegisteredComponent) -> bool:
+    if component.borrowed and not component_binding_of(component, drawings).held_by(parts.places):
+        return False
     if component.delivered is not None:
         place = (field_chapter(component.field), component.field)
         taken = {*page.units, *page.drafts}
@@ -252,16 +265,26 @@ def _borrow(
             page.units[key] = unit
         citations.update(named.citations)
         claims.update(named.citation_claims)
-    _borrow_data(page, drawings)
+    _borrow_data(page, drawings, book)
 
 
-def _borrow_data(page: _Page, drawings: Drawings) -> None:
+def _borrow_data(page: _Page, drawings: Drawings, book: SourceBook) -> None:
     read: dict[str, dict[str, Any]] = {}
     for label, monograph in {**page.reused, **page.borrowed_specs}.items():
         if monograph not in read:
             read[monograph] = monograph_data(drawings.root, monograph)
         found = borrowed_data(read[monograph], page.components[label].kind, page.specs.get(label))
         merged_data(page.data, found)
+        if home_scopes(monograph).get(label) == READER_SCOPE:
+            numbers = drawings.source_numbers(monograph, book)
+            merged_data(page.data, reader_data(read[monograph], _held_sentences(page, label), numbers))
+
+
+def _held_sentences(page: _Page, label: str) -> set[str]:
+    if label in page.fragments:
+        return fragment_sentences(page.fragments[label])
+    named = spec_unit_keys(page.specs.get(label, {}))
+    return unit_sentences(page.units[key].nodes for key in sorted(named) if key in page.units)
 
 
 def _lay_out(page: _Page, found: Sequence[Mapping[str, list[str]]]) -> None:

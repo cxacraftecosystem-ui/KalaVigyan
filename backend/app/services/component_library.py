@@ -31,6 +31,7 @@ from .component_library_applies import (
     applies_to,
     registered_pieces,
 )
+from .component_places_held import held_pieces, piece_facts
 from .knowledge_api import known_craft
 
 __all__ = ["APPLIED_CRAFT", "APPLIED_PIECE", "applies_to", "library_components", "registered_pieces"]
@@ -49,8 +50,8 @@ async def library_components(
     limit: int = COMPONENTS_LIMIT_MAX,
 ) -> CraftComponents:
     conditions = registered_pieces()
-    if slug is not None:
-        craft = await known_craft(session, slug)
+    craft = None if slug is None else await known_craft(session, slug)
+    if craft is not None:
         applying = applies_to([craft.id]).subquery()
         conditions.append(KnowledgePiece.id.in_(select(applying.c[APPLIED_PIECE])))
     if field is not None:
@@ -58,6 +59,9 @@ async def library_components(
     if kind is not None:
         conditions.append(KnowledgePiece.kind == kind)
     rows = (await session.execute(_listing(conditions, query).limit(limit))).all()
+    if craft is not None:
+        held = await held_pieces(session, [(craft.id, piece_facts(piece)) for piece, _ in rows])
+        rows = [row for row in rows if (craft.id, row[0].id) in held]
     subjects = await _subjects(session, [piece.id for piece, _ in rows])
     return CraftComponents(
         craft_slug=slug,

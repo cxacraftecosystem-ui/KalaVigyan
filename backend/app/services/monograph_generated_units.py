@@ -88,6 +88,9 @@ class SourceBook:
         self.sources[key] = source.model_copy(update={"number": number})
         return key
 
+    def known(self, source: CitedSource) -> str | None:
+        return self._keys.get(source.url or source.title.casefold())
+
 
 def stored_source(ref: Mapping[str, Any]) -> CitedSource:
     return CitedSource(

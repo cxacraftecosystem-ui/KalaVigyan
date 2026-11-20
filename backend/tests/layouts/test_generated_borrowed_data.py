@@ -2,7 +2,7 @@ import dataclasses
 import json
 from pathlib import Path
 
-from app.services.document_components_data import borrowed_data, merged_data
+from app.services.document_components_data import borrowed_data, merged_data, reader_data
 from app.services.monograph_generated_assembly import assembled_document
 from app.services.monograph_generated_drawings import Drawings
 
@@ -60,3 +60,89 @@ def test_molecules_borrowed_from_two_figures_are_carried_together() -> None:
     merged_data(held, borrowed_data(DATA, "molecule_3d", {"molecules": [{"cid": 441564}]}))
     merged_data(held, borrowed_data(DATA, "reaction_player", {"steps": []}))
     assert held == {"mol-data": {"6293": ALIZARIN, "441564": INDICAN}}
+
+
+HINDI = "shared/chemistry/alizarin-purpurin-structures-hindi"
+PURPURIN_SENTENCE = "f3.purp"
+QUOTES = [{"q": "bright green", "l": "p. 8"}]
+READER = {
+    "sents": {
+        PURPURIN_SENTENCE: [{"n": 1, "qs": QUOTES}],
+        "lede.1": [{"n": 1, "qs": QUOTES}, {"n": 2, "qs": QUOTES}],
+    },
+    "sources": {"1": {"n": 1, "k": "gi", "t": "GI Journal"}, "2": {"n": 2, "k": "other", "t": "Other"}},
+    "quiz": [{"pre": "Madder needs "}],
+    "listen": {"wpm": 150, "total": 12},
+}
+PURPURIN_UNIT = {
+    "chapter": "reading",
+    "tag": "p",
+    "field": "CHEMISTRY",
+    "nodes": [
+        {
+            "m": "s",
+            "sid": PURPURIN_SENTENCE,
+            "c": ["Madder holds purpurin ", {"m": "cite", "key": "rm:f3.purp", "g": ["g1"], "c": ["too."]}],
+        }
+    ],
+    "claimIds": ["C096"],
+}
+
+
+def _reader_monograph(tmp_path: Path) -> Path:
+    root = fragment_monograph(tmp_path)
+    folder = root / "Kutch-Ajrakh"
+    content = json.loads((folder / "content.json").read_text(encoding="utf-8"))
+    content["units"]["u20"] = PURPURIN_UNIT
+    content["citations"]["rm:f3.purp"] = [{"source": "g1", "locator": "p. 8", "quote": "bright green"}]
+    content["citationClaims"]["rm:f3.purp"] = ["C096"]
+    (folder / "content.json").write_text(
+        json.dumps({**content, "data": {"kv-data": READER}}), encoding="utf-8"
+    )
+    spec = {"id": "fig3-hi", "head": {"dek": "u20"}}
+    (folder / "specs" / "shared__chemistry__alizarin-purpurin-structures-hindi.json").write_text(
+        json.dumps(spec), encoding="utf-8"
+    )
+    return root
+
+
+def test_a_borrowed_reader_figure_brings_only_the_sentences_it_holds_numbered_as_the_page_numbers_them(
+    tmp_path: Path,
+) -> None:
+    borrowed = (dataclasses.replace(component(HINDI), kind="structure_diagram"),)
+    built = assembled_document(generated(components=borrowed), Drawings(root=_reader_monograph(tmp_path)))
+    assert built is not None
+    [number] = [source.number for source in built.content.sources.values() if source.title == "GI Journal"]
+    assert built.content.data["kv-data"] == {
+        "sents": {PURPURIN_SENTENCE: [{"n": number, "qs": QUOTES}]},
+        "sources": {str(number): {"n": number, "k": "gi", "t": "GI Journal"}},
+    }
+
+
+def test_reader_data_of_two_borrowed_figures_is_carried_together() -> None:
+    held: dict[str, object] = {}
+    merged_data(held, reader_data({"kv-data": READER}, {PURPURIN_SENTENCE}, {1: 4}))
+    merged_data(held, reader_data({"kv-data": READER}, {"lede.1"}, {1: 4, 2: 7}))
+    assert held == {
+        "kv-data": {
+            "sents": {
+                PURPURIN_SENTENCE: [{"n": 4, "qs": QUOTES}],
+                "lede.1": [{"n": 4, "qs": QUOTES}, {"n": 7, "qs": QUOTES}],
+            },
+            "sources": {
+                "4": {"n": 4, "k": "gi", "t": "GI Journal"},
+                "7": {"n": 7, "k": "other", "t": "Other"},
+            },
+        }
+    }
+
+
+def test_a_sentence_whose_source_is_not_on_the_page_keeps_only_the_sources_that_are() -> None:
+    found = reader_data({"kv-data": READER}, {"lede.1", "no.such"}, {2: 3})
+    assert found == {
+        "kv-data": {
+            "sents": {"lede.1": [{"n": 3, "qs": QUOTES}]},
+            "sources": {"3": {"n": 3, "k": "other", "t": "Other"}},
+        }
+    }
+    assert reader_data({"mol-data": {}}, {"lede.1"}, {2: 3}) == {}

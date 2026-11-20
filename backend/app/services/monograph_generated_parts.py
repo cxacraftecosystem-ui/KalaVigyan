@@ -23,10 +23,12 @@ from app.models.enums import DISCIPLINES
 from app.research.component_specs_general_delivery import DeliveredComponent
 
 from .component_library import library_components
+from .component_places import PlaceBinding, component_binding, subject_place_keys
 from .component_proposals_drawn import stored_delivery
 from .craft_page_family import family_place, reader_name
 from .knowledge_export import EXPORT_COMPONENTS_MAX
 from .media_ref_store import stored_media_refs
+from .monograph_generated_drawings import Drawings
 from .monograph_generated_pictures import PlateSource, contributed_plates, curated_plate
 from .monograph_generated_units import SubjectRecord
 from .open_work_subjects import CATEGORY, WorkSubject
@@ -36,6 +38,7 @@ __all__ = [
     "PlateSource",
     "RegisteredComponent",
     "StoredSection",
+    "component_binding_of",
     "subject_components",
     "subject_pictures",
     "subject_record",
@@ -70,6 +73,22 @@ class RegisteredComponent:
     monograph: str | None
     anchor: str | None
     delivered: DeliveredComponent | None = None
+    borrowed: bool = False
+
+
+def component_binding_of(component: RegisteredComponent, drawings: Drawings) -> PlaceBinding:
+    if component.delivered is not None:
+        texts = [unit.text for unit in component.delivered.units.values()]
+    elif component.monograph is not None:
+        texts = drawings.unit_texts(component.monograph, component.label)
+    else:
+        texts = []
+    return component_binding(
+        kind=component.kind,
+        field=component.field,
+        places=subject_place_keys(component.subjects),
+        texts=[component.title, component.description, *texts],
+    )
 
 
 async def subject_sections(session: AsyncSession, subject: WorkSubject) -> list[StoredSection]:
@@ -118,7 +137,7 @@ async def subject_components(
     rows = [row for row in found if row.craftId is None or row.craftId == owner]
     subjects = await _subject_keys(session, [row.id for row in rows])
     return sorted(
-        (_component(row, subjects.get(row.id, ())) for row in rows if row.label is not None),
+        (_component(row, subjects.get(row.id, ()), owner) for row in rows if row.label is not None),
         key=lambda component: component.label,
     )
 
@@ -189,7 +208,9 @@ def _subject_key(subject: Subject, craft_slug: str | None, cid: int | None) -> s
     return None
 
 
-def _component(row: KnowledgePiece, subjects: tuple[str, ...]) -> RegisteredComponent:
+def _component(
+    row: KnowledgePiece, subjects: tuple[str, ...], owner: uuid.UUID | None
+) -> RegisteredComponent:
     payload = row.payload if isinstance(row.payload, dict) else {}
     monograph = payload.get("monograph")
     anchor = payload.get("anchor")
@@ -204,4 +225,5 @@ def _component(row: KnowledgePiece, subjects: tuple[str, ...]) -> RegisteredComp
         monograph=monograph if isinstance(monograph, str) else None,
         anchor=anchor if isinstance(anchor, str) else None,
         delivered=stored_delivery(str(row.label), payload),
+        borrowed=row.craftId is None or row.craftId != owner,
     )

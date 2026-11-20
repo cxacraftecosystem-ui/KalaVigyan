@@ -3,7 +3,9 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
+from functools import lru_cache
 from html.parser import HTMLParser
+from types import MappingProxyType
 from typing import Any
 
 from app.research.monograph_page import COMPONENT_SLOT, SLOT_PATTERN
@@ -27,6 +29,7 @@ __all__ = [
     "authored_homes",
     "component_homes",
     "frame_steps",
+    "home_scopes",
     "homes_body",
     "kind_scopes",
     "spec_keys",
@@ -58,6 +61,8 @@ VOID_TAGS = frozenset(
         "wbr",
     }
 )
+MONOGRAPH_SLUG = re.compile(r"^[A-Za-z0-9-]+$")
+SCOPES_CACHED = 32
 FIRST_TAG = re.compile(r"<([a-zA-Z][a-zA-Z0-9-]*)([^>]*)>")
 ATTRIBUTE = re.compile(r'([a-zA-Z_:][-a-zA-Z0-9_:.]*)="([^"]*)"')
 
@@ -259,6 +264,14 @@ def authored_home_source(slug: str) -> HomeSource:
         kinds={component.label: component.kind for component in content.components},
         native=native_views(slug),
     )
+
+
+@lru_cache(maxsize=SCOPES_CACHED)
+def home_scopes(monograph: str) -> Mapping[str, str | None]:
+    if not MONOGRAPH_SLUG.fullmatch(monograph) or not has_authored_content(monograph):
+        return MappingProxyType({})
+    homes = component_homes(authored_home_source(monograph))
+    return MappingProxyType({label: home.scope for label, home in homes.items()})
 
 
 def authored_homes() -> dict[str, Any]:

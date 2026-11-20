@@ -33,5 +33,5 @@ export default async function CategoryPage({ params }: CategoryRoute) {
   const category = findFamily(catalogue, slug);
   if (!category) notFound();
   const document = await serverMonographDocument("category", category.slug);
-  return <CategoryHub catalogue={catalogue} category={category} science={document ? <MonographPage document={document} masthead={false} /> : null} />;
+  return <CategoryHub catalogue={catalogue} category={category} science={document ? <MonographPage document={document} masthead={false} deferred /> : null} />;
 }

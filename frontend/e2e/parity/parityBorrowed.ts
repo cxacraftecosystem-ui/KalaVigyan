@@ -4,7 +4,7 @@ import { COMPONENT_HOMES, type HomeRecord } from "../../lib/componentHomes";
 import { isPreview, PRODUCTION_ORIGIN } from "../production/preview";
 
 export type SubjectKind = "craft" | "family" | "category";
-export type DocumentComponent = { label: string; kind: string };
+export type DocumentComponent = { label: string; kind: string; subjects?: string[] };
 export type SubjectPage = { path: string; slug: string; subject: SubjectKind; curated: boolean; authored: boolean; components: DocumentComponent[] };
 export type BorrowedCase = { label: string; kind: string; page: SubjectPage; root: string | null; frame: number };
 export type HomeEntry = HomeRecord;
@@ -37,7 +37,7 @@ export function subjectPage(body: DocumentBody, asked: "craft" | "category", slu
     subject,
     curated: components.some((component) => component.kind === STRUCTURE_KIND),
     authored: typeof body.shell === "string",
-    components: components.map((component) => ({ label: component.label, kind: component.kind }))
+    components: components.map((component) => ({ label: component.label, kind: component.kind, subjects: component.subjects ?? [] }))
   };
 }
 
@@ -45,7 +45,7 @@ export function retryable(status: number): boolean {
   return status === 429 || status >= 500;
 }
 
-async function read(request: APIRequestContext, path: string): Promise<unknown> {
+export async function readApi(request: APIRequestContext, path: string): Promise<unknown> {
   for (let attempt = 0; attempt < RETRY_WAITS_MS.length; attempt += 1) {
     const response = await request.get(path, { failOnStatusCode: false, timeout: 60_000 }).catch(() => null);
     if (response?.ok()) return response.json();
@@ -61,7 +61,7 @@ export function apiOrigin(site: string): string {
 
 async function documentOf(request: APIRequestContext, origin: string, [asked, slug]: ["craft" | "category", string]): Promise<SubjectPage | null> {
   const path = asked === "category" ? `/api/categories/${encodeURIComponent(slug)}/monograph` : `/api/crafts/${encodeURIComponent(slug)}/monograph`;
-  const body = await read(request, `${origin}${path}`);
+  const body = await readApi(request, `${origin}${path}`);
   return body ? subjectPage(body as DocumentBody, asked, slug) : null;
 }
 
@@ -72,8 +72,8 @@ export function craftsWithClaims(crafts: readonly CatalogueCraft[]): string[] {
 }
 
 async function askedSubjects(request: APIRequestContext, origin: string): Promise<["craft" | "category", string][]> {
-  const listed = ((await read(request, `${origin}${PAGES_PATH}`)) ?? {}) as { crafts?: string[]; categories?: string[] };
-  const catalogue = ((await read(request, `${origin}${CATALOGUE_PATH}`)) ?? {}) as { crafts?: CatalogueCraft[] };
+  const listed = ((await readApi(request, `${origin}${PAGES_PATH}`)) ?? {}) as { crafts?: string[]; categories?: string[] };
+  const catalogue = ((await readApi(request, `${origin}${CATALOGUE_PATH}`)) ?? {}) as { crafts?: CatalogueCraft[] };
   const known = new Set(listed.crafts ?? []);
   const crafts = craftsWithClaims(catalogue.crafts ?? []).filter((slug) => known.has(slug));
   return [...(listed.categories ?? []).map((slug) => ["category", slug] as ["category", string]), ...crafts.map((slug) => ["craft", slug] as ["craft", string])];

@@ -5,6 +5,9 @@ import { componentBundles, type ComponentBundle } from "@/lib/monographRenderLay
 import { shellSlots, shellTree, type ShellNode } from "@/lib/monographShellTree";
 
 export const SHELL_REST_SCHEMA_VERSION = 1;
+export const DOCUMENT_REST_SCHEMA_VERSION = 1;
+export const LEAD_CHAPTERS = 1;
+const CATEGORY_SUBJECT = "category";
 const CHAPTER_CLASS = "kv-ch";
 const CHAPTER_TAG = "section";
 const PICTURE_KEYS = ["src", "width", "height", "alt", "loading"] as const;
@@ -12,9 +15,20 @@ const PICTURE_KEYS = ["src", "width", "height", "alt", "loading"] as const;
 export type ShellPart = { tree: ShellNode[]; bundles: Record<string, ComponentBundle>; sources: MonographSources };
 export type ShellRest = ShellPart & { schemaVersion: typeof SHELL_REST_SCHEMA_VERSION; version: number; data: KitDataBlock[] };
 export type ShellParts = { lead: ShellPart; rest: ShellPart };
+export type DocumentRest = { schemaVersion: typeof DOCUMENT_REST_SCHEMA_VERSION; version: number; document: MonographDocument };
+export type RestPart = "shell" | "document";
 
-export function shellRestPath(slug: string, version: number): string {
-  return `/crafts/${encodeURIComponent(slug)}/shell/v${version}`;
+export function shellRestPath(slug: string, version: number, subject = "craft"): string {
+  const pages = subject === CATEGORY_SUBJECT ? "categories" : "crafts";
+  return `/${pages}/${encodeURIComponent(slug)}/shell/v${version}`;
+}
+
+export function leadChapters<T>(chapters: readonly T[]): T[] {
+  return chapters.slice(0, LEAD_CHAPTERS);
+}
+
+export function restChapters<T>(chapters: readonly T[]): T[] {
+  return chapters.slice(LEAD_CHAPTERS);
 }
 
 export function isChapter(node: ShellNode): boolean {
@@ -70,4 +84,21 @@ export function checkedShellRest(raw: unknown, version: number): ShellRest {
     throw new Error(`The rest of monograph version ${version} came back in another shape`);
   }
   return body as ShellRest;
+}
+
+export function documentRest(document: MonographDocument): DocumentRest {
+  return { schemaVersion: DOCUMENT_REST_SCHEMA_VERSION, version: document.version, document: { ...document, specs: lazyPictures(document.specs) } };
+}
+
+export function restBody(document: MonographDocument): ShellRest | DocumentRest {
+  return document.shell === null ? documentRest(document) : shellRest(document);
+}
+
+export function checkedDocumentRest(raw: unknown, version: number): DocumentRest {
+  const body = raw as Partial<DocumentRest> | null;
+  const document = body?.document as Partial<MonographDocument> | undefined;
+  if (!body || body.schemaVersion !== DOCUMENT_REST_SCHEMA_VERSION || body.version !== version || !document || document.version !== version || document.shell !== null || typeof document.content !== "object" || document.content === null) {
+    throw new Error(`The rest of monograph version ${version} came back in another shape`);
+  }
+  return body as DocumentRest;
 }
