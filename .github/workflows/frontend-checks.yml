@@ -28,7 +28,7 @@ on:
       - "infra/terraform/variables.tf"
       - ".github/workflows/frontend-checks.yml"
   push:
-    branches: [main]
+    branches: [main, "round[0-9]", "round[0-9][0-9]"]
     paths:
       - "frontend/**"
       - "shared/*.golden.*"

@@ -9,7 +9,7 @@ on:
       - "tools/**"
       - ".github/workflows/backend-checks.yml"
   push:
-    branches: [main]
+    branches: [main, "round[0-9]", "round[0-9][0-9]"]
     paths:
       - "backend/**"
       - "shared/**"
