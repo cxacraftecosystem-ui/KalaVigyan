@@ -28,5 +28,5 @@ export default async function CraftEditionPage({ params }: CraftEditionRoute) {
   const { slug, version } = await editionOf(params);
   const document = await serverCraftDocument(slug, version);
   if (!document) notFound();
-  return <MonographPage document={document} />;
+  return <MonographPage document={document} deferred />;
 }

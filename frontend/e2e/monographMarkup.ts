@@ -127,8 +127,15 @@ function normalValue(name: string, value: string): string {
   return normalJson(value);
 }
 
+export const PICTURE_DELIVERY: ReadonlySet<string> = new Set(["srcset", "sizes"]);
+
+function drawnNames(open: Open): string[] {
+  const names = Object.keys(open.attrs);
+  return open.tag.toLowerCase() === "img" ? names.filter((name) => !PICTURE_DELIVERY.has(name.toLowerCase())) : names;
+}
+
 function openLine(open: Open): string {
-  const names = Object.keys(open.attrs).sort();
+  const names = drawnNames(open).sort();
   const shown = names.map((name) => `${name}=${JSON.stringify(normalValue(name, open.attrs[name]))}`);
   return `<${open.tag.toLowerCase()}${shown.length ? " " + shown.join(" ") : ""}>`;
 }

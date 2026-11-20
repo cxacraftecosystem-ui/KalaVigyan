@@ -23,5 +23,5 @@ export default async function CraftMonographPreview({ params }: CraftMonographRo
   const { slug } = await params;
   const document = await serverMonographDocument("craft", slug);
   if (!document) notFound();
-  return <MonographPage document={document} />;
+  return <MonographPage document={document} deferred />;
 }

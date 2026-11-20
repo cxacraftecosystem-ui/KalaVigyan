@@ -15,6 +15,7 @@ import { SourceList } from "@/components/monograph/SourceList";
 import { citeKey, versionedUrl, type Citable } from "@/lib/monographCite";
 import { MONOGRAPH_KIT_CSS, type MonographDocument } from "@/lib/monographDocument";
 import { componentKind, pagePlan, railChapters, type ChapterBlock, type ChapterPlan, type LabelMasthead, type MastheadPlan, type PagePlan } from "@/lib/monographRenderLayout";
+import { shellRestPath } from "@/lib/monographRenderShell";
 import { componentPlace, type KitFrame } from "@/lib/monographScopes";
 
 const CITED_SUBJECT = "craft";
@@ -105,16 +106,23 @@ export function railAfterMasthead(document: MonographDocument, plan: PagePlan, m
   return document.shell === null && masthead && plan.label !== null && plan.chapters[0]?.index === 0;
 }
 
-export function MonographPage({ document, masthead = true }: { document: MonographDocument; masthead?: boolean }) {
+export function deferredRest(document: MonographDocument, deferred: boolean): string | null {
+  return deferred && document.shell !== null && document.subjectKind === CITED_SUBJECT ? shellRestPath(document.subjectSlug, document.version) : null;
+}
+
+type MonographPageProps = { document: MonographDocument; masthead?: boolean; deferred?: boolean };
+
+export function MonographPage({ document, masthead = true, deferred = false }: MonographPageProps) {
   const plan = pagePlan(document);
   const rail = <MonographRail chapters={railChapters(plan)} />;
   const later = railAfterMasthead(document, plan, masthead);
+  const rest = deferredRest(document, deferred);
   return (
     <div className="kv-monograph ms-[calc(50%-50vw)] w-screen" lang={document.language} data-subject={`${document.subjectKind}:${document.subjectSlug}`} data-version={document.version}>
       <link rel="stylesheet" href={MONOGRAPH_KIT_CSS} precedence="default" />
       {later ? null : rail}
-      {document.shell !== null ? <AuthoredShell document={document} shell={document.shell} /> : <DocumentChapters document={document} plan={plan} masthead={masthead} rail={later ? rail : null} />}
-      <KitShellTail document={document} />
+      {document.shell !== null ? <AuthoredShell document={document} shell={document.shell} rest={rest} /> : <DocumentChapters document={document} plan={plan} masthead={masthead} rail={later ? rail : null} />}
+      <KitShellTail document={document} dataDeferred={rest !== null} />
       <KitPreferences />
       <KitScript />
     </div>

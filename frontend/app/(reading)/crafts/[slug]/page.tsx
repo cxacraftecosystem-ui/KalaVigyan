@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: CraftRoute): Promise<Metadata
 export default async function CraftPage({ params }: CraftRoute) {
   const { slug } = await params;
   const document = await serverCraftDocument(slug);
-  if (document) return <MonographPage document={document} />;
+  if (document) return <MonographPage document={document} deferred />;
   const page = await craftRecordPage(slug);
   if (!page) notFound();
   return <CraftWithoutMonograph record={craftRecordView(page)} />;
