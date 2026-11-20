@@ -28,7 +28,7 @@ export const COUNTRY_LABELS = [
   { key: "LKA", text: "Sri Lanka", longitude: 80.7, latitude: 7.75 }
 ] as const;
 
-export const RANN_LABEL = { text: "Great Rann", longitude: 70.1, latitude: 24.15 };
+export const RANN_LABEL = { text: "Great Rann", longitude: 68.95, latitude: 24.15 };
 
 export type MapScene = { frame: MapBox; scale: number };
 
@@ -55,7 +55,7 @@ function PlaceLabels() {
   const rann = project(RANN_LABEL.longitude, RANN_LABEL.latitude);
   return (
     <g className={PHONE_HIDDEN} data-testid="map-place-labels">
-      <MapText x={rann.x} y={rann.y} anchor="middle" tone="var(--ink-2)" italic>
+      <MapText x={rann.x} y={rann.y} anchor="end" tone="var(--ink-2)" italic>
         {RANN_LABEL.text}
       </MapText>
       {COUNTRY_LABELS.map((label) => {

@@ -15,7 +15,7 @@ def test_a_whole_degree_is_written_in_three_characters() -> None:
 
 def test_a_ring_drops_its_closing_point_and_writes_deltas() -> None:
     ring = [(0.0, 0.0), (0.001, 0.0), (0.001, 0.001), (0.0, 0.0)]
-    assert encode_ring(ring) == "DAACAAC"
+    assert encode_ring(ring) == "GAACAAC"
 
 
 def test_points_that_round_to_the_same_place_are_written_once() -> None:

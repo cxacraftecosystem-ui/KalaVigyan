@@ -34,7 +34,7 @@ function Family({ family }: { family: FamilyBlock }) {
       </h3>
       {family.subFamilies.length ? <p className="font-ui text-label text-ink-3">{shelfSubLine(family.subFamilies)}</p> : null}
       {family.plates.length ? (
-        <ul className="grid grid-cols-2 gap-2.5">
+        <ul className="grid grid-cols-2 gap-2.5 max-sm:hidden">
           {family.plates.map((plate) => (
             <li key={plate.craft.id} className="min-w-0">
               <CollectionPlate plate={plate} className="h-full" />
