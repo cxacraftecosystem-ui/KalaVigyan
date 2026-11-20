@@ -76,7 +76,7 @@ export function MonographMasthead({ document, masthead }: { document: MonographD
               <Actions document={document} />
               <Provenance tally={gradeTally(document, citedSources(document))} />
             </div>
-            {masthead.picture ? <ComponentSlot document={document} label={masthead.picture} /> : null}
+            {masthead.picture ? <ComponentSlot document={document} label={masthead.picture} scoped={false} /> : null}
           </div>
         </header>
       </section>

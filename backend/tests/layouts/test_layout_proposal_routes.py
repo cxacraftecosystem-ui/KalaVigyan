@@ -6,8 +6,8 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api import mcp_layout_tools
-from app.api.mcp_tools import ToolContext, answer
+from app.api import mcp_page_tools
+from app.api.mcp_tools import TOOLS, ToolContext, answer
 from app.api.routes import knowledge_writes
 from app.core.db import get_session
 from app.core.deps import get_current_user
@@ -17,6 +17,7 @@ from app.main import create_app
 from app.models import LayoutProposal, User
 from app.research.layout_proposals import LayoutProposalDraft, LayoutProposalResult, LayoutSubject
 from app.research.page_layout import PageLayout, PageLayoutEntry
+from app.research.page_proposals import PageBundle, PageProposalResult, PageSubject
 from app.services import page_layout_proposals
 from app.services.craft_resolver import CraftIndexStore
 from app.services.open_work_subjects import WorkSubject
@@ -170,41 +171,53 @@ async def call_tool(arguments: dict[str, Any], tool_context: ToolContext) -> dic
         "jsonrpc": "2.0",
         "id": 8,
         "method": "tools/call",
-        "params": {"name": "propose_layout", "arguments": arguments},
+        "params": {"name": "propose_page", "arguments": arguments},
     }
     reply = await answer(message, tool_context)
     assert reply is not None and "result" in reply, reply
     return reply["result"]
 
 
-async def test_propose_layout_is_a_contribute_write_listed_beside_get_layout() -> None:
+async def test_a_layout_is_proposed_over_mcp_as_a_bundle_of_one_part() -> None:
     reply = await answer({"jsonrpc": "2.0", "id": 1, "method": "tools/list"}, mcp_context(None))
     assert reply is not None
-    (tool,) = [tool for tool in reply["result"]["tools"] if tool["name"] == "propose_layout"]
-    assert tool["annotations"]["readOnlyHint"] is False
-    assert tool["inputSchema"]["required"] == ["proposal"]
-    assert mcp_layout_tools.LAYOUT_TOOLS[1].scope == CONTRIBUTE_SCOPE
+    names = {tool["name"] for tool in reply["result"]["tools"]}
+    assert "propose_layout" not in names and "get_layout" not in names
+    assert TOOLS["propose_page"].scope == CONTRIBUTE_SCOPE
+    assert TOOLS["propose_page"].annotations["readOnlyHint"] is False
 
 
-async def test_an_agent_s_layout_carries_the_agent_origin_and_a_stale_one_is_a_tool_error(
+async def test_an_agent_s_layout_alone_goes_to_the_page_proposal_as_the_agent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    origins: list[str] = []
+    seen: list[tuple[PageBundle, str]] = []
 
-    async def propose(session: Any, user: User, draft: Any, *, origin: str, site: str, now: datetime) -> Any:
-        origins.append(origin)
-        if draft.base_version != 2:
-            raise Refused(STALE_LAYOUT, "The layout of Bagh-Print is at version 2, not 0.")
-        return RESULT
+    async def proposed(session: Any, bundle: PageBundle, user: User, *, origin: str, site: str) -> Any:
+        seen.append((bundle, origin))
+        return PageProposalResult(
+            subject=PageSubject(kind="craft", slug="Bagh-Print"),
+            page_url=f"{site}/crafts/Bagh-Print",
+            accepted=1,
+            refused=0,
+            parts=[],
+            message="1 of 1.",
+        )
 
-    monkeypatch.setattr(mcp_layout_tools, "propose_layout", propose)
-    stored = await call_tool({"proposal": BODY}, mcp_context("RESEARCHER"))
-    assert stored["isError"] is False and stored["structuredContent"]["outcome"] == "STORED"
-    stale = await call_tool({"proposal": BODY | {"baseVersion": 0}}, mcp_context("RESEARCHER"))
-    assert stale["isError"] is True and "at version 2, not 0" in stale["content"][0]["text"]
-    student = await call_tool({"proposal": BODY}, mcp_context("STUDENT"))
+    monkeypatch.setattr(mcp_page_tools, "page_proposed", proposed)
+    layout = {"base_version": BODY["baseVersion"], "entries": [HERO], "note": BODY["note"]}
+    bundle = {"subject": BODY["subject"], "layout": layout}
+    stored = await call_tool({"bundle": bundle}, mcp_context("RESEARCHER"))
+    assert stored["isError"] is False and stored["structuredContent"]["accepted"] == 1
+    ((sent, origin),) = seen
+    assert origin == "AGENT" and sent.layout is not None
+    assert (sent.layout.base_version, sent.layout.entries[0].ref, sent.layout.note) == (
+        2,
+        HERO["ref"],
+        "Lead.",
+    )
+    student = await call_tool({"bundle": bundle}, mcp_context("STUDENT"))
     assert student["isError"] is True and "Researcher or above" in student["content"][0]["text"]
-    assert origins == ["AGENT", "AGENT"]
+    assert len(seen) == 1
 
 
 def http(role: str, monkeypatch: pytest.MonkeyPatch, outcome: Any) -> TestClient:

@@ -88,6 +88,7 @@ class CitedSource(ContractModel):
     declared_licence: str | None = None
     stated_licence: str | None = None
     restricted: bool = False
+    supplied: str | None = None
 
 
 class HeldFact(ContractModel):
@@ -125,7 +126,10 @@ def quote_gate(statement: str, sources: Sequence[CitedSource]) -> GateOutcome:
     return _outcome(
         QUOTES_GATE,
         passed=True,
-        reasons=[f"all {len(quoted)} quotes were found verbatim in their fetched sources"],
+        reasons=[
+            f"all {len(quoted)} quotes were found verbatim in their fetched sources",
+            *(f"{source.url}: {source.supplied}" for source in sources if source.supplied),
+        ],
     )
 
 
@@ -221,7 +225,8 @@ def _quote_problems(source: CitedSource) -> list[str]:
         if trivial_quote(quote):
             problems.append(f"quote {index} from {source.url} is shorter than {QUOTE_MIN_CHARS} characters")
         elif not quote_occurs(quote, source.text):
-            problems.append(f"quote {index} from {source.url} is not in the page as fetched")
+            where = "the text supplied for it" if source.supplied else "the page as fetched"
+            problems.append(f"quote {index} from {source.url} is not in {where}")
     return problems
 
 

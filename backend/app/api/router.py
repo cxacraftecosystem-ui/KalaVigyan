@@ -47,6 +47,7 @@ from app.api.routes import (
     simulations,
     site_build,
     structure_proposals,
+    supplied_sources,
     terms,
     testimony_review,
     two_factor,
@@ -106,6 +107,7 @@ api_router.include_router(shared.router)
 api_router.include_router(simulations.router)
 api_router.include_router(site_build.router)
 api_router.include_router(structure_proposals.router)
+api_router.include_router(supplied_sources.router)
 api_router.include_router(terms.router)
 api_router.include_router(testimony_review.router)
 api_router.include_router(usage.router)

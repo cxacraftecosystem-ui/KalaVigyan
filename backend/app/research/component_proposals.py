@@ -83,7 +83,7 @@ STOP_WORDS = frozenset(
 WAYS_ON = (
     "Place the existing component by its label: name the label in the page's layout or the answer instead "
     "of making another.",
-    "Propose an extension of it: call propose_component again with extends set to its label and extension "
+    "Propose an extension of it: propose the component again with extends set to its label and extension "
     "SUBJECT_LINK to key it to a new craft, concept, compound or place, or VARIANT for a different form of "
     "the same thing. Never a copy.",
 )

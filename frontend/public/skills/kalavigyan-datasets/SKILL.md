@@ -1,6 +1,6 @@
 ---
 name: kalavigyan-datasets
-description: How to bring data into KalaVigyan - the open datasets behind its charts, tables, timelines and map layers, from river, relief, mineral, climate, soil and cover layers to the places each craft is practised - for an agent over the KalaVigyan MCP server or an engineer in its repository. Finding an open dataset whose licence allows redistribution (with search_sources, read_source and check_quote over MCP, as KalaVigyan's own research does), recording it with its version and citation, keeping provenance, units and the map's projection and Survey of India outline, simplifying no further than allowed, never inventing or interpolating a value, and turning the data into a delivered component (general_chart, general_table, general_timeline or general_map_layer) or a layer of the site's own maps, checked before it ships. The rules are in the shared dataset guide and component guide; this skill is the method. Load it before using any dataset, building a chart, table, timeline or map layer from data, or adding a source to etl/geo or tools/maplayers.
+description: How to bring data into KalaVigyan - the open datasets behind its charts, tables, timelines and map layers, from river, relief, mineral, climate, soil and cover layers to the places each craft is practised - for an agent over the KalaVigyan MCP server or an engineer in its repository. Finding an open dataset whose licence allows redistribution (with search_sources and read_source over MCP, as KalaVigyan's own research does), recording it with its version and citation, keeping provenance, units and the map's projection and Survey of India outline, simplifying no further than allowed, never inventing or interpolating a value, and turning the data into a delivered component (general_chart, general_table, general_timeline or general_map_layer) or a layer of the site's own maps, checked before it ships. The rules are in the shared dataset guide and component guide; this skill is the method. Load it before using any dataset, building a chart, table, timeline or map layer from data, or adding a source to etl/geo or tools/maplayers.
 ---
 
 # Datasets for KalaVigyan
@@ -26,7 +26,7 @@ The tools, tiers and allowances of the MCP server are in the contributor skill
 
 ## Decide which way the data goes
 
-1. Read the page first: `get_facts`, `get_coverage` and `get_layout` for the craft, and
+1. Read the page first: `get_facts` and `get_page` (its coverage and layout) for the craft, and
    `list_components` for what the library already draws from data. Place or extend a component
    that fits (the component guide) before building one.
 2. Ask what the data describes. Values about the craft itself (its artisans, production, exports,
@@ -37,16 +37,16 @@ The tools, tiers and allowances of the MCP server are in the contributor skill
 
 ## Over the MCP server
 
-1. Claim the task of the field the data fills (`list_open_work`, then `claim_task`): a
+1. Claim the task of the field the data fills (`list_open_work`, then `reserve_tasks`): a
    `MISSING_FIELD` or `THIN_FIELD` task, which the facts name as their `task_key`.
 2. Find the dataset with `search_sources` (kinds `web` and `scholarly`) or yourself, and check its
    licence against the dataset guide before reading a value. Note its record as the guide lists
    it; you give it as the source of every fact. A dataset page that may change gets a snapshot
-   from `archive_source`.
+   from `read_source` with archive.
 3. Read the rows the figure needs, no more, with `read_source` (`around` each row's words), pass
-   each row's quote through `check_quote`, and write each value as a fact, as `propose_fact` takes
-   one: the row quoted with its locator, the dataset's page as the source, an `idempotency_key` per
-   fact and the task as `task_key`. A place's coordinates come from its item in `lookup_entity`.
+   each row's quote through its `quotes`, and write each value as a fact of the craft for the
+   bundle: the row quoted with its locator, the dataset's page as the source and the task as
+   `task_key`. A place's coordinates come from its Wikidata item in `lookup`.
 4. Choose the general kind by the component guide and write its spec and units: every value stated
    by its reading unit, every reading unit citing its fact, every label short and uncited.
 5. Bundle the new facts with the component, cite the facts as `fact:0` and on, and call
@@ -54,7 +54,7 @@ The tools, tiers and allowances of the MCP server are in the contributor skill
    light and dark against the page checklist and the component guide's design rules, fix, preview
    again.
 6. Send the same bundle with `propose_page`, which proposes its facts and the component together,
-   and follow each part's outcome with `get_proposal` or `my_tasks`.
+   and follow each part's outcome with `get_proposal` or `my_work`.
 
 ## In the repository
 

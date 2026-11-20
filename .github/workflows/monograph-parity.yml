@@ -7,6 +7,15 @@ on:
         description: The site to compare on (empty compares production)
         required: false
         default: ""
+      check:
+        description: What to compare (all, monograph for the Kutch Ajrakh page, borrowed for its components on the pages that borrow them)
+        type: choice
+        options: [all, monograph, borrowed]
+        default: all
+  workflow_run:
+    workflows: [Deploy web app]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -17,15 +26,18 @@ concurrency:
 
 jobs:
   parity:
-    name: Compare the React monograph with the approved page
-    if: github.repository == 'cxacraftecosystem-ui/KalaVigyan'
+    name: Compare the React monograph and every borrowed component with the approved page
+    if: >-
+      github.repository == 'cxacraftecosystem-ui/KalaVigyan' &&
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-26.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: frontend
     env:
       E2E_PARITY: "1"
+      E2E_PARITY_CHECK: ${{ inputs.check || 'borrowed' }}
       E2E_BASE_URL: ${{ inputs.base_url || vars.WEB_ORIGIN || 'https://kalavigyan.vercel.app' }}
       E2E_VERCEL_BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
       E2E_REPORT_DIR: parity-run
@@ -50,7 +62,7 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Compare at 360, 834 and 1440 in light and dark
+      - name: Compare at 360, 834, 1440 and 1920 in light and dark
         run: npx playwright test --project='parity-*'
 
       - name: Keep the report

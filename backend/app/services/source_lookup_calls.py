@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 
@@ -76,6 +77,9 @@ class LookupAsk:
     tool: str
     deps: LookupDeps
 
+    def reader_id(self) -> uuid.UUID | None:
+        return self.user.id if self.user is not None else None
+
     async def contributor(self) -> LookupCaller:
         return await contributor_caller(self.session, self.user, self.tool, self.deps.tier)
 
@@ -115,14 +119,14 @@ async def read_call(ask: LookupAsk, url: str | None, doi: str | None, view: Text
     spend(SOURCE_READS, await ask.contributor())
     sources = await ask.sources()
     address = await source_address(sources.locator, url=url, doi=doi)
-    return await external(source_text(ask.session, sources, address, view))
+    return await external(source_text(ask.session, sources, address, view, reader_id=ask.reader_id()))
 
 
 async def check_call(ask: LookupAsk, url: str | None, doi: str | None, quote: ProposedQuote) -> QuoteCheck:
     spend(SOURCE_READS, await ask.contributor())
     sources = await ask.sources()
     address = await source_address(sources.locator, url=url, doi=doi)
-    return await external(checked_quote(ask.session, sources, address, quote))
+    return await external(checked_quote(ask.session, sources, address, quote, reader_id=ask.reader_id()))
 
 
 async def compound_call(ask: LookupAsk, name: str | None, cid: int | None) -> CompoundLookup:

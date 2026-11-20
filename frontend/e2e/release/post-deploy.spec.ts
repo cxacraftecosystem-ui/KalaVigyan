@@ -85,9 +85,9 @@ test.describe("public MCP tools", () => {
     settle(MCP_CHECK, `get_facts ${CHECKED_CRAFT}`, content ? [...problems, ...craftFactsProblems(content, CHECKED_CRAFT)] : problems);
   });
 
-  test(`get_coverage gives ${CHECKED_CRAFT}'s sixteen fields`, async () => {
-    const { content, problems } = await callTool(mcpEndpoint(), "get_coverage", { craft_slug: CHECKED_CRAFT });
-    settle(MCP_CHECK, `get_coverage ${CHECKED_CRAFT}`, content ? [...problems, ...coverageProblems(content, CHECKED_CRAFT)] : problems);
+  test(`get_page gives ${CHECKED_CRAFT}'s sixteen fields`, async () => {
+    const { content, problems } = await callTool(mcpEndpoint(), "get_page", { subject: { kind: "craft", slug: CHECKED_CRAFT }, parts: ["coverage"] });
+    settle(MCP_CHECK, `get_page ${CHECKED_CRAFT}`, content ? [...problems, ...coverageProblems(content, CHECKED_CRAFT)] : problems);
   });
 
   test("a signed-in tool asks an anonymous caller to sign in", async () => {

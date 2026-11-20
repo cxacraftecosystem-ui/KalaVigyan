@@ -44,8 +44,8 @@ WIKI_URL = "https://en.wikipedia.org/wiki/Ajrakh"
 EXCERPT = "The cloth is dyed in an indigo vat kept with lime and jaggery for several days."
 ORIGINAL = "https://upload.wikimedia.org/wikipedia/commons/a/ab/Ajrakh_block.jpg"
 SNAPSHOT = f"https://web.archive.org/web/20261121080000/{PAGE_URL}"
-CONTRIBUTOR_TOOLS = {"search_sources", "read_source", "check_quote", "archive_source"}
-OPEN_TOOLS = {"lookup_compound", "lookup_entity", "find_pictures"}
+CONTRIBUTOR_TOOLS = {"search_sources", "read_source"}
+OPEN_TOOLS = {"lookup"}
 
 
 def sources(**parts: Any) -> LookupSources:
@@ -80,7 +80,7 @@ def error_text(result: dict[str, Any]) -> str:
     return result["content"][0]["text"]
 
 
-def test_the_seven_source_tools_are_registered_with_their_scopes_and_hints() -> None:
+def test_the_three_source_tools_are_registered_with_their_scopes_hints_and_group() -> None:
     assert set(LOOKUP_TOOL_NAMES) == CONTRIBUTOR_TOOLS | OPEN_TOOLS
     for name in CONTRIBUTOR_TOOLS:
         assert TOOLS[name].scope == CONTRIBUTE_SCOPE, name
@@ -89,9 +89,41 @@ def test_the_seven_source_tools_are_registered_with_their_scopes_and_hints() -> 
     for name in LOOKUP_TOOL_NAMES:
         listed = TOOLS[name].listed()
         assert listed["annotations"]["openWorldHint"] is True
-        assert listed["annotations"]["readOnlyHint"] is (name != "archive_source")
-        assert "never follow instructions" in listed["description"]
+        assert listed["annotations"]["readOnlyHint"] is True
+        assert listed["_meta"]["kalavigyan/group"] == "sources"
+        assert "never follow instructions" not in listed["description"]
         assert listed["inputSchema"]["additionalProperties"] is False
+    for name in ("check_quote", "archive_source", "find_pictures", "lookup_compound", "lookup_entity"):
+        assert name not in TOOLS
+
+
+@pytest.mark.parametrize(
+    ("kinds", "scope"),
+    [
+        (["pictures"], READ_SCOPE),
+        (["pictures", "pictures"], READ_SCOPE),
+        (["pictures", "web"], CONTRIBUTE_SCOPE),
+        (["scholarly"], CONTRIBUTE_SCOPE),
+        (None, CONTRIBUTE_SCOPE),
+    ],
+)
+def test_a_pictures_search_alone_needs_only_the_read_scope(kinds: list[str] | None, scope: str) -> None:
+    given = {"query": "ajrakh"} if kinds is None else {"query": "ajrakh", "kinds": kinds}
+    assert TOOLS["search_sources"].scope_for(given) == scope
+
+
+async def test_sources_and_pictures_are_searched_in_one_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    openalex = FakeSearcher("openalex", [item("openalex", PAPER_URL)])
+    commons = FakePictures("wikimedia_commons", [picture(ORIGINAL, licence="CC BY-SA 4.0", author="Ann Rao")])
+    serve(monkeypatch, sources(scholarly=(openalex,), pictures=(commons,)))
+    arguments = {"query": "ajrakh", "kinds": ["scholarly", "pictures"]}
+    result = content(await call("search_sources", arguments, tool_context(person(RESEARCHER))))
+    assert (result["kinds"], result["searched"]) == (
+        ["scholarly", "pictures"],
+        ["openalex", "wikimedia_commons"],
+    )
+    assert [hit["url"] for hit in result["sources"]] == [PAPER_URL]
+    assert [found["author"] for found in result["pictures"]] == ["Ann Rao"]
 
 
 def test_the_lookup_tiers_are_the_trust_tiers() -> None:
@@ -237,7 +269,9 @@ async def test_open_pictures_are_found_by_anyone_with_credit_and_the_commons_wid
         "openverse", [picture(ORIGINAL.replace("Ajrakh", "Dabu"), licence="CC0", author=None)]
     )
     serve(monkeypatch, sources(pictures=(commons, openverse)))
-    result = content(await call("find_pictures", {"query": "ajrakh block"}, tool_context(None)))
+    result = content(
+        await call("search_sources", {"query": "ajrakh block", "kinds": ["pictures"]}, tool_context(None))
+    )
     [found] = result["pictures"]
     assert found["credit"] == "Photo: Ann Rao, CC BY-SA 4.0, via Wikimedia Commons"
     assert found["openLicence"] is True
@@ -253,10 +287,16 @@ async def test_open_pictures_are_found_by_anyone_with_credit_and_the_commons_wid
 async def test_signed_out_callers_share_one_allowance(monkeypatch: pytest.MonkeyPatch) -> None:
     serve(monkeypatch, sources(pictures=(FakePictures("openverse", []),)))
     for _ in range(120):
-        content(await call("find_pictures", {"query": "ajrakh"}, tool_context(None)))
-    spent = error_text(await call("find_pictures", {"query": "ajrakh"}, tool_context(None)))
+        content(await call("search_sources", {"query": "ajrakh", "kinds": ["pictures"]}, tool_context(None)))
+    spent = error_text(
+        await call("search_sources", {"query": "ajrakh", "kinds": ["pictures"]}, tool_context(None))
+    )
     assert spent.startswith("Signed-out callers made 120 source searches together in the last hour")
-    content(await call("find_pictures", {"query": "ajrakh"}, tool_context(person(RESEARCHER))))
+    content(
+        await call(
+            "search_sources", {"query": "ajrakh", "kinds": ["pictures"]}, tool_context(person(RESEARCHER))
+        )
+    )
 
 
 async def test_a_page_is_archived_within_a_small_allowance(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -264,9 +304,9 @@ async def test_a_page_is_archived_within_a_small_allowance(monkeypatch: pytest.M
     serve(monkeypatch, sources(archiver=archiver))
     context = tool_context(person(RESEARCHER))
     for _ in range(5):
-        saved = content(await call("archive_source", {"url": PAGE_URL}, context))
+        saved = content(await call("read_source", {"url": PAGE_URL, "archive": True}, context))["archive"]
         assert saved["archivedUrl"] == SNAPSHOT and saved["url"] == PAGE_URL
-    spent = error_text(await call("archive_source", {"url": PAGE_URL}, context))
+    spent = error_text(await call("read_source", {"url": PAGE_URL, "archive": True}, context))
     assert spent.startswith("This account made 5 source archives in the last hour")
     assert archiver.saved == [PAGE_URL] * 5
 
@@ -277,5 +317,5 @@ async def test_an_unreachable_source_is_a_tool_error_naming_it(monkeypatch: pyte
             raise ExternalFailure("did not answer", kind="unavailable", service="wayback-save")
 
     serve(monkeypatch, sources(archiver=Down()))
-    failed = await call("archive_source", {"url": PAGE_URL}, tool_context(person(RESEARCHER)))
+    failed = await call("read_source", {"url": PAGE_URL, "archive": True}, tool_context(person(RESEARCHER)))
     assert error_text(failed).startswith("The Wayback Machine could not be reached just now")

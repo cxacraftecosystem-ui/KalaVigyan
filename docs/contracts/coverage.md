@@ -54,7 +54,7 @@ standing}`:
   **`GET /api/categories/{slug}/coverage`**: the `FieldCoverage`, a public read counted like every
   public read, with its tag and `Cache-Control` (`cached_read`); an unknown or inactive subject is
   404.
-- **MCP**: `get_coverage`, and the per-field counts on `list_fields` and `find_crafts`
+- **MCP**: `get_page` with its coverage, and the per-field counts on `find_crafts`
   (`knowledge-api.md`).
 
 ## What follows from it

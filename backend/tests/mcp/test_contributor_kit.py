@@ -16,43 +16,63 @@ from app.research.sections import DISCIPLINE_FIELDS, DISCIPLINE_TITLES
 from app.research.trust_tiers import TIER_FACTS_PER_HOUR, TIER_TASKS_HELD, TRUST_TIERS
 
 CONTRIBUTOR_TOOLS = (
+    "find_crafts",
+    "get_page",
+    "get_facts",
+    "list_components",
+    "ask",
+    "search_sources",
+    "read_source",
+    "lookup",
+    "supply_source",
     "list_open_work",
+    "my_work",
+    "reserve_tasks",
+    "steward_craft",
+    "get_proposal",
+    "propose_facts",
+    "propose_structure",
+    "propose_source",
+    "edit_draft",
+    "preview_page",
+    "propose_page",
+    "give_pictures",
+)
+RETIRED_TOOLS = (
+    "list_fields",
+    "get_section",
+    "get_coverage",
+    "get_layout",
     "claim_task",
     "claim_tasks",
     "release_task",
     "my_tasks",
-    "get_facts",
-    "get_section",
-    "get_coverage",
-    "get_layout",
-    "list_components",
-    "propose_fact",
-    "propose_facts",
-    "get_proposal",
-    "propose_source",
-    "propose_structure",
-    "propose_component",
-    "preview_page",
-    "propose_page",
+    "my_crafts",
     "adopt_craft",
     "drop_craft",
-    "my_crafts",
+    "propose_fact",
+    "propose_component",
+    "propose_layout",
+    "create_draft",
+    "add_to_draft",
+    "remove_from_draft",
+    "get_draft",
+    "preview_draft",
+    "submit_draft",
+    "start_image_upload",
     "give_image",
     "give_images",
-    "start_image_upload",
-    "search_sources",
-    "read_source",
     "check_quote",
+    "archive_source",
     "lookup_compound",
     "lookup_entity",
     "find_pictures",
-    "archive_source",
 )
 LOOKUP_TABLE = {
-    "source searches": ("`search_sources`, `find_pictures`", (30, 60, 120)),
-    "source reads": ("`read_source`, `check_quote`, `lookup_compound`, `lookup_entity`", (120, 240, 480)),
+    "source searches": ("each kind of `search_sources`, its pictures too", (30, 60, 120)),
+    "source reads": ("the text and each quote of `read_source`, and `lookup`", (120, 240, 480)),
     "paid searches": ("the Brave and Elsevier routes of `search_sources`", (5, 15, 30)),
-    "source archives": ("`archive_source`", (5, 10, 20)),
+    "source archives": ("`read_source` with archive", (5, 10, 20)),
 }
 
 REPOSITORY = Path(__file__).resolve().parents[3]
@@ -106,6 +126,9 @@ def test_the_skill_teaches_every_contributor_tool_by_its_name() -> None:
     text = CONTRIBUTOR_SKILL_PATH.read_bytes().decode("utf-8")
     for name in CONTRIBUTOR_TOOLS:
         assert f"`{name}`" in text, name
+    for name in RETIRED_TOOLS:
+        assert f"`{name}`" not in text and name not in TOOLS, name
+    assert set(CONTRIBUTOR_TOOLS) == set(TOOLS)
     assert "taskKey" not in text and "craftSlug" not in text and "claimId" not in text
 
 

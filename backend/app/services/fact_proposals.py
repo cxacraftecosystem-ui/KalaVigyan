@@ -91,7 +91,7 @@ async def propose_fact_run(
     role = await role_now(session, proposer.id)
     standing = await trust_tiers.account_standing(session, proposer.id)
     subject = await proposal_subject(session, proposal.subject)
-    read = await read_sources(session, adapters.fetcher, proposal)
+    read = await read_sources(session, adapters.fetcher, proposal, proposer_id=proposer.id)
     run = await _gated(proposal, read, adapters, SqlHeldFacts(session, subject))
     switch = await app_settings.review_switch(session)
     tiered = _placed(run, switch, origin, role=role, tier=standing.tier, ticket=ticket)

@@ -91,7 +91,7 @@ async def test_a_compound_comes_with_its_record_hazards_and_the_synonyms_kalavig
     serve(monkeypatch, looked_up(compounds))
     held = Compound(name="indigo", pubchemCid=10215, synonyms=["indigotin", "C.I. Vat Blue 1"])
     context = tool_context(None, FakeSession(scalar=held))
-    result = content(await call("lookup_compound", {"name": "indigo"}, context))
+    result = content(await call("lookup", {"kind": "compound", "name": "indigo"}, context))
     [record] = result["compounds"]
     assert (record["cid"], record["formula"], record["url"]) == (
         10215,
@@ -114,20 +114,30 @@ async def test_a_cid_is_looked_up_alone_and_an_unknown_one_says_so(monkeypatch: 
     down = ExternalFailure("pubchem answered 503", kind="unavailable", service="pubchem")
     compounds = FakeCompounds([INDIGO], {"pubchem:10215:ghs": down})
     serve(monkeypatch, looked_up(compounds))
-    result = content(await call("lookup_compound", {"cid": 10215}, tool_context(person(RESEARCHER))))
+    result = content(
+        await call("lookup", {"kind": "compound", "id": 10215}, tool_context(person(RESEARCHER)))
+    )
     [record] = result["compounds"]
     assert (record["held"], record["synonyms"], record["hazards"]) == (False, [], None)
     assert result["notices"] == [
         "PubChem's hazards for CID 10215 could not be read just now; ask again later."
     ]
-    missing = await call("lookup_compound", {"cid": 99}, tool_context(None))
+    missing = await call("lookup", {"kind": "compound", "id": 99}, tool_context(None))
     assert missing["isError"] is True
     assert missing["content"][0]["text"].startswith("PubChem holds no compound for 99")
 
 
-async def test_a_compound_needs_one_key() -> None:
-    from_both = await call("lookup_compound", {"name": "indigo", "cid": 10215}, tool_context(None))
+async def test_a_lookup_needs_one_key_of_its_kind() -> None:
+    from_both = await call("lookup", {"kind": "compound", "name": "indigo", "id": 10215}, tool_context(None))
     assert from_both["isError"] is True and "one of them" in from_both["content"][0]["text"]
+    neither = await call("lookup", {"kind": "entity"}, tool_context(None))
+    assert neither["isError"] is True and "Wikidata qid as id, one of them" in neither["content"][0]["text"]
+    qid_for_a_compound = await call("lookup", {"kind": "compound", "id": "Q2085556"}, tool_context(None))
+    assert "PubChem CID, a whole number" in qid_for_a_compound["content"][0]["text"]
+    cid_for_an_entity = await call("lookup", {"kind": "entity", "id": 10215}, tool_context(None))
+    assert "Wikidata qid, such as Q12345" in cid_for_an_entity["content"][0]["text"]
+    unknown = await call("lookup", {"kind": "mineral", "name": "alum"}, tool_context(None))
+    assert unknown["isError"] is True and "kind" in unknown["content"][0]["text"]
 
 
 async def test_a_plant_comes_with_its_taxon_name_and_statements(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -145,7 +155,7 @@ async def test_a_plant_comes_with_its_taxon_name_and_statements(monkeypatch: pyt
         "wikidata", [found], documents={"wikidata:Q2085556": document(found, ENTITY_TEXT)}
     )
     serve(monkeypatch, looked_up(entities=entities))
-    result = content(await call("lookup_entity", {"name": "true indigo"}, tool_context(None)))
+    result = content(await call("lookup", {"kind": "entity", "name": "true indigo"}, tool_context(None)))
     [entity] = result["entities"]
     assert (entity["qid"], entity["label"], entity["taxonName"]) == (
         "Q2085556",
@@ -154,7 +164,7 @@ async def test_a_plant_comes_with_its_taxon_name_and_statements(monkeypatch: pyt
     )
     assert (entity["licence"], entity["openLicence"], entity["grade"]) == ("CC0 1.0", True, "B")
     assert entity["lines"] == ENTITY_TEXT.split("\n") and entities.asked == ["true indigo"]
-    by_qid = content(await call("lookup_entity", {"qid": "Q2085556"}, tool_context(None)))
+    by_qid = content(await call("lookup", {"kind": "entity", "id": "Q2085556"}, tool_context(None)))
     assert [entity["qid"] for entity in by_qid["entities"]] == ["Q2085556"]
-    missing = await call("lookup_entity", {"qid": "Q999"}, tool_context(None))
+    missing = await call("lookup", {"kind": "entity", "id": "Q999"}, tool_context(None))
     assert missing["content"][0]["text"].startswith("Wikidata holds no item for Q999")

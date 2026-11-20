@@ -31,7 +31,7 @@ UTF-8 without a byte-order mark, LF line endings.
 Since 2026-11-19 the database holds curated knowledge and these files are its versioned export:
 a backup, a diff against the database, and the way to bulk import. A new fact is proposed through
 the Knowledge API, where it passes the gates (`tools/curation/propose.py` sends a working
-dossier's new facts; an agent on the MCP server uses `propose_fact`). Structure the API does not
+dossier's new facts; an agent on the MCP server uses `propose_facts`). Structure the API does not
 take yet (picture placements, a stage's `after` or why, native names, reactions, glossary,
 conflicts, open questions, the GI record) and a new craft's first dossier still come in as a new
 dossier version, checked as below and imported on deploy. `app.scripts.export_dossiers` writes the

@@ -22,7 +22,7 @@ shown only to the proposer, on their own list.
 | `GET /form` | none | `ProposalForm {schemaVersion 1, terms {version, acceptedAt}, fields[{field, title, covers, chapter}], kinds[], subjectKinds[], needs {need: kinds[]}}` |
 | `POST /terms` | `{version}`, the current version only (`2026-11-19`) | `TermsStatus {version, acceptedAt}`; accepting twice keeps the first time |
 | `GET /library?query=&craftSlug=&field=&kind=` | none | `CraftComponents`, the same search as the MCP tool `list_components` (`component_library.library_components`) |
-| `POST /components` | `ComponentProposalBody`, the MCP `propose_component` arguments in camelCase | `ComponentProposalResult {outcome STORED or REFUSED, proposalId, status, label, message, matches[{component, reasons[]}], waysOn[]}` |
+| `POST /components` | `ComponentProposalBody`, a component of an MCP `propose_page` bundle in camelCase | `ComponentProposalResult {outcome STORED or REFUSED, proposalId, status, label, message, matches[{component, reasons[]}], waysOn[]}` |
 | `GET /mine` | none | `OwnProposals {schemaVersion 1, items[]}`, facts and component proposals together, newest first, at most 100 |
 | `POST /facts/{id}/withdraw` | none | `OwnProposal`, `WITHDRAWN` |
 | `POST /components/{id}/withdraw` | none | `OwnProposal`, `WITHDRAWN` |

@@ -99,6 +99,7 @@ SERVICE_ROUTES = {
     ("POST", "/api/oauth/token"),
     ("POST", "/api/oauth/revoke"),
     ("PUT", "/api/upload-links/slots/{token}"),
+    ("PUT", "/api/knowledge/supplied-sources/slots/{token}"),
 }
 ASKING_ROUTES = {
     ("GET", "/api/answers/config"),
@@ -180,6 +181,7 @@ ADMIN_ROUTES = {
     ("POST", "/api/knowledge/pages/preview"),
     ("GET", "/api/knowledge/pages/previews/{token}"),
     ("GET", "/api/knowledge/pages/pictures/{contribution_id}"),
+    ("GET", "/api/knowledge/supplied-sources/{supplied_id}"),
     ("POST", "/api/knowledge/open-work/claim"),
     ("POST", "/api/knowledge/open-work/release"),
     ("GET", "/api/knowledge/review-switch"),

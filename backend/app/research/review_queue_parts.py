@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import uuid
 
-from .base import ContractModel
+from pydantic import Field
+
+from .base import ContractModel, absent
+from .supplied_sources import SuppliedProvenance
 
 __all__ = ["FactSource", "GateCheck", "RelatedFact", "SourceQuote"]
 
@@ -18,6 +21,7 @@ class FactSource(ContractModel):
     licence: str | None
     reliability: str
     quotes: list[SourceQuote]
+    supplied: SuppliedProvenance | None = Field(default=None, exclude_if=absent)
 
 
 class RelatedFact(ContractModel):
