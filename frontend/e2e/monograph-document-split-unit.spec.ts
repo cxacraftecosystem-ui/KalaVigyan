@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { expect, test } from "@playwright/test";
 import { createElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -9,6 +12,7 @@ import { shownPage } from "../components/monograph/MonographChapters";
 import { deferredRest, MonographPage } from "../components/monograph/MonographPage";
 import { ThemeProvider } from "../components/ThemeProvider";
 import type { MonographDocument } from "../lib/monographDocument";
+import { parseNamedDocument } from "../lib/monographRenderCitations";
 import { KIT_CITES_ID, kitDataBlocks } from "../lib/monographRenderKit";
 import { checkedDocumentRest, documentRest, leadChapters, restBody, restChapters } from "../lib/monographRenderShell";
 
@@ -21,6 +25,9 @@ const chapterIds = (html: string) => [...html.matchAll(/<section class="kv-ch" i
 const MAIN_END = '</div><footer class="kv-foot">';
 const REACT_IDS = /_r_[0-9a-z]+_|«r[0-9a-z]+»|:r[0-9a-z]+:/gi;
 const sameIds = (html: string) => html.replace(REACT_IDS, "react-id");
+const HUB_DOCUMENT = join(__dirname, "textilesHubDocument.json");
+const HUB_FIGURES = ["shared/chemistry/alizarin-purpurin-3d", "shared/chemistry/indigo-leaf-to-cloth-chain"];
+const drawnLabels = (html: string) => [...new Set([...html.matchAll(/data-component="([^"]+)"/g)].map((found) => found[1]))].sort();
 
 function restOf(document: MonographDocument): string {
   return provided(createElement(DeferredDocument, { part: documentRest(document), jump: null }));
@@ -76,4 +83,12 @@ test("the rest of a generated document carries the whole document for its versio
   expect(() => checkedDocumentRest({ ...rest, document: { ...rest.document, shell: "<main></main>" } }, document.version)).toThrow(/another shape/);
   const golden = goldenDocument();
   expect(Object.keys(restBody(golden)).sort()).toEqual(["bundles", "data", "schemaVersion", "sources", "tree", "version"]);
+});
+
+test("the rest of the Textiles hub draws every borrowed figure its whole page draws", () => {
+  const document = parseNamedDocument(JSON.parse(readFileSync(HUB_DOCUMENT, "utf8")));
+  const whole = provided(createElement(MonographPage, { document, masthead: false }));
+  const rest = provided(createElement(DeferredDocument, { part: JSON.parse(JSON.stringify(documentRest(document))), jump: null }));
+  for (const label of HUB_FIGURES) expect(drawnLabels(whole), label).toContain(label);
+  expect(drawnLabels(rest)).toEqual(drawnLabels(whole));
 });
