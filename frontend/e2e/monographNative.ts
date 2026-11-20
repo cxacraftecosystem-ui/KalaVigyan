@@ -48,8 +48,15 @@ export function drawnMain(document: MonographDocument = goldenDocument()): strin
   return html.slice(html.indexOf(SHELL_OPEN) + SHELL_OPEN.length, html.lastIndexOf(SHELL_CLOSE));
 }
 
+export const DELIVERY_ATTRIBUTES: ReadonlySet<string> = new Set(["srcset", "sizes", "loading", "fetchpriority", "decoding"]);
+
+function drawnAttributes(tag: string, attrs: Record<string, string>): Record<string, string> {
+  const named = Object.entries(attrs).map(([name, value]) => [name.toLowerCase(), value] as const);
+  return Object.fromEntries(tag.toLowerCase() === "img" ? named.filter(([name]) => !DELIVERY_ATTRIBUTES.has(name)) : named);
+}
+
 export function caselessTokens(markup: string): Token[] {
-  return tokenize(markup).map((token) => (token.kind === "open" ? { ...token, attrs: Object.fromEntries(Object.entries(token.attrs).map(([name, value]) => [name.toLowerCase(), value])) } : token));
+  return tokenize(markup).map((token) => (token.kind === "open" ? { ...token, attrs: drawnAttributes(token.tag, token.attrs) } : token));
 }
 
 export function firstDifference(left: readonly string[], right: readonly string[]): number {

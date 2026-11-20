@@ -133,7 +133,7 @@ def test_sources_are_numbered_in_reading_order_and_a_sentence_carries_the_cite_m
     assert render_nodes(document.content.units[alum].nodes, sources) == (
         '<span class="s">Alum fixes the madder <span class="nw">red.<button class="kcite" type="button" '
         f'data-c="{alum}" data-g="g2 g1" aria-haspopup="dialog" aria-expanded="false" '
-        'aria-label="Sources 1 and 2" aria-description="Bagh survey; Alum on cotton">1,2</button></span></span>'
+        'aria-label="Sources 1, 2" aria-description="Bagh survey; Alum on cotton">1,2</button></span></span>'
     )
     assert [(q.source, q.locator, q.quote) for q in document.content.citations[alum]] == [
         ("g2", "p. 1", "quote 1"),

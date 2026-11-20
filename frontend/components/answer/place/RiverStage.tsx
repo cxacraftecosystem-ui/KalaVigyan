@@ -7,7 +7,7 @@ import type { PlacedBadge, StoryGeometry, StoryRiver } from "@/components/answer
 import type { RiverFlow } from "@/components/answer/place/useRiverFlow";
 import { fitStyle, useFitScale } from "@/components/charts/useFitScale";
 import { DistrictFills, SelectedDistrict, type DistrictFill } from "@/components/map/DistrictLayer";
-import { MapCoast, MapLand, SaltFlats, StateLines } from "@/components/map/MapBase";
+import { MapCoast, MapLand, SaltFlats } from "@/components/map/MapBase";
 import { MapText } from "@/components/map/MapCanvas";
 import { pointAlong, viewPercent, type Point, type View } from "@/lib/riverGeometry";
 import { cn } from "@/lib/utils";
@@ -116,7 +116,6 @@ function StageMap({ drawing, focus, summary }: { drawing: StageDrawing; focus: S
     <svg ref={ref} viewBox={`${view.x} ${view.y} ${view.width} ${view.height}`} className="absolute inset-0 h-full w-full" role="img" aria-label={summary} data-fit="" style={fitStyle(scale)}>
       <MapLand frame={view} />
       <DistrictFills shapes={geometry.context} fillOf={fillOf} />
-      <StateLines />
       <SaltFlats />
       <MapCoast />
       {focused ? <SelectedDistrict shape={focused.shape} /> : null}

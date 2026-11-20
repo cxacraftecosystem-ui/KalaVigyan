@@ -32,11 +32,6 @@ export function parseSiteBuildState(raw: unknown): SiteBuildState {
   return parseShape(siteBuildShape, raw);
 }
 
-export function staticCraftParams(pages: StaticPages | null): CraftParams[] {
-  if (!pages) return [];
-  return [...new Set(pages.crafts)].map((slug) => ({ slug }));
-}
-
 export function buildWaitsUntil(state: SiteBuildState, now: Date): Date | null {
   if (!state.nextAllowedAt) return null;
   const until = new Date(state.nextAllowedAt);

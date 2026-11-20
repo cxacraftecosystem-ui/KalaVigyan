@@ -99,3 +99,8 @@ export function districtSteps(layer: MapLayer): { classes: ShownClass[]; steps: 
   const steps = new Map(Object.entries(layer.values).map(([lgd, value]) => [Number(lgd), classes[classIndexOf(classes, value)].step] as const));
   return { classes, steps };
 }
+
+export function paletteSteps(layer: MapLayer): { label: string; colour: string }[] {
+  const { ramp } = layerPalette(layer.layer);
+  return paletteClasses(layer).map((band) => ({ label: band.label, colour: paletteColour(ramp, band.step) }));
+}

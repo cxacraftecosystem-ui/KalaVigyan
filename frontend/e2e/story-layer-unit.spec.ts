@@ -10,10 +10,8 @@ import { StoryLayerReadout, storyScopeNote } from "@/components/answer/place/Sto
 import type { StoryLayer } from "@/components/answer/place/useStoryLayer";
 import { NO_DATA_TONE } from "@/components/map/DistrictLayer";
 import { IndiaLocator, locatorLabel } from "@/components/map/IndiaLocator";
-import { RAMP_FILLS } from "@/components/map/rampFills";
 import { decodeShapes, type DistrictShape, type ShapesFile } from "@/components/map/shapeGeometry";
 import { layerInView, viewClasses } from "@/lib/layerClasses";
-import { layerRamp } from "@/lib/mapRamps";
 import type { MapLayer } from "@/lib/regionContract";
 import { ALL_PASSED } from "@/lib/regionStory";
 
@@ -54,32 +52,32 @@ function shownValues(drawn: StoryGeometry, valueAt: (position: number) => number
   ]);
 }
 
-test("a chosen layer spreads the districts the story shows over its own ramp, so two layers draw two different maps", () => {
+test("a chosen layer spreads the districts the story shows over its palette's ramp, lowest first, so rising and falling values draw two different maps", () => {
   const drawn = geometry();
   const count = drawn.context.length;
   expect(count).toBeGreaterThanOrEqual(5);
   const rising = layer("annual-precipitation", shownValues(drawn, (position) => 10 + position * 5));
-  const falling = layer("elevation", shownValues(drawn, (position) => 10 + (count - 1 - position) * 5));
+  const falling = layer("annual-precipitation", shownValues(drawn, (position) => 10 + (count - 1 - position) * 5));
   const tones = (chosen: MapLayer) => drawn.context.map((shape) => storyLayerFill(drawn, chosen)(shape));
-  const fills = RAMP_FILLS[layerRamp(rising.layer)];
   expect(new Set(tones(rising)).size).toBe(storyLayerInView(drawn, rising)?.classes.length);
   expect(tones(rising)).not.toEqual(tones(falling));
-  expect(tones(rising)[0]).toBe(fills[0]);
-  expect(tones(rising)[count - 1]).toBe(fills[fills.length - 1]);
-  expect(tones(falling)[0]).toBe(fills[fills.length - 1]);
+  expect(tones(rising)[0]).toBe("fill-[var(--rain-1)]");
+  expect(tones(rising)[count - 1]).toBe("fill-[var(--rain-6)]");
+  expect(tones(falling)[0]).toBe("fill-[var(--rain-6)]");
   expect(drawn.context.some((shape) => shape.lgd === KACHCHH)).toBe(true);
 });
 
-test("a rainfall layer shades the story in the rain ramp, and an unnamed variable in the density ramp", () => {
+test("a story layer takes the palette /map gives it: rain for rainfall, the pH ramp's fixed breaks for soil pH, density for a variable no palette names", () => {
   const drawn = geometry();
   const values = shownValues(drawn, (position) => 10 + position * 5);
   const rain = layer("annual-precipitation", values);
-  rain.layer = { ...rain.layer, variable: "annual_precipitation" };
-  const soil = layer("soil-ph", values);
-  expect(layerRamp(rain.layer)).toBe("rain");
-  expect(layerRamp(soil.layer)).toBe("density");
-  expect(drawn.context.map((shape) => storyLayerFill(drawn, rain)(shape)).every((tone) => tone !== null && tone.includes("--rain-"))).toBe(true);
-  expect(drawn.context.map((shape) => storyLayerFill(drawn, soil)(shape)).every((tone) => tone !== null && tone.includes("--density-"))).toBe(true);
+  const soil = layer("soil-ph-0-5cm", shownValues(drawn, (position) => 5 + (position % 5)));
+  const other = layer("unnamed-layer", values);
+  other.layer = { ...other.layer, variable: "unnamed_measure" };
+  const tones = (chosen: MapLayer) => drawn.context.map((shape) => storyLayerFill(drawn, chosen)(shape));
+  expect(tones(rain).every((tone) => tone !== null && tone.includes("--rain-"))).toBe(true);
+  expect(tones(other).every((tone) => tone !== null && tone.includes("--density-"))).toBe(true);
+  expect(tones(soil).slice(0, 5)).toEqual(["fill-[var(--ph-1)]", "fill-[var(--ph-2)]", "fill-[var(--ph-3)]", "fill-[var(--ph-4)]", "fill-[var(--ph-5)]"]);
 });
 
 test("districts are classed over the values on the map, by inclusive quantiles cut to three figures, as the server classes India", () => {
@@ -133,6 +131,8 @@ test("a chosen layer reads out each story district's value and a legend scoped t
   expect(shownText(html)).toContain("Kachchh");
   expect(html).toContain(`${300 + kachchh * 10}`);
   expect(attribute(html, "choropleth-scope", "data-testid")).toHaveLength(1);
+  expect(html).toContain("var(--rain-1)");
+  expect(html).not.toContain("var(--density-");
   expect(shownText(html)).toContain(storyScopeNote(shown));
   expect(storyScopeNote(shown)).toBe(`Shades compare the ${drawn.context.length} districts on this map.`);
   expect(renderToStaticMarkup(createElement(StoryLayerReadout, { block, story: chosenStory(null), shown: null, shapes }))).toBe("");

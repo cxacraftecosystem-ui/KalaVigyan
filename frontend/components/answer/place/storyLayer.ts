@@ -1,11 +1,10 @@
 import type { StoryGeometry } from "@/components/answer/place/storyGeometry";
 import { NO_DATA_TONE, type DistrictFill } from "@/components/map/DistrictLayer";
-import { rampFill } from "@/components/map/rampFills";
+import { paletteFill } from "@/components/map/rampFills";
 import type { DistrictShape } from "@/components/map/shapeGeometry";
 import { layerInView } from "@/lib/layerClasses";
-import { layerRamp, rampStep } from "@/lib/mapRamps";
+import { districtSteps, layerPalette } from "@/lib/mapPalettes";
 import type { MapLayer } from "@/lib/regionContract";
-import { layerFills } from "@/lib/regionView";
 
 export function storyLayerInView(geometry: StoryGeometry, layer: MapLayer): MapLayer | null {
   return layerInView(
@@ -15,11 +14,11 @@ export function storyLayerInView(geometry: StoryGeometry, layer: MapLayer): MapL
 }
 
 export function shownLayerFill(shown: MapLayer): DistrictFill {
-  const fills = layerFills(shown);
-  const ramp = layerRamp(shown.layer);
+  const { ramp } = layerPalette(shown.layer);
+  const { steps } = districtSteps(shown);
   return (shape: DistrictShape) => {
-    const index = fills.get(shape.lgd);
-    return index === undefined ? NO_DATA_TONE : rampFill(ramp, rampStep(index, shown.classes.length));
+    const step = steps.get(shape.lgd);
+    return step === undefined ? NO_DATA_TONE : paletteFill(ramp, step);
   };
 }
 

@@ -11,14 +11,11 @@ import { MAP_PLACE, MapStatesFigure, SIDE_PLACE } from "@/components/map/MapStat
 import { placedCircles, StateCircles } from "@/components/map/StateCircles";
 import { MapLegend, NO_READING_EXTRA } from "@/components/map/ChoroplethLegend";
 import { CircleKey, circleKeyBox } from "@/components/map/CirclesLegend";
-import { rampFill } from "@/components/map/rampFills";
 import { RankedList } from "@/components/map/RankedList";
 import { parseCraftCatalogue } from "@/lib/craftCatalogueContract";
 import { markerFamilies, placeMarkers } from "@/lib/mapFamilies";
-import { classColour, layerRamp, NO_READING_LABEL, rampStep } from "@/lib/mapRamps";
+import { NO_READING_LABEL } from "@/lib/mapRamps";
 import { allStatesLabel, circleKeys, circleRadius, mapDescription, niceValue, placeLabels, rankDek, rankFinding, stateMarks } from "@/lib/mapStates";
-import { mapLayerShape } from "@/lib/regionContract";
-import { parseShape } from "@/lib/shape";
 import type { CraftMapPoint } from "@/lib/types";
 
 const SHARED = join(__dirname, "..", "..", "shared");
@@ -122,14 +119,7 @@ test("labels take the first free side of their circle and drop when every side i
   ]);
 });
 
-test("a layer takes its variable's ramp, lowest class first, and no reading is the cross-hatch", () => {
-  expect(layerRamp({ variable: "annual_mean_temperature" })).toBe("heat");
-  expect(layerRamp({ variable: "annual_precipitation" })).toBe("rain");
-  expect(layerRamp({ variable: "phh2o" })).toBe("density");
-  expect([rampStep(0, 5), rampStep(2, 5), rampStep(4, 5), rampStep(0, 1)]).toEqual([1, 4, 6, 3]);
-  const soil = parseShape(mapLayerShape, golden("region.layer.golden.json"));
-  expect(classColour(soil, 0)).toBe("var(--density-1)");
-  expect(rampFill("rain", 6)).toBe("fill-[var(--rain-6)]");
+test("no reading in the dataset is the cross-hatch, named in the legend", () => {
   expect(NO_READING_EXTRA.label).toBe(NO_READING_LABEL);
   expect(NO_READING_EXTRA.fill).toBe("url(#kv-map-nodata)");
 });

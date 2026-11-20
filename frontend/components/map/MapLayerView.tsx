@@ -6,14 +6,12 @@ import { failureMessage, useRemote, type Remote } from "@/components/hooks/useRe
 import { ChoroplethLegend } from "@/components/map/ChoroplethLegend";
 import { NO_DATA_TONE, type DistrictFill } from "@/components/map/DistrictLayer";
 import { MapRetry } from "@/components/map/MapRetry";
-import { paletteFill, rampFill } from "@/components/map/rampFills";
+import { paletteFill } from "@/components/map/rampFills";
 import { loadShapes, type DistrictShape } from "@/components/map/shapeGeometry";
 import { districtSteps, layerPalette } from "@/lib/mapPalettes";
-import { layerRamp, rampStep } from "@/lib/mapRamps";
 import { fetchMapLayer } from "@/lib/mapLayers";
 import { fetchDistricts } from "@/lib/profileContract";
 import type { MapLayer } from "@/lib/regionContract";
-import { layerFills } from "@/lib/regionView";
 
 export type DistrictName = { name: string; state: string };
 export type MapLayerData = { layer: Remote<MapLayer>; shapes: Remote<DistrictShape[]>; names: Remote<Map<number, DistrictName>> };
@@ -29,18 +27,6 @@ export function useMapLayer(layerId: string | null): MapLayerData {
   const shapes = useRemote(layerId ? loadShapes : null);
   const names = useRemote(layerId ? districtNames : null);
   return { layer, shapes, names };
-}
-
-export function useLayerFill(data: MapLayer | null): DistrictFill {
-  const fills = useMemo(() => (data ? layerFills(data) : null), [data]);
-  return useCallback(
-    (shape: DistrictShape) => {
-      if (!fills || !data) return null;
-      const index = fills.get(shape.lgd);
-      return index === undefined ? NO_DATA_TONE : rampFill(layerRamp(data.layer), rampStep(index, data.classes.length));
-    },
-    [data, fills]
-  );
 }
 
 export function usePaletteFill(data: MapLayer | null): DistrictFill {

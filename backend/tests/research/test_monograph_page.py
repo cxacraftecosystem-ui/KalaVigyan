@@ -62,7 +62,7 @@ def test_a_cited_sentence_renders_its_last_word_and_button_unbroken() -> None:
     assert render_nodes(nodes, SOURCES) == (
         '<span class="s">A resist printing and <span class="nw">dyeing.<button class="kcite" type="button" '
         'data-c="chem:q0" data-g="g1 g2" aria-haspopup="dialog" aria-expanded="false" '
-        'aria-label="Sources 1 and 2" aria-description="GI Journal No. 188: Kutch Ajrakh; Ajrakh: Rhythm of Blues">'
+        'aria-label="Sources 1, 2" aria-description="GI Journal No. 188: Kutch Ajrakh; Ajrakh: Rhythm of Blues">'
         "1,2</button></span></span>"
     )
 
@@ -71,7 +71,7 @@ def test_a_citation_numbers_its_sources_in_order_but_keeps_their_given_order_in_
     nodes = [{"m": "cite", "key": "mb:aj:C001", "g": ["g2", "g1", "g11"], "c": ["catwalk."]}]
     rendered = render_nodes(nodes, SOURCES)
     assert 'data-g="g2 g1 g11"' in rendered
-    assert 'aria-label="Sources 1, 2 and 11"' in rendered
+    assert 'aria-label="Sources 1, 2, 11"' in rendered
     assert (
         'aria-description="GI Journal No. 188: Kutch Ajrakh; Ajrakh: Rhythm of Blues; '
         'Ajrakh: From Caste Dress to Catwalk">1,2,11</button>'

@@ -43,14 +43,27 @@ const newsreaderExtended = localFont({
 });
 
 const plexSans = localFont({
+  src: "../fonts/ibm-plex-sans-regular-latin1.woff2",
+  display: "swap",
+  variable: "--font-plex-sans",
+  weight: "400",
+  style: "normal",
+  adjustFontFallback: "Arial",
+  declarations: [
+    { prop: "font-family", value: "IBM Plex Sans" },
+    { prop: "unicode-range", value: "U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044, U+20AC, U+2122, U+2212, U+FB01-FB02" }
+  ]
+});
+
+const plexSansWeights = localFont({
   src: [
-    { path: "../fonts/ibm-plex-sans-regular-latin1.woff2", weight: "400", style: "normal" },
     { path: "../fonts/ibm-plex-sans-medium-latin1.woff2", weight: "500", style: "normal" },
     { path: "../fonts/ibm-plex-sans-semibold-latin1.woff2", weight: "600", style: "normal" }
   ],
   display: "swap",
-  variable: "--font-plex-sans",
-  adjustFontFallback: "Arial",
+  variable: "--font-plex-sans-weights",
+  preload: false,
+  adjustFontFallback: false,
   declarations: [
     { prop: "font-family", value: "IBM Plex Sans" },
     { prop: "unicode-range", value: "U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044, U+20AC, U+2122, U+2212, U+FB01-FB02" }
@@ -137,6 +150,6 @@ const plexMono = localFont({
   ]
 });
 
-export const LATIN_FONT_VARIABLES = [newsreader, newsreaderItalic, newsreaderExtended, plexSans, plexSansItalic, plexSansLatin2, plexSansLatin3, plexSansSymbols, plexMono]
+export const LATIN_FONT_VARIABLES = [newsreader, newsreaderItalic, newsreaderExtended, plexSans, plexSansWeights, plexSansItalic, plexSansLatin2, plexSansLatin3, plexSansSymbols, plexMono]
   .map((font) => font.variable)
   .join(" ");

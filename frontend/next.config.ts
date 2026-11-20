@@ -42,9 +42,20 @@ const securityHeaders = [
   }
 ];
 
+export const PICTURE_WIDTHS = [330, 500, 960, 1280, 1920];
+export const PICTURE_QUALITIES = [80];
+export const PICTURE_CACHE_SECONDS = 31_536_000;
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  images: {
+    deviceSizes: PICTURE_WIDTHS,
+    imageSizes: [],
+    qualities: PICTURE_QUALITIES,
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: PICTURE_CACHE_SECONDS
+  },
   env: {
     NEXT_PUBLIC_BUILD_NUMBER: process.env.NEXT_PUBLIC_BUILD_NUMBER || process.env.GITHUB_RUN_NUMBER || ""
   },

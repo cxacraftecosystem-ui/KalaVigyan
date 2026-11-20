@@ -1,3 +1,4 @@
+import { clusterName } from "@/lib/citationCluster";
 import type { MonographMark, MonographNode, MonographSource } from "@/lib/monographDocument";
 
 export const ITALIC_ROLES = ["loc", "bot", "ring", "on"] as const;
@@ -101,12 +102,7 @@ export function citedNumbers(keys: readonly string[], sources: MonographSources)
   const byNumber = new Map(keys.map((key) => [sources[key].number, sources[key]] as const));
   const shown = [...byNumber.entries()].sort(([a], [b]) => a - b);
   const numbers = shown.map(([number]) => String(number));
-  const label = numbers.length === 1 ? `Source ${numbers[0]}` : `Sources ${listed(numbers)}`;
-  return { numbers, label, described: shown.map(([, source]) => source.title).join("; ") };
-}
-
-function listed(numbers: readonly string[]): string {
-  return numbers.length === 1 ? numbers[0] : `${numbers.slice(0, -1).join(", ")} and ${numbers[numbers.length - 1]}`;
+  return { numbers, label: clusterName(shown.map(([number]) => ({ number }))), described: shown.map(([, source]) => source.title).join("; ") };
 }
 
 export function citeButton(node: MonographMark, sources: MonographSources): MarkupPart {

@@ -78,7 +78,3 @@ export const SaltFlats = memo(function SaltFlats() {
     </g>
   );
 });
-
-export function StateLines(): null {
-  return null;
-}

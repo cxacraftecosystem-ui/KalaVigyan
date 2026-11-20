@@ -32,7 +32,7 @@ test("the unit view can draw a unit in the element and class its shell asks for"
 });
 
 test("a citation cluster numbers its sources in order, once each, and names them", () => {
-  expect(citedNumbers(["g2", "g1", "g2"], sources)).toEqual({ numbers: ["1", "2"], label: "Sources 1 and 2", described: "GI Journal No. 188: Kutch Ajrakh; Ajrakh: Rhythm of Blues" });
+  expect(citedNumbers(["g2", "g1", "g2"], sources)).toEqual({ numbers: ["1", "2"], label: "Sources 1, 2", described: "GI Journal No. 188: Kutch Ajrakh; Ajrakh: Rhythm of Blues" });
   expect(citedNumbers(["g1"], sources).label).toBe("Source 1");
 });
 

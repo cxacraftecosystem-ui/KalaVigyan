@@ -7,9 +7,9 @@ import { MapLegend, NO_READING_EXTRA } from "@/components/map/ChoroplethLegend";
 import { LayerStatus } from "@/components/map/MapLayerView";
 import type { DistrictShape } from "@/components/map/shapeGeometry";
 import type { RegionStoryBlock } from "@/lib/explainerPlace";
-import { layerColours } from "@/lib/mapRamps";
+import { paletteSteps } from "@/lib/mapPalettes";
 import type { MapLayer } from "@/lib/regionContract";
-import { districtReading, layerCaption, layerClassLabels, layerSummary } from "@/lib/regionView";
+import { districtReading, layerCaption, layerSummary } from "@/lib/regionView";
 
 export function storyScopeNote(shown: MapLayer): string {
   const count = Object.keys(shown.values).length;
@@ -34,8 +34,7 @@ export function StoryReadings({ block, layer }: { block: RegionStoryBlock; layer
 }
 
 function ShownLegend({ shown }: { shown: MapLayer }) {
-  const colours = layerColours(shown);
-  const steps = layerClassLabels(shown).map((label, at) => ({ label, colour: colours[at] }));
+  const steps = paletteSteps(shown);
   return (
     <div className="mt-4 grid gap-2">
       <MapLegend title={shown.layer.title} steps={steps} extras={[NO_READING_EXTRA]} note={storyScopeNote(shown)} caption={layerCaption(shown)} summary={layerSummary(shown)} />

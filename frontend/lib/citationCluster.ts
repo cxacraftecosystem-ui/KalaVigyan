@@ -27,9 +27,13 @@ export function clusterName(entries: readonly Pick<ClusterEntry, "number">[]): s
   const numbered = entries.flatMap((entry) => (entry.number === null ? [] : [String(entry.number)]));
   const unnumbered = entries.length - numbered.length;
   if (numbered.length === 0) return unnumbered === 1 ? "Source" : `${unnumbered} sources`;
-  const more = unnumbered > 0 ? [`${unnumbered} more`] : [];
   const noun = numbered.length + unnumbered === 1 ? "Source" : "Sources";
-  return `${noun} ${NUMBER_LIST.format([...numbered, ...more])}`;
+  const more = unnumbered > 0 ? ` and ${unnumbered} more` : "";
+  return `${noun} ${numbered.join(", ")}${more}`;
+}
+
+export function shownNumbers(label: string): Pick<ClusterEntry, "number">[] {
+  return label.split(",").map((part) => (/^\d+$/.test(part.trim()) ? { number: Number(part.trim()) } : { number: null }));
 }
 
 export function shortTitle(title: string): string {
