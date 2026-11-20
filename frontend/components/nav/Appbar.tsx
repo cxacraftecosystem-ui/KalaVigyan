@@ -28,7 +28,7 @@ export function Appbar({ brandHref, tone = "page", brand = "full", overlay = fal
   const photo = tone === "photo";
   return (
     <header className={cn("kv-bar", photo && "kv-on-photo")} data-tone={photo ? "photo" : undefined} data-overlay={overlay ? "" : undefined} data-testid="appbar">
-      <div className="kv-shell-wrap kv-bar-in">
+      <div className="kv-shell-wrap kv-bar-in flex-wrap">
         <Link href={brandHref} className="kv-bar-brand">
           <Lockup brand={brand} />
         </Link>

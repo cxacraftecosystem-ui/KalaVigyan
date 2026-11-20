@@ -2,13 +2,11 @@
 
 import { memo, useEffect, useState } from "react";
 
-import { boardTransform, KACHCHH_OUTLINE, NEIGHBOUR_LAND, RANN_SALT_FLATS, type MapBox } from "@/components/map/boardGeometry";
-import { loadBorders } from "@/components/map/borderGeometry";
-import { bordersToPath, indiaOutlinePath } from "@/components/map/projection";
+import { loadBasemap, RANN_PATH, type Basemap, type MapBox } from "@/components/map/basemap";
+import { indiaOutlinePath } from "@/components/map/projection";
 
 export const SALT_PATTERN = "kv-map-salt";
 export const PLACE_PATTERN = "kv-map-place";
-export const BOARD_PLACE_PATTERN = "kv-map-place-board";
 export const NO_READING_PATTERN = "kv-map-nodata";
 
 export function MapPatterns() {
@@ -18,9 +16,6 @@ export function MapPatterns() {
         <rect width={4} height={4} fill="var(--map-salt)" />
         <circle cx={1} cy={1.2} r={0.55} fill="var(--map-salt-hatch)" />
         <circle cx={3.1} cy={3} r={0.55} fill="var(--map-salt-hatch)" />
-      </pattern>
-      <pattern id={BOARD_PLACE_PATTERN} width={5} height={5} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-        <line x1={0} y1={0} x2={0} y2={5} stroke="var(--terracotta)" strokeWidth={1.4} />
       </pattern>
       <pattern id={PLACE_PATTERN} width={8} height={8} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
         <line x1={0} y1={0} x2={0} y2={8} stroke="var(--terracotta)" strokeWidth={2.2} />
@@ -33,13 +28,40 @@ export function MapPatterns() {
   );
 }
 
+export function useBasemap(): Basemap | null {
+  const [basemap, setBasemap] = useState<Basemap | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadBasemap()
+      .then((loaded) => {
+        if (!cancelled) setBasemap(loaded);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return basemap;
+}
+
+export function NeighbourLand({ basemap }: { basemap: Basemap }) {
+  return (
+    <g className="pointer-events-none" data-testid="map-neighbours">
+      {basemap.neighbours.map((country) => (
+        <path key={country.iso} d={country.d} fillRule="evenodd" fill="var(--map-land-foreign)" data-iso={country.iso} />
+      ))}
+      <path d={basemap.borders} fill="none" stroke="var(--map-coast)" strokeWidth={0.5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <path d={basemap.coast} fill="none" stroke="var(--map-coast)" strokeWidth={0.75} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+    </g>
+  );
+}
+
 export const MapLand = memo(function MapLand({ frame }: { frame: MapBox }) {
+  const basemap = useBasemap();
   return (
     <g data-testid="map-land">
       <rect x={frame.x} y={frame.y} width={frame.width} height={frame.height} fill="var(--map-water)" />
-      <g transform={boardTransform()}>
-        <path d={NEIGHBOUR_LAND} fill="var(--map-land-foreign)" stroke="var(--map-land-foreign)" strokeWidth={2} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-      </g>
+      {basemap ? <NeighbourLand basemap={basemap} /> : null}
       <path d={indiaOutlinePath()} fillRule="evenodd" fill="var(--map-land)" />
     </g>
   );
@@ -51,33 +73,12 @@ export const MapCoast = memo(function MapCoast() {
 
 export const SaltFlats = memo(function SaltFlats() {
   return (
-    <g transform={boardTransform()} className="pointer-events-none" data-testid="map-salt">
-      <path d={RANN_SALT_FLATS} fill={`url(#${SALT_PATTERN})`} stroke="var(--map-salt-hatch)" strokeWidth={0.75} strokeDasharray="1 2" vectorEffect="non-scaling-stroke" />
+    <g className="pointer-events-none" data-testid="map-salt">
+      <path d={RANN_PATH} fillRule="evenodd" fill={`url(#${SALT_PATTERN})`} stroke="var(--map-salt-hatch)" strokeWidth={0.75} strokeDasharray="1 2" vectorEffect="non-scaling-stroke" />
     </g>
   );
 });
 
-export const KachchhPlace = memo(function KachchhPlace() {
-  return (
-    <g transform={boardTransform()} className="pointer-events-none" data-testid="map-place">
-      <path d={KACHCHH_OUTLINE} fill={`url(#${BOARD_PLACE_PATTERN})`} stroke="var(--terracotta)" strokeWidth={1.25} vectorEffect="non-scaling-stroke" />
-    </g>
-  );
-});
-
-export function StateLines() {
-  const [path, setPath] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    loadBorders("state")
-      .then((lines) => {
-        if (!cancelled) setPath(bordersToPath(lines));
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  if (!path) return null;
-  return <path d={path} fill="none" stroke="var(--map-border-state)" strokeWidth={0.75} strokeLinejoin="round" vectorEffect="non-scaling-stroke" className="pointer-events-none" />;
+export function StateLines(): null {
+  return null;
 }

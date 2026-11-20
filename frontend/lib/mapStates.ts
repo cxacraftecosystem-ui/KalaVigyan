@@ -84,15 +84,28 @@ export function rankDek(allIndia: number): string {
   return `Circles are drawn to scale. A craft practised in several states counts in each${tail}.`;
 }
 
-export function mapDescription(states: readonly StateCount[], withPlace: boolean): string {
+export function mapDescription(states: readonly StateCount[]): string {
   const top = states.slice(0, 3).map((state) => `${state.name} ${state.count}`);
   const named = top.length ? ` The most: ${top.join(", ")}.` : "";
-  const place = withPlace ? " Kachchh, home of Kutch Ajrakh, is marked; the Great and Little Rann to its north are salt flat." : " The Great and Little Rann of Kachchh are salt flat.";
-  return `One circle per state, its area drawn to scale by the number of crafts practised there.${named}${place}`;
+  return `One circle per state, its area drawn to scale by the number of crafts practised there.${named} India’s neighbours are drawn around it, and the Great and Little Rann of Kachchh are salt flat.`;
 }
 
 export function allStatesLabel(count: number): string {
   return `All ${count} ${count === 1 ? "state or union territory" : "states and union territories"}`;
+}
+
+export function stateAnchor(name: string): string {
+  return `${STATE_KEY_PREFIX}${fold(name).replace(/ /g, "-")}`;
+}
+
+export function stateListDek(states: number, allIndia: number): string {
+  const head = `Every craft is listed under each of the ${states} ${states === 1 ? "state or union territory" : "states and union territories"} where it is practised, monographs first.`;
+  if (allIndia === 0) return head;
+  return `${head} ${allIndia} ${allIndia === 1 ? "craft belongs" : "crafts belong"} to all of India.`;
+}
+
+export function allCraftsLabel(count: number): string {
+  return `All ${count.toLocaleString("en-IN")} ${count === 1 ? "craft" : "crafts"} in the atlas`;
 }
 
 function overlaps(a: Box, b: Box): boolean {

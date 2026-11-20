@@ -1,3 +1,4 @@
+import { isMonograph } from "@/lib/atlasCollection";
 import type { CraftCatalogue, FamilyPalette } from "@/lib/craftCatalogueContract";
 import type { CraftMapPoint } from "@/lib/types";
 
@@ -17,7 +18,8 @@ const FAMILY_TOKEN: Record<FamilyPalette, string> = {
 };
 
 export type MapFamily = { id: string; name: string; token: string; colour: string };
-export type PlaceMarker = { key: string; name: string; longitude: number; latitude: number; total: number; family: MapFamily | null; href: string; crafts: string[] };
+export type PlaceCraft = { slug: string; name: string; monograph: boolean };
+export type PlaceMarker = { key: string; name: string; longitude: number; latitude: number; total: number; family: MapFamily | null; href: string; crafts: PlaceCraft[] };
 
 export function familyColour(token: string): string {
   return `var(--fam-${token})`;
@@ -48,8 +50,13 @@ export function placeHref(point: CraftMapPoint): string {
   return point.crafts.length === 1 ? `/crafts/${encodeURIComponent(point.crafts[0].slug)}` : `/crafts?q=${encodeURIComponent(point.name)}`;
 }
 
+function monographSlugs(catalogue: CraftCatalogue | null): Set<string> {
+  return new Set((catalogue?.crafts ?? []).filter(isMonograph).map((craft) => craft.slug));
+}
+
 export function placeMarkers(points: readonly CraftMapPoint[], catalogue: CraftCatalogue | null): PlaceMarker[] {
   const bySlug = catalogue ? familyOfSlug(catalogue) : new Map<string, MapFamily>();
+  const documented = monographSlugs(catalogue);
   const located = points.filter((point) => !point.key.startsWith("state-"));
   const tally = new Map<string, number>();
   for (const point of located) {
@@ -67,7 +74,7 @@ export function placeMarkers(points: readonly CraftMapPoint[], catalogue: CraftC
       total: point.total,
       family: family && coloured.has(family.id) ? family : null,
       href: placeHref(point),
-      crafts: point.crafts.map((craft) => craft.name)
+      crafts: point.crafts.map((craft) => ({ slug: craft.slug, name: craft.name, monograph: documented.has(craft.slug) }))
     };
   });
 }

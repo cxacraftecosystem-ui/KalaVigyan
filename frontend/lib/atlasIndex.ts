@@ -1,5 +1,5 @@
-import { isMonograph, readerCrafts } from "@/lib/atlasCollection";
-import type { CatalogueConcept, CraftCatalogue } from "@/lib/craftCatalogueContract";
+import { isMonograph, plateOrder, readerCrafts } from "@/lib/atlasCollection";
+import type { CatalogueConcept, CatalogueCraft, CraftCatalogue } from "@/lib/craftCatalogueContract";
 
 export const ALL_INDIA = "All India";
 export const PLACES_SHOWN = 12;
@@ -10,6 +10,8 @@ const NUMBER_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven
 
 export type StateCount = { name: string; count: number };
 export type StateCounts = { states: StateCount[]; allIndia: number };
+export type StateCraftList = { name: string; crafts: CatalogueCraft[] };
+export type StateCrafts = { states: StateCraftList[]; allIndia: CatalogueCraft[] };
 export type ConceptNeighbour = { concept: CatalogueConcept; shared: number };
 
 export function numberWord(value: number): string {
@@ -20,16 +22,26 @@ function isAllIndia(state: string): boolean {
   return state.trim().toLowerCase() === ALL_INDIA.toLowerCase();
 }
 
-export function stateCounts(catalogue: CraftCatalogue): StateCounts {
-  const counts = new Map<string, number>();
-  let allIndia = 0;
+export function stateCrafts(catalogue: CraftCatalogue): StateCrafts {
+  const lists = new Map<string, CatalogueCraft[]>();
+  const allIndia: CatalogueCraft[] = [];
   for (const craft of readerCrafts(catalogue)) {
     const states = new Set(craft.stateOfPractice.map((state) => state.trim()).filter(Boolean));
-    if ([...states].some(isAllIndia)) allIndia += 1;
-    for (const state of states) if (!isAllIndia(state)) counts.set(state, (counts.get(state) ?? 0) + 1);
+    if ([...states].some(isAllIndia)) allIndia.push(craft);
+    for (const state of states) if (!isAllIndia(state)) lists.set(state, [...(lists.get(state) ?? []), craft]);
   }
-  const states = [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "en"));
-  return { states, allIndia };
+  const states = [...lists]
+    .map(([name, crafts]) => ({ name, crafts: [...crafts].sort(plateOrder) }))
+    .sort((a, b) => b.crafts.length - a.crafts.length || a.name.localeCompare(b.name, "en"));
+  return { states, allIndia: allIndia.sort(plateOrder) };
+}
+
+export function listCounts(lists: StateCrafts): StateCounts {
+  return { states: lists.states.map((state) => ({ name: state.name, count: state.crafts.length })), allIndia: lists.allIndia.length };
+}
+
+export function stateCounts(catalogue: CraftCatalogue): StateCounts {
+  return listCounts(stateCrafts(catalogue));
 }
 
 export function monographCount(catalogue: CraftCatalogue): number {

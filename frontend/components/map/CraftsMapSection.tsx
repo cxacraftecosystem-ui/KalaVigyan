@@ -1,25 +1,39 @@
 "use client";
 
 import { failureMessage } from "@/components/hooks/useRemote";
-import { NATURAL_EARTH_CREDIT } from "@/components/map/boardGeometry";
-import { placeExtra, SALT_EXTRA, WATER_EXTRA } from "@/components/map/ChoroplethLegend";
+import { NATURAL_EARTH_CREDIT } from "@/components/map/basemap";
+import { FOREIGN_EXTRA, SALT_EXTRA, WATER_EXTRA } from "@/components/map/ChoroplethLegend";
 import { CirclesLegend } from "@/components/map/CirclesLegend";
-import { MapCanvas } from "@/components/map/MapCanvas";
 import { SURVEY_OF_INDIA_CAPTION } from "@/components/map/MapAttribution";
-import { KachchhPlace } from "@/components/map/MapBase";
 import { MapRetry } from "@/components/map/MapRetry";
 import { RankedList } from "@/components/map/RankedList";
-import { KachchhPin, StateCircles } from "@/components/map/StateCircles";
+import { StatesMapCanvas } from "@/components/map/StatesMapCanvas";
 import { useStateRanking, type StateRanking } from "@/components/map/useStateRanking";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TextLink } from "@/components/ui/TextLink";
-import { allStatesLabel, mapDescription, rankDek, rankFinding } from "@/lib/mapStates";
+import { allCraftsLabel, allStatesLabel, rankDek, rankFinding } from "@/lib/mapStates";
 
 export const CRAFTS_MAP_HEADING = "Where the crafts are practised";
 export const CRAFTS_MAP_SOURCE = `${SURVEY_OF_INDIA_CAPTION} ${NATURAL_EARTH_CREDIT} Counts from the KalaVigyan craft list.`;
 export const CIRCLES_LABEL = "Crafts in a state; circle area to scale";
-const PIN_LINES = ["Kachchh, home of", "Kutch Ajrakh"] as const;
-const PLACE_LABEL = "Kachchh, the place this page is about";
+export const MAP_EXTRAS = [SALT_EXTRA, FOREIGN_EXTRA, WATER_EXTRA];
+
+export function MapSideLinks({ crafts, withMap }: { crafts: number | null; withMap: boolean }) {
+  return (
+    <p className="flex flex-wrap gap-x-6 gap-y-2">
+      {crafts ? (
+        <TextLink href="/crafts" standalone>
+          {allCraftsLabel(crafts)}
+        </TextLink>
+      ) : null}
+      {withMap ? (
+        <TextLink href="/map" standalone>
+          Soil, climate and terrain on the full map
+        </TextLink>
+      ) : null}
+    </p>
+  );
+}
 
 function MapSide({ ranking }: { ranking: StateRanking }) {
   const { counts, rows, circles } = ranking;
@@ -36,32 +50,19 @@ function MapSide({ ranking }: { ranking: StateRanking }) {
     <>
       {finding ? <p className="mt-[18px] font-reading text-h3 text-ink-1 [font-variant-numeric:lining-nums] [text-wrap:balance]">{finding}</p> : null}
       <p className="mt-1.5 max-w-[76ch] font-ui text-ui font-normal text-ink-2">{rankDek(counts.allIndia)}</p>
-      <RankedList rows={rows} label="Crafts practised in each state" emphKey={rows[0]?.key ?? null} className="mt-[22px]" />
-      <CirclesLegend largest={largest} label={CIRCLES_LABEL} extras={[placeExtra(PLACE_LABEL), SALT_EXTRA, WATER_EXTRA]} className="mt-[18px]" />
-      <p className="mt-3.5">
-        <TextLink href="/map" standalone>
-          {allStatesLabel(counts.states.length)}
-        </TextLink>
-      </p>
+      <RankedList rows={rows} label="Crafts practised in each state" emphKey={rows[0]?.key ?? null} all={{ label: allStatesLabel(rows.length) }} className="mt-[22px]" />
+      <CirclesLegend largest={largest} label={CIRCLES_LABEL} extras={MAP_EXTRAS} className="mt-[18px]" />
+      <div className="mt-3.5">
+        <MapSideLinks crafts={ranking.catalogue?.summary.crafts ?? null} withMap />
+      </div>
     </>
   );
 }
 
 function MapFigure({ ranking }: { ranking: StateRanking }) {
-  const emph = ranking.circles[0]?.name ?? null;
   return (
     <figure className="min-w-0" data-testid="crafts-map-figure">
-      <MapCanvas
-        title="Where India's crafts are practised"
-        description={mapDescription(ranking.circles, true)}
-        over={(scene) => (
-          <>
-            <KachchhPlace />
-            <StateCircles circles={ranking.circles} emphKey={emph} scene={scene} />
-            <KachchhPin lines={PIN_LINES} scene={scene} />
-          </>
-        )}
-      />
+      <StatesMapCanvas ranking={ranking} title="Where India's crafts are practised" />
       {ranking.points.failure ? <MapRetry message={failureMessage(ranking.points.failure, "The craft places could not be loaded.")} onRetry={ranking.points.retry} className="mt-3" /> : null}
       <figcaption className="mt-3 font-ui text-caption text-ink-3">{CRAFTS_MAP_SOURCE}</figcaption>
     </figure>

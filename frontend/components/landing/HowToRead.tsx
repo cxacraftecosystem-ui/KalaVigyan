@@ -1,8 +1,9 @@
 "use client";
 
 import { ReliabilityMark } from "@/components/editorial/EvidenceMark";
-import { CitedText, type CiteMaps } from "@/components/landing/CitedText";
-import type { LandingSentence } from "@/components/landing/landingContent";
+import { CitedText, useCiteMaps } from "@/components/landing/CitedText";
+import type { LandingContent } from "@/components/landing/landingContent";
+import { TextLink } from "@/components/ui/TextLink";
 import { citationCluster, entryByline, shortTitle, type ClusterEntry } from "@/lib/citationCluster";
 
 export const READING_KEYS = [
@@ -56,11 +57,17 @@ function QuoteCard({ entry, marked }: { entry: ClusterEntry; marked: boolean }) 
   );
 }
 
-export function HowToRead({ demo, cite }: { demo: LandingSentence | null; cite: CiteMaps }) {
+export function exampleLine(name: string): string {
+  return `An example from ${name}`;
+}
+
+export function HowToRead({ content }: { content: LandingContent }) {
+  const cite = useCiteMaps(content.sources);
+  const demo = content.demo;
   if (!demo) return null;
   const entries = citationCluster(demo.citations, cite.numbers, cite.sourcesById).entries;
   return (
-    <section className="kv-howto" aria-labelledby="how-to-read-h">
+    <section className="kv-howto" aria-labelledby="how-to-read-h" data-testid="how-to-read">
       <div className="kv-shell-wrap">
         <div className="kv-howto-grid">
           <div>
@@ -68,6 +75,15 @@ export function HowToRead({ demo, cite }: { demo: LandingSentence | null; cite: 
             <h2 id="how-to-read-h" className="m-0 font-headline text-h2 text-ink-1">
               Every numeral opens a source.
             </h2>
+            <p className="kv-howto-example">
+              {content.craftPath ? (
+                <TextLink href={content.craftPath} standalone>
+                  {exampleLine(content.name)}
+                </TextLink>
+              ) : (
+                exampleLine(content.name)
+              )}
+            </p>
             <p className="kv-howto-sentence">
               <CitedText sentence={demo} cite={cite} />
             </p>

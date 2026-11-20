@@ -1574,11 +1574,11 @@
     [
       "map-land-foreign",
       "surface",
-      "Neighbouring land, quieter than India. Natural Earth land under the Survey of India outline.",
-      "#EEEFEA",
-      "#181D29",
-      "#F4F5F1",
-      "#10141D"
+      "Neighbouring land: Natural Earth countries under the Survey of India outline. A grey a step darker than India, set apart from the page ground, the sea and every ramp's first step, so the frame reads as land and sea to its edges.",
+      "#D4DACF",
+      "#1C2230",
+      "#CAD5C8",
+      "#121722"
     ],
     [
       "map-water",

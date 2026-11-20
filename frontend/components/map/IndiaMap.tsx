@@ -3,9 +3,10 @@
 import { useMemo, type ReactNode } from "react";
 
 import { layoutPins, type MapPoint } from "@/components/map/layout";
-import { MapCoast, MapLand, MapPatterns, SaltFlats, StateLines } from "@/components/map/MapBase";
+import { MapCoast, MapLand, MapPatterns, SaltFlats } from "@/components/map/MapBase";
 import { MapHoverCard } from "@/components/map/MapHoverCard";
 import { Pin } from "@/components/map/MapMarks";
+import { PinControls } from "@/components/map/PinControls";
 import { VIEW_BOX } from "@/components/map/projection";
 import { cn } from "@/lib/utils";
 
@@ -19,26 +20,24 @@ export interface IndiaMapProps {
   hoveredKey?: string | null;
   onSelect?: (key: string) => void;
   onHover?: (key: string | null) => void;
-  showStates?: boolean;
   underlay?: ReactNode;
   overlay?: ReactNode;
   className?: string;
 }
 
-export function IndiaMapBase({ underlay, showStates = true }: { underlay?: ReactNode; showStates?: boolean }) {
+export function IndiaMapBase({ underlay }: { underlay?: ReactNode }) {
   return (
     <>
       <MapPatterns />
       <MapLand frame={FRAME} />
       {underlay}
-      {showStates ? <StateLines /> : null}
       <SaltFlats />
       <MapCoast />
     </>
   );
 }
 
-export function IndiaMap({ points, selectedKey = null, hoveredKey = null, onSelect, onHover, showStates = true, underlay = null, overlay = null, className }: IndiaMapProps) {
+export function IndiaMap({ points, selectedKey = null, hoveredKey = null, onSelect, onHover, underlay = null, overlay = null, className }: IndiaMapProps) {
   const pins = useMemo(() => layoutPins(points), [points]);
   const ordinals = useMemo(() => new Map(points.map((point, index) => [point.key, index + 1])), [points]);
   const active = pins.find((pin) => pin.point.key === (hoveredKey ?? selectedKey)) ?? null;
@@ -46,7 +45,7 @@ export function IndiaMap({ points, selectedKey = null, hoveredKey = null, onSele
   return (
     <div className={cn("relative", className)}>
       <svg viewBox={`0 0 ${VIEW_BOX.width} ${VIEW_BOX.height}`} className="h-auto w-full max-w-full rounded-plate" role="presentation" aria-hidden="true" focusable="false">
-        <IndiaMapBase underlay={underlay} showStates={showStates} />
+        <IndiaMapBase underlay={underlay} />
         <g>
           {pins
             .filter((pin) => pin.displaced)
@@ -62,6 +61,7 @@ export function IndiaMap({ points, selectedKey = null, hoveredKey = null, onSele
         ))}
         {overlay}
       </svg>
+      {onSelect && pins.length ? <PinControls pins={pins} frame={FRAME} selectedKey={selectedKey} onSelect={onSelect} onHover={onHover} /> : null}
       {active ? <MapHoverCard key={active.point.key} pin={active} ordinal={ordinals.get(active.point.key)} /> : null}
     </div>
   );

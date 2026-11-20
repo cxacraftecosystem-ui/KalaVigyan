@@ -99,9 +99,22 @@
     margin-top: 28px;
   }
 
-  .kv-hero-audience {
+  .kv-hero-access {
+    max-width: 40ch;
     margin: 14px 0 0;
     color: var(--photo-ink-2);
+  }
+
+  .kv-hero-access-link {
+    color: var(--photo-ink-1);
+    font-weight: 500;
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  .kv-hero-access-link:hover {
+    text-decoration-thickness: 2px;
   }
 
   .kv-hero-label {
@@ -173,6 +186,12 @@
     }
   }
 
+  @media (max-width: 639px) {
+    .kv-hero-grid {
+      padding-top: calc(3.5rem + var(--target) + 120px);
+    }
+  }
+
   @media (min-width: 1024px) {
     .kv-hero-grid {
       grid-template-columns: minmax(0, 1fr) 390px;
@@ -205,30 +224,6 @@
     flex: 0 0 40px;
     height: 1px;
     background-color: var(--ink-3);
-  }
-
-  .kv-src-line {
-    margin: 12px 0 0;
-    color: var(--ink-3);
-    font-family: var(--font-ui);
-    font-size: var(--text-caption);
-    line-height: 1.5;
-  }
-
-  .kv-swatch {
-    display: block;
-    padding: 2px;
-    border: 1px solid var(--ink-2);
-    border-radius: var(--radius-plate);
-    background-color: var(--raised);
-    forced-color-adjust: none;
-  }
-
-  .kv-swatch > svg {
-    display: block;
-    width: 100%;
-    height: auto;
-    aspect-ratio: 1;
   }
 
   .kv-auth {
@@ -391,5 +386,4 @@
     inset-inline-start: auto;
     inset-inline-end: -10px;
   }
-
 }

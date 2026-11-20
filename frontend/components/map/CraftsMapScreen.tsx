@@ -9,6 +9,7 @@ import { LayerPicker } from "@/components/map/LayerPicker";
 import { MapLayerFigure } from "@/components/map/MapLayerFigure";
 import { useMapLayer } from "@/components/map/MapLayerView";
 import { MapStatesFigure } from "@/components/map/MapStatesFigure";
+import { StateCraftsList } from "@/components/map/StateCraftsList";
 import { useStateRanking } from "@/components/map/useStateRanking";
 import { placedCountLine } from "@/lib/craftCatalogue";
 import { DISTRICT_PARAM } from "@/lib/districtView";
@@ -57,6 +58,7 @@ export function CraftsMapScreen() {
       </header>
       {layerId ? <MapLayerFigure data={layerData} markers={markers} boundary={boundary} pick={pick} /> : <MapStatesFigure ranking={ranking} boundary={boundary} />}
       {districtLgd !== null ? <DistrictPanel district={district} onClose={() => pick.onPick(null)} /> : null}
+      {!layerId && ranking.lists ? <StateCraftsList lists={ranking.lists} /> : null}
     </article>
   );
 }

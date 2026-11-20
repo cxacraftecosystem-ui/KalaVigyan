@@ -3,7 +3,11 @@
 @import "./motion.css";
 @import "./primitives.css";
 @import "./editorial.css";
+@import "./editorial-plate.css";
+@import "./editorial-figure.css";
+@import "./editorial-monograph.css";
 @import "../components/shell/shell.css";
+@import "../components/nav/nav.css";
 @import "../components/landing/landing.css";
 @import "../components/landing/sections.css";
 @config "../tailwind.config.ts";

@@ -14,6 +14,7 @@ export type LegendExtra = { key: string; label: string; fill: string; dashed?: b
 
 export const SALT_EXTRA: LegendExtra = { key: "salt", label: "Salt flat: the Great and Little Rann", fill: `url(#${SALT_PATTERN})`, dashed: true, edge: "var(--map-salt-hatch)" };
 export const WATER_EXTRA: LegendExtra = { key: "water", label: "Sea", fill: "var(--map-water)" };
+export const FOREIGN_EXTRA: LegendExtra = { key: "foreign", label: "Neighbouring countries", fill: "var(--map-land-foreign)" };
 export const NO_READING_EXTRA: LegendExtra = { key: "none", label: NO_READING_LABEL, fill: `url(#${NO_READING_PATTERN})` };
 
 export function placeExtra(label: string): LegendExtra {

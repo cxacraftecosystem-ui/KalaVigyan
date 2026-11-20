@@ -5,13 +5,12 @@ import { expect, test } from "@playwright/test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { BOARD_FRAME, BOARD_INDIA_BOX, boardBox } from "@/components/map/boardGeometry";
+import { mapFrame } from "@/components/map/basemap";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { MAP_PLACE, MapStatesFigure, SIDE_PLACE } from "@/components/map/MapStatesFigure";
-import { KachchhPin, placedCircles, StateCircles } from "@/components/map/StateCircles";
+import { placedCircles, StateCircles } from "@/components/map/StateCircles";
 import { MapLegend, NO_READING_EXTRA } from "@/components/map/ChoroplethLegend";
 import { CircleKey, circleKeyBox } from "@/components/map/CirclesLegend";
-import { VIEW_BOX } from "@/components/map/projection";
 import { rampFill } from "@/components/map/rampFills";
 import { RankedList } from "@/components/map/RankedList";
 import { parseCraftCatalogue } from "@/lib/craftCatalogueContract";
@@ -54,7 +53,9 @@ test("the dek says how crafts of several states and of all India are counted", (
   expect(rankDek(1)).toBe("Circles are drawn to scale. A craft practised in several states counts in each, and 1 more belongs to all of India.");
   expect(rankDek(0)).toBe("Circles are drawn to scale. A craft practised in several states counts in each.");
   expect(allStatesLabel(33)).toBe("All 33 states and union territories");
-  expect(mapDescription([state("A", 3)], false)).toBe("One circle per state, its area drawn to scale by the number of crafts practised there. The most: A 3. The Great and Little Rann of Kachchh are salt flat.");
+  expect(mapDescription([state("A", 3)])).toBe(
+    "One circle per state, its area drawn to scale by the number of crafts practised there. The most: A 3. India’s neighbours are drawn around it, and the Great and Little Rann of Kachchh are salt flat."
+  );
 });
 
 test("circles are drawn by area, and the key takes round values below the largest", () => {
@@ -66,23 +67,23 @@ test("circles are drawn by area, and the key takes round values below the larges
   expect(circleKeys(0)).toEqual([]);
 });
 
-test("below 640px the map keeps its circles and the place pin but drops the state labels and the Rann's name, as the board does", () => {
-  const scene = { frame: boardBox(BOARD_FRAME), scale: 1 };
+test("below 640px the map keeps its circles but drops the state labels, the Rann's name and the neighbours' names, and draws no state lines and no Kachchh", () => {
+  const scene = { frame: mapFrame(), scale: 1 };
   const circles = placedCircles([{ name: "Madhya Pradesh", count: 19, longitude: 78.6, latitude: 23.5 }]);
   const states = renderToStaticMarkup(createElement("svg", null, createElement(StateCircles, { circles, emphKey: null, scene })));
   expect(states).toContain('<g class="max-sm:hidden" data-testid="state-labels">');
   expect(states).toMatch(/data-testid="state-labels">.*Madhya Pradesh/);
   expect(states.match(/<circle/g)).toHaveLength(1);
-  const pin = renderToStaticMarkup(createElement("svg", null, createElement(KachchhPin, { lines: ["Kachchh, home of", "Kutch Ajrakh"], scene })));
-  expect(pin).not.toContain("max-sm:hidden");
   const canvas = renderToStaticMarkup(createElement(MapCanvas, { title: "Map", description: "India" }));
-  expect(canvas).toMatch(/<g class="max-sm:hidden"><text[^>]*>Great Rann<\/text><\/g>/);
+  expect(canvas).toMatch(/<g class="max-sm:hidden" data-testid="map-place-labels"><text[^>]*>Great Rann<\/text>/);
+  for (const name of ["Pakistan", "China", "Nepal", "Bhutan", "Bangladesh", "Myanmar", "Sri Lanka", "Afghanistan"]) expect(canvas).toContain(`>${name}</text>`);
+  expect(canvas).not.toMatch(/map-border-state|Kachchh, home|place this page is about|kv-map-place-board/);
 });
 
 test("from 1024px the map page's caption, ranked list and legend stand beside the map, as the board's landing map does", () => {
   const counts = { states: [state("Uttar Pradesh", 64), state("Gujarat", 37)], allIndia: 46 };
   const rows = counts.states.map((entry) => ({ key: entry.name, name: entry.name, value: entry.count }));
-  const ranking = { catalogue: null, points: { data: [], failure: null, retry: () => undefined }, counts, circles: [], rows, catalogueError: null, reloadCatalogue: () => undefined };
+  const ranking = { catalogue: null, points: { data: [], failure: null, retry: () => undefined }, counts, lists: null, circles: [], marks: [], rows, catalogueError: null, reloadCatalogue: () => undefined };
   const html = renderToStaticMarkup(createElement(MapStatesFigure, { ranking, boundary: null }));
   expect(html).toMatch(/<figure id="map-figure" class="kv-figure lg:grid lg:grid-cols-\[minmax\(0,6.6fr\)_minmax\(0,4.4fr\)\]/);
   expect(html).toContain("lg:[&amp;&gt;figcaption]:col-start-2");
@@ -141,14 +142,6 @@ test("craft places are paper discs, coloured by family only where one family hol
     ["district-9", null, "/crafts?q=Bastar"]
   ]);
   expect(markerFamilies(markers).map((family) => family.colour)).toEqual(["var(--fam-textiles)"]);
-});
-
-test("the Natural Earth layer is laid on India's own frame", () => {
-  const india = boardBox(BOARD_INDIA_BOX);
-  expect(india.x).toBeCloseTo(24, 6);
-  expect(india.y).toBeCloseTo(24, 6);
-  expect(india.width).toBeCloseTo(VIEW_BOX.width - 48, 6);
-  expect(india.height).toBeCloseTo(VIEW_BOX.height - 48, 6);
 });
 
 test("the ranked list shows ten rows, the leader in the emphasis ink, and offers the rest in place", () => {

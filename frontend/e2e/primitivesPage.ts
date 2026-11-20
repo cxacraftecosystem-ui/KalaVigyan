@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { FRONTEND } from "./moduleGraph";
 
-const SHEETS = ["tokens.css", "motion.css", "primitives.css", "editorial.css"];
+const SHEETS = ["tokens.css", "motion.css", "primitives.css", "editorial.css", "editorial-plate.css", "editorial-figure.css", "editorial-monograph.css"];
 
 export const PRIMITIVE_CSS = SHEETS.map((name) => readFileSync(join(FRONTEND, "app", name), "utf8")).join("\n");
 

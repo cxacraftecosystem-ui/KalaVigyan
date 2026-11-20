@@ -5,13 +5,15 @@ import { useMemo, useState, type ReactNode } from "react";
 import { DataTable, type DataRow } from "@/components/charts/DataTable";
 import { DatasetCredit } from "@/components/DatasetCredit";
 import { failureMessage } from "@/components/hooks/useRemote";
-import { MapLegend, NO_READING_EXTRA, SALT_EXTRA, WATER_EXTRA, type LegendExtra } from "@/components/map/ChoroplethLegend";
+import { FOREIGN_EXTRA, MapLegend, NO_READING_EXTRA, SALT_EXTRA, WATER_EXTRA, type LegendExtra } from "@/components/map/ChoroplethLegend";
 import { DistrictFills, DistrictTag, SelectedDistrict } from "@/components/map/DistrictLayer";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { MapRetry } from "@/components/map/MapRetry";
 import { useLayerFill, type DistrictName, type MapLayerData } from "@/components/map/MapLayerView";
 import { MapSourceLine } from "@/components/map/MapSourceLine";
-import { PlaceMarkers } from "@/components/map/PlaceMarkers";
+import { MarkControls } from "@/components/map/MarkControls";
+import { PlaceMarkers, placeMapMarks } from "@/components/map/PlaceMarkers";
+import { useMarkFocus } from "@/components/map/useStateRanking";
 import { RankedList, type RankedRow } from "@/components/map/RankedList";
 import type { DistrictShape } from "@/components/map/shapeGeometry";
 import { Figure } from "@/components/ui/Figure";
@@ -22,6 +24,7 @@ import type { BoundaryNote, MapLayer } from "@/lib/regionContract";
 import { districtReading, layerCaption, layerClassLabels, layerSummary } from "@/lib/regionView";
 
 const SERIES = { rain: "var(--series-rain)", heat: "var(--series-heat)", density: "var(--chart-series)" } as const;
+const PLACE_MARKS_LABEL = "Craft places on the map";
 const COLUMNS = [
   { key: "district", label: "District" },
   { key: "state", label: "State" },
@@ -53,7 +56,7 @@ function LayerSide({ layer, names, markers, pick }: { layer: MapLayer; names: Na
   return (
     <div className="grid gap-[18px]">
       {rows.length ? <RankedList rows={rows} label={layer.layer.title} series={SERIES[layerRamp(layer.layer)]} all={{ label: `Show all ${rows.length}` }} /> : null}
-      <MapLegend title={layer.layer.title} steps={steps} extras={[NO_READING_EXTRA, SALT_EXTRA, WATER_EXTRA, ...markerExtras(markers)]} caption={layerCaption(layer)} summary={layerSummary(layer)} />
+      <MapLegend title={layer.layer.title} steps={steps} extras={[NO_READING_EXTRA, SALT_EXTRA, FOREIGN_EXTRA, WATER_EXTRA, ...markerExtras(markers)]} caption={layerCaption(layer)} summary={layerSummary(layer)} />
       <DatasetCredit dataset={layer.dataset} />
     </div>
   );
@@ -67,6 +70,7 @@ function tagText(layer: MapLayer, names: Names, lgd: number): string {
 
 function LayerMap({ layer, shapes, names, markers, pick }: { layer: MapLayer; shapes: DistrictShape[]; names: Names; markers: readonly PlaceMarker[]; pick: DistrictPick }) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const focus = useMarkFocus();
   const fillOf = useLayerFill(layer);
   const select = (lgd: number) => pick.onPick(pick.lgd === lgd ? null : lgd);
   const active = hovered ?? pick.lgd;
@@ -80,10 +84,11 @@ function LayerMap({ layer, shapes, names, markers, pick }: { layer: MapLayer; sh
       over={(scene) => (
         <>
           {picked ? <SelectedDistrict shape={picked} /> : null}
-          <PlaceMarkers markers={markers} scene={scene} />
+          <PlaceMarkers markers={markers} scene={scene} active={focus.active} />
           {activeShape ? <DistrictTag shape={activeShape} text={tagText(layer, names, activeShape.lgd)} /> : null}
         </>
       )}
+      controls={(scene) => (markers.length ? <MarkControls marks={placeMapMarks(markers, scene.scale)} scene={scene} focus={focus} label={PLACE_MARKS_LABEL} /> : null)}
     />
   );
 }

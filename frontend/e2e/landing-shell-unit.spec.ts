@@ -11,12 +11,15 @@ import { SourcesDifferNote } from "@/components/editorial/EvidenceMark";
 import { NAV_ITEMS, isNavItemVisible } from "@/components/DynamicIslandNav";
 import { DNS_NAMESPACE, curatedClaimId, uuidV5 } from "@/components/landing/curatedClaim";
 import { InstitutionFooter } from "@/components/landing/Footer";
-import { Landing, atlasLine } from "@/components/landing/Landing";
-import { LANDING_CRAFT_SLUG, botanicalNames, emptyLanding, giDay, italicParts, landingContent, ribbonStages, rulerWord, type LandingContent } from "@/components/landing/landingContent";
-import { craftsLine } from "@/components/landing/LandingHero";
+import { Landing } from "@/components/landing/Landing";
+import { landingCollection, type LandingCollection } from "@/components/landing/landingCollection";
+import { LANDING_CRAFT_SLUG, emptyLanding, giDay, italicParts, landingContent, type LandingContent } from "@/components/landing/landingContent";
+import { ACCESS_LINK, fieldsLine } from "@/components/landing/LandingHero";
 import { currentVatStep } from "@/components/landing/VatSteps";
 import { currentHref } from "@/components/nav/Appbar";
+import { publicLinks } from "@/components/nav/PublicNav";
 import { ReadingBarView } from "@/components/nav/ReadingBar";
+import { parseCraftCatalogue } from "@/lib/craftCatalogueContract";
 import type { User } from "@/lib/types";
 
 import { rawPage } from "./craftPageFixture";
@@ -26,8 +29,11 @@ const PAGE = rawPage();
 const idOf = (key: string) => curatedClaimId(LANDING_CRAFT_SLUG, key);
 const VAT_TEXT = "Cloth lifted from the indigo vat is bright green at first and turns blue as oxygen meets the dye on the fibres.";
 const DEMO_TEXT = "In 2001 an earthquake that caused severe damage in Kutch almost destroyed Dhamadka, which lay only 20 km from the epicentre.";
+const CATALOGUE = parseCraftCatalogue(JSON.parse(readFileSync(join(FRONTEND, "..", "shared", "craft.catalogue.golden.json"), "utf8")));
 
-const landing = (content: LandingContent) => renderToStaticMarkup(createElement(AuthProvider, null, createElement(Landing, { craftCount: 461, content })));
+const landing = (content: LandingContent, collection: LandingCollection | null = null) =>
+  renderToStaticMarkup(createElement(AuthProvider, null, createElement(Landing, { craftCount: 461, content, collection, fields: null })));
+const words = (markup: string) => markup.replace(/<[^>]+>/g, " ");
 
 test("a curated claim's id is the backend's uuid5 of its dossier key", () => {
   expect(uuidV5(DNS_NAMESPACE, "python.org")).toBe("886313e1-3b8a-5372-9b90-0c9aee199e5d");
@@ -35,71 +41,94 @@ test("a curated claim's id is the backend's uuid5 of its dossier key", () => {
   expect(PAGE.claims.find((claim) => claim.text === VAT_TEXT)?.id).toBe(idOf("C086"));
 });
 
-test("the landing reads its specimen, its four colours and its demonstration from Kutch Ajrakh's stored page", () => {
+test("the landing reads only its photograph's label and its one worked example from Kutch Ajrakh's stored page", () => {
   const content = landingContent(PAGE, idOf);
   expect([content.name, content.family, content.place, content.craftPath]).toEqual(["Kutch Ajrakh", "Textiles · Hand block printing", "Kachchh, Gujarat", "/crafts/Kutch-Ajrakh"]);
   expect(content.vat?.text).toBe(VAT_TEXT);
   expect(content.gi?.text).toBe("Registered geographical indication, 22 April 2024");
-  expect(content.colours.map((colour) => [colour.key, colour.sentences.length])).toEqual([
-    ["blue", 1],
-    ["black", 1],
-    ["red", 1],
-    ["white", 2]
-  ]);
   expect(content.demo?.text).toBe(DEMO_TEXT);
+  expect(Object.keys(content).sort()).toEqual(["craftPath", "demo", "family", "gi", "name", "place", "sources", "vat"]);
   const vatSources = [...new Set(content.vat?.citations.map((citation) => citation.sourceId))];
   expect(content.sources.slice(0, vatSources.length).map((source) => source.id).sort()).toEqual(vatSources.sort());
   expect(new Set(content.sources.map((source) => source.id)).size).toBe(content.sources.length);
 });
 
-test("the ribbon draws Kutch Ajrakh's eleven ordered stages under their first local name, or the first word of the English name in lower case", () => {
-  expect(ribbonStages(PAGE.process.stages).map((stage) => stage.label)).toEqual(["saaj", "kasanu", "rekh", "drying", "kat", "kan", "gach", "indigo", "vichharnu", "rang", "minakari"]);
-  expect(ribbonStages(PAGE.process.stages).filter((stage) => !stage.local).map((stage) => stage.order)).toEqual([4, 8]);
-  expect(ribbonStages(PAGE.process.stages.slice(0, 5))).toEqual([]);
-  expect(rulerWord("  Drying the outline print")).toBe("drying");
-});
-
-test("a botanical name the stored stages record is set in italic wherever a landing sentence names it, and only as a whole word", () => {
-  const names = botanicalNames(PAGE.process.stages);
-  expect(names).toContain("Rubia cordifolia");
-  expect(names).toContain("Indigofera tinctoria");
-  expect(new Set(names).size).toBe(names.length);
-  const red = "The long thin roots of Indian madder, Rubia cordifolia or majeeta, give a dye.";
-  expect(italicParts(red, names)).toEqual([
-    { text: "The long thin roots of Indian madder, ", italic: false },
+test("a botanical name is set in italic only as a whole word", () => {
+  expect(italicParts("The long thin roots of Rubia cordifolia give a dye.", ["Rubia cordifolia"])).toEqual([
+    { text: "The long thin roots of ", italic: false },
     { text: "Rubia cordifolia", italic: true },
-    { text: " or majeeta, give a dye.", italic: false }
+    { text: " give a dye.", italic: false }
   ]);
   expect(italicParts("Tamarixes grow here.", ["Tamarix"])).toEqual([{ text: "Tamarixes grow here.", italic: false }]);
   expect(italicParts("plain", [])).toEqual([{ text: "plain", italic: false }]);
-  const markup = landing(landingContent(PAGE, idOf));
-  expect(markup).toContain("<i>Rubia cordifolia</i>");
 });
 
-test("without the stored page the landing still stands and shows no sentence it cannot cite", () => {
+test("a visitor who is not signed in is led into reading, and asking and contributing are named as what access unlocks", () => {
   expect(landingContent(null, idOf)).toEqual(emptyLanding());
   const markup = landing(emptyLanding());
   expect(markup).toContain("The science in India’s crafts, <em>sourced to the sentence.</em>");
-  expect(markup).toContain(">Request access</a>");
-  expect(markup).toContain(">Sign in</a>");
-  expect(markup).toContain("An atlas of 461 crafts");
-  expect(markup).toContain("Chemistry, history and geography for 461 crafts.");
+  expect(markup).toMatch(/<a [^>]*href="\/crafts"[^>]*>Explore the crafts<\/a>/);
+  expect(markup).toMatch(/<a [^>]*href="\/login"[^>]*>Sign in<\/a>/);
+  expect(markup).toMatch(new RegExp(`<a [^>]*href="/signup"[^>]*>${ACCESS_LINK}</a>`));
+  expect(markup).not.toMatch(/data-variant="primary"[^>]*>Request access/);
+  expect(markup).toContain(fieldsLine(461));
+  expect(markup).not.toContain("For IIT professors");
+  expect(markup).not.toContain("Chemistry, history and geography");
   expect(markup.match(/<h1/g)).toHaveLength(1);
   expect(markup).toContain('data-testid="institution-footer"');
-  expect(markup).not.toContain("kv-four");
-  expect(markup.replace(/<[^>]+>/g, " ")).not.toMatch(/loading|coming soon|no data/i);
+  expect(words(markup)).not.toMatch(/loading|coming soon|no data/i);
   expect(markup).toContain('rel="preload" as="image" href="/landing/ajrakh-print-detail-indigo-ground.jpg" fetchPriority="high"');
 });
 
-test("the stored page fills the label, the four colours and how to read a page, each sentence cited", () => {
-  const markup = landing(landingContent(PAGE, idOf));
-  for (const heading of ["One cloth, four chemistries", "Every numeral opens a source."]) expect(markup).toContain(heading);
-  expect(markup.match(/<h3/g)).toHaveLength(4);
+test("the hero names all sixteen fields' breadth and every reader, not three fields or one audience", () => {
+  expect(fieldsLine(426)).toBe("Sixteen fields across 426 crafts, from materials and chemistry to ecology, history, design and policy. Every sentence opens to its source’s own words.");
+  expect(fieldsLine(null)).toBe("Sixteen fields across India’s crafts, from materials and chemistry to ecology, history, design and policy. Every sentence opens to its source’s own words.");
+  expect(fieldsLine(1)).toContain("across 1 craft,");
+});
+
+test("the landing is about the whole collection: monographs from every family, the families with their plates, and one labelled example", () => {
+  const markup = landing(landingContent(PAGE, idOf), landingCollection(CATALOGUE));
+  for (const gone of ["kv-ribbon", "One cloth, four chemistries", "kv-four", "Kachchh, home of", "place this page is about"]) expect(markup).not.toContain(gone);
+  expect(markup).toContain("An example from Kutch Ajrakh");
+  expect(markup).toContain("Every numeral opens a source.");
+  expect(markup).toContain(DEMO_TEXT);
+  expect(markup).toMatch(/data-testid="landing-documents"[\s\S]*Kutch Ajrakh[\s\S]*Bastar Dhokra/);
+  expect(markup).toContain('href="/categories/Textiles-Based-Craft-Category"');
+  expect(markup).toContain('href="/categories/Metal-Craft-Category"');
+  expect(markup.match(/data-testid="landing-family"/g)).toHaveLength(2);
+  expect(markup).toContain(">Two families of craft</h2>");
+  expect(markup).toContain('id="categories"');
+  expect(markup).toContain('href="#categories"');
+  expect(markup.match(/data-testid="landing-stat"/g)).toHaveLength(5);
   expect(markup.match(/<h1/g)).toHaveLength(1);
   expect(markup).toContain('aria-current="step"');
-  expect(markup).toContain("Play again");
-  expect(markup).toContain(VAT_TEXT);
   expect(markup).toContain("Photo: ");
+});
+
+test("the landing's appbar names the atlas, the map and the categories, and the reading bar keeps them at every width", () => {
+  const links = publicLinks("/categories/Textiles-Based-Craft-Category");
+  expect(links.map((link) => [link.label, link.href, link.current])).toEqual([
+    ["Atlas", "/crafts", false],
+    ["Map", "/map", false],
+    ["Categories", "/crafts#atlas-index", true],
+    ["Compare", "/compare", false]
+  ]);
+  expect(publicLinks("/crafts/Kutch-Ajrakh", "#categories").map((link) => [link.href, link.current])).toEqual([
+    ["/crafts", true],
+    ["/map", false],
+    ["#categories", false],
+    ["/compare", false]
+  ]);
+  const account = createElement("a", { href: "/login" }, "Sign in");
+  const markup = renderToStaticMarkup(createElement(ReadingBarView, { links, account }));
+  expect(markup).toMatch(/<nav class="kv-pnav" aria-label="Reading"[^>]*>.*>Atlas<.*>Map<.*>Categories<.*>Compare<.*<\/nav>/);
+  expect(markup).not.toContain("max-md:hidden");
+  expect(markup).not.toContain('data-testid="menu-button"');
+  expect(markup).toContain('<div class="kv-bar-end" data-testid="reading-bar"><a href="/login">Sign in</a></div>');
+  expect(markup).toContain('aria-current="page"');
+  const nav = readFileSync(join(FRONTEND, "components", "nav", "nav.css"), "utf8");
+  expect(nav).toMatch(/@media \(max-width: 639px\) \{\s*\.kv-pnav \{\s*order: 3;\s*flex-basis: 100%;/);
+  expect(nav).not.toMatch(/\.kv-pnav \{[^}]*display: none/);
 });
 
 test("the appbar keeps the reading entries inline and moves tools, admin and account into the account menu", () => {
@@ -111,23 +140,11 @@ test("the appbar keeps the reading entries inline and moves tools, admin and acc
   expect(currentHref(["/ask"], "/asked")).toBeNull();
 });
 
-test("a disagreement reads as the board writes it: on a topic for the landing's colours, after a colon for a quantity", () => {
+test("a disagreement reads as the board writes it: on a topic, after a colon for a quantity", () => {
   const about = renderToStaticMarkup(createElement(SourcesDifferNote, { on: true, summary: "what the colours mean" }, "Both readings."));
   expect(about).toContain("<summary>Sources differ on what the colours mean</summary>");
   const quantity = renderToStaticMarkup(createElement(SourcesDifferNote, { summary: "months, or about one month" }, "Both readings."));
   expect(quantity).toContain("<summary>Sources differ: months, or about one month</summary>");
-  expect(landing(landingContent(PAGE, idOf))).toContain("<summary>Sources differ on what the colours mean</summary>");
-});
-
-test("below 768px the reading bar is the full wordmark and Menu alone, and signing in waits in the menu's sheet", () => {
-  const links = [{ href: "/crafts", label: "Crafts", current: true }];
-  const account = createElement("a", { href: "/login" }, "Sign in");
-  const markup = renderToStaticMarkup(createElement(ReadingBarView, { links, account }));
-  expect(markup).toContain('<span class="contents max-md:hidden"><a href="/login">Sign in</a></span>');
-  expect(markup).not.toContain("sm:hidden");
-  expect(markup).toContain('data-testid="menu-button"');
-  expect(markup).toContain('aria-current="page"');
-  expect(renderToStaticMarkup(createElement(ReadingBarView, { links, account: null }))).not.toContain("max-md:hidden");
 });
 
 test("a sign-in screen credits its photograph where it shows: under the photograph on a phone, in the label from 1024px", () => {
@@ -137,12 +154,9 @@ test("a sign-in screen credits its photograph where it shows: under the photogra
   expect(markup.match(/<h1/g)).toHaveLength(1);
 });
 
-test("the vat rests on blue in the air, and the copy counts only what the catalogue counts", () => {
+test("the vat rests on blue in the air, and a GI day reads in words", () => {
   expect([currentVatStep("rest"), currentVatStep("in"), currentVatStep("lifted"), currentVatStep("air")]).toEqual(["air", "in", "lifted", "air"]);
   expect(giDay("2024-04-22")).toBe("22 April 2024");
-  expect(atlasLine(null)).toBeNull();
-  expect(atlasLine(1)).toBe("An atlas of 1 craft");
-  expect(craftsLine(null)).toBe("Chemistry, history and geography for India’s crafts. Every sentence opens to its source’s own words.");
 });
 
 test("the institution footer is one line naming IIT Kharagpur and the citation promise", () => {
@@ -156,4 +170,5 @@ test("the shells sit on ground with its grain showing, and the island navigation
     expect(readFileSync(join(FRONTEND, file), "utf8"), file).not.toMatch(/bg-ground|bg-bg-0|backdrop-blur|GlassSurface|LiquidGlass/);
   }
   for (const gone of ["BottomIslandNav.tsx", "IslandMoreSheet.tsx", "AppSearchHeader.tsx"]) expect(existsSync(join(FRONTEND, "components", "nav", gone)), gone).toBe(false);
+  for (const gone of ["ClothRibbon.tsx", "FourChemistries.tsx", "clothTile.tsx"]) expect(existsSync(join(FRONTEND, "components", "landing", gone)), gone).toBe(false);
 });

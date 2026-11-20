@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/AuthProvider";
 import { SpecimenLabel } from "@/components/editorial/SpecimenLabel";
-import { CitedText, type CiteMaps } from "@/components/landing/CitedText";
+import { CitedText, useCiteMaps } from "@/components/landing/CitedText";
 import { HERO_SPECIMEN, HeroCredit, HeroPhoto } from "@/components/landing/heroPicture";
 import type { LandingContent } from "@/components/landing/landingContent";
 import { VAT_PLAYED_KEY, VatSteps } from "@/components/landing/VatSteps";
@@ -15,9 +15,13 @@ import { buttonLook } from "@/components/ui/button";
 
 export const HERO_TITLE_ID = "landing-title";
 
-export function craftsLine(craftCount: number | null): string {
-  const reach = craftCount === null ? "India’s crafts" : `${craftCount} ${craftCount === 1 ? "craft" : "crafts"}`;
-  return `Chemistry, history and geography for ${reach}. Every sentence opens to its source’s own words.`;
+export const ATLAS_HREF = "/crafts";
+export const ACCESS_LINE = "Reading is open to everyone.";
+export const ACCESS_LINK = "Request access to ask questions and contribute";
+
+export function fieldsLine(craftCount: number | null): string {
+  const reach = craftCount === null ? "India’s crafts" : `${craftCount.toLocaleString("en-IN")} ${craftCount === 1 ? "craft" : "crafts"}`;
+  return `Sixteen fields across ${reach}, from materials and chemistry to ecology, history, design and policy. Every sentence opens to its source’s own words.`;
 }
 
 function usePhotoShown(host: React.RefObject<HTMLElement | null>): boolean {
@@ -40,40 +44,51 @@ function HeroActions() {
   const { user } = useAuth();
   if (user) {
     return (
-      <ActionGroup align="start" inline className="kv-hero-actions">
+      <ActionGroup align="start" className="kv-hero-actions">
         <Link href="/ask" {...buttonLook({ variant: "primary", onPhoto: true })}>
           Start asking
+        </Link>
+        <Link href={ATLAS_HREF} {...buttonLook({ variant: "quiet", onPhoto: true })}>
+          Explore the crafts
         </Link>
       </ActionGroup>
     );
   }
   return (
-    <ActionGroup align="start" className="kv-hero-actions">
-      <Link href="/signup" {...buttonLook({ variant: "primary", onPhoto: true })}>
-        Request access
-      </Link>
-      <Link href="/login" {...buttonLook({ variant: "quiet", onPhoto: true })}>
-        Sign in
-      </Link>
-    </ActionGroup>
+    <>
+      <ActionGroup align="start" className="kv-hero-actions">
+        <Link href={ATLAS_HREF} {...buttonLook({ variant: "primary", onPhoto: true })}>
+          Explore the crafts
+        </Link>
+        <Link href="/login" {...buttonLook({ variant: "quiet", onPhoto: true })}>
+          Sign in
+        </Link>
+      </ActionGroup>
+      <p className="kv-hero-access font-ui text-label">
+        {ACCESS_LINE}{" "}
+        <Link href="/signup" className="kv-hero-access-link">
+          {ACCESS_LINK}
+        </Link>
+      </p>
+    </>
   );
 }
 
 function HeroText({ craftCount }: { craftCount: number | null }) {
   return (
-    <div className="kv-hero-in">
+    <div className="kv-hero-in kv-on-photo">
       <p className="kicker kv-hero-kicker">Science behind craft</p>
       <h1 id={HERO_TITLE_ID} className="kv-hero-title font-headline text-hero lining-nums">
         The science in India’s crafts, <em>sourced to the sentence.</em>
       </h1>
-      <p className="kv-hero-dek font-reading text-lede">{craftsLine(craftCount)}</p>
+      <p className="kv-hero-dek font-reading text-lede">{fieldsLine(craftCount)}</p>
       <HeroActions />
-      <p className="kv-hero-audience font-ui text-label">For IIT professors, researchers and design students.</p>
     </div>
   );
 }
 
-export function LandingHero({ craftCount, content, cite }: { craftCount: number | null; content: LandingContent; cite: CiteMaps }) {
+export function LandingHero({ craftCount, content }: { craftCount: number | null; content: LandingContent }) {
+  const cite = useCiteMaps(content.sources);
   const host = useRef<HTMLElement | null>(null);
   const shown = usePhotoShown(host);
   const vat = useVatMoment({ autoplayKey: shown ? VAT_PLAYED_KEY : undefined });

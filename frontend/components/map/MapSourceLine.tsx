@@ -1,4 +1,4 @@
-import { NATURAL_EARTH_CREDIT } from "@/components/map/boardGeometry";
+import { NATURAL_EARTH_CREDIT } from "@/components/map/basemap";
 import { BOUNDARY_ATTRIBUTION, DISTRICTS_INDICATIVE, OSM_COPYRIGHT_URL, OSM_CREDIT, SURVEY_OF_INDIA_CAPTION } from "@/components/map/MapAttribution";
 import type { BoundaryNote } from "@/lib/regionContract";
 
