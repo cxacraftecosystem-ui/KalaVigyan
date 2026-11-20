@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { AuthProvider } from "../components/AuthProvider";
 import { ComponentSlot, slotDrawing } from "../components/monograph/ComponentSlot";
 import { COMPONENT_VIEWS } from "../components/monograph/componentViews";
-import { ANSWER_BLOCK_KIND, blockFrame, parseAnswerBlockSpec, sourceNumbers, type AnswerBlockSpec } from "../components/monograph/kinds/blocks/answerBlockSpec";
+import { ANSWER_BLOCK_KIND, blockColumn, blockFrame, parseAnswerBlockSpec, sourceNumbers, type AnswerBlockSpec } from "../components/monograph/kinds/blocks/answerBlockSpec";
 import { ThemeProvider } from "../components/ThemeProvider";
 import type { PageBlock } from "../lib/craftChapters";
 import type { MonographDocument, MonographSource } from "../lib/monographDocument";
@@ -93,6 +93,11 @@ test("a figure is framed by its kind: a signature figure by its own, a self-titl
   expect(blockFrame(parseAnswerBlockSpec(spec("market_gi", null))!)).toBe("bare");
 });
 
+test("a map or a series spans the reading column and its margin, any other figure keeps to the reading column", () => {
+  const columns = (["region_story", "climate_risk", "timeline_map", "process_ladder", "reaction_player", "market_gi"] as const).map((kind) => blockColumn(parseAnswerBlockSpec(spec(kind, null))!));
+  expect(columns).toEqual(["wide", "wide", "wide", "main", "main", "main"]);
+});
+
 test("a block's numerals are the document's numbers for its listed sources", () => {
   const drawn = spec("process_ladder", null);
   const parsed = parseAnswerBlockSpec(drawn)!;
@@ -107,6 +112,7 @@ test("the document draws an answer block natively, as the answer's own ladder in
   const document = documentWith(spec("process_ladder", { kind: "FIGURE", number: 1, title: "How Kutch Ajrakh is made, in 14 stages" }));
   expect(slotDrawing(document, LABEL)).toBe("view");
   const html = provided(createElement(ComponentSlot, { document, label: LABEL }));
+  expect(html).toContain('<div class="spread"><div class="main">');
   expect(html).toContain('data-testid="answer-block"');
   expect(html).toContain('data-block-kind="process_ladder"');
   expect(html).toContain("Fig. <b>1</b>");

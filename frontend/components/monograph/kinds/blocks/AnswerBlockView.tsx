@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { renderBlock } from "@/components/answer/blockRenderers";
 import { CitedReading } from "@/components/answer/CitedReading";
 import { SignatureFigure } from "@/components/answer/SignatureFigure";
-import { blockFrame, parseAnswerBlockSpec, sourceNumbers, type AnswerBlockSpec } from "@/components/monograph/kinds/blocks/answerBlockSpec";
+import { blockColumn, blockFrame, parseAnswerBlockSpec, sourceNumbers, type AnswerBlockSpec } from "@/components/monograph/kinds/blocks/answerBlockSpec";
 import { useMonographSlot } from "@/components/monograph/MonographSlotContext";
 import { Figure } from "@/components/ui/Figure";
 import type { ComponentViewProps } from "@/lib/componentViewContract";
@@ -55,8 +55,12 @@ export function AnswerBlockView({ spec }: ComponentViewProps) {
   if (!parsed) return null;
   return (
     <CitedReading sources={refs} numbers={numbers}>
-      <div className="kv-answer-block min-w-0 font-reading text-ink-1" data-block-kind={parsed.block.kind} data-testid="answer-block">
-        <FramedBlock spec={parsed} />
+      <div className="spread">
+        <div className={blockColumn(parsed)}>
+          <div className="kv-answer-block min-w-0 font-reading text-ink-1" data-block-kind={parsed.block.kind} data-testid="answer-block">
+            <FramedBlock spec={parsed} />
+          </div>
+        </div>
       </div>
     </CitedReading>
   );

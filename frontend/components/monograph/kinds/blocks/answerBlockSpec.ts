@@ -8,11 +8,13 @@ import type { SourceRef } from "@/lib/types";
 export const ANSWER_BLOCK_KIND = "answer_block";
 export const BLOCK_FIGURE_KINDS = ["FIGURE", "TABLE"] as const;
 export const SELF_TITLED_KINDS = ["region_story", "seasons"] as const;
+export const WIDE_KINDS = ["region_story", "timeline_map", "zoom_story", "supply_map", "climate_risk", "seasons", "concept_graph"] as const;
 
 export type BlockFigure = { kind: (typeof BLOCK_FIGURE_KINDS)[number]; number: number; title: string };
 export type BlockSource = { key: string; ref: SourceRef };
 export type AnswerBlockSpec = { block: PageBlock; figure: BlockFigure | null; sources: BlockSource[] };
 export type BlockFrame = "signature" | "titled" | "numbered" | "bare";
+export type BlockColumn = "main" | "wide";
 
 export const answerBlockSpecShape: Shape<AnswerBlockSpec> = object<AnswerBlockSpec>({
   block: pageBlockShape,
@@ -33,6 +35,10 @@ export function blockFrame(spec: AnswerBlockSpec): BlockFrame {
   if ((BUILT_FIGURE_KINDS as readonly string[]).includes(spec.block.kind)) return "signature";
   if (!spec.figure) return "bare";
   return (SELF_TITLED_KINDS as readonly string[]).includes(spec.block.kind) ? "numbered" : "titled";
+}
+
+export function blockColumn(spec: AnswerBlockSpec): BlockColumn {
+  return (WIDE_KINDS as readonly string[]).includes(spec.block.kind) ? "wide" : "main";
 }
 
 export function sourceNumbers(spec: AnswerBlockSpec, sources: MonographSources): Map<string, number> {
