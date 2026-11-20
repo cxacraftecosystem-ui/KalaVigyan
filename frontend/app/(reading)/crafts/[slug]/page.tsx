@@ -7,8 +7,8 @@ import { craftRecordView } from "@/lib/craftRecord";
 import { monographMetadata } from "@/lib/monographMetadata";
 import { serverCraftDocument } from "@/lib/monographRenderServer";
 import { craftPageMetadata } from "@/lib/readingMetadata";
-import { serverStaticPages } from "@/lib/server/readingPages";
-import { staticCraftParams, type CraftParams } from "@/lib/sitePagesContract";
+import { prerenderedPages } from "@/lib/server/readingPages";
+import type { CraftParams } from "@/lib/sitePagesContract";
 
 import { craftRecordPage } from "./craftRecordPage";
 
@@ -18,7 +18,7 @@ export const revalidate = 86400;
 export const dynamicParams = true;
 
 export async function generateStaticParams(): Promise<CraftParams[]> {
-  return staticCraftParams(await serverStaticPages());
+  return prerenderedPages("crafts");
 }
 
 export async function generateMetadata({ params }: CraftRoute): Promise<Metadata> {
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: CraftRoute): Promise<Metadata
 export default async function CraftPage({ params }: CraftRoute) {
   const { slug } = await params;
   const document = await serverCraftDocument(slug);
-  if (document) return <MonographPage document={document} />;
+  if (document) return <MonographPage document={document} deferred />;
   const page = await craftRecordPage(slug);
   if (!page) notFound();
   return <CraftWithoutMonograph record={craftRecordView(page)} />;

@@ -10,6 +10,7 @@ import { borrowedCases, pagesToVisit, subjectPages } from "./parityBorrowed";
 import { driftSteps, heightDifferences, sectionHeights, type DriftReport } from "./parityDrift";
 import { chapterIds, lineDiff, pixelDifference, type PixelDifference } from "./parityMeasure";
 import { alignPhase } from "./parityPhase";
+import { fullSizePictures } from "./parityPictures";
 import { playersAtRest, restingVat } from "./parityRest";
 import { borrowedPass, failures, type PassReport } from "./parityRun";
 import { ancestorLayers, chapterOffsets, elementStyles, fontReport, selfHostedFaces, servedFaces, styleDifferences, type StyleDifference } from "./parityStyles";
@@ -18,6 +19,7 @@ const APPROVED = "/monographs/kutch-ajrakh/index.html";
 const RENDERED = "/crafts/Kutch-Ajrakh/monograph";
 const REPORT_DIR = process.env.E2E_REPORT_DIR ?? "parity-run";
 const SETTLE_MS = 1500;
+const KIT_TIMEOUT_MS = 30_000;
 const PIXEL_TOLERANCE = 0.02;
 const SHOT_TIMEOUT_MS = 10_000;
 const CHAPTERS_TIMEOUT_MS = 15 * 60_000;
@@ -27,6 +29,7 @@ const BORROWED_ONLY = CHECK === "borrowed";
 
 async function opened(page: Page, path: string): Promise<void> {
   await page.goto(path, { waitUntil: "networkidle" });
+  await page.waitForFunction(() => "KV" in window, undefined, { timeout: KIT_TIMEOUT_MS }).catch(() => undefined);
   await page.evaluate(async () => {
     for (let y = 0; y < document.body.scrollHeight; y += window.innerHeight) {
       window.scrollTo(0, y);
@@ -35,6 +38,7 @@ async function opened(page: Page, path: string): Promise<void> {
     window.scrollTo(0, 0);
   });
   await page.waitForTimeout(SETTLE_MS);
+  await fullSizePictures(page);
   await playersAtRest(page);
 }
 

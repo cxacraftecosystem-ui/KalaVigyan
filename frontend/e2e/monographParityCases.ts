@@ -146,7 +146,7 @@ export const PARITY = {
           "src": "aj:S15 aj:S13"
         }
       ],
-      "html": "<span class=\"s\" data-src=\"aj:S15 aj:S13\">Traditional ajrakh has a fixed layout, a large central field of a motif repeated on a tight grid, framed by borders and end <span class=\"nw\">panels.<button class=\"kcite\" type=\"button\" data-c=\"mb:aj:C118\" data-g=\"g2 g6\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Sources 2 and 6\" aria-description=\"Ajrakh: Rhythm of Blues; Ajrakh: An Introduction\">2,6</button></span></span>"
+      "html": "<span class=\"s\" data-src=\"aj:S15 aj:S13\">Traditional ajrakh has a fixed layout, a large central field of a motif repeated on a tight grid, framed by borders and end <span class=\"nw\">panels.<button class=\"kcite\" type=\"button\" data-c=\"mb:aj:C118\" data-g=\"g2 g6\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Sources 2, 6\" aria-description=\"Ajrakh: Rhythm of Blues; Ajrakh: An Introduction\">2,6</button></span></span>"
     },
     "u0008": {
       "tag": "p",
@@ -235,7 +235,7 @@ export const PARITY = {
           "src": "aj:S04 aj:S08"
         }
       ],
-      "html": "<span class=\"s\" data-src=\"aj:S04 aj:S08\"><i>Ek-puri</i> on one side, <i>bi-puri</i> on both; identical bi-puri the most <span class=\"nw\">prized<button class=\"kcite\" type=\"button\" data-c=\"mb:aj:C128\" data-g=\"g12 g7\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Sources 7 and 12\" aria-description=\"Ajarkh, the resist printed fabric of Gujarat; AJRAKH- A Textile Tradition in Transition\">7,12</button></span></span>"
+      "html": "<span class=\"s\" data-src=\"aj:S04 aj:S08\"><i>Ek-puri</i> on one side, <i>bi-puri</i> on both; identical bi-puri the most <span class=\"nw\">prized<button class=\"kcite\" type=\"button\" data-c=\"mb:aj:C128\" data-g=\"g12 g7\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Sources 7, 12\" aria-description=\"Ajarkh, the resist printed fabric of Gujarat; AJRAKH- A Textile Tradition in Transition\">7,12</button></span></span>"
     },
     "u0075": {
       "tag": "p",
@@ -443,7 +443,7 @@ export const PARITY = {
           "src": "pc:441564 pc:5793"
         }
       ],
-      "html": "<span class=\"s\" data-src=\"tx:S05\">Indigo plants hold colourless indican, which the enzyme β-glucosidase turns into colourless <span class=\"nw\">indoxyl.<button class=\"kcite\" type=\"button\" data-c=\"chem:q17\" data-g=\"g9\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Source 9\" aria-description=\"Microbial Communities Associated With Indigo Fermentation\">9</button></span></span> <span class=\"s\" data-src=\"tx:S05\">The enzyme works in the leaf’s chloroplasts, and the dye is drawn out of the plant with <span class=\"nw\">water.<button class=\"kcite\" type=\"button\" data-c=\"chem:q18\" data-g=\"g9\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Source 9\" aria-description=\"Microbial Communities Associated With Indigo Fermentation\">9</button></span></span> <span class=\"s\" data-src=\"pc:441564 pc:5793\">PubChem files indican as indoxyl-beta-D-glucoside, C<sub>14</sub>H<sub>17</sub>NO<sub>6</sub>, and glucose as <span class=\"nw\">C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>.<button class=\"kcite\" type=\"button\" data-c=\"chem:q19\" data-g=\"g22 g23\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Sources 22 and 23\" aria-description=\"Indican (PubChem CID 441564); Glucose (PubChem CID 5793)\">22,23</button></span></span>"
+      "html": "<span class=\"s\" data-src=\"tx:S05\">Indigo plants hold colourless indican, which the enzyme β-glucosidase turns into colourless <span class=\"nw\">indoxyl.<button class=\"kcite\" type=\"button\" data-c=\"chem:q17\" data-g=\"g9\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Source 9\" aria-description=\"Microbial Communities Associated With Indigo Fermentation\">9</button></span></span> <span class=\"s\" data-src=\"tx:S05\">The enzyme works in the leaf’s chloroplasts, and the dye is drawn out of the plant with <span class=\"nw\">water.<button class=\"kcite\" type=\"button\" data-c=\"chem:q18\" data-g=\"g9\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Source 9\" aria-description=\"Microbial Communities Associated With Indigo Fermentation\">9</button></span></span> <span class=\"s\" data-src=\"pc:441564 pc:5793\">PubChem files indican as indoxyl-beta-D-glucoside, C<sub>14</sub>H<sub>17</sub>NO<sub>6</sub>, and glucose as <span class=\"nw\">C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>.<button class=\"kcite\" type=\"button\" data-c=\"chem:q19\" data-g=\"g22 g23\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Sources 22, 23\" aria-description=\"Indican (PubChem CID 441564); Glucose (PubChem CID 5793)\">22,23</button></span></span>"
     },
     "u0754": {
       "tag": "p",
@@ -606,7 +606,7 @@ export const PARITY = {
           ]
         }
       ],
-      "html": "<span class=\"s\" data-sid=\"x.1\" data-pair=\"a\">Fe<sup>3+</sup> &amp; &lt;ions&gt; \"quoted\" <span class=\"nw\">end.<button class=\"kcite\" type=\"button\" data-c=\"k:1\" data-g=\"g2 g1 g2\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Sources 1 and 2\" aria-description=\"GI Journal No. 188: Kutch Ajrakh; Ajrakh: Rhythm of Blues\">1,2</button></span></span> <a href=\"/ask?q=a&amp;craft=b\" rel=\"noopener\" target=\"_blank\" data-ask=\"Why &quot;lime&quot;?\" lang=\"hi\">Ask</a><span class=\"s dim\" data-src=\"a1\"><mark>kut</mark></span>"
+      "html": "<span class=\"s\" data-sid=\"x.1\" data-pair=\"a\">Fe<sup>3+</sup> &amp; &lt;ions&gt; \"quoted\" <span class=\"nw\">end.<button class=\"kcite\" type=\"button\" data-c=\"k:1\" data-g=\"g2 g1 g2\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Sources 1, 2\" aria-description=\"GI Journal No. 188: Kutch Ajrakh; Ajrakh: Rhythm of Blues\">1,2</button></span></span> <a href=\"/ask?q=a&amp;craft=b\" rel=\"noopener\" target=\"_blank\" data-ask=\"Why &quot;lime&quot;?\" lang=\"hi\">Ask</a><span class=\"s dim\" data-src=\"a1\"><mark>kut</mark></span>"
     }
   }
 } as const;

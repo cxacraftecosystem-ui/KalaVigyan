@@ -1,7 +1,7 @@
 import { cache } from "react";
 
 import type { MonographDocument } from "@/lib/monographDocument";
-import { parseMonographDocument } from "@/lib/monographDocumentShape";
+import { parseNamedDocument } from "@/lib/monographRenderCitations";
 import { signedInFetch } from "@/lib/server/serverFetch";
 
 export const PREVIEW_TOKEN = /^[0-9a-f]{32}\.\d{1,12}\.[0-9a-f]{64}$/;
@@ -22,7 +22,7 @@ export function previewPagePath(token: string): string {
 
 export const previewDocument = cache(async (token: string): Promise<PreviewRead> => {
   if (!PREVIEW_TOKEN.test(token)) return { kind: "missing" };
-  const result = await signedInFetch(previewApiPath(token), { parse: parseMonographDocument });
+  const result = await signedInFetch(previewApiPath(token), { parse: parseNamedDocument });
   if (result.ok) return { kind: "shown", document: result.body };
   if (result.status === SIGNED_OUT) return { kind: "signed-out" };
   if (result.status !== null && HIDDEN.has(result.status)) return { kind: "missing" };

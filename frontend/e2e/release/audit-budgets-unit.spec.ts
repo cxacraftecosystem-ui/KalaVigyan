@@ -80,7 +80,7 @@ test("a recorded page that holds its record passes and names what misses the tar
   ]);
 });
 
-test("a recorded page that meets its targets may move within them, and fails once it misses both the target and its record", () => {
+test("a recorded page that meets its targets may move within them, and fails once it misses both the target and its record, except on weight, which is only reported", () => {
   const recorded = { performance: 90, accessibility: 100, "best-practices": 100, lcpMs: 1000, cls: 0, tbtMs: 100, bytes: 1_000_000 };
   expect(lighthouseJudgement(measured([0.81, 0.96, 0.91], [2400, 0.09, 190, 1_900_000]), TARGET, recorded).problems).toEqual([]);
   const judged = lighthouseJudgement(measured([0.79, 0.9, null], [3400, 0.2, 260, 2_600_000]), TARGET, recorded);
@@ -90,9 +90,9 @@ test("a recorded page that meets its targets may move within them, and fails onc
     "Lighthouse gave no best-practices score",
     "Largest contentful paint (ms) is 3400; the budget is 2500",
     "Cumulative layout shift is 0.2; the budget is 0.1",
-    "Total blocking time (ms) is 260; the budget is 200",
-    "Transferred bytes is 2600000; the budget is 2000000"
+    "Total blocking time (ms) is 260; the budget is 200"
   ]);
+  expect(judged.notes).toContain("Transferred bytes 2600000 is over the target 2000000");
 });
 
 test("an unrecorded page that misses the targets is noted, not failed, unless Lighthouse could not measure it", () => {

@@ -329,17 +329,13 @@ def _cite_button(node: Mapping[str, Any], sources: Mapping[str, CitedSource]) ->
         raise InvalidInput(f"Citation {node['key']} names unknown sources {missing}")
     shown = sorted({sources[key].number: sources[key] for key in keys}.items())
     numbers = [str(number) for number, _ in shown]
-    label = f"Source {numbers[0]}" if len(numbers) == 1 else f"Sources {_listed(numbers)}"
+    label = f"Source {numbers[0]}" if len(numbers) == 1 else f"Sources {', '.join(numbers)}"
     described = "; ".join(source.title for _, source in shown)
     return (
         f'<button class="kcite" type="button" data-c="{html.escape(node["key"])}" '
         f'data-g="{" ".join(keys)}" aria-haspopup="dialog" aria-expanded="false" '
         f'aria-label="{label}" aria-description="{html.escape(described)}">{",".join(numbers)}</button>'
     )
-
-
-def _listed(numbers: Sequence[str]) -> str:
-    return numbers[0] if len(numbers) == 1 else f"{', '.join(numbers[:-1])} and {numbers[-1]}"
 
 
 def _data(key: str, content: MonographContent) -> str:

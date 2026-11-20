@@ -59,13 +59,13 @@ test("a sentence's citations become one cluster, one entry per source, sorted by
 
 test("the accessible name says Source or Sources with the numbers, and the titles go into the description", () => {
   expect(clusterName([{ number: 3 }])).toBe("Source 3");
-  expect(clusterName([{ number: 1 }, { number: 2 }])).toBe("Sources 1 and 2");
-  expect(clusterName([{ number: 3 }, { number: 4 }, { number: 5 }, { number: 6 }])).toBe("Sources 3, 4, 5 and 6");
+  expect(clusterName([{ number: 1 }, { number: 2 }])).toBe("Sources 1, 2");
+  expect(clusterName([{ number: 3 }, { number: 4 }, { number: 5 }, { number: 6 }])).toBe("Sources 3, 4, 5, 6");
   expect(clusterName([{ number: null }])).toBe("Source");
   expect(clusterName([{ number: null }, { number: null }])).toBe("2 sources");
   expect(clusterName([{ number: 1 }, { number: null }])).toBe("Sources 1 and 1 more");
   const view = citationCluster(SENTENCE, NUMBERS, SOURCES);
-  expect(view.name).toBe("Sources 1 and 2");
+  expect(view.name).toBe("Sources 1, 2");
   expect(view.description).toBe("GI Journal No. 188: Kutch Ajrakh; Ajrakh");
   expect(shortTitle(LONG.title)).toBe("Microbial Communities Associated With Indigo Fermentation That Thrive in…");
   expect(shortTitle(LONG.title).length).toBeLessThanOrEqual(73);
@@ -85,7 +85,7 @@ test("the cluster is one button glued to the word before it, named, described an
   const html = renderToStaticMarkup(createElement(Cite, { citations: SENTENCE, numbers: NUMBERS, sourcesById: SOURCES }));
   expect(html.match(/<button/g)).toHaveLength(1);
   expect(html.startsWith('<span class="kv-nowrap kv-cite-cluster" data-testid="citation-cluster">⁠<button')).toBe(true);
-  expect(attribute(html, "citation-chip", "aria-label")).toEqual(["Sources 1 and 2"]);
+  expect(attribute(html, "citation-chip", "aria-label")).toEqual(["Sources 1, 2"]);
   expect(attribute(html, "citation-chip", "aria-haspopup")).toEqual(["dialog"]);
   expect(attribute(html, "citation-chip", "aria-expanded")).toEqual(["false"]);
   expect(html).not.toContain("aria-controls");

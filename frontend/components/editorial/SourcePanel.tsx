@@ -57,7 +57,7 @@ function Entry({ entry, norm, borrowed }: { entry: ClusterEntry; norm: EvidenceS
         ) : null}
         {href ? (
           <p className="kv-meta mt-1.5">
-            <a href={href} target="_blank" rel="noopener noreferrer" className="kv-link font-normal underline-offset-2">
+            <a href={href} target="_blank" rel="noopener noreferrer" className="kv-link py-1 font-normal underline-offset-2">
               Open the source<span className="sr-only"> (opens in a new tab)</span>
             </a>
           </p>

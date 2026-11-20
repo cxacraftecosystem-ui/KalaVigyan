@@ -1,6 +1,8 @@
-import { BundleView, NestedSlots, SLOT_CLASS, SlotRoot } from "@/components/monograph/BundleView";
+import { NestedSlots, SlotRoot } from "@/components/monograph/BundleView";
 import { ComponentHome } from "@/components/monograph/ComponentHome";
 import { COMPONENT_VIEWS } from "@/components/monograph/componentViews";
+import { DrawnBundle } from "@/components/monograph/ServerBundle";
+import { SLOT_CLASS } from "@/components/monograph/slotClass";
 import type { MonographComponent, MonographDocument } from "@/lib/monographDocument";
 import { bundleSources } from "@/lib/monographRenderKit";
 import { componentBundles, placedComponents, slotId } from "@/lib/monographRenderLayout";
@@ -25,11 +27,7 @@ function homeOf(document: MonographDocument, component: MonographComponent) {
 
 function ViewSlot({ document, component, scoped }: { document: MonographDocument; component: MonographComponent; scoped: boolean }) {
   const bundles = componentBundles(document, component.label);
-  const view = (
-    <SlotRoot sources={bundleSources(document, bundles)} bundles={bundles} bare={!APP_KINDS.has(component.kind)}>
-      <BundleView label={component.label} />
-    </SlotRoot>
-  );
+  const view = <DrawnBundle label={component.label} set={{ bundles, sources: bundleSources(document, bundles), bare: !APP_KINDS.has(component.kind) }} />;
   if (!scoped) return view;
   return (
     <ComponentHome home={homeOf(document, component)} label={component.label} kind={component.kind}>

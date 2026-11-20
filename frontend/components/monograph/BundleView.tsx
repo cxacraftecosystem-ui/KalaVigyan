@@ -6,11 +6,12 @@ import { createPortal } from "react-dom";
 import { COMPONENT_VIEWS } from "@/components/monograph/componentViews";
 import { MonographSlotProvider, useMonographSlot, type MonographSlotValue } from "@/components/monograph/MonographSlotContext";
 import { NestedComponents } from "@/components/monograph/NestedComponents";
+import { SLOT_CLASS } from "@/components/monograph/slotClass";
 import type { MonographSources } from "@/lib/monographRender";
 import { nodeElements } from "@/lib/monographRenderElements";
 import { fragmentSlots, slotId, type ComponentBundle } from "@/lib/monographRenderLayout";
 
-export const SLOT_CLASS = "kv-slot contents";
+export { SLOT_CLASS };
 export const SLOT_ELEMENT = "kv-slot[component]";
 
 export function SlotRoot({ sources, bundles, bare = false, children }: MonographSlotValue & { children: ReactNode }) {

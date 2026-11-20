@@ -3,6 +3,7 @@ import type { BrowserContext, ElementHandle, Page } from "@playwright/test";
 import { AUTHORED_PATH, pageKind, type BorrowedCase, type SubjectPage } from "./parityBorrowed";
 import { authoredRoot, drawing, gatedDifferences, generatedRoot, sanityProblems, widthAs, type SanityProblem } from "./parityComponent";
 import { pixelDifference } from "./parityMeasure";
+import { fullSizePictures } from "./parityPictures";
 import { playersAtRest } from "./parityRest";
 import type { StyleDifference } from "./parityStyles";
 
@@ -10,14 +11,14 @@ export type CaseResult = { label: string; kind: string; page: string; pageKind: 
 export type Shots = (name: string, image: Buffer) => void;
 
 const SETTLE_MS = 1500;
+const KIT_TIMEOUT_MS = 30_000;
 const STEP_MS = 30;
 const SHOWN_DIFFERENCES = 40;
 const SHOT_TIMEOUT_MS = 20_000;
 const CHAPTER = "#chem";
 const CHAPTER_QUALITY = 70;
 
-export async function readPage(page: Page, path: string): Promise<void> {
-  await page.goto(path, { waitUntil: "networkidle", timeout: 120_000 });
+async function scrolled(page: Page): Promise<void> {
   await page.evaluate(async (step) => {
     for (let y = 0; y < document.body.scrollHeight; y += window.innerHeight) {
       window.scrollTo(0, y);
@@ -25,8 +26,21 @@ export async function readPage(page: Page, path: string): Promise<void> {
     }
     window.scrollTo(0, 0);
   }, STEP_MS);
+}
+
+export async function readPage(page: Page, path: string): Promise<void> {
+  await page.goto(path, { waitUntil: "networkidle", timeout: 120_000 });
+  await scrolled(page);
+  await page.waitForFunction(() => "KV" in window, undefined, { timeout: KIT_TIMEOUT_MS }).catch(() => undefined);
+  await scrolled(page);
   await page.waitForTimeout(SETTLE_MS);
+  await fullSizePictures(page);
   await playersAtRest(page);
+}
+
+async function inView(page: Page, root: ElementHandle<Element>): Promise<void> {
+  await root.scrollIntoViewIfNeeded().catch(() => undefined);
+  await page.waitForTimeout(SETTLE_MS);
 }
 
 function fileName(label: string): string {
@@ -56,12 +70,11 @@ export async function compareCase(authored: Page, rendered: Page, found: Borrowe
   const text = await mine.evaluate((element) => (element as HTMLElement).innerText ?? "");
   const theirs = await authoredRoot(authored, found.root, text);
   if (!theirs) return missing(found);
+  await inView(authored, theirs);
   const approved = await drawing(theirs);
   const before = (await drawing(mine)).width;
-  if (Math.abs(before - approved.width) > 1) {
-    await widthAs(mine, approved.width);
-    await rendered.waitForTimeout(SETTLE_MS);
-  }
+  if (Math.abs(before - approved.width) > 1) await widthAs(mine, approved.width);
+  await inView(rendered, mine);
   const shown = await drawing(mine);
   const differences = gatedDifferences(approved.styles, shown.styles);
   const ratio = await pixels(theirs, mine, `${fileName(found.page.slug)}--${fileName(found.label)}`, save);
@@ -73,6 +86,7 @@ export async function pageSanity(page: Page, subject: SubjectPage): Promise<Sani
   for (const component of subject.components) {
     const root = await page.$(`[data-component="${component.label.replace(/"/g, '\\"')}"]`);
     if (!root) continue;
+    await inView(page, root);
     problems.push(...(await sanityProblems(page, component.label, root)));
   }
   return problems;

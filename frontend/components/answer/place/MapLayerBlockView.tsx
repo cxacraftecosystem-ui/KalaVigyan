@@ -13,18 +13,17 @@ import { DistrictFills, DistrictTag, SelectedDistrict } from "@/components/map/D
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { layerRows } from "@/components/map/MapLayerFigure";
 import { MapRetry } from "@/components/map/MapRetry";
-import { useLayerFill, useMapLayer, type DistrictName } from "@/components/map/MapLayerView";
+import { useMapLayer, usePaletteFill, type DistrictName } from "@/components/map/MapLayerView";
 import { RankedList, type RankedRow } from "@/components/map/RankedList";
 import type { DistrictShape } from "@/components/map/shapeGeometry";
 import type { MapLayerBlock } from "@/lib/explainerPlace";
-import { layerColours, layerRamp } from "@/lib/mapRamps";
+import { layerPalette, paletteSeries, paletteSteps } from "@/lib/mapPalettes";
 import { boundaryNote, isGone } from "@/lib/placeView";
 import type { MapLayer } from "@/lib/regionContract";
-import { districtReading, layerCaption, layerClassLabels, layerSummary } from "@/lib/regionView";
+import { districtReading, layerCaption, layerSummary } from "@/lib/regionView";
 
 type Names = Map<number, DistrictName> | null;
 
-const SERIES = { rain: "var(--series-rain)", heat: "var(--series-heat)", density: "var(--chart-series)" } as const;
 const COLUMNS = [
   { key: "district", label: "District" },
   { key: "state", label: "State" },
@@ -53,7 +52,7 @@ function Readings({ layer, names, highlighted }: { layer: MapLayer; names: Names
 
 function LayerMap({ layer, shapes, names, highlighted }: { layer: MapLayer; shapes: DistrictShape[]; names: Names; highlighted: readonly number[] }) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const fillOf = useLayerFill(layer);
+  const fillOf = usePaletteFill(layer);
   const outlined = useMemo(() => shapes.filter((shape) => highlighted.includes(shape.lgd)), [shapes, highlighted]);
   const hoveredShape = hovered === null ? undefined : shapes.find((shape) => shape.lgd === hovered);
   const tagged = hoveredShape ? [hoveredShape] : outlined;
@@ -80,13 +79,12 @@ function LayerMap({ layer, shapes, names, highlighted }: { layer: MapLayer; shap
 
 function LayerSide({ layer, names, highlighted }: { layer: MapLayer; names: Names; highlighted: readonly number[] }) {
   const rows: RankedRow[] = layerRows(layer, names).map((row) => ({ key: String(row.lgd), name: row.name, value: row.value, display: districtReading(layer, row.lgd) }));
-  const colours = layerColours(layer);
-  const steps = layerClassLabels(layer).map((label, at) => ({ label, colour: colours[at] }));
+  const steps = paletteSteps(layer);
   const emphKey = highlighted.length > 0 ? String(highlighted[0]) : null;
   return (
     <div className="grid min-w-0 content-start gap-5">
       <Readings layer={layer} names={names} highlighted={highlighted} />
-      {rows.length ? <RankedList rows={rows} label={layer.layer.title} series={SERIES[layerRamp(layer.layer)]} emphKey={emphKey} all={{ label: `Show all ${rows.length}` }} /> : null}
+      {rows.length ? <RankedList rows={rows} label={layer.layer.title} series={paletteSeries(layerPalette(layer.layer))} emphKey={emphKey} all={{ label: `Show all ${rows.length}` }} /> : null}
       <MapLegend title={layer.layer.title} steps={steps} extras={[OUTLINED_EXTRA, NO_READING_EXTRA, SALT_EXTRA, WATER_EXTRA]} caption={layerCaption(layer)} summary={layerSummary(layer)} />
       <DatasetCredit dataset={layer.dataset} />
     </div>

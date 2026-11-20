@@ -1,12 +1,9 @@
+import { DataScript } from "@/components/monograph/DataScript";
 import type { MonographDocument } from "@/lib/monographDocument";
-import { dataByScope, KIT_CITES_ID, KIT_HIDDEN_SCOPES, KIT_SCOPE_CONTROLS, kitCites, scriptJson } from "@/lib/monographRenderKit";
+import { dataByScope, KIT_CITES_ID, KIT_HIDDEN_SCOPES, KIT_SCOPE_CONTROLS, kitCites } from "@/lib/monographRenderKit";
 
 export const CODA_LINE = "KalaVigyan, from IIT Kharagpur and its Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform. Every sentence opens to its source’s own words.";
 const RATES = ["1", "1.25", "1.5"] as const;
-
-function DataScript({ id, value }: { id: string; value: unknown }) {
-  return <script type="application/json" id={id} dangerouslySetInnerHTML={{ __html: scriptJson(value) }} />;
-}
 
 function Player() {
   return (
@@ -52,8 +49,10 @@ function Player() {
   );
 }
 
-export function KitShellTail({ document }: { document: MonographDocument }) {
-  const { scoped, loose } = dataByScope(document.content);
+export function KitShellTail({ document, dataDeferred = false }: { document: MonographDocument; dataDeferred?: boolean }) {
+  const { scoped: allScoped, loose: allLoose } = dataByScope(document.content);
+  const scoped = dataDeferred ? Object.fromEntries(KIT_HIDDEN_SCOPES.map((scope) => [scope, [] as string[]])) : allScoped;
+  const loose = dataDeferred ? [] : allLoose;
   const data = document.content.data;
   return (
     <>
@@ -81,7 +80,7 @@ export function KitShellTail({ document }: { document: MonographDocument }) {
       {loose.map((key) => (
         <DataScript key={key} id={key} value={data[key]} />
       ))}
-      <DataScript id={KIT_CITES_ID} value={kitCites(document.content)} />
+      {dataDeferred ? null : <DataScript id={KIT_CITES_ID} value={kitCites(document.content)} />}
     </>
   );
 }

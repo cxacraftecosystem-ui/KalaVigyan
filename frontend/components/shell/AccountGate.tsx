@@ -1,16 +1,19 @@
 "use client";
 
 import type { ReactNode } from "react";
+import dynamic from "next/dynamic";
 
 import { AuthShell } from "@/components/auth/AuthShell";
 import { useAuth } from "@/components/AuthProvider";
 import { FirstPasswordGate } from "@/components/FirstPasswordGate";
-import { FirstEntryGate, GuardianHold } from "@/components/onboarding/FirstEntryGate";
-import { TwoStepVerificationCard } from "@/components/settings/TwoStepVerificationCard";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { mustChangePassword } from "@/lib/signIn";
 import type { User } from "@/lib/types";
+
+const FirstEntryGate = dynamic(() => import("@/components/onboarding/FirstEntryGate").then((gate) => gate.FirstEntryGate));
+const GuardianHold = dynamic(() => import("@/components/onboarding/FirstEntryGate").then((gate) => gate.GuardianHold));
+const TwoStepVerificationCard = dynamic(() => import("@/components/settings/TwoStepVerificationCard").then((card) => card.TwoStepVerificationCard));
 
 export function AccountGate({ user, children }: { user: User; children: ReactNode }) {
   const { retryMe, logout, markPasswordChanged } = useAuth();

@@ -49,6 +49,8 @@ test("a plate puts the caption first and the credit after, at standard widths, a
   expect(markup).toContain('sizes="(min-width: 1024px) 16vw, (min-width: 640px) 25vw, 72vw"');
   expect(markup).toContain('loading="lazy"');
   expect(markup).toContain('referrerPolicy="no-referrer"');
+  expect(markup).toMatch(/crossorigin="anonymous"/i);
+  expect(html(createElement(Plate, { src: "/landing/cloth.jpg", alt: "A cloth", caption: "Cloth.", credit: "Photo: KalaVigyan" }))).not.toMatch(/crossorigin/i);
   expect(markup.indexOf("Look at the roundels.")).toBeLessThan(markup.indexOf("Photo: SMarndi"));
   expect(markup).toContain('aria-haspopup="dialog"');
   expect(markup).not.toContain("blur");

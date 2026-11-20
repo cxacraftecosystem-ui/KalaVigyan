@@ -7,6 +7,7 @@ import { fragmentDocumentText, goldenText, nativeComponents } from "./monographN
 import { anchorPlans, mainLines, markAnchors, nativeDocumentPath, openedPage, pageAnswers, type AnchorPlan } from "./monographNativeBrowser";
 import { lineDiff, pixelDifference, type PixelDifference } from "./parity/parityMeasure";
 import { alignPhase } from "./parity/parityPhase";
+import { restingVat } from "./parity/parityRest";
 import { selfHostedFaces, servedFaces } from "./parity/parityStyles";
 import { contextOptions, DESKTOP, SCHEMES, SMALL_PHONE, TABLET, type Scheme, type Width } from "./production/matrix";
 
@@ -89,6 +90,7 @@ async function componentShot(pages: Pages, plan: AnchorPlan, run: Run): Promise<
 
 async function reactPage(browser: Browser, run: Run, path: string, errors: string[]): Promise<Page> {
   const context = await browser.newContext(contextOptions(run.width, run.scheme));
+  await restingVat(context);
   const page = await context.newPage();
   page.on("pageerror", (error) => errors.push(`${path}: ${error.message}`));
   page.on("console", (message) => {

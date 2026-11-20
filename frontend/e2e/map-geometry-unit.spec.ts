@@ -5,8 +5,7 @@ import { expect, test } from "@playwright/test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { decodeBasemap, decodeRings, mapFrame, MAP_FRAME_DEGREES, NATURAL_EARTH_CREDIT, RANN_PATH, type NeighbourFile } from "@/components/map/basemap";
-import { boardBox, RANN_SALT_FLATS } from "@/components/map/boardGeometry";
+import { decodeBasemap, decodeRings, mapFrame, MAP_FRAME_DEGREES, NATURAL_EARTH_CREDIT, type NeighbourFile } from "@/components/map/basemap";
 import { indiaRings, type Ring } from "@/components/map/indiaGeometry";
 import { COUNTRY_LABELS, MapCanvas, RANN_LABEL } from "@/components/map/MapCanvas";
 import { project } from "@/components/map/projection";
@@ -96,9 +95,6 @@ test("the Rann is Natural Earth's salt flat, never sea, and the old board's trac
   expect(holders(69.2, 24.05)).toEqual(["IND"]);
   expect(inside(project(70.5, 24), rann)).toBe(true);
   expect(inside(project(RANN_LABEL.longitude, RANN_LABEL.latitude), rann)).toBe(true);
-  expect(RANN_SALT_FLATS).toBe(RANN_PATH);
-  const box = { x: 1, y: 2, width: 3, height: 4 };
-  expect(boardBox(box)).toEqual(box);
   const decoded = decodeBasemap(FILE);
   expect(decoded.neighbours.map((country) => country.iso)).toEqual(FILE.countries.map((country) => country.iso));
   expect(decoded.coast.startsWith("M")).toBe(true);

@@ -78,7 +78,10 @@ test("a visitor who is not signed in is led into reading, and asking and contrib
   expect(markup.match(/<h1/g)).toHaveLength(1);
   expect(markup).toContain('data-testid="institution-footer"');
   expect(words(markup)).not.toMatch(/loading|coming soon|no data/i);
-  expect(markup).toContain('rel="preload" as="image" href="/landing/ajrakh-print-detail-indigo-ground.jpg" fetchPriority="high"');
+  const preload = markup.match(/<link rel="preload" as="image"[^>]*>/)?.[0] ?? "";
+  expect(preload).toContain("/_next/image?url=%2Flanding%2Fajrakh-print-detail-indigo-ground.jpg&amp;w=960&amp;q=80 960w");
+  expect(preload).toContain('imageSizes="100vw"');
+  expect(preload).toContain('fetchPriority="high"');
 });
 
 test("the hero names all sixteen fields' breadth and every reader, not three fields or one audience", () => {

@@ -30,8 +30,9 @@ export function rankedStateRows(counts: StateCounts): RankedRow[] {
   return counts.states.map((state) => ({ key: state.name, name: state.name, value: state.count, href: searchHref(state.name) }));
 }
 
-export function useStateRanking(): StateRanking {
-  const { catalogue, error, reload } = useCraftCatalogue();
+export function useStateRanking(initial: CraftCatalogue | null = null): StateRanking {
+  const { catalogue: loaded, error, reload } = useCraftCatalogue();
+  const catalogue = loaded ?? initial;
   const points = useRemote(fetchCraftMapPoints);
   const lists = useMemo(() => (catalogue ? stateCrafts(catalogue) : null), [catalogue]);
   const counts = useMemo(() => (lists ? listCounts(lists) : null), [lists]);

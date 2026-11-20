@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { AtlasCollection } from "@/components/crafts/AtlasCollection";
 import { AtlasIndex } from "@/components/crafts/AtlasIndex";
 import { AtlasResults, AtlasSearchBox } from "@/components/crafts/AtlasSearch";
 import { ledFamilyShelves } from "@/components/crafts/shelfLead";
+import { useUrlSearch } from "@/components/hooks/useUrlSearch";
 import { MapRetry } from "@/components/map/MapRetry";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { atlasDek, stateCounts } from "@/lib/atlasIndex";
@@ -30,23 +31,23 @@ export function CraftAtlasHeader({ dek, search }: { dek?: string | null; search?
   );
 }
 
-function useQueryParam(): [string, (next: string) => void] {
-  const params = useSearchParams();
+function useQueryParam(): [string, (next: string) => void, ReactNode] {
+  const { params, known, reader } = useUrlSearch();
   const router = useRouter();
   const pathname = usePathname();
   const fromUrl = params.get(QUERY_PARAM) ?? "";
-  const [query, setQuery] = useState(fromUrl);
-  const written = useRef(fromUrl);
+  const [query, setQuery] = useState("");
+  const written = useRef<string | null>(null);
 
   useEffect(() => {
-    if (fromUrl === written.current) return;
+    if (!known || fromUrl === written.current) return;
     written.current = fromUrl;
     setQuery(fromUrl);
-  }, [fromUrl]);
+  }, [fromUrl, known]);
 
   useEffect(() => {
     const next = query.trim();
-    if (next === written.current) return;
+    if (written.current === null || next === written.current) return;
     const timer = setTimeout(() => {
       written.current = next;
       router.replace(next ? `${pathname}?${QUERY_PARAM}=${encodeURIComponent(next)}` : pathname, { scroll: false });
@@ -54,7 +55,7 @@ function useQueryParam(): [string, (next: string) => void] {
     return () => clearTimeout(timer);
   }, [pathname, query, router]);
 
-  return [query, setQuery];
+  return [query, setQuery, reader];
 }
 
 function AtlasBody({ catalogue, names, query, onQuery }: { catalogue: CraftCatalogue; names: readonly NamedCraft[]; query: string; onQuery: (next: string) => void }) {
@@ -72,10 +73,11 @@ function AtlasBody({ catalogue, names, query, onQuery }: { catalogue: CraftCatal
 export function CraftAtlas({ initial, names }: { initial: CraftCatalogue | null; names: readonly NamedCraft[] }) {
   const { catalogue: loaded, error, reload } = useCraftCatalogue();
   const catalogue = loaded ?? initial;
-  const [query, setQuery] = useQueryParam();
+  const [query, setQuery, urlReader] = useQueryParam();
   const search = <AtlasSearchBox catalogue={catalogue} query={query} onQuery={setQuery} />;
   return (
     <div className="pb-section" data-testid="craft-atlas">
+      {urlReader}
       <CraftAtlasHeader dek={catalogue ? atlasDek(catalogue) : null} search={search} />
       {catalogue ? (
         <AtlasBody catalogue={catalogue} names={names} query={query} onQuery={setQuery} />

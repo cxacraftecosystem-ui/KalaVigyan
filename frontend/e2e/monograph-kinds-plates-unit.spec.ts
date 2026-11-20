@@ -53,7 +53,7 @@ test("a held citation is drawn as the page draws it: numbers in order, named and
     }
   ]);
   expect(renderToStaticMarkup(createElement(HeldText, { nodes }))).toBe(
-    '<span class="s">Khamir, <span class="nw">Dhamadka<button class="kcite" type="button" data-c="pt:C035" data-g="g14 g1" aria-haspopup="dialog" aria-expanded="false" aria-label="Sources 1 and 14" aria-description="GI Journal; Khatris">1,14</button></span></span>'
+    '<span class="s">Khamir, <span class="nw">Dhamadka<button class="kcite" type="button" data-c="pt:C035" data-g="g14 g1" aria-haspopup="dialog" aria-expanded="false" aria-label="Sources 1, 14" aria-description="GI Journal; Khatris">1,14</button></span></span>'
   );
 });
 

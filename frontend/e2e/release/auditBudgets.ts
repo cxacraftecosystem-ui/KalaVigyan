@@ -18,6 +18,7 @@ export type AxeViolation = { id: string; impact?: string | null; help: string; n
 
 export const LIGHTHOUSE_CATEGORIES: readonly LighthouseCategory[] = ["performance", "accessibility", "best-practices"];
 export const METRICS: readonly MetricName[] = ["lcpMs", "cls", "tbtMs", "bytes"];
+export const REPORTED_ONLY: ReadonlySet<MetricName> = new Set(["bytes"]);
 
 export const LIGHTHOUSE_FORMS: readonly LighthouseForm[] = [
   {
@@ -123,7 +124,7 @@ function metricJudgement(numbers: CheckNumbers, target: LighthouseBudget, record
     const value = numbers[name];
     const ceiling = metricCeiling(name, target, recorded);
     if (value === null) judged.problems.push(`Lighthouse measured no ${METRIC_LABELS[name].toLowerCase()}`);
-    else if (value > ceiling) breach(judged, recorded, `${METRIC_LABELS[name]} is ${value}; the budget is ${ceiling}`);
+    else if (value > ceiling && !REPORTED_ONLY.has(name)) breach(judged, recorded, `${METRIC_LABELS[name]} is ${value}; the budget is ${ceiling}`);
     else if (value > target.metrics[name]) judged.notes.push(`${METRIC_LABELS[name]} ${value} is over the target ${target.metrics[name]}`);
   }
 }

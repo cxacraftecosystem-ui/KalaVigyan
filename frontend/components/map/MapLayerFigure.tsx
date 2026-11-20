@@ -19,7 +19,7 @@ import type { DistrictShape } from "@/components/map/shapeGeometry";
 import { Figure } from "@/components/ui/Figure";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { markerFamilies, type PlaceMarker } from "@/lib/mapFamilies";
-import { layerPalette, paletteClasses, paletteColour, paletteSeries } from "@/lib/mapPalettes";
+import { layerPalette, paletteSeries, paletteSteps } from "@/lib/mapPalettes";
 import type { BoundaryNote, MapLayer } from "@/lib/regionContract";
 import { districtReading, layerCaption, layerSummary } from "@/lib/regionView";
 
@@ -50,7 +50,7 @@ export function markerExtras(markers: readonly PlaceMarker[]): LegendExtra[] {
 function LayerSide({ layer, names, markers, pick }: { layer: MapLayer; names: Names; markers: readonly PlaceMarker[]; pick: DistrictPick }) {
   const rows: RankedRow[] = layerRows(layer, names).map((row) => ({ key: String(row.lgd), name: row.name, value: row.value, display: districtReading(layer, row.lgd), onPick: () => pick.onPick(row.lgd) }));
   const palette = layerPalette(layer.layer);
-  const steps = paletteClasses(layer).map((band) => ({ label: band.label, colour: paletteColour(palette.ramp, band.step) }));
+  const steps = paletteSteps(layer);
   return (
     <div className="grid gap-[18px]">
       {rows.length ? <RankedList rows={rows} label={layer.layer.title} series={paletteSeries(palette)} all={{ label: `Show all ${rows.length}` }} /> : null}

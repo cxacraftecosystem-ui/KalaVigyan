@@ -23,10 +23,6 @@ export const PALETTE_FILLS: Record<PaletteName, readonly string[]> = {
   ]
 };
 
-export function rampFill(ramp: RampName, step: number): string {
-  return RAMP_FILLS[ramp][Math.min(Math.max(step, 1), RAMP_FILLS[ramp].length) - 1];
-}
-
 export function paletteFill(ramp: PaletteName, step: number): string {
   const fills = PALETTE_FILLS[ramp];
   return fills[Math.min(Math.max(step, 1), fills.length) - 1];

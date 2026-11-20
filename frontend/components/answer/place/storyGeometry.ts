@@ -1,4 +1,4 @@
-import { boardBox, RANN_SALT_FLATS, type MapBox } from "@/components/map/boardGeometry";
+import { RANN_PATH, type MapBox } from "@/components/map/basemap";
 import { PLACE_TONE } from "@/components/map/DistrictLayer";
 import { project } from "@/components/map/projection";
 import type { DistrictShape } from "@/components/map/shapeGeometry";
@@ -117,5 +117,5 @@ export function boxesMeet(a: MapBox, b: MapBox): boolean {
 }
 
 export function saltInView(view: View): boolean {
-  return boxesMeet(boardBox(pathBox(RANN_SALT_FLATS)), view);
+  return boxesMeet(pathBox(RANN_PATH), view);
 }
