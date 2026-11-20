@@ -6,8 +6,9 @@ import pytest
 
 from app.research.craft_origins import AskedQuestion, ItemOrigin
 from app.research.craft_page import CraftPage
+from app.research.craft_parts import SourcesDifferPart
 from app.services.document_components import StructureBlock, document_structure
-from app.services.document_components_parts import StructureText
+from app.services.document_components_parts import StructureText, sentence_case
 
 from ..contracts.golden import golden_json
 
@@ -188,3 +189,31 @@ def test_an_item_a_reader_s_answer_brought_is_left_to_the_answer_it_came_from(pa
     assert "market" not in blocks(
         dict(document_structure(page.model_copy(update={"chapters": chapters})).trailing)
     )
+
+
+def lowered_topic(item: Any) -> Any:
+    part = item.part
+    if not isinstance(part, SourcesDifferPart) or item.origin is not None:
+        return item
+    about = part.reading.about[:1].lower() + part.reading.about[1:]
+    reading = part.reading.model_copy(update={"about": about})
+    return item.model_copy(update={"part": part.model_copy(update={"reading": reading})})
+
+
+def test_a_disagreement_s_topic_heads_its_readings_in_sentence_case(page: CraftPage) -> None:
+    topics = [
+        item.part.reading.about
+        for chapter in page.chapters
+        for item in chapter.items
+        if isinstance(item.part, SourcesDifferPart) and item.origin is None
+    ]
+    chapters = [
+        chapter.model_copy(update={"items": [lowered_topic(item) for item in chapter.items]})
+        for chapter in page.chapters
+    ]
+    structure = document_structure(page.model_copy(update={"chapters": chapters}))
+    terms = [text for items in structure.trailing.values() for text in texts(items, "dt")]
+    assert topics and all(topic[:1].isupper() for topic in topics)
+    assert [term for term in terms if term in topics] == topics
+    assert sentence_case("  whether the vat is reduced ") == "Whether the vat is reduced"
+    assert sentence_case("") == ""

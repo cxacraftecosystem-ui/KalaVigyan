@@ -1,3 +1,4 @@
+import itertools
 import uuid
 from collections.abc import AsyncIterator
 from typing import Any
@@ -9,6 +10,7 @@ from app.core.db import get_engine
 from app.research.component_specs import checked_spec
 from app.research.component_specs_blocks import ANSWER_BLOCK_KIND, AnswerBlockSpec
 from app.research.monograph_document import MonographDocument
+from app.research.monograph_page import TextUnit
 from app.services import knowledge_view
 from app.services.craft_page_snapshots import OPEN, built_page
 from app.services.curation_import import import_curation
@@ -18,6 +20,7 @@ pytestmark = pytest.mark.db
 
 CRAFTS = ("Bastar-Dhokra", "Kutch-Bandhani", "Bagru-Hand-Block-Print")
 PICTURE_KIND = "picture_plate"
+DIFFER_HEADING = "Where the sources differ"
 
 
 @pytest.fixture
@@ -101,3 +104,49 @@ async def test_a_curated_craft_s_document_shows_every_cited_claim_and_figure_its
     for kind in ("process_ladder", "reaction_player", "market_gi", "region_story"):
         assert (kind in kinds) == (kind in drawn), kind
     assert document.version >= 3
+
+
+def top_units(document: MonographDocument, chapter: str) -> list[TextUnit]:
+    units = document.content.units
+    return [
+        units[entry.ref]
+        for entry in document.content.layout
+        if entry.kind == "unit" and entry.within is None and entry.chapter == chapter
+    ]
+
+
+def unit_text(unit: TextUnit) -> str:
+    return "".join(node if isinstance(node, str) else "" for node in unit.nodes).strip()
+
+
+def differ_topics(document: MonographDocument) -> list[str]:
+    topics: list[str] = []
+    for chapter in dict.fromkeys(entry.chapter for entry in document.content.layout):
+        under = False
+        for unit in top_units(document, chapter):
+            if unit.tag in ("h2", "h3"):
+                under = unit.tag == "h3" and unit_text(unit) == DIFFER_HEADING
+            elif under and unit.tag == "dt":
+                topics.append(unit_text(unit))
+    return topics
+
+
+@pytest.mark.parametrize("slug", CRAFTS)
+async def test_a_curated_craft_s_glance_leads_with_cited_facts_and_each_disagreement_reads_in_sentence_case(
+    session: AsyncSession, slug: str
+) -> None:
+    report = await import_curation(session)
+    assert report.refused == []
+    craft = await knowledge_view.resolve_craft(session, slug)
+    assert craft is not None
+    document = await generated_document(session, "craft", craft.slug)
+    assert document is not None
+    kicker = document.content.units["masthead-kicker"].nodes
+    assert [node["m"] for node in kicker] == ["span", "span"] and kicker[0]["c"] == ["Monograph"]
+    glance = top_units(document, "glance")
+    assert glance[0].tag == "h2"
+    facts = list(itertools.takewhile(lambda unit: unit.tag in ("dt", "dd"), glance[1:]))
+    assert len(facts) >= 4 and [unit.tag for unit in facts] == ["dt", "dd"] * (len(facts) // 2)
+    assert all(unit.claim_ids for unit in facts if unit.tag == "dd")
+    topics = differ_topics(document)
+    assert topics and all(topic[:1].isupper() for topic in topics), topics

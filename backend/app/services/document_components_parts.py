@@ -18,7 +18,7 @@ from app.research.craft_parts import (
     SourcesDifferPart,
 )
 
-__all__ = ["HEADING_TAG", "HYPOTHESIS", "StructureText", "hypothesis_texts", "part_texts"]
+__all__ = ["HEADING_TAG", "HYPOTHESIS", "StructureText", "hypothesis_texts", "part_texts", "sentence_case"]
 
 HYPOTHESIS = "HYPOTHESIS"
 HEADING_TAG = "h3"
@@ -98,11 +98,18 @@ def _rows(part: PagePart) -> tuple[str | None, list[Row]] | None:
         return COMMUNITIES_HEADING, rows
     if isinstance(part, SourcesDifferPart):
         reading = part.reading
-        return DIFFER_HEADING, [(reading.about, [(s.text, s.citations) for s in reading.sentences()])]
+        return DIFFER_HEADING, [
+            (sentence_case(reading.about), [(s.text, s.citations) for s in reading.sentences()])
+        ]
     if isinstance(part, OpenQuestionsPart):
         rows = [(q.question, [(s.text, s.citations) for s in q.sentences]) for q in part.questions]
         return QUESTIONS_HEADING, rows
     return None
+
+
+def sentence_case(text: str) -> str:
+    shown = text.strip()
+    return shown[:1].upper() + shown[1:]
 
 
 def _heading(chapter: str, heading: str, taken: set[str]) -> list[StructureText]:
