@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import Any
 
-from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, String, Text, text
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, String, Text, text as sql
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -44,10 +44,10 @@ class PageDraft(Base):
     )
     subjectKind: Mapped[str] = mapped_column(String(SUBJECT_KIND_CHARS), nullable=False)
     subjectSlug: Mapped[str] = mapped_column(String(SLUG_CHARS), nullable=False)
-    state: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'OPEN'"))
-    parts: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
-    bytes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
-    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
+    state: Mapped[str] = mapped_column(String(20), nullable=False, server_default=sql("'OPEN'"))
+    parts: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default=sql("'{}'::jsonb"))
+    bytes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=sql("0"))
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=sql("1"))
     previewUrl: Mapped[str | None] = mapped_column(Text, nullable=True)
     previewExpiresAt: Mapped[datetime | None] = _stamp()
     report: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
@@ -72,7 +72,7 @@ class PageDraft(Base):
             "subjectKind",
             "subjectSlug",
             unique=True,
-            postgresql_where=text("\"state\" = 'OPEN'"),
+            postgresql_where=sql("\"state\" = 'OPEN'"),
         ),
         Index(None, "userId", "expiresAt"),
     )
@@ -85,7 +85,7 @@ class SuppliedSource(Base):
     userId: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("User.id", ondelete="CASCADE"), nullable=False
     )
-    userTokenVersion: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    userTokenVersion: Mapped[int] = mapped_column(Integer, nullable=False, server_default=sql("0"))
     state: Mapped[str] = mapped_column(String(20), nullable=False)
     citeUrl: Mapped[str] = mapped_column(String(CITE_URL_CHARS), nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -100,17 +100,17 @@ class SuppliedSource(Base):
     grade: Mapped[str] = mapped_column(String(1), nullable=False)
     gradeReason: Mapped[str] = mapped_column(String(400), nullable=False)
     passages: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+        JSONB, nullable=False, server_default=sql("'[]'::jsonb")
     )
     text: Mapped[str | None] = mapped_column(Text, nullable=True)
     textSha256: Mapped[str | None] = mapped_column(String(HASH_CHARS), nullable=True)
     fileSha256: Mapped[str | None] = mapped_column(String(HASH_CHARS), nullable=True)
-    characters: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    characters: Mapped[int] = mapped_column(Integer, nullable=False, server_default=sql("0"))
     upload: Mapped[str | None] = mapped_column(String(10), nullable=True)
     slotHash: Mapped[str | None] = mapped_column(String(HASH_CHARS), nullable=True, unique=True)
     slotExpiresAt: Mapped[datetime | None] = _stamp()
     sourceIds: Mapped[list[uuid.UUID]] = mapped_column(
-        ARRAY(UUID(as_uuid=True)), nullable=False, server_default=text("ARRAY[]::uuid[]")
+        ARRAY(UUID(as_uuid=True)), nullable=False, server_default=sql("ARRAY[]::uuid[]")
     )
     createdAt: Mapped[datetime] = created_at()
     updatedAt: Mapped[datetime] = updated_at()
