@@ -1,6 +1,6 @@
 import { defineConfig, devices, type Project } from "@playwright/test";
 
-import { ANONYMOUS_WIDTHS, DESKTOP, IPHONE, QUESTIONS_SCHEME, QUESTIONS_WIDTH, SCHEMES, SCREEN_WIDTHS, SMALL_PHONE, TABLET, anonymousProjectName, contextOptions, projectName, runLabel, type Scheme, type Width } from "./e2e/production/matrix";
+import { ANONYMOUS_WIDTHS, DESKTOP, IPHONE, QUESTIONS_SCHEME, QUESTIONS_WIDTH, SCHEMES, SCREEN_WIDTHS, SMALL_PHONE, TABLET, WIDE, anonymousProjectName, contextOptions, projectName, runLabel, type Scheme, type Width } from "./e2e/production/matrix";
 import { isPreview, siteRefusal } from "./e2e/production/preview";
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
@@ -12,6 +12,7 @@ const CAPTURE = process.env.E2E_CAPTURE === "1";
 const CAPTURE_SPEC = /[\\/]e2e[\\/]capture[\\/]capture\.spec\.ts$/;
 const PARITY_SPEC = /[\\/]e2e[\\/]parity[\\/]monograph-parity\.spec\.ts$/;
 const PARITY_WIDTHS: readonly Width[] = [SMALL_PHONE, TABLET, DESKTOP];
+const CAPTURE_WIDTHS: readonly Width[] = [...PARITY_WIDTHS, WIDE];
 
 const PRODUCTION_SPECS = /[\\/]e2e[\\/]production[\\/]/;
 const SCREENS_SPEC = /[\\/]e2e[\\/]production[\\/]screens\.spec\.ts$/;
@@ -70,7 +71,7 @@ function captureProject(width: Width, scheme: Scheme): Project {
   return { name: `capture-${width.key}-${scheme}`, testMatch: [CAPTURE_SPEC], retries: 0, use: { ...devices[width.device], ...contextOptions(width, scheme), ...RUN_USE } };
 }
 
-const CAPTURE_PROJECTS: Project[] = PARITY_WIDTHS.flatMap((width) => SCHEMES.map((scheme) => captureProject(width, scheme)));
+const CAPTURE_PROJECTS: Project[] = CAPTURE_WIDTHS.flatMap((width) => SCHEMES.map((scheme) => captureProject(width, scheme)));
 
 const PRODUCTION_PROJECTS: Project[] = [
   ...SCREEN_WIDTHS.flatMap((width) => SCHEMES.map((scheme) => productionProject(width, scheme, specsFor(width, scheme)))),
