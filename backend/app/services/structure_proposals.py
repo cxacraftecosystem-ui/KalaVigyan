@@ -40,6 +40,7 @@ from .proposal_writes import mark_contributed
 from .structure_proposals_dossier import dossier_problem
 from .structure_proposals_page import target_problem
 from .structure_proposals_review import approve_structure
+from .supplied_sources_gate import keep_supplied
 from .task_reservations import complete_task, give_back_task
 
 __all__ = ["CANDIDATE_REF", "craft_page_url", "curated_subject", "propose_structure"]
@@ -99,7 +100,7 @@ async def propose_structure(
     problem = dossier_problem(proposal) or target_problem(page, proposal.item)
     if problem is not None:
         raise InvalidInput(problem)
-    checked = await _checked(session, fetcher, proposal)
+    checked = await _checked(session, fetcher, proposal, user.id)
     kept = await _kept(session, checked.read, user.id) if checked.passed else {}
     row = _row(proposal, (craft.id, user.id, origin), checked, kept, now)
     session.add(row)
@@ -113,14 +114,16 @@ async def propose_structure(
     return _result(row, craft.slug, checked.checks, site)
 
 
-async def _checked(session: AsyncSession, fetcher: Fetcher, proposal: StructureProposal) -> _Checked:
+async def _checked(
+    session: AsyncSession, fetcher: Fetcher, proposal: StructureProposal, proposer_id: uuid.UUID
+) -> _Checked:
     if proposal.item.kind == CONFLICT:
         return _Checked(checks=(), read=())
     quotes = [quote.text for source in proposal.sources for quote in source.quotes]
     stated = stated_check(proposal.item, quotes)
     if not stated.passed:
         return _Checked(checks=(stated,), read=())
-    read = tuple([await read_source(session, fetcher, source) for source in proposal.sources])
+    read = tuple([await read_source(session, fetcher, s, proposer_id=proposer_id) for s in proposal.sources])
     candidate = Candidate(ref=CANDIDATE_REF, statement=proposal.statement or "", field=proposal.field)
     outcomes = first_gates(candidate, [source.cited for source in read])
     gates = [
@@ -136,7 +139,7 @@ async def _kept(
     for source in read:
         if source.document is None:
             continue
-        source_id = await keep_document(session, source.document)
+        source_id = await (keep_supplied if source.supplied else keep_document)(session, source.document)
         if source.stored is None:
             await mark_contributed(session, source_id, proposer_id)
         kept[canonical_url(source.proposed.url)] = source_id

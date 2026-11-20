@@ -8,6 +8,7 @@ from typing import Any
 
 from app.data.answer_kit import answer_kit, answer_view
 from app.data.contributor_kit import SITE_SKILL_PATH, contributor_skill, design_tokens
+from app.data.page_preview_view import PAGE_PREVIEW_VIEW, page_preview_view
 from app.data.skill_library import DATASETS_SITE_PATH, REFERENCES, Reference, datasets_skill, reference_text
 from app.research.mcp_ask import ANSWER_VIEW_MIME, ANSWER_VIEW_URI
 
@@ -127,6 +128,7 @@ DESIGN = (
         answer_view,
         VIEW_META,
     ),
+    Resource(*PAGE_PREVIEW_VIEW, ANSWER_VIEW_MIME, page_preview_view, VIEW_META),
 )
 RESOURCES: Mapping[str, Resource] = MappingProxyType(
     {

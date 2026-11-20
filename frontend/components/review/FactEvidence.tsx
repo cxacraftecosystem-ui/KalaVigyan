@@ -2,7 +2,7 @@ import { CircleCheck, CircleX } from "lucide-react";
 
 import { TextLink } from "@/components/ui/TextLink";
 import type { FactSource, GateCheck } from "@/lib/reviewQueueContract";
-import { gateLine } from "@/lib/reviewQueueView";
+import { gateLine, suppliedLine } from "@/lib/reviewQueueView";
 
 export function FactSources({ sources }: { sources: FactSource[] }) {
   return (
@@ -18,6 +18,7 @@ export function FactSources({ sources }: { sources: FactSource[] }) {
               Reliability {source.reliability}
               {source.licence ? ` · ${source.licence}` : ""}
             </p>
+            {source.supplied ? <p className="font-ui text-caption text-ink-2">{suppliedLine(source.supplied)}</p> : null}
             {source.quotes.map((quote) => (
               <blockquote key={`${quote.text}-${quote.locator ?? ""}`} className="border-s-2 border-rule-strong ps-3">
                 <p className="font-reading text-quote italic text-ink-1">{quote.text}</p>

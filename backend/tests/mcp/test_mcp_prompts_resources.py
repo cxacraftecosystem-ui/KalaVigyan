@@ -29,6 +29,7 @@ PROMPT_NAMES = {
     "deliver_page",
     "give_picture",
     "deliver_dataset",
+    "curate_page",
 }
 
 

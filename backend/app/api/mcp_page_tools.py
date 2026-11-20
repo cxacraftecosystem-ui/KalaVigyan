@@ -9,13 +9,16 @@ from app.core.errors import InvalidInput
 from app.core.mcp_scopes import CONTRIBUTE_SCOPE
 from app.core.rate_limit import COMPONENT_PROPOSALS, PAGE_PREVIEWS, PAGE_PROPOSALS
 from app.core.roles import Capability, can
+from app.data.page_preview_view import PAGE_PREVIEW_VIEW_URI
 from app.models import User
 from app.research.component_proposals import SUBJECT_LINK, ComponentProposalDraft, ComponentProposalResult
 from app.research.page_proposals import PageBundle, PagePreviewResult, PageProposalResult
+from app.research.page_report import PageReport
 from app.research.review_switch import AGENT
-from app.services import component_proposals, page_preview
+from app.services import component_proposals, page_preview, page_report
 
 from .mcp_argument_names import SnakeBodyArguments
+from .mcp_ask_tools import ViewedTool
 from .mcp_tool_base import WRITES, Arguments, Tool, ToolContext
 from .page_proposal_deps import page_proposed
 from .proposal_limits import refuse_tool_when_spent
@@ -62,7 +65,10 @@ PREVIEW_DESCRIPTION = (
     "layout, without proposing anything, and return a private link to it: signed, for this account only, for 24 "
     "hours, drawn exactly as the site draws its pages. Each part reports whether it is shown, listed or would be "
     "refused by the checks that run without fetching sources; the gates read the sources when it is proposed. "
-    "A picture this account gave with give_image, named by its contribution_id, is drawn in its place."
+    "A picture this account gave with give_image, named by its contribution_id, is drawn in its place. The "
+    "result carries the page checklist report (each mechanical rule passed or failed with its evidence, the "
+    "rest to judge, coverage by field, figures, sources by grade, pictures by licence), drawn by "
+    "ui://kalavigyan/page-preview.html in clients that show MCP Apps; create_draft builds a page over many calls."
 )
 
 
@@ -91,6 +97,7 @@ class PageToolReply(PageProposalResult):
 
 
 class PreviewToolReply(PagePreviewResult):
+    report: PageReport | None = None
     notices: list[str] = Field(default_factory=list)
 
 
@@ -119,10 +126,14 @@ async def _propose_page(context: ToolContext, arguments: ProposePage) -> PageToo
 async def _preview_page(context: ToolContext, arguments: ProposePage) -> PreviewToolReply:
     user = _proposer(context, "preview_page")
     refuse_tool_when_spent(PAGE_PREVIEWS, user)
+    now = datetime.now(UTC)
     result = await page_preview.preview_page(
-        context.session, user, arguments.proposal, site=context.site, now=datetime.now(UTC)
+        context.session, user, arguments.proposal, site=context.site, now=now
     )
-    return PreviewToolReply.model_validate({**result.model_dump(), "notices": arguments.notices()})
+    report = await page_report.preview_report(context.session, user, arguments.proposal, result, now=now)
+    return PreviewToolReply.model_validate(
+        {**result.model_dump(), "report": report, "notices": arguments.notices()}
+    )
 
 
 PROPOSE_COMPONENT = Tool(
@@ -145,7 +156,7 @@ PROPOSE_PAGE = Tool(
     scope=CONTRIBUTE_SCOPE,
     annotations=WRITES,
 )
-PREVIEW_PAGE = Tool(
+PREVIEW_PAGE = ViewedTool(
     "preview_page",
     "Preview a page bundle",
     PREVIEW_DESCRIPTION,
@@ -154,5 +165,6 @@ PREVIEW_PAGE = Tool(
     _preview_page,
     scope=CONTRIBUTE_SCOPE,
     annotations=WRITES,
+    view_uri=PAGE_PREVIEW_VIEW_URI,
 )
 PAGE_TOOLS: tuple[Tool, ...] = (PROPOSE_COMPONENT, PROPOSE_PAGE, PREVIEW_PAGE)

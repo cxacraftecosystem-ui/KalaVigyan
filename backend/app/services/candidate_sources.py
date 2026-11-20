@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -19,6 +20,8 @@ from app.research.retrieval import RESTRICTED_SENSITIVITY
 from app.sources.adapter import build_document
 from app.sources.fetcher_client import FetcherClient
 from app.sources.web.page import page_item
+
+from .supplied_sources_gate import supplied_read
 
 __all__ = [
     "PROPOSAL_ADAPTER",
@@ -40,6 +43,7 @@ class ReadSource:
     cited: CitedSource
     document: SourceDocument | None
     stored: Source | None
+    supplied: bool = False
 
 
 @dataclass(frozen=True)
@@ -55,9 +59,14 @@ async def proposal_fetcher() -> AsyncIterator[Fetcher]:
 
 
 async def read_sources(
-    session: AsyncSession, fetcher: Fetcher, proposal: FactProposal
+    session: AsyncSession, fetcher: Fetcher, proposal: FactProposal, *, proposer_id: uuid.UUID | None = None
 ) -> tuple[ReadSource, ...]:
-    return tuple([await read_source(session, fetcher, proposed) for proposed in proposal.sources])
+    return tuple(
+        [
+            await read_source(session, fetcher, proposed, proposer_id=proposer_id)
+            for proposed in proposal.sources
+        ]
+    )
 
 
 async def stored_source(session: AsyncSession, url: str) -> Source | None:
@@ -67,10 +76,13 @@ async def stored_source(session: AsyncSession, url: str) -> Source | None:
     )
 
 
-async def read_source(session: AsyncSession, fetcher: Fetcher, proposed: ProposedSource) -> ReadSource:
+async def read_source(
+    session: AsyncSession, fetcher: Fetcher, proposed: ProposedSource, *, proposer_id: uuid.UUID | None = None
+) -> ReadSource:
     stored = await stored_source(session, proposed.url)
-    fetched = await _fetched(fetcher, proposed.url)
-    document = _document(proposed, fetched.page) if fetched.page is not None else None
+    supplied = await supplied_read(session, proposed.url, proposer_id)
+    fetched = _Fetched(page=None, unread=None) if supplied else await _fetched(fetcher, proposed.url)
+    document = supplied.document if supplied else _document(proposed, fetched.page) if fetched.page else None
     unread = None if document is not None else (fetched.unread or NO_TEXT)
     cited = CitedSource(
         url=proposed.url,
@@ -81,8 +93,11 @@ async def read_source(session: AsyncSession, fetcher: Fetcher, proposed: Propose
         declared_licence=proposed.licence,
         stated_licence=fetched.page.metadata.licence if fetched.page is not None else None,
         restricted=stored is not None and stored.sensitivity == RESTRICTED_SENSITIVITY,
+        supplied=supplied.note if supplied else None,
     )
-    return ReadSource(proposed=proposed, cited=cited, document=document, stored=stored)
+    return ReadSource(
+        proposed=proposed, cited=cited, document=document, stored=stored, supplied=bool(supplied)
+    )
 
 
 async def _fetched(fetcher: Fetcher, url: str) -> _Fetched:

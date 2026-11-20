@@ -22,7 +22,13 @@ proposal), `services/structure_proposals_dossier.py` (the dossier's own rules),
 `services/structure_proposals_page.py` (where an item lands on the page index),
 `services/structure_proposals_write.py` and `services/structure_proposals_claims.py` (what approval
 writes), `services/structure_proposals_review.py` (approve, reject), `api/routes/structure_proposals.py`,
-`api/mcp_structure_tools.py`, `api/structure_proposal_deps.py`, `models/structure_proposals.py`.
+`api/mcp_structure_tools.py`, `api/structure_proposal_deps.py`, `models/structure_proposals.py`;
+supplied sources (decision 0110) `research/supplied_sources.py` (the contract, the cite url, the grade
+and the identity match), `services/supplied_sources.py` (storing and the upload slot),
+`services/supplied_sources_identity.py` (the index lookups), `services/supplied_sources_pdf.py` (a file's
+text), `services/supplied_sources_gate.py` (what the gates read and keep),
+`services/supplied_sources_review.py` (the review queue's provenance), `services/supplied_sources_views.py`,
+`api/mcp_studio_sources.py`, `api/routes/supplied_sources.py`, `models/studio.py`.
 
 ## Who may do what
 
@@ -32,6 +38,8 @@ writes), `services/structure_proposals_review.py` (approve, reject), `api/routes
 | Propose a page layout (`POST /api/knowledge/layouts`, MCP `propose_layout`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
 | Propose page structure (`POST /api/knowledge/structure`, MCP `propose_structure`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
 | Propose a source for a held fact (MCP `propose_source`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
+| Supply a source's text (MCP `supply_source`, its upload slot) | `PROPOSE_KNOWLEDGE` | Researcher and above |
+| Read a supplied source's text (`GET /api/knowledge/supplied-sources/{id}`) | its supplier, or `REVIEW_CONTRIBUTIONS` | Researcher and above for their own; Admin, Master Admin for any |
 | Read and set the review switch (`/api/knowledge/review-switch`) | `REVIEW_CONTRIBUTIONS` | Admin, Master Admin |
 
 The MCP tools also need a signed-in connection holding the `contribute` scope
@@ -72,7 +80,9 @@ A refusal stops the run; every gate that ran is stored as one `CandidateCheck` r
    whitespace folded) and be at least 20 characters. Every number or formula in the statement
    must appear in one of its quotes. A page that is refused (robots, size, type), missing or
    blank refuses its quotes with the reason. When our fetcher itself is down nothing is stored
-   and the caller is asked to try again (503, or a tool error).
+   and the caller is asked to try again (503, or a tool error). A source the proposer supplied
+   (Supplied sources, below) is read from the supplied text instead of being fetched, and the
+   gate's reasons say so.
 2. **SOURCE.** Each source is graded: a source already stored keeps its own reliability; a newly
    fetched page takes the grade the research pipeline gives a web page (C). A fact resting only on
    D sources is refused, except an ECONOMICS fact stating a price (the curation rule). A source
@@ -205,13 +215,13 @@ account has a sliding hour per kind (`core/rate_limit.proposal_attempt`, `PROPOS
 
 | Kind (`core/rate_limit`) | Per hour (constant) | Counted at |
 |---|---|---|
-| `FACT_PROPOSALS` | `FACT_PROPOSALS_PER_WINDOW` = 30; for a queued fact the account's tier allowance (`TIER_FACTS_PER_HOUR`: 30, 60, 150) | `POST /api/knowledge/facts` (after the terms); each new fact queued by MCP `propose_fact` and `propose_facts` and `POST /api/knowledge/proposals/facts` (`core/rate_limit.proposal_slots`: a batch takes what is left of the same window, and each fact beyond it is refused on its own; a fact sent again with its key takes nothing) |
+| `FACT_PROPOSALS` | `FACT_PROPOSALS_PER_WINDOW` = 30; for a queued fact the account's tier allowance (`TIER_FACTS_PER_HOUR`: 30, 60, 150) | `POST /api/knowledge/facts` (after the terms); each new fact queued by MCP `propose_fact` and `propose_facts` and `POST /api/knowledge/proposals/facts` (`core/rate_limit.proposal_slots`: a batch takes what is left of the same window, and each fact beyond it is refused on its own; a fact sent again with its key takes nothing); MCP `supply_source`, one a supplied source (decision 0110) |
 | `COMPONENT_PROPOSALS` | `COMPONENT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/contributions/proposals/components`, MCP `propose_component` |
 | `LAYOUT_PROPOSALS` | `LAYOUT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/knowledge/layouts` (after the terms), MCP `propose_layout` |
 | `STRUCTURE_PROPOSALS` | `STRUCTURE_PROPOSALS_PER_WINDOW` = 20 | `POST /api/knowledge/structure` (after the terms), MCP `propose_structure` |
 | `IMAGE_UPLOADS` | `IMAGE_UPLOADS_PER_WINDOW` = 20 | `POST /api/contributions/images` (a picture declared on the site), MCP `start_image_upload` (a link and slot issued; the picture given through it is not counted again) |
-| `PAGE_PROPOSALS` | `PAGE_PROPOSALS_PER_WINDOW` = 10 | `POST /api/knowledge/pages`, MCP `propose_page` (round 7; each part also counts against its own kind) |
-| `PAGE_PREVIEWS` | `PAGE_PREVIEWS_PER_WINDOW` = 30 | `POST /api/knowledge/pages/preview`, MCP `preview_page` (round 7) |
+| `PAGE_PROPOSALS` | `PAGE_PROPOSALS_PER_WINDOW` = 10 | `POST /api/knowledge/pages`, MCP `propose_page` (round 7; each part also counts against its own kind) and `submit_draft` (decision 0110) |
+| `PAGE_PREVIEWS` | `PAGE_PREVIEWS_PER_WINDOW` = 30 | `POST /api/knowledge/pages/preview`, MCP `preview_page` (round 7) and `preview_draft` (decision 0110) |
 
 - Admins and Master Admins are never limited. A proposal refused at a gate still counts. A request
   without the capability never counts; on the Knowledge API routes and over MCP neither does a
@@ -459,6 +469,80 @@ each named once by canonical URL: `{url, title, licence?, quotes [{text, locator
 message}`. MCP `propose_source` (`api/mcp_source_tools.py`, in `SOURCE_TOOLS`), scope `contribute`,
 `readOnlyHint false`, arguments `{proposal: SourceProposal}`, origin `AGENT`; an outage is a tool error
 asking to call again. There is no site route yet: contributions of this kind arrive over MCP.
+
+## Supplied sources (round 7, decision 0110)
+
+A source the contributor's AI can read and our fetcher cannot (a paywalled paper through the
+contributor's subscription or library, a book or PDF they hold, an archive, a site that refuses the
+fetcher) is supplied with its text, and the gates read that text instead of fetching it.
+
+`SupplySource` (schema version 1, camelCase; MCP `supply_source` takes the same names in snake_case):
+`identity {doi?, isbn?, url?, title (3 to 500), authors[] (up to 20), year?, publisher?, kind (PAPER,
+BOOK, BOOK_CHAPTER, WEB_PAGE, ENCYCLOPEDIA, DATASET, GI_JOURNAL, GOVERNMENT_REPORT or OTHER), language}`
+(at least one of DOI, ISBN and url; a DOI is folded to lower case, an ISBN-10 or 13 is checked and kept
+as ISBN-13), `access {how (SUBSCRIPTION, INSTITUTION, OWN_COPY, ARCHIVE or BLOCKED_SITE), accessedOn
+(not after today), note?}`, `licence?` (the source's own), and exactly one of `passages` (1 to 60, each
+`{text (20 to 8,000), locator (1 to 200)}`, each once, 200,000 characters together), `text` (200 to
+200,000 characters) or `upload` (`pdf` or `text`).
+
+- **Identity** (`services/supplied_sources_identity.py`): the title is searched in OpenAlex, Crossref
+  and Semantic Scholar in that order (five results each, stopping at the first match). With a DOI only
+  an equal DOI matches; otherwise the same title words (or one a prefix of the other from four words),
+  the year within one when both give it and a shared author surname when both name authors
+  (`research/supplied_sources.matching_work`). An index that fails is skipped; with no contact email
+  configured nothing is looked up.
+- **Grade** (`supplied_grade`): a confirmed work takes the index's grade (paper, book, chapter A;
+  preprint, thesis, report, dataset B; other C), and B becomes C without a named author; a work found
+  nowhere is C with a named author or publisher and D otherwise, with the reason stored.
+- **Cite url** (`cite_url`, `cite_key`): `https://doi.org/<doi>` (the confirmed DOI when none was
+  given), else the canonical url, else `https://openlibrary.org/isbn/<isbn13>`. The reply's
+  `citeAs {url, title, licence}` is what a fact's source names.
+- **Upload slot**: `upload` stores the source `AWAITING_FILE` with a slot token (`kvss_` and 32 random
+  bytes; only its SHA-256 is kept), valid 30 minutes, at `PUT /api/knowledge/supplied-sources/slots/
+  {token}` (no session, counted as an anonymous read): a PDF (read with pypdf in a worker thread, two at
+  a time, the first 150 pages within the fetcher's 20 MB decompression limit, refused without a text
+  layer or when encrypted) or UTF-8 text, at most 20 MB, cut to 200,000 characters. The slot is single
+  use and stops when the supplier's sessions end, the account goes or it loses the capability (404
+  unknown, 410 used, expired or changed account, 413 too large, 422 unreadable). Without the API origin
+  configured an upload is refused and the text is asked for instead.
+- **Limits**: supplying counts against the hour's `FACT_PROPOSALS`, like a source proposal; an account
+  holds at most 300 supplied sources (`SUPPLIED_HELD_MAX`).
+
+`SuppliedSourceReply {schemaVersion 1, suppliedSourceId, state READY | AWAITING_FILE, citeAs, grade,
+gradeReason, confirmed {index, workId, title, doi, year, authors} | null, characters, passages,
+textSha256, upload {uploadUrl, uploadMethod PUT, uploadTypes, uploadMaxBytes, expiresAt} | null,
+message, nextStep}`; over MCP also `draftId` (the draft it joined, when `draft_id` was given) and
+`notices`.
+
+**The gates' branch** (`services/candidate_sources.read_source` with `proposer_id`): for a fact (direct
+or queued), a structure item or a source proposal, a source whose cite key equals a READY supplied
+source of the same proposer is not fetched. The QUOTES gate reads every READY supply of that source by
+that proposer, joined by a pilcrow on its own line so no quote spans two passages, and its passing
+reasons add "<url>: text supplied by the proposer, read through ... on <day>, is held privately for
+reviewers as supplied source <id>"; a missing quote is "not in the text supplied for it". The SOURCE
+gate takes a stored source's own grade, else the supplied grade; no licence is read from the text.
+Another account's supplied text is never read.
+
+**What is kept**: a passing fact's supplied source becomes a link-only `Source` (`keep_supplied`: the
+DOI or url, title, authors and the grade as reliability, no chunks, marked `CONTRIBUTION` with the
+proposer) whose id joins `SuppliedSource.sourceIds`; its quotes are `ClaimSource` rows without a chunk,
+so readers see the short quote and its citation as for every source, and the text never reaches
+retrieval, answers or exports. `GET /api/knowledge/supplied-sources/{id}` (`SuppliedSourceView {id,
+state, citeUrl, identity, access, licence, grade, gradeReason, confirmed, characters, textSha256,
+passages[], text (whole texts only), createdAt}`, `private, no-store`, `noindex`) answers its supplier
+and reviewers (`REVIEW_CONTRIBUTIONS`), 404 for anyone else.
+
+**In the review queue**: a fact's source supplied by the fact's proposer carries `supplied
+{suppliedSourceId, access, accessedOn, grade, confirmedBy, textSha256, characters}` (absent otherwise),
+and the review card says the text was supplied, how and when it was read, whether an index found it,
+and its length and hash. Trust tiers and the review switch apply unchanged.
+
+Table `SuppliedSource` (migration `0052_drafts_and_supplied_sources`, row level security on, no grants
+to the public roles): `userId` (cascading), `userTokenVersion`, `state`, `citeUrl`, `title`, `doi`,
+`isbn`, `identity` and `confirmation` (JSONB), `accessKind`, `accessedOn`, `accessNote`, `licence`,
+`grade`, `gradeReason`, `passages` (JSONB), `text`, `textSha256`, `fileSha256`, `characters`, `upload`,
+`slotHash` (unique), `slotExpiresAt`, `sourceIds`; READY exactly when the text and its hash are held, a
+slot hash exactly with its expiry; indexes on `(userId, citeUrl)` and `(userId, createdAt)`.
 
 ## Pages follow their facts (round 7)
 

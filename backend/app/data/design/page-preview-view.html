@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src '__KV_SCRIPT_HASH__'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>KalaVigyan page preview</title>
+<style>
+__KV_THEME__
+*{box-sizing:border-box}
+html{background:var(--ground);color:var(--ink-1)}
+body{margin:0;background:var(--ground);color:var(--ink-1);font-family:var(--font-ui);font-size:0.9375rem;line-height:1.5;font-variant-numeric:lining-nums tabular-nums}
+main{max-width:72rem;margin:0 auto;padding:24px 16px 32px}
+.kv-kicker{margin:0 0 8px;font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3)}
+h1{margin:0 0 8px;font-family:var(--font-headline);font-size:1.75rem;font-weight:400;line-height:1.2}
+h2{margin:0 0 12px;font-family:var(--font-headline);font-size:1.375rem;font-weight:480;line-height:1.25}
+p{margin:0 0 12px}
+.kv-lede{max-width:66ch;font-family:var(--font-reading);font-size:1.0625rem;line-height:1.6;color:var(--ink-2)}
+.kv-meta{font-size:0.8125rem;color:var(--ink-3)}
+section{padding-top:20px;margin-top:24px;border-top:1px solid var(--ink-1)}
+a{color:var(--indigo);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+a:hover{color:var(--indigo-hover);text-decoration-thickness:2px}
+a:focus-visible{outline:2px solid var(--indigo);outline-offset:3px}
+.kv-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0 8px}
+.kv-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;border-radius:999px;font-weight:600;text-decoration:none;border:1px solid var(--rule-strong);color:var(--ink-1);background:var(--raised)}
+.kv-button:hover{background:var(--sunk);color:var(--ink-1)}
+.kv-button.kv-primary{background:var(--indigo);border-color:var(--indigo);color:var(--on-indigo)}
+.kv-button.kv-primary:hover{background:var(--indigo-hover);color:var(--on-indigo)}
+.kv-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin:16px 0 0;background:var(--rule);border:1px solid var(--rule)}
+.kv-tile{margin:0;padding:12px;background:var(--ground)}
+.kv-tile dt{font-size:0.75rem;color:var(--ink-3)}
+.kv-tile dd{margin:4px 0 0;font-family:var(--font-headline);font-size:1.5rem;line-height:1.1;color:var(--ink-1)}
+.kv-split{display:grid;gap:24px}
+.kv-rules{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.kv-rule{display:grid;grid-template-columns:2.5rem minmax(0,1fr);gap:4px 12px;padding:12px 0;border-bottom:1px solid var(--rule)}
+.kv-rule-number{font-size:0.8125rem;color:var(--ink-3);padding-top:2px}
+.kv-rule-title{margin:0;font-weight:600;color:var(--ink-1)}
+.kv-rule-body{display:grid;gap:6px}
+.kv-evidence{margin:0;padding-inline-start:1.1em;font-size:0.8125rem;color:var(--ink-2)}
+.kv-evidence li{margin:0 0 2px}
+.kv-status{display:inline-flex;align-items:center;gap:6px;justify-self:start;padding:2px 8px;border-radius:4px;font-size:0.8125rem;font-weight:600}
+.kv-status svg{width:14px;height:14px;flex:none}
+.kv-pass{background:var(--success-wash);color:var(--success)}
+.kv-fail{background:var(--error-wash);color:var(--error)}
+.kv-judge{background:var(--info-wash);color:var(--info)}
+.kv-table-wrap{overflow-x:auto;margin:0 -16px;padding:0 16px}
+table{width:100%;border-collapse:collapse;font-size:0.875rem}
+caption{text-align:start;font-size:0.8125rem;color:var(--ink-3);padding:0 0 8px}
+th,td{padding:6px 8px;text-align:start;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:600;color:var(--ink-3);font-size:0.75rem}
+td.kv-num,th.kv-num{text-align:end}
+.kv-pairs{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;margin:0;font-size:0.875rem}
+.kv-pairs dt{color:var(--ink-2)}
+.kv-pairs dd{margin:0;text-align:end;color:var(--ink-1)}
+.kv-list{margin:0;padding-inline-start:1.5em;font-size:0.875rem}
+.kv-list li{margin:0 0 8px}
+footer{margin-top:32px;padding-top:12px;border-top:1px solid var(--rule);font-size:0.75rem;color:var(--ink-3)}
+@media (min-width:640px){.kv-actions{display:flex;flex-wrap:wrap}.kv-tiles{grid-template-columns:repeat(4,minmax(0,1fr))}main{padding:32px 24px 40px}.kv-table-wrap{margin:0;padding:0}}
+@media (min-width:1024px){.kv-tiles{grid-template-columns:repeat(8,minmax(0,1fr))}.kv-split{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}}
+</style>
+</head>
+<body>
+<main id="kv-preview" aria-live="polite"><p class="kv-meta" role="status">Waiting for the preview</p></main>
+<script>
+(function () {
+  "use strict";
+  var root = document.getElementById("kv-preview");
+  var SVG = "http://www.w3.org/2000/svg";
+  var VERDICTS = {
+    PASS: { word: "Passes", css: "kv-pass", path: "M20 6 9 17l-5-5" },
+    FAIL: { word: "Fails", css: "kv-fail", path: "M18 6 6 18M6 6l12 12" },
+    JUDGE: { word: "Yours to judge", css: "kv-judge", path: "M12 16v-4M12 8h.01" }
+  };
+  var OUTCOMES = { SHOWN: "Shown", LISTED: "Listed", REFUSED: "Refused", ACCEPTED: "Accepted" };
+  var nextId = 1;
+  var initId = null;
+
+  function send(message) { window.parent.postMessage(message, "*"); }
+  function request(method, params) { var id = nextId; nextId += 1; send({ jsonrpc: "2.0", id: id, method: method, params: params }); return id; }
+  function notify(method, params) { send({ jsonrpc: "2.0", method: method, params: params || {} }); }
+  function list(value) { return Array.isArray(value) ? value : []; }
+  function count(value) { return Number.isInteger(value) ? value : 0; }
+
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined && text !== null) node.textContent = String(text);
+    return node;
+  }
+
+  function words(code) {
+    var text = String(code || "").replace(/_/g, " ").toLowerCase();
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  function safeUrl(value) {
+    try {
+      var url = new URL(String(value));
+      return url.protocol === "https:" ? url.href : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function outLink(text, href, className) {
+    var url = safeUrl(href);
+    if (!url) return el("span", className, text);
+    var anchor = el("a", className, text);
+    anchor.href = url;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.addEventListener("click", function (event) {
+      event.preventDefault();
+      request("ui/open-link", { url: url });
+    });
+    return anchor;
+  }
+
+  function icon(path) {
+    var svg = document.createElementNS(SVG, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2.5");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("aria-hidden", "true");
+    var line = document.createElementNS(SVG, "path");
+    line.setAttribute("d", path);
+    svg.appendChild(line);
+    return svg;
+  }
+
+  function status(verdict) {
+    var shown = VERDICTS[verdict] || VERDICTS.JUDGE;
+    var badge = el("span", "kv-status " + shown.css);
+    badge.appendChild(icon(shown.path));
+    badge.appendChild(document.createTextNode(shown.word));
+    return badge;
+  }
+
+  function tile(label, value) {
+    var box = el("div", "kv-tile");
+    box.appendChild(el("dt", null, label));
+    box.appendChild(el("dd", null, value));
+    return box;
+  }
+
+  function head(result, report) {
+    var subject = result.subject || {};
+    var parts = [el("p", "kv-kicker", "KalaVigyan · Page preview · " + words(subject.kind))];
+    parts.push(el("h1", null, String(subject.slug || "").replace(/-/g, " ")));
+    parts.push(el("p", "kv-lede", (report && report.message) || result.message));
+    var actions = el("div", "kv-actions");
+    actions.appendChild(outLink("Open the private preview", result.previewUrl, "kv-button kv-primary"));
+    actions.appendChild(outLink("Open the page as it stands", result.pageUrl, "kv-button"));
+    parts.push(actions);
+    var until = new Date(String(result.expiresAt || ""));
+    if (!isNaN(until.getTime())) parts.push(el("p", "kv-meta", "Private to you until " + until.toLocaleString()));
+    var tiles = el("dl", "kv-tiles");
+    if (report) {
+      tiles.appendChild(tile("Rules passed", count(report.passed)));
+      tiles.appendChild(tile("Rules failed", count(report.failed)));
+      tiles.appendChild(tile("Yours to judge", count(report.judged)));
+      tiles.appendChild(tile("Cited sentences", count(report.sentences)));
+    }
+    tiles.appendChild(tile("Chapters", list(result.chapters).length));
+    tiles.appendChild(tile("Components", count(result.components)));
+    tiles.appendChild(tile("Sources", count(result.sources)));
+    if (report) tiles.appendChild(tile("Pictures", list(report.pictures).length));
+    parts.push(tiles);
+    return parts;
+  }
+
+  function rule(check) {
+    var item = el("li", "kv-rule");
+    item.appendChild(el("span", "kv-rule-number", check.rule));
+    var body = el("div", "kv-rule-body");
+    body.appendChild(el("p", "kv-rule-title", check.title));
+    body.appendChild(status(check.verdict));
+    var evidence = el("ul", "kv-evidence");
+    list(check.evidence).forEach(function (line) { evidence.appendChild(el("li", null, line)); });
+    if (evidence.childNodes.length) body.appendChild(evidence);
+    item.appendChild(body);
+    return item;
+  }
+
+  function rules(report) {
+    var block = el("section");
+    block.appendChild(el("h2", null, "The checklist, rule by rule"));
+    var ordered = el("ol", "kv-rules");
+    var sorted = list(report.rules).slice().sort(function (a, b) {
+      var rank = { FAIL: 0, JUDGE: 1, PASS: 2 };
+      return (rank[a.verdict] - rank[b.verdict]) || (a.rule - b.rule);
+    });
+    sorted.forEach(function (check) { ordered.appendChild(rule(check)); });
+    block.appendChild(ordered);
+    return block;
+  }
+
+  function table(caption, heads, rows, numeric) {
+    var wrap = el("div", "kv-table-wrap");
+    var grid = el("table");
+    grid.appendChild(el("caption", null, caption));
+    var top = el("tr");
+    heads.forEach(function (name, index) { top.appendChild(el("th", numeric[index] ? "kv-num" : null, name)); });
+    var thead = el("thead");
+    thead.appendChild(top);
+    grid.appendChild(thead);
+    var body = el("tbody");
+    rows.forEach(function (cells) {
+      var row = el("tr");
+      cells.forEach(function (cell, index) { row.appendChild(el("td", numeric[index] ? "kv-num" : null, cell)); });
+      body.appendChild(row);
+    });
+    grid.appendChild(body);
+    wrap.appendChild(grid);
+    return wrap;
+  }
+
+  function coverage(report) {
+    var rows = list(report.fields).map(function (line) {
+      return [words(line.field), words(line.chapter), count(line.sentences), count(line.figures), count(line.held), words(line.standing)];
+    });
+    return table("Cited sentences and figures on the page, and facts held, for each of the sixteen fields", ["Field", "Chapter", "Sentences", "Figures", "Facts held", "Standing"], rows, [false, false, true, true, true, false]);
+  }
+
+  function pairs(title, values, empty) {
+    var block = el("div");
+    block.appendChild(el("h2", null, title));
+    var dl = el("dl", "kv-pairs");
+    Object.keys(values || {}).sort().forEach(function (key) {
+      dl.appendChild(el("dt", null, words(key)));
+      dl.appendChild(el("dd", null, values[key]));
+    });
+    if (!dl.childNodes.length) dl.appendChild(el("dt", null, empty));
+    block.appendChild(dl);
+    return block;
+  }
+
+  function figures(report) {
+    var block = el("div");
+    block.appendChild(el("h2", null, "Figures in reading order"));
+    var ordered = el("ol", "kv-list");
+    list(report.figures).forEach(function (figure) {
+      var item = el("li");
+      item.appendChild(el("span", null, "Figure " + figure.number + " · " + figure.title));
+      item.appendChild(el("span", "kv-meta", " · " + words(figure.kind) + " · " + words(figure.field) + (figure.cited ? " · cited" : " · cites nothing")));
+      ordered.appendChild(item);
+    });
+    if (!ordered.childNodes.length) ordered.appendChild(el("li", null, "Deliver a chart, table, timeline or map layer from cited facts with the draft."));
+    block.appendChild(ordered);
+    return block;
+  }
+
+  function details(report) {
+    var block = el("section");
+    block.appendChild(el("h2", null, "Coverage by field"));
+    block.appendChild(coverage(report));
+    var split = el("div", "kv-split");
+    split.appendChild(figures(report));
+    var side = el("div");
+    side.appendChild(pairs("Sources by grade", report.sourcesByGrade, "Cite a source in a fact to see its grade here."));
+    side.appendChild(el("p", "kv-meta", count(report.suppliedSources) + " of them rest on text you supplied, held privately for reviewers."));
+    side.appendChild(pairs("Pictures by licence", report.picturesByLicence, "Give a picture with give_image and name it in the draft."));
+    split.appendChild(side);
+    block.appendChild(split);
+    return block;
+  }
+
+  function bundleParts(result) {
+    var block = el("section");
+    block.appendChild(el("h2", null, "Each part of the bundle"));
+    var rows = list(result.parts).map(function (part) {
+      return [words(part.part) + " " + count(part.index), OUTCOMES[part.outcome] || words(part.outcome), part.message];
+    });
+    block.appendChild(table("What the preview did with each part you gave", ["Part", "Outcome", "Why"], rows, [false, false, false]));
+    return block;
+  }
+
+  function render(result) {
+    var report = result.report && typeof result.report === "object" ? result.report : null;
+    var parts = head(result, report);
+    if (report) parts.push(rules(report), details(report));
+    if (list(result.parts).length) parts.push(bundleParts(result));
+    var foot = el("footer");
+    foot.appendChild(el("p", null, "Drawn from the preview's own result; every text is shown as text and nothing is loaded from the network."));
+    parts.push(foot);
+    root.replaceChildren.apply(root, parts);
+    report_size();
+  }
+
+  function theme(context) {
+    var chosen = context && context.theme;
+    if (chosen === "dark" || chosen === "light") document.documentElement.setAttribute("data-theme", chosen);
+  }
+
+  function report_size() {
+    notify("ui/notifications/size-changed", { width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight });
+  }
+
+  window.addEventListener("message", function (event) {
+    if (event.source !== window.parent) return;
+    var message = event.data;
+    if (!message || message.jsonrpc !== "2.0") return;
+    if (message.method === "ui/notifications/tool-result") {
+      var content = message.params && message.params.structuredContent;
+      if (content && typeof content === "object") render(content);
+      return;
+    }
+    if (message.method === "ui/notifications/host-context-changed") {
+      theme(message.params);
+      return;
+    }
+    if (message.id === initId && message.result) {
+      theme(message.result.hostContext);
+      notify("ui/notifications/initialized", {});
+    }
+  });
+
+  initId = request("ui/initialize", {
+    protocolVersion: "2026-01-26",
+    appInfo: { name: "kalavigyan-page-preview", version: "1.0.0" },
+    appCapabilities: {}
+  });
+})();
+</script>
+</body>
+</html>

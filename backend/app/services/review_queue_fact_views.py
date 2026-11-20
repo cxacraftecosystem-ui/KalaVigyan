@@ -21,10 +21,12 @@ from app.research.review_queue import (
     SourceQuote,
     fact_origin,
 )
+from app.research.supplied_sources import SuppliedProvenance
 
 from .claim_holds_review import hold_evidence, with_hold_evidence
 from .knowledge_view import craft_ref
 from .review_queue_select import Rendered, rows_by_id
+from .supplied_sources_review import supplied_provenance
 
 __all__ = ["fact_items", "fact_sources"]
 
@@ -84,23 +86,29 @@ async def fact_sources(session: AsyncSession, ids: Sequence[uuid.UUID]) -> dict[
         .where(ClaimSource.claimId.in_(list(ids)))
         .order_by(ClaimSource.claimId, ClaimSource.createdAt, ClaimSource.id)
     )
+    found = rows.all()
+    supplied = await supplied_provenance(session, [(cite.claimId, source.url) for cite, source in found])
     grouped: dict[uuid.UUID, dict[uuid.UUID, tuple[Source, list[SourceQuote]]]] = defaultdict(dict)
-    for cite, source in rows.all():
+    for cite, source in found:
         _, quotes = grouped[cite.claimId].setdefault(source.id, (source, []))
         if cite.quote:
             quotes.append(SourceQuote(text=cite.quote, locator=cite.locator))
     return {
-        claim_id: [_source(*pair) for pair in by_source.values()] for claim_id, by_source in grouped.items()
+        claim_id: [_source(*pair, supplied.get((claim_id, pair[0].url))) for pair in by_source.values()]
+        for claim_id, by_source in grouped.items()
     }
 
 
-def _source(source: Source, quotes: list[SourceQuote]) -> FactSource:
+def _source(
+    source: Source, quotes: list[SourceQuote], supplied: SuppliedProvenance | None = None
+) -> FactSource:
     return FactSource(
         title=source.title,
         url=source.url,
         licence=source.licence,
         reliability=source.reliability,
         quotes=quotes,
+        supplied=supplied,
     )
 
 

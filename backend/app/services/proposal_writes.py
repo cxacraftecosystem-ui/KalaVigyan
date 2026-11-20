@@ -21,6 +21,7 @@ from .candidate_store import CATEGORY, FactSubject
 from .claim_writer import SHARED_CONCEPT_KEYS, CraftKeys, concept_id_for
 from .curation_keys import DISCIPLINE_CONCEPT_TYPES
 from .live_source_store import chunk_for_quote, keep_document
+from .supplied_sources_gate import keep_supplied
 
 __all__ = [
     "PROPOSAL_CLAIM_ORIGIN",
@@ -103,7 +104,7 @@ async def cite_proposal(
     for source in read:
         if source.document is None:
             continue
-        source_id = await keep_document(session, source.document)
+        source_id = await (keep_supplied if source.supplied else keep_document)(session, source.document)
         if source.stored is None:
             await mark_contributed(session, source_id, proposer_id)
         for quote in source.proposed.quotes:

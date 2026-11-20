@@ -12,7 +12,8 @@ import {
   type QueueKind,
   type ReviewFilters,
   type ReviewOrigin,
-  type ReviewQueuePage
+  type ReviewQueuePage,
+  type SuppliedProvenance
 } from "@/lib/reviewQueueContract";
 
 export const EVERY_KIND = "ALL";
@@ -150,6 +151,14 @@ export function fieldsLine(field: string | null, fields: readonly string[]): str
 
 export function gateLine(check: GateCheck): string {
   return `${GATE_LABELS[check.gate] ?? codeLabel(check.gate)}: ${check.passed ? "passed" : "refused"}`;
+}
+
+const INDEX_LABELS: Record<string, string> = { openalex: "OpenAlex", crossref: "Crossref", semantic_scholar: "Semantic Scholar" };
+
+export function suppliedLine(supplied: SuppliedProvenance): string {
+  const index = supplied.confirmedBy ? (INDEX_LABELS[supplied.confirmedBy] ?? supplied.confirmedBy) : null;
+  const found = index ? `, found in ${index}` : ", not found in a scholarly index";
+  return `Text supplied by the proposer (${codeLabel(supplied.access)}, read on ${supplied.accessedOn}${found}); ${supplied.characters} characters held privately, SHA-256 ${supplied.textSha256.slice(0, 12)}`;
 }
 
 export function overlapLine(overlap: number): string {
