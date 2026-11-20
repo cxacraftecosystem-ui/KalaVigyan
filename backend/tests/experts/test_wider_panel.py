@@ -123,6 +123,7 @@ def test_a_seat_searches_its_question_craft_and_fields() -> None:
     assert (query.craft_slug, query.mode) == (ask.request.craft.slug, "HYBRID")
     assert query.text.startswith(QUESTION) and "Ajrakh" in query.text and "Chemist" in query.text
     assert "chemistry" in query.text and "health, toxicology and safe handling" in query.text
+    assert query.fields == ("CHEMISTRY", "PROCESS", "MATERIALS", "HEALTH")
 
 
 async def test_without_a_retriever_a_seat_searches_nothing() -> None:
