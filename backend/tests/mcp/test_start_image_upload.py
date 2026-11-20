@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from app.api import mcp_ask_tools
+from app.api import mcp_picture_tools
 from app.api.mcp_tools import ToolContext, answer
 from app.core.errors import InvalidInput
 from app.core.mcp_scopes import CONTRIBUTE_SCOPE, READ_SCOPE
@@ -28,6 +28,18 @@ DECLARATION = {
     "rightsConfirmed": True,
     "termsVersion": "2026-11-19",
 }
+UPLOAD_TYPES = [
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+    "image/avif",
+    "image/gif",
+    "image/heic",
+    "image/heif",
+    "image/tiff",
+    "image/bmp",
+    "image/svg+xml",
+]
 OWNER = User(id=uuid.UUID(int=41), name="Meera Rao", email="meera@example.org", role="RESEARCHER")
 
 
@@ -68,7 +80,7 @@ def issuing(
 
     monkeypatch.setattr(upload_links, "start_upload", start)
     monkeypatch.setattr(
-        mcp_ask_tools, "endpoints_or_none", lambda: None if api is None else SimpleNamespace(issuer=api)
+        mcp_picture_tools, "endpoints_or_none", lambda: None if api is None else SimpleNamespace(issuer=api)
     )
     return seen
 
@@ -108,7 +120,7 @@ async def test_without_a_declaration_it_returns_only_the_link_for_the_person(
     )
     assert (shown["uploadMethod"], shown["uploadTypes"], shown["uploadMaxBytes"]) == (
         "PUT",
-        ["image/png", "image/jpeg", "image/webp"],
+        UPLOAD_TYPES,
         10 * 1024 * 1024,
     )
     ((slot, declaration),) = seen
@@ -185,4 +197,4 @@ async def test_it_is_listed_as_a_write_that_needs_the_contribute_scope() -> None
     assert listed["annotations"]["readOnlyHint"] is False
     assert "single-use link" in listed["description"] and "30 minutes" in listed["description"]
     assert {"link", "uploadUrl", "expiresAt", "facts"} <= set(listed["outputSchema"]["properties"])
-    assert mcp_ask_tools.START_IMAGE_UPLOAD.scope == CONTRIBUTE_SCOPE
+    assert mcp_picture_tools.START_IMAGE_UPLOAD.scope == CONTRIBUTE_SCOPE

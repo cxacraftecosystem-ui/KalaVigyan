@@ -19,6 +19,8 @@ from app.research.fetcher import (
     FetchRequest,
 )
 
+from .pictures import PictureFetch, add_picture_route
+
 __all__ = ["FETCH_CONCURRENCY", "create_app"]
 
 FETCH_CONCURRENCY = 8
@@ -29,6 +31,7 @@ logger = logging.getLogger("kalavigyan.fetcher")
 def create_app(fetcher: Fetcher) -> FastAPI:
     app = FastAPI(title="KalaVigyan fetcher", docs_url=None, redoc_url=None, openapi_url=None)
     slots = asyncio.Semaphore(FETCH_CONCURRENCY)
+    add_picture_route(app, PictureFetch.build())
 
     @app.get(FETCHER_HEALTH_PATH)
     async def health() -> dict[str, str]:

@@ -17,6 +17,7 @@ from app.models.open_work import TASK_KEY_COLUMN_CHARS
 
 from .base import ContractModel
 from .crafts import SLUG_MAX_CHARS
+from .image_contributions_tasks import PICTURE_TASK, is_picture_detail
 from .vocabulary import Discipline
 
 __all__ = [
@@ -76,6 +77,7 @@ TASK_KINDS = (
     "DEAD_SOURCE",
     "UNARCHIVED_SOURCE",
     "REVIEW",
+    PICTURE_TASK,
 )
 UNRESERVABLE_KINDS = frozenset({"REVIEW"})
 PRIORITIES = ("HIGH", "MEDIUM", "LOW")
@@ -325,6 +327,11 @@ def parse_task_key(key: str) -> TaskKey:
     if len(parts) not in (3, 4) or parts[1] not in SUBJECT_KINDS or not SLUG_PATTERN.match(parts[2]):
         raise InvalidInput(f"{key} is not a task key; list_open_work gives the keys")
     detail = parts[3] if len(parts) == 4 else None
-    if detail is not None and detail not in DISCIPLINES and detail not in COMPONENT_NEEDS:
+    if (
+        detail is not None
+        and detail not in DISCIPLINES
+        and detail not in COMPONENT_NEEDS
+        and not is_picture_detail(detail)
+    ):
         raise InvalidInput(f"{key} names neither a field nor a component need")
     return TaskKey(parts[0], parts[1], parts[2], detail)

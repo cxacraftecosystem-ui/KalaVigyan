@@ -56,6 +56,8 @@ EXPECTED = [
     f"SECOND_SOURCE:{PREFIX}:HISTORY",
     f"DEAD_SOURCE:{PREFIX}",
     f"UNARCHIVED_SOURCE:{PREFIX}",
+    f"MISSING_PICTURE:{PREFIX}:slot-masthead",
+    f"MISSING_PICTURE:{PREFIX}:slot-record",
 ]
 
 

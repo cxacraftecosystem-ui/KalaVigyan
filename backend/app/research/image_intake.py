@@ -4,27 +4,46 @@ from dataclasses import dataclass
 
 from app.core.errors import InvalidInput
 
+from .image_intake_avif import MetadataUnplaced, avif_without_metadata
+from .image_intake_pixels import converted, sized
+from .image_intake_svg import clean_svg
+from .image_intake_types import (
+    ACCEPTED_TYPES,
+    AVIF,
+    CONVERTED_TYPES,
+    IMAGE_BYTES_MAX,
+    JPEG,
+    JPEG_START,
+    PNG,
+    PNG_SIGNATURE,
+    RIFF,
+    SVG,
+    WEBP,
+    WEBP_FORM,
+    received_type,
+)
+
 __all__ = [
+    "ACCEPTED_TYPES",
     "AI_SOURCE_MARK",
+    "AVIF",
+    "CONVERTED_TYPES",
     "IMAGE_BYTES_MAX",
     "IMAGE_SIDE_MAX",
     "IMAGE_SIDE_MIN",
     "PNG_SIGNATURE",
+    "SVG",
     "InspectedImage",
     "inspected_image",
     "png_size",
+    "received_type",
 ]
 
-IMAGE_BYTES_MAX = 10 * 1024 * 1024
 IMAGE_SIDE_MIN = 320
 IMAGE_SIDE_MAX = 8192
 AI_SOURCE_MARK = b"trainedAlgorithmicMedia"
-PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 PNG_HEADER = b"IHDR"
 
-PNG = "image/png"
-JPEG = "image/jpeg"
-WEBP = "image/webp"
 PNG_KEPT = frozenset(
     {
         b"IHDR",
@@ -43,7 +62,6 @@ PNG_KEPT = frozenset(
 )
 PNG_END = b"IEND"
 
-JPEG_START = b"\xff\xd8"
 JPEG_SCAN = 0xDA
 JPEG_EXIF_APP = 0xE1
 JPEG_KEPT = frozenset({0xC4, 0xCC, 0xDB, 0xDD, 0xE0, 0xE2, 0xEE})
@@ -52,8 +70,6 @@ EXIF_HEADER = b"Exif\x00\x00"
 ORIENTATION_TAG = 0x0112
 SHORT_TYPE = 3
 
-RIFF = b"RIFF"
-WEBP_FORM = b"WEBP"
 WEBP_EXTENDED = b"VP8X"
 WEBP_LOSSY = b"VP8 "
 WEBP_LOSSLESS = b"VP8L"
@@ -70,28 +86,57 @@ class InspectedImage:
     width: int
     height: int
     ai_marked: bool
+    received: str
+
+    @property
+    def vector(self) -> bool:
+        return self.mime == SVG
 
 
 def inspected_image(data: bytes) -> InspectedImage:
     if len(data) > IMAGE_BYTES_MAX:
         raise InvalidInput(f"A contributed image is at most {IMAGE_BYTES_MAX // (1024 * 1024)} MB")
-    if data.startswith(PNG_SIGNATURE):
-        clean = _png_without_metadata(data)
-        width, height = png_size(clean)
-        mime = PNG
-    elif data.startswith(JPEG_START):
-        clean, (width, height) = _jpeg_without_metadata(data)
-        mime = JPEG
-    elif data[:4] == RIFF and data[8:12] == WEBP_FORM:
-        clean, (width, height) = _webp_without_metadata(data)
-        mime = WEBP
-    else:
-        raise InvalidInput("A contributed image is a PNG, JPEG or WebP file")
+    received = received_type(data)
+    marked = AI_SOURCE_MARK in data
+    if received == SVG:
+        drawing = clean_svg(data)
+        return InspectedImage(drawing.data, SVG, drawing.width, drawing.height, marked, received)
+    clean, mime, (width, height) = _cleaned(data, received)
     if min(width, height) < IMAGE_SIDE_MIN or max(width, height) > IMAGE_SIDE_MAX:
         raise InvalidInput(
             f"A contributed image is {IMAGE_SIDE_MIN} to {IMAGE_SIDE_MAX} pixels a side, not {width} by {height}"
         )
-    return InspectedImage(clean, mime, width, height, AI_SOURCE_MARK in data)
+    if len(clean) > IMAGE_BYTES_MAX:
+        raise InvalidInput(
+            f"Converted, this picture is over {IMAGE_BYTES_MAX // (1024 * 1024)} MB; send a smaller one"
+        )
+    return InspectedImage(clean, mime, width, height, marked, received)
+
+
+def _cleaned(data: bytes, received: str) -> tuple[bytes, str, tuple[int, int]]:
+    if received == PNG:
+        clean = _png_without_metadata(data)
+        return clean, PNG, png_size(clean)
+    if received == JPEG:
+        clean, size = _jpeg_without_metadata(data)
+        return clean, JPEG, size
+    if received == WEBP:
+        clean, size = _webp_without_metadata(data)
+        return clean, WEBP, size
+    if received == AVIF:
+        kept = _avif_kept(data)
+        if kept is not None:
+            return kept
+    made = converted(data, CONVERTED_TYPES.get(received, WEBP))
+    return made.data, made.mime, (made.width, made.height)
+
+
+def _avif_kept(data: bytes) -> tuple[bytes, str, tuple[int, int]] | None:
+    try:
+        clean = avif_without_metadata(data)
+        return clean, AVIF, sized(clean)
+    except MetadataUnplaced, InvalidInput:
+        return None
 
 
 def _png_without_metadata(data: bytes) -> bytes:

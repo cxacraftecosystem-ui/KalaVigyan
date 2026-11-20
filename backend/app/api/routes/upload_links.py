@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.multipart_form import BodyTooLarge, form_file, limited_body
+from app.api.picture_vision import picture_screen_tools
 from app.api.public_deps import counted_anonymous_read
 from app.core.config import get_settings
 from app.core.db import get_session
@@ -56,7 +57,7 @@ async def give_picture(
 ) -> ImageContributionView:
     objects = _bucket()
     picture = await _form_picture(request)
-    filled = links.fill_by_link(session, user, token, picture, objects=objects, now=_now())
+    filled = links.fill_by_link(session, user, token, picture, filling=_filling(objects))
     return await _shown(session, await _refusals(session, filled), objects)
 
 
@@ -83,7 +84,7 @@ async def fill_upload_slot(
     await counted_anonymous_read(request)
     objects = _bucket()
     data = await _body(request, IMAGE_BYTES_MAX)
-    filled = links.fill_slot(session, token, data, objects=objects, now=_now())
+    filled = links.fill_slot(session, token, data, filling=_filling(objects))
     return await _shown(session, await _refusals(session, filled), objects)
 
 
@@ -138,6 +139,10 @@ async def _body(request: Request, limit: int) -> bytes:
         return await limited_body(request, limit)
     except BodyTooLarge as too_large:
         raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, TOO_LARGE_DETAIL) from too_large
+
+
+def _filling(objects: ObjectStore) -> links.Filling:
+    return links.Filling(objects=objects, tools=picture_screen_tools(), now=_now())
 
 
 def _bucket() -> ObjectStore:

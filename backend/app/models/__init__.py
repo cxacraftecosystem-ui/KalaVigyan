@@ -76,6 +76,7 @@ from app.models.identity import (
     UserPreference,
 )
 from app.models.image_contributions import ImageContribution
+from app.models.image_screens import ImageFingerprint, ImageScreen, PictureDeclaration
 from app.models.knowledge import (
     Chunk,
     Claim,
@@ -182,6 +183,8 @@ __all__ = [
     "FieldVoiceStream",
     "GiRegistration",
     "ImageContribution",
+    "ImageFingerprint",
+    "ImageScreen",
     "Invite",
     "Job",
     "KnowledgePiece",
@@ -208,6 +211,7 @@ __all__ = [
     "PageLayout",
     "PasswordResetRequest",
     "PasswordResetToken",
+    "PictureDeclaration",
     "Process",
     "ProcessCondition",
     "ProcessStage",

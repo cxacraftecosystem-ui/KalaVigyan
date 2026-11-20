@@ -12,7 +12,7 @@ from app.core.deps import token_matches_user
 from app.core.errors import InvalidInput
 from app.core.roles import Capability, can
 from app.core.security import TOKEN_VERSION_CLAIM
-from app.models import Craft, ImageContribution, Process, ProcessStage, UploadLink, User
+from app.models import Craft, ImageContribution, UploadLink, User
 from app.research.image_contributions import ImageDeclaration
 from app.research.retrieval import OPEN_CHUNK_ACLS
 from app.research.upload_links import (
@@ -25,6 +25,7 @@ from app.research.upload_links import (
     SlotCraft,
     SlotDeclaration,
     SlotFact,
+    SlotMaterial,
     SlotStage,
     UploadLinkView,
     UploadSlot,
@@ -33,6 +34,8 @@ from app.research.upload_links import (
 )
 
 from . import image_contributions as images, knowledge_view
+from .image_contributions_checks import checked_craft, checked_target, material_name, stage_name
+from .image_screens import Screened, ScreenTools, screened
 from .oauth_tokens import new_secret, stored_secret
 from .object_store import ObjectStore
 
@@ -55,8 +58,6 @@ USED_DETAIL = "This upload link was used already. Ask for a new one."
 EXPIRED_DETAIL = "This upload link has expired. Ask for a new one."
 STILL_OPEN = "This upload link still works. Use it."
 ACCOUNT_CHANGED = "This upload link no longer works: its account signed out or changed. Ask for a new one."
-NO_CRAFT = "No craft has the slug {slug}"
-NO_STAGE = "That stage is not one of this craft's"
 NO_FACT = "No shown fact has the id {claim_id}"
 
 
@@ -84,12 +85,22 @@ class IssuedLink:
     craft: SlotCraft
     stage: SlotStage | None
     facts: list[SlotFact]
+    material: SlotMaterial | None = None
+    slot: str | None = None
+    task_key: str | None = None
 
 
 @dataclass(frozen=True)
 class Picture:
     declaration: SlotDeclaration
     data: bytes
+
+
+@dataclass(frozen=True)
+class Filling:
+    objects: ObjectStore
+    tools: ScreenTools
+    now: datetime
 
 
 async def start_upload(
@@ -105,17 +116,20 @@ async def start_upload(
     if declaration is not None:
         _checked(slot, declaration)
     await _refuse_too_many(session, user.id, now)
-    craft = await _craft(session, slot.craft_slug)
-    stage = await _stage(session, craft.id, slot.stage_id)
-    facts = await _facts(session, slot.claim_ids)
+    craft = await checked_craft(session, slot.craft_slug)
+    aimed = await checked_target(session, craft, slot)
+    facts = await _facts(session, aimed.claim_ids)
     link = new_secret(LINK_PREFIX)
     slot_token = None if declaration is None else new_secret(SLOT_PREFIX)
     row = UploadLink(
         userId=user.id,
         userTokenVersion=int(user.tokenVersion or 0),
         craftId=craft.id,
-        stageId=slot.stage_id,
-        claimIds=list(slot.claim_ids),
+        stageId=aimed.stage_id,
+        materialId=aimed.material_id,
+        slot=aimed.slot,
+        taskKey=aimed.task_key,
+        claimIds=list(aimed.claim_ids),
         linkHash=_digest(link, LINK_PREFIX),
         slotHash=None if slot_token is None else _digest(slot_token, SLOT_PREFIX),
         declaration=None if declaration is None else declaration.model_dump(mode="json", by_alias=True),
@@ -124,8 +138,7 @@ async def start_upload(
     )
     session.add(row)
     await session.flush()
-    shown = SlotCraft(slug=craft.slug, name=craft.name)
-    return IssuedLink(link, slot_token, row.expiresAt, shown, stage, facts)
+    return await _issued(session, row, craft, (link, slot_token), facts)
 
 
 async def link_view(session: AsyncSession, user: User, token: str, *, now: datetime) -> UploadLinkView:
@@ -136,7 +149,10 @@ async def link_view(session: AsyncSession, user: User, token: str, *, now: datet
     return UploadLinkView(
         state=link_state(used_at=row.usedAt, expires_at=row.expiresAt, now=now),
         craft=SlotCraft(slug=craft.slug, name=craft.name),
-        stage=await _stage(session, row.craftId, row.stageId),
+        stage=await _stage(session, row),
+        material=await _material(session, row),
+        slot=row.slot,
+        task_key=row.taskKey,
         facts=await _shown_facts(session, list(row.claimIds)),
         expires_at=row.expiresAt,
         contribution_id=row.contributionId,
@@ -147,55 +163,100 @@ async def renew_link(session: AsyncSession, user: User, token: str, *, now: date
     row = await _own_link(session, user, token, lock=True)
     if link_state(used_at=row.usedAt, expires_at=row.expiresAt, now=now) == OPEN:
         raise LinkRefused(STILL_OPEN)
-    craft = await session.get(Craft, row.craftId)
-    if craft is None:
-        raise UnknownLink(token)
-    slot = UploadSlot(craft_slug=craft.slug, stage_id=row.stageId, claim_ids=list(row.claimIds))
-    return await start_upload(session, user, slot, None, now=now)
+    return await start_upload(session, user, await _slot_of(session, row, token), None, now=now)
 
 
 async def fill_by_link(
-    session: AsyncSession, user: User, token: str, picture: Picture, *, objects: ObjectStore, now: datetime
+    session: AsyncSession, user: User, token: str, picture: Picture, *, filling: Filling
 ) -> ImageContribution:
-    row = await _own_link(session, user, token, lock=True)
-    return await _fill(session, row, user, picture, objects=objects, now=now)
+    row = await _own_link(session, user, token, lock=False)
+    _require_open(row, filling.now)
+    slot = await _slot_of(session, row, token)
+    declaration = _checked(slot, picture.declaration)
+    screen = await screened(session, picture.data, origin=declaration.origin, user=user, tools=filling.tools)
+    locked = await _own_link(session, user, token, lock=True)
+    return await _fill(session, locked, user, (declaration, screen), filling=filling)
 
 
-async def fill_slot(
-    session: AsyncSession, token: str, data: bytes, *, objects: ObjectStore, now: datetime
-) -> ImageContribution:
+async def fill_slot(session: AsyncSession, token: str, data: bytes, *, filling: Filling) -> ImageContribution:
     digest = stored_secret(token, SLOT_PREFIX)
-    row = None if digest is None else await _locked(session, UploadLink.slotHash == digest)
+    if digest is None:
+        raise UnknownLink(token)
+    user, declaration = await _slot_owner(
+        session, await _by_slot(session, digest, lock=False), token, filling.now
+    )
+    screen = await screened(session, data, origin=declaration.origin, user=user, tools=filling.tools)
+    locked = await _by_slot(session, digest, lock=True)
+    if locked is None:
+        raise UnknownLink(token)
+    return await _fill(session, locked, user, (declaration, screen), filling=filling)
+
+
+async def _slot_owner(
+    session: AsyncSession, row: UploadLink | None, token: str, now: datetime
+) -> tuple[User, ImageDeclaration]:
     if row is None or row.declaration is None:
         raise UnknownLink(token)
     _require_open(row, now)
     user = await session.get(User, row.userId)
     if user is None or not _owner_live(row, user) or not can(user, Capability.PROPOSE_KNOWLEDGE):
         raise LinkGone(ACCOUNT_CHANGED)
-    picture = Picture(declaration=SlotDeclaration.model_validate(row.declaration), data=data)
-    return await _fill(session, row, user, picture, objects=objects, now=now)
+    slot = await _slot_of(session, row, token)
+    return user, _checked(slot, SlotDeclaration.model_validate(row.declaration))
 
 
 async def _fill(
     session: AsyncSession,
     row: UploadLink,
     user: User,
-    picture: Picture,
+    given: tuple[ImageDeclaration, Screened],
     *,
-    objects: ObjectStore,
-    now: datetime,
+    filling: Filling,
 ) -> ImageContribution:
-    _require_open(row, now)
-    craft = await session.get(Craft, row.craftId)
-    if craft is None:
-        raise UnknownLink(str(row.id))
-    slot = UploadSlot(craft_slug=craft.slug, stage_id=row.stageId, claim_ids=list(row.claimIds))
-    contribution = await images.declare(session, user, _checked(slot, picture.declaration), now=now)
-    upload = images.Upload(contribution_id=contribution.id, user=user, data=picture.data)
-    received = await images.receive_file(session, upload, objects=objects, now=now)
-    row.usedAt, row.contributionId = now, received.id
+    declaration, screen = given
+    _require_open(row, filling.now)
+    contribution = await images.declare(session, user, declaration, now=filling.now)
+    received = await images.store_screened(
+        session, contribution.id, user, screen, objects=filling.objects, now=filling.now
+    )
+    row.usedAt, row.contributionId = filling.now, received.id
     await session.flush()
     return received
+
+
+async def _issued(
+    session: AsyncSession,
+    row: UploadLink,
+    craft: Craft,
+    tokens: tuple[str, str | None],
+    facts: list[SlotFact],
+) -> IssuedLink:
+    link, slot_token = tokens
+    return IssuedLink(
+        link_token=link,
+        slot_token=slot_token,
+        expires_at=row.expiresAt,
+        craft=SlotCraft(slug=craft.slug, name=craft.name),
+        stage=await _stage(session, row),
+        facts=facts,
+        material=await _material(session, row),
+        slot=row.slot,
+        task_key=row.taskKey,
+    )
+
+
+async def _slot_of(session: AsyncSession, row: UploadLink, token: str) -> UploadSlot:
+    craft = await session.get(Craft, row.craftId)
+    if craft is None:
+        raise UnknownLink(token)
+    return UploadSlot(
+        craft_slug=craft.slug,
+        stage_id=row.stageId,
+        material_id=row.materialId,
+        slot=row.slot,
+        task_key=row.taskKey,
+        claim_ids=list(row.claimIds),
+    )
 
 
 def _checked(slot: UploadSlot, declaration: SlotDeclaration) -> ImageDeclaration:
@@ -220,19 +281,21 @@ def _owner_live(row: UploadLink, user: User) -> bool:
 
 async def _own_link(session: AsyncSession, user: User, token: str, *, lock: bool) -> UploadLink:
     digest = stored_secret(token, LINK_PREFIX)
-    if digest is None:
-        raise UnknownLink(token)
-    if lock:
-        row = await _locked(session, UploadLink.linkHash == digest)
-    else:
-        row = await session.scalar(select(UploadLink).where(UploadLink.linkHash == digest))
+    row = None if digest is None else await _found(session, UploadLink.linkHash == digest, lock=lock)
     if row is None or row.userId != user.id:
         raise UnknownLink(token)
     return row
 
 
-async def _locked(session: AsyncSession, condition: ColumnElement[bool]) -> UploadLink | None:
-    return await session.scalar(select(UploadLink).where(condition).with_for_update())
+async def _by_slot(session: AsyncSession, digest: str, *, lock: bool) -> UploadLink | None:
+    return await _found(session, UploadLink.slotHash == digest, lock=lock)
+
+
+async def _found(session: AsyncSession, condition: ColumnElement[bool], *, lock: bool) -> UploadLink | None:
+    query = select(UploadLink).where(condition)
+    if lock:
+        query = query.with_for_update().execution_options(populate_existing=True)
+    return await session.scalar(query)
 
 
 async def _refuse_too_many(session: AsyncSession, user_id: uuid.UUID, now: datetime) -> None:
@@ -245,24 +308,18 @@ async def _refuse_too_many(session: AsyncSession, user_id: uuid.UUID, now: datet
         raise InvalidInput(TOO_MANY)
 
 
-async def _craft(session: AsyncSession, slug: str) -> Craft:
-    craft = await knowledge_view.resolve_craft(session, slug)
-    if craft is None:
-        raise InvalidInput(NO_CRAFT.format(slug=slug))
-    return craft
-
-
-async def _stage(session: AsyncSession, craft_id: uuid.UUID, stage_id: uuid.UUID | None) -> SlotStage | None:
-    if stage_id is None:
+async def _stage(session: AsyncSession, row: UploadLink) -> SlotStage | None:
+    if row.stageId is None:
         return None
-    name = await session.scalar(
-        select(ProcessStage.name)
-        .join(Process, Process.id == ProcessStage.processId)
-        .where(ProcessStage.id == stage_id, Process.craftId == craft_id)
-    )
-    if name is None:
-        raise InvalidInput(NO_STAGE)
-    return SlotStage(id=stage_id, name=name)
+    name = await stage_name(session, row.craftId, row.stageId)
+    return None if name is None else SlotStage(id=row.stageId, name=name)
+
+
+async def _material(session: AsyncSession, row: UploadLink) -> SlotMaterial | None:
+    if row.materialId is None:
+        return None
+    name = await material_name(session, row.craftId, row.materialId)
+    return None if name is None else SlotMaterial(id=row.materialId, name=name)
 
 
 async def _facts(session: AsyncSession, claim_ids: list[uuid.UUID]) -> list[SlotFact]:

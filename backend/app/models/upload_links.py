@@ -7,6 +7,8 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, created_at, updated_at, uuid_pk
+from .image_contributions import SLOT_CHARS
+from .open_work import TASK_KEY_COLUMN_CHARS
 
 __all__ = ["DIGEST_CHARS", "UploadLink"]
 
@@ -27,6 +29,11 @@ class UploadLink(Base):
     stageId: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("ProcessStage.id", ondelete="SET NULL")
     )
+    materialId: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("Material.id", ondelete="SET NULL")
+    )
+    slot: Mapped[str | None] = mapped_column(String(SLOT_CHARS))
+    taskKey: Mapped[str | None] = mapped_column(String(TASK_KEY_COLUMN_CHARS))
     claimIds: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), nullable=False)
     linkHash: Mapped[str] = mapped_column(String(DIGEST_CHARS), nullable=False, unique=True)
     slotHash: Mapped[str | None] = mapped_column(String(DIGEST_CHARS), unique=True)

@@ -24,7 +24,7 @@ from app.models import (
 from app.research.upload_links import SlotDeclaration, UploadSlot
 from app.services import upload_links as links
 
-from .test_image_contributions_db import Objects, _png
+from ..pictures import FakeObjects, picture, screen_tools
 from .testimony_seed import rolled_back_session
 
 pytestmark = pytest.mark.db
@@ -104,8 +104,12 @@ def _slot(**changes: Any) -> UploadSlot:
     )
 
 
-def _picture(width: int = 800) -> links.Picture:
-    return links.Picture(declaration=SlotDeclaration.model_validate(PHOTO), data=_png(width, 600))
+def _picture(seed: int = 1) -> links.Picture:
+    return links.Picture(declaration=SlotDeclaration.model_validate(PHOTO), data=picture(seed=seed))
+
+
+def _filling(now: datetime = NOW) -> links.Filling:
+    return links.Filling(objects=cast(Any, FakeObjects()), tools=screen_tools(), now=now)
 
 
 async def _row(session: AsyncSession, token: str) -> UploadLink:
@@ -123,11 +127,11 @@ async def test_a_link_takes_one_picture_for_its_craft_stage_and_fact(
         "Reducing the vat",
         [FACT],
     )
-    objects = cast(Any, Objects())
-    made = await links.fill_by_link(session, owner, issued.link_token, _picture(), objects=objects, now=NOW)
+    filling = _filling()
+    made = await links.fill_by_link(session, owner, issued.link_token, _picture(), filling=filling)
     assert (made.craftId, made.stageId, made.claimIds, made.status) == (CRAFT, STAGE, [FACT], "PENDING")
     with pytest.raises(links.LinkGone, match="used already"):
-        await links.fill_by_link(session, owner, issued.link_token, _picture(640), objects=objects, now=NOW)
+        await links.fill_by_link(session, owner, issued.link_token, _picture(2), filling=filling)
     view = await links.link_view(session, owner, issued.link_token, now=NOW)
     assert (view.state, view.contribution_id) == ("USED", made.id)
     row = await _row(session, issued.link_token)
@@ -140,9 +144,7 @@ async def test_an_expired_link_refuses_and_is_renewed_for_the_same_slot(
     issued = await links.start_upload(session, owner, _slot(), None, now=NOW)
     later = NOW + timedelta(minutes=30)
     with pytest.raises(links.LinkGone, match="expired"):
-        await links.fill_by_link(
-            session, owner, issued.link_token, _picture(), objects=cast(Any, Objects()), now=later
-        )
+        await links.fill_by_link(session, owner, issued.link_token, _picture(), filling=_filling(now=later))
     assert (await links.link_view(session, owner, issued.link_token, now=later)).state == "EXPIRED"
     renewed = await links.renew_link(session, owner, issued.link_token, now=later)
     fresh = await _row(session, renewed.link_token)
@@ -160,9 +162,7 @@ async def test_another_person_can_neither_read_nor_use_the_link(session: AsyncSe
     with pytest.raises(links.UnknownLink):
         await links.link_view(session, stranger, issued.link_token, now=NOW)
     with pytest.raises(links.UnknownLink):
-        await links.fill_by_link(
-            session, stranger, issued.link_token, _picture(), objects=cast(Any, Objects()), now=NOW
-        )
+        await links.fill_by_link(session, stranger, issued.link_token, _picture(), filling=_filling())
 
 
 async def test_a_link_names_a_shown_fact_and_a_stage_of_its_own_craft(
@@ -182,14 +182,14 @@ async def test_a_declared_slot_takes_the_bytes_once_without_a_session(
     declaration = SlotDeclaration.model_validate(PHOTO)
     issued = await links.start_upload(session, owner, _slot(), declaration, now=NOW)
     assert issued.slot_token is not None
-    objects = cast(Any, Objects())
-    made = await links.fill_slot(session, issued.slot_token, _png(), objects=objects, now=NOW)
+    filling = _filling()
+    made = await links.fill_slot(session, issued.slot_token, picture(), filling=filling)
     stored = await session.get(ImageContribution, made.id)
     assert stored is not None and (stored.contributorId, stored.caption) == (owner.id, PHOTO["caption"])
     with pytest.raises(links.LinkGone, match="used already"):
-        await links.fill_slot(session, issued.slot_token, _png(640), objects=objects, now=NOW)
+        await links.fill_slot(session, issued.slot_token, picture(seed=2), filling=filling)
     with pytest.raises(links.LinkGone, match="used already"):
-        await links.fill_by_link(session, owner, issued.link_token, _picture(720), objects=objects, now=NOW)
+        await links.fill_by_link(session, owner, issued.link_token, _picture(3), filling=filling)
 
 
 async def test_a_person_holds_at_most_ten_open_links(session: AsyncSession, owner: User) -> None:

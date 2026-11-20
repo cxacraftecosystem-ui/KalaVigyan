@@ -19,6 +19,7 @@ from app.research.upload_links import (
     upload_page_url,
 )
 from app.services import image_contributions as images, knowledge_view, upload_links as links
+from app.services.image_screens import ScreenTools
 
 NOW = datetime(2026, 11, 19, 12, tzinfo=UTC)
 CRAFT = Craft(id=uuid.UUID(int=7), name="Kutch Ajrakh", slug="Kutch-Ajrakh")
@@ -34,6 +35,7 @@ PHOTO = {
     "termsVersion": "2026-11-19",
 }
 AI_IMAGE = PHOTO | {"origin": "AI_GENERATED", "generator": "ChatGPT, gpt-image-1", "prompt": "An indigo vat"}
+FILLING = links.Filling(objects=None, tools=ScreenTools(vision=None), now=NOW)  # type: ignore[arg-type]
 
 
 def person(role: str = "RESEARCHER", key: int = 41, **fields: Any) -> User:
@@ -198,19 +200,19 @@ async def test_a_used_or_expired_link_takes_no_picture(
     owner = person()
     session = FakeSession(answers=[link_row(owner, **fields)])
     with pytest.raises(refusal, match=says):
-        await links.fill_by_link(session, owner, LINK, picture(), objects=None, now=NOW)  # type: ignore[arg-type]
+        await links.fill_by_link(session, owner, LINK, picture(), filling=FILLING)  # type: ignore[arg-type]
 
 
 async def test_another_person_s_link_or_a_token_of_the_wrong_kind_is_unknown() -> None:
     owner, stranger = person(), person(key=42)
     with pytest.raises(links.UnknownLink):
         await links.fill_by_link(
-            FakeSession(answers=[link_row(owner)]), stranger, LINK, picture(), objects=None, now=NOW
+            FakeSession(answers=[link_row(owner)]), stranger, LINK, picture(), filling=FILLING
         )  # type: ignore[arg-type]
     with pytest.raises(links.UnknownLink):
         await links.link_view(FakeSession(), owner, SLOT, now=NOW)  # type: ignore[arg-type]
     with pytest.raises(links.UnknownLink):
-        await links.fill_slot(FakeSession(), LINK, b"png", objects=None, now=NOW)  # type: ignore[arg-type]
+        await links.fill_slot(FakeSession(), LINK, b"png", filling=FILLING)  # type: ignore[arg-type]
 
 
 async def test_an_open_link_is_not_renewed() -> None:
@@ -224,7 +226,7 @@ async def test_a_slot_stops_working_when_its_account_signs_out_everywhere() -> N
     row = link_row(owner, slotHash="y" * 64, declaration=PHOTO)
     session = FakeSession(answers=[row], rows={(User, owner.id): owner})
     with pytest.raises(links.LinkGone, match="signed out or changed"):
-        await links.fill_slot(session, SLOT, b"png", objects=None, now=NOW)  # type: ignore[arg-type]
+        await links.fill_slot(session, SLOT, b"png", filling=FILLING)  # type: ignore[arg-type]
 
 
 async def test_a_picture_through_the_link_is_declared_for_the_slot_and_closes_it(
@@ -233,8 +235,8 @@ async def test_a_picture_through_the_link_is_declared_for_the_slot_and_closes_it
     owner = person()
     row = link_row(owner, claimIds=[FACT, OTHER_FACT])
     sent = received(monkeypatch)
-    session = FakeSession(answers=[row], rows={(Craft, CRAFT.id): CRAFT})
-    made = await links.fill_by_link(session, owner, LINK, picture(AI_IMAGE), objects=None, now=NOW)  # type: ignore[arg-type]
+    session = FakeSession(answers=[row, row], rows={(Craft, CRAFT.id): CRAFT})
+    made = await links.fill_by_link(session, owner, LINK, picture(AI_IMAGE), filling=FILLING)  # type: ignore[arg-type]
     (declaration,) = sent.declarations
     assert (declaration.craft_slug, declaration.claim_ids, declaration.generator) == (
         CRAFT.slug,
@@ -249,8 +251,8 @@ async def test_a_slot_upload_uses_the_declaration_stored_with_it(monkeypatch: py
     owner = person()
     row = link_row(owner, slotHash="y" * 64, declaration=PHOTO)
     sent = received(monkeypatch)
-    session = FakeSession(answers=[row], rows={(User, owner.id): owner, (Craft, CRAFT.id): CRAFT})
-    made = await links.fill_slot(session, SLOT, b"png", objects=None, now=NOW)  # type: ignore[arg-type]
+    session = FakeSession(answers=[row, row], rows={(User, owner.id): owner, (Craft, CRAFT.id): CRAFT})
+    made = await links.fill_slot(session, SLOT, b"png", filling=FILLING)  # type: ignore[arg-type]
     (declaration,) = sent.declarations
     assert (declaration.origin, declaration.caption) == ("PHOTOGRAPH", "A printer lifts the block")
     assert (row.usedAt, row.contributionId) == (NOW, made.id)
@@ -287,12 +289,16 @@ def received(monkeypatch: pytest.MonkeyPatch) -> Received:
         sent.declarations.append(declaration)
         return made
 
-    async def receive_file(
-        session: Any, upload: images.Upload, *, objects: Any, now: datetime
+    async def screened(session: Any, data: bytes, *, origin: str, user: User, tools: Any) -> Any:
+        return SimpleNamespace(data=data, origin=origin)
+
+    async def store_screened(
+        session: Any, contribution_id: uuid.UUID, user: User, screen: Any, *, objects: Any, now: datetime
     ) -> ImageContribution:
-        sent.files.append((upload.contribution_id, upload.user.id, upload.data))
+        sent.files.append((contribution_id, user.id, screen.data))
         return made
 
     monkeypatch.setattr(images, "declare", declare)
-    monkeypatch.setattr(images, "receive_file", receive_file)
+    monkeypatch.setattr(links, "screened", screened)
+    monkeypatch.setattr(images, "store_screened", store_screened)
     return sent

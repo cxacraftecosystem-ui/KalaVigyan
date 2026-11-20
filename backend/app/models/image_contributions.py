@@ -7,12 +7,15 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, created_at, one_of, updated_at, uuid_pk
 from app.models.enums import IMAGE_CONTRIBUTION_STATUSES, IMAGE_ORIGINS
+from app.models.open_work import TASK_KEY_COLUMN_CHARS
 
 IMAGE_TEXT_CHARS = 300
 GENERATOR_CHARS = 120
 TERMS_VERSION_CHARS = 40
 REVIEW_NOTE_CHARS = 500
 DIGEST_CHARS = 64
+SLOT_CHARS = 16
+ONE_TARGET = 'num_nonnulls("stageId", "materialId", "slot") <= 1'
 AI_GENERATED = "AI_GENERATED"
 WITH_FILE = ("PENDING", "APPROVED")
 REVIEWED = ("APPROVED", "REJECTED")
@@ -30,6 +33,14 @@ class ImageContribution(Base):
     )
     stageId: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("ProcessStage.id", ondelete="SET NULL")
+    )
+    materialId: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("Material.id", ondelete="SET NULL")
+    )
+    slot: Mapped[str | None] = mapped_column(String(SLOT_CHARS))
+    taskKey: Mapped[str | None] = mapped_column(String(TASK_KEY_COLUMN_CHARS))
+    declarationId: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("PictureDeclaration.id", ondelete="SET NULL")
     )
     claimIds: Mapped[list[uuid.UUID]] = mapped_column(
         ARRAY(UUID(as_uuid=True)), nullable=False, server_default=text("ARRAY[]::uuid[]")
@@ -65,9 +76,12 @@ class ImageContribution(Base):
         ),
         CheckConstraint(f'NOT {one_of("status", WITH_FILE)} OR "assetId" IS NOT NULL', name="file"),
         CheckConstraint(f'NOT {one_of("status", REVIEWED)} OR "reviewedAt" IS NOT NULL', name="reviewed"),
+        CheckConstraint(ONE_TARGET, name="one_target"),
         Index(None, "status", "createdAt"),
         Index(None, "craftId"),
         Index(None, "contributorId"),
         Index(None, "assetId"),
         Index(None, "sha256"),
+        Index(None, "declarationId"),
+        Index(None, "taskKey"),
     )

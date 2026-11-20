@@ -46,6 +46,7 @@ from .coverage import owners_of, subject_coverage
 from .open_work_components import craft_component_kinds
 from .open_work_counts import SubjectCounts, subject_counts
 from .open_work_pages import monograph_layouts
+from .open_work_pictures import picture_tasks
 from .open_work_subjects import CATEGORY, WorkSubject, subject_by_key, work_subjects
 
 __all__ = [
@@ -96,7 +97,7 @@ async def list_open_work(
     reviewed = reviewed_queues(viewer.review_role) if filters.subject_filter() is None else ()
     queues = await review_queues(session, reviewed)
     kept = chosen_tasks(
-        open_tasks(standings, queues, viewer),
+        [*open_tasks(standings, queues, viewer), *await picture_tasks(session, standings)],
         filters,
         holds=await live_holds(session, now=now),
         closed=await proposed_tasks(session),
@@ -114,7 +115,8 @@ async def open_task(session: AsyncSession, key: TaskKey, *, site: str) -> OpenTa
     subject = await subject_by_key(session, key.subject_kind, key.slug)
     standings = await subject_standings(session, [subject], site=site)
     wanted = key.text()
-    return next((task for task in subject_tasks(standings[0]) if task.key == wanted), None)
+    found = [*subject_tasks(standings[0]), *await picture_tasks(session, standings)]
+    return next((task for task in found if task.key == wanted), None)
 
 
 async def subject_standings(

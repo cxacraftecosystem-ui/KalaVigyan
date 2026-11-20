@@ -9,6 +9,7 @@ from app.core.db import get_session, release_connection
 from app.core.errors import AppError
 from app.core.http_cache import not_modified, revalidation_headers
 from app.models import User
+from app.research.image_intake_svg import SVG_POLICY
 from app.services.answering import NOT_FOUND_DETAIL
 from app.services.contributed_pictures import shown_picture
 from app.services.object_store import media_bucket
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 PICTURE_CACHE = "private, max-age=300"
 NO_PICTURES = "Contributed pictures are not available right now."
-NO_SNIFF = {"X-Content-Type-Options": "nosniff"}
+NO_SNIFF = {"X-Content-Type-Options": "nosniff", "Content-Security-Policy": SVG_POLICY}
 
 
 @router.get("/contributed/{contribution_id}")

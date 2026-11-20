@@ -11,6 +11,7 @@ from app.core.errors import InvalidInput, Refused
 from .mcp_ask_tools import ASK_TOOLS
 from .mcp_fact_tools import FACT_TOOLS
 from .mcp_layout_tools import LAYOUT_TOOLS
+from .mcp_picture_tools import PICTURE_TOOLS
 from .mcp_prompts import prompt_list, prompt_result
 from .mcp_protocol import (
     INVALID_PARAMS,
@@ -34,7 +35,15 @@ __all__ = ["TOOLS", "ToolContext", "answer", "tool_list"]
 TOOLS: Mapping[str, Tool] = MappingProxyType(
     {
         tool.name: tool
-        for tool in (*READ_TOOLS, *FACT_TOOLS, *WORK_TOOLS, *ASK_TOOLS, *LAYOUT_TOOLS, *STRUCTURE_TOOLS)
+        for tool in (
+            *READ_TOOLS,
+            *FACT_TOOLS,
+            *WORK_TOOLS,
+            *ASK_TOOLS,
+            *PICTURE_TOOLS,
+            *LAYOUT_TOOLS,
+            *STRUCTURE_TOOLS,
+        )
     }
 )
 

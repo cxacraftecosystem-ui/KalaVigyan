@@ -16,9 +16,11 @@ from .image_contributions import (
     PROMPT_MAX_CHARS,
     ImageDeclaration,
     ImageOrigin,
+    PictureSlot,
+    PictureTarget,
     TermsVersion,
 )
-from .image_intake import IMAGE_BYTES_MAX
+from .image_intake import ACCEPTED_TYPES, IMAGE_BYTES_MAX
 
 __all__ = [
     "EXPIRED",
@@ -39,6 +41,7 @@ __all__ = [
     "SlotCraft",
     "SlotDeclaration",
     "SlotFact",
+    "SlotMaterial",
     "SlotStage",
     "UploadLinkView",
     "UploadSlot",
@@ -57,7 +60,7 @@ SLOT_PREFIX = "kvup_sl_"
 UPLOAD_PAGE_PATH = "/contributions/pictures/upload"
 LINK_PARAM = "link"
 SLOT_UPLOAD_ROUTE = "/api/upload-links/slots"
-UPLOAD_TYPES = ("image/png", "image/jpeg", "image/webp")
+UPLOAD_TYPES = ACCEPTED_TYPES
 OPEN = "OPEN"
 USED = "USED"
 EXPIRED = "EXPIRED"
@@ -67,9 +70,8 @@ EACH_FACT_ONCE = "Each fact is named once"
 LinkState = Literal[*LINK_STATES]
 
 
-class UploadSlot(ContractModel):
+class UploadSlot(PictureTarget):
     craft_slug: str = Field(min_length=1, max_length=SLUG_MAX_CHARS)
-    stage_id: uuid.UUID | None = None
     claim_ids: list[uuid.UUID] = Field(min_length=1, max_length=CLAIMS_MAX)
 
     @model_validator(mode="after")
@@ -99,6 +101,11 @@ class SlotStage(ContractModel):
     name: str
 
 
+class SlotMaterial(ContractModel):
+    id: uuid.UUID
+    name: str
+
+
 class SlotFact(ContractModel):
     id: uuid.UUID
     text: str
@@ -114,6 +121,9 @@ class UploadStart(ContractModel):
     upload_max_bytes: int = IMAGE_BYTES_MAX
     craft: SlotCraft
     stage: SlotStage | None
+    material: SlotMaterial | None = None
+    slot: PictureSlot | None = None
+    task_key: str | None = None
     facts: list[SlotFact]
     declared: bool
     next_step: str
@@ -123,6 +133,9 @@ class UploadLinkView(ContractModel):
     state: LinkState
     craft: SlotCraft
     stage: SlotStage | None
+    material: SlotMaterial | None
+    slot: PictureSlot | None
+    task_key: str | None
     facts: list[SlotFact]
     expires_at: datetime
     contribution_id: uuid.UUID | None
@@ -143,12 +156,7 @@ def link_state(*, used_at: datetime | None, expires_at: datetime, now: datetime)
 
 
 def declared(slot: UploadSlot, declaration: SlotDeclaration) -> ImageDeclaration:
-    return ImageDeclaration(
-        craft_slug=slot.craft_slug,
-        stage_id=slot.stage_id,
-        claim_ids=list(slot.claim_ids),
-        **declaration.model_dump(by_alias=False),
-    )
+    return ImageDeclaration(**slot.model_dump(by_alias=False), **declaration.model_dump(by_alias=False))
 
 
 def upload_page_url(site: str, token: str) -> str:

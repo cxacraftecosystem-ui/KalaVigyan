@@ -125,7 +125,14 @@ def test_a_webp_loses_its_exif_and_xmp_and_their_flags_and_keeps_a_true_riff_siz
         _jpeg(800, 600).replace(b"\xff\xc0", b"\xff\xe5"),
         b"RIFF" + bytes(4) + b"WEBP",
     ],
-    ids=["gif", "too-small", "too-wide", "png-without-end", "jpeg-without-frame", "webp-without-image"],
+    ids=[
+        "broken-gif",
+        "too-small",
+        "too-wide",
+        "png-without-end",
+        "jpeg-without-frame",
+        "webp-without-image",
+    ],
 )
 def test_what_is_not_a_whole_picture_of_a_fair_size_is_refused(made: bytes) -> None:
     with pytest.raises(InvalidInput):

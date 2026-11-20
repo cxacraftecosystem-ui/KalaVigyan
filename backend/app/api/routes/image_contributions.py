@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.picture_vision import picture_screen_tools
 from app.api.proposal_limits import proposal_limit
 from app.core.db import get_session
 from app.core.deps import require
@@ -15,6 +16,7 @@ from app.core.rate_limit import IMAGE_UPLOADS
 from app.core.roles import Capability
 from app.models import ImageContribution, User
 from app.research.image_contributions import (
+    ImageBatch,
     ImageContributionStatus,
     ImageContributionView,
     ImageDeclaration,
@@ -33,6 +35,7 @@ reviewer = require(Capability.REVIEW_CONTRIBUTIONS)
 NOT_FOUND_DETAIL = "No contribution of yours has that id."
 TOO_LARGE_DETAIL = f"A contributed picture is at most {IMAGE_BYTES_MAX // (1024 * 1024)} MB."
 NO_BUCKET_DETAIL = "Pictures cannot be stored right now."
+WEB = "WEB"
 
 
 @router.post(
@@ -46,6 +49,23 @@ async def declare_image(
     return await _answer(session, images.declare(session, user, body, now=_now()))
 
 
+@router.post(
+    "/batch",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(proposal_limit(IMAGE_UPLOADS, contributor))],
+)
+async def declare_images(
+    body: ImageBatch, user: User = Depends(contributor), session: AsyncSession = Depends(get_session)
+) -> list[ImageContributionView]:
+    try:
+        rows = await images.declare_batch(session, user, body, images.Filing(channel=WEB), now=_now())
+    except InvalidInput as invalid:
+        await session.rollback()
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(invalid)) from invalid
+    await session.commit()
+    return await images.views(session, rows, objects=media_bucket(), now=_now())
+
+
 @router.put("/{contribution_id}/file")
 async def upload_image(
     contribution_id: uuid.UUID,
@@ -57,7 +77,8 @@ async def upload_image(
     if objects is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, NO_BUCKET_DETAIL)
     upload = images.Upload(contribution_id=contribution_id, user=user, data=await _picture(request))
-    return await _answer(session, images.receive_file(session, upload, objects=objects, now=_now()))
+    received = images.receive_file(session, upload, objects=objects, tools=picture_screen_tools(), now=_now())
+    return await _answer(session, received)
 
 
 @router.get("/mine")

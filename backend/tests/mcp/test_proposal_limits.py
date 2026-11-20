@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api import mcp_ask_tools, mcp_fact_tools, mcp_layout_tools, mcp_work_tools
+from app.api import mcp_fact_tools, mcp_layout_tools, mcp_picture_tools, mcp_work_tools
 from app.api.mcp_tools import ToolContext, answer
 from app.api.proposal_limits import wait_words
 from app.api.routes import knowledge_writes
@@ -136,7 +136,7 @@ async def test_spent_component_layout_and_picture_limits_are_tool_errors(
     monkeypatch.setattr(mcp_work_tools.component_proposals, "propose_component", never_called)
     monkeypatch.setattr(mcp_layout_tools, "propose_layout", never_called)
     monkeypatch.setattr(upload_links, "start_upload", never_called)
-    monkeypatch.setattr(mcp_ask_tools, "endpoints_or_none", lambda: None)
+    monkeypatch.setattr(mcp_picture_tools, "endpoints_or_none", lambda: None)
     for kind in (COMPONENT_PROPOSALS, LAYOUT_PROPOSALS, IMAGE_UPLOADS):
         spend(kind, researcher)
     component = {
