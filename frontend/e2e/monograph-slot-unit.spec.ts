@@ -44,7 +44,7 @@ test("a fragment is drawn as written inside a slot container React never re-rend
 test("a fragment on a page sits in its scope, its last frame holding the markup", () => {
   const html = markup(createElement(ComponentSlot, { document: fixtureDocument(), label: PICTURE }));
   expect(html).toBe(
-    `<div class="bx bx-pt" data-component="${PICTURE}" data-component-kind="picture_plate" data-home="kind"><div class="screen"><div class="wrap kv-passage"><div class="spread">` +
+    `<div class="bx bx-pt my-12" data-component="${PICTURE}" data-component-kind="picture_plate" data-home="kind"><div class="screen"><div class="wrap kv-passage"><div class="spread">` +
       '<div class="main" id="kv-slot-test-craft__design__cloth-photo"><figure class="plate" id="photo"><img src="/x.jpg" alt="A cloth"><figcaption><p class="credit">Photo: test</p></figcaption></figure></div></div></div></div></div>'
   );
 });

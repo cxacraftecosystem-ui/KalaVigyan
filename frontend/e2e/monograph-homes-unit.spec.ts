@@ -70,7 +70,7 @@ test("a borrowed component is drawn in the scope and frame of its slot on the au
     { classes: ["kv-wrap"], box: true }
   ]);
   const html = renderToStaticMarkup(createElement(ComponentHome, { home, label: CHAIN, kind: "diagram" }, createElement("section", { className: "chain" })));
-  expect(html).toBe(`<div class="bx bx-ask" data-component="${CHAIN}" data-component-kind="diagram" data-home="home"><div class="screen"><div class="kv-chain" style="display:contents"><div class="kv-wrap"><section class="chain"></section></div></div></div></div>`);
+  expect(html).toBe(`<div class="bx bx-ask my-12" data-component="${CHAIN}" data-component-kind="diagram" data-home="home"><div class="screen"><div class="kv-chain" style="display:contents"><div class="kv-wrap"><section class="chain"></section></div></div></div></div>`);
 });
 
 test("a contributed component takes the scope its kind's authored specs of the same shape are drawn in", () => {

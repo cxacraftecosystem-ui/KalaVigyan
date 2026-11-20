@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import type { ComponentHome as Home, FrameStep } from "@/lib/monographScopes";
 
 const PASS_THROUGH: CSSProperties = { display: "contents" };
+export const HOME_SPACING = "my-12";
 
 export type FragmentHost = { id: string; html: string };
 
@@ -25,7 +26,7 @@ function hosted(steps: readonly FrameStep[], fragment: FragmentHost): ReactNode 
 
 export function ComponentHome({ home, label, kind, fragment, children }: HomeProps) {
   return (
-    <div className={home.scope ? `bx bx-${home.scope}` : undefined} data-component={label} data-component-kind={kind} data-home={home.source}>
+    <div className={home.scope ? `bx bx-${home.scope} ${HOME_SPACING}` : HOME_SPACING} data-component={label} data-component-kind={kind} data-home={home.source}>
       {fragment ? hosted(home.frame, fragment) : nested(home.frame, children)}
     </div>
   );

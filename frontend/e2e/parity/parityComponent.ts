@@ -100,13 +100,20 @@ function tag(node: string): string {
   return node.split(":")[1]?.split(".")[0] ?? "";
 }
 
+const ROOT = "0:";
+const ROOT_PLACEMENT = new Set(["margin-block-start", "margin-block-end", "box-height"]);
+
+function gatedBox(difference: StyleDifference, approved: StyleRecord): boolean {
+  const delta = Math.abs(Number(difference.approved) - Number(difference.rendered));
+  if (!(delta > BOX_TOLERANCE_PX)) return false;
+  if (GRAPHIC_TAGS.includes(tag(difference.node)) || difference.node.startsWith(ROOT)) return true;
+  return difference.property === "box-x" && !(approved[difference.node]?.display ?? "").startsWith("inline");
+}
+
 export function gatedDifferences(approved: StyleRecord, rendered: StyleRecord): StyleDifference[] {
   return styleDifferences(approved, rendered).filter((difference) => {
-    if (!difference.property.startsWith("box-")) return true;
-    const delta = Math.abs(Number(difference.approved) - Number(difference.rendered));
-    if (!(delta > BOX_TOLERANCE_PX)) return false;
-    if (GRAPHIC_TAGS.includes(tag(difference.node)) || difference.node.startsWith("0:")) return true;
-    return difference.property === "box-x" && approved[difference.node]?.display !== "inline";
+    if (difference.node.startsWith(ROOT) && ROOT_PLACEMENT.has(difference.property)) return false;
+    return difference.property.startsWith("box-") ? gatedBox(difference, approved) : true;
   });
 }
 
