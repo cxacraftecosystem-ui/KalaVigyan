@@ -344,7 +344,8 @@ test("Film is offered exactly where Listen is, and its code loads only when it s
   );
   expect(header).toMatch(/data-testid="film-start"><svg[^]*<\/svg>Film<\/button>/);
   const eager = eagerModules("@/app/(protected)/ask/page");
-  expect(eager.has("components/answer/ExplainerView.tsx")).toBe(true);
-  for (const file of eager) expect(file.startsWith("components/answer/film/"), file).toBe(false);
+  expect(eager.has("components/answer/ExplainerView.tsx")).toBe(false);
+  expect(readRepo("frontend", "app", "(protected)", "ask", "page.tsx")).toContain('dynamic(() => import("@/components/answer/ExplainerView")');
+  for (const file of [...eager, ...eagerModules("@/components/answer/ExplainerView")]) expect(file.startsWith("components/answer/film/"), file).toBe(false);
   expect(readRepo("frontend", "components", "answer", "ExplainerView.tsx")).toContain('import("@/components/answer/film/FilmPlayer")');
 });

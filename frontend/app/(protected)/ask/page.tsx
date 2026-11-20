@@ -1,9 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { CircleAlert } from "lucide-react";
 
-import { ExplainerView } from "@/components/answer/ExplainerView";
 import { NotEnoughEvidence } from "@/components/answer/NotEnoughEvidence";
 import { AnswerTools } from "@/components/ask/AnswerTools";
 import { AskBox } from "@/components/ask/AskBox";
@@ -18,6 +18,8 @@ import { VersionPicker } from "@/components/learn/ExplainerTools";
 import { LoadingPanel, RetryPanel } from "@/components/RemotePanels";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
+
+const ExplainerView = dynamic(() => import("@/components/answer/ExplainerView").then((view) => view.ExplainerView), { loading: () => <LoadingPanel label="Opening the answer" /> });
 
 const STARTERS = ["Why does alum fix madder dye on cotton?", "What happens to clay when terracotta is fired?", "How does indigo turn blue on the cloth?"];
 const ASK_HEADING = "What would you like to understand?";
