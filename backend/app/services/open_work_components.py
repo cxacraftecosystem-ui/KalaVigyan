@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import KnowledgePiece
 
-from .component_library import APPLIED_CRAFT, APPLIED_PIECE, applies_to, registered_pieces
+from .component_library_applies import APPLIED_CRAFT, APPLIED_PIECE, applies_to, registered_pieces
 
 __all__ = ["CraftPiece", "craft_component_kinds", "craft_pieces", "registered_pieces"]
 

@@ -6,7 +6,7 @@ export const REVALIDATE_SECRET_ENV = "WEB_REVALIDATE_SECRET";
 export const TARGETS_MAX = 40;
 export const NOT_CONFIGURED = "Refreshing pages on request is not set up on this deployment.";
 export const NOT_ALLOWED = "This request may not refresh pages.";
-export const NOT_TARGETS = "Name up to 40 craft or category pages and their document tags to refresh.";
+export const NOT_TARGETS = `Name the craft and category pages to refresh and their document tags, at most ${TARGETS_MAX} in all.`;
 
 const SLUG = "[A-Za-z0-9-]+";
 const PAGE_PATH = new RegExp(`^/(crafts|categories)/${SLUG}(/monograph)?$`);
