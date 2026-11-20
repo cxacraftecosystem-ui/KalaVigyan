@@ -1,4 +1,5 @@
 import type { MonographComponent, MonographDocument, MonographLayoutEntry, MonographUnit } from "@/lib/monographDocument";
+import { placedMastheadPicture } from "@/lib/monographPlacement";
 import { citedSourceKeys, hasSentence, nodesText, type MonographSources } from "@/lib/monographRender";
 
 export const COMPONENT_SLOT_PATTERN = /<kv-slot component="([^"]+)"><\/kv-slot>/g;
@@ -8,10 +9,9 @@ export const LABEL_MAX_CHARS = 60;
 const HEADINGS = new Set(["h2", "h3", "h4"]);
 
 export type UnitRole = "numeral" | "kicker" | "title" | "lede" | "label" | "text";
-export type PassagePiece =
-  | { kind: "unit"; ref: string; role: UnitRole }
-  | { kind: "list"; refs: string[] }
-  | { kind: "terms"; refs: string[] };
+export type TermGroup = "facts" | "record" | "differ" | "entries";
+export type TermsPiece = { kind: "terms"; refs: string[]; group: TermGroup; heading: string | null };
+export type PassagePiece = { kind: "unit"; ref: string; role: UnitRole } | { kind: "list"; refs: string[] } | TermsPiece;
 export type MarginNote = { ref: string; source: string };
 export type Passage = { kind: "passage"; head: boolean; pieces: PassagePiece[]; notes: MarginNote[] };
 export type ChapterBlock = Passage | { kind: "component"; label: string } | { kind: "sources"; replaces: string[] };
@@ -22,6 +22,43 @@ export type PagePlan = { masthead: MastheadPlan; label: LabelMasthead | null; ch
 
 const NO_MASTHEAD: MastheadPlan = { kicker: null, standfirst: [], lede: null, picture: null };
 const TERM_TAGS = new Set(["dt", "dd"]);
+const GROUP_HEADING_TAG = "h3";
+export const RECORD_HEADINGS: ReadonlySet<string> = new Set(["In the record"]);
+export const DIFFER_HEADINGS: ReadonlySet<string> = new Set(["Where the sources differ"]);
+
+export type TermRow = { term: string | null; values: string[] };
+
+export function termRows(units: Readonly<Record<string, MonographUnit>>, refs: readonly string[]): TermRow[] {
+  const rows: TermRow[] = [];
+  for (const ref of refs) {
+    const last = rows[rows.length - 1];
+    if (units[ref]?.tag === "dt") rows.push({ term: ref, values: [] });
+    else if (last) last.values.push(ref);
+    else rows.push({ term: null, values: [ref] });
+  }
+  return rows;
+}
+
+export function termGroup(units: Readonly<Record<string, MonographUnit>>, refs: readonly string[], heading: string | null): TermGroup {
+  if (heading !== null && DIFFER_HEADINGS.has(heading)) return "differ";
+  if (heading !== null && RECORD_HEADINGS.has(heading)) return "record";
+  const rows = termRows(units, refs);
+  const single = rows.every((row) => row.term !== null && row.values.length === 1);
+  return heading === null && single ? "facts" : "entries";
+}
+
+export type PassageSegment = { kind: "column"; pieces: PassagePiece[] } | { kind: "group"; piece: TermsPiece };
+
+export function passageSegments(pieces: readonly PassagePiece[]): PassageSegment[] {
+  const out: PassageSegment[] = [];
+  for (const piece of pieces) {
+    const last = out[out.length - 1];
+    if (piece.kind === "terms") out.push({ kind: "group", piece });
+    else if (last?.kind === "column") last.pieces.push(piece);
+    else out.push({ kind: "column", pieces: [piece] });
+  }
+  return out;
+}
 
 export function chapterOrder(layout: readonly MonographLayoutEntry[]): string[] {
   return [...new Set(layout.map((entry) => entry.chapter))];
@@ -78,7 +115,7 @@ export function labelMasthead(document: MonographDocument, entries: readonly Mon
   for (; TERM_TAGS.has(unitAt(at)?.tag ?? ""); at += 1) terms.push(entries[at].ref);
   const lede: string[] = [];
   for (; unitAt(at)?.tag === "p" && hasSentence(unitAt(at)?.nodes ?? []); at += 1) lede.push(entries[at].ref);
-  const picture = entries.find((entry) => entry.kind === "component" && componentKind(document, entry.ref) === MASTHEAD_PICTURE_KIND)?.ref ?? null;
+  const picture = entries.find((entry) => entry.kind === "component" && componentKind(document, entry.ref) === MASTHEAD_PICTURE_KIND)?.ref ?? placedMastheadPicture(document);
   return { kicker, title: entries[titleAt].ref, terms, picture, lede };
 }
 
@@ -171,9 +208,25 @@ function pieces(units: Readonly<Record<string, MonographUnit>>, refs: readonly s
     if (tag === "li" && last?.kind === "list") last.refs.push(ref);
     else if (tag === "li") out.push({ kind: "list", refs: [ref] });
     else if ((tag === "dt" || tag === "dd") && last?.kind === "terms") last.refs.push(ref);
-    else if (tag === "dt" || tag === "dd") out.push({ kind: "terms", refs: [ref] });
+    else if (tag === "dt" || tag === "dd") out.push({ kind: "terms", refs: [ref], group: "entries", heading: null });
     else out.push({ kind: "unit", ref, role: unitRole(units, refs, at, { number, titleAt }) });
   });
+  return groupedTerms(units, out);
+}
+
+function groupedTerms(units: Readonly<Record<string, MonographUnit>>, found: readonly PassagePiece[]): PassagePiece[] {
+  const out: PassagePiece[] = [];
+  for (const piece of found) {
+    if (piece.kind !== "terms") {
+      out.push(piece);
+      continue;
+    }
+    const last = out[out.length - 1];
+    const heading = last?.kind === "unit" && units[last.ref].tag === GROUP_HEADING_TAG ? last.ref : null;
+    if (heading) out.pop();
+    const title = heading ? nodesText(units[heading].nodes).trim() : null;
+    out.push({ ...piece, heading, group: termGroup(units, piece.refs, title) });
+  }
   return out;
 }
 

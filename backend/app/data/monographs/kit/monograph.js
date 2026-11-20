@@ -371,17 +371,60 @@
   var menuBtn = document.getElementById('kv-menu-btn');
   var menu = document.getElementById('kv-menu');
   var menuLabel = document.getElementById('kv-menu-label');
+  var rail = $('.kv-rail');
+  var railList = rail ? rail.querySelector('ol') : null;
+  var railGo = rail ? $$('.kv-rail-go', rail) : [];
+  var RAIL_FADE = 48;
+  function railEnds() {
+    var max = Math.max(0, railList.scrollWidth - railList.clientWidth);
+    var at = Math.min(max, Math.abs(railList.scrollLeft));
+    return { over: max > 1, back: max > 1 ? Math.min(RAIL_FADE, at) : 0, on: max > 1 ? Math.min(RAIL_FADE, max - at) : 0 };
+  }
+  function railHide(b, ends) {
+    var hide = ends[b.getAttribute('data-go')] < 1;
+    if (hide && !b.hidden && document.activeElement === b) {
+      var other = railGo.filter(function (o) { return o !== b && ends[o.getAttribute('data-go')] >= 1; })[0];
+      var to = other || railList.querySelector('a[aria-current]') || railList.querySelector('a');
+      if (to) to.focus();
+    }
+    b.hidden = hide;
+  }
+  function railEdges() {
+    if (!railList) return;
+    var ends = railEnds();
+    rail.setAttribute('data-edges', ends.over ? 'over' : 'fit');
+    rail.style.setProperty('--rail-back', ends.back + 'px');
+    rail.style.setProperty('--rail-on', ends.on + 'px');
+    railGo.forEach(function (b) { railHide(b, ends); });
+  }
+  function railGoBy(dir) {
+    var step = Math.max(120, railList.clientWidth - 2 * RAIL_FADE);
+    railList.scrollBy({ left: dir * step, behavior: reduced() ? 'auto' : 'smooth' });
+  }
+  function railShow(a) {
+    if (!railList || railList.scrollWidth <= railList.clientWidth + 1) return;
+    var r = a.getBoundingClientRect(), box = railList.getBoundingClientRect();
+    if (r.left >= box.left + RAIL_FADE && r.right <= box.right - RAIL_FADE) return;
+    var left = railList.scrollLeft + (r.left - box.left) - (box.width - r.width) / 2;
+    railList.scrollTo({ left: Math.max(0, left), behavior: reduced() ? 'auto' : 'smooth' });
+  }
+  if (railList) {
+    railGo.forEach(function (b) { b.addEventListener('click', function () { railGoBy(b.getAttribute('data-go') === 'back' ? -1 : 1); }); });
+    railList.addEventListener('scroll', railEdges, { passive: true });
+    window.addEventListener('resize', railEdges);
+    if ('ResizeObserver' in window) {
+      var railSizes = new ResizeObserver(railEdges);
+      railSizes.observe(railList);
+      $$('li', railList).forEach(function (li) { railSizes.observe(li); });
+    }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(railEdges);
+    railEdges();
+  }
   function setCurrent(id) {
     railLinks.forEach(function (a) {
       var on = a.getAttribute('href') === '#' + id;
       if (on) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
-      if (on) {
-        var ol = a.closest('ol');
-        if (ol && ol.scrollWidth > ol.clientWidth) {
-          var l = a.offsetLeft - ol.clientWidth / 2 + a.offsetWidth / 2;
-          ol.scrollTo({ left: Math.max(0, l), behavior: reduced() ? 'auto' : 'smooth' });
-        }
-      }
+      if (on) railShow(a);
     });
     $$('#kv-menu a').forEach(function (a) { if (a.getAttribute('href') === '#' + id) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); });
     var ch = document.getElementById(id);

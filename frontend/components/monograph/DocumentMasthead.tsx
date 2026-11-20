@@ -79,7 +79,7 @@ export function DocumentMasthead({ document, label }: { document: MonographDocum
   const view = documentLabel(document, label);
   return (
     <>
-      <div className="kv-page kv-doc-open">
+      <div className="kv-page kv-doc-open" data-app="">
         <Masthead
           material={view.material}
           plateKicker={view.plateKicker}

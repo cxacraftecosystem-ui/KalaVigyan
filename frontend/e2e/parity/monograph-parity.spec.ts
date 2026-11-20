@@ -8,6 +8,7 @@ import { passPreviewProtection } from "../production/preview";
 import { driftSteps, heightDifferences, sectionHeights, type DriftReport } from "./parityDrift";
 import { chapterIds, lineDiff, pixelDifference, type PixelDifference } from "./parityMeasure";
 import { alignPhase } from "./parityPhase";
+import { playersAtRest, restingVat } from "./parityRest";
 import { ancestorLayers, chapterOffsets, elementStyles, fontReport, selfHostedFaces, servedFaces, styleDifferences, type StyleDifference } from "./parityStyles";
 
 const APPROVED = "/monographs/kutch-ajrakh/index.html";
@@ -28,6 +29,7 @@ async function opened(page: Page, path: string): Promise<void> {
     window.scrollTo(0, 0);
   });
   await page.waitForTimeout(SETTLE_MS);
+  await playersAtRest(page);
 }
 
 async function mainText(page: Page): Promise<string[]> {
@@ -52,6 +54,7 @@ async function bothPages(context: BrowserContext): Promise<{ approved: Page; ren
 
 test.beforeEach(async ({ context }) => {
   await passPreviewProtection(context, process.env.E2E_BASE_URL ?? "", process.env.E2E_VERCEL_BYPASS ?? "");
+  await restingVat(context);
 });
 
 test("the React page reads exactly as the approved page", async ({ context }) => {

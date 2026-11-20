@@ -1,7 +1,8 @@
+import { TermGroupView } from "@/components/monograph/TermGroups";
 import { UnitView } from "@/components/monograph/UnitView";
 import type { MonographDocument, MonographUnit } from "@/lib/monographDocument";
 import { nodeElements } from "@/lib/monographRenderElements";
-import type { ChapterPlan, Passage, PassagePiece, UnitRole } from "@/lib/monographRenderLayout";
+import { passageSegments, type ChapterPlan, type Passage, type PassagePiece, type PassageSegment, type UnitRole } from "@/lib/monographRenderLayout";
 
 type Drawn = { as: string; className?: string };
 
@@ -33,9 +34,7 @@ function Piece({ document, chapter, piece, titled }: PieceProps) {
   if (piece.kind === "list") {
     return <ul className="kv-list">{piece.refs.map((ref) => <li key={ref}>{nodeElements(units[ref].nodes, sources)}</li>)}</ul>;
   }
-  if (piece.kind === "terms") {
-    return <dl className="kv-terms">{piece.refs.map((ref) => <UnitView key={ref} unit={units[ref]} sources={sources} />)}</dl>;
-  }
+  if (piece.kind === "terms") return <TermGroupView units={units} sources={sources} piece={piece} />;
   const unit = units[piece.ref];
   const drawn = drawing(unit, piece.role);
   const id = piece.role === "title" && titled ? `${chapter.key}-h` : undefined;
@@ -69,29 +68,60 @@ export function needsNumeral(passage: Passage, number: number | null): boolean {
   return passage.head && number !== null && !passage.pieces.some((piece) => piece.kind === "unit" && piece.role === "numeral");
 }
 
-function Spread({ document, chapter, passage }: PassageProps) {
+function pieceKey(piece: PassagePiece, at: number): string {
+  if (piece.kind === "unit") return piece.ref;
+  return `${piece.kind}-${piece.refs[0] ?? at}`;
+}
+
+type SpreadProps = PassageProps & { pieces: readonly PassagePiece[]; first: boolean };
+
+function Spread({ document, chapter, passage, pieces, first }: SpreadProps) {
   const title = passage.head ? firstTitle(passage) : null;
+  const head = passage.head && first;
   return (
-    <div className={passage.head ? "spread railed sec-head" : "spread"}>
-      {passage.head && chapter.number !== null ? (
+    <div className={head ? "spread railed sec-head" : "spread"}>
+      {head && chapter.number !== null ? (
         <div className="rail">
           <span className="numeral">{chapter.number}</span>
         </div>
       ) : null}
       <div className="main prose">
-        {needsNumeral(passage, chapter.number) ? <p className="chapter-no in-main">{chapter.number}</p> : null}
-        {passage.pieces.map((piece, at) => (
-          <Piece key={piece.kind === "unit" ? piece.ref : `${piece.kind}-${at}`} document={document} chapter={chapter} piece={piece} titled={piece.kind === "unit" && piece.ref === title} />
+        {head && needsNumeral(passage, chapter.number) ? <p className="chapter-no in-main">{chapter.number}</p> : null}
+        {pieces.map((piece, at) => (
+          <Piece key={pieceKey(piece, at)} document={document} chapter={chapter} piece={piece} titled={piece.kind === "unit" && piece.ref === title} />
         ))}
       </div>
-      <MarginNotes document={document} passage={passage} />
+      {first ? <MarginNotes document={document} passage={passage} /> : null}
     </div>
+  );
+}
+
+function shownSegments(passage: Passage): PassageSegment[] {
+  const segments = passageSegments(passage.pieces);
+  if (!passage.notes.length || segments.some((segment) => segment.kind === "column")) return segments;
+  return [{ kind: "column", pieces: [] }, ...segments];
+}
+
+function Segments({ document, chapter, passage }: PassageProps) {
+  const segments = shownSegments(passage);
+  const firstColumn = segments.findIndex((segment) => segment.kind === "column");
+  const { units, sources } = document.content;
+  return (
+    <>
+      {segments.map((segment, at) =>
+        segment.kind === "group" ? (
+          <TermGroupView key={pieceKey(segment.piece, at)} units={units} sources={sources} piece={segment.piece} />
+        ) : (
+          <Spread key={`column-${at}`} document={document} chapter={chapter} passage={passage} pieces={segment.pieces} first={at === firstColumn} />
+        )
+      )}
+    </>
   );
 }
 
 export function MonographPassage({ document, chapter, passage }: PassageProps) {
   const title = passage.head ? firstTitle(passage) : null;
-  const spread = <Spread document={document} chapter={chapter} passage={passage} />;
+  const spread = <Segments document={document} chapter={chapter} passage={passage} />;
   return (
     <div className="bx bx-pt">
       <div className="screen">

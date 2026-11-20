@@ -4,34 +4,34 @@
 }
 
 @layer base {
-  :where(#kv-main) *:where(:not([data-kind], [data-kind] *)),
-  :where(#kv-main) :where(:not([data-kind], [data-kind] *))::before,
-  :where(#kv-main) :where(:not([data-kind], [data-kind] *))::after {
+  :where(#kv-main) *:where(:not([data-kind], [data-kind] *, [data-app], [data-app] *)),
+  :where(#kv-main) :where(:not([data-kind], [data-kind] *, [data-app], [data-app] *))::before,
+  :where(#kv-main) :where(:not([data-kind], [data-kind] *, [data-app], [data-app] *))::after {
     box-sizing: revert;
     margin: revert;
     padding: revert;
     border: revert;
   }
 
-  :where(#kv-main) :is(h1, h2, h3, h4, h5, h6):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(h1, h2, h3, h4, h5, h6):where(:not([data-kind] *, [data-app], [data-app] *)) {
     font-size: revert;
     font-weight: revert;
   }
 
-  :where(#kv-main) :is(a):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(a):where(:not([data-kind] *, [data-app], [data-app] *)) {
     color: revert;
     text-decoration: revert;
   }
 
-  :where(#kv-main) :is(b, strong):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(b, strong):where(:not([data-kind] *, [data-app], [data-app] *)) {
     font-weight: revert;
   }
 
-  :where(#kv-main) :is(small):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(small):where(:not([data-kind] *, [data-app], [data-app] *)) {
     font-size: revert;
   }
 
-  :where(#kv-main) :is(sub, sup):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(sub, sup):where(:not([data-kind] *, [data-app], [data-app] *)) {
     font-size: revert;
     line-height: revert;
     position: revert;
@@ -39,21 +39,21 @@
     inset-block: revert;
   }
 
-  :where(#kv-main) :is(ol, ul, menu):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(ol, ul, menu):where(:not([data-kind] *, [data-app], [data-app] *)) {
     list-style: revert;
   }
 
-  :where(#kv-main) :is(img, svg, video, canvas, audio, iframe, embed, object):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(img, svg, video, canvas, audio, iframe, embed, object):where(:not([data-kind] *, [data-app], [data-app] *)) {
     display: revert;
     vertical-align: revert;
   }
 
-  :where(#kv-main) :is(img, video):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(img, video):where(:not([data-kind] *, [data-app], [data-app] *)) {
     max-width: revert;
     height: revert;
   }
 
-  :where(#kv-main) :is(button, input, select, optgroup, textarea):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(button, input, select, optgroup, textarea):where(:not([data-kind] *, [data-app], [data-app] *)) {
     font: revert;
     font-feature-settings: revert;
     font-variation-settings: revert;
@@ -64,39 +64,39 @@
     opacity: revert;
   }
 
-  :where(#kv-main) :is(hr):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(hr):where(:not([data-kind] *, [data-app], [data-app] *)) {
     height: revert;
     color: revert;
     border-block-start-width: revert;
   }
 
-  :where(#kv-main) :is(code, kbd, samp, pre):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(code, kbd, samp, pre):where(:not([data-kind] *, [data-app], [data-app] *)) {
     font-family: revert;
     font-feature-settings: revert;
     font-variation-settings: revert;
     font-size: revert;
   }
 
-  :where(#kv-main) :is(table):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(table):where(:not([data-kind] *, [data-app], [data-app] *)) {
     text-indent: revert;
     border-color: revert;
     border-collapse: revert;
   }
 
-  :where(#kv-main) :is(textarea):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(textarea):where(:not([data-kind] *, [data-app], [data-app] *)) {
     resize: revert;
   }
 
-  :where(#kv-main) :is(progress):where(:not([data-kind] *)) {
+  :where(#kv-main) :is(progress):where(:not([data-kind] *, [data-app], [data-app] *)) {
     vertical-align: revert;
   }
 }
 
 @layer kv-shell {
-  :where(#kv-main) :is(.kv-btn, .kv-tabs, .kv-cite, .kicker, .panel, .grid, .inline, .ring):where(:not([data-kind], [data-kind] *)),
-  :where(#kv-main) :is(.kv-btn, .kv-tabs, .kv-cite, .kicker, .panel, .grid, .inline, .ring):where(:not([data-kind], [data-kind] *))::before,
-  :where(#kv-main) :is(.kv-btn, .kv-tabs, .kv-cite, .kicker, .panel, .grid, .inline, .ring):where(:not([data-kind], [data-kind] *))::after,
-  :where(#kv-main) :is(.kv-btn, .kv-tabs, .kv-cite, .kicker, .panel):where(:not([data-kind], [data-kind] *)) * {
+  :where(#kv-main) :is(.kv-btn, .kv-tabs, .kv-cite, .kicker, .panel, .grid, .inline, .ring):where(:not([data-kind], [data-kind] *, [data-app], [data-app] *, svg *)),
+  :where(#kv-main) :is(.kv-btn, .kv-tabs, .kv-cite, .kicker, .panel, .grid, .inline, .ring):where(:not([data-kind], [data-kind] *, [data-app], [data-app] *, svg *))::before,
+  :where(#kv-main) :is(.kv-btn, .kv-tabs, .kv-cite, .kicker, .panel, .grid, .inline, .ring):where(:not([data-kind], [data-kind] *, [data-app], [data-app] *, svg *))::after,
+  :where(#kv-main) :is(.kv-btn, .kv-tabs, .kv-cite, .kicker, .panel):where(:not([data-kind], [data-kind] *, [data-app], [data-app] *)) *:where(:not(svg *)) {
     all: revert;
   }
 }

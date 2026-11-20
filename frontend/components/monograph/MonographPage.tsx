@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
 import { CiteThis } from "@/components/craft/CiteThis";
 import { AuthoredShell } from "@/components/monograph/AuthoredShell";
@@ -79,16 +79,21 @@ export function documentCitation(document: MonographDocument): Citable | null {
   return { kind: "monograph", title: document.title, version: document.version, url: versionedUrl(document.pageUrl, document.version), key: citeKey(document.subjectSlug, document.version) };
 }
 
-function DocumentChapters({ document, plan, masthead }: { document: MonographDocument; plan: PagePlan; masthead: boolean }) {
+type ChaptersProps = { document: MonographDocument; plan: PagePlan; masthead: boolean; rail: ReactNode };
+
+function DocumentChapters({ document, plan, masthead, rail }: ChaptersProps) {
   const labelled = plan.label !== null;
   const cite = labelled ? documentCitation(document) : null;
   return (
     <div id="kv-main">
       {plan.chapters.map((chapter) => (
-        <MonographChapter key={chapter.key} document={document} chapter={chapter} masthead={masthead && chapter.index === 0 ? plan.masthead : null} label={masthead && chapter.index === 0 ? plan.label : null} labelled={labelled} />
+        <Fragment key={chapter.key}>
+          <MonographChapter document={document} chapter={chapter} masthead={masthead && chapter.index === 0 ? plan.masthead : null} label={masthead && chapter.index === 0 ? plan.label : null} labelled={labelled} />
+          {chapter.index === 0 ? rail : null}
+        </Fragment>
       ))}
       {cite ? (
-        <div className="kv-page kv-citethis-place">
+        <div className="kv-page kv-citethis-place" data-app="">
           <CiteThis cite={cite} />
         </div>
       ) : null}
@@ -96,13 +101,19 @@ function DocumentChapters({ document, plan, masthead }: { document: MonographDoc
   );
 }
 
+export function railAfterMasthead(document: MonographDocument, plan: PagePlan, masthead: boolean): boolean {
+  return document.shell === null && masthead && plan.label !== null && plan.chapters[0]?.index === 0;
+}
+
 export function MonographPage({ document, masthead = true }: { document: MonographDocument; masthead?: boolean }) {
   const plan = pagePlan(document);
+  const rail = <MonographRail chapters={railChapters(plan)} />;
+  const later = railAfterMasthead(document, plan, masthead);
   return (
     <div className="kv-monograph ms-[calc(50%-50vw)] w-screen" lang={document.language} data-subject={`${document.subjectKind}:${document.subjectSlug}`} data-version={document.version}>
       <link rel="stylesheet" href={MONOGRAPH_KIT_CSS} precedence="default" />
-      <MonographRail chapters={railChapters(plan)} />
-      {document.shell !== null ? <AuthoredShell document={document} shell={document.shell} /> : <DocumentChapters document={document} plan={plan} masthead={masthead} />}
+      {later ? null : rail}
+      {document.shell !== null ? <AuthoredShell document={document} shell={document.shell} /> : <DocumentChapters document={document} plan={plan} masthead={masthead} rail={later ? rail : null} />}
       <KitShellTail document={document} />
       <KitPreferences />
       <KitScript />

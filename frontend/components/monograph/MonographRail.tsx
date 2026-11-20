@@ -2,23 +2,43 @@ import { ReaderTools } from "@/components/monograph/ReaderSettings";
 import type { ChapterPlan } from "@/lib/monographRenderLayout";
 
 export const RAIL_LABEL = "Chapters";
+export const RAIL_LIST_ID = "kv-rail-list";
+export const RAIL_ARROWS = {
+  back: { label: "Show earlier chapters", path: "M10 3 L5 8 L10 13" },
+  on: { label: "Show later chapters", path: "M6 3 L11 8 L6 13" }
+} as const;
 
 type Chapters = { chapters: readonly ChapterPlan[] };
+
+function RailArrow({ go }: { go: keyof typeof RAIL_ARROWS }) {
+  const arrow = RAIL_ARROWS[go];
+  return (
+    <button className="kv-rail-go" type="button" data-go={go} aria-label={arrow.label} aria-controls={RAIL_LIST_ID} hidden>
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path d={arrow.path} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  );
+}
 
 function RailNav({ chapters }: Chapters) {
   return (
     <nav className="kv-rail" aria-label={RAIL_LABEL}>
       <div className="kv-wrap">
-        <ol>
-          {chapters.map((chapter, at) => (
-            <li key={chapter.key}>
-              <a href={`#${chapter.key}`} aria-current={at === 0 ? "location" : undefined}>
-                {chapter.number !== null ? <b>{chapter.number}</b> : null}
-                <span>{chapter.label}</span>
-              </a>
-            </li>
-          ))}
-        </ol>
+        <div className="kv-rail-in">
+          <RailArrow go="back" />
+          <ol id={RAIL_LIST_ID}>
+            {chapters.map((chapter, at) => (
+              <li key={chapter.key}>
+                <a href={`#${chapter.key}`} aria-current={at === 0 ? "location" : undefined}>
+                  {chapter.number !== null ? <b>{chapter.number}</b> : null}
+                  <span>{chapter.label}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+          <RailArrow go="on" />
+        </div>
       </div>
     </nav>
   );
