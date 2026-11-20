@@ -71,9 +71,14 @@ async function sheetProblems(page: Page, expected: readonly string[]): Promise<s
   const panel = page.getByRole("dialog", { name: MENU_LABEL, exact: true });
   await expect(panel).toBeVisible();
   const problems = labelProblems("the menu", expected, await labelsOf(panel.locator("a")));
+  await closePanel(page, panel);
+  return problems;
+}
+
+async function closePanel(page: Page, panel: Locator): Promise<void> {
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();
-  return problems;
+  await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : undefined));
 }
 
 export async function readingBarProblems(page: Page, current: string | null): Promise<string[]> {
@@ -101,7 +106,6 @@ export async function menuProblems(page: Page, user: User): Promise<string[]> {
   await expect(panel).toBeVisible();
   const problems = [...labelProblems(where, wide ? expected.account : expected.menu, await labelsOf(panel.locator("a"))), ...(await panelProblems(panel, where, user))];
   if ((await page.locator('a[href^="/admin"]').count()) > 0) problems.push("an admin link is on the page for a role without admin areas");
-  await page.keyboard.press("Escape");
-  await expect(panel).toBeHidden();
+  await closePanel(page, panel);
   return problems;
 }
