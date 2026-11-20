@@ -13,7 +13,7 @@ export function GuideSection({ id, title, about, ready, failed = false, loading 
         <h2 id={heading} className="font-headline text-h2 text-ink-1">
           {title}
         </h2>
-        <p className="m-0 font-ui text-ui text-ink-2">{about}</p>
+        <p className="m-0 font-ui text-ui font-normal text-ink-2">{about}</p>
       </div>
       {ready ? children() : <Skeleton shape="lede" label={loading} />}
     </section>

@@ -33,7 +33,7 @@ function ToolGroupView({ group }: { group: ToolGroup }) {
               <span className="font-ui text-h4 text-ink-1">{tool.title}</span>
               <code className="font-code text-label text-ink-3 [overflow-wrap:anywhere]">{tool.name}</code>
             </p>
-            <p className="m-0 font-ui text-ui text-ink-2">{tool.summary}</p>
+            <p className="m-0 font-ui text-ui font-normal text-ink-2">{tool.summary}</p>
           </li>
         ))}
       </ul>
@@ -59,7 +59,7 @@ function PromptList({ prompts }: { prompts: readonly McpPrompt[] }) {
               <span className="font-ui text-h4 text-ink-1">{prompt.title}</span>
               <code className="font-code text-label text-ink-3 [overflow-wrap:anywhere]">{prompt.name}</code>
             </p>
-            <p className="m-0 font-ui text-ui text-ink-2">{prompt.description}</p>
+            <p className="m-0 font-ui text-ui font-normal text-ink-2">{prompt.description}</p>
             {promptTakes(prompt) ? <p className="m-0 font-ui text-label text-ink-3">{promptTakes(prompt)}</p> : null}
           </li>
         ))}
@@ -71,7 +71,7 @@ function PromptList({ prompts }: { prompts: readonly McpPrompt[] }) {
 export function ToolCatalogue({ catalogue }: { catalogue: McpCatalogue }) {
   return (
     <div className="grid min-w-0 gap-6">
-      <p className="m-0 font-ui text-ui text-ink-2" data-testid="catalogue-line">
+      <p className="m-0 font-ui text-ui font-normal text-ink-2" data-testid="catalogue-line">
         {catalogueLine(catalogue)}
       </p>
       <div className="gap-x-10 lg:columns-2 [&>section]:mb-10 [&>section]:break-inside-avoid">

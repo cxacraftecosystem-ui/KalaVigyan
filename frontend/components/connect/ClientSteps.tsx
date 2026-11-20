@@ -2,7 +2,7 @@ import { CopyCode } from "@/components/connect/CopyCode";
 import { TextLink } from "@/components/ui/TextLink";
 import type { ClientGuide } from "@/lib/connectClients";
 
-export const STEP_LIST = "m-0 grid list-decimal gap-4 ps-6 font-ui text-ui marker:font-ui marker:text-label marker:text-ink-3";
+export const STEP_LIST = "m-0 grid list-decimal gap-4 ps-6 font-ui text-ui font-normal marker:font-ui marker:text-label marker:text-ink-3";
 
 function ClientCard({ guide }: { guide: ClientGuide }) {
   const heading = `client-${guide.key}`;
@@ -15,7 +15,7 @@ function ClientCard({ guide }: { guide: ClientGuide }) {
         {guide.steps.map((step) => (
           <li key={step.text} className="min-w-0 ps-1">
             <div className="grid min-w-0 gap-2">
-              <p className="m-0 font-ui text-ui text-ink-1">{step.text}</p>
+              <p className="m-0 font-ui text-ui font-normal text-ink-1">{step.text}</p>
               {step.code ? <CopyCode code={step.code} /> : null}
             </div>
           </li>

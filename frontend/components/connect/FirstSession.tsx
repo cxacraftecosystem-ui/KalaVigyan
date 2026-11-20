@@ -15,7 +15,7 @@ function FollowAndRevoke({ contributes }: { contributes: boolean }) {
       {contributes ? (
         <div className="grid gap-1 border-b border-rule py-3" data-testid="follow-proposals">
           <dt className="font-ui text-h4 text-ink-1">Follow what you submitted</dt>
-          <dd className="m-0 grid gap-2 font-ui text-ui text-ink-2">
+          <dd className="m-0 grid gap-2 font-ui text-ui font-normal text-ink-2">
             <span>What your AI proposes is listed with what you propose on the site, with each check&apos;s reasons and the reviewers&apos; word; your AI reads the same through my_tasks and get_proposal.</span>
             <span className="flex flex-wrap gap-x-5 gap-y-1">
               {FOLLOW_PATHS.map((path) => (
@@ -29,7 +29,7 @@ function FollowAndRevoke({ contributes }: { contributes: boolean }) {
       ) : null}
       <div className="grid gap-1 border-b border-rule py-3" data-testid="revoke-connection">
         <dt className="font-ui text-h4 text-ink-1">Revoke a connection</dt>
-        <dd className="m-0 grid gap-2 font-ui text-ui text-ink-2">
+        <dd className="m-0 grid gap-2 font-ui text-ui font-normal text-ink-2">
           <span>Connected apps in Settings lists each app with what it may do and when it was last used; Revoke ends its access at once.</span>
           <span>
             <TextLink href={CONNECTED_APPS_PATH} standalone>

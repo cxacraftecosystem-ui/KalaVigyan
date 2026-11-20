@@ -29,7 +29,7 @@ function ScopeTable({ held }: { held: readonly McpScope[] }) {
           <span role="rowheader" className="font-ui text-h4 text-ink-1">
             {guide.title}
           </span>
-          <span role="cell" className="font-ui text-ui text-ink-2">
+          <span role="cell" className="font-ui text-ui font-normal text-ink-2">
             {guide.allows}
           </span>
           <span role="cell" className="font-ui text-label text-ink-3">
