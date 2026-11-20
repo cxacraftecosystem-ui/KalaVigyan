@@ -25,7 +25,7 @@ import {
   credentials,
   previewBypassToken
 } from "./run";
-import { chooseFirstLayer, comparisonProblems, depthProblems, essayOutcome, hubOutcome, mapProblems, savedAnswerHref } from "./screenChecks";
+import { comparisonProblems, depthProblems, essayOutcome, hubOutcome, mapProblems, savedAnswerHref, walkLayers } from "./screenChecks";
 import { ScreenRun } from "./screenRun";
 import { submitSignIn } from "./signIn";
 
@@ -155,10 +155,10 @@ async function toolScreens(run: ScreenRun, page: Page): Promise<void> {
   await run.visit("Compare pair", compareHref(COMPARED_CRAFTS), () => comparisonProblems(page));
   await savedScreens(run, page);
   await run.visit("Map", "/map", () => mapProblems(page));
-  await run.step("Map layer", async () => {
-    const chosen = await chooseFirstLayer(page);
-    if (chosen.layer) run.note(`layer: ${chosen.layer}`);
-    return chosen.problems;
+  await run.step("Map layers, one after another", async () => {
+    const walk = await walkLayers(page);
+    if (walk.layers.length) run.note(`layers: ${walk.layers.join(", ")}`);
+    return walk.problems;
   });
   await run.visit("Settings", "/settings", heading(page, "Settings"));
 }

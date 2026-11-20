@@ -130,6 +130,11 @@ def test_a_photograph_credited_otherwise_or_served_elsewhere_is_refused(changes:
         ContributedPlate.model_validate(plate(**changes))
 
 
+@pytest.mark.parametrize("mime", ["image/png", "image/jpeg", "image/webp", "image/avif", "image/svg+xml"])
+def test_every_kept_picture_type_is_shown(mime: str) -> None:
+    assert ContributedPlate.model_validate(plate(mime=mime)).mime == mime
+
+
 def test_a_plate_shows_the_facts_it_illustrates() -> None:
     shown = ContributedPlate.model_validate(plate(sentences=[sentence("PROVISIONAL")]))
     assert [s.text for s in shown.sentences] == ["The cloth is washed."]

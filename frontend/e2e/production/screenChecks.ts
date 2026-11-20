@@ -1,4 +1,6 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
+
+import { PHYSICAL_LAYERS } from "@/lib/mapPhysical";
 
 import type { User } from "@/lib/types";
 
@@ -38,17 +40,51 @@ export async function mapProblems(page: Page): Promise<string[]> {
   return (await ranked.getByTestId("ranked-row").count()) > 0 ? [] : ["the ranked list beside the map ranks nothing"];
 }
 
-export async function chooseFirstLayer(page: Page): Promise<{ problems: string[]; layer: string | null }> {
+const PHYSICAL_IDS = new Set(PHYSICAL_LAYERS.map((layer) => layer.id as string));
+const ERROR_SCREEN = 'section[data-testid^="error-"]';
+const DISTRICT_LAYERS_WALKED = 2;
+
+export type LayerWalk = { problems: string[]; layers: string[] };
+
+export function layerWalkOrder(physical: number, district: number): number[] {
+  const own = Array.from({ length: physical }, (_, index) => index);
+  const values = Array.from({ length: Math.min(district, DISTRICT_LAYERS_WALKED) }, (_, index) => physical + index);
+  return [...own, ...values, ...own.slice(0, 1)];
+}
+
+export async function walkLayers(page: Page): Promise<LayerWalk> {
   const picker = page.getByTestId("layer-picker");
-  if ((await picker.count()) === 0) return { problems: ["the map offers no environment layer to choose"], layer: null };
+  if ((await picker.count()) === 0) return { problems: ["the map offers no layer to choose"], layers: [] };
+  const layers: string[] = [];
+  for (const index of layerWalkOrder(PHYSICAL_LAYERS.length, DISTRICT_LAYERS_WALKED)) {
+    const chosen = await chooseLayer(page, picker, index);
+    layers.push(chosen.layer);
+    if (chosen.problems.length) return { problems: chosen.problems, layers };
+  }
+  return { problems: [], layers };
+}
+
+async function chooseLayer(page: Page, picker: Locator, index: number): Promise<{ problems: string[]; layer: string }> {
+  const before = new URL(page.url()).searchParams.get("layer");
   await picker.locator("[data-searchable-select]").click();
-  const option = page.getByRole("option").filter({ hasNotText: NO_LAYER_LABEL }).first();
-  const layer = (await option.innerText()).trim();
+  const option = page.getByRole("option").filter({ hasNotText: NO_LAYER_LABEL }).nth(index);
+  const label = (await option.innerText()).trim().split(/\r?\n/)[0];
   await option.click();
-  await page.waitForURL(/[?&]layer=/, { timeout: LAYER_TIMEOUT_MS });
-  await expect(page.getByTestId("choropleth-legend")).toBeVisible({ timeout: LAYER_TIMEOUT_MS });
-  await expect(page.getByTestId("district-fills")).toBeAttached({ timeout: LAYER_TIMEOUT_MS });
-  return { problems: [], layer };
+  await page.waitForURL((url) => url.searchParams.get("layer") !== null && url.searchParams.get("layer") !== before, { timeout: LAYER_TIMEOUT_MS });
+  const id = new URL(page.url()).searchParams.get("layer") ?? "";
+  const drawn = PHYSICAL_IDS.has(id) ? page.locator(`[data-testid="physical-layer"][data-layer="${id}"] [data-testid="map-canvas"]`) : page.getByTestId("choropleth-legend");
+  const settled = await drawn
+    .or(page.locator(ERROR_SCREEN))
+    .first()
+    .waitFor({ state: "visible", timeout: LAYER_TIMEOUT_MS })
+    .then(
+      () => true,
+      () => false
+    );
+  if (await page.locator(ERROR_SCREEN).count()) return { problems: [`choosing "${label}" after "${before ?? NO_LAYER_LABEL}" shows the error screen`], layer: label };
+  if (!settled) return { problems: [`"${label}" draws nothing in ${LAYER_TIMEOUT_MS / 1000} s`], layer: label };
+  if (!PHYSICAL_IDS.has(id)) await expect(page.getByTestId("district-fills")).toBeAttached({ timeout: LAYER_TIMEOUT_MS });
+  return { problems: [], layer: label };
 }
 
 export async function hubOutcome(page: Page, family: string): Promise<{ problems: string[]; notes: string[] }> {

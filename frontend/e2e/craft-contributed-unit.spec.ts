@@ -124,6 +124,7 @@ test("the client refuses a picture credited to a person, an AI image shown as a 
   ];
   for (const shelves of cases) expect(refused(shelves)).toThrow(ShapeError);
   expect(refused({ glance: [plate(1, { mime: "image/gif" as ContributedPlate["mime"] })] })).toThrow(ShapeError);
+  for (const mime of ["image/avif", "image/svg+xml"] as const) expect(refused({ glance: [plate(1, { mime })] })).not.toThrow();
   expect(refused({ glance: [{ ...plate(1), contributor: "Asha Patel" } as ContributedPlate] })).toThrow(/no such field/);
   expect(refused({ glance: [plate(1)], history: [plate(1)] })).toThrow(/each contributed picture shown once/);
   expect(refused({ glance: [] })).toThrow(ShapeError);

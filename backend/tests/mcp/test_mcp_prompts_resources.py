@@ -109,6 +109,29 @@ async def test_research_a_field_carries_the_method_and_names_the_tools_in_order(
     assert "QUEUED" in text and "FAILED" in text
 
 
+async def test_every_prompt_finds_reads_and_checks_sources_with_the_server_s_tools() -> None:
+    research, section, component, page, picture, dataset = await every_prompt()
+    for text in (research, page):
+        assert in_order(
+            text,
+            "`list_open_work`",
+            "Call `search_sources`",
+            "call `lookup_compound`",
+            "Call `read_source`",
+            "`archive_source`",
+            "Call `check_quote`",
+            "Call `propose_",
+        )
+    assert in_order(section, "`search_sources`", "`read_source`", "`check_quote`", "call `propose_facts`")
+    assert in_order(
+        component, "`list_components` first", "`search_sources`", "`check_quote`", "`lookup_compound`"
+    )
+    assert in_order(dataset, "Find the dataset with `search_sources`", "Call `read_source`", "`check_quote`")
+    assert in_order(picture, "`start_image_upload`", "call `find_pictures`")
+    for text in (research, section, component, page, picture, dataset):
+        assert "## Finding and reading sources" in text
+
+
 async def test_write_a_section_and_deliver_a_component_add_their_own_rules() -> None:
     section = await prompt_text("write_section", {"craft_slug": "Kutch-Ajrakh", "field": "HISTORY"})
     assert "## Writing a section" in section and all(heading in section for heading in METHOD)

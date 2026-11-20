@@ -10,7 +10,7 @@ from app.models.enums import IMAGE_ORIGINS
 from .base import ContractModel
 from .blocks import ExplainerSentence, require_facts
 from .image_contributions import AI_GENERATED, GENERATOR_MAX_CHARS, IMAGE_TEXT_MAX_CHARS, shown_label
-from .image_intake import JPEG, PNG, WEBP
+from .image_intake import AVIF, JPEG, PNG, SVG, WEBP
 
 __all__ = [
     "CONTRIBUTED_CREDIT",
@@ -24,7 +24,7 @@ __all__ = [
 
 CONTRIBUTED_CREDIT = "Contributed to KalaVigyan"
 CONTRIBUTED_PATH = "/api/crafts/contributed/{id}"
-CONTRIBUTED_MIMES = (PNG, JPEG, WEBP)
+CONTRIBUTED_MIMES = (PNG, JPEG, WEBP, AVIF, SVG)
 CONTRIBUTED_PER_CHAPTER_MAX = 6
 
 

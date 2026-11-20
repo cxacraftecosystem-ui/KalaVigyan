@@ -17,7 +17,8 @@ component contracts; where it is silent, they decide.
   label of its own). Never a copy: a close match in the library refuses a new proposal with the
   matches and the two ways on.
 - A `MISSING_COMPONENT` task names its need: `what-if`, `molecules`, `map`, `reaction-player` or
-  `pictures`, and only a component of a kind that need lists completes it. Pictures are given, not
+  `pictures`, and only a component of a kind that need lists completes it. An `experiment_lab`
+  completes `what-if`, and a delivered `general_map_layer` completes `map`. Pictures are given, not
   delivered as components (the contributor skill, Pictures).
 
 ## Choosing a kind
@@ -32,7 +33,7 @@ Choose by what the reader must see:
 | places, with or without a value each | `general_map_layer` |
 | a mechanism, a section, a tool or an object | `general_drawing`, or `diagram` for a chain of linked steps |
 | one stated equation | `equation_card` |
-| molecules | `structure_diagram` (flat, with their PubChem records) or `molecule_3d` |
+| molecules | `structure_diagram` (flat, with their PubChem records from `lookup_compound`) or `molecule_3d` |
 | a reaction a source states step by step | `reaction_player` |
 | what each material is and does | `material_cards` |
 | sources that disagree | `source_disagreements` |

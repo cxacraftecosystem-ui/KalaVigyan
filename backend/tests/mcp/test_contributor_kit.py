@@ -1,8 +1,9 @@
 import re
 from pathlib import Path
 
+from app.api.mcp_tools import TOOLS
 from app.api.proposal_limits import LIMIT_NOUNS
-from app.core.rate_limit import FACT_PROPOSALS, PROPOSAL_LIMITS
+from app.core.rate_limit import FACT_PROPOSALS, LOOKUP_LIMITS, PROPOSAL_LIMITS
 from app.data.contributor_kit import (
     CONTRIBUTOR_SKILL_PATH,
     DESIGN_TOKENS_PATH,
@@ -39,7 +40,20 @@ CONTRIBUTOR_TOOLS = (
     "give_image",
     "give_images",
     "start_image_upload",
+    "search_sources",
+    "read_source",
+    "check_quote",
+    "lookup_compound",
+    "lookup_entity",
+    "find_pictures",
+    "archive_source",
 )
+LOOKUP_TABLE = {
+    "source searches": ("`search_sources`, `find_pictures`", (30, 60, 120)),
+    "source reads": ("`read_source`, `check_quote`, `lookup_compound`, `lookup_entity`", (120, 240, 480)),
+    "paid searches": ("the Brave and Elsevier routes of `search_sources`", (5, 15, 30)),
+    "source archives": ("`archive_source`", (5, 10, 20)),
+}
 
 REPOSITORY = Path(__file__).resolve().parents[3]
 SITE_COPY = REPOSITORY / "frontend" / "public" / SITE_SKILL_PATH.lstrip("/")
@@ -93,3 +107,21 @@ def test_the_skill_teaches_every_contributor_tool_by_its_name() -> None:
     for name in CONTRIBUTOR_TOOLS:
         assert f"`{name}`" in text, name
     assert "taskKey" not in text and "craftSlug" not in text and "claimId" not in text
+
+
+def test_the_skill_teaches_every_tool_the_server_offers() -> None:
+    text = CONTRIBUTOR_SKILL_PATH.read_bytes().decode("utf-8")
+    untaught = sorted(name for name in TOOLS if f"`{name}`" not in text)
+    assert untaught == []
+
+
+def test_the_source_tool_allowances_the_skill_teaches_are_the_server_s() -> None:
+    rows = {
+        row[0]: (row[1], tuple(int(cell) for cell in row[2:]))
+        for row in table_rows("Finding and reading sources")
+    }
+    assert rows == LOOKUP_TABLE
+    assert {use: tuple(limits.values()) for use, limits in LOOKUP_LIMITS.items()} == {
+        use: limits for use, (_tools, limits) in LOOKUP_TABLE.items()
+    }
+    assert all(tuple(limits) == TRUST_TIERS for limits in LOOKUP_LIMITS.values())

@@ -8,7 +8,18 @@ from typing import Any
 
 from app.data.answer_kit import answer_kit, answer_view
 from app.data.contributor_kit import SITE_SKILL_PATH, contributor_skill, design_tokens
-from app.data.skill_library import DATASETS_SITE_PATH, REFERENCES, Reference, datasets_skill, reference_text
+from app.data.skill_library import (
+    CONTRACTS,
+    DATASETS_SITE_PATH,
+    INDEX_URI,
+    REFERENCES,
+    Contract,
+    Reference,
+    contract_text,
+    datasets_skill,
+    reference_text,
+    server_index,
+)
 from app.research.mcp_ask import ANSWER_VIEW_MIME, ANSWER_VIEW_URI
 
 from .mcp_protocol import INVALID_PARAMS, RESOURCE_NOT_FOUND, RequestError
@@ -19,6 +30,7 @@ __all__ = [
     "CONTRIBUTOR_SKILL_URI",
     "DATASETS_SKILL_URI",
     "DESIGN_TOKENS_URI",
+    "INDEX_URI",
     "RESOURCES",
     "VIEW_META",
     "resource_list",
@@ -75,6 +87,26 @@ def _reference(reference: Reference) -> Resource:
     )
 
 
+def _contract(contract: Contract) -> Resource:
+    return Resource(
+        contract.uri,
+        f"kalavigyan-contract-{contract.name}",
+        f"{contract.title}, a KalaVigyan contract",
+        f"{contract.holds}. The protocol a contributor's client follows, the same text as "
+        f"{contract.repository_path} in KalaVigyan's repository.",
+        MARKDOWN,
+        partial(contract_text, contract.name),
+    )
+
+
+INDEX = Resource(
+    INDEX_URI,
+    "kalavigyan-index",
+    "Everything the KalaVigyan MCP server offers",
+    "Every tool, prompt and resource of the server with one line each: where to start and what to read.",
+    MARKDOWN,
+    server_index,
+)
 SKILLS = (
     Resource(
         CONTRIBUTOR_SKILL_URI,
@@ -131,7 +163,13 @@ DESIGN = (
 RESOURCES: Mapping[str, Resource] = MappingProxyType(
     {
         resource.uri: resource
-        for resource in (*SKILLS, *(_reference(reference) for reference in REFERENCES.values()), *DESIGN)
+        for resource in (
+            INDEX,
+            *SKILLS,
+            *(_reference(reference) for reference in REFERENCES.values()),
+            *(_contract(contract) for contract in CONTRACTS.values()),
+            *DESIGN,
+        )
     }
 )
 

@@ -7,7 +7,7 @@ import { integer, list, matching, nullable, object, oneOf, ShapeError, text, typ
 
 export const CONTRIBUTED_CREDIT = "Contributed to KalaVigyan";
 export const ILLUSTRATION_CREDIT = "Illustration, made with";
-export const CONTRIBUTED_MIMES = ["image/png", "image/jpeg", "image/webp"] as const;
+export const CONTRIBUTED_MIMES = ["image/png", "image/jpeg", "image/webp", "image/avif", "image/svg+xml"] as const;
 export const CONTRIBUTED_PER_CHAPTER_MAX = 6;
 export const CONTRIBUTED_PATH = /^\/api\/crafts\/contributed\/[0-9a-f-]{36}$/;
 export const CONTRIBUTED_RULE = `at most ${CONTRIBUTED_PER_CHAPTER_MAX} contributed pictures, each once, credited to KalaVigyan without a name, an AI image as an illustration made with its tool, showing facts only`;
