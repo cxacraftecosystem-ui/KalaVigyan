@@ -31,9 +31,13 @@ specs from its template).
 | a craft's cited edition | `/crafts/<slug>/v<N>` | `GET /api/crafts/{slug}/monograph?version=N` |
 | a craft's monograph (alias) | `/crafts/<slug>/monograph` | `GET /api/crafts/{slug}/monograph` |
 | a category's monograph | `/categories/<slug>/monograph` | `GET /api/categories/{slug}/monograph` |
+| a bundle's private preview | `/preview/<token>` | `GET /api/knowledge/pages/previews/{token}` with the reader's session (`open-work.md`, Previews before submitting) |
 
 All are server components in `app/(reading)`, read through `publicFetch` (tag
-`monograph-document:<subject>:<slug>`, revalidated daily, static params from `/site/pages`).
+`monograph-document:<subject>:<slug>`, revalidated daily, static params from `/site/pages`),
+except the preview, read per request through `signedInFetch` (`app/(reading)/preview/[token]/
+previewDocument.ts`: a token off its pattern, 403, 404 or 422 is the not-found page, 401 sends the
+reader to sign in and back, any other failure is thrown), titled "Preview: <title>" and `noindex`.
 
 - **`/crafts/<slug>`**: a craft with a document (stored or generated; Kutch Ajrakh since the parity
   proof passed, 2026-11-20; every curated craft since round 6) draws it with `MonographPage`
@@ -179,6 +183,19 @@ in `div.wide`, across the reading column and its margin from 1200px, any other i
 reading column. The kind has no kit place of its own (`mb`, `wrap`), and
 `answerBlock.css` gives the block's elements back the app's own margins, padding, colour, fonts and
 lists (`revert-layer` over the kit's scope resets), so it is drawn as on the answer page.
+
+## The general kinds
+
+`components/monograph/kinds/general/` draws the five general kinds a contributor can deliver for
+anything the 42 kinds do not show (`component-specs-general.md`): `DrawingView`, `ChartView` (with
+`ChartLine`), `TableView`, `TimelineView` and `MapLayerView`, each in `GeneralFigure` (the
+`kv-figure` frame, the kind as its kicker, the title and caption units, "All N values" where the
+values are not all on show). Specs parse with `lib/componentSpecsGeneral.ts`; a spec off its shape
+draws nothing. Colours are the chart and map tokens (`general.css`): `--chart-series`, the
+emphasised mark `--chart-emph`, tracks `--chart-grid`, India's outline `--map-land` and `--map-coast`
+without state lines, discs `--map-marker` ringed `--map-marker-ring`. SVG text scales with the
+drawing's fit (`useFitScale`, `--k`) so it stays at the caption size. A drawing is an image of its
+cleaned SVG on cloth white (`--dye-cloth`) inside a specimen mat, in every theme.
 
 ## Native views on the authored page
 

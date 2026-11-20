@@ -1,6 +1,6 @@
 from app.models.enums import BLOCK_KINDS
 
-__all__ = ["COMPONENT_KINDS", "DOCUMENT_KINDS", "PIECE_KINDS"]
+__all__ = ["COMPONENT_KINDS", "DOCUMENT_KINDS", "GENERAL_KINDS", "PIECE_KINDS"]
 
 COMPONENT_KINDS = (
     "ai_illustration",
@@ -41,5 +41,6 @@ COMPONENT_KINDS = (
     "timeline",
     "voice",
 )
-PIECE_KINDS = (*BLOCK_KINDS, *COMPONENT_KINDS)
+GENERAL_KINDS = ("general_drawing", "general_chart", "general_table", "general_timeline", "general_map_layer")
+PIECE_KINDS = (*BLOCK_KINDS, *COMPONENT_KINDS, *GENERAL_KINDS)
 DOCUMENT_KINDS = ("answer_block",)

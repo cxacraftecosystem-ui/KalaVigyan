@@ -17,6 +17,11 @@ drawings, held text; `docs/contracts/component-specs-plates.md`).
 Run `python -m app.scripts.extract_specs_data Kutch-Ajrakh` from `backend` to write the spec files,
 `--check` to list those that differ from what extraction writes.
 
+Any kind of this group, the plates group and the science group can also arrive as data from a
+contributor through `propose_component`, with the units it places, and is drawn by the same view
+once approved (`component-specs-general.md`, which also holds the five general kinds for anything
+new). A delivered spec holds no citation of its own: its text is in units resting on shown facts.
+
 ## Shared parts
 
 - **TextLine**: one line of text in its element (`p`, `h3`, `li`, `span`, `dt`, `dd`, `figcaption`,

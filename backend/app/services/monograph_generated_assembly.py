@@ -16,6 +16,7 @@ from app.research.monograph_document import MonographDocument
 from app.research.monograph_page import CitedSource, ComponentEntry, LayoutEntry, MonographContent, TextUnit
 from app.research.page_layout import PageLayout, PageLayoutEntry, arranged_layout, picture_label
 
+from .component_proposals_drawn import drawn_delivery
 from .document_components import DocumentStructure, StructureBlock
 from .knowledge_view import ClaimView
 from .monograph_generated_drawings import Drawings
@@ -198,14 +199,7 @@ def _pictures(parts: GeneratedParts, page: _Page) -> dict[str, list[str]]:
 def _components(parts: GeneratedParts, page: _Page, drawings: Drawings) -> dict[str, list[str]]:
     by_chapter: dict[str, list[str]] = {}
     for component in parts.components:
-        if component.label in page.components or component.monograph is None:
-            continue
-        spec = drawings.spec(component.monograph, component.label)
-        if spec is not None:
-            page.specs[component.label] = spec
-        elif drawings.has_fragment(component.monograph, component.label):
-            page.reused[component.label] = component.monograph
-        else:
+        if component.label in page.components or not _drawn(parts, page, drawings, component):
             continue
         chapter = field_chapter(component.field)
         page.components[component.label] = ComponentEntry(
@@ -221,6 +215,29 @@ def _components(parts: GeneratedParts, page: _Page, drawings: Drawings) -> dict[
         )
         by_chapter.setdefault(chapter, []).append(component.label)
     return by_chapter
+
+
+def _drawn(parts: GeneratedParts, page: _Page, drawings: Drawings, component: RegisteredComponent) -> bool:
+    if component.delivered is not None:
+        place = (field_chapter(component.field), component.field)
+        taken = {*page.units, *page.drafts}
+        drawn = drawn_delivery(component.delivered, place=place, visible=parts.visible, taken=taken)
+        if drawn is None:
+            return False
+        page.specs[component.label] = drawn.spec
+        page.drafts.update(drawn.drafts)
+        page.held[component.label] = list(drawn.drafts)
+        return True
+    if component.monograph is None:
+        return False
+    spec = drawings.spec(component.monograph, component.label)
+    if spec is not None:
+        page.specs[component.label] = spec
+    elif drawings.has_fragment(component.monograph, component.label):
+        page.reused[component.label] = component.monograph
+    else:
+        return False
+    return True
 
 
 def _lay_out(page: _Page, found: Sequence[Mapping[str, list[str]]]) -> None:

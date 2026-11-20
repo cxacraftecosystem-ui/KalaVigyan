@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any
 
@@ -18,6 +18,7 @@ from app.models.open_work import LIVE_PROPOSALS
 from app.research.component_proposals import (
     SUBJECT_LINK,
     WAYS_ON,
+    ComponentMatch,
     ComponentProposalDraft,
     ComponentProposalResult,
     close_matches,
@@ -29,8 +30,11 @@ from app.research.knowledge_api import ComponentSummary
 from app.research.open_work_texts import counted
 
 from .component_library import library_components
+from .component_proposals_register import register_component, registers
+from .component_proposals_spec import NO_KNOWN, CheckedDelivery, checked_delivery
 from .knowledge_api import known_craft
 from .open_work_components import registered_pieces
+from .review_queue_errors import DecisionConflict
 from .task_reservations import complete_task
 
 __all__ = ["propose_component"]
@@ -46,10 +50,32 @@ STORED = {
     PENDING: "Stored for review: an Admin approves or rejects it. Who proposed it is kept privately, never shown.",
     APPROVED: "Approved at once as a reviewer's own proposal; it waits to be built and registered.",
 }
+REGISTERED = {
+    PENDING: (
+        "Stored for review with its spec: an Admin's approval registers it in the library, and every page it "
+        "applies to draws it. Who proposed it is kept privately, never shown."
+    ),
+    APPROVED: (
+        "Registered at once in the library, because your account reviews components: every page it applies to "
+        "draws it from its spec."
+    ),
+}
+LINKED = {
+    PENDING: (
+        "Stored for review: an Admin's approval keys the registered component to its new subjects. Who proposed "
+        "it is kept privately, never shown."
+    ),
+    APPROVED: "Linked at once to its new subjects, because your account reviews components.",
+}
 
 
 async def propose_component(
-    session: AsyncSession, user: User, draft: ComponentProposalDraft, *, now: datetime
+    session: AsyncSession,
+    user: User,
+    draft: ComponentProposalDraft,
+    *,
+    now: datetime,
+    known: Mapping[uuid.UUID, Sequence[str]] = NO_KNOWN,
 ) -> ComponentProposalResult:
     problem = task_problem(draft)
     if problem is not None:
@@ -59,25 +85,49 @@ async def propose_component(
     await _check_subjects(session, draft)
     matches = close_matches(draft, await _candidates(session, draft))
     if matches:
-        verb = "shows" if len(matches) == 1 else "show"
-        return ComponentProposalResult(
-            outcome="REFUSED",
-            label=draft.label,
-            message=REFUSED.format(count=counted(len(matches), "component"), verb=verb),
-            matches=matches,
-            ways_on=list(WAYS_ON),
-        )
-    row = _proposal(draft, user, None if owner is None else owner.id, now=now)
+        return _refused(draft, matches)
+    delivery = await checked_delivery(session, draft, known=known) if draft.delivered else None
+    row = _proposal(draft, user, None if owner is None else owner.id, delivery, now=now)
+    await _stored(session, row)
+    if draft.task_key is not None:
+        await complete_task(session, user.id, draft.task_key, now=now)
+    if row.status == APPROVED and registers(row):
+        await _registered_at_once(session, row)
+    return ComponentProposalResult(
+        outcome="STORED", proposal_id=row.id, status=row.status, label=draft.label, message=_message(row)
+    )
+
+
+def _message(row: ComponentProposal) -> str:
+    if row.extension == SUBJECT_LINK:
+        return LINKED[row.status]
+    return (REGISTERED if row.spec is not None else STORED)[row.status]
+
+
+def _refused(draft: ComponentProposalDraft, matches: list[ComponentMatch]) -> ComponentProposalResult:
+    verb = "shows" if len(matches) == 1 else "show"
+    return ComponentProposalResult(
+        outcome="REFUSED",
+        label=draft.label,
+        message=REFUSED.format(count=counted(len(matches), "component"), verb=verb),
+        matches=matches,
+        ways_on=list(WAYS_ON),
+    )
+
+
+async def _stored(session: AsyncSession, row: ComponentProposal) -> None:
     try:
         async with session.begin_nested():
             session.add(row)
     except IntegrityError as taken:
-        raise InvalidInput(WAITING.format(label=draft.label)) from taken
-    if draft.task_key is not None:
-        await complete_task(session, user.id, draft.task_key, now=now)
-    return ComponentProposalResult(
-        outcome="STORED", proposal_id=row.id, status=row.status, label=draft.label, message=STORED[row.status]
-    )
+        raise InvalidInput(WAITING.format(label=row.label)) from taken
+
+
+async def _registered_at_once(session: AsyncSession, row: ComponentProposal) -> None:
+    try:
+        await register_component(session, row)
+    except DecisionConflict as conflict:
+        raise InvalidInput(str(conflict)) from None
 
 
 async def _check_labels(session: AsyncSession, draft: ComponentProposalDraft) -> None:
@@ -171,10 +221,18 @@ async def _same_label(session: AsyncSession, label: str) -> Sequence[ComponentSu
 
 
 def _proposal(
-    draft: ComponentProposalDraft, user: User, craft_id: uuid.UUID | None, *, now: datetime
+    draft: ComponentProposalDraft,
+    user: User,
+    craft_id: uuid.UUID | None,
+    delivery: CheckedDelivery | None,
+    *,
+    now: datetime,
 ) -> ComponentProposal:
     approved = has_rank(user, PROFESSOR)
     return ComponentProposal(
+        spec=None if delivery is None else delivery.spec,
+        units=None if delivery is None else delivery.units,
+        claimIds=[] if delivery is None else list(delivery.claim_ids),
         proposerId=user.id,
         label=draft.label,
         title=draft.title,

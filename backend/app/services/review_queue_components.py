@@ -9,13 +9,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ComponentProposal, Craft, User
-from app.research.component_proposals import ComponentProposalDraft, ProposedSubject
+from app.research.component_proposals import SUBJECT_LINK, ComponentProposalDraft, ProposedSubject
 from app.research.crafts import QUESTION_MAX_CHARS, CraftRef
 from app.research.review_queue import COMPONENTS, KIND_ORIGINS, ComponentItem, QueueDecision
 from app.research.review_queue_components import ClosestComponent, ComponentReview, closest_components
 
 from . import audit
 from .component_library import library_components
+from .component_proposals_register import register_component, registers
 from .knowledge_view import craft_ref
 from .review_queue_errors import DecisionConflict, OwnItem, UnknownItem
 from .review_queue_select import PENDING, Rendered, rows_by_id
@@ -29,6 +30,8 @@ MESSAGES = {
     APPROVED: "Approved for a builder: it waits to be built and registered in the library.",
     REJECTED: "Rejected: it will not be built, and the reason is kept with the proposal.",
 }
+REGISTERED = "Approved and registered in the library: every page it applies to draws it from its spec."
+LINKED = "Approved and linked: the registered component is keyed to its new subjects."
 
 
 @dataclass(frozen=True)
@@ -77,6 +80,9 @@ async def _decided(
         decision.note,
     )
     await session.flush()
+    registered = decision.status == APPROVED and registers(row)
+    if registered:
+        await register_component(session, row)
     await audit.record(
         session,
         action=f"review.component_{decision.action}",
@@ -85,7 +91,13 @@ async def _decided(
         target_id=row.id,
         detail={"from": PENDING, "to": decision.status},
     )
-    return QueueDecision(kind=COMPONENTS, id=row.id, status=row.status, message=MESSAGES[row.status])
+    return QueueDecision(kind=COMPONENTS, id=row.id, status=row.status, message=_message(row, registered))
+
+
+def _message(row: ComponentProposal, registered: bool) -> str:
+    if not registered:
+        return MESSAGES[row.status]
+    return LINKED if row.extension == SUBJECT_LINK else REGISTERED
 
 
 async def _item(session: AsyncSession, row: ComponentProposal, craft: Craft | None) -> ComponentItem:
