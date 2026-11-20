@@ -5,6 +5,7 @@ export const PREVIEW_HOST = /^kalavigyan-[a-z0-9]{9}-cxacraftecosystem-8028s-pro
 export const BYPASS_HEADER = "x-vercel-protection-bypass";
 export const SET_BYPASS_COOKIE_HEADER = "x-vercel-set-bypass-cookie";
 export const GOOGLE_ORIGIN_REFUSED = "[GSI_LOGGER]: The given origin is not allowed for the given client ID.";
+export const VERCEL_TOOLBAR_REFUSED = "Framing 'https://vercel.live/' violates the following Content Security Policy directive";
 
 const GOOGLE_SIGN_IN = "https://accounts.google.com/gsi/";
 const FAILED_RESOURCE = "Failed to load resource";
@@ -33,6 +34,10 @@ export function roleSiteRefusal(url: string): string | null {
 
 export function googleRefusesPreview(text: string, from: string): boolean {
   return text.startsWith(GOOGLE_ORIGIN_REFUSED) || (text.startsWith(FAILED_RESOURCE) && from.startsWith(GOOGLE_SIGN_IN));
+}
+
+export function previewConsoleNoise(text: string, from: string): boolean {
+  return googleRefusesPreview(text, from) || text.startsWith(VERCEL_TOOLBAR_REFUSED);
 }
 
 export function siteRefusal(url: string): string | null {

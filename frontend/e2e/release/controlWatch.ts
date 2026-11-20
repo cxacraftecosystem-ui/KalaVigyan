@@ -1,7 +1,7 @@
 import type { ConsoleMessage, Page, Request, Response } from "@playwright/test";
 
 import { clip, errorHeadline } from "../production/checks";
-import { googleRefusesPreview, isPreview } from "../production/preview";
+import { isPreview, previewConsoleNoise } from "../production/preview";
 
 import { checkRecord, keepRecord } from "./report";
 
@@ -105,7 +105,7 @@ export class ControlWatch {
     const from = message.location().url;
     if (text.startsWith(SAME_ORIGIN_RESOURCE) && from && this.sameOrigin(from)) return;
     if (text === UNKNOWN_WEBRTC_DIRECTIVE && from.startsWith("about:srcdoc")) return;
-    if (this.preview && googleRefusesPreview(text, from)) return;
+    if (this.preview && previewConsoleNoise(text, from)) return;
     this.flag(`console error: ${clip(text)}`);
   }
 

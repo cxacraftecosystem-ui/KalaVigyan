@@ -6,7 +6,7 @@ import { NetworkQuiet, captureScreen, readyForCapture, settle, sightProblems } f
 import { CITED_CONTENT, OVERFLOW_LIMIT, clip, errorHeadline, gapCopyFindings } from "./checks";
 import type { Scheme } from "./matrix";
 import { auditPage } from "./pageAudit";
-import { googleRefusesPreview, isPreview } from "./preview";
+import { isPreview, previewConsoleNoise } from "./preview";
 import type { ScreenOutcome, ScreensReport } from "./report";
 import { SCREENSHOT_DIR, baseUrl, runFileName, runId, runStartedAt, writeReport } from "./run";
 import { answersScript, stuckStack, watchScript } from "./stuckPage";
@@ -213,7 +213,7 @@ export class ScreenRun {
     const from = message.location().url;
     if (text.startsWith("Failed to load resource") && from && this.sameOrigin(from)) return;
     if (text === UNKNOWN_WEBRTC_DIRECTIVE && from.startsWith("about:srcdoc")) return;
-    if (this.preview && googleRefusesPreview(text, from)) return;
+    if (this.preview && previewConsoleNoise(text, from)) return;
     this.flag(`console error: ${clip(text)}`);
   }
 

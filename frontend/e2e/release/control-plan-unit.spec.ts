@@ -15,6 +15,7 @@ import {
   type LayerChoice
 } from "./controlPlan";
 import { designedAnswer } from "./controlWatch";
+import { servedSiteOrigin } from "./site";
 
 const land = (index: number): LayerChoice => ({ kind: "land", index });
 const districts = (index: number): LayerChoice => ({ kind: "districts", index });
@@ -83,4 +84,9 @@ test("only a term no two crafts' cited sentences share may answer 404, as the le
   expect(designedAnswer("/api/shared-science/alum", 500)).toBe(false);
   expect(designedAnswer("/api/crafts/Kutch-Ajrakh/shared-science", 404)).toBe(false);
   expect(designedAnswer("/api/map-layers/relief", 404)).toBe(false);
+});
+
+test("a preview reads production's API, so the API's sign-in metadata names production's site", () => {
+  expect(servedSiteOrigin("https://kalavigyan-ab12cd34e-cxacraftecosystem-8028s-projects.vercel.app")).toBe("https://kalavigyan.vercel.app");
+  expect(servedSiteOrigin("https://kalavigyan.vercel.app")).toBe("https://kalavigyan.vercel.app");
 });

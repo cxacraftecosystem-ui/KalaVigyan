@@ -1,4 +1,5 @@
 import { clip } from "../production/checks";
+import { BYPASS_HEADER } from "../production/preview";
 
 import { PROTOCOL_VERSION, replyResult, toolContent } from "./mcpContract";
 
@@ -25,9 +26,10 @@ export async function getJson(url: string): Promise<Answer> {
   return answerOf(await fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(ANSWER_TIMEOUT_MS) }));
 }
 
-export async function rpc(endpoint: string, method: string, params: Json, token?: string): Promise<Answer> {
+export async function rpc(endpoint: string, method: string, params: Json, token?: string, bypass?: string): Promise<Answer> {
   const headers: Record<string, string> = { "content-type": "application/json", accept: "application/json", "mcp-protocol-version": PROTOCOL_VERSION };
   if (token) headers.authorization = `Bearer ${token}`;
+  if (bypass) headers[BYPASS_HEADER] = bypass;
   const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method, params });
   return answerOf(await fetch(endpoint, { method: "POST", headers, body, signal: AbortSignal.timeout(ANSWER_TIMEOUT_MS) }));
 }
