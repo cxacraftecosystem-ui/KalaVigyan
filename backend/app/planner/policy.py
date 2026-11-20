@@ -54,7 +54,7 @@ DEGRADED_MODES: Mapping[str, str] = MappingProxyType({"DEEP": "HYBRID"})
 NATIVE_QUERY_SEARCHERS = frozenset({WikipediaAdapter.name, WikidataAdapter.name})
 SEAT_LIVE_SHARE = ResearchShare(queries=1, native_queries=0, fetches=1)
 SEAT_RESEARCH_DEPTHS = WIDENED_DEPTHS
-SEAT_RESEARCH_SECONDS = 55.0
+SEAT_RESEARCH_SECONDS = 50.0
 SEAT_SENTENCES_MAX = 3
 
 

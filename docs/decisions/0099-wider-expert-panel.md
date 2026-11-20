@@ -86,10 +86,10 @@ the "No live search, no fetch and no new claim" of point 1 for such a seat only.
    (`knowledge-writes.md`). The claims it wrote or re-found are the seat's own evidence, offered
    before its stored findings (`services/seat_search.with_live`), and the take is composed and
    checked as before.
-4. **Time.** Each gap seat's research is bounded by `SEAT_RESEARCH_SECONDS` = 55 s, within the
-   builder's 90 s; a seat that runs out of time or fails is logged and keeps its stored evidence, and
-   the other seats are not held up. The searches of all gap seats run at once, beside the stored
-   searches.
+4. **Time.** Each gap seat's research is bounded by `SEAT_RESEARCH_SECONDS` = 50 s, which leaves
+   the takes and the difference pass 40 s of the builder's 90 s; a seat that runs out of time or
+   fails is logged and keeps its stored evidence, and the other seats are not held up. The searches
+   of all gap seats run at once, beside the stored searches.
 5. **Wiring.** `BuildAsk.research` (a `SeatResearch`) carries the section's research to its
    builders (`seat_research.section_ask`, from `answer_sections`); a build without it researches
    nothing live. Spend is recorded as every other call (point 6).
