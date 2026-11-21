@@ -101,6 +101,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p "$RUNNER_TEMP/rendered"
+          render() {
+            jq -Rs --arg ctx "$GITHUB_REPOSITORY" '{text: ., mode: "gfm", context: $ctx}' "$1" | gh api markdown --input - > "$2"
+          }
           status=0
           for md in $(node docs/readme-kit/tools/check.mjs files); do
             html="$RUNNER_TEMP/rendered/${md//\//_}.html"
@@ -108,11 +111,18 @@ jobs:
               echo "::warning file=$md::larger than the 400 KB the Markdown API renders; its mermaid blocks are still checked above"
               continue
             fi
-            if ! jq -Rs --arg ctx "$GITHUB_REPOSITORY" '{text: ., mode: "gfm", context: $ctx}' "$md" | gh api markdown --input - > "$html"; then
-              echo "::error file=$md::gh api markdown refused this file"
-              status=1
-              continue
-            fi
+            sleep 1
+            tries=1
+            until render "$md" "$html"; do
+              if [ "$tries" -ge 4 ]; then
+                echo "::error file=$md::gh api markdown refused this file"
+                status=1
+                continue 2
+              fi
+              echo "::warning file=$md::gh api markdown refused this file, so it is asked again in 60 s (try $tries of 4)"
+              tries=$((tries + 1))
+              sleep 60
+            done
             node docs/readme-kit/tools/check.mjs rendered "$html" "$md" || status=1
           done
           exit "$status"
