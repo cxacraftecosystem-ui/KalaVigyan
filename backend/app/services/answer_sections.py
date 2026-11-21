@@ -160,7 +160,7 @@ async def _guarded(
 async def _section(
     spec: SectionSpec, share: ResearchShare, context: SectionContext, floor: Floor, floored: tuple[Block, ...]
 ) -> SectionOutcome:
-    attempts = [await _attempt(spec, context, context.ledger.take(share), fresh=False)]
+    attempts = [await _attempt(spec, context, context.ledger.take_section(share), fresh=False)]
     fresh = context.ledger.take_fresh(share) if _needs_fresh(attempts[0], floored) else None
     if fresh is not None:
         await context.stream.section_state(spec.id, "RESEARCHING")

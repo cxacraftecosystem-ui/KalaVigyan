@@ -148,8 +148,10 @@ out) and `checked_vectors(vectors, expected=)`, which raises `ExternalFailure` (
 - **Decision**: `clear_winner` gives `RESOLVED`; otherwise any candidates give `AMBIGUOUS`;
   none give `NONE`. The model choice among the candidates (PLAN 5.2 step 6) is the
   understanding step's (decision 0031).
-- **Failures**: an embedding failure is an `ExternalFailure` (or the router's `RouterError`);
-  the answer stream turns any `AppError` from the resolver into one `error` event and `done`.
+- **Failures**: an embedding failure is an `ExternalFailure` (or the router's `RouterError`). A
+  failed semantic step that is not a spend refusal is logged and the lexical resolution stands,
+  so the crafts the names matched are still offered (decision 0123); a spend refusal is raised.
+  The answer stream turns any `AppError` the resolver raises into one `error` event and `done`.
 
 ## Evidence and source adapters (`research/evidence.py`)
 
@@ -460,16 +462,19 @@ it; the answer flow passes `providers/embedding.router_embedder(principal)`.
   `craft` is any craft: stored searches read every visible concept, queries carry no craft name
   and the plan call sees `crafts.ANY_CRAFT_LINE` in place of the craft block. `depth` bounds the
   queries and fetches by `research/depth.research_budget(mode, depth)`. `language` is the
-  answer language (`ANSWER_LANGUAGES`); `englishQuestion` is the question in English when the
-  caller has it (the answering service passes the question itself when it is written in Latin
-  script), else the planner uses the plan call's rendering. An explainer section adds `focus`
+  answer language (`ANSWER_LANGUAGES`); `englishQuestion` is the answer's one English rendering
+  (`Understanding.englishQuestion`, decision 0123), which the stored search, the component
+  catalogue, the seat searches, the simulation and what-if builders and the lede all read; without
+  it the planner's stored search uses the plan call's rendering and the others the question as
+  asked. An explainer section adds `focus`
   (its discipline; the plan call gets a `Section` line), `seats` (the understanding's experts:
   the plan call's `Experts` line names each seat speaking in the section,
   `expert_panel.speaking_seats` of `focus`, `seats` and `depth`, with the source kinds it reads,
   and the reading order shares the section's reads with them; decision 0046), `share` (`ResearchShare {queries, nativeQueries, fetches}`, its part of the
   depth budget: `planner/policy.request_limits` takes the smaller of the share and the mode and
   depth limits) and `fresh` (live queries run for covered facets too, finding 8a.2; decision 0032).
-  `split_share(total, parts)` splits a budget evenly, the remainder to the first parts.
+  `split_share(total, parts)` splits a budget evenly, the remainder to the first parts; it is
+  each section's floor, not its ceiling (`ResearchLedger.take_section`, below).
 - `RetrievalPlan {schemaVersion 1, mode, craft | null, intent, language, needsRegion,
   facets[Facet] (1-8), tiers[], queries[PlannedQuery], maxFetches}`; stored per section in
   `Answer.plan` as `research/sections.AnswerPlans {schemaVersion 1, sections[{sectionId,
@@ -829,35 +834,53 @@ ModelUnderstander(model=StructuredModel, resolve=)` implements it with the craft
 - `UnderstandAsk {question, depth, language="en", craftSlug?, anyCraft=false, role?}`; a craft
   and any craft together do not construct.
 - `Understanding {schemaVersion 1, craft | null, candidates[CraftRef] (0-5), compared[CraftRef]
-  (0-3, left out when empty), disciplines [Discipline], seats[ExpertSeat], depth, language, basis:
-  MODEL | RESOLVER, refusal?}`, stored on `Answer.understanding`. `craft` null is any craft; each
-  craft appears once across `craft`, `compared` and `candidates`; `compared` (decision 0064) are
-  the crafts a comparison sets beside `craft`, only in a `MODEL` understanding with a craft;
-  disciplines and seats are listed once each, seats at most the depth's
-  `max_experts`. `MODEL` names at least one discipline; `RESOLVER` (the model call failed or its
-  reply was unusable) names none and no seats; only `RESOLVER` carries a `refusal`, the router's
-  own words when spend was refused. `understood()` is the stream's `Understood` event, its
-  `crafts` the craft then the compared ones.
+  (0-3, left out when empty), disciplines [Discipline], seats[ExpertSeat], depth, language,
+  englishQuestion? (2-1000, left out when absent), basis: MODEL | RESOLVER, refusal?}`, stored on
+  `Answer.understanding`. `craft` null is any craft; each craft appears once across `craft`,
+  `compared` and `candidates`; `compared` (decision 0064) are the crafts a comparison sets beside
+  `craft`, only in a `MODEL` understanding with a craft; disciplines and seats are listed once
+  each, seats at most the depth's `max_experts`. `MODEL` (the reply held something usable) names
+  at least one discipline; `RESOLVER` (the model call failed or its reply held nothing usable)
+  carries the fields the question's words name and their seats (below); only `RESOLVER` carries a
+  `refusal`, the router's own words when spend was refused. `englishQuestion` is the question in
+  English that every search of the answer reads (decision 0123). `understood()` is the stream's
+  `Understood` event, its `crafts` the craft then the compared ones.
 - The call: system `UNDERSTAND_SYSTEM_PROMPT`; user `understand_message` (depth label, the
-  depth's expert range, the listed crafts each in a `craft_block`, the question in an untrusted
-  block); schema `understand_schema(offered)` `{craft: enum of the listed slugs and "", craftNames
-  [string], compare[enum of the listed slugs and ""], disciplines[DISCIPLINES],
-  seats[EXPERT_SEATS]}` with only `type`, `enum`, `items`,
-  `properties`, `required` and `additionalProperties: false`. The reply must choose a listed craft
-  or none and name at least one discipline; duplicates are dropped, at most three names are kept.
+  depth's expert range, its section range `Sections: <min> to <max>`, the listed crafts each in a
+  `craft_block`, the question in an untrusted block); schema `understand_schema(offered)` `{craft:
+  enum of the listed slugs and "", craftNames [string], compare[enum of the listed slugs and ""],
+  disciplines[DISCIPLINES], seats[EXPERT_SEATS], englishQuestion: string}` with only `type`,
+  `enum`, `items`, `properties`, `required` and `additionalProperties: false`.
+- The reply (`understanding_prompt.parsed_reply`, decision 0123) is read field by field: a value
+  the schema refuses (an unlisted craft slug, a name under 2 or over 300 characters, an unknown
+  slug, field or seat, an English rendering under 2 or over 1000 characters) is left out alone
+  and logged, and every other field is kept; duplicates are dropped and at most three names kept.
+  A craft left out is the same as no reply about the craft; `""` is the reply that no single
+  listed craft is meant. A reply that is not a JSON object, or keeps nothing, is no reply.
 - The choice: a slug the reader gave is kept (an unknown one raises `UnknownCraft`); `anyCraft`
   is any craft with every resolver candidate offered; a resolver failure (not a spend refusal, no
   slug given) is logged and the question proceeds with no candidates, so the model's reply and
   the crafts it names decide, else any craft; a `RESOLVED` craft stands, the other
-  candidates offered; `AMBIGUOUS` takes the model's pick, else the top candidate, and offers the
-  rest; `NONE` resolves each model-named craft with a text-only `CraftQuery`, chooses the first
-  `RESOLVED` one and offers every other candidate found, else any craft. At most five offers.
+  candidates offered; `AMBIGUOUS` takes the model's pick, keeps any craft with every candidate
+  offered when the model chose none (`""`: none of them, several, or crafts in general), and takes
+  the top candidate only when there is no reply about the craft; when no craft is chosen and the
+  reader did not ask for any craft (`NONE`, or `AMBIGUOUS` answered `""`), each model-named craft
+  that is not one of the candidates by name is resolved with a text-only `CraftQuery`, the first
+  `RESOLVED` one is chosen and every other candidate found is offered, else any craft. At most
+  five offers.
 - A comparison (`compared_choice`, decision 0064): when the reply's `compare` names at least two
   listed crafts (unknown slugs dropped) and the reader did not ask for any craft, the first of them
   leads (`craft`) and the next three at most are `compared`; a craft the reader picked leads
   instead, and only when it is among them. The others stay offers. `PlanRequest.compared` carries
   them to the block builders (`compare`); research and composition still run for the lead craft.
 - The depth is `effective_depth(asked, role, past_degrade=reply.degraded)`.
+- The fields (`understanding.asked_fields`, `sections.answer_fields`, decision 0123): the
+  reply's disciplines, else the fields the question's words name (`sections.question_fields`:
+  `research/question_cues.py` over every field, the chosen craft's own name left out, read from
+  the reply's English rendering when it has one); then, while fewer than the depth's
+  `min_sections` (Basic 3, Detailed 5, Expert 1), the fields the chosen craft holds cited claims
+  in (`held`, in field order), never a field with nothing behind it; `OVERVIEW` when there are
+  none at all. The seats cover the asked fields, not the fields added to reach the minimum.
 
 ### The answering service (`services/answering.py`, decisions 0012, 0031 and 0032)
 
@@ -898,8 +921,11 @@ stream: each step opens its own.
    `status SEARCHING_STORED`, the craft's `VERIFIED` and `REVIEWED` `APPROVED` claims
    (`retrieval/statements.claim_conditions`, the scope T1 also reads) ranked by any word of the
    question (`ts_rank_cd` over the OR query), at most 14 findings and 4 hypotheses;
-   `answerId` null. No model call for a question in Latin script; another script is first
-   rendered in English by one TRANSLATE call. For any craft the refusal is the `error`.
+   `answerId` null (`services/stored_only_answer`). No model call for a question in Latin
+   script; another script is first rendered in English by one TRANSLATE call. When that
+   rendering fails or the words hold no full-text term (`retrieval/text.query_terms`), nothing is
+   ranked and the answer is `not_enough_evidence`, never an unranked list (decision 0123). For any
+   craft the refusal is the `error`.
    `services/stored_explainer.stream_stored_answer` sends one section per concept heading
    (`HEADING_DISCIPLINES` gives its discipline, else `OVERVIEW`), each `section_started` (state
    `CHECKING`), its sources, one `prose` block of the claims and `section_done READY`; then the
@@ -908,11 +934,15 @@ stream: each step opens its own.
    `begin`; the sections are `research/sections.section_specs(understanding.disciplines, depth)`:
    the fields most important first, at most the depth's `max_sections`, `OVERVIEW` when none,
    ids `s1`, `s2`, ... by order, titled by `DISCIPLINE_TITLES`; then `pieces.reusable` (decision
-   0033): each section whose facet has a reusable stored set streams it first (`trail FOUND` per
+   0033; the understanding tops its fields up to the depth's minimum, above): each section whose
+   facet has a reusable stored set streams it first (`trail FOUND` per
    piece with `storedAt`, `section_started WRITING`, sources, the placed blocks, `section_done
    READY`), and nothing is reused when the ask is `fresh` or for any craft; every other
    `section_started` (`RESEARCHING`) is sent next. The depth's budget (`request_limits` of the question's plan
-   request) is split across the open sections (`services/research_ledger.ResearchLedger`), and up to
+   request) is split across the open sections (`services/research_ledger.ResearchLedger`); a
+   section's first take (`take_section`) is its share plus a fair split, among the sections not
+   yet started, of what is left above their shares, so budget an earlier section left reaches the
+   later ones and no section takes the share of one still waiting (decision 0123); and up to
    `SECTION_CONCURRENCY` (4) sections run at once, each on its own: research with its `focus`,
    `seats` and `share` (the trail streams `FOUND` and `READ` per source as the planner reports
    them, then `FOUND` for the stored sources of its stored claims); `section_state WRITING`;
@@ -1009,7 +1039,11 @@ a router failure is raised to the caller, which keeps the English.
   model=router_structured_model(AiTask.TRANSLATE, principal))`, and pass the cited claims' texts
   (`{view.id: view.text}`) so claim sentences use the cache. Compose the turn in English
   (`ComposeRequest.language` refuses anything else); `english_question(question, translation)`
-  renders a question in another script for ranking stored claims.
+  renders a question in another script for ranking stored claims, and `english_rendering` gives
+  that rendering or `None` when the call failed. `with_english_question(understanding, *,
+  question, language, translation)` sets the answer's one rendering before research (decision
+  0123): the understanding call's when it gave one; else the question as asked when it is in Latin
+  script and the answer is in English; else, for another script, one TRANSLATE call's; else none.
 - Cache: `TranslationCache {known(language, {claimId: text}), remember(language, {claimId:
   (text, translation)})}`, `translation_cache.SqlTranslationCache` over `ClaimTranslation`. A
   sentence is cached when it cites one claim and its text is exactly that claim's text; a row is

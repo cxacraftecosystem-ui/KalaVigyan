@@ -3,17 +3,12 @@ from __future__ import annotations
 import logging
 import uuid
 from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Protocol
 
 from app.core.errors import AppError, spend_refusal
 from app.planner.policy import request_limits
-from app.research.composition import (
-    ComposedAnswer,
-    ComposeRequest,
-    ResearchSummary,
-    not_enough_evidence_message,
-)
+from app.research.composition import ComposedAnswer, ComposeRequest
 from app.research.crafts import CraftRef
 from app.research.depth import depth_policy
 from app.research.evidence_pack import EvidencePack, ResearchTrail
@@ -30,7 +25,7 @@ from app.science.records import ProcessRecords
 from .answer_catalogue import CatalogueLookup, no_catalogue
 from .answer_events import CitedClaims
 from .answer_gaps import FieldReading, answer_readings
-from .answer_lede import AnswerOpening, LedeTools, LedeWriting, Opening, lede_plan
+from .answer_lede import AnswerOpening, LedePlan, LedeTools, LedeWriting, Opening, lede_plan
 from .answer_sections import (
     ClaimsOf,
     ResearchLedger,
@@ -39,13 +34,7 @@ from .answer_sections import (
     SectionTools,
     run_sections,
 )
-from .answer_translation import (
-    AnswerTranslation,
-    Segment,
-    english_question,
-    needs_english_rendering,
-    translate_segments,
-)
+from .answer_translation import AnswerTranslation, Segment, translate_segments, with_english_question
 from .block_builders import BlockBuilders
 from .explainer_document import explainer_document
 from .explainer_events import ExplainerStream, status_message
@@ -56,8 +45,8 @@ from .piece_store import BuiltSection, PieceStore
 from .reuse_enrichment import expert_floors, floor_deepening, floors_by_section
 from .reused_sections import ReuseBuilds, ReusedShowing, stream_reused_beside
 from .section_enrichment import Enrichment, EnrichmentTools
-from .stored_explainer import stream_stored_answer
 from .stored_fields import with_stored_fields
+from .stored_only_answer import STORED_ONLY_MODE, stored_only_answer
 
 __all__ = [
     "NOT_FOUND_DETAIL",
@@ -79,7 +68,6 @@ NOT_FOUND_DETAIL = "No craft has that address."
 RESOLVER_FAILED_DETAIL = "Finding the craft failed just now. Try again."
 RESEARCH_FAILED_DETAIL = "Research failed just now. Try again."
 UNEXPECTED_DETAIL = "Something went wrong while answering. Try again."
-STORED_ONLY_MODE = "VERIFIED"
 
 
 @dataclass(frozen=True)
@@ -213,27 +201,13 @@ async def _refused_answer(
     if understanding.craft is None or ask.builds_on is not None:
         await stream.emit("error", {"message": understanding.refusal})
         return
-    await _stored_answer(ask, understanding.craft, pipeline, stream)
-
-
-async def _stored_answer(
-    ask: AnswerAsk, craft: CraftRef, pipeline: AnswerPipeline, stream: ExplainerStream
-) -> None:
-    await stream.status("SEARCHING_STORED")
-    question = await english_question(ask.question, pipeline.translation)
-    cited = await pipeline.store.stored_claims(craft.slug, question, STORED_ONLY_MODE)
-    if await stream_stored_answer(stream, craft.name, cited, translation=pipeline.translation):
-        return
-    summary = ResearchSummary(
-        craft=craft,
-        mode=STORED_ONLY_MODE,
-        stored_claims=0,
-        stored_passages=0,
-        evidence_found=0,
-        documents_read=0,
-        failures=0,
+    await stored_only_answer(
+        ask.question,
+        understanding.craft,
+        stored=pipeline.store.stored_claims,
+        stream=stream,
+        translation=pipeline.translation,
     )
-    await stream.emit("not_enough_evidence", {"message": not_enough_evidence_message(summary)})
 
 
 async def _researched_answer(
@@ -241,8 +215,7 @@ async def _researched_answer(
 ) -> uuid.UUID:
     craft = understanding.craft
     await stream.status("PLANNING", craft=craft.name if craft else "")
-    if ask.builds_on is None:
-        understanding = await with_stored_fields(understanding, pipeline.pieces.fields)
+    understanding = await _prepared(ask, understanding, pipeline, stream.language)
     layout = answer_layout(understanding, ask.builds_on, question=ask.question)
     specs = layout.specs
     answer_id = await pipeline.store.begin(ask, understanding)
@@ -258,7 +231,7 @@ async def _researched_answer(
     builders = pipeline.builders.for_answer()
     run = _Run(ask, understanding, pipeline, stream, answer_id, enrichment, layout, process, floors, builders)
     writing = LedeWriting(stream, pipeline.translation, enrichment)
-    plan = lede_plan(ask.question, understanding, layout.untitled, lookup, style=ask.reading_style)
+    plan = _lede_plan(ask, understanding, layout.untitled, lookup)
     opening = AnswerOpening(plan, pipeline.lede, writing, pipeline.store)
     open_specs = [spec for spec in specs if spec.discipline not in lookup.reused]
     async with opening.started() as first_lede:
@@ -274,6 +247,23 @@ async def _researched_answer(
     await _finish(run, outcomes, titles=titles, follow_ups=follow_ups, opened=opened)
     await _kept(run, lookup, outcomes)
     return answer_id
+
+
+async def _prepared(
+    ask: AnswerAsk, understanding: Understanding, pipeline: AnswerPipeline, language: str
+) -> Understanding:
+    if ask.builds_on is None:
+        understanding = await with_stored_fields(understanding, pipeline.pieces.fields)
+    return await with_english_question(
+        understanding, question=ask.question, language=language, translation=pipeline.translation
+    )
+
+
+def _lede_plan(
+    ask: AnswerAsk, understanding: Understanding, untitled: Sequence[SectionSpec], lookup: PieceLookup
+) -> LedePlan:
+    plan = lede_plan(ask.question, understanding, untitled, lookup, style=ask.reading_style)
+    return replace(plan, english=understanding.english_question or plan.english)
 
 
 async def _kept(run: _Run, lookup: PieceLookup, outcomes: Sequence[SectionOutcome]) -> None:
@@ -387,7 +377,7 @@ def _plan_request(ask: AnswerAsk, understanding: Understanding) -> PlanRequest:
         depth=understanding.depth,
         language=_language(ask),
         withheld_terms=ask.withheld_terms,
-        english_question=None if needs_english_rendering(ask.question) else ask.question,
+        english_question=understanding.english_question,
         seats=tuple(understanding.seats),
     )
 

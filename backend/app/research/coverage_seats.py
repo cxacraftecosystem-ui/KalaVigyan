@@ -34,13 +34,15 @@ def relevant_fields(asked: Sequence[str], held: Collection[str] | None) -> tuple
 
 
 def covering_seats(fields: Sequence[str], chosen: Sequence[str], *, limit: int) -> tuple[str, ...]:
-    seats = [seat for seat in dict.fromkeys(chosen) if seat in EXPERT_PANEL][:limit]
-    for discipline in uncovered_fields(fields, seats):
+    offered = [seat for seat in dict.fromkeys(chosen) if seat in EXPERT_PANEL]
+    seats: list[str] = []
+    for discipline in uncovered_fields(fields, ()):
         if len(seats) >= limit:
             break
         if not _speaks_for(discipline, seats):
-            seats.append(FIELD_LEADS[discipline])
-    return tuple(seats)
+            seats.append(_field_seat(discipline, offered))
+    extra = [seat for seat in offered if seat not in seats]
+    return tuple([*seats, *extra][:limit])
 
 
 def uncovered_fields(fields: Sequence[str], seats: Sequence[str]) -> tuple[str, ...]:
@@ -49,6 +51,10 @@ def uncovered_fields(fields: Sequence[str], seats: Sequence[str]) -> tuple[str, 
         for discipline in dict.fromkeys(fields)
         if discipline in FIELD_LEADS and not _speaks_for(discipline, seats)
     )
+
+
+def _field_seat(discipline: str, offered: Sequence[str]) -> str:
+    return next((seat for seat in offered if _speaks_for(discipline, (seat,))), FIELD_LEADS[discipline])
 
 
 def _speaks_for(discipline: str, seats: Sequence[str]) -> bool:

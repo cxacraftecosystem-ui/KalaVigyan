@@ -164,7 +164,7 @@ def test_an_expert_answer_adds_every_field_the_craft_holds_after_those_asked() -
     widened = every_stored_field(understanding("EXPERT"), ("PROCESS", "CHEMISTRY", "MATERIALS"))
     assert widened.disciplines == ["CHEMISTRY", "HISTORY", "PROCESS", "MATERIALS"]
     assert every_stored_field(understanding("DETAILED"), ("PROCESS",)).disciplines == ["CHEMISTRY", "HISTORY"]
-    assert every_stored_field(understanding("EXPERT", "RESOLVER"), ("PROCESS",)).disciplines == []
+    assert every_stored_field(understanding("EXPERT", "RESOLVER"), ("PROCESS",)).disciplines == ["PROCESS"]
 
 
 def test_how_a_craft_works_and_its_politics_lead_the_owner_s_question() -> None:

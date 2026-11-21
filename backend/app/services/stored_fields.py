@@ -13,7 +13,6 @@ from app.research.understanding import Understanding
 __all__ = [
     "FIELD_CLAIMS_MIN",
     "FLOOR_DEPTH",
-    "MODEL_BASIS",
     "curated_field_counts",
     "every_stored_field",
     "fields_held",
@@ -22,7 +21,6 @@ __all__ = [
 
 FIELD_CLAIMS_MIN = 3
 FLOOR_DEPTH = EXPLAINER_DEPTHS[-1]
-MODEL_BASIS = "MODEL"
 
 
 async def curated_field_counts(session: AsyncSession, craft: Craft) -> dict[str, int]:
@@ -63,8 +61,4 @@ def every_stored_field(understanding: Understanding, held: Sequence[str]) -> Und
 
 
 def _widened(understanding: Understanding) -> bool:
-    return (
-        understanding.depth == FLOOR_DEPTH
-        and understanding.craft is not None
-        and understanding.basis == MODEL_BASIS
-    )
+    return understanding.depth == FLOOR_DEPTH and understanding.craft is not None

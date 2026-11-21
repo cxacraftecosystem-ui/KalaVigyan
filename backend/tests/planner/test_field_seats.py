@@ -68,3 +68,9 @@ async def test_the_expert_depth_keeps_the_model_s_seats_because_its_panel_widens
 
 def test_the_basic_depth_seats_at_most_two() -> None:
     assert understood_seats(ASKED, [], depth="BASIC", held=None) == ["CHEMIST", "HISTORIAN"]
+
+
+def test_the_model_s_experts_never_crowd_out_a_field_the_question_asks_about() -> None:
+    seats = understood_seats(["CHEMISTRY"], ["HYDROLOGIST", "GEOLOGIST"], depth="BASIC", held=None)
+    assert seats == ["CHEMIST", "HYDROLOGIST"]
+    assert speaking_seats("CHEMISTRY", seats, depth="BASIC") == ("CHEMIST",)

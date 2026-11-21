@@ -8,6 +8,7 @@ from typing import Any, Protocol
 
 from app.core.errors import AppError
 from app.data.craft_text import script_of
+from app.research.crafts import QUESTION_MAX_CHARS
 from app.research.explainer import payload_sentences, with_payload_sentences
 from app.research.terms import spans_still_shown
 from app.research.translation import (
@@ -16,6 +17,7 @@ from app.research.translation import (
     TranslationRequest,
     Translator,
 )
+from app.research.understanding import ENGLISH_QUESTION_MIN_CHARS, Understanding
 from app.research.vocabulary import CANONICAL_LANGUAGE
 
 __all__ = [
@@ -25,10 +27,12 @@ __all__ = [
     "Segment",
     "TranslationCache",
     "english_question",
+    "english_rendering",
     "needs_english_rendering",
     "translate_segments",
     "translated_block",
     "translated_sentences",
+    "with_english_question",
 ]
 
 logger = logging.getLogger(__name__)
@@ -64,10 +68,29 @@ def needs_english_rendering(question: str) -> bool:
 async def english_question(question: str, translation: AnswerTranslation) -> str:
     if not needs_english_rendering(question):
         return question
+    return await english_rendering(question, translation) or question
+
+
+async def english_rendering(question: str, translation: AnswerTranslation) -> str | None:
     rendered = await _translated(
         [Segment(QUESTION_KEY, question)], CANONICAL_LANGUAGE, translation.translator
     )
-    return rendered.get(QUESTION_KEY, question)
+    return rendered.get(QUESTION_KEY)
+
+
+async def with_english_question(
+    understanding: Understanding, *, question: str, language: str, translation: AnswerTranslation
+) -> Understanding:
+    if understanding.english_question is not None:
+        return understanding
+    if not needs_english_rendering(question):
+        english = question if language == CANONICAL_LANGUAGE else None
+    else:
+        english = await english_rendering(question, translation)
+    if english is None or not ENGLISH_QUESTION_MIN_CHARS <= len(english.strip()) <= QUESTION_MAX_CHARS:
+        return understanding
+    shown = understanding.model_dump(mode="json", by_alias=True)
+    return Understanding.model_validate(shown | {"englishQuestion": english})
 
 
 async def translated_sentences(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import time
 import uuid
 from collections.abc import Callable, Sequence
@@ -11,6 +12,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import release_connection
+from app.core.errors import AppError, spend_refusal
 from app.data.craft_master_loader import ACTIVE
 from app.models import AdminDistrict, AdminState, Craft, CraftAlias, CraftLocation, CraftSpelling
 from app.research.crafts import CraftQuery, CraftResolution
@@ -36,6 +38,8 @@ __all__ = [
     "fill_descriptor_embeddings",
     "load_index",
 ]
+
+logger = logging.getLogger(__name__)
 
 INDEX_TTL_SECONDS = 300.0
 DESCRIPTOR_BATCH = 50
@@ -76,7 +80,14 @@ class DatabaseCraftResolver:
         lexical = resolution_from(index, match)
         if lexical.status == "RESOLVED" or not index.embedded:
             return lexical
-        return resolution_from(index, match, await self._semantic(query.text))
+        try:
+            hits = await self._semantic(query.text)
+        except AppError as error:
+            if spend_refusal(error):
+                raise
+            logger.warning("finding crafts by meaning failed, so the name match stands: %s", error)
+            return lexical
+        return resolution_from(index, match, hits)
 
     async def _semantic(self, text: str) -> list[SemanticHit]:
         await release_connection(self._session)
