@@ -81,6 +81,13 @@ standing}`:
   (`open-work.md`).
 - **Seats**: the ask agent's planner seats an expert for each field the question touches that the
   craft holds claims in (`answer-eval.md`, "Seats by field").
+- **The daily coverage enrichment** (`services/coverage_selection.py`, decision 0124) files its gaps
+  by field as this count does: a craft's visible claims are counted by their primary field, each
+  standard question asks for its facet's field and runs while that field holds fewer than
+  `FACET_COVERED_MIN_CLAIMS` (2), and live research files what it finds under the field of the
+  section or facet it answers (`research.md`, The writer and the coverage job). A question whose
+  last finished run added no claim of its field rests for `FRUITLESS_BACKOFF` (28 days), so a
+  gap research cannot fill is not asked again every week.
 
 ## How this document is kept true
 
@@ -90,6 +97,7 @@ standing}`:
 | The queries on Postgres | `backend/tests/db/test_coverage_db.py` |
 | The routes | `backend/tests/public/test_coverage_route.py` |
 | The MCP reads | `backend/tests/mcp/test_mcp_page_read.py` |
+| The enrichment's gaps by field and their rest | `backend/tests/write_back/test_coverage_enrichment.py` and `backend/tests/db/test_coverage_backoff_db.py` |
 | Each field's chapter and fact grid on generated pages | `backend/tests/layouts/test_generated_fields.py` |
 | The seats | `backend/tests/planner/test_field_seats.py` |
 | The same count as the gap script | `backend/tests/mcp/test_reference_limits.py` reads `gaps.py`'s fields and bar against the server's |

@@ -6,10 +6,13 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError, InvalidInput
+from app.models import Answer
 from app.research.composition import ComposedAnswer
+from app.research.crafts import CraftRef
 from app.research.embedding import TextEmbedder
 from app.research.evidence import SourceDocument
 from app.research.evidence_pack import EvidencePack
@@ -28,6 +31,7 @@ __all__ = [
     "NOTHING_EMBEDDED",
     "GatedWrite",
     "StoredResearch",
+    "cited_source_ids",
     "sentence_claim_ids",
     "shown_results",
     "store_live_research",
@@ -37,10 +41,12 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 NOTHING_EMBEDDED = EmbeddedCounts(claims=0, chunks=0)
+COMPARED_KEY = "compared"
 
 
 @dataclass(frozen=True)
 class GatedWrite:
+    claims: tuple[ClaimWriteBack, ...]
     results: tuple[WriteBackResult, ...]
     held_instead: tuple[WriteBackResult, ...]
     skipped: tuple[SkippedSentence, ...]
@@ -75,19 +81,22 @@ async def store_live_research(
     answer_id: uuid.UUID | None = None,
     judge: StructuredModel | None = None,
 ) -> StoredResearch:
-    source_ids = [await keep_document(session, document) for document in pack.documents]
+    kept = {document.item.id: await keep_document(session, document) for document in pack.documents}
     fields = await field_documents(session, pack)
-    plan = write_back_plan(pack, answer, found_by=found_by, answer_id=answer_id, field_documents=fields)
+    compared = await compared_crafts(session, answer_id)
+    plan = write_back_plan(
+        pack, answer, found_by=found_by, answer_id=answer_id, field_documents=fields, compared=compared
+    )
     written = await write_through_gates(
         session, plan.claims, _documents(pack, fields), embed=embed, judge=judge
     )
     await session.commit()
     await refresh_claim_pages(session, shown_results(written.results, live=written.live))
-    kept = tuple(dict.fromkeys(source_ids))
-    embedded, error = await _embed_written(session, embed, list(written.results), kept)
+    cited = cited_source_ids(written.claims, kept)
+    embedded, error = await _embed_written(session, embed, list(written.results), cited)
     return StoredResearch(
-        source_ids=kept,
-        results=(*written.results, *written.held_instead),
+        source_ids=tuple(dict.fromkeys(kept.values())),
+        results=written.results,
         skipped=(*plan.skipped, *written.skipped),
         embedded=EmbeddedCounts(claims=embedded.claims + written.vectored, chunks=embedded.chunks),
         sentence_keys=plan.sentence_keys,
@@ -110,12 +119,28 @@ async def write_through_gates(
         session, results, gated.runs, live=placed.live, checked_at=datetime.now(UTC)
     )
     return GatedWrite(
+        claims=gated.claims,
         results=tuple(results),
         held_instead=gated.held_instead,
         skipped=gated.skipped,
         vectored=vectored,
         live=placed.live,
     )
+
+
+async def compared_crafts(session: AsyncSession, answer_id: uuid.UUID | None) -> tuple[CraftRef, ...]:
+    if answer_id is None:
+        return ()
+    understanding = await session.scalar(select(Answer.understanding).where(Answer.id == answer_id))
+    compared = (understanding or {}).get(COMPARED_KEY) or []
+    return tuple(CraftRef.model_validate(craft) for craft in compared)
+
+
+def cited_source_ids(
+    claims: Sequence[ClaimWriteBack], kept: Mapping[str, uuid.UUID]
+) -> tuple[uuid.UUID, ...]:
+    cited = (kept.get(citation.evidence.id) for claim in claims for citation in claim.citations)
+    return tuple(dict.fromkeys(source_id for source_id in cited if source_id is not None))
 
 
 def shown_results(results: Sequence[WriteBackResult], *, live: bool) -> list[uuid.UUID]:

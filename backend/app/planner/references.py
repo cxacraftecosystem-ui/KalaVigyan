@@ -11,7 +11,7 @@ from app.sources.records import doi_of
 
 from .failures import FailureLog
 from .policy import DOCUMENT_TIMEOUT_SECONDS, LIVE_BUDGETS, REFERENCES_PER_DOCUMENT
-from .reading import DocumentReader
+from .reading import DocumentReader, with_abstract
 
 __all__ = ["FOLLOW_STAGE", "CitedDoi", "FollowedReference", "cited_dois", "dois_in", "follow_references"]
 
@@ -93,4 +93,5 @@ async def _follow(
         followed_from=lead.parent.item.id,
     )
     opened = await reader.open_access_document(fetched.item)
-    return FollowedReference(entry=entry, document=opened or fetched)
+    document = fetched if opened is None else with_abstract(opened, fetched)
+    return FollowedReference(entry=entry, document=document)

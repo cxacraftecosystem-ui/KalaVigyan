@@ -151,12 +151,40 @@ async def test_deep_reads_open_access_full_text_and_follows_cited_dois() -> None
         ("crossref",),
     )
     opened, page, followed = pack.documents
-    assert (opened.content, opened.text, opened.item.licence) == ("FULL_TEXT", full_text, "CC BY 4.0")
-    assert opened.item.external_ids["open_access_url"] == OPEN_COPY
+    assert (opened.content, opened.text, opened.item.licence) == (
+        "FULL_TEXT",
+        f"W1 abstract.\n\n{full_text}",
+        "CC BY 4.0",
+    )
+    assert (opened.item.external_ids["open_access_url"], opened.item.doi) == (OPEN_COPY, "10.1000/a")
     assert (page.item.id, followed.content) == (P1.id, "ABSTRACT")
-    assert openalex.fetched == [] and locator.asked == ["10.1000/a", "10.2000/ref.1"]
+    assert openalex.fetched == [W1.id] and locator.asked == ["10.1000/a", "10.2000/ref.1"]
     assert crossref.fetched == ["crossref:10.2000/ref.1", "crossref:10.2000/REF.2"]
     assert [(f.stage, f.target, f.kind) for f in pack.failures] == [("FOLLOW", "10.2000/REF.2", "not_found")]
+
+
+@pytest.mark.parametrize(
+    ("version", "label"),
+    [
+        ("acceptedVersion", "author's accepted manuscript"),
+        ("submittedVersion", "submitted manuscript, before peer review"),
+    ],
+)
+async def test_a_manuscript_copy_is_cited_as_the_copy_read_and_never_as_the_published_paper(
+    version: str, label: str
+) -> None:
+    openalex = FakeAdapter("openalex", "T3", [W1], texts={W1.id: "W1 abstract."})
+    locator = FakeLocator({"10.1000/a": OPEN_COPY}, version=version)
+    fetcher = FakeFetcher({OPEN_COPY: "Alum binds alizarin in the manuscript."})
+    sources = LiveSources(searchers=(openalex,), fetcher=fetcher, locator=locator)
+    reader = DocumentReader(sources, mode="DEEP", log=FailureLog())
+    entry = PackedEvidence(item=W1, facet_indexes=(0,), found_by=("openalex",), hits=1, best_rank=1)
+    (document,) = await reader.read_best([entry], limit=1)
+    assert document.text == "Alum binds alizarin in the manuscript."
+    item = document.item
+    assert (item.id, item.title, item.url, item.doi) == (W1.id, f"Work W1 ({label})", OPEN_COPY, None)
+    assert (item.external_ids["doi"], item.external_ids["open_access_version"]) == ("10.1000/a", version)
+    assert item.source_key != W1.source_key
 
 
 async def test_a_degraded_router_turns_deep_into_hybrid() -> None:

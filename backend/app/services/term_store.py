@@ -31,7 +31,7 @@ from .live_source_store import keep_document
 from .research_write_back import write_through_gates
 from .term_research import GlossaryTerm, ResearchedSummary, TermConceptRef
 from .term_summaries import StoredClaims, cites_only_shown
-from .write_back_plan import QUOTED_REASON, WRITE_BACK_PREDICATE
+from .write_back_plan import QUOTED_REASON, WRITE_BACK_PREDICATE, quote_carries
 
 __all__ = ["CONCEPT_SUBJECT_TYPE", "SqlTermStore", "claim_for_sentence", "write_back_subject"]
 
@@ -144,10 +144,12 @@ class SqlTermStore:
             await session.commit()
 
 
-def write_back_subject(term: GlossaryTerm) -> tuple[str, WriteBackSubject]:
+def write_back_subject(term: GlossaryTerm) -> tuple[str | None, WriteBackSubject]:
     if not term.craft_slugs:
         raise InvalidInput(f"Term {term.key} belongs to no craft, so what is found for it cannot be kept")
-    craft_slug = term.craft_slugs[0]
+    craft_slug = _owning_craft(term)
+    if craft_slug is None:
+        return None, WriteBackSubject(concept_type=TERM_FACET, concept_name=term.label)
     concept = next((c for c in term.concepts if c.craft_slug == craft_slug), None)
     if concept is None:
         return craft_slug, WriteBackSubject(concept_type=TERM_FACET, concept_name=term.label)
@@ -156,10 +158,17 @@ def write_back_subject(term: GlossaryTerm) -> tuple[str, WriteBackSubject]:
     )
 
 
+def _owning_craft(term: GlossaryTerm) -> str | None:
+    if len(term.craft_slugs) == 1:
+        return term.craft_slugs[0]
+    owners = list(dict.fromkeys(concept.craft_slug for concept in term.concepts))
+    return owners[0] if len(owners) == 1 else None
+
+
 def claim_for_sentence(
     sentence: ComposedSentence,
     documents: dict[str, SourceDocument],
-    craft_slug: str,
+    craft_slug: str | None,
     subject: WriteBackSubject,
 ) -> ClaimWriteBack:
     citations = []
@@ -172,7 +181,7 @@ def claim_for_sentence(
                 evidence=item.model_copy(update={"quotes": known}),
                 quote=quote,
                 quote_check="PASS",
-                relation="DIRECT",
+                relation="DIRECT" if quote_carries(sentence.text, quote) else "CONTEXTUAL",
             )
         )
     return ClaimWriteBack(

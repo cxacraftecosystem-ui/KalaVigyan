@@ -43,17 +43,16 @@ def composed(
     )
 
 
-def test_each_sentence_gets_the_claim_written_for_it_after_its_stored_claims() -> None:
+def test_each_sentence_gets_the_claim_written_for_it_and_a_pooled_one_keeps_only_its_stored_claims() -> None:
     figure = ComposedSentence(
         text=FIGURE_TEXT,
-        claim_ids=[ALUM_CLAIM_ID],
         evidence_ids=[LAKE_PAPER],
         spans=[QuotedSpan(ref=LAKE_PAPER, text=FIGURE_QUOTE)],
     )
-    answer = composed(said(ALUM_TEXT, claims=(ALUM_CLAIM_ID,)), figure)
+    pooled = figure.model_copy(update={"claim_ids": [ALUM_CLAIM_ID]})
+    answer = composed(said(ALUM_TEXT, claims=(ALUM_CLAIM_ID,)), figure, pooled)
     plan = write_back_plan(pack(), answer, found_by="ANSWER", answer_id=ANSWER_ID)
-    assert plan.sentence_keys[0] is None
-    assert plan.sentence_keys[1] == plan.claims[0].dedupe_key
+    assert plan.sentence_keys == (None, plan.claims[0].dedupe_key, None)
     stored = StoredResearch(
         source_ids=(),
         results=(
@@ -63,7 +62,7 @@ def test_each_sentence_gets_the_claim_written_for_it_after_its_stored_claims() -
         embedded=EmbeddedCounts(claims=0, chunks=0),
         sentence_keys=plan.sentence_keys,
     )
-    assert sentence_claim_ids(answer, stored) == ((ALUM_CLAIM_ID,), (ALUM_CLAIM_ID, WRITTEN_LAKE_ID))
+    assert sentence_claim_ids(answer, stored) == ((ALUM_CLAIM_ID,), (WRITTEN_LAKE_ID,), (ALUM_CLAIM_ID,))
 
 
 def test_without_a_write_back_only_stored_claims_are_cited() -> None:
