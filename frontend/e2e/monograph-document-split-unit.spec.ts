@@ -54,8 +54,8 @@ test("a generated page draws its first chapter and a reserved place for the rest
 
 test("the rest draws every later chapter and Cite this monograph exactly as the whole page draws them, then the kit's data", () => {
   const document = generatedDocument();
-  const whole = provided(createElement(MonographPage, { document }));
-  const later = withoutKitDefs(whole.slice(whole.indexOf('<section class="kv-ch" id="chem"'), whole.indexOf(MAIN_END)));
+  const whole = withoutKitDefs(provided(createElement(MonographPage, { document })));
+  const later = whole.slice(whole.indexOf('<section class="kv-ch" id="chem"'), whole.indexOf(MAIN_END));
   const kit = markup(createElement(KitData, { blocks: kitDataBlocks(shownPage(document).document.content) }));
   expect(later).toContain("Cite this monograph");
   expect(sameIds(restOf(document))).toBe(sameIds(later + kit));
