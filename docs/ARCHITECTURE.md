@@ -3,20 +3,51 @@
 How KalaVigyan is put together today: the pieces, the layers inside the backend, the direction
 imports may point, and the contracts between lanes. The target design is `docs/PLAN.md` (section
 0 overrides the rest); this page describes what exists and is updated in the same change that
-makes it untrue.
+makes it untrue. Engineers read it before changing code; each interface's detail is its contract.
 
-Last reviewed: 2026-11-18.
+| For | Read |
+|---|---|
+| Ids, names, the deploy sequence and the box's units | [RUNBOOK.md](RUNBOOK.md) |
+| What the box assumes from the code | [contracts/infra.md](contracts/infra.md) |
+| The shared code this page names | [CORE_API.md](CORE_API.md) |
+| Every interface between lanes | [contracts/README.md](contracts/README.md) |
+| Why a placement is the way it is | [decisions/README.md](decisions/README.md) |
+| Counts of tables, routes, tools and tests | [REPO_FACTS.md](REPO_FACTS.md), generated |
 
 ## Deployed pieces
 
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  B["Browser"] --> V["Vercel<br/>Next.js App Router"]
+  V -->|x-web-proxy-secret| CF["CloudFront<br/>HTTPS ends here"]
+  CF -->|X-Origin-Verify| NG["nginx :80<br/>EC2 kalavigyan-api"]
+  NG --> API["uvicorn<br/>blue/green 8000, 8001"]
+  API --> PG[("Postgres 17<br/>Supabase")]
+  API --> S3[("S3 media bucket<br/>presigned URLs")]
+  subgraph Box["The same box"]
+    NG
+    API
+    WK["kv-worker"]
+    FE["kv-fetcher"]
+    CW["kv-contributions"]
+  end
+  WK --> PG
+  CW --> PG
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  classDef gold fill:#FAEECD,stroke:#CD9200,color:#1E1B2E
+  class API accent
+  class PG,S3 gold
 ```
-browser
-  -> Vercel (Next.js App Router, frontend/)        lib/server/apiProxy.ts adds x-web-proxy-secret
-  -> CloudFront d89rsltpszebp.cloudfront.net       HTTPS ends here
-  -> nginx :80 on EC2 kalavigyan-api (ap-south-1)  403 without X-Origin-Verify
-  -> uvicorn app.main:app, blue/green on 8000/8001
-  -> Postgres 17 on Supabase (session pooler :5432; vector, postgis, pg_trgm, unaccent, citext)
-```
+
+| Hop | What runs there | Detail |
+|---|---|---|
+| Web | Vercel, Next.js App Router (`frontend/`) | `lib/server/apiProxy.ts` adds `x-web-proxy-secret` |
+| Edge | CloudFront `d89rsltpszebp.cloudfront.net` | HTTPS ends here |
+| Origin | nginx `:80` on EC2 `kalavigyan-api` (ap-south-1) | 403 without `X-Origin-Verify` |
+| API | `uvicorn app.main:app` | blue/green on 8000/8001 |
+| Database | Postgres 17 on Supabase | session pooler `:5432`; vector, postgis, pg_trgm, unaccent, citext |
+| Workers on the box | `kv-worker`, `kv-fetcher` and `kv-contributions` | the media queue (decision 0018), the fetcher sandbox (decision 0007) and the contribution queue's gates (round 7), as `docs/RUNBOOK.md` lists them under On the box |
 
 Media goes to the private S3 bucket through presigned URLs. Ids, names and the deploy sequence
 are in `docs/RUNBOOK.md`; what the box assumes from the code is in `docs/contracts/infra.md`.
@@ -31,71 +62,65 @@ are in `docs/RUNBOOK.md`; what the box assumes from the code is in `docs/contrac
 | `frontend/` | Next.js web client (npm, Node 26) |
 | `infra/` | Terraform, deploy scripts, systemd units, secret seeding, Supabase lockdown SQL |
 | `shared/` | Files checked by more than one side (`craft-master.sha1`, the `*.golden.*` contract files) |
-| `tools/` | Developer tooling: `hygiene_check.py` and the `hygiene` package; `curation/` (fetch, verify, check, schema and migrate for curated dossiers, decisions 0051 and 0095); `design/` and `design_tokens.py`, the design token generator that writes `frontend/app/tokens.css` and the skill's references (decision 0092); their tests |
-| `docs/` | Plan, architecture, catalogue, contracts, decisions, debt, progress, runbook, data sources |
-| `.claude/skills/` | Practice skills (engineering, backend, frontend), naming, frontend design system |
+| `tools/` | Developer tooling: `hygiene_check.py` and the `hygiene` package; `repo_facts_build.py` and the `repo_facts` package, which write `docs/REPO_FACTS.md`; `curation/` (fetch, verify, check, schema and migrate for curated dossiers, decisions 0051 and 0095); `design/` and `design_tokens.py`, the design token generator that writes `frontend/app/tokens.css` and the skill's references (decision 0092); their tests |
+| `docs/` | Plan, architecture, catalogue, contracts, decisions, debt, progress, runbook, data sources, the design boards, the contributors' terms, the generated repository facts and the README kit (`docs/README.md` is the index) |
+| `.claude/skills/` | Practice skills (engineering, backend, frontend), naming, the frontend design system (`kalavigyan-design`), the contributor's method skills (`kalavigyan-craft-pages`, `kalavigyan-datasets`, `kalavigyan-interactives`), the vendored security audit, and the retired `motion` pointer |
 
 ## Backend layers
 
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart TD
+  E["Entry points<br/>main.py, api/, scripts/"]
+  subgraph Pipelines
+    VO["voice/"]
+    ME["media/"]
+  end
+  PR["Adapters<br/>providers/"]
+  subgraph Domain
+    SV["services/"]
+    SC["schemas/"]
+    SI["science/"]
+    GE["geo/"]
+  end
+  PL["planner/"]
+  CO["composer/"]
+  RE["retrieval/"]
+  SO["sources/"]
+  FE["fetcher/"]
+  CU["curation/"]
+  RS["Contracts<br/>research/"]
+  CR["Shared<br/>core/"]
+  subgraph Foundation
+    MO["models/"]
+    DA["data/"]
+  end
+  E --> Pipelines --> PR --> Domain --> PL --> CO --> RE --> SO --> FE --> CU --> RS --> CR --> Foundation
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class RS accent
 ```
-entry points   main.py   api/ (router.py, routes/<area>.py)   scripts/ (seeds, sync, coverage job)
-                 |
-voice          voice/       voice sessions, the custom-LLM turn, relay turns, the encrypted
-                            transcript, daily upkeep, agent provisioning (decision 0017; the
-                            call is switched off, decision 0035); Listen: narration of finished
-                            explainers with word timings, cached in the media bucket (0035);
-                            film mode's score: scenes, fixed prompts, content-addressed clips
-                            and a manifest per explainer and language (0058)
-media          media/       stage illustrations and clips: claim set, prompt, bundle, MP4 and
-                            PNG checks, the job routes' steps, the kv-worker queue and its SQL;
-                            worker.py runs it as kv-worker (decision 0018)
-                 |
-adapters       providers/   model adapters, AI router, spend rules, the quota ledger, ElevenLabs
-                 |
-domain         services/    crafts, knowledge view, access roster, credentials, keys, routing,
-                            live-research write-back and the coverage job (decision 0011)
-               schemas/     request and response bodies, and the science, region, voice and
-                            media contracts (decision 0014), which reuse research/'s shapes
-               science/     the science engine: formulas, balancing, pint units, stage
-                            envelopes, the process view built from stored rows (decision 0015)
-               geo/         the region profile and map layers: places, state aggregates,
-                            facets, the layer registry and its classes (decision 0016)
-                 |
-planner        planner/     plan call, facet coverage, parallel live search across the
-                            source adapters, dedupe, reading through the fetcher, open-access
-                            copies and cited DOIs into an evidence pack (decision 0009); the
-                            understanding step: craft choice, fields, seats (decision 0031)
-                 |
-composer       composer/    evidence pack to cited candidates, the COMPOSE call, the
-                            per-sentence post-checks, one regenerate (decision 0010)
-                 |
-retrieval      retrieval/   stored-knowledge search: craft-scoped claims and chunks, full text
-                            and pgvector fused by RRF, chunking and embedding fill
-                 |
-sources        sources/     external research sources: paced HTTP, record rules, one adapter
-                            per service (sources/scholarly/: OpenAlex, Crossref, ...;
-                            sources/reference/: Wikipedia, Wikidata, PubChem, Commons;
-                            sources/web/: SearXNG, Brave, the fallback; sources/images/:
-                            Openverse and the image sources), the fetcher client
-                 |
-fetcher        fetcher/     the separate kv-fetcher process: address-pinned https fetch,
-                            robots.txt, caps, trafilatura and pypdf extraction (no DB, no AWS)
-                 |
-curation       curation/    curated craft dossiers: the model, the offline rules, the check
-                            file and the index, read by tools/curation and the importer;
-                            imports research/, models/ and data/ only (decision 0051)
-                 |
-contracts      research/    research and answering types, protocols, post-check rules; the
-                            explainer document, blocks, stored pieces and depth by role
-                            (decision 0030); dataset rows, rivers, the calendar words,
-                            reaction rules and the expert panel (decision 0042)
-                 |
-shared         core/        settings, db, security (passwords, tokens, secret keys), roles,
-                            deps, logging, rate limits, India time, HTTP revalidation, work
-                            shielded from a leaving caller
-                 |
-foundation     models/      ORM tables          data/   vendored datasets and pure loaders
-```
+
+The diagram is the stack from the top down; the edges that may really be imported are below it.
+
+| Layer | Package | What it holds |
+|---|---|---|
+| entry points | `main.py`, `api/` (`router.py`, `routes/<area>.py`), `scripts/` | the app, the HTTP routes, and the scripts (seeds, sync, coverage job) |
+| voice | `voice/` | voice sessions, the custom-LLM turn, relay turns, the encrypted transcript, daily upkeep, agent provisioning (decision 0017; the call is switched off, decision 0035); Listen: narration of finished explainers with word timings, cached in the media bucket (0035); film mode's score: scenes, fixed prompts, content-addressed clips and a manifest per explainer and language (0058) |
+| media | `media/` | stage illustrations and clips: claim set, prompt, bundle, MP4 and PNG checks, the job routes' steps, the kv-worker queue and its SQL; `worker.py` runs it as kv-worker (decision 0018) |
+| adapters | `providers/` | model adapters, AI router, spend rules, the quota ledger, ElevenLabs |
+| domain | `services/` | crafts, knowledge view, access roster, credentials, keys, routing, live-research write-back and the coverage job (decision 0011) |
+| domain | `schemas/` | request and response bodies, and the science, region, voice and media contracts (decision 0014), which reuse `research/`'s shapes |
+| domain | `science/` | the science engine: formulas, balancing, pint units, stage envelopes, the process view built from stored rows (decision 0015) |
+| domain | `geo/` | the region profile and map layers: places, state aggregates, facets, the layer registry and its classes (decision 0016) |
+| planner | `planner/` | plan call, facet coverage, parallel live search across the source adapters, dedupe, reading through the fetcher, open-access copies and cited DOIs into an evidence pack (decision 0009); the understanding step: craft choice, fields, seats (decision 0031) |
+| composer | `composer/` | evidence pack to cited candidates, the COMPOSE call, the per-sentence post-checks, one regenerate (decision 0010) |
+| retrieval | `retrieval/` | stored-knowledge search: craft-scoped claims and chunks, full text and pgvector fused by RRF, chunking and embedding fill |
+| sources | `sources/` | external research sources: paced HTTP, record rules, one adapter per service (`sources/scholarly/`: OpenAlex, Crossref, ...; `sources/reference/`: Wikipedia, Wikidata, PubChem, Commons; `sources/web/`: SearXNG, Brave, the fallback; `sources/images/`: Openverse and the image sources), the fetcher client |
+| fetcher | `fetcher/` | the separate kv-fetcher process: address-pinned https fetch, robots.txt, caps, trafilatura and pypdf extraction (no DB, no AWS) |
+| curation | `curation/` | curated craft dossiers: the model, the offline rules, the check file and the index, read by `tools/curation` and the importer; imports `research/`, `models/` and `data/` only (decision 0051) |
+| contracts | `research/` | research and answering types, protocols, post-check rules; the explainer document, blocks, stored pieces and depth by role (decision 0030); dataset rows, rivers, the calendar words, reaction rules and the expert panel (decision 0042) |
+| shared | `core/` | settings, db, security (passwords, tokens, secret keys), roles, deps, logging, rate limits, India time, HTTP revalidation, work shielded from a leaving caller |
+| foundation | `models/`, `data/` | ORM tables; vendored datasets and pure loaders |
 
 The allowed import edges are the table `LAYER_IMPORTS` in `tools/hygiene/layers.py`, listed in
 the project bindings (`.claude/skills/engineering-practices/references/project-bindings.md`).
@@ -138,7 +163,7 @@ is shown only as the artisan's own words. Contract: `docs/contracts/roles-and-co
 
 All routes are under `/api` except `/health` and `/health/ready`. Route groups (`api/routes/`):
 `auth`, `password_change` (change-password and the first-password nonce, decision 0028), `two_factor`, `me`, `access`, `users`, `crafts`, `film` (film mode's music and sound score, decision 0058), `knowledge`, `lessons` (lesson packs and their files, decision 0067), `explainer_exports` (an explainer version's PDF and citations, decision 0067), `listen` (an explainer read aloud, decision 0035), `map_districts` (ask the map, decision 0065), `map_layers`, `media`, `profile` (a student's and an artisan's first-entry profile, the artisan recording notice and its consent, and the public district list, decision 0083), `artisan_conversations` (an artisan's conversation with KalaVigyan, 404 while `ARTISAN_CONVERSATION_ENABLED` is off), `artisan_contributions` (an artisan's own conversations and contributions, and withdrawal), `testimony_review` (the review queue for artisan testimony), `public` (the landing's summary, decision 0079), `rivers` (a basin's river lines as TopoJSON, decision 0043), `secrets`,
-`settings`, `terms` (a glossary term's cited summary, decision 0034), `usage`, `voice` (404 throughout while `VOICE_CALL_ENABLED` is off, decision 0035). Shapes, headers and error forms are in `docs/contracts/backend.md`; the web client's
+`settings`, `terms` (a glossary term's cited summary, decision 0034), `usage`, `voice` (404 throughout while `VOICE_CALL_ENABLED` is off, decision 0035). Every route module and its operation count, these and the ones added since, is generated in `docs/REPO_FACTS.md`. Shapes, headers and error forms are in `docs/contracts/backend.md`; the web client's
 side is `docs/contracts/frontend.md`. `GET /api/crafts/{slug}/page` (in `crafts`) answers the whole craft page from stored rows: the
 curated overview and facts and All evidence (`docs/contracts/craft-page.md`, decision 0053);
 `GET /api/categories` and `/api/categories/{slug}` (in `categories`, public reading) answer the
@@ -163,7 +188,52 @@ bucket of their own) and answered `public, max-age=300`; a session still gets it
 needs a session and carries a reason class (asking, own records, admin, consent) in
 `tests/public/test_route_inventory.py`, which checks each one answers 401 anonymously.
 
+## How a contribution reaches the knowledge (round 7)
+
+Every new fact, whatever its origin, is a candidate: the site, the Knowledge API, an agent on the MCP
+server (`POST /api/mcp`, decisions 0103 and 0111) and the research write-back take one path
+(`docs/contracts/knowledge-writes.md`). A proposed fact is checked at the door for its shape, its
+subject, its idempotency key and the hour's allowance, stored `QUEUED` and answered at once with a
+ticket; the contribution worker `kv-contributions` then runs the four gates in order (QUOTES, SOURCE,
+DUPLICATE, NOVELTY) off the request. The review switch (`knowledge.review_switch`, per origin) and
+the contributor's trust tier decide whether a fact that passed goes live at once or waits in the
+review queue for a Professor or Admin (`docs/contracts/review-queue.md`). An agent signs in with
+OAuth 2.1 (`docs/contracts/mcp-oauth.md`); open work, reservations and the method served over MCP
+are `docs/contracts/open-work.md`.
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","transitionColor":"#AA69E9","transitionLabelColor":"#857F9E","stateLabelColor":"#1E1B2E","stateBkg":"#F2E9FE","compositeBackground":"#F9F5FF","compositeTitleBackground":"#F2E9FE"}}}%%
+stateDiagram-v2
+  [*] --> Queued: checked at the door
+  Queued --> Gates: kv-contributions takes it
+  Gates --> Refused: a gate refuses
+  Gates --> Published: switch and tier allow
+  Gates --> Waiting: held for review
+  Waiting --> Published: approved
+  Waiting --> Rejected: rejected with a reason
+  Published --> [*]
+  Refused --> [*]
+  Rejected --> [*]
+```
+
 ## How a question is answered today
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
+sequenceDiagram
+  autonumber
+  participant R as Reader
+  participant A as answers/stream
+  participant U as Understanding
+  participant S as Sections
+  R->>A: POST /api/answers/stream
+  A->>U: craft resolver, then one PLAN call
+  U-->>R: understood
+  A->>S: stored pieces first, the rest researched
+  A-->>R: the lede, before any block
+  S-->>R: section_started, block, section_done
+  A-->>R: follow-ups, then done
+```
 
 1. `POST /api/answers/stream` (`api/routes/knowledge.py`) takes the reader's depth (default the
    role's: Student Basic, Researcher and Professor Detailed, Admin and Master Admin Expert; any
@@ -238,6 +308,17 @@ needs a session and carries a reason class (asking, own records, admin, consent)
 
 ## How a saved explainer gets better (decision 0063)
 
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  S([A reader saves it]) --> N["recheck_saved<br/>nightly, no model"]
+  N -->|a field has news| NOTE["ANSWER_IMPROVED note"]
+  NOTE --> U["Update asks a follow-up<br/>for those fields"]
+  NOTE -.->|Mondays, when enabled| D["Alert digest<br/>through SES"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class NOTE accent
+```
+
 1. A reader saves an explainer (`SavedItem` with its first answer). Every night the last module of
    the Coverage enrichment job, `app.scripts.recheck_saved`, counts per saved field the craft's
    fact-level claims created or raised since the last check that the latest version does not cite,
@@ -264,6 +345,16 @@ needs a session and carries a reason class (asking, own records, admin, consent)
 
 ## How stored pieces stay current (decision 0033)
 
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","transitionColor":"#AA69E9","transitionLabelColor":"#857F9E","stateLabelColor":"#1E1B2E","stateBkg":"#F2E9FE","compositeBackground":"#F9F5FF","compositeTitleBackground":"#F2E9FE"}}}%%
+stateDiagram-v2
+  [*] --> Kept: an answer finishes
+  Kept --> Superseded: newer pieces of its topic
+  Kept --> Stale: a resting claim changes
+  Stale --> Superseded: the topic is researched again
+  Superseded --> [*]
+```
+
 1. When an answer finishes, every English block of each researched section that cites claims and
    sources is kept as a `KnowledgePiece` (its facet, topic, depth, claims, sources, content hash,
    vector), superseding the earlier pieces of that topic and kind at the same or a lower depth.
@@ -272,11 +363,28 @@ needs a session and carries a reason class (asking, own records, admin, consent)
 2. A trigger on `Claim` (`kv_stale_resting_pieces`) marks every piece resting on a claim stale when
    it is retracted, hidden, deleted, or changes level or text; the next answer for that topic
    researches the section again and its new pieces supersede the stale ones.
-3. Every night the Coverage enrichment run calls `app.scripts.rebuild_pieces` before the coverage
-   job: the stale pieces of the 10 most-asked crafts are answered again for their facet and depth,
-   with fresh research, within the same day's budget.
+3. No nightly run rebuilds pieces: since commit fdf478c the Coverage enrichment run no longer
+   researches crafts or rebuilds pieces (`docs/RUNBOOK.md`, Deploy), so a stale piece is researched
+   again when the next answer for its topic needs it.
 
 ## How an explainer is read aloud (Listen, decision 0035)
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
+sequenceDiagram
+  autonumber
+  participant R as Reader
+  participant L as listen route
+  participant C as Narration cache
+  participant E as ElevenLabs
+  R->>L: GET the answer's listen route
+  L->>C: each block's manifest
+  C-->>L: hits and misses
+  L->>E: misses only, parts of 2,000 characters
+  E-->>L: audio with word timings
+  L->>C: audio, then the manifest
+  L-->>R: a track per part, words timed
+```
 
 1. `GET /api/answers/{answerId}/listen` (`api/routes/listen.py`) checks `VOICE` and the 30-press
    limit, and reads the reader's own explainer from `Answer.payload.explainer`
@@ -337,6 +445,27 @@ answers 404 and no voice button is drawn. The steps hold when the setting is tru
    reconciles agent calls with ElevenLabs in both directions (refund or charge).
 
 ## How a stage illustration is made
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
+sequenceDiagram
+  autonumber
+  participant C as Client
+  participant A as API
+  participant D as Postgres
+  participant W as kv-worker
+  participant G as Gemini
+  participant S as S3
+  C->>A: POST /api/media/jobs
+  A->>D: the job, a quota unit, a Job row
+  A-->>C: a shared asset at once, or the job
+  W->>D: claims Job rows, SKIP LOCKED
+  W->>G: through the media router
+  G-->>W: PNG, or MP4
+  W->>S: checked, named, uploaded
+  C->>A: GET the job
+  A-->>C: a 900 s presigned URL
+```
 
 1. `POST /api/media/jobs` (`api/routes/media.py`, `media/jobs.py`) checks the capability, answers a
    repeated key, derives the stage's claim set from stored rows (`media/rows.py`,
@@ -442,6 +571,20 @@ answers 404 and no voice button is drawn. The steps hold when the setting is tru
    (`components/answer/blockRenderers.ts`); a kind without one is not drawn.
 
 ## Data
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  M["alembic upgrade head"] --> SE["seed_crafts, seed_claims,<br/>seed_districts"]
+  SE --> IC["import_curation<br/>dossiers, then categories"]
+  IC --> SP["sync_portal_crafts"]
+  SP --> EM["embed_craft_descriptors,<br/>embed_knowledge"]
+  EM --> RP["rebuild_stale_pages"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class IC accent
+```
+
+Every deploy runs these in order while the old colour serves (`docs/RUNBOOK.md`, Deploy).
 
 Tables follow DR's Prisma naming (quoted PascalCase tables, camelCase columns) so the portals
 stay mergeable; the full list is `backend/app/models/` and `backend/migrations/versions/`.
@@ -562,15 +705,17 @@ server's file name (`lib/download.downloadApiFile`), lesson files and the report
 signed links (decision 0067). The notes behind `/saved` and the nav's unread badge are held for
 the signed-in account only (`lib/notesStore.ts`, decision 0070).
 
-The craft page (decision 0071) reads `GET /crafts/{slug}/page` and the region route, each parsed
-by its contract shape and cross-checked at the boundary (`lib/craftPageContract.ts`,
-`lib/craftRegion.ts` with `lib/regionView.ts`); its pure rules are `lib/craftPageView.ts` and
-`lib/craftPlaces.ts`, and `components/craft/CraftReference.tsx` draws the tabs (Overview,
-Process, Region, Shared science when `GET /crafts/{slug}/shared-science` names a shared concept
-(decision 0070), Sources, and All evidence for researchers and above). One claim index
-(`components/craft/CraftClaims.tsx`) and one citation numbering per page reach every chip through
-`components/answer/CitationContext.tsx`; sentences and terms are the explainer's
-(`ExplainerSentence`, `TermSheet`). `/map` draws craft places as pins and the environment
+The craft page (`app/(reading)/crafts/[slug]/page.tsx`) draws the craft's monograph document when
+the server has one (`lib/monographRenderServer.serverCraftDocument`, `components/monograph/MonographPage.tsx`;
+every curated craft since round 6, decisions 0106 and 0108), and otherwise the craft's record
+(`lib/craftRecord.ts`, `components/craft/CraftWithoutMonograph.tsx`); it is revalidated daily and
+pre-rendered for the pages `lib/server/readingPages.ts` lists. The tabbed reference page of
+decision 0071 (`components/craft/CraftReference.tsx` and its claim index `CraftClaims.tsx`) was
+retired in round 6. The page and region routes are still parsed by their contract shapes and
+cross-checked at the boundary (`lib/craftPageContract.ts`, `lib/craftRegion.ts` with
+`lib/regionView.ts`), with pure rules in `lib/craftPageView.ts` and `lib/craftPlaces.ts`; one
+citation numbering per page reaches every chip through `components/answer/CitationContext.tsx`, and
+sentences and terms are the explainer's (`ExplainerSentence`, `TermSheet`). `/map` draws craft places as pins and the environment
 layers as district choropleths on `public/boundaries/district-shapes.json`, clipped to the
 DataMeet outline, with no tile basemap (`components/map/`, decision 0019).
 
@@ -581,10 +726,11 @@ which runs the consent, session, timer and client-tool checks and takes its tran
 SDK, on demand), and the microphone and speech player (`lib/voiceDevice.ts`). The CSP's
 `connect-src` is `next.config.ts`.
 
-Generated media (decision 0021) is one store per page, `lib/craftMedia.ts`, created by
-`components/craft/useStageMedia.tsx`: it reads the media options, creates jobs with an
-idempotency key per press, polls them, remembers their ids in session storage and renews expiring
-URLs. Since decision 0071 no screen mounts it (the craft page offers no generator). Files reach the browser through `lib/download.ts`; the CSP's
+Generated media (decision 0021) had one store per page, `lib/craftMedia.ts`, created by
+`components/craft/useStageMedia.tsx`: it read the media options, created jobs with an idempotency
+key per press, polled them, remembered their ids in session storage and renewed expiring URLs.
+After decision 0071 no screen mounted it (the craft page offers no generator), and both files went
+with the tabbed craft page in round 6. Files reach the browser through `lib/download.ts`; the CSP's
 `connect-src`, `img-src` and `media-src` name the media bucket's host. Pictures from the web are
 drawn with no referrer (decision 0034); `img-src` adds `https:` on every page, because a
 client-side move to `/ask` keeps the first page's policy (decision 0039); plain http stays refused.
@@ -599,9 +745,28 @@ from opening nested windows, because Chromium ignores the policy's `webrtc 'bloc
 | Workflow | Runs |
 |---|---|
 | Backend checks | ruff, DB-free pytest, tools tests (hygiene, curation), hygiene check, the curation check of every dossier and the index (`tools/curation/check.py --check-index`, no network), offline migration render; then migrations, seeds and DB tests against PostGIS with pgvector, then the curated dossier import (decision 0053) |
-| Frontend checks | typecheck, lint, unit specs, smoke specs |
+| Frontend checks | typecheck, lint and unit specs (after the lockfile audit and the no-comments check); the production build; the smoke specs against that build in a browser |
 | Hygiene | the hygiene check over the whole repository on every push to `main` and every pull request, whatever the paths, since Backend checks runs only for backend paths |
+| README check | on a pull request, or a push to `main` or a round branch, that changes `README.md`, a Markdown file under `docs/` or `.claude/skills/`, the README kit or its workflow: the kit rebuilt and diffed, every SVG checked, every mermaid block drawn by mermaid-cli and on github.com, every page rendered by GitHub (`docs/readme-kit/README_STYLE.md`, CI) |
 | Craft data | master-list sha1, lint and tests of `etl/crafts`; weekly regeneration |
 | Geo ETL | `etl/geo` tests and the district statistics build |
 | Deploy backend | after Backend checks succeed on a push to `main` of `cxacraftecosystem-ui/KalaVigyan` |
 | E2E production | on dispatch only: Playwright against the deployed site (`frontend/e2e/production/matrix.ts`), every screen signed in as the E2E Researcher at 1920, 1440, 834, 390 and 360 px wide in light and dark, and with `questions=true` four known-answer questions asked at 1440 px in light: at Detailed depth the mordant in English and Hindi, and Kachchh's water, which needs a region story with a traced river once `rivers_loaded` is set, and at Expert depth indigo's generated explainer; each must show a lede with a cited sentence, live and in its saved explainer, which is checked again at 834 and 390 px in light and dark (decisions 0029, 0050, 0061 and 0077) |
+
+Scheduled and dispatched runs (craft sync, field voices, coverage enrichment, nightly upkeep, the
+alert digest, the release gate, captures, Monograph parity, open data and the Geo ETL) are in
+`docs/RUNBOOK.md`.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The allowed import edges | `LAYER_IMPORTS` in `tools/hygiene/layers.py`; the hygiene check fails on any other edge and on a package with no row |
+| The deployed pieces, ids and units | `docs/RUNBOOK.md`, What exists and On the box, and `infra/` |
+| Route groups and their counts | `docs/REPO_FACTS.md`, generated by `tools/repo_facts_build.py` |
+| Each flow's steps | the contract each section names, changed in the same change as the code |
+| Every path named here | it exists in the tree: on 2026-11-21 every backticked file name was checked against it and the stale ones fixed |
+
+Last reviewed: 2026-11-18, and its paths checked on 2026-11-21. Re-read it when a package is added
+under `backend/app` (it needs a `LAYER_IMPORTS` row), a process is added to the box, an answer step
+or block kind changes, or what reads without signing in changes.

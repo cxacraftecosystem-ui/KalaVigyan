@@ -1,6 +1,34 @@
 # Data sources
 
-Every per-district environment value and every physical map layer in KalaVigyan comes from one of the open datasets below. The tables mirror the one dataset registry, `backend/app/data/datasets/registry.json` (decision 0114), which is the source of truth: `etl/geo/geo_etl/catalog.py` reads its `geo-etl` rows, `tools/maplayers/sources.py` names its `maplayers` rows by code, each row of `district_env.parquet` repeats its dataset's `source`, `version`, `resolution` and `licence`, and `etl/geo/load.py` writes the full record to `EnvDataset` (`python -m app.scripts.sync_dataset_registry` brings stored rows up to the registry). If this page and the registry disagree, the registry wins and this page is stale.
+Every per-district environment value and every physical map layer in KalaVigyan comes from one of
+the open datasets below; the live sources answers read, the pictures they show, the vendored export
+assets and fonts, and the generated media are listed after them. If this page and the dataset
+registry disagree, the registry wins and this page is stale. Engineers adding a dataset and
+researchers citing KalaVigyan's data read it.
+
+| For | Read |
+|---|---|
+| The one dataset registry, the source of truth | `backend/app/data/datasets/registry.json` (decision 0114) |
+| How a dataset becomes a chart, table, timeline or map layer | [kalavigyan-datasets](../.claude/skills/kalavigyan-datasets/SKILL.md) |
+| What the geo lane writes and loads | [contracts/geo.md](contracts/geo.md) |
+| KalaVigyan's own knowledge as an open dataset | [contracts/open-data.md](contracts/open-data.md) |
+
+## The registry
+
+The tables mirror the one dataset registry, `backend/app/data/datasets/registry.json` (decision 0114), which is the source of truth: `etl/geo/geo_etl/catalog.py` reads its `geo-etl` rows, `tools/maplayers/sources.py` names its `maplayers` rows by code, each row of `district_env.parquet` repeats its dataset's `source`, `version`, `resolution` and `licence`, and `etl/geo/load.py` writes the full record to `EnvDataset` (`python -m app.scripts.sync_dataset_registry` brings stored rows up to the registry).
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  REG[("registry.json<br/>one dataset registry")] --> CAT["geo_etl/catalog.py<br/>its geo-etl rows"]
+  REG --> ML["tools/maplayers/sources.py<br/>its maplayers rows"]
+  CAT --> PQ["district_env.parquet<br/>source, version, licence"]
+  PQ --> LD["etl/geo/load.py"]
+  LD --> ENV[("EnvDataset<br/>the full record")]
+  REG -.->|sync_dataset_registry| ENV
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class REG accent
+```
 
 Owner direction: open datasets only, nothing that needs registration or a login. Heavy downloads run in GitHub Actions (`.github/workflows/geo-etl.yml`), never on a laptop.
 
@@ -314,3 +342,15 @@ District polygons come from the Designer Portal's `district-shapes.json` (shapes
 - Every value here is a statistic over an **indicative** polygon. Districts created after the shapes were drawn have no polygon and are listed in the summary's `districtsWithoutShapes`.
 - The polygons themselves **cannot be redistributed**: no download or export of the geometry. Showing them on a map in the portal must carry "District boundaries are indicative."
 - The per-district numbers are derived from the open rasters, and their licence follows the source dataset in the tables above.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Codes, editions, licences and citations | `backend/app/data/datasets/registry.json`; this page mirrors it and loses to it |
+| What is stored | `python -m app.scripts.sync_dataset_registry` brings `EnvDataset` up to the registry |
+| What the geo ETL reads | `etl/geo/geo_etl/catalog.py`, tested in the Geo ETL workflow |
+| The physical map layers | `tools/maplayers/sources.py`, tested by `tools/tests` |
+
+Re-read it when a dataset is added to the registry, an edition is reloaded, a licence changes, or a
+live source or picture source is added or dropped.

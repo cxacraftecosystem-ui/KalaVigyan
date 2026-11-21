@@ -8,6 +8,12 @@ Release step 6 of `docs/NEXT.md`. One critic scored the live page against `.clau
 - Design fixes 6 (SVG label sizes), 7 (Fig. 1 rests at dip 1; resting at dip 4 changes its generated status line and button label), 8 (a picture crop), 11 (folding the progress block), 12 (numbering) and 13 (the GI card frame).
 - Every wording change below, which needs the owner's OK.
 
+| For | Read |
+|---|---|
+| The rules the critic scored against | [page-checklist.md](../../.claude/skills/kalavigyan-craft-pages/references/page-checklist.md) |
+| The design system the fixes follow | [kalavigyan-design](../../.claude/skills/kalavigyan-design/SKILL.md) |
+| The release this critique was a step of | [NEXT.md](../NEXT.md) |
+
 The critic's report follows as written.
 
 Read on 19 Nov 2026 at https://kalavigyan.vercel.app/crafts/Kutch-Ajrakh, at 360, 834 and 1440 px, light and dark, plus a reduced-motion run at 1440 for the rest state. Full-page captures go blank past Chromium's 16,384 px limit, so the page was captured in 8,000 px slices (`seg-*.png`, `sheet-*.png`). Measurements are in `metrics.json`, `probe.json` and `probe2.json`; the page text is in `innerText.txt`. All files are in this folder.
@@ -218,3 +224,9 @@ template, rebuilt by `app.scripts.build_monograph`.
   - "How this answer was made" is a closed disclosure.
   - The first screen's list shows each item's chapter number.
   - The GI card loses its frame and its repeated name line.
+
+## How this document is kept true
+
+It is a point-in-time critique of 19 November 2026 and is not regenerated. Its "Applied" section
+records what changed with the owner's OK; what still waits is in [NEXT.md](../NEXT.md), Owner
+decisions. Re-read it before changing the Kutch Ajrakh page's wording or design.

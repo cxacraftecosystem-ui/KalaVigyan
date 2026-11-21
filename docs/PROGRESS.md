@@ -2,7 +2,14 @@
 
 Where work stands and what comes next. Update it in the same change that finishes or starts a
 piece of work. The plan is `docs/PLAN.md` (section 0 overrides the rest); the build order is its
-section 17.
+section 17. Everyone building KalaVigyan reads it; a new session starts at [NEXT.md](NEXT.md).
+
+| For | Read |
+|---|---|
+| What is live and how a session starts | [NEXT.md](NEXT.md) |
+| Why each piece was built as it was | [decisions/README.md](decisions/README.md) |
+| What was left below standard | [TECH_DEBT.md](TECH_DEBT.md) |
+| The rounds at a glance | [README.md](../README.md#status) |
 
 Last updated: 2026-11-20.
 
@@ -1215,3 +1222,13 @@ Last updated: 2026-11-20.
 
 - Cloudflare Turnstile widget for `kalavigyan.vercel.app` (email sign-up is Google-only in
   production until then).
+
+## How this document is kept true
+
+| Change | What to do here |
+|---|---|
+| A piece of work finishes | its entry under Done, in the same change, with its decision and contract |
+| A round is integrated | one entry naming its lanes and what each made work |
+| The owner has a step to take | an entry under Waiting on the owner, removed when it is done |
+
+Re-read Next and Waiting on the owner at every release; "Last updated" says when it was last done.

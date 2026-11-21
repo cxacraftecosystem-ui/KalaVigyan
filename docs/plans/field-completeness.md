@@ -4,6 +4,12 @@ Status: proposed, waiting for the owner's approval of the spend and a Researcher
 (2026-11-20). The owner's direction the same day: "information density encompassing all the fields
 is spectacular on all the pages".
 
+| For | Read |
+|---|---|
+| What each page holds per field, as data | [contracts/coverage.md](../contracts/coverage.md) |
+| The method each agent follows | [kalavigyan-craft-pages](../../.claude/skills/kalavigyan-craft-pages/SKILL.md) |
+| The architecture this is step 6 of | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md) |
+
 ## Where we stand
 
 Counted by `.claude/skills/kalavigyan-craft-pages/scripts/gaps.py` over the 41 curated dossiers (32
@@ -45,3 +51,12 @@ about 60 turns, report gaps before and after.
 1. Approve phase A (and later B and C) with its estimate.
 2. Give a Researcher session token for `tools/curation/propose.py` (facts go through the gates), or
    allow phase A to travel as dossier versions through the bulk import, as structure does.
+
+## How this document is kept true
+
+| Part | Kept true by |
+|---|---|
+| The counts in Where we stand | `.claude/skills/kalavigyan-craft-pages/scripts/gaps.py`, run on 2026-11-20; run it again to refresh them |
+| The status line | changed when the owner decides |
+
+Re-read it when a phase is approved or finished.

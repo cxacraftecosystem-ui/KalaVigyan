@@ -1,8 +1,18 @@
-# Next: handoff (2026-11-19, night session)
+# Next
 
-Start here in a new session. The owner went to sleep and asked Claude to finish the release and
-start on decision 0101's database and MCP work on its own recommendations. Every choice made
-without the owner is recorded below or in decisions 0102 and 0103 for review.
+Start here in a new session: what is live now, the release status, the owner's decisions, the two
+big tracks and how to work. The lead keeps it current. Every choice made without the owner is
+recorded below or in decisions 0102 and 0103 for review.
+
+| For | Read |
+|---|---|
+| Everything done, in order | [PROGRESS.md](PROGRESS.md) |
+| What is knowingly below standard | [TECH_DEBT.md](TECH_DEBT.md) |
+| How to deploy, switch on and roll back | [RUNBOOK.md](RUNBOOK.md) |
+| The owner's standing direction | [PLAN.md](PLAN.md), section 0 |
+
+This handoff began in the night session of 2026-11-19: the owner went to sleep and asked Claude to
+finish the release and start on decision 0101's database and MCP work on its own recommendations.
 
 ## Live now
 
@@ -170,3 +180,13 @@ film). Bringing the other crafts and 9 categories to the Ajrakh level is track 1
   - `REPO_FACTS.md` must be regenerated on a clean tree after the last change.
 - **Git Bash rewrites `/kalavigyan/...` paths** in `aws ssm` calls; set `MSYS_NO_PATHCONV=1`.
 - Debt is in `docs/TECH_DEBT.md`; progress is in `docs/PROGRESS.md`.
+
+## How this document is kept true
+
+| Part | Kept true by |
+|---|---|
+| Live now and release status | the lead, at each release, from the deployed commit (`/api/version`) and the Vercel deployment's state |
+| Owner decisions | the owner's words, dated; settled ones also land in a decision record |
+| The two big tracks | [PROGRESS.md](PROGRESS.md), which records each round as it is integrated |
+
+Re-read it at the start of every session and after every release.

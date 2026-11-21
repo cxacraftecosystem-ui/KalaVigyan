@@ -1,5 +1,26 @@
 # Plan: the answer experience
 
+The plan that turned an answer into an explainer of cited sections, built in four phases, A to D.
+Engineers read it beside the explainer and learning contracts; it is a plan, and what was built is
+in the decisions it led to.
+
+| For | Read |
+|---|---|
+| The explainer's shapes and rules | [contracts/explainer.md](../contracts/explainer.md) |
+| Phase D's learning routes | [contracts/learning.md](../contracts/learning.md) |
+| What each phase decided as it was built | [decisions/README.md](../decisions/README.md), decisions 0030 to 0070 |
+| The owner's standing direction | [PLAN.md](../PLAN.md), section 0 |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  A["Phase A<br/>explainer, sections,<br/>pictures, terms"] --> B["Phase B<br/>place, matter,<br/>the expert panel"]
+  B --> C["Phase C<br/>generated explainers,<br/>what-if, zoom, film"]
+  C --> D["Phase D<br/>learning, versions,<br/>lessons, exports, map"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class A accent
+```
+
 Status: approved by the owner, 2026-11-17 (section 8); phase A deployed, phases B and C built and
 reviewed, not yet deployed, the contract of phase D fixed (section 5).
 Supersedes the chat-style answer and the live voice call. PLAN section 0 still binds: accuracy over speed, every claim cited, research not limited
@@ -469,3 +490,13 @@ offline (`docs/TECH_DEBT.md`, Craft Process tab on phones hangs).
 - Accuracy: one or two known-answer questions per phase in production, not a large suite.
 - Reduced motion: every animation has a static end state; the river, ladder and reactions are
   readable without motion.
+
+## How this document is kept true
+
+| Part | Kept true by |
+|---|---|
+| The status line | updated as each phase ships; the phases' decisions say what was built |
+| The sandbox frame | `backend/tests/contracts/test_explainer_phase_c.py` reads the frame's sandbox attribute and policy from this plan |
+| The owner's decisions (section 8) | taken on 2026-11-17 and changed only by the owner |
+
+Re-read it before changing how an answer is composed, drawn or exported.

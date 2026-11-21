@@ -2,9 +2,17 @@
 
 Every shared backend component, with what it guarantees. Check here before writing a helper; if
 what you need is close to something listed, extend it. A component enters this list when a
-second real caller exists, and leaves it in the same change that deletes it.
+second real caller exists, and leaves it in the same change that deletes it. Paths are under
+`backend/app/`.
 
-Paths are under `backend/app/`. Last reviewed: 2026-11-18.
+| For | Read |
+|---|---|
+| Which layer a component belongs to, and which way imports point | [ARCHITECTURE.md](ARCHITECTURE.md), Backend layers |
+| The rules for reuse and the shared layer | [engineering-practices](../.claude/skills/engineering-practices/SKILL.md) and its [project bindings](../.claude/skills/engineering-practices/references/project-bindings.md) |
+| The interface a component serves | [contracts/README.md](contracts/README.md) |
+| The web client's shared primitives | [kalavigyan-design](../.claude/skills/kalavigyan-design/SKILL.md) |
+
+Last reviewed: 2026-11-18.
 
 ## core/config.py: settings
 
@@ -344,8 +352,8 @@ the client side is `frontend/lib/{scienceContract,regionContract,voiceContract,m
 over the runtime shape kit `frontend/lib/shape.ts` and `answerShapes.ts`. The client's voice
 rules (offer, tool re-checks, the transcript ledger) are `frontend/lib/voiceRules.ts`, and its one
 call controller is `frontend/lib/voiceCall.ts` (decision 0020). The client's media rules
-(`checkedMediaJob`, `checkedMediaOptions`, `offeredKinds`) are in `frontend/lib/mediaContract.ts`
-and its job store is `frontend/lib/craftMedia.ts` (decision 0021).
+(`checkedMediaJob`, `checkedMediaOptions`, `offeredKinds`) are in `frontend/lib/mediaContract.ts`;
+its job store, `frontend/lib/craftMedia.ts` (decision 0021), went with the tabbed craft page in round 6.
 
 | Name | Guarantee |
 |---|---|
@@ -578,7 +586,7 @@ Each group's rules are in its contract; this table says where the code lives.
 | `data/skill_library.py` (`SKILL_FILES`, `SkillFile`) | The skills and references served over MCP and on the site, the interactives skill among them. |
 | `curation/dossier_text.py`; `services/dossier_export*.py`; `scripts/export_dossiers.py` | The dossier export from the database, the curation's versioned backup and diff (`docs/contracts/dossier-export.md`). |
 | `research/monograph_page.py` (slots, `render_page`, `render_fragment`, `assemble_template`, the kit format), `research/monograph_document.py`; `services/monograph_document.py`; `models/monograph_documents.py`; `api/routes/craft_monograph.py`; `scripts/build_monograph.py`, `split_monograph.py`, `load_monograph.py` | The monograph as a document (decision 0106): the shell, fragments and kit, the stored document per version and its route (`docs/contracts/monograph-document.md`). |
-| `research/page_layout.py`; `services/page_layouts*.py`, `services/monograph_generated*.py`; `models/page_layouts.py`; `api/mcp_layout_tools.py`; `scripts/backfill_layouts.py` | `PageLayout` per page and the documents generated for crafts, families and categories without authored content (`docs/contracts/page-layout.md`). |
+| `research/page_layout.py`; `services/page_layouts*.py`, `services/monograph_generated*.py`; `models/page_layouts.py`; `api/mcp_page_tools.py` (`propose_page`, decision 0111); `scripts/backfill_layouts.py` | `PageLayout` per page and the documents generated for crafts, families and categories without authored content (`docs/contracts/page-layout.md`). |
 | `research/component_specs.py` (`SPEC_MODELS`, `checked_spec`) and `component_specs_plates*.py`, `_data*.py`, `_science*.py`, `_tools.py`; `scripts/extract_specs_*.py` | The typed spec of every component kind and Ajrakh's spec extraction (`docs/contracts/component-specs-*.md`). |
 | `api/mcp_tool_base.py`, `api/mcp_read_tools.py`, `core/mcp_scopes.py` | The MCP tool base (context with the signed-in user and scopes, the scope check) and the read tools; the scope names have one home in `models/oauth.py`. |
 
@@ -687,3 +695,15 @@ Each group's rules are in its contract; this table says where the code lives.
 | `curation/commons`: `commons_picture(http, page_url) -> CommonsPicture`, `imageinfo_url`, `picture_lines`, `PictureFailed` | A Commons file page's original address (query dropped), size and credit from the API's imageinfo, for `fetch.py --picture`. |
 | `curation/migrating`: `migrated_text(text)`, `migrate_files(paths) -> Migrated`, `MigrationFailed` | Rewrites a dossier of the previous schema version by its `schemaVersion` alone, every other byte kept; writes nothing when any file is refused. |
 | `curation/output.write_text_atomically(path, text)` | UTF-8, LF, written through a temporary file and replaced, so parallel runs never leave a half-written file. |
+
+## How this document is kept true
+
+| Change | What to do here |
+|---|---|
+| A component gains its second real caller | add its row, with what it guarantees, in the same change |
+| A component is renamed, moved or deleted | change or remove its row in the same change |
+| A guarantee changes | rewrite the row from the code and its tests |
+
+Every backticked file name here was checked against the tree on 2026-11-21, and the two that had
+gone were fixed. Re-read a section when its package gains a module, and the whole page when a
+package is added under `backend/app`.

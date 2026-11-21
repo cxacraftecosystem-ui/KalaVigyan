@@ -1,6 +1,13 @@
 # KalaVigyan runbook
 
-This page lists what is provisioned, how to deploy, and how to roll back. It holds ids and names only. Secret values live in GitHub Actions secrets and SSM Parameter Store, and nowhere else.
+This page lists what is provisioned, how to deploy, and how to roll back. It holds ids and names only. Secret values live in GitHub Actions secrets and SSM Parameter Store, and nowhere else. Operators read it, and anyone switching a feature on.
+
+| For | Read |
+|---|---|
+| What the box assumes from the code | [contracts/infra.md](contracts/infra.md) |
+| The nightly schedule, its bounds and commands | [contracts/nightly-upkeep.md](contracts/nightly-upkeep.md) |
+| How the pieces fit | [ARCHITECTURE.md](ARCHITECTURE.md), Deployed pieces |
+| Every name in Parameter Store | `infra/.env.example` |
 
 ## What exists
 
@@ -197,6 +204,40 @@ Decision 0017; contract `docs/contracts/voice.md`.
 
 ## Deploy
 
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart TD
+  subgraph Actions["GitHub Actions"]
+    P([Push to main])
+    BC{Backend checks}
+    DB["Deploy backend<br/>OIDC, secrets to SSM"]
+    SM["Smoke test<br/>through CloudFront"]
+    V["Web build<br/>Vercel deploy hook"]
+  end
+  subgraph Box["The box, over SSM"]
+    R["release.sh"]
+    M["Migrate, seed, import<br/>while the old colour serves"]
+    S["Start the other colour"]
+    H{"/health answers?"}
+    N["nginx switches"]
+    K["The deploy rolls back"]
+    W["Old colour stops,<br/>workers restart"]
+  end
+  P --> BC
+  BC -->|green| DB
+  DB --> R
+  R --> M
+  M --> S
+  S --> H
+  H -->|yes| N
+  H -->|no| K
+  N --> W
+  W --> SM
+  SM --> V
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class N accent
+```
+
 Automatic: a push to `main` that touches `backend/**`, `shared/**`, `infra/deploy/**`, `backend-checks.yml` or `deploy-backend.yml` → **Backend checks** → **Deploy backend**. Vercel builds the web app from `main` on its own.
 
 Deploy backend (`.github/workflows/deploy-backend.yml`):
@@ -227,8 +268,8 @@ Coverage enrichment (`.github/workflows/coverage-enrichment.yml`): daily at 22:1
 
 Running the same sha again re-renders the env and restarts the live colour.
 
-Frontend: the API goes first, then the web app. Vercel never builds `main` from Git
-(`frontend/vercel.json` turns off Git deployments of `main`); the build is started through the
+Frontend: the API goes first, then the web app. Vercel never builds from Git
+(`frontend/vercel.json` turns Git deployments off for every branch); the production build is started through the
 Vercel deploy hook (`/kalavigyan/env/VERCEL_DEPLOY_HOOK_URL`) by the action
 `.github/actions/build-web-app`, which builds `main` and takes the domain when it is ready.
 
@@ -242,8 +283,7 @@ Vercel deploy hook (`/kalavigyan/env/VERCEL_DEPLOY_HOOK_URL`) by the action
 
 No watcher or manual promote is needed. The nightly build uses the same hook.
 
-Vercel never builds from Git (`frontend/vercel.json` turns Git deployments off for every branch);
-production builds come from the deploy hook. To check a branch before it ships, deploy a preview from
+To check a branch before it ships, deploy a preview from
 the repository root (the root `.vercelignore` uploads only `frontend/`):
 `VERCEL_ORG_ID=team_pcTf4Alb2DCIwq2IZcdu00dS VERCEL_PROJECT_ID=prj_5hRNy7S9CS4fkhVVBRW5mbmAAUSd vercel deploy --yes`,
 then run **Capture screens** or **Monograph parity** with that preview's address as `base_url`; both
@@ -621,3 +661,16 @@ Rebuilding the box:
 - event trigger `enable_rls_on_new_tables`.
 
 The Data API therefore exposes nothing. Re-run the file after anything recreates the schema.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Ids and names of what exists | `infra/terraform` (`terraform plan` must read "No changes") and the AWS, Supabase and Vercel consoles |
+| The box's units and scripts | `infra/deploy/`, installed on every release |
+| The deploy steps | `.github/workflows/deploy-backend.yml`, `infra/deploy/release.sh` and `infra/deploy/blue_green.sh` |
+| The names of secrets and variables | `infra/.env.example` and `infra/scripts/seed_secrets.py`; values are never written here |
+| The scheduled runs | each workflow's own `schedule` |
+
+Re-read it when a workflow, a box unit, a secret or a provisioned resource is added or changed, and
+after every rollback.
