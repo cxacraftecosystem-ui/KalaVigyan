@@ -30,7 +30,7 @@ async def test_a_section_plan_names_its_field_and_the_experts_who_speak_to_it() 
     share = ResearchShare(queries=1, native_queries=0, fetches=3)
     await draft_plan(model, request(focus="CHEMISTRY", seats=("CHEMIST", "DESIGN_HISTORIAN"), share=share))
     (call,) = model.calls
-    experts = "Experts: chemist, reading paper, book, compound record, encyclopedia"
+    experts = "Experts: chemist, reading paper, book, compound record, encyclopedia, book chapter, gi journal, web page"
     assert f"Section: chemistry\n{experts}\n" in call["user"]
     assert "Queries: at most 1\n" in call["user"]
 

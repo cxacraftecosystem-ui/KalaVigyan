@@ -12,16 +12,18 @@ from app.models.enums import DISCIPLINES
 from app.research.open_work import TASK_KINDS, TASK_PROMPTS, parse_task_key
 from app.research.open_work_gap_keys import gap_detail, gap_id, is_gap_detail
 from app.research.open_work_gaps import (
+    ANSWER_MIN_SIMILARITY,
     Asked,
     FieldReading,
     accepted,
     answer_verdict,
-    found_facts,
     gap_count,
     gap_priority,
     nearest_gap,
+    rare_terms,
+    terms_needed,
 )
-from app.research.retrieval import ClaimHit, KnowledgeHits
+from app.services.craft_matching import SEMANTIC_MIN_SIMILARITY
 
 REPO = Path(__file__).resolve().parents[3]
 NOW = datetime(2026, 11, 21, 12, 0, tzinfo=UTC)
@@ -141,30 +143,22 @@ def test_a_question_joins_the_nearest_group_within_the_distance() -> None:
     assert nearest_gap({}) is None
 
 
-def hit(level: str, **ranks: int) -> ClaimHit:
-    return ClaimHit(
-        claim_id=uuid.uuid4(),
-        text="A stored fact.",
-        level=level,
-        subject_type="CONCEPT",
-        subject_id=ALUM,
-        score=0.02,
-        **ranks,
-    )
+def test_a_gap_is_answered_by_its_rare_words_not_by_the_craft_s_name_or_common_words() -> None:
+    asked = ["why", "does", "ajrakh", "use", "camel", "dung"]
+    assert rare_terms(asked, ["kutch", "ajrakh"]) == ("camel", "dung")
+    assert rare_terms(["how", "are", "ajrakh", "prints", "made"], ["ajrakh", "print"]) == ()
+    assert rare_terms(["which", "dyes", "dye", "dyes"], []) == ("dyes", "dye")
 
 
-def test_acceptance_counts_facts_the_retrieval_finds_by_the_question_s_words_or_names() -> None:
-    hits = KnowledgeHits(
-        craft_slug="Kutch-Ajrakh",
-        claims=(
-            hit("REVIEWED", lexical_rank=1, vector_rank=2),
-            hit("PROVISIONAL", entity_rank=1),
-            hit("VERIFIED", vector_rank=1),
-            hit("HYPOTHESIS", lexical_rank=2, vector_rank=3),
-        ),
-    )
-    assert found_facts(hits, by_meaning=False) == 2
-    assert found_facts(hits, by_meaning=True) == 3
+def test_two_rare_words_or_the_only_one_must_be_held_by_a_fact() -> None:
+    assert terms_needed(("camel", "dung", "softens")) == 2
+    assert terms_needed(("camel", "dung")) == 2
+    assert terms_needed(("dabu",)) == 1
+    assert terms_needed(()) == 0
+
+
+def test_a_question_without_rare_words_is_answered_only_by_facts_as_close_as_the_craft_finder_asks() -> None:
+    assert ANSWER_MIN_SIMILARITY == SEMANTIC_MIN_SIMILARITY == 0.6
 
 
 def test_a_gap_is_accepted_when_every_field_holds_two_found_facts() -> None:

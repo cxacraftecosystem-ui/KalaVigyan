@@ -108,7 +108,7 @@ async def asked(session: AsyncSession, question: Question) -> uuid.UUID:
 
 
 async def fact(
-    session: AsyncSession, text: str, field_name: str, vector: Sequence[float] = EAST
+    session: AsyncSession, text: str, field_name: str | None, vector: Sequence[float] = EAST
 ) -> uuid.UUID:
     claim = uuid.uuid4()
     session.add(
@@ -122,6 +122,7 @@ async def fact(
             origin="IMPORT",
             field=field_name,
             embedding=list(vector),
+            embeddingModel=current_embedding_model(),
         )
     )
     await session.flush()

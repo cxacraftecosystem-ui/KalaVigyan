@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import uuid
 from collections.abc import Sequence
 
@@ -8,25 +9,30 @@ from app.research.retrieval import KnowledgeHits, KnowledgeQuery, KnowledgeRetri
 
 from .policy import COVERAGE_QUERY_LIMIT, STORED_PACK_LIMIT
 
-__all__ = ["covering_claims", "facet_coverage", "stored_knowledge"]
+__all__ = ["covering_claims", "facet_coverage", "facet_query", "stored_knowledge"]
 
 
 async def facet_coverage(
     retriever: KnowledgeRetriever, *, craft_slug: str | None, mode: str, facets: Sequence[Facet]
 ) -> tuple[FacetCoverage, ...]:
-    coverage: list[FacetCoverage] = []
-    for index, facet in enumerate(facets):
-        hits = await retriever.search(
-            KnowledgeQuery(
-                craft_slug=craft_slug,
-                text=facet.target,
-                mode=mode,
-                facets=(facet.type,),
-                limit=COVERAGE_QUERY_LIMIT,
-            )
-        )
-        coverage.append(FacetCoverage(facet_index=index, claim_ids=covering_claims(hits, mode=mode)))
-    return tuple(coverage)
+    found = await asyncio.gather(
+        *(retriever.search(facet_query(craft_slug, mode, facet)) for facet in facets)
+    )
+    return tuple(
+        FacetCoverage(facet_index=index, claim_ids=covering_claims(hits, mode=mode))
+        for index, hits in enumerate(found)
+    )
+
+
+def facet_query(craft_slug: str | None, mode: str, facet: Facet) -> KnowledgeQuery:
+    return KnowledgeQuery(
+        craft_slug=craft_slug,
+        text=facet.target,
+        mode=mode,
+        facets=(facet.type,),
+        passages=False,
+        limit=COVERAGE_QUERY_LIMIT,
+    )
 
 
 def covering_claims(hits: KnowledgeHits, *, mode: str) -> tuple[uuid.UUID, ...]:

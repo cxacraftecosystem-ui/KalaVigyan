@@ -14,8 +14,9 @@ from ..research.fixtures import evidence_item
 from .fakes import FakeAdapter, FakeFetcher, FakeLocator, ids, model_for, request, web_page
 from .test_research_run import OPEN_COPY, P1, W1, planner
 
-HISTORIAN_READS = ("BOOK", "PAPER", "GI_JOURNAL", "ENCYCLOPEDIA")
-TOXICOLOGIST_READS = ("COMPOUND_RECORD", "PAPER", "GOVERNMENT_REPORT")
+HISTORIAN_READS = ("BOOK", "PAPER", "GI_JOURNAL", "ENCYCLOPEDIA", "BOOK_CHAPTER", "WEB_PAGE", "OTHER")
+TOXICOLOGIST_READS = ("COMPOUND_RECORD", "PAPER", "GOVERNMENT_REPORT", "BOOK_CHAPTER")
+CHEMIST_READS = ("PAPER", "BOOK", "COMPOUND_RECORD", "ENCYCLOPEDIA", "BOOK_CHAPTER", "GI_JOURNAL", "WEB_PAGE")
 
 
 def packed(native: str, kind: str, facet: int) -> PackedEvidence:
@@ -63,13 +64,11 @@ def test_the_section_s_speaking_seats_give_their_kinds_in_seat_order() -> None:
         ),
     )
     assert seat_reading_kinds(request(focus="HEALTH", seats=seated, depth="EXPERT")) == (
-        ("PAPER", "BOOK", "COMPOUND_RECORD", "ENCYCLOPEDIA"),
+        CHEMIST_READS,
         TOXICOLOGIST_READS,
         EXPERT_PANEL["ECOLOGIST"].source_kinds,
     )
-    assert seat_reading_kinds(request(focus="HEALTH", seats=seated, depth="BASIC")) == (
-        ("PAPER", "BOOK", "COMPOUND_RECORD", "ENCYCLOPEDIA"),
-    )
+    assert seat_reading_kinds(request(focus="HEALTH", seats=seated, depth="BASIC")) == (CHEMIST_READS,)
     assert seat_reading_kinds(request(seats=seated, depth="EXPERT")) == ()
 
 
@@ -77,7 +76,7 @@ async def test_a_section_plan_names_no_artisan_and_the_kinds_each_expert_reads()
     model = model_for()
     await draft_plan(model, request(focus="PROCESS", seats=("ARTISAN", "TECHNOLOGIST"), depth="DETAILED"))
     (call,) = model.calls
-    reads = "paper, government report, gi journal, book"
+    reads = "paper, government report, gi journal, book, book chapter, web page, other"
     assert f"Experts: textile or ceramic technologist, reading {reads}\n" in call["user"]
     assert "artisan" not in call["user"].casefold()
 

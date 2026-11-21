@@ -10,6 +10,7 @@ from sqlalchemy import (
     CompoundSelect,
     Float,
     Select,
+    String,
     and_,
     case,
     cast,
@@ -20,6 +21,7 @@ from sqlalchemy import (
     select,
     union_all,
 )
+from sqlalchemy.orm import aliased
 
 from app.models import (
     Chunk,
@@ -27,6 +29,8 @@ from app.models import (
     ClaimSource,
     Concept,
     ConceptEdge,
+    CraftCategory,
+    CuratedCategoryClaim,
     FieldRecording,
     Source,
     Term,
@@ -55,12 +59,14 @@ __all__ = [
     "chunk_conditions",
     "chunk_lexical_ranking",
     "chunk_vector_ranking",
+    "cited_from_kinds",
     "claim_conditions",
     "claim_entity_ranking",
     "claim_lexical_ranking",
     "claim_vector_ranking",
     "field_condition",
     "field_passages",
+    "filed_under",
     "lexical_rank",
     "readable_citations",
     "scope_claims",
@@ -74,12 +80,19 @@ TEXT_SEARCH_CONFIG = "english"
 ENTITY_NAME_MIN_CHARS = 4
 NAME_GLOSS_OPEN = " ("
 NAME_GLOSS = r"\(([^)]*)\)"
+WORD_BEFORE = r"(?<!\w)"
+WORD_AFTER = r"(?:e?s)?(?!\w)"
+REGEX_SPECIALS = r"([.^$*+?(){}|\\\[\]])"
+REGEX_ESCAPED = r"\\\1"
+CONCEPT_SUBJECT = "CONCEPT"
 
 
 @dataclass(frozen=True)
 class CraftScope:
     craft_id: uuid.UUID | None
     sub_category_id: uuid.UUID | None
+    category_id: uuid.UUID | None = None
+    merged_ids: tuple[uuid.UUID, ...] = ()
 
 
 EVERY_CRAFT = CraftScope(craft_id=None, sub_category_id=None)
@@ -96,9 +109,27 @@ def scope_concepts(scope: CraftScope, *, facets: Sequence[str] = ()) -> Select[t
 
 def _owners(scope: CraftScope) -> list[ColumnElement[bool]]:
     owners: list[ColumnElement[bool]] = [Concept.craftId == scope.craft_id]
+    if scope.merged_ids:
+        owners.append(Concept.craftId.in_(list(scope.merged_ids)))
     if scope.sub_category_id is not None:
         owners.append(and_(Concept.craftId.is_(None), Concept.subCategoryId == scope.sub_category_id))
+    if scope.category_id is not None:
+        owners.append(_family_science(scope.category_id))
     return owners
+
+
+def _family_science(category_id: uuid.UUID) -> ColumnElement[bool]:
+    marked = aliased(Claim, name="family_claim")
+    curated = (
+        select(marked.subjectId)
+        .join(CuratedCategoryClaim, CuratedCategoryClaim.claimId == marked.id)
+        .where(CuratedCategoryClaim.categoryId == category_id, marked.subjectType == CONCEPT_SUBJECT)
+    )
+    named = select(func.lower(CraftCategory.name)).where(CraftCategory.id == category_id).scalar_subquery()
+    shared = and_(
+        Concept.craftId.is_(None), Concept.subCategoryId.is_(None), func.lower(Concept.name) == named
+    )
+    return or_(Concept.id.in_(curated), shared)
 
 
 def scope_claims(scope: CraftScope, *, facets: Sequence[str] = ()) -> ColumnElement[bool]:
@@ -113,8 +144,7 @@ def scope_claims(scope: CraftScope, *, facets: Sequence[str] = ()) -> ColumnElem
 
 
 def field_condition(fields: Sequence[str]) -> ColumnElement[bool]:
-    wanted = list(fields)
-    return or_(Claim.field.is_(None), Claim.field.in_(wanted), Claim.fields.overlap(wanted))
+    return or_(Claim.field.is_(None), filed_under(fields))
 
 
 def claim_conditions(
@@ -177,6 +207,21 @@ def field_passages() -> ColumnElement[bool]:
     return Chunk.sourceId.in_(select(FieldRecording.sourceId))
 
 
+def filed_under(fields: Sequence[str]) -> ColumnElement[bool]:
+    wanted = list(fields)
+    return or_(Claim.field.in_(wanted), Claim.fields.overlap(wanted))
+
+
+def cited_from_kinds(kinds: Sequence[str]) -> ColumnElement[bool]:
+    return exists().where(
+        ClaimSource.claimId == Claim.id,
+        ClaimSource.sourceId == Source.id,
+        Source.kind.in_(list(kinds)),
+        Source.sensitivity != RESTRICTED_SENSITIVITY,
+        Source.id.not_in(withheld_field_sources()),
+    )
+
+
 def claim_lexical_ranking(
     conditions: Sequence[ColumnElement[bool]], tsquery: str, *, depth: int = RANKING_DEPTH
 ) -> Select[tuple[uuid.UUID]]:
@@ -222,10 +267,16 @@ def _named_concepts(scope: CraftScope, question: str) -> Any:
             names.c.id.in_(scope_concepts(scope)),
             func.length(name) >= ENTITY_NAME_MIN_CHARS,
             func.strpos(asked, name) > 0,
+            asked.op("~", is_comparison=True)(_whole_word(name)),
         )
         .group_by(names.c.id)
         .cte("named")
     )
+
+
+def _whole_word(name: ColumnElement[str]) -> ColumnElement[str]:
+    escaped = func.regexp_replace(name, REGEX_SPECIALS, REGEX_ESCAPED, "g", type_=String)
+    return func.concat(WORD_BEFORE, escaped, WORD_AFTER)
 
 
 def _concept_names() -> CompoundSelect[Any]:

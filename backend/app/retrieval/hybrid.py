@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import uuid
 from collections.abc import Sequence
 
@@ -7,7 +8,7 @@ from sqlalchemy import ColumnElement, Select, not_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.errors import InvalidInput
-from app.models import Chunk, Claim, Craft, Source
+from app.models import Chunk, Claim, Craft, CraftSubCategory, Source
 from app.research.embedding import TextEmbedder, checked_vectors
 from app.research.planning import MODE_POLICIES
 from app.research.retrieval import ChunkHit, ClaimHit, EnglishRendering, KnowledgeHits, KnowledgeQuery
@@ -19,6 +20,7 @@ from .statements import (
     chunk_conditions,
     chunk_lexical_ranking,
     chunk_vector_ranking,
+    cited_from_kinds,
     claim_conditions,
     claim_entity_ranking,
     claim_lexical_ranking,
@@ -27,11 +29,20 @@ from .statements import (
 )
 from .text import or_tsquery, query_text
 
-__all__ = ["CORPUS_TIER", "SessionScopedSearch", "StoredKnowledgeSearch", "craft_scope", "search_words"]
+__all__ = [
+    "CORPUS_TIER",
+    "MERGE_HOPS_MAX",
+    "SessionScopedSearch",
+    "StoredKnowledgeSearch",
+    "craft_scope",
+    "merged_into",
+    "search_words",
+]
 
 CORPUS_TIER = "T2"
 SCORE_DIGITS = 9
 RANK_FIELDS = ("lexical_rank", "vector_rank", "entity_rank")
+MERGE_HOPS_MAX = 5
 
 
 class SessionScopedSearch:
@@ -59,13 +70,18 @@ class StoredKnowledgeSearch:
         self._session = session
         self._embed = embed
         self._english = english
+        self._turn = asyncio.Lock()
 
     async def search(self, query: KnowledgeQuery) -> KnowledgeHits:
         words = await search_words(query.text, self._english)
         (vector,) = checked_vectors(await self._embed([query_text(query.text)]), expected=1)
+        async with self._turn:
+            return await self._searched(query, words, vector)
+
+    async def _searched(self, query: KnowledgeQuery, words: str, vector: list[float]) -> KnowledgeHits:
         scope = await craft_scope(self._session, query.craft_slug)
         tsquery = or_tsquery(words)
-        conditions = claim_conditions(scope, mode=query.mode, facets=query.facets, fields=query.fields)
+        conditions = _claim_conditions(query, scope)
         claims = await self._fuse(
             [
                 claim_lexical_ranking(conditions, tsquery) if tsquery else None,
@@ -75,7 +91,7 @@ class StoredKnowledgeSearch:
             limit=query.limit,
         )
         chunks: list[FusedItem[uuid.UUID]] = []
-        if CORPUS_TIER in MODE_POLICIES[query.mode].tiers:
+        if query.passages and CORPUS_TIER in MODE_POLICIES[query.mode].tiers:
             chunks = await self._passages(query, scope, tsquery, vector)
         return KnowledgeHits(
             craft_slug=query.craft_slug,
@@ -170,10 +186,42 @@ async def search_words(text: str, english: EnglishRendering | None) -> str:
 async def craft_scope(session: AsyncSession, slug: str | None) -> CraftScope:
     if slug is None:
         return EVERY_CRAFT
-    row = (await session.execute(select(Craft.id, Craft.subCategoryId).where(Craft.slug == slug))).first()
+    row = (
+        await session.execute(
+            select(Craft.id, Craft.subCategoryId, CraftSubCategory.categoryId)
+            .outerjoin(CraftSubCategory, CraftSubCategory.id == Craft.subCategoryId)
+            .where(Craft.slug == slug)
+        )
+    ).first()
     if row is None:
         raise InvalidInput(f"No craft has the slug {slug!r}")
-    return CraftScope(craft_id=row.id, sub_category_id=row.subCategoryId)
+    return CraftScope(
+        craft_id=row.id,
+        sub_category_id=row.subCategoryId,
+        category_id=row.categoryId,
+        merged_ids=await merged_into(session, row.id),
+    )
+
+
+async def merged_into(session: AsyncSession, craft_id: uuid.UUID) -> tuple[uuid.UUID, ...]:
+    found: list[uuid.UUID] = []
+    reached = [craft_id]
+    for _ in range(MERGE_HOPS_MAX):
+        rows = await session.scalars(
+            select(Craft.id)
+            .where(Craft.mergedIntoId.in_(reached), Craft.id.not_in([craft_id, *found]))
+            .order_by(Craft.id)
+        )
+        reached = list(rows.all())
+        if not reached:
+            break
+        found += reached
+    return tuple(found)
+
+
+def _claim_conditions(query: KnowledgeQuery, scope: CraftScope) -> list[ColumnElement[bool]]:
+    conditions = claim_conditions(scope, mode=query.mode, facets=query.facets, fields=query.fields)
+    return [*conditions, cited_from_kinds(query.source_kinds)] if query.source_kinds else conditions
 
 
 def _ranking_fields(item: FusedItem[uuid.UUID]) -> dict[str, float | int | None]:
