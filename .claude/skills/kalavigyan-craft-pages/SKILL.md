@@ -1,6 +1,6 @@
 ---
 name: kalavigyan-craft-pages
-description: How to make or deepen a KalaVigyan craft, family or category page to the Kutch Ajrakh bar through the KalaVigyan MCP server, by the same method and references every contributor follows - sources found, read and checked with the same registries, reader and quote matcher the gates use (search_sources, read_source, check_quote, lookup_compound, lookup_entity, find_pictures, archive_source), facts through propose_facts and get_proposal, structure (a stage's colour after and its why, native names, reactions, botanical names, the GI record, glossary, conflicts, open questions) through propose_structure, new sources through propose_source, components delivered finished as spec and units, whole pages built in a draft (curate_page, preview_draft's checklist report, submit_draft) or through preview_page then propose_page, sources only the contributor can open through supply_source, pictures through start_image_upload, and Commons pictures still placed through the dossier import - cheaply, one page per agent, with the gates, the checker and the preview as the judges. The rules are the shared references (the page checklist and its 26 rules, sources and licences, quotes and locators, the sixteen fields, components, datasets); the dossiers in backend/app/data/curation are the database's export, edited by hand only for a bulk import. Load it before creating, deepening, fixing or reviewing any page's content, dossier, check file or proposed fact, and before briefing an agent to do so.
+description: How to make or deepen a KalaVigyan craft, family or category page to the Kutch Ajrakh bar through the KalaVigyan MCP server, by the same method and references every contributor follows - sources found, read and checked with the same registries, reader and quote matcher the gates use (search_sources with its pictures, read_source with its quote checks and archive, lookup), facts through propose_facts and get_proposal, structure (a stage's colour after and its why, native names, reactions, botanical names, the GI record, glossary, conflicts, open questions) through propose_structure, new sources through propose_source, components delivered finished as spec and units, whole pages built in a draft (curate_page, edit_draft, preview_page's checklist report, propose_page) or given as one bundle to preview_page then propose_page, sources only the contributor can open through supply_source, pictures through give_pictures, and Commons pictures still placed through the dossier import - cheaply, one page per agent, with the gates, the checker and the preview as the judges. The rules are the shared references (the page checklist and its 26 rules, sources and licences, quotes and locators, the sixteen fields, components, datasets); the dossiers in backend/app/data/curation are the database's export, edited by hand only for a bulk import. Load it before creating, deepening, fixing or reviewing any page's content, dossier, check file or proposed fact, and before briefing an agent to do so.
 ---
 
 # KalaVigyan craft and category pages
@@ -50,21 +50,21 @@ and `kalavigyan://index.md`, one line for each tool, prompt and resource.
 | Change | Path |
 |---|---|
 | Finding a source | `search_sources` first (the registries, reference works and web search KalaVigyan's planner uses, each result graded with its licence and any open copy), then your own search |
-| Reading it and taking quotes | `read_source`, which returns the text the gates will match, page by page or `around` given words, with locators; `archive_source` for a snapshot of a page that may vanish |
-| A quote before it is sent | `check_quote`: the QUOTES gate's verdict, and the nearest passage when it misses |
-| A compound's record and hazards, a plant's taxon name, a place's or craft's item | `lookup_compound`, `lookup_entity` |
-| Finding open pictures | `find_pictures` (Commons and Openverse, open licences only, with author, credit and the site's widths), then the dossier route |
+| Reading it and taking quotes | `read_source`, which returns the text the gates will match, page by page or `around` given words, with locators; `read_source` with archive for a snapshot of a page that may vanish |
+| A quote before it is sent | `read_source` with the quote in its `quotes`: the QUOTES gate's verdict, and the nearest passage when it misses |
+| A compound's record and hazards, a plant's taxon name, a place's or craft's item | `lookup`, with kind compound or entity |
+| Finding open pictures | `search_sources` with kinds pictures (Commons and Openverse, open licences only, with author, credit and the site's widths), then the dossier route |
 | A fact that stands alone | `propose_facts` (up to 25, each with an `idempotency_key` and the claimed `task_key`), then `get_proposal` until it is DONE; a working dossier's new facts in one run with `tools/curation/propose.py` |
 | A new source for a held fact, or for a fact that lost its quotes | `propose_source`, naming the fact as `claim_id` |
 | A stage's after or why, a native name, a reaction, a botanical name, a glossary term, an open question, the GI record, a conflict | `propose_structure`, one item with the fact and the quotes that state it |
-| A component | `list_components` first, then delivered finished as spec and units (the component guide), in a page bundle or with `propose_component` |
-| A whole page built over many calls | the `curate_page` prompt: `create_draft`, `add_to_draft` part by part, `preview_draft` and its checklist report until nothing fails, then `submit_draft` |
+| A component | `list_components` first, then delivered finished as spec and units (the component guide), in a draft or a page bundle, or alone in a bundle to `propose_page` |
+| A whole page built over many calls | the `curate_page` prompt: `edit_draft` part by part, `preview_page` with the draft and its checklist report until nothing fails, then `propose_page` with the draft |
 | A whole page's additions given at once: facts, structure, components, layout, pictures | `preview_page`, then `propose_page` with the same bundle |
-| A source only your own access opens: a paywalled paper, a book or PDF you hold, an archive, a site that refuses the fetcher | `supply_source`, then `check_quote` against your text; cite it as its `cite_as` gives it |
-| A picture a person took or made | `start_image_upload`, or `give_image` when it is in the chat, with the declaration the person confirms |
+| A source only your own access opens: a paywalled paper, a book or PDF you hold, an archive, a site that refuses the fetcher | `supply_source`, then `read_source`'s quote checks against your text; cite it as its `cite_as` gives it |
+| A picture a person took or made | `give_pictures`, in the chat or as an upload slot, with the declaration the person confirms |
 | A Wikimedia Commons picture: its placement, focal box, size and stand-in | the dossier route, a new dossier version imported on deploy, while it remains the import path for pictures from elsewhere |
 | A new craft's first dossier, or any bulk import | the dossier route |
-| What is held | `get_facts`, `get_section`, `get_coverage`, `get_layout`; against git, `export_dossiers --diff` (the lead) |
+| What is held | `get_facts`, `get_page` (coverage, sections, layout); against git, `export_dossiers --diff` (the lead) |
 
 The dossiers in `backend/app/data/curation` (a category's under `categories/`), each with its
 `.check.json`, are the database's versioned export: a backup, a diff and the bulk import. They are
@@ -97,13 +97,13 @@ A category page has no stages, native names or GI record; it has pictures placed
 
 ## See the gaps first
 
-- `get_coverage` gives each field's cited facts, sources, sections and figures and its standing;
+- `get_page` with its coverage gives each field's cited facts, sources, sections and figures and its standing;
   `list_open_work` gives the page's tasks.
 - `python -I .claude/skills/kalavigyan-craft-pages/scripts/gaps.py <dossier>` prints a dossier's
   counts against the bar (pictures and their placements, stages' after and why, native and
   botanical names, the GI record, fields), `--json` for machine output. Run it on the exported
   dossier, and on a working copy before and after a bulk import. It counts the facts structure
-  cites (communities for SOCIETY, the GI record for POLICY) as `get_coverage` does.
+  cites (communities for SOCIETY, the GI record for POLICY) as `get_page` does.
 - Search every field with no fact before calling it a gap, with `search_sources` and then your
   own search. The ones most often missing are botany,
   climate, health, geology, policy and ecology: look for dye and fibre plant monographs, district
@@ -119,17 +119,17 @@ A category page has no stages, native names or GI record; it has pictures placed
    `propose_structure`, each item with the fact and the quote that state it: a stage's after and
    its why, native names and botanical names that already sit in a quote. No new source is needed.
 3. **Fill the remaining gaps from new sources**, open ones only (the source rubric), found with
-   `search_sources` and read with `read_source`, every quote passed by `check_quote` before it is
-   sent, compounds and taxon names from `lookup_compound` and `lookup_entity`: new facts
+   `search_sources` and read with `read_source`, every quote passed by `read_source`'s check before it is
+   sent, compounds and taxon names from `lookup`: new facts
    through `propose_facts`, structure through `propose_structure`, a held fact's new source through
    `propose_source`, components by the component guide, figures from data by the datasets skill,
    and Commons pictures by the dossier route (`fetch.py --picture` gives a picture's address, size,
    author and licence).
-4. **See the page before sending it.** Build the page in a draft (`create_draft`, `add_to_draft`),
-   call `preview_draft`, fix every rule its report fails, judge the rest on the private link at
-   360 and 1440 px in both themes, preview again, then `submit_draft`. A page given in one call
+4. **See the page before sending it.** Build the page in a draft (`edit_draft`),
+   call `preview_page` with it, fix every rule its report fails, judge the rest on the private link at
+   360 and 1440 px in both themes, preview again, then `propose_page` with it. A page given in one call
    goes through `preview_page` and `propose_page` the same way.
-5. **Follow every proposal** with `get_proposal` or `my_tasks`. A refused fact is fixed from its
+5. **Follow every proposal** with `get_proposal` or `my_work`. A refused fact is fixed from its
    sources or dropped, never reworded past its quotes to slip a gate.
 6. **Hand the lead what only the dossier route carries**: Commons pictures with their placements and
    focal boxes, or a new craft's first dossier, as the working dossier with its version raised by
@@ -153,7 +153,7 @@ is the working dossier in your scratchpad.
 |---|---|
 | gaps | `python -I .claude/skills/kalavigyan-craft-pages/scripts/gaps.py <work>` |
 | read a source as the verifier will | `python tools/curation/fetch.py <https url>`, or `read_source` over MCP |
-| find open pictures | `find_pictures` over MCP, with the craft's slug |
+| find open pictures | `search_sources` with kinds pictures over MCP, with the craft's slug |
 | a Commons picture's address, size, author, licence | `python tools/curation/fetch.py --picture https://commons.wikimedia.org/wiki/File:<name>` |
 | verify quotes (network) | `python tools/curation/verify.py <work>` |
 | offline checks | `python tools/curation/check.py <work>` |
@@ -183,7 +183,7 @@ fact from being sent twice. Never edit `index.json`.
 
 ## Briefing an agent (the lead)
 
-Give the agent this skill's name, the page (its kind and slug), its `get_coverage` or gaps output,
+Give the agent this skill's name, the page (its kind and slug), its `get_page` coverage or gaps output,
 and for the dossier route its working copy of the exported dossier. Nothing else; the skill and the
 references carry the method. Run the pages of one family together so their pictures and reactions
 do not repeat. When the agents are done, the lead commits the dossier-route versions to

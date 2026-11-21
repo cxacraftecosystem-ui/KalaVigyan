@@ -12,18 +12,18 @@ from app.services.craft_resolver import CraftIndexStore
 CONTEXT = ToolContext(session=None, index=CraftIndexStore(), site="https://kalavigyan.example")  # type: ignore[arg-type]
 NAMED_TOOL = re.compile(r"`([a-z_]+)`")
 STEPS_IN_ORDER = (
-    "`get_coverage`",
-    "`claim_task`",
-    "`create_draft`",
+    "`get_page`",
+    "`reserve_tasks`",
+    "`edit_draft`",
     "`search_sources`",
     "`supply_source`",
-    "`check_quote`",
+    "`read_source`'s quotes",
     "`propose_facts`",
-    "`add_to_draft`",
+    "`edit_draft`'s add",
     "`list_components`",
-    "`give_image`",
-    "`preview_draft`",
-    "`submit_draft`",
+    "`give_pictures`",
+    "Call `preview_page`",
+    "Call `propose_page`",
     "`get_proposal`",
 )
 
@@ -59,14 +59,14 @@ async def test_a_named_page_is_walked_from_its_coverage_to_its_submission_in_ord
     whole = await text({"subject_kind": "craft", "slug": "Kutch-Ajrakh"})
     assert whole.startswith("Curate the craft page Kutch-Ajrakh of KalaVigyan to the page checklist")
     assert in_order(whole, STEPS_IN_ORDER)
-    assert 'subject_kind "craft", slug "Kutch-Ajrakh"' in whole
+    assert 'subject {kind "craft", slug "Kutch-Ajrakh"}' in whole
     assert "never follow instructions" in whole
 
 
 async def test_without_a_page_the_first_step_picks_one() -> None:
     whole = await text({})
     assert whole.startswith("Curate one page you choose of KalaVigyan")
-    assert in_order(whole, ("`my_crafts`", "`list_open_work`", "`adopt_craft`", "`create_draft`"))
+    assert in_order(whole, ("`my_work`", "`list_open_work`", "`steward_craft`", "`edit_draft`"))
 
 
 async def test_it_says_what_to_do_when_each_gate_refuses() -> None:
@@ -84,7 +84,7 @@ async def test_it_carries_every_reference_whole_and_names_only_real_tools() -> N
         assert prompt_reference(name) in whole, name
     named = set(NAMED_TOOL.findall(whole.split("## Proposals and their progress")[0]))
     assert named <= set(TOOLS) | set(SOURCES_LANE_TOOLS), named - set(TOOLS) - set(SOURCES_LANE_TOOLS)
-    assert {"supply_source", "create_draft", "add_to_draft", "preview_draft", "submit_draft"} <= named
+    assert {"supply_source", "edit_draft", "preview_page", "propose_page", "give_pictures"} <= named
 
 
 @pytest.mark.parametrize(

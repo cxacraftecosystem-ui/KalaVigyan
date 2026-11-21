@@ -224,6 +224,7 @@ async def test_ask_is_listed_with_its_ui_resource_and_as_a_write() -> None:
     assert reply is not None
     (listed,) = [tool for tool in reply["result"]["tools"] if tool["name"] == "ask"]
     assert listed["_meta"] == {
+        "kalavigyan/group": "reading",
         "ui": {"resourceUri": "ui://kalavigyan/answer.html", "visibility": ["model", "app"]},
         "ui/resourceUri": "ui://kalavigyan/answer.html",
     }

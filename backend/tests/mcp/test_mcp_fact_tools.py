@@ -20,13 +20,7 @@ SITE = "https://kalavigyan.example"
 QUEUED_AT = datetime(2026, 11, 20, 9, 0, tzinfo=UTC)
 SOURCE = {"url": PAGE_URL, "title": "Indigo in Ajrakh", "quotes": [{"text": QUOTE, "locator": "p. 2"}]}
 FACT = {"craft_slug": "Kutch-Ajrakh", "field": "PROCESS", "statement": STATEMENT, "sources": [SOURCE]}
-OLD_FORM = {
-    "subject": {"kind": "craft", "slug": "Kutch-Ajrakh"},
-    "field": "PROCESS",
-    "statement": STATEMENT,
-    "sources": [SOURCE],
-    "taskKey": "THIN_FIELD:craft:Kutch-Ajrakh:PROCESS",
-}
+TASK_KEY = "THIN_FIELD:craft:Kutch-Ajrakh:PROCESS"
 
 
 class EndedSession:
@@ -93,14 +87,18 @@ def queued(seen: list[tuple[list[QueuedFact], str]]) -> Any:
     return enqueue
 
 
-async def test_the_fact_tools_are_listed_with_their_scopes_and_hints() -> None:
+async def test_the_fact_tools_are_listed_with_their_scopes_groups_and_hints() -> None:
     reply = await answer({"jsonrpc": "2.0", "id": 1, "method": "tools/list"}, context(None))
     assert reply is not None
     tools = {tool["name"]: tool for tool in reply["result"]["tools"]}
-    for name in ("propose_fact", "propose_facts"):
-        assert tools[name]["annotations"]["readOnlyHint"] is False
+    assert "propose_fact" not in tools
+    assert tools["propose_facts"]["annotations"]["readOnlyHint"] is False
+    assert tools["propose_facts"]["_meta"]["kalavigyan/group"] == "proposing"
     assert tools["get_proposal"]["annotations"]["readOnlyHint"] is True
-    single = tools["propose_fact"]["inputSchema"]
+    assert tools["get_proposal"]["_meta"]["kalavigyan/group"] == "work"
+    batch = tools["propose_facts"]["inputSchema"]
+    assert batch["properties"]["facts"]["maxItems"] == 25
+    single = batch["$defs"]["FactFields"]
     assert {
         "craft_slug",
         "category_slug",
@@ -111,7 +109,6 @@ async def test_the_fact_tools_are_listed_with_their_scopes_and_hints() -> None:
         "idempotency_key",
     } <= set(single["properties"])
     assert set(single["required"]) == {"field", "statement", "sources"}
-    assert tools["propose_facts"]["inputSchema"]["properties"]["facts"]["maxItems"] == 25
     assert all(tool.scope == CONTRIBUTE_SCOPE for tool in mcp_fact_tools.FACT_TOOLS)
 
 
@@ -128,21 +125,24 @@ async def test_a_proposal_without_sign_in_scope_or_rank_is_a_tool_error(
 ) -> None:
     seen: list[tuple[list[QueuedFact], str]] = []
     monkeypatch.setattr(mcp_fact_tools.contribution_queue, "enqueue_facts", queued(seen))
-    result = await call("propose_fact", FACT, tool_context)
+    result = await call("propose_facts", {"facts": [FACT]}, tool_context)
     assert result["isError"] is True and said in result["content"][0]["text"]
     assert seen == []
 
 
-async def test_a_fact_is_queued_with_the_agent_origin_and_answered_at_once(
+async def test_one_fact_is_a_batch_of_one_queued_with_the_agent_origin_and_answered_at_once(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     seen: list[tuple[list[QueuedFact], str]] = []
     monkeypatch.setattr(mcp_fact_tools.contribution_queue, "enqueue_facts", queued(seen))
     tool_context = context("RESEARCHER")
-    result = await call("propose_fact", FACT | {"idempotency_key": "agent-run-7:fact-1"}, tool_context)
+    result = await call(
+        "propose_facts", {"facts": [FACT | {"idempotency_key": "agent-run-7:fact-1"}]}, tool_context
+    )
     assert result["isError"] is False
     structured = result["structuredContent"]
-    assert (structured["state"], structured["idempotencyKey"], structured["notices"]) == (
+    (item,) = structured["items"]
+    assert (item["ticket"]["state"], item["idempotencyKey"], structured["notices"]) == (
         "QUEUED",
         "agent-run-7:fact-1",
         [],
@@ -160,29 +160,43 @@ async def test_a_fact_is_queued_with_the_agent_origin_and_answered_at_once(
     assert tool_context.session.ended == ["commit"]  # type: ignore[attr-defined]
 
 
-async def test_the_old_proposal_form_still_works_and_says_so(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_an_old_name_inside_a_fact_still_works_and_says_so(monkeypatch: pytest.MonkeyPatch) -> None:
     seen: list[tuple[list[QueuedFact], str]] = []
     monkeypatch.setattr(mcp_fact_tools.contribution_queue, "enqueue_facts", queued(seen))
-    result = await call("propose_fact", {"proposal": OLD_FORM}, context("RESEARCHER"))
-    assert result["isError"] is False
-    (notice,) = result["structuredContent"]["notices"]
-    assert notice.startswith("proposal is the old form of propose_fact's arguments")
-    (([fact], _),) = seen
-    assert (fact.proposal.subject.slug, fact.proposal.task_key) == ("Kutch-Ajrakh", OLD_FORM["taskKey"])
-    renamed = await call("propose_fact", FACT | {"taskKey": OLD_FORM["taskKey"]}, context("RESEARCHER"))
+    renamed = await call("propose_facts", {"facts": [FACT | {"taskKey": TASK_KEY}]}, context("RESEARCHER"))
     assert renamed["structuredContent"]["notices"] == [
         "taskKey is the old name of task_key; it works until the next release, so pass task_key from now on."
     ]
+    (([fact], _),) = seen
+    assert (fact.proposal.subject.slug, fact.proposal.task_key) == ("Kutch-Ajrakh", TASK_KEY)
 
 
-async def test_a_malformed_fact_is_a_correctable_tool_error(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_a_retired_tool_name_is_an_unknown_tool() -> None:
+    reply = await answer(
+        {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {"name": "propose_fact", "arguments": FACT},
+        },
+        context("RESEARCHER"),
+    )
+    assert reply is not None and reply["error"]["code"] == -32602
+
+
+async def test_a_malformed_fact_is_refused_by_its_index_with_a_correctable_problem(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(mcp_fact_tools.contribution_queue, "enqueue_facts", queued([]))
-    both = await call("propose_fact", FACT | {"category_slug": "Textiles"}, context("RESEARCHER"))
-    assert both["isError"] is True and "one of them" in both["content"][0]["text"]
-    wrong = await call("propose_fact", FACT | {"field": "ASTROLOGY"}, context("RESEARCHER"))
-    assert wrong["isError"] is True and wrong["content"][0]["text"].startswith("field:")
-    twice = await call("propose_fact", FACT | {"fields": ["PROCESS"]}, context("RESEARCHER"))
-    assert twice["isError"] is True and "secondary fields are distinct" in twice["content"][0]["text"]
+    for changes, said in (
+        ({"category_slug": "Textiles"}, "one of them"),
+        ({"field": "ASTROLOGY"}, "field:"),
+        ({"fields": ["PROCESS"]}, "secondary fields are distinct"),
+    ):
+        result = await call("propose_facts", {"facts": [FACT | changes]}, context("RESEARCHER"))
+        structured = result["structuredContent"]
+        assert (result["isError"], structured["accepted"], structured["refused"]) == (False, 0, 1)
+        assert said in structured["items"][0]["problem"], said
 
 
 async def test_a_batch_queues_each_good_fact_and_refuses_each_malformed_one_by_its_index(

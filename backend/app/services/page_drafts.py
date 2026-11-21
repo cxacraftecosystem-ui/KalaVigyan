@@ -47,17 +47,17 @@ __all__ = [
     "subject_of",
 ]
 
-UNKNOWN_DRAFT = (
-    "No open draft of yours has the id {draft_id}; create_draft makes one, or gives back the one you hold."
-)
-SUBMITTED_DRAFT = "The draft {draft_id} was submitted; create_draft starts a new one for the page."
+UNKNOWN_DRAFT = "No open draft of yours has the id {draft_id}; edit_draft with the page's subject opens one, or gives back the one you hold."
+SUBMITTED_DRAFT = "The draft {draft_id} was submitted; edit_draft with the page's subject starts a new one."
 TOO_MANY = (
     "This account holds {held} open drafts, the most one account may; submit one, or let one expire, first."
 )
 TOO_LARGE = (
     "The draft would hold {size} bytes, more than the {limit} a draft may; submit it, or split the page."
 )
-EMPTY = "The draft holds no part yet; add_to_draft adds facts, structure, components, a layout or pictures."
+EMPTY = (
+    "The draft holds no part yet; edit_draft's add takes facts, structure, components, a layout or pictures."
+)
 NOT_YOURS = "These supplied sources are not this account's: {ids}; supply_source gives each one its id."
 
 

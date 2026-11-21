@@ -50,7 +50,7 @@ async def test_a_craft_asks_for_its_first_picture_and_a_picture_of_each_stage_an
         tasks[MATERIAL_TASK].needed
         == "A picture of Test indigo cake, a material of Image Contribution Test Craft."
     )
-    assert "give_image" in tasks[MASTHEAD].acceptance and tasks[MASTHEAD].count == 1
+    assert "give_pictures" in tasks[MASTHEAD].acceptance and tasks[MASTHEAD].count == 1
 
 
 async def test_a_picture_waiting_for_review_holds_its_task_and_a_refusal_reopens_it(

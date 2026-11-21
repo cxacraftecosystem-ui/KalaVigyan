@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from app.api import mcp_studio_sources, mcp_studio_tools
+from app.api import mcp_page_tools, mcp_studio_sources
 from app.api.mcp_tools import TOOLS, ToolContext, answer
 from app.core.errors import InvalidInput
 from app.models import PageDraft, SuppliedSource, User
@@ -26,16 +26,7 @@ USER_ID = uuid.UUID("0e000000-0000-4000-8000-0000000057d1")
 DRAFT_ID = uuid.UUID("0e000000-0000-4000-8000-0000000057d2")
 SUPPLIED_ID = uuid.UUID("0e000000-0000-4000-8000-0000000057d3")
 NOW = datetime(2026, 11, 21, 9, tzinfo=UTC)
-STUDIO = (
-    "supply_source",
-    "create_draft",
-    "add_to_draft",
-    "remove_from_draft",
-    "get_draft",
-    "preview_draft",
-    "submit_draft",
-)
-VIEW = "ui://kalavigyan/page-preview.html"
+SUBJECT = {"kind": "craft", "slug": "Kutch-Ajrakh"}
 IDENTITY = {
     "title": "Mordant printing with alum and madder",
     "doi": "10.1000/kv.42",
@@ -117,111 +108,6 @@ def property_names(schema: Any) -> set[str]:
     return found
 
 
-def test_the_studio_tools_are_contribute_tools_and_the_previews_name_their_view() -> None:
-    for name in STUDIO:
-        tool = TOOLS[name]
-        assert tool.scope == "contribute", name
-        assert tool.annotations["readOnlyHint"] is (name == "get_draft"), name
-    for name in ("preview_draft", "preview_page"):
-        meta = TOOLS[name].listed()["_meta"]
-        assert meta == {"ui": {"resourceUri": VIEW, "visibility": ["model", "app"]}, "ui/resourceUri": VIEW}
-    assert {"report", "draftId", "previewUrl"} <= set(
-        TOOLS["preview_draft"].listed()["outputSchema"]["properties"]
-    )
-
-
-@pytest.mark.parametrize("name", ["add_to_draft", "supply_source", "create_draft"])
-def test_the_studio_tools_are_schemed_in_snake_case(name: str) -> None:
-    names = property_names(TOOLS[name].listed()["inputSchema"])
-    assert [each for each in names if each != each.lower()] == []
-    assert "draft_id" in names or name == "create_draft"
-
-
-@pytest.mark.parametrize("name", STUDIO)
-async def test_a_student_cannot_use_the_studio(name: str) -> None:
-    arguments: dict[str, Any] = {"draft_id": str(DRAFT_ID)}
-    if name == "supply_source":
-        arguments = {"identity": IDENTITY, "access": ACCESS, "passages": [PASSAGE]}
-    elif name == "create_draft":
-        arguments = {"subject_kind": "craft", "slug": "Kutch-Ajrakh"}
-    elif name == "add_to_draft":
-        arguments |= {"note": "A note."}
-    elif name == "remove_from_draft":
-        arguments |= {"part": "fact", "index": 0}
-    result = await call(name, arguments, context(role="STUDENT"))
-    assert result["isError"] is True and "Researcher or above" in result["content"][0]["text"]
-
-
-async def test_create_draft_opens_the_page_s_draft_and_says_what_comes_next(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    seen: dict[str, Any] = {}
-
-    async def created(session: Any, user: User, subject: PageSubject, *, now: datetime) -> PageDraft:
-        seen["subject"] = subject
-        return draft_row()
-
-    monkeypatch.setattr(mcp_studio_tools.page_drafts, "create_draft", created)
-    session = FakeSession()
-    result = await call(
-        "create_draft", {"subject_kind": "craft", "slug": "Kutch-Ajrakh"}, context(session=session)
-    )
-    content = result["structuredContent"]
-    assert result["isError"] is False and session.commits == 1
-    assert seen["subject"] == PageSubject(kind="craft", slug="Kutch-Ajrakh")
-    assert content["draftId"] == str(DRAFT_ID) and content["state"] == "OPEN"
-    assert content["counts"]["facts"] == 0 and content["limits"]["facts"] == 20
-    assert "add_to_draft" in content["nextStep"]
-
-
-async def test_an_empty_addition_is_refused_before_the_draft_is_touched() -> None:
-    result = await call("add_to_draft", {"draft_id": str(DRAFT_ID)})
-    assert result["isError"] is True and "add at least one" in result["content"][0]["text"]
-
-
-async def test_parts_reach_the_draft_and_old_names_are_noted(monkeypatch: pytest.MonkeyPatch) -> None:
-    seen: dict[str, Any] = {}
-
-    async def added(
-        session: Any, user: User, draft_id: uuid.UUID, addition: Any, *, now: datetime
-    ) -> PageDraft:
-        seen["addition"] = addition
-        return draft_row(addition.model_dump(mode="json", by_alias=True), version=2)
-
-    monkeypatch.setattr(mcp_studio_tools.page_drafts, "add_to_draft", added)
-    picture = {"contributionId": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e5f"}
-    arguments = {"draft_id": str(DRAFT_ID), "facts": [FACT], "pictures": [picture]}
-    content = (await call("add_to_draft", arguments))["structuredContent"]
-    assert (
-        len(seen["addition"].facts) == 1
-        and str(seen["addition"].pictures[0].contribution_id) == picture["contributionId"]
-    )
-    assert (content["counts"]["facts"], content["counts"]["pictures"], content["version"]) == (1, 1, 2)
-    assert [part["part"] for part in content["parts"]] == ["fact", "picture"]
-    assert content["notices"] == [
-        "contributionId is the old name of contribution_id; it works until the next release, so pass "
-        "contribution_id from now on."
-    ]
-
-
-async def test_a_part_is_removed_by_a_kind_the_draft_knows() -> None:
-    result = await call("remove_from_draft", {"draft_id": str(DRAFT_ID), "part": "chapter", "index": 0})
-    assert result["isError"] is True and "part" in result["content"][0]["text"]
-
-
-async def test_a_refusal_from_the_draft_is_a_tool_error_and_rolls_back(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    async def gone(session: Any, user: User, draft_id: uuid.UUID, **kwargs: Any) -> PageDraft:
-        raise InvalidInput(f"No open draft of yours has the id {draft_id}")
-
-    monkeypatch.setattr(mcp_studio_tools.page_drafts, "own_draft", gone)
-    session = FakeSession()
-    result = await call("submit_draft", {"draft_id": str(DRAFT_ID)}, context(session=session))
-    assert result["isError"] is True and "No open draft of yours" in result["content"][0]["text"]
-    assert (session.commits, session.rollbacks) == (0, 1)
-
-
 def owned(row: PageDraft) -> Any:
     async def own(session: Any, user: User, draft_id: uuid.UUID, **kwargs: Any) -> PageDraft:
         assert user.id == USER_ID and draft_id == DRAFT_ID
@@ -234,9 +120,131 @@ async def noop(*args: Any, **kwargs: Any) -> None:
     return None
 
 
-async def test_preview_draft_returns_the_private_link_and_the_report(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_edit_draft_and_supply_source_are_contribute_writes_schemed_in_snake_case() -> None:
+    for name, group in (("edit_draft", "pages"), ("supply_source", "sources")):
+        tool = TOOLS[name]
+        assert (tool.scope, tool.group, tool.annotations["readOnlyHint"]) == ("contribute", group, False)
+        names = property_names(tool.listed()["inputSchema"])
+        assert [each for each in names if each != each.lower()] == []
+        assert "draft_id" in names
+    assert {"subject", "add", "remove", "lists"} <= property_names(
+        TOOLS["edit_draft"].listed()["inputSchema"]
+    )
+    for name in ("create_draft", "add_to_draft", "remove_from_draft", "get_draft"):
+        assert name not in TOOLS
+
+
+@pytest.mark.parametrize(
+    ("name", "arguments"),
+    [
+        ("supply_source", {"identity": IDENTITY, "access": ACCESS, "passages": [PASSAGE]}),
+        ("edit_draft", {"draft_id": str(DRAFT_ID), "add": {"note": "A note."}}),
+        ("preview_page", {"draft_id": str(DRAFT_ID)}),
+        ("propose_page", {"draft_id": str(DRAFT_ID)}),
+    ],
+)
+async def test_a_student_cannot_use_the_studio(name: str, arguments: dict[str, Any]) -> None:
+    result = await call(name, arguments, context(role="STUDENT"))
+    assert result["isError"] is True and "Researcher or above" in result["content"][0]["text"]
+
+
+async def test_the_draft_is_named_by_its_page_or_its_id_one_of_them() -> None:
+    for arguments in ({}, {"subject": SUBJECT, "draft_id": str(DRAFT_ID)}):
+        refused = await call("edit_draft", arguments)
+        assert refused["isError"] is True and "one of them" in refused["content"][0]["text"]
+
+
+async def test_the_first_edit_opens_the_page_s_draft_and_one_with_nothing_to_change_returns_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: list[PageSubject] = []
+
+    async def created(session: Any, user: User, subject: PageSubject, *, now: datetime) -> PageDraft:
+        seen.append(subject)
+        return draft_row()
+
+    monkeypatch.setattr(mcp_page_tools.page_drafts, "create_draft", created)
+    session = FakeSession()
+    content = (await call("edit_draft", {"subject": SUBJECT}, context(session=session)))["structuredContent"]
+    assert session.commits == 1 and seen == [PageSubject(kind="craft", slug="Kutch-Ajrakh")]
+    assert content["draftId"] == str(DRAFT_ID) and content["state"] == "OPEN"
+    assert content["counts"]["facts"] == 0 and content["limits"]["facts"] == 20
+    assert content["message"].startswith("The draft for craft Kutch-Ajrakh is open")
+    assert "edit_draft's add" in content["nextStep"] and content["draft"] is not None
+
+
+async def test_parts_reach_the_draft_and_old_names_are_noted(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict[str, Any] = {}
+
+    async def added(
+        session: Any, user: User, draft_id: uuid.UUID, addition: Any, *, now: datetime
+    ) -> PageDraft:
+        seen["addition"] = addition
+        return draft_row(addition.model_dump(mode="json", by_alias=True), version=2)
+
+    monkeypatch.setattr(mcp_page_tools.page_drafts, "own_draft", owned(draft_row()))
+    monkeypatch.setattr(mcp_page_tools.page_drafts, "add_to_draft", added)
+    picture = {"contributionId": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e5f"}
+    arguments = {"draft_id": str(DRAFT_ID), "add": {"facts": [FACT], "pictures": [picture]}}
+    content = (await call("edit_draft", arguments))["structuredContent"]
+    addition = seen["addition"]
+    assert len(addition.facts) == 1 and str(addition.pictures[0].contribution_id) == picture["contributionId"]
+    assert (content["counts"]["facts"], content["counts"]["pictures"], content["version"]) == (1, 1, 2)
+    assert [part["part"] for part in content["parts"]] == ["fact", "picture"]
+    assert content["draft"] is None and "preview_page" in content["nextStep"]
+    assert content["notices"] == [
+        "contributionId is the old name of contribution_id; it works until the next release, so pass "
+        "contribution_id from now on."
+    ]
+
+
+async def test_removals_run_before_additions_facts_last_and_from_the_highest_index(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    order: list[Any] = []
+
+    async def removed(
+        session: Any, user: User, draft_id: uuid.UUID, part: tuple[str, int], *, now: datetime
+    ) -> PageDraft:
+        order.append(part)
+        return draft_row()
+
+    async def added(
+        session: Any, user: User, draft_id: uuid.UUID, addition: Any, *, now: datetime
+    ) -> PageDraft:
+        order.append(("lists", addition.lists.mechanisms))
+        return draft_row()
+
+    monkeypatch.setattr(mcp_page_tools.page_drafts, "own_draft", owned(draft_row()))
+    monkeypatch.setattr(mcp_page_tools.page_drafts, "remove_from_draft", removed)
+    monkeypatch.setattr(mcp_page_tools.page_drafts, "add_to_draft", added)
+    remove = [{"part": "fact", "index": 0}, {"part": "component", "index": 0}, {"part": "fact", "index": 2}]
+    lists = {"mechanisms": ["Alum fixes the red"]}
+    await call("edit_draft", {"draft_id": str(DRAFT_ID), "remove": remove, "lists": lists})
+    assert order == [("component", 0), ("fact", 2), ("fact", 0), ("lists", ["Alum fixes the red"])]
+    wrong = await call("edit_draft", {"draft_id": str(DRAFT_ID), "remove": [{"part": "chapter", "index": 0}]})
+    assert wrong["isError"] is True and "part" in wrong["content"][0]["text"]
+
+
+async def test_a_refusal_from_the_draft_is_a_tool_error_and_rolls_back(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def gone(session: Any, user: User, draft_id: uuid.UUID, **kwargs: Any) -> PageDraft:
+        raise InvalidInput(f"No open draft of yours has the id {draft_id}")
+
+    monkeypatch.setattr(mcp_page_tools.page_drafts, "own_draft", gone)
+    session = FakeSession()
+    result = await call("propose_page", {"draft_id": str(DRAFT_ID)}, context(session=session))
+    assert result["isError"] is True and "No open draft of yours" in result["content"][0]["text"]
+    assert (session.commits, session.rollbacks) == (0, 1)
+
+
+async def test_a_draft_s_preview_returns_the_private_link_and_the_report(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     row = draft_row({"facts": [FACT]})
     report = page_report(ReportInput(document=page_document()), {})
+    recorded: list[Any] = []
 
     async def previewed(
         session: Any, user: User, bundle: PageBundle, *, site: str, now: datetime
@@ -257,16 +265,23 @@ async def test_preview_draft_returns_the_private_link_and_the_report(monkeypatch
     async def reported(*args: Any, **kwargs: Any) -> Any:
         return report
 
-    monkeypatch.setattr(mcp_studio_tools.page_drafts, "own_draft", owned(row))
-    monkeypatch.setattr(mcp_studio_tools.page_drafts, "record_preview", noop)
-    monkeypatch.setattr(mcp_studio_tools.page_preview, "preview_page", previewed)
-    monkeypatch.setattr(mcp_studio_tools.page_report, "preview_report", reported)
-    content = (await call("preview_draft", {"draft_id": str(DRAFT_ID)}))["structuredContent"]
+    async def record(session: Any, draft: PageDraft, *args: Any) -> None:
+        recorded.append(draft.id)
+
+    monkeypatch.setattr(mcp_page_tools.page_drafts, "own_draft", owned(row))
+    monkeypatch.setattr(mcp_page_tools.page_drafts, "record_preview", record)
+    monkeypatch.setattr(mcp_page_tools.page_preview, "preview_page", previewed)
+    monkeypatch.setattr(mcp_page_tools.page_report, "preview_report", reported)
+    session = FakeSession()
+    content = (await call("preview_page", {"draft_id": str(DRAFT_ID)}, context(session=session)))[
+        "structuredContent"
+    ]
     assert content["previewUrl"] == f"{SITE}/preview/token" and content["draftId"] == str(DRAFT_ID)
     assert (content["report"]["failed"], len(content["report"]["rules"])) == (report.failed, 26)
+    assert recorded == [DRAFT_ID] and session.commits == 1
 
 
-async def test_submit_draft_proposes_its_bundle_as_the_agent(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_a_draft_is_proposed_once_as_the_agent(monkeypatch: pytest.MonkeyPatch) -> None:
     row = draft_row(
         {"facts": [FACT], "components": [{"proposal": COMPONENT, "cites": {"u0006": ["fact:0"]}}]}
     )
@@ -285,16 +300,13 @@ async def test_submit_draft_proposes_its_bundle_as_the_agent(monkeypatch: pytest
             message="2 of 2.",
         )
 
-    monkeypatch.setattr(mcp_studio_tools.page_drafts, "own_draft", owned(row))
-    monkeypatch.setattr(mcp_studio_tools.page_drafts, "record_submission", noop)
-    monkeypatch.setattr(mcp_studio_tools, "page_proposed", proposed)
-    content = (await call("submit_draft", {"draft_id": str(DRAFT_ID)}))["structuredContent"]
+    monkeypatch.setattr(mcp_page_tools.page_drafts, "own_draft", owned(row))
+    monkeypatch.setattr(mcp_page_tools.page_drafts, "record_submission", noop)
+    monkeypatch.setattr(mcp_page_tools, "page_proposed", proposed)
+    content = (await call("propose_page", {"draft_id": str(DRAFT_ID)}))["structuredContent"]
     assert seen == {"origin": "AGENT", "components": 1}
-    assert (
-        content["draftId"] == str(DRAFT_ID)
-        and content["accepted"] == 2
-        and "get_proposal" in content["nextStep"]
-    )
+    assert content["draftId"] == str(DRAFT_ID) and content["accepted"] == 2
+    assert "get_proposal" in content["nextStep"] and "stays readable" in content["nextStep"]
 
 
 def supplied_row(state: str = "READY") -> SuppliedSource:

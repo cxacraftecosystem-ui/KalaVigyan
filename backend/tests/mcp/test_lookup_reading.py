@@ -40,8 +40,8 @@ def reading(fetcher: FakeFetcher, **parts: Any) -> LookupSources:
     return LookupSources(fetcher=fetcher, **parts)
 
 
-async def tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-    result = await call(name, arguments, tool_context(person(RESEARCHER)))
+async def tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    result = await call("read_source", arguments, tool_context(person(RESEARCHER)))
     assert result["isError"] is False, result
     return result["structuredContent"]
 
@@ -50,7 +50,7 @@ async def test_read_source_returns_the_very_text_the_quotes_gate_matches(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     serve(monkeypatch, reading(FakeFetcher({PAGE_URL: page()})))
-    text = await tool("read_source", {"url": PAGE_URL})
+    text = (await tool({"url": PAGE_URL}))["text"]
     assert [passage["text"] for passage in text["passages"]] == list(PAGE_LINES)
     assert [passage["locator"] for passage in text["passages"]] == [f"paragraph {n}" for n in range(1, 5)]
     assert (text["url"], text["readable"], text["lines"], text["nextStart"]) == (PAGE_URL, True, 4, None)
@@ -67,10 +67,10 @@ async def test_read_source_returns_the_very_text_the_quotes_gate_matches(
 
 async def test_around_returns_every_passage_holding_the_words(monkeypatch: pytest.MonkeyPatch) -> None:
     serve(monkeypatch, reading(FakeFetcher({PAGE_URL: page()})))
-    found = await tool("read_source", {"url": PAGE_URL, "around": "lime"})
+    found = (await tool({"url": PAGE_URL, "around": "lime"}))["text"]
     assert found["found"] == 2
     assert [passage["locator"] for passage in found["passages"]] == ["paragraph 2", "paragraph 3"]
-    phrase = await tool("read_source", {"url": PAGE_URL, "around": "“mud resist”"})
+    phrase = (await tool({"url": PAGE_URL, "around": "“mud resist”"}))["text"]
     assert [passage["text"] for passage in phrase["passages"]] == [PAGE_LINES[3]]
 
 
@@ -78,16 +78,16 @@ async def test_a_long_text_is_read_a_page_at_a_time(monkeypatch: pytest.MonkeyPa
     lines = [LONG_LINE.replace("000", f"{n:03d}") for n in range(1, 31)]
     assert len(lines[0]) == 403
     serve(monkeypatch, reading(FakeFetcher({PAGE_URL: page(text="\n".join(lines))})))
-    first = await tool("read_source", {"url": PAGE_URL})
+    first = (await tool({"url": PAGE_URL}))["text"]
     assert (len(first["passages"]), first["nextStart"], first["lines"]) == (19, 20, 30)
-    second = await tool("read_source", {"url": PAGE_URL, "start": 20})
+    second = (await tool({"url": PAGE_URL, "start": 20}))["text"]
     assert second["passages"][0]["text"].startswith("020 ") and second["nextStart"] is None
 
 
 async def test_a_pdf_is_located_by_line_and_a_doi_by_its_open_copy(monkeypatch: pytest.MonkeyPatch) -> None:
     fetcher = FakeFetcher({PDF_URL: page(PDF_URL, PDF_TEXT, content_type="application/pdf")})
     serve(monkeypatch, reading(fetcher, locator=FakeLocator({DOI: open_location(DOI, PDF_URL)})))
-    text = await tool("read_source", {"doi": DOI, "around": "heated to 70"})
+    text = (await tool({"doi": DOI, "around": "heated to 70"}))["text"]
     assert (text["url"], text["doi"], text["licence"], text["openLicence"]) == (PDF_URL, DOI, "cc-by", True)
     assert text["passages"] == [
         {
@@ -103,31 +103,35 @@ async def test_a_pdf_is_located_by_line_and_a_doi_by_its_open_copy(monkeypatch: 
 async def test_a_doi_without_an_open_copy_is_read_through_doi_org(monkeypatch: pytest.MonkeyPatch) -> None:
     resolver = f"https://doi.org/{DOI}"
     serve(monkeypatch, reading(FakeFetcher({resolver: page(resolver)}), locator=FakeLocator({})))
-    text = await tool("read_source", {"doi": DOI})
+    text = (await tool({"doi": DOI}))["text"]
     assert (text["url"], text["doi"], text["readable"]) == (resolver, DOI, True)
 
 
 async def test_an_unreadable_page_says_why_and_names_its_snapshot(monkeypatch: pytest.MonkeyPatch) -> None:
     blocked = FakeFetcher({PAGE_URL: FetchRefused(PAGE_URL, "ROBOTS_DISALLOWED")})
     serve(monkeypatch, reading(blocked, snapshots=FakeSnapshots(SNAPSHOT)))
-    text = await tool("read_source", {"url": PAGE_URL})
+    text = (await tool({"url": PAGE_URL}))["text"]
     assert (text["readable"], text["archivedUrl"], text["passages"]) == (False, SNAPSHOT, [])
     assert "ROBOTS_DISALLOWED" in text["unread"]
+
+
+async def checks(*quotes: dict[str, Any]) -> list[dict[str, Any]]:
+    reading = await tool({"url": PAGE_URL, "quotes": list(quotes)})
+    assert reading["text"] is None and reading["archive"] is None
+    return list(reading["quotes"])
 
 
 async def test_a_quote_the_gate_would_find_passes_with_where_it_stands(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     serve(monkeypatch, reading(FakeFetcher({PAGE_URL: page()})))
-    plain = await tool(
-        "check_quote", {"url": PAGE_URL, "quote": "a paste of lime and gum arabic before the second"}
+    plain, folded, typographic = await checks(
+        {"text": "a paste of lime and gum arabic before the second"},
+        {"text": "Printers re-print the resist with a paste"},
+        {"text": "“Mud resist” is called dabu"},
     )
     assert (plain["passed"], plain["foundAt"], plain["nearest"]) == (True, ["paragraph 3"], None)
-    folded = await tool(
-        "check_quote", {"url": PAGE_URL, "quote": "Printers re-print the resist with a paste"}
-    )
     assert folded["passed"] is True and folded["foundAt"] == ["paragraph 3"]
-    typographic = await tool("check_quote", {"url": PAGE_URL, "quote": "“Mud resist” is called dabu"})
     assert typographic["passed"] is True
 
 
@@ -136,7 +140,7 @@ async def test_a_quote_the_gate_would_refuse_fails_with_the_nearest_passage(
 ) -> None:
     serve(monkeypatch, reading(FakeFetcher({PAGE_URL: page()})))
     quote = "a paste of lime and gum tragacanth before the second dyeing"
-    checked = await tool("check_quote", {"url": PAGE_URL, "quote": quote, "locator": "paragraph 3"})
+    checked, short = await checks({"text": quote, "locator": "paragraph 3"}, {"text": "lime and gum"})
     assert checked["passed"] is False and checked["locator"] == "paragraph 3"
     assert checked["reasons"] == [f"quote 1 from {PAGE_URL} is not in the page as fetched"]
     assert checked["nearest"] == {
@@ -144,11 +148,10 @@ async def test_a_quote_the_gate_would_refuse_fails_with_the_nearest_passage(
         "text": "a paste of lime and gum arabic before the second dyeing",
         "shared": 0.91,
     }
-    short = await tool("check_quote", {"url": PAGE_URL, "quote": "lime and gum"})
     assert short["passed"] is False and "shorter than 20 characters" in short["reasons"][0]
 
 
-async def test_reading_and_checking_use_the_text_the_signed_in_person_supplied(
+async def test_reading_and_checking_in_one_call_use_the_text_the_signed_in_person_supplied(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     serve(monkeypatch, reading(FakeFetcher({PAGE_URL: page()})))
@@ -159,9 +162,26 @@ async def test_reading_and_checking_use_the_text_the_signed_in_person_supplied(
         return await read_source(session, fetcher, proposed)
 
     monkeypatch.setattr(source_lookup_read, "read_source", spy)
-    await tool("read_source", {"url": PAGE_URL})
-    await tool("check_quote", {"url": PAGE_URL, "quote": PAGE_LINES[1]})
+    both = await tool({"url": PAGE_URL, "around": "lime", "quotes": [{"text": PAGE_LINES[1]}]})
+    assert both["text"]["found"] == 2 and both["quotes"][0]["passed"] is True
     assert readers == [uuid.UUID(int=41), uuid.UUID(int=41)]
+
+
+async def test_a_later_step_that_fails_becomes_a_notice_and_a_first_one_the_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    serve(monkeypatch, reading(FakeFetcher({PAGE_URL: page()})))
+    read = await tool({"url": PAGE_URL, "archive": True, "start": 1})
+    assert read["text"]["readable"] is True and read["archive"] is None
+    assert read["notices"] == [
+        "The Wayback Machine is not among this server's sources just now; nothing was read."
+    ]
+    alone = await call("read_source", {"url": PAGE_URL, "archive": True}, tool_context(person(RESEARCHER)))
+    assert alone["isError"] is True and alone["content"][0]["text"].startswith(
+        "The Wayback Machine is not among"
+    )
+    by_doi = await call("read_source", {"doi": DOI, "archive": True}, tool_context(person(RESEARCHER)))
+    assert by_doi["isError"] is True and "archive saves a page by its address" in by_doi["content"][0]["text"]
 
 
 def test_the_nearest_window_is_the_run_sharing_most_of_the_quote_s_words() -> None:

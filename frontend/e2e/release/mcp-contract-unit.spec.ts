@@ -6,7 +6,7 @@ import { coverageProblems, craftFactsProblems, foundCraftsProblems, initializePr
 const API = "https://api.example";
 const WEB = "https://web.example";
 const FIELDS = ["OVERVIEW", "PROCESS", "CHEMISTRY", "PHYSICS", "MATERIALS", "GEOGRAPHY", "GEOLOGY", "CLIMATE", "ECOLOGY", "BOTANY", "HISTORY", "ECONOMICS", "DESIGN", "HEALTH", "SOCIETY", "POLICY"];
-const LISTED = ["list_fields", "find_crafts", "get_facts", "get_section", "get_coverage", "list_components", "propose_fact"];
+const LISTED = ["find_crafts", "get_page", "get_facts", "list_components", "propose_facts"];
 
 function tool(name: string) {
   return { name, description: `What ${name} does.`, inputSchema: { type: "object", properties: {} } };
@@ -63,8 +63,8 @@ test("tools/list passes when every public read tool is listed once with an objec
 });
 
 test("tools/list names a missing public tool, a tool listed twice and a tool without a schema", () => {
-  const tools = [...LISTED.filter((name) => name !== "get_coverage").map(tool), tool("find_crafts"), { name: "bare", description: "Bare." }];
-  expect(toolListProblems({ tools })).toEqual(["tools/list does not offer get_coverage", "tools/list offers find_crafts twice", "bare has no object input schema"]);
+  const tools = [...LISTED.filter((name) => name !== "get_page").map(tool), tool("find_crafts"), { name: "bare", description: "Bare." }];
+  expect(toolListProblems({ tools })).toEqual(["tools/list does not offer get_page", "tools/list offers find_crafts twice", "bare has no object input schema"]);
 });
 
 test("a tool error is named with its text and a result without structured content is refused", () => {
@@ -86,14 +86,14 @@ test("get_facts must cite only the sources it lists", () => {
   expect(craftFactsProblems(facts(["s1"], ["s1"]), "Bastar-Dhokra")).toEqual(["get_facts answered for Kutch-Ajrakh; it was asked for Bastar-Dhokra"]);
 });
 
-test("get_coverage must list the sixteen fields in order with standings that agree with its lists", () => {
+test("get_page must list the sixteen fields in order with standings that agree with its lists", () => {
   expect(coverageProblems(coverage(["PHYSICS"], ["POLICY"]), "Kutch-Ajrakh")).toEqual([]);
   const disagreeing = coverage(["PHYSICS"], ["POLICY"]);
   disagreeing.coverage.thin = [];
   expect(coverageProblems(disagreeing, "Kutch-Ajrakh")).toEqual(["the thin fields are []; the field counts say [PHYSICS]"]);
   const shuffled = coverage([], []);
   shuffled.coverage.fields = [...shuffled.coverage.fields].reverse();
-  expect(coverageProblems(shuffled, "Kutch-Ajrakh")[0]).toMatch(/^get_coverage lists the fields \[POLICY, SOCIETY/);
+  expect(coverageProblems(shuffled, "Kutch-Ajrakh")[0]).toMatch(/^get_page lists the fields \[POLICY, SOCIETY/);
 });
 
 test("the OAuth metadata must name the API as issuer and resource, the web consent page and PKCE S256", () => {

@@ -30,7 +30,7 @@ __all__ = [
 
 PENDING, APPROVED, REJECTED = "PENDING", "APPROVED", "REJECTED"
 STALE = (
-    "The layout of {slug} is at version {current}, not {base}. Read it with get_layout and build on "
+    "The layout of {slug} is at version {current}, not {base}. Read it with get_page and build on "
     "version {current}."
 )
 MESSAGES = {

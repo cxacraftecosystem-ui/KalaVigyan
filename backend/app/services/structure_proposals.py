@@ -49,7 +49,7 @@ CANDIDATE_REF = "structure"
 UNKNOWN_CRAFT = "No craft has the slug {slug!r}; find_crafts gives the slugs of crafts and families."
 NOT_CURATED = (
     "{slug} has no curated page yet, so its structure arrives with its first dossier. Propose facts for it "
-    "with propose_fact instead."
+    "with propose_facts instead."
 )
 MESSAGES = {
     STORED: (

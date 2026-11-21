@@ -21,11 +21,14 @@ Last reviewed: 2026-11-20.
 
 ## A delivered component
 
-`propose_component` (MCP) and `ComponentProposalDraft` carry, beside the proposal's label, title,
-description, kind, field, subjects and considered labels (`open-work.md`):
+A component in a draft or bundle of `propose_page` (MCP) and `ComponentProposalDraft` carry,
+beside the proposal's label, title, description, kind, field, subjects and considered labels
+(`open-work.md`):
 
 - `spec`: the kind's spec as a JSON object, checked by `component_specs.checked_spec` and stored as
-  the model writes it back (camelCase, defaults filled, a drawing's SVG cleaned);
+  the model writes it back (camelCase, defaults filled, a drawing's SVG cleaned); the MCP server
+  serves each kind's JSON schema as `kalavigyan://components/<kind>.schema.json`
+  (`api/mcp_component_schemas.py`), so the tools' own input schemas take a spec as an object;
 - `units`: `{u0001: {text, claimIds}}`, at most 400, each text 1 to 600 characters with at most 20
   fact ids. Unit ids are the delivery's own (`u` and four digits); every unit the spec names is
   delivered and every delivered unit has a place in the spec.

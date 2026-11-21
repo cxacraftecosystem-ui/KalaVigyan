@@ -22,13 +22,9 @@ from app.research.vocabulary import Discipline
 from .mcp_argument_names import OLD_ARGUMENT_NAMES, RenamedArguments, problems
 from .mcp_tool_base import Arguments
 
-__all__ = ["FactFields", "GetProposal", "ProposeFact", "ProposeFacts"]
+__all__ = ["FactFields", "GetProposal", "ProposeFacts"]
 
 ONE_SUBJECT = "name a craft_slug or a category_slug, one of them"
-OLD_PROPOSAL = (
-    "proposal is the old form of propose_fact's arguments; it works until the next release, so pass "
-    "craft_slug or category_slug, field, statement, sources and task_key at the top level from now on."
-)
 FACT_NAMES: Mapping[str, str] = MappingProxyType({**OLD_ARGUMENT_NAMES, "idempotencyKey": "idempotency_key"})
 
 
@@ -47,7 +43,7 @@ class FactFields(RenamedArguments):
         max_length=SLUG_MAX_CHARS,
         description="A category's slug, for a category fact",
     )
-    field: Discipline = Field(description="One of list_fields: the field the fact is filed under")
+    field: Discipline = Field(description="One of the sixteen fields: the field the fact is filed under")
     fields: list[Discipline] = Field(
         default_factory=list, max_length=PROPOSAL_FIELDS_MAX, description="Up to three secondary fields"
     )
@@ -103,31 +99,12 @@ class FactFields(RenamedArguments):
         return self._fact
 
 
-class ProposeFact(FactFields):
-    OLD_FORMS = MappingProxyType({"proposal": OLD_PROPOSAL})
-
-    @classmethod
-    def reshaped(cls, data: Mapping[str, Any]) -> tuple[dict[str, Any], tuple[str, ...]]:
-        moved, used = super().reshaped(data)
-        old = moved.get("proposal")
-        if not isinstance(old, Mapping):
-            return moved, used
-        moved.pop("proposal")
-        subject = old.get("subject")
-        if isinstance(subject, Mapping):
-            moved[f"{subject.get('kind')}_slug"] = subject.get("slug")
-        for name, value in old.items():
-            if name not in ("subject", "schemaVersion", "schema_version"):
-                moved[FACT_NAMES.get(name, name)] = value
-        return moved, (*used, "proposal")
-
-
 class ProposeFacts(Arguments):
     facts: list[FactFields] = Field(
         min_length=1,
         max_length=BATCH_FACTS_MAX,
         description=(
-            "1 to 25 facts, each as propose_fact takes one, each with its own idempotency_key; each is checked "
+            "1 to 25 facts, each with its subject, field, statement, sources and its own idempotency_key; each is checked "
             "on its own, so a malformed one is refused and the rest go on"
         ),
     )
@@ -168,7 +145,7 @@ class ProposeFacts(Arguments):
 
 
 class GetProposal(Arguments):
-    proposal_id: uuid.UUID = Field(description="A proposalId from propose_fact, propose_facts or my_tasks")
+    proposal_id: uuid.UUID = Field(description="A proposal id from propose_facts, propose_page or my_work")
 
 
 def _key(item: Any) -> str | None:

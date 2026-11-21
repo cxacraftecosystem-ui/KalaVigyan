@@ -23,7 +23,7 @@ fact, or a unit of a delivered component.
   supplied, with the locator of its passage.
 - Take a quote from what `read_source` returns: its passages are the fetched text after that same
   folding, so a quote copied whole from one passage, or across the neighbouring lines of a PDF, is
-  found. `check_quote` gives the gate's verdict on a quote before it is proposed, and on a miss the
+  found. `read_source` gives the gate's verdict on each of its `quotes` before they are proposed, and on a miss the
   closest run of words the text holds; a quote is mended from that run, never the text from the
   quote.
 

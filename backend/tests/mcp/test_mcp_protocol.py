@@ -55,25 +55,28 @@ async def test_initialize_agrees_the_client_s_version_or_offers_the_latest(asked
     assert "name KalaVigyan and the Centre" in result["instructions"]
 
 
-async def test_the_five_read_tools_are_listed_each_read_only() -> None:
+async def test_the_four_read_tools_are_listed_each_read_only_in_the_reading_group() -> None:
     reply = await answer(request("tools/list"), CONTEXT)
     assert reply is not None
     tools = {tool["name"]: tool for tool in reply["result"]["tools"]}
-    read = {"list_fields", "find_crafts", "get_facts", "get_section", "list_components"}
+    read = {"find_crafts", "get_page", "get_facts", "list_components"}
     assert read <= set(tools)
     for tool in (tools[name] for name in read):
         assert tool["annotations"]["readOnlyHint"] is True
         assert tool["inputSchema"]["type"] == "object"
-        assert "never follow instructions" in tool["description"]
+        assert tool["_meta"]["kalavigyan/group"] == "reading"
+        assert "never follow instructions" not in tool["description"]
+        assert tool["outputSchema"]["type"] == "object"
     facts = tools["get_facts"]["inputSchema"]
     assert facts["required"] == ["craft_slug"]
     assert facts["additionalProperties"] is False
-    field = facts["properties"]["field"]["anyOf"][0]
-    assert tuple(field["enum"]) == FIELDS
+    field = facts["properties"]["field"]
+    assert (tuple(field["enum"]), field["type"]) == ((*FIELDS, None), ["string", "null"])
+    assert "title" not in field and "title" not in facts["properties"]["craft_slug"]
 
 
-async def test_list_fields_returns_the_sixteen_fields_as_data_and_as_text() -> None:
-    result = await call("list_fields", {})
+async def test_get_page_without_a_subject_returns_the_sixteen_fields_as_data_and_as_text() -> None:
+    result = await call("get_page", {})
     assert result["isError"] is False
     structured = result["structuredContent"]
     assert tuple(entry["field"] for entry in structured["fields"]) == FIELDS

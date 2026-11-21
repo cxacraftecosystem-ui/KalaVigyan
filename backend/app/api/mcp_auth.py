@@ -64,17 +64,18 @@ async def mcp_caller(request: Request, session: AsyncSession) -> McpCaller | Non
 
 def scope_challenge(message: Any, caller: McpCaller | None) -> JSONResponse | None:
     tool = _called_tool(message)
-    if tool is None or tool.scope == READ_SCOPE:
+    scope = READ_SCOPE if tool is None else tool.scope_for(message["params"].get("arguments"))
+    if tool is None or scope == READ_SCOPE:
         return None
-    if caller is not None and tool.scope in caller.scopes:
+    if caller is not None and scope in caller.scopes:
         return None
     endpoints = endpoints_or_none()
     if endpoints is None:
         return None
     if caller is None:
-        challenge = bearer_challenge(endpoints, scope=joined_scopes((READ_SCOPE, tool.scope)))
+        challenge = bearer_challenge(endpoints, scope=joined_scopes((READ_SCOPE, scope)))
         return _refusal(status.HTTP_401_UNAUTHORIZED, SIGN_IN_NEEDED, challenge)
-    wanted = joined_scopes(ordered_scopes({*caller.scopes, tool.scope}))
+    wanted = joined_scopes(ordered_scopes({*caller.scopes, scope}))
     challenge = bearer_challenge(
         endpoints, error="insufficient_scope", description=SCOPE_NEEDED, scope=wanted
     )

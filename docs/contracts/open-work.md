@@ -1,8 +1,8 @@
 # Open work, reservations, component proposals and the method on the MCP server
 
 Decision 0101's Knowledge API and MCP server: item 15 "Open work" and "The method travels with
-the server", and item 16's `propose_component`. The endpoint, framing and read tools are in
-`docs/contracts/knowledge-api.md`; `propose_fact`, `propose_layout` and `propose_structure` are in
+the server", and item 16's component proposals. The endpoint, framing and read tools are in
+`docs/contracts/knowledge-api.md`; `propose_facts`, a layout's proposal and `propose_structure` are in
 `knowledge-writes.md`.
 
 ## Code
@@ -26,12 +26,12 @@ the server", and item 16's `propose_component`. The endpoint, framing and read t
 | Claim, claim several, release, complete | `services/task_reservations.py` |
 | My tasks (held, completed, outcomes) | `services/contribution_queue_tasks.py`, contract `research/my_tasks.py` |
 | Stewardship | `services/stewardship.py`, contract `research/stewardship.py`, table `CraftSteward` (`models/contributions.py`, migration `0048_contribution_queue`) |
-| `propose_component` | `services/component_proposals.py`; the delivered spec `component_proposals_spec.py`, registration `component_proposals_register.py` (`component-specs-general.md`) |
+| A component proposal | `services/component_proposals.py`; the delivered spec `component_proposals_spec.py`, registration `component_proposals_register.py` (`component-specs-general.md`) |
 | `propose_page` and `preview_page` | `research/page_proposals.py` (the bundle and its reports), `services/page_proposals.py` with `page_proposals_parts.py`, `services/page_preview.py` with `page_preview_parts.py`, `page_preview_additions.py` and `page_preview_links.py` |
 | Tables | `models/open_work.py` (`TaskReservation`, `ComponentProposal`), migration `0038_open_work`; the delivered spec's columns and `models/page_previews.py` (`PagePreview`), migration `0049_delivered_components` |
-| MCP tools | `api/mcp_work_tools.py` (`WORK_TOOLS`), `api/mcp_task_tools.py` (`TASK_TOOLS`), `api/mcp_steward_tools.py` (`STEWARD_TOOLS`) and `api/mcp_page_tools.py` (`PAGE_TOOLS`: `propose_component`, `propose_page`, `preview_page`), registered in `api/mcp_tools.py` |
+| MCP tools | `api/mcp_work_tools.py` (`WORK_TOOLS`: `list_open_work`, `my_work`, `reserve_tasks`, `steward_craft`) and `api/mcp_page_tools.py` (`PAGE_TOOLS`: `edit_draft`, `preview_page`, `propose_page`, with `mcp_page_arguments.py` and `mcp_page_texts.py`), registered in `api/mcp_tools.py`; each names its group in `_meta["kalavigyan/group"]` |
 | MCP prompts and resources | `api/mcp_prompts.py`, `api/mcp_resources.py`, dispatched in `api/mcp_tools.py` |
-| Source tools (`search_sources`, `read_source`, `check_quote`, `lookup_compound`, `lookup_entity`, `find_pictures`, `archive_source`) | `api/mcp_lookup_tools.py` (`LOOKUP_TOOLS`), `services/source_lookup*.py`, limits `core/rate_limit.LOOKUP_LIMITS` (`knowledge-api.md`, Source tools) |
+| Source tools (`search_sources`, `read_source`, `lookup`) | `api/mcp_lookup_tools.py` (`LOOKUP_TOOLS`), `services/source_lookup*.py`, limits `core/rate_limit.LOOKUP_LIMITS` (`knowledge-api.md`, Source tools) |
 | The contract resources and the index | `data/contributor/contracts/<name>.md`, copies of `docs/contracts/<name>.md`; `data/contributor/index.md`; read by `data/skill_library.py` |
 | HTTP routes | `api/routes/open_work.py`; `api/routes/page_proposals.py` (bundles and previews, `api/page_proposal_deps.py`) |
 | The contributor skill | `data/contributor/SKILL.md`, served at `frontend/public/skills/kalavigyan-contributor/SKILL.md` |
@@ -142,19 +142,22 @@ its key.
 
 ## Reservations (`TaskReservation`)
 
-- `claim_task` reserves an open task for 2 hours; claiming it again renews it from now. The key must
+- A claim reserves an open task for 2 hours; claiming it again renews it from now. The key must
   name a task open now (computed for its subject) and not closed by a proposal; a review queue is
   never reserved. How many live reservations one account holds at once is set by its trust tier
   (`knowledge-writes.md`, Trust tiers: `NEW` 5, `ESTABLISHED` 10, `PROVEN` 20; Professors and above
   20); the refusal names the tier. The reservation length (2 hours) and renewal are unchanged.
-- `claim_tasks` claims up to 10 keys in one call, each in its own savepoint: a key taken, closed or
-  over the cap is refused with its reason and the rest are held (`TaskClaims {schemaVersion 1,
-  held[TaskHold], refused[{taskKey, problem}], tier, holding, holdingMax, message, notices[]}`).
+- MCP `reserve_tasks {claim?, release?}` (decision 0111, in place of `claim_task`, `claim_tasks` and
+  `release_task`) first gives back each key of `release`, then claims up to 10 keys of `claim`, each
+  in its own savepoint (`task_reservations.claim_tasks`): a key taken, closed or over the cap, or a
+  release of a task the caller does not hold, is refused with its reason and the rest go on
+  (`ReservedTasks {schemaVersion 1, held[TaskHold], released[TaskHold], refused[{taskKey, problem}],
+  tier, holding, holdingMax, message, notices[]}`). The site's routes keep one key a call.
 - A live reservation of another account refuses the claim with its end. An expired one is ended
   (`EXPIRED`, at its expiry) by the next claim, and the task returns to the list by itself.
-- `release_task` ends the caller's own reservation (`RELEASED`, or `EXPIRED` once past its time).
-- A `propose_component` naming its `task_key` ends the proposer's reservation `COMPLETED`.
-- A `propose_fact` (or `POST /api/knowledge/facts`) naming a field or corroboration task as its
+- A release ends the caller's own reservation (`RELEASED`, or `EXPIRED` once past its time).
+- A component proposal naming its `task_key` ends the proposer's reservation `COMPLETED`.
+- A proposed fact (MCP `propose_facts`, a fact part of `propose_page`, or `POST /api/knowledge/facts`) naming a field or corroboration task as its
   `taskKey` ends the proposer's reservation `COMPLETED` once the fact passes the gates (published or
   waiting for review), and gives it back (`RELEASED`) when the fact is refused, so the task returns
   to the list (`knowledge-writes.md`). The `research_field` prompt asks the agent to pass it.
@@ -207,43 +210,39 @@ MCP except for a `SUBJECT_LINK`, which carries none (`component-specs-general.md
 
 ## MCP
 
-Last reviewed: 2026-11-21 (round 7: delivered components and pages, the source tools, and supplied
-sources, drafts and the checklist report, decision 0110).
+Last reviewed: 2026-11-21 (round 7: delivered components and pages, the source tools, supplied
+sources, drafts and the checklist report, decision 0110; the 21 tools of decision 0111).
 
-| Tool | Scope | Hints | Returns |
-|---|---|---|---|
-| `list_open_work` | read | read-only | `OpenWork` |
-| `claim_task` | contribute | writes | `TaskHold {schemaVersion, taskKey, held, reservedUntil, task}` |
-| `release_task` | contribute | writes | `TaskHold` with `held` false |
-| `claim_tasks` | contribute | writes | `TaskClaims` |
-| `my_tasks` | contribute | read-only | `MyTasks {schemaVersion 1, tier, holding, holdingMax, reservationMinutes, claimed[{taskKey, reservedUntil, task (OpenTask, or null once closed)}], completed[{taskKey, ending COMPLETED, endedAt}] (the last 30 days, at most 50), outcomes[ProposalTicket] (the latest 20)}` |
-| `adopt_craft` | contribute | writes | `StewardPackage` |
-| `drop_craft` | contribute | writes | `Stewardship {schemaVersion 1, craftSlug, adopted false, message}` |
-| `my_crafts` | contribute | writes (records what was seen) | `MyCrafts {schemaVersion 1, crafts[StewardPackage], adopted, adoptedMax, message}` |
-| `propose_component` | contribute | writes | `ComponentProposalResult {schemaVersion, outcome, proposalId, status, label, message, matches, waysOn}` |
-| `propose_source` | contribute | writes | `SourceProposalReply {schemaVersion, outcome, claimId, quotesAdded, held, gates, message}` |
-| `propose_page` | contribute | writes | `PageProposalResult {schemaVersion, subject, pageUrl, accepted, refused, parts[], message}` |
-| `preview_page` | contribute | writes (a preview, never a proposal) | `PagePreviewResult {schemaVersion, subject, pageUrl, previewUrl, expiresAt, chapters[], components, sources, parts[], message}` with `report` (`PageReport`, below) and `notices`; `_meta.ui` names `ui://kalavigyan/page-preview.html` |
-| `supply_source` | contribute | writes | `SuppliedSourceReply` with `draftId` and `notices` (`knowledge-writes.md`, Supplied sources) |
-| `create_draft` | contribute | writes | `DraftView` (below) |
-| `add_to_draft` | contribute | writes | `DraftView` |
-| `remove_from_draft` | contribute | writes | `DraftView` |
-| `get_draft` | contribute | read-only | `DraftView` with the whole `draft` |
-| `preview_draft` | contribute | writes (a preview, never a proposal) | `PagePreviewResult` with `draftId`, `report` and `notices`; `_meta.ui` names `ui://kalavigyan/page-preview.html` |
-| `submit_draft` | contribute | writes | `PageProposalResult` with `draftId`, `nextStep` and `notices` |
-| `search_sources` | contribute | read-only, open-world | `FoundSources` (`knowledge-api.md`, Source tools) |
-| `read_source` | contribute | read-only, open-world | `SourceText` |
-| `check_quote` | contribute | read-only, open-world | `QuoteCheck` |
-| `lookup_compound` | read | read-only, open-world | `CompoundLookup` |
-| `lookup_entity` | read | read-only, open-world | `EntityLookup` |
-| `find_pictures` | read | read-only, open-world | `FoundPictures` |
-| `archive_source` | contribute | writes (a Wayback snapshot), open-world | `ArchivedSource` |
+| Tool | Group | Scope | Hints | Returns |
+|---|---|---|---|---|
+| `list_open_work` | work | read | read-only | `OpenWork` |
+| `my_work` | work | contribute | read-only (records what a steward has seen) | `MyWork {schemaVersion 1, tier, holding, holdingMax, reservationMinutes, claimed[{taskKey, reservedUntil, task (OpenTask, or null once closed)}], completed[{taskKey, ending COMPLETED, endedAt}] (the last 30 days, at most 50), outcomes[ProposalTicket] (the latest 20), crafts[StewardPackage], craftsMax, message}` |
+| `reserve_tasks` | work | contribute | writes | `ReservedTasks` (Reservations, above) |
+| `steward_craft` | work | contribute | writes | `StewardReply {schemaVersion 1, craftSlug, adopted, message, package: StewardPackage or null}` |
+| `get_proposal` | work | contribute | read-only | `ProposalTicket` (`knowledge-writes.md`) |
+| `propose_source` | proposing | contribute | writes | `SourceProposalReply {schemaVersion, outcome, claimId, quotesAdded, held, gates, message}` |
+| `edit_draft` | pages | contribute | writes | `DraftView` (below) with `notices` |
+| `preview_page` | pages | contribute | read-only (a preview, never a proposal; the dispatch keeps the preview it records) | `PagePreviewResult {schemaVersion, subject, pageUrl, previewUrl, expiresAt, chapters[], components, sources, parts[], message}` with `draftId`, `report` (`PageReport`, below) and `notices`; `_meta.ui` names `ui://kalavigyan/page-preview.html` |
+| `propose_page` | pages | contribute | writes | `PageProposalResult {schemaVersion, subject, pageUrl, accepted, refused, parts[], message}` with `draftId`, `nextStep` and `notices`; a component part's report carries its close `matches` and `waysOn` |
+| `supply_source` | sources | contribute | writes | `SuppliedSourceReply` with `draftId` and `notices` (`knowledge-writes.md`, Supplied sources) |
+| `search_sources` | sources | contribute (read for pictures alone) | read-only, open-world | `SourceSearch` (`knowledge-api.md`, Source tools) |
+| `read_source` | sources | contribute | read-only, open-world | `SourceReading` |
+| `lookup` | sources | read | read-only, open-world | `LookupReply` |
 
-The page, draft and source tools and the four contribute source tools need an account of Researcher or
-above (`PROPOSE_KNOWLEDGE`).
+The page, draft and source tools need an account of Researcher or above (`PROPOSE_KNOWLEDGE`), but
+`lookup` and a pictures-only search, which anyone may call.
 
 - A write tool's changes are committed by the dispatch when it succeeds and rolled back when it
-  refuses (`InvalidInput` or `Refused`, both a tool result with `isError`).
+  refuses (`InvalidInput` or `Refused`, both a tool result with `isError`); a read-only tool that
+  records its own bookkeeping (`Tool.records`: `my_work` the steward's last look, `preview_page` the
+  preview row and a draft's last preview) is committed the same way.
+- **Merged in decision 0111.** `my_work` is `my_tasks` and `my_crafts` in one view (a Student holds
+  only its tasks); `reserve_tasks` is `claim_task`, `claim_tasks` and `release_task`; `steward_craft
+  {craft_slug, action adopt | drop}` is `adopt_craft` and `drop_craft`; `edit_draft` is
+  `create_draft`, `add_to_draft`, `remove_from_draft` and `get_draft`; `preview_page` and
+  `propose_page` take a `bundle` or a `draft_id` and are `preview_draft` and `submit_draft` too, and
+  `propose_page` with one part alone is `propose_component` and `propose_layout`. Every allowance,
+  check and message of the old tools is kept.
 - Review queues reach `list_open_work` only on a connection holding the review scope, and then by
   the account's role.
 - `initialize` declares `tools`, `prompts` (`listChanged` false) and `resources` (`subscribe` and
@@ -253,33 +252,36 @@ above (`PROPOSE_KNOWLEDGE`).
   {craft_slug, need?}`, and (round 7) `deliver_page {subject_kind, slug}`, `give_picture
   {craft_slug}`, the prompt of `MISSING_PICTURE` tasks, and `deliver_dataset {craft_slug, kind?}`
   (`kind` one of the general kinds but `general_drawing`). Each returns one user message: the task, the
-  steps naming the tools in order (`list_open_work`, `claim_task` or `claim_tasks`, `get_facts` and
-  `get_section`, `list_components` first for a component, the source steps (round 7:
-  `search_sources`, then `lookup_compound` and `lookup_entity`, `read_source` for the text the gates
-  will read and `check_quote` on every quote, with the agent's own search where they find nothing;
-  `write_section`, `propose_component` and `deliver_dataset` name the same tools in their own
-  steps, and `give_picture` ends on `find_pictures` for open pictures the team places),
-  `propose_facts` with idempotency keys and the claimed task as `task_key`, then `get_proposal` or
-  `my_tasks` for the outcome; a component or page is built finished and seen with `preview_page`
-  before `propose_page` or `propose_component`; a picture is given with `give_image` only after the
-  person confirms the declaration in their own words), the method sections of the contributor
+  steps naming the tools in order (`list_open_work`, `reserve_tasks`, `get_facts` and `get_page`,
+  `list_components` first for a component, the source steps (`search_sources`, then `lookup`,
+  `read_source` for the text the gates will read and with `quotes` on every quote, with the agent's
+  own search where they find nothing; `write_section`, `propose_component` and `deliver_dataset`
+  name the same tools in their own steps, and `give_picture` ends on `search_sources` with kinds
+  pictures for open pictures the team places), `propose_facts` with idempotency keys and the claimed
+  task as `task_key`, then `get_proposal` or `my_work` for the outcome; a component or page is built
+  finished and seen with `preview_page` before `propose_page`; a picture is given with
+  `give_pictures` only after the person confirms the declaration in their own words), the method sections of the contributor
   skill (Proposals and their progress, Finding and reading sources and Never; plus Writing a
   section, Components, Pages, Structure and sources or Pictures; `give_picture` carries Pictures
   and Finding and reading sources) and, whole, the references the prompt names (`Prompt.references`: sources,
   quotes, fields and the page checklist; components for a component or a page; datasets for
   `deliver_dataset`; none for `give_picture`). A wrong prompt or argument is `-32602`.
 - `curate_page {subject_kind?, slug?}` (decision 0110, `api/mcp_prompt_curate.py`) walks the whole
-  job of one page in order: pick the page (`my_crafts`, `list_open_work`, `adopt_craft`) or read the
-  named one (`get_coverage`, `list_open_work`), claim its tasks, derive its lists (`get_facts`,
-  `get_section`, `get_layout`) and `create_draft` with them, research with the agent's own reach and
-  the sources tools (`search_sources`, `lookup_compound`, `lookup_entity`, `find_pictures`), read and
-  check every quote (`read_source`, `supply_source` for a source only the agent can read, `check_quote`,
-  `archive_source`), `propose_facts` in batches, then structure, components and dataset figures and
-  the layout with `add_to_draft`, pictures with `give_image` and `add_to_draft`, `preview_draft` and
-  fix against the report until no fixable failure is left, `submit_draft` once, follow with
-  `get_proposal`, `my_tasks` and `get_draft`, and what to do when each gate refuses. Its sections are
-  those of `deliver_page`; its references are all six.
-- `resources/list`, `resources/read`, `resources/templates/list` (empty): the index
+  job of one page in order: pick the page (`my_work`, `list_open_work`, `steward_craft`) or read the
+  named one (`get_page`, `list_open_work`), claim its tasks, derive its lists (`get_page`,
+  `get_facts`) and open the draft with them (`edit_draft`), research with the agent's own reach and
+  the sources tools (`search_sources`, its pictures too, and `lookup`), read and check every quote
+  (`read_source`, `supply_source` for a source only the agent can read, `read_source`'s quotes and
+  archive), `propose_facts` in batches, then structure, components and dataset figures and the
+  layout in `edit_draft`'s add, pictures with `give_pictures` and `edit_draft`, `preview_page` with
+  the draft and fix against the report until no fixable failure is left, `propose_page` with the
+  draft once, follow with `get_proposal`, `my_work` and `edit_draft` by its id, and what to do when
+  each gate refuses. Its sections are those of `deliver_page`; its references are all six.
+- `resources/templates/list` gives `kalavigyan://components/{kind}.schema.json`, and every kind a
+  contributor may deliver is also listed as its own resource (`api/mcp_component_schemas.py`,
+  `application/schema+json`): the JSON schema of the kind's spec, the model the server checks a
+  delivered spec with (decision 0111).
+- `resources/list`, `resources/read`: the index
   `kalavigyan://index.md` (round 7: every tool, prompt and resource with one line each), the skills
   `kalavigyan://skills/kalavigyan-contributor/SKILL.md` and
   `kalavigyan://skills/kalavigyan-datasets/SKILL.md`, the six references
@@ -292,11 +294,12 @@ above (`PROPOSE_KNOWLEDGE`).
   `ui://kalavigyan/page-preview.html` (`text/html;profile=mcp-app`, `data/design/page-preview-view.html`
   through `data/page_preview_view.py`: one self-contained page, `default-src 'none'` and its one script
   allowed by hash, the four themes' colours and the status colours inlined from `tokens.json`, every
-  text set as text, `https` links opened through `ui/open-link`; it draws a `preview_page` or
-  `preview_draft` result: the private link, the rules failed first with their evidence, coverage by
+  text set as text, `https` links opened through `ui/open-link`; it draws a `preview_page`
+  result: the private link, the rules failed first with their evidence, coverage by
   field, figures, sources by grade, pictures by licence and each part's outcome). An unknown uri is
   `-32002`.
-- The server's `instructions` name the source tools and the index (`api/mcp_protocol.py`).
+- The server's `instructions` name the tools in the order of the work, the groups, the index and,
+  once for every tool, the data note (`api/mcp_protocol.py`).
 
 ## HTTP
 
@@ -313,8 +316,9 @@ above (`PROPOSE_KNOWLEDGE`).
 
 ## Stewardship (round 7)
 
-A contributor adopts crafts and families (`adopt_craft {craft_slug}`, at most `STEWARD_CRAFTS_MAX` =
-10 live at once) and drops them (`drop_craft`). A steward sees each craft's open work as one package:
+A contributor adopts crafts and families (`steward_craft {craft_slug, action adopt}`, at most
+`STEWARD_CRAFTS_MAX` = 10 live at once) and drops them (`action drop`). A steward sees each craft's
+open work as one package (in `my_work`, and in the reply to an adoption):
 `StewardPackage {craft (TaskSubject), adoptedAt, seenAt (the steward's last look, null before the
 first), stewards (how many accounts steward it; never who), newTasks[OpenTask] (open now and not open
 at the last look: the craft's new gaps, first), tasks[OpenTask] (the rest), total}`, the tasks
@@ -328,10 +332,13 @@ any number of stewards. Table `CraftSteward` (`userId`, `craftId`, `adoptedAt`, 
 ## Pages delivered whole (`propose_page`)
 
 One bundle builds one page: `PageBundle {schemaVersion 1, subject {kind craft, family or category,
-slug}, facts[] (each a `propose_fact` proposal, at most 20), structure[] (each a `propose_structure`
+slug}, facts[] (each a `FactProposal`, at most 20), structure[] (each a `propose_structure`
 proposal, at most 20), components[] ({proposal, cites}, at most 10), layout? ({baseVersion,
 entries, note?}), pictures[] ({stageId?, claimIds, declaration?}, at most 10), note?}`, holding at
-least one part. A component's `cites` names, per unit, the bundle's facts it rests on besides its
+least one part; over MCP it is `propose_page`'s and `preview_page`'s `bundle`, in snake_case, and a
+draft's parts make one too. One part alone is a bundle: a component by itself (in place of the
+retired `propose_component`) or a layout by itself (in place of `propose_layout`). Over MCP every
+component of a bundle or draft is delivered finished: a spec, except for a `SUBJECT_LINK`. A component's `cites` names, per unit, the bundle's facts it rests on besides its
 `claimIds`, as `fact:0`, `fact:1` and on (the facts' places in `facts`); a picture's `claimIds` may
 name them the same way. A reference beyond the bundle's facts, or to a unit the component lacks, is
 an argument error.
@@ -340,13 +347,16 @@ Parts run in order (facts, structure, components, layout, pictures), each in its
 checked exactly as its own tool checks it: a fact through the gates (`knowledge-writes.md`), a
 structure item through its checks, a component through the delivery checks and the library search,
 the layout against the page's current version (stored for review, or written at once by an
-Admin), and a picture by starting its upload (`start_image_upload`'s link and slot, reported in
-the part's `upload`). Each part counts against its own kind's hourly limit. A part is also refused
+Admin), and a picture by starting its upload (the link and slot of `give_pictures`'s `upload:
+true`, `mcp_picture_tools.start_picture`, reported in the part's `upload`). Each part counts against
+its own kind's hourly limit, and a draft or a bundle of more than one part also against the page
+bundles; a bundle of one part counts against that part's kind alone, as its retired tool did. A part is also refused
 when it names another page (a fact's or structure item's subject), when a category's bundle carries
 structure or pictures, when a component is keyed to another craft (`craft_slug` or a `CRAFT`
 subject), or when it cites a bundle fact that was refused. A refused part rolls back only itself:
 the others stand, and one report lists every part `{part, index, outcome ACCEPTED or REFUSED,
-status, id, message, upload?}` with the counts. A component citing a bundle fact that waits for
+status, id, message, upload?, matches?, waysOn?}` with the counts; a component refused for a close
+match carries the matches and the two ways on. A component citing a bundle fact that waits for
 review is stored, and its approval waits until that fact is shown. HTTP: `POST
 /api/knowledge/pages` (`PROPOSE_KNOWLEDGE`, the contribution terms accepted), 422 for an argument
 or subject error.
@@ -384,7 +394,7 @@ sign in and back, and any other answer is the not-found page.
 
 ## The checklist report (decision 0110)
 
-Over MCP, `preview_page` and `preview_draft` read back the stored preview document
+Over MCP, `preview_page`, of a bundle or a draft, reads back the stored preview document
 (`services/page_report.preview_report`) and report it against the page checklist
 (`research/page_report.py`, the rules in `research/page_report_rules.py`); a preview whose document
 cannot be read back carries `report: null`. The rule titles are read from the checklist reference
@@ -424,23 +434,31 @@ is the sentences of the opening; a picture is a `picture_plate`.
 ## Drafts (decision 0110)
 
 A draft is a page bundle built over many calls (`research/page_drafts.py`, `services/page_drafts.py`,
-`api/mcp_studio_tools.py`, `api/mcp_studio_arguments.py`, `models/studio.py`).
+`api/mcp_page_tools.py`, `api/mcp_page_arguments.py`, `models/studio.py`). One MCP tool edits it,
+`edit_draft {subject? | draft_id?, add?, remove?, lists?}` (decision 0111, in place of
+`create_draft`, `add_to_draft`, `remove_from_draft` and `get_draft`), and `preview_page` and
+`propose_page` take its `draft_id`.
 
-- `create_draft {subject_kind, slug, lists?, note?}` opens one draft per account and page (the subject
-  found as `preview_page` finds it), or gives back the open one; an account holds at most 10 open
-  drafts (`DRAFTS_OPEN_MAX`), and its drafts past their expiry are deleted when it creates one.
-- `add_to_draft {draft_id, facts?, structure?, components?, layout?, pictures?, supplied_sources?,
-  lists?, note?}` appends parts (a layout, lists or note replaces the draft's) and refuses a draft past
-  the bundle's limits (20 facts, 20 structure items, 10 components, 10 pictures), 40 supplied sources,
-  600,000 bytes of JSON (`DRAFT_BYTES_MAX`), a `fact:N` beyond its facts, or a supplied source of another
-  account. `lists {mechanisms (up to 12), ambiguous_terms (up to 12), signature (fact:N or a fact id)}`.
-- `remove_from_draft {draft_id, part, index}`: `part` one of `fact`, `structure`, `component`, `layout`,
-  `picture`, `supplied_source`; removing `fact:i` refuses while a component, picture or the signature
-  names it, and renumbers every later `fact:N`.
-- `get_draft {draft_id}` reads the draft whole, submitted ones too, until it expires.
-- `preview_draft {draft_id}` previews the draft's bundle with `preview_page` (`PAGE_PREVIEWS`) and
-  reports it with its lists; the draft keeps the link and the report's counts.
-- `submit_draft {draft_id}` proposes the draft's bundle with `propose_page`'s checks
+- With `subject {kind, slug}`, the first edit opens one draft per account and page (the subject found
+  as `preview_page` finds it), and every later one works on the open one; an account holds at most
+  10 open drafts (`DRAFTS_OPEN_MAX`), and its drafts past their expiry are deleted when it opens one.
+  With `draft_id` instead it works on that draft.
+- `add {facts?, structure?, components?, layout?, pictures?, supplied_sources?, note?}` and `lists`
+  append parts (a layout, lists or note replaces the draft's) and refuse a draft past the bundle's
+  limits (20 facts, 20 structure items, 10 components, 10 pictures), 40 supplied sources, 600,000
+  bytes of JSON (`DRAFT_BYTES_MAX`), a `fact:N` beyond its facts, a supplied source of another
+  account, or a component without its spec (but a `SUBJECT_LINK`). `lists {mechanisms (up to 12),
+  ambiguous_terms (up to 12), signature (fact:N or a fact id)}`.
+- `remove [{part, index}]` (up to 20): `part` one of `fact`, `structure`, `component`, `layout`,
+  `picture`, `supplied_source`; the removals run before the additions, other parts first and facts
+  last, each kind from the highest index down, so every index is the one the draft listed; removing
+  `fact:i` refuses while a component, picture or the signature names it, and renumbers every later
+  `fact:N`.
+- An edit with nothing to change returns the draft whole (`draft`), and with a `draft_id` a
+  submitted one too, until it expires.
+- `preview_page {draft_id}` previews the draft's bundle (`PAGE_PREVIEWS`) and reports it with its
+  lists; the draft keeps the link and the report's counts.
+- `propose_page {draft_id}` proposes the draft's bundle with the bundle's checks
   (`page_proposal_deps.page_proposed`, origin `AGENT`, `PAGE_PROPOSALS` and each part's own allowance)
   and keeps the result; the draft is then `SUBMITTED` and no longer changes.
 - Each change bumps `version`, moves `expiresAt` to 14 days on (`DRAFT_LIFETIME`) and drops the last
@@ -449,7 +467,7 @@ A draft is a page bundle built over many calls (`research/page_drafts.py`, `serv
 `DraftView {schemaVersion 1, draftId, subject, state OPEN | SUBMITTED, version, updatedAt, expiresAt,
 bytes, bytesMax, counts and limits {facts, structure, components, layout, pictures, suppliedSources},
 parts[{part, index, summary}], lists, preview {url, expiresAt, passed, failed, judged} | null, result
-(PageProposalResult) | null, draft (the whole parts, from get_draft) | null, message, nextStep}` and
+(PageProposalResult) | null, draft (the whole parts, from an edit with nothing to change) | null, message, nextStep}` and
 `notices`.
 
 Table `PageDraft` (migration `0052_drafts_and_supplied_sources`, row level security on, no grants to the
@@ -491,8 +509,8 @@ server's tools, prompts and resources, one line each, or when a contract resourc
 
 ## Around open work
 
-- Facts and structure proposals close their tasks (above); page layouts are proposed with
-  `propose_layout` and wait in the `LAYOUTS` queue, page structure with `propose_structure` in the
+- Facts and structure proposals close their tasks (above); page layouts are proposed as a part of
+  `propose_page` and wait in the `LAYOUTS` queue, page structure with `propose_structure` in the
   `STRUCTURE` queue (`knowledge-writes.md`).
 - Component and layout proposals are decided on the review page, `/admin/review`
   (`review-queue.md`). An approved delivered component is registered in the library at once and

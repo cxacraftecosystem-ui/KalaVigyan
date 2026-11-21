@@ -97,10 +97,9 @@ async def test_research_a_field_carries_the_method_and_names_the_tools_in_order(
     assert in_order(
         text,
         "`list_open_work`",
-        "`claim_task`",
-        "`claim_tasks`",
+        "`reserve_tasks`",
         "`get_facts`",
-        "`get_section`",
+        "`get_page`",
         "yourself",
         "`propose_facts`",
         "`get_proposal`",
@@ -117,18 +116,24 @@ async def test_every_prompt_finds_reads_and_checks_sources_with_the_server_s_too
             text,
             "`list_open_work`",
             "Call `search_sources`",
-            "call `lookup_compound`",
-            "Call `read_source`",
-            "`archive_source`",
-            "Call `check_quote`",
+            "call `lookup` with kind compound",
+            "Call `read_source` with a result's url",
+            "`read_source` with archive true",
+            "Call `read_source` with quotes",
             "Call `propose_",
         )
-    assert in_order(section, "`search_sources`", "`read_source`", "`check_quote`", "call `propose_facts`")
+    assert in_order(section, "`search_sources`", "`read_source`", "with its quotes", "call `propose_facts`")
     assert in_order(
-        component, "`list_components` first", "`search_sources`", "`check_quote`", "`lookup_compound`"
+        component,
+        "`list_components` first",
+        "`search_sources`",
+        "with its quotes",
+        "`lookup` with kind compound",
     )
-    assert in_order(dataset, "Find the dataset with `search_sources`", "Call `read_source`", "`check_quote`")
-    assert in_order(picture, "`start_image_upload`", "call `find_pictures`")
+    assert in_order(
+        dataset, "Find the dataset with `search_sources`", "Call `read_source`", "with quotes holding"
+    )
+    assert in_order(picture, "`give_pictures`", "call `search_sources` with kinds pictures")
     for text in (research, section, component, page, picture, dataset):
         assert "## Finding and reading sources" in text
 
@@ -137,7 +142,7 @@ async def test_write_a_section_and_deliver_a_component_add_their_own_rules() -> 
     section = await prompt_text("write_section", {"craft_slug": "Kutch-Ajrakh", "field": "HISTORY"})
     assert "## Writing a section" in section and all(heading in section for heading in METHOD)
     assert in_order(
-        section, "`list_open_work`", "`claim_task`", "`get_facts`", "`get_section`", "`propose_facts`"
+        section, "`list_open_work`", "`reserve_tasks`", "`get_facts`", "`get_page`", "`propose_facts`"
     )
     component = await prompt_text("propose_component", {"craft_slug": "Kutch-Ajrakh", "need": "molecules"})
     assert component.startswith("Find or deliver a 3D molecule for the craft Kutch-Ajrakh")
@@ -146,13 +151,13 @@ async def test_write_a_section_and_deliver_a_component_add_their_own_rules() -> 
     assert in_order(
         component,
         "`list_open_work`",
-        "`claim_task`",
+        "`reserve_tasks`",
         "`get_facts`",
         "`list_components` first",
         "yourself",
         "general_drawing, general_chart, general_table, general_timeline, general_map_layer",
         "`preview_page`",
-        "`propose_component` with",
+        "Call `propose_page` with that bundle",
     )
 
 
@@ -163,11 +168,11 @@ async def test_a_page_is_previewed_before_it_is_proposed() -> None:
         heading in page for heading in (*METHOD, "## Pages", "## Pictures", "## Structure and sources")
     )
     assert in_order(
-        page, "`get_layout`", 'family_slug "Ajrakh"', "`claim_tasks`", "`list_components`", "`preview_page`"
+        page, "`get_page`", 'family_slug "Ajrakh"', "`reserve_tasks`", "`list_components`", "`preview_page`"
     )
     assert page.index("Call `preview_page`") < page.index("Call `propose_page`")
     category = await prompt_text("deliver_page", {"subject_kind": "category", "slug": "textiles"})
-    assert 'Call `get_coverage` with category_slug "textiles"' in category
+    assert 'Call `get_page` with subject {kind "category", slug "textiles"}' in category
 
 
 async def test_a_picture_is_given_only_with_the_person_s_own_declaration() -> None:
@@ -176,11 +181,11 @@ async def test_a_picture_is_given_only_with_the_person_s_own_declaration() -> No
     assert in_order(
         picture,
         'kind "MISSING_PICTURE"',
-        "`claim_task`",
+        "`reserve_tasks`",
         "`get_facts`",
         "in their own words",
-        "`give_image` with image_url or image_base64",
-        "`start_image_upload`",
+        "`give_pictures` with the craft_slug",
+        "upload true",
     )
     assert "Never fill the declaration in" in picture
     assert "HEIC, HEIF, TIFF or BMP" in picture
@@ -193,7 +198,7 @@ async def test_a_figure_from_a_dataset_rests_on_cited_facts_and_is_previewed_fir
     assert in_order(
         figure,
         "THIN_FIELD",
-        "`claim_task`",
+        "`reserve_tasks`",
         "`get_facts`",
         "`list_components`",
         "the dataset guide below",
@@ -291,7 +296,11 @@ async def test_the_contributor_skill_and_the_design_tokens_are_resources() -> No
             {"uri": skill["uri"], "mimeType": "text/markdown", "text": SKILL.read_bytes().decode("utf-8")}
         ]
     }
-    assert (await result("resources/templates/list")) == {"resourceTemplates": []}
+    (template,) = (await result("resources/templates/list"))["resourceTemplates"]
+    assert (template["uriTemplate"], template["mimeType"]) == (
+        "kalavigyan://components/{kind}.schema.json",
+        "application/schema+json",
+    )
 
 
 async def test_an_unknown_resource_is_not_found() -> None:

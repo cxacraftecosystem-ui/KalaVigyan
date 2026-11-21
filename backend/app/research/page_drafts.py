@@ -198,7 +198,7 @@ def without(held: DraftParts, part: str, index: int) -> DraftParts:
     }
     held_list: list[Any] = list(getattr(held, field[part]))
     if not 0 <= index < len(held_list):
-        raise ValueError(f"the draft holds no {part} {index}; get_draft lists its parts by index")
+        raise ValueError(f"the draft holds no {part} {index}; edit_draft lists its parts by index")
     del held_list[index]
     return _checked({**_dumped(held), field[part]: held_list})
 
@@ -231,7 +231,7 @@ def part_summaries(parts: DraftParts) -> list[DraftPart]:
 
 def _without_fact(held: DraftParts, index: int) -> DraftParts:
     if not 0 <= index < len(held.facts):
-        raise ValueError(f"the draft holds no fact {index}; get_draft lists its parts by index")
+        raise ValueError(f"the draft holds no fact {index}; edit_draft lists its parts by index")
     named = _naming(held, f"fact:{index}")
     if named:
         raise ValueError(STILL_CITED.format(index=index, by=", ".join(named)))

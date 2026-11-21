@@ -262,7 +262,7 @@ footer{margin-top:32px;padding-top:12px;border-top:1px solid var(--rule);font-si
     var side = el("div");
     side.appendChild(pairs("Sources by grade", report.sourcesByGrade, "Cite a source in a fact to see its grade here."));
     side.appendChild(el("p", "kv-meta", count(report.suppliedSources) + " of them rest on text you supplied, held privately for reviewers."));
-    side.appendChild(pairs("Pictures by licence", report.picturesByLicence, "Give a picture with give_image and name it in the draft."));
+    side.appendChild(pairs("Pictures by licence", report.picturesByLicence, "Give a picture with give_pictures and name it in the draft."));
     split.appendChild(side);
     block.appendChild(split);
     return block;

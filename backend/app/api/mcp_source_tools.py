@@ -17,7 +17,7 @@ from app.services.claim_pages import refresh_claim_pages
 from app.services.source_proposals import SourceAsk, propose_source
 
 from .mcp_argument_names import SnakeBodyArguments
-from .mcp_tool_base import WRITES, Tool, ToolContext
+from .mcp_tool_base import PROPOSING, WRITES, Tool, ToolContext
 from .proposal_limits import refuse_tool_when_spent
 
 __all__ = ["PROPOSE_SOURCE", "SOURCE_TOOLS", "ProposeSource", "SourceToolReply", "source_proposed"]
@@ -92,6 +92,7 @@ PROPOSE_SOURCE = Tool(
     run=_propose,
     scope=CONTRIBUTE_SCOPE,
     annotations=WRITES,
+    group=PROPOSING,
 )
 
 SOURCE_TOOLS = (PROPOSE_SOURCE,)

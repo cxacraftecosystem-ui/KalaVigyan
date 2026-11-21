@@ -10,7 +10,7 @@ from app.research.review_switch import AGENT
 from app.research.structure_proposals import StructureProposal, StructureProposalResult
 
 from .mcp_argument_names import SnakeBodyArguments
-from .mcp_tool_base import WRITES, Tool, ToolContext
+from .mcp_tool_base import PROPOSING, WRITES, Tool, ToolContext
 from .proposal_limits import refuse_tool_when_spent
 from .structure_proposal_deps import structure_proposed
 
@@ -23,7 +23,7 @@ PROPOSE_DESCRIPTION = (
     "it (REACTION), a material's botanical name (BOTANICAL_NAME), a glossary term (GLOSSARY_TERM), an open "
     "question (OPEN_QUESTION), parts of the GI record (GI_RECORD), or two or more held facts of the page that "
     "disagree (CONFLICT, which names the facts by id and gives no new fact). Read the page with get_facts and "
-    "get_section first: stage and material keys are the page's own. Every name, colour and number the item "
+    "get_page first: stage and material keys are the page's own. Every name, colour and number the item "
     "gives must be in one of its quotes; the gates fetch every source and re-find every quote, and grade the "
     "source. It waits in the review queue, and approval writes it into the page and its dossier. Name the field "
     "task you claimed as task_key: a proposal that passes the checks completes it. Every name inside the "
@@ -78,6 +78,7 @@ PROPOSE_STRUCTURE = Tool(
     run=_propose,
     scope=CONTRIBUTE_SCOPE,
     annotations=WRITES,
+    group=PROPOSING,
 )
 
 STRUCTURE_TOOLS = (PROPOSE_STRUCTURE,)

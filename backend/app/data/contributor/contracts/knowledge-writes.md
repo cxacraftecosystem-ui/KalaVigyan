@@ -15,7 +15,7 @@ rules), `research/review_switch.py` (the switch and where a fact is placed);
 `services/write_back_gates.py` (the research write-back), `services/app_settings.py` (the switch
 setting); `api/routes/knowledge_writes.py`, `api/mcp_fact_tools.py`, `api/proposal_deps.py`; the
 limits `core/rate_limit.py` and `api/proposal_limits.py`; layout proposals `research/layout_proposals.py`,
-`services/page_layout_proposals.py`, `services/review_queue_layouts.py`, `api/mcp_layout_tools.py`,
+`services/page_layout_proposals.py`, `services/review_queue_layouts.py`, `api/mcp_page_tools.py`,
 `models/layout_proposals.py`; structure proposals `research/structure_proposals.py` (the contract),
 `research/structure_proposals_values.py` (the STATED check), `services/structure_proposals.py` (the
 proposal), `services/structure_proposals_dossier.py` (the dossier's own rules),
@@ -34,8 +34,8 @@ text), `services/supplied_sources_gate.py` (what the gates read and keep),
 
 | Action | Capability | Roles |
 |---|---|---|
-| Propose a fact (`POST /api/knowledge/facts`, MCP `propose_fact`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
-| Propose a page layout (`POST /api/knowledge/layouts`, MCP `propose_layout`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
+| Propose a fact (`POST /api/knowledge/facts`, MCP `propose_facts`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
+| Propose a page layout (`POST /api/knowledge/layouts`, MCP `propose_page` with a layout) | `PROPOSE_KNOWLEDGE` | Researcher and above |
 | Propose page structure (`POST /api/knowledge/structure`, MCP `propose_structure`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
 | Propose a source for a held fact (MCP `propose_source`) | `PROPOSE_KNOWLEDGE` | Researcher and above |
 | Supply a source's text (MCP `supply_source`, its upload slot) | `PROPOSE_KNOWLEDGE` | Researcher and above |
@@ -50,7 +50,7 @@ with a tool error naming the scope. The site's routes ask for the contribution t
 
 - `subject {kind: craft | category, slug}`: a craft by its slug (merged crafts follow their merge)
   or a category by its slug.
-- `field`: one of the 16 fields (`list_fields`); `fields`: up to 3 secondary fields, distinct and
+- `field`: one of the 16 fields (`get_page` with no subject); `fields`: up to 3 secondary fields, distinct and
   without the primary one.
 - `statement`: 20 to 1,000 characters, one fact, no personal data (emails, phone and
   Aadhaar-like numbers are refused).
@@ -189,17 +189,17 @@ still a 200: the reply's outcome and the failing gate's reasons say why.
 ## MCP
 
 The fact tools (`api/mcp_fact_tools.py`, arguments in `api/mcp_fact_arguments.py`, in `FACT_TOOLS`),
-scope `contribute`, origin `AGENT`. A missing sign-in, scope or rank, or a malformed fact comes back
-as a tool error the agent can act on. The gates run in the contribution queue (below), so the reply
-comes at once.
+scope `contribute`, origin `AGENT`. A missing sign-in, scope or rank comes back as a tool error the
+agent can act on, and a malformed fact as that fact's refusal. The gates run in the contribution
+queue (below), so the reply comes at once. Decision 0111 retired `propose_fact`: one fact is a batch
+of one.
 
 | Tool | Arguments | Result | Hints |
 |---|---|---|---|
-| `propose_fact` | `craft_slug` or `category_slug` (one), `field`, `fields?`, `statement`, `sources`, `task_key?`, `idempotency_key?` | `ProposalTicket` | writes |
-| `propose_facts` | `facts` (1 to 25, each as `propose_fact` takes one) | `ProposalBatch` | writes |
+| `propose_facts` | `facts` (1 to 25, each `craft_slug` or `category_slug` (one), `field`, `fields?`, `statement`, `sources`, `task_key?`, `idempotency_key?`) | `ProposalBatch` | writes |
 | `get_proposal` | `proposal_id` | `ProposalTicket` (the account's own; an admin's any) | read-only |
 
-- **Old forms.** `{proposal: FactProposal}`, the first release's form, and the camelCase names
+- **Old names.** The camelCase names inside a fact
   (`craftSlug`, `categorySlug`, `taskKey`, `idempotencyKey`) keep working until the next release, and
   the result's `notices[]` says so (`api/mcp_argument_names.RenamedArguments`, which any tool file may
   use for its own old names).
@@ -215,13 +215,13 @@ account has a sliding hour per kind (`core/rate_limit.proposal_attempt`, `PROPOS
 
 | Kind (`core/rate_limit`) | Per hour (constant) | Counted at |
 |---|---|---|
-| `FACT_PROPOSALS` | `FACT_PROPOSALS_PER_WINDOW` = 30; for a queued fact the account's tier allowance (`TIER_FACTS_PER_HOUR`: 30, 60, 150) | `POST /api/knowledge/facts` (after the terms); each new fact queued by MCP `propose_fact` and `propose_facts` and `POST /api/knowledge/proposals/facts` (`core/rate_limit.proposal_slots`: a batch takes what is left of the same window, and each fact beyond it is refused on its own; a fact sent again with its key takes nothing); MCP `supply_source`, one a supplied source (decision 0110) |
-| `COMPONENT_PROPOSALS` | `COMPONENT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/contributions/proposals/components`, MCP `propose_component` |
-| `LAYOUT_PROPOSALS` | `LAYOUT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/knowledge/layouts` (after the terms), MCP `propose_layout` |
+| `FACT_PROPOSALS` | `FACT_PROPOSALS_PER_WINDOW` = 30; for a queued fact the account's tier allowance (`TIER_FACTS_PER_HOUR`: 30, 60, 150) | `POST /api/knowledge/facts` (after the terms); each new fact queued by MCP `propose_facts` and `POST /api/knowledge/proposals/facts` (`core/rate_limit.proposal_slots`: a batch takes what is left of the same window, and each fact beyond it is refused on its own; a fact sent again with its key takes nothing); MCP `supply_source`, one a supplied source (decision 0110) |
+| `COMPONENT_PROPOSALS` | `COMPONENT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/contributions/proposals/components`, each component part of MCP `propose_page` |
+| `LAYOUT_PROPOSALS` | `LAYOUT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/knowledge/layouts` (after the terms), the layout part of MCP `propose_page` |
 | `STRUCTURE_PROPOSALS` | `STRUCTURE_PROPOSALS_PER_WINDOW` = 20 | `POST /api/knowledge/structure` (after the terms), MCP `propose_structure` |
-| `IMAGE_UPLOADS` | `IMAGE_UPLOADS_PER_WINDOW` = 20 | `POST /api/contributions/images` (a picture declared on the site), MCP `start_image_upload` (a link and slot issued; the picture given through it is not counted again) |
-| `PAGE_PROPOSALS` | `PAGE_PROPOSALS_PER_WINDOW` = 10 | `POST /api/knowledge/pages`, MCP `propose_page` (round 7; each part also counts against its own kind) and `submit_draft` (decision 0110) |
-| `PAGE_PREVIEWS` | `PAGE_PREVIEWS_PER_WINDOW` = 30 | `POST /api/knowledge/pages/preview`, MCP `preview_page` (round 7) and `preview_draft` (decision 0110) |
+| `IMAGE_UPLOADS` | `IMAGE_UPLOADS_PER_WINDOW` = 20 | `POST /api/contributions/images` (a picture declared on the site), MCP `give_pictures` (each picture given, and each link and slot issued for `upload: true`; the picture given through it is not counted again) |
+| `PAGE_PROPOSALS` | `PAGE_PROPOSALS_PER_WINDOW` = 10 | `POST /api/knowledge/pages`, MCP `propose_page` with a draft or a bundle of more than one part (each part also counts against its own kind; a bundle of one part counts against that part's kind alone, decision 0111) |
+| `PAGE_PREVIEWS` | `PAGE_PREVIEWS_PER_WINDOW` = 30 | `POST /api/knowledge/pages/preview`, MCP `preview_page`, of a bundle or a draft |
 
 - Admins and Master Admins are never limited. A proposal refused at a gate still counts. A request
   without the capability never counts; on the Knowledge API routes and over MCP neither does a
@@ -319,9 +319,9 @@ version.
 - `LayoutProposalDraft` (schema version 1, camelCase): `subject {kind craft | family | category,
   slug}`, `baseVersion` (the version the proposer read, 0 when the page has none), `entries[]` (the
   whole layout, each a `PageLayoutEntry`, checked by the layout rules), `note?` (1 to 500 characters,
-  why). MCP `propose_layout` (`api/mcp_layout_tools.py`, scope `contribute`, a write) takes
-  `{proposal: LayoutProposalDraft}`, origin `AGENT`; the route's origin is `CONTRIBUTION`.
-- `services/page_layout_proposals.propose_layout`: the subject is found as `get_layout` finds it (a
+  why). MCP `propose_page` (`api/mcp_page_tools.py`, scope `contribute`, a write) takes a layout as
+  a bundle's part `{base_version, entries, note}`, origin `AGENT`; the route's origin is `CONTRIBUTION`.
+- `services/page_layout_proposals.propose_layout`: the subject is found as `get_page` finds it (a
   family asked for as a craft is refused like an unknown slug: 422, or a tool error); a `baseVersion`
   that is not the page's current version is refused (`Refused("stale_layout")`: 409, or a tool error
   naming the current version). An account that reviews layouts (`REVIEW_CONTRIBUTIONS`, Admin and
@@ -552,7 +552,7 @@ owners by `page_revalidation.claim_owners`, then `refresh_pages`), always after 
 
 | The fact | Where |
 |---|---|
-| published by a proposal (`PUBLISHED`, at once or unreviewed), with the facts it differs from | `api/proposal_deps.proposed`, for the route and `propose_fact` |
+| published by a proposal (`PUBLISHED`, at once or unreviewed), with the facts it differs from | `api/proposal_deps.proposed`, for the route and a fact part of `propose_page` |
 | written or re-found by a live research write-back (written ones only when the switch shows them) | `services/research_write_back.store_live_research` |
 | approved, raised, rejected or retracted in the review queue | `services/review_queue_refresh.refresh_after_decision` (every fact decision) |
 | held or lifted by the nightly upkeep | `services/upkeep_healing.heal` |
