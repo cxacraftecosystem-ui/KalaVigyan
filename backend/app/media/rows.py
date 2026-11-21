@@ -27,6 +27,7 @@ from app.models import (
 )
 from app.research.crafts import CraftRef
 from app.research.retrieval import RESTRICTED_SENSITIVITY, VISIBLE_SENSITIVITY
+from app.services.citation_tiers import reading_acl
 from app.services.knowledge_view import craft_ref
 
 from .place import LocationFacts, media_place
@@ -201,7 +202,11 @@ async def _citations(
     rows = (
         await session.execute(
             select(
-                ClaimSource.claimId, ClaimSource.quoteCheck, Source.sensitivity, Chunk.acl, Chunk.sensitivity
+                ClaimSource.claimId,
+                ClaimSource.quoteCheck,
+                Source.sensitivity,
+                reading_acl(),
+                Chunk.sensitivity,
             )
             .join(Source, Source.id == ClaimSource.sourceId)
             .outerjoin(Chunk, Chunk.id == ClaimSource.chunkId)
@@ -209,7 +214,7 @@ async def _citations(
         )
     ).all()
     found: dict[uuid.UUID, list[CitationFacts]] = defaultdict(list)
-    for claim_id, quote_check, source_sensitivity, chunk_acl, chunk_sensitivity in rows:
+    for claim_id, quote_check, source_sensitivity, acl, chunk_sensitivity in rows:
         restricted = RESTRICTED_SENSITIVITY in (source_sensitivity, chunk_sensitivity)
-        found[claim_id].append(CitationFacts(quote_check, restricted, chunk_acl))
+        found[claim_id].append(CitationFacts(quote_check, restricted, acl))
     return {claim_id: tuple(items) for claim_id, items in found.items()}

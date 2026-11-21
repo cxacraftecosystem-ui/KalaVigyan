@@ -667,8 +667,12 @@ and the first 50 with their verdicts, and writes nothing.
 Without a judge (the default until the callers pass one), the duplicate gate refuses only
 identical texts and records that no judge compared the close facts, and the novelty gate is
 recorded only when it needs no judge. When the embedding route fails, the closed-fact check and the
-duplicate gate match identical texts only; when the judge fails, the later gates fall back to the
-identical-text check. Both are logged and neither fails the answer.
+duplicate gate match identical texts only; when the duplicate judge fails, the later gates fall back
+to the identical-text check, and when only the novelty call fails, novelty is left unjudged and the
+duplicate verdicts already given stand (`write_back_gates.write_back_later_gates`, with
+`later_gates(..., novelty_failure=NOVELTY_LEFT_UNJUDGED)`), so a fact the judge found the same is never
+written. Each is logged and none fails the answer. A proposal's gates raise a failed judge call
+instead of passing it over (`NOVELTY_FAILURE_RAISED`, the default).
 
 ## Versioning
 
@@ -679,7 +683,7 @@ field, or changes its meaning, is a new schema version.
 
 | Claim | Kept true by |
 |---|---|
-| The gates, their order, reasons and the judge's replies | `backend/tests/knowledge_writes/test_candidate_gates.py`, `test_gate_orchestration.py` and `test_judge_and_contract.py` |
+| The gates, their order, reasons and the judge's replies | `backend/tests/knowledge_writes/test_candidate_gates.py`, `test_gate_orchestration.py`, `test_judge_and_contract.py` and `backend/tests/write_back/test_novelty_failure.py` (a failed novelty call) |
 | The review switch and placement | `backend/tests/knowledge_writes/test_review_switch.py` |
 | A proposal's task key | `backend/tests/knowledge_writes/test_fact_task_key.py` |
 | The routes, refusals and the reply | `backend/tests/knowledge_writes/test_knowledge_writes_routes.py` and `backend/tests/db/test_fact_proposals_db.py` |

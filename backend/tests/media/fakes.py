@@ -42,6 +42,7 @@ PA_TEXT = (
 )
 ALUM_TEXT = "Alum acts as the mordant that fixes the red dye to the cotton."
 BUNDLE_KEY = b"test-only-media-bundle-key-0123456789abcdef"
+PUBLIC_ACL = "PUBLIC"
 AJRAKH = CraftRef(slug="Kutch-Ajrakh", name="Kutch Ajrakh", path="/crafts/Kutch-Ajrakh")
 BUCKET_HOST = "https://kalavigyan-media-example.s3.ap-south-1.amazonaws.com"
 
@@ -55,11 +56,11 @@ def stage(stage_id: uuid.UUID = STAGE_ID, *, ordinal: int = 6, active: bool = Tr
     return StageFacts(stage_id, ordinal, "Pa (alum mordant printing for red)", craft(active=active))
 
 
-def passing(acl: str | None = None) -> CitationFacts:
+def passing(acl: str | None = PUBLIC_ACL) -> CitationFacts:
     return CitationFacts(quote_check="PASS", restricted=False, chunk_acl=acl)
 
 
-def unchecked(acl: str | None = None) -> CitationFacts:
+def unchecked(acl: str | None = PUBLIC_ACL) -> CitationFacts:
     return CitationFacts(quote_check="NA", restricted=False, chunk_acl=acl)
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import uuid
 from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from app.core.errors import AppError, spend_refusal
@@ -25,7 +25,7 @@ from app.science.records import ProcessRecords
 from .answer_catalogue import CatalogueLookup, no_catalogue
 from .answer_events import CitedClaims
 from .answer_gaps import FieldReading, answer_readings
-from .answer_lede import AnswerOpening, LedePlan, LedeTools, LedeWriting, Opening, lede_plan
+from .answer_lede import AnswerOpening, LedeTools, LedeWriting, Opening, lede_plan
 from .answer_sections import (
     ClaimsOf,
     ResearchLedger,
@@ -231,7 +231,7 @@ async def _researched_answer(
     builders = pipeline.builders.for_answer()
     run = _Run(ask, understanding, pipeline, stream, answer_id, enrichment, layout, process, floors, builders)
     writing = LedeWriting(stream, pipeline.translation, enrichment)
-    plan = _lede_plan(ask, understanding, layout.untitled, lookup)
+    plan = lede_plan(ask.question, understanding, layout.untitled, lookup, style=ask.reading_style)
     opening = AnswerOpening(plan, pipeline.lede, writing, pipeline.store)
     open_specs = [spec for spec in specs if spec.discipline not in lookup.reused]
     async with opening.started() as first_lede:
@@ -257,13 +257,6 @@ async def _prepared(
     return await with_english_question(
         understanding, question=ask.question, language=language, translation=pipeline.translation
     )
-
-
-def _lede_plan(
-    ask: AnswerAsk, understanding: Understanding, untitled: Sequence[SectionSpec], lookup: PieceLookup
-) -> LedePlan:
-    plan = lede_plan(ask.question, understanding, untitled, lookup, style=ask.reading_style)
-    return replace(plan, english=understanding.english_question or plan.english)
 
 
 async def _kept(run: _Run, lookup: PieceLookup, outcomes: Sequence[SectionOutcome]) -> None:

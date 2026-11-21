@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 
 import { splitSseBuffer } from "@/lib/answerStream";
-import { BLOCK_SHAPES, explainerBlockShape, explainerSectionShape, explainerShape, ledeBlockShape, termShape, type Explainer, type ExplainerBlock } from "@/lib/explainerContract";
+import { BLOCK_SHAPES, explainerBlockShape, explainerSectionShape, explainerShape, ledeBlockShape, termShape, understoodShape, type Explainer, type ExplainerBlock } from "@/lib/explainerContract";
 import { parseExplainerStreamBlock, type ExplainerEvent } from "@/lib/explainerStream";
 import { parseShape, ShapeError } from "@/lib/shape";
 
@@ -51,6 +51,13 @@ test("every citation names a listed source", () => {
   const cited = JSON.stringify(document.sections).match(/"sourceId":"[0-9a-f-]{36}"/g) ?? [];
   expect(cited.length).toBeGreaterThan(0);
   for (const entry of cited) expect(listed.has(entry.slice(12, -1))).toBe(true);
+});
+
+test("the understood event says whether the model or the resolver read the question, and nothing else", () => {
+  const read = { crafts: [], candidates: [], depth: "BASIC", language: "hi" };
+  expect(parseShape(understoodShape, { ...read, basis: "RESOLVER" })).toEqual({ ...read, basis: "RESOLVER" });
+  expect(parseShape(understoodShape, read)).toEqual(read);
+  expect(() => parseShape(understoodShape, { ...read, basis: "GUESS" })).toThrow(ShapeError);
 });
 
 test("the explainer stream parses, starts understood and ends done", () => {

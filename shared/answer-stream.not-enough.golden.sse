@@ -1,5 +1,5 @@
 event: understood
-data: {"crafts":[{"slug":"Kutch-Ajrakh","name":"Kutch Ajrakh","path":"/crafts/Kutch-Ajrakh"}],"candidates":[],"depth":"DETAILED","language":"en"}
+data: {"crafts":[{"slug":"Kutch-Ajrakh","name":"Kutch Ajrakh","path":"/crafts/Kutch-Ajrakh"}],"candidates":[],"depth":"DETAILED","language":"en","basis":"MODEL"}
 
 event: status
 data: {"step":"PLANNING","message":"Planning the research on Kutch Ajrakh"}

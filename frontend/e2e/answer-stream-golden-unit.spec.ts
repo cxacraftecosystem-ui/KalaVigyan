@@ -59,7 +59,7 @@ test("the backend's researched stream parses, skipping only retired events, and 
   const events = eventsOf("answer-stream.research.golden.sse");
   expect(events[0]).toEqual({
     type: "understood",
-    data: { crafts: [{ slug: "Kutch-Ajrakh", name: "Kutch Ajrakh", path: "/crafts/Kutch-Ajrakh" }], candidates: [], depth: "DETAILED", language: "en" }
+    data: { crafts: [{ slug: "Kutch-Ajrakh", name: "Kutch Ajrakh", path: "/crafts/Kutch-Ajrakh" }], candidates: [], depth: "DETAILED", language: "en", basis: "MODEL" }
   });
   const steps = events.flatMap((event) => (event.type === "status" ? [event.data.step] : []));
   expect(steps).toEqual(["PLANNING", "SEARCHING_STORED", "RESEARCHING", "READING", "COMPOSING", "WRITING_BACK"]);

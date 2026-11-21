@@ -81,6 +81,7 @@ class ClaimView:
     concept_id: uuid.UUID | None
     rank: float = 0.0
     citations: list[dict[str, Any]] = field(default_factory=list)
+    sources_differ: bool = False
 
     def payload(self) -> dict[str, Any]:
         return {"id": str(self.id), "text": self.text, "level": self.level, "citations": self.citations}
@@ -295,6 +296,7 @@ def cited_view(
         concept_id=concept_id,
         rank=rank,
         citations=[citation(c, claim.evidenceLevel) for c in ordered],
+        sources_differ=bool(claim.sourcesDiffer),
     )
 
 

@@ -82,6 +82,7 @@ import type { AnswerSentence, Citation, EvidenceLevel, SourceRef } from "@/lib/t
 
 export { DISCIPLINES, type Discipline };
 export const DEPTHS = ["BASIC", "DETAILED", "EXPERT"] as const;
+export const UNDERSTANDING_BASES = ["MODEL", "RESOLVER"] as const;
 export const BLOCK_KINDS = [
   "prose",
   "process_ladder",
@@ -121,6 +122,7 @@ export const FINAL_SECTION_STATES = ["READY", "EMPTY"] as const;
 export const TERM_BASES = ["STORED", "WIKIPEDIA", "WEB_SEARCH"] as const;
 
 export type Depth = (typeof DEPTHS)[number];
+export type UnderstandingBasis = (typeof UNDERSTANDING_BASES)[number];
 export type BlockKind = (typeof BLOCK_KINDS)[number];
 export type WorkingSectionState = (typeof WORKING_SECTION_STATES)[number];
 export type FinalSectionState = (typeof FINAL_SECTION_STATES)[number];
@@ -204,7 +206,7 @@ export type ExplainerSection = {
   blocks: ExplainerBlock[];
   searched: string | null;
 };
-export type Understood = { crafts: CraftLink[]; candidates: CraftLink[]; depth: Depth; language: string };
+export type Understood = { crafts: CraftLink[]; candidates: CraftLink[]; depth: Depth; language: string; basis?: UnderstandingBasis };
 export type LedeBlock = BlockEnvelope<"lede"> & { headline: string; sentences: ExplainerSentence[]; figure: SignatureBlock | null };
 export type Explainer = {
   schemaVersion: 1;
@@ -333,7 +335,8 @@ export const understoodShape: Shape<Understood> = object<Understood>({
   crafts: list(craftLinkShape),
   candidates: list(craftLinkShape),
   depth: oneOf(DEPTHS),
-  language: languageCodeShape
+  language: languageCodeShape,
+  basis: optional(oneOf(UNDERSTANDING_BASES))
 });
 
 export const explainerSectionShape: Shape<ExplainerSection> = object<ExplainerSection>({

@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Mapping, Sequence
+from typing import Any
 
 from sqlalchemy import ColumnElement, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput
+from app.core.roles import Capability, can
 from app.models import ArticleSection as SectionRow, Claim, Craft, Source
 from app.models.enums import DISCIPLINES
 from app.research.article_sections import ArticleSection
@@ -28,6 +30,7 @@ from app.research.knowledge_api import (
 from app.research.retrieval import OPEN_CHUNK_ACLS
 from app.research.sections import DISCIPLINE_FIELDS, DISCIPLINE_TITLES
 from app.research.vocabulary import LEVEL_ORDER
+from app.retrieval.citation_access import HELD_KEPT, HELD_LEFT_OUT, HeldFacts
 
 from . import knowledge_view
 from .coverage import craft_coverage
@@ -52,6 +55,7 @@ __all__ = [
     "facts_by_field",
     "field_list",
     "field_section",
+    "held_facts_for",
     "held_field_list",
     "known_craft",
     "published_sections",
@@ -86,6 +90,10 @@ async def held_field_list(session: AsyncSession, slug: str) -> FieldList:
     return field_list(await craft_coverage(session, craft.slug))
 
 
+def held_facts_for(reader: Any) -> HeldFacts:
+    return HELD_KEPT if reader is not None and can(reader, Capability.PROPOSE_KNOWLEDGE) else HELD_LEFT_OUT
+
+
 async def craft_facts(
     session: AsyncSession,
     slug: str,
@@ -94,11 +102,11 @@ async def craft_facts(
     field: str | None = None,
     query: str | None = None,
     limit: int = FACTS_LIMIT_DEFAULT,
+    held: HeldFacts = HELD_LEFT_OUT,
 ) -> CraftFacts:
     craft = await known_craft(session, slug)
-    views, sources = await knowledge_view.claims_for(
-        session, craft, mode=PUBLIC_MODE, question=query, acls=OPEN_CHUNK_ACLS
-    )
+    read = knowledge_view.contributor_claims_for if held == HELD_KEPT else knowledge_view.claims_for
+    views, sources = await read(session, craft, mode=PUBLIC_MODE, question=query, acls=OPEN_CHUNK_ACLS)
     placed = await claim_fields(session, [view.id for view in views])
     chosen = [view for view in views if field is None or field in placed[view.id]]
     ordered = (ranked_views(chosen) if query else knowledge_view.order_claims(chosen))[:limit]

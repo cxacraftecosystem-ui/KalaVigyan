@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
-from app.core.errors import ExternalFailure
+from app.core.errors import AppError, ExternalFailure
 from app.research.candidate_gates import (
     DUPLICATE_GATE,
     NOVELTY_GATE,
@@ -43,15 +44,24 @@ from app.retrieval.text import document_text
 
 __all__ = [
     "NOVELTY_FACTS_MAX",
+    "NOVELTY_FAILURE_RAISED",
+    "NOVELTY_LEFT_UNJUDGED",
     "GateRun",
     "HeldFacts",
     "LaterGates",
+    "NoveltyFailure",
     "first_gates",
     "gate_run",
     "later_gates",
 ]
 
+logger = logging.getLogger(__name__)
+
 NOVELTY_FACTS_MAX = 12
+
+type NoveltyFailure = Literal["RAISED", "UNJUDGED"]
+NOVELTY_FAILURE_RAISED: NoveltyFailure = "RAISED"
+NOVELTY_LEFT_UNJUDGED: NoveltyFailure = "UNJUDGED"
 
 
 class HeldFacts(Protocol):
@@ -113,6 +123,7 @@ class _Held:
 class _Judging:
     ladder: tuple[StructuredModel, ...]
     thrift: GateThrift | None
+    novelty_failure: NoveltyFailure = NOVELTY_FAILURE_RAISED
 
 
 def first_gates(candidate: Candidate, sources: Sequence[CitedSource]) -> tuple[GateOutcome, ...]:
@@ -136,10 +147,12 @@ async def later_gates(
     judge: StructuredModel | None,
     thrift: GateThrift | None = None,
     escalate: Sequence[StructuredModel] = (),
+    novelty_failure: NoveltyFailure = NOVELTY_FAILURE_RAISED,
 ) -> dict[str, LaterGates]:
     if not candidates:
         return {}
-    judging = _Judging(ladder=() if judge is None else (judge, *escalate), thrift=thrift)
+    ladder = () if judge is None else (judge, *escalate)
+    judging = _Judging(ladder=ladder, thrift=thrift, novelty_failure=novelty_failure)
     vectors = await _vectors(embed, candidates)
     held = {c.ref: await _held(store, c, vectors.get(c.ref), thrift) for c in candidates}
     duplicates = await _duplicates(judging, candidates, held, vectored=embed is not None)
@@ -228,9 +241,7 @@ async def _novelty(
     verdicts: dict[str, NoveltyVerdict] = {}
     model = None
     if asks and judging.ladder:
-        verdicts, model = await _asked(
-            judging.ladder, novelty_request(asks), lambda reply: parsed_novelty(reply, asks)
-        )
+        verdicts, model = await _novelty_verdicts(judging, asks)
     found: dict[str, GateOutcome] = {}
     for candidate in candidates:
         if candidate.ref in settled:
@@ -246,6 +257,20 @@ async def _novelty(
         if outcome is not None:
             found[candidate.ref] = outcome
     return found
+
+
+async def _novelty_verdicts(
+    judging: _Judging, asks: Sequence[JudgeAsk]
+) -> tuple[dict[str, NoveltyVerdict], str | None]:
+    try:
+        return await _asked(judging.ladder, novelty_request(asks), lambda reply: parsed_novelty(reply, asks))
+    except AppError as error:
+        if judging.novelty_failure != NOVELTY_LEFT_UNJUDGED:
+            raise
+        logger.warning(
+            "the novelty judge failed, so novelty is left unjudged and duplicates stand: %s", error
+        )
+        return {}, None
 
 
 async def _asked[T](

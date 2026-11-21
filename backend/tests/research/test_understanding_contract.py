@@ -27,7 +27,7 @@ def test_the_understood_event_names_the_chosen_craft_and_the_offers() -> None:
         "event: understood\n"
         'data: {"crafts":[{"slug":"Kutch-Ajrakh","name":"Kutch Ajrakh","path":"/crafts/Kutch-Ajrakh"}],'
         '"candidates":[{"slug":"Bagru-Print","name":"Bagru Print","path":"/crafts/Bagru-Print"}],'
-        '"depth":"BASIC","language":"hi"}\n\n'
+        '"depth":"BASIC","language":"hi","basis":"MODEL"}\n\n'
     )
 
 

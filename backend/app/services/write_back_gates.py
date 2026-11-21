@@ -4,7 +4,6 @@ import logging
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
 
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +18,15 @@ from app.research.structured import StructuredModel
 from app.research.write_back import ClaimWriteBack, WriteBackCitation, WriteBackResult
 
 from . import app_settings
-from .candidate_gates import GateRun, HeldFacts, LaterGates, first_gates, gate_run, later_gates
+from .candidate_gates import (
+    NOVELTY_LEFT_UNJUDGED,
+    GateRun,
+    HeldFacts,
+    LaterGates,
+    first_gates,
+    gate_run,
+    later_gates,
+)
 from .candidate_store import CLOSED_STATUSES, SqlHeldFacts, craft_subject
 from .candidate_writes import mark_sources_differ, record_checks
 from .write_back_closed import (
@@ -33,7 +40,13 @@ from .write_back_closed import (
 )
 from .write_back_plan import SkippedSentence
 
-__all__ = ["GatedWriteBack", "gate_write_back", "record_write_back_runs", "research_placement"]
+__all__ = [
+    "GatedWriteBack",
+    "gate_write_back",
+    "record_write_back_runs",
+    "research_placement",
+    "write_back_later_gates",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -107,11 +120,11 @@ async def record_write_back_runs(
         if run is None or not result.created:
             continue
         await record_checks(session, result.claim_id, run.outcomes, checked_at=checked_at)
-        values: dict[str, Any] = {"field": run.candidate.field}
         if run.vector is not None:
-            values["embedding"] = run.vector
+            await session.execute(
+                update(Claim).where(Claim.id == result.claim_id).values(embedding=run.vector)
+            )
             vectored += 1
-        await session.execute(update(Claim).where(Claim.id == result.claim_id).values(**values))
         if live:
             await mark_sources_differ(session, result.claim_id)
     return vectored
@@ -156,11 +169,12 @@ async def _later(
     found: dict[str, LaterGates] = {}
     for craft_slug, group in by_craft(claims).items():
         store = SqlHeldFacts(session, await craft_subject(session, craft_slug))
-        found |= await _judged(store, [_candidate(claim) for claim in group], embed=embed, judge=judge)
+        candidates = [_candidate(claim) for claim in group]
+        found |= await write_back_later_gates(store, candidates, embed=embed, judge=judge)
     return found
 
 
-async def _judged(
+async def write_back_later_gates(
     store: HeldFacts,
     candidates: Sequence[Candidate],
     *,
@@ -168,7 +182,9 @@ async def _judged(
     judge: StructuredModel | None,
 ) -> dict[str, LaterGates]:
     try:
-        return await later_gates(store, candidates, embed=embed, judge=judge)
+        return await later_gates(
+            store, candidates, embed=embed, judge=judge, novelty_failure=NOVELTY_LEFT_UNJUDGED
+        )
     except AppError as error:
         logger.warning("write-back gates fell back to identical texts only: %s", error)
         return await later_gates(store, candidates, embed=None, judge=None)

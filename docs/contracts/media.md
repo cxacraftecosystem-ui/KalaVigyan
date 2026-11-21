@@ -88,8 +88,15 @@ From `stageId` alone: claims whose subject is the stage's concept or one of its
 `StageMaterial` claims, visible to the asker's ACL, sensitivity `OPEN`, cited by no `RESTRICTED`
 source, status not `DRAFT`, `REJECTED` or `RETRACTED`, and either level `VERIFIED` or `REVIEWED`,
 or level `PROVISIONAL` with at least one citation whose `quoteCheck` is `PASS`. "Visible to the
-asker's ACL" means a citation without a chunk or with a `PUBLIC` chunk, and a `RESEARCHER` chunk
-for `READ_RESEARCHER_QUOTES` holders; a `RESTRICTED` chunk counts as a restricted source. A claim
+asker's ACL" is retrieval's one rule for reading a citation (`retrieval/citation_access.readable_citation`,
+decision 0121): a linked citation follows its passage, an unquoted one is readable, and an unlinked
+quote takes the most closed passage of its source and the source's own sensitivity, so a quote of a
+closed-licence page whose passages are for researchers only enters only a researcher's claim set.
+The store reads each citation's access as the ACL of the most open reader tier that may read it
+(`services/citation_tiers.reading_acl` over `READER_TIERS`: `PUBLIC` for anyone, `SIGNED_IN`,
+`RESEARCHER` for `READ_RESEARCHER_QUOTES` holders), or none when no reader may, and the claim set
+counts a citation only when that ACL is among the asker's (`chunk_acls_for`); a `RESTRICTED`
+source or linked chunk counts as a restricted source. A claim
 using a group word (community, caste, jati, samaj, tribe, tribal, clan, gotra, biradari, adivasi) is left
 out (PLAN 13a, decision 0018); the list is `schemas/media.NAMED_GROUP_WORDS`, matched in the
 singular or plural (`names_a_group`, decision 0022). Hypotheses never enter a prompt. At most `MEDIA_MAX_CLAIMS` (8), strongest level first, then the stage's own claims,
@@ -288,7 +295,7 @@ rules:
 |---|---|
 | The goldens and the models' rules | `backend/tests/contracts/test_media_contract.py`, against `shared/media.job.golden.json` and `shared/media.options.golden.json` |
 | The client's shapes | `frontend/e2e/contracts-unit.spec.ts` |
-| The claim set and the prompt | `backend/tests/media/test_claim_set.py` and `test_prompt.py` |
+| The claim set and the prompt | `backend/tests/media/test_claim_set.py`, `test_prompt.py` and `backend/tests/db/test_media_citation_access_db.py` (a closed-licence quote left out) |
 | Jobs, the queue, the runner and refunds | `backend/tests/media/test_jobs.py`, `test_queue.py`, `test_runner.py` and `backend/tests/db/test_media_store_db.py` |
 | Model routes, ElevenLabs and Gemini | `backend/tests/media/test_media_router.py`, `test_media_router_audio.py`, `test_elevenlabs_media.py`, `test_gemini_media.py` and `backend/tests/db/test_media_router_db.py` |
 | The MP4 and bundle checks | `backend/tests/media/test_mp4.py` and `test_bundle.py` |

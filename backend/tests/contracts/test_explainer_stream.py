@@ -13,7 +13,7 @@ from .explainer_golden import DOCUMENT, STREAM, citations_in, golden_json, strea
 from .golden import golden_text
 
 EXPLAINER_WIRE = {
-    "understood": {"crafts", "candidates", "depth", "language"},
+    "understood": {"crafts", "candidates", "depth", "language", "basis"},
     "section_started": {"id", "discipline", "title", "original", "order", "state"},
     "section_state": {"sectionId", "state"},
     "block": {"sectionId", "block"},

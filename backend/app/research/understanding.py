@@ -11,7 +11,7 @@ from .base import ContractModel, absent, empty
 from .blocks_people import ExpertSeat
 from .crafts import COMPARED_CRAFTS_MAX, MAX_CANDIDATES, QUESTION_MAX_CHARS, SLUG_MAX_CHARS, CraftRef
 from .depth import depth_policy
-from .explainer import Understood
+from .explainer import UNDERSTANDING_BASES, UnderstandingBasis, Understood
 from .vocabulary import CANONICAL_LANGUAGE, AnswerLanguage, Depth, Discipline
 
 __all__ = [
@@ -26,11 +26,8 @@ __all__ = [
 ]
 
 UNDERSTANDING_SCHEMA_VERSION = 1
-UNDERSTANDING_BASES = ("MODEL", "RESOLVER")
 REFUSAL_MAX_CHARS = 500
 ENGLISH_QUESTION_MIN_CHARS = 2
-
-UnderstandingBasis = Literal[*UNDERSTANDING_BASES]
 
 
 class UnknownCraft(InvalidInput):
@@ -94,6 +91,7 @@ class Understanding(ContractModel):
             candidates=self.candidates,
             depth=self.depth,
             language=self.language,
+            basis=self.basis,
         )
 
 

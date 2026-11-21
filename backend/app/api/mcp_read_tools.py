@@ -119,6 +119,7 @@ async def _craft_facts(context: ToolContext, arguments: GetFacts, slug: str) -> 
         field=arguments.field,
         query=arguments.query,
         limit=arguments.limit,
+        held=knowledge_api.held_facts_for(context.user),
     )
 
 

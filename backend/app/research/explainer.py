@@ -54,6 +54,7 @@ __all__ = [
     "SECTION_ID_PATTERN",
     "SECTION_STATES",
     "SIGNATURE_PHASE",
+    "UNDERSTANDING_BASES",
     "WORKING_SECTION_STATES",
     "Block",
     "BlockEvent",
@@ -64,6 +65,7 @@ __all__ = [
     "SectionHeadingEvent",
     "SectionStartedEvent",
     "SectionStateEvent",
+    "UnderstandingBasis",
     "Understood",
     "explainer_blocks",
     "payload_sentences",
@@ -71,6 +73,9 @@ __all__ = [
 ]
 
 EXPLAINER_SCHEMA_VERSION = 1
+UNDERSTANDING_BASES = ("MODEL", "RESOLVER")
+
+UnderstandingBasis = Literal[*UNDERSTANDING_BASES]
 SECTION_ID_PATTERN = r"^s[1-9]\d{0,2}$"
 SEARCHED_MAX_CHARS = 2000
 WORKING_SECTION_STATES = ("RESEARCHING", "WRITING", "CHECKING")
@@ -216,6 +221,7 @@ class Understood(ContractModel):
     candidates: list[CraftRef] = Field(max_length=MAX_CANDIDATES)
     depth: Depth
     language: AnswerLanguage
+    basis: UnderstandingBasis | None = Field(default=None, exclude_if=absent)
 
     @model_validator(mode="after")
     def _each_craft_once(self) -> Self:

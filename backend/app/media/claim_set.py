@@ -45,7 +45,7 @@ def _usable(claim: ClaimFacts, acls: Collection[str]) -> bool:
         return False
     if any(citation.restricted for citation in claim.citations):
         return False
-    visible = [c for c in claim.citations if c.chunk_acl is None or c.chunk_acl in acls]
+    visible = [c for c in claim.citations if c.chunk_acl is not None and c.chunk_acl in acls]
     if claim.level in REVIEWED_LEVELS:
         return bool(visible)
     return claim.level in QUOTED_LEVELS and any(c.quote_check == PASSING_QUOTE for c in visible)

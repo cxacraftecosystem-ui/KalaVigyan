@@ -81,7 +81,9 @@ def ambiguous() -> CraftResolution:
     )
 
 
-def understood(crafts: list, candidates: list, depth: str = "DETAILED") -> tuple[str, dict]:
+def understood(
+    crafts: list, candidates: list, depth: str = "DETAILED", basis: str = "MODEL"
+) -> tuple[str, dict]:
     return (
         "understood",
         {
@@ -89,6 +91,7 @@ def understood(crafts: list, candidates: list, depth: str = "DETAILED") -> tuple
             "candidates": [craft.model_dump() for craft in candidates],
             "depth": depth,
             "language": "en",
+            "basis": basis,
         },
     )
 
@@ -164,7 +167,7 @@ async def test_a_spent_budget_answers_from_stored_findings_without_research() ->
         "follow_ups",
         "done",
     ]
-    assert found[0] == understood([AJRAKH], [])
+    assert found[0] == understood([AJRAKH], [], basis="RESOLVER")
     assert found[1][1] == {"step": "SEARCHING_STORED", "message": "Searching stored findings"}
     assert found[2][1] == {
         "id": "s1",
@@ -193,7 +196,11 @@ async def test_a_spent_budget_without_stored_findings_is_not_enough_evidence() -
 async def test_a_spent_budget_for_any_craft_says_so_in_its_own_words() -> None:
     none = CraftResolution(status="NONE", craft=None, candidates=[], normalised="why", script="Latn")
     found = events(await streamed(detailed(), pipeline(resolution=none, spent=True)))
-    assert found == [understood([], []), ("error", {"message": SPENT}), ("done", {"answerId": None})]
+    assert found == [
+        understood([], [], basis="RESOLVER"),
+        ("error", {"message": SPENT}),
+        ("done", {"answerId": None}),
+    ]
 
 
 async def test_an_ambiguous_question_about_no_single_craft_is_answered_for_any_craft_offering_both() -> None:
@@ -212,7 +219,7 @@ async def test_without_a_reply_an_ambiguous_question_proceeds_with_the_best_matc
         resolution=ambiguous(), research=research, replies=[REPLY], understand_model=FakeModel(["not json"])
     )
     found = events(await streamed(detailed(), answer_pipeline))
-    assert found[0] == understood([AJRAKH], [BAGRU])
+    assert found[0] == understood([AJRAKH], [BAGRU], basis="RESOLVER")
     (request,) = research.requests
     assert request.craft == AJRAKH
 
@@ -261,7 +268,7 @@ async def test_an_unusable_understanding_reply_still_answers_from_the_resolver()
         research=research, replies=[REPLY], store=store, understand_model=FakeModel(["not json"])
     )
     found = events(await streamed(detailed(), answer_pipeline))
-    assert found[0] == understood([AJRAKH], [])
+    assert found[0] == understood([AJRAKH], [], basis="RESOLVER")
     assert [request.craft for request in research.requests] == [AJRAKH]
     assert store.understood[0].basis == "RESOLVER"
 

@@ -78,6 +78,7 @@ async def test_an_unknown_craft_does_not_block_and_answers_for_any_craft() -> No
         "candidates": [],
         "depth": "DETAILED",
         "language": "en",
+        "basis": "MODEL",
     }
 
 

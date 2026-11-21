@@ -94,3 +94,14 @@ def test_two_claims_are_enough_and_acls_follow_the_role() -> None:
     assert enough_claims(claim_set([claim(a, "One."), claim(b, "Two.")], acls=STUDENT))
     assert chunk_acls_for("STUDENT") == EVERY_READER
     assert chunk_acls_for("RESEARCHER") == RESEARCHER
+
+
+def test_a_citation_no_reader_may_read_counts_for_nobody() -> None:
+    a, b = ids(2)
+    unreadable = CitationFacts(quote_check="PASS", restricted=False, chunk_acl=None)
+    claims = [
+        claim(a, "Quoted from a passage no reader may read.", level="PROVISIONAL", citations=(unreadable,)),
+        claim(b, "Reviewed through it alone.", citations=(unreadable,)),
+    ]
+    assert claim_set(claims, acls=STUDENT) == ()
+    assert claim_set(claims, acls=RESEARCHER) == ()

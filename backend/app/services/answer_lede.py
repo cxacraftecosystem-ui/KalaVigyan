@@ -22,7 +22,7 @@ from app.research.vocabulary import CANONICAL_LANGUAGE
 
 from .answer_events import CitedClaims, joined_claims
 from .answer_sections import SectionOutcome
-from .answer_translation import AnswerTranslation, english_question, translated_block
+from .answer_translation import AnswerTranslation, translated_block
 from .claim_ledger import sentence_keys
 from .explainer_events import ExplainerStream
 from .lede_evidence import (
@@ -80,9 +80,9 @@ class LedePlan:
     question: str
     craft: CraftRef | None
     mode: str
+    english: str
     heads: tuple[SectionToHead, ...] = ()
     reused: CitedClaims = field(default_factory=CitedClaims)
-    english: str = ""
     style: ReadingStyle | None = None
 
 
@@ -126,9 +126,8 @@ class AnswerOpening:
     async def settled(self, first: Opening, outcomes: Sequence[SectionOutcome]) -> Opening:
         if first.lede is not None or not first.deferred:
             return first
-        plan = replace(self.plan, english=first.english)
         shown = sections_shown(outcomes)
-        written = partial(late_opening, plan, self.tools, self.writing, self.store.cited, shown)
+        written = partial(late_opening, self.plan, self.tools, self.writing, self.store.cited, shown)
         late = await _softly(written, self.tools.wait_seconds)
         return late if late.lede is not None else first
 
@@ -165,25 +164,26 @@ def lede_plan(
     )
     mode = depth_policy(understanding.depth).mode
     cited = joined_claims(*(section.cited for _, section in reused))
-    return LedePlan(question, understanding.craft, mode, heads, cited, style=style)
+    english = understanding.english_question or question
+    return LedePlan(question, understanding.craft, mode, english, heads, cited, style=style)
 
 
 async def early_opening(plan: LedePlan, tools: LedeTools, writing: LedeWriting, cited: CitedOf) -> Opening:
     if tools.compose is None:
         return Opening()
-    english = await _english(plan, writing)
-    found = await _searched(plan, tools, english, cited)
+    found = await _searched(plan, tools, cited)
     evidence = joined_claims(found.cited, plan.reused)
     ask = LedeAsk(
-        plan.question, english, plan.craft, evidence, plan.heads, style=plan.style, ranked=found.ranked
+        plan.question, plan.english, plan.craft, evidence, plan.heads, style=plan.style, ranked=found.ranked
     )
     return await written_opening(ask, tools, writing)
 
 
-async def _searched(plan: LedePlan, tools: LedeTools, english: str, cited: CitedOf) -> SearchedEvidence:
+async def _searched(plan: LedePlan, tools: LedeTools, cited: CitedOf) -> SearchedEvidence:
     if plan.craft is None or tools.retriever is None:
         return SearchedEvidence()
-    return await searched_evidence(tools.retriever, cited, lede_query(plan.craft.slug, english, plan.mode))
+    query = lede_query(plan.craft.slug, plan.english, plan.mode)
+    return await searched_evidence(tools.retriever, cited, query)
 
 
 async def late_opening(
@@ -191,9 +191,8 @@ async def late_opening(
 ) -> Opening:
     if tools.compose is None or not shown.claim_ids:
         return Opening()
-    english = await _english(plan, writing)
     evidence = await cited(shown.claim_ids)
-    ask = LedeAsk(plan.question, english, plan.craft, evidence, said=shown.said, style=plan.style)
+    ask = LedeAsk(plan.question, plan.english, plan.craft, evidence, said=shown.said, style=plan.style)
     opening = await written_opening(ask, tools, writing)
     if opening.lede is not None:
         await writing.stream.lede(opening.lede, opening.sources)
@@ -227,10 +226,6 @@ def sections_shown(outcomes: Sequence[SectionOutcome]) -> SectionsShown:
         claim_ids=tuple(dict.fromkeys(claim for outcome in outcomes for claim in outcome.claim_ids)),
         said=frozenset(key for s in sentences for key in sentence_keys(s.text, s.original)),
     )
-
-
-async def _english(plan: LedePlan, writing: LedeWriting) -> str:
-    return plan.english or await english_question(plan.question, writing.translation)
 
 
 async def _sent_first(

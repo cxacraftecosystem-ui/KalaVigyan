@@ -5,11 +5,12 @@ from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ColumnElement, and_, exists, func, select
+from sqlalchemy import ColumnElement, and_, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Claim, ClaimSource
 from app.research.retrieval import SHOWN_CLAIM_STATUSES
+from app.retrieval.citation_access import FAILED_QUOTE, held_claim
 
 from .knowledge_view import ClaimView
 
@@ -27,15 +28,7 @@ __all__ = [
     "with_kept_verdicts",
 ]
 
-FAILED_QUOTE = "FAIL"
 VERDICT_COLUMNS = ("quoteCheck", "checkedAt")
-
-
-def held_claim() -> ColumnElement[bool]:
-    quoted = ClaimSource.quote.is_not(None)
-    cited = exists().where(ClaimSource.claimId == Claim.id, quoted)
-    standing = exists().where(ClaimSource.claimId == Claim.id, quoted, ClaimSource.quoteCheck != FAILED_QUOTE)
-    return and_(cited, ~standing)
 
 
 def corroborated_claim() -> ColumnElement[bool]:
@@ -55,12 +48,7 @@ async def held_claim_ids(session: AsyncSession, claim_ids: Iterable[uuid.UUID]) 
     wanted = list(dict.fromkeys(claim_ids))
     if not wanted:
         return frozenset()
-    rows = await session.scalars(
-        select(ClaimSource.claimId)
-        .where(ClaimSource.claimId.in_(wanted), ClaimSource.quote.is_not(None))
-        .group_by(ClaimSource.claimId)
-        .having(func.bool_and(ClaimSource.quoteCheck == FAILED_QUOTE))
-    )
+    rows = await session.scalars(select(Claim.id).where(Claim.id.in_(wanted), held_claim()))
     return frozenset(rows.all())
 
 
