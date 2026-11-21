@@ -15,6 +15,7 @@ from .open_data_text import CODE_URL, CREATOR, DATASET_TITLE, KEYWORDS, SUMMARY,
 
 __all__ = [
     "DEPOSITIONS",
+    "SANDBOX_DOI_PREFIX",
     "ZENODO_HOSTS",
     "ZENODO_LICENCE",
     "Draft",
@@ -26,6 +27,7 @@ __all__ = [
 ZENODO_HOSTS: Mapping[str, str] = {SANDBOX: "https://sandbox.zenodo.org", ZENODO: "https://zenodo.org"}
 DEPOSITIONS = "/api/deposit/depositions"
 ZENODO_LICENCE = "cc-by-4.0"
+SANDBOX_DOI_PREFIX = "10.5072"
 SERVICE = "zenodo"
 NO_TOKEN = (
     "Set ZENODO_TOKEN to a Zenodo personal access token with the deposit:write and deposit:actions scopes."
@@ -62,6 +64,7 @@ class ZenodoDeposit:
             raise NotConfigured(SERVICE, NO_TOKEN)
         self._client = client
         self._base = ZENODO_HOSTS[checked_target(target)]
+        self._minted = SANDBOX_DOI_PREFIX if target == SANDBOX else None
         self._headers = {"Authorization": f"Bearer {token}"}
 
     def open_draft(self, latest_record: int | None, metadata: Mapping[str, Any]) -> Draft:
@@ -73,10 +76,10 @@ class ZenodoDeposit:
         for found in opened.get("files") or []:
             self._call("DELETE", f"{DEPOSITIONS}/{opened['id']}/files/{found['id']}")
         described = self._call("PUT", f"{DEPOSITIONS}/{opened['id']}", json={"metadata": dict(metadata)})
-        return _draft({**opened, "metadata": described.get("metadata") or {}})
+        return _draft({**opened, "metadata": described.get("metadata") or {}}, minted=self._minted)
 
     def draft(self, record_id: int) -> Draft:
-        return _draft(self._call("GET", f"{DEPOSITIONS}/{record_id}"))
+        return _draft(self._call("GET", f"{DEPOSITIONS}/{record_id}"), minted=self._minted)
 
     def upload(self, draft: Draft, files: Mapping[str, bytes]) -> None:
         for name, body in sorted(files.items()):
@@ -159,12 +162,12 @@ def deposit_metadata(*, version: str, released: date, counts: Mapping[str, int],
     }
 
 
-def _draft(body: Mapping[str, Any]) -> Draft:
+def _draft(body: Mapping[str, Any], *, minted: str | None) -> Draft:
     record = int(body["id"])
     reserved = ((body.get("metadata") or {}).get("prereserve_doi") or {}).get("doi")
     if not reserved:
         raise ExternalFailure(NO_DOI.format(record=record), service=SERVICE)
-    doi = checked_doi(str(reserved))
+    doi = checked_doi(_minted_doi(str(reserved), minted))
     concept = int(body.get("conceptrecid") or record)
     prefix = doi.split("/", 1)[0]
     bucket = str((body.get("links") or {}).get("bucket") or "")
@@ -177,3 +180,9 @@ def _draft(body: Mapping[str, Any]) -> Draft:
         concept_doi=f"{prefix}/zenodo.{concept}",
         bucket=bucket,
     )
+
+
+def _minted_doi(reserved: str, prefix: str | None) -> str:
+    if prefix is None or "/" not in reserved:
+        return reserved
+    return f"{prefix}/{reserved.split('/', 1)[1]}"

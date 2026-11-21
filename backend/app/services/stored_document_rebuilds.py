@@ -46,6 +46,7 @@ class DocumentsReport:
     changed: int = 0
     removed: int = 0
     failed: list[str] = field(default_factory=list)
+    moved: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -84,6 +85,8 @@ async def rebuild_stale_documents(session: AsyncSession, *, report: DocumentsRep
         report.rebuilt.append(named)
         report.changed += int(rebuilt == Rebuilt.CHANGED)
         report.removed += int(rebuilt == Rebuilt.REMOVED)
+        if rebuilt.moved:
+            report.moved.append(named)
 
 
 async def rebuild_wanted(kind: str, slug: str) -> None:

@@ -10,7 +10,7 @@ from app.providers.embedding import router_embedder
 from app.scripts.build_monograph import SERVED_FOLDERS, monograph_content
 from app.services.live_sources import live_source_client
 from app.services.nightly_upkeep import plan_nightly_upkeep, run_nightly_upkeep, upkeep_tools
-from app.services.site_build import deploy_hook, nightly_site_build
+from app.services.page_revalidation import nightly_refresh
 
 
 async def plan() -> dict[str, Any]:
@@ -21,7 +21,7 @@ async def plan() -> dict[str, Any]:
         await dispose_engine()
 
 
-async def run(*, build: bool) -> dict[str, Any]:
+async def run(*, refresh: bool) -> dict[str, Any]:
     settings = get_settings()
     try:
         async with live_source_client() as client, session_scope() as session:
@@ -32,12 +32,11 @@ async def run(*, build: bool) -> dict[str, Any]:
                 load=monograph_content,
                 embed=router_embedder(),
             )
-            report = (await run_nightly_upkeep(session, tools, now=datetime.now(UTC))).as_dict()
-            if build:
-                report["build"] = await nightly_site_build(
-                    session, deploy_hook(settings.vercel_deploy_hook_url, client)
-                )
-                report["ok"] = report["ok"] and report["build"]["ok"]
+            upkept = await run_nightly_upkeep(session, tools, now=datetime.now(UTC))
+            report = upkept.as_dict()
+            if refresh:
+                report["refresh"] = await nightly_refresh(upkept.pages.changed_owners(), settings=settings)
+                report["ok"] = report["ok"] and report["refresh"]["ok"]
     finally:
         await dispose_engine()
     return report
@@ -49,10 +48,10 @@ def main(argv: list[str] | None = None) -> int:
         "--dry-run", action="store_true", help="report what tonight's upkeep would do; write nothing"
     )
     parser.add_argument(
-        "--no-build", action="store_true", help="run the upkeep without triggering the site build"
+        "--no-refresh", action="store_true", help="run the upkeep without refreshing the pages it changed"
     )
     args = parser.parse_args(argv)
-    report = asyncio.run(plan() if args.dry_run else run(build=not args.no_build))
+    report = asyncio.run(plan() if args.dry_run else run(refresh=not args.no_refresh))
     print(json.dumps(report))
     return 0 if report["ok"] else 1
 

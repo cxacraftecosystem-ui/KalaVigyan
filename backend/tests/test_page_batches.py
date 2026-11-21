@@ -11,6 +11,8 @@ from app.research.page_revalidation import PageOwners
 from app.services.page_revalidation import (
     MISSES_BEFORE_GIVING_UP,
     REVALIDATE_TARGETS_MAX,
+    UNSET_SECRET,
+    nightly_refresh,
     owner_batches,
     refresh_in_batches,
 )
@@ -80,3 +82,39 @@ async def test_an_unreachable_web_is_given_up_after_three_misses() -> None:
     assert MISSES_BEFORE_GIVING_UP == 3
     assert (done.batches, done.tried, len(tried)) == (6, 3, 3)
     assert done.unrefreshed == owners and done.refreshed == PageOwners()
+
+
+def never_sent(request: httpx.Request) -> httpx.Response:
+    raise AssertionError(f"a request was sent to {request.url}")
+
+
+async def test_a_night_that_changed_no_page_sends_nothing() -> None:
+    done = await nightly_refresh(PageOwners(), settings=SETTINGS, transport=httpx.MockTransport(never_sent))
+    assert done == {"ok": True, "pages": 0, "refreshed": 0, "unrefreshed": []}
+
+
+async def test_a_night_without_the_secret_reports_its_pages_and_is_not_a_failure() -> None:
+    unset: Any = SimpleNamespace(web_revalidate_secret="", public_web_url=WEB)
+    owners = PageOwners(crafts=("Kutch-Ajrakh",), categories=("textiles",))
+    done = await nightly_refresh(owners, settings=unset, transport=httpx.MockTransport(never_sent))
+    assert done == {"ok": True, "pages": 2, "refreshed": 0, "unrefreshed": [], "reason": UNSET_SECRET}
+
+
+async def test_a_night_refreshes_only_its_changed_pages_and_names_any_left_unrefreshed() -> None:
+    sent: list[dict[str, Any]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        sent.append(body)
+        return httpx.Response(500 if "/crafts/Craft-10" in body["paths"] else 200)
+
+    owners = PageOwners(crafts=crafts(12))
+    done = await nightly_refresh(owners, settings=SETTINGS, transport=httpx.MockTransport(handler))
+    assert len(sent) == 2
+    assert done == {"ok": False, "pages": 12, "refreshed": 10, "unrefreshed": ["Craft-10", "Craft-11"]}
+    clean = await nightly_refresh(
+        PageOwners(crafts=crafts(3)),
+        settings=SETTINGS,
+        transport=httpx.MockTransport(lambda _: httpx.Response(200)),
+    )
+    assert clean == {"ok": True, "pages": 3, "refreshed": 3, "unrefreshed": []}

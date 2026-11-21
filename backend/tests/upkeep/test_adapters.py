@@ -6,7 +6,7 @@ import pytest
 
 from app.core.errors import ExternalFailure
 from app.models import AuditLog
-from app.services.site_build import DeployHook, deploy_hook, nightly_site_build, trigger_site_build
+from app.services.site_build import DeployHook, deploy_hook, trigger_site_build
 from app.sources.wayback_save import WaybackSaver
 
 from .fakes import CountingHook
@@ -111,16 +111,3 @@ async def test_a_triggered_build_is_audited_with_who_asked() -> None:
         {"origin": "admin"},
     )
     assert session.commits == 1
-
-
-async def test_the_nightly_build_reports_an_unset_hook_and_fails_on_a_refused_one() -> None:
-    session = AuditSession()
-    unset = await nightly_site_build(session, None)  # type: ignore[arg-type]
-    assert unset == {"ok": True, "triggered": False, "reason": "VERCEL_DEPLOY_HOOK_URL is not set"}
-    refused = CountingHook(ExternalFailure("the deploy hook answered 500", kind="unavailable", status=500))
-    failed = await nightly_site_build(session, refused)  # type: ignore[arg-type]
-    assert failed == {"ok": False, "triggered": False, "reason": "the deploy hook answered 500"}
-    assert session.added == []
-    done = await nightly_site_build(session, CountingHook())  # type: ignore[arg-type]
-    assert done == {"ok": True, "triggered": True}
-    assert [entry.actorKind for entry in session.added] == ["SYSTEM"]

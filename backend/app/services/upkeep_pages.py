@@ -15,12 +15,14 @@ from app.core.errors import AppError
 from app.models import Craft, CraftPageSnapshot, CuratedCraft
 from app.research.craft_page import CRAFT_PAGE_SCHEMA_VERSION
 from app.research.monograph_page import MonographContent
+from app.research.page_revalidation import PageOwners
 
 from .craft_chapters_job import chapter_crafts
 from .craft_page_snapshots import rebuild_snapshots
 from .craft_page_stamp import PAGE_VARIANTS, page_stamp
 from .monograph_load import load_monograph
-from .stored_document_rebuilds import DocumentsReport, rebuild_stale_documents
+from .page_revalidation import merged_owners
+from .stored_document_rebuilds import DocumentsReport, rebuild_stale_documents, subject_owners
 
 __all__ = [
     "DOCUMENTS_PER_NIGHT",
@@ -55,6 +57,11 @@ class PagesReport:
     pages_changed: int = 0
     failed: list[str] = field(default_factory=list)
     documents: DocumentsReport = field(default_factory=DocumentsReport)
+    changed_crafts: list[str] = field(default_factory=list)
+
+    def changed_owners(self) -> PageOwners:
+        documents = [subject_owners(*named.split(":", 1)) for named in self.documents.moved]
+        return merged_owners(PageOwners(crafts=tuple(self.changed_crafts)), *documents)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -94,6 +101,8 @@ async def rebuild_monographs(
             report.failed.append(f"monograph:{slug}")
             continue
         report.monographs.append(loaded.as_dict())
+        if loaded.sections_written or loaded.components_written:
+            report.changed_crafts.append(loaded.craft_slug)
 
 
 async def stale_crafts(session: AsyncSession, *, skip: Collection[str]) -> list[tuple[uuid.UUID, str]]:
@@ -139,6 +148,8 @@ async def rebuild_stale_pages(
             continue
         report.pages_rebuilt.append(slug)
         report.pages_changed += int(changed)
+        if changed:
+            report.changed_crafts.append(slug)
 
 
 async def rebuild_documents(

@@ -1,13 +1,13 @@
-# Nightly upkeep and the nightly static build
+# Nightly upkeep and the nightly page refresh
 
-Every night the database looks after what it already holds, then the web app is rebuilt from it:
+Every night the database looks after what it already holds, then the pages that changed are refreshed:
 quotes are re-verified against their sources, a fact none of whose quotes is found any more is held
 from its pages until a quote is found again, a link that keeps failing gets its archived copy or
 becomes work, live open sources are archived before their links rot, orphaned research concepts are
 swept, MCP client registrations that never signed anyone in are
 removed, the monograph sections and components and the craft
-page snapshots whose facts moved are rebuilt, and one production build pre-renders the craft pages
-from those snapshots onto the CDN. Answers stay live. Every step is bounded per night by a named
+page snapshots and stored documents whose facts moved are rebuilt, and only the pages whose content
+moved are refreshed on the CDN; a night that changed nothing sends nothing. Answers stay live. Every step is bounded per night by a named
 constant, so a night's work and its load on other sites are known in advance.
 Operators and the engineers who add a step read it.
 
@@ -28,8 +28,8 @@ flowchart LR
   A --> O["3 Sweep orphans<br/>clients, buckets"]
   O --> M["4 Reload monographs"]
   M --> P["5 Rebuild stale pages<br/>refresh work and gaps"]
-  P --> B["6 Trigger the build"]
-  B --> V[("Vercel<br/>pre-rendered pages")]
+  P --> B["6 Refresh the changed pages"]
+  B --> V[("Vercel<br/>cached pages")]
   classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
   classDef gold fill:#FAEECD,stroke:#CD9200,color:#1E1B2E
   class H accent
@@ -40,7 +40,7 @@ flowchart LR
 
 | What | Where | When |
 |---|---|---|
-| The upkeep and the build trigger | `.github/workflows/nightly-upkeep.yml` (GitHub Actions, run on the box through SSM like Coverage enrichment) | 23:45 UTC every day (05:15 IST), after Coverage enrichment (22:17 UTC, at most 67 minutes) |
+| The upkeep and the page refresh | `.github/workflows/nightly-upkeep.yml` (GitHub Actions, run on the box through SSM like Coverage enrichment) | 23:45 UTC every day (05:15 IST), after Coverage enrichment (22:17 UTC, at most 67 minutes) |
 | The same run by hand | the workflow's Run workflow button, with `dry_run` to report only | any time |
 | The build alone | an Admin's Start a build on the admin settings page (`/admin`), or `POST /api/site/build` | any time, at most once in 10 minutes |
 
@@ -61,7 +61,7 @@ The workflow runs `python -m app.scripts.nightly_upkeep` as the `kalavigyan` use
 | 5. Rebuild stale craft pages | `services/upkeep_pages.py` through `services/craft_page_snapshots.py` | `PAGES_PER_NIGHT` = 60, oldest snapshot first | `CraftPageSnapshot` |
 | 5a. Refresh the field work | `services/open_work_refresh.py` | every subject, once | `TaskReservation.ending` `COMPLETED` for a live reservation of a `MISSING_FIELD` or `THIN_FIELD` task no longer open (`open-work.md`) |
 | 5b. Questions become work | `services/answer_gap_refresh.py` | the thin and unanswered answers of the last 90 days, once | `AnswerGap` groups by craft and meaning, anonymised; `TaskReservation.ending` `COMPLETED` for an `ANSWER_GAP` task whose acceptance holds (`open-work.md`, Questions readers asked; decision 0113) |
-| 6. Trigger the site build | `services/site_build.py` | one deploy-hook call | `AuditLog` action `site_build.triggered` |
+| 6. Refresh the changed pages | `services/page_revalidation.nightly_refresh`, with the pages from `upkeep_pages.PagesReport.changed_owners` | the crafts whose monograph or snapshot changed and the documents that moved, in batches of `REVALIDATE_TARGETS_MAX` = 40 targets; none when nothing changed | nothing stored; the web's `/api/revalidate` drops those pages' cached copies |
 
 The orchestration is `services/nightly_upkeep.py` (`run_nightly_upkeep`, and the read-only
 `plan_nightly_upkeep` behind `--dry-run`).
@@ -164,15 +164,22 @@ the audit still name it (`mcp-oauth.md`).
   the craft's facts, pictures, places and the code that builds a page, not with each release).
   The oldest stale pages are rebuilt.
 
-### 6. The build
+### 6. The page refresh
 
-One `POST` to the Vercel deploy hook starts a production build of `main`. The build pre-renders
-`/crafts/{slug}` for every slug of `GET /api/site/pages` (except the static monograph), and
-`/categories/{slug}` for every category it lists, and keeps each page for a day
-(`revalidate = 86400`); any other craft renders on its first visit and is kept the same way. Signed-in readers still load their own variant in the browser, and answers are
-never cached. A change that must reach readers who are not signed in before the next night (a
-hidden piece, a retracted claim) is published by an Admin's Start a build. The admin control refuses a second build within 10 minutes (429 with
-`Retry-After`); the nightly run always triggers.
+The night never rebuilds the site (decision 0119): a build would discard every cached page and
+re-render each one on its next visit, changed or not. Instead the run collects the pages whose
+content moved, the crafts whose monograph sections or components were written in step 4 or whose
+snapshot changed in step 5 and every stored document rebuilt as changed or removed, and asks the web
+to refresh exactly those (`/api/revalidate`, in batches). A night that changed nothing sends
+nothing. Without `WEB_REVALIDATE_SECRET` the report names the pages and is not a failure; those
+pages then refresh on their own schedule. A production build still pre-renders `/crafts/{slug}`
+for every slug of `GET /api/site/pages` (except the static monograph) and `/categories/{slug}`
+for every category it lists, and keeps each page for a day (`revalidate = 86400`), but only when a
+release ships or an Admin starts one; any other craft renders on its first visit and is kept the
+same way. Signed-in readers still load their own variant in the browser, and answers are never
+cached. A change that must reach readers who are not signed in at once (a hidden piece, a
+retracted claim) refreshes its pages when it is written, and an Admin's Start a build remains for
+anything else; the admin control refuses a second build within 10 minutes (429 with `Retry-After`).
 
 ## Routes
 
@@ -200,13 +207,12 @@ The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
  fieldWork {subjects, tasks {MISSING_FIELD, THIN_FIELD}, priorities {HIGH, MEDIUM, LOW}, reservationsClosed},
  allowances {bucketsDeleted},
  answerGaps {questions, dropped, embedded, embeddingError, joined, opened, answered, lapsed, open, reservationsClosed},
- build {ok, triggered, reason?}}
+ refresh {ok, pages, refreshed, unrefreshed[], reason?}}
 ```
 
-`ok` is false when a monograph or page failed to rebuild, the fetcher was away or the deploy hook
-refused; an unreachable source or a failed archive is expected and only counted. An unset deploy
-hook is
-reported (`triggered: false`) and is not a failure. `--dry-run` prints `{ok, dryRun, sourcesDue,
+`ok` is false when a monograph or page failed to rebuild, the fetcher was away or a changed page
+could not be refreshed; an unreachable source or a failed archive is expected and only counted. An
+unset `WEB_REVALIDATE_SECRET` is reported (`reason`) and is not a failure. `--dry-run` prints `{ok, dryRun, sourcesDue,
 sourcesAtRisk, claimsHeld, sourcesRotten, monographs, pagesStale, clientsAbandoned, orphans[]}` and writes
 nothing.
 
@@ -225,8 +231,8 @@ the build as not triggered, and the admin control says so.
 | Purpose | Command |
 |---|---|
 | See what tonight would do (writes nothing) | `gh workflow run nightly-upkeep.yml -f dry_run=true`, or on the box `cd /opt/kalavigyan/current/backend && sudo runuser -u kalavigyan -- bash -c "set -a; . /opt/kalavigyan/.env; set +a; exec ./.venv/bin/python -m app.scripts.nightly_upkeep --dry-run"` |
-| Run the upkeep now, with the build | `gh workflow run nightly-upkeep.yml` |
-| Run the upkeep on the box without the build | the box command above with `--no-build` in place of `--dry-run` |
+| Run the upkeep now, with the page refresh | `gh workflow run nightly-upkeep.yml` |
+| Run the upkeep on the box without the refresh | the box command above with `--no-refresh` in place of `--dry-run` |
 | Start only the build | Start a build on `/admin` (Admin), or `POST /api/site/build` with an Admin's token |
 
 ## Not covered yet
@@ -248,6 +254,7 @@ the build as not triggered, and the admin control says so.
 | Abandoned client registrations | `backend/tests/db/test_upkeep_clients_db.py` |
 | The rotating monograph window and stale page rebuilds | `backend/tests/upkeep/test_rotation.py` and `test_page_rebuilds.py` |
 | The build route and its throttle | `backend/tests/upkeep/test_site_build_routes.py` |
+| The changed pages and their refresh | `backend/tests/upkeep/test_page_rebuilds.py` and `backend/tests/test_page_batches.py` |
 | The whole run and its report on Postgres | `backend/tests/db/test_nightly_upkeep_db.py` |
 | The pages the build pre-renders | `frontend/e2e/site-pages-unit.spec.ts`, against `shared/site.pages.golden.json` |
 

@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 
 from app.core.errors import InvalidInput, NotConfigured
+from app.research.page_revalidation import PageOwners
 from app.services import upkeep_pages
 from app.services.upkeep_pages import (
     PagesReport,
@@ -19,6 +20,9 @@ from .fakes import NIGHT
 class Loaded:
     def __init__(self, slug: str) -> None:
         self.slug = slug
+        self.craft_slug = slug
+        self.sections_written: list[str] = []
+        self.components_written: list[str] = []
 
     def as_dict(self) -> dict[str, Any]:
         return {"craftSlug": self.slug}
@@ -126,6 +130,23 @@ async def test_stored_documents_rebuilt_after_the_pages_report_their_failures_as
     assert shown["documentsFailed"] == ["craft:Bidri-Ware"]
 
 
+async def test_only_a_monograph_that_wrote_sections_or_components_names_its_craft_changed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def load_monograph(session: Any, content: str, *, now: Any) -> Loaded:
+        loaded = Loaded(content)
+        if content == "a":
+            loaded.sections_written.append("chemistry")
+        if content == "c":
+            loaded.components_written.append("dip-player")
+        return loaded
+
+    monkeypatch.setattr(upkeep_pages, "load_monograph", load_monograph)
+    report = PagesReport()
+    await rebuild_monographs(Session(), ["a", "b", "c"], lambda slug: slug, now=NIGHT, report=report)  # type: ignore[arg-type]
+    assert report.changed_crafts == ["a", "c"]
+
+
 def test_curated_crafts_are_rebuilt_first_then_the_oldest() -> None:
     early, late = NIGHT.replace(hour=1), NIGHT.replace(hour=2)
     pages = [
@@ -140,3 +161,12 @@ def test_curated_crafts_are_rebuilt_first_then_the_oldest() -> None:
         "Agra-Durrie",
         "Aari-Work",
     ]
+
+
+def test_the_night_s_changed_pages_are_the_crafts_and_documents_that_moved_once_each() -> None:
+    report = PagesReport(changed_crafts=["Kutch-Ajrakh", "Bagru-Prints"])
+    report.documents.moved.extend(["craft:Kutch-Ajrakh", "category:Textiles-Based-Craft-Category"])
+    assert report.changed_owners() == PageOwners(
+        crafts=("Bagru-Prints", "Kutch-Ajrakh"), categories=("Textiles-Based-Craft-Category",)
+    )
+    assert PagesReport().changed_owners().empty

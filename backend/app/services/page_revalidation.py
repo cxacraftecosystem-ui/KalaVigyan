@@ -4,6 +4,7 @@ import logging
 import uuid
 from collections.abc import Collection, Iterable
 from dataclasses import dataclass
+from typing import Any
 
 import httpx
 from sqlalchemy import and_, select
@@ -25,10 +26,12 @@ __all__ = [
     "MISSES_BEFORE_GIVING_UP",
     "REVALIDATE_TARGETS_MAX",
     "REVALIDATE_TIMEOUT_SECONDS",
+    "UNSET_SECRET",
     "BatchedRefresh",
     "claim_owners",
     "craft_owners",
     "merged_owners",
+    "nightly_refresh",
     "owner_batches",
     "refresh_in_batches",
     "refresh_pages",
@@ -39,6 +42,7 @@ logger = logging.getLogger(__name__)
 REVALIDATE_TIMEOUT_SECONDS = 5.0
 REVALIDATE_TARGETS_MAX = 40
 MISSES_BEFORE_GIVING_UP = 3
+UNSET_SECRET = "WEB_REVALIDATE_SECRET is not set"
 CONCEPT_SUBJECT = "CONCEPT"
 REFRESHED = 200
 CRAFT_OWNER, CATEGORY_OWNER = "craft", "category"
@@ -119,6 +123,22 @@ def owner_batches(owners: PageOwners, *, most: int = REVALIDATE_TARGETS_MAX) -> 
         batches[-1].append((kind, slug))
         room -= size
     return [_owners_of(batch) for batch in batches]
+
+
+async def nightly_refresh(
+    owners: PageOwners,
+    *,
+    settings: Settings | None = None,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> dict[str, Any]:
+    pages = len(owners.crafts) + len(owners.categories)
+    if owners.empty:
+        return {"ok": True, "pages": 0, "refreshed": 0, "unrefreshed": []}
+    if not ((settings or get_settings()).web_revalidate_secret or "").strip():
+        return {"ok": True, "pages": pages, "refreshed": 0, "unrefreshed": [], "reason": UNSET_SECRET}
+    sent = await refresh_in_batches(owners, settings=settings, transport=transport)
+    left = [*sent.unrefreshed.crafts, *sent.unrefreshed.categories]
+    return {"ok": not left, "pages": pages, "refreshed": pages - len(left), "unrefreshed": left}
 
 
 async def refresh_in_batches(

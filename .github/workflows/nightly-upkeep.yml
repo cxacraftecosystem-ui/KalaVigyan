@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Report what the upkeep would do, write nothing and start no build"
+        description: "Report what the upkeep would do, write nothing and refresh no page"
         type: boolean
         default: false
 
@@ -42,7 +42,7 @@ jobs:
           role-session-name: nightly-upkeep-${{ github.run_id }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Re-verify quotes, archive sources, sweep orphaned concepts, rebuild pages and start the site build on the box
+      - name: Re-verify quotes, archive sources, sweep orphaned concepts, rebuild stale pages and refresh only the changed ones on the box
         run: |
           set -euo pipefail
           case "$UPKEEP_ARGS" in ""|--dry-run) ;; *) echo "::error::unexpected upkeep arguments"; exit 1 ;; esac
@@ -83,4 +83,4 @@ jobs:
                    --query "$( [ "$stream" = stdout ] && echo StandardOutputContent || echo StandardErrorContent )" --output text
             echo "::endgroup::"
           done
-          [ "$status" = Success ] || { echo "::error::nightly upkeep ended $status; the JSON report above counts quotes, archives, orphans, pages and the build (docs/contracts/nightly-upkeep.md)"; exit 1; }
+          [ "$status" = Success ] || { echo "::error::nightly upkeep ended $status; the JSON report above counts quotes, archives, orphans, pages and the refresh (docs/contracts/nightly-upkeep.md)"; exit 1; }

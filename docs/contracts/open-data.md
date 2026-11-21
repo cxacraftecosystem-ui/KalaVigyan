@@ -97,7 +97,7 @@ prints one line `OPEN_DATA_RESULT <json>`.
 | Step | Arguments | Does |
 |---|---|---|
 | `latest` | | prints the latest published release of the target, or `null` |
-| `draft` | `--version`, `--site`, `--latest-record` when there is one | opens a Zenodo draft (a new version of the latest record, its inherited files deleted), sets the first metadata, reserves the DOI; prints `record_id`, `concept_record_id`, `doi`, `concept_doi`, `bucket`. Reads `ZENODO_TOKEN` |
+| `draft` | `--version`, `--site`, `--latest-record` when there is one | opens a Zenodo draft (a new version of the latest record, its inherited files deleted), sets the first metadata, reserves the DOI; prints `record_id`, `concept_record_id`, `doi`, `concept_doi`, `bucket`. On SANDBOX the DOI and concept DOI take the sandbox's test prefix `10.5072` (`SANDBOX_DOI_PREFIX`), because the sandbox reserves under Zenodo's `10.5281` but mints under `10.5072`; on ZENODO they are the DOI Zenodo reserves. Reads `ZENODO_TOKEN` |
 | `build` | `--version`, `--doi`, `--concept-doi`, `--record-id`, `--concept-record-id`, `--out` | reads the database, writes the files to `--out`, and stores the release as DRAFT with its files, counts, changes and row digests; refuses a version already PUBLISHED on that target |
 | `deposit` | `--record-id`, `--files`, `--site`, `--publish` | refuses a folder whose files do not match `SHA256SUMS` or whose DOI is not the draft's, uploads every file, sets the final metadata, and publishes only with `--publish`; refuses a published DOI other than the reserved one. Reads `ZENODO_TOKEN` |
 | `record` | `--version`, `--doi`, `--record-url`, `--published-at` (with its offset) | marks the release PUBLISHED; refuses a DOI other than the one its build used |

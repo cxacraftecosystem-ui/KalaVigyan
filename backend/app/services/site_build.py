@@ -27,7 +27,6 @@ __all__ = [
     "SiteBuildHook",
     "SiteBuildState",
     "deploy_hook",
-    "nightly_site_build",
     "refuse_early_build",
     "site_build_state",
     "trigger_site_build",
@@ -40,7 +39,6 @@ DEPLOY_HOOK_SETTING = "VERCEL_DEPLOY_HOOK_URL"
 DEPLOY_HOOK_SERVICE = "deploy-hook"
 DEPLOY_HOOK_TIMEOUT_SECONDS = 20.0
 TOO_SOON = "too_soon"
-NIGHTLY = "nightly"
 HTTP_LOGGER = "httpx"
 
 
@@ -141,16 +139,6 @@ async def trigger_site_build(
         detail={"origin": origin},
     )
     await session.commit()
-
-
-async def nightly_site_build(session: AsyncSession, hook: SiteBuildHook | None) -> dict[str, Any]:
-    if hook is None:
-        return {"ok": True, "triggered": False, "reason": f"{DEPLOY_HOOK_SETTING} is not set"}
-    try:
-        await trigger_site_build(session, hook, actor=None, origin=NIGHTLY)
-    except ExternalFailure as failure:
-        return {"ok": False, "triggered": False, "reason": str(failure)}
-    return {"ok": True, "triggered": True}
 
 
 async def _last_triggered_at(session: AsyncSession) -> datetime | None:

@@ -20,7 +20,14 @@ METADATA = deposit_metadata(version="2026.11.21", released=date(2026, 11, 21), c
 
 
 class FakeZenodo:
-    def __init__(self, *, published_doi: str = "10.5072/zenodo.200", previous_files: int = 0) -> None:
+    def __init__(
+        self,
+        *,
+        published_doi: str = "10.5072/zenodo.200",
+        previous_files: int = 0,
+        reserved_doi: str = "10.5281/zenodo.200",
+    ) -> None:
+        self.reserved_doi = reserved_doi
         self.calls: list[tuple[str, str]] = []
         self.uploaded: dict[str, bytes] = {}
         self.described: list[dict[str, Any]] = []
@@ -61,7 +68,7 @@ class FakeZenodo:
 
     def _draft(self, *, reserved: bool = False) -> dict[str, Any]:
         files = [{"id": f"f{n}", "filename": f"old{n}.csv"} for n in range(self.previous_files)]
-        metadata = {"prereserve_doi": {"doi": "10.5072/zenodo.200", "recid": 200}} if reserved else {}
+        metadata = {"prereserve_doi": {"doi": self.reserved_doi, "recid": 200}} if reserved else {}
         return {
             "id": 200,
             "conceptrecid": "199",
@@ -88,6 +95,23 @@ def test_a_first_release_opens_a_draft_and_takes_its_reserved_doi_and_concept() 
     )
     assert fake.calls == [("POST", "/api/deposit/depositions"), ("PUT", "/api/deposit/depositions/200")]
     assert fake.described[0]["prereserve_doi"] is True
+
+
+def test_the_sandbox_reserves_under_zenodo_s_prefix_but_the_files_name_the_test_doi_it_mints() -> None:
+    fake = FakeZenodo(reserved_doi="10.5281/zenodo.200")
+    draft = _zenodo(fake).open_draft(None, METADATA)
+    assert (draft.doi, draft.concept_doi) == ("10.5072/zenodo.200", "10.5072/zenodo.199")
+    assert _zenodo(fake).publish(draft).doi == "10.5072/zenodo.200"
+
+
+def test_zenodo_itself_keeps_the_doi_it_reserves() -> None:
+    fake = FakeZenodo(reserved_doi="10.5281/zenodo.200", published_doi="10.5281/zenodo.200")
+    zenodo = ZenodoDeposit(
+        httpx.Client(transport=httpx.MockTransport(fake)), target="ZENODO", token="sandbox-token"
+    )
+    draft = zenodo.open_draft(None, METADATA)
+    assert (draft.doi, draft.concept_doi) == ("10.5281/zenodo.200", "10.5281/zenodo.199")
+    assert zenodo.publish(draft).doi == "10.5281/zenodo.200"
 
 
 def test_a_later_release_is_a_new_version_that_drops_the_files_it_inherits() -> None:

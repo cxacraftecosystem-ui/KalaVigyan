@@ -281,7 +281,7 @@ Vercel deploy hook (`/kalavigyan/env/VERCEL_DEPLOY_HOOK_URL`) by the action
   when the push touches any of them.
 - By hand: run **Deploy web app** from Actions, or **Build pages now** in admin settings.
 
-No watcher or manual promote is needed. The nightly build uses the same hook.
+No watcher or manual promote is needed. The nightly upkeep does not build the site: it refreshes only the pages whose content changed (decision 0119).
 
 To check a branch before it ships, deploy a preview from
 the repository root (the root `.vercelignore` uploads only `frontend/`):
@@ -333,10 +333,12 @@ A dispatch without `publish=true` goes to the sandbox; `publish=true` publishes 
 ## Nightly upkeep and page builds
 
 `docs/contracts/nightly-upkeep.md` names the schedule, the bounds and the commands. The nightly
-workflow runs `app.scripts.nightly_upkeep` on the box over SSM, then calls the Vercel deploy hook
-for one production build that pre-renders every craft page from the snapshots. The hook is read
-from `/kalavigyan/env/VERCEL_DEPLOY_HOOK_URL` (SecureString; never printed); without it the run
-reports the build as not triggered and "Build pages now" in admin settings answers 503.
+workflow runs `app.scripts.nightly_upkeep` on the box over SSM, which rebuilds stale snapshots and
+documents and then refreshes only the pages whose content moved through the web's `/api/revalidate`
+(`WEB_REVALIDATE_SECRET`); a night that changed nothing sends nothing and no site build runs
+(decision 0119). Releases and "Build pages now" in admin settings still build through the Vercel
+deploy hook, read from `/kalavigyan/env/VERCEL_DEPLOY_HOOK_URL` (SecureString; never printed);
+without it "Build pages now" answers 503.
 
 ## Bulk export
 
