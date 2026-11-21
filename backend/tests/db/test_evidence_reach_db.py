@@ -19,7 +19,7 @@ from app.research.retrieval import KnowledgeHits, KnowledgeQuery
 from app.retrieval.hybrid import StoredKnowledgeSearch, merged_into
 from app.retrieval.indexing import embed_pending, replace_source_chunks
 
-from ..craft_fixtures import FixedEmbedder, unit
+from ..craft_fixtures import FixedEmbedder
 
 pytestmark = pytest.mark.db
 
@@ -130,7 +130,6 @@ def _claim(claim_id: uuid.UUID, subject: uuid.UUID, text: str) -> Claim:
         subjectId=subject,
         predicate="explains",
         text=text,
-        embedding=unit(1.0),
         evidenceLevel="PROVISIONAL",
         origin="IMPORT",
     )
