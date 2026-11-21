@@ -37,32 +37,158 @@
         "drawing": {
           "tag": "svg",
           "attrs": {
-            "viewBox": "0 0 120 80",
+            "viewBox": "0 0 130 80",
             "role": "img",
             "aria-label": "Ammonium chloride"
           },
           "children": [
             {
-              "tag": "circle",
+              "tag": "line",
               "attrs": {
-                "cx": "40",
-                "cy": "40",
-                "r": "18",
-                "fill": "var(--raised)",
-                "stroke": "var(--ink-1)",
+                "x1": "50",
+                "y1": "33",
+                "x2": "50",
+                "y2": "19",
+                "stroke": "var(--ink-2)",
                 "stroke-width": "1.5"
               }
             },
             {
-              "tag": "circle",
+              "tag": "line",
               "attrs": {
-                "cx": "80",
-                "cy": "40",
-                "r": "12",
-                "fill": "var(--sunk)",
-                "stroke": "var(--ink-1)",
+                "x1": "57",
+                "y1": "40",
+                "x2": "71",
+                "y2": "40",
+                "stroke": "var(--ink-2)",
                 "stroke-width": "1.5"
               }
+            },
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "50",
+                "y1": "47",
+                "x2": "50",
+                "y2": "61",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "43",
+                "y1": "40",
+                "x2": "29",
+                "y2": "40",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "50",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "N"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "50",
+                "y": "16",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "H"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "78",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "H"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "50",
+                "y": "72",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "H"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "22",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "H"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "64",
+                "y": "28",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "+"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "108",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "Cl"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "122",
+                "y": "34",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "−"
+              ]
             }
           ]
         }
