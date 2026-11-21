@@ -30,7 +30,7 @@ async def propose_page_structure(
 ) -> StructureProposalResult:
     try:
         await require_terms(session, user)
-        refuse_when_spent(STRUCTURE_PROPOSALS, user)
+        await refuse_when_spent(STRUCTURE_PROPOSALS, user)
         return await structure_proposed(session, body, user, origin=CONTRIBUTION, site=site_origin())
     except InvalidInput as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from None

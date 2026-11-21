@@ -7,8 +7,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import OAuthClient, OAuthGrant, User
-from app.research.oauth_contract import Connection, client_host
+from app.research.oauth_contract import Connection
 
+from .oauth_clients import shown_host
 from .oauth_tokens import revoke_grant
 
 __all__ = ["connections", "revoke_connection"]
@@ -25,7 +26,7 @@ async def connections(session: AsyncSession, user: User, *, now: datetime) -> li
         Connection(
             id=grant.id,
             client_name=client.name,
-            client_host=client_host(client.redirectUris[0]),
+            client_host=shown_host(client),
             scopes=list(grant.scopes),
             connected_at=grant.createdAt,
             last_used_at=grant.lastUsedAt,

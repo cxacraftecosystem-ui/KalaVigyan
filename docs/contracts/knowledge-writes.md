@@ -210,12 +210,12 @@ of one.
 ## Proposal limits
 
 Every proposal costs work (a fact a fetch per source, an embedding and up to two judge calls), so each
-account has a sliding hour per kind (`core/rate_limit.proposal_attempt`, `PROPOSAL_WINDOW_SECONDS` =
-3,600), counted in the API process like the other limits there:
+account has an hourly bucket per kind (`core/rate_limit.proposal_attempt`, a clock hour in UTC), counted
+once in Postgres for every process (`core/allowances`, table `AllowanceBucket`):
 
 | Kind (`core/rate_limit`) | Per hour (constant) | Counted at |
 |---|---|---|
-| `FACT_PROPOSALS` | `FACT_PROPOSALS_PER_WINDOW` = 30; for a queued fact the account's tier allowance (`TIER_FACTS_PER_HOUR`: 30, 60, 150) | `POST /api/knowledge/facts` (after the terms); each new fact queued by MCP `propose_facts` and `POST /api/knowledge/proposals/facts` (`core/rate_limit.proposal_slots`: a batch takes what is left of the same window, and each fact beyond it is refused on its own; a fact sent again with its key takes nothing); MCP `supply_source`, one a supplied source (decision 0110) |
+| `FACT_PROPOSALS` | `FACT_PROPOSALS_PER_WINDOW` = 30; for a queued fact the account's tier allowance (`TIER_FACTS_PER_HOUR`: 30, 60, 150) | `POST /api/knowledge/facts` (after the terms); each new fact queued by MCP `propose_facts` and `POST /api/knowledge/proposals/facts` (`core/rate_limit.proposal_slots`: a batch takes what is left of the same hour, and each fact beyond it is refused on its own; a fact sent again with its key takes nothing); MCP `supply_source`, one a supplied source (decision 0110) |
 | `COMPONENT_PROPOSALS` | `COMPONENT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/contributions/proposals/components`, each component part of MCP `propose_page` |
 | `LAYOUT_PROPOSALS` | `LAYOUT_PROPOSALS_PER_WINDOW` = 10 | `POST /api/knowledge/layouts` (after the terms), the layout part of MCP `propose_page` |
 | `STRUCTURE_PROPOSALS` | `STRUCTURE_PROPOSALS_PER_WINDOW` = 20 | `POST /api/knowledge/structure` (after the terms), MCP `propose_structure` |
@@ -228,9 +228,12 @@ account has a sliding hour per kind (`core/rate_limit.proposal_attempt`, `PROPOS
   malformed body or missing terms, while the site's component and picture routes count a request once
   the capability is checked, before its body.
 - On HTTP a spent limit is 429 with `Retry-After` (whole seconds) and a detail such as "This account
-  made 30 fact proposals in the last hour, the most one account may. Try again in 12 minutes."; over
+  made 30 fact proposals this hour, the most one account may. Try again in 12 minutes."; over
   MCP the same sentence is a tool error (`api/proposal_limits.py`: `proposal_limit` for routes,
   `refuse_tool_when_spent` for tools).
+- A count that cannot be read within `COUNT_SECONDS` (5) refuses the call for a minute and does
+  nothing (`ALLOWANCE_UNREAD`): 503 with `Retry-After: 60` on HTTP, a tool error over MCP, a refused
+  fact in a batch.
 
 ## The contribution queue (round 7)
 

@@ -65,8 +65,9 @@ def research_steps(values: Mapping[str, str]) -> list[str]:
         "`propose_source`, naming the fact as claim_id.",
         *SOURCE_STEPS,
         "Call `propose_facts` with up to 25 new facts, each with its quotes, locators and sources, an "
-        "idempotency_key of your own, and the key of the task you claimed as task_key. The reply gives each "
-        "fact a proposal id at once, QUEUED.",
+        "idempotency_key of your own, and the key of the task you claimed as task_key (for an ANSWER_GAP task, "
+        "its field's MISSING_FIELD or THIN_FIELD task when one is open, otherwise none: a reader's question "
+        "closes at the nightly check). The reply gives each fact a proposal id at once, QUEUED.",
         FOLLOW_STEP,
     ]
 

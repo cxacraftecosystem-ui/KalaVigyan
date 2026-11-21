@@ -23,6 +23,8 @@ the server", and item 16's component proposals. The endpoint, framing and read t
 | The nightly refresh of field work | `services/open_work_refresh.py` |
 | Pages in the monograph form | `services/open_work_pages.py`; the folder is `data/monograph_files.MONOGRAPHS_DIR` |
 | Listing, standings, review queues, live reservations | `services/open_work.py` |
+| Questions readers asked: verdicts, privacy, keys, wording | `research/open_work_gaps.py`, `research/open_work_gap_privacy.py`, `research/open_work_gap_keys.py`, `research/open_work_gap_tasks.py` |
+| Recording each answer's verdict; the nightly grouping, acceptance and closing; the tasks | `services/answer_gaps.py` (from `SqlAnswerStore.finish`); `services/answer_gap_refresh.py` over `answer_gap_groups.py` and `answer_gap_checks.py`; `services/open_work_gaps.py`; tables `AnswerVerdict` and `AnswerGap` (`models/answer_gaps.py`, migration `0055_answer_gaps`) |
 | Claim, claim several, release, complete | `services/task_reservations.py` |
 | My tasks (held, completed, outcomes) | `services/contribution_queue_tasks.py`, contract `research/my_tasks.py` |
 | Stewardship | `services/stewardship.py`, contract `research/stewardship.py`, table `CraftSteward` (`models/contributions.py`, migration `0048_contribution_queue`) |
@@ -65,6 +67,7 @@ at most 20 ids; `count` is the whole number.
 | `CORROBORATE_FACT` | shown facts with a quote that failed and another that holds, per primary field | `CORROBORATE_FACT:...[:<FIELD>]` | facts | none (`propose_source`) |
 | `FIND_ANOTHER_SOURCE` | shown facts resting only on rotten sources (`nightly-upkeep.md`, 1a); `factIds` the facts, `sourceIds` the sources | `FIND_ANOTHER_SOURCE:<subject>:<slug>` | facts | none (`propose_source`) |
 | `REVIEW` | a review queue holds items, shown to its reviewers only | `REVIEW:<QUEUE>` | items waiting | none |
+| `ANSWER_GAP` | readers asked about a craft or family and the answer was thin or found no cited evidence (Questions readers asked, below) | `ANSWER_GAP:<subject>:<slug>:gap-<32 hex>` | readers who asked in the last 90 days | `research_field` |
 
 `<subject>` is `craft`, `family` or `category`. A fact with no primary field gives a key without
 the field part.
@@ -122,7 +125,8 @@ task and each under 3 a `THIN_FIELD` task; quotes are 25 to 300 characters.
 - Order (the subject's prominence): priority; then the owner's list order; GI before not; curated
   before not; then reader demand, most first; crafts, families, categories; name. Within a subject:
   healing first (re-source, corroborate, find another source; fields in vocabulary order), then
-  fields in vocabulary order, components, page, corroboration, links. A page that lost a fact is
+  the questions readers asked (their own priority, most askers first), then fields in vocabulary
+  order, components, page, corroboration, links. A page that lost a fact is
   the first repair of its subject. Review queues lead the `HIGH` tasks.
 - **The nightly upkeep** (`services/open_work_refresh.refresh_field_work`, the `fieldWork` part of
   its report) counts every open `MISSING_FIELD` and `THIN_FIELD` task by kind and priority and ends,
@@ -139,6 +143,82 @@ matching task before the limit.
 A task reserved by another account is left out until its reservation ends; the caller's own carry
 `reservedUntil`. A `MISSING_COMPONENT` task is closed while a `PENDING` or `APPROVED` proposal names
 its key.
+
+## Questions readers asked (decision 0113)
+
+What readers ask and KalaVigyan answers poorly becomes work. Nothing here calls a model.
+
+**Each answer's verdict.** When an answer is finished (`SqlAnswerStore.finish`), each of its
+sections is read for its field: its cited sentences at a fact level (`VERIFIED`, `REVIEWED` or
+`PROVISIONAL`, each text once), whether its retrieval scored low, and the facts it cited. Retrieval
+scores low when the section ran research and its best stored fact scored at most 1/61 (one over
+`RRF_K` + 1: the most a fact found by one ranking alone can score, so nothing matched the question's
+words or names), or no stored fact was found; a section reused from stored pieces is not judged on
+retrieval. The store adds the cited facts holding a quote whose last check is `FAIL`.
+
+- `UNANSWERED`: no field holds a cited sentence (`NO_CITED_EVIDENCE`; every field is lacking).
+- `THIN`: a field lacks: `MISSING_FIELD` (no cited sentence), `FEW_SENTENCES` (1 or 2),
+  `LOW_RETRIEVAL`, `FAILED_QUOTE` (it cited such a fact).
+- `ANSWERED`: no field lacks.
+
+`AnswerVerdict {answerId (unique, cascading with the answer), craftId, verdict, fields[] (the
+answer's fields, vocabulary order), lacking[], lacks[], sentences, gapId, embedding, embeddingModel,
+createdAt}`. A question refused before research keeps no answer row and so no verdict; a question
+about no craft keeps a verdict and never a task.
+
+**The nightly step** (`services/answer_gap_refresh.refresh_answer_gaps`, `answerGaps` in the upkeep
+report `{questions, dropped, embedded, embeddingError, joined, opened, answered, lapsed, open,
+reservationsClosed}`), after the field work:
+
+1. Takes at most 500 `THIN` and `UNANSWERED` verdicts about a craft, asked within 90 days and in no
+   group, oldest first, and anonymises each question (Privacy, below); a dropped question stays out.
+2. Embeds each anonymised question once (`query_text`, stamped with the current embedding model)
+   when its verdict holds no current vector, and an open group's question whose vector is stale; a
+   failed embedding is reported as `embeddingError` and the night goes on with the stored vectors.
+3. Joins each question to the nearest open group of its craft when their cosine distance is at most
+   0.15, or opens a group with it; a group's question is its first asker's, anonymised.
+4. Recounts every open group from its members asked within 90 days: `askers` (distinct accounts; an
+   answer without an account counts once), the latest asked, `fields` (the union of the members'
+   lacking fields) and `lacks`. A group no one asked within 90 days is `LAPSED`.
+5. Sets its priority: `HIGH` when 5 or more asked and the latest within 30 days; `MEDIUM` when 5 or
+   more asked earlier, or 2 or more with the latest within 30 days; `LOW` otherwise.
+6. Checks its acceptance with a retrieval run per field: the stored search (`StoredKnowledgeSearch`,
+   mode `HYBRID`, the craft, the field) with the group's question as its text and its stored vector
+   as the query vector, counting the claim hits at a fact level found by the question's words or
+   names (a lexical or entity rank), or by meaning alone for a question not in an English script.
+   When every field counts 2 or more, the group is `ANSWERED`.
+7. Ends each live `ANSWER_GAP` reservation of a group no longer open: `COMPLETED` when it was
+   answered, `EXPIRED` otherwise.
+
+`AnswerGap {id, craftId, question (anonymised), language, fields[], lacks[], askers, firstAskedAt,
+lastAskedAt, priority, state OPEN | ANSWERED | LAPSED, closedAt (exactly when not open), embedding,
+embeddingModel}`.
+
+**The task.** Each open group with askers is a task of its craft or family, listed after the
+subject's healing tasks with its own priority: `field` the first of its fields, `count` the askers,
+prompt `research_field`, `needed` `Readers asked "<question>" (<n> readers in the last 90 days, the
+latest on <date>); the answer <what it lacked>. Cited facts under <fields> would answer it.`, and the
+acceptance above. A fact proposed for it names the field's `MISSING_FIELD` or `THIN_FIELD` task as
+`task_key` when one is open and no `task_key` otherwise; the task closes itself at the nightly check.
+The site lists it with the fact tasks ("Where help is wanted" on `/contributions/facts`).
+
+**Privacy.** A task never says who asked: no account, no answer, only how many. The question is
+anonymised by rules (`research/open_work_gap_privacy.anonymised`):
+
+- Dropped whole when it asks for someone's contact (a phone, mobile, WhatsApp or contact number or
+  details of or for someone, an email or address of someone, a home address, how to contact or reach
+  someone), or names someone and asks about them (who is, tell me about, biography, life of, how
+  old, married, lives or stays, his or her age, family, income, caste, religion, health or home);
+  and when fewer than 3 words are left.
+- Removed: emails (`[email]`), links (`[link]`), handles (`[name]`), phone numbers of 10 digits, or 8
+  after a `+` (`[phone]`), PIN codes, house numbers and street addresses (`[address]`), the asker's
+  own name after "my name is", "I am", "myself", "call me" or "मेरा नाम", a name after an honorific
+  (Mr, Mrs, Ms, Miss, Dr, Shri, Sri, Smt, Kumari, Prof, Ustad, Pandit, Begum, Madam; श्री, श्रीमती,
+  डॉ, कुमारी, सुश्री, उस्ताद), and two or more capitalised words in a row (a sentence's first word
+  aside) unless every word is in a craft, category, family, state or district name (`[name]`).
+
+The answers stay private as before; both tables have row level security and no grants to the
+public roles.
 
 ## Reservations (`TaskReservation`)
 

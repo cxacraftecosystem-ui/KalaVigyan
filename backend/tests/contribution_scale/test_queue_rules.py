@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from app.core.rate_limit import FACT_PROPOSALS, SlidingWindow, proposal_slots
+from app.core.allowances import Taken
+from app.core.rate_limit import FACT_PROPOSALS, proposal_attempt, proposal_slots
 from app.models import User
 from app.research.contribution_queue import (
     IDEMPOTENCY_KEY_PATTERN,
@@ -65,21 +66,14 @@ def test_every_model_call_of_a_proposal_carries_one_request_id_the_router_accept
     assert REQUEST_ID.fullmatch(tag)
 
 
-def test_a_window_grants_what_is_left_and_says_when_the_oldest_slot_returns() -> None:
-    window = SlidingWindow()
-    assert window.take("k", 4, 6, 100.0, now=0.0) == (4, 0.0)
-    assert window.take("k", 4, 6, 100.0, now=10.0) == (2, 90.0)
-    assert window.take("k", 1, 6, 100.0, now=50.0) == (0, 50.0)
-    assert window.take("k", 3, 6, 100.0, now=100.5) == (3, 0.0)
-
-
-def test_a_batch_takes_its_slots_from_the_same_hourly_window_as_single_facts() -> None:
+async def test_a_batch_takes_its_slots_from_the_same_hourly_allowance_as_single_facts() -> None:
     researcher = person("RESEARCHER", 41)
-    assert proposal_slots(FACT_PROPOSALS, researcher, 25)[0] == 25
-    granted, wait = proposal_slots(FACT_PROPOSALS, researcher, 10)
-    assert granted == 5 and 0 < wait <= 3600
-    assert proposal_slots(FACT_PROPOSALS, researcher, 40, limit=60)[0] == 30
-    assert proposal_slots(FACT_PROPOSALS, person("ADMIN", 42), 500) == (500, 0.0)
+    assert (await proposal_slots(FACT_PROPOSALS, researcher, 25)).granted == 25
+    taken = await proposal_slots(FACT_PROPOSALS, researcher, 10)
+    assert taken.granted == 5 and 0 < taken.wait_seconds <= 3600
+    assert (await proposal_attempt(FACT_PROPOSALS, researcher)).granted == 0
+    assert (await proposal_slots(FACT_PROPOSALS, researcher, 40, limit=60)).granted == 30
+    assert await proposal_slots(FACT_PROPOSALS, person("ADMIN", 42), 500) == Taken(granted=500)
 
 
 def test_the_cheap_judge_is_each_provider_s_least_priced_model_that_may_judge() -> None:

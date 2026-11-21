@@ -143,7 +143,7 @@ async def test_a_component_alone_is_proposed_as_the_agent_with_its_own_allowance
     tool_context = context(number=61)
     assert tool_context.user is not None
     for _ in range(10):
-        assert proposal_attempt(PAGE_PROPOSALS, tool_context.user)[0] is True
+        assert (await proposal_attempt(PAGE_PROPOSALS, tool_context.user)).granted == 1
     delivered = {"proposal": COMPONENT | {"spec": TABLE, "units": UNITS}}
     shown = await call(
         "propose_page", {"bundle": {"subject": SUBJECT, "components": [delivered]}}, tool_context
@@ -168,7 +168,7 @@ async def test_a_bundle_of_several_parts_counts_as_a_page_bundle(
     tool_context = context(number=62)
     assert tool_context.user is not None
     for _ in range(10):
-        assert proposal_attempt(PAGE_PROPOSALS, tool_context.user)[0] is True
+        assert (await proposal_attempt(PAGE_PROPOSALS, tool_context.user)).granted == 1
     delivered = {"proposal": COMPONENT | {"spec": TABLE, "units": UNITS}}
     both = {"subject": SUBJECT, "components": [delivered], "layout": {"base_version": 0, "entries": []}}
     spent = await call("propose_page", {"bundle": both}, tool_context)

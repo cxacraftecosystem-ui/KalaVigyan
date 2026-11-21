@@ -3277,3 +3277,8 @@ Last reviewed: 2026-11-18.
   repository, as the datasets skill says.
 - **Clears it:** a dataset proposal over MCP that carries the source, licence, version and the
   simplified geometry, checked by the same rules before an engineer ships it.
+
+### Question anonymising is rules-based
+
+- **What:** questions that become open work (decision 0113) are anonymised by rules with no model, so a lone first name with no honorific or self-introduction is not detected; the rules lean the other way elsewhere (a place outside the gazetteer written in capitals becomes [name], and a title-cased question may be dropped).
+- **Clears it:** a named-entity pass with the cheapest model route on the few questions that survive the rules, run in the nightly step, never at request time.

@@ -102,7 +102,7 @@ async def _work(
 async def _preview_page(context: ToolContext, arguments: PageWork) -> PreviewReply:
     user, now = contributor(context, "preview_page", STUDIO_DOES), datetime.now(UTC)
     bundle, row, lists = await _work(context, user, arguments, now)
-    refuse_tool_when_spent(PAGE_PREVIEWS, user)
+    await refuse_tool_when_spent(PAGE_PREVIEWS, user)
     previewed = await page_preview.preview_page(context.session, user, bundle, site=context.site, now=now)
     report = await page_report.preview_report(context.session, user, bundle, previewed, lists=lists, now=now)
     if row is not None:
@@ -121,7 +121,7 @@ async def _propose_page(context: ToolContext, arguments: PageWork) -> PageReply:
     user, now = contributor(context, "propose_page", STUDIO_DOES), datetime.now(UTC)
     bundle, row, _ = await _work(context, user, arguments, now)
     if row is not None or bundle_parts(bundle) > 1:
-        refuse_tool_when_spent(PAGE_PROPOSALS, user)
+        await refuse_tool_when_spent(PAGE_PROPOSALS, user)
     result = await page_proposed(context.session, bundle, user, origin=AGENT, site=context.site)
     if row is not None:
         await page_drafts.record_submission(context.session, row, result, now=now)

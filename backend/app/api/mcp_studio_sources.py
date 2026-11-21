@@ -45,7 +45,7 @@ async def _supply_source(context: ToolContext, arguments: SupplySourceArguments)
     endpoints = endpoints_or_none()
     if arguments.upload is not None and endpoints is None:
         raise InvalidInput(NO_UPLOADS)
-    refuse_tool_when_spent(FACT_PROPOSALS, user)
+    await refuse_tool_when_spent(FACT_PROPOSALS, user)
     now = datetime.now(UTC)
     async with scholarly_lookup(context.session) as lookup:
         supplied = await supplied_sources.supply_source(

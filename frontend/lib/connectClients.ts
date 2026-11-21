@@ -2,6 +2,7 @@ export const SERVER_KEY = "kalavigyan";
 export const SERVER_NAME = "KalaVigyan";
 export const CONNECT_PATH = "/connect";
 export const CONNECT_TITLE = "Connect your AI";
+export const CLAUDE_IDENTITY = "Use Claude's published identity";
 
 export type GuideStep = { text: string; code?: string };
 export type ClientGuide = { key: string; name: string; steps: GuideStep[]; note: string | null; docs: string };
@@ -24,11 +25,11 @@ function claude(address: string): ClientGuide {
     name: "Claude and Claude Desktop",
     steps: [
       { text: "Open Customize, then Connectors, press + Add and choose Add custom connector." },
-      { text: `Name it ${SERVER_NAME} and paste the address as the remote MCP server URL.`, code: address },
-      { text: "Under Authentication choose Sign in now, under OAuth client choose Register automatically, then press Add." },
+      { text: `Name it ${SERVER_NAME}, paste the address as the server URL and press Continue.`, code: address },
+      { text: `Review the sign-in Claude detects: under Authentication choose Sign in now, under OAuth client choose ${CLAUDE_IDENTITY} (Recommended), then press Add.` },
       { text: "In a chat, press + at the lower left, open Connectors and switch KalaVigyan on." }
     ],
-    note: "On Team and Enterprise plans an owner adds it in Organization settings, Connectors (Add, Custom, Web); members then press Connect beside it in Customize, Connectors.",
+    note: `On Team and Enterprise plans an owner adds it in Organization settings, Connectors (Add, Custom, Web) with the same choices; members then press Connect beside it in Customize, Connectors. Register automatically also signs in, where ${CLAUDE_IDENTITY} cannot be chosen.`,
     docs: "https://support.claude.com/en/articles/11175166-getting-started-with-custom-connectors-using-remote-mcp"
   };
 }
@@ -94,7 +95,7 @@ function anyClient(address: string): ClientGuide {
     name: "Any other client",
     steps: [
       { text: "Add the address as a remote MCP server over Streamable HTTP.", code: address },
-      { text: "Let the client sign you in with OAuth: it reads the sign-in from the server, registers itself and opens KalaVigyan's sign-in page." }
+      { text: "Let the client sign you in with OAuth: it reads the sign-in from the server, names itself by its published client ID document or registers itself, and opens KalaVigyan's sign-in page." }
     ],
     note: "Reading works without signing in; asking, contributing and reviewing need it.",
     docs: "https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization"

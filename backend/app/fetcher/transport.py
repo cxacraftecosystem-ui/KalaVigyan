@@ -29,6 +29,7 @@ class Hop:
     location: str | None = None
     retry_after: float | None = None
     body: bytes = b""
+    cache_control: str | None = None
 
     @property
     def is_redirect(self) -> bool:
@@ -143,7 +144,15 @@ async def _read(response: httpx.Response, target: Target, max_bytes: int) -> Hop
             f"{target.host} broke the connection", kind="unavailable", retryable=True, service=SERVICE
         ) from None
     content_type, charset = _media_type(response.headers.get("content-type", ""))
-    return Hop(target, status, content_type=content_type, charset=charset, body=bytes(body))
+    cache_control = response.headers.get("cache-control")
+    return Hop(
+        target,
+        status,
+        content_type=content_type,
+        charset=charset,
+        body=bytes(body),
+        cache_control=cache_control,
+    )
 
 
 def _media_type(header: str) -> tuple[str, str | None]:

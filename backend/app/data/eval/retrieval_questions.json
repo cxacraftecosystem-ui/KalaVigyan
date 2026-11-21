@@ -1,0 +1,871 @@
+{
+ "version": 1,
+ "about": "Questions the stored-knowledge retrieval must answer, scored by app.scripts.eval_retrieval at recall@5 and mean reciprocal rank. Each entry of expected is one fact the answer needs; a list names every stored claim that states that fact, and any one of them in the top five counts. Claims are named by their seed key (seed-...) or their claim id, read from the public export of each craft on 2026-11-21. field is the field the question asks about; fields, when given, is the field filter the question is asked with.",
+ "questions": [
+  {
+   "key": "ajrakh-saran-river",
+   "craftSlug": "Kutch-Ajrakh",
+   "field": "HISTORY",
+   "question": "What dried up the river Saran in Dhamadka?",
+   "expected": [
+    "seed-1370e9e4530bde40d95b"
+   ]
+  },
+  {
+   "key": "ajrakh-khatri-invitation",
+   "craftSlug": "Kutch-Ajrakh",
+   "field": "HISTORY",
+   "question": "Which ruler invited Khatri printers from Sindh to Kutch?",
+   "expected": [
+    [
+     "seed-23c545bf0f188e4f5adf",
+     "4d318823-bf7e-5adc-b7e5-d0e10d2ef14c",
+     "a0450c99-5642-549d-a4e5-64d9b7aaac04",
+     "57d37bf8-a5a4-5639-902d-51ab7007b14d"
+    ]
+   ],
+   "fields": [
+    "HISTORY"
+   ]
+  },
+  {
+   "key": "ajrakh-neerani",
+   "craftSlug": "Kutch-Ajrakh",
+   "field": "MATERIALS",
+   "question": "Which ingredients go into neerani?",
+   "expected": [
+    [
+     "seed-afdbf6ac058a9044478c",
+     "5f044f84-98bf-5a7d-b043-42379c351f3e"
+    ]
+   ]
+  },
+  {
+   "key": "ajrakh-madder-pink-whites",
+   "craftSlug": "Kutch-Ajrakh",
+   "field": "CHEMISTRY",
+   "question": "Why does madder leave a pinkish tinge on the whites?",
+   "expected": [
+    [
+     "seed-3b388d593cdc9aa74f51",
+     "a2695dd4-19b9-58e8-803d-0b40d8cec6de"
+    ]
+   ],
+   "fields": [
+    "CHEMISTRY"
+   ]
+  },
+  {
+   "key": "ajrakh-kut-black",
+   "craftSlug": "Kutch-Ajrakh",
+   "field": "CHEMISTRY",
+   "question": "How does kut turn black on harde-treated cloth?",
+   "expected": [
+    [
+     "seed-116b395b80705f3ff151",
+     "76c28e36-98a9-52a3-b09f-80250bab237c"
+    ]
+   ]
+  },
+  {
+   "key": "ajrakh-iron-groundwater",
+   "craftSlug": "Kutch-Ajrakh",
+   "field": "GEOGRAPHY",
+   "question": "How much iron did testing find in the groundwater?",
+   "expected": [
+    [
+     "seed-ba277ff363773bd99b0f",
+     "seed-2e4abe1e3cbe1ba67d01"
+    ]
+   ],
+   "fields": [
+    "GEOGRAPHY"
+   ]
+  },
+  {
+   "key": "ajrakh-cool-final-wash",
+   "craftSlug": "Kutch-Ajrakh",
+   "field": "PROCESS",
+   "question": "Why is the final wash done early in the morning?",
+   "expected": [
+    [
+     "seed-dfa400fe0681c1f89b8f",
+     "seed-d2f46851eca4a4174213",
+     "18259828-30cc-5e3e-8812-81cf8bb97bf5",
+     "2d46ad69-e514-5912-baff-e9033972cf10"
+    ]
+   ]
+  },
+  {
+   "key": "ajrakh-colour-meanings",
+   "craftSlug": "Kutch-Ajrakh",
+   "field": "DESIGN",
+   "question": "What do red, black, white and blue stand for in ajrakh?",
+   "expected": [
+    [
+     "seed-6637ffc5cdc197b6076c",
+     "e953c2ea-cd0f-5198-9ba3-655b25b7f897"
+    ]
+   ],
+   "fields": [
+    "DESIGN"
+   ]
+  },
+  {
+   "key": "ajrakh-gi-certificate",
+   "craftSlug": "Kutch-Ajrakh",
+   "field": "POLICY",
+   "question": "When was the geographical indication certificate for Kutch Ajrakh issued?",
+   "expected": [
+    [
+     "be537f31-1f71-50f6-ba28-063486cc14f4",
+     "0ee67893-3343-5bf1-ac27-acd8de752737"
+    ]
+   ]
+  },
+  {
+   "key": "bagh-dry-river",
+   "craftSlug": "Bagh-Prints-Of-Madhya-Pradesh",
+   "field": "GEOGRAPHY",
+   "question": "Where is the cloth washed when the Bagh river is dry?",
+   "expected": [
+    [
+     "seed-db1ae7b4b46856b5a8fa",
+     "seed-cef358cfac297e4d01c9",
+     "seed-e819ca3c077155f4d6ba",
+     "bb90ac09-a3b9-5bff-a55c-11e474cb4f7e",
+     "96dc397d-9595-52ea-9a49-bfd33d506951",
+     "3d0453b8-e014-520b-9d5a-e0d9b26ed5d7"
+    ]
+   ]
+  },
+  {
+   "key": "bagh-ismail-khatri",
+   "craftSlug": "Bagh-Prints-Of-Madhya-Pradesh",
+   "field": "HISTORY",
+   "question": "When did Ismail Khatri settle in Bagh?",
+   "expected": [
+    [
+     "seed-38efd49a75192fd3e57a",
+     "seed-891d196f29e98b3cf103",
+     "4abb706b-61d1-55b7-b6a0-19aec98d6dd0",
+     "ae8f2440-e14d-5e05-8b90-61e8ab45323d"
+    ]
+   ]
+  },
+  {
+   "key": "bagh-dhavda-flowers",
+   "craftSlug": "Bagh-Prints-Of-Madhya-Pradesh",
+   "field": "MATERIALS",
+   "question": "What is dhavda ka phool used for?",
+   "expected": [
+    [
+     "seed-0950b33057c9d3bca8bf",
+     "2601454c-aedd-5765-9e90-7aa1758f82b0"
+    ]
+   ]
+  },
+  {
+   "key": "bagh-harda-tinge",
+   "craftSlug": "Bagh-Prints-Of-Madhya-Pradesh",
+   "field": "CHEMISTRY",
+   "question": "Why is the yellowish tinge from harda essential?",
+   "expected": [
+    [
+     "seed-b30c6a450530921cee7a",
+     "672cb4a5-9f61-5b5f-a787-4487b285490f"
+    ]
+   ],
+   "fields": [
+    "CHEMISTRY"
+   ]
+  },
+  {
+   "key": "bagru-syahi",
+   "craftSlug": "Bagru-Hand-Block-Print",
+   "field": "MATERIALS",
+   "question": "What is syahi made from?",
+   "expected": [
+    [
+     "seed-2b9c639651cae3c36fc7",
+     "seed-4b5a2faf9688e0e0768b",
+     "cf8043f0-e34b-5bb8-ab94-59d800d5fa6a",
+     "2a36dbc0-49dd-5fca-b6a3-4aba48b5241f",
+     "c552eda4-6687-52d7-b1d8-15897904733e",
+     "b135b1a6-fa18-5f34-b5ab-1863721c079b"
+    ]
+   ]
+  },
+  {
+   "key": "bagru-block-names",
+   "craftSlug": "Bagru-Hand-Block-Print",
+   "field": "PROCESS",
+   "question": "What are the rekh, gadh and datta blocks?",
+   "expected": [
+    [
+     "seed-fe81bc7cc5d9a0f86743",
+     "3d938ca8-663e-5f69-a3d7-8b79150f40e1",
+     "50fbefc8-7afe-515f-891a-86458aa04f8d"
+    ]
+   ]
+  },
+  {
+   "key": "bagru-indigo-dips",
+   "craftSlug": "Bagru-Hand-Block-Print",
+   "field": "PROCESS",
+   "question": "How many times can a fabric be dipped in the indigo vat?",
+   "expected": [
+    [
+     "seed-55a24b22dcf32d81f35c",
+     "c57da5a0-cca4-5735-ab7b-19f16aa241f4"
+    ]
+   ]
+  },
+  {
+   "key": "kalamkari-iron-black",
+   "craftSlug": "Machilipatnam-Kalamkari",
+   "field": "MATERIALS",
+   "question": "How is the black colour made from iron scraps and jaggery?",
+   "expected": [
+    [
+     "seed-c8b48523584b47823bb4",
+     "7d527aee-e0ed-5474-9635-869dd41ca5f8",
+     "e4413868-86a8-52e3-890f-9cf385188518"
+    ]
+   ]
+  },
+  {
+   "key": "kalamkari-revival",
+   "craftSlug": "Machilipatnam-Kalamkari",
+   "field": "HISTORY",
+   "question": "Who revived kalamkari in 1952?",
+   "expected": [
+    [
+     "seed-c538ce2bf75942a377b0",
+     "309f0072-d5e0-5a92-a6d7-24057ebcffcf"
+    ]
+   ]
+  },
+  {
+   "key": "kalamkari-chintz-names",
+   "craftSlug": "Machilipatnam-Kalamkari",
+   "field": "HISTORY",
+   "question": "What did the English and the Dutch call this cloth?",
+   "expected": [
+    [
+     "seed-eddba63971aabe884e52",
+     "eb6b13c3-5ea5-5da1-a4f0-a8352257e531"
+    ]
+   ]
+  },
+  {
+   "key": "sanganer-watt",
+   "craftSlug": "Sanganeri-Hand-Block-Printing",
+   "field": "HISTORY",
+   "question": "What did Sir George Watt call Sanganer?",
+   "expected": [
+    [
+     "seed-58729ccddca9fd865802",
+     "89bf2531-888b-5f5c-8b70-83cd16ea6182"
+    ]
+   ]
+  },
+  {
+   "key": "akola-motifs",
+   "craftSlug": "Block-Printing-Of-Akola",
+   "field": "DESIGN",
+   "question": "Which four motifs survive in Akola dabu printing?",
+   "expected": [
+    "seed-39d2a34fc011307c70be"
+   ]
+  },
+  {
+   "key": "indigo-reducing-bacteria",
+   "craftSlug": null,
+   "field": "CHEMISTRY",
+   "question": "How do bacteria turn indigo into leucoindigo?",
+   "expected": [
+    [
+     "seed-a16a0906bd1fa81c6de0",
+     "512daf80-9d3a-5bf4-ab93-572f0072a85b"
+    ]
+   ],
+   "fields": [
+    "CHEMISTRY"
+   ]
+  },
+  {
+   "key": "iron-tannate-complex",
+   "craftSlug": null,
+   "field": "CHEMISTRY",
+   "question": "What complexes do ferrous ions form with tannins?",
+   "expected": [
+    [
+     "seed-94b38fa8e0010c0f2be6",
+     "bbafb209-45d2-5522-9ac5-03ef76e54649",
+     "dd91a048-3ae2-596c-9700-665a996b2402"
+    ]
+   ],
+   "fields": [
+    "CHEMISTRY"
+   ]
+  },
+  {
+   "key": "aranmula-alloy",
+   "craftSlug": "Aranmula-Kannadi",
+   "field": "OVERVIEW",
+   "question": "What is the Aranmula Kannadi made of?",
+   "expected": [
+    [
+     "22c2b7e6-fd45-52ce-b846-c997770d76c7",
+     "99d248c3-f8d4-500c-9c3d-ccd794795965"
+    ]
+   ]
+  },
+  {
+   "key": "aranmula-melting-point",
+   "craftSlug": "Aranmula-Kannadi",
+   "field": "PHYSICS",
+   "question": "At what temperature does the mirror's delta bronze melt?",
+   "expected": [
+    "234b471b-c561-529b-bc22-8c497b875b12"
+   ]
+  },
+  {
+   "key": "aranmula-delta-phase",
+   "craftSlug": "Aranmula-Kannadi",
+   "field": "CHEMISTRY",
+   "question": "What is the delta phase of the mirror alloy?",
+   "expected": [
+    "7bebb2c0-6533-581a-9953-609881b5c934"
+   ]
+  },
+  {
+   "key": "aranmula-point-image",
+   "craftSlug": "Aranmula-Kannadi",
+   "field": "PHYSICS",
+   "question": "Why does a finger on the mirror show no gap from its reflection?",
+   "expected": [
+    [
+     "078e02ce-8da7-5c31-8775-3a67caa9ca3d",
+     "d9966817-0189-5b10-ad26-37abe48c9c9e",
+     "a8a4bcc8-6efb-5cfe-8aad-5c79ade5c69e"
+    ]
+   ]
+  },
+  {
+   "key": "aranmula-floods",
+   "craftSlug": "Aranmula-Kannadi",
+   "field": "CLIMATE",
+   "question": "What did the 2018 Kerala floods do to the mirror workshops?",
+   "expected": [
+    "48c76848-4029-5b1e-9de8-6dbe48c5c1f2"
+   ]
+  },
+  {
+   "key": "aranmula-achari",
+   "craftSlug": "Aranmula-Kannadi",
+   "field": "SOCIETY",
+   "question": "Which craftsmen make the Aranmula mirrors?",
+   "expected": [
+    "6c525bc1-336b-5fc3-993e-66b99a3b8543"
+   ]
+  },
+  {
+   "key": "agates-dry-grinding",
+   "craftSlug": "Agates-Of-Cambay",
+   "field": "HEALTH",
+   "question": "Why is grinding agate without water dangerous for the grinders?",
+   "expected": [
+    [
+     "17956ae8-8811-5b2e-8f17-3c18ea8c99f7",
+     "31fc6ef9-2181-5876-a64b-75a97cdfde54"
+    ]
+   ]
+  },
+  {
+   "key": "agates-ratanpur-formation",
+   "craftSlug": "Agates-Of-Cambay",
+   "field": "GEOLOGY",
+   "question": "Which geological formation holds the Ratanpur agate sources?",
+   "expected": [
+    "1728626f-ec15-5683-8326-e817f3ea0373"
+   ]
+  },
+  {
+   "key": "agates-carnelian-red",
+   "craftSlug": "Agates-Of-Cambay",
+   "field": "CHEMISTRY",
+   "question": "What gives carnelian its red colour?",
+   "expected": [
+    [
+     "3f62ff44-f8f0-59c7-841d-b79d7fa1eb1e",
+     "ba422cd7-4b8e-5dc1-91c2-8e62fa643bc8"
+    ]
+   ]
+  },
+  {
+   "key": "agates-bhasal",
+   "craftSlug": "Agates-Of-Cambay",
+   "field": "PROCESS",
+   "question": "How are the stones heated in the bhasal method?",
+   "expected": [
+    "b388c926-80b7-57bf-b200-2ba695580ca6"
+   ]
+  },
+  {
+   "key": "agates-census-castes",
+   "craftSlug": "Agates-Of-Cambay",
+   "field": "SOCIETY",
+   "question": "Which castes worked in Cambay's agate industry in the 1961 census?",
+   "expected": [
+    "247ea644-5f9e-5328-a1db-912b23df3722"
+   ]
+  },
+  {
+   "key": "agra-calcitic-marble",
+   "craftSlug": "Agra-Marble-Inlay",
+   "field": "GEOLOGY",
+   "question": "Which marbles of India are calcitic?",
+   "expected": [
+    [
+     "2a54db1a-77c9-576f-9be0-a6b8e52f5e04",
+     "abfd1a93-3f1a-58db-8f99-5895f108b20d"
+    ]
+   ]
+  },
+  {
+   "key": "agra-alabaster-health",
+   "craftSlug": "Agra-Marble-Inlay",
+   "field": "HEALTH",
+   "question": "What does the GI application say alabaster does to the artisans' health?",
+   "expected": [
+    "eaf666c2-07f3-5fde-b0dc-8393633cc883"
+   ]
+  },
+  {
+   "key": "agra-slurry-dumps",
+   "craftSlug": "Agra-Marble-Inlay",
+   "field": "ECOLOGY",
+   "question": "What did the Geological Survey find around Makrana's waste and slurry dumps?",
+   "expected": [
+    "c8b379c8-b5d2-5ea1-a604-9c1387156311"
+   ]
+  },
+  {
+   "key": "agra-parchin-kari",
+   "craftSlug": "Agra-Marble-Inlay",
+   "field": "DESIGN",
+   "question": "Which stones are inlaid in parchin kari?",
+   "expected": [
+    "b1acb5a4-c077-5bd1-a518-790e25d9f635"
+   ]
+  },
+  {
+   "key": "dhokra-furnace-heat",
+   "craftSlug": "Bastar-Dhokra",
+   "field": "PHYSICS",
+   "question": "How hot does blowing through the pipe make the fire?",
+   "expected": [
+    "0a31b75b-2546-5e26-9dfe-68e39cd13a3d"
+   ]
+  },
+  {
+   "key": "dhokra-rainy-months",
+   "craftSlug": "Bastar-Dhokra",
+   "field": "CLIMATE",
+   "question": "What do Ghadwa families do in the rainy months?",
+   "expected": [
+    "cb5f9b57-ab8e-581d-9a81-967d7493ddab"
+   ]
+  },
+  {
+   "key": "dhokra-ghadwa",
+   "craftSlug": "Bastar-Dhokra",
+   "field": "SOCIETY",
+   "question": "Which community makes dhokra in Bastar?",
+   "expected": [
+    [
+     "1fd519d4-5ae6-5baf-b8bc-c500a9eec5c5",
+     "b6857045-f290-53f9-a5da-2770e940312d"
+    ]
+   ]
+  },
+  {
+   "key": "dhokra-rui-mitti",
+   "craftSlug": "Bastar-Dhokra",
+   "field": "GEOLOGY",
+   "question": "What is rui mitti?",
+   "expected": [
+    "72717b60-0d50-5d1e-bda2-e814cc295c72"
+   ]
+  },
+  {
+   "key": "bidri-fort-soil",
+   "craftSlug": "Bidriware",
+   "field": "GEOLOGY",
+   "question": "What is the Bidar fort soil believed to contain?",
+   "expected": [
+    [
+     "0398786f-b2ec-55b2-abce-7e0c25fdc07d",
+     "49b157d5-2ef0-538c-adf7-6c0f374ef796"
+    ]
+   ]
+  },
+  {
+   "key": "bidri-soil-reuse",
+   "craftSlug": "Bidriware",
+   "field": "GEOLOGY",
+   "question": "How many times can the Bidar fort soil be used?",
+   "expected": [
+    "2d4d70a3-5a07-58a0-985a-15c68bfd21d1"
+   ]
+  },
+  {
+   "key": "bidri-patina",
+   "craftSlug": "Bidriware",
+   "field": "PHYSICS",
+   "question": "How thick was the patina on the experimental zinc alloy?",
+   "expected": [
+    "5704d0a9-38e0-566c-b85f-7f1c5570bac5"
+   ]
+  },
+  {
+   "key": "blue-pottery-lead",
+   "craftSlug": "Blue-Pottery-Of-Jaipur",
+   "field": "HEALTH",
+   "question": "Which toxic material was taken out of blue pottery?",
+   "expected": [
+    [
+     "2854d270-8c89-58b0-b2a3-fa6b20744864",
+     "51d24ae8-7dd8-5b6f-99ea-971ba75c776f",
+     "be5ebab9-3ac2-5f36-aa68-59c6d894d4ed"
+    ]
+   ]
+  },
+  {
+   "key": "blue-pottery-cobalt",
+   "craftSlug": "Blue-Pottery-Of-Jaipur",
+   "field": "GEOLOGY",
+   "question": "Where was the cobalt for the blue colour mined?",
+   "expected": [
+    [
+     "3f7ae37f-4dda-5857-90b2-16727b7eafb5",
+     "b0e4c964-016b-59d0-ad08-e476ab5f5888"
+    ]
+   ]
+  },
+  {
+   "key": "blue-pottery-monsoon",
+   "craftSlug": "Blue-Pottery-Of-Jaipur",
+   "field": "CLIMATE",
+   "question": "Why does blue pottery production halt during the monsoon?",
+   "expected": [
+    "a5174681-9816-5ff8-9c2a-0dbc6ccfe154"
+   ]
+  },
+  {
+   "key": "blue-pottery-gi-logo",
+   "craftSlug": "Blue-Pottery-Of-Jaipur",
+   "field": "POLICY",
+   "question": "Who filed the GI application for the Blue Pottery of Jaipur logo?",
+   "expected": [
+    "975cc0ac-2d5e-5487-a08c-7d60626a32eb"
+   ]
+  },
+  {
+   "key": "cane-ghoon-borers",
+   "craftSlug": "Cane-Bamboo-Craft",
+   "field": "ECOLOGY",
+   "question": "Which beetles damage felled bamboo in storage?",
+   "expected": [
+    [
+     "de4d57a7-c31b-52d5-a864-7fba5dd41d00",
+     "bfcb4568-c645-5f69-8384-83cd573d1bfb"
+    ]
+   ]
+  },
+  {
+   "key": "cane-boron-food",
+   "craftSlug": "Cane-Bamboo-Craft",
+   "field": "HEALTH",
+   "question": "Which preservative is safe for bamboo baskets that hold food?",
+   "expected": [
+    "7de3c74f-cfbb-5c74-ae43-65ccdfa4d57e"
+   ]
+  },
+  {
+   "key": "cane-split-lengthwise",
+   "craftSlug": "Cane-Bamboo-Craft",
+   "field": "PHYSICS",
+   "question": "Why does a bamboo culm split easily along its length?",
+   "expected": [
+    "79ec0b40-3944-5890-bf2b-f4c721f1ca4f"
+   ]
+  },
+  {
+   "key": "channapatna-early-harvest",
+   "craftSlug": "Channapatna-Toys-Dolls",
+   "field": "ECOLOGY",
+   "question": "How early are ivory wood trees being harvested?",
+   "expected": [
+    "2d4a67e5-9e74-5725-9697-cd4cd028a381"
+   ]
+  },
+  {
+   "key": "channapatna-lac-friction",
+   "craftSlug": "Channapatna-Toys-Dolls",
+   "field": "PHYSICS",
+   "question": "How is the lac spread over the turning wood?",
+   "expected": [
+    [
+     "a50d1264-d8d5-5fc0-bfce-e370a2f2bba1",
+     "7fee6004-37be-50ae-9cac-54807ee91807"
+    ]
+   ]
+  },
+  {
+   "key": "channapatna-bawas-miyan",
+   "craftSlug": "Channapatna-Toys-Dolls",
+   "field": "HISTORY",
+   "question": "Who introduced toy making at Channapatna?",
+   "expected": [
+    [
+     "5ade6f2d-608d-54c9-b9c0-041890c6d48e",
+     "0fec7efe-fd72-56ac-ae1b-728d08e0ff82"
+    ]
+   ]
+  },
+  {
+   "key": "bandhani-gi-certificate",
+   "craftSlug": "Kutch-Bandhani",
+   "field": "POLICY",
+   "question": "When was the GI certificate for Kutch Bandhani issued?",
+   "expected": [
+    "9b09cb22-493e-5887-9599-ad3e5055dc10"
+   ]
+  },
+  {
+   "key": "bandhani-community",
+   "craftSlug": "Kutch-Bandhani",
+   "field": "SOCIETY",
+   "question": "Which community mainly practises bandhani in Kachchh?",
+   "expected": [
+    [
+     "68e1cd5c-9be4-5356-bffd-0010bd505aae",
+     "b79fc9a9-7b63-502f-8808-9dd39c6c5575",
+     "f453126a-0807-5ff7-945a-9c4545b7cf62"
+    ]
+   ]
+  },
+  {
+   "key": "bandhani-laheria",
+   "craftSlug": "Kutch-Bandhani",
+   "field": "DESIGN",
+   "question": "What is laheria?",
+   "expected": [
+    "767a61fd-3d0a-5e47-aa99-32e551804fc2"
+   ]
+  },
+  {
+   "key": "bandhani-knots",
+   "craftSlug": "Kutch-Bandhani",
+   "field": "PROCESS",
+   "question": "What are the tiny knots of Kutch bandhani called?",
+   "expected": [
+    [
+     "159fef11-0765-58ec-8640-0730349d11d8",
+     "c734899f-615d-5447-863d-ded8025e5b44"
+    ]
+   ]
+  },
+  {
+   "key": "bandhani-tying-pay",
+   "craftSlug": "Kutch-Bandhani",
+   "field": "ECONOMICS",
+   "question": "How is bandhani tying counted and paid?",
+   "expected": [
+    "0fbfc4cf-7d0e-5f0a-827c-58ec1a2088c4"
+   ]
+  },
+  {
+   "key": "madhubani-gi",
+   "craftSlug": "Madhubani-Paintings",
+   "field": "POLICY",
+   "question": "Who filed the GI application for Madhubani paintings?",
+   "expected": [
+    "af766b9f-33a5-57e5-9ea3-e44d62f3e7c3"
+   ]
+  },
+  {
+   "key": "madhubani-women",
+   "craftSlug": "Madhubani-Paintings",
+   "field": "SOCIETY",
+   "question": "Who traditionally paints Madhubani paintings?",
+   "expected": [
+    [
+     "d201c8ee-9870-5187-98db-4ac71c84563e",
+     "a0ae28e3-d12b-5694-82d2-24349ad7bad9"
+    ]
+   ]
+  },
+  {
+   "key": "madhubani-archer-castes",
+   "craftSlug": "Madhubani-Paintings",
+   "field": "HISTORY",
+   "question": "Which two caste styles did Archer study?",
+   "expected": [
+    "63d00bcf-b9a7-5f61-8d4d-ef0adc365316"
+   ]
+  },
+  {
+   "key": "nizamabad-black",
+   "craftSlug": "Nizamabad-Black-Pottery",
+   "field": "CHEMISTRY",
+   "question": "What gives Nizamabad pottery its black colour?",
+   "expected": [
+    [
+     "db3b6553-83cc-5097-976e-b39d86e7146d",
+     "3d543291-c049-5af3-828a-5e79362c2728"
+    ]
+   ]
+  },
+  {
+   "key": "nizamabad-mustard-oil",
+   "craftSlug": "Nizamabad-Black-Pottery",
+   "field": "MATERIALS",
+   "question": "Why is mustard oil rubbed on the pottery before firing?",
+   "expected": [
+    "33ca3bf8-8ab3-5488-a5b7-dc08e3f99652"
+   ]
+  },
+  {
+   "key": "pattachitra-white",
+   "craftSlug": "Orissa-Pattachitra",
+   "field": "MATERIALS",
+   "question": "What is the white of pattachitra made from?",
+   "expected": [
+    [
+     "4462fcbd-0ad8-586e-90bf-37abcdfde84f",
+     "8bde7d61-e57a-5786-99da-e624081bddd3",
+     "24fbf93d-3383-5b41-b3e1-cd60be586caf"
+    ]
+   ]
+  },
+  {
+   "key": "pattachitra-canvas",
+   "craftSlug": "Orissa-Pattachitra",
+   "field": "PROCESS",
+   "question": "How is the pattachitra canvas made?",
+   "expected": [
+    [
+     "f395c728-6b5f-5dc8-9aa8-b758aafc068a",
+     "4e282980-2ba1-599b-bcc6-82e313729105"
+    ]
+   ]
+  },
+  {
+   "key": "pattachitra-gi",
+   "craftSlug": "Orissa-Pattachitra",
+   "field": "POLICY",
+   "question": "When did the GI Registry register Orissa Pattachitra?",
+   "expected": [
+    "beea5026-7b66-5d28-a9f2-6d89d834bb92"
+   ]
+  },
+  {
+   "key": "firozabad-dye-fumes",
+   "craftSlug": "Firozabad-Glass",
+   "field": "HEALTH",
+   "question": "Why are the fumes of the bangle colours dangerous?",
+   "expected": [
+    "03ad7c82-a5de-57dd-8008-e1d20a54dcb5"
+   ]
+  },
+  {
+   "key": "firozabad-pot-furnace",
+   "craftSlug": "Firozabad-Glass",
+   "field": "PHYSICS",
+   "question": "How do the hot gases move in a Firozabad pot furnace?",
+   "expected": [
+    "ae96f7af-879c-5bd4-a17f-abe865c0e0a6"
+   ]
+  },
+  {
+   "key": "firozabad-selenium",
+   "craftSlug": "Firozabad-Glass",
+   "field": "CHEMISTRY",
+   "question": "Why did the furnace for red glass have shorter pot lives?",
+   "expected": [
+    "e5e33bd3-0919-5a78-addf-5955fc0c1b20"
+   ]
+  },
+  {
+   "key": "ringal-altitude",
+   "craftSlug": "Uttarakhand-Ringal-Craft",
+   "field": "BOTANY",
+   "question": "At what altitude does ringal grow?",
+   "expected": [
+    [
+     "6b833e97-4a82-504d-b2fc-d66e9a2a3db4",
+     "35fd602d-9632-501c-a344-cf5c32382fa8"
+    ]
+   ]
+  },
+  {
+   "key": "ringal-dev-ringal",
+   "craftSlug": "Uttarakhand-Ringal-Craft",
+   "field": "BOTANY",
+   "question": "Which species is called dev ringal?",
+   "expected": [
+    [
+     "61170b72-616f-51d2-aecd-12d428ff46cb",
+     "ed348de1-2a7b-546a-84be-ec6c3f57d39c",
+     "4b28504c-db41-532f-93be-296b3a860f4e",
+     "004cbaa0-61a8-5ac0-87e4-a98e599c3bce"
+    ]
+   ]
+  },
+  {
+   "key": "ringal-rudia",
+   "craftSlug": "Uttarakhand-Ringal-Craft",
+   "field": "SOCIETY",
+   "question": "Which community weaves ringal?",
+   "expected": [
+    [
+     "cfcb0a81-1c74-571e-905e-afab79d06d59",
+     "6317066d-6256-5c7f-9f90-79a4ee03d101",
+     "3a18b6b1-320e-564c-a32d-6f544685d339",
+     "c661ecf1-b8d5-50d6-9207-4bda3c78f659"
+    ]
+   ]
+  },
+  {
+   "key": "tikuli-old-glass",
+   "craftSlug": "Tikuli-Painting",
+   "field": "HISTORY",
+   "question": "How was the glass for the old tikulis made?",
+   "expected": [
+    "83305520-167e-552f-8d00-6595548e3615"
+   ]
+  },
+  {
+   "key": "tikuli-enamel-exports",
+   "craftSlug": "Tikuli-Painting",
+   "field": "HEALTH",
+   "question": "What hinders the export of tikuli products?",
+   "expected": [
+    "558fead0-e7d1-5220-805c-ce924093b6e4"
+   ]
+  },
+  {
+   "key": "tikuli-season",
+   "craftSlug": "Tikuli-Painting",
+   "field": "CLIMATE",
+   "question": "Which seasons suit tikuli making best?",
+   "expected": [
+    "a57ddb2a-4f4d-547c-bb1f-737c2cf74bd4"
+   ]
+  }
+ ]
+}

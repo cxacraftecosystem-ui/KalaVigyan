@@ -1,5 +1,5 @@
 import { apiFetch, buildQuery } from "@/lib/api";
-import { boolean, list, nullable, object, oneOf, parseShape, tagged, text, type Shape } from "@/lib/shape";
+import { boolean, list, nullable, object, oneOf, optional, parseShape, tagged, text, type Shape } from "@/lib/shape";
 
 export const OAUTH_TERMS_PATH = "/oauth/terms";
 export const OAUTH_REVIEW_PATH = "/oauth/authorize/request";
@@ -26,7 +26,14 @@ export type AuthorizationQuery = Partial<Record<AuthorizationParam, string>> & {
 
 export type ScopeChoice = { scope: McpScope; title: string; description: string; allowed: boolean; needs: string | null };
 export type TermsStatus = { version: string; acceptedAt: string | null };
-export type AuthorizationPrompt = { kind: "prompt"; clientName: string; redirectHost: string; scopes: ScopeChoice[]; terms: TermsStatus };
+export type AuthorizationPrompt = {
+  kind: "prompt";
+  clientName: string;
+  clientIdHost?: string | null;
+  redirectHost: string;
+  scopes: ScopeChoice[];
+  terms: TermsStatus;
+};
 export type AuthorizationRedirect = { kind: "redirect"; redirectTo: string };
 export type AuthorizationReview = AuthorizationPrompt | AuthorizationRedirect;
 export type TermsOfUse = { version: string; title: string; body: string };
@@ -51,6 +58,7 @@ const scopeChoiceShape: Shape<ScopeChoice> = object<ScopeChoice>({
 export const promptShape: Shape<AuthorizationPrompt> = object<AuthorizationPrompt>({
   kind: oneOf(["prompt"] as const),
   clientName: text,
+  clientIdHost: optional(nullable(text)),
   redirectHost: text,
   scopes: list(scopeChoiceShape),
   terms: object<TermsStatus>({ version: text, acceptedAt: nullable(text) })

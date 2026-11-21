@@ -60,6 +60,7 @@ def authorization_server_metadata(endpoints: OAuthEndpoints) -> dict[str, Any]:
         "revocation_endpoint_auth_methods_supported": [PUBLIC_CLIENT_AUTH],
         "code_challenge_methods_supported": [PKCE_METHOD],
         "authorization_response_iss_parameter_supported": True,
+        "client_id_metadata_document_supported": True,
     }
 
 

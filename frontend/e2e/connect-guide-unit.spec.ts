@@ -142,6 +142,14 @@ test("every client's steps carry the address exactly as the client takes it", ()
   }
 });
 
+test("Claude is told to sign in with its published identity, with registering kept as the other way in", () => {
+  const [claude] = clientGuides(ADDRESS);
+  const steps = claude.steps.map((step) => step.text).join(" ");
+  expect(steps).toContain("under OAuth client choose Use Claude's published identity (Recommended)");
+  expect(steps).not.toContain("Register automatically");
+  expect(claude.note).toContain("Register automatically also signs in");
+});
+
 test("the catalogue draws each group with its count and the prompts with what they take", () => {
   const catalogue: McpCatalogue = { tools: [tool("find_crafts", false, "reading"), tool("get_facts", false, "reading"), tool("reserve_tasks", true, "work")], prompts: TODAY.prompts };
   expect(catalogueLine(catalogue)).toBe("3 tools in 2 groups, and 1 guided prompt, as the server lists them now.");

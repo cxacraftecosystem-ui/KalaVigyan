@@ -18,6 +18,7 @@ from app.models.open_work import TASK_KEY_COLUMN_CHARS
 from .base import ContractModel
 from .crafts import SLUG_MAX_CHARS
 from .image_contributions_tasks import PICTURE_TASK, is_picture_detail
+from .open_work_gap_keys import GAP_TASK, is_gap_detail
 from .vocabulary import Discipline
 
 __all__ = [
@@ -83,6 +84,7 @@ TASK_KINDS = (
     "FIND_ANOTHER_SOURCE",
     "REVIEW",
     PICTURE_TASK,
+    GAP_TASK,
 )
 UNRESERVABLE_KINDS = frozenset({"REVIEW"})
 PRIORITIES = ("HIGH", "MEDIUM", "LOW")
@@ -172,6 +174,7 @@ TASK_PROMPTS: Mapping[str, str] = MappingProxyType(
         "SECTION": WRITE_SECTION_PROMPT,
         "MISSING_COMPONENT": PROPOSE_COMPONENT_PROMPT,
         "MISSING_PICTURE": GIVE_PICTURE_PROMPT,
+        GAP_TASK: RESEARCH_FIELD_PROMPT,
     }
 )
 TASKS_LIMIT_DEFAULT = 50
@@ -294,6 +297,7 @@ class SubjectStanding:
     curated: bool = False
     demand: int = 0
     healing: tuple[OpenTask, ...] = ()
+    asked: tuple[OpenTask, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -354,6 +358,7 @@ def parse_task_key(key: str) -> TaskKey:
         and detail not in DISCIPLINES
         and detail not in COMPONENT_NEEDS
         and not is_picture_detail(detail)
+        and not is_gap_detail(detail)
     ):
         raise InvalidInput(f"{key} names neither a field nor a component need")
     return TaskKey(parts[0], parts[1], parts[2], detail)

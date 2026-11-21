@@ -163,7 +163,7 @@ async def test_one_subject_is_checked_one_proposal_at_a_time(session: AsyncSessi
 async def test_the_hour_s_allowance_refuses_the_facts_beyond_it(session: AsyncSession) -> None:
     researcher = await person(session, "RESEARCHER")
     for _ in range(29):
-        assert proposal_attempt(FACT_PROPOSALS, researcher)[0] is True
+        assert (await proposal_attempt(FACT_PROPOSALS, researcher, now=NOW)).granted == 1
     statements = [STATEMENT, OTHER_STATEMENT, OTHER_STATEMENT.replace("running", "flowing")]
     assert all(len(text) <= STATEMENT_MAX_CHARS for text in statements)
     batch = await queued(

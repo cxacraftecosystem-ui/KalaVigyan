@@ -45,7 +45,7 @@ async def start_picture(
     context: ToolContext, slot: UploadSlot, declaration: SlotDeclaration | None
 ) -> UploadStart:
     user = signed_in(context)
-    refuse_tool_when_spent(IMAGE_UPLOADS, user)
+    await refuse_tool_when_spent(IMAGE_UPLOADS, user)
     issued = await upload_links.start_upload(context.session, user, slot, declaration, now=datetime.now(UTC))
     endpoints = endpoints_or_none()
     upload_url = (
@@ -95,7 +95,7 @@ async def _given(context: ToolContext, user: User, arguments: GivePictures) -> G
 
 async def _file(position: int, picture: GivenOrUploaded, fetcher: PictureFetcher, user: User) -> GivenFile:
     batch = picture.batch_picture()
-    spent = spent_limit(IMAGE_UPLOADS, user)
+    spent = await spent_limit(IMAGE_UPLOADS, user)
     if spent is not None:
         return GivenFile(position, batch, None, spent.message)
     try:
