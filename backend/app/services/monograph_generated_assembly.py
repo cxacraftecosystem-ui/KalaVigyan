@@ -258,6 +258,10 @@ def _borrow(
         citations.update(filled.citations)
         claims.update(filled.citation_claims)
     for label, monograph in page.borrowed_specs.items():
+        cited = drawings.spec_cites(monograph, page.specs[label], book)
+        page.specs[label] = cited.spec
+        citations.update(cited.citations)
+        claims.update(cited.citation_claims)
         named = drawings.spec_units(monograph, page.specs[label], book)
         for key, unit in named.units.items():
             if page.units.get(key, unit) != unit:

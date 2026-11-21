@@ -146,3 +146,46 @@ def test_a_sentence_whose_source_is_not_on_the_page_keeps_only_the_sources_that_
         }
     }
     assert reader_data({"mol-data": {}}, {"lede.1"}, {2: 3}) == {}
+
+
+HELD_KEY = "pt:C046"
+HELD_CITE = {
+    "m": "cite",
+    "key": HELD_KEY,
+    "g": ["g1"],
+    "shown": [{"number": 1, "title": "GI Journal"}],
+    "c": ["Barmer."],
+}
+
+
+def _cited_map(tmp_path: Path) -> Path:
+    root = fragment_monograph(tmp_path)
+    folder = root / "Kutch-Ajrakh"
+    content = json.loads((folder / "content.json").read_text(encoding="utf-8"))
+    content["citations"][HELD_KEY] = [{"source": "g1", "locator": "p. 9", "quote": "Barmer"}]
+    content["citationClaims"][HELD_KEY] = ["C046"]
+    (folder / "content.json").write_text(json.dumps(content), encoding="utf-8")
+    side = [{"text": [{"m": "s", "c": ["Rain over ", HELD_CITE]}]}]
+    (folder / "specs" / "shared__climate__kachchh-district-climate-map.json").write_text(
+        json.dumps({"setting": "explorer", "explorer": {"side": side}}), encoding="utf-8"
+    )
+    return root
+
+
+def test_a_citation_a_borrowed_spec_holds_names_the_source_by_the_page_s_own_number(tmp_path: Path) -> None:
+    borrowed = (dataclasses.replace(component(MAP), kind="map_layer"),)
+    built = assembled_document(generated(components=borrowed), Drawings(root=_cited_map(tmp_path)))
+    assert built is not None
+    sources = built.content.sources.items()
+    [(key, gi)] = [(key, found) for key, found in sources if found.title == "GI Journal"]
+    cite = built.specs[MAP]["explorer"]["side"][0]["text"][0]["c"][1]
+    held = f"kutch-ajrakh:{HELD_KEY}"
+    assert cite == {
+        "m": "cite",
+        "key": held,
+        "g": [key],
+        "shown": [{"number": gi.number, "title": "GI Journal"}],
+        "c": ["Barmer."],
+    }
+    assert [quote.source for quote in built.content.citations[held]] == [key]
+    assert built.content.citation_claims[held] == ["C046"]

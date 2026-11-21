@@ -20,6 +20,7 @@ __all__ = [
     "SPECS_FOLDER",
     "Drawings",
     "FilledFragment",
+    "FilledSpec",
     "FilledUnits",
     "fragment_file_name",
     "remapped_nodes",
@@ -32,6 +33,7 @@ FRAGMENT_SUFFIX = ".html"
 MONOGRAPH_SLUG = re.compile(r"^[A-Za-z0-9-]+$")
 UNIT_SLOT = "unit"
 CITE_MARK = "cite"
+SHOWN_KEY = "shown"
 UNIT_NAME = re.compile(r"^u\d+$")
 
 
@@ -53,6 +55,13 @@ class FilledFragment:
 @dataclass(frozen=True)
 class FilledUnits:
     units: dict[str, TextUnit]
+    citations: dict[str, list[Quote]]
+    citation_claims: dict[str, list[str]]
+
+
+@dataclass(frozen=True)
+class FilledSpec:
+    spec: dict[str, Any]
     citations: dict[str, list[Quote]]
     citation_claims: dict[str, list[str]]
 
@@ -113,6 +122,16 @@ class Drawings:
         content = self._content(monograph)
         return self._filled(monograph, sorted(named & set(content.units)), book)
 
+    def spec_cites(self, monograph: str, spec: Mapping[str, Any], book: SourceBook) -> FilledSpec:
+        content = self._content(monograph)
+        prefix = f"{monograph.lower()}:"
+        rename = _renamer(content, book)
+        held: set[str] = set()
+        renumbered = _held_cites(spec, rename, book, prefix, held)
+        citations = {f"{prefix}{key}": _quotes(content, key, rename) for key in sorted(held)}
+        claims = {f"{prefix}{key}": list(content.citation_claims.get(key, [])) for key in sorted(held)}
+        return FilledSpec(renumbered, citations, claims)
+
     def source_numbers(self, monograph: str, book: SourceBook) -> dict[int, int]:
         numbers: dict[int, int] = {}
         for source in self._content(monograph).sources.values():
@@ -170,6 +189,27 @@ def _renamer(content: MonographContent, book: SourceBook) -> Callable[[str], str
         return book.key(source)
 
     return rename
+
+
+def _held_cites(
+    value: Any, rename: Callable[[str], str], book: SourceBook, prefix: str, held: set[str]
+) -> Any:
+    if isinstance(value, list):
+        return [_held_cites(item, rename, book, prefix, held) for item in value]
+    if not isinstance(value, Mapping):
+        return value
+    changed = {name: _held_cites(item, rename, book, prefix, held) for name, item in value.items()}
+    if value.get("m") == CITE_MARK and SHOWN_KEY in value:
+        held.add(str(value["key"]))
+        changed["g"] = [rename(key) for key in value["g"]]
+        changed["key"] = f"{prefix}{value['key']}"
+        changed[SHOWN_KEY] = _shown(changed["g"], book)
+    return changed
+
+
+def _shown(keys: Sequence[str], book: SourceBook) -> list[dict[str, Any]]:
+    titles = {book.sources[key].number: book.sources[key].title for key in keys}
+    return [{"number": number, "title": titles[number]} for number in sorted(titles)]
 
 
 def _remapped_unit(unit: TextUnit, rename: Callable[[str], str], prefix: str) -> TextUnit:
