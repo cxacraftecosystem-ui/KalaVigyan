@@ -76,7 +76,10 @@ name, English name, whether the name is local (italic on the ribbon), its "after
 label card and the script's `data-stages`, and its units (number, heading, texts, why, materials,
 and the held "Sources differ" note and after sentence). The view draws each stage's tile, ribbon
 and swatch from the page's `#tile-n` patterns, the label card at rest ("Stage 11 of 11") and the
-ribbon as a toolbar. Ajrakh: `kutch-ajrakh/process/cloth-after-each-stage`.
+ribbon as a toolbar. The label before each stage's after (`afterLabel`, Ajrakh's "Cloth after", a dhokra
+mould's "Model after") is the spec's, and a stage may name a recorded material as its `swatch`, drawn in
+place of the page's `#tile-n` pattern, so another craft's stages show their own colours.
+Ajrakh: `kutch-ajrakh/process/cloth-after-each-stage`.
 
 ## diagram
 

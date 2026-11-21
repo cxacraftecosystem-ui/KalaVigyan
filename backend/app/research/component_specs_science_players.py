@@ -188,6 +188,7 @@ class StageEntry(SpecModel):
     differs: Differs | None = None
     after_sentence: UnitRef | None = None
     materials: UnitRef | None = None
+    swatch: ColourToken | None = Field(default=None, exclude_if=absent)
 
 
 class StageFinish(SpecModel):
@@ -204,3 +205,4 @@ class StagePlayerSpec(SpecModel):
     source: UnitRef
     stages: list[StageEntry] = Field(min_length=2)
     finish: StageFinish
+    after_label: Label

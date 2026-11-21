@@ -3,30 +3,54 @@
   "kind": "label_card",
   "craft": "Bidriware",
   "craftName": "Bidriware",
-  "label": "bidriware/materials/alloy-label",
-  "title": "The bidri alloy",
-  "description": "A label card of the bidri alloy with the zinc, copper and silver shares the Hyderabad quality-marking scheme set. Place it where the alloy is introduced.",
-  "field": "MATERIALS",
+  "label": "bidriware/policy/gi-registration-card",
+  "title": "Bidriware's GI registration",
+  "description": "A label card of Bidriware's geographical indication: its application, certificate, validity and area as the GI registry records them.",
+  "field": "POLICY",
   "within": null,
   "spec": {
-    "variant": "craft",
+    "variant": "gi",
     "kicker": "u0001",
     "seal": {
       "tag": "svg",
       "attrs": {
-        "viewBox": "0 0 40 40",
+        "viewBox": "0 0 56 56",
         "aria-hidden": "true"
       },
       "children": [
         {
           "tag": "circle",
           "attrs": {
-            "cx": "20",
-            "cy": "20",
-            "r": "16",
+            "cx": "28",
+            "cy": "28",
+            "r": "26",
+            "fill": "none",
+            "stroke": "currentColor",
+            "stroke-width": "1.4"
+          },
+          "children": []
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": "28",
+            "cy": "28",
+            "r": "21.5",
+            "fill": "none",
+            "stroke": "currentColor",
+            "stroke-width": "0.8"
+          },
+          "children": []
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": "28",
+            "cy": "28",
+            "r": "9",
             "fill": "var(--dye-bidri-black)",
             "stroke": "var(--dye-bidri-silver)",
-            "stroke-width": "3"
+            "stroke-width": "2"
           },
           "children": []
         }
@@ -51,114 +75,112 @@
   },
   "units": {
     "u0001": {
-      "text": "The bidri alloy",
+      "text": "Geographical indication",
       "claims": []
     },
     "u0002": {
-      "text": "Bidriware is cast from a zinc-copper alloy, engraved and inlaid with silver.",
+      "text": "Bidriware is a registered geographical indication, application number 20, filed on 24 January 2005.",
       "claims": [
-        "C001"
+        "C134"
       ]
     },
     "u0003": {
-      "text": "Zinc",
+      "text": "Certificate",
       "claims": []
     },
     "u0004": {
-      "text": "93% to 94% of the base alloy",
+      "text": "Number 21, issued on 30 January 2006",
       "claims": [
-        "C089"
+        "C135"
       ]
     },
     "u0005": {
-      "text": "Copper",
+      "text": "Valid until",
       "claims": []
     },
     "u0006": {
-      "text": "6% to 7% of the base alloy",
+      "text": "23 January 2035",
       "claims": [
-        "C089"
+        "C136"
       ]
     },
     "u0007": {
-      "text": "Inlay",
+      "text": "Area",
       "claims": []
     },
     "u0008": {
-      "text": "Silver of at least 96%",
+      "text": "Karnataka",
       "claims": [
-        "C089"
+        "C047"
       ]
     }
   },
   "facts": {
-    "C001": {
-      "text": "Bidriware is a metal craft of Bidar in which designs engraved on a cast zinc-copper alloy are inlaid with silver.",
+    "C047": {
+      "text": "The GI registry records Karnataka as the geographical area of the Bidriware geographical indication.",
       "quotes": [
         {
-          "source": "S02",
-          "locator": "lines 109-110",
-          "quote": "Bidri ware is a famous handicraft of Bidar District."
-        },
-        {
-          "source": "S02",
-          "locator": "lines 224-227",
-          "quote": "Bidriware is an alloy ofzinc , copper and other non ferrous metals. Pretty designs are engtaved on it and there after inlaid with pure silver ware."
-        },
-        {
-          "source": "S08",
-          "locator": "line 5",
-          "quote": "The technique consists of casting objects from a high-zinc alloy and then inlaying them with silver or brass, or a combination of both."
+          "source": "S01",
+          "locator": "line 10",
+          "quote": "| Geographical Area | Karnataka |"
         }
       ]
     },
-    "C089": {
-      "text": "The census monograph reproduces quality-marking standards set for Bidriware at Hyderabad, requiring a base alloy of 93% to 94% zinc and 6% to 7% copper and inlay silver of at least 96%.",
+    "C134": {
+      "text": "Bidriware is a registered geographical indication under application number 20, filed by the Karnataka State Handicrafts Development Corporation Limited on 24 January 2005.",
       "quotes": [
         {
-          "source": "S03",
-          "locator": "lines 1853-1854",
-          "quote": "a quality marking scheme was introduced in the State first on a voluntary basis in 1960"
+          "source": "S01",
+          "locator": "lines 2-5",
+          "quote": "| Application Number | 20 | | Geographical Indications | Bidriware | | Status | Registered | | Applicant Name | Karnataka State Handicrafts Development Corporation Limited |"
         },
         {
-          "source": "S03",
-          "locator": "lines 1856-1858",
-          "quote": "The scheme was extended by phases to the other crafts also, including Bidriware at Hyderabad."
+          "source": "S01",
+          "locator": "line 7",
+          "quote": "| Date of Filing | 24-01-2005 |"
+        }
+      ]
+    },
+    "C135": {
+      "text": "The registry issued certificate number 21 for Bidriware on 30 January 2006, after publication in Geographical Indications Journal number 10.",
+      "quotes": [
+        {
+          "source": "S01",
+          "locator": "lines 12-15",
+          "quote": "| Journal Number | 10 | | Availability Date | 21-10-2005 | | Certificate Number | 21 | | Certificate Date | 30-01-2006 |"
         },
         {
-          "source": "S03",
-          "locator": "lines 1868-1872",
-          "quote": "Those set up for Bidriware are reproduced below: 1. Base alloy should have the following com position: Zinc = 93% to 94% Copper = 6% to 7%"
-        },
+          "source": "S16",
+          "locator": "line 5",
+          "quote": "In 2006, Bidriware was granted the Geographical Indications status by the Government of India."
+        }
+      ]
+    },
+    "C136": {
+      "text": "The Bidriware geographical indication registration is valid up to 23 January 2035.",
+      "quotes": [
         {
-          "source": "S03",
-          "locator": "lines 1877-1878",
-          "quote": "Silver used for inlay work shOUld contain a minimum of 96% silver"
+          "source": "S01",
+          "locator": "line 16",
+          "quote": "| Registration Valid Upto | 23-01-2035 |"
         }
       ]
     }
   },
   "sources": {
-    "S02": {
-      "title": "Form GI-1: Application for the registration of a geographical indication, Bidriware (statement of case)",
-      "publisher": "Karnataka State Handicrafts Development Corporation Limited",
+    "S01": {
+      "title": "Application Details: Bidriware, Application Number 20",
+      "publisher": "Geographical Indications Registry, IP India",
       "year": null,
-      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/13-bidriware.pdf",
+      "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/20",
       "reliability": "A"
     },
-    "S03": {
-      "title": "Census of India 1961, Volume II, Andhra Pradesh, Part VII-A (3): Selected Crafts of Andhra Pradesh (monograph: Bidriware of Hyderabad City)",
-      "publisher": "Census of India",
+    "S16": {
+      "title": "Bidriware",
+      "publisher": "Incredible India, Ministry of Tourism, Government of India",
       "year": null,
-      "url": "https://censusindia.gov.in/nada/index.php/catalog/31726/download/34907/22310_1961_SEL.pdf",
-      "reliability": "A"
-    },
-    "S08": {
-      "title": "Huqqa base, Bidar, ca. 1850, museum number 136-1852",
-      "publisher": "Victoria and Albert Museum",
-      "year": null,
-      "url": "https://collections.vam.ac.uk/item/O16017/huqqa-base-unknown/",
-      "reliability": "A"
+      "url": "https://www.incredibleindia.gov.in/en/karnataka/bidriware",
+      "reliability": "C"
     }
   }
 }

@@ -56,7 +56,8 @@
         "why": null,
         "differs": null,
         "afterSentence": null,
-        "materials": null
+        "materials": null,
+        "swatch": "--dye-field-soil"
       },
       {
         "name": "Leaf paste",
@@ -71,7 +72,8 @@
         "why": null,
         "differs": null,
         "afterSentence": null,
-        "materials": null
+        "materials": null,
+        "swatch": "--dye-sem-green"
       },
       {
         "name": "Wrapping wax strings",
@@ -124,7 +126,8 @@
       "paragraphs": [
         "u0022"
       ]
-    }
+    },
+    "afterLabel": "Model after"
   },
   "units": {
     "u0001": {

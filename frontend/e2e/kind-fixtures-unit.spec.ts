@@ -49,6 +49,8 @@ test("the preview page places one of each kind, every unit cited from its craft'
   expect(Object.keys(document.specs).sort()).toEqual(KIND_FIXTURES.map((fixture) => fixture.label).sort());
   const nested = document.content.layout.filter((entry) => entry.within === "bidriware/chemistry/what-if-lab").map((entry) => entry.ref);
   expect(nested.sort()).toEqual(["bidriware/chemistry/what-blackens", "bidriware/chemistry/why-copper"]);
+  const tiles = document.content.layout.find((entry) => entry.ref === "blue-pottery-of-jaipur/market/at-a-glance");
+  expect(tiles?.within).toBe("blue-pottery-of-jaipur/history/journey-of-the-glaze");
   const numbers = Object.values(document.content.sources).map((source) => source.number);
   expect(numbers).toEqual(numbers.map((_, at) => at + 1));
   const cited = Object.values(document.content.citations).flat();
@@ -69,6 +71,19 @@ test("any recorded material can be depicted and no other", () => {
   expect(knownColourToken("--dye-field-soil")).toBe(true);
   expect(knownColourToken("--dye-ultramarine")).toBe(false);
   expect(knownColourToken("--ink-1")).toBe(true);
+});
+
+test("a stage player says its own after label and paints each stage from a recorded material", () => {
+  const stages = KIND_FIXTURES.find((fixture) => fixture.kind === "stage_player") as KindFixture;
+  const html = drawn(stages);
+  expect(html).toContain("Model after");
+  expect(html).not.toContain("Cloth after");
+  expect(html).toContain('fill="var(--dye-field-soil)"');
+});
+
+test("a map sequence card without a visual draws no empty frame", () => {
+  const sequence = KIND_FIXTURES.find((fixture) => fixture.kind === "map_sequence") as KindFixture;
+  expect(drawn(sequence).match(/class="ws-vis"/g)).toHaveLength(1);
 });
 
 test("a dip player names its own phases and may show no equation", () => {

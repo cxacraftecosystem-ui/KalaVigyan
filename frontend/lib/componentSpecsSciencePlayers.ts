@@ -86,6 +86,7 @@ export type StageEntry = {
   differs: Differs | null;
   afterSentence: string | null;
   materials: string | null;
+  swatch?: string;
 };
 export type StagePlayerSpec = {
   key: string;
@@ -96,6 +97,7 @@ export type StagePlayerSpec = {
   source: string;
   stages: StageEntry[];
   finish: { heading: string; paragraphs: string[] };
+  afterLabel?: string;
 };
 
 const stepTextShape: Shape<StepText> = object<StepText>({
@@ -185,9 +187,11 @@ export const stagePlayerShape: Shape<StagePlayerSpec> = object<StagePlayerSpec>(
       why: nullable(unitRef),
       differs: nullable(differsShape),
       afterSentence: nullable(unitRef),
-      materials: nullable(unitRef)
+      materials: nullable(unitRef),
+      swatch: optional(colourToken)
     }),
     2
   ),
-  finish: object<{ heading: string; paragraphs: string[] }>({ heading: unitRef, paragraphs: list(unitRef, 1) })
+  finish: object<{ heading: string; paragraphs: string[] }>({ heading: unitRef, paragraphs: list(unitRef, 1) }),
+  afterLabel: optional(label)
 });

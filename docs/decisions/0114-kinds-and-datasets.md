@@ -36,8 +36,11 @@ CHELSA's licence field held a citation, USGS MRDS was recorded twice, and the co
    identical; the swatch key `dye` keeps its name for the same reason.
 2. **Words are data.** A dip player's phase is a key of the spec's own (`pose`, a lower-case word,
    each once), so Ajrakh's spec carries vat, lifted and air and Bidri's carries solution, lifted and
-   oiled; its equation is shown only where a source states one. A `--dye-` token in any drawing must
-   be a recorded material.
+   oiled; its equation is shown only where a source states one. A stage player's label before each
+   stage's colour after is the spec's (`afterLabel`: Ajrakh's "Cloth after", a dhokra mould's "Model
+   after"), and a stage may name a recorded material as its swatch instead of the page's tile pattern.
+   A map sequence card without a visual draws no empty frame. A `--dye-` token in any drawing must be
+   a recorded material.
 3. **One kind per job.** `chart`, `fact_table`, `timeline` and `map_layer` take the authored spec
    and the declared spec (a spec with a `head`); `general_drawing` is now `drawing`; the general_*
    names are retired in the kind lists, the stored pieces, the proposals and the stored documents

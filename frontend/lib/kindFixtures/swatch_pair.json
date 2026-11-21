@@ -11,7 +11,7 @@
   "spec": {
     "id": "dhokra-sem",
     "wide": false,
-    "pairClass": "pair",
+    "pairClass": "iron-pair",
     "description": "The black soil core before and after it is rubbed with sem leaves",
     "weave": "dhokra-weave",
     "swatches": [

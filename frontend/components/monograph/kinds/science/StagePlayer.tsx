@@ -5,7 +5,7 @@ import { parseShape } from "@/lib/shape";
 import { Drawing } from "./parts/Drawing";
 import { PlayStagesIcon } from "./parts/icons";
 import { FigureHeadLines, type RenderUnit } from "./parts/Text";
-import { CLOTH_AFTER, StageList, StageRibbon } from "./StageList";
+import { afterLabel, StageList, StageRibbon } from "./StageList";
 
 export const stagesForScript = (player: StagePlayerSpec) =>
   JSON.stringify(
@@ -23,7 +23,7 @@ function LabelCard({ player, renderUnit }: { player: StagePlayerSpec; renderUnit
         {renderUnit(player.restName)}
       </p>
       <p className="lc-now">
-        <span className="lk">{CLOTH_AFTER}</span>
+        <span className="lk">{afterLabel(player)}</span>
         <span data-a="">{player.stages[rest - 1].after}</span>
       </p>
       <div className="lc-play">

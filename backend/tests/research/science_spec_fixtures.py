@@ -235,6 +235,7 @@ def stage_player() -> dict[str, Any]:
         "source": "u0801",
         "stages": [stage_entry("saaj", 810), stage_entry("kasanu", 820)],
         "finish": {"heading": "u0830", "paragraphs": ["u0831"]},
+        "afterLabel": "Cloth after",
     }
 
 

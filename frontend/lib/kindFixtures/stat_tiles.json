@@ -7,7 +7,7 @@
   "title": "Jaipur blue pottery at a glance",
   "description": "Four headline figures of Jaipur blue pottery: its authorised GI users, the days a piece takes, its single firing and the year of its GI application.",
   "field": "MARKET",
-  "within": null,
+  "within": "blue-pottery-of-jaipur/history/journey-of-the-glaze",
   "spec": {
     "classes": [],
     "tiles": [
