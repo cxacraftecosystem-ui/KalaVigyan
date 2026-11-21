@@ -8,7 +8,14 @@ description: Durable practices for building and refactoring user-interface code 
 Read `engineering-practices` first; this skill applies its rules to user-interface code. Where
 UI code lives in this repository, and the project rules a UI must respect, are in
 `../engineering-practices/references/project-bindings.md`. Examples use React and TypeScript
-terms; with another framework keep the principles and map the names.
+terms; with another framework keep the principles and map the names. Anyone writing or reviewing
+user-interface code here reads it, with `kalavigyan-design` for how a screen looks.
+
+| For | Read |
+|---|---|
+| The house rules this applies | `engineering-practices` |
+| Where UI code lives here, and the project's rules | `../engineering-practices/references/project-bindings.md` |
+| Tokens, components, templates, copy and acceptance | `kalavigyan-design` |
 
 ## Structure
 
@@ -125,3 +132,13 @@ behind your own component so it can be replaced, and record the decision.
 - Do the types come from the backend schemas?
 - Is untrusted content never rendered as raw markup?
 - Do the tests exercise behaviour a user would notice?
+
+## How this skill is kept true
+
+| What | Kept true by |
+|---|---|
+| Type checks, lint and unit specs | Frontend checks (`.github/workflows/frontend-checks.yml`) |
+| Retired classes, hex literals and physical utilities | the design guard, `frontend/e2e/design-guard-unit.spec.ts` |
+| Accessibility and layout at the acceptance widths | the browser smoke and the capture and parity runs |
+
+Re-read it when the web client changes framework, a check is automated, or the design system changes a rule.

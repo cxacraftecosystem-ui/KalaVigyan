@@ -5,7 +5,13 @@ description: The one naming convention for designer-portal (DesignWorkshop) and 
 
 # Naming: one convention for every generated name
 
-The full rationale, audit and examples are in `C:/dev/IIT/docs/conventions/NAMING_2026-10-18.md` (owner correction, 18 Oct 2026). This skill gives you the rules you need to apply it.
+The full rationale, audit and examples are in `C:/dev/IIT/docs/conventions/NAMING_2026-10-18.md` (owner correction, 18 Oct 2026). This skill gives you the rules you need to apply it. Anyone generating a stored, uploaded or downloaded name reads it.
+
+| For | Read |
+|---|---|
+| The rationale, audit and examples | `C:/dev/IIT/docs/conventions/NAMING_2026-10-18.md` |
+| KalaVigyan's own helpers | `backend/app/services/naming.py` and `frontend/lib/naming.ts` |
+| The golden rows both sides share | `shared/naming-golden.json` |
 
 ## Grammar for file names
 
@@ -66,3 +72,12 @@ Portal_Entity_Date[_Time]_Place_Craft_Subject_What[_Sequence][_n].ext
 1. Never format a name inline. Call the runtime's single helper: Python `app/services/naming.py`, web `frontend/lib/naming.ts`, Android `data/Naming.kt`. If the helper does not exist yet, add it rather than hand-building the string.
 2. Add a golden test row for every new kind of name: questionnaire titles, recordings and exports in `shared/session-title.json` (the frozen contract), everything else in `shared/naming-golden.json`. All three runtimes run both tables, and both repositories carry the same bytes.
 3. Exempt: Android private storage directories, scratch temp files, and parts inside a docx. These are not data names.
+
+## How this skill is kept true
+
+| What | Kept true by |
+|---|---|
+| Names built by both sides agree | `shared/naming-golden.json`, read by `backend/tests/media/test_naming.py` and `frontend/e2e/production-checks-unit.spec.ts` |
+| A stored file's key | `backend/tests/field_voices/test_field_image_names.py` and the other tests that read the same golden |
+
+Re-read it when the convention document changes, or a new kind of name is generated.

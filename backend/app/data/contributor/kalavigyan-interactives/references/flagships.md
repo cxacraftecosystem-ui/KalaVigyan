@@ -10,15 +10,15 @@ its page or joined by others since. Read only your family's section.
 
 Each section gives:
 
-- **Pages**: the family's page and the anchor craft, by slug.
-- **Why this one**: what makes it the family's shared mechanism.
-- **Shared by**: the sub-families and crafts that will borrow it, and those that will not.
-- **Task**: the anchor's open-work task, from `list_open_work` on the same day; the family's own
-  is its `FLAGSHIP` task (Open work and the flagships, below).
-- **Carried by**: the kind, the registered components it links to and the what-if beside it.
-- **Missing**: what must be found or made before it is drawn.
-- **The states and their facts**: a table, "Read from" naming the family's page or the craft whose
-  `get_facts` gave the fact, and the fact's statement as held.
+| Part | What it gives |
+|---|---|
+| Pages | the family's page and the anchor craft, by slug |
+| Why this one | what makes it the family's shared mechanism |
+| Shared by | the sub-families and crafts that will borrow it, and those that will not |
+| Task | the anchor's open-work task, from `list_open_work` on the same day; the family's own is its `FLAGSHIP` task (Open work and the flagships, below) |
+| Carried by | the kind, the registered components it links to and the what-if beside it |
+| Missing | what must be found or made before it is drawn |
+| The states and their facts | a table, "Read from" naming the family's page or the craft whose `get_facts` gave the fact, and the fact's statement as held |
 
 ## Textiles: two mordants, one bath, then the vat
 
@@ -354,3 +354,16 @@ is `HIGH`, since every craft of the family borrows the flagship, and its prompt 
   named above for each anchor. A delivered reaction player keyed to the anchor completes the
   anchor's task, and each craft that then places it, by a `SUBJECT_LINK` or a `VARIANT` keyed to
   it, completes its own.
+
+## How this backlog is kept true
+
+| What | Kept true by |
+|---|---|
+| Each family's mechanism, anchor, facts and Missing line equal the server's backlog | `backend/tests/mcp/test_interactives_skill.py`, against `research/open_work_flagship_backlog.FLAGSHIPS` |
+| Nine families, each anchored on one of its own crafts | the same test, against the category register |
+| Every task it names is a craft's reaction-player task, and the family task's key is the server's | the same test, against `research/open_work.parse_task_key` |
+| Each fact is named once | the same test |
+| The served copies | the same test, byte for byte against the server's and the site's |
+
+Re-read it when a family's flagship is built, its facts are read again from the server, or a
+fact it names is held from its page.

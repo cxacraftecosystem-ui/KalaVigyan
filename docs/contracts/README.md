@@ -88,5 +88,7 @@ page; the first is caught by comparing the tables with `ls docs/contracts`.
 | A new contract | add its row, in the area it serves, in the same change that adds the file |
 | A contract renamed, merged or retired | change or remove its row in the same change |
 | A contract's scope moves | rewrite its "Answers" line from the contract's own opening |
+| A contract's code or tests move | update the closing "How this document is kept true" of that contract, which names them |
+| A served contract changes | copy it to `backend/app/data/contributor/contracts/` in the same change; `backend/tests/mcp/test_skill_references.py` holds the copies byte for byte |
 
 Re-read the whole table when a round adds a lane, since a new lane usually adds a contract.

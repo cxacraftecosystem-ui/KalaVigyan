@@ -5,6 +5,13 @@ source's material be shown. Every contributor follows it, over the MCP server or
 The gates read each source again themselves: they fetch it, grade it and read its licence, so a
 source chosen against these rules is refused, never argued.
 
+| For | Read |
+|---|---|
+| The SOURCE gate and supplied sources | `kalavigyan://contracts/knowledge-writes.md` |
+| Quoting a source once it is chosen | `quotes.md` |
+| A dataset's licence and record | `datasets.md` |
+| A picture a person gives, and its declaration | `kalavigyan://contracts/image-contributions.md` |
+
 ## Where to look
 
 KalaVigyan's own research reads these, and over the MCP server every contributor reads them
@@ -25,16 +32,12 @@ A source found anywhere else is judged by the same rules below.
 
 Grade every source before quoting it, and prefer A and B:
 
-- **A**: primary or authoritative. The GI journal and registry, peer-reviewed papers, museum
-  collection records, government reports (Textiles Committee, Development Commissioner
-  (Handicrafts), state handicraft boards), academic books.
-- **B**: theses, conference papers, edited encyclopedias, established craft institutions with named
-  authors.
-- **C**: reputable press features, artisan organisations' pages with a named author, and a page a
-  named organisation publishes about its own work, author named or not (a cooperative about its
-  members).
-- **D**: other web pages, and any shop, sales or retail page (a page that sells the craft, or links
-  its visitors to a shop for it).
+| Grade | What it holds |
+|---|---|
+| **A** | primary or authoritative. The GI journal and registry, peer-reviewed papers, museum collection records, government reports (Textiles Committee, Development Commissioner (Handicrafts), state handicraft boards), academic books |
+| **B** | theses, conference papers, edited encyclopedias, established craft institutions with named authors |
+| **C** | reputable press features, artisan organisations' pages with a named author, and a page a named organisation publishes about its own work, author named or not (a cooperative about its members) |
+| **D** | other web pages, and any shop, sales or retail page (a page that sells the craft, or links its visitors to a shop for it) |
 
 A fact whose quotes all come from D sources is refused, except an ECONOMICS fact stating a price in
 a currency from a dated page (a price on that date). A source without a named author is never
@@ -91,3 +94,15 @@ never shown; pages show only the short quote and its citation.
   contributor skill, Pictures).
 - **A dataset** follows the dataset guide (`datasets.md`): the licences it may carry, how it is
   recorded, and which values belong to a dataset rather than to a fact.
+
+## How this reference is kept true
+
+| Rule | Kept true by |
+|---|---|
+| The licences a picture from elsewhere may and may not carry | `test_reference_limits.py` in `backend/tests/mcp`, against `research/licences.open_licence` |
+| The grades and licence marks a search shows | `test_lookup_tools.py` in `backend/tests/mcp` |
+| The SOURCE gate's grading and refusals | `test_candidate_gates.py` and `test_gate_orchestration.py` in `backend/tests/knowledge_writes` |
+| A supplied work's grade | `test_supplied_sources_db.py` in `backend/tests/db` |
+| This text, as every prompt and the site serve it | `test_skill_references.py` in `backend/tests/mcp` |
+
+Read it again whenever an adapter is added, a grade rule changes, or a licence is read differently.

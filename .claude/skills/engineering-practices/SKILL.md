@@ -13,6 +13,13 @@ Everything that is specific to this repository (folder names, commands, budgets,
 documents) is in one file, `references/project-bindings.md`. Read it together with this skill.
 When the project changes, update the bindings, not the rules.
 
+| For | Read |
+|---|---|
+| This repository's layers, commands, budgets and owner rules | `references/project-bindings.md` |
+| Backend Python | `backend-practices` |
+| User-interface code | `frontend-practices`, and `kalavigyan-design` for every screen |
+| Generated names of files and keys | `naming` |
+
 ## Why these rules
 
 Codebases that grow quickly fail in the same few ways: the same helper written many times under
@@ -201,3 +208,13 @@ and put project facts in the bindings, so the skill stays true when the project 
 - Are decisions, debt and exceptions recorded?
 - Do the whole test suite and the check command pass?
 - Are the living documents still true?
+
+## How this skill is kept true
+
+| What | Kept true by |
+|---|---|
+| Size, nesting, parameter and comment budgets, and the import direction | `tools/hygiene_check.py` against `tools/hygiene_baseline.json`, in the Hygiene workflow |
+| Tests with independently derived expected values | review of each change, and the test suites that run on every pull request |
+| The project facts it leaves to the bindings | `references/project-bindings.md` and its own closing section |
+
+Re-read it when a rule proves wrong, missing or unclear, as Keeping this skill alive says.

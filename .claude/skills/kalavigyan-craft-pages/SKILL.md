@@ -9,9 +9,14 @@ The database holds every page's knowledge, and every contributor reaches it the 
 the KalaVigyan MCP server, by the contributor skill's method and the shared references. This skill
 is that method for the team's own agents, plus what only the team does: the bar a curated page
 meets, its gaps, the dossier route for Commons pictures and bulk imports, the cost rules and the
-briefing. `docs/contracts/knowledge-writes.md` is the write path and its gates,
-`docs/contracts/curation.md` the dossier contract field by field, `docs/contracts/dossier-export.md`
-the export. Read the section you need, never the whole file.
+briefing. Read the section you need, never the whole file.
+
+| For | Read |
+|---|---|
+| The write path and its gates | `docs/contracts/knowledge-writes.md` |
+| The dossier contract, field by field | `docs/contracts/curation.md` |
+| The export | `docs/contracts/dossier-export.md` |
+| The rules themselves | the references, below |
 
 ## The references
 
@@ -208,3 +213,16 @@ Minister-facing first: the GI crafts with the most visual stages (Bidriware, Blu
 Jaipur, Kutch Bandhani, Machilipatnam Kalamkari, Madhubani, Orissa Pattachitra, Bastar Dhokra,
 Channapatna), then the rest of the crafts, then the nine categories. The three with no pictures
 (Bareilly Cane Bamboo, Sanganeri, Varanasi Soft Stone Jali) need pictures first.
+
+## How this skill is kept true
+
+| What | Kept true by |
+|---|---|
+| Every tool it sends a change through is one the server offers | `backend/tests/mcp/test_skill_references.py` |
+| It names each reference by its repository path and its URI, and its checklist is the shared one | the same test, byte for byte |
+| It restates no rule a reference owns and shares no heading with one | the same test |
+| The bar's pictures, fields and claims are the gap script's and the server's | `backend/tests/mcp/test_reference_limits.py` |
+| Agents find it by its `name` and `description` | the frontmatter above, which the same tests read |
+
+Re-read it when a tool is added or retired, a reference is added, the bar moves, or a kind of
+structure stops entering by the dossier route.

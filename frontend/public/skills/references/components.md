@@ -7,6 +7,13 @@ in the design system, and nothing a contributor sends is ever run as code. This 
 the design system (Alum & Indigo, the tokens at `kalavigyan://design/tokens.json`) and the
 component contracts; where it is silent, they decide.
 
+| For | Read |
+|---|---|
+| The declared kinds' specs, units and checks in full | `kalavigyan://contracts/component-specs-general.md` |
+| Proposals, the close-match search, drafts and bundles | `kalavigyan://contracts/open-work.md` |
+| Each kind's JSON schema | `kalavigyan://components/<kind>.schema.json` |
+| A figure built from a dataset | `datasets.md` |
+
 ## Find before you make
 
 - Search the library with `list_components`, by the craft and by words for what the component
@@ -211,3 +218,14 @@ stated by their units.
   characters of SVG with no document type or entity, one `svg` element with a viewBox of four
   numbers and a positive size; it is cleaned of everything else before it is stored, and the site
   draws it only as an image, which runs nothing and loads nothing.
+
+## How this reference is kept true
+
+| Rule | Kept true by |
+|---|---|
+| The kinds in each group and their counts, against the server's own lists | `test_reference_limits.py` in `backend/tests/mcp`, reading `models/component_kinds` and `research/component_specs` |
+| Every delivery limit it states | that test again, reading each bound from the spec and delivery modules |
+| The colours a drawing may use | `test_interactives_skill.py` in `backend/tests/mcp`, against the drawings' colour pattern |
+| This text, as every prompt and the site serve it | `test_skill_references.py` in `backend/tests/mcp` |
+
+Read it again whenever a kind is added or retired, a bound changes, or the design system changes a colour's role.

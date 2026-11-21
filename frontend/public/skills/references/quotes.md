@@ -5,6 +5,12 @@ These are the rules of that evidence and of the fact it supports, for every cont
 proposed over the MCP server, a claim in a dossier, a structure item, a source added to a held
 fact, or a unit of a delivered component.
 
+| For | Read |
+|---|---|
+| The gates that fetch each source and look for its quotes | `kalavigyan://contracts/knowledge-writes.md` |
+| Which sources a quote may be taken from | `sources.md` |
+| The field a fact is filed under | `fields.md` |
+
 ## Quotes
 
 - Every fact carries at least one quote, copied verbatim from the source in the source's own
@@ -61,3 +67,13 @@ fact, or a unit of a delivered component.
 - No personal data beyond what a published source states: a named person only as a source names
   them with the craft, and never an authorised user's name, house number or address, a phone number
   or an email address.
+
+## How this reference is kept true
+
+| Rule | Kept true by |
+|---|---|
+| Its numbers: quote and fact lengths, sources and quotes a fact may hold | `test_reference_limits.py` in `backend/tests/mcp`, which reads them from `curation/limits`, `models/knowledge` and `research/knowledge_writes` |
+| What folding a quote may undergo before it is matched | `research/quotes.quote_occurs`, tested in `test_quotes_and_errors.py` in `backend/tests/research` |
+| This text, as every prompt and the site serve it | `test_skill_references.py` and `test_mcp_prompts_resources.py` in `backend/tests/mcp` |
+
+Read it again whenever one of those limits or the matcher's folding changes.

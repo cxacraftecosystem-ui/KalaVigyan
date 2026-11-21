@@ -3,10 +3,15 @@
 Every craft, family, category and answer page of KalaVigyan meets these 26 rules, whoever works on
 it: a contributor delivering facts, structure, components, pictures or a whole page bundle over the
 MCP server, a curator deepening a page, an engineer building a screen, or a critic scoring the
-result. They were learnt from the critics of the first consolidated page (2026-11-19) and the
-owner's density rule (2026-11-20). Each rule is written for any craft; an example shows how one
-craft met a rule and is never the rule itself. A page meets every rule before anyone scores it,
-and a contribution never breaks one.
+result. Each rule is written for any craft; an example shows how one craft met a rule and is never
+the rule itself. A page meets every rule before anyone scores it, and a contribution never breaks one.
+
+| For | Read |
+|---|---|
+| Where the rules come from | they were learnt from the critics of the first consolidated page (2026-11-19) and the owner's density rule (2026-11-20) |
+| The sixteen fields of rules 23 to 26 | `fields.md` |
+| The preview's checklist report, rule by rule | `kalavigyan://contracts/open-work.md` |
+| A figure's own design rules | `components.md` |
 
 ## First, derive the page's own lists
 
@@ -134,3 +139,14 @@ The rules below refer to them.
   1440 px in light and dark, and scores it against this checklist. Everything that keeps it below 9
   is fixed, then it is scored once more. No judge panels.
 - A page the owner approved is served as it was built, not rebuilt.
+
+## How this reference is kept true
+
+| Rule | Kept true by |
+|---|---|
+| The rules are numbered 1 to 26 in order, and the count is stated | `test_skill_references.py` in `backend/tests/mcp` |
+| The preview's report names each rule by its bold title | `services/page_report.checklist_titles`, which reads them from this file, tested in `test_page_report.py` in `backend/tests/research` |
+| The density bar of rule 24 | `test_reference_limits.py` in `backend/tests/mcp`, against `curation/limits` |
+| The curation skill carries this very file | `test_skill_references.py` again, comparing the two files' bytes |
+
+Read it again whenever a critic's finding becomes a rule, or a rule's title changes (the report quotes it).

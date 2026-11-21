@@ -5,6 +5,12 @@ climate, soil and cover, and the places where each craft is practised. A dataset
 table, series or layer of values by place or by year. Every value a reader sees comes from one,
 recorded with its version and citation, and nothing is drawn that the dataset does not state.
 
+| For | Read |
+|---|---|
+| The component a dataset becomes | `components.md` |
+| Licences and how any source is recorded | `sources.md` |
+| The datasets KalaVigyan holds | `docs/DATA_SOURCES.md` and `backend/app/data/datasets/registry.json` in the repository |
+
 ## Open sources and licences
 
 - Use a dataset only when its licence allows redistribution: the public domain (a U.S. Government
@@ -167,3 +173,14 @@ In the repository:
   checked before anything is written; and the run's summary lists the districts without values and
   without cells, so a gap is visible rather than filled.
 - A layer or value is shown publicly only when its dataset's record says it may be redistributed.
+
+## How this reference is kept true
+
+| Rule | Kept true by |
+|---|---|
+| The map's frame and the latitude its scale is taken at | `test_reference_limits.py` in `backend/tests/mcp`, against `frontend/components/map/indiaBounds.ts` |
+| Each layer's simplification tolerance | that test again, reading the constants of `tools/maplayers`, `tools/basemap` and `etl/geo` |
+| How many facts a bundle holds | that test again, against `research/page_proposals` |
+| This text, as every prompt and the site serve it | `test_skill_references.py` in `backend/tests/mcp` |
+
+Read it again whenever a layer's tolerance, the map's frame or the dataset registry's rules change.

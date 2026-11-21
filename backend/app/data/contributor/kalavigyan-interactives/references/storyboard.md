@@ -61,3 +61,12 @@ Textiles, from the backlog: the facts are the ones `flagships.md` lists, read ag
 What this storyboard tells its agent before any drawing: two facts to research (the soaked cloth's
 colour and the alum print's colour, or draw both as outlines), one token to ask for (beeswax), and
 nothing to redraw that the library already holds (the vat, the alizarin molecule).
+
+## How this form is kept true
+
+| What | Kept true by |
+|---|---|
+| The filled storyboard cites only facts the backlog names | `backend/tests/mcp/test_interactives_skill.py` |
+| The served copies | the same test, byte for byte against the server's and the site's |
+
+Re-read it when the backlog's Textiles facts are read again, or a column is added to the form.

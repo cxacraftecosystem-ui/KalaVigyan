@@ -2,7 +2,14 @@
 
 KalaVigyan files every fact under one primary field and up to three further fields from this
 vocabulary of sixteen. A page is organised by them, and every field a source covers is on the page
-(the page checklist, rules 23 to 26).
+(the page checklist, rules 23 to 26). Every contributor files by them, and the server counts a
+page's coverage by them.
+
+| For | Read |
+|---|---|
+| How a fact is written and quoted | `quotes.md` |
+| Where each field sits on a page, and how densely | `page-checklist.md` |
+| Values measured by district | `datasets.md` |
 
 | Field | Title | Covers |
 |---|---|---|
@@ -65,3 +72,13 @@ vocabulary of sixteen. A page is organised by them, and every field a source cov
   record and its facts for POLICY.
 - A climate, geography or geology fact is what a source states about the craft; values measured by
   district belong to the datasets (the dataset guide, `datasets.md`).
+
+## How this reference is kept true
+
+| Rule | Kept true by |
+|---|---|
+| The table's sixteen rows, their titles and what each covers | `test_contributor_kit.py` in `backend/tests/mcp`, against `models/enums.DISCIPLINES` and `research/sections` |
+| How many further fields a fact may take | `test_reference_limits.py` in `backend/tests/mcp`, against `research/knowledge_writes` |
+| The checklist rules it names | `test_skill_references.py` in `backend/tests/mcp` |
+
+Read it again whenever a field is added or renamed, or what one covers moves.

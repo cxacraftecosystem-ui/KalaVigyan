@@ -7,7 +7,14 @@ description: Durable practices for writing, fixing and refactoring backend Pytho
 
 Read `engineering-practices` first; this skill applies its rules to backend Python code. The
 names of this repository's layers, its shared layer, its catalogue and its commands are in
-`../engineering-practices/references/project-bindings.md`.
+`../engineering-practices/references/project-bindings.md`. Anyone writing or reviewing a `.py`
+file here reads it.
+
+| For | Read |
+|---|---|
+| The house rules this applies | `engineering-practices` |
+| This repository's layers, shared layer and commands | `../engineering-practices/references/project-bindings.md` |
+| The shared code's catalogue | `docs/CORE_API.md` |
 
 ## Layers and the direction of imports
 
@@ -134,3 +141,13 @@ report instead of silencing it. A suppression needs a reason in the same line.
 - Does any changed data format have a version bump and a migration?
 - Is there a contract test for each interface I touched?
 - Do the whole suite and the hygiene check pass?
+
+## How this skill is kept true
+
+| What | Kept true by |
+|---|---|
+| Layers and the direction of imports | `tools/hygiene/layers.py`, enforced by `tools/hygiene_check.py` |
+| Lint and format | `ruff check` and `ruff format --check` in Backend checks (`.github/workflows/backend-checks.yml`) |
+| File, function and parameter budgets, and no comments | `tools/hygiene_check.py` against its baseline |
+
+Re-read it when the backend gains a layer, a tool or a rule from the owner.

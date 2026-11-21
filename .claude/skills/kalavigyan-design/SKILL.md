@@ -9,7 +9,15 @@ Version 1.1, approved by the owner on 18 November 2026 (decision 0092). Directio
 Indigo**: alum-white paper, kut iron-black ink, one interactive indigo. Three grafts: from the
 Specimen Cabinet the specimen label on every craft, the collection wall (every craft has a plate),
 figure numbering and Cite this monograph; from Night Vat the full-bleed photographic first screen
-and the vat moment as the one orchestrated animation.
+and the vat moment as the one orchestrated animation. Every engineer and agent who touches a
+screen, a class, a figure or reader-facing copy reads it first.
+
+| For | Read |
+|---|---|
+| Why the system is this way | [decision 0092](../../../docs/decisions/0092-design-system.md), and SYSTEM.md section 9 |
+| The pixel references | `docs/design/design-system.html` and `docs/design/master-board.html` |
+| The code rules | `engineering-practices` (with `references/project-bindings.md`) and `frontend-practices` |
+| A page's content rules | the page checklist, `backend/app/data/contributor/references/page-checklist.md` |
 
 This file covers the common case. The full specification is in `references/`:
 
@@ -378,15 +386,15 @@ state and prop is in SYSTEM.md section 3.
 |---|---|---|
 | Button, IconButton | `ui/button.tsx`, `ui/IconButton.tsx` | `primary`, `quiet`, `danger`, `text`; `md`, `sm`. One primary per view and none on a reading page. Busy shows spinner plus a verb over the resting label, width unchanged. Danger is a madder outline; a confirming destructive button is a madder fill. On a photograph, primary is a paper button with indigo text and quiet is outlined in photo ink over a 40 per cent dark fill. `outline`, `secondary`, `ghost`, `provider` map to quiet. |
 | ActionGroup | `ui/ActionGroup.tsx`, `ui/actionGroupLayout.ts` | Every button row; `align`, `fill`, `inline`; `data-danger` child last. |
-| TextLink | `ui/TextLink.tsx` (new) | Prose: indigo, 1px underline at 3px offset, 2px on hover. Standalone ("All 97"): UI 14 500. Link to navigate, button to expand or act. Replaces `field-link`. |
+| TextLink | `ui/TextLink.tsx` | Prose: indigo, 1px underline at 3px offset, 2px on hover. Standalone ("All 97"): UI 14 500. Link to navigate, button to expand or act. Replaces `field-link`. |
 | Field, Input, Textarea | `FormControls.tsx`, `forms/*` | Label above (UI 13 500 ink-2, sentence case); raised fill, rule-strong edge, 16px text; error is a 2px madder edge plus message with icon, `aria-invalid`, `aria-describedby`; required is the word in the hint. |
 | SearchBox | `SearchInput.tsx` | 60px, ink edge, lede-size Newsreader input, 44px Clear; `/` focuses it unless typing elsewhere; counts in `role="status"`. |
 | OtpCodeInput | `ui/OtpCodeInput.tsx`, `TwoStepCodeEntry.tsx`, `TwoStepChallengeForm.tsx` | Six boxes in `font-code`, lining tabular; the field ring on focus. |
 | Toggle | `ui/Toggle.tsx` | Pill track; off sunk with rule-strong edge; on indigo with on-indigo thumb; mirrors in right to left. |
 | SegmentedChoice | `ui/SegmentedChoice.tsx` | Two to four options; selected is the indigo fill. More options become a select. |
 | SearchableSelect, Dropdown, LanguagePicker | `ui/SearchableSelect.tsx`, `ui/Dropdown.tsx`, `LanguagePicker.tsx` | Raised card panel; search past eight options; keyboard highlight sunk with a 2px indigo inline-start bar; selected indigo on indigo-wash with a check; languages in their own script with the English beside. |
-| Chip | `ui/Chip.tsx` (new) | Pill, rule-strong edge, UI 13; pressed is indigo-wash, indigo edge, indigo-hover text. Never the only way to an action. |
-| Tabs | `ui/Tabs.tsx` (new) | Only for views of one object on signed-in tool pages. Monographs have no tabs. |
+| Chip | `ui/Chip.tsx` | Pill, rule-strong edge, UI 13; pressed is indigo-wash, indigo edge, indigo-hover text. Never the only way to an action. |
+| Tabs | `ui/Tabs.tsx` | Only for views of one object on signed-in tool pages. Monographs have no tabs. |
 
 **Citations, evidence, provenance**
 
@@ -403,42 +411,42 @@ state and prop is in SYSTEM.md section 3.
 | Component | File | Rule |
 |---|---|---|
 | SpecimenLabel, NameStack, Masthead | `editorial/SpecimenLabel.tsx`, `editorial/NameStack.tsx`, `editorial/Masthead.tsx` | On every craft: raised, double ink frame; kicker row; name (h1 in a masthead, a paragraph on the landing, h2 as a chapter label); native name only when sourced; one cited sentence; GI line; place; provenance; credit when on a photograph. Label shadow only `onPhoto`. No catalogue number. |
-| Plate | `editorial/Plate.tsx` (replaces `craft/MediaFigure.tsx` as pages migrate) | Photograph at 2px radius cropped from its focal box; caption first, credit after; opens the Lightbox. |
-| Lightbox | `ui/Lightbox.tsx` (new) | Modal on a 92 per cent dark scrim, largest standard width, zoom, caption and credit; focus returns to the plate. |
-| TypographicPlate, CollectionPlate | `editorial/TypographicPlate.tsx` (the plate and its ground); `crafts/CollectionPlate.tsx` (new) wraps it with the strip and link | Every craft: material ground and seeded texture, sub-family kicker (none for catch-all rows), the display name, a raised strip with the English name, state, then Monograph and GI tags. |
-| PhotoCard | `crafts/PhotoCard.tsx` (new) | Leads a shelf for a craft with a licensed photograph. |
-| CollectionShelf | `crafts/CollectionShelf.tsx` (new) | Plate-ground swatch, family, counts, "All N"; sideways scroll-snap row below 640px, 2 / 4 / 6 columns from 640 / 768 / 1024; lead alternates sides. |
-| NamesWall | `crafts/NamesWall.tsx` (new) | Sourced own-script names by home state, English always visible beneath in UI 13 ink-3. |
-| AtlasIndex | `crafts/AtlasIndex.tsx` (new) | Families, places, ideas; three columns from 1200px; rows are links. |
+| Plate | `editorial/Plate.tsx` (it replaced `MediaFigure`, now gone) | Photograph at 2px radius cropped from its focal box; caption first, credit after; opens the Lightbox. |
+| Lightbox | `ui/Lightbox.tsx` | Modal on a 92 per cent dark scrim, largest standard width, zoom, caption and credit; focus returns to the plate. |
+| TypographicPlate, CollectionPlate | `editorial/TypographicPlate.tsx` (the plate and its ground); `crafts/CollectionPlate.tsx` wraps it with the strip and link | Every craft: material ground and seeded texture, sub-family kicker (none for catch-all rows), the display name, a raised strip with the English name, state, then Monograph and GI tags. |
+| PhotoCard | `crafts/PhotoCard.tsx` | Leads a shelf for a craft with a licensed photograph. |
+| CollectionShelf | `crafts/CollectionShelf.tsx` | Plate-ground swatch, family, counts, "All N"; sideways scroll-snap row below 640px, 2 / 4 / 6 columns from 640 / 768 / 1024; lead alternates sides. |
+| NamesWall | `crafts/NamesWall.tsx` | Sourced own-script names by home state, English always visible beneath in UI 13 ink-3. |
+| AtlasIndex | `crafts/AtlasIndex.tsx` | Families, places, ideas; three columns from 1200px; rows are links. |
 | FactGrid | `editorial/FactGrid.tsx` | At a glance as a `<dl>`, 1 / 2 / 4 columns, ink top rule; on an uncurated craft, "What the craft list records", uncited. |
 | RecordStrip | `craft/InTheRecord.tsx` (new) | "In the record": date in ink-1 tabular, cited sentence, optional plate. |
 | StageList | `craft/StageList.tsx` (new) | Numbered stages, local term in italic with the English name, prose starting with its verb, materials with botanical names; five shown, then "Show all 11 stages" (`aria-expanded`). |
 | DatedRail | `craft/DatedRail.tsx` (new) | Dates in the left rail from 1200px, inline above the paragraph below. |
-| ChapterRail | `editorial/ChapterRail.tsx` (replaces `craft/CraftTabs.tsx`) | Sticks once the appbar scrolls away; scroll-spy with `aria-current="location"` and an indigo underline; deep-linkable anchors (`?tab=science` maps to `#chem`); `scroll-margin-top: calc(var(--rail-h) + 1rem)`. |
-| CiteThis | `craft/CiteThis.tsx` (new) | Text or BibTeX (`@misc`), the lower-case versioned URL, one Copy citation button; the text ends with the access date. |
+| ChapterRail | `editorial/ChapterRail.tsx` (it replaced `craft/CraftTabs.tsx`, retired with the tabbed craft screen in round 6) | Sticks once the appbar scrolls away; scroll-spy with `aria-current="location"` and an indigo underline; deep-linkable anchors (`?tab=science` maps to `#chem`); `scroll-margin-top: calc(var(--rail-h) + 1rem)`. |
+| CiteThis | `craft/CiteThis.tsx` | Text or BibTeX (`@misc`), the lower-case versioned URL, one Copy citation button; the text ends with the access date. |
 
 **Figures, data, maps, chemistry**
 
 | Component | File | Rule |
 |---|---|---|
-| Figure | `ui/Figure.tsx` (new) | Kicker "Fig. 3" ("Table 1"), numbered through the page; charts title their finding, diagrams and maps describe; source line under; the table behind "All N values"; one tab stop, arrow keys between marks. |
+| Figure | `ui/Figure.tsx` | Kicker "Fig. 3" ("Table 1"), numbered through the page; charts title their finding, diagrams and maps describe; source line under; the table behind "All N values"; one tab stop, arrow keys between marks. |
 | Chart kit | `charts/*` (new): Axis, Bars, Line, TrendLine, RefLine, DirectLabel, Band, Tooltip, DataTable | The chart grammar: axes in UI 12 tabular, direct labels for one or two series, a legend for three or more, one y-axis, uncertainty as band or whisker, `data-fit` text. |
-| MapLegend, RankedList | `map/*` (today `map/ChoroplethLegend.tsx`), `map/RankedList.tsx` (new) | Stepped legend with labelled breaks in the unit, salt, water, place and no-reading swatches; under the map on a phone, over open sea from 768px. The ranked list beside every map: top ten, then "All N". |
+| MapLegend, RankedList | `map/*` (today `map/ChoroplethLegend.tsx`), `map/RankedList.tsx` | Stepped legend with labelled breaks in the unit, salt, water, place and no-reading swatches; under the map on a phone, over open sea from 768px. The ranked list beside every map: top ten, then "All N". |
 | Formula, Swatch | `chem/Formula.tsx`, `chem/Swatch.tsx` (new; today `answer/ChemEquation.tsx`) | True subscripts at 12px or more, the equation rule; swatches framed with the weave texture. |
 | LivingCloth | `cloth/*` (new, one SVG engine) | One deterministic ajrakh drawing in its eleven states; stage buttons are a `role="toolbar"` with roving tabindex, each `aria-pressed`. |
-| VatFigure | `cloth/VatFigure.tsx` (new) | Three frames with the current frame's ink rule, Dip again, live status, the balanced equation with its atom count. |
+| VatFigure | `answer/VatFigure.tsx` | Three frames with the current frame's ink rule, Dip again, live status, the balanced equation with its atom count. |
 
 **Shell and status**
 
 | Component | File | Rule |
 |---|---|---|
 | Appbar, BrandMark | `DynamicIslandNav.tsx`, `BrandMark.tsx` | SVG wordmark at parity; nav UI 14 ink-2, current ink-1 with an indigo underline; 44px account button; below 768px a Menu button opening a sheet. On a photograph: photo ink, translucent rule, photo focus ring, switching to page ink after 64px of ground. |
-| HowToRead | `landing/HowToRead.tsx` (new) | The sunk band: a demonstrated sentence with its turmeric rule, keys a to d and their quote cards. |
-| InstitutionFooter | `landing/Footer.tsx` (new) | One line, UI 12 ink-3 under a hairline. |
+| HowToRead | `landing/HowToRead.tsx` | The sunk band: a demonstrated sentence with its turmeric rule, keys a to d and their quote cards. |
+| InstitutionFooter | `landing/Footer.tsx` | One line, UI 12 ink-3 under a hairline. |
 | Toast | `ui/Toast.tsx` | Raised, pop shadow, status icon tile, three at most; info and success leave after 5s, warnings 8s, errors stay; error is `role="alert"`. |
 | Dialog | `dialogs/*` | Title in h3 reading; ActionGroup actions; destructive last, madder, named for what it does; initial focus on the least destructive; Escape cancels. |
 | EmptyState | `EmptyState.tsx`, `DeadEnd.tsx` | Hairlines, what the place is for, one way forward; a craft's state shows its plate; no generic icons. |
-| Skeleton | `ui/Skeleton.tsx` (new) | Sunk blocks in the content's shape, slow pulse that stops under reduced motion, `aria-busy` container. Never "Loading" alone. |
+| Skeleton | `ui/Skeleton.tsx` | Sunk blocks in the content's shape, slow pulse that stops under reduced motion, `aria-busy` container. Never "Loading" alone. |
 
 ## 8. Page templates
 
@@ -688,3 +696,16 @@ Found by the Kutch Ajrakh critics (2026-11-19; the full list is
 - **A credit a screen away from its figure**: it sits under the figure.
 - **A card with a title and no sentence**: it is not drawn.
 - **A media chapter that retells the text**: it is a gallery.
+
+## How this skill is kept true
+
+| What | Kept true by |
+|---|---|
+| Every value and class it names | `tools/design_tokens.py --check`, run by `tools/tests/test_design_tokens.py`, against the generated `references/tokens.json`, `tokens.css` and `tailwind.config.ts` |
+| No file gains a retired class, alias, hex literal or physical utility | the design guard, `frontend/e2e/design-guard-unit.spec.ts` with `design-guard-baseline.json`, in Frontend checks and Design guard |
+| Each screen matches its board at 360, 834 and 1440 px in light and dark | the capture and Monograph parity runs (`capture.yml`, `monograph-parity.yml`) against a preview |
+| Where each component lives | `frontend/components/`; on 2026-11-21 each "new" file was checked against the tree, and those since built lost the word |
+| Agents find it by its `name` and `description` | the frontmatter above |
+
+Re-read it when the owner approves a change to the system, a component is built or moved, or a
+section of SYSTEM.md changes.
