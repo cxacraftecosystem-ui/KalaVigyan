@@ -6,7 +6,7 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects import postgresql
 
 revision: str = "0055_answer_gaps"
-down_revision: str | Sequence[str] | None = "0052_drafts_and_supplied_sources"
+down_revision: str | Sequence[str] | None = "0054_field_photo_reviews"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
