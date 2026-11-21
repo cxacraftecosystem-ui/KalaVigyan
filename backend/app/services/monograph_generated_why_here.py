@@ -40,12 +40,18 @@ WHY_SECTION = re.compile(r'<section class="kv-ch" id="why[a-z0-9-]*"[^>]*>')
 SECTION_CLOSE = "</section>"
 SHELL_SLOT = '<div class="kv-page kv-why-here" data-app=""><kv-slot component="{label}"></kv-slot></div>'
 NOTE_TERMS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("deposits", ("mine", "mines", "mined", "mineral", "minerals", "ore", "ores", "deposit", "deposits", "quarry")),
+    (
+        "deposits",
+        ("mine", "mines", "mined", "mineral", "minerals", "ore", "ores", "deposit", "deposits", "quarry"),
+    ),
     ("river", ("river", "rivers", "stream", "streams", "riverbed", "running water")),
     ("lake", ("lake", "lakes", "tank", "tanks", "pond", "ponds", "reservoir", "reservoirs")),
     ("soil", ("soil", "soils", "clay", "silt", "alluvial", "alluvium", "earth", "mud")),
     ("rainfall", ("rain", "rains", "rainfall", "monsoon", "arid", "humid", "humidity", "drought")),
-    ("elevation", ("hill", "hills", "plateau", "plain", "plains", "mountain", "mountains", "altitude", "valley")),
+    (
+        "elevation",
+        ("hill", "hills", "plateau", "plain", "plains", "mountain", "mountains", "altitude", "valley"),
+    ),
     ("cover", ("forest", "forests", "tree", "trees", "grassland", "grasslands")),
 )
 PATTERNS = tuple(

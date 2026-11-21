@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,7 +17,13 @@ from .document_components_store import subject_structure
 from .monograph_generated_assembly import GeneratedParts, assembled_document
 from .monograph_generated_drawings import Drawings
 from .monograph_generated_grids import stated_values
-from .monograph_generated_parts import subject_components, subject_pictures, subject_record, subject_sections
+from .monograph_generated_parts import (
+    StoredSection,
+    subject_components,
+    subject_pictures,
+    subject_record,
+    subject_sections,
+)
 from .monograph_generated_structure import structure_claim_ids, with_page_claims
 from .monograph_generated_units import stored_source
 from .open_work_subjects import WorkSubject, subject_by_key
@@ -47,9 +54,7 @@ async def generated_parts(
         return None
     structure = await subject_structure(session, subject)
     sections = with_page_claims(stored, structure)
-    claim_ids = [
-        uuid.UUID(str(claim)) for section in sections for s in section.sentences for claim in s["claimIds"]
-    ]
+    claim_ids = _sentence_claims(sections)
     if not claim_ids:
         return None
     looked_up = [
@@ -80,6 +85,12 @@ async def generated_parts(
         places=await subject_places(session, subject),
         ground=await subject_ground(session, subject.id) if subject.kind == CRAFT else None,
     )
+
+
+def _sentence_claims(sections: Sequence[StoredSection]) -> list[uuid.UUID]:
+    return [
+        uuid.UUID(str(claim)) for section in sections for s in section.sentences for claim in s["claimIds"]
+    ]
 
 
 def page_url(subject: WorkSubject) -> str:

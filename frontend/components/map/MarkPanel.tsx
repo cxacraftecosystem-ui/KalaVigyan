@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, type RefObject } from "react";
 import { X } from "lucide-react";
 
 import { countLine, type MapMark } from "@/components/map/markPlacement";
+import { PlaceGroundPanel } from "@/components/map/place-context/PlaceGroundPanel";
 import { AnchoredPopover } from "@/components/ui/AnchoredPopover";
 import { Sheet } from "@/components/ui/Sheet";
 import { TextLink } from "@/components/ui/TextLink";
@@ -51,6 +52,7 @@ export function MarkPanelBody({ mark, headingId, onClose, closeRef }: { mark: Ma
           </TextLink>
         </p>
       ) : null}
+      {mark.place ? <PlaceGroundPanel longitude={mark.place.longitude} latitude={mark.place.latitude} /> : null}
     </div>
   );
 }

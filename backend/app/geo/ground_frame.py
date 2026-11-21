@@ -158,7 +158,9 @@ def _touches(line: Line, box: Box) -> bool:
 
 
 def _rings(rings: Iterable[Line], box: Box, step: float) -> list[list[Point]]:
-    clipped = (thinned(clip_ring(ring.points, box), step, closed=True) for ring in rings if _touches(ring, box))
+    clipped = (
+        thinned(clip_ring(ring.points, box), step, closed=True) for ring in rings if _touches(ring, box)
+    )
     return [ring for ring in clipped if ring]
 
 

@@ -54,7 +54,7 @@ const PLACES: Readonly<Record<string, ComponentPlace>> = {
 
 const UNKNOWN_PLACE: ComponentPlace = { scope: "mb", frame: "wrap" };
 
-export const APP_KINDS: ReadonlySet<string> = new Set(["answer_block", "general_drawing", "general_chart", "general_table", "general_timeline", "general_map_layer"]);
+export const APP_KINDS: ReadonlySet<string> = new Set(["answer_block", "general_drawing", "general_chart", "general_table", "general_timeline", "general_map_layer", "why_here"]);
 
 const SCREEN: FrameStep = { classes: ["screen"], box: true };
 const PASSAGE: FrameStep = { classes: ["wrap", "kv-passage"], box: true };

@@ -87,7 +87,7 @@ def nearest_line(origin: Point, lines: Sequence[Line]) -> Nearest | None:
 
 
 def _crosses(origin: Point, ring: Line) -> int:
-    west, south, east, north = ring.box
+    west, south, _, north = ring.box
     x, y = origin
     if not (south <= y <= north) or x < west:
         return 0
@@ -108,7 +108,9 @@ def nearest_lake(origin: Point, lakes: Sequence[Line]) -> Nearest | None:
     return _nearest(origin, lakes, closed=True)
 
 
-def elevation_band(origin: Point, bands: Sequence[Band], breaks: Sequence[int]) -> tuple[int | None, int | None]:
+def elevation_band(
+    origin: Point, bands: Sequence[Band], breaks: Sequence[int]
+) -> tuple[int | None, int | None]:
     reached = [band.low_m for band in bands if inside(origin, band.rings)]
     if not reached:
         return None, breaks[0]

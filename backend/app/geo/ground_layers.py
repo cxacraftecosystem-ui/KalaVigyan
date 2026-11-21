@@ -173,7 +173,9 @@ def _published(key: str, row: Mapping[str, Any]) -> GroundLayer:
     )
 
 
-def _layers(relief: Mapping[str, Any], rivers: Mapping[str, Any], minerals: Mapping[str, Any]) -> tuple[GroundLayer, ...]:
+def _layers(
+    relief: Mapping[str, Any], rivers: Mapping[str, Any], minerals: Mapping[str, Any]
+) -> tuple[GroundLayer, ...]:
     lines, lakes = rivers["datasets"][0], rivers["datasets"][1]
     return (
         _published("ETOPO1", relief["datasets"][0]),
@@ -193,7 +195,9 @@ def ground_layers(
         rivers=_rivers(rivers["ranks"]),
         lakes=_rings(rivers["lakes"]),
         labels=tuple(
-            RiverLabel(str(label["text"]), float(label["longitude"]), float(label["latitude"]), float(label["angle"]))
+            RiverLabel(
+                str(label["text"]), float(label["longitude"]), float(label["latitude"]), float(label["angle"])
+            )
             for label in rivers["labels"]
         ),
         deposits=tuple(_deposit(row, statuses) for row in minerals["sites"]),

@@ -3,9 +3,10 @@ from typing import Any
 
 from app.geo.ground_layers import GroundLayers, ground_layers
 from app.geo.ground_materials import CraftMaterial
-from app.geo.place_ground import GroundInputs, LocatedPlace
+from app.geo.place_ground import GroundInputs, LocatedPlace, craft_ground, direct_measures
 from app.research.citations import SourceRef
 from app.research.crafts import CraftRef
+from app.research.why_here import CraftGround
 
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 ORIGIN = (77.0, 20.0)
@@ -154,3 +155,9 @@ def fixture_inputs() -> GroundInputs:
         ),
         sources=(fixture_source(),),
     )
+
+
+def fixture_ground() -> CraftGround:
+    built = craft_ground(fixture_inputs(), direct_measures(fixture_layers()))
+    assert built is not None
+    return built

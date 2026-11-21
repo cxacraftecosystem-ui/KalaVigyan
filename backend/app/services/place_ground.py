@@ -19,7 +19,15 @@ from app.geo.ground_frame import framed
 from app.geo.ground_layers import GroundLayers, ground_layers
 from app.geo.ground_materials import CraftMaterial
 from app.geo.ground_readings import cited_readings, reading_codes
-from app.geo.place_ground import GroundInputs, LocatedPlace, Measured, Measures, craft_ground, map_place_ground, measured
+from app.geo.place_ground import (
+    GroundInputs,
+    LocatedPlace,
+    Measured,
+    Measures,
+    craft_ground,
+    map_place_ground,
+    measured,
+)
 from app.models import (
     AdminDistrict,
     AdminState,
@@ -137,7 +145,8 @@ async def _a_craft_place(session: AsyncSession, spot: Any) -> bool:
         func.ST_DWithin(func.geometry(CraftLocation.geom), spot, PLACE_TOLERANCE_DEGREES),
     )
     centred = select(AdminDistrict.lgd).where(
-        AdminDistrict.centroid.is_not(None), func.ST_DWithin(AdminDistrict.centroid, spot, PLACE_TOLERANCE_DEGREES)
+        AdminDistrict.centroid.is_not(None),
+        func.ST_DWithin(AdminDistrict.centroid, spot, PLACE_TOLERANCE_DEGREES),
     )
     found = await session.scalar(select(located.exists().label("found")))
     return bool(found) or bool(await session.scalar(select(centred.exists().label("found"))))

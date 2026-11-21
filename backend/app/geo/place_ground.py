@@ -97,7 +97,9 @@ def measured(layers: GroundLayers, point: Point, radius_km: float = DEPOSIT_RADI
 
 
 def direct_measures(layers: GroundLayers) -> Measures:
-    return Measures(layers=layers, at=lambda point: measured(layers, point), frame=lambda box: framed(layers, box))
+    return Measures(
+        layers=layers, at=lambda point: measured(layers, point), frame=lambda box: framed(layers, box)
+    )
 
 
 def _water(found: Nearest | None, ranked: bool) -> Water | None:
@@ -181,7 +183,9 @@ def craft_ground(inputs: GroundInputs, measures: Measures) -> CraftGround | None
         schema_version=GROUND_SCHEMA_VERSION,
         craft=inputs.craft,
         radius_km=DEPOSIT_RADIUS_KM,
-        places=[_place(inputs, layers, place, taken) for place, taken in zip(inputs.places, found, strict=True)],
+        places=[
+            _place(inputs, layers, place, taken) for place, taken in zip(inputs.places, found, strict=True)
+        ],
         soil_materials=soil_materials(inputs.materials),
         deposits=_deposits(found, wanted),
         classes=list(layers.classes),
@@ -193,7 +197,10 @@ def craft_ground(inputs: GroundInputs, measures: Measures) -> CraftGround | None
 
 
 def map_place_ground(
-    point: Point, district: str | None, measures: Measures, readings: tuple[Sequence[GroundReading], Sequence[DatasetRef]]
+    point: Point,
+    district: str | None,
+    measures: Measures,
+    readings: tuple[Sequence[GroundReading], Sequence[DatasetRef]],
 ) -> MapPlaceGround:
     values, datasets = readings
     return MapPlaceGround(

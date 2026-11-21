@@ -73,6 +73,27 @@ The tools, tiers and allowances of the MCP server are in the contributor skill
    `.claude/skills/kalavigyan-design`, Maps): one variable at a time, its ramp and legend, the
    Survey of India caption, and its table of every value.
 
+## The ground under each craft place
+
+KalaVigyan measures the land under every recorded craft place itself; nobody types these values.
+
+- `tools/maplayers_build.py` writes the relief, river and mineral layers to `frontend/public/layers` and
+  mirrors the three JSON files into `backend/app/data/layers` (`tools/maplayers/mirror.py`;
+  `tools/tests/test_maplayers_mirror.py` fails when the copies differ). Rebuild both together.
+- `backend/app/geo/place_ground.py` measures each place once per process from those files: its
+  ETOPO1 elevation band, the great-circle distance to the nearest Natural Earth 1:10m river line and
+  lake shore, the USGS MRDS deposits within `DEPOSIT_RADIUS_KM` (50) by class and commodity, and,
+  from the stored district values, the district's rainfall, soil and cover readings
+  (`ground_readings.READING_LAYERS`), each with its dataset and edition.
+- A material meets a deposit only through `ground_materials.COMMODITY_TERMS`, which maps the words
+  of a material's name to MRDS commodity names; clays and earths are also listed beside the soil
+  readings. Add a term with its MRDS name and a test with a hand-counted fixture.
+- The context is served at `/api/crafts/{slug}/ground` and `/api/map/ground`, and drawn as the
+  `why_here` component in each craft's place chapter and in the map's place panel. It states data
+  only: a cause appears only as a cited fact of the craft (GEOGRAPHY, GEOLOGY, CLIMATE or ECOLOGY),
+  which the generated page draws beside the reading it names. To explain why a craft is where it
+  is, propose that fact over MCP; never write the cause into the figure.
+
 ## Cost rules
 
 - One dataset per agent, and one figure or layer per bundle or change.

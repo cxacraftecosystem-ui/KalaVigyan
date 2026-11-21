@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import Field, model_validator
 
@@ -19,6 +19,8 @@ __all__ = [
     "GroundLayer",
     "GroundPlace",
     "GroundReading",
+    "Latitude",
+    "Longitude",
     "MapPlaceGround",
     "MaterialDeposits",
     "MineralClass",
@@ -32,8 +34,8 @@ DEPOSIT_RADIUS_KM = 50
 GROUND_LAYERS = ("ETOPO1", "NE_RIVERS", "NE_LAKES", "USGS_MRDS")
 PLACE_PRECISIONS = ("POINT", "DISTRICT")
 READING_KINDS = ("rainfall", "soil", "cover")
-LONGITUDE = Field(ge=-180, le=180)
-LATITUDE = Field(ge=-90, le=90)
+Longitude = Annotated[float, Field(ge=-180, le=180)]
+Latitude = Annotated[float, Field(ge=-90, le=90)]
 
 
 class GroundLayer(ContractModel):
@@ -67,8 +69,8 @@ class Elevation(ContractModel):
 class Water(ContractModel):
     distance_km: float = Field(ge=0)
     scale_rank: int | None = Field(ge=0)
-    longitude: float = LONGITUDE
-    latitude: float = LATITUDE
+    longitude: Longitude
+    latitude: Latitude
 
 
 class Tally(ContractModel):
@@ -127,8 +129,8 @@ class GroundPlace(ContractModel):
     precision: Literal[*PLACE_PRECISIONS]
     district: str | None
     state: str | None
-    longitude: float = LONGITUDE
-    latitude: float = LATITUDE
+    longitude: Longitude
+    latitude: Latitude
     source_id: str = Field(min_length=1)
     ground: GroundAt
     materials: list[MaterialDeposits]
@@ -145,8 +147,8 @@ class GroundPlace(ContractModel):
 class MapPlaceGround(ContractModel):
     schema_version: Literal[1]
     district: str | None
-    longitude: float = LONGITUDE
-    latitude: float = LATITUDE
+    longitude: Longitude
+    latitude: Latitude
     radius_km: int = Field(ge=1)
     ground: GroundAt
     classes: list[MineralClass] = Field(min_length=1)
