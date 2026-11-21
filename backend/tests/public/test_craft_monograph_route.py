@@ -57,6 +57,7 @@ def served(
     stored: bool = True,
     generated: bool = False,
     body: dict[str, Any] | None = None,
+    ground: Any = None,
 ) -> tuple[TestClient, Calls]:
     calls = Calls()
     document = STORED if body is None else body
@@ -75,12 +76,16 @@ def served(
         calls.made.append(f"generated {craft.slug}")
         return GENERATED if generated else None
 
+    async def stored_ground(session: Any, craft: Any) -> Any:
+        return ground
+
     async def session() -> AsyncIterator[object]:
         yield object()
 
     monkeypatch.setattr(route.knowledge_view, "resolve_craft", resolve_craft)
     monkeypatch.setattr(route, "document_row", document_row)
     monkeypatch.setattr(route, "generated_fallback", generated_fallback)
+    monkeypatch.setattr(route, "stored_ground", stored_ground)
     app = create_app()
     app.dependency_overrides[get_session] = session
     return TestClient(app), calls

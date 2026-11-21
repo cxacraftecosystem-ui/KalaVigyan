@@ -43,4 +43,4 @@ COMPONENT_KINDS = (
 )
 GENERAL_KINDS = ("general_drawing", "general_chart", "general_table", "general_timeline", "general_map_layer")
 PIECE_KINDS = (*BLOCK_KINDS, *COMPONENT_KINDS, *GENERAL_KINDS)
-DOCUMENT_KINDS = ("answer_block",)
+DOCUMENT_KINDS = ("answer_block", "why_here")

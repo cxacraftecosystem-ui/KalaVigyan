@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from app.models.component_kinds import DOCUMENT_KINDS
 from app.research.component_specs import checked_spec
 from app.research.component_specs_blocks import ANSWER_BLOCK_KIND, AnswerBlockSpec
+from app.research.why_here import WHY_HERE_KIND
 
 from ..contracts.golden import golden_json
 
@@ -47,9 +48,9 @@ def spec(block: dict[str, Any], refs: list[dict[str, Any]], **figure: Any) -> di
     }
 
 
-def test_the_answer_block_is_the_one_document_kind_and_draws_a_page_block_with_its_sources() -> None:
+def test_the_answer_block_is_a_document_kind_and_draws_a_page_block_with_its_sources() -> None:
     block, refs = golden_ladder()
-    assert DOCUMENT_KINDS == (ANSWER_BLOCK_KIND,)
+    assert DOCUMENT_KINDS == (ANSWER_BLOCK_KIND, WHY_HERE_KIND)
     checked = checked_spec(
         ANSWER_BLOCK_KIND, spec(block, refs, kind="FIGURE", number=1, title="How it is made")
     )

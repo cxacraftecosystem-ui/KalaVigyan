@@ -11,11 +11,14 @@ from app.api.public_deps import public_reader, read_headers, unchanged_read
 from app.core.db import get_session
 from app.models import Craft, User
 from app.research.monograph_document import LANGUAGE_MAX_CHARS, MonographDocument, served_language
+from app.research.why_here import CraftGround
 from app.services import knowledge_view
 from app.services.answering import NOT_FOUND_DETAIL
 from app.services.monograph_document import CRAFT_SUBJECT, document_body, document_hash, document_row
 from app.services.monograph_generated import generated_document
+from app.services.monograph_generated_why_here import ground_hash, with_why_here
 from app.services.open_work_subjects import is_family
+from app.services.place_ground import subject_ground
 
 router = APIRouter(prefix="/crafts", tags=["crafts"])
 
@@ -76,9 +79,12 @@ async def served_document(session: AsyncSession, craft: Craft, asked: DocumentAs
         session, CRAFT_SUBJECT, craft.slug, language=asked.language, version=asked.version
     )
     if row is not None:
-        body = {**row.document, "language": row.language}
+        ground = await stored_ground(session, craft)
+        body = dict(with_why_here({**row.document, "language": row.language}, ground))
         return ServedDocument(
-            etag=document_etag(row.version, row.contentHash), language=row.language, body=body
+            etag=document_etag(row.version, ground_hash(row.contentHash, ground)),
+            language=row.language,
+            body=body,
         )
     generated = await generated_fallback(session, craft)
     if generated is None or (asked.version is not None and generated.version != asked.version):
@@ -88,6 +94,10 @@ async def served_document(session: AsyncSession, craft: Craft, asked: DocumentAs
         language=generated.language,
         body=document_body(generated),
     )
+
+
+async def stored_ground(session: AsyncSession, craft: Craft) -> CraftGround | None:
+    return await subject_ground(session, craft.id) if subject_kind(craft) == CRAFT_SUBJECT else None
 
 
 async def generated_fallback(session: AsyncSession, craft: Craft) -> MonographDocument | None:

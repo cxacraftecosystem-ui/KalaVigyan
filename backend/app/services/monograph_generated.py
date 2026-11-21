@@ -22,6 +22,7 @@ from .monograph_generated_units import stored_source
 from .open_work_subjects import WorkSubject, subject_by_key
 from .page_layouts import layout_of, subject_path
 from .page_preview_additions import NO_ADDITIONS, PageAdditions
+from .place_ground import subject_ground
 
 __all__ = ["CRAFT_SECTIONS_MIN", "enough_sections", "generated_document", "generated_parts", "page_url"]
 
@@ -77,6 +78,7 @@ async def generated_parts(
         values=await stated_values(session, list(visible)),
         structure=structure,
         places=await subject_places(session, subject),
+        ground=await subject_ground(session, subject.id) if subject.kind == CRAFT else None,
     )
 
 
