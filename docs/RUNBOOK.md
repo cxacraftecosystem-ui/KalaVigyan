@@ -206,18 +206,34 @@ Decision 0017; contract `docs/contracts/voice.md`.
 
 ```mermaid
 %%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
-flowchart LR
-  P([Push to main]) --> BC{Backend checks}
-  BC -->|green| DB["Deploy backend<br/>OIDC, secrets to SSM"]
-  DB --> R["release.sh on the box<br/>over SSM"]
-  R --> M["Migrate, seed, import<br/>while the old colour serves"]
-  M --> S["Start the other colour"]
-  S --> H{"/health answers?"}
-  H -->|yes| N["nginx switches"]
-  H -->|no| K["The deploy rolls back"]
-  N --> W["Old colour stops,<br/>workers restart"]
-  W --> SM["Smoke test<br/>through CloudFront"]
-  SM --> V["Web build<br/>Vercel deploy hook"]
+flowchart TD
+  subgraph Actions["GitHub Actions"]
+    P([Push to main])
+    BC{Backend checks}
+    DB["Deploy backend<br/>OIDC, secrets to SSM"]
+    SM["Smoke test<br/>through CloudFront"]
+    V["Web build<br/>Vercel deploy hook"]
+  end
+  subgraph Box["The box, over SSM"]
+    R["release.sh"]
+    M["Migrate, seed, import<br/>while the old colour serves"]
+    S["Start the other colour"]
+    H{"/health answers?"}
+    N["nginx switches"]
+    K["The deploy rolls back"]
+    W["Old colour stops,<br/>workers restart"]
+  end
+  P --> BC
+  BC -->|green| DB
+  DB --> R
+  R --> M
+  M --> S
+  S --> H
+  H -->|yes| N
+  H -->|no| K
+  N --> W
+  W --> SM
+  SM --> V
   classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
   class N accent
 ```

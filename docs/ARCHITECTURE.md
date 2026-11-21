@@ -308,6 +308,17 @@ sequenceDiagram
 
 ## How a saved explainer gets better (decision 0063)
 
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  S([A reader saves it]) --> N["recheck_saved<br/>nightly, no model"]
+  N -->|a field has news| NOTE["ANSWER_IMPROVED note"]
+  NOTE --> U["Update asks a follow-up<br/>for those fields"]
+  NOTE -.->|Mondays, when enabled| D["Alert digest<br/>through SES"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class NOTE accent
+```
+
 1. A reader saves an explainer (`SavedItem` with its first answer). Every night the last module of
    the Coverage enrichment job, `app.scripts.recheck_saved`, counts per saved field the craft's
    fact-level claims created or raised since the last check that the latest version does not cite,
@@ -334,6 +345,16 @@ sequenceDiagram
 
 ## How stored pieces stay current (decision 0033)
 
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","transitionColor":"#AA69E9","transitionLabelColor":"#857F9E","stateLabelColor":"#1E1B2E","stateBkg":"#F2E9FE","compositeBackground":"#F9F5FF","compositeTitleBackground":"#F2E9FE"}}}%%
+stateDiagram-v2
+  [*] --> Kept: an answer finishes
+  Kept --> Superseded: newer pieces of its topic
+  Kept --> Stale: a resting claim changes
+  Stale --> Superseded: the topic is researched again
+  Superseded --> [*]
+```
+
 1. When an answer finishes, every English block of each researched section that cites claims and
    sources is kept as a `KnowledgePiece` (its facet, topic, depth, claims, sources, content hash,
    vector), superseding the earlier pieces of that topic and kind at the same or a lower depth.
@@ -342,11 +363,28 @@ sequenceDiagram
 2. A trigger on `Claim` (`kv_stale_resting_pieces`) marks every piece resting on a claim stale when
    it is retracted, hidden, deleted, or changes level or text; the next answer for that topic
    researches the section again and its new pieces supersede the stale ones.
-3. Every night the Coverage enrichment run calls `app.scripts.rebuild_pieces` before the coverage
-   job: the stale pieces of the 10 most-asked crafts are answered again for their facet and depth,
-   with fresh research, within the same day's budget.
+3. No nightly run rebuilds pieces: since commit fdf478c the Coverage enrichment run no longer
+   researches crafts or rebuilds pieces (`docs/RUNBOOK.md`, Deploy), so a stale piece is researched
+   again when the next answer for its topic needs it.
 
 ## How an explainer is read aloud (Listen, decision 0035)
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
+sequenceDiagram
+  autonumber
+  participant R as Reader
+  participant L as listen route
+  participant C as Narration cache
+  participant E as ElevenLabs
+  R->>L: GET the answer's listen route
+  L->>C: each block's manifest
+  C-->>L: hits and misses
+  L->>E: misses only, parts of 2,000 characters
+  E-->>L: audio with word timings
+  L->>C: audio, then the manifest
+  L-->>R: a track per part, words timed
+```
 
 1. `GET /api/answers/{answerId}/listen` (`api/routes/listen.py`) checks `VOICE` and the 30-press
    limit, and reads the reader's own explainer from `Answer.payload.explainer`
@@ -407,6 +445,27 @@ answers 404 and no voice button is drawn. The steps hold when the setting is tru
    reconciles agent calls with ElevenLabs in both directions (refund or charge).
 
 ## How a stage illustration is made
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
+sequenceDiagram
+  autonumber
+  participant C as Client
+  participant A as API
+  participant D as Postgres
+  participant W as kv-worker
+  participant G as Gemini
+  participant S as S3
+  C->>A: POST /api/media/jobs
+  A->>D: the job, a quota unit, a Job row
+  A-->>C: a shared asset at once, or the job
+  W->>D: claims Job rows, SKIP LOCKED
+  W->>G: through the media router
+  G-->>W: PNG, or MP4
+  W->>S: checked, named, uploaded
+  C->>A: GET the job
+  A-->>C: a 900 s presigned URL
+```
 
 1. `POST /api/media/jobs` (`api/routes/media.py`, `media/jobs.py`) checks the capability, answers a
    repeated key, derives the stage's claim set from stored rows (`media/rows.py`,
@@ -512,6 +571,20 @@ answers 404 and no voice button is drawn. The steps hold when the setting is tru
    (`components/answer/blockRenderers.ts`); a kind without one is not drawn.
 
 ## Data
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  M["alembic upgrade head"] --> SE["seed_crafts, seed_claims,<br/>seed_districts"]
+  SE --> IC["import_curation<br/>dossiers, then categories"]
+  IC --> SP["sync_portal_crafts"]
+  SP --> EM["embed_craft_descriptors,<br/>embed_knowledge"]
+  EM --> RP["rebuild_stale_pages"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class IC accent
+```
+
+Every deploy runs these in order while the old colour serves (`docs/RUNBOOK.md`, Deploy).
 
 Tables follow DR's Prisma naming (quoted PascalCase tables, camelCase columns) so the portals
 stay mergeable; the full list is `backend/app/models/` and `backend/migrations/versions/`.
