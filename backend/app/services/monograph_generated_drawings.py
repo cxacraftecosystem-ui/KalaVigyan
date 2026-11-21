@@ -123,6 +123,8 @@ class Drawings:
         return self._filled(monograph, sorted(named & set(content.units)), book)
 
     def spec_cites(self, monograph: str, spec: Mapping[str, Any], book: SourceBook) -> FilledSpec:
+        if not _holds_cites(spec):
+            return FilledSpec(dict(spec), {}, {})
         content = self._content(monograph)
         prefix = f"{monograph.lower()}:"
         rename = _renamer(content, book)
@@ -205,6 +207,16 @@ def _held_cites(
         changed["key"] = f"{prefix}{value['key']}"
         changed[SHOWN_KEY] = _shown(changed["g"], book)
     return changed
+
+
+def _holds_cites(value: Any) -> bool:
+    if isinstance(value, list):
+        return any(_holds_cites(item) for item in value)
+    if not isinstance(value, Mapping):
+        return False
+    if value.get("m") == CITE_MARK and SHOWN_KEY in value:
+        return True
+    return any(_holds_cites(item) for item in value.values())
 
 
 def _shown(keys: Sequence[str], book: SourceBook) -> list[dict[str, Any]]:

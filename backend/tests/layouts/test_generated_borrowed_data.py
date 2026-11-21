@@ -5,6 +5,7 @@ from pathlib import Path
 from app.services.document_components_data import borrowed_data, merged_data, reader_data
 from app.services.monograph_generated_assembly import assembled_document
 from app.services.monograph_generated_drawings import Drawings
+from app.services.monograph_generated_units import SourceBook
 
 from .generated_parts import component, fragment_monograph, generated
 
@@ -189,3 +190,11 @@ def test_a_citation_a_borrowed_spec_holds_names_the_source_by_the_page_s_own_num
     }
     assert [quote.source for quote in built.content.citations[held]] == [key]
     assert built.content.citation_claims[held] == ["C046"]
+
+
+def test_a_borrowed_spec_holding_no_citation_is_kept_as_it_is_without_reading_its_monograph(
+    tmp_path: Path,
+) -> None:
+    spec = {"steps": [1, 2], "note": {"m": "s", "c": ["Plain."]}}
+    filled = Drawings(root=tmp_path).spec_cites("No-Such-Monograph", spec, SourceBook())
+    assert (filled.spec, filled.citations, filled.citation_claims) == (spec, {}, {})
