@@ -30,6 +30,9 @@ const HUB_DOCUMENT = join(__dirname, "textilesHubDocument.json.gz");
 const HUB_FIGURES = ["shared/chemistry/alizarin-purpurin-3d", "shared/chemistry/indigo-leaf-to-cloth-chain", "shared/chemistry/indigo-reduction-player", "shared/chemistry/indigo-vat-dip"];
 const drawnLabels = (html: string) => [...new Set([...html.matchAll(/data-component="([^"]+)"/g)].map((found) => found[1]))].sort();
 
+const KIT_DEFS_BLOCK = /<div aria-hidden="true" style="[^"]*" data-testid="kit-defs">(?:<div[^>]*><svg[^>]*><defs>.*?<\/defs><\/svg><\/div>)*<\/div>/g;
+const withoutKitDefs = (html: string) => html.replace(KIT_DEFS_BLOCK, "");
+
 function restOf(document: MonographDocument): string {
   return provided(createElement(DeferredDocument, { part: documentRest(document), jump: null }));
 }
@@ -52,7 +55,7 @@ test("a generated page draws its first chapter and a reserved place for the rest
 test("the rest draws every later chapter and Cite this monograph exactly as the whole page draws them, then the kit's data", () => {
   const document = generatedDocument();
   const whole = provided(createElement(MonographPage, { document }));
-  const later = whole.slice(whole.indexOf('<section class="kv-ch" id="chem"'), whole.indexOf(MAIN_END));
+  const later = withoutKitDefs(whole.slice(whole.indexOf('<section class="kv-ch" id="chem"'), whole.indexOf(MAIN_END)));
   const kit = markup(createElement(KitData, { blocks: kitDataBlocks(shownPage(document).document.content) }));
   expect(later).toContain("Cite this monograph");
   expect(sameIds(restOf(document))).toBe(sameIds(later + kit));

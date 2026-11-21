@@ -23,6 +23,14 @@ function specOf(label: string): Record<string, unknown> {
   return JSON.parse(readFileSync(join(AJRAKH_DIR, "specs", `${label.replaceAll("/", "__")}.json`), "utf8"));
 }
 
+function carriedCites(value: unknown): string[] {
+  if (Array.isArray(value)) return value.flatMap(carriedCites);
+  if (typeof value !== "object" || value === null) return [];
+  const node = value as Record<string, unknown>;
+  const own = node.m === "cite" && typeof node.key === "string" ? [node.key] : [];
+  return [...own, ...Object.values(node).flatMap(carriedCites)];
+}
+
 function unitsWithin(label: string): string[] {
   return content.layout.filter((entry) => entry.within === label).map((entry) => entry.ref);
 }
@@ -83,7 +91,9 @@ function approved(component: MonographComponent): Token[] {
     ]);
   }
   const held = HELD_CONTAINERS.flatMap((test) => subtrees(tokens, test)).filter((range) => !holdsUnit(tokens, range));
-  return replaced(tokens, [...held, ...subtrees(tokens, CITATION)], () => []);
+  const carried = new Set(carriedCites(specOf(component.label)));
+  const dropped: ElementTest = (open) => CITATION(open) && !carried.has(open.attrs["data-c"] ?? "");
+  return replaced(tokens, [...held, ...subtrees(tokens, dropped)], () => []);
 }
 
 test("every Ajrakh component of a science kind has a spec file", () => {
