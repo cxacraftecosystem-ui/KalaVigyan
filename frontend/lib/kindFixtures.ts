@@ -10,6 +10,7 @@ import factTable from "@/lib/kindFixtures/fact_table.json";
 import labelCard from "@/lib/kindFixtures/label_card.json";
 import mapLayer from "@/lib/kindFixtures/map_layer.json";
 import mapSequence from "@/lib/kindFixtures/map_sequence.json";
+import mapSequenceDhokra from "@/lib/kindFixtures/map_sequence_dhokra.json";
 import materialCards from "@/lib/kindFixtures/material_cards.json";
 import molecule3d from "@/lib/kindFixtures/molecule_3d.json";
 import reactionPlayer from "@/lib/kindFixtures/reaction_player.json";
@@ -76,6 +77,7 @@ const RAW: readonly unknown[] = [
   mapLayer,
   statTiles,
   mapSequence,
+  mapSequenceDhokra,
   sourceDisagreements,
   labelCard,
   swatchCards,

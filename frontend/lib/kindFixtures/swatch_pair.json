@@ -7,7 +7,7 @@
   "title": "The dhokra core before and after sem leaves",
   "description": "Two swatches of the black soil core of a dhokra figure, before and after it is rubbed green with sem leaves. Place it beside the leaf-paste stage.",
   "field": "PROCESS",
-  "within": null,
+  "within": "bastar-dhokra/process/core-to-mould",
   "spec": {
     "id": "dhokra-sem",
     "wide": false,

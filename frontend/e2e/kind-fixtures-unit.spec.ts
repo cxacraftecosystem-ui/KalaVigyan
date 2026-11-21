@@ -27,7 +27,7 @@ function drawn(fixture: KindFixture): string {
 }
 
 test("twenty-two contributable kinds are each drawn for a craft other than Kutch Ajrakh", () => {
-  expect(KIND_FIXTURES).toHaveLength(23);
+  expect(KIND_FIXTURES).toHaveLength(24);
   expect(new Set(KIND_FIXTURES.map((fixture) => fixture.kind)).size).toBe(22);
   expect(KIND_FIXTURES.filter((fixture) => fixture.craft === KUTCH)).toEqual([]);
   for (const fixture of KIND_FIXTURES) expect(COMPONENT_VIEWS[fixture.kind], fixture.kind).toBeDefined();
@@ -82,7 +82,7 @@ test("a stage player says its own after label and paints each stage from a recor
 });
 
 test("a map sequence card without a visual draws no empty frame", () => {
-  const sequence = KIND_FIXTURES.find((fixture) => fixture.kind === "map_sequence") as KindFixture;
+  const sequence = KIND_FIXTURES.find((fixture) => fixture.label === "blue-pottery-of-jaipur/history/journey-of-the-glaze") as KindFixture;
   expect(drawn(sequence).match(/class="ws-vis"/g)).toHaveLength(1);
 });
 
