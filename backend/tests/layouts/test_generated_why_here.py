@@ -29,6 +29,13 @@ def draft(unit_id: str, text: str, field: str = "GEOGRAPHY", tag: str = "p") -> 
     return DraftUnit(unit_id, "why", field, text, (BAGH,), tag)
 
 
+def plain(nodes: list[Any]) -> str:
+    return "".join(
+        node if isinstance(node, str) else plain(node.get("c", [])) if isinstance(node, dict) else ""
+        for node in nodes
+    )
+
+
 def stored_body(**content: Any) -> dict[str, Any]:
     return {"subjectSlug": "Bagh-Print", "specs": {}, "content": {"components": [], "layout": [], **content}}
 
@@ -51,13 +58,8 @@ def test_the_sentence_about_the_river_is_held_beside_its_reading_and_rain_stays_
     built = assembled_document(parts, Drawings(root=tmp_path))
     assert built is not None
     why = [entry for entry in built.content.layout if entry.chapter == "why"]
-    texts = {
-        ref: unit
-        for ref, unit in built.content.units.items()
-        if unit.nodes and unit.nodes[0] in (RIVER, RAIN)
-    }
-    river = next(ref for ref, unit in texts.items() if unit.nodes[0] == RIVER)
-    rain = next(ref for ref, unit in texts.items() if unit.nodes[0] == RAIN)
+    texts = {plain(unit.nodes): ref for ref, unit in built.content.units.items()}
+    river, rain = texts[RIVER], texts[RAIN]
     assert [(e.kind, e.ref, e.within) for e in why if e.ref in (LABEL, river, rain)] == [
         ("unit", rain, None),
         ("component", LABEL, None),
