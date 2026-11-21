@@ -100,6 +100,7 @@ SERVICE_ROUTES = {
     ("POST", "/api/oauth/revoke"),
     ("PUT", "/api/upload-links/slots/{token}"),
     ("PUT", "/api/knowledge/supplied-sources/slots/{token}"),
+    ("PUT", "/api/dataset-uploads/{token}"),
 }
 ASKING_ROUTES = {
     ("GET", "/api/answers/config"),

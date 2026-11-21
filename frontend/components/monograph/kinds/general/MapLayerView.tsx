@@ -65,7 +65,7 @@ export function MapLayerView({ spec, renderUnit }: ComponentViewProps) {
   const titleId = useId();
   if (!layer) return null;
   return (
-    <GeneralFigure kind="general_map_layer" head={layer.head} titleId={titleId} renderUnit={renderUnit}>
+    <GeneralFigure kind="map_layer" head={layer.head} dataset={layer.dataset} titleId={titleId} renderUnit={renderUnit}>
       <div className="grid gap-5 md:grid-cols-[minmax(0,1.25fr)_minmax(15rem,1fr)] md:items-start">
         <PlaceMap places={layer.places} labelledBy={titleId} />
         <PlaceList places={layer.places} valueLabel={layer.valueLabel} renderUnit={renderUnit} />

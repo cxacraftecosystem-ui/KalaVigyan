@@ -6,7 +6,7 @@ import { SLOT_CLASS } from "@/components/monograph/slotClass";
 import type { MonographComponent, MonographDocument } from "@/lib/monographDocument";
 import { bundleSources } from "@/lib/monographRenderKit";
 import { componentBundles, placedComponents, slotId, specStrings } from "@/lib/monographRenderLayout";
-import { APP_KINDS, componentHome } from "@/lib/monographScopes";
+import { appDrawn, componentHome } from "@/lib/monographScopes";
 
 export type SlotDrawing = "view" | "fragment" | "none";
 
@@ -26,14 +26,17 @@ export function slotDrawing(document: MonographDocument, label: string): SlotDra
 
 type SlotProps = { document: MonographDocument; label: string; scoped?: boolean };
 
+function specOf(document: MonographDocument, component: MonographComponent) {
+  return Object.hasOwn(document.specs, component.label) ? document.specs[component.label] : null;
+}
+
 function homeOf(document: MonographDocument, component: MonographComponent) {
-  const spec = Object.hasOwn(document.specs, component.label) ? document.specs[component.label] : null;
-  return componentHome(component.label, component.kind, spec);
+  return componentHome(component.label, component.kind, specOf(document, component));
 }
 
 function ViewSlot({ document, component, scoped }: { document: MonographDocument; component: MonographComponent; scoped: boolean }) {
   const bundles = componentBundles(document, component.label);
-  const view = <DrawnBundle label={component.label} set={{ bundles, sources: bundleSources(document, bundles), bare: !APP_KINDS.has(component.kind) }} />;
+  const view = <DrawnBundle label={component.label} set={{ bundles, sources: bundleSources(document, bundles), bare: !appDrawn(component.kind, specOf(document, component)) }} />;
   if (!scoped) return view;
   return (
     <ComponentHome home={homeOf(document, component)} label={component.label} kind={component.kind}>

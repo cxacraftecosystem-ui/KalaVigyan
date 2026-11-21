@@ -54,6 +54,7 @@ from app.models import (
 from app.research.crafts import CraftRef
 from app.research.retrieval import RESTRICTED_SENSITIVITY
 from app.research.stream import SourceRef
+from app.services.dataset_registry import dataset_record
 from app.services.knowledge_view import craft_ref, source_ref
 
 __all__ = [
@@ -102,22 +103,7 @@ async def dataset_records(session: AsyncSession, codes: Iterable[str]) -> dict[s
     if not wanted:
         return {}
     rows = (await session.scalars(select(EnvDataset).where(EnvDataset.code.in_(wanted)))).all()
-    return {
-        row.code: DatasetRecord(
-            code=row.code,
-            title=row.title,
-            publisher=row.publisher,
-            edition=row.edition,
-            period=row.period,
-            native_resolution=row.nativeResolution,
-            licence=row.licence,
-            licence_url=row.licenceUrl,
-            attribution=row.attribution,
-            citation=row.citation,
-            url=row.url,
-        )
-        for row in rows
-    }
+    return {row.code: dataset_record(row) for row in rows}
 
 
 def region_values() -> Subquery:

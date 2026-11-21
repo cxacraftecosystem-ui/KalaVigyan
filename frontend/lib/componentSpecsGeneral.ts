@@ -1,7 +1,8 @@
 import { unitRef } from "@/lib/componentSpecsPlates";
-import { boolean, integer, list, matching, nullable, number, object, oneOf, ShapeError, type Shape } from "@/lib/shape";
+import { boolean, integer, list, matching, nullable, number, object, oneOf, optional, ShapeError, text, type Shape } from "@/lib/shape";
 
-export const GENERAL_KINDS = ["general_drawing", "general_chart", "general_table", "general_timeline", "general_map_layer"] as const;
+export const GENERAL_KINDS = ["drawing", "chart", "fact_table", "timeline", "map_layer"] as const;
+export const DECLARED_KEY = "head";
 export const CHART_FORMS = ["bars", "line"] as const;
 export const MARK_RADIUS = 7;
 export const MARK_RADIUS_MAX = 22;
@@ -9,11 +10,11 @@ export const MARK_RADIUS_MAX = 22;
 export type GeneralKind = (typeof GENERAL_KINDS)[number];
 
 export const GENERAL_KICKERS: Readonly<Record<GeneralKind, string>> = {
-  general_drawing: "Drawing",
-  general_chart: "Chart",
-  general_table: "Table",
-  general_timeline: "Timeline",
-  general_map_layer: "Map"
+  drawing: "Drawing",
+  chart: "Chart",
+  fact_table: "Table",
+  timeline: "Timeline",
+  map_layer: "Map"
 };
 export const MAP_BOUNDS = { west: 68, east: 97.5, south: 6.5, north: 37.5 } as const;
 
@@ -21,16 +22,19 @@ const SVG_ROOT = /^<svg[\s>]/;
 const VIEW_BOX = /viewBox="\s*(-?\d+(?:\.\d+)?)[\s,]+(-?\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)\s*"/;
 
 export type GeneralHead = { title: string; caption: string | null };
+export type DataCell = { row: number; column: string };
+export type DatasetCite = { code: string; credit?: string; url?: string };
 export type DrawingSpec = { head: GeneralHead; svg: string; alt: string };
-export type ChartPoint = { label: string; value: number; reading: string };
+export type ChartPoint = { label: string; value: number; reading: string; cell?: DataCell };
 export type ChartSeries = { name: string; points: ChartPoint[] };
-export type ChartSpec = { head: GeneralHead; form: (typeof CHART_FORMS)[number]; valueLabel: string; series: ChartSeries[]; emphasis: number | null };
-export type TableColumn = { label: string; numeric: boolean };
-export type TableSpec = { head: GeneralHead; columns: TableColumn[]; rows: { cells: string[] }[] };
+export type ChartSpec = { head: GeneralHead; form: (typeof CHART_FORMS)[number]; valueLabel: string; series: ChartSeries[]; emphasis: number | null; dataset?: DatasetCite };
+export type TableColumn = { label: string; numeric: boolean; column?: string };
+export type TableRow = { cells: string[]; row?: number };
+export type TableSpec = { head: GeneralHead; columns: TableColumn[]; rows: TableRow[]; dataset?: DatasetCite };
 export type TimelineEvent = { year: number; when: string; title: string; text: string };
 export type TimelineSpec = { head: GeneralHead; events: TimelineEvent[] };
-export type MapPlace = { longitude: number; latitude: number; name: string; reading: string; value: number | null };
-export type MapLayerSpec = { head: GeneralHead; places: MapPlace[]; valueLabel: string | null };
+export type MapPlace = { longitude: number; latitude: number; name: string; reading: string; value: number | null; cell?: DataCell };
+export type MapLayerSpec = { head: GeneralHead; places: MapPlace[]; valueLabel: string | null; dataset?: DatasetCite };
 export type ViewBox = { x: number; y: number; width: number; height: number };
 
 const within = (low: number, high: number, label: string): Shape<number> => ({
@@ -43,19 +47,27 @@ const within = (low: number, high: number, label: string): Shape<number> => ({
 });
 
 const headShape = object<GeneralHead>({ title: unitRef, caption: nullable(unitRef) });
+const cellShape = optional(object<DataCell>({ row: integer, column: text }));
+const datasetShape = optional(object<DatasetCite>({ code: text, credit: optional(text), url: optional(text) }));
+
+export function isDeclared(spec: unknown): boolean {
+  return typeof spec === "object" && spec !== null && !Array.isArray(spec) && Object.hasOwn(spec, DECLARED_KEY);
+}
 
 export const drawingSpecShape = object<DrawingSpec>({ head: headShape, svg: matching(SVG_ROOT, "an svg drawing"), alt: unitRef });
 export const chartSpecShape = object<ChartSpec>({
   head: headShape,
   form: oneOf(CHART_FORMS),
   valueLabel: unitRef,
-  series: list(object<ChartSeries>({ name: unitRef, points: list(object<ChartPoint>({ label: unitRef, value: number, reading: unitRef }), 1) }), 1),
-  emphasis: nullable(integer)
+  series: list(object<ChartSeries>({ name: unitRef, points: list(object<ChartPoint>({ label: unitRef, value: number, reading: unitRef, cell: cellShape }), 1) }), 1),
+  emphasis: nullable(integer),
+  dataset: datasetShape
 });
 export const tableSpecShape = object<TableSpec>({
   head: headShape,
-  columns: list(object<TableColumn>({ label: unitRef, numeric: boolean }), 1),
-  rows: list(object<{ cells: string[] }>({ cells: list(unitRef, 1) }), 1)
+  columns: list(object<TableColumn>({ label: unitRef, numeric: boolean, column: optional(text) }), 1),
+  rows: list(object<TableRow>({ cells: list(unitRef, 1), row: optional(integer) }), 1),
+  dataset: datasetShape
 });
 export const timelineSpecShape = object<TimelineSpec>({
   head: headShape,
@@ -69,11 +81,13 @@ export const mapLayerSpecShape = object<MapLayerSpec>({
       latitude: within(MAP_BOUNDS.south, MAP_BOUNDS.north, "a latitude"),
       name: unitRef,
       reading: unitRef,
-      value: nullable(number)
+      value: nullable(number),
+      cell: cellShape
     }),
     1
   ),
-  valueLabel: nullable(unitRef)
+  valueLabel: nullable(unitRef),
+  dataset: datasetShape
 });
 
 export function parsedSpec<T>(target: Shape<T>, spec: unknown): T | null {

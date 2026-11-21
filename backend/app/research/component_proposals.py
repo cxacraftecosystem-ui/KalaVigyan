@@ -11,6 +11,7 @@ from app.models.knowledge_pieces import DESCRIPTION_MAX_CHARS, LABEL_PATTERN, TI
 from app.models.open_work import PROPOSAL_EXTENSIONS, PROPOSAL_STATUSES
 
 from .base import ContractModel
+from .component_specs import not_contributable
 from .component_specs_general_delivery import UNITS_MAX, DeliveredUnit, UnitKey
 from .crafts import SLUG_MAX_CHARS
 from .knowledge_api import ComponentSummary
@@ -122,6 +123,9 @@ class ComponentProposalDraft(BaseModel):
 
     @model_validator(mode="after")
     def _consistent(self) -> Self:
+        refused = not_contributable(self.kind)
+        if refused is not None:
+            raise ValueError(refused)
         if (self.extends is None) != (self.extension is None):
             raise ValueError("extends and extension come together: the label extended and how")
         if self.extension == SUBJECT_LINK and self.label != self.extends:

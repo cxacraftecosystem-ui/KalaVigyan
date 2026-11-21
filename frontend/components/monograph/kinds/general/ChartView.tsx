@@ -60,7 +60,7 @@ export function ChartView({ spec, renderUnit }: ComponentViewProps) {
   const range = chartRange(chart);
   const values = chart.form === "line" ? { count: chart.series[0].points.length * chart.series.length, table: valuesTable(chart, titleId, renderUnit) } : undefined;
   return (
-    <GeneralFigure kind="general_chart" head={chart.head} titleId={titleId} renderUnit={renderUnit} values={values}>
+    <GeneralFigure kind="chart" head={chart.head} dataset={chart.dataset} titleId={titleId} renderUnit={renderUnit} values={values}>
       <div className="grid gap-3">
         <p className="font-ui text-caption text-ink-3">{renderUnit(chart.valueLabel)}</p>
         <div className="grid gap-6 md:grid-cols-[repeat(auto-fit,minmax(18rem,1fr))]" data-testid="general-chart-panels">

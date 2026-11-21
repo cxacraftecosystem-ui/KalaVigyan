@@ -46,7 +46,7 @@ export function TimelineView({ spec, renderUnit }: ComponentViewProps) {
   const titleId = useId();
   if (!timeline) return null;
   return (
-    <GeneralFigure kind="general_timeline" head={timeline.head} titleId={titleId} renderUnit={renderUnit}>
+    <GeneralFigure kind="timeline" head={timeline.head} titleId={titleId} renderUnit={renderUnit}>
       <div className="grid gap-3">
         <TimelineAxis events={timeline.events} labelledBy={titleId} />
         <ol className="grid" data-testid="general-timeline">

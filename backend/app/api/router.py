@@ -11,6 +11,7 @@ from app.api.routes import (
     coverage,
     craft_monograph,
     crafts,
+    dataset_uploads,
     explainer_exports,
     explainers,
     field_photo_reviews,
@@ -68,6 +69,7 @@ api_router.include_router(artisan_contributions.router)
 api_router.include_router(artisan_conversations.router)
 api_router.include_router(image_contributions.router)
 api_router.include_router(upload_links.router)
+api_router.include_router(dataset_uploads.router)
 api_router.include_router(users.router)
 api_router.include_router(categories.router)
 api_router.include_router(crafts.router)

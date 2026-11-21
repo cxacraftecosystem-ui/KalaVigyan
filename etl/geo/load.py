@@ -21,6 +21,7 @@ DATASET_COLUMNS = [
     "title",
     "publisher",
     "edition",
+    "version",
     "period",
     "nativeResolution",
     "crs",
@@ -31,6 +32,8 @@ DATASET_COLUMNS = [
     "retrievedAt",
     "sha256",
     "citation",
+    "doi",
+    "landingUrl",
     "url",
 ]
 DATASET_REQUIRED = {"code", "title", "licence"}

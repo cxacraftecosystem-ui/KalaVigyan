@@ -6,6 +6,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
+from .component_specs_general import is_declared
 from .coverage_chapters import field_chapter
 from .elements import ELEMENTS
 from .monograph_document import MonographDocument
@@ -40,8 +41,7 @@ DENSE_SENTENCES = 3
 MECHANISM_MIN = 2
 EVIDENCE_MAX = 12
 CATEGORY = "category"
-CHART_KINDS = frozenset({"general_chart", "chart"})
-SCALED_CHARTS = frozenset({"general_chart"})
+CHART_KIND = "chart"
 REPEAT_MIN_CHARS = 40
 PROGRESS = re.compile(
     r"\bwriting (the )?section\b"
@@ -271,8 +271,12 @@ def _cards_hold_text(page: ReadPage, given: ReportInput) -> Verdict:
 
 
 def _charts(page: ReadPage, given: ReportInput) -> Verdict:
-    charts = [f for f in page.figures if f.kind in CHART_KINDS]
-    loose = [f"{f.label} is a {f.kind}; check its scale" for f in charts if f.kind not in SCALED_CHARTS]
+    charts = [f for f in page.figures if f.kind == CHART_KIND]
+    loose = [
+        f"{f.label} is an authored {f.kind}; check its scale"
+        for f in charts
+        if not is_declared(page.document.specs.get(f.label))
+    ]
     if loose:
         return JUDGE, loose
     return PASS, [f"{len(charts)} charts, each drawn by the site from zero"]

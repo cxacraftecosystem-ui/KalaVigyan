@@ -1,6 +1,13 @@
 from app.models.enums import BLOCK_KINDS
 
-__all__ = ["COMPONENT_KINDS", "DOCUMENT_KINDS", "GENERAL_KINDS", "PIECE_KINDS"]
+__all__ = [
+    "AUTHORED_ART_KINDS",
+    "COMPONENT_KINDS",
+    "DOCUMENT_KINDS",
+    "GENERAL_KINDS",
+    "PAGE_TOOL_KINDS",
+    "PIECE_KINDS",
+]
 
 COMPONENT_KINDS = (
     "ai_illustration",
@@ -15,6 +22,7 @@ COMPONENT_KINDS = (
     "credits",
     "diagram",
     "dip_player",
+    "drawing",
     "equation_card",
     "experiment_lab",
     "explainer",
@@ -41,6 +49,23 @@ COMPONENT_KINDS = (
     "timeline",
     "voice",
 )
-GENERAL_KINDS = ("general_drawing", "general_chart", "general_table", "general_timeline", "general_map_layer")
-PIECE_KINDS = (*BLOCK_KINDS, *COMPONENT_KINDS, *GENERAL_KINDS)
+GENERAL_KINDS = ("drawing", "chart", "fact_table", "timeline", "map_layer")
+PAGE_TOOL_KINDS = (
+    "ask_next",
+    "audio_player",
+    "citation_tool",
+    "concept_atlas",
+    "credits",
+    "explainer",
+    "film",
+    "generator",
+    "language_switch",
+    "process_replay",
+    "quiz",
+    "reading_level",
+    "related_crafts",
+    "source_list",
+)
+AUTHORED_ART_KINDS = ("ai_illustration", "ai_video", "comic", "picture_plate", "specimen_plate")
+PIECE_KINDS = (*BLOCK_KINDS, *COMPONENT_KINDS)
 DOCUMENT_KINDS = ("answer_block",)

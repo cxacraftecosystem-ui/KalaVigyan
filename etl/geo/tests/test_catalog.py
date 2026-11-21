@@ -19,7 +19,7 @@ INTERNAL_WORDS = (
     "unconfirmed",
 )
 READER_FIELDS = ("title", "publisher", "edition", "period", "licence", "attribution", "citation")
-CHELSA_DOI_URL = "https://doi.org/10.1038/sdata.2017.122"
+CC0_URL = "https://creativecommons.org/publicdomain/zero/1.0/"
 ENGINEERING_WORDS = ("exactextract", "area_spherical_km2", "GeoTIFF", "65535", "no data")
 KM_PER_DEGREE = 111.32
 
@@ -36,11 +36,30 @@ def test_the_district_boundaries_are_named_in_reader_words() -> None:
     assert (catalog.BOUNDARIES.licenceUrl, catalog.BOUNDARIES.citation) == (None, None)
 
 
-def test_chelsa_is_credited_by_its_paper_named_once_beside_the_full_citation() -> None:
-    assert (catalog.CHELSA.licence, catalog.CHELSA.licenceUrl) == ("Karger et al. 2017", CHELSA_DOI_URL)
-    assert catalog.CHELSA.attribution == "CHELSA V2.1"
+def test_chelsa_is_recorded_under_its_cc0_licence_with_its_data_doi() -> None:
+    assert (catalog.CHELSA.licence, catalog.CHELSA.licenceUrl) == ("CC0 1.0", CC0_URL)
+    assert catalog.CHELSA.doi == "10.16904/envidat.228"
     assert catalog.CHELSA.citation.startswith("Karger, D. N.")
-    assert catalog.CHELSA.citation.endswith(CHELSA_DOI_URL)
+    assert catalog.CHELSA.citation.endswith(f"https://doi.org/{catalog.CHELSA.doi}")
+    assert catalog.CHELSA.redistributable is True
+
+
+def test_the_etl_reads_only_the_registry_s_district_datasets() -> None:
+    assert sorted(catalog.ALL) == sorted(
+        [
+            "CHELSA_2_1_1981_2010",
+            "CHIRPS_3_0",
+            "COPERNICUS_DEM_GLO90",
+            "DR_DISTRICT_SHAPES",
+            "ESA_WORLDCOVER_2021_V200",
+            "GHCN_CAMS_T2M",
+            "GLIM_1_0_05DEG",
+            "HANSEN_GFC_2025_V1_13",
+            "HYDRORIVERS_1_0",
+            "SOILGRIDS_2_0",
+            "USGS_MRDS",
+        ]
+    )
 
 
 def test_every_chelsa_value_carries_the_reader_method(tmp_path, monkeypatch) -> None:

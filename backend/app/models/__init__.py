@@ -51,6 +51,7 @@ from app.models.curation import (
     CuratedClaim,
     CuratedCraft,
 )
+from app.models.datasets import DatasetTable, DatasetUpload
 from app.models.evaluation import EvalCase, EvalResult, EvalRun
 from app.models.field_photo_reviews import FieldPhotoReview, FieldPhotoScreen
 from app.models.field_voices import (
@@ -172,6 +173,8 @@ __all__ = [
     "CuratedCraft",
     "CxaCraftMap",
     "DataRequest",
+    "DatasetTable",
+    "DatasetUpload",
     "DistrictEnvValue",
     "DistrictGeology",
     "EnrichmentJob",

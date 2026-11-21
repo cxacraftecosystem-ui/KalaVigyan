@@ -212,6 +212,11 @@ callers share one allowance between them.
   facts. A close match in the library refuses it with the matches and two ways on. An Admin's
   approval registers it so every page it applies to draws it; a Professor's or Admin's own is
   registered at once.
+- A figure drawn from a table of values rests on a dataset, not on one fact per value:
+  `propose_dataset` gives the dataset's record (`datasets.md`, Recording a dataset) and returns a
+  single-use upload slot for its CSV file, checked against the SHA-256 you declare. A `chart`,
+  `fact_table` or `map_layer` then names the dataset's code as `dataset` and each value's `cell`
+  (its row and column), and the gates check every value against its stored row.
 
 ## Pages
 
