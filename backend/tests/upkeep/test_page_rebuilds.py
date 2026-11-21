@@ -99,8 +99,31 @@ async def test_the_oldest_stale_pages_are_rebuilt_up_to_the_bound(monkeypatch: p
         "pagesRebuilt": 1,
         "pagesChanged": 1,
         "pagesFailed": ["page:Bidri-Ware"],
+        "documentsStale": 0,
+        "documentsRebuilt": 0,
+        "documentsChanged": 0,
+        "documentsRemoved": 0,
+        "documentsFailed": [],
     }
     assert (session.commits, session.rollbacks) == (1, 1)
+
+
+async def test_stored_documents_rebuilt_after_the_pages_report_their_failures_as_the_pages_do(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def rebuild_stale_documents(session: Any, *, report: Any, limit: int) -> None:
+        report.stale = 3
+        report.rebuilt.extend(["craft:Bagh-Print", "category:Metal-Craft-Category"])
+        report.changed = 1
+        report.failed.append("craft:Bidri-Ware")
+
+    monkeypatch.setattr(upkeep_pages, "rebuild_stale_documents", rebuild_stale_documents)
+    report = PagesReport()
+    await upkeep_pages.rebuild_documents(Session(), report=report, limit=5)  # type: ignore[arg-type]
+    shown = report.as_dict()
+    assert (shown["documentsStale"], shown["documentsRebuilt"], shown["documentsChanged"]) == (3, 2, 1)
+    assert shown["pagesFailed"] == ["document:craft:Bidri-Ware"]
+    assert shown["documentsFailed"] == ["craft:Bidri-Ware"]
 
 
 def test_curated_crafts_are_rebuilt_first_then_the_oldest() -> None:
