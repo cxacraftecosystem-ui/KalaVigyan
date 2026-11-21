@@ -15,6 +15,7 @@ from app.geo.section_layers import STORY_LAYER_FACETS, section_layer_order
 from app.models import AdminDistrict, AdminState, Craft
 from app.research.blocks_place import DistrictRef
 
+from .component_places import practised_states
 from .knowledge_view import resolve_craft
 from .map_layer_store import district_layers, layer_values
 from .region_records import district_places
@@ -44,8 +45,13 @@ class SectionLayer:
 
 async def mapped_districts(session: AsyncSession, craft: Craft) -> tuple[int, ...]:
     places = await district_places(session, craft)
+    practised = practised_states(craft.stateOfPractice or ())
     return tuple(
-        dict.fromkeys(place.district_lgd for place in places if place.has_polygon and place.district_lgd)
+        dict.fromkeys(
+            place.district_lgd
+            for place in places
+            if place.has_polygon and place.district_lgd and (not practised or place.state.lgd in practised)
+        )
     )
 
 

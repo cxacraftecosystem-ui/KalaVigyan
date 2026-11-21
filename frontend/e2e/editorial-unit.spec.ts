@@ -86,6 +86,9 @@ test("every craft has a plate on its material's ground, and a masthead without a
   const pictured = html(createElement(Masthead, { material: "textile", picture: { src: FILE, alt: "Cloth", caption: "The field.", credit: "Photo", wide: [0, 0.2, 1, 0.6] }, label: { kicker: "Monograph", name: "Kutch Ajrakh" } }));
   expect(pictured).toContain('loading="eager" fetchPriority="high"');
   expect(pictured).toContain("--focal-wide-box:inset(20% 0% 20% 0%)");
+  expect(pictured).not.toMatch(/<img[^>]* (width|height)=/);
+  const sized = html(createElement(Masthead, { material: "textile", picture: { src: FILE, alt: "Cloth", caption: "The field.", credit: "Photo", originalWidth: 3000, originalHeight: 2000 }, label: { kicker: "Monograph", name: "Kutch Ajrakh" } }));
+  expect(sized).toMatch(/<img[^>]* alt="Cloth" width="3000" height="2000"/);
 });
 
 test("the fact grid is a definition list, and the chapter rail marks the chapter in view and maps old tab links", () => {

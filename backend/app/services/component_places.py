@@ -17,6 +17,7 @@ __all__ = [
     "component_binding",
     "joined_places",
     "named_places",
+    "practised_states",
     "subject_place_keys",
 ]
 
@@ -94,6 +95,11 @@ def named_places(names: Iterable[str]) -> PlacesHeld:
         districts=frozenset(codes.districts[pair] for pair in chosen),
         states=frozenset(lgd for name in states - covered if (lgd := codes.state_lgd(name)) is not None),
     )
+
+
+def practised_states(names: Iterable[str]) -> frozenset[int]:
+    codes = load_district_codes()
+    return frozenset(lgd for name in names if (lgd := codes.state_lgd(name.strip())) is not None)
 
 
 def _district_lgd(key: str) -> int | None:

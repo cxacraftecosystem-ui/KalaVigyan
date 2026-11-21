@@ -43,6 +43,7 @@ test("the label lies over the photograph cropped from its focal box, with captio
   expect(html).toContain('aria-label="Reliability of the 2 sources: 1 graded A, 1 graded B"');
   expect(html).toContain("--focal-wide-box:inset(20% 20% 20% 20%)");
   expect(html).toContain("/thumb/a/ab/I02.jpg/960px-I02.jpg");
+  expect(html).toMatch(/<img [^>]*alt="Picture I02" width="1600" height="1200" loading="eager" fetchPriority="high"/);
   expect(html).toContain(`<figcaption class="kv-masthead-caption"><p class="kv-caption">${CAPTION}</p><p class="kv-credit">${CREDIT}</p></figcaption>`);
   expect(html).toContain('<p class="lede-k">The monograph</p>');
   expect(html).toContain('<li data-g="g1"><b>1</b><span>Bagh survey, 2020</span></li>');

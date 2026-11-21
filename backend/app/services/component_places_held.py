@@ -4,13 +4,15 @@ import uuid
 from collections import defaultdict
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.errors import InvalidInput
 from app.data.craft_master_loader import ACTIVE
 from app.data.curation_scopes import is_family
-from app.data.district_register import load_district_codes
 from app.models import (
     Craft,
     CraftLocation,
@@ -19,12 +21,17 @@ from app.models import (
     KnowledgePieceSubject as Subject,
 )
 
-from .component_places import PlaceBinding, PlacesHeld, component_binding, joined_places
+from .component_places import PlaceBinding, PlacesHeld, component_binding, joined_places, practised_states
+from .component_proposals_drawn import stored_delivery
 from .measure_regions import district_states
+from .monograph_generated_drawings import Drawings
 from .open_work_subjects import CATEGORY, WorkSubject
 from .region_records import located_places
 
-__all__ = ["PieceFacts", "held_pieces", "piece_facts", "places_held", "subject_places"]
+__all__ = ["PieceFacts", "held_pieces", "piece_facts", "piece_texts", "places_held", "subject_places"]
+
+UNIT_TEXTS_CACHED = 512
+DRAWINGS = Drawings()
 
 
 @dataclass(frozen=True)
@@ -42,6 +49,24 @@ Pair = tuple[uuid.UUID, PieceFacts]
 
 def piece_facts(piece: KnowledgePiece) -> PieceFacts:
     return PieceFacts(piece.id, piece.craftId, piece.kind, piece.facet, piece.title, piece.description)
+
+
+def piece_texts(label: str | None, payload: Any) -> tuple[str, ...]:
+    if label is None or not isinstance(payload, dict):
+        return ()
+    delivered = stored_delivery(label, payload)
+    if delivered is not None:
+        return tuple(unit.text for unit in delivered.units.values())
+    monograph = payload.get("monograph")
+    return _monograph_texts(monograph, label) if isinstance(monograph, str) else ()
+
+
+@lru_cache(maxsize=UNIT_TEXTS_CACHED)
+def _monograph_texts(monograph: str, label: str) -> tuple[str, ...]:
+    try:
+        return tuple(DRAWINGS.unit_texts(monograph, label))
+    except InvalidInput:
+        return ()
 
 
 async def subject_places(session: AsyncSession, subject: WorkSubject) -> PlacesHeld:
@@ -73,22 +98,40 @@ async def held_pieces(session: AsyncSession, pairs: Sequence[Pair]) -> set[tuple
     if not pairs:
         return set()
     held = await places_held(session, {craft for craft, _ in pairs})
-    places = await _piece_places(session, {piece.id for _, piece in pairs})
+    borrowed = {piece.id for craft, piece in pairs if piece.owner != craft}
+    places = await _piece_places(session, borrowed)
+    texts = await _piece_texts(session, borrowed)
     return {
         (craft, piece.id)
         for craft, piece in pairs
-        if piece.owner == craft or _bound(piece, places.get(piece.id, ())).held_by(held[craft])
+        if piece.owner == craft
+        or _bound(piece, places.get(piece.id, ()), texts.get(piece.id, ())).held_by(held[craft])
     }
 
 
-def _bound(piece: PieceFacts, places: Sequence[str]) -> PlaceBinding:
-    texts = [piece.title or "", piece.description or ""]
+def _bound(piece: PieceFacts, places: Sequence[str], units: Sequence[str]) -> PlaceBinding:
+    texts = [piece.title or "", piece.description or "", *units]
     return component_binding(kind=piece.kind, field=piece.field, places=places, texts=texts)
+
+
+async def _piece_texts(
+    session: AsyncSession, piece_ids: Collection[uuid.UUID]
+) -> dict[uuid.UUID, tuple[str, ...]]:
+    if not piece_ids:
+        return {}
+    rows = await session.execute(
+        select(KnowledgePiece.id, KnowledgePiece.label, KnowledgePiece.payload).where(
+            KnowledgePiece.id.in_(list(piece_ids))
+        )
+    )
+    return {piece_id: piece_texts(label, payload) for piece_id, label, payload in rows.all()}
 
 
 async def _piece_places(
     session: AsyncSession, piece_ids: Collection[uuid.UUID]
 ) -> dict[uuid.UUID, list[str]]:
+    if not piece_ids:
+        return {}
     rows = await session.execute(
         select(Subject.pieceId, Subject.placeKey).where(
             Subject.pieceId.in_(list(piece_ids)), Subject.placeKey.is_not(None)
@@ -157,9 +200,5 @@ async def _located(session: AsyncSession, craft_ids: Sequence[uuid.UUID]) -> dic
 async def _practised(
     session: AsyncSession, craft_ids: Sequence[uuid.UUID]
 ) -> Mapping[uuid.UUID, frozenset[int]]:
-    codes = load_district_codes()
     rows = await session.execute(select(Craft.id, Craft.stateOfPractice).where(Craft.id.in_(list(craft_ids))))
-    return {
-        craft: frozenset(lgd for name in names or () if (lgd := codes.state_lgd(name.strip())) is not None)
-        for craft, names in rows.all()
-    }
+    return {craft: practised_states(names or ()) for craft, names in rows.all()}

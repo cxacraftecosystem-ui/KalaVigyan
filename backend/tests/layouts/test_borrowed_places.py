@@ -2,7 +2,14 @@ import dataclasses
 import json
 from pathlib import Path
 
-from app.services.component_places import PlaceBinding, PlacesHeld, component_binding, joined_places
+from app.services.component_places import (
+    PlaceBinding,
+    PlacesHeld,
+    component_binding,
+    joined_places,
+    practised_states,
+)
+from app.services.component_places_held import piece_texts
 from app.services.monograph_generated_assembly import assembled_document
 from app.services.monograph_generated_drawings import Drawings
 
@@ -57,6 +64,22 @@ def test_a_family_or_category_holds_every_place_of_its_crafts() -> None:
     held = joined_places([KACHCHH_PAGE, AZAMGARH_PAGE])
     assert held == PlacesHeld(frozenset({KACHCHH, AZAMGARH}), frozenset({GUJARAT, UTTAR_PRADESH}))
     assert binding(places=(f"lgd:{KACHCHH}",)).held_by(held)
+
+
+def test_a_piece_s_units_are_read_from_its_delivery_and_never_from_a_monograph_it_cannot_name() -> None:
+    units = {
+        "u5001": {"text": SALT_FLAT, "claimIds": []},
+        "u5002": {"text": "Alum fixes red.", "claimIds": []},
+    }
+    assert piece_texts(DRYING, {"delivered": {"spec": {}, "units": units}}) == (SALT_FLAT, "Alum fixes red.")
+    assert piece_texts(DRYING, {"monograph": "../Kutch-Ajrakh"}) == ()
+    assert piece_texts(DRYING, {"monograph": "No-Such-Monograph"}) == ()
+    assert piece_texts(None, {"monograph": "Kutch-Ajrakh"}) == ()
+
+
+def test_a_craft_s_states_of_practice_are_the_register_states_it_names() -> None:
+    assert practised_states(["Gujarat", " Uttar Pradesh "]) == frozenset({GUJARAT, UTTAR_PRADESH})
+    assert practised_states(["All India"]) == frozenset()
 
 
 def _monograph(root: Path) -> Path:

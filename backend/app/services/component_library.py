@@ -58,10 +58,11 @@ async def library_components(
         conditions.append(or_(KnowledgePiece.facet == field, KnowledgePiece.fields.any(field)))
     if kind is not None:
         conditions.append(KnowledgePiece.kind == kind)
-    rows = (await session.execute(_listing(conditions, query).limit(limit))).all()
+    listing = _listing(conditions, query)
+    rows = (await session.execute(listing if craft is not None else listing.limit(limit))).all()
     if craft is not None:
         held = await held_pieces(session, [(craft.id, piece_facts(piece)) for piece, _ in rows])
-        rows = [row for row in rows if (craft.id, row[0].id) in held]
+        rows = [row for row in rows if (craft.id, row[0].id) in held][:limit]
     subjects = await _subjects(session, [piece.id for piece, _ in rows])
     return CraftComponents(
         craft_slug=slug,

@@ -32,7 +32,7 @@ function Provenance({ tally }: { tally: GradeTally }) {
 
 function shownPicture(photo: MastheadPhoto | null): MastheadPicture | null {
   if (!photo) return null;
-  return { src: photo.src, alt: photo.alt, caption: photo.caption, credit: photo.credit, wide: photo.focal, narrow: photo.focal, originalWidth: photo.originalWidth };
+  return { src: photo.src, alt: photo.alt, caption: photo.caption, credit: photo.credit, wide: photo.focal, narrow: photo.focal, originalWidth: photo.originalWidth, originalHeight: photo.originalHeight };
 }
 
 function LedeSpread({ document, lede }: { document: MonographDocument; lede: readonly string[] }) {

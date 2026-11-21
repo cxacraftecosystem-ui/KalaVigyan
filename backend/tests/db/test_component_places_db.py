@@ -17,8 +17,10 @@ from app.services.open_work_subjects import subject_by_key
 
 from .component_places_seed import (
     AZAMGARH,
+    CLAY_COLOURS,
     GUJARAT,
     KACHCHH,
+    KACHCHH_RIVER,
     KUTCH_CATEGORY_SLUG,
     KUTCH_SLUG,
     MONOGRAPH,
@@ -27,6 +29,7 @@ from .component_places_seed import (
     UP_CATEGORY_SLUG,
     UP_SLUG,
     UTTAR_PRADESH,
+    delivered_pieces,
     seed,
 )
 from .testimony_seed import rolled_back_session
@@ -80,6 +83,23 @@ async def test_the_library_offers_a_district_figure_only_to_the_craft_of_that_di
     azamgarh = [item.label for item in (await library_components(session, slug=UP_SLUG)).components]
     assert kutch == [RAINFALL]
     assert azamgarh == [SHARED_PLAYER]
+
+
+async def test_the_library_reads_a_borrowed_piece_s_units_for_the_places_it_names(
+    session: AsyncSession,
+) -> None:
+    await delivered_pieces(session)
+    azamgarh = [item.label for item in (await library_components(session, slug=UP_SLUG)).components]
+    assert azamgarh == [CLAY_COLOURS, SHARED_PLAYER]
+
+
+async def test_the_library_fills_its_limit_after_refusing_another_place_s_piece(
+    session: AsyncSession,
+) -> None:
+    await delivered_pieces(session)
+    first = await library_components(session, slug=UP_SLUG, limit=1)
+    assert [item.label for item in first.components] == [CLAY_COLOURS]
+    assert KACHCHH_RIVER < CLAY_COLOURS
 
 
 async def test_open_work_counts_a_district_figure_only_for_the_craft_of_that_district(

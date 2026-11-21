@@ -13,6 +13,7 @@ export type MastheadPicture = {
   wide?: FocalBox;
   narrow?: FocalBox;
   originalWidth?: number;
+  originalHeight?: number;
 };
 
 export type MastheadProps = {
@@ -29,10 +30,14 @@ function focalVariables(picture: MastheadPicture): CSSProperties {
   return variables as CSSProperties;
 }
 
+function pictureSize({ originalWidth, originalHeight }: MastheadPicture): { width: number; height: number } | undefined {
+  return originalWidth && originalHeight ? { width: originalWidth, height: originalHeight } : undefined;
+}
+
 function MastheadFigure({ picture }: { picture: MastheadPicture }) {
   return (
     <figure className="kv-masthead-figure">
-      <PlatePicture alt={picture.alt} sources={pictureSources(picture.src, "masthead", picture.originalWidth)} priority className="kv-masthead-picture" />
+      <PlatePicture alt={picture.alt} sources={pictureSources(picture.src, "masthead", picture.originalWidth)} size={pictureSize(picture)} priority className="kv-masthead-picture" />
       <figcaption className="kv-masthead-caption">
         <p className="kv-caption">{picture.caption}</p>
         <p className="kv-credit">{picture.credit}</p>

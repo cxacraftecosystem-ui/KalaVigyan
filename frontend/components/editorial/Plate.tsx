@@ -47,7 +47,7 @@ function withLocalSizes(sources: PictureSources): PictureSources {
   return { ...sources, srcSet: localSrcSet(sources.src), sizes: sources.sizes ?? LOCAL_PICTURE_SIZES };
 }
 
-export function PlatePicture({ alt, sources, focal, priority, ratio, className, onOpen }: { alt: string; sources: PictureSources; focal?: FocalBox; priority?: boolean; ratio?: string; className?: string; onOpen?: () => void }) {
+export function PlatePicture({ alt, sources, size, focal, priority, ratio, className, onOpen }: { alt: string; sources: PictureSources; size?: { width: number; height: number }; focal?: FocalBox; priority?: boolean; ratio?: string; className?: string; onOpen?: () => void }) {
   const shown = withLocalSizes(sources);
   const image = (
     <img
@@ -55,6 +55,8 @@ export function PlatePicture({ alt, sources, focal, priority, ratio, className, 
       srcSet={shown.srcSet}
       sizes={shown.sizes}
       alt={alt}
+      width={size?.width}
+      height={size?.height}
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : undefined}
       decoding="async"

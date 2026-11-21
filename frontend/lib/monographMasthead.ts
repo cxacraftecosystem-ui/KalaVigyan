@@ -11,7 +11,7 @@ export const GI_TERM = "GI";
 export const MONOGRAPH_KICKER = "Monograph";
 export const LEDE_KICKER = "The monograph";
 
-export type MastheadPhoto = { src: string; alt: string; originalWidth: number; focal: FocalBox | undefined; caption: string; credit: string };
+export type MastheadPhoto = { src: string; alt: string; originalWidth: number; originalHeight: number; focal: FocalBox | undefined; caption: string; credit: string };
 
 export type DocumentLabel = {
   kicker: string;
@@ -63,6 +63,7 @@ export function mastheadPhoto(document: MonographDocument, label: string | null)
     src: plate.picture.src,
     alt: plate.picture.alt,
     originalWidth: plate.picture.width,
+    originalHeight: plate.picture.height,
     focal: focal ? [focal.x, focal.y, focal.width, focal.height] : undefined,
     caption,
     credit: nodesText(units[plate.figure.credit]?.nodes ?? []).trim()

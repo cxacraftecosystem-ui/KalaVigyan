@@ -21,8 +21,10 @@ from app.models import (
 
 __all__ = [
     "AZAMGARH",
+    "CLAY_COLOURS",
     "GUJARAT",
     "KACHCHH",
+    "KACHCHH_RIVER",
     "KUTCH_CATEGORY_SLUG",
     "KUTCH_SLUG",
     "MONOGRAPH",
@@ -31,6 +33,7 @@ __all__ = [
     "UP_CATEGORY_SLUG",
     "UP_SLUG",
     "UTTAR_PRADESH",
+    "delivered_pieces",
     "seed",
 ]
 
@@ -52,6 +55,8 @@ UP_CATEGORY_SLUG = "Places-Test-Azamgarh-Category"
 MONOGRAPH = "Places-Test-Monograph"
 RAINFALL = "shared/climate/places-test-kachchh-rainfall"
 SHARED_PLAYER = "shared/chemistry/places-test-clay-firing"
+KACHCHH_RIVER = "shared/chemistry/places-test-a-river-water"
+CLAY_COLOURS = "shared/chemistry/places-test-clay-colours"
 SECTION_FIELDS = ("CHEMISTRY", "PROCESS", "MATERIALS")
 CLAIM_TEXT = "The clay darkens as it is fired in a closed kiln."
 
@@ -187,6 +192,25 @@ def _piece(label: str, kind: str, facet: str, title: str) -> KnowledgePiece:
         description=f"{title}, drawn from the cited records.",
         fields=[],
     )
+
+
+def _delivered(label: str, title: str, unit: str) -> KnowledgePiece:
+    piece = _piece(label, "general_table", "CHEMISTRY", title)
+    piece.payload = {"delivered": {"spec": {}, "units": {"u5001": {"text": unit, "claimIds": []}}}}
+    return piece
+
+
+async def delivered_pieces(session: AsyncSession) -> None:
+    river = _delivered(
+        KACHCHH_RIVER, "Water hardness by month", "Well water at Ajrakhpur in Kachchh, by month."
+    )
+    colours = _delivered(CLAY_COLOURS, "Clay colours by firing", "The colour of the clay after each firing.")
+    session.add_all([river, colours])
+    await session.flush()
+    session.add_all(
+        KnowledgePieceSubject(pieceId=piece.id, kind="CONCEPT", conceptId=CLAY) for piece in (river, colours)
+    )
+    await session.flush()
 
 
 async def _pieces(session: AsyncSession) -> None:
