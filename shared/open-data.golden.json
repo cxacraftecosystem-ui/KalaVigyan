@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "title": "KalaVigyan open knowledge",
+  "summary": "Cited facts about India's crafts and the science behind them, with the sources they rest on.",
+  "creator": "KalaVigyan, Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform, IIT Kharagpur",
+  "licence": {
+    "id": "CC-BY-4.0",
+    "name": "Creative Commons Attribution 4.0 International",
+    "url": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  "attribution": "KalaVigyan, Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform, IIT Kharagpur. KalaVigyan open knowledge, licensed under CC BY 4.0.",
+  "citedWorks": "The works its facts cite keep their own licences.",
+  "leftOut": [
+    "The names of contributors and reviewers."
+  ],
+  "codeUrl": "https://github.com/cxacraftecosystem-ui/KalaVigyan",
+  "pageUrl": "https://kalavigyan.example/data",
+  "conceptDoi": "10.5281/zenodo.299",
+  "conceptDoiUrl": "https://doi.org/10.5281/zenodo.299",
+  "citation": "KalaVigyan, Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform, IIT Kharagpur. (2026). KalaVigyan open knowledge (Version 2026.11.21) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.300",
+  "bibtex": "@misc{kalavigyan_open_knowledge_2026_11_21,\n  title = {KalaVigyan open knowledge}\n}",
+  "latest": {
+    "version": "2026.11.21",
+    "releasedOn": "2026-11-21",
+    "doi": "10.5281/zenodo.300",
+    "doiUrl": "https://doi.org/10.5281/zenodo.300",
+    "recordUrl": "https://zenodo.org/records/300",
+    "publishedAt": "2026-11-21T10:00:00Z",
+    "totalBytes": 1258291,
+    "files": [
+      {
+        "path": "claims.csv",
+        "bytes": 524288,
+        "downloadUrl": "https://zenodo.org/records/300/files/claims.csv?download=1"
+      },
+      {
+        "path": "claims.jsonl",
+        "bytes": 734003,
+        "downloadUrl": "https://zenodo.org/records/300/files/claims.jsonl?download=1"
+      }
+    ],
+    "counts": {
+      "claims": 12345,
+      "families": 1
+    },
+    "changes": {
+      "claims": {
+        "added": 3,
+        "removed": 1,
+        "changed": 2
+      }
+    },
+    "citation": "KalaVigyan, Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform, IIT Kharagpur. (2026). KalaVigyan open knowledge (Version 2026.11.21) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.300",
+    "bibtex": "@misc{kalavigyan_open_knowledge_2026_11_21,\n  title = {KalaVigyan open knowledge}\n}"
+  },
+  "releases": [
+    {
+      "version": "2026.11.21",
+      "releasedOn": "2026-11-21",
+      "doi": "10.5281/zenodo.300",
+      "doiUrl": "https://doi.org/10.5281/zenodo.300",
+      "recordUrl": "https://zenodo.org/records/300",
+      "publishedAt": "2026-11-21T10:00:00Z",
+      "totalBytes": 1258291,
+      "files": [
+        {
+          "path": "claims.csv",
+          "bytes": 524288,
+          "downloadUrl": "https://zenodo.org/records/300/files/claims.csv?download=1"
+        },
+        {
+          "path": "claims.jsonl",
+          "bytes": 734003,
+          "downloadUrl": "https://zenodo.org/records/300/files/claims.jsonl?download=1"
+        }
+      ],
+      "counts": {
+        "claims": 12345,
+        "families": 1
+      },
+      "changes": {
+        "claims": {
+          "added": 3,
+          "removed": 1,
+          "changed": 2
+        }
+      },
+      "citation": "KalaVigyan, Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform, IIT Kharagpur. (2026). KalaVigyan open knowledge (Version 2026.11.21) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.300",
+      "bibtex": "@misc{kalavigyan_open_knowledge_2026_11_21,\n  title = {KalaVigyan open knowledge}\n}"
+    },
+    {
+      "version": "2026.10.01",
+      "releasedOn": "2026-10-01",
+      "doi": "10.5281/zenodo.250",
+      "doiUrl": "https://doi.org/10.5281/zenodo.250",
+      "recordUrl": "https://zenodo.org/records/250",
+      "publishedAt": "2026-10-01T09:30:00Z",
+      "totalBytes": 900,
+      "files": [],
+      "counts": {
+        "claims": 12343
+      },
+      "changes": {},
+      "citation": "KalaVigyan, Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform, IIT Kharagpur. (2026). KalaVigyan open knowledge (Version 2026.10.01) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.250",
+      "bibtex": "@misc{kalavigyan_open_knowledge_2026_10_01,\n  title = {KalaVigyan open knowledge}\n}"
+    }
+  ],
+  "tables": [
+    {
+      "name": "families",
+      "title": "Families",
+      "description": "The families (sub-categories) of the craft list.",
+      "key": [
+        "slug"
+      ],
+      "files": [
+        "families.jsonl",
+        "families.csv"
+      ],
+      "fields": [
+        {
+          "name": "slug",
+          "type": "string",
+          "description": "The family's identifier.",
+          "required": true
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "description": "Its category's slug.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

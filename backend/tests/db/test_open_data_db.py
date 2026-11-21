@@ -122,8 +122,11 @@ async def test_a_published_release_is_listed_and_the_next_one_names_its_changes(
         "ZENODO", FIRST.version, FIRST.doi, RECORD, datetime(2026, 11, 21, 10, tzinfo=UTC)
     )
     await record_release(session, published)
-    listing = await open_data_listing(session)
+    listing = await open_data_listing(session, site=SITE)
     assert listing.concept_doi == "10.5281/zenodo.299"
+    assert listing.citation.endswith(
+        "(Version 2026.11.21) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.300"
+    )
     assert listing.latest is not None and listing.latest.version == "2026.11.21"
     links = {file.path: file.download_url for file in listing.latest.files}
     assert links["claims.jsonl"] == f"{RECORD}/files/claims.jsonl?download=1"

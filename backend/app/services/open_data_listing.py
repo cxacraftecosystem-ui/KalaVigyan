@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date, datetime
 from typing import Any, Literal
 from urllib.parse import quote
@@ -27,6 +28,9 @@ from .open_data_text import (
     SUMMARY,
     citation_bibtex,
     citation_text,
+    data_page,
+    page_citation_bibtex,
+    page_citation_text,
 )
 
 __all__ = [
@@ -37,6 +41,7 @@ __all__ = [
     "OpenDataListing",
     "PublishedRelease",
     "ReleaseFile",
+    "listing_of",
     "open_data_listing",
 ]
 
@@ -96,20 +101,29 @@ class OpenDataListing(ContractModel):
     cited_works: str = CITED_WORKS
     left_out: list[str] = list(LEFT_OUT)
     code_url: str = CODE_URL
+    page_url: str
     concept_doi: str | None
     concept_doi_url: str | None
+    citation: str
+    bibtex: str
     latest: PublishedRelease | None
     releases: list[PublishedRelease]
     tables: list[DatasetTable]
 
 
-async def open_data_listing(session: AsyncSession) -> OpenDataListing:
-    rows = await published_releases(session, ZENODO)
+async def open_data_listing(session: AsyncSession, *, site: str) -> OpenDataListing:
+    return listing_of(await published_releases(session, ZENODO), site=site)
+
+
+def listing_of(rows: Sequence[OpenDataRelease], *, site: str) -> OpenDataListing:
     releases = [_release(row) for row in rows]
     concept = rows[0].conceptDoi if rows else None
     return OpenDataListing(
+        page_url=data_page(site),
         concept_doi=concept,
         concept_doi_url=f"https://doi.org/{concept}" if concept else None,
+        citation=releases[0].citation if releases else page_citation_text(site),
+        bibtex=releases[0].bibtex if releases else page_citation_bibtex(site),
         latest=releases[0] if releases else None,
         releases=releases,
         tables=[_table(table) for table in TABLES],

@@ -1,4 +1,4 @@
-export const READING_ROUTES = ["/crafts", "/categories", "/map", "/compare", "/voices", "/shared"] as const;
+export const READING_ROUTES = ["/crafts", "/categories", "/map", "/compare", "/data", "/voices", "/shared"] as const;
 
 export function isReadingRoute(pathname: string): boolean {
   const path = pathname.replace(/\/+$/, "") || "/";

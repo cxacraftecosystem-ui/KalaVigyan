@@ -5,7 +5,8 @@ import pytest
 from app.services.open_data_changes import release_changes, row_digest, row_digests
 from app.services.open_data_readme import changes_text
 from app.services.open_data_rows import checked_tables, row_key
-from app.services.open_data_tables import FAMILIES, NATIVE_NAMES, TABLES
+from app.services.open_data_structure_tables import NATIVE_NAMES
+from app.services.open_data_tables import FAMILIES, TABLES
 
 from .release_fixtures import STAMP, family_row, tables_with
 

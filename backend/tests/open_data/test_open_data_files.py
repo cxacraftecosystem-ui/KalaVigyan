@@ -6,7 +6,8 @@ from app.core.errors import InvalidInput
 from app.services.open_data_changes import release_changes
 from app.services.open_data_deposit import release_folder
 from app.services.open_data_files import csv_bytes, jsonl_bytes, manifest_text, release_files, sha256_of
-from app.services.open_data_tables import FAMILIES, MATERIALS, TABLES
+from app.services.open_data_structure_tables import MATERIALS
+from app.services.open_data_tables import FAMILIES, TABLES
 
 from .release_fixtures import SITE, STAMP, empty_tables, family_row, tables_with
 

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { CITATION_PROMISE, INSTITUTION_LINE } from "@/components/landing/Footer";
+import { CITATION_PROMISE, CITE_DATASET_LINK, DATASET_PAGE, INSTITUTION_LINE } from "@/components/landing/Footer";
 
 export type PartnerMark = { key: string; name: string; src: string; width: number; height: number; shape: "seal" | "wide" };
 
@@ -64,6 +64,9 @@ export function PartnersFooter() {
         </div>
         <p className="kv-partners-promise">
           {CITATION_PROMISE}{" "}
+          <Link href={DATASET_PAGE} className="kv-link font-normal">
+            {CITE_DATASET_LINK}
+          </Link>{" "}
           <Link href="/privacy" className="kv-link font-normal">
             Privacy
           </Link>

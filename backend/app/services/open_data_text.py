@@ -22,6 +22,8 @@ __all__ = [
     "citation_bibtex",
     "citation_text",
     "data_page",
+    "page_citation_bibtex",
+    "page_citation_text",
     "zenodo_description",
 ]
 
@@ -93,6 +95,16 @@ def citation_bibtex(version: str, released: date, doi: str) -> str:
     )
     lines = [f"  {name} = {{{value}}}" for name, value in fields]
     return f"@misc{{{key},\n" + ",\n".join(lines) + "\n}"
+
+
+def page_citation_text(site: str) -> str:
+    return f"{CREATOR}. {DATASET_TITLE} [Data set]. {data_page(site)}"
+
+
+def page_citation_bibtex(site: str) -> str:
+    fields = (("author", f"{{{CREATOR}}}"), ("title", DATASET_TITLE), ("url", data_page(site)))
+    lines = [f"  {name} = {{{value}}}" for name, value in fields]
+    return "@misc{kalavigyan_open_knowledge,\n" + ",\n".join(lines) + "\n}"
 
 
 def zenodo_description(counts: Mapping[str, int]) -> str:
