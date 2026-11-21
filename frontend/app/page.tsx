@@ -5,7 +5,6 @@ import { landingCollection } from "@/components/landing/landingCollection";
 import { LANDING_CRAFT_SLUG, landingContent } from "@/components/landing/landingContent";
 import { publicSummary } from "@/lib/server/publicSummary";
 import { serverCraftCatalogue, serverCraftPage } from "@/lib/server/readingPages";
-import "./landingFonts";
 
 export default async function LandingPage() {
   const [summary, page, catalogue] = await Promise.all([publicSummary(), serverCraftPage(LANDING_CRAFT_SLUG), serverCraftCatalogue()]);
