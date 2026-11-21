@@ -36,9 +36,9 @@ HIDDEN_SOURCE = uuid.UUID("9e0d0000-0000-4000-8000-000000000003")
 PROCESS = uuid.UUID("9e0d0000-0000-4000-8000-000000000004")
 STAGE = uuid.UUID("9e0d0000-0000-4000-8000-000000000005")
 MATERIALS = (
-    (uuid.UUID("9e0d0000-0000-4000-8000-000000000011"), "Iron filings", "METAL", "INPUT"),
-    (uuid.UUID("9e0d0000-0000-4000-8000-000000000012"), "River clay", "CLAY", "INPUT"),
-    (uuid.UUID("9e0d0000-0000-4000-8000-000000000013"), "Iron hammer", "METAL", "TOOL"),
+    (uuid.UUID("9e0d0000-0000-4000-8000-000000000011"), "Ground test iron filings", "METAL", "INPUT"),
+    (uuid.UUID("9e0d0000-0000-4000-8000-000000000012"), "Ground test river clay", "CLAY", "INPUT"),
+    (uuid.UUID("9e0d0000-0000-4000-8000-000000000013"), "Ground test iron hammer", "METAL", "TOOL"),
 )
 
 
@@ -139,8 +139,10 @@ async def test_a_craft_s_open_places_are_measured_once_each_with_their_district_
         60.5,
         10.5,
     )
-    assert [(m.material, m.count, m.nearest_km) for m in place.materials] == [("Iron filings", 1, 11.1)]
-    assert ground.soil_materials == ["River clay"]
+    assert [(m.material, m.count, m.nearest_km) for m in place.materials] == [
+        ("Ground test iron filings", 1, 11.1)
+    ]
+    assert ground.soil_materials == ["Ground test river clay"]
     assert [(d.dep_id, d.matched) for d in ground.deposits] == [(7, True)]
     assert [source.id for source in ground.sources] == [str(OPEN_SOURCE)]
 
