@@ -170,7 +170,8 @@ jobs:
     needs: served
     if: >-
       !cancelled() && github.repository == 'cxacraftecosystem-ui/KalaVigyan' &&
-      (github.event_name != 'schedule' || github.event.schedule == '17 3 * * *')
+      (github.event_name != 'schedule' || github.event.schedule == '17 3 * * *') &&
+      (github.event_name != 'workflow_run' || needs.served.outputs.verdict != 'no-build')
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     defaults:
