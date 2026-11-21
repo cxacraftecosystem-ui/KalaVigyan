@@ -8,11 +8,15 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api import document_reads
 from app.api.routes import craft_monograph as route
 from app.core.db import get_session
 from app.main import create_app
+from app.research.document_parts import compact_json, document_parts
 from app.research.monograph_document import MonographDocument, served_language
 from app.services.answering import NOT_FOUND_DETAIL
+from app.services.monograph_document import document_body, document_hash
+from app.services.stored_documents import GeneratedRead, StoredCopy
 
 PATH = "/api/crafts/kutch-ajrakh/monograph"
 DIGEST = "a" * 64
@@ -48,6 +52,23 @@ GENERATED = MonographDocument.model_validate(
 @dataclass
 class Calls:
     made: list[str] = field(default_factory=list)
+    queued: list[tuple[str, str]] = field(default_factory=list)
+
+
+def stored_copy(document: MonographDocument, *, current: bool = True) -> StoredCopy:
+    text = compact_json(document_body(document))
+    return StoredCopy(text, document.version, document_hash(document), document.language, current)
+
+
+async def no_session() -> AsyncIterator[object]:
+    yield object()
+
+
+def watch_rebuilds(monkeypatch: pytest.MonkeyPatch, calls: Calls) -> None:
+    async def rebuild_wanted(kind: str, slug: str) -> None:
+        calls.queued.append((kind, slug))
+
+    monkeypatch.setattr(document_reads, "rebuild_wanted", rebuild_wanted)
 
 
 def served(
@@ -58,6 +79,7 @@ def served(
     generated: bool = False,
     body: dict[str, Any] | None = None,
     ground: Any = None,
+    stale: bool = False,
 ) -> tuple[TestClient, Calls]:
     calls = Calls()
     document = STORED if body is None else body
@@ -72,22 +94,21 @@ def served(
             return None
         return SimpleNamespace(version=3, language="en", contentHash=DIGEST, document=document)
 
-    async def generated_fallback(session: Any, craft: Any) -> MonographDocument | None:
+    async def generated_fallback(session: Any, craft: Any) -> GeneratedRead:
         calls.made.append(f"generated {craft.slug}")
-        return GENERATED if generated else None
+        copy = stored_copy(GENERATED, current=not stale) if generated else None
+        return GeneratedRead(SimpleNamespace(kind="craft", slug=craft.slug), copy, rebuild=stale)  # type: ignore[arg-type]
 
     async def stored_ground(session: Any, craft: Any) -> Any:
         return ground
-
-    async def session() -> AsyncIterator[object]:
-        yield object()
 
     monkeypatch.setattr(route.knowledge_view, "resolve_craft", resolve_craft)
     monkeypatch.setattr(route, "document_row", document_row)
     monkeypatch.setattr(route, "generated_fallback", generated_fallback)
     monkeypatch.setattr(route, "stored_ground", stored_ground)
+    watch_rebuilds(monkeypatch, calls)
     app = create_app()
-    app.dependency_overrides[get_session] = session
+    app.dependency_overrides[get_session] = no_session
     return TestClient(app), calls
 
 
@@ -161,6 +182,44 @@ def test_without_a_stored_document_the_generated_one_is_served(monkeypatch: pyte
     assert calls.made[-1] == "generated Kutch-Ajrakh"
     assert http.get(PATH, params={"version": 1}).status_code == 200
     assert http.get(PATH, params={"version": 2}).status_code == 404
+    assert calls.queued == []
+
+
+def test_a_stale_generated_document_is_served_as_it_was_and_its_rebuild_queued(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    http, calls = served(monkeypatch, stored=False, generated=True, stale=True)
+    answer = http.get(PATH)
+    assert answer.status_code == 200
+    assert answer.json() == GENERATED.model_dump(mode="json", by_alias=True)
+    assert calls.queued == [("craft", "Kutch-Ajrakh")]
+
+
+def test_a_document_larger_than_a_part_is_read_part_by_part_and_rejoins_whole(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    whole = {
+        **STORED,
+        "shell": "<section>" + "s" * 120 + "</section>",
+        "specs": {"a": {"text": "a" * 120}, "b": {"text": "b" * 120}},
+        "fragments": {},
+    }
+    http, _ = served(monkeypatch, body=whole)
+    monkeypatch.setattr(document_reads, "document_parts", lambda body: document_parts(body, most=200))
+    first = http.get(PATH, params={"part": 0}).json()
+    assert (first["schemaVersion"], first["version"], first["part"], first["parts"]) == (1, 3, 0, 4)
+    rejoined = dict(first["body"])
+    rejoined.update(shell=None, specs={}, fragments={})
+    for part in range(1, first["parts"]):
+        answer = http.get(PATH, params={"part": part})
+        assert answer.headers["etag"] == f'"v3-{DIGEST}-p{part}"'
+        later = answer.json()["body"]
+        rejoined["shell"] = later.get("shell", rejoined["shell"])
+        rejoined["specs"].update(later["specs"])
+        rejoined["fragments"].update(later["fragments"])
+    assert rejoined == whole
+    assert list(rejoined["specs"]) == ["a", "b"]
+    assert http.get(PATH, params={"part": 4}).status_code == 404
 
 
 @pytest.mark.parametrize(
@@ -190,14 +249,14 @@ async def test_the_fallback_asks_for_a_craft_or_a_family_document_by_the_craft_l
 ) -> None:
     asked: list[tuple[str, str]] = []
 
-    async def generated_document(session: Any, subject_kind: str, slug: str) -> MonographDocument | None:
+    async def generated_read(session: Any, subject_kind: str, slug: str) -> GeneratedRead:
         asked.append((subject_kind, slug))
-        return None
+        return GeneratedRead(SimpleNamespace(kind=subject_kind, slug=slug), None)  # type: ignore[arg-type]
 
-    monkeypatch.setattr(route, "generated_document", generated_document)
+    monkeypatch.setattr(route, "generated_read", generated_read)
     craft = SimpleNamespace(slug="Bagh-Print", isCatchAll=False, stateOfPractice=["Madhya Pradesh"])
     catch_all = SimpleNamespace(slug="Applique", isCatchAll=True, stateOfPractice=[])
     all_india = SimpleNamespace(slug="Tie-Dye", isCatchAll=False, stateOfPractice=["All India"])
     for row in (craft, catch_all, all_india):
-        assert await route.generated_fallback(object(), row) is None
+        assert (await route.generated_fallback(object(), row)).copy is None
     assert asked == [("craft", "Bagh-Print"), ("family", "Applique"), ("family", "Tie-Dye")]

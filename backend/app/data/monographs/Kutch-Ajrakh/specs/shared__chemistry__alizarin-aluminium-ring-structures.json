@@ -405,7 +405,21 @@
    "atomsTerm": "u0398",
    "atoms": "u0399",
    "recordTerm": "u0400",
-   "cid": 6293
+   "cid": 6293,
+   "recordCite": {
+    "m": "cite",
+    "key": "rm:mol.1",
+    "g": [
+     "g35"
+    ],
+    "shown": [
+     {
+      "number": 35,
+      "title": "Alizarin, PubChem CID 6293"
+     }
+    ],
+    "c": []
+   }
   },
   {
    "drawing": {
@@ -788,7 +802,21 @@
    "atomsTerm": "u0401",
    "atoms": "u0402",
    "recordTerm": "u0403",
-   "cid": 6683
+   "cid": 6683,
+   "recordCite": {
+    "m": "cite",
+    "key": "rm:mol.6683",
+    "g": [
+     "g36"
+    ],
+    "shown": [
+     {
+      "number": 36,
+      "title": "Purpurin, PubChem CID 6683"
+     }
+    ],
+    "c": []
+   }
   }
  ],
  "notes": [],

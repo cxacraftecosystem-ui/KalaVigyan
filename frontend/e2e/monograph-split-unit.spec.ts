@@ -13,7 +13,7 @@ import { SERVER_VIEWS } from "../components/monograph/serverViews";
 import { hashTargetMissing } from "../components/monograph/useShellTrigger";
 import { bundleSources, KIT_CITES_ID } from "../lib/monographRenderKit";
 import { componentBundles, pagePlan } from "../lib/monographRenderLayout";
-import { checkedShellRest, documentTree, isChapter, lazyPictures, shellParts, shellRest, shellRestPath } from "../lib/monographRenderShell";
+import { checkedShellRest, documentDigest, documentTree, isChapter, lazyPictures, restAddress, shellParts, shellRest, shellRestPath } from "../lib/monographRenderShell";
 import { shellSlots } from "../lib/monographShellTree";
 
 import { goldenDocument } from "./monographNative";
@@ -92,10 +92,13 @@ test("the rest carries its own bundles, every picture in it lazy, and the kit's 
   });
 });
 
-test("an authored shell defers its rest only on a craft's page, at its own version's address", () => {
+test("an authored shell defers its rest only on a craft's page, at its own version and content's address", () => {
   const document = goldenDocument();
   const plan = pagePlan(document);
-  expect(deferredRest(document, plan, true)).toBe(`/crafts/Kutch-Ajrakh/shell/v${document.version}`);
+  expect(deferredRest(document, plan, true)).toBe(`/crafts/Kutch-Ajrakh/shell/v${document.version}-${documentDigest(document)}`);
+  const grounded = { ...document, content: { ...document.content, data: { ...document.content.data, "why-here": { readings: 1 } } } };
+  expect(deferredRest(grounded, plan, true)).not.toBe(deferredRest(document, plan, true));
+  expect(restAddress(`v${document.version}-${documentDigest(document)}`)).toEqual({ version: document.version, digest: documentDigest(document) });
   expect(deferredRest(document, plan, false)).toBeNull();
   expect(deferredRest({ ...document, subjectKind: "category" }, plan, true)).toBeNull();
 });

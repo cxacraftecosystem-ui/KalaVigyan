@@ -71,7 +71,18 @@ from app.retrieval.statements import CraftScope, scope_claims, scope_concepts
 from .contributed_pictures import shown_contributions
 from .page_code import page_code_fingerprint
 
-__all__ = ["PAGE_VARIANTS", "craft_compound_ids", "page_stamp", "stamp_terms", "stamp_text"]
+__all__ = [
+    "PAGE_VARIANTS",
+    "Terms",
+    "count_term",
+    "counted_terms",
+    "craft_compound_ids",
+    "page_stamp",
+    "plain_term",
+    "scalar_term",
+    "stamp_terms",
+    "stamp_text",
+]
 
 PAGE_VARIANTS = ("OPEN", "RESEARCHER")
 
@@ -92,7 +103,7 @@ def stamp_text(terms: Mapping[str, Any], *, code: str, site: str, variant: str) 
         "site": site,
         "schemaVersion": CRAFT_PAGE_SCHEMA_VERSION,
         "variant": variant,
-        "terms": {key: _plain(value) for key, value in sorted(terms.items())},
+        "terms": {key: plain_term(value) for key, value in sorted(terms.items())},
     }
     text = json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
@@ -128,11 +139,11 @@ def _family(craft: Craft) -> Select[Any]:
 def _curation_terms(craft: Craft) -> Terms:
     family = _family(craft)
     return {
-        "curatedVersion": _scalar(CuratedCraft.version, CuratedCraft.craftId == craft.id),
-        "curatedAt": _scalar(CuratedCraft.updatedAt, CuratedCraft.craftId == craft.id),
-        "familyVersion": _scalar(CuratedCategory.version, CuratedCategory.categoryId.in_(family)),
-        "familyAt": _scalar(CuratedCategory.updatedAt, CuratedCategory.categoryId.in_(family)),
-        "craftAt": _scalar(Craft.updatedAt, Craft.id == craft.id),
+        "curatedVersion": scalar_term(CuratedCraft.version, CuratedCraft.craftId == craft.id),
+        "curatedAt": scalar_term(CuratedCraft.updatedAt, CuratedCraft.craftId == craft.id),
+        "familyVersion": scalar_term(CuratedCategory.version, CuratedCategory.categoryId.in_(family)),
+        "familyAt": scalar_term(CuratedCategory.updatedAt, CuratedCategory.categoryId.in_(family)),
+        "craftAt": scalar_term(Craft.updatedAt, Craft.id == craft.id),
     }
 
 
@@ -141,19 +152,23 @@ def _claim_terms(craft: Craft, own: Select[Any]) -> Terms:
     cited = select(ClaimSource.sourceId).where(ClaimSource.claimId.in_(own))
     glossary = select(TermCraft.termId).where(TermCraft.craftId == craft.id)
     return {
-        **_counted("concepts", Concept.id, Concept.updatedAt, Concept.id.in_(concepts)),
-        **_counted("claims", Claim.id, Claim.updatedAt, Claim.id.in_(own)),
-        **_counted("citations", ClaimSource.id, ClaimSource.updatedAt, ClaimSource.claimId.in_(own)),
-        **_counted("sources", Source.id, Source.updatedAt, Source.id.in_(cited)),
-        **_counted("glossaryLinks", TermCraft.termId, TermCraft.createdAt, TermCraft.craftId == craft.id),
-        **_counted("glossary", Term.id, Term.updatedAt, Term.id.in_(glossary)),
+        **counted_terms("concepts", Concept.id, Concept.updatedAt, Concept.id.in_(concepts)),
+        **counted_terms("claims", Claim.id, Claim.updatedAt, Claim.id.in_(own)),
+        **counted_terms("citations", ClaimSource.id, ClaimSource.updatedAt, ClaimSource.claimId.in_(own)),
+        **counted_terms("sources", Source.id, Source.updatedAt, Source.id.in_(cited)),
+        **counted_terms(
+            "glossaryLinks", TermCraft.termId, TermCraft.createdAt, TermCraft.craftId == craft.id
+        ),
+        **counted_terms("glossary", Term.id, Term.updatedAt, Term.id.in_(glossary)),
     }
 
 
 def _family_terms(family: Select[Any]) -> Terms:
     return {
-        **_counted("familyClaims", Claim.id, Claim.updatedAt, Claim.id.in_(family)),
-        **_counted("familyCitations", ClaimSource.id, ClaimSource.updatedAt, ClaimSource.claimId.in_(family)),
+        **counted_terms("familyClaims", Claim.id, Claim.updatedAt, Claim.id.in_(family)),
+        **counted_terms(
+            "familyCitations", ClaimSource.id, ClaimSource.updatedAt, ClaimSource.claimId.in_(family)
+        ),
     }
 
 
@@ -161,11 +176,11 @@ def _relative_terms(craft: Craft) -> Terms:
     kin = select(Craft.id).where(Craft.subCategoryId == craft.subCategoryId, Craft.id != craft.id)
     concepts = select(Concept.id).where(Concept.craftId.in_(kin))
     return {
-        **_counted("relatives", Craft.id, Craft.updatedAt, Craft.id.in_(kin)),
-        **_counted(
+        **counted_terms("relatives", Craft.id, Craft.updatedAt, Craft.id.in_(kin)),
+        **counted_terms(
             "relativeCurations", CuratedCraft.craftId, CuratedCraft.updatedAt, CuratedCraft.craftId.in_(kin)
         ),
-        **_counted("relativeClaims", Claim.id, Claim.updatedAt, Claim.subjectId.in_(concepts)),
+        **counted_terms("relativeClaims", Claim.id, Claim.updatedAt, Claim.subjectId.in_(concepts)),
     }
 
 
@@ -175,20 +190,20 @@ def _science_terms(craft: Craft) -> Terms:
     materials = _craft_materials(craft)
     compounds = craft_compound_ids(craft)
     return {
-        **_counted("processes", Process.id, Process.updatedAt, Process.id.in_(processes)),
-        **_counted("stages", ProcessStage.id, ProcessStage.updatedAt, ProcessStage.id.in_(stages)),
-        **_counted("reactions", Reaction.id, Reaction.updatedAt, Reaction.stageId.in_(stages)),
-        **_counted("materials", Material.id, Material.updatedAt, Material.id.in_(materials)),
-        **_counted("compounds", Compound.id, Compound.updatedAt, Compound.id.in_(compounds)),
-        "conformersAt": _scalar(func.max(Compound.conformerKeptAt), Compound.id.in_(compounds)),
+        **counted_terms("processes", Process.id, Process.updatedAt, Process.id.in_(processes)),
+        **counted_terms("stages", ProcessStage.id, ProcessStage.updatedAt, ProcessStage.id.in_(stages)),
+        **counted_terms("reactions", Reaction.id, Reaction.updatedAt, Reaction.stageId.in_(stages)),
+        **counted_terms("materials", Material.id, Material.updatedAt, Material.id.in_(materials)),
+        **counted_terms("compounds", Compound.id, Compound.updatedAt, Compound.id.in_(compounds)),
+        "conformersAt": scalar_term(func.max(Compound.conformerKeptAt), Compound.id.in_(compounds)),
     }
 
 
 def _picture_terms(shown: ColumnElement[bool]) -> Terms:
     linked = select(MediaRefClaim.mediaRefId).where(shown)
     return {
-        **_counted("pictures", MediaRefClaim.mediaRefId, MediaRefClaim.createdAt, shown),
-        **_counted("mediaRefs", MediaRef.id, MediaRef.updatedAt, MediaRef.id.in_(linked)),
+        **counted_terms("pictures", MediaRefClaim.mediaRefId, MediaRefClaim.createdAt, shown),
+        **counted_terms("mediaRefs", MediaRef.id, MediaRef.updatedAt, MediaRef.id.in_(linked)),
     }
 
 
@@ -197,20 +212,24 @@ def _place_terms(craft: Craft) -> Terms:
     places = func.jsonb_array_elements(CuratedCraft.page["places"], type_=JSONB)
     named = select(places["wikidataId"].astext).where(CuratedCraft.craftId == craft.id)
     return {
-        **_counted("locations", CraftLocation.id, CraftLocation.updatedAt, CraftLocation.craftId == craft.id),
-        **_counted("gi", CraftGiRecord.craftId, CraftGiRecord.updatedAt, CraftGiRecord.craftId == craft.id),
-        **_counted("prices", CraftPrice.id, CraftPrice.updatedAt, CraftPrice.craftId == craft.id),
-        **_counted(
+        **counted_terms(
+            "locations", CraftLocation.id, CraftLocation.updatedAt, CraftLocation.craftId == craft.id
+        ),
+        **counted_terms(
+            "gi", CraftGiRecord.craftId, CraftGiRecord.updatedAt, CraftGiRecord.craftId == craft.id
+        ),
+        **counted_terms("prices", CraftPrice.id, CraftPrice.updatedAt, CraftPrice.craftId == craft.id),
+        **counted_terms(
             "workforce", CraftWorkforce.id, CraftWorkforce.updatedAt, CraftWorkforce.craftId == craft.id
         ),
-        **_counted("datasets", EnvDataset.id, EnvDataset.updatedAt, EnvDataset.id.is_not(None)),
-        **_counted(
+        **counted_terms("datasets", EnvDataset.id, EnvDataset.updatedAt, EnvDataset.id.is_not(None)),
+        **counted_terms(
             "geoValues",
             DistrictEnvValue.id,
             DistrictEnvValue.updatedAt,
             DistrictEnvValue.districtLgd.in_(districts),
         ),
-        **_counted(
+        **counted_terms(
             "points", WikidataPoint.wikidataId, WikidataPoint.keptAt, WikidataPoint.wikidataId.in_(named)
         ),
     }
@@ -220,12 +239,12 @@ def _piece_terms(craft: Craft) -> Terms:
     own = KnowledgePiece.craftId == craft.id
     jobs = select(MediaJob.id).where(MediaJob.craftId == craft.id)
     return {
-        **_counted("pieces", KnowledgePiece.id, KnowledgePiece.updatedAt, own),
-        "piecesStaleAt": _scalar(func.max(KnowledgePiece.staleSince), own),
-        "piecesHiddenAt": _scalar(func.max(KnowledgePiece.hiddenAt), own),
-        "piecesSuperseded": _count(KnowledgePiece.id, own & KnowledgePiece.supersededById.is_not(None)),
-        "piecesShown": _count(KnowledgePiece.id, own & KnowledgePiece.hiddenAt.is_(None)),
-        **_counted("aiMedia", MediaAsset.id, MediaAsset.updatedAt, MediaAsset.jobId.in_(jobs)),
+        **counted_terms("pieces", KnowledgePiece.id, KnowledgePiece.updatedAt, own),
+        "piecesStaleAt": scalar_term(func.max(KnowledgePiece.staleSince), own),
+        "piecesHiddenAt": scalar_term(func.max(KnowledgePiece.hiddenAt), own),
+        "piecesSuperseded": count_term(KnowledgePiece.id, own & KnowledgePiece.supersededById.is_not(None)),
+        "piecesShown": count_term(KnowledgePiece.id, own & KnowledgePiece.hiddenAt.is_(None)),
+        **counted_terms("aiMedia", MediaAsset.id, MediaAsset.updatedAt, MediaAsset.jobId.in_(jobs)),
     }
 
 
@@ -238,22 +257,22 @@ def _voice_terms(craft: Craft) -> Terms:
     stream = FieldVoiceStream.stream + literal(":") + FieldVoiceStream.portal
     streams = func.string_agg(stream, aggregate_order_by(literal_column("','"), stream))
     return {
-        **_counted("fieldRecordings", FieldRecording.id, FieldRecording.updatedAt, recorded),
-        "fieldRecordingsShown": _count(FieldRecording.id, recorded & FieldRecording.hiddenAt.is_(None)),
-        "fieldRecordingsHiddenAt": _scalar(func.max(FieldRecording.hiddenAt), recorded),
-        "fieldSegments": _count(FieldSegment.id, FieldSegment.recordingId.in_(recordings)),
-        "fieldQuotable": _count(
+        **counted_terms("fieldRecordings", FieldRecording.id, FieldRecording.updatedAt, recorded),
+        "fieldRecordingsShown": count_term(FieldRecording.id, recorded & FieldRecording.hiddenAt.is_(None)),
+        "fieldRecordingsHiddenAt": scalar_term(func.max(FieldRecording.hiddenAt), recorded),
+        "fieldSegments": count_term(FieldSegment.id, FieldSegment.recordingId.in_(recordings)),
+        "fieldQuotable": count_term(
             FieldSegment.id, and_(FieldSegment.recordingId.in_(recordings), FieldSegment.quotable)
         ),
-        **_counted("fieldImages", FieldImage.id, FieldImage.updatedAt, pictured),
-        "fieldImagesShown": _count(FieldImage.id, pictured & FieldImage.hiddenAt.is_(None)),
-        "fieldImagesHiddenAt": _scalar(func.max(FieldImage.hiddenAt), pictured),
-        "fieldPhotoDecidedAt": _scalar(
+        **counted_terms("fieldImages", FieldImage.id, FieldImage.updatedAt, pictured),
+        "fieldImagesShown": count_term(FieldImage.id, pictured & FieldImage.hiddenAt.is_(None)),
+        "fieldImagesHiddenAt": scalar_term(func.max(FieldImage.hiddenAt), pictured),
+        "fieldPhotoDecidedAt": scalar_term(
             func.max(FieldPhotoReview.decidedAt), FieldPhotoReview.imageId.in_(images)
         ),
         "freshStreams": select(streams).where(fresh).scalar_subquery(),
-        "artisanImages": _scalar(AppSetting.value.cast(String), AppSetting.key == ARTISAN_IMAGES_SETTING),
-        "artisanImagesAt": _scalar(AppSetting.updatedAt, AppSetting.key == ARTISAN_IMAGES_SETTING),
+        "artisanImages": scalar_term(AppSetting.value.cast(String), AppSetting.key == ARTISAN_IMAGES_SETTING),
+        "artisanImagesAt": scalar_term(AppSetting.updatedAt, AppSetting.key == ARTISAN_IMAGES_SETTING),
     }
 
 
@@ -261,14 +280,14 @@ def _testimony_terms(craft: Craft) -> Terms:
     given = ArtisanContribution.craftId == craft.id
     talks = ArtisanConversation.craftId == craft.id
     return {
-        **_counted("testimony", ArtisanContribution.id, ArtisanContribution.updatedAt, given),
-        "testimonyApprovedAt": _scalar(func.max(ArtisanContribution.approvedAt), given),
-        "testimonyWithdrawnAt": _scalar(func.max(ArtisanContribution.withdrawnAt), given),
-        "testimonyApproved": _count(
+        **counted_terms("testimony", ArtisanContribution.id, ArtisanContribution.updatedAt, given),
+        "testimonyApprovedAt": scalar_term(func.max(ArtisanContribution.approvedAt), given),
+        "testimonyWithdrawnAt": scalar_term(func.max(ArtisanContribution.withdrawnAt), given),
+        "testimonyApproved": count_term(
             ArtisanContribution.id, and_(given, ArtisanContribution.status == "APPROVED")
         ),
-        **_counted("conversations", ArtisanConversation.id, ArtisanConversation.updatedAt, talks),
-        "conversationsDeleted": _count(
+        **counted_terms("conversations", ArtisanConversation.id, ArtisanConversation.updatedAt, talks),
+        "conversationsDeleted": count_term(
             ArtisanConversation.id, and_(talks, ArtisanConversation.deletedAt.is_not(None))
         ),
     }
@@ -278,27 +297,27 @@ def _contributed_terms(craft: Craft) -> Terms:
     shown = ImageContribution.id.in_(shown_contributions(craft.id))
     assets = select(ImageContribution.assetId).where(shown)
     return {
-        **_counted("contributed", ImageContribution.id, ImageContribution.updatedAt, shown),
-        **_counted("contributedAssets", MediaAsset.id, MediaAsset.updatedAt, MediaAsset.id.in_(assets)),
+        **counted_terms("contributed", ImageContribution.id, ImageContribution.updatedAt, shown),
+        **counted_terms("contributedAssets", MediaAsset.id, MediaAsset.updatedAt, MediaAsset.id.in_(assets)),
     }
 
 
-def _counted(name: str, key: Any, changed: Any, where: ColumnElement[bool]) -> Terms:
+def counted_terms(name: str, key: Any, changed: Any, where: ColumnElement[bool]) -> Terms:
     return {
-        f"{name}Count": _count(key, where),
+        f"{name}Count": count_term(key, where),
         f"{name}At": select(func.sum(extract("epoch", changed))).where(where).scalar_subquery(),
     }
 
 
-def _count(key: Any, where: ColumnElement[bool]) -> ColumnElement[Any]:
+def count_term(key: Any, where: ColumnElement[bool]) -> ColumnElement[Any]:
     return select(func.count(key)).where(where).scalar_subquery()
 
 
-def _scalar(value: Any, where: ColumnElement[bool]) -> ColumnElement[Any]:
+def scalar_term(value: Any, where: ColumnElement[bool]) -> ColumnElement[Any]:
     return select(value).where(where).limit(1).scalar_subquery()
 
 
-def _plain(value: Any) -> Any:
+def plain_term(value: Any) -> Any:
     if value is None or isinstance(value, (int, float, str, bool)):
         return value
     isoformat = getattr(value, "isoformat", None)

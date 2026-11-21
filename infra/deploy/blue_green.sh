@@ -16,6 +16,7 @@ NGINX_SWITCH_SECONDS="${NGINX_SWITCH_SECONDS:-20}"
 EMBED_SECONDS="${EMBED_SECONDS:-240}"
 EMBED_GRACE="${EMBED_GRACE:-60}"
 PAGES_SECONDS="${PAGES_SECONDS:-480}"
+DOCUMENTS_SECONDS="${DOCUMENTS_SECONDS:-420}"
 REFRESH_SECONDS="${REFRESH_SECONDS:-300}"
 STATE="${STATE_DIR:-$APP/state}"
 
@@ -55,7 +56,7 @@ seed() {
   if [ ! -f "$tree/alembic.ini" ]; then
     return 0
   fi
-  for module in app.scripts.seed_crafts app.scripts.seed_claims app.scripts.seed_districts app.scripts.import_curation; do
+  for module in app.scripts.seed_crafts app.scripts.seed_claims app.scripts.seed_districts app.scripts.sync_dataset_registry app.scripts.import_curation; do
     if ! (cd "$tree" && runuser -u "$RUN_AS" -- bash -c "set -a; . '$ENV_FILE'; set +a; exec ./.venv/bin/python -m $module" >&2); then
       return 1
     fi
@@ -69,10 +70,10 @@ seed() {
 
 rebuild_pages() {
   local tree="$1" report
-  if report="$(cd "$tree" && timeout "$((PAGES_SECONDS + EMBED_GRACE))" runuser -u "$RUN_AS" -- bash -c "set -a; . '$ENV_FILE'; set +a; exec ./.venv/bin/python -m app.scripts.rebuild_stale_pages --seconds $PAGES_SECONDS")"; then
+  if report="$(cd "$tree" && timeout "$((PAGES_SECONDS + DOCUMENTS_SECONDS + EMBED_GRACE))" runuser -u "$RUN_AS" -- bash -c "set -a; . '$ENV_FILE'; set +a; exec ./.venv/bin/python -m app.scripts.rebuild_stale_pages --seconds $PAGES_SECONDS --document-seconds $DOCUMENTS_SECONDS")"; then
     say "app.scripts.rebuild_stale_pages done: $report"
   else
-    say "::warning::app.scripts.rebuild_stale_pages did not finish (${report:-no report}); the release goes on and the nightly upkeep rebuilds what is left, but the web build reads stale pages slowly until then."
+    say "::warning::app.scripts.rebuild_stale_pages did not finish (${report:-no report}); the release goes on and the nightly upkeep rebuilds what is left; until then reads serve the last good copy of each stored document and queue its rebuild."
   fi
 }
 

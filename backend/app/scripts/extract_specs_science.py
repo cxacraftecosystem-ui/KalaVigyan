@@ -10,7 +10,7 @@ from app.core.errors import InvalidInput
 from app.research.base import ContractModel
 from app.research.component_specs_science import SPEC_MODELS_SCIENCE
 from app.research.monograph_document import spec_file_name
-from app.research.monograph_page import ComponentEntry
+from app.research.monograph_page import CitedSource, ComponentEntry
 from app.services.monograph_document import MONOGRAPHS_DIR
 
 from .build_monograph import assembled_template, monograph_content
@@ -25,27 +25,37 @@ from .extract_specs_science_stages import stage_player
 SPECS_FOLDER = "specs"
 SLUGS = ("Kutch-Ajrakh",)
 
-Extractor = Callable[[Element, Mapping[int, str]], dict[str, Any]]
+Sources = Mapping[str, CitedSource]
+Extractor = Callable[[Element, Mapping[int, str], Sources], dict[str, Any]]
+NestedRead = Callable[[Element, Mapping[int, str]], dict[str, Any]]
 
 
 def _plain(read: Callable[[Element], dict[str, Any]]) -> Extractor:
-    return lambda element, _nested: read(element)
+    return lambda element, _nested, _sources: read(element)
+
+
+def _nesting(read: NestedRead) -> Extractor:
+    return lambda element, nested, _sources: read(element, nested)
+
+
+def _cited(read: Callable[[Element, Sources], dict[str, Any]]) -> Extractor:
+    return lambda element, _nested, sources: read(element, sources)
 
 
 EXTRACTORS: Mapping[str, Extractor] = MappingProxyType(
     {
-        "choice_toggle": choice_toggle,
+        "choice_toggle": _nesting(choice_toggle),
         "diagram": _plain(diagram),
         "dip_player": _plain(dip_player),
         "equation_card": _plain(equation_card),
-        "experiment_lab": experiment_lab,
-        "material_cards": material_cards,
+        "experiment_lab": _nesting(experiment_lab),
+        "material_cards": _nesting(material_cards),
         "model_explainer": _plain(model_explainer),
         "molecule_3d": _plain(molecule_3d),
         "process_replay": _plain(process_replay),
         "reaction_player": _plain(reaction_player),
         "stage_player": _plain(stage_player),
-        "structure_diagram": _plain(structure_diagram),
+        "structure_diagram": _cited(structure_diagram),
     }
 )
 
@@ -75,11 +85,24 @@ def extract_specs(slug: str) -> Extraction:
             continue
         element = find_anchor(root, component.anchor)
         nested = {key: label for key, label in labels.items() if key != id(element)}
-        specs[component.label] = SPEC_MODELS_SCIENCE[component.kind].model_validate(
-            extractor(element, nested)
-        )
-        held += [HeldCitation(component.label, key) for key in held_citations(element, nested)]
+        spec = SPEC_MODELS_SCIENCE[component.kind].model_validate(extractor(element, nested, content.sources))
+        specs[component.label] = spec
+        carried = carried_citations(spec.model_dump(mode="json", by_alias=True))
+        held += [
+            HeldCitation(component.label, key)
+            for key in held_citations(element, nested)
+            if key not in carried
+        ]
     return Extraction(specs, tuple(held))
+
+
+def carried_citations(value: Any) -> set[str]:
+    if isinstance(value, list):
+        return set().union(*(carried_citations(item) for item in value))
+    if not isinstance(value, dict):
+        return set()
+    own = {value["key"]} if value.get("m") == "cite" and isinstance(value.get("key"), str) else set()
+    return own.union(*(carried_citations(item) for item in value.values()))
 
 
 def _placed_components(root: Element, components: Sequence[ComponentEntry]) -> dict[int, str]:

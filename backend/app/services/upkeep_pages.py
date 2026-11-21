@@ -20,13 +20,16 @@ from .craft_chapters_job import chapter_crafts
 from .craft_page_snapshots import rebuild_snapshots
 from .craft_page_stamp import PAGE_VARIANTS, page_stamp
 from .monograph_load import load_monograph
+from .stored_document_rebuilds import DocumentsReport, rebuild_stale_documents
 
 __all__ = [
+    "DOCUMENTS_PER_NIGHT",
     "MONOGRAPHS_PER_NIGHT",
     "PAGES_PER_NIGHT",
     "MonographLoader",
     "PagesReport",
     "StalePage",
+    "rebuild_documents",
     "rebuild_monographs",
     "rebuild_order",
     "rebuild_stale_pages",
@@ -38,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 MONOGRAPHS_PER_NIGHT = 20
 PAGES_PER_NIGHT = 60
+DOCUMENTS_PER_NIGHT = 200
 NEVER_BUILT = datetime.min.replace(tzinfo=UTC)
 
 MonographLoader = Callable[[str], MonographContent]
@@ -50,6 +54,7 @@ class PagesReport:
     pages_rebuilt: list[str] = field(default_factory=list)
     pages_changed: int = 0
     failed: list[str] = field(default_factory=list)
+    documents: DocumentsReport = field(default_factory=DocumentsReport)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -58,6 +63,7 @@ class PagesReport:
             "pagesRebuilt": len(self.pages_rebuilt),
             "pagesChanged": self.pages_changed,
             "pagesFailed": self.failed,
+            **self.documents.as_dict(),
         }
 
 
@@ -133,6 +139,13 @@ async def rebuild_stale_pages(
             continue
         report.pages_rebuilt.append(slug)
         report.pages_changed += int(changed)
+
+
+async def rebuild_documents(
+    session: AsyncSession, *, report: PagesReport, limit: int = DOCUMENTS_PER_NIGHT
+) -> None:
+    await rebuild_stale_documents(session, report=report.documents, limit=limit)
+    report.failed.extend(f"document:{named}" for named in report.documents.failed)
 
 
 async def _stale_since(session: AsyncSession, craft: Craft) -> datetime | None:

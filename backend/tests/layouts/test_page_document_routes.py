@@ -1,20 +1,25 @@
 import uuid
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api import document_reads
 from app.api.routes import page_documents
 from app.core.db import get_session
 from app.core.deps import get_current_user, get_optional_user
 from app.core.errors import InvalidInput, Refused
 from app.main import create_app
 from app.models import User
+from app.research.document_parts import compact_json
 from app.research.monograph_document import MonographDocument
 from app.research.page_layout import LayoutWrite, PageLayout
+from app.services.monograph_document import document_body, document_hash
 from app.services.monograph_generated_assembly import assembled_document
 from app.services.monograph_generated_drawings import Drawings
+from app.services.stored_documents import GeneratedRead, StoredCopy
 
 from .generated_parts import generated, hero_layout
 
@@ -40,6 +45,8 @@ def held(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
         "writes": [],
         "document": None,
         "layout": hero_layout(),
+        "rebuild": False,
+        "queued": [],
     }
     state["document"] = assembled_document(generated(), Drawings(root=tmp_path))
 
@@ -48,8 +55,13 @@ def held(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
             raise InvalidInput(f"No {kind} has the slug {slug}.")
         return object()
 
-    async def document(session: Any, kind: str, slug: str) -> MonographDocument | None:
-        return state["document"]
+    async def read(session: Any, kind: str, slug: str) -> GeneratedRead:
+        await subject(session, kind, slug)
+        held = stored(state["document"], current=not state["rebuild"])
+        return GeneratedRead(SimpleNamespace(kind=kind, slug=slug), held, rebuild=state["rebuild"])  # type: ignore[arg-type]
+
+    async def queued(kind: str, slug: str) -> None:
+        state["queued"].append((kind, slug))
 
     async def layout(session: Any, kind: str, slug: str) -> PageLayout | None:
         await subject(session, kind, slug)
@@ -62,11 +74,18 @@ def held(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
         state["writes"].append((kind, slug, actor.role, len(written.entries)))
         return state["layout"].model_copy(update={"version": 3})
 
-    monkeypatch.setattr(page_documents, "subject_by_key", subject)
-    monkeypatch.setattr(page_documents, "generated_document", document)
+    monkeypatch.setattr(page_documents, "generated_read", read)
+    monkeypatch.setattr(document_reads, "rebuild_wanted", queued)
     monkeypatch.setattr(page_documents, "page_layout", layout)
     monkeypatch.setattr(page_documents, "write_layout", write)
     return state
+
+
+def stored(document: MonographDocument | None, *, current: bool) -> StoredCopy | None:
+    if document is None:
+        return None
+    text = compact_json(document_body(document))
+    return StoredCopy(text, document.version, document_hash(document), document.language, current)
 
 
 def client(state: dict[str, Any], role: str | None = None) -> TestClient:
@@ -91,8 +110,44 @@ def test_a_category_or_family_monograph_is_a_public_read_with_an_etag(
     assert answer.json()["subjectSlug"] == "Bagh-Print"
     assert answer.json()["content"]["layout"][0]["ref"] == "bagh-print/pictures/i02"
     assert answer.headers["Cache-Control"] == "public, max-age=300"
+    document = held["document"]
+    assert answer.headers["ETag"] == f'"v{document.version}-{document_hash(document)}"'
     again = http.get(path, headers={"If-None-Match": answer.headers["ETag"]})
     assert again.status_code == 304
+    assert held["queued"] == []
+
+
+def test_a_stale_stored_document_is_served_and_its_rebuild_queued_after_the_answer(
+    held: dict[str, Any],
+) -> None:
+    held["rebuild"] = True
+    answer = client(held).get("/api/families/Other-Textiles/monograph")
+    assert answer.status_code == 200
+    assert answer.json()["subjectSlug"] == "Bagh-Print"
+    assert held["queued"] == [("family", "Other-Textiles")]
+
+
+def test_a_document_read_in_parts_gives_the_whole_document_back_and_no_part_beyond(
+    held: dict[str, Any],
+) -> None:
+    http = client(held)
+    whole = http.get("/api/categories/Textile-Craft-Category/monograph").json()
+    first = http.get("/api/categories/Textile-Craft-Category/monograph", params={"part": 0})
+    assert first.status_code == 200
+    assert first.json() == {
+        "schemaVersion": 1,
+        "version": whole["version"],
+        "part": 0,
+        "parts": 1,
+        "body": whole,
+    }
+    assert first.headers["ETag"].endswith('-p0"')
+    beyond = http.get("/api/categories/Textile-Craft-Category/monograph", params={"part": 1})
+    assert beyond.status_code == 404
+    assert beyond.json()["detail"] == "This monograph has no such part."
+    assert (
+        http.get("/api/categories/Textile-Craft-Category/monograph", params={"part": -1}).status_code == 422
+    )
 
 
 @pytest.mark.parametrize(

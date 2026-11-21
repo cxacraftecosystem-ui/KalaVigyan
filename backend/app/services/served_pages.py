@@ -22,10 +22,10 @@ from app.models import (
 from app.research.page_revalidation import PageOwners
 
 from .craft_page_snapshots import OPEN
-from .monograph_document import CRAFT_SUBJECT, document_hash, latest_document_row
-from .monograph_generated import generated_document
+from .monograph_document import CRAFT_SUBJECT, latest_document_row
 from .open_work_subjects import CATEGORY, WorkSubject, craft_subjects, subject_by_key
 from .page_revalidation import BatchedRefresh
+from .stored_documents import stored_copy
 
 __all__ = [
     "BUILD_READ_SECONDS",
@@ -130,8 +130,8 @@ async def document_digest(session: AsyncSession, subject: WorkSubject) -> str | 
         row = await latest_document_row(session, CRAFT_SUBJECT, subject.slug)
         if row is not None:
             return f"v{row.version}-{row.contentHash}"
-    generated = await generated_document(session, subject.kind, subject.slug)
-    return None if generated is None else f"v{generated.version}-{document_hash(generated)}"
+    copy = await stored_copy(session, subject)
+    return None if copy is None else copy.etag
 
 
 def changed_owners(

@@ -65,6 +65,8 @@ REFUSALS: list[tuple[str, Callable[[dict[str, Any]], None]]] = [
     ("diagram", lambda spec: spec.update(drawing=fixtures.DOT)),
     ("diagram", lambda spec: spec["chain"]["links"].pop()),
     ("structure_diagram", lambda spec: spec["molecules"][0].update(cid=0)),
+    ("structure_diagram", lambda spec: spec["molecules"][0].update(recordCite={"m": "span", "c": ["35"]})),
+    ("structure_diagram", lambda spec: spec["molecules"][0]["recordCite"].update(shown=[])),
     ("molecule_3d", lambda spec: spec["key"][0].update(swatch="square")),
     ("material_cards", lambda spec: spec["cards"][0].update(swatch="--brand-purple")),
     ("model_explainer", lambda spec: spec["model"].update(sandbox="allow-scripts allow-same-origin")),

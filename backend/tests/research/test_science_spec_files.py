@@ -24,12 +24,32 @@ NESTED = {
     "kutch-ajrakh/materials/six-materials": ["kutch-ajrakh/materials/natural-dye-materials-photo"],
 }
 STAGES = "kutch-ajrakh/process/cloth-after-each-stage"
-HELD = [
-    (STAGES, "pt:C131"),
-    ("shared/chemistry/alizarin-aluminium-ring-structures", "rm:mol.1"),
-    ("shared/chemistry/alizarin-aluminium-ring-structures", "rm:mol.6683"),
-    ("shared/chemistry/alizarin-purpurin-structures-hindi", "rm:mol.1"),
-    ("shared/chemistry/alizarin-purpurin-structures-hindi", "rm:mol.6683"),
+HELD = [(STAGES, "pt:C131")]
+STRUCTURES = (
+    "shared/chemistry/alizarin-aluminium-ring-structures",
+    "shared/chemistry/alizarin-purpurin-structures-hindi",
+)
+RECORD_CITES = [
+    (
+        6293,
+        {
+            "m": "cite",
+            "key": "rm:mol.1",
+            "g": ["g35"],
+            "shown": [{"number": 35, "title": "Alizarin, PubChem CID 6293"}],
+            "c": [],
+        },
+    ),
+    (
+        6683,
+        {
+            "m": "cite",
+            "key": "rm:mol.6683",
+            "g": ["g36"],
+            "shown": [{"number": 36, "title": "Purpurin, PubChem CID 6683"}],
+            "c": [],
+        },
+    ),
 ]
 
 
@@ -98,6 +118,14 @@ def test_a_spec_places_its_nested_components_where_the_page_nests_them(
 def test_the_cited_passages_outside_text_units_are_held_back_and_listed() -> None:
     held = [(item.label, item.citation) for item in extract_specs(SLUG).held]
     assert sorted(held) == sorted(HELD)
+
+
+def test_each_structure_carries_the_citation_of_its_pubchem_record(
+    specs: dict[str, tuple[str, dict[str, Any]]],
+) -> None:
+    for label in STRUCTURES:
+        _kind, spec = specs[label]
+        assert [(molecule["cid"], molecule["recordCite"]) for molecule in spec["molecules"]] == RECORD_CITES
 
 
 def test_the_committed_spec_files_are_what_the_template_extracts_to() -> None:

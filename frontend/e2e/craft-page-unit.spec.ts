@@ -253,15 +253,19 @@ test("the production Overview check needs a curated page's lede and key facts on
 test("the craft page loads the monograph or the craft list's record only when it draws it, draws no tabs and mounts no generator", () => {
   const route = readFileSync(join(FRONTEND, "app", "(reading)", "crafts", "[slug]", "page.tsx"), "utf8");
   const lazy = [...route.matchAll(/dynamic\(\(\) => import\("([^"]+)"\)/g)].map((found) => found[1]);
-  expect(lazy).toEqual(["@/components/monograph/MonographPage", "@/components/craft/CraftWithoutMonograph"]);
+  expect(lazy).toEqual(["@/components/monograph/MonographShellPage", "@/components/monograph/MonographDocumentPage", "@/components/craft/CraftWithoutMonograph"]);
   const eager = [...eagerModules("@/app/(reading)/crafts/[slug]/page")];
   expect(eager.filter((file) => /components\/(monograph|craft)\//.test(file))).toEqual([]);
   const graph = [...new Set([...eager, ...lazy.flatMap((entry) => [...eagerModules(entry)])])];
   const texts = graph.map((file) => readFileSync(join(FRONTEND, file), "utf8"));
   expect(graph).toContain("lib/craftPageContract.ts");
   expect(graph).toContain("lib/monographDocumentShape.ts");
-  expect(graph).toContain("components/monograph/MonographPage.tsx");
+  expect(graph).toContain("components/monograph/MonographShellPage.tsx");
+  expect(graph).toContain("components/monograph/MonographDocumentPage.tsx");
   expect(graph).toContain("components/craft/CraftWithoutMonograph.tsx");
+  const shellPage = [...eagerModules("@/components/monograph/MonographShellPage")];
+  expect(shellPage.filter((file) => /MonographDocumentPage|MonographChapters|ComponentSlot\.tsx/.test(file))).toEqual([]);
+  expect([...eagerModules("@/components/answer/ChemEquation")]).not.toContain("lib/chemistry.ts");
   expect(graph).toContain("components/monograph/kinds/blocks/AnswerBlockView.tsx");
   expect(graph.filter((file) => /CraftScreen|CraftTabs|CraftReference|craftMedia|StageMedia|mediaContract/.test(file))).toEqual([]);
   expect(texts.filter((text) => /\/(profile|process)`/.test(text))).toEqual([]);

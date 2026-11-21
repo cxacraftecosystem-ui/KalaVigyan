@@ -32,6 +32,7 @@ from .upkeep_pages import (
     MONOGRAPHS_PER_NIGHT,
     MonographLoader,
     PagesReport,
+    rebuild_documents,
     rebuild_monographs,
     rebuild_stale_pages,
     rotating_window,
@@ -110,6 +111,7 @@ async def run_nightly_upkeep(session: AsyncSession, tools: UpkeepTools, *, now: 
     report.allowances = await sweep_allowances(session, now=now)
     await rebuild_monographs(session, tools.monographs, tools.load_monograph, now=now, report=report.pages)
     await rebuild_stale_pages(session, skip=frozenset(tools.monographs), report=report.pages)
+    await rebuild_documents(session, report=report.pages)
     report.field_work = await refresh_field_work(session, now=now)
     report.answer_gaps = await refresh_answer_gaps(session, tools.embed, now=now)
     return report

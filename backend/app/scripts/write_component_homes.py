@@ -5,7 +5,7 @@ from typing import Any
 
 from app.data.craft_master_loader import DATA_DIR
 from app.services.document_components_homes import authored_homes
-from app.services.document_kit_defs import kit_defs
+from app.services.document_kit_defs import kit_defs, kit_style_references
 
 __all__ = ["DEFS_FILE", "HOMES_FILE", "defs_text", "homes_text", "main"]
 
@@ -41,7 +41,9 @@ def homes_text() -> str:
 def defs_text() -> str:
     return (
         "export type KitDef = { scope: string | null; markup: string };\n\n"
-        f"export const KIT_DEFS: Readonly<Record<string, KitDef>> = {{\n{_entries(kit_defs())}\n}};\n"
+        f"export const KIT_DEFS: Readonly<Record<string, KitDef>> = {{\n{_entries(kit_defs())}\n}};\n\n"
+        "export const KIT_STYLE_REFERENCES: Readonly<Record<string, readonly string[]>> = "
+        f"{json.dumps(kit_style_references())};\n"
     )
 
 

@@ -10,7 +10,7 @@ function field(mark: HeldMark, name: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-function CiteButton({ mark }: { mark: HeldMark }) {
+export function CiteButton({ mark }: { mark: HeldMark }) {
   const shown = mark.shown as ShownSource[];
   const keys = mark.g as string[];
   return (

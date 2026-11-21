@@ -11,7 +11,8 @@ import type { CraftParams } from "@/lib/sitePagesContract";
 
 import { craftRecordPage } from "./craftRecordPage";
 
-const MonographPage = dynamic(() => import("@/components/monograph/MonographPage").then((page) => page.MonographPage));
+const MonographShellPage = dynamic(() => import("@/components/monograph/MonographShellPage").then((page) => page.MonographShellPage));
+const MonographDocumentPage = dynamic(() => import("@/components/monograph/MonographDocumentPage").then((page) => page.MonographDocumentPage));
 const CraftWithoutMonograph = dynamic(() => import("@/components/craft/CraftWithoutMonograph").then((page) => page.CraftWithoutMonograph));
 
 type CraftRoute = { params: Promise<{ slug: string }> };
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: CraftRoute): Promise<Metadata
 export default async function CraftPage({ params }: CraftRoute) {
   const { slug } = await params;
   const document = await serverCraftDocument(slug);
-  if (document) return <MonographPage document={document} deferred />;
+  if (document) return document.shell !== null ? <MonographShellPage document={document} deferred /> : <MonographDocumentPage document={document} deferred />;
   const page = await craftRecordPage(slug);
   if (!page) notFound();
   return <CraftWithoutMonograph record={craftRecordView(page)} />;

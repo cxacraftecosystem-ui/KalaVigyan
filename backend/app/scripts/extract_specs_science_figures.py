@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from typing import Any
 
 from app.core.errors import InvalidInput
+from app.research.monograph_page import CitedSource
 
+from .extract_specs_markup import Element as MarkupElement, Node as MarkupNode
+from .extract_specs_parts import held_cite
 from .extract_specs_science_chem import equation_line, figure_head, grouped_line, tick_count
 from .extract_specs_science_dom import Element
 from .extract_specs_science_read import drawing, expect, kids, only, rich, styled_unit, text_of, unit_of
@@ -40,7 +44,7 @@ def diagram(element: Element) -> dict[str, Any]:
     }
 
 
-def structure_diagram(element: Element) -> dict[str, Any]:
+def structure_diagram(element: Element, sources: Mapping[str, CitedSource]) -> dict[str, Any]:
     head, grid = kids(expect(element, "figure", "fig", "chemfig", "redfig"))
     paragraphs = kids(expect(head, "figcaption", "fig-head"))
     dek_style = [name for name in paragraphs[-1].classes if name != "chart-dek"]
@@ -51,7 +55,7 @@ def structure_diagram(element: Element) -> dict[str, Any]:
         "head": figure_head(paragraphs),
         "dekStyle": " ".join(dek_style) or None,
         "scale": unit_of(expect(scale, "p", "scale-k")),
-        "molecules": [_structure(molecule) for molecule in kids(expect(pair, "div", "anth-pair"))],
+        "molecules": [_structure(molecule, sources) for molecule in kids(expect(pair, "div", "anth-pair"))],
         **_structure_side(expect(side, "div", "anth-side")),
     }
 
@@ -125,7 +129,7 @@ def _chain_equation(box: Element) -> dict[str, Any]:
     }
 
 
-def _structure(molecule: Element) -> dict[str, Any]:
+def _structure(molecule: Element, sources: Mapping[str, CitedSource]) -> dict[str, Any]:
     picture, caption = kids(expect(molecule, "figure", "m", "anth"))
     name, formula, note, facts = kids(expect(caption, "figcaption"))
     atoms_term, atoms, record_term, record = kids(expect(facts, "dl", "m-dl"))
@@ -140,7 +144,14 @@ def _structure(molecule: Element) -> dict[str, Any]:
         "atoms": unit_of(expect(atoms, "dd")),
         "recordTerm": unit_of(expect(record_term, "dt")),
         "cid": int(_match(PUBCHEM_RECORD, text_of(expect(identifier, "span")))),
+        "recordCite": held_cite(MarkupElement("span", {}, [_markup(cite)]), sources),
     }
+
+
+def _markup(node: Element | str) -> MarkupNode:
+    if isinstance(node, str):
+        return node
+    return MarkupElement(node.tag, dict(node.attrs), [_markup(child) for child in node.children])
 
 
 def _structure_side(side: Element) -> dict[str, Any]:

@@ -16,6 +16,7 @@ __all__ = [
     "drawing",
     "dye_variable",
     "figure_head",
+    "held_cite",
     "held_nodes",
     "held_or_unit",
     "held_text",
@@ -189,7 +190,7 @@ def _held(node: Node, sources: Mapping[str, CitedSource]) -> Any:
 
 def _held_span(span: Element, sources: Mapping[str, CitedSource]) -> Any:
     if span.has_class(UNBROKEN_CLASS):
-        return _held_cite(span, sources)
+        return held_cite(span, sources)
     if span.has_class(FIGREF_CLASS):
         return _mark("figref", span, sources, ref=span.attrs["data-figref"])
     if span.has_class(SENTENCE_CLASS):
@@ -206,7 +207,7 @@ def _held_link(link: Element, sources: Mapping[str, CitedSource]) -> Any:
     return _mark("link", link, sources, href=link.attrs["href"], **fields)
 
 
-def _held_cite(span: Element, sources: Mapping[str, CitedSource]) -> Any:
+def held_cite(span: Element, sources: Mapping[str, CitedSource]) -> Any:
     button = span.elements()[-1]
     if not button.has_class(CITE_CLASS):
         raise InvalidInput("An unbroken span in held text ends in its citation button")

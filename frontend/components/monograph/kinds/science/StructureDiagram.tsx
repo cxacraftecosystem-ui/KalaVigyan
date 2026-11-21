@@ -2,6 +2,7 @@ import type { ComponentViewProps } from "@/lib/componentViewContract";
 import { structureDiagramShape, type StructureDiagramSpec, type StructureMolecule } from "@/lib/componentSpecsScienceFigures";
 import { parseShape } from "@/lib/shape";
 
+import { CiteButton } from "@/components/monograph/kinds/plates/HeldText";
 import { Drawing, RichText } from "./parts/Drawing";
 import { Block, Blocks, FigureHeadLines, type RenderUnit } from "./parts/Text";
 
@@ -21,6 +22,7 @@ function Structure({ molecule, renderUnit }: { molecule: StructureMolecule; rend
           <dt>{renderUnit(molecule.recordTerm)}</dt>
           <dd>
             <span lang="en" dir="ltr">{`PubChem CID ${molecule.cid}`}</span>
+            {molecule.recordCite ? <CiteButton mark={molecule.recordCite} /> : null}
           </dd>
         </dl>
       </figcaption>

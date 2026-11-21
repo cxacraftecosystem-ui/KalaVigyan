@@ -1,6 +1,12 @@
-import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
-import type { MonographNode } from "../lib/monographDocument";
+import { expect, test } from "@playwright/test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+
+import { StructureDiagram } from "../components/monograph/kinds/science/StructureDiagram";
+import type { MonographComponent, MonographNode } from "../lib/monographDocument";
 import { sentenceCounts } from "../lib/monographRenderKit";
 
 import { tokenize, type Open } from "./monographMarkup";
@@ -41,6 +47,17 @@ const STILL_HELD: Readonly<Record<string, number>> = {
   "rm:pe5fed6213bc9.3": 1
 };
 
+const AJRAKH_SPECS = join(__dirname, "..", "..", "backend", "app", "data", "monographs", "Kutch-Ajrakh", "specs");
+const STRUCTURES = ["shared/chemistry/alizarin-aluminium-ring-structures", "shared/chemistry/alizarin-purpurin-structures-hindi"];
+const RECORD = /<dd><span lang="en" dir="ltr">PubChem CID \d+<\/span>.*?<\/dd>/g;
+
+function structureRecords(label: string): string[] {
+  const spec = JSON.parse(readFileSync(join(AJRAKH_SPECS, `${label.replaceAll("/", "__")}.json`), "utf8")) as Record<string, unknown>;
+  const component: MonographComponent = { label, chapter: "chem", anchor: "#fig3", kind: "structure_diagram", title: label, description: "", field: "CHEMISTRY", fields: [], subjects: [] };
+  const html = renderToStaticMarkup(createElement(StructureDiagram, { component, spec, unitRefs: [], renderUnit: (ref: string) => ref, renderComponent: () => null }));
+  return [...html.matchAll(RECORD)].map((found) => found[0]);
+}
+
 function approvedCitations(): Open[] {
   return tokenize(servedMain()).filter((token): token is Open => token.kind === "open" && token.tag === "button" && (token.attrs.class ?? "").split(/\s+/).includes("kcite"));
 }
@@ -76,4 +93,17 @@ test("each source's count of supported sentences takes in the passages that beca
   const counts = sentenceCounts(goldenDocument());
   for (const [source, count] of onPage) expect(counts.get(source) ?? 0, source).toBe(count - (held.get(source) ?? 0));
   expect(counts.get("g1")).toBe(157);
+});
+
+test("each structure's PubChem record carries the citation numeral the approved page gives it", () => {
+  const approved = servedMain();
+  for (const label of STRUCTURES) {
+    const records = structureRecords(label);
+    expect(records, label).toHaveLength(2);
+    expect(records[0], label).toContain('data-c="rm:mol.1" data-g="g35"');
+    expect(records[0], label).toContain(">35</button>");
+    expect(records[1], label).toContain('data-c="rm:mol.6683" data-g="g36"');
+    expect(records[1], label).toContain(">36</button>");
+    for (const record of records) expect(approved, label).toContain(record);
+  }
 });

@@ -100,23 +100,8 @@ async def refresh_pages(
 ) -> bool:
     if owners.empty:
         return False
-    chosen = settings or get_settings()
-    secret = (chosen.web_revalidate_secret or "").strip()
-    if not secret:
-        logger.info("WEB_REVALIDATE_SECRET is not set, so signed-out pages refresh on their own schedule")
-        return False
-    url = f"{chosen.public_web_url.rstrip('/')}{REVALIDATE_ROUTE}"
-    body = revalidation_request(owners).model_dump(mode="json")
-    try:
-        async with httpx.AsyncClient(transport=transport, timeout=REVALIDATE_TIMEOUT_SECONDS) as client:
-            response = await client.post(url, json=body, headers={REVALIDATE_SECRET_HEADER: secret})
-    except httpx.HTTPError as error:
-        logger.warning("signed-out pages of %s were not refreshed: %s", _named(owners), type(error).__name__)
-        return False
-    if response.status_code != REFRESHED:
-        logger.warning("signed-out pages of %s were not refreshed: %s", _named(owners), response.status_code)
-        return False
-    return True
+    sent = await refresh_in_batches(owners, settings=settings, transport=transport)
+    return sent.unrefreshed.empty
 
 
 def owner_batches(owners: PageOwners, *, most: int = REVALIDATE_TARGETS_MAX) -> list[PageOwners]:
@@ -150,10 +135,35 @@ async def refresh_in_batches(
         done = False
         if misses < MISSES_BEFORE_GIVING_UP:
             tried += 1
-            done = await refresh_pages(batch, settings=settings, transport=transport)
+            done = await _refresh_batch(batch, settings=settings, transport=transport)
         misses = 0 if done else misses + 1
         (refreshed if done else unrefreshed).append(batch)
     return BatchedRefresh(merged_owners(*refreshed), merged_owners(*unrefreshed), len(batches), tried)
+
+
+async def _refresh_batch(
+    owners: PageOwners,
+    *,
+    settings: Settings | None = None,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> bool:
+    chosen = settings or get_settings()
+    secret = (chosen.web_revalidate_secret or "").strip()
+    if not secret:
+        logger.info("WEB_REVALIDATE_SECRET is not set, so signed-out pages refresh on their own schedule")
+        return False
+    url = f"{chosen.public_web_url.rstrip('/')}{REVALIDATE_ROUTE}"
+    body = revalidation_request(owners).model_dump(mode="json")
+    try:
+        async with httpx.AsyncClient(transport=transport, timeout=REVALIDATE_TIMEOUT_SECONDS) as client:
+            response = await client.post(url, json=body, headers={REVALIDATE_SECRET_HEADER: secret})
+    except httpx.HTTPError as error:
+        logger.warning("signed-out pages of %s were not refreshed: %s", _named(owners), type(error).__name__)
+        return False
+    if response.status_code != REFRESHED:
+        logger.warning("signed-out pages of %s were not refreshed: %s", _named(owners), response.status_code)
+        return False
+    return True
 
 
 async def _sub_category_owners(session: AsyncSession, sub_category_ids: set[uuid.UUID]) -> PageOwners:

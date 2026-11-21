@@ -42,6 +42,13 @@ def structure_diagram() -> dict[str, Any]:
         "atoms": "u0032",
         "recordTerm": "u0033",
         "cid": 6293,
+        "recordCite": {
+            "m": "cite",
+            "key": "rm:mol.1",
+            "g": ["g35"],
+            "shown": [{"number": 35, "title": "Alizarin, PubChem CID 6293"}],
+            "c": [],
+        },
     }
     return {
         "id": "fig3-en",

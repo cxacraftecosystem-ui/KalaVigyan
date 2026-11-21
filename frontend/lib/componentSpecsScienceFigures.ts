@@ -20,7 +20,19 @@ import {
   type SvgNode,
   type TextBlock
 } from "@/lib/componentSpecsScienceParts";
-import { list, nullable, number, object, oneOf, ShapeError, tagged, type Shape } from "@/lib/shape";
+import { heldTextShape, type HeldMark } from "@/lib/componentSpecsPlates";
+import { list, nullable, number, object, oneOf, optional, ShapeError, tagged, type Shape } from "@/lib/shape";
+
+const CITE_MARK = "cite";
+
+export const citeMarkShape: Shape<HeldMark> = {
+  expected: "a citation",
+  parse(value, path) {
+    const [mark] = heldTextShape.parse([value], path);
+    if (typeof mark === "string" || mark.m !== CITE_MARK) throw new ShapeError(path, "a citation");
+    return mark;
+  }
+};
 
 export type EquationCardSpec = { kicker: string; title: string; mark: string; line: EquationLine; why: string };
 export type ChainText = { part: "text"; text: TextBlock };
@@ -48,6 +60,7 @@ export type StructureMolecule = {
   atoms: string;
   recordTerm: string;
   cid: number;
+  recordCite?: HeldMark | null;
 };
 export type KeySwatch = { colour: string; label: string };
 export type StructureDiagramSpec = {
@@ -128,7 +141,8 @@ export const structureDiagramShape: Shape<StructureDiagramSpec> = object<Structu
       atomsTerm: unitRef,
       atoms: unitRef,
       recordTerm: unitRef,
-      cid: positive
+      cid: positive,
+      recordCite: optional(nullable(citeMarkShape))
     }),
     1
   ),

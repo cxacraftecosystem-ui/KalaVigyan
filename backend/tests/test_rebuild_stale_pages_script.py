@@ -17,7 +17,11 @@ class Session:
         self.rolled_back = True
 
 
-def patched(monkeypatch: pytest.MonkeyPatch, rebuild: Any) -> Session:
+async def no_documents(session: Session, *, report: Any, limit: int) -> None:
+    return None
+
+
+def patched(monkeypatch: pytest.MonkeyPatch, rebuild: Any, documents: Any = no_documents) -> Session:
     session = Session()
 
     @asynccontextmanager
@@ -30,6 +34,7 @@ def patched(monkeypatch: pytest.MonkeyPatch, rebuild: Any) -> Session:
     monkeypatch.setattr(script, "session_scope", scope)
     monkeypatch.setattr(script, "dispose_engine", disposed)
     monkeypatch.setattr(script, "rebuild_stale_pages", rebuild)
+    monkeypatch.setattr(script, "rebuild_documents", documents)
     monkeypatch.setattr(script, "page_code_fingerprint", lambda: "c1")
     return session
 
@@ -56,5 +61,28 @@ def test_a_rebuild_that_runs_out_of_time_stops_and_says_so(monkeypatch: pytest.M
         await asyncio.sleep(5)
 
     session = patched(monkeypatch, rebuild)
-    report = asyncio.run(script.run(0.05))
+    report = asyncio.run(script.run(0.05, 5))
     assert (report["pagesRebuilt"], report["finished"], session.rolled_back) == (1, False, True)
+    assert report["documentsFinished"] is True
+
+
+def test_stored_documents_are_rebuilt_after_the_snapshots_within_their_own_time(
+    monkeypatch: pytest.MonkeyPatch, capsys: Any
+) -> None:
+    order: list[str] = []
+
+    async def rebuild(session: Session, *, skip: Any, report: Any, limit: int) -> None:
+        order.append("snapshots")
+
+    async def documents(session: Session, *, report: Any, limit: int) -> None:
+        order.append(f"documents {limit}")
+        report.documents.rebuilt.extend(["craft:Bidriware", "category:Metal-Craft-Category"])
+        report.documents.changed = 1
+        await asyncio.sleep(5)
+
+    session = patched(monkeypatch, rebuild, documents)
+    assert script.main(["--seconds", "5", "--document-seconds", "0.05"]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert order == ["snapshots", "documents 100000"]
+    assert (printed["finished"], printed["documentsFinished"], session.rolled_back) == (True, False, True)
+    assert (printed["documentsRebuilt"], printed["documentsChanged"]) == (2, 1)

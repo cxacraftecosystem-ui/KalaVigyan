@@ -1,9 +1,16 @@
 from dataclasses import dataclass
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Query, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.document_reads import (
+    AskedPart,
+    ServedDocument,
+    document_response,
+    generated_served,
+    queue_rebuild,
+)
 from app.api.public_deps import cached_read, public_reader
 from app.core.db import get_session
 from app.core.deps import get_current_user
@@ -13,9 +20,8 @@ from app.models import User
 from app.research.crafts import SLUG_MAX_CHARS
 from app.research.monograph_document import LANGUAGE_MAX_CHARS, SUBJECT_KINDS
 from app.research.page_layout import LayoutWrite
-from app.services.monograph_generated import generated_document
-from app.services.open_work_subjects import subject_by_key
 from app.services.page_layouts import page_layout, write_layout
+from app.services.stored_documents import generated_read
 
 router = APIRouter(tags=["page documents"])
 
@@ -23,7 +29,6 @@ ADMIN_ONLY_DETAIL = "Changing a page's layout is for admins."
 NO_DOCUMENT_DETAIL = "There is no monograph for that {kind} yet."
 NO_LAYOUT_DETAIL = "That page has no layout yet."
 CATEGORY, FAMILY = "category", "family"
-CONTENT_LANGUAGE = "Content-Language"
 
 SubjectKind = Literal[*SUBJECT_KINDS]
 Slug = Annotated[str, Path(min_length=1, max_length=SLUG_MAX_CHARS, pattern=r"^[A-Za-z0-9-]+$")]
@@ -50,32 +55,37 @@ def page_ref(kind: SubjectKind, slug: Slug) -> PageRef:
 class AskedDocument:
     slug: str
     language: str | None
+    part: int | None = None
 
 
-def asked_document(slug: Slug, lang: AskedLanguage = None) -> AskedDocument:
-    return AskedDocument(slug, lang)
+def asked_document(slug: Slug, lang: AskedLanguage = None, part: AskedPart = None) -> AskedDocument:
+    return AskedDocument(slug, lang, part)
 
 
 @router.get("/categories/{slug}/monograph")
 async def get_category_monograph(
     request: Request,
-    response: Response,
+    background: BackgroundTasks,
     asked: AskedDocument = Depends(asked_document),
     reader: User | None = Depends(public_reader),
     session: AsyncSession = Depends(get_session),
-) -> Any:
-    return _served(request, response, reader, await _document(session, CATEGORY, asked.slug))
+) -> Response:
+    served = await _document(session, CATEGORY, asked.slug)
+    queue_rebuild(background, served)
+    return document_response(request, reader, served, asked.part)
 
 
 @router.get("/families/{slug}/monograph")
 async def get_family_monograph(
     request: Request,
-    response: Response,
+    background: BackgroundTasks,
     asked: AskedDocument = Depends(asked_document),
     reader: User | None = Depends(public_reader),
     session: AsyncSession = Depends(get_session),
-) -> Any:
-    return _served(request, response, reader, await _document(session, FAMILY, asked.slug))
+) -> Response:
+    served = await _document(session, FAMILY, asked.slug)
+    queue_rebuild(background, served)
+    return document_response(request, reader, served, asked.part)
 
 
 @router.get("/pages/{kind}/{slug}/layout")
@@ -113,17 +123,12 @@ async def put_page_layout(
     return layout.model_dump(mode="json", by_alias=True)
 
 
-def _served(request: Request, response: Response, reader: User | None, body: dict[str, Any]) -> Any:
-    response.headers[CONTENT_LANGUAGE] = body["language"]
-    return cached_read(request, response, reader, body)
-
-
-async def _document(session: AsyncSession, kind: str, slug: str) -> dict[str, Any]:
+async def _document(session: AsyncSession, kind: str, slug: str) -> ServedDocument:
     try:
-        await subject_by_key(session, kind, slug)
+        read = await generated_read(session, kind, slug)
     except InvalidInput as unknown:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(unknown)) from unknown
-    document = await generated_document(session, kind, slug)
-    if document is None:
+    served = generated_served(read)
+    if served is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, NO_DOCUMENT_DETAIL.format(kind=kind))
-    return document.model_dump(mode="json", by_alias=True)
+    return served

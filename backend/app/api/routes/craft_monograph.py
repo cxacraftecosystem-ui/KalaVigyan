@@ -1,30 +1,35 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
-from typing import Annotated, Any
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.public_deps import public_reader, read_headers, unchanged_read
+from app.api.document_reads import (
+    AskedPart,
+    ServedDocument,
+    document_response,
+    generated_served,
+    queue_rebuild,
+)
+from app.api.public_deps import public_reader
 from app.core.db import get_session
 from app.models import Craft, User
-from app.research.monograph_document import LANGUAGE_MAX_CHARS, MonographDocument, served_language
+from app.research.document_parts import compact_json
+from app.research.monograph_document import LANGUAGE_MAX_CHARS, served_language
 from app.research.why_here import CraftGround
 from app.services import knowledge_view
 from app.services.answering import NOT_FOUND_DETAIL
-from app.services.monograph_document import CRAFT_SUBJECT, document_body, document_hash, document_row
-from app.services.monograph_generated import generated_document
+from app.services.monograph_document import CRAFT_SUBJECT, document_row
 from app.services.monograph_generated_why_here import ground_hash, with_why_here
 from app.services.open_work_subjects import is_family
 from app.services.place_ground import subject_ground
+from app.services.stored_documents import GeneratedRead, generated_read
 
 router = APIRouter(prefix="/crafts", tags=["crafts"])
 
-JSON_TYPE = "application/json"
 FAMILY_SUBJECT = "family"
-CONTENT_LANGUAGE = "Content-Language"
 NO_DOCUMENT_DETAIL = "This craft's page is not a monograph document yet."
 NO_VERSION_DETAIL = "This craft's monograph has no such version."
 
@@ -33,45 +38,50 @@ AskedVersion = Annotated[int | None, Query(ge=1)]
 
 
 @dataclass(frozen=True)
-class ServedDocument:
-    etag: str
-    language: str
-    body: dict[str, Any]
-
-
-@dataclass(frozen=True)
 class DocumentAsk:
     language: str
     version: int | None = None
+    part: int | None = None
 
 
-def document_ask(lang: AskedLanguage = None, version: AskedVersion = None) -> DocumentAsk:
-    return DocumentAsk(language=served_language(lang), version=version)
+def document_ask(
+    lang: AskedLanguage = None, version: AskedVersion = None, part: AskedPart = None
+) -> DocumentAsk:
+    return DocumentAsk(language=served_language(lang), version=version, part=part)
+
+
+@dataclass(frozen=True)
+class ReaderAsk:
+    request: Request
+    reader: User | None
+    asked: DocumentAsk
+
+
+def reader_ask(
+    request: Request,
+    asked: DocumentAsk = Depends(document_ask),
+    reader: User | None = Depends(public_reader),
+) -> ReaderAsk:
+    return ReaderAsk(request, reader, asked)
 
 
 @router.get("/{slug}/monograph")
 async def get_craft_monograph(
     slug: str,
-    request: Request,
-    asked: DocumentAsk = Depends(document_ask),
-    reader: User | None = Depends(public_reader),
+    background: BackgroundTasks,
+    read: ReaderAsk = Depends(reader_ask),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
     craft = await knowledge_view.resolve_craft(session, slug)
     if craft is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND_DETAIL)
-    served = await served_document(session, craft, asked)
+    served = await served_document(session, craft, read.asked)
     if served is None:
         raise HTTPException(
-            status.HTTP_404_NOT_FOUND, NO_VERSION_DETAIL if asked.version else NO_DOCUMENT_DETAIL
+            status.HTTP_404_NOT_FOUND, NO_VERSION_DETAIL if read.asked.version else NO_DOCUMENT_DETAIL
         )
-    unchanged = unchanged_read(request, reader, served.etag)
-    if unchanged is not None:
-        unchanged.headers[CONTENT_LANGUAGE] = served.language
-        return unchanged
-    content = json.dumps(served.body, ensure_ascii=False, separators=(",", ":"))
-    headers = {**read_headers(reader, served.etag), CONTENT_LANGUAGE: served.language}
-    return Response(content, media_type=JSON_TYPE, headers=headers)
+    queue_rebuild(background, served)
+    return document_response(read.request, read.reader, served, read.asked.part)
 
 
 async def served_document(session: AsyncSession, craft: Craft, asked: DocumentAsk) -> ServedDocument | None:
@@ -80,28 +90,21 @@ async def served_document(session: AsyncSession, craft: Craft, asked: DocumentAs
     )
     if row is not None:
         ground = await stored_ground(session, craft)
-        body = dict(with_why_here({**row.document, "language": row.language}, ground))
-        return ServedDocument(
-            etag=document_etag(row.version, ground_hash(row.contentHash, ground)),
-            language=row.language,
-            body=body,
-        )
-    generated = await generated_fallback(session, craft)
-    if generated is None or (asked.version is not None and generated.version != asked.version):
+        body = with_why_here({**row.document, "language": row.language}, ground)
+        etag = document_etag(row.version, ground_hash(row.contentHash, ground))
+        return ServedDocument(etag, row.language, compact_json(body), row.version)
+    served = generated_served(await generated_fallback(session, craft))
+    if served is None or (asked.version is not None and served.version != asked.version):
         return None
-    return ServedDocument(
-        etag=document_etag(generated.version, document_hash(generated)),
-        language=generated.language,
-        body=document_body(generated),
-    )
+    return served
 
 
 async def stored_ground(session: AsyncSession, craft: Craft) -> CraftGround | None:
     return await subject_ground(session, craft.id) if subject_kind(craft) == CRAFT_SUBJECT else None
 
 
-async def generated_fallback(session: AsyncSession, craft: Craft) -> MonographDocument | None:
-    return await generated_document(session, subject_kind(craft), craft.slug)
+async def generated_fallback(session: AsyncSession, craft: Craft) -> GeneratedRead:
+    return await generated_read(session, subject_kind(craft), craft.slug)
 
 
 def subject_kind(craft: Craft) -> str:

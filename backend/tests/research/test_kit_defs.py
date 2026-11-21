@@ -1,7 +1,15 @@
 import json
 
 from app.scripts.write_component_homes import DEFS_FILE, defs_text
-from app.services.document_kit_defs import defined_ids, kit_defs, kit_defs_of, referenced_ids, spec_ids
+from app.services.document_kit_defs import (
+    defined_ids,
+    kit_defs,
+    kit_defs_of,
+    kit_style_references,
+    kit_style_references_of,
+    referenced_ids,
+    spec_ids,
+)
 from app.services.monograph_document import MONOGRAPHS_DIR
 
 AJRAKH = MONOGRAPHS_DIR / "Kutch-Ajrakh"
@@ -74,6 +82,24 @@ def test_every_reference_in_kutch_ajrakh_s_specs_and_fragments_resolves_on_any_p
         markup = path.read_text(encoding="utf-8")
         missing = referenced_ids(markup) - defined_ids(markup) - kit
         assert not missing, f"{path.name} draws with {sorted(missing)}, which no page defines"
+
+
+def test_the_kit_style_names_the_patterns_it_fills_with_under_each_scope() -> None:
+    css = (
+        ".bx-pt .days-plot .dhatch{ fill: url(#hatch-madder) }\n"
+        "@media (min-width: 40em) { .bx-sa .loc .dist.on{fill:url(#hatch-place)} .bx-sa .x{color:red} }\n"
+        ".bx-pt .a, .bx-mb .a { fill: url(#pt-weave); stroke: url(#hatch-madder) }\n"
+        ".plain { fill: url(#loose) }"
+    )
+    assert kit_style_references_of(css) == {
+        "mb": ["hatch-madder", "pt-weave"],
+        "pt": ["hatch-madder", "pt-weave"],
+        "sa": ["hatch-place"],
+    }
+
+
+def test_the_kit_style_fills_the_madder_hatch_and_the_place_hatch() -> None:
+    assert kit_style_references() == {"pt": ["hatch-madder"], "sa": ["hatch-place"]}
 
 
 def test_the_committed_kit_defs_are_the_build() -> None:

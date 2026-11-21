@@ -5,6 +5,7 @@ import { expect, test } from "@playwright/test";
 
 import type { MonographDocument } from "@/lib/monographDocument";
 import { documentOrAbsent, DOCUMENT_UNAVAILABLE, shellParams } from "@/lib/monographRenderServer";
+import { documentDigest } from "@/lib/monographRenderShell";
 import { PRERENDERED_PAGES, prerenderedParams } from "@/lib/server/readingPages";
 import type { StaticPages } from "@/lib/sitePagesContract";
 
@@ -39,10 +40,11 @@ test("every reading route with static params takes them from the policy and rend
   }
 });
 
-test("the rest of each prerendered craft with an authored shell is prerendered at that craft's own version", () => {
-  const shelled = { subjectSlug: "Kutch-Ajrakh", version: 3, shell: "<section></section>" } as MonographDocument;
+test("the rest of each prerendered craft with an authored shell is prerendered at that craft's own version and content", () => {
+  const shelled = { subjectSlug: "Kutch-Ajrakh", version: 3, shell: "<section></section>", content: { units: {} }, specs: {}, fragments: {} } as unknown as MonographDocument;
   const plain = { subjectSlug: "Bastar-Dhokra", version: 12, shell: null } as MonographDocument;
-  expect(shellParams([shelled, plain, null])).toEqual([{ slug: "Kutch-Ajrakh", version: "v3" }]);
+  expect(shellParams([shelled, plain, null])).toEqual([{ slug: "Kutch-Ajrakh", version: `v3-${documentDigest(shelled)}` }]);
+  expect(documentDigest(shelled)).toMatch(/^[0-9a-f]{8}$/);
   expect(readFileSync(join(ROUTES, "crafts", "[slug]", "shell", "[version]", "route.ts"), "utf8")).toContain("return prerenderedShells();");
 });
 

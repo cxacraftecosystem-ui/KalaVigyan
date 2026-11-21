@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-import { KIT_DEFS } from "@/generated/kitDefs";
-import { defsByScope, referencedIds, usedDefs, type KitDef } from "@/lib/monographKitDefs";
+import { KIT_DEFS, KIT_STYLE_REFERENCES } from "@/generated/kitDefs";
+import type { MonographDocument } from "@/lib/monographDocument";
+import { defsByScope, drawnScopes, kitDrawnIds, pageDefs, referencedIds, usedDefs, type KitDef } from "@/lib/monographKitDefs";
 
 const def = (scope: string | null, markup: string): KitDef => ({ scope, markup });
 
@@ -43,4 +44,26 @@ test("the atom gradients a borrowed molecule fills its atoms with are kept in th
     expect(KIT_DEFS[id].markup, id).toContain(`id="${id}"`);
     expect(KIT_DEFS[id].scope, id).toBe("chem");
   }
+});
+
+function generated(components: { label: string; kind: string; spec: Record<string, unknown> }[]): MonographDocument {
+  const listed = components.map(({ label, kind }) => ({ label, kind, chapter: "process", anchor: "#x", title: label, description: "", field: "PROCESS", fields: [], subjects: [] }));
+  return { content: { components: listed }, specs: Object.fromEntries(components.map(({ label, spec }) => [label, spec])), fragments: {} } as unknown as MonographDocument;
+}
+
+test("a stage list the kit draws asks for the weave and the tile of each stage that names no swatch", () => {
+  const stages = { key: "lc", stages: [{ name: "Wash", swatch: "--dye-cloth" }, { name: "Mordant", swatch: null }, { name: "Dye" }] };
+  expect(kitDrawnIds("stage_player", stages)).toEqual(["tile-2", "tile-3", "pt-weave"]);
+  expect(kitDrawnIds("answer_block", stages)).toEqual([]);
+  expect(kitDrawnIds("related_crafts", { weave: "pt-weave", crafts: [{ tile: 4 }, { tile: 7 }] })).toEqual(["pt-weave", "tile-4", "tile-7"]);
+  expect(kitDrawnIds("voice", { coda: { tile: "tile-9", weave: "pt-weave" } })).toEqual(["tile-9", "pt-weave"]);
+});
+
+test("a generated page carries the kit's weave and tiles its stage list draws and the hatches its scopes' style fills with", () => {
+  const document = generated([{ label: "bagru/process/stages", kind: "stage_player", spec: { key: "lc", stages: [{ name: "Wash" }] } }]);
+  expect(drawnScopes(document)).toEqual(["pt"]);
+  const carried = pageDefs(document, KIT_DEFS, KIT_STYLE_REFERENCES).map((found) => found.markup);
+  for (const id of ["tile-1", "pt-weave", "hatch-madder"]) expect(carried.some((markup) => markup.includes(`id="${id}"`)), id).toBe(true);
+  expect(KIT_STYLE_REFERENCES).toEqual({ pt: ["hatch-madder"], sa: ["hatch-place"] });
+  expect(pageDefs(generated([]), KIT_DEFS, KIT_STYLE_REFERENCES)).toEqual([]);
 });

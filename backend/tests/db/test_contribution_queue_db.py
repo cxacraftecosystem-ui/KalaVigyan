@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ExternalFailure
 from app.core.rate_limit import FACT_PROPOSALS, proposal_attempt
-from app.models import Claim, QueuedProposal, User
+from app.models import AnswerGap, Claim, QueuedProposal, User
 from app.research.contribution_queue import ProposalBatch
 from app.research.knowledge_writes import STATEMENT_MAX_CHARS
 from app.services.contribution_queue import QueuedFact, enqueue_facts
@@ -15,7 +15,7 @@ from app.services.contribution_queue_tickets import own_ticket
 from app.services.contribution_queue_worker import claim_next, drain
 
 from ..knowledge_writes.fakes import STATEMENT
-from .contribution_seed import NOW, adapters, fact, person, same_session, seeded_session
+from .contribution_seed import CRAFT, NOW, SLUG, adapters, fact, key, person, same_session, seeded_session
 
 pytestmark = pytest.mark.db
 
@@ -85,6 +85,33 @@ async def test_a_batch_queues_each_good_fact_and_refuses_each_other_one_on_its_o
     assert "No craft has the slug" in str(batch.items[1].problem)
     assert "given twice in this call" in str(batch.items[2].problem)
     assert batch.items[3].ticket is not None and batch.items[3].ticket.position == 1
+
+
+async def test_a_fact_for_a_question_task_is_refused_at_once_when_the_gap_asked_other_fields(
+    session: AsyncSession,
+) -> None:
+    researcher = await person(session, "RESEARCHER")
+    asked = {
+        "question": "What fixes the red?",
+        "fields": ["CHEMISTRY"],
+        "firstAskedAt": NOW,
+        "lastAskedAt": NOW,
+    }
+    gap = AnswerGap(id=key("queue-gap"), craftId=CRAFT, **asked)
+    session.add(gap)
+    await session.flush()
+    task = f"ANSWER_GAP:craft:{SLUG}:gap-{gap.id.hex}"
+    batch = await queued(
+        session,
+        researcher,
+        QueuedFact(0, fact(taskKey=task), "gap-run:process"),
+        QueuedFact(1, fact(OTHER_STATEMENT, field="CHEMISTRY", taskKey=task), "gap-run:chemistry"),
+        QueuedFact(2, fact(taskKey=f"ANSWER_GAP:craft:{SLUG}:gap-{key('unasked').hex}"), "gap-run:unknown"),
+    )
+    assert [item.accepted for item in batch.items] == [False, True, False]
+    assert "asks about CHEMISTRY; the fact is filed under PROCESS" in str(batch.items[0].problem)
+    assert "names no question readers asked" in str(batch.items[2].problem)
+    assert await rows(session) == 1
 
 
 async def test_the_worker_runs_the_gates_off_the_request_and_keeps_the_reply(session: AsyncSession) -> None:

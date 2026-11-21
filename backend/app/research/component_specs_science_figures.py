@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
-from pydantic import Field, model_validator
+from pydantic import AfterValidator, Field, model_validator
 
+from .component_specs_plates_parts import held_text
 from .component_specs_science_parts import (
     ColourToken,
     DomId,
@@ -27,14 +28,27 @@ __all__ = [
     "ChainStep",
     "DiagramSpec",
     "EquationCardSpec",
+    "HeldCite",
     "KeySwatch",
     "Molecule3dSpec",
     "MoleculeModel",
     "StructureDiagramSpec",
     "StructureMolecule",
+    "checked_cite",
 ]
 
 Cid = Annotated[int, Field(ge=1)]
+CITE_MARK = "cite"
+
+
+def checked_cite(node: dict[str, Any]) -> dict[str, Any]:
+    held_text([node])
+    if node.get("m") != CITE_MARK:
+        raise ValueError("A record's citation is a cite mark")
+    return node
+
+
+HeldCite = Annotated[dict[str, Any], AfterValidator(checked_cite)]
 
 
 class EquationCardSpec(SpecModel):
@@ -110,6 +124,7 @@ class StructureMolecule(SpecModel):
     atoms: UnitRef
     record_term: UnitRef
     cid: Cid
+    record_cite: HeldCite | None = None
 
 
 class KeySwatch(SpecModel):

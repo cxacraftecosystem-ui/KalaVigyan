@@ -9,9 +9,9 @@ import { MonographSources } from "@/components/monograph/MonographSources";
 import { SourceList } from "@/components/monograph/SourceList";
 import { citeKey, versionedUrl, type Citable } from "@/lib/monographCite";
 import type { MonographDocument } from "@/lib/monographDocument";
-import { numberedDocument } from "@/lib/monographRenderFigures";
-import { pagePlan, type ChapterBlock, type ChapterPlan, type LabelMasthead, type MastheadPlan, type PagePlan } from "@/lib/monographRenderLayout";
-import { placedPlan } from "@/lib/monographRenderNear";
+import type { ChapterBlock, ChapterPlan, LabelMasthead, MastheadPlan, PagePlan } from "@/lib/monographRenderLayout";
+
+export { shownPage } from "@/lib/monographShownPage";
 
 const CITED_SUBJECT = "craft";
 
@@ -43,11 +43,6 @@ export function MonographChapter({ document, chapter, masthead, label = null, la
 export function documentCitation(document: MonographDocument): Citable | null {
   if (document.subjectKind !== CITED_SUBJECT) return null;
   return { kind: "monograph", title: document.title, version: document.version, url: versionedUrl(document.pageUrl, document.version), key: citeKey(document.subjectSlug, document.version) };
-}
-
-export function shownPage(document: MonographDocument): { document: MonographDocument; plan: PagePlan } {
-  const plan = placedPlan(document, pagePlan(document));
-  return { document: numberedDocument(document, plan), plan };
 }
 
 type RunProps = { document: MonographDocument; plan: PagePlan; chapters: readonly ChapterPlan[]; masthead: boolean; rail: ReactNode };

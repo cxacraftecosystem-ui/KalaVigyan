@@ -42,3 +42,19 @@ def test_a_build_time_read_waits_as_long_as_the_slowest_document_the_release_war
     found = re.search(r"export const STATIC_FETCH_TIMEOUT_MS = ([\d_]+);", source)
     assert found is not None
     assert int(found.group(1).replace("_", "")) == BUILD_READ_SECONDS * 1000 == 30_000
+
+
+def test_a_release_brings_stored_dataset_records_up_to_the_registry_before_the_curation_import() -> None:
+    seed = shell_function("seed")
+    assert called_in_order(seed, "app.scripts.seed_districts", "app.scripts.sync_dataset_registry")
+    assert called_in_order(seed, "app.scripts.sync_dataset_registry", "app.scripts.import_curation")
+
+
+def test_the_pages_step_rebuilds_stored_documents_within_their_own_budget() -> None:
+    pages = shell_function("rebuild_pages")
+    assert "--seconds $PAGES_SECONDS --document-seconds $DOCUMENTS_SECONDS" in pages
+    assert "PAGES_SECONDS + DOCUMENTS_SECONDS + EMBED_GRACE" in pages
+    budget = re.search(
+        r'^DOCUMENTS_SECONDS="\$\{DOCUMENTS_SECONDS:-(\d+)\}"$', SWITCH.read_text("utf-8"), re.M
+    )
+    assert budget is not None and int(budget.group(1)) == 420

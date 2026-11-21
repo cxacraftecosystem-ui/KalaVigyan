@@ -6,6 +6,7 @@ from typing import Any
 
 from .document_components_homes import home_scopes
 from .monograph_document import (
+    KIT_DIR,
     MONOGRAPHS_DIR,
     has_authored_content,
     monograph_content,
@@ -13,7 +14,17 @@ from .monograph_document import (
     page_parts,
 )
 
-__all__ = ["DEFS_CLASS", "defined_ids", "kit_defs", "kit_defs_of", "referenced_ids", "spec_ids"]
+__all__ = [
+    "DEFS_CLASS",
+    "KIT_STYLE_FILE",
+    "defined_ids",
+    "kit_defs",
+    "kit_defs_of",
+    "kit_style_references",
+    "kit_style_references_of",
+    "referenced_ids",
+    "spec_ids",
+]
 
 DEFS_CLASS = "kv-defs"
 DEFS_BLOCK = re.compile(
@@ -26,6 +37,9 @@ REFERENCE = re.compile(r"""(?:url\(#|<use\s[^>]*?href=["']#)(?P<id>[A-Za-z][\w-]
 USE_ATTRIBUTES = ("href", "xlink:href")
 ID_ATTRIBUTE = re.compile(r'\bid="(?P<id>[^"]+)"')
 SCOPE_CLASS = re.compile(r'class="[^"]*\bbx-(?P<scope>[a-z]+)\b[^"]*"')
+KIT_STYLE_FILE = "monograph.css"
+STYLE_RULE = re.compile(r"(?P<selector>[^{}]+)\{(?P<body>[^{}]*)\}")
+SCOPE_SELECTOR = re.compile(r"\.bx-(?P<scope>[a-z]+)\b")
 
 
 def kit_defs_of(
@@ -63,6 +77,19 @@ def kit_defs() -> dict[str, dict[str, str | None]]:
         for label, markup in page_parts(monograph_content(slug)).fragments.items()
     ]
     return kit_defs_of((monograph_shell(slug) for slug in slugs), fragments)
+
+
+def kit_style_references() -> dict[str, list[str]]:
+    return kit_style_references_of((KIT_DIR / KIT_STYLE_FILE).read_bytes().decode("utf-8"))
+
+
+def kit_style_references_of(css: str) -> dict[str, list[str]]:
+    found: dict[str, set[str]] = {}
+    for rule in STYLE_RULE.finditer(css):
+        ids = referenced_ids(rule.group("body"))
+        for scope in SCOPE_SELECTOR.findall(rule.group("selector")) if ids else ():
+            found.setdefault(scope, set()).update(ids)
+    return {scope: sorted(ids) for scope, ids in sorted(found.items())}
 
 
 def referenced_ids(markup: str) -> set[str]:

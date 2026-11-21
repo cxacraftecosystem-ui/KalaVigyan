@@ -30,6 +30,7 @@ from app.research.trust_tiers import TrustStanding
 from . import trust_tiers
 from .candidate_store import proposal_subject
 from .contribution_queue_tickets import ticket_of
+from .fact_task_checks import check_question_task
 
 __all__ = ["QueuedFact", "batch_of", "enqueue_facts"]
 
@@ -124,7 +125,15 @@ async def _subject_problem(
             checked[key] = None
         except InvalidInput as unknown:
             checked[key] = f"{unknown}; find_crafts gives the slugs."
-    return checked[key]
+    return checked[key] or await _task_problem(session, proposal)
+
+
+async def _task_problem(session: AsyncSession, proposal: FactProposal) -> str | None:
+    try:
+        await check_question_task(session, proposal.task_key, (proposal.field, *proposal.fields))
+    except InvalidInput as asked:
+        return str(asked)
+    return None
 
 
 async def _queued(

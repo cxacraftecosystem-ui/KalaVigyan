@@ -104,3 +104,30 @@ async def test_a_refusal_or_an_unreachable_web_app_leaves_the_change_in_place() 
         await refresh_pages(PageOwners(categories=("textiles",)), settings=settings(), transport=down)
         is False
     )
+
+
+async def test_many_crafts_are_refreshed_in_requests_the_web_accepts() -> None:
+    sent: list[dict[str, Any]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        sent.append(body)
+        if len(body["paths"]) + len(body["tags"]) > 40:
+            return httpx.Response(422)
+        return httpx.Response(200, json={"revalidated": True})
+
+    slugs = tuple(f"Photo-Craft-{number:02d}" for number in range(23))
+    refreshed = await refresh_pages(
+        PageOwners(crafts=slugs), settings=settings(), transport=httpx.MockTransport(handler)
+    )
+    assert refreshed is True
+    assert [len(body["paths"]) // 2 for body in sent] == [10, 10, 3]
+    pages = [path for body in sent for path in body["paths"] if not path.endswith("/monograph")]
+    assert pages == [f"/crafts/{slug}" for slug in slugs]
+
+
+async def test_one_refused_batch_leaves_the_refresh_unfinished() -> None:
+    answers = iter([200, 422])
+    transport = httpx.MockTransport(lambda request: httpx.Response(next(answers)))
+    slugs = tuple(f"Photo-Craft-{number:02d}" for number in range(12))
+    assert await refresh_pages(PageOwners(crafts=slugs), settings=settings(), transport=transport) is False

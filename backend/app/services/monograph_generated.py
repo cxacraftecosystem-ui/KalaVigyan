@@ -31,7 +31,14 @@ from .page_layouts import layout_of, subject_path
 from .page_preview_additions import NO_ADDITIONS, PageAdditions
 from .place_ground import subject_ground
 
-__all__ = ["CRAFT_SECTIONS_MIN", "enough_sections", "generated_document", "generated_parts", "page_url"]
+__all__ = [
+    "CRAFT_SECTIONS_MIN",
+    "enough_sections",
+    "generated_document",
+    "generated_document_of",
+    "generated_parts",
+    "page_url",
+]
 
 CRAFT_SECTIONS_MIN = 3
 CRAFT = "craft"
@@ -42,7 +49,11 @@ def enough_sections(subject_kind: str, published: int) -> bool:
 
 
 async def generated_document(session: AsyncSession, subject_kind: str, slug: str) -> MonographDocument | None:
-    parts = await generated_parts(session, await subject_by_key(session, subject_kind, slug))
+    return await generated_document_of(session, await subject_by_key(session, subject_kind, slug))
+
+
+async def generated_document_of(session: AsyncSession, subject: WorkSubject) -> MonographDocument | None:
+    parts = await generated_parts(session, subject)
     return None if parts is None else assembled_document(parts, Drawings())
 
 
