@@ -21,8 +21,8 @@ function matches(source: string, path: string): boolean {
 test("the Kutch Ajrakh craft page is the React page, with no rewrite to the static file", async () => {
   expect(nextConfig.rewrites).toBeUndefined();
   const route = readFileSync(CRAFT_ROUTE, "utf8");
-  expect(route).toContain("<MonographShellPage document={document} deferred />");
-  expect(route).toContain("<MonographDocumentPage document={document} deferred />");
+  expect(route).toContain("<MonographShellPage document={document} deferred languages={languages} />");
+  expect(route).toContain("<MonographDocumentPage document={document} deferred languages={languages} />");
   expect(route).not.toContain("MonographHandover");
 });
 

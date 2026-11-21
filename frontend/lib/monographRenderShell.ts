@@ -1,3 +1,4 @@
+import { isDocumentLanguage, type DocumentLanguageCode } from "@/lib/documentLanguages";
 import type { MonographDocument } from "@/lib/monographDocument";
 import type { MonographSources } from "@/lib/monographRender";
 import { bundleSources, kitDataBlocks, type KitDataBlock } from "@/lib/monographRenderKit";
@@ -14,23 +15,27 @@ const PICTURE_KEYS = ["src", "width", "height", "alt", "loading"] as const;
 const DIGEST_SEED = 0x811c9dc5;
 const DIGEST_PRIME = 0x01000193;
 const DIGEST_CHARS = 8;
-const REST_ADDRESS = /^v([1-9]\d*)(?:-([0-9a-f]{8}))?$/;
+const REST_ADDRESS = /^v([1-9]\d*)(?:-([0-9a-f]{8})(?:-([a-z]{2,3}))?)?$/;
 
 export type ShellPart = { tree: ShellNode[]; bundles: Record<string, ComponentBundle>; sources: MonographSources };
 export type ShellRest = ShellPart & { schemaVersion: typeof SHELL_REST_SCHEMA_VERSION; version: number; data: KitDataBlock[] };
 export type ShellParts = { lead: ShellPart; rest: ShellPart };
 export type DocumentRest = { schemaVersion: typeof DOCUMENT_REST_SCHEMA_VERSION; version: number; document: MonographDocument };
 export type RestPart = "shell" | "document";
-export type RestAddress = { version: number; digest: string | null };
+export type RestAddress = { version: number; digest: string | null; language: DocumentLanguageCode | null };
 
-export function shellRestPath(slug: string, version: number, subject = "craft", digest: string | null = null): string {
+export function shellRestPath(slug: string, version: number, subject = "craft", digest: string | null = null, language: DocumentLanguageCode | null = null): string {
   const pages = subject === CATEGORY_SUBJECT ? "categories" : "crafts";
-  return `/${pages}/${encodeURIComponent(slug)}/shell/v${version}${digest ? `-${digest}` : ""}`;
+  const variant = digest && language ? `-${language}` : "";
+  return `/${pages}/${encodeURIComponent(slug)}/shell/v${version}${digest ? `-${digest}` : ""}${variant}`;
 }
 
 export function restAddress(segment: string): RestAddress | null {
   const found = REST_ADDRESS.exec(segment);
-  return found ? { version: Number(found[1]), digest: found[2] ?? null } : null;
+  if (!found) return null;
+  const language = found[3] ?? null;
+  if (language !== null && !isDocumentLanguage(language)) return null;
+  return { version: Number(found[1]), digest: found[2] ?? null, language };
 }
 
 export function documentDigest(document: MonographDocument): string {

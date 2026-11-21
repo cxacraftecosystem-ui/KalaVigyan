@@ -7,23 +7,29 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, R
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.document_reads import (
+    WHOLE_DOCUMENT,
     AskedPart,
+    AskedTag,
+    PartAsk,
     ServedDocument,
     document_response,
-    generated_served,
+    generated_in_language,
+    in_language,
     queue_rebuild,
 )
 from app.api.public_deps import public_reader
 from app.core.db import get_session
 from app.models import Craft, User
 from app.research.document_parts import compact_json
-from app.research.monograph_document import LANGUAGE_MAX_CHARS, served_language
+from app.research.monograph_document import ENGLISH, LANGUAGE_MAX_CHARS, served_language
 from app.research.why_here import CraftGround
 from app.services import knowledge_view
 from app.services.answering import NOT_FOUND_DETAIL
 from app.services.monograph_document import CRAFT_SUBJECT, document_row
 from app.services.monograph_generated_why_here import ground_hash, with_why_here
 from app.services.open_work_subjects import is_family
+from app.services.page_text_index import stored_tag
+from app.services.page_translation_serving import ServedPage
 from app.services.place_ground import subject_ground
 from app.services.stored_documents import GeneratedRead, generated_read
 
@@ -41,13 +47,13 @@ AskedVersion = Annotated[int | None, Query(ge=1)]
 class DocumentAsk:
     language: str
     version: int | None = None
-    part: int | None = None
+    part: PartAsk = WHOLE_DOCUMENT
 
 
 def document_ask(
-    lang: AskedLanguage = None, version: AskedVersion = None, part: AskedPart = None
+    lang: AskedLanguage = None, version: AskedVersion = None, part: AskedPart = None, tag: AskedTag = None
 ) -> DocumentAsk:
-    return DocumentAsk(language=served_language(lang), version=version, part=part)
+    return DocumentAsk(language=served_language(lang), version=version, part=PartAsk(part, tag))
 
 
 @dataclass(frozen=True)
@@ -85,18 +91,23 @@ async def get_craft_monograph(
 
 
 async def served_document(session: AsyncSession, craft: Craft, asked: DocumentAsk) -> ServedDocument | None:
-    row = await document_row(
-        session, CRAFT_SUBJECT, craft.slug, language=asked.language, version=asked.version
-    )
+    page = (subject_kind(craft), craft.slug)
+    row = await document_row(session, CRAFT_SUBJECT, craft.slug, language=ENGLISH, version=asked.version)
     if row is not None:
         ground = await stored_ground(session, craft)
-        body = with_why_here({**row.document, "language": row.language}, ground)
-        etag = document_etag(row.version, ground_hash(row.contentHash, ground))
-        return ServedDocument(etag, row.language, compact_json(body), row.version)
-    served = generated_served(await generated_fallback(session, craft))
-    if served is None or (asked.version is not None and served.version != asked.version):
+        english = ServedPage(
+            etag=document_etag(row.version, ground_hash(row.contentHash, ground)),
+            language=row.language,
+            body={**row.document, "language": row.language},
+        )
+        tag = stored_tag(row.version, row.contentHash)
+        shown = await in_language(session, page, english, tag=tag, language=asked.language)
+        body = with_why_here(shown.body, ground)
+        return ServedDocument(shown.etag, shown.language, compact_json(body), row.version)
+    read = await generated_fallback(session, craft)
+    if read.copy is None or (asked.version is not None and read.copy.version != asked.version):
         return None
-    return served
+    return await generated_in_language(session, read, language=asked.language)
 
 
 async def stored_ground(session: AsyncSession, craft: Craft) -> CraftGround | None:

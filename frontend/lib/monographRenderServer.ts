@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 
 import type { MonographDocument } from "@/lib/monographDocument";
-import { documentPart, documentPartPath, joinedDocument, type DocumentPart } from "@/lib/monographDocumentParts";
+import { documentPart, documentPartPath, joinedDocument, laterRead, LATEST_READ, type DocumentPart, type PartRead } from "@/lib/monographDocumentParts";
 import { monographDocumentPath, type MonographPreviewSubject } from "@/lib/monographDocumentShape";
 import { parseNamedDocument } from "@/lib/monographRenderCitations";
 import { documentDigest } from "@/lib/monographRenderShell";
@@ -46,16 +46,16 @@ function heldPart(result: ServerFetchResult<DocumentPart>): DocumentPart {
   throw new Error(`${DOCUMENT_UNAVAILABLE}: a later part ${result.failure}`);
 }
 
-async function documentRead(path: string, tag: string, version: number | null): Promise<MonographDocument | null> {
-  const first = documentOrAbsent(await partRead(documentPartPath(path, 0, version), tag));
+export async function documentRead(path: string, tag: string, read: PartRead): Promise<MonographDocument | null> {
+  const first = documentOrAbsent(await partRead(documentPartPath(path, 0, read), tag));
   if (first === null) return null;
-  const later = Array.from({ length: first.parts - 1 }, (_, at) => partRead(documentPartPath(path, at + 1, first.version), tag));
+  const later = Array.from({ length: first.parts - 1 }, (_, at) => partRead(documentPartPath(path, at + 1, laterRead(first, read.language)), tag));
   const parts = [first, ...(await Promise.all(later)).map(heldPart)];
   return parseNamedDocument(joinedDocument(parts));
 }
 
 export const serverMonographDocument = cache(async (subject: MonographPreviewSubject, slug: string): Promise<MonographDocument | null> =>
-  documentRead(monographDocumentPath(subject, slug), monographDocumentTag(subject, slug), null)
+  documentRead(monographDocumentPath(subject, slug), monographDocumentTag(subject, slug), LATEST_READ)
 );
 
 export type ShellParams = { slug: string; version: string };
@@ -70,5 +70,5 @@ export async function prerenderedShells(): Promise<ShellParams[]> {
 }
 
 export const serverCraftDocument = cache(async (slug: string, version: number | null = null): Promise<MonographDocument | null> =>
-  documentRead(monographDocumentPath("craft", slug), monographDocumentTag("craft", slug), version)
+  documentRead(monographDocumentPath("craft", slug), monographDocumentTag("craft", slug), { ...LATEST_READ, version })
 );

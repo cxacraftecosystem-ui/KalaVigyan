@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { craftRecordView } from "@/lib/craftRecord";
 import { monographMetadata } from "@/lib/monographMetadata";
+import { serverPageLanguages } from "@/lib/monographLanguagesServer";
 import { serverCraftDocument } from "@/lib/monographRenderServer";
 import { craftPageMetadata } from "@/lib/readingMetadata";
 import { prerenderedPages } from "@/lib/server/readingPages";
@@ -27,14 +28,17 @@ export async function generateStaticParams(): Promise<CraftParams[]> {
 export async function generateMetadata({ params }: CraftRoute): Promise<Metadata> {
   const { slug } = await params;
   const document = await serverCraftDocument(slug);
-  if (document) return monographMetadata(document);
+  if (document) return monographMetadata(document, await serverPageLanguages(document.subjectKind, document.subjectSlug));
   return craftPageMetadata(await craftRecordPage(slug));
 }
 
 export default async function CraftPage({ params }: CraftRoute) {
   const { slug } = await params;
   const document = await serverCraftDocument(slug);
-  if (document) return document.shell !== null ? <MonographShellPage document={document} deferred /> : <MonographDocumentPage document={document} deferred />;
+  if (document) {
+    const languages = await serverPageLanguages(document.subjectKind, document.subjectSlug);
+    return document.shell !== null ? <MonographShellPage document={document} deferred languages={languages} /> : <MonographDocumentPage document={document} deferred languages={languages} />;
+  }
   const page = await craftRecordPage(slug);
   if (!page) notFound();
   return <CraftWithoutMonograph record={craftRecordView(page)} />;

@@ -28,6 +28,7 @@ __all__ = [
     "claim_rebuild",
     "generated_read",
     "has_sections",
+    "held_copy",
     "read_generated",
     "rebuild_document",
     "stored_copy",
@@ -105,6 +106,15 @@ async def stored_copy(
         row = None if document is None else (await _store(session, document, stamp, now=utc_now()))[0]
     await session.commit()
     return None if row is None else _copy(row, stamp)
+
+
+async def held_copy(
+    session: AsyncSession, subject: WorkSubject, *, language: str = ENGLISH
+) -> StoredCopy | None:
+    if not await has_sections(session, subject):
+        return None
+    row = await stored_row(session, subject, language)
+    return None if row is None else _copy(row, await document_stamp(session, subject))
 
 
 async def claim_rebuild(

@@ -40,7 +40,8 @@ PREVIEW_DESCRIPTION = (
     "by the checks that run without fetching sources; the gates read the sources on propose_page. With it comes "
     "the page checklist report: each of the 26 rules that can be checked mechanically passed or failed with its "
     "evidence, the rest listed for you to judge on the link, coverage by field, figures, sources by grade and "
-    "pictures by licence, drawn by ui://kalavigyan/page-preview.html in clients that show MCP Apps."
+    "pictures by licence, drawn by ui://kalavigyan/page-preview.html in clients that show MCP Apps. A "
+    "translation draws the page in its language, authored pages too."
 )
 PROPOSE_DESCRIPTION = (
     "Propose a draft once (draft_id), or a bundle, which may hold one part alone: a finished component or a "
@@ -49,7 +50,8 @@ PROPOSE_DESCRIPTION = (
     "alone: facts through the gates, structure through its checks, a component against its kind's spec model "
     "(kalavigyan://components/<kind>.schema.json), its units' facts and the library, where a close match refuses "
     "it with the matches and two ways on, the layout against the page's version, a new picture starting its "
-    "upload. A refused part leaves the others standing; the report gives each part's outcome, id and reason. "
+    "upload, a translation's passages against their current English (a TRANSLATE task's). "
+    "A refused part leaves the others standing; the report gives each part's outcome, id and reason. "
     "Each part counts against its own hour's allowance, and a draft or a bundle of several parts also against "
     "the page bundles. Preview it first with preview_page."
 )

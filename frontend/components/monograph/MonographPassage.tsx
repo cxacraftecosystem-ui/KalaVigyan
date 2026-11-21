@@ -1,9 +1,8 @@
 import { Fragment } from "react";
 
 import { TermGroupView } from "@/components/monograph/TermGroups";
-import { UnitView } from "@/components/monograph/UnitView";
+import { unitNodes, UnitView } from "@/components/monograph/UnitView";
 import type { MonographDocument, MonographUnit } from "@/lib/monographDocument";
-import { nodeElements } from "@/lib/monographRenderElements";
 import { passageSegments, type ChapterPlan, type Passage, type PassagePiece, type PassageSegment, type UnitRole } from "@/lib/monographRenderLayout";
 
 type Drawn = { as: string; className?: string };
@@ -34,7 +33,7 @@ type PieceProps = { document: MonographDocument; chapter: ChapterPlan; piece: Pa
 function Piece({ document, chapter, piece, titled }: PieceProps) {
   const { units, sources } = document.content;
   if (piece.kind === "list") {
-    return <ul className="kv-list">{piece.refs.map((ref) => <li key={ref}>{nodeElements(units[ref].nodes, sources)}</li>)}</ul>;
+    return <ul className="kv-list">{piece.refs.map((ref) => <li key={ref}>{unitNodes(units[ref], sources)}</li>)}</ul>;
   }
   if (piece.kind === "terms") return <TermGroupView units={units} sources={sources} piece={piece} />;
   if (piece.kind === "paragraph") {
@@ -43,7 +42,7 @@ function Piece({ document, chapter, piece, titled }: PieceProps) {
         {piece.refs.map((ref, at) => (
           <Fragment key={ref}>
             {at ? " " : null}
-            {nodeElements(units[ref].nodes, sources)}
+            {unitNodes(units[ref], sources)}
           </Fragment>
         ))}
       </p>
@@ -70,7 +69,7 @@ function MarginNotes({ document, passage }: Omit<PassageProps, "chapter">) {
       <ul>
         {passage.notes.map((note) => (
           <li key={note.ref} data-g={note.source}>
-            {nodeElements(units[note.ref].nodes, sources)}
+            {unitNodes(units[note.ref], sources)}
           </li>
         ))}
       </ul>

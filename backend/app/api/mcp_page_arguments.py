@@ -45,7 +45,7 @@ FACT = "fact"
 BUNDLE = (
     "One page's parts: subject {kind, slug} and any of facts, structure, components ({proposal, cites}), "
     "layout {base_version, entries}, pictures and a note, each part exactly as edit_draft's add takes it "
-    "(its input schema holds every part's fields); one part alone works"
+    "(its input schema holds every part's fields), and translation; one part alone works"
 )
 NEEDS_SPEC = (
     "a component is delivered finished: give its spec (the kind's spec data) and the units it places, each "
@@ -66,7 +66,8 @@ def undelivered(components: Sequence[PageComponent]) -> str | None:
 
 def bundle_parts(bundle: PageBundle) -> int:
     held = (bundle.facts, bundle.structure, bundle.components, bundle.pictures)
-    return sum(len(part) for part in held) + int(bundle.layout is not None)
+    translated = 0 if bundle.translation is None else len(bundle.translation.passages)
+    return sum(len(part) for part in held) + int(bundle.layout is not None) + translated
 
 
 class DraftAdd(Arguments):
@@ -167,6 +168,7 @@ def bundle_schema() -> dict[str, Any]:
         "components": _parts(COMPONENTS_MAX),
         "layout": {"type": "object"},
         "pictures": _parts(PICTURES_MAX),
+        "translation": {"type": "object"},
         "note": {"type": "string", "maxLength": NOTE_MAX_CHARS},
     }
     return {

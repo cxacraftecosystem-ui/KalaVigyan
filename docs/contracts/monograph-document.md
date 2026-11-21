@@ -30,17 +30,36 @@ tag of at most 16 characters) and `version` (optional, from 1).
 
 - **200**: the latest stored document of that craft in the served language as JSON
   (`MonographDocument`, by alias, its `language` the row's), or, with nothing stored, the generated
-  one (`generated_fallback(session, slug)`, the route's one adapter, which calls
-  `services.monograph_generated.generated_document(session, "craft", slug)`) with the tag of its own
-  hash and version. With `ETag: "v<version>-<contentHash>"`, `Content-Language`,
+  one from its stored copy (`generated_fallback(session, craft)`, the route's one adapter, which
+  calls `services.stored_documents.generated_read(session, kind, slug)`) with the tag of its own
+  hash and stored version. With `ETag: "v<version>-<contentHash>"`, `Content-Language`,
   `Cache-Control: public, max-age=300` for a signed-out reader (`private, no-cache` signed in) and
   `Vary: Authorization`, as every public read.
-- **English only, room for translation** (owner, 2026-11-20): `served_language(lang)` serves only
-  `SERVED_LANGUAGES` (`en`); a request for any other language gets the English document with
-  `Content-Language: en`. Generated documents are English.
+- **A language** (decision 0117): `served_language(lang)` names one of `SERVED_LANGUAGES`, the
+  thirteen answer languages, and anything else asks for English. The route always resolves the
+  English document first (stored, else generated); for another language it serves that page's
+  variant (Pages in other languages, below) with `Content-Language` the language and the tag
+  `"v<version>-<hash>-<language>-<16 hex of the served translations' digest>"`, or the English
+  document with `Content-Language: en` while no passage of it is translated into that language.
+  The family and category routes (`page_documents.py`) take `lang` the same way. Articles are
+  written in English (decision 0107); a variant is the same page translated, never another
+  article.
 - **`version`**: that stored version, or the generated document when its version is that number;
   otherwise 404 `This craft's monograph has no such version.`. The web app's `/crafts/<slug>/v<N>`
   reads it, the address Cite this monograph gives.
+- **`part`** (0 to 64) and **`tag`**: the served document, English or a variant, cut into parts of
+  at most 1 MB (`research.document_parts`): `{schemaVersion 1, version, part, parts, tag, body}`,
+  the content in part 0, then the shell, specs and fragments in order, under the tag
+  `"<served tag>-p<part>"`. `tag` is the served document's own tag, a variant's when a language is
+  served, so every part of one reading carries it. The web reads part 0, then the others with
+  `version` and `tag` as part 0 named them and joins only parts of one tag; a `tag` that is no
+  longer the served one is 404 `This monograph has changed since its first part was read; read it
+  again from part 0.`, so an English part never joins a translated one. A part beyond the last is
+  404 `This monograph has no such part.`. The family and category routes take both the same way.
+- **Stored, then translated**: a generated document is read
+  from its stored English copy (`services.stored_documents`), and a variant is drawn from that copy
+  on each read, never stored; only the English row is kept per subject, its version and tag moving
+  with the English content alone, and an approved translation moves only the variant's tag.
 - **304**: `If-None-Match` names the current tag (with `Content-Language`).
 - **404** `This craft's page is not a monograph document yet.`: nothing is stored and nothing is
   generated. A craft needs `CRAFT_SECTIONS_MIN` (3) published sections for a generated document
@@ -167,6 +186,83 @@ contribution brought (`origin`) are left out.
   shows is added to its field's text (`with_page_claims`), so the document shows every cited claim
   the tabbed page showed.
 
+## Pages in other languages (decision 0117)
+
+Code: `research/translation_passages.py` (passages, their hash, their texts),
+`research/page_translation_gates.py` (the gates), `research/page_translation_variant.py` (the
+variant), `research/document_translation.py` (the document's `translation`),
+`research/page_translations.py` (the bundle's `translation` part, statuses, `task_problem`),
+`research/page_translation_views.py` (the site's views), `models/page_translations.py` and
+migration `0059_page_translations` (`PageTranslation`, `PageTextUnit`, `TranslationReader`),
+`services/page_translations.py` (proposing), `services/page_translation_preview.py` (previewing),
+`services/page_translation_serving.py` (serving), `services/page_translation_review.py` and
+`services/translation_readers.py` (review), `api/routes/page_translations.py`; the web side is
+`frontend/lib/documentLanguages.ts`, `lib/translationContract.ts`, `lib/documentVariant.ts` (a
+draft's variant, for the preview page) and `components/monograph/DocumentLanguages.tsx`.
+
+- **A passage** is a text unit with a letter outside a fixed mark (`i`, `sub`, `sup`: names in
+  italic, botanical names, verbatim quotes, formula parts), the masthead title aside: a name is
+  never translated. Its **texts** are its string leaves in document order, `fixed` the indices
+  inside a fixed mark, `cited` those inside a `cite` mark. Its **hash** (`unit_hash`) is the
+  SHA-256 of `{"claims": sorted claim ids, "nodes": the nodes with each cite mark's g and key
+  removed}` (JSON, keys sorted, compact): the words and the claims a sentence rests on, not how
+  its sources happen to be numbered.
+- **A translation** is one text for each English text, in order, for a passage named by its key and
+  the hash of the English it translates. The gates, in order, each stopping the rest when it fails:
+  `CURRENT` (the hash is the current English passage's), `SHAPE` (one text for each, every fixed
+  text exactly as it stands, the cited text not empty), `KEPT` (`research/translation.translation_problems`,
+  the answers' rule: every number, unit, formula and pH kept, none added, the prose written in the
+  language's script) and `ADDED` (at most 3 times the English prose plus 40 characters, and no link
+  the English lacks). Citations are never translated: the served passage takes every mark,
+  citation and attribute from the current English passage and only its texts from the translation,
+  so it keeps that sentence's citations whatever the translator sent; quotes stay in the popover in
+  their source's language.
+- **Placed by trust tiers** (`trust_tiers.tier_placement` with the review switch of the bundle's
+  origin): a Professor or above who reads the language (`TranslationReader`) is `APPROVED` at once,
+  a proven account `APPROVED` or drawn `IN_REVIEW`, a newcomer `DRAFT` (waiting), the rest as the
+  switch says; a refused passage is kept `REJECTED` with its checks. A served translation supersedes
+  the earlier served one of the same passage and hash (`SUPERSEDED`). `APPROVED` and `IN_REVIEW`
+  are served.
+- **Review.** `GET /api/knowledge/translations/review` (Professor and above) lists `DRAFT` and
+  `IN_REVIEW` translations in the languages the reviewer reads, oldest first, each with its English,
+  its texts, its checks and whether its English is still current; `POST .../{id}/approve` and
+  `.../reject` (a note required) decide one and refresh its page. A reviewer never decides their
+  own translation, nor one in a language they do not read; `GET`/`PUT
+  /api/knowledge/translations/languages` read and set the languages a Professor or above reads.
+- **The variant** (`variant_content`): each passage whose current hash has a served translation
+  is drawn from its texts with `lang` the language; every other passage keeps its English and
+  `lang: "en"`, and is counted `held` when its key had a served translation of an earlier English
+  passage (the English changed, so the translation is held until the passage is translated again).
+  Units that are not passages keep no `lang`. The document's `language` is the language and its
+  `translation` is `{sourceLanguage "en", sourceVersion, script, direction, passages, translated,
+  held}`; specs, fragments, data and the source book are the English document's. An authored
+  page's shell is drawn again from its template with the variant's units (`authored_document`);
+  `render_nodes` wraps a unit with a `lang` in `<span lang dir data-script>` (`data-script` `Aran`
+  for Urdu, else the language's script) or `<span lang="en" dir="ltr" data-fallback="en">`, and
+  the web's `UnitView` sets the same attributes, so a reader and a screen reader always know which
+  language a passage is in and the page marks each English passage with the word English.
+- **The index** (`PageTextUnit`): every passage of a page's English document, its position, hash,
+  chapter, tag and leaves, under the document's tag (`v<version>-<content hash>`). The monograph
+  routes, the translation view and every translation part write it again when the tag changed, so
+  open work counts passages without building documents.
+- **Reads.** `GET /api/pages/{kind}/{slug}/languages` (public): each answer language the page is
+  offered in or translated into, with its label, autonym, script, direction, passages, translated
+  (served) and offered. `GET /api/pages/{kind}/{slug}/translations/{language}` (public; `state`,
+  `offset`, `limit` up to 200): the page's passages with their state (`TO_TRANSLATE`, `HELD` with the
+  earlier translation, `WAITING`, `TRANSLATED` with its texts) and counts, for the site's form.
+- **Proposing** is a page bundle's `translation` part (`page_proposals.PageTranslationPart`:
+  `language`, up to 40 `passages` of `{key, source_hash, texts}`, `task_key`, `note`), through
+  `preview_page` (drawn in place, authored pages too, each passage `SHOWN` or `REFUSED`, nothing
+  stored) and `propose_page` (one report per passage, `ACCEPTED` or `REFUSED`), over MCP and from
+  the site (`POST /api/knowledge/pages`, `/preview`).
+- **On the web**: `/crafts/<slug>/<language>` and `/categories/<slug>/<language>` draw the page
+  in that language (an untranslated language redirects to the English page), every document page
+  lists its translated languages as links (`DocumentLanguages`, its note saying how many passages
+  read in the language), the page's metadata names them as `hreflang` alternates with `x-default`
+  English, and `/contributions/translations` is the site's form and the reviewers' queue.
+  `/preview/translation` draws Kutch Bandhani with a Hindi draft of its three lede sentences
+  (`lib/translationPreview.ts`), the capture of decision 0117.
+
 ## The authored files
 
 ```
@@ -240,3 +336,13 @@ build byte for byte), `tests/public/test_craft_monograph_route.py` (the route) a
 language its own versions, the load), `tests/test_document_language_migration.py` (the key),
 `tests/layouts/test_generated_document.py` and `tests/layouts/test_generated_chapters.py` (the
 generated layout, chapter titles, the lede, the section minimum, the picture specs).
+
+Pages in other languages: `tests/research/test_translation_passages.py` (texts, fixed and cited,
+the hash), `tests/research/test_page_translation_gates.py` (each gate),
+`tests/research/test_page_translation_variant.py` (the fallback, citations from the English, the
+hold, the marks the renderer writes), `tests/research/test_translation_regions.py` (languages,
+priority, the task key, the part), `tests/research/test_document_language_seam.py` (the web's
+codes, scripts and names are the server's), `tests/test_page_translations_migration.py`,
+`tests/db/test_page_translations_db.py` (placement, the variant, the hold on change, the preview)
+and `tests/db/test_translation_work_db.py` (the tasks, a claim completed, review), and the web's
+`frontend/e2e/document-languages-unit.spec.ts`.

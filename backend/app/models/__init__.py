@@ -107,6 +107,7 @@ from app.models.open_data import OpenDataRelease
 from app.models.open_work import ComponentProposal, TaskReservation
 from app.models.page_layouts import PageLayout
 from app.models.page_previews import PagePreview
+from app.models.page_translations import PageTextUnit, PageTranslation, TranslationReader
 from app.models.profiles import ArtisanCraft, ArtisanProfile, StudentProfile
 from app.models.rivers import RiverBasin, RiverReach
 from app.models.science import (
@@ -229,6 +230,8 @@ __all__ = [
     "PageDraft",
     "PageLayout",
     "PagePreview",
+    "PageTextUnit",
+    "PageTranslation",
     "PasswordResetRequest",
     "PasswordResetToken",
     "PictureDeclaration",
@@ -260,6 +263,7 @@ __all__ = [
     "TermConcept",
     "TermCraft",
     "TermSummary",
+    "TranslationReader",
     "TrustTierOverride",
     "TwoFactorChallenge",
     "UploadLink",

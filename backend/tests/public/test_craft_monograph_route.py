@@ -1,6 +1,6 @@
 import hashlib
 import json
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 from typing import Any
@@ -16,10 +16,13 @@ from app.research.document_parts import compact_json, document_parts
 from app.research.monograph_document import MonographDocument, served_language
 from app.services.answering import NOT_FOUND_DETAIL
 from app.services.monograph_document import document_body, document_hash
+from app.services.page_translation_serving import ServedPage, ShownPage
 from app.services.stored_documents import GeneratedRead, StoredCopy
 
 PATH = "/api/crafts/kutch-ajrakh/monograph"
 DIGEST = "a" * 64
+VARIANT_DIGEST = "b" * 16
+AJRAKH = SimpleNamespace(slug="Kutch-Ajrakh", isCatchAll=False, stateOfPractice=["Gujarat"])
 STORED = {
     "schemaVersion": 1,
     "subjectKind": "craft",
@@ -49,15 +52,42 @@ GENERATED = MonographDocument.model_validate(
 )
 
 
+def in_hindi(body: Mapping[str, Any]) -> dict[str, Any]:
+    shown = {**body, "language": "hi"}
+    if isinstance(body.get("shell"), str):
+        shown["shell"] = body["shell"].replace("sss", "ससस")
+    return shown
+
+
 @dataclass
 class Calls:
     made: list[str] = field(default_factory=list)
     queued: list[tuple[str, str]] = field(default_factory=list)
+    languages: list[tuple[tuple[str, str], str, str]] = field(default_factory=list)
+
+    async def in_language(
+        self, session: Any, page: tuple[str, str], english: ServedPage, *, tag: str, language: str
+    ) -> ShownPage:
+        self.languages.append((page, tag, language))
+        if language != "hi":
+            return ShownPage(english, wrote=False)
+        variant = ServedPage(f"{english.etag}-hi-{VARIANT_DIGEST}", "hi", in_hindi(english.body))
+        return ShownPage(variant, wrote=False)
 
 
 def stored_copy(document: MonographDocument, *, current: bool = True) -> StoredCopy:
     text = compact_json(document_body(document))
     return StoredCopy(text, document.version, document_hash(document), document.language, current)
+
+
+def generated_digest() -> str:
+    body = GENERATED.model_dump(mode="json", by_alias=True)
+    hashed = json.dumps(
+        {k: v for k, v in body.items() if k not in {"version", "language"}},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(hashed.encode("utf-8")).hexdigest()
 
 
 async def no_session() -> AsyncIterator[object]:
@@ -86,7 +116,7 @@ def served(
 
     async def resolve_craft(session: Any, slug: str) -> Any:
         calls.made.append(f"resolve {slug}")
-        return SimpleNamespace(slug="Kutch-Ajrakh") if known else None
+        return AJRAKH if known else None
 
     async def document_row(session: Any, subject_kind: str, slug: str, *, language: str, version: Any) -> Any:
         calls.made.append(f"stored {subject_kind} {slug} {language} {version}")
@@ -106,6 +136,7 @@ def served(
     monkeypatch.setattr(route, "document_row", document_row)
     monkeypatch.setattr(route, "generated_fallback", generated_fallback)
     monkeypatch.setattr(route, "stored_ground", stored_ground)
+    monkeypatch.setattr(document_reads, "page_in_language", calls.in_language)
     watch_rebuilds(monkeypatch, calls)
     app = create_app()
     app.dependency_overrides[get_session] = no_session
@@ -134,9 +165,9 @@ def test_a_document_stored_without_its_language_is_served_with_its_rows_language
     assert http.get(PATH).json() == {**older, "language": "en"}
 
 
-@pytest.mark.parametrize("asked", ["hi", "ur", "EN", "kn-Knda"])
-def test_a_request_for_another_language_gets_the_english_document_said_to_be_english(
-    monkeypatch: pytest.MonkeyPatch, asked: str
+@pytest.mark.parametrize(("asked", "named"), [("ur", "ur"), ("EN", "en"), ("kn-Knda", "en"), ("xx", "en")])
+def test_a_language_without_a_translation_gets_the_english_document_said_to_be_english(
+    monkeypatch: pytest.MonkeyPatch, asked: str, named: str
 ) -> None:
     http, calls = served(monkeypatch)
     answer = http.get(PATH, params={"lang": asked})
@@ -144,7 +175,22 @@ def test_a_request_for_another_language_gets_the_english_document_said_to_be_eng
     assert answer.headers["content-language"] == "en"
     assert answer.json()["language"] == "en"
     assert calls.made[-1] == "stored craft Kutch-Ajrakh en None"
-    assert served_language(asked) == "en"
+    assert calls.languages == [(("craft", "Kutch-Ajrakh"), f"v3-{DIGEST}", named)]
+    assert served_language(asked) == named
+
+
+def test_a_translated_page_is_served_in_its_language_under_its_own_tag(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    http, calls = served(monkeypatch)
+    answer = http.get(PATH, params={"lang": "hi"})
+    assert answer.status_code == 200
+    assert answer.headers["content-language"] == "hi"
+    assert answer.json()["language"] == "hi"
+    assert answer.headers["etag"] == f'"v3-{DIGEST}-hi-{VARIANT_DIGEST}"'
+    assert calls.made[-1] == "stored craft Kutch-Ajrakh en None"
+    english = http.get(PATH)
+    assert english.headers["etag"] == f'"v3-{DIGEST}"'
 
 
 def test_a_versioned_request_reads_that_version_and_an_unknown_one_is_not_found(
@@ -173,16 +219,25 @@ def test_without_a_stored_document_the_generated_one_is_served(monkeypatch: pyte
     body = GENERATED.model_dump(mode="json", by_alias=True)
     assert answer.status_code == 200 and answer.json() == body
     assert body["language"] == "en"
-    hashed = json.dumps(
-        {k: v for k, v in body.items() if k not in {"version", "language"}},
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    assert answer.headers["etag"] == f'"v1-{hashlib.sha256(hashed.encode("utf-8")).hexdigest()}"'
+    assert answer.headers["etag"] == f'"v1-{generated_digest()}"'
     assert calls.made[-1] == "generated Kutch-Ajrakh"
     assert http.get(PATH, params={"version": 1}).status_code == 200
     assert http.get(PATH, params={"version": 2}).status_code == 404
     assert calls.queued == []
+
+
+def test_a_generated_document_in_a_translated_language_is_its_variant_and_the_english_its_stored_text(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    http, calls = served(monkeypatch, stored=False, generated=True)
+    english = http.get(PATH)
+    assert english.content == stored_copy(GENERATED).text.encode("utf-8")
+    hindi = http.get(PATH, params={"lang": "hi"})
+    assert hindi.status_code == 200
+    assert hindi.headers["content-language"] == "hi"
+    assert hindi.headers["etag"] == f'"v1-{generated_digest()}-hi-{VARIANT_DIGEST}"'
+    assert hindi.json() == {**GENERATED.model_dump(mode="json", by_alias=True), "language": "hi"}
+    assert calls.languages[-1] == (("craft", "Kutch-Ajrakh"), f"v1-{generated_digest()}", "hi")
 
 
 def test_a_stale_generated_document_is_served_as_it_was_and_its_rebuild_queued(
@@ -193,11 +248,11 @@ def test_a_stale_generated_document_is_served_as_it_was_and_its_rebuild_queued(
     assert answer.status_code == 200
     assert answer.json() == GENERATED.model_dump(mode="json", by_alias=True)
     assert calls.queued == [("craft", "Kutch-Ajrakh")]
+    assert http.get(PATH, params={"lang": "hi"}).json()["language"] == "hi"
+    assert calls.queued == [("craft", "Kutch-Ajrakh")] * 2
 
 
-def test_a_document_larger_than_a_part_is_read_part_by_part_and_rejoins_whole(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def parted(monkeypatch: pytest.MonkeyPatch) -> tuple[TestClient, dict[str, Any]]:
     whole = {
         **STORED,
         "shell": "<section>" + "s" * 120 + "</section>",
@@ -206,20 +261,56 @@ def test_a_document_larger_than_a_part_is_read_part_by_part_and_rejoins_whole(
     }
     http, _ = served(monkeypatch, body=whole)
     monkeypatch.setattr(document_reads, "document_parts", lambda body: document_parts(body, most=200))
-    first = http.get(PATH, params={"part": 0}).json()
-    assert (first["schemaVersion"], first["version"], first["part"], first["parts"]) == (1, 3, 0, 4)
+    return http, whole
+
+
+def rejoined_parts(http: TestClient, asked: dict[str, Any], first: dict[str, Any]) -> dict[str, Any]:
     rejoined = dict(first["body"])
     rejoined.update(shell=None, specs={}, fragments={})
     for part in range(1, first["parts"]):
-        answer = http.get(PATH, params={"part": part})
-        assert answer.headers["etag"] == f'"v3-{DIGEST}-p{part}"'
+        answer = http.get(
+            PATH, params={**asked, "version": first["version"], "tag": first["tag"], "part": part}
+        )
+        assert answer.headers["etag"] == f'"{first["tag"]}-p{part}"'
+        assert answer.json()["tag"] == first["tag"]
         later = answer.json()["body"]
         rejoined["shell"] = later.get("shell", rejoined["shell"])
         rejoined["specs"].update(later["specs"])
         rejoined["fragments"].update(later["fragments"])
+    return rejoined
+
+
+def test_a_document_larger_than_a_part_is_read_part_by_part_and_rejoins_whole(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    http, whole = parted(monkeypatch)
+    first = http.get(PATH, params={"part": 0}).json()
+    assert (first["schemaVersion"], first["version"], first["part"], first["parts"]) == (1, 3, 0, 4)
+    assert first["tag"] == f"v3-{DIGEST}"
+    rejoined = rejoined_parts(http, {}, first)
     assert rejoined == whole
     assert list(rejoined["specs"]) == ["a", "b"]
     assert http.get(PATH, params={"part": 4}).status_code == 404
+    assert http.get(PATH, params={"part": 1}).headers["etag"] == f'"v3-{DIGEST}-p1"'
+
+
+def test_a_translated_document_is_read_in_its_own_parts_and_never_joined_with_an_english_part(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    http, whole = parted(monkeypatch)
+    variant_tag = f"v3-{DIGEST}-hi-{VARIANT_DIGEST}"
+    opened = http.get(PATH, params={"lang": "hi", "part": 0})
+    assert opened.headers["content-language"] == "hi"
+    first = opened.json()
+    assert (first["tag"], first["body"]["language"]) == (variant_tag, "hi")
+    rejoined = rejoined_parts(http, {"lang": "hi"}, first)
+    assert rejoined == {**whole, "language": "hi", "shell": "<section>" + "स" * 120 + "</section>"}
+    english_part = {"lang": "hi", "version": 3, "tag": f"v3-{DIGEST}", "part": 1}
+    moved = http.get(PATH, params=english_part)
+    assert moved.status_code == 404
+    assert moved.json()["detail"] == document_reads.READING_MOVED_DETAIL
+    assert http.get(PATH, params={"version": 3, "tag": variant_tag, "part": 1}).status_code == 404
+    assert http.get(PATH, params={"tag": "v3 nope", "part": 1}).status_code == 422
 
 
 @pytest.mark.parametrize(

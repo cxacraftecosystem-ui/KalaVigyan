@@ -5,10 +5,13 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Qu
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.document_reads import (
+    WHOLE_DOCUMENT,
     AskedPart,
+    AskedTag,
+    PartAsk,
     ServedDocument,
     document_response,
-    generated_served,
+    generated_in_language,
     queue_rebuild,
 )
 from app.api.public_deps import cached_read, public_reader
@@ -18,7 +21,7 @@ from app.core.errors import InvalidInput, Refused
 from app.core.roles import ADMIN, has_rank
 from app.models import User
 from app.research.crafts import SLUG_MAX_CHARS
-from app.research.monograph_document import LANGUAGE_MAX_CHARS, SUBJECT_KINDS
+from app.research.monograph_document import LANGUAGE_MAX_CHARS, SUBJECT_KINDS, served_language
 from app.research.page_layout import LayoutWrite
 from app.services.page_layouts import page_layout, write_layout
 from app.services.stored_documents import generated_read
@@ -54,12 +57,14 @@ def page_ref(kind: SubjectKind, slug: Slug) -> PageRef:
 @dataclass(frozen=True)
 class AskedDocument:
     slug: str
-    language: str | None
-    part: int | None = None
+    language: str
+    part: PartAsk = WHOLE_DOCUMENT
 
 
-def asked_document(slug: Slug, lang: AskedLanguage = None, part: AskedPart = None) -> AskedDocument:
-    return AskedDocument(slug, lang, part)
+def asked_document(
+    slug: Slug, lang: AskedLanguage = None, part: AskedPart = None, tag: AskedTag = None
+) -> AskedDocument:
+    return AskedDocument(slug, served_language(lang), PartAsk(part, tag))
 
 
 @router.get("/categories/{slug}/monograph")
@@ -70,7 +75,7 @@ async def get_category_monograph(
     reader: User | None = Depends(public_reader),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
-    served = await _document(session, CATEGORY, asked.slug)
+    served = await _document(session, CATEGORY, asked)
     queue_rebuild(background, served)
     return document_response(request, reader, served, asked.part)
 
@@ -83,7 +88,7 @@ async def get_family_monograph(
     reader: User | None = Depends(public_reader),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
-    served = await _document(session, FAMILY, asked.slug)
+    served = await _document(session, FAMILY, asked)
     queue_rebuild(background, served)
     return document_response(request, reader, served, asked.part)
 
@@ -123,12 +128,12 @@ async def put_page_layout(
     return layout.model_dump(mode="json", by_alias=True)
 
 
-async def _document(session: AsyncSession, kind: str, slug: str) -> ServedDocument:
+async def _document(session: AsyncSession, kind: str, asked: AskedDocument) -> ServedDocument:
     try:
-        read = await generated_read(session, kind, slug)
+        read = await generated_read(session, kind, asked.slug)
     except InvalidInput as unknown:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(unknown)) from unknown
-    served = generated_served(read)
+    served = await generated_in_language(session, read, language=asked.language)
     if served is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, NO_DOCUMENT_DETAIL.format(kind=kind))
     return served

@@ -38,6 +38,7 @@ from app.api.routes import (
     own_proposals,
     page_documents,
     page_proposals,
+    page_translations,
     password_change,
     place_ground,
     profile,
@@ -103,6 +104,7 @@ api_router.include_router(open_work.router)
 api_router.include_router(own_proposals.router)
 api_router.include_router(page_documents.router)
 api_router.include_router(page_proposals.router)
+api_router.include_router(page_translations.router)
 api_router.include_router(place_ground.router)
 api_router.include_router(profile.router)
 api_router.include_router(public.router)

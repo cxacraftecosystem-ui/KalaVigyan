@@ -1,3 +1,4 @@
+import { isDocumentLanguage, type DocumentLanguageCode } from "@/lib/documentLanguages";
 import type { MonographDocument } from "@/lib/monographDocument";
 import type { PagePlan } from "@/lib/monographRenderLayout";
 import { documentDigest, leadChapters, shellRestPath } from "@/lib/monographRenderShell";
@@ -8,9 +9,14 @@ export function railAfterMasthead(document: MonographDocument, plan: PagePlan, m
   return document.shell === null && masthead && plan.label !== null && plan.chapters[0]?.index === 0;
 }
 
+export function variantLanguage(document: MonographDocument): DocumentLanguageCode | null {
+  return isDocumentLanguage(document.language) ? document.language : null;
+}
+
 export function deferredRest(document: MonographDocument, plan: PagePlan, deferred: boolean): string | null {
   if (!deferred) return null;
-  if (document.shell !== null) return document.subjectKind === CITED_SUBJECT ? shellRestPath(document.subjectSlug, document.version, CITED_SUBJECT, documentDigest(document)) : null;
+  const language = variantLanguage(document);
+  if (document.shell !== null) return document.subjectKind === CITED_SUBJECT ? shellRestPath(document.subjectSlug, document.version, CITED_SUBJECT, documentDigest(document), language) : null;
   if (plan.chapters.length <= leadChapters(plan.chapters).length) return null;
-  return shellRestPath(document.subjectSlug, document.version, document.subjectKind, documentDigest(document));
+  return shellRestPath(document.subjectSlug, document.version, document.subjectKind, documentDigest(document), language);
 }

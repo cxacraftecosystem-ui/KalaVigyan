@@ -53,14 +53,16 @@ def document_parts(body: Mapping[str, Any], *, most: int = PART_BYTES_MAX) -> li
     return [DocumentPart(part=0, parts=total, body=core), *later]
 
 
-def part_body(part: DocumentPart, version: int) -> dict[str, Any]:
-    return {
+def part_body(part: DocumentPart, version: int, tag: str | None = None) -> dict[str, Any]:
+    wrapped: dict[str, Any] = {
         "schemaVersion": DOCUMENT_PART_SCHEMA_VERSION,
         "version": version,
         "part": part.part,
         "parts": part.parts,
-        "body": part.body,
     }
+    if tag is not None:
+        wrapped["tag"] = tag
+    return {**wrapped, "body": part.body}
 
 
 def _carried(key: str, value: Any) -> bool:

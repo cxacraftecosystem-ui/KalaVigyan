@@ -87,8 +87,8 @@ test("a document whose content changes under the same version asks for its rest 
   changed.content.units = { ...changed.content.units, u9999: { chapter: "chem", tag: "p", field: null, nodes: ["A figure borrowed since."], claimIds: [] } };
   expect(documentDigest(generatedDocument())).toBe(documentDigest(document));
   expect(documentDigest(changed)).not.toBe(documentDigest(document));
-  expect(restAddress(`v5-${documentDigest(document)}`)).toEqual({ version: 5, digest: documentDigest(document) });
-  expect(restAddress("v12")).toEqual({ version: 12, digest: null });
+  expect(restAddress(`v5-${documentDigest(document)}`)).toEqual({ version: 5, digest: documentDigest(document), language: null });
+  expect(restAddress("v12")).toEqual({ version: 12, digest: null, language: null });
   expect([restAddress("v0"), restAddress("5"), restAddress("v5-xyz"), restAddress("v5-0123456789")]).toEqual([null, null, null, null]);
 });
 

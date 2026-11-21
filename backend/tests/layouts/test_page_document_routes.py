@@ -19,6 +19,7 @@ from app.research.page_layout import LayoutWrite, PageLayout
 from app.services.monograph_document import document_body, document_hash
 from app.services.monograph_generated_assembly import assembled_document
 from app.services.monograph_generated_drawings import Drawings
+from app.services.page_translation_serving import ServedPage, ShownPage
 from app.services.stored_documents import GeneratedRead, StoredCopy
 
 from .generated_parts import generated, hero_layout
@@ -38,17 +39,39 @@ class QuietSession:
         self.ended.append("rollback")
 
 
+class AskedLanguages:
+    def __init__(self) -> None:
+        self.asked: list[tuple[Any, str, str]] = []
+        self.translated = False
+
+    async def in_language(
+        self, session: Any, page: Any, english: ServedPage, *, tag: str, language: str
+    ) -> ShownPage:
+        self.asked.append((page, tag, language))
+        if not self.translated or language != "hi":
+            return ShownPage(english, wrote=False)
+        body = {**english.body, "language": "hi", "title": "बाघ छपाई"}
+        return ShownPage(ServedPage(f"{english.etag}-hi-{'c' * 16}", "hi", body), wrote=False)
+
+
 @pytest.fixture
-def held(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
+def languages(monkeypatch: pytest.MonkeyPatch) -> AskedLanguages:
+    asked = AskedLanguages()
+    monkeypatch.setattr(document_reads, "page_in_language", asked.in_language)
+    return asked
+
+
+@pytest.fixture
+def held(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, languages: AskedLanguages) -> dict[str, Any]:
     state: dict[str, Any] = {
         "session": QuietSession(),
         "writes": [],
-        "document": None,
+        "document": assembled_document(generated(), Drawings(root=tmp_path)),
         "layout": hero_layout(),
         "rebuild": False,
         "queued": [],
+        "languages": languages,
     }
-    state["document"] = assembled_document(generated(), Drawings(root=tmp_path))
 
     async def subject(session: Any, kind: str, slug: str) -> object:
         if (kind, slug) not in KNOWN:
@@ -131,7 +154,8 @@ def test_a_document_read_in_parts_gives_the_whole_document_back_and_no_part_beyo
     held: dict[str, Any],
 ) -> None:
     http = client(held)
-    whole = http.get("/api/categories/Textile-Craft-Category/monograph").json()
+    read = http.get("/api/categories/Textile-Craft-Category/monograph")
+    whole = read.json()
     first = http.get("/api/categories/Textile-Craft-Category/monograph", params={"part": 0})
     assert first.status_code == 200
     assert first.json() == {
@@ -139,6 +163,7 @@ def test_a_document_read_in_parts_gives_the_whole_document_back_and_no_part_beyo
         "version": whole["version"],
         "part": 0,
         "parts": 1,
+        "tag": read.headers["ETag"].strip('"'),
         "body": whole,
     }
     assert first.headers["ETag"].endswith('-p0"')
@@ -153,13 +178,37 @@ def test_a_document_read_in_parts_gives_the_whole_document_back_and_no_part_beyo
 @pytest.mark.parametrize(
     "path", ["/api/categories/Textile-Craft-Category/monograph", "/api/families/Other-Textiles/monograph"]
 )
-def test_a_category_or_family_monograph_is_served_in_english_whatever_language_is_asked(
+def test_a_category_or_family_monograph_asks_for_the_language_and_is_english_without_a_translation(
     path: str, held: dict[str, Any]
 ) -> None:
     answer = client(held).get(path, params={"lang": "hi"})
     assert answer.status_code == 200
     assert answer.headers["Content-Language"] == "en"
     assert answer.json()["language"] == "en"
+    assert [language for _, _, language in held["languages"].asked] == ["hi"]
+    unknown = client(held).get(path, params={"lang": "xx"})
+    assert unknown.status_code == 200
+    assert held["languages"].asked[-1][2] == "en"
+
+
+def test_a_translated_category_is_served_from_its_stored_english_copy_under_its_language_tag(
+    held: dict[str, Any],
+) -> None:
+    held["languages"].translated = True
+    document = held["document"]
+    english_tag = f"v{document.version}-{document_hash(document)}"
+    http = client(held)
+    answer = http.get("/api/categories/Textile-Craft-Category/monograph", params={"lang": "hi"})
+    assert answer.status_code == 200
+    assert answer.headers["Content-Language"] == "hi"
+    assert answer.headers["ETag"] == f'"{english_tag}-hi-{"c" * 16}"'
+    assert (answer.json()["language"], answer.json()["title"]) == ("hi", "बाघ छपाई")
+    assert held["languages"].asked == [(("category", "Textile-Craft-Category"), english_tag, "hi")]
+    first = http.get("/api/categories/Textile-Craft-Category/monograph", params={"lang": "hi", "part": 0})
+    assert first.json()["tag"] == f"{english_tag}-hi-{'c' * 16}"
+    assert first.json()["body"]["title"] == "बाघ छपाई"
+    english = http.get("/api/categories/Textile-Craft-Category/monograph")
+    assert (english.headers["ETag"], english.json()["language"]) == (f'"{english_tag}"', "en")
 
 
 def test_an_unknown_subject_or_one_with_nothing_published_is_a_404(held: dict[str, Any]) -> None:

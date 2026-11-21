@@ -3,10 +3,10 @@ import { Fragment } from "react";
 import { Masthead, type MastheadPicture } from "@/components/editorial/Masthead";
 import { provenanceLine } from "@/components/monograph/MonographMasthead";
 import { MARGIN_LABEL } from "@/components/monograph/MonographPassage";
+import { unitNodes } from "@/components/monograph/UnitView";
 import { reliabilityFill } from "@/lib/citationCluster";
 import type { MonographDocument } from "@/lib/monographDocument";
 import { documentLabel, LEDE_KICKER, ledeNotes, type MastheadPhoto } from "@/lib/monographMasthead";
-import { nodeElements } from "@/lib/monographRenderElements";
 import type { GradeTally } from "@/lib/monographRenderKit";
 import type { LabelMasthead } from "@/lib/monographRenderLayout";
 import type { SourceReliability } from "@/lib/types";
@@ -51,7 +51,7 @@ function LedeSpread({ document, lede }: { document: MonographDocument; lede: rea
                 {lede.map((ref, at) => (
                   <Fragment key={ref}>
                     {at ? " " : null}
-                    {nodeElements(units[ref].nodes, sources)}
+                    {unitNodes(units[ref], sources)}
                   </Fragment>
                 ))}
               </p>

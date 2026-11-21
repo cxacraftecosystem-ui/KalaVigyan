@@ -98,7 +98,7 @@ test("an authored shell defers its rest only on a craft's page, at its own versi
   expect(deferredRest(document, plan, true)).toBe(`/crafts/Kutch-Ajrakh/shell/v${document.version}-${documentDigest(document)}`);
   const grounded = { ...document, content: { ...document.content, data: { ...document.content.data, "why-here": { readings: 1 } } } };
   expect(deferredRest(grounded, plan, true)).not.toBe(deferredRest(document, plan, true));
-  expect(restAddress(`v${document.version}-${documentDigest(document)}`)).toEqual({ version: document.version, digest: documentDigest(document) });
+  expect(restAddress(`v${document.version}-${documentDigest(document)}`)).toEqual({ version: document.version, digest: documentDigest(document), language: null });
   expect(deferredRest(document, plan, false)).toBeNull();
   expect(deferredRest({ ...document, subjectKind: "category" }, plan, true)).toBeNull();
 });

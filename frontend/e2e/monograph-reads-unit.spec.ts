@@ -4,19 +4,28 @@ import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 
 import { afterLoad, laterWhenIdle, whenIdle } from "../components/monograph/useShellTrigger";
-import { documentPart, documentPartPath, DocumentPartError, joinedDocument, type DocumentPart } from "../lib/monographDocumentParts";
+import { documentPart, documentPartPath, DocumentPartError, joinedDocument, LATEST_READ, laterRead, type DocumentPart } from "../lib/monographDocumentParts";
 
-const part = (at: number, parts: number, body: Record<string, unknown>, version = 4): DocumentPart => ({ schemaVersion: 1, version, part: at, parts, body });
+const part = (at: number, parts: number, body: Record<string, unknown>, version = 4, tag: string | null = null): DocumentPart => ({ schemaVersion: 1, version, part: at, parts, tag, body });
+const HINDI_TAG = "v4-abc-hi-0123456789abcdef";
 const SHELL_ROUTE = join(__dirname, "..", "app", "(reading)", "crafts", "[slug]", "shell", "[version]", "route.ts");
 
 test("a part is read by its number at the version the first part named", () => {
-  expect(documentPartPath("/crafts/Kutch-Ajrakh/monograph", 0, null)).toBe("/crafts/Kutch-Ajrakh/monograph?part=0");
-  expect(documentPartPath("/crafts/Kutch-Ajrakh/monograph", 2, 7)).toBe("/crafts/Kutch-Ajrakh/monograph?version=7&part=2");
+  expect(documentPartPath("/crafts/Kutch-Ajrakh/monograph", 0, LATEST_READ)).toBe("/crafts/Kutch-Ajrakh/monograph?part=0");
+  expect(documentPartPath("/crafts/Kutch-Ajrakh/monograph", 2, { ...LATEST_READ, version: 7 })).toBe("/crafts/Kutch-Ajrakh/monograph?version=7&part=2");
+});
+
+test("a translated document's later parts are read in its language at the tag its first part named", () => {
+  expect(documentPartPath("/crafts/Kutch-Ajrakh/monograph", 0, { ...LATEST_READ, language: "hi" })).toBe("/crafts/Kutch-Ajrakh/monograph?lang=hi&part=0");
+  const first = documentPart({ schemaVersion: 1, version: 4, part: 0, parts: 2, tag: HINDI_TAG, body: { language: "hi" } });
+  expect(first.tag).toBe(HINDI_TAG);
+  expect(documentPartPath("/crafts/Kutch-Ajrakh/monograph", 1, laterRead(first, "hi"))).toBe(`/crafts/Kutch-Ajrakh/monograph?lang=hi&version=4&tag=${HINDI_TAG}&part=1`);
+  expect(() => documentPart({ schemaVersion: 1, version: 4, part: 0, parts: 2, tag: 7, body: {} })).toThrow(DocumentPartError);
 });
 
 test("a server that sends the whole document is read as its only part", () => {
   const whole = { schemaVersion: 1, subjectSlug: "Kutch-Ajrakh", version: 3, specs: { a: { x: 1 } }, fragments: {}, shell: null };
-  expect(documentPart(whole)).toEqual({ schemaVersion: 1, version: 3, part: 0, parts: 1, body: whole });
+  expect(documentPart(whole)).toEqual({ schemaVersion: 1, version: 3, part: 0, parts: 1, tag: null, body: whole });
   expect(joinedDocument([documentPart(whole)])).toEqual(whole);
   expect(documentPart({ schemaVersion: 1, version: 3, part: 1, parts: 3, body: { specs: {} } })).toEqual(part(1, 3, { specs: {} }, 3));
   expect(() => documentPart({ schemaVersion: 1, version: 3, part: 3, parts: 3, body: {} })).toThrow(DocumentPartError);
@@ -35,6 +44,8 @@ test("the parts join back into the whole document, its shell and specs in their 
 
 test("parts read from two readings, or too few of them, refuse to join", () => {
   expect(() => joinedDocument([part(0, 2, {}), part(1, 2, { specs: {} }, 5)])).toThrow("from another reading");
+  expect(() => joinedDocument([part(0, 2, { language: "hi" }, 4, HINDI_TAG), part(1, 2, { shell: "<section></section>" }, 4, "v4-abc")])).toThrow("from another reading");
+  expect(joinedDocument([part(0, 2, { language: "hi" }, 4, HINDI_TAG), part(1, 2, { shell: "<section></section>" }, 4, HINDI_TAG)]).shell).toBe("<section></section>");
   expect(() => joinedDocument([part(0, 3, {}), part(1, 3, { specs: {} })])).toThrow("has 3 parts, not 2");
   expect(() => joinedDocument([part(1, 2, {})])).toThrow("from its first part");
 });

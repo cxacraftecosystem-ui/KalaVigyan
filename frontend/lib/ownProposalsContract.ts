@@ -1,6 +1,7 @@
 import { apiFetch, buildQuery } from "@/lib/api";
 import { DISCIPLINES, type Discipline } from "@/lib/explainerBlockBase";
-import { boolean, dictionary, integer, list, nullable, object, oneOf, parseShape, text, type Shape } from "@/lib/shape";
+import { boolean, dictionary, integer, list, nullable, object, oneOf, optional, parseShape, text, type Shape } from "@/lib/shape";
+import { taskPassageShape, type TaskPassage } from "@/lib/translationContract";
 
 export const PROPOSALS_PATH = "/contributions/proposals";
 export const MY_PROPOSALS_PATH = `${PROPOSALS_PATH}/mine`;
@@ -11,7 +12,7 @@ export const OPEN_WORK_PATH = "/knowledge/open-work";
 export const PROPOSAL_KINDS = ["FACT", "COMPONENT"] as const;
 export const PROPOSAL_STATES = ["PUBLISHED", "APPROVED", "WAITING", "REFUSED", "REJECTED", "WITHDRAWN", "RETIRED"] as const;
 export const GATES = ["QUOTES", "SOURCE", "DUPLICATE", "NOVELTY"] as const;
-export const TASK_KINDS = ["MISSING_FIELD", "THIN_FIELD", "SECTION", "MISSING_COMPONENT", "FLAGSHIP", "PAGE_FORM", "PAGE_LAYOUT", "SECOND_SOURCE", "SOURCES_DIFFER", "DEAD_SOURCE", "UNARCHIVED_SOURCE", "RESOURCE_FACT", "CORROBORATE_FACT", "FIND_ANOTHER_SOURCE", "REVIEW", "MISSING_PICTURE", "ANSWER_GAP"] as const;
+export const TASK_KINDS = ["MISSING_FIELD", "THIN_FIELD", "SECTION", "MISSING_COMPONENT", "FLAGSHIP", "PAGE_FORM", "PAGE_LAYOUT", "SECOND_SOURCE", "SOURCES_DIFFER", "DEAD_SOURCE", "UNARCHIVED_SOURCE", "RESOURCE_FACT", "CORROBORATE_FACT", "FIND_ANOTHER_SOURCE", "REVIEW", "MISSING_PICTURE", "TRANSLATE", "ANSWER_GAP"] as const;
 export const FACT_TASK_KINDS: readonly TaskKind[] = ["ANSWER_GAP", "MISSING_FIELD", "THIN_FIELD"];
 export const COMPONENT_TASK_KINDS: readonly TaskKind[] = ["MISSING_COMPONENT"];
 export const FACT_TASK_SUBJECTS: readonly TaskSubject["kind"][] = ["craft", "category"];
@@ -68,6 +69,7 @@ export type OpenTask = {
   sourceIds: string[];
   prompt: string | null;
   reservedUntil: string | null;
+  passages?: TaskPassage[];
 };
 
 export const GATE_LABELS: Record<Gate, string> = {
@@ -140,7 +142,8 @@ const openTaskShape: Shape<OpenTask> = object<OpenTask>({
   factIds: list(text),
   sourceIds: list(text),
   prompt: nullable(text),
-  reservedUntil: nullable(text)
+  reservedUntil: nullable(text),
+  passages: optional(list(taskPassageShape))
 });
 
 export function stateLabel(item: OwnProposal): string {

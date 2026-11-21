@@ -83,7 +83,10 @@ def test_a_document_is_english_unless_it_names_a_language_tag() -> None:
 
 
 @pytest.mark.parametrize(
-    ("asked", "served"), [(None, "en"), ("en", "en"), (" EN ", "en"), ("hi", "en"), ("ur", "en")]
+    ("asked", "served"),
+    [(None, "en"), ("en", "en"), (" EN ", "en"), ("hi", "hi"), (" HI ", "hi"), ("ur", "ur"), ("fr", "en")],
 )
-def test_only_english_is_served_for_now(asked: str | None, served: str) -> None:
+def test_the_answer_languages_are_served_and_any_other_asks_for_english(
+    asked: str | None, served: str
+) -> None:
     assert served_language(asked) == served

@@ -50,3 +50,18 @@ def test_the_budget_keeps_every_part_under_the_web_cache_item_once_encoded() -> 
     assert compact_json({"a": "धोना"}) == '{"a":"धोना"}'
     with pytest.raises(ValueError, match="bytes of wrapping"):
         document_parts(SMALL, most=64)
+
+
+def test_a_part_carries_the_tag_of_the_reading_it_was_cut_from() -> None:
+    (only,) = document_parts(SMALL)
+    tagged = part_body(only, 7, "v7-abc-hi-0123")
+    expected = {
+        "schemaVersion": 1,
+        "version": 7,
+        "part": 0,
+        "parts": 1,
+        "tag": "v7-abc-hi-0123",
+        "body": SMALL,
+    }
+    assert tagged == expected
+    assert list(tagged) == ["schemaVersion", "version", "part", "parts", "tag", "body"]

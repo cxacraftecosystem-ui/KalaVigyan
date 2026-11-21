@@ -1,0 +1,20 @@
+.kv-monograph :is(p, li, blockquote, figcaption)[data-fallback]::before,
+.kv-monograph :is(p, li, blockquote, figcaption) > span[data-fallback]::before {
+  content: "English";
+  display: inline-block;
+  margin-inline-end: var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-caption);
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  vertical-align: 0.1em;
+}
+
+.kv-monograph :is(p, li, blockquote, figcaption) > span[data-fallback] + span[data-fallback]::before,
+.kv-monograph :is(.margin, .kicker, .chapter-no) [data-fallback]::before,
+.kv-monograph :is(.margin, .kicker, .chapter-no)[data-fallback]::before {
+  content: none;
+}
