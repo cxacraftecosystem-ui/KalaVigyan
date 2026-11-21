@@ -14,14 +14,15 @@ from pydantic import Field
 from app.core.errors import InvalidInput
 from app.models.component_kinds import DOCUMENT_KINDS
 
-from .base import ContractModel
-from .vocabulary import Discipline, PieceKind
+from .base import ContractModel, absent
+from .vocabulary import ANSWER_LANGUAGE_SPECS, CANONICAL_LANGUAGE, Discipline, PieceKind, text_direction
 
 __all__ = [
     "COMPONENT_SLOT",
     "DATA_SLOT",
     "KIT_FILES",
     "KIT_SLOT",
+    "LANGUAGE_TAG",
     "MONOGRAPH_SCHEMA_VERSION",
     "NO_PARTS",
     "SLOT_PATTERN",
@@ -66,6 +67,9 @@ ITALIC_ROLES = ("loc", "bot", "ring", "on")
 MARK_TAGS = {"b": "b", "sub": "sub", "sup": "sup", "mark": "mark"}
 SENTENCE_ATTRS = (("src", "data-src"), ("sid", "data-sid"), ("pair", "data-pair"))
 LINK_ATTRS = (("rel", "rel"), ("target", "target"), ("ask", "data-ask"), ("lang", "lang"))
+LANGUAGE_TAG = r"^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+UNIT_LANGUAGE_MAX_CHARS = 16
+TEXT_SCRIPTS = MappingProxyType({"ur": "Aran"})
 
 Node = str | dict[str, Any]
 
@@ -94,6 +98,9 @@ class TextUnit(ContractModel):
     field: Discipline | None
     nodes: list[Any]
     claim_ids: list[str]
+    lang: str | None = Field(
+        default=None, max_length=UNIT_LANGUAGE_MAX_CHARS, pattern=LANGUAGE_TAG, exclude_if=absent
+    )
 
 
 class ComponentEntry(ContractModel):
@@ -253,7 +260,15 @@ def _unit(content: MonographContent, key: str) -> str:
     unit = content.units.get(key)
     if unit is None:
         raise InvalidInput(f"The template has a slot for unit {key}, which the content lacks")
-    return render_nodes(unit.nodes, content.sources)
+    drawn = render_nodes(unit.nodes, content.sources)
+    return drawn if unit.lang is None else _in_language(drawn, unit.lang)
+
+
+def _in_language(drawn: str, language: str) -> str:
+    if language == CANONICAL_LANGUAGE:
+        return f'<span lang="{language}" dir="ltr" data-fallback="en">{drawn}</span>'
+    script = TEXT_SCRIPTS.get(language, ANSWER_LANGUAGE_SPECS[language].script)
+    return f'<span lang="{language}" dir="{text_direction(language)}" data-script="{script}">{drawn}</span>'
 
 
 def _kit_part(kit: Mapping[str, str], key: str) -> str:

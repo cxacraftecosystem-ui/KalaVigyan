@@ -5,17 +5,20 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, Res
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.public_deps import cached_read, public_reader
-from app.core.db import get_session
+from app.core.db import get_session, release_connection
 from app.core.deps import get_current_user
 from app.core.errors import InvalidInput, Refused
 from app.core.roles import ADMIN, has_rank
 from app.models import User
 from app.research.crafts import SLUG_MAX_CHARS
-from app.research.monograph_document import LANGUAGE_MAX_CHARS, SUBJECT_KINDS
+from app.research.monograph_document import LANGUAGE_MAX_CHARS, SUBJECT_KINDS, served_language
 from app.research.page_layout import LayoutWrite
+from app.services.monograph_document import document_hash
 from app.services.monograph_generated import generated_document
 from app.services.open_work_subjects import subject_by_key
 from app.services.page_layouts import page_layout, write_layout
+from app.services.page_text_index import stored_tag
+from app.services.page_translation_serving import ServedPage, page_in_language
 
 router = APIRouter(tags=["page documents"])
 
@@ -64,7 +67,7 @@ async def get_category_monograph(
     reader: User | None = Depends(public_reader),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
-    return _served(request, response, reader, await _document(session, CATEGORY, asked.slug))
+    return _served(request, response, reader, await _document(session, CATEGORY, asked))
 
 
 @router.get("/families/{slug}/monograph")
@@ -75,7 +78,7 @@ async def get_family_monograph(
     reader: User | None = Depends(public_reader),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
-    return _served(request, response, reader, await _document(session, FAMILY, asked.slug))
+    return _served(request, response, reader, await _document(session, FAMILY, asked))
 
 
 @router.get("/pages/{kind}/{slug}/layout")
@@ -118,12 +121,21 @@ def _served(request: Request, response: Response, reader: User | None, body: dic
     return cached_read(request, response, reader, body)
 
 
-async def _document(session: AsyncSession, kind: str, slug: str) -> dict[str, Any]:
+async def _document(session: AsyncSession, kind: str, asked: AskedDocument) -> dict[str, Any]:
     try:
-        await subject_by_key(session, kind, slug)
+        subject = await subject_by_key(session, kind, asked.slug)
     except InvalidInput as unknown:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(unknown)) from unknown
-    document = await generated_document(session, kind, slug)
+    document = await generated_document(session, kind, asked.slug)
     if document is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, NO_DOCUMENT_DETAIL.format(kind=kind))
-    return document.model_dump(mode="json", by_alias=True)
+    digest = document_hash(document)
+    english = ServedPage(
+        etag=digest, language=document.language, body=document.model_dump(mode="json", by_alias=True)
+    )
+    tag = stored_tag(document.version, digest)
+    language = served_language(asked.language)
+    shown = await page_in_language(session, (kind, subject.slug), english, tag=tag, language=language)
+    if shown.wrote:
+        await release_connection(session)
+    return shown.page.body

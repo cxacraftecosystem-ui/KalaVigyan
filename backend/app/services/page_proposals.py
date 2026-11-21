@@ -52,6 +52,7 @@ from .page_proposals_parts import (
     resolved_component,
     structure_subject_problem,
 )
+from .page_translations import checked_translation
 from .structure_proposals import propose_structure
 
 __all__ = ["PageTools", "PictureStarter", "propose_page"]
@@ -99,6 +100,10 @@ async def propose_page(
         await _record(run, LAYOUT, 0, partial(_layout, run, bundle.layout))
     for index, picture in enumerate(bundle.pictures):
         await _record(run, PICTURE, index, partial(_picture, run, index, picture))
+    if bundle.translation is not None:
+        run.reports += await checked_translation(
+            session, user, subject, bundle.translation, origin=tools.origin, now=now
+        )
     count = sum(report.outcome == REFUSED for report in run.reports)
     total = len(run.reports)
     return PageProposalResult(

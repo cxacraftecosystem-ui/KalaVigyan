@@ -6,7 +6,9 @@ from pydantic import Field, model_validator
 
 from .base import ContractModel, absent
 from .coverage import FieldCoverage
-from .monograph_page import MonographContent
+from .document_translation import DocumentTranslation
+from .monograph_page import LANGUAGE_TAG, MonographContent
+from .vocabulary import ANSWER_LANGUAGES, CANONICAL_LANGUAGE
 
 __all__ = [
     "ENGLISH",
@@ -25,9 +27,8 @@ __all__ = [
 
 MONOGRAPH_DOCUMENT_SCHEMA_VERSION = 1
 SUBJECT_KINDS = ("craft", "family", "category")
-ENGLISH = "en"
-SERVED_LANGUAGES = (ENGLISH,)
-LANGUAGE_TAG = r"^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+ENGLISH = CANONICAL_LANGUAGE
+SERVED_LANGUAGES = ANSWER_LANGUAGES
 LANGUAGE_MAX_CHARS = 16
 SPEC_FILE_SUFFIX = ".json"
 FRAGMENT_FILE_SUFFIX = ".html"
@@ -48,6 +49,7 @@ class MonographDocument(ContractModel):
     shell: str | None = None
     page_url: str
     coverage: FieldCoverage | None = Field(default=None, exclude_if=absent)
+    translation: DocumentTranslation | None = Field(default=None, exclude_if=absent)
 
     @model_validator(mode="after")
     def _each_component_drawn_once(self) -> Self:

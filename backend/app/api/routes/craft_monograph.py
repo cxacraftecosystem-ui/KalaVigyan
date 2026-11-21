@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.public_deps import public_reader, read_headers, unchanged_read
-from app.core.db import get_session
+from app.core.db import get_session, release_connection
 from app.models import Craft, User
-from app.research.monograph_document import LANGUAGE_MAX_CHARS, MonographDocument, served_language
+from app.research.monograph_document import ENGLISH, LANGUAGE_MAX_CHARS, MonographDocument, served_language
 from app.research.why_here import CraftGround
 from app.services import knowledge_view
 from app.services.answering import NOT_FOUND_DETAIL
@@ -18,6 +18,8 @@ from app.services.monograph_document import CRAFT_SUBJECT, document_body, docume
 from app.services.monograph_generated import generated_document
 from app.services.monograph_generated_why_here import ground_hash, with_why_here
 from app.services.open_work_subjects import is_family
+from app.services.page_text_index import stored_tag
+from app.services.page_translation_serving import ServedPage, ShownPage, page_in_language
 from app.services.place_ground import subject_ground
 
 router = APIRouter(prefix="/crafts", tags=["crafts"])
@@ -30,13 +32,6 @@ NO_VERSION_DETAIL = "This craft's monograph has no such version."
 
 AskedLanguage = Annotated[str | None, Query(alias="lang", max_length=LANGUAGE_MAX_CHARS)]
 AskedVersion = Annotated[int | None, Query(ge=1)]
-
-
-@dataclass(frozen=True)
-class ServedDocument:
-    etag: str
-    language: str
-    body: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -74,26 +69,39 @@ async def get_craft_monograph(
     return Response(content, media_type=JSON_TYPE, headers=headers)
 
 
-async def served_document(session: AsyncSession, craft: Craft, asked: DocumentAsk) -> ServedDocument | None:
-    row = await document_row(
-        session, CRAFT_SUBJECT, craft.slug, language=asked.language, version=asked.version
-    )
+async def served_document(session: AsyncSession, craft: Craft, asked: DocumentAsk) -> ServedPage | None:
+    page = (subject_kind(craft), craft.slug)
+    row = await document_row(session, CRAFT_SUBJECT, craft.slug, language=ENGLISH, version=asked.version)
     if row is not None:
         ground = await stored_ground(session, craft)
-        body = dict(with_why_here({**row.document, "language": row.language}, ground))
-        return ServedDocument(
+        english = ServedPage(
             etag=document_etag(row.version, ground_hash(row.contentHash, ground)),
             language=row.language,
-            body=body,
+            body={**row.document, "language": row.language},
         )
+        tag = stored_tag(row.version, row.contentHash)
+        shown = await _in_language(session, page, english, tag=tag, language=asked.language)
+        return ServedPage(shown.etag, shown.language, dict(with_why_here(shown.body, ground)))
     generated = await generated_fallback(session, craft)
     if generated is None or (asked.version is not None and generated.version != asked.version):
         return None
-    return ServedDocument(
-        etag=document_etag(generated.version, document_hash(generated)),
+    digest = document_hash(generated)
+    english = ServedPage(
+        etag=document_etag(generated.version, digest),
         language=generated.language,
         body=document_body(generated),
     )
+    tag = stored_tag(generated.version, digest)
+    return await _in_language(session, page, english, tag=tag, language=asked.language)
+
+
+async def _in_language(
+    session: AsyncSession, page: tuple[str, str], english: ServedPage, *, tag: str, language: str
+) -> ServedPage:
+    shown: ShownPage = await page_in_language(session, page, english, tag=tag, language=language)
+    if shown.wrote:
+        await release_connection(session)
+    return shown.page
 
 
 async def stored_ground(session: AsyncSession, craft: Craft) -> CraftGround | None:

@@ -2,12 +2,14 @@ import type { ReactNode } from "react";
 
 import { AuthoredShell } from "@/components/monograph/AuthoredShell";
 import { DeferredShellSlot } from "@/components/monograph/DeferredShellSlot";
+import { DocumentLanguages } from "@/components/monograph/DocumentLanguages";
 import { KitDefs } from "@/components/monograph/KitDefs";
 import { KitScript } from "@/components/monograph/KitScript";
 import { KitShellTail } from "@/components/monograph/KitShellTail";
 import { ChapterRun, PageCitation, shownPage } from "@/components/monograph/MonographChapters";
 import { MonographRail } from "@/components/monograph/MonographRail";
 import { KitPreferences } from "@/components/monograph/ReaderSettings";
+import type { PageLanguages } from "@/lib/documentLanguages";
 import { MONOGRAPH_KIT_CSS, type MonographDocument } from "@/lib/monographDocument";
 import { railChapters, type PagePlan } from "@/lib/monographRenderLayout";
 import { documentDigest, leadChapters, shellRestPath } from "@/lib/monographRenderShell";
@@ -36,9 +38,9 @@ export function deferredRest(document: MonographDocument, plan: PagePlan, deferr
   return shellRestPath(document.subjectSlug, document.version, document.subjectKind, documentDigest(document));
 }
 
-type MonographPageProps = { document: MonographDocument; masthead?: boolean; deferred?: boolean };
+type MonographPageProps = { document: MonographDocument; masthead?: boolean; deferred?: boolean; languages?: PageLanguages | null };
 
-export function MonographPage({ document: given, masthead = true, deferred = false }: MonographPageProps) {
+export function MonographPage({ document: given, masthead = true, deferred = false, languages = null }: MonographPageProps) {
   const { document, plan } = shownPage(given);
   const rail = <MonographRail chapters={railChapters(plan)} />;
   const later = railAfterMasthead(document, plan, masthead);
@@ -46,6 +48,7 @@ export function MonographPage({ document: given, masthead = true, deferred = fal
   return (
     <div className="kv-monograph ms-[calc(50%-50vw)] w-screen" lang={document.language} data-subject={`${document.subjectKind}:${document.subjectSlug}`} data-version={document.version}>
       <link rel="stylesheet" href={MONOGRAPH_KIT_CSS} precedence="default" />
+      {languages ? <DocumentLanguages kind={document.subjectKind} slug={document.subjectSlug} current={document.language} languages={languages.languages} translation={document.translation} /> : null}
       {later ? null : rail}
       {document.shell !== null ? <AuthoredShell document={document} shell={document.shell} rest={rest} /> : <DocumentChapters document={document} plan={plan} masthead={masthead} rail={later ? rail : null} rest={rest} />}
       {document.shell === null ? <KitDefs document={given} /> : null}

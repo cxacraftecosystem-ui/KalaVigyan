@@ -2,6 +2,7 @@ import {
   LANGUAGE_TAG,
   MONOGRAPH_DOCUMENT_PATH,
   SUBJECT_KINDS,
+  type DocumentTranslation,
   type MonographComponent,
   type MonographContent,
   type MonographDocument,
@@ -74,7 +75,18 @@ const unitShape: Shape<MonographUnit> = object<MonographUnit>({
   tag: text,
   field: nullable(text),
   nodes: list(monographNodeShape),
-  claimIds: list(text)
+  claimIds: list(text),
+  lang: optional(matching(LANGUAGE_TAG, "a language tag"))
+});
+
+const translationShape: Shape<DocumentTranslation> = object<DocumentTranslation>({
+  sourceLanguage: oneOf(["en"] as const),
+  sourceVersion: positive(integer),
+  script: matching(/^[A-Z][a-z]{3}$/, "a script code"),
+  direction: oneOf(["ltr", "rtl"] as const),
+  passages: integer,
+  translated: integer,
+  held: integer
 });
 
 const componentShape: Shape<MonographComponent> = object<MonographComponent>({
@@ -120,7 +132,8 @@ export const monographDocumentShape: Shape<MonographDocument> = object<Monograph
   fragments: dictionary(ANY_KEY, text),
   shell: nullable(text),
   pageUrl: text,
-  coverage: optional(fieldCoverageShape)
+  coverage: optional(fieldCoverageShape),
+  translation: optional(translationShape)
 });
 
 export function checkedMonographDocument(document: MonographDocument): MonographDocument {

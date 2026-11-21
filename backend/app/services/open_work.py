@@ -27,6 +27,7 @@ from app.research.coverage import FieldCount, FieldCoverage
 from app.research.open_work import (
     NO_ITEMS,
     RESERVATION_TIME,
+    TASK_ITEMS_MAX,
     CoverageTargets,
     FieldStanding,
     Hold,
@@ -53,6 +54,7 @@ from .open_work_healing import Healing, subject_healing, with_healing
 from .open_work_pages import monograph_layouts
 from .open_work_pictures import picture_tasks
 from .open_work_subjects import CATEGORY, WorkSubject, subject_by_key, work_subjects
+from .open_work_translations import translation_tasks
 
 __all__ = [
     "RESERVATION_MINUTES",
@@ -104,7 +106,11 @@ async def list_open_work(
     reviewed = reviewed_queues(viewer.review_role) if filters.subject_filter() is None else ()
     queues = await review_queues(session, reviewed)
     kept = chosen_tasks(
-        [*open_tasks(standings, queues, viewer), *await picture_tasks(session, standings)],
+        [
+            *open_tasks(standings, queues, viewer),
+            *await picture_tasks(session, standings),
+            *await translation_tasks(session, standings),
+        ],
         filters,
         holds=await live_holds(session, now=now),
         closed=await proposed_tasks(session),
@@ -122,7 +128,11 @@ async def open_task(session: AsyncSession, key: TaskKey, *, site: str) -> OpenTa
     subject = await subject_by_key(session, key.subject_kind, key.slug)
     standings = await subject_standings(session, [subject], site=site)
     wanted = key.text()
-    found = [*subject_tasks(standings[0]), *await picture_tasks(session, standings)]
+    found = [
+        *subject_tasks(standings[0]),
+        *await picture_tasks(session, standings),
+        *await translation_tasks(session, standings, passages=TASK_ITEMS_MAX),
+    ]
     return next((task for task in found if task.key == wanted), None)
 
 

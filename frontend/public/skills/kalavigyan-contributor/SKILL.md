@@ -342,6 +342,30 @@ asked in the last 90 days, the fields that would answer it and what the answer l
   in each of its fields.
 - Never try to reach the person who asked, and never put a personal detail from a question in a fact.
 
+## Pages in other languages
+
+A page in another language is the same page, sentence by sentence. Each page with a monograph is
+offered as a `TRANSLATE` task per language, `TRANSLATE:<kind>:<slug>:<language>`: the language of
+the craft's home state first (Gujarati for a craft of Gujarat, Tamil for one of Tamil Nadu), then
+Hindi, and Hindi alone for a family or category. Its count is the passages still to translate;
+`reserve_tasks` and `my_work` list up to 20 of them, each with its `key`, `source_hash`, its
+English and its `texts`.
+
+- Give one translated text for each English text, in order. The texts listed in `fixed` (names,
+  botanical names, quotes, formula parts) stay exactly as they stand; the text listed in `cited`
+  ends the sentence and carries its citation, so it is never empty. Citations are not yours to
+  write: the page keeps the English passage's citations.
+- Keep every number, unit and formula, add nothing the English does not say, write in the
+  language's own script and leave a name in the script a source gives it: never transliterate a
+  craft's name yourself.
+- Send the passages as the `translation` part of a bundle (`language`, `task_key`, `passages` of
+  `key`, `source_hash` and `texts`), first to `preview_page`, which draws the page in that language
+  with each passage's checks, then to `propose_page`. Each passage is checked on its own and a
+  reviewer who reads the language approves it, unless your account's record already does.
+- When an English sentence changes, its translation is held and the page shows the English until
+  the passage is translated again; held passages come back in the task. The task closes when no
+  passage is left.
+
 ## Never
 
 - Never propose prose or HTML: facts, structure, components, pictures and pages only.

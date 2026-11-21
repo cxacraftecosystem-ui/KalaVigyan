@@ -8,7 +8,7 @@ from typing import Annotated, Literal, Self
 
 from pydantic import Field, model_validator
 
-from .base import ContractModel, empty
+from .base import ContractModel, absent, empty
 from .component_proposals import ComponentMatch
 from .component_specs_general_delivery import CLAIMS_PER_UNIT_MAX, UnitKey
 from .crafts import SLUG_MAX_CHARS
@@ -17,6 +17,7 @@ from .layout_proposals import LAYOUT_NOTE_MAX_CHARS
 from .monograph_document import SUBJECT_KINDS
 from .own_proposals import ComponentProposalBody
 from .page_layout import LAYOUT_ENTRIES_MAX, PageLayoutEntry, check_entries
+from .page_translations import PageTranslationPart
 from .structure_proposals import StructureProposal
 from .upload_links import CLAIMS_MAX, SlotDeclaration, UploadStart
 
@@ -36,6 +37,7 @@ __all__ = [
     "REFUSED",
     "SHOWN",
     "STRUCTURE",
+    "TRANSLATION",
     "FactRef",
     "PageBundle",
     "PageComponent",
@@ -54,12 +56,13 @@ STRUCTURE_MAX = 20
 COMPONENTS_MAX = 10
 PICTURES_MAX = 10
 NOTE_MAX_CHARS = 500
-FACT, STRUCTURE, COMPONENT, LAYOUT, PICTURE = PART_KINDS = (
+FACT, STRUCTURE, COMPONENT, LAYOUT, PICTURE, TRANSLATION = PART_KINDS = (
     "fact",
     "structure",
     "component",
     "layout",
     "picture",
+    "translation",
 )
 ACCEPTED, REFUSED = PROPOSAL_OUTCOMES = ("ACCEPTED", "REFUSED")
 SHOWN, LISTED = "SHOWN", "LISTED"
@@ -136,13 +139,16 @@ class PageBundle(ContractModel):
     components: list[PageComponent] = Field(default_factory=list, max_length=COMPONENTS_MAX)
     layout: PageLayoutPart | None = None
     pictures: list[PagePicture] = Field(default_factory=list, max_length=PICTURES_MAX)
+    translation: PageTranslationPart | None = Field(default=None, exclude_if=absent)
     note: str | None = Field(default=None, min_length=1, max_length=NOTE_MAX_CHARS)
 
     @model_validator(mode="after")
     def _holds_work(self) -> Self:
-        if not (self.facts or self.structure or self.components or self.layout or self.pictures):
+        held = (self.facts, self.structure, self.components, self.layout, self.pictures, self.translation)
+        if not any(held):
             raise ValueError(
-                "a page bundle holds at least one fact, structure item, component, layout or picture"
+                "a page bundle holds at least one fact, structure item, component, layout, picture or "
+                "translation"
             )
         named = [ref for component in self.components for refs in component.cites.values() for ref in refs]
         named += _refs(picture.claim_ids for picture in self.pictures)

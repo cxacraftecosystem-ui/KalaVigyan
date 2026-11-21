@@ -1,5 +1,6 @@
 import { createElement } from "react";
 
+import { unitLanguage } from "@/lib/documentLanguages";
 import type { MonographNode, MonographUnit } from "@/lib/monographDocument";
 import type { MonographSources } from "@/lib/monographRender";
 import { nodeElements } from "@/lib/monographRenderElements";
@@ -14,7 +15,7 @@ function checkedTag(tag: string): string {
 }
 
 export function UnitView({ unit, sources, as, className, id }: UnitViewProps) {
-  return createElement(checkedTag(as ?? unit.tag), { className, id }, nodeElements(unit.nodes, sources));
+  return createElement(checkedTag(as ?? unit.tag), { className, id, ...unitLanguage(unit) }, nodeElements(unit.nodes, sources));
 }
 
 export type NodesViewProps = { nodes: readonly MonographNode[]; sources: MonographSources; as?: string; className?: string };

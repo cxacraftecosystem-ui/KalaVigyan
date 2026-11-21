@@ -15,11 +15,13 @@ from app.core.roles import Capability
 from app.models.enums import DISCIPLINES
 from app.models.open_work import TASK_KEY_COLUMN_CHARS
 
-from .base import ContractModel
+from .base import ContractModel, empty
 from .crafts import SLUG_MAX_CHARS
 from .image_contributions_tasks import PICTURE_TASK, is_picture_detail
 from .open_work_flagship_backlog import FLAGSHIP_TASK
 from .open_work_gap_keys import GAP_TASK, is_gap_detail
+from .open_work_translation_keys import TRANSLATE_TASK, is_translation_detail
+from .translation_passages import TaskPassage
 from .vocabulary import Discipline
 
 __all__ = [
@@ -86,6 +88,7 @@ TASK_KINDS = (
     "FIND_ANOTHER_SOURCE",
     "REVIEW",
     PICTURE_TASK,
+    TRANSLATE_TASK,
     GAP_TASK,
 )
 UNRESERVABLE_KINDS = frozenset({"REVIEW"})
@@ -214,6 +217,7 @@ class OpenTask(ContractModel):
     source_ids: list[str] = Field(default_factory=list, max_length=TASK_ITEMS_MAX)
     prompt: str | None = None
     reserved_until: datetime | None = None
+    passages: list[TaskPassage] = Field(default_factory=list, max_length=TASK_ITEMS_MAX, exclude_if=empty)
 
 
 class WorkFilters(ContractModel):
@@ -361,6 +365,7 @@ def parse_task_key(key: str) -> TaskKey:
         and detail not in COMPONENT_NEEDS
         and not is_picture_detail(detail)
         and not is_gap_detail(detail)
+        and not is_translation_detail(detail)
     ):
         raise InvalidInput(f"{key} names neither a field nor a component need")
     return TaskKey(parts[0], parts[1], parts[2], detail)

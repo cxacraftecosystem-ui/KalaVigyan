@@ -1,5 +1,6 @@
 import uuid
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -15,6 +16,7 @@ from app.research.monograph_document import MonographDocument
 from app.research.page_layout import LayoutWrite, PageLayout
 from app.services.monograph_generated_assembly import assembled_document
 from app.services.monograph_generated_drawings import Drawings
+from app.services.page_translation_serving import ServedPage, ShownPage
 
 from .generated_parts import generated, hero_layout
 
@@ -33,6 +35,17 @@ class QuietSession:
         self.ended.append("rollback")
 
 
+class AskedLanguages:
+    def __init__(self) -> None:
+        self.asked: list[tuple[Any, str]] = []
+
+    async def in_language(
+        self, session: Any, page: Any, english: ServedPage, *, tag: str, language: str
+    ) -> ShownPage:
+        self.asked.append((page, language))
+        return ShownPage(english, wrote=False)
+
+
 @pytest.fixture
 def held(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
     state: dict[str, Any] = {
@@ -46,7 +59,7 @@ def held(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
     async def subject(session: Any, kind: str, slug: str) -> object:
         if (kind, slug) not in KNOWN:
             raise InvalidInput(f"No {kind} has the slug {slug}.")
-        return object()
+        return SimpleNamespace(slug=slug)
 
     async def document(session: Any, kind: str, slug: str) -> MonographDocument | None:
         return state["document"]
@@ -62,6 +75,8 @@ def held(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
         state["writes"].append((kind, slug, actor.role, len(written.entries)))
         return state["layout"].model_copy(update={"version": 3})
 
+    state["languages"] = AskedLanguages()
+    monkeypatch.setattr(page_documents, "page_in_language", state["languages"].in_language)
     monkeypatch.setattr(page_documents, "subject_by_key", subject)
     monkeypatch.setattr(page_documents, "generated_document", document)
     monkeypatch.setattr(page_documents, "page_layout", layout)
@@ -98,13 +113,17 @@ def test_a_category_or_family_monograph_is_a_public_read_with_an_etag(
 @pytest.mark.parametrize(
     "path", ["/api/categories/Textile-Craft-Category/monograph", "/api/families/Other-Textiles/monograph"]
 )
-def test_a_category_or_family_monograph_is_served_in_english_whatever_language_is_asked(
+def test_a_category_or_family_monograph_asks_for_the_language_and_is_english_without_a_translation(
     path: str, held: dict[str, Any]
 ) -> None:
     answer = client(held).get(path, params={"lang": "hi"})
     assert answer.status_code == 200
     assert answer.headers["Content-Language"] == "en"
     assert answer.json()["language"] == "en"
+    assert [language for _, language in held["languages"].asked] == ["hi"]
+    unknown = client(held).get(path, params={"lang": "xx"})
+    assert unknown.status_code == 200
+    assert held["languages"].asked[-1][1] == "en"
 
 
 def test_an_unknown_subject_or_one_with_nothing_published_is_a_404(held: dict[str, Any]) -> None:

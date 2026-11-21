@@ -22,7 +22,16 @@ export type MonographSource = {
   dossierSourceId: string | null;
 };
 export type MonographQuote = { source: string; locator: string | null; quote: string | null };
-export type MonographUnit = { chapter: string; tag: string; field: string | null; nodes: MonographNode[]; claimIds: string[] };
+export type MonographUnit = { chapter: string; tag: string; field: string | null; nodes: MonographNode[]; claimIds: string[]; lang?: string };
+export type DocumentTranslation = {
+  sourceLanguage: "en";
+  sourceVersion: number;
+  script: string;
+  direction: "ltr" | "rtl";
+  passages: number;
+  translated: number;
+  held: number;
+};
 export type MonographComponent = {
   label: string;
   chapter: string;
@@ -59,4 +68,5 @@ export type MonographDocument = {
   shell: string | null;
   pageUrl: string;
   coverage?: FieldCoverage;
+  translation?: DocumentTranslation;
 };

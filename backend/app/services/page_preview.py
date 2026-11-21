@@ -50,6 +50,7 @@ from .page_proposals_parts import (
     resolved_component,
     structure_subject_problem,
 )
+from .page_translation_preview import only_translation, preview_translation, previewed_translation
 from .structure_proposals import curated_subject
 from .structure_proposals_dossier import dossier_problem
 from .structure_proposals_page import target_problem
@@ -90,6 +91,8 @@ READY = (
 async def preview_page(
     session: AsyncSession, user: User, bundle: PageBundle, *, site: str, now: datetime
 ) -> PagePreviewResult:
+    if only_translation(bundle):
+        return await preview_translation(session, user, bundle, site=site, now=now)
     subject = await subject_by_key(session, bundle.subject.kind, bundle.subject.slug)
     if has_authored_content(subject.slug):
         raise InvalidInput(AUTHORED.format(slug=subject.slug))
@@ -102,6 +105,9 @@ async def preview_page(
     document = None if parts is None else assembled_document(parts, Drawings())
     if document is None:
         raise InvalidInput(THIN)
+    if bundle.translation is not None:
+        document, translated = await previewed_translation(session, subject, document, bundle.translation)
+        reports += translated
     row, token = await store_preview(session, user, document, now=now)
     return PagePreviewResult(
         subject=PageSubject(kind=subject.kind, slug=subject.slug),

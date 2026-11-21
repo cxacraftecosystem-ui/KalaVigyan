@@ -13,9 +13,11 @@ from app.core.db import get_session
 from app.main import create_app
 from app.research.monograph_document import MonographDocument, served_language
 from app.services.answering import NOT_FOUND_DETAIL
+from app.services.page_translation_serving import ServedPage, ShownPage
 
 PATH = "/api/crafts/kutch-ajrakh/monograph"
 DIGEST = "a" * 64
+AJRAKH = SimpleNamespace(slug="Kutch-Ajrakh", isCatchAll=False, stateOfPractice=["Gujarat"])
 STORED = {
     "schemaVersion": 1,
     "subjectKind": "craft",
@@ -48,6 +50,16 @@ GENERATED = MonographDocument.model_validate(
 @dataclass
 class Calls:
     made: list[str] = field(default_factory=list)
+    languages: list[tuple[tuple[str, str], str, str]] = field(default_factory=list)
+
+    async def in_language(
+        self, session: Any, page: tuple[str, str], english: ServedPage, *, tag: str, language: str
+    ) -> ShownPage:
+        self.languages.append((page, tag, language))
+        if language != "hi":
+            return ShownPage(english, wrote=False)
+        variant = ServedPage(f"{english.etag}-hi-{'b' * 16}", "hi", {**english.body, "language": "hi"})
+        return ShownPage(variant, wrote=False)
 
 
 def served(
@@ -64,7 +76,7 @@ def served(
 
     async def resolve_craft(session: Any, slug: str) -> Any:
         calls.made.append(f"resolve {slug}")
-        return SimpleNamespace(slug="Kutch-Ajrakh") if known else None
+        return AJRAKH if known else None
 
     async def document_row(session: Any, subject_kind: str, slug: str, *, language: str, version: Any) -> Any:
         calls.made.append(f"stored {subject_kind} {slug} {language} {version}")
@@ -86,6 +98,7 @@ def served(
     monkeypatch.setattr(route, "document_row", document_row)
     monkeypatch.setattr(route, "generated_fallback", generated_fallback)
     monkeypatch.setattr(route, "stored_ground", stored_ground)
+    monkeypatch.setattr(route, "page_in_language", calls.in_language)
     app = create_app()
     app.dependency_overrides[get_session] = session
     return TestClient(app), calls
@@ -113,9 +126,9 @@ def test_a_document_stored_without_its_language_is_served_with_its_rows_language
     assert http.get(PATH).json() == {**older, "language": "en"}
 
 
-@pytest.mark.parametrize("asked", ["hi", "ur", "EN", "kn-Knda"])
-def test_a_request_for_another_language_gets_the_english_document_said_to_be_english(
-    monkeypatch: pytest.MonkeyPatch, asked: str
+@pytest.mark.parametrize(("asked", "named"), [("ur", "ur"), ("EN", "en"), ("kn-Knda", "en"), ("xx", "en")])
+def test_a_language_without_a_translation_gets_the_english_document_said_to_be_english(
+    monkeypatch: pytest.MonkeyPatch, asked: str, named: str
 ) -> None:
     http, calls = served(monkeypatch)
     answer = http.get(PATH, params={"lang": asked})
@@ -123,7 +136,22 @@ def test_a_request_for_another_language_gets_the_english_document_said_to_be_eng
     assert answer.headers["content-language"] == "en"
     assert answer.json()["language"] == "en"
     assert calls.made[-1] == "stored craft Kutch-Ajrakh en None"
-    assert served_language(asked) == "en"
+    assert calls.languages == [(("craft", "Kutch-Ajrakh"), f"v3-{DIGEST}", named)]
+    assert served_language(asked) == named
+
+
+def test_a_translated_page_is_served_in_its_language_under_its_own_tag(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    http, calls = served(monkeypatch)
+    answer = http.get(PATH, params={"lang": "hi"})
+    assert answer.status_code == 200
+    assert answer.headers["content-language"] == "hi"
+    assert answer.json()["language"] == "hi"
+    assert answer.headers["etag"] == f'"v3-{DIGEST}-hi-{"b" * 16}"'
+    assert calls.made[-1] == "stored craft Kutch-Ajrakh en None"
+    english = http.get(PATH)
+    assert english.headers["etag"] == f'"v3-{DIGEST}"'
 
 
 def test_a_versioned_request_reads_that_version_and_an_unknown_one_is_not_found(

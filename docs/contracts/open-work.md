@@ -69,6 +69,7 @@ at most 20 ids; `count` is the whole number.
 | `CORROBORATE_FACT` | shown facts with a quote that failed and another that holds, per primary field | `CORROBORATE_FACT:...[:<FIELD>]` | facts | none (`propose_source`) |
 | `FIND_ANOTHER_SOURCE` | shown facts resting only on rotten sources (`nightly-upkeep.md`, 1a); `factIds` the facts, `sourceIds` the sources | `FIND_ANOTHER_SOURCE:<subject>:<slug>` | facts | none (`propose_source`) |
 | `REVIEW` | a review queue holds items, shown to its reviewers only | `REVIEW:<QUEUE>` | items waiting | none |
+| `TRANSLATE` | a page with a monograph has passages not yet translated into a language it is offered in (Pages in other languages, below) | `TRANSLATE:<subject>:<slug>:<language>` | passages to translate | none (`preview_page`, `propose_page`) |
 | `ANSWER_GAP` | readers asked about a craft or family and the answer was thin or found no cited evidence (Questions readers asked, below) | `ANSWER_GAP:<subject>:<slug>:gap-<32 hex>` | readers who asked in the last 90 days | `research_field` |
 
 `<subject>` is `craft`, `family` or `category`. A fact with no primary field gives a key without
@@ -240,6 +241,38 @@ anonymised by rules (`research/open_work_gap_privacy.anonymised`):
 
 The answers stay private as before; both tables have row level security and no grants to the
 public roles.
+
+## Pages in other languages (decision 0117)
+
+Code: `research/translation_passages.py` (a passage's texts, its hash, `TaskPassage`),
+`research/translation_regions.py` (the languages a page is offered in and their priority),
+`research/open_work_translation_keys.py` (`TRANSLATE`), `services/page_text_index.py` (the
+passages of each page's English document, `PageTextUnit`) and `services/open_work_translations.py`
+(the tasks); the translations themselves are `monograph-document.md`'s.
+
+- **Which languages.** A craft's or family's home state (`Craft.stateOfOrigin`) gives its
+  regional language among the thirteen answer languages (`STATE_LANGUAGES`: Gujarat `gu`,
+  Maharashtra `mr`, West Bengal and Tripura `bn`, Assam `as`, Tamil Nadu and Puducherry `ta`,
+  Kerala `ml`, Karnataka `kn`, Andhra Pradesh and Telangana `te`, Odisha `or`, Punjab `pa`, Jammu
+  and Kashmir `ur`, the Hindi-speaking states `hi`); every page is also offered in Hindi, and a
+  category in Hindi alone. A state outside the table (All India, Goa, the north-east but Assam and
+  Tripura) offers Hindi alone.
+- **One task per page and language** with passages left, `TRANSLATE:<subject>:<slug>:<language>`.
+  Its count is the passages of the page's English document (every text unit with a letter outside
+  a fixed mark, the masthead title aside) that have no live translation (served or waiting) for
+  their current hash. Its priority is the page's (`subject_priority`, the most read and owner's
+  crafts first) in its home language and one step lower in Hindi when Hindi is not its home
+  language.
+- **The passages** come from `PageTextUnit`, refreshed whenever the page's English document is
+  served or read for translation and its tag changed, so listing open work never builds a
+  document. A listed task carries none; the task `reserve_tasks`, `my_work` and claims return
+  carries up to 20 (`TASK_ITEMS_MAX`) of its open passages as `passages`, each `{key,
+  sourceHash, english, texts, fixed, cited}`.
+- **Taken and closed** by a page bundle's `translation` part naming the task as `task_key`
+  (`preview_page` first, then `propose_page`; the site's form posts the same bundle). A part naming
+  another task is refused whole. A live reservation ends `COMPLETED` once a part leaves no passage
+  of the page without a live translation; until then it stays held, so the work can go on over
+  several bundles.
 
 ## Reservations (`TaskReservation`)
 

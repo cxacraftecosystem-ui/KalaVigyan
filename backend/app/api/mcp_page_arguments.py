@@ -10,6 +10,7 @@ from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonS
 from app.research.component_proposals import SUBJECT_LINK
 from app.research.knowledge_writes import FactProposal
 from app.research.monograph_document import SUBJECT_KINDS
+from app.research.open_work_translation_keys import TRANSLATION_LANGUAGES
 from app.research.page_drafts import DRAFT_PARTS, SUPPLIED_PER_DRAFT_MAX, DraftAddition, PageLists
 from app.research.page_proposals import (
     COMPONENTS_MAX,
@@ -23,6 +24,7 @@ from app.research.page_proposals import (
     PagePicture,
     PageSubject,
 )
+from app.research.page_translations import TRANSLATION_NOTE_MAX_CHARS, TRANSLATION_PASSAGES_MAX
 from app.research.structure_proposals import StructureProposal
 
 from .mcp_studio_arguments import StudioArguments
@@ -45,7 +47,11 @@ FACT = "fact"
 BUNDLE = (
     "One page's parts: subject {kind, slug} and any of facts, structure, components ({proposal, cites}), "
     "layout {base_version, entries}, pictures and a note, each part exactly as edit_draft's add takes it "
-    "(its input schema holds every part's fields); one part alone works"
+    "(its input schema holds every part's fields), and translation; one part alone works"
+)
+TRANSLATION_PART = (
+    "The page in another language: language, the TRANSLATE task_key and passages, each the key and source_hash "
+    "of a passage the task lists with texts, one translated text for each English text in order"
 )
 NEEDS_SPEC = (
     "a component is delivered finished: give its spec (the kind's spec data) and the units it places, each "
@@ -66,7 +72,8 @@ def undelivered(components: Sequence[PageComponent]) -> str | None:
 
 def bundle_parts(bundle: PageBundle) -> int:
     held = (bundle.facts, bundle.structure, bundle.components, bundle.pictures)
-    return sum(len(part) for part in held) + int(bundle.layout is not None)
+    translated = 0 if bundle.translation is None else len(bundle.translation.passages)
+    return sum(len(part) for part in held) + int(bundle.layout is not None) + translated
 
 
 class DraftAdd(Arguments):
@@ -155,6 +162,29 @@ def _parts(most: int) -> dict[str, Any]:
     return {"type": "array", "items": {"type": "object"}, "maxItems": most}
 
 
+def translation_schema() -> dict[str, Any]:
+    passage = {
+        "type": "object",
+        "properties": {
+            "key": {"type": "string"},
+            "source_hash": {"type": "string"},
+            "texts": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": ["key", "source_hash", "texts"],
+    }
+    return {
+        "type": "object",
+        "description": TRANSLATION_PART,
+        "properties": {
+            "language": {"type": "string", "enum": list(TRANSLATION_LANGUAGES)},
+            "passages": {"type": "array", "items": passage, "maxItems": TRANSLATION_PASSAGES_MAX},
+            "task_key": {"type": "string"},
+            "note": {"type": "string", "maxLength": TRANSLATION_NOTE_MAX_CHARS},
+        },
+        "required": ["language", "passages"],
+    }
+
+
 def bundle_schema() -> dict[str, Any]:
     subject = {
         "type": "object",
@@ -167,6 +197,7 @@ def bundle_schema() -> dict[str, Any]:
         "components": _parts(COMPONENTS_MAX),
         "layout": {"type": "object"},
         "pictures": _parts(PICTURES_MAX),
+        "translation": translation_schema(),
         "note": {"type": "string", "maxLength": NOTE_MAX_CHARS},
     }
     return {
