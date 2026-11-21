@@ -225,7 +225,7 @@ def task_problem(draft: ComponentProposalDraft) -> str | None:
     if key.kind == FLAGSHIP_TASK:
         return flagship_problem(key, draft.kind, proposal_crafts(draft), delivered=draft.delivered)
     if key.kind != COMPONENT_TASK or key.detail not in COMPONENT_NEEDS:
-        return f"{draft.task_key} is not a missing-component or flagship task; only those are completed by a proposal"
+        return f"{draft.task_key} is not a missing-component task or a flagship task; only those are completed by a proposal"
     if draft.kind not in COMPONENT_NEEDS[key.detail]:
         return f"a {key.detail} task is completed by a component of kind {', '.join(COMPONENT_NEEDS[key.detail])}"
     if key.slug not in proposal_crafts(draft):
