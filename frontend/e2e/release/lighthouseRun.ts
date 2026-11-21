@@ -2,6 +2,8 @@ import { execFile } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { promisify } from "node:util";
 
+import { previewBlockedUrls } from "../production/preview";
+
 import { LIGHTHOUSE_CATEGORIES, type LighthouseForm, type LighthouseResult } from "./auditBudgets";
 
 export type LighthouseRun = { url: string; port: number; form: LighthouseForm; outputBase: string; html: boolean };
@@ -17,7 +19,8 @@ export function reportPath(audit: Pick<LighthouseRun, "outputBase">): string {
 
 export function lighthouseArgs(audit: LighthouseRun): string[] {
   const outputs = audit.html ? ["--output=json", "--output=html", `--output-path=${audit.outputBase}`] : ["--output=json", `--output-path=${reportPath(audit)}`];
-  return [audit.url, `--port=${audit.port}`, ...outputs, `--only-categories=${LIGHTHOUSE_CATEGORIES.join(",")}`, "--quiet", ...audit.form.flags];
+  const blocked = previewBlockedUrls(audit.url).map((pattern) => `--blocked-url-patterns=${pattern}`);
+  return [audit.url, `--port=${audit.port}`, ...outputs, `--only-categories=${LIGHTHOUSE_CATEGORIES.join(",")}`, "--quiet", ...blocked, ...audit.form.flags];
 }
 
 export async function runLighthouse(audit: LighthouseRun): Promise<LighthouseResult> {
