@@ -1,0 +1,74 @@
+{
+  "hero": {
+    "eyebrow": "AI CoE · IIT Kharagpur",
+    "name": "KalaVigyan",
+    "titleWrap": 18,
+    "tagline": "The science behind India's crafts: each craft read as a cited monograph, each question answered with a source under every sentence, each fact contributed over MCP.",
+    "chips": ["Next.js 16", "FastAPI", "Postgres + pgvector", "MCP server", "Cited to the quote"],
+    "motifCaption": "source · quote · cite",
+    "label": "KalaVigyan: the science behind India's crafts, each craft read as a cited monograph, each question answered with a source under every sentence, each fact contributed over MCP"
+  },
+  "cards": {
+    "label": "What KalaVigyan does: crafts as cited monographs, answers with every sentence cited, the atlas and its map layers, a studio for contributors' AI over MCP, lessons and voice, and open data with a DOI",
+    "columns": 3,
+    "items": [
+      { "icon": "book-open", "tag": "Crafts", "title": "Every craft a monograph", "body": "Each craft reads as one cited document: process, chemistry, place, people and pictures, built from stored facts." },
+      { "icon": "scroll-text", "tag": "Answers", "title": "Every sentence cited", "body": "Ask in any of 13 languages; each sentence links to the quoted passage it rests on, or it is not shown." },
+      { "icon": "map", "tag": "Atlas", "title": "The atlas and its maps", "body": "Every craft's districts on the Survey of India outline, with relief, rivers and mineral layers." },
+      { "icon": "bot", "tag": "MCP", "title": "A studio for your AI", "body": "Contributors' agents search, read and quote sources, then propose facts, structure, components and pages." },
+      { "icon": "notebook-pen", "tag": "Learning", "title": "Lessons and voice", "body": "Professors make lesson packs and files from explainers, and a finished explainer can be read aloud." },
+      { "icon": "archive", "tag": "Open data", "title": "Open data with a DOI", "body": "A reproducible release of facts, sources, crafts and structure, deposited on Zenodo under CC BY 4.0." }
+    ]
+  },
+  "cards:mcp": {
+    "label": "The MCP studio in six groups: reading, sources, work, proposing, pages and pictures",
+    "columns": 3,
+    "items": [
+      { "icon": "book", "tag": "Reading", "title": "Read what is known", "body": "Find crafts, read a page's fields, facts and components, and ask KalaVigyan a cited question." },
+      { "icon": "search", "tag": "Sources", "title": "Search and read sources", "body": "The registries, reader and quote matcher the gates use, and sources only the contributor can open." },
+      { "icon": "workflow", "tag": "Work", "title": "Take open work", "body": "List open work, reserve tasks, steward a craft and follow every proposal made." },
+      { "icon": "send", "tag": "Proposing", "title": "Propose what a page needs", "body": "Up to 25 quoted facts at a time, a page's structure and new sources, each passed through the gates." },
+      { "icon": "file-text", "tag": "Pages", "title": "Build and preview a page", "body": "Edit a draft, preview it against the page checklist, then propose the finished page." },
+      { "icon": "camera", "tag": "Pictures", "title": "Give pictures", "body": "Pictures from a link, a file or an upload, each screened before review." }
+    ]
+  },
+  "pipeline": {
+    "label": "How knowledge flows: sources, gates, knowledge, pages and answers, and MCP contributors",
+    "hop": 1.2,
+    "stages": [
+      { "icon": "search", "title": "Sources", "sub": "Scholarly, reference, web and field" },
+      { "icon": "shield-check", "title": "Gates", "sub": "Quotes matched, sources graded" },
+      { "icon": "database", "title": "Knowledge", "sub": "Claims with evidence levels" },
+      { "icon": "book-open", "title": "Pages and answers", "sub": "Monographs and cited explainers" },
+      { "icon": "bot", "title": "MCP contributors", "sub": "Agents propose, preview, submit" }
+    ]
+  },
+  "stats": {
+    "label": "At a glance: six roles, three answer depths, thirteen answer languages and nine craft categories",
+    "tiles": [
+      { "icon": "users", "kicker": "Roles", "value": "6", "label": "Student to Master Admin" },
+      { "icon": "layers", "kicker": "Depths", "value": "3", "label": "Basic, Detailed and Expert" },
+      { "icon": "languages", "kicker": "Languages", "value": "13", "label": "English and 12 Indian languages" },
+      { "icon": "compass", "kicker": "Categories", "value": "9", "label": "On the IIT craft master list" }
+    ]
+  },
+  "timeline": {
+    "label": "Rounds: 1 fields, gates and OAuth; 2 the review queue and uploads; 3 one monograph template; 4 every craft a document; 5 the answer page and every field; 6 curated crafts as documents; 7 knowledge made over MCP",
+    "items": [
+      { "date": "19 Nov", "title": "Round 1", "sub": "Fields, gates, OAuth" },
+      { "date": "19 Nov", "title": "Round 2", "sub": "Review queue, uploads" },
+      { "date": "19 Nov", "title": "Round 3", "sub": "One monograph template" },
+      { "date": "20 Nov", "title": "Round 4", "sub": "Every craft a document" },
+      { "date": "20 Nov", "title": "Round 5", "sub": "Answer page, every field" },
+      { "date": "20 Nov", "title": "Round 6", "sub": "Curated crafts as documents" },
+      { "date": "20 Nov", "title": "Round 7", "sub": "Knowledge made over MCP", "now": true }
+    ]
+  },
+  "divider": { "label": "Section divider" },
+  "footer": {
+    "title": "The science behind every craft, cited.",
+    "sub": "Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform · IIT Kharagpur",
+    "label": "The science behind every craft, cited. Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform, IIT Kharagpur."
+  },
+  "icons": "all"
+}
