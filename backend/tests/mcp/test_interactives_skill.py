@@ -11,7 +11,6 @@ from app.api.mcp_tools import ToolContext, answer
 from app.data.contributor_kit import CONTRIBUTOR_SKILL_PATH
 from app.data.skill_library import REFERENCES, SKILL_FILES, skill_file_text
 from app.research.component_specs_science_parts import COLOUR_TOKEN_PATTERN
-from app.research.component_specs_science_players import DIP_POSES
 from app.research.open_work import COMPONENT_NEEDS, TASK_KINDS, parse_task_key
 from app.services.category_register import register_categories
 from app.services.craft_resolver import CraftIndexStore
@@ -32,6 +31,7 @@ CONTEXT = ToolContext(session=None, index=CraftIndexStore(), site=SITE)  # type:
 FOLLOWED_REFERENCES = ("components", "page-checklist", "quotes", "sources")
 FAMILIES = 9
 STEPS_MIN = 2
+DIP_PHASES_MIN = 2
 DRAWING_COLOURS = {
     "--ground": "--ground",
     "--raised": "--raised",
@@ -117,12 +117,13 @@ def test_the_skill_names_its_own_references_and_the_shared_ones_it_follows() -> 
     assert f"`{ENTRY_URI}`" in CONTRIBUTOR_SKILL_PATH.read_bytes().decode("utf-8")
 
 
-def test_a_reaction_player_holds_two_steps_or_more_and_a_dip_player_its_three_poses() -> None:
+def test_a_reaction_player_holds_two_steps_or_more_and_a_dip_player_two_phases_or_more() -> None:
     schema = json.loads(component_schema_text("reaction_player"))
     assert schema["properties"]["steps"]["minItems"] == STEPS_MIN
     assert "two steps or more" in skill_file_text(ENTRY_URI)
-    assert DIP_POSES == ("vat", "lifted", "air")
-    assert "its phases are fixed: vat, lifted and air" in skill_file_text(ENTRY_URI)
+    dip = json.loads(component_schema_text("dip_player"))
+    assert dip["properties"]["phases"]["minItems"] == DIP_PHASES_MIN
+    assert "two phases or more, each named once" in skill_file_text(ENTRY_URI)
 
 
 def test_the_colours_the_skill_lists_are_the_ones_a_drawing_may_use() -> None:

@@ -73,7 +73,7 @@ it. Write the storyboard (`references/storyboard.md`) before any drawing.
 | The family's mechanism | Carried by | Its rule |
 |---|---|---|
 | a sequence of changes, chemical or physical, each stated by sources | `reaction_player` | rail, Play and status from the page's kit; two steps or more, each naming its materials in a lane and giving its balanced equation or a note saying why it has none |
-| cloth dipped, lifted and aired, again and again | `dip_player` | its phases are fixed: vat, lifted and air; reuse `shared/chemistry/indigo-vat-dip` before drawing another |
+| a piece dipped, lifted and aired, again and again | `dip_player` | two phases or more, each named once by a short lowercase key (Ajrakh's are vat, lifted and air; Bidriware's solution, lifted and air); reuse `shared/chemistry/indigo-vat-dip` before drawing another |
 | one choice with two stated outcomes (alum or iron, open fire or smothered) | `experiment_lab` holding a `choice_toggle`, beside the flagship | a what-if never stands in for the flagship |
 | the molecules a step names | `molecule_3d` or `structure_diagram`, linked from that step | |
 | the same steps at rest, in print and for a quick read | `diagram`, as a chain whose steps link into the player | |
