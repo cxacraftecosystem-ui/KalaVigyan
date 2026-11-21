@@ -71,6 +71,12 @@ export function ExplainerSentence({ sentence }: { sentence: Sentence }) {
           {" "}
           <EvidenceTag state={evidence} />
         </span>
+      ) : null}
+      {sentence.sourcesDiffer ? (
+        <span>
+          {" "}
+          <EvidenceTag state="differ" />
+        </span>
       ) : null}{" "}
     </span>
   );

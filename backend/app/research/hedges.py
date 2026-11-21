@@ -3,16 +3,20 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
-from app.research.quotes import normalise_quote_text
+from .quotes import normalise_quote_text
 
 __all__ = [
+    "APPROXIMATE_FIGURE",
     "ENGLISH_APPROXIMATION",
     "ENGLISH_HEDGE",
     "HINDI_APPROXIMATION",
     "HINDI_DOUBT",
     "QUOTE_IGNORED_MODALS",
+    "doubt_words",
+    "dropped_doubt",
     "dropped_hedges",
     "hedged",
+    "hedges_in",
     "quote_hedges",
     "unsourced_hedges",
 ]
@@ -25,6 +29,7 @@ ENGLISH_HEDGE = re.compile(
 ENGLISH_APPROXIMATION = re.compile(
     r"\b(?:about|approximately|approx|around|nearly|almost|roughly|circa|estimated|some)\b", re.IGNORECASE
 )
+APPROXIMATE_FIGURE = re.compile(ENGLISH_APPROXIMATION.pattern + r"\s+\d", re.IGNORECASE)
 QUOTE_IGNORED_MODALS = frozenset({"may", "might", "could"})
 MONTH_MAY = "May"
 DEVANAGARI_WORD = r"\w\u0900-\u0963\u0966-\u097f"
@@ -66,10 +71,11 @@ def unsourced_hedges(text: str, quotes: Sequence[str]) -> list[str]:
 
 
 def dropped_hedges(text: str, quotes: Sequence[str]) -> list[str]:
-    found = [quote_hedges(quote) for quote in quotes]
-    if not found or not all(found) or hedged(text):
-        return []
-    return list(dict.fromkeys(word for words in found for word in words))
+    return _dropped(text, [quote_hedges(quote) for quote in quotes])
+
+
+def dropped_doubt(text: str, quotes: Sequence[str]) -> list[str]:
+    return _dropped(text, [doubt_words(quote) for quote in quotes])
 
 
 def hedged(text: str) -> bool:
@@ -79,6 +85,24 @@ def hedged(text: str) -> bool:
 def quote_hedges(quote: str) -> list[str]:
     english = [hedge for hedge in _english_hedges(quote) if hedge not in QUOTE_IGNORED_MODALS]
     return [*english, *_found(HINDI_DOUBT, quote), *_found(HINDI_APPROXIMATION, quote)]
+
+
+def doubt_words(text: str) -> list[str]:
+    english = [
+        found.group().casefold() for found in ENGLISH_HEDGE.finditer(text) if found.group() != MONTH_MAY
+    ]
+    return [*english, *_found(HINDI_DOUBT, text), *_found(HINDI_APPROXIMATION, text)]
+
+
+def hedges_in(text: str) -> list[str]:
+    approximations = [found.group().split()[0].casefold() for found in APPROXIMATE_FIGURE.finditer(text)]
+    return list(dict.fromkeys([*doubt_words(text), *approximations]))
+
+
+def _dropped(text: str, found: Sequence[Sequence[str]]) -> list[str]:
+    if not found or not all(found) or hedged(text):
+        return []
+    return list(dict.fromkeys(word for words in found for word in words))
 
 
 def _english_hedges(text: str) -> list[str]:

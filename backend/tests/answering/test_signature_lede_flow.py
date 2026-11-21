@@ -10,6 +10,7 @@ from app.services.signature_blocks import CraftCompounds, SignatureFigures
 
 from ..planner.fakes import FakeModel
 from .fakes import SOURCES, FakeEnrichment, FakeStore, pipeline, streamed
+from .lede_search import LedeStore, StoredSearch
 from .signature_evidence import AJRAKH, GLOSSARY, MORDANT_CLAIMS, evidence
 from .test_answer_flow import events
 from .test_lede_flow import ALUM_RED, HARDE, MORDANT, MORDANT_LEDE, sections_model, understood_as
@@ -26,7 +27,7 @@ def stored() -> CitedClaims:
 
 
 async def mordant_answer(*, figures: SignatureFigures | None) -> tuple[list[tuple[str, dict]], FakeStore]:
-    store = FakeStore(stored=stored())
+    store = LedeStore(stored=stored())
     built = pipeline(
         store=store,
         compose_model=sections_model(),
@@ -34,7 +35,8 @@ async def mordant_answer(*, figures: SignatureFigures | None) -> tuple[list[tupl
         enrichment=FakeEnrichment(entries=GLOSSARY),
     )
     composer = ModelComposer(model=FakeModel([MORDANT_LEDE]))
-    built = dataclasses.replace(built, lede=LedeTools(compose=composer.lede, figures=figures))
+    lede = LedeTools(compose=composer.lede, figures=figures, retriever=StoredSearch(store))
+    built = dataclasses.replace(built, lede=lede)
     found = events(await streamed(AnswerAsk(question=MORDANT, depth="DETAILED"), built))
     return found, store
 

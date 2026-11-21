@@ -70,8 +70,13 @@ class ReuseMarker(ContractModel):
     stored_at: AwareDatetime
 
 
+def _unflagged(value: object) -> bool:
+    return value is False
+
+
 class ExplainerSentence(AnswerSentence):
     terms: list[TermSpan]
+    sources_differ: bool = Field(default=False, exclude_if=_unflagged)
 
     @model_validator(mode="after")
     def _terms_mark_the_shown_text(self) -> Self:

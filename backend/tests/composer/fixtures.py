@@ -156,6 +156,10 @@ def sentence(text: str, *quotes: dict[str, str]) -> dict[str, Any]:
     return {"text": text, "quotes": list(quotes)}
 
 
+def lede_sentences(*items: dict[str, Any], answer: int = 0) -> list[dict[str, Any]]:
+    return [{**item, "answer": n == answer} for n, item in enumerate(items)]
+
+
 def answer(*sections: tuple[str, Sequence[dict[str, Any]]], follow_ups: Sequence[str] = ()) -> str:
     return json.dumps(
         {

@@ -212,6 +212,20 @@ async def test_a_view_that_only_restates_its_section_is_not_seated() -> None:
     assert (anthropologist.seat, anthropologist.agrees_with) == ("ANTHROPOLOGIST", [])
 
 
+async def test_a_view_that_restates_its_section_stays_seated_for_its_difference() -> None:
+    model = panel_model(
+        [take("HISTORIAN", said(SEVENTH_CENTURY)), take("ANTHROPOLOGIST", said(CLIENTS))],
+        [differ("HISTORIAN", FOUR_HUNDRED, "ANTHROPOLOGIST", SEVENTH_CENTURY)],
+    )
+    historian, anthropologist = await built(("HISTORIAN", "ANTHROPOLOGIST"), model)
+    assert [sentence.text for sentence in historian.take] == [SEVENTH_CENTURY.text]
+    assert (historian.differs[0].seat, anthropologist.differs[0].seat) == ("ANTHROPOLOGIST", "HISTORIAN")
+    assert (historian.differs[0].this_view.text, historian.differs[0].other_view.text) == (
+        FOUR_HUNDRED.text,
+        SEVENTH_CENTURY.text,
+    )
+
+
 async def test_a_view_adding_one_new_claim_is_seated_whole() -> None:
     model = panel_model([take("HISTORIAN", said(SEVENTH_CENTURY), said(FOUR_HUNDRED))])
     (historian,) = await built(("HISTORIAN",), model)

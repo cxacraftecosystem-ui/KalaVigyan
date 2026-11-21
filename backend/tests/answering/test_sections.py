@@ -80,12 +80,26 @@ async def test_two_sections_compose_in_parallel_and_stream_in_completion_order()
     assert found[-1] == ("done", {"answerId": ANSWER_TEXT})
 
 
-async def test_a_block_with_an_uncited_sentence_is_dropped_and_the_section_says_what_it_searched() -> None:
+async def test_a_sentence_with_no_stored_claim_is_dropped_alone_and_the_section_shows_the_rest() -> None:
     reply = section_reply(
         sentence(
             "Alum is the mordant that binds alizarin to cotton.",
             quote(ALUM_CLAIM_ID, "Alum is the mordant that binds alizarin to cotton"),
         ),
+        sentence(
+            "Alizarin forms an insoluble red lake with aluminium ions.",
+            quote(LAKE_PAPER, "Alizarin forms an insoluble red lake with aluminium ions"),
+        ),
+    )
+    found = events(await streamed(asked(), pipeline(replies=[reply])))
+    (prose,) = [data["block"] for name, data in found if name == "block" and data["block"]["kind"] == "prose"]
+    assert [s["text"] for s in prose["sentences"]] == ["Alum is the mordant that binds alizarin to cotton."]
+    assert ("section_done", {"sectionId": "s1", "state": "READY", "searched": None}) in found
+    assert "not_enough_evidence" not in [name for name, _ in found]
+
+
+async def test_a_section_whose_every_sentence_lacks_a_stored_claim_says_what_it_searched() -> None:
+    reply = section_reply(
         sentence(
             "Alizarin forms an insoluble red lake with aluminium ions.",
             quote(LAKE_PAPER, "Alizarin forms an insoluble red lake with aluminium ions"),

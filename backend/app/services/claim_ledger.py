@@ -85,6 +85,7 @@ class ClaimLedger:
         self._explained: set[str] = set()
         self._section_claims: dict[str, set[str]] = {}
         self._once: set[str] = set()
+        self._differences: set[frozenset[frozenset[str]]] = set()
 
     def admit(
         self, section_id: str, blocks: Sequence[Block], sources: Mapping[str, Mapping[str, Any]]
@@ -181,38 +182,44 @@ class ClaimLedger:
         return lambda sentence: bool(sentence_keys(sentence["text"], sentence.get("original")) & seen)
 
     def _experts(self, section_id: str, payloads: Mapping[int, Payload]) -> dict[int, Block]:
-        kept = self._new_takes(payloads)
-        seats = {payload["seat"] for payload in kept.values()}
-        repeated = self._repeated_pairs(kept.values(), seats)
-        views = _expert_views({n: _paired_within(p, seats, repeated) for n, p in kept.items()})
-        if expert_pairing_problems(list(views.values())):
-            views = _expert_views({n: _paired_within(p, set(), set()) for n, p in kept.items()})
+        kept, differing = self._new_takes(payloads)
+        views = self._paired_views(kept, differing)
         for view in views.values():
             self._record(section_id, view)
         return views
 
-    def _new_takes(self, payloads: Mapping[int, Payload]) -> dict[int, Payload]:
+    def _new_takes(self, payloads: Mapping[int, Payload]) -> tuple[dict[int, Payload], set[int]]:
         kept: dict[int, Payload] = {}
+        differing: set[int] = set()
         for n, payload in payloads.items():
             stripped = kept_sentences(payload, RESTATING_KINDS[EXPERT_KIND], self._restating_repeat())
             if stripped is not None and stripped["take"]:
                 kept[n] = stripped
                 self._record_sentences(stripped["take"])
-        return kept
+            elif payload["differs"]:
+                kept[n] = payload
+                differing.add(n)
+        return kept, differing
 
-    def _repeated_pairs(self, payloads: Iterable[Payload], seats: set[str]) -> set[frozenset[str]]:
-        seen = set(self._texts)
-        judged: set[frozenset[str]] = set()
-        repeated: set[frozenset[str]] = set()
-        for payload in payloads:
-            for difference in (d for d in payload["differs"] if d["seat"] in seats):
-                pair = frozenset({payload["seat"], difference["seat"]})
-                keys = _view_keys(difference)
-                if pair not in judged and keys & seen:
-                    repeated.add(pair)
-                judged.add(pair)
-                seen.update(keys)
-        return repeated
+    def _paired_views(self, kept: Mapping[int, Payload], differing: set[int]) -> dict[int, Block]:
+        repeated = self._repeated_pairs(kept.values())
+        paired = _paired(kept, repeated)
+        idle = {n for n in differing if not paired[n]["differs"]}
+        if idle:
+            paired = _paired({n: p for n, p in kept.items() if n not in idle}, repeated)
+        views = _expert_views(paired)
+        if expert_pairing_problems(list(views.values())):
+            plain = {n: p for n, p in kept.items() if n not in differing}
+            views = _expert_views({n: _paired_within(p, set(), set()) for n, p in plain.items()})
+        return views
+
+    def _repeated_pairs(self, payloads: Iterable[Payload]) -> set[frozenset[str]]:
+        return {
+            frozenset({payload["seat"], difference["seat"]})
+            for payload in payloads
+            for difference in payload["differs"]
+            if _difference_key(difference) in self._differences
+        }
 
     def _picture(self, section_id: str, payload: Payload) -> Block | None:
         cited = self._section_claims.get(section_id, set())
@@ -244,6 +251,8 @@ class ClaimLedger:
             self._explained.add(fold(payload["concept"]))
         elif block.kind == "concept_graph":
             self._concepts.update(node["termKey"] for node in payload["nodes"])
+        elif block.kind == EXPERT_KIND:
+            self._differences.update(_difference_key(difference) for difference in payload["differs"])
         elif block.kind == "zoom_story":
             self._pictures.update(
                 key for level in payload["levels"] if level["media"] for key in picture_keys(level["media"])
@@ -267,6 +276,11 @@ def _expert_views(payloads: Mapping[int, Payload]) -> dict[int, Block]:
     return {n: view for n, payload in payloads.items() if (view := _validated(EXPERT_KIND, payload))}
 
 
+def _paired(kept: Mapping[int, Payload], repeated: set[frozenset[str]]) -> dict[int, Payload]:
+    seats = {payload["seat"] for payload in kept.values()}
+    return {n: _paired_within(payload, seats, repeated) for n, payload in kept.items()}
+
+
 def _paired_within(payload: Payload, seats: set[str], repeated: set[frozenset[str]]) -> Payload:
     seat = payload["seat"]
     differs = [
@@ -277,11 +291,8 @@ def _paired_within(payload: Payload, seats: set[str], repeated: set[frozenset[st
     return {**payload, "agreesWith": [s for s in payload["agreesWith"] if s in seats], "differs": differs}
 
 
-def _view_keys(difference: Mapping[str, Any]) -> set[str]:
-    mine, theirs = difference["thisView"], difference["otherView"]
-    return sentence_keys(mine["text"], mine.get("original")) | sentence_keys(
-        theirs["text"], theirs.get("original")
-    )
+def _difference_key(difference: Mapping[str, Any]) -> frozenset[frozenset[str]]:
+    return frozenset({claims_of(difference["thisView"]), claims_of(difference["otherView"])})
 
 
 def _material_keys(payload: Mapping[str, Any]) -> set[str]:

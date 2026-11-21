@@ -13,7 +13,7 @@ from app.services.answer_events import cited_claims
 from app.services.answer_lede import LedeTools
 from app.services.answering import AnswerAsk, AnswerPipeline
 
-from ..composer.fixtures import quote, section_reply, sentence
+from ..composer.fixtures import lede_sentences, quote, section_reply, sentence
 from ..planner.fakes import FakeModel
 from .fakes import (
     ALUM_CLAIM_ID,
@@ -28,6 +28,7 @@ from .fakes import (
     streamed,
     understanding_model,
 )
+from .lede_search import LedeStore, StoredSearch
 from .piece_fakes import MemoryPieces
 from .test_answer_flow import LAKE_PAPER, events
 from .test_piece_reuse_flow import first_answer, memory
@@ -62,7 +63,7 @@ HARDE = stored_view(
 )
 MORDANT_LEDE = json.dumps(
     {
-        "sentences": [
+        "sentences": lede_sentences(
             sentence(
                 "Alum is the mordant that fixes the red, together with dhaori (tamarisk galls).",
                 quote(ALUM_RED_ID, "Red comes from alum as mordant together with dhaori (tamarisk galls)"),
@@ -74,19 +75,19 @@ MORDANT_LEDE = json.dumps(
                     "Harde, a paste of myrobalan, carries the tannin that is an essential pre-mordant",
                 ),
             ),
-        ],
+        ),
         "headings": [],
         "followUps": ["Why does iron in the water spot harde-treated cloth?", MORDANT],
     }
 )
 REUSED_LEDE = {
-    "sentences": [
+    "sentences": lede_sentences(
         sentence(
             "Alum is the mordant that binds alizarin to cotton in Ajrakh.",
             quote(ALUM_CLAIM_ID, "Alum is the mordant that binds alizarin to cotton"),
         ),
         sentence("The red lake withstood 20 washes.", quote(WRITTEN_WASH_ID, "the lake withstood 20 washes")),
-    ],
+    ),
     "headings": [{"section": "s1", "heading": "Alum binds the red to cotton"}],
 }
 INDIGO_OPEN = ["Why do the darkest blues need more dips in the vat?", "What feeds the bacteria in the naand?"]
@@ -136,23 +137,28 @@ def sections_model() -> SectionModel:
     )
 
 
-def lede_pipeline(lede_model: Any, *, store: FakeStore | None = None, **given: Any) -> AnswerPipeline:
-    built = pipeline(store=store or FakeStore(), **given)
-    return dataclasses.replace(built, lede=LedeTools(compose=ModelComposer(model=lede_model).lede))
+def lede_pipeline(
+    lede_model: Any, *, store: FakeStore | None = None, search: StoredSearch | None = None, **given: Any
+) -> AnswerPipeline:
+    held = store or LedeStore()
+    built = pipeline(store=held, **given)
+    lede = LedeTools(compose=ModelComposer(model=lede_model).lede, retriever=search or StoredSearch(held))
+    return dataclasses.replace(built, lede=lede)
 
 
-def mordant_store() -> FakeStore:
-    return FakeStore(stored=cited_claims([ALUM_RED, HARDE], SOURCES))
+def mordant_store() -> LedeStore:
+    return LedeStore(stored=cited_claims([ALUM_RED, HARDE], SOURCES))
 
 
 def understood_as(*disciplines: str) -> Any:
     return understanding_model({"craft": "", "craftNames": [], "disciplines": list(disciplines), "seats": []})
 
 
-async def mordant_answer(store: FakeStore) -> list[tuple[str, dict]]:
+async def mordant_answer(store: FakeStore, search: StoredSearch | None = None) -> list[tuple[str, dict]]:
     built = lede_pipeline(
         FakeModel([MORDANT_LEDE]),
         store=store,
+        search=search,
         compose_model=sections_model(),
         understand_model=understood_as("PROCESS", "CHEMISTRY"),
     )
@@ -165,7 +171,8 @@ def names(found: list[tuple[str, dict]]) -> list[str]:
 
 async def test_the_mordant_question_opens_with_a_cited_lede_naming_alum_and_myrobalan() -> None:
     store = mordant_store()
-    found = await mordant_answer(store)
+    search = StoredSearch(store)
+    found = await mordant_answer(store, search)
     order = names(found)
     assert order.index("lede") < order.index("block")
     (lede,) = [data["block"] for name, data in found if name == "lede"]
@@ -177,7 +184,9 @@ async def test_the_mordant_question_opens_with_a_cited_lede_naming_alum_and_myro
     assert cited == [{str(ALUM_RED_ID)}, {str(HARDE_ID)}]
     sent = [data["id"] for name, data in found[: order.index("lede")] if name == "source"]
     assert {c["sourceId"] for s in lede["sentences"] for c in s["citations"]} <= set(sent)
-    assert store.modes == ["HYBRID"] and store.questions == [MORDANT]
+    assert [(q.craft_slug, q.text, q.mode, q.limit) for q in search.queries] == [
+        ("Kutch-Ajrakh", MORDANT, "HYBRID", 24)
+    ]
 
 
 async def test_sections_are_ordered_by_the_question_and_headed_by_what_they_show() -> None:
@@ -271,7 +280,7 @@ def late_lede(*texts: str) -> str:
     }
     return json.dumps(
         {
-            "sentences": [sentence(text, quoted[text]) for text in texts],
+            "sentences": lede_sentences(*(sentence(text, quoted[text]) for text in texts)),
             "headings": [],
             "followUps": ["Does the lake survive sunlight as well as washing?"],
         }
@@ -280,7 +289,7 @@ def late_lede(*texts: str) -> str:
 
 async def late_answer(reply: str) -> tuple[list[tuple[str, dict]], FakeModel, FakeStore]:
     model = FakeModel([reply])
-    store = FakeStore()
+    store = LedeStore()
     built = lede_pipeline(
         model, store=store, compose_model=sections_model(), understand_model=understood_as("CHEMISTRY")
     )
@@ -292,7 +301,7 @@ async def test_an_answer_without_stored_findings_gets_its_lede_once_its_sections
     found, model, store = await late_answer(late_lede(REUSED_LEDE["sentences"][0]["text"], LATE_BATH))
     order = names(found)
     assert order.index("block") < order.index("lede") < order.index("follow_ups")
-    assert len(model.calls) == 1 and store.modes == ["HYBRID"]
+    assert len(model.calls) == 1
     (finished,) = store.finished
     assert finished["explainer"].lede is not None
 

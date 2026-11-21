@@ -627,10 +627,31 @@ evidence[PackedEvidence], documents[SourceDocument], failures[ResearchFailure]}`
   - `TRIVIAL_QUOTE`: a span shorter than 20 characters once folded (`quotes.trivial_quote`).
   - `UNRELATED_QUOTE`: the verified spans carry fewer than half of the sentence's content words
     (`quotes.quote_overlap`, `QUOTE_OVERLAP_MIN`).
+  - `UNRELATED_SPAN`: a sentence citing two or more sources, one of whose own verified spans
+    share fewer than `SPAN_SHARED_MIN` (2) content words or figures with the sentence (or all
+    of them, when the span holds fewer); a source quoted for something else is not support
+    (`sentence_support.unrelated_refs`, decision 0120).
+  - The stance checks (`sentence_support.stance_gaps`, decision 0120), against the verified
+    spans: `NEGATION_CHANGED` when the sentence's negations (`gate_thrift.NEGATION`: not, no,
+    never, none, nor, neither, without, cannot, n't) fall outside the range from the most any one
+    span holds to all the spans hold together; `NUMBER_WORD` for a number word (one to twenty,
+    the tens, hundred, thousand, million, twice, thrice, double, triple, single, pair, half,
+    dozen; `one` as a pronoun is not one) that no span holds as the same word, a word of the same
+    value or that value in digits; `UNIT_CHANGED` for a number whose unit (the units of
+    `translation.protected_tokens`) differs from every unit the spans give that number; and
+    `DROPPED_HEDGE` when every span carries a word of doubt (`hedges.doubt_words`: may, might,
+    could, probably, believed, said to and the rest, the Hindi words of doubt and approximation;
+    `May` with a capital is the month) and the sentence carries no hedge (`hedges.dropped_doubt`).
+  - The screen (`sentence_support.screen_gaps`): `LINK_OR_MARKUP` for an address (`https:`,
+    `www.`, a bare `.com`, `.in`, `.org` ... name), a tag or a Markdown link, and
+    `PERSONAL_DATA` for an email address or a phone-like or Aadhaar-like number
+    (`evidence.personal_data_in`). A comparison sign or a reaction arrow is not markup.
 - After the post-checks the sectioned flow drops, alone, a sentence that names a month, a
   season, or a state or district of the LGD register that none of its stored claims' texts or
-  quotes states (`services/stated_names.unstated_names`, decision 0050); the same check refuses a
-  prose block and an expert take (`section_blocks.prose_problems`).
+  quotes states (`services/stated_names.unstated_names`, decision 0050). A claim written back by
+  this answer for the sentence (`KeptSentence.written`) states nothing for it: its text is the
+  sentence itself, so only its quotes and the sentence's verified spans count (decision 0120).
+  The same check refuses a prose block and an expert take (`section_blocks.prose_problems`).
 - `sentence_level(sentence, allowed)` is the weakest level of the cited candidates, computed by
   the server, never by the model. Hypothesis-level sentences go to `openQuestions`.
 - Reactions are not composer output: they come from stored `Reaction` rows checked by the
@@ -674,7 +695,10 @@ Gemini).
   switches the call to `SECTION_SYSTEM_PROMPT` and `section_schema(stage_ids)`: `{sentences[],
   stages[] (an enum of the offered stage ids, present only when stages are offered), followUps[]}`.
   The message adds the `Section` line and, for a ladder, the stored stages inside an untrusted
-  block. At most `ComposeFocus.sentencesMax` sentences (the depth's `section_sentences`: 8, or 16 at
+  block. The section prompt asks at every depth, where sources differ, for both readings, each
+  citing only its own source (`DIFFERING_SOURCES_RULE`, decision 0120), and the source rules ask
+  for every negation, hedge, number word and unit as the quotes give them. At most
+  `ComposeFocus.sentencesMax` sentences (the depth's `section_sentences`: 8, or 16 at
   Expert, whose prompt adds `EXPERT_SECTION_RULES`; decision 0089) and `SECTION_FOLLOW_UPS_MAX` (2)
   follow-ups are kept; a stage id that was not offered is never chosen (logged). The same checks and the
   one regenerate apply. `ComposedAnswer.stageIds` carries the chosen stages; an answer showing only
@@ -926,9 +950,14 @@ stream: each step opens its own.
      `science/ladder.ladder_problems` is empty (every stage, sentence, material, condition and
      reaction a stored row of that stage, of that craft's process);
    - one `prose` block of the fact-level sentences, each with the visible citations of its claims
-     (`services/section_blocks.prose_block`), refused whole (`BlockRefused`) when a sentence cites
-     no stored claim, is not a fact, or states a figure that none of its claims' texts and quotes
-     holds.
+     (`services/section_blocks.prose_block`). `section_sentences` first drops, each alone and
+     logged, a sentence that cites no visible stored claim (a sentence whose write-back was
+     refused arrives claimless), is not a fact, states a figure that none of its claims' texts
+     and quotes holds, or names what none states (above); the block is built from the rest and
+     is not shown only when nothing remains (decision 0120). `prose_block` itself still refuses
+     whole (`BlockRefused`) a list holding any such sentence, for the callers that hand it
+     stored claims directly. A sentence citing a claim whose sources differ carries
+     `sourcesDiffer: true` (`section_blocks.explainer_sentence`).
    Every sentence of the kept blocks is marked with the answer's glossary terms
    (`services/section_enrichment`, decision 0039), in English, before translation; then the
    section's pictures are searched from the claims those blocks cite and sent as an `images`
@@ -990,7 +1019,13 @@ text}` returns only translations that passed `translation_problems(original, tra
 language=)`: the same numbers after `fold_digits` (no number missing, none added); the same
 formulas, mhchem `\ce{}`/`\pu{}` spans and units (°C, °F, %, ‰, pH, and the `NUMBER_UNITS` after
 a number), compared after NFKC; prose (protected tokens removed) at least half in the target
-script; and (`composer/translation.checked_translation`) no link, markup or personal data the
+script; the English original's negation and hedge kept (decision 0120): an original with a
+negation (`gate_thrift.NEGATION`) needs one of the target language's negation words or endings,
+and an original with a hedge (`hedges.hedges_in`: a word of doubt, or about, around, some and the
+like before a figure) one of its hedge words or endings (`research/stance_markers`, a list for
+each answer language; a missing one names the problem, a negation or hedge the translation adds
+is not refused, since idioms such as "until ... नहीं" carry one); and
+(`composer/translation.checked_translation`) no link, markup or personal data the
 original did not carry. `ModelTranslator` sends every item in one `TRANSLATE` call, sends the
 failing ones back once with their problems (`TRANSLATION_ATTEMPTS` 2), and leaves out the rest;
 a router failure is raised to the caller, which keeps the English.
@@ -1035,7 +1070,8 @@ tier and the reader that takes verbatim quotes from the pack's documents (`WEB_R
 | The fetcher service | `backend/tests/fetcher/` |
 | The planner, the composer and the answering service | `backend/tests/planner/`, `backend/tests/composer/` and `backend/tests/answering/test_answer_flow.py` |
 | Write-back and the coverage job | `backend/tests/write_back/` and `backend/tests/research/test_composition_and_write_back.py` |
+| The stance, per-source and screen checks of a sentence, the names a live sentence must quote, a sentence dropped alone | `backend/tests/research/test_grounded_sentences.py`, `backend/tests/composer/test_grounded_compose.py` and `backend/tests/answering/test_grounded_blocks.py` |
 | The stream as the client reads it | `frontend/e2e/answer-stream-golden-unit.spec.ts`, against `shared/answer-stream*.golden.sse` |
-| Translation | `backend/tests/research/test_translation.py` and `backend/tests/answering/test_translation_flow.py` |
+| Translation | `backend/tests/research/test_translation.py`, `backend/tests/research/test_translation_stance.py` and `backend/tests/answering/test_translation_flow.py` |
 
 Re-read it when an adapter, a tier, an error type or a stream event is added, or a ground rule moves.

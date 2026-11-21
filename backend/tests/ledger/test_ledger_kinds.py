@@ -54,18 +54,18 @@ def test_a_stage_that_keeps_some_sentences_takes_the_level_of_what_it_keeps() ->
     assert ([s.text for s in stage.sentences], stage.level) == ([GREEN_BLUE.text], "REVIEWED")
 
 
-def test_two_seats_stop_differing_when_one_view_was_already_said() -> None:
+def test_two_seats_keep_differing_when_one_reading_was_already_said_in_prose() -> None:
     historian, anthropologist = phase_b_blocks()["s5.b1"], phase_b_blocks()["s5.b2"]
     view = BLOCK.validate_python(historian).differs[0].this_view
     ledger = ClaimLedger()
     shown = admitted(ledger, "s1", said("s1.b1", view))
     shown += admitted(ledger, "s5", historian, anthropologist)
-    assert [(block.kind, getattr(block, "differs", [])) for block in shown] == [
+    assert [(block.kind, [d.seat for d in getattr(block, "differs", [])]) for block in shown] == [
         ("prose", []),
-        ("expert_view", []),
-        ("expert_view", []),
+        ("expert_view", ["ANTHROPOLOGIST"]),
+        ("expert_view", ["HISTORIAN"]),
     ]
-    assert repeated_sentences(shown) == 0
+    assert repeated_sentences(shown) == 1
 
 
 def test_a_zoom_never_shows_a_picture_an_earlier_section_showed() -> None:
