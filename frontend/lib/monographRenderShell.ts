@@ -11,16 +11,33 @@ const CATEGORY_SUBJECT = "category";
 const CHAPTER_CLASS = "kv-ch";
 const CHAPTER_TAG = "section";
 const PICTURE_KEYS = ["src", "width", "height", "alt", "loading"] as const;
+const DIGEST_SEED = 0x811c9dc5;
+const DIGEST_PRIME = 0x01000193;
+const DIGEST_CHARS = 8;
+const REST_ADDRESS = /^v([1-9]\d*)(?:-([0-9a-f]{8}))?$/;
 
 export type ShellPart = { tree: ShellNode[]; bundles: Record<string, ComponentBundle>; sources: MonographSources };
 export type ShellRest = ShellPart & { schemaVersion: typeof SHELL_REST_SCHEMA_VERSION; version: number; data: KitDataBlock[] };
 export type ShellParts = { lead: ShellPart; rest: ShellPart };
 export type DocumentRest = { schemaVersion: typeof DOCUMENT_REST_SCHEMA_VERSION; version: number; document: MonographDocument };
 export type RestPart = "shell" | "document";
+export type RestAddress = { version: number; digest: string | null };
 
-export function shellRestPath(slug: string, version: number, subject = "craft"): string {
+export function shellRestPath(slug: string, version: number, subject = "craft", digest: string | null = null): string {
   const pages = subject === CATEGORY_SUBJECT ? "categories" : "crafts";
-  return `/${pages}/${encodeURIComponent(slug)}/shell/v${version}`;
+  return `/${pages}/${encodeURIComponent(slug)}/shell/v${version}${digest ? `-${digest}` : ""}`;
+}
+
+export function restAddress(segment: string): RestAddress | null {
+  const found = REST_ADDRESS.exec(segment);
+  return found ? { version: Number(found[1]), digest: found[2] ?? null } : null;
+}
+
+export function documentDigest(document: MonographDocument): string {
+  const text = JSON.stringify([document.content, document.specs, document.fragments]);
+  let hash = DIGEST_SEED;
+  for (let at = 0; at < text.length; at += 1) hash = Math.imul(hash ^ text.charCodeAt(at), DIGEST_PRIME);
+  return (hash >>> 0).toString(16).padStart(DIGEST_CHARS, "0");
 }
 
 export function leadChapters<T>(chapters: readonly T[]): T[] {

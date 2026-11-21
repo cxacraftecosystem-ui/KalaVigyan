@@ -9,7 +9,7 @@ import { MonographRail } from "@/components/monograph/MonographRail";
 import { KitPreferences } from "@/components/monograph/ReaderSettings";
 import { MONOGRAPH_KIT_CSS, type MonographDocument } from "@/lib/monographDocument";
 import { railChapters, type PagePlan } from "@/lib/monographRenderLayout";
-import { leadChapters, shellRestPath } from "@/lib/monographRenderShell";
+import { documentDigest, leadChapters, shellRestPath } from "@/lib/monographRenderShell";
 
 const CITED_SUBJECT = "craft";
 
@@ -31,7 +31,8 @@ export function railAfterMasthead(document: MonographDocument, plan: PagePlan, m
 export function deferredRest(document: MonographDocument, plan: PagePlan, deferred: boolean): string | null {
   if (!deferred) return null;
   if (document.shell !== null) return document.subjectKind === CITED_SUBJECT ? shellRestPath(document.subjectSlug, document.version) : null;
-  return plan.chapters.length > leadChapters(plan.chapters).length ? shellRestPath(document.subjectSlug, document.version, document.subjectKind) : null;
+  if (plan.chapters.length <= leadChapters(plan.chapters).length) return null;
+  return shellRestPath(document.subjectSlug, document.version, document.subjectKind, documentDigest(document));
 }
 
 type MonographPageProps = { document: MonographDocument; masthead?: boolean; deferred?: boolean };
@@ -40,7 +41,7 @@ export function MonographPage({ document: given, masthead = true, deferred = fal
   const { document, plan } = shownPage(given);
   const rail = <MonographRail chapters={railChapters(plan)} />;
   const later = railAfterMasthead(document, plan, masthead);
-  const rest = deferredRest(document, plan, deferred);
+  const rest = deferredRest(given, plan, deferred);
   return (
     <div className="kv-monograph ms-[calc(50%-50vw)] w-screen" lang={document.language} data-subject={`${document.subjectKind}:${document.subjectSlug}`} data-version={document.version}>
       <link rel="stylesheet" href={MONOGRAPH_KIT_CSS} precedence="default" />

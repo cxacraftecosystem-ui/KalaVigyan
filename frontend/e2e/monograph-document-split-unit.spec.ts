@@ -15,7 +15,7 @@ import { ThemeProvider } from "../components/ThemeProvider";
 import type { MonographDocument } from "../lib/monographDocument";
 import { parseNamedDocument } from "../lib/monographRenderCitations";
 import { KIT_CITES_ID, kitDataBlocks } from "../lib/monographRenderKit";
-import { checkedDocumentRest, documentRest, leadChapters, restBody, restChapters } from "../lib/monographRenderShell";
+import { checkedDocumentRest, documentDigest, documentRest, leadChapters, restAddress, restBody, restChapters } from "../lib/monographRenderShell";
 
 import { generatedDocument } from "./generatedMonographFixture";
 import { goldenDocument } from "./monographNative";
@@ -66,14 +66,27 @@ test("the first chapter leads and every other chapter is the rest", () => {
   expect([...leadChapters(chapters), ...restChapters(chapters)]).toEqual(chapters);
 });
 
-test("a generated craft, family and category each ask for their rest at their own page's address and version", () => {
+test("a generated craft, family and category each ask for their rest at their own page's address, version and content", () => {
   const document = generatedDocument();
   const plan = shownPage(document).plan;
-  expect(deferredRest(document, plan, true)).toBe("/crafts/Bagh-Print/shell/v5");
-  expect(deferredRest({ ...document, subjectKind: "family" }, plan, true)).toBe("/crafts/Bagh-Print/shell/v5");
-  expect(deferredRest({ ...document, subjectKind: "category" }, plan, true)).toBe("/categories/Bagh-Print/shell/v5");
+  const digest = documentDigest(document);
+  expect(digest).toMatch(/^[0-9a-f]{8}$/);
+  expect(deferredRest(document, plan, true)).toBe(`/crafts/Bagh-Print/shell/v5-${digest}`);
+  expect(deferredRest({ ...document, subjectKind: "family" }, plan, true)).toBe(`/crafts/Bagh-Print/shell/v5-${digest}`);
+  expect(deferredRest({ ...document, subjectKind: "category" }, plan, true)).toBe(`/categories/Bagh-Print/shell/v5-${digest}`);
   expect(deferredRest(document, plan, false)).toBeNull();
   expect(deferredRest(document, { ...plan, chapters: leadChapters(plan.chapters) }, true)).toBeNull();
+});
+
+test("a document whose content changes under the same version asks for its rest at a new address, and the address reads back", () => {
+  const document = generatedDocument();
+  const changed = generatedDocument();
+  changed.content.units = { ...changed.content.units, u9999: { chapter: "chem", tag: "p", field: null, nodes: ["A figure borrowed since."], claimIds: [] } };
+  expect(documentDigest(generatedDocument())).toBe(documentDigest(document));
+  expect(documentDigest(changed)).not.toBe(documentDigest(document));
+  expect(restAddress(`v5-${documentDigest(document)}`)).toEqual({ version: 5, digest: documentDigest(document) });
+  expect(restAddress("v12")).toEqual({ version: 12, digest: null });
+  expect([restAddress("v0"), restAddress("5"), restAddress("v5-xyz"), restAddress("v5-0123456789")]).toEqual([null, null, null, null]);
 });
 
 test("the rest of a generated document carries the whole document for its version only, and a shell's rest stays the shell's", () => {

@@ -1,6 +1,5 @@
-import { craftEdition } from "@/lib/craftPageContract";
 import { serverMonographDocument, type ShellParams } from "@/lib/monographRenderServer";
-import { documentRest } from "@/lib/monographRenderShell";
+import { documentRest, restAddress } from "@/lib/monographRenderShell";
 
 type RestRoute = { params: Promise<ShellParams> };
 
@@ -14,7 +13,7 @@ export async function generateStaticParams(): Promise<ShellParams[]> {
 
 export async function GET(_request: Request, { params }: RestRoute): Promise<Response> {
   const { slug, version } = await params;
-  const edition = craftEdition(version);
+  const edition = restAddress(version)?.version ?? null;
   const document = edition === null ? null : await serverMonographDocument("category", slug);
   if (!document || document.version !== edition || document.shell !== null) return new Response(null, { status: 404 });
   return Response.json(documentRest(document));
