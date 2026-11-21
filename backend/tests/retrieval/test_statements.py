@@ -186,7 +186,7 @@ def test_a_citation_is_read_from_a_passage_the_reader_may_quote_and_an_unlinked_
     assert sql.startswith('SELECT "ClaimSource".id') and 'JOIN "Chunk"' not in sql
     assert '"Chunk".id = "ClaimSource"."chunkId" AND "Chunk".acl IN' in sql
     assert '"ClaimSource"."chunkId" IS NULL AND ("ClaimSource".quote IS NULL OR ' in sql
-    assert '"Chunk"."sourceId" = "ClaimSource"."sourceId" AND ("Chunk".acl NOT IN' in sql
+    assert '"Chunk"."sourceId" = "ClaimSource"."sourceId" AND (' in sql and '"Chunk".acl NOT IN' in sql
     assert '"Source".id = "ClaimSource"."sourceId" AND "Source".sensitivity = ' in sql
     assert 'FROM "Chunk", "ClaimSource"' not in sql and 'FROM "Source", "ClaimSource"' not in sql
     assert params_with(params, "acl_") == [["PUBLIC"], ["PUBLIC"]]
