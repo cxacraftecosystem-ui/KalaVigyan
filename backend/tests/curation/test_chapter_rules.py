@@ -132,6 +132,6 @@ def test_the_page_cache_keeps_the_newest_pages_under_their_stamp() -> None:
 
 def test_the_stamp_names_the_site_its_citations_address() -> None:
     terms = {"claimsCount": 3}
-    here = stamp_text(terms, release="r1", site="https://a.example", variant="OPEN")
-    assert here != stamp_text(terms, release="r1", site="https://b.example", variant="OPEN")
-    assert here != stamp_text(terms, release="r1", site="https://a.example", variant="RESEARCHER")
+    here = stamp_text(terms, code="c1", site="https://a.example", variant="OPEN")
+    assert here != stamp_text(terms, code="c1", site="https://b.example", variant="OPEN")
+    assert here != stamp_text(terms, code="c1", site="https://a.example", variant="RESEARCHER")

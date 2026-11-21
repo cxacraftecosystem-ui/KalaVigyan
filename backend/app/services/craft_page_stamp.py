@@ -69,6 +69,7 @@ from app.retrieval.field_scope import FIELD_STALE_AFTER
 from app.retrieval.statements import CraftScope, scope_claims, scope_concepts
 
 from .contributed_pictures import shown_contributions
+from .page_code import page_code_fingerprint
 
 __all__ = ["PAGE_VARIANTS", "craft_compound_ids", "page_stamp", "stamp_terms", "stamp_text"]
 
@@ -79,17 +80,15 @@ Terms = dict[str, ColumnElement[Any]]
 
 async def page_stamp(session: AsyncSession, craft: Craft, variant: str) -> str:
     row = (await session.execute(stamp_terms(craft))).one()
-    settings = get_settings()
-    return stamp_text(
-        dict(row._mapping), release=settings.release, site=settings.public_web_url, variant=variant
-    )
+    site = get_settings().public_web_url
+    return stamp_text(dict(row._mapping), code=page_code_fingerprint(), site=site, variant=variant)
 
 
-def stamp_text(terms: Mapping[str, Any], *, release: str, site: str, variant: str) -> str:
+def stamp_text(terms: Mapping[str, Any], *, code: str, site: str, variant: str) -> str:
     if variant not in PAGE_VARIANTS:
         raise ValueError(f"a craft page has the variants {', '.join(PAGE_VARIANTS)}, not {variant!r}")
     record = {
-        "release": release,
+        "code": code,
         "site": site,
         "schemaVersion": CRAFT_PAGE_SCHEMA_VERSION,
         "variant": variant,

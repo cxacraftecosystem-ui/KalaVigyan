@@ -29,6 +29,7 @@ from app.science.records import ProcessRecords
 
 from .answer_catalogue import CatalogueLookup, no_catalogue
 from .answer_events import CitedClaims
+from .answer_gaps import FieldReading, answer_readings
 from .answer_lede import AnswerOpening, LedeTools, LedeWriting, Opening, lede_plan
 from .answer_sections import (
     ClaimsOf,
@@ -115,6 +116,7 @@ class AnswerStore(Protocol):
         claim_ids: Sequence[uuid.UUID],
         explainer: Explainer | None,
         version: VersionMark | None = None,
+        readings: Sequence[FieldReading] = (),
     ) -> None: ...
 
 
@@ -341,6 +343,7 @@ async def _finish(
         claim_ids=list(stored.claim_ids),
         explainer=stored.explainer,
         version=stored.version,
+        readings=answer_readings(outcomes),
     )
     if stored.version is not None:
         await run.stream.emit("version", stored.version)

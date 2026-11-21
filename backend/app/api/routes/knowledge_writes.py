@@ -36,7 +36,7 @@ async def propose(
 ) -> ProposalReply:
     try:
         await require_terms(session, user)
-        refuse_when_spent(FACT_PROPOSALS, user)
+        await refuse_when_spent(FACT_PROPOSALS, user)
         return await proposed(session, body, user, CONTRIBUTION)
     except InvalidInput as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from None
@@ -52,7 +52,7 @@ async def propose_page_layout(
 ) -> LayoutProposalResult:
     try:
         await require_terms(session, user)
-        refuse_when_spent(LAYOUT_PROPOSALS, user)
+        await refuse_when_spent(LAYOUT_PROPOSALS, user)
         result = await propose_layout(
             session, user, body, origin=CONTRIBUTION, site=_site(), now=datetime.now(UTC)
         )

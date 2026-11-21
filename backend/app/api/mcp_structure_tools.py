@@ -57,7 +57,7 @@ async def _propose(context: ToolContext, arguments: ProposeStructure) -> Structu
     user = context.user
     if user is None or not can(user, Capability.PROPOSE_KNOWLEDGE):
         raise InvalidInput(NEEDS_PROPOSER)
-    refuse_tool_when_spent(STRUCTURE_PROPOSALS, user)
+    await refuse_tool_when_spent(STRUCTURE_PROPOSALS, user)
     try:
         result = await structure_proposed(
             context.session, arguments.proposal, user, origin=AGENT, site=context.site

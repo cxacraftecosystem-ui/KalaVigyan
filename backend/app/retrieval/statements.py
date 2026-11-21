@@ -5,9 +5,33 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import ColumnElement, Select, and_, exists, func, literal, or_, select
+from sqlalchemy import (
+    ColumnElement,
+    CompoundSelect,
+    Float,
+    Select,
+    and_,
+    case,
+    cast,
+    exists,
+    func,
+    literal,
+    or_,
+    select,
+    union_all,
+)
 
-from app.models import Chunk, Claim, ClaimSource, Concept, ConceptEdge, FieldRecording, Source
+from app.models import (
+    Chunk,
+    Claim,
+    ClaimSource,
+    Concept,
+    ConceptEdge,
+    FieldRecording,
+    Source,
+    Term,
+    TermConcept,
+)
 from app.research.retrieval import (
     MODE_CLAIM_LEVELS,
     MODE_CLAIM_STATUSES,
@@ -17,10 +41,14 @@ from app.research.retrieval import (
 
 from .field_scope import field_interview_sources, withheld_field_sources
 from .stamps import made_by_current_model
+from .text import tsquery_terms
 
 __all__ = [
     "ENTITY_NAME_MIN_CHARS",
     "EVERY_CRAFT",
+    "LEXICAL_CANDIDATES",
+    "NAME_GLOSS",
+    "NAME_GLOSS_OPEN",
     "RANKING_DEPTH",
     "TEXT_SEARCH_CONFIG",
     "CraftScope",
@@ -41,8 +69,11 @@ __all__ = [
 ]
 
 RANKING_DEPTH = 30
+LEXICAL_CANDIDATES = 400
 TEXT_SEARCH_CONFIG = "english"
 ENTITY_NAME_MIN_CHARS = 4
+NAME_GLOSS_OPEN = " ("
+NAME_GLOSS = r"\(([^)]*)\)"
 
 
 @dataclass(frozen=True)
@@ -182,13 +213,34 @@ def claim_entity_ranking(
 
 
 def _named_concepts(scope: CraftScope, question: str) -> Any:
-    name = func.lower(Concept.name)
+    names = _concept_names().subquery("names")
+    name = func.lower(func.trim(names.c.name))
     asked = func.lower(literal(question))
     return (
-        scope_concepts(scope)
-        .add_columns(func.length(Concept.name).label("weight"))
-        .where(func.length(Concept.name) >= ENTITY_NAME_MIN_CHARS, func.strpos(asked, name) > 0)
+        select(names.c.id.label("id"), func.max(func.length(name)).label("weight"))
+        .where(
+            names.c.id.in_(scope_concepts(scope)),
+            func.length(name) >= ENTITY_NAME_MIN_CHARS,
+            func.strpos(asked, name) > 0,
+        )
+        .group_by(names.c.id)
         .cte("named")
+    )
+
+
+def _concept_names() -> CompoundSelect[Any]:
+    listed = (
+        select(TermConcept.conceptId.label("concept"), Term.label, Term.aliases, Term.localNames)
+        .join(Term, Term.id == TermConcept.termId)
+        .subquery("termed")
+    )
+    return union_all(
+        select(Concept.id.label("id"), Concept.name.label("name")),
+        select(Concept.id, func.split_part(Concept.name, NAME_GLOSS_OPEN, 1)),
+        select(Concept.id, func.substring(Concept.name, NAME_GLOSS)),
+        select(listed.c.concept, listed.c.label),
+        select(listed.c.concept, func.unnest(listed.c.aliases)),
+        select(listed.c.concept, func.unnest(listed.c.localNames)),
     )
 
 
@@ -222,8 +274,32 @@ def _lexical(
     depth: int,
 ) -> Select[tuple[uuid.UUID]]:
     query = text_query(tsquery)
-    rank = lexical_rank(tsv, query)
-    return select(key).where(*conditions, tsv.op("@@")(query)).order_by(rank.desc(), key).limit(depth)
+    terms = tsquery_terms(tsquery)
+    density = lexical_rank(tsv, query)
+    matched = [tsv.op("@@")(text_query(term)).label(f"term_{index}") for index, term in enumerate(terms)]
+    candidates = (
+        select(key.label("id"), density.label("density"), *matched)
+        .where(*conditions, tsv.op("@@")(query))
+        .order_by(density.desc(), key)
+        .limit(LEXICAL_CANDIDATES)
+        .cte("lexical")
+        .prefix_with("MATERIALIZED")
+    )
+    found = select(func.count()).select_from(candidates).scalar_subquery()
+    score: ColumnElement[float] = literal(0.0)
+    for index in range(len(terms)):
+        score = score + _rarity(candidates, candidates.c[f"term_{index}"], found)
+    return (
+        select(candidates.c.id)
+        .order_by(score.desc(), candidates.c.density.desc(), candidates.c.id)
+        .limit(depth)
+    )
+
+
+def _rarity(candidates: Any, matched: ColumnElement[bool], found: ColumnElement[int]) -> ColumnElement[float]:
+    holding = select(func.count()).select_from(candidates).where(matched).scalar_subquery()
+    weight = func.ln(1.0 + cast(found, Float) / func.greatest(holding, 1))
+    return case((matched, weight), else_=0.0)
 
 
 def _vector(

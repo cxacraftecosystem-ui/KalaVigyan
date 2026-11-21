@@ -6,6 +6,7 @@ from typing import Any
 
 from app.core.config import get_settings
 from app.core.db import dispose_engine, session_scope
+from app.providers.embedding import router_embedder
 from app.scripts.build_monograph import SERVED_FOLDERS, monograph_content
 from app.services.live_sources import live_source_client
 from app.services.nightly_upkeep import plan_nightly_upkeep, run_nightly_upkeep, upkeep_tools
@@ -29,6 +30,7 @@ async def run(*, build: bool) -> dict[str, Any]:
                 fetcher_url=settings.fetcher_url,
                 monographs=sorted(SERVED_FOLDERS),
                 load=monograph_content,
+                embed=router_embedder(),
             )
             report = (await run_nightly_upkeep(session, tools, now=datetime.now(UTC))).as_dict()
             if build:

@@ -213,6 +213,8 @@ Deploy backend (`.github/workflows/deploy-backend.yml`):
    6. restart the worker and fetcher.
 
    It keeps the newest 5 releases.
+
+   Pages (round 7): after the embeds, `rebuild_stale_pages` (bounded by `PAGES_SECONDS` = 480) rebuilds only the page snapshots whose stamp moved. A stamp hashes the page's data and a fingerprint of the code that builds pages (`services/page_code.py`), not the release, so a deploy that changes no page code rebuilds nothing; the report carries `pageCode`. The first deploy after a change to page code restales every page once.
 5. Smoke-tests `https://d89rsltpszebp.cloudfront.net/health`.
 
 Craft sync (`.github/workflows/craft-sync.yml`): daily at 21:37 UTC and on dispatch, runs `app.scripts.sync_portal_crafts` in `/opt/kalavigyan/current/backend` on the box over SSM, logging to `deploy/logs/craft-sync/<run id>/`. It prints one JSON report and fails when a portal did not answer (`docs/contracts/portal-craft-feed.md`).
@@ -262,6 +264,9 @@ origins; the issuer is the API origin and the consent page is `<PUBLIC_WEB_URL>/
 3. Switch off: `MCP_SERVER_ENABLED=false` and re-render; the route answers 404.
 
 ### Contributions at scale (round 7)
+
+- **Allowances** are counted per account and kind in each clock hour (UTC) in Postgres (`AllowanceBucket`, `core/allowances.py`), so a restart does not reset them and both deploy slots share them; the nightly upkeep deletes buckets over a day old. A refusal saying the call "could not be counted" means the allowance database was unreachable or slow; it lifts in a minute.
+- **The release checks**: the post-deploy check reads `E2E_EMAIL` and `E2E_PASSWORD`, takes an optional `base_url`, operates every control of the live site (`frontend/e2e/release/controls.spec.ts`) and skips its page job after a deploy that built no web. Lighthouse on a preview blocks `vercel.live`, whose feedback toolbar otherwise costs best practices; production never carries it.
 
 - **The contribution worker** `kv-contributions` (a systemd unit beside `kv-worker` and `kv-fetcher`,
   restarted by every deploy) takes queued proposals and runs their gates off the request

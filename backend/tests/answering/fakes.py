@@ -225,6 +225,7 @@ class FakeStore:
         claim_ids: Sequence[uuid.UUID],
         explainer: Explainer | None,
         version: VersionMark | None = None,
+        readings: Sequence[Any] = (),
     ) -> None:
         self.finished.append(
             {

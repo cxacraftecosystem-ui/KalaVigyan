@@ -10,7 +10,9 @@ __all__ = [
     "TSQUERY_MIN_TERM_CHARS",
     "document_text",
     "or_tsquery",
+    "query_terms",
     "query_text",
+    "tsquery_terms",
 ]
 
 QUERY_PREFIX = "task: search result | query: "
@@ -19,6 +21,7 @@ NO_TITLE = "none"
 TSQUERY_MAX_TERMS = 40
 TSQUERY_MIN_TERM_CHARS = 3
 TERM = re.compile(r"[a-z0-9]+")
+OR = " | "
 
 
 def query_text(text: str) -> str:
@@ -31,6 +34,14 @@ def document_text(text: str, *, title: str | None = None) -> str:
 
 
 def or_tsquery(text: str) -> str | None:
+    return OR.join(query_terms(text)) or None
+
+
+def query_terms(text: str) -> list[str]:
     folded = unicodedata.normalize("NFKC", text).casefold()
     terms = [term for term in dict.fromkeys(TERM.findall(folded)) if len(term) >= TSQUERY_MIN_TERM_CHARS]
-    return " | ".join(terms[:TSQUERY_MAX_TERMS]) or None
+    return terms[:TSQUERY_MAX_TERMS]
+
+
+def tsquery_terms(tsquery: str) -> list[str]:
+    return [term for term in dict.fromkeys(part.strip() for part in tsquery.split("|")) if term]

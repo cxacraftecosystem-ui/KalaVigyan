@@ -1,11 +1,17 @@
 import { expect, test } from "@playwright/test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
+import { ClientIdentity } from "../components/oauth/ClientIdentity";
 import {
   authorizationQuery,
   consentBody,
   consentProblem,
+  deviceCaution,
+  identityFacts,
   initialScopes,
   navigableRedirect,
+  returnsToThisDevice,
   scopeList,
   TERMS_NEEDED,
   withScope
@@ -95,4 +101,34 @@ test("the review reply is either the prompt or a redirect, and connections list 
   });
   expect(scopeList(listed.connections[0].scopes)).toBe("read and contribute");
   expect(scopeList(["review", "ask", "read"])).toBe("read, ask and review");
+});
+
+const PUBLISHED: AuthorizationPrompt = { ...PROMPT, clientIdHost: "claude.ai" };
+
+test("a prompt names who publishes the app's identity, and an older reply without it still reads", () => {
+  expect(parseShape(reviewShape, PUBLISHED)).toEqual(PUBLISHED);
+  expect(parseShape(reviewShape, { ...PROMPT, clientIdHost: null })).toEqual({ ...PROMPT, clientIdHost: null });
+  expect(parseShape(reviewShape, PROMPT)).not.toHaveProperty("clientIdHost");
+  expect(identityFacts(PUBLISHED)).toEqual([
+    { label: "App", value: "Claude" },
+    { label: "Identity", value: "Published at claude.ai" },
+    { label: "Returns you to", value: "claude.ai" },
+    { label: "Asks to", value: "Read, contribute and review" }
+  ]);
+  expect(identityFacts(PROMPT)[1]).toEqual({ label: "Identity", value: "Registered by the app itself" });
+});
+
+test("a return to a program on this computer is cautioned, any other return is not", () => {
+  for (const host of ["127.0.0.1", "127.4.5.6", "localhost", "::1", "[::1]"]) {
+    expect(returnsToThisDevice({ ...PUBLISHED, redirectHost: host }), host).toBe(true);
+  }
+  for (const host of ["claude.ai", "127.0.0.1.example.org", "vscode.dev", "cursor:"]) {
+    expect(returnsToThisDevice({ ...PUBLISHED, redirectHost: host }), host).toBe(false);
+  }
+  const vsCode: AuthorizationPrompt = { ...PUBLISHED, clientName: "Visual Studio Code", clientIdHost: "vscode.dev", redirectHost: "127.0.0.1" };
+  expect(deviceCaution(vsCode)).toBe("This sign-in returns to a program on this computer. Approve it only if you started it from Visual Studio Code here.");
+  const cautioned = renderToStaticMarkup(createElement(ClientIdentity, { prompt: vsCode }));
+  expect(cautioned).toContain("Published at vscode.dev");
+  expect(cautioned).toContain('data-testid="device-caution"');
+  expect(renderToStaticMarkup(createElement(ClientIdentity, { prompt: PUBLISHED }))).not.toContain('data-testid="device-caution"');
 });

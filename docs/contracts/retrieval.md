@@ -27,12 +27,19 @@ seat search in `app/services/seat_search.py`, the seed passages in
 - Claims: three rankings of at most `RANKING_DEPTH` (30) each, fused by reciprocal rank fusion
   (`score = sum(1 / (60 + rank))`, ties by best single rank, then id):
   - full text: the search words' distinct Latin terms of 3 or more characters ORed through
-    `to_tsquery('english')`, ordered by `ts_rank_cd`;
+    `to_tsquery('english')`; the first `LEXICAL_CANDIDATES` (400) matches by `ts_rank_cd` are
+    then ordered by the rarity of the terms each holds: a term weighs `ln(1 + n / n_t)`, where `n`
+    is the number of candidates and `n_t` the number holding the term, so a claim holding the
+    question's rare word (settled, bacteria, a person's name) outranks claims that only repeat the
+    craft's name or a name every claim carries; ties by `ts_rank_cd`, then id;
   - vector: exact cosine distance between the embedded question and the scoped claims whose
     vector was made by the embedding route's current model (see Stamps); a claim with no vector,
     or with another model's, ranks by text and entities alone;
-  - entities: claims on scoped concepts (or edges touching them) whose name of 4 or more
-    characters appears in the search words, longest name first.
+  - entities: claims on scoped concepts (or edges touching them) named in the search words by a
+    name of 4 or more characters, longest name first. A concept is named by its whole name, by its
+    native head before ` (` and by the gloss inside the parentheses (`Syahi (fermented iron
+    black)` is named by "syahi" and by "fermented iron black"), and by the label, aliases and
+    local names of every glossary term linked to it (`TermConcept`).
 - Passages: full text and vector as above, fused in two separate lists of at most `limit` each:
   corpus passages, and the passages of field recordings (`Source` of a `FieldRecording`). A
   craft's many corpus passages therefore never crowd an artisan's recorded words out of the
@@ -127,21 +134,29 @@ with no quote; the repository holds no text of that edition, so it has no passag
 
 ## Evaluation
 
-- The golden list (`retrieval/golden.GOLDEN_QUESTIONS`): 22 questions over six crafts and the
-  shared block-printing science, each with the seed claims that answer it (seed keys), chosen by
-  hand from `app/data/seed_claims.json`; some name fields. `test_evaluation` checks that every
-  expected hit is a seeded concept claim of the named craft in an allowed field.
+- The golden list (`app/data/eval/retrieval_questions.json`, version 1, read by
+  `retrieval/golden.golden_questions()`): 77 questions over 21 crafts and the shared
+  block-printing science, covering all sixteen fields. Each question names the field it asks
+  about (`field`) and, sometimes, the field filter it is asked with (`fields`). Each entry of
+  `expected` is one fact the answer needs: a claim, or a list of every stored claim that states
+  that fact (the knowledge base often holds a seed claim and the curated claims that restate it),
+  any one of which counts. Claims are named by seed key (`seed-...`) or claim id, read from each
+  craft's public export on 2026-11-21. `test_evaluation` checks the counts, that every name is a
+  seed key or a claim id, and that every seed key is a seeded concept claim of the named craft in
+  an allowed field.
 - `retrieval/evaluation.evaluate_golden(retriever, golden, *, claim_id, present=None)` asks each
   question in `HYBRID` mode for 10 claims and reports recall at 5 (the share of a question's
-  expected claims in its first five, averaged) and mean reciprocal rank (of the first expected
-  claim), with the expected claims each question missed. Expected claims not visible in the
-  database are reported as absent and not scored.
+  facts with any of their claims in its first five, averaged), mean reciprocal rank (of the first
+  claim of any fact) and recall by field, with the facts each question missed (`a or b`).
+  Expected claims not visible in the database are reported as absent and not scored; a fact
+  whose claims are all absent is dropped.
 - `tests/db/test_retrieval_eval.py` seeds the claims and passages, embeds them with a hashed
-  bag-of-words embedder (deterministic, no network) and asserts recall at 5 of at least 0.9 and
-  a mean reciprocal rank of at least 0.7. Measured in Backend checks on 2026-11-20: 0.9394 and
-  0.7439 over the 22 questions; a change that lowers either below its floor fails.
-- `python -m app.scripts.eval_retrieval` runs the same list against the live database with the
-  embedding route and prints `{ok, questions, recallAt5, meanReciprocalRank, absent, misses}`.
+  bag-of-words embedder (deterministic, no network), scores the questions with a seeded claim
+  (at least the 22 seed-keyed ones) and asserts recall at 5 of at least 0.9 and a mean
+  reciprocal rank of at least 0.7; a change that lowers either below its floor fails.
+- `python -m app.scripts.eval_retrieval` runs the list against the live database with the
+  embedding route and prints
+  `{ok, questions, recallAt5, meanReciprocalRank, absent, misses, recallByField}`.
 
 ## Not built
 

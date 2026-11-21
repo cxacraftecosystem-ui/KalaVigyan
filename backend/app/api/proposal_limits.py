@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import Depends, HTTPException, status
 
+from app.core.allowances import ALLOWANCE_UNREAD
 from app.core.errors import InvalidInput
 from app.core.rate_limit import (
     COMPONENT_PROPOSALS,
@@ -44,7 +45,7 @@ LIMIT_NOUNS: Mapping[str, str] = MappingProxyType(
         PAGE_PREVIEWS: "page previews",
     }
 )
-SPENT = "This account made {limit} {noun} in the last hour, the most one account may. Try again in {wait}."
+SPENT = "This account made {limit} {noun} this hour, the most one account may. Try again in {wait}."
 MINUTE = 60
 
 Proposer = Callable[..., Awaitable[User]]
@@ -54,6 +55,7 @@ Proposer = Callable[..., Awaitable[User]]
 class Spent:
     message: str
     wait_seconds: float
+    unread: bool = False
 
 
 def wait_words(seconds: float) -> str:
@@ -64,33 +66,33 @@ def wait_words(seconds: float) -> str:
     return f"{whole} second" if whole == 1 else f"{whole} seconds"
 
 
-def spent_limit(kind: str, user: Any) -> Spent | None:
-    allowed, wait = proposal_attempt(kind, user)
-    if allowed:
+async def spent_limit(kind: str, user: Any) -> Spent | None:
+    taken = await proposal_attempt(kind, user)
+    if taken.granted:
         return None
-    message = SPENT.format(limit=PROPOSAL_LIMITS[kind], noun=LIMIT_NOUNS[kind], wait=wait_words(wait))
-    return Spent(message=message, wait_seconds=wait)
+    if taken.unread:
+        return Spent(message=ALLOWANCE_UNREAD, wait_seconds=taken.wait_seconds, unread=True)
+    words = wait_words(taken.wait_seconds)
+    message = SPENT.format(limit=PROPOSAL_LIMITS[kind], noun=LIMIT_NOUNS[kind], wait=words)
+    return Spent(message=message, wait_seconds=taken.wait_seconds)
 
 
-def refuse_when_spent(kind: str, user: Any) -> None:
-    spent = spent_limit(kind, user)
+async def refuse_when_spent(kind: str, user: Any) -> None:
+    spent = await spent_limit(kind, user)
     if spent is not None:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            spent.message,
-            {"Retry-After": retry_after_value(spent.wait_seconds)},
-        )
+        refused = status.HTTP_503_SERVICE_UNAVAILABLE if spent.unread else status.HTTP_429_TOO_MANY_REQUESTS
+        raise HTTPException(refused, spent.message, {"Retry-After": retry_after_value(spent.wait_seconds)})
 
 
-def refuse_tool_when_spent(kind: str, user: Any) -> None:
-    spent = spent_limit(kind, user)
+async def refuse_tool_when_spent(kind: str, user: Any) -> None:
+    spent = await spent_limit(kind, user)
     if spent is not None:
         raise InvalidInput(spent.message)
 
 
 def proposal_limit(kind: str, proposer: Proposer) -> Callable[..., Awaitable[None]]:
     async def limited(user: User = Depends(proposer)) -> None:
-        refuse_when_spent(kind, user)
+        await refuse_when_spent(kind, user)
 
     limited.__name__ = f"limit_{kind}"
     return limited

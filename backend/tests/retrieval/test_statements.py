@@ -1,3 +1,4 @@
+import re
 import uuid
 from typing import Any, cast
 
@@ -19,6 +20,9 @@ from app.retrieval.hybrid import CORPUS_TIER, StoredKnowledgeSearch
 from app.retrieval.statements import (
     ENTITY_NAME_MIN_CHARS,
     EVERY_CRAFT,
+    LEXICAL_CANDIDATES,
+    NAME_GLOSS,
+    NAME_GLOSS_OPEN,
     RANKING_DEPTH,
     CraftScope,
     chunk_conditions,
@@ -111,31 +115,39 @@ def test_chunks_follow_the_claims_of_the_asked_fields() -> None:
     assert '"Claim".fields && ' in sql and params["fields_1"] == ["HISTORY"]
 
 
-def test_the_entity_ranking_reads_scoped_concepts_named_in_the_question_longest_name_first() -> None:
-    statement = claim_entity_ranking(claim_conditions(SCOPE, mode="HYBRID"), SCOPE, "Why is alum used?")
+def test_the_entity_ranking_reads_concepts_named_by_name_head_gloss_or_glossary_term_longest_first() -> None:
+    statement = claim_entity_ranking(claim_conditions(SCOPE, mode="HYBRID"), SCOPE, "Why is syahi used?")
     sql, params = compiled(statement)
     assert sql.startswith(
-        'WITH named AS (SELECT "Concept".id AS id, length("Concept".name) AS weight FROM "Concept"'
+        "WITH named AS (SELECT names.id AS id, max(length(lower(trim(names.name)))) AS weight"
     )
-    assert 'strpos(lower(%(param_1)s::VARCHAR), lower("Concept".name)) > %(strpos_1)s::INTEGER' in sql
+    assert 'split_part("Concept".name, ' in sql and 'SUBSTRING("Concept".name FROM ' in sql
+    assert "termed.label" in sql and "unnest(termed.aliases)" in sql and 'unnest(termed."localNames")' in sql
+    assert re.search(
+        r"strpos\(lower\(%\(param_\d+\)s::VARCHAR\), lower\(trim\(names\.name\)\)\) > %\(strpos_1\)s::INTEGER",
+        sql,
+    )
     assert '"ConceptEdge"."srcId" = named.id OR "ConceptEdge"."dstId" = named.id' in sql
-    assert sql.endswith(
-        'GROUP BY "Claim".id ORDER BY max(subjects.weight) DESC, "Claim".id LIMIT %(param_2)s::INTEGER'
+    assert re.search(
+        r'GROUP BY "Claim"\.id ORDER BY max\(subjects\.weight\) DESC, "Claim"\.id LIMIT %\(param_\d+\)s::INTEGER$',
+        sql,
     )
-    assert params["param_1"] == "Why is alum used?" and params["length_1"] == ENTITY_NAME_MIN_CHARS == 4
-    assert params["strpos_1"] == 0 and params["param_2"] == RANKING_DEPTH
+    values = list(params.values())
+    assert NAME_GLOSS_OPEN == " (" and NAME_GLOSS == r"\(([^)]*)\)"
+    assert NAME_GLOSS_OPEN in values and NAME_GLOSS in values and ENTITY_NAME_MIN_CHARS in values
+    assert "Why is syahi used?" in values and RANKING_DEPTH in values and ENTITY_NAME_MIN_CHARS == 4
 
 
-def test_the_lexical_ranking_matches_the_or_query_and_orders_by_cover_density() -> None:
+def test_the_lexical_ranking_weighs_each_matched_term_by_its_rarity_among_the_candidates() -> None:
     sql, params = compiled(claim_lexical_ranking(claim_conditions(SCOPE, mode="HYBRID"), "alum | madder"))
-    assert sql.startswith('SELECT "Claim".id FROM "Claim" WHERE')
-    assert '"Claim".tsv @@ to_tsquery(%(to_tsquery_1)s::REGCONFIG, %(to_tsquery_2)s::VARCHAR)' in sql
-    assert sql.endswith(
-        'ORDER BY ts_rank_cd("Claim".tsv, to_tsquery(%(to_tsquery_1)s::REGCONFIG, %(to_tsquery_2)s::VARCHAR))'
-        ' DESC, "Claim".id LIMIT %(param_1)s::INTEGER'
-    )
-    assert params["to_tsquery_1"] == "english" and params["to_tsquery_2"] == "alum | madder"
-    assert params["param_1"] == RANKING_DEPTH == 30
+    assert sql.startswith('WITH lexical AS MATERIALIZED (SELECT "Claim".id AS id, ts_rank_cd("Claim".tsv, ')
+    assert "AS term_0" in sql and "AS term_1" in sql and "term_2" not in sql
+    assert sql.count("ln(") == 2 and sql.count("greatest(") == 2
+    assert re.search(r"DESC, lexical\.density DESC, lexical\.id LIMIT %\(param_\d+\)s::INTEGER$", sql)
+    words = [value for value in params.values() if isinstance(value, str)]
+    assert {"english", "alum | madder", "alum", "madder"} <= set(words)
+    assert LEXICAL_CANDIDATES in params.values() and RANKING_DEPTH in params.values()
+    assert (LEXICAL_CANDIDATES, RANKING_DEPTH) == (400, 30)
 
 
 def test_the_vector_ranking_is_an_exact_cosine_scan_of_the_scoped_rows() -> None:
@@ -153,7 +165,8 @@ def test_chunks_come_from_sources_cited_by_scoped_claims_or_shown_field_intervie
 ):
     conditions = chunk_conditions(SCOPE, mode="HYBRID", acls=("PUBLIC",))
     sql, params = compiled(chunk_lexical_ranking(conditions, "alum"))
-    assert sql.startswith('SELECT "Chunk".id FROM "Chunk" WHERE ("Chunk"."sourceId" IN (SELECT "Source".id')
+    assert sql.startswith('WITH lexical AS MATERIALIZED (SELECT "Chunk".id AS id, ts_rank_cd("Chunk".tsv, ')
+    assert 'WHERE ("Chunk"."sourceId" IN (SELECT "Source".id' in sql
     assert '"ClaimSource"."claimId" IN (SELECT "Claim".id FROM "Claim"' in sql
     assert ' OR "Chunk"."sourceId" IN (SELECT "FieldRecording"."sourceId" FROM "FieldRecording"' in sql
     assert '"FieldRecording"."hiddenAt" IS NULL' in sql

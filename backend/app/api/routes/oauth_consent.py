@@ -106,7 +106,7 @@ async def _answer[T](session: AsyncSession, change: Awaitable[T]) -> T:
         result = await change
     except oauth_consent.UntrustedRequest as untrusted:
         await session.rollback()
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(untrusted)) from untrusted
+        raise HTTPException(untrusted.status, str(untrusted)) from untrusted
     except oauth_consent.TermsChanged as changed:
         await session.rollback()
         raise HTTPException(status.HTTP_409_CONFLICT, str(changed)) from changed

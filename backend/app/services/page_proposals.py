@@ -67,7 +67,7 @@ class PageTools:
     gates: ProposalAdapters
     fetcher: Fetcher
     start_picture: PictureStarter
-    spend: Callable[[str], None]
+    spend: Callable[[str], Awaitable[None]]
     origin: str
     site: str
 
@@ -120,7 +120,7 @@ async def _record(run: _Run, part: str, index: int, work: Callable[[], Awaitable
 
 async def _fact(run: _Run, index: int, proposal: FactProposal) -> PartReport:
     refuse_on(fact_subject_problem(run.bundle, run.subject, index, proposal))
-    run.tools.spend(FACT_PROPOSALS)
+    await run.tools.spend(FACT_PROPOSALS)
     reply = await propose_fact(
         run.session, proposal, run.user, run.tools.origin, adapters=run.tools.gates, now=run.now
     )
@@ -132,7 +132,7 @@ async def _fact(run: _Run, index: int, proposal: FactProposal) -> PartReport:
 
 async def _structure(run: _Run, index: int, proposal: StructureProposal) -> PartReport:
     refuse_on(structure_subject_problem(run.bundle, run.subject, index, proposal))
-    run.tools.spend(STRUCTURE_PROPOSALS)
+    await run.tools.spend(STRUCTURE_PROPOSALS)
     context = (run.tools.origin, run.tools.fetcher, run.tools.site)
     result = await propose_structure(run.session, run.user, proposal, context=context, now=run.now)
     made = refused if result.outcome == STRUCTURE_REFUSED else accepted
@@ -142,7 +142,7 @@ async def _structure(run: _Run, index: int, proposal: StructureProposal) -> Part
 async def _component(run: _Run, index: int, component: PageComponent) -> PartReport:
     draft = resolved_component(component, run.facts)
     refuse_on(keyed_problem(run.bundle, run.subject, index, draft))
-    run.tools.spend(COMPONENT_PROPOSALS)
+    await run.tools.spend(COMPONENT_PROPOSALS)
     result = await propose_component(
         run.session, run.user, draft, now=run.now, known=known_texts(run.facts, draft)
     )
@@ -152,7 +152,7 @@ async def _component(run: _Run, index: int, component: PageComponent) -> PartRep
 
 
 async def _layout(run: _Run, part: PageLayoutPart) -> PartReport:
-    run.tools.spend(LAYOUT_PROPOSALS)
+    await run.tools.spend(LAYOUT_PROPOSALS)
     draft = LayoutProposalDraft(
         subject=LayoutSubject(kind=run.subject.kind, slug=run.subject.slug),
         base_version=part.base_version,

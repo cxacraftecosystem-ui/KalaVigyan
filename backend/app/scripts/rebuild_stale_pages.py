@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from app.core.db import dispose_engine, session_scope
+from app.services.page_code import page_code_fingerprint
 from app.services.upkeep_pages import PagesReport, rebuild_stale_pages
 
 EVERY_STALE_PAGE = 100_000
@@ -23,7 +24,7 @@ async def run(seconds: float) -> dict[str, Any]:
                 await session.rollback()
     finally:
         await dispose_engine()
-    return {**report.as_dict(), "finished": finished}
+    return {**report.as_dict(), "finished": finished, "pageCode": page_code_fingerprint()}
 
 
 def main(argv: list[str] | None = None) -> int:

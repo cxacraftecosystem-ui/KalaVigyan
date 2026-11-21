@@ -528,8 +528,9 @@ because the stamp moves.
 ## Caching
 
 - **Stamp.** `craft_page_stamp.page_stamp(session, craft, variant)` reads in one statement what
-  the page is built from, each term scoped to the craft (decision 0098 item 11): the release's
-  build id, the site address, the schema version, the curation versions of the craft's dossier and
+  the page is built from, each term scoped to the craft (decision 0098 item 11): the fingerprint of
+  the code that builds a page (`page_code.page_code_fingerprint()`, below), the site address, the
+  schema version, the curation versions of the craft's dossier and
   its family dossier, and for every row class the builders read its count and latest change: the
   craft's concepts, claims, citations and cited sources (the craft claim scope), its family's claims
   and citations, the relatives' crafts, curations and claims, glossary terms, processes, stages,
@@ -541,6 +542,14 @@ because the stamp moves.
   as `field_scope.fresh_portals` reads them, the artisan-images setting, and its testimony
   (approvals and withdrawals) and conversations. The stamp is the SHA-256 of that record and the
   variant.
+- **Page code.** `services/page_code.page_code_fingerprint()` is computed once per process from the
+  files themselves: the SHA-256 of the path and SHA-256 of every source file the page and document
+  builders (`craft_page_snapshots`, `monograph_generated`) import, directly or through other
+  modules of `app` (not followed into `app.models` and `app.core`, which carry no page content),
+  the data files those `app.data` loaders name, and the monograph kit (`data/monographs/kit`). A
+  deploy that changes none of them leaves every stamp as it was, so nothing restales; a deploy that
+  changes one restales every page once. The deploy's and the nightly rebuild's report carry it as
+  `pageCode`.
 - **Snapshot.** `CraftPageSnapshot {craftId, variant (OPEN, RESEARCHER), stamp, schemaVersion, body,
   etag, builtAt}`, one row per craft and variant. The route reads the stamp, then the process cache
   (`craft_page_cache.PageCache` on `app.state.craft_pages`, the last 48 pages as served bytes with

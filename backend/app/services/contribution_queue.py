@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.allowances import ALLOWANCE_UNREAD
 from app.core.errors import InvalidInput
 from app.core.rate_limit import FACT_PROPOSALS, proposal_slots
 from app.models import QueuedProposal, User
@@ -135,11 +136,12 @@ async def _queued(
     origin: str,
     now: datetime,
 ) -> dict[int, BatchItem]:
-    granted, wait = proposal_slots(FACT_PROPOSALS, proposer, len(fresh), limit=standing.facts_per_hour)
+    taken = await proposal_slots(FACT_PROPOSALS, proposer, len(fresh), limit=standing.facts_per_hour, now=now)
+    problem = ALLOWANCE_UNREAD if taken.unread else _spent(standing, taken.wait_seconds)
     items: dict[int, BatchItem] = {}
     for number, plan in enumerate(fresh):
-        if number >= granted:
-            items[plan.fact.index] = _refused(plan, _spent(standing, wait))
+        if number >= taken.granted:
+            items[plan.fact.index] = _refused(plan, problem)
             continue
         row, created = await _stored(
             session, proposer.id, plan, origin=origin, now=now + timedelta(microseconds=number)

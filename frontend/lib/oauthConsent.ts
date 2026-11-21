@@ -14,6 +14,9 @@ export const MISSING_REQUEST = "This link is missing what the app sends. Start t
 
 const NAVIGABLE = /^(https?:|[a-z][a-z0-9+.-]*:)/i;
 const NEVER_NAVIGATE = /^(javascript|data|vbscript|file|blob|about):/i;
+const LOOPBACK_HOST = /^(localhost|::1|\[::1\]|127(\.\d{1,3}){3})$/i;
+
+export type IdentityFact = { label: string; value: string };
 
 export function authorizationQuery(search: string): AuthorizationQuery | null {
   const params = new URLSearchParams(search);
@@ -63,6 +66,24 @@ export function navigableRedirect(url: string): boolean {
 
 export function scopeList(scopes: readonly McpScope[]): string {
   return listText(inOrder(scopes));
+}
+
+export function returnsToThisDevice(prompt: AuthorizationPrompt): boolean {
+  return LOOPBACK_HOST.test(prompt.redirectHost);
+}
+
+export function identityFacts(prompt: AuthorizationPrompt): IdentityFact[] {
+  const asked = scopeList(prompt.scopes.map((choice) => choice.scope));
+  return [
+    { label: "App", value: prompt.clientName },
+    { label: "Identity", value: prompt.clientIdHost ? `Published at ${prompt.clientIdHost}` : "Registered by the app itself" },
+    { label: "Returns you to", value: prompt.redirectHost },
+    { label: "Asks to", value: `${asked.charAt(0).toUpperCase()}${asked.slice(1)}` }
+  ];
+}
+
+export function deviceCaution(prompt: AuthorizationPrompt): string {
+  return `This sign-in returns to a program on this computer. Approve it only if you started it from ${prompt.clientName} here.`;
 }
 
 function inOrder(scopes: readonly McpScope[]): McpScope[] {

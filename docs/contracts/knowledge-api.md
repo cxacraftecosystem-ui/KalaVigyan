@@ -161,14 +161,20 @@ twice.
   that fails after an earlier one answered becomes a notice and stops the call there; when the
   first step fails, the call is the tool error. So a call with `quotes` alone is the old quote
   check and a call with `archive` alone the old archive, each counting as before.
-- **Allowances** (`core/rate_limit.LOOKUP_LIMITS`, an hour, per account by the trust tier
+- **Allowances** (`core/rate_limit.LOOKUP_LIMITS`, per clock hour (UTC), per account by the trust tier
   `my_work` reports, Professors and up at proven; the tiers are `research/trust_tiers`): source
   searches (each kind of `search_sources`: its sources once, its pictures once) 30, 60 and 120;
   source reads (the text of `read_source`, each quote it checks, and `lookup`) 120, 240 and 480;
   paid searches 5, 15 and 30; source archives (`read_source` with archive) 5, 10 and 20. Signed-out calls share one allowance across every caller
   (`ANONYMOUS_LOOKUP_LIMITS`: 120 searches and 600 reads an hour). A spent allowance is a tool error
   saying how long to wait; nothing was fetched. An unknown `craft_slug` is refused before anything
-  is spent.
+  is spent. Every allowance is counted once for all API processes and both deploy slots, in
+  Postgres (`core/allowances`, table `AllowanceBucket`: one row per holder, kind and hour,
+  incremented by one `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` on a small connection pool of
+  its own, so a call granted is always counted). When the count cannot be read within
+  `COUNT_SECONDS` (5) the call is refused for a minute (fail closed) and nothing is fetched. The
+  nightly upkeep deletes the buckets of hours that ended more than a day ago. The proposal
+  allowances (`PROPOSAL_LIMITS`) are counted the same way.
 - **Paid routes.** Brave (the web search's fallback when SearXNG finds fewer than three) and
   Elsevier run only within the paid searches: a search that could reach them spends one, and when
   none is left it runs over the free routes and says so in `notices`.
