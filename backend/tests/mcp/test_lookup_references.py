@@ -3,10 +3,12 @@ from typing import Any
 
 import pytest
 
+from app.api import mcp_lookup_tools
 from app.core.errors import ExternalFailure
 from app.core.roles import RESEARCHER
 from app.models import Compound
 from app.research.evidence import SourceDocument
+from app.services.lookup_subjects import HeldSubject
 from app.services.source_lookup_sources import LookupSources
 from app.sources.reference.pubchem import PUBCHEM_LICENCE, PubChemCompound
 
@@ -125,6 +127,27 @@ async def test_a_cid_is_looked_up_alone_and_an_unknown_one_says_so(monkeypatch: 
     missing = await call("lookup", {"kind": "compound", "id": 99}, tool_context(None))
     assert missing["isError"] is True
     assert missing["content"][0]["text"].startswith("PubChem holds no compound for 99")
+
+
+async def test_a_held_compound_comes_with_the_keys_a_component_proposal_names(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    serve(monkeypatch, looked_up(FakeCompounds([INDIGO])))
+    asked: list[list[int]] = []
+    key = "0d000000-0000-4000-8000-000000000001"
+
+    async def subjects(session: Any, cids: list[int]) -> list[HeldSubject]:
+        asked.append(list(cids))
+        return [HeldSubject(kind="COMPOUND", key=key, name="indigo", record="10215")]
+
+    monkeypatch.setattr(mcp_lookup_tools, "compound_subjects", subjects)
+    held = Compound(name="indigo", pubchemCid=10215, synonyms=[])
+    context = tool_context(None, FakeSession(scalar=held))
+    result = content(await call("lookup", {"kind": "compound", "id": 10215}, context))
+    assert asked == [[10215]]
+    assert result["subjects"] == [{"kind": "COMPOUND", "key": key, "name": "indigo", "record": "10215"}]
+    unheld = content(await call("lookup", {"kind": "compound", "id": 10215}, tool_context(None)))
+    assert unheld["compounds"][0]["held"] is False and asked[-1] == []
 
 
 async def test_a_lookup_needs_one_key_of_its_kind() -> None:

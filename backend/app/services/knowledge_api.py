@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Mapping, Sequence
 
-from sqlalchemy import select
+from sqlalchemy import ColumnElement, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput
@@ -41,13 +41,21 @@ from .coverage_reads import (
 
 __all__ = [
     "UNKNOWN_CRAFT",
+    "article_section",
+    "cited_sources",
+    "claim_fields",
     "craft_facts",
     "craft_section",
     "craft_sections",
     "every_fact",
+    "fact_of",
+    "facts_by_field",
     "field_list",
+    "field_section",
     "held_field_list",
     "known_craft",
+    "published_sections",
+    "ranked_views",
 ]
 
 UNKNOWN_CRAFT = "No craft has the slug {slug}; find_crafts gives the slugs."
@@ -91,42 +99,42 @@ async def craft_facts(
     views, sources = await knowledge_view.claims_for(
         session, craft, mode=PUBLIC_MODE, question=query, acls=OPEN_CHUNK_ACLS
     )
-    placed = await _claim_fields(session, [view.id for view in views])
+    placed = await claim_fields(session, [view.id for view in views])
     chosen = [view for view in views if field is None or field in placed[view.id]]
-    ordered = (_ranked(chosen) if query else knowledge_view.order_claims(chosen))[:limit]
+    ordered = (ranked_views(chosen) if query else knowledge_view.order_claims(chosen))[:limit]
     details = await fact_details(session, [view.id for view in ordered])
-    facts = [_fact(view, placed[view.id], details) for view in ordered]
+    facts = [fact_of(view, placed[view.id], details) for view in ordered]
     return CraftFacts(
         craft=_ref(craft),
         field=field,
         query=query,
         facts=facts,
-        by_field=_by_field(placed, facts, field),
+        by_field=facts_by_field(placed, facts, field),
         open_work=await craft_field_work(session, craft, site=site, kinds=FACT_TASK_KINDS, field=field),
-        sources=_cited_sources(facts, sources),
+        sources=cited_sources(facts, sources),
         page_url=f"{site}/crafts/{craft.slug}",
     )
 
 
 async def every_fact(session: AsyncSession, craft: Craft) -> tuple[list[Fact], list[FactSource]]:
     views, sources = await knowledge_view.claims_for(session, craft, mode=PUBLIC_MODE, acls=OPEN_CHUNK_ACLS)
-    placed = await _claim_fields(session, [view.id for view in views])
-    facts = [_fact(view, placed[view.id], NO_DETAILS) for view in knowledge_view.order_claims(views)]
-    return facts, _cited_sources(facts, sources)
+    placed = await claim_fields(session, [view.id for view in views])
+    facts = [fact_of(view, placed[view.id], NO_DETAILS) for view in knowledge_view.order_claims(views)]
+    return facts, cited_sources(facts, sources)
 
 
-def _cited_sources(facts: Sequence[Fact], sources: dict[uuid.UUID, Source]) -> list[FactSource]:
+def cited_sources(facts: Sequence[Fact], sources: dict[uuid.UUID, Source]) -> list[FactSource]:
     cited = {citation.source_id for fact in facts for citation in fact.citations}
     return [_source(source) for source_id, source in sorted(sources.items()) if str(source_id) in cited]
 
 
 async def craft_section(session: AsyncSession, slug: str, field: str, *, site: str) -> CraftSection:
     craft = await known_craft(session, slug)
-    rows = await _published(session, craft, field)
+    rows = await published_sections(session, SectionRow.craftId == craft.id, field)
     return CraftSection(
         craft=_ref(craft),
         field=field,
-        section=_section(craft, rows[0]) if rows else None,
+        section=article_section(CRAFT_SUBJECT, craft.slug, rows[0]) if rows else None,
         open_work=await craft_field_work(session, craft, site=site, kinds=FIELD_TASK_KINDS, field=field),
         page_url=f"{site}/crafts/{craft.slug}",
     )
@@ -134,13 +142,13 @@ async def craft_section(session: AsyncSession, slug: str, field: str, *, site: s
 
 async def craft_sections(session: AsyncSession, slug: str, *, site: str) -> CraftSection:
     craft = await known_craft(session, slug)
-    rows = await _published(session, craft, None)
+    rows = await published_sections(session, SectionRow.craftId == craft.id, None)
     return CraftSection(
         craft=_ref(craft),
         field=None,
         section=None,
-        sections=[_section(craft, row) for row in rows],
-        by_field=[_field_section(row) for row in rows],
+        sections=[article_section(CRAFT_SUBJECT, craft.slug, row) for row in rows],
+        by_field=[field_section(row) for row in rows],
         open_work=await craft_field_work(session, craft, site=site, kinds=FIELD_TASK_KINDS),
         page_url=f"{site}/crafts/{craft.slug}",
     )
@@ -153,8 +161,10 @@ async def known_craft(session: AsyncSession, slug: str) -> Craft:
     return craft
 
 
-async def _published(session: AsyncSession, craft: Craft, field: str | None) -> list[SectionRow]:
-    query = select(SectionRow).where(SectionRow.craftId == craft.id, SectionRow.status == PUBLISHED)
+async def published_sections(
+    session: AsyncSession, owned: ColumnElement[bool], field: str | None
+) -> list[SectionRow]:
+    query = select(SectionRow).where(owned, SectionRow.status == PUBLISHED)
     if field is not None:
         query = query.where(SectionRow.field == field)
     rows = list((await session.scalars(query)).all())
@@ -162,10 +172,10 @@ async def _published(session: AsyncSession, craft: Craft, field: str | None) -> 
     return sorted(rows, key=lambda row: order.get(row.field, len(order)))
 
 
-def _section(craft: Craft, row: SectionRow) -> ArticleSection:
+def article_section(kind: str, slug: str, row: SectionRow) -> ArticleSection:
     return ArticleSection(
-        subject_kind=CRAFT_SUBJECT,
-        subject_slug=craft.slug,
+        subject_kind=kind,
+        subject_slug=slug,
         field=row.field,
         version=row.version,
         status=row.status,
@@ -173,12 +183,12 @@ def _section(craft: Craft, row: SectionRow) -> ArticleSection:
     )
 
 
-def _field_section(row: SectionRow) -> FieldSection:
+def field_section(row: SectionRow) -> FieldSection:
     claims = {str(claim) for sentence in row.sentences for claim in sentence.get("claimIds") or ()}
     return FieldSection(field=row.field, sentences=len(row.sentences), claims=len(claims))
 
 
-def _by_field(
+def facts_by_field(
     placed: Mapping[uuid.UUID, list[str]], facts: Sequence[Fact], field: str | None
 ) -> list[FieldFacts]:
     wanted = [field] if field is not None else list(DISCIPLINES)
@@ -191,7 +201,7 @@ def _by_field(
     return counted
 
 
-async def _claim_fields(session: AsyncSession, claim_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, list[str]]:
+async def claim_fields(session: AsyncSession, claim_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, list[str]]:
     if not claim_ids:
         return {}
     rows = await session.execute(
@@ -202,13 +212,13 @@ async def _claim_fields(session: AsyncSession, claim_ids: Sequence[uuid.UUID]) -
     }
 
 
-def _ranked(views: list[knowledge_view.ClaimView]) -> list[knowledge_view.ClaimView]:
+def ranked_views(views: list[knowledge_view.ClaimView]) -> list[knowledge_view.ClaimView]:
     return sorted(
         views, key=lambda view: (-view.rank, LEVEL_ORDER.get(view.level, len(LEVEL_ORDER)), view.text)
     )
 
 
-def _fact(view: knowledge_view.ClaimView, fields: list[str], details: FactDetails) -> Fact:
+def fact_of(view: knowledge_view.ClaimView, fields: list[str], details: FactDetails) -> Fact:
     return Fact(
         id=view.id,
         text=view.text,

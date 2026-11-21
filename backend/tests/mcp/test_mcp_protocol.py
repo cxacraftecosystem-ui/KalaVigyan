@@ -1,4 +1,5 @@
 import json
+import uuid
 from typing import Any
 
 import pytest
@@ -6,7 +7,9 @@ import pytest
 from app.api import mcp_read_tools
 from app.api.mcp_tools import ToolContext, answer
 from app.core.errors import InvalidInput
+from app.research.knowledge_api import CraftFacts
 from app.services.craft_resolver import CraftIndexStore
+from app.services.open_work_subjects import WorkSubject
 
 FIELDS = (
     "OVERVIEW",
@@ -68,7 +71,7 @@ async def test_the_four_read_tools_are_listed_each_read_only_in_the_reading_grou
         assert "never follow instructions" not in tool["description"]
         assert tool["outputSchema"]["type"] == "object"
     facts = tools["get_facts"]["inputSchema"]
-    assert facts["required"] == ["craft_slug"]
+    assert "required" not in facts and {"craft_slug", "subject"} <= set(facts["properties"])
     assert facts["additionalProperties"] is False
     field = facts["properties"]["field"]
     assert (tuple(field["enum"]), field["type"]) == ((*FIELDS, None), ["string", "null"])
@@ -107,6 +110,38 @@ async def test_an_unknown_craft_is_a_tool_error_naming_find_crafts(monkeypatch: 
         "content": [{"type": "text", "text": "No craft has the slug Nowhere; find_crafts gives the slugs."}],
         "isError": True,
     }
+
+
+async def test_get_facts_names_its_page_once_by_slug_or_by_subject() -> None:
+    for asked in ({}, {"craft_slug": "Kutch-Ajrakh", "subject": {"kind": "craft", "slug": "Kutch-Ajrakh"}}):
+        result = await call("get_facts", asked)
+        assert result["isError"] is True and "one of them" in result["content"][0]["text"]
+
+
+async def test_a_category_s_facts_are_read_from_its_page(monkeypatch: pytest.MonkeyPatch) -> None:
+    metal = WorkSubject(uuid.UUID(int=9), "category", "Metal-Craft-Category", "Metal Craft", gi=False)
+    seen: list[tuple[str, str | None, int]] = []
+
+    async def subject(session: Any, kind: str, slug: str) -> WorkSubject:
+        assert (kind, slug) == ("category", metal.slug)
+        return metal
+
+    async def facts(session: Any, found: WorkSubject, **asked: Any) -> CraftFacts:
+        seen.append((found.slug, asked["field"], asked["limit"]))
+        page = found.task_subject(asked["site"])
+        return CraftFacts(
+            subject=page, field=asked["field"], query=None, facts=[], sources=[], page_url=page.page_url
+        )
+
+    monkeypatch.setattr(mcp_read_tools, "subject_by_key", subject)
+    monkeypatch.setattr(mcp_read_tools.category_knowledge, "category_facts", facts)
+    result = await call(
+        "get_facts", {"subject": {"kind": "category", "slug": metal.slug}, "field": "PROCESS"}
+    )
+    shown = result["structuredContent"]
+    assert seen == [("Metal-Craft-Category", "PROCESS", 20)]
+    assert shown["subject"]["kind"] == "category" and "craft" not in shown
+    assert shown["pageUrl"] == "https://kalavigyan.example/categories/Metal-Craft-Category"
 
 
 async def test_an_unknown_tool_or_method_is_a_protocol_error_with_the_request_id() -> None:

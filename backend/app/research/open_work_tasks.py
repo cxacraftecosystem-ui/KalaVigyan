@@ -23,6 +23,7 @@ from .open_work import (
     WorkFilters,
     task_key,
 )
+from .open_work_flagships import flagship_tasks
 
 __all__ = [
     "HIGH_DEMAND_ANSWERS",
@@ -61,6 +62,7 @@ def subject_tasks(standing: SubjectStanding) -> list[OpenTask]:
         *standing.asked,
         *_field_tasks(standing),
         *_component_tasks(standing),
+        *flagship_tasks(standing),
         *_page_tasks(standing),
         *_corroboration_tasks(standing),
         *_link_tasks(standing),

@@ -11,15 +11,14 @@ from app.data.contributor_kit import CONTRIBUTOR_SKILL_PATH
 from app.data.skill_library import (
     CONTRACTS,
     CONTRACTS_DIR,
-    DATASETS_SKILL_PATH,
     INDEX_URI,
     REFERENCES,
     REFERENCES_DIR,
     SKILL_FILES,
     contract_text,
-    datasets_skill,
     reference_text,
     server_index,
+    skill_file_text,
 )
 from app.services.craft_resolver import CraftIndexStore
 
@@ -31,6 +30,7 @@ CURATION_CHECKLIST = CLAUDE_SKILLS / "kalavigyan-craft-pages" / "references" / "
 DATASETS_SOURCE = CLAUDE_SKILLS / "kalavigyan-datasets" / "SKILL.md"
 DATASETS_SITE = SITE_PUBLIC / "skills" / "kalavigyan-datasets" / "SKILL.md"
 DATASETS_URI = "kalavigyan://skills/kalavigyan-datasets/SKILL.md"
+DATASETS_SKILL_PATH = SKILL_FILES[DATASETS_URI].path
 SKILLS = {
     "contributor": CONTRIBUTOR_SKILL_PATH,
     "curation": CURATION_SKILL,
@@ -115,6 +115,14 @@ def test_the_datasets_skill_is_one_text_in_the_repository_the_server_and_the_sit
     assert "name: kalavigyan-datasets" in head and "description:" in head
 
 
+def test_every_skill_served_beside_the_contributor_s_is_one_registry_s_file() -> None:
+    served = {f"kalavigyan://skills/{file.skill}/{file.name}" for file in SKILL_FILES.values()}
+    assert {file.skill for file in SKILL_FILES.values()} == {"kalavigyan-datasets", "kalavigyan-interactives"}
+    assert DATASETS_URI in served
+    skills = {uri for uri in RESOURCES if uri.startswith("kalavigyan://skills/kalavigyan-")}
+    assert skills == {*served, "kalavigyan://skills/kalavigyan-contributor/SKILL.md"}
+
+
 def test_the_curation_skill_s_checklist_is_the_shared_checklist() -> None:
     assert CURATION_CHECKLIST.read_bytes() == REFERENCES["page-checklist"].path.read_bytes()
 
@@ -173,7 +181,7 @@ async def test_every_reference_and_the_datasets_skill_are_resources_read_back_wh
     assert skill["size"] == DATASETS_SKILL_PATH.stat().st_size
     assert f"{SITE}/skills/kalavigyan-datasets/SKILL.md" in skill["description"]
     read = await result("resources/read", {"uri": DATASETS_URI})
-    assert read["contents"][0]["text"] == datasets_skill()
+    assert read["contents"][0]["text"] == skill_file_text(DATASETS_URI)
 
 
 @pytest.mark.parametrize("name", sorted(CONTRACTS))

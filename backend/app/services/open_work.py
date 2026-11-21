@@ -47,6 +47,7 @@ from .claim_holds import held_in_queue
 from .coverage import owners_of, subject_coverage
 from .open_work_components import craft_component_kinds
 from .open_work_counts import SubjectCounts, subject_counts
+from .open_work_flagships import category_component_kinds
 from .open_work_gaps import asked_tasks, open_gaps
 from .open_work_healing import Healing, subject_healing, with_healing
 from .open_work_pages import monograph_layouts
@@ -132,7 +133,10 @@ async def subject_standings(
     gathered = _Gathered(
         counts=await subject_counts(session, owners),
         coverage=await subject_coverage(session, subjects),
-        kinds=await craft_component_kinds(session, owners.crafts),
+        kinds={
+            **await craft_component_kinds(session, owners.crafts),
+            **await category_component_kinds(session, owners.categories),
+        },
         layouts=monograph_layouts(),
         site=site,
         healing=await subject_healing(session, owners),

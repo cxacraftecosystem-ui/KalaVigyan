@@ -22,6 +22,7 @@ __all__ = [
     "SqlHeldFacts",
     "craft_subject",
     "proposal_subject",
+    "subject_claims",
 ]
 
 HELD_STATUSES = ("DRAFT", "PROPOSED", "IN_REVIEW", "APPROVED")
@@ -93,7 +94,7 @@ class SqlHeldFacts:
 
     def _conditions(self, field: str | None) -> list[ColumnElement[bool]]:
         conditions = [
-            _subject_claims(self._subject),
+            subject_claims(self._subject),
             Claim.status.in_(HELD_STATUSES),
             Claim.sensitivity == VISIBLE_SENSITIVITY,
         ]
@@ -102,7 +103,7 @@ class SqlHeldFacts:
         return conditions
 
 
-def _subject_claims(subject: FactSubject) -> ColumnElement[bool]:
+def subject_claims(subject: FactSubject) -> ColumnElement[bool]:
     if subject.kind == CRAFT:
         return scope_claims(CraftScope(craft_id=subject.craft_id, sub_category_id=subject.sub_category_id))
     shared = [Concept.craftId.is_(None), Concept.subCategoryId.is_(None)]

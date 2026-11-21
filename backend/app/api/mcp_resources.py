@@ -11,7 +11,6 @@ from app.data.contributor_kit import SITE_SKILL_PATH, contributor_skill, design_
 from app.data.page_preview_view import PAGE_PREVIEW_VIEW, page_preview_view
 from app.data.skill_library import (
     CONTRACTS,
-    DATASETS_SITE_PATH,
     INDEX_URI,
     REFERENCES,
     SKILL_FILES,
@@ -19,7 +18,6 @@ from app.data.skill_library import (
     Reference,
     SkillFile,
     contract_text,
-    datasets_skill,
     reference_text,
     server_index,
     skill_file_text,
@@ -39,7 +37,6 @@ __all__ = [
     "ANSWER_KIT_URI",
     "ANSWER_VIEW_URI",
     "CONTRIBUTOR_SKILL_URI",
-    "DATASETS_SKILL_URI",
     "DESIGN_TOKENS_URI",
     "INDEX_URI",
     "RESOURCES",
@@ -50,7 +47,6 @@ __all__ = [
 ]
 
 CONTRIBUTOR_SKILL_URI = "kalavigyan://skills/kalavigyan-contributor/SKILL.md"
-DATASETS_SKILL_URI = "kalavigyan://skills/kalavigyan-datasets/SKILL.md"
 DESIGN_TOKENS_URI = "kalavigyan://design/tokens.json"
 ANSWER_KIT_URI = "kalavigyan://design/answer-kit.md"
 MARKDOWN = "text/markdown"
@@ -150,16 +146,6 @@ SKILLS = (
         "pictures. Its rules are the references it names. Also at {site}" + SITE_SKILL_PATH + ".",
         MARKDOWN,
         contributor_skill,
-    ),
-    Resource(
-        DATASETS_SKILL_URI,
-        "kalavigyan-datasets",
-        "The KalaVigyan datasets skill",
-        "The method for the data behind KalaVigyan's charts, tables, timelines and map layers: open datasets "
-        "and their licences, provenance, units and projection, and how a dataset becomes a delivered "
-        "component. Also at {site}" + DATASETS_SITE_PATH + ".",
-        MARKDOWN,
-        datasets_skill,
     ),
 )
 DESIGN = (

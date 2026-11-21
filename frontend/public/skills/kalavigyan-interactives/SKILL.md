@@ -38,9 +38,8 @@ skill leaves open.
    recorded in `references/flagships.md`.
 2. **Read what is held, never memory.** `get_page` for the family's page gives its coverage per
    field and its address; `get_facts` by field, with words for the mechanism, gives the facts of
-   the anchor and each curated craft. `get_facts` reads crafts only, so the family page's own
-   facts are listed by id in the backlog and read on the page itself, each citation opening its
-   quotes.
+   the anchor and each curated craft, and with subject `{kind "category", slug}` the family
+   page's own, each with its quotes and sources.
 3. **Derive the family's mechanisms list** as the page checklist says, then keep the one that:
    every sub-family shares (or, where none is shared by all, the one the most crafts share, the
    rest noted as second candidates); changes something a drawing can show (a colour, a phase, a
@@ -49,8 +48,8 @@ skill leaves open.
 4. **One flagship a family.** A second mechanism becomes a craft's own player or a what-if beside
    the flagship, never a second flagship.
 5. **Start from the backlog**, but read each fact again before you rely on it, a craft's with
-   `get_facts` and the family's on its page: a fact may since be held from its page, and new facts
-   may have arrived.
+   `get_facts`, the family's by its page as subject: a fact may since be held from its page, and
+   new facts may have arrived. Claim the family's `FLAGSHIP` task before you start.
 
 ## Storyboard it as cited states
 
@@ -139,8 +138,8 @@ it. Write the storyboard (`references/storyboard.md`) before any drawing.
 ## How the family's crafts borrow it
 
 - The flagship's units cite the family's facts. Label it `shared/<field>/<name>` and key it to the
-  anchor craft, and to the concept or compounds it shows where their ids are known
-  (`list_components` gives the subjects of registered components).
+  anchor craft, and to the concept or compounds it shows by their ids: `lookup` gives a held
+  compound's and concept's ids in its `subjects`, and `get_page` a craft's districts in its `keys`.
 - A craft of the family places it by its label; the page marks it as the family's and counts its
   sources apart from the craft's own.
 - A craft whose own facts add to a state (its furnace, its mordant, its proportions) delivers a
@@ -150,7 +149,8 @@ it. Write the storyboard (`references/storyboard.md`) before any drawing.
 
 ## Proving it
 
-- **Over MCP**: deliver it in a draft or bundle with the facts it rests on, call `preview_page`, fix
+- **Over MCP**: deliver it in a draft or bundle for the family's category page with the facts it
+  rests on and the family's `FLAGSHIP` task as `task_key`, call `preview_page`, fix
   every rule its report fails, then open the private link in both themes at 360, 834 and 1440 px,
   and again with reduced motion on; work it by keyboard alone; step every state and read each against its
   facts. Preview again after each fix, then `propose_page`.

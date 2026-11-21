@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import uuid
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from .article_sections import ArticleSection
 from .base import ContractModel, absent, empty
 from .coverage import FieldCount, FieldCoverage
 from .crafts import QUESTION_MAX_CHARS, SLUG_MAX_CHARS, CraftRef
-from .open_work import OpenTask
+from .open_work import OpenTask, TaskSubject
 from .vocabulary import Discipline, EvidenceLevel, PieceKind, PieceSubjectKind
 
 __all__ = [
@@ -51,6 +51,7 @@ ATTRIBUTION = (
 )
 
 SchemaVersion = Literal[1]
+ONE_PAGE = "a reply names its craft or, for a category, its subject: one of them"
 
 
 class FieldInfo(ContractModel):
@@ -146,7 +147,8 @@ class FieldFacts(ContractModel):
 
 class CraftFacts(ContractModel):
     schema_version: SchemaVersion = KNOWLEDGE_API_SCHEMA_VERSION
-    craft: CraftRef
+    craft: CraftRef | None = Field(default=None, exclude_if=absent)
+    subject: TaskSubject | None = Field(default=None, exclude_if=absent)
     field: Discipline | None
     query: str | None
     facts: list[Fact]
@@ -155,6 +157,10 @@ class CraftFacts(ContractModel):
     sources: list[FactSource]
     page_url: str
     attribution: str = ATTRIBUTION
+
+    @model_validator(mode="after")
+    def _one_page(self) -> Self:
+        return _named_once(self, self.craft, self.subject)
 
 
 class FieldSection(ContractModel):
@@ -165,7 +171,8 @@ class FieldSection(ContractModel):
 
 class CraftSection(ContractModel):
     schema_version: SchemaVersion = KNOWLEDGE_API_SCHEMA_VERSION
-    craft: CraftRef
+    craft: CraftRef | None = Field(default=None, exclude_if=absent)
+    subject: TaskSubject | None = Field(default=None, exclude_if=absent)
     field: Discipline | None
     section: ArticleSection | None
     sections: list[ArticleSection] = Field(default_factory=list)
@@ -173,6 +180,10 @@ class CraftSection(ContractModel):
     open_work: list[OpenTask] = Field(default_factory=list)
     page_url: str
     attribution: str = ATTRIBUTION
+
+    @model_validator(mode="after")
+    def _one_page(self) -> Self:
+        return _named_once(self, self.craft, self.subject)
 
 
 class SubjectCoverage(ContractModel):
@@ -207,6 +218,12 @@ class CraftComponents(ContractModel):
     kind: PieceKind | None = None
     query: str | None = Field(default=None, max_length=QUESTION_MAX_CHARS)
     components: list[ComponentSummary]
+
+
+def _named_once[Reply](reply: Reply, craft: CraftRef | None, subject: TaskSubject | None) -> Reply:
+    if (craft is None) == (subject is None):
+        raise ValueError(ONE_PAGE)
+    return reply
 
 
 def coverage_summary(coverage: FieldCoverage) -> CoverageSummary:

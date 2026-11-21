@@ -13,12 +13,12 @@ as `spec`; `resources/templates/list` gives them as `kalavigyan://components/{ki
 
 - `find_crafts`: a craft's slug, page and fields from its name, place, material or technique.
 - `get_page`: a page's coverage, sections and layout, or with no subject the sixteen fields.
-- `get_facts`: a craft's stored facts in one field or all, each with its verbatim quotes and sources.
+- `get_facts`: a craft's, family's or category's stored facts in one field or all, each with its verbatim quotes and sources.
 - `list_components`: the registered components that apply to a craft, searched by words, before making one.
 - `ask`: ask KalaVigyan a question as the signed-in person and get the finished, cited answer.
 - `search_sources`: the scholarly registries, reference works, web search and open pictures KalaVigyan itself uses, graded.
 - `read_source`: a source's text exactly as the QUOTES gate will read it, the gate's verdict on your quotes, and a Wayback snapshot.
-- `lookup`: a compound's PubChem record and hazards, or Wikidata items for a place, plant or craft.
+- `lookup`: a compound's PubChem record and hazards, or Wikidata items for a place, plant or craft, with KalaVigyan's keys for each.
 - `supply_source`: give a source only you can read (paywall, book, PDF, archive) with its words, kept privately for the gates.
 - `list_open_work`: the tasks that still need work, filtered by subject, field, kind and priority.
 - `my_work`: your reserved and completed tasks, latest outcomes, trust tier and the crafts you steward.

@@ -4,17 +4,17 @@ from typing import Literal, Self
 
 from pydantic import Field, model_validator
 
-from app.core.errors import InvalidInput
 from app.research.article_sections import ArticleSection
 from app.research.base import ContractModel, absent, empty
 from app.research.coverage import FieldCoverage
-from app.research.knowledge_api import ATTRIBUTION, CraftSection, FieldInfo, FieldSection
+from app.research.knowledge_api import ATTRIBUTION, ComponentSubject, CraftSection, FieldInfo, FieldSection
 from app.research.open_work import OpenTask
 from app.research.page_layout import PageLayout
 from app.research.page_proposals import PageSubject
 from app.research.vocabulary import Discipline
-from app.services import coverage_reads, knowledge_api
-from app.services.open_work_subjects import WorkSubject, subject_by_key
+from app.services import category_knowledge, coverage_reads, knowledge_api
+from app.services.open_work_subjects import CATEGORY, WorkSubject, subject_by_key
+from app.services.page_keys import page_keys
 from app.services.page_layouts import layout_of, subject_path
 
 from .mcp_tool_base import Arguments, Tool, ToolContext
@@ -22,16 +22,15 @@ from .mcp_tool_base import Arguments, Tool, ToolContext
 __all__ = ["GET_PAGE", "PAGE_PARTS", "GetPage", "PageRead"]
 
 COVERAGE, SECTIONS, LAYOUT = PAGE_PARTS = ("coverage", "sections", "layout")
-CATEGORY = "category"
-NO_SECTIONS = "A category's page holds no section prose of its own; read its coverage and layout."
 DESCRIPTION = (
     "Read one craft, family or category page in the parts you name. coverage: the cited claims, "
     "structure-cited claims, sources, published section and figures it holds in each of the sixteen fields, "
-    "which are covered, thin or missing. sections: a craft's or family's published prose, one field or every "
-    "field, each sentence with the facts it rests on. layout: where each text unit and component is placed "
-    "(chapter, order, role, a picture's crop, size and caption), its version, and null where the page has "
-    "none; a layout never holds a fact. Each part's open field work comes with its task key. With no subject "
-    "it lists the sixteen fields, each with what it covers and its chapter."
+    "which are covered, thin or missing. sections: the page's published prose as the page draws it, one field "
+    "or every field, each sentence with the facts it rests on. layout: where each text unit and component is "
+    "placed (chapter, order, role, a picture's crop, size and caption), its version, and null where the page "
+    "has none; a layout never holds a fact. Each part's open field work comes with its task key. A craft's or "
+    "family's page also gives its keys: the craft and its districts, as a component proposal names its "
+    "subjects. With no subject it lists the sixteen fields, each with what it covers and its chapter."
 )
 
 
@@ -65,6 +64,7 @@ class PageRead(ContractModel):
     sections: list[ArticleSection] = Field(default_factory=list, exclude_if=empty)
     by_field: list[FieldSection] = Field(default_factory=list, exclude_if=empty)
     layout: PageLayout | None = None
+    keys: list[ComponentSubject] = Field(default_factory=list, exclude_if=empty)
     open_work: list[OpenTask] = Field(default_factory=list)
     page_url: str | None = Field(default=None, exclude_if=absent)
     attribution: str = ATTRIBUTION
@@ -74,11 +74,12 @@ async def _get_page(context: ToolContext, arguments: GetPage) -> PageRead:
     if arguments.subject is None:
         return PageRead(fields=knowledge_api.field_list().fields)
     subject = await subject_by_key(context.session, arguments.subject.kind, arguments.subject.slug)
-    parts = _parts(arguments, subject)
+    parts = _parts(arguments)
     read: dict[str, object] = {
         "subject": PageSubject(kind=subject.kind, slug=subject.slug),
         "parts": parts,
         "page_url": f"{context.site}{subject_path(subject)}",
+        "keys": await page_keys(context.session, subject),
     }
     work: list[OpenTask] = []
     if COVERAGE in parts:
@@ -87,7 +88,7 @@ async def _get_page(context: ToolContext, arguments: GetPage) -> PageRead:
         )
         read["coverage"], work = held.coverage, [*work, *held.open_work]
     if SECTIONS in parts:
-        section = await _sections(context, subject.slug, arguments.field)
+        section = await _sections(context, subject, arguments.field)
         read |= {"field": section.field, "sections": _section_list(section), "by_field": section.by_field}
         work = [*work, *section.open_work]
     if LAYOUT in parts:
@@ -95,19 +96,16 @@ async def _get_page(context: ToolContext, arguments: GetPage) -> PageRead:
     return PageRead.model_validate({**read, "open_work": _once(work)})
 
 
-def _parts(arguments: GetPage, subject: WorkSubject) -> list[str]:
-    asked = list(dict.fromkeys(arguments.parts or ()))
-    if subject.kind == CATEGORY and SECTIONS in asked:
-        raise InvalidInput(NO_SECTIONS)
-    if asked:
-        return asked
-    return [part for part in PAGE_PARTS if not (subject.kind == CATEGORY and part == SECTIONS)]
+def _parts(arguments: GetPage) -> list[str]:
+    return list(dict.fromkeys(arguments.parts or PAGE_PARTS))
 
 
-async def _sections(context: ToolContext, slug: str, field: str | None) -> CraftSection:
+async def _sections(context: ToolContext, subject: WorkSubject, field: str | None) -> CraftSection:
+    if subject.kind == CATEGORY:
+        return await category_knowledge.category_sections(context.session, subject, field, site=context.site)
     if field is None:
-        return await knowledge_api.craft_sections(context.session, slug, site=context.site)
-    return await knowledge_api.craft_section(context.session, slug, field, site=context.site)
+        return await knowledge_api.craft_sections(context.session, subject.slug, site=context.site)
+    return await knowledge_api.craft_section(context.session, subject.slug, field, site=context.site)
 
 
 def _section_list(section: CraftSection) -> list[ArticleSection]:

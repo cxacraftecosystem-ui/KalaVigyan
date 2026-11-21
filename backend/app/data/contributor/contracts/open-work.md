@@ -20,6 +20,7 @@ the server", and item 16's component proposals. The endpoint, framing and read t
 | Facts and sections per field (the field coverage) | `services/coverage.py` (`coverage.md`) |
 | Counts per subject (one source, sources differ, links, demand) | `services/open_work_counts.py` |
 | Component kinds per craft | `services/open_work_components.py`, over the library's one applies-to query (`services/component_library.applies_to`, with `registered_pieces`) |
+| The family flagships: the backlog, the task, its proposal check; the kinds a family page draws | `research/open_work_flagship_backlog.py` (from the interactives skill's `references/flagships.md`, kept equal by a test), `research/open_work_flagships.py`; `services/open_work_flagships.py` |
 | The nightly refresh of field work | `services/open_work_refresh.py` |
 | Pages in the monograph form | `services/open_work_pages.py`; the folder is `data/monograph_files.MONOGRAPHS_DIR` |
 | Listing, standings, review queues, live reservations | `services/open_work.py` |
@@ -37,7 +38,7 @@ the server", and item 16's component proposals. The endpoint, framing and read t
 | The contract resources and the index | `data/contributor/contracts/<name>.md`, copies of `docs/contracts/<name>.md`; `data/contributor/index.md`; read by `data/skill_library.py` |
 | HTTP routes | `api/routes/open_work.py`; `api/routes/page_proposals.py` (bundles and previews, `api/page_proposal_deps.py`) |
 | The contributor skill | `data/contributor/SKILL.md`, served at `frontend/public/skills/kalavigyan-contributor/SKILL.md` |
-| The references, the datasets skill and the interactives skill | `data/contributor/references/<name>.md`, `data/contributor/kalavigyan-datasets/SKILL.md` (from `.claude/skills/kalavigyan-datasets`) and `data/contributor/kalavigyan-interactives/` (from `.claude/skills/kalavigyan-interactives`, listed in `skill_library.SKILL_FILES`), read by `data/skill_library.py`, served at `frontend/public/skills/references/`, `frontend/public/skills/kalavigyan-datasets/` and `frontend/public/skills/kalavigyan-interactives/` |
+| The references, the datasets skill and the interactives skill | `data/contributor/references/<name>.md`, `data/contributor/kalavigyan-datasets/SKILL.md` (from `.claude/skills/kalavigyan-datasets`) and `data/contributor/kalavigyan-interactives/` (from `.claude/skills/kalavigyan-interactives`; both listed in `skill_library.SKILL_FILES`, the one registry of served skills), read by `data/skill_library.py`, served at `frontend/public/skills/references/`, `frontend/public/skills/kalavigyan-datasets/` and `frontend/public/skills/kalavigyan-interactives/` |
 | The design tokens resource | `data/design/tokens.json`, written by `tools/design_tokens.py` beside the design skill's `references/tokens.json` |
 
 ## Subjects
@@ -57,6 +58,7 @@ at most 20 ids; `count` is the whole number.
 | `THIN_FIELD` | a field holds facts or a section but fewer facts than the target | `THIN_FIELD:...:<FIELD>` | facts still wanted | `research_field` |
 | `SECTION` | a field meets its facts target, but its published section is missing or shorter than the target | `SECTION:...:<FIELD>` | facts held | `write_section` |
 | `MISSING_COMPONENT` | a craft or family has no registered component of a need's kinds | `MISSING_COMPONENT:...:<need>` | 0 | `propose_component` |
+| `FLAGSHIP` | one of the nine family pages draws no `reaction_player`, `dip_player`, `stage_player` or `experiment_lab` (The family flagships, below) | `FLAGSHIP:category:<slug>` | the backlog's facts | `deliver_page` |
 | `PAGE_FORM` | the page is not in the monograph form | `PAGE_FORM:<subject>:<slug>` | 0 | none |
 | `PAGE_LAYOUT` | in the monograph form without a layout | `PAGE_LAYOUT:<subject>:<slug>` | 0 | none |
 | `SECOND_SOURCE` | facts cited by one source only, per primary field | `SECOND_SOURCE:...[:<FIELD>]` | facts | `research_field` |
@@ -104,8 +106,8 @@ task and each under 3 a `THIN_FIELD` task; quotes are 25 to 300 characters.
 | `reaction-player` | `reaction_player`, `indigo_vat`, `mordant_bath`, `lost_wax`, `firing`, `dip_player` |
 | `pictures` | `images`, `picture_plate`, `specimen_plate` |
 
-  A category has no component tasks: the registry keys components to crafts, concepts, places and
-  compounds, never to a category.
+  A category has no `MISSING_COMPONENT` tasks: the registry keys components to crafts, concepts,
+  places and compounds, never to a category. A family page has its `FLAGSHIP` task instead.
 - Monograph form: a folder `data/monographs/<slug>` with `content.json`; a layout is a non-empty
   `layout` in it. Only `Kutch-Ajrakh` is in the form.
 - Review queues and who sees them: `FACTS` (claims `PROPOSED` or `IN_REVIEW`, and every shown held
@@ -121,7 +123,8 @@ task and each under 3 a `THIN_FIELD` task; quotes are 25 to 300 characters.
   Channapatna), or 25 or more stored answers about the craft. Every review queue is `HIGH`.
 - `MEDIUM`: GI-registered (`Craft.giStatus` `GI`), curated (a `CuratedCraft` or `CuratedCategory`
   row), or 5 or more stored answers.
-- `LOW`: every other craft and family, and every category.
+- `LOW`: every other craft and family, and every category; a family page's `FLAGSHIP` task is
+  `HIGH` all the same, since every craft of the family borrows the flagship.
 - Order (the subject's prominence): priority; then the owner's list order; GI before not; curated
   before not; then reader demand, most first; crafts, families, categories; name. Within a subject:
   healing first (re-source, corroborate, find another source; fields in vocabulary order), then
@@ -141,8 +144,25 @@ families), at most one of the three; `field`; `kind`; `priority`; `limit` 1 to 2
 matching task before the limit.
 
 A task reserved by another account is left out until its reservation ends; the caller's own carry
-`reservedUntil`. A `MISSING_COMPONENT` task is closed while a `PENDING` or `APPROVED` proposal names
-its key.
+`reservedUntil`. A `MISSING_COMPONENT` or `FLAGSHIP` task is closed while a `PENDING` or `APPROVED`
+proposal names its key.
+
+### The family flagships
+
+Each of the nine family pages (the atlas's categories) has one flagship interactive, chosen in the
+interactives skill's backlog (`kalavigyan://skills/kalavigyan-interactives/references/flagships.md`).
+`research/open_work_flagship_backlog.FLAGSHIPS` holds it in code: per category slug, the family,
+the mechanism, the anchor craft, the facts of its states (the candidates' rows left out) and what it
+still lacks (the backlog's Missing line); a test keeps the two equal.
+
+- **Open** while the family page draws no registered component of kind `reaction_player`,
+  `dip_player`, `stage_player` or `experiment_lab`: none rests on (`claimIds`) or is keyed to the
+  concepts of the page's facts (its `CuratedCategoryClaim` claims and those its `PUBLISHED`
+  sections cite), and none is named in its latest layout. `count` is the backlog's facts for it and
+  `factIds` those facts; `needed` names the mechanism, the anchor and what is still lacking.
+- **Completed** by a component proposal naming it as `task_key`: of one of those kinds, delivered
+  with its spec, and keyed to the anchor craft (a `CRAFT` subject or its `craft_slug`), sent in a
+  bundle for the category page. Any other proposal naming it is refused with the reason.
 
 ## Questions readers asked (decision 0113)
 
@@ -264,8 +284,9 @@ data, any of the 22 contributable kinds, authored or declared) and `units` (`{u0
 MCP except for a `SUBJECT_LINK`, which carries none (`component-specs-general.md`).
 
 - Checks, failing with a sentence the agent can act on: a `task_key` names a `MISSING_COMPONENT`
-  task whose need the proposal's kind meets and whose craft the proposal is keyed to (so a proposal
-  never closes another task); every considered or extended label is registered; every subject exists
+  task whose need the proposal's kind meets and whose craft the proposal is keyed to, or a
+  `FLAGSHIP` task the delivered proposal meets (The family flagships, above), so a proposal never
+  closes another task; every considered or extended label is registered; every subject exists
   (a concept must be open); no live proposal holds the label (a subject link excepted, and a
   concurrent duplicate is refused by the partial unique index on `label`).
 - **The library search**: `component_library.library_components` on the title and description, and
