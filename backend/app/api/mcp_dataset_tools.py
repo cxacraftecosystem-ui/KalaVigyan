@@ -28,7 +28,9 @@ DESCRIPTION = (
     "value's row and column as its cell, and the gates check every value against its stored row."
 )
 UPLOADS_OFF = "Dataset uploads are not open on this server right now."
-CHECKS_UNAVAILABLE = "The checks could not run just now and nothing was stored; call propose_dataset again later."
+CHECKS_UNAVAILABLE = (
+    "The checks could not run just now and nothing was stored; call propose_dataset again later."
+)
 UPLOAD_STEP = "PUT the CSV file to upload_url (curl -T file.csv <upload_url>) before the slot expires."
 REFUSED = "The dataset was not taken: {problems}."
 
@@ -50,9 +52,13 @@ async def _propose(context: ToolContext, arguments: ProposeDataset) -> DatasetRe
     except ExternalFailure:
         raise InvalidInput(CHECKS_UNAVAILABLE) from None
     if problems:
-        return DatasetReply(code=proposal.code, outcome="REFUSED", message=REFUSED.format(problems="; ".join(problems)))
+        return DatasetReply(
+            code=proposal.code, outcome="REFUSED", message=REFUSED.format(problems="; ".join(problems))
+        )
     issued = await issue_dataset_slot(context.session, user, proposal, now=datetime.now(UTC))
-    upload = DatasetUploadStart(upload_url=upload_url(endpoints.issuer, issued.token), expires_at=issued.expires_at)
+    upload = DatasetUploadStart(
+        upload_url=upload_url(endpoints.issuer, issued.token), expires_at=issued.expires_at
+    )
     return DatasetReply(code=proposal.code, outcome="UPLOAD", message=UPLOAD_STEP, upload=upload)
 
 

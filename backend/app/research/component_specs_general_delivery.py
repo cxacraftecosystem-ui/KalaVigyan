@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import re
 import uuid
-from dataclasses import dataclass
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Annotated, Any, Self
 
@@ -35,9 +35,9 @@ __all__ = [
     "DELIVERED_UNIT_START",
     "LABEL_MAX_CHARS",
     "UNITS_MAX",
+    "CitedCell",
     "DeliveredComponent",
     "DeliveredUnit",
-    "CitedCell",
     "UnitKey",
     "cited_cells",
     "cited_dataset",
@@ -235,9 +235,15 @@ def cited_dataset(spec: Any) -> DatasetCite | None:
 def cited_cells(spec: Any) -> list[CitedCell]:
     if isinstance(spec, GeneralChartSpec):
         points = [point for series in spec.series for point in series.points]
-        return [CitedCell(point.cell, point.reading, point.value) for point in points if point.cell is not None]
+        return [
+            CitedCell(point.cell, point.reading, point.value) for point in points if point.cell is not None
+        ]
     if isinstance(spec, GeneralMapLayerSpec):
-        return [CitedCell(place.cell, place.reading, place.value) for place in spec.places if place.cell is not None]
+        return [
+            CitedCell(place.cell, place.reading, place.value)
+            for place in spec.places
+            if place.cell is not None
+        ]
     if isinstance(spec, GeneralTableSpec):
         return [
             CitedCell(DataCell(row=row.row, column=column.column), row.cells[at], None)

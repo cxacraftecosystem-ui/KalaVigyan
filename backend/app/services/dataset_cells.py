@@ -64,7 +64,9 @@ def _check_cell(check: CellCheck, cited: CitedCell, table: DatasetTable, code: s
         return
     if cited.value is not None and not _same(cited.value, numbers_in(stored)):
         check.problems.append(
-            NOT_STATED.format(value=cited.value, unit=cited.unit, stored=stored, row=cited.cell.row, code=code)
+            NOT_STATED.format(
+                value=cited.value, unit=cited.unit, stored=stored, row=cited.cell.row, code=code
+            )
         )
         return
     check.rows.setdefault(cited.unit, []).append(stored)

@@ -116,7 +116,9 @@ def parsed_table(data: bytes) -> ParsedTable:
         raise TableRefused("a table has a header row and at least one row of values")
     header = tuple(cell.strip() for cell in lines[0])
     _check_header(header)
-    rows = tuple(tuple(cell.strip() for cell in line) for line in lines[1:] if any(cell.strip() for cell in line))
+    rows = tuple(
+        tuple(cell.strip() for cell in line) for line in lines[1:] if any(cell.strip() for cell in line)
+    )
     if not rows or len(rows) > ROWS_MAX:
         raise TableRefused(f"a table has 1 to {ROWS_MAX} rows of values")
     for at, row in enumerate(rows, start=1):

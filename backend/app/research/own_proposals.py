@@ -13,10 +13,10 @@ from app.models.enums import PIECE_SUBJECT_KINDS
 
 from .base import ContractModel
 from .component_proposals import ComponentProposalDraft
+from .component_specs import not_contributable
 from .crafts import QUESTION_MAX_CHARS, SLUG_MAX_CHARS
 from .knowledge_api import FieldInfo
 from .knowledge_writes import GateReport
-from .component_specs import not_contributable
 from .open_work import COMPONENT_NEEDS
 from .vocabulary import Discipline, PieceKind, PieceSubjectKind
 

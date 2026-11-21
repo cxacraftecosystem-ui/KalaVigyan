@@ -5,7 +5,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "0056_datasets_and_materials"
-down_revision: str | Sequence[str] | None = "0054_field_photo_reviews"
+down_revision: str | Sequence[str] | None = "0055_answer_gaps"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -113,7 +113,7 @@ def upgrade() -> None:
     for table in KIND_CHECKS:
         _drop_kind_check(table)
         for old, new in RENAMED_KINDS:
-            op.execute(f"UPDATE \"{table}\" SET \"kind\" = '{new}' WHERE \"kind\" = '{old}'")
+            op.execute(f'UPDATE "{table}" SET "kind" = \'{new}\' WHERE "kind" = \'{old}\'')
         _add_kind_check(table, PIECE_KINDS)
     _dataset_columns()
     _dataset_tables()
@@ -135,8 +135,8 @@ def downgrade() -> None:
         _drop_kind_check(table)
         for old, new in RENAMED_KINDS:
             declared = DECLARED_SPEC[table]
-            op.execute(f"UPDATE \"{table}\" SET \"kind\" = '{old}' WHERE \"kind\" = '{new}' AND {declared}")
-        op.execute(f"DELETE FROM \"{table}\" WHERE \"kind\" = 'drawing'")
+            op.execute(f'UPDATE "{table}" SET "kind" = \'{old}\' WHERE "kind" = \'{new}\' AND {declared}')
+        op.execute(f'DELETE FROM "{table}" WHERE "kind" = \'drawing\'')
         _add_kind_check(table, PIECE_KINDS_BEFORE)
 
 

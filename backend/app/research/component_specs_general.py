@@ -10,8 +10,8 @@ from app.models.component_kinds import GENERAL_KINDS
 
 from .base import ContractModel, HttpsUrl, absent
 from .component_specs_general_svg import cleaned_svg
-from .datasets import DATASET_CODE_PATTERN
 from .component_specs_plates_parts import UnitRef
+from .datasets import DATASET_CODE_PATTERN
 
 __all__ = [
     "BOUNDS",
@@ -195,7 +195,9 @@ class GeneralMapLayerSpec(ContractModel):
         return self
 
 
-SPEC_MODELS_GENERAL: Mapping[str, type[ContractModel]] = MappingProxyType({GENERAL_DRAWING: GeneralDrawingSpec})
+SPEC_MODELS_GENERAL: Mapping[str, type[ContractModel]] = MappingProxyType(
+    {GENERAL_DRAWING: GeneralDrawingSpec}
+)
 DECLARED_SPEC_MODELS: Mapping[str, type[ContractModel]] = MappingProxyType(
     {
         GENERAL_CHART: GeneralChartSpec,

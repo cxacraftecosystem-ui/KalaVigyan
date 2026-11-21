@@ -74,7 +74,7 @@ async def proposal_problems(session: AsyncSession, fetcher: Fetcher, proposal: D
         problems.append(TAKEN.format(code=proposal.code))
     try:
         await fetcher.fetch(FetchRequest(url=proposal.landing_url))
-    except (FetchRefused, ExternalFailure):
+    except FetchRefused, ExternalFailure:
         problems.append(UNREACHABLE.format(url=proposal.landing_url))
     return problems
 
@@ -103,7 +103,9 @@ async def issue_dataset_slot(
     return IssuedSlot(token=token, expires_at=expires_at)
 
 
-async def fill_dataset_slot(session: AsyncSession, token: str, data: bytes, *, now: datetime) -> StoredDataset:
+async def fill_dataset_slot(
+    session: AsyncSession, token: str, data: bytes, *, now: datetime
+) -> StoredDataset:
     digest = stored_secret(token, SLOT_PREFIX)
     row = None if digest is None else await _slot(session, digest)
     if row is None:
