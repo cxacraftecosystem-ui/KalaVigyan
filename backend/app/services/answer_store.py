@@ -38,6 +38,7 @@ from app.science.records import ProcessRecords
 from . import knowledge_view
 from .answer_catalogue import catalogue_lookup
 from .answer_events import CitedClaims, cited_claims
+from .answer_gaps import FieldReading, record_verdict
 from .answer_lede import LedeTools
 from .answer_models import AnswerModels
 from .answer_sections import ClaimsOf
@@ -111,9 +112,11 @@ class SqlAnswerStore:
         claim_ids: Sequence[uuid.UUID],
         explainer: Explainer | None,
         version: VersionMark | None = None,
+        readings: Sequence[FieldReading] = (),
     ) -> None:
         stored = _StoredExplainer(explainer, version) if explainer is not None else None
-        await self._shield.run(self._finished(answer_id, plans, claim_ids, stored), name="answer record")
+        finished = self._finished(answer_id, plans, claim_ids, stored, readings=readings)
+        await self._shield.run(finished, name="answer record")
 
     async def process(self, craft_slug: str) -> ProcessRecords | None:
         async with self._sessions() as session:
@@ -162,6 +165,8 @@ class SqlAnswerStore:
         plans: AnswerPlans,
         claim_ids: Sequence[uuid.UUID],
         stored: _StoredExplainer | None,
+        *,
+        readings: Sequence[FieldReading] = (),
     ) -> None:
         tiers = dict.fromkeys(tier for section in plans.sections for tier in section.plan.tiers)
         values = {
@@ -178,6 +183,7 @@ class SqlAnswerStore:
         try:
             async with self._sessions() as session:
                 await session.execute(update(Answer).where(Answer.id == answer_id).values(**values))
+                await record_verdict(session, answer_id, readings)
                 await session.commit()
         except IntegrityError as error:
             if stored is None or stored.version is None:

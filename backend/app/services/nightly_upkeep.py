@@ -8,10 +8,12 @@ from typing import Any
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.research.embedding import TextEmbedder
 from app.research.fetcher import Fetcher
 from app.sources.fetcher_client import FetcherClient
 from app.sources.wayback_save import WaybackSaver
 
+from .answer_gap_refresh import AnswerGapsReport, refresh_answer_gaps
 from .claim_holds import shown_held_ids
 from .open_work_refresh import FieldWorkReport, refresh_field_work
 from .orphan_concepts import OrphansReport, orphan_concepts, sweep_orphans
@@ -45,16 +47,23 @@ class UpkeepTools:
     archiver: SourceArchiver
     monographs: Sequence[str]
     load_monograph: MonographLoader
+    embed: TextEmbedder | None = None
 
 
 def upkeep_tools(
-    client: httpx.AsyncClient, *, fetcher_url: str, monographs: Sequence[str], load: MonographLoader
+    client: httpx.AsyncClient,
+    *,
+    fetcher_url: str,
+    monographs: Sequence[str],
+    load: MonographLoader,
+    embed: TextEmbedder | None = None,
 ) -> UpkeepTools:
     return UpkeepTools(
         fetcher=FetcherClient(fetcher_url, client),
         archiver=WaybackSaver(client),
         monographs=tuple(monographs),
         load_monograph=load,
+        embed=embed,
     )
 
 
@@ -67,6 +76,7 @@ class UpkeepReport:
     clients: ClientsReport = field(default_factory=ClientsReport)
     pages: PagesReport = field(default_factory=PagesReport)
     field_work: FieldWorkReport = field(default_factory=FieldWorkReport)
+    answer_gaps: AnswerGapsReport = field(default_factory=AnswerGapsReport)
 
     @property
     def ok(self) -> bool:
@@ -82,6 +92,7 @@ class UpkeepReport:
             "clients": self.clients.as_dict(),
             "pages": self.pages.as_dict(),
             "fieldWork": self.field_work.as_dict(),
+            "answerGaps": self.answer_gaps.as_dict(),
         }
 
 
@@ -96,6 +107,7 @@ async def run_nightly_upkeep(session: AsyncSession, tools: UpkeepTools, *, now: 
     await rebuild_monographs(session, tools.monographs, tools.load_monograph, now=now, report=report.pages)
     await rebuild_stale_pages(session, skip=frozenset(tools.monographs), report=report.pages)
     report.field_work = await refresh_field_work(session, now=now)
+    report.answer_gaps = await refresh_answer_gaps(session, tools.embed, now=now)
     return report
 
 

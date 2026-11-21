@@ -39,6 +39,7 @@ from app.research.open_work import (
     Viewer,
     WorkFilters,
 )
+from app.research.open_work_gap_tasks import OpenGap
 from app.research.open_work_links import DEAD_SOURCE, UNARCHIVED_SOURCE, sources_in_state
 from app.research.open_work_tasks import chosen_tasks, open_tasks, reviewed_queues, subject_tasks
 
@@ -46,6 +47,7 @@ from .claim_holds import held_in_queue
 from .coverage import owners_of, subject_coverage
 from .open_work_components import craft_component_kinds
 from .open_work_counts import SubjectCounts, subject_counts
+from .open_work_gaps import asked_tasks, open_gaps
 from .open_work_healing import Healing, subject_healing, with_healing
 from .open_work_pages import monograph_layouts
 from .open_work_pictures import picture_tasks
@@ -90,6 +92,7 @@ class _Gathered:
     layouts: Mapping[str, bool]
     site: str
     healing: Mapping[uuid.UUID, Healing]
+    gaps: Mapping[uuid.UUID, Sequence[OpenGap]]
 
 
 async def list_open_work(
@@ -133,6 +136,7 @@ async def subject_standings(
         layouts=monograph_layouts(),
         site=site,
         healing=await subject_healing(session, owners),
+        gaps=await open_gaps(session, owners.crafts),
     )
     return [
         with_healing(_standing(subject, gathered), gathered.healing.get(subject.id)) for subject in subjects
@@ -177,8 +181,9 @@ async def _queue(session: AsyncSession, created: Any, condition: ColumnElement[b
 def _standing(subject: WorkSubject, gathered: _Gathered) -> SubjectStanding:
     counts = gathered.counts
     links = counts.links.get(subject.id, [])
+    task_subject = subject.task_subject(gathered.site)
     return SubjectStanding(
-        subject=subject.task_subject(gathered.site),
+        subject=task_subject,
         targets=SUBJECT_TARGETS[subject.kind],
         fields=_fields(subject.id, counts, gathered.coverage.get(subject.id)),
         component_kinds=gathered.kinds.get(subject.id, frozenset()),
@@ -189,6 +194,7 @@ def _standing(subject: WorkSubject, gathered: _Gathered) -> SubjectStanding:
         gi=subject.gi,
         curated=subject.curated,
         demand=counts.demand.get(subject.id, 0),
+        asked=asked_tasks(task_subject, gathered.gaps.get(subject.id, ())),
     )
 
 

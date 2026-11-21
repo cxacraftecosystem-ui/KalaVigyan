@@ -312,6 +312,20 @@ still found is a `CORROBORATE_FACT` task; facts resting only on pages that stopp
   The statement stays as it is: never restate a held fact with `propose_facts`.
 - A held fact returns to its page as soon as one of its quotes is found again.
 
+## Questions readers asked
+
+When a reader's question was answered thinly, or could not be answered from cited evidence, the
+nightly upkeep groups it with the questions like it about the same craft and lists the group as an
+`ANSWER_GAP` task: the question as readers asked it, anonymised (never who asked), how many readers
+asked in the last 90 days, the fields that would answer it and what the answer lacked.
+
+- Work it as field research (its prompt is `research_field`, for the task's field) and propose the
+  facts with `propose_facts`, naming the field's `MISSING_FIELD` or `THIN_FIELD` task as `task_key`
+  when one is open, and no `task_key` otherwise.
+- It closes by itself once a nightly retrieval run for the question finds at least two cited facts
+  in each of its fields, and a reservation of it then ends completed.
+- Never try to reach the person who asked, and never put a personal detail from a question in a fact.
+
 ## Never
 
 - Never propose prose or HTML: facts, structure, components, pictures and pages only.
