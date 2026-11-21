@@ -10,13 +10,15 @@ from app.models.answer_gaps import ANSWER_VERDICTS, GAP_LACKS
 from app.models.enums import DISCIPLINES
 
 from .open_work import PRIORITIES
-from .retrieval import KnowledgeHits
-from .vocabulary import FACT_LEVELS
+from .quotes import STOP_WORDS
 
 __all__ = [
     "ACCEPTED_FACTS_MIN",
+    "ACCEPTED_TERMS_MIN",
     "ANSWERED",
+    "ANSWER_MIN_SIMILARITY",
     "ASKED_WINDOW",
+    "COMMON_WORDS",
     "FAILED_QUOTE",
     "FEW_SENTENCES",
     "FIELD_SENTENCES_MIN",
@@ -36,10 +38,11 @@ __all__ = [
     "Verdict",
     "accepted",
     "answer_verdict",
-    "found_facts",
     "gap_count",
     "gap_priority",
     "nearest_gap",
+    "rare_terms",
+    "terms_needed",
 ]
 
 ANSWERED, THIN, UNANSWERED = ANSWER_VERDICTS
@@ -53,6 +56,98 @@ HIGH_ASKERS = 5
 MEDIUM_ASKERS = 2
 GROUP_DISTANCE_MAX = 0.15
 ACCEPTED_FACTS_MIN = 2
+ACCEPTED_TERMS_MIN = 2
+ANSWER_MIN_SIMILARITY = 0.6
+PLURAL_ENDING = "s"
+QUESTION_WORDS = frozenset(
+    {
+        "above",
+        "again",
+        "against",
+        "all",
+        "and",
+        "any",
+        "are",
+        "because",
+        "below",
+        "between",
+        "but",
+        "can",
+        "craft",
+        "crafts",
+        "describe",
+        "did",
+        "doing",
+        "down",
+        "during",
+        "explain",
+        "few",
+        "for",
+        "further",
+        "get",
+        "give",
+        "given",
+        "gives",
+        "had",
+        "has",
+        "her",
+        "here",
+        "hers",
+        "herself",
+        "him",
+        "himself",
+        "his",
+        "how",
+        "its",
+        "itself",
+        "just",
+        "kind",
+        "kinds",
+        "made",
+        "make",
+        "makes",
+        "making",
+        "many",
+        "mean",
+        "means",
+        "myself",
+        "nor",
+        "not",
+        "now",
+        "off",
+        "once",
+        "our",
+        "ours",
+        "ourselves",
+        "out",
+        "own",
+        "role",
+        "she",
+        "tell",
+        "the",
+        "theirs",
+        "themselves",
+        "too",
+        "until",
+        "use",
+        "used",
+        "uses",
+        "using",
+        "was",
+        "way",
+        "ways",
+        "who",
+        "whom",
+        "why",
+        "work",
+        "works",
+        "you",
+        "yours",
+        "yourself",
+        "yourselves",
+    }
+)
+COMMON_WORDS = STOP_WORDS | QUESTION_WORDS
 FIELD_RANK = {discipline: rank for rank, discipline in enumerate(DISCIPLINES)}
 LACK_RANK = {lack: rank for rank, lack in enumerate(GAP_LACKS)}
 
@@ -131,13 +226,19 @@ def nearest_gap(distances: Mapping[uuid.UUID, float]) -> uuid.UUID | None:
     return gap if distance <= GROUP_DISTANCE_MAX else None
 
 
-def found_facts(hits: KnowledgeHits, *, by_meaning: bool) -> int:
-    return sum(
-        1
-        for hit in hits.claims
-        if hit.level in FACT_LEVELS
-        and (by_meaning or hit.lexical_rank is not None or hit.entity_rank is not None)
+def rare_terms(asked: Iterable[str], named: Iterable[str]) -> tuple[str, ...]:
+    craft = {_singular(term) for term in named}
+    return tuple(
+        dict.fromkeys(term for term in asked if term not in COMMON_WORDS and _singular(term) not in craft)
     )
+
+
+def terms_needed(terms: Sequence[str]) -> int:
+    return min(ACCEPTED_TERMS_MIN, len(terms))
+
+
+def _singular(term: str) -> str:
+    return term.removesuffix(PLURAL_ENDING)
 
 
 def accepted(found: Mapping[str, int]) -> bool:

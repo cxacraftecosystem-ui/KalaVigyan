@@ -5,17 +5,26 @@ from collections import defaultdict
 from collections.abc import Sequence
 from datetime import datetime
 
-from sqlalchemy import String, cast, func, select
+from sqlalchemy import ColumnElement, Integer, String, and_, cast, func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Answer, AnswerGap, AnswerVerdict, Craft, TaskReservation
-from app.research.crafts import QUESTION_MAX_CHARS
-from app.research.embedding import checked_vectors
+from app.models import Answer, AnswerGap, AnswerVerdict, Claim, Craft, TaskReservation
 from app.research.open_work_gap_keys import GAP_TASK, gap_id
-from app.research.open_work_gaps import Asked, accepted, found_facts, gap_count, gap_priority
-from app.research.retrieval import KnowledgeQuery
-from app.retrieval.hybrid import StoredKnowledgeSearch
+from app.research.open_work_gaps import (
+    ACCEPTED_FACTS_MIN,
+    ANSWER_MIN_SIMILARITY,
+    Asked,
+    accepted,
+    gap_count,
+    gap_priority,
+    rare_terms,
+    terms_needed,
+)
+from app.research.vocabulary import FACT_LEVELS
+from app.retrieval.hybrid import craft_scope
 from app.retrieval.stamps import made_by_current_model
+from app.retrieval.statements import TEXT_SEARCH_CONFIG, CraftScope, claim_conditions, filed_under
+from app.retrieval.text import query_terms
 
 from .answer_translation import needs_english_rendering
 from .open_work_gaps import OPEN_GAP
@@ -26,6 +35,7 @@ __all__ = [
     "LAPSED_GAP",
     "answered_gaps",
     "end_closed_reservations",
+    "gap_matching",
     "recount_gaps",
 ]
 
@@ -56,14 +66,14 @@ async def recount_gaps(session: AsyncSession, *, now: datetime) -> list[uuid.UUI
 
 async def answered_gaps(session: AsyncSession, *, now: datetime) -> list[uuid.UUID]:
     rows = await session.execute(
-        select(AnswerGap, Craft.slug)
+        select(AnswerGap, Craft.slug, Craft.name)
         .join(Craft, Craft.id == AnswerGap.craftId)
         .where(AnswerGap.state == OPEN_GAP, made_by_current_model(AnswerGap.embeddingModel))
         .order_by(AnswerGap.id)
     )
     answered = []
-    for gap, slug in rows.all():
-        if await _accepted(session, gap, slug):
+    for gap, slug, name in rows.all():
+        if await _accepted(session, gap, (slug, name)):
             gap.state, gap.closedAt = ANSWERED_GAP, now
             answered.append(gap.id)
     await session.flush()
@@ -111,24 +121,38 @@ async def _members(session: AsyncSession, gap_ids: Sequence[uuid.UUID]) -> dict[
     return dict(found)
 
 
-async def _accepted(session: AsyncSession, gap: AnswerGap, slug: str) -> bool:
+async def _accepted(session: AsyncSession, gap: AnswerGap, craft: tuple[str, str]) -> bool:
     if gap.embedding is None:
         return False
-    vector = [float(value) for value in gap.embedding]
+    slug, name = craft
+    scope = await craft_scope(session, slug)
+    matching = gap_matching(gap.question, [*query_terms(slug), *query_terms(name)], gap.embedding)
+    return accepted({field: await _found(session, scope, field, matching) for field in gap.fields})
 
-    async def stored_vector(texts: list[str]) -> list[list[float]]:
-        return checked_vectors([vector for _ in texts], expected=len(texts))
 
-    search = StoredKnowledgeSearch(session, embed=stored_vector)
-    by_meaning = needs_english_rendering(gap.question)
-    question = gap.question[:QUESTION_MAX_CHARS]
-    found: dict[str, int] = {}
-    for field in gap.fields:
-        hits = await search.search(
-            KnowledgeQuery(craft_slug=slug, text=question, mode=ACCEPTANCE_MODE, fields=(field,))
+def gap_matching(question: str, named: Sequence[str], vector: Sequence[float]) -> ColumnElement[bool]:
+    terms = () if needs_english_rendering(question) else rare_terms(query_terms(question), named)
+    if not terms:
+        near = 1 - Claim.embedding.cosine_distance([float(value) for value in vector])
+        return and_(made_by_current_model(Claim.embeddingModel), near >= ANSWER_MIN_SIMILARITY)
+    held: ColumnElement[int] = literal(0)
+    for term in terms:
+        held = held + cast(Claim.tsv.op("@@")(func.plainto_tsquery(TEXT_SEARCH_CONFIG, term)), Integer)
+    return held >= terms_needed(terms)
+
+
+async def _found(session: AsyncSession, scope: CraftScope, field: str, matching: ColumnElement[bool]) -> int:
+    rows = await session.scalars(
+        select(Claim.id)
+        .where(
+            *claim_conditions(scope, mode=ACCEPTANCE_MODE),
+            filed_under((field,)),
+            Claim.evidenceLevel.in_(FACT_LEVELS),
+            matching,
         )
-        found[field] = found_facts(hits, by_meaning=by_meaning)
-    return accepted(found)
+        .limit(ACCEPTED_FACTS_MIN)
+    )
+    return len(rows.all())
 
 
 async def _states(session: AsyncSession, gap_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, str]:

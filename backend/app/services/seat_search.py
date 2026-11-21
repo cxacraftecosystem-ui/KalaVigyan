@@ -14,7 +14,6 @@ from app.research.coverage import FieldCoverage
 from app.research.crafts import QUESTION_MAX_CHARS
 from app.research.expert_panel import SeatBrief
 from app.research.retrieval import SIGNED_IN_CHUNK_ACLS, KnowledgeHits, KnowledgeQuery
-from app.research.sections import DISCIPLINE_FIELDS
 from app.research.vocabulary import FACT_LEVELS
 
 from . import knowledge_view
@@ -55,18 +54,14 @@ SeatSearch = Callable[[BuildAsk, Sequence[SeatBrief], Collection[str]], Awaitabl
 
 def seat_query(ask: BuildAsk, brief: SeatBrief) -> KnowledgeQuery:
     craft = ask.request.craft
-    words = [
-        ask.request.english_question or ask.request.question,
-        craft.name if craft else "",
-        brief.label,
-        *(DISCIPLINE_FIELDS[discipline] for discipline in brief.fields),
-    ]
-    text = " ".join(word for word in words if word)[:QUESTION_MAX_CHARS]
+    words = [ask.request.english_question or ask.request.question, craft.name if craft else ""]
     return KnowledgeQuery(
         craft_slug=craft.slug if craft else None,
-        text=text,
+        text=" ".join(word for word in words if word)[:QUESTION_MAX_CHARS],
         mode=ask.request.mode,
         fields=brief.fields,
+        source_kinds=brief.source_kinds,
+        passages=False,
         limit=SEAT_SEARCH_LIMIT,
     )
 

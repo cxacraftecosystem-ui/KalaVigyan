@@ -24,10 +24,15 @@ from app.retrieval.statements import (
     NAME_GLOSS,
     NAME_GLOSS_OPEN,
     RANKING_DEPTH,
+    REGEX_ESCAPED,
+    REGEX_SPECIALS,
+    WORD_AFTER,
+    WORD_BEFORE,
     CraftScope,
     chunk_conditions,
     chunk_lexical_ranking,
     chunk_vector_ranking,
+    cited_from_kinds,
     claim_conditions,
     claim_entity_ranking,
     claim_lexical_ranking,
@@ -40,6 +45,8 @@ from ..craft_fixtures import FixedEmbedder
 CRAFT = uuid.uuid5(uuid.NAMESPACE_URL, "test-craft/Qorvane-Ikat")
 FAMILY = uuid.uuid5(uuid.NAMESPACE_URL, "test-sub/qorvane")
 SCOPE = CraftScope(craft_id=CRAFT, sub_category_id=FAMILY)
+CATEGORY = uuid.uuid5(uuid.NAMESPACE_URL, "test-category/qorvane")
+MERGED = uuid.uuid5(uuid.NAMESPACE_URL, "test-craft/Qorvane-Old-Ikat")
 VECTOR = [0.0] * EMBEDDING_DIMENSIONS
 
 
@@ -210,3 +217,66 @@ def test_any_craft_reads_every_visible_concept() -> None:
     assert "craftId" not in sql and "subCategoryId" not in sql
     assert '"Concept".sensitivity = %(sensitivity_1)s' in sql
     assert params_with(params, "sensitivity_") == ["OPEN", "OPEN", "RESTRICTED"]
+
+
+def test_a_craft_scope_reads_its_family_science_and_the_crafts_merged_into_it() -> None:
+    scope = CraftScope(CRAFT, FAMILY, category_id=CATEGORY, merged_ids=(MERGED,))
+    sql, params = compiled(claim_lexical_ranking(claim_conditions(scope, mode="HYBRID"), "alum"))
+    merged = re.search(r'"Concept"\."craftId" IN \(__\[POSTCOMPILE_(craftId_\d+)\]\)', sql)
+    assert merged is not None and params[merged.group(1)] == [MERGED]
+    assert (
+        'SELECT family_claim."subjectId" FROM "Claim" AS family_claim JOIN "CuratedCategoryClaim" '
+        'ON "CuratedCategoryClaim"."claimId" = family_claim.id WHERE "CuratedCategoryClaim"."categoryId" = '
+    ) in sql
+    assert 'family_claim."subjectType" = ' in sql
+    assert (
+        '"Concept"."subCategoryId" IS NULL AND lower("Concept".name) = (SELECT lower("CraftCategory".name)'
+        in sql
+    )
+    assert [value for value in params.values() if value == CATEGORY] == [CATEGORY, CATEGORY]
+    plain, _ = compiled(claim_lexical_ranking(claim_conditions(SCOPE, mode="HYBRID"), "alum"))
+    assert (
+        "CuratedCategoryClaim" not in plain
+        and "CraftCategory" not in plain
+        and " IN (__[POSTCOMPILE_craftId" not in plain
+    )
+
+
+def test_a_search_kept_to_source_kinds_reads_claims_citing_a_visible_source_of_those_kinds() -> None:
+    conditions = [*claim_conditions(SCOPE, mode="HYBRID"), cited_from_kinds(("GI_JOURNAL", "OTHER"))]
+    sql, params = compiled(claim_lexical_ranking(conditions, "alum"))
+    assert '"Source".kind IN (__[POSTCOMPILE_kind_1])' in sql and params["kind_1"] == ["GI_JOURNAL", "OTHER"]
+    assert '"ClaimSource"."sourceId" = "Source".id AND "Source".kind IN (__[POSTCOMPILE_kind_1])' in sql
+    assert '"Source".sensitivity != ' in sql.split('"Source".kind IN', 1)[1]
+
+
+def test_a_concept_is_named_only_by_whole_words_or_their_plural() -> None:
+    statement = claim_entity_ranking(claim_conditions(SCOPE, mode="HYBRID"), SCOPE, "Which blocks need alum?")
+    sql, params = compiled(statement)
+    bound = r"%\(\w+\)s(?:::VARCHAR)?"
+    assert re.search(
+        rf"lower\({bound}\) ~ concat\({bound}, regexp_replace\(lower\(trim\(names\.name\)\), "
+        rf"{bound}, {bound}, {bound}\), {bound}\)",
+        sql,
+    )
+    assert (WORD_BEFORE, WORD_AFTER) == (r"(?<!\w)", r"(?:e?s)?(?!\w)")
+    assert (REGEX_SPECIALS, REGEX_ESCAPED) == (r"([.^$*+?(){}|\\\[\]])", r"\\\1")
+    values = list(params.values())
+    assert all(value in values for value in (WORD_BEFORE, WORD_AFTER, REGEX_SPECIALS, REGEX_ESCAPED, "g"))
+
+
+def test_the_query_contract_keeps_source_kinds_once_each_and_reads_passages_unless_told_not_to() -> None:
+    with pytest.raises(ValueError):
+        KnowledgeQuery(craft_slug="Kutch-Ajrakh", text="alum", mode="HYBRID", source_kinds=("OTHER", "OTHER"))
+    query = KnowledgeQuery(craft_slug="Kutch-Ajrakh", text="alum", mode="HYBRID")
+    assert (query.source_kinds, query.passages) == ((), True)
+    kept = KnowledgeQuery.model_validate(
+        {
+            "craftSlug": None,
+            "text": "alum",
+            "mode": "DEEP",
+            "sourceKinds": ["BOOK_CHAPTER"],
+            "passages": False,
+        }
+    )
+    assert (kept.source_kinds, kept.passages) == (("BOOK_CHAPTER",), False)

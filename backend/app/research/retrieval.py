@@ -73,8 +73,10 @@ class KnowledgeQuery(ContractModel):
     fields: tuple[Discipline, ...] = ()
     chunk_acls: tuple[ChunkAcl, ...] = OPEN_CHUNK_ACLS
     limit: int = Field(default=KNOWLEDGE_RESULT_DEFAULT, ge=1, le=KNOWLEDGE_RESULT_MAX)
+    source_kinds: tuple[SourceType, ...] = ()
+    passages: bool = True
 
-    @field_validator("facets", "fields", "chunk_acls")
+    @field_validator("facets", "fields", "chunk_acls", "source_kinds")
     @classmethod
     def _distinct(cls, values: tuple[str, ...]) -> tuple[str, ...]:
         if len(set(values)) != len(values):

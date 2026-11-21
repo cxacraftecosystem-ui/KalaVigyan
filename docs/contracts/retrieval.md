@@ -36,15 +36,36 @@ flowchart LR
 
 `KnowledgeRetriever.search(KnowledgeQuery) -> KnowledgeHits`. Two implementations:
 `StoredKnowledgeSearch(session, *, embed, english=None)` on one session and
-`SessionScopedSearch(sessions, *, embed, english=None)`, which opens a session per search.
+`SessionScopedSearch(sessions, *, embed, english=None)`, which opens a session per search. Searches
+sharing one `StoredKnowledgeSearch` take turns on its session once their words and vector are
+made; searches through `SessionScopedSearch` run at once.
 
-- `KnowledgeQuery {craftSlug | null, text, mode, facets[], fields[], chunkAcls, limit}`. A craft
-  scope reads the craft's concepts and its family's shared concepts; `craftSlug` null reads every
-  visible concept. Modes set the statuses and levels read (`MODE_CLAIM_STATUSES`,
-  `MODE_CLAIM_LEVELS`); only the modes whose policy holds tier `T2` read passages.
+- `KnowledgeQuery {craftSlug | null, text, mode, facets[], fields[], chunkAcls, limit,
+  sourceKinds[], passages}`. `craftSlug` null reads every visible concept. A craft's scope
+  (`hybrid.craft_scope`) reads:
+  - the craft's own concepts and the shared concepts of its sub-category;
+  - its **family science**: the concepts its category's curated facts are about (the claims
+    `CuratedCategoryClaim` marks for the category of the craft's sub-category, the link the craft
+    page's family science and its page stamp read), and the shared concepts named as the category
+    is, which hold the category's contributed facts (`statements._family_science`). The nine
+    category dossiers' 2,029 facts reach the answers of every craft of their family;
+  - the concepts of every craft merged into it, followed through `Craft.mergedIntoId` for up to
+    `MERGE_HOPS_MAX` (5) hops (`hybrid.merged_into`), so a merged craft's knowledge stays in the
+    surviving craft's answers.
+
+  The page stamp, the review queue, the candidate gates and `knowledge_view` build `CraftScope`
+  with neither, and read as before. Modes set the statuses and levels read
+  (`MODE_CLAIM_STATUSES`, `MODE_CLAIM_LEVELS`); only the modes whose policy holds tier `T2` read
+  passages.
 - `fields` keeps the claims filed under one of the fields (as their field or a secondary field)
   and the claims with no field yet; passages follow the claims kept. An empty tuple reads every
   field.
+- `sourceKinds` keeps the claims citing at least one visible source of those kinds
+  (`statements.cited_from_kinds`) inside every ranking, so a search kept to some kinds fills its
+  `limit` with them. An empty tuple reads every kind.
+- `passages` false runs no passage ranking even in a mode that reads `T2`; `chunks` is then empty.
+  The facet coverage (`planner/coverage.facet_query`) and the seats set it, since they read claims
+  only; the stored pack keeps the default, true.
 - `chunkAcls` is the reader's passage access (`chunk_acls_for(reader)`); restricted chunks and
   sources and withheld field recordings are never read.
 
@@ -65,7 +86,13 @@ flowchart LR
     name of 4 or more characters, longest name first. A concept is named by its whole name, by its
     native head before ` (` and by the gloss inside the parentheses (`Syahi (fermented iron
     black)` is named by "syahi" and by "fermented iron black"), and by the label, aliases and
-    local names of every glossary term linked to it (`TermConcept`).
+    local names of every glossary term linked to it (`TermConcept`). A name counts only as whole
+    words: no letter, digit or underscore may stand right before it or right after it, but an
+    English plural ending `s` or `es` may (`lower(words) ~ concat('(?<!\w)', name,
+    '(?:e?s)?(?!\w)')`, the name's regular-expression characters escaped). So "blocks" names
+    Block, while "leading" names no Lead, "chemicals" no Mica, "thousand" no Sand, "formation" no
+    Mati, "carnelian" no Neli, "pattachitra" no Atta and "channapatna" no Patna. A native name
+    written in another script matches the same way.
 - Passages: full text and vector as above, fused in two separate lists of at most `limit` each:
   corpus passages, and the passages of field recordings (`Source` of a `FieldRecording`). A
   craft's many corpus passages therefore never crowd an artisan's recorded words out of the
@@ -87,11 +114,17 @@ connection.
 
 ### Expert seats
 
-`seat_query(ask, brief)` searches the seat's own fields: `fields` is the seat's `SeatBrief.fields`
-(the Historian reads `HISTORY` and `OVERVIEW`, the Chemist `CHEMISTRY`, `PROCESS`, `MATERIALS`
-and `HEALTH`), so the search is filtered by field, not only worded by it. The words are the
-answer's English question (`PlanRequest.english_question`, else the question), the craft name,
-the seat label and the field titles.
+`seat_query(ask, brief)` searches the seat's own fields and source kinds: `fields` is the seat's
+`SeatBrief.fields` (the Historian reads `HISTORY` and `OVERVIEW`, the Chemist `CHEMISTRY`,
+`PROCESS`, `MATERIALS` and `HEALTH`) and `sourceKinds` its `SeatBrief.source_kinds`, so both are
+filters inside the search and the seat's `SEAT_SEARCH_LIMIT` (12) hits are all facts it may use.
+The words are the answer's English question (`PlanRequest.english_question`, else the question)
+and the craft name only: the seat label and field titles are not added, since the fields already
+filter and the extra words would pull every seat's vector to one point. The seat search reads no
+passages (`passages` false). The seat then keeps the first `SEAT_CLAIMS_MAX` (6) facts the section
+has not shown whose readable citations include one of its kinds. Kept true by
+`backend/tests/retrieval/test_seat_fields.py`, `backend/tests/experts/test_wider_panel.py` and
+`backend/tests/db/test_evidence_reach_db.py`.
 
 ## Stamps
 

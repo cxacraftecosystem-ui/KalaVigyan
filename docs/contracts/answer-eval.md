@@ -37,8 +37,32 @@ flowchart LR
   (`depth_policy(depth).max_experts`: 2 Basic, 4 Detailed) (`coverage_seats.covering_seats`,
   `understanding.understood_seats`). Expert depth keeps the model's seats: its panel already widens
   to every seat of each section's field (`expert_panel.panel_seats`).
-- Each seat searches stored knowledge with its own fields as the retrieval field filter
-  (`services/seat_search.seat_query`, `KnowledgeQuery.fields`).
+- Each seat searches stored knowledge with its own fields and source kinds as filters inside the
+  search (`services/seat_search.seat_query`, `KnowledgeQuery.fields` and `sourceKinds`), worded by
+  the answer's English question and the craft name only ([retrieval.md](retrieval.md), Expert
+  seats). Every source kind is read by at least one seat. Each seat keeps its earlier kinds first,
+  so the live reading order of decision 0046 is unchanged, and reads these (decision 0122):
+
+  | Seat | Source kinds, most preferred first |
+  |---|---|
+  | Chemist | paper, book, compound record, encyclopedia, book chapter, GI journal, web page |
+  | Physicist | paper, book, encyclopedia, book chapter, GI journal, web page |
+  | Materials scientist | paper, book, compound record, book chapter, GI journal, web page, other |
+  | Textile or ceramic technologist | paper, government report, GI journal, book, book chapter, web page, other |
+  | Geologist | dataset, paper, government report, book chapter, web page |
+  | Hydrologist | dataset, government report, paper, book chapter, other |
+  | Soil scientist | dataset, paper, book chapter |
+  | Climatologist | dataset, paper, government report, book chapter |
+  | Ecologist | paper, government report, dataset, book chapter, other |
+  | Botanist | paper, book, encyclopedia, book chapter, web page |
+  | Toxicologist | compound record, paper, government report, book chapter |
+  | Historian | book, paper, GI journal, encyclopedia, book chapter, web page, other |
+  | Anthropologist | field testimony, paper, book, web page, book chapter, other |
+  | Economist | government report, paper, dataset, book chapter, web page, other |
+  | Design and art historian | book, paper, web page, book chapter, other |
+  | Conservator | paper, book, web page, book chapter, other |
+  | GI and policy expert | GI journal, government report, web page, other |
+  | Artisan's voice | field testimony, web page |
 - An answer that leaves a relevant field with stored claims without a speaking seat is a defect;
   `tests/planner/test_field_seats.py` catches it.
 - **Provenance**: the MCP `ask` result names the fields it consulted (`AskedAnswer.fields`,

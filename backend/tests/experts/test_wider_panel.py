@@ -110,20 +110,31 @@ def test_a_seat_keeps_unshown_facts_from_its_own_source_kinds() -> None:
             hit(v, n) for n, v in enumerate((GUESS, SEVENTH_CENTURY, TRADE, FOUR_HUNDRED, CLIENTS), 1)
         ),
     )
-    briefs = (EXPERT_PANEL["HISTORIAN"], EXPERT_PANEL["ANTHROPOLOGIST"])
-    found = seat_findings(briefs, (hits, hits), claims, {str(FOUR_HUNDRED.id)})
-    assert found["HISTORIAN"] == (TRADE,)
+    briefs = (EXPERT_PANEL["POLICY_EXPERT"], EXPERT_PANEL["ANTHROPOLOGIST"], EXPERT_PANEL["HISTORIAN"])
+    found = seat_findings(briefs, (hits, hits, hits), claims, {str(FOUR_HUNDRED.id)})
+    assert found["POLICY_EXPERT"] == (SEVENTH_CENTURY, CLIENTS)
     assert found["ANTHROPOLOGIST"] == (SEVENTH_CENTURY, TRADE, CLIENTS)
+    assert found["HISTORIAN"] == (SEVENTH_CENTURY, TRADE, CLIENTS)
     assert SEAT_CLAIMS_MAX >= 3
 
 
-def test_a_seat_searches_its_question_craft_and_fields() -> None:
+def test_a_seat_searches_its_question_and_craft_filtered_by_its_fields_and_source_kinds() -> None:
     ask = build_ask(("CHEMIST",), discipline="CHEMISTRY")
     query = seat_query(ask, EXPERT_PANEL["CHEMIST"])
     assert (query.craft_slug, query.mode) == (ask.request.craft.slug, "HYBRID")
-    assert query.text.startswith(QUESTION) and "Ajrakh" in query.text and "Chemist" in query.text
-    assert "chemistry" in query.text and "health, toxicology and safe handling" in query.text
+    assert query.text == f"{QUESTION} {ask.request.craft.name}"
+    assert "Chemist" not in query.text and "chemistry" not in query.text
     assert query.fields == ("CHEMISTRY", "PROCESS", "MATERIALS", "HEALTH")
+    assert query.source_kinds == (
+        "PAPER",
+        "BOOK",
+        "COMPOUND_RECORD",
+        "ENCYCLOPEDIA",
+        "BOOK_CHAPTER",
+        "GI_JOURNAL",
+        "WEB_PAGE",
+    )
+    assert query.passages is False
 
 
 async def test_without_a_retriever_a_seat_searches_nothing() -> None:
