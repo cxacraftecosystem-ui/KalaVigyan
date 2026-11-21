@@ -12,7 +12,8 @@ from app.core.roles import ADMIN, has_rank
 from app.models import User
 from app.research.field_voices import ARTISAN_IMAGE_VISIBILITIES
 from app.services import audit
-from app.services.field_voices_held import held_image_list, set_artisan_image_visibility
+from app.services.field_voices_held import held_image_list, held_photo_crafts, set_artisan_image_visibility
+from app.services.page_revalidation import craft_owners, refresh_pages
 
 router = APIRouter(prefix="/field-voices/held-images", tags=["field-voices"])
 
@@ -65,5 +66,6 @@ async def put_held_image_visibility(
         detail={"visibility": visibility},
     )
     await session.commit()
+    await refresh_pages(await craft_owners(session, await held_photo_crafts(session)))
     response.headers["Cache-Control"] = PRIVATE_NO_CACHE
     return {"visibility": visibility}

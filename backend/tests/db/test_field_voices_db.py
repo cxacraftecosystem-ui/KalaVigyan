@@ -7,6 +7,7 @@ from sqlalchemy import select
 from app.models import (
     Chunk,
     FieldImage,
+    FieldPhotoReview,
     FieldRecording,
     FieldRecordingCraft,
     FieldSegment,
@@ -208,7 +209,7 @@ async def photo_ids(session: Any, craft_id: uuid.UUID) -> set[str]:
     return {photo.item_id for photo in listed} | {photo.item_id for photo in part.photos}
 
 
-async def test_an_artisan_linked_photograph_is_held_hidden_listed_for_admins_and_shown_only_when_flipped() -> (
+async def test_an_artisan_linked_photograph_is_held_hidden_listed_for_admins_and_shown_only_when_reviewed() -> (
     None
 ):
     async with rolled_back() as session:
@@ -224,6 +225,12 @@ async def test_an_artisan_linked_photograph_is_held_hidden_listed_for_admins_and
         held = await held_image_list(session, cursor=None)
         assert held.visibility == "HIDDEN" and item in {each.item_id for each in held.images}
         await set_artisan_image_visibility(session, "SHOWN", actor_id=None)
+        await session.flush()
+        assert await shown_image(session, image.id) is None
+        assert item not in await photo_ids(session, craft.id)
+        session.add(
+            FieldPhotoReview(imageId=image.id, imageSha256=image.sha256, decision="SHOW", deciderRole="ADMIN")
+        )
         await session.flush()
         assert await shown_image(session, image.id) is not None
         assert item in await photo_ids(session, craft.id)

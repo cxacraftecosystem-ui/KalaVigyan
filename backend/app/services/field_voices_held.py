@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 from sqlalchemy import func, select
@@ -7,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import INDIA_TZ
 from app.core.errors import InvalidInput
-from app.models import FieldImage
+from app.models import FieldImage, FieldImageCraft
 from app.research.field_voices import (
     ARTISAN_IMAGE_VISIBILITIES,
     ARTISAN_IMAGES_HIDDEN,
@@ -21,7 +22,13 @@ from app.retrieval.field_scope import held_images
 from app.services import app_settings
 from app.services.field_voices_reading import list_offset
 
-__all__ = ["artisan_image_visibility", "held_image_list", "held_image_of", "set_artisan_image_visibility"]
+__all__ = [
+    "artisan_image_visibility",
+    "held_image_list",
+    "held_image_of",
+    "held_photo_crafts",
+    "set_artisan_image_visibility",
+]
 
 UNKNOWN_VISIBILITY = "Visibility is HIDDEN or SHOWN."
 
@@ -76,3 +83,11 @@ async def held_image_list(session: AsyncSession, *, cursor: str | None) -> HeldI
         next_cursor=str(following) if following < total else None,
         images=[held_image_of(row) for row in rows],
     )
+
+
+async def held_photo_crafts(session: AsyncSession) -> set[uuid.UUID]:
+    held = select(FieldImage.id).where(*held_images())
+    crafts = await session.scalars(
+        select(FieldImageCraft.craftId).where(FieldImageCraft.imageId.in_(held)).distinct()
+    )
+    return set(crafts.all())

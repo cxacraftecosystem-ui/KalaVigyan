@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 from app.core.errors import InvalidInput
 
-from .image_intake_types import PNG, WEBP
+from .image_intake_types import JPEG, PNG, WEBP
 
 if TYPE_CHECKING:
     from PIL.Image import Image as Picture
@@ -26,6 +26,7 @@ __all__ = [
     "Converted",
     "Pixels",
     "converted",
+    "cropped",
     "fingerprint_distance",
     "pixels_of",
     "sized",
@@ -39,6 +40,7 @@ HASH_LOW = 8
 PREVIEW_SIDE = 768
 PREVIEW_MIME = "image/jpeg"
 PREVIEW_QUALITY = 80
+CROP_QUALITY = 90
 WEBP_QUALITY = 90
 WEBP_METHOD = 4
 SAVED_AS = {WEBP: "WEBP", PNG: "PNG"}
@@ -96,6 +98,23 @@ def converted(data: bytes, mime: str) -> Converted:
             options |= {"quality": WEBP_QUALITY, "method": WEBP_METHOD}
         flat.save(out, SAVED_AS[mime], **options)
         return Converted(out.getvalue(), mime, flat.width, flat.height)
+
+
+def cropped(data: bytes, box: tuple[int, int, int, int], mime: str) -> Converted:
+    left, top, width, height = box
+    with _opened(data) as image:
+        _loaded(image)
+        _operations().exif_transpose(image, in_place=True)
+        if left < 0 or top < 0 or left + width > image.width or top + height > image.height:
+            raise InvalidInput("The region to keep lies outside the picture")
+        kept = _flat(image).crop((left, top, left + width, top + height))
+        kept.info = {}
+        out = io.BytesIO()
+        if mime == PNG:
+            kept.save(out, "PNG", optimize=True)
+        else:
+            kept.convert("RGB").save(out, "JPEG", quality=CROP_QUALITY, optimize=True)
+        return Converted(out.getvalue(), PNG if mime == PNG else JPEG, kept.width, kept.height)
 
 
 def pixels_of(data: bytes) -> Pixels:

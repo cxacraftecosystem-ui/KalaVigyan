@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { RecordNotice } from "@/components/records/RecordNotice";
 import { PictureReviewCard } from "@/components/review/PictureReviewCard";
 import { SegmentedChoice } from "@/components/ui/SegmentedChoice";
+import { TextLink } from "@/components/ui/TextLink";
 import { apiErrorMessage } from "@/lib/api";
 import { byCount } from "@/lib/format";
 import { fetchImageQueue, IMAGE_STATUS_LABELS, type ImageQueue, type ImageStatus } from "@/lib/imageContributionContract";
@@ -50,6 +51,9 @@ export default function PictureReviewPage() {
             </p>
           ) : null}
         </div>
+        <p className="font-ui text-label text-ink-3">
+          Photographs the portals filed on artisans wait under <TextLink href="/admin/field-photos">field photographs</TextLink>.
+        </p>
         {error ? <RecordNotice tone="error">{error}</RecordNotice> : null}
         <ul className="grid gap-8">
           {queue?.items.map((item) => <PictureReviewCard key={`${item.id}-${item.status}`} item={item} onDecided={() => void load()} />)}

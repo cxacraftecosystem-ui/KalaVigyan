@@ -14,9 +14,12 @@ from .base import ContractModel
 
 __all__ = [
     "CLEAR",
+    "FACE",
     "FLAGGED",
     "FLAG_REASONS",
+    "ID_DOCUMENT",
     "NEAR_BITS",
+    "NEAR_DUPLICATE",
     "NEAR_IDENTICAL_BITS",
     "NOT_SCREENED",
     "SCREEN_FLAGS",
@@ -46,14 +49,16 @@ FLAGGED = "FLAGGED"
 UNSCREENED = "UNSCREENED"
 SCREEN_VERDICTS = (CLEAR, FLAGGED, UNSCREENED)
 ID_DOCUMENT = "ID_DOCUMENT"
+FACE = "FACE"
 FACE_IN_AI_IMAGE = "FACE_IN_AI_IMAGE"
 UNSAFE = "UNSAFE"
 NEAR_DUPLICATE = "NEAR_DUPLICATE"
 NOT_SCREENED = "NOT_SCREENED"
-SCREEN_FLAGS = (ID_DOCUMENT, FACE_IN_AI_IMAGE, UNSAFE, NEAR_DUPLICATE, NOT_SCREENED)
+SCREEN_FLAGS = (ID_DOCUMENT, FACE, FACE_IN_AI_IMAGE, UNSAFE, NEAR_DUPLICATE, NOT_SCREENED)
 FLAG_REASONS: Mapping[str, str] = MappingProxyType(
     {
         ID_DOCUMENT: "It may show an identity document, or a card with a face and a number.",
+        FACE: "It shows a person's face.",
         FACE_IN_AI_IMAGE: "It is AI-made and shows a person's face.",
         UNSAFE: "It may show content that is not safe to publish.",
         NEAR_DUPLICATE: "It looks like a picture KalaVigyan already holds.",
@@ -109,8 +114,9 @@ class VisionRequest:
     preview: bytes
     mime: str
     ai_made: bool
-    user_id: uuid.UUID
+    user_id: uuid.UUID | None
     role: str | None
+    faces: bool = False
 
 
 @dataclass(frozen=True)
@@ -153,21 +159,24 @@ def vision_prompt(*, ai_made: bool) -> tuple[str, str]:
     return SCREEN_SYSTEM, "\n".join((ID_QUESTION, face, UNSAFE_QUESTION, NOTE_ASK))
 
 
-def vision_flags(answer: VisionAnswer, *, ai_made: bool) -> tuple[str, ...]:
+def vision_flags(answer: VisionAnswer, *, ai_made: bool, faces: bool = False) -> tuple[str, ...]:
     raised = (
         (ID_DOCUMENT, answer.id_document),
+        (FACE, faces and not ai_made and answer.face),
         (FACE_IN_AI_IMAGE, ai_made and answer.face),
         (UNSAFE, answer.unsafe),
     )
     return tuple(flag for flag, up in raised if up)
 
 
-def vision_verdict(text: str, *, ai_made: bool) -> tuple[tuple[str, ...], str | None] | None:
+def vision_verdict(
+    text: str, *, ai_made: bool, faces: bool = False
+) -> tuple[tuple[str, ...], str | None] | None:
     try:
         answer = VisionAnswer.model_validate(json.loads(text))
     except ValueError, ValidationError:
         return None
-    flags = vision_flags(answer, ai_made=ai_made)
+    flags = vision_flags(answer, ai_made=ai_made, faces=faces)
     note = answer.note.strip()[:NOTE_MAX_CHARS] or None
     return flags, note if flags else None
 

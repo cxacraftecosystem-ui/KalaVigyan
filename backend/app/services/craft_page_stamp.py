@@ -42,6 +42,7 @@ from app.models import (
     EnvDataset,
     FieldImage,
     FieldImageCraft,
+    FieldPhotoReview,
     FieldRecording,
     FieldRecordingCraft,
     FieldSegment,
@@ -248,6 +249,9 @@ def _voice_terms(craft: Craft) -> Terms:
         **_counted("fieldImages", FieldImage.id, FieldImage.updatedAt, pictured),
         "fieldImagesShown": _count(FieldImage.id, pictured & FieldImage.hiddenAt.is_(None)),
         "fieldImagesHiddenAt": _scalar(func.max(FieldImage.hiddenAt), pictured),
+        "fieldPhotoDecidedAt": _scalar(
+            func.max(FieldPhotoReview.decidedAt), FieldPhotoReview.imageId.in_(images)
+        ),
         "freshStreams": select(streams).where(fresh).scalar_subquery(),
         "artisanImages": _scalar(AppSetting.value.cast(String), AppSetting.key == ARTISAN_IMAGES_SETTING),
         "artisanImagesAt": _scalar(AppSetting.updatedAt, AppSetting.key == ARTISAN_IMAGES_SETTING),

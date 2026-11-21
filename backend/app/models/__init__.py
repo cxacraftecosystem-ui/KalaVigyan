@@ -52,6 +52,7 @@ from app.models.curation import (
     CuratedCraft,
 )
 from app.models.evaluation import EvalCase, EvalResult, EvalRun
+from app.models.field_photo_reviews import FieldPhotoReview, FieldPhotoScreen
 from app.models.field_voices import (
     FieldImage,
     FieldImageCraft,
@@ -181,6 +182,8 @@ __all__ = [
     "EvalRun",
     "FieldImage",
     "FieldImageCraft",
+    "FieldPhotoReview",
+    "FieldPhotoScreen",
     "FieldRecording",
     "FieldRecordingCraft",
     "FieldSegment",

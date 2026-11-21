@@ -20,7 +20,7 @@ amendment of 2026-11-18). The same night the owner added, for images filed on ar
 but do not show, we will figure out something later, but do not close the path" (`artisanLinked`,
 below).
 
-Last reviewed: 2026-11-18.
+Last reviewed: 2026-11-21 (reviewed field photographs, decision 0112).
 
 Status: the KalaVigyan side of version 2 is built (decision 0091), behind `FIELD_VOICES_ENABLED`
 (default off). The portal side is built in both portals, loosened as below, and not yet deployed;
@@ -104,9 +104,11 @@ says, in both portals and in KalaVigyan:
    `artisanLinked` (below), under the owner's direction for those images: "Bring it, but do not
    show". KalaVigyan stores it privately and shows it in no public or signed-in payload, page,
    list or image route; section 29(4) forbids publishing, displaying or posting an Aadhaar number,
-   and a held copy does none of these. Before a Master Admin sets the held images `SHOWN`, every
-   held image is opened in its portal (the held list names the portal and the file's id) and an
-   identity document there is withdrawn or removed, which sends its tombstone.
+   and a held copy does none of these. Each held image is screened for identity documents and
+   faces and is shown only after a person's decision on it (decision 0112): one the screen flags as
+   an identity document is shown only by a Master Admin who clears the flag or crops it out, and an
+   identity document found there is also withdrawn or removed in its portal (the queue names the
+   portal and the file's id), which sends its tombstone.
 4. **Never sent in any field:** Aadhaar numbers, last four digits, the Aadhaar verification and
    fingerprint fields and Aadhaar logs; Pehchan card numbers; phone numbers and email addresses;
    bank details; passwords, sessions, two-step codes and every other account credential.
@@ -875,19 +877,58 @@ the stored key (a read presigns it for 900 seconds, inline, with its leaf name, 
 illustration candidates of their crafts' claims (`MediaRefClaim`, relevance `TEXT` from caption
 and labels). Not openly licensed: never offered for reuse, download or export.
 
-**Artisan-linked images are brought but not shown** (owner, 2026-11-18: "Bring it, but do not show,
-we will figure out something later, but do not close the path"). An image sent with
-`"artisanLinked": true` is copied, stored and given its `FieldImage` row (`artisanLinked` true) and
-`MediaRef` like any other, and is then left out of every reading: `retrieval/field_scope.shown_images`
-keeps it out of the craft page's photographs and totals, the "Show all" list, the image route
-(404, so no route serves its file), retrieval, exports, sitemaps and preview images, for anonymous,
-signed-in and admin readers alike. The path stays open: the setting `field_voices.artisan_images`
-(`HIDDEN` by default, or `SHOWN`) decides it with no code change; a Master Admin sets it with
-`PUT /api/field-voices/held-images/visibility` `{"visibility": "SHOWN" | "HIDDEN"}` (audited), and
-admins (`ADMIN` and above) see what is held with `GET /api/field-voices/held-images?cursor=`
-(25 a page: the item, its caption, date, crafts, placements and credited names, never a file
-link). Any future path that reads field images (illustration candidates included) reads them
-through `shown_images`.
+**Artisan-linked images are brought, screened and shown one by one after a person's decision**
+(owner, 2026-11-18: "Bring it, but do not show, we will figure out something later, but do not
+close the path"; 2026-11-21: "the admins, and master admins should be able to review the images and
+add them here"; decision 0112). An image sent with `"artisanLinked": true` is copied, stored and
+given its `FieldImage` row (`artisanLinked` true) and `MediaRef` like any other, and is left out of
+every reading until its own decision shows it:
+
+- **Screens.** After each sync, `app.scripts.sync_field_voices` runs the picture screens of decision
+  0109 on up to 200 held photographs (`services/field_photo_screens.screen_held_photos`): a 64-bit
+  perceptual fingerprint compared with every stored picture and every other field photograph (12
+  bits or fewer is `NEAR_DUPLICATE`), then one call to the cheapest CAPTION route
+  (`providers/picture_vision.py`, `VisionRequest.faces` true) flagging `ID_DOCUMENT`, `FACE` (any
+  face) and `UNSAFE`. The result is one `FieldPhotoScreen` row per photograph for its current copy
+  (`imageSha256`), with the route, tokens and cost; a copy the screen could not read or look at
+  (`UNSCREENED`) is screened again on the next run. `POST /api/field-photos/screen` screens ten at
+  once for an Admin.
+- **The queue.** `GET /api/field-photos/review?state=WAITING|SHOWN|HIDDEN&cursor=` (capability
+  `REVIEW_CONTRIBUTIONS`: Admin and Master Admin) answers `FieldPhotoQueue` of
+  `research/field_photo_reviews.py`, 25 a page: the switch, the three counts, and each photograph
+  with its caption, description, crafts, placements, people named, credit, workshop, rights
+  statement, rights holder, licence, portal and file id, date taken, size and type, a 600-second
+  presigned link to the stored copy, its risk (`IDENTITY`, `FACE`, `CHECK`, `CLEAR`), whether only a
+  Master Admin may show it, what the screen found, the decision on record (with a link to its crop)
+  and the last five decisions. Waiting photographs (no decision, or one made on an earlier copy) are
+  sorted identity documents first, then faces, then flagged or unscreened, then clear.
+- **A decision.** `POST /api/field-photos/{id}/decision` `{decision: SHOW | HIDE | CROP, seenSha256,
+  reason?, note?, crop?: {left, top, width, height}, clearFlags?}`. `HIDE` names a reason
+  (`IDENTITY_DOCUMENT`, `NOT_AGREED`, `PRIVATE_PLACE`, `POOR_QUALITY`, `NOT_THIS_CRAFT`, `OTHER` with
+  a note); `CROP` keeps a region of at least 64 pixels a side that leaves part of the photograph out,
+  made by `research/image_intake_pixels.cropped` in the photograph's format and stored at
+  `naming.field_voice_key(<crop sha256>, <the copy's leaf>)`; showing needs a screen of the current
+  copy; a photograph flagged `ID_DOCUMENT`, or `FACE` when its record names no one, is shown only by
+  a Master Admin, with `clearFlags` and a note or as a crop. A decision on another copy than
+  `seenSha256` is refused (409). The decision is one `FieldPhotoReview` row (decider, role, time,
+  reason, note, flags cleared, crop) and an `AuditLog` row `field_photo.decided`; it moves the craft
+  page stamp (`fieldPhotoDecidedAt`) and asks the web to refresh the photograph's craft pages. The
+  admin screen is `/admin/field-photos`.
+- **What is shown.** `services/field_photo_scope.shown_field_photos` is
+  `retrieval/field_scope.shown_images` (hidden, stale or unlinked photographs stay out; the setting
+  `field_voices.artisan_images` must be `SHOWN` for an artisan-linked one) plus: a photograph is
+  shown when it is not artisan-linked and has no decision, or when its decision on its current copy
+  is `SHOW` or `CROP`. The craft page's photographs and totals, the "Show all" list and the image
+  route read through it; for a `CROP` decision the image route serves the crop and never the
+  original, and the page gives the crop's size. `field_voices.artisan_images` is the master kill
+  switch: `HIDDEN` (the default) hides every artisan-linked photograph whatever its decision, and a
+  Master Admin sets it with `PUT /api/field-voices/held-images/visibility` (audited, and the pages of
+  every craft with a held photograph are refreshed). `GET /api/field-voices/held-images` still lists
+  what is held, without file links.
+- **Withdrawal wins.** A tombstone deletes the `FieldImage` (its screen goes with it); its review
+  loses the photograph (`imageId` set to null), is never served, and is deleted with its crop by
+  `services/field_photo_crops.sweep_withdrawn_reviews` at the end of the same sync run. The same
+  photograph sent again waits for a new decision.
 
 ## How KalaVigyan withdraws (changed)
 
@@ -1014,5 +1055,5 @@ answers 404 and its streams are skipped.
 | Withdrawal | `field_voices_store.withdraw_recording` and `recheck_quoted_claims`; `services/field_voices_readback.py` (`current_field_voices`), applied wherever a stored explainer is read: the explainer versions and their exports and lesson packs, the quiz, Listen and film mode | a stored explainer is filtered when it is read, not rewritten: a citation of a portal interview is shown only while its recording is shown and its claim still cites it; a prose sentence carrying such a citation is dropped, any other block carrying one is dropped, images left illustrating no cited claim go, the sources are renumbered, and a section left with nothing is shown `EMPTY` with "A field interview this section quoted is no longer shown."; an explainer left with no ready section is not shown. A section only partly affected carries no "quote withdrawn" note (`docs/TECH_DEBT.md`) |
 | Craft page | `voices` (`PageVoice`: the `VoiceQuote` of `research/voices.py` with `stage`, `citation`, `recordingId`), `fieldPhotos` (`PageFieldPhoto`), `fieldVoicesTotal {quotes, images}`; each quote's `Source` is listed in `sources`; KalaVigyan testimony is merged from `services/testimony_store` | portal quotes and testimony are paged in one SQL order (`field_voices_view.quote_order`): newest recording or conversation first, then portal quotes before testimony, then the recording and the turn's position (testimony: approval time and id); a page loads only its own 25 rows. `recordedOn` is a partial date: `YYYY-MM-DD` for portal quotes, `YYYY-MM` for testimony. The Voices and gallery components are not drawn yet |
 | Reading | `GET /api/crafts/{slug}/field-voices?kind=quotes|images&cursor=<offset>` (public, 25 a page), `GET /api/field-voices/recordings/{id}` (public since decision 0097), `GET /api/field-voices/images/{id}` (public 302), web page `/voices/<id>` | the list cursor is the offset of the page, a multiple of 25 |
-| Held images | `FieldImage.artisanLinked` (from the item's `artisanLinked`); `retrieval/field_scope.shown_images` adds `artisanLinked IS false OR` the `AppSetting` `field_voices.artisan_images` is `"SHOWN"` (`app_settings.DEFAULTS` holds `"HIDDEN"`), and `held_images` selects the held ones; `services/field_voices_held.py` (`held_image_list`, `artisan_image_visibility`, `set_artisan_image_visibility`); `api/routes/field_voices_held.py`: `GET /api/field-voices/held-images?cursor=` (rank `ADMIN` and above, `HeldImageList` of `research/field_voices.py`, 25 a page, no file link) and `PUT /api/field-voices/held-images/visibility` (`MASTER_ADMIN`, `{"visibility": "HIDDEN" \| "SHOWN"}`, an `AuditLog` row `field_voices.artisan_images`) | the setting is global: it shows or hides every held image at once; there is no per-image show yet |
+| Held images | `FieldImage.artisanLinked`; `models/field_photo_reviews.py` (`FieldPhotoReview`, `FieldPhotoScreen`, migration `0054_field_photo_reviews`); `services/field_photo_scope.py`, `field_photo_screens.py`, `field_photo_decisions.py`, `field_photo_crops.py`, `field_photo_queue.py`, `field_photo_items.py`, `field_voices_held.py`; `api/routes/field_photo_reviews.py` and `field_voices_held.py`; the web's `/admin/field-photos` | decided one photograph at a time (decision 0112); the setting is the master kill switch |
 | Speaker | `VoiceSpeaker {name: str | null, line, role, yearsInCraft, district, state}` | `line` is the credit as shown, "An artisan of <craft>, <district>, <state>" when `name` is null |

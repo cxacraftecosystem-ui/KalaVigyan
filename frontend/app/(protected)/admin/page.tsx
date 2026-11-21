@@ -16,6 +16,7 @@ type HubTool = { href: string; title: string; note: string };
 
 const TOOLS: HubTool[] = [
   { href: "/admin/review", title: "Review", note: "Decide what other people give: facts, testimony, pictures, components and layouts." },
+  { href: "/admin/field-photos", title: "Field photographs", note: "Show, crop or keep hidden each photograph the portals filed on an artisan." },
   { href: "/admin/access", title: "Who may sign in", note: "Approve requests and add addresses." },
   { href: "/admin/users", title: "Manage users", note: "Change roles, suspend accounts, reset two-step verification." },
   { href: "/admin/keys", title: "API keys", note: "Set and test the provider keys." },

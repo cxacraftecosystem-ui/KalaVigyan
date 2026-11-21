@@ -13,6 +13,7 @@ from app.api.routes import (
     crafts,
     explainer_exports,
     explainers,
+    field_photo_reviews,
     field_voices,
     field_voices_held,
     film,
@@ -77,6 +78,7 @@ api_router.include_router(explainers.router)
 api_router.include_router(explainer_exports.router)
 api_router.include_router(field_voices.router)
 api_router.include_router(field_voices_held.router)
+api_router.include_router(field_photo_reviews.router)
 api_router.include_router(film.router)
 api_router.include_router(knowledge.router)
 api_router.include_router(knowledge_export.router)

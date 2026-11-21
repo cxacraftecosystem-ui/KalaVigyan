@@ -17,7 +17,7 @@ agents with a shell, a presigned upload slot) for each picture that travels outs
 | The tool `give_pictures` (`PICTURE_TOOLS`), its arguments and texts, and `start_picture`, which page bundles share | `api/mcp_picture_tools.py`, `api/mcp_picture_arguments.py`, `api/mcp_picture_texts.py`, registered in `api/mcp_tools.py` |
 | Giving pictures from the chat: per picture checks, screens, one declaration | `services/upload_links_give.py`, contracts in `research/image_contributions_give.py` |
 | Fetching a picture's link | the fetcher's `POST /fetch-picture` (`fetcher/pictures.py`), its client `services/upload_links_fetch.py`, contract `research/image_intake_fetch.py` |
-| The vision screen's call | `api/picture_vision.py` |
+| The vision screen's call | `providers/picture_vision.py` |
 | The answer kit and the answer view resources | `api/mcp_resources.py`, `data/answer_kit.py`, `data/design/answer-kit.md`, `data/design/answer-view.html` |
 | The page preview view (decision 0110) | `data/page_preview_view.py`, `data/design/page-preview-view.html`, named by `preview_page` |
 | A supplied source's file slot (decision 0110) | `services/supplied_sources.py`, `api/routes/supplied_sources.py` (`knowledge-writes.md`, Supplied sources) |

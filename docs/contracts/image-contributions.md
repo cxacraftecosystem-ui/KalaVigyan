@@ -81,7 +81,7 @@ Cheap first; the vision call is the last step and runs only for a picture that p
    stored picture it is refused ("contributed already" or "already holds"); within 12 bits it is
    flagged `NEAR_DUPLICATE`.
 6. **The vision screen:** one call to the cheapest enabled route of the CAPTION task
-   (`api/picture_vision.py`), with a JPEG preview of at most 768 pixels a side, asking in a JSON
+   (`providers/picture_vision.py`), with a JPEG preview of at most 768 pixels a side, asking in a JSON
    schema whether the picture shows an identity document or a card with a face and a number
    (`ID_DOCUMENT`), a human face when it is AI-made (`FACE_IN_AI_IMAGE`), or unsafe content
    (`UNSAFE`). The call is reserved and settled in the usage ledger like every model call. No

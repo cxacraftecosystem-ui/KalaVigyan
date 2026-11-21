@@ -7,7 +7,6 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.picture_vision import picture_screen_tools
 from app.api.proposal_limits import proposal_limit
 from app.core.db import get_session
 from app.core.deps import require
@@ -15,6 +14,7 @@ from app.core.errors import InvalidInput
 from app.core.rate_limit import IMAGE_UPLOADS
 from app.core.roles import Capability
 from app.models import ImageContribution, User
+from app.providers.picture_vision import picture_screen_tools
 from app.research.image_contributions import (
     ImageBatch,
     ImageContributionStatus,

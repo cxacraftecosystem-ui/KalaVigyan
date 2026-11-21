@@ -96,7 +96,7 @@ async def screen_with_vision(request: VisionRequest) -> VisionVerdict:
     except ProviderError as failure:
         await _settled_failure(event_id, failure)
         return unscreened(FAILED.format(kind=failure.kind or "error"))
-    return await _settled(route, event_id, result, ai_made=request.ai_made)
+    return await _settled(route, event_id, result, request)
 
 
 async def _cheapest(prompt_tokens: int) -> _Route | None:
@@ -141,7 +141,7 @@ async def _called(choice: RouteChoice, chat: ChatRequest) -> ChatResult:
         await adapter.aclose()
 
 
-async def _settled(route: _Route, event_id: Any, result: ChatResult, *, ai_made: bool) -> VisionVerdict:
+async def _settled(route: _Route, event_id: Any, result: ChatResult, request: VisionRequest) -> VisionVerdict:
     choice = route.choice
     cost = budget.token_cost(
         model_for(choice.provider, choice.model),
@@ -162,7 +162,7 @@ async def _settled(route: _Route, event_id: Any, result: ChatResult, *, ai_made:
             latency_ms=result.latency_ms,
             detail={"servedModel": result.meta.get("served_model"), "use": SCREEN_DETAIL},
         )
-    parsed = vision_verdict(result.text, ai_made=ai_made)
+    parsed = vision_verdict(result.text, ai_made=request.ai_made, faces=request.faces)
     flags, note = parsed if parsed is not None else ((NOT_SCREENED,), UNREAD)
     return VisionVerdict(
         ran=parsed is not None,

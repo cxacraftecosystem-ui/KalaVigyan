@@ -20,7 +20,8 @@ from app.research.field_voices import (
     VoiceStage,
 )
 from app.research.voices import VoiceSpeaker
-from app.retrieval.field_scope import shown_images, shown_recordings
+from app.retrieval.field_scope import shown_recordings
+from app.services.field_photo_scope import shown_field_photos, shown_size
 from app.services.field_voices_credit import Credited, citation_line, month_year, person_line, span_locator
 from app.services.field_voices_items import FeedPerson
 from app.services.field_voices_records import sentences_within
@@ -89,16 +90,16 @@ async def craft_voices(
 async def craft_field_photos(
     session: AsyncSession, craft_id: uuid.UUID, *, limit: int, offset: int
 ) -> tuple[list[PageFieldPhoto], int]:
-    shown = shown_images(craft_id)
+    shown = shown_field_photos(craft_id)
     rows = await session.execute(
-        select(FieldImage, MediaRef.imageUrl)
+        select(FieldImage, MediaRef.imageUrl, *shown_size())
         .join(MediaRef, MediaRef.id == FieldImage.mediaRefId)
         .where(*shown)
         .order_by(FieldImage.takenAt.desc().nulls_last(), FieldImage.id)
         .offset(offset)
         .limit(limit)
     )
-    photos = [_photo(row, url) for row, url in rows]
+    photos = [_photo(row, url, (width, height)) for row, url, width, height in rows]
     total = await session.scalar(select(func.count()).select_from(FieldImage).where(*shown))
     return photos, int(total or 0)
 
@@ -293,7 +294,7 @@ def _month(recorded_on: str) -> str:
     return month_year(date(int(year), int(month), 1))
 
 
-def _photo(row: FieldImage, url: str) -> PageFieldPhoto:
+def _photo(row: FieldImage, url: str, size: tuple[int, int]) -> PageFieldPhoto:
     context = row.context or {}
     people = {person["id"]: person for person in row.people}
     credited = [people[c["personId"]].get("name") for c in row.credits if c["personId"] in people]
@@ -301,8 +302,8 @@ def _photo(row: FieldImage, url: str) -> PageFieldPhoto:
         item_id=f"{row.portal}:{row.portalMediaId}",
         origin=row.portal,
         image_url=url,
-        width=row.width,
-        height=row.height,
+        width=size[0],
+        height=size[1],
         caption=row.caption,
         alt=context.get("alt") or FALLBACK_ALT,
         credit=context.get("credit") or row.rightsHolder,

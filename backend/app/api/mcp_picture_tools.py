@@ -6,6 +6,7 @@ from app.core.errors import ExternalFailure, InvalidInput
 from app.core.mcp_scopes import CONTRIBUTE_SCOPE
 from app.core.rate_limit import IMAGE_UPLOADS
 from app.models import User
+from app.providers.picture_vision import picture_screen_tools
 from app.research.image_contributions_give import GivenPictures
 from app.research.image_intake_fetch import PictureFetcher, decoded_base64
 from app.research.upload_links import (
@@ -31,7 +32,6 @@ from .mcp_picture_arguments import (
 from .mcp_picture_texts import GIVE_DESCRIPTION, LINK_STEP, SHELL_STEP
 from .mcp_tool_base import OPEN_WRITES, PICTURES, Tool, ToolContext, signed_in
 from .oauth_hosts import endpoints_or_none
-from .picture_vision import picture_screen_tools
 from .proposal_limits import refuse_tool_when_spent, spent_limit
 
 __all__ = ["GIVE_PICTURES", "PICTURE_TOOLS", "start_picture"]

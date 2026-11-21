@@ -1,7 +1,7 @@
 import base64
 import uuid
 
-from app.api.picture_vision import provider_content
+from app.providers.picture_vision import provider_content
 from app.research.image_screens import VisionRequest
 
 PREVIEW = b"\xff\xd8preview"

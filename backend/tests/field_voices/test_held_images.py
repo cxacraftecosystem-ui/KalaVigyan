@@ -20,6 +20,7 @@ from app.research.field_voices import (
     HeldImage,
     HeldImageList,
 )
+from app.research.page_revalidation import PageOwners
 from app.retrieval.field_scope import held_images, shown_images
 from app.services import app_settings, field_voices_held as held
 
@@ -140,6 +141,22 @@ def state() -> dict[str, Any]:
     return {}
 
 
+def refreshing(state: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
+    async def held_crafts(session: Any) -> set[uuid.UUID]:
+        return set(state.get("crafts", ()))
+
+    async def owners(session: Any, craft_ids: Any) -> PageOwners:
+        return PageOwners(crafts=tuple(sorted(str(each) for each in craft_ids)))
+
+    async def refreshed(owners: PageOwners) -> bool:
+        state.setdefault("refreshed", []).append(owners.crafts)
+        return True
+
+    monkeypatch.setattr(field_voices_held, "held_photo_crafts", held_crafts)
+    monkeypatch.setattr(field_voices_held, "craft_owners", owners)
+    monkeypatch.setattr(field_voices_held, "refresh_pages", refreshed)
+
+
 @pytest.fixture
 def app(state: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> Iterator[FastAPI]:
     built = FastAPI()
@@ -166,6 +183,7 @@ def app(state: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> Iterator[Fast
         )
 
     monkeypatch.setattr(field_voices_held, "held_image_list", listed)
+    refreshing(state, monkeypatch)
     built.dependency_overrides[get_session] = session
     built.dependency_overrides[get_current_user] = current
     yield built
@@ -223,3 +241,15 @@ async def test_only_a_master_admin_flips_the_setting(app: FastAPI, state: dict[s
     written = session.executed[0].compile(dialect=postgresql.dialect())
     assert written.params["key"] == ARTISAN_IMAGES_SETTING and written.params["value"] == "SHOWN"
     assert [row.action for row in session.added] == ["field_voices.artisan_images"]
+
+
+async def test_a_flip_refreshes_the_pages_of_every_craft_with_a_held_photograph(
+    app: FastAPI, state: dict[str, Any]
+) -> None:
+    craft = uuid.UUID("5ca1ab1e-0000-4000-8000-0000000000c1")
+    state["session"], state["user"], state["crafts"] = FakeSession(), person("MASTER_ADMIN"), {craft}
+    flipped = await call(
+        app, "PUT", "/api/field-voices/held-images/visibility", json={"visibility": "HIDDEN"}
+    )
+    assert flipped.status_code == 200
+    assert state["refreshed"] == [(str(craft),)]

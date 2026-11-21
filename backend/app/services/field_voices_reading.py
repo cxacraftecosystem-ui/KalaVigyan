@@ -20,7 +20,8 @@ from app.research.field_voices import (
     TranscriptLine,
     TranscriptSpeaker,
 )
-from app.retrieval.field_scope import shown_images, shown_recordings
+from app.retrieval.field_scope import shown_recordings
+from app.services.field_photo_scope import shown_field_photos
 from app.services.field_voices_credit import Credited, citation_line, long_date, person_line, span_locator
 from app.services.field_voices_items import FeedPerson
 from app.services.field_voices_view import (
@@ -69,7 +70,7 @@ async def field_list(
 
 
 async def shown_image(session: AsyncSession, image_id: uuid.UUID) -> FieldImage | None:
-    return await session.scalar(select(FieldImage).where(FieldImage.id == image_id, *shown_images()))
+    return await session.scalar(select(FieldImage).where(FieldImage.id == image_id, *shown_field_photos()))
 
 
 async def field_transcript(session: AsyncSession, recording_id: uuid.UUID) -> FieldTranscript | None:

@@ -167,6 +167,7 @@ export const ROUTE_GUARDS: RouteGuard[] = [
   { path: "/admin/access", ...PROFESSOR_GUARD, gate: "require_access_roster_manager" },
   { path: "/admin/testimony", ...PROFESSOR_GUARD, can: canReviewTestimony, gate: "require(REVIEW_TESTIMONY)" },
   { path: "/admin/pictures", ...ADMIN_GUARD, can: canReviewContributions, gate: "require(REVIEW_CONTRIBUTIONS)" },
+  { path: "/admin/field-photos", ...ADMIN_GUARD, can: canReviewContributions, gate: "require(REVIEW_CONTRIBUTIONS)" },
   { path: "/admin/review", ...PROFESSOR_GUARD, can: canReviewTestimony, gate: "queue_reviewer" },
   { path: "/contributions/pictures", can: canContributeImages, gate: "require(PROPOSE_KNOWLEDGE)", title: "For researchers and above", message: "Needs Researcher access or above." },
   { path: "/contributions/facts", can: canContributeImages, gate: "require(PROPOSE_KNOWLEDGE)", title: "For researchers and above", message: "Needs Researcher access or above." },

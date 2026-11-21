@@ -13,7 +13,8 @@ from app.models import User
 from app.research.field_voices import FIELD_LIST_KINDS
 from app.services import knowledge_view
 from app.services.answering import NOT_FOUND_DETAIL
-from app.services.field_voices_reading import field_list, field_transcript, shown_image
+from app.services.field_photo_scope import served_photo
+from app.services.field_voices_reading import field_list, field_transcript
 from app.services.naming import content_disposition
 from app.services.object_store import media_bucket
 
@@ -67,16 +68,16 @@ async def get_field_image(
     reader: User | None = Depends(public_asset_reader),
     session: AsyncSession = Depends(get_session),
 ) -> RedirectResponse:
-    image = await shown_image(session, image_id)
-    if image is None:
+    served = await served_photo(session, image_id)
+    if served is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND_DETAIL)
     bucket = media_bucket()
     if bucket is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, NO_IMAGES)
-    leaf = image.objectKey.rsplit("/", 1)[-1]
+    leaf = served.key.rsplit("/", 1)[-1]
     try:
         link = bucket.presigned_get(
-            image.objectKey,
+            served.key,
             disposition=content_disposition(leaf, inline=True),
             seconds=IMAGE_LINK_SECONDS,
             now=datetime.now(UTC),

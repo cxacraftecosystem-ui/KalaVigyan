@@ -9,7 +9,6 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.multipart_form import BodyTooLarge, form_file, limited_body
-from app.api.picture_vision import picture_screen_tools
 from app.api.public_deps import counted_anonymous_read
 from app.core.config import get_settings
 from app.core.db import get_session
@@ -18,6 +17,7 @@ from app.core.errors import InvalidInput
 from app.core.http_cache import PRIVATE_NO_CACHE
 from app.core.roles import Capability
 from app.models import ImageContribution, User
+from app.providers.picture_vision import picture_screen_tools
 from app.research.image_contributions import ImageContributionView
 from app.research.image_intake import IMAGE_BYTES_MAX
 from app.research.upload_links import RenewedLink, SlotDeclaration, UploadLinkView, upload_page_url
