@@ -19,6 +19,7 @@ const newsreaderItalic = localFont({
   variable: "--font-newsreader-italic",
   weight: "300 600",
   style: "italic",
+  preload: false,
   adjustFontFallback: false,
   declarations: [
     { prop: "font-family", value: "Newsreader" },
@@ -78,6 +79,7 @@ const plexSansWeights = localFont({
   ],
   display: "swap",
   variable: "--font-plex-sans-weights",
+  preload: false,
   adjustFontFallback: false,
   declarations: [
     { prop: "font-family", value: "IBM Plex Sans" },
@@ -91,6 +93,7 @@ const plexSansItalic = localFont({
   variable: "--font-plex-sans-italic",
   weight: "400",
   style: "italic",
+  preload: false,
   adjustFontFallback: false,
   declarations: [
     { prop: "font-family", value: "IBM Plex Sans" },
