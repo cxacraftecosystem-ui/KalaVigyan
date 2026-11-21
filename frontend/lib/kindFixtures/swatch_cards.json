@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "kind": "swatch_cards",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/chemistry/colours-of-the-alloy",
+  "title": "The colours of bidri",
+  "description": "Swatches of the bidri alloy before and after the fort-earth bath, and of its silver inlay, which keeps its colour. Place it beside the blackening step.",
+  "field": "CHEMISTRY",
+  "within": null,
+  "spec": {
+    "chapterNo": "u0001",
+    "title": "u0002",
+    "titleId": "bidri-colours-t",
+    "intro": "u0003",
+    "weave": "bidri-weave",
+    "colours": [
+      {
+        "before": {
+          "dye": "bidri-white",
+          "caption": "u0004"
+        },
+        "join": "becomes",
+        "after": {
+          "dye": "bidri-black",
+          "caption": "u0005"
+        },
+        "name": "u0006",
+        "agent": "u0007",
+        "text": "u0008"
+      },
+      {
+        "before": {
+          "dye": "bidri-silver",
+          "caption": "u0009"
+        },
+        "join": "becomes",
+        "after": {
+          "dye": "bidri-silver",
+          "caption": "u0010"
+        },
+        "name": "u0011",
+        "agent": "u0012",
+        "text": "u0013"
+      }
+    ]
+  },
+  "units": {
+    "u0001": {
+      "text": "Colour",
+      "claims": []
+    },
+    "u0002": {
+      "text": "The fort-earth bath turns the alloy black and leaves the silver bright.",
+      "claims": [
+        "C071"
+      ]
+    },
+    "u0003": {
+      "text": "Sanding leaves the alloy zinc-white, and the boiling solution of fort earth and ammonium chloride blackens it.",
+      "claims": [
+        "C070",
+        "C071"
+      ]
+    },
+    "u0004": {
+      "text": "Sanded alloy, zinc-white",
+      "claims": [
+        "C070"
+      ]
+    },
+    "u0005": {
+      "text": "After the bath, black",
+      "claims": [
+        "C071"
+      ]
+    },
+    "u0006": {
+      "text": "Patina",
+      "claims": []
+    },
+    "u0007": {
+      "text": "Fort earth and ammonium chloride",
+      "claims": [
+        "C071"
+      ]
+    },
+    "u0008": {
+      "text": "The zinc alloy turns black while the silver keeps its colour.",
+      "claims": [
+        "C071"
+      ]
+    },
+    "u0009": {
+      "text": "Silver inlay",
+      "claims": []
+    },
+    "u0010": {
+      "text": "Silver after the bath",
+      "claims": [
+        "C071"
+      ]
+    },
+    "u0011": {
+      "text": "Inlay",
+      "claims": []
+    },
+    "u0012": {
+      "text": "The same bath",
+      "claims": []
+    },
+    "u0013": {
+      "text": "The black ground contrasts with the lustrous silver inlay.",
+      "claims": [
+        "C004"
+      ]
+    }
+  },
+  "facts": {
+    "C004": {
+      "text": "The black background of bidri ware contrasts strikingly with its lustrous silver inlay.",
+      "quotes": [
+        {
+          "source": "S02",
+          "locator": "lines 116-119",
+          "quote": "The contrast between the black oxidized background and lustrous silver inlay gives a beauty to the Bidri ware."
+        },
+        {
+          "source": "S05",
+          "locator": "line 29",
+          "quote": "The inlays contrast strikingly with the matt black patina of the vessel."
+        }
+      ]
+    },
+    "C070": {
+      "text": "In tarkashi and tainishan work the inlaid surface is then filed or sanded level, and the temporary black vanishes to leave a smooth, zinc-white surface.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1331-1333",
+          "quote": "filing the above piece with a flat iron file so that the embedded silver and the base material's surface form a smooth single level"
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1333-1334",
+          "quote": "This is done only in the case of tarkashi and taihnishan techniques."
+        },
+        {
+          "source": "S02",
+          "locator": "lines 291-295",
+          "quote": "the whole surface is again rubbed with sand paper or buffrng machine. Thereafter the temporary black colour vanishes and the surface becomes smooth and zinc-white."
+        }
+      ]
+    },
+    "C071": {
+      "text": "The finished article is dipped in a boiling solution of fort earth and ammonium chloride, which turns the zinc alloy black while the silver keeps its colour.",
+      "quotes": [
+        {
+          "source": "S02",
+          "locator": "lines 296-299",
+          "quote": "The polished article is then dipped in a boiled solution of ammonium chloride and earth collected and available only from the fort area"
+        },
+        {
+          "source": "S02",
+          "locator": "lines 305-307",
+          "quote": "By this process, the zinc portion ofthe articles become black and the silver portion retains its own colour."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1348-1349",
+          "quote": "The finished article is now given a dip in this hot solution."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1350-1351",
+          "quote": "The zinc alloy turns permanently jet black while the silver retains its brilliance."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S02": {
+      "title": "Form GI-1: Application for the registration of a geographical indication, Bidriware (statement of case)",
+      "publisher": "Karnataka State Handicrafts Development Corporation Limited",
+      "year": null,
+      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/13-bidriware.pdf",
+      "reliability": "A"
+    },
+    "S03": {
+      "title": "Census of India 1961, Volume II, Andhra Pradesh, Part VII-A (3): Selected Crafts of Andhra Pradesh (monograph: Bidriware of Hyderabad City)",
+      "publisher": "Census of India",
+      "year": null,
+      "url": "https://censusindia.gov.in/nada/index.php/catalog/31726/download/34907/22310_1961_SEL.pdf",
+      "reliability": "A"
+    },
+    "S05": {
+      "title": "The technical examination of Bidri ware",
+      "publisher": "The International Institute for Conservation of Historic and Artistic Works",
+      "year": 1987,
+      "url": "https://mci.si.edu/node/1221430",
+      "reliability": "A"
+    }
+  }
+}

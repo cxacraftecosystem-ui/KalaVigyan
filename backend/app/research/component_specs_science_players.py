@@ -4,6 +4,7 @@ from typing import Annotated, Literal, Self
 
 from pydantic import Field, model_validator
 
+from .base import absent
 from .component_specs_science_parts import (
     Colour,
     ColourToken,
@@ -165,7 +166,7 @@ class DipPlayerSpec(SpecModel):
     status: UnitRef
     dips_label: UnitRef
     dips: list[ColourToken] = Field(min_length=1)
-    equation: Equation
+    equation: Equation | None = Field(default=None, exclude_if=absent)
 
     @model_validator(mode="after")
     def _each_phase_once(self) -> Self:

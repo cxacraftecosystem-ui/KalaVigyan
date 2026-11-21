@@ -30,6 +30,7 @@ from .quotes import numbers_in, unsupported_figures
 
 __all__ = [
     "CLAIMS_PER_UNIT_MAX",
+    "CONTAINER_KINDS",
     "DELIVERED_KEY",
     "DELIVERED_UNIT_END",
     "DELIVERED_UNIT_START",
@@ -65,6 +66,7 @@ PROBLEMS_SHOWN = 6
 
 UnitKey = Annotated[str, Field(pattern=UNIT_KEY_PATTERN)]
 NO_ROWS: Mapping[str, Sequence[str]] = MappingProxyType({})
+CONTAINER_KINDS = frozenset({"experiment_lab"})
 
 
 class DeliveredUnit(ContractModel):
@@ -111,7 +113,7 @@ def spec_problems(kind: str, spec: Mapping[str, Any], units: Mapping[str, Delive
         problems.append(
             "a citation in the spec's own text is not allowed: cite a fact through a unit's claimIds"
         )
-    if not delivered_claim_ids(units) and cited_dataset(checked) is None:
+    if not delivered_claim_ids(units) and cited_dataset(checked) is None and kind not in CONTAINER_KINDS:
         problems.append("the component cites no fact: at least one unit names the facts it rests on")
     return problems + _value_problems(kind, checked, units)
 

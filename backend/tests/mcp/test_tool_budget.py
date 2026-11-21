@@ -23,7 +23,7 @@ GROUPED = {
     "pictures": {"give_pictures"},
 }
 READ_BY_CLIENTS = {"find_crafts", "get_page", "get_facts", "list_components", "ask", "preview_page"}
-DELIVERED_KINDS = 24
+DELIVERED_KINDS = 22
 
 
 def size(value: Any) -> int:

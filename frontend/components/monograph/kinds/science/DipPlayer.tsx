@@ -63,7 +63,7 @@ export function DipPlayer({ spec, renderUnit }: ComponentViewProps) {
       </div>
       <Strip player={player} renderUnit={renderUnit} />
       <Controls player={player} renderUnit={renderUnit} />
-      <EquationView equation={player.equation} renderUnit={renderUnit} />
+      {player.equation ? <EquationView equation={player.equation} renderUnit={renderUnit} /> : null}
     </figure>
   );
 }

@@ -20,7 +20,7 @@ import {
   type Styled,
   type SvgNode
 } from "@/lib/componentSpecsScienceParts";
-import { boolean, list, matching, nullable, object, oneOf, ShapeError, tagged, text, type Shape } from "@/lib/shape";
+import { boolean, list, matching, nullable, object, oneOf, optional, ShapeError, tagged, text, type Shape } from "@/lib/shape";
 
 export const SWATCH_MARKS = ["clear", "gas", "ion"] as const;
 export const PHASE_KEY = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
@@ -72,7 +72,7 @@ export type DipPlayerSpec = {
   status: string;
   dipsLabel: string;
   dips: string[];
-  equation: Equation;
+  equation?: Equation;
 };
 export type StageEntry = {
   name: string;
@@ -163,7 +163,7 @@ export const dipPlayerShape: Shape<DipPlayerSpec> = object<DipPlayerSpec>({
   status: unitRef,
   dipsLabel: unitRef,
   dips: list(colourToken, 1),
-  equation: equationShape
+  equation: optional(equationShape)
 });
 
 export const stagePlayerShape: Shape<StagePlayerSpec> = object<StagePlayerSpec>({

@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "kind": "label_card",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/materials/alloy-label",
+  "title": "The bidri alloy",
+  "description": "A label card of the bidri alloy with the zinc, copper and silver shares the Hyderabad quality-marking scheme set. Place it where the alloy is introduced.",
+  "field": "MATERIALS",
+  "within": null,
+  "spec": {
+    "variant": "craft",
+    "kicker": "u0001",
+    "seal": {
+      "tag": "svg",
+      "attrs": {
+        "viewBox": "0 0 40 40",
+        "aria-hidden": "true"
+      },
+      "children": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": "20",
+            "cy": "20",
+            "r": "16",
+            "fill": "var(--dye-bidri-black)",
+            "stroke": "var(--dye-bidri-silver)",
+            "stroke-width": "3"
+          }
+        }
+      ]
+    },
+    "sentence": "u0002",
+    "facts": [
+      {
+        "term": "u0003",
+        "value": "u0004"
+      },
+      {
+        "term": "u0005",
+        "value": "u0006"
+      },
+      {
+        "term": "u0007",
+        "value": "u0008"
+      }
+    ]
+  },
+  "units": {
+    "u0001": {
+      "text": "The bidri alloy",
+      "claims": []
+    },
+    "u0002": {
+      "text": "Bidriware is cast from a zinc-copper alloy, engraved and inlaid with silver.",
+      "claims": [
+        "C001"
+      ]
+    },
+    "u0003": {
+      "text": "Zinc",
+      "claims": []
+    },
+    "u0004": {
+      "text": "93% to 94% of the base alloy",
+      "claims": [
+        "C089"
+      ]
+    },
+    "u0005": {
+      "text": "Copper",
+      "claims": []
+    },
+    "u0006": {
+      "text": "6% to 7% of the base alloy",
+      "claims": [
+        "C089"
+      ]
+    },
+    "u0007": {
+      "text": "Inlay",
+      "claims": []
+    },
+    "u0008": {
+      "text": "Silver of at least 96%",
+      "claims": [
+        "C089"
+      ]
+    }
+  },
+  "facts": {
+    "C001": {
+      "text": "Bidriware is a metal craft of Bidar in which designs engraved on a cast zinc-copper alloy are inlaid with silver.",
+      "quotes": [
+        {
+          "source": "S02",
+          "locator": "lines 109-110",
+          "quote": "Bidri ware is a famous handicraft of Bidar District."
+        },
+        {
+          "source": "S02",
+          "locator": "lines 224-227",
+          "quote": "Bidriware is an alloy ofzinc , copper and other non ferrous metals. Pretty designs are engtaved on it and there after inlaid with pure silver ware."
+        },
+        {
+          "source": "S08",
+          "locator": "line 5",
+          "quote": "The technique consists of casting objects from a high-zinc alloy and then inlaying them with silver or brass, or a combination of both."
+        }
+      ]
+    },
+    "C089": {
+      "text": "The census monograph reproduces quality-marking standards set for Bidriware at Hyderabad, requiring a base alloy of 93% to 94% zinc and 6% to 7% copper and inlay silver of at least 96%.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1853-1854",
+          "quote": "a quality marking scheme was introduced in the State first on a voluntary basis in 1960"
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1856-1858",
+          "quote": "The scheme was extended by phases to the other crafts also, including Bidriware at Hyderabad."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1868-1872",
+          "quote": "Those set up for Bidriware are reproduced below: 1. Base alloy should have the following com position: Zinc = 93% to 94% Copper = 6% to 7%"
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1877-1878",
+          "quote": "Silver used for inlay work shOUld contain a minimum of 96% silver"
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S02": {
+      "title": "Form GI-1: Application for the registration of a geographical indication, Bidriware (statement of case)",
+      "publisher": "Karnataka State Handicrafts Development Corporation Limited",
+      "year": null,
+      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/13-bidriware.pdf",
+      "reliability": "A"
+    },
+    "S03": {
+      "title": "Census of India 1961, Volume II, Andhra Pradesh, Part VII-A (3): Selected Crafts of Andhra Pradesh (monograph: Bidriware of Hyderabad City)",
+      "publisher": "Census of India",
+      "year": null,
+      "url": "https://censusindia.gov.in/nada/index.php/catalog/31726/download/34907/22310_1961_SEL.pdf",
+      "reliability": "A"
+    },
+    "S08": {
+      "title": "Huqqa base, Bidar, ca. 1850, museum number 136-1852",
+      "publisher": "Victoria and Albert Museum",
+      "year": null,
+      "url": "https://collections.vam.ac.uk/item/O16017/huqqa-base-unknown/",
+      "reliability": "A"
+    }
+  }
+}

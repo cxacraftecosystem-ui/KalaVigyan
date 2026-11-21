@@ -80,7 +80,8 @@ REFUSALS: list[tuple[str, Callable[[dict[str, Any]], None]]] = [
         ),
     ),
     ("reaction_player", lambda spec: spec["steps"][0]["chemistry"]["parts"].pop()),
-    ("dip_player", lambda spec: spec["phases"][0].update(pose="boil")),
+    ("dip_player", lambda spec: spec["phases"][0].update(pose="In the vat")),
+    ("dip_player", lambda spec: spec["phases"][1].update(pose=spec["phases"][0]["pose"])),
     ("stage_player", lambda spec: spec["stages"][0].update(texts=[])),
     ("choice_toggle", lambda spec: spec["options"][1].update(value="madder")),
     (

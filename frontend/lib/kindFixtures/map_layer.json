@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "kind": "map_layer",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/history/centres",
+  "title": "Where bidri has been made",
+  "description": "A map of the towns where bidri is or was made, from Bidar and Hyderabad today to the eighteenth- and nineteenth-century courts of Purnia, Murshidabad and Lucknow, placed by their Wikidata coordinates.",
+  "field": "HISTORY",
+  "within": null,
+  "spec": {
+    "head": {
+      "title": "u0001",
+      "caption": "u0002"
+    },
+    "places": [
+      {
+        "longitude": 77.55,
+        "latitude": 17.9,
+        "name": "u0003",
+        "reading": "u0004",
+        "value": null
+      },
+      {
+        "longitude": 78.474722222,
+        "latitude": 17.361666666,
+        "name": "u0005",
+        "reading": "u0006",
+        "value": null
+      },
+      {
+        "longitude": 87.47,
+        "latitude": 25.78,
+        "name": "u0007",
+        "reading": "u0008",
+        "value": null
+      },
+      {
+        "longitude": 88.27,
+        "latitude": 24.18,
+        "name": "u0009",
+        "reading": "u0010",
+        "value": null
+      },
+      {
+        "longitude": 80.947,
+        "latitude": 26.847,
+        "name": "u0011",
+        "reading": "u0012",
+        "value": null
+      }
+    ],
+    "valueLabel": null
+  },
+  "units": {
+    "u0001": {
+      "text": "By the nineteenth century bidri was also worked at Purnia, Murshidabad and Lucknow.",
+      "claims": [
+        "C025"
+      ]
+    },
+    "u0002": {
+      "text": "Bidar and Hyderabad are named as the chief centres of bidri today.",
+      "claims": [
+        "C006"
+      ]
+    },
+    "u0003": {
+      "text": "Bidar",
+      "claims": []
+    },
+    "u0004": {
+      "text": "A chief centre today",
+      "claims": [
+        "C006"
+      ]
+    },
+    "u0005": {
+      "text": "Hyderabad",
+      "claims": []
+    },
+    "u0006": {
+      "text": "A chief centre today",
+      "claims": [
+        "C006"
+      ]
+    },
+    "u0007": {
+      "text": "Purnia",
+      "claims": []
+    },
+    "u0008": {
+      "text": "A court centre by the late eighteenth century",
+      "claims": [
+        "C025"
+      ]
+    },
+    "u0009": {
+      "text": "Murshidabad",
+      "claims": []
+    },
+    "u0010": {
+      "text": "A court centre by the late eighteenth century",
+      "claims": [
+        "C025"
+      ]
+    },
+    "u0011": {
+      "text": "Lucknow",
+      "claims": []
+    },
+    "u0012": {
+      "text": "A centre by the nineteenth century",
+      "claims": [
+        "C025"
+      ]
+    }
+  },
+  "facts": {
+    "C006": {
+      "text": "Bidar and Hyderabad are named as the chief, and in one account the only, present-day centres of bidri production.",
+      "quotes": [
+        {
+          "source": "S14",
+          "locator": "line 7",
+          "quote": "Bidar remains one of the chief centres of bidriware production in the country, alongside Hyderabad in present-day Telangana."
+        },
+        {
+          "source": "S13",
+          "locator": "line 1",
+          "quote": "Today, Bidri is produced only in two centres in India: Bidar and Hyderabad."
+        }
+      ]
+    },
+    "C025": {
+      "text": "By the late eighteenth century bidri had spread to the courts of Purnia and Murshidabad, and by the nineteenth century to Lucknow.",
+      "quotes": [
+        {
+          "source": "S14",
+          "locator": "line 9",
+          "quote": "By the late eighteenth century, the technique had spread to the Muslim courts of Purnia (in present-day Bihar) and Murshidabad (in present-day Bengal), and by the nineteenth century, to Lucknow (in present-day Uttar Pradesh)."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S13": {
+      "title": "Types of Bidri Work",
+      "publisher": "Sahapedia",
+      "year": null,
+      "url": "https://www.sahapedia.org/types-of-bidri-work",
+      "reliability": "B"
+    },
+    "S14": {
+      "title": "Bidriware",
+      "publisher": "Impart Encyclopedia of Art (MAP Academy)",
+      "year": 2023,
+      "url": "https://imp-art.org/articles/bidriware/",
+      "reliability": "B"
+    }
+  }
+}

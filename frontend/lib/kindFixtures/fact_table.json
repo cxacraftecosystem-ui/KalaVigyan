@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "kind": "fact_table",
+  "craft": "Blue-Pottery-Of-Jaipur",
+  "craftName": "Blue Pottery of Jaipur",
+  "label": "blue-pottery-of-jaipur/chemistry/oxide-colours",
+  "title": "Oxides and the colours they fire to",
+  "description": "A table of the metal oxides painted on Jaipur blue pottery and the colour each gives after firing. Place it where the painting and firing of the ware are described.",
+  "field": "CHEMISTRY",
+  "within": null,
+  "spec": {
+    "head": {
+      "title": "u0001",
+      "caption": "u0002"
+    },
+    "columns": [
+      {
+        "label": "u0003",
+        "numeric": false
+      },
+      {
+        "label": "u0004",
+        "numeric": false
+      }
+    ],
+    "rows": [
+      {
+        "cells": [
+          "u0005",
+          "u0006"
+        ]
+      },
+      {
+        "cells": [
+          "u0007",
+          "u0008"
+        ]
+      },
+      {
+        "cells": [
+          "u0009",
+          "u0010"
+        ]
+      },
+      {
+        "cells": [
+          "u0011",
+          "u0012"
+        ]
+      },
+      {
+        "cells": [
+          "u0013",
+          "u0014"
+        ]
+      },
+      {
+        "cells": [
+          "u0015",
+          "u0016"
+        ]
+      }
+    ]
+  },
+  "units": {
+    "u0001": {
+      "text": "Each metal oxide fires to its own colour on Jaipur ware.",
+      "claims": [
+        "C021",
+        "C025"
+      ]
+    },
+    "u0002": {
+      "text": "Cobalt oxide fires to the deep blue that dominates the ware.",
+      "claims": [
+        "C021",
+        "C003"
+      ]
+    },
+    "u0003": {
+      "text": "Oxide",
+      "claims": []
+    },
+    "u0004": {
+      "text": "Colour after firing",
+      "claims": []
+    },
+    "u0005": {
+      "text": "Cobalt",
+      "claims": []
+    },
+    "u0006": {
+      "text": "Deep blue",
+      "claims": [
+        "C021"
+      ]
+    },
+    "u0007": {
+      "text": "Chromium",
+      "claims": []
+    },
+    "u0008": {
+      "text": "Green",
+      "claims": [
+        "C021"
+      ]
+    },
+    "u0009": {
+      "text": "Cadmium",
+      "claims": []
+    },
+    "u0010": {
+      "text": "Bright yellow",
+      "claims": [
+        "C021"
+      ]
+    },
+    "u0011": {
+      "text": "Iron",
+      "claims": []
+    },
+    "u0012": {
+      "text": "Red-brown",
+      "claims": [
+        "C021"
+      ]
+    },
+    "u0013": {
+      "text": "Copper",
+      "claims": []
+    },
+    "u0014": {
+      "text": "Turquoise",
+      "claims": [
+        "C025"
+      ]
+    },
+    "u0015": {
+      "text": "Manganese",
+      "claims": []
+    },
+    "u0016": {
+      "text": "Purple",
+      "claims": [
+        "C025"
+      ]
+    }
+  },
+  "facts": {
+    "C003": {
+      "text": "The statement of case says the blue on the product is so dominant it is easily recognised, and cobalt-oxide blue is the key shade of its visual appeal.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 106-107",
+          "quote": "The blue colour on the product is so dominant that it can be easily recognised on the naked eye."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 107-108",
+          "quote": "The brilliance of blue created from the cobalt oxide is striking and is the key shade to create the visual appeal of these items."
+        }
+      ]
+    },
+    "C021": {
+      "text": "On firing, the oxide of cobalt becomes deep blue, chromium turns green, cadmium gives bright yellow and iron oxide becomes red-brown.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 137-139",
+          "quote": "The oxide of cobalt becomes a deep blue, that of chromium changes to green, cadmium produces a bright yellow and iron oxide becomes a red-brown."
+        },
+        {
+          "source": "S11",
+          "locator": "line 10",
+          "quote": "iron may be used for red, cadmium for yellow and chromium for green"
+        }
+      ]
+    },
+    "C025": {
+      "text": "Ceramics Monthly lists the Jaipur colours as copper for turquoise, chromium for green, cobalt for dark blue and black, iron for brown, cadmium for yellow and manganese for purple.",
+      "quotes": [
+        {
+          "source": "S14",
+          "locator": "line 11",
+          "quote": "The colors of Jaipur pottery are as follows: copper to create turquoise; chromium to create green; cobalt to create dark blue and black; iron to create brown; cadmium to create yellow; and manganese to create purple."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S03": {
+      "title": "Statement of Case for Blue Pottery of Jaipur in Rajasthan",
+      "publisher": "Development Commissioner (Handicraft), Government of India, filed with the Geographical Indications Registry",
+      "year": 2015,
+      "url": "https://ipindiaservices.gov.in/GI_DOC/540/540%20-%20Statement%20of%20Case%20-%2028-12-2015.pdf",
+      "reliability": "A"
+    },
+    "S11": {
+      "title": "Blue Glaze Pottery",
+      "publisher": "Impart Encyclopedia of Art (MAP Academy)",
+      "year": 2023,
+      "url": "https://imp-art.org/articles/blue-glaze-pottery/",
+      "reliability": "B"
+    },
+    "S14": {
+      "title": "Clay Culture: Jaipur Blue Pottery",
+      "publisher": "Ceramics Monthly, Ceramic Arts Network",
+      "year": null,
+      "url": "https://ceramicartsnetwork.org/ceramics-monthly/ceramics-monthly-article/Clay-Culture-Jaipur-Blue-Pottery-202409",
+      "reliability": "C"
+    }
+  }
+}

@@ -2,6 +2,7 @@ from app.models.enums import BLOCK_KINDS
 
 __all__ = [
     "AUTHORED_ART_KINDS",
+    "AUTHORED_SCRIPT_KINDS",
     "COMPONENT_KINDS",
     "DOCUMENT_KINDS",
     "GENERAL_KINDS",
@@ -67,5 +68,6 @@ PAGE_TOOL_KINDS = (
     "source_list",
 )
 AUTHORED_ART_KINDS = ("ai_illustration", "ai_video", "comic", "picture_plate", "specimen_plate")
+AUTHORED_SCRIPT_KINDS = ("model_explainer", "timeline_map")
 PIECE_KINDS = (*BLOCK_KINDS, *COMPONENT_KINDS)
 DOCUMENT_KINDS = ("answer_block",)

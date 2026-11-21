@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "kind": "structure_diagram",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/chemistry/patina-salts",
+  "title": "The salts of the patina solution",
+  "description": "Ammonium chloride and potassium nitrate, the two salts a thesis dissolved to give the bidri patina, each with its PubChem record.",
+  "field": "CHEMISTRY",
+  "within": null,
+  "spec": {
+    "id": "bidri-salts",
+    "head": {
+      "figure": null,
+      "number": "u0003",
+      "title": "u0004",
+      "titleId": "bidri-salts-t"
+    },
+    "scale": "u0005",
+    "molecules": [
+      {
+        "drawing": {
+          "tag": "svg",
+          "attrs": {
+            "viewBox": "0 0 120 80",
+            "role": "img",
+            "aria-label": "Ammonium chloride"
+          },
+          "children": [
+            {
+              "tag": "circle",
+              "attrs": {
+                "cx": "40",
+                "cy": "40",
+                "r": "18",
+                "fill": "var(--raised)",
+                "stroke": "var(--ink-1)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "circle",
+              "attrs": {
+                "cx": "80",
+                "cy": "40",
+                "r": "12",
+                "fill": "var(--sunk)",
+                "stroke": "var(--ink-1)",
+                "stroke-width": "1.5"
+              }
+            }
+          ]
+        },
+        "name": "Ammonium chloride",
+        "formula": [
+          "NH",
+          {
+            "text": "4",
+            "style": "sub"
+          },
+          "Cl"
+        ],
+        "note": "A salt of the patina bath",
+        "atomsTerm": "u0001",
+        "atoms": "u0006",
+        "recordTerm": "u0002",
+        "cid": 25517
+      },
+      {
+        "drawing": {
+          "tag": "svg",
+          "attrs": {
+            "viewBox": "0 0 120 80",
+            "role": "img",
+            "aria-label": "Potassium nitrate"
+          },
+          "children": [
+            {
+              "tag": "circle",
+              "attrs": {
+                "cx": "40",
+                "cy": "40",
+                "r": "18",
+                "fill": "var(--raised)",
+                "stroke": "var(--ink-1)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "circle",
+              "attrs": {
+                "cx": "80",
+                "cy": "40",
+                "r": "12",
+                "fill": "var(--sunk)",
+                "stroke": "var(--ink-1)",
+                "stroke-width": "1.5"
+              }
+            }
+          ]
+        },
+        "name": "Potassium nitrate",
+        "formula": [
+          "KNO",
+          {
+            "text": "3",
+            "style": "sub"
+          }
+        ],
+        "note": "A salt of the patina bath",
+        "atomsTerm": "u0001",
+        "atoms": "u0007",
+        "recordTerm": "u0002",
+        "cid": 24434
+      }
+    ],
+    "key": "The two salts"
+  },
+  "units": {
+    "u0001": {
+      "text": "Atoms",
+      "claims": []
+    },
+    "u0002": {
+      "text": "PubChem",
+      "claims": []
+    },
+    "u0003": {
+      "text": "Figure",
+      "claims": []
+    },
+    "u0004": {
+      "text": "Two salts make the laboratory patina solution.",
+      "claims": [
+        "C131"
+      ]
+    },
+    "u0005": {
+      "text": "Drawn to no common scale",
+      "claims": []
+    },
+    "u0006": {
+      "text": "Nitrogen, hydrogen and chlorine",
+      "claims": []
+    },
+    "u0007": {
+      "text": "Potassium, nitrogen and oxygen",
+      "claims": []
+    }
+  },
+  "facts": {
+    "C131": {
+      "text": "An IIT Madras thesis found that 20 g of ammonium chloride and 5 g of potassium nitrate in 100 ml of water gave a black patina like that from Bidri sand.",
+      "quotes": [
+        {
+          "source": "S07",
+          "locator": "lines 668-670",
+          "quote": "5g of potassium nitrate (KNO3), 20g of ammonium chloride (NH4Cl) was dissolved in 100 ml of de-ionised water"
+        },
+        {
+          "source": "S07",
+          "locator": "lines 829-831",
+          "quote": "An alternative to Bidri sand has been identified. A mixture of NH4Cl and KNO3 (20g:5g) in 100mL of de-ionized water renders black patina on the surface similar to one seen with Bidri sand."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S07": {
+      "title": "Alternative Method of Processing Bidri-ware Crafts: An Electrochemical Study",
+      "publisher": "Indian Institute of Technology Madras",
+      "year": 2017,
+      "url": "https://acr.iitm.ac.in/wp-content/uploads/2018/08/AkshayKumar-Varma-MM13B006.pdf",
+      "reliability": "B"
+    }
+  }
+}

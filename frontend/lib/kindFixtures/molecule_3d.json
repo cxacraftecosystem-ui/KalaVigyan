@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "kind": "molecule_3d",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/chemistry/ammonium-chloride",
+  "title": "Ammonium chloride",
+  "description": "A turnable model of ammonium chloride, the salt boiled with fort earth to blacken bidri.",
+  "field": "CHEMISTRY",
+  "within": null,
+  "spec": {
+    "head": {
+      "figure": null,
+      "number": "u0001",
+      "title": "u0002",
+      "titleId": "bidri-model-t"
+    },
+    "molecules": [
+      {
+        "key": "nh4cl",
+        "cid": 25517,
+        "yaw": 20.0,
+        "pitch": 10.0,
+        "name": "Ammonium chloride",
+        "dialLabel": "Turn the model",
+        "formula": [
+          "NH",
+          {
+            "text": "4",
+            "style": "sub"
+          },
+          "Cl"
+        ],
+        "atoms": "Nitrogen, hydrogen and chlorine",
+        "note": "Its record is PubChem's",
+        "drawing": {
+          "tag": "svg",
+          "attrs": {
+            "viewBox": "0 0 120 80",
+            "role": "img",
+            "aria-label": "Ammonium chloride"
+          },
+          "children": [
+            {
+              "tag": "circle",
+              "attrs": {
+                "cx": "40",
+                "cy": "40",
+                "r": "18",
+                "fill": "var(--raised)",
+                "stroke": "var(--ink-1)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "circle",
+              "attrs": {
+                "cx": "80",
+                "cy": "40",
+                "r": "12",
+                "fill": "var(--sunk)",
+                "stroke": "var(--ink-1)",
+                "stroke-width": "1.5"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "key": [
+      {
+        "label": "Nitrogen"
+      },
+      {
+        "label": "Hydrogen"
+      },
+      {
+        "label": "Chlorine"
+      }
+    ]
+  },
+  "units": {
+    "u0001": {
+      "text": "Figure",
+      "claims": []
+    },
+    "u0002": {
+      "text": "Ammonium chloride goes into the boiling fort-earth bath.",
+      "claims": [
+        "C071"
+      ]
+    }
+  },
+  "facts": {
+    "C071": {
+      "text": "The finished article is dipped in a boiling solution of fort earth and ammonium chloride, which turns the zinc alloy black while the silver keeps its colour.",
+      "quotes": [
+        {
+          "source": "S02",
+          "locator": "lines 296-299",
+          "quote": "The polished article is then dipped in a boiled solution of ammonium chloride and earth collected and available only from the fort area"
+        },
+        {
+          "source": "S02",
+          "locator": "lines 305-307",
+          "quote": "By this process, the zinc portion ofthe articles become black and the silver portion retains its own colour."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1348-1349",
+          "quote": "The finished article is now given a dip in this hot solution."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1350-1351",
+          "quote": "The zinc alloy turns permanently jet black while the silver retains its brilliance."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S02": {
+      "title": "Form GI-1: Application for the registration of a geographical indication, Bidriware (statement of case)",
+      "publisher": "Karnataka State Handicrafts Development Corporation Limited",
+      "year": null,
+      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/13-bidriware.pdf",
+      "reliability": "A"
+    },
+    "S03": {
+      "title": "Census of India 1961, Volume II, Andhra Pradesh, Part VII-A (3): Selected Crafts of Andhra Pradesh (monograph: Bidriware of Hyderabad City)",
+      "publisher": "Census of India",
+      "year": null,
+      "url": "https://censusindia.gov.in/nada/index.php/catalog/31726/download/34907/22310_1961_SEL.pdf",
+      "reliability": "A"
+    }
+  }
+}

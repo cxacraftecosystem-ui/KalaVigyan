@@ -7,7 +7,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from app.core.errors import InvalidInput
-from app.models.component_kinds import AUTHORED_ART_KINDS, PAGE_TOOL_KINDS, PIECE_KINDS
+from app.models.component_kinds import AUTHORED_ART_KINDS, AUTHORED_SCRIPT_KINDS, PAGE_TOOL_KINDS, PIECE_KINDS
 
 from .base import ContractModel
 from .component_specs_blocks import SPEC_MODELS_BLOCKS
@@ -37,6 +37,10 @@ PAGE_TOOL = "the site builds the {kind} of every page from its data, so it is ne
 AUTHORED_ART = (
     "a {kind} draws an authored page's own art; give pictures with give_pictures and the site places them"
 )
+AUTHORED_SCRIPT = (
+    "a {kind} runs an authored page's own script; deliver a drawing, a timeline or a map_layer instead"
+)
+WITHHELD = (*PAGE_TOOL_KINDS, *AUTHORED_ART_KINDS, *AUTHORED_SCRIPT_KINDS)
 
 
 def _joined() -> Mapping[str, type[BaseModel]]:
@@ -51,11 +55,7 @@ def _joined() -> Mapping[str, type[BaseModel]]:
 
 SPEC_MODELS = _joined()
 CONTRIBUTABLE_KINDS = tuple(
-    sorted(
-        kind
-        for kind in SPEC_MODELS
-        if kind in PIECE_KINDS and kind not in PAGE_TOOL_KINDS and kind not in AUTHORED_ART_KINDS
-    )
+    sorted(kind for kind in SPEC_MODELS if kind in PIECE_KINDS and kind not in WITHHELD)
 )
 
 
@@ -71,4 +71,6 @@ def not_contributable(kind: str) -> str | None:
         return PAGE_TOOL.format(kind=kind)
     if kind in AUTHORED_ART_KINDS:
         return AUTHORED_ART.format(kind=kind)
+    if kind in AUTHORED_SCRIPT_KINDS:
+        return AUTHORED_SCRIPT.format(kind=kind)
     return None
