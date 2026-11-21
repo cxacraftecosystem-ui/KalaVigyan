@@ -46,6 +46,15 @@ PRESETS: list[dict] = [
         "key_env": "ELEVENLABS_API_KEY",
         "docs_url": "https://elevenlabs.io/docs/api-reference/introduction",
     },
+    {
+        "preset": "voyage",
+        "kind": "voyage",
+        "label": "Voyage AI",
+        "base_url": "https://api.voyageai.com/v1",
+        "needs_key": True,
+        "key_env": "VOYAGE_API_KEY",
+        "docs_url": "https://docs.voyageai.com/docs/reranker",
+    },
 ]
 
 BY_PRESET = {p["preset"]: p for p in PRESETS}

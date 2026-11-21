@@ -7,11 +7,11 @@ import pytest
 from app.research.explainer import Explainer
 from app.research.explainer_versions import VersionMark
 from app.research.open_work_gaps import FieldReading, answer_verdict
-from app.research.retrieval import KnowledgeHits
+from app.research.retrieval import ClaimHit, KnowledgeHits
 from app.research.sections import AnswerPlans
 from app.retrieval.fusion import RRF_K
 from app.retrieval.statements import RANKING_DEPTH
-from app.services.answer_gaps import SINGLE_RANKING_SCORE, retrieval_low
+from app.services.answer_gaps import ANSWERING_RELEVANCE, SINGLE_RANKING_SCORE, fused_low, retrieval_low
 
 from ..composer.fixtures import pack
 from ..research.fixtures import AJRAKH
@@ -79,6 +79,18 @@ def test_one_ranking_alone_scores_at_most_one_over_sixty_one() -> None:
     assert 2 / (RRF_K + RANKING_DEPTH) > SINGLE_RANKING_SCORE
 
 
+def stored(score: float, relevance: float | None = None) -> ClaimHit:
+    return ClaimHit(
+        claim_id=uuid.uuid4(),
+        text="Alum fixes the red.",
+        level="PROVISIONAL",
+        subject_type="CONCEPT",
+        subject_id=uuid.uuid4(),
+        score=score,
+        relevance_score=relevance,
+    )
+
+
 @pytest.mark.parametrize(
     ("scores", "low"),
     [
@@ -89,7 +101,29 @@ def test_one_ranking_alone_scores_at_most_one_over_sixty_one() -> None:
         ((0.03,), False),
     ],
 )
-def test_retrieval_is_low_when_no_stored_fact_beat_one_ranking_alone(
+def test_without_relevance_retrieval_is_low_when_no_stored_fact_beat_one_ranking_alone(
     scores: tuple[float, ...], low: bool
 ) -> None:
-    assert retrieval_low(scores) is low
+    assert fused_low(scores) is low
+    assert retrieval_low([stored(score) for score in scores]) is low
+
+
+@pytest.mark.parametrize(
+    ("relevance", "low"),
+    [
+        ((0.49,), True),
+        ((0.12, 0.3), True),
+        ((0.5,), False),
+        ((0.2, 0.94), False),
+    ],
+)
+def test_with_relevance_retrieval_is_low_when_no_stored_fact_answers_the_question(
+    relevance: tuple[float, ...], low: bool
+) -> None:
+    assert ANSWERING_RELEVANCE == 0.5
+    assert retrieval_low([stored(0.03, score) for score in relevance]) is low
+
+
+def test_a_fact_ranked_by_several_lists_but_judged_irrelevant_is_still_low() -> None:
+    assert fused_low([2 / 61]) is False
+    assert retrieval_low([stored(2 / 61, 0.1)]) is True

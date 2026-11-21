@@ -74,7 +74,7 @@ async def test_schema_is_hardened_and_seeded() -> None:
         )
         assert unprotected == []
         providers = set((await session.execute(select(Provider.name))).scalars())
-        assert providers == {"OPENAI", "GEMINI", "ANTHROPIC", "DEEPSEEK", "ELEVENLABS"}
+        assert providers == {"OPENAI", "GEMINI", "ANTHROPIC", "DEEPSEEK", "ELEVENLABS", "VOYAGE"}
         deepseek = (await session.execute(select(Provider).where(Provider.name == "DEEPSEEK"))).scalar_one()
         assert deepseek.dataClass == "PUBLIC_TEXT_ONLY"
         first_compose = (

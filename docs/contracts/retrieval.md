@@ -8,12 +8,15 @@ ranking, the embedding runs or the evaluation read it.
 |---|---|
 | Why retrieval works this way | [decision 0008](../decisions/0008-stored-knowledge-retrieval.md) and [0101](../decisions/0101-knowledge-architecture-for-every-craft.md), item 10 and build step 3 |
 | Why a quote follows its page and a held fact leaves answers | [decision 0121](../decisions/0121-quote-visibility.md) |
+| Why stored facts are reranked, and when stored knowledge is enough | [decision 0125](../decisions/0125-reranking.md) |
 | The seats that each search their own fields | [answer-eval.md](answer-eval.md) |
 | Where retrieval sits in answering | [research.md](research.md) |
 
 | Part | Code |
 |---|---|
 | The search, ranking, stamps and runs | `app/retrieval/` |
+| The rerank stage and the collapse of restatements | `app/retrieval/rerank.py` |
+| The reranker's contract, its route and its adapter | `app/research/reranking.py`, `app/providers/rerank_router.py`, `app/providers/voyage_p.py` |
 | Who may read a citation, and held facts | `app/retrieval/citation_access.py` |
 | The passage that holds a quote, and re-reading a source | `app/retrieval/quote_passages.py`, `app/retrieval/citation_links.py` |
 | The contract types | `app/research/retrieval.py` |
@@ -30,21 +33,24 @@ flowchart LR
   K --> F["Reciprocal rank<br/>fusion"]
   V --> F
   E --> F
-  F --> H["KnowledgeHits<br/>claims, passages"]
+  F --> R["Rerank, when asked<br/>Voyage rerank-3"]
+  R --> C["One slot<br/>per fact"]
+  C --> H["KnowledgeHits<br/>claims, passages"]
   classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
-  class F accent
+  class F,R accent
 ```
 
 ## The search
 
 `KnowledgeRetriever.search(KnowledgeQuery) -> KnowledgeHits`. Two implementations:
-`StoredKnowledgeSearch(session, *, embed, english=None)` on one session and
-`SessionScopedSearch(sessions, *, embed, english=None)`, which opens a session per search. Searches
-sharing one `StoredKnowledgeSearch` take turns on its session once their words and vector are
-made; searches through `SessionScopedSearch` run at once.
+`StoredKnowledgeSearch(session, *, embed, english=None, rerank=None)` on one session and
+`SessionScopedSearch(sessions, *, embed, english=None, rerank=None)`, which opens a session per
+search. Searches sharing one `StoredKnowledgeSearch` take turns on its session once their words
+and vector are made, and call the reranker after their turn; searches through
+`SessionScopedSearch` run at once.
 
 - `KnowledgeQuery {craftSlug | null, text, mode, facets[], fields[], chunkAcls, limit,
-  sourceKinds[], passages}`. `craftSlug` null reads every visible concept. A craft's scope
+  sourceKinds[], passages, rerank}`. `craftSlug` null reads every visible concept. A craft's scope
   (`hybrid.craft_scope`) reads:
   - the craft's own concepts and the shared concepts of its sub-category;
   - its **family science**: the concepts its category's curated facts are about (the claims
@@ -73,6 +79,9 @@ made; searches through `SessionScopedSearch` run at once.
 - `passages` false runs no passage ranking even in a mode that reads `T2`; `chunks` is then empty.
   The facet coverage (`planner/coverage.facet_query`) and the seats set it, since they read claims
   only; the stored pack keeps the default, true.
+- `rerank` true asks for the rerank stage (Reranking, below); the default is false. The seats
+  (`seat_query`) and the stored pack (`planner/coverage.stored_knowledge`) ask for it. The facet
+  coverage does not: it reads which facts the full-text ranking found, not their order.
 - `chunkAcls` is the reader's passage access (`chunk_acls_for(reader)`); restricted chunks and
   sources and withheld field recordings are never read.
 
@@ -125,7 +134,7 @@ included. A citation that already points at the right passage and locator is not
 
 ### Ranking
 
-- Claims: three rankings of at most `RANKING_DEPTH` (30) each, fused by reciprocal rank fusion
+- Claims: three rankings of at most `RANKING_DEPTH` (60) each, fused by reciprocal rank fusion
   (`score = sum(1 / (60 + rank))`, ties by best single rank, then id):
   - full text: the search words' distinct Latin terms of 3 or more characters ORed through
     `to_tsquery('english')`; the first `LEXICAL_CANDIDATES` (400) matches by `ts_rank_cd` are
@@ -154,6 +163,41 @@ included. A citation that already points at the right passage and locator is not
 - The question is embedded as `task: search result | query: <text>`, claims as
   `title: none | text: <text>`, passages as `title: <source title> | text: <text>`.
 
+### Reranking
+
+A search with `rerank` true orders its candidate facts by relevance to the question with Voyage
+`rerank-3`, through the AI router (decision 0125). Passages are not reranked.
+
+1. **A wider pool.** The three claim rankings are fused as above, and the first
+   `rerank.RERANK_POOL` (60) fused claims, or `limit` if that is larger, are the candidates.
+2. **Titled like the vectors.** Each candidate is sent as
+   `title: <craft>, <concept>, <field> | text: <claim text>` (`rerank.claim_title`; the craft and
+   concept of the claim's concept subject and the claim's field, lower case, each where known, else
+   `title: none`).
+3. **One call.** The search words (the question, or its English rendering when it has no Latin
+   word) and the candidates go to the reranker in one call, after the search's turn on its session
+   and after `release_connection`, so no connection is held across it. The seats of one section
+   search through `SessionScopedSearch` at once, so they rerank concurrently.
+4. **Rerank order.** The candidates come back in descending `relevanceScore`, ties by fused order;
+   each carries its score as `ClaimHit.relevanceScore`. A candidate the reranker did not score
+   follows in fused order, without a score. `score` and the three ranks stay the fused values.
+5. **One fact, one slot.** Walking that order, a candidate whose text folds to the same words as a
+   kept fact (`rerank.folded_words`: NFKC, case folded, words only) or whose vector lies within
+   cosine similarity `RESTATEMENT_COSINE` (0.97) of one (both vectors from the same model) joins that
+   fact: the first, best-ranked, is kept and the others are listed in its `corroboratingIds`. The
+   hits hold the first `limit` distinct facts.
+6. **Never in the way.** When the search has no reranker, the call fails, no rerank route has a key,
+   or the spend is refused, the search keeps the fused order, logs one warning
+   (`the search keeps its fused order: reranking failed (<kind>)`) and still collapses
+   restatements. A search without `rerank` runs none of this and reads exactly as before.
+
+The reranker is `research/reranking.Reranker`, `async (query, documents) -> [Relevance{index,
+score}]`, checked by `checked_relevance` (each index inside the documents, once; finite scores).
+The answer pipeline passes `providers/rerank_router.router_reranker(principal)` as
+`AnswerModels.rerank` to its `SessionScopedSearch`, with the answer's spend as `principal.answer`;
+the route, prices and refusals are `docs/contracts/backend.md`, AI router. The evaluation,
+the coverage enrichment and direct callers build their searches without a reranker.
+
 ### Questions without Latin words
 
 The search words are the question itself unless it has no Latin term of 3 or more characters.
@@ -175,7 +219,8 @@ filters inside the search and the seat's `SEAT_SEARCH_LIMIT` (12) hits are all f
 The words are the answer's English question (`PlanRequest.english_question`, else the question)
 and the craft name only: the seat label and field titles are not added, since the fields already
 filter and the extra words would pull every seat's vector to one point. The seat search reads no
-passages (`passages` false). The seat then keeps the first `SEAT_CLAIMS_MAX` (6) facts the section
+passages (`passages` false) and asks for reranking (`rerank` true), so its hits are distinct facts
+in order of relevance. The seat then keeps the first `SEAT_CLAIMS_MAX` (6) facts the section
 has not shown whose readable citations include one of its kinds. Kept true by
 `backend/tests/retrieval/test_seat_fields.py`, `backend/tests/experts/test_wider_panel.py` and
 `backend/tests/db/test_evidence_reach_db.py`.
@@ -298,6 +343,8 @@ with no quote; the repository holds no text of that edition, so it has no passag
 |---|---|
 | Recall at 5 of at least 0.9 and a mean reciprocal rank of at least 0.7 | `backend/tests/db/test_retrieval_eval.py`; a change that lowers either fails |
 | Fusion, rarity weighting and the search words | `backend/tests/retrieval/test_fusion_and_text.py` and `test_search_words.py` |
+| Rerank order, its fallback, the titles, the collapse and the released connection | `backend/tests/retrieval/test_rerank.py`, `test_rerank_search.py` and `backend/tests/db/test_rerank_search_db.py` |
+| The reranker's route, spend and adapter | `backend/tests/db/test_reranking_db.py`, `backend/tests/test_voyage_adapter.py` and `test_reranking_catalogue.py` |
 | Stamps and embedding runs | `backend/tests/retrieval/test_stamps.py`, `test_embedding_budget.py` and `backend/tests/db/test_retrieval_stamps_db.py` |
 | Seats' field filters | `backend/tests/retrieval/test_seat_fields.py` |
 | Seed passages and the corpus | `backend/tests/retrieval/test_seed_passages.py`, `test_chunking.py` and `backend/tests/db/test_retrieval_passages_db.py` |

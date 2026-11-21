@@ -63,6 +63,7 @@ def seat_query(ask: BuildAsk, brief: SeatBrief) -> KnowledgeQuery:
         source_kinds=brief.source_kinds,
         passages=False,
         limit=SEAT_SEARCH_LIMIT,
+        rerank=True,
     )
 
 

@@ -7,13 +7,16 @@ from collections.abc import Sequence
 from sqlalchemy import ColumnElement, Select, not_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core.db import release_connection
 from app.core.errors import InvalidInput
 from app.models import Chunk, Claim, Craft, CraftSubCategory, Source
 from app.research.embedding import TextEmbedder, checked_vectors
 from app.research.planning import MODE_POLICIES
+from app.research.reranking import Reranker
 from app.research.retrieval import ChunkHit, ClaimHit, EnglishRendering, KnowledgeHits, KnowledgeQuery
 
 from .fusion import FusedItem, fused_order, reciprocal_rank_fusion
+from .rerank import RerankCandidates, collapsed, pool_size, rerank_candidates, reranked
 from .statements import (
     EVERY_CRAFT,
     CraftScope,
@@ -52,31 +55,55 @@ class SessionScopedSearch:
         *,
         embed: TextEmbedder,
         english: EnglishRendering | None = None,
+        rerank: Reranker | None = None,
     ) -> None:
         self._sessions = sessions
         self._embed = embed
         self._english = english
+        self._rerank = rerank
 
     async def search(self, query: KnowledgeQuery) -> KnowledgeHits:
         async with self._sessions() as session:
-            stored = StoredKnowledgeSearch(session, embed=self._embed, english=self._english)
+            stored = StoredKnowledgeSearch(
+                session, embed=self._embed, english=self._english, rerank=self._rerank
+            )
             return await stored.search(query)
 
 
 class StoredKnowledgeSearch:
     def __init__(
-        self, session: AsyncSession, *, embed: TextEmbedder, english: EnglishRendering | None = None
+        self,
+        session: AsyncSession,
+        *,
+        embed: TextEmbedder,
+        english: EnglishRendering | None = None,
+        rerank: Reranker | None = None,
     ) -> None:
         self._session = session
         self._embed = embed
         self._english = english
+        self._rerank = rerank
         self._turn = asyncio.Lock()
 
     async def search(self, query: KnowledgeQuery) -> KnowledgeHits:
         words = await search_words(query.text, self._english)
         (vector,) = checked_vectors(await self._embed([query_text(query.text)]), expected=1)
         async with self._turn:
-            return await self._searched(query, words, vector)
+            found = await self._searched(query, words, vector)
+            candidates = await self._candidates(query, found)
+        if candidates is None:
+            return found
+        ordered = await reranked(found.claims, candidates, query=words, rerank=self._rerank)
+        kept = collapsed(ordered, candidates.restated, limit=query.limit)
+        return found.model_copy(update={"claims": tuple(kept)})
+
+    async def _candidates(self, query: KnowledgeQuery, found: KnowledgeHits) -> RerankCandidates | None:
+        if not query.rerank:
+            return None
+        candidates = await rerank_candidates(self._session, found.claims)
+        if self._rerank is not None:
+            await release_connection(self._session)
+        return candidates
 
     async def _searched(self, query: KnowledgeQuery, words: str, vector: list[float]) -> KnowledgeHits:
         scope = await craft_scope(self._session, query.craft_slug)
@@ -88,7 +115,7 @@ class StoredKnowledgeSearch:
                 claim_vector_ranking(conditions, vector),
                 claim_entity_ranking(conditions, scope, words),
             ],
-            limit=query.limit,
+            limit=pool_size(query.limit) if query.rerank else query.limit,
         )
         chunks: list[FusedItem[uuid.UUID]] = []
         if query.passages and CORPUS_TIER in MODE_POLICIES[query.mode].tiers:

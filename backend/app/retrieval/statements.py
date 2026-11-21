@@ -75,7 +75,7 @@ __all__ = [
     "text_query",
 ]
 
-RANKING_DEPTH = 30
+RANKING_DEPTH = 60
 LEXICAL_CANDIDATES = 400
 TEXT_SEARCH_CONFIG = "english"
 ENTITY_NAME_MIN_CHARS = 4

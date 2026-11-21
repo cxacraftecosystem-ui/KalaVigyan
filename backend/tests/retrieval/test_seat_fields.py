@@ -16,6 +16,10 @@ def test_a_seat_search_is_filtered_by_the_seats_own_fields() -> None:
     assert historian.fields == ("HISTORY", "OVERVIEW")
 
 
+def test_a_seat_search_asks_for_reranking() -> None:
+    assert seat_query(build_ask(("CHEMIST",), discipline="CHEMISTRY"), EXPERT_PANEL["CHEMIST"]).rerank is True
+
+
 def test_a_seat_searches_the_english_rendering_when_the_answer_has_one() -> None:
     ask = build_ask(("HISTORIAN",))
     rendered = replace(ask, request=ask.request.model_copy(update={"english_question": ENGLISH}))

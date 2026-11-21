@@ -147,7 +147,7 @@ There is no reveal route. Changes need a TOTP step-up.
 
 Key row: `{key, label, description, group, formatOnly, configured, source:"database"|"environment"|"unset", overrideUnreadable, hint (last 4), lastStatus:"UNKNOWN"|"OK"|"FAILED", lastCheckedAt, lastError, updatedBy, updatedAt}`.
 
-Keys: GEMINI_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, ELEVENLABS_API_KEY, BRAVE_SEARCH_API_KEY, EXA_API_KEY, TAVILY_API_KEY, OPENALEX_API_KEY, SEMANTIC_SCHOLAR_API_KEY, CORE_API_KEY, SPRINGER_NATURE_API_KEY, ELSEVIER_API_KEY, ELSEVIER_INSTTOKEN, WILEY_TDM_TOKEN, DATA_GOV_IN_API_KEY, GOOGLE_CLIENT_ID.
+Keys: GEMINI_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, ELEVENLABS_API_KEY, VOYAGE_API_KEY (format-checked only), BRAVE_SEARCH_API_KEY, EXA_API_KEY, TAVILY_API_KEY, OPENALEX_API_KEY, SEMANTIC_SCHOLAR_API_KEY, CORE_API_KEY, SPRINGER_NATURE_API_KEY, ELSEVIER_API_KEY, ELSEVIER_INSTTOKEN, WILEY_TDM_TOKEN, DATA_GOV_IN_API_KEY, GOOGLE_CLIENT_ID.
 
 | Method | Path | Body | Response |
 |---|---|---|---|
@@ -219,7 +219,7 @@ The routes, refusals, claim set, prompt, quotas and job view are `docs/contracts
 
 `/settings/ai-routing` generalises DR `/settings/transcription-providers` to one ordered list per task (stored in `RoutePolicy`).
 
-Routable tasks: PLAN, WEB_READ, COMPOSE, VOICE_TURN, EXTRACT, EMBED, EVAL_JUDGE, IMAGE, VIDEO. WEB_READ and EXTRACT are public-text tasks; DeepSeek (PUBLIC_TEXT_ONLY) is offered and accepted only there.
+Routable tasks (`ai_providers.ROUTABLE_TASKS`, the keys of `DEFAULT_ROUTES`): PLAN, WEB_READ, COMPOSE, VOICE_TURN, INTERVIEW, TESTIMONY, TRANSLATE, EXTRACT, SUMMARISE, EMBED, EVAL_JUDGE, IMAGE, VIDEO, MUSIC, SOUND_EFFECT, RERANK. WEB_READ and EXTRACT are public-text tasks; DeepSeek (PUBLIC_TEXT_ONLY) is offered and accepted only there. RERANK has one model, Voyage `rerank-3` (provider VOYAGE, migration `0060_reranking`, decision 0125).
 
 Task state:
 ```
@@ -265,6 +265,7 @@ Defaults (`services/app_settings.DEFAULTS`, decision 0093): no monthly ceiling, 
 - `degraded=True` once the month passes the degrade mark (`AI_DEGRADE_AT_FRACTION`) of a set ceiling; COMPOSE, EXTRACT, VOICE_TURN, PLAN and WEB_READ then try the cheapest route first. The caller drops Deep to Hybrid. With no ceiling or no mark (the defaults, decision 0093) nothing degrades.
 - EMBED returns 1536-dimension vectors (`texts=[...]`).
 - IMAGE and VIDEO are not called through `run`; `providers/media_router.MediaRouter` walks their routes and calls `router.reserve(...)` and `router.settle(...)` around each call so the media sub-cap applies (decision 0018). The media routes are `docs/contracts/media.md`.
+- RERANK is not called through `run` either (decision 0125). `providers/rerank_router.RerankRouter(principal=...)`, made by `router_reranker(principal)`, is the `research/reranking.Reranker` the search calls: `await reranker(query, documents) -> [Relevance{index, score}]`, best first. It walks the RERANK routes in ordinal order, skips a route whose key is unset without reserving anything (`RouterError(kind="no_key")` when none has one), reserves the estimate with `router.reserve` (so the answer's `AnswerSpend`, the role's day and the monthly ceiling apply; a refusal is `RouterError(kind="ceiling")` and nothing is called), calls the adapter's `rerank`, and settles `OK` at Voyage's `usage.total_tokens`, or `ERROR`/`REFUSED_PROVIDER` (an `auth` failure marks the key FAILED), giving back the answer's hold; `refusal`/`bad_request` stop, other kinds try the next route, then `RouterError(kind="exhausted")`. Tokens are estimated as Voyage counts them, query tokens times documents plus every document's tokens (each `len // 3`), and priced at $0.05 per million (`rerank-3`; Voyage's first 200 million free tokens are not modelled, so the ledger shows list price). The adapter (`providers/voyage_p.VoyageAdapter`, httpx, no SDK) posts `{query, documents, model, truncation: true}` to `https://api.voyageai.com/v1/rerank` with the key as a bearer (15 s, connect 5 s), waits once for a 429's `Retry-After` of at most 2 s, maps statuses to the shared kinds (400 `bad_request`, 401/403 `auth`, 429 `rate_limit`, 5xx `unavailable`; timeouts and transport errors `unavailable`) and refuses an answer off its contract as `error`; it never logs or returns the key. The search keeps its fused order on any of these failures (`docs/contracts/retrieval.md`, Reranking).
 - Unverified prices (gpt-6.1-terra, gemini-4-argon, DeepSeek models, Omni video) are budgeted at $5/$30 per MTok, $0.134/image, $0.15/s until the owner sets `AI_MODEL_PRICES` (`{"model-id": {"in": x, "out": y}}` or `{"unit": z}`) in `AppSetting`.
 
 ## Data model

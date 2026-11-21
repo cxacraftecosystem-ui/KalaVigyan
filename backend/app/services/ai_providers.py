@@ -18,6 +18,7 @@ class AiProvider(StrEnum):
     ANTHROPIC = "ANTHROPIC"
     DEEPSEEK = "DEEPSEEK"
     ELEVENLABS = "ELEVENLABS"
+    VOYAGE = "VOYAGE"
 
 
 class AiTask(StrEnum):
@@ -40,6 +41,7 @@ class AiTask(StrEnum):
     SOUND_EFFECT = "SOUND_EFFECT"
     INTERVIEW = "INTERVIEW"
     TESTIMONY = "TESTIMONY"
+    RERANK = "RERANK"
 
 
 TEXT_TASKS = frozenset({AiTask.PROOFREAD, AiTask.EXPAND, AiTask.SUMMARISE, AiTask.TRANSLATE})
@@ -81,6 +83,7 @@ TASK_LABELS: dict[AiTask, str] = {
     AiTask.SOUND_EFFECT: "Film sound effects",
     AiTask.INTERVIEW: "Artisan conversations",
     AiTask.TESTIMONY: "Artisan testimony",
+    AiTask.RERANK: "Rerank stored facts",
 }
 
 UNKNOWN_TOKEN_PRICE: tuple[float, float] = (5.0, 30.0)
@@ -441,8 +444,31 @@ _ELEVENLABS = ProviderSpec(
     default_model="music_v2_5",
 )
 
+_VOYAGE = ProviderSpec(
+    provider=AiProvider.VOYAGE,
+    label="Voyage AI",
+    managed_key="VOYAGE_API_KEY",
+    key_prefix=None,
+    console_url="https://dash.voyageai.com",
+    pricing_url="https://docs.voyageai.com/docs/pricing",
+    preset="voyage",
+    kind="voyage",
+    base_url="https://api.voyageai.com/v1",
+    data_class="ANY",
+    models=(
+        AiModel(
+            "rerank-3",
+            "Voyage Rerank 3",
+            "Orders stored facts by their relevance to the question.",
+            (0.05, 0.0),
+            frozenset({AiTask.RERANK}),
+        ),
+    ),
+    default_model="rerank-3",
+)
+
 PROVIDERS: dict[AiProvider, ProviderSpec] = {
-    spec.provider: spec for spec in (_OPENAI, _GEMINI, _ANTHROPIC, _DEEPSEEK, _ELEVENLABS)
+    spec.provider: spec for spec in (_OPENAI, _GEMINI, _ANTHROPIC, _DEEPSEEK, _ELEVENLABS, _VOYAGE)
 }
 
 DEFAULT_ROUTES: dict[AiTask, tuple[tuple[AiProvider, str], ...]] = {
@@ -500,6 +526,7 @@ DEFAULT_ROUTES: dict[AiTask, tuple[tuple[AiProvider, str], ...]] = {
     AiTask.VIDEO: ((AiProvider.GEMINI, "gemini-omni-1.2-flash"),),
     AiTask.MUSIC: ((AiProvider.ELEVENLABS, "music_v2_5"),),
     AiTask.SOUND_EFFECT: ((AiProvider.ELEVENLABS, "eleven_text_to_sound_v3"),),
+    AiTask.RERANK: ((AiProvider.VOYAGE, "rerank-3"),),
 }
 
 ROUTABLE_TASKS: tuple[AiTask, ...] = tuple(DEFAULT_ROUTES)

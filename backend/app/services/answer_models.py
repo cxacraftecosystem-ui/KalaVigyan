@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.research.reranking import Reranker
 from app.research.structured import StructuredModel
 
 __all__ = ["AnswerModels"]
@@ -16,3 +17,4 @@ class AnswerModels:
     explainer: StructuredModel
     translate: StructuredModel
     judge: StructuredModel | None = None
+    rerank: Reranker | None = None

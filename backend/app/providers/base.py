@@ -53,6 +53,20 @@ def format_refused(service: str, model: str) -> ProviderError:
 
 
 @dataclass(frozen=True)
+class RerankRequest:
+    model: str
+    query: str
+    documents: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RerankResult:
+    scores: tuple[tuple[int, float], ...]
+    total_tokens: int | None
+    latency_ms: int = 0
+
+
+@dataclass(frozen=True)
 class MediaRequest:
     model: str
     prompt: str
@@ -108,6 +122,9 @@ class Adapter(ABC):
         raise ProviderError(
             f"{self.preset} does not provide embeddings through this adapter", kind="unavailable"
         )
+
+    async def rerank(self, req: RerankRequest) -> RerankResult:
+        raise ProviderError(f"{self.preset} does not rerank through this adapter", kind="unavailable")
 
     async def generate_image(self, req: MediaRequest) -> MediaResult:
         raise ProviderError(f"{self.preset} does not make images through this adapter", kind="unavailable")

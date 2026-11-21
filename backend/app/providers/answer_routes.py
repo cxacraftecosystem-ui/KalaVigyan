@@ -6,6 +6,7 @@ from types import MappingProxyType
 from app.services.ai_providers import AiProvider, AiTask
 from app.services.answer_models import AnswerModels
 
+from .rerank_router import router_reranker
 from .router import Principal, RouteTuning
 from .structured import router_structured_model
 
@@ -49,4 +50,5 @@ def answer_models(depth: str, *, principal: Principal, optional: Principal) -> A
         explainer=router_structured_model(AiTask.COMPOSE, optional, tuning=EXPLAINER_TUNINGS[depth]),
         translate=router_structured_model(AiTask.TRANSLATE, principal),
         judge=router_structured_model(AiTask.EVAL_JUDGE, optional),
+        rerank=router_reranker(principal),
     )

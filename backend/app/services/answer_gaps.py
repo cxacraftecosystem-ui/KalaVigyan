@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Answer, AnswerVerdict, ClaimSource
 from app.research.open_work_gaps import FieldReading, Verdict, answer_verdict
+from app.research.retrieval import ClaimHit
 from app.research.vocabulary import FACT_LEVELS
 from app.retrieval.fusion import RRF_K
 
@@ -15,22 +16,32 @@ from .answer_sections import SectionOutcome
 from .claim_holds import FAILED_QUOTE
 
 __all__ = [
+    "ANSWERING_RELEVANCE",
     "SINGLE_RANKING_SCORE",
     "FieldReading",
     "answer_readings",
     "failed_claims",
+    "fused_low",
     "record_verdict",
     "retrieval_low",
 ]
 
 SINGLE_RANKING_SCORE = 1 / (RRF_K + 1)
+ANSWERING_RELEVANCE = 0.5
 
 
 def answer_readings(outcomes: Sequence[SectionOutcome]) -> tuple[FieldReading, ...]:
     return tuple(_reading(outcome) for outcome in outcomes if outcome.failure is None)
 
 
-def retrieval_low(scores: Sequence[float]) -> bool:
+def retrieval_low(hits: Sequence[ClaimHit]) -> bool:
+    relevance = [hit.relevance_score for hit in hits if hit.relevance_score is not None]
+    if relevance:
+        return max(relevance) < ANSWERING_RELEVANCE
+    return fused_low([hit.score for hit in hits])
+
+
+def fused_low(scores: Sequence[float]) -> bool:
     return not scores or max(scores) <= SINGLE_RANKING_SCORE
 
 
@@ -75,10 +86,10 @@ def _reading(outcome: SectionOutcome) -> FieldReading:
         if sentence.level in FACT_LEVELS
     }
     researched = bool(outcome.packs)
-    scores = [hit.score for pack in outcome.packs for hit in pack.stored.claims]
+    hits = [hit for pack in outcome.packs for hit in pack.stored.claims]
     return FieldReading(
         field=outcome.spec.discipline,
         sentences=len(sentences),
-        retrieval_low=researched and retrieval_low(scores),
+        retrieval_low=researched and retrieval_low(hits),
         claim_ids=tuple(outcome.claim_ids),
     )

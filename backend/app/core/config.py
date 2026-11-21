@@ -131,6 +131,7 @@ class Settings(BaseSettings):
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     deepseek_api_key: str | None = Field(default=None, alias="DEEPSEEK_API_KEY")
     elevenlabs_api_key: str | None = Field(default=None, alias="ELEVENLABS_API_KEY")
+    voyage_api_key: str | None = Field(default=None, alias="VOYAGE_API_KEY")
     elevenlabs_agent_id: str | None = Field(default=None, alias="ELEVENLABS_AGENT_ID")
     voice_llm_bearer: str | None = Field(default=None, alias="VOICE_LLM_BEARER")
     voice_call_enabled: bool = Field(default=False, alias="VOICE_CALL_ENABLED")

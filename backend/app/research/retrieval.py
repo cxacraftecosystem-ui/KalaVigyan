@@ -75,6 +75,7 @@ class KnowledgeQuery(ContractModel):
     limit: int = Field(default=KNOWLEDGE_RESULT_DEFAULT, ge=1, le=KNOWLEDGE_RESULT_MAX)
     source_kinds: tuple[SourceType, ...] = ()
     passages: bool = True
+    rerank: bool = False
 
     @field_validator("facets", "fields", "chunk_acls", "source_kinds")
     @classmethod
@@ -94,6 +95,8 @@ class ClaimHit(ContractModel):
     lexical_rank: int | None = Field(default=None, ge=1)
     vector_rank: int | None = Field(default=None, ge=1)
     entity_rank: int | None = Field(default=None, ge=1)
+    relevance_score: float | None = Field(default=None, allow_inf_nan=False)
+    corroborating_ids: tuple[uuid.UUID, ...] = ()
 
 
 class ChunkHit(ContractModel):

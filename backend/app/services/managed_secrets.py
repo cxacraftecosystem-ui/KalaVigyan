@@ -200,6 +200,14 @@ MANAGED_KEYS: dict[str, ManagedKey] = {
             _header("https://api.elevenlabs.io/v1/user", "xi-api-key"),
         ),
         ManagedKey(
+            "VOYAGE_API_KEY",
+            "Voyage AI",
+            "Reranks stored facts for answers.",
+            "AI",
+            _format(16),
+            format_only=True,
+        ),
+        ManagedKey(
             "BRAVE_SEARCH_API_KEY",
             "Brave Search",
             "Web search fallback when SearXNG returns too little.",

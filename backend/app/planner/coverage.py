@@ -50,5 +50,7 @@ async def stored_knowledge(
     limit: int = STORED_PACK_LIMIT,
 ) -> KnowledgeHits:
     return await retriever.search(
-        KnowledgeQuery(craft_slug=craft_slug, text=question, mode=mode, fields=tuple(fields), limit=limit)
+        KnowledgeQuery(
+            craft_slug=craft_slug, text=question, mode=mode, fields=tuple(fields), limit=limit, rerank=True
+        )
     )

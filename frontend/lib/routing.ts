@@ -2,7 +2,7 @@ import { apiFetch } from "@/lib/api";
 
 export type KeyState = "ABSENT" | "UNTESTED" | "PASSING" | "FAILING";
 
-export type AiProviderId = "GEMINI" | "ANTHROPIC" | "OPENAI" | "DEEPSEEK" | "ELEVENLABS";
+export type AiProviderId = "GEMINI" | "ANTHROPIC" | "OPENAI" | "DEEPSEEK" | "ELEVENLABS" | "VOYAGE";
 
 export type RouteModel = {
   id: string;

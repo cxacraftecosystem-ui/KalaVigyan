@@ -28,15 +28,15 @@ async def test_the_facets_are_searched_at_once_and_read_no_passages() -> None:
     retriever = TogetherRetriever(asyncio.Barrier(len(FACETS)))
     coverage = await facet_coverage(retriever, craft_slug="Kutch-Ajrakh", mode="HYBRID", facets=FACETS)
     assert [(entry.facet_index, entry.claim_ids) for entry in coverage] == [(0, ()), (1, ()), (2, ())]
-    assert [(query.text, query.facets, query.passages) for query in retriever.queries] == [
-        ("alum", ("MATERIAL",), False),
-        ("mordant bath", ("MECHANISM",), False),
-        ("washing", ("PROCESS_STAGE",), False),
+    assert [(query.text, query.facets, query.passages, query.rerank) for query in retriever.queries] == [
+        ("alum", ("MATERIAL",), False, False),
+        ("mordant bath", ("MECHANISM",), False, False),
+        ("washing", ("PROCESS_STAGE",), False, False),
     ]
 
 
-async def test_the_stored_pack_still_reads_passages() -> None:
+async def test_the_stored_pack_still_reads_passages_and_asks_for_reranking() -> None:
     retriever = TogetherRetriever(asyncio.Barrier(1))
     await stored_knowledge(retriever, craft_slug="Kutch-Ajrakh", mode="HYBRID", question="Why alum?")
     (query,) = retriever.queries
-    assert query.passages is True
+    assert (query.passages, query.rerank) == (True, True)

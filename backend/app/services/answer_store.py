@@ -222,7 +222,7 @@ def build_answer_pipeline(
 ) -> AnswerPipeline:
     translation = build_answer_translation(sessions, model=models.translate)
     retriever = SessionScopedSearch(
-        sessions, embed=embed, english=lambda text: english_question(text, translation)
+        sessions, embed=embed, english=lambda text: english_question(text, translation), rerank=models.rerank
     )
 
     async def research(

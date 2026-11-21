@@ -59,6 +59,10 @@ def build_adapter(
         from .elevenlabs_media import ElevenLabsMediaAdapter
 
         return ElevenLabsMediaAdapter(**kw)
+    if kind == "voyage":
+        from .voyage_p import VoyageAdapter
+
+        return VoyageAdapter(**kw)
     raise ProviderError(f"Unknown provider kind '{kind}'", kind="unavailable")
 
 

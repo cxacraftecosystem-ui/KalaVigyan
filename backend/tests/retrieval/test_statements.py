@@ -155,7 +155,7 @@ def test_the_lexical_ranking_weighs_each_matched_term_by_its_rarity_among_the_ca
     words = [value for value in params.values() if isinstance(value, str)]
     assert {"english", "alum | madder", "alum", "madder"} <= set(words)
     assert LEXICAL_CANDIDATES in params.values() and RANKING_DEPTH in params.values()
-    assert (LEXICAL_CANDIDATES, RANKING_DEPTH) == (400, 30)
+    assert (LEXICAL_CANDIDATES, RANKING_DEPTH) == (400, 60)
 
 
 def test_the_vector_ranking_is_an_exact_cosine_scan_of_the_scoped_rows() -> None:
