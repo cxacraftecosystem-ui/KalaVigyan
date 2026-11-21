@@ -8,6 +8,7 @@ from typing import Any
 
 from app.core.errors import SPEND_REFUSAL_KIND, ExternalFailure
 from app.core.logging import current_request_id
+from app.providers.router import RouterError
 from app.research.structured import StructuredReply
 from app.retrieval.golden import GeneratedQuestion, GeneratedSet
 from app.retrieval.question_generation import GenerationPlan, WritingTools, generate_questions
@@ -137,7 +138,7 @@ async def test_no_batch_is_written_once_the_spend_cap_leaves_less_than_the_reser
 
 
 async def test_a_refused_spend_stops_the_writing_and_a_failed_call_drops_only_its_batch() -> None:
-    refused = Writer(ExternalFailure("the monthly AI budget has been reached", kind=SPEND_REFUSAL_KIND))
+    refused = Writer(RouterError(SPEND_REFUSAL_KIND, "The monthly AI budget has been reached."))
     outcome = await generate_questions(
         stream(craft("A-Craft", facts("refused", 2))), tools(refused), GenerationPlan()
     )
