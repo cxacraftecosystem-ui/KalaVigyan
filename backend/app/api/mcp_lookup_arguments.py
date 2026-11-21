@@ -11,6 +11,7 @@ from app.research.base import ContractModel, HttpsUrl
 from app.research.crafts import SLUG_MAX_CHARS
 from app.research.evidence import DOI_PATTERN, SEARCH_QUERY_MAX_CHARS
 from app.research.knowledge_writes import PROPOSAL_QUOTES_MAX, ProposedQuote
+from app.services.lookup_subjects import HeldSubject
 from app.services.source_lookup_models import (
     ArchivedSource,
     CompoundRecord,
@@ -167,4 +168,5 @@ class LookupReply(ContractModel):
     query: str
     compounds: list[CompoundRecord] = Field(default_factory=list)
     entities: list[EntityRecord] = Field(default_factory=list)
+    subjects: list[HeldSubject] = Field(default_factory=list)
     notices: list[str] = Field(default_factory=list)

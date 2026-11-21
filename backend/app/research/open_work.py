@@ -18,6 +18,7 @@ from app.models.open_work import TASK_KEY_COLUMN_CHARS
 from .base import ContractModel
 from .crafts import SLUG_MAX_CHARS
 from .image_contributions_tasks import PICTURE_TASK, is_picture_detail
+from .open_work_flagship_backlog import FLAGSHIP_TASK
 from .open_work_gap_keys import GAP_TASK, is_gap_detail
 from .vocabulary import Discipline
 
@@ -73,6 +74,7 @@ TASK_KINDS = (
     "THIN_FIELD",
     "SECTION",
     "MISSING_COMPONENT",
+    FLAGSHIP_TASK,
     "PAGE_FORM",
     "PAGE_LAYOUT",
     "SECOND_SOURCE",
@@ -172,6 +174,7 @@ TASK_PROMPTS: Mapping[str, str] = MappingProxyType(
         "UNARCHIVED_SOURCE": RESEARCH_FIELD_PROMPT,
         "SECTION": WRITE_SECTION_PROMPT,
         "MISSING_COMPONENT": PROPOSE_COMPONENT_PROMPT,
+        FLAGSHIP_TASK: DELIVER_PAGE_PROMPT,
         "MISSING_PICTURE": GIVE_PICTURE_PROMPT,
         GAP_TASK: RESEARCH_FIELD_PROMPT,
     }

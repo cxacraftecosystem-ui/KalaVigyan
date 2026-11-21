@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from pydantic import Field
+from typing import Self
+
+from pydantic import Field, model_validator
 
 from app.research.crafts import QUESTION_MAX_CHARS, SLUG_MAX_CHARS
 from app.research.knowledge_api import (
@@ -10,8 +12,10 @@ from app.research.knowledge_api import (
     CraftFacts,
     FoundCrafts,
 )
+from app.research.page_proposals import PageSubject
 from app.research.vocabulary import Discipline, PieceKind
-from app.services import component_library, craft_finder, knowledge_api
+from app.services import category_knowledge, component_library, craft_finder, knowledge_api
+from app.services.open_work_subjects import CATEGORY, subject_by_key
 
 from .mcp_page_read import GET_PAGE
 from .mcp_tool_base import Arguments, Tool, ToolContext
@@ -25,10 +29,12 @@ FIND_DESCRIPTION = (
     "its cited claims per field: which fields are covered, thin or missing."
 )
 FACTS_DESCRIPTION = (
-    "The cited facts of one craft, optionally one field and ranked by words, each with its evidence level, "
-    "verbatim quotes, locators, stored quantities and the figures resting on it; grouped by field with counts, "
-    "and every field the craft holds too few facts in named as open work with its task key."
+    "The cited facts of one craft, family or category page, optionally one field and ranked by words, each "
+    "with its evidence level, verbatim quotes, locators, stored quantities and the figures resting on it; "
+    "grouped by field with counts, and every field the page holds too few facts in named as open work with its "
+    "task key. A category's are the facts its page links and those proposed for it."
 )
+ONE_PAGE = "name the page as subject {kind, slug} or give a craft_slug, one of them"
 COMPONENTS_DESCRIPTION = (
     "The registered interactive components (players, maps, molecules, charts), each with its label, title, "
     "description, kind, fields and the subjects it is keyed to. Search it before delivering a component: one "
@@ -46,7 +52,13 @@ class FindCrafts(Arguments):
 
 
 class GetFacts(Arguments):
-    craft_slug: str = Field(min_length=1, max_length=SLUG_MAX_CHARS, description="A slug from find_crafts")
+    craft_slug: str | None = Field(
+        default=None, min_length=1, max_length=SLUG_MAX_CHARS, description="A craft's or family's slug"
+    )
+    subject: PageSubject | None = Field(
+        default=None,
+        description="The page instead: kind craft, family or category and its slug from find_crafts",
+    )
     field: Discipline | None = Field(
         default=None, description="One of the sixteen fields; every field when absent"
     )
@@ -54,6 +66,12 @@ class GetFacts(Arguments):
         default=None, min_length=1, max_length=QUESTION_MAX_CHARS, description="Words to rank the facts by"
     )
     limit: int = Field(default=FACTS_LIMIT_DEFAULT, ge=1, le=FACTS_LIMIT_MAX)
+
+    @model_validator(mode="after")
+    def _one_page(self) -> Self:
+        if (self.craft_slug is None) == (self.subject is None):
+            raise ValueError(ONE_PAGE)
+        return self
 
 
 class ListComponents(Arguments):
@@ -78,9 +96,25 @@ async def _find_crafts(context: ToolContext, arguments: FindCrafts) -> FoundCraf
 
 
 async def _get_facts(context: ToolContext, arguments: GetFacts) -> CraftFacts:
+    if arguments.subject is None:
+        return await _craft_facts(context, arguments, str(arguments.craft_slug))
+    subject = await subject_by_key(context.session, arguments.subject.kind, arguments.subject.slug)
+    if subject.kind != CATEGORY:
+        return await _craft_facts(context, arguments, subject.slug)
+    return await category_knowledge.category_facts(
+        context.session,
+        subject,
+        site=context.site,
+        field=arguments.field,
+        query=arguments.query,
+        limit=arguments.limit,
+    )
+
+
+async def _craft_facts(context: ToolContext, arguments: GetFacts, slug: str) -> CraftFacts:
     return await knowledge_api.craft_facts(
         context.session,
-        arguments.craft_slug,
+        slug,
         site=context.site,
         field=arguments.field,
         query=arguments.query,
@@ -111,7 +145,7 @@ READ_TOOLS: tuple[Tool, ...] = (
     GET_PAGE,
     Tool(
         "get_facts",
-        "Get a craft's facts",
+        "Get a page's facts",
         FACTS_DESCRIPTION,
         GetFacts,
         CraftFacts,

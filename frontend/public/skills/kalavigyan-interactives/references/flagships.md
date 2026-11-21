@@ -4,16 +4,17 @@ The starting backlog: for each of the nine families of the atlas, the candidate 
 craft beside the family's own page, the facts KalaVigyan already holds for each state, the task to
 claim and what is still missing. The facts were read from the production server on 2026-11-21: a
 craft's with `get_facts` by field, and the family's own from its page at
-`/categories/<slug>` on the site, since `get_facts` reads crafts only. Read each again before you
-cite it, since a fact may have been held from its page or joined by others since. Read only your
-family's section.
+`/categories/<slug>` on the site. `get_facts` now reads the family page too, named as subject
+`{kind "category", slug}`. Read each again before you cite it, since a fact may have been held from
+its page or joined by others since. Read only your family's section.
 
 Each section gives:
 
 - **Pages**: the family's page and the anchor craft, by slug.
 - **Why this one**: what makes it the family's shared mechanism.
 - **Shared by**: the sub-families and crafts that will borrow it, and those that will not.
-- **Task**: the open-work task to name as `task_key`, from `list_open_work` on the same day.
+- **Task**: the anchor's open-work task, from `list_open_work` on the same day; the family's own
+  is its `FLAGSHIP` task (Open work and the flagships, below).
 - **Carried by**: the kind, the registered components it links to and the what-if beside it.
 - **Missing**: what must be found or made before it is drawn.
 - **The states and their facts**: a table, "Read from" naming the family's page or the craft whose
@@ -334,27 +335,22 @@ Each section gives:
 
 ## Open work and the flagships
 
-Open work cannot hold a task for a family's flagship today. Its tasks are computed on every call
-from what each craft, family and category holds, so there is no stored task to add; and a
-category's page has no component tasks, because the library keys components to crafts, concepts,
-compounds and places, never to a category.
+Each of the nine family pages holds one `FLAGSHIP` task until it draws its flagship, keyed
+`FLAGSHIP:category:<slug>`: Metal's is `FLAGSHIP:category:Metal-Craft-Category`. The server holds
+this backlog in code, in `research/open_work_flagship_backlog.py`, and a test keeps the two equal:
+each family's mechanism and anchor, the facts of its states as the task's fact ids (the first and
+second candidates' rows left out), and its Missing line as what is still to find or make. The task
+is `HIGH`, since every craft of the family borrows the flagship, and its prompt is `deliver_page`.
 
-What it holds instead is each craft's `MISSING_COMPONENT` task for the `reaction-player` need,
-named above for each anchor. A delivered reaction player keyed to the anchor completes the anchor's
-task, and each craft that then places it, by a `SUBJECT_LINK` or a `VARIANT` keyed to it,
-completes its own.
-
-A task kind for the flagships would need:
-
-- the kind in the task kinds and the task key parser, keyed once per family as
-  `<KIND>:category:<slug>`;
-- one home for the nine flagships (the family, the mechanism, the anchor, the kinds that meet it),
-  in code beside the component needs, written from this backlog;
-- its computation: open while no registered component of those kinds is keyed to the anchor or to
-  the flagship's concept, and closed while a pending or approved proposal names its key;
-- its wording (what is needed, its acceptance), its prompt, `propose_component`, and a priority
-  rule, since every category is LOW in today's order;
-- the component proposal's check accepting it as `task_key` for a component of a kind that meets
-  it, keyed to the anchor;
-- `list_open_work`'s kind filter, the contribution screens' list of kinds, the open-work contract
-  and its served copy, the server index and a test for each.
+- **Open** while the family page draws no registered `reaction_player`, `dip_player`,
+  `stage_player` or `experiment_lab`: none rests on the page's facts or on the facts its published
+  sections cite, none is keyed to those facts' concepts, and none is named in its layout. A
+  waiting or approved proposal that names the key closes it too.
+- **Claim** it with `reserve_tasks`, then deliver the player finished in a bundle for the family's
+  category page: its spec and units citing the facts above, keyed to the anchor craft, with the
+  task as `task_key`. `preview_page` first, then `propose_page`. The proposal is refused, with its
+  reason, when it is of another kind, carries no spec or is not keyed to the anchor.
+- **Each craft's own task** stays: the `MISSING_COMPONENT` task for the `reaction-player` need,
+  named above for each anchor. A delivered reaction player keyed to the anchor completes the
+  anchor's task, and each craft that then places it, by a `SUBJECT_LINK` or a `VARIANT` keyed to
+  it, completes its own.

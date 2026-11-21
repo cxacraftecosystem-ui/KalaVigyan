@@ -66,8 +66,8 @@ names every tool, prompt and resource in a line each.
 2. `reserve_tasks` with `claim` holding up to 10 keys: each is reserved for your account for two
    hours, so no other agent does the same work. Claim it again to renew it; `release` gives it back
    when you stop, and an expired reservation returns to the list by itself.
-3. `get_page` and `get_facts` for the page: its coverage, its sections, its layout and the facts
-   already held. Derive the page's three lists from them (the page checklist). Never propose a fact
+3. `get_page` and `get_facts` for the page, a craft's, a family's or a category's: its coverage,
+   its sections, its layout, its keys and the facts already held. Derive the page's three lists from them (the page checklist). Never propose a fact
    that is held; a second source for a held fact goes to `propose_source`.
 4. `list_components` first, before anything about a component: place an existing component by
    its label rather than proposing another.
@@ -163,7 +163,9 @@ for them before any search of your own.
 - `lookup` with `kind` compound and a name, synonym, formula or PubChem CID as `id`: the PubChem
   record, its GHS hazards, and the name and synonyms KalaVigyan holds. `lookup` with `kind` entity
   and a name or a Wikidata Q number: the items for a place, a plant (with its taxon name) or a
-  craft, with their statements.
+  craft, with their statements. Either way its `subjects` name what KalaVigyan holds for each
+  record as a component's subjects are keyed: a compound's or concept's id, a craft's slug, a
+  district's `lgd:<code>`.
 
 `lookup` and a pictures search need no sign-in; the rest need a signed-in Researcher or above.
 Each use has its own allowance an hour, by trust tier:
@@ -202,6 +204,13 @@ callers share one allowance between them.
   state it, and quotes that pass are added at once. Name the fact as `claim_id`.
 
 ## Components
+
+Two kinds of task are completed by a component, each named as the proposal's `task_key`:
+
+| Task | Its key | Completed by |
+|---|---|---|
+| `MISSING_COMPONENT` | `MISSING_COMPONENT:craft:<slug>:<need>` | a component of a kind the need lists, keyed to that craft |
+| `FLAGSHIP` | `FLAGSHIP:category:<slug>` | a family page's flagship, delivered finished as a `reaction_player`, `dip_player`, `stage_player` or `experiment_lab`, keyed to the anchor craft the task names, in a bundle for that category page (the interactives skill) |
 
 - `list_components` first, by the craft and by words: place a component that fits by its label,
   and extend one that nearly fits, before you make another (`components.md`).

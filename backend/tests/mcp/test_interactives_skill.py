@@ -12,6 +12,7 @@ from app.data.contributor_kit import CONTRIBUTOR_SKILL_PATH
 from app.data.skill_library import REFERENCES, SKILL_FILES, skill_file_text
 from app.research.component_specs_science_parts import COLOUR_TOKEN_PATTERN
 from app.research.open_work import COMPONENT_NEEDS, TASK_KINDS, parse_task_key
+from app.research.open_work_flagship_backlog import FLAGSHIPS
 from app.services.category_register import register_categories
 from app.services.craft_resolver import CraftIndexStore
 
@@ -56,6 +57,9 @@ SECTION = re.compile(r"^## (?P<title>[^\n]+)\n(?P<body>.*?)(?=^## |\Z)", re.MULT
 PAGES = re.compile(r"\*\*Pages\*\*: `(?P<family>[A-Za-z-]+)`; anchor `(?P<anchor>[A-Za-z-]+)`")
 TASK = re.compile(r"`(MISSING_COMPONENT:[^`]+)`")
 FACT_ID = re.compile(r"`([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})`")
+ROW = re.compile(r"^\| (?P<state>[^|]+) \| `(?P<fact>[0-9a-f-]{36})` \|", re.MULTILINE)
+MISSING = re.compile(r"\*\*Missing\*\*: (?P<lacks>.*?)(?=\n- \*\*|\n\n)", re.DOTALL)
+FLAGSHIP_KEY = re.compile(r"`(FLAGSHIP:category:[A-Za-z-]+)`")
 
 
 def family_sections() -> dict[str, tuple[str, str]]:
@@ -161,9 +165,30 @@ def test_every_task_the_backlog_names_is_a_craft_s_reaction_player_task() -> Non
     assert "reaction_player" in COMPONENT_NEEDS["reaction-player"]
 
 
-def test_open_work_holds_no_flagship_task_as_the_backlog_says() -> None:
-    assert "Open work cannot hold a task for a family's flagship today." in skill_file_text(FLAGSHIPS_URI)
-    assert not [kind for kind in TASK_KINDS if "FLAGSHIP" in kind]
+def test_open_work_holds_a_flagship_task_for_each_family_as_the_backlog_says() -> None:
+    backlog = skill_file_text(FLAGSHIPS_URI)
+    open_work = backlog.split("## Open work and the flagships\n")[1]
+    assert "FLAGSHIP" in TASK_KINDS and "Open work cannot hold" not in backlog
+    assert "`FLAGSHIP:category:<slug>`" in open_work
+    assert FLAGSHIP_KEY.findall(open_work) == ["FLAGSHIP:category:Metal-Craft-Category"]
+    assert parse_task_key("FLAGSHIP:category:Metal-Craft-Category").slug in FLAGSHIPS
+
+
+def test_the_server_s_flagships_are_the_backlog_s_mechanism_anchor_facts_and_lacks() -> None:
+    sections = [
+        section
+        for section in SECTION.finditer(skill_file_text(FLAGSHIPS_URI))
+        if PAGES.search(section["body"])
+    ]
+    assert len(sections) == len(FLAGSHIPS) == FAMILIES
+    for section in sections:
+        pages, missing = PAGES.search(section["body"]), MISSING.search(section["body"])
+        assert pages is not None and missing is not None
+        flagship = FLAGSHIPS[pages["family"]]
+        facts = [row["fact"] for row in ROW.finditer(section["body"]) if "candidate" not in row["state"]]
+        assert f"{flagship.family}: {flagship.mechanism}" == section["title"]
+        assert (flagship.anchor, list(flagship.facts)) == (pages["anchor"], facts)
+        assert flagship.lacks == " ".join(missing["lacks"].split()).removesuffix(".")
 
 
 def test_each_backlog_fact_is_named_once_and_the_storyboard_draws_only_backlog_facts() -> None:

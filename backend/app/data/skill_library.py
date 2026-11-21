@@ -12,8 +12,6 @@ from .contributor_kit import CONTRIBUTOR_SKILL_PATH
 __all__ = [
     "CONTRACTS",
     "CONTRACTS_DIR",
-    "DATASETS_SITE_PATH",
-    "DATASETS_SKILL_PATH",
     "INDEX_PATH",
     "INDEX_URI",
     "REFERENCES",
@@ -23,7 +21,6 @@ __all__ = [
     "Reference",
     "SkillFile",
     "contract_text",
-    "datasets_skill",
     "prompt_reference",
     "reference_text",
     "server_index",
@@ -32,8 +29,6 @@ __all__ = [
 
 CONTRIBUTOR_DIR = CONTRIBUTOR_SKILL_PATH.parent
 REFERENCES_DIR = CONTRIBUTOR_DIR / "references"
-DATASETS_SKILL_PATH = CONTRIBUTOR_DIR / "kalavigyan-datasets" / "SKILL.md"
-DATASETS_SITE_PATH = "/skills/kalavigyan-datasets/SKILL.md"
 REFERENCE_URI_PREFIX = "kalavigyan://skills/references/"
 REFERENCE_SITE_PREFIX = "/skills/references/"
 CONTRACTS_DIR = CONTRIBUTOR_DIR / "contracts"
@@ -44,6 +39,7 @@ INDEX_URI = "kalavigyan://index.md"
 SKILL_URI_PREFIX = "kalavigyan://skills/"
 SKILL_SITE_PREFIX = "/skills/"
 SKILL_ENTRY = "SKILL.md"
+DATASETS_SKILL = "kalavigyan-datasets"
 INTERACTIVES_SKILL = "kalavigyan-interactives"
 HEADING = re.compile(r"^(#+) ", re.MULTILINE)
 
@@ -202,6 +198,14 @@ SKILL_FILES: Mapping[str, SkillFile] = MappingProxyType(
         skill_file.uri: skill_file
         for skill_file in (
             SkillFile(
+                DATASETS_SKILL,
+                SKILL_ENTRY,
+                "The KalaVigyan datasets skill",
+                "The method for the data behind KalaVigyan's charts, tables, timelines and map layers: open "
+                "datasets and their licences, provenance, units and projection, and how a dataset becomes a "
+                "delivered component",
+            ),
+            SkillFile(
                 INTERACTIVES_SKILL,
                 SKILL_ENTRY,
                 "The KalaVigyan interactives skill",
@@ -244,11 +248,6 @@ def server_index() -> str:
 
 def prompt_reference(name: str) -> str:
     return HEADING.sub(r"#\1 ", reference_text(name)).strip()
-
-
-@cache
-def datasets_skill() -> str:
-    return DATASETS_SKILL_PATH.read_bytes().decode("utf-8")
 
 
 @cache

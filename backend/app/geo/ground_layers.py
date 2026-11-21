@@ -152,7 +152,7 @@ def _edition(row: Mapping[str, Any]) -> str:
 def _natural_earth(key: str, row: Mapping[str, Any], licence: str) -> GroundLayer:
     return GroundLayer(
         key=key,
-        title=f"{NATURAL_EARTH} {NATURAL_EARTH_SCALE} {row['dataset']}",
+        title=f"{NATURAL_EARTH} {NATURAL_EARTH_SCALE} {row['file']}",
         publisher=NATURAL_EARTH,
         edition=_edition(row),
         url=str(row["url"]),
@@ -164,7 +164,7 @@ def _natural_earth(key: str, row: Mapping[str, Any], licence: str) -> GroundLaye
 def _published(key: str, row: Mapping[str, Any]) -> GroundLayer:
     return GroundLayer(
         key=key,
-        title=str(row["dataset"]),
+        title=str(row["title"]),
         publisher=str(row["publisher"]),
         edition=_edition(row),
         url=str(row["url"]),

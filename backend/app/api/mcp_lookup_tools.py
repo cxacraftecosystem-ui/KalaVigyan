@@ -6,6 +6,7 @@ from typing import Any
 
 from app.core.errors import InvalidInput
 from app.core.mcp_scopes import CONTRIBUTE_SCOPE, READ_SCOPE
+from app.services.lookup_subjects import compound_subjects, entity_subjects
 from app.services.source_lookup_calls import (
     LookupAsk,
     LookupDeps,
@@ -71,7 +72,9 @@ LOOKUP_DESCRIPTION = (
     "weight, IUPAC name, InChIKey, SMILES), its GHS hazards as PubChem's attributed sources report them, and "
     "the name and synonyms KalaVigyan holds; or Wikidata items for a place, a plant or a craft: each item's "
     "label, statements (a plant's taxon name, a place's coordinates and area), CC0 licence and grade. Give a "
-    "name (up to three items) or an id. Open to anyone; signed in, it counts as a source read."
+    "name (up to three items) or an id. subjects gives what KalaVigyan holds for each record by the key a "
+    "component proposal names it with: a compound's and a concept's id, a craft's slug, a district's lgd place. "
+    "Open to anyone; signed in, it counts as a source read."
 )
 
 Asker = Callable[[ToolContext, str], LookupAsk]
@@ -158,14 +161,21 @@ def _lookup(ask: Asker) -> Callable[[ToolContext, Lookup], Awaitable[LookupReply
         asked = ask(context, LOOKUP)
         if arguments.kind == COMPOUND:
             compounds = await compound_call(asked, arguments.name, arguments.cid())
+            held = [record.cid for record in compounds.compounds if record.held]
             return LookupReply(
                 kind=arguments.kind,
                 query=compounds.query,
                 compounds=compounds.compounds,
+                subjects=await compound_subjects(context.session, held),
                 notices=compounds.notices,
             )
         entities = await entity_call(asked, arguments.name, arguments.qid())
-        return LookupReply(kind=arguments.kind, query=entities.query, entities=entities.entities)
+        return LookupReply(
+            kind=arguments.kind,
+            query=entities.query,
+            entities=entities.entities,
+            subjects=await entity_subjects(context.session, entities.entities),
+        )
 
     return lookup
 

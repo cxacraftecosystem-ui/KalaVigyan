@@ -16,6 +16,7 @@ from .component_specs_general_delivery import UNITS_MAX, DeliveredUnit, UnitKey
 from .crafts import SLUG_MAX_CHARS
 from .knowledge_api import ComponentSummary
 from .open_work import COMPONENT_NEEDS, TASK_KEY_MAX_CHARS, parse_task_key
+from .open_work_flagships import FLAGSHIP_TASK, flagship_problem
 from .vocabulary import Discipline, PieceKind, PieceSubjectKind
 
 __all__ = [
@@ -221,8 +222,10 @@ def task_problem(draft: ComponentProposalDraft) -> str | None:
     if draft.task_key is None:
         return None
     key = parse_task_key(draft.task_key)
+    if key.kind == FLAGSHIP_TASK:
+        return flagship_problem(key, draft.kind, proposal_crafts(draft), delivered=draft.delivered)
     if key.kind != COMPONENT_TASK or key.detail not in COMPONENT_NEEDS:
-        return f"{draft.task_key} is not a missing-component task; only those are completed by a proposal"
+        return f"{draft.task_key} is not a missing-component task or a flagship task; only those are completed by a proposal"
     if draft.kind not in COMPONENT_NEEDS[key.detail]:
         return f"a {key.detail} task is completed by a component of kind {', '.join(COMPONENT_NEEDS[key.detail])}"
     if key.slug not in proposal_crafts(draft):

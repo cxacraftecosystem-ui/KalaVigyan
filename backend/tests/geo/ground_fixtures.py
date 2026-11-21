@@ -48,7 +48,7 @@ def relief() -> dict[str, Any]:
     return {
         "datasets": [
             {
-                "dataset": "ETOPO1 1 Arc-Minute Global Relief Model, ice surface",
+                "title": "ETOPO1 1 Arc-Minute Global Relief Model, ice surface",
                 "publisher": "NOAA National Centers for Environmental Information",
                 "url": "https://example.org/etopo1.asc",
                 "licence": "Public domain (U.S. Government work)",
@@ -67,7 +67,13 @@ def relief() -> dict[str, Any]:
 
 def rivers() -> dict[str, Any]:
     natural_earth = [
-        {"dataset": name, "version": "5.0.0", "url": f"https://example.org/{name}.zip", "sha256": DIGEST}
+        {
+            "title": "Natural Earth 1:10m physical vectors",
+            "file": name,
+            "version": "5.0.0",
+            "url": f"https://example.org/{name}.zip",
+            "sha256": DIGEST,
+        }
         for name in ("ne_10m_rivers_lake_centerlines", "ne_10m_lakes")
     ]
     return {
@@ -82,7 +88,7 @@ def rivers() -> dict[str, Any]:
 def minerals() -> dict[str, Any]:
     return {
         "source": {
-            "dataset": "Mineral Resources Data System",
+            "title": "Mineral Resources Data System",
             "publisher": "U.S. Geological Survey",
             "url": "https://example.org/mrds-csv.zip",
             "licence": "Public domain (U.S. Government work)",
