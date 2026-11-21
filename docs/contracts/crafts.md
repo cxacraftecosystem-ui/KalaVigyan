@@ -1,6 +1,27 @@
-# Craft data lane: contract
+# Craft data
 
-This lane owns `etl/crafts/`, `backend/app/data/`, `shared/` and `.github/workflows/craft-data.yml`. The other lanes read what is listed here and nothing else. Every file below is pure data or pure Python: no database, no network at import time.
+This lane owns `etl/crafts/`, `backend/app/data/`, `shared/` and `.github/workflows/craft-data.yml`. The other lanes read what is listed here and nothing else. Every file below is pure data or pure Python: no database, no network at import time. Engineers seeding crafts, adding an alias source or re-vendoring the master list read it.
+
+| For | Read |
+|---|---|
+| Crafts either portal added beyond the master list | [portal-craft-feed.md](portal-craft-feed.md) |
+| Running the seeds on a release | [infra.md](infra.md), Seeds |
+| What a craft's page answers from these rows | [craft-page.md](craft-page.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  DR[("Designer portal<br/>master list")] -->|vendored| ML["craft_master_list.json<br/>sha1 checked"]
+  ML --> LO["craft_master_loader<br/>seed_plan"]
+  WD["wikidata_link.py"] --> WJ["craft_wikidata.json"]
+  AL["aliases.py"] --> AJ["craft_aliases.json"]
+  LO --> DB[("Craft tables")]
+  AJ --> LO
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  classDef gold fill:#FAEECD,stroke:#CD9200,color:#1E1B2E
+  class LO accent
+  class DR gold
+```
 
 ## Files
 
@@ -37,16 +58,16 @@ The backend imports `app.data.craft_master_loader` and calls `seed_plan()`. It r
 - `extraMetadata.masterSeed` holds the file's columns, the same as in DR, so the admin-edit/keep logic ports unchanged.
 - `build_catalogue()` returns DR's `GET /crafts/catalogue` shape (`version`, `categories[].subCategories[].craftCount`, `crafts[]` with `aliases`) from the files alone. Use it for tests and offline fixtures. The live route should still read the database.
 - `master_is_current()` compares the vendored file with `shared/craft-master.sha1`.
-- **Dependency:** `normalise` needs `anyascii` (lazy import). Please add `anyascii` to `backend/pyproject.toml`. Nothing else in this directory needs a third-party package.
+- **Dependency:** `normalise` needs `anyascii` (lazy import), which `backend/pyproject.toml` lists. Nothing else in this directory needs a third-party package.
 
 ## Enum values the backend must accept
 
-`backend/app/models/enums.py` belongs to the backend lane. These files use values it does not yet list:
+`backend/app/models/enums.py` belongs to the backend lane. These files use values beyond the plan's, and it lists every one of them:
 
 - `AliasSource`: add `WIKIDATA` (labels, aliases and sitelink titles of MATCHED items only) and `TRANSLITERATION` (machine script conversions).
 - `ConceptType`: the seeds also use `TRADITION`, `DESIGN_PRINCIPLE`, `HISTORICAL_CONTEXT`, `COMPARISON`, `EXPLANATION`, `ARTISAN_ACTION`, `SENSORY_CUE`, `PROPERTY`, `CHANGE`, `CONCEPT`.
 - `ConceptRelation`: the six in the plan plus `DEPENDS_ON`, `CAUSES`, `ENABLES`, `EXPLAINS`, `REQUIRES`, `PRACTITIONER_EXPLAINS`, `HAS_PROPERTY`, `CONTRASTS_WITH`, `ASSOCIATED_WITH`, `SIMILAR_TO`, `USED_FOR`, `PREVENTS`, `MODIFIES`. Each edge also keeps `sourceRelation` (the upstream spelling).
-- Evidence levels use the backend's uppercase values (`PROVISIONAL`, `HYPOTHESIS`). Source kinds use `SOURCE_KINDS`. The upstream evidence type is kept in `Source.evidenceKind` (for example `HISTORICAL_DOCUMENTATION`). That needs a nullable text column, or it can be folded into `notes`.
+- Evidence levels use the backend's uppercase values (`PROVISIONAL`, `HYPOTHESIS`). Source kinds use `SOURCE_KINDS`. The upstream evidence type is kept in `Source.evidenceKind` (for example `HISTORICAL_DOCUMENTATION`), a nullable text column.
 
 ## `craft_aliases.json`
 
@@ -122,3 +143,17 @@ The resolver is built: `docs/contracts/research.md` (The resolver) and decision 
 
 - **checks:** runs on push or PR touching this lane, and on schedule or dispatch. It runs `sha1sum -c`, ruff and the pure tests.
 - **regenerate:** runs on schedule (Mondays 02:17 UTC) and dispatch only. It re-runs the Wikidata link with no cache and re-merges aliases, reusing the IMMERSIVE aliases from the committed file because the sibling repos are absent on the runner. It writes a status-diff summary and uploads both files as the artifact `craft-data-<run>`. It never commits or opens a PR.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The master list is the vendored one | `sha1sum -c shared/craft-master.sha1` in `craft-data.yml` |
+| The loader, the seed plan and the catalogue shape | `etl/crafts/tests/test_loader.py` |
+| Aliases, `norm`, `latin` and collisions | `etl/crafts/tests/test_aliases.py` and `test_text.py` |
+| Wikidata scoring and its caps | `etl/crafts/tests/test_wikidata_scoring.py` |
+| The seed claims' rows | `etl/crafts/tests/test_seed_claims.py`, and `backend/tests/db/test_claim_seed.py` and `test_craft_seed.py` on Postgres |
+| Editorial names and state languages | their loaders, `craft_names.py` and `state_languages.py`, which refuse the rows named above |
+
+Re-read it when the master list is re-vendored, an alias source or a seed file is added, or the
+counts above change after a regenerate run is committed.

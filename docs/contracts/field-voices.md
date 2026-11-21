@@ -1,10 +1,34 @@
-# Field voices: contract, version 2
+# Field voices, version 2
 
 What both portals, the designer portal (DesignWorkshop, `designer-portal`, portal `DESIGNER`) and
 the documentation portal (Field Repository, `documentation-portal`, portal `FIELD_REPOSITORY`),
 serve so KalaVigyan holds their transcripts and their craft images, and how KalaVigyan reads,
-stores, links, cites, shows and withdraws them. Design choices: decision 0084 (version 2), which
-amends decision 0072 (version 1).
+stores, links, cites, shows and withdraws them. Engineers in all three repositories read it before
+changing either side of the routes.
+
+| For | Read |
+|---|---|
+| Version 2's design choices | [decision 0084](../decisions/0084-field-voices-v2.md), which amends [0072](../decisions/0072-field-voices-contract.md) (version 1) |
+| The KalaVigyan side as built | [decision 0091](../decisions/0091-field-voices-kalavigyan-side.md) |
+| Reviewed field photographs | [decision 0112](../decisions/0112-reviewed-field-photographs.md) |
+| The portals' craft list, over the same peer mechanism | [portal-craft-feed.md](portal-craft-feed.md) |
+| Artisans' own testimony, sharing the `artisan_voice` block | [roles-and-contributions.md](roles-and-contributions.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
+sequenceDiagram
+  participant K as KalaVigyan sync
+  participant P as Portal peer routes
+  participant DB as KalaVigyan database
+  K->>P: Signed request, a stream and its cursor
+  P-->>K: A page of transcripts or images
+  K->>K: Signature, schema 2, never-sent keys, the legal floor
+  K->>DB: Store, link, keep a neutral image copy
+  P-->>K: Tombstones for what was withdrawn
+  K->>DB: Withdraw everywhere it is shown
+```
+
+## The owner's decisions
 
 Owner decisions: O4 of 2026-11-17 (artisans are quoted by name); 2026-11-18 (consented quotes and
 process photographs may be published, credited, never with contact or identity details; craft
@@ -1057,3 +1081,18 @@ answers 404 and its streams are skipped.
 | Reading | `GET /api/crafts/{slug}/field-voices?kind=quotes|images&cursor=<offset>` (public, 25 a page), `GET /api/field-voices/recordings/{id}` (public since decision 0097), `GET /api/field-voices/images/{id}` (public 302), web page `/voices/<id>` | the list cursor is the offset of the page, a multiple of 25 |
 | Held images | `FieldImage.artisanLinked`; `models/field_photo_reviews.py` (`FieldPhotoReview`, `FieldPhotoScreen`, migration `0054_field_photo_reviews`); `services/field_photo_scope.py`, `field_photo_screens.py`, `field_photo_decisions.py`, `field_photo_crops.py`, `field_photo_queue.py`, `field_photo_items.py`, `field_voices_held.py`; `api/routes/field_photo_reviews.py` and `field_voices_held.py`; the web's `/admin/field-photos` | decided one photograph at a time (decision 0112); the setting is the master kill switch |
 | Speaker | `VoiceSpeaker {name: str | null, line, role, yearsInCraft, district, state}` | `line` is the credit as shown, "An artisan of <craft>, <district>, <state>" when `name` is null |
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Every answer's checks, against recorded pages of both portals | `backend/tests/field_voices/test_feed.py`, `test_reader.py` and `test_portal_built_pages.py`, over `backend/tests/field_voices/recorded/` |
+| The legal floor's scrubbing and labels | `backend/tests/field_voices/test_scrub_vectors.py`, over `field-voices-scrub-vectors.json`, byte-identical in both portals |
+| Placements, image names and copies | `backend/tests/field_voices/test_placements.py`, `test_field_image_names.py` and `test_image_copies.py` |
+| Sync, storage and withdrawal | `backend/tests/field_voices/test_sync.py`, `test_records.py`, `test_readback.py`, `backend/tests/db/test_field_voices_db.py` and `test_field_voices_withdrawal_db.py` |
+| Citing and the routes | `backend/tests/field_voices/test_citing_rules.py` and `test_routes.py` |
+| Held images and reviewed field photographs | `backend/tests/field_voices/test_held_images.py`, `test_field_photo_rules.py`, `backend/tests/db/test_field_photo_reviews_db.py` and `test_field_photo_decisions_db.py` |
+| The web client | `frontend/e2e/field-voices-unit.spec.ts` |
+| The portals' side | each portal's own tests, which ship there |
+
+Re-read it when a portal ships its routes, the legal floor or a never-sent key changes, or the owner's direction on what comes across changes.

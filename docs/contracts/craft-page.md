@@ -1,4 +1,31 @@
-# Craft page contract (decisions 0053, 0081, 0095 and 0096)
+# Craft page
+
+What `GET /api/crafts/{slug}/page` answers: the craft page as a monograph in chapters, built from
+stored rows only, its caching and its snapshots. Since round 6 the web app draws a craft's monograph
+document and reads this route for the craft list's record of a craft without one. Engineers changing
+a chapter builder, the snapshot or the client's parser read it.
+
+| For | Read |
+|---|---|
+| Why the page is built this way | [decisions 0053](../decisions/0053-curated-dossier-import.md), [0081](../decisions/0081-craft-page-contract-v2.md), [0095](../decisions/0095-craft-page-chapters.md), [0096](../decisions/0096-reader-question-pieces-join-their-craft-page.md) and [0098](../decisions/0098-craft-page-chapters-build.md) |
+| The plan | [plans/dataset-curation.md](../plans/dataset-curation.md), section 9 |
+| The dossier it reads | [curation.md](curation.md) |
+| How the web app draws a craft | [monograph-renderer.md](monograph-renderer.md) |
+| The answer blocks it reuses | [explainer.md](explainer.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  ROWS[("Stored rows<br/>dossier, claims, places")] --> REC["craft_page_records<br/>fixed queries"]
+  REC --> CH["Chapter builders<br/>one per chapter"]
+  CH --> LG["Claim ledger<br/>and source numbers"]
+  LG --> SN["Snapshot<br/>per variant and stamp"]
+  SN --> RT["GET craft page"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class CH accent
+```
+
+## Schema and build status
 
 What `GET /api/crafts/{slug}/page` answers: the whole craft page, a monograph in chapters, built
 from stored rows only (plan `docs/plans/dataset-curation.md` section 9). Schema version 3
@@ -61,8 +88,8 @@ Both commands run from `backend/`. Change the models, this page, the fixtures an
 tests together. The web client parses the page with `frontend/lib/craftPageContract.ts` (the
 version 2 parts with `frontend/lib/craftPageContext.ts`, the chapters with
 `frontend/lib/craftChapters.ts`, the blocks with the explainer's own parser); its specs are
-`frontend/e2e/craft-page-unit.spec.ts`, `craft-page-drawing-unit.spec.ts`,
-`craft-page-context-unit.spec.ts` and `craft-chapters-unit.spec.ts`, and the vocabularies are
+`frontend/e2e/craft-page-unit.spec.ts`, `craft-page-context-unit.spec.ts` and
+`craft-chapters-unit.spec.ts`, and the vocabularies are
 pinned in `frontend/e2e/backend-vocabulary-unit.spec.ts`. The contract test also holds the served
 Kutch Ajrakh page to 250 KB gzipped.
 
@@ -353,9 +380,9 @@ neither golden changed. A client that does not know the kind refuses the page, a
 The web client reads the part in `frontend/lib/craftContributed.ts` (shape, credit rule, and
 `contributedPlacement`, which sends a stage's plate to its stage card on Process, `why` and
 `people` plates to Region and the rest to Overview, or to Overview when the page offers no
-Process). `components/craft/ContributedPlates.tsx` draws each with the design system's `Plate`:
-the picture at its own ratio, the caption with the citation numerals of its facts first, the
-credit after, visible at rest, and the Lightbox. Specs: `frontend/e2e/craft-contributed-unit.spec.ts`.
+Process). The tabbed screen's `components/craft/ContributedPlates.tsx` was retired with it (round
+6); a craft's document draws an approved picture as a `picture_plate` (`image-contributions.md`, On
+craft pages). Specs: `frontend/e2e/craft-contributed-unit.spec.ts`.
 
 ## Pieces built for readers' questions (decision 0096)
 
@@ -705,3 +732,17 @@ EvidenceEntry {claimId, foldedIds[]}
   and hypotheses; the entry is the strongest claim: curated, then researcher, then from answers,
   then seed, then by level, number of citations and text.
 - `hypotheses` stand apart, in discipline order.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Both goldens, byte for byte, and the served Kutch Ajrakh page under 250 KB gzipped | `backend/tests/contracts/test_craft_page_contract.py` |
+| The chapters, their order and rules | `backend/tests/curation/test_craft_chapters.py`, `test_chapter_rules.py`, `test_chapter_balance.py` and `test_craft_page.py` |
+| Contributed pictures | `backend/tests/curation/test_contributed_plates.py`, `test_contributed_placement.py` and `backend/tests/db/test_contributed_plates_db.py` |
+| Readers' answer pieces joining the page | `backend/tests/curation/test_craft_page_answer_assets.py` |
+| Caching, the stamp and snapshots | `backend/tests/curation/test_craft_page_route.py`, `backend/tests/db/test_craft_page_stamp_db.py` and `test_craft_page_snapshots_db.py` |
+| The client parses the page | `frontend/e2e/craft-page-unit.spec.ts`, `craft-page-context-unit.spec.ts`, `craft-chapters-unit.spec.ts` and `craft-contributed-unit.spec.ts`; vocabularies in `backend-vocabulary-unit.spec.ts` |
+
+Re-read it when a chapter is built or retired, the schema version moves (version 2 parts leave by
+2026-12-18), or a new part kind is added.

@@ -1,8 +1,34 @@
-# Explainer contract
+# Explainer
 
 An answer becomes an explainer: ordered sections, each holding typed blocks, streamed as they
-are ready and stored as knowledge pieces for later answers (`docs/plans/answer-experience.md`
-sections 2.1 to 2.4, 2.7 and 2.8). The code is the typed models in `backend/app/research/`
+are ready and stored as knowledge pieces for later answers. Engineers adding a block kind, a
+builder or a renderer, or changing the stream, read it.
+
+| For | Read |
+|---|---|
+| The plan | [plans/answer-experience.md](../plans/answer-experience.md), sections 2.1 to 2.4, 2.7 and 2.8 |
+| The design choices | decisions [0030](../decisions/0030-explainer-contract.md), [0042](../decisions/0042-phase-b-contract.md), [0054](../decisions/0054-phase-c-contract.md) and [0062](../decisions/0062-phase-d-contract.md); the lede and signature figures [0077](../decisions/0077-lede-headings-and-question-order.md); the claim ledger [0080](../decisions/0080-claim-ledger.md) |
+| The interfaces that build an answer | [research.md](research.md) |
+| Registered components placed in a section | [answer-components.md](answer-components.md) |
+| What a reader does with a finished explainer | [learning.md](learning.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  Q["Question"] --> L["Lede"]
+  L --> S["Sections<br/>in question order"]
+  S --> B["Typed blocks<br/>built and checked"]
+  B --> CL["Claim ledger<br/>one claim, one rendering"]
+  CL --> ST["Stream events"]
+  ST --> W["Web client<br/>block renderers"]
+  B --> KP[("Knowledge pieces<br/>reused later")]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class B accent
+```
+
+## Where the code is
+
+The plan is `docs/plans/answer-experience.md`, sections 2.1 to 2.4, 2.7 and 2.8. The code is the typed models in `backend/app/research/`
 (`explainer.py`, `blocks.py`, `blocks_place.py`, `blocks_matter.py`, `blocks_people.py`,
 `terms.py`, `media_refs.py`, `subject_keys.py`, `knowledge_pieces.py`, `depth.py`,
 `citations.py`, and for phase B `datasets.py`, `rivers.py`, `calendar.py`, `reactions.py`,
@@ -1761,3 +1787,16 @@ rebuilt-each-time kinds, the stream's `builds_on` and `version`, the learning ro
 - A refused block is dropped and logged; a section left without blocks ends `EMPTY` with what it
   searched. Translation runs per checked block; ladder names and conditions stay as stored; an
   `images` block is not translated.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The document, the stream and every phase's kinds against their goldens (`shared/explainer.*`) | `backend/tests/contracts/test_explainer_contract.py`, `test_explainer_stream.py`, `test_explainer_lede_contract.py`, `test_explainer_signature_contract.py`, `test_explainer_phase_b.py`, `test_explainer_phase_c.py` and `test_explainer_phase_d.py` |
+| Stored pieces | `backend/tests/contracts/test_knowledge_piece_contract.py` and `backend/tests/db/test_knowledge_pieces_db.py` |
+| The client's shapes and the stream reduced to the document | `frontend/e2e/explainer-contract-unit.spec.ts`, `explainer-phase-b-unit.spec.ts`, `explainer-phase-c-unit.spec.ts`, `explainer-phase-d-unit.spec.ts` and `explainer-view-unit.spec.ts` |
+| Each kind's renderer | `frontend/e2e/place-renderers-unit.spec.ts`, `matter-renderers-unit.spec.ts`, `expert-panel-unit.spec.ts`, `journey-renderers-unit.spec.ts`, `learning-renderers-unit.spec.ts`, `insight-renderers-unit.spec.ts` and `sandbox-frame-unit.spec.ts` |
+| The block builders and their checks | `backend/tests/answering/test_block_builders.py`, `test_section_blocks.py` and `backend/tests/research/test_explainer_blocks.py` |
+| One claim, one rendering | `backend/tests/ledger/test_ledger_rules.py` and `test_ledger_kinds.py` |
+
+Re-read it when a block kind is built or retired, a stream event is added, or a depth rule changes.

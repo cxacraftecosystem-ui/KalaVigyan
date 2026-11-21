@@ -1,10 +1,33 @@
-# Category page contract (decision 0078)
+# Category page
 
 What `GET /api/categories` and `GET /api/categories/{slug}` answer: the nine craft categories of
 the master list and, for each, its master dossier's cited overview, sub-categories, member crafts,
-pictures, glossary and sources, built from stored rows only. The category dossier format is
-`docs/contracts/curation.md` (scope `CATEGORY`); the plan is `docs/plans/dataset-curation.md`
-section 3.16. The models are `backend/app/research/category_page.py`; the rows are read by
+pictures, glossary and sources, built from stored rows only. Engineers on either side of the two
+routes read it, and curators read how a category dossier is stored.
+
+| For | Read |
+|---|---|
+| Why categories have pages | [decision 0078](../decisions/0078-category-dossiers-in-the-app.md) |
+| The category dossier format (scope `CATEGORY`) | [curation.md](curation.md) |
+| The plan | [plans/dataset-curation.md](../plans/dataset-curation.md), section 3.16 |
+| The page as a monograph document | [monograph-renderer.md](monograph-renderer.md) and [page-layout.md](page-layout.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  DS["Category dossier"] --> IM["category_import<br/>on every deploy"]
+  IM --> ROWS[("Claims, concepts,<br/>pieces, CuratedCategory")]
+  ROWS --> REC["category_records<br/>fixed queries"]
+  REC --> PG["category_page<br/>pure build"]
+  PG --> API["GET categories<br/>by slug"]
+  PV["category_preview<br/>no database"] --> PG
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class PG accent
+```
+
+## Where the code is
+
+The models are `backend/app/research/category_page.py`; the rows are read by
 `services/category_records.py` and `services/category_register.py` in a fixed number of queries
 however many categories are curated, the page is built by the pure
 `services/category_page.py`, and `services/category_preview.py` builds the same page with no
@@ -165,3 +188,15 @@ claims and concepts only: no `CraftLocation`, `Process` or market row belongs to
 version supersedes the old exactly as for a craft: a dropped claim becomes `SUPERSEDED` and keeps
 its citations, a dropped picture link is removed, replaced overview pieces are superseded and
 dropped ones marked stale; a second import of the same files writes nothing.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Both answers match their goldens | `backend/tests/contracts/test_category_contract.py`, which fails until the goldens are regenerated |
+| The client parses both answers | `frontend/e2e/category-contract-unit.spec.ts` |
+| The page's rules | `backend/tests/curation/test_category_page.py`, `test_category_records.py` and `test_category_reactions.py` |
+| The routes, their caching and counting | `backend/tests/curation/test_category_routes.py` |
+| The import and superseding | `backend/tests/db/test_category_import_db.py` |
+
+Re-read it when the category dossier's schema, a stored row or the page's shape changes.

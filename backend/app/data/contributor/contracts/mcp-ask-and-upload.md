@@ -1,10 +1,33 @@
-# MCP ask and the picture tools (decision 0101, items 15 and 17; decision 0109)
+# MCP ask and the picture tools
 
 Two signed-in MCP tools. `ask` runs our answer pipeline for the signed-in person and returns the
 finished answer as structured data, with a design kit and an MCP App view to draw it.
 `give_pictures` takes pictures that are already in the chat, by link or as base64, with the
 declaration the person confirmed there, and hands out a single-use link to our site (and, for
 agents with a shell, a presigned upload slot) for each picture that travels outside the chat.
+A contributor's agent reads it over MCP, and engineers read it before changing either tool.
+
+| For | Read |
+|---|---|
+| Why these tools are this way | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), items 15 and 17; [0109](../decisions/0109-image-formats-and-screens.md); [0111](../decisions/0111-fewer-mcp-tools.md) |
+| The endpoint, framing, streaming and the read tools | [knowledge-api.md](knowledge-api.md) |
+| Signing in and the `ask` and `contribute` scopes | [mcp-oauth.md](mcp-oauth.md) |
+| What a picture's file goes through | [image-contributions.md](image-contributions.md) |
+| An answer's sections and seats by field | [explainer.md](explainer.md), [answer-eval.md](answer-eval.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  G["give_pictures"] --> IN{"In the chat?"}
+  IN -->|link or base64| SC["Checked and screened<br/>one by one"]
+  SC --> PD["One PictureDeclaration<br/>channel MCP"]
+  PD --> RQ["Review queue"]
+  IN -->|upload true| UL["Single-use link<br/>and slot"]
+  UL --> LP["Landing page<br/>or PUT to the slot"]
+  LP --> SC
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class SC accent
+```
 
 ## Code
 
@@ -65,17 +88,15 @@ loses its client also runs to the end and is kept.
 opening[], sections[{id, field, title, sentences[], components[]}], fields[], sources[], followUps[],
 answerUrl, view{resourceUri, mimeType}, attribution, dataNote}`
 
-- A sentence: `{text, level, claimIds[], sourceIds[], cites[]}`: the facts and sources it rests on
-  and its citation numbers, sorted and de-duplicated, numbered in the order of `sources`.
-- `opening` is the lede's sentences; sections are the ready ones, in order.
-- `fields` is the answer's provenance by field: each field a ready section consulted, in vocabulary
-  order, `{field, sections, sentences, sources, figures, seats[]}` (`answer-eval.md`).
-- A placed component: `{label, title, kind, url}`, the registered component by label and its link
-  on the site.
-- A source: `{number, id, kind, title, authors, year, doi, url, publisher, licence, attribution,
-  reliability}`.
-- `answerUrl` is `<site>/ask?explainer=<id>&version=<n>`, the same answer on the site.
-- `attribution` and `dataNote` are the read tools' (`knowledge-api.md`).
+| Part | What it holds |
+|---|---|
+| A sentence | `{text, level, claimIds[], sourceIds[], cites[]}`: the facts and sources it rests on and its citation numbers, sorted and de-duplicated, numbered in the order of `sources` |
+| `opening`, `sections` | `opening` is the lede's sentences; sections are the ready ones, in order |
+| `fields` | the answer's provenance by field: each field a ready section consulted, in vocabulary order, `{field, sections, sentences, sources, figures, seats[]}` (`answer-eval.md`) |
+| A placed component | `{label, title, kind, url}`, the registered component by label and its link on the site |
+| A source | `{number, id, kind, title, authors, year, doi, url, publisher, licence, attribution, reliability}` |
+| `answerUrl` | `<site>/ask?explainer=<id>&version=<n>`, the same answer on the site |
+| `attribution`, `dataNote` | the read tools' (`knowledge-api.md`) |
 
 In `tools/list`, `ask` carries `_meta.ui.resourceUri` (and the older `_meta["ui/resourceUri"]`)
 naming `ui://kalavigyan/answer.html`, with visibility `model` and `app`, beside its group
@@ -205,3 +226,20 @@ credit after; a file the browser cannot draw says it is made WebP on arrival) an
 declaration (version 2026-11-19). Once sent it says whether the picture is shown or waits, and
 why the screen held it. A used or expired link says so and offers Get a
 new link; a link of another account says so and points to the picture page without a link.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| `ask`'s guards, order, timeout and `AskedAnswer` | `backend/tests/mcp/test_mcp_ask.py` |
+| The answer kit and the views as resources | `backend/tests/mcp/test_answer_kit.py` |
+| The `fields` provenance and its seats | `backend/tests/answering/test_answer_eval.py` |
+| `give_pictures`: per-picture checks, one declaration, the reply | `backend/tests/mcp/test_give_pictures.py` and `backend/tests/db/test_given_pictures_db.py` |
+| Fetching a picture's link | `backend/tests/fetcher/test_pictures.py` and `test_picture_client.py` |
+| Links, slots, their states and the HTTP routes | `backend/tests/mcp/test_upload_links.py`, `test_upload_link_routes.py` and `backend/tests/db/test_upload_links_db.py` |
+| The routes' classes | `backend/tests/public/test_route_inventory.py` |
+| The landing page | `frontend/e2e/upload-links-unit.spec.ts` |
+| The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/mcp-ask-and-upload.md` byte for byte equal to this file |
+
+Re-read it when `ask`'s guards or timeout, an accepted type, a link's lifetime or the reply changes;
+copy it to `backend/app/data/contributor/contracts/` in the same change.

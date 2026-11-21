@@ -1,9 +1,16 @@
 # Component specs: data and place
 
-Decision 0106, item 4. The data group moves twelve component kinds of the approved Kutch Ajrakh
-page (charts, figures, maps, timelines, lists of crafts and sources, the citation tool) from template
-markup to typed specs drawn by React views. It builds on the plates group's shared parts (units,
-drawings, held text; `docs/contracts/component-specs-plates.md`).
+The data group moves twelve component kinds of the approved Kutch Ajrakh page (charts, figures,
+maps, timelines, lists of crafts and sources, the citation tool) from template markup to typed specs
+drawn by React views. It builds on the plates group's shared parts (units, drawings, held text).
+Engineers changing one of these kinds, and a contributor's agent delivering one, read it.
+
+| For | Read |
+|---|---|
+| Why kinds became specs | [decision 0106](../decisions/0106-one-monograph-template-for-every-page.md), item 4 |
+| The shared parts this group builds on | [component-specs-plates.md](component-specs-plates.md) |
+| Delivering one of these kinds through MCP, and the five general kinds | [component-specs-general.md](component-specs-general.md) |
+| How a document places a component | [monograph-renderer.md](monograph-renderer.md) |
 
 | Side | File |
 |---|---|
@@ -24,15 +31,13 @@ new). A delivered spec holds no citation of its own: its text is in units restin
 
 ## Shared parts
 
-- **TextLine**: one line of text in its element (`p`, `h3`, `li`, `span`, `dt`, `dd`, `figcaption`,
-  `td`, `th`) with its classes, showing a unit, held text or nothing (an empty cell or live region).
-- **FigureHead**: the figure number (unit and `data-fig` reference), the chart title and the dek, with
-  the ids a figure is labelled by.
-- **Placed**: a label set over a drawing at a left, width or top position (`12.5%`), its classes,
-  whether it is hidden from screen readers, and its text.
-- **ToggleGroup**: a segmented control the kit's script reads (`data-layers`, `data-zooms`) with its
-  options and the one pressed at rest.
-- **ComponentLabel**: another component this one holds (see Nesting).
+| Part | What it is |
+|---|---|
+| `TextLine` | one line of text in its element (`p`, `h3`, `li`, `span`, `dt`, `dd`, `figcaption`, `td`, `th`) with its classes, showing a unit, held text or nothing (an empty cell or live region) |
+| `FigureHead` | the figure number (unit and `data-fig` reference), the chart title and the dek, with the ids a figure is labelled by |
+| `Placed` | a label set over a drawing at a left, width or top position (`12.5%`), its classes, whether it is hidden from screen readers, and its text |
+| `ToggleGroup` | a segmented control the kit's script reads (`data-layers`, `data-zooms`) with its options and the one pressed at rest |
+| `ComponentLabel` | another component this one holds (see Nesting) |
 
 ## Nesting
 
@@ -139,3 +144,14 @@ link units and the copy button. The kit's script switches tabs and styles and co
   spec keeps the page's words.
 - **Charts as drawings.** Charts and maps keep their drawn geometry; a spec that holds only data and
   lets the view lay it out is the step after parity.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Each kind's spec model and its bounds | `backend/tests/research/test_component_specs_data.py` |
+| The spec files are what extraction writes from the approved page | `backend/tests/research/test_spec_extraction_data.py`, and `python -m app.scripts.extract_specs_data Kutch-Ajrakh --check` |
+| Each view draws the approved page's elements, classes and text | `frontend/e2e/monograph-kinds-data-unit.spec.ts`, and the Monograph parity run |
+
+Re-read it when a kind of this group gains a field, a held citation moves into a unit, or a chart
+becomes a data-only spec.

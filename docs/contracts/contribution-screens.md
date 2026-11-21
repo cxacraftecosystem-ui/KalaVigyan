@@ -1,10 +1,32 @@
-# Contribution screens (decision 0101, item 8 and build step 7)
+# Contribution screens
 
 The site's screens for proposing a fact and a component, and the contributor's own list of what
 they proposed with what happened to each. Facts go through the gates of `knowledge-writes.md`;
-components through the library search and duplicate refusal of `open-work.md`. Approval follows
-decision 0101, item 12, and consent cannot be revoked: a published contribution stays published,
-and only what still waits for review can be withdrawn.
+components through the library search and duplicate refusal of `open-work.md`. Consent cannot be
+revoked: a published contribution stays published, and only what still waits for review can be withdrawn.
+Engineers changing a contribution screen or its routes read it.
+
+| For | Read |
+|---|---|
+| Why the screens are this way | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), item 8 and build step 7; approval follows item 12 |
+| The gates a fact passes | [knowledge-writes.md](knowledge-writes.md) |
+| The library search, close matches and component proposals | [open-work.md](open-work.md) |
+| The terms' own words | [legal/contribution-terms.md](../legal/contribution-terms.md) |
+| How a waiting item is decided | [review-queue.md](review-queue.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","transitionColor":"#AA69E9","transitionLabelColor":"#857F9E","stateLabelColor":"#1E1B2E","stateBkg":"#F2E9FE","compositeBackground":"#F9F5FF","compositeTitleBackground":"#F2E9FE"}}}%%
+stateDiagram-v2
+  [*] --> WAITING: proposed
+  [*] --> PUBLISHED: passed, shown at once
+  [*] --> REFUSED: a gate refused
+  WAITING --> PUBLISHED: approved
+  WAITING --> REJECTED: a reviewer's note
+  WAITING --> WITHDRAWN: the proposer takes it back
+  PUBLISHED --> RETIRED: retracted or superseded
+```
+
+The diagram follows a fact; a component waits, then is `APPROVED`, `REJECTED` or `WITHDRAWN`.
 
 ## Who may do what
 
@@ -90,3 +112,15 @@ The nav carries one entry, Propose knowledge, to the fact page; each page links 
 | Client contracts | `frontend/lib/ownProposalsContract.ts`, `factProposalContract.ts`, `componentProposalContract.ts` |
 | Screens | `frontend/app/(protected)/contributions/facts`, `.../components`, `frontend/components/contributions/` |
 | Tests | `backend/tests/contributions/`, `backend/tests/db/test_own_proposals_db.py`, `frontend/e2e/contribution-facts-unit.spec.ts`, `contribution-components-unit.spec.ts` |
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| States, reasons and the withdrawal rule | `backend/tests/contributions/test_own_proposals_rules.py` |
+| The routes and their refusals | `backend/tests/contributions/test_own_proposals_routes.py` |
+| The list, withdrawals and terms on Postgres | `backend/tests/db/test_own_proposals_db.py` |
+| The two pages | `frontend/e2e/contribution-facts-unit.spec.ts` and `contribution-components-unit.spec.ts` |
+| The routes' classes | `backend/tests/public/test_route_inventory.py` |
+
+Re-read it when a stored status, the terms' version or a page's steps change.

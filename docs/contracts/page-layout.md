@@ -1,10 +1,32 @@
-# Page layout and generated monograph documents (decision 0106 item 6; decision 0101 items 4 and 14)
+# Page layout and generated monograph documents
 
 Formatting is its own layer. A page's layout record says where each text unit and component of the
 page sits and how a picture is cropped; it refers to them by unit id and component label only and
-never holds a fact. Editing a fact never breaks a layout, and editing a layout never touches a
-fact. Every craft, family and category without authored content gets a monograph document
-generated from what the database holds, ordered by its layout record.
+never holds a fact. Every craft, family and category without authored content gets a monograph
+document generated from what the database holds, ordered by its layout record.
+
+| For | Read |
+|---|---|
+| Why formatting is its own layer | [decision 0106](../decisions/0106-one-monograph-template-for-every-page.md), item 6; [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), items 4 and 14 |
+| Proposing a layout and how it is reviewed | [knowledge-writes.md](knowledge-writes.md), Layout proposals; [review-queue.md](review-queue.md) |
+| The document the layout orders | [monograph-document.md](monograph-document.md) |
+| How the web app draws it | [monograph-renderer.md](monograph-renderer.md) |
+| What each field contributes to a generated page | [coverage.md](coverage.md) |
+
+Editing a fact never breaks a layout, and editing a layout never touches a fact. Engineers changing
+a generated page, and a contributor's agent proposing a layout, read it.
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  F[("Facts, sections,<br/>components, pictures")] --> G["Generated document<br/>monograph_generated"]
+  L["Layout record<br/>versioned"] --> G
+  G --> API["Monograph routes<br/>and get_page"]
+  API --> W["Web app<br/>MonographPage"]
+  P["propose_page<br/>with a layout"] -->|approved| L
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class G accent
+```
 
 ## The layout record (`research/page_layout.py`)
 
@@ -154,10 +176,14 @@ snapshot, a published section (so a generated document) or authored monograph co
 and every category in master order. The shape is unchanged (`StaticPages {schemaVersion 1,
 crafts[], categories[]}`): a family's page lives at `/crafts/<slug>`.
 
-## Tests
+## How this document is kept true
 
-`tests/research/test_page_layout.py` (rules, labels, ordering), `tests/layouts/` (backfill rules,
-the generated document with a spec, a reused fragment and a layout, the routes),
-`tests/mcp/test_mcp_layout_tools.py`, and the database tests
-`tests/db/test_page_layouts_db.py` (versions, audit, kinds, backfill, static pages) and
-`tests/db/test_generated_documents_db.py` (a seeded craft, family and category).
+| Claim | Kept true by |
+|---|---|
+| The record's rules, labels and ordering | `backend/tests/research/test_page_layout.py` |
+| Backfill rules, the generated document with a spec, a reused fragment and a layout, the routes | `backend/tests/layouts/` |
+| A layout read and proposed over MCP | `backend/tests/mcp/test_mcp_page_read.py` and `test_mcp_page_tools.py` |
+| Versions, audit, kinds, backfill and static pages on Postgres | `backend/tests/db/test_page_layouts_db.py` |
+| A seeded craft, family and category's generated documents | `backend/tests/db/test_generated_documents_db.py` |
+
+Re-read it when an entry field or role is added, a chapter key changes, or a generated part moves chapter.

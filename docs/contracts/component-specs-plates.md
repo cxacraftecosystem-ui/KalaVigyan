@@ -1,7 +1,16 @@
 # Component specs: plates and media
 
-Decision 0106, item 4. The plates group moves twelve component kinds of the approved Kutch Ajrakh
-page from template markup to typed specs drawn by React views.
+The plates group moves twelve component kinds of the approved Kutch Ajrakh page (pictures,
+illustrations, specimens, label and swatch cards, film, comics, audio, voices and credits) from
+template markup to typed specs drawn by React views, and holds the parts every group shares.
+Engineers changing one of these kinds, and a contributor's agent delivering one, read it.
+
+| For | Read |
+|---|---|
+| Why kinds became specs | [decision 0106](../decisions/0106-one-monograph-template-for-every-page.md), item 4 |
+| The other groups, built on these parts | [component-specs-data.md](component-specs-data.md), [component-specs-science.md](component-specs-science.md) |
+| Delivering one of these kinds through MCP | [component-specs-general.md](component-specs-general.md) |
+| Depicted materials and their colours | [kalavigyan-design](../../.claude/skills/kalavigyan-design/SKILL.md) and `tools/design/materials.json` |
 
 | Side | File |
 |---|---|
@@ -18,25 +27,14 @@ a component whose markup the kind's spec cannot hold fails with the label and wh
 
 ## Shared parts
 
-- **UnitRef** (`u0001`): a text unit of the content. A spec names every unit its component holds and
-  no other; the view draws each through `renderUnit` inside the element the template wraps it in.
-- **Picture**: a monograph picture (`/monographs/<folder>/img/…`), its size, alt text, and the
-  loading, fetch priority and decoding the page asks for.
-- **ArtFrame**: a drawing kept once on the page as a symbol (`#ai-vat`), shown through `<use>` with
-  its view box and size.
-- **DrawingElement**: vector geometry as a tree of SVG elements (svg, g, path, rect, circle, text,
-  gradients, patterns, masks, clip paths, a blur filter). Attributes keep their SVG names; `href`
-  points only within the page (`#id`); no handler and no script value is accepted. Colours are the
-  page's tokens and dye specimen variables (`var(--dye-kut)`), never typed values.
-- **HeldText**: text the template holds outside any unit, in the units' mark grammar (sentence,
-  span, italic with its role, bold, sub, sup, highlight, link, figure reference, citation). A held
-  citation carries `shown`, its sources' numbers and titles as the page shows them, because a view
-  has no source table. Held text is a bridge: such sentences should become units (see Open).
-- **DepictedMaterial**: a depicted material the design generator records, drawn as its specimen
-  variable `--dye-<name>`. The names are generated from the material records
-  (`tools/design/materials.json`, each naming a craft's dossier material and the facts that state
-  its colour) into `backend/app/research/depicted_materials.py` and `frontend/lib/depictedMaterials.ts`;
-  Kutch Ajrakh's dyes were the first records, and any craft's material with a record can be drawn.
+| Part | What it is |
+|---|---|
+| `UnitRef` (`u0001`) | a text unit of the content. A spec names every unit its component holds and no other; the view draws each through `renderUnit` inside the element the template wraps it in |
+| `Picture` | a monograph picture (`/monographs/<folder>/img/…`), its size, alt text, and the loading, fetch priority and decoding the page asks for |
+| `ArtFrame` | a drawing kept once on the page as a symbol (`#ai-vat`), shown through `<use>` with its view box and size |
+| `DrawingElement` | vector geometry as a tree of SVG elements (svg, g, path, rect, circle, text, gradients, patterns, masks, clip paths, a blur filter). Attributes keep their SVG names; `href` points only within the page (`#id`); no handler and no script value is accepted. Colours are the page's tokens and dye specimen variables (`var(--dye-kut)`), never typed values |
+| `HeldText` | text the template holds outside any unit, in the units' mark grammar (sentence, span, italic with its role, bold, sub, sup, highlight, link, figure reference, citation). A held citation carries `shown`, its sources' numbers and titles as the page shows them, because a view has no source table. Held text is a bridge: such sentences should become units (see Open) |
+| `DepictedMaterial` | a depicted material the design generator records, drawn as its specimen variable `--dye-<name>`. The names are generated from the material records (`tools/design/materials.json`, each naming a craft's dossier material and the facts that state its colour) into `backend/app/research/depicted_materials.py` and `frontend/lib/depictedMaterials.ts`; Kutch Ajrakh's dyes were the first records, and any craft's material with a record can be drawn |
 
 ## Kinds
 
@@ -136,3 +134,14 @@ held text (a credit the template holds with its link).
   iron swatch pair; the layout lists them at the top level. The views draw what they hold through an
   optional `renderComponent` beside the view contract's props; the renderer has to pass it and skip
   held components at their layout place, or the contract and layout have to record nesting.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Each kind's spec model and the shared parts | `backend/tests/research/test_component_specs_plates.py` |
+| The spec files are what extraction writes, and extraction is strict | `backend/tests/research/test_spec_extraction_plates.py`, and `python -m app.scripts.extract_specs_plates Kutch-Ajrakh --check` |
+| Each view draws the approved page's elements, classes and text | `frontend/e2e/monograph-kinds-plates-unit.spec.ts` with `e2e/monographKinds.ts`, and the Monograph parity run |
+| The depicted materials are generated, never typed | `tools/design_tokens.py --check` and `tools/tests/test_design_tokens.py` |
+
+Re-read it when a plate kind gains a field, a held citation becomes a unit, or the GI card's anchor is corrected.

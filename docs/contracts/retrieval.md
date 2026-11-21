@@ -1,10 +1,36 @@
-# Stored-knowledge retrieval contract
+# Stored-knowledge retrieval
 
 How stored claims (T1) and stored passages (T2) are found for a question, how their vectors are
-made, stamped and renewed, and how retrieval is measured. Decisions 0008 and 0101 (item 10 and
-build step 3). Code: `app/retrieval/`, the contract types in `app/research/retrieval.py`, the
-seat search in `app/services/seat_search.py`, the seed passages in
-`app/services/claim_seed_passages.py`, migration `0043_embedding_stamps`.
+made, stamped and renewed, and how retrieval is measured. Engineers changing the search, its
+ranking, the embedding runs or the evaluation read it.
+
+| For | Read |
+|---|---|
+| Why retrieval works this way | [decision 0008](../decisions/0008-stored-knowledge-retrieval.md) and [0101](../decisions/0101-knowledge-architecture-for-every-craft.md), item 10 and build step 3 |
+| The seats that each search their own fields | [answer-eval.md](answer-eval.md) |
+| Where retrieval sits in answering | [research.md](research.md) |
+
+| Part | Code |
+|---|---|
+| The search, ranking, stamps and runs | `app/retrieval/` |
+| The contract types | `app/research/retrieval.py` |
+| The seat search | `app/services/seat_search.py` |
+| The seed passages | `app/services/claim_seed_passages.py` |
+| The stamps' columns | migration `0043_embedding_stamps` |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  Q["KnowledgeQuery<br/>craft, fields, mode"] --> K["Full text<br/>rare terms first"]
+  Q --> V["Vector<br/>current model only"]
+  Q --> E["Entities<br/>named concepts"]
+  K --> F["Reciprocal rank<br/>fusion"]
+  V --> F
+  E --> F
+  F --> H["KnowledgeHits<br/>claims, passages"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class F accent
+```
 
 ## The search
 
@@ -165,3 +191,16 @@ with no quote; the repository holds no text of that edition, so it has no passag
   distance compare vectors without reading the stamp.
 - The HNSW indexes on the vector columns are unused by the exact craft-scoped scan.
 - Wood Handbook passages wait for the cited edition's text.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Recall at 5 of at least 0.9 and a mean reciprocal rank of at least 0.7 | `backend/tests/db/test_retrieval_eval.py`; a change that lowers either fails |
+| Fusion, rarity weighting and the search words | `backend/tests/retrieval/test_fusion_and_text.py` and `test_search_words.py` |
+| Stamps and embedding runs | `backend/tests/retrieval/test_stamps.py`, `test_embedding_budget.py` and `backend/tests/db/test_retrieval_stamps_db.py` |
+| Seats' field filters | `backend/tests/retrieval/test_seat_fields.py` |
+| Seed passages and the corpus | `backend/tests/retrieval/test_seed_passages.py`, `test_chunking.py` and `backend/tests/db/test_retrieval_passages_db.py` |
+| Ranking on Postgres | `backend/tests/db/test_retrieval_ranking_db.py` and `test_knowledge_retrieval_db.py` |
+
+Re-read it when the embedding model, a ranking or the evaluation's floors change.

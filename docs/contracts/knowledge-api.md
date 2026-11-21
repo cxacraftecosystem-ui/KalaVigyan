@@ -3,9 +3,35 @@
 Decision 0101's Knowledge API, served to any agent over the Model Context Protocol (decision 0103).
 Anyone may read; a signed-in connection (OAuth 2.1, `docs/contracts/mcp-oauth.md`) may also ask,
 contribute and review by the scopes it holds. This file is the endpoint, its framing and the read
-tools; the other tools are in their own contracts. The server offers 21 tools in six groups
-(decision 0111); each tool names its group in `tools/list` as `_meta["kalavigyan/group"]`, so a
-screen can group them without a list of names:
+tools; the other tools are in their own contracts. Engineers adding or changing a tool read it.
+
+| For | Read |
+|---|---|
+| Why the server exists and what it serves | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md) and [0103](../decisions/0103-mcp-server-read-slice.md) |
+| Why the tools are few and grouped | [decision 0111](../decisions/0111-fewer-mcp-tools.md) |
+| Signing in and scopes | [mcp-oauth.md](mcp-oauth.md) |
+| Every tool, prompt and resource with one line each | `backend/app/data/contributor/index.md`, served as `kalavigyan://index.md` |
+| Running the server | [RUNBOOK.md](../RUNBOOK.md), MCP server |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  C["MCP client"] -->|POST /api/mcp| E["Streamable HTTP<br/>stateless"]
+  E --> R["reading"]
+  E --> S["sources"]
+  E --> W["work"]
+  E --> P["proposing"]
+  E --> PG["pages"]
+  E --> PI["pictures"]
+  P --> Q["Contribution queue"]
+  PG --> Q
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class E accent
+```
+
+The server offers 22 tools in six groups (decision 0111; decision 0114 added `propose_dataset`);
+each tool names its group in `tools/list` as `_meta["kalavigyan/group"]`, so a screen can group them
+without a list of names:
 
 | Group | Tools | Scope | Contract |
 |---|---|---|---|
@@ -13,7 +39,7 @@ screen can group them without a list of names:
 | reading | `ask` | ask | `mcp-ask-and-upload.md` |
 | sources | `search_sources` (contribute; a pictures-only search is read), `read_source` (contribute), `lookup` (read), `supply_source` (contribute) | as listed | this file, Source tools; `knowledge-writes.md` for `supply_source` |
 | work | `list_open_work` (read; its review queues need review), `my_work`, `reserve_tasks`, `steward_craft`, `get_proposal` | contribute | `open-work.md`, `knowledge-writes.md` |
-| proposing | `propose_facts`, `propose_structure`, `propose_source` | contribute | `knowledge-writes.md`, decision 0108 |
+| proposing | `propose_facts`, `propose_structure`, `propose_source`, `propose_dataset` | contribute | `knowledge-writes.md`, decision 0108; decision 0114 for `propose_dataset` |
 | pages | `edit_draft`, `preview_page`, `propose_page` | contribute | `open-work.md` |
 | pictures | `give_pictures` | contribute | `mcp-ask-and-upload.md` |
 
@@ -289,3 +315,18 @@ description, field, fields[], craftSlug, subjects[], claimIds[], spec}], pageUrl
 Results carry `schemaVersion 1`. A change that removes or renames a field, or changes its meaning,
 is a new tool name or a new schema version, never a silent change, so institutions' integrations do
 not break (decision 0101, item 15). `serverInfo.version` is `1.0.0`.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The tools, their groups and the list's budget | `backend/tests/mcp/test_tool_budget.py`: 22 tools in the six groups, 60 KB of input, 120 KB in all |
+| The protocol, framing and the event stream | `backend/tests/mcp/test_mcp_protocol.py`, `test_mcp_route.py` and `test_mcp_stream.py` |
+| Browser clients | `backend/tests/mcp/test_mcp_cors.py` |
+| The read tools | `backend/tests/mcp/test_mcp_page_read.py`, `test_mcp_fact_tools.py`, `backend/tests/contribution_scale/test_craft_finding.py` and `backend/tests/db/test_craft_finder_db.py` |
+| The source tools and their allowances | `backend/tests/mcp/test_mcp_source_tools.py`, `test_lookup_tools.py`, `test_lookup_reading.py` and `test_lookup_references.py` |
+| One set of argument names | `backend/tests/mcp/test_mcp_body_names.py` |
+| Every tool, prompt and resource is in the index once | `backend/tests/mcp/test_skill_references.py` |
+| The bulk export | `backend/tests/db/test_knowledge_api_db.py` |
+
+Re-read it when a tool is added, renamed or moves group, or the stream's heartbeat or the edge's timeouts change.

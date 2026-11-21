@@ -1,7 +1,35 @@
-# Voice contract: sessions, the custom LLM and the relay path (lanes: voice backend 0017, voice UI 0020)
+# Voice: sessions, the custom LLM and the relay path
 
 How a two-way voice conversation is started, bound to one user, answered by our grounded
-pipeline and billed. The models are `backend/app/schemas/voice.py` (sessions, transcript, client
+pipeline and billed, and how a finished explainer is read aloud (Listen). Engineers changing a
+voice route, the custom LLM turn or the client's shapes read it.
+
+| For | Read |
+|---|---|
+| Why the contract has this shape | [decision 0014](../decisions/0014-science-region-voice-media-contracts.md) |
+| The voice backend and client lanes | [decision 0017](../decisions/0017-voice-backend.md) and [0020](../decisions/0020-voice-ui.md) |
+| Why the call is switched off, and Listen | [decision 0035](../decisions/0035-listen-and-voice-switched-off.md) |
+| Artisans' conversations on the same path | [roles-and-contributions.md](roles-and-contributions.md) |
+| The specification | `docs/PLAN.md` section 10 |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
+sequenceDiagram
+  participant B as Browser
+  participant API as KalaVigyan API
+  participant EL as ElevenLabs agent
+  B->>API: POST session, bound to the user
+  API-->>B: Signed URL or relay session
+  B->>EL: Speak
+  EL->>API: Custom LLM turn, bearer checked
+  API-->>EL: Grounded answer, streamed
+  EL-->>B: Spoken reply
+  Note over B,API: Seconds billed against the quota
+```
+
+## Where the code is
+
+The models are `backend/app/schemas/voice.py` (sessions, transcript, client
 tools, relay events) and `backend/app/schemas/voice_llm.py` (the OpenAI-compatible wire
 ElevenLabs calls); the client's types and shapes are `frontend/lib/voiceContract.ts`. Golden
 files: `shared/voice.availability.golden.json`, `voice.session-agent`, `voice.session-relay`,
@@ -16,9 +44,10 @@ Last reviewed: 2026-11-17, against the ElevenLabs documentation of that day.
 (`Settings.voice_call_enabled`, default false) guards every route under `/api/voice`: while it is
 false each answers 404 before anything else is read, and `/answers/config` sends the hidden
 `VoiceAvailability` (`configured` false), so no voice button is drawn. Nothing is deleted; the rest
-of this page describes the call as it runs when the setting is true. Turning it on brings back the
-craft page's Talk dock only: the mic on `/ask` is dictation (decision 0036), and no call starts
-from there. Listening to finished explainers is Listen, below.
+of this page describes the call as it runs when the setting is true. Turning it on offers the Talk
+dock (`components/voice/VoicePanel.tsx`), which no page mounts since the tabbed craft screen and its
+Talk button were retired (round 6): the mic on `/ask` is dictation (decision 0036), and no call
+starts from there. Listening to finished explainers is Listen, below.
 
 **Session purpose (decision 0083).** `VoiceSession.purpose` is `ASK` for this call and `ARTISAN`
 for an artisan's conversation about their craft (`docs/contracts/roles-and-contributions.md`
@@ -316,3 +345,17 @@ sound effects through the media router (`docs/contracts/media.md`), not narratio
 `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, `ELEVENLABS_ARTISAN_AGENT_ID` (decision 0083),
 `VOICE_LLM_BEARER` (rotated quarterly), `VOICE_SESSION_HMAC_KEY`, `TRANSCRIPT_ENCRYPTION_KEY`; each
 in GitHub Actions secrets and the box `.env` (PLAN 15).
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Every shape against its golden (`shared/voice.*`) | `backend/tests/contracts/test_voice_contract.py` and `frontend/e2e/contracts-unit.spec.ts` |
+| Starting a session, its checks in order and the switch | `backend/tests/voice/test_sessions.py` and `test_voice_routes.py` |
+| Session binding and the custom LLM turn | `backend/tests/voice/test_binding.py`, `test_agent_turn.py` and `test_llm_stream.py` |
+| Relay turns and their audio | `backend/tests/voice/test_relay.py`, `test_turns.py` and `test_audio.py` |
+| Quota, consent, retention and languages | `backend/tests/voice/test_privacy.py`, `test_upkeep.py`, `test_languages.py` and `test_turn_languages.py` |
+| Listen and the film's score | `backend/tests/voice/test_listen.py`, `test_listen_routes.py`, `test_narration.py`, `test_film_score.py` and `test_film_routes.py` |
+| The store on Postgres | `backend/tests/db/test_voice_store_db.py` and `test_listen_db.py` |
+
+Re-read it against ElevenLabs' documentation before the call is switched on, and when a voice route, the quota or a language changes.

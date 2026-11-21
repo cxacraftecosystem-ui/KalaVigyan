@@ -1,9 +1,28 @@
 # Answer quality: seats by field and the evaluation
 
-How the ask agent covers every field a question touches, and how that is measured (round 5, lane
-fields-and-ask; `kalavigyan-craft-pages` checklist rule 23: an answer page draws on every field its
-question touches, through one expert seat per field, and its provenance names the fields it
-consulted).
+How the ask agent covers every field a question touches, and how that is measured. An answer page
+draws on every field its question touches, through one expert seat per field, and its provenance
+names the fields it consulted. Engineers changing the planner, the seats or the evaluation read it.
+
+| For | Read |
+|---|---|
+| Where the rule comes from | round 5, lane fields-and-ask; `kalavigyan-craft-pages` checklist rule 23 ([page-checklist.md](../../.claude/skills/kalavigyan-craft-pages/references/page-checklist.md)) |
+| The coverage count the seats read | [coverage.md](coverage.md) |
+| The `ask` result that carries the provenance | [mcp-ask-and-upload.md](mcp-ask-and-upload.md) |
+| How each seat searches stored knowledge | [retrieval.md](retrieval.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  Q["Question"] --> U["Understanding<br/>asked fields"]
+  H["Fields the craft<br/>holds claims in"] --> R["Relevant fields"]
+  U --> R
+  R --> S["Seats<br/>model's choice plus leads"]
+  S --> K["Each seat searches<br/>its own fields"]
+  K --> A["Answer<br/>provenance by field"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class S accent
+```
 
 ## Seats by field
 
@@ -65,3 +84,14 @@ problem and the run goes on. The exit status is 0 when at least one question was
 `cap`, each checked) runs the script on the box over SSM as the other upkeep workflows do, keeps
 `report.json` (the report) and `stdout.txt` as the `answer-quality-<run id>` artifact for 90 days,
 and writes the asked, answered, means and spend into the run summary.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| A relevant field with stored claims always has a speaking seat | `backend/tests/planner/test_field_seats.py` |
+| The rubric, the judge's share and the report | `backend/tests/research/test_coverage_eval.py` |
+| The run, its spend cap and the consulted fields | `backend/tests/answering/test_answer_eval.py` |
+| The questions | `backend/app/data/eval/answer_questions.json`, read by the script as it runs |
+
+Re-read it when a seat's fields, a depth's seat limit, a rubric part or the spend cap changes.

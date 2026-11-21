@@ -1,24 +1,55 @@
-# Open data releases (decision 0116)
+# Open data releases
 
 KalaVigyan's published knowledge as a versioned, citable dataset under CC BY 4.0, deposited on
-Zenodo with a DOI for every version and a concept DOI for all of them.
+Zenodo with a DOI for every version and a concept DOI for all of them. Engineers changing a table
+or a release step read it, and so does the operator who runs a release.
 
 Last reviewed: 2026-11-21.
 
-Code: `services/open_data_tables.py` and `open_data_structure_tables.py` (the tables and their
-fields: one home, read by the files, the descriptor, the README, the API and the page),
-`open_data_schema.py` (the column and table types), `open_data_rows.py` (reading every table and
-checking its rows), `open_data_claims.py` (facts, citations, sources), `open_data_crafts.py` (crafts,
-places, categories, families), `open_data_structure.py` (stages, materials, reactions, native names,
-GI records), `open_data_catalogue.py` (components, datasets), `open_data_values.py` (value
-formats), `open_data_changes.py` (row digests and changes), `open_data_files.py`,
-`open_data_descriptor.py`, `open_data_readme.py`, `open_data_text.py` (the files and their words),
-`open_data_release.py` (version, DOI and target rules), `open_data.py` (build, record, list),
-`open_data_listing.py` (the public listing), `open_data_zenodo.py` (the Zenodo adapter),
-`open_data_deposit.py` (checking a release folder and depositing it); `models/open_data.py` and
-migration `0057_open_data_releases`; `scripts/build_open_data.py`; `api/routes/open_data.py`;
-`.github/workflows/open-data.yml`; the web client's `lib/openDataContract.ts`, `lib/openDataView.ts`,
-`lib/openData.ts`, `lib/server/openDataServer.ts`, `components/openData/*` and `app/(reading)/data`.
+| For | Read |
+|---|---|
+| Why the data is released this way | [decision 0116](../decisions/0116-open-data-with-a-doi.md) |
+| Running a release | [RUNBOOK.md](../RUNBOOK.md), Open data with a DOI |
+| The datasets behind the maps, whose records (never values) are released | [DATA_SOURCES.md](../DATA_SOURCES.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  L["latest<br/>on the box"] --> D["draft<br/>DOI reserved"]
+  D --> B["build<br/>files and digests"]
+  B --> C["Checksums<br/>on the runner"]
+  C --> DP["deposit<br/>publish"]
+  DP --> R["record<br/>PUBLISHED"]
+  Z[("Zenodo")]
+  D -.-> Z
+  DP -.-> Z
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  classDef gold fill:#FAEECD,stroke:#CD9200,color:#1E1B2E
+  class B accent
+  class Z gold
+```
+
+## Where the code is
+
+| Part | Code |
+|---|---|
+| The tables and their fields: one home, read by the files, the descriptor, the README, the API and the page | `services/open_data_tables.py` and `open_data_structure_tables.py` |
+| The column and table types | `open_data_schema.py` |
+| Reading every table and checking its rows | `open_data_rows.py` |
+| Facts, citations, sources | `open_data_claims.py` |
+| Crafts, places, categories, families | `open_data_crafts.py` |
+| Stages, materials, reactions, native names, GI records | `open_data_structure.py` |
+| Components, datasets | `open_data_catalogue.py` |
+| Value formats | `open_data_values.py` |
+| Row digests and changes | `open_data_changes.py` |
+| The files and their words | `open_data_files.py`, `open_data_descriptor.py`, `open_data_readme.py`, `open_data_text.py` |
+| Version, DOI and target rules | `open_data_release.py` |
+| Build, record, list | `open_data.py` |
+| The public listing | `open_data_listing.py` |
+| The Zenodo adapter | `open_data_zenodo.py` |
+| Checking a release folder and depositing it | `open_data_deposit.py` |
+| Rows, the command, the route, the workflow | `models/open_data.py` and migration `0057_open_data_releases`; `scripts/build_open_data.py`; `api/routes/open_data.py`; `.github/workflows/open-data.yml` |
+| The web client | `lib/openDataContract.ts`, `lib/openDataView.ts`, `lib/openData.ts`, `lib/server/openDataServer.ts`, `components/openData/*` and `app/(reading)/data` |
 
 ## What a release holds
 
@@ -114,3 +145,18 @@ footers link it as "Cite this dataset".
 The listing is schema 1, the files are described by their own `datapackage.json`. Adding a table or
 a column changes the descriptor, the README, this page and the golden in the same change; removing
 or renaming one is a new schema.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| What each table releases and leaves out, and same data, same bytes | `backend/tests/db/test_open_data_db.py`, on a seeded database |
+| The files, the descriptor and the checksums | `backend/tests/open_data/test_open_data_files.py` |
+| Versions, DOIs and target rules | `backend/tests/open_data/test_open_data_identity.py` |
+| Changes against the latest release | `backend/tests/open_data/test_open_data_changes.py` |
+| The command's steps | `backend/tests/open_data/test_build_open_data_script.py` |
+| The Zenodo adapter and the deposit's refusals | `backend/tests/open_data/test_open_data_zenodo.py` |
+| The public listing and its golden | `backend/tests/open_data/test_open_data_listing.py` and `shared/open-data.golden.json` |
+| The page | `frontend/e2e/open-data-unit.spec.ts` |
+
+Re-read it when a table or column is added, a release step changes, or Zenodo's metadata rules move.

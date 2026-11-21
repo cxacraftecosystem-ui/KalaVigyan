@@ -1,34 +1,61 @@
-# Knowledge writes: proposals, gates, the review switch and limits (decision 0101, items 5, 8, 12, 14)
+# Knowledge writes
 
 Every new fact, whatever its origin, is a candidate. It is published only through four automatic
 gates, run in order, and the review switch then decides whether it goes live at once or waits for
 a Professor or Admin. The same path serves a person on the site, the Knowledge API, an agent on the
-MCP server and our own research write-back.
+MCP server and our own research write-back, and carries layouts, structure, sources and supplied texts too.
 
-Code: `research/knowledge_writes.py` (the proposal and the reply), `research/candidate_gates.py`
-(the pure gate decisions), `research/candidate_judge.py` (the judge's prompts, schemas and reply
-rules), `research/review_switch.py` (the switch and where a fact is placed);
-`services/candidate_sources.py` (fetching and grading the sources), `services/candidate_store.py`
-(the subject's held facts), `services/candidate_gates.py` (running the gates with the adapters),
-`services/candidate_writes.py` (the stored outcomes and sources differ),
-`services/proposal_writes.py` and `services/fact_proposals.py` (`propose_fact`),
-`services/write_back_gates.py` (the research write-back), `services/app_settings.py` (the switch
-setting); `api/routes/knowledge_writes.py`, `api/mcp_fact_tools.py`, `api/proposal_deps.py`; the
-limits `core/rate_limit.py` and `api/proposal_limits.py`; layout proposals `research/layout_proposals.py`,
-`services/page_layout_proposals.py`, `services/review_queue_layouts.py`, `api/mcp_page_tools.py`,
-`models/layout_proposals.py`; structure proposals `research/structure_proposals.py` (the contract),
-`research/structure_proposals_values.py` (the STATED check), `services/structure_proposals.py` (the
-proposal), `services/structure_proposals_dossier.py` (the dossier's own rules),
-`services/structure_proposals_page.py` (where an item lands on the page index),
-`services/structure_proposals_write.py` and `services/structure_proposals_claims.py` (what approval
-writes), `services/structure_proposals_review.py` (approve, reject), `api/routes/structure_proposals.py`,
-`api/mcp_structure_tools.py`, `api/structure_proposal_deps.py`, `models/structure_proposals.py`;
-supplied sources (decision 0110) `research/supplied_sources.py` (the contract, the cite url, the grade
-and the identity match), `services/supplied_sources.py` (storing and the upload slot),
-`services/supplied_sources_identity.py` (the index lookups), `services/supplied_sources_pdf.py` (a file's
-text), `services/supplied_sources_gate.py` (what the gates read and keep),
-`services/supplied_sources_review.py` (the review queue's provenance), `services/supplied_sources_views.py`,
-`api/mcp_studio_sources.py`, `api/routes/supplied_sources.py`, `models/studio.py`.
+| For | Read |
+|---|---|
+| Why the path is this way | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), items 5, 8, 12 and 14; [0108](../decisions/0108-structure-proposals-become-curated-facts.md); [0110](../decisions/0110-contributor-supplied-sources.md); [0111](../decisions/0111-fewer-mcp-tools.md) |
+| The tasks a proposal names and the method served over MCP | [open-work.md](open-work.md) |
+| How a waiting fact, layout or structure item is decided | [review-queue.md](review-queue.md) |
+| A page's layout record | [page-layout.md](page-layout.md) |
+| Signing in and the `contribute` scope | [mcp-oauth.md](mcp-oauth.md) |
+| Facts held and healed every night | [nightly-upkeep.md](nightly-upkeep.md) |
+
+## A fact's path
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  P["Proposal<br/>site, API, MCP"] --> D{"Door<br/>shape, key, allowance"}
+  D -->|malformed| X["Refused<br/>before any gate"]
+  D --> Q["Queued<br/>ticket at once"]
+  Q --> G1["QUOTES"] --> G2["SOURCE"] --> G3["DUPLICATE"] --> G4["NOVELTY"]
+  G1 & G2 & G3 & G4 -->|refuses| R["REFUSED<br/>kept for audit"]
+  G4 --> S{"Review switch<br/>and trust tier"}
+  S --> PUB["PUBLISHED"]
+  S --> W["WAITING<br/>review queue"]
+  WB["Research<br/>write-back"] --> G1
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  classDef gold fill:#FAEECD,stroke:#CD9200,color:#1E1B2E
+  class S accent
+  class WB gold
+```
+
+The site's single form (`POST /api/knowledge/facts`) runs the gates in the request; MCP and the batch
+route queue the fact first (The contribution queue, below).
+
+## Where the code is
+
+| Part | Code |
+|---|---|
+| The proposal and the reply | `research/knowledge_writes.py` |
+| The pure gate decisions | `research/candidate_gates.py` |
+| The judge's prompts, schemas and reply rules | `research/candidate_judge.py` |
+| The switch and where a fact is placed | `research/review_switch.py`; the switch setting in `services/app_settings.py` |
+| Fetching and grading the sources | `services/candidate_sources.py` |
+| The subject's held facts | `services/candidate_store.py` |
+| Running the gates with the adapters | `services/candidate_gates.py` |
+| The stored outcomes and sources differ | `services/candidate_writes.py` |
+| `propose_fact` | `services/proposal_writes.py` and `services/fact_proposals.py` |
+| The research write-back | `services/write_back_gates.py` |
+| Routes and tools | `api/routes/knowledge_writes.py`, `api/mcp_fact_tools.py`, `api/proposal_deps.py` |
+| The limits | `core/rate_limit.py` and `api/proposal_limits.py` |
+| Layout proposals | `research/layout_proposals.py`, `services/page_layout_proposals.py`, `services/review_queue_layouts.py`, `api/mcp_page_tools.py`, `models/layout_proposals.py` |
+| Structure proposals | `research/structure_proposals.py` (the contract), `research/structure_proposals_values.py` (the STATED check), `services/structure_proposals.py` (the proposal), `services/structure_proposals_dossier.py` (the dossier's own rules), `services/structure_proposals_page.py` (where an item lands on the page index), `services/structure_proposals_write.py` and `services/structure_proposals_claims.py` (what approval writes), `services/structure_proposals_review.py` (approve, reject), `api/routes/structure_proposals.py`, `api/mcp_structure_tools.py`, `api/structure_proposal_deps.py`, `models/structure_proposals.py` |
+| Supplied sources (decision 0110) | `research/supplied_sources.py` (the contract, the cite url, the grade and the identity match), `services/supplied_sources.py` (storing and the upload slot), `services/supplied_sources_identity.py` (the index lookups), `services/supplied_sources_pdf.py` (a file's text), `services/supplied_sources_gate.py` (what the gates read and keep), `services/supplied_sources_review.py` (the review queue's provenance), `services/supplied_sources_views.py`, `api/mcp_studio_sources.py`, `api/routes/supplied_sources.py`, `models/studio.py` |
 
 ## Who may do what
 
@@ -48,14 +75,15 @@ with a tool error naming the scope. The site's routes ask for the contribution t
 
 ## The proposal (`FactProposal`, schema version 1, camelCase on the wire)
 
-- `subject {kind: craft | category, slug}`: a craft by its slug (merged crafts follow their merge)
-  or a category by its slug.
-- `field`: one of the 16 fields (`get_page` with no subject); `fields`: up to 3 secondary fields, distinct and
-  without the primary one.
-- `statement`: 20 to 1,000 characters, one fact, no personal data (emails, phone and
-  Aadhaar-like numbers are refused).
-- `sources`: 1 to 5, each named once (by canonical URL): `{url (https), title, licence?, quotes:
-  [{text (at most 300 characters), locator?}] (1 to 6, each once)}`.
+| Field | Rule |
+|---|---|
+| `subject {kind, slug}` | kind `craft` or `category`: a craft by its slug (merged crafts follow their merge) or a category by its slug |
+| `field` | one of the 16 fields (`get_page` with no subject) |
+| `fields` | up to 3 secondary fields, distinct and without the primary one |
+| `statement` | 20 to 1,000 characters, one fact, no personal data (emails, phone and Aadhaar-like numbers are refused) |
+| `sources` | 1 to 5, each named once (by canonical URL): `{url (https), title, licence?, quotes: [{text (at most 300 characters), locator?}] (1 to 6, each once)}` |
+| `taskKey` | optional, the open-work task the proposer claimed for this fact (below) |
+
 - `taskKey` (optional): the open-work task the proposer claimed for this fact
   (`docs/contracts/open-work.md`). It must be a field, corroboration or question task (`MISSING_FIELD`,
   `THIN_FIELD`, `SECOND_SOURCE`, `SOURCES_DIFFER`, `ANSWER_GAP`) of the same page (a craft subject takes a
@@ -261,6 +289,18 @@ A key sent again with the same fact returns the first proposal (`replayed`; noth
 allowance taken); with another fact it is refused; given twice in one call the second is refused. A
 `FAILED` proposal sent again with its key is queued once more. A unique index on `(proposerId,
 idempotencyKey)` holds this under concurrent retries.
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","transitionColor":"#AA69E9","transitionLabelColor":"#857F9E","stateLabelColor":"#1E1B2E","stateBkg":"#F2E9FE","compositeBackground":"#F9F5FF","compositeTitleBackground":"#F2E9FE"}}}%%
+stateDiagram-v2
+  [*] --> QUEUED: checked at the door
+  QUEUED --> CHECKING: a worker leases it
+  CHECKING --> QUEUED: lease runs out, or a check cannot run
+  CHECKING --> DONE: the gates ran
+  CHECKING --> FAILED: five tries, or the account or subject went
+  FAILED --> QUEUED: sent again with its key
+  DONE --> [*]
+```
 
 **States.** `QUEUED`, then `CHECKING` (a worker holds it for `LEASE_TIME`, 15 minutes; a lease that
 runs out returns it to the queue), then `DONE` (the gates ran: `outcome` PUBLISHED, WAITING or
@@ -601,3 +641,26 @@ falls back to the identical-text check and logs it; it never fails the answer.
 
 `FactProposal` and `ProposalReply` carry `schemaVersion 1`. A change that removes or renames a
 field, or changes its meaning, is a new schema version.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The gates, their order, reasons and the judge's replies | `backend/tests/knowledge_writes/test_candidate_gates.py`, `test_gate_orchestration.py` and `test_judge_and_contract.py` |
+| The review switch and placement | `backend/tests/knowledge_writes/test_review_switch.py` |
+| A proposal's task key | `backend/tests/knowledge_writes/test_fact_task_key.py` |
+| The routes, refusals and the reply | `backend/tests/knowledge_writes/test_knowledge_writes_routes.py` and `backend/tests/db/test_fact_proposals_db.py` |
+| Trust tiers | `backend/tests/contribution_scale/test_trust_tiers.py` and `backend/tests/db/test_trust_tiers_db.py` |
+| The queue, its keys, states and retries | `backend/tests/contribution_scale/test_queue_rules.py`, `test_contribution_routes.py` and `backend/tests/db/test_contribution_queue_db.py` |
+| The thrifty gates and the cost ledger | `backend/tests/contribution_scale/test_gate_thrift.py` and `backend/tests/db/test_cost_ledger_db.py` |
+| The hourly limits | `backend/tests/mcp/test_proposal_limits.py`, `backend/tests/test_allowances.py` and `backend/tests/db/test_shared_allowances_db.py` |
+| Layout proposals | `backend/tests/layouts/test_layout_proposal_rules.py`, `test_layout_proposal_routes.py` and `backend/tests/db/test_layout_proposals_db.py` |
+| Structure proposals and what approval writes | `backend/tests/structure/`, `backend/tests/db/test_structure_proposals_db.py`, `test_structure_writes_db.py` and `test_structure_export_db.py` |
+| Source proposals | `backend/tests/db/test_source_proposals_db.py` and `backend/tests/mcp/test_mcp_source_tools.py` |
+| Supplied sources | `backend/tests/db/test_supplied_sources_db.py` |
+| Pages follow their facts | `backend/tests/db/test_review_queue_refresh_db.py` and `test_page_revalidation_db.py` |
+| The research write-back | `backend/tests/write_back/`, `backend/tests/db/test_write_back_audit_db.py`, `test_write_back_report_db.py` and `test_term_write_back_gates_db.py` |
+| The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/knowledge-writes.md` byte for byte equal to this file |
+
+Re-read it when a gate, a trust tier, a limit or a proposal kind is added or changed, and copy it to
+`backend/app/data/contributor/contracts/` in the same change.

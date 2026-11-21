@@ -1,7 +1,36 @@
-# Media contract: generated stage images and videos (lanes: media backend 0018, media UI 0021; ElevenLabs routes 0054, 0058)
+# Media: generated stage images and videos
 
 How a learner asks for an illustration of a process stage, what the server builds it from, how
-it is queued, billed, labelled, named and served. The models are `backend/app/schemas/media.py`;
+it is queued, billed, labelled, named and served. Engineers changing the media queue, a provider
+route or the client's shapes read it.
+
+| For | Read |
+|---|---|
+| Why the contract has this shape | [decision 0014](../decisions/0014-science-region-voice-media-contracts.md) |
+| The media backend and the queue | [decision 0018](../decisions/0018-media-backend.md) |
+| The client | [decision 0021](../decisions/0021-media-ui.md) |
+| The ElevenLabs routes | [decision 0054](../decisions/0054-phase-c-contract.md) and [0058](../decisions/0058-elevenlabs-music-sound-image-video.md) |
+| The names of stored files | the naming skill, [naming](../../.claude/skills/naming/SKILL.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  O["GET options<br/>kinds left today"] --> J["POST jobs<br/>one key a press"]
+  J --> CS["Claim set<br/>server-derived"]
+  CS --> PR["Prompt"]
+  PR --> QU["kv-worker queue"]
+  QU --> MD["Model route"]
+  MD --> CK["MP4 and PNG checks"]
+  CK --> S3[("Media bucket<br/>presigned")]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  classDef gold fill:#FAEECD,stroke:#CD9200,color:#1E1B2E
+  class CS accent
+  class S3 gold
+```
+
+## Where the code is
+
+The models are `backend/app/schemas/media.py`;
 the client's types and shapes are `frontend/lib/mediaContract.ts`; the golden answers are
 `shared/media.job.golden.json` and `shared/media.options.golden.json`. Change them together with
 `backend/tests/contracts/test_media_contract.py` and `frontend/e2e/contracts-unit.spec.ts`. PLAN
@@ -236,7 +265,12 @@ label {text, model, generatedOn}, altText, visibility}`.
 
 ## Client (lane 0021, decision 0021)
 
-- The craft page holds one store (`frontend/lib/craftMedia.ts`) for the options and one slot per
+Since decision 0071 the craft page offers no generator, and the store that held this client
+(`frontend/lib/craftMedia.ts`) was deleted with the tabbed craft screen (round 6); the client's
+shapes stay in `frontend/lib/mediaContract.ts`. A client that mounts the routes again follows these
+rules:
+
+- One store for the options and one slot per
   stage and kind; Image and Video are drawn exactly for `offeredKinds(options, stageId)` and show
   the units left. Options are re-read after a job settles and after a refused press.
 - One idempotency key per press (`media:<uuid>`); a press without an answer (network, 500, 502,
@@ -247,3 +281,19 @@ label {text, model, generatedOn}, altText, visibility}`.
   day, and `altText`; downloads fetch the asset and save it as `fileName`; a URL with a minute or
   less left is renewed first. Job ids are kept per craft in session storage so a reload shows
   the job again.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The goldens and the models' rules | `backend/tests/contracts/test_media_contract.py`, against `shared/media.job.golden.json` and `shared/media.options.golden.json` |
+| The client's shapes | `frontend/e2e/contracts-unit.spec.ts` |
+| The claim set and the prompt | `backend/tests/media/test_claim_set.py` and `test_prompt.py` |
+| Jobs, the queue, the runner and refunds | `backend/tests/media/test_jobs.py`, `test_queue.py`, `test_runner.py` and `backend/tests/db/test_media_store_db.py` |
+| Model routes, ElevenLabs and Gemini | `backend/tests/media/test_media_router.py`, `test_media_router_audio.py`, `test_elevenlabs_media.py`, `test_gemini_media.py` and `backend/tests/db/test_media_router_db.py` |
+| The MP4 and bundle checks | `backend/tests/media/test_mp4.py` and `test_bundle.py` |
+| Names of stored files | `backend/tests/media/test_naming.py` |
+| The routes and views | `backend/tests/media/test_media_routes.py` and `test_views.py` |
+
+Re-read it when a kind, a model route, a limit or the naming of a stored file changes, or a screen
+mounts the client again.

@@ -1,4 +1,34 @@
-# Learning contract: follow-ups, versions, saved answers, alerts, lessons, exports, shared science and the map
+# Learning: follow-ups, versions, saved answers, alerts, lessons, exports, shared science and the map
+
+What a reader does with an answer once it is written: ask a follow-up that builds on it, keep and
+compare its versions, save it and hear when it got better, build a lesson, export it, share it,
+explore the science it shares with other crafts, take its quiz, compare crafts and ask the map.
+Engineers changing any of these routes or screens read it.
+
+| For | Read |
+|---|---|
+| The plan | [plans/answer-experience.md](../plans/answer-experience.md), phase D, "Learn and act" (features 7, 11, 14, 15, 16, export) |
+| The explainer these act on, and the phase D blocks | [explainer.md](explainer.md) |
+| The design choices | [decision 0062](../decisions/0062-phase-d-contract.md) |
+| The lanes that built it | [0063](../decisions/0063-follow-ups-versions-and-alerts.md), [0064](../decisions/0064-quiz-compare-and-shared-science.md), [0065](../decisions/0065-climate-risk-and-ask-the-map.md), [0066](../decisions/0066-local-measures-and-market-gi.md), [0067](../decisions/0067-lessons-and-exports.md), [0068](../decisions/0068-learning-block-renderers.md), [0069](../decisions/0069-learning-screens.md), [0070](../decisions/0070-phase-d-review-fixes.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  E["Explainer<br/>version n"] --> F["Follow-up<br/>version n+1"]
+  E --> S["Saved<br/>got better notes"]
+  E --> L["Lesson pack<br/>PPTX and PDF"]
+  E --> X["Exports<br/>PDF and citations"]
+  E --> SH["Share link"]
+  E --> QZ["Quiz"]
+  C["Craft"] --> SS["Shared science"]
+  C --> CM["Compare"]
+  D["District"] --> AM["Ask the map"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class E accent
+```
+
+## Where the code is
 
 Phase D of `docs/plans/answer-experience.md` ("Learn and act", features 7, 11, 14, 15, 16, export)
 around the explainer of `docs/contracts/explainer.md`. The code is the typed models in
@@ -361,12 +391,10 @@ Fixture:
 `shared/learning.shared-science.golden.json` (`craft` for Kutch Ajrakh, `concept` for alum seen
 from Kutch Ajrakh), the nodes of the phase D concept graph.
 
-The craft page draws the craft route as its Shared science tab (decision 0070,
-`components/craft/CraftSharedScience.tsx`): the concept graph view with the craft in focus, a
-choice of its shared terms, every sharing craft linked with its cited sentence, and the route's
-numbered sources; the tab is offered only when the route names at least one node. The craft
-route's nodes already list every sharing craft up to the same 100 the term route reads, so the
-tab needs no second read.
+The craft page drew the craft route as its Shared science tab (decision 0070) until the tabbed
+craft screen and `components/craft/CraftSharedScience.tsx` were retired (round 6); the atlas's
+search reads the concept route (`lib/atlasSearch.ts`). The craft route's nodes already list every
+sharing craft up to the same 100 the term route reads, so a view of them needs no second read.
 
 **As built (decision 0064, `services/shared_concepts.py`, `research/shared_science.py`).** Read
 on the request's one session, no model call. A craft's sentence is chosen among its fact-level
@@ -480,3 +508,17 @@ the district's stored values of `SOIL`, `CLIMATE`, `WATER` and `TERRAIN` built b
 `region_view.district_value` and `region_facets`, so the climate facet also lists the CHIRPS and
 GHCN CAMS series, normals and trends. The assembler reproduces the fixture from the region
 golden's rows (`tests/geo/test_district_view.py`).
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Every shape against its golden (`shared/learning.*.golden.json`) | `backend/tests/contracts/test_learning_contract.py`, `test_learning_exports_contract.py` and `test_learning_views_contract.py`; `frontend/e2e/learning-contract-unit.spec.ts` |
+| Follow-ups, versions, saved explainers and alerts | `backend/tests/alerts/`, `backend/tests/answering/test_follow_up_flow.py`, `backend/tests/db/test_explainer_versions_db.py` and `test_alerts_db.py` |
+| Lesson packs and their files | `backend/tests/learning/test_lesson_pack.py`, `test_lesson_files.py`, `test_lesson_routes.py` and `backend/tests/db/test_lessons_db.py` |
+| Exports and citation formats | `backend/tests/learning/test_citation_formats.py`, `test_export_store.py`, `test_hidden_exports.py` and `test_lede_export.py` |
+| Share links | `backend/tests/learning/test_share_links.py`, `test_share_owners.py` and `backend/tests/db/test_share_links_db.py` |
+| Ask the map | `backend/tests/geo/test_district_view.py` |
+| The screens and renderers | `frontend/e2e/learning-screens-unit.spec.ts`, `learning-renderers-unit.spec.ts`, `learning-views-unit.spec.ts`, `lesson-exports-unit.spec.ts` and `compare-state-unit.spec.ts` |
+
+Re-read it when a learning shape gains a field, an export format is added, or a screen changes what it reads.

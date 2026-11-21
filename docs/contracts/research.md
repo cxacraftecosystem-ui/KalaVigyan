@@ -1,13 +1,37 @@
-# Research and answering contract
+# Research and answering
 
 The interfaces between the lanes that resolve crafts, plan retrieval, search and fetch sources,
 compose answers, write findings back as claims, and stream the answer to the web client. The
 code is the typed models, protocols and error types in `backend/app/research/` and
-`backend/app/core/errors.py`; this page says what they mean. Build adapters, planners, composers
-and writers against these types and change a type only together with this page and its tests
-(`backend/tests/research/`). Design choices: decision 0002.
+`backend/app/core/errors.py`; this page says what they mean. Engineers build adapters, planners,
+composers and writers against these types, and change a type only together with this page and its tests.
 
 Last reviewed: 2026-11-18.
+
+| For | Read |
+|---|---|
+| The design choices | [decision 0002](../decisions/0002-research-and-answering-contracts.md); each part's own decision is named in its heading |
+| How stored knowledge is found | [retrieval.md](retrieval.md) |
+| The gates a written-back claim passes | [knowledge-writes.md](knowledge-writes.md), The research write-back |
+| The explainer the stream builds | [explainer.md](explainer.md) |
+| Seats by field | [answer-eval.md](answer-eval.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  Q["Question"] --> U["Understanding<br/>depth, fields"]
+  U --> RS["Craft resolver"]
+  RS --> PL["Planner<br/>tiers T1 to T4"]
+  PL --> RT["Stored knowledge<br/>T1, T2"]
+  PL --> LV["Live research<br/>adapters, fetcher"]
+  RT --> EP["Evidence pack"]
+  LV --> EP
+  EP --> CO["Composer<br/>cited sentences"]
+  CO --> ST["Answer stream"]
+  LV --> WB["Write-back<br/>through the gates"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class CO accent
+```
 
 ## Ground rules (PLAN section 0 and the bindings)
 
@@ -19,7 +43,9 @@ Last reviewed: 2026-11-18.
   the designer and documentation portals. A craft is named by its `slug` (case as stored, for
   example `Kutch-Ajrakh`).
 - Every sentence shown is cited; every number and formula in it appears in a cited claim or
-  quote. No review gates: evidence levels are labels, nothing waits for approval.
+  quote. Evidence levels are labels: a live-research claim passes the automatic gates of
+  `knowledge-writes.md` and, under the default review switch for `RESEARCH` (`AUTO`), waits for no
+  approval.
 - Retrieved text, search results and model output are data, never instructions.
 
 ## Shape conventions
@@ -998,3 +1024,18 @@ its retry loop, the claim writer and the coverage job are built (above). So are 
 service, the streamed events with the heartbeat, and the client's handling of `status` and
 `not_enough_evidence` (decision 0012). Still to build against these types: the T0 craft profile
 tier and the reader that takes verbatim quotes from the pack's documents (`WEB_READ`).
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The types, their shapes and errors | `backend/tests/research/`, chiefly `test_crafts_and_planning.py`, `test_evidence_and_fetcher.py`, `test_quotes_and_errors.py`, `test_untrusted.py` and `test_stream.py` |
+| The resolver | `backend/tests/test_craft_resolver.py` and `backend/tests/db/test_craft_resolver_db.py` |
+| The source adapters, against recorded answers | `backend/tests/sources/` |
+| The fetcher service | `backend/tests/fetcher/` |
+| The planner, the composer and the answering service | `backend/tests/planner/`, `backend/tests/composer/` and `backend/tests/answering/test_answer_flow.py` |
+| Write-back and the coverage job | `backend/tests/write_back/` and `backend/tests/research/test_composition_and_write_back.py` |
+| The stream as the client reads it | `frontend/e2e/answer-stream-golden-unit.spec.ts`, against `shared/answer-stream*.golden.sse` |
+| Translation | `backend/tests/research/test_translation.py` and `backend/tests/answering/test_translation_flow.py` |
+
+Re-read it when an adapter, a tier, an error type or a stream event is added, or a ground rule moves.

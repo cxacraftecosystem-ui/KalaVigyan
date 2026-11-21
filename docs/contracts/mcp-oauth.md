@@ -1,7 +1,38 @@
 # MCP sign-in (OAuth 2.1)
 
-Slice 2 of the MCP server (decision 0101, item 15, "Authentication" and "Guards"). An agent's
-MCP client signs a person in with OAuth 2.1 as the MCP authorization specification defines
+How an agent's MCP client signs a person in, what each scope lets it do, and how a connection is
+listed and revoked. Engineers changing sign-in, a scope or the consent screen read it, and so do
+the people who connect a client.
+
+| For | Read |
+|---|---|
+| Why sign-in works this way | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), item 15, "Authentication" and "Guards" (slice 2 of the MCP server) |
+| Published identities | [decision 0115](../decisions/0115-client-id-metadata-documents.md) |
+| The read tools and the protocol, unchanged for a call without a token | [knowledge-api.md](knowledge-api.md) |
+| The terms a person accepts | [legal/mcp-terms-of-use.md](../legal/mcp-terms-of-use.md) |
+| Abandoned registrations removed every night | [nightly-upkeep.md](nightly-upkeep.md), 3a |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
+sequenceDiagram
+  autonumber
+  participant C as MCP client
+  participant A as API, the issuer
+  participant W as Web consent page
+  participant P as Person
+  C->>A: Call /api/mcp without a token
+  A-->>C: 401 with resource metadata
+  C->>A: Read the metadata, register or publish an identity
+  C->>W: Send the person to /oauth/authorize
+  W->>P: Who asks, the scopes, the terms
+  P->>W: Approve
+  W-->>C: Redirect with code, state, iss
+  C->>A: POST /api/oauth/token with PKCE verifier
+  A-->>C: Access and refresh tokens
+  C->>A: Call /api/mcp with the bearer
+```
+
+An agent's MCP client signs a person in with OAuth 2.1 as the MCP authorization specification defines
 (2025-06-18 and 2025-11-25): protected resource metadata (RFC 9728), authorization server
 metadata (RFC 8414), client ID metadata documents (draft-ietf-oauth-client-id-metadata-document,
 decision 0115), dynamic client registration (RFC 7591), the authorization code grant with
@@ -266,3 +297,18 @@ SHA-256; they are never logged.
   `tests/fetcher/test_client_documents.py` (the fetcher route),
   `tests/mcp/test_oauth_client_document_reads.py` (through the fetcher to the API, held and
   refused), `tests/db/test_oauth_metadata_clients_db.py` (sign-in end to end beside registration).
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Metadata, registration, authorization, tokens and revocation | `backend/tests/mcp/test_oauth_rules.py` and `test_oauth_routes.py` |
+| Sessions, rotation and the token version | `backend/tests/mcp/test_oauth_sessions.py` and `backend/tests/db/test_oauth_db.py` |
+| The bearer on the MCP server and its challenges | `backend/tests/mcp/test_mcp_bearer_route.py` |
+| Browser clients from any origin | `backend/tests/mcp/test_mcp_cors.py` |
+| Published identities, on hand-written documents, through the fetcher and end to end | `backend/tests/mcp/test_oauth_client_documents.py`, `backend/tests/fetcher/test_client_documents.py`, `backend/tests/mcp/test_oauth_client_document_reads.py` and `backend/tests/db/test_oauth_metadata_clients_db.py` |
+| The terms of use as the consent screen shows them | `backend/tests/mcp/test_mcp_terms_copy.py` |
+| The consent screen | `frontend/e2e/oauth-consent-unit.spec.ts` |
+| A real client signing in | `.github/workflows/mcp-client.yml` |
+
+Re-read it when the MCP authorization specification gains a revision, a scope is added, or a token lifetime changes.

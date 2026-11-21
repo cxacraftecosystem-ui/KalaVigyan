@@ -1,7 +1,33 @@
-# Curation contract: dossiers, check files and the index (decision 0051)
+# Curation: dossiers, check files and the index
 
 What a curated craft dossier holds, how its quotes are verified, and what the offline checker
-refuses. The plan is `docs/plans/dataset-curation.md` (sections 3, 5, 6 and 10; its section 0 and
+refuses. Curators, the curation skill's agents and the engineers who change the model or the
+importer read it.
+
+| For | Read |
+|---|---|
+| The tooling's design | [decision 0051](../decisions/0051-curation-tooling.md) |
+| The plan | [plans/dataset-curation.md](../plans/dataset-curation.md), sections 3, 5, 6 and 10 (its section 0 and the decisions in its section 14 are the owner's) |
+| The database as the source, and the dossiers as its export | [dossier-export.md](dossier-export.md) |
+| The method a curator follows | [kalavigyan-craft-pages](../../.claude/skills/kalavigyan-craft-pages/SKILL.md) |
+| The commands step by step | [RUNBOOK.md](../RUNBOOK.md), How to curate a craft |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  SRC["Sources read<br/>quotes kept"] --> DOS["Dossier<br/>CraftSlug.json"]
+  DOS --> VER["verify.py<br/>check file"]
+  VER --> CHK["check.py<br/>the checks"]
+  CHK --> IDX["index.json<br/>once per batch"]
+  IDX --> IMP["import_curation<br/>on every deploy"]
+  IMP --> DB[("Database")]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class CHK accent
+```
+
+## Where the code is
+
+The plan is `docs/plans/dataset-curation.md` (sections 3, 5, 6 and 10; its section 0 and
 the decisions in its section 14 are the owner's). The code is the Pydantic model and the rules in
 `backend/app/curation/`, shared by the tools and the importer (below), and the tools in
 `tools/curation/`. The JSON Schema generated from the model is
@@ -621,3 +647,17 @@ views and sources of a family dossier.
 ## Not built yet
 
 The critic's brief (plan section 7).
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The model, its fields and the schema file | `backend/tests/curation/` and `shared/curation.dossier.schema.json`, which a backend test fails on when stale |
+| The checks, the check file and the index | `backend/tests/curation/test_dossier_checks.py`, `test_check_file_and_index.py`, `test_curation_claim_rules.py` and `test_text_rules.py`; `tools/tests/test_curation_verify_and_check.py` |
+| Reading and matching quotes | `tools/tests/test_curation_reading.py` |
+| Migrating a dossier and its pictures | `tools/tests/test_curation_migrate_and_pictures.py` |
+| Every committed dossier passes | `tools/curation/check.py --check-index`, run in Backend checks |
+| The import, superseding and idempotence | `backend/tests/curation/test_curation_import_plan.py` and `backend/tests/db/test_curation_import_db.py` |
+| Category dossiers | `backend/tests/curation/test_category_dossiers.py` and `backend/tests/db/test_category_import_db.py` |
+
+Re-read it when the dossier schema version changes, a check is added, or a kind of structure stops entering by bulk import.

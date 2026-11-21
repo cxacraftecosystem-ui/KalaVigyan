@@ -1,10 +1,31 @@
-# Image contributions (decision 0101, item 17; decisions 0104 and 0109)
+# Image contributions
 
 Pictures that readers with the right to propose knowledge give to a craft: photographs, drawings
 and AI-made illustrations. Each is declared, checked on our side, screened, stored privately, and
-shared on approval. Approval follows decision 0101, item 12: a Professor's, Admin's or Master
-Admin's picture is approved at once when the screen clears it; anyone else's, and every picture the
-screen flags or could not look at, waits for an Admin.
+shared on approval. A Professor's, Admin's or Master Admin's picture is approved at once when the
+screen clears it; anyone else's, and every picture the screen flags or could not look at, waits for an Admin.
+Engineers, reviewers and a contributor's agent (over MCP) read it before a picture is given or decided.
+
+| For | Read |
+|---|---|
+| Why pictures are taken this way | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), items 12 and 17; [0104](../decisions/0104-image-contributions-intake.md); [0109](../decisions/0109-image-formats-and-screens.md) |
+| The declaration's own words | [legal/image-declaration.md](../legal/image-declaration.md) |
+| Giving a picture from a chat, and upload links | [mcp-ask-and-upload.md](mcp-ask-and-upload.md) |
+| Where an approved picture is placed | [craft-page.md](craft-page.md), Contributed pictures |
+| `MISSING_PICTURE` tasks and drafts | [open-work.md](open-work.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","transitionColor":"#AA69E9","transitionLabelColor":"#857F9E","stateLabelColor":"#1E1B2E","stateBkg":"#F2E9FE","compositeBackground":"#F9F5FF","compositeTitleBackground":"#F2E9FE"}}}%%
+stateDiagram-v2
+  [*] --> AWAITING_FILE: declared
+  AWAITING_FILE --> PENDING: file passes, waits for an Admin
+  AWAITING_FILE --> APPROVED: CLEAR, a Professor or above
+  PENDING --> APPROVED: an Admin approves
+  PENDING --> REJECTED: refused with a note
+  AWAITING_FILE --> WITHDRAWN: taken back
+  PENDING --> WITHDRAWN: taken back
+  APPROVED --> [*]: shared, never revoked
+```
 
 ## Who may do what
 
@@ -35,18 +56,15 @@ holds, one's own picture), 413 over 10 MB, 422 for a declaration or file that fa
 
 ## `ImageDeclaration`
 
-- `craftSlug`; `claimIds`, at most 20, each a fact a signed-out reader is shown.
-- At most one target: `stageId` (one of the craft's stages), `materialId` (one of the materials
-  its stages use) or `slot` (`MASTHEAD`, the page's first picture; `RECORD`, the GI record's
-  picture); and optionally `taskKey`, a `MISSING_PICTURE` task of this craft (`open-work.md`),
-  whose target is used when none is given and must match one that is.
-- `origin`: `PHOTOGRAPH`, `DRAWING` or `AI_GENERATED`.
-- An AI-made picture names its `generator` (tool and model, 2 to 120 characters), its `prompt`
-  (up to 4,000 characters) and at least one fact it shows. Other origins carry neither.
-- `caption` and `altText`, 3 to 300 characters each.
-- `rightsConfirmed: true` and `termsVersion: "2026-11-19"`, the declaration's version (its text:
-  `docs/legal/image-declaration.md`): the uploader holds the rights to give the picture under the
-  contribution terms.
+| Field | Rule |
+|---|---|
+| `craftSlug`; `claimIds` | at most 20 fact ids, each a fact a signed-out reader is shown |
+| One target, at most | `stageId` (one of the craft's stages), `materialId` (one of the materials its stages use) or `slot` (`MASTHEAD`, the page's first picture; `RECORD`, the GI record's picture) |
+| `taskKey` | optional, a `MISSING_PICTURE` task of this craft (`open-work.md`), whose target is used when none is given and must match one that is |
+| `origin` | `PHOTOGRAPH`, `DRAWING` or `AI_GENERATED` |
+| `generator`, `prompt` | an AI-made picture names its `generator` (tool and model, 2 to 120 characters), its `prompt` (up to 4,000 characters) and at least one fact it shows. Other origins carry neither |
+| `caption`, `altText` | 3 to 300 characters each |
+| `rightsConfirmed: true`, `termsVersion: "2026-11-19"` | the declaration's version (its text: `docs/legal/image-declaration.md`): the uploader holds the rights to give the picture under the contribution terms |
 
 `ImageBatch` is one declaration for one to ten pictures of one craft: `craftSlug`, `origin`,
 `generator` (AI only), `rightsConfirmed`, `termsVersion`, and `pictures[]`, each with its own
@@ -93,23 +111,19 @@ a `CLEAR` picture of a Professor or above is approved at once.
 
 ## Storage
 
-- The cleaned file goes to the media bucket at `media/<contributor id>/<token>/<name>`, named
-  `KalaVigyan_Contribution_<date>_<time>_<craft>_<caption>_<Photo|Drawing|Illustration>.<ext>`
-  (`png`, `jpg`, `webp`, `avif` or `svg`).
-- A `MediaAsset` holds it: mime, size, width, height, the caption as label, the generator as
-  model, the alt text; `PRIVATE` until approved, `CRAFT_SHARED` after, with `approvedById`.
-- `ImageContribution` holds the declaration (with `stageId`, `materialId`, `slot`, `taskKey`, at
-  most one target), the status, the asset, the SHA-256, the AI mark, the review (`reviewedById`,
-  `reviewedAt`, `reviewNote`) and `declarationId`.
-- `ImageScreen` (one per contribution): the received MIME type and size, the fingerprint, the
-  nearest stored picture and its distance, the verdict, flags and reasons, and the screen's
-  provider, model, usage event, tokens and `costUsd`.
-- `ImageFingerprint` (one per stored picture, keyed by its `MediaAsset`): the signed 64-bit
-  fingerprint. `python -m app.scripts.fingerprint_pictures` fills it for pictures stored before.
-- `PictureDeclaration`: one declaration for one or more pictures, with its channel (`WEB`, `LINK`,
-  `SLOT`, `MCP`), origin, generator, terms version, when the rights were confirmed and, from MCP,
-  the person's words of confirmation, under the contributor.
-- Migration `0050_image_screens`. Row level security is on and the public roles have no grants.
+The cleaned file goes to the media bucket at `media/<contributor id>/<token>/<name>`, named
+`KalaVigyan_Contribution_<date>_<time>_<craft>_<caption>_<Photo|Drawing|Illustration>.<ext>`
+(`png`, `jpg`, `webp`, `avif` or `svg`).
+
+| Row | What it holds |
+|---|---|
+| `MediaAsset` | the file: mime, size, width, height, the caption as label, the generator as model, the alt text; `PRIVATE` until approved, `CRAFT_SHARED` after, with `approvedById` |
+| `ImageContribution` | the declaration (with `stageId`, `materialId`, `slot`, `taskKey`, at most one target), the status, the asset, the SHA-256, the AI mark, the review (`reviewedById`, `reviewedAt`, `reviewNote`) and `declarationId` |
+| `ImageScreen` | one per contribution: the received MIME type and size, the fingerprint, the nearest stored picture and its distance, the verdict, flags and reasons, and the screen's provider, model, usage event, tokens and `costUsd` |
+| `ImageFingerprint` | one per stored picture, keyed by its `MediaAsset`: the signed 64-bit fingerprint. `python -m app.scripts.fingerprint_pictures` fills it for pictures stored before |
+| `PictureDeclaration` | one declaration for one or more pictures, with its channel (`WEB`, `LINK`, `SLOT`, `MCP`), origin, generator, terms version, when the rights were confirmed and, from MCP, the person's words of confirmation, under the contributor |
+
+Migration `0050_image_screens`. Row level security is on and the public roles have no grants.
 
 ## `ImageContributionView`
 
@@ -164,3 +178,19 @@ upload starts when the draft is proposed with `propose_page`. The draft's report
 pictures by licence from each plate's credit: `CONTRIBUTED` ("Contributed to KalaVigyan"),
 `AI_ILLUSTRATION` ("Illustration, made with ..."), the licence a Commons credit names (CC BY-SA 4.0,
 CC0, Public domain), or `NAMED_IN_CREDIT`.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Types, sizes, metadata removal and the AI mark | `backend/tests/research/test_image_intake.py` and `test_image_intake_formats.py` |
+| Repeats, the fingerprint and the vision screen's verdicts | `backend/tests/research/test_image_screens.py`, `backend/tests/images/test_picture_vision.py` and `backend/tests/db/test_image_screens_db.py` |
+| Routes, states, storage and review | `backend/tests/db/test_image_contributions_db.py` |
+| Placement in generated documents and the public picture route | `backend/tests/db/test_contributed_pictures_db.py` and `backend/tests/public/test_contributed_picture_route.py` |
+| `MISSING_PICTURE` tasks | `backend/tests/db/test_open_work_pictures_db.py` |
+| Pictures from MCP | `backend/tests/mcp/test_give_pictures.py` and `backend/tests/db/test_given_pictures_db.py` |
+| The screens and the plates' credit | `frontend/e2e/image-contributions-unit.spec.ts` and `craft-contributed-unit.spec.ts` |
+| The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/image-contributions.md` byte for byte equal to this file |
+
+Re-read it when a format, a screen, a size limit or the declaration's version changes; copy it to
+`backend/app/data/contributor/contracts/` in the same change.

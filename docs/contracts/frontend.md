@@ -1,6 +1,24 @@
-# Frontend lane contract
+# Frontend
 
-The web client (`frontend/`, Next.js 16 App Router, React 19, Tailwind 4) is a port of the designer-portal (DR) shell. Wherever DR already has a route, the client calls it in DR's exact shape; the backend lane ports those routes unchanged. This file lists what the client assumes, and every route that is new for KalaVigyan.
+The web client (`frontend/`, Next.js 16 App Router, React 19, Tailwind 4) is a port of the designer-portal (DR) shell. Wherever DR already has a route, the client calls it in DR's exact shape; the backend lane ports those routes unchanged. This file lists what the client assumes, and every route that is new for KalaVigyan. Engineers on either side of the web client's calls read it.
+
+| For | Read |
+|---|---|
+| Every API route's prefix, body casing, headers and errors | [backend.md](backend.md) |
+| How a monograph document is drawn | [monograph-renderer.md](monograph-renderer.md) |
+| The design system every screen follows | [kalavigyan-design](../../.claude/skills/kalavigyan-design/SKILL.md) |
+| How the web app is built and deployed | [infra.md](infra.md), Frontend |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  B["Browser"] --> PX["proxy.ts<br/>same origin /api"]
+  SC["Server components<br/>serverFetch"] --> API
+  PX -->|bearer and<br/>x-web-proxy-secret| API["API<br/>CloudFront"]
+  RH["Route handlers<br/>app/api/auth, session"] -->|session cookie| B
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class PX accent
+```
 
 ## 1. Transport and session
 
@@ -17,7 +35,7 @@ Everything a reader reads opens without signing in; only asking and the reader's
 - **Two route groups.** `app/(reading)/` holds the reading pages: `/crafts`, `/crafts/[slug]`, `/map`, `/compare`, `/voices/[id]` (a field transcript), `/shared/answers/[token]` and `/shared/lessons/[token]`. Its layout is `components/shell/ReadingShell.tsx`, which never redirects: signed out it draws `components/nav/ReadingBar.tsx` (the brand, Crafts, Map, Compare from 640px, and Sign in), signed in the island nav. `app/(protected)/` keeps `/ask`, `/saved`, `/lessons`, `/settings`, `/admin` and `/contribute` behind `components/AppShell.tsx`, which sends a signed-out reader to `/login?next=<the page>`. Both shells share the account gates (`components/shell/AccountGate.tsx`: first password, two-step, first-entry profile, guardian hold) and the frame (`components/shell/ShellFrame.tsx`: skip link, nav, main, the reconnecting line). `lib/readingRoutes.READING_ROUTES` lists the reading prefixes. A page moved between the groups moves its entry there and in `e2e/public-reading-unit.spec.ts`.
 - **No signed-in call from a signed-out reading page.** `lib/session.mayHoldSession` skips the `/me` probe on a reading route unless the session marker or a legacy token is present. `useVoiceAvailability` asks `GET /answers/config` only for a signed-in reader, so Talk shows only to one. No reading page mounts the media client (`/media/options`). `apiFetch` ends a session on a 401 only when it sent a session, so a 401 from a public read sent without one (a term lookup that would research) is shown on the spot: the term sheet then offers Sign in (`components/auth/SignInLink.tsx`) in place of Try again.
 - **Asking sends a signed-out reader to sign in and back.** Every Ask entry point takes its link from `components/ask/useAskHref` (`lib/askEntry`): `/ask?q=<question>&craft=<slug>` for a signed-in reader, `/login?next=<that address>` for a signed-out one, so the question and the craft survive sign-in. The craft header's Ask, the shared answer's "Ask your own question" and, when the monograph lands, its suggested and open questions use it.
-- **First paint from the server.** `/crafts/[slug]` and `/crafts` are server components: they read `GET /crafts/{slug}/page` and `GET /crafts/catalogue` through `lib/server/readingPages` (`publicFetch`, tags `craft-page:<slug>` and `craft-catalogue`, revalidated after 300 s) and hand the answer to the client screens (`components/craft/CraftScreen.tsx`, `components/crafts/CraftAtlas.tsx`). The craft screen of a signed-out reader then makes no second read of the page, and a signed-in reader's reads it again for their own variant; the atlas shows the server's catalogue until its stored copy (`useCraftCatalogue`) answers. `generateMetadata` (`lib/readingMetadata`) gives the craft's name, its first lede sentence, its canonical path and its hero plate at the standard Commons width 1280 with "caption. Photo: author, licence, via Wikimedia Commons" as the image's alt text; the atlas gives the catalogue's craft count. Shared pages are `noindex`.
+- **First paint from the server.** `/crafts/[slug]` and `/crafts` are server components. A craft page draws its monograph document (`serverCraftDocument`, `components/monograph/MonographPage`), or without one the craft list's record from `GET /crafts/{slug}/page` (`craftRecordPage`, tag `craft-page:<slug>`, `components/craft/CraftWithoutMonograph.tsx`), as `monograph-renderer.md` sets out; the tabbed craft screen is retired (round 6). `/crafts` reads `GET /crafts/catalogue` through `lib/server/readingPages` (`publicFetch`, tag `craft-catalogue`) and hands it to `components/crafts/CraftAtlas.tsx`; the atlas shows the server's catalogue until its stored copy (`useCraftCatalogue`) answers. `generateMetadata` gives a document's metadata (`lib/monographMetadata`), and for a craft without one `lib/readingMetadata` gives the craft's name, its first lede sentence, its canonical path and its hero plate at the standard Commons width 1280 with "caption. Photo: author, licence, via Wikimedia Commons" as the image's alt text; the atlas gives the catalogue's craft count. Shared pages are `noindex`.
 - **Share links.** On an explainer version (`components/learn/ExplainerTools.tsx`) and on a lesson (`app/(protected)/lessons/[id]`), `components/learn/ShareControl.tsx` reads, starts and stops the share (`GET`, `PUT`, `DELETE .../share`, `lib/shareContract.ts`, `ShareLink` schema 1 of `docs/contracts/learning.md`) and copies `origin + path`; it starts one only after a confirmation that names what becomes readable (`lib/shareNotice.SHARE_NOTICE`, by its `kind`, `answer` or `lesson`); the public pages read `GET /shared/answers/{token}` and `GET /shared/lessons/{token}` and draw them with the explainer view and the lesson view, with no follow-up, Listen or film. A link that no longer opens says so.
 - **Signed-out production run.** `e2e/production/anonymous.spec.ts` (projects `production-anonymous-small-phone`, `-tablet`, `-desktop`: 360, 834 and 1440 px, light) opens the atlas, Kutch Ajrakh, the map and compare without a session and fails on a redirect to sign-in, a missing Sign in, or any 401 or 403 under `/api/`; it presses Ask on Kutch Ajrakh, expects `/login?next=/ask?craft=Kutch-Ajrakh`, and with `E2E_EMAIL` and `E2E_PASSWORD` signs in and expects to land on `/ask?craft=Kutch-Ajrakh`.
 
@@ -127,10 +145,22 @@ Follow-ups and versions, saved explainers and notifications, lesson packs, the P
 
 ## 5. Voice (decision 0020)
 
-`frontend/components/voice/VoicePanel.tsx` is the mount point: a non-modal dock, loaded with `next/dynamic` on `/crafts/[slug]` (Talk in the header, `components/craft/CraftVoice.tsx`), mounted only when voice is offered, which it never is while the call is switched off (`configured` false, decision 0035). The ask box's mic is dictation (decision 0036) and no longer opens the dock. Props: `{open, onClose, craftSlug, mode, question?, availability, host?, onTranscript?}`; the call's language is the Ask preference (`answerLanguage`, Auto following `question`'s script) resolved over `availability.languages` (decision 0025); `host` is what the page can show for the client tools: `{stages (id to name, the craft page's stages), showOnMap, openStage}`. The call itself is `lib/voiceCall.ts` with its transports (`voiceRelay.ts`, `voiceAgent.ts`) and adapters (`voiceSession.ts` for the routes, `elevenLabsAgent.ts` for the SDK, `voiceDevice.ts` for the microphone and speech).
+`frontend/components/voice/VoicePanel.tsx` is the mount point: a non-modal dock, mounted only when voice is offered, which it never is while the call is switched off (`configured` false, decision 0035); since the tabbed craft screen and its Talk button were retired (round 6) no page mounts it. The ask box's mic is dictation (decision 0036) and no longer opens the dock. Props: `{open, onClose, craftSlug, mode, question?, availability, host?, onTranscript?}`; the call's language is the Ask preference (`answerLanguage`, Auto following `question`'s script) resolved over `availability.languages` (decision 0025); `host` is what the page can show for the client tools: `{stages (id to name, the craft page's stages), showOnMap, openStage}`. The call itself is `lib/voiceCall.ts` with its transports (`voiceRelay.ts`, `voiceAgent.ts`) and adapters (`voiceSession.ts` for the routes, `elevenLabsAgent.ts` for the SDK, `voiceDevice.ts` for the microphone and speech).
 
 The voice routes, session shapes, client tools and the relay turn stream are `docs/contracts/voice.md`, typed and parsed by `frontend/lib/voiceContract.ts`. The craft page is `docs/contracts/craft-page.md` (`lib/craftPageContract.ts`); its region answer and the map layers are `docs/contracts/region.md` (`lib/regionContract.ts`), and the process vocabulary `docs/contracts/science.md` (`lib/scienceContract.ts`); generated media is `docs/contracts/media.md` (`lib/mediaContract.ts`); the explainer document, its blocks, terms and stream events are `docs/contracts/explainer.md` (`lib/explainerContract.ts` with `lib/explainerBlockBase.ts`, `explainerPlace.ts`, `explainerMatter.ts`, `explainerExperts.ts`, and `lib/explainerStream.ts`), whose shapes refuse a block kind that is not built yet; each built kind is drawn by its one renderer in `components/answer/blockRenderers.ts` (decision 0042). Each parses its response with `parseShape`, which refuses unknown fields and values.
 
 ## 6. Naming
 
 `frontend/lib/naming.ts` is DR's helper with `PORTAL = "KalaVigyan"` (recovery codes download as `KalaVigyan_Account_<date>_Recovery-Codes.txt`). Golden rows belong in `shared/naming-golden.json` (shared lane).
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Every response is parsed by its shape, refusing unknown fields | `frontend/e2e/contracts-unit.spec.ts` and `backend-vocabulary-unit.spec.ts`, against the `shared/*.golden.*` files |
+| What the roles may see and do | `frontend/e2e/permissions-unit.spec.ts` and `backend/tests/test_roles.py`, both against `shared/roles.json` |
+| Reading without signing in | `frontend/e2e/public-reading-unit.spec.ts`, and `e2e/production/anonymous.spec.ts` on the live site |
+| The stream and the explainer views | `frontend/e2e/answer-stream-golden-unit.spec.ts` and `explainer-view-unit.spec.ts` |
+| The atlas | `frontend/e2e/craft-catalogue-unit.spec.ts` |
+
+Re-read it when a route is added on either side, a screen changes what it reads, or a header is added.

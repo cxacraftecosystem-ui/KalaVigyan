@@ -1,6 +1,29 @@
-# Geo contract (lane: geo)
+# Geo
 
-The geo lane owns `etl/geo/`, `.github/workflows/geo-etl.yml` and `docs/DATA_SOURCES.md`. It writes per-district environment statistics to `etl/geo/out/` and `etl/geo/load.py` upserts them into the backend tables below. This file lists what `load.py` assumes about those tables and the backend changes it needs.
+The geo lane owns `etl/geo/`, `.github/workflows/geo-etl.yml` and `docs/DATA_SOURCES.md`. It writes per-district environment statistics to `etl/geo/out/` and `etl/geo/load.py` upserts them into the backend tables below. This file lists what `load.py` assumes about those tables and the backend changes it needs. Engineers changing a layer, the loader or the tables it writes read it.
+
+| For | Read |
+|---|---|
+| Every dataset, its edition and licence | [DATA_SOURCES.md](../DATA_SOURCES.md) and `backend/app/data/datasets/registry.json` |
+| What the region panel and the map receive from these tables | [region.md](region.md) |
+| Running the ETL and the river load | [RUNBOOK.md](../RUNBOOK.md), Geo ETL |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  OD[("Open datasets")] --> ETL["geo_etl<br/>layers in Actions"]
+  ETL --> OUT["etl/geo/out<br/>parquet and summary"]
+  OUT --> LD["load.py<br/>one transaction"]
+  LD --> T[("EnvDataset<br/>DistrictEnvValue<br/>DistrictGeology")]
+  ETL --> RV["out/rivers<br/>reaches and topology"]
+  RV --> LR["load_rivers.py"]
+  LR --> RT[("RiverBasin<br/>RiverReach")]
+  LR --> S3[("Media bucket<br/>topology files")]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  classDef gold fill:#FAEECD,stroke:#CD9200,color:#1E1B2E
+  class LD accent
+  class OD gold
+```
 
 ## Backend changes required
 
@@ -106,3 +129,15 @@ python etl/geo/load.py --prune
 - `RiverReach`: `hyrivId` (key), `nextDown`, `mainRiv`, `ordStra`, `uplandSkm`, `disAvCms`, `lengthKm`, `geom` (written as hex EWKB).
 
 It reads the database URL from `DATABASE_URL` (`--dsn-env`) and the bucket from `S3_BUCKET` (`--bucket-env`), AWS credentials from the standard `AWS_*` variables (on GitHub Actions the short-lived ones of the `kalavigyan-river-load` role, decision 0050), and never takes a value on the command line. Exit codes: 0 loaded, 1 validation failed, 2 an env var not set; a missing table stops it with a pointer to this file. `backend/tests/contracts/test_river_contract.py` pins these column lists, the topology object name and the key to the backend's models and `services/naming`.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The output columns, stats and summary | `etl/geo/tests/test_rows.py`, `test_layers.py` and `test_trend.py`, run by `geo-etl.yml` |
+| What `load.py` validates, writes and refuses, and its exit codes | `etl/geo/tests/test_load.py` |
+| The river network, its files and the river load | `etl/geo/tests/test_rivers.py` and `test_load_rivers.py` |
+| The river columns, the topology object and its key against the backend | `backend/tests/contracts/test_river_contract.py` |
+| The datasets' codes and editions | `etl/geo/geo_etl/catalog.py` reads them from the one registry (`etl/geo/tests/test_catalog.py`) |
+
+Re-read it when a layer adds a stat or column, a backend table gains a column `load.py` writes, or row 4 above is decided.

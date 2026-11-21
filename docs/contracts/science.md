@@ -1,7 +1,30 @@
-# Science contract: process stages and reactions (lane: science engine, decision 0015)
+# Science: process stages and reactions
 
-What `GET /api/crafts/{slug}/process` answers, and the rules every value in it follows. The
-models are `backend/app/schemas/science.py`; the client's types and runtime shapes are
+What `GET /api/crafts/{slug}/process` answers, and the rules every value in it follows: stages,
+materials, conditions and reactions, each built from stored rows and shown at its evidence level.
+Engineers changing the science engine, the reaction player or the client's process shapes read it.
+
+| For | Read |
+|---|---|
+| The science engine | [decision 0015](../decisions/0015-science-engine.md) |
+| Why the contract has this shape | [decision 0014](../decisions/0014-science-region-voice-media-contracts.md) |
+| Reactions shared with the explainer's player | [decision 0042](../decisions/0042-phase-b-contract.md), [0045](../decisions/0045-reactions-materials-molecules.md) and [explainer.md](explainer.md) |
+| The specification | `docs/PLAN.md` section 7; section 0 overrides it |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  SC[("Seed claims<br/>and science rows")] --> PV["Process view<br/>science/"]
+  PV --> RT["GET process"]
+  RT --> CL["scienceContract.ts<br/>craftProcessShape"]
+  PV --> RP["Reaction player<br/>re-checked steps"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class PV accent
+```
+
+## Where the code is
+
+The models are `backend/app/schemas/science.py`; the client's types and runtime shapes are
 `frontend/lib/scienceContract.ts`; the golden answer is `shared/science.process.golden.json`
 (Kutch Ajrakh, from the seeded GI Journal claims). Change the three together, with
 `backend/tests/contracts/test_science_contract.py` and `frontend/e2e/contracts-unit.spec.ts`.
@@ -146,7 +169,16 @@ and `science/process_view.craft_process` builds the answer.
   revision. The cited source puts the start of kaolinite dehydroxylation at 550–600 °C, so
   that is the constant (PLAN 7 says 450–600 °C).
 
-## Tests
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The golden answer and every rule above, with hand-worked values | `backend/tests/contracts/test_science_contract.py` |
+| The client's shapes refuse unknown fields and values | `frontend/e2e/contracts-unit.spec.ts` |
+| The producer builds and serves the golden answer | `backend/tests/science/test_process_view.py`, `test_process_route.py` and `backend/tests/db/test_craft_process_db.py` |
+| Balancing, units, envelopes, the seed plan and the compound lookup | `backend/tests/science/` |
+
+Re-read it when a stage, condition or reaction field changes, or a seeded constant is re-cited.
 
 `backend/tests/contracts/test_science_contract.py` reproduces the golden file byte for byte from
 the models and checks each rule above with hand-worked values (kaolinite dehydroxylation

@@ -1,12 +1,45 @@
-# Review queue (decision 0101, items 5, 12, 13 and 14)
+# Review queue
 
 One review path for everything other people give: proposed and researched facts, artisans'
 testimony, contributed pictures, component proposals, page layout proposals and page structure
-proposals, whatever their origin (the site, the
-Knowledge API, the MCP server, an artisan's conversation). Reviewers see one page of pending items,
-newest first, and decide each through one route per action. A reviewer's own contribution is
-approved at once by its own write path (`knowledge-writes.md`, `image-contributions.md`,
-`open-work.md`) and never enters the queue; the queue also leaves out anything the viewer proposed.
+proposals, whatever their origin (the site, the Knowledge API, the MCP server, an artisan's
+conversation). Reviewers see one page of pending items, newest first, and decide each through one
+route per action. Reviewers and the engineers who add a kind or a decision read it.
+
+| For | Read |
+|---|---|
+| Why one queue | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), items 5, 12, 13 and 14 |
+| How a fact, layout, structure item or source reaches the queue | [knowledge-writes.md](knowledge-writes.md) |
+| Pictures | [image-contributions.md](image-contributions.md) |
+| Component proposals | [open-work.md](open-work.md) |
+| Artisans' testimony | [roles-and-contributions.md](roles-and-contributions.md) |
+
+A reviewer's own contribution is approved at once by its own write path (`knowledge-writes.md`,
+`image-contributions.md`, `open-work.md`) and never enters the queue; the queue also leaves out
+anything the viewer proposed.
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  subgraph Kinds
+    FA["FACTS"]
+    TE["TESTIMONY"]
+    IM["IMAGES"]
+    CO["COMPONENTS"]
+    LA["LAYOUTS"]
+    ST["STRUCTURE"]
+  end
+  Kinds --> Q["GET review-queue<br/>one page, newest first"]
+  Q --> D{"Decision"}
+  D -->|approve| A["Written or shown"]
+  D -->|reject or retract| R["Kept with a reason"]
+  A --> RV["Signed-out pages<br/>refreshed"]
+  R --> RV
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class D accent
+```
+
+## Where the code is
 
 Contract: `backend/app/research/review_queue.py`, with the component body in
 `research/review_queue_components.py`, the layout body in `research/layout_proposals.py`, the
@@ -242,12 +275,14 @@ Reason field required for either. The client contract is `frontend/lib/reviewQue
 pure rules are in `frontend/lib/reviewQueueView.ts`. `/admin/pictures` and `/admin/testimony`
 stay, and list decided items.
 
-## Tests
+## How this document is kept true
 
-`backend/tests/review_queue/` (rules and routes), `backend/tests/db/test_review_queue_db.py` and
-`test_review_queue_decisions_db.py`, `test_layout_proposals_db.py`, `backend/tests/layouts/`
-(layout proposal rules and routes), `backend/tests/structure/` and
-`tests/db/test_structure_proposals_db.py`, `test_structure_writes_db.py`, `test_structure_export_db.py`
-(structure proposals), `tests/test_page_revalidation.py` and `tests/db/test_page_revalidation_db.py`,
-`frontend/e2e/review-queue-unit.spec.ts`, `review-layouts-unit.spec.ts`,
-`review-structure-unit.spec.ts` and `revalidate-unit.spec.ts`.
+| Claim | Kept true by |
+|---|---|
+| Who sees which kind, what is pending, the page and the decisions | `backend/tests/review_queue/` (rules and routes), `backend/tests/db/test_review_queue_db.py` and `test_review_queue_decisions_db.py` |
+| Layout proposals | `backend/tests/db/test_layout_proposals_db.py` and `backend/tests/layouts/` (layout proposal rules and routes) |
+| Structure proposals | `backend/tests/structure/`, `backend/tests/db/test_structure_proposals_db.py`, `test_structure_writes_db.py` and `test_structure_export_db.py` |
+| Refreshing signed-out pages | `backend/tests/test_page_revalidation.py`, `backend/tests/db/test_page_revalidation_db.py` and `test_review_queue_refresh_db.py` |
+| The Review page | `frontend/e2e/review-queue-unit.spec.ts`, `review-layouts-unit.spec.ts`, `review-structure-unit.spec.ts` and `revalidate-unit.spec.ts` |
+
+Re-read it when a kind joins the queue, a decision is added, or a capability moves between roles.

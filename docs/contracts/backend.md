@@ -1,4 +1,32 @@
-# Backend contract (lane: backend foundation)
+# Backend
+
+What every API route shares (its prefix, body casing, token, headers, errors and which routes read
+without signing in), then the foundation's own routes: auth, me, access, users, keys, the craft
+catalogue, settings, usage and the AI router. Engineers on the web client or another backend lane
+read it before calling or adding a route.
+
+| For | Read |
+|---|---|
+| What the web client assumes from these routes | [frontend.md](frontend.md) |
+| What the box assumes from the backend | [infra.md](infra.md) |
+| Why reading needs no account | [decision 0079](../decisions/0079-public-reading.md) and [0097](../decisions/0097-public-reading-everywhere-but-asking.md) |
+| The count of routes and tables today | [REPO_FACTS.md](../REPO_FACTS.md), generated |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart TD
+  R["A request to /api"] --> T{"Token sent?"}
+  T -->|no| P{"Public read?"}
+  P -->|yes| S["Read as a Student<br/>counted per address"]
+  P -->|no| X["401"]
+  T -->|yes| V{"Token version<br/>still good?"}
+  V -->|no| X
+  V -->|yes| C["Route's class<br/>and capability"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class C accent
+```
+
+## What every route shares
 
 Every API route is under `/api`. Health routes are at the root. JSON bodies use camelCase, matching DR (designer-portal) shapes unless a row below says otherwise. Auth is a bearer JWT in `Authorization: Bearer <token>`; the token carries `sub` (user id), `tv` (token version), `email`, `role`. Any password, role, 2FA or suspension change bumps the version, so older tokens answer 401.
 
@@ -249,5 +277,18 @@ DR columns not carried: Aadhaar columns on `User`, `Craft.workshopId` (no Worksh
 
 - Frontend: the DR screens it ports call these paths with the `/api` prefix. DR's `/secrets/{key}/reveal` and `/settings/transcription-providers` do not exist here; use `/settings/ai-routing` instead. Secrets changes must collect a TOTP code. Suspension of an account is `/users/{id}/suspend`, not a roster DELETE (both work).
 - Data/ETL lane: owns the district and environmental tables and the source corpus. The craft seed (455 crafts, `CraftCode`, `CraftSpelling`, `CraftAlias`) belongs to this lane: `app/services/craft_seed.py` and `app/scripts/seed_crafts.py`, fed by the vendored JSON in `backend/app/data/`. The ETL lane reads crafts by slug or `craftCode` and must not insert or rename catalogue rows; changes to the catalogue go through the vendored JSON and the seeder.
-- Infra lane: provides `DATABASE_URL` (Supabase session pooler, port 5432) and the names in `backend/.env.example` on the box. `blue_green.sh` runs `seed_crafts`, `seed_claims`, `seed_districts` and `import_curation` (decision 0053) after `alembic upgrade head` and stops the release if one fails, then `sync_portal_crafts` (a warning on failure); `backend-checks.yml` runs the same three before the DB tests. Client IP for rate limits: `x-viewer-address` when `x-web-proxy-secret` matches `WEB_PROXY_SECRET` (hmac compare), otherwise the `FORWARDED_CLIENT_HOPS` rule. Settings errors name fields only (`hide_input_in_errors`, `SettingsError`). The bucket and Brave key are read as `S3_BUCKET` and `BRAVE_SEARCH_API_KEY` (old `AWS_S3_BUCKET` and `BRAVE_API_KEY` still accepted). First master admin: `MASTER_ADMIN_EMAIL` signs in with Google, or the operator runs `python -m app.scripts.seed_admin` (password read from stdin) in `backend/`.
+- Infra lane: provides `DATABASE_URL` (Supabase session pooler, port 5432) and the names in `backend/.env.example` on the box. `blue_green.sh` runs `seed_crafts`, `seed_claims`, `seed_districts` and `import_curation` (decision 0053) after `alembic upgrade head` and stops the release if one fails, then `sync_portal_crafts` (a warning on failure); `backend-checks.yml` runs the same four before the DB tests. Client IP for rate limits: `x-viewer-address` when `x-web-proxy-secret` matches `WEB_PROXY_SECRET` (hmac compare), otherwise the `FORWARDED_CLIENT_HOPS` rule. Settings errors name fields only (`hide_input_in_errors`, `SettingsError`). The bucket and Brave key are read as `S3_BUCKET` and `BRAVE_SEARCH_API_KEY` (old `AWS_S3_BUCKET` and `BRAVE_API_KEY` still accepted). First master admin: `MASTER_ADMIN_EMAIL` signs in with Google, or the operator runs `python -m app.scripts.seed_admin` (password read from stdin) in `backend/`.
 - `shared/roles.json` holds `{"ranks": {ROLE: rank}, "labels": {ROLE: label}}` for all five roles; `backend/tests/test_roles.py` and `frontend/e2e/permissions-unit.spec.ts` check both sides match it.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Every route has one class, and which read without a token | `backend/tests/public/test_route_inventory.py` fails on a route without a class |
+| Roles, ranks and labels on both sides | `backend/tests/test_roles.py` and `frontend/e2e/permissions-unit.spec.ts`, against `shared/roles.json` |
+| Public reads: the Student view, counting, `ETag` and `Cache-Control` | `backend/tests/public/` and `backend/tests/db/test_public_reading_db.py` |
+| Tokens and their version, passwords and two-step codes | `backend/tests/test_security_and_core.py` |
+| Request ids and error bodies | `backend/tests/test_app_and_schema.py` |
+| The seeds the release and the checks run | `infra/deploy/blue_green.sh` and `.github/workflows/backend-checks.yml`; `backend/tests/db/test_craft_seed.py` and `test_claim_seed.py` |
+
+Re-read it when a route group is added, a header is exposed, or what reads without signing in changes.

@@ -1,21 +1,43 @@
-# Dossier export and the curation write path (decision 0101, item 6)
+# Dossier export and the curation write path
 
 The database is the source of truth for curated knowledge. The dossiers in
-`backend/app/data/curation` (`docs/contracts/curation.md`) become its versioned export: a backup
-in git, a diff against what the database holds, and the way to bulk import. New facts are written
-through the Knowledge API (`docs/contracts/knowledge-writes.md`), where they pass the four gates;
-`tools/curation/propose.py` sends a working dossier's new facts there. The curation skill
-(`.claude/skills/kalavigyan-craft-pages`) keeps the method and says which change goes which way.
+`backend/app/data/curation` become its versioned export: a backup in git, a diff against what the
+database holds, and the way to bulk import. New facts are written through the Knowledge API, where
+they pass the four gates. Curators and the engineers who run an export or a bulk import read it.
 
 Last reviewed: 2026-11-19.
 
-Code: `services/dossier_export.py` (the run, the git file it compares with, the report),
-`services/dossier_export_store.py` (the stored rows it reads), `services/dossier_export_records.py`
-(the read model), `services/dossier_export_assembly.py`, `dossier_export_claims.py`,
-`dossier_export_parts.py`, `dossier_export_overview.py`, `dossier_export_market.py` (the dossier
-rebuilt from those rows), `services/dossier_diff.py` (what differs from git),
-`curation/dossier_text.py` (the file text), `scripts/export_dossiers.py` (the command);
-`tools/curation/propose.py` and `tools/curation/proposing.py` (the client).
+| For | Read |
+|---|---|
+| Why the database is the source | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), item 6 |
+| What a dossier holds and what the checker refuses | [curation.md](curation.md) |
+| The gates new facts pass (`tools/curation/propose.py` sends a working dossier's new facts there) | [knowledge-writes.md](knowledge-writes.md) |
+| Which change goes which way | the curation skill, [kalavigyan-craft-pages](../../.claude/skills/kalavigyan-craft-pages/SKILL.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  DB[("Database<br/>the source")] -->|export_dossiers| EX["Dossier export<br/>schema 2"]
+  EX --> GIT["Dossiers in git<br/>backup and diff"]
+  GIT -->|bulk import on deploy| DB
+  WD["Working dossier"] -->|propose.py| KA["Knowledge API<br/>four gates"]
+  KA --> DB
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class DB accent
+```
+
+## Where the code is
+
+| Part | Code |
+|---|---|
+| The run, the git file it compares with, the report | `services/dossier_export.py` |
+| The stored rows it reads | `services/dossier_export_store.py` |
+| The read model | `services/dossier_export_records.py` |
+| The dossier rebuilt from those rows | `services/dossier_export_assembly.py`, `dossier_export_claims.py`, `dossier_export_parts.py`, `dossier_export_overview.py`, `dossier_export_market.py` |
+| What differs from git | `services/dossier_diff.py` |
+| The file text | `curation/dossier_text.py` |
+| The command | `scripts/export_dossiers.py` |
+| The client | `tools/curation/propose.py` and `tools/curation/proposing.py` |
 
 ## The promise
 
@@ -137,3 +159,15 @@ after which `--diff` reports `SAME` for it.
 The export writes dossier schema 2 and changes with it. The report and the receipt are tools'
 output, not served contracts; a change that removes or renames a field of either updates this
 page in the same change.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Export then import changes nothing, on every curated dossier | `backend/tests/curation/test_dossier_export.py`, through the import's own plan |
+| Kutch Ajrakh exports as its file, and a full round trip writes no row | `backend/tests/db/test_dossier_export_db.py` |
+| What differs from git | `backend/tests/curation/test_dossier_diff.py` |
+| Approved structure exports under its keys | `backend/tests/db/test_structure_export_db.py` |
+| The proposing client | `tools/tests/test_curation_propose.py` |
+
+Re-read it when the dossier schema version changes, or a kind of structure moves from bulk import to MCP.

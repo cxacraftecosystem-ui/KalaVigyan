@@ -1,20 +1,35 @@
-# Roles and contributions: students, artisans and artisan testimony (decision 0083)
+# Roles and contributions: students, artisans and artisan testimony
 
 What a Student and an Artisan are asked when they first enter, where those answers are kept, how a
 student's age band reaches composition, what the Artisan role may do, how an artisan talks with
 KalaVigyan about their craft, and how what they say becomes testimony that is reviewed, shown,
 cited and withdrawn. The owner's direction of 2026-11-18 governs, including the addition that an
-artisan practises one or more crafts. Design choices: decision 0083.
+artisan practises one or more crafts. Engineers and reviewers of testimony read it.
 
 Last reviewed: 2026-11-18. Status: built in the tree, not deployed; the database tests run on GitHub.
 
-Related contracts:
+| For | Read |
+|---|---|
+| The design choices | [decision 0083](../decisions/0083-students-and-artisans.md) |
+| The voice backend this reuses | [voice.md](voice.md) |
+| The portals' quotes, which share the `artisan_voice` block and the craft page's Voices part with this testimony | [field-voices.md](field-voices.md) (version 2, [decision 0084](../decisions/0084-field-voices-v2.md)) |
+| The page and the blocks | [craft-page.md](craft-page.md), [explainer.md](explainer.md) |
+| The error forms | [backend.md](backend.md) |
+| How testimony is decided beside every other kind | [review-queue.md](review-queue.md) |
 
-- `voice.md`: the voice backend this reuses.
-- `field-voices.md` (version 2, decision 0084): the portals' quotes, which share the `artisan_voice`
-  block and the craft page's Voices part with this testimony.
-- `craft-page.md`, `explainer.md`: the page and the blocks.
-- `backend.md`: the error forms.
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","transitionColor":"#AA69E9","transitionLabelColor":"#857F9E","stateLabelColor":"#1E1B2E","stateBkg":"#F2E9FE","compositeBackground":"#F9F5FF","compositeTitleBackground":"#F2E9FE"}}}%%
+stateDiagram-v2
+  [*] --> PENDING: drawn from a conversation
+  PENDING --> APPROVED: a reviewer, a claim written
+  PENDING --> REJECTED: a reviewer, no claim
+  PENDING --> WITHDRAWN: the artisan, texts cleared
+  APPROVED --> APPROVED: edited, a new claim version
+  APPROVED --> REJECTED: unshown, the claim retracted
+  APPROVED --> WITHDRAWN: the artisan, every version erased
+  REJECTED --> [*]
+  WITHDRAWN --> [*]
+```
 
 ## 1. Vocabulary and limits
 
@@ -154,7 +169,7 @@ Each is one screen with Sign out, and nothing else is drawn behind it. Other rol
 
 ### 3.2 Student
 
-One screen, "Before you start" (`components/onboarding/StudentFirstEntry.tsx`):
+One screen, "Before you start" (`components/onboarding/FirstEntryGate.tsx` with `StudentProfileForm.tsx`):
 
 - **Age** (four choices) and **Gender** (four choices, "Prefer not to say" among them), both
   required.
@@ -163,7 +178,7 @@ One screen, "Before you start" (`components/onboarding/StudentFirstEntry.tsx`):
 - Continue records the current privacy notice (`POST /api/auth/consent`, `PRIVACY_NOTICE`) when the
   accepted version is older, then sends `PUT /api/profile/me/student`.
 
-Settings gains "Your profile" (`components/settings/StudentProfileCard.tsx`) with the same two
+Settings gains "Your profile" (`components/settings/ProfileCards.tsx`) with the same two
 fields.
 
 ### 3.3 Students under 18 (owner to confirm, decision 0083 item 9)
@@ -202,8 +217,9 @@ my parent or guardian agrees." Every other role keeps "I am 18 or older".
 
 ### 3.4 Artisan
 
-Four steps (`components/onboarding/ArtisanFirstEntry.tsx`), each with Back and Continue. The last
-step sends everything.
+One form (`components/onboarding/ArtisanProfileForm.tsx`, shown by `FirstEntryGate.tsx`) holds
+parts 1 to 3 and Continue saves them; the recording agreement (`RecordingAgreement.tsx`) follows as
+part 4.
 
 1. **Your crafts.** "Which crafts do you practise?" is a searchable multi-select over
    `GET /api/crafts/catalogue`.
@@ -228,7 +244,7 @@ step sends everything.
 
 Finishing sends `PUT /api/profile/me/artisan`, then `POST /api/profile/me/recording-consent` on "I
 agree". The first save also sets `UserPreference.answerLanguage` to the spoken language while it is
-still `auto`. Settings gains "Your craft profile" (`components/settings/ArtisanProfileCard.tsx`)
+still `auto`. Settings gains "Your craft profile" (`components/settings/ProfileCards.tsx`)
 with the same fields and the recording agreement with Withdraw (section 10).
 
 ## 4. Profile routes
@@ -1190,3 +1206,16 @@ Tests run without a database unless marked. Models are faked, and no provider is
 | conversations | the question post-check and its fallbacks; the guide and phrase tables complete in all thirteen languages and scripts |
 | blocks | the `artisan_voice` v2 validator with a `KALAVIGYAN` quote |
 | on GitHub (`db` marker) | approval writes; testimony absent from every fact reader; a withdrawal erasing the claim and leaving the next answer and every read-back; the guardian hold; the migration's upgrade and downgrade |
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The goldens above, parsed by both sides | `backend/tests/testimony/test_testimony_contracts.py`, `backend/tests/profiles/test_profile_view_contract.py` and `frontend/e2e/backend-vocabulary-unit.spec.ts` |
+| Profiles, first entry and the guardian hold | `backend/tests/profiles/` and `backend/tests/db/test_profiles_db.py` |
+| Conversations and the artisan agent | `backend/tests/voice/test_artisan_*.py` and `backend/tests/db/test_artisan_conversations_db.py` |
+| Testimony rules, transitions and withdrawal | `backend/tests/testimony/`, `backend/tests/db/test_testimony_rules_db.py` and `test_testimony_writes_db.py` |
+| The age band reaching composition, and reading styles | `backend/tests/composer/test_reading_style_compose.py` and `backend/tests/answering/test_reading_style_flow.py` |
+| The areas listed in section 13 | the tests that table names, each with hand-derived expected values |
+
+Re-read it when a role, an age band, a language or a testimony status changes, and before the work is deployed.

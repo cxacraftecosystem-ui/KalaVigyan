@@ -1,27 +1,56 @@
-# The monograph renderer (decision 0106, item 3) and the page-tool kinds
+# The monograph renderer and the page-tool kinds
 
 The web app draws a `MonographDocument` (`lib/monographDocument.ts`, mirrored from
 `research/monograph_document.py`) with one React renderer, so the approved Kutch Ajrakh page can
 become the template for every craft, family and category page. Every craft page is its document
 now (decision 0106, round 3c); curated crafts too since round 6, whose documents carry their
-structure, so the tabbed craft screen is retired.
+structure, so the tabbed craft screen is retired. Engineers changing the renderer, a native view or
+a page tool read it.
 
 Last reviewed: 2026-11-20.
 
-Code: `lib/monographDocumentShape.ts` (the runtime shape), `lib/monographRender.ts` (the marks, as
-`render_nodes` writes them), `lib/monographRenderElements.ts` (the same marks as React elements),
-`lib/monographRenderLayout.ts` (the page plan), `lib/monographRenderKit.ts` (what the kit's script
-reads), `lib/monographRenderServer.ts` (the server fetch and the preview metadata),
-`lib/monographMasthead.ts` (the generated label masthead), `lib/monographScopes.ts` (the kit scope
-of each kind), `lib/monographCite.ts` (Cite this), `lib/monographMetadata.ts` (a craft page's
-metadata), `lib/craftRecord.ts` and `lib/craftPlate.ts` (the craft without a monograph),
-`components/craft/CiteThis.tsx`, `components/craft/CraftWithoutMonograph.tsx`,
-`app/(reading)/crafts/[slug]/craftRecordPage.ts` (the craft list's record),
-`components/monograph/` (the page), `components/monograph/kinds/tools/` (the page-tool views),
-`components/monograph/kinds/blocks/` (the answer block kind),
-`lib/componentSpecsTools.ts` and `backend/app/research/component_specs_tools.py` (the tool specs),
-`backend/app/scripts/extract_specs_tools.py` with `extract_specs_tools_markup.py` (Ajrakh's tool
-specs from its template).
+| For | Read |
+|---|---|
+| Why one renderer | [decision 0106](../decisions/0106-one-monograph-template-for-every-page.md), item 3 |
+| The document it draws, the template split and the kit | [monograph-document.md](monograph-document.md) |
+| Generated documents and their layout | [page-layout.md](page-layout.md) |
+| The component kinds and their views | [component-specs-science.md](component-specs-science.md), [component-specs-data.md](component-specs-data.md), [component-specs-plates.md](component-specs-plates.md), [component-specs-general.md](component-specs-general.md) |
+| The design system | [kalavigyan-design](../../.claude/skills/kalavigyan-design/SKILL.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  R["Craft route"] --> D{"A document?"}
+  D -->|yes| MP["MonographPage<br/>chapters and units"]
+  D -->|no| CW["CraftWithoutMonograph<br/>the record"]
+  MP --> SL["Component slots"]
+  SL --> V["Kind views<br/>from specs"]
+  SL --> FR["Fragments<br/>the kit's markup"]
+  MP --> TL["Page tools<br/>cite, language, menu"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class MP accent
+```
+
+## Where the code is
+
+| Part | Code |
+|---|---|
+| The runtime shape | `lib/monographDocumentShape.ts` |
+| The marks, as `render_nodes` writes them | `lib/monographRender.ts` |
+| The same marks as React elements | `lib/monographRenderElements.ts` |
+| The page plan | `lib/monographRenderLayout.ts` |
+| What the kit's script reads | `lib/monographRenderKit.ts` |
+| The server fetch and the preview metadata | `lib/monographRenderServer.ts` |
+| The generated label masthead | `lib/monographMasthead.ts` |
+| The kit scope of each kind | `lib/monographScopes.ts` |
+| Cite this | `lib/monographCite.ts`, `components/craft/CiteThis.tsx` |
+| A craft page's metadata | `lib/monographMetadata.ts` |
+| The craft without a monograph | `lib/craftRecord.ts` and `lib/craftPlate.ts`, `components/craft/CraftWithoutMonograph.tsx`, `app/(reading)/crafts/[slug]/craftRecordPage.ts` (the craft list's record) |
+| The page | `components/monograph/` |
+| The page-tool views | `components/monograph/kinds/tools/` |
+| The answer block kind | `components/monograph/kinds/blocks/` |
+| The tool specs | `lib/componentSpecsTools.ts` and `backend/app/research/component_specs_tools.py` |
+| Ajrakh's tool specs from its template | `backend/app/scripts/extract_specs_tools.py` with `extract_specs_tools_markup.py` |
 
 ## Addresses
 
@@ -280,3 +309,17 @@ settings set on `<html>` (`data-theme`, `data-high-contrast`, `data-larger-text`
 `data-reduced-motion`; `lib/preferences.ts`), as the approved page reads them, and tells the kit
 when any of them changes (`kv-prefs`). The menu's display tools change the app's own settings
 (`useThemePreferences().update`) and carry no `data-kv-tool`, so the kit never toggles them too.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The document's runtime shape refuses what the backend refuses | `frontend/e2e/monograph-document-shape-unit.spec.ts` |
+| Marks, units, slots and the page plan | `frontend/e2e/monograph-render-unit.spec.ts`, `monograph-units-unit.spec.ts`, `monograph-slot-unit.spec.ts` and `monograph-layout-unit.spec.ts` |
+| A craft's route draws its document or its record | `frontend/e2e/craft-monograph-unit.spec.ts` and `craft-without-monograph-unit.spec.ts` |
+| Generated documents and the answer block kind | `frontend/e2e/monograph-generated-unit.spec.ts` and `monograph-blocks-unit.spec.ts` |
+| Native views and the whole shell | `frontend/e2e/monograph-native-unit.spec.ts`, and `monograph-native.smoke.spec.ts` against the built site |
+| The page tools | `frontend/e2e/monograph-tools-unit.spec.ts` and `backend/tests/research/test_component_specs_tools.py` |
+| The served page against the approved board | the Monograph parity run (`.github/workflows/monograph-parity.yml`) |
+
+Re-read it when a route draws another subject, a native view replaces a fragment, or a page tool is added.

@@ -1,9 +1,16 @@
 # Component specs: science group
 
-Decision 0106, item 4, for the science group: twelve component kinds move from the approved Kutch
-Ajrakh template to typed specs and React views. A spec holds everything a view needs that is not a
-text unit; the view draws the same elements, classes and text as the approved page, so the kit's
-`monograph.css` styles it as before.
+Twelve science component kinds move from the approved Kutch Ajrakh template to typed specs and
+React views. A spec holds everything a view needs that is not a text unit; the view draws the same
+elements, classes and text as the approved page, so the kit's `monograph.css` styles it as before.
+Engineers changing a player, a drawing or the lab, and a contributor's agent delivering one, read it.
+
+| For | Read |
+|---|---|
+| Why kinds became specs | [decision 0106](../decisions/0106-one-monograph-template-for-every-page.md), item 4, for the science group |
+| The parts every group shares | [component-specs-plates.md](component-specs-plates.md) |
+| Delivering one of these kinds through MCP | [component-specs-general.md](component-specs-general.md) |
+| A family's flagship interactive, which these kinds carry | [kalavigyan-interactives](../../.claude/skills/kalavigyan-interactives/SKILL.md) |
 
 | Side | Home |
 |---|---|
@@ -143,16 +150,15 @@ their grade, and the sections written with what each drew. Ajrakh:
 `kutch-ajrakh/overview/how-this-answer-was-made`; its heading `u1055` is the summary of the fold
 around the anchor, outside it, and is not drawn by the view.
 
-## Tests
+## How this document is kept true
 
-- `backend/tests/research/test_component_specs_science.py`: a valid and a refused spec of each
-  kind, the drawing and colour rules, spaces kept.
-- `backend/tests/research/test_science_spec_files.py`: every Ajrakh spec validates, shows exactly
-  the units the layout places in its component, nests the components the page nests, holds back
-  the 22 cited passages, and equals what the template extracts to.
-- `backend/tests/test_extract_specs_science_script.py`: the template reader.
-- `frontend/e2e/monograph-science-parity-unit.spec.ts`: each of the 21 views, drawn from its spec
-  file, gives the template element's markup (attribute order, entity spelling, style spacing and
-  JSON formatting aside), with the held passages removed and foreign nested components as slots.
-- `frontend/e2e/monograph-science-views-unit.spec.ts`: one component of each kind checked by hand
-  against the approved page, the client's kinds against the backend's, and the shape refusals.
+| Claim | Kept true by |
+|---|---|
+| A valid and a refused spec of each kind, the drawing and colour rules, spaces kept | `backend/tests/research/test_component_specs_science.py` |
+| Every Ajrakh spec validates, shows exactly the units the layout places in its component, nests the components the page nests, holds back the 22 cited passages, and equals what the template extracts to | `backend/tests/research/test_science_spec_files.py` |
+| The template reader | `backend/tests/test_extract_specs_science_script.py` |
+| Each of the 21 views, drawn from its spec file, gives the template element's markup (attribute order, entity spelling, style spacing and JSON formatting aside), with the held passages removed and foreign nested components as slots | `frontend/e2e/monograph-science-parity-unit.spec.ts` |
+| One component of each kind checked by hand against the approved page, the client's kinds against the backend's, and the shape refusals | `frontend/e2e/monograph-science-views-unit.spec.ts` |
+| The colours a drawing accepts, as the interactives skill lists them | `backend/tests/mcp/test_interactives_skill.py`, against `COLOUR_TOKEN_PATTERN` |
+
+Re-read it when a science kind gains a field, a held passage becomes a unit, or the colour rule changes.

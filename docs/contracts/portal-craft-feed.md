@@ -1,11 +1,31 @@
-# Portal craft feed: contract
+# Portal craft feed
 
 What the designer portal (DesignWorkshop, `designer-portal`) and the documentation portal (Field
 Repository, `documentation-portal`) must serve so KalaVigyan holds every craft either team added,
-not only the 455 master crafts, and how KalaVigyan reads and stores it. Design choices:
-decision 0003.
+not only the 455 master crafts, and how KalaVigyan reads and stores it. Engineers in all three
+repositories read it before changing either side of the route.
 
 Last reviewed: 2026-11-16.
+
+| For | Read |
+|---|---|
+| The design choices | [decision 0003](../decisions/0003-portal-craft-sync.md) |
+| The master crafts and their aliases | [crafts.md](crafts.md) |
+| The portals' transcripts and images, over the same peer mechanism | [field-voices.md](field-voices.md) |
+| The daily sync and its switch | [RUNBOOK.md](../RUNBOOK.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
+sequenceDiagram
+  participant K as KalaVigyan sync
+  participant P as Portal peer route
+  participant DB as KalaVigyan database
+  K->>P: GET /api/cross-portal/peer/crafts
+  P-->>K: Crafts, codes, spellings, merges
+  K->>DB: Match by slug or name, add aliases
+  Note over K,DB: A portal that answers 404<br/>changes nothing
+  K-->>K: One JSON line, ok per portal
+```
 
 ## Why a new route
 
@@ -150,3 +170,15 @@ The script prints one JSON line and exits 0 when every portal answered, 1 otherw
             "crafts_synced": 471, "crafts_merged": 6, "crafts_unlisted": 0, "aliases": 88,
             "name_conflicts": []}}
 ```
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The body is parsed as stated, unknown fields refused | `backend/tests/portal_sync/test_feed.py` |
+| The peer call and its token | `backend/tests/portal_sync/test_peer.py` |
+| Merges, unlisting and name conflicts | `backend/tests/portal_sync/test_reconcile.py` and `test_sync_seam.py` |
+| What is stored | `backend/tests/db/test_portal_craft_sync.py` |
+| The portals' side | each portal's own tests of the route, which ships there first |
+
+Re-read it when a portal ships the route, the body gains a field, or the sync's output changes.

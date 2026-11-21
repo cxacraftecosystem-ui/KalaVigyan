@@ -1,10 +1,26 @@
-# Answer components contract
+# Answer components
 
-Decision 0101, item 3 and build step 3 (the component half), and item 10's last point: an answer
-section is offered the registered components that fit it, the composer names the ones to show by
-label, and each is placed as a `component` block instead of being built again. The block itself
-is in `docs/contracts/explainer.md` (phase A kinds); the library it draws on is
-`services/component_library.library_components` (`docs/contracts/knowledge-api.md`).
+An answer section is offered the registered components that fit it, the composer names the ones to
+show by label, and each is placed as a `component` block instead of being built again. Engineers
+changing the composer, the catalogue or a builder read it.
+
+| For | Read |
+|---|---|
+| Why answers reuse components | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), item 3 and build step 3 (the component half), and item 10's last point |
+| The `component` block itself | [explainer.md](explainer.md), phase A kinds |
+| The library it draws on (`services/component_library.library_components`) | [knowledge-api.md](knowledge-api.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  L["Library<br/>craft, field, question"] --> C["Catalogue<br/>at most six"]
+  C --> O["Offered to<br/>the section call"]
+  O --> N["Composer names<br/>labels, each once"]
+  N --> B["component blocks<br/>after the prose"]
+  B -.->|stands for| S["Builder skipped"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class N accent
+```
 
 ## The catalogue (`services/answer_catalogue.py`)
 
@@ -63,17 +79,21 @@ which re-exports it, so every import still reads it). Migration `0035_answer_com
 (down from `0034_component_kinds`) widens `KnowledgePiece_kind_check` by `component`; its
 downgrade deletes rows of that kind, of which there are none.
 
-## Tests
-
-`tests/composer/test_component_compose.py` (offer, schema, parse, dropped labels),
-`tests/contracts/test_component_block_contract.py` (the block, its link, what it stands for, the
-kinds' home and the migration), `tests/answering/test_answer_components.py` (placement, sources,
-builders skipped, with fakes), `tests/db/test_answer_catalogue_db.py` (the catalogue on
-Postgres) and `frontend/e2e/answer-component-unit.spec.ts` (the client shape and the card).
-
 ## Open
 
 - One answer may place the same component in two sections when it is keyed to both fields; the
   claim ledger does not yet keep a component to its first section.
 - Sections reused from stored pieces are not offered components; only composed sections are.
 - The title is shown in English in every answer language, like the kicker.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The offer, the schema, the parse and dropped labels | `backend/tests/composer/test_component_compose.py` |
+| The block, its link, what it stands for, the kinds' home and the migration | `backend/tests/contracts/test_component_block_contract.py` |
+| Placement, sources and builders skipped, with fakes | `backend/tests/answering/test_answer_components.py` |
+| The catalogue on Postgres | `backend/tests/db/test_answer_catalogue_db.py` |
+| The client shape and the card | `frontend/e2e/answer-component-unit.spec.ts` |
+
+Re-read it when a builder gains or loses a component that stands for it, or the offer's limit changes.

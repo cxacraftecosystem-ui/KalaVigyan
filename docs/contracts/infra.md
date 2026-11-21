@@ -1,11 +1,33 @@
-# Contract: provisioning and deploy lane
+# Provisioning and deploy
 
-What the box and the deploy workflows assume from the backend, frontend and CI lanes. If one of these is wrong, change it here and in `infra/` together.
+What the box and the deploy workflows assume from the backend, frontend and CI lanes. If one of these is wrong, change it here and in `infra/` together. Engineers read it before they change how the API starts, what it reads from its environment, or how a release reaches the box.
+
+| For | Read |
+|---|---|
+| Ids, names, the deploy sequence and the box's units | [RUNBOOK.md](../RUNBOOK.md), What exists and Deploy |
+| How the pieces fit | [ARCHITECTURE.md](../ARCHITECTURE.md), Deployed pieces |
+| Every name in Parameter Store | `infra/.env.example` |
+| The fetcher's own rules | [research.md](research.md), the fetcher service |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  P["Push to main"] --> BC["Backend checks"]
+  BC -->|workflow_run success| DB["Deploy backend<br/>blue_green.sh"]
+  DB --> M["Migrations<br/>then seeds"]
+  M --> SW["Switch colour<br/>nginx"]
+  SW --> HK["Vercel deploy hook<br/>build-web-app"]
+  P -->|frontend only| DW["Deploy web app"] --> HK
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  classDef gold fill:#FAEECD,stroke:#CD9200,color:#1E1B2E
+  class DB accent
+  class HK gold
+```
 
 ## CI
 
-- `Backend checks` (`.github/workflows/backend-checks.yml`) runs on `push` to `main` when `backend/**`, `shared/**`, `infra/deploy/**`, `backend-checks.yml` or `deploy-backend.yml` changes. `Deploy backend` starts from its `workflow_run`, only for a `push` on `main` of this repository that concluded `success`. A push that changes only `infra/deploy/**` therefore still deploys.
-- The web app deploys from Vercel's Git integration on `main`; there is no Actions frontend deploy.
+- `Backend checks` (`.github/workflows/backend-checks.yml`) runs on `push` to `main` and the round branches when `backend/**`, `shared/**`, `infra/deploy/**`, `backend-checks.yml` or `deploy-backend.yml` changes. `Deploy backend` starts from its `workflow_run`, only for a `push` on `main` of this repository that concluded `success`. A push that changes only `infra/deploy/**` therefore still deploys.
+- Vercel never builds from Git (`frontend/vercel.json` turns Git deployments off for every branch). The production build is started through the Vercel deploy hook by `.github/actions/build-web-app`: from the last step of `Deploy backend`, or from `Deploy web app` (`.github/workflows/deploy-web.yml`) for a push that changes only `frontend/**`.
 
 ## Backend
 
@@ -15,7 +37,7 @@ What the box and the deploy workflows assume from the backend, frontend and CI l
 | ASGI app | `app.main:app`, started from `backend/` as `python -m uvicorn app.main:app --host 127.0.0.1 --port 8000|8001 --workers ${API_WORKERS} --no-proxy-headers`. `API_WORKERS` defaults to 1. |
 | Liveness | `GET /health` answers 200 without touching the database. The blue/green switch, nginx check, watchdog and CloudFront smoke test all call it. |
 | Migrations | `backend/alembic.ini` present → `python -m alembic upgrade head` runs from `backend/` with the env loaded, before the new colour starts. No `alembic.ini` → no migrations. |
-| Seeds | Right after the migration, `blue_green.sh` runs `python -m app.scripts.seed_crafts`, `app.scripts.seed_claims` and `app.scripts.seed_districts` from `backend/` with the env loaded. All three are idempotent. A non-zero exit stops the release and nginx keeps the live colour. Then it runs `app.scripts.sync_portal_crafts` (`docs/contracts/portal-craft-feed.md`) then `app.scripts.embed_craft_descriptors` and `app.scripts.embed_knowledge` (missing or re-stamped craft, claim and chunk vectors, each bounded to 240 seconds inside a 300-second timeout, reports logged); a failure or time-out of any of them is a warning only. |
+| Seeds | Right after the migration, `blue_green.sh` runs `python -m app.scripts.seed_crafts`, `app.scripts.seed_claims`, `app.scripts.seed_districts` and `app.scripts.import_curation` (decision 0053) from `backend/` with the env loaded. All four are idempotent. A non-zero exit stops the release and nginx keeps the live colour. Then it runs `app.scripts.sync_portal_crafts` (`docs/contracts/portal-craft-feed.md`), `app.scripts.embed_craft_descriptors` and `app.scripts.embed_knowledge` (missing or re-stamped craft, claim and chunk vectors, each bounded to 240 seconds inside a 300-second timeout, reports logged) and `app.scripts.rebuild_stale_pages` (480 seconds); after the switch, `app.scripts.refresh_served_pages` (300 seconds). A failure or time-out of any of these later steps is a warning only. |
 | Worker | `app.worker` (`app/worker.py` or `app/worker/__main__.py`). systemd starts `kv-worker` only if one exists. Stopped during migrations, restarted after the switch. `app/worker.py` exists since decision 0018: it runs the media queue, needs `DATABASE_URL`, `S3_BUCKET`, `MEDIA_BUNDLE_HMAC_KEY`, the AWS keys and the provider keys from the same `.env`, drains for 25 s on SIGTERM (`TimeoutStopSec=30`), and without its bucket or bundle key logs the missing name and waits. |
 | Fetcher | `app.fetcher` (`app/fetcher.py` or `app/fetcher/__main__.py`), listening on `FETCHER_HOST:FETCHER_PORT` (127.0.0.1:8090). It gets only `/opt/kalavigyan/fetcher.env`: keys starting with `FETCHER_` plus `APP_ENV` and `LOG_LEVEL`. It has no AWS keys or database URL. systemd blocks link-local (instance metadata) and private ranges. It does **not** block loopback, so the fetcher must refuse loopback targets itself (it does: `docs/contracts/research.md`, the fetcher service). Memory cap 768 MB, 64 tasks. The API reaches it at `FETCHER_URL` (`http://127.0.0.1:8090`), `POST /fetch`, `GET /health`. |
 | Env file | `/opt/kalavigyan/.env`, rendered from SSM `/kalavigyan/env/*` as `NAME='value'` lines. It is symlinked as `backend/.env` in every release, so pydantic-settings and Alembic find it. Values never contain `'` or line breaks. |
@@ -32,6 +54,20 @@ What the box and the deploy workflows assume from the backend, frontend and CI l
 
 ## Frontend
 
-- Vercel project `kalavigyan` (team `cxacraftecosystem-8028s-projects`), Root Directory `frontend`, Node 26.x, built by Vercel from `main`. Production URL `https://kalavigyan.vercel.app`.
-- `NEXT_PUBLIC_API_URL=https://d89rsltpszebp.cloudfront.net` (origin only, no trailing slash, no path). The frontend adds whatever prefix the backend mounts its routes under. Also set: `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_GOOGLE_CLIENT_ID` and, once the backend has the Yahoo secret, `NEXT_PUBLIC_YAHOO_CLIENT_ID` (Encrypted) and `WEB_PROXY_SECRET` (Sensitive, server-only, read by `lib/server/apiProxy.ts`).
-- The app must build with `vercel build --prod` from the repository root.
+| Assumption | Detail |
+|---|---|
+| Project | Vercel project `kalavigyan` (team `cxacraftecosystem-8028s-projects`), Root Directory `frontend`, Node 26.x, built from `main` through the deploy hook (CI, above). Production URL `https://kalavigyan.vercel.app` |
+| API origin | `NEXT_PUBLIC_API_URL=https://d89rsltpszebp.cloudfront.net` (origin only, no trailing slash, no path). The frontend adds whatever prefix the backend mounts its routes under |
+| Other variables | `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_GOOGLE_CLIENT_ID` and, once the backend has the Yahoo secret, `NEXT_PUBLIC_YAHOO_CLIENT_ID` (Encrypted) and `WEB_PROXY_SECRET` (Sensitive, server-only, read by `lib/server/apiProxy.ts`) |
+| Build | The app must build with `vercel build --prod` from the repository root; the root `.vercelignore` uploads only `frontend/` |
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| When checks run and deploys start | `.github/workflows/backend-checks.yml`, `deploy-backend.yml` and `deploy-web.yml`, and `frontend/vercel.json` |
+| How a release starts, migrates, seeds and switches | `infra/deploy/release.sh` and `infra/deploy/blue_green.sh`; `backend/tests/test_deploy_page_order.py` holds the order of its page steps |
+| The box's processes | `infra/deploy/units/` (`kv-api@`, `kv-worker`, `kv-fetcher`, `kv-contributions`, the watchdog), installed on every release |
+| The environment's names | `infra/.env.example` and `infra/scripts/seed_secrets.py` |
+
+Re-read it when a workflow's trigger, a box unit, an environment name or the web build changes.

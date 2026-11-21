@@ -1,6 +1,35 @@
-# Region contract: a craft's environment and the map layers (lane: region profile, decision 0016)
+# Region: a craft's environment and the map layers
 
-What the region panel of a craft page and the map's choropleths receive. The models are
+What the region panel of a craft page and the map's choropleths receive: a craft's places and
+their environment values, the map's layers, rivers, monthly rainfall and climate trends. Engineers
+changing the region producer, a layer or the client's shapes read it.
+
+| For | Read |
+|---|---|
+| Why the contract has this shape | [decision 0014](../decisions/0014-science-region-voice-media-contracts.md) |
+| The producer | [decision 0016](../decisions/0016-region-profile.md) |
+| The stored tables and how they are loaded | [geo.md](geo.md) and [DATA_SOURCES.md](../DATA_SOURCES.md) |
+| The specification | `docs/PLAN.md` section 8; section 0 overrides it |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  G[("Geo lane tables<br/>values, geology, rivers")] --> RR["region_records<br/>map_layer_store"]
+  RR --> CR["GET craft region"]
+  RR --> ML["GET map layers"]
+  S3[("River topology<br/>media bucket")] --> RV["GET rivers"]
+  CR --> CL["regionContract.ts"]
+  ML --> CL
+  RV --> CL
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  classDef gold fill:#FAEECD,stroke:#CD9200,color:#1E1B2E
+  class RR accent
+  class G,S3 gold
+```
+
+## Where the code is
+
+The models are
 `backend/app/schemas/region.py`; the client's types and shapes `frontend/lib/regionContract.ts`;
 the golden answers `shared/region.craft.golden.json`, `shared/region.layers.golden.json` and
 `shared/region.layer.golden.json`. Change them together with
@@ -280,3 +309,17 @@ period. They are district values like any other: the region route and ask the ma
 under `CLIMATE`, and the state aggregates leave them out (`STATE_AGGREGATIONS` names neither).
 `geo/climate.climate_trends` reads them for a `climate_risk` block
 (`docs/contracts/explainer.md`).
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The three goldens and the models' rules | `backend/tests/contracts/test_region_contract.py` |
+| The client's shapes | `frontend/e2e/contracts-unit.spec.ts` and `region-view-unit.spec.ts` |
+| The goldens rebuilt from records and from stored rows | `backend/tests/geo/` and `backend/tests/db/test_region_db.py` |
+| Places, values, facets and the layers' classes | `backend/tests/geo/test_places.py`, `test_region_view.py`, `test_layers.py` and `test_aggregation.py` |
+| Rivers, their traces and topology files | `backend/tests/geo/test_river_trace.py`, `test_river_routes.py`, `backend/tests/db/test_rivers_db.py`, `etl/geo/tests/test_rivers.py` and `frontend/e2e/river-topology-golden-unit.spec.ts` |
+| Monthly rainfall and climate trends | `backend/tests/geo/test_rainfall.py` and `test_climate_trends.py` |
+| The map's layers on the client | `frontend/e2e/map-layers-unit.spec.ts` and the other `map-*-unit.spec.ts` |
+
+Re-read it when a layer, a value's unit or a river rule changes, or the geo lane loads a new edition.

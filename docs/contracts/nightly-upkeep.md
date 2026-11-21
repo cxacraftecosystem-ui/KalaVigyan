@@ -1,4 +1,4 @@
-# Nightly upkeep and the nightly static build (decision 0101, items 5 and 11)
+# Nightly upkeep and the nightly static build
 
 Every night the database looks after what it already holds, then the web app is rebuilt from it:
 quotes are re-verified against their sources, a fact none of whose quotes is found any more is held
@@ -9,8 +9,32 @@ removed, the monograph sections and components and the craft
 page snapshots whose facts moved are rebuilt, and one production build pre-renders the craft pages
 from those snapshots onto the CDN. Answers stay live. Every step is bounded per night by a named
 constant, so a night's work and its load on other sites are known in advance.
+Operators and the engineers who add a step read it.
 
 Last reviewed: 2026-11-20.
+
+| For | Read |
+|---|---|
+| Why the knowledge heals itself every night | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), items 5 and 11 |
+| The healing tasks open work computes from these verdicts | [open-work.md](open-work.md) |
+| How a fact repaired by a new source returns to its pages | [knowledge-writes.md](knowledge-writes.md), Source proposals and Pages follow their facts |
+| The box, the deploy hook and the secrets | [RUNBOOK.md](../RUNBOOK.md), Nightly upkeep and page builds |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  Q["1 Re-verify quotes"] --> H["1a Hold and heal"]
+  H --> A["2 Archive sources"]
+  A --> O["3 Sweep orphans<br/>clients, buckets"]
+  O --> M["4 Reload monographs"]
+  M --> P["5 Rebuild stale pages<br/>refresh work and gaps"]
+  P --> B["6 Trigger the build"]
+  B --> V[("Vercel<br/>pre-rendered pages")]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  classDef gold fill:#FAEECD,stroke:#CD9200,color:#1E1B2E
+  class H accent
+  class V gold
+```
 
 ## Schedule
 
@@ -143,9 +167,9 @@ the audit still name it (`mcp-oauth.md`).
 ### 6. The build
 
 One `POST` to the Vercel deploy hook starts a production build of `main`. The build pre-renders
-`/crafts/{slug}` for every slug of `GET /api/site/pages` (except the static monograph) and keeps
-each page for a day (`revalidate = 86400`); any other craft renders on its first visit and is kept
-the same way. Signed-in readers still load their own variant in the browser, and answers are
+`/crafts/{slug}` for every slug of `GET /api/site/pages` (except the static monograph), and
+`/categories/{slug}` for every category it lists, and keeps each page for a day
+(`revalidate = 86400`); any other craft renders on its first visit and is kept the same way. Signed-in readers still load their own variant in the browser, and answers are
 never cached. A change that must reach readers who are not signed in before the next night (a
 hidden piece, a retracted claim) is published by an Admin's Start a build. The admin control refuses a second build within 10 minutes (429 with
 `Retry-After`); the nightly run always triggers.
@@ -207,12 +231,24 @@ the build as not triggered, and the admin control says so.
 
 ## Not covered yet
 
-- The web app has no category or family page route today (the API serves them, decision 0078;
-  craft pages link to `/categories/<slug>`). `GET /api/site/pages` already lists the categories so
-  the route, when it is built, pre-renders from the same list with the same day-long revalidate.
 - Coverage gaps turned into research tasks (item 5's third point) belong to open work
   (`list_open_work`), not to this job; so do the healing tasks, which open work computes from the
   verdicts and the link counts this job records.
 - A page whose facts move between nights (a published, approved, retracted or re-sourced fact) is
   refreshed when the fact moves (`knowledge-writes.md`, Pages follow their facts); step 5's bound of
   60 pages is for the backlog only.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Re-verifying quotes and their bounds | `backend/tests/upkeep/test_quote_recheck.py` |
+| Holds, healing and link rot | `backend/tests/upkeep/test_healing_rules.py`, `test_healing_tasks.py` and `backend/tests/db/test_claim_holds_db.py` |
+| Archives and orphaned concepts | `backend/tests/upkeep/test_archive_and_orphans.py` and `backend/tests/db/test_orphan_concepts_db.py` |
+| Abandoned client registrations | `backend/tests/db/test_upkeep_clients_db.py` |
+| The rotating monograph window and stale page rebuilds | `backend/tests/upkeep/test_rotation.py` and `test_page_rebuilds.py` |
+| The build route and its throttle | `backend/tests/upkeep/test_site_build_routes.py` |
+| The whole run and its report on Postgres | `backend/tests/db/test_nightly_upkeep_db.py` |
+| The pages the build pre-renders | `frontend/e2e/site-pages-unit.spec.ts`, against `shared/site.pages.golden.json` |
+
+Re-read it when a step is added, a bound changes, or the build pre-renders another route.

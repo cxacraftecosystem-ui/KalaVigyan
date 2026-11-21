@@ -1,10 +1,34 @@
 # Component specs: delivered components and the declared kinds
 
-Round 7 (owner, 2026-11-20: contributors deliver whole components and pages through MCP). A
-component arrives finished: its kind's spec data and the texts it places, each resting on shown
+A component arrives finished: its kind's spec data and the texts it places, each resting on shown
 facts. The 22 contributable kinds (`component_specs.CONTRIBUTABLE_KINDS`) can be delivered this
 way; five of them (`drawing`, `chart`, `fact_table`, `timeline`, `map_layer`) also take a declared
-spec that draws anything new from data. Nothing a contributor sends is ever run as code.
+spec that draws anything new from data. Nothing a contributor sends is ever run as code. A
+contributor's agent reads this over MCP before it delivers one, and engineers before they change a kind.
+
+| For | Read |
+|---|---|
+| Why components arrive finished | the owner, 2026-11-20: contributors deliver whole components and pages through MCP (round 7) |
+| One kind per job | [decision 0114](../decisions/0114-kinds-and-datasets.md) |
+| The proposal, the close-match search, drafts and bundles | [open-work.md](open-work.md) |
+| Where a registered delivery is drawn | [page-layout.md](page-layout.md), Generated documents |
+| The other groups' kinds | [component-specs-science.md](component-specs-science.md), [component-specs-data.md](component-specs-data.md), [component-specs-plates.md](component-specs-plates.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  D["Delivery<br/>spec and units"] --> M{"Close match?"}
+  M -->|a copy| X["Refused"]
+  M --> C["Seven checks"]
+  C -->|a problem| X
+  C --> R["Approval<br/>queue or at once"]
+  R --> REG["Registered<br/>KnowledgePiece"]
+  REG --> P["Drawn on<br/>generated pages"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class REG accent
+```
+
+## One kind per job
 
 One kind per job (decision 0114): the general_* names are retired. `chart`, `fact_table`,
 `timeline` and `map_layer` each take two forms of spec: a spec with a `head` is declared and drawn
@@ -38,13 +62,10 @@ A component in a draft or bundle of `propose_page` (MCP) and `ComponentProposalD
 beside the proposal's label, title, description, kind, field, subjects and considered labels
 (`open-work.md`):
 
-- `spec`: the kind's spec as a JSON object, checked by `component_specs.checked_spec` and stored as
-  the model writes it back (camelCase, defaults filled, a drawing's SVG cleaned); the MCP server
-  serves each kind's JSON schema as `kalavigyan://components/<kind>.schema.json`
-  (`api/mcp_component_schemas.py`), so the tools' own input schemas take a spec as an object;
-- `units`: `{u0001: {text, claimIds}}`, at most 400, each text 1 to 600 characters with at most 20
-  fact ids. Unit ids are the delivery's own (`u` and four digits); every unit the spec names is
-  delivered and every delivered unit has a place in the spec.
+| Part | What it holds |
+|---|---|
+| `spec` | the kind's spec as a JSON object, checked by `component_specs.checked_spec` and stored as the model writes it back (camelCase, defaults filled, a drawing's SVG cleaned); the MCP server serves each kind's JSON schema as `kalavigyan://components/<kind>.schema.json` (`api/mcp_component_schemas.py`), so the tools' own input schemas take a spec as an object |
+| `units` | `{u0001: {text, claimIds}}`, at most 400, each text 1 to 600 characters with at most 20 fact ids. Unit ids are the delivery's own (`u` and four digits); every unit the spec names is delivered and every delivered unit has a place in the spec |
 
 On MCP a spec is required except for a `SUBJECT_LINK`, which carries none. The site's own form
 (`POST /api/contributions/proposals/components`) may still send a proposal without one: it is
@@ -134,3 +155,18 @@ another namespace, every `href` that is not a local `#` reference, every value w
 `url(…)`, `javascript:`, `expression(` or `@import`, and the root's fixed `width` and `height`. The
 stored spec holds the cleaned markup, and the web app only ever draws it as an image, which runs no
 script and loads nothing.
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| The general kinds' specs, bounds and the SVG intake | `backend/tests/research/test_component_specs_general.py` |
+| A delivery's units and its seven checks | `backend/tests/research/test_component_specs_general_delivery.py` |
+| Registration and drawing on generated pages | `backend/tests/db/test_delivered_components_db.py` |
+| Each kind's fixture for a craft other than Kutch Ajrakh | `backend/tests/research/test_kind_fixtures.py` and `frontend/e2e/kind-fixtures-unit.spec.ts` |
+| The views | `frontend/e2e/monograph-kinds-general-unit.spec.ts` |
+| The same limits, as the component guide states them to contributors | `backend/tests/mcp/test_reference_limits.py` reads them from the constants, not from this page |
+| The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/component-specs-general.md` byte for byte equal to this file |
+
+Re-read it when a kind becomes contributable or retires, a bound changes, or the SVG intake keeps or
+removes another element; copy it to `backend/app/data/contributor/contracts/` in the same change.
