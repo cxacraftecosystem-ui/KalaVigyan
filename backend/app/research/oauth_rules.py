@@ -34,6 +34,7 @@ __all__ = [
     "SCOPE_MAX_CHARS",
     "SECRET_MAX_CHARS",
     "STATE_MAX_CHARS",
+    "TEMPORARILY_UNAVAILABLE",
     "UNSUPPORTED_GRANT_TYPE",
     "UNSUPPORTED_RESPONSE_TYPE",
     "OAuthError",
@@ -81,6 +82,7 @@ UNSUPPORTED_GRANT_TYPE = "unsupported_grant_type"
 UNSUPPORTED_RESPONSE_TYPE = "unsupported_response_type"
 INVALID_REDIRECT_URI = "invalid_redirect_uri"
 INVALID_CLIENT_METADATA = "invalid_client_metadata"
+TEMPORARILY_UNAVAILABLE = "temporarily_unavailable"
 
 
 class OAuthError(AppError):

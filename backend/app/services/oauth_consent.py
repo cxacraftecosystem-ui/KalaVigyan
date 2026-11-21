@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
-from app.models import McpTermsAcceptance, OAuthClient, OAuthCode, User
+from app.models import McpTermsAcceptance, OAuthCode, User
 from app.research.oauth_authorization import (
     checked_authorization,
     code_redirect,
@@ -31,13 +31,15 @@ from app.research.oauth_metadata import OAuthEndpoints
 from app.research.oauth_rules import (
     CODE_PREFIX,
     CODE_SECONDS,
+    INVALID_CLIENT,
+    INVALID_REQUEST,
     MCP_TERMS_VERSION,
     OAuthError,
     redirect_uri_matches,
 )
 from app.services.credential_links import token_hash
 
-from .oauth_clients import find_client
+from .oauth_clients import AskingClient, asking_client, stored_client_id
 from .oauth_tokens import new_secret
 
 __all__ = [
@@ -55,12 +57,17 @@ TERMS_TITLE = "MCP terms of use"
 UNKNOWN_CLIENT = (
     "This app is not registered with KalaVigyan. Remove the server from the app and add it again."
 )
-FOREIGN_RETURN = "This app asked to return to an address it did not register, so the sign-in stops here."
+FOREIGN_RETURN = (
+    "This app asked to return to an address it did not register or publish, so the sign-in stops here."
+)
 TERMS_CHANGED = "The terms of use changed while this page was open. Read them again and accept them."
 
 
 class UntrustedRequest(AppError):
-    pass
+    def __init__(self, message: str, *, error: str = INVALID_CLIENT, status: int = 400) -> None:
+        super().__init__(message)
+        self.error = error
+        self.status = status
 
 
 class TermsChanged(AppError):
@@ -95,6 +102,7 @@ async def review(
         return AuthorizationRedirect(redirect_to=error_redirect(request, refused, issuer=endpoints.issuer))
     return AuthorizationPrompt(
         client_name=client.name,
+        client_id_host=client.client_id_host,
         redirect_host=client_host(request.redirect_uri),
         scopes=scope_choices(user, checked.scopes),
         terms=TermsStatus(version=MCP_TERMS_VERSION, accepted_at=await terms_accepted_at(session, user)),
@@ -112,11 +120,12 @@ async def approve(
         return AuthorizationRedirect(redirect_to=error_redirect(request, refused, issuer=endpoints.issuer))
     scopes = granted_scopes(user, checked.scopes, consent.scopes)
     await _accept_terms(session, user, consent.terms_version, now=now)
+    client_id = await stored_client_id(session, client, now=now)
     code = new_secret(CODE_PREFIX)
     session.add(
         OAuthCode(
             codeHash=token_hash(code),
-            clientId=client.id,
+            clientId=client_id,
             userId=user.id,
             redirectUri=request.redirect_uri,
             codeChallenge=checked.challenge,
@@ -137,12 +146,15 @@ async def decline(
     return AuthorizationRedirect(redirect_to=declined_redirect(request, issuer=endpoints.issuer))
 
 
-async def _trusted_client(session: AsyncSession, request: AuthorizationRequest) -> OAuthClient:
-    client = await find_client(session, request.client_id)
+async def _trusted_client(session: AsyncSession, request: AuthorizationRequest) -> AskingClient:
+    try:
+        client = await asking_client(session, request.client_id)
+    except OAuthError as refused:
+        raise UntrustedRequest(refused.description, error=refused.error, status=refused.status) from refused
     if client is None:
         raise UntrustedRequest(UNKNOWN_CLIENT)
-    if not any(redirect_uri_matches(uri, request.redirect_uri) for uri in client.redirectUris):
-        raise UntrustedRequest(FOREIGN_RETURN)
+    if not any(redirect_uri_matches(uri, request.redirect_uri) for uri in client.redirect_uris):
+        raise UntrustedRequest(FOREIGN_RETURN, error=INVALID_REQUEST)
     return client
 
 

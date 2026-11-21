@@ -119,7 +119,7 @@ class RegisteredClient(BaseModel):
 class AuthorizationRequest(WireModel):
     model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
 
-    client_id: str = Field(min_length=1, max_length=64)
+    client_id: str = Field(min_length=1, max_length=URL_MAX_CHARS)
     redirect_uri: str = Field(min_length=1, max_length=URL_MAX_CHARS)
     response_type: str | None = Field(default=None, max_length=WIRE_MAX_CHARS)
     code_challenge: str | None = Field(default=None, max_length=WIRE_MAX_CHARS)
@@ -145,6 +145,7 @@ class TermsStatus(ContractModel):
 class AuthorizationPrompt(ContractModel):
     kind: Literal["prompt"] = "prompt"
     client_name: str
+    client_id_host: str | None = None
     redirect_host: str
     scopes: list[ScopeChoice]
     terms: TermsStatus

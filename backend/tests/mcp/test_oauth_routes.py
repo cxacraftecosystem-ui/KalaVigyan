@@ -54,6 +54,7 @@ def test_both_metadata_documents_name_the_api_as_issuer_and_the_web_page_for_con
     assert server["token_endpoint_auth_methods_supported"] == ["none"]
     assert server["grant_types_supported"] == ["authorization_code", "refresh_token"]
     assert server["response_types_supported"] == ["code"]
+    assert server["client_id_metadata_document_supported"] is True
 
 
 def test_metadata_is_404_while_the_server_is_off_and_503_without_an_https_api_address(
@@ -168,6 +169,7 @@ def test_the_consent_review_answers_the_prompt_in_camel_case(monkeypatch: pytest
     with_hosts(monkeypatch)
     prompt = AuthorizationPrompt(
         client_name="Claude",
+        client_id_host="claude.ai",
         redirect_host="claude.ai",
         scopes=[],
         terms=TermsStatus(version="2026-11-19", accepted_at=None),
@@ -183,6 +185,7 @@ def test_the_consent_review_answers_the_prompt_in_camel_case(monkeypatch: pytest
     assert reply.json() == {
         "kind": "prompt",
         "clientName": "Claude",
+        "clientIdHost": "claude.ai",
         "redirectHost": "claude.ai",
         "scopes": [],
         "terms": {"version": "2026-11-19", "acceptedAt": None},
@@ -193,6 +196,7 @@ def test_the_consent_review_answers_the_prompt_in_camel_case(monkeypatch: pytest
     ("refusal", "code"),
     [
         (oauth_consent.UntrustedRequest("This app is not registered."), 400),
+        (oauth_consent.UntrustedRequest("Try again.", error="temporarily_unavailable", status=503), 503),
         (oauth_consent.TermsChanged("The terms changed."), 409),
         (InvalidInput("Your account may not give review."), 422),
     ],

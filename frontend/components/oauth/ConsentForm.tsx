@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { ClientIdentity } from "@/components/oauth/ClientIdentity";
 import { ScopeChoices } from "@/components/oauth/ScopeChoices";
 import { TermsAcceptance } from "@/components/oauth/TermsAcceptance";
 import { ActionGroup } from "@/components/ui/ActionGroup";
@@ -37,6 +38,7 @@ export function ConsentForm({
         if (!problem) onApprove(chosen);
       }}
     >
+      <ClientIdentity prompt={prompt} />
       <ScopeChoices
         choices={prompt.scopes}
         chosen={chosen}

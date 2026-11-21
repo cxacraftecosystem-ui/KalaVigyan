@@ -3,7 +3,8 @@
 Slice 2 of the MCP server (decision 0101, item 15, "Authentication" and "Guards"). An agent's
 MCP client signs a person in with OAuth 2.1 as the MCP authorization specification defines
 (2025-06-18 and 2025-11-25): protected resource metadata (RFC 9728), authorization server
-metadata (RFC 8414), dynamic client registration (RFC 7591), the authorization code grant with
+metadata (RFC 8414), client ID metadata documents (draft-ietf-oauth-client-id-metadata-document,
+decision 0115), dynamic client registration (RFC 7591), the authorization code grant with
 PKCE S256 only, rotating refresh tokens, token revocation (RFC 7009), resource indicators
 (RFC 8707) and the `iss` response parameter (RFC 9207). The read tools and the protocol are in
 `docs/contracts/knowledge-api.md`; nothing there changes for a call without a token.
@@ -40,8 +41,47 @@ preflight included (`api/mcp_cors.py`, `knowledge-api.md`), as the MCP authoriza
 expects of clients that run in a browser; the consent routes keep the site's configured origins. The authorization server metadata lists `scopes_supported`
 (read, ask, contribute, review), `response_types_supported` `code`, `grant_types_supported`
 `authorization_code` and `refresh_token`, `token_endpoint_auth_methods_supported` and
-`revocation_endpoint_auth_methods_supported` `none`, `code_challenge_methods_supported` `S256`
-and `authorization_response_iss_parameter_supported` true.
+`revocation_endpoint_auth_methods_supported` `none`, `code_challenge_methods_supported` `S256`,
+`authorization_response_iss_parameter_supported` true and `client_id_metadata_document_supported`
+true.
+
+## Published identities (client ID metadata documents)
+
+A client may skip registration and use an https URL as its `client_id`: the address of a JSON
+document that names it (decision 0115). Claude's is
+`https://claude.ai/oauth/mcp-oauth-client-metadata` ("Use Claude's published identity" in its
+connector dialog), VS Code's `https://vscode.dev/oauth/client-metadata.json`. A `client_id` holding
+`://` is read this way.
+
+- **The address** is https on port 443 with a host, a path other than `/` and no `.` or `..`
+  segments, no user name, password or fragment, at most 2,048 characters; else `invalid_client`
+  and nothing is fetched (`research/oauth_client_documents.client_id_problem`).
+- **Reading** goes through the fetcher (`POST <FETCHER_URL>/fetch-client-document`,
+  `fetcher/client_documents.py`), never the API: every address of the host must be public (no
+  private, loopback, link-local or metadata address), the connection is pinned to the vetted
+  address, at most 5 KB, at most 5 seconds, `Accept: application/json`, no redirect followed (any
+  redirect refuses the document), only a 200 accepted. The fetcher passes the document's
+  `Cache-Control` back in `X-Client-Document-Cache-Control`.
+- **The document** is a JSON object with `client_id` exactly the address it was read from,
+  `client_name` (1 to 120 characters), 1 to 10 `redirect_uris` that each pass the registration
+  rule below, no `client_secret` or `client_secret_expires_at`, and `token_endpoint_auth_method`
+  absent or `none` (`token_endpoint_auth_methods_supported`, when given, includes `none`). Other
+  fields, `grant_types` and `response_types` included, are ignored
+  (`research/oauth_client_documents.metadata_client`).
+- **Held** in the API process for its `max-age`, at least 60 seconds and at most a day; no
+  `max-age` is ten minutes, `no-store` or `no-cache` a minute; at most 256 documents, least
+  recently used out first. A refusal, a failure or a broken document is never held
+  (`services/oauth_client_documents.py`).
+- **Refusals** stop on the consent page, never at the client's redirect URI: 400 for an
+  `invalid_client` (a refused address, a private address, over 5 KB, a redirect, a missing
+  document, a document that breaks a rule), 503 for `temporarily_unavailable` (too slow, the host
+  failing or rate limiting, the fetcher unreachable).
+- **Stored** at approval as the `OAuthClient` row whose id is `uuid5(NAMESPACE_URL, client_id)`,
+  with the document's name and redirect URIs and the `client_id` in `clientUri`, refreshed (with
+  `createdAt`) at each approval; the 30-day upkeep removes it only when nobody approved it for a
+  month. The token and revocation endpoints take the address as `client_id`; the row's UUID is
+  refused there. Everyone who connects one published client shares the row; their connections stay
+  their own.
 
 ## Registration
 
@@ -72,18 +112,23 @@ The client sends the person to `<WEB>/oauth/authorize` with `response_type=code`
 1. The page sits in the signed-in shell: a signed-out person signs in with today's sign-in
    (including two-step verification and a forced password change) and comes back to the same URL.
 2. It sends the OAuth parameters, and only those, to `GET /api/oauth/authorize/request`.
-   - An unknown `client_id`, or a `redirect_uri` the client did not register, answers 400 and the
-     page stops there: nothing is sent to an address nobody vouched for. A loopback redirect may
-     differ from the registered one only in its port (RFC 8252).
+   - An unknown `client_id`, or a `redirect_uri` the client did not register or its document does
+     not list, answers 400 and the page stops there: nothing is sent to an address nobody vouched
+     for. A loopback redirect may differ from the registered one only in its port (RFC 8252). A
+     published identity that cannot be used answers 400 or 503 as above.
    - Any other fault (`response_type` not `code`, no S256 challenge, a malformed challenge,
      `state` over 1,024 characters, an unknown scope, a `resource` that is not this server)
      answers `{kind: "redirect", redirectTo}` carrying `error`, `error_description`, `state` and
      `iss`. The page shows that nothing was connected and returns only when the person presses
      Return to the app, so a registered client cannot use the page as an open redirector
      (RFC 9700, 4.11).
-   - Otherwise `{kind: "prompt", clientName, redirectHost, scopes[{scope, title, description,
-     allowed, needs}], terms{version, acceptedAt}}`.
-3. The person reads the scopes (read is always given; a scope their role cannot hold is shown
+   - Otherwise `{kind: "prompt", clientName, clientIdHost, redirectHost, scopes[{scope, title,
+     description, allowed, needs}], terms{version, acceptedAt}}`; `clientIdHost` is the host of a
+     published identity's `client_id` and null for a registered client.
+3. The page shows who is asking (`components/oauth/ClientIdentity.tsx`): the app's name, its
+   identity ("Published at claude.ai" or "Registered by the app itself"), the host it returns to
+   and the scopes it asks for, with a warning when it returns to a program on this computer
+   (localhost, 127.x, [::1]). The person reads the scopes (read is always given; a scope their role cannot hold is shown
    with what it needs and cannot be ticked), reads and accepts the MCP terms of use when this
    version is not yet accepted, and presses Approve or Cancel (an `ActionGroup`).
 4. Approve posts `POST /api/oauth/authorize/approve {request, scopes, termsVersion}`. The request
@@ -162,7 +207,8 @@ The rule is `research/oauth_rules.may_hold`; the words shown are `research/oauth
 ## Settings
 
 `GET /api/oauth/connections` answers `{serverUrl, connections[{id, clientName, clientHost,
-scopes, connectedAt, lastUsedAt}]}`, the person's unrevoked, unexpired connections, newest first;
+scopes, connectedAt, lastUsedAt}]}`, the person's unrevoked, unexpired connections, newest first
+(`clientHost` is the `client_id` host of a published identity, else the first redirect URI's host);
 `serverUrl` is the MCP server's URL while it is on and null otherwise.
 `DELETE /api/oauth/connections/{id}` revokes one of the person's own (204), else 404. The card
 is `components/settings/ConnectedClientsCard.tsx`; it hides itself while the server is off and
@@ -205,12 +251,18 @@ SHA-256; they are never logged.
 - Contracts: `research/oauth_rules.py` (PKCE, redirect URIs, scopes, lifetimes, errors),
   `research/oauth_contract.py` (bodies and replies), `research/oauth_authorization.py` (checking a
   request, granting scopes, the redirects), `research/oauth_metadata.py` (the two documents and
-  the challenge header).
-- Services: `oauth_clients`, `oauth_consent`, `oauth_tokens`, `oauth_bearer`,
-  `oauth_connections`.
+  the challenge header), `research/oauth_client_documents.py` (client ID addresses, documents,
+  holding times, the fetcher route's contract).
+- Services: `oauth_clients` (registered and published clients), `oauth_client_documents` (reading
+  through the fetcher and holding documents), `oauth_consent`, `oauth_tokens`, `oauth_bearer`,
+  `oauth_connections`. Fetcher: `fetcher/client_documents.py`.
 - Routes: `api/routes/oauth_well_known.py`, `api/routes/oauth.py`, `api/routes/oauth_consent.py`,
   `api/routes/mcp.py`; `api/oauth_hosts.py` (paths and URLs), `api/oauth_wire.py` (form and error
   bodies), `api/mcp_auth.py` (the bearer, the challenges and the audit), `api/mcp_cors.py` (browser
   clients); the clean-up `services/upkeep_clients.py`.
 - Web: `app/oauth/authorize/page.tsx`, `components/oauth/*`, `lib/oauthContract.ts`,
   `lib/oauthConsent.ts`.
+- Tests: `tests/mcp/test_oauth_client_documents.py` (the rules on hand-written documents),
+  `tests/fetcher/test_client_documents.py` (the fetcher route),
+  `tests/mcp/test_oauth_client_document_reads.py` (through the fetcher to the API, held and
+  refused), `tests/db/test_oauth_metadata_clients_db.py` (sign-in end to end beside registration).
