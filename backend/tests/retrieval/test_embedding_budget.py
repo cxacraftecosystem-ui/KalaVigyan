@@ -18,12 +18,17 @@ class Clock:
         return self.now
 
 
+class Written:
+    rowcount = 1
+
+
 class Session:
     def __init__(self) -> None:
         self.updates = 0
 
-    async def execute(self, statement: Any) -> None:
+    async def execute(self, statement: Any) -> Written:
         self.updates += 1
+        return Written()
 
     async def commit(self) -> None:
         return None
@@ -48,7 +53,7 @@ async def test_filling_vectors_starts_no_batch_after_the_deadline() -> None:
     clock = Clock()
     deadline = Deadline.after(10, clock=clock)
     session = Session()
-    pending = [_Pending(id=uuid.uuid4(), text=f"claim {n}") for n in range(5)]
+    pending = [_Pending(id=uuid.uuid4(), text=f"claim {n}", read=f"claim {n}") for n in range(5)]
     batches: list[list[str]] = []
 
     async def embed(texts: list[str]) -> list[list[float]]:

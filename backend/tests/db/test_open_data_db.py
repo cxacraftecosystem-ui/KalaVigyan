@@ -39,6 +39,7 @@ RECORD = "https://zenodo.org/records/300"
 FIRST = ReleaseStamp("ZENODO", "2026.11.21", "10.5281/zenodo.300", "10.5281/zenodo.299", 300, 299)
 SECOND = ReleaseStamp("ZENODO", "2026.11.22", "10.5281/zenodo.301", "10.5281/zenodo.299", 301, 299)
 LATER = uuid.UUID("0da7a000-0000-4000-8000-000000000777")
+UNLINKED = uuid.UUID("0da7a000-0000-4000-8000-000000000778")
 
 
 @pytest.fixture
@@ -78,6 +79,23 @@ async def test_only_published_facts_with_an_open_public_citation_are_released(se
     sources = {row["id"] for row in tables.rows["sources"]}
     assert str(IDS["paper"]) in sources
     assert {str(IDS["secret"]), str(IDS["testimony"])}.isdisjoint(sources)
+
+
+async def test_a_quote_no_passage_holds_follows_the_researchers_only_text_of_its_page(
+    session: AsyncSession,
+) -> None:
+    await add_claim(
+        session,
+        UNLINKED,
+        "Alum is weighed on a scale.",
+        cite=(IDS["paper"], "alum is weighed by eye", "PASS", None),
+    )
+    await add_claim(session, LATER, "Alum is weighed by hand.", cite=(IDS["paper"], None, "NA", None))
+    tables = await read_tables(session, site=SITE)
+    claims = {row["id"] for row in tables.rows["claims"]}
+    assert str(UNLINKED) not in claims
+    assert str(LATER) in claims and str(SHOWN) in claims
+    assert {row["claim_id"] for row in tables.rows["citations"]} >= {str(LATER), str(SHOWN)}
 
 
 async def test_the_curated_structure_keeps_only_what_rests_on_released_facts(session: AsyncSession) -> None:

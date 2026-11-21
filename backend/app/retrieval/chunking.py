@@ -6,6 +6,7 @@ from itertools import pairwise
 
 from app.core.errors import InvalidInput
 from app.models.knowledge import QUOTE_MAX_CHARS
+from app.research.quotes import LINE_BREAK_HYPHEN
 
 __all__ = ["CHUNK_MAX_CHARS", "CHUNK_OVERLAP_MAX_CHARS", "TextChunk", "chunk_text"]
 
@@ -13,6 +14,7 @@ CHUNK_MAX_CHARS = 1200
 CHUNK_OVERLAP_MAX_CHARS = QUOTE_MAX_CHARS
 PARAGRAPH_BREAK = re.compile(r"\n[ \t\f\v]*\n")
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
+JOINED_WORD = r"\1\2"
 
 
 @dataclass(frozen=True)
@@ -52,7 +54,8 @@ def _overlap(tail: _Unit, unit: _Unit, max_chars: int) -> list[_Unit]:
 
 
 def _units(text: str, max_chars: int) -> list[_Unit]:
-    paragraphs = [" ".join(part.split()) for part in PARAGRAPH_BREAK.split(text.replace("\r\n", "\n"))]
+    joined = LINE_BREAK_HYPHEN.sub(JOINED_WORD, text.replace("\r\n", "\n"))
+    paragraphs = [" ".join(part.split()) for part in PARAGRAPH_BREAK.split(joined)]
     units: list[_Unit] = []
     for number, paragraph in enumerate((p for p in paragraphs if p), start=1):
         pieces = [paragraph] if len(paragraph) <= max_chars else _split_long(paragraph, max_chars)

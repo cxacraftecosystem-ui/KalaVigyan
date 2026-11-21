@@ -27,6 +27,11 @@ def test_whitespace_collapses_and_windows_line_breaks_split_paragraphs() -> None
     assert chunks[0].text == "Alum fixes madder.\n\nIron darkens."
 
 
+def test_a_word_hyphenated_at_a_line_end_is_joined_as_the_quote_matcher_joins_it() -> None:
+    (chunk,) = chunk_text("Iron black is a mor-\ndant print.\n\nIt is well-known.")
+    assert chunk.text == "Iron black is a mordant print.\n\nIt is well-known."
+
+
 def test_a_full_chunk_starts_the_next_with_its_last_paragraph() -> None:
     a, b, c = sentence("a", 150), sentence("b", 150), sentence("c", 150)
     chunks = chunk_text(f"{a}\n\n{b}\n\n{c}", max_chars=LIMIT)

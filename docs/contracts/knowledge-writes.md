@@ -121,7 +121,8 @@ A refusal stops the run; every gate that ran is stored as one `CandidateCheck` r
    stored as RESTRICTED is refused. A licence declared open (CC BY, CC0, public domain) that the
    page itself contradicts is refused. Otherwise the licence passes and is recorded; it decides
    only whether quotes are public: a fetched page's full text is stored for researchers
-   (`chunk_acl`), so its quotes are withheld from public views and exports.
+   (`chunk_acl`), so its quotes are withheld from public views and exports, whether or not a
+   passage holds them (Citations and their passages, below).
 3. **DUPLICATE.** The statement is embedded in the stored document form and compared with the
    subject's held facts in the field (primary or secondary): shown or waiting statuses (`DRAFT`,
    `PROPOSED`, `IN_REVIEW`, `APPROVED`), open sensitivity. The same statement once case and final
@@ -573,8 +574,9 @@ Another account's supplied text is never read.
 **What is kept**: a passing fact's supplied source becomes a link-only `Source` (`keep_supplied`: the
 DOI or url, title, authors and the grade as reliability, no chunks, marked `CONTRIBUTION` with the
 proposer) whose id joins `SuppliedSource.sourceIds`; its quotes are `ClaimSource` rows without a chunk,
-so readers see the short quote and its citation as for every source, and the text never reaches
-retrieval, answers or exports. `GET /api/knowledge/supplied-sources/{id}` (`SuppliedSourceView {id,
+so readers see the short quote and its citation as for every source with no passages (when the same
+source also holds a fetched text kept for researchers, its quotes follow that text, decision 0121),
+and the text never reaches retrieval, answers or exports. `GET /api/knowledge/supplied-sources/{id}` (`SuppliedSourceView {id,
 state, citeUrl, identity, access, licence, grade, gradeReason, confirmed, characters, textSha256,
 passages[], text (whole texts only), createdAt}`, `private, no-store`, `noindex`) answers its supplier
 and reviewers (`REVIEW_CONTRIBUTIONS`), 404 for anyone else.
@@ -590,6 +592,25 @@ to the public roles): `userId` (cascading), `userTokenVersion`, `state`, `citeUr
 `grade`, `gradeReason`, `passages` (JSONB), `text`, `textSha256`, `fileSha256`, `characters`, `upload`,
 `slotHash` (unique), `slotExpiresAt`, `sourceIds`; READY exactly when the text and its hash are held, a
 slot hash exactly with its expiry; indexes on `(userId, citeUrl)` and `(userId, createdAt)`.
+
+## Citations and their passages (decision 0121)
+
+Every writer that stores a quote (a proposed fact, a structure item, a source proposal, the research
+write-back) keeps the fetched page first (`live_source_store.keep_document`) and then links the quote
+to the passage that holds it (`live_source_store.chunk_for_quote`): one passage, else two neighbouring
+passages of the same access, linked to the first with both paragraphs as its locator
+(`retrieval.md`, The passage that holds a quote). Who may then read the quote follows its page, never
+the absence of a link: a linked quote follows its passage, an unlinked one the most closed passage of
+its source, and an unquoted citation shows no words and is read by everyone (`retrieval.md`, Who may
+read a citation).
+
+`keep_document` stores a page's passages when the source has none, when a live-research source is
+read in full or had only an abstract, and, since decision 0121, when any other source (a curated or
+contributed one) is read in full: its earlier passages are replaced by the full text with the page's
+own access. Re-reading never moves or hides what earlier citations rest on: every quoted citation of
+the source is re-linked to the passage that holds its quote now, and one that everyone could read
+before keeps a public passage of exactly its quote (`retrieval.md`, Re-reading a source). So a curated
+quote stays on its page, and a new quote of a closed page is for researchers.
 
 ## Pages follow their facts (round 7)
 
@@ -658,6 +679,7 @@ field, or changes its meaning, is a new schema version.
 | Structure proposals and what approval writes | `backend/tests/structure/`, `backend/tests/db/test_structure_proposals_db.py`, `test_structure_writes_db.py` and `test_structure_export_db.py` |
 | Source proposals | `backend/tests/db/test_source_proposals_db.py` and `backend/tests/mcp/test_mcp_source_tools.py` |
 | Supplied sources | `backend/tests/db/test_supplied_sources_db.py` |
+| Citations and their passages | `backend/tests/db/test_quote_relinks_db.py` and `test_quote_visibility_db.py` |
 | Pages follow their facts | `backend/tests/db/test_review_queue_refresh_db.py` and `test_page_revalidation_db.py` |
 | The research write-back | `backend/tests/write_back/`, `backend/tests/db/test_write_back_audit_db.py`, `test_write_back_report_db.py` and `test_term_write_back_gates_db.py` |
 | The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/knowledge-writes.md` byte for byte equal to this file |

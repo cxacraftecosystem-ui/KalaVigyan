@@ -76,6 +76,12 @@ def cited_pairs(explainer: Explainer) -> set[tuple[str, str]]:
     return {(c.claim_id, c.source_id) for block in explainer_blocks(explainer) for c in block.citations()}
 
 
+def cited_quotes(explainer: Explainer) -> set[tuple[str, str, str | None]]:
+    return {
+        (c.claim_id, c.source_id, c.quote) for block in explainer_blocks(explainer) for c in block.citations()
+    }
+
+
 def token_of(link: ShareLink | None) -> str:
     assert link is not None and link.path is not None
     return link.path.rsplit("/", 1)[1]
@@ -127,10 +133,10 @@ async def stored_citations(session: AsyncSession, explainer: Explainer, closed: 
         ClaimSource(
             claimId=uuid.UUID(claim),
             sourceId=uuid.UUID(source),
-            quote="A quoted passage.",
+            quote=quote,
             chunkId=chunk.id if (claim, source) == closed else None,
         )
-        for claim, source in sorted(pairs)
+        for claim, source, quote in sorted(cited_quotes(explainer), key=str)
     )
     await session.commit()
 

@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased, defer
 
 from app.models import (
-    Chunk,
     Claim,
     ClaimSource,
     Concept,
@@ -20,11 +19,12 @@ from app.models import (
     Source,
 )
 from app.research.retrieval import (
-    PUBLIC_CHUNK_ACL,
+    OPEN_CHUNK_ACLS,
     RESTRICTED_SENSITIVITY,
     SHOWN_CLAIM_STATUSES,
     VISIBLE_SENSITIVITY,
 )
+from app.retrieval.citation_access import readable_citation
 from app.retrieval.field_scope import withheld_field_sources
 
 from .claim_holds import held_claim
@@ -105,18 +105,13 @@ def _citations(*columns: Any) -> Select[Any]:
 
 
 def _exportable_citation() -> list[ColumnElement[bool]]:
-    public_chunks = (
-        select(Chunk.id)
-        .where(Chunk.acl == PUBLIC_CHUNK_ACL, Chunk.sensitivity != RESTRICTED_SENSITIVITY)
-        .correlate(None)
-    )
     open_sources = (
         select(Source.id)
         .where(Source.sensitivity != RESTRICTED_SENSITIVITY, Source.kind != FIELD_TESTIMONY)
         .correlate(None)
     )
     return [
-        or_(ClaimSource.chunkId.is_(None), ClaimSource.chunkId.in_(public_chunks)),
+        readable_citation(OPEN_CHUNK_ACLS),
         ClaimSource.sourceId.in_(open_sources),
         ClaimSource.sourceId.not_in(withheld_field_sources()),
     ]

@@ -7,12 +7,15 @@ ranking, the embedding runs or the evaluation read it.
 | For | Read |
 |---|---|
 | Why retrieval works this way | [decision 0008](../decisions/0008-stored-knowledge-retrieval.md) and [0101](../decisions/0101-knowledge-architecture-for-every-craft.md), item 10 and build step 3 |
+| Why a quote follows its page and a held fact leaves answers | [decision 0121](../decisions/0121-quote-visibility.md) |
 | The seats that each search their own fields | [answer-eval.md](answer-eval.md) |
 | Where retrieval sits in answering | [research.md](research.md) |
 
 | Part | Code |
 |---|---|
 | The search, ranking, stamps and runs | `app/retrieval/` |
+| Who may read a citation, and held facts | `app/retrieval/citation_access.py` |
+| The passage that holds a quote, and re-reading a source | `app/retrieval/quote_passages.py`, `app/retrieval/citation_links.py` |
 | The contract types | `app/research/retrieval.py` |
 | The seat search | `app/services/seat_search.py` |
 | The seed passages | `app/services/claim_seed_passages.py` |
@@ -42,11 +45,62 @@ flowchart LR
   scope reads the craft's concepts and its family's shared concepts; `craftSlug` null reads every
   visible concept. Modes set the statuses and levels read (`MODE_CLAIM_STATUSES`,
   `MODE_CLAIM_LEVELS`); only the modes whose policy holds tier `T2` read passages.
+- A held fact (every quote it cites failed its check, `nightly-upkeep.md` 1a) is never searched,
+  in any mode: `statements.claim_conditions(..., held=HELD_LEFT_OUT)` by default, so answers,
+  coverage and the saved-answer re-check never rest on it. `held=HELD_KEPT` keeps it, for the
+  reads a contributor re-sources it from (decision 0121).
 - `fields` keeps the claims filed under one of the fields (as their field or a secondary field)
   and the claims with no field yet; passages follow the claims kept. An empty tuple reads every
   field.
 - `chunkAcls` is the reader's passage access (`chunk_acls_for(reader)`); restricted chunks and
   sources and withheld field recordings are never read.
+
+### Who may read a citation
+
+A citation (`ClaimSource`) is read through `citation_access.readable_citation(acls)`, the one rule
+behind `statements.readable_citations` (every view of a fact), the open-data export (`acls`
+`PUBLIC`) and the re-reading below (decision 0121):
+
+- linked to a passage (`chunkId`): that passage's `acl` is one of `acls` and it is not
+  `RESTRICTED`;
+- not linked and not quoted: readable, since it shows no words of its source;
+- not linked but quoted: every passage of its source is readable by `acls` and not `RESTRICTED`,
+  and the source is not `RESTRICTED`. A quote no passage holds therefore takes the most closed
+  passage of its page: a quote of a page whose full text is kept for researchers is shown to
+  researchers only. A source with no passages (a book cited by page, a supplied source) shows
+  its short quotes to everyone, as before.
+
+A view never shows a quote whose last check failed (`quoteCheck` `FAIL`): the citation stays,
+unquoted and labelled `INFERRED` (`knowledge_view.shown_quote`). A stored answer read publicly
+(`public_explainer.closed_citations`) is redacted per citation: a quoted citation stays only when
+a readable citation of the same fact and source carries the same quote (compared by
+`quotes.quote_key`), an unquoted one when the fact and source have any readable citation.
+
+### The passage that holds a quote
+
+`quote_passages.QuotePassages(passages).holding(quote)` (read by
+`live_source_store.chunk_for_quote`, so by every writer that links a quote) finds the first
+passage, by ordinal, whose text holds the quote by `quotes.quote_occurs`; failing that, the first
+two neighbouring passages of the same `acl` whose joined text holds it, linked to the first with
+the paragraph range of both (`para 4` and `paras 5-6` become `paras 4-6`; any other locator keeps
+the first). A quote that crosses one passage boundary is so linked, whether or not the chunker
+carried the last paragraph over; one no passage or pair holds stays unlinked and is read by the
+rule above.
+
+### Re-reading a source
+
+`indexing.replace_source_chunks(session, source_id, text, *, lang, acl)` rewrites a source's
+passages by ordinal, then re-links every quoted citation of the source
+(`citation_links.relink_quotes`): each moves to the passage that holds its quote now, with that
+passage's locator unless the citation carries its own (one that is not its old passage's
+locator); a quote no passage holds is left unlinked, and the rule above decides it. A citation
+everyone could read before the re-reading, whose quote has not failed, is never hidden by it:
+when its new passage is less open than `PUBLIC`, or none holds it, a `PUBLIC` passage holding
+exactly its quote is kept for it after the document's passages (one per quote, with the
+document's language and the source's sensitivity), as the seed import keeps its quotes. So a
+public abstract quote stays public when the paper's closed full text is read, and the closed text
+around it does not become public. The function returns the passages stored, kept quotes
+included. A citation that already points at the right passage and locator is not written.
 
 ### Ranking
 
@@ -113,6 +167,10 @@ Every stored vector carries the model that made it.
   (`services/curation_claims.write_claims`), the testimony erasure
   (`services/testimony_claims`), re-chunking (`retrieval/indexing._apply`) or any later writer.
   The next embedding run gives it a new one.
+- An embedding run writes a vector only where the text is still the text it embedded: the
+  `UPDATE` compares `Claim.text`, `Chunk.text` or `KnowledgePiece.payload` with what was read,
+  so a text rewritten while the model ran (a curation import, a testimony erasure) keeps no
+  vector, is not counted, and is embedded by the next run.
 - The migration stamps the vectors stored before it with the route's model at that moment;
   `gemini-embedding-2` is the only catalogue model that can run `EMBED` and has been since the
   foundation.
@@ -152,8 +210,15 @@ their sources (`claim_seed_passages.store_seed_passages`): every quote whose ups
 passed (`quoteCheck` `PASS`), once per source, with every locator it was cited at joined by
 `; `, `PUBLIC` (the same words are already shown as the claim's quote), language `en`. A
 source that already has chunks (an earlier run, or a document live research stored) is left as
-it is, so a second run stores nothing. `ClaimSource.chunkId` is not set, so citation access is
-unchanged. The passages are searched like any corpus passage and embedded by `embed_knowledge`.
+it is, so a second run stores nothing. `ClaimSource.chunkId` is not set: an unlinked quote is
+read by its source's passages (Who may read a citation), and these are all `PUBLIC`. When a full
+text of such a source is read later (`live_source_store.keep_document`), its passages are
+replaced and each curated quote re-linked as in Re-reading a source, so it stays public. The
+passages are searched like any corpus passage and embedded by `embed_knowledge`.
+
+The chunker (`chunking.chunk_text`) joins a word broken by a hyphen at a line end the way the
+quote matcher does (`quotes.LINE_BREAK_HYPHEN`: `mor-` and `dant` on the next line become
+`mordant`), so a quote the gate found in a document is found in its passages too.
 
 The Wood Handbook is cited by the inferential-system seed (FPL-GTR-190, 2010) by chapter title,
 with no quote; the repository holds no text of that edition, so it has no passages.
@@ -202,5 +267,7 @@ with no quote; the repository holds no text of that edition, so it has no passag
 | Seats' field filters | `backend/tests/retrieval/test_seat_fields.py` |
 | Seed passages and the corpus | `backend/tests/retrieval/test_seed_passages.py`, `test_chunking.py` and `backend/tests/db/test_retrieval_passages_db.py` |
 | Ranking on Postgres | `backend/tests/db/test_retrieval_ranking_db.py` and `test_knowledge_retrieval_db.py` |
+| Who may read a citation, held facts and failed quotes | `backend/tests/retrieval/test_statements.py`, `backend/tests/learning/test_share_links.py` and `backend/tests/db/test_quote_visibility_db.py` |
+| The passage that holds a quote, re-reading and the vector guard | `backend/tests/retrieval/test_quote_passages.py`, `test_chunking.py` and `backend/tests/db/test_quote_relinks_db.py` |
 
 Re-read it when the embedding model, a ranking or the evaluation's floors change.
