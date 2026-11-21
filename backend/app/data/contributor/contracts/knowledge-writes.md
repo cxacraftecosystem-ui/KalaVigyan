@@ -57,11 +57,15 @@ with a tool error naming the scope. The site's routes ask for the contribution t
 - `sources`: 1 to 5, each named once (by canonical URL): `{url (https), title, licence?, quotes:
   [{text (at most 300 characters), locator?}] (1 to 6, each once)}`.
 - `taskKey` (optional): the open-work task the proposer claimed for this fact
-  (`docs/contracts/open-work.md`). It must be a field or corroboration task (`MISSING_FIELD`,
-  `THIN_FIELD`, `SECOND_SOURCE`, `SOURCES_DIFFER`) of the same page (a craft subject takes a craft or
-  family key, a category a category key) and name the primary field or a secondary one
-  (`SECOND_SOURCE` and `SOURCES_DIFFER` may name none); otherwise the proposal is malformed
-  (`research/knowledge_writes.fact_task_problem`). Once the gates have run, a fact that passed
+  (`docs/contracts/open-work.md`). It must be a field, corroboration or question task (`MISSING_FIELD`,
+  `THIN_FIELD`, `SECOND_SOURCE`, `SOURCES_DIFFER`, `ANSWER_GAP`) of the same page (a craft subject takes a
+  craft or family key, a category a category key) and name the primary field or a secondary one
+  (`SECOND_SOURCE` and `SOURCES_DIFFER` may name none; an `ANSWER_GAP` key names its question,
+  `gap-<id>`); otherwise the proposal is malformed (`research/knowledge_writes.fact_task_problem`). An
+  `ANSWER_GAP` key is taken only when the question's gap lists the primary field or a secondary one
+  among the fields its readers lacked, and is refused before any gate otherwise
+  (`services/fact_task_checks.check_question_task`, the same check for a structure item's fact). Once the
+  gates have run, a fact that passed
   (published or waiting for review) ends the proposer's live reservation of that key `COMPLETED`, and a
   refused one gives it back (`RELEASED`, or `EXPIRED` past its time), so the task returns to the list
   (`services/task_reservations.complete_task`, `give_back_task`). Another account's reservation is

@@ -8,7 +8,7 @@ import { SITE_PAGES_PATH, STATIC_PAGE_REVALIDATE_SECONDS, parseStaticPages, type
 
 export const CRAFT_CATALOGUE_TAG = "craft-catalogue";
 export const STATIC_PAGES_TAG = "static-pages";
-export const STATIC_FETCH_TIMEOUT_MS = 10_000;
+export const STATIC_FETCH_TIMEOUT_MS = 30_000;
 export const CATALOGUE_UNAVAILABLE = "The craft catalogue could not be read";
 export const craftPageTag = (slug: string) => `craft-page:${slug}`;
 

@@ -13,7 +13,7 @@ on:
         options: [all, monograph, borrowed]
         default: all
   workflow_run:
-    workflows: [Deploy web app]
+    workflows: [Deploy web app, Deploy backend]
     types: [completed]
     branches: [main]
 
@@ -25,11 +25,57 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  parity:
-    name: Compare the React monograph and every borrowed component with the approved page
+  served:
+    name: Wait until production serves the deployed commit
     if: >-
       github.repository == 'cxacraftecosystem-ui/KalaVigyan' &&
-      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+      github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 50
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      built: ${{ steps.await.outputs.built }}
+      reached: ${{ steps.await.outputs.reached }}
+    steps:
+      - name: Check out the repository with its history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Wait for the build of the deployed commit
+        id: await
+        uses: ./.github/actions/await-build
+        with:
+          commit: ${{ github.event.workflow_run.head_sha }}
+          trigger-run: ${{ github.event.workflow_run.id }}
+          web-origin: ${{ vars.WEB_ORIGIN || 'https://kalavigyan.vercel.app' }}
+          wait-seconds: "2400"
+          token: ${{ github.token }}
+
+      - name: Say what will be compared
+        env:
+          BUILT: ${{ steps.await.outputs.built }}
+          REACHED: ${{ steps.await.outputs.reached }}
+          HAVE: ${{ steps.await.outputs.served }}
+          WAITED: ${{ steps.await.outputs.waited }}
+          EXPECTED: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          case "$BUILT:$REACHED" in
+            success:yes) echo "production serves $HAVE, so its parity is compared" ;;
+            none:*) echo "::notice::this deploy started no web build, so parity waits for the deploy that does" ;;
+            failure:*) echo "::error::the deploy hook did not start the build of ${EXPECTED:0:12}, so parity was not compared against an older build"; exit 1 ;;
+            *) echo "::error::production still serves ${HAVE:-no commit}, not ${EXPECTED:0:12} or a later commit of main, after waiting ${WAITED:-0}s: its Vercel build failed or never finished, so parity was not compared against an older build"; exit 1 ;;
+          esac
+
+  parity:
+    name: Compare the React monograph and every borrowed component with the approved page
+    needs: served
+    if: >-
+      !cancelled() && github.repository == 'cxacraftecosystem-ui/KalaVigyan' &&
+      (github.event_name == 'workflow_dispatch' || (needs.served.outputs.built == 'success' && needs.served.outputs.reached == 'yes'))
     runs-on: ubuntu-26.04
     timeout-minutes: 60
     defaults:

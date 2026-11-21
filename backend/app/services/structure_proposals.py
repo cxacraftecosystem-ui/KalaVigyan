@@ -35,6 +35,7 @@ from .candidate_gates import first_gates
 from .candidate_sources import ReadSource, read_source
 from .curated_index import CuratedPage, stored_curated_page
 from .fact_proposals import role_now
+from .fact_task_checks import check_question_task
 from .live_source_store import keep_document
 from .proposal_writes import mark_contributed
 from .structure_proposals_dossier import dossier_problem
@@ -100,6 +101,7 @@ async def propose_structure(
     problem = dossier_problem(proposal) or target_problem(page, proposal.item)
     if problem is not None:
         raise InvalidInput(problem)
+    await check_question_task(session, proposal.task_key, tuple(filter(None, (proposal.field,))))
     checked = await _checked(session, fetcher, proposal, user.id)
     kept = await _kept(session, checked.read, user.id) if checked.passed else {}
     row = _row(proposal, (craft.id, user.id, origin), checked, kept, now)

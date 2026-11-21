@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       commit:
-        description: A commit of main production must serve within 20 minutes (empty checks that production is not behind main)
+        description: A commit of main production must serve within 40 minutes (empty checks that production is not behind main)
         type: string
         default: ""
       base_url:
@@ -24,6 +24,7 @@ on:
       - ".github/actions/release-issue/**"
       - "frontend/e2e/release/**"
       - "frontend/app/api/version/**"
+      - ".github/actions/await-build/**"
 
 permissions:
   contents: read
@@ -40,7 +41,7 @@ jobs:
     name: Production serves the pushed commit
     if: github.repository == 'cxacraftecosystem-ui/KalaVigyan' && github.event_name != 'pull_request' && !inputs.base_url
     runs-on: ubuntu-26.04
-    timeout-minutes: 30
+    timeout-minutes: 50
     permissions:
       contents: read
       actions: read
@@ -48,44 +49,43 @@ jobs:
       mode: ${{ steps.want.outputs.mode }}
       expected: ${{ steps.want.outputs.expected }}
       trigger: ${{ steps.want.outputs.trigger }}
-      verdict: ${{ steps.serve.outputs.verdict }}
-      served: ${{ steps.serve.outputs.served }}
+      verdict: ${{ steps.verdict.outputs.verdict }}
+      served: ${{ steps.await.outputs.served }}
     steps:
-      - name: Check out main with its history
+      - name: Check out the repository with its history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: main
           fetch-depth: 0
 
       - name: Name the commit production must serve
         id: want
         env:
-          GH_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
           TRIGGER_RUN: ${{ github.event.workflow_run.id }}
           TRIGGER_SHA: ${{ github.event.workflow_run.head_sha }}
           TRIGGER_NAME: ${{ github.event.workflow_run.name }}
           TRIGGER_URL: ${{ github.event.workflow_run.html_url }}
           ASKED: ${{ inputs.commit }}
+          WAIT_SECONDS: "2400"
         run: |
           set -euo pipefail
           mode=latest
           expected=""
           trigger=""
+          run=""
+          wait=0
           if [ "$EVENT" = workflow_run ]; then
+            mode=deploy
             trigger="[$TRIGGER_NAME]($TRIGGER_URL)"
-            build="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$TRIGGER_RUN/jobs" --jq '[.jobs[].steps[]? | select(.name | startswith("Build the web app")) | .conclusion | select(. != null)] | first // "none"')"
-            echo "$TRIGGER_NAME started the web build: $build"
-            case "$build" in
-              success) mode=wait; expected="$TRIGGER_SHA" ;;
-              failure) mode=refused; expected="$TRIGGER_SHA" ;;
-              *) mode=none ;;
-            esac
+            run="$TRIGGER_RUN"
+            expected="$TRIGGER_SHA"
+            wait="$WAIT_SECONDS"
           elif [ -n "$ASKED" ]; then
             [[ "$ASKED" =~ ^[0-9a-f]{7,40}$ ]] || { echo "::error::commit must be a hexadecimal commit id"; exit 1; }
             expected="$(git rev-parse --verify --quiet "$ASKED^{commit}")" || { echo "::error::$ASKED is not a commit of this repository"; exit 1; }
             git merge-base --is-ancestor "$expected" origin/main || { echo "::error::$ASKED is not on main"; exit 1; }
-            mode=wait
+            mode=asked
+            wait="$WAIT_SECONDS"
           fi
           if [ "$mode" = latest ]; then
             command -v yq > /dev/null || { echo "::error::yq is not on the runner; cannot read the deploy workflows' push paths"; exit 1; }
@@ -102,67 +102,62 @@ jobs:
             echo "mode=$mode"
             echo "expected=$expected"
             echo "trigger=$trigger"
+            echo "run=$run"
+            echo "wait=$wait"
           } >> "$GITHUB_OUTPUT"
           echo "mode $mode; production must serve ${expected:-no particular commit}"
 
-      - name: Read the commit production serves
-        id: serve
+      - name: Wait for the build of that commit
+        id: await
+        uses: ./.github/actions/await-build
+        with:
+          commit: ${{ steps.want.outputs.expected }}
+          trigger-run: ${{ steps.want.outputs.run }}
+          web-origin: ${{ env.WEB_ORIGIN }}
+          wait-seconds: ${{ steps.want.outputs.wait }}
+          token: ${{ github.token }}
+
+      - name: Say whether production serves it
+        id: verdict
         env:
           MODE: ${{ steps.want.outputs.mode }}
           EXPECTED: ${{ steps.want.outputs.expected }}
-          WAIT_SECONDS: "1200"
+          BUILT: ${{ steps.await.outputs.built }}
+          REACHED: ${{ steps.await.outputs.reached }}
+          HAVE: ${{ steps.await.outputs.served }}
+          WAITED: ${{ steps.await.outputs.waited }}
           GRACE_SECONDS: "5400"
         run: |
           set -euo pipefail
-          served() {
-            curl -fsS -m 15 -H 'cache-control: no-cache' "$WEB_ORIGIN/api/version" 2> /dev/null | jq -r '.commit // empty' 2> /dev/null || true
-          }
-          descends() {
-            [ "$1" = "$2" ] && return 0
-            git cat-file -e "$2^{commit}" 2> /dev/null || git fetch --quiet origin main
-            git cat-file -e "$2^{commit}" 2> /dev/null && git merge-base --is-ancestor "$1" "$2"
-          }
-          have=""
-          case "$MODE" in
-            none) have="$(served)"; verdict=no-build ;;
-            refused) have="$(served)"; verdict=refused ;;
-            wait)
-              deadline=$(( $(date +%s) + WAIT_SECONDS ))
-              while :; do
-                have="$(served)"
-                if [ -n "$have" ] && descends "$EXPECTED" "$have"; then verdict=served; break; fi
-                if [ "$(date +%s)" -ge "$deadline" ]; then verdict=behind; break; fi
-                echo "production serves ${have:-no commit}; waiting for ${EXPECTED:0:12}"
-                sleep 20
-              done
-              ;;
-            latest)
-              have="$(served)"
+          case "$MODE:$BUILT" in
+            deploy:none) verdict=no-build ;;
+            deploy:failure) verdict=refused ;;
+            deploy:success|asked:success) if [ "$REACHED" = yes ]; then verdict=served; else verdict=behind; fi ;;
+            latest:success)
               age=$(( $(date +%s) - $(git log -1 --format=%ct "$EXPECTED") ))
-              if [ -z "$have" ]; then verdict=silent
-              elif descends "$EXPECTED" "$have"; then verdict=served
+              if [ -z "$HAVE" ]; then verdict=silent
+              elif [ "$REACHED" = yes ]; then verdict=served
               elif [ "$age" -lt "$GRACE_SECONDS" ]; then verdict=building
               else verdict=behind
               fi
               ;;
-            *) echo "::error::unknown mode $MODE"; exit 1 ;;
+            *) echo "::error::unknown mode $MODE with build $BUILT"; exit 1 ;;
           esac
-          {
-            echo "verdict=$verdict"
-            echo "served=$have"
-          } >> "$GITHUB_OUTPUT"
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+          unread=""
+          [ "$MODE" = latest ] || unread=", so the pages were not read against an older build"
           {
             echo "### Production commit"
             echo ""
-            echo "Production serves \`${have:-no commit}\`; it should serve \`${EXPECTED:-any commit}\` or a later commit of main. Verdict: $verdict."
+            echo "Production serves \`${HAVE:-no commit}\`; it should serve \`${EXPECTED:-any commit}\` or a later commit of main. Verdict: $verdict (waited ${WAITED:-0}s)."
           } >> "$GITHUB_STEP_SUMMARY"
           case "$verdict" in
-            served) echo "production serves $have" ;;
-            no-build) echo "::notice::this deploy started no web build; production serves ${have:-no commit}" ;;
+            served) echo "production serves $HAVE" ;;
+            no-build) echo "::notice::this deploy started no web build; production serves ${HAVE:-no commit}, so the pages are not read" ;;
             building) echo "::notice::the newest deployable commit ${EXPECTED:0:12} is younger than $(( GRACE_SECONDS / 60 )) minutes; its build may still be running" ;;
-            behind) echo "::error::production serves ${have:-no commit}, not ${EXPECTED:0:12} or a later commit of main: its Vercel build failed or never started"; exit 1 ;;
+            behind) echo "::error::production still serves ${HAVE:-no commit}, not ${EXPECTED:0:12} or a later commit of main, after waiting ${WAITED:-0}s: its Vercel build failed or never finished$unread"; exit 1 ;;
             silent) echo "::error::$WEB_ORIGIN/api/version reports no commit"; exit 1 ;;
-            refused) echo "::error::the deploy hook did not start the build of ${EXPECTED:0:12}"; exit 1 ;;
+            refused) echo "::error::the deploy hook did not start the build of ${EXPECTED:0:12}$unread"; exit 1 ;;
           esac
 
   pages:
@@ -171,7 +166,7 @@ jobs:
     if: >-
       !cancelled() && github.repository == 'cxacraftecosystem-ui/KalaVigyan' &&
       (github.event_name != 'schedule' || github.event.schedule == '17 3 * * *') &&
-      (github.event_name != 'workflow_run' || needs.served.outputs.verdict != 'no-build')
+      (needs.served.result == 'skipped' || needs.served.outputs.mode == 'latest' || needs.served.outputs.verdict == 'served')
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     defaults:

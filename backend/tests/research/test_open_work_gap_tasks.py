@@ -49,7 +49,7 @@ def test_a_gap_becomes_one_task_with_the_question_how_many_asked_and_what_would_
         "At least 2 cited facts of Kutch Ajrakh under each of CHEMISTRY and HISTORY that a retrieval run for "
         "the question finds"
     )
-    assert "MISSING_FIELD or THIN_FIELD task as task_key" in task.acceptance
+    assert "naming this task's key as task_key: a fact filed under one of those fields" in task.acceptance
     assert task.fact_ids == [] and task.source_ids == [] and task.need is None
 
 

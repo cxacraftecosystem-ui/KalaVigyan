@@ -28,6 +28,7 @@ from .candidate_sources import ReadSource, read_sources
 from .candidate_store import SqlHeldFacts, proposal_subject
 from .candidate_writes import mark_sources_differ, record_checks
 from .fact_proposals_words import placement_message, placement_note
+from .fact_task_checks import check_question_task
 from .proposal_writes import ProposedClaim, cite_proposal, proposal_level, write_proposed_claim
 from .task_reservations import complete_task, give_back_task
 
@@ -88,6 +89,7 @@ async def propose_fact_run(
     now: datetime,
     ticket: uuid.UUID,
 ) -> ProposalRun:
+    await check_question_task(session, proposal.task_key, (proposal.field, *proposal.fields))
     role = await role_now(session, proposer.id)
     standing = await trust_tiers.account_standing(session, proposer.id)
     subject = await proposal_subject(session, proposal.subject)

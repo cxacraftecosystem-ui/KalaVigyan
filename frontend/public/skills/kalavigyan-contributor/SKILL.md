@@ -320,10 +320,11 @@ nightly upkeep groups it with the questions like it about the same craft and lis
 asked in the last 90 days, the fields that would answer it and what the answer lacked.
 
 - Work it as field research (its prompt is `research_field`, for the task's field) and propose the
-  facts with `propose_facts`, naming the field's `MISSING_FIELD` or `THIN_FIELD` task as `task_key`
-  when one is open, and no `task_key` otherwise.
-- It closes by itself once a nightly retrieval run for the question finds at least two cited facts
-  in each of its fields, and a reservation of it then ends completed.
+  facts with `propose_facts`, naming the `ANSWER_GAP` key as `task_key`: it is taken by a fact filed
+  under one of the fields its readers lacked, and your reservation ends completed once that fact
+  passes the gates.
+- The question closes by itself once a nightly retrieval run for it finds at least two cited facts
+  in each of its fields.
 - Never try to reach the person who asked, and never put a personal detail from a question in a fact.
 
 ## Never

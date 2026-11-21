@@ -198,8 +198,9 @@ embeddingModel}`.
 subject's healing tasks with its own priority: `field` the first of its fields, `count` the askers,
 prompt `research_field`, `needed` `Readers asked "<question>" (<n> readers in the last 90 days, the
 latest on <date>); the answer <what it lacked>. Cited facts under <fields> would answer it.`, and the
-acceptance above. A fact proposed for it names the field's `MISSING_FIELD` or `THIN_FIELD` task as
-`task_key` when one is open and no `task_key` otherwise; the task closes itself at the nightly check.
+acceptance above. A fact proposed for it names its key as `task_key` when the fact is filed under one
+of the gap's fields (`knowledge-writes.md`); the reservation ends `COMPLETED` once the fact passes the
+gates, and the question closes itself at the nightly check.
 The site lists it with the fact tasks ("Where help is wanted" on `/contributions/facts`).
 
 **Privacy.** A task never says who asked: no account, no answer, only how many. The question is
@@ -237,7 +238,7 @@ public roles.
   (`EXPIRED`, at its expiry) by the next claim, and the task returns to the list by itself.
 - A release ends the caller's own reservation (`RELEASED`, or `EXPIRED` once past its time).
 - A component proposal naming its `task_key` ends the proposer's reservation `COMPLETED`.
-- A proposed fact (MCP `propose_facts`, a fact part of `propose_page`, or `POST /api/knowledge/facts`) naming a field or corroboration task as its
+- A proposed fact (MCP `propose_facts`, a fact part of `propose_page`, or `POST /api/knowledge/facts`) naming a field, corroboration or question task as its
   `taskKey` ends the proposer's reservation `COMPLETED` once the fact passes the gates (published or
   waiting for review), and gives it back (`RELEASED`) when the fact is refused, so the task returns
   to the list (`knowledge-writes.md`). The `research_field` prompt asks the agent to pass it.
