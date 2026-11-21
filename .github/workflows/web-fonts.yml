@@ -1,0 +1,47 @@
+name: Web fonts
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: [main]
+    paths:
+      - "tools/webfonts/**"
+      - "tools/webfonts_build.py"
+      - ".github/workflows/web-fonts.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-fonts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  subset:
+    name: Subset the Newsreader web fonts
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: "3.14"
+      - name: Install fontTools and Brotli
+        run: python -m pip install --disable-pip-version-check fonttools==4.68.0 brotli==1.2.1
+      - name: Subset
+        working-directory: tools
+        shell: bash
+        run: python webfonts_build.py --out ../web-fonts | tee ../web-fonts.txt
+      - name: Keep the fonts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: web-fonts-${{ github.run_id }}
+          path: |
+            web-fonts
+            web-fonts.txt
+          if-no-files-found: error
+          retention-days: 14
+      - name: Check the written fonts carry the fix-unhinted prep
+        run: |
+          cp web-fonts/*.woff2 frontend/fonts/
+          python tools/hygiene_check.py

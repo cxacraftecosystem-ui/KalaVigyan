@@ -1,13 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { CircleAlert } from "lucide-react";
 
-import { ExplainerView } from "@/components/answer/ExplainerView";
 import { NotEnoughEvidence } from "@/components/answer/NotEnoughEvidence";
 import { AnswerTools } from "@/components/ask/AnswerTools";
 import { AskBox } from "@/components/ask/AskBox";
 import { AskOptions } from "@/components/ask/AskOptions";
+import { useAuth } from "@/components/AuthProvider";
 import { useAskScreen } from "@/components/ask/useAskScreen";
 import { useExplainerLearning } from "@/components/ask/useExplainerLearning";
 import { useAppReducedMotion } from "@/components/guide/useAppReducedMotion";
@@ -18,13 +19,41 @@ import { LoadingPanel, RetryPanel } from "@/components/RemotePanels";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 
+const ExplainerView = dynamic(() => import("@/components/answer/ExplainerView").then((view) => view.ExplainerView), { loading: () => <LoadingPanel label="Opening the answer" /> });
+
 const STARTERS = ["Why does alum fix madder dye on cotton?", "What happens to clay when terracotta is fired?", "How does indigo turn blue on the cloth?"];
+const ASK_HEADING = "What would you like to understand?";
 
 export default function AskPage() {
+  const { loading } = useAuth();
+  if (loading) return <AskOpening />;
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<AskOpening />}>
       <AskScreen />
     </Suspense>
+  );
+}
+
+function AskHeading() {
+  return (
+    <header className="pt-4 md:pt-12">
+      <h1 className="font-headline text-h1 text-ink-1">{ASK_HEADING}</h1>
+    </header>
+  );
+}
+
+function AskOpening() {
+  return (
+    <div className="grid w-full min-w-0 gap-8" inert aria-busy="true" data-testid="ask-opening">
+      <div className="mx-auto grid w-full max-w-measure gap-5">
+        <AskHeading />
+        <div className="grid gap-3 rounded-control border border-ink-1 bg-raised p-3 sm:p-4" aria-hidden>
+          <div className="min-h-16" />
+          <div className="h-control" />
+        </div>
+        <Starters onAsk={() => undefined} />
+      </div>
+    </div>
   );
 }
 
@@ -75,11 +104,7 @@ function AskScreen() {
   return (
     <div className="grid w-full min-w-0 gap-8">
       <div className="mx-auto grid w-full max-w-measure gap-5">
-        {idle ? (
-          <header className="pt-4 md:pt-12">
-            <h1 className="font-headline text-h1 text-ink-1">What would you like to understand?</h1>
-          </header>
-        ) : null}
+        {idle ? <AskHeading /> : null}
         {learning.opening && !started ? <h1 className="sr-only">Answer</h1> : null}
         <AskBox value={question} onChange={setQuestion} onSubmit={() => run(question)} onStop={stop} busy={busy} canAsk={canAsk} dictation={dictation} language={language} options={<AskOptions {...options} />} />
         {idle ? <Starters onAsk={(starter) => run(starter)} /> : null}

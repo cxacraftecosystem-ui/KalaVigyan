@@ -3,7 +3,7 @@ name: Hygiene
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, "round[0-9]", "round[0-9][0-9]"]
   workflow_dispatch:
 
 permissions:

@@ -22,6 +22,7 @@ export type PageSeen = {
   shape: DrawnShape | null;
   signInFields: boolean;
   crashes: string[];
+  appbars: number;
 };
 
 export const NOT_FOUND_PANEL = "error-not-found";
@@ -47,6 +48,7 @@ export const KEY_PAGES: readonly KeyPage[] = [
   { name: "Sign in", path: SIGN_IN_PATH, marker: { kind: "sign-in" }, audit: true },
   { name: "The answer page", path: "/ask", marker: { kind: "shell" }, audit: true },
   { name: "Connect an app", path: "/oauth/authorize", marker: { kind: "shell" }, audit: false },
+  { name: "Connect your AI", path: "/connect", marker: { kind: "shell" }, audit: false },
   { name: "Sign up", path: "/signup", marker: { kind: "heading", heading: ANY_HEADING }, audit: false },
   { name: "Forgot password", path: "/forgot-password", marker: { kind: "heading", heading: ANY_HEADING }, audit: false },
   { name: "Privacy", path: "/privacy", marker: { kind: "heading", heading: /privacy/i }, audit: false },
@@ -110,5 +112,6 @@ export function pageProblems(page: KeyPage, seen: PageSeen): string[] {
   if (!seen.drawn) problems.push("the page drew nothing within the wait");
   const unexpected = seen.errorPanels.filter((panel) => page.marker.kind !== "not-found" || panel !== NOT_FOUND_PANEL);
   for (const panel of unexpected) problems.push(`the page shows the ${panel} panel`);
+  if (seen.appbars > 1) problems.push(`the page draws ${seen.appbars} app bars, one above the other`);
   return [...problems, ...markerProblems(page, seen)];
 }

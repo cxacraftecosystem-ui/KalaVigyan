@@ -250,8 +250,13 @@ test("the production Overview check needs a curated page's lede and key facts on
   expect(overviewNote({ ...served, curated: false })).toBe("not curated");
 });
 
-test("the craft page reads its monograph document or the craft list's record, draws no tabs and mounts no generator", () => {
-  const graph = [...eagerModules("@/app/(reading)/crafts/[slug]/page")];
+test("the craft page loads the monograph or the craft list's record only when it draws it, draws no tabs and mounts no generator", () => {
+  const route = readFileSync(join(FRONTEND, "app", "(reading)", "crafts", "[slug]", "page.tsx"), "utf8");
+  const lazy = [...route.matchAll(/dynamic\(\(\) => import\("([^"]+)"\)/g)].map((found) => found[1]);
+  expect(lazy).toEqual(["@/components/monograph/MonographPage", "@/components/craft/CraftWithoutMonograph"]);
+  const eager = [...eagerModules("@/app/(reading)/crafts/[slug]/page")];
+  expect(eager.filter((file) => /components\/(monograph|craft)\//.test(file))).toEqual([]);
+  const graph = [...new Set([...eager, ...lazy.flatMap((entry) => [...eagerModules(entry)])])];
   const texts = graph.map((file) => readFileSync(join(FRONTEND, file), "utf8"));
   expect(graph).toContain("lib/craftPageContract.ts");
   expect(graph).toContain("lib/monographDocumentShape.ts");

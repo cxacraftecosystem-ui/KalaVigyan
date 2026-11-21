@@ -168,6 +168,19 @@ scopes, connectedAt, lastUsedAt}]}`, the person's unrevoked, unexpired connectio
 is `components/settings/ConnectedClientsCard.tsx`; it hides itself while the server is off and
 nothing is connected.
 
+## The connection guide
+
+`<WEB>/connect` ("Connect your AI", linked from the account menu and from Connected apps in
+Settings) is a signed-in page that a person follows to connect their AI. It reads the address from
+`<API>/.well-known/oauth-protected-resource/api/mcp` (`resource`) and the tools and prompts from
+anonymous `tools/list` and `prompts/list` calls to `<API>/api/mcp`, both on the server and cached
+five minutes, and through the site (`/api/oauth/connections` for the address, `/api/mcp` for the
+lists) when the server could not read them. Nothing on the page is a typed address or a hand list:
+a tool the server adds is grouped by its name (`lib/connectCatalogue.ts`), and the role's scopes
+follow `may_hold` (`lib/connectRoles.ts`). Code: `app/(protected)/connect/page.tsx`,
+`components/connect/*`, `lib/server/mcpGuide.ts`, `lib/connectClients.ts` (each client's steps as
+its own documentation gives them).
+
 ## Guards
 
 - **Rate limit per connection**: 1,200 calls in 10 minutes for one connection, counted across its

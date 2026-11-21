@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Literal, Self
 
 from pydantic import Field, model_validator
@@ -28,6 +29,7 @@ GI_SHOWN = ("REGISTERED", "APPLIED")
 NATIVE_NAME_SOURCES = ("DOSSIER", "WIKIDATA")
 DAY_PATTERN = r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$"
 CITE_PATH_PATTERN = r"^/crafts/[a-z0-9-]+(/v[1-9]\d*)?$"
+VERSION_SEGMENT = re.compile(r"v[1-9]\d*")
 
 
 class Kicker(ContractModel):
@@ -99,7 +101,7 @@ class CiteThis(ContractModel):
     def _versioned_only_when_curated(self) -> Self:
         if (self.version is None) != (self.curated_on is None):
             raise ValueError("a citation gives its version and curation day together")
-        if (self.version is None) == self.url.rsplit("/", 1)[-1].startswith("v"):
+        if (self.version is None) == (VERSION_SEGMENT.fullmatch(self.url.rsplit("/", 1)[-1]) is not None):
             raise ValueError("a curated citation names its versioned address, an uncurated one its plain one")
         return self
 

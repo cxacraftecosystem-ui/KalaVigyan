@@ -118,6 +118,11 @@ def test_read_is_always_asked_and_scopes_come_in_their_fixed_order() -> None:
     assert refused.value.error == "invalid_scope"
 
 
+def test_offline_access_is_accepted_and_grants_nothing_more_since_refresh_tokens_always_come() -> None:
+    assert requested_scopes("offline_access") == ("read",)
+    assert requested_scopes("read offline_access contribute") == ("read", "contribute")
+
+
 @pytest.mark.parametrize(
     ("role", "held"),
     [

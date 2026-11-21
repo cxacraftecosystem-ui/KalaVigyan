@@ -150,4 +150,12 @@ test("Lighthouse is driven on the shared browser's port and writes its JSON and 
   expect(reportPath(audit)).toBe("audit/lighthouse/desktop/map.lighthouse-1.report.json");
   const repeat = { ...audit, outputBase: "audit/lighthouse/desktop/map.lighthouse-2", html: false };
   expect(lighthouseArgs(repeat).slice(0, 4)).toEqual(["https://kalavigyan.vercel.app/map", "--port=9333", "--output=json", "--output-path=audit/lighthouse/desktop/map.lighthouse-2.report.json"]);
+  expect(args.filter((arg) => arg.startsWith("--blocked-url-patterns"))).toEqual([]);
+});
+
+test("on a preview Lighthouse blocks the Vercel toolbar, which production never serves", () => {
+  const audit = { url: "https://kalavigyan-ab12cd34e-cxacraftecosystem-8028s-projects.vercel.app/categories/Textiles-Based-Craft-Category", port: 9334, form: LIGHTHOUSE_FORMS[0], outputBase: "audit/lighthouse/mobile/hub.lighthouse-1", html: false };
+  const args = lighthouseArgs(audit);
+  expect(args.slice(0, 6)).toEqual([audit.url, "--port=9334", "--output=json", "--output-path=audit/lighthouse/mobile/hub.lighthouse-1.report.json", "--only-categories=performance,accessibility,best-practices", "--quiet"]);
+  expect(args[6]).toBe("--blocked-url-patterns=https://vercel.live/*");
 });

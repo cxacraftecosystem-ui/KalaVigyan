@@ -161,12 +161,15 @@ def redirect_with(uri: str, params: Mapping[str, str | None]) -> str:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, query, parts.fragment))
 
 
+ACCEPTED_UNNAMED_SCOPES = frozenset({"offline_access"})
+
+
 def requested_scopes(scope: str | None) -> tuple[str, ...]:
     if scope is not None and len(scope) > SCOPE_MAX_CHARS:
         raise OAuthError(INVALID_SCOPE, f"scope is at most {SCOPE_MAX_CHARS} characters")
     asked = {READ_SCOPE}
     for name in (scope or "").split(" "):
-        if not name:
+        if not name or name in ACCEPTED_UNNAMED_SCOPES:
             continue
         if name not in MCP_SCOPES:
             raise OAuthError(

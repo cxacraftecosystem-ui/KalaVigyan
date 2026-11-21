@@ -1,10 +1,14 @@
-import { PRODUCTION_ORIGIN, siteRefusal } from "../production/preview";
+import { PRODUCTION_ORIGIN, isPreview, siteRefusal } from "../production/preview";
 
 export function siteOrigin(): string {
   const origin = new URL(process.env.E2E_BASE_URL || PRODUCTION_ORIGIN).origin;
   const refused = siteRefusal(origin);
   if (refused) throw new Error(refused);
   return origin;
+}
+
+export function servedSiteOrigin(site: string): string {
+  return isPreview(site) ? PRODUCTION_ORIGIN : site;
 }
 
 export function apiOrigin(): string {

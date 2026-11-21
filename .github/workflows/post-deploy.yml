@@ -14,6 +14,10 @@ on:
         description: A commit of main production must serve within 20 minutes (empty checks that production is not behind main)
         type: string
         default: ""
+      base_url:
+        description: A Vercel preview of this project to read and operate instead of production (https://kalavigyan-<id>-cxacraftecosystem-8028s-projects.vercel.app); a preview run skips the commit check and the production issues
+        type: string
+        default: ""
   pull_request:
     paths:
       - ".github/workflows/post-deploy.yml"
@@ -25,7 +29,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: post-deploy-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  group: post-deploy-${{ github.event_name == 'pull_request' && github.ref || inputs.base_url && 'preview' || 'main' }}
   cancel-in-progress: false
 
 env:
@@ -34,7 +38,7 @@ env:
 jobs:
   served:
     name: Production serves the pushed commit
-    if: github.repository == 'cxacraftecosystem-ui/KalaVigyan' && github.event_name != 'pull_request'
+    if: github.repository == 'cxacraftecosystem-ui/KalaVigyan' && github.event_name != 'pull_request' && !inputs.base_url
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     permissions:
@@ -166,14 +170,15 @@ jobs:
     needs: served
     if: >-
       !cancelled() && github.repository == 'cxacraftecosystem-ui/KalaVigyan' &&
-      (github.event_name != 'schedule' || github.event.schedule == '17 3 * * *')
+      (github.event_name != 'schedule' || github.event.schedule == '17 3 * * *') &&
+      (github.event_name != 'workflow_run' || needs.served.outputs.verdict != 'no-build')
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     defaults:
       run:
         working-directory: frontend
     env:
-      E2E_BASE_URL: ${{ vars.WEB_ORIGIN || 'https://kalavigyan.vercel.app' }}
+      E2E_BASE_URL: ${{ inputs.base_url || vars.WEB_ORIGIN || 'https://kalavigyan.vercel.app' }}
       E2E_API_URL: ${{ vars.API_BASE_URL }}
       E2E_REPORT_DIR: post-deploy-run
       E2E_REPORT_TITLE: Post-deploy check
@@ -203,7 +208,11 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Read the key pages and call the public MCP tools
+      - name: Read the key pages, operate every control and call the public MCP tools
+        env:
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+          E2E_VERCEL_BYPASS: ${{ inputs.base_url && secrets.VERCEL_AUTOMATION_BYPASS_SECRET || '' }}
         run: npx playwright test -c e2e/release/release.config.ts --project=post-deploy
 
       - name: Say what was read
@@ -228,7 +237,7 @@ jobs:
     name: Open or close the production issues
     needs: [served, pages]
     if: >-
-      !cancelled() && github.repository == 'cxacraftecosystem-ui/KalaVigyan' && github.event_name != 'pull_request'
+      !cancelled() && github.repository == 'cxacraftecosystem-ui/KalaVigyan' && github.event_name != 'pull_request' && !inputs.base_url
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:

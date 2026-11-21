@@ -20,7 +20,7 @@ import { challengeProblems } from "./mcpChallenge";
 import { answerResult, callTool, getJson, rpc, type Answer } from "./mcpWire";
 import { visitKeyPage } from "./pageVisit";
 import { checkRecord, keepRecord } from "./report";
-import { apiOrigin, bypassToken, siteOrigin } from "./site";
+import { apiOrigin, bypassToken, servedSiteOrigin, siteOrigin } from "./site";
 
 const PAGE_CHECK = "page";
 const MCP_CHECK = "mcp";
@@ -72,7 +72,7 @@ test.describe("public MCP tools", () => {
   });
 
   test("tools/list through the site lists the public tools", async () => {
-    settle(MCP_CHECK, "tools/list through the site", listed(await rpc(`${siteOrigin()}${MCP_PATH}`, "tools/list", {})));
+    settle(MCP_CHECK, "tools/list through the site", listed(await rpc(`${siteOrigin()}${MCP_PATH}`, "tools/list", {}, undefined, bypassToken())));
   });
 
   test(`find_crafts finds ${CHECKED_CRAFT}`, async () => {
@@ -100,7 +100,7 @@ test.describe("public MCP tools", () => {
     const resource = bodyOf(await getJson(`${api}/.well-known/oauth-protected-resource${MCP_PATH}`), "the protected resource metadata");
     const server = bodyOf(await getJson(`${api}/.well-known/oauth-authorization-server`), "the authorization server metadata");
     const problems = [...resource.problems, ...server.problems];
-    if (resource.body && server.body) problems.push(...metadataProblems(resource.body, server.body, { api, web: siteOrigin() }));
+    if (resource.body && server.body) problems.push(...metadataProblems(resource.body, server.body, { api, web: servedSiteOrigin(siteOrigin()) }));
     settle(MCP_CHECK, "OAuth metadata", problems);
   });
 });

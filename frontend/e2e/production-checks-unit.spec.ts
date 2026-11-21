@@ -40,7 +40,7 @@ import {
   unpaintedNotes
 } from "./production/gates";
 import { SCHEMES, SCREEN_WIDTHS } from "./production/matrix";
-import { GOOGLE_ORIGIN_REFUSED, PRODUCTION_ORIGIN, googleRefusesPreview, isPreview, roleSiteRefusal, siteRefusal } from "./production/preview";
+import { GOOGLE_ORIGIN_REFUSED, PRODUCTION_ORIGIN, googleRefusesPreview, isPreview, previewConsoleNoise, roleSiteRefusal, siteRefusal } from "./production/preview";
 import type { AnswersReport, ScreensReport } from "./production/report";
 import { roleCredentials, runFileName } from "./production/run";
 import { answerRepeats, busyText, citationClusters, emptyPictures, opacityAtCapture, regionRunPx } from "./production/sight";
@@ -267,14 +267,14 @@ test("nav labels must match the role exactly and in order", () => {
   expect(labelProblems("the menu", ["Ask", "Map"], ["Map", "Ask"])).toEqual(["the menu shows [Map, Ask]; this role should see [Ask, Map]"]);
   expect(NAV_BY_ROLE.STUDENT).toEqual({
     bar: ["Ask", "Crafts", "Map", "Saved"],
-    account: ["Settings"],
-    menu: ["Ask", "Crafts", "Map", "Saved", "Settings"],
+    account: ["Connect your AI", "Settings"],
+    menu: ["Ask", "Crafts", "Map", "Saved", "Connect your AI", "Settings"],
     depths: ["Basic", "Detailed", "Expert"]
   });
   expect(NAV_BY_ROLE.RESEARCHER).toEqual({
     bar: ["Ask", "Crafts", "Map", "Saved"],
-    account: ["Give a picture", "Propose knowledge", "Settings"],
-    menu: ["Ask", "Crafts", "Map", "Saved", "Give a picture", "Propose knowledge", "Settings"],
+    account: ["Give a picture", "Propose knowledge", "Connect your AI", "Settings"],
+    menu: ["Ask", "Crafts", "Map", "Saved", "Give a picture", "Propose knowledge", "Connect your AI", "Settings"],
     depths: ["Basic", "Detailed", "Expert"]
   });
   expect(NAV_BY_ROLE.PROFESSOR).toBeUndefined();
@@ -581,6 +581,15 @@ test("Google refusing a preview origin is told apart from every other console er
   expect(googleRefusesPreview(forbidden, "https://accounts.google.com.evil.example/gsi/button")).toBe(false);
   expect(googleRefusesPreview("[GSI_LOGGER]: Provided button width is invalid: 1000", "https://accounts.google.com/gsi/client")).toBe(false);
   expect(googleRefusesPreview("TypeError: x is undefined", "https://accounts.google.com/gsi/client")).toBe(false);
+});
+
+test("on a preview, only Google's refusal and the blocked Vercel toolbar frame are noise", () => {
+  const toolbar = "Framing 'https://vercel.live/' violates the following Content Security Policy directive: \"frame-src https://accounts.google.com/gsi/\". The request has been blocked.";
+  expect(previewConsoleNoise(toolbar, "https://kalavigyan-ab12cd34e-cxacraftecosystem-8028s-projects.vercel.app/crafts")).toBe(true);
+  expect(previewConsoleNoise(GOOGLE_ORIGIN_REFUSED, "https://accounts.google.com/gsi/client")).toBe(true);
+  expect(previewConsoleNoise("Refused to load https://vercel.live/_next-live/feedback/feedback.html?dpl=dpl_1 because it does not appear in the frame-src directive of the Content Security Policy.", "")).toBe(true);
+  expect(previewConsoleNoise("Framing 'https://evil.example/' violates the following Content Security Policy directive: \"frame-src 'none'\".", "")).toBe(false);
+  expect(previewConsoleNoise("TypeError: Cannot read properties of null (reading 'textContent')", "")).toBe(false);
 });
 
 test("two-step codes match the RFC 6238 SHA-1 vectors", () => {

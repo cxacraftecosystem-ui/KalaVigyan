@@ -60,10 +60,10 @@ test("an answer essay passes with its question, a cited lede and the two quiet a
   expect(essayProblems({ ...essay, lede: 0, ledeCited: 0 })).toEqual(["the answer draws no lede"]);
 });
 
-test("a document is read from its chapters, its rail and its cited sentences", async ({ page }) => {
+test("a document is read from its chapters, its rail and its cited sentences, by their sources or their citation button", async ({ page }) => {
   await page.setContent(
     `<div class="kv-monograph"><nav aria-label="Chapters"><a href="#answer">The answer</a><a href="#made">How it is made</a><a href="#answer">The answer</a></nav>` +
-      `<section class="kv-ch" id="answer" data-label="The answer"><h1>Kutch Ajrakh</h1><p><span data-src="a1">One.</span> <span data-src="a2">Two.</span></p></section>` +
+      `<section class="kv-ch" id="answer" data-label="The answer"><h1>Kutch Ajrakh</h1><p><span class="s" data-src="a1">One.</span> <span class="s">Two <span class="nw">words.<button class="kcite">1</button></span></span> <span class="s">Three.</span></p></section>` +
       `<section class="kv-ch" id="cloth" data-label="The cloth"></section></div>`
   );
   expect(await page.evaluate(documentShape, { root: DOCUMENT_ROOT, rail: RAIL_LINKS })).toEqual({

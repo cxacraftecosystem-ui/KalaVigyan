@@ -41,10 +41,11 @@ export type NavExpectation = { bar: string[]; account: string[]; menu: string[];
 
 const LEARNER_BAR = ["Ask", "Crafts", "Map", "Saved"];
 const RESEARCHER_TOOLS = ["Give a picture", "Propose knowledge"];
-const ACCOUNT_LINKS = ["Settings"];
+const ACCOUNT_LINKS = ["Connect your AI", "Settings"];
 const EVERY_DEPTH = ["Basic", "Detailed", "Expert"];
 
-export const READING_BAR = ["Crafts", "Map", "Compare"];
+export const READING_NAV_LABEL = "Reading";
+export const READING_BAR = ["Atlas", "Map", "Categories", "Compare"];
 
 export const NAV_BY_ROLE: Partial<Record<UserRole, NavExpectation>> = {
   STUDENT: { bar: LEARNER_BAR, account: ACCOUNT_LINKS, menu: [...LEARNER_BAR, ...ACCOUNT_LINKS], depths: EVERY_DEPTH },
@@ -53,6 +54,22 @@ export const NAV_BY_ROLE: Partial<Record<UserRole, NavExpectation>> = {
 
 export function navExpectation(role: UserRole): NavExpectation | null {
   return NAV_BY_ROLE[role] ?? null;
+}
+
+export const ABORTED_REQUESTS: readonly string[] = ["net::ERR_ABORTED", "Load request cancelled", "NS_BINDING_ABORTED"];
+
+export function abortedRequest(failure: string): boolean {
+  return ABORTED_REQUESTS.includes(failure);
+}
+
+export const WEBKIT_LOAD_FAILED = "TypeError: Load failed";
+const WEBKIT_LEFT_FETCH = / due to access control checks\.?\s*$/;
+const WEBKIT_UNKNOWN_WEBRTC = "Unrecognized Content-Security-Policy directive 'webrtc'";
+
+export function webkitLeavingNoise(text: string, origin: string): boolean {
+  const said = text.trim();
+  if (said === WEBKIT_LOAD_FAILED || said.startsWith(WEBKIT_UNKNOWN_WEBRTC)) return true;
+  return WEBKIT_LEFT_FETCH.test(said) && said.includes(`${new URL(origin).host}/`);
 }
 
 export function clip(text: string, limit = TEXT_LIMIT): string {
