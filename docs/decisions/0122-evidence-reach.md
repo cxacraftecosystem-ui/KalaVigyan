@@ -114,7 +114,10 @@ search did and threw away.
 ## Consequences
 
 - An answer about a craft can cite its family's chemistry, physics and materials with the family's
-  own sources, as its page does; a merged craft's facts stay in the survivor's answers.
+  own sources, as its page does; a merged craft's facts stay in the survivor's answers. The golden
+  question `farrukhabad-family-mordants` asks an uncurated block-printing craft what only the
+  textile family's mordant facts answer; it is scored against the live database, where the
+  category dossiers are imported.
 - Questions that used to name a stray concept inside a longer word lose that false entity rank;
   retrieval's recall and reciprocal-rank floors (`backend/tests/db/test_retrieval_eval.py`) still
   hold.

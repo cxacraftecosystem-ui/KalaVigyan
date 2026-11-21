@@ -866,6 +866,18 @@
    "expected": [
     "a57ddb2a-4f4d-547c-bb1f-737c2cf74bd4"
    ]
+  },
+  {
+   "key": "farrukhabad-family-mordants",
+   "craftSlug": "Farrukhabad-Prints",
+   "field": "CHEMISTRY",
+   "question": "Which colours do alum and iron mordants give with madder?",
+   "expected": [
+    [
+     "b25ce086-7bb1-5708-b119-f511e4058f99",
+     "3481e6d2-f827-5d81-95ab-3ca3d57775b3"
+    ]
+   ]
   }
  ]
 }

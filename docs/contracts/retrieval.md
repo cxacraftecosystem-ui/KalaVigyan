@@ -194,8 +194,10 @@ with no quote; the repository holds no text of that edition, so it has no passag
 ## Evaluation
 
 - The golden list (`app/data/eval/retrieval_questions.json`, version 1, read by
-  `retrieval/golden.golden_questions()`): 77 questions over 21 crafts and the shared
-  block-printing science, covering all sixteen fields. Each question names the field it asks
+  `retrieval/golden.golden_questions()`): 78 questions over 22 crafts and the shared
+  block-printing science, covering all sixteen fields. One (`farrukhabad-family-mordants`) asks an
+  uncurated craft a question only its family science answers, so it is scored where the category
+  dossiers are imported (the live database), not in the seeded test database. Each question names the field it asks
   about (`field`) and, sometimes, the field filter it is asked with (`fields`). Each entry of
   `expected` is one fact the answer needs: a claim, or a list of every stored claim that states
   that fact (the knowledge base often holds a seed claim and the curated claims that restate it),
