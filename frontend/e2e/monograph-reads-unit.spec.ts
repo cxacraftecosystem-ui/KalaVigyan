@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { afterLoad, whenIdle } from "../components/monograph/useShellTrigger";
+import { afterLoad, laterWhenIdle, whenIdle } from "../components/monograph/useShellTrigger";
 import { documentPart, documentPartPath, DocumentPartError, joinedDocument, type DocumentPart } from "../lib/monographDocumentParts";
 
 const part = (at: number, parts: number, body: Record<string, unknown>, version = 4): DocumentPart => ({ schemaVersion: 1, version, part: at, parts, body });
@@ -39,25 +39,35 @@ test("parts read from two readings, or too few of them, refuse to join", () => {
   expect(() => joinedDocument([part(1, 2, {})])).toThrow("from its first part");
 });
 
-test("the rest of a page starts once the page has loaded and the browser is idle", () => {
+test("the rest of a page starts a while after load, once the browser is idle", () => {
   const calls: string[] = [];
+  const timers: (() => void)[] = [];
+  const setTimeout = (run: () => void, wait: number) => {
+    calls.push(`wait ${wait}`);
+    timers.push(run);
+    return 3;
+  };
   const requestIdleCallback = (run: () => void, options: { timeout: number }) => {
     calls.push(`idle ${options.timeout}`);
     run();
     return 1;
   };
-  const view = { requestIdleCallback, cancelIdleCallback: () => calls.push("cancelled") };
-  const stop = whenIdle(view as unknown as Window, () => calls.push("started"));
+  const view = { setTimeout, clearTimeout: () => calls.push("cleared"), requestIdleCallback, cancelIdleCallback: () => calls.push("cancelled") };
+  const stop = laterWhenIdle(view as unknown as Window, () => calls.push("started"));
+  expect(calls).toEqual(["wait 5000"]);
+  timers.forEach((run) => run());
   stop();
-  expect(calls).toEqual(["idle 5000", "started", "cancelled"]);
-  const timers: number[] = [];
-  const setTimeout = (_run: () => void, wait: number) => {
-    timers.push(wait);
-    return 3;
+  expect(calls).toEqual(["wait 5000", "idle 2000", "started", "cleared", "cancelled"]);
+  const plain: string[] = [];
+  const runAtOnce = (run: () => void) => {
+    run();
+    return 4;
   };
-  const plain = { setTimeout, clearTimeout: (handle: number) => timers.push(-handle) };
-  whenIdle(plain as unknown as Window, () => undefined)();
-  expect(timers).toEqual([5000, -3]);
+  const noIdle = { setTimeout: runAtOnce, clearTimeout: () => plain.push("cleared") };
+  laterWhenIdle(noIdle as unknown as Window, () => plain.push("started"))();
+  expect(plain).toEqual(["started", "cleared"]);
+  expect(whenIdle({} as Window, () => plain.push("never"))).toBeInstanceOf(Function);
+  expect(plain).not.toContain("never");
 });
 
 test("a page still loading waits for its load event, and a loaded one goes on at once", () => {

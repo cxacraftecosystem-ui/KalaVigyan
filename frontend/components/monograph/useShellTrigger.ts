@@ -1,6 +1,7 @@
 import { useEffect, type RefObject } from "react";
 
 export const REST_AFTER_LOAD_MS = 5000;
+export const REST_IDLE_WAIT_MS = 2000;
 export const INTENT_TRIGGERS = ["pointerdown", "keydown", "touchstart"] as const;
 export const SCROLL_TRIGGERS = ["wheel", "scroll"] as const;
 export const REST_TRIGGERS = [...INTENT_TRIGGERS, ...SCROLL_TRIGGERS] as const;
@@ -24,11 +25,22 @@ export function afterLoad(view: Window, root: Document, then: () => void): Stop 
 
 export function whenIdle(view: IdleView, start: () => void): Stop {
   if (typeof view.requestIdleCallback === "function") {
-    const handle = view.requestIdleCallback(start, { timeout: REST_AFTER_LOAD_MS });
+    const handle = view.requestIdleCallback(start, { timeout: REST_IDLE_WAIT_MS });
     return () => view.cancelIdleCallback?.(handle);
   }
-  const timer = view.setTimeout(start, REST_AFTER_LOAD_MS);
-  return () => view.clearTimeout(timer);
+  return () => undefined;
+}
+
+export function laterWhenIdle(view: IdleView, start: () => void): Stop {
+  let idle: Stop = () => undefined;
+  const timer = view.setTimeout(() => {
+    if (typeof view.requestIdleCallback === "function") idle = whenIdle(view, start);
+    else start();
+  }, REST_AFTER_LOAD_MS);
+  return () => {
+    view.clearTimeout(timer);
+    idle();
+  };
 }
 
 function listened(view: Window, names: readonly string[], go: () => void): Stop[] {
@@ -58,7 +70,7 @@ export function useShellTrigger(holder: RefObject<Element | null>, start: () => 
       start();
     };
     const loaded = () => {
-      if (!started) stops.push(...listened(window, SCROLL_TRIGGERS, go), inView(holder.current, go), whenIdle(window, go));
+      if (!started) stops.push(...listened(window, SCROLL_TRIGGERS, go), inView(holder.current, go), laterWhenIdle(window, go));
     };
     stops.push(...listened(window, INTENT_TRIGGERS, go), afterLoad(window, document, loaded));
     if (hashTargetMissing(window.location.hash, document)) go();
