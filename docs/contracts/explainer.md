@@ -122,7 +122,9 @@ fewer sentences than the live page, never more.
   `SENTENCES`: `region_story` steps, `supply_map` links, `zoom_story` levels, `timeline_map` points
   and routes, `concept_graph` entries, `seasons`, `measure`, `compare`, `what_if`, `market_gi`,
   `climate_risk` and the rest) drop an item when its sentence's text is already shown or it
-  restates a shown sentence, and in one call they are let through before the restating blocks; a
+  restates a shown sentence; a story that would not stand without its restating items keeps the
+  first of them (then, if it still does not stand, every one), so a figure is never lost to the
+  prose it draws. In one call they are let through before the restating blocks; a
   supply map may repeat a sentence within itself (the client shows it once per material). A
   `process_ladder` is the process's skeleton: a stage drops a sentence said word for word, and a
   restating sentence only while the stage keeps another, so a stage the question names is never

@@ -73,6 +73,21 @@ def test_a_story_step_retelling_the_prose_nearly_word_for_word_is_held_back() ->
     assert restated_in_other_words([prose, story]) == []
 
 
+def test_a_figure_whose_every_item_retells_the_prose_keeps_its_first_item() -> None:
+    seasons = phase_b_blocks()["s3.b1"]
+    (row,) = BLOCK.validate_python(seasons).rows
+    told = {
+        **row.sentence.model_dump(mode="json", by_alias=True),
+        "id": "s1.b1.1",
+        "text": "Monsoon humidity slows the production of Ajrakh.",
+        "terms": [],
+    }
+    ledger = ClaimLedger()
+    ledger.admit("s1", [BLOCK.validate_python(block("s1.b1", "prose", sentences=[told]))], REFS)
+    (kept,) = ledger.admit("s3", [BLOCK.validate_python(seasons)], REFS)
+    assert [shown.sentence.text for shown in kept.rows] == [row.sentence.text]
+
+
 def test_the_same_fact_filed_under_two_fields_is_said_once() -> None:
     ledger = ClaimLedger()
     first = ledger.admit("s1", [said_in("s1", gi_sentence("s1.b1.1", GI_SAID, "gi-economics"))], REFS)

@@ -49,8 +49,10 @@ The judge of the live evaluation scored ten answers and named four faults the au
    already shown: at least four content stems, no new number, the same negation, and either the same
    claim group (its claims, or its citations' source and quote, within the shown sentence's) with half
    the stems shared, or other evidence with the same numbers and 0.8 of the stems shared. Restating
-   blocks drop it as before; story blocks now drop it too; a ladder stage drops it only while it keeps
-   another sentence. The lede keeps its word-for-word rule.
+   blocks drop it as before; story blocks now drop it too, but a story that would not stand without
+   its restating items keeps the first of them, so a map or a stepper is never lost to the prose it
+   draws; a ladder stage drops it only while it keeps another sentence. The lede keeps its
+   word-for-word rule.
 2. **A gap becomes an open question.** The pattern moves to `research/gap_admissions.py`, gains "is
    unknown or unclear" and "has not been identified or established", and is the one the evaluation's
    `noGaps` measure and the answer stream both read. `ExplainerStream.blocks` takes every sentence
@@ -71,8 +73,9 @@ The judge of the live evaluation scored ten answers and named four faults the au
 
 ## Consequences
 
-- A figure whose every item repeats the prose nearly word for word is not drawn; the place builders
-  could offer their stories the facts the prose did not say (open for the builders' owner).
+- A figure whose every item repeats the prose nearly word for word is drawn with one item, so one
+  restatement can remain; the place and journey builders could offer their stories the facts the
+  prose did not say, which would remove it (open for the builders' owner).
 - The Bidriware answers lose their gap sentences from the sections and gain them as open
   questions, streamed with the answer like every other open question; the stored explainer's
   sections no longer hold them, so the evaluation's `noGaps` reads the same answer the reader saw.

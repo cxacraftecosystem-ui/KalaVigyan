@@ -137,8 +137,7 @@ class ClaimLedger:
         if not self._first_of_its_kind(kind, payload):
             logger.info("block %s shows what this answer already shows", payload["id"])
             return None
-        kept = self._without_repeats(kind, payload)
-        block = _validated(kind, kept) if kept is not None else None
+        block = next((block for block in self._kept_forms(kind, payload) if block is not None), None)
         if block is not None:
             self._record(section_id, block)
         return block
@@ -152,12 +151,23 @@ class ClaimLedger:
             return fold(payload["concept"]) not in self._explained
         return kind not in self._once
 
-    def _without_repeats(self, kind: str, payload: Payload) -> Payload | None:
+    def _kept_forms(self, kind: str, payload: Payload) -> Iterator[Block | None]:
         if kind in RESTATING_KINDS:
-            return kept_sentences(payload, RESTATING_KINDS[kind], self._restating_repeat())
+            kept = kept_sentences(payload, RESTATING_KINDS[kind], self._restating_repeat())
+            yield _validated(kind, kept) if kept is not None else None
+            return
+        repeats = (
+            (self._anchored_repeat(),)
+            if kind == LADDER_KIND
+            else (self._story_repeat(), self._story_repeat(spared=1), self._anchored_repeat())
+        )
+        for repeat in repeats:
+            kept = self._without_repeats(kind, payload, repeat)
+            yield _validated(kind, kept) if kept is not None else None
+
+    def _without_repeats(self, kind: str, payload: Payload, repeat: Repeat) -> Payload | None:
         if kind == "compare":
-            return compared_rows(payload, self._story_repeat())
-        repeat = self._anchored_repeat() if kind == LADDER_KIND else self._story_repeat()
+            return compared_rows(payload, repeat)
         kept = kept_sentences(payload, BLOCK_MODELS[kind].SENTENCES, repeat)
         return None if kept is None else self._repaired(kind, kept)
 
@@ -198,10 +208,20 @@ class ClaimLedger:
         seen = frozenset(self._texts)
         return lambda sentence: bool(sentence_keys(sentence["text"], sentence.get("original")) & seen)
 
-    def _story_repeat(self) -> Repeat:
+    def _story_repeat(self, *, spared: int = 0) -> Repeat:
         exact = self._anchored_repeat()
         shown = tuple(self._said)
-        return lambda sentence: exact(sentence) or restates_any(said(sentence), shown)
+        left = [spared]
+
+        def repeat(sentence: Mapping[str, Any]) -> bool:
+            if exact(sentence):
+                return True
+            if not restates_any(said(sentence), shown):
+                return False
+            left[0] -= 1
+            return left[0] < 0
+
+        return repeat
 
     def _experts(self, section_id: str, payloads: Mapping[int, Payload]) -> dict[int, Block]:
         kept, differing = self._new_takes(payloads)
