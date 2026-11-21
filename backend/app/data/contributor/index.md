@@ -57,7 +57,7 @@ as `spec`; `resources/templates/list` gives them as `kalavigyan://components/{ki
 - `kalavigyan://skills/references/datasets.md`: open datasets, provenance, units and projection.
 - `kalavigyan://contracts/knowledge-writes.md`: the write path, its gates, queue and limits.
 - `kalavigyan://contracts/open-work.md`: tasks, reservations, stewardship, drafts, pages, previews and the source tools.
-- `kalavigyan://contracts/component-specs-general.md`: the five general component kinds and their checks.
+- `kalavigyan://contracts/component-specs-general.md`: one kind per job, the five declared kinds, dataset cells and their checks.
 - `kalavigyan://contracts/image-contributions.md`: how a picture is declared, screened and reviewed.
 - `kalavigyan://contracts/mcp-ask-and-upload.md`: the ask tool, `give_pictures` and its upload links.
 - `kalavigyan://design/tokens.json`: the design system's tokens, for agents that draw KalaVigyan content.
@@ -79,7 +79,6 @@ as `spec`; `resources/templates/list` gives them as `kalavigyan://components/{ki
 - `kalavigyan://components/map_layer.schema.json`: the spec of a map_layer.
 - `kalavigyan://components/map_sequence.schema.json`: the spec of a map_sequence.
 - `kalavigyan://components/material_cards.schema.json`: the spec of a material_cards.
-- `kalavigyan://components/model_explainer.schema.json`: the spec of a model_explainer.
 - `kalavigyan://components/molecule_3d.schema.json`: the spec of a molecule_3d.
 - `kalavigyan://components/reaction_player.schema.json`: the spec of a reaction_player.
 - `kalavigyan://components/source_disagreements.schema.json`: the spec of a source_disagreements.
@@ -89,5 +88,4 @@ as `spec`; `resources/templates/list` gives them as `kalavigyan://components/{ki
 - `kalavigyan://components/swatch_cards.schema.json`: the spec of a swatch_cards.
 - `kalavigyan://components/swatch_pair.schema.json`: the spec of a swatch_pair.
 - `kalavigyan://components/timeline.schema.json`: the spec of a timeline.
-- `kalavigyan://components/timeline_map.schema.json`: the spec of a timeline_map.
 - `kalavigyan://components/voice.schema.json`: the spec of a voice.

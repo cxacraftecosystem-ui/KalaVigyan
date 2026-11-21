@@ -21,10 +21,16 @@ recorded with its version and citation, and nothing is drawn that the dataset do
 ## Recording a dataset
 
 Record each dataset once, before any value of it is used: a short code, the title, the publisher,
-the edition or version, the period it covers, its native resolution, its coordinate reference
+the edition and version, the period it covers, its native resolution, its coordinate reference
 system, the licence with its address, the attribution to display, whether it may be redistributed,
 the citation (with its DOI when there is one), the landing page, the day it was read, and the
 SHA-256 of the file read. A dataset changes only as a new version with its own record.
+
+Every dataset, an environment layer or a physical layer, has one record of that shape in one
+registry, `backend/app/data/datasets/registry.json`: the geo ETL reads its rows from it, a physical
+layer names its dataset there by code, and the site serves the whole record, with the day read and
+the SHA-256 of each build, wherever it credits the data. A contributed dataset is stored with the
+same record.
 
 ## Provenance per value
 
@@ -101,13 +107,37 @@ export tables, a registry's records, prices over the years):
 - Write each value as a fact quoting its row, with the dataset's published table or record as the
   source, as `propose_facts` takes each.
 - Build the component from those facts by the component guide (`components.md`): a series over
-  years or places is a `general_chart`, rows of attributes a `general_table`, dated events a
-  `general_timeline`, places with readings a `general_map_layer`. Each value is stated by its
-  reading unit, which cites its fact.
+  years or places is a `chart`, rows of attributes a `fact_table`, dated events a `timeline`,
+  places with readings a `map_layer`. Each value is stated by its reading unit, which cites its
+  fact.
 - Put the facts and the component in one page bundle, see it with `preview_page`, then send it with
   `propose_page`: the facts are proposed with the component, never twice. A bundle holds at most
-  20 facts; for a figure of more values, propose the facts first with `propose_facts`, follow them
-  until they are shown, then deliver the component citing their ids.
+  20 facts; a figure of more values rests on a contributed dataset instead.
+
+## Contributed datasets
+
+A table of values (a district table, a census, a registry's list) is proposed once as a dataset,
+not as one fact per value:
+
+1. Call `propose_dataset` with the dataset's record as above (code, title, publisher, edition,
+   version, period, native_resolution, crs, licence with licence_url, attribution, redistributable,
+   citation with doi, landing_url, url of the file) and the SHA-256 of the CSV file you will send.
+2. The gates check the record: the licence is one they read as open and the dataset may be
+   redistributed, the citation names its DOI, the code is new, and the landing page can be read.
+   A refusal names every problem; nothing is stored.
+3. On a pass the reply gives a single-use upload slot: PUT the CSV file (UTF-8, a header row of
+   distinct column names, 1 to 20000 rows of at most 60 columns, at most 5 MB) to `upload_url`
+   within 30 minutes. The file's SHA-256 must be the one declared; the table is then stored with
+   the record and the slot is spent.
+4. A `chart`, `fact_table` or `map_layer` cites the stored table: `dataset {code}` and, for each
+   value, `cell {row, column}`, the row counted from 1 below the header and the column by its
+   header name (a table's rows by `row` and its columns by `column`). The gates read each value
+   from its cell and refuse one that is not there or is not the number the cell states, so a
+   cited cell needs no fact of its own. The site writes the dataset's credit and link under the
+   figure.
+
+A district table proposed this way serves a delivered figure; the site's own map layers still
+enter in the repository.
 - Environment values by district (rainfall, temperature, soil, forest and land cover, elevation,
   geology, rivers) are the site's own layers, built from its open datasets: never propose them as
   facts and never redraw them in a delivered component. The page shows them through its own maps
@@ -115,19 +145,22 @@ export tables, a registry's records, prices over the years):
 
 In the repository:
 
-- A per-district environment dataset enters `etl/geo`: a layer in `geo_etl/layers`, its record in
-  `geo_etl/catalog.py` (the source of truth, mirrored by `docs/DATA_SOURCES.md`), run by the
-  `geo-etl` workflow on GitHub Actions and loaded by `etl/geo/load.py`.
-- A physical map layer (rivers, lakes, relief, minerals) enters `tools/maplayers`: its source as a
-  `Source` in `maplayers/sources.py` (file, title, publisher, address, licence, citation), built by
-  `tools/maplayers_build.py` into `frontend/public/layers` with the SHA-256 of every download it
-  read. The base map's countries come from `tools/basemap_build.py`.
+- Every dataset's record goes into the one registry, `backend/app/data/datasets/registry.json`,
+  with its build (`geo-etl` or `maplayers`), mirrored by `docs/DATA_SOURCES.md`.
+- A per-district environment dataset enters `etl/geo`: a layer in `geo_etl/layers`, whose dataset
+  `geo_etl/catalog.py` reads from the registry, run by the `geo-etl` workflow on GitHub Actions and
+  loaded by `etl/geo/load.py`.
+- A physical map layer (rivers, lakes, relief, minerals) enters `tools/maplayers`: its download as a
+  `Source` in `maplayers/sources.py` (the dataset's code, the file and its address), built by
+  `tools/maplayers_build.py` into `frontend/public/layers` with the full record, the day read and
+  the SHA-256 of every download it read. The base map's countries come from
+  `tools/basemap_build.py`.
 - Heavy downloads run on GitHub Actions, never on a laptop.
 
 ## How it is checked
 
 - A delivered component passes the delivery checks of the component guide: every value stated by
-  its unit and every number of a unit in its facts. The gates re-read every source and re-find every
+  its unit and every number of a unit in its facts, or read from its cell of a stored table. The gates re-read every source and re-find every
   quote, and the preview shows the component drawn before it is sent.
 - A layer in the repository has tests with expected values derived independently of the code;
   `load.py --dry-run` checks dataset codes, keys and values without writing; the river network is

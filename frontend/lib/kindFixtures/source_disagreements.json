@@ -27,7 +27,8 @@
             "who": "Impart",
             "unit": "u0003"
           }
-        ]
+        ],
+        "figure": null
       },
       {
         "summary": [
@@ -42,7 +43,8 @@
             "who": "Impart",
             "unit": "u0005"
           }
-        ]
+        ],
+        "figure": null
       }
     ]
   },

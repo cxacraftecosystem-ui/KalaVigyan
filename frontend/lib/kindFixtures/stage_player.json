@@ -14,7 +14,8 @@
       "figure": null,
       "number": "u0001",
       "title": "u0002",
-      "titleId": "dhokra-stages-t"
+      "titleId": "dhokra-stages-t",
+      "dek": null
     },
     "drawing": {
       "tag": "svg",
@@ -51,7 +52,11 @@
         "heading": "u0006",
         "texts": [
           "u0007"
-        ]
+        ],
+        "why": null,
+        "differs": null,
+        "afterSentence": null,
+        "materials": null
       },
       {
         "name": "Leaf paste",
@@ -62,7 +67,11 @@
         "heading": "u0009",
         "texts": [
           "u0010"
-        ]
+        ],
+        "why": null,
+        "differs": null,
+        "afterSentence": null,
+        "materials": null
       },
       {
         "name": "Wrapping wax strings",
@@ -73,7 +82,11 @@
         "heading": "u0012",
         "texts": [
           "u0013"
-        ]
+        ],
+        "why": null,
+        "differs": null,
+        "afterSentence": null,
+        "materials": null
       },
       {
         "name": "Layer of termite-hill soil",
@@ -84,7 +97,11 @@
         "heading": "u0015",
         "texts": [
           "u0016"
-        ]
+        ],
+        "why": null,
+        "differs": null,
+        "afterSentence": null,
+        "materials": null
       },
       {
         "name": "Firing, dewaxing and casting",
@@ -96,7 +113,10 @@
         "texts": [
           "u0019"
         ],
-        "why": "u0020"
+        "why": "u0020",
+        "differs": null,
+        "afterSentence": null,
+        "materials": null
       }
     ],
     "finish": {

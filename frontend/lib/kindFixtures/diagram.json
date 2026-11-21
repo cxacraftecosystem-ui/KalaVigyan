@@ -9,41 +9,48 @@
   "field": "PROCESS",
   "within": null,
   "spec": {
+    "drawing": null,
     "chain": {
       "headingId": "dhokra-chain-t",
       "heading": "u0001",
       "links": [
         {
+          "style": null,
           "kicker": "u0002",
           "parts": [
             {
               "part": "text",
               "text": {
                 "tag": "p",
+                "style": null,
                 "unit": "u0003"
               }
             }
           ]
         },
         {
+          "style": null,
           "kicker": "u0004",
           "parts": [
             {
               "part": "text",
               "text": {
                 "tag": "p",
+                "style": null,
                 "unit": "u0005"
               }
             }
           ]
         },
         {
+          "style": null,
           "kicker": "u0006",
           "parts": [
             {
               "part": "text",
               "text": {
                 "tag": "p",
+                "style": null,
                 "unit": "u0007"
               }
             }

@@ -14,8 +14,10 @@
       "figure": null,
       "number": "u0003",
       "title": "u0004",
-      "titleId": "bidri-salts-t"
+      "titleId": "bidri-salts-t",
+      "dek": null
     },
+    "dekStyle": null,
     "scale": "u0005",
     "molecules": [
       {
@@ -114,7 +116,10 @@
         "cid": 24434
       }
     ],
-    "key": "The two salts"
+    "notes": [],
+    "key": "The two salts",
+    "swatches": [],
+    "swatchNote": null
   },
   "units": {
     "u0001": {

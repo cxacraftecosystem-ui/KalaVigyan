@@ -35,7 +35,9 @@
           }
         ]
       }
-    ]
+    ],
+    "textParts": [],
+    "visualParts": []
   },
   "units": {
     "u0001": {

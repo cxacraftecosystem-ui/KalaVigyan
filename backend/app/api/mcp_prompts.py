@@ -102,7 +102,7 @@ NEED = PromptArgument("need", f"Optional, the component needed: {', '.join(COMPO
 SUBJECT_KIND = PromptArgument("subject_kind", f"The page's kind: {', '.join(SUBJECT_KINDS)}")
 SLUG = PromptArgument("slug", "The page's slug, from find_crafts")
 DATA_KIND = PromptArgument(
-    "kind", f"Optional, the general kind to deliver: {', '.join(DATA_KINDS)}", required=False
+    "kind", f"Optional, the declared kind to deliver: {', '.join(DATA_KINDS)}", required=False
 )
 SLUGS = frozenset({CRAFT.name, SLUG.name})
 ALLOWED_VALUES: Mapping[str, tuple[str, ...]] = MappingProxyType(

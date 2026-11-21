@@ -12,13 +12,18 @@ from app.curation.limits import (
     PICTURES_MAX,
 )
 from app.data.skill_library import reference_text
-from app.models.component_kinds import GENERAL_KINDS
+from app.models.component_kinds import (
+    AUTHORED_ART_KINDS,
+    AUTHORED_SCRIPT_KINDS,
+    GENERAL_KINDS,
+    PAGE_TOOL_KINDS,
+)
 from app.models.enums import DISCIPLINES
 from app.models.knowledge import QUOTE_MAX_CHARS
 from app.models.knowledge_pieces import DESCRIPTION_MAX_CHARS
 from app.research import component_specs_general as general
 from app.research.component_proposals import DESCRIPTION_MIN_CHARS, SUBJECTS_MAX
-from app.research.component_specs_data import SPEC_MODELS_DATA
+from app.research.component_specs import CONTRIBUTABLE_KINDS
 from app.research.component_specs_general_delivery import (
     CLAIMS_PER_UNIT_MAX,
     LABEL_MAX_CHARS,
@@ -26,9 +31,6 @@ from app.research.component_specs_general_delivery import (
     UNITS_MAX,
 )
 from app.research.component_specs_general_svg import DRAWING_MAX_CHARS
-from app.research.component_specs_plates import SPEC_MODELS_PLATES
-from app.research.component_specs_science import SPEC_MODELS_SCIENCE
-from app.research.component_specs_tools import SPEC_MODELS_TOOLS
 from app.research.knowledge_writes import PROPOSAL_FIELDS_MAX, PROPOSAL_QUOTES_MAX, PROPOSAL_SOURCES_MAX
 from app.research.licences import open_licence
 from app.research.page_proposals import FACTS_MAX
@@ -38,12 +40,25 @@ CRAFT_PAGES = REPOSITORY / ".claude" / "skills" / "kalavigyan-craft-pages"
 INDIA_BOUNDS = REPOSITORY / "frontend" / "components" / "map" / "indiaBounds.ts"
 NUMBER_WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}
 KIND_GROUPS = {
-    "Plates and media": SPEC_MODELS_PLATES,
-    "Data and place": SPEC_MODELS_DATA,
-    "Science": SPEC_MODELS_SCIENCE,
-    "Reading tools": SPEC_MODELS_TOOLS,
+    "Figures from data": ("drawing", "chart", "fact_table", "timeline", "map_layer"),
+    "Data and place": ("stat_tiles", "map_sequence", "source_disagreements"),
+    "Plates and voices": ("label_card", "swatch_cards", "swatch_pair", "voice"),
+    "Science": (
+        "reaction_player",
+        "dip_player",
+        "stage_player",
+        "diagram",
+        "molecule_3d",
+        "structure_diagram",
+        "equation_card",
+        "material_cards",
+        "experiment_lab",
+        "choice_toggle",
+    ),
+    "Built by the site for every page": PAGE_TOOL_KINDS,
+    "The authored page's own": (*AUTHORED_ART_KINDS, *AUTHORED_SCRIPT_KINDS),
 }
-APPROVED_KINDS = 42
+DELIVERED_GROUPS = ("Figures from data", "Data and place", "Plates and voices", "Science")
 GROUP = re.compile(
     r"^- \*\*(?P<group>[^*]+)\*\* \((?P<count>\d+)\): (?P<kinds>.+?)(?=\n- |\n\n)", re.M | re.S
 )
@@ -106,17 +121,21 @@ def test_a_picture_from_elsewhere_needs_a_licence_the_server_reads_as_open() -> 
     assert "non-commercial (NC)" in bullet and "no-derivatives (ND)" in bullet
 
 
-def test_the_component_guide_lists_the_42_kinds_by_group_and_the_five_general_kinds() -> None:
+def test_the_component_guide_lists_the_kinds_a_contributor_delivers_and_those_the_site_keeps() -> None:
     components = reference_text("components")
     groups = {match["group"]: match for match in GROUP.finditer(components)}
     assert set(groups) == set(KIND_GROUPS)
-    for name, models in KIND_GROUPS.items():
-        assert sorted(CODE_NAME.findall(groups[name]["kinds"])) == sorted(models), name
-        assert int(groups[name]["count"]) == len(models), name
-    assert sum(len(models) for models in KIND_GROUPS.values()) == APPROVED_KINDS
-    assert f"The {APPROVED_KINDS} kinds" in components
-    named = flat(components).split("use one of the five general kinds: ")[1].split(". ")[0]
+    for name, kinds in KIND_GROUPS.items():
+        assert sorted(CODE_NAME.findall(groups[name]["kinds"].split(". ")[0])) == sorted(kinds), name
+        assert int(groups[name]["count"]) == len(kinds), name
+    delivered = [kind for name in DELIVERED_GROUPS for kind in KIND_GROUPS[name]]
+    assert sorted(delivered) == sorted(CONTRIBUTABLE_KINDS)
+    assert f"The {len(CONTRIBUTABLE_KINDS)} kinds a contributor delivers" in components
+    named = (
+        flat(components).split("use one of the five kinds that also take a declared spec: ")[1].split(". ")[0]
+    )
     assert tuple(CODE_NAME.findall(named)) == GENERAL_KINDS
+    assert "general_" not in components
 
 
 def test_the_component_guide_states_the_delivery_limits() -> None:

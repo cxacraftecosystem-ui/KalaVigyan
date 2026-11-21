@@ -61,9 +61,13 @@ second is drawn as `figure.rp.rx-player`. Ajrakh: blue (per-step reactions), red
 ## dip_player
 
 `DipPlayerSpec {id, head, phase, scene, stripLabel, phases, dipAgain, status, dipsLabel, dips,
-equation}`: the vat scene, the strip of phases (vat, lifted, air; the last carries
-`aria-current="step"`), Dip again, the dip swatches (`--dip-1..4`, the last `on`) and the
-balanced equation. Ajrakh: `shared/chemistry/indigo-vat-dip`.
+equation?}`: the scene, the strip of phases, each named by its own key in `pose` (a lower-case
+word or hyphenated words, each once; the last carries `aria-current="step"`), the label of the
+repeat button, the swatches of the successive dips (colour tokens, the last `on`) and, where a source
+states one, the balanced equation. The poses are the spec's words, not the model's: Ajrakh's spec
+carries vat, lifted and air and its `--dip-1..4`, and Bidriware's fixture carries solution, lifted
+and oiled with no equation, because the patina's compounds are unidentified. Ajrakh:
+`shared/chemistry/indigo-vat-dip`.
 
 ## stage_player
 

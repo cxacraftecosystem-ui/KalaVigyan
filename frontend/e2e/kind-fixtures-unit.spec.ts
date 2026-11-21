@@ -49,8 +49,11 @@ test("the preview page places one of each kind, every unit cited from its craft'
   expect(Object.keys(document.specs).sort()).toEqual(KIND_FIXTURES.map((fixture) => fixture.label).sort());
   const nested = document.content.layout.filter((entry) => entry.within === "bidriware/chemistry/what-if-lab").map((entry) => entry.ref);
   expect(nested.sort()).toEqual(["bidriware/chemistry/what-blackens", "bidriware/chemistry/why-copper"]);
-  const titles = Object.values(document.content.sources).map((source) => source.title);
-  expect(new Set(titles).size).toBe(titles.length);
+  const numbers = Object.values(document.content.sources).map((source) => source.number);
+  expect(numbers).toEqual(numbers.map((_, at) => at + 1));
+  const cited = Object.values(document.content.citations).flat();
+  expect(cited.length).toBeGreaterThan(0);
+  expect(cited.every((quote) => Object.hasOwn(document.content.sources, quote.source))).toBe(true);
 });
 
 test("a fixture's units move to a block of their own and its spec follows them", () => {

@@ -124,7 +124,7 @@ Ratios are the lowest against ground, raised and sunk in that theme (on-indigo a
 
 ### 2.5 Specimen colours
 
-Depicted materials. They do not change with the theme. The interactive indigo is chroma 0.15 or more and every dyed blue is chroma 0.06 or less, so a dye never reads as a control; dye-madder is alizarin crimson, deeper and bluer than the semantic madder. The nearest semantic colour is recorded per theme.
+Depicted materials. They do not change with the theme. Each is a material record in `tools/design/materials.json`: the craft's material by its dossier id, the facts that state or show its colour, the colour and what the swatch shows. The generator turns every record into its token, records the nearest reserved colour and the frame ratios, and refuses a record within 3 delta E of a reserved colour in any theme, a blue as saturated as the interactive indigo (chroma 0.15 or more), or a swatch whose edge does not read; it also writes the names a spec may depict (`backend/app/research/depicted_materials.py`, `frontend/lib/depictedMaterials.ts`). Kutch Ajrakh's dyes were the first records; any craft's material with a record can be drawn. The interactive indigo is chroma 0.15 or more and every dyed blue is chroma 0.06 or less, so a dye never reads as a control; dye-madder is alizarin crimson, deeper and bluer than the semantic madder. The nearest semantic colour is recorded per theme.
 
 | Token | Hex | Nearest semantic (light) | Shows |
 |---|---|---|---|
@@ -149,11 +149,20 @@ Depicted materials. They do not change with the theme. The interactive indigo is
 | `--dip-2` | `#475C7A` | 12.7 from indigo | Two dips. |
 | `--dip-3` | `#354660` | 11.2 from indigo | Three dips. |
 | `--dip-4` | `#253045` | 10.0 from indigo-hover | Four dips, the darkest blue. |
+| `--dye-bidri-white` | `#D6D5CE` | 16.7 from turmeric | Bidriware: the alloy sanded zinc-white. |
+| `--dye-bidri-black` | `#232326` | 14.9 from indigo-hover | Bidriware: the matt black patina of the fort-earth bath. |
+| `--dye-bidri-silver` | `#BFC2C6` | 15.9 from turmeric | Bidriware: the silver inlay. |
+| `--dye-quartz-white` | `#F1EFE7` | 21.9 from turmeric | Blue Pottery of Jaipur: the white quartz body. |
+| `--dye-cobalt` | `#385E95` | 10.3 from indigo | Blue Pottery of Jaipur: cobalt oxide fired deep blue, chroma 0.10. |
+| `--dye-copper-turquoise` | `#429595` | 20.5 from terracotta | Blue Pottery of Jaipur: copper oxide fired turquoise. |
+| `--dye-field-soil` | `#3B342E` | 15.4 from indigo-hover | Bastar Dhokra: the black field soil of the core. |
+| `--dye-sem-green` | `#5F7B3B` | 15.2 from terracotta | Bastar Dhokra: the core rubbed green with sem leaves. |
+| `--dye-river-soil` | `#8E5E4A` | 6.3 from terracotta | Bastar Dhokra: the red riverside soil. |
 | `--photo-ink-1` | `#FBFAF6` | – | Headline ink over a scrimmed photograph. |
 | `--photo-ink-2` | `#E6E3DA` | – | Standfirst ink over a scrimmed photograph. |
 
 - **Frame.** Every swatch sits in a 1px ink-2 frame with a 2px raised mat inside it. Its edge then reads at 3:1 or better against the mat (dark swatches) or the frame (light and mid swatches) in all four themes; tokens.json records both ratios per swatch. The swatch carries the weave texture.
-- **Exception, with safeguards.** A dye is a real material, so a few specimens sit closer than 10 delta E to a reserved colour in some theme: harda 7.3 from turmeric, gach clay 7.9 from terracotta, dye-madder 4.4 from the high-contrast madder. Safeguards: a specimen is always framed, textured and named in a key; it never fills a control, a link, a chart series or a map class; the reserved colours never fill an area larger than a control.
+- **Exception, with safeguards.** A dye is a real material, so a few specimens sit closer than 10 delta E to a reserved colour in some theme: harda 7.3 from turmeric, gach clay 7.9 and dhokra's riverside soil 6.3 from terracotta, dye-madder 4.4 from the high-contrast madder. Safeguards: a specimen is always framed, textured and named in a key; it never fills a control, a link, a chart series or a map class; the reserved colours never fill an area larger than a control.
 - **On a photograph.** Text uses `--photo-ink-1` and `--photo-ink-2` over a scrim keyed to the text block: `--photo-scrim-start` (a horizontal gradient under text at the inline start, desktop and tablet, mirrored in right-to-left) and `--photo-scrim-bottom` (phone, text stacked at the bottom). The primary button on a photograph is a paper button with indigo text; the quiet one is outlined in photo ink over a 40 per cent dark fill. These do not theme.
 - **Scrim check (acceptance).** For every art-directed crop, the build hides the text, screenshots the photograph through its scrim and samples the pixels under each text line's own boxes. The 95th-percentile luminance must leave photo-ink-1 at 4.5:1 or better for every line, in every vat phase (rest, in the vat, lifted green, in the air). On the landing photograph today the worst line is 5.96:1 (kicker, 390px); headlines are 8.0:1 or better. A failing crop strengthens its scrim; text is never weakened.
 - **Appbar on a photograph.** Photo ink and a translucent rule while the photograph is under it; once 64px of page ground has scrolled under the bar it switches to page ink in one 200ms state change.

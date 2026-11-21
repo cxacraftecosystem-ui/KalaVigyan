@@ -10,50 +10,72 @@
   "within": null,
   "spec": {
     "head": {
-      "title": "u0001"
+      "number": null,
+      "title": "u0001",
+      "titleId": null,
+      "dek": null,
+      "dekId": null
     },
     "first": [
       {
         "card": {
+          "visual": null,
           "when": "u0002",
           "title": "u0003",
           "lines": [
             {
               "tag": "p",
-              "unit": "u0004"
+              "classes": [],
+              "unit": "u0004",
+              "text": null
             }
-          ]
-        }
+          ],
+          "differs": null
+        },
+        "component": null
       },
       {
         "card": {
+          "visual": null,
           "when": "u0005",
           "title": "u0006",
           "lines": [
             {
               "tag": "p",
-              "unit": "u0007"
+              "classes": [],
+              "unit": "u0007",
+              "text": null
             }
-          ]
-        }
+          ],
+          "differs": null
+        },
+        "component": null
       },
       {
         "card": {
+          "visual": null,
           "when": "u0008",
           "title": "u0009",
           "lines": [
             {
               "tag": "p",
-              "unit": "u0010"
+              "classes": [],
+              "unit": "u0010",
+              "text": null
             }
-          ]
-        }
+          ],
+          "differs": null
+        },
+        "component": null
       }
     ],
     "source": {
       "tag": "p",
-      "unit": "u0011"
-    }
+      "classes": [],
+      "unit": "u0011",
+      "text": null
+    },
+    "more": []
   },
   "units": {
     "u0001": {

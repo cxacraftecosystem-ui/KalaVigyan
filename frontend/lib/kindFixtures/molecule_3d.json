@@ -13,7 +13,8 @@
       "figure": null,
       "number": "u0001",
       "title": "u0002",
-      "titleId": "bidri-model-t"
+      "titleId": "bidri-model-t",
+      "dek": null
     },
     "molecules": [
       {
@@ -67,14 +68,18 @@
         }
       }
     ],
+    "side": [],
     "key": [
       {
+        "swatch": null,
         "label": "Nitrogen"
       },
       {
+        "swatch": null,
         "label": "Hydrogen"
       },
       {
+        "swatch": null,
         "label": "Chlorine"
       }
     ]

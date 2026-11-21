@@ -74,8 +74,8 @@ STRUCTURE_STEP = (
 )
 COMPONENTS_STEP = (
     "Call `list_components` first and place an existing component by its label. Build what is missing "
-    "finished, by the component guide below: its spec and units, a general kind for a chart, table, timeline "
-    "or map layer from a dataset, every value stated by a cited fact. Call `edit_draft` with each in add as "
+    "finished, by the component guide below: its spec and units, a declared chart, fact_table, timeline "
+    "or map_layer from a dataset, every value stated by a cited fact or a stored row. Call `edit_draft` with each in add as "
     "{proposal, cites}, and with the layout on the version `get_page` gave."
 )
 PICTURES_STEP = (

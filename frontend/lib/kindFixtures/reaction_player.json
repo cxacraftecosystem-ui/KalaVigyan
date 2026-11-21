@@ -15,7 +15,8 @@
       "figure": null,
       "number": "u0011",
       "title": "u0012",
-      "titleId": "bidri-rp-t"
+      "titleId": "bidri-rp-t",
+      "dek": null
     },
     "current": 1,
     "steps": [
@@ -27,12 +28,15 @@
           "paragraphs": [
             "u0003"
           ],
+          "bond": null,
+          "link": null,
           "conditions": [
             {
               "term": "u0004",
               "value": "u0005"
             }
-          ]
+          ],
+          "differs": null
         },
         "chemistry": {
           "parts": [
@@ -45,7 +49,10 @@
                   "swatch": "--dye-bidri-white",
                   "name": [
                     "Zinc-copper alloy"
-                  ]
+                  ],
+                  "formula": null,
+                  "state": [],
+                  "cid": null
                 },
                 {
                   "item": "arrow",
@@ -56,7 +63,10 @@
                   "swatch": "--dye-bidri-white",
                   "name": [
                     "Copper-rich surface"
-                  ]
+                  ],
+                  "formula": null,
+                  "state": [],
+                  "cid": null
                 }
               ]
             },
@@ -65,7 +75,8 @@
               "unit": "u0006"
             }
           ]
-        }
+        },
+        "scene": null
       },
       {
         "name": "Copper darkens",
@@ -74,7 +85,11 @@
           "heading": "u0008",
           "paragraphs": [
             "u0009"
-          ]
+          ],
+          "bond": null,
+          "link": null,
+          "conditions": [],
+          "differs": null
         },
         "chemistry": {
           "parts": [
@@ -87,7 +102,10 @@
                   "swatch": "--dye-bidri-white",
                   "name": [
                     "Copper-rich surface"
-                  ]
+                  ],
+                  "formula": null,
+                  "state": [],
+                  "cid": null
                 },
                 {
                   "item": "arrow",
@@ -106,7 +124,9 @@
                       "style": "sub"
                     },
                     "O"
-                  ]
+                  ],
+                  "state": [],
+                  "cid": null
                 }
               ]
             },
@@ -115,7 +135,8 @@
               "unit": "u0010"
             }
           ]
-        }
+        },
+        "scene": null
       }
     ],
     "scenes": [
@@ -154,6 +175,7 @@
         ]
       }
     ],
+    "key": null,
     "status": "u0013"
   },
   "units": {

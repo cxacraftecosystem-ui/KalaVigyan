@@ -19,6 +19,7 @@
         "role": "u0002",
         "name": "u0003",
         "local": "u0004",
+        "botanical": null,
         "chemistry": "u0005",
         "facts": [
           "u0006"
@@ -29,12 +30,14 @@
         "role": "u0007",
         "name": "u0008",
         "local": "u0009",
+        "botanical": null,
         "chemistry": "u0010",
         "facts": [
           "u0011"
         ]
       }
-    ]
+    ],
+    "after": []
   },
   "units": {
     "u0001": {

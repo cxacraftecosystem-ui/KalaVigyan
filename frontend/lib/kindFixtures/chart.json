@@ -21,12 +21,12 @@
         "points": [
           {
             "label": "u0005",
-            "value": 20,
+            "value": 20.0,
             "reading": "u0006"
           },
           {
             "label": "u0007",
-            "value": 5,
+            "value": 5.0,
             "reading": "u0008"
           }
         ]

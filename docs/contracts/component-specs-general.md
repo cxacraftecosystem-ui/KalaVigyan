@@ -1,11 +1,24 @@
-# Component specs: delivered components and the general kinds
+# Component specs: delivered components and the declared kinds
 
 Round 7 (owner, 2026-11-20: contributors deliver whole components and pages through MCP). A
 component arrives finished: its kind's spec data and the texts it places, each resting on shown
-facts. Any of the 42 kinds of the approved page can be delivered this way, and five general kinds
-draw anything new from declarative data. Nothing a contributor sends is ever run as code.
+facts. The 22 contributable kinds (`component_specs.CONTRIBUTABLE_KINDS`) can be delivered this
+way; five of them (`drawing`, `chart`, `fact_table`, `timeline`, `map_layer`) also take a declared
+spec that draws anything new from data. Nothing a contributor sends is ever run as code.
 
-Last reviewed: 2026-11-20.
+One kind per job (decision 0114): the general_* names are retired. `chart`, `fact_table`,
+`timeline` and `map_layer` each take two forms of spec: a spec with a `head` is declared and drawn
+by the general view, a spec without one is the authored figure of a page (Kutch Ajrakh's) and drawn
+by the kind's own view (`component_specs_either.EITHER_FORMS`, `form_model`;
+`frontend/components/monograph/eitherView.tsx`). `drawing` has only the declared form. The page
+tools (`PAGE_TOOL_KINDS`), the authored art (`AUTHORED_ART_KINDS`) and the authored scripts
+(`AUTHORED_SCRIPT_KINDS`: `model_explainer`, `timeline_map`) are refused with a reason
+(`component_specs.not_contributable`). Each contributable kind has a fixture for a craft other
+than Kutch Ajrakh in `frontend/lib/kindFixtures/`, checked by the gates in
+`backend/tests/research/test_kind_fixtures.py`, drawn by its view in
+`frontend/e2e/kind-fixtures-unit.spec.ts` and placed together on `/design/kinds`.
+
+Last reviewed: 2026-11-21.
 
 | Side | File |
 |---|---|
@@ -88,18 +101,26 @@ drawing, map, timeline, table), the caption is a cited sentence under it. Every 
 
 | Kind | Spec | View |
 |---|---|---|
-| `general_drawing` | `head`, `svg` (one SVG, cleaned at intake), `alt` (what it shows) | the drawing as an image (`img` of a `data:image/svg+xml` URI at its viewBox's size) on the cloth white of a specimen mat in every theme, `alt` as its description |
-| `general_chart` | `head`, `form` (`bars` or `line`), `valueLabel` (what is measured, with its unit), `series` 1 to 3 `{name, points [{label, value, reading}]}` (1 to 60, the same count in each), `emphasis` (the first series' point the title names) | one small multiple per series: bars as rows (label, bar at its share of the largest from zero, the cited reading), a line on a plot with three ticks and its first and last label, every value behind "All N values"; `--chart-series`, the emphasised mark `--chart-emph` |
-| `general_table` | `head`, `columns` 1 to 8 `{label, numeric}`, `rows` 1 to 100 `{cells}` (one per column) | a table with the first cell of a row as its header, numeric columns at the end in tabular figures |
-| `general_timeline` | `head`, `events` 2 to 40 `{year, when, title, text}` in year order (-3000 to 2100) | a dated axis marking each event, its first and last year (BCE for negative years), then one row per event: the date as written, the title, the cited sentence |
-| `general_map_layer` | `head`, `places` 1 to 60 `{longitude 68 to 97.5, latitude 6.5 to 37.5, name, reading, value?}`, `valueLabel` (only and always when places have values) | India's outline in the map tokens (`--map-land`, `--map-coast`, no state lines), a numbered disc per place sized by the square root of its value, and the numbered list of places with their cited readings |
+| `drawing` | `head`, `svg` (one SVG, cleaned at intake), `alt` (what it shows) | the drawing as an image (`img` of a `data:image/svg+xml` URI at its viewBox's size) on the cloth white of a specimen mat in every theme, `alt` as its description |
+| `chart` | `head`, `form` (`bars` or `line`), `valueLabel` (what is measured, with its unit), `series` 1 to 3 `{name, points [{label, value, reading, cell?}]}`, `dataset?` (1 to 60, the same count in each), `emphasis` (the first series' point the title names) | one small multiple per series: bars as rows (label, bar at its share of the largest from zero, the cited reading), a line on a plot with three ticks and its first and last label, every value behind "All N values"; `--chart-series`, the emphasised mark `--chart-emph` |
+| `fact_table` | `head`, `columns` 1 to 8 `{label, numeric, column?}`, `rows` 1 to 100 `{cells, row?}` (one per column), `dataset?` | a table with the first cell of a row as its header, numeric columns at the end in tabular figures |
+| `timeline` | `head`, `events` 2 to 40 `{year, when, title, text}` in year order (-3000 to 2100) | a dated axis marking each event, its first and last year (BCE for negative years), then one row per event: the date as written, the title, the cited sentence |
+| `map_layer` | `head`, `places` 1 to 60 `{longitude 68 to 97.5, latitude 6.5 to 37.5, name, reading, value?, cell?}`, `dataset?`, `valueLabel` (only and always when places have values) | India's outline in the map tokens (`--map-land`, `--map-coast`, no state lines), a numbered disc per place sized by the square root of its value, and the numbered list of places with their cited readings |
 
 General figures carry their kind as the kicker ("Chart", "Table") rather than a figure number:
 numbering them through the page with the answer blocks' figures is open. A page draft (decision
 0110, `open-work.md`, Drafts) holds delivered components and general figures as `{proposal, cites}`
 like a bundle, and its checklist report numbers every figure of the assembled page in reading order
-with its kind, field and whether it cites through its units (rule 9); a `general_chart` passes rule 17
+with its kind, field and whether it cites through its units (rule 9); a declared `chart` passes rule 17
 because the view draws its bars from zero.
+
+A declared `chart`, `fact_table` or `map_layer` may rest on a contributed dataset (`dataset {code}`,
+each value's `cell {row, column}`, a table's `row` and `column`): `services/dataset_cells.checked_cells`
+reads each cell from the stored `DatasetTable`, refuses a cell the table does not hold or a value
+that is not the number it states, lets a unit state the figures of its cells without a fact, and
+replaces the spec's `dataset` with the stored record's credit and address. A component citing a
+dataset needs no fact of its own; an `experiment_lab` rests on its toggles' facts
+(`CONTAINER_KINDS`).
 
 ### The SVG intake (`cleaned_svg`)
 

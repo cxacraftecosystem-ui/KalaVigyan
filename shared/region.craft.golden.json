@@ -175,7 +175,7 @@
     {
       "code": "CHELSA_2_1_1981_2010",
       "title": "CHELSA V2.1 climatologies 1981-2010",
-      "publisher": "Swiss Federal Institute for Forest, Snow and Landscape Research WSL",
+      "publisher": "Swiss Federal Institute for Forest, Snow and Landscape Research WSL, via EnviDat",
       "edition": "V2.1",
       "period": "1981-2010",
       "nativeResolution": "30 arc-seconds (about 1 km)",

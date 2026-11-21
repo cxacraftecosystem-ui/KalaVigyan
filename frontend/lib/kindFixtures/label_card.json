@@ -27,11 +27,13 @@
             "fill": "var(--dye-bidri-black)",
             "stroke": "var(--dye-bidri-silver)",
             "stroke-width": "3"
-          }
+          },
+          "children": []
         }
       ]
     },
     "sentence": "u0002",
+    "inset": null,
     "facts": [
       {
         "term": "u0003",

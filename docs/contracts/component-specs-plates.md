@@ -32,7 +32,11 @@ a component whose markup the kind's spec cannot hold fails with the label and wh
   span, italic with its role, bold, sub, sup, highlight, link, figure reference, citation). A held
   citation carries `shown`, its sources' numbers and titles as the page shows them, because a view
   has no source table. Held text is a bridge: such sentences should become units (see Open).
-- **DyeName**: one of the specimen variables `--dye-*` of the design system.
+- **DepictedMaterial**: a depicted material the design generator records, drawn as its specimen
+  variable `--dye-<name>`. The names are generated from the material records
+  (`tools/design/materials.json`, each naming a craft's dossier material and the facts that state
+  its colour) into `backend/app/research/depicted_materials.py` and `frontend/lib/depictedMaterials.ts`;
+  Kutch Ajrakh's dyes were the first records, and any craft's material with a record can be drawn.
 
 ## Kinds
 

@@ -1,4 +1,3 @@
-import ast
 import json
 import uuid
 from functools import cache
@@ -22,12 +21,14 @@ __all__ = [
     "PhaseBFixture",
     "Placeholders",
     "catalog_dataset",
+    "geo_etl_datasets",
     "phase_b",
     "phase_b_blocks",
 ]
 
 PHASE_B = "explainer.phase-b.golden.json"
-GEO_CATALOG = REPO / "etl" / "geo" / "geo_etl" / "catalog.py"
+REGISTRY = REPO / "backend" / "app" / "data" / "datasets" / "registry.json"
+GEO_ETL = "geo-etl"
 DATASET_FIELDS = (
     "code",
     "title",
@@ -83,11 +84,14 @@ def phase_b_blocks() -> dict[str, dict[str, Any]]:
     return {block["id"]: block for section in phase_b()["sections"] for block in section["blocks"]}
 
 
+@cache
+def geo_etl_datasets() -> dict[str, dict[str, Any]]:
+    body = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    return {entry["code"]: entry for entry in body["datasets"] if entry["build"] == GEO_ETL}
+
+
 def catalog_dataset(code: str) -> dict[str, Any]:
-    tree = ast.parse(GEO_CATALOG.read_text(encoding="utf-8"))
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "Dataset":
-            fields = {kw.arg: ast.literal_eval(kw.value) for kw in node.keywords if kw.arg}
-            if fields.get("code") == code:
-                return {key: fields.get(key) for key in DATASET_FIELDS}
-    raise AssertionError(f"{code} is not a dataset of the geo ETL catalogue")
+    entry = geo_etl_datasets().get(code)
+    if entry is None:
+        raise AssertionError(f"{code} is not a dataset the geo ETL builds from the registry")
+    return {key: entry.get(key) for key in DATASET_FIELDS}

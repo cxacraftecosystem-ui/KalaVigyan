@@ -259,7 +259,7 @@ Arguments: `label` (`<craft-or-shared>/<field>/<name>`, the registry's pattern),
 (1 to 20: a craft by slug, a concept or compound by id, a place by `lgd:<code>` or `basin:<id>`),
 `considered_labels[]` (registered labels only), `extends?` with `extension` (`SUBJECT_LINK` keeps the
 extended label; `VARIANT` takes a new one), `task_key?`, and the delivery: `spec` (the kind's spec
-data, any of the 42 kinds or a general kind) and `units` (`{u0001: {text, claimIds}}`), required on
+data, any of the 22 contributable kinds, authored or declared) and `units` (`{u0001: {text, claimIds}}`), required on
 MCP except for a `SUBJECT_LINK`, which carries none (`component-specs-general.md`).
 
 - Checks, failing with a sentence the agent can act on: a `task_key` names a `MISSING_COMPONENT`
@@ -331,7 +331,7 @@ The page, draft and source tools need an account of Researcher or above (`PROPOS
   `research_field {craft_slug, field}`, `write_section {craft_slug, field}`, `propose_component
   {craft_slug, need?}`, and (round 7) `deliver_page {subject_kind, slug}`, `give_picture
   {craft_slug}`, the prompt of `MISSING_PICTURE` tasks, and `deliver_dataset {craft_slug, kind?}`
-  (`kind` one of the general kinds but `general_drawing`). Each returns one user message: the task, the
+  (`kind` one of the declared kinds but `drawing`). Each returns one user message: the task, the
   steps naming the tools in order (`list_open_work`, `reserve_tasks`, `get_facts` and `get_page`,
   `list_components` first for a component, the source steps (`search_sources`, then `lookup`,
   `read_source` for the text the gates will read and with `quotes` on every quote, with the agent's
@@ -501,7 +501,7 @@ is the sentences of the opening; a picture is a `picture_plate`.
 | 10 | no text shows a progress state ("writing section", "n of m scenes", "70 % done") |
 | 14 | every picture carries its credit |
 | 15 | every figure holds text or cites |
-| 17 | every chart is a `general_chart` (drawn from zero by the site); any other chart is judged |
+| 17 | every chart is a declared `chart` (drawn from zero by the site); an authored chart is judged |
 | 18 | judged, with the number of sentences using each ambiguous term of the lists |
 | 20 | each mechanism of the lists is named in 2 or more sentences; judged without lists |
 | 21 | each reaction of the bundle's structure with every formula has the same elements on both sides; judged without one |
@@ -576,7 +576,7 @@ kalavigyan-datasets/`, and the checklist at `.claude/skills/kalavigyan-craft-pag
 `tests/mcp/test_skill_references.py` fails when a copy differs from its source, when a skill shares
 a run of eight words or a heading with a reference, or when a skill stops naming a reference;
 `tests/mcp/test_reference_limits.py` ties each number a reference states (quote lengths, fact
-words, sources and quotes, the 42 kinds, the delivery limits, the map's frame and the layers'
+words, sources and quotes, the contributable kinds, the delivery limits, the map's frame and the layers'
 tolerances, the bundle's facts, the gaps script's bar) to the constant the server or the build
 applies. After editing a reference, copy it to its served places.
 
