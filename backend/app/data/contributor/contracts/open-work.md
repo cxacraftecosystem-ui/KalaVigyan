@@ -203,11 +203,18 @@ reservationsClosed}`), after the field work:
    lacking fields) and `lacks`. A group no one asked within 90 days is `LAPSED`.
 5. Sets its priority: `HIGH` when 5 or more asked and the latest within 30 days; `MEDIUM` when 5 or
    more asked earlier, or 2 or more with the latest within 30 days; `LOW` otherwise.
-6. Checks its acceptance with a retrieval run per field: the stored search (`StoredKnowledgeSearch`,
-   mode `HYBRID`, the craft, the field) with the group's question as its text and its stored vector
-   as the query vector, counting the claim hits at a fact level found by the question's words or
-   names (a lexical or entity rank), or by meaning alone for a question not in an English script.
-   When every field counts 2 or more, the group is `ANSWERED`.
+6. Checks its acceptance with one count per field, no model and no ranking
+   (`services/answer_gap_checks`, decision 0122): the claims of the craft's scope (with its family
+   science and the crafts merged into it, `retrieval.md`), shown in mode `HYBRID` at a fact level and
+   filed under the field as their field or a secondary field (a claim with no field counts for no
+   field), that match the question. A question in an English script matches by its rare words: its
+   Latin terms of 3 or more characters less the craft's name and slug words (a plural `s` aside) and
+   common words (`COMMON_WORDS`: the quote matcher's stop words and question words such as why, how,
+   use, made); a claim matches when its English text-search vector holds 2 of them, or the only one
+   (`terms_needed`). A question in another script, or one left with no rare word, matches by
+   meaning: a claim whose current-model vector has a cosine similarity of at least 0.6 to the
+   group's stored vector (`ANSWER_MIN_SIMILARITY`, the craft finder's semantic floor). When every
+   field counts 2 or more, the group is `ANSWERED`.
 7. Ends each live `ANSWER_GAP` reservation of a group no longer open: `COMPLETED` when it was
    answered, `EXPIRED` otherwise.
 
