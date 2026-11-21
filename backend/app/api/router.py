@@ -32,6 +32,7 @@ from app.api.routes import (
     molecules,
     notifications,
     oauth,
+    open_data,
     open_work,
     own_proposals,
     page_documents,
@@ -94,6 +95,7 @@ api_router.include_router(media.router)
 api_router.include_router(molecules.router)
 api_router.include_router(notifications.router)
 api_router.include_router(oauth.router)
+api_router.include_router(open_data.router)
 api_router.include_router(open_work.router)
 api_router.include_router(own_proposals.router)
 api_router.include_router(page_documents.router)

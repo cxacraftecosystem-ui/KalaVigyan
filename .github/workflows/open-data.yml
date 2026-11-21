@@ -1,0 +1,232 @@
+name: Open data release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version, YYYY.MM.DD or YYYY.MM.DD.N for a second release that day (empty: today in India)"
+        required: false
+        default: ""
+      publish:
+        description: "Publish on Zenodo itself with ZENODO_TOKEN; unticked, the release goes to the Zenodo sandbox"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: open-data
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.14"
+  UV_LOCKED: "1"
+
+jobs:
+  release:
+    name: Build, deposit and record a release
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+      BUCKET: ${{ vars.MEDIA_BUCKET }}
+      SITE: ${{ vars.WEB_ORIGIN || 'https://kalavigyan.vercel.app' }}
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Choose the target, the token and the version
+        id: plan
+        env:
+          PUBLISH: ${{ inputs.publish }}
+          VERSION_INPUT: ${{ inputs.version }}
+          PRODUCTION_TOKEN_SET: ${{ secrets.ZENODO_TOKEN != '' }}
+          SANDBOX_TOKEN_SET: ${{ secrets.ZENODO_SANDBOX_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          for v in AWS_REGION INSTANCE_ID BUCKET; do
+            [ -n "${!v}" ] || { echo "::error::repository variable for $v is not set (see docs/RUNBOOK.md)"; exit 1; }
+          done
+          if [ "$PUBLISH" = "true" ]; then
+            [ "$PRODUCTION_TOKEN_SET" = "true" ] || { echo "::error::publish=true needs the ZENODO_TOKEN secret; nothing was sent (docs/contracts/open-data.md)"; exit 1; }
+            target=ZENODO
+          else
+            [ "$SANDBOX_TOKEN_SET" = "true" ] || { echo "::error::a sandbox release needs the ZENODO_SANDBOX_TOKEN secret; nothing was sent (docs/contracts/open-data.md)"; exit 1; }
+            target=SANDBOX
+          fi
+          version="${VERSION_INPUT:-$(TZ=Asia/Kolkata date +%Y.%m.%d)}"
+          [[ "$version" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}(\.[1-9][0-9]?)?$ ]] || { echo "::error::the version is YYYY.MM.DD or YYYY.MM.DD.N, not $version"; exit 1; }
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Release $version to $target"
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install
+        run: uv sync --locked
+
+      - name: Assume the deploy role
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: open-data-${{ github.run_id }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Write the helper that runs a step on the box
+        working-directory: .
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/on_box.sh" <<'SH'
+          on_box() {
+            local name="$1" command="$2" minutes="$3" cid status deadline base
+            local prefix="deploy/logs/open-data/$GITHUB_RUN_ID/$name"
+            local script="set -euo pipefail
+          cd /opt/kalavigyan/current/backend
+          $command"
+            jq -n --arg s "$script" --arg t "$((minutes * 60))" '{commands: [$s], executionTimeout: [$t]}' > "$RUNNER_TEMP/$name.json"
+            cid="$(aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name AWS-RunShellScript \
+              --comment "open data $name ${GITHUB_RUN_ID}" --timeout-seconds 300 \
+              --parameters "file://$RUNNER_TEMP/$name.json" \
+              --output-s3-bucket-name "$BUCKET" --output-s3-key-prefix "$prefix" \
+              --query Command.CommandId --output text)"
+            echo "SSM command $cid ($name)"
+            deadline=$(( $(date +%s) + minutes * 60 + 60 ))
+            while :; do
+              sleep 15
+              status="$(aws ssm get-command-invocation --command-id "$cid" --instance-id "$INSTANCE_ID" --query Status --output text 2>/dev/null || echo Pending)"
+              case "$status" in
+                Pending|InProgress|Delayed) ;;
+                *) break ;;
+              esac
+              [ "$(date +%s)" -lt "$deadline" ] || { echo "::error::$name did not finish in $minutes minutes"; status=TimedOut; break; }
+            done
+            base="$prefix/$cid/$INSTANCE_ID/awsrunShellScript/0.awsrunShellScript"
+            aws s3 cp --only-show-errors "s3://$BUCKET/$base/stdout" "$RUNNER_TEMP/$name.out" 2>/dev/null \
+              || aws ssm get-command-invocation --command-id "$cid" --instance-id "$INSTANCE_ID" --query StandardOutputContent --output text > "$RUNNER_TEMP/$name.out"
+            echo "::group::box stdout ($name)"
+            cat "$RUNNER_TEMP/$name.out"
+            echo "::endgroup::"
+            echo "::group::box stderr ($name)"
+            aws s3 cp --only-show-errors "s3://$BUCKET/$base/stderr" - 2>/dev/null \
+              || aws ssm get-command-invocation --command-id "$cid" --instance-id "$INSTANCE_ID" --query StandardErrorContent --output text
+            echo "::endgroup::"
+            [ "$status" = Success ] || { echo "::error::$name ended $status; the box output above says why (docs/contracts/open-data.md)"; return 1; }
+          }
+          as_app() {
+            printf 'runuser -u kalavigyan -- bash -c "set -a; . /opt/kalavigyan/.env; set +a; exec ./.venv/bin/python -m app.scripts.build_open_data %s"' "$1"
+          }
+          result_of() {
+            grep -m1 '^OPEN_DATA_RESULT ' "$1" | sed 's/^OPEN_DATA_RESULT //'
+          }
+          SH
+
+      - name: Read the latest published release of the target on the box
+        id: latest
+        env:
+          TARGET: ${{ steps.plan.outputs.target }}
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/on_box.sh"
+          on_box latest "$(as_app "latest --target $TARGET")" 10
+          record="$(result_of "$RUNNER_TEMP/latest.out" | jq -r '.latest.recordId // empty')"
+          [ -z "$record" ] || [[ "$record" =~ ^[0-9]+$ ]] || { echo "::error::the latest record id is not a number"; exit 1; }
+          echo "record=$record" >> "$GITHUB_OUTPUT"
+          echo "Latest published record: ${record:-none, so this is the first release}"
+
+      - name: Open a draft on Zenodo and reserve its DOI
+        id: draft
+        env:
+          TARGET: ${{ steps.plan.outputs.target }}
+          VERSION: ${{ steps.plan.outputs.version }}
+          LATEST: ${{ steps.latest.outputs.record }}
+          ZENODO_TOKEN: ${{ inputs.publish && secrets.ZENODO_TOKEN || secrets.ZENODO_SANDBOX_TOKEN }}
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/on_box.sh"
+          args=(draft --target "$TARGET" --version "$VERSION" --site "$SITE")
+          [ -z "$LATEST" ] || args+=(--latest-record "$LATEST")
+          uv run python -m app.scripts.build_open_data "${args[@]}" | tee "$RUNNER_TEMP/draft.out"
+          draft="$(result_of "$RUNNER_TEMP/draft.out")"
+          for key in record_id concept_record_id doi concept_doi; do
+            value="$(jq -r ".$key" <<< "$draft")"
+            [[ "$value" =~ ^(10\.[0-9]{4,9}/zenodo\.[0-9]+|[0-9]+)$ ]] || { echo "::error::Zenodo gave an unexpected $key"; exit 1; }
+            echo "$key=$value" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Build the release on the box from the database
+        env:
+          TARGET: ${{ steps.plan.outputs.target }}
+          VERSION: ${{ steps.plan.outputs.version }}
+          DOI: ${{ steps.draft.outputs.doi }}
+          CONCEPT_DOI: ${{ steps.draft.outputs.concept_doi }}
+          RECORD: ${{ steps.draft.outputs.record_id }}
+          CONCEPT_RECORD: ${{ steps.draft.outputs.concept_record_id }}
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/on_box.sh"
+          out="/var/tmp/kv-open-data/$GITHUB_RUN_ID"
+          build="$(as_app "build --target $TARGET --version $VERSION --doi $DOI --concept-doi $CONCEPT_DOI --record-id $RECORD --concept-record-id $CONCEPT_RECORD --out $out")"
+          on_box build "rm -rf $out
+          install -d -o kalavigyan -m 0750 $out
+          $build
+          aws s3 cp --recursive --only-show-errors --region $AWS_REGION $out s3://$BUCKET/deploy/logs/open-data/$GITHUB_RUN_ID/files/
+          rm -rf $out" 30
+
+      - name: Fetch the release files and check every checksum
+        working-directory: .
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/release"
+          aws s3 cp --recursive --only-show-errors "s3://$BUCKET/deploy/logs/open-data/$GITHUB_RUN_ID/files/" "$RUNNER_TEMP/release/"
+          cd "$RUNNER_TEMP/release"
+          sha256sum -c --quiet SHA256SUMS
+          ls -l
+
+      - name: Upload the files to the draft, describe it and publish it
+        id: deposit
+        env:
+          TARGET: ${{ steps.plan.outputs.target }}
+          RECORD: ${{ steps.draft.outputs.record_id }}
+          ZENODO_TOKEN: ${{ inputs.publish && secrets.ZENODO_TOKEN || secrets.ZENODO_SANDBOX_TOKEN }}
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/on_box.sh"
+          uv run python -m app.scripts.build_open_data deposit --target "$TARGET" --record-id "$RECORD" \
+            --files "$RUNNER_TEMP/release" --site "$SITE" --publish | tee "$RUNNER_TEMP/deposit.out"
+          deposited="$(result_of "$RUNNER_TEMP/deposit.out")"
+          record_url="$(jq -r '.recordUrl' <<< "$deposited")"
+          published_at="$(jq -r '.publishedAt' <<< "$deposited")"
+          [[ "$record_url" =~ ^https://(sandbox\.)?zenodo\.org/records/[0-9]+$ ]] || { echo "::error::Zenodo gave an unexpected record address"; exit 1; }
+          [[ "$published_at" =~ ^[0-9T:.+-]+$ ]] || { echo "::error::the publication time is not a timestamp"; exit 1; }
+          echo "record_url=$record_url" >> "$GITHUB_OUTPUT"
+          echo "published_at=$published_at" >> "$GITHUB_OUTPUT"
+
+      - name: Record the DOI and the record on the box
+        env:
+          TARGET: ${{ steps.plan.outputs.target }}
+          VERSION: ${{ steps.plan.outputs.version }}
+          DOI: ${{ steps.draft.outputs.doi }}
+          CONCEPT_DOI: ${{ steps.draft.outputs.concept_doi }}
+          RECORD_URL: ${{ steps.deposit.outputs.record_url }}
+          PUBLISHED_AT: ${{ steps.deposit.outputs.published_at }}
+        run: |
+          set -euo pipefail
+          . "$RUNNER_TEMP/on_box.sh"
+          on_box record "$(as_app "record --target $TARGET --version $VERSION --doi $DOI --record-url $RECORD_URL --published-at $PUBLISHED_AT")" 10
+          {
+            echo "### Open data release $VERSION ($TARGET)"
+            echo ""
+            echo "- This version: https://doi.org/$DOI"
+            echo "- Every version: https://doi.org/$CONCEPT_DOI"
+            echo "- Record: $RECORD_URL"
+          } >> "$GITHUB_STEP_SUMMARY"

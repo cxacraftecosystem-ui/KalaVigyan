@@ -52,6 +52,7 @@ PUBLIC_ROUTES = {
     ("GET", "/api/map/layers"),
     ("GET", "/api/map/layers/{layer}"),
     ("GET", "/api/molecules/{pubchem_cid}/conformer"),
+    ("GET", "/api/open-data"),
     ("GET", "/api/places/districts"),
     ("GET", "/api/public/summary"),
     ("GET", "/api/rivers/{main_riv}"),
