@@ -6,13 +6,21 @@ from collections.abc import Sequence
 from decimal import Decimal
 from typing import Literal, Protocol, Self, runtime_checkable
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from .base import ContractModel
 from .crafts import SLUG_MAX_CHARS
-from .evidence import EvidenceItem, Quote
+from .evidence import EvidenceItem, Quote, personal_data_in
 from .quotes import figures_in, normalise_quote_text, unsupported_figures
-from .vocabulary import LABEL_LEVELS, EvidenceLabel, FacetType, QuoteCheck, SourceRelation
+from .vocabulary import (
+    CONCEPT_TYPE_DISCIPLINES,
+    LABEL_LEVELS,
+    Discipline,
+    EvidenceLabel,
+    FacetType,
+    QuoteCheck,
+    SourceRelation,
+)
 
 __all__ = [
     "DEDUPE_NAMESPACE",
@@ -31,7 +39,7 @@ __all__ = [
 WRITE_BACK_SCHEMA_VERSION = 1
 WRITE_BACK_ORIGIN = "LIVE_RESEARCH"
 WRITE_BACK_STATUS = "APPROVED"
-DEDUPE_NAMESPACE = "claim-write-back/v1"
+DEDUPE_NAMESPACE = "claim-write-back/v2"
 KEY_SEPARATOR = "\x1f"
 FOUND_BY = ("ANSWER", "BACKGROUND")
 
@@ -66,6 +74,7 @@ class ClaimWriteBack(ContractModel):
     schema_version: Literal[1] = WRITE_BACK_SCHEMA_VERSION
     craft_slug: str | None = Field(min_length=1, max_length=SLUG_MAX_CHARS)
     subject: WriteBackSubject
+    field: Discipline | None = None
     predicate: str = Field(min_length=1, max_length=120)
     text: str = Field(min_length=1, max_length=1000)
     text_lang: str = Field(default="en", min_length=2, max_length=16)
@@ -76,6 +85,14 @@ class ClaimWriteBack(ContractModel):
     citations: list[WriteBackCitation] = Field(min_length=1)
     found_by: FoundBy
     answer_id: uuid.UUID | None = None
+
+    @field_validator("text")
+    @classmethod
+    def _no_personal_data(cls, value: str) -> str:
+        found = personal_data_in(value)
+        if found:
+            raise ValueError(f"a fact never carries personal data ({', '.join(found)})")
+        return value
 
     @model_validator(mode="after")
     def _provenance_is_whole(self) -> Self:
@@ -108,10 +125,12 @@ class ClaimWriteBack(ContractModel):
         return LABEL_LEVELS[self.label]
 
     @property
+    def stored_field(self) -> str | None:
+        return self.field or CONCEPT_TYPE_DISCIPLINES.get(self.subject.concept_type)
+
+    @property
     def dedupe_key(self) -> str:
-        return claim_dedupe_key(
-            self.craft_slug, self.subject.concept_type, self.subject.concept_name, self.predicate, self.text
-        )
+        return claim_dedupe_key(self.craft_slug, self.stored_field, self.text)
 
 
 class WriteBackResult(ContractModel):
@@ -120,17 +139,8 @@ class WriteBackResult(ContractModel):
     created: bool
 
 
-def claim_dedupe_key(
-    craft_slug: str | None, concept_type: str, concept_name: str, predicate: str, text: str
-) -> str:
-    parts = [
-        DEDUPE_NAMESPACE,
-        craft_slug or "",
-        concept_type,
-        _fold(concept_name),
-        predicate.strip().casefold(),
-        _fold(text),
-    ]
+def claim_dedupe_key(craft_slug: str | None, field: str | None, text: str) -> str:
+    parts = [DEDUPE_NAMESPACE, craft_slug or "", field or "", _fold(text)]
     return hashlib.sha256(KEY_SEPARATOR.join(parts).encode("utf-8")).hexdigest()
 
 

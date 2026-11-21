@@ -148,6 +148,7 @@ class FakeLocator:
     name: str = "unpaywall"
     asked: list[str] = field(default_factory=list)
     licence: str | None = "CC BY 4.0"
+    version: str | None = None
 
     async def locate(self, doi: str) -> OpenAccessLocation:
         self.asked.append(doi)
@@ -159,6 +160,7 @@ class FakeLocator:
             status="GREEN",
             pdf_url=url,
             licence=self.licence,
+            version=self.version,
             host_type="REPOSITORY",
             checked_at=CHECKED,
         )

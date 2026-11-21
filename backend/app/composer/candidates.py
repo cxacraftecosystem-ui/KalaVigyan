@@ -16,6 +16,8 @@ from app.research.reading_style import ReadingStyle
 from app.research.retrieval import ChunkHit, ClaimHit
 from app.research.vocabulary import LABEL_LEVELS
 
+from .passages import best_passages, passage_terms
+
 __all__ = [
     "EVIDENCE_LEVEL",
     "WHOLE_TEXT_MAX_CHARS",
@@ -42,7 +44,10 @@ def compose_request(
 ) -> ComposeRequest:
     claims = [claim_candidate(hit) for hit in pack.stored.claims]
     fields = [field_candidate(hit) for hit in pack.stored.chunks if hit.source_kind == FIELD_SOURCE_KIND]
-    documents = [candidate for doc in pack.documents if (candidate := document_candidate(doc)) is not None]
+    terms = passage_terms(pack.plan)
+    documents = [
+        candidate for doc in pack.documents if (candidate := document_candidate(doc, terms)) is not None
+    ]
     return ComposeRequest(
         question=question,
         craft=pack.plan.craft,
@@ -80,8 +85,10 @@ def field_candidate(hit: ChunkHit) -> ComposeCandidate:
     )
 
 
-def document_candidate(document: SourceDocument) -> ComposeCandidate | None:
-    passages = _passages(document)
+def document_candidate(
+    document: SourceDocument, terms: frozenset[str] = frozenset()
+) -> ComposeCandidate | None:
+    passages = _passages(document, terms)
     if not passages:
         return None
     return ComposeCandidate(
@@ -112,10 +119,11 @@ def research_summary(pack: EvidencePack, *more: EvidencePack) -> ResearchSummary
     )
 
 
-def _passages(document: SourceDocument) -> list[str]:
+def _passages(document: SourceDocument, terms: frozenset[str]) -> list[str]:
     if len(document.text) <= WHOLE_TEXT_MAX_CHARS:
         return [document.text]
-    return list(dict.fromkeys(quote.text for quote in document.item.quotes))
+    quoted = list(dict.fromkeys(quote.text for quote in document.item.quotes))
+    return quoted or best_passages(document.text, terms, budget=WHOLE_TEXT_MAX_CHARS)
 
 
 def _source_label(document: SourceDocument) -> str:

@@ -4,7 +4,13 @@ from dataclasses import dataclass, field
 
 from app.providers.router import RouterError
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
-from app.services.term_research import GlossaryTerm, LiveTermResearch, names_the_term, research_query
+from app.services.term_research import (
+    GlossaryTerm,
+    LiveTermResearch,
+    best_named,
+    names_the_term,
+    research_query,
+)
 from app.sources.adapter import build_document
 from app.sources.reference.wikipedia import WikipediaAdapter
 
@@ -175,3 +181,32 @@ def test_a_hit_names_the_term_by_its_item_or_one_of_its_names() -> None:
     assert not names_the_term(hit.model_copy(update={"title": "Myrobalan oil"}), harde)
     assert names_the_term(hit.model_copy(update={"external_ids": {"wikidata": "Q1"}}), harde)
     assert research_query(harde) == "Harde myrobalan, Terminalia chebula"
+
+
+def indigo_term(meaning: str | None) -> GlossaryTerm:
+    return GlossaryTerm(
+        id=uuid.uuid4(),
+        key="indigo",
+        label="Indigo",
+        meaning=meaning,
+        craft_slugs=("Kutch-Ajrakh",),
+        craft_names=("Kutch Ajrakh",),
+    )
+
+
+def titled(*titles: str) -> list[EvidenceItem]:
+    return [
+        page_item().model_copy(update={"id": f"{DOC_ID}/{n}", "title": title})
+        for n, title in enumerate(titles)
+    ]
+
+
+def test_the_dye_article_is_preferred_to_the_colour_named_by_the_bare_label() -> None:
+    hits = titled("Indigo", "Indigo dye", "Indigo Airlines")
+    for meaning in ("blue dye from Indigofera", "Indigo dye, a vat dye"):
+        chosen = best_named(hits, indigo_term(meaning))
+        assert chosen is not None and chosen.title == "Indigo dye"
+    assert not names_the_term(hits[2], indigo_term("blue dye from Indigofera"))
+    colour = best_named(hits, indigo_term(None))
+    assert colour is not None and colour.title == "Indigo"
+    assert best_named(titled("Indigo Airlines"), indigo_term(None)) is None

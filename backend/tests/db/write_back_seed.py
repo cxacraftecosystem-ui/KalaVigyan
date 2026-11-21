@@ -129,8 +129,8 @@ def answer(*sentences: ComposedSentence, guesses: tuple[ComposedSentence, ...] =
     return ComposedAnswer(sections=sections, open_questions=list(guesses))
 
 
-def expected_claim_id(text: str, craft_slug: str = ZELVAR.slug) -> uuid.UUID:
-    parts = ["claim-write-back/v1", craft_slug, "MATERIAL", "alum", "states", text]
+def expected_claim_id(text: str, craft_slug: str = ZELVAR.slug, field: str = "MATERIALS") -> uuid.UUID:
+    parts = ["claim-write-back/v2", craft_slug, field, text]
     digest = hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
     return uuid.uuid5(uuid.uuid5(uuid.NAMESPACE_DNS, "craft-master.kalavigyan"), f"claim-write-back:{digest}")
 

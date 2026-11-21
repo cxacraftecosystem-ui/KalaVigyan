@@ -30,6 +30,7 @@ __all__ = [
     "LiveTermResearch",
     "ResearchedSummary",
     "TermConceptRef",
+    "best_named",
     "lead_sentences",
     "names_the_term",
     "research_query",
@@ -43,6 +44,7 @@ WEB_READS = 2
 LEAD_LEVEL = "PROVISIONAL"
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"'(“‘])")
 GLOSS_ITEMS = re.compile(r"\s*[,/;]\s*")
+TITLE_WORD = re.compile(r"[^\W_]+")
 
 ResearchBasis = Literal["WIKIPEDIA", "WEB_SEARCH"]
 
@@ -95,7 +97,7 @@ class LiveTermResearch:
     async def _wikipedia(self, term: GlossaryTerm) -> ResearchedSummary | None:
         try:
             hits = await self.wikipedia.search(SearchQuery(text=research_query(term)), WIKIPEDIA_HITS)
-            hit = next((item for item in hits if names_the_term(item, term)), None)
+            hit = best_named(hits, term)
             if hit is None:
                 return None
             document = await self.wikipedia.fetch(hit.id)
@@ -144,13 +146,45 @@ def research_query(term: GlossaryTerm) -> str:
 
 
 def names_the_term(item: EvidenceItem, term: GlossaryTerm) -> bool:
+    return _naming(item, term) is not None
+
+
+def best_named(hits: Sequence[EvidenceItem], term: GlossaryTerm) -> EvidenceItem | None:
+    ranked = [(naming, -index, hit) for index, hit in enumerate(hits) if (naming := _naming(hit, term))]
+    return max(ranked, key=lambda found: (found[0], found[1]))[2] if ranked else None
+
+
+def _naming(item: EvidenceItem, term: GlossaryTerm) -> tuple[bool, int] | None:
     found = item.external_ids.get("wikidata")
     if term.wikidata_id and found:
-        return found == term.wikidata_id
-    names = {term.label, *term.aliases, *term.local_names}
+        return (True, 0) if found == term.wikidata_id else None
+    title = _words(item.title)
+    context = {word for text in (term.meaning or "", *term.craft_names) for word in _words(text)}
+    qualified = [_qualifiers(title, _words(name), context) for name in _names(term)]
+    found_extra = [extra for extra in qualified if extra is not None]
+    return (False, max(found_extra)) if found_extra else None
+
+
+def _qualifiers(title: list[str], name: list[str], context: set[str]) -> int | None:
+    if not name or not _runs_in(name, title):
+        return None
+    extra = [word for word in title if word not in name]
+    return len(title) if all(word in context for word in extra) else None
+
+
+def _runs_in(name: list[str], title: list[str]) -> bool:
+    return any(title[start : start + len(name)] == name for start in range(len(title) - len(name) + 1))
+
+
+def _names(term: GlossaryTerm) -> list[str]:
+    names = [term.label, *term.aliases, *term.local_names]
     if term.meaning:
-        names.update(GLOSS_ITEMS.split(term.meaning))
-    return _folded(item.title) in {_folded(name) for name in names if name}
+        names.extend(GLOSS_ITEMS.split(term.meaning))
+    return [name for name in names if name]
+
+
+def _words(text: str) -> list[str]:
+    return TITLE_WORD.findall(_folded(text))
 
 
 def lead_sentences(document: SourceDocument) -> list[ComposedSentence]:

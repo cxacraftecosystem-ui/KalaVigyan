@@ -277,16 +277,43 @@ def test_write_backs_refuse_broken_evidence() -> None:
 
 def test_the_dedupe_key_ignores_case_spacing_and_the_final_stop() -> None:
     canonical = "\x1f".join(
-        [
-            "claim-write-back/v1",
-            "Kutch-Ajrakh",
-            "MECHANISM",
-            "alum mordanting",
-            "explains",
-            "alum binds alizarin at about 60 °c",
-        ]
+        ["claim-write-back/v2", "Kutch-Ajrakh", "CHEMISTRY", "alum binds alizarin at about 60 °c"]
     )
     expected = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
     assert write_back().dedupe_key == expected
     assert write_back(text="ALUM binds  alizarin at about 60 °C").dedupe_key == expected
     assert write_back(craftSlug="Bagru-Print").dedupe_key != expected
+
+
+def test_the_dedupe_key_is_the_craft_field_and_text_never_the_model_s_target() -> None:
+    rejected = "Ajrakh is washed in camel dung"
+    first = write_back(
+        text=rejected,
+        subject={"conceptType": "PROCESS_STAGE", "conceptName": "Ajrakh washing"},
+        label="INFERRED",
+    )
+    again = write_back(
+        text=f"{rejected}.",
+        subject={"conceptType": "SENSORY_CUE", "conceptName": "washing"},
+        label="INFERRED",
+    )
+    canonical = "\x1f".join(
+        ["claim-write-back/v2", "Kutch-Ajrakh", "PROCESS", "ajrakh is washed in camel dung"]
+    )
+    assert first.dedupe_key == again.dedupe_key == hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    assert write_back(text=rejected, field="HISTORY", label="INFERRED").dedupe_key != first.dedupe_key
+
+
+def test_a_section_s_field_outranks_the_concept_type_s_field() -> None:
+    assert write_back().stored_field == "CHEMISTRY"
+    assert write_back(field="MATERIALS").stored_field == "MATERIALS"
+    assert write_back(subject={"conceptType": "OUTCOME", "conceptName": "red"}).stored_field is None
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["Write to dyer@example.org for alum at about 60 °C.", "Call 98765 43210 for alum at about 60 °C."],
+)
+def test_a_write_back_never_carries_personal_data(text: str) -> None:
+    with pytest.raises(ValidationError, match="personal data"):
+        write_back(text=text)

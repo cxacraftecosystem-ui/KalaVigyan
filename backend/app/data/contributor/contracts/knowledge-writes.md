@@ -615,10 +615,21 @@ Without the secret nothing is sent and the pages refresh on their daily schedule
 whose dedupe id is not yet stored) through the same gates with origin `RESEARCH`, using the
 documents the research already fetched for gate 1 and the evidence items' grades and licences
 for gate 2. A claim already held is re-found as before (new citations, a level raised from
-hypothesis), with no gates. A refused claim is not written: the write-back's `skipped` list
-carries the gate and its first reason, and when the duplicate or novelty gate named held facts the
-answer's sentence cites the first of them instead. A written claim's checks and its vector are
-stored; its status follows the switch for `RESEARCH`.
+hypothesis), with no gates. A refused claim is not written, and its sentence keeps no claim: the
+write-back's `skipped` list carries the gate and its first reason, and an answer never cites a held
+fact under the writer's wording (decision 0124). Only the glossary's term summary, which shows a
+held fact's own text and citations, still takes the identical held fact a refusal names. A written
+claim's checks, its vector and its field (the section's, see research.md) are stored; its status
+follows the switch for `RESEARCH`.
+
+Research never writes back a fact review closed (decision 0124). A claim whose dedupe id is a fact
+now `REJECTED`, `RETRACTED`, `SUPERSEDED` or `WITHDRAWN` (`candidate_store.CLOSED_STATUSES`), or
+whose text after the two first gates is the identical text of the subject's closed fact, or a closed
+fact at cosine similarity 0.97 or more with the same figures, no negation between them and 80 % of
+its content stems (the vector twin rule above), in any field, is refused at the duplicate gate with
+the reason `fact <id> says the same and review closed it as <status>; research never writes a
+closed fact back`, before any judge is asked. It gains no citation and is never shown instead.
+Statements are embedded once per write-back, for the closed-fact check and the later gates both.
 
 Every write-back goes through `research_write_back.write_through_gates` (round 7): the answer's and
 the coverage enrichment's (`store_live_research`) and the glossary term's
@@ -634,8 +645,9 @@ and the first 50 with their verdicts, and writes nothing.
 
 Without a judge (the default until the callers pass one), the duplicate gate refuses only
 identical texts and records that no judge compared the close facts, and the novelty gate is
-recorded only when it needs no judge. When the embedding route or the judge fails, the write-back
-falls back to the identical-text check and logs it; it never fails the answer.
+recorded only when it needs no judge. When the embedding route fails, the closed-fact check and the
+duplicate gate match identical texts only; when the judge fails, the later gates fall back to the
+identical-text check. Both are logged and neither fails the answer.
 
 ## Versioning
 
@@ -659,7 +671,7 @@ field, or changes its meaning, is a new schema version.
 | Source proposals | `backend/tests/db/test_source_proposals_db.py` and `backend/tests/mcp/test_mcp_source_tools.py` |
 | Supplied sources | `backend/tests/db/test_supplied_sources_db.py` |
 | Pages follow their facts | `backend/tests/db/test_review_queue_refresh_db.py` and `test_page_revalidation_db.py` |
-| The research write-back | `backend/tests/write_back/`, `backend/tests/db/test_write_back_audit_db.py`, `test_write_back_report_db.py` and `test_term_write_back_gates_db.py` |
+| The research write-back | `backend/tests/write_back/`, `backend/tests/db/test_write_back_audit_db.py`, `test_write_back_report_db.py`, `test_term_write_back_gates_db.py` and `test_write_back_closed_db.py` |
 | The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/knowledge-writes.md` byte for byte equal to this file |
 
 Re-read it when a gate, a trust tier, a limit or a proposal kind is added or changed, and copy it to

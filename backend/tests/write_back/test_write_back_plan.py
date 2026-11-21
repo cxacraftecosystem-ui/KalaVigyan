@@ -6,7 +6,7 @@ from app.composer.composer import ModelComposer
 from app.research.composition import ComposedAnswer, ComposedSection, ComposedSentence, QuotedSpan
 from app.research.evidence import Quote
 from app.research.write_back import ClaimWriteBack
-from app.services.write_back_plan import INFERRED_REASON, QUOTED_REASON, write_back_plan
+from app.services.write_back_plan import INFERRED_REASON, QUOTED_REASON, SKIP_BESIDE_STORED, write_back_plan
 
 from ..composer.fixtures import (
     ALUM_CLAIM_ID,
@@ -30,9 +30,9 @@ WASH_QUOTE = "the lake withstood 20 washes"
 
 
 def composed(
-    *sentences: ComposedSentence, open_questions: tuple[ComposedSentence, ...] = ()
+    *sentences: ComposedSentence, open_questions: tuple[ComposedSentence, ...] = (), heading: str = "Mordant"
 ) -> ComposedAnswer:
-    sections = [ComposedSection(heading="Mordant", sentences=list(sentences))] if sentences else []
+    sections = [ComposedSection(heading=heading, sentences=list(sentences))] if sentences else []
     return ComposedAnswer(sections=sections, open_questions=list(open_questions))
 
 
@@ -46,8 +46,8 @@ def cited(text: str, *spans: tuple[str, str], claims: tuple[uuid.UUID, ...] = ()
     )
 
 
-def expected_key(text: str) -> str:
-    parts = ["claim-write-back/v1", "Kutch-Ajrakh", "MATERIAL", "alum", "states", text]
+def expected_key(text: str, craft: str = "Kutch-Ajrakh", field: str = "MATERIALS") -> str:
+    parts = ["claim-write-back/v2", craft, field, text]
     return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
 
 
@@ -61,7 +61,11 @@ def test_a_quoted_sentence_becomes_a_provisional_claim_on_its_facet() -> None:
     assert plan.skipped == ()
     (claim,) = plan.claims
     assert (claim.label, claim.evidence_level, claim.level_reason) == ("QUOTED", "PROVISIONAL", QUOTED_REASON)
-    assert (claim.subject.concept_type, claim.subject.concept_name) == ("MATERIAL", "alum")
+    assert (claim.subject.concept_type, claim.subject.concept_name, claim.field) == (
+        "MATERIAL",
+        "alum",
+        "MATERIALS",
+    )
     assert (claim.craft_slug, claim.predicate, claim.found_by, claim.answer_id) == (
         "Kutch-Ajrakh",
         "states",
@@ -102,12 +106,22 @@ def test_sentences_on_stored_claims_only_are_not_written_again() -> None:
     ]
 
 
+def test_a_sentence_citing_a_stored_fact_beside_a_live_page_is_not_written_with_the_page_alone() -> None:
+    pooled = cited(
+        "The cloth is resisted with alum, and the red withstood 20 washes.",
+        (str(ALUM_CLAIM_ID), "Alum is the mordant that binds"),
+        (PAGE_ID, WASH_QUOTE),
+        claims=(ALUM_CLAIM_ID,),
+    )
+    plan = write_back_plan(pack(), composed(pooled), found_by="ANSWER", answer_id=ANSWER_ID)
+    assert plan.claims == ()
+    assert [skipped.reason for skipped in plan.skipped] == [SKIP_BESIDE_STORED]
+    assert plan.sentence_keys == (None,)
+
+
 def test_an_open_question_is_written_as_a_model_inference() -> None:
     guess = cited(
-        "Washing may matter as much as the mordant.",
-        (str(GUESS_CLAIM_ID), "Lime in the wash water may brighten the red"),
-        (PAGE_ID, "fastness rose with mordant strength"),
-        claims=(GUESS_CLAIM_ID,),
+        "Washing may matter as much as the mordant.", (PAGE_ID, "fastness rose with mordant strength")
     )
     plan = write_back_plan(pack(), composed(open_questions=(guess,)), found_by="ANSWER", answer_id=ANSWER_ID)
     (claim,) = plan.claims
@@ -120,7 +134,18 @@ def test_an_open_question_is_written_as_a_model_inference() -> None:
     assert [c.evidence.id for c in claim.citations] == [PAGE_ID]
 
 
-def test_a_cited_source_without_a_passing_span_is_a_contextual_citation() -> None:
+def test_an_open_question_on_a_stored_hypothesis_and_a_page_is_not_written() -> None:
+    guess = cited(
+        "Washing may matter as much as the mordant.",
+        (str(GUESS_CLAIM_ID), "Lime in the wash water may brighten the red"),
+        (PAGE_ID, "fastness rose with mordant strength"),
+        claims=(GUESS_CLAIM_ID,),
+    )
+    plan = write_back_plan(pack(), composed(open_questions=(guess,)), found_by="ANSWER", answer_id=ANSWER_ID)
+    assert (plan.claims, [skipped.reason for skipped in plan.skipped]) == ((), [SKIP_BESIDE_STORED])
+
+
+def test_a_quote_that_does_not_carry_the_sentence_is_contextual_and_the_claim_inferred() -> None:
     sentence_ = ComposedSentence(
         text="Ajrakh uses alum.",
         evidence_ids=[ABSTRACT_ID, PAGE_ID],
@@ -130,10 +155,24 @@ def test_a_cited_source_without_a_passing_span_is_a_contextual_citation() -> Non
         ],
     )
     (claim,) = write_back_plan(pack(), composed(sentence_), found_by="ANSWER", answer_id=ANSWER_ID).claims
+    assert claim.label == "INFERRED"
+    assert [(c.evidence.id, c.quote_check, c.relation) for c in claim.citations] == [
+        (ABSTRACT_ID, "PASS", "CONTEXTUAL"),
+        (PAGE_ID, "NA", "CONTEXTUAL"),
+    ]
+
+
+def test_quotes_that_carry_a_sentence_only_together_are_each_contextual() -> None:
+    both = cited(
+        "Mordant baths held 8 g/L alum and the lake withstood 20 washes.",
+        (ABSTRACT_ID, FIGURE_QUOTE),
+        (PAGE_ID, WASH_QUOTE),
+    )
+    (claim,) = write_back_plan(pack(), composed(both), found_by="ANSWER", answer_id=ANSWER_ID).claims
     assert claim.label == "QUOTED"
     assert [(c.evidence.id, c.quote_check, c.relation) for c in claim.citations] == [
-        (ABSTRACT_ID, "PASS", "DIRECT"),
-        (PAGE_ID, "NA", "CONTEXTUAL"),
+        (ABSTRACT_ID, "PASS", "CONTEXTUAL"),
+        (PAGE_ID, "PASS", "CONTEXTUAL"),
     ]
 
 
@@ -144,6 +183,18 @@ def test_a_figure_without_a_passing_quote_is_skipped_with_the_reason() -> None:
     (skipped,) = plan.skipped
     assert skipped.reason.startswith("breaks the write-back contract")
     assert "90" in skipped.reason
+
+
+def test_a_sentence_with_personal_data_is_skipped_with_the_reason() -> None:
+    contact = cited(
+        "Ask dyer@example.org how alizarin forms a red lake.",
+        (ABSTRACT_ID, "Alizarin forms an insoluble red lake"),
+    )
+    plan = write_back_plan(pack(), composed(contact), found_by="ANSWER", answer_id=ANSWER_ID)
+    assert plan.claims == ()
+    (skipped,) = plan.skipped
+    assert skipped.reason.startswith("breaks the write-back contract")
+    assert "personal data (email address)" in skipped.reason
 
 
 def test_the_same_claim_twice_is_one_write_back_with_both_citations() -> None:
@@ -186,5 +237,4 @@ def test_research_for_any_craft_writes_claims_that_name_no_craft() -> None:
     )
     (claim,) = plan.claims
     assert claim.craft_slug is None
-    parts = ["claim-write-back/v1", "", "MATERIAL", "alum", "states", FIGURE_TEXT.casefold().rstrip(" .")]
-    assert claim.dedupe_key == hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
+    assert claim.dedupe_key == expected_key(FIGURE_TEXT.casefold().rstrip(" ."), craft="")

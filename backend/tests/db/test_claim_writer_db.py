@@ -75,14 +75,18 @@ async def citations(session: AsyncSession, claim_id: uuid.UUID) -> list[ClaimSou
     return list(rows)
 
 
-async def test_a_write_back_keeps_each_read_document_with_embedded_chunks(session: AsyncSession) -> None:
+async def test_a_write_back_keeps_each_read_document_and_embeds_only_the_cited_one(
+    session: AsyncSession,
+) -> None:
     stored = await write(session, answer(said(FIGURE_TEXT, ABSTRACT_ID, FIGURE_QUOTE)))
     page_id = live_source_id(LONG_ITEM.source_key)
     assert stored.source_ids == (IMPORTED, page_id)
     imported = await session.get(Source, IMPORTED)
     assert (imported.origin, imported.title) == ("IMPORT", "Imported lake paper")
-    kept = await session.scalars(select(Chunk.text).where(Chunk.sourceId == IMPORTED))
-    assert list(kept) == ["Curated imported text about lakes."]
+    kept = list(await session.scalars(select(Chunk).where(Chunk.sourceId == IMPORTED)))
+    assert [(chunk.text, chunk.embedding is not None) for chunk in kept] == [
+        ("Curated imported text about lakes.", True)
+    ]
     page = await session.get(Source, page_id)
     assert (page.origin, page.storage, page.reliability, page.retrievedAt) == (
         "LIVE_RESEARCH",
@@ -91,7 +95,8 @@ async def test_a_write_back_keeps_each_read_document_with_embedded_chunks(sessio
         RETRIEVED,
     )
     page_chunks = list(await session.scalars(select(Chunk).where(Chunk.sourceId == page_id)))
-    assert page_chunks and all(c.embedding is not None and c.acl == "RESEARCHER" for c in page_chunks)
+    assert page_chunks and all(c.embedding is None and c.acl == "RESEARCHER" for c in page_chunks)
+    assert stored.embedded.chunks == 1
 
 
 async def test_a_write_back_stores_a_cited_claim_with_its_provenance(session: AsyncSession) -> None:
@@ -238,7 +243,7 @@ async def test_the_least_covered_open_crafts_come_first(session: AsyncSession) -
     assert "Zelvar-Rested" not in slugs
     assert slugs.index("Zelvar-Quiet") < slugs.index(ZELVAR.slug)
     zelvar = next(craft for craft in picked if craft.slug == ZELVAR.slug)
-    assert (zelvar.claims, dict(zelvar.facet_claims)) == (1, {"MATERIAL": 1})
+    assert (zelvar.claims, dict(zelvar.field_claims)) == (1, {"MATERIALS": 1})
 
 
 async def test_tagged_spend_sums_only_the_tagged_events_of_the_day(session: AsyncSession) -> None:
@@ -347,7 +352,9 @@ async def test_a_new_research_fact_is_written_unreviewed_with_each_gate_s_outcom
     assert checks[3].reasons == ["the subject holds no fact in MATERIALS yet, so it adds to the section"]
 
 
-async def test_research_that_repeats_a_held_fact_cites_the_held_fact_instead(session: AsyncSession) -> None:
+async def test_research_that_repeats_a_held_fact_is_refused_and_its_sentence_keeps_no_claim(
+    session: AsyncSession,
+) -> None:
     held = key("held-figure")
     session.add(
         Claim(
@@ -364,14 +371,15 @@ async def test_research_that_repeats_a_held_fact_cites_the_held_fact_instead(ses
     await session.flush()
     composed = answer(said(FIGURE_TEXT, ABSTRACT_ID, FIGURE_QUOTE))
     stored = await write(session, composed)
-    assert [(result.claim_id, result.created) for result in stored.results] == [(held, False)]
+    assert stored.results == ()
     assert (
         await session.get(Claim, expected_claim_id("mordant baths held 8 g/l alum and were heated to 60 °c"))
         is None
     )
     (skipped,) = stored.skipped
     assert skipped.reason.startswith("refused at the DUPLICATE gate: the same statement is already held")
-    assert sentence_claim_ids(composed, stored) == ((held,),)
+    assert sentence_claim_ids(composed, stored) == ((),)
+    assert await citations(session, held) == []
 
 
 async def test_with_research_set_to_approval_a_new_fact_waits_hidden(session: AsyncSession) -> None:

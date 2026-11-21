@@ -33,6 +33,7 @@ __all__ = [
     "HeldFact",
     "NoveltyVerdict",
     "close_facts",
+    "closed_outcome",
     "duplicate_outcome",
     "held_twin",
     "novelty_outcome",
@@ -95,6 +96,7 @@ class HeldFact(ContractModel):
     id: uuid.UUID
     text: str
     similarity: float = Field(ge=-1.0, le=1.0)
+    status: str | None = None
 
 
 class FactComparison(ContractModel):
@@ -174,6 +176,15 @@ def duplicate_outcome(
         reason = f"{len(close)} held facts are close, and no judge compared them, so only identical texts were refused"
         return _outcome(DUPLICATE_GATE, passed=True, reasons=[reason])
     return _compared(comparisons, model)
+
+
+def closed_outcome(fact: HeldFact) -> GateOutcome:
+    status = (fact.status or "closed").lower()
+    reason = (
+        f"fact {fact.id} says the same and review closed it as {status}; research never writes a closed fact "
+        "back"
+    )
+    return _outcome(DUPLICATE_GATE, passed=False, reasons=[reason], related=[fact.id])
 
 
 def novelty_outcome(

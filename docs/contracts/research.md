@@ -557,15 +557,23 @@ document is read), which the answer stream turns into `trail` events.
   (`foundBy[0]`; `web` dispatches to SearXNG or Brave, which read through the fetcher), until
   `maxFetches` documents or `READ_ATTEMPT_FACTOR` (2) attempts per allowed document, at most
   `READ_CONCURRENCY` (8) at once, each within `DOCUMENT_TIMEOUT_SECONDS` (45). Where the tier's
-  budget has `open_access` (`DEEP` T3), an item with a DOI and no quotes is first located with
-  the `OpenAccessLocator`; an open copy (PDF, else landing page) is read through the `Fetcher`
-  as `FULL_TEXT`, with the copy's own licence (none when the locator gives none, never the
-  record's) and `externalIds.open_access_url` and `sha256`.
+  budget has `open_access` (`DEEP` T3), an item with a DOI and no quotes is located with the
+  `OpenAccessLocator` while its searcher reads the record (the abstract) at the same time; an open
+  copy (PDF, else landing page) is read through the `Fetcher` as `FULL_TEXT`, with the copy's own
+  licence (none when the locator gives none, never the record's) and `externalIds.open_access_url`
+  and `sha256`, and the abstract goes before its text in the one document
+  (`reading.with_abstract`; decision 0124). A copy Unpaywall names a `submittedVersion` or an
+  `acceptedVersion` is cited as the copy read, never as the published paper (`reading.copy_read`):
+  its title ends `(submitted manuscript, before peer review)` or `(author's accepted manuscript)`,
+  its URL is the copy's and it has no DOI, so it is a source of its own; `externalIds.doi` keeps
+  the published work's DOI and `externalIds.open_access_version` the version. A manuscript takes
+  no abstract beside it.
 - **Follow references** (`DEEP`, with a `doi_source`): the same part of the plan's fetches as
   `DEEP_REFERENCE_RESERVE` (6) is of `DEEP`'s 20 (`policy.reference_reserve`: 6 of 20, 1 of 4,
   none of 3; decision 0046) wait while the primary items are read; then DOIs cited in
   documents whose tier `follows_references` (at most `REFERENCES_PER_DOCUMENT` 5 new per document, in text order)
-  are fetched as `<doi_source>:<doi>` and opened like any scholarly item. They join the
+  are fetched as `<doi_source>:<doi>` and opened like any scholarly item, the fetched abstract
+  beside an open published copy. They join the
   evidence after the searched items with `followedFrom` set and the parent's facets.
 
 `LiveSources {searchers (distinct names), fetcher?, locator?, doi_source?}` (a dataclass);
@@ -646,8 +654,15 @@ Gemini).
 - **Candidates**: `composer.candidates.compose_request(pack, question)`: every stored claim hit
   as `CLAIM` (its level, label `stored claim, <level>`), then every read document as `EVIDENCE`
   (level `PROVISIONAL`, `LABEL_LEVELS["QUOTED"]`): the whole text when at most
-  `WHOLE_TEXT_MAX_CHARS` (4,000) characters, else its item's quotes; a long document without
-  quotes, and evidence not read, are left out. Label `<title> (<publisher or adapter>, <year or
+  `WHOLE_TEXT_MAX_CHARS` (4,000) characters, else its item's quotes, else its best passages
+  (`composer/passages.best_passages`, decision 0124): the text is cut into passages of whole
+  sentences of at most `PASSAGE_MAX_CHARS` (1,200) characters; the facet words are the content
+  stems of the plan's queries and facet targets less those of the craft's own name
+  (`passage_terms`); a passage scores the sum of the rarity of each facet word it holds
+  (ln(1 + passages / passages holding the word)); the highest scoring, ties in reading order, are
+  taken while at most `PASSAGES_PER_DOCUMENT` (3) fit within the same 4,000 characters, the best as
+  the candidate's text and the rest as its quotes. No model call chooses them. A long document
+  with no passage holding a facet word, and evidence not read, are left out. Label `<title> (<publisher or adapter>, <year or
   undated>, <content>)`. `research_summary(pack)` fills `searched`; `services` are the searchers
   that returned evidence and the services that failed, sorted.
 - **Call**: system `COMPOSE_SYSTEM_PROMPT` (rules only), user `compose_message(request)`
@@ -686,9 +701,11 @@ Gemini).
 created}]`. What live research found becomes stored, cited claims so the next answer is
 faster.
 
-- `ClaimWriteBack {schemaVersion 1, craftSlug | null, subject, predicate, text, textLang="en",
-  valueNum?, valueUnit?, label, levelReason, citations[WriteBackCitation] (at least one),
-  foundBy, answerId?}`.
+- `ClaimWriteBack {schemaVersion 1, craftSlug | null, subject, field?, predicate, text,
+  textLang="en", valueNum?, valueUnit?, label, levelReason, citations[WriteBackCitation] (at least
+  one), foundBy, answerId?}`. `field` is the claim's primary field; without one, `storedField` is
+  the subject's concept type's field (`CONCEPT_TYPE_DISCIPLINES`). `text` never carries personal
+  data (`evidence.personal_data_in`, the rule contributors' facts follow).
 - `subject = WriteBackSubject {conceptId?, conceptType, conceptName}`: the writer attaches the
   claim to that craft's concept of that type and name, creating it when absent, so the stored
   answer path (`knowledge_view.claims_for`, which reads `retrieval/statements.claim_conditions`)
@@ -708,23 +725,40 @@ faster.
 - Stored as `Claim.origin=LIVE_RESEARCH`, `status=APPROVED` (`WRITE_BACK_ORIGIN`,
   `WRITE_BACK_STATUS`), `createdByKind=SYSTEM`, with one `ReviewEvent` (`actorKind=SYSTEM`,
   `systemActor=live_research`).
-- `dedupeKey` is the SHA-256 of `claim-write-back/v1`, craft slug, concept type, folded concept
-  name, predicate and folded text joined by U+001F (folded: quote-normalised, case-folded,
-  trailing full stop dropped). A second write with the same key adds its new citations to the
-  existing claim and answers `created=false`; it never creates a duplicate. Citations dedupe on
-  (claim, source key, quote).
+- `dedupeKey` is the SHA-256 of `claim-write-back/v2`, craft slug, `storedField` and folded text
+  joined by U+001F (folded: quote-normalised, case-folded, trailing full stop dropped), never the
+  model's facet target, type or predicate (decision 0124): the same sentence found under another
+  facet is the same fact. A second write with the same key adds its new citations to the
+  existing claim and answers `created=false`; it never creates a duplicate, and when that claim is
+  closed it is refused instead (knowledge-writes.md, The research write-back). Write-backs keyed
+  `v1` keep their ids; a `v2` twin of one is caught by the duplicate gate's identical-text check.
+  Citations dedupe on (claim, source key, quote).
 
 ### The writer and the coverage job (decision 0011)
 
-- `services/write_back_plan.write_back_plan(pack, answer, *, found_by, answer_id) ->
-  WriteBackPlan {claims, skipped, sentence_keys}`: one write-back per composed sentence that
-  cites a read document of the pack. `sentence_keys` has one entry per sentence in
-  `composed_sentences(answer)` order (sections, then open questions; each with its heading,
-  `None` for an open question): the dedupe key of the claim written for it, or `None`. Sections give `QUOTED` (relation `DIRECT`) when a span of the sentence
-  is in the cited document's text, else `INFERRED`; open questions are `INFERRED` (relation
-  `CONTEXTUAL`). The passing span is the citation quote and joins the item's quotes. Subject:
-  the plan facet of the first cited evidence; predicate `WRITE_BACK_PREDICATE` (`states`).
-  Sentences citing stored claims only, or breaking the contract, are `skipped` with a reason.
+- `services/write_back_plan.write_back_plan(pack, answer, *, found_by, answer_id,
+  field_documents=None, compared=()) -> WriteBackPlan {claims, skipped, sentence_keys}`: one
+  write-back per composed sentence that cites a read document of the pack and no stored claim
+  (decision 0124). `sentence_keys` has one entry per sentence in `composed_sentences(answer)` order
+  (sections, then open questions; each with its heading, `None` for an open question): the dedupe
+  key of the claim written for it, or `None`. Every span of the sentence found in its cited
+  document's text is a `PASS` citation quote and joins the item's quotes; a citation is `DIRECT`
+  only when its own quote carries the sentence (`quote_carries`: `quote_overlap` of that quote
+  alone at `QUOTE_OVERLAP_MIN`), else `CONTEXTUAL`, and a cited document with no passing span is a
+  `CONTEXTUAL` citation with no quote. A section sentence is `QUOTED` when its passing quotes
+  together carry it, else `INFERRED`; open questions are `INFERRED` with `CONTEXTUAL` citations.
+  The section's discipline is its heading (`section_discipline`: a focused section's heading is
+  `DISCIPLINE_TITLES[discipline]`): the claim's `field` is that discipline and its subject the
+  first facet a cited document was found by whose type is of that field, else the first; with no
+  section discipline (an unfocused answer, an open question), the first facet and its type's field.
+  In a comparison (`compared`, the crafts the answer's understanding compares), a sentence naming
+  exactly one compared craft is filed under it, one naming two or more of the crafts is skipped,
+  and one naming none stays with the plan's craft (`write_back_crafts.craft_filing`): a craft is
+  named by a word of four letters or more of its name that no other craft of the comparison shares
+  and that fewer than three crafts of the master list use (`COMMON_NAME_USES`). Predicate
+  `WRITE_BACK_PREDICATE` (`states`). Sentences citing stored claims only, a stored claim beside live
+  evidence (a new fact would not carry its citations), or breaking the contract are `skipped` with
+  a reason.
 - `services/claim_writer.SqlClaimWriter(session)` implements `ClaimWriter`. Claim id
   `uuid5(ID_NAMESPACE, "claim-write-back:" + dedupeKey)`; citation id from claim, source key and
   `quote_key(quote)`; inserts never duplicate. The concept is the given `conceptId` (of the
@@ -744,17 +778,25 @@ faster.
   item is not a T4 page declaring its own licence; else `RESEARCHER` (decision 0013).
 - `services/research_write_back.store_live_research(session, pack, answer, *, embed, found_by,
   answer_id=None) -> StoredResearch {source_ids, results, skipped, embedded, sentence_keys,
-  embedding_error}` keeps the documents, writes the claims, commits, then embeds only the claims
-  and chunks it wrote (`embed_written`). An embedding failure after the commit is logged and
-  kept in `embedding_error` (`embedded` zero); the rows wait for `embed_knowledge`.
-  `sentence_claim_ids(answer, stored)` gives each composed sentence its stored claim ids, then
-  the claim written for it (`stored` None: stored claims only); keys that do not match the
-  answer's sentences are `InvalidInput`.
+  embedding_error}` keeps the documents, reads the compared crafts from the answer's stored
+  understanding (`compared_crafts`), writes the claims through the gates, commits, then embeds
+  only the claims it wrote and the chunks of the sources those claims cite (`cited_source_ids`,
+  `embed_written`); the chunks of documents no written claim cites wait for `embed_knowledge`,
+  since stored-knowledge search reads only chunks of sources a visible fact cites (decision 0124).
+  An embedding failure after the commit is logged and kept in `embedding_error` (`embedded` zero);
+  the rows wait for `embed_knowledge`. `results` are the claims written or re-found; a refused
+  sentence has none. `sentence_claim_ids(answer, stored)` gives each composed sentence its stored
+  claim ids, then the claim written for it (`stored` None: stored claims only); keys that do not
+  match the answer's sentences are `InvalidInput`.
 - The coverage job (`python -m app.scripts.enrich_coverage`, daily by
   `.github/workflows/coverage-enrichment.yml`): `services/coverage_selection.least_covered_crafts`
   picks active, non-catch-all crafts of every source without a job in the last 7 days, fewest
-  visible claims first; `STANDARD_QUESTIONS` (one per facet) run while the facet has fewer than
-  `FACET_COVERED_MIN_CLAIMS` claims, as `HYBRID` planner, composer and `BACKGROUND` write-back.
+  visible claims first; `STANDARD_QUESTIONS` (one per facet) run while the question's field
+  (`StandardQuestion.field`, its facet's) holds fewer than `FACET_COVERED_MIN_CLAIMS` of the craft's
+  visible claims counted by their primary field, and a question rests for `FRUITLESS_BACKOFF`
+  (28 days) after a finished job asked it and added no live-research claim of its field to the
+  craft while the job ran (decision 0124). They run as `HYBRID` planner, composer and
+  `BACKGROUND` write-back.
   `ENRICHMENT_DAILY_BUDGET_USD` (2.50) bounds the day, measured from `UsageEvent` rows tagged
   with the request id `enrichment-<job id>` (`providers/router.tagged_spend`); each craft gets an
   `EnrichmentJob` row. The report is one JSON object; any failed craft exits 1.
@@ -1034,7 +1076,8 @@ tier and the reader that takes verbatim quotes from the pack's documents (`WEB_R
 | The source adapters, against recorded answers | `backend/tests/sources/` |
 | The fetcher service | `backend/tests/fetcher/` |
 | The planner, the composer and the answering service | `backend/tests/planner/`, `backend/tests/composer/` and `backend/tests/answering/test_answer_flow.py` |
-| Write-back and the coverage job | `backend/tests/write_back/` and `backend/tests/research/test_composition_and_write_back.py` |
+| Write-back and the coverage job | `backend/tests/write_back/`, `backend/tests/research/test_composition_and_write_back.py`, `backend/tests/db/test_claim_writer_db.py`, `test_write_back_closed_db.py` and `test_coverage_backoff_db.py` |
+| Passages of long documents and the copy read | `backend/tests/composer/test_passages.py` and `backend/tests/planner/test_research_run.py` |
 | The stream as the client reads it | `frontend/e2e/answer-stream-golden-unit.spec.ts`, against `shared/answer-stream*.golden.sse` |
 | Translation | `backend/tests/research/test_translation.py` and `backend/tests/answering/test_translation_flow.py` |
 

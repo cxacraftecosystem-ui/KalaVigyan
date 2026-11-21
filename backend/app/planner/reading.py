@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import zip_longest
+from types import MappingProxyType
 
 from app.research.evidence import EvidenceItem, OpenAccessLocator, SourceAdapter, SourceDocument
 from app.research.evidence_pack import PackedEvidence
@@ -17,13 +18,25 @@ from .policy import DOCUMENT_TIMEOUT_SECONDS, LIVE_BUDGETS, READ_ATTEMPT_FACTOR,
 __all__ = [
     "FETCH_STAGE",
     "LOCATE_STAGE",
+    "MANUSCRIPT_VERSIONS",
     "DocumentReader",
     "LiveSources",
+    "copy_read",
     "reading_order",
+    "with_abstract",
 ]
 
 FETCH_STAGE = "FETCH"
 LOCATE_STAGE = "LOCATE"
+TITLE_MAX_CHARS = 1000
+DOI_KEY = "doi"
+VERSION_KEY = "open_access_version"
+MANUSCRIPT_VERSIONS: Mapping[str, str] = MappingProxyType(
+    {
+        "submittedVersion": "submitted manuscript, before peer review",
+        "acceptedVersion": "author's accepted manuscript",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -104,20 +117,25 @@ class DocumentReader:
 
     async def _opened(self, entry: PackedEvidence) -> SourceDocument | None:
         async with self._gate:
-            opened = await self.open_access_document(entry.item)
-            if opened is not None:
-                return opened
-            searcher = self._searchers[entry.found_by[0]]
-            return await self._log.guarded(
-                asyncio.wait_for(searcher.fetch(entry.item.id), DOCUMENT_TIMEOUT_SECONDS),
-                stage=FETCH_STAGE,
-                service=searcher.name,
-                target=entry.item.id,
+            if not self._opens(entry.item):
+                return await self._fetched(entry)
+            opened, abstract = await asyncio.gather(
+                self.open_access_document(entry.item), self._fetched(entry)
             )
+            return abstract if opened is None else with_abstract(opened, abstract)
+
+    async def _fetched(self, entry: PackedEvidence) -> SourceDocument | None:
+        searcher = self._searchers[entry.found_by[0]]
+        return await self._log.guarded(
+            asyncio.wait_for(searcher.fetch(entry.item.id), DOCUMENT_TIMEOUT_SECONDS),
+            stage=FETCH_STAGE,
+            service=searcher.name,
+            target=entry.item.id,
+        )
 
     async def open_access_document(self, item: EvidenceItem) -> SourceDocument | None:
         locator, fetcher = self._sources.locator, self._sources.fetcher
-        if locator is None or fetcher is None or not self._wants_open_access(item):
+        if locator is None or fetcher is None or not self._opens(item):
             return None
         location = await self._log.guarded(
             asyncio.wait_for(locator.locate(item.doi or ""), DOCUMENT_TIMEOUT_SECONDS),
@@ -148,8 +166,34 @@ class DocumentReader:
                 },
             }
         )
-        return build_document(opened, page.text, "FULL_TEXT", truncated=page.truncated)
+        copy = copy_read(opened, location.version, page.final_url)
+        return build_document(copy, page.text, "FULL_TEXT", truncated=page.truncated)
 
-    def _wants_open_access(self, item: EvidenceItem) -> bool:
+    def _opens(self, item: EvidenceItem) -> bool:
+        if self._sources.locator is None or self._sources.fetcher is None:
+            return False
         budget = self._budgets.get(item.tier)
         return bool(budget and budget.open_access and item.doi and not item.quotes)
+
+
+def copy_read(item: EvidenceItem, version: str | None, url: str) -> EvidenceItem:
+    label = MANUSCRIPT_VERSIONS.get(version or "")
+    if label is None or item.doi is None:
+        return item
+    return item.model_copy(
+        update={
+            "title": f"{item.title} ({label})"[:TITLE_MAX_CHARS],
+            "url": url,
+            "doi": None,
+            "external_ids": {**item.external_ids, DOI_KEY: item.doi, VERSION_KEY: version or ""},
+        }
+    )
+
+
+def with_abstract(opened: SourceDocument, abstract: SourceDocument | None) -> SourceDocument:
+    manuscript = opened.item.external_ids.get(VERSION_KEY) in MANUSCRIPT_VERSIONS
+    if abstract is None or manuscript or abstract.text in opened.text:
+        return opened
+    return build_document(
+        opened.item, f"{abstract.text}\n\n{opened.text}", "FULL_TEXT", truncated=opened.truncated
+    )

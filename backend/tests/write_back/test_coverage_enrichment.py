@@ -26,7 +26,7 @@ from ..craft_fixtures import FixedEmbedder
 
 DAY = datetime(2026, 11, 15, 18, 30, tzinfo=UTC)
 FIRST = CraftToEnrich(uuid.UUID(int=1), "Kutch-Ajrakh", "Kutch Ajrakh", 0)
-SECOND = CraftToEnrich(uuid.UUID(int=2), "Bagru-Print", "Bagru Print", 3, {"MATERIAL": 2})
+SECOND = CraftToEnrich(uuid.UUID(int=2), "Bagru-Print", "Bagru Print", 3, {"PROCESS": 2})
 
 
 class FakeSession:
@@ -112,19 +112,40 @@ def crafts(monkeypatch: pytest.MonkeyPatch, *picked: CraftToEnrich) -> None:
     monkeypatch.setattr(coverage_enrichment, "least_covered_crafts", fake_pick)
 
 
-def test_only_facets_short_of_two_claims_are_asked() -> None:
-    craft = CraftToEnrich(uuid.UUID(int=3), "Kutch-Ajrakh", "Kutch Ajrakh", 3, {"MATERIAL": 2, "TOOL": 1})
+def test_only_questions_whose_field_holds_fewer_than_two_claims_are_asked() -> None:
+    craft = CraftToEnrich(uuid.UUID(int=3), "Kutch-Ajrakh", "Kutch Ajrakh", 3, {"PROCESS": 2, "CHEMISTRY": 1})
     assert [q.facet for q in open_questions(craft)] == [
-        "PROCESS_STAGE",
+        "MATERIAL",
         "MECHANISM",
         "TOOL",
         "ENVIRONMENTAL_CONDITION",
         "HISTORICAL_CONTEXT",
     ]
+    assert [q.field for q in STANDARD_QUESTIONS] == [
+        "MATERIALS",
+        "PROCESS",
+        "CHEMISTRY",
+        "MATERIALS",
+        "GEOGRAPHY",
+        "HISTORY",
+    ]
     assert (
         STANDARD_QUESTIONS[1].text_for("Kutch Ajrakh")
         == "What are the stages of making Kutch Ajrakh, in order?"
     )
+
+
+def test_a_question_whose_last_run_added_nothing_rests_and_two_facts_in_a_field_close_both_its_questions() -> (
+    None
+):
+    resting = CraftToEnrich(
+        uuid.UUID(int=4), "Kutch-Ajrakh", "Kutch Ajrakh", 2, {"MATERIALS": 2}, frozenset({"MECHANISM"})
+    )
+    assert [q.facet for q in open_questions(resting)] == [
+        "PROCESS_STAGE",
+        "ENVIRONMENTAL_CONDITION",
+        "HISTORICAL_CONTEXT",
+    ]
 
 
 async def test_the_run_stops_before_a_question_would_pass_the_daily_budget(
