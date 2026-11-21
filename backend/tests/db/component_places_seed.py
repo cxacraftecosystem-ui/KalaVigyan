@@ -195,7 +195,7 @@ def _piece(label: str, kind: str, facet: str, title: str) -> KnowledgePiece:
 
 
 def _delivered(label: str, title: str, unit: str) -> KnowledgePiece:
-    piece = _piece(label, "general_table", "CHEMISTRY", title)
+    piece = _piece(label, "fact_table", "CHEMISTRY", title)
     piece.payload = {"delivered": {"spec": {}, "units": {"u5001": {"text": unit, "claimIds": []}}}}
     return piece
 

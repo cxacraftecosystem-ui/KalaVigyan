@@ -95,6 +95,15 @@
   --dip-2: #475C7A;
   --dip-3: #354660;
   --dip-4: #253045;
+  --dye-bidri-white: #D6D5CE;
+  --dye-bidri-black: #232326;
+  --dye-bidri-silver: #BFC2C6;
+  --dye-quartz-white: #F1EFE7;
+  --dye-cobalt: #385E95;
+  --dye-copper-turquoise: #429595;
+  --dye-field-soil: #3B342E;
+  --dye-sem-green: #5F7B3B;
+  --dye-river-soil: #8E5E4A;
   --photo-ink-1: #FBFAF6;
   --photo-ink-2: #E6E3DA;
   --photo-scrim-start: linear-gradient(90deg, rgba(8,10,16,.84) 0%, rgba(8,10,16,.74) 36%, rgba(8,10,16,.46) 56%, rgba(8,10,16,.12) 74%, rgba(8,10,16,0) 88%);

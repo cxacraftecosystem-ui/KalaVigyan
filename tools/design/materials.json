@@ -1,0 +1,359 @@
+{
+  "schemaVersion": 1,
+  "rule": "A depicted material's colour: the craft's material by its dossier id, the facts that state or show the colour by their dossier ids, the colour as hex or oklch, and what the swatch shows. The design generator turns each record into the specimen token --<token>, checks it against the reserved colours and the specimen frame, and lists the dye- names a spec may depict. stated false marks a colour the facts name the material of but do not state.",
+  "materials": [
+    {
+      "token": "dye-cloth",
+      "craft": "Kutch-Ajrakh",
+      "material": "M01",
+      "claims": [
+        "C064"
+      ],
+      "hex": "#F4F2EA",
+      "shows": "Scoured cotton after saaj."
+    },
+    {
+      "token": "dye-harda",
+      "craft": "Kutch-Ajrakh",
+      "material": "M05",
+      "claims": [
+        "C150"
+      ],
+      "hex": "#DFC974",
+      "shows": "Myrobalan (harda) yellow after kasanu."
+    },
+    {
+      "token": "dye-harda-dry",
+      "craft": "Kutch-Ajrakh",
+      "material": "M05",
+      "claims": [
+        "C041",
+        "C150"
+      ],
+      "hex": "#E7D48D",
+      "shows": "Harda yellow, sun-dried."
+    },
+    {
+      "token": "dye-lime",
+      "craft": "Kutch-Ajrakh",
+      "material": "M06",
+      "claims": [
+        "C070"
+      ],
+      "hex": "#F7F5EE",
+      "shows": "Lime and gum resist outline."
+    },
+    {
+      "token": "dye-lime-edge",
+      "craft": "Kutch-Ajrakh",
+      "material": "M06",
+      "claims": [
+        "C070"
+      ],
+      "hex": "#CFCBBE",
+      "shows": "Edge of a lime outline on cloth."
+    },
+    {
+      "token": "dye-kut",
+      "craft": "Kutch-Ajrakh",
+      "material": "M08",
+      "claims": [
+        "C078"
+      ],
+      "hex": "#2A1C17",
+      "shows": "Kut iron-black on tannin: chocolate-black."
+    },
+    {
+      "token": "dye-kesari",
+      "craft": "Kutch-Ajrakh",
+      "material": "M13",
+      "claims": [
+        "C079"
+      ],
+      "oklch": [
+        0.72,
+        0.14,
+        52
+      ],
+      "shows": "Kesari rang, the fugitive saffron tint in the alum paste."
+    },
+    {
+      "token": "dye-mud",
+      "craft": "Kutch-Ajrakh",
+      "material": "M14",
+      "claims": [
+        "C081"
+      ],
+      "hex": "#97785A",
+      "shows": "Gach clay resist."
+    },
+    {
+      "token": "dye-mud-wet",
+      "craft": "Kutch-Ajrakh",
+      "material": "M14",
+      "claims": [
+        "C081"
+      ],
+      "hex": "#7D6249",
+      "shows": "Gach clay, wet from washing."
+    },
+    {
+      "token": "dye-leuco",
+      "craft": "Kutch-Ajrakh",
+      "material": "M16",
+      "claims": [
+        "C086"
+      ],
+      "hex": "#6F9A3E",
+      "shows": "Cloth lifted green from the vat."
+    },
+    {
+      "token": "dye-vat-liquor",
+      "craft": "Kutch-Ajrakh",
+      "material": "M16",
+      "claims": [
+        "C084",
+        "C086"
+      ],
+      "hex": "#A3A14A",
+      "shows": "Yellow-green vat liquor with dissolved leucoindigo.",
+      "stated": false
+    },
+    {
+      "token": "dye-indigo",
+      "craft": "Kutch-Ajrakh",
+      "material": "M16",
+      "claims": [
+        "C087"
+      ],
+      "oklch": [
+        0.31,
+        0.04,
+        262
+      ],
+      "shows": "Indigo-dyed cotton after oxidation: a dull slate navy, chroma 0.04, never the interactive indigo."
+    },
+    {
+      "token": "dye-indigo-deep",
+      "craft": "Kutch-Ajrakh",
+      "material": "M16",
+      "claims": [
+        "C091"
+      ],
+      "oklch": [
+        0.22,
+        0.035,
+        262
+      ],
+      "shows": "Indigo after the second round (minakari)."
+    },
+    {
+      "token": "dye-madder",
+      "craft": "Kutch-Ajrakh",
+      "material": "M19",
+      "claims": [
+        "C093"
+      ],
+      "oklch": [
+        0.38,
+        0.15,
+        12
+      ],
+      "shows": "Madder red where alum was printed: alizarin crimson, deeper and bluer than the semantic madder."
+    },
+    {
+      "token": "dye-madder-bright",
+      "craft": "Kutch-Ajrakh",
+      "material": "M19",
+      "claims": [
+        "C091"
+      ],
+      "oklch": [
+        0.56,
+        0.17,
+        4
+      ],
+      "shows": "Madder after the second round: a lighter crimson."
+    },
+    {
+      "token": "dye-pink",
+      "craft": "Kutch-Ajrakh",
+      "material": "M19",
+      "claims": [
+        "C097"
+      ],
+      "hex": "#EED6CC",
+      "shows": "The pinkish tinge madder leaves on whites that no lime protected."
+    },
+    {
+      "token": "dye-pink-edge",
+      "craft": "Kutch-Ajrakh",
+      "material": "M19",
+      "claims": [
+        "C097"
+      ],
+      "hex": "#C98F86",
+      "shows": "Edge of the pink tinge."
+    },
+    {
+      "token": "dip-1",
+      "craft": "Kutch-Ajrakh",
+      "material": "M16",
+      "claims": [
+        "C087"
+      ],
+      "oklch": [
+        0.56,
+        0.06,
+        255
+      ],
+      "shows": "One dip, oxidised."
+    },
+    {
+      "token": "dip-2",
+      "craft": "Kutch-Ajrakh",
+      "material": "M16",
+      "claims": [
+        "C087"
+      ],
+      "oklch": [
+        0.47,
+        0.055,
+        257
+      ],
+      "shows": "Two dips."
+    },
+    {
+      "token": "dip-3",
+      "craft": "Kutch-Ajrakh",
+      "material": "M16",
+      "claims": [
+        "C087"
+      ],
+      "oklch": [
+        0.39,
+        0.05,
+        259
+      ],
+      "shows": "Three dips."
+    },
+    {
+      "token": "dip-4",
+      "craft": "Kutch-Ajrakh",
+      "material": "M16",
+      "claims": [
+        "C087"
+      ],
+      "oklch": [
+        0.31,
+        0.04,
+        261
+      ],
+      "shows": "Four dips, the darkest blue."
+    },
+    {
+      "token": "dye-bidri-white",
+      "craft": "Bidriware",
+      "material": "M01",
+      "claims": [
+        "C070"
+      ],
+      "hex": "#D6D5CE",
+      "shows": "The zinc-copper alloy sanded level after inlay, its temporary black gone: zinc-white."
+    },
+    {
+      "token": "dye-bidri-black",
+      "craft": "Bidriware",
+      "material": "M09",
+      "claims": [
+        "C071",
+        "C123"
+      ],
+      "hex": "#232326",
+      "shows": "The alloy after the boiling fort earth solution: a matt black patina."
+    },
+    {
+      "token": "dye-bidri-silver",
+      "craft": "Bidriware",
+      "material": "M03",
+      "claims": [
+        "C004",
+        "C071"
+      ],
+      "hex": "#BFC2C6",
+      "shows": "Silver inlay, which keeps its colour while the alloy turns black."
+    },
+    {
+      "token": "dye-quartz-white",
+      "craft": "Blue-Pottery-Of-Jaipur",
+      "material": "M01",
+      "claims": [
+        "C086",
+        "C023"
+      ],
+      "hex": "#F1EFE7",
+      "shows": "The white quartz body of Jaipur ware under its glaze."
+    },
+    {
+      "token": "dye-cobalt",
+      "craft": "Blue-Pottery-Of-Jaipur",
+      "material": "M07",
+      "claims": [
+        "C021",
+        "C003"
+      ],
+      "oklch": [
+        0.48,
+        0.1,
+        258
+      ],
+      "shows": "Cobalt oxide after firing: the deep blue of Jaipur ware, never the interactive indigo."
+    },
+    {
+      "token": "dye-copper-turquoise",
+      "craft": "Blue-Pottery-Of-Jaipur",
+      "material": "M08",
+      "claims": [
+        "C025",
+        "C022"
+      ],
+      "oklch": [
+        0.62,
+        0.08,
+        195
+      ],
+      "shows": "Copper oxide after firing: turquoise."
+    },
+    {
+      "token": "dye-field-soil",
+      "craft": "Bastar-Dhokra",
+      "material": "M09",
+      "claims": [
+        "C050",
+        "C110"
+      ],
+      "hex": "#3B342E",
+      "shows": "Black field soil, chikti mitti, kneaded with rice husk for the core."
+    },
+    {
+      "token": "dye-sem-green",
+      "craft": "Bastar-Dhokra",
+      "material": "M13",
+      "claims": [
+        "C055"
+      ],
+      "hex": "#5F7B3B",
+      "shows": "The dry core rubbed green with crushed sem leaves."
+    },
+    {
+      "token": "dye-river-soil",
+      "craft": "Bastar-Dhokra",
+      "material": "M11",
+      "claims": [
+        "C111"
+      ],
+      "hex": "#8E5E4A",
+      "shows": "Riverside soil, rui mitti: red, soft and easy to shape."
+    }
+  ]
+}

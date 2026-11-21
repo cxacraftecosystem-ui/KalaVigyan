@@ -46,7 +46,7 @@ def component(label: str, *, craft: str = CRAFT_SLUG) -> dict[str, Any]:
             "label": label,
             "title": "Alum and the town's printers",
             "description": "A table of what alum does on the cotton and how long the town has printed with it.",
-            "kind": "general_table",
+            "kind": "fact_table",
             "field": "CHEMISTRY",
             "craftSlug": craft,
             "subjects": [{"kind": "CRAFT", "key": craft}],

@@ -8,6 +8,8 @@ from design.build_data import chart_tokens, family_tokens, map_tokens, ramp_toke
 from design.build_type import space_tokens, type_tokens
 from design.checks import validate
 from design.css import css
+from design.material_lists import python_list, typescript_list
+from design.materials import material_names
 from design.system import System
 from design.tailwind import tailwind_ts
 
@@ -56,5 +58,7 @@ def render(system: System) -> tuple[dict[str, str], list[str]]:
         "tokens.json": json.dumps(tokens, ensure_ascii=False, indent=2) + "\n",
         "tokens.css": css(tokens, system),
         "tailwind.config.ts": tailwind_ts(tokens),
+        "depicted_materials.py": python_list(material_names(system.materials)),
+        "depictedMaterials.ts": typescript_list(material_names(system.materials)),
     }
     return outputs, validate(tokens, system)

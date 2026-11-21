@@ -6,6 +6,7 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Discriminator, RootModel, Tag
 
+from .base import ContractModel
 from .component_specs_data import ChartSpec, FactTableSpec, TimelineSpec
 from .component_specs_data_maps import MapLayerSpec
 from .component_specs_general import (
@@ -23,11 +24,13 @@ from .component_specs_general import (
 __all__ = [
     "AUTHORED",
     "DECLARED",
+    "EITHER_FORMS",
     "SPEC_MODELS_EITHER",
     "ChartKindSpec",
     "FactTableKindSpec",
     "MapLayerKindSpec",
     "TimelineKindSpec",
+    "form_model",
     "spec_form",
 ]
 
@@ -83,6 +86,14 @@ class MapLayerKindSpec(
     pass
 
 
+EITHER_FORMS: Mapping[str, Mapping[str, type[ContractModel]]] = MappingProxyType(
+    {
+        GENERAL_CHART: MappingProxyType({DECLARED: GeneralChartSpec, AUTHORED: ChartSpec}),
+        GENERAL_TABLE: MappingProxyType({DECLARED: GeneralTableSpec, AUTHORED: FactTableSpec}),
+        GENERAL_TIMELINE: MappingProxyType({DECLARED: GeneralTimelineSpec, AUTHORED: TimelineSpec}),
+        GENERAL_MAP_LAYER: MappingProxyType({DECLARED: GeneralMapLayerSpec, AUTHORED: MapLayerSpec}),
+    }
+)
 SPEC_MODELS_EITHER: Mapping[str, type[BaseModel]] = MappingProxyType(
     {
         GENERAL_CHART: ChartKindSpec,
@@ -91,3 +102,8 @@ SPEC_MODELS_EITHER: Mapping[str, type[BaseModel]] = MappingProxyType(
         GENERAL_MAP_LAYER: MapLayerKindSpec,
     }
 )
+
+
+def form_model(kind: str, spec: Any) -> type[ContractModel] | None:
+    forms = EITHER_FORMS.get(kind)
+    return None if forms is None else forms[spec_form(spec)]

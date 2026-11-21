@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import date
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -38,14 +39,18 @@ SHOWN_FIELDS = (
     "code",
     "title",
     "publisher",
+    "edition",
     "version",
+    "period",
+    "nativeResolution",
+    "crs",
     "licence",
     "licenceUrl",
     "attribution",
+    "redistributable",
     "citation",
     "doi",
     "landingUrl",
-    "redistributable",
 )
 
 
@@ -86,6 +91,7 @@ def digest(path: Path) -> str:
 @dataclass(frozen=True)
 class Downloads:
     folder: Path
+    read_on: date = field(default_factory=date.today)
 
     def shapefile(self, key: str) -> Path:
         name = NATURAL_EARTH[key][1]
@@ -98,6 +104,7 @@ class Downloads:
             "version": version,
             "file": name,
             "url": f"{NATURAL_EARTH_DOWNLOADS}/{theme}/{name}.zip",
+            "readOn": self.read_on.isoformat(),
             "sha256": digest(self.folder / f"{name}.zip"),
         }
 
@@ -105,5 +112,6 @@ class Downloads:
         return record(source.code) | {
             "file": source.file,
             "url": source.url,
+            "readOn": self.read_on.isoformat(),
             "sha256": digest(self.folder / source.file),
         }

@@ -111,7 +111,7 @@ def _components(second_picture: bool) -> list[dict[str, Any]]:
     plates = [
         _component(label, OPENING, "picture_plate", "OVERVIEW", "The printer at work") for label in pictures
     ]
-    return [*plates, _component(FIGURE, CHEM, "general_table", "CHEMISTRY", "Alum on cotton")]
+    return [*plates, _component(FIGURE, CHEM, "fact_table", "CHEMISTRY", "Alum on cotton")]
 
 
 def _component(label: str, chapter: str, kind: str, field: str, title: str) -> dict[str, Any]:

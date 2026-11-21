@@ -59,7 +59,7 @@ COMPONENT = {
     "label": "kutch-ajrakh/chemistry/vat-surface",
     "title": "Indigo vat surface",
     "description": "Shows the blue film forming where the vat meets the air, step by step, with its reaction.",
-    "kind": "general_table",
+    "kind": "fact_table",
     "field": "CHEMISTRY",
     "craftSlug": "Kutch-Ajrakh",
     "subjects": [{"kind": "CRAFT", "key": "Kutch-Ajrakh"}],

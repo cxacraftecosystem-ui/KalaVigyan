@@ -133,7 +133,7 @@ def test_the_report_counts_fields_figures_sources_and_pictures() -> None:
     assert lines["CHEMISTRY"] == (3, 1, "DENSE")
     assert lines["OVERVIEW"] == (1, 0, "THIN") and lines["HISTORY"] == (0, 0, "ABSENT")
     assert [(f.number, f.label, f.cited) for f in report.figures] == [(1, FIGURE, True)]
-    assert report.figure_kinds == {"general_table": 1}
+    assert report.figure_kinds == {"fact_table": 1}
     assert (report.sources, report.sources_by_grade, report.supplied_sources) == (2, {"A": 1, "B": 1}, 1)
     assert [(p.label, p.licence) for p in report.pictures] == [(PICTURE, "CC BY-SA 4.0")]
     assert (report.sentences, report.lede_sentences) == (5, 1)

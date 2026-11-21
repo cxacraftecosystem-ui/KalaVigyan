@@ -29,7 +29,7 @@ def units(raw: dict[str, Any]) -> dict[str, DeliveredUnit]:
 
 
 def test_a_chart_whose_units_name_every_place_of_its_spec_has_no_problem() -> None:
-    assert spec_problems("general_chart", CHART, units(chart_units(FACT))) == []
+    assert spec_problems("chart", CHART, units(chart_units(FACT))) == []
     assert unit_problems(units(chart_units(FACT)), {FACT: [RAIN]}) == []
 
 
@@ -37,7 +37,7 @@ def test_every_unit_the_spec_names_is_delivered_and_every_unit_has_a_place() -> 
     delivered = units(chart_units(FACT))
     delivered.pop("u0008")
     delivered["u0099"] = DeliveredUnit(text="A stray line")
-    assert spec_problems("general_chart", CHART, delivered) == [
+    assert spec_problems("chart", CHART, delivered) == [
         "the spec names the unit u0008, which units does not hold",
         "the unit u0099 is in no place of the spec",
     ]
@@ -45,9 +45,7 @@ def test_every_unit_the_spec_names_is_delivered_and_every_unit_has_a_place() -> 
 
 def test_a_value_the_reading_does_not_state_is_a_problem() -> None:
     delivered = units({**chart_units(FACT), "u0006": {"text": "Five hundred mm", "claimIds": [str(FACT)]}})
-    assert spec_problems("general_chart", CHART, delivered) == [
-        "the value 518 is not stated by its unit u0006"
-    ]
+    assert spec_problems("chart", CHART, delivered) == ["the value 518 is not stated by its unit u0006"]
 
 
 def test_a_timeline_year_is_stated_by_its_when_unit() -> None:
@@ -62,21 +60,21 @@ def test_a_timeline_year_is_stated_by_its_when_unit() -> None:
         "u0007": {"text": "Freed"},
         "u0008": {"text": "The country became free.", "claimIds": cited},
     }
-    assert spec_problems("general_timeline", TIMELINE, units(timeline)) == [
+    assert spec_problems("timeline", TIMELINE, units(timeline)) == [
         "the value 1947 is not stated by its unit u0006"
     ]
 
 
 def test_a_numeric_column_holds_numbers() -> None:
     numeric = {**TABLE, "columns": [{"label": "u0003"}, {"label": "u0004", "numeric": True}]}
-    assert spec_problems("general_table", numeric, units(table_units(FACT))) == [
+    assert spec_problems("fact_table", numeric, units(table_units(FACT))) == [
         "the unit u0006 sits in a numeric column and states no number"
     ]
 
 
 def test_a_spec_off_its_model_is_one_problem_naming_where() -> None:
-    assert spec_problems("general_chart", {**CHART, "extra": 1}, units(chart_units(FACT))) == [
-        "the general_chart spec: extra: Extra inputs are not permitted"
+    assert spec_problems("chart", {**CHART, "extra": 1}, units(chart_units(FACT))) == [
+        "the chart spec: extra: Extra inputs are not permitted"
     ]
     assert spec_problems("no_such_kind", {}, {}) == ["No spec model draws the component kind 'no_such_kind'"]
 
@@ -103,7 +101,7 @@ def test_a_citation_held_in_the_spec_is_refused_for_one_through_a_unit() -> None
 
 def test_a_component_citing_no_fact_is_refused() -> None:
     plain = {ref: {"text": unit["text"]} for ref, unit in chart_units(FACT).items()}
-    assert spec_problems("general_chart", CHART, units(plain)) == [
+    assert spec_problems("chart", CHART, units(plain)) == [
         "the component cites no fact: at least one unit names the facts it rests on"
     ]
 

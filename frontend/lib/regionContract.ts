@@ -48,7 +48,7 @@ export type RegionDataset = {
   version?: string;
   crs?: string;
   redistributable?: boolean;
-  doi?: string;
+  doi?: string | null;
   landingUrl?: string;
   readOn?: string;
   sha256?: string;
@@ -126,7 +126,7 @@ export const datasetShape: Shape<RegionDataset> = object<RegionDataset>({
   version: optional(text),
   crs: optional(text),
   redistributable: optional(boolean),
-  doi: optional(text),
+  doi: optional(nullable(text)),
   landingUrl: optional(HTTPS_URL),
   readOn: optional(text),
   sha256: optional(text)

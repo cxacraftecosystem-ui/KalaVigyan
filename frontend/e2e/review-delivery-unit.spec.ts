@@ -33,7 +33,7 @@ const COMPONENT = {
     label: "kutch-ajrakh/chemistry/alum-table",
     title: "Alum on cotton",
     description: "A table of what alum does to the madder red on cotton.",
-    kind: "general_table",
+    kind: "fact_table",
     field: "CHEMISTRY",
     fields: [],
     subjects: [{ kind: "CRAFT", key: "Kutch-Ajrakh" }],

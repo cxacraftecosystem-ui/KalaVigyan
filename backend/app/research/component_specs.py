@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Any
 
-from pydantic import BaseModel, RootModel
+from pydantic import BaseModel
 
 from app.core.errors import InvalidInput
 from app.models.component_kinds import AUTHORED_ART_KINDS, PAGE_TOOL_KINDS, PIECE_KINDS
@@ -12,7 +12,7 @@ from app.models.component_kinds import AUTHORED_ART_KINDS, PAGE_TOOL_KINDS, PIEC
 from .base import ContractModel
 from .component_specs_blocks import SPEC_MODELS_BLOCKS
 from .component_specs_data import SPEC_MODELS_DATA
-from .component_specs_either import SPEC_MODELS_EITHER
+from .component_specs_either import SPEC_MODELS_EITHER, form_model
 from .component_specs_general import SPEC_MODELS_GENERAL
 from .component_specs_plates import SPEC_MODELS_PLATES
 from .component_specs_science import SPEC_MODELS_SCIENCE
@@ -60,14 +60,10 @@ CONTRIBUTABLE_KINDS = tuple(
 
 
 def checked_spec(kind: str, spec: Mapping[str, Any]) -> ContractModel:
-    model = SPEC_MODELS.get(kind)
-    if model is None:
+    model = form_model(kind, spec) or SPEC_MODELS.get(kind)
+    if model is None or not issubclass(model, ContractModel):
         raise InvalidInput(f"No spec model draws the component kind {kind!r}")
-    checked = model.model_validate(spec)
-    inner = checked.root if isinstance(checked, RootModel) else checked
-    if not isinstance(inner, ContractModel):
-        raise InvalidInput(f"The {kind} spec is not a component spec")
-    return inner
+    return model.model_validate(spec)
 
 
 def not_contributable(kind: str) -> str | None:

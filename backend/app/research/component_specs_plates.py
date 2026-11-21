@@ -19,9 +19,9 @@ from .component_specs_plates_media import (
 from .component_specs_plates_parts import (
     ClassName,
     ComponentLabel,
+    DepictedMaterial,
     DomId,
     DrawingElement,
-    DyeName,
     HeldOrUnit,
     HeldText,
     Picture,
@@ -150,7 +150,7 @@ class LabelCardSpec(ContractModel):
 
 
 class Swatch(ContractModel):
-    dye: DyeName
+    dye: DepictedMaterial
     caption: UnitRef
 
 
@@ -173,7 +173,7 @@ class SwatchCardsSpec(ContractModel):
 
 
 class PairSwatch(ContractModel):
-    ground: DyeName
+    ground: DepictedMaterial
     motif: list[DrawingElement] = Field(min_length=1)
     label: str = Field(min_length=1)
 

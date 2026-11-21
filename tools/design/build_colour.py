@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from design.colour import contrast, delta_e, fmt_oklch
+from design.materials import Material
 from design.system import System, colour_entry, mix, specimen_hex
 
 __all__ = ["colour_tokens", "plate_tokens", "specimen_tokens"]
@@ -54,29 +55,42 @@ def _specimen_frame(system: System, colour: str, theme: str) -> dict[str, Any]:
     return {"vsFrame": round(frame, 2), "vsMat": round(mat, 2), "edgeVisible": max(frame, mat) >= FRAME_EDGE}
 
 
-def _specimen_entry(system: System, row: list[Any]) -> dict[str, Any]:
-    name, shows = row[0], row[2]
+def _photo_entry(row: list[Any]) -> dict[str, Any]:
     colour = specimen_hex(row)
-    on_photo = name.startswith("photo")
-    entry = {
-        "cssVar": f"--{name}",
+    return {
+        "cssVar": f"--{row[0]}",
         "hex": colour,
         "oklch": fmt_oklch(colour),
-        "shows": shows,
-        "class": "text-on-photo" if on_photo else "specimen",
+        "shows": row[2],
+        "class": "text-on-photo",
     }
-    if on_photo:
-        return entry
+
+
+def _material_entry(system: System, material: Material) -> dict[str, Any]:
+    colour = material.hex
     nearest = {theme: system.reserved_min(colour, theme) for theme in system.themes}
-    entry["nearestSemantic"] = {
-        theme: {"deltaE": gap, "token": token} for theme, (gap, token) in nearest.items()
+    return {
+        "cssVar": f"--{material.token}",
+        "hex": colour,
+        "oklch": fmt_oklch(colour),
+        "shows": material.shows,
+        "class": "specimen",
+        "material": {
+            "craft": material.craft,
+            "material": material.material,
+            "claims": list(material.claims),
+            "colourStated": material.stated,
+        },
+        "nearestSemantic": {
+            theme: {"deltaE": gap, "token": token} for theme, (gap, token) in nearest.items()
+        },
+        "frame": {theme: _specimen_frame(system, colour, theme) for theme in system.themes},
     }
-    entry["frame"] = {theme: _specimen_frame(system, colour, theme) for theme in system.themes}
-    return entry
 
 
 def specimen_tokens(system: System) -> dict[str, Any]:
-    tokens = {row[0]: _specimen_entry(system, row) for row in system.data["specimen"]}
+    tokens = {material.token: _material_entry(system, material) for material in system.materials}
+    tokens.update({row[0]: _photo_entry(row) for row in system.data["specimen"]})
     tokens.update(system.data["photoScrims"])
     return tokens
 

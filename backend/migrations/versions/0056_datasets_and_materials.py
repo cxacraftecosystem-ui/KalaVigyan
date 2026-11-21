@@ -95,6 +95,22 @@ PIECE_KINDS = (*BLOCK_KINDS, *sorted((*COMPONENT_KINDS_BEFORE, "drawing")))
 ORIGINS = ("SITE", "CONTRIBUTED")
 SHA256 = "~ '^[0-9a-f]{64}$'"
 NEW_TABLES = ("DatasetTable", "DatasetUpload")
+DOCUMENT_KINDS = """
+UPDATE "MonographDocument" AS d
+SET "document" = jsonb_set(
+    d."document",
+    '{{content,components}}',
+    (
+        SELECT jsonb_agg(
+            CASE WHEN c ->> 'kind' = '{old}' THEN jsonb_set(c, '{{kind}}', '"{new}"') ELSE c END
+            ORDER BY n
+        )
+        FROM jsonb_array_elements(d."document" -> 'content' -> 'components') WITH ORDINALITY AS t(c, n)
+    )
+)
+WHERE jsonb_typeof(d."document" -> 'content' -> 'components') = 'array'
+AND d."document" -> 'content' -> 'components' @> '[{{"kind": "{old}"}}]'
+"""
 REVOKE_PUBLIC_ROLES = """
 DO $do$
 DECLARE grantee text;
@@ -115,6 +131,8 @@ def upgrade() -> None:
         for old, new in RENAMED_KINDS:
             op.execute(f'UPDATE "{table}" SET "kind" = \'{new}\' WHERE "kind" = \'{old}\'')
         _add_kind_check(table, PIECE_KINDS)
+    for old, new in RENAMED_KINDS:
+        op.execute(DOCUMENT_KINDS.format(old=old, new=new))
     _dataset_columns()
     _dataset_tables()
     _dataset_uploads()
@@ -138,6 +156,7 @@ def downgrade() -> None:
             op.execute(f'UPDATE "{table}" SET "kind" = \'{old}\' WHERE "kind" = \'{new}\' AND {declared}')
         op.execute(f'DELETE FROM "{table}" WHERE "kind" = \'drawing\'')
         _add_kind_check(table, PIECE_KINDS_BEFORE)
+    op.execute(DOCUMENT_KINDS.format(old="drawing", new="general_drawing"))
 
 
 def _drop_kind_check(table: str) -> None:

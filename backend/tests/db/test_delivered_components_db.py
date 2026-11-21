@@ -49,7 +49,7 @@ def draft(**changes: Any) -> ComponentProposalDraft:
         "label": LABEL,
         "title": "Alum as the mordant of the red",
         "description": "A table of what alum does to the madder red on cotton, each line resting on its fact.",
-        "kind": "general_table",
+        "kind": "fact_table",
         "field": "CHEMISTRY",
         "craft_slug": CRAFT_SLUG,
         "subjects": [{"kind": "CRAFT", "key": CRAFT_SLUG}],
@@ -73,7 +73,7 @@ async def test_a_delivered_component_waits_with_its_checked_spec_and_the_facts_i
     assert stored.message.startswith("Stored for review with its spec")
     row = await session.get(ComponentProposal, stored.proposal_id)
     assert row is not None
-    assert row.spec == checked_spec("general_table", TABLE).model_dump(mode="json")
+    assert row.spec == checked_spec("fact_table", TABLE).model_dump(mode="json")
     assert sorted(row.units or {}) == ["u0001", "u0002", "u0003", "u0004", "u0005", "u0006"]
     assert row.claimIds == [FACT]
     assert await session.scalar(select(KnowledgePiece.id).where(KnowledgePiece.label == LABEL)) is None
@@ -91,12 +91,12 @@ async def test_approval_registers_it_and_the_craft_s_document_draws_it_with_its_
     piece = await session.scalar(select(KnowledgePiece).where(KnowledgePiece.label == LABEL))
     assert piece is not None
     assert (piece.kind, piece.facet, piece.craftId, piece.claimIds) == (
-        "general_table",
+        "fact_table",
         "CHEMISTRY",
         CRAFT,
         [FACT],
     )
-    assert piece.payload["delivered"]["spec"] == checked_spec("general_table", TABLE).model_dump(mode="json")
+    assert piece.payload["delivered"]["spec"] == checked_spec("fact_table", TABLE).model_dump(mode="json")
     linked = await session.scalars(
         select(KnowledgePieceSubject.craftId).where(KnowledgePieceSubject.pieceId == piece.id)
     )
@@ -111,7 +111,7 @@ async def test_approval_registers_it_and_the_craft_s_document_draws_it_with_its_
     assert document.content.citation_claims["u5006"] == [str(FACT)]
     assert document.content.units["u5003"].nodes == [{"m": "s", "c": ["Mordant"]}]
     component = next(entry for entry in document.content.components if entry.label == LABEL)
-    assert (component.kind, component.chapter) == ("general_table", "chem")
+    assert (component.kind, component.chapter) == ("fact_table", "chem")
 
 
 async def test_a_proposal_without_a_spec_stores_no_delivery_as_sql_null(session: AsyncSession) -> None:
@@ -136,8 +136,7 @@ async def test_a_professor_s_delivered_component_is_registered_at_once(session: 
         "draws it from its spec.",
     )
     assert (
-        await session.scalar(select(KnowledgePiece.kind).where(KnowledgePiece.label == LABEL))
-        == "general_table"
+        await session.scalar(select(KnowledgePiece.kind).where(KnowledgePiece.label == LABEL)) == "fact_table"
     )
 
 

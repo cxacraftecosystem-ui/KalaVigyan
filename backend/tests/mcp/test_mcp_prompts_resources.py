@@ -69,7 +69,7 @@ async def every_prompt() -> list[str]:
         await prompt_text("propose_component", {**craft, "need": "molecules"}),
         await prompt_text("deliver_page", {"subject_kind": "craft", "slug": "Kutch-Ajrakh"}),
         await prompt_text("give_picture", craft),
-        await prompt_text("deliver_dataset", {**craft, "kind": "general_table"}),
+        await prompt_text("deliver_dataset", {**craft, "kind": "fact_table"}),
     ]
 
 
@@ -155,7 +155,7 @@ async def test_write_a_section_and_deliver_a_component_add_their_own_rules() -> 
         "`get_facts`",
         "`list_components` first",
         "yourself",
-        "general_drawing, general_chart, general_table, general_timeline, general_map_layer",
+        "drawing, chart, fact_table, timeline, map_layer",
         "`preview_page`",
         "Call `propose_page` with that bundle",
     )
@@ -192,8 +192,8 @@ async def test_a_picture_is_given_only_with_the_person_s_own_declaration() -> No
 
 
 async def test_a_figure_from_a_dataset_rests_on_cited_facts_and_is_previewed_first() -> None:
-    figure = await prompt_text("deliver_dataset", {"craft_slug": "Kutch-Ajrakh", "kind": "general_chart"})
-    assert figure.startswith("Deliver a general_chart built from an open dataset for the craft Kutch-Ajrakh")
+    figure = await prompt_text("deliver_dataset", {"craft_slug": "Kutch-Ajrakh", "kind": "chart"})
+    assert figure.startswith("Deliver a chart built from an open dataset for the craft Kutch-Ajrakh")
     assert all(heading in figure for heading in ("## Datasets", "## Authoring a component", "## Never"))
     assert in_order(
         figure,
@@ -202,13 +202,14 @@ async def test_a_figure_from_a_dataset_rests_on_cited_facts_and_is_previewed_fir
         "`get_facts`",
         "`list_components`",
         "the dataset guide below",
-        "Build a general_chart",
+        "`propose_dataset`",
+        "Build a chart",
         "Call `preview_page`",
         "Call `propose_page`",
     )
     either = await prompt_text("deliver_dataset", {"craft_slug": "Kutch-Ajrakh"})
-    assert "general_chart, general_table, general_timeline, general_map_layer" in either
-    assert "general_drawing" not in either.split("## Proposals and their progress")[0]
+    assert "one of chart, fact_table, timeline, map_layer" in either
+    assert "general_" not in either.split("## Proposals and their progress")[0]
 
 
 async def test_each_prompt_carries_the_whole_of_every_reference_it_names_and_no_other() -> None:
@@ -270,7 +271,7 @@ async def test_every_prompt_uses_the_one_set_of_argument_names_and_names_real_to
         (
             {
                 "name": "deliver_dataset",
-                "arguments": {"craft_slug": "Kutch-Ajrakh", "kind": "general_drawing"},
+                "arguments": {"craft_slug": "Kutch-Ajrakh", "kind": "drawing"},
             },
             "kind: is one of",
         ),

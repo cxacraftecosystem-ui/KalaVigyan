@@ -1,0 +1,1 @@
+export const DEPICTED_MATERIALS = ["cloth", "harda", "harda-dry", "lime", "lime-edge", "kut", "kesari", "mud", "mud-wet", "leuco", "vat-liquor", "indigo", "indigo-deep", "madder", "madder-bright", "pink", "pink-edge", "bidri-white", "bidri-black", "bidri-silver", "quartz-white", "cobalt", "copper-turquoise", "field-soil", "sem-green", "river-soil"] as const;

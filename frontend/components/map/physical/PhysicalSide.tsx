@@ -1,43 +1,21 @@
 "use client";
 
 import { FOREIGN_EXTRA, MapLegend, SALT_EXTRA, WATER_EXTRA, type LegendExtra } from "@/components/map/ChoroplethLegend";
+import { DatasetCredit } from "@/components/DatasetCredit";
 import { MineralSymbol, mineralColour } from "@/components/map/physical/MineralsLayer";
 import { RankedList, type RankedRow } from "@/components/map/RankedList";
-import { safeOutboundUrl } from "@/lib/citations";
-import { SHA_SHOWN } from "@/lib/datasetRecord";
 import { formatRange } from "@/lib/measure";
 import { elevationBands, tally, type DatasetRow, type MineralSite, type MineralsFile, type ReliefFile, type RiversFile } from "@/lib/mapPhysical";
 
-const LINK = "kv-link font-normal";
-
 export function LayerCredits({ datasets }: { datasets: readonly DatasetRow[] }) {
   return (
-    <ul className="grid gap-2 border-t border-rule pt-3 font-ui text-caption text-ink-3" data-testid="layer-credits">
+    <ul className="grid gap-2 border-t border-rule pt-3" data-testid="layer-credits">
       {datasets.map((row) => (
-        <li key={row.file} className="grid gap-0.5">
-          <DatasetLink href={row.landingUrl} text={row.title} suffix={[row.publisher, row.version].map((part) => ` · ${part}`).join("")} />
-          <DatasetLink href={row.licenceUrl} text={row.licence} suffix={row.attribution ? ` · ${row.attribution}` : ""} />
-          {row.citation ? <span>{row.citation}</span> : null}
-          <span className="font-code">{`${row.file} · SHA-256 ${row.sha256.slice(0, SHA_SHOWN)}`}</span>
+        <li key={row.file}>
+          <DatasetCredit dataset={row} />
         </li>
       ))}
     </ul>
-  );
-}
-
-function DatasetLink({ href, text, suffix }: { href: string | null; text: string; suffix: string }) {
-  const safe = safeOutboundUrl(href);
-  return (
-    <span>
-      {safe ? (
-        <a href={safe} target="_blank" rel="noopener noreferrer" className={LINK}>
-          {text}
-        </a>
-      ) : (
-        text
-      )}
-      {suffix}
-    </span>
   );
 }
 
