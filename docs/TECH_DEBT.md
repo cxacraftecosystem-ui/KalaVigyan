@@ -1,7 +1,24 @@
 # Technical debt register
 
 What is knowingly below standard, why it was left, and what clears it. Add an entry in the same
-change that takes the shortcut; delete it in the change that clears it.
+change that takes the shortcut; delete it in the change that clears it. Engineers and reviewers read
+it before changing an area.
+
+| For | Read |
+|---|---|
+| Why an area is built the way it is | [decisions/README.md](decisions/README.md) |
+| Where the work stands | [PROGRESS.md](PROGRESS.md) |
+| The hygiene baseline of files and functions over budget | `tools/hygiene_baseline.json` |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  S([A shortcut taken]) --> E[An entry<br/>what, why, what clears it]
+  E --> C[The work that clears it]
+  C --> D([The entry deleted<br/>in the same change])
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class E accent
+```
 
 Last reviewed: 2026-11-18.
 
@@ -3282,3 +3299,14 @@ Last reviewed: 2026-11-18.
 
 - **What:** questions that become open work (decision 0113) are anonymised by rules with no model, so a lone first name with no honorific or self-introduction is not detected; the rules lean the other way elsewhere (a place outside the gazetteer written in capitals becomes [name], and a title-cased question may be dropped).
 - **Clears it:** a named-entity pass with the cheapest model route on the few questions that survive the rules, run in the nightly step, never at request time.
+
+## How this document is kept true
+
+| Change | What to do here |
+|---|---|
+| A shortcut is taken | add its entry, with what is wrong, why it was left and what clears it, in the same change |
+| A shortcut is cleared | delete its entry in the change that clears it |
+| A round ends | the lead re-reads the round's entries and updates "Last reviewed" |
+
+An entry is true only while its "What" still describes the code; when a change makes it untrue,
+rewrite or delete the entry in that change.

@@ -153,6 +153,7 @@ flowchart LR
 | [0111](0111-fewer-mcp-tools.md) | Twenty-one MCP tools in six groups, with small schemas |
 | [0112](0112-reviewed-field-photographs.md) | Each field photograph filed on an artisan is reviewed by a person before it is shown |
 | [0113](0113-questions-become-work.md) | Questions KalaVigyan cannot answer well become open work |
+| [0114](0114-kinds-and-datasets.md) | Component kinds any craft can use, and one dataset record |
 | [0115](0115-client-id-metadata-documents.md) | MCP clients sign in with their published identity |
 | [0116](0116-open-data-with-a-doi.md) | KalaVigyan's knowledge is an open dataset with a DOI |
 

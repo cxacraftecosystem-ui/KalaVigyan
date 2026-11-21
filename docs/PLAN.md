@@ -1,6 +1,18 @@
 # KalaVigyan AI: implementation plan for science-behind-craft
 
-Repo: `C:/dev/IIT/science-behind-craft`. Today it holds only `.claude/skills/{field-repo-frontend,gsap,motion,naming,security-audit}` and this file. Paths are absolute unless stated. Vendor facts were collected on 2026-11-15 from official docs through fetch summaries. Items marked **(unverified)** must be confirmed live before they go into code constants or budgets. Revision 2 resolves the plan critique of 2026-11-15.
+The product plan: what KalaVigyan is for, who uses it, and how it was designed to be built.
+Section 0 is the owner's direction and overrides everything below it; the rest is revision 2 of the
+plan of 2026-11-15, which resolves the plan critique of that day. Everyone building KalaVigyan
+reads section 0 first; what exists today is [ARCHITECTURE.md](ARCHITECTURE.md).
+
+| For | Read |
+|---|---|
+| What exists today | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| The plans that followed this one | [plans/answer-experience.md](plans/answer-experience.md), [plans/dataset-curation.md](plans/dataset-curation.md), [plans/field-completeness.md](plans/field-completeness.md) |
+| Every decision taken since | [decisions/README.md](decisions/README.md) |
+| Where the build stands | [PROGRESS.md](PROGRESS.md) |
+
+Repo: `C:/dev/IIT/science-behind-craft`. When this plan was written it held only `.claude/skills/{field-repo-frontend,gsap,motion,naming,security-audit}` and this file. Paths are absolute unless stated. Vendor facts were collected on 2026-11-15 from official docs through fetch summaries. Items marked **(unverified)** must be confirmed live before they go into code constants or budgets.
 
 ---
 
@@ -91,6 +103,26 @@ A derived artefact (a balanced equation, a unit conversion) inherits the minimum
 ---
 
 ## 3. Architecture
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  W["Next.js 16 web<br/>Vercel"] -->|JWT| API["FastAPI API<br/>EC2, blue/green"]
+  W -->|WebRTC token| EA["ElevenAgents"]
+  EA -->|custom LLM SSE| API
+  API --> WK["kv-worker.service"]
+  API --> FE["kv-fetcher.service"]
+  API --> PG[("Postgres 17<br/>Supabase")]
+  API --> S3[("S3 private bucket")]
+  API --> PR["Providers<br/>via app/providers"]
+  API --> SA["Search adapters"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  classDef gold fill:#FAEECD,stroke:#CD9200,color:#1E1B2E
+  class API accent
+  class PG,S3,EA gold
+```
+
+The planned target, as the plan wrote it:
 
 ```
 Next.js 16 web (Vercel) --JWT--> FastAPI API (EC2 t3.medium ap-south-1, blue/green 8000/8001, nginx)
@@ -717,3 +749,14 @@ Owner decisions (approved 2026-11-15):
 | O4 | Access: DR/FR access roster and role management |
 | O5 | DeepSeek for public-text tasks only |
 
+## How this document is kept true
+
+| Part | Kept true by |
+|---|---|
+| Section 0 | the owner's words, each dated; a new direction is added there the day it is given |
+| Section 7's stage envelopes | `backend/tests/science/test_units_and_envelopes.py` reads them from this file |
+| The generated-media key and the boundary caption | `backend/tests/contracts/test_media_contract.py` and `test_region_contract.py` read them from this file |
+| Everything else | it is the plan of 2026-11-15, revision 2; what was built instead is in the decisions and `ARCHITECTURE.md` |
+
+Re-read section 0 whenever the owner gives a direction, and the section of the plan a change
+touches before starting it.

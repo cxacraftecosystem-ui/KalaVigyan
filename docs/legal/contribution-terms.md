@@ -39,3 +39,11 @@ combine and share your contribution, including under open licences, in any mediu
   for an Admin, who may approve, edit or reject it.
 - We may correct, move or retire published content when the evidence changes. Retired content is
   kept in the page's history.
+
+## How this document is kept true
+
+This is the approved text of version 2026-11-19. `CONTRIBUTION_TERMS_VERSION` in
+`backend/app/research/own_proposals.py` names the version, and
+`backend/tests/contributions/test_own_proposals_rules.py` holds this file's heading to it; the site
+shows its own copy from `frontend/lib/ownProposalsContract.ts`. A change to the text is a new
+version: change this file, the site's copy and the version together, with the owner's approval.

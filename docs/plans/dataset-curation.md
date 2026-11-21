@@ -1,5 +1,28 @@
 # Dataset curation by Claude Code
 
+The plan for building the knowledge base without paid model calls: what a curated dossier holds, how
+its quotes are verified, how it is checked and how it reaches the app. Curators and engineers read
+it; the contract holds the rules a dossier must pass.
+
+| For | Read |
+|---|---|
+| Every rule a dossier must pass | [contracts/curation.md](../contracts/curation.md) |
+| The commands, step by step | [RUNBOOK.md](../RUNBOOK.md), How to curate a craft |
+| Curated knowledge now that the database is its source | [contracts/dossier-export.md](../contracts/dossier-export.md) |
+| The method contributors follow over MCP | [kalavigyan-craft-pages](../../.claude/skills/kalavigyan-craft-pages/SKILL.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  S["Sourcing order<br/>section 4"] --> V["Verification<br/>section 5"]
+  V --> C["The checker<br/>section 6"]
+  C --> K["The critic<br/>section 7"]
+  K --> I["Import into the app<br/>section 8"]
+  I --> R["How readers see it<br/>section 9"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class V accent
+```
+
 Status: approved by the owner on 2026-11-17 with every recommendation in section 14 (D1 to D7); the
 pilot (wave 0) started the same day.
 
@@ -391,3 +414,13 @@ Claude Code workflows, one agent per craft, each running the same pipeline:
 | D5 | Openly licensed pictures in dossiers | include, up to six per craft |
 | D6 | Named master artisans from published sources | include name, honours and place only (O4) |
 | D7 | Withdraw the seed edge sentences from display now | yes, at the first import |
+
+## How this document is kept true
+
+| Part | Kept true by |
+|---|---|
+| The dossier's format and rules | `docs/contracts/curation.md` and `tools/curation/check.py`, run in Backend checks with `--check-index` |
+| The owner's decisions (section 14) | approved on 2026-11-17 and changed only by the owner |
+| Where curated knowledge lives | decision 0101, item 6, and `docs/contracts/dossier-export.md` |
+
+Re-read it before a curation wave, and when the dossier schema version changes.
