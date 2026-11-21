@@ -126,8 +126,11 @@ fewer sentences than the live page, never more.
   client shows it once per material). An item left with no sentence goes, so a card whose every fact
   was shown is not sent even when it shows a formula; a ladder stage keeps the level of the
   sentences it keeps; a compare cell already shown is left `null` and a row with fewer than two
-  crafts goes; a block whose own sentence (an indigo vat's lift) was shown is not sent. An
-  `expert_view` difference goes from both seats when either view was already shown. Kinds without
+  crafts goes; a block whose own sentence (an indigo vat's lift) was shown is not sent. Differences
+  are exempt from the repeat rule (decision 0120): an `expert_view` difference goes from both seats
+  only when the same pair of claims was already shown as a difference, never because one reading
+  was already said in prose, and a seat whose every take sentence was shown stays, with its take,
+  while it carries a difference (it goes when its differences go). Kinds without
   sentences pass whole. A block left empty or off its contract is not sent; a section left with
   nothing ends `EMPTY` with `COVERED_NOTE` ("Already covered in this answer."), which the client
   does not draw (`lib/explainerView.shownSections`).
@@ -168,7 +171,9 @@ old one), `reuse` is null or `ReuseMarker {pieceId, storedAt}` when the block ca
 piece ("From earlier research" and its date). Each block says what it rests on:
 `cited_claim_ids()`, `cited_source_ids()` (citation sources, then sources cited directly), and
 `illustrated_claim_ids()` for images. Sentences in blocks are `ExplainerSentence`, today's
-`AnswerSentence` plus `terms[TermSpan]`.
+`AnswerSentence` plus `terms[TermSpan]` and `sourcesDiffer`, present (and `true`) only when a
+claim the sentence cites is marked sources differ; the client draws the madder Sources differ tag
+after such a sentence (`components/answer/ExplainerSentence.tsx`, decision 0120).
 
 | Kind | Phase | Built |
 |---|---|---|
@@ -581,8 +586,10 @@ speaking or voiced seat.
   take sentences are read. A reply off the schema, a failed or a refused call drops that seat's
   view only.
 - **Takes.** Every take sentence passes the prose checks (the composer's sentence validator, then
-  `section_blocks.prose_problems`) or that seat's view is not shown, and so is a view whose every
-  claim the section's blocks already cite (`kept_takes`).
+  `section_blocks.prose_problems`) or that seat's view is not shown (`kept_takes`). A view whose
+  every claim the section's blocks already cite is not shown either, unless the seat carries a
+  difference that is kept (`seated_takes`, decision 0120): the differences are judged over every
+  view that passed, so a seat restating the section can still be the other side of one.
 - **Experts differ.** A final pass (`composer/expert_differences.compose_differences`), one
   `COMPOSE` call, runs only when two or more seats gave a view and two offered statements on one
   concept cite no common source. It names the seats that spoke and the statements they were offered;
@@ -1332,16 +1339,21 @@ with the quiz shape.
   `BUILT_BLOCK_KINDS`). Sentence ids
   are `lede.<n>`; translation and term marking walk the lede and its figure through
   `explainer.payload_sentences`.
-- **How the server writes it** (`services/answer_lede.py`): at the start of the answer, from the
-  craft's stored claims ranked for the question (`knowledge_view.claims_for` at the depth's mode,
-  hypotheses left out, `LEDE_CLAIMS_MAX` 16) and the claims of each reused section
+- **How the server writes it** (`services/answer_lede.py`, `services/lede_evidence.py`): at the
+  start of the answer, from the claims the answer's own hybrid search finds for the question in
+  English (`LedeTools.retriever`, the answer's `SessionScopedSearch`: one `KnowledgeQuery` for the
+  craft at the depth's mode, `LEDE_SEARCH_LIMIT` 24, read in its order with `OpeningStore.cited`;
+  hypotheses left out, `LEDE_CLAIMS_MAX` 16; decision 0120) and the claims of each reused section
   (`HEADING_CLAIMS_MAX` 8, in reading order), one `LedeRequest` to the COMPOSE route
-  (`ModelComposer.lede`, `LEDE_SYSTEM_PROMPT`, `lede_schema`) returns 2-3 sentences, one heading
-  per reused section and the questions the answer leaves open. A failing sentence is regenerated
-  once like any section's; a sentence still failing is dropped and fewer than two is no lede.
+  (`ModelComposer.lede`, `LEDE_SYSTEM_PROMPT`, `lede_schema`) returns 2-3 sentences, the model
+  marking the one that names the answer (`answer: true`), one heading per reused section and the
+  questions the answer leaves open. The marked sentence leads the lede. A failing sentence is
+  regenerated once like any section's; a sentence still failing is dropped and fewer than two is no
+  lede. When the answer sentence fails, is not marked, or a section already says it, there is no
+  lede, whatever the others say (decision 0120).
   Blocks are held until the lede settles (`ExplainerStream.hold_blocks_for_lede`), so `lede` comes
   before the first `block`; sections without a stored piece research meanwhile. `LEDE_WAIT_SECONDS`
-  (30 s) bounds the whole opening: the question's English rendering, the stored read, the call and
+  (30 s) bounds the whole opening: the question's English rendering, the search, the call and
   the lede's translation. Only when the opening found no stored finding (`Opening.deferred`) is the
   lede written once the sections are checked, from the claims they cite, without any sentence a
   section already states, and sent before `follow_ups`. A failure, a refusal or the wait leaves the
@@ -1798,5 +1810,6 @@ rebuilt-each-time kinds, the stream's `builds_on` and `version`, the learning ro
 | Each kind's renderer | `frontend/e2e/place-renderers-unit.spec.ts`, `matter-renderers-unit.spec.ts`, `expert-panel-unit.spec.ts`, `journey-renderers-unit.spec.ts`, `learning-renderers-unit.spec.ts`, `insight-renderers-unit.spec.ts` and `sandbox-frame-unit.spec.ts` |
 | The block builders and their checks | `backend/tests/answering/test_block_builders.py`, `test_section_blocks.py` and `backend/tests/research/test_explainer_blocks.py` |
 | One claim, one rendering | `backend/tests/ledger/test_ledger_rules.py` and `test_ledger_kinds.py` |
+| The lede's search, its answer sentence, a sentence's Sources differ flag and its tag | `backend/tests/answering/test_lede_answer.py`, `test_lede_flow.py`, `test_grounded_blocks.py`, `backend/tests/composer/test_lede_compose.py` and `frontend/e2e/sentence-differ-unit.spec.ts` |
 
 Re-read it when a block kind is built or retired, a stream event is added, or a depth rule changes.

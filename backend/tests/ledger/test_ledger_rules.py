@@ -26,15 +26,35 @@ def test_an_answer_draws_one_region_story() -> None:
     assert ([block.id for block in first], again) == (["s1.b1"], [])
 
 
-def test_a_seat_with_nothing_new_leaves_and_its_partner_stops_differing_with_it() -> None:
-    historian, anthropologist = golden("s5.b1"), golden("s5.b2")
+def take_said_first(historian: Block) -> ClaimLedger:
     (take,) = historian.take
     said = prose("s1.b1", (take.text, ()))
     said["sentences"][0]["citations"] = [c.model_dump(mode="json", by_alias=True) for c in take.citations]
     ledger = ClaimLedger()
     ledger.admit("s1", [BLOCK.validate_python(said)], GOLDEN_SOURCES)
-    shown = ledger.admit("s5", [historian, anthropologist], GOLDEN_SOURCES)
+    return ledger
+
+
+def test_a_seat_whose_take_was_shown_stays_for_its_difference_and_keeps_it() -> None:
+    historian, anthropologist = golden("s5.b1"), golden("s5.b2")
+    shown = take_said_first(historian).admit("s5", [historian, anthropologist], GOLDEN_SOURCES)
+    assert [(view.seat, [d.seat for d in view.differs]) for view in shown] == [
+        ("HISTORIAN", ["ANTHROPOLOGIST"]),
+        ("ANTHROPOLOGIST", ["HISTORIAN"]),
+    ]
+
+
+def test_a_seat_with_nothing_new_and_no_difference_leaves() -> None:
+    historian, anthropologist = golden("s5.b1", differs=[]), golden("s5.b2", differs=[])
+    shown = take_said_first(historian).admit("s5", [historian, anthropologist], GOLDEN_SOURCES)
     assert [(view.seat, view.differs, view.agrees_with) for view in shown] == [("ANTHROPOLOGIST", [], [])]
+
+
+def test_a_pair_already_shown_as_a_difference_is_left_out_the_second_time() -> None:
+    ledger = ClaimLedger()
+    first = ledger.admit("s5", [golden("s5.b1"), golden("s5.b2")], GOLDEN_SOURCES)
+    again = ledger.admit("s6", [golden("s5.b1", id="s6.b1"), golden("s5.b2", id="s6.b2")], GOLDEN_SOURCES)
+    assert ([len(view.differs) for view in first], again) == ([1, 1], [])
 
 
 def test_two_seats_both_bringing_something_new_keep_their_difference() -> None:

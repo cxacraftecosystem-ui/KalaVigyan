@@ -500,7 +500,8 @@ single characters separated by single spaces, as on a report's title page) also 
 digits closed up: `2 0 1 8` states 2018 and `1 6 J U L Y` states 16, while `| 1 | 2 |` keeps its
 numbers apart.
 
-The hedge rules (`curation/hedges.py`), in English and Hindi:
+The hedge rules (`research/hedges.py`, which the composer's sentence checks share), in English and
+Hindi:
 
 - A hedging word in the text (may, might, could, possibly, probably, perhaps, likely, in all
   likelihood, reportedly, allegedly, apparently, presumably, supposedly, purportedly, seemingly,

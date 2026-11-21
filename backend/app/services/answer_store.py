@@ -244,7 +244,7 @@ def build_answer_pipeline(
         pieces=SqlPieceStore(sessions, embed=embed, shield=shield),
         enrichment=build_answer_enrichment(sessions, live),
         builders=BlockBuilders.from_registry(tools),
-        lede=LedeTools(compose=composer.lede, figures=signature_figures(sessions)),
+        lede=LedeTools(compose=composer.lede, figures=signature_figures(sessions), retriever=retriever),
         catalogue=catalogue_lookup(sessions),
     )
 

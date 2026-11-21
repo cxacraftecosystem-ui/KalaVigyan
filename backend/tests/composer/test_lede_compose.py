@@ -13,6 +13,7 @@ from .fixtures import (
     ALUM_CLAIM_ID,
     ALUM_CLAIM_TEXT,
     QUESTION,
+    lede_sentences,
     pack,
     quote,
     replacements,
@@ -48,9 +49,15 @@ def request(*sections: LedeSection) -> LedeRequest:
     )
 
 
-def lede_reply(*sentences: dict, headings: list | None = None, follow_ups: list | None = None) -> str:
+def lede_reply(
+    *sentences: dict, headings: list | None = None, follow_ups: list | None = None, answer: int = 0
+) -> str:
     return json.dumps(
-        {"sentences": list(sentences), "headings": headings or [], "followUps": follow_ups or []}
+        {
+            "sentences": lede_sentences(*sentences, answer=answer),
+            "headings": headings or [],
+            "followUps": follow_ups or [],
+        }
     )
 
 
@@ -95,6 +102,26 @@ async def test_a_heading_naming_a_field_or_carrying_a_number_is_not_kept() -> No
     model = FakeModel([lede_reply(ALUM, HARDE, headings=headings)])
     composed = await ModelComposer(model=model).lede(request(*sections))
     assert composed.headings == {"s3": "Alum binds the red"}
+
+
+async def test_the_sentence_the_model_marks_as_the_answer_opens_the_lede() -> None:
+    model = FakeModel([lede_reply(HARDE, ALUM, answer=1)])
+    composed = await ModelComposer(model=model).lede(request())
+    assert [s.text for s in composed.sentences] == [ALUM["text"], HARDE["text"]]
+    assert lede_schema()["properties"]["sentences"]["items"]["properties"]["answer"] == {"type": "boolean"}
+
+
+async def test_a_lede_whose_answer_sentence_fails_its_checks_has_no_sentences() -> None:
+    model = FakeModel([lede_reply(UNQUOTED, ALUM, HARDE), replacements()])
+    composed = await ModelComposer(model=model).lede(request())
+    assert [call["system"] for call in model.calls] == [LEDE_SYSTEM_PROMPT, REGENERATE_SYSTEM_PROMPT]
+    assert composed.sentences == []
+
+
+async def test_a_lede_reply_marking_no_answer_has_no_sentences() -> None:
+    unmarked = json.dumps({"sentences": [ALUM, HARDE], "headings": [], "followUps": []})
+    composed = await ModelComposer(model=FakeModel([unmarked])).lede(request())
+    assert composed.sentences == []
 
 
 async def test_no_stored_claim_means_no_lede_call() -> None:

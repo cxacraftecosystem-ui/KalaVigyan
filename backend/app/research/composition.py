@@ -22,6 +22,7 @@ from .quotes import (
     unsupported_figures,
 )
 from .reading_style import ReadingStyle
+from .sentence_support import SCREEN_KINDS, STANCE_KINDS, SupportGap, screen_gaps, stance_gaps, unrelated_refs
 from .vocabulary import (
     CANONICAL_LANGUAGE,
     AnswerLanguage,
@@ -86,6 +87,9 @@ VIOLATION_KINDS = (
     "SPAN_NOT_IN_SOURCE",
     "TRIVIAL_QUOTE",
     "UNRELATED_QUOTE",
+    "UNRELATED_SPAN",
+    *STANCE_KINDS,
+    *SCREEN_KINDS,
 )
 
 CandidateKind = Literal[*CANDIDATE_KINDS]
@@ -292,21 +296,44 @@ def sentence_violations(
     found = [SentenceViolation(kind="UNKNOWN_ID", detail=i) for i in cited if i not in allowed]
     if not sentence.spans:
         found.append(SentenceViolation(kind="UNQUOTED", detail="the sentence quotes no source"))
-    verified: list[str] = []
-    span_problems: list[SentenceViolation] = []
+    verified, span_problems = _checked_spans(sentence, cited, allowed)
+    found += _support_violations(sentence.text, verified)
+    found += _violations(screen_gaps(sentence.text))
+    return found + span_problems
+
+
+def _checked_spans(
+    sentence: ComposedSentence, cited: list[str], allowed: Mapping[str, ComposeCandidate]
+) -> tuple[dict[str, list[str]], list[SentenceViolation]]:
+    verified: dict[str, list[str]] = {}
+    problems: list[SentenceViolation] = []
     for span in sentence.spans:
         problem = _span_problem(span, cited, allowed)
         if problem is not None:
-            span_problems.append(SentenceViolation(kind=problem, detail=span.ref))
+            problems.append(SentenceViolation(kind=problem, detail=span.ref))
         elif span.ref in allowed:
-            verified.append(span.text)
-    found += [
-        SentenceViolation(kind="UNSUPPORTED_FIGURE", detail=figure)
-        for figure in unsupported_figures(sentence.text, verified)
+            verified.setdefault(span.ref, []).append(span.text)
+    return verified, problems
+
+
+def _support_violations(text: str, verified: Mapping[str, list[str]]) -> list[SentenceViolation]:
+    quotes = [quote for spans in verified.values() for quote in spans]
+    found = [
+        SentenceViolation(kind="UNSUPPORTED_FIGURE", detail=f) for f in unsupported_figures(text, quotes)
     ]
-    if verified and quote_overlap(sentence.text, verified) < QUOTE_OVERLAP_MIN:
+    if not quotes:
+        return found
+    if quote_overlap(text, quotes) < QUOTE_OVERLAP_MIN:
         found.append(SentenceViolation(kind="UNRELATED_QUOTE", detail="the quotes do not carry its wording"))
-    return found + span_problems
+    else:
+        found += [
+            SentenceViolation(kind="UNRELATED_SPAN", detail=ref) for ref in unrelated_refs(text, verified)
+        ]
+    return found + _violations(stance_gaps(text, quotes))
+
+
+def _violations(gaps: list[SupportGap]) -> list[SentenceViolation]:
+    return [SentenceViolation.model_validate({"kind": kind, "detail": detail}) for kind, detail in gaps]
 
 
 def _span_problem(

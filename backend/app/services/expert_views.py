@@ -24,7 +24,7 @@ from .artisan_seat import Heard, VoiceSearch, artisan_take, stored_voices
 from .builder_interface import BuildAsk, BuilderTools, Built
 from .knowledge_view import ClaimView
 from .seat_search import SeatEvidence, SeatSearch, stored_seat_search
-from .section_blocks import KeptSentence, cited_sentence, prose_problems
+from .section_blocks import KeptSentence, explainer_sentence, prose_problems
 
 __all__ = [
     "EXPERT_VIEW_WAIT_SECONDS",
@@ -33,6 +33,7 @@ __all__ = [
     "expert_views",
     "kept_takes",
     "panel_candidates",
+    "seated_takes",
 ]
 
 logger = logging.getLogger(__name__)
@@ -62,8 +63,9 @@ class ExpertPanelBuilder:
         evidence, heard = await asyncio.gather(self._evidence(ask, briefs, shown), self._heard(ask, voiced))
         cited = joined_claims(ask.cited, evidence.cited, heard.cited)
         offers = _offers(ask, briefs, evidence, cited, shown)
-        takes = kept_takes(await self._takes(ask, offers), cited, shown)
+        takes = kept_takes(await self._takes(ask, offers), cited)
         differences = await self._differences(ask, offers, takes, cited)
+        takes = seated_takes(takes, differences, cited, shown)
         voice = artisan_take(heard, shown)
         if voice:
             takes = {**takes, voiced[0]: voice}
@@ -137,11 +139,20 @@ def panel_candidates(cited: CitedClaims, blocks: Sequence[Block]) -> list[Compos
     return [_candidate(view) for view in views if view is not None]
 
 
-def kept_takes(takes: Sequence[SeatTake], cited: CitedClaims, shown: Collection[str]) -> dict[str, Take]:
+def kept_takes(takes: Sequence[SeatTake], cited: CitedClaims) -> dict[str, Take]:
+    return {take.seat: kept for take in takes if (kept := _kept_take(take, cited)) is not None}
+
+
+def seated_takes(
+    takes: Mapping[str, Take],
+    differences: Sequence[ProposedDifference],
+    cited: CitedClaims,
+    shown: Collection[str],
+) -> dict[str, Take]:
+    kept = _kept_differences(differences, takes, cited)
+    differing = {seat for difference in kept for seat in (difference.seat, difference.other_seat)}
     return {
-        take.seat: kept
-        for take in takes
-        if (kept := _kept_take(take, cited)) is not None and _adds_a_claim(take.seat, kept, shown)
+        seat: take for seat, take in takes.items() if seat in differing or _adds_a_claim(seat, take, shown)
     }
 
 
@@ -280,7 +291,8 @@ def _agreements(
 
 def _view(block_id: str, seat: str, panel: _Panel) -> ExpertViewBlock:
     take = [
-        _sentence(f"{block_id}.{n}", sentence, panel.cited) for n, sentence in enumerate(panel.takes[seat], 1)
+        explainer_sentence(f"{block_id}.{n}", sentence, panel.cited)
+        for n, sentence in enumerate(panel.takes[seat], 1)
     ]
     differs: list[ExpertDifference] = []
     for other, mine, theirs in _sides(seat, panel.differences):
@@ -314,13 +326,9 @@ def _sides(seat: str, differences: Sequence[ProposedDifference]) -> list[tuple[s
     return sides
 
 
-def _sentence(sentence_id: str, sentence: KeptSentence, cited: CitedClaims) -> ExplainerSentence:
-    return ExplainerSentence.model_validate(cited_sentence(sentence_id, sentence, cited) | {"terms": []})
-
-
 def _claim_sentence(sentence_id: str, claim: str, cited: CitedClaims) -> ExplainerSentence:
     view = cited.views[uuid.UUID(claim)]
-    return _sentence(sentence_id, KeptSentence(view.text, (view.id,), (), False), cited)
+    return explainer_sentence(sentence_id, KeptSentence(view.text, (view.id,), (), False), cited)
 
 
 def _stored(claim: str, cited: CitedClaims) -> ClaimView | None:

@@ -9,8 +9,10 @@ from typing import Protocol, Self, runtime_checkable
 from pydantic import Field, model_validator
 
 from .base import ContractModel
+from .hedges import hedges_in
 from .quotes import formulas_in, normalise_quote_text, numbers_in
-from .vocabulary import ANSWER_LANGUAGE_SPECS, AnswerLanguage
+from .stance_markers import hedge_marked, negation_marked
+from .vocabulary import ANSWER_LANGUAGE_SPECS, CANONICAL_LANGUAGE, AnswerLanguage
 
 __all__ = [
     "NUMBER_UNITS",
@@ -148,6 +150,16 @@ def translation_problems(original: str, translated: str, *, language: str) -> li
     script = ANSWER_LANGUAGE_SPECS[language].script
     if _letters(_prose(original, kept)) and not written_in(_prose(translated, made), script):
         problems.append(f"the translation is not written in the {script} script")
+    return problems + _stance_problems(original, translated, language)
+
+
+def _stance_problems(original: str, translated: str, language: str) -> list[str]:
+    problems: list[str] = []
+    if negation_marked(original, CANONICAL_LANGUAGE) and not negation_marked(translated, language):
+        problems.append("the original's negation (not, no, never, without) is missing")
+    hedges = hedges_in(original)
+    if hedges and not hedge_marked(translated, language):
+        problems.append(f"the original's hedge ({', '.join(hedges)}) is missing")
     return problems
 
 

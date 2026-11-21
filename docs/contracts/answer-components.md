@@ -62,7 +62,9 @@ offer; `SectionCatalogue.options()` gives the composer's `ComponentOption`s and
 ## Placement (`services/answer_sections.py`)
 
 - A section places components only when it shows prose: one `component` block per chosen label,
-  in the chosen order, right after the prose block, numbered on from it (`s1.b2`, `s1.b3`).
+  in the chosen order, right after the prose block, numbered on from it (`s1.b2`, `s1.b3`). A
+  sentence that fails its checks after composing is dropped alone and the prose stays with the
+  rest (decision 0120), so one failing sentence no longer takes the section's components with it.
 - The components' sources join the section's cited sources, so the stream sends each source
   once and the explainer lists it.
 - Builders start after composing (`_built_on`), so a builder of the same purpose is not run for

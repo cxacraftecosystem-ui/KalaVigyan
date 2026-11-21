@@ -11,38 +11,42 @@ from typing import Any, Protocol
 
 from app.core.errors import AppError
 from app.research.blocks_lede import LedeBlock
-from app.research.composition import ComposeCandidate, ComposedLede, LedeRequest, LedeSection
+from app.research.composition import ComposedLede, LedeRequest
 from app.research.crafts import CraftRef
 from app.research.depth import depth_policy
-from app.research.planning import OPEN_QUESTION_LEVEL
 from app.research.reading_style import ReadingStyle
+from app.research.retrieval import KnowledgeRetriever
 from app.research.sections import SectionSpec
 from app.research.understanding import Understanding
-from app.research.vocabulary import CANONICAL_LANGUAGE, LEVEL_ORDER
+from app.research.vocabulary import CANONICAL_LANGUAGE
 
 from .answer_events import CitedClaims, joined_claims
 from .answer_sections import SectionOutcome
 from .answer_translation import AnswerTranslation, english_question, translated_block
 from .claim_ledger import sentence_keys
 from .explainer_events import ExplainerStream
-from .knowledge_view import ClaimView
+from .lede_evidence import (
+    CitedOf,
+    LedeAsk,
+    SearchedEvidence,
+    SectionToHead,
+    lede_query,
+    lede_request,
+    searched_evidence,
+)
 from .piece_lookup import PieceLookup, ReusedSection
 from .section_blocks import BlockRefused, KeptSentence, lede_block
 from .section_enrichment import Enrichment
 from .signature_blocks import FiguredLede, SignatureFigures
 
 __all__ = [
-    "HEADING_CLAIMS_MAX",
-    "LEDE_CLAIMS_MAX",
     "LEDE_WAIT_SECONDS",
     "AnswerOpening",
-    "LedeAsk",
     "LedePlan",
     "LedeTools",
     "LedeWriting",
     "Opening",
     "OpeningStore",
-    "SectionToHead",
     "SectionsShown",
     "early_opening",
     "late_opening",
@@ -54,19 +58,12 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
-LEDE_CLAIMS_MAX = 16
-HEADING_CLAIMS_MAX = 8
 LEDE_WAIT_SECONDS = 30.0
-LABEL_MAX_CHARS = 300
 
 ComposeLede = Callable[[LedeRequest], Awaitable[ComposedLede]]
-StoredClaims = Callable[[str, str, str], Awaitable[CitedClaims]]
-CitedOf = Callable[[Iterable[uuid.UUID]], Awaitable[CitedClaims]]
 
 
 class OpeningStore(Protocol):
-    async def stored_claims(self, craft_slug: str, question: str, mode: str) -> CitedClaims: ...
-
     async def cited(self, claim_ids: Iterable[uuid.UUID]) -> CitedClaims: ...
 
 
@@ -75,24 +72,7 @@ class LedeTools:
     compose: ComposeLede | None = None
     wait_seconds: float = LEDE_WAIT_SECONDS
     figures: SignatureFigures | None = None
-
-
-@dataclass(frozen=True)
-class SectionToHead:
-    section_id: str
-    discipline: str
-    claim_ids: tuple[uuid.UUID, ...]
-
-
-@dataclass(frozen=True)
-class LedeAsk:
-    question: str
-    english: str
-    craft: CraftRef | None
-    evidence: CitedClaims
-    sections: tuple[SectionToHead, ...] = ()
-    said: frozenset[str] = frozenset()
-    style: ReadingStyle | None = None
+    retriever: KnowledgeRetriever | None = None
 
 
 @dataclass(frozen=True)
@@ -140,7 +120,7 @@ class AnswerOpening:
     store: OpeningStore
 
     def started(self) -> AbstractAsyncContextManager[asyncio.Task[Opening]]:
-        written = partial(early_opening, self.plan, self.tools, self.writing, self.store.stored_claims)
+        written = partial(early_opening, self.plan, self.tools, self.writing, self.store.cited)
         return opening_lede(self.writing.stream, written, wait_seconds=self.tools.wait_seconds)
 
     async def settled(self, first: Opening, outcomes: Sequence[SectionOutcome]) -> Opening:
@@ -188,16 +168,22 @@ def lede_plan(
     return LedePlan(question, understanding.craft, mode, heads, cited, style=style)
 
 
-async def early_opening(
-    plan: LedePlan, tools: LedeTools, writing: LedeWriting, stored: StoredClaims
-) -> Opening:
+async def early_opening(plan: LedePlan, tools: LedeTools, writing: LedeWriting, cited: CitedOf) -> Opening:
     if tools.compose is None:
         return Opening()
     english = await _english(plan, writing)
-    found = await stored(plan.craft.slug, english, plan.mode) if plan.craft else CitedClaims()
-    evidence = joined_claims(found, plan.reused)
-    ask = LedeAsk(plan.question, english, plan.craft, evidence, plan.heads, style=plan.style)
+    found = await _searched(plan, tools, english, cited)
+    evidence = joined_claims(found.cited, plan.reused)
+    ask = LedeAsk(
+        plan.question, english, plan.craft, evidence, plan.heads, style=plan.style, ranked=found.ranked
+    )
     return await written_opening(ask, tools, writing)
+
+
+async def _searched(plan: LedePlan, tools: LedeTools, english: str, cited: CitedOf) -> SearchedEvidence:
+    if plan.craft is None or tools.retriever is None:
+        return SearchedEvidence()
+    return await searched_evidence(tools.retriever, cited, lede_query(plan.craft.slug, english, plan.mode))
 
 
 async def late_opening(
@@ -217,7 +203,7 @@ async def late_opening(
 async def written_opening(ask: LedeAsk, tools: LedeTools, writing: LedeWriting) -> Opening:
     if tools.compose is None:
         return Opening(english=ask.english)
-    request = _lede_request(ask)
+    request = lede_request(ask)
     if not request.candidates:
         return Opening(english=ask.english, deferred=True)
     try:
@@ -273,62 +259,25 @@ async def _softly(written: Callable[[], Awaitable[Opening]], wait_seconds: float
         return Opening()
 
 
-def _lede_request(ask: LedeAsk) -> LedeRequest:
-    views = _offered_views(ask)
-    shown = {view.id for view in views}
-    sections = [
-        LedeSection(
-            section_id=section.section_id,
-            discipline=section.discipline,
-            claim_ids=[str(claim) for claim in section.claim_ids if claim in shown],
+def _unsaid(ask: LedeAsk, composed: ComposedLede) -> list[KeptSentence] | None:
+    sentences = [
+        KeptSentence(
+            s.text, tuple(s.claim_ids), tuple(s.evidence_ids), False, quotes=tuple(q.text for q in s.spans)
         )
-        for section in ask.sections
-        if any(claim in shown for claim in section.claim_ids)
+        for s in composed.sentences
     ]
-    return LedeRequest(
-        question=ask.english,
-        craft=ask.craft,
-        candidates=[_candidate(view) for view in views],
-        sections=sections,
-        style=ask.style,
-    )
-
-
-def _offered_views(ask: LedeAsk) -> list[ClaimView]:
-    facts = {
-        claim_id: view for claim_id, view in ask.evidence.views.items() if view.level != OPEN_QUESTION_LEVEL
-    }
-    ranked = sorted(facts.values(), key=lambda view: (-view.rank, LEVEL_ORDER.get(view.level, 9)))
-    heading_claims = [
-        claim
-        for section in ask.sections
-        for claim in section.claim_ids[:HEADING_CLAIMS_MAX]
-        if claim in facts
-    ]
-    chosen = dict.fromkeys([*(view.id for view in ranked[:LEDE_CLAIMS_MAX]), *heading_claims])
-    return [facts[claim_id] for claim_id in chosen]
-
-
-def _candidate(view: ClaimView) -> ComposeCandidate:
-    quotes = list(dict.fromkeys(c["quote"] for c in view.citations if c.get("quote")))
-    return ComposeCandidate(
-        id=str(view.id),
-        kind="CLAIM",
-        text=view.text,
-        quotes=quotes,
-        source_label=f"stored claim, {view.level.lower()}"[:LABEL_MAX_CHARS],
-        level=view.level,
-    )
+    if sentences and sentence_keys(sentences[0].text) & ask.said:
+        logger.warning("the lede's answer sentence is already said by a section, so no lede is shown")
+        return None
+    return [s for n, s in enumerate(sentences) if n == 0 or not sentence_keys(s.text) & ask.said]
 
 
 async def _shown_lede(
     ask: LedeAsk, composed: ComposedLede, writing: LedeWriting, figures: SignatureFigures | None
 ) -> FiguredLede | None:
-    kept = [
-        KeptSentence(s.text, tuple(s.claim_ids), tuple(s.evidence_ids), False)
-        for s in composed.sentences
-        if not sentence_keys(s.text) & ask.said
-    ]
+    kept = _unsaid(ask, composed)
+    if kept is None:
+        return None
     try:
         lede = lede_block(ask.question, kept, ask.evidence)
     except BlockRefused as refused:

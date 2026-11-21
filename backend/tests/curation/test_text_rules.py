@@ -4,10 +4,10 @@ import pytest
 
 from app.curation.duplicates import near_duplicates
 from app.curation.figures import figure_gaps, figure_key
-from app.curation.hedges import dropped_hedges, quote_hedges, unsourced_hedges
 from app.curation.matching import match_key, quote_chars, quote_found
 from app.curation.sentences import relationship_sentence, single_sentence
 from app.research.evidence import personal_data_in
+from app.research.hedges import dropped_hedges, quote_hedges, unsourced_hedges
 from app.research.quotes import normalise_quote_lines
 
 

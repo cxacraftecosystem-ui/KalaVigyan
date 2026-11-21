@@ -20,10 +20,12 @@ from .stated_names import unstated_names
 from .write_back_plan import composed_sentences
 
 __all__ = [
+    "SOURCES_DIFFER_FIELD",
     "BlockRefused",
     "KeptSentence",
     "SectionSentences",
     "cited_sentence",
+    "explainer_sentence",
     "kept_sentences",
     "lede_block",
     "prose_block",
@@ -32,6 +34,8 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
+
+SOURCES_DIFFER_FIELD = "sources_differ"
 
 
 class BlockRefused(InvalidInput):
@@ -47,6 +51,8 @@ class KeptSentence:
     claim_ids: tuple[uuid.UUID, ...]
     evidence_ids: tuple[str, ...]
     open_question: bool
+    quotes: tuple[str, ...] = ()
+    written: tuple[uuid.UUID, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -60,7 +66,14 @@ def kept_sentences(composed: ComposedAnswer, claims_of: Sequence[Sequence[uuid.U
     if len(pairs) != len(claims_of):
         raise InvalidInput(f"{len(claims_of)} claim lists were given for {len(pairs)} sentences")
     return [
-        KeptSentence(sentence.text, tuple(claim_ids), tuple(sentence.evidence_ids), heading is None)
+        KeptSentence(
+            sentence.text,
+            tuple(claim_ids),
+            tuple(sentence.evidence_ids),
+            heading is None,
+            quotes=tuple(span.text for span in sentence.spans),
+            written=tuple(claim for claim in claim_ids if claim not in sentence.claim_ids),
+        )
         for (sentence, heading), claim_ids in zip(pairs, claims_of, strict=True)
     ]
 
@@ -70,44 +83,25 @@ def section_sentences(sentences: Sequence[KeptSentence], cited: CitedClaims) -> 
     open_questions: list[KeptSentence] = []
     for sentence in sentences:
         views = _views(sentence, cited)
-        unstated = unstated_names(sentence.text, _supports(views))
-        if unstated:
-            logger.warning(
-                "dropped a sentence naming %s, which no cited claim or quote states", ", ".join(unstated)
-            )
-            continue
-        level = _level(views)
-        if level == OPEN_QUESTION_LEVEL:
-            open_questions.append(sentence)
-        elif sentence.open_question and level is None:
-            logger.warning("dropped an open question with no stored citation")
+        if _level(views) == OPEN_QUESTION_LEVEL:
+            problems = _named_problems(sentence, views)
+            shown = open_questions
         else:
-            facts.append(sentence)
+            problems = _sentence_problems(sentence, views)
+            shown = facts
+        if problems:
+            logger.warning("dropped a sentence alone: %s", "; ".join(problems))
+        else:
+            shown.append(sentence)
     return SectionSentences(tuple(facts), tuple(open_questions))
 
 
 def prose_problems(sentences: Sequence[KeptSentence], cited: CitedClaims) -> list[str]:
-    problems: list[str] = []
-    for number, sentence in enumerate(sentences, start=1):
-        views = _views(sentence, cited)
-        citations = _citations(views)
-        if not citations:
-            problems.append(f"sentence {number} cites no stored claim")
-            continue
-        if _level(views) not in FACT_LEVELS:
-            problems.append(f"sentence {number} is not a fact")
-        supports = _supports(views)
-        figures = unsupported_figures(sentence.text, supports)
-        if figures:
-            problems.append(
-                f"sentence {number} states {', '.join(figures)}, which no cited claim or quote holds"
-            )
-        unstated = unstated_names(sentence.text, supports)
-        if unstated:
-            problems.append(
-                f"sentence {number} names {', '.join(unstated)}, which no cited claim or quote states"
-            )
-    return problems
+    return [
+        f"sentence {number} {problem}"
+        for number, sentence in enumerate(sentences, start=1)
+        for problem in _sentence_problems(sentence, _views(sentence, cited))
+    ]
 
 
 def prose_block(block_id: str, sentences: Sequence[KeptSentence], cited: CitedClaims) -> ProseBlock:
@@ -120,17 +114,21 @@ def prose_block(block_id: str, sentences: Sequence[KeptSentence], cited: CitedCl
         version=1,
         reuse=None,
         sentences=[
-            ExplainerSentence.model_validate(
-                cited_sentence(f"{block_id}.{n}", sentence, cited) | {"terms": []}
-            )
+            explainer_sentence(f"{block_id}.{n}", sentence, cited)
             for n, sentence in enumerate(sentences, start=1)
         ],
     )
 
 
 def lede_block(question: str, sentences: Sequence[KeptSentence], cited: CitedClaims) -> LedeBlock:
-    kept: list[KeptSentence] = []
-    for sentence in sentences:
+    if not sentences:
+        raise BlockRefused(LEDE_BLOCK_ID, ["the lede has no answer sentence"])
+    answer, *others = sentences
+    refused = prose_problems([answer], cited)
+    if refused:
+        raise BlockRefused(LEDE_BLOCK_ID, [f"the answer, {problem}" for problem in refused])
+    kept = [answer]
+    for sentence in others:
         problems = prose_problems([sentence], cited)
         if problems:
             logger.warning("dropped a lede sentence: %s", "; ".join(problems))
@@ -145,12 +143,17 @@ def lede_block(question: str, sentences: Sequence[KeptSentence], cited: CitedCla
         reuse=None,
         headline=question,
         sentences=[
-            ExplainerSentence.model_validate(
-                cited_sentence(f"{LEDE_BLOCK_ID}.{n}", sentence, cited) | {"terms": []}
-            )
+            explainer_sentence(f"{LEDE_BLOCK_ID}.{n}", sentence, cited)
             for n, sentence in enumerate(kept[:LEDE_SENTENCES_MAX], start=1)
         ],
         figure=None,
+    )
+
+
+def explainer_sentence(sentence_id: str, sentence: KeptSentence, cited: CitedClaims) -> ExplainerSentence:
+    differing = {"sourcesDiffer": True} if _sources_differ(_views(sentence, cited)) else {}
+    return ExplainerSentence.model_validate(
+        cited_sentence(sentence_id, sentence, cited) | {"terms": []} | differing
     )
 
 
@@ -164,13 +167,40 @@ def cited_sentence(sentence_id: str, sentence: KeptSentence, cited: CitedClaims)
     }
 
 
+def _sentence_problems(sentence: KeptSentence, views: Sequence[ClaimView]) -> list[str]:
+    if not _citations(views):
+        return ["cites no stored claim"]
+    problems = [] if _level(views) in FACT_LEVELS else ["is not a fact"]
+    figures = unsupported_figures(sentence.text, _supports(views))
+    if figures:
+        problems.append(f"states {', '.join(figures)}, which no cited claim or quote holds")
+    return problems + _named_problems(sentence, views)
+
+
+def _named_problems(sentence: KeptSentence, views: Sequence[ClaimView]) -> list[str]:
+    stated = [
+        *(view.text for view in views if view.id not in sentence.written),
+        *_quotes(views),
+        *sentence.quotes,
+    ]
+    unstated = unstated_names(sentence.text, stated)
+    return [f"names {', '.join(unstated)}, which no cited claim or quote states"] if unstated else []
+
+
 def _views(sentence: KeptSentence, cited: CitedClaims) -> list[ClaimView]:
     return [cited.views[claim_id] for claim_id in sentence.claim_ids if claim_id in cited.views]
 
 
 def _supports(views: Sequence[ClaimView]) -> list[str]:
-    quotes = [citation["quote"] for citation in _citations(views) if citation["quote"]]
-    return [*(view.text for view in views), *quotes]
+    return [*(view.text for view in views), *_quotes(views)]
+
+
+def _quotes(views: Sequence[ClaimView]) -> list[str]:
+    return [citation["quote"] for citation in _citations(views) if citation["quote"]]
+
+
+def _sources_differ(views: Sequence[ClaimView]) -> bool:
+    return any(getattr(view, SOURCES_DIFFER_FIELD, False) is True for view in views)
 
 
 def _level(views: Sequence[ClaimView]) -> str | None:

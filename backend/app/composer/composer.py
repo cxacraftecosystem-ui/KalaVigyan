@@ -165,13 +165,23 @@ def assembled_answer(draft: DraftAnswer, request: ComposeRequest) -> ComposedAns
 
 
 def assembled_lede(draft: DraftAnswer, allowed: Mapping[str, ComposeCandidate]) -> ComposedLede:
+    answer = _stated_answer(draft, allowed)
+    if answer is None:
+        logger.warning("the lede's answer sentence did not pass its checks, so no lede is written")
     kept = [s.sentence for section in draft.sections for s in section.sentences if s.passes and s.sentence]
-    facts = [sentence for sentence in kept if not _is_open_question(sentence, allowed)]
+    facts = [s for s in kept if s is not answer and not _is_open_question(s, allowed)]
     return ComposedLede(
-        sentences=facts[:LEDE_SENTENCES_MAX],
+        sentences=[answer, *facts][:LEDE_SENTENCES_MAX] if answer is not None else [],
         headings=dict(draft.headings),
         follow_ups=list(draft.follow_ups),
     )
+
+
+def _stated_answer(draft: DraftAnswer, allowed: Mapping[str, ComposeCandidate]) -> ComposedSentence | None:
+    answer = draft.answer
+    if answer is None or not answer.passes or answer.sentence is None:
+        return None
+    return None if _is_open_question(answer.sentence, allowed) else answer.sentence
 
 
 def _with_replacements(draft: DraftAnswer, replacements: Mapping[int, DraftSentence]) -> DraftAnswer:
@@ -184,7 +194,7 @@ def _with_replacements(draft: DraftAnswer, replacements: Mapping[int, DraftSente
                 sentences.append(sentence)
                 continue
             if slot in replacements:
-                sentences.append(replace(replacements[slot], heading=section.heading))
+                sentences.append(replace(replacements[slot], heading=section.heading, answer=sentence.answer))
             slot += 1
         sections.append(DraftSection(section.heading, tuple(sentences)))
     return replace(draft, sections=tuple(sections))

@@ -26,6 +26,7 @@ from .drafts import DraftSentence
 __all__ = [
     "COMPONENTS_LABEL",
     "COMPOSE_SYSTEM_PROMPT",
+    "DIFFERING_SOURCES_RULE",
     "EXPERT_SECTION_RULES",
     "HEADING_RULES",
     "HEADING_WORDS_MAX",
@@ -66,8 +67,11 @@ SOURCE_RULES = (
     f"of {QUOTE_MIN_CHARS} to {QUOTE_MAX_CHARS} characters from that source exactly, character for "
     "character, starting and ending on whole words. Write only what the quoted passages state, in "
     "their own key words. Every number, unit value and chemical formula in a "
-    "sentence must appear in one of its quotes. Write numbers with the digits 0-9. Cite only the refs "
-    "of the blocks given. If the sources do not support something, leave it out."
+    "sentence must appear in one of its quotes. Write numbers with the digits 0-9, or as the quote writes "
+    "them in words (twice, three, half). Keep every negation (not, no, never, without) and every hedge "
+    "(may, probably, believed) of the quotes, add none, and keep each unit as the quote gives it. Each "
+    "source a sentence cites must itself state what the sentence says of it. Cite only the refs of the "
+    "blocks given. If the sources do not support something, leave it out."
 )
 
 COMPOSE_SYSTEM_PROMPT = (
@@ -90,8 +94,12 @@ HEADING_RULES = (
 EXPERT_SECTION_RULES = (
     "This is an Expert answer: write the section as a full explainer, not a summary. Give every "
     "mechanism step by step (what reacts or changes, the conditions, what it gives and why), every "
-    "stage with its materials, every date, place and person the sources name, and where sources "
-    "differ, both readings. Group the sentences so each run explains one point before the next."
+    "stage with its materials, and every date, place and person the sources name. Group the sentences "
+    "so each run explains one point before the next."
+)
+DIFFERING_SOURCES_RULE = (
+    "Where sources differ, give both readings, each in a sentence that cites only the source stating it; "
+    "never choose between them and never merge them into one."
 )
 
 
@@ -102,7 +110,7 @@ def section_system_prompt(sentences_max: int = SECTION_SENTENCES_MAX) -> str:
         "the science behind it, using only the sources given. The Section line names the field it covers. "
         "Reply with one JSON object that matches the schema.\n"
         f"- sentences: at most {sentences_max}, in reading order, on the section's field only; leave "
-        "out what another field explains.\n"
+        f"out what another field explains. {DIFFERING_SOURCES_RULE}\n"
         f"{depth_rules}"
         "- stages: present only when process stages are offered; the ids of the stages a reader needs to "
         "see, step by step, to answer the question, or none when the stages do not serve it.\n"
@@ -127,8 +135,8 @@ LEDE_SYSTEM_PROMPT = (
     "schema.\n"
     f"- sentences: {LEDE_SENTENCES_MIN} or {LEDE_SENTENCES_MAX}, in reading order, that answer this question "
     "directly. The first sentence names the answer itself: the material, the cause or the mechanism asked "
-    "about. The others give the one or two facts that make it so. No background the question did not ask "
-    "for.\n"
+    "about, and is the only one with answer true; the others have answer false and give the one or two "
+    "facts that make it so. No background the question did not ask for.\n"
     f"- headings: one for each section listed, by its id. {HEADING_RULES}\n"
     f"- followUps: at most {FOLLOW_UPS_MAX} questions this answer leaves open: what the sources given do not "
     "settle, asked plainly; never the learner's question again, never one the sources answer; without "
@@ -163,7 +171,8 @@ def section_schema(stage_ids: Sequence[str] = (), *, labels: Sequence[str] = ())
 def lede_schema(section_ids: Sequence[str] = ()) -> dict[str, Any]:
     section = {"type": "string", "enum": list(section_ids) or [""]}
     headings = _array(schema_object(section=section, heading=TEXT))
-    return schema_object(sentences=_array(sentence_schema()), headings=headings, followUps=_array(TEXT))
+    sentences = _array(sentence_schema(answer={"type": "boolean"}))
+    return schema_object(sentences=sentences, headings=headings, followUps=_array(TEXT))
 
 
 def regenerate_schema(failed: int) -> dict[str, Any]:

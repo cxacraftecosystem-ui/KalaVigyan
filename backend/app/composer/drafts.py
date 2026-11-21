@@ -4,7 +4,7 @@ import logging
 import re
 import uuid
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from pydantic import ValidationError
@@ -51,6 +51,7 @@ class DraftSentence:
     raw_text: str
     sentence: ComposedSentence | None
     problems: tuple[str, ...]
+    answer: bool = False
 
     @property
     def passes(self) -> bool:
@@ -80,6 +81,10 @@ class DraftAnswer:
     @property
     def failed(self) -> list[DraftSentence]:
         return [s for section in self.sections for s in section.sentences if not s.passes]
+
+    @property
+    def answer(self) -> DraftSentence | None:
+        return next((s for section in self.sections for s in section.sentences if s.answer), None)
 
 
 @dataclass(frozen=True)
@@ -125,7 +130,13 @@ def parsed_lede(
     limit: int,
 ) -> DraftAnswer:
     sentences = _list(reply, "sentences")[:limit]
-    checked = tuple(checked_sentence(s, LEDE_DRAFT_HEADING, allowed) for s in sentences)
+    marked = next(
+        (n for n, raw in enumerate(sentences) if isinstance(raw, Mapping) and raw.get("answer") is True), None
+    )
+    checked = tuple(
+        replace(checked_sentence(raw, LEDE_DRAFT_HEADING, allowed), answer=n == marked)
+        for n, raw in enumerate(sentences)
+    )
     return DraftAnswer(
         sections=(DraftSection(LEDE_DRAFT_HEADING, checked),),
         follow_ups=tuple(_usable_follow_ups(_list(reply, "followUps"))),

@@ -11,7 +11,6 @@ from app.research.evidence_pack import EvidencePack, ResearchTrail
 from app.research.planning import PlanRequest
 from app.research.stream import ResearchProgress
 from app.research.structured import StructuredReply
-from app.services.answer_events import CitedClaims
 from app.services.answer_lede import LedeTools
 from app.services.answering import AnswerAsk
 
@@ -19,12 +18,12 @@ from ..planner.fakes import FakeModel
 from .fakes import (
     UNDERSTOOD_REPLY,
     FakeResearch,
-    FakeStore,
     SectionModel,
     pipeline,
     streamed,
     understanding_model,
 )
+from .lede_search import StoredSearch
 from .test_answer_flow import events
 from .test_lede_flow import (
     MORDANT,
@@ -63,13 +62,6 @@ class GatedModel:
         self.calls += 1
         await self.gate.wait()
         return StructuredReply(text=self.reply, degraded=False)
-
-
-@dataclass
-class SlowStore(FakeStore):
-    async def stored_claims(self, craft_slug: str, question: str, mode: str) -> CitedClaims:
-        await asyncio.sleep(30)
-        return await super().stored_claims(craft_slug, question, mode)
 
 
 @dataclass
@@ -121,9 +113,13 @@ async def test_a_lede_slower_than_its_wait_releases_the_blocks_and_is_never_sent
 
 async def test_the_lede_s_wait_covers_its_stored_read_too() -> None:
     model = FakeModel([MORDANT_LEDE])
-    store = SlowStore(stored=mordant_store().stored)
+    store = mordant_store()
     built = lede_pipeline(
-        model, store=store, compose_model=sections_model(), understand_model=understood_as("CHEMISTRY")
+        model,
+        store=store,
+        search=StoredSearch(store, delay=30),
+        compose_model=sections_model(),
+        understand_model=understood_as("CHEMISTRY"),
     )
     found = await asyncio.wait_for(mordant_events(waiting(built, SHORT_WAIT)), timeout=10)
     assert "lede" not in names(found) and "block" in names(found)

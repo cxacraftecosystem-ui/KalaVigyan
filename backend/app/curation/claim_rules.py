@@ -4,11 +4,11 @@ import re
 from itertools import combinations
 
 from app.models.knowledge import QUOTE_MAX_CHARS
+from app.research.hedges import dropped_hedges, unsourced_hedges
 
 from .dossier import Dossier
 from .duplicates import near_duplicates
 from .figures import figure_gaps
-from .hedges import dropped_hedges, unsourced_hedges
 from .limits import CLAIM_WORDS_MAX, CLAIM_WORDS_MIN, CURATED_QUOTE_MIN_CHARS
 from .matching import quote_chars
 from .parts import Claim
