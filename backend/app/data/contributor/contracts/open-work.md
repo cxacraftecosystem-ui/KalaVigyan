@@ -172,9 +172,12 @@ What readers ask and KalaVigyan answers poorly becomes work. Nothing here calls 
 **Each answer's verdict.** When an answer is finished (`SqlAnswerStore.finish`), each of its
 sections is read for its field: its cited sentences at a fact level (`VERIFIED`, `REVIEWED` or
 `PROVISIONAL`, each text once), whether its retrieval scored low, and the facts it cited. Retrieval
-scores low when the section ran research and its best stored fact scored at most 1/61 (one over
-`RRF_K` + 1: the most a fact found by one ranking alone can score, so nothing matched the question's
-words or names), or no stored fact was found; a section reused from stored pieces is not judged on
+scores low when the section ran research and no stored fact was found, or when the stored pack was
+reranked (decision 0125) and its best fact's relevance score is below `ANSWERING_RELEVANCE` (0.5:
+no stored fact answers the question), or, when no fact carries a relevance score (no reranker, or
+the rerank failed), its best stored fact's fused score is at most 1/61 (one over `RRF_K` + 1: the
+most a fact found by one ranking alone can score, so nothing matched the question's words or
+names) (`services/answer_gaps.retrieval_low`); a section reused from stored pieces is not judged on
 retrieval. The store adds the cited facts holding a quote whose last check is `FAIL`.
 
 - `UNANSWERED`: no field holds a cited sentence (`NO_CITED_EVIDENCE`; every field is lacking).
