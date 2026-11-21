@@ -38,6 +38,12 @@ export async function readPage(page: Page, path: string): Promise<void> {
   await playersAtRest(page);
 }
 
+async function revealed(root: ElementHandle<Element>): Promise<void> {
+  await root.evaluate((element) => {
+    for (let held = element.closest("[hidden]"); held; held = held.parentElement?.closest("[hidden]") ?? null) held.removeAttribute("hidden");
+  });
+}
+
 async function inView(page: Page, root: ElementHandle<Element>): Promise<void> {
   await root.scrollIntoViewIfNeeded().catch(() => undefined);
   await page.waitForTimeout(SETTLE_MS);
@@ -70,6 +76,7 @@ export async function compareCase(authored: Page, rendered: Page, found: Borrowe
   const text = await mine.evaluate((element) => (element as HTMLElement).innerText ?? "");
   const theirs = await authoredRoot(authored, found.root, text);
   if (!theirs) return missing(found);
+  await revealed(theirs);
   await inView(authored, theirs);
   const approved = await drawing(theirs);
   const before = (await drawing(mine)).width;

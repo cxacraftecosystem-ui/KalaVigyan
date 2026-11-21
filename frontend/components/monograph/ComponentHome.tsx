@@ -9,8 +9,11 @@ export type FragmentHost = { id: string; html: string };
 
 type HomeProps = { home: Home; label: string; kind: string; fragment?: FragmentHost; children?: ReactNode };
 
-function stepProps(step: FrameStep): { className?: string; style?: CSSProperties } {
-  return { className: step.classes.length ? step.classes.join(" ") : undefined, style: step.box ? undefined : PASS_THROUGH };
+type StepProps = { className?: string; style?: CSSProperties; lang?: string; dir?: string; "data-ui-lang"?: string };
+
+function stepProps(step: FrameStep): StepProps {
+  const marks: Readonly<Record<string, string | undefined>> = step.attrs ?? {};
+  return { className: step.classes.length ? step.classes.join(" ") : undefined, style: step.box ? undefined : PASS_THROUGH, lang: marks.lang, dir: marks.dir, "data-ui-lang": marks["data-ui-lang"] };
 }
 
 function nested(steps: readonly FrameStep[], inner: ReactNode): ReactNode {

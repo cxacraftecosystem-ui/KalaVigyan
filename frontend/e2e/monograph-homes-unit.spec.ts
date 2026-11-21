@@ -73,6 +73,14 @@ test("a borrowed component is drawn in the scope and frame of its slot on the au
   expect(html).toBe(`<div class="bx bx-ask my-12" data-component="${CHAIN}" data-component-kind="diagram" data-home="home"><div class="screen"><div class="kv-chain" style="display:contents"><div class="kv-wrap"><section class="chain"></section></div></div></div></div>`);
 });
 
+test("a figure from the Hindi panel of the authored page keeps the panel's language around it when borrowed", () => {
+  const home = componentHome("shared/chemistry/alizarin-purpurin-structures-hindi", "structure_diagram", null);
+  expect(home.frame.filter((step) => step.attrs)).toEqual([{ classes: ["lang-panel"], box: false, attrs: { lang: "hi", "data-ui-lang": "hi" } }]);
+  const html = renderToStaticMarkup(createElement(ComponentHome, { home, label: "shared/chemistry/alizarin-purpurin-structures-hindi", kind: "structure_diagram" }, createElement("figure", { className: "fig" })));
+  expect(html).toContain('<div class="lang-panel" style="display:contents" lang="hi" data-ui-lang="hi">');
+  expect(html).not.toContain("hidden");
+});
+
 test("a contributed component takes the scope its kind's authored specs of the same shape are drawn in", () => {
   expect(componentHome("test-craft/chemistry/chain", "diagram", { chain: { heading: "u0001" }, drawing: null })).toMatchObject({ scope: "ask", source: "kind" });
   expect(componentHome("test-craft/geography/distances", "diagram", { chain: null, drawing: { tag: "svg" } })).toMatchObject({ scope: "mb", source: "kind" });

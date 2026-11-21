@@ -97,6 +97,23 @@ def test_a_component_a_native_view_places_shares_its_parents_scope() -> None:
     assert (home.scope, home.frame, home.within, home.root) == ("ask", (), CHAIN, "svg")
 
 
+def test_a_home_inside_a_language_panel_keeps_the_panel_s_language_but_not_its_hidden_state() -> None:
+    shell = (
+        '<div class="bx bx-rm"><div class="screen"><div class="lang-panel" lang="hi" data-ui-lang="hi" '
+        f'hidden><div class="spread railed"><div class="main hi-prose"><kv-slot component="{CHAIN}">'
+        "</kv-slot></div></div></div></div></div>"
+    )
+    source = _source(
+        shell, {CHAIN: '<figure class="fig"></figure>'}, {CHAIN: {"chain": None}}, {CHAIN: "diagram"}
+    )
+    frame = component_homes(source)[CHAIN].frame
+    assert frame[1] == FrameStep(("lang-panel",), box=False, attrs=(("lang", "hi"), ("data-ui-lang", "hi")))
+    assert [step.attrs for step in frame if step.classes != ("lang-panel",)] == [(), (), ()]
+    authored = component_homes(authored_home_source(AUTHORED))
+    hindi = authored["shared/chemistry/alizarin-purpurin-structures-hindi"].frame
+    assert [dict(step.attrs) for step in hindi if step.attrs] == [{"lang": "hi", "data-ui-lang": "hi"}]
+
+
 def test_the_reading_column_keeps_its_boxes_and_a_margin_does_not() -> None:
     column = frame_steps([("screen",), ("spread", "railed"), ("main", "prose")])
     margin = frame_steps([("screen",), ("spread", "railed"), ("margin", "note")])

@@ -9,7 +9,7 @@ __all__ = ["HOMES_FILE", "homes_text", "main"]
 
 HOMES_FILE = DATA_DIR.parents[2] / "frontend" / "lib" / "componentHomes.ts"
 TYPES = (
-    "export type FrameStep = { classes: string[]; box: boolean };\n"
+    "export type FrameStep = { classes: string[]; box: boolean; attrs?: Readonly<Record<string, string>> };\n"
     "export type HomeRecord = { kind: string; scope: string | null; frame: FrameStep[]; root: string | null; "
     "within?: string };\n"
     "export type KindRecord = { scope: string | null; keys: string[] };\n"
