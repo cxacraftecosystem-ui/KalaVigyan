@@ -145,7 +145,9 @@ def _claims() -> list[Claim]:
         _claim(OLDER_BLOCK, BLOCK, "The wooden block carries the alum paste to the cloth."),
         _claim(ELSEWHERE, WEAVE_ALUM, "Alum fixes the red of the weave."),
         _claim(
-            REGISTERED, VAT, "Among the salts, gums, earths and roots of the vat there is also some indigo."
+            REGISTERED,
+            VAT,
+            "Among the salts, gums, earths and roots of the dye bath there is also some indigo.",
         ),
         *(
             _claim(claim, VAT, f"Indigo, indigo and more indigo fill vat {n}.")
@@ -181,9 +183,9 @@ async def test_a_craft_reads_the_knowledge_of_the_crafts_merged_into_it(session:
 
 
 async def test_a_search_kept_to_source_kinds_fills_its_limit_with_them(session: AsyncSession) -> None:
-    unkept = await searched(session, "Where does the indigo go?", limit=12)
+    unkept = await searched(session, "What goes into the indigo vat?", limit=12)
     assert ids(unkept) == set(PRINTED)
-    kept = await searched(session, "Where does the indigo go?", limit=12, sourceKinds=["GI_JOURNAL"])
+    kept = await searched(session, "What goes into the indigo vat?", limit=12, sourceKinds=["GI_JOURNAL"])
     assert [hit.claim_id for hit in kept.claims] == [REGISTERED]
 
 
