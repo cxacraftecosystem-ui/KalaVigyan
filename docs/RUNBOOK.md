@@ -525,7 +525,27 @@ fixture or the category page (`docs/contracts/category-page.md`).
   variable `API_BASE_URL`, and keeps the issue `The MCP client cannot sign in to production`.
 - **Retrieval evaluation** (`retrieval-eval.yml`): runs `app.scripts.eval_retrieval` on the box,
   weekly and by hand, from main only (the deploy role trusts main):
-  `gh workflow run retrieval-eval.yml -R cxacraftecosystem-ui/KalaVigyan --ref main`.
+  `gh workflow run retrieval-eval.yml -R cxacraftecosystem-ui/KalaVigyan --ref main` (`-f cap=<USD>`
+  lowers the judge's spend, at most 1 US dollar). It scores the hand-written and generated questions
+  against `backend/app/data/eval/floors.json` and keeps the issue `Retrieval fell below its floor`.
+  Its artifact holds the judged revision of the generated questions: commit `retrieval_questions.json`
+  over `backend/app/data/eval/generated/retrieval_questions.json` when `generatedRevision` rose.
+- **Generated retrieval questions** (`eval-questions.yml`): by hand only, from main:
+  `gh workflow run eval-questions.yml -R cxacraftecosystem-ui/KalaVigyan --ref main` (`-f cap=<USD>`,
+  3 by default). It writes a question for each sampled published fact on the box and keeps the set as
+  the `eval-questions-<run id>` artifact; commit its `retrieval_questions.json` as
+  `backend/app/data/eval/generated/retrieval_questions.json`. A later run reuses the kept questions
+  and pays only for new facts.
+- **Answer quality** (`answer-quality.yml`): by hand, from main (`-f limit=`, `-f only=`, `-f cap=`).
+  A run that asks every question compares the judge and rubric means with the answer floors and
+  keeps the issue `Answers fell below their floor`.
+- **Floors**: raise a floor in `backend/app/data/eval/floors.json` as the live numbers improve; a
+  `null` floor is reported and never alerts. The release (`blue_green.sh`, `check_retrieval`, within
+  `CHECK_SECONDS`, 180) stops below a retrieval floor and warns when it could not compare one.
+- **Craft-matching cases**: after the craft master list or `craft_aliases.json` changes, rebuild them
+  from `backend/` with `.venv/Scripts/python.exe -m app.scripts.build_craft_cases`;
+  `tests/retrieval/test_craft_cases.py` fails until they are rebuilt. `python -m
+  app.scripts.eval_retrieval --crafts` on the box scores them with the embedding route.
 - **Capture audit**: axe (WCAG A and AA) and Lighthouse at 360 and 1440 on every Capture run;
   `-f audit=false` skips it. To ratchet the budgets, copy `audit-baseline.candidate.json` from a
   production run's artifact over `frontend/e2e/release/audit-baseline.json`. A new axe rule on a

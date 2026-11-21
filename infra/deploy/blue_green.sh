@@ -15,6 +15,7 @@ die() { say "::error::$*"; exit 1; }
 NGINX_SWITCH_SECONDS="${NGINX_SWITCH_SECONDS:-20}"
 EMBED_SECONDS="${EMBED_SECONDS:-240}"
 EMBED_GRACE="${EMBED_GRACE:-60}"
+CHECK_SECONDS="${CHECK_SECONDS:-180}"
 PAGES_SECONDS="${PAGES_SECONDS:-480}"
 DOCUMENTS_SECONDS="${DOCUMENTS_SECONDS:-420}"
 REFRESH_SECONDS="${REFRESH_SECONDS:-300}"
@@ -103,6 +104,17 @@ embed_seeded() {
   else
     say "::warning::$module did not finish (${report:-no report}); the release goes on and the daily Coverage enrichment run embeds what is left."
   fi
+}
+
+check_retrieval() {
+  local tree="$1" report status=0
+  report="$(cd "$tree" && timeout "$((CHECK_SECONDS + EMBED_GRACE))" runuser -u "$RUN_AS" -- bash -c "set -a; . '$ENV_FILE'; set +a; exec ./.venv/bin/python -m app.scripts.eval_retrieval --release --seconds $CHECK_SECONDS")" || status=$?
+  case "$status" in
+    0) say "retrieval check passed: $report" ;;
+    2) say "::warning::the retrieval check warned: $report; the release goes on." ;;
+    3) say "::error::retrieval fell below its floor on this release: $report"; return 1 ;;
+    *) say "::warning::the retrieval check did not finish (exit $status: ${report:-no report}); the release goes on." ;;
+  esac
 }
 
 wait_healthy() {
@@ -247,6 +259,7 @@ cmd_release() {
     migrate "$tree" 5 || die "migrations failed. nginx still proxies to $live."
   fi
   seed "$tree" || die "seeding failed. nginx still proxies to $live."
+  check_retrieval "$tree" || die "retrieval fell below its floor. nginx still proxies to $live."
   start_and_promote
   refresh_served_pages "$tree"
   say "released: nginx -> $cand, current -> $(readlink "$APP/current")"

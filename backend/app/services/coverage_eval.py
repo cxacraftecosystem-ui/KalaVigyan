@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 from app.core.errors import AppError
 from app.core.logging import redact_secrets, request_id_scope
@@ -28,6 +29,7 @@ from app.research.coverage_eval import (
 )
 from app.research.explainer import Explainer
 from app.research.structured import StructuredModel
+from app.retrieval.eval_floors import JUDGE_MEAN, RUBRIC_MEAN, EvalFloors, broken, eval_floors, floor_checks
 
 from .answer_runs import AnswerRun
 from .answering import AnswerAsk
@@ -38,6 +40,7 @@ __all__ = [
     "EVAL_TAG",
     "QUESTIONS_FILE",
     "EvalTools",
+    "floor_report",
     "load_questions",
     "run_answer_eval",
 ]
@@ -146,6 +149,17 @@ async def _scored(run: _Run, question: EvalQuestion, answered: AnswerRun) -> _Sc
             measures=measures, problem=f"{JUDGE_FAILED}: {redact_secrets(str(error))}"[:ERROR_MAX_CHARS]
         )
     return _Scored(measures=measures, scores=scores, problem=answered.problem)
+
+
+def floor_report(report: EvalReport, *, whole: bool, floors: EvalFloors | None = None) -> dict[str, Any]:
+    applied = whole and report.stopped is None
+    means = {JUDGE_MEAN: report.judge_mean, RUBRIC_MEAN: report.rubric_mean}
+    checks = floor_checks(means, (floors or eval_floors()).answers.named())
+    return {
+        "floorsApplied": applied,
+        "floors": [check.as_dict() for check in checks],
+        "belowFloor": applied and bool(broken(checks)),
+    }
 
 
 def _ask(question: EvalQuestion) -> AnswerAsk:

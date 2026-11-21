@@ -10,9 +10,12 @@ from app.core.errors import InvalidInput
 from app.models.enums import DISCIPLINES
 from app.research.retrieval import ClaimHit, KnowledgeHits, KnowledgeQuery
 from app.research.vocabulary import CONCEPT_TYPE_DISCIPLINES
+from app.retrieval.deadline import Deadline
 from app.retrieval.evaluation import (
+    EvalPace,
     GoldenQuestion,
     evaluate_golden,
+    measures,
     recall_at,
     reciprocal_rank,
 )
@@ -83,10 +86,15 @@ async def test_the_report_averages_recall_and_reciprocal_rank_over_the_questions
     assert report.recall_at_depth == pytest.approx((0.5 + 1.0) / 2)
     assert report.mean_reciprocal_rank == pytest.approx((1 / 2 + 1) / 2)
     assert report.as_dict()["misses"] == {"first": ["y or w"]}
-    assert report.as_dict()["recallByField"] == {"HISTORY": 0.5}
+    assert report.as_dict()["byField"] == {
+        "HISTORY": {"questions": 1, "recallAt5": 0.5, "meanReciprocalRank": 0.5, "recallAt20": 1.0}
+    }
+    assert report.as_dict()["byCraft"] == {
+        "Kutch-Ajrakh": {"questions": 1, "recallAt5": 0.5, "meanReciprocalRank": 0.5, "recallAt20": 1.0}
+    }
     assert [(q.mode, q.limit, q.fields) for q in retriever.queries] == [
-        ("HYBRID", 10, ()),
-        ("HYBRID", 10, ("CHEMISTRY",)),
+        ("HYBRID", 20, ()),
+        ("HYBRID", 20, ("CHEMISTRY",)),
     ]
 
 
@@ -162,3 +170,77 @@ def test_every_golden_claim_is_a_seed_of_the_named_craft_or_a_claim_id() -> None
                 assert claim["subjectType"] == "CONCEPT" and claim["evidenceLevel"] == "PROVISIONAL", name
                 assert claim["craftSlug"] == question.craft_slug, name
                 assert not question.fields or field is None or field in question.fields, name
+
+
+async def test_recall_at_twenty_counts_a_fact_found_below_the_first_five() -> None:
+    golden = (GoldenQuestion(key="deep", craft_slug="A", question="q", expected=("x", "y")),)
+    ids = {name: key(name) for name in ("x", "y")}
+    noise = [key(f"noise-{n}") for n in range(20)]
+    ranked = [*noise[:12], ids["x"], *noise[12:]]
+    report = await evaluate_golden(RankedRetriever({"q": ranked}), golden, claim_id=ids.__getitem__)
+    overall = report.as_dict()
+    assert (overall["recallAt5"], overall["recallAt20"]) == (0.0, 0.5)
+    assert overall["meanReciprocalRank"] == round(1 / 13, 4)
+
+
+def test_measures_of_no_questions_are_empty() -> None:
+    assert measures([]).as_dict() == {
+        "questions": 0,
+        "recallAt5": None,
+        "meanReciprocalRank": None,
+        "recallAt20": None,
+    }
+
+
+class TickingRetriever(RankedRetriever):
+    def __init__(self, ranked: Mapping[str, Sequence[uuid.UUID]], now: list[float]) -> None:
+        super().__init__(ranked)
+        self.now = now
+
+    async def search(self, query: KnowledgeQuery) -> KnowledgeHits:
+        self.now[0] += 1.0
+        return await super().search(query)
+
+
+async def test_a_spent_time_budget_asks_no_more_questions_and_says_so() -> None:
+    golden = tuple(
+        GoldenQuestion(key=f"k{n}", craft_slug=None, question=f"q{n}", expected=("x",)) for n in range(3)
+    )
+    ids = {"x": key("x")}
+    now = [0.0]
+    retriever = TickingRetriever({f"q{n}": [ids["x"]] for n in range(3)}, now)
+    pace = EvalPace(deadline=Deadline(at=1.0, clock=lambda: now[0]))
+    report = await evaluate_golden(retriever, golden, claim_id=ids.__getitem__, pace=pace)
+    assert [result.key for result in report.results] == ["k0"]
+    assert (report.skipped, report.complete) == (2, False)
+    assert report.as_dict()["skipped"] == 2
+
+
+async def test_questions_asked_side_by_side_keep_their_order() -> None:
+    golden = tuple(
+        GoldenQuestion(key=f"k{n}", craft_slug=None, question=f"q{n}", expected=("x",)) for n in range(6)
+    )
+    ids = {"x": key("x")}
+    retriever = RankedRetriever({f"q{n}": [ids["x"]] for n in range(6)})
+    report = await evaluate_golden(retriever, golden, claim_id=ids.__getitem__, pace=EvalPace(concurrency=4))
+    assert [result.key for result in report.results] == [f"k{n}" for n in range(6)]
+    assert report.complete and report.recall_at_depth == 1.0
+
+
+async def test_a_claim_judged_to_answer_widens_the_fact_it_was_asked_for() -> None:
+    golden = (GoldenQuestion(key="judged", craft_slug=None, question="q", expected=("x",)),)
+    ids = {"x": key("x")}
+    other = key("other")
+    report = await evaluate_golden(
+        RankedRetriever({"q": [other, ids["x"]]}), golden, claim_id=ids.__getitem__
+    )
+    (result,) = report.results
+    assert (result.first, result.recall, result.reciprocal_rank) == (other, 1.0, 0.5)
+    widened = result.answered_by(other, "other")
+    assert (widened.recall, widened.reciprocal_rank) == (1.0, 1.0)
+    assert widened.expected_claims == {ids["x"], other}
+
+
+def test_an_evaluation_asks_at_least_one_question_at_a_time() -> None:
+    with pytest.raises(InvalidInput):
+        EvalPace(concurrency=0)

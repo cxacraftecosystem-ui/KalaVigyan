@@ -24,7 +24,13 @@ from app.services.ai_providers import AiTask
 from app.services.answer_runs import AnswerRun, answer_to_the_end
 from app.services.answer_store import build_answer_pipeline
 from app.services.answering import AnswerAsk, AnswerPipeline
-from app.services.coverage_eval import EVAL_SPEND_CAP_USD, EvalTools, load_questions, run_answer_eval
+from app.services.coverage_eval import (
+    EVAL_SPEND_CAP_USD,
+    EvalTools,
+    floor_report,
+    load_questions,
+    run_answer_eval,
+)
 from app.services.craft_resolver import CraftIndexStore
 from app.services.explainer_payload import stored_explainer
 from app.services.live_sources import LiveSourcesStore
@@ -71,7 +77,8 @@ async def spent_since(request_id_prefix: str, since: datetime) -> Decimal:
 
 
 async def run(*, only: list[str], limit: int | None, cap: Decimal) -> dict[str, Any]:
-    questions = [q for q in load_questions().questions if not only or q.id in only][:limit]
+    every = load_questions().questions
+    questions = [q for q in every if not only or q.id in only][:limit]
     tools = EvalTools(
         answer=answer,
         explainer=explainer,
@@ -82,7 +89,8 @@ async def run(*, only: list[str], limit: int | None, cap: Decimal) -> dict[str, 
         report = await run_answer_eval(questions, tools, started_at=datetime.now(UTC), cap_usd=cap)
     finally:
         await dispose_engine()
-    return report.model_dump(mode="json", by_alias=True)
+    whole = len(questions) == len(every)
+    return {**report.model_dump(mode="json", by_alias=True), **floor_report(report, whole=whole)}
 
 
 def main(argv: list[str] | None = None) -> int:

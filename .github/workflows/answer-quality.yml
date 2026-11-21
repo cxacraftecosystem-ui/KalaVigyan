@@ -26,8 +26,13 @@ concurrency:
 
 jobs:
   evaluate:
+    name: Ask the evaluation questions and score each answer
+    if: github.repository == 'cxacraftecosystem-ui/KalaVigyan'
     runs-on: ubuntu-26.04
     timeout-minutes: 260
+    outputs:
+      outcome: ${{ steps.floors.outputs.outcome }}
+      measures: ${{ steps.floors.outputs.measures }}
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
       INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
@@ -104,6 +109,24 @@ jobs:
           fi
           [ "$status" = Success ] || { echo "::error::the answer evaluation ended $status; the report, when written, is kept as the answer-quality artifact (docs/contracts/answer-eval.md)"; exit 1; }
 
+      - name: Compare with the floors
+        id: floors
+        if: always()
+        run: |
+          set -euo pipefail
+          report="$RUNNER_TEMP/answer-quality/report.json"
+          if [ ! -s "$report" ] || ! jq -e '.floorsApplied == true' "$report" > /dev/null; then
+            outcome=unknown
+            measures="the run did not ask every question to the end, so the floors were not compared"
+          else
+            measures="$(jq -r '[.floors[] | "\(.measure) \(.value // "none") (floor \(.floor))"] | join(", ")' "$report")"
+            if jq -e '.belowFloor == true' "$report" > /dev/null; then outcome=failing; else outcome=passing; fi
+          fi
+          echo "Floors: $measures" >> "$GITHUB_STEP_SUMMARY"
+          echo "outcome=$outcome" >> "$GITHUB_OUTPUT"
+          echo "measures=$measures" >> "$GITHUB_OUTPUT"
+          echo "answer floors: $outcome ($measures)"
+
       - name: Keep the report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -112,3 +135,57 @@ jobs:
           path: ${{ runner.temp }}/answer-quality/
           if-no-files-found: warn
           retention-days: 90
+
+      - name: Stop when a floor is broken
+        if: steps.floors.outputs.outcome == 'failing'
+        env:
+          MEASURES: ${{ steps.floors.outputs.measures }}
+        run: |
+          echo "::error::answers fell below their floor: $MEASURES (backend/app/data/eval/floors.json)"
+          exit 1
+
+  alert:
+    name: Open or close the answer floor issue
+    needs: evaluate
+    if: >-
+      !cancelled() && github.repository == 'cxacraftecosystem-ui/KalaVigyan' &&
+      (needs.evaluate.result == 'success' || needs.evaluate.result == 'failure')
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the release issue action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/actions
+
+      - name: Say what the evaluation found
+        id: found
+        env:
+          OUTCOME: ${{ needs.evaluate.outputs.outcome }}
+          MEASURES: ${{ needs.evaluate.outputs.measures }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          body="$RUNNER_TEMP/answer-floor.md"
+          case "${OUTCOME:-unknown}" in
+            failing) headline="Answers fell below their floor: ${MEASURES}." ;;
+            passing) headline="Answers are at or above their floors again: ${MEASURES}." ;;
+            *) headline="The answer evaluation did not ask every question to the end, so the floors were not compared." ;;
+          esac
+          printf '%s\n\nThe floors are in backend/app/data/eval/floors.json (decision 0126). Run: %s\n' "$headline" "$RUN_URL" > "$body"
+          {
+            echo "outcome=${OUTCOME:-unknown}"
+            echo "body=$body"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Track the answer floor issue
+        uses: ./.github/actions/release-issue
+        with:
+          title: Answers fell below their floor
+          outcome: ${{ steps.found.outputs.outcome }}
+          body-file: ${{ steps.found.outputs.body }}

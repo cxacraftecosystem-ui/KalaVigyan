@@ -258,31 +258,191 @@ with no quote; the repository holds no text of that edition, so it has no passag
 
 ## Evaluation
 
-- The golden list (`app/data/eval/retrieval_questions.json`, version 1, read by
-  `retrieval/golden.golden_questions()`): 78 questions over 22 crafts and the shared
-  block-printing science, covering all sixteen fields. One (`farrukhabad-family-mordants`) asks an
-  uncurated craft a question only its family science answers, so it is scored where the category
-  dossiers are imported (the live database), not in the seeded test database. Each question names the field it asks
-  about (`field`) and, sometimes, the field filter it is asked with (`fields`). Each entry of
-  `expected` is one fact the answer needs: a claim, or a list of every stored claim that states
-  that fact (the knowledge base often holds a seed claim and the curated claims that restate it),
-  any one of which counts. Claims are named by seed key (`seed-...`) or claim id, read from each
-  craft's public export on 2026-11-21. `test_evaluation` checks the counts, that every name is a
-  seed key or a claim id, and that every seed key is a seeded concept claim of the named craft in
-  an allowed field.
-- `retrieval/evaluation.evaluate_golden(retriever, golden, *, claim_id, present=None)` asks each
-  question in `HYBRID` mode for 10 claims and reports recall at 5 (the share of a question's
-  facts with any of their claims in its first five, averaged), mean reciprocal rank (of the first
-  claim of any fact) and recall by field, with the facts each question missed (`a or b`).
-  Expected claims not visible in the database are reported as absent and not scored; a fact
-  whose claims are all absent is dropped.
-- `tests/db/test_retrieval_eval.py` seeds the claims and passages, embeds them with a hashed
-  bag-of-words embedder (deterministic, no network), scores the questions with a seeded claim
-  (at least the 22 seed-keyed ones) and asserts recall at 5 of at least 0.9 and a mean
-  reciprocal rank of at least 0.7; a change that lowers either below its floor fails.
-- `python -m app.scripts.eval_retrieval` runs the list against the live database with the
-  embedding route and prints
-  `{ok, questions, recallAt5, meanReciprocalRank, absent, misses, recallByField}`.
+Retrieval is measured on production by question sets that grow with the data, so a drop is
+caught when it happens, at 500 crafts as at 20 (decision 0126). Every number below is printed by
+`python -m app.scripts.eval_retrieval` and compared with the floors in
+`app/data/eval/floors.json`.
+
+| Part | Code |
+|---|---|
+| The question sets and their loaders | `app/retrieval/golden.py`, `app/data/eval/retrieval_questions.json`, `app/data/eval/generated/` |
+| The scorer and its report | `app/retrieval/evaluation.py`, `app/retrieval/eval_runs.py` |
+| Writing generated questions | `app/retrieval/question_facts.py`, `question_writing.py`, `question_generation.py`; `app.scripts.generate_eval_questions` |
+| The judge of misses | `app/retrieval/miss_judging.py` |
+| The floors | `app/retrieval/eval_floors.py`, `app/data/eval/floors.json` |
+| The release check | `app/retrieval/release_check.py`, `infra/deploy/blue_green.sh` (`check_retrieval`) |
+| Craft matching | `app/retrieval/craft_cases.py`, `app/data/eval/craft_matching_cases.json`; `app.scripts.build_craft_cases` |
+
+### The hand-written set
+
+`app/data/eval/retrieval_questions.json` (version 1, read by `retrieval/golden.golden_questions()`):
+78 questions over 22 crafts and the shared block-printing science, covering all sixteen fields.
+One (`farrukhabad-family-mordants`) asks an uncurated craft a question only its family science
+answers, so it is scored where the category dossiers are imported (the live database), not in the
+seeded test database. Each question names the field it asks about (`field`) and, sometimes, the
+field filter it is asked with (`fields`). Each entry of `expected` is one fact the answer needs: a
+claim, or a list of every stored claim that states that fact (the knowledge base often holds a seed
+claim and the curated claims that restate it), any one of which counts. Claims are named by seed
+key (`seed-...`) or claim id, read from each craft's public export on 2026-11-21. `test_evaluation`
+checks the counts, that every name is a seed key or a claim id, and that every seed key is a seeded
+concept claim of the named craft in an allowed field. The set is kept as it is, beside the
+generated one.
+
+### The generated set
+
+`app/data/eval/generated/retrieval_questions.json`, validated by `golden.parse_generated` against
+the model whose JSON Schema is kept beside it (`retrieval_questions.schema.json`, written by
+`generate_eval_questions --schema`; a test fails when the two differ). Its questions have the shape
+the hand-written loader reads: `GeneratedSet {version 1, revision, generatedAt, model, seed,
+factsPerCraft, questions[]}`, each a `GeneratedQuestion` (a golden question whose `craftSlug` is
+required) `{key "<fact id>-<language>", craftSlug, field, question, expected [[fact id,
+restatement ids...]], fact, language, rejected[]}`: exactly one expected fact, named by claim ids,
+holding the fact it was written from; `rejected` names the claims the judge said do not answer it,
+never expected. A missing file is no generated set.
+
+`python -m app.scripts.generate_eval_questions [--cap USD] [--out PATH] [--previous PATH]` writes
+it from the live database:
+
+- **Facts.** For each active craft that is not a catch-all (`question_facts.eval_crafts`), its
+  published facts are the claims a `HYBRID` search of the craft's own concepts reads
+  (`statements.claim_conditions` on the craft alone: a shown status, `OPEN`, cited, not held), each
+  with its field (the claim's, else its concept type's).
+- **Sample.** `FACTS_PER_CRAFT` (20) facts per craft, first by the SHA-256 of
+  `"<seed>:<fact id>"` (`GENERATION_SEED` 20261122), so the set stays near 10,000 questions at 500
+  crafts and a new fact enters only where it ranks. A fact already sampled for an earlier craft (by
+  slug) is not written again.
+- **Restatements.** A sampled fact's restatements are the craft's facts the duplicate gate would
+  call the same without a judge: the same text by `statement_key`, or a vector of the current model
+  at cosine similarity `VECTOR_TWIN_SIMILARITY` (0.97) or more that `gate_thrift.vector_twin`
+  accepts (the same figures and negations, the stems overlapping). Any one of them counts as found.
+- **Writing.** One call per batch of at most `WRITING_BATCH` (25) facts of one craft, at most
+  `WRITING_CONCURRENCY` (4) at once, to the cheapest structured route: the `EVAL_JUDGE` task tuned to
+  each provider's least priced model (`candidate_judge_routes.cheapest_judge_models`), under the
+  request id `eval-questions-<run>-b<NNNNN>`. The prompt (`WRITER_SYSTEM_PROMPT`) asks for one
+  question a reader would ask that the fact answers, reads the craft's names and the facts as
+  untrusted data, and takes `{questions[{ref, question, unavoidable[], translated}]}`.
+- **Worded apart, checked in code.** A fact's distinctive words are its content stems
+  (`quotes.content_stems`: words of four letters or more, stop words left out, their first four
+  letters) less the stems of the craft's names and those common to the craft (in at least three of
+  its facts and a fifth of them). A question may reuse at most `UNAVOIDABLE_MAX` (2) distinctive
+  stems, and only those of the terms it lists as unavoidable; one that reuses more is dropped and
+  counted.
+- **A second language.** For about one fact in five (`SECOND_LANGUAGE_EVERY`, by the SHA-256 of
+  `"<seed>:language:<fact id>"`) the same question is also asked in the craft's own language: the
+  first language of its states of origin (`app/data/state_languages.json`) the site answers in,
+  else Hindi. The model leaves it empty where it cannot write it; one with no letter outside ASCII,
+  or one that copies the fact, is dropped.
+- **Reuse.** The questions of the previous set (`--previous`, the kept file by default) for a fact
+  still sampled for the same craft are kept with their judged claims and the restatements found now,
+  so a regeneration pays only for new facts. The new set's `revision` is the previous one's plus one.
+- **Spend.** The router meters every call; before each batch the run's spend (`router.tagged_spend`
+  on its request id prefix) must leave `WRITING_RESERVE_USD` (0.05) of `--cap` (default
+  `GENERATION_CAP_USD`, 3 US dollars). A refused spend stops the writing, and the facts left are
+  counted as unwritten. The script prints `{ok, crafts, facts, questions, reused, batches,
+  dropped{reason: count}, stopped, model, revision, spentUsd, capUsd, out}`.
+
+The lead runs it on production with `.github/workflows/eval-questions.yml` (dispatched by hand,
+input `cap`), which keeps the set as the `eval-questions-<run id>` artifact for 90 days, to be
+committed as the generated file.
+
+### Scoring
+
+`retrieval/evaluation.evaluate_golden(retriever, questions, *, claim_id, present=None, pace=None)`
+asks each question in `HYBRID` mode for `EVAL_DEPTH` (20) claims, at most `pace.concurrency` at
+once and none once `pace.deadline` has passed (those are `skipped`), and keeps each ranking. Per
+question it measures recall at 5 (the share of its facts with any of their claims in the first
+five), the reciprocal rank of the first claim of any fact, and recall at 20. A `RetrievalReport`
+averages them overall, by field and by craft (`Measures {questions, recallAt5,
+meanReciprocalRank, recallAt20}`), with the facts each question missed in its first five
+(`a or b`). Expected claims not visible are reported as `absent` and not scored; a fact whose
+claims are all absent is dropped.
+
+`eval_runs.scored` reads which expected claims are visible, embeds every question once, in batches
+of `EMBED_BATCH` (50), before the searches (`prefetched_embedder`; a search that embeds another text
+embeds it then), and searches through `SessionScopedSearch`, `EVAL_CONCURRENCY` (4) questions at a
+time.
+
+**Misses judged once.** In the weekly run, a generated question whose first hit is a claim neither
+expected nor rejected is shown with both facts to the same cheapest route as the writer
+(`miss_judging`, `MISS_JUDGE_SYSTEM_PROMPT`, 20 asks a call, request id `eval-misses-<run>-j<NNNNN>`),
+within `--cap` (at most `MISS_JUDGE_CAP_USD`, 1 US dollar; reserve 0.05). A claim the judge says
+answers the question as fully counts as found in that run's scores and joins the question's expected
+claims in the next revision of the generated file; one it refuses joins `rejected`. Neither is asked
+again. An ask left unjudged (by the cap or a failed call) stays a miss.
+
+`python -m app.scripts.eval_retrieval [--cap USD] [--out PATH]` scores both sets on the live
+database with the embedding route and prints `{ok, sets {handWritten, generated}, judged[{question,
+claim, answers}], judgeStopped, generatedRevision, floors[{measure, floor, value, held}], belowFloor,
+judgeSpentUsd, judgeCapUsd, out}`, each set `{questions, recallAt5, meanReciprocalRank, recallAt20,
+skipped, absent[], misses{}, byField{}, byCraft{}}`. With `--out` it writes the judged revision there.
+
+### Floors
+
+`app/data/eval/floors.json` (version 1, read by `eval_floors.eval_floors()`) holds, per question
+set, a floor for recall at 5 and for mean reciprocal rank, and floors for the answer judge's and
+rubric means ([answer-eval.md](answer-eval.md)). A floor holds when the value, rounded to four
+places, is at or above it; a missing value breaks it; a `null` floor is reported and never alerts.
+They were set on 2026-11-22 at the live numbers of 2026-11-21 less 0.05: hand-written recall at 5
+0.82 and mean reciprocal rank 0.64; the generated set has none until its first live run; answers
+0.85 and 0.85. The lead raises them as the numbers improve.
+
+`.github/workflows/retrieval-eval.yml` (weekly on Monday at 04:11 UTC and by hand, input `cap`) runs
+the script on the box over SSM, keeps `report.json`, `stdout.txt` and the judged revision
+`retrieval_questions.json` as the `retrieval-eval-<run id>` artifact for 90 days, writes the sets,
+the fields and the hand-written misses into the run summary, fails when a floor is broken, and keeps
+one issue, `Retrieval fell below its floor`, through `.github/actions/release-issue`: opened or
+commented on while a floor is broken, closed when a run passes, left as it is when no report was
+written.
+
+`tests/db/test_retrieval_eval.py` keeps its own floors on the seeded test database: it seeds the
+claims and passages, embeds them with a hashed bag-of-words embedder (deterministic, no network),
+scores the hand-written questions with a seeded claim (at least the 22 seed-keyed ones) and asserts
+recall at 5 of at least 0.9 and a mean reciprocal rank of at least 0.7; a change that lowers either
+below its floor fails.
+
+### The release check
+
+`infra/deploy/blue_green.sh` runs `check_retrieval` after the seeds, the curated import, the craft
+sync, the embedding steps and the page rebuild, and before traffic moves:
+`python -m app.scripts.eval_retrieval --release --seconds $CHECK_SECONDS` (180) from the new
+colour's tree inside `timeout` of that plus `EMBED_GRACE` (60), against the same database, with the
+embedding route only (no answer is composed and no judge is asked). It scores the hand-written
+questions and a fixed, stratified sample of the generated English ones
+(`release_check.release_sample`: two per craft, the first by the SHA-256 of `"<seed>:<key>"`, crafts
+in the order of `"<seed>:craft:<slug>"`, so that with the hand-written set there are at most
+`RELEASE_SAMPLE_MAX` (400) questions), and compares each set with its floors. It prints `{ok,
+verdict, complete, warnings[], error, sets{name: {questions, recallAt5, meanReciprocalRank,
+recallAt20, skipped}}, floors[]}` and exits:
+
+| Exit | Verdict | The release |
+|---|---|---|
+| 0 | `PASSED`: every question asked, every floor held | goes on |
+| 2 | `WARNED`: no generated set, the embedding route or another call failed, or the time ran out before every question was asked (no floor is compared then) | goes on, with a warning |
+| 3 | `BELOW_FLOOR`: every question asked and a floor broken | stops like a failed seed; nginx still proxies to the old colour |
+
+Any other exit (a crash, a time-out) is a warning and the release goes on.
+
+### Craft matching
+
+`app/data/eval/craft_matching_cases.json` (version 1) holds 1,764 cases built by
+`python -m app.scripts.build_craft_cases` from the craft master list and `craft_aliases.json`
+(`craft_cases.craft_cases`, every craft that is not a catch-all): `EXACT` (the name, one recorded
+Latin alias that is not a machine transliteration, one name in another script), `FOLDED` (the name
+in upper or lower case or without its punctuation, and a Latin alias without its accents),
+`MISSPELLED` (one deterministic edit of the name's longest word that fewer than four craft names
+share: a letter dropped, two swapped or one doubled, never the first), `PARTIAL` (the name without
+the words four or more craft names share, when two or more words are left) and `COMPARISON` (two
+crafts of one sub-category, `"<a> or <b>"`). A text that, folded, more than one craft holds expects
+`AMBIGUOUS` with every holder; every other expects its craft. A `RESOLVED` case passes when its craft
+is the first candidate, an `AMBIGUOUS` one when the resolver says `AMBIGUOUS` and offers every
+expected craft. A test fails when the kept file is not what the script builds from the craft lists.
+
+`tests/db/test_craft_matching_db.py` asks the lexical resolver (`lexical_match` and
+`resolution_from` over `load_index` of the seeded crafts) the `EXACT`, `FOLDED` and `COMPARISON`
+cases and asserts that at least 95% of each kind pass. `python -m app.scripts.eval_retrieval
+--crafts` asks every case of the live database through `DatabaseCraftResolver` with the embedding
+route, so the misspelt and partial names that need the semantic step are scored there, and prints
+`{ok, cases, byKind{kind: {cases, passed, resolved, failed[]}}}`.
 
 ## Not built
 
@@ -291,12 +451,19 @@ with no quote; the repository holds no text of that edition, so it has no passag
   distance compare vectors without reading the stamp.
 - The HNSW indexes on the vector columns are unused by the exact craft-scoped scan.
 - Wood Handbook passages wait for the cited edition's text.
+- Generated questions in another language are searched as asked, with no English rendering, and
+  the report does not split the generated set by language.
 
 ## How this document is kept true
 
 | Claim | Kept true by |
 |---|---|
 | Recall at 5 of at least 0.9 and a mean reciprocal rank of at least 0.7 | `backend/tests/db/test_retrieval_eval.py`; a change that lowers either fails |
+| The scorer, its depths and its report | `backend/tests/retrieval/test_evaluation.py` |
+| The generated set, its schema and its writing | `backend/tests/retrieval/test_generated_set.py`, `test_question_writing.py`, `test_question_generation.py` and `backend/tests/db/test_measurement_db.py` |
+| Misses judged once, the floors and the workflows' issues | `backend/tests/retrieval/test_miss_judging.py`, `test_eval_floors.py`, `test_eval_workflows.py` and `backend/tests/db/test_measurement_db.py` |
+| The release check and its place in a release | `backend/tests/retrieval/test_release_check.py` and `backend/tests/db/test_measurement_db.py` |
+| The craft-matching cases and the lexical resolver's floor | `backend/tests/retrieval/test_craft_cases.py` and `backend/tests/db/test_craft_matching_db.py` |
 | Fusion, rarity weighting and the search words | `backend/tests/retrieval/test_fusion_and_text.py` and `test_search_words.py` |
 | Stamps and embedding runs | `backend/tests/retrieval/test_stamps.py`, `test_embedding_budget.py` and `backend/tests/db/test_retrieval_stamps_db.py` |
 | Seats' field filters | `backend/tests/retrieval/test_seat_fields.py` |
@@ -305,4 +472,4 @@ with no quote; the repository holds no text of that edition, so it has no passag
 | Who may read a citation, held facts and failed quotes | `backend/tests/retrieval/test_statements.py`, `backend/tests/learning/test_share_links.py` and `backend/tests/db/test_quote_visibility_db.py` |
 | The passage that holds a quote, re-reading and the vector guard | `backend/tests/retrieval/test_quote_passages.py`, `test_chunking.py` and `backend/tests/db/test_quote_relinks_db.py` |
 
-Re-read it when the embedding model, a ranking or the evaluation's floors change.
+Re-read it when the embedding model, a ranking, a question set or the evaluation's floors change.

@@ -110,6 +110,15 @@ problem and the run goes on. The exit status is 0 when at least one question was
 `report.json` (the report) and `stdout.txt` as the `answer-quality-<run id>` artifact for 90 days,
 and writes the asked, answered, means and spend into the run summary.
 
+**The floors.** The printed line also carries `{floorsApplied, floors[{measure, floor, value, held}],
+belowFloor}` (`services/coverage_eval.floor_report`): the judge's and rubric means compared with the
+answer floors of `backend/app/data/eval/floors.json` (both 0.85 from 2026-11-22; decision 0126 and
+[retrieval.md](retrieval.md), Floors). They are compared only for a run that asked every question
+and was not stopped by the cap; a mean that is missing breaks its floor. The workflow then fails
+when a floor is broken and keeps one issue, `Answers fell below their floor`, through
+`.github/actions/release-issue`: opened or commented on while a floor is broken, closed when a whole
+run passes, left as it is after a partial run.
+
 ## How this document is kept true
 
 | Claim | Kept true by |
@@ -117,6 +126,7 @@ and writes the asked, answered, means and spend into the run summary.
 | A relevant field with stored claims always has a speaking seat | `backend/tests/planner/test_field_seats.py` |
 | The rubric, the judge's share and the report | `backend/tests/research/test_coverage_eval.py` |
 | The run, its spend cap and the consulted fields | `backend/tests/answering/test_answer_eval.py` |
+| The answer floors and when they are compared | `backend/tests/answering/test_answer_floors.py` and `backend/tests/retrieval/test_eval_workflows.py` |
 | The questions | `backend/app/data/eval/answer_questions.json`, read by the script as it runs |
 
-Re-read it when a seat's fields, a depth's seat limit, a rubric part or the spend cap changes.
+Re-read it when a seat's fields, a depth's seat limit, a rubric part, the spend cap or a floor changes.

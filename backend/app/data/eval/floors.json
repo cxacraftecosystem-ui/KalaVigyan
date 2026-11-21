@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "about": "The floors the evaluation runs alert on (decision 0126). Retrieval floors are per question set: handWritten is retrieval_questions.json, generated is generated/retrieval_questions.json; a null floor is measured and reported but never alerts. Answer floors compare answer-quality's judge and rubric means. Set on 2026-11-22 at the live numbers of 2026-11-21 minus 0.05; the lead raises them as the numbers improve.",
+  "retrieval": {
+    "handWritten": {
+      "recallAt5": 0.82,
+      "meanReciprocalRank": 0.64
+    },
+    "generated": {
+      "recallAt5": null,
+      "meanReciprocalRank": null
+    }
+  },
+  "answers": {
+    "judgeMean": 0.85,
+    "rubricMean": 0.85
+  }
+}

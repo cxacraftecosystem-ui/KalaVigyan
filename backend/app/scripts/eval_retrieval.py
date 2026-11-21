@@ -1,18 +1,35 @@
+import argparse
 import asyncio
 import json
 import uuid
 from collections.abc import Sequence
+from datetime import UTC, datetime
+from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 from app.core.db import dispose_engine, session_scope, sessionmaker
 from app.core.errors import AppError
+from app.providers import router
 from app.providers.embedding import router_embedder
-from app.retrieval.evaluation import GoldenQuestion, evaluate_golden, visible_claims
-from app.retrieval.golden import golden_questions
-from app.retrieval.hybrid import SessionScopedSearch
+from app.providers.router import Principal, RouteTuning
+from app.providers.structured import router_structured_model
+from app.research.crafts import CraftQuery
+from app.research.structured import StructuredModel
+from app.retrieval.craft_cases import CaseOutcome, CraftCase, case_report, craft_cases_file, outcome_of
+from app.retrieval.deadline import Deadline
+from app.retrieval.eval_floors import eval_floors
+from app.retrieval.eval_runs import EVAL_CONCURRENCY, EvalTools, QuestionSets, release_run, weekly_run
+from app.retrieval.evaluation import GoldenQuestion
+from app.retrieval.golden import generated_set, golden_questions
+from app.retrieval.miss_judging import MISS_JUDGE_CAP_USD, MISS_JUDGE_TAG, JudgeTools
+from app.retrieval.release_check import RELEASE_SECONDS
+from app.services.candidate_judge_routes import JUDGE_TASK, cheapest_judge_models
 from app.services.claim_seed import seed_id
+from app.services.craft_resolver import CraftIndexStore, DatabaseCraftResolver
 
 SEED_PREFIX = "seed-"
+EXIT_FAILED = 1
 
 
 def golden_claim_id(key: str) -> uuid.UUID:
@@ -23,25 +40,88 @@ def golden_claim_ids(golden: Sequence[GoldenQuestion]) -> dict[str, uuid.UUID]:
     return {key: golden_claim_id(key) for question in golden for fact in question.facts for key in fact}
 
 
-async def run() -> dict[str, Any]:
+def eval_tools() -> EvalTools:
+    return EvalTools(sessions=sessionmaker(), embed=router_embedder(), claim_id=golden_claim_id)
+
+
+def cheapest_judge() -> StructuredModel:
+    tuning = RouteTuning(models=dict(cheapest_judge_models()))
+    return router_structured_model(JUDGE_TASK, Principal(), tuning=tuning)
+
+
+async def spent_since(tag: str, since: datetime) -> Decimal:
+    async with session_scope() as session:
+        return await router.tagged_spend(session, request_id_prefix=tag, since=since)
+
+
+async def weekly(cap: Decimal, out: Path | None) -> dict[str, Any]:
+    started, tag = datetime.now(UTC), f"{MISS_JUDGE_TAG}{uuid.uuid4().hex[:12]}"
+
+    async def spent() -> Decimal:
+        return await spent_since(tag, started)
+
+    judge = JudgeTools(judge=cheapest_judge(), spent=spent, tag=tag, cap_usd=cap)
+    run = await weekly_run(
+        eval_tools(), QuestionSets(golden_questions(), generated_set()), judge=judge, floors=eval_floors()
+    )
+    written = None
+    if out is not None and run.revised is not None:
+        out.write_text(run.revised.model_dump_json(by_alias=True, indent=1) + "\n", encoding="utf-8")
+        written = str(out)
+    spend = (await spent()).quantize(Decimal("0.0001"))
+    return {**run.as_dict(), "judgeSpentUsd": str(spend), "judgeCapUsd": str(cap), "out": written}
+
+
+async def release(seconds: float) -> tuple[dict[str, Any], int]:
+    check = await release_run(
+        eval_tools(),
+        QuestionSets(golden_questions(), generated_set()),
+        floors=eval_floors(),
+        deadline=Deadline.after(seconds),
+    )
+    return check.as_dict(), check.exit_code
+
+
+async def crafts() -> dict[str, Any]:
+    store, embed, gate = CraftIndexStore(), router_embedder(), asyncio.Semaphore(EVAL_CONCURRENCY)
+
+    async def resolved(case: CraftCase) -> CaseOutcome:
+        async with gate, session_scope() as session:
+            found = await DatabaseCraftResolver(session, store=store, embed=embed).resolve(
+                CraftQuery(text=case.text)
+            )
+        return outcome_of(case, found)
+
+    outcomes = await asyncio.gather(*(resolved(case) for case in craft_cases_file().cases))
+    return {"ok": True, "cases": len(outcomes), "byKind": case_report(outcomes)}
+
+
+async def run(arguments: argparse.Namespace) -> tuple[dict[str, Any], int]:
     try:
-        golden = golden_questions()
-        ids = golden_claim_ids(golden)
-        async with session_scope() as session:
-            present = await visible_claims(session, ids.values())
-        retriever = SessionScopedSearch(sessionmaker(), embed=router_embedder())
-        report = await evaluate_golden(retriever, golden, claim_id=ids.__getitem__, present=present)
+        if arguments.release:
+            return await release(arguments.seconds)
+        if arguments.crafts:
+            return await crafts(), 0
+        return await weekly(min(arguments.cap, MISS_JUDGE_CAP_USD), arguments.out), 0
     except AppError as error:
-        return {"ok": False, "error": str(error)}
+        return {"ok": False, "error": str(error)}, EXIT_FAILED
     finally:
         await dispose_engine()
-    return {"ok": True, **report.as_dict()}
 
 
-def main() -> int:
-    report = asyncio.run(run())
-    print(json.dumps(report))
-    return 0 if report["ok"] else 1
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="eval_retrieval")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--release", action="store_true", help="score the release sample against the floors")
+    mode.add_argument("--crafts", action="store_true", help="score the craft resolver on the matching cases")
+    parser.add_argument(
+        "--seconds", type=float, default=RELEASE_SECONDS, help="the release check's time budget"
+    )
+    parser.add_argument("--cap", type=Decimal, default=MISS_JUDGE_CAP_USD, help="the judge's US dollar cap")
+    parser.add_argument("--out", type=Path, default=None, help="write the next generated set's revision here")
+    report, code = asyncio.run(run(parser.parse_args(argv)))
+    print(json.dumps(report, ensure_ascii=False))
+    return code
 
 
 if __name__ == "__main__":
