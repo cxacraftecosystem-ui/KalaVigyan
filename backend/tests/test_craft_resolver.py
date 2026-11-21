@@ -5,6 +5,7 @@ import pytest
 
 from app.core.errors import ExternalFailure
 from app.models.crafts import EMBEDDING_DIMENSIONS
+from app.providers.router import RouterError
 from app.research.crafts import CraftQuery, CraftResolver
 from app.research.embedding import checked_vectors
 from app.services import craft_resolver
@@ -58,7 +59,7 @@ class RecordingEmbedder:
         return [VECTOR for _ in texts]
 
 
-def resolver(index: CraftIndex, session: Any, embed: RecordingEmbedder) -> DatabaseCraftResolver:
+def resolver(index: CraftIndex, session: Any, embed: Any) -> DatabaseCraftResolver:
     return DatabaseCraftResolver(session, store=StubStore(index), embed=embed)
 
 
@@ -91,6 +92,36 @@ async def test_semantic_neighbours_join_an_unsettled_ranking() -> None:
         ("Kutch-Ajrakh", 0.913636),
         ("Barmer-Ajrakh-Print", 0.863636),
     ]
+
+
+class FailingEmbedder:
+    def __init__(self, error: Exception) -> None:
+        self.error = error
+
+    async def __call__(self, texts: list[str]) -> list[list[float]]:
+        raise self.error
+
+
+async def test_a_failed_embedding_keeps_the_crafts_the_name_match_found() -> None:
+    timed_out = ExternalFailure("embedding route timed out", kind="unavailable", service="embeddings")
+    session = NearestSession([])
+    found = await resolver(sample_index(embedded=2), session, FailingEmbedder(timed_out)).resolve(
+        CraftQuery(text="ajrak")
+    )
+    assert found.status == "AMBIGUOUS"
+    assert [(c.craft.slug, c.score) for c in found.candidates] == [
+        ("Barmer-Ajrakh-Print", 0.863636),
+        ("Kutch-Ajrakh", 0.863636),
+    ]
+    assert session.queries == 0
+
+
+async def test_a_spend_refusal_while_embedding_still_stops_the_question() -> None:
+    refusal = RouterError("ceiling", "The monthly AI budget has been reached.", reason="MONTHLY_CEILING")
+    with pytest.raises(RouterError):
+        await resolver(sample_index(embedded=2), NearestSession([]), FailingEmbedder(refusal)).resolve(
+            CraftQuery(text="ajrak")
+        )
 
 
 async def test_a_named_slug_skips_text_matching() -> None:

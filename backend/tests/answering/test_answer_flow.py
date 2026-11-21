@@ -196,14 +196,38 @@ async def test_a_spent_budget_for_any_craft_says_so_in_its_own_words() -> None:
     assert found == [understood([], []), ("error", {"message": SPENT}), ("done", {"answerId": None})]
 
 
-async def test_an_ambiguous_question_proceeds_with_the_best_match_and_offers_the_others() -> None:
+async def test_an_ambiguous_question_about_no_single_craft_is_answered_for_any_craft_offering_both() -> None:
     research = FakeResearch()
     answer_pipeline = pipeline(resolution=ambiguous(), research=research, replies=[REPLY])
+    found = events(await streamed(detailed(question="Which crafts of Gujarat use alum?"), answer_pipeline))
+    assert found[0] == understood([], [AJRAKH, BAGRU])
+    (request,) = research.requests
+    assert request.craft is None
+    assert found[-1] == ("done", {"answerId": str(ANSWER_ID)})
+
+
+async def test_without_a_reply_an_ambiguous_question_proceeds_with_the_best_match() -> None:
+    research = FakeResearch()
+    answer_pipeline = pipeline(
+        resolution=ambiguous(), research=research, replies=[REPLY], understand_model=FakeModel(["not json"])
+    )
     found = events(await streamed(detailed(), answer_pipeline))
     assert found[0] == understood([AJRAKH], [BAGRU])
     (request,) = research.requests
     assert request.craft == AJRAKH
-    assert found[-1] == ("done", {"answerId": str(ANSWER_ID)})
+
+
+async def test_a_failed_reply_still_answers_every_field_the_question_names() -> None:
+    research = FakeResearch()
+    store = FakeStore()
+    answer_pipeline = pipeline(
+        research=research, replies=[REPLY, REPLY], store=store, understand_model=FakeModel(["not json"])
+    )
+    await streamed(detailed(question="Why does alum fix madder on cotton?"), answer_pipeline)
+    assert sorted(request.focus or "" for request in research.requests) == ["CHEMISTRY", "MATERIALS"]
+    (understanding,) = store.understood
+    assert (understanding.basis, understanding.disciplines) == ("RESOLVER", ["CHEMISTRY", "MATERIALS"])
+    assert understanding.seats == ["CHEMIST"]
 
 
 async def test_the_model_may_pick_another_ambiguous_candidate() -> None:

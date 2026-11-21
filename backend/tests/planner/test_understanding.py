@@ -81,10 +81,26 @@ async def test_an_unknown_craft_does_not_block_and_answers_for_any_craft() -> No
     }
 
 
-async def test_an_ambiguous_craft_proceeds_with_the_best_and_lists_the_others() -> None:
+async def test_an_ambiguous_question_the_model_finds_about_no_single_craft_offers_every_candidate() -> None:
     found, _ = await understood(AMBIGUOUS)
-    assert (found.craft, found.candidates) == (AJRAKH, [BAGRU])
+    assert (found.craft, found.candidates, found.basis) == (None, [AJRAKH, BAGRU], "MODEL")
+    assert found.understood().crafts == []
+
+
+async def test_without_a_reply_an_ambiguous_craft_proceeds_with_the_best_and_lists_the_others() -> None:
+    model = FakeModel(["not json"])
+    found = await ModelUnderstander(model=model, resolve=Resolver(AMBIGUOUS)).understand(ask())
+    assert (found.craft, found.candidates, found.basis) == (AJRAKH, [BAGRU], "RESOLVER")
     assert found.understood().crafts == [AJRAKH]
+
+
+async def test_a_craft_the_model_names_beside_the_candidates_is_looked_up_and_a_listed_one_is_not() -> None:
+    named = {BARMER.name: resolution("RESOLVED", (BARMER, 1.0))}
+    reply = {**READ, "craftNames": [AJRAKH.name, BARMER.name]}
+    resolver = Resolver(AMBIGUOUS, named)
+    found = await ModelUnderstander(model=FakeModel([json.dumps(reply)]), resolve=resolver).understand(ask())
+    assert (found.craft, found.candidates) == (BARMER, [AJRAKH, BAGRU])
+    assert [query.text for query in resolver.queries] == [QUESTION, BARMER.name]
 
 
 async def test_the_model_chooses_among_ambiguous_candidates() -> None:
@@ -199,20 +215,43 @@ async def test_past_the_degrade_mark_expert_becomes_detailed_except_for_master_a
     assert found.depth == depth
 
 
+BOTH = [AJRAKH, BAGRU]
+TWO_FIELDS = ["CHEMISTRY", "HISTORY"]
+
+
 @pytest.mark.parametrize(
-    "reply",
+    ("reply", "craft", "candidates", "fields", "seats"),
     [
-        {**READ, "craft": "Some-Other-Craft"},
-        {**READ, "disciplines": []},
-        {**READ, "disciplines": ["ASTROLOGY"]},
-        {**READ, "seats": ["ORACLE"]},
-        {"craft": ""},
+        ({**READ, "craft": "Some-Other-Craft"}, AJRAKH, [BAGRU], TWO_FIELDS, ["CHEMIST", "HISTORIAN"]),
+        ({**READ, "disciplines": []}, None, BOTH, ["CHEMISTRY"], ["CHEMIST"]),
+        (
+            {**READ, "disciplines": ["ASTROLOGY", "HISTORY"]},
+            None,
+            BOTH,
+            ["HISTORY"],
+            ["HISTORIAN", "CHEMIST"],
+        ),
+        ({**READ, "seats": ["ORACLE"]}, None, BOTH, TWO_FIELDS, ["CHEMIST", "HISTORIAN"]),
+        ({"craft": ""}, None, BOTH, ["CHEMISTRY"], ["CHEMIST"]),
     ],
 )
-async def test_an_unusable_reply_falls_back_to_the_resolver(reply: Mapping[str, Any]) -> None:
+async def test_a_reply_keeps_its_usable_fields_and_leaves_out_only_the_unusable_ones(
+    reply: Mapping[str, Any],
+    craft: CraftRef | None,
+    candidates: list[CraftRef],
+    fields: list[str],
+    seats: list[str],
+) -> None:
+    found, _ = await understood(AMBIGUOUS, reply)
+    assert (found.craft, found.candidates, found.basis) == (craft, candidates, "MODEL")
+    assert (found.disciplines, found.seats, found.refusal) == (fields, seats, None)
+
+
+@pytest.mark.parametrize("reply", [{}, {"craftNames": [""], "disciplines": ["ASTROLOGY"], "notes": "x"}])
+async def test_a_reply_that_holds_nothing_usable_falls_back_to_the_resolver(reply: Mapping[str, Any]) -> None:
     found, _ = await understood(AMBIGUOUS, reply)
     assert (found.craft, found.candidates, found.basis) == (AJRAKH, [BAGRU], "RESOLVER")
-    assert (found.disciplines, found.seats, found.refusal) == ([], [], None)
+    assert (found.disciplines, found.seats, found.refusal) == (["CHEMISTRY"], ["CHEMIST"], None)
 
 
 class Failing:
@@ -281,7 +320,7 @@ async def test_the_question_and_crafts_reach_the_model_only_as_untrusted_data() 
     (call,) = model.calls
     assert call["system"] == UNDERSTAND_SYSTEM_PROMPT
     lines = call["user"].split("\n")
-    assert lines[:3] == ["Answer depth: Expert", "Experts: 6 to 12", "Listed crafts: 2"]
+    assert lines[:4] == ["Answer depth: Expert", "Experts: 6 to 12", "Sections: 1 to 16", "Listed crafts: 2"]
     assert (
         f'<untrusted_source ref="question" label="learner question">\n{QUESTION}\n</untrusted_source>'
         in call["user"]
@@ -300,7 +339,8 @@ def keywords(schema: Any) -> set[str]:
 def test_the_schema_uses_only_widely_supported_keywords_and_the_registered_vocabulary() -> None:
     schema = understand_schema([AJRAKH])
     assert keywords(schema) <= SCHEMA_KEYWORDS
-    assert schema["required"] == ["craft", "craftNames", "compare", "disciplines", "seats"]
+    assert schema["required"] == ["craft", "craftNames", "compare", "disciplines", "seats", "englishQuestion"]
+    assert schema["properties"]["englishQuestion"] == {"type": "string"}
     assert schema["properties"]["compare"]["items"]["enum"] == [AJRAKH.slug, ""]
     assert schema["additionalProperties"] is False
     assert schema["properties"]["disciplines"]["items"]["enum"] == list(DISCIPLINES)

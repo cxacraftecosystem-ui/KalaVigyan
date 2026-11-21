@@ -1502,7 +1502,7 @@ How today's events map:
 
 | Today | In the explainer stream |
 |---|---|
-| `match` | `understood`: `RESOLVED` is `crafts=[craft]`; `AMBIGUOUS` no longer stops (the best candidate proceeds, the rest are `candidates`); `NONE` is `crafts=[]` (any craft) |
+| `match` | `understood`: `RESOLVED` is `crafts=[craft]`; `AMBIGUOUS` no longer stops (the model's pick proceeds, the best candidate when there is no reply, the rest are `candidates`; a question about no single craft is `crafts=[]` with every candidate offered, decision 0123); `NONE` is `crafts=[]` (any craft) |
 | `status` | kept for the one progress line; steps unchanged |
 | `source` | kept; sent before the first block citing it |
 | `section` | `section_started` |
@@ -1758,7 +1758,9 @@ rebuilt-each-time kinds, the stream's `builds_on` and `version`, the learning ro
 
 - A section is a field the question touches (`Understanding.disciplines`, most important first,
   at most the depth's `maxSections`, keeping the fields the question asks about before the others;
-  `OVERVIEW` when the understanding names none). Since decision
+  `OVERVIEW` when the understanding names none). The understanding tops its fields up to the
+  depth's `minSections` with the fields the craft holds cited claims in, and a failed reply's
+  fields are those the question's words name (decision 0123, `docs/contracts/research.md`). Since decision
   0077 the chosen fields are read in the order the question needs (`sections.question_order`: the
   fields its words ask about first, by `research/question_cues.py` in English and Hindi with the
   craft's own name left out, then the rest, and the full process last unless the question asks

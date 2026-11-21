@@ -23,6 +23,7 @@ from app.voice.availability import HIDDEN_VOICE
 
 from .answering.fakes import pipeline, streamed
 from .craft_fixtures import sample_index
+from .planner.fakes import FakeModel
 
 NOTICE_SHA256 = "ac3e191cce8e3bbeae1f291071b4c1be47cea01c9983c679660f00f3da329d1f"
 
@@ -60,9 +61,11 @@ def resolution_of(text: str) -> CraftResolution:
     return craft_matching.resolution_from(index, craft_matching.lexical_match(index, text))
 
 
-async def answer_frames(outcome: CraftResolution, **ask: Any) -> list[tuple[str, Any]]:
+async def answer_frames(
+    outcome: CraftResolution, understand_model: Any = None, **ask: Any
+) -> list[tuple[str, Any]]:
     request = AnswerAsk(question="Why is it dyed twice?", depth="DETAILED", **ask)
-    text = await streamed(request, pipeline(resolution=outcome))
+    text = await streamed(request, pipeline(resolution=outcome, understand_model=understand_model))
     parsed = []
     for block in text.split("\n\n")[:-1]:
         name, data = block.split("\n", 1)
@@ -70,22 +73,27 @@ async def answer_frames(outcome: CraftResolution, **ask: Any) -> list[tuple[str,
     return parsed
 
 
-async def test_the_resolver_ranking_proceeds_with_the_best_and_offers_the_rest() -> None:
+BARMER_REF = {
+    "slug": "Barmer-Ajrakh-Print",
+    "name": "Barmer Ajrakh Print",
+    "path": "/crafts/Barmer-Ajrakh-Print",
+}
+KUTCH_REF = {"slug": "Kutch-Ajrakh", "name": "Kutch Ajrakh", "path": "/crafts/Kutch-Ajrakh"}
+
+
+async def test_without_a_reply_the_resolver_ranking_proceeds_with_the_best_and_offers_the_rest() -> None:
+    frames = await answer_frames(resolution_of("How is Ajrakh washed?"), FakeModel(["not json"]))
+    assert frames[0] == (
+        "understood",
+        {"crafts": [BARMER_REF], "candidates": [KUTCH_REF], "depth": "DETAILED", "language": "en"},
+    )
+
+
+async def test_a_reply_about_no_single_craft_keeps_the_resolver_ranking_as_offers() -> None:
     frames = await answer_frames(resolution_of("How is Ajrakh washed?"))
     assert frames[0] == (
         "understood",
-        {
-            "crafts": [
-                {
-                    "slug": "Barmer-Ajrakh-Print",
-                    "name": "Barmer Ajrakh Print",
-                    "path": "/crafts/Barmer-Ajrakh-Print",
-                }
-            ],
-            "candidates": [{"slug": "Kutch-Ajrakh", "name": "Kutch Ajrakh", "path": "/crafts/Kutch-Ajrakh"}],
-            "depth": "DETAILED",
-            "language": "en",
-        },
+        {"crafts": [], "candidates": [BARMER_REF, KUTCH_REF], "depth": "DETAILED", "language": "en"},
     )
 
 

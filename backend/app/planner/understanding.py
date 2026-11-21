@@ -9,6 +9,7 @@ from app.research.coverage_seats import covering_seats, relevant_fields
 from app.research.crafts import COMPARED_CRAFTS_MAX, MAX_CANDIDATES, CraftQuery, CraftRef, CraftResolution
 from app.research.depth import depth_policy, effective_depth
 from app.research.expert_panel import WIDENED_DEPTHS
+from app.research.sections import answer_fields, question_fields
 from app.research.structured import StructuredModel
 from app.research.understanding import UnderstandAsk, Understanding, UnknownCraft
 
@@ -26,6 +27,7 @@ __all__ = [
     "ModelUnderstander",
     "Reading",
     "Resolve",
+    "asked_fields",
     "chosen_craft",
     "compared_choice",
     "understood_seats",
@@ -70,7 +72,7 @@ class ModelUnderstander:
         return _understanding(ask, chosen, reading, await self._held_fields(chosen.craft, reading))
 
     async def _held_fields(self, craft: CraftRef | None, reading: Reading) -> tuple[str, ...] | None:
-        if self._held is None or craft is None or reading.reply is None:
+        if self._held is None or craft is None or reading.refusal is not None:
             return None
         try:
             return tuple(await self._held(craft.slug))
@@ -109,7 +111,8 @@ class ModelUnderstander:
     async def _named(self, reply: UnderstandReply, offered: Sequence[CraftRef]) -> CraftChoice:
         chosen: CraftRef | None = None
         others: list[CraftRef] = list(offered)
-        for name in reply.craft_names:
+        listed = {craft.name.casefold() for craft in offered}
+        for name in (name for name in reply.craft_names if name.casefold() not in listed):
             try:
                 resolution = await self._resolve(CraftQuery(text=name))
             except AppError as error:
@@ -131,7 +134,9 @@ def chosen_craft(
         return CraftChoice(craft=None, others=tuple(offered))
     if resolution.status == "RESOLVED":
         return CraftChoice(craft=resolution.craft, others=tuple(offered[1:]))
-    picked = (reply.chosen(offered) if reply else None) or offered[0]
+    if reply is None or reply.craft is None:
+        return CraftChoice(craft=offered[0], others=tuple(offered[1:]))
+    picked = reply.chosen(offered)
     return CraftChoice(craft=picked, others=_distinct(offered, without=picked))
 
 
@@ -160,19 +165,28 @@ def understood_seats(
     return list(covering_seats(relevant_fields(disciplines, held), seats, limit=limit))
 
 
+def asked_fields(question: str, craft: CraftRef | None, reply: UnderstandReply | None) -> list[str]:
+    if reply is not None and reply.disciplines:
+        return list(reply.disciplines)
+    words = reply.english_question if reply is not None and reply.english_question else question
+    return question_fields(words, craft.name if craft else None)
+
+
 def _understanding(
     ask: UnderstandAsk, choice: CraftChoice, reading: Reading, held: Sequence[str] | None = None
 ) -> Understanding:
     depth = effective_depth(ask.depth, ask.role, past_degrade=reading.degraded)
     reply = reading.reply
+    asked = asked_fields(ask.question, choice.craft, reply)
     return Understanding(
         craft=choice.craft,
         candidates=list(choice.others[:MAX_CANDIDATES]),
         compared=list(choice.compared) if reply else [],
-        disciplines=list(reply.disciplines) if reply else [],
-        seats=understood_seats(reply.disciplines, reply.seats, depth=depth, held=held) if reply else [],
+        disciplines=answer_fields(asked, depth, held or ()),
+        seats=understood_seats(asked, reply.seats if reply else (), depth=depth, held=held),
         depth=depth,
         language=ask.language,
+        english_question=reply.english_question if reply else None,
         basis="MODEL" if reply else "RESOLVER",
         refusal=reading.refusal,
     )

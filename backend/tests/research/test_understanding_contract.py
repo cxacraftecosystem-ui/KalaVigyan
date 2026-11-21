@@ -56,9 +56,9 @@ def test_the_stored_understanding_keeps_its_seats_and_fields() -> None:
         {"disciplines": ["CHEMISTRY", "CHEMISTRY"]},
         {"seats": ["CHEMIST", "BOTANIST", "HISTORIAN"]},
         {"disciplines": []},
-        {"basis": "RESOLVER"},
         {"refusal": "The monthly AI budget has been reached."},
         {"seats": ["SOOTHSAYER"]},
+        {"english_question": "?"},
     ],
 )
 def test_an_inconsistent_understanding_does_not_construct(changes: dict) -> None:
@@ -69,6 +69,19 @@ def test_an_inconsistent_understanding_does_not_construct(changes: dict) -> None
 def test_a_resolver_understanding_knows_the_craft_and_may_carry_a_refusal() -> None:
     refused = understanding(basis="RESOLVER", disciplines=[], seats=[], refusal="Budget reached.")
     assert refused.refusal == "Budget reached."
+
+
+def test_a_resolver_understanding_keeps_the_fields_the_question_s_words_name_and_their_seats() -> None:
+    read = understanding(basis="RESOLVER", disciplines=["CHEMISTRY", "MATERIALS"], seats=["CHEMIST"])
+    assert (read.disciplines, read.seats) == (["CHEMISTRY", "MATERIALS"], ["CHEMIST"])
+
+
+def test_the_english_rendering_every_search_reads_is_stored_with_the_understanding() -> None:
+    rendered = understanding(english_question="Why is alum added in Ajrakh?")
+    assert (
+        rendered.model_dump(mode="json", by_alias=True)["englishQuestion"] == "Why is alum added in Ajrakh?"
+    )
+    assert "englishQuestion" not in understanding().model_dump(mode="json", by_alias=True)
 
 
 def test_a_question_names_one_craft_or_any_craft() -> None:

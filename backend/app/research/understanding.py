@@ -15,6 +15,7 @@ from .explainer import Understood
 from .vocabulary import CANONICAL_LANGUAGE, AnswerLanguage, Depth, Discipline
 
 __all__ = [
+    "ENGLISH_QUESTION_MIN_CHARS",
     "REFUSAL_MAX_CHARS",
     "UNDERSTANDING_BASES",
     "UNDERSTANDING_SCHEMA_VERSION",
@@ -27,6 +28,7 @@ __all__ = [
 UNDERSTANDING_SCHEMA_VERSION = 1
 UNDERSTANDING_BASES = ("MODEL", "RESOLVER")
 REFUSAL_MAX_CHARS = 500
+ENGLISH_QUESTION_MIN_CHARS = 2
 
 UnderstandingBasis = Literal[*UNDERSTANDING_BASES]
 
@@ -61,6 +63,9 @@ class Understanding(ContractModel):
     seats: list[ExpertSeat]
     depth: Depth
     language: AnswerLanguage
+    english_question: str | None = Field(
+        default=None, min_length=ENGLISH_QUESTION_MIN_CHARS, max_length=QUESTION_MAX_CHARS, exclude_if=absent
+    )
     basis: UnderstandingBasis
     refusal: str | None = Field(default=None, min_length=1, max_length=REFUSAL_MAX_CHARS, exclude_if=absent)
 
@@ -79,8 +84,6 @@ class Understanding(ContractModel):
             raise ValueError(f"{self.depth} seats at most {depth_policy(self.depth).max_experts} experts")
         if self.basis == "MODEL" and not self.disciplines:
             raise ValueError("a model understanding names the fields the question touches")
-        if self.basis == "RESOLVER" and (self.disciplines or self.seats):
-            raise ValueError("a resolver understanding knows the craft only")
         if self.refusal is not None and self.basis != "RESOLVER":
             raise ValueError("a refused model call leaves the resolver's understanding")
         return self

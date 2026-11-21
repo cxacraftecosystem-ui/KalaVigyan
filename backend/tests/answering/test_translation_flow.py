@@ -163,7 +163,7 @@ async def test_a_researched_answer_in_hindi_translates_the_title_each_block_and_
         [(WRITTEN_LAKE_ID, "hi"), (WRITTEN_WASH_ID, "hi"), (GUESS_CLAIM_ID, "hi")]
     )
     (request,) = research.requests
-    assert (request.language, request.english_question) == ("hi", QUESTION)
+    assert (request.language, request.english_question) == ("hi", None)
 
 
 async def test_a_sentence_failing_its_check_twice_is_shown_in_english() -> None:
@@ -184,13 +184,17 @@ async def test_a_sentence_failing_its_check_twice_is_shown_in_english() -> None:
     assert "translated" not in wash and "original" not in wash
 
 
-async def test_a_question_in_tamil_script_plans_without_an_english_rendering() -> None:
+async def test_a_question_in_tamil_script_no_call_could_render_plans_without_an_english_rendering() -> None:
     research = FakeResearch()
     ask = AnswerAsk(question="அஜ்ரக் ஏன் சிவப்பாக இருக்கிறது?", depth="DETAILED", language="ta")
-    model = FakeModel([reply()] * 8)
-    await streamed(ask, pipeline(research=research, replies=[REPLY], translated=translation(model)))
+    model = FakeModel([reply()] * 20)
+    found = events(
+        await streamed(ask, pipeline(research=research, replies=[REPLY], translated=translation(model)))
+    )
     (request,) = research.requests
     assert (request.language, request.english_question) == ("ta", None)
+    assert schema_keys(model.calls[0]) == schema_keys(model.calls[1]) == ["question"]
+    assert "error" not in [name for name, _ in found]
 
 
 async def test_a_failed_translation_route_shows_the_answer_in_english() -> None:

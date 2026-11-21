@@ -31,10 +31,11 @@ flowchart LR
   the craft holds cited claims in (`held`, `services/coverage.held_field_lookup`, the coverage count
   of `coverage.md`). The **relevant fields** are the asked fields the craft holds claims in, or every
   asked field when no craft is chosen or the lookup fails (`coverage_seats.relevant_fields`).
-- The seats keep the model's choice, in its order, and add for each relevant field no chosen seat
-  speaks for the seat that leads it (`FIELD_LEADS`: the seat that lists the field first, the panel's
-  order breaking ties; the artisan's voice speaks for no field), up to the depth's seat limit
-  (`depth_policy(depth).max_experts`: 2 Basic, 4 Detailed) (`coverage_seats.covering_seats`,
+- Each relevant field is seated first, in the question's order: by the first seat the model chose
+  that speaks for it, else by the seat that leads it (`FIELD_LEADS`: the seat that lists the field
+  first, the panel's order breaking ties; the artisan's voice speaks for no field); the model's
+  other seats follow in its order, all within the depth's seat limit
+  (`depth_policy(depth).max_experts`: 2 Basic, 4 Detailed; decision 0123) (`coverage_seats.covering_seats`,
   `understanding.understood_seats`). Expert depth keeps the model's seats: its panel already widens
   to every seat of each section's field (`expert_panel.panel_seats`).
 - Each seat searches stored knowledge with its own fields as the retrieval field filter

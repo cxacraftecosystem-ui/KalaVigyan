@@ -31,18 +31,28 @@ def test_the_chosen_seats_stay_and_a_lead_is_added_for_each_field_they_leave_out
 
 def test_one_added_seat_can_serve_several_fields_and_the_limit_holds() -> None:
     assert covering_seats(["HISTORY", "OVERVIEW"], [], limit=4) == ("HISTORIAN",)
+    assert covering_seats(["HISTORY", "OVERVIEW", "SOCIETY"], ["ANTHROPOLOGIST"], limit=4) == (
+        "ANTHROPOLOGIST",
+    )
+
+
+def test_each_field_of_the_question_is_seated_before_the_model_s_extra_experts() -> None:
     assert covering_seats(["CHEMISTRY", "HISTORY", "CLIMATE"], ["BOTANIST"], limit=2) == (
-        "BOTANIST",
         "CHEMIST",
+        "HISTORIAN",
     )
     assert covering_seats(["CHEMISTRY"], ["HYDROLOGIST", "GEOLOGIST", "ECOLOGIST"], limit=2) == (
+        "CHEMIST",
         "HYDROLOGIST",
+    )
+    assert covering_seats(["GEOGRAPHY", "CHEMISTRY"], ["GEOLOGIST", "TOXICOLOGIST"], limit=4) == (
         "GEOLOGIST",
+        "TOXICOLOGIST",
     )
 
 
 def test_the_artisans_voice_speaks_for_no_field_and_unknown_seats_are_dropped() -> None:
-    assert covering_seats(["PROCESS"], ["ARTISAN", "ORACLE"], limit=4) == ("ARTISAN", "TECHNOLOGIST")
+    assert covering_seats(["PROCESS"], ["ARTISAN", "ORACLE"], limit=4) == ("TECHNOLOGIST", "ARTISAN")
     assert uncovered_fields(["PROCESS", "DESIGN"], ["ARTISAN"]) == ("PROCESS", "DESIGN")
 
 

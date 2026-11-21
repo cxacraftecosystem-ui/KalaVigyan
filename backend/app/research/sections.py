@@ -30,10 +30,12 @@ __all__ = [
     "AnswerPlans",
     "SectionPlan",
     "SectionSpec",
+    "answer_fields",
     "asked_disciplines",
     "block_id",
     "fallback_heading",
     "is_facet_label",
+    "question_fields",
     "question_order",
     "section_specs",
 ]
@@ -152,6 +154,21 @@ def section_specs(
         )
         for order, discipline in enumerate(ordered, start=1)
     ]
+
+
+def answer_fields(asked: Sequence[str], depth: str, held: Sequence[str] = ()) -> list[str]:
+    fields = [discipline for discipline in dict.fromkeys(asked) if discipline in DISCIPLINES]
+    floor = depth_policy(depth).min_sections
+    for discipline in held:
+        if len(fields) >= floor:
+            break
+        if discipline in DISCIPLINES and discipline not in fields:
+            fields.append(discipline)
+    return fields or [FALLBACK_DISCIPLINE]
+
+
+def question_fields(question: str, craft_name: str | None = None) -> list[str]:
+    return asked_disciplines(DISCIPLINES, question, craft_name)
 
 
 def question_order(disciplines: Sequence[str], question: str, craft_name: str | None = None) -> list[str]:
