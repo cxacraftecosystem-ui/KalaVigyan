@@ -24,7 +24,7 @@ from app.research.page_proposals import (
     PagePicture,
     PageSubject,
 )
-from app.research.page_translations import TRANSLATION_NOTE_MAX_CHARS, TRANSLATION_PASSAGES_MAX
+from app.research.page_translations import TRANSLATION_PASSAGES_MAX
 from app.research.structure_proposals import StructureProposal
 
 from .mcp_studio_arguments import StudioArguments
@@ -48,10 +48,6 @@ BUNDLE = (
     "One page's parts: subject {kind, slug} and any of facts, structure, components ({proposal, cites}), "
     "layout {base_version, entries}, pictures and a note, each part exactly as edit_draft's add takes it "
     "(its input schema holds every part's fields), and translation; one part alone works"
-)
-TRANSLATION_PART = (
-    "The page in another language: language, the TRANSLATE task_key and passages, each the key and source_hash "
-    "of a passage the task lists with texts, one translated text for each English text in order"
 )
 NEEDS_SPEC = (
     "a component is delivered finished: give its spec (the kind's spec data) and the units it places, each "
@@ -174,12 +170,10 @@ def translation_schema() -> dict[str, Any]:
     }
     return {
         "type": "object",
-        "description": TRANSLATION_PART,
         "properties": {
             "language": {"type": "string", "enum": list(TRANSLATION_LANGUAGES)},
             "passages": {"type": "array", "items": passage, "maxItems": TRANSLATION_PASSAGES_MAX},
             "task_key": {"type": "string"},
-            "note": {"type": "string", "maxLength": TRANSLATION_NOTE_MAX_CHARS},
         },
         "required": ["language", "passages"],
     }

@@ -7,7 +7,7 @@ import { draftVariant } from "@/lib/documentVariant";
 import { PREVIEW_ROBOTS, serverCraftDocument } from "@/lib/monographRenderServer";
 import { previewLanguages, TRANSLATION_PREVIEW_LANGUAGE, TRANSLATION_PREVIEW_PASSAGES, TRANSLATION_PREVIEW_SLUG, TRANSLATION_PREVIEW_TITLE } from "@/lib/translationPreview";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: TRANSLATION_PREVIEW_TITLE, robots: PREVIEW_ROBOTS };
 

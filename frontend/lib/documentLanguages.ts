@@ -1,4 +1,4 @@
-import { ENGLISH, type MonographDocument, type MonographUnit } from "@/lib/monographDocument";
+import { ENGLISH, type MonographUnit } from "@/lib/monographDocument";
 import { boolean, integer, list, matching, object, oneOf, parseShape, text, type Shape } from "@/lib/shape";
 
 export const DOCUMENT_LANGUAGE_CODES = ["hi", "bn", "ta", "te", "mr", "gu", "kn", "ml", "or", "pa", "as", "ur"] as const;
@@ -50,6 +50,7 @@ export type PageLanguage = {
   offered: boolean;
 };
 export type PageLanguages = { schemaVersion: 1; subject: { kind: PageKind; slug: string }; languages: PageLanguage[] };
+export type AlternateLanguages = Partial<Record<typeof ENGLISH | DocumentLanguageCode | typeof DEFAULT_ALTERNATE, string>>;
 export type UnitLanguage = { lang?: string; dir?: TextDirection; "data-fallback"?: string; "data-script"?: string };
 
 export const pageLanguageShape: Shape<PageLanguage> = object<PageLanguage>({
@@ -93,11 +94,13 @@ export function readLanguages(languages: readonly PageLanguage[]): PageLanguage[
   return languages.filter((language) => language.translated > 0);
 }
 
-export function languageAlternates(kind: PageKind, slug: string, languages: readonly PageLanguage[]): Record<string, string> {
+export function languageAlternates(kind: PageKind, slug: string, languages: readonly PageLanguage[]): AlternateLanguages {
   const read = readLanguages(languages);
   if (!read.length) return {};
   const english = pagePath(kind, slug);
-  return Object.fromEntries([[ENGLISH, english], ...read.map((language) => [language.code, documentLanguagePath(kind, slug, language.code)]), [DEFAULT_ALTERNATE, english]]);
+  const translated = read.map((language): [string, string] => [language.code, documentLanguagePath(kind, slug, language.code)]);
+  const entries: [string, string][] = [[ENGLISH, english], ...translated, [DEFAULT_ALTERNATE, english]];
+  return Object.fromEntries(entries) as AlternateLanguages;
 }
 
 export function textDirection(code: string): TextDirection {
@@ -111,6 +114,3 @@ export function unitLanguage(unit: MonographUnit): UnitLanguage {
   return { lang: unit.lang, dir: textDirection(unit.lang), "data-script": TEXT_SCRIPTS[unit.lang] };
 }
 
-export function isTranslated(document: MonographDocument): boolean {
-  return document.language !== ENGLISH && document.translation !== undefined;
-}
