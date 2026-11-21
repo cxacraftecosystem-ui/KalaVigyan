@@ -10,9 +10,10 @@ os.environ.setdefault("BACKEND_CORS_ORIGINS", "http://localhost:3000")
 
 import pytest
 
-from app.core import rate_limit, roles
+from app.core import allowances, rate_limit, roles
 
 from .ai_caps import ALLOWANCES_AN_OWNER_MIGHT_SET
+from .allowance_counter import MemoryCounter
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
@@ -27,6 +28,13 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 @pytest.fixture(autouse=True)
 def _fresh_rate_limits() -> None:
     rate_limit.reset_all()
+
+
+@pytest.fixture(autouse=True)
+def allowance_counter(monkeypatch: pytest.MonkeyPatch) -> MemoryCounter:
+    counter = MemoryCounter()
+    monkeypatch.setattr(allowances, "counter", counter)
+    return counter
 
 
 @pytest.fixture

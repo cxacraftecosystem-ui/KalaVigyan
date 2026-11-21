@@ -104,10 +104,10 @@ async def search_call(
 ) -> FoundSources:
     caller = await ask.contributor()
     text = await query_for(ask.session, query, craft_slug)
-    spend(SOURCE_SEARCHES, caller)
+    await spend(SOURCE_SEARCHES, caller)
     sources = await ask.sources()
     chosen = tuple(dict.fromkeys(kinds))
-    wait = spent_wait(PAID_SEARCHES, caller) if sources.reaches_paid(chosen) else None
+    wait = await spent_wait(PAID_SEARCHES, caller) if sources.reaches_paid(chosen) else None
     paid = sources.reaches_paid(chosen) and wait is None
     asked = SearchAsk(
         query=text, kinds=chosen, paid=paid, paid_wait=None if wait is None else wait_words(wait)
@@ -116,21 +116,21 @@ async def search_call(
 
 
 async def read_call(ask: LookupAsk, url: str | None, doi: str | None, view: TextView) -> SourceText:
-    spend(SOURCE_READS, await ask.contributor())
+    await spend(SOURCE_READS, await ask.contributor())
     sources = await ask.sources()
     address = await source_address(sources.locator, url=url, doi=doi)
     return await external(source_text(ask.session, sources, address, view, reader_id=ask.reader_id()))
 
 
 async def check_call(ask: LookupAsk, url: str | None, doi: str | None, quote: ProposedQuote) -> QuoteCheck:
-    spend(SOURCE_READS, await ask.contributor())
+    await spend(SOURCE_READS, await ask.contributor())
     sources = await ask.sources()
     address = await source_address(sources.locator, url=url, doi=doi)
     return await external(checked_quote(ask.session, sources, address, quote, reader_id=ask.reader_id()))
 
 
 async def compound_call(ask: LookupAsk, name: str | None, cid: int | None) -> CompoundLookup:
-    spend(SOURCE_READS, await ask.anyone())
+    await spend(SOURCE_READS, await ask.anyone())
     source = (await ask.sources()).compounds
     if source is None:
         raise InvalidInput(NO_ADAPTER.format(name="PubChem"))
@@ -138,7 +138,7 @@ async def compound_call(ask: LookupAsk, name: str | None, cid: int | None) -> Co
 
 
 async def entity_call(ask: LookupAsk, name: str | None, qid: str | None) -> EntityLookup:
-    spend(SOURCE_READS, await ask.anyone())
+    await spend(SOURCE_READS, await ask.anyone())
     source = (await ask.sources()).entities
     if source is None:
         raise InvalidInput(NO_ADAPTER.format(name="Wikidata"))
@@ -148,13 +148,13 @@ async def entity_call(ask: LookupAsk, name: str | None, qid: str | None) -> Enti
 async def pictures_call(ask: LookupAsk, query: str, craft_slug: str | None) -> FoundPictures:
     caller = await ask.anyone()
     text = await query_for(ask.session, query, craft_slug)
-    spend(SOURCE_SEARCHES, caller)
+    await spend(SOURCE_SEARCHES, caller)
     sources = await ask.sources()
     return await external(found_pictures(sources.pictures, text))
 
 
 async def archive_call(ask: LookupAsk, url: str) -> ArchivedSource:
-    spend(SOURCE_ARCHIVES, await ask.contributor())
+    await spend(SOURCE_ARCHIVES, await ask.contributor())
     archiver = (await ask.sources()).archiver
     if archiver is None:
         raise InvalidInput(NO_ADAPTER.format(name="The Wayback Machine"))

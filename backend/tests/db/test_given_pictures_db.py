@@ -40,13 +40,17 @@ def unused(*_: Any, **__: Any) -> Any:
     raise AssertionError("a picture given already starts no upload")
 
 
+async def spent_nothing(kind: str) -> None:
+    return None
+
+
 def no_uploads() -> PageTools:
     nothing: Any = unused
     return PageTools(
         gates=nothing,
         fetcher=nothing,
         start_picture=nothing,
-        spend=lambda kind: None,
+        spend=spent_nothing,
         origin="AGENT",
         site=SITE,
     )

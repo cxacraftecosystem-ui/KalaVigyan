@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from datetime import datetime
 from math import ceil
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.allowances import ALLOWANCE_UNREAD
 from app.core.errors import InvalidInput
 from app.core.rate_limit import (
     ANONYMOUS_HOLDER,
@@ -32,11 +34,11 @@ __all__ = [
 ]
 
 SPENT = (
-    "This account made {limit} {noun} in the last hour, the most its trust tier ({tier}) allows. "
+    "This account made {limit} {noun} this hour, the most its trust tier ({tier}) allows. "
     "Try again in {wait}."
 )
 SPENT_SIGNED_OUT = (
-    "Signed-out callers made {limit} {noun} together in the last hour, the most KalaVigyan allows them. "
+    "Signed-out callers made {limit} {noun} together this hour, the most KalaVigyan allows them. "
     "Sign in, or try again in {wait}."
 )
 NOT_A_CONTRIBUTOR = (
@@ -82,18 +84,21 @@ async def contributor_caller(
     return await lookup_caller(session, user, tier_of)
 
 
-def spent_wait(kind: str, caller: LookupCaller) -> float | None:
-    allowed, wait = lookup_attempt(kind, caller.holder, caller.limit(kind))
-    return None if allowed else wait
+async def spent_wait(kind: str, caller: LookupCaller) -> float | None:
+    taken = await lookup_attempt(kind, caller.holder, caller.limit(kind))
+    return None if taken.granted else taken.wait_seconds
 
 
-def spend(kind: str, caller: LookupCaller) -> None:
-    wait = spent_wait(kind, caller)
-    if wait is None:
+async def spend(kind: str, caller: LookupCaller, *, now: datetime | None = None) -> None:
+    taken = await lookup_attempt(kind, caller.holder, caller.limit(kind), now=now)
+    if taken.granted:
         return
+    if taken.unread:
+        raise InvalidInput(ALLOWANCE_UNREAD)
     words = SPENT if caller.tier is not None else SPENT_SIGNED_OUT
     tier = (caller.tier or "").lower()
-    raise InvalidInput(words.format(limit=caller.limit(kind), noun=kind, tier=tier, wait=wait_words(wait)))
+    wait = wait_words(taken.wait_seconds)
+    raise InvalidInput(words.format(limit=caller.limit(kind), noun=kind, tier=tier, wait=wait))
 
 
 def wait_words(seconds: float) -> str:

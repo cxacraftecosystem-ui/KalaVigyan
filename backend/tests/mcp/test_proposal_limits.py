@@ -10,6 +10,8 @@ from app.api import mcp_page_tools, mcp_picture_tools
 from app.api.mcp_tools import ToolContext, answer
 from app.api.proposal_limits import refuse_tool_when_spent, wait_words
 from app.api.routes import knowledge_writes
+from app.core import allowances
+from app.core.allowances import ALLOWANCE_UNREAD, AllowanceUnread, Ask, Bucket, Taken
 from app.core.db import get_session
 from app.core.deps import get_current_user
 from app.core.mcp_scopes import CONTRIBUTE_SCOPE, READ_SCOPE
@@ -31,6 +33,7 @@ from app.services.craft_resolver import CraftIndexStore
 from app.services.open_work_subjects import WorkSubject
 from app.services.page_proposals import PageTools
 
+from ..allowance_counter import MemoryCounter
 from ..research.general_spec_fixtures import TABLE
 
 HOUR = 3600
@@ -77,9 +80,18 @@ def person(role: str, number: int = 31) -> User:
     return User(id=uuid.UUID(int=number), name=f"{role} person", email=f"{number}@example.org", role=role)
 
 
-def spend(kind: str, user: User) -> None:
+async def spend(kind: str, user: User) -> None:
     for _ in range(LIMITS[kind]):
-        assert proposal_attempt(kind, user)[0] is True
+        assert (await proposal_attempt(kind, user)).granted == 1
+
+
+def spent_already(counter: MemoryCounter, kind: str, user: User) -> None:
+    counter.fill(str(user.id), kind, LIMITS[kind])
+
+
+class UnreadCounter:
+    async def take(self, bucket: Bucket, ask: Ask) -> int:
+        raise AllowanceUnread(f"the {bucket.kind} allowance of {bucket.holder} was not counted")
 
 
 class FakeSession:
@@ -129,21 +141,38 @@ def never_called(*_: Any, **__: Any) -> Any:
 
 
 @pytest.mark.parametrize("kind", sorted(LIMITS))
-def test_an_account_makes_its_kind_s_limit_in_an_hour_then_waits(kind: str) -> None:
+async def test_an_account_makes_its_kind_s_limit_in_an_hour_then_waits(kind: str) -> None:
     researcher = person("RESEARCHER")
-    spend(kind, researcher)
-    allowed, wait = proposal_attempt(kind, researcher)
-    assert allowed is False and 0 < wait <= HOUR
-    assert proposal_attempt(kind, person("RESEARCHER", 32))[0] is True
+    await spend(kind, researcher)
+    taken = await proposal_attempt(kind, researcher)
+    assert taken.granted == 0 and 0 < taken.wait_seconds <= HOUR and taken.unread is False
+    assert (await proposal_attempt(kind, person("RESEARCHER", 32))).granted == 1
     other = next(each for each in LIMITS if each != kind)
-    assert proposal_attempt(other, researcher)[0] is True
+    assert (await proposal_attempt(other, researcher)).granted == 1
 
 
 @pytest.mark.parametrize("role", ["ADMIN", "MASTER_ADMIN"])
-def test_admins_are_never_limited(role: str) -> None:
+async def test_admins_are_never_limited(role: str, allowance_counter: MemoryCounter) -> None:
     admin = person(role)
     for _ in range(LIMITS[FACT_PROPOSALS] + 5):
-        assert proposal_attempt(FACT_PROPOSALS, admin) == (True, 0.0)
+        assert await proposal_attempt(FACT_PROPOSALS, admin) == Taken(granted=1)
+    assert allowance_counter.used == {}
+
+
+async def test_an_allowance_that_cannot_be_counted_refuses_the_tool(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(allowances, "counter", UnreadCounter())
+    monkeypatch.setattr(mcp_page_tools.page_preview, "preview_page", never_called)
+    result = await tool_text("preview_page", BUNDLE, person("RESEARCHER"))
+    assert result["isError"] is True and ALLOWANCE_UNREAD in result["content"][0]["text"]
+
+
+def test_an_allowance_that_cannot_be_counted_answers_503_with_a_minute_s_retry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(allowances, "counter", UnreadCounter())
+    response = client(person("RESEARCHER")).post("/api/knowledge/pages/preview", json={})
+    assert (response.status_code, response.headers["retry-after"]) == (503, "60")
+    assert response.json()["detail"] == ALLOWANCE_UNREAD
 
 
 @pytest.mark.parametrize(
@@ -165,7 +194,7 @@ async def test_spent_component_and_layout_limits_refuse_their_bundle_parts(
 ) -> None:
     researcher = person("RESEARCHER", 34)
     for kind in (COMPONENT_PROPOSALS, LAYOUT_PROPOSALS):
-        spend(kind, researcher)
+        await spend(kind, researcher)
 
     async def subject(session: Any, kind: str, slug: str) -> WorkSubject:
         return AJRAKH
@@ -204,7 +233,7 @@ async def test_a_spent_picture_limit_refuses_the_upload_before_a_slot_is_opened(
     researcher = person("RESEARCHER", 35)
     monkeypatch.setattr(upload_links, "start_upload", never_called)
     monkeypatch.setattr(mcp_picture_tools, "endpoints_or_none", lambda: None)
-    spend(IMAGE_UPLOADS, researcher)
+    await spend(IMAGE_UPLOADS, researcher)
     picture = {"upload": True, "claim_ids": [str(uuid.UUID(int=5))]}
     result = await tool_text(
         "give_pictures", {"craft_slug": "Kutch-Ajrakh", "pictures": [picture]}, researcher
@@ -219,18 +248,20 @@ async def test_page_bundles_and_page_previews_have_their_own_hourly_allowances(
     researcher = person("RESEARCHER")
     monkeypatch.setattr(mcp_page_tools, "page_proposed", never_called)
     monkeypatch.setattr(mcp_page_tools.page_preview, "preview_page", never_called)
-    spend(PAGE_PROPOSALS, researcher)
+    await spend(PAGE_PROPOSALS, researcher)
     proposed = await tool_text("propose_page", BUNDLE, researcher)
     assert proposed["isError"] is True and "10 page bundles" in proposed["content"][0]["text"]
-    assert proposal_attempt(PAGE_PREVIEWS, researcher)[0] is True
+    assert (await proposal_attempt(PAGE_PREVIEWS, researcher)).granted == 1
     for _ in range(LIMITS[PAGE_PREVIEWS] - 1):
-        assert proposal_attempt(PAGE_PREVIEWS, researcher)[0] is True
+        assert (await proposal_attempt(PAGE_PREVIEWS, researcher)).granted == 1
     previewed = await tool_text("preview_page", BUNDLE, researcher)
     assert previewed["isError"] is True and "30 page previews" in previewed["content"][0]["text"]
-    assert proposal_attempt(COMPONENT_PROPOSALS, researcher)[0] is True
+    assert (await proposal_attempt(COMPONENT_PROPOSALS, researcher)).granted == 1
 
 
-def test_a_spent_fact_limit_answers_429_with_retry_after(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_spent_fact_limit_answers_429_with_retry_after(
+    monkeypatch: pytest.MonkeyPatch, allowance_counter: MemoryCounter
+) -> None:
     researcher = person("RESEARCHER")
 
     async def accepted(session: Any, user: User) -> None:
@@ -238,7 +269,7 @@ def test_a_spent_fact_limit_answers_429_with_retry_after(monkeypatch: pytest.Mon
 
     monkeypatch.setattr(knowledge_writes, "require_terms", accepted)
     monkeypatch.setattr(knowledge_writes, "proposed", never_called)
-    spend(FACT_PROPOSALS, researcher)
+    spent_already(allowance_counter, FACT_PROPOSALS, researcher)
     proposal = {
         "subject": {"kind": "craft", "slug": "Kutch-Ajrakh"},
         "field": "PROCESS",
@@ -262,11 +293,13 @@ def test_a_spent_fact_limit_answers_429_with_retry_after(monkeypatch: pytest.Mon
         ("/api/knowledge/pages/preview", PAGE_PREVIEWS),
     ],
 )
-def test_the_site_s_picture_and_component_routes_share_the_limits(path: str, kind: str) -> None:
+def test_the_site_s_picture_and_component_routes_share_the_limits(
+    path: str, kind: str, allowance_counter: MemoryCounter
+) -> None:
     researcher = person("RESEARCHER")
-    spend(kind, researcher)
+    spent_already(allowance_counter, kind, researcher)
     response = client(researcher).post(path, json={})
     assert response.status_code == 429 and "retry-after" in response.headers
     student = person("STUDENT", 33)
     assert client(student).post(path, json={}).status_code == 403
-    assert proposal_attempt(kind, student)[0] is True
+    assert (str(student.id), kind) not in allowance_counter.used

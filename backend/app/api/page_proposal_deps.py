@@ -38,5 +38,5 @@ async def page_proposed(
         return await propose_page(session, user, bundle, tools=tools, now=datetime.now(UTC))
 
 
-def _spend(user: User, kind: str) -> None:
-    refuse_tool_when_spent(kind, user)
+async def _spend(user: User, kind: str) -> None:
+    await refuse_tool_when_spent(kind, user)

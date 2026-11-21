@@ -15,6 +15,7 @@ from app.sources.wayback_save import WaybackSaver
 from .claim_holds import shown_held_ids
 from .open_work_refresh import FieldWorkReport, refresh_field_work
 from .orphan_concepts import OrphansReport, orphan_concepts, sweep_orphans
+from .upkeep_allowances import AllowancesReport, sweep_allowances
 from .upkeep_archive import (
     ARCHIVES_PER_NIGHT,
     ArchiveReport,
@@ -67,6 +68,7 @@ class UpkeepReport:
     clients: ClientsReport = field(default_factory=ClientsReport)
     pages: PagesReport = field(default_factory=PagesReport)
     field_work: FieldWorkReport = field(default_factory=FieldWorkReport)
+    allowances: AllowancesReport = field(default_factory=AllowancesReport)
 
     @property
     def ok(self) -> bool:
@@ -82,6 +84,7 @@ class UpkeepReport:
             "clients": self.clients.as_dict(),
             "pages": self.pages.as_dict(),
             "fieldWork": self.field_work.as_dict(),
+            "allowances": self.allowances.as_dict(),
         }
 
 
@@ -93,6 +96,7 @@ async def run_nightly_upkeep(session: AsyncSession, tools: UpkeepTools, *, now: 
     report.archive = await archive_sources(session, tools.archiver, now=now)
     report.orphans = await sweep_orphans(session, now=now)
     report.clients = await remove_abandoned_clients(session, now=now)
+    report.allowances = await sweep_allowances(session, now=now)
     await rebuild_monographs(session, tools.monographs, tools.load_monograph, now=now, report=report.pages)
     await rebuild_stale_pages(session, skip=frozenset(tools.monographs), report=report.pages)
     report.field_work = await refresh_field_work(session, now=now)

@@ -246,7 +246,7 @@ async def test_source_searches_follow_the_trust_tier(monkeypatch: pytest.MonkeyP
     for _ in range(30):
         content(await call("search_sources", {"query": "indigo"}, context))
     spent = error_text(await call("search_sources", {"query": "indigo"}, context))
-    assert spent.startswith("This account made 30 source searches in the last hour")
+    assert spent.startswith("This account made 30 source searches this hour")
     assert "trust tier (new)" in spent
     serve(monkeypatch, sources(scholarly=(FakeSearcher("openalex", []),)), tier="ESTABLISHED")
     other = tool_context(person(RESEARCHER, number=42))
@@ -291,7 +291,7 @@ async def test_signed_out_callers_share_one_allowance(monkeypatch: pytest.Monkey
     spent = error_text(
         await call("search_sources", {"query": "ajrakh", "kinds": ["pictures"]}, tool_context(None))
     )
-    assert spent.startswith("Signed-out callers made 120 source searches together in the last hour")
+    assert spent.startswith("Signed-out callers made 120 source searches together this hour")
     content(
         await call(
             "search_sources", {"query": "ajrakh", "kinds": ["pictures"]}, tool_context(person(RESEARCHER))
@@ -307,7 +307,7 @@ async def test_a_page_is_archived_within_a_small_allowance(monkeypatch: pytest.M
         saved = content(await call("read_source", {"url": PAGE_URL, "archive": True}, context))["archive"]
         assert saved["archivedUrl"] == SNAPSHOT and saved["url"] == PAGE_URL
     spent = error_text(await call("read_source", {"url": PAGE_URL, "archive": True}, context))
-    assert spent.startswith("This account made 5 source archives in the last hour")
+    assert spent.startswith("This account made 5 source archives this hour")
     assert archiver.saved == [PAGE_URL] * 5
 
 
