@@ -202,7 +202,8 @@ def test_chunks_come_from_sources_cited_by_scoped_claims_or_shown_field_intervie
 ):
     conditions = chunk_conditions(SCOPE, mode="HYBRID", acls=("PUBLIC",))
     sql, params = compiled(chunk_lexical_ranking(conditions, "alum"))
-    assert sql.startswith('WITH lexical AS MATERIALIZED (SELECT "Chunk".id AS id, ts_rank_cd("Chunk".tsv, ')
+    assert sql.startswith("WITH glossary AS ")
+    assert 'lexical AS MATERIALIZED (SELECT "Chunk".id AS id, ts_rank_cd("Chunk".tsv, ' in sql
     assert 'WHERE ("Chunk"."sourceId" IN (SELECT "Source".id' in sql
     assert '"ClaimSource"."claimId" IN (SELECT "Claim".id FROM "Claim"' in sql
     assert ' OR "Chunk"."sourceId" IN (SELECT "FieldRecording"."sourceId" FROM "FieldRecording"' in sql
