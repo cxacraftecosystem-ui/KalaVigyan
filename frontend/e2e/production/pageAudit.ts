@@ -24,6 +24,11 @@ export function auditPage(options: AuditOptions): PageAudit {
     }
     return parts.join(" > ");
   };
+  const fontPx = (element: Element) => parseFloat(getComputedStyle(element).fontSize) || 16;
+  const verticalSlack = (parent: Element, box: Element) => {
+    const shifted = parent.closest("sup, sub");
+    return shifted && shifted !== box && box.contains(shifted) ? Math.max(2, fontPx(box) * 0.5) : Math.max(2, fontPx(parent) * 0.3);
+  };
   const scrolledOrClipped = (element: Element) => {
     for (let node: Element | null = element; node && node !== document.body; node = node.parentElement) {
       if (getComputedStyle(node).overflowX !== "visible") return true;
@@ -46,7 +51,7 @@ export function auditPage(options: AuditOptions): PageAudit {
     range.selectNodeContents(node);
     const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0);
     if (rects.length === 0) continue;
-    const slackY = Math.max(2, (parseFloat(getComputedStyle(parent).fontSize) || 16) * 0.3);
+    const slackY = verticalSlack(parent, box);
     const outer = box.getBoundingClientRect();
     const spills = rects.some(
       (rect) => rect.right > outer.right + 2 || rect.left < outer.left - 2 || rect.bottom > outer.bottom + slackY || rect.top < outer.top - slackY
