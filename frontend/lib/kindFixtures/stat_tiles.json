@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "kind": "stat_tiles",
+  "craft": "Blue-Pottery-Of-Jaipur",
+  "craftName": "Blue Pottery of Jaipur",
+  "label": "blue-pottery-of-jaipur/market/at-a-glance",
+  "title": "Jaipur blue pottery at a glance",
+  "description": "Four headline figures of Jaipur blue pottery: its authorised GI users, the days a piece takes, its single firing and the year of its GI application.",
+  "field": "MARKET",
+  "within": "blue-pottery-of-jaipur/history/journey-of-the-glaze",
+  "spec": {
+    "classes": [],
+    "tiles": [
+      {
+        "figure": "160",
+        "small": null,
+        "caption": "u0001"
+      },
+      {
+        "figure": "15",
+        "small": "days",
+        "caption": "u0002"
+      },
+      {
+        "figure": "One",
+        "small": "firing",
+        "caption": "u0003"
+      },
+      {
+        "figure": "2006",
+        "small": null,
+        "caption": "u0004"
+      }
+    ]
+  },
+  "units": {
+    "u0001": {
+      "text": "160 authorised users of the GI",
+      "claims": [
+        "C138"
+      ]
+    },
+    "u0002": {
+      "text": "15 days for a piece or a batch",
+      "claims": [
+        "C133"
+      ]
+    },
+    "u0003": {
+      "text": "One firing bakes and glazes",
+      "claims": [
+        "C043"
+      ]
+    },
+    "u0004": {
+      "text": "2006, the GI application",
+      "claims": [
+        "C135"
+      ]
+    }
+  },
+  "facts": {
+    "C043": {
+      "text": "Blue pottery needs only one firing for both baking and glazing, unlike clay pottery, which needs two firings.",
+      "quotes": [
+        {
+          "source": "S02",
+          "locator": "lines 144-145",
+          "quote": "Requires only one firing for baking and glazing unlike clay pottery where two firings are required."
+        },
+        {
+          "source": "S14",
+          "locator": "line 10",
+          "quote": "Jaipur potters do not bisque fire their wares"
+        }
+      ]
+    },
+    "C133": {
+      "text": "A Kot Jewar artisan family told The Federal that a piece of blue pottery takes around 15 days to complete, whether a single plate or a batch of one hundred.",
+      "quotes": [
+        {
+          "source": "S16",
+          "locator": "line 17",
+          "quote": "Creating a single piece of blue pottery takes around 15 days to complete, whether it's a single plate or a batch of one hundred."
+        }
+      ]
+    },
+    "C135": {
+      "text": "Blue Pottery of Jaipur was filed for registration as geographical indication application 66 by the Development Commissioner (Handicrafts) on 14 August 2006.",
+      "quotes": [
+        {
+          "source": "S01",
+          "locator": "lines 2-5",
+          "quote": "| Application Number | 66 | | Geographical Indications | Blue Pottery of Jaipur | | Status | Registered | | Applicant Name | Development Commissioner (Handicrafts) |"
+        },
+        {
+          "source": "S01",
+          "locator": "line 7",
+          "quote": "| Date of Filing | 14-08-2006 |"
+        },
+        {
+          "source": "S05",
+          "locator": "line 90",
+          "quote": "74 66 Blue Pottery of Jaipur Handicraft Rajasthan"
+        }
+      ]
+    },
+    "C138": {
+      "text": "The GI registry's record of application 66 lists 160 authorised users of the Blue Pottery of Jaipur geographical indication.",
+      "quotes": [
+        {
+          "source": "S01",
+          "locator": "line 19",
+          "quote": "| Sl.No. | Authorized User No | Authorized User Name | Authorized User Address | Status |"
+        },
+        {
+          "source": "S01",
+          "locator": "line 180",
+          "quote": "| 160 | AU/21933/GI/66/160 |"
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S01": {
+      "title": "Application Details: Blue Pottery of Jaipur, Application Number 66",
+      "publisher": "Geographical Indications Registry, Intellectual Property India",
+      "year": null,
+      "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/66",
+      "reliability": "A"
+    },
+    "S02": {
+      "title": "Form GI-1: application for registration of the geographical indication Blue Pottery of Jaipur",
+      "publisher": "Development Commissioner (Handicrafts), Ministry of Textiles, Government of India",
+      "year": null,
+      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/64-blue-pottery-of-jaipur.pdf",
+      "reliability": "A"
+    },
+    "S05": {
+      "title": "Registration details of Geographical Indications",
+      "publisher": "IP India",
+      "year": null,
+      "url": "https://www.ipindia.gov.in/storage/uploads/docs-operator/aa9ef4c8-ae0e-4717-9181-52b6a9479b82.pdf",
+      "reliability": "A"
+    },
+    "S14": {
+      "title": "Clay Culture: Jaipur Blue Pottery",
+      "publisher": "Ceramics Monthly, Ceramic Arts Network",
+      "year": null,
+      "url": "https://ceramicartsnetwork.org/ceramics-monthly/ceramics-monthly-article/Clay-Culture-Jaipur-Blue-Pottery-202409",
+      "reliability": "C"
+    },
+    "S16": {
+      "title": "Blue Pottery Heritage: The Persian technique that India made its own",
+      "publisher": "The Federal",
+      "year": 2025,
+      "url": "https://thefederal.com/category/the-eighth-column/the-persian-pottery-technique-that-india-made-its-own-174809",
+      "reliability": "C"
+    }
+  }
+}

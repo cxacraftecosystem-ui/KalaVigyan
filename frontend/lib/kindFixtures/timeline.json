@@ -1,0 +1,279 @@
+{
+  "schemaVersion": 1,
+  "kind": "timeline",
+  "craft": "Blue-Pottery-Of-Jaipur",
+  "craftName": "Blue Pottery of Jaipur",
+  "label": "blue-pottery-of-jaipur/history/decline-and-revival",
+  "title": "The decline and revival of Jaipur blue pottery",
+  "description": "A timeline of Jaipur blue pottery from the School of Art of 1866 to the GI application of 2006. Place it in the history of the craft.",
+  "field": "HISTORY",
+  "within": null,
+  "spec": {
+    "head": {
+      "title": "u0001",
+      "caption": "u0002"
+    },
+    "events": [
+      {
+        "year": 1866,
+        "when": "u0003",
+        "title": "u0004",
+        "text": "u0005"
+      },
+      {
+        "year": 1954,
+        "when": "u0006",
+        "title": "u0007",
+        "text": "u0008"
+      },
+      {
+        "year": 1963,
+        "when": "u0009",
+        "title": "u0010",
+        "text": "u0011"
+      },
+      {
+        "year": 1974,
+        "when": "u0012",
+        "title": "u0013",
+        "text": "u0014"
+      },
+      {
+        "year": 2006,
+        "when": "u0015",
+        "title": "u0016",
+        "text": "u0017"
+      }
+    ]
+  },
+  "units": {
+    "u0001": {
+      "text": "Blue pottery almost vanished by 1954 and was revived through a school set up in 1963.",
+      "claims": [
+        "C073",
+        "C074"
+      ]
+    },
+    "u0002": {
+      "text": "Kripal Singh Shekhawat, credited with the revival, received the Padma Shri in 1974.",
+      "claims": [
+        "C078"
+      ]
+    },
+    "u0003": {
+      "text": "1866",
+      "claims": [
+        "C061"
+      ]
+    },
+    "u0004": {
+      "text": "School of Art",
+      "claims": []
+    },
+    "u0005": {
+      "text": "Ram Singh II set up a school of art at Jaipur in 1866, and blue glaze pottery thrived under it.",
+      "claims": [
+        "C061"
+      ]
+    },
+    "u0006": {
+      "text": "1954",
+      "claims": [
+        "C073"
+      ]
+    },
+    "u0007": {
+      "text": "The school closes",
+      "claims": []
+    },
+    "u0008": {
+      "text": "Blue pottery had almost vanished by independence, and the art school closed in 1954.",
+      "claims": [
+        "C073"
+      ]
+    },
+    "u0009": {
+      "text": "1963",
+      "claims": [
+        "C074"
+      ]
+    },
+    "u0010": {
+      "text": "A training school",
+      "claims": []
+    },
+    "u0011": {
+      "text": "A training school set up in 1963 had Kripal Singh Shekhawat as its first director.",
+      "claims": [
+        "C074"
+      ]
+    },
+    "u0012": {
+      "text": "1974",
+      "claims": [
+        "C078"
+      ]
+    },
+    "u0013": {
+      "text": "Padma Shri",
+      "claims": []
+    },
+    "u0014": {
+      "text": "Kripal Singh Shekhawat was conferred the Padma Shri in 1974.",
+      "claims": [
+        "C078"
+      ]
+    },
+    "u0015": {
+      "text": "2006",
+      "claims": [
+        "C135"
+      ]
+    },
+    "u0016": {
+      "text": "GI application",
+      "claims": []
+    },
+    "u0017": {
+      "text": "The GI application for Blue Pottery of Jaipur was filed on 14 August 2006.",
+      "claims": [
+        "C135"
+      ]
+    }
+  },
+  "facts": {
+    "C061": {
+      "text": "Maharaja Sawai Ram Singh II set up a school of art at Jaipur in 1866, and blue glaze pottery thrived primarily under its aegis.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 72-73",
+          "quote": "Sawai Ram Singh tr (1835-1880) set up a school of art in 1866"
+        },
+        {
+          "source": "S02",
+          "locator": "lines 104-105",
+          "quote": "the School of Art was established in 1866 at Jaipur"
+        },
+        {
+          "source": "S11",
+          "locator": "line 8",
+          "quote": "Introduced in Jaipur from Delhi and Khurja by the ruler of Jaipur, Ram Singh II, blue glaze pottery thrived primarily under the aegis of the Jaipur School of Art, founded in 1866."
+        }
+      ]
+    },
+    "C073": {
+      "text": "The CBSE manual says blue pottery had almost vanished by the time of independence and the art school was closed down in 1954.",
+      "quotes": [
+        {
+          "source": "S20",
+          "locator": "lines 158-161",
+          "quote": "The family gradually lost its hold and the art of blue pottery almost vanished by the time of independence. In 1954 the art school was closed down."
+        }
+      ]
+    },
+    "C074": {
+      "text": "A training school set up in 1963, named Sawai Ram Singh Shilp Kala Mandir, had Kripal Singh Shekhawat as its first director to train people in blue pottery.",
+      "quotes": [
+        {
+          "source": "S20",
+          "locator": "lines 165-168",
+          "quote": "The school established in 1963 was named Sawai Ram Singh Shilp Kala Mandir and Shri Kripal Singh Shekhawat,a renowned artist of Rajasthan was made the first director of the school to train people in blue pottery."
+        }
+      ]
+    },
+    "C078": {
+      "text": "Kripal Singh Shekhawat of Rajasthan, a craftsman credited with reviving blue pottery, was conferred the Padma Shri in 1974 in the field of art.",
+      "quotes": [
+        {
+          "source": "S19",
+          "locator": "line 1383",
+          "quote": "Shri Kirpal Singh Shekhawat RAJ PS24 Art"
+        },
+        {
+          "source": "S17",
+          "locator": "line 13",
+          "quote": "Kripal Singh Shekhawat, a renowned craftsman who revived Blue Pottery and was conferred with the Padma Shri in 1974."
+        }
+      ]
+    },
+    "C135": {
+      "text": "Blue Pottery of Jaipur was filed for registration as geographical indication application 66 by the Development Commissioner (Handicrafts) on 14 August 2006.",
+      "quotes": [
+        {
+          "source": "S01",
+          "locator": "lines 2-5",
+          "quote": "| Application Number | 66 | | Geographical Indications | Blue Pottery of Jaipur | | Status | Registered | | Applicant Name | Development Commissioner (Handicrafts) |"
+        },
+        {
+          "source": "S01",
+          "locator": "line 7",
+          "quote": "| Date of Filing | 14-08-2006 |"
+        },
+        {
+          "source": "S05",
+          "locator": "line 90",
+          "quote": "74 66 Blue Pottery of Jaipur Handicraft Rajasthan"
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S01": {
+      "title": "Application Details: Blue Pottery of Jaipur, Application Number 66",
+      "publisher": "Geographical Indications Registry, Intellectual Property India",
+      "year": null,
+      "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/66",
+      "reliability": "A"
+    },
+    "S02": {
+      "title": "Form GI-1: application for registration of the geographical indication Blue Pottery of Jaipur",
+      "publisher": "Development Commissioner (Handicrafts), Ministry of Textiles, Government of India",
+      "year": null,
+      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/64-blue-pottery-of-jaipur.pdf",
+      "reliability": "A"
+    },
+    "S03": {
+      "title": "Statement of Case for Blue Pottery of Jaipur in Rajasthan",
+      "publisher": "Development Commissioner (Handicraft), Government of India, filed with the Geographical Indications Registry",
+      "year": 2015,
+      "url": "https://ipindiaservices.gov.in/GI_DOC/540/540%20-%20Statement%20of%20Case%20-%2028-12-2015.pdf",
+      "reliability": "A"
+    },
+    "S05": {
+      "title": "Registration details of Geographical Indications",
+      "publisher": "IP India",
+      "year": null,
+      "url": "https://www.ipindia.gov.in/storage/uploads/docs-operator/aa9ef4c8-ae0e-4717-9181-52b6a9479b82.pdf",
+      "reliability": "A"
+    },
+    "S11": {
+      "title": "Blue Glaze Pottery",
+      "publisher": "Impart Encyclopedia of Art (MAP Academy)",
+      "year": 2023,
+      "url": "https://imp-art.org/articles/blue-glaze-pottery/",
+      "reliability": "B"
+    },
+    "S17": {
+      "title": "On a bullock cart to the world: How this Jaipur man set up a successful Blue Pottery business",
+      "publisher": "30 Stades",
+      "year": 2023,
+      "url": "https://30stades.com/enterprise/how-jaipur-man-ramnarayan-prajapati-set-up-successful-blue-pottery-business-global-exports",
+      "reliability": "C"
+    },
+    "S19": {
+      "title": "Padma Awards Directory (1954-2017): Year-Wise List",
+      "publisher": "Ministry of Home Affairs (Public Section), Government of India",
+      "year": null,
+      "url": "https://www.mha.gov.in/sites/default/files/2023-01/Year_Wise_main_25042017.pdf",
+      "reliability": "A"
+    },
+    "S20": {
+      "title": "Blue Pottery",
+      "publisher": "Central Board of Secondary Education",
+      "year": null,
+      "url": "https://cbseacademic.nic.in/web_material/Curriculum23/publication/BLUE_POTTERY8.pdf",
+      "reliability": "B"
+    }
+  }
+}

@@ -1,0 +1,371 @@
+{
+  "schemaVersion": 1,
+  "kind": "stage_player",
+  "craft": "Bastar-Dhokra",
+  "craftName": "Bastar Dhokra",
+  "label": "bastar-dhokra/process/lost-wax-stages",
+  "title": "The lost-wax stages of Bastar dhokra",
+  "description": "Five stages of a Bastar dhokra casting, from the black soil core and the sem leaves to the wax strings, the last soil coat and the pour. Place it in the process chapter.",
+  "field": "PROCESS",
+  "within": null,
+  "spec": {
+    "key": "dhokra-stages",
+    "head": {
+      "figure": null,
+      "number": "u0001",
+      "title": "u0002",
+      "titleId": "dhokra-stages-t",
+      "dek": null
+    },
+    "drawing": {
+      "tag": "svg",
+      "attrs": {
+        "viewBox": "0 0 200 120",
+        "role": "img",
+        "aria-label": "A dhokra figure on its stand"
+      },
+      "children": [
+        {
+          "tag": "ellipse",
+          "attrs": {
+            "cx": "100",
+            "cy": "60",
+            "rx": "40",
+            "ry": "50",
+            "fill": "var(--dye-field-soil)",
+            "stroke": "var(--ink-1)",
+            "stroke-width": "1.5"
+          }
+        }
+      ]
+    },
+    "restName": "u0003",
+    "play": "Play the stages",
+    "source": "u0004",
+    "stages": [
+      {
+        "name": "Rough core model",
+        "english": "Core",
+        "local": false,
+        "after": "Black core",
+        "number": "u0005",
+        "heading": "u0006",
+        "texts": [
+          "u0007"
+        ],
+        "why": null,
+        "differs": null,
+        "afterSentence": null,
+        "materials": null,
+        "swatch": "--dye-field-soil"
+      },
+      {
+        "name": "Leaf paste",
+        "english": "Sem leaves",
+        "local": false,
+        "after": "Green",
+        "number": "u0008",
+        "heading": "u0009",
+        "texts": [
+          "u0010"
+        ],
+        "why": null,
+        "differs": null,
+        "afterSentence": null,
+        "materials": null,
+        "swatch": "--dye-sem-green"
+      },
+      {
+        "name": "Wrapping wax strings",
+        "english": "Wax",
+        "local": false,
+        "after": "Wax skin",
+        "number": "u0011",
+        "heading": "u0012",
+        "texts": [
+          "u0013"
+        ],
+        "why": null,
+        "differs": null,
+        "afterSentence": null,
+        "materials": null
+      },
+      {
+        "name": "Layer of termite-hill soil",
+        "english": "Mould",
+        "local": false,
+        "after": "Mould",
+        "number": "u0014",
+        "heading": "u0015",
+        "texts": [
+          "u0016"
+        ],
+        "why": null,
+        "differs": null,
+        "afterSentence": null,
+        "materials": null
+      },
+      {
+        "name": "Firing, dewaxing and casting",
+        "english": "Casting",
+        "local": false,
+        "after": "Metal",
+        "number": "u0017",
+        "heading": "u0018",
+        "texts": [
+          "u0019"
+        ],
+        "why": "u0020",
+        "differs": null,
+        "afterSentence": null,
+        "materials": null
+      }
+    ],
+    "finish": {
+      "heading": "u0021",
+      "paragraphs": [
+        "u0022"
+      ]
+    },
+    "afterLabel": "Model after"
+  },
+  "units": {
+    "u0001": {
+      "text": "Figure",
+      "claims": []
+    },
+    "u0002": {
+      "text": "A dhokra mould is built in coats of soil over wax, fired, and filled with metal.",
+      "claims": [
+        "C066",
+        "C070"
+      ]
+    },
+    "u0003": {
+      "text": "The core",
+      "claims": []
+    },
+    "u0004": {
+      "text": "Stages as the GI method records them",
+      "claims": [
+        "C051"
+      ]
+    },
+    "u0005": {
+      "text": "First",
+      "claims": []
+    },
+    "u0006": {
+      "text": "A core of black soil",
+      "claims": []
+    },
+    "u0007": {
+      "text": "The core is black field soil, chikti mitti, kneaded with rice husk: 1 kg of soil to 100 grams of husk.",
+      "claims": [
+        "C051"
+      ]
+    },
+    "u0008": {
+      "text": "Second",
+      "claims": []
+    },
+    "u0009": {
+      "text": "Sem leaves on the dry core",
+      "claims": []
+    },
+    "u0010": {
+      "text": "Crushed sem leaves are rubbed over the dry model until it turns green, so the next soil does not stick.",
+      "claims": [
+        "C055"
+      ]
+    },
+    "u0011": {
+      "text": "Third",
+      "claims": []
+    },
+    "u0012": {
+      "text": "Wax strings around the model",
+      "claims": []
+    },
+    "u0013": {
+      "text": "Wax strings are wrapped closely around the hard, green-coated model, and designs are added in plain wax.",
+      "claims": [
+        "C061"
+      ]
+    },
+    "u0014": {
+      "text": "Fourth",
+      "claims": []
+    },
+    "u0015": {
+      "text": "The last coat and the funnel",
+      "claims": []
+    },
+    "u0016": {
+      "text": "A last coat of termite-hill soil covers the model, with wax channels forming an inverted funnel for the metal.",
+      "claims": [
+        "C066"
+      ]
+    },
+    "u0017": {
+      "text": "Fifth",
+      "claims": []
+    },
+    "u0018": {
+      "text": "Fire, wax out, metal in",
+      "claims": []
+    },
+    "u0019": {
+      "text": "When the fired mould turns red it is held upside down and molten metal is poured in to replace the wax.",
+      "claims": [
+        "C070"
+      ]
+    },
+    "u0020": {
+      "text": "Blowing through the pipe raises the fire to about 1000-1200 degrees Celsius, the heat that melts the metal.",
+      "claims": [
+        "C091"
+      ]
+    },
+    "u0021": {
+      "text": "Cooled and finished",
+      "claims": []
+    },
+    "u0022": {
+      "text": "The cast is left to cool for 1-6 hours depending on its size.",
+      "claims": [
+        "C071"
+      ]
+    }
+  },
+  "facts": {
+    "C051": {
+      "text": "The GI method mixes 1 kg of black field soil, called chikti mitti, with 100 grams of rice husk and kneads it with water into a soft dough.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1359-1362",
+          "quote": "Black soil in the fields (locally known as chikti mitti) is brought and mixed with rice husk in the ratio - 1 kg of black soil with 100 Gms of rice husk. Water is added to knead it into soft pliable dough."
+        }
+      ]
+    },
+    "C055": {
+      "text": "Crushed leaves of the sem or country bean creeper are rubbed over the dry model until it turns green, to keep the next soil from sticking to it.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1375-1377",
+          "quote": "Fresh and 'semi' or 'sem' or country bean creeper leaves are brought, crushed by rubbing them between both palms till a green liquid oozes out."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1377-1378",
+          "quote": "all over the model until the models looks totally green. This is to prevent the soil from sticking to the model"
+        },
+        {
+          "source": "S15",
+          "locator": "lines 1121-1122",
+          "quote": "The purpose of applying green liquid to model is to prevent the soil from sticking to the model."
+        }
+      ]
+    },
+    "C061": {
+      "text": "Wax strings are wrapped closely around the hard, green-coated model, and further designs are added in plain wax.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1418-1421",
+          "quote": "When wax strings are ready as required, they are wrapped closely around the model, which is hard and dry and green with the application of sem-leaf liquid. When the model is totally covered with wax strings, designs of choice can be made with plain wax too."
+        },
+        {
+          "source": "S23",
+          "locator": "lines 103-104",
+          "quote": "7. Wrapping of strings (Tikkal Chadana): Wax strings are tightly wrapped around the dry clay form"
+        }
+      ]
+    },
+    "C066": {
+      "text": "A final layer of powdered termite-hill soil covers the model, with larger wax channels added to form an inverted funnel for pouring the metal.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1460-1461",
+          "quote": "Soil from the termite hill is brought, powdered and kneaded to make a smooth mixture."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1461-1464",
+          "quote": "a bigger channel or channels from wax are added to the earlier channels (for pouring metal) made at the bottom and covered with termite soil mixture to make the passage ready (inverted funnel shape) and dried."
+        }
+      ]
+    },
+    "C070": {
+      "text": "When the fired mould turns red it is held upside down, and molten metal from the crucible is poured into its funnel to replace the wax.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1476-1477",
+          "quote": "The model in the first furnace turns red on being properly kept in fire."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1478-1482",
+          "quote": "The model is held upside down for the liquid bell metal to be poured in the channels or funnels made at the bottom. The crucible is then lifted with long-handled pincers and the molten metal is poured in the funnel so that it can pass through the channel to replace the wax inside the model."
+        },
+        {
+          "source": "S15",
+          "locator": "lines 1162-1164",
+          "quote": "The wax inside the model is replaced by molten metal poured through funnel."
+        }
+      ]
+    },
+    "C071": {
+      "text": "The cast is left to cool for 1-6 hours depending on its size, and water is sprinkled on it if it has not cooled.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1484-1486",
+          "quote": "The model is left to cool for 1-6 hours depending on the size. If it has not cooled down, water is sprinkled lightly on it to cool."
+        }
+      ]
+    },
+    "C091": {
+      "text": "Blowing through the pipe raises the fire to about 1000-1200 degrees Celsius, the heat needed to melt the metal.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1473-1476",
+          "quote": "The pola pipe is then blowed on so that the fire is burning at high temperature, reaching almost 1000-1200° C, which is required to melt the metal pieces."
+        },
+        {
+          "source": "S23",
+          "locator": "lines 110-111",
+          "quote": "Air is blown continuously through the pipe to maintain the temperature (1000-1200°C)."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S03": {
+      "title": "Geographical Indications Journal No. 24",
+      "publisher": "Geographical Indications Registry, Government of India",
+      "year": 2008,
+      "url": "https://ipindia.nic.in/girindia/journal/24.pdf",
+      "reliability": "A"
+    },
+    "S15": {
+      "title": "Dhokra Shilp: The Bell Metal Craft of Bastar",
+      "publisher": "D'source, Industrial Design Centre, IIT Bombay",
+      "year": null,
+      "url": "https://dsource.in/sites/default/files/resource/dhokra-shilp/downloads/file/dhokra_shilp_bell_metal_craft_bastar.pdf",
+      "reliability": "B"
+    },
+    "S23": {
+      "title": "Dhokra craft Kondagaon",
+      "publisher": "Gaatha",
+      "year": null,
+      "url": "https://gaatha.org/Craft-of-India/dhokra-craft-kondagaon/",
+      "reliability": "D"
+    }
+  }
+}

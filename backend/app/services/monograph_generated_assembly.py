@@ -12,6 +12,7 @@ from app.research.coverage_chapters import field_chapter
 from app.research.monograph_document import MonographDocument
 from app.research.monograph_page import CitedSource, ComponentEntry, LayoutEntry, MonographContent, TextUnit
 from app.research.page_layout import PageLayout, arranged_layout, picture_label
+from app.research.why_here import CraftGround
 
 from .component_places import PlacesHeld
 from .component_proposals_drawn import drawn_delivery
@@ -46,6 +47,7 @@ from .monograph_generated_units import (
     masthead_units,
     section_units,
 )
+from .monograph_generated_why_here import place_why_here
 from .page_layouts_backfill import LEADING_ROLES
 
 __all__ = ["LAYOUT_DATA", "GeneratedParts", "assembled_document"]
@@ -72,6 +74,7 @@ class GeneratedParts:
     values: Mapping[uuid.UUID, StatedValue] = field(default_factory=dict)
     structure: DocumentStructure | None = None
     places: PlacesHeld = field(default_factory=PlacesHeld)
+    ground: CraftGround | None = None
 
 
 @dataclass
@@ -99,6 +102,7 @@ def assembled_document(parts: GeneratedParts, drawings: Drawings) -> MonographDo
     placed = _structure(parts, page)
     pictures = _pictures(parts, page)
     components = _components(parts, page, drawings)
+    place_why_here(parts.ground, parts.subject_slug, page, (texts, components))
     _lay_out(page, (texts, pictures, components, placed.leading, placed.trailing))
     arranged = _headed(
         parts.record, page, [*_opening(parts, page), *arranged_layout(page.default, parts.layout)]

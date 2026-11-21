@@ -73,14 +73,23 @@ def test_the_numeral_size_is_fluid_only_from_the_rail_breakpoint() -> None:
     assert numeral["projector"] == 88
 
 
+OUTPUT_FOLDERS = (
+    ".claude/skills/kalavigyan-design/references",
+    "frontend/app",
+    "frontend/lib",
+    "backend/app/data/design",
+    "backend/app/research",
+)
+
+
 def test_the_outputs_are_written_where_the_app_and_the_skill_read_them(tmp_path: Path) -> None:
-    for folder in (".claude/skills/kalavigyan-design/references", "frontend/app", "backend/app/data/design"):
+    for folder in OUTPUT_FOLDERS:
         (tmp_path / folder).mkdir(parents=True)
-    assert len(stale_outputs(tmp_path, OUTPUTS)) == 5
+    assert len(stale_outputs(tmp_path, OUTPUTS)) == 7
 
 
 def test_the_backend_s_tokens_resource_is_written_by_the_generator_as_the_skill_s(tmp_path: Path) -> None:
-    for folder in (".claude/skills/kalavigyan-design/references", "frontend/app", "backend/app/data/design"):
+    for folder in OUTPUT_FOLDERS:
         (tmp_path / folder).mkdir(parents=True)
     write_outputs(tmp_path, OUTPUTS)
     served = tmp_path / "backend/app/data/design/tokens.json"

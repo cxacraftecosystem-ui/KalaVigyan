@@ -16,7 +16,7 @@ export function TableView({ spec, renderUnit }: ComponentViewProps) {
     cells: row.cells.map((cell, column) => ({ key: `c${column}`, content: renderUnit(cell), numeric: table.columns[column]?.numeric }))
   }));
   return (
-    <GeneralFigure kind="general_table" head={table.head} titleId={titleId} renderUnit={renderUnit}>
+    <GeneralFigure kind="fact_table" head={table.head} dataset={table.dataset} titleId={titleId} renderUnit={renderUnit}>
       <div className="overflow-x-auto">
         <UnitTable labelledBy={titleId} head={head} rows={rows} />
       </div>

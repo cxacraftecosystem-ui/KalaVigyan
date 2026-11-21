@@ -71,8 +71,8 @@ def gap_acceptance(name: str, fields: Sequence[str]) -> str:
     return (
         f"At least {ACCEPTED_FACTS_MIN} cited facts of {name} under each of {listed(fields)} that a retrieval run "
         "for the question finds, each one sentence saying no more than its verbatim quotes. "
-        "Propose them with propose_facts, naming the field's MISSING_FIELD or THIN_FIELD task as task_key when one "
-        "is open and no task_key otherwise. The task closes itself, and its reservation ends COMPLETED, when the "
+        "Propose them with propose_facts, naming this task's key as task_key: a fact filed under one of those "
+        "fields that passes the gates ends your reservation COMPLETED. The question closes itself when the "
         "nightly retrieval run finds them."
     )
 

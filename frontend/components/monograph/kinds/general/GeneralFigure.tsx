@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
-import { GENERAL_KICKERS, type GeneralHead, type GeneralKind } from "@/lib/componentSpecsGeneral";
+import { safeOutboundUrl } from "@/lib/citations";
+import { GENERAL_KICKERS, type DatasetCite, type GeneralHead, type GeneralKind } from "@/lib/componentSpecsGeneral";
 
 export type RenderUnit = (ref: string) => ReactNode;
 
@@ -10,10 +11,28 @@ type FigureProps = {
   titleId: string;
   renderUnit: RenderUnit;
   values?: { count: number; table: ReactNode };
+  dataset?: DatasetCite;
   children: ReactNode;
 };
 
-export function GeneralFigure({ kind, head, titleId, renderUnit, values, children }: FigureProps) {
+function DatasetLine({ dataset }: { dataset: DatasetCite }) {
+  const href = safeOutboundUrl(dataset.url ?? null);
+  const credit = dataset.credit ?? dataset.code;
+  return (
+    <p className="max-w-measure font-ui text-caption text-ink-3" data-testid="general-dataset">
+      {"Data: "}
+      {href ? (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="kv-link font-normal">
+          {credit}
+        </a>
+      ) : (
+        credit
+      )}
+    </p>
+  );
+}
+
+export function GeneralFigure({ kind, head, titleId, renderUnit, values, dataset, children }: FigureProps) {
   return (
     <figure className="kv-figure grid gap-3.5" data-general={kind} data-testid="general-figure">
       <figcaption className="grid gap-1.5">
@@ -30,6 +49,7 @@ export function GeneralFigure({ kind, head, titleId, renderUnit, values, childre
           <div className="overflow-x-auto pt-2">{values.table}</div>
         </details>
       ) : null}
+      {dataset ? <DatasetLine dataset={dataset} /> : null}
     </figure>
   );
 }

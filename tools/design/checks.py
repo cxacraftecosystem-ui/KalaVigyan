@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from design.colour import oklch
 from design.system import System
 
 __all__ = ["validate"]
@@ -18,6 +19,9 @@ WATER_LAND_GAP = 10
 SALT_LAND_GAP = 5
 PLATE_INK_RATIO = 5
 PLATE_TEXTURE_GAP = 3
+MATERIAL_RESERVED_GAP = 3
+INTERACTIVE_CHROMA = 0.15
+BLUE_HUES = (230, 290)
 
 
 def _needed_ratio(kind: str, theme: str) -> float | None:
@@ -137,14 +141,28 @@ def _plate_violations(tokens: dict[str, Any], system: System) -> list[str]:
     return bad
 
 
+def _material_violations(name: str, entry: dict[str, Any], system: System) -> list[str]:
+    bad = [
+        f"specimen {name} {theme} frame"
+        for theme in system.themes
+        if not entry["frame"][theme]["edgeVisible"]
+    ]
+    bad += [
+        f"specimen {name} {theme} {near['deltaE']} from {near['token']}"
+        for theme, near in entry["nearestSemantic"].items()
+        if near["deltaE"] < MATERIAL_RESERVED_GAP
+    ]
+    _, chroma, hue = oklch(entry["hex"])
+    if BLUE_HUES[0] <= hue <= BLUE_HUES[1] and chroma >= INTERACTIVE_CHROMA:
+        bad.append(f"specimen {name} chroma {chroma:.3f} reads as the interactive indigo")
+    return bad
+
+
 def _specimen_violations(tokens: dict[str, Any], system: System) -> list[str]:
     bad = []
     for name, entry in tokens["specimen"].items():
-        frame = entry.get("frame")
-        if isinstance(frame, dict) and "light" in frame:
-            bad += [
-                f"specimen {name} {theme} frame" for theme in system.themes if not frame[theme]["edgeVisible"]
-            ]
+        if isinstance(entry, dict) and "material" in entry:
+            bad += _material_violations(name, entry, system)
     return bad
 
 

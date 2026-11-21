@@ -15,9 +15,11 @@ def test_the_delivered_components_migration_follows_the_image_screens() -> None:
 
 def test_it_widens_both_kind_checks_by_the_general_kinds_only() -> None:
     step = migration("0049_delivered_components")
-    assert step.PIECE_KINDS == PIECE_KINDS
-    assert step.GENERAL_KINDS == GENERAL_KINDS
-    assert set(step.PIECE_KINDS) - set(step.PIECE_KINDS_BEFORE) == set(GENERAL_KINDS)
+    renamed = migration("0056_datasets_and_materials")
+    assert step.PIECE_KINDS == renamed.PIECE_KINDS_BEFORE
+    assert tuple(old for old, _ in renamed.RENAMED_KINDS) == step.GENERAL_KINDS
+    assert set(step.PIECE_KINDS) - set(step.PIECE_KINDS_BEFORE) == set(step.GENERAL_KINDS)
+    assert set(PIECE_KINDS) >= set(GENERAL_KINDS)
     assert (KnowledgePiece.__tablename__, ComponentProposal.__tablename__) == step.KIND_CHECKS
 
 

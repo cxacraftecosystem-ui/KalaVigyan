@@ -7,9 +7,12 @@ import { TableView } from "./TableView";
 import { TimelineView } from "./TimelineView";
 
 export const VIEWS: ComponentViews = {
-  general_drawing: DrawingView,
-  general_chart: ChartView,
-  general_table: TableView,
-  general_timeline: TimelineView,
-  general_map_layer: MapLayerView
+  drawing: DrawingView
+};
+
+export const DECLARED_VIEWS: ComponentViews = {
+  chart: ChartView,
+  fact_table: TableView,
+  timeline: TimelineView,
+  map_layer: MapLayerView
 };

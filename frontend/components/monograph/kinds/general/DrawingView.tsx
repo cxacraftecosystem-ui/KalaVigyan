@@ -15,7 +15,7 @@ export function DrawingView({ spec, renderUnit }: ComponentViewProps) {
   const box = drawing ? drawingViewBox(drawing.svg) : null;
   if (!drawing || !box) return null;
   return (
-    <GeneralFigure kind="general_drawing" head={drawing.head} titleId={titleId} renderUnit={renderUnit}>
+    <GeneralFigure kind="drawing" head={drawing.head} titleId={titleId} renderUnit={renderUnit}>
       <div className="grid gap-2">
         <div className="rounded-plate border border-ink-2 bg-raised p-0.5" role="img" aria-labelledby={titleId} aria-describedby={altId}>
           <div className="kv-general-sheet rounded-plate">

@@ -345,14 +345,14 @@
     {
       "code": "CHELSA_2_1_1981_2010",
       "title": "CHELSA V2.1 climatologies 1981-2010",
-      "publisher": "Swiss Federal Institute for Forest, Snow and Landscape Research WSL",
+      "publisher": "Swiss Federal Institute for Forest, Snow and Landscape Research WSL, via EnviDat",
       "edition": "V2.1",
       "period": "1981-2010",
       "nativeResolution": "30 arc-seconds (about 1 km)",
-      "licence": "Karger et al. 2017",
-      "licenceUrl": "https://doi.org/10.1038/sdata.2017.122",
-      "attribution": "CHELSA V2.1",
-      "citation": "Karger, D. N., Conrad, O., Bohner, J., et al. (2017). Climatologies at high resolution for the earth's land surface areas. Scientific Data 4, 170122. https://doi.org/10.1038/sdata.2017.122",
+      "licence": "CC0 1.0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "attribution": "CHELSA V2.1, Karger et al.",
+      "citation": "Karger, D. N., Conrad, O., Bohner, J., et al. (2021). Climatologies at high resolution for the earth's land surface areas. EnviDat. https://doi.org/10.16904/envidat.228",
       "url": "https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/1981-2010/"
     },
     {

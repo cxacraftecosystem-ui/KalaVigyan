@@ -4,6 +4,7 @@ from typing import Annotated, Literal, Self
 
 from pydantic import Field, model_validator
 
+from .base import absent
 from .component_specs_science_parts import (
     Colour,
     ColourToken,
@@ -20,6 +21,7 @@ from .component_specs_science_parts import (
 )
 
 __all__ = [
+    "PHASE_KEY_PATTERN",
     "Condition",
     "DipPhase",
     "DipPlayerSpec",
@@ -38,9 +40,11 @@ __all__ = [
     "StepText",
 ]
 
-DIP_POSES = ("vat", "lifted", "air")
+PHASE_KEY_PATTERN = r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+PHASE_KEY_MAX = 40
 SWATCH_MARKS = ("clear", "gas", "ion")
 Cid = Annotated[int, Field(ge=1)]
+PhaseKey = Annotated[str, Field(pattern=PHASE_KEY_PATTERN, max_length=PHASE_KEY_MAX)]
 
 
 class Condition(SpecModel):
@@ -145,7 +149,7 @@ class ReactionPlayerSpec(SpecModel):
 
 
 class DipPhase(SpecModel):
-    pose: Literal[*DIP_POSES]
+    pose: PhaseKey
     drawing: SvgNode
     kicker: UnitRef
     text: UnitRef
@@ -162,7 +166,14 @@ class DipPlayerSpec(SpecModel):
     status: UnitRef
     dips_label: UnitRef
     dips: list[ColourToken] = Field(min_length=1)
-    equation: Equation
+    equation: Equation | None = Field(default=None, exclude_if=absent)
+
+    @model_validator(mode="after")
+    def _each_phase_once(self) -> Self:
+        poses = [phase.pose for phase in self.phases]
+        if len(set(poses)) != len(poses):
+            raise ValueError(f"player {self.id} names each of its phases once")
+        return self
 
 
 class StageEntry(SpecModel):
@@ -177,6 +188,7 @@ class StageEntry(SpecModel):
     differs: Differs | None = None
     after_sentence: UnitRef | None = None
     materials: UnitRef | None = None
+    swatch: ColourToken | None = Field(default=None, exclude_if=absent)
 
 
 class StageFinish(SpecModel):
@@ -193,3 +205,4 @@ class StagePlayerSpec(SpecModel):
     source: UnitRef
     stages: list[StageEntry] = Field(min_length=2)
     finish: StageFinish
+    after_label: Label

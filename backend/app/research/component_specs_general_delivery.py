@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 import uuid
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Annotated, Any, Self
 
 from pydantic import Field, ValidationError, model_validator
@@ -10,12 +12,14 @@ from pydantic import Field, ValidationError, model_validator
 from app.core.errors import InvalidInput
 
 from .base import ContractModel
-from .component_specs import checked_spec
+from .component_specs import checked_spec, not_contributable
 from .component_specs_general import (
     GENERAL_CHART,
     GENERAL_MAP_LAYER,
     GENERAL_TABLE,
     GENERAL_TIMELINE,
+    DataCell,
+    DatasetCite,
     GeneralChartSpec,
     GeneralMapLayerSpec,
     GeneralTableSpec,
@@ -26,14 +30,18 @@ from .quotes import numbers_in, unsupported_figures
 
 __all__ = [
     "CLAIMS_PER_UNIT_MAX",
+    "CONTAINER_KINDS",
     "DELIVERED_KEY",
     "DELIVERED_UNIT_END",
     "DELIVERED_UNIT_START",
     "LABEL_MAX_CHARS",
     "UNITS_MAX",
+    "CitedCell",
     "DeliveredComponent",
     "DeliveredUnit",
     "UnitKey",
+    "cited_cells",
+    "cited_dataset",
     "delivered_claim_ids",
     "delivered_of",
     "fresh_unit_ids",
@@ -57,6 +65,8 @@ DELIVERED_KEY = "delivered"
 PROBLEMS_SHOWN = 6
 
 UnitKey = Annotated[str, Field(pattern=UNIT_KEY_PATTERN)]
+NO_ROWS: Mapping[str, Sequence[str]] = MappingProxyType({})
+CONTAINER_KINDS = frozenset({"experiment_lab"})
 
 
 class DeliveredUnit(ContractModel):
@@ -85,6 +95,9 @@ def delivered_claim_ids(units: Mapping[str, DeliveredUnit]) -> list[uuid.UUID]:
 
 
 def spec_problems(kind: str, spec: Mapping[str, Any], units: Mapping[str, DeliveredUnit]) -> list[str]:
+    refused = not_contributable(kind)
+    if refused is not None:
+        return [refused]
     try:
         checked = checked_spec(kind, spec)
     except ValidationError as wrong:
@@ -100,23 +113,27 @@ def spec_problems(kind: str, spec: Mapping[str, Any], units: Mapping[str, Delive
         problems.append(
             "a citation in the spec's own text is not allowed: cite a fact through a unit's claimIds"
         )
-    if not delivered_claim_ids(units):
+    if not delivered_claim_ids(units) and cited_dataset(checked) is None and kind not in CONTAINER_KINDS:
         problems.append("the component cites no fact: at least one unit names the facts it rests on")
     return problems + _value_problems(kind, checked, units)
 
 
-def unit_problems(units: Mapping[str, DeliveredUnit], cited: Mapping[uuid.UUID, Sequence[str]]) -> list[str]:
+def unit_problems(
+    units: Mapping[str, DeliveredUnit],
+    cited: Mapping[uuid.UUID, Sequence[str]],
+    rows: Mapping[str, Sequence[str]] = NO_ROWS,
+) -> list[str]:
     problems: list[str] = []
     for ref, unit in sorted(units.items()):
         missing = [str(claim) for claim in unit.claim_ids if claim not in cited]
         if missing:
             problems.append(f"the unit {ref} cites {', '.join(missing)}, which no shown fact has as its id")
             continue
-        if not unit.claim_ids and len(unit.text) > LABEL_MAX_CHARS:
+        if not unit.claim_ids and ref not in rows and len(unit.text) > LABEL_MAX_CHARS:
             problems.append(
                 f"the unit {ref} is a sentence of more than {LABEL_MAX_CHARS} characters citing no fact"
             )
-        stated = [text for claim in unit.claim_ids for text in cited[claim]]
+        stated = [*(text for claim in unit.claim_ids for text in cited[claim]), *rows.get(ref, ())]
         figures = unsupported_figures(unit.text, stated)
         if figures:
             problems.append(f"the unit {ref} states {', '.join(figures)}, which none of its facts states")
@@ -202,3 +219,39 @@ def _first(wrong: ValidationError) -> str:
     problem = wrong.errors()[0]
     where = ".".join(str(part) for part in problem["loc"])
     return f"{where}: {problem['msg']}" if where else str(problem["msg"])
+
+
+@dataclass(frozen=True)
+class CitedCell:
+    cell: DataCell
+    unit: str
+    value: float | None
+
+
+def cited_dataset(spec: Any) -> DatasetCite | None:
+    if isinstance(spec, GeneralChartSpec | GeneralTableSpec | GeneralMapLayerSpec):
+        return spec.dataset
+    return None
+
+
+def cited_cells(spec: Any) -> list[CitedCell]:
+    if isinstance(spec, GeneralChartSpec):
+        points = [point for series in spec.series for point in series.points]
+        return [
+            CitedCell(point.cell, point.reading, point.value) for point in points if point.cell is not None
+        ]
+    if isinstance(spec, GeneralMapLayerSpec):
+        return [
+            CitedCell(place.cell, place.reading, place.value)
+            for place in spec.places
+            if place.cell is not None
+        ]
+    if isinstance(spec, GeneralTableSpec):
+        return [
+            CitedCell(DataCell(row=row.row, column=column.column), row.cells[at], None)
+            for row in spec.rows
+            if row.row is not None
+            for at, column in enumerate(spec.columns)
+            if column.column is not None
+        ]
+    return []

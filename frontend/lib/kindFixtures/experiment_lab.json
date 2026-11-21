@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "kind": "experiment_lab",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/chemistry/what-if-lab",
+  "title": "What if, for bidri",
+  "description": "Two what-if experiments on bidri: the bath that blackens the alloy, and the copper in it.",
+  "field": "CHEMISTRY",
+  "within": null,
+  "spec": {
+    "id": "bidri-lab",
+    "figure": "chem:1",
+    "number": "u0001",
+    "pickerLabel": "Choose an experiment",
+    "experiments": [
+      {
+        "key": "bath",
+        "label": "The bath",
+        "toggle": {
+          "component": "bidriware/chemistry/what-blackens"
+        }
+      },
+      {
+        "key": "copper",
+        "label": "The copper",
+        "toggle": {
+          "component": "bidriware/chemistry/why-copper"
+        }
+      }
+    ]
+  },
+  "units": {
+    "u0001": {
+      "text": "Figure",
+      "claims": []
+    }
+  },
+  "facts": {},
+  "sources": {}
+}

@@ -18,7 +18,7 @@ component contracts; where it is silent, they decide.
   matches and the two ways on.
 - A `MISSING_COMPONENT` task names its need: `what-if`, `molecules`, `map`, `reaction-player` or
   `pictures`, and only a component of a kind that need lists completes it. An `experiment_lab`
-  completes `what-if`, and a delivered `general_map_layer` completes `map`. Pictures are given, not
+  completes `what-if`, and a delivered `map_layer` completes `map`. Pictures are given, not
   delivered as components (the contributor skill, Pictures).
 
 ## Choosing a kind
@@ -27,63 +27,87 @@ Choose by what the reader must see:
 
 | To show | Deliver |
 |---|---|
-| quantities compared across places, materials or years | `general_chart`, as `bars` for categories or a `line` for a series over time |
-| several things side by side, by their attributes, or a few headline numbers | `general_table` |
-| dated events in order | `general_timeline` |
-| places, with or without a value each | `general_map_layer` |
-| a mechanism, a section, a tool or an object | `general_drawing`, or `diagram` for a chain of linked steps |
+| quantities compared across places, materials or years | `chart`, as `bars` for categories or a `line` for a series over time |
+| several things side by side, by their attributes, or a few headline numbers | `fact_table`, or `stat_tiles` for a few figures |
+| dated events in order | `timeline` |
+| places, with or without a value each | `map_layer` |
+| a mechanism, a section, a tool or an object | `drawing`, or `diagram` for a chain of linked steps |
 | one stated equation | `equation_card` |
 | molecules | `structure_diagram` (flat, with their PubChem records from `lookup`) or `molecule_3d` |
 | a reaction a source states step by step | `reaction_player` |
-| what each material is and does | `material_cards` |
+| a process stage by stage | `stage_player`, or `dip_player` for successive immersions |
+| what each material is and does | `material_cards`, and `swatch_cards` or `swatch_pair` for its colours |
 | sources that disagree | `source_disagreements` |
 | a what-if experiment | `experiment_lab` holding one `choice_toggle` per experiment |
 
-The 42 kinds of the approved page, by group:
+The 22 kinds a contributor delivers, by group:
 
-- **Plates and media** (12): `picture_plate`, `ai_illustration`, `specimen_plate`, `label_card`,
-  `swatch_cards`, `swatch_pair`, `film`, `ai_video`, `comic`, `audio_player`, `voice`, `credits`.
-- **Data and place** (12): `chart`, `stat_tiles`, `fact_table`, `map_layer`, `map_sequence`,
-  `timeline`, `timeline_map`, `concept_atlas`, `related_crafts`, `source_list`,
-  `source_disagreements`, `citation_tool`.
-- **Science** (12): `reaction_player`, `dip_player`, `stage_player`, `diagram`, `molecule_3d`,
-  `structure_diagram`, `equation_card`, `model_explainer`, `material_cards`, `experiment_lab`,
-  `choice_toggle`, `process_replay`.
-- **Reading tools** (6): `explainer`, `quiz`, `ask_next`, `language_switch`, `reading_level`,
-  `generator`.
+- **Figures from data** (5): `drawing`, `chart`, `fact_table`, `timeline`, `map_layer`.
+- **Data and place** (3): `stat_tiles`, `map_sequence`, `source_disagreements`.
+- **Plates and voices** (4): `label_card`, `swatch_cards`, `swatch_pair`, `voice`.
+- **Science** (10): `reaction_player`, `dip_player`, `stage_player`, `diagram`, `molecule_3d`,
+  `structure_diagram`, `equation_card`, `material_cards`, `experiment_lab`, `choice_toggle`.
 
-Their specs follow the approved Kutch Ajrakh page part for part, and each is checked against its
-kind's model (the repository's `docs/contracts/component-specs-plates.md`, `-data.md` and
-`-science.md`). The MCP server publishes that model for every kind, the five general ones too, as a
-JSON schema resource named `kalavigyan://components/<kind>.schema.json`: read the one for your kind
-before you write its spec. Deliver one when its form is exactly what the page needs and every part can be
-filled from facts, most often as a `VARIANT` of a registered component. Deliver knowledge, not the
-page's apparatus: the masthead, the citation tool, source lists, credits and the reading tools are
-the page's own.
+Each has been drawn for a craft other than Kutch Ajrakh (Bidriware, Blue Pottery of Jaipur,
+Bastar Dhokra, cane and bamboo) from that craft's stored facts, and none needs Kutch Ajrakh's
+words: a dip player names its own phases, a material is any the design system records, and a
+dip player shows an equation only where a source states one. The site builds the rest itself:
 
-For anything the 42 do not show, use one of the five general kinds: `general_drawing`,
-`general_chart`, `general_table`, `general_timeline`, `general_map_layer`. A one-off visual is a
-general kind, never free-form HTML.
+- **Built by the site for every page** (14): `ask_next`, `audio_player`, `citation_tool`,
+  `concept_atlas`, `credits`, `explainer`, `film`, `generator`, `language_switch`,
+  `process_replay`, `quiz`, `reading_level`, `related_crafts`, `source_list`. They are the page's
+  apparatus, computed from its data; a proposal of one is refused.
+- **The authored page's own** (7): `picture_plate`, `specimen_plate`, `ai_illustration`, `ai_video`,
+  `comic`, `model_explainer`, `timeline_map`. Pictures are given with `give_pictures` and placed
+  by the site; a model or a route map runs the authored page's own script, so deliver a `drawing`,
+  a `timeline` or a `map_layer` instead.
 
-## The general kinds
+Each kind's spec is checked against its model (the repository's
+`docs/contracts/component-specs-plates.md`, `-data.md`, `-science.md` and `-general.md`). The MCP
+server publishes that model for every kind a contributor delivers as a JSON schema resource named
+`kalavigyan://components/<kind>.schema.json`: read the one for your kind before you write its spec.
 
-Every general spec has `head {title, caption?}`. The title states the finding of a chart and
+Five kinds also take a declared spec, which the site draws in the design system from data alone,
+and which is the form for anything new: use one of the five kinds that also take a declared spec:
+`drawing`, `chart`, `fact_table`, `timeline`, `map_layer`. A spec with a `head` is declared; the
+same kind without one is the authored figure of a page such as Kutch Ajrakh's. A one-off visual is
+a declared kind, never free-form HTML.
+
+## The declared kinds
+
+Every declared spec has `head {title, caption?}`. The title states the finding of a chart and
 describes a drawing, map, table or timeline; the caption is a cited sentence under it. Keys may be
 written in camelCase (`valueLabel`) or snake_case (`value_label`); the stored spec keeps camelCase.
 
-- `general_drawing`: `head`, `svg` (one SVG drawing) and `alt` (what it shows).
-- `general_chart`: `head`; `form`, `bars` or `line`; `valueLabel`, what is measured with its unit;
-  `series`, 1 to 3, each `{name, points}` with 1 to 60 points `{label, value, reading}` and the
-  same count in every series; `emphasis`, the index of the first series' point the title names.
+- `drawing`: `head`, `svg` (one SVG drawing) and `alt` (what it shows).
+- `chart`: `head`; `form`, `bars` or `line`; `valueLabel`, what is measured with its unit;
+  `series`, 1 to 3, each `{name, points}` with 1 to 60 points `{label, value, reading, cell?}` and
+  the same count in every series; `emphasis`, the index of the first series' point the title names.
   Bars start at zero, so a bar chart shows no negative value; a line joins two points or more.
-- `general_table`: `head`; `columns`, 1 to 8, each `{label, numeric}`; `rows`, 1 to 100, each
-  `{cells}` with one cell per column. Every cell of a numeric column states a number.
-- `general_timeline`: `head`; `events`, 2 to 40, each `{year, when, title, text}`, in the order of
+- `fact_table`: `head`; `columns`, 1 to 8, each `{label, numeric, column?}`; `rows`, 1 to 100, each
+  `{cells, row?}` with one cell per column. Every cell of a numeric column states a number.
+- `timeline`: `head`; `events`, 2 to 40, each `{year, when, title, text}`, in the order of
   their years, from -3000 to 2100 (a negative year is BCE).
-- `general_map_layer`: `head`; `places`, 1 to 60, each `{longitude, latitude, name, reading,
-  value?}`, inside longitude 68 to 97.5 and latitude 6.5 to 37.5; every place has a value or none
+- `map_layer`: `head`; `places`, 1 to 60, each `{longitude, latitude, name, reading, value?,
+  cell?}`, inside longitude 68 to 97.5 and latitude 6.5 to 37.5; every place has a value or none
   does, a value is zero or more, and `valueLabel` names what the values measure when, and only when,
   they are given. Each place is a numbered disc whose area follows its value.
+
+A `chart`, `fact_table` or `map_layer` drawn from a stored dataset names it as `dataset {code}` and
+each value's place in its table as `cell {row, column}` (a table's rows by `row`, its columns by
+`column`): the dataset guide's Contributed datasets says how a table is stored. The gates read
+every such value from its row, so its unit needs no fact of its own; the site writes the dataset's
+credit under the figure.
+
+## Depicted materials
+
+A swatch's `dye` or `ground`, a `--dye-*` token in a drawing and a dip's colours name depicted
+materials: colours the design system generates from material records, each naming the craft's
+material, the facts that state its colour and the swatch it draws. `kalavigyan://design/tokens.json`
+lists every one under `specimen`, with its craft, material and facts. Kutch Ajrakh's dyes were the
+first records; Bidriware's alloy, silver and black, Jaipur's quartz white, cobalt and copper
+turquoise and Bastar dhokra's soils followed. A material no record holds is refused; ask for its
+record (its colour and the fact that states it) before you draw it.
 
 ## Units and citations
 
@@ -109,7 +133,7 @@ The shape, with the texts left to the facts:
 
 ```json
 {
-  "kind": "general_chart",
+  "kind": "chart",
   "spec": {
     "head": {"title": "u0001", "caption": "u0002"},
     "form": "bars",
@@ -149,20 +173,20 @@ How a component is sent, seen first and registered is the contributor skill's (C
 Pages). The checks it meets, each refusal naming every problem in one sentence: the close-match
 search of the library; the spec against its kind's model; the spec's units against the delivered
 units; no citation in the spec's own text; at least one cited unit; every cited fact shown or in
-the bundle; every number of a unit in its facts; and the general kinds' values stated by their
-units.
+the bundle; every number of a unit in its facts or its dataset rows; and the declared kinds' values
+stated by their units.
 
 ## The design rules for a contributed figure
 
-- **Give data, not styling.** A general kind's view sets every colour, size and position itself:
+- **Give data, not styling.** A declared kind's view sets every colour, size and position itself:
   bars and lines in the chart series colour with the one mark the title names emphasised, places as
   numbered paper discs on India's outline in the map colours, tables in tabular figures. A spec
   carries no colour, font or size.
-- **Tokens, never typed colours**, in the drawings of the 42 kinds: a fill, stroke or stop colour
-  is a token (`var(--ink-1)`, a specimen `--dye-*`, a `--chart-*` or `--map-*` token, a surface), a
+- **Tokens, never typed colours**, in the drawings of the authored forms: a fill, stroke or stop colour
+  is a token (`var(--ink-1)`, a depicted `--dye-*`, a `--chart-*` or `--map-*` token, a surface), a
   mix of two tokens, an in-drawing reference, `none` or `currentColor`; plain white or black only
   for a mask or a highlight.
-- **A general drawing** is shown as an image on the cloth-white specimen mat in every theme, so it
+- **A declared drawing** is shown as an image on the cloth-white specimen mat in every theme, so it
   cannot read the page's tokens: draw its lines and text in the light theme's ink values from the
   tokens resource, and a depicted material in its specimen `--dye-*` value, named in the caption or
   `alt`.

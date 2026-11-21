@@ -3,9 +3,10 @@ from __future__ import annotations
 import re
 from typing import Annotated, Literal
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import AfterValidator, ConfigDict, Field, field_validator
 
 from .base import ContractModel
+from .depicted_materials import DEPICTED_MATERIALS
 
 __all__ = [
     "COLOUR_TOKEN_PATTERN",
@@ -32,6 +33,7 @@ __all__ = [
     "SvgNode",
     "TextBlock",
     "UnitRef",
+    "known_colour_token",
 ]
 
 UNIT_REF_PATTERN = r"^u\d{4,}$"
@@ -78,12 +80,28 @@ PAINT_VALUE = re.compile(
 PAINT_TOKEN = re.compile(r"^var\((--[a-z0-9-]+)\)$")
 PAINT_MIX = re.compile(r"^color-mix\(in srgb, var\((--[a-z0-9-]+)\) \d{1,3}%, var\((--[a-z0-9-]+)\)\)$")
 LOCAL_URL = re.compile(r"url\((?!#[\w-]+\))")
+DEPICTED_PREFIX = "--dye-"
+DEPICTED = frozenset(DEPICTED_MATERIALS)
 
 UnitRef = Annotated[str, Field(pattern=UNIT_REF_PATTERN)]
 DomId = Annotated[str, Field(pattern=DOM_ID_PATTERN)]
 StyleName = Annotated[str, Field(pattern=STYLE_PATTERN)]
 FigureKey = Annotated[str, Field(pattern=FIGURE_KEY_PATTERN)]
-ColourToken = Annotated[str, Field(pattern=COLOUR_TOKEN_PATTERN)]
+
+
+def known_colour_token(token: str) -> bool:
+    if not re.fullmatch(COLOUR_TOKEN_PATTERN, token):
+        return False
+    return not token.startswith(DEPICTED_PREFIX) or token.removeprefix(DEPICTED_PREFIX) in DEPICTED
+
+
+def _depicted(token: str) -> str:
+    if not known_colour_token(token):
+        raise ValueError(f"{token} is not a depicted material the design system records")
+    return token
+
+
+ColourToken = Annotated[str, Field(pattern=COLOUR_TOKEN_PATTERN), AfterValidator(_depicted)]
 Label = Annotated[str, Field(min_length=1, max_length=2000)]
 
 
@@ -189,5 +207,5 @@ def _refused_attribute(name: str, value: str) -> str | None:
 def _paint(value: str) -> bool:
     tokens = PAINT_TOKEN.fullmatch(value) or PAINT_MIX.fullmatch(value)
     if tokens:
-        return all(re.fullmatch(COLOUR_TOKEN_PATTERN, token) for token in tokens.groups())
+        return all(known_colour_token(token) for token in tokens.groups())
     return PAINT_VALUE.fullmatch(value) is not None

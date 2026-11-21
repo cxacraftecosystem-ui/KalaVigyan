@@ -2,18 +2,21 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from types import MappingProxyType
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import AfterValidator, Field, model_validator
 
 from app.models.component_kinds import GENERAL_KINDS
 
-from .base import ContractModel
+from .base import ContractModel, HttpsUrl, absent
 from .component_specs_general_svg import cleaned_svg
 from .component_specs_plates_parts import UnitRef
+from .datasets import DATASET_CODE_PATTERN
 
 __all__ = [
     "BOUNDS",
+    "DECLARED_KEY",
+    "DECLARED_SPEC_MODELS",
     "GENERAL_CHART",
     "GENERAL_DRAWING",
     "GENERAL_KINDS",
@@ -23,6 +26,8 @@ __all__ = [
     "SPEC_MODELS_GENERAL",
     "ChartPoint",
     "ChartSeries",
+    "DataCell",
+    "DatasetCite",
     "GeneralChartSpec",
     "GeneralDrawingSpec",
     "GeneralHead",
@@ -33,6 +38,7 @@ __all__ = [
     "TableColumn",
     "TableRow",
     "TimelineEvent",
+    "is_declared",
 ]
 
 GENERAL_DRAWING, GENERAL_CHART, GENERAL_TABLE, GENERAL_TIMELINE, GENERAL_MAP_LAYER = GENERAL_KINDS
@@ -47,6 +53,10 @@ PLACES_MAX = 60
 YEAR_MIN = -3000
 YEAR_MAX = 2100
 BOUNDS = MappingProxyType({"west": 68.0, "east": 97.5, "south": 6.5, "north": 37.5})
+DECLARED_KEY = "head"
+CELL_COLUMN_MAX = 500
+CREDIT_MAX = 600
+NEEDS_DATASET = "a value that names its cell names the dataset too, and a dataset is named only with cells"
 
 CleanSvg = Annotated[str, AfterValidator(cleaned_svg)]
 
@@ -54,6 +64,17 @@ CleanSvg = Annotated[str, AfterValidator(cleaned_svg)]
 class GeneralHead(ContractModel):
     title: UnitRef
     caption: UnitRef | None = None
+
+
+class DataCell(ContractModel):
+    row: int = Field(ge=1)
+    column: str = Field(min_length=1, max_length=CELL_COLUMN_MAX)
+
+
+class DatasetCite(ContractModel):
+    code: str = Field(pattern=DATASET_CODE_PATTERN, max_length=80)
+    credit: str | None = Field(default=None, max_length=CREDIT_MAX, exclude_if=absent)
+    url: HttpsUrl | None = Field(default=None, exclude_if=absent)
 
 
 class GeneralDrawingSpec(ContractModel):
@@ -66,6 +87,7 @@ class ChartPoint(ContractModel):
     label: UnitRef
     value: float
     reading: UnitRef
+    cell: DataCell | None = Field(default=None, exclude_if=absent)
 
 
 class ChartSeries(ContractModel):
@@ -79,6 +101,7 @@ class GeneralChartSpec(ContractModel):
     value_label: UnitRef
     series: list[ChartSeries] = Field(min_length=1, max_length=SERIES_MAX)
     emphasis: int | None = Field(default=None, ge=0)
+    dataset: DatasetCite | None = Field(default=None, exclude_if=absent)
 
     @model_validator(mode="after")
     def _drawable(self) -> Self:
@@ -91,27 +114,38 @@ class GeneralChartSpec(ContractModel):
             raise ValueError("Bars start at zero, so a bar chart shows no negative value")
         if self.form == "line" and len(self.series[0].points) < 2:
             raise ValueError("A line joins two points or more")
+        cells = [point.cell for series in self.series for point in series.points]
+        if (self.dataset is None) != all(cell is None for cell in cells):
+            raise ValueError(NEEDS_DATASET)
         return self
 
 
 class TableColumn(ContractModel):
     label: UnitRef
     numeric: bool = False
+    column: str | None = Field(default=None, min_length=1, max_length=CELL_COLUMN_MAX, exclude_if=absent)
 
 
 class TableRow(ContractModel):
     cells: list[UnitRef] = Field(min_length=1, max_length=COLUMNS_MAX)
+    row: int | None = Field(default=None, ge=1, exclude_if=absent)
 
 
 class GeneralTableSpec(ContractModel):
     head: GeneralHead
     columns: list[TableColumn] = Field(min_length=1, max_length=COLUMNS_MAX)
     rows: list[TableRow] = Field(min_length=1, max_length=ROWS_MAX)
+    dataset: DatasetCite | None = Field(default=None, exclude_if=absent)
 
     @model_validator(mode="after")
     def _square(self) -> Self:
         if any(len(row.cells) != len(self.columns) for row in self.rows):
             raise ValueError("Every row of a table has one cell per column")
+        located = any(row.row is not None for row in self.rows) and any(
+            column.column is not None for column in self.columns
+        )
+        if (self.dataset is None) == located:
+            raise ValueError(NEEDS_DATASET)
         return self
 
 
@@ -140,12 +174,14 @@ class MapPlace(ContractModel):
     name: UnitRef
     reading: UnitRef
     value: float | None = Field(default=None, ge=0)
+    cell: DataCell | None = Field(default=None, exclude_if=absent)
 
 
 class GeneralMapLayerSpec(ContractModel):
     head: GeneralHead
     places: list[MapPlace] = Field(min_length=1, max_length=PLACES_MAX)
     value_label: UnitRef | None = None
+    dataset: DatasetCite | None = Field(default=None, exclude_if=absent)
 
     @model_validator(mode="after")
     def _valued_together(self) -> Self:
@@ -154,15 +190,25 @@ class GeneralMapLayerSpec(ContractModel):
             raise ValueError("Either every place of a map layer has a value or none has")
         if (True in valued) != (self.value_label is not None):
             raise ValueError("A map layer with values names what they measure in valueLabel, and only then")
+        if (self.dataset is None) != all(place.cell is None for place in self.places):
+            raise ValueError(NEEDS_DATASET)
         return self
 
 
 SPEC_MODELS_GENERAL: Mapping[str, type[ContractModel]] = MappingProxyType(
+    {GENERAL_DRAWING: GeneralDrawingSpec}
+)
+DECLARED_SPEC_MODELS: Mapping[str, type[ContractModel]] = MappingProxyType(
     {
-        GENERAL_DRAWING: GeneralDrawingSpec,
         GENERAL_CHART: GeneralChartSpec,
         GENERAL_TABLE: GeneralTableSpec,
         GENERAL_TIMELINE: GeneralTimelineSpec,
         GENERAL_MAP_LAYER: GeneralMapLayerSpec,
     }
 )
+
+
+def is_declared(spec: Any) -> bool:
+    if isinstance(spec, Mapping):
+        return DECLARED_KEY in spec
+    return isinstance(spec, tuple(DECLARED_SPEC_MODELS.values()))

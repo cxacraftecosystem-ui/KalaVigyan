@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "kind": "map_sequence",
+  "craft": "Blue-Pottery-Of-Jaipur",
+  "craftName": "Blue Pottery of Jaipur",
+  "label": "blue-pottery-of-jaipur/history/journey-of-the-glaze",
+  "title": "The journey of the blue glaze",
+  "description": "Three cards following the blue glaze technique into India in the fourteenth century, to Jaipur in the seventeenth, and under the School of Art from 1866.",
+  "field": "HISTORY",
+  "within": null,
+  "spec": {
+    "head": {
+      "number": null,
+      "title": "u0001",
+      "titleId": null,
+      "dek": null,
+      "dekId": null
+    },
+    "first": [
+      {
+        "card": {
+          "visual": null,
+          "when": "u0002",
+          "title": "u0003",
+          "lines": [
+            {
+              "tag": "p",
+              "classes": [],
+              "unit": "u0004",
+              "text": null
+            }
+          ],
+          "differs": null
+        },
+        "component": null
+      },
+      {
+        "card": {
+          "visual": null,
+          "when": "u0005",
+          "title": "u0006",
+          "lines": [
+            {
+              "tag": "p",
+              "classes": [],
+              "unit": "u0007",
+              "text": null
+            }
+          ],
+          "differs": null
+        },
+        "component": null
+      },
+      {
+        "card": {
+          "visual": null,
+          "when": "u0008",
+          "title": "u0009",
+          "lines": [
+            {
+              "tag": "p",
+              "classes": [],
+              "unit": "u0010",
+              "text": null
+            }
+          ],
+          "differs": null
+        },
+        "component": null
+      },
+      {
+        "card": {
+          "visual": "blue-pottery-of-jaipur/market/at-a-glance",
+          "when": "u0011",
+          "title": "u0012",
+          "lines": [
+            {
+              "tag": "p",
+              "classes": [],
+              "unit": "u0013",
+              "text": null
+            }
+          ],
+          "differs": null
+        },
+        "component": null
+      }
+    ],
+    "source": {
+      "tag": "p",
+      "classes": [],
+      "unit": "u0014",
+      "text": null
+    },
+    "more": []
+  },
+  "units": {
+    "u0001": {
+      "text": "The blue glaze travelled into India and reached Jaipur by way of Delhi.",
+      "claims": [
+        "C054",
+        "C057"
+      ]
+    },
+    "u0002": {
+      "text": "14th century",
+      "claims": [
+        "C054"
+      ]
+    },
+    "u0003": {
+      "text": "Into India",
+      "claims": []
+    },
+    "u0004": {
+      "text": "The technique travelled to India with early Muslim rulers and Turkish conquests.",
+      "claims": [
+        "C054"
+      ]
+    },
+    "u0005": {
+      "text": "17th century",
+      "claims": [
+        "C057"
+      ]
+    },
+    "u0006": {
+      "text": "To Jaipur",
+      "claims": []
+    },
+    "u0007": {
+      "text": "It reached the plains of Delhi and went on to Jaipur.",
+      "claims": [
+        "C057"
+      ]
+    },
+    "u0008": {
+      "text": "1866",
+      "claims": [
+        "C061"
+      ]
+    },
+    "u0009": {
+      "text": "The School of Art",
+      "claims": []
+    },
+    "u0010": {
+      "text": "Blue glaze pottery thrived under the Jaipur School of Art.",
+      "claims": [
+        "C061"
+      ]
+    },
+    "u0011": {
+      "text": "2006",
+      "claims": [
+        "C135"
+      ]
+    },
+    "u0012": {
+      "text": "The GI",
+      "claims": []
+    },
+    "u0013": {
+      "text": "The GI application for Blue Pottery of Jaipur was filed on 14 August 2006.",
+      "claims": [
+        "C135"
+      ]
+    },
+    "u0014": {
+      "text": "Each card names its sources",
+      "claims": []
+    }
+  },
+  "facts": {
+    "C054": {
+      "text": "The blue glaze technique travelled to India in the 14th century, with early Muslim rulers and Turkish conquests.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 50-51",
+          "quote": "This technique traveled south to India with early Muslim potentates in the 14th century."
+        },
+        {
+          "source": "S15",
+          "locator": "line 1",
+          "quote": "The magnificent technique of blue pottery, Turko-Persian in origin, reached East India with Turkish conquests in the 14th century"
+        }
+      ]
+    },
+    "C057": {
+      "text": "The blue glaze technique grew beyond an architectural accessory to Kashmiri potters, reached the plains of Delhi and went to Jaipur in the 17th century.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 55-56",
+          "quote": "Gradually the blue glaze technique grew beyond an architectural accessory to Kashmiri potters."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 56-57",
+          "quote": "From there, the technique traveled to the plains of Delhi"
+        },
+        {
+          "source": "S14",
+          "locator": "line 2",
+          "quote": "It travelled from Delhi to Jaipur in the 17th century."
+        },
+        {
+          "source": "S15",
+          "locator": "line 6",
+          "quote": "it was later introduced in Delhi and moved to Jaipur artisans in the 17th century."
+        }
+      ]
+    },
+    "C061": {
+      "text": "Maharaja Sawai Ram Singh II set up a school of art at Jaipur in 1866, and blue glaze pottery thrived primarily under its aegis.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 72-73",
+          "quote": "Sawai Ram Singh tr (1835-1880) set up a school of art in 1866"
+        },
+        {
+          "source": "S02",
+          "locator": "lines 104-105",
+          "quote": "the School of Art was established in 1866 at Jaipur"
+        },
+        {
+          "source": "S11",
+          "locator": "line 8",
+          "quote": "Introduced in Jaipur from Delhi and Khurja by the ruler of Jaipur, Ram Singh II, blue glaze pottery thrived primarily under the aegis of the Jaipur School of Art, founded in 1866."
+        }
+      ]
+    },
+    "C135": {
+      "text": "Blue Pottery of Jaipur was filed for registration as geographical indication application 66 by the Development Commissioner (Handicrafts) on 14 August 2006.",
+      "quotes": [
+        {
+          "source": "S01",
+          "locator": "lines 2-5",
+          "quote": "| Application Number | 66 | | Geographical Indications | Blue Pottery of Jaipur | | Status | Registered | | Applicant Name | Development Commissioner (Handicrafts) |"
+        },
+        {
+          "source": "S01",
+          "locator": "line 7",
+          "quote": "| Date of Filing | 14-08-2006 |"
+        },
+        {
+          "source": "S05",
+          "locator": "line 90",
+          "quote": "74 66 Blue Pottery of Jaipur Handicraft Rajasthan"
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S01": {
+      "title": "Application Details: Blue Pottery of Jaipur, Application Number 66",
+      "publisher": "Geographical Indications Registry, Intellectual Property India",
+      "year": null,
+      "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/66",
+      "reliability": "A"
+    },
+    "S02": {
+      "title": "Form GI-1: application for registration of the geographical indication Blue Pottery of Jaipur",
+      "publisher": "Development Commissioner (Handicrafts), Ministry of Textiles, Government of India",
+      "year": null,
+      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/64-blue-pottery-of-jaipur.pdf",
+      "reliability": "A"
+    },
+    "S03": {
+      "title": "Statement of Case for Blue Pottery of Jaipur in Rajasthan",
+      "publisher": "Development Commissioner (Handicraft), Government of India, filed with the Geographical Indications Registry",
+      "year": 2015,
+      "url": "https://ipindiaservices.gov.in/GI_DOC/540/540%20-%20Statement%20of%20Case%20-%2028-12-2015.pdf",
+      "reliability": "A"
+    },
+    "S05": {
+      "title": "Registration details of Geographical Indications",
+      "publisher": "IP India",
+      "year": null,
+      "url": "https://www.ipindia.gov.in/storage/uploads/docs-operator/aa9ef4c8-ae0e-4717-9181-52b6a9479b82.pdf",
+      "reliability": "A"
+    },
+    "S11": {
+      "title": "Blue Glaze Pottery",
+      "publisher": "Impart Encyclopedia of Art (MAP Academy)",
+      "year": 2023,
+      "url": "https://imp-art.org/articles/blue-glaze-pottery/",
+      "reliability": "B"
+    },
+    "S14": {
+      "title": "Clay Culture: Jaipur Blue Pottery",
+      "publisher": "Ceramics Monthly, Ceramic Arts Network",
+      "year": null,
+      "url": "https://ceramicartsnetwork.org/ceramics-monthly/ceramics-monthly-article/Clay-Culture-Jaipur-Blue-Pottery-202409",
+      "reliability": "C"
+    },
+    "S15": {
+      "title": "Jaipur Blue Pottery: The No Clay Pottery Mughals Popularised",
+      "publisher": "Outlook Traveller",
+      "year": 2023,
+      "url": "https://www.outlooktraveller.com/experiences/heritage/jaipur-blue-pottery-a-story-of-no-clay-pottery",
+      "reliability": "D"
+    }
+  }
+}

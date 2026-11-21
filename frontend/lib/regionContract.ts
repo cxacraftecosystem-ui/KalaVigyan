@@ -1,5 +1,5 @@
 import { craftLinkShape, HTTPS_URL, sourceRefShape, storedLevelShape, type CraftLink, type StoredLevel } from "@/lib/answerShapes";
-import { dictionary, integer, list, matching, nullable, number, object, oneOf, text, type Shape } from "@/lib/shape";
+import { boolean, dictionary, integer, list, matching, nullable, number, object, oneOf, optional, text, type Shape } from "@/lib/shape";
 import type { SourceRef } from "@/lib/types";
 
 export const CRAFT_REGION_PATH = (slug: string) => `/crafts/${encodeURIComponent(slug)}/region`;
@@ -45,6 +45,13 @@ export type RegionDataset = {
   attribution: string | null;
   citation: string | null;
   url: string | null;
+  version?: string;
+  crs?: string;
+  redistributable?: boolean;
+  doi?: string | null;
+  landingUrl?: string;
+  readOn?: string;
+  sha256?: string;
 };
 export type RegionValue = {
   datasetCode: string;
@@ -115,7 +122,14 @@ export const datasetShape: Shape<RegionDataset> = object<RegionDataset>({
   licenceUrl: nullable(HTTPS_URL),
   attribution: nullable(text),
   citation: nullable(text),
-  url: nullable(HTTPS_URL)
+  url: nullable(HTTPS_URL),
+  version: optional(text),
+  crs: optional(text),
+  redistributable: optional(boolean),
+  doi: optional(nullable(text)),
+  landingUrl: optional(HTTPS_URL),
+  readOn: optional(text),
+  sha256: optional(text)
 });
 
 const valueShape: Shape<RegionValue> = object<RegionValue>({

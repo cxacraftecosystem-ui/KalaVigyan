@@ -14,10 +14,10 @@ export function PlayStagesIcon() {
   );
 }
 
-export function StageTile({ stage, style, viewBox }: { stage: number; style: string; viewBox: string }) {
+export function StageTile({ stage, style, viewBox, swatch }: { stage: number; style: string; viewBox: string; swatch?: string }) {
   return (
     <svg className={style} viewBox={viewBox} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <rect x="-200" y="-200" width="800" height="800" fill={`url(#tile-${stage})`} />
+      <rect x="-200" y="-200" width="800" height="800" fill={swatch ? `var(${swatch})` : `url(#tile-${stage})`} />
       <rect x="-200" y="-200" width="800" height="800" fill="url(#pt-weave)" />
     </svg>
   );

@@ -23,7 +23,8 @@ from app.research.open_work_tasks import subject_tasks
 from . import trust_tiers
 from .contribution_queue_tickets import recent_tickets
 from .open_work import RESERVATION_MINUTES, subject_standings
-from .open_work_subjects import subject_by_key
+from .open_work_pictures import picture_tasks
+from .open_work_subjects import WorkSubject, subject_by_key
 
 __all__ = ["COMPLETED", "my_tasks"]
 
@@ -81,17 +82,26 @@ async def _completed(session: AsyncSession, user_id: uuid.UUID, *, now: datetime
 
 
 async def _open_tasks(session: AsyncSession, keys: Sequence[str], *, site: str) -> dict[str, OpenTask]:
-    subjects: dict[tuple[str, str], set[str]] = {}
+    wanted = set(keys)
+    subjects = await _held_subjects(session, keys)
+    if not subjects:
+        return {}
+    standings = await subject_standings(session, subjects, site=site)
+    tasks = [task for standing in standings for task in subject_tasks(standing)]
+    tasks += await picture_tasks(session, standings)
+    return {task.key: task for task in tasks if task.key in wanted}
+
+
+async def _held_subjects(session: AsyncSession, keys: Sequence[str]) -> list[WorkSubject]:
+    named: dict[tuple[str, str], None] = {}
     for key in keys:
         parsed = parse_task_key(key)
         if parsed.subject_kind is not None and parsed.slug is not None:
-            subjects.setdefault((parsed.subject_kind, parsed.slug), set()).add(key)
-    found: dict[str, OpenTask] = {}
-    for (kind, slug), wanted in subjects.items():
+            named[(parsed.subject_kind, parsed.slug)] = None
+    subjects: list[WorkSubject] = []
+    for kind, slug in named:
         try:
-            subject = await subject_by_key(session, kind, slug)
+            subjects.append(await subject_by_key(session, kind, slug))
         except InvalidInput:
             continue
-        (standing,) = await subject_standings(session, [subject], site=site)
-        found |= {task.key: task for task in subject_tasks(standing) if task.key in wanted}
-    return found
+    return subjects

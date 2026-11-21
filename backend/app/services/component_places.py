@@ -29,7 +29,6 @@ REGION_KINDS = frozenset(
         "region_story",
         "supply_map",
         "climate_risk",
-        "general_map_layer",
     }
 )
 CLIMATE_FIELD = "CLIMATE"

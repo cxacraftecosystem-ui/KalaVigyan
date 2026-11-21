@@ -213,6 +213,11 @@ callers share one allowance between them.
   facts. A close match in the library refuses it with the matches and two ways on. An Admin's
   approval registers it so every page it applies to draws it; a Professor's or Admin's own is
   registered at once.
+- A figure drawn from a table of values rests on a dataset, not on one fact per value:
+  `propose_dataset` gives the dataset's record (`datasets.md`, Recording a dataset) and returns a
+  single-use upload slot for its CSV file, checked against the SHA-256 you declare. A `chart`,
+  `fact_table` or `map_layer` then names the dataset's code as `dataset` and each value's `cell`
+  (its row and column), and the gates check every value against its stored row.
 
 ## Pages
 
@@ -321,10 +326,11 @@ nightly upkeep groups it with the questions like it about the same craft and lis
 asked in the last 90 days, the fields that would answer it and what the answer lacked.
 
 - Work it as field research (its prompt is `research_field`, for the task's field) and propose the
-  facts with `propose_facts`, naming the field's `MISSING_FIELD` or `THIN_FIELD` task as `task_key`
-  when one is open, and no `task_key` otherwise.
-- It closes by itself once a nightly retrieval run for the question finds at least two cited facts
-  in each of its fields, and a reservation of it then ends completed.
+  facts with `propose_facts`, naming the `ANSWER_GAP` key as `task_key`: it is taken by a fact filed
+  under one of the fields its readers lacked, and your reservation ends completed once that fact
+  passes the gates.
+- The question closes by itself once a nightly retrieval run for it finds at least two cited facts
+  in each of its fields.
 - Never try to reach the person who asked, and never put a personal detail from a question in a fact.
 
 ## Never

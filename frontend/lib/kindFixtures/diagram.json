@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "kind": "diagram",
+  "craft": "Bastar-Dhokra",
+  "craftName": "Bastar Dhokra",
+  "label": "bastar-dhokra/process/why-wax",
+  "title": "Why the wax",
+  "description": "A chain of three links showing how the wax skin of a dhokra mould gives way to the metal.",
+  "field": "PROCESS",
+  "within": null,
+  "spec": {
+    "drawing": null,
+    "chain": {
+      "headingId": "dhokra-chain-t",
+      "heading": "u0001",
+      "links": [
+        {
+          "style": null,
+          "kicker": "u0002",
+          "parts": [
+            {
+              "part": "text",
+              "text": {
+                "tag": "p",
+                "style": null,
+                "unit": "u0003"
+              }
+            }
+          ]
+        },
+        {
+          "style": null,
+          "kicker": "u0004",
+          "parts": [
+            {
+              "part": "text",
+              "text": {
+                "tag": "p",
+                "style": null,
+                "unit": "u0005"
+              }
+            }
+          ]
+        },
+        {
+          "style": null,
+          "kicker": "u0006",
+          "parts": [
+            {
+              "part": "text",
+              "text": {
+                "tag": "p",
+                "style": null,
+                "unit": "u0007"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "units": {
+    "u0001": {
+      "text": "Wax holds the shape that the metal takes.",
+      "claims": [
+        "C092"
+      ]
+    },
+    "u0002": {
+      "text": "Wax",
+      "claims": []
+    },
+    "u0003": {
+      "text": "Wax strings are wrapped closely around the hard, green-coated model.",
+      "claims": [
+        "C061"
+      ]
+    },
+    "u0004": {
+      "text": "Fire",
+      "claims": []
+    },
+    "u0005": {
+      "text": "Wax melts out and burns away, making room for the molten metal.",
+      "claims": [
+        "C092"
+      ]
+    },
+    "u0006": {
+      "text": "Metal",
+      "claims": []
+    },
+    "u0007": {
+      "text": "Molten metal poured into the funnel replaces the wax.",
+      "claims": [
+        "C070"
+      ]
+    }
+  },
+  "facts": {
+    "C061": {
+      "text": "Wax strings are wrapped closely around the hard, green-coated model, and further designs are added in plain wax.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1418-1421",
+          "quote": "When wax strings are ready as required, they are wrapped closely around the model, which is hard and dry and green with the application of sem-leaf liquid. When the model is totally covered with wax strings, designs of choice can be made with plain wax too."
+        },
+        {
+          "source": "S23",
+          "locator": "lines 103-104",
+          "quote": "7. Wrapping of strings (Tikkal Chadana): Wax strings are tightly wrapped around the dry clay form"
+        }
+      ]
+    },
+    "C070": {
+      "text": "When the fired mould turns red it is held upside down, and molten metal from the crucible is poured into its funnel to replace the wax.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1476-1477",
+          "quote": "The model in the first furnace turns red on being properly kept in fire."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1478-1482",
+          "quote": "The model is held upside down for the liquid bell metal to be poured in the channels or funnels made at the bottom. The crucible is then lifted with long-handled pincers and the molten metal is poured in the funnel so that it can pass through the channel to replace the wax inside the model."
+        },
+        {
+          "source": "S15",
+          "locator": "lines 1162-1164",
+          "quote": "The wax inside the model is replaced by molten metal poured through funnel."
+        }
+      ]
+    },
+    "C092": {
+      "text": "Wax is indispensable to the process because it melts out and burns away, making room for the molten metal.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1530-1532",
+          "quote": "And of course wax is indispensable in this process, since it conveniently melts out and burns, thus giving way to the molten metal."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S03": {
+      "title": "Geographical Indications Journal No. 24",
+      "publisher": "Geographical Indications Registry, Government of India",
+      "year": 2008,
+      "url": "https://ipindia.nic.in/girindia/journal/24.pdf",
+      "reliability": "A"
+    },
+    "S15": {
+      "title": "Dhokra Shilp: The Bell Metal Craft of Bastar",
+      "publisher": "D'source, Industrial Design Centre, IIT Bombay",
+      "year": null,
+      "url": "https://dsource.in/sites/default/files/resource/dhokra-shilp/downloads/file/dhokra_shilp_bell_metal_craft_bastar.pdf",
+      "reliability": "B"
+    },
+    "S23": {
+      "title": "Dhokra craft Kondagaon",
+      "publisher": "Gaatha",
+      "year": null,
+      "url": "https://gaatha.org/Craft-of-India/dhokra-craft-kondagaon/",
+      "reliability": "D"
+    }
+  }
+}

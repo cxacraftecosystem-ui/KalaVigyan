@@ -1,0 +1,95 @@
+name: Await the production build
+description: Says whether a deploy run started the web build, then reads the commit production serves from /api/version until it is the given commit of main or a later one, or the time runs out. The job checks out the repository with its whole history first.
+inputs:
+  commit:
+    description: The commit of main production must serve (empty only reads what production serves)
+    required: false
+    default: ""
+  trigger-run:
+    description: The id of the deploy run whose web build is awaited (empty awaits the commit without asking)
+    required: false
+    default: ""
+  web-origin:
+    description: The production site, without a trailing slash
+    required: true
+  wait-seconds:
+    description: How long to wait for the commit; 0 reads once
+    required: false
+    default: "0"
+  token:
+    description: A token that may read the repository's workflow runs
+    required: true
+outputs:
+  built:
+    description: success when the deploy run started the web build, failure when starting it failed, none when it started none; success when no deploy run is named
+    value: ${{ steps.built.outputs.built }}
+  served:
+    description: The commit production serves (empty when it reports none)
+    value: ${{ steps.serve.outputs.served }}
+  reached:
+    description: yes when production serves the commit or a later commit of main, no otherwise
+    value: ${{ steps.serve.outputs.reached }}
+  waited:
+    description: The seconds spent waiting
+    value: ${{ steps.serve.outputs.waited }}
+runs:
+  using: composite
+  steps:
+    - name: Ask whether the deploy started the web build
+      id: built
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        RUN: ${{ inputs.trigger-run }}
+      run: |
+        set -euo pipefail
+        built=success
+        if [ -n "$RUN" ]; then
+          [[ "$RUN" =~ ^[0-9]+$ ]] || { echo "::error::trigger-run must be a workflow run id"; exit 1; }
+          built="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN/jobs" --jq '[.jobs[].steps[]? | select(.name | startswith("Build the web app")) | .conclusion | select(. != null)] | first // "none"')"
+          case "$built" in
+            success|failure) ;;
+            *) built=none ;;
+          esac
+          echo "deploy run $RUN started the web build: $built"
+        fi
+        echo "built=$built" >> "$GITHUB_OUTPUT"
+
+    - name: Read the commit production serves
+      id: serve
+      shell: bash
+      env:
+        BUILT: ${{ steps.built.outputs.built }}
+        EXPECTED: ${{ inputs.commit }}
+        ORIGIN: ${{ inputs.web-origin }}
+        WAIT_SECONDS: ${{ inputs.wait-seconds }}
+      run: |
+        set -euo pipefail
+        [[ "$WAIT_SECONDS" =~ ^[0-9]+$ ]] || { echo "::error::wait-seconds must be a whole number of seconds"; exit 1; }
+        [ -z "$EXPECTED" ] || [[ "$EXPECTED" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::commit must be a full commit id"; exit 1; }
+        served() {
+          curl -fsS -m 15 -H 'cache-control: no-cache' "$ORIGIN/api/version" 2> /dev/null | jq -r '.commit // empty' 2> /dev/null || true
+        }
+        descends() {
+          [ "$1" = "$2" ] && return 0
+          git cat-file -e "$2^{commit}" 2> /dev/null || git fetch --quiet origin main
+          git cat-file -e "$2^{commit}" 2> /dev/null && git merge-base --is-ancestor "$1" "$2"
+        }
+        [ "$BUILT" = success ] && [ -n "$EXPECTED" ] || WAIT_SECONDS=0
+        start="$(date +%s)"
+        deadline=$(( start + WAIT_SECONDS ))
+        reached=no
+        while :; do
+          have="$(served)"
+          if [ -n "$EXPECTED" ] && [ -n "$have" ] && descends "$EXPECTED" "$have"; then reached=yes; break; fi
+          [ "$(date +%s)" -lt "$deadline" ] || break
+          echo "production serves ${have:-no commit}; waiting for ${EXPECTED:0:12} ($(( $(date +%s) - start ))s of ${WAIT_SECONDS}s)"
+          sleep 20
+        done
+        waited=$(( $(date +%s) - start ))
+        {
+          echo "served=$have"
+          echo "reached=$reached"
+          echo "waited=$waited"
+        } >> "$GITHUB_OUTPUT"
+        echo "production serves ${have:-no commit}; ${EXPECTED:+reached ${EXPECTED:0:12}: $reached after ${waited}s}"

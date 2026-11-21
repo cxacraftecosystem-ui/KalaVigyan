@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import uuid
 from collections.abc import Collection, Iterable
+from dataclasses import dataclass
 
 import httpx
 from sqlalchemy import and_, select
@@ -15,22 +16,40 @@ from app.research.page_revalidation import (
     REVALIDATE_ROUTE,
     REVALIDATE_SECRET_HEADER,
     PageOwners,
+    category_targets,
+    craft_targets,
     revalidation_request,
 )
 
 __all__ = [
+    "MISSES_BEFORE_GIVING_UP",
+    "REVALIDATE_TARGETS_MAX",
     "REVALIDATE_TIMEOUT_SECONDS",
+    "BatchedRefresh",
     "claim_owners",
     "craft_owners",
     "merged_owners",
+    "owner_batches",
+    "refresh_in_batches",
     "refresh_pages",
 ]
 
 logger = logging.getLogger(__name__)
 
 REVALIDATE_TIMEOUT_SECONDS = 5.0
+REVALIDATE_TARGETS_MAX = 40
+MISSES_BEFORE_GIVING_UP = 3
 CONCEPT_SUBJECT = "CONCEPT"
 REFRESHED = 200
+CRAFT_OWNER, CATEGORY_OWNER = "craft", "category"
+
+
+@dataclass(frozen=True)
+class BatchedRefresh:
+    refreshed: PageOwners
+    unrefreshed: PageOwners
+    batches: int
+    tried: int
 
 
 async def craft_owners(session: AsyncSession, craft_ids: Collection[uuid.UUID]) -> PageOwners:
@@ -100,6 +119,43 @@ async def refresh_pages(
     return True
 
 
+def owner_batches(owners: PageOwners, *, most: int = REVALIDATE_TARGETS_MAX) -> list[PageOwners]:
+    batches: list[list[tuple[str, str]]] = []
+    room = 0
+    for kind, slug in _owned(owners):
+        size = _target_count(kind, slug)
+        if size > most:
+            raise ValueError(
+                f"the {kind} {slug} names {size} pages and tags, more than one request takes ({most})"
+            )
+        if not batches or size > room:
+            batches.append([])
+            room = most
+        batches[-1].append((kind, slug))
+        room -= size
+    return [_owners_of(batch) for batch in batches]
+
+
+async def refresh_in_batches(
+    owners: PageOwners,
+    *,
+    settings: Settings | None = None,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> BatchedRefresh:
+    refreshed: list[PageOwners] = []
+    unrefreshed: list[PageOwners] = []
+    batches = owner_batches(owners)
+    tried = misses = 0
+    for batch in batches:
+        done = False
+        if misses < MISSES_BEFORE_GIVING_UP:
+            tried += 1
+            done = await refresh_pages(batch, settings=settings, transport=transport)
+        misses = 0 if done else misses + 1
+        (refreshed if done else unrefreshed).append(batch)
+    return BatchedRefresh(merged_owners(*refreshed), merged_owners(*unrefreshed), len(batches), tried)
+
+
 async def _sub_category_owners(session: AsyncSession, sub_category_ids: set[uuid.UUID]) -> PageOwners:
     if not sub_category_ids:
         return PageOwners()
@@ -124,3 +180,22 @@ def _distinct(slugs: Iterable[str]) -> tuple[str, ...]:
 
 def _named(owners: PageOwners) -> str:
     return ", ".join((*owners.crafts, *owners.categories))
+
+
+def _owned(owners: PageOwners) -> list[tuple[str, str]]:
+    return [
+        *((CRAFT_OWNER, slug) for slug in _distinct(owners.crafts)),
+        *((CATEGORY_OWNER, slug) for slug in _distinct(owners.categories)),
+    ]
+
+
+def _target_count(kind: str, slug: str) -> int:
+    paths, tags = craft_targets(slug) if kind == CRAFT_OWNER else category_targets(slug)
+    return len(paths) + len(tags)
+
+
+def _owners_of(batch: list[tuple[str, str]]) -> PageOwners:
+    return PageOwners(
+        crafts=tuple(slug for kind, slug in batch if kind == CRAFT_OWNER),
+        categories=tuple(slug for kind, slug in batch if kind == CATEGORY_OWNER),
+    )

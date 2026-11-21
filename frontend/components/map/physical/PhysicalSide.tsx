@@ -1,36 +1,20 @@
 "use client";
 
 import { FOREIGN_EXTRA, MapLegend, SALT_EXTRA, WATER_EXTRA, type LegendExtra } from "@/components/map/ChoroplethLegend";
+import { DatasetCredit } from "@/components/DatasetCredit";
 import { MineralSymbol, mineralColour } from "@/components/map/physical/MineralsLayer";
 import { RankedList, type RankedRow } from "@/components/map/RankedList";
-import { safeOutboundUrl } from "@/lib/citations";
 import { formatRange } from "@/lib/measure";
 import { elevationBands, tally, type DatasetRow, type MineralSite, type MineralsFile, type ReliefFile, type RiversFile } from "@/lib/mapPhysical";
 
-const LINK = "kv-link font-normal";
-
 export function LayerCredits({ datasets }: { datasets: readonly DatasetRow[] }) {
   return (
-    <ul className="grid gap-2 border-t border-rule pt-3 font-ui text-caption text-ink-3" data-testid="layer-credits">
-      {datasets.map((row) => {
-        const href = safeOutboundUrl(row.url);
-        return (
-          <li key={row.dataset} className="grid gap-0.5">
-            <span>
-              {href ? (
-                <a href={href} target="_blank" rel="noopener noreferrer" className={LINK}>
-                  {row.dataset}
-                </a>
-              ) : (
-                row.dataset
-              )}
-              {[row.publisher, row.version].filter(Boolean).map((part) => ` · ${part}`)}
-            </span>
-            <span>{row.licence ?? "Public domain"}</span>
-            {row.citation ? <span>{row.citation}</span> : null}
-          </li>
-        );
-      })}
+    <ul className="grid gap-2 border-t border-rule pt-3" data-testid="layer-credits">
+      {datasets.map((row) => (
+        <li key={row.file}>
+          <DatasetCredit dataset={row} />
+        </li>
+      ))}
     </ul>
   );
 }

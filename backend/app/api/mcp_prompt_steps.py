@@ -65,9 +65,9 @@ def research_steps(values: Mapping[str, str]) -> list[str]:
         "`propose_source`, naming the fact as claim_id.",
         *SOURCE_STEPS,
         "Call `propose_facts` with up to 25 new facts, each with its quotes, locators and sources, an "
-        "idempotency_key of your own, and the key of the task you claimed as task_key (for an ANSWER_GAP task, "
-        "its field's MISSING_FIELD or THIN_FIELD task when one is open, otherwise none: a reader's question "
-        "closes at the nightly check). The reply gives each fact a proposal id at once, QUEUED.",
+        "idempotency_key of your own, and the key of the task you claimed as task_key (an ANSWER_GAP key is "
+        "taken by a fact filed under one of the fields its readers lacked). The reply gives each fact a "
+        "proposal id at once, QUEUED.",
         FOLLOW_STEP,
     ]
 
@@ -101,7 +101,7 @@ def component_steps(values: Mapping[str, str]) -> list[str]:
         "For anything the component needs that is not held, call `search_sources` or search yourself, read each "
         "source with `read_source` and check each quote with its quotes; a molecule's compounds come from "
         "`lookup` with kind compound.",
-        "Build it finished by the component guide below: the spec of its kind, or of a general kind for "
+        "Build it finished by the component guide below: the spec of its kind, declared with a head for "
         f"anything new ({', '.join(GENERAL_KINDS)}), as kalavigyan://components/<kind>.schema.json gives it, and "
         "its units, each text by its unit id (u0001 and on) with the ids of the shown facts it rests on.",
         f'Call `preview_page` with a bundle for the craft "{craft}" holding the component and any new facts it '
@@ -166,10 +166,12 @@ def dataset_steps(values: Mapping[str, str]) -> list[str]:
         "are the site's own layers, never this figure's.",
         "Call `read_source` on the dataset's page with around for each row's words and with quotes holding each "
         "row you quote, so every value rests on the text the gates will read.",
-        "Write each value the figure needs as a fact of the craft, quoting its row with its locator, with the "
-        "dataset's page as the source and that field task as task_key.",
-        f"Build {shape} by the component guide below: every value stated by its reading unit, and every reading "
-        "unit citing its fact as fact:0 and on.",
+        "For a few values, write each as a fact of the craft, quoting its row with its locator, with the "
+        "dataset's page as the source and that field task as task_key. For a table, call `propose_dataset` with "
+        "the dataset's record and its CSV file's SHA-256, and PUT the file to the upload slot it returns.",
+        f"Build {shape} by the component guide below: every value stated by its reading unit, each reading unit "
+        "citing its fact as fact:0 and on, or, for a stored table, the dataset's code as dataset and each value's "
+        "row and column as its cell.",
         f'Call `preview_page` with one bundle for the craft "{craft}" holding the facts and the component, open '
         "the private link, and check the figure against the page checklist below.",
         "Call `propose_page` with the same bundle once the preview is right, and follow its parts with "

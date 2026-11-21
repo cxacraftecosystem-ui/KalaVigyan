@@ -1,3 +1,4 @@
+import { DEPICTED_MATERIALS } from "@/lib/depictedMaterials";
 import { dictionary, integer, list, matching, nullable, object, oneOf, optional, ShapeError, text, type Shape } from "@/lib/shape";
 
 export const SVG_TAGS = [
@@ -13,6 +14,8 @@ const FIGURE_KEY = /^[a-z]+:[A-Za-z0-9.]+$/;
 const COMPONENT_LABEL = /^[a-z0-9]+(-[a-z0-9]+)*(\/[a-z0-9]+(-[a-z0-9]+)*){2,}$/;
 const COLOUR_TOKEN =
   /^--(ground|raised|sunk|rule|rule-strong|ink-[1-3]|madder|indigo|dye-[a-z]+(-[a-z]+)*|dip-[1-9]|mol-[a-z]+|atom-[a-z]+|map-[a-z]+(-[a-z]+)*|chart-[a-z]+(-[a-z]+)*)$/;
+const DEPICTED_PREFIX = "--dye-";
+const DEPICTED: ReadonlySet<string> = new Set(DEPICTED_MATERIALS);
 const DRAWING_ATTRIBUTE = /^(?![oO][nN])[A-Za-z][A-Za-z0-9-]*$/;
 const PAINT_ATTRIBUTES = new Set(["fill", "stroke", "stop-color"]);
 const PAINT_VALUE = /^(none|currentColor|#(?:fff|000)|url\(#[\w-]+\)|rgba\((255,255,255|0,0,0),(0|1|0?\.\d+)\))$/;
@@ -40,7 +43,18 @@ export const unitRef = matching(UNIT_REF, "a text unit id");
 export const domId = matching(DOM_ID, "an element id");
 export const styleName = matching(STYLE_NAME, "a style name");
 export const figureKey = matching(FIGURE_KEY, "a figure key");
-export const colourToken = matching(COLOUR_TOKEN, "a colour token");
+export function knownColourToken(token: string): boolean {
+  if (!COLOUR_TOKEN.test(token)) return false;
+  return !token.startsWith(DEPICTED_PREFIX) || DEPICTED.has(token.slice(DEPICTED_PREFIX.length));
+}
+
+export const colourToken: Shape<string> = {
+  expected: "a colour token",
+  parse(value, path) {
+    if (typeof value !== "string" || !knownColourToken(value)) throw new ShapeError(path, "a colour token");
+    return value;
+  }
+};
 export const componentLabel = matching(COMPONENT_LABEL, "a component label");
 export const label = matching(/\S/, "a label");
 
@@ -70,7 +84,7 @@ function refusedAttribute(name: string, value: string): boolean {
   if (!DRAWING_ATTRIBUTE.test(name) || /javascript:/i.test(value) || FOREIGN_URL.test(value)) return true;
   if (!PAINT_ATTRIBUTES.has(name)) return false;
   const tokens = PAINT_TOKEN.exec(value) ?? PAINT_MIX.exec(value);
-  return tokens ? !tokens.slice(1).every((token) => COLOUR_TOKEN.test(token)) : !PAINT_VALUE.test(value);
+  return tokens ? !tokens.slice(1).every(knownColourToken) : !PAINT_VALUE.test(value);
 }
 
 const drawingAttributes: Shape<Record<string, string>> = {

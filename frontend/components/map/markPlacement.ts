@@ -4,7 +4,8 @@ import type { MapBox } from "@/components/map/basemap";
 
 export type MarkCraft = { slug: string; name: string; monograph: boolean };
 export type MarkMore = { href: string; label: string };
-export type MapMark = { key: string; name: string; kind: string; x: number; y: number; r: number; count: number; crafts: readonly MarkCraft[]; more: MarkMore | null };
+export type MarkPlace = { longitude: number; latitude: number };
+export type MapMark = { key: string; name: string; kind: string; x: number; y: number; r: number; count: number; crafts: readonly MarkCraft[]; more: MarkMore | null; place?: MarkPlace };
 
 export const MARK_MIN_PX = 24;
 export const CARD_CRAFTS = 3;

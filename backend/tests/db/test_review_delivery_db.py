@@ -47,7 +47,7 @@ async def delivered(session: AsyncSession) -> uuid.UUID:
             "label": LABEL,
             "title": "Alum as the mordant of the red",
             "description": "A table of what alum does to the madder red on cotton, each line resting on its fact.",
-            "kind": "general_table",
+            "kind": "fact_table",
             "field": "CHEMISTRY",
             "craft_slug": CRAFT_SLUG,
             "subjects": [{"kind": "CRAFT", "key": CRAFT_SLUG}],
@@ -93,7 +93,7 @@ async def test_the_page_review_draws_the_waiting_components_its_layout_places(se
     await session.flush()
     (rendered,) = await layout_items(session, [LAYOUT])
     (placed,) = rendered.item.layout.placed
-    assert (placed.label, placed.kind) == (LABEL, "general_table")
+    assert (placed.label, placed.kind) == (LABEL, "fact_table")
     assert placed.delivery.drawing is not None
 
 

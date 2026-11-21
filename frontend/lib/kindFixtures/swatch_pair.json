@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "kind": "swatch_pair",
+  "craft": "Bastar-Dhokra",
+  "craftName": "Bastar Dhokra",
+  "label": "bastar-dhokra/process/core-before-and-after-sem",
+  "title": "The dhokra core before and after sem leaves",
+  "description": "Two swatches of the black soil core of a dhokra figure, before and after it is rubbed green with sem leaves. Place it beside the leaf-paste stage.",
+  "field": "PROCESS",
+  "within": "bastar-dhokra/process/core-to-mould",
+  "spec": {
+    "id": "dhokra-sem",
+    "wide": false,
+    "pairClass": "iron-pair",
+    "description": "The black soil core before and after it is rubbed with sem leaves",
+    "weave": "dhokra-weave",
+    "swatches": [
+      {
+        "ground": "field-soil",
+        "motif": [
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "40",
+              "cy": "40",
+              "r": "18",
+              "fill": "none",
+              "stroke": "var(--ink-1)",
+              "stroke-width": "2"
+            },
+            "children": []
+          }
+        ],
+        "label": "Core"
+      },
+      {
+        "ground": "sem-green",
+        "motif": [
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "40",
+              "cy": "40",
+              "r": "18",
+              "fill": "none",
+              "stroke": "var(--ink-1)",
+              "stroke-width": "2"
+            },
+            "children": []
+          }
+        ],
+        "label": "Rubbed green"
+      }
+    ],
+    "when": "u0001",
+    "title": "u0002",
+    "texts": [
+      "u0003"
+    ],
+    "go": null
+  },
+  "units": {
+    "u0001": {
+      "text": "Once the core is dry",
+      "claims": []
+    },
+    "u0002": {
+      "text": "Sem leaves turn the core green.",
+      "claims": [
+        "C055"
+      ]
+    },
+    "u0003": {
+      "text": "Crushed sem leaves are rubbed over the dry model until it turns green, so the next soil does not stick to it.",
+      "claims": [
+        "C055"
+      ]
+    }
+  },
+  "facts": {
+    "C055": {
+      "text": "Crushed leaves of the sem or country bean creeper are rubbed over the dry model until it turns green, to keep the next soil from sticking to it.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1375-1377",
+          "quote": "Fresh and 'semi' or 'sem' or country bean creeper leaves are brought, crushed by rubbing them between both palms till a green liquid oozes out."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1377-1378",
+          "quote": "all over the model until the models looks totally green. This is to prevent the soil from sticking to the model"
+        },
+        {
+          "source": "S15",
+          "locator": "lines 1121-1122",
+          "quote": "The purpose of applying green liquid to model is to prevent the soil from sticking to the model."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S03": {
+      "title": "Geographical Indications Journal No. 24",
+      "publisher": "Geographical Indications Registry, Government of India",
+      "year": 2008,
+      "url": "https://ipindia.nic.in/girindia/journal/24.pdf",
+      "reliability": "A"
+    },
+    "S15": {
+      "title": "Dhokra Shilp: The Bell Metal Craft of Bastar",
+      "publisher": "D'source, Industrial Design Centre, IIT Bombay",
+      "year": null,
+      "url": "https://dsource.in/sites/default/files/resource/dhokra-shilp/downloads/file/dhokra_shilp_bell_metal_craft_bastar.pdf",
+      "reliability": "B"
+    }
+  }
+}

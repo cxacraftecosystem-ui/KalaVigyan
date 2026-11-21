@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "kind": "label_card",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/policy/gi-registration-card",
+  "title": "Bidriware's GI registration",
+  "description": "A label card of Bidriware's geographical indication: its application, certificate, validity and area as the GI registry records them.",
+  "field": "POLICY",
+  "within": null,
+  "spec": {
+    "variant": "gi",
+    "kicker": "u0001",
+    "seal": {
+      "tag": "svg",
+      "attrs": {
+        "viewBox": "0 0 56 56",
+        "aria-hidden": "true"
+      },
+      "children": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": "28",
+            "cy": "28",
+            "r": "26",
+            "fill": "none",
+            "stroke": "currentColor",
+            "stroke-width": "1.4"
+          },
+          "children": []
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": "28",
+            "cy": "28",
+            "r": "21.5",
+            "fill": "none",
+            "stroke": "currentColor",
+            "stroke-width": "0.8"
+          },
+          "children": []
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": "28",
+            "cy": "28",
+            "r": "9",
+            "fill": "var(--dye-bidri-black)",
+            "stroke": "var(--dye-bidri-silver)",
+            "stroke-width": "2"
+          },
+          "children": []
+        }
+      ]
+    },
+    "sentence": "u0002",
+    "inset": null,
+    "facts": [
+      {
+        "term": "u0003",
+        "value": "u0004"
+      },
+      {
+        "term": "u0005",
+        "value": "u0006"
+      },
+      {
+        "term": "u0007",
+        "value": "u0008"
+      }
+    ]
+  },
+  "units": {
+    "u0001": {
+      "text": "Geographical indication",
+      "claims": []
+    },
+    "u0002": {
+      "text": "Bidriware is a registered geographical indication, application number 20, filed on 24 January 2005.",
+      "claims": [
+        "C134"
+      ]
+    },
+    "u0003": {
+      "text": "Certificate",
+      "claims": []
+    },
+    "u0004": {
+      "text": "Number 21, issued on 30 January 2006",
+      "claims": [
+        "C135"
+      ]
+    },
+    "u0005": {
+      "text": "Valid until",
+      "claims": []
+    },
+    "u0006": {
+      "text": "23 January 2035",
+      "claims": [
+        "C136"
+      ]
+    },
+    "u0007": {
+      "text": "Area",
+      "claims": []
+    },
+    "u0008": {
+      "text": "Karnataka",
+      "claims": [
+        "C047"
+      ]
+    }
+  },
+  "facts": {
+    "C047": {
+      "text": "The GI registry records Karnataka as the geographical area of the Bidriware geographical indication.",
+      "quotes": [
+        {
+          "source": "S01",
+          "locator": "line 10",
+          "quote": "| Geographical Area | Karnataka |"
+        }
+      ]
+    },
+    "C134": {
+      "text": "Bidriware is a registered geographical indication under application number 20, filed by the Karnataka State Handicrafts Development Corporation Limited on 24 January 2005.",
+      "quotes": [
+        {
+          "source": "S01",
+          "locator": "lines 2-5",
+          "quote": "| Application Number | 20 | | Geographical Indications | Bidriware | | Status | Registered | | Applicant Name | Karnataka State Handicrafts Development Corporation Limited |"
+        },
+        {
+          "source": "S01",
+          "locator": "line 7",
+          "quote": "| Date of Filing | 24-01-2005 |"
+        }
+      ]
+    },
+    "C135": {
+      "text": "The registry issued certificate number 21 for Bidriware on 30 January 2006, after publication in Geographical Indications Journal number 10.",
+      "quotes": [
+        {
+          "source": "S01",
+          "locator": "lines 12-15",
+          "quote": "| Journal Number | 10 | | Availability Date | 21-10-2005 | | Certificate Number | 21 | | Certificate Date | 30-01-2006 |"
+        },
+        {
+          "source": "S16",
+          "locator": "line 5",
+          "quote": "In 2006, Bidriware was granted the Geographical Indications status by the Government of India."
+        }
+      ]
+    },
+    "C136": {
+      "text": "The Bidriware geographical indication registration is valid up to 23 January 2035.",
+      "quotes": [
+        {
+          "source": "S01",
+          "locator": "line 16",
+          "quote": "| Registration Valid Upto | 23-01-2035 |"
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S01": {
+      "title": "Application Details: Bidriware, Application Number 20",
+      "publisher": "Geographical Indications Registry, IP India",
+      "year": null,
+      "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/20",
+      "reliability": "A"
+    },
+    "S16": {
+      "title": "Bidriware",
+      "publisher": "Incredible India, Ministry of Tourism, Government of India",
+      "year": null,
+      "url": "https://www.incredibleindia.gov.in/en/karnataka/bidriware",
+      "reliability": "C"
+    }
+  }
+}

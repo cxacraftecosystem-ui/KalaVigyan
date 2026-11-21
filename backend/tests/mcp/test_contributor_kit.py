@@ -33,6 +33,7 @@ CONTRIBUTOR_TOOLS = (
     "propose_facts",
     "propose_structure",
     "propose_source",
+    "propose_dataset",
     "edit_draft",
     "preview_page",
     "propose_page",

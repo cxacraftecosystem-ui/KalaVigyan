@@ -37,6 +37,7 @@ PUBLIC_ROUTES = {
     ("GET", "/api/crafts/contributed/{contribution_id}"),
     ("GET", "/api/crafts/{slug}/coverage"),
     ("GET", "/api/crafts/{slug}/field-voices"),
+    ("GET", "/api/crafts/{slug}/ground"),
     ("GET", "/api/crafts/{slug}/monograph"),
     ("GET", "/api/crafts/{slug}/page"),
     ("GET", "/api/crafts/{slug}/process"),
@@ -49,6 +50,7 @@ PUBLIC_ROUTES = {
     ("GET", "/api/field-voices/recordings/{recording_id}"),
     ("GET", "/api/map/crafts"),
     ("GET", "/api/map/districts/{district_lgd}"),
+    ("GET", "/api/map/ground"),
     ("GET", "/api/map/layers"),
     ("GET", "/api/map/layers/{layer}"),
     ("GET", "/api/molecules/{pubchem_cid}/conformer"),
@@ -101,6 +103,7 @@ SERVICE_ROUTES = {
     ("POST", "/api/oauth/revoke"),
     ("PUT", "/api/upload-links/slots/{token}"),
     ("PUT", "/api/knowledge/supplied-sources/slots/{token}"),
+    ("PUT", "/api/dataset-uploads/{token}"),
 }
 ASKING_ROUTES = {
     ("GET", "/api/answers/config"),

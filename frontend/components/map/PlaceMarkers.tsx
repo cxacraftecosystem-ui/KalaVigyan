@@ -14,7 +14,8 @@ export function placeMapMarks(markers: readonly PlaceMarker[], scale: number): M
     .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "en"))
     .map((marker) => {
       const at = project(marker.longitude, marker.latitude);
-      return { key: marker.key, name: marker.name, kind: PLACE_KIND, x: at.x, y: at.y, r: MARKER_PX * scale, count: marker.crafts.length, crafts: marker.crafts, more: null };
+      const place = { longitude: marker.longitude, latitude: marker.latitude };
+      return { key: marker.key, name: marker.name, kind: PLACE_KIND, x: at.x, y: at.y, r: MARKER_PX * scale, count: marker.crafts.length, crafts: marker.crafts, more: null, place };
     });
 }
 

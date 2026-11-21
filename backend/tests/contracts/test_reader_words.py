@@ -1,10 +1,9 @@
 import json
-import re
 from collections.abc import Iterator
 from typing import Any
 
 from .golden import SHARED
-from .phase_b_golden import GEO_CATALOG, catalog_dataset
+from .phase_b_golden import catalog_dataset, geo_etl_datasets
 
 INTERNAL_WORDS = (
     "Designer Portal",
@@ -38,7 +37,7 @@ def dataset_rows(node: Any) -> Iterator[dict[str, Any]]:
 
 
 def test_every_golden_dataset_row_credits_its_dataset_as_the_geo_etl_catalogue_does() -> None:
-    codes = set(re.findall(r'code="([A-Z0-9_]+)"', GEO_CATALOG.read_text(encoding="utf-8")))
+    codes = set(geo_etl_datasets())
     rows = [
         (path.name, row)
         for path in sorted(SHARED.glob("*.golden.json"))

@@ -4,14 +4,18 @@ import { NoteDiffers } from "./parts/Differs";
 import { StageTile } from "./parts/icons";
 import type { RenderUnit } from "./parts/Text";
 
-export const CLOTH_AFTER = "Cloth after";
+export const STORED_AFTER_LABEL = "Cloth after";
 
-function Stage({ entry, stage, rest, prefix, renderUnit }: { entry: StageEntry; stage: number; rest: boolean; prefix: string; renderUnit: RenderUnit }) {
+export const afterLabel = (player: StagePlayerSpec) => player.afterLabel ?? STORED_AFTER_LABEL;
+
+type StageProps = { entry: StageEntry; stage: number; rest: boolean; prefix: string; label: string; renderUnit: RenderUnit };
+
+function Stage({ entry, stage, rest, prefix, label, renderUnit }: StageProps) {
   return (
     <li className="lc-step" id={`${prefix}-st-${stage}`} data-stage={stage} aria-current={rest ? "step" : undefined}>
       <div className="lc-sh">
         <span className="lc-tile">
-          <StageTile stage={stage} style="lc-tsvg" viewBox="0 0 100 100" />
+          <StageTile stage={stage} style="lc-tsvg" viewBox="0 0 100 100" swatch={entry.swatch} />
         </span>
         <p className="lc-no">{renderUnit(entry.number)}</p>
         <h3>{renderUnit(entry.heading)}</h3>
@@ -21,9 +25,9 @@ function Stage({ entry, stage, rest, prefix, renderUnit }: { entry: StageEntry; 
       {entry.differs !== null ? <NoteDiffers differs={entry.differs} renderUnit={renderUnit} /> : null}
       {entry.afterSentence !== null ? (
         <p className="lc-after">
-          <span className="lk">{CLOTH_AFTER}</span>
+          <span className="lk">{label}</span>
           <span className="lc-av">
-            <StageTile stage={stage} style="lc-sw" viewBox="0 0 200 200" />
+            <StageTile stage={stage} style="lc-sw" viewBox="0 0 200 200" swatch={entry.swatch} />
             {renderUnit(entry.afterSentence)}
           </span>
         </p>
@@ -38,7 +42,7 @@ export function StageList({ player, renderUnit }: { player: StagePlayerSpec; ren
   return (
     <ol className="lc-steps">
       {player.stages.map((entry, index) => (
-        <Stage key={entry.name} entry={entry} stage={index + 1} rest={index + 1 === rest} prefix={player.key} renderUnit={renderUnit} />
+        <Stage key={entry.name} entry={entry} stage={index + 1} rest={index + 1 === rest} prefix={player.key} label={afterLabel(player)} renderUnit={renderUnit} />
       ))}
     </ol>
   );
@@ -61,7 +65,7 @@ export function StageRibbon({ player }: { player: StagePlayerSpec }) {
             aria-controls={`${player.key}-st-${stage}`}
             aria-label={`Stage ${stage}, ${entry.name}`}
           >
-            <StageTile stage={stage} style="rb-svg" viewBox="0 0 100 150" />
+            <StageTile stage={stage} style="rb-svg" viewBox="0 0 100 150" swatch={entry.swatch} />
             <span className="rb-l">
               <b>{stage}</b>
               {entry.local ? <i>{entry.name}</i> : <span>{entry.name}</span>}

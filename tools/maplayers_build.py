@@ -25,7 +25,8 @@ def main(argv: list[str] | None = None) -> int:
         description=(
             "Build the map's physical layers: rivers and lakes from Natural Earth 1:10m, relief bands and shaded "
             "relief from ETOPO1, and mineral deposits from the USGS Mineral Resources Data System, each fitted to "
-            "the Survey of India outline. Needs numpy, rasterio, shapely and pyogrio (the etl/geo environment)."
+            "the Survey of India outline and mirrored into the API, which measures each craft place's ground from "
+            "them. Needs numpy, rasterio, shapely and pyogrio (the etl/geo environment)."
         )
     )
     parser.add_argument(
@@ -52,13 +53,24 @@ def main(argv: list[str] | None = None) -> int:
     _write(folder / "rivers.json", rivers_body(downloads, outline))
     grid = read_grid(downloads)
     shade_webp(grid, outline, folder / SHADE_FILE)
-    west, south, east, north = grid.bounds
-    shade = {"href": f"/layers/{SHADE_FILE}", "west": west, "south": south, "east": east, "north": north}
-    _write(folder / "relief.json", relief_body(downloads, grid, outline, shade))
+    _write(folder / "relief.json", relief_body(downloads, grid, outline, _shade(grid.bounds)))
     locate = state_locator(options.root / DISTRICTS, options.root / REGISTER)
     place = Place(BOUNDS, lambda x, y: outline.contains(_point(x, y)), locate)
     sites = read_sites(downloads.folder / MRDS.file, place)
     _write(folder / "minerals.json", minerals_body(sites, downloads.source(MRDS)))
+    return _mirrored(folder, options.root)
+
+
+def _shade(bounds: tuple[float, float, float, float]) -> dict[str, Any]:
+    west, south, east, north = bounds
+    return {"href": f"/layers/{SHADE_FILE}", "west": west, "south": south, "east": east, "north": north}
+
+
+def _mirrored(folder: Path, root: Path) -> int:
+    from maplayers.mirror import MEASURED_OUTPUT, mirror_measured
+
+    for path in mirror_measured(folder, root / MEASURED_OUTPUT):
+        print(f"{path.as_posix()} mirrored")
     return 0
 
 

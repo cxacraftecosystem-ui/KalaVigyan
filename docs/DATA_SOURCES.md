@@ -1,6 +1,6 @@
 # Data sources
 
-Every per-district environment value in KalaVigyan comes from one of the open datasets below. The table mirrors `etl/geo/geo_etl/catalog.py` `ALL`, which is the source of truth: each row of `district_env.parquet` repeats its dataset's `source`, `version`, `resolution` and `licence`, and `etl/geo/load.py` writes the full record to `EnvDataset`. If this page and `catalog.py` disagree, `catalog.py` wins and this page is stale.
+Every per-district environment value and every physical map layer in KalaVigyan comes from one of the open datasets below. The tables mirror the one dataset registry, `backend/app/data/datasets/registry.json` (decision 0114), which is the source of truth: `etl/geo/geo_etl/catalog.py` reads its `geo-etl` rows, `tools/maplayers/sources.py` names its `maplayers` rows by code, each row of `district_env.parquet` repeats its dataset's `source`, `version`, `resolution` and `licence`, and `etl/geo/load.py` writes the full record to `EnvDataset` (`python -m app.scripts.sync_dataset_registry` brings stored rows up to the registry). If this page and the registry disagree, the registry wins and this page is stale.
 
 Owner direction: open datasets only, nothing that needs registration or a login. Heavy downloads run in GitHub Actions (`.github/workflows/geo-etl.yml`), never on a laptop.
 
@@ -12,12 +12,14 @@ Owner direction: open datasets only, nothing that needs registration or a login.
 | `SOILGRIDS_2_0` | SoilGrids 2.0 | ISRIC World Soil Information | 2.0 | modelled, 2020 release | 250 m | Interrupted Goode Homolosine (ESRI:54052) |
 | `ESA_WORLDCOVER_2021_V200` | ESA WorldCover 10 m 2021 v200 | European Space Agency | v200 | 2021 | 10 m (1/12000 degree) | EPSG:4326 |
 | `HANSEN_GFC_2025_V1_13` | Global Forest Change 2000-2025 | University of Maryland, Department of Geographical Sciences | GFC-2025-v1.13 | 2000-2025 | 1 arc-second (about 30 m) | EPSG:4326 |
-| `CHELSA_2_1_1981_2010` | CHELSA V2.1 climatologies 1981-2010 | Swiss Federal Institute for Forest, Snow and Landscape Research WSL | V2.1 | 1981-2010 | 30 arc-seconds (about 1 km) | EPSG:4326 |
+| `CHELSA_2_1_1981_2010` | CHELSA V2.1 climatologies 1981-2010 | Swiss Federal Institute for Forest, Snow and Landscape Research WSL, via EnviDat | V2.1 | 1981-2010 | 30 arc-seconds (about 1 km) | EPSG:4326 |
 | `CHIRPS_3_0` | Climate Hazards Center InfraRed Precipitation with Stations v3.0 | Climate Hazards Center, UC Santa Barbara | 3.0 | set per run: 1981 (the record's first year) to the last complete year | 0.05 degree | EPSG:4326 |
 | `GHCN_CAMS_T2M` | GHCN CAMS gridded monthly land surface air temperature | NOAA Climate Prediction Center, distributed by NOAA Physical Sciences Laboratory | air.mon.mean.nc, file version 3.01 | set per run: 1981 to the last complete year in the file | 0.5 degree | EPSG:4326 |
 | `COPERNICUS_DEM_GLO90` | Copernicus DEM GLO-90 | European Space Agency, Copernicus Programme | 2021_1 (AWS Open Data COG) | 2011-2015 acquisitions | 3 arc-seconds (about 90 m) | EPSG:4326 (EGM2008 heights) |
 | `HYDRORIVERS_1_0` | HydroRIVERS v1.0 (Asia) | WWF HydroSHEDS | v10 | static | 15 arc-second network (reaches with upstream area >= 10 km2 or discharge >= 0.1 m3/s) | EPSG:4326 |
-| `USGS_MRDS` | Mineral Resources Data System | U.S. Geological Survey | WFS snapshot at retrieval | compiled to 2011, no longer updated | point locations | EPSG:4326 |
+| `USGS_MRDS` | Mineral Resources Data System | U.S. Geological Survey | snapshot at retrieval | compiled to 2011, no longer updated | point locations | EPSG:4326 |
+| `ETOPO1_ICE` | ETOPO1 1 Arc-Minute Global Relief Model, ice surface (the relief layer) | NOAA National Centers for Environmental Information | ice surface, grid-registered | 2009 | 1 arc-minute | EPSG:4326 |
+| `NATURAL_EARTH_10M_PHYSICAL` | Natural Earth 1:10m physical vectors (rivers, lakes, regions and peaks) | Natural Earth | 1:10m, version 5.0.0 | static | 1:10 million | EPSG:4326 |
 | `GLIM_1_0_05DEG` | Global Lithological Map Database v1.0 (gridded to 0.5 degree) | Universitat Hamburg, via PANGAEA | 1.0 | 2012 | 0.5 degree | EPSG:4326 |
 
 ## Licence, attribution and redistribution
@@ -30,13 +32,15 @@ Owner direction: open datasets only, nothing that needs registration or a login.
 | `SOILGRIDS_2_0` | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Yes | SoilGrids 2.0, ISRIC World Soil Information | https://files.isric.org/soilgrids/latest/data/ |
 | `ESA_WORLDCOVER_2021_V200` | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Yes | ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium | https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ |
 | `HANSEN_GFC_2025_V1_13` | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Yes | Hansen/UMD/Google/USGS/NASA | https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/ |
-| `CHELSA_2_1_1981_2010` | [Karger et al. 2017](https://doi.org/10.1038/sdata.2017.122) (the paper CHELSA asks to be cited; no licence text found) | No, until a licence is confirmed | CHELSA V2.1 | https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/1981-2010/ |
+| `CHELSA_2_1_1981_2010` | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) (EnviDat's record of the dataset, read 2026-11-21) | Yes | CHELSA V2.1, Karger et al. | https://os.zhdk.cloud.switch.ch/chelsav2/GLOBAL/climatologies/1981-2010/ |
 | `CHIRPS_3_0` | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Yes | Climate Hazards Center, UC Santa Barbara (CHIRPS3) | https://data.chc.ucsb.edu/products/CHIRPS/v3.0/ |
 | `GHCN_CAMS_T2M` | [Public domain (U.S. Government work on a federal server)](https://psl.noaa.gov/data/help/) (checked 2026-11-18) | Yes | GHCN_CAMS Gridded 2m Temperature (Land) data provided by the NOAA PSL, Boulder, Colorado, USA | https://downloads.psl.noaa.gov/Datasets/ghcncams/air.mon.mean.nc |
 | `COPERNICUS_DEM_GLO90` | [Copernicus DEM licence (GLO-90 free worldwide)](https://registry.opendata.aws/copernicus-dem/) | Yes | Produced using Copernicus WorldDEM-90 (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved | https://copernicus-dem-90m.s3.amazonaws.com/ |
 | `HYDRORIVERS_1_0` | [HydroSHEDS v1 License Agreement](https://data.hydrosheds.org/file/technical-documentation/HydroSHEDS_TechDoc_v1_4.pdf) (Appendix A, checked 2026-11-17): free for non-commercial and commercial use; distributed only inside derived products, never on its own; attribution required | Yes, inside the app; the lines are never a download or export | The Exhibit B statement, below (River lines) | https://data.hydrosheds.org/file/HydroRIVERS/HydroRIVERS_v10_as_shp.zip |
 | `USGS_MRDS` | [Public domain (U.S. Government work)](https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits) | Yes | U.S. Geological Survey Mineral Resources Data System | https://mrdata.usgs.gov/services/wfs/mrds |
 | `GLIM_1_0_05DEG` | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) | Yes | Hartmann and Moosdorf (2012), GLiM | https://doi.pangaea.de/10.1594/PANGAEA.788537?format=textfile |
+| `ETOPO1_ICE` | [Public domain (U.S. Government work)](https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.ngdc.mgg.dem:316) | Yes | NOAA National Centers for Environmental Information, ETOPO1 | https://coastwatch.pfeg.noaa.gov/erddap/griddap/etopo180.html |
+| `NATURAL_EARTH_10M_PHYSICAL` | [Public domain](https://www.naturalearthdata.com/about/terms-of-use/) | Yes | Made with Natural Earth. | https://naciscdn.org/naturalearth/10m/physical/ |
 
 ## Citations
 
@@ -44,13 +48,15 @@ Owner direction: open datasets only, nothing that needs registration or a login.
 - `SOILGRIDS_2_0`: Poggio, L., de Sousa, L. M., Batjes, N. H., et al. (2021). SoilGrids 2.0: producing soil information for the globe with quantified spatial uncertainty. SOIL 7, 217-240. https://doi.org/10.5194/soil-7-217-2021
 - `ESA_WORLDCOVER_2021_V200`: Zanaga, D., Van De Kerchove, R., Daems, D., et al. (2022). ESA WorldCover 10 m 2021 v200. https://doi.org/10.5281/zenodo.7254221
 - `HANSEN_GFC_2025_V1_13`: Hansen, M. C., Potapov, P. V., Moore, R., et al. (2013). High-Resolution Global Maps of 21st-Century Forest Cover Change. Science 342, 850-853. https://doi.org/10.1126/science.1244693. Data GFC-2025-v1.13.
-- `CHELSA_2_1_1981_2010`: Karger, D. N., Conrad, O., Bohner, J., et al. (2017). Climatologies at high resolution for the earth's land surface areas. Scientific Data 4, 170122. https://doi.org/10.1038/sdata.2017.122
+- `CHELSA_2_1_1981_2010`: Karger, D. N., Conrad, O., Bohner, J., et al. (2021). Climatologies at high resolution for the earth's land surface areas. EnviDat. https://doi.org/10.16904/envidat.228 (the dataset; the method paper is Scientific Data 4, 170122, 2017, https://doi.org/10.1038/sdata.2017.122)
 - `CHIRPS_3_0`: Climate Hazards Center InfraRed Precipitation with Stations version 3 (CHIRPS3) Data Repository (2025). https://doi.org/10.15780/G2JQ0P
 - `GHCN_CAMS_T2M`: Fan, Y., van den Dool, H. (2008). A global monthly land surface air temperature analysis for 1948-present. Journal of Geophysical Research 113, D01103. https://doi.org/10.1029/2007JD008470
 - `COPERNICUS_DEM_GLO90`: European Space Agency (2024). Copernicus Global Digital Elevation Model. https://doi.org/10.5270/ESA-c5d3d65
 - `HYDRORIVERS_1_0`: Lehner, B., Grill, G. (2013). Global river hydrography and network routing: baseline data and new approaches to study the world's large river systems. Hydrological Processes 27(15), 2171-2186. https://doi.org/10.1002/hyp.9740
 - `USGS_MRDS`: U.S. Geological Survey. Mineral Resources Data System (MRDS). Reston, Virginia. https://mrdata.usgs.gov/mrds/
 - `GLIM_1_0_05DEG`: Hartmann, J., Moosdorf, N. (2012). Global Lithological Map Database v1.0 (gridded to 0.5 degree spatial resolution). PANGAEA. https://doi.org/10.1594/PANGAEA.788537
+- `ETOPO1_ICE`: Amante, C. and B.W. Eakins, 2009. ETOPO1 1 Arc-Minute Global Relief Model: Procedures, Data Sources and Analysis. NOAA Technical Memorandum NESDIS NGDC-24. https://doi.org/10.7289/V5C8276M
+- `NATURAL_EARTH_10M_PHYSICAL`: Natural Earth. Free vector and raster map data at naturalearthdata.com.
 
 ## Unit definitions (decision 0062)
 

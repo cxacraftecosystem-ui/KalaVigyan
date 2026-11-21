@@ -16,6 +16,8 @@ NGINX_SWITCH_SECONDS="${NGINX_SWITCH_SECONDS:-20}"
 EMBED_SECONDS="${EMBED_SECONDS:-240}"
 EMBED_GRACE="${EMBED_GRACE:-60}"
 PAGES_SECONDS="${PAGES_SECONDS:-480}"
+REFRESH_SECONDS="${REFRESH_SECONDS:-300}"
+STATE="${STATE_DIR:-$APP/state}"
 
 other() { if [ "$1" = 8000 ]; then echo 8001; else echo 8000; fi; }
 active() { systemctl is-active --quiet "$1" 2>/dev/null; }
@@ -71,6 +73,16 @@ rebuild_pages() {
     say "app.scripts.rebuild_stale_pages done: $report"
   else
     say "::warning::app.scripts.rebuild_stale_pages did not finish (${report:-no report}); the release goes on and the nightly upkeep rebuilds what is left, but the web build reads stale pages slowly until then."
+  fi
+}
+
+refresh_served_pages() {
+  local tree="$1" report
+  install -d -o "$RUN_AS" -g "$RUN_AS" -m 0750 "$STATE"
+  if report="$(cd "$tree" && timeout "$((REFRESH_SECONDS + EMBED_GRACE))" runuser -u "$RUN_AS" -- bash -c "set -a; . '$ENV_FILE'; set +a; exec ./.venv/bin/python -m app.scripts.refresh_served_pages --state '$STATE/served-pages.json' --seconds $REFRESH_SECONDS")"; then
+    say "app.scripts.refresh_served_pages done: $report"
+  else
+    say "::warning::app.scripts.refresh_served_pages did not finish (${report:-no report}); the web keeps the pages it holds until they expire, and the next release refreshes what changed."
   fi
 }
 
@@ -235,6 +247,7 @@ cmd_release() {
   fi
   seed "$tree" || die "seeding failed. nginx still proxies to $live."
   start_and_promote
+  refresh_served_pages "$tree"
   say "released: nginx -> $cand, current -> $(readlink "$APP/current")"
 }
 
@@ -253,6 +266,7 @@ cmd_rollback() {
   stop_workers
   if active "$UNIT@$cand"; then systemctl stop "$UNIT@$cand"; fi
   start_and_promote
+  refresh_served_pages "$target/backend"
   say "rolled back: nginx -> $cand ($target)"
 }
 

@@ -96,8 +96,8 @@ REFERENCES: Mapping[str, Reference] = MappingProxyType(
             Reference(
                 "components",
                 "Authoring a component",
-                "Choosing among the 42 kinds and the five general kinds, units and citations in a spec, and the "
-                "design rules for a contributed figure",
+                "Choosing among the 22 kinds a contributor delivers and their declared specs, units and citations "
+                "in a spec, depicted materials, and the design rules for a contributed figure",
             ),
             Reference(
                 "datasets",
@@ -151,9 +151,9 @@ CONTRACTS: Mapping[str, Contract] = MappingProxyType(
             ),
             Contract(
                 "component-specs-general",
-                "The general component kinds",
-                "The five general kinds a contributor delivers (drawing, chart, table, timeline, map layer): "
-                "their specs, units, citations and the checks a delivered spec passes",
+                "The declared component kinds",
+                "The five kinds that take a declared spec (drawing, chart, fact_table, timeline, map_layer), "
+                "one kind per job: their specs, units, citations, dataset cells and the checks a delivered spec passes",
             ),
             Contract(
                 "image-contributions",

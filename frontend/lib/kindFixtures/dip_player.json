@@ -1,0 +1,330 @@
+{
+  "schemaVersion": 1,
+  "kind": "dip_player",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/chemistry/fort-earth-dip",
+  "title": "The fort-earth dip",
+  "description": "The bidri piece in its fort-earth bath, lifted black and oiled, with the surface before and after. It shows no equation, because the compounds of the patina have not been identified.",
+  "field": "CHEMISTRY",
+  "within": null,
+  "spec": {
+    "id": "bidri-dip",
+    "head": {
+      "figure": null,
+      "number": "u0001",
+      "title": "u0002",
+      "titleId": "bidri-dip-t",
+      "dek": "u0003"
+    },
+    "phase": "u0004",
+    "scene": {
+      "tag": "svg",
+      "attrs": {
+        "viewBox": "0 0 200 120",
+        "role": "img",
+        "aria-label": "A bidri piece above its bath"
+      },
+      "children": [
+        {
+          "tag": "rect",
+          "attrs": {
+            "x": "20",
+            "y": "60",
+            "width": "160",
+            "height": "50",
+            "fill": "var(--sunk)",
+            "stroke": "var(--ink-2)",
+            "stroke-width": "1.5"
+          }
+        },
+        {
+          "tag": "rect",
+          "attrs": {
+            "x": "80",
+            "y": "20",
+            "width": "40",
+            "height": "60",
+            "fill": "var(--dye-bidri-white)",
+            "stroke": "var(--ink-1)",
+            "stroke-width": "1.5"
+          }
+        }
+      ]
+    },
+    "stripLabel": "The phases of the dip",
+    "phases": [
+      {
+        "pose": "solution",
+        "drawing": {
+          "tag": "svg",
+          "attrs": {
+            "viewBox": "0 0 200 120",
+            "role": "img",
+            "aria-label": "u0005"
+          },
+          "children": [
+            {
+              "tag": "rect",
+              "attrs": {
+                "x": "20",
+                "y": "60",
+                "width": "160",
+                "height": "50",
+                "fill": "var(--sunk)",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "rect",
+              "attrs": {
+                "x": "80",
+                "y": "20",
+                "width": "40",
+                "height": "60",
+                "fill": "var(--dye-bidri-white)",
+                "stroke": "var(--ink-1)",
+                "stroke-width": "1.5"
+              }
+            }
+          ]
+        },
+        "kicker": "u0005",
+        "text": "u0006"
+      },
+      {
+        "pose": "lifted",
+        "drawing": {
+          "tag": "svg",
+          "attrs": {
+            "viewBox": "0 0 200 120",
+            "role": "img",
+            "aria-label": "u0007"
+          },
+          "children": [
+            {
+              "tag": "rect",
+              "attrs": {
+                "x": "20",
+                "y": "60",
+                "width": "160",
+                "height": "50",
+                "fill": "var(--sunk)",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "rect",
+              "attrs": {
+                "x": "80",
+                "y": "20",
+                "width": "40",
+                "height": "60",
+                "fill": "var(--dye-bidri-black)",
+                "stroke": "var(--ink-1)",
+                "stroke-width": "1.5"
+              }
+            }
+          ]
+        },
+        "kicker": "u0007",
+        "text": "u0008"
+      },
+      {
+        "pose": "oiled",
+        "drawing": {
+          "tag": "svg",
+          "attrs": {
+            "viewBox": "0 0 200 120",
+            "role": "img",
+            "aria-label": "u0009"
+          },
+          "children": [
+            {
+              "tag": "rect",
+              "attrs": {
+                "x": "20",
+                "y": "60",
+                "width": "160",
+                "height": "50",
+                "fill": "var(--sunk)",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "rect",
+              "attrs": {
+                "x": "80",
+                "y": "20",
+                "width": "40",
+                "height": "60",
+                "fill": "var(--dye-bidri-black)",
+                "stroke": "var(--ink-1)",
+                "stroke-width": "1.5"
+              }
+            }
+          ]
+        },
+        "kicker": "u0009",
+        "text": "u0010"
+      }
+    ],
+    "dipAgain": "Dip again",
+    "status": "u0011",
+    "dipsLabel": "u0012",
+    "dips": [
+      "--dye-bidri-white",
+      "--dye-bidri-black"
+    ]
+  },
+  "units": {
+    "u0001": {
+      "text": "Figure",
+      "claims": []
+    },
+    "u0002": {
+      "text": "The black patina forms the instant the alloy enters the warm solution.",
+      "claims": [
+        "C117"
+      ]
+    },
+    "u0003": {
+      "text": "The silver inlay keeps its colour.",
+      "claims": [
+        "C071"
+      ]
+    },
+    "u0004": {
+      "text": "In the solution",
+      "claims": []
+    },
+    "u0005": {
+      "text": "In the bath",
+      "claims": []
+    },
+    "u0006": {
+      "text": "The finished article is dipped in a boiling solution of fort earth and ammonium chloride.",
+      "claims": [
+        "C071"
+      ]
+    },
+    "u0007": {
+      "text": "Lifted",
+      "claims": []
+    },
+    "u0008": {
+      "text": "The zinc alloy comes out black while the silver keeps its colour.",
+      "claims": [
+        "C071"
+      ]
+    },
+    "u0009": {
+      "text": "Oiled",
+      "claims": []
+    },
+    "u0010": {
+      "text": "The blackened piece is polished with groundnut oil to give it a shine.",
+      "claims": [
+        "C077"
+      ]
+    },
+    "u0011": {
+      "text": "Blackened",
+      "claims": []
+    },
+    "u0012": {
+      "text": "The surface before and after",
+      "claims": []
+    }
+  },
+  "facts": {
+    "C071": {
+      "text": "The finished article is dipped in a boiling solution of fort earth and ammonium chloride, which turns the zinc alloy black while the silver keeps its colour.",
+      "quotes": [
+        {
+          "source": "S02",
+          "locator": "lines 296-299",
+          "quote": "The polished article is then dipped in a boiled solution of ammonium chloride and earth collected and available only from the fort area"
+        },
+        {
+          "source": "S02",
+          "locator": "lines 305-307",
+          "quote": "By this process, the zinc portion ofthe articles become black and the silver portion retains its own colour."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1348-1349",
+          "quote": "The finished article is now given a dip in this hot solution."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1350-1351",
+          "quote": "The zinc alloy turns permanently jet black while the silver retains its brilliance."
+        }
+      ]
+    },
+    "C077": {
+      "text": "The blackened piece is polished with groundnut oil, in some accounts as a paste with fine charcoal powder, to give it a shine.",
+      "quotes": [
+        {
+          "source": "S02",
+          "locator": "lines 309-311",
+          "quote": "Later the whole surface is rubbed with groundnut oil, so as to give the article a shining."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1356-1357",
+          "quote": "For this purpose a paste of fine charcoal powder and ground nut oil is prepared."
+        },
+        {
+          "source": "S14",
+          "locator": "line 15",
+          "quote": "Following this, the object is polished with groundnut oil and charcoal."
+        }
+      ]
+    },
+    "C117": {
+      "text": "La Niece and Martin found that the black patina forms instantly when the alloy is immersed in a warm solution of one part potassium nitrate to four parts ammonium chloride.",
+      "quotes": [
+        {
+          "source": "S05",
+          "locator": "line 29",
+          "quote": "The black patina forms instantaneously on immersion of the alloy in a warm solution of potassium nitrate (one part) and ammonium chloride (four parts)."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S02": {
+      "title": "Form GI-1: Application for the registration of a geographical indication, Bidriware (statement of case)",
+      "publisher": "Karnataka State Handicrafts Development Corporation Limited",
+      "year": null,
+      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/13-bidriware.pdf",
+      "reliability": "A"
+    },
+    "S03": {
+      "title": "Census of India 1961, Volume II, Andhra Pradesh, Part VII-A (3): Selected Crafts of Andhra Pradesh (monograph: Bidriware of Hyderabad City)",
+      "publisher": "Census of India",
+      "year": null,
+      "url": "https://censusindia.gov.in/nada/index.php/catalog/31726/download/34907/22310_1961_SEL.pdf",
+      "reliability": "A"
+    },
+    "S05": {
+      "title": "The technical examination of Bidri ware",
+      "publisher": "The International Institute for Conservation of Historic and Artistic Works",
+      "year": 1987,
+      "url": "https://mci.si.edu/node/1221430",
+      "reliability": "A"
+    },
+    "S14": {
+      "title": "Bidriware",
+      "publisher": "Impart Encyclopedia of Art (MAP Academy)",
+      "year": 2023,
+      "url": "https://imp-art.org/articles/bidriware/",
+      "reliability": "B"
+    }
+  }
+}

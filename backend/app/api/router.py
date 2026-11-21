@@ -11,6 +11,7 @@ from app.api.routes import (
     coverage,
     craft_monograph,
     crafts,
+    dataset_uploads,
     explainer_exports,
     explainers,
     field_photo_reviews,
@@ -38,6 +39,7 @@ from app.api.routes import (
     page_documents,
     page_proposals,
     password_change,
+    place_ground,
     profile,
     public,
     review_queue,
@@ -69,6 +71,7 @@ api_router.include_router(artisan_contributions.router)
 api_router.include_router(artisan_conversations.router)
 api_router.include_router(image_contributions.router)
 api_router.include_router(upload_links.router)
+api_router.include_router(dataset_uploads.router)
 api_router.include_router(users.router)
 api_router.include_router(categories.router)
 api_router.include_router(crafts.router)
@@ -100,6 +103,7 @@ api_router.include_router(open_work.router)
 api_router.include_router(own_proposals.router)
 api_router.include_router(page_documents.router)
 api_router.include_router(page_proposals.router)
+api_router.include_router(place_ground.router)
 api_router.include_router(profile.router)
 api_router.include_router(public.router)
 api_router.include_router(review_queue.router)

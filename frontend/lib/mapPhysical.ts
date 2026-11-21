@@ -9,7 +9,27 @@ export const PHYSICAL_LAYERS: readonly PhysicalLayer[] = [
   { id: "minerals", title: "Mineral deposits", hint: "USGS Mineral Resources Data System", asset: "/layers/minerals.json" }
 ];
 
-export type DatasetRow = { dataset: string; url: string; sha256: string; version?: string; publisher?: string; licence?: string; citation?: string };
+export type DatasetRow = {
+  code: string;
+  title: string;
+  publisher: string;
+  edition: string;
+  version: string;
+  period: string;
+  nativeResolution: string;
+  crs: string;
+  licence: string;
+  licenceUrl: string | null;
+  attribution: string | null;
+  redistributable: boolean;
+  citation: string | null;
+  doi: string | null;
+  landingUrl: string;
+  file: string;
+  url: string;
+  readOn: string;
+  sha256: string;
+};
 export type PlacedLabel = { text: string; tier: number; longitude: number; latitude: number; angle: number };
 export type Peak = { name: string; elevation: number; text: string; rank: number; longitude: number; latitude: number };
 

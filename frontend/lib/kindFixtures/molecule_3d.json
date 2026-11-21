@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "kind": "molecule_3d",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/chemistry/ammonium-chloride",
+  "title": "Ammonium chloride",
+  "description": "A turnable model of ammonium chloride, the salt boiled with fort earth to blacken bidri.",
+  "field": "CHEMISTRY",
+  "within": null,
+  "spec": {
+    "head": {
+      "figure": null,
+      "number": "u0001",
+      "title": "u0002",
+      "titleId": "bidri-model-t",
+      "dek": null
+    },
+    "molecules": [
+      {
+        "key": "nh4cl",
+        "cid": 25517,
+        "yaw": 20.0,
+        "pitch": 10.0,
+        "name": "Ammonium chloride",
+        "dialLabel": "Turn the model",
+        "formula": [
+          "NH",
+          {
+            "text": "4",
+            "style": "sub"
+          },
+          "Cl"
+        ],
+        "atoms": "Nitrogen, hydrogen and chlorine",
+        "note": "Its record is PubChem's",
+        "drawing": {
+          "tag": "svg",
+          "attrs": {
+            "viewBox": "0 0 130 80",
+            "role": "img",
+            "aria-label": "Ammonium chloride"
+          },
+          "children": [
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "50",
+                "y1": "33",
+                "x2": "50",
+                "y2": "19",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "57",
+                "y1": "40",
+                "x2": "71",
+                "y2": "40",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "50",
+                "y1": "47",
+                "x2": "50",
+                "y2": "61",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "43",
+                "y1": "40",
+                "x2": "29",
+                "y2": "40",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "50",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "N"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "50",
+                "y": "16",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "H"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "78",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "H"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "50",
+                "y": "72",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "H"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "22",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "H"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "64",
+                "y": "28",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "+"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "108",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "Cl"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "122",
+                "y": "34",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "−"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "side": [],
+    "key": [
+      {
+        "swatch": null,
+        "label": "Nitrogen"
+      },
+      {
+        "swatch": null,
+        "label": "Hydrogen"
+      },
+      {
+        "swatch": null,
+        "label": "Chlorine"
+      }
+    ]
+  },
+  "units": {
+    "u0001": {
+      "text": "Figure",
+      "claims": []
+    },
+    "u0002": {
+      "text": "Ammonium chloride goes into the boiling fort-earth bath.",
+      "claims": [
+        "C071"
+      ]
+    }
+  },
+  "facts": {
+    "C071": {
+      "text": "The finished article is dipped in a boiling solution of fort earth and ammonium chloride, which turns the zinc alloy black while the silver keeps its colour.",
+      "quotes": [
+        {
+          "source": "S02",
+          "locator": "lines 296-299",
+          "quote": "The polished article is then dipped in a boiled solution of ammonium chloride and earth collected and available only from the fort area"
+        },
+        {
+          "source": "S02",
+          "locator": "lines 305-307",
+          "quote": "By this process, the zinc portion ofthe articles become black and the silver portion retains its own colour."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1348-1349",
+          "quote": "The finished article is now given a dip in this hot solution."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1350-1351",
+          "quote": "The zinc alloy turns permanently jet black while the silver retains its brilliance."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S02": {
+      "title": "Form GI-1: Application for the registration of a geographical indication, Bidriware (statement of case)",
+      "publisher": "Karnataka State Handicrafts Development Corporation Limited",
+      "year": null,
+      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/13-bidriware.pdf",
+      "reliability": "A"
+    },
+    "S03": {
+      "title": "Census of India 1961, Volume II, Andhra Pradesh, Part VII-A (3): Selected Crafts of Andhra Pradesh (monograph: Bidriware of Hyderabad City)",
+      "publisher": "Census of India",
+      "year": null,
+      "url": "https://censusindia.gov.in/nada/index.php/catalog/31726/download/34907/22310_1961_SEL.pdf",
+      "reliability": "A"
+    }
+  }
+}

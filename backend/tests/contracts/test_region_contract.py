@@ -17,7 +17,8 @@ from app.schemas.region import (
     split_depth_or_period,
 )
 
-from .golden import REPO, golden_json, plan_text, reproduces
+from .golden import golden_json, plan_text, reproduces
+from .phase_b_golden import geo_etl_datasets
 
 
 def place() -> dict[str, Any]:
@@ -160,8 +161,7 @@ def test_the_boundary_caption_is_the_plan_eight_text() -> None:
 
 
 def test_every_dataset_the_geo_etl_builds_has_a_region_facet() -> None:
-    catalog = (REPO / "etl" / "geo" / "geo_etl" / "catalog.py").read_text(encoding="utf-8")
-    codes = set(re.findall(r'code="([A-Z0-9_]+)"', catalog)) - {BOUNDARY_DATASET_CODE}
+    codes = set(geo_etl_datasets()) - {BOUNDARY_DATASET_CODE}
     assert codes and codes <= set(DATASET_FACETS)
 
 

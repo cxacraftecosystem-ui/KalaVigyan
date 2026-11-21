@@ -1,4 +1,4 @@
-[data-general="general_drawing"] .kv-general-sheet {
+[data-general="drawing"] .kv-general-sheet {
   background: var(--dye-cloth);
   forced-color-adjust: none;
 }

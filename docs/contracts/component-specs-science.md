@@ -61,9 +61,13 @@ second is drawn as `figure.rp.rx-player`. Ajrakh: blue (per-step reactions), red
 ## dip_player
 
 `DipPlayerSpec {id, head, phase, scene, stripLabel, phases, dipAgain, status, dipsLabel, dips,
-equation}`: the vat scene, the strip of phases (vat, lifted, air; the last carries
-`aria-current="step"`), Dip again, the dip swatches (`--dip-1..4`, the last `on`) and the
-balanced equation. Ajrakh: `shared/chemistry/indigo-vat-dip`.
+equation?}`: the scene, the strip of phases, each named by its own key in `pose` (a lower-case
+word or hyphenated words, each once; the last carries `aria-current="step"`), the label of the
+repeat button, the swatches of the successive dips (colour tokens, the last `on`) and, where a source
+states one, the balanced equation. The poses are the spec's words, not the model's: Ajrakh's spec
+carries vat, lifted and air and its `--dip-1..4`, and Bidriware's fixture carries solution, lifted
+and oiled with no equation, because the patina's compounds are unidentified. Ajrakh:
+`shared/chemistry/indigo-vat-dip`.
 
 ## stage_player
 
@@ -72,7 +76,10 @@ name, English name, whether the name is local (italic on the ribbon), its "after
 label card and the script's `data-stages`, and its units (number, heading, texts, why, materials,
 and the held "Sources differ" note and after sentence). The view draws each stage's tile, ribbon
 and swatch from the page's `#tile-n` patterns, the label card at rest ("Stage 11 of 11") and the
-ribbon as a toolbar. Ajrakh: `kutch-ajrakh/process/cloth-after-each-stage`.
+ribbon as a toolbar. The label before each stage's after (`afterLabel`, Ajrakh's "Cloth after", a dhokra
+mould's "Model after") is the spec's, and a stage may name a recorded material as its `swatch`, drawn in
+place of the page's `#tile-n` pattern, so another craft's stages show their own colours.
+Ajrakh: `kutch-ajrakh/process/cloth-after-each-stage`.
 
 ## diagram
 

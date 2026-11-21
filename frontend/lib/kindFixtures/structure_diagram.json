@@ -1,0 +1,410 @@
+{
+  "schemaVersion": 1,
+  "kind": "structure_diagram",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/chemistry/patina-salts",
+  "title": "The salts of the patina solution",
+  "description": "Ammonium chloride and potassium nitrate, the two salts a thesis dissolved to give the bidri patina, each with its PubChem record.",
+  "field": "CHEMISTRY",
+  "within": null,
+  "spec": {
+    "id": "bidri-salts",
+    "head": {
+      "figure": null,
+      "number": "u0003",
+      "title": "u0004",
+      "titleId": "bidri-salts-t",
+      "dek": null
+    },
+    "dekStyle": null,
+    "scale": "u0005",
+    "molecules": [
+      {
+        "drawing": {
+          "tag": "svg",
+          "attrs": {
+            "viewBox": "0 0 130 80",
+            "role": "img",
+            "aria-label": "Ammonium chloride"
+          },
+          "children": [
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "50",
+                "y1": "33",
+                "x2": "50",
+                "y2": "19",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "57",
+                "y1": "40",
+                "x2": "71",
+                "y2": "40",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "50",
+                "y1": "47",
+                "x2": "50",
+                "y2": "61",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "43",
+                "y1": "40",
+                "x2": "29",
+                "y2": "40",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "50",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "N"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "50",
+                "y": "16",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "H"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "78",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "H"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "50",
+                "y": "72",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "H"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "22",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "H"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "64",
+                "y": "28",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "+"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "108",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "Cl"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "122",
+                "y": "34",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "−"
+              ]
+            }
+          ]
+        },
+        "name": "Ammonium chloride",
+        "formula": [
+          "NH",
+          {
+            "text": "4",
+            "style": "sub"
+          },
+          "Cl"
+        ],
+        "note": "A salt of the patina bath",
+        "atomsTerm": "u0001",
+        "atoms": "u0006",
+        "recordTerm": "u0002",
+        "cid": 25517
+      },
+      {
+        "drawing": {
+          "tag": "svg",
+          "attrs": {
+            "viewBox": "0 0 130 80",
+            "role": "img",
+            "aria-label": "Potassium nitrate"
+          },
+          "children": [
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "18",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "K"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "30",
+                "y": "34",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "+"
+              ]
+            },
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "80",
+                "y1": "33",
+                "x2": "80",
+                "y2": "19",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "86",
+                "y1": "44",
+                "x2": "99",
+                "y2": "54",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "line",
+              "attrs": {
+                "x1": "74",
+                "y1": "44",
+                "x2": "61",
+                "y2": "54",
+                "stroke": "var(--ink-2)",
+                "stroke-width": "1.5"
+              }
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "80",
+                "y": "44",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "N"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "80",
+                "y": "16",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "O"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "105",
+                "y": "64",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "O"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "55",
+                "y": "64",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "O"
+              ]
+            },
+            {
+              "tag": "text",
+              "attrs": {
+                "x": "118",
+                "y": "26",
+                "text-anchor": "middle",
+                "font-size": "12",
+                "fill": "var(--ink-1)"
+              },
+              "children": [
+                "−"
+              ]
+            }
+          ]
+        },
+        "name": "Potassium nitrate",
+        "formula": [
+          "KNO",
+          {
+            "text": "3",
+            "style": "sub"
+          }
+        ],
+        "note": "A salt of the patina bath",
+        "atomsTerm": "u0001",
+        "atoms": "u0007",
+        "recordTerm": "u0002",
+        "cid": 24434
+      }
+    ],
+    "notes": [],
+    "key": "The two salts",
+    "swatches": [],
+    "swatchNote": null
+  },
+  "units": {
+    "u0001": {
+      "text": "Atoms",
+      "claims": []
+    },
+    "u0002": {
+      "text": "PubChem",
+      "claims": []
+    },
+    "u0003": {
+      "text": "Figure",
+      "claims": []
+    },
+    "u0004": {
+      "text": "Two salts make the laboratory patina solution.",
+      "claims": [
+        "C131"
+      ]
+    },
+    "u0005": {
+      "text": "Drawn to no common scale",
+      "claims": []
+    },
+    "u0006": {
+      "text": "Nitrogen, hydrogen and chlorine",
+      "claims": []
+    },
+    "u0007": {
+      "text": "Potassium, nitrogen and oxygen",
+      "claims": []
+    }
+  },
+  "facts": {
+    "C131": {
+      "text": "An IIT Madras thesis found that 20 g of ammonium chloride and 5 g of potassium nitrate in 100 ml of water gave a black patina like that from Bidri sand.",
+      "quotes": [
+        {
+          "source": "S07",
+          "locator": "lines 668-670",
+          "quote": "5g of potassium nitrate (KNO3), 20g of ammonium chloride (NH4Cl) was dissolved in 100 ml of de-ionised water"
+        },
+        {
+          "source": "S07",
+          "locator": "lines 829-831",
+          "quote": "An alternative to Bidri sand has been identified. A mixture of NH4Cl and KNO3 (20g:5g) in 100mL of de-ionized water renders black patina on the surface similar to one seen with Bidri sand."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S07": {
+      "title": "Alternative Method of Processing Bidri-ware Crafts: An Electrochemical Study",
+      "publisher": "Indian Institute of Technology Madras",
+      "year": 2017,
+      "url": "https://acr.iitm.ac.in/wp-content/uploads/2018/08/AkshayKumar-Varma-MM13B006.pdf",
+      "reliability": "B"
+    }
+  }
+}

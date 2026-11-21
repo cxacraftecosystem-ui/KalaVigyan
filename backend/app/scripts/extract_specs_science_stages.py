@@ -84,6 +84,7 @@ def _stage_box(stagebox: Element, entries: list[dict[str, Any]]) -> dict[str, An
         "drawing": drawing(expect(one_of(kids(expect(big, "div", "lc-big"))), "svg", "lc-bsvg")),
         "restName": unit_of(expect(name, "p", "lc-name")),
         "play": text_of(expect(words, "span")),
+        "afterLabel": text_of(label),
     }
 
 

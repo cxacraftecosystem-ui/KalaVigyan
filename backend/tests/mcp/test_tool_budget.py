@@ -18,12 +18,12 @@ GROUPED = {
     "reading": {"find_crafts", "get_page", "get_facts", "list_components", "ask"},
     "sources": {"search_sources", "read_source", "lookup", "supply_source"},
     "work": {"list_open_work", "my_work", "reserve_tasks", "steward_craft", "get_proposal"},
-    "proposing": {"propose_facts", "propose_structure", "propose_source"},
+    "proposing": {"propose_facts", "propose_structure", "propose_source", "propose_dataset"},
     "pages": {"edit_draft", "preview_page", "propose_page"},
     "pictures": {"give_pictures"},
 }
 READ_BY_CLIENTS = {"find_crafts", "get_page", "get_facts", "list_components", "ask", "preview_page"}
-DELIVERED_KINDS = 47
+DELIVERED_KINDS = 22
 
 
 def size(value: Any) -> int:
@@ -36,7 +36,7 @@ async def result(method: str, params: dict[str, Any] | None = None) -> dict[str,
     return reply["result"]
 
 
-async def test_the_server_offers_the_21_tools_of_decision_0111_each_in_its_group() -> None:
+async def test_the_server_offers_the_tools_of_decisions_0111_and_0114_each_in_its_group() -> None:
     tools = (await result("tools/list"))["tools"]
     assert GROUPS == ("reading", "sources", "work", "proposing", "pages", "pictures")
     grouped = {
@@ -44,7 +44,7 @@ async def test_the_server_offers_the_21_tools_of_decision_0111_each_in_its_group
         for group in GROUPS
     }
     assert grouped == GROUPED
-    assert len(tools) == sum(len(names) for names in GROUPED.values()) == 21
+    assert len(tools) == sum(len(names) for names in GROUPED.values()) == 22
 
 
 async def test_tools_list_stays_within_its_budget() -> None:
@@ -119,7 +119,10 @@ async def test_each_kind_a_contributor_delivers_has_its_spec_schema_as_a_resourc
     for kind in COMPONENT_KINDS:
         assert listed[component_schema_uri(kind)]["mimeType"] == "application/schema+json", kind
         assert component_schema_uri(kind) in RESOURCES
-    read = await result("resources/read", {"uri": "kalavigyan://components/general_table.schema.json"})
+    read = await result("resources/read", {"uri": "kalavigyan://components/fact_table.schema.json"})
     schema = json.loads(read["contents"][0]["text"])
-    assert schema["$id"] == "kalavigyan://components/general_table.schema.json"
-    assert {"head", "columns", "rows"} <= set(schema["properties"])
+    assert schema["$id"] == "kalavigyan://components/fact_table.schema.json"
+    forms = [form.get("properties", {}) for form in schema.get("oneOf", schema.get("anyOf", []))]
+    forms += [definition.get("properties", {}) for definition in schema.get("$defs", {}).values()]
+    assert any({"head", "columns", "rows"} <= set(form) for form in forms)
+    assert "citation_tool" not in COMPONENT_KINDS and "language_switch" not in COMPONENT_KINDS

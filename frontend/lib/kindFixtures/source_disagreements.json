@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "kind": "source_disagreements",
+  "craft": "Blue-Pottery-Of-Jaipur",
+  "craftName": "Blue Pottery of Jaipur",
+  "label": "blue-pottery-of-jaipur/policy/where-sources-differ",
+  "title": "Where the sources on Jaipur blue pottery differ",
+  "description": "Two disagreements between the sources on Jaipur blue pottery: the year of its GI tag, and who first brought the craft to Jaipur.",
+  "field": "POLICY",
+  "within": null,
+  "spec": {
+    "id": "bp-differ",
+    "titleId": "bp-differ-t",
+    "title": "Where the sources differ",
+    "intro": "u0001",
+    "items": [
+      {
+        "summary": [
+          "The year of the GI tag"
+        ],
+        "readings": [
+          {
+            "who": "Urvashi Dev Rawal",
+            "unit": "u0002"
+          },
+          {
+            "who": "Impart",
+            "unit": "u0003"
+          }
+        ],
+        "figure": null
+      },
+      {
+        "summary": [
+          "Who brought blue pottery to Jaipur"
+        ],
+        "readings": [
+          {
+            "who": "GI application",
+            "unit": "u0004"
+          },
+          {
+            "who": "Impart",
+            "unit": "u0005"
+          }
+        ],
+        "figure": null
+      }
+    ]
+  },
+  "units": {
+    "u0001": {
+      "text": "Features and the GI documents disagree on when the GI came and on who brought the craft to Jaipur.",
+      "claims": [
+        "C139",
+        "C141",
+        "C059",
+        "C062"
+      ]
+    },
+    "u0002": {
+      "text": "Got the GI tag in 2006",
+      "claims": [
+        "C139"
+      ]
+    },
+    "u0003": {
+      "text": "Received the GI tag in 2008",
+      "claims": [
+        "C141"
+      ]
+    },
+    "u0004": {
+      "text": "Man Singh I first brought blue and white to Jaipur",
+      "claims": [
+        "C059"
+      ]
+    },
+    "u0005": {
+      "text": "Ram Singh II introduced it from Delhi and Khurja",
+      "claims": [
+        "C062"
+      ]
+    }
+  },
+  "facts": {
+    "C059": {
+      "text": "The GI application says Man Singh I was the first to bring the art of blue and white to Jaipur, after his dealings with the Mughals and campaigns in Afghanistan.",
+      "quotes": [
+        {
+          "source": "S02",
+          "locator": "lines 100-102",
+          "quote": "Man Singh I was the first to bring the art of blue and white to Jaipur subsequent to his interactions with the Mughals and through his campaigns in Afghanistan."
+        }
+      ]
+    },
+    "C062": {
+      "text": "Impart says Ram Singh II, ruler of Jaipur, introduced blue glaze pottery to Jaipur from Delhi and Khurja.",
+      "quotes": [
+        {
+          "source": "S11",
+          "locator": "line 8",
+          "quote": "Introduced in Jaipur from Delhi and Khurja by the ruler of Jaipur, Ram Singh II"
+        }
+      ]
+    },
+    "C139": {
+      "text": "Urvashi Dev Rawal's feature reports that blue pottery is historically linked to Jaipur and got the geographical indication tag in 2006.",
+      "quotes": [
+        {
+          "source": "S17",
+          "locator": "line 7",
+          "quote": "it is historically linked to Jaipur and even got the Geographical Indication or GI tag in 2006."
+        }
+      ]
+    },
+    "C141": {
+      "text": "Impart says Jaipur's blue glaze pottery received a GI tag in 2008, while workshops making similar wares have cropped up elsewhere, such as Chinhat near Lucknow.",
+      "quotes": [
+        {
+          "source": "S11",
+          "locator": "line 11",
+          "quote": "Jaipur's blue glaze pottery received a Geographical Indication (GI) tag in 2008, and while the industry remains protected in Jaipur, several other workshops producing similar wares have cropped up in regions such as Chinhat near Lucknow in present-day Uttar Pradesh."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S02": {
+      "title": "Form GI-1: application for registration of the geographical indication Blue Pottery of Jaipur",
+      "publisher": "Development Commissioner (Handicrafts), Ministry of Textiles, Government of India",
+      "year": null,
+      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/64-blue-pottery-of-jaipur.pdf",
+      "reliability": "A"
+    },
+    "S11": {
+      "title": "Blue Glaze Pottery",
+      "publisher": "Impart Encyclopedia of Art (MAP Academy)",
+      "year": 2023,
+      "url": "https://imp-art.org/articles/blue-glaze-pottery/",
+      "reliability": "B"
+    },
+    "S17": {
+      "title": "On a bullock cart to the world: How this Jaipur man set up a successful Blue Pottery business",
+      "publisher": "30 Stades",
+      "year": 2023,
+      "url": "https://30stades.com/enterprise/how-jaipur-man-ramnarayan-prajapati-set-up-successful-blue-pottery-business-global-exports",
+      "reliability": "C"
+    }
+  }
+}

@@ -28,7 +28,7 @@ COMPONENT = {
     "label": "kutch-ajrakh/chemistry/alum-table",
     "title": "Alum on cotton",
     "description": "A table of what alum does to the madder red on cotton, cited fact by fact.",
-    "kind": "general_table",
+    "kind": "fact_table",
     "field": "CHEMISTRY",
     "craftSlug": "Kutch-Ajrakh",
     "subjects": [{"kind": "CRAFT", "key": "Kutch-Ajrakh"}],

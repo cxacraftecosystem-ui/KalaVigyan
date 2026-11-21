@@ -79,7 +79,7 @@ def _component() -> ComponentProposal:
         label="refresh-own-craft/chemistry/alum-table",
         title="Alum on cotton",
         description="A table of what alum does to the madder red on cotton, cited fact by fact.",
-        kind="general_table",
+        kind="fact_table",
         field="CHEMISTRY",
         craftId=OWN,
         subjects=[{"kind": "CRAFT", "key": LINKED_SLUG}, {"kind": "CONCEPT", "key": str(SHARED_CONCEPT)}],

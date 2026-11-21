@@ -1,4 +1,5 @@
 import { COMPONENT_HOMES, type FrameStep, type HomeRecord } from "@/lib/componentHomes";
+import { GENERAL_KINDS, isDeclared } from "@/lib/componentSpecsGeneral";
 
 export type { FrameStep };
 
@@ -54,7 +55,12 @@ const PLACES: Readonly<Record<string, ComponentPlace>> = {
 
 const UNKNOWN_PLACE: ComponentPlace = { scope: "mb", frame: "wrap" };
 
-export const APP_KINDS: ReadonlySet<string> = new Set(["answer_block", "general_drawing", "general_chart", "general_table", "general_timeline", "general_map_layer"]);
+export const APP_KINDS: ReadonlySet<string> = new Set(["answer_block", "drawing", "why_here"]);
+const DECLARED_KINDS: ReadonlySet<string> = new Set(GENERAL_KINDS);
+
+export function appDrawn(kind: string, spec: Readonly<Record<string, unknown>> | null): boolean {
+  return APP_KINDS.has(kind) || (DECLARED_KINDS.has(kind) && isDeclared(spec));
+}
 
 const SCREEN: FrameStep = { classes: ["screen"], box: true };
 const PASSAGE: FrameStep = { classes: ["wrap", "kv-passage"], box: true };
@@ -103,7 +109,7 @@ export function authoredHome(label: string): HomeRecord | null {
 
 export function componentHome(label: string, kind: string, spec: Readonly<Record<string, unknown>> | null): ComponentHome {
   const place = componentPlace(kind);
-  if (APP_KINDS.has(kind)) return { scope: place.scope, frame: FRAMES[place.frame], source: "app" };
+  if (appDrawn(kind, spec)) return { scope: place.scope, frame: FRAMES[place.frame], source: "app" };
   const home = authoredHome(label);
   if (home && home.kind === kind) return { scope: kitScope(home.scope), frame: home.within ? FRAMES.wrap : home.frame, source: "home" };
   const derived = kindScope(kind, spec);

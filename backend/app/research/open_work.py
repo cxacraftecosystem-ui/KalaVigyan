@@ -119,7 +119,6 @@ COMPONENT_NEEDS: Mapping[str, tuple[str, ...]] = MappingProxyType(
             "timeline_map",
             "supply_map",
             "map_sequence",
-            "general_map_layer",
         ),
         "reaction-player": (
             "reaction_player",

@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "kind": "chart",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/chemistry/patina-solution",
+  "title": "The salts of a bidri patina solution",
+  "description": "Bars of the two salts a thesis dissolved to match the bidri patina, with the one-to-four ratio La Niece and Martin give. Place it beside the blackening step of a bidri page.",
+  "field": "CHEMISTRY",
+  "within": null,
+  "spec": {
+    "head": {
+      "title": "u0001",
+      "caption": "u0002"
+    },
+    "form": "bars",
+    "valueLabel": "u0003",
+    "series": [
+      {
+        "name": "u0004",
+        "points": [
+          {
+            "label": "u0005",
+            "value": 20.0,
+            "reading": "u0006"
+          },
+          {
+            "label": "u0007",
+            "value": 5.0,
+            "reading": "u0008"
+          }
+        ]
+      }
+    ],
+    "emphasis": 0
+  },
+  "units": {
+    "u0001": {
+      "text": "The patina forms in a warm solution of one part potassium nitrate to four parts ammonium chloride.",
+      "claims": [
+        "C117"
+      ]
+    },
+    "u0002": {
+      "text": "A thesis matched the Bidar fort-soil patina with 20 g of ammonium chloride and 5 g of potassium nitrate in 100 ml of water.",
+      "claims": [
+        "C131"
+      ]
+    },
+    "u0003": {
+      "text": "Grams in the solution",
+      "claims": []
+    },
+    "u0004": {
+      "text": "Thesis solution",
+      "claims": []
+    },
+    "u0005": {
+      "text": "Ammonium chloride",
+      "claims": []
+    },
+    "u0006": {
+      "text": "20 g of ammonium chloride",
+      "claims": [
+        "C131"
+      ]
+    },
+    "u0007": {
+      "text": "Potassium nitrate",
+      "claims": []
+    },
+    "u0008": {
+      "text": "5 g of potassium nitrate",
+      "claims": [
+        "C131"
+      ]
+    }
+  },
+  "facts": {
+    "C117": {
+      "text": "La Niece and Martin found that the black patina forms instantly when the alloy is immersed in a warm solution of one part potassium nitrate to four parts ammonium chloride.",
+      "quotes": [
+        {
+          "source": "S05",
+          "locator": "line 29",
+          "quote": "The black patina forms instantaneously on immersion of the alloy in a warm solution of potassium nitrate (one part) and ammonium chloride (four parts)."
+        }
+      ]
+    },
+    "C131": {
+      "text": "An IIT Madras thesis found that 20 g of ammonium chloride and 5 g of potassium nitrate in 100 ml of water gave a black patina like that from Bidri sand.",
+      "quotes": [
+        {
+          "source": "S07",
+          "locator": "lines 668-670",
+          "quote": "5g of potassium nitrate (KNO3), 20g of ammonium chloride (NH4Cl) was dissolved in 100 ml of de-ionised water"
+        },
+        {
+          "source": "S07",
+          "locator": "lines 829-831",
+          "quote": "An alternative to Bidri sand has been identified. A mixture of NH4Cl and KNO3 (20g:5g) in 100mL of de-ionized water renders black patina on the surface similar to one seen with Bidri sand."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S05": {
+      "title": "The technical examination of Bidri ware",
+      "publisher": "The International Institute for Conservation of Historic and Artistic Works",
+      "year": 1987,
+      "url": "https://mci.si.edu/node/1221430",
+      "reliability": "A"
+    },
+    "S07": {
+      "title": "Alternative Method of Processing Bidri-ware Crafts: An Electrochemical Study",
+      "publisher": "Indian Institute of Technology Madras",
+      "year": 2017,
+      "url": "https://acr.iitm.ac.in/wp-content/uploads/2018/08/AkshayKumar-Varma-MM13B006.pdf",
+      "reliability": "B"
+    }
+  }
+}

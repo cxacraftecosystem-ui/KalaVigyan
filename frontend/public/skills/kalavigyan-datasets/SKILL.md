@@ -1,6 +1,6 @@
 ---
 name: kalavigyan-datasets
-description: How to bring data into KalaVigyan - the open datasets behind its charts, tables, timelines and map layers, from river, relief, mineral, climate, soil and cover layers to the places each craft is practised - for an agent over the KalaVigyan MCP server or an engineer in its repository. Finding an open dataset whose licence allows redistribution (with search_sources and read_source over MCP, as KalaVigyan's own research does), recording it with its version and citation, keeping provenance, units and the map's projection and Survey of India outline, simplifying no further than allowed, never inventing or interpolating a value, and turning the data into a delivered component (general_chart, general_table, general_timeline or general_map_layer) or a layer of the site's own maps, checked before it ships. The rules are in the shared dataset guide and component guide; this skill is the method. Load it before using any dataset, building a chart, table, timeline or map layer from data, or adding a source to etl/geo or tools/maplayers.
+description: How to bring data into KalaVigyan - the open datasets behind its charts, tables, timelines and map layers, from river, relief, mineral, climate, soil and cover layers to the places each craft is practised - for an agent over the KalaVigyan MCP server or an engineer in its repository. Finding an open dataset whose licence allows redistribution (with search_sources and read_source over MCP, as KalaVigyan's own research does), recording it with its version and citation, keeping provenance, units and the map's projection and Survey of India outline, simplifying no further than allowed, never inventing or interpolating a value, and turning the data into a delivered component (a declared chart, fact_table, timeline or map_layer, its values from facts or from a dataset proposed with its table) or a layer of the site's own maps, checked before it ships. The rules are in the shared dataset guide and component guide; this skill is the method. Load it before using any dataset, building a chart, table, timeline or map layer from data, or adding a source to etl/geo or tools/maplayers.
 ---
 
 # Datasets for KalaVigyan
@@ -15,7 +15,7 @@ references below, one source each, and are not repeated here.
 | Reference | MCP resource | In the repository | Holds |
 |---|---|---|---|
 | Datasets | `kalavigyan://skills/references/datasets.md` | `backend/app/data/contributor/references/datasets.md` | licences, recording, provenance, units, projection, simplification, no invented values, delivery and checks |
-| Authoring a component | `kalavigyan://skills/references/components.md` | `backend/app/data/contributor/references/components.md` | the general kinds, units and citations, the design rules for a figure |
+| Authoring a component | `kalavigyan://skills/references/components.md` | `backend/app/data/contributor/references/components.md` | the kinds and their declared specs, units and citations, depicted materials, the design rules for a figure |
 | What counts as a source | `kalavigyan://skills/references/sources.md` | `backend/app/data/contributor/references/sources.md` | grading and recording a source |
 | Quotes and locators | `kalavigyan://skills/references/quotes.md` | `backend/app/data/contributor/references/quotes.md` | quoting a row and writing the fact it states |
 | The page checklist | `kalavigyan://skills/references/page-checklist.md` | `backend/app/data/contributor/references/page-checklist.md` | what the page the figure joins must meet |
@@ -43,12 +43,16 @@ The tools, tiers and allowances of the MCP server are in the contributor skill
    licence against the dataset guide before reading a value. Note its record as the guide lists
    it; you give it as the source of every fact. A dataset page that may change gets a snapshot
    from `read_source` with archive.
-3. Read the rows the figure needs, no more, with `read_source` (`around` each row's words), pass
-   each row's quote through its `quotes`, and write each value as a fact of the craft for the
-   bundle: the row quoted with its locator, the dataset's page as the source and the task as
-   `task_key`. A place's coordinates come from its Wikidata item in `lookup`.
-4. Choose the general kind by the component guide and write its spec and units: every value stated
-   by its reading unit, every reading unit citing its fact, every label short and uncited.
+3. For a few values, read the rows the figure needs, no more, with `read_source` (`around` each
+   row's words), pass each row's quote through its `quotes`, and write each value as a fact of the
+   craft for the bundle: the row quoted with its locator, the dataset's page as the source and the
+   task as `task_key`. For a table, call `propose_dataset` with its record and the CSV file's
+   SHA-256, PUT the file to the upload slot it returns, and cite cells instead of facts (the
+   dataset guide, Contributed datasets). A place's coordinates come from its Wikidata item in
+   `lookup`.
+4. Choose the kind by the component guide and write its declared spec and units: every value
+   stated by its reading unit, every reading unit citing its fact or naming its `cell` of the
+   stored table, every label short and uncited.
 5. Bundle the new facts with the component, cite the facts as `fact:0` and on, and call
    `preview_page`. Open the private link, read the figure at a phone and a desktop width in
    light and dark against the page checklist and the component guide's design rules, fix, preview
@@ -58,9 +62,10 @@ The tools, tiers and allowances of the MCP server are in the contributor skill
 
 ## In the repository
 
-1. Check the licence and write the dataset's record (the dataset guide) before any code: a row in
-   `etl/geo/geo_etl/catalog.py` for a per-district layer, or a `Source` in
-   `tools/maplayers/sources.py` for a physical layer, and its row in `docs/DATA_SOURCES.md`.
+1. Check the licence and write the dataset's record (the dataset guide) before any code: its
+   entry in `backend/app/data/datasets/registry.json` (build `geo-etl` for a per-district layer,
+   `maplayers` for a physical one, which also gets a `Source` naming its code and file in
+   `tools/maplayers/sources.py`), and its row in `docs/DATA_SOURCES.md`.
 2. Write the reader in its own module (`etl/geo/geo_etl/layers/<dataset>.py`, or beside the other
    layers in `tools/maplayers/`), keeping each value's provenance and the tolerances and
    coordinate precision of the dataset guide as named constants.
@@ -72,6 +77,27 @@ The tools, tiers and allowances of the MCP server are in the contributor skill
 5. Draw it through the site's map components and tokens (the design skill,
    `.claude/skills/kalavigyan-design`, Maps): one variable at a time, its ramp and legend, the
    Survey of India caption, and its table of every value.
+
+## The ground under each craft place
+
+KalaVigyan measures the land under every recorded craft place itself; nobody types these values.
+
+- `tools/maplayers_build.py` writes the relief, river and mineral layers to `frontend/public/layers` and
+  mirrors the three JSON files into `backend/app/data/layers` (`tools/maplayers/mirror.py`;
+  `tools/tests/test_maplayers_mirror.py` fails when the copies differ). Rebuild both together.
+- `backend/app/geo/place_ground.py` measures each place once per process from those files: its
+  ETOPO1 elevation band, the great-circle distance to the nearest Natural Earth 1:10m river line and
+  lake shore, the USGS MRDS deposits within `DEPOSIT_RADIUS_KM` (50) by class and commodity, and,
+  from the stored district values, the district's rainfall, soil and cover readings
+  (`ground_readings.READING_LAYERS`), each with its dataset and edition.
+- A material meets a deposit only through `ground_materials.COMMODITY_TERMS`, which maps the words
+  of a material's name to MRDS commodity names; clays and earths are also listed beside the soil
+  readings. Add a term with its MRDS name and a test with a hand-counted fixture.
+- The context is served at `/api/crafts/{slug}/ground` and `/api/map/ground`, and drawn as the
+  `why_here` component in each craft's place chapter and in the map's place panel. It states data
+  only: a cause appears only as a cited fact of the craft (GEOGRAPHY, GEOLOGY, CLIMATE or ECOLOGY),
+  which the generated page draws beside the reading it names. To explain why a craft is where it
+  is, propose that fact over MCP; never write the cause into the figure.
 
 ## Cost rules
 

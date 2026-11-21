@@ -4,8 +4,7 @@ import json
 from functools import cache
 from typing import Any
 
-from app.models.component_kinds import PIECE_KINDS
-from app.research.component_specs import SPEC_MODELS
+from app.research.component_specs import CONTRIBUTABLE_KINDS, SPEC_MODELS
 
 from .mcp_schemas import compact
 
@@ -23,7 +22,7 @@ COMPONENT_SCHEMA_PREFIX = "kalavigyan://components/"
 SCHEMA_SUFFIX = ".schema.json"
 COMPONENT_SCHEMA_TEMPLATE = f"{COMPONENT_SCHEMA_PREFIX}{{kind}}{SCHEMA_SUFFIX}"
 SCHEMA_MIME = "application/schema+json"
-COMPONENT_KINDS = tuple(sorted(kind for kind in SPEC_MODELS if kind in PIECE_KINDS))
+COMPONENT_KINDS = CONTRIBUTABLE_KINDS
 DRAFT = "https://json-schema.org/draft/2020-12/schema"
 
 

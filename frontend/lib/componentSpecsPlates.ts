@@ -1,7 +1,7 @@
+import { DEPICTED_MATERIALS } from "@/lib/depictedMaterials";
 import type { MonographMark, MonographNode } from "@/lib/monographDocument";
 import { boolean, integer, list, matching, nullable, number, object, oneOf, optional, ShapeError, text, type Shape } from "@/lib/shape";
 
-export const DYE_NAMES = ["cloth", "harda", "harda-dry", "lime", "lime-edge", "kut", "kesari", "mud", "mud-wet", "leuco", "vat-liquor", "indigo", "indigo-deep", "madder", "madder-bright", "pink", "pink-edge"] as const;
 export const DRAWING_TAGS = ["svg", "g", "defs", "title", "desc", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon", "text", "tspan", "use", "linearGradient", "radialGradient", "stop", "pattern", "mask", "clipPath", "filter", "feGaussianBlur"] as const;
 export const PLATE_SETTINGS = ["figure", "row", "pull", "opener", "masthead"] as const;
 export const VOICE_SETTINGS = ["testimony", "coda"] as const;
@@ -23,7 +23,7 @@ const MARK_FIELDS: Readonly<Record<string, readonly string[]>> = {
 const DRAWING_ATTRIBUTE = /^[A-Za-z][A-Za-z0-9:_-]*$/;
 const REFERENCE_ATTRIBUTES = ["href", "xlink:href"];
 
-export type DyeName = (typeof DYE_NAMES)[number];
+export type DepictedMaterial = (typeof DEPICTED_MATERIALS)[number];
 export type DrawingTag = (typeof DRAWING_TAGS)[number];
 export type DrawingElement = { tag: DrawingTag; attrs: Record<string, string>; children: (DrawingElement | string)[] };
 export type ShownSource = { number: number; title: string };
@@ -40,7 +40,7 @@ export const domId = matching(/^[A-Za-z][A-Za-z0-9_:.-]*$/, "an element id");
 export const viewBox = matching(/^-?\d+(\.\d+)? -?\d+(\.\d+)? \d+(\.\d+)? \d+(\.\d+)?$/, "a view box");
 export const fileName = matching(/^[a-z0-9]+(-[a-z0-9]+)*$/, "a file name");
 export const calendarDay = matching(/^\d{4}-\d{2}-\d{2}$/, "a calendar day");
-export const dyeName = oneOf(DYE_NAMES);
+export const depictedMaterial = oneOf(DEPICTED_MATERIALS);
 const fraction: Shape<number> = {
   expected: "a fraction from 0 to 1",
   parse(value, path) {
@@ -217,10 +217,10 @@ export const labelCardShape = object<LabelCardSpec>({
   facts: list(object<LabelFact>({ term: unitRef, value: unitRef }), 1)
 });
 
-export type Swatch = { dye: DyeName; caption: string };
+export type Swatch = { dye: DepictedMaterial; caption: string };
 export type ColourCard = { before: Swatch; join: "becomes" | "or"; after: Swatch; name: string; agent: string; text: string };
 export type SwatchCardsSpec = { chapterNo: string; title: string; titleId: string; intro: string; weave: string; colours: ColourCard[] };
-const swatchShape = object<Swatch>({ dye: dyeName, caption: unitRef });
+const swatchShape = object<Swatch>({ dye: depictedMaterial, caption: unitRef });
 export const swatchCardsShape = object<SwatchCardsSpec>({
   chapterNo: unitRef,
   title: unitRef,
@@ -230,7 +230,7 @@ export const swatchCardsShape = object<SwatchCardsSpec>({
   colours: list(object<ColourCard>({ before: swatchShape, join: oneOf(["becomes", "or"] as const), after: swatchShape, name: unitRef, agent: unitRef, text: unitRef }), 1)
 });
 
-export type PairSwatch = { ground: DyeName; motif: DrawingElement[]; label: string };
+export type PairSwatch = { ground: DepictedMaterial; motif: DrawingElement[]; label: string };
 export type StageLink = { stage: number; label: HeldNode[] };
 export type SwatchPairSpec = {
   id: string;
@@ -250,7 +250,7 @@ export const swatchPairShape = object<SwatchPairSpec>({
   pairClass: className,
   description: text,
   weave: domId,
-  swatches: list(object<PairSwatch>({ ground: dyeName, motif: list(drawingShape, 1), label: text }), 2),
+  swatches: list(object<PairSwatch>({ ground: depictedMaterial, motif: list(drawingShape, 1), label: text }), 2),
   when: unitRef,
   title: unitRef,
   texts: list(unitRef, 1),

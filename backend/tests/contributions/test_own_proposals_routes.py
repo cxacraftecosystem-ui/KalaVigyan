@@ -204,13 +204,14 @@ def test_the_form_offers_the_terms_every_field_every_kind_and_what_each_need_tak
         "covers": "what the craft is, where and by whom it is practised",
         "chapter": form["fields"][0]["chapter"],
     }
-    assert {"what_if", "molecule_3d", "reaction_player", "picture_plate"} <= set(form["kinds"])
+    assert {"what_if", "molecule_3d", "reaction_player", "chart", "drawing"} <= set(form["kinds"])
+    assert not {"language_switch", "credits", "citation_tool", "picture_plate"} & set(form["kinds"])
     assert form["subjectKinds"] == ["CRAFT", "CONCEPT", "PLACE", "COMPOUND"]
     assert (form["needs"]["molecules"], form["needs"]["what-if"]) == (
         ["molecule_3d"],
         ["what_if", "experiment_lab"],
     )
-    assert form["needs"]["map"][-1] == "general_map_layer"
+    assert form["needs"]["map"][-1] == "map_sequence"
     assert form["needs"]["pictures"] == ["images", "picture_plate", "specimen_plate"]
 
 

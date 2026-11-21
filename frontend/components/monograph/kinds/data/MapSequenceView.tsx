@@ -11,7 +11,7 @@ function Card({ card, props }: { card: SequenceCard; props: NestingViewProps }) 
   const renderUnit = props.renderUnit;
   return (
     <li className="ws-card">
-      <div className="ws-vis">{heldComponent(props, card.visual)}</div>
+      {card.visual ? <div className="ws-vis">{heldComponent(props, card.visual)}</div> : null}
       <p className="when">{renderUnit(card.when)}</p>
       <h3>{renderUnit(card.title)}</h3>
       <TextLines lines={card.lines} renderUnit={renderUnit} />

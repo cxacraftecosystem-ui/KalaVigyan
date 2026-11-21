@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "kind": "material_cards",
+  "craft": "Blue-Pottery-Of-Jaipur",
+  "craftName": "Blue Pottery of Jaipur",
+  "label": "blue-pottery-of-jaipur/materials/glaze-and-colour",
+  "title": "The glaze and the blue",
+  "description": "Cards for borax, the glaze's flux, and cobalt oxide, the blue of Jaipur ware, each with its local name and what it does.",
+  "field": "MATERIALS",
+  "within": null,
+  "spec": {
+    "id": "bp-materials",
+    "headingId": "bp-materials-t",
+    "heading": "What the ware is made of",
+    "intro": "u0001",
+    "cards": [
+      {
+        "swatch": "crystal",
+        "role": "u0002",
+        "name": "u0003",
+        "local": "u0004",
+        "botanical": null,
+        "chemistry": "u0005",
+        "facts": [
+          "u0006"
+        ]
+      },
+      {
+        "swatch": "--dye-cobalt",
+        "role": "u0007",
+        "name": "u0008",
+        "local": "u0009",
+        "botanical": null,
+        "chemistry": "u0010",
+        "facts": [
+          "u0011"
+        ]
+      }
+    ],
+    "after": []
+  },
+  "units": {
+    "u0001": {
+      "text": "Jaipur ware is a body of ground quartz, painted with metal oxides and dipped in a glaze of glass, borax and lead oxide.",
+      "claims": [
+        "C001",
+        "C030"
+      ]
+    },
+    "u0002": {
+      "text": "Glaze",
+      "claims": []
+    },
+    "u0003": {
+      "text": "Borax",
+      "claims": []
+    },
+    "u0004": {
+      "text": "Suhaga",
+      "claims": [
+        "C030"
+      ]
+    },
+    "u0005": {
+      "text": "Borax powder is one of the glaze's ingredients, with crushed glass and red lead.",
+      "claims": [
+        "C030"
+      ]
+    },
+    "u0006": {
+      "text": "The glaze is made adhesive with boiled flour.",
+      "claims": [
+        "C030"
+      ]
+    },
+    "u0007": {
+      "text": "Colour",
+      "claims": []
+    },
+    "u0008": {
+      "text": "Cobalt oxide",
+      "claims": []
+    },
+    "u0009": {
+      "text": "Jeypoorite",
+      "claims": [
+        "C014"
+      ]
+    },
+    "u0010": {
+      "text": "On firing, cobalt oxide becomes a deep blue.",
+      "claims": [
+        "C021"
+      ]
+    },
+    "u0011": {
+      "text": "The blue came from cobalt oxides first mined at Khetri.",
+      "claims": [
+        "C014"
+      ]
+    }
+  },
+  "facts": {
+    "C001": {
+      "text": "Blue pottery of Jaipur is based on ground quartz, and its GI application calls it primarily a ceramic body made of quartz.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "line 119",
+          "quote": "Blue Pottery is based on ground quartz."
+        },
+        {
+          "source": "S02",
+          "locator": "lines 135-137",
+          "quote": "Blue pottery of Jaipur and its surrounding villages is unique in that primarily it is a ceramic body made of quartz."
+        }
+      ]
+    },
+    "C014": {
+      "text": "The blue colour derives from jeypoorite and seypoorite, forms of cobalt oxide originally mined in the principality of Khetri in present-day Rajasthan.",
+      "quotes": [
+        {
+          "source": "S11",
+          "locator": "line 10",
+          "quote": "The distinct blue colour is derived from jeypoorite and seypoorite, forms of cobalt oxides that were originally mined in the principality of Khetri (in present-day Rajasthan)."
+        },
+        {
+          "source": "S06",
+          "locator": "line 2260",
+          "quote": "Blue.-Obtained from cobalt from Khetri (Jaipur State)."
+        }
+      ]
+    },
+    "C021": {
+      "text": "On firing, the oxide of cobalt becomes deep blue, chromium turns green, cadmium gives bright yellow and iron oxide becomes red-brown.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 137-139",
+          "quote": "The oxide of cobalt becomes a deep blue, that of chromium changes to green, cadmium produces a bright yellow and iron oxide becomes a red-brown."
+        },
+        {
+          "source": "S11",
+          "locator": "line 10",
+          "quote": "iron may be used for red, cadmium for yellow and chromium for green"
+        }
+      ]
+    },
+    "C030": {
+      "text": "After painting, the statement of case says, the piece is dipped into a homemade glaze of glass, borax and lead oxide made adhesive with boiled flour; it lists sindoor (red lead), suhaga (borax powder) and crushed glass.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 119-121",
+          "quote": "the unfired pieces are hand painted with oxide colours, dipped in clear glaze and fired once in wooden kilns."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 139-140",
+          "quote": "The piece is then dipped into a homemade glaze of glass, borax and lead oxide which is made adhesive by the addition of boiled flour."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 158-159",
+          "quote": "Glaze -,Sindoor (red lead), Suhaga (Borax powder), Crushed glass."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S02": {
+      "title": "Form GI-1: application for registration of the geographical indication Blue Pottery of Jaipur",
+      "publisher": "Development Commissioner (Handicrafts), Ministry of Textiles, Government of India",
+      "year": null,
+      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/64-blue-pottery-of-jaipur.pdf",
+      "reliability": "A"
+    },
+    "S03": {
+      "title": "Statement of Case for Blue Pottery of Jaipur in Rajasthan",
+      "publisher": "Development Commissioner (Handicraft), Government of India, filed with the Geographical Indications Registry",
+      "year": 2015,
+      "url": "https://ipindiaservices.gov.in/GI_DOC/540/540%20-%20Statement%20of%20Case%20-%2028-12-2015.pdf",
+      "reliability": "A"
+    },
+    "S06": {
+      "title": "Jaipur Pottery; Notes on Jaipur Pottery",
+      "publisher": "The Journal of Indian Art, W. Griggs & Sons",
+      "year": 1916,
+      "url": "https://archive.org/download/sim_journal-of-indian-art-and-industries_1916-10_17_129-136/sim_journal-of-indian-art-and-industries_1916-10_17_129-136_djvu.txt",
+      "reliability": "B"
+    },
+    "S11": {
+      "title": "Blue Glaze Pottery",
+      "publisher": "Impart Encyclopedia of Art (MAP Academy)",
+      "year": 2023,
+      "url": "https://imp-art.org/articles/blue-glaze-pottery/",
+      "reliability": "B"
+    }
+  }
+}

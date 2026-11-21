@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "kind": "voice",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/people/copper-for-the-black",
+  "title": "An artisan on copper and the black",
+  "description": "A bidri artisan's words on the copper he adds to the zinc for the black of the finished ware, as reported by The News Minute.",
+  "field": "PEOPLE",
+  "within": null,
+  "spec": {
+    "setting": "testimony",
+    "testimony": {
+      "kicker": "u0001",
+      "kickerId": "bidri-voice-k",
+      "evidence": "Reported speech",
+      "quote": "u0002",
+      "credit": "u0003",
+      "meta": "u0004",
+      "echo": null
+    },
+    "coda": null
+  },
+  "units": {
+    "u0001": {
+      "text": "In an artisan's words",
+      "claims": []
+    },
+    "u0002": {
+      "text": "For every kilogram of zinc, we use 60 gm of copper for it to get the perfect black hue.",
+      "claims": [
+        "C080"
+      ]
+    },
+    "u0003": {
+      "text": "Khwaja, a bidri artisan",
+      "claims": [
+        "C080"
+      ]
+    },
+    "u0004": {
+      "text": "As told to The News Minute",
+      "claims": [
+        "C080"
+      ]
+    }
+  },
+  "facts": {
+    "C080": {
+      "text": "One bidri artisan told The News Minute that 60 gm of copper goes into every kilogram of zinc to get the perfect black hue.",
+      "quotes": [
+        {
+          "source": "S15",
+          "locator": "line 4",
+          "quote": "explains Khwaja, a Bidri artisan"
+        },
+        {
+          "source": "S15",
+          "locator": "line 5",
+          "quote": "For every kilogram of zinc, we use 60 gm of copper for it to get the perfect black hue."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S15": {
+      "title": "Exports hit, declining interest: Karnataka's Bidriware artisans struggle to earn a living",
+      "publisher": "The News Minute",
+      "year": 2021,
+      "url": "https://www.thenewsminute.com/karnataka/exports-hit-declining-interest-karnataka-s-bidriware-artisans-struggle-earn-living-144528",
+      "reliability": "C"
+    }
+  }
+}

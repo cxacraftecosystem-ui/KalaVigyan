@@ -1,0 +1,247 @@
+{
+  "schemaVersion": 1,
+  "craft": {
+    "slug": "Ground-Fixture",
+    "name": "Ground fixture",
+    "path": "/crafts/Ground-Fixture"
+  },
+  "radiusKm": 50,
+  "places": [
+    {
+      "key": "place-1",
+      "name": "Fixture village",
+      "roles": [
+        "PRACTISED"
+      ],
+      "precision": "POINT",
+      "district": null,
+      "state": "Fixture State",
+      "longitude": 77.0,
+      "latitude": 20.0,
+      "sourceId": "00000000-0000-4000-8000-0000000000a1",
+      "ground": {
+        "elevation": {
+          "lowM": 300,
+          "highM": 600
+        },
+        "river": {
+          "distanceKm": 10.4,
+          "scaleRank": 4,
+          "longitude": 77.1,
+          "latitude": 20.0
+        },
+        "lake": {
+          "distanceKm": 45.8,
+          "scaleRank": null,
+          "longitude": 77.3,
+          "latitude": 20.3
+        },
+        "depositClasses": [
+          {
+            "key": "aluminium",
+            "label": "Aluminium",
+            "count": 1
+          },
+          {
+            "key": "iron",
+            "label": "Iron",
+            "count": 1
+          }
+        ],
+        "commodities": [
+          {
+            "key": "Aluminum",
+            "label": "Aluminum",
+            "count": 1
+          },
+          {
+            "key": "Iron",
+            "label": "Iron",
+            "count": 1
+          }
+        ],
+        "readings": []
+      },
+      "materials": [
+        {
+          "material": "Alum",
+          "commodities": [
+            "Aluminum"
+          ],
+          "count": 1,
+          "nearestKm": 33.4
+        },
+        {
+          "material": "Iron filings",
+          "commodities": [
+            "Iron"
+          ],
+          "count": 1,
+          "nearestKm": 11.1
+        }
+      ]
+    }
+  ],
+  "soilMaterials": [
+    "River clay"
+  ],
+  "deposits": [
+    {
+      "depId": 1,
+      "name": "Near iron",
+      "longitude": 77.0,
+      "latitude": 20.1,
+      "classIndex": 0,
+      "status": "Occurrence",
+      "commodities": "Iron",
+      "nearestKm": 11.1,
+      "matched": true
+    },
+    {
+      "depId": 3,
+      "name": "Mid alum",
+      "longitude": 77.0,
+      "latitude": 19.7,
+      "classIndex": 2,
+      "status": "Occurrence",
+      "commodities": "Aluminum",
+      "nearestKm": 33.4,
+      "matched": true
+    }
+  ],
+  "classes": [
+    {
+      "id": "iron",
+      "label": "Iron"
+    },
+    {
+      "id": "alloy",
+      "label": "Manganese, chromium and alloy metals"
+    },
+    {
+      "id": "aluminium",
+      "label": "Aluminium"
+    },
+    {
+      "id": "base",
+      "label": "Copper, lead, zinc and precious metals"
+    },
+    {
+      "id": "sands",
+      "label": "Titanium, zirconium and rare earths"
+    },
+    {
+      "id": "industrial",
+      "label": "Industrial minerals"
+    }
+  ],
+  "frame": {
+    "west": 76.445,
+    "south": 19.478,
+    "east": 77.555,
+    "north": 20.522,
+    "bands": [
+      {
+        "lowM": 100,
+        "rings": [
+          [
+            [76.5, 19.5],
+            [77.5, 19.5],
+            [77.5, 20.5],
+            [76.5, 20.5]
+          ]
+        ]
+      },
+      {
+        "lowM": 300,
+        "rings": [
+          [
+            [76.9, 19.9],
+            [77.05, 19.9],
+            [77.05, 20.05],
+            [76.9, 20.05]
+          ]
+        ]
+      }
+    ],
+    "rivers": [
+      {
+        "rank": 4,
+        "points": [
+          [77.1, 19.8],
+          [77.1, 20.2]
+        ]
+      }
+    ],
+    "lakes": [
+      [
+        [77.3, 20.3],
+        [77.4, 20.3],
+        [77.4, 20.4],
+        [77.3, 20.4]
+      ]
+    ],
+    "labels": [
+      {
+        "text": "Fixture",
+        "longitude": 77.1,
+        "latitude": 20.1,
+        "angle": 90.0
+      }
+    ]
+  },
+  "layers": [
+    {
+      "key": "ETOPO1",
+      "title": "ETOPO1 1 Arc-Minute Global Relief Model, ice surface",
+      "publisher": "NOAA National Centers for Environmental Information",
+      "edition": "sha256 abcdef012345",
+      "url": "https://example.org/etopo1.asc",
+      "licence": "Public domain (U.S. Government work)",
+      "citation": "Amante and Eakins, 2009."
+    },
+    {
+      "key": "NE_RIVERS",
+      "title": "Natural Earth 1:10m ne_10m_rivers_lake_centerlines",
+      "publisher": "Natural Earth",
+      "edition": "5.0.0",
+      "url": "https://example.org/ne_10m_rivers_lake_centerlines.zip",
+      "licence": "Public domain",
+      "citation": null
+    },
+    {
+      "key": "NE_LAKES",
+      "title": "Natural Earth 1:10m ne_10m_lakes",
+      "publisher": "Natural Earth",
+      "edition": "5.0.0",
+      "url": "https://example.org/ne_10m_lakes.zip",
+      "licence": "Public domain",
+      "citation": null
+    },
+    {
+      "key": "USGS_MRDS",
+      "title": "Mineral Resources Data System",
+      "publisher": "U.S. Geological Survey",
+      "edition": "sha256 abcdef012345",
+      "url": "https://example.org/mrds-csv.zip",
+      "licence": "Public domain (U.S. Government work)",
+      "citation": "U.S. Geological Survey. Mineral Resources Data System."
+    }
+  ],
+  "datasets": [],
+  "sources": [
+    {
+      "id": "00000000-0000-4000-8000-0000000000a1",
+      "kind": "WEB_PAGE",
+      "title": "A fixture source that places the craft",
+      "authors": [],
+      "year": 2024,
+      "doi": null,
+      "url": "https://example.org/place",
+      "publisher": null,
+      "licence": null,
+      "attribution": null,
+      "reliability": null
+    }
+  ]
+}

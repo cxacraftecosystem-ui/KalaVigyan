@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from design.colour import channels, delta_e, fmt_oklch, from_oklch, hex_to_rgb, rgb_to_hex
+from design.materials import MATERIALS_FILE, Material, load_materials
 
 __all__ = ["SYSTEM_FILE", "System", "colour_entry", "load_system", "mix", "specimen_hex"]
 
@@ -15,6 +16,7 @@ SYSTEM_FILE = Path(__file__).with_name("system.json")
 @dataclass(frozen=True)
 class System:
     data: dict[str, Any]
+    materials: tuple[Material, ...] = field(default=())
 
     @property
     def themes(self) -> list[str]:
@@ -46,8 +48,8 @@ class System:
         return min((round(delta_e(colour, self.sem(name, theme)), 1), name) for name in self.data["reserved"])
 
 
-def load_system(path: Path = SYSTEM_FILE) -> System:
-    return System(json.loads(path.read_text(encoding="utf-8")))
+def load_system(path: Path = SYSTEM_FILE, materials: Path = MATERIALS_FILE) -> System:
+    return System(json.loads(path.read_text(encoding="utf-8")), load_materials(materials))
 
 
 def mix(foreground: str, background: str, alpha: float) -> str:

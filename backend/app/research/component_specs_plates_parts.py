@@ -9,17 +9,17 @@ from pydantic import AfterValidator, ConfigDict, Field, model_validator
 
 from .base import ContractModel, empty
 from .craft_parts import Focal
+from .depicted_materials import DEPICTED_MATERIALS
 from .monograph_page import COMPONENT_LABEL_PATTERN, ITALIC_ROLES, MARK_TAGS
 
 __all__ = [
     "DRAWING_TAGS",
-    "DYE_NAMES",
     "ArtFrame",
     "ClassName",
     "ComponentLabel",
+    "DepictedMaterial",
     "DomId",
     "DrawingElement",
-    "DyeName",
     "FileName",
     "HeldOrUnit",
     "HeldText",
@@ -44,25 +44,6 @@ SHOWN_SOURCE_KEYS = frozenset({"number", "title"})
 LOCAL_REFERENCE = "#"
 REFERENCE_ATTRIBUTES = ("href", "xlink:href")
 SCRIPT_SCHEME = "javascript:"
-DYE_NAMES = (
-    "cloth",
-    "harda",
-    "harda-dry",
-    "lime",
-    "lime-edge",
-    "kut",
-    "kesari",
-    "mud",
-    "mud-wet",
-    "leuco",
-    "vat-liquor",
-    "indigo",
-    "indigo-deep",
-    "madder",
-    "madder-bright",
-    "pink",
-    "pink-edge",
-)
 DRAWING_TAGS = (
     "svg",
     "g",
@@ -109,7 +90,7 @@ ClassName = Annotated[str, Field(pattern=CLASS_PATTERN)]
 DomId = Annotated[str, Field(pattern=DOM_ID_PATTERN)]
 ViewBox = Annotated[str, Field(pattern=VIEW_BOX_PATTERN)]
 FileName = Annotated[str, Field(pattern=FILE_NAME_PATTERN)]
-DyeName = Literal[*DYE_NAMES]
+DepictedMaterial = Literal[*DEPICTED_MATERIALS]
 
 
 def held_text(nodes: list[Any]) -> list[Any]:

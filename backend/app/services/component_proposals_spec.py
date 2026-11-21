@@ -19,6 +19,7 @@ from app.research.component_specs_general_delivery import (
 )
 
 from . import knowledge_view
+from .dataset_cells import checked_cells
 
 __all__ = ["NO_KNOWN", "CheckedDelivery", "checked_delivery", "shown_texts"]
 
@@ -44,12 +45,16 @@ async def checked_delivery(
     problems = spec_problems(draft.kind, draft.spec, draft.units)
     if problems:
         raise InvalidInput(REFUSED.format(problems=problems_sentence(problems)))
+    checked = checked_spec(draft.kind, draft.spec)
+    cells = await checked_cells(session, checked)
     claim_ids = delivered_claim_ids(draft.units)
     shown = await shown_texts(session, [claim for claim in claim_ids if claim not in known])
-    problems = unit_problems(draft.units, {**shown, **known})
+    problems = [*cells.problems, *unit_problems(draft.units, {**shown, **known}, cells.rows)]
     if problems:
         raise InvalidInput(REFUSED.format(problems=problems_sentence(problems)))
-    spec = checked_spec(draft.kind, draft.spec).model_dump(mode="json")
+    spec = checked.model_dump(mode="json")
+    if cells.dataset is not None:
+        spec["dataset"] = cells.dataset
     units = {ref: unit.model_dump(mode="json") for ref, unit in sorted(draft.units.items())}
     return CheckedDelivery(spec=spec, units=units, claim_ids=tuple(claim_ids))
 

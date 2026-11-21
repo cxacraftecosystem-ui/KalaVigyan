@@ -26,6 +26,7 @@ from app.models import enums as e
 from app.models.base import Base, created_at, one_of, updated_at, uuid_pk
 
 EMBEDDING_DIMENSIONS = 1536
+DATASET_ORIGINS = ("SITE", "CONTRIBUTED")
 EMBEDDING_MODEL_CHARS = 120
 DESCRIPTOR_HASH_CHARS = 64
 
@@ -306,8 +307,20 @@ class EnvDataset(Base):
     sha256: Mapped[str | None] = mapped_column(String(64))
     citation: Mapped[str | None] = mapped_column(Text)
     url: Mapped[str | None] = mapped_column(Text)
+    version: Mapped[str | None] = mapped_column(String(120))
+    doi: Mapped[str | None] = mapped_column(String(200))
+    landingUrl: Mapped[str | None] = mapped_column(Text)
+    origin: Mapped[str] = mapped_column(String(20), nullable=False, server_default="SITE")
+    proposedById: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("User.id", ondelete="SET NULL")
+    )
     createdAt: Mapped[datetime] = created_at()
     updatedAt: Mapped[datetime] = updated_at()
+
+    __table_args__ = (
+        CheckConstraint(one_of("origin", DATASET_ORIGINS), name="origin"),
+        Index(None, "proposedById"),
+    )
 
 
 class DistrictEnvValue(Base):

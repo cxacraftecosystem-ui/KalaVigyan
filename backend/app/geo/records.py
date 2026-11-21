@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import date
 
 from app.research.crafts import CraftRef
 from app.research.stream import SourceRef
@@ -46,6 +47,13 @@ class DatasetRecord:
     attribution: str | None
     citation: str | None
     url: str | None
+    version: str | None = None
+    crs: str | None = None
+    redistributable: bool | None = None
+    doi: str | None = None
+    landing_url: str | None = None
+    read_on: date | None = None
+    sha256: str | None = None
 
 
 @dataclass(frozen=True)

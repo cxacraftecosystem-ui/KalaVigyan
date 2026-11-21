@@ -2515,7 +2515,7 @@ KV.boot('rm', function (document) {
     qn.disabled = false;
     steps();
   }
-  qn.addEventListener('click', function () {
+  if (qn) qn.addEventListener('click', function () {
     if (quiz.classList.contains('finished')) { qi = 0; score = 0; results = []; renderQ(); return; }
     if (qi < Q.length - 1) { qi++; renderQ(); qq.setAttribute('tabindex', '-1'); qq.focus({ preventScroll: true }); return; }
     quiz.classList.add('finished');

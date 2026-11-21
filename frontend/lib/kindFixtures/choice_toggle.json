@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "kind": "choice_toggle",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/chemistry/what-blackens",
+  "title": "Which bath blackens the alloy?",
+  "description": "A choice between two answers to the question which bath blackens the alloy, each from the sources on bidri.",
+  "field": "CHEMISTRY",
+  "within": "bidriware/chemistry/what-if-lab",
+  "spec": {
+    "experiment": "bath",
+    "questionId": "bath-q",
+    "question": "u0001",
+    "options": [
+      {
+        "value": "fort-earth",
+        "label": "Fort earth",
+        "heading": "u0002",
+        "parts": [
+          {
+            "part": "text",
+            "unit": "u0003"
+          }
+        ]
+      },
+      {
+        "value": "salts",
+        "label": "Two salts",
+        "heading": "u0004",
+        "parts": [
+          {
+            "part": "text",
+            "unit": "u0005"
+          }
+        ]
+      }
+    ],
+    "textParts": [],
+    "visualParts": []
+  },
+  "units": {
+    "u0001": {
+      "text": "Which bath blackens the alloy?",
+      "claims": []
+    },
+    "u0002": {
+      "text": "Bidar fort earth",
+      "claims": []
+    },
+    "u0003": {
+      "text": "The blackening uses soil from around Bidar fort, which sources describe as found only there.",
+      "claims": [
+        "C109"
+      ]
+    },
+    "u0004": {
+      "text": "A laboratory solution",
+      "claims": []
+    },
+    "u0005": {
+      "text": "A thesis found that ammonium chloride and potassium nitrate in water gave a black patina like that from Bidri sand.",
+      "claims": [
+        "C131"
+      ]
+    }
+  },
+  "facts": {
+    "C109": {
+      "text": "The blackening uses soil from around Bidar fort, which sources describe as found only there and as having oxidising properties.",
+      "quotes": [
+        {
+          "source": "S02",
+          "locator": "lines 228-231",
+          "quote": "It is then dipoed in a solution orepared with the Soil available onlv around the Bidar fort, which has oxidizing properties."
+        },
+        {
+          "source": "S02",
+          "locator": "lines 302-304",
+          "quote": "This type of earth needed' which is available qly in the Bidar fort area, has a fine effect on zinc alloy."
+        },
+        {
+          "source": "S07",
+          "locator": "lines 326-327",
+          "quote": "The traditional patination process uses the soil from beneath the mud-brick walls of the fort of Bidar city which is said to have special oxidizing properties."
+        },
+        {
+          "source": "S16",
+          "locator": "line 2",
+          "quote": "A special earth, found only near Bidar Fort, brews a magical solution"
+        },
+        {
+          "source": "S04",
+          "locator": "lines 22-23",
+          "quote": "the handicraft mandates the use of Bidar Fort (in Karnataka, India) clay, which bestows the handicraft its characteristic matt-black patina"
+        }
+      ]
+    },
+    "C131": {
+      "text": "An IIT Madras thesis found that 20 g of ammonium chloride and 5 g of potassium nitrate in 100 ml of water gave a black patina like that from Bidri sand.",
+      "quotes": [
+        {
+          "source": "S07",
+          "locator": "lines 668-670",
+          "quote": "5g of potassium nitrate (KNO3), 20g of ammonium chloride (NH4Cl) was dissolved in 100 ml of de-ionised water"
+        },
+        {
+          "source": "S07",
+          "locator": "lines 829-831",
+          "quote": "An alternative to Bidri sand has been identified. A mixture of NH4Cl and KNO3 (20g:5g) in 100mL of de-ionized water renders black patina on the surface similar to one seen with Bidri sand."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S02": {
+      "title": "Form GI-1: Application for the registration of a geographical indication, Bidriware (statement of case)",
+      "publisher": "Karnataka State Handicrafts Development Corporation Limited",
+      "year": null,
+      "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/13-bidriware.pdf",
+      "reliability": "A"
+    },
+    "S04": {
+      "title": "Surface patina and clay characterization: multi-analytical investigations into Bidri handicraft",
+      "publisher": "International Journal of Conservation Science",
+      "year": 2023,
+      "url": "https://ijcs.ro/public/IJCS-23-95_Rolla.pdf",
+      "reliability": "A"
+    },
+    "S07": {
+      "title": "Alternative Method of Processing Bidri-ware Crafts: An Electrochemical Study",
+      "publisher": "Indian Institute of Technology Madras",
+      "year": 2017,
+      "url": "https://acr.iitm.ac.in/wp-content/uploads/2018/08/AkshayKumar-Varma-MM13B006.pdf",
+      "reliability": "B"
+    },
+    "S16": {
+      "title": "Bidriware",
+      "publisher": "Incredible India, Ministry of Tourism, Government of India",
+      "year": null,
+      "url": "https://www.incredibleindia.gov.in/en/karnataka/bidriware",
+      "reliability": "C"
+    }
+  }
+}

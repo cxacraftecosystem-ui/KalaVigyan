@@ -8,7 +8,9 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.errors import InvalidInput
 from app.models import (
+    AnswerGap,
     Claim,
     ClaimSource,
     Concept,
@@ -371,3 +373,22 @@ async def test_a_refused_fact_gives_the_task_back_and_leaves_another_account_s_a
     assert (held.ending, held.endedAt) == ("RELEASED", NOW)
     passed = await proposed(session, people.researcher, "AGENT", adapters(ADDS), taskKey=theirs)
     assert passed.outcome == "WAITING" and (other.ending, other.endedAt) == (None, None)
+
+
+async def test_a_fact_completes_the_question_task_whose_readers_lacked_one_of_its_fields(
+    session: AsyncSession, people: People
+) -> None:
+    asked = {"question": "How many dips?", "fields": ["CHEMISTRY"], "firstAskedAt": NOW, "lastAskedAt": NOW}
+    gap = AnswerGap(id=key("gap"), craftId=CRAFT, **asked)
+    task, unknown = f"ANSWER_GAP:craft:{SLUG}:gap-{gap.id.hex}", f"ANSWER_GAP:craft:{SLUG}:gap-{key('x').hex}"
+    reservation = held_task(people.researcher, task)
+    session.add_all([gap, reservation])
+    await session.flush()
+    with pytest.raises(InvalidInput, match="asks about CHEMISTRY; the fact is filed under PROCESS"):
+        await proposed(session, people.researcher, "AGENT", adapters(ADDS), taskKey=task, fields=[])
+    with pytest.raises(InvalidInput, match="names no question readers asked"):
+        await proposed(session, people.researcher, "AGENT", adapters(ADDS), taskKey=unknown)
+    assert reservation.endedAt is None
+    reply = await proposed(session, people.researcher, "AGENT", adapters(ADDS), taskKey=task)
+    assert reply.outcome == "WAITING"
+    assert (reservation.ending, reservation.endedAt) == ("COMPLETED", NOW)

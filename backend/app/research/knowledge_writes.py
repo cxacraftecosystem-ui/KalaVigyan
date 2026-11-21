@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 from typing import Literal, Self
 
@@ -13,6 +13,7 @@ from .base import ContractModel, HttpsUrl
 from .candidate_gates import Gate, GateOutcome
 from .evidence import canonical_url, personal_data_in
 from .open_work import TASK_KEY_MAX_CHARS, parse_task_key
+from .open_work_gap_keys import GAP_TASK, is_gap_detail
 from .review_switch import ProposalOutcome
 from .vocabulary import Discipline, EvidenceLevel
 
@@ -31,6 +32,7 @@ __all__ = [
     "ProposedQuote",
     "ProposedSource",
     "fact_task_problem",
+    "gap_fields_problem",
     "gate_reports",
 ]
 
@@ -45,7 +47,7 @@ SUBJECT_SLUG_MAX_CHARS = 200
 TITLE_MAX_CHARS = 1000
 LICENCE_MAX_CHARS = 200
 LOCATOR_MAX_CHARS = 300
-FACT_TASK_KINDS = ("MISSING_FIELD", "THIN_FIELD", "SECOND_SOURCE", "SOURCES_DIFFER")
+FACT_TASK_KINDS = ("MISSING_FIELD", "THIN_FIELD", "SECOND_SOURCE", "SOURCES_DIFFER", GAP_TASK)
 FIELDLESS_TASK_KINDS = frozenset({"SECOND_SOURCE", "SOURCES_DIFFER"})
 TASK_SUBJECTS: Mapping[str, tuple[str, ...]] = MappingProxyType(
     {"craft": ("craft", "family"), "category": ("category",)}
@@ -139,10 +141,20 @@ def fact_task_problem(key: str, subject: ProposalSubject, fields: tuple[str, ...
         return f"{key} is not a task a fact completes; a fact completes a {', '.join(FACT_TASK_KINDS)} task"
     if task.subject_kind not in TASK_SUBJECTS[subject.kind] or task.slug != subject.slug:
         return f"{key} is a task of another page than {subject.kind} {subject.slug}"
+    if task.kind == GAP_TASK:
+        return None if task.detail is not None and is_gap_detail(task.detail) else f"{key} names no question"
     if task.detail is None:
         return None if task.kind in FIELDLESS_TASK_KINDS else f"{key} names no field"
     if task.detail not in fields:
         return f"{key} asks for {task.detail}; the fact is filed under {', '.join(fields)}"
+    return None
+
+
+def gap_fields_problem(key: str, asked: Sequence[str] | None, fields: Sequence[str]) -> str | None:
+    if asked is None:
+        return f"{key} names no question readers asked of this page; list_open_work gives the open questions"
+    if not set(asked) & set(fields):
+        return f"{key} asks about {', '.join(asked)}; the fact is filed under {', '.join(fields)}"
     return None
 
 

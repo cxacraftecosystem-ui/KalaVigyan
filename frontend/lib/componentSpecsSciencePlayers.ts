@@ -20,10 +20,10 @@ import {
   type Styled,
   type SvgNode
 } from "@/lib/componentSpecsScienceParts";
-import { boolean, list, nullable, object, oneOf, ShapeError, tagged, text, type Shape } from "@/lib/shape";
+import { boolean, list, matching, nullable, object, oneOf, optional, ShapeError, tagged, text, type Shape } from "@/lib/shape";
 
 export const SWATCH_MARKS = ["clear", "gas", "ion"] as const;
-export const DIP_POSES = ["vat", "lifted", "air"] as const;
+export const PHASE_KEY = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
 export type Condition = { term: string; value: string };
 export type StepText = {
@@ -60,7 +60,7 @@ export type ReactionPlayerSpec = {
   key: string | null;
   status: string;
 };
-export type DipPhase = { pose: (typeof DIP_POSES)[number]; drawing: SvgNode; kicker: string; text: string };
+export type DipPhase = { pose: string; drawing: SvgNode; kicker: string; text: string };
 export type DipPlayerSpec = {
   id: string;
   head: FigureHead;
@@ -72,7 +72,7 @@ export type DipPlayerSpec = {
   status: string;
   dipsLabel: string;
   dips: string[];
-  equation: Equation;
+  equation?: Equation;
 };
 export type StageEntry = {
   name: string;
@@ -86,6 +86,7 @@ export type StageEntry = {
   differs: Differs | null;
   afterSentence: string | null;
   materials: string | null;
+  swatch?: string;
 };
 export type StagePlayerSpec = {
   key: string;
@@ -96,6 +97,7 @@ export type StagePlayerSpec = {
   source: string;
   stages: StageEntry[];
   finish: { heading: string; paragraphs: string[] };
+  afterLabel?: string;
 };
 
 const stepTextShape: Shape<StepText> = object<StepText>({
@@ -158,12 +160,12 @@ export const dipPlayerShape: Shape<DipPlayerSpec> = object<DipPlayerSpec>({
   phase: unitRef,
   scene: svgNodeShape,
   stripLabel: label,
-  phases: list(object<DipPhase>({ pose: oneOf(DIP_POSES), drawing: svgNodeShape, kicker: unitRef, text: unitRef }), 2),
+  phases: list(object<DipPhase>({ pose: matching(PHASE_KEY, "a phase key"), drawing: svgNodeShape, kicker: unitRef, text: unitRef }), 2),
   dipAgain: label,
   status: unitRef,
   dipsLabel: unitRef,
   dips: list(colourToken, 1),
-  equation: equationShape
+  equation: optional(equationShape)
 });
 
 export const stagePlayerShape: Shape<StagePlayerSpec> = object<StagePlayerSpec>({
@@ -185,9 +187,11 @@ export const stagePlayerShape: Shape<StagePlayerSpec> = object<StagePlayerSpec>(
       why: nullable(unitRef),
       differs: nullable(differsShape),
       afterSentence: nullable(unitRef),
-      materials: nullable(unitRef)
+      materials: nullable(unitRef),
+      swatch: optional(colourToken)
     }),
     2
   ),
-  finish: object<{ heading: string; paragraphs: string[] }>({ heading: unitRef, paragraphs: list(unitRef, 1) })
+  finish: object<{ heading: string; paragraphs: string[] }>({ heading: unitRef, paragraphs: list(unitRef, 1) }),
+  afterLabel: optional(label)
 });

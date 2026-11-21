@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 1,
+  "kind": "reaction_player",
+  "craft": "Bidriware",
+  "craftName": "Bidriware",
+  "label": "bidriware/chemistry/patina-steps",
+  "title": "How the bidri patina may form",
+  "description": "Two steps a thesis infers for the bidri patina, zinc dissolving and the copper left behind turning to oxides, beside the finding that the patina's compounds are unidentified.",
+  "field": "CHEMISTRY",
+  "within": null,
+  "spec": {
+    "id": "bidri-rp",
+    "track": "The steps of the patina",
+    "head": {
+      "figure": null,
+      "number": "u0011",
+      "title": "u0012",
+      "titleId": "bidri-rp-t",
+      "dek": null
+    },
+    "current": 1,
+    "steps": [
+      {
+        "name": "Zinc dissolves",
+        "text": {
+          "kicker": "u0001",
+          "heading": "u0002",
+          "paragraphs": [
+            "u0003"
+          ],
+          "bond": null,
+          "link": null,
+          "conditions": [
+            {
+              "term": "u0004",
+              "value": "u0005"
+            }
+          ],
+          "differs": null
+        },
+        "chemistry": {
+          "parts": [
+            {
+              "part": "lane",
+              "label": "Species",
+              "items": [
+                {
+                  "item": "species",
+                  "swatch": "--dye-bidri-white",
+                  "name": [
+                    "Zinc-copper alloy"
+                  ],
+                  "formula": null,
+                  "state": [],
+                  "cid": null
+                },
+                {
+                  "item": "arrow",
+                  "label": "zinc dissolves"
+                },
+                {
+                  "item": "species",
+                  "swatch": "--dye-bidri-white",
+                  "name": [
+                    "Copper-rich surface"
+                  ],
+                  "formula": null,
+                  "state": [],
+                  "cid": null
+                }
+              ]
+            },
+            {
+              "part": "none",
+              "unit": "u0006"
+            }
+          ]
+        },
+        "scene": null
+      },
+      {
+        "name": "Copper darkens",
+        "text": {
+          "kicker": "u0007",
+          "heading": "u0008",
+          "paragraphs": [
+            "u0009"
+          ],
+          "bond": null,
+          "link": null,
+          "conditions": [],
+          "differs": null
+        },
+        "chemistry": {
+          "parts": [
+            {
+              "part": "lane",
+              "label": "Species",
+              "items": [
+                {
+                  "item": "species",
+                  "swatch": "--dye-bidri-white",
+                  "name": [
+                    "Copper-rich surface"
+                  ],
+                  "formula": null,
+                  "state": [],
+                  "cid": null
+                },
+                {
+                  "item": "arrow",
+                  "label": "in nitrate"
+                },
+                {
+                  "item": "species",
+                  "swatch": "--dye-bidri-black",
+                  "name": [
+                    "Copper oxides"
+                  ],
+                  "formula": [
+                    "CuO, Cu",
+                    {
+                      "text": "2",
+                      "style": "sub"
+                    },
+                    "O"
+                  ],
+                  "state": [],
+                  "cid": null
+                }
+              ]
+            },
+            {
+              "part": "none",
+              "unit": "u0010"
+            }
+          ]
+        },
+        "scene": null
+      }
+    ],
+    "scenes": [
+      {
+        "tag": "svg",
+        "attrs": {
+          "viewBox": "0 0 200 120",
+          "role": "img",
+          "aria-label": "A bidri piece in the solution"
+        },
+        "children": [
+          {
+            "tag": "rect",
+            "attrs": {
+              "x": "20",
+              "y": "60",
+              "width": "160",
+              "height": "50",
+              "fill": "var(--sunk)",
+              "stroke": "var(--ink-2)",
+              "stroke-width": "1.5"
+            }
+          },
+          {
+            "tag": "rect",
+            "attrs": {
+              "x": "80",
+              "y": "20",
+              "width": "40",
+              "height": "60",
+              "fill": "var(--dye-bidri-black)",
+              "stroke": "var(--ink-1)",
+              "stroke-width": "1.5"
+            }
+          }
+        ]
+      }
+    ],
+    "key": null,
+    "status": "u0013"
+  },
+  "units": {
+    "u0001": {
+      "text": "First",
+      "claims": []
+    },
+    "u0002": {
+      "text": "Zinc leaves the surface",
+      "claims": []
+    },
+    "u0003": {
+      "text": "In the solution zinc dissolves first, leaving a surface rich in copper.",
+      "claims": [
+        "C124"
+      ]
+    },
+    "u0004": {
+      "text": "Solution",
+      "claims": []
+    },
+    "u0005": {
+      "text": "Ammonium chloride and potassium nitrate in water",
+      "claims": [
+        "C131"
+      ]
+    },
+    "u0006": {
+      "text": "The compounds forming the patina have not been identified.",
+      "claims": [
+        "C121"
+      ]
+    },
+    "u0007": {
+      "text": "Second",
+      "claims": []
+    },
+    "u0008": {
+      "text": "Oxides on the surface",
+      "claims": []
+    },
+    "u0009": {
+      "text": "In nitrate solution the copper-rich surface converts to CuO and Cu2O, which a thesis infers give the black.",
+      "claims": [
+        "C124"
+      ]
+    },
+    "u0010": {
+      "text": "X-ray diffraction found simonkolleite, zincite and cuprite, which are white or reddish.",
+      "claims": [
+        "C125"
+      ]
+    },
+    "u0011": {
+      "text": "Figure",
+      "claims": []
+    },
+    "u0012": {
+      "text": "Zinc dissolves first and the copper left behind darkens.",
+      "claims": [
+        "C124"
+      ]
+    },
+    "u0013": {
+      "text": "The first of two steps",
+      "claims": []
+    }
+  },
+  "facts": {
+    "C121": {
+      "text": "La Niece and Martin reported that the compounds forming the black patina had not been identified, and a V&A record calls the exact chemical process still unidentified.",
+      "quotes": [
+        {
+          "source": "S05",
+          "locator": "line 29",
+          "quote": "The compound or compounds forming the patina have not been identified."
+        },
+        {
+          "source": "S10",
+          "locator": "line 5",
+          "quote": "The exact chemical process which takes place is still unidentified."
+        }
+      ]
+    },
+    "C124": {
+      "text": "An IIT Madras thesis inferred that the copper-enriched surface converts in nitrate solution to CuO and Cu2O, and that these oxides give the black appearance.",
+      "quotes": [
+        {
+          "source": "S07",
+          "locator": "line 828",
+          "quote": "From the current investigation, the following can be inferred"
+        },
+        {
+          "source": "S07",
+          "locator": "lines 834-836",
+          "quote": "In such a solution zinc dissolves preferentially leading to copper enriched surface, which in nitrate containing solution converts to CuO and Cu2O. These oxides render the black appearance."
+        }
+      ]
+    },
+    "C125": {
+      "text": "X-ray diffraction of bidri patinas found simonkolleite, zincite and cuprite as the main crystalline phases, which are white or reddish rather than black.",
+      "quotes": [
+        {
+          "source": "S07",
+          "locator": "lines 359-363",
+          "quote": "identified the three main crystalline components of all the object and experimental patinas analysed:- Simonkolleite, zinc hydroxychloride (Zn5(OH)8 Cl2) Zincite, zinc oxide (ZnO) Cuprite, copper I oxide (Cu2O)"
+        },
+        {
+          "source": "S07",
+          "locator": "lines 364-365",
+          "quote": "The two zinc compounds identified are white in colour and cuprite appears reddish, so these results do not directly explain the black colouration of the patina."
+        }
+      ]
+    },
+    "C131": {
+      "text": "An IIT Madras thesis found that 20 g of ammonium chloride and 5 g of potassium nitrate in 100 ml of water gave a black patina like that from Bidri sand.",
+      "quotes": [
+        {
+          "source": "S07",
+          "locator": "lines 668-670",
+          "quote": "5g of potassium nitrate (KNO3), 20g of ammonium chloride (NH4Cl) was dissolved in 100 ml of de-ionised water"
+        },
+        {
+          "source": "S07",
+          "locator": "lines 829-831",
+          "quote": "An alternative to Bidri sand has been identified. A mixture of NH4Cl and KNO3 (20g:5g) in 100mL of de-ionized water renders black patina on the surface similar to one seen with Bidri sand."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S05": {
+      "title": "The technical examination of Bidri ware",
+      "publisher": "The International Institute for Conservation of Historic and Artistic Works",
+      "year": 1987,
+      "url": "https://mci.si.edu/node/1221430",
+      "reliability": "A"
+    },
+    "S07": {
+      "title": "Alternative Method of Processing Bidri-ware Crafts: An Electrochemical Study",
+      "publisher": "Indian Institute of Technology Madras",
+      "year": 2017,
+      "url": "https://acr.iitm.ac.in/wp-content/uploads/2018/08/AkshayKumar-Varma-MM13B006.pdf",
+      "reliability": "B"
+    },
+    "S10": {
+      "title": "Huqqa base, Deccan, mid 17th century, museum number 45-1905",
+      "publisher": "Victoria and Albert Museum",
+      "year": null,
+      "url": "https://collections.vam.ac.uk/item/O153328/huqqa-base-unknown/",
+      "reliability": "A"
+    }
+  }
+}

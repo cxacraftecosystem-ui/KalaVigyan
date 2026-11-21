@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "kind": "map_sequence",
+  "craft": "Bastar-Dhokra",
+  "craftName": "Bastar Dhokra",
+  "label": "bastar-dhokra/process/core-to-mould",
+  "title": "From the core to the mould",
+  "description": "Three steps of a Bastar dhokra mould: the core rubbed green with sem leaves, wound in wax strings and coated in soil.",
+  "field": "PROCESS",
+  "within": null,
+  "spec": {
+    "head": {
+      "number": null,
+      "title": "u0001",
+      "titleId": null,
+      "dek": null,
+      "dekId": null
+    },
+    "first": [
+      {
+        "card": null,
+        "component": "bastar-dhokra/process/core-before-and-after-sem"
+      },
+      {
+        "card": {
+          "visual": null,
+          "when": "u0002",
+          "title": "u0003",
+          "lines": [
+            {
+              "tag": "p",
+              "classes": [],
+              "unit": "u0004",
+              "text": null
+            }
+          ],
+          "differs": null
+        },
+        "component": null
+      },
+      {
+        "card": {
+          "visual": null,
+          "when": "u0005",
+          "title": "u0006",
+          "lines": [
+            {
+              "tag": "p",
+              "classes": [],
+              "unit": "u0007",
+              "text": null
+            }
+          ],
+          "differs": null
+        },
+        "component": null
+      }
+    ],
+    "source": {
+      "tag": "p",
+      "classes": [],
+      "unit": "u0008",
+      "text": null
+    },
+    "more": []
+  },
+  "units": {
+    "u0001": {
+      "text": "The core is coated green, wound in wax and closed in soil before it is fired.",
+      "claims": [
+        "C055",
+        "C061",
+        "C064"
+      ]
+    },
+    "u0002": {
+      "text": "Then",
+      "claims": []
+    },
+    "u0003": {
+      "text": "Wax strings",
+      "claims": []
+    },
+    "u0004": {
+      "text": "Wax strings are wrapped closely around the hard, green-coated model.",
+      "claims": [
+        "C061"
+      ]
+    },
+    "u0005": {
+      "text": "Last",
+      "claims": []
+    },
+    "u0006": {
+      "text": "Soil over the wax",
+      "claims": []
+    },
+    "u0007": {
+      "text": "The waxed model is coated with sieved riverside soil and powdered wood coal.",
+      "claims": [
+        "C064"
+      ]
+    },
+    "u0008": {
+      "text": "Each card names its sources",
+      "claims": []
+    }
+  },
+  "facts": {
+    "C055": {
+      "text": "Crushed leaves of the sem or country bean creeper are rubbed over the dry model until it turns green, to keep the next soil from sticking to it.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1375-1377",
+          "quote": "Fresh and 'semi' or 'sem' or country bean creeper leaves are brought, crushed by rubbing them between both palms till a green liquid oozes out."
+        },
+        {
+          "source": "S03",
+          "locator": "lines 1377-1378",
+          "quote": "all over the model until the models looks totally green. This is to prevent the soil from sticking to the model"
+        },
+        {
+          "source": "S15",
+          "locator": "lines 1121-1122",
+          "quote": "The purpose of applying green liquid to model is to prevent the soil from sticking to the model."
+        }
+      ]
+    },
+    "C061": {
+      "text": "Wax strings are wrapped closely around the hard, green-coated model, and further designs are added in plain wax.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1418-1421",
+          "quote": "When wax strings are ready as required, they are wrapped closely around the model, which is hard and dry and green with the application of sem-leaf liquid. When the model is totally covered with wax strings, designs of choice can be made with plain wax too."
+        },
+        {
+          "source": "S23",
+          "locator": "lines 103-104",
+          "quote": "7. Wrapping of strings (Tikkal Chadana): Wax strings are tightly wrapped around the dry clay form"
+        }
+      ]
+    },
+    "C064": {
+      "text": "The waxed model is first coated with sieved riverside soil and powdered wood coal, mixed in proportions of about 85-90% soil to 10-15% coal.",
+      "quotes": [
+        {
+          "source": "S03",
+          "locator": "lines 1424-1427",
+          "quote": "Powdered sticky riverside soil and powdered wood coal are sieved separately through clean cloth. Mixed in the proportions 90-85% and 10-15%, water is added and kneaded to make dough like consistency and applied over the model."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S03": {
+      "title": "Geographical Indications Journal No. 24",
+      "publisher": "Geographical Indications Registry, Government of India",
+      "year": 2008,
+      "url": "https://ipindia.nic.in/girindia/journal/24.pdf",
+      "reliability": "A"
+    },
+    "S15": {
+      "title": "Dhokra Shilp: The Bell Metal Craft of Bastar",
+      "publisher": "D'source, Industrial Design Centre, IIT Bombay",
+      "year": null,
+      "url": "https://dsource.in/sites/default/files/resource/dhokra-shilp/downloads/file/dhokra_shilp_bell_metal_craft_bastar.pdf",
+      "reliability": "B"
+    },
+    "S23": {
+      "title": "Dhokra craft Kondagaon",
+      "publisher": "Gaatha",
+      "year": null,
+      "url": "https://gaatha.org/Craft-of-India/dhokra-craft-kondagaon/",
+      "reliability": "D"
+    }
+  }
+}

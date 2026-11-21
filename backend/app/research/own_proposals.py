@@ -13,6 +13,7 @@ from app.models.enums import PIECE_SUBJECT_KINDS
 
 from .base import ContractModel
 from .component_proposals import ComponentProposalDraft
+from .component_specs import not_contributable
 from .crafts import QUESTION_MAX_CHARS, SLUG_MAX_CHARS
 from .knowledge_api import FieldInfo
 from .knowledge_writes import GateReport
@@ -112,7 +113,9 @@ class ProposalForm(ContractModel):
     schema_version: Literal[1] = OWN_PROPOSALS_SCHEMA_VERSION
     terms: TermsStatus
     fields: list[FieldInfo]
-    kinds: list[PieceKind] = Field(default_factory=lambda: list(PIECE_KINDS))
+    kinds: list[PieceKind] = Field(
+        default_factory=lambda: [kind for kind in PIECE_KINDS if not_contributable(kind) is None]
+    )
     subject_kinds: list[PieceSubjectKind] = Field(default_factory=lambda: list(PIECE_SUBJECT_KINDS))
     needs: dict[str, list[PieceKind]] = Field(
         default_factory=lambda: {need: list(kinds) for need, kinds in COMPONENT_NEEDS.items()}

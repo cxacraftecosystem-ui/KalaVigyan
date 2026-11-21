@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "kind": "equation_card",
+  "craft": "Cane-Bamboo-Craft",
+  "craftName": "Cane and Bamboo Craft",
+  "label": "cane-bamboo-craft/chemistry/lime-wash",
+  "title": "Lime washing a culm",
+  "description": "The change a lime wash makes on cane and bamboo, slaked lime turning into calcium carbonate, and why it protects the culm.",
+  "field": "CHEMISTRY",
+  "within": null,
+  "spec": {
+    "kicker": "u0001",
+    "title": "u0002",
+    "mark": "u0003",
+    "line": {
+      "reactants": [
+        {
+          "formula": [
+            "Ca(OH)",
+            {
+              "text": "2",
+              "style": "sub"
+            }
+          ],
+          "name": "slaked lime"
+        }
+      ],
+      "products": [
+        {
+          "formula": [
+            "CaCO",
+            {
+              "text": "3",
+              "style": "sub"
+            }
+          ],
+          "name": "calcium carbonate"
+        }
+      ]
+    },
+    "why": "u0004"
+  },
+  "units": {
+    "u0001": {
+      "text": "Lime wash",
+      "claims": []
+    },
+    "u0002": {
+      "text": "Slaked lime on the culm turns into calcium carbonate.",
+      "claims": [
+        "C060"
+      ]
+    },
+    "u0003": {
+      "text": "From slaked lime to calcium carbonate, as the source states it",
+      "claims": []
+    },
+    "u0004": {
+      "text": "The carbonate inhibits water absorption and delays fungal attack.",
+      "claims": [
+        "C060"
+      ]
+    }
+  },
+  "facts": {
+    "C060": {
+      "text": "Lime washing coats culms and mats with slaked lime, which turns into calcium carbonate that inhibits water absorption and delays fungal attack.",
+      "quotes": [
+        {
+          "source": "S01",
+          "locator": "09 Traditional Treatment, Lime Washing",
+          "quote": "Culms and mats are painted with slaked lime(Ca(OH) ) which is then transformed 2 into calcium carbonate, CaCO , which inhibits water absorption and 3 delays fungal attack."
+        },
+        {
+          "source": "S03",
+          "locator": "Water Leaching Methods, p. 10607",
+          "quote": "Slaked lime makes the surface of treated bamboo alkaline. This delays the attack of fungi."
+        }
+      ]
+    }
+  },
+  "sources": {
+    "S01": {
+      "title": "Preservation of Bamboo: Training Manual (TM 05 07/06)",
+      "publisher": "National Mission on Bamboo Applications, TIFAC, Department of Science and Technology, Government of India",
+      "year": 2006,
+      "url": "https://nectar.dst.gov.in/sites/default/files/Publications/preservation_book.pdf",
+      "reliability": "A"
+    },
+    "S03": {
+      "title": "Eco-friendly preservation of bamboo species: Traditional to modern techniques",
+      "publisher": "BioResources",
+      "year": 2016,
+      "url": "https://bioresources.cnr.ncsu.edu/wp-content/uploads/2016/08/BioRes_11_4_10604_Kaur_SPN_EcoFriendly_Preservatives_Bamboo_Species_Techniques_9981.pdf",
+      "reliability": "A"
+    }
+  }
+}
