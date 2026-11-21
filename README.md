@@ -12,7 +12,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Web-Next.js_16-1E1B2E?style=for-the-badge&labelColor=762CB1" alt="Web: Next.js 16">
-  <img src="https://img.shields.io/badge/API-FastAPI_·_Python_3.14-1E1B2E?style=for-the-badge&labelColor=762CB1" alt="API: FastAPI on Python 3.14">
+  <img src="https://img.shields.io/badge/API-FastAPI_·_Python_3.15-1E1B2E?style=for-the-badge&labelColor=762CB1" alt="API: FastAPI on Python 3.15">
   <img src="https://img.shields.io/badge/Data-Postgres_%2B_pgvector_·_Supabase-1E1B2E?style=for-the-badge&labelColor=762CB1" alt="Data: Postgres with pgvector on Supabase">
   <img src="https://img.shields.io/badge/Hosting-AWS_·_Vercel-1E1B2E?style=for-the-badge&labelColor=762CB1" alt="Hosting: AWS and Vercel">
   <img src="https://img.shields.io/badge/Agents-MCP_·_OAuth_2.1-1E1B2E?style=for-the-badge&labelColor=762CB1" alt="Agents: MCP with OAuth 2.1">
@@ -189,7 +189,7 @@ sequenceDiagram
 | Layer | Stack |
 |---|---|
 | Web | Next.js 16, React 19, Tailwind 4, framer-motion 14, 3Dmol.js 2.5, TypeScript 6; the Alum & Indigo design system |
-| API | FastAPI on Python 3.14, SQLAlchemy 2.1 with Alembic and psycopg 3, pgvector, Pint, trafilatura and pypdf, citeproc-py, fpdf2 and python-pptx |
+| API | FastAPI on Python 3.15, SQLAlchemy 2.1 with Alembic and psycopg 3, pgvector, Pint, trafilatura and pypdf, citeproc-py, fpdf2 and python-pptx |
 | Models | Anthropic, Gemini, OpenAI and DeepSeek behind one AI router, ElevenLabs for voice and sound |
 | Data | Postgres 17 on Supabase with pgvector, PostGIS, pg_trgm, unaccent and citext; S3; Redis on the box |
 | Delivery | GitHub Actions with OIDC, Terraform, SSM, systemd, nginx blue/green, Vercel |
@@ -202,7 +202,7 @@ type-checks, builds, dev servers or browsers (owner, 2026-11-20). Every suite ru
 1. Read the rules first: [project-bindings.md](.claude/skills/engineering-practices/references/project-bindings.md)
    binds the practice skills to this repository, and [PLAN.md](docs/PLAN.md) section 0 is the owner's
    direction.
-2. Make the backend environment, Python 3.14 with uv:
+2. Make the backend environment, Python 3.15 with uv:
 
    ```sh
    cd backend

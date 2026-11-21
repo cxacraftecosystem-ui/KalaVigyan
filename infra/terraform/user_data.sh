@@ -2,10 +2,10 @@
 set -euxo pipefail
 
 APP=/opt/kalavigyan
-PY_VERSION="3.14.10"
+PY_VERSION="3.15.2"
 PY_BUILD="20261110"
-PY_URL="https://github.com/astral-sh/python-build-standalone/releases/download/20261110/cpython-3.14.10%2B20261110-x86_64-unknown-linux-gnu-install_only.tar.gz"
-PY_SHA256="3fe0d7c0538eb5d190c34582992d26230532551355cbd789fabc6591621cfc07"
+PY_URL="https://github.com/astral-sh/python-build-standalone/releases/download/20261110/cpython-3.15.2%2B20261110-x86_64-unknown-linux-gnu-install_only.tar.gz"
+PY_SHA256="182e7adf7e4f0e32dafac5143f00d466afd20eef45918ea170f78884e503ac18"
 UV_VERSION="0.13.9"
 UV_SHA256="a7fbaff2b9a271d85c1bdb540941090fd1ce011797b4abeb48e4dcd39c2471d5"
 SEARXNG_IMAGE="docker.io/searxng/searxng:2026.11.15-2d500cb6b"

@@ -56,9 +56,9 @@ are in `docs/RUNBOOK.md`; what the box assumes from the code is in `docs/contrac
 
 | Folder | What it holds |
 |---|---|
-| `backend/` | FastAPI API, SQLAlchemy models, Alembic migrations, tests (uv, Python 3.14) |
-| `etl/crafts/` | Craft data pipeline: aliases, Wikidata links, seed claims. Reuses `backend/app/data/` |
-| `etl/geo/` | Per-district environment statistics from open datasets (`geo_etl`), and `load.py` |
+| `backend/` | FastAPI API, SQLAlchemy models, Alembic migrations, tests (uv, Python 3.15; decision 0118) |
+| `etl/crafts/` | Craft data pipeline: aliases, Wikidata links, seed claims. Reuses `backend/app/data/` (Python 3.15) |
+| `etl/geo/` | Per-district environment statistics from open datasets (`geo_etl`), and `load.py` (Python 3.14 until exactextract publishes a cp315 wheel; decision 0118) |
 | `frontend/` | Next.js web client (npm, Node 26) |
 | `infra/` | Terraform, deploy scripts, systemd units, secret seeding, Supabase lockdown SQL |
 | `shared/` | Files checked by more than one side (`craft-master.sha1`, the `*.golden.*` contract files) |

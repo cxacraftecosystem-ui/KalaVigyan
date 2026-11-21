@@ -39,7 +39,7 @@ This page lists what is provisioned, how to deploy, and how to roll back. It hol
 | nginx site `kalavigyan` | `:80`. The snippet `kalavigyan-origin-verify.conf` returns 403 without CloudFront's header; loopback is exempt. |
 | `redis-server` | `127.0.0.1:6379`, 256 MB LRU |
 | Docker `searxng` | `127.0.0.1:8888`, image `searxng/searxng:2026.11.15-2d500cb6b`, settings `/etc/searxng/settings.yml` |
-| `/opt/cpython/3.14.10+20261110` | Standalone CPython (python-build-standalone 20261110, sha256-checked). uv 0.13.8 in `/usr/local/bin` |
+| `/opt/cpython/<version>+<build>` | Standalone CPython (python-build-standalone, sha256-checked), one directory per interpreter a release has pinned in `infra/deploy/python.pin`: `3.15.2+20261110` from round 7 (decision 0118) beside `3.14.10+20261110`, which the box was built with and the releases before it still run. Nothing removes one. uv 0.13.9 in `/usr/local/bin` |
 | `/usr/local/sbin/kv-blue-green`, `kv-render-env` | Installed from `infra/deploy/` on every release |
 | certbot | Installed, unused: TLS ends at CloudFront. It is there for a custom domain later. |
 
@@ -245,7 +245,7 @@ Deploy backend (`.github/workflows/deploy-backend.yml`):
 1. Assumes `kalavigyan-deploy` through GitHub OIDC (no static AWS keys in GitHub).
 2. Copies changed secrets into `/kalavigyan/env`.
 3. Uploads `git archive HEAD backend infra/deploy` to `s3://kalavigyan-media-626159998512/deploy/backend/<sha>/KalaVigyan_API_Release-Build_<sha12>.tar.gz`.
-4. Runs `infra/deploy/release.sh <sha>` on the box over SSM `AWS-RunShellScript`, logging to `deploy/logs/<sha>/`. The script installs units, renders the env, builds the venv with uv, then `blue_green.sh release <sha>`:
+4. Runs `infra/deploy/release.sh <sha>` on the box over SSM `AWS-RunShellScript`, logging to `deploy/logs/<sha>/`. The script installs units, renders the env, installs the CPython that `infra/deploy/python.pin` names into `/opt/cpython/<version>+<build>` unless it is there (over https, checksum checked before it is unpacked, staged then moved, root-owned; decision 0118), builds the venv with uv on that interpreter, then `blue_green.sh release <sha>`:
    1. migrate (`alembic upgrade head`), seed (`seed_crafts`, `seed_claims`, `seed_districts`) and import the curated dossiers (`import_curation`, decision 0053; a refused dossier exits 2 and stops the release like a failed seed) while the old colour serves, then sync crafts from both portals (`sync_portal_crafts`; a failure is a warning, the release goes on) and embed what the seeds and the import wrote (`embed_craft_descriptors`, then `embed_knowledge`, each bounded to 240 seconds; a failure is a warning too);
    2. start the other colour;
    3. wait for `/health`;
@@ -541,6 +541,8 @@ sudo kv-blue-green rollback <sha>      # or any kept release: ls -t /opt/kalavig
 ```
 
 A rollback does not reverse migrations. If a migration has to be undone, run `alembic downgrade` from the release that added it before rolling back.
+
+A rollback keeps each release on the interpreter it was built with: its `.venv` points into its own `/opt/cpython/<version>+<build>`, and no release removes one. To go back to an older Python for new releases, revert `infra/deploy/python.pin`, `requires-python` and `backend/uv.lock` together and deploy; the release finds that interpreter installed and builds on it (decision 0118). `readlink -f /opt/kalavigyan/releases/*/backend/.venv/bin/python` shows which interpreter each kept release runs on.
 
 Frontend: `vercel rollback --scope cxacraftecosystem-8028s-projects` (or Instant Rollback in the dashboard). A rollback stops automatic domain assignment until the next `vercel promote` or `--prod` deploy.
 
