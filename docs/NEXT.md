@@ -6,23 +6,24 @@ without the owner is recorded below or in decisions 0102 and 0103 for review.
 
 ## Live now
 
-- **KalaVigyan `main` at `afa152b`.** Deploy backend passed; frontend `dpl_8Sj3NTJWGjZ85NHRXjvPRnjtQ8i9`
-  promoted after it. On top of release `1897d80` it carries:
-  - **Knowledge fields, step 1 of decision 0101** (migration `0032_knowledge_fields`, decision 0102):
-    - `SOCIETY` and `POLICY` join the fields (16);
-    - `Claim.field` and `Claim.fields`, backfilled and stamped by every writer;
-    - `ArticleSection`;
-    - the component registry columns on `KnowledgePiece` and `KnowledgePieceSubject`.
-  - **The MCP server, slice 1** (decision 0103, `docs/contracts/knowledge-api.md`):
-    - `POST <PUBLIC_API_URL>/mcp` with five public read tools;
-    - switched **on** at `/kalavigyan/env/MCP_SERVER_ENABLED`; smoke-tested live.
-  - **Craft page hotfixes:** every curated craft page answers 200 again (32 of 32 swept). Four
-    page-build defects had been returning 500 for most curated crafts:
-    - the region story's and the history timeline's choices went over their limits;
-    - link-card pictures were made into plates;
-    - the process ladder cited claims and sources the page did not list.
-  - **The Ajrakh monograph's design fixes** that change no words (critic re-score below).
-  - **The production E2E specs** read Kutch Ajrakh as the served monograph.
+- **KalaVigyan `main` at `53d8b43`** (2026-11-21), round 7 shipped in steps (`d0167f9`, `90b79f6`,
+  `53d8b43`), each checked on GitHub and its Vercel build confirmed READY:
+  - **Contribution at scale:** the queued gates, batches, idempotency keys, trust tiers, task leases,
+    stewardship, delivered components and pages with a private preview, pictures in every format with
+    screens, healing (held facts, link rot) and the expert seats' capped research.
+  - **The MCP studio (decisions 0110, 0111):** 21 tools in six groups (reading, sources, work,
+    proposing, pages, pictures); KalaVigyan's own source registries, fetcher and quote matcher as
+    tools; sources only a contributor can read, supplied and checked against their text; a draft per
+    page with a preview report on the 26 checklist rules, drawn in the chat; the `curate_page` prompt;
+    every skill, reference and contract teaching it.
+  - **Pages:** every borrowed component drawn in its home's styles (the Textiles chemistry), figures
+    beside the sentences they illustrate, a view missing a unit left out instead of breaking the page,
+    and a parity check of each borrowed component after every deploy; Kutch Ajrakh at 90 on a phone.
+  - **Maps:** the Natural Earth base, relief, rivers and mineral layers with their palettes, the Survey
+    of India state lines on every map, and switching layers without an error.
+  - **Open, being built:** the round 7 fix lanes (release proof, integrity, connect and speed,
+    monograph follow-ups, artisan photographs), then questions becoming work, why here, kinds and
+    datasets, and design conformance (`docs/TECH_DEBT.md`, round 7).
 - **Portals 0.0.8** (designer-portal `2d468af3`, documentation-portal `28abc96d`), released together:
   - field voices for KalaVigyan;
   - question takes name their section;
