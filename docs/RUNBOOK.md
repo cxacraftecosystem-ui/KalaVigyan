@@ -536,6 +536,12 @@ fixture or the category page (`docs/contracts/category-page.md`).
   the `eval-questions-<run id>` artifact; commit its `retrieval_questions.json` as
   `backend/app/data/eval/generated/retrieval_questions.json`. A later run reuses the kept questions
   and pays only for new facts.
+- **Re-embed knowledge** (`embed-knowledge.yml`): by hand only, from main, once after a release that
+  changes the embedding stamp's recipe (decision 0129):
+  `gh workflow run embed-knowledge.yml -R cxacraftecosystem-ui/KalaVigyan --ref main` (`-f seconds=`,
+  60 to 3300, 1800 by default). It runs `embed_craft_descriptors` and then `embed_knowledge` on the box
+  until every claim and passage vector carries the current stamp or the time is spent; the daily
+  Coverage enrichment embeds what is left. About 2.6 million tokens (0.52 US dollars) on 2026-11-22.
 - **Answer quality** (`answer-quality.yml`): by hand, from main (`-f limit=`, `-f only=`, `-f cap=`).
   A run that asks every question compares the judge and rubric means with the answer floors and
   keeps the issue `Answers fell below their floor`.

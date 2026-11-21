@@ -12,6 +12,8 @@ from app.core.db import get_session
 from app.core.deps import get_current_user
 from app.core.errors import InvalidInput
 from app.models import ArtisanContribution, ArtisanConversation, User
+from app.providers.embedding import router_embedder
+from app.providers.router import Principal
 from app.research.crafts import SLUG_MAX_CHARS
 from app.research.review_queue import (
     CURSOR_MAX_CHARS,
@@ -39,6 +41,7 @@ from app.services.review_queue_errors import (
 )
 from app.services.review_queue_refresh import refresh_after_decision
 from app.services.testimony_views import Turns
+from app.services.written_vectors import embed_decided
 
 router = APIRouter(prefix="/review-queue", tags=["review"])
 
@@ -98,7 +101,9 @@ async def approve(
     session: AsyncSession = Depends(get_session),
 ) -> QueueDecision:
     ref = decisions.ItemRef(kind, item_id)
-    return await _decided(session, decisions.approve_item(session, ref, user, body, now=_now()))
+    decided = await _decided(session, decisions.approve_item(session, ref, user, body, now=_now()))
+    await embed_decided(session, router_embedder(Principal(user_id=user.id, role=user.role)), decided)
+    return decided
 
 
 @router.post("/{kind}/{item_id}/reject")

@@ -21,6 +21,7 @@ from app.models import (
     TermSummary,
 )
 from app.research.composition import ComposedSentence
+from app.research.embedding import TextEmbedder
 from app.research.evidence import Quote, SourceDocument
 from app.research.retrieval import OPEN_CHUNK_ACLS
 from app.research.terms import Term
@@ -32,6 +33,7 @@ from .research_write_back import write_through_gates
 from .term_research import GlossaryTerm, ResearchedSummary, TermConceptRef
 from .term_summaries import StoredClaims, cites_only_shown
 from .write_back_plan import QUOTED_REASON, WRITE_BACK_PREDICATE, quote_carries
+from .written_vectors import embed_now
 
 __all__ = ["CONCEPT_SUBJECT_TYPE", "SqlTermStore", "claim_for_sentence", "write_back_subject"]
 
@@ -42,10 +44,15 @@ FOUND_BY = "BACKGROUND"
 
 class SqlTermStore:
     def __init__(
-        self, sessions: async_sessionmaker[AsyncSession], *, acls: Sequence[str] = OPEN_CHUNK_ACLS
+        self,
+        sessions: async_sessionmaker[AsyncSession],
+        *,
+        acls: Sequence[str] = OPEN_CHUNK_ACLS,
+        embed: TextEmbedder | None = None,
     ) -> None:
         self._sessions = sessions
         self._acls = acls
+        self._embed = embed
 
     async def term(self, key: str) -> GlossaryTerm | None:
         async with self._sessions() as session:
@@ -108,11 +115,12 @@ class SqlTermStore:
             claim_for_sentence(sentence, documents, craft_slug, subject) for sentence in researched.sentences
         ]
         async with self._sessions() as session:
-            for document in researched.documents:
-                await keep_document(session, document)
+            kept = [await keep_document(session, document) for document in researched.documents]
             gated = await write_through_gates(session, claims, documents, embed=None, judge=None)
             await session.commit()
-        written = gated.claim_ids()
+            written = gated.claim_ids()
+            if self._embed is not None:
+                await embed_now(session, self._embed, claim_ids=list(written.values()), source_ids=kept)
         return [written[claim.dedupe_key] for claim in claims if claim.dedupe_key in written]
 
     async def cited(self, claim_ids: Sequence[uuid.UUID]) -> StoredClaims:

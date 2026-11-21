@@ -45,9 +45,9 @@ def test_a_fusion_constant_below_one_is_refused() -> None:
         reciprocal_rank_fusion([["a"]], k=0)
 
 
-def test_the_text_query_ors_distinct_words_of_three_or_more_characters() -> None:
+def test_the_text_query_ors_distinct_words_of_three_or_more_characters_then_the_short_ones() -> None:
     query = or_tsquery("What mordant is used in Ajrakh? Ajrakh uses alum; pH 4")
-    assert query == "what | mordant | used | ajrakh | uses | alum"
+    assert query == "what | mordant | used | ajrakh | uses | alum | is | in | ph"
 
 
 def test_the_text_query_folds_width_and_case_and_drops_operators() -> None:

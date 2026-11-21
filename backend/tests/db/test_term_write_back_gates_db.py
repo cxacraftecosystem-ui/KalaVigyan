@@ -6,13 +6,15 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
-from app.models import CandidateCheck, Claim
+from app.models import CandidateCheck, Chunk, Claim, ClaimSource
 from app.research.composition import ComposedSentence, QuotedSpan
 from app.research.evidence import EvidenceItem
 from app.research.retrieval import EVERY_CHUNK_ACLS
 from app.services.term_research import ResearchedSummary
 from app.services.term_store import SqlTermStore
 from app.sources.adapter import build_document
+
+from ..craft_fixtures import FixedEmbedder
 
 pytestmark = pytest.mark.db
 
@@ -46,11 +48,11 @@ async def session() -> AsyncIterator[AsyncSession]:
             await transaction.rollback()
 
 
-def store_for(session: AsyncSession) -> SqlTermStore:
+def store_for(session: AsyncSession, embed: FixedEmbedder | None = None) -> SqlTermStore:
     def sessions() -> AsyncSession:
         return AsyncSession(bind=session.bind, expire_on_commit=False, autoflush=False)
 
-    return SqlTermStore(sessions, acls=EVERY_CHUNK_ACLS)
+    return SqlTermStore(sessions, acls=EVERY_CHUNK_ACLS, embed=embed)
 
 
 def said(text: str, quote: str) -> ComposedSentence:
@@ -80,3 +82,22 @@ async def test_a_term_s_research_is_written_back_through_the_gates_unreviewed_wi
     assert sorted(gates.all()) == ["DUPLICATE", "QUOTES", "SOURCE"]
     boiled = await session.scalar(select(func.count(Claim.id)).where(Claim.text == BOILED))
     assert boiled == 0
+
+
+async def test_a_term_s_research_is_searchable_by_vector_as_it_is_written(session: AsyncSession) -> None:
+    embed = FixedEmbedder()
+    store = store_for(session, embed)
+    term = await store.term("neerani")
+    assert term is not None
+    found = ResearchedSummary(
+        "WEB_SEARCH", (build_document(ITEM, TEXT, "FULL_TEXT"),), (said(SOAKED, SOAKED_QUOTE),)
+    )
+    written = await store.write_back(term, found)
+    claim = await session.get(Claim, written[0])
+    assert claim is not None and claim.embedding is not None
+    assert claim.embeddingModel == await session.scalar(select(func.kv_embedding_model()))
+    texts = [words for call in embed.calls for words in call]
+    assert any(words.endswith(f"| text: {SOAKED}") for words in texts)
+    cited = select(ClaimSource.sourceId).where(ClaimSource.claimId == claim.id)
+    kept = (await session.scalars(select(Chunk.embedding).where(Chunk.sourceId.in_(cited)))).all()
+    assert kept and all(vector is not None for vector in kept)

@@ -45,10 +45,12 @@ from app.research.retrieval import (
 
 from .citation_access import HELD_LEFT_OUT, HeldFacts, readable_citation, unheld
 from .field_scope import field_interview_sources, withheld_field_sources
-from .stamps import made_by_current_model
+from .glossary_words import TEXT_SEARCH_CONFIG, any_slot, named_by, slot_query, text_query
+from .nearest import ANY_CRAFT, vector_ranking
 from .text import tsquery_terms
 
 __all__ = [
+    "ANY_CRAFT",
     "ENTITY_NAME_MIN_CHARS",
     "EVERY_CRAFT",
     "LEXICAL_CANDIDATES",
@@ -77,7 +79,6 @@ __all__ = [
 
 RANKING_DEPTH = 60
 LEXICAL_CANDIDATES = 400
-TEXT_SEARCH_CONFIG = "english"
 ENTITY_NAME_MIN_CHARS = 4
 NAME_GLOSS_OPEN = " ("
 NAME_GLOSS = r"\(([^)]*)\)"
@@ -169,8 +170,13 @@ def claim_conditions(
         Claim.sensitivity == VISIBLE_SENSITIVITY,
         cited,
         *unheld(held),
+        *_every_craft(scope),
     ]
     return [*conditions, field_condition(fields)] if fields else conditions
+
+
+def _every_craft(scope: CraftScope) -> list[ColumnElement[bool]]:
+    return [ANY_CRAFT] if scope.craft_id is None else []
 
 
 def readable_citations(claim_ids: Sequence[uuid.UUID], *, acls: Sequence[str]) -> Select[tuple[ClaimSource]]:
@@ -199,6 +205,7 @@ def chunk_conditions(
         Chunk.sourceId.not_in(withheld_field_sources()),
         Chunk.acl.in_(list(acls)),
         Chunk.sensitivity != RESTRICTED_SENSITIVITY,
+        *_every_craft(scope),
     ]
 
 
@@ -297,19 +304,13 @@ def _concept_names() -> CompoundSelect[Any]:
 def claim_vector_ranking(
     conditions: Sequence[ColumnElement[bool]], vector: Sequence[float], *, depth: int = RANKING_DEPTH
 ) -> Select[tuple[uuid.UUID]]:
-    stamped = [*conditions, made_by_current_model(Claim.embeddingModel)]
-    return _vector(Claim.id, Claim.embedding, stamped, vector, depth)
+    return vector_ranking(Claim, conditions, vector, depth)
 
 
 def chunk_vector_ranking(
     conditions: Sequence[ColumnElement[bool]], vector: Sequence[float], *, depth: int = RANKING_DEPTH
 ) -> Select[tuple[uuid.UUID]]:
-    stamped = [*conditions, made_by_current_model(Chunk.embeddingModel)]
-    return _vector(Chunk.id, Chunk.embedding, stamped, vector, depth)
-
-
-def text_query(tsquery: str) -> ColumnElement[Any]:
-    return func.to_tsquery(TEXT_SEARCH_CONFIG, tsquery)
+    return vector_ranking(Chunk, conditions, vector, depth)
 
 
 def lexical_rank(tsv: Any, query: ColumnElement[Any]) -> ColumnElement[float]:
@@ -323,10 +324,12 @@ def _lexical(
     tsquery: str,
     depth: int,
 ) -> Select[tuple[uuid.UUID]]:
-    query = text_query(tsquery)
     terms = tsquery_terms(tsquery)
+    asked = _asked(terms)
+    slots = [select(asked.c[f"slot_{index}"]).scalar_subquery() for index in range(len(terms))]
+    query = select(any_slot([asked.c[f"slot_{index}"] for index in range(len(terms))])).scalar_subquery()
     density = lexical_rank(tsv, query)
-    matched = [tsv.op("@@")(text_query(term)).label(f"term_{index}") for index, term in enumerate(terms)]
+    matched = [tsv.op("@@")(slot).label(f"term_{index}") for index, slot in enumerate(slots)]
     candidates = (
         select(key.label("id"), density.label("density"), *matched)
         .where(*conditions, tsv.op("@@")(query))
@@ -346,24 +349,13 @@ def _lexical(
     )
 
 
+def _asked(terms: Sequence[str]) -> Any:
+    named = named_by(terms).cte("glossary")
+    slots = [slot_query(term, named).label(f"slot_{index}") for index, term in enumerate(terms)]
+    return select(*slots).cte("asked")
+
+
 def _rarity(candidates: Any, matched: ColumnElement[bool], found: ColumnElement[int]) -> ColumnElement[float]:
     holding = select(func.count()).select_from(candidates).where(matched).scalar_subquery()
     weight = func.ln(1.0 + cast(found, Float) / func.greatest(holding, 1))
     return case((matched, weight), else_=0.0)
-
-
-def _vector(
-    key: ColumnElement[uuid.UUID],
-    embedding: Any,
-    conditions: Sequence[ColumnElement[bool]],
-    vector: Sequence[float],
-    depth: int,
-) -> Select[tuple[uuid.UUID]]:
-    distance = embedding.cosine_distance(list(vector))
-    scoped = (
-        select(key.label("id"), distance.label("distance"))
-        .where(*conditions, embedding.is_not(None))
-        .cte("scoped")
-        .prefix_with("MATERIALIZED")
-    )
-    return select(scoped.c.id).order_by(scoped.c.distance, scoped.c.id).limit(depth)

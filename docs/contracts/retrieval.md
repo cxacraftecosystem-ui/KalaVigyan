@@ -9,12 +9,18 @@ ranking, the embedding runs or the evaluation read it.
 | Why retrieval works this way | [decision 0008](../decisions/0008-stored-knowledge-retrieval.md) and [0101](../decisions/0101-knowledge-architecture-for-every-craft.md), item 10 and build step 3 |
 | Why a quote follows its page and a held fact leaves answers | [decision 0121](../decisions/0121-quote-visibility.md) |
 | Why stored facts are reranked, and when stored knowledge is enough | [decision 0125](../decisions/0125-reranking.md) |
+| Why vectors carry their context, the glossary reaches the words search and any-craft questions use the vector indexes | [decision 0129](../decisions/0129-first-stage-retrieval.md) |
 | The seats that each search their own fields | [answer-eval.md](answer-eval.md) |
 | Where retrieval sits in answering | [research.md](research.md) |
 
 | Part | Code |
 |---|---|
 | The search, ranking, stamps and runs | `app/retrieval/` |
+| The glossary's names in the words search | `app/retrieval/glossary_words.py` |
+| The any-craft vector ranking and its index settings | `app/retrieval/nearest.py` |
+| A claim's title for its vector | `app/retrieval/claim_titles.py`, `app/retrieval/text.py` |
+| One embedding per text for an answer | `app/retrieval/answer_embeddings.py` |
+| Facts embedded as they are written | `app/services/written_vectors.py` |
 | The rerank stage and the collapse of restatements | `app/retrieval/rerank.py` |
 | The reranker's contract, its route and its adapter | `app/research/reranking.py`, `app/providers/rerank_router.py`, `app/providers/voyage_p.py` |
 | Who may read a citation, and held facts | `app/retrieval/citation_access.py` |
@@ -22,13 +28,13 @@ ranking, the embedding runs or the evaluation read it.
 | The contract types | `app/research/retrieval.py` |
 | The seat search | `app/services/seat_search.py` |
 | The seed passages | `app/services/claim_seed_passages.py` |
-| The stamps' columns | migration `0043_embedding_stamps` |
+| The stamps' columns | migration `0043_embedding_stamps`; the recipe, migration `0061_embedding_recipe` |
 
 ```mermaid
 %%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
 flowchart LR
-  Q["KnowledgeQuery<br/>craft, fields, mode"] --> K["Full text<br/>rare terms first"]
-  Q --> V["Vector<br/>current model only"]
+  Q["KnowledgeQuery<br/>craft, fields, mode"] --> K["Full text<br/>glossary names, rare terms first"]
+  Q --> V["Vector<br/>current model, any recipe"]
   Q --> E["Entities<br/>named concepts"]
   K --> F["Reciprocal rank<br/>fusion"]
   V --> F
@@ -136,15 +142,35 @@ included. A citation that already points at the right passage and locator is not
 
 - Claims: three rankings of at most `RANKING_DEPTH` (60) each, fused by reciprocal rank fusion
   (`score = sum(1 / (60 + rank))`, ties by best single rank, then id):
-  - full text: the search words' distinct Latin terms of 3 or more characters ORed through
-    `to_tsquery('english')`; the first `LEXICAL_CANDIDATES` (400) matches by `ts_rank_cd` are
-    then ordered by the rarity of the terms each holds: a term weighs `ln(1 + n / n_t)`, where `n`
-    is the number of candidates and `n_t` the number holding the term, so a claim holding the
-    question's rare word (settled, bacteria, a person's name) outranks claims that only repeat the
-    craft's name or a name every claim carries; ties by `ts_rank_cd`, then id;
-  - vector: exact cosine distance between the embedded question and the scoped claims whose
-    vector was made by the embedding route's current model (see Stamps); a claim with no vector,
-    or with another model's, ranks by text and entities alone;
+  - full text: the search words' distinct Latin terms of 3 or more characters (at most
+    `TSQUERY_MAX_TERMS`, 40), then their words of 2 characters (at most `TSQUERY_SHORT_TERMS`, 8;
+    `text.or_tsquery`), each a slot ORed with the others. A short word counts only when it is a
+    glossary term's label, alias or local name (`Term`), so "GI" is searched and "is", "pH" or "xy"
+    are not until the glossary names them. Every word that is a name of a glossary term, folded to
+    lower case, also matches every other name of that term (its label, aliases and local names, so
+    the transliterations the glossary holds): its slot is
+    `websearch_to_tsquery('english', '"<word>" or "<name>" or ...')`
+    (`glossary_words.slot_query`), so "GI" finds "geographical indication" and "siyahi" finds
+    "syahi". A question with no word of 3 characters has no full-text ranking. The first
+    `LEXICAL_CANDIDATES` (400) matches of any slot by `ts_rank_cd` are then ordered by the rarity
+    of the slots each matches: a slot weighs `ln(1 + n / n_t)`, where `n` is the number of
+    candidates and `n_t` the number matching the slot, so a claim holding the question's rare word
+    (settled, bacteria, a person's name) outranks claims that only repeat the craft's name or a
+    name every claim carries; ties by `ts_rank_cd`, then id. `statements.text_query`, which the
+    knowledge view, the category knowledge and the component library rank by, reads the glossary
+    the same way;
+  - vector: cosine distance between the embedded question and the scoped claims whose vector was
+    made by the embedding route's current model, whatever its recipe (see Stamps); a claim with no
+    vector, or with another model's, ranks by text and entities alone. A craft's scope is an exact
+    scan of its claims. A search of no single craft (`craftSlug` null, `statements.ANY_CRAFT`
+    among its conditions) reads the HNSW index on `Claim.embedding` instead
+    (`nearest.vector_ranking`): the nearest `depth x INDEX_CANDIDATES_PER_HIT` (8) vectors of the
+    current model in index order, then the claim conditions, then the first `depth` by exact
+    distance. Before it runs, the session sets `hnsw.iterative_scan = relaxed_order` and
+    `hnsw.ef_search = 200` for its transaction (`set_config(..., true)`, a `do_orm_execute` hook on
+    the statement's `kv_vector_index_scan` option), so the index keeps scanning until enough
+    vectors of the current model are found (pgvector 0.8; production runs 0.8.2). Passages of no
+    single craft read `Chunk.embedding`'s HNSW index the same way;
   - entities: claims on scoped concepts (or edges touching them) named in the search words by a
     name of 4 or more characters, longest name first. A concept is named by its whole name, by its
     native head before ` (` and by the gloss inside the parentheses (`Syahi (fermented iron
@@ -160,8 +186,15 @@ included. A citation that already points at the right passage and locator is not
   corpus passages, and the passages of field recordings (`Source` of a `FieldRecording`). A
   craft's many corpus passages therefore never crowd an artisan's recorded words out of the
   hits. `KnowledgeHits.chunks` holds both lists merged by score, so up to twice `limit` rows.
-- The question is embedded as `task: search result | query: <text>`, claims as
-  `title: none | text: <text>`, passages as `title: <source title> | text: <text>`.
+- The question is embedded as `task: search result | query: <text>`, passages as
+  `title: <source title> | text: <text>`, and claims with their context
+  (`claim_titles.titled_claims`, `text.context_title`): `title: <owner> · <concept> · <field> |
+  text: <text>`, the owner being the craft of the claim's concept, else the sub-category of a
+  shared concept, else the category whose curated facts mark the claim (`CuratedCategoryClaim`),
+  else the category the concept is named as; the concept is the claim's concept, or the source
+  concept of an edge; the field is the claim's field in sentence case. A part repeated or missing
+  is left out, and a claim with none is `title: none`. So "It is then washed in the river." is
+  embedded as `title: Kutch Ajrakh · Washing · Process | text: It is then washed in the river.`
 
 ### Reranking
 
@@ -227,19 +260,26 @@ has not shown whose readable citations include one of its kinds. Kept true by
 
 ## Stamps
 
-Every stored vector carries the model that made it.
+Every stored vector carries the model that made it and the recipe of the text it was made from.
 
 - Columns (migration `0043_embedding_stamps`): `Claim.embeddingModel`, `Chunk.embeddingModel`,
   `Craft.embeddingModel` (for `descriptorEmbedding`), `varchar(120)` like `RoutePolicy.model`,
   and `Craft.descriptorHash` (SHA-256 hex of the descriptor text the vector was made from).
-- The current model is `kv_embedding_model()`: the model of the first enabled `EMBED` route
-  (by ordinal) whose provider is enabled. Python reads it as
-  `retrieval/stamps.current_embedding_model()`.
-- Every writer stamps. The writers in `retrieval/indexing` and the descriptor fill set the stamp
-  explicitly; triggers (`Claim_embedding_stamp`, `Chunk_embedding_stamp`,
-  `Craft_descriptor_stamp`) stamp any other write (the write-back gates, proposals, tests): a
-  vector written without a stamp, or changed while its stamp stayed, takes the current model; a
-  cleared vector clears its stamp (and a craft's hash).
+- The current stamp is `kv_embedding_model()`: the model of the first enabled `EMBED` route
+  (by ordinal) whose provider is enabled, then `#` and the recipe, `ctx1` (migration
+  `0061_embedding_recipe`), so `gemini-embedding-2#ctx1`. Python reads it as
+  `retrieval/stamps.current_embedding_model()` and holds the recipe as `stamps.EMBEDDING_RECIPE`
+  (a test keeps the two equal). Recipe `ctx1` is the claim titles of The search; a vector of
+  another recipe is one embedded before it.
+- A vector is read by the rankings when the model part of its stamp (`split_part(stamp, '#', 1)`,
+  `stamps.made_by_current_model`) is the route's model, whatever its recipe, so the rankings never
+  go blind while vectors are renewed.
+- Every writer stamps. The writers in `retrieval/indexing` and the descriptor fill set the full
+  stamp explicitly; triggers (`Claim_embedding_stamp`, `Chunk_embedding_stamp`,
+  `Craft_descriptor_stamp`) stamp any other write (the write-back gates, proposals, tests): a claim
+  or passage vector written without a stamp, or changed while its stamp stayed, takes the model
+  alone (no recipe), since only `retrieval/indexing` writes the recipe's text; a descriptor takes
+  the full stamp; a cleared vector clears its stamp (and a craft's hash).
 - A claim or passage whose text changes in place loses its vector and stamp in the same
   statement, whichever path changed it: the curation import's claim updates
   (`services/curation_claims.write_claims`), the testimony erasure
@@ -256,13 +296,34 @@ Every stored vector carries the model that made it.
 ## Embedding runs
 
 - `embed_pending(session, embed, *, batch_size=50, deadline=None)` embeds the visible claims and
-  unrestricted passages with no vector or another model's stamp (missing first), then the
-  knowledge pieces with no vector, in batches of `EMBED_BATCH` (50), at most `EMBED_RUN_ROWS`
-  (20,000) rows of each kind a run. With a `Deadline` it starts no batch once the time is
-  spent; each batch is committed, so a stopped run keeps what it did. It returns
-  `EmbeddedCounts {claims, chunks, pieces, complete}`.
-- `embed_written(session, embed, *, claim_ids, source_ids)` applies the same rules to the rows a
-  write just stored.
+  unrestricted passages whose stamp is not the current one (`stamps.needs_vector`), in the order
+  of `stamps.renewal_order`: no vector first, then another model's vector, then an older recipe of
+  the current model, oldest `updatedAt` first, then id; then the knowledge pieces with no vector.
+  It works in batches of `EMBED_BATCH` (50), at most `EMBED_RUN_ROWS` (20,000) rows of each kind a
+  run. With a `Deadline` it starts no batch once the time is spent; each batch is committed, so a
+  stopped run keeps what it did. It returns `EmbeddedCounts {claims, chunks, pieces, complete}`.
+  So a new recipe needs no hand step: the release and the daily run renew every vector, oldest
+  first, after the missing ones.
+- `embed_written(session, embed, *, claim_ids, source_ids)` embeds the rows a write just stored
+  that have no vector of the current model (`stamps.needs_model_vector`), so they are searchable
+  at once; an older recipe of the current model is left to the runs.
+- Facts are embedded in the request that writes them, with the embedding route of the account
+  that wrote them (`providers/embedding.router_embedder(principal)`), through
+  `services/written_vectors.embed_now`, which never undoes the write: a failed or refused
+  embedding is logged (`written facts stored without vectors, left for embed_knowledge`) and the
+  runs embed the rest. The writers: an answer's write-back (`store_live_research`, as before); a
+  term summary's write-back (`SqlTermStore(..., embed=)`, built by the term route for a signed-in
+  reader); a structure item written at once for a Professor or Admin (`structure_proposed`, behind
+  the MCP tool and `/api/knowledge/structure`, and `page_proposed` for a page bundle) or approved
+  from the review queue (`POST /api/review-queue/STRUCTURE/{id}/approve`, `embed_decided`). A
+  proposed fact keeps the vector its duplicate gate made, and its sources are embedded as before
+  (`fact_proposals.embed_sources`).
+- One answer embeds a text once: `build_answer_pipeline` wraps its embedder in
+  `answer_embeddings.AnswerEmbeddings`, which keeps each vector for the answer's life keyed by
+  the current stamp (`stamps.stamp_reader`, read at each call) and the text, and shares a vector
+  still being made with every caller that asks for it, so the seats of a section that search the
+  same words make one call. A failed call is forgotten, so the next asks again. Nothing is kept
+  across answers.
 - `services/craft_resolver.fill_descriptor_embeddings(session, embed, *, batch_size, deadline)`
   embeds a craft's descriptor (name, local name and aliases joined by `; `) when it has no
   vector, another model's stamp, or a `descriptorHash` that differs from the hash of its
@@ -270,8 +331,15 @@ Every stored vector carries the model that made it.
   semantic step reads only descriptor vectors of the current model.
 - Scripts: `python -m app.scripts.embed_knowledge [--seconds N]` and
   `python -m app.scripts.embed_craft_descriptors [--seconds N]` print a JSON report
-  (`{ok, model, claims, chunks, pieces, complete}` and `{ok, filled}`), or
-  `{ok: false, error}` and exit 1 when the embedding route fails.
+  (`{ok, model, claims, chunks, pieces, complete}`, `model` being the full stamp, and
+  `{ok, filled}`), or `{ok: false, error}` and exit 1 when the embedding route fails.
+- `.github/workflows/embed-knowledge.yml` (dispatched by hand, input `seconds`, 60 to 3,300,
+  default 1,800) runs `embed_craft_descriptors` once and then `embed_knowledge` on the box over SSM
+  again and again until a report says `complete` or the time is spent, so the lead can renew every
+  vector after a new recipe in one go. On 2026-11-22 production held 8,311 claims (about 1.07
+  million characters) and 8,787 passages (about 7.78 million characters, with 0.81 million of
+  source titles): about 2.6 million tokens, near 0.52 US dollars at Gemini Embedding 2's 0.20 US
+  dollars per million tokens.
 
 ### On every release
 
@@ -279,7 +347,8 @@ Every stored vector carries the model that made it.
 `embed_craft_descriptors` and then `embed_knowledge`, each with `--seconds $EMBED_SECONDS`
 (240) inside `timeout` of that plus `EMBED_GRACE` (60). Their reports are logged; a failure, a
 time-out or a down embedding route is a warning and the release goes on. What is left is
-embedded by the next release or the daily Coverage enrichment run.
+embedded by the next release or the daily Coverage enrichment run; after a release that changes
+the recipe the lead dispatches `embed-knowledge.yml` to renew every vector in one go.
 
 ## Stored passages of the corpus imports
 
@@ -494,7 +563,6 @@ route, so the misspelt and partial names that need the semantic step are scored 
 - Knowledge pieces carry no stamp; a piece's vector is filled when missing only.
 - The candidate gates' neighbour search (`services/candidate_store`) and the piece store's reuse
   distance compare vectors without reading the stamp.
-- The HNSW indexes on the vector columns are unused by the exact craft-scoped scan.
 - Wood Handbook passages wait for the cited edition's text.
 - Generated questions in another language are searched as asked, with no English rendering, and
   the report does not split the generated set by language.
@@ -510,9 +578,11 @@ route, so the misspelt and partial names that need the semantic step are scored 
 | The release check and its place in a release | `backend/tests/retrieval/test_release_check.py` and `backend/tests/db/test_measurement_db.py` |
 | The craft-matching cases and the lexical resolver's floor | `backend/tests/retrieval/test_craft_cases.py` and `backend/tests/db/test_craft_matching_db.py` |
 | Fusion, rarity weighting and the search words | `backend/tests/retrieval/test_fusion_and_text.py` and `test_search_words.py` |
+| Claim titles, the glossary's names, short words, the any-craft index and one embedding per text | `backend/tests/retrieval/test_first_stage.py`, `test_statements.py` and `backend/tests/db/test_first_stage_db.py` |
+| Facts embedded as they are written | `backend/tests/knowledge_writes/test_written_vectors.py`, `backend/tests/db/test_term_write_back_gates_db.py` and `test_retrieval_stamps_db.py` |
 | Rerank order, its fallback, the titles, the collapse and the released connection | `backend/tests/retrieval/test_rerank.py`, `test_rerank_search.py` and `backend/tests/db/test_rerank_search_db.py` |
 | The reranker's route, spend and adapter | `backend/tests/db/test_reranking_db.py`, `backend/tests/test_voyage_adapter.py` and `test_reranking_catalogue.py` |
-| Stamps and embedding runs | `backend/tests/retrieval/test_stamps.py`, `test_embedding_budget.py` and `backend/tests/db/test_retrieval_stamps_db.py` |
+| Stamps, the recipe and embedding runs | `backend/tests/retrieval/test_stamps.py`, `test_embedding_budget.py` and `backend/tests/db/test_retrieval_stamps_db.py` |
 | Seats' field filters | `backend/tests/retrieval/test_seat_fields.py` |
 | Seed passages and the corpus | `backend/tests/retrieval/test_seed_passages.py`, `test_chunking.py` and `backend/tests/db/test_retrieval_passages_db.py` |
 | Ranking on Postgres | `backend/tests/db/test_retrieval_ranking_db.py` and `test_knowledge_retrieval_db.py` |

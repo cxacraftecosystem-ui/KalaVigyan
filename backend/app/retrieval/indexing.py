@@ -25,8 +25,9 @@ from app.research.retrieval import (
 
 from .chunking import TextChunk, chunk_text
 from .citation_links import cited_quotes, relink_quotes
+from .claim_titles import claim_document, titled_claims
 from .deadline import Deadline
-from .stamps import current_embedding_model, needs_vector
+from .stamps import current_embedding_model, needs_model_vector, needs_vector, renewal_order
 from .text import document_text
 
 __all__ = [
@@ -67,6 +68,16 @@ class _Pending:
     id: uuid.UUID
     text: str
     read: Any
+
+
+@dataclass(frozen=True)
+class _Wanted:
+    claims: ColumnElement[bool] | None
+    chunks: ColumnElement[bool] | None
+    renew: bool
+
+    def lacking(self, embedding: Any, stamp: Any) -> ColumnElement[bool]:
+        return needs_vector(embedding, stamp) if self.renew else needs_model_vector(embedding, stamp)
 
 
 async def replace_source_chunks(
@@ -116,7 +127,11 @@ async def embed_pending(
     deadline: Deadline | None = None,
 ) -> EmbeddedCounts:
     counts = await _embed(
-        session, embed, claim_scope=None, chunk_scope=None, batch_size=batch_size, deadline=deadline
+        session,
+        embed,
+        _Wanted(claims=None, chunks=None, renew=True),
+        batch_size=batch_size,
+        deadline=deadline,
     )
     pending = await _pending_pieces(session, None)
     pieces = await _fill(session, embed, KnowledgePiece, pending, batch_size=batch_size, deadline=deadline)
@@ -145,28 +160,24 @@ async def embed_written(
     source_ids: Collection[uuid.UUID],
     batch_size: int = EMBED_BATCH,
 ) -> EmbeddedCounts:
-    return await _embed(
-        session,
-        embed,
-        claim_scope=Claim.id.in_(list(claim_ids)),
-        chunk_scope=Chunk.sourceId.in_(list(source_ids)),
-        batch_size=batch_size,
+    scopes = _Wanted(
+        claims=Claim.id.in_(list(claim_ids)), chunks=Chunk.sourceId.in_(list(source_ids)), renew=False
     )
+    return await _embed(session, embed, scopes, batch_size=batch_size)
 
 
 async def _embed(
     session: AsyncSession,
     embed: TextEmbedder,
+    wanted: _Wanted,
     *,
-    claim_scope: ColumnElement[bool] | None,
-    chunk_scope: ColumnElement[bool] | None,
     batch_size: int,
     deadline: Deadline | None = None,
 ) -> EmbeddedCounts:
     _check_batch(batch_size)
-    claims = await _pending_claims(session, claim_scope)
+    claims = await _pending_claims(session, wanted)
     claimed = await _fill(session, embed, Claim, claims, batch_size=batch_size, deadline=deadline)
-    chunks = await _pending_chunks(session, chunk_scope)
+    chunks = await _pending_chunks(session, wanted)
     chunked = await _fill(session, embed, Chunk, chunks, batch_size=batch_size, deadline=deadline)
     return EmbeddedCounts(
         claims=claimed, chunks=chunked, complete=claimed == len(claims) and chunked == len(chunks)
@@ -207,28 +218,30 @@ def _apply(
     chunk.sensitivity = source.sensitivity
 
 
-async def _pending_claims(session: AsyncSession, scope: ColumnElement[bool] | None) -> list[_Pending]:
-    statement = select(Claim.id, Claim.text).where(
-        needs_vector(Claim.embedding, Claim.embeddingModel),
+async def _pending_claims(session: AsyncSession, wanted: _Wanted) -> list[_Pending]:
+    statement = titled_claims().where(
+        wanted.lacking(Claim.embedding, Claim.embeddingModel),
         Claim.sensitivity == VISIBLE_SENSITIVITY,
         Claim.status.not_in(HIDDEN_CLAIM_STATUSES),
     )
-    ordered = _scoped(statement, scope).order_by(Claim.embedding.is_not(None), Claim.id)
+    order = renewal_order(Claim.embedding, Claim.embeddingModel, Claim.updatedAt)
+    ordered = _scoped(statement, wanted.claims).order_by(*order, Claim.id)
     rows = await session.execute(ordered.limit(EMBED_RUN_ROWS))
-    return [_Pending(row.id, document_text(row.text), row.text) for row in rows]
+    return [_Pending(row.id, claim_document(row), row.text) for row in rows]
 
 
-async def _pending_chunks(session: AsyncSession, scope: ColumnElement[bool] | None) -> list[_Pending]:
+async def _pending_chunks(session: AsyncSession, wanted: _Wanted) -> list[_Pending]:
     statement = (
         select(Chunk.id, Chunk.text, Source.title)
         .join(Source, Source.id == Chunk.sourceId)
         .where(
-            needs_vector(Chunk.embedding, Chunk.embeddingModel),
+            wanted.lacking(Chunk.embedding, Chunk.embeddingModel),
             Chunk.sensitivity != RESTRICTED_SENSITIVITY,
             Source.sensitivity != RESTRICTED_SENSITIVITY,
         )
     )
-    ordered = _scoped(statement, scope).order_by(Chunk.embedding.is_not(None), Chunk.id)
+    order = renewal_order(Chunk.embedding, Chunk.embeddingModel, Chunk.updatedAt)
+    ordered = _scoped(statement, wanted.chunks).order_by(*order, Chunk.id)
     rows = await session.execute(ordered.limit(EMBED_RUN_ROWS))
     return [_Pending(row.id, document_text(row.text, title=row.title), row.text) for row in rows]
 

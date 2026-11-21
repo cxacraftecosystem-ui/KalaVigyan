@@ -32,7 +32,9 @@ from app.research.stream import ResearchProgress
 from app.research.structured import StructuredModel
 from app.research.term_marking import GlossaryEntry
 from app.research.understanding import Understanding
+from app.retrieval.answer_embeddings import AnswerEmbeddings
 from app.retrieval.hybrid import SessionScopedSearch
+from app.retrieval.stamps import stamp_reader
 from app.science.records import ProcessRecords
 
 from . import knowledge_view
@@ -220,6 +222,7 @@ def build_answer_pipeline(
     embed: TextEmbedder,
     shield: ShieldedWork,
 ) -> AnswerPipeline:
+    embed = AnswerEmbeddings(embed, stamp=stamp_reader(sessions))
     translation = build_answer_translation(sessions, model=models.translate)
     retriever = SessionScopedSearch(
         sessions, embed=embed, english=lambda text: english_question(text, translation), rerank=models.rerank

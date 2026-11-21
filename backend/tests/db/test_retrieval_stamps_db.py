@@ -3,14 +3,14 @@ import uuid
 from collections.abc import AsyncIterator
 
 import pytest
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
 from app.models import Chunk, Claim, ClaimSource, Concept, Craft, CraftAlias, Provider, RoutePolicy, Source
-from app.research.retrieval import KnowledgeQuery
+from app.research.retrieval import HIDDEN_CLAIM_STATUSES, VISIBLE_SENSITIVITY, KnowledgeQuery
 from app.retrieval.hybrid import StoredKnowledgeSearch
-from app.retrieval.indexing import embed_written, replace_source_chunks
+from app.retrieval.indexing import embed_pending, embed_written, replace_source_chunks
 from app.services.craft_resolver import fill_descriptor_embeddings
 
 from ..craft_fixtures import FixedEmbedder, unit
@@ -18,6 +18,8 @@ from ..craft_fixtures import FixedEmbedder, unit
 pytestmark = pytest.mark.db
 
 FIRST_MODEL, SECOND_MODEL = "stamp-test-embedder-a", "stamp-test-embedder-b"
+RECIPE = "#ctx1"
+TITLED = "title: Vornel Print · Vornel mordant | text: Vornel mordant fixes the red."
 
 
 def key(name: str) -> uuid.UUID:
@@ -81,7 +83,9 @@ async def stamp_of(session: AsyncSession, model: type[Claim] | type[Chunk], row_
     return await session.scalar(select(model.embeddingModel).where(model.id == row_id))
 
 
-async def test_a_vector_written_without_a_stamp_takes_the_routes_current_model(session: AsyncSession) -> None:
+async def test_a_vector_written_without_a_stamp_takes_the_routes_model_without_a_recipe(
+    session: AsyncSession,
+) -> None:
     assert await stamp_of(session, Claim, CLAIM) == FIRST_MODEL
     await replace_source_chunks(session, SOURCE, "Vornel mordant is ground fine.")
     chunk = await session.scalar(select(Chunk.id).where(Chunk.sourceId == SOURCE))
@@ -113,7 +117,7 @@ async def test_only_vectors_of_the_current_model_rank_and_the_rest_are_embedded_
     stale = (await search.search(query)).claims
     assert [(hit.claim_id, hit.lexical_rank, hit.vector_rank) for hit in stale] == [(CLAIM, 1, None)]
     counts = await embed_written(session, FixedEmbedder(), claim_ids=[CLAIM], source_ids=[])
-    assert counts.claims == 1 and await stamp_of(session, Claim, CLAIM) == SECOND_MODEL
+    assert counts.claims == 1 and await stamp_of(session, Claim, CLAIM) == SECOND_MODEL + RECIPE
     again = (await search.search(query)).claims
     assert [(hit.claim_id, hit.vector_rank) for hit in again] == [(CLAIM, 1)]
     assert (await embed_written(session, FixedEmbedder(), claim_ids=[CLAIM], source_ids=[])).claims == 0
@@ -127,7 +131,7 @@ async def test_a_craft_descriptor_is_embedded_again_only_when_its_text_or_model_
         await session.execute(select(Craft.descriptorHash, Craft.embeddingModel).where(Craft.id == CRAFT))
     ).one()
     assert stored.descriptorHash == hashlib.sha256(b"Vornel Print").hexdigest()
-    assert stored.embeddingModel == FIRST_MODEL
+    assert stored.embeddingModel == FIRST_MODEL + RECIPE
     assert await fill_descriptor_embeddings(session, FixedEmbedder(), batch_size=500) == 0
     session.add(CraftAlias(craftId=CRAFT, alias="Vornel Chhap", aliasNorm="vornel chhap", source="CURATED"))
     await session.flush()
@@ -136,3 +140,24 @@ async def test_a_craft_descriptor_is_embedded_again_only_when_its_text_or_model_
     assert embed.calls == [["Vornel Print; Vornel Chhap"]]
     changed = await session.scalar(select(Craft.descriptorHash).where(Craft.id == CRAFT))
     assert changed == hashlib.sha256(b"Vornel Print; Vornel Chhap").hexdigest()
+
+
+async def test_an_old_recipe_still_ranks_and_runs_renew_it_with_its_title_after_the_missing_vectors(
+    session: AsyncSession,
+) -> None:
+    search = StoredKnowledgeSearch(session, embed=FixedEmbedder())
+    query = KnowledgeQuery(craft_slug="Vornel-Print", text=QUESTION, mode="HYBRID")
+    assert [(hit.claim_id, hit.vector_rank) for hit in (await search.search(query)).claims] == [(CLAIM, 1)]
+    assert (await embed_written(session, FixedEmbedder(), claim_ids=[CLAIM], source_ids=[])).claims == 0
+    missing = await session.scalar(
+        select(func.count(Claim.id)).where(
+            Claim.embedding.is_(None),
+            Claim.sensitivity == VISIBLE_SENSITIVITY,
+            Claim.status.not_in(HIDDEN_CLAIM_STATUSES),
+        )
+    )
+    embed = FixedEmbedder()
+    await embed_pending(session, embed, batch_size=500)
+    embedded = [words for call in embed.calls for words in call]
+    assert embedded.index(TITLED) == missing
+    assert await stamp_of(session, Claim, CLAIM) == FIRST_MODEL + RECIPE

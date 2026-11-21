@@ -18,6 +18,7 @@ from app.research.retrieval import (
 )
 from app.retrieval.citation_access import HELD_KEPT
 from app.retrieval.hybrid import CORPUS_TIER, StoredKnowledgeSearch
+from app.retrieval.nearest import INDEX_SCAN_OPTION, reads_every_craft
 from app.retrieval.statements import (
     ENTITY_NAME_MIN_CHARS,
     EVERY_CRAFT,
@@ -148,12 +149,17 @@ def test_the_entity_ranking_reads_concepts_named_by_name_head_gloss_or_glossary_
 
 def test_the_lexical_ranking_weighs_each_matched_term_by_its_rarity_among_the_candidates() -> None:
     sql, params = compiled(claim_lexical_ranking(claim_conditions(SCOPE, mode="HYBRID"), "alum | madder"))
-    assert sql.startswith('WITH lexical AS MATERIALIZED (SELECT "Claim".id AS id, ts_rank_cd("Claim".tsv, ')
+    assert sql.startswith("WITH glossary AS (SELECT lower(btrim(asked_names.name)) AS word, ")
+    assert ", asked AS (SELECT websearch_to_tsquery(" in sql
+    assert 'lexical AS MATERIALIZED (SELECT "Claim".id AS id, ts_rank_cd("Claim".tsv, (SELECT ' in sql
+    assert "asked.slot_0 || asked.slot_1" in sql
+    assert '"Claim".tsv @@ (SELECT asked.slot_0 FROM asked) AS term_0' in sql
     assert "AS term_0" in sql and "AS term_1" in sql and "term_2" not in sql
     assert sql.count("ln(") == 2 and sql.count("greatest(") == 2
     assert re.search(r"DESC, lexical\.density DESC, lexical\.id LIMIT %\(param_\d+\)s::INTEGER$", sql)
     words = [value for value in params.values() if isinstance(value, str)]
-    assert {"english", "alum | madder", "alum", "madder"} <= set(words)
+    assert {"english", '"alum"', '"madder"', " or "} <= set(words)
+    assert ["alum", "madder"] in params.values()
     assert LEXICAL_CANDIDATES in params.values() and RANKING_DEPTH in params.values()
     assert (LEXICAL_CANDIDATES, RANKING_DEPTH) == (400, 60)
 
@@ -166,6 +172,29 @@ def test_the_vector_ranking_is_an_exact_cosine_scan_of_the_scoped_rows() -> None
         "SELECT scoped.id FROM scoped ORDER BY scoped.distance, scoped.id LIMIT %(param_1)s::INTEGER"
     )
     assert params["param_1"] == 7
+
+
+def test_a_search_of_no_single_craft_orders_by_the_vector_index_then_filters_by_the_claim_conditions() -> (
+    None
+):
+    statement = claim_vector_ranking(claim_conditions(EVERY_CRAFT, mode="HYBRID"), VECTOR, depth=7)
+    sql, params = compiled(statement)
+    assert sql.startswith('WITH nearest AS MATERIALIZED (SELECT "Claim".id AS id, "Claim".embedding <=> ')
+    assert 'SELECT nearest.id FROM nearest JOIN "Claim" ON "Claim".id = nearest.id WHERE ' in sql
+    assert sql.endswith("ORDER BY nearest.distance, nearest.id LIMIT %(param_2)s::INTEGER")
+    assert (params["param_1"], params["param_2"]) == (56, 7)
+    assert statement.get_execution_options()[INDEX_SCAN_OPTION] is True
+    chunks = chunk_vector_ranking(chunk_conditions(EVERY_CRAFT, mode="HYBRID", acls=("PUBLIC",)), VECTOR)
+    assert compiled(chunks)[0].startswith('WITH nearest AS MATERIALIZED (SELECT "Chunk".id AS id, ')
+
+
+def test_only_a_search_of_no_single_craft_takes_the_index_even_when_more_conditions_follow() -> None:
+    kinds = cited_from_kinds(("BOOK",))
+    assert reads_every_craft([*claim_conditions(EVERY_CRAFT, mode="HYBRID"), kinds])
+    assert not reads_every_craft([*claim_conditions(SCOPE, mode="HYBRID"), kinds])
+    assert not reads_every_craft(chunk_conditions(SCOPE, mode="HYBRID", acls=("PUBLIC",)))
+    exact = compiled(claim_vector_ranking(claim_conditions(SCOPE, mode="HYBRID"), VECTOR))[0]
+    assert exact.startswith("WITH scoped AS MATERIALIZED") and "nearest" not in exact
 
 
 def test_chunks_come_from_sources_cited_by_scoped_claims_or_shown_field_interviews_within_the_reader_acl() -> (

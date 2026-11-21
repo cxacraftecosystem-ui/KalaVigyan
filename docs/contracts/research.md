@@ -451,29 +451,34 @@ it; the answer flow passes `providers/embedding.router_embedder(principal)`.
   with no field yet, which a field never hides (decision 0101 item 10); chunks follow the claims
   kept. The research planner searches a section's stored facts in that section's field
   (`searched_fields(focus)`), except the overview (`BROAD_FIELDS`), which reads every field.
-- Ranking: full text (the question's distinct Latin words of 3+ characters, at most 40, ORed
-  through `to_tsquery('english')`, ordered by `ts_rank_cd`, then id) and vector (cosine distance
-  to the embedded question over the scoped rows, exact, then id), each the best
+- Ranking: full text (the question's distinct Latin words of 3+ characters, at most 40, then
+  its words of 2 characters that name a glossary term, each word matching every other name of the
+  terms it names, ORed through `websearch_to_tsquery('english')`, ordered by `ts_rank_cd`, then
+  id) and vector (cosine distance to the embedded question over the scoped rows, exact for a
+  craft's scope and through the HNSW index for no single craft, then id), each the best
   `RANKING_DEPTH` (30). Claims have a third ranking, entities: the claims on scoped concepts (or
   on edges touching them) whose name of 4 or more characters (`ENTITY_NAME_MIN_CHARS`) appears in
   the question, case-insensitive, the longest name first, then id. Fused by reciprocal rank fusion, `score = sum(1 / (RRF_K + rank))` with
   `RRF_K` 60; equal scores order by the best single rank, then id. A question with no Latin
   word of 3 or more characters ranks full text and entities on its English rendering when the
   caller passes one (decision 0023; `docs/contracts/retrieval.md`), the vector on the question as
-  asked. Vectors compare only within the current embedding model's stamp.
+  asked. Vectors compare only within the current embedding model, whatever the stamp's recipe
+  (decision 0129).
 - The question is embedded as `task: search result | query: <text>`; stored claims as
-  `title: none | text: <text>` and chunks as `title: <source title> | text: <text>`
+  `title: <craft> · <concept> · <field> | text: <text>` and chunks as
+  `title: <source title> | text: <text>`
   (`retrieval/text.py`). An embedding failure is raised, never replaced by text-only results.
 - Indexing (`retrieval/indexing.py`): `replace_source_chunks(session, source_id, text, *,
   lang="en", acl="PUBLIC")` chunks a source's text (`retrieval/chunking.chunk_text`: paragraphs
   packed up to 1,200 characters, long ones split at sentences, the last paragraph of a full chunk
   repeated when at most 300 characters, locator `para N` or `paras N-M`), keeps unchanged
   chunks' vectors, and gives chunks the source's sensitivity. `embed_pending(session, embed)`
-  fills missing vectors, and re-embeds vectors stamped with another model, of `OPEN`, non-hidden claims and of chunks whose chunk and source are
-  not `RESTRICTED` (`python -m app.scripts.embed_knowledge`, run daily by the Coverage
-  enrichment workflow before it enriches). `embed_written(session, embed, *, claim_ids,
-  source_ids)` applies the same rules to the given claims and the chunks of the given sources
-  only; the write-back uses it.
+  fills missing vectors, and re-embeds vectors stamped with another model or an older recipe, of
+  `OPEN`, non-hidden claims and of chunks whose chunk and source are not `RESTRICTED`
+  (`python -m app.scripts.embed_knowledge`, run daily by the Coverage enrichment workflow before
+  it enriches). `embed_written(session, embed, *, claim_ids, source_ids)` embeds those of the
+  given claims and of the chunks of the given sources that have no vector of the current model;
+  the write-backs use it.
 
 ## Retrieval plan and planner (`research/planning.py`)
 

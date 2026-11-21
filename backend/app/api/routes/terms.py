@@ -8,6 +8,7 @@ from app.core.errors import Refused
 from app.core.rate_limit import retry_after_value, term_attempt
 from app.core.roles import is_uncapped
 from app.models import User
+from app.providers.embedding import router_embedder
 from app.providers.router import Principal
 from app.providers.structured import router_structured_model
 from app.research.subject_keys import TERM_KEY_MAX_CHARS
@@ -32,6 +33,7 @@ async def term_lookup(request: Request, reader: User | None = Depends(public_rea
         summarise_model=router_structured_model(AiTask.SUMMARISE, principal),
         translate_model=router_structured_model(AiTask.TRANSLATE, principal),
         acls=reading_acls(reader),
+        embed=router_embedder(principal),
     )
 
 

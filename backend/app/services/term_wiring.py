@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.errors import NotConfigured
+from app.research.embedding import TextEmbedder
 from app.research.retrieval import OPEN_CHUNK_ACLS
 from app.research.structured import StructuredModel
 
@@ -27,6 +28,7 @@ async def build_term_lookup(
     summarise_model: StructuredModel,
     translate_model: StructuredModel,
     acls: Sequence[str] = OPEN_CHUNK_ACLS,
+    embed: TextEmbedder | None = None,
 ) -> TermLookup:
     sources = await live.get(sessions)
     research = LiveTermResearch(
@@ -35,7 +37,7 @@ async def build_term_lookup(
         summarise=summarise_model,
     )
     return TermLookup(
-        store=SqlTermStore(sessions, acls=acls),
+        store=SqlTermStore(sessions, acls=acls, embed=embed),
         research=research,
         translation=build_answer_translation(sessions, model=translate_model),
     )
