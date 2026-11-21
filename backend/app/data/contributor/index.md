@@ -48,6 +48,9 @@ as `spec`; `resources/templates/list` gives them as `kalavigyan://components/{ki
 - `kalavigyan://index.md`: this index.
 - `kalavigyan://skills/kalavigyan-contributor/SKILL.md`: the contributor skill, the method in order.
 - `kalavigyan://skills/kalavigyan-datasets/SKILL.md`: the datasets skill, for figures and map layers from data.
+- `kalavigyan://skills/kalavigyan-interactives/SKILL.md`: the interactives skill, for a craft family's flagship interactive.
+- `kalavigyan://skills/kalavigyan-interactives/references/flagships.md`: the nine families' candidate flagships and the facts each holds.
+- `kalavigyan://skills/kalavigyan-interactives/references/storyboard.md`: the storyboard a flagship is planned in before it is drawn.
 - `kalavigyan://skills/references/page-checklist.md`: the 26 rules every page meets.
 - `kalavigyan://skills/references/sources.md`: what counts as a source, its grade and its licence.
 - `kalavigyan://skills/references/quotes.md`: verbatim quotes, locators and one fact per sentence.

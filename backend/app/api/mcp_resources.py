@@ -14,12 +14,15 @@ from app.data.skill_library import (
     DATASETS_SITE_PATH,
     INDEX_URI,
     REFERENCES,
+    SKILL_FILES,
     Contract,
     Reference,
+    SkillFile,
     contract_text,
     datasets_skill,
     reference_text,
     server_index,
+    skill_file_text,
 )
 from app.research.mcp_ask import ANSWER_VIEW_MIME, ANSWER_VIEW_URI
 
@@ -107,6 +110,17 @@ def _contract(contract: Contract) -> Resource:
     )
 
 
+def _skill_file(skill_file: SkillFile) -> Resource:
+    return Resource(
+        skill_file.uri,
+        skill_file.resource_name,
+        skill_file.title,
+        f"{skill_file.holds}. Also at {{site}}{skill_file.site_path}.",
+        MARKDOWN,
+        partial(skill_file_text, skill_file.uri),
+    )
+
+
 def _component_schema(kind: str) -> Resource:
     return Resource(
         component_schema_uri(kind),
@@ -186,6 +200,7 @@ RESOURCES: Mapping[str, Resource] = MappingProxyType(
         for resource in (
             INDEX,
             *SKILLS,
+            *(_skill_file(skill_file) for skill_file in SKILL_FILES.values()),
             *(_reference(reference) for reference in REFERENCES.values()),
             *(_contract(contract) for contract in CONTRACTS.values()),
             *DESIGN,

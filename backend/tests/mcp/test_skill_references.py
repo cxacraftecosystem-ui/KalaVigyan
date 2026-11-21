@@ -15,6 +15,7 @@ from app.data.skill_library import (
     INDEX_URI,
     REFERENCES,
     REFERENCES_DIR,
+    SKILL_FILES,
     contract_text,
     datasets_skill,
     reference_text,
@@ -30,7 +31,12 @@ CURATION_CHECKLIST = CLAUDE_SKILLS / "kalavigyan-craft-pages" / "references" / "
 DATASETS_SOURCE = CLAUDE_SKILLS / "kalavigyan-datasets" / "SKILL.md"
 DATASETS_SITE = SITE_PUBLIC / "skills" / "kalavigyan-datasets" / "SKILL.md"
 DATASETS_URI = "kalavigyan://skills/kalavigyan-datasets/SKILL.md"
-SKILLS = {"contributor": CONTRIBUTOR_SKILL_PATH, "curation": CURATION_SKILL, "datasets": DATASETS_SOURCE}
+SKILLS = {
+    "contributor": CONTRIBUTOR_SKILL_PATH,
+    "curation": CURATION_SKILL,
+    "datasets": DATASETS_SOURCE,
+    **{file.uri: CLAUDE_SKILLS / file.skill / file.name for file in SKILL_FILES.values()},
+}
 SITE = "https://kalavigyan.example"
 CONTEXT = ToolContext(session=None, index=CraftIndexStore(), site=SITE)  # type: ignore[arg-type]
 SHINGLE_WORDS = 8

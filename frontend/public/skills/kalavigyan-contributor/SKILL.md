@@ -31,6 +31,7 @@ prompts carry them as well.
 | Datasets | `kalavigyan://skills/references/datasets.md` | `/skills/references/datasets.md` | building a chart, table, timeline or map layer from data |
 
 For data behind a figure, load the datasets skill too: `kalavigyan://skills/kalavigyan-datasets/SKILL.md`.
+For a craft family's flagship interactive, load the interactives skill: `kalavigyan://skills/kalavigyan-interactives/SKILL.md`.
 Each component kind's spec has its JSON schema at `kalavigyan://components/<kind>.schema.json`.
 
 The protocols your client follows are served whole as well, each the same text as the contract in
