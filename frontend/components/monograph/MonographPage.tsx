@@ -46,7 +46,7 @@ export function MonographPage({ document: given, masthead = true, deferred = fal
   const later = railAfterMasthead(document, plan, masthead);
   const rest = deferredRest(given, plan, deferred);
   return (
-    <div className="kv-monograph ms-[calc(50%-50vw)] w-screen" lang={document.language} data-subject={`${document.subjectKind}:${document.subjectSlug}`} data-version={document.version}>
+    <div className="kv-monograph ms-[calc(50%-50vw)] w-screen" lang={document.translation?.sourceLanguage ?? document.language} data-subject={`${document.subjectKind}:${document.subjectSlug}`} data-version={document.version}>
       <link rel="stylesheet" href={MONOGRAPH_KIT_CSS} precedence="default" />
       {languages ? <DocumentLanguages kind={document.subjectKind} slug={document.subjectSlug} current={document.language} languages={languages.languages} translation={document.translation} /> : null}
       {later ? null : rail}

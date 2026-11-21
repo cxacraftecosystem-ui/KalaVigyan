@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 
-import { UnitView } from "@/components/monograph/UnitView";
+import { unitNodes, UnitView } from "@/components/monograph/UnitView";
 import type { MonographNode, MonographUnit } from "@/lib/monographDocument";
 import type { MonographSources } from "@/lib/monographRender";
 import { nodeElements } from "@/lib/monographRenderElements";
@@ -38,7 +38,7 @@ function joined(units: Units, sources: MonographSources, refs: readonly string[]
   return refs.map((ref, at) => (
     <Fragment key={ref}>
       {at ? " " : null}
-      {nodeElements(units[ref].nodes, sources)}
+      {unitNodes(units[ref], sources)}
     </Fragment>
   ));
 }

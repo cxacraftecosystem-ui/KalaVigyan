@@ -1,5 +1,5 @@
-.kv-monograph :is(p, li, dd, figcaption, blockquote)[data-fallback]::before,
-.kv-monograph :is(p, li, dd, figcaption, blockquote) > span[data-fallback]::before {
+.kv-monograph :is(p, li, blockquote, figcaption)[data-fallback]::before,
+.kv-monograph :is(p, li, blockquote, figcaption) > span[data-fallback]::before {
   content: "English";
   display: inline-block;
   margin-inline-end: var(--space-2);
@@ -11,4 +11,10 @@
   letter-spacing: 0.02em;
   color: var(--ink-3);
   vertical-align: 0.1em;
+}
+
+.kv-monograph :is(p, li, blockquote, figcaption) > span[data-fallback] + span[data-fallback]::before,
+.kv-monograph :is(.margin, .kicker, .chapter-no) [data-fallback]::before,
+.kv-monograph :is(.margin, .kicker, .chapter-no)[data-fallback]::before {
+  content: none;
 }
