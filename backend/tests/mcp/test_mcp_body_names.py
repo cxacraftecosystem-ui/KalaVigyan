@@ -142,16 +142,9 @@ def test_a_bundle_names_its_parts_and_points_to_edit_draft_for_their_fields(name
         "note",
     }
     assert bundle["properties"]["facts"]["maxItems"] == 20 and "edit_draft's add" in bundle["description"]
-    translation = bundle["properties"]["translation"]
     assert (
-        translation["required"] == ["language", "passages"]
-        and "en" not in translation["properties"]["language"]["enum"]
+        bundle["properties"]["translation"] == {"type": "object"} and "translation" in bundle["description"]
     )
-    assert set(translation["properties"]["passages"]["items"]["properties"]) == {
-        "key",
-        "source_hash",
-        "texts",
-    }
     assert bundle["properties"]["subject"]["properties"]["kind"]["enum"] == ["craft", "family", "category"]
 
 

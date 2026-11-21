@@ -10,7 +10,6 @@ from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonS
 from app.research.component_proposals import SUBJECT_LINK
 from app.research.knowledge_writes import FactProposal
 from app.research.monograph_document import SUBJECT_KINDS
-from app.research.open_work_translation_keys import TRANSLATION_LANGUAGES
 from app.research.page_drafts import DRAFT_PARTS, SUPPLIED_PER_DRAFT_MAX, DraftAddition, PageLists
 from app.research.page_proposals import (
     COMPONENTS_MAX,
@@ -24,7 +23,6 @@ from app.research.page_proposals import (
     PagePicture,
     PageSubject,
 )
-from app.research.page_translations import TRANSLATION_PASSAGES_MAX
 from app.research.structure_proposals import StructureProposal
 
 from .mcp_studio_arguments import StudioArguments
@@ -158,27 +156,6 @@ def _parts(most: int) -> dict[str, Any]:
     return {"type": "array", "items": {"type": "object"}, "maxItems": most}
 
 
-def translation_schema() -> dict[str, Any]:
-    passage = {
-        "type": "object",
-        "properties": {
-            "key": {"type": "string"},
-            "source_hash": {"type": "string"},
-            "texts": {"type": "array", "items": {"type": "string"}},
-        },
-        "required": ["key", "source_hash", "texts"],
-    }
-    return {
-        "type": "object",
-        "properties": {
-            "language": {"type": "string", "enum": list(TRANSLATION_LANGUAGES)},
-            "passages": {"type": "array", "items": passage, "maxItems": TRANSLATION_PASSAGES_MAX},
-            "task_key": {"type": "string"},
-        },
-        "required": ["language", "passages"],
-    }
-
-
 def bundle_schema() -> dict[str, Any]:
     subject = {
         "type": "object",
@@ -191,7 +168,7 @@ def bundle_schema() -> dict[str, Any]:
         "components": _parts(COMPONENTS_MAX),
         "layout": {"type": "object"},
         "pictures": _parts(PICTURES_MAX),
-        "translation": translation_schema(),
+        "translation": {"type": "object"},
         "note": {"type": "string", "maxLength": NOTE_MAX_CHARS},
     }
     return {
