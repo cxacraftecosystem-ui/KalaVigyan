@@ -30,6 +30,8 @@ class RecordingSession:
 
 
 class EmptyResult:
+    rowcount = 1
+
     def first(self) -> None:
         return None
 
@@ -72,7 +74,7 @@ async def test_stored_search_embeds_the_question_before_it_takes_a_connection() 
 async def test_filling_vectors_releases_the_connection_before_every_embedding_call() -> None:
     session = RecordingSession()
     await session.execute("pending rows")
-    pending = [_Pending(id=uuid.uuid4(), text=f"claim {n}") for n in range(5)]
+    pending = [_Pending(id=uuid.uuid4(), text=f"claim {n}", read=f"claim {n}") for n in range(5)]
     await _fill(session, embed_after(session, stop=False), Claim, pending, batch_size=2)
     assert session.calls.count("embed") == 3
     assert held_while_embedding(session.calls) == []

@@ -13,10 +13,10 @@ from app.data.craft_master_loader import ID_NAMESPACE
 from app.models import Chunk, Source
 from app.research.evidence import EvidenceItem, SourceDocument, canonical_url
 from app.research.licences import open_licence
-from app.research.quotes import quote_occurs
 from app.research.retrieval import PUBLIC_CHUNK_ACL, RESEARCHER_CHUNK_ACL
 from app.research.write_back import WRITE_BACK_ORIGIN
 from app.retrieval.indexing import replace_source_chunks
+from app.retrieval.quote_passages import source_passages
 
 __all__ = [
     "CONTENT_STORAGE",
@@ -30,6 +30,7 @@ __all__ = [
 ]
 
 CONTENT_STORAGE = {"FULL_TEXT": "FULL_TEXT", "ABSTRACT": "EXCERPT", "EXCERPT": "EXCERPT"}
+FULL_TEXT = "FULL_TEXT"
 LINK_ONLY = "LINK_ONLY"
 SELF_DECLARED_LICENCE_TIERS = ("T4",)
 EVIDENCE_ID_KEY = "evidenceId"
@@ -98,13 +99,8 @@ async def keep_document(session: AsyncSession, document: SourceDocument) -> uuid
 
 
 async def chunk_for_quote(session: AsyncSession, source_id: uuid.UUID, quote: str) -> QuoteChunk | None:
-    rows = await session.execute(
-        select(Chunk.id, Chunk.locator, Chunk.text).where(Chunk.sourceId == source_id).order_by(Chunk.ordinal)
-    )
-    for row in rows:
-        if quote_occurs(quote, row.text):
-            return QuoteChunk(chunk_id=row.id, locator=row.locator)
-    return None
+    found = (await source_passages(session, source_id)).holding(quote)
+    return None if found is None else QuoteChunk(chunk_id=found.chunk_id, locator=found.locator)
 
 
 async def _existing(session: AsyncSession, item: EvidenceItem) -> Source | None:
@@ -133,9 +129,10 @@ async def _refresh_live_source(session: AsyncSession, source: Source, document: 
 
 
 def _replaces(source: Source, document: SourceDocument) -> bool:
+    full_text = CONTENT_STORAGE[document.content] == FULL_TEXT
     if source.origin != WRITE_BACK_ORIGIN:
-        return False
-    return CONTENT_STORAGE[document.content] == "FULL_TEXT" or source.storage != "FULL_TEXT"
+        return full_text
+    return full_text or source.storage != FULL_TEXT
 
 
 async def _has_chunks(session: AsyncSession, source_id: uuid.UUID) -> bool:

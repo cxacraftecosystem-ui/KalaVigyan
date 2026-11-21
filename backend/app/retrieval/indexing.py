@@ -24,6 +24,7 @@ from app.research.retrieval import (
 )
 
 from .chunking import TextChunk, chunk_text
+from .citation_links import cited_quotes, relink_quotes
 from .deadline import Deadline
 from .stamps import current_embedding_model, needs_vector
 from .text import document_text
@@ -65,6 +66,7 @@ class SourceChunk:
 class _Pending:
     id: uuid.UUID
     text: str
+    read: Any
 
 
 async def replace_source_chunks(
@@ -74,6 +76,7 @@ async def replace_source_chunks(
     if source is None:
         raise InvalidInput(f"No source has the id {source_id}")
     pieces = chunk_text(text)
+    cited = await cited_quotes(session, source_id)
     stored = {
         chunk.ordinal: chunk
         for chunk in (await session.scalars(select(Chunk).where(Chunk.sourceId == source_id))).all()
@@ -82,7 +85,7 @@ async def replace_source_chunks(
         _apply(session, stored.get(piece.ordinal), piece, source=source, lang=lang, acl=acl)
     await session.execute(delete(Chunk).where(Chunk.sourceId == source_id, Chunk.ordinal >= len(pieces)))
     await session.flush()
-    return len(pieces)
+    return len(pieces) + await relink_quotes(session, source, cited, lang=lang)
 
 
 async def replace_planned_chunks(
@@ -212,7 +215,7 @@ async def _pending_claims(session: AsyncSession, scope: ColumnElement[bool] | No
     )
     ordered = _scoped(statement, scope).order_by(Claim.embedding.is_not(None), Claim.id)
     rows = await session.execute(ordered.limit(EMBED_RUN_ROWS))
-    return [_Pending(row.id, document_text(row.text)) for row in rows]
+    return [_Pending(row.id, document_text(row.text), row.text) for row in rows]
 
 
 async def _pending_chunks(session: AsyncSession, scope: ColumnElement[bool] | None) -> list[_Pending]:
@@ -227,7 +230,7 @@ async def _pending_chunks(session: AsyncSession, scope: ColumnElement[bool] | No
     )
     ordered = _scoped(statement, scope).order_by(Chunk.embedding.is_not(None), Chunk.id)
     rows = await session.execute(ordered.limit(EMBED_RUN_ROWS))
-    return [_Pending(row.id, document_text(row.text, title=row.title)) for row in rows]
+    return [_Pending(row.id, document_text(row.text, title=row.title), row.text) for row in rows]
 
 
 async def _pending_pieces(session: AsyncSession, scope: ColumnElement[bool] | None) -> list[_Pending]:
@@ -237,7 +240,10 @@ async def _pending_pieces(session: AsyncSession, scope: ColumnElement[bool] | No
         KnowledgePiece.label.is_(None),
     )
     rows = await session.execute(_scoped(statement, scope).order_by(KnowledgePiece.id).limit(EMBED_RUN_ROWS))
-    return [_Pending(row.id, document_text(piece_text(BLOCKS.validate_python(row.payload)))) for row in rows]
+    return [
+        _Pending(row.id, document_text(piece_text(BLOCKS.validate_python(row.payload))), row.payload)
+        for row in rows
+    ]
 
 
 def _scoped[T: tuple[object, ...]](statement: Select[T], scope: ColumnElement[bool] | None) -> Select[T]:
@@ -261,12 +267,22 @@ async def _fill(
         await release_connection(session)
         vectors = checked_vectors(await embed(texts), expected=len(texts))
         for item, vector in zip(group, vectors, strict=True):
-            await session.execute(
-                update(model).where(model.id == item.id).values(_vector_values(model, vector))
+            written = await session.execute(
+                update(model)
+                .where(model.id == item.id, _unchanged(model, item.read))
+                .values(_vector_values(model, vector))
             )
+            done += int(written.rowcount or 0)
         await session.commit()
-        done += len(group)
     return done
+
+
+def _unchanged(model: type[Claim] | type[Chunk] | type[KnowledgePiece], read: Any) -> ColumnElement[bool]:
+    if model is KnowledgePiece:
+        return KnowledgePiece.payload == read
+    if model is Claim:
+        return Claim.text == read
+    return Chunk.text == read
 
 
 def _vector_values(

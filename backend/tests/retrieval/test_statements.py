@@ -16,6 +16,7 @@ from app.research.retrieval import (
     KnowledgeQuery,
     KnowledgeRetriever,
 )
+from app.retrieval.citation_access import HELD_KEPT
 from app.retrieval.hybrid import CORPUS_TIER, StoredKnowledgeSearch
 from app.retrieval.statements import (
     ENTITY_NAME_MIN_CHARS,
@@ -180,13 +181,27 @@ def test_chunks_come_from_sources_cited_by_scoped_claims_or_shown_field_intervie
     )
 
 
-def test_a_citation_is_read_only_from_no_chunk_or_an_unrestricted_chunk_the_reader_may_quote() -> None:
+def test_a_citation_is_read_from_a_passage_the_reader_may_quote_and_an_unlinked_quote_by_its_page() -> None:
     sql, params = compiled(readable_citations([CRAFT], acls=("PUBLIC",)))
-    assert 'FROM "ClaimSource" LEFT OUTER JOIN "Chunk" ON "Chunk".id = "ClaimSource"."chunkId"' in sql
-    assert '"ClaimSource"."chunkId" IS NULL OR "Chunk".acl IN' in sql
-    assert params_with(params, "acl_") == [["PUBLIC"]]
-    assert '"Chunk".sensitivity != ' in sql and params_with(params, "sensitivity_") == ["RESTRICTED"]
+    assert sql.startswith('SELECT "ClaimSource".id') and 'JOIN "Chunk"' not in sql
+    assert '"Chunk".id = "ClaimSource"."chunkId" AND "Chunk".acl IN' in sql
+    assert '"ClaimSource"."chunkId" IS NULL AND ("ClaimSource".quote IS NULL OR ' in sql
+    assert '"Chunk"."sourceId" = "ClaimSource"."sourceId" AND (' in sql and '"Chunk".acl NOT IN' in sql
+    assert '"Source".id = "ClaimSource"."sourceId" AND "Source".sensitivity = ' in sql
+    assert 'FROM "Chunk", "ClaimSource"' not in sql and 'FROM "Source", "ClaimSource"' not in sql
+    assert params_with(params, "acl_") == [["PUBLIC"], ["PUBLIC"]]
+    assert params_with(params, "sensitivity_") == ["RESTRICTED", "RESTRICTED", "RESTRICTED"]
     assert params_with(params, "claimId_") == [[CRAFT]]
+
+
+def test_held_facts_are_left_out_of_every_mode_unless_kept_for_contributors() -> None:
+    for mode in MODE_CLAIM_STATUSES:
+        sql, params = compiled(claim_lexical_ranking(claim_conditions(SCOPE, mode=mode), "alum"))
+        assert '"ClaimSource"."quoteCheck" != ' in sql and params_with(params, "quoteCheck_") == ["FAIL"]
+        assert '"ClaimSource".quote IS NOT NULL' in sql
+    kept = claim_conditions(SCOPE, mode="HYBRID", held=HELD_KEPT)
+    sql, _ = compiled(claim_lexical_ranking(kept, "alum"))
+    assert "quoteCheck" not in sql
 
 
 def test_the_query_contract_refuses_repeats_and_out_of_range_limits() -> None:

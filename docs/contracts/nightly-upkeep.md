@@ -18,6 +18,7 @@ Last reviewed: 2026-11-20.
 | Why the knowledge heals itself every night | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), items 5 and 11 |
 | The healing tasks open work computes from these verdicts | [open-work.md](open-work.md) |
 | How a fact repaired by a new source returns to its pages | [knowledge-writes.md](knowledge-writes.md), Source proposals and Pages follow their facts |
+| Why answers leave a held fact out | [decision 0121](../decisions/0121-quote-visibility.md) |
 | The box, the deploy hook and the secrets | [RUNBOOK.md](../RUNBOOK.md), Nightly upkeep and page builds |
 
 ```mermaid
@@ -88,7 +89,8 @@ The orchestration is `services/nightly_upkeep.py` (`run_nightly_upkeep`, and the
 ### 1a. Holds, corroboration and link rot (round 7)
 
 - **Held**: a claim is held when it cites at least one quote and every quote it cites is `FAIL`
-  (`services/claim_holds.held_claim`). The hold is derived from the stored verdicts, so it needs no
+  (`services/claim_holds.held_claim`, and for the search and the views
+  `retrieval/citation_access.held_claim`). The hold is derived from the stored verdicts, so it needs no
   table and lifts by itself the moment one quote is `PASS` again: a later re-check that finds it, a
   research write-back that re-finds the claim with a quoted citation, or a quote added with
   `propose_source` (`knowledge-writes.md`). A held claim is not deleted and keeps its status.
@@ -98,8 +100,15 @@ The orchestration is `services/nightly_upkeep.py` (`run_nightly_upkeep`, and the
   (`open_work_counts.owned_facts`); it waits in the `FACTS` review queue whatever its status, with
   the night's evidence as its `QUOTES` check (`services/claim_holds_review.py`, one reason per
   failing quote: the day, the quote and the page), and a reviewer may retract it there; and it
-  becomes a `RESOURCE_FACT` task (`open-work.md`). Answers and the Knowledge API's reads still find
-  it, so a contributor can read the fact they re-source.
+  becomes a `RESOURCE_FACT` task (`open-work.md`). Since decision 0121 answers never find it
+  either: stored search leaves it out in every mode (`retrieval/statements.claim_conditions`), and
+  so do the views facts are read through (`knowledge_view.claims_for` and `claims_by_id`), so no
+  answer, page, component check or public reading of a stored answer rests on it. The reads a
+  contributor re-sources it from keep it (`knowledge_view.contributor_claims_for`, and
+  `claim_conditions(..., held=HELD_KEPT)`), its failed quotes shown as unquoted citations.
+- **A failed quote is never shown as a quote**: a view drops the words of a citation whose last
+  check is `FAIL` and labels it `INFERRED` (`knowledge_view.shown_quote`), so a corroborated fact
+  shows its standing quotes and names the failing source without its dead words.
 - **Corroborate**: a shown claim with a `FAIL` quote and at least one quote that is not `FAIL`
   keeps showing and becomes a `CORROBORATE_FACT` task.
 - **The night**: the held claims are read before the re-check and again after it
@@ -250,6 +259,7 @@ the build as not triggered, and the admin control says so.
 |---|---|
 | Re-verifying quotes and their bounds | `backend/tests/upkeep/test_quote_recheck.py` |
 | Holds, healing and link rot | `backend/tests/upkeep/test_healing_rules.py`, `test_healing_tasks.py` and `backend/tests/db/test_claim_holds_db.py` |
+| A held fact left out of search and views, and failed quotes never shown | `backend/tests/db/test_quote_visibility_db.py` and `backend/tests/retrieval/test_statements.py` |
 | Archives and orphaned concepts | `backend/tests/upkeep/test_archive_and_orphans.py` and `backend/tests/db/test_orphan_concepts_db.py` |
 | Abandoned client registrations | `backend/tests/db/test_upkeep_clients_db.py` |
 | The rotating monograph window and stale page rebuilds | `backend/tests/upkeep/test_rotation.py` and `test_page_rebuilds.py` |

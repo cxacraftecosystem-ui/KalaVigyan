@@ -24,6 +24,7 @@ from app.research.retrieval import (
     VISIBLE_SENSITIVITY,
 )
 from app.research.vocabulary import LEVEL_ORDER
+from app.retrieval.citation_access import FAILED_QUOTE, HELD_KEPT, HELD_LEFT_OUT, unheld
 from app.retrieval.statements import (
     CraftScope,
     claim_conditions,
@@ -106,16 +107,21 @@ def source_ref(source: Source) -> dict[str, Any]:
 
 
 def citation(cite: ClaimSource, level: str) -> dict[str, Any]:
+    quote = shown_quote(cite)
     return {
         "id": str(cite.id),
         "claimId": str(cite.claimId),
         "sourceId": str(cite.sourceId),
-        "quote": cite.quote,
+        "quote": quote,
         "locator": cite.locator,
         "context": None,
-        "evidence": "QUOTED" if cite.quote else "INFERRED",
+        "evidence": "QUOTED" if quote else "INFERRED",
         "level": level,
     }
+
+
+def shown_quote(cite: ClaimSource) -> str | None:
+    return None if cite.quoteCheck == FAILED_QUOTE else cite.quote
 
 
 def section_heading(concept_type: str) -> str:
@@ -169,9 +175,32 @@ async def claims_for(
     question: str | None = None,
     acls: Sequence[str] = OPEN_CHUNK_ACLS,
 ) -> tuple[list[ClaimView], dict[uuid.UUID, Source]]:
+    conditions = claim_conditions(craft_scope_of(craft), mode=mode, held=HELD_LEFT_OUT)
+    return await _craft_claims(session, craft, conditions, question=question, acls=acls)
+
+
+async def contributor_claims_for(
+    session: AsyncSession,
+    craft: Craft,
+    *,
+    mode: str,
+    question: str | None = None,
+    acls: Sequence[str] = OPEN_CHUNK_ACLS,
+) -> tuple[list[ClaimView], dict[uuid.UUID, Source]]:
+    conditions = claim_conditions(craft_scope_of(craft), mode=mode, held=HELD_KEPT)
+    return await _craft_claims(session, craft, conditions, question=question, acls=acls)
+
+
+async def _craft_claims(
+    session: AsyncSession,
+    craft: Craft,
+    conditions: Sequence[Any],
+    *,
+    question: str | None,
+    acls: Sequence[str],
+) -> tuple[list[ClaimView], dict[uuid.UUID, Source]]:
     tsquery = or_tsquery(question or "")
     rank_column: Any = lexical_rank(Claim.tsv, text_query(tsquery)) if tsquery else text("0")
-    conditions = claim_conditions(craft_scope_of(craft), mode=mode)
     rows = list((await session.execute(select(Claim, rank_column).where(*conditions))).all())
     concepts = {concept.id: concept for concept in await craft_concepts(session, craft)}
     edge_concept = await _edge_concepts(session, rows, concepts)
@@ -214,6 +243,7 @@ async def _visible_claims(session: AsyncSession, condition: Any, rank_column: An
         condition,
         Claim.status.not_in(HIDDEN_CLAIM_STATUSES),
         Claim.sensitivity == VISIBLE_SENSITIVITY,
+        *unheld(HELD_LEFT_OUT),
     ]
     return list((await session.execute(select(Claim, rank_column).where(*filters))).all())
 
@@ -256,7 +286,7 @@ def cited_view(
     claim: Claim, cites: list[ClaimSource], placed: tuple[uuid.UUID | None, str], *, rank: float = 0.0
 ) -> ClaimView:
     concept_id, concept_type = placed
-    ordered = sorted(cites, key=lambda c: (c.quote is None, str(c.id)))
+    ordered = sorted(cites, key=lambda c: (shown_quote(c) is None, str(c.id)))
     return ClaimView(
         id=claim.id,
         text=claim.text,

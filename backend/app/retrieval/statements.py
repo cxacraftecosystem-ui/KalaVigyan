@@ -39,6 +39,7 @@ from app.research.retrieval import (
     VISIBLE_SENSITIVITY,
 )
 
+from .citation_access import HELD_LEFT_OUT, HeldFacts, readable_citation, unheld
 from .field_scope import field_interview_sources, withheld_field_sources
 from .stamps import made_by_current_model
 from .text import tsquery_terms
@@ -118,7 +119,12 @@ def field_condition(fields: Sequence[str]) -> ColumnElement[bool]:
 
 
 def claim_conditions(
-    scope: CraftScope, *, mode: str, facets: Sequence[str] = (), fields: Sequence[str] = ()
+    scope: CraftScope,
+    *,
+    mode: str,
+    facets: Sequence[str] = (),
+    fields: Sequence[str] = (),
+    held: HeldFacts = HELD_LEFT_OUT,
 ) -> list[ColumnElement[bool]]:
     cited = exists().where(
         ClaimSource.claimId == Claim.id,
@@ -132,23 +138,16 @@ def claim_conditions(
         Claim.evidenceLevel.in_(MODE_CLAIM_LEVELS[mode]),
         Claim.sensitivity == VISIBLE_SENSITIVITY,
         cited,
+        *unheld(held),
     ]
     return [*conditions, field_condition(fields)] if fields else conditions
 
 
 def readable_citations(claim_ids: Sequence[uuid.UUID], *, acls: Sequence[str]) -> Select[tuple[ClaimSource]]:
-    readable = or_(
-        ClaimSource.chunkId.is_(None),
-        and_(Chunk.acl.in_(list(acls)), Chunk.sensitivity != RESTRICTED_SENSITIVITY),
-    )
-    return (
-        select(ClaimSource)
-        .outerjoin(Chunk, Chunk.id == ClaimSource.chunkId)
-        .where(
-            ClaimSource.claimId.in_(list(claim_ids)),
-            ClaimSource.sourceId.not_in(withheld_field_sources()),
-            readable,
-        )
+    return select(ClaimSource).where(
+        ClaimSource.claimId.in_(list(claim_ids)),
+        ClaimSource.sourceId.not_in(withheld_field_sources()),
+        readable_citation(acls),
     )
 
 

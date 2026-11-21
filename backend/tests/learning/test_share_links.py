@@ -100,15 +100,21 @@ def cited_pairs(explainer: Explainer) -> set[tuple[str, str]]:
     return {(c.claim_id, c.source_id) for block in explainer_blocks(explainer) for c in block.citations()}
 
 
-def readable_only(pairs: set[tuple[str, str]], asked: list[tuple[str, ...]]) -> Any:
+def cited_keys(explainer: Explainer) -> set[tuple[str, str, str | None]]:
+    return {
+        (c.claim_id, c.source_id, c.quote) for block in explainer_blocks(explainer) for c in block.citations()
+    }
+
+
+def readable_only(keys: set[tuple[str, str, str | None]], asked: list[tuple[str, ...]]) -> Any:
     async def claims_by_id(session: Any, claim_ids: Any, *, acls: Any) -> tuple[dict, dict]:
         asked.append(tuple(acls))
         views: dict[uuid.UUID, ClaimView] = {}
-        for claim, source in sorted(pairs):
+        for claim, source, quote in sorted(keys, key=str):
             view = views.setdefault(
                 uuid.UUID(claim), ClaimView(uuid.UUID(claim), "a stored claim", "PROVISIONAL", "", None)
             )
-            view.citations.append({"claimId": claim, "sourceId": source})
+            view.citations.append({"claimId": claim, "sourceId": source, "quote": quote})
         return {key: views[key] for key in claim_ids if key in views}, {}
 
     return claims_by_id
@@ -237,9 +243,8 @@ async def test_a_public_explainer_keeps_what_an_anonymous_reader_may_quote(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     explainer = first_version().explainer
-    pairs = cited_pairs(explainer)
     asked: list[tuple[str, ...]] = []
-    monkeypatch.setattr(knowledge_view, "claims_by_id", readable_only(pairs, asked))
+    monkeypatch.setattr(knowledge_view, "claims_by_id", readable_only(cited_keys(explainer), asked))
     assert await public_explainer(None, explainer) == explainer
     assert asked == [ANONYMOUS_ACLS]
 
@@ -250,13 +255,35 @@ async def test_a_closed_quote_leaves_the_public_explainer_and_nothing_readable_l
     explainer = first_version().explainer
     prose = next(block for section in explainer.sections for block in section.blocks if block.kind == "prose")
     closed = (prose.sentences[0].citations[0].claim_id, prose.sentences[0].citations[0].source_id)
-    monkeypatch.setattr(knowledge_view, "claims_by_id", readable_only(cited_pairs(explainer) - {closed}, []))
+    readable = {key for key in cited_keys(explainer) if key[:2] != closed}
+    monkeypatch.setattr(knowledge_view, "claims_by_id", readable_only(readable, []))
     shown = await public_explainer(None, explainer)
     assert shown is not None
     assert closed not in cited_pairs(shown)
     assert prose.sentences[0].text not in shown.model_dump_json()
     monkeypatch.setattr(knowledge_view, "claims_by_id", readable_only(set(), []))
     assert await public_explainer(None, explainer) is None
+
+
+async def test_a_closed_quote_leaves_even_when_its_fact_and_source_have_a_public_one(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    explainer = first_version().explainer
+    sentence = next(
+        sentence
+        for section in explainer.sections
+        for block in section.blocks
+        if block.kind == "prose"
+        for sentence in block.sentences
+        if any(c.quote for c in sentence.citations)
+    )
+    quoted = next(c for c in sentence.citations if c.quote)
+    public_twin = (quoted.claim_id, quoted.source_id, "A shorter public quote of the same page.")
+    readable = (cited_keys(explainer) - {(quoted.claim_id, quoted.source_id, quoted.quote)}) | {public_twin}
+    monkeypatch.setattr(knowledge_view, "claims_by_id", readable_only(readable, []))
+    shown = await public_explainer(None, explainer)
+    assert shown is not None
+    assert sentence.text not in shown.model_dump_json()
 
 
 async def test_a_shared_lesson_is_its_professor_s_pack_when_everything_is_public(
@@ -268,7 +295,7 @@ async def test_a_shared_lesson_is_its_professor_s_pack_when_everything_is_public
         return document
 
     monkeypatch.setattr(share_links, "shown_version", as_stored)
-    monkeypatch.setattr(knowledge_view, "claims_by_id", readable_only(cited_pairs(version.explainer), []))
+    monkeypatch.setattr(knowledge_view, "claims_by_id", readable_only(cited_keys(version.explainer), []))
     row = SimpleNamespace(id=version.explainer.answer_id, payload=stored_payload(version.explainer, None))
     assert await share_links.public_lesson(RowSession(row), golden_pack()) == golden_pack()
     monkeypatch.setattr(knowledge_view, "claims_by_id", readable_only(set(), []))

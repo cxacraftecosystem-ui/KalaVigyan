@@ -72,6 +72,7 @@ IDS = {
             "held",
             "retracted",
             "researcher",
+            "public_chunk",
         ),
         start=1,
     )
@@ -93,6 +94,11 @@ async def seed_open_data(session: AsyncSession) -> None:
     session.add(
         Chunk(
             id=IDS["chunk"], sourceId=IDS["paper"], ordinal=0, text="For researchers only.", acl="RESEARCHER"
+        )
+    )
+    session.add(
+        Chunk(
+            id=IDS["public_chunk"], sourceId=IDS["paper"], ordinal=1, text=f"In the dye house {ALUM_QUOTE}."
         )
     )
     session.add(Process(id=IDS["process"], craftId=IDS["craft"], name="Printing"))
@@ -134,7 +140,7 @@ async def _claims(session: AsyncSession) -> None:
         session,
         SHOWN,
         "Alum fixes the madder red.",
-        cite=(IDS["paper"], ALUM_QUOTE, "PASS", None),
+        cite=(IDS["paper"], ALUM_QUOTE, "PASS", IDS["public_chunk"]),
         createdById=IDS["user"],
     )
     await add_claim(
