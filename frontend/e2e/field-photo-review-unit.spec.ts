@@ -72,7 +72,7 @@ test("trimming each edge by a share of the photograph keeps the region between t
 });
 
 test("a crop leaves part of the photograph out and keeps at least sixty-four pixels a side", () => {
-  expect(cropProblem({ left: 0, top: 0, width: 2400, height: 1600 }, 2400, 1600)).toBe("Trim at least one edge, or choose Show it.");
+  expect(cropProblem({ left: 0, top: 0, width: 2400, height: 1600 }, 2400, 1600)).toBe("Trim at least one edge, or choose Show to show all of it.");
   expect(cropProblem({ left: 0, top: 0, width: 63, height: 1600 }, 2400, 1600)).toBe("Keep at least 64 pixels on each side.");
   expect(cropProblem({ left: 10, top: 0, width: 2390, height: 1600 }, 2400, 1600)).toBeNull();
 });

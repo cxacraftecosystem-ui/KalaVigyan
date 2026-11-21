@@ -19,7 +19,7 @@ export function FieldPhotoFigure({ photo, trims }: { photo: FieldPhoto; trims: T
 
   return (
     <figure className="grid min-w-0 content-start gap-3" data-testid="field-photo-figure">
-      <div className="relative w-full overflow-hidden rounded-plate bg-sunk" style={{ aspectRatio: `${photo.width} / ${photo.height}` }}>
+      <div className="relative mx-auto w-full overflow-hidden rounded-plate bg-sunk" style={{ aspectRatio: `${photo.width} / ${photo.height}`, maxWidth: `calc(75vh * ${(photo.width / photo.height).toFixed(4)})` }}>
         {photo.fileUrl ? (
           <button type="button" className="block size-full cursor-zoom-in" onClick={() => setOpened("original")} aria-haspopup="dialog">
             <>

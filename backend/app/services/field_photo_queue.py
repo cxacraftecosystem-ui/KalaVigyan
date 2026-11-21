@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ColumnElement, Select, and_, case, func, or_, select
+from sqlalchemy import ColumnElement, Select, and_, any_, case, func, literal, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import AuditLog, FieldImage, FieldPhotoReview, FieldPhotoScreen, User
@@ -137,8 +137,8 @@ def _in_state(state: str) -> ColumnElement[bool]:
 
 def _risk_rank() -> ColumnElement[int]:
     return case(
-        (FieldPhotoScreen.flags.any(ID_DOCUMENT), 0),
-        (FieldPhotoScreen.flags.any(FACE), 1),
+        (literal(ID_DOCUMENT) == any_(FieldPhotoScreen.flags), 0),
+        (literal(FACE) == any_(FieldPhotoScreen.flags), 1),
         (FieldPhotoScreen.imageId.is_(None), 2),
         (func.cardinality(FieldPhotoScreen.flags) > 0, 2),
         else_=3,

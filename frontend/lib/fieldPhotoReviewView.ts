@@ -30,7 +30,7 @@ export const TRIM_SIDES: { key: keyof Trims; label: string }[] = [
 
 export const STATE_LABELS: Record<QueueState, string> = { WAITING: "Waiting", SHOWN: "Shown", HIDDEN: "Hidden" };
 
-export const DECISION_CHOICES: Record<PhotoDecision, string> = { SHOW: "Show it", CROP: "Show a crop", HIDE: "Keep it hidden" };
+export const DECISION_CHOICES: Record<PhotoDecision, string> = { SHOW: "Show", CROP: "Crop", HIDE: "Hide" };
 
 export const REASON_LABELS: Record<HideReason, string> = {
   IDENTITY_DOCUMENT: "It shows an identity document",
@@ -67,7 +67,7 @@ export function cropFromTrims(trims: Trims, width: number, height: number): Phot
 
 export function cropProblem(crop: PhotoCrop, width: number, height: number): string | null {
   if (crop.width < CROP_SIDE_MIN || crop.height < CROP_SIDE_MIN) return `Keep at least ${CROP_SIDE_MIN} pixels on each side.`;
-  if (crop.width * crop.height >= width * height) return "Trim at least one edge, or choose Show it.";
+  if (crop.width * crop.height >= width * height) return "Trim at least one edge, or choose Show to show all of it.";
   return null;
 }
 
