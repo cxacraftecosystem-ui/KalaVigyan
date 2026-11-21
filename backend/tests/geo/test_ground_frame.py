@@ -8,7 +8,9 @@ BOX = (0.0, 0.0, 10.0, 10.0)
 
 
 def area(ring: list[tuple[float, float]]) -> float:
-    return abs(sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in zip(ring, [*ring[1:], ring[0]], strict=True))) / 2
+    return (
+        abs(sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in zip(ring, [*ring[1:], ring[0]], strict=True))) / 2
+    )
 
 
 def test_a_ring_half_outside_the_frame_keeps_the_half_inside() -> None:

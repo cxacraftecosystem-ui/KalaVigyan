@@ -37,7 +37,10 @@ def test_the_golden_ground_is_a_valid_why_here_spec_with_no_notes() -> None:
     spec = WhyHereSpec.model_validate({"ground": golden_json(GOLDEN_GROUND), "notes": []})
     [place] = spec.ground.places
     assert (place.ground.elevation.low_m, place.ground.elevation.high_m) == (300, 600)
-    assert [(m.material, m.count, m.nearest_km) for m in place.materials] == [("Alum", 1, 33.4), ("Iron filings", 1, 11.1)]
+    assert [(m.material, m.count, m.nearest_km) for m in place.materials] == [
+        ("Alum", 1, 33.4),
+        ("Iron filings", 1, 11.1),
+    ]
 
 
 def test_a_craft_without_a_located_place_has_no_ground() -> None:

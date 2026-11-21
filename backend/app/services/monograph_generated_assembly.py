@@ -33,7 +33,6 @@ from .monograph_generated_grids import StatedValue, fact_grid
 from .monograph_generated_parts import RegisteredComponent, StoredSection, component_binding_of
 from .monograph_generated_pictures import PICTURE_KIND, PlateSource, plate_spec
 from .monograph_generated_structure import CHAPTER_FIELDS, BlockSpecs, PlacedStructure, placed_structure
-from .monograph_generated_why_here import place_why_here
 from .monograph_generated_units import (
     LEDE_FIELD,
     LEDE_SENTENCES,
@@ -48,6 +47,7 @@ from .monograph_generated_units import (
     masthead_units,
     section_units,
 )
+from .monograph_generated_why_here import place_why_here
 from .page_layouts_backfill import LEADING_ROLES
 
 __all__ = ["LAYOUT_DATA", "GeneratedParts", "assembled_document"]
