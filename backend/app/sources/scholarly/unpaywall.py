@@ -7,13 +7,14 @@ from app.core.errors import ExternalFailure, InvalidInput
 from app.research.evidence import OPEN_ACCESS_STATUSES, OpenAccessLocation
 
 from ..adapter import Clock, utc_now
-from ..http import RatePolicy, SourceHttp
+from ..http import SourceHttp
 from ..records import clean_text, doi_of, https_or_none
+from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["UNPAYWALL_RATE", "UnpaywallLocator"]
+__all__ = ["UNPAYWALL_LIMITS", "UnpaywallLocator"]
 
 UNPAYWALL_API = "https://api.unpaywall.org/v2"
-UNPAYWALL_RATE = RatePolicy(min_interval=0.1)
+UNPAYWALL_LIMITS = ServiceLimits(search=SourceLimit(requests=10))
 HOST_TYPES = {"publisher": "PUBLISHER", "repository": "REPOSITORY"}
 
 

@@ -7,7 +7,6 @@ from typing import Any
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
 from ..adapter import HttpSourceAdapter, build_document
-from ..http import RatePolicy
 from ..records import (
     AUTHORS_MAX,
     UnusableRecord,
@@ -19,11 +18,12 @@ from ..records import (
     partial_date_of,
     title_of,
 )
+from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["EUROPE_PMC_RATE", "EuropePmcAdapter"]
+__all__ = ["EUROPE_PMC_LIMITS", "EuropePmcAdapter"]
 
 EUROPE_PMC_API = "https://www.ebi.ac.uk/europepmc/webservices/rest"
-EUROPE_PMC_RATE = RatePolicy(min_interval=0.2)
+EUROPE_PMC_LIMITS = ServiceLimits(search=SourceLimit(requests=5))
 RECORD_ID = re.compile(r"^([A-Z]{3}):([A-Za-z0-9]+)$")
 ARTICLE_TYPES = frozenset({"journal article", "research-article", "review-article", "review", "article"})
 

@@ -6,7 +6,7 @@ from typing import Any
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
 from ..adapter import Clock, HttpSourceAdapter, build_document, utc_now
-from ..http import RatePolicy, SourceHttp
+from ..http import SourceHttp
 from ..records import (
     AUTHORS_MAX,
     UnusableRecord,
@@ -18,11 +18,12 @@ from ..records import (
     partial_date_of,
     title_of,
 )
+from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["SPRINGER_NATURE_RATE", "SpringerNatureAdapter", "springer_abstract"]
+__all__ = ["SPRINGER_NATURE_LIMITS", "SpringerNatureAdapter", "springer_abstract"]
 
 SPRINGER_NATURE_API = "https://api.springernature.com/openaccess/json"
-SPRINGER_NATURE_RATE = RatePolicy(min_interval=0.6)
+SPRINGER_NATURE_LIMITS = ServiceLimits(search=SourceLimit(requests=100, seconds=60.0))
 CONTENT_KINDS = {"article": "article", "chapter": "chapter", "book": "book"}
 
 

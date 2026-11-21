@@ -8,7 +8,6 @@ from urllib.parse import quote
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
 from ..adapter import HttpSourceAdapter, build_document
-from ..http import RatePolicy
 from ..records import (
     AUTHORS_MAX,
     UnusableRecord,
@@ -21,11 +20,12 @@ from ..records import (
     query_terms,
     title_of,
 )
+from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["DOAJ_RATE", "DoajAdapter"]
+__all__ = ["DOAJ_LIMITS", "DoajAdapter"]
 
 DOAJ_API = "https://doaj.org/api/v4"
-DOAJ_RATE = RatePolicy(min_interval=0.5)
+DOAJ_LIMITS = ServiceLimits(search=SourceLimit(requests=2))
 ARTICLE_ID = re.compile(r"^[0-9a-f]{32}$")
 
 

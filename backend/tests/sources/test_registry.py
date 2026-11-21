@@ -38,18 +38,23 @@ def test_keys_switch_on_core_and_the_dormant_publishers() -> None:
     assert sources.unconfigured == ()
 
 
-def test_each_adapter_paces_itself() -> None:
+def test_each_adapter_is_paced_under_its_published_limit() -> None:
     sources = build(ScholarlyKeys(contact_email=CONTACT, core_api_key="c"))
-    intervals = {adapter.name: adapter.http.policy.min_interval for adapter in sources.adapters}
-    assert intervals == {
-        "openalex": 0.1,
-        "crossref": 0.2,
-        "semantic_scholar": 1.0,
-        "europe_pmc": 0.2,
-        "arxiv": 3.0,
-        "doaj": 0.5,
-        "core": 2.0,
-    }
+    intervals = {adapter.name: adapter.http.limits.search.interval for adapter in sources.adapters}
+    assert intervals == pytest.approx(
+        {
+            "openalex": 0.125,
+            "crossref": 1.25,
+            "semantic_scholar": 1.25,
+            "europe_pmc": 0.25,
+            "arxiv": 3.75,
+            "doaj": 0.625,
+            "core": 2.5,
+        }
+    )
+    assert {adapter.name: adapter.http.policy.min_interval for adapter in sources.adapters} == dict.fromkeys(
+        intervals, 0.0
+    )
     services = [adapter.http.service for adapter in sources.adapters]
     assert services == [adapter.name for adapter in sources.adapters]
     assert all(re.fullmatch(ADAPTER_NAME_PATTERN, name) for name in services)

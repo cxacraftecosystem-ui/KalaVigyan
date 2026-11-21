@@ -9,9 +9,11 @@ from functools import partial
 from typing import Any
 
 from app.models.enums import EXPLAINER_DEPTHS
+from app.research.blocks import ProcessLadderBlock
 from app.research.explainer import Block
 from app.research.planning import PlanRequest
-from app.research.sections import SectionSpec
+from app.research.sections import LADDER_DISCIPLINE, SectionSpec, named_stage_ids
+from app.science.ladder import ladder_problems, ladder_stage_options, process_ladder
 from app.science.records import ProcessRecords
 
 from .answer_lede import Opening
@@ -31,6 +33,7 @@ __all__ = ["REUSED_SECTION_STATE", "ReuseBuilds", "ReusedShowing", "stream_reuse
 
 REUSED_SECTION_STATE = "WRITING"
 DEEPEST_DEPTH = EXPLAINER_DEPTHS[-1]
+ASKED_LADDER_SUFFIX = "ladder"
 
 
 @dataclass(frozen=True)
@@ -42,7 +45,24 @@ class ReuseBuilds:
 
     def placed(self, spec: SectionSpec, reused: ReusedSection, enrichment: Enrichment) -> Placed:
         replaced = self.builders.replaced_on_reuse(spec.discipline)
-        return placed_section(spec, reused, enrichment, self.process, replaced=replaced)
+        placed = placed_section(spec, reused, enrichment, self.process, replaced=replaced)
+        ladder = self._asked_ladder(spec, placed)
+        return placed if ladder is None else _with_ladder(placed, enrichment.marked(ladder))
+
+    def _asked_ladder(self, spec: SectionSpec, placed: Placed) -> ProcessLadderBlock | None:
+        records = self.process
+        if records is None or spec.discipline != LADDER_DISCIPLINE:
+            return None
+        shown = [block for block in placed.blocks if isinstance(block, ProcessLadderBlock)]
+        held = [stage.stage_id for ladder in shown for stage in ladder.stages]
+        wanted = named_stage_ids(self.request, ladder_stage_options(records), held)
+        if set(wanted) <= set(held):
+            return None
+        ladder_id = shown[0].id if shown else f"{spec.id}.{ASKED_LADDER_SUFFIX}"
+        ladder = process_ladder(records, block_id=ladder_id, stage_ids=wanted)
+        if ladder is None or ladder_problems(ladder, records):
+            return None
+        return ladder
 
     async def started(
         self, stack: AsyncExitStack, spec: SectionSpec, placed: Placed, reused: ReusedSection
@@ -185,6 +205,16 @@ async def _sent(
         block_in_language, stream=showing.stream, translation=showing.translation, claim_texts=texts
     )
     return await showing.stream.blocks(section.spec.id, blocks, sources, in_language=in_language)
+
+
+def _with_ladder(placed: Placed, ladder: Block) -> Placed:
+    others = tuple(block for block in placed.blocks if not isinstance(block, ProcessLadderBlock))
+    return replace(
+        placed,
+        blocks=(ladder, *others),
+        built=(ladder, *(block for block in placed.built if not isinstance(block, ProcessLadderBlock))),
+        copies=tuple(block for block in placed.copies if not isinstance(block, ProcessLadderBlock)),
+    )
 
 
 def _placed_sources(section: _Reused, showing: ReusedShowing) -> dict[str, Mapping[str, Any]]:

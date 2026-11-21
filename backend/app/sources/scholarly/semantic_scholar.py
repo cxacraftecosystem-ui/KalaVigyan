@@ -6,7 +6,7 @@ from typing import Any
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
 from ..adapter import Clock, HttpSourceAdapter, build_document, utc_now
-from ..http import RatePolicy, SourceHttp
+from ..http import SourceHttp
 from ..records import (
     AUTHORS_MAX,
     UnusableRecord,
@@ -19,11 +19,12 @@ from ..records import (
     partial_date_of,
     title_of,
 )
+from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["SEMANTIC_SCHOLAR_RATE", "SemanticScholarAdapter"]
+__all__ = ["SEMANTIC_SCHOLAR_LIMITS", "SemanticScholarAdapter"]
 
 SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org/graph/v1"
-SEMANTIC_SCHOLAR_RATE = RatePolicy(min_interval=1.0)
+SEMANTIC_SCHOLAR_LIMITS = ServiceLimits(search=SourceLimit(requests=1, concurrency=1))
 PAPER_FIELDS = (
     "paperId,title,abstract,authors,year,publicationDate,externalIds,url,venue,publicationTypes,"
     "openAccessPdf,journal"

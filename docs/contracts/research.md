@@ -209,12 +209,35 @@ the locator: its title search is retired (decision 0005), so it is not a `Source
 `sources.scholarly.registry.scholarly_sources(keys, client) -> ScholarlySources {adapters,
 locator, unconfigured}` builds every T3 scholarly adapter; `services/scholarly_keys.
 scholarly_keys(session)` reads the keys from the managed secrets and `RESEARCH_CONTACT_EMAIL`.
-The caller holds the result for the process (each adapter paces itself and caches for 600 s).
+The caller holds the result for the process.
+
+**Pacing (decision 0127).** Every scholarly adapter talks through a `sources.scholarly.pacing.
+PacedHttp` built on one process-wide `ScholarlyPacing` (`shared_pacing()`, or the `pacing`
+argument of `scholarly_sources`), so every rebuild of the live sources and every caller in the
+process shares one token bucket per service and request kind:
+
+- Each adapter declares its published limit beside it (`<NAME>_LIMITS`, a `ServiceLimits` of a
+  search `SourceLimit {requests, seconds, concurrency?}` and an optional lookup limit), and is
+  paced at `PACED_SHARE` (80 %) of it: Crossref's public pool 1 search a second and 5 DOI
+  lookups a second, one request at a time; Semantic Scholar 1 a second (its introductory keyed
+  rate, also kept without a key in the shared anonymous pool), one at a time; OpenAlex 10 a
+  second without a key; arXiv 1 every 3 seconds, one at a time; DOAJ 2 a second; Europe PMC,
+  CORE, Elsevier, Springer Nature and Unpaywall the rates they kept before.
+- A 429 or 503 holds the service for every client for its `Retry-After` (60 s when absent); a
+  hold longer than `RatePolicy.max_retry_wait` (10 s) fails at once as `rate_limit` without
+  sending, a shorter one is waited out. More than `QUEUE_WAIT_MAX` (30 s) of requests already
+  queued fails as `unavailable`.
+- Identical lookups are answered from the service's process-wide `ResponseCache` (600 s,
+  longer than an answer) whatever the rebuild. Within one answer (its request id): a lookup
+  that failed is not asked again, and a service that refused `REFUSALS_MAX` (2) requests (a
+  `rate_limit`, a 403 or a 429) is not asked again; it fails at once as `rate_limit`.
+- Crossref is asked with `User-Agent: KalaVigyan/1 (+https://kalavigyan.vercel.app)` and no
+  `mailto`: the project's public address, never a person's e-mail.
 
 | Adapter `name` | Service | Key | Id after the colon | `fetch` content |
 |---|---|---|---|---|
 | `openalex` | OpenAlex works | `OPENALEX_API_KEY` optional | `W…` | `ABSTRACT` |
-| `crossref` | Crossref works (polite pool, abstracts only) | none | DOI | `ABSTRACT` |
+| `crossref` | Crossref works (public pool, abstracts only) | none | DOI | `ABSTRACT` |
 | `semantic_scholar` | Semantic Scholar Graph | `SEMANTIC_SCHOLAR_API_KEY` optional | paper id | `ABSTRACT` |
 | `core` | CORE v3 | `CORE_API_KEY`; without it left out and listed in `unconfigured` | work id | `FULL_TEXT`, else `ABSTRACT` |
 | `europe_pmc` | Europe PMC REST | none | `<SRC>:<id>` | `ABSTRACT` |

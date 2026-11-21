@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import uuid
 from collections.abc import Sequence
 from datetime import datetime
@@ -15,6 +14,7 @@ from .base import ContractModel
 from .coverage_answers import ConsultedField, FieldSentence, consulted_fields, field_sentences
 from .crafts import QUESTION_MAX_CHARS, SLUG_MAX_CHARS
 from .explainer import Explainer
+from .gap_admissions import gap_admissions
 from .structured import MODEL_SERVICE, StructuredReply, reply_object, schema_object
 from .untrusted import untrusted_block
 from .vocabulary import Depth, Discipline
@@ -22,7 +22,6 @@ from .vocabulary import Depth, Discipline
 __all__ = [
     "ANSWER_EVAL_SCHEMA_VERSION",
     "FIELD_SENTENCES_MIN",
-    "GAP_ADMISSION",
     "JUDGE_SCORE_MAX",
     "JUDGE_SYSTEM_PROMPT",
     "RUBRIC",
@@ -35,7 +34,6 @@ __all__ = [
     "QuestionResult",
     "answer_measures",
     "eval_report",
-    "gap_admissions",
     "judge_message",
     "judge_schema",
     "parsed_scores",
@@ -48,16 +46,6 @@ JUDGE_SCORE_MAX = 5
 JUDGE_SENTENCES_MAX = 120
 RUBRIC = ("fields", "cited", "everyCited", "figures", "noGaps")
 QUESTION_ID = r"^[a-z0-9]+(-[a-z0-9]+)*$"
-GAP_ADMISSION = re.compile(
-    r"\b(no (cited |stored )?(source|evidence|information|data)s?\b"
-    r"|not enough (cited )?evidence"
-    r"|(could|can) ?not (find|be found)"
-    r"|not (yet )?(known|documented|recorded|available)\b"
-    r"|(little|nothing) is known"
-    r"|sources? (do|does) not (say|state|mention)"
-    r"|we (do not|don't) know)",
-    re.IGNORECASE,
-)
 JUDGE_SYSTEM_PROMPT = (
     "You score one answer of KalaVigyan, a cited explainer on an Indian craft, against a fixed rubric. "
     "Reply with one JSON object that matches the schema, each score a whole number from 0 to 5:\n"
@@ -171,10 +159,6 @@ def eval_report(
         judge_mean=_mean([result.judge_share for result in results if result.judge_share is not None]),
         questions=list(results),
     )
-
-
-def gap_admissions(texts: Sequence[str]) -> list[str]:
-    return [text for text in texts if GAP_ADMISSION.search(text)]
 
 
 def answer_measures(explainer: Explainer, expected: Sequence[str]) -> AnswerMeasures:

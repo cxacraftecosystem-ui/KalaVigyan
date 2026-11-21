@@ -8,17 +8,18 @@ import httpx
 from app.core.errors import NotConfigured
 
 from ..adapter import Clock, HttpSourceAdapter, utc_now
-from ..http import RatePolicy, ResponseCache, SourceHttp
-from .arxiv import ARXIV_RATE, ArxivAdapter
-from .core_works import CORE_RATE, CoreAdapter
-from .crossref import CROSSREF_RATE, CrossrefAdapter
-from .doaj import DOAJ_RATE, DoajAdapter
-from .elsevier import ELSEVIER_RATE, ElsevierAdapter
-from .europe_pmc import EUROPE_PMC_RATE, EuropePmcAdapter
-from .openalex import OPENALEX_RATE, OpenAlexAdapter
-from .semantic_scholar import SEMANTIC_SCHOLAR_RATE, SemanticScholarAdapter
-from .springer_nature import SPRINGER_NATURE_RATE, SpringerNatureAdapter
-from .unpaywall import UNPAYWALL_RATE, UnpaywallLocator
+from ..http import RatePolicy
+from .arxiv import ARXIV_LIMITS, ArxivAdapter
+from .core_works import CORE_LIMITS, CoreAdapter
+from .crossref import CROSSREF_LIMITS, CrossrefAdapter
+from .doaj import DOAJ_LIMITS, DoajAdapter
+from .elsevier import ELSEVIER_LIMITS, ElsevierAdapter
+from .europe_pmc import EUROPE_PMC_LIMITS, EuropePmcAdapter
+from .openalex import OPENALEX_LIMITS, OpenAlexAdapter
+from .pacing import PacedHttp, ScholarlyPacing, ServiceLimits, shared_pacing
+from .semantic_scholar import SEMANTIC_SCHOLAR_LIMITS, SemanticScholarAdapter
+from .springer_nature import SPRINGER_NATURE_LIMITS, SpringerNatureAdapter
+from .unpaywall import UNPAYWALL_LIMITS, UnpaywallLocator
 
 __all__ = ["SCHOLARLY_KEY_NAMES", "ScholarlyKeys", "ScholarlySources", "scholarly_sources"]
 
@@ -32,7 +33,9 @@ SCHOLARLY_KEY_NAMES = (
 )
 
 
-HttpFactory = Callable[[str, RatePolicy], SourceHttp]
+SPACED_BY_LIMITS = RatePolicy(min_interval=0.0)
+
+HttpFactory = Callable[[str, ServiceLimits], PacedHttp]
 
 
 @dataclass(frozen=True, repr=False)
@@ -58,14 +61,18 @@ class ScholarlySources:
 
 
 def scholarly_sources(
-    keys: ScholarlyKeys, client: httpx.AsyncClient, *, clock: Clock = utc_now
+    keys: ScholarlyKeys,
+    client: httpx.AsyncClient,
+    *,
+    clock: Clock = utc_now,
+    pacing: ScholarlyPacing | None = None,
 ) -> ScholarlySources:
     if not keys.contact_email:
         raise NotConfigured("RESEARCH_CONTACT_EMAIL", "Scholarly APIs need a contact email address")
-    http = _http_factory(client)
+    http = _http_factory(client, pacing or shared_pacing())
     keyed, unconfigured = _keyed_adapters(keys, http, clock)
     locator = UnpaywallLocator(
-        http("unpaywall", UNPAYWALL_RATE), contact_email=keys.contact_email, clock=clock
+        http("unpaywall", UNPAYWALL_LIMITS), contact_email=keys.contact_email, clock=clock
     )
     return ScholarlySources((*_open_adapters(keys, http, clock), *keyed), locator, unconfigured)
 
@@ -74,17 +81,17 @@ def _open_adapters(keys: ScholarlyKeys, http: HttpFactory, clock: Clock) -> list
     email = keys.contact_email
     return [
         OpenAlexAdapter(
-            http("openalex", OPENALEX_RATE), contact_email=email, api_key=keys.openalex_api_key, clock=clock
+            http("openalex", OPENALEX_LIMITS), contact_email=email, api_key=keys.openalex_api_key, clock=clock
         ),
-        CrossrefAdapter(http("crossref", CROSSREF_RATE), contact_email=email, clock=clock),
+        CrossrefAdapter(http("crossref", CROSSREF_LIMITS), clock=clock),
         SemanticScholarAdapter(
-            http("semantic_scholar", SEMANTIC_SCHOLAR_RATE),
+            http("semantic_scholar", SEMANTIC_SCHOLAR_LIMITS),
             api_key=keys.semantic_scholar_api_key,
             clock=clock,
         ),
-        EuropePmcAdapter(http("europe_pmc", EUROPE_PMC_RATE), clock=clock),
-        ArxivAdapter(http("arxiv", ARXIV_RATE), clock=clock),
-        DoajAdapter(http("doaj", DOAJ_RATE), clock=clock),
+        EuropePmcAdapter(http("europe_pmc", EUROPE_PMC_LIMITS), clock=clock),
+        ArxivAdapter(http("arxiv", ARXIV_LIMITS), clock=clock),
+        DoajAdapter(http("doaj", DOAJ_LIMITS), clock=clock),
     ]
 
 
@@ -94,26 +101,33 @@ def _keyed_adapters(
     adapters: list[HttpSourceAdapter] = []
     unconfigured: tuple[str, ...] = ()
     if keys.core_api_key:
-        adapters.append(CoreAdapter(http("core", CORE_RATE), api_key=keys.core_api_key, clock=clock))
+        adapters.append(CoreAdapter(http("core", CORE_LIMITS), api_key=keys.core_api_key, clock=clock))
     else:
         unconfigured = ("CORE_API_KEY",)
     if keys.elsevier_api_key:
-        elsevier_http = http("elsevier", ELSEVIER_RATE)
+        elsevier_http = http("elsevier", ELSEVIER_LIMITS)
         adapters.append(
             ElsevierAdapter(
                 elsevier_http, api_key=keys.elsevier_api_key, insttoken=keys.elsevier_insttoken, clock=clock
             )
         )
     if keys.springer_nature_api_key:
-        springer_http = http("springer_nature", SPRINGER_NATURE_RATE)
+        springer_http = http("springer_nature", SPRINGER_NATURE_LIMITS)
         adapters.append(
             SpringerNatureAdapter(springer_http, api_key=keys.springer_nature_api_key, clock=clock)
         )
     return adapters, unconfigured
 
 
-def _http_factory(client: httpx.AsyncClient) -> HttpFactory:
-    def build(service: str, policy: RatePolicy) -> SourceHttp:
-        return SourceHttp(client=client, service=service, policy=policy, cache=ResponseCache())
+def _http_factory(client: httpx.AsyncClient, pacing: ScholarlyPacing) -> HttpFactory:
+    def build(service: str, limits: ServiceLimits) -> PacedHttp:
+        return PacedHttp(
+            client=client,
+            service=service,
+            policy=SPACED_BY_LIMITS,
+            cache=pacing.cache(service),
+            limits=limits,
+            pacing=pacing,
+        )
 
     return build

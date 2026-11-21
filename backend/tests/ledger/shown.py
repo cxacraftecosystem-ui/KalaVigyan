@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections import Counter
 from collections.abc import Iterable, Iterator
 from typing import Any
@@ -10,6 +11,7 @@ from app.research.citations import AnswerSentence
 from app.research.explainer import Explainer
 
 RESTATING = ("prose", "material_card", "expert_view")
+LONG_WORD = re.compile(r"[a-z]{4,}")
 
 
 def blocks_of(explainer: Explainer) -> list[BlockBase]:
@@ -61,3 +63,24 @@ def restated(blocks: Iterable[BlockBase]) -> list[str]:
         found += [sentence.text for sentence in sentences if claims_of(sentence) <= earlier]
         earlier |= {claim for sentence in sentences for claim in claims_of(sentence)}
     return found
+
+
+def restated_in_other_words(blocks: Iterable[BlockBase]) -> list[str]:
+    earlier: list[AnswerSentence] = []
+    found = []
+    for sentence in rendered_sentences(blocks):
+        if any(_retold(sentence, before) for before in earlier):
+            found.append(sentence.text)
+        earlier.append(sentence)
+    return found
+
+
+def _retold(later: AnswerSentence, earlier: AnswerSentence) -> bool:
+    if not claims_of(later) or not claims_of(later) <= claims_of(earlier):
+        return False
+    mine, theirs = _long_words(later.text), _long_words(earlier.text)
+    return len(mine & theirs) * 2 >= len(mine | theirs)
+
+
+def _long_words(text: str) -> set[str]:
+    return set(LONG_WORD.findall(text.casefold()))

@@ -117,13 +117,23 @@ fewer sentences than the live page, never more.
 
 - **Restating blocks** (`RESTATING_KINDS`: `prose`, `material_card` facts and handling,
   `expert_view` takes) drop a sentence whose text is already on the page (folded by
-  `data/craft_text.fold`, its English `original` too) or whose every claim an earlier block already
-  showed. **Story blocks** (every other kind with `SENTENCES`: `process_ladder` stages,
-  `region_story` steps, `supply_map` links, `zoom_story` levels, `timeline_map` points and routes,
-  `concept_graph` entries, `seasons`, `measure`, `compare`, `what_if`, `market_gi`, `climate_risk`
-  and the rest) drop an item only when its sentence's text is already shown, and in one call they
-  are let through before the restating blocks; a supply map may repeat a sentence within itself (the
-  client shows it once per material). An item left with no sentence goes, so a card whose every fact
+  `data/craft_text.fold`, its English `original` too), whose every claim an earlier block already
+  showed, or that restates a shown sentence (below). **Story blocks** (every other kind with
+  `SENTENCES`: `region_story` steps, `supply_map` links, `zoom_story` levels, `timeline_map` points
+  and routes, `concept_graph` entries, `seasons`, `measure`, `compare`, `what_if`, `market_gi`,
+  `climate_risk` and the rest) drop an item when its sentence's text is already shown or it
+  restates a shown sentence, and in one call they are let through before the restating blocks; a
+  supply map may repeat a sentence within itself (the client shows it once per material). A
+  `process_ladder` is the process's skeleton: a stage drops a sentence said word for word, and a
+  restating sentence only while the stage keeps another, so a stage the question names is never
+  emptied by another section (decision 0127). **A restatement** (`services/restatements.restates`,
+  decision 0127) is a sentence of at least `RESTATED_STEMS_MIN` (4) content stems
+  (`quotes.content_stems`) that adds no number to a shown one and keeps its negation, and either
+  shares its claim group (its claims, or its citations' source and folded quote, within the shown
+  sentence's) with at least `SAME_GROUP_SHARE` (half) of their stems in common, or cites other
+  evidence with the same numbers and at least `NEAR_VERBATIM_SHARE` (0.8) of their stems in common:
+  a story step that tells the prose's fact in nearly the prose's words, and one fact filed under
+  two fields, are said once. An item left with no sentence goes, so a card whose every fact
   was shown is not sent even when it shows a formula; a ladder stage keeps the level of the
   sentences it keeps; a compare cell already shown is left `null` and a row with fewer than two
   crafts goes; a block whose own sentence (an indigo vat's lift) was shown is not sent. Differences
@@ -138,6 +148,14 @@ fewer sentences than the live page, never more.
   (`claim_ledger.admission_batches`), for fresh sections, reused sections and the rebuild alike.
   `ExplainerStream.blocks(section_id, blocks, sources, *, in_language)` admits in English, then
   translates what it let through, all at once, then sends it.
+- **No gap on the page** (decision 0127): before admission, every sentence of a block (a prose
+  sentence, a card fact, a take, a story item) whose English text admits a gap
+  (`research/gap_admissions.admits_gap`, the one pattern the answer evaluation's `noGaps` measure
+  also reads) leaves its block and is sent as an `open_question` with its citations, translated
+  with the section's blocks (`services/gap_routing.routed_gaps`): "the compounds have not been
+  identified", "the origins are unknown". A block left with no sentence or off its contract is not
+  sent, and its gap sentences are still asked; nothing is dropped silently. An open question
+  citing a source the stream does not hold is left out with a warning.
 - **Once per answer:** a material card per material (PubChem CID, compound, material, term or
   folded name), a `molecule_3d` per CID, a concept-graph node per term (a node that loses the
   focus craft or falls below two crafts goes), one each of the craft-level stories
@@ -417,7 +435,10 @@ sum. Placed blocks are term-marked again with the answer's glossary
 (`reuse_enrichment.placed_section`; a `replaces_stored` kind is left out of the placed blocks and of
 the copies), and a reused `PROCESS` section without a stored ladder is led by one built from the
 stored stages whose claims its blocks cite (`reuse_enrichment.reused_ladder`, no model call,
-checked by `ladder_problems`). A reused section is kept again as a group of this answer only when it
+checked by `ladder_problems`). When the question names stored stages its reused ladder lacks
+(`sections.named_stage_ids`, below), the ladder is rebuilt from the stored rows with them and
+leads the section as a block built for this answer (`reused_sections.ReuseBuilds.placed`,
+decision 0127). A reused section is kept again as a group of this answer only when it
 gained a storable block its group does not already store (`Placed.stores`: same kind and the same
 content once sentence ids and term marks are set aside, `knowledge_pieces.shows_alike`): copies of
 its craft pieces (not region stories or generated explainers, which keep their own slots) and the
@@ -1793,7 +1814,11 @@ rebuilt-each-time kinds, the stream's `builds_on` and `version`, the learning ro
   when one sentence cites no stored claim, is not a fact or states a figure that none of its
   claims' texts and quotes holds.
 - `process_ladder`: only in a `PROCESS` section of a known craft. The model chooses stage ids from
-  the stored stages offered to it; the server builds every stage from the stored rows
+  the stored stages offered to it, and the stages a process question names are added whatever it
+  chose (`research/sections.named_stage_ids`, decision 0127): a question the `PROCESS` cues ask
+  names a stage when a content stem of the stage's name (the craft's name and `GENERIC_STAGE_WORDS`
+  such as making, stage and step set aside) is in the question, and a question running "from" one
+  named stage "to" another names every stage between them; the server builds every stage from the stored rows
   (`science/ladder`) and refuses the ladder unless each stage, sentence (a stored claim of that
   stage, as stored or as its translation's `original`), material, condition and reaction is a
   stored row of that stage.
@@ -1811,7 +1836,8 @@ rebuilt-each-time kinds, the stream's `builds_on` and `version`, the learning ro
 | The client's shapes and the stream reduced to the document | `frontend/e2e/explainer-contract-unit.spec.ts`, `explainer-phase-b-unit.spec.ts`, `explainer-phase-c-unit.spec.ts`, `explainer-phase-d-unit.spec.ts` and `explainer-view-unit.spec.ts` |
 | Each kind's renderer | `frontend/e2e/place-renderers-unit.spec.ts`, `matter-renderers-unit.spec.ts`, `expert-panel-unit.spec.ts`, `journey-renderers-unit.spec.ts`, `learning-renderers-unit.spec.ts`, `insight-renderers-unit.spec.ts` and `sandbox-frame-unit.spec.ts` |
 | The block builders and their checks | `backend/tests/answering/test_block_builders.py`, `test_section_blocks.py` and `backend/tests/research/test_explainer_blocks.py` |
-| One claim, one rendering | `backend/tests/ledger/test_ledger_rules.py` and `test_ledger_kinds.py` |
+| One claim, one rendering | `backend/tests/ledger/test_ledger_rules.py`, `test_ledger_kinds.py` and `test_restated_facts.py` |
+| No gap on the page, and a question's named stages on its ladder | `backend/tests/ledger/test_gap_routing.py`, `backend/tests/research/test_gap_admissions.py`, `test_named_stages.py` and `backend/tests/answering/test_reused_stages.py` |
 | The lede's search, its answer sentence, a sentence's Sources differ flag and its tag | `backend/tests/answering/test_lede_answer.py`, `test_lede_flow.py`, `test_grounded_blocks.py`, `backend/tests/composer/test_lede_compose.py` and `frontend/e2e/sentence-differ-unit.spec.ts` |
 
 Re-read it when a block kind is built or retired, a stream event is added, or a depth rule changes.

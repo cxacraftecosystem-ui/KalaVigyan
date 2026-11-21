@@ -10,13 +10,13 @@ from app.research.coverage_eval import (
     EvalQuestions,
     JudgeScores,
     answer_measures,
-    gap_admissions,
     judge_message,
     judge_schema,
     parsed_scores,
     rubric_score,
 )
 from app.research.explainer import Explainer
+from app.research.gap_admissions import gap_admissions
 from app.research.structured import StructuredReply, schema_problems
 
 from ..contracts.explainer_golden import DOCUMENT, golden_json

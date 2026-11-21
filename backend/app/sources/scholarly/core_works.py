@@ -6,7 +6,7 @@ from typing import Any
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
 from ..adapter import Clock, HttpSourceAdapter, build_document, utc_now
-from ..http import RatePolicy, SourceHttp
+from ..http import SourceHttp
 from ..records import (
     AUTHORS_MAX,
     UnusableRecord,
@@ -18,11 +18,12 @@ from ..records import (
     partial_date_of,
     title_of,
 )
+from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["CORE_RATE", "CoreAdapter"]
+__all__ = ["CORE_LIMITS", "CoreAdapter"]
 
 CORE_API = "https://api.core.ac.uk/v3"
-CORE_RATE = RatePolicy(min_interval=2.0)
+CORE_LIMITS = ServiceLimits(search=SourceLimit(requests=1, seconds=2.0))
 
 
 class CoreAdapter(HttpSourceAdapter):

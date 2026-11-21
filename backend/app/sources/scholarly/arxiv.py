@@ -9,7 +9,7 @@ from app.core.errors import ExternalFailure
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
 from ..adapter import HttpSourceAdapter, build_document
-from ..http import RatePolicy, SourceResponse
+from ..http import SourceResponse
 from ..records import (
     AUTHORS_MAX,
     UnusableRecord,
@@ -21,11 +21,12 @@ from ..records import (
     query_terms,
     title_of,
 )
+from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["ARXIV_RATE", "ArxivAdapter", "arxiv_search_query"]
+__all__ = ["ARXIV_LIMITS", "ArxivAdapter", "arxiv_search_query"]
 
 ARXIV_API = "https://export.arxiv.org/api/query"
-ARXIV_RATE = RatePolicy(min_interval=3.0)
+ARXIV_LIMITS = ServiceLimits(search=SourceLimit(requests=1, seconds=3.0, concurrency=1))
 ATOM = "{http://www.w3.org/2005/Atom}"
 ARXIV = "{http://arxiv.org/schemas/atom}"
 ARXIV_ID = re.compile(r"^(?:\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Z]{2})?/\d{7})(?:v\d+)?$")

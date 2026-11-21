@@ -89,7 +89,6 @@ async def test_crossref_search_and_fetch() -> None:
             "api.crossref.org/works": Reply("crossref_search.json"),
             "api.crossref.org/works/10.55041/ijsrem46137": Reply("crossref_work.json"),
         },
-        contact_email=CONTACT,
     )
     items = await adapter.search(QUERY, 5)
     assert [item.id for item in items] == [
@@ -104,7 +103,9 @@ async def test_crossref_search_and_fetch() -> None:
     assert article.publisher == "Edtech Publishers (OPC) Private Limited"
     assert (article.source_type, article.trust) == ("PAPER", "A")
     assert recorder.requests[0].url.params["filter"] == "has-abstract:true"
-    assert recorder.requests[0].url.params["mailto"] == CONTACT
+    assert "mailto" not in recorder.requests[0].url.params
+    assert recorder.requests[0].headers["User-Agent"] == "KalaVigyan/1 (+https://kalavigyan.vercel.app)"
+    assert CONTACT not in str(recorder.requests[0].url)
     document = await adapter.fetch("crossref:10.55041/ijsrem46137")
     assert document.text.startswith(
         "Abstract Clothing serves several essential functions, including protection, identification, and adornment."
@@ -117,7 +118,6 @@ async def test_crossref_unknown_doi_is_not_found() -> None:
     adapter, _ = adapter_for(
         CrossrefAdapter,
         {"api.crossref.org/works/10.9999/missing": Reply("crossref_missing.txt", status=404)},
-        contact_email=CONTACT,
     )
     with pytest.raises(ExternalFailure) as failure:
         await adapter.fetch("crossref:10.9999/missing")
@@ -347,7 +347,7 @@ async def test_a_record_without_an_id_is_left_out_and_logged(caplog: pytest.LogC
     ],
 )
 def test_every_adapter_meets_the_source_adapter_contract(cls) -> None:
-    options = {"contact_email": CONTACT} if cls in (OpenAlexAdapter, CrossrefAdapter) else {}
+    options = {"contact_email": CONTACT} if cls is OpenAlexAdapter else {}
     if cls in (CoreAdapter, ElsevierAdapter, SpringerNatureAdapter):
         options["api_key"] = "key"
     adapter, _ = adapter_for(cls, {}, **options)

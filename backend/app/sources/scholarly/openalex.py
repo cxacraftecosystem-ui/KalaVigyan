@@ -6,7 +6,7 @@ from typing import Any
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
 from ..adapter import Clock, HttpSourceAdapter, build_document, utc_now
-from ..http import RatePolicy, SourceHttp
+from ..http import SourceHttp
 from ..records import (
     AUTHORS_MAX,
     UnusableRecord,
@@ -17,11 +17,12 @@ from ..records import (
     partial_date_of,
     title_of,
 )
+from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["OPENALEX_RATE", "OpenAlexAdapter", "abstract_from_index"]
+__all__ = ["OPENALEX_LIMITS", "OpenAlexAdapter", "abstract_from_index"]
 
 OPENALEX_API = "https://api.openalex.org"
-OPENALEX_RATE = RatePolicy(min_interval=0.1)
+OPENALEX_LIMITS = ServiceLimits(search=SourceLimit(requests=10))
 WORK_FIELDS = (
     "id,doi,display_name,publication_date,publication_year,type,authorships,primary_location,best_oa_location"
 )

@@ -17,7 +17,7 @@ from app.research.evidence_pack import EvidencePack, ResearchTrail
 from app.research.explainer import Block
 from app.research.planning import PlanRequest, ResearchShare, RetrievalPlan
 from app.research.reading_style import ReadingStyle
-from app.research.sections import DISCIPLINE_TITLES, LADDER_DISCIPLINE, SectionSpec, block_id
+from app.research.sections import DISCIPLINE_TITLES, LADDER_DISCIPLINE, SectionSpec, block_id, named_stage_ids
 from app.research.stream import ResearchProgress
 from app.science.ladder import ladder_problems, ladder_stage_options, process_ladder
 from app.science.records import ProcessRecords
@@ -296,15 +296,15 @@ def _ladder(
     spec: SectionSpec, context: SectionContext, composed: ComposedAnswer, ordinal: int
 ) -> Block | None:
     records = context.process
-    if records is None or spec.discipline != LADDER_DISCIPLINE or not composed.stage_ids:
+    if records is None or spec.discipline != LADDER_DISCIPLINE:
         return None
-    ladder_id = block_id(spec.id, ordinal)
-    ladder = process_ladder(records, block_id=ladder_id, stage_ids=composed.stage_ids)
+    stage_ids = named_stage_ids(context.base, ladder_stage_options(records), composed.stage_ids)
+    ladder = process_ladder(records, block_id=block_id(spec.id, ordinal), stage_ids=stage_ids)
     if ladder is None:
         return None
     problems = ladder_problems(ladder, records)
     if problems:
-        logger.warning("ladder %s refused: %s", ladder_id, "; ".join(problems))
+        logger.warning("ladder %s refused: %s", ladder.id, "; ".join(problems))
         return None
     return ladder
 

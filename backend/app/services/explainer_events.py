@@ -14,6 +14,8 @@ from app.research.vocabulary import ANSWER_LANGUAGE_SPECS
 from .answer_events import OPEN_HEADING, OPEN_SECTION_ID
 from .answer_trail import TrailLog
 from .claim_ledger import ClaimLedger
+from .gap_routing import gap_block, open_question, routed_gaps
+from .ledger_payloads import Payload
 
 __all__ = ["ONCE_STEPS", "ExplainerStream", "InLanguage", "shown_title", "status_message"]
 
@@ -111,8 +113,9 @@ class ExplainerStream:
         in_language: InLanguage | None = None,
     ) -> list[Block]:
         await self._lede_settled.wait()
+        routed = routed_gaps(blocks)
         async with self._lock:
-            admitted = self.ledger.admit(section_id, blocks, sources)
+            admitted = self.ledger.admit(section_id, routed.blocks, sources)
         shown = list(await asyncio.gather(*map(in_language, admitted))) if in_language else admitted
         async with self._lock:
             known = {**sources, **self.ledger.sources.refs()}
@@ -120,6 +123,8 @@ class ExplainerStream:
             for block in sent:
                 await self._sources(block.cited_source_ids(), known)
                 await self.emit("block", {"sectionId": section_id, "block": block})
+        if routed.gaps:
+            await self.open_questions(await _asked(section_id, routed.gaps, in_language), sources)
         return sent
 
     def shown_sources(self) -> dict[str, dict[str, Any]]:
@@ -132,6 +137,8 @@ class ExplainerStream:
             for sentence in sentences:
                 merged = self.ledger.merged_sentence(sentence, sources)
                 known = {**sources, **self.ledger.sources.refs()}
+                if not _asks_from_known(merged, known):
+                    continue
                 await self._sources(dict.fromkeys(c["sourceId"] for c in merged["citations"]), known)
                 self._open_questions += 1
                 numbered = {**merged, "id": f"{OPEN_SECTION_ID}.{self._open_questions}"}
@@ -145,6 +152,26 @@ class ExplainerStream:
             if source_id not in self._sent_sources:
                 self._sent_sources.add(source_id)
                 await self.emit("source", sources[source_id])
+
+
+async def _asked(section_id: str, gaps: Sequence[Payload], in_language: InLanguage | None) -> list[Payload]:
+    plain = [open_question(gap) for gap in gaps]
+    block = gap_block(section_id, gaps) if in_language is not None else None
+    if in_language is None or block is None:
+        return plain
+    shown = await in_language(block)
+    return [
+        open_question(sentence.model_dump(mode="json", by_alias=True)) for sentence in shown.cited_sentences()
+    ]
+
+
+def _asks_from_known(sentence: Mapping[str, Any], known: Mapping[str, Mapping[str, Any]]) -> bool:
+    missing = [c["sourceId"] for c in sentence.get("citations", []) if c["sourceId"] not in known]
+    if missing:
+        logger.warning(
+            "an open question is left out: it cites sources not sent with it (%s)", ", ".join(missing)
+        )
+    return not missing
 
 
 def _sourced(section_id: str, block: Block, known: Mapping[str, Mapping[str, Any]]) -> bool:

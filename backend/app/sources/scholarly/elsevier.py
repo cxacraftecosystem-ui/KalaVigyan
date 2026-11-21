@@ -6,7 +6,7 @@ from typing import Any
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
 from ..adapter import Clock, HttpSourceAdapter, build_document, utc_now
-from ..http import RatePolicy, SourceHttp
+from ..http import SourceHttp
 from ..records import (
     AUTHORS_MAX,
     UnusableRecord,
@@ -20,11 +20,12 @@ from ..records import (
     query_terms,
     title_of,
 )
+from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["ELSEVIER_RATE", "ElsevierAdapter"]
+__all__ = ["ELSEVIER_LIMITS", "ElsevierAdapter"]
 
 ELSEVIER_API = "https://api.elsevier.com/content"
-ELSEVIER_RATE = RatePolicy(min_interval=0.2)
+ELSEVIER_LIMITS = ServiceLimits(search=SourceLimit(requests=5))
 SUBTYPE_KINDS = {
     "ar": "article",
     "re": "article",

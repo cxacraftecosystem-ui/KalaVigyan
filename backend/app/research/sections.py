@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 import re
+import uuid
 from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 from typing import Annotated, Literal
@@ -11,11 +12,12 @@ from pydantic import Field
 from app.models.enums import DISCIPLINES
 
 from .base import ContractModel
-from .composition import HEADING_MAX_CHARS
+from .composition import HEADING_MAX_CHARS, StageOption
 from .depth import depth_policy
 from .explainer import SECTION_ID_PATTERN
-from .planning import RetrievalPlan
+from .planning import PlanRequest, RetrievalPlan
 from .question_cues import HOW_IT_WORKS_FILLERS, HOW_IT_WORKS_SUBJECTS, HOW_IT_WORKS_VERBS, QUESTION_CUES
+from .quotes import content_stem, content_stems
 from .vocabulary import Discipline
 
 __all__ = [
@@ -26,6 +28,7 @@ __all__ = [
     "FACET_LABELS",
     "FALLBACK_DISCIPLINE",
     "FALLBACK_HEADINGS",
+    "GENERIC_STAGE_WORDS",
     "LADDER_DISCIPLINE",
     "AnswerPlans",
     "SectionPlan",
@@ -35,6 +38,7 @@ __all__ = [
     "block_id",
     "fallback_heading",
     "is_facet_label",
+    "named_stage_ids",
     "question_fields",
     "question_order",
     "section_specs",
@@ -120,6 +124,28 @@ FACET_LABELS = frozenset(
 )
 QUESTION_WORD = re.compile(r"[^\s\"'“”‘’.,;:!?()\[\]{}।॥/\\-]+")
 
+STAGE_SPAN = re.compile(r"\bfrom\b.+\b(to|till|until|through|into)\b", re.IGNORECASE)
+GENERIC_STAGE_WORDS = (
+    "make",
+    "made",
+    "makes",
+    "making",
+    "stage",
+    "stages",
+    "step",
+    "steps",
+    "process",
+    "processes",
+    "technique",
+    "techniques",
+    "craft",
+    "work",
+    "working",
+    "first",
+    "last",
+    "final",
+)
+
 SectionId = Annotated[str, Field(pattern=SECTION_ID_PATTERN)]
 
 
@@ -196,12 +222,32 @@ def fallback_heading(discipline: str, craft_name: str | None) -> str:
     return heading[0].upper() + heading[1:]
 
 
+def named_stage_ids(
+    request: PlanRequest, stages: Sequence[StageOption], chosen: Sequence[uuid.UUID] = ()
+) -> list[uuid.UUID]:
+    asked = request.english_question or request.question
+    craft_name = request.craft.name if request.craft else ""
+    process = LADDER_DISCIPLINE in asked_disciplines([LADDER_DISCIPLINE], asked, craft_name)
+    named = _named_positions(asked, stages, craft_name) if process else []
+    if len(named) > 1 and STAGE_SPAN.search(asked):
+        named = list(range(named[0], named[-1] + 1))
+    wanted = {*chosen, *(stages[n].id for n in named)}
+    ordered = [stage.id for stage in stages if stage.id in wanted]
+    return [*ordered, *(stage_id for stage_id in dict.fromkeys(chosen) if stage_id not in ordered)]
+
+
 def is_facet_label(heading: str) -> bool:
     return " ".join(LABEL_WORD.findall(heading.casefold())) in FACET_LABELS
 
 
 def block_id(section_id: str, ordinal: int) -> str:
     return f"{section_id}.b{ordinal}"
+
+
+def _named_positions(asked: str, stages: Sequence[StageOption], craft_name: str) -> list[int]:
+    ignored = content_stems(craft_name) | {content_stem(word) for word in GENERIC_STAGE_WORDS}
+    words = content_stems(asked) - ignored
+    return [n for n, stage in enumerate(stages) if (content_stems(stage.name) - ignored) & words]
 
 
 def _words(text: str) -> set[str]:
