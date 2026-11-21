@@ -1,8 +1,22 @@
 # 0067. Lesson packs, the explainer PDF and citation export
 
+A Professor or above turns one version of their explainer into a lesson pack built by fixed rules,
+with APA through citeproc-py, BibTeX and RIS by stated rules, a PDF by fpdf2, and a PPTX and a
+reveal.js deck. Files are built once into the private bucket and answered as short-lived links, and
+pictures come only from the open-image hosts.
+
 Date: 2026-11-18. Status: accepted. Amended by 0070 (APA references are written in the
 worker thread; the export libraries load on the first file; hidden generated explainers are left
 out).
+
+| For | Read |
+|---|---|
+| What amended it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md): APA in the worker thread, the export libraries loaded on the first file, hidden generated explainers left out |
+| What it amends | [0069 Learning screens: follow-ups, saved answers, notes, lessons, exports, the map and compare](0069-learning-screens.md): item 5, with lesson files and the report PDF as signed links |
+| What it amends | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md): item 10, with APA written by citeproc-py while BibTeX and RIS keep the stated rules |
+| The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
+| The contracts it names | [learning.md](../contracts/learning.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -96,3 +110,11 @@ nothing when author names are kept as written.
 - Nothing needs provisioning: the `exports/` prefix, its expiry and the media key's rights exist.
   After the deploy that carries migration 0023, a professor's lesson pack is the phase D proof.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

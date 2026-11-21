@@ -1,7 +1,16 @@
 # 0099. The expert panel searches its own fields, calls each seat on its own, seats up to 12 at Expert, and hears the artisan from field transcripts
 
+The expert panel gives each seat evidence from its own fields and a call of its own, seats up to 12
+at Expert, and hears the artisan from field transcripts. Its amendment of 2026-11-20 lets a seat
+whose own field is missing or thin research live.
+
 Date: 2026-11-19. Status: accepted. Extends decision 0046 (the expert panel); keeps decision 0080
 (the claim ledger) as it is; the add-on route stays on Claude Sonnet 5.5 (decision 0089).
+
+| For | Read |
+|---|---|
+| What it builds on | [0046 The expert panel](0046-expert-panel.md): the expert panel, widened |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -101,3 +110,10 @@ of the fourteen days to 2026-11-20 (`app/scripts/write_back_report.py`, run read
 showed 35 answers, one of them with live research, and 136 claims written back by live research
 with 136 quoted citations, 133 found by the background coverage enrichment and 3 by answers, the
 latest on 2026-11-17; the seats' research raises the share that answers write.
+
+## How this record is kept true
+
+Its Amendment of 2026-11-20 records what the owner approved in round 7. Beyond that it is not edited
+except to mark it superseded: a later choice is a new record that names this one, and the table
+above links the two both ways. It records the choice as taken on 2026-11-19; what the code does
+today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the [contracts](../contracts/README.md).

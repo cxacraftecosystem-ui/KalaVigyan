@@ -1,7 +1,19 @@
 # 0100. The Kutch Ajrakh craft page is the hand-built monograph, served as built
 
+The Kutch Ajrakh craft page was the owner's approved hand-built monograph, served as a static file
+changed only to fit the app, until the template renderer matched it. That ended on 2026-11-20, when
+decision 0106's React renderer passed the parity proof.
+
 Date: 2026-11-19. Status: accepted. Overrides the craft page renderer (decisions 0071, 0095 and
 0098) for one craft, Kutch Ajrakh; every other craft keeps it.
+
+| For | Read |
+|---|---|
+| What ended it | [0106 One monograph template for every page, reached through fragments](0106-one-monograph-template-for-every-page.md): its renderer passed the parity proof on 2026-11-20, so the craft page draws its stored document |
+| What it supersedes in part | [0071 The craft page reads as a curated reference](0071-craft-page-rebuild.md): its renderer, for Kutch Ajrakh only, until 2026-11-20 |
+| What it supersedes in part | [0095 The craft page becomes a monograph in chapters, public to read, built without a question](0095-craft-page-chapters.md): its renderer, for Kutch Ajrakh only, until 2026-11-20 |
+| What it supersedes in part | [0098 How the craft page chapters were built: the readings taken where the contract was open](0098-craft-page-chapters-build.md): its renderer, for Kutch Ajrakh only, until 2026-11-20 |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -45,3 +57,10 @@ document like every other craft and the rewrite is gone. The approved file stays
 `/monographs/kutch-ajrakh/` as the parity reference, served with `X-Robots-Tag: noindex`;
 `e2e/craft-monograph-unit.spec.ts` checks that arrangement.
 
+## How this record is kept true
+
+Its section Ended (2026-11-20) records how the override ended. Beyond that it is not edited except
+to mark it superseded: a later choice is a new record that names this one, and the table above links
+the two both ways. The parts later records changed stay here as they were decided; the later record
+is the one that holds. It records the choice as taken on 2026-11-19; what the code does today is in
+[ARCHITECTURE.md](../ARCHITECTURE.md) and the [contracts](../contracts/README.md).

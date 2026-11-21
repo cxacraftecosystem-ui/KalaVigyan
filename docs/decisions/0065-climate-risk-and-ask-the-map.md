@@ -1,6 +1,16 @@
 # 0065. Climate and risk, and ask the map
 
+Climate trends use one CHIRPS period from 1981 and GHCN CAMS temperatures, with the Theil-Sen and
+Mann-Kendall method stated once and no groundwater values. Ask the map reads the stored story of the
+district tapped.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
+| The review that fixed it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -71,3 +81,10 @@ loaded. The phase D fixture cites `CHIRPS_3_0` over `1981-2025`.
   a Climate section shows the block once trends are loaded. Ask the map is mounted now; its
   screen is lane 0069's.
 - The region panel lists each year of both series under Climate (`docs/TECH_DEBT.md`).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

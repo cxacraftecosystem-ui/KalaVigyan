@@ -1,7 +1,18 @@
 # 0105. The Ajrakh page as structured content, rebuilt by a static build
 
+The approved Kutch Ajrakh page became structured content (text units without HTML, fields,
+registered components and citations against the dossier) and a template rebuilt by a static build,
+at parity by construction. Its later sections record its load into the database and every citation
+resolved.
+
 Date: 2026-11-19. Status: accepted (owner: "port the rest of the things of the Ajrakh page into
 structured content, and do a static build as well").
+
+| For | Read |
+|---|---|
+| What it builds on | [0101 One knowledge architecture for every craft: facts, sections, components, monographs](0101-knowledge-architecture-for-every-craft.md): build step 2's first half, the Ajrakh page as structured content |
+| What built on it | [0106 One monograph template for every page, reached through fragments](0106-one-monograph-template-for-every-page.md): the structured content it renders |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -89,3 +100,11 @@ The page was a 3 MB hand-built file whose sentences did not point at stored fact
   gates, then load again so every cited sentence and component is in the database.
 - Move each component's view from the template into a component spec, so other crafts reuse it.
 - Render other crafts with the same template once their content exists (decision 0101, step 6).
+
+## How this record is kept true
+
+Its sections of 2026-11-19, Loaded into the database and Every citation resolved, record what
+followed the build. Beyond that it is not edited except to mark it superseded: a later choice is a
+new record that names this one, and the table above links the two both ways. It records the choice
+as taken on 2026-11-19; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

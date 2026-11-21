@@ -1,6 +1,15 @@
 # 0007. Web search adapters and the fetcher sandbox
 
+Live research searches the web through SearXNG on the box, with Brave as the fallback, and reads
+pages only through a separate fetcher sandbox. The sandbox reads https only, pins addresses, checks
+redirects and robots.txt, caps size and time, and returns extracted text marked untrusted.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -102,3 +111,10 @@ them, and nothing defined how the API process talks to the fetcher process.
 - The answering service and the coverage job build the web adapters with
   `services.web_sources.web_sources(session, client)` and hold the result for the process.
 - The fetcher's limits and known gaps are in the debt register.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

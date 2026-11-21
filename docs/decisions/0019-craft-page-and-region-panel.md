@@ -1,6 +1,18 @@
 # 0019. Craft page process timeline, region panel and map choropleths
 
+The craft page gains a cited process timeline and a region panel, and `/map` gains district
+choropleths of the environment layers, every response checked at the boundary. One citation
+numbering covers the page, and presentation stays in the client.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| What superseded part of it | [0092 The KalaVigyan design system: Alum & Indigo](0092-design-system.md): its colour, type and motion choices; its behaviour stands |
+| The contract it was built to | [0014 Contracts for process science, region profile, voice and media](0014-science-region-voice-media-contracts.md) |
+| The review that fixed it | [0022 Voice spend fails closed, a filtered style hint, region sources and one home per rule](0022-batch-3-review-fixes.md) |
+| The contracts it names | [science.md](../contracts/science.md), [region.md](../contracts/region.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -79,3 +91,11 @@ scoped `evidence` ramp.
 - The map layer carries LGD codes only, so a district's value is shown without its name.
 - The screens have not been seen running yet; the production build and smoke specs run on
   GitHub Actions. Each item is in `docs/TECH_DEBT.md`.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

@@ -1,6 +1,17 @@
 # 0020. Voice UI: the voice dock on /ask and the craft page
 
+Voice is a dock on `/ask` and the craft page, not a dialog, offered only when the server says so and
+run by one controller over injected adapters with the ElevenLabs client SDK. Its transcript cites,
+relay is push to talk, and client tools are checked again against what the browser holds.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0014 Contracts for process science, region profile, voice and media](0014-science-region-voice-media-contracts.md) |
+| The review that fixed it | [0022 Voice spend fails closed, a filtered style hint, region sources and one home per rule](0022-batch-3-review-fixes.md) |
+| The contracts it names | [voice.md](../contracts/voice.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -107,3 +118,10 @@ routes at the same time, so the client is built against the contract and its gol
   `/answers/config`; nothing else on the client waits for it.
 - The dock, orb and microphone paths have not run in a browser; the controller and transports are
   covered with fakes. Both are in `docs/TECH_DEBT.md`, as are the worklet CSP and the image button.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

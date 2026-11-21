@@ -1,6 +1,15 @@
 # 0008. Stored-knowledge retrieval
 
+Stored knowledge is retrieved within a craft's scope by two rankings, full text and an exact vector
+scan, fused by rank with no similarity floor. What a reader may be shown is defined once in
+`research/retrieval.py`, and a failed embedding fails the search instead of falling back to text.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -76,3 +85,10 @@ protocol lived inside the craft resolver.
 - The claim writer calls `replace_source_chunks` with a fetched `SourceDocument.text` when it
   stores a source, and `app/scripts/embed_knowledge.py` (`embed_pending`) fills missing vectors.
 - Stored vectors carry no model stamp (`docs/TECH_DEBT.md`).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

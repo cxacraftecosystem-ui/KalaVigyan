@@ -1,8 +1,18 @@
 # 0096. Every piece built for a reader's question joins its craft's page, whoever asked
 
+Every piece built for a reader's question joins its craft's page whoever asked, placed by chapter,
+one per slot, with its provenance shown and its asker never. AI media join too, and withdrawal and
+staleness follow the sources.
+
 Date: 2026-11-18. Status: accepted. Extends decision 0095 (craft page schema version 3); amends
 decision 0033 (stored pieces served only to answers) and the media contract's sharing rule for
 assets made from a craft's claims.
+
+| For | Read |
+|---|---|
+| What it amends | [0033 Stored knowledge pieces and reuse](0033-knowledge-pieces-and-reuse.md): stored pieces served only to answers |
+| What it builds on | [0095 The craft page becomes a monograph in chapters, public to read, built without a question](0095-craft-page-chapters.md): craft page schema version 3 |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -72,3 +82,10 @@ an AI asset's object key names the user who asked for it.
   it.
 - An any-craft answer whose pieces cite claims of two crafts with no common page attaches nothing;
   its claims still reach each page through the write-back.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

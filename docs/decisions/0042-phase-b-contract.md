@@ -1,6 +1,16 @@
 # 0042. Phase B contract: place, matter and the expert panel
 
+Phase B's contract fixes version 1 of the place, matter and expert panel kinds: references instead
+of copied geometry, datasets cited as rows, a model that only chooses and orders, and reactions from
+the science engine. Builders and renderers are registries, called once from the sectioned flow.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The lanes built to it | [0043](0043-river-lines-tracer-and-monthly-rain.md), [0044](0044-region-story-and-map-layers.md), [0045](0045-reactions-materials-molecules.md), [0046](0046-expert-panel.md), [0047](0047-seasons-and-supply.md), [0048](0048-place-renderers.md) and [0049](0049-matter-and-expert-renderers.md) |
+| The contracts it names | [explainer.md](../contracts/explainer.md), [region.md](../contracts/region.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -85,3 +95,10 @@ cited, numbers and places from claims or datasets only.
   (rivers); their fixtures and tests must keep `explainer.phase-b.golden.json` reproducing.
 - Nothing a reader sees changes: the registry is empty and the kinds are not built.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

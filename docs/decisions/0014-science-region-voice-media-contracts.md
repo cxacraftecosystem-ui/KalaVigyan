@@ -1,6 +1,17 @@
 # 0014. Contracts for process science, region profile, voice and media
 
+The contracts for process science, the region profile, voice and media are HTTP bodies in
+`backend/app/schemas/`, each model refusing a body that breaks its rule, with one golden file per
+shape. They settle the readings PLAN 7, 10 and 11 left open and fix the numbers 0015 to 0022 for the
+batch built to them.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The lanes built to it | [0015](0015-science-engine.md), [0016](0016-region-profile.md), [0017](0017-voice-backend.md), [0018](0018-media-backend.md), [0019](0019-craft-page-and-region-panel.md), [0020](0020-voice-ui.md) and [0021](0021-media-ui.md) |
+| The review that fixed it | [0022 Voice spend fails closed, a filtered style hint, region sources and one home per rule](0022-batch-3-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -98,3 +109,10 @@ and no review gates; the owner asks for no gap admissions on screens and no code
   `DistrictEnvValue.resolution`; lane 0017 runs the ElevenLabs spike before `AGENT` is offered.
   These are in the debt register until built.
 - A badly formed stored row fails its answer loudly instead of reaching the screen.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

@@ -1,7 +1,16 @@
 # 0102. Fields on facts, section records and the component registry: step 1 as built
 
+Build step 1 of decision 0101 is built as a vocabulary of 16 fields, a field on every claim with a
+backfill, `ArticleSection` records and the component registry's fields on `KnowledgePiece`. The new
+tables are closed to the public roles.
+
 Date: 2026-11-19. Status: accepted (built without the owner present, on the owner's instruction to
 continue on Claude's recommendations; each choice below can be revisited).
+
+| For | Read |
+|---|---|
+| What it builds on | [0101 One knowledge architecture for every craft: facts, sections, components, monographs](0101-knowledge-architecture-for-every-craft.md): build step 1 |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -66,3 +75,10 @@ where the two new fields sit in the answer engine open.
   without changing what a reader sees.
 - The downgrade maps `SOCIETY` to `OVERVIEW` and `POLICY` to `ECONOMICS` before restoring the
   14-field checks, so a database can go back without losing rows.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-19; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

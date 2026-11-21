@@ -1,6 +1,18 @@
 # 0071. The craft page reads as a curated reference
 
+The craft page reads as a curated reference from one route, in five tabs drawn only from what the
+response holds, with no generator or research control for readers. All evidence is for Researchers
+and above.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| What superseded part of it | [0100 The Kutch Ajrakh craft page is the hand-built monograph, served as built](0100-ajrakh-monograph-served-as-built.md): its renderer, for Kutch Ajrakh only, until 2026-11-20 |
+| What amended it | [0081 Craft page contract version 2: a page whose structure is final at first paint](0081-craft-page-contract-v2.md): its sources-differ rows come heaviest first, not in the order served |
+| What amended it | [0095 The craft page becomes a monograph in chapters, public to read, built without a question](0095-craft-page-chapters.md): item 8, All evidence for researchers |
+| The contracts it names | [craft-page.md](../contracts/craft-page.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -79,3 +91,11 @@ reliability, and All evidence for researchers. Until now the page read `/profile
 - The term sheet still shows the term route's summary, not the dossier's meaning
   (`docs/TECH_DEBT.md`, "A curated glossary meaning does not reach the term route").
 - Left open in `docs/TECH_DEBT.md`, section "Craft page rebuild (decision 0071)".
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

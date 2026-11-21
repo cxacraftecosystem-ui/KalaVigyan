@@ -1,6 +1,16 @@
 # 0011. Claim write-back and the coverage enrichment job
 
+What live research finds for one learner is written back as cited claims, its documents stored first
+and each citation keeping its provenance, through one writer whose derived ids make concurrent
+writes safe. A daily coverage enrichment job widens coverage across every craft within the monthly
+ceiling.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -92,3 +102,10 @@ write-backs, no place for the question and retrieval time of each citation, and 
 - Write-backs are labels, not gates: they show at once, and a professor can still correct,
   retract or verify them.
 - `EnrichmentProposal` is not used: there is nothing to approve.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

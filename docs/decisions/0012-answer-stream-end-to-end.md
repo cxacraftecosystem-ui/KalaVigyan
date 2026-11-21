@@ -1,6 +1,18 @@
 # 0012. The answer stream end to end
 
+`POST /api/answers/stream` runs end to end through one answering service: a producer and a queue,
+progress from inside research, citations read back from the database after write-back, and no
+session held across a model call. Not enough evidence is its own event, and `VERIFIED` answers make
+no model call.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| The review that fixed it | [0013 Quote strength, open licences, one craft scope and scoped embedding](0013-review-fixes-quotes-licences-scope.md) |
+| The contracts it names | [research.md](../contracts/research.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -75,3 +87,10 @@ researchers and above; the stream contract (`docs/contracts/research.md`) alread
   transaction rolls back). Recorded in `docs/TECH_DEBT.md`.
 - `AnswerSentence`, `AnswerCitation` and `AnswerTrace` rows are not written yet; the `Answer`
   row carries the plan, tiers and cited claim ids.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

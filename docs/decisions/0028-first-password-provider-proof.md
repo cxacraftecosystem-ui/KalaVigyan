@@ -1,6 +1,14 @@
 # 0028. A first password needs a fresh provider proof: DR's rule, ported
 
+An account with no password sets its first one only with a fresh proof from Google, Microsoft or
+Yahoo: the designer portal's rule, ported and made stricter in four ways. One service holds the
+rule, and the rest of change-password is unchanged.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -83,3 +91,10 @@ the card's step unused.
   back to `/settings`, the fields sent). Expected values are written by hand.
 - The card offers a recovery code for the two-step code, but `step_up` takes only an authenticator
   code (`docs/TECH_DEBT.md`).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

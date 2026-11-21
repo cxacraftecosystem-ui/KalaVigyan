@@ -1,6 +1,15 @@
 # 0051. Curation tooling: the dossier model, fetch, verify and check
 
+Curation has one shared dossier model with its rules as pure functions beside it, reading through
+the app's own extraction, an independent quote verifier and a checker that writes the index. Its
+wave 1 changes, after the pilot, refined how numbers and hedges match and when the index is written.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contracts it names | [curation.md](../contracts/curation.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -134,3 +143,10 @@ wave 1:
 9. **The pilots under the new rules**: re-verified, then checked with no problem. Kutch Ajrakh's
    three Khamir exhibition pages, rated D by the pilot critic for want of an author, are C under
    the new rubric (Khamir's own annual exhibition, no shop links); the craft page golden follows.
+
+## How this record is kept true
+
+Its Wave 1 changes of 2026-11-18 record what followed the pilot. Beyond that it is not edited except
+to mark it superseded: a later choice is a new record that names this one, and the table above links
+the two both ways. It records the choice as taken on 2026-11-17; what the code does today is in
+[ARCHITECTURE.md](../ARCHITECTURE.md) and the [contracts](../contracts/README.md).

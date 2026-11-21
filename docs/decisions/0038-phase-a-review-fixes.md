@@ -1,6 +1,17 @@
 # 0038. Phase A review fixes
 
+Phase A's review fixed what broke an owner rule or a plan decision: Master Admins are never
+throttled, a failed craft lookup never blocks, modes stay internal and answers write no process
+rows. No adapter drops a schema, the trail's limits have one home, and the documents say what the
+code does.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The lanes it reviewed | [0030](0030-explainer-contract.md), [0031](0031-understanding-and-depth.md), [0032](0032-sectioned-composition.md), [0033](0033-knowledge-pieces-and-reuse.md), [0034](0034-images-and-terms.md), [0035](0035-listen-and-voice-switched-off.md), [0036](0036-asking-screen.md) and [0037](0037-explainer-ui.md) |
+| The contracts it names | [research.md](../contracts/research.md), [backend.md](../contracts/backend.md), [voice.md](../contracts/voice.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -83,3 +94,10 @@ and several documents described behaviour that had changed.
 - Items left are in `docs/TECH_DEBT.md`: "Answers never grow the Process tab", the `/ask` picture
   policy (cleared by decision 0039), "Retired stream vocabulary still listed" and "Craft Process
   tab on phones hangs (finding 8a.3)".
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

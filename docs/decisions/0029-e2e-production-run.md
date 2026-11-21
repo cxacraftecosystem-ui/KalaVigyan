@@ -1,6 +1,15 @@
 # 0029. E2E against production, on dispatch, as one Researcher account
 
+The production app is driven end to end on GitHub Actions, on dispatch only, signed in as one
+Researcher password account, at every screen. Its known-answer questions are checked on the wire,
+and its reports and screenshots are named by `lib/naming`.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| What built on it | [0076 The release gate looks at what the reader sees](0076-release-gate-that-sees.md): the Professor and Admin screens it left not covered |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -67,3 +76,10 @@ headless run cannot pass it without a TOTP secret in CI.
   CI.
 - The pure checks (stream parsing, answer rules, gap copy, nav labels, file names, summary) have
   unit specs in `frontend/e2e/production-checks-unit.spec.ts`, which run on push.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

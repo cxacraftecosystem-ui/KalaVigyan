@@ -1,7 +1,17 @@
 # 0116. KalaVigyan's knowledge is an open dataset with a DOI
 
+KalaVigyan's published facts, their citations and curated structure are released as a versioned open
+dataset under CC BY 4.0 with a Zenodo DOI, without the cited works' verbatim quotes or any
+contributor's name. The same data gives the same bytes, each release is recorded with its row
+digests, and `GET /api/open-data` lists how to cite it.
+
 Date: 2026-11-21. Status: accepted (owner, 2026-11-21: "We should be able to publish the data with a
 DOI."). The contract is `docs/contracts/open-data.md`.
+
+| For | Read |
+|---|---|
+| The contract it fixes | [open-data.md](../contracts/open-data.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -76,3 +86,10 @@ a sandbox for rehearsals and a concept DOI that always resolves to the newest ve
   new version, and an unpublished first draft can be deleted from Zenodo's uploads page.
 - Facts whose only citations are field testimony stay out of the dataset until a recorded right to
   redistribute them exists; a later decision may add that right to the portals' consent.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-21; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

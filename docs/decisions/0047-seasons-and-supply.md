@@ -1,6 +1,16 @@
 # 0047. Seasons and supply
 
+The `seasons` and `supply_map` blocks are chosen by the server with no model: a season becomes
+months only through a cited mapping, and rainfall is the first craft district with twelve normals.
+Supply links are words the model chooses and the server checks, with coordinates only from Wikidata.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0042 Phase B contract: place, matter and the expert panel](0042-phase-b-contract.md) |
+| The review that fixed it | [0050 Phase B review fixes](0050-phase-b-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -88,3 +98,10 @@ blocks.
   stored CHIRPS rows and the supply links against the seeded Indigo material
   (`tests/db/test_seasons_supply_db.py`).
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

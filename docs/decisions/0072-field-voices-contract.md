@@ -1,7 +1,18 @@
 # 0072. Field voices come through signed peer routes, filtered by consent at the portal
 
+Field voices reach KalaVigyan through three signed peer routes instead of the portals' export,
+filtered by consent at the portal: publication is its own consent purpose, only the artisan's own
+words travel, and credit is as the artisan chose. Withdrawal is by absence and fails closed, and
+photographs travel as derived copies.
+
 Date: 2026-11-18. Status: accepted; amended by 0084 (version 2: both portals, full transcripts and
 craft images, by cursor with tombstones).
+
+| For | Read |
+|---|---|
+| What amended it | [0084 Field voices v2: both portals, full transcripts and craft images, by cursor with tombstones](0084-field-voices-v2.md): version 2, for both portals, full transcripts and craft images, by cursor with tombstones |
+| The contracts it names | [field-voices.md](../contracts/field-voices.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -74,3 +85,11 @@ there are the original uploads, with their EXIF location data.
   another language or `und` cannot meet; the block needs its next version before phase E shows
   quotes.
 - The designer portal's ledger must gain the same purpose, since the two ledgers are one model.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

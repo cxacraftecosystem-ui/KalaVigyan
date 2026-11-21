@@ -1,11 +1,22 @@
 # 0110. Sources a contributor's AI can read and we cannot, and a studio to build a page in
 
+A contributor's AI may supply the text of a source KalaVigyan cannot read itself, which is graded,
+checked by the gates against that text and kept privately, never republished. A draft workspace and
+a preview an AI can judge let a contributor build a whole page in one guided flow.
+
 Date: 2026-11-21. Status: accepted (owner, 2026-11-21: "There is a greater maneuverability in the
 MCP through the third party ai, it can get us access to better sources too and all, so add it to the
 MCP as well, the MCP should be able to do all the research, the page curation, and the page preview
 including uploading and all, it should be a miraculous experience in total"). Amends the sources
 reference's "never used: anything behind a login" for text a contributor supplies under these rules;
 the rest of decision 0101 (the gates, the review switch, trust tiers) stands.
+
+| For | Read |
+|---|---|
+| What amended it | [0111 Twenty-one MCP tools in six groups, with small schemas](0111-fewer-mcp-tools.md): the tools it names; its services, allowances and contracts stand |
+| What it amends | the sources reference's "never used: anything behind a login" ([sources.md](../../backend/app/data/contributor/references/sources.md)), for text a contributor supplies |
+| What it builds on | [0101 One knowledge architecture for every craft: facts, sections, components, monographs](0101-knowledge-architecture-for-every-craft.md): the gates, the review switch and trust tiers, which stand |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -91,3 +102,11 @@ and `preview_page` returned a link but nothing it could judge without a browser.
   reviewer who finds a false text rejects the fact and can see every fact resting on that supply.
 - The sources reference and the contributor skill still say "anything behind a login" is never used;
   the lead amends them to name supplied text as the one way such a source enters.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-21; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

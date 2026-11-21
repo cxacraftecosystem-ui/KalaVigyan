@@ -1,6 +1,17 @@
 # 0058. ElevenLabs music, sound effects, image and video
 
+ElevenLabs makes the film score, an instrumental bed and sound-effect cues under the narration,
+through one adapter and router wrapper on its newest models, cached per explainer and language. Its
+image and video generation are route choices, not defaults.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0054 Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode](0054-phase-c-contract.md) |
+| The review that fixed it | [0061 Phase C review fixes](0061-phase-c-review-fixes.md) |
+| The contracts it names | [media.md](../contracts/media.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -121,3 +132,10 @@ the music and sound-effect capability pages, `https://elevenlabs.io/pricing/api`
 - Settings shows Film music and Film sound effects in the routing page and on Usage, and offers
   the ElevenLabs image and video models as further choices.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

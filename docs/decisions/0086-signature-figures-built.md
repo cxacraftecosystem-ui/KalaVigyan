@@ -1,6 +1,15 @@
 # 0086. The four signature figures are built, as lede figures only, behind a setting
 
+The four signature figures (`indigo_vat`, `mordant_bath`, `lost_wax` and `firing`) are built as lede
+figures only, behind a setting, chosen by terms and built by rules. They fail closed, softly.
+
 Date: 2026-11-18. Status: accepted. Builds plan task 3-04 on the shapes of decision 0077 item 6.
+
+| For | Read |
+|---|---|
+| What it builds on | [0077 Every answer opens with a lede, its sections carry headings shaped by the question](0077-lede-headings-and-question-order.md): item 6's signature figures |
+| The contracts it names | [explainer.md](../contracts/explainer.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -45,3 +54,10 @@ from green to blue in air. The production page cannot draw the figures; the rede
   `LedeBlock.tsx` draws no figure it has no renderer for, and no empty frame for it.
 - The word rules are English; a translated lede keeps the figure built from the English claims and
   translates its sentences with the lede.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

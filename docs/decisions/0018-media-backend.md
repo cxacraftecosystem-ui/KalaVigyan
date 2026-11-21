@@ -1,6 +1,17 @@
 # 0018. Media backend: stage illustrations and clips through the router, the job queue and S3
 
+Stage illustrations and clips are made only on an explicit press, through the media router's walk, a
+job queue served by a worker, and the private S3 bucket. The claim set comes from the server, the
+prompt is versioned, and what the official Gemini pages did not confirm is handled fail-closed.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0014 Contracts for process science, region profile, voice and media](0014-science-region-voice-media-contracts.md) |
+| The review that fixed it | [0022 Voice spend fails closed, a filtered style hint, region sources and one home per rule](0022-batch-3-review-fixes.md) |
+| The contracts it names | [media.md](../contracts/media.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -151,3 +162,10 @@ screens, every user-facing fact cited.
 - Debt: the stage image as a video's first frame, captured fixtures, the KalaVigyan token in the
   cross-portal naming document, refunds counted on the refund's day, and voice upkeep moving into
   this worker (`docs/TECH_DEBT.md`).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

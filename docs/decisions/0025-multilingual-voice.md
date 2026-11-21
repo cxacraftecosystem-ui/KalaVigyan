@@ -1,6 +1,15 @@
 # 0025. Voice in every answer language
 
+Voice speaks every answer language its speech models support: one derivation lists them, each turn
+is ranked and composed through English and translated under the call's deadline, and every fixed
+phrase exists in every offered language. A sentence whose translation fails twice is left out.
+
 Date: 2026-11-16. Status: accepted. Supersedes item 12 of decision 0017.
+
+| For | Read |
+|---|---|
+| What it supersedes in part | [0017 Voice backend: sessions, the custom LLM, the relay path and upkeep](0017-voice-backend.md): item 12, the languages voice offers |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -144,3 +153,10 @@ lacks none of them, so no language needs another model.
   translations are cached.
 - Debt: Urdu speech-to-text accuracy, native review of the phrase tables, the agent's language
   binding (`docs/TECH_DEBT.md`).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

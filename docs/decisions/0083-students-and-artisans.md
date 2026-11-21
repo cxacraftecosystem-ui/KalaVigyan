@@ -1,6 +1,17 @@
 # 0083. Students and artisans: profiles at first entry, the Artisan role, conversations and testimony
 
+Students give an age band and gender at first entry, the age band becoming a reading style for
+composition and the lede, and a student under 18 needs a guardian's consent confirmed by the
+admitting institution. A new Artisan role (rank 18) talks with an interviewer agent, and its
+testimony becomes a claim only after a person reviews it, a deliberate exception to "no review
+gates".
+
 Date: 2026-11-18. Status: accepted; the items under "Owner to confirm" wait for the owner.
+
+| For | Read |
+|---|---|
+| The contracts it names | [roles-and-contributions.md](../contracts/roles-and-contributions.md), [voice.md](../contracts/voice.md), [craft-page.md](../contracts/craft-page.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -223,3 +234,11 @@ The contract is `docs/contracts/roles-and-contributions.md`.
   - an in-app note to the artisan when an item is decided;
   - an E2E artisan account for the production run;
   - native review of the phrase tables.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. When the owner settles the items under
+Owner to confirm, a later record says so and is linked above. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

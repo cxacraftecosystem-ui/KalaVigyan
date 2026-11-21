@@ -1,6 +1,16 @@
 # 0055. Generated explainers: built from cited figures, checked, stored, reused and hidden
 
+A generated explainer is built by a registry builder from figures the server offers, in one model
+call and one redraft and then nothing, and is stored once keyed by its claim set and concept. It is
+reused before any call, and a professor can hide it.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0054 Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode](0054-phase-c-contract.md) |
+| The review that fixed it | [0061 Phase C review fixes](0061-phase-c-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -72,3 +82,10 @@ hide one. This lane builds the server side; the renderer is lane 0059, and the k
   the stored pieces query, the reuse of a kept explainer with its section, hiding, showing again
   and the 404 cases.
 - Debt is in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

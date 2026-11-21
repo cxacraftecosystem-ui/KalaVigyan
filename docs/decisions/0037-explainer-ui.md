@@ -1,6 +1,16 @@
 # 0037. The explainer view
 
+The explainer view reads the stream through one reader and one reducer, and shows what was
+understood, the research trail, sections with their state, and Listen with the text highlighted.
+Citations, evidence badges, terms, the ladder and pictures follow the explainer contract.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
+| The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -82,3 +92,10 @@ the picture rules, 0036 the asking screen and its controls. The boards are the "
 - Listen stays hidden wherever the config does not list the answer's language (no ElevenLabs key,
   a language it cannot speak).
 - Save, Export, Share and Film mode on the board are not drawn: they belong to phases C and D.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

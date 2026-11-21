@@ -1,6 +1,17 @@
 # 0033. Stored knowledge pieces and reuse
 
+Every finished block is stored as a knowledge piece and reused when its facet and a topic key
+derived from data match, checked again at read time and failing closed. A claim change marks pieces
+stale through a trigger, a newer piece supersedes the older one, and a nightly job rebuilds.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| What amended it | [0096 Every piece built for a reader's question joins its craft's page, whoever asked](0096-reader-question-pieces-join-their-craft-page.md): stored pieces served only to answers |
+| The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
+| The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -96,3 +107,11 @@ the reuse rule and the staleness vocabulary; decision 0032 built the sections an
   the stored follow-ups for the headings its pieces' claims do not cover, and a reused section
   gets pictures searched from its blocks' claims, as a researched one does.
 - Items left below standard are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

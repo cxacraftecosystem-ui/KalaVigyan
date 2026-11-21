@@ -1,7 +1,17 @@
 # 0066. Local measures, and market and GI
 
+The `measure` and `market_gi` blocks are built with no model choosing: units are Pint's, a regional
+factor must be a stated equality, and GI status, imitation and prices are the registry's and the
+sources' own words. There is one market block per craft.
+
 Date: 2026-11-18. Status: accepted. Amended by 0070 (GI and price dates are shown
 only as precisely as their quotes state them).
+
+| For | Read |
+|---|---|
+| What amended it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md): GI and price dates are shown only as precisely as their quotes state them |
+| The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -87,3 +97,11 @@ nothing waits on a model or HTTP call while a connection is held (decision 0040)
   for the craft's region.
 - No migration, no data run and no owner step.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

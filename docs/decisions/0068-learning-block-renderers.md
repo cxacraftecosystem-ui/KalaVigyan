@@ -1,6 +1,17 @@
 # 0068. Learning block renderers
 
+The quiz, compare, concept graph, measure, market and GI and climate blocks are drawn from two
+registered modules: a quiz hides its answers until the reader picks, and compare is one table that
+stacks on a phone. A measure shows the source's words first, a climate trend is drawn as a slope
+from zero, and one numbering covers the new kinds.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
+| The review that fixed it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -87,3 +98,10 @@ reaches a screen.
   numbering against the fixture's sources and the shrinkable columns. Rendered at 390, 834 and
   1280 px in both themes, no page scrolled sideways.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

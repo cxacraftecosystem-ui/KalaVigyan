@@ -1,6 +1,19 @@
 # 0017. Voice backend: sessions, the custom LLM, the relay path and upkeep
 
+The voice backend is a `voice/` package: sessions bound to one user, one ElevenLabs adapter, a quota
+ledger and a custom-LLM endpoint that answers each turn from a claim pack in one model call. Spoken
+replies are cited, seconds are reserved and reconciled, the relay path uploads audio, and upkeep
+runs without a worker.
+
 Date: 2026-11-16. Status: accepted; item 12 superseded by decision 0025.
+
+| For | Read |
+|---|---|
+| What superseded part of it | [0025 Voice in every answer language](0025-multilingual-voice.md): item 12, the languages voice offers |
+| The contract it was built to | [0014 Contracts for process science, region profile, voice and media](0014-science-region-voice-media-contracts.md) |
+| The review that fixed it | [0022 Voice spend fails closed, a filtered style hint, region sources and one home per rule](0022-batch-3-review-fixes.md) |
+| The contracts it names | [voice.md](../contracts/voice.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -115,3 +128,11 @@ admissions on screens.
   spike replaces them with recorded responses.
 - Hindi voice, the T2 passages and claim embeddings in the voice pack, a voice settings screen and
   a real worker are in `docs/TECH_DEBT.md`.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

@@ -1,6 +1,15 @@
 # 0023. Answers in Indian languages
 
+Answers are written in English and twelve Indian languages: composed and verified in English, then
+translated in one `TRANSLATE` call per answer and checked mechanically. Translations are cached per
+claim and language, and a question may be asked in any of the languages.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| What built on it | [0107 Craft articles are written in English, with room for translations](0107-craft-articles-in-english-with-room-for-translation.md): answers in Indian languages, which keep their languages |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -111,3 +120,10 @@ sentence; the frontend skill asks for local fonts and concise copy.
   calls; a Hindi Verified answer at most two translate calls (question, then uncached claims) and
   none once its claims are cached.
 - The not-enough-evidence message, errors and status lines stay English.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

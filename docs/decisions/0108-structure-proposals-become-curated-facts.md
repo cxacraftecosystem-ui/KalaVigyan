@@ -1,8 +1,19 @@
 # 0108. An approved structure proposal becomes a curated fact of its dossier
 
+A structure proposal carries one piece of structure and the fact that states it, is reviewed as
+structure, and becomes a curated fact of its dossier when approved. The dossier export follows the
+database.
+
 Date: 2026-11-20. Status: accepted (round 6, structure writes; the owner asked that contributors
 deliver everything through MCP). Builds on decisions 0053 (the database is the source of truth and
 the dossiers its export) and 0101 (contributions through the gates).
+
+| For | Read |
+|---|---|
+| What amended it | [0111 Twenty-one MCP tools in six groups, with small schemas](0111-fewer-mcp-tools.md): the tools it names; its gates and contracts stand |
+| What it builds on | [0053 Curated dossiers are imported on deploy and served as one craft page](0053-curated-dossier-import.md): the database as the source of truth and the dossiers as its export |
+| What it builds on | [0101 One knowledge architecture for every craft: facts, sections, components, monographs](0101-knowledge-architecture-for-every-craft.md): contributions through the gates |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -38,3 +49,11 @@ its dossier export consistent.
   reaction gets no stored science row, until the dossier is exported and imported again.
 - Approval, hiding and retraction refresh the signed-out pages at once through the web app's
   revalidation route (`WEB_REVALIDATE_SECRET`).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-20; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

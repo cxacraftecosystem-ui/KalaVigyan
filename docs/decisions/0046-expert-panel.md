@@ -1,6 +1,19 @@
 # 0046. The expert panel
 
+The expert panel seats experts from the stored understanding, each giving a cited take on a section
+in one panel call that passes the prose checks or is not shown. "Experts differ" appears only for
+two stored facts about one subject from two sources, and panel calls spend only from the answer's
+headroom.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| What superseded part of it | [0093 No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output](0093-no-caps-for-now.md): its cap values; the code paths stand |
+| What built on it | [0099 The expert panel searches its own fields, calls each seat on its own, seats up to 12 at Expert, and hears the artisan from field transcripts](0099-wider-expert-panel.md): the expert panel, widened |
+| The contract it was built to | [0042 Phase B contract: place, matter and the expert panel](0042-phase-b-contract.md) |
+| The review that fixed it | [0050 Phase B review fixes](0050-phase-b-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -84,3 +97,11 @@ The renderer is lane 0049's.
   (`tests/experts/test_expert_flow.py`), the headroom (`tests/test_budget.py`, and on GitHub
   Actions `tests/db/test_spend_rules_db.py`).
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

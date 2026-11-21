@@ -1,9 +1,21 @@
 # 0114. Component kinds any craft can use, and one dataset record
 
+Depicted materials are records and a component's words are data, so every component kind serves any
+craft, one kind per job. Every dataset has one record, contributors propose new ones through a 22nd
+MCP tool, `propose_dataset`, and each contributable kind is proven on a craft other than Kutch
+Ajrakh.
+
 Date: 2026-11-21. Status: accepted (owner, 2026-11-21: "check whether the items that we have added in
 proposed component types are generalizable or not, optimize over there too. And the dataset
 structure, has it proven to be any good?"). Amends decision 0092 (the design tokens), the delivered
 components of round 7 (`component-specs-general.md`) and decision 0111 (the MCP tools).
+
+| For | Read |
+|---|---|
+| What it amends | [0092 The KalaVigyan design system: Alum & Indigo](0092-design-system.md): the design tokens, now that a depicted material is a record |
+| What it amends | [0111 Twenty-one MCP tools in six groups, with small schemas](0111-fewer-mcp-tools.md): the MCP tools, which gain a 22nd, `propose_dataset` |
+| What it amends | the delivered components of round 7 ([component-specs-general.md](../contracts/component-specs-general.md)) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -77,3 +89,10 @@ CHELSA's licence field held a citation, USGS MRDS was recorded twice, and the co
   data stay on the Kutch Ajrakh page as authored.
 - The swatch's weave pattern is the page's; a generated page that places a swatch draws it without
   the weave until the site defines one for every page.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-21; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

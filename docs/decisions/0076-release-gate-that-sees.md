@@ -1,6 +1,15 @@
 # 0076. The release gate looks at what the reader sees
 
+The production E2E captures a page only once it is still, and fails a screen on what is wrong rather
+than on its length, at five widths in light and dark. It can run on a preview, checks the Professor
+and Admin screens only when their secrets exist and only in production, and adds no dependency.
+
 Date: 2026-11-18. Status: accepted. Extends decision 0029.
+
+| For | Read |
+|---|---|
+| What it builds on | [0029 E2E against production, on dispatch, as one Researcher account](0029-e2e-production-run.md): the Professor and Admin screens it left not covered |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -94,3 +103,10 @@ Vercel's deployment protection.
   RFC 6238 vectors.
 - A tall page with a flat tile costs one more capture per eight screens past it; the saved
   full-page screenshot is still the one Chromium painted, so its blank end is explained by the note.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

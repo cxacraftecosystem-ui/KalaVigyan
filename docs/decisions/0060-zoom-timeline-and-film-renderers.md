@@ -1,6 +1,17 @@
 # 0060. Zoom, timeline and film mode renderers
 
+The zoom draws one level at a time, the timeline is a slider over the moments its texts date, and
+film mode plays the drawn blocks as scenes over Listen's narration with an optional score. Scenes
+and their clock are pure and shared with the server's numbers, and the player works by keys and on a
+phone.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0054 Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode](0054-phase-c-contract.md) |
+| The review that fixed it | [0061 Phase C review fixes](0061-phase-c-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -110,3 +121,10 @@ map and film code stay off `/ask` until used, and no how-it-works copy reaches a
   answer language, keys, the mix, the offer, the stage with the ladder and reaction player
   following the scene, the controls and the lazy player.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

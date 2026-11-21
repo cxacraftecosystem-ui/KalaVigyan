@@ -1,8 +1,17 @@
 # 0107. Craft articles are written in English, with room for translations
 
+Craft, family and category articles are written in English only for now, with room in the document
+for translations later. Answers keep their thirteen languages.
+
 Date: 2026-11-20. Status: accepted (owner: "every craft needs to maintain the entire article only in
 english for now, we can add the scope for adding translation for a craft too"). Builds on decisions
 0106 (one monograph template) and 0023 (answers in Indian languages).
+
+| For | Read |
+|---|---|
+| What it builds on | [0106 One monograph template for every page, reached through fragments](0106-one-monograph-template-for-every-page.md): one monograph template |
+| What it builds on | [0023 Answers in Indian languages](0023-multilingual-answers.md): answers in Indian languages, which keep their languages |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -29,3 +38,10 @@ follows the reader's language too.
   English units with the verified-translation path of decision 0023, reviewed before it is served,
   and a language choice on the page.
 - Native names in their own scripts stay as they are: they are names, not translations.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-20; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

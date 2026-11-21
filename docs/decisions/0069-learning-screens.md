@@ -1,8 +1,20 @@
 # 0069. Learning screens: follow-ups, saved answers, notes, lessons, exports, the map and compare
 
+The learning screens draw follow-ups on top of the explainer being read, stored explainers in the
+ask screen, saved answers and notes on `/saved`, professors' lessons, exports under the server's
+file name, ask the map and a compare page. Cited text outside the explainer uses one reading frame.
+
 Date: 2026-11-18. Status: accepted. Amended by 0067 (item 5: lesson files and the report PDF are
 signed links) and by 0070 (item 3: notes are held per account; item 7: an unknown craft and a
 comparison with nothing cited are told apart).
+
+| For | Read |
+|---|---|
+| What amended it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md): item 3, notes held per account, and item 7, an unknown craft told apart from a comparison with nothing cited |
+| What amended it | [0067 Lesson packs, the explainer PDF and citation export](0067-lessons-and-exports.md): item 5, with lesson files and the report PDF as signed links |
+| The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
+| The contracts it names | [learning.md](../contracts/learning.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -96,3 +108,11 @@ static end state under either reduced-motion switch, and no how-it-works copy re
 - `ExplainerState` gains `mark` and `basedOn`; `ExplainerView` takes optional `tools`, `versions`
   and `footer` slots; `AskRequest` takes `buildsOn`; the stream reads `builds_on` and `version`.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

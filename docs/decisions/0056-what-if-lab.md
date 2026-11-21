@@ -1,6 +1,17 @@
 # 0056. The what-if lab's builder
 
+The what-if lab's builder offers one input per block, a stage's materials that stored data relates
+as alternatives, and assembles each outcome on the server from cited relationships. The model only
+chooses, a hypothesis is labelled as one, and every block is checked against the rows when built and
+when reused.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0054 Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode](0054-phase-c-contract.md) |
+| The review that fixed it | [0061 Phase C review fixes](0061-phase-c-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -85,3 +96,10 @@ only from the answer's headroom (decision 0050).
   their rows change. Database tests (marked `db`) read the seeded relationships and rebuild the
   fixture's options from the seeded database.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

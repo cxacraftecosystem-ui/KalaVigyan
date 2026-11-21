@@ -1,6 +1,21 @@
 # 0084. Field voices v2: both portals, full transcripts and craft images, by cursor with tombstones
 
+Field voices version 2 serves both portals through one contract: full transcripts credited as
+recorded and scrubbed rather than withheld, craft images by an allow-list of fields, and a ledger
+read by an `updatedAt` cursor with tombstones. Its amendment the same day publishes everything above
+the legal floor.
+
 Date: 2026-11-18. Status: accepted. Amends decision 0072.
+
+| For | Read |
+|---|---|
+| What amended it | [0097 Everything reads without signing in except asking](0097-public-reading-everywhere-but-asking.md): point 3, now that the full transcript is public |
+| What amended it | [0112 Each field photograph filed on an artisan is reviewed by a person before it is shown](0112-reviewed-field-photographs.md): point 5 of its amendment of 2026-11-18; the legal floor stands |
+| What it amends | [0072 Field voices come through signed peer routes, filtered by consent at the portal](0072-field-voices-contract.md): version 2, for both portals, full transcripts and craft images, by cursor with tombstones |
+| What it amends | [0079 Craft, category, map and science pages read without signing in](0079-public-reading.md): point 3, with full transcripts for signed-in readers only |
+| What built on it | [0091 Field voices v2 in KalaVigyan: storage, citation, the craft page and the reading view](0091-field-voices-kalavigyan-side.md): its KalaVigyan side |
+| The contracts it names | [field-voices.md](../contracts/field-voices.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -143,3 +158,11 @@ show, we will figure out something later, but do not close the path".
   removed or deleted records, recorded refusals and undecodable images.
 - **Consequence:** the consequence above that portraits, event and session photographs stay in the
   portals no longer holds; they arrive, artisan-linked ones held hidden.
+
+## How this record is kept true
+
+Its Amendment of 2026-11-18 records the owner's direction later the same day. Beyond that it is not
+edited except to mark it superseded: a later choice is a new record that names this one, and the
+table above links the two both ways. The parts later records changed stay here as they were decided;
+the later record is the one that holds. It records the choice as taken on 2026-11-18; what the code
+does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the [contracts](../contracts/README.md).

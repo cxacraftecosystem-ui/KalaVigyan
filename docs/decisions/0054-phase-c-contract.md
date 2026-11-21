@@ -1,6 +1,17 @@
 # 0054. Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode
 
+Phase C's contract fixes version 1 of generated explainers, the what-if lab, the zoom story,
+timelines and film mode: numbers enter the sandboxed frame only from claims or dataset rows, and the
+static check names what it refuses. A zoom level is real or absent, dates are read and places looked
+up, and film mode is derived on the client under an ElevenLabs score.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The lanes built to it | [0055](0055-generated-explainers.md), [0056](0056-what-if-lab.md), [0057](0057-zoom-story-and-timeline-map.md), [0058](0058-elevenlabs-music-sound-image-video.md), [0059](0059-sandbox-and-what-if-renderers.md) and [0060](0060-zoom-timeline-and-film-renderers.md) |
+| The contracts it names | [explainer.md](../contracts/explainer.md), [media.md](../contracts/media.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -86,3 +97,10 @@ the interface they share is agreed and built first and pinned on both sides by f
 - Nothing a reader sees changes: the kinds are not built, and `piece_slot` and the reading order
   (`PIECE_BLOCK_ORDER`) only take effect once a phase C block can be stored.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

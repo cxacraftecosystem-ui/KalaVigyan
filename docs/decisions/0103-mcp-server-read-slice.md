@@ -1,7 +1,18 @@
 # 0103. The MCP server, slice 1: public read tools over our own JSON-RPC framing
 
+The MCP server's first slice ships public read tools alone, anonymous and switched off by default,
+over KalaVigyan's own JSON-RPC framing instead of the MCP SDK. Its reads are the public page's
+reads, finding a craft costs nothing, and browser origins are checked.
+
 Date: 2026-11-19. Status: accepted (built without the owner present, on the owner's instruction to
 start on the MCP server and continue on Claude's recommendations).
+
+| For | Read |
+|---|---|
+| What amended it | [0111 Twenty-one MCP tools in six groups, with small schemas](0111-fewer-mcp-tools.md): the tools it names; its services and contracts stand |
+| What it builds on | [0101 One knowledge architecture for every craft: facts, sections, components, monographs](0101-knowledge-architecture-for-every-craft.md): slice 1 of the MCP server of items 7, 9 and 15 |
+| The contracts it names | [knowledge-api.md](../contracts/knowledge-api.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -44,3 +55,11 @@ except asking is readable without signing in (decision 0097).
 - **Amended 2026-11-19:** `list_components` became the component library's search (`query`, `kind`,
   and a craft's shared components through its concepts, compounds and districts), the step an agent
   takes before it makes a component (decision 0101, item 16). The change only adds fields.
+
+## How this record is kept true
+
+The amendment of 2026-11-19 under What follows records what followed the slice. Beyond that it is
+not edited except to mark it superseded: a later choice is a new record that names this one, and the
+table above links the two both ways. The parts later records changed stay here as they were decided;
+the later record is the one that holds. It records the choice as taken on 2026-11-19; what the code
+does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the [contracts](../contracts/README.md).

@@ -1,6 +1,14 @@
 # 0041. One Gemini content per embedded text
 
+`GeminiAdapter.embed` sends one `Content` per text, after production got one vector back for five
+texts and left every stored claim without one. A test passes the request through the SDK's own
+conversion, and the embedding scripts ran again after the deploy.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -26,3 +34,10 @@ was unaffected, which is why answers still ran.
 
 - `checked_vectors` already refuses a count that does not match, so a future SDK change that folds
   texts again fails loudly at write time rather than storing wrong vectors.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

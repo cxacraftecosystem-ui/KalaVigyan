@@ -1,8 +1,18 @@
 # 0115. MCP clients sign in with their published identity
 
+An MCP client may sign in with its published identity: a `client_id` holding `://` is the address of
+a client ID metadata document, read through the fetcher and held within a bound. Errors stop on
+KalaVigyan's page, each published client has one stored row, and people see who is asking.
+
 Date: 2026-11-21. Status: accepted (owner, 2026-11-20: "every MCP gap is to be resolved, each and
 every one"). Amends decision 0101 item 15 ("Authentication") and `docs/contracts/mcp-oauth.md`;
 dynamic client registration stays as it was.
+
+| For | Read |
+|---|---|
+| What it amends | [0101 One knowledge architecture for every craft: facts, sections, components, monographs](0101-knowledge-architecture-for-every-craft.md): item 15, Authentication, for published client identities |
+| What it amends | [mcp-oauth.md](../contracts/mcp-oauth.md); dynamic client registration stays as it was |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -94,3 +104,10 @@ Two published documents were read on 2026-11-21:
   says to try again (503) and registered clients still sign in.
 - Logos (`logo_uri`) are not fetched or shown; the draft asks a server that shows them to prefetch
   and serve them itself, which can come later.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-21; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

@@ -1,6 +1,15 @@
 # 0078. Category dossiers are imported keyed to their category and served as public category pages
 
+Category dossiers are imported into two new tables keyed by the dossier's slug, by the same writers
+and deploy-time import as crafts, and served as public category pages. They have their own contract,
+and goldens built from a fixture.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contracts it names | [category-page.md](../contracts/category-page.md), [curation.md](../contracts/curation.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -68,3 +77,10 @@ page and DB tests for idempotence and supersession, with at most one migration i
 - Category claims and pieces get vectors from the nightly `embed_knowledge`, like a craft's.
 - `docs/contracts/category-page.md` is the contract; `docs/contracts/curation.md` describes the
   import of both scopes.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

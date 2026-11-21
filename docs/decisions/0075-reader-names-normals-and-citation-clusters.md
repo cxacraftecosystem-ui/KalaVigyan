@@ -1,6 +1,14 @@
 # 0075. Reader names, one normal per quantity and citation clusters
 
+Catalogue text is written for readers, a district place is named for its district, each quantity has
+one normal from the dataset of its trend, and numbers read in words. The map keeps one line in view,
+and citations cluster by source.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -67,3 +75,10 @@ The layer golden's version hash and the phase-B map block that cites it were rec
 new boundary text, and the layer list golden now lists the GHCN CAMS temperature layer. The two
 climate layers read rows production already holds (CHIRPS and GHCN CAMS normals, decision 0065),
 so they change with the backend deploy alone.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

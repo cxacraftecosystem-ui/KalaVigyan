@@ -1,9 +1,20 @@
 # 0111. Twenty-one MCP tools in six groups, with small schemas
 
+The MCP server offers 21 tools in six groups with small schemas, merged at the API layer from the 35
+whose `tools/list` the lead measured at 230 KB. Everything that names a tool uses the new names.
+
 Date: 2026-11-21. Status: accepted (owner, 2026-11-21: "Do you think all the MCP tools are justified?
 If not, try and optimize and merge them. The ones that are needed, the ones that are not needed need
 to be removed"). Amends decisions 0103, 0108 and 0110 where they name tools; their services, gates,
 allowances and contracts stand.
+
+| For | Read |
+|---|---|
+| What amended it | [0114 Component kinds any craft can use, and one dataset record](0114-kinds-and-datasets.md): the MCP tools, which gain a 22nd, `propose_dataset` |
+| What it amends | [0103 The MCP server, slice 1: public read tools over our own JSON-RPC framing](0103-mcp-server-read-slice.md): the tools it names; its services and contracts stand |
+| What it amends | [0108 An approved structure proposal becomes a curated fact of its dossier](0108-structure-proposals-become-curated-facts.md): the tools it names; its gates and contracts stand |
+| What it amends | [0110 Sources a contributor's AI can read and we cannot, and a studio to build a page in](0110-contributor-supplied-sources.md): the tools it names; its services, allowances and contracts stand |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -106,3 +117,11 @@ read-only ones without asking.
 - An agent built against the old names gets the unknown-tool error and the index of the new ones.
 - The release gate's MCP checks call `get_page` and `propose_facts`; the connect page groups the
   tools by `_meta["kalavigyan/group"]`.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-21; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

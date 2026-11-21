@@ -1,6 +1,20 @@
 # 0091. Field voices v2 in KalaVigyan: storage, citation, the craft page and the reading view
 
+KalaVigyan stores field voices version 2 from one migration, cites each recording as one
+`FIELD_TESTIMONY` source through the existing write-back and copies the images again on its own
+side. The craft page gains voices and field photos, the sync runs from its own workflow, and
+staleness fails closed.
+
 Date: 2026-11-18. Status: accepted. Builds the KalaVigyan side of decision 0084.
+
+| For | Read |
+|---|---|
+| What amended it | [0097 Everything reads without signing in except asking](0097-public-reading-everywhere-but-asking.md): field recordings and their transcripts read without signing in |
+| What amended it | [0112 Each field photograph filed on an artisan is reviewed by a person before it is shown](0112-reviewed-field-photographs.md): its held images, each field photograph filed on an artisan now reviewed by a person |
+| What it amends | [0079 Craft, category, map and science pages read without signing in](0079-public-reading.md): point 3, what each reader reads of field transcripts |
+| What it builds on | [0084 Field voices v2: both portals, full transcripts and craft images, by cursor with tombstones](0084-field-voices-v2.md): its KalaVigyan side |
+| The contracts it names | [field-voices.md](../contracts/field-voices.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -95,3 +109,11 @@ switched off until it is.
   expert panel's artisan seat, are not drawn yet (`docs/TECH_DEBT.md`).
 - A saved explainer section only partly affected by a withdrawal shows no "quote withdrawn" note:
   the explainer contract has no field for one outside `artisan_voice` (`docs/TECH_DEBT.md`).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

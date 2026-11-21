@@ -1,6 +1,18 @@
 # 0016. Region profile and map layers from the stored district statistics
 
+A pure `backend/app/geo/` layer builds a craft's region profile from the stored district statistics:
+places from cited locations, every stored value of their districts, and state aggregates computed in
+Postgres. It serves 21 map layers, none without a cited boundary row, with ETag caching and a
+write-back that outlives the request.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0014 Contracts for process science, region profile, voice and media](0014-science-region-voice-media-contracts.md) |
+| The review that fixed it | [0022 Voice spend fails closed, a filtered style hint, region sources and one home per rule](0022-batch-3-review-fixes.md) |
+| The contracts it names | [region.md](../contracts/region.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -96,3 +108,10 @@ the write-back to survive a learner who leaves, and for craft descriptor vectors
   every aggregable series; aggregates are recomputed per request. Both are in the debt register.
 - The sparse-series rule and the twin rule depend on how the GLiM and MRDS layers write rows;
   a change there must change `ABSENT_MEANS_ZERO` or `LITHOLOGY_TWIN_PREFIX` with it.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

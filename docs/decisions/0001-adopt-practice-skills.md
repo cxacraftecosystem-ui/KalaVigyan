@@ -1,6 +1,14 @@
 # 0001. Adopt the practice skills and an automated hygiene check
 
+The engineering, backend and frontend practice skills bind this repository, with the owner's rules
+over them and every project fact in one bindings file. `tools/hygiene_check.py` holds their
+measurable rules to an exact ratcheted baseline and a table of the allowed import layers.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -52,3 +60,10 @@ secret names only, nothing heavy run locally.
   2026-11-16) is recorded, not fixed; every clean-up lowers the baseline.
 - Nesting depth, the frontend size budget and the frontend import boundaries are not checked by a
   tool yet (debt register).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

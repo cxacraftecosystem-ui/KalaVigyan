@@ -1,6 +1,18 @@
 # 0005. Scholarly source adapters
 
+Live research reads OpenAlex, Crossref, Semantic Scholar, CORE, Europe PMC, arXiv and DOAJ, with
+Elsevier and Springer Nature dormant without keys, through one `SourceAdapter` each in a new
+`backend/app/sources/` package, and keeps Unpaywall as a locator only. Each adapter returns the text
+its own record carries, grades trust from one table, paces itself below the service's limit and
+never follows a redirect or logs a key.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| The contracts it names | [research.md](../contracts/research.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -84,3 +96,10 @@ PMC, arXiv and DOAJ, plus Elsevier and Springer Nature adapters that stay dorman
   hold the result for the process, so pacing and the cache are per process (debt register).
 - Fixtures are recorded responses from 2026-11-16, trimmed to the fields the adapters read;
   CORE full text is cut to 3,000 characters. Two are not plain recordings (debt register).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

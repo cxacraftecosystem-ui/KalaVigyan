@@ -1,6 +1,14 @@
 # 0082. Catalogue v2: reader names, depth, concepts and one count, and server fetch
 
+Catalogue schema version 2 adds reader names, depth, concepts and one counting rule, with local
+names only from sources and each piece of editorial data in one home. The web server fetches the
+catalogue itself under its own allowance and keeps it for 300 seconds, with the body as its ETag.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -95,3 +103,10 @@ trip to the API.
   library writes one (plan tasks C2-01 and C2-02).
 - The client refuses a version 1 catalogue, so the API must carry version 2 before the web app
   that reads it; between the two deploys the craft list shows its load error.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

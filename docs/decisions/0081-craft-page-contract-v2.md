@@ -1,6 +1,17 @@
 # 0081. Craft page contract version 2: a page whose structure is final at first paint
 
+Craft page schema version 2 adds fields only, filled from what is stored with nothing invented, so
+the page's structure is final at first paint. Editorial labels live in one data file, disagreements
+are weighted, one source numbering covers the page, and tabs and relatives are decided on the
+server.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| What amended it | [0095 The craft page becomes a monograph in chapters, public to read, built without a question](0095-craft-page-chapters.md): the flat page, now in chapters |
+| What it amends | [0071 The craft page reads as a curated reference](0071-craft-page-rebuild.md): its sources-differ rows come heaviest first, not in the order served |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -80,3 +91,11 @@ critiques) needs one contract it can build against before any screen changes.
   environment steps cite claims the v1 page left to All evidence.
 - When the curation schema gains picture roles, sizes, stage colours or native-script names, the
   page fills the existing fields from them; the contract does not change again for those.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

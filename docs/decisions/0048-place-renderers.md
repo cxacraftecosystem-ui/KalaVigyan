@@ -1,6 +1,18 @@
 # 0048. Place renderers: region story, map layer, seasons and supply
 
+The region story, map layer, seasons and supply blocks are drawn in the client from one registered
+module, with map code loaded on demand. The river is drawn from the served TopoJSON in the server's
+order, and motion is a progress value, never the only signal.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| What superseded part of it | [0092 The KalaVigyan design system: Alum & Indigo](0092-design-system.md): its colour, type and motion choices; its behaviour stands |
+| The contract it was built to | [0042 Phase B contract: place, matter and the expert panel](0042-phase-b-contract.md) |
+| The review that fixed it | [0050 Phase B review fixes](0050-phase-b-review-fixes.md) |
+| The contracts it names | [region.md](../contracts/region.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -97,3 +109,11 @@ load the outline), `numberRuns` and `listText` (`lib/format.ts`), `BOUNDARY_DATA
   quantized topology against the real Kachchh polygon, and checks reduced motion, the caption, the
   empty states, the lazy imports and the shrinkable columns.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

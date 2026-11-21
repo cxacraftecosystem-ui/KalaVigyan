@@ -1,6 +1,15 @@
 # 0094. The design primitives: one citation cluster, one motion owner, the editorial folder
 
+The primitives of Alum & Indigo are built before the page lanes move to them: one citation cluster
+that owns its sources, one owner for motion, component classes in CSS and the editorial folder.
+Commons pictures are plain `<img srcset sizes>`, and `/design` shows the system.
+
 Date: 2026-11-18. Status: accepted. Builds on decision 0092 (Alum & Indigo).
+
+| For | Read |
+|---|---|
+| What it builds on | [0092 The KalaVigyan design system: Alum & Indigo](0092-design-system.md): its components, SYSTEM.md section 3 |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -66,3 +75,10 @@ headline, the popover's own reduced-motion reader).
 - Unit specs that counted one chip per source now read one cluster per sentence and its numbers.
 - `e2e/primitivesPage.ts` loads the four CSS files into a page, so specs check the real styles
   (busy width, fills, the sheet's shape, the reduced-motion switch) without a build.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

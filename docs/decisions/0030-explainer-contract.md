@@ -1,6 +1,17 @@
 # 0030. The explainer contract
 
+The explainer contract turns an answer into sections of typed blocks under one envelope with a
+version per kind, streamed as they are ready and stored as knowledge pieces for reuse. It fixes the
+vocabulary, sentences and terms, the ladder, images, depth by role, artisan voices and the fixtures
+phase A's lanes build to.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The lanes built to it | [0031](0031-understanding-and-depth.md), [0032](0032-sectioned-composition.md), [0033](0033-knowledge-pieces-and-reuse.md), [0034](0034-images-and-terms.md), [0035](0035-listen-and-voice-switched-off.md), [0036](0036-asking-screen.md) and [0037](0037-explainer-ui.md) |
+| The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -101,3 +112,10 @@ several rules and some readings open.
   and above) does not; lane 0033 adds the `KnowledgePiece` table and its enums; lane 0034 the
   `Term` and `MediaRef` tables and the image hosts in the CSP. These are in the debt register.
 - A badly formed block fails loudly where it is produced, never on a reader's screen.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

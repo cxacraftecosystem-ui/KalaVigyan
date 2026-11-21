@@ -1,6 +1,14 @@
 # 0052. Opus 5.5 composes answers, at medium effort
 
+Opus 5.5 composes answers first on the `COMPOSE` route at medium reasoning effort, which the router
+passes on every chat call and only always-thinking Anthropic models act on. Each route keeps its
+parameters across a reorder, and the effort can be lowered without a deploy.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -32,3 +40,10 @@ read it, and saving a new order in Settings recreated every route without it.
 - The paid nightly enrichment stays off (commit fdf478c); the dataset is curated by Claude Code
   (`docs/plans/dataset-curation.md`, decision 0051). Live answers are serving and keep using the
   routes above.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

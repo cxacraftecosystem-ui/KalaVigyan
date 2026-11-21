@@ -1,6 +1,15 @@
 # 0085. The story map's layers redraw what it shows, and zoomed answer maps carry an India locator
 
+Choosing a layer in a region story classes the districts it draws among themselves, so the map
+visibly changes, and its legend says so and reads the values out. Zoomed answer maps carry an India
+locator.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contracts it names | [explainer.md](../contracts/explainer.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -51,3 +60,10 @@ districts barely spanned. The zoomed map also gave no sense of where in India it
 - The quiz route's "nothing to quiz" answer (204, from the lead's backend change) reads as no quiz
   on the client (`learningApi.fetchExplainerQuiz` returns null), so the answer page neither logs a
   shape error nor shows a failure.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

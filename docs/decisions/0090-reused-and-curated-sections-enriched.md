@@ -1,6 +1,14 @@
 # 0090. Reused and curated sections are enriched like researched ones
 
+Curated sections are the Expert floor and stay current, and a reused or curated section is enriched
+like a researched one, a rebuilt reaction player replacing the stored one. Expert reaches every
+stored field, builders reach more fields, and the ledger keeps decision 0080's rules.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -109,3 +117,10 @@ is the corrected decision.
   the answer's copy while it is current and the curated piece again once the copy goes stale.
 - The ledger tests of decision 0080 state its rules again (`tests/ledger`): the recorded Indigo
   answer keeps one Indigo card and two expert seats with no repeated sentence.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

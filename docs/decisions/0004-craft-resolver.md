@@ -1,6 +1,16 @@
 # 0004. The craft resolver
 
+The craft resolver finds a question's craft in memory from exact, fuzzy (rapidfuzz), family and
+place signals that keep interpretable scores, and embeds the question only when no lexical winner
+emerges. A single candidate below the accept rule is ambiguous, and a failed embedding is shown as
+an error, never hidden.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -69,3 +79,10 @@ live.
   built yet (`docs/TECH_DEBT.md`).
 - Semantic matching returns nothing until `embed_craft_descriptors` has run against the
   production database; no workflow runs it yet (`docs/TECH_DEBT.md`).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

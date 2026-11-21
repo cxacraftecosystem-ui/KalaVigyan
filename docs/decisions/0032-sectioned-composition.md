@@ -1,6 +1,16 @@
 # 0032. Sectioned composition: research per field, blocks per section
 
+Each section of an explainer is a field, researched within the depth's budget and composed by one
+composer, with live research when stored claims compose nothing. A model chooses and the server
+fills, every block is checked again, and a failure stays in its section.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
+| The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -92,3 +102,10 @@ answering service composed one answer and streamed `section` and `sentence` even
   molecules and simulations come with later phases. Step 9's knowledge pieces are called too (lane
   0033: `pieces.reusable` before planning, `pieces.keep` after the answer).
 - Items left below standard are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

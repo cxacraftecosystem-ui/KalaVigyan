@@ -1,6 +1,15 @@
 # 0039. Pictures and terms in the answer stream
 
+Pictures and term spans reach the answer stream: terms are marked in English once per answer's
+glossary, pieces keep the marked blocks, and a translation keeps the spans its text still shows.
+Pictures follow a section's blocks, wait at most 8 seconds, never stop a section and are never
+stored as pieces.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -76,3 +85,10 @@ Decision 0038 kept `https:` out of every page's `img-src` until pictures were st
 - The nightly piece rebuild answers through the same pipeline, so rebuilt pieces carry spans and
   its sections also search pictures nobody sees (debt).
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

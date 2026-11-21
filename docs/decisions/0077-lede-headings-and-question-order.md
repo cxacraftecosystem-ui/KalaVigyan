@@ -1,6 +1,15 @@
 # 0077. Every answer opens with a lede, its sections carry headings shaped by the question
 
+Every answer opens with a lede, composed and streamed first outside the sections, and its sections
+carry headings written for the question, in the question's order. Follow-ups come from what the
+answer left open, and signature figures are declared but not built.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| What built on it | [0086 The four signature figures are built, as lede figures only, behind a setting](0086-signature-figures-built.md): item 6's signature figures |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -93,3 +102,10 @@ the answer left open, and the shapes of four signature figures for task 3-04.
   does not draw, so 3-02 is released together with 3-03.
 - The claim ledger of task 3-01 merges the lede's sources like any block's but does not record its
   claims, so a section may still state in full what the lede summarises.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

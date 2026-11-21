@@ -1,6 +1,25 @@
 # 0101. One knowledge architecture for every craft: facts, sections, components, monographs
 
+Every craft follows one knowledge architecture: facts carry their fields, article sections are
+records, components are a labelled registry and one monograph template renders every subject, with
+the database as the source of truth. Knowledge heals itself through one gated write path, reached
+through a Knowledge API and an MCP server, with review behind a switch.
+
 Date: 2026-11-19. Status: accepted (owner direction, 2026-11-19).
+
+| For | Read |
+|---|---|
+| What amended it | [0115 MCP clients sign in with their published identity](0115-client-id-metadata-documents.md): item 15, Authentication, for published client identities |
+| What built on it | [0102 Fields on facts, section records and the component registry: step 1 as built](0102-knowledge-fields-schema-as-built.md): build step 1 |
+| What built on it | [0103 The MCP server, slice 1: public read tools over our own JSON-RPC framing](0103-mcp-server-read-slice.md): slice 1 of the MCP server of items 7, 9 and 15 |
+| What built on it | [0104 Image contributions: declared, read byte by byte, private until approved](0104-image-contributions-intake.md): the backend of item 17's contributed pictures |
+| What built on it | [0105 The Ajrakh page as structured content, rebuilt by a static build](0105-ajrakh-page-as-structured-content.md): build step 2's first half, the Ajrakh page as structured content |
+| What built on it | [0106 One monograph template for every page, reached through fragments](0106-one-monograph-template-for-every-page.md): build step 2's second half and item 14 |
+| What built on it | [0108 An approved structure proposal becomes a curated fact of its dossier](0108-structure-proposals-become-curated-facts.md): contributions through the gates |
+| What built on it | [0110 Sources a contributor's AI can read and we cannot, and a studio to build a page in](0110-contributor-supplied-sources.md): the gates, the review switch and trust tiers, which stand |
+| What built on it | [0113 Questions KalaVigyan cannot answer well become open work](0113-questions-become-work.md): item 15's open work, which gains a task kind |
+| The contracts it names | [knowledge-api.md](../contracts/knowledge-api.md), [research.md](../contracts/research.md), [knowledge-writes.md](../contracts/knowledge-writes.md), [nightly-upkeep.md](../contracts/nightly-upkeep.md), [review-queue.md](../contracts/review-queue.md), [mcp-oauth.md](../contracts/mcp-oauth.md), [open-work.md](../contracts/open-work.md), [mcp-ask-and-upload.md](../contracts/mcp-ask-and-upload.md), [dossier-export.md](../contracts/dossier-export.md), [contribution-screens.md](../contracts/contribution-screens.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -351,3 +370,11 @@ infrastructure.
      published sections and its components, citable by curation and section version
      (`docs/contracts/knowledge-api.md`); the contribution screens for facts and components
      (`docs/contracts/contribution-screens.md`).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-19; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

@@ -1,7 +1,18 @@
 # 0064. Quiz, compare and the shared-science explorer
 
+The quiz, compare and the shared-science explorer are built with no model choosing anything: a quiz
+is made on request, a comparison is understood and compared per field, and the concept graph follows
+the terms a section marks. Reads have sane limits.
+
 Date: 2026-11-18. Status: accepted. Amended by 0070 (a comparison with nothing
 cited answers 204; the quiz reads hidden marks).
+
+| For | Read |
+|---|---|
+| What amended it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md): a comparison with nothing cited answers 204, and the quiz reads hidden marks |
+| The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
+| The contracts it names | [learning.md](../contracts/learning.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -70,3 +81,11 @@ a database connection is held (decision 0040).
 - No migration and no data run: the glossary links (`TermCraft`, `TermConcept`) the seed and the
   curation import already write are all the explorer needs.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

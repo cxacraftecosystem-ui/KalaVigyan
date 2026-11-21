@@ -1,6 +1,15 @@
 # 0088. Reactions play step by step with their stage, conditions, colours and why; curated CIDs become compounds
 
+Reaction steps carry their stage, conditions and before-and-after colours (only from a cited quote's
+own words), with the why as notes at block level, and the web plays the change. Curated PubChem CIDs
+become compounds at import, and R01 and R02 stay word equations.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| What amended it | [0095 The craft page becomes a monograph in chapters, public to read, built without a question](0095-craft-page-chapters.md): item 6, for display only |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -58,3 +67,11 @@ existing `Compound` rows, so those materials had no compound, no formula and no 
 - Old stored reaction players show plain steps until rebuilt; the builder asks no model, so
   rebuilding it on reuse refreshes them at no cost.
 - `link_compounds` makes one more PubChem request per curated CID until the formula is filled.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

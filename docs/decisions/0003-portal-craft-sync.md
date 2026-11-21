@@ -1,6 +1,16 @@
 # 0003. Crafts from both portals, synced through a new peer route
 
+Every craft added in the designer or documentation portal reaches KalaVigyan through one signed peer
+route both portals serve, `GET /api/cross-portal/peer/crafts`, keyed by slug into one row. The
+master list always wins, a colliding rename becomes an alias, and a portal that fails is reported
+while the other is still applied.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contracts it names | [portal-craft-feed.md](../contracts/portal-craft-feed.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -61,3 +71,10 @@ routes search records. KalaVigyan may not edit the portal repositories.
   nothing; deploys print a warning and the daily workflow fails (`docs/TECH_DEBT.md`).
 - The portals need `CROSS_PORTAL_CRAFT_FEED_ENABLED=true` on both boxes, in their GitHub
   secrets and box `.env`, when the route ships.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

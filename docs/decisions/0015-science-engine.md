@@ -1,6 +1,18 @@
 # 0015. Science engine: balancing, units, envelopes, the science seed and the process route
 
+A pure `backend/app/science/` layer balances reactions on the server, normalises conditions with
+pint and checks them against stage envelopes whose constants are cited claims. The science seed
+stores processes, stages, reactions and compounds looked up in PubChem, served by `GET
+/api/crafts/{slug}/process`.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0014 Contracts for process science, region profile, voice and media](0014-science-region-voice-media-contracts.md) |
+| The review that fixed it | [0022 Voice spend fails closed, a filtered style hint, region sources and one home per rule](0022-batch-3-review-fixes.md) |
+| The contracts it names | [science.md](../contracts/science.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -95,3 +107,10 @@ claim.
   crafts, a writer for researcher or model proposals, the review-queue listing of `OUTSIDE`
   readings and running `link_compounds` on the box are in the debt register.
 - New dependencies: `sympy` and `pint` (latest, locked in `backend/uv.lock`).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

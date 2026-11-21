@@ -1,6 +1,15 @@
 # 0026. Yahoo sign-in (and Microsoft, off): DR's OpenID Connect module, ported
 
+Yahoo sign-in, and Microsoft switched off, is the designer portal's OpenID Connect module ported:
+the server redeems the code with the client secret, the redirect URI is pinned, the nonce binds the
+portal's digest to KalaVigyan's server nonce, and two-step and limits are as for Google. Every
+provider shares one account path.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -83,3 +92,10 @@ anywhere, web only.
   RFC 7636 appendix B, never from the code under test.
 - The Settings card's "confirm it's you" step before a first password, inherited from DR, still
   has no backend in KalaVigyan for any provider (`docs/TECH_DEBT.md`). Cleared by decision 0028.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

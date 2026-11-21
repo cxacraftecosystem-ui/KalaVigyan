@@ -1,6 +1,16 @@
 # 0050. Phase B review fixes
 
+Phase B's review fixed fourteen issues: the conformer route releases its connection first, the
+matter kinds reach readers, kinds that are never pieces are rebuilt on reuse, and builders run only
+on a checked block. Takes, prose, stories and rainfall name only the times and places their sources
+state, and the river files and load are content-addressed and scoped.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The lanes it reviewed | [0043](0043-river-lines-tracer-and-monthly-rain.md), [0044](0044-region-story-and-map-layers.md), [0045](0045-reactions-materials-molecules.md), [0046](0046-expert-panel.md), [0047](0047-seasons-and-supply.md), [0048](0048-place-renderers.md) and [0049](0049-matter-and-expert-renderers.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -107,3 +117,10 @@ held across a model call or HTTP (decision 0040).
   `AWS_RIVER_LOAD_ROLE_ARN` (`docs/RUNBOOK.md`, Geo ETL). The load has never run, so no file sits
   under the old keys.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

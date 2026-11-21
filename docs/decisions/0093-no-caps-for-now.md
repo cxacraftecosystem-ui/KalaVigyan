@@ -1,8 +1,20 @@
 # 0093. No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output
 
+Every AI cap defaults to none and every model call asks for its model's documented maximum output,
+on the owner's word of 2026-11-18. Unlimited is a default value, not deleted code, so a cap can come
+back as a stored setting.
+
 Date: 2026-11-18. Status: accepted. Supersedes the cap values of decisions 0031, 0046 and 0089
 (item 3's output tokens and item 4's caps) and the daily allowances of PLAN section 12; their
 code paths stand.
+
+| For | Read |
+|---|---|
+| What it supersedes in part | [0031 Understanding the question, and depth by role](0031-understanding-and-depth.md): its cap values; the code paths stand |
+| What it supersedes in part | [0046 The expert panel](0046-expert-panel.md): its cap values; the code paths stand |
+| What it supersedes in part | [0089 Expert answers research and write more, compose on Opus at high effort, and cost more; Hindi terms survive translation](0089-expert-depth-caps-and-answer-routes.md): item 3's output tokens and item 4's caps |
+| What it supersedes in part | the daily allowances of [PLAN.md](../PLAN.md), section 12; their code paths stand |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -118,3 +130,10 @@ places:
   (`tests/test_budget.py`, `tests/conftest.allowances_an_owner_might_set`), and new tests show
   that no role or depth is refused, degraded or cut short by default, that spend is still
   recorded, that each route asks for the documented maximum, and that the data step converges.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

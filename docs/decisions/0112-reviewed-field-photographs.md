@@ -1,8 +1,19 @@
 # 0112. Each field photograph filed on an artisan is reviewed by a person before it is shown
 
+Admins and Master Admins review each field photograph filed on an artisan before it is shown, one
+recorded decision per photograph, after the picture screens have looked at it. A photograph flagged
+as an identity document or an unnamed face can be shown only by a Master Admin, the rule fails
+closed, and pages follow at once.
+
 Date: 2026-11-21. Status: accepted (owner, 2026-11-21: "the admins, and master admins should be able
 to review the images and add them here"). Amends decision 0084 (amendment of 2026-11-18, point 5)
 and the held images of decision 0091; the legal floor and the rest of both stand.
+
+| For | Read |
+|---|---|
+| What it amends | [0084 Field voices v2: both portals, full transcripts and craft images, by cursor with tombstones](0084-field-voices-v2.md): point 5 of its amendment of 2026-11-18; the legal floor stands |
+| What it amends | [0091 Field voices v2 in KalaVigyan: storage, citation, the craft page and the reading view](0091-field-voices-kalavigyan-side.md): its held images, each field photograph filed on an artisan now reviewed by a person |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -71,3 +82,10 @@ show them would also have shown any identity card among them.
   photograph and should take the review clause when that module is next changed.
 - The served crop keeps the stable image route, which answers 302 to a fresh 15-minute link; a
   browser may keep an earlier redirect for up to five minutes after a photograph is hidden again.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-21; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

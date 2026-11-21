@@ -1,8 +1,26 @@
 # 0095. The craft page becomes a monograph in chapters, public to read, built without a question
 
+The craft page becomes a public monograph in ten chapters (schema version 3), built by fixed rules
+without a question through the renderer answers use, with the generated explainer as its one model
+use. Citations travel with each sentence, the page is cached per stamp, and a craft without a
+dossier gets the chapters its rows support.
+
 Date: 2026-11-18. Status: accepted. Specifies craft page schema version 3
 (`docs/contracts/craft-page.md`); amends decisions 0071 (All evidence for researchers), 0079 (the
 page's one role-dependent part), 0081 (the flat page) and, for display only, 0088 item 6.
+
+| For | Read |
+|---|---|
+| What superseded part of it | [0100 The Kutch Ajrakh craft page is the hand-built monograph, served as built](0100-ajrakh-monograph-served-as-built.md): its renderer, for Kutch Ajrakh only, until 2026-11-20 |
+| What amended it | [0097 Everything reads without signing in except asking](0097-public-reading-everywhere-but-asking.md): item 7, what on the page is public |
+| What it amends | [0071 The craft page reads as a curated reference](0071-craft-page-rebuild.md): item 8, All evidence for researchers |
+| What it amends | [0079 Craft, category, map and science pages read without signing in](0079-public-reading.md): the page's one role-dependent part |
+| What it amends | [0081 Craft page contract version 2: a page whose structure is final at first paint](0081-craft-page-contract-v2.md): the flat page, now in chapters |
+| What it amends | [0088 Reactions play step by step with their stage, conditions, colours and why; curated CIDs become compounds](0088-reactions-step-by-step-and-molecules.md): item 6, for display only |
+| What built on it | [0096 Every piece built for a reader's question joins its craft's page, whoever asked](0096-reader-question-pieces-join-their-craft-page.md): craft page schema version 3 |
+| What built on it | [0098 How the craft page chapters were built: the readings taken where the contract was open](0098-craft-page-chapters-build.md): the page builders, the snapshot store and the routes |
+| The contract it specifies | [craft-page.md](../contracts/craft-page.md), schema version 3 |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -129,3 +147,11 @@ question to choose for.
 - The owner decided both open exceptions of item 7 on 2026-11-18 (decision 0097): full field
   transcripts are public, and an asker may share a version of an answer by link, with the privacy
   notice and the portals' contract (decision 0084) changed with them.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

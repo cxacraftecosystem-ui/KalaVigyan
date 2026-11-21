@@ -1,7 +1,22 @@
 # 0092. The KalaVigyan design system: Alum & Indigo
 
+KalaVigyan's design system is Alum & Indigo, version 1.1: one source of truth, rules that bind every
+screen, its own type and motion, and a migration by job rather than by name. The `kalavigyan-design`
+skill carries it, every build task meets its acceptance, and the generator, the boards and the mask
+live in the repository.
+
 Date: 2026-11-18. Status: accepted. Supersedes the frontend system of plan section 14.1 and the
 colour, type and motion choices of decisions 0019, 0021 and 0048; their behaviour stands.
+
+| For | Read |
+|---|---|
+| What amended it | [0114 Component kinds any craft can use, and one dataset record](0114-kinds-and-datasets.md): the design tokens, now that a depicted material is a record |
+| What it supersedes in part | [0019 Craft page process timeline, region panel and map choropleths](0019-craft-page-and-region-panel.md): its colour, type and motion choices; its behaviour stands |
+| What it supersedes in part | [0021 Media UI: Image and Video on the craft page's process stages](0021-media-ui.md): its colour, type and motion choices; its behaviour stands |
+| What it supersedes in part | [0048 Place renderers: region story, map layer, seasons and supply](0048-place-renderers.md): its colour, type and motion choices; its behaviour stands |
+| What it supersedes in part | the frontend system of [PLAN.md](../PLAN.md), section 14.1 |
+| What built on it | [0094 The design primitives: one citation cluster, one motion owner, the editorial folder](0094-design-primitives.md): its components, SYSTEM.md section 3 |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -99,3 +114,11 @@ skills file too".
   exception, no right rail on a tablet, English kept visible on the names view, Western digits in
   Urdu answers, and the rest), is section 9 of `references/SYSTEM.md`. Reopening one of those
   needs the owner.
+
+## How this record is kept true
+
+Item 6's amendment of 18 November 2026 records what followed the first build. Beyond that it is not
+edited except to mark it superseded: a later choice is a new record that names this one, and the
+table above links the two both ways. The parts later records changed stay here as they were decided;
+the later record is the one that holds. It records the choice as taken on 2026-11-18; what the code
+does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the [contracts](../contracts/README.md).

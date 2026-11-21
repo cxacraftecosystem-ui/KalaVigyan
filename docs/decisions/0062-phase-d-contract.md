@@ -1,6 +1,18 @@
 # 0062. Phase D contract: learning blocks, versions, alerts, lessons, exports and the map
 
+Phase D's contract fixes the learning blocks (quiz and compare at version 1, four kinds new),
+follow-ups as new versions, alerts that detect, professors' lessons, citation formats by stated
+rules, and an ask the map that reads stored stories. A quiz is a cloze of the explainer's own
+sentences, and local measures convert only by an exact definition or a stated regional value.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| What amended it | [0067 Lesson packs, the explainer PDF and citation export](0067-lessons-and-exports.md): item 10, with APA written by citeproc-py while BibTeX and RIS keep the stated rules |
+| The lanes built to it | [0063](0063-follow-ups-versions-and-alerts.md), [0064](0064-quiz-compare-and-shared-science.md), [0065](0065-climate-risk-and-ask-the-map.md), [0066](0066-local-measures-and-market-gi.md), [0067](0067-lessons-and-exports.md), [0068](0068-learning-block-renderers.md) and [0069](0069-learning-screens.md) |
+| The contracts it names | [learning.md](../contracts/learning.md), [explainer.md](../contracts/explainer.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -90,3 +102,11 @@ import (decision 0053) lands GI records and prices in `CraftGiRecord` and `Craft
   `explainerContract.ts`) so block modules can name fields without an import cycle; the region
   contract exports its place-basis and facet shapes for reuse.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

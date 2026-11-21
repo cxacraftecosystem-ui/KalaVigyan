@@ -1,6 +1,17 @@
 # 0006. Reference source adapters: Wikipedia, Wikidata, PubChem, Wikimedia Commons
 
+Wikipedia (English and the Indian languages on an allow-list), Wikidata, PubChem and Wikimedia
+Commons are each one `SourceAdapter` under `backend/app/sources/reference/`, read through the Action
+API, SPARQL or PubChem's own routes. Commons gives file metadata only, hidden markup is dropped, and
+each service has its own pace.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| The contracts it names | [research.md](../contracts/research.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -89,3 +100,10 @@ Live calls were made on 2026-11-16 to choose endpoints and record fixtures.
   external ids. The Wikidata time-precision and unitless-quantity cases are hand-written
   binding rows in the tests (no recorded item of the right shape was needed to state the rule).
 - A SPARQL `select` for arbitrary structured lookups is not exposed: no caller needs one yet.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

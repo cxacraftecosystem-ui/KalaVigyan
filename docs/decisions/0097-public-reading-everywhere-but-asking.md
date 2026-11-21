@@ -1,7 +1,21 @@
 # 0097. Everything reads without signing in except asking
 
+Everything reads without signing in except asking: public is the default, every guarded route states
+why, and the web app splits into two route groups. Asking sends the reader to sign in and back, the
+craft page and atlas render on the server, and field transcripts and an asker's chosen share links
+are public.
+
 Date: 2026-11-18. Status: accepted. Extends decision 0079; amends decisions 0084 (point 3), 0091
 and 0095 (item 7).
+
+| For | Read |
+|---|---|
+| What it amends | [0084 Field voices v2: both portals, full transcripts and craft images, by cursor with tombstones](0084-field-voices-v2.md): point 3, now that the full transcript is public |
+| What it amends | [0091 Field voices v2 in KalaVigyan: storage, citation, the craft page and the reading view](0091-field-voices-kalavigyan-side.md): field recordings and their transcripts read without signing in |
+| What it amends | [0095 The craft page becomes a monograph in chapters, public to read, built without a question](0095-craft-page-chapters.md): item 7, what on the page is public |
+| What it builds on | [0079 Craft, category, map and science pages read without signing in](0079-public-reading.md): public reading, widened to everything but asking |
+| The contracts it names | [field-voices.md](../contracts/field-voices.md), [craft-page.md](../contracts/craft-page.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -171,3 +185,10 @@ it, stopping ends the link, an answer with nothing quotable is refused, a suspen
 deleted owner's link answers nothing, a withdrawal ends both kinds with its audit row, a demoted
 builder's lesson stops while the answer stays), and `e2e/public-reading-unit.spec.ts` (the
 confirmation's words, asked before the one `startSharing` call).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

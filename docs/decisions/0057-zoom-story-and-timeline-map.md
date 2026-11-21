@@ -1,6 +1,16 @@
 # 0057. Zoom story and timeline map builders
 
+The `zoom_story` builder asks no model, reaches beyond the section for the district level and takes
+kept pictures before searching, and the `timeline_map` builder offers dated spans by reference. A
+counting numeral is never offered as a year, and undated statements stay off the timeline.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0054 Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode](0054-phase-c-contract.md) |
+| The review that fixed it | [0061 Phase C review fixes](0061-phase-c-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -71,3 +81,10 @@ blocks.
   the kept workshop picture and the recorded conformer; the timeline from the recorded Wikidata
   searches and coordinates, with only Fustat placed.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

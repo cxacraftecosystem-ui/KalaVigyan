@@ -1,6 +1,16 @@
 # 0045. Reaction player, material cards and 3D molecules
 
+The `reaction_player`, `material_card` and `molecule_3d` blocks are built from one loader of a
+craft's matter, with conformers fetched through the PubChem adapter and kept in the private bucket.
+Compounds are linked nightly, and pieces of one answer never supersede each other.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0042 Phase B contract: place, matter and the expert panel](0042-phase-b-contract.md) |
+| The review that fixed it | [0050 Phase B review fixes](0050-phase-b-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -82,3 +92,10 @@ are lane 0049's.
   a missing conformer adds no block) and the registry seam (`tests/matter/`); database tests on
   GitHub Actions for the loader, the guard, reuse and supersession (`tests/db/test_matter_db.py`).
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

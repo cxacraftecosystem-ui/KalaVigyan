@@ -1,6 +1,16 @@
 # 0013. Quote strength, open licences, one craft scope and scoped embedding
 
+A review of the answer stream tightened its checks: a quote is at least 20 characters after folding,
+matches whole words and whole numbers, and the sentence it supports carries its wording. Full text
+is public only under an allow-listed open licence, a craft's claims have one home, a write-back
+embeds only what it wrote, and untrusted text stays inside its blocks.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The lanes it reviewed | [0012](0012-answer-stream-end-to-end.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -67,3 +77,10 @@ every sentence. The practice skills ask for one home per rule and for guards tha
 8. **A spend-cap refusal while finding the craft is shown in the router's words.** This is the
    same rule as for research (decision 0012). `NOT_FOUND_DETAIL` is defined once, in
    `services/answering`.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

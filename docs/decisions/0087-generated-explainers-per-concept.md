@@ -1,6 +1,14 @@
 # 0087. A generated explainer, or a picture, for every concept that needs one
 
+A concept that needs one gets a generated explainer, chosen by fixed rules and resting on statements
+and stored reactions as well as figures, within stated limits. A concept with no explainer gets a
+picture.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -48,3 +56,10 @@ before any call.
   then falls back to its picture.
 - `shared/explainer.simulation-mechanism.golden.json` fixes a mechanism explainer (the iron
   acetate of kut, no figure values) that both sides parse; the phase C golden is unchanged.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

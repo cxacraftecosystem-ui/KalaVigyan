@@ -1,6 +1,14 @@
 # 0080. An answer renders each claim once: the claim ledger
 
+An answer renders each claim once: one ledger per answer, applied where blocks are sent, drops
+repeats and rebuilds the finished answer once in reading order. Sources count as works rather than
+records, expert seats earn their place, and covered sections are not drawn.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -81,3 +89,10 @@ Build plan task 3-01 asks for an answer-wide ledger.
   that prose needs the geography section to hold its prose until the story is built, which is
   presentation work for a later task.
 - A caption saying what to look at in a picture needs a contract field and a renderer, also later.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

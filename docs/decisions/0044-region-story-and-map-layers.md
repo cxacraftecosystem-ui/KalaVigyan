@@ -1,6 +1,16 @@
 # 0044. Region story and map layers
 
+The `region_story` and `map_layer` blocks are built through the block builder registry: the model
+only chooses, a dataset value is cited or not shown, and no river data means no story. Map layers
+come from the layer route's own computation, and region pieces are reused across crafts.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0042 Phase B contract: place, matter and the expert panel](0042-phase-b-contract.md) |
+| The review that fixed it | [0050 Phase B review fixes](0050-phase-b-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -81,3 +91,10 @@ that slot into storing and reuse.
   on Postgres), and on GitHub Actions the offer's ranking and traces, the section map and the stored
   piece's slot, reuse and refusal once its river changes (`tests/place/`, `tests/db/test_place_db.py`).
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

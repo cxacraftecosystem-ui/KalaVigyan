@@ -1,6 +1,15 @@
 # 0009. Planner and tiered research
 
+A new `app/planner/` layer plans each question in one model call and runs tiered research that stops
+at the first tier where every facet is covered at the mode's threshold. Both live tiers run in
+parallel, and their deduplicated, ranked readings become the evidence pack the composer cites.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -81,3 +90,10 @@ open-access locator together.
 - Coverage runs one stored search per facet; each embeds its target (a cheap call, but up to
   eight per question). `LiveCandidate`, `WebFetch` and `AnswerTrace` rows are not written yet
   (`docs/TECH_DEBT.md`).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

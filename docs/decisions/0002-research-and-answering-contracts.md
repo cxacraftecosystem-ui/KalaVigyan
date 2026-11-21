@@ -1,6 +1,17 @@
 # 0002. One contract package for research and answering
 
+Research and answering meet at one contract package, `backend/app/research/`, which fixes the shared
+errors, vocabulary, wire names, mode limits, figure and quote rules, fetcher outcomes and stream
+events before any lane is built. Live findings are written back as cited claims instead of being
+kept for one answer only.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The lanes built to it | [0004](0004-craft-resolver.md), [0005](0005-scholarly-source-adapters.md), [0006](0006-reference-source-adapters.md), [0007](0007-web-search-and-fetcher.md), [0008](0008-stored-knowledge-retrieval.md), [0009](0009-planner-and-tiered-research.md), [0010](0010-composer.md), [0011](0011-claim-write-back-and-coverage-enrichment.md) and [0012](0012-answer-stream-end-to-end.md) |
+| The contracts it names | [research.md](../contracts/research.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -76,3 +87,10 @@ as claims, there are no review gates, and research is not limited to the named s
 - A badly formed stored row (for example a source title that is empty) now fails the answer
   loudly instead of sending a malformed event; the seed data was checked and passes.
 - Number words, units and formula-free quantities are not yet checked (debt register).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

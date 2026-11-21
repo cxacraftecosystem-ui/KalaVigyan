@@ -1,6 +1,21 @@
 # 0070. Phase D review fixes
 
+Phase D's review fixed eleven issues: APA in the worker thread, export libraries loaded on the first
+file, hidden marks on every served version, dates only as precise as their text, and BibTeX a stored
+value cannot close. Notes belong to one account, an unknown craft and an empty comparison differ,
+the digest links each explainer, and the explorer is a craft page tab.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| What it amends | [0063 Follow-ups that build, version history, saved explainers and alerts](0063-follow-ups-versions-and-alerts.md): the digest links each item to its explainer |
+| What it amends | [0064 Quiz, compare and the shared-science explorer](0064-quiz-compare-and-shared-science.md): a comparison with nothing cited answers 204, and the quiz reads hidden marks |
+| What it amends | [0066 Local measures, and market and GI](0066-local-measures-and-market-gi.md): GI and price dates are shown only as precisely as their quotes state them |
+| What it amends | [0067 Lesson packs, the explainer PDF and citation export](0067-lessons-and-exports.md): APA in the worker thread, the export libraries loaded on the first file, hidden generated explainers left out |
+| What it amends | [0069 Learning screens: follow-ups, saved answers, notes, lessons, exports, the map and compare](0069-learning-screens.md): item 3, notes held per account, and item 7, an unknown craft told apart from a comparison with nothing cited |
+| The lanes it reviewed | [0063](0063-follow-ups-versions-and-alerts.md), [0064](0064-quiz-compare-and-shared-science.md), [0065](0065-climate-risk-and-ask-the-map.md), [0066](0066-local-measures-and-market-gi.md), [0067](0067-lessons-and-exports.md), [0068](0068-learning-block-renderers.md) and [0069](0069-learning-screens.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -103,3 +118,10 @@ in the same tree and owns the read-back routes of hidden explainers.
 - Left: the curation checks of curated dates (lane 0053), the C049 price fixture refresh (decision
   0062's debt entry) and the lesson pack proof in production (owner); all are in
   `docs/TECH_DEBT.md`.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

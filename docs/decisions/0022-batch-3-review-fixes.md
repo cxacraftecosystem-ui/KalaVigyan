@@ -1,6 +1,17 @@
 # 0022. Voice spend fails closed, a filtered style hint, region sources and one home per rule
 
+A review of lanes 0014 to 0021 made voice spend fail closed: a relay upload is measured and its turn
+claimed before speech to text, and an agent call holds its whole length at the start. It also
+filtered the media style hint, gave `CraftRegion` its places' sources, gave each rule one home and
+pinned the client's vocabularies to the backend.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The lanes it reviewed | [0014](0014-science-region-voice-media-contracts.md), [0015](0015-science-engine.md), [0016](0016-region-profile.md), [0017](0017-voice-backend.md), [0018](0018-media-backend.md), [0019](0019-craft-page-and-region-panel.md), [0020](0020-voice-ui.md) and [0021](0021-media-ui.md) |
+| The contracts it names | [voice.md](../contracts/voice.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -102,3 +113,10 @@ that guards fail closed and that every rule have one home.
   and one model default.
 - Database tests for the claim and the agent slot are in `tests/db/test_voice_store_db.py` and
   run on GitHub Actions.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

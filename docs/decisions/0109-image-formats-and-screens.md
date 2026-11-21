@@ -1,8 +1,18 @@
 # 0109. Pictures in every common format, given from the chat and screened before review
 
+Pictures arrive in every common format through one imaging adapter (Pillow with pillow-heif),
+straight from the chat that made them, several under one declaration. They are screened before
+review, cheapest check first, a flagged picture is never shared automatically, and missing pictures
+are open work.
+
 Date: 2026-11-20. Status: accepted (owner, 2026-11-20: pictures through MCP in every format, from
 the chat that made them, screened before review; every MCP gap resolved). Supersedes the
 no-imaging-library rule of decision 0104, item 3; the rest of 0104 stands.
+
+| For | Read |
+|---|---|
+| What it supersedes in part | [0104 Image contributions: declared, read byte by byte, private until approved](0104-image-contributions-intake.md): item 3, the no-imaging-library rule; the rest stands |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -70,3 +80,10 @@ picture with the ones already held, or let a model look at it before anyone else
 - The perceptual comparison scans every fingerprint per upload; at a million pictures it should
   move to banded lookups.
 - The cost recorded per picture joins the cost ledger built in parallel this round.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-20; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

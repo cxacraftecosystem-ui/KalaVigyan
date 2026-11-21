@@ -1,6 +1,17 @@
 # 0053. Curated dossiers are imported on deploy and served as one craft page
 
+Curated dossiers are imported into the app's own tables after the seeds on every deploy, with
+deterministic ids, writes only on change, supersession instead of deletion, and the seed's edge
+sentences withdrawn. One route serves the whole curated craft page, with a preview that needs no
+database.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| What built on it | [0108 An approved structure proposal becomes a curated fact of its dossier](0108-structure-proposals-become-curated-facts.md): the database as the source of truth and the dossiers as its export |
+| The contracts it names | [craft-page.md](../contracts/craft-page.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -102,3 +113,10 @@ API; vectors stay with the nightly `embed_knowledge`.
 - Imported claims and pieces have no vectors until the nightly `embed_knowledge`; until then
   answers find them by keywords.
 - Left open: `docs/TECH_DEBT.md`, section "Curated import and craft page (decision 0053)".
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

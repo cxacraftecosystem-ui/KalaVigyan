@@ -1,6 +1,15 @@
 # 0024. Admin role
 
+An Admin role (rank 50) sits between Professor and Master admin and holds inviting professors,
+changing roles, disabling users, usage, the audit log and datasets, while keys, routing and quotas
+stay with the master admin. An admin acts only on accounts ranked below its own and needs two-step
+verification.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -74,3 +83,10 @@ rank 50, and the portals are meant to merge.
   DISABLE_USERS, as the backend already required).
 - The access roster screen hides actions by the entry's role only; an entry whose account holds a
   higher role than the entry still shows them, and the server refuses with a sentence.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

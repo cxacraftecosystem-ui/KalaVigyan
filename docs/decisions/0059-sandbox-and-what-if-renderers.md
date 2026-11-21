@@ -1,6 +1,17 @@
 # 0059. Sandbox and what-if renderers
 
+Generated explainers render in a sandboxed frame whose document puts the policy first, sized by a
+height message the page bounds, and the site policy names the one frame source the app needs. A
+hidden explainer is hidden for readers and collapsed for Professors, and the what-if lab chooses one
+option at a time.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0054 Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode](0054-phase-c-contract.md) |
+| The review that fixed it | [0061 Phase C review fixes](0061-phase-c-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -81,3 +92,10 @@ how-it-works copy reaches a screen.
   hiding and the route, the options and Unknown, reduced motion, the numbering and the shrinkable
   columns; `e2e/playFixture.ts` loads the fixture.
 - Items left are in `docs/TECH_DEBT.md` under this decision.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

@@ -1,6 +1,16 @@
 # 0036. The asking screen: dictation, an optional craft, depth by role
 
+The asking screen takes a typed or dictated question (the browser's Web Speech API), an optional
+craft and the depth the server gives the reader's role, and sends `depth`, never `mode`. The ask box
+offers no live call.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
+| The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -70,3 +80,10 @@ boards are the "Asking" and "Answer experience" pages of the design project.
   Hybrid, checks the Depth group instead of the Mode group, and checks `depth` in the request.
 - Each target browser's dictation languages are still to be tried once by hand (plan 2.5); the
   runtime refusal path makes an unsupported language safe but not verified (`docs/TECH_DEBT.md`).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

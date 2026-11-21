@@ -1,6 +1,15 @@
 # 0040. No connection held across a model call
 
+No caller holds a pooled database connection while it waits on a model or an embedding call, after
+the first production run of phase A exhausted the pool. A test records each session's queries and
+commits to keep it so.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contracts it names | [backend.md](../contracts/backend.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -46,3 +55,10 @@ the Supabase session pooler, so a larger pool would trade this failure for the p
 - The rule is in `docs/contracts/backend.md` under the AI router.
 - `fill_descriptor_embeddings`, run only by the nightly script with nothing in parallel, still
   holds its connection while embedding.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

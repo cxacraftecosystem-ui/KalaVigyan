@@ -1,6 +1,15 @@
 # 0035. Listen, and the live voice call switched off
 
+Listen reads finished research aloud in the reader's language with word timings, its audio cached
+per piece and language in the private media bucket. The live voice call is switched off.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
+| The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -122,3 +131,10 @@ Read on the ElevenLabs documentation on 2026-11-17:
   explainer; the voice call stays off until the owner sets `VOICE_CALL_ENABLED=true`.
 - Debt (`docs/TECH_DEBT.md`): two readers missing the same block at once both pay for it; no lifecycle
   rule ages narration objects out; the Gemini read-aloud fallback of PLAN 10.6 is not built.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

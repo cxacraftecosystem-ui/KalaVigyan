@@ -1,9 +1,18 @@
 # 0113. Questions KalaVigyan cannot answer well become open work
 
+Every finished answer gets a verdict per field from what it already holds, with no model call, and
+the nightly upkeep groups a craft's thin and unanswered questions by meaning. Each open group
+becomes an `ANSWER_GAP` task in open work that never says who asked.
+
 Date: 2026-11-21. Status: accepted (owner, 2026-11-21: "A question the knowledge can't answer well
 should open a task in open work automatically. That closes the loop between readers and
 contributors; today the two halves don't connect."). Adds a task kind to decision 0101's open work
 (item 15); the gates, reservations and the review switch stand.
+
+| For | Read |
+|---|---|
+| What it builds on | [0101 One knowledge architecture for every craft: facts, sections, components, monographs](0101-knowledge-architecture-for-every-craft.md): item 15's open work, which gains a task kind |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -68,3 +77,10 @@ not, and to every MCP client.
   the night goes on with the vectors it has.
 - A question about no craft keeps its verdict but opens no task, since acceptance is a retrieval run
   over one craft.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-21; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

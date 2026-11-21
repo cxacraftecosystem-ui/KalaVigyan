@@ -1,7 +1,19 @@
 # 0098. How the craft page chapters were built: the readings taken where the contract was open
 
+While the craft page chapters were built, the readings taken where decision 0095's contract was open
+were recorded in eighteen items, among them the answer builders' pure halves reused, one ledger for
+the page, a lazily written archive and a minimal novelty rule for readers' pieces. What was not
+built yet is recorded with them.
+
 Date: 2026-11-18. Status: accepted. Implements decision 0095 (craft page schema version 3) for the
 page builders, the snapshot store and the routes; records what is not built yet.
+
+| For | Read |
+|---|---|
+| What superseded part of it | [0100 The Kutch Ajrakh craft page is the hand-built monograph, served as built](0100-ajrakh-monograph-served-as-built.md): its renderer, for Kutch Ajrakh only, until 2026-11-20 |
+| What it builds on | [0095 The craft page becomes a monograph in chapters, public to read, built without a question](0095-craft-page-chapters.md): the page builders, the snapshot store and the routes |
+| The contracts it names | [craft-page.md](../contracts/craft-page.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -112,3 +124,11 @@ be built from the rows a page may read.
   film scores) and job steps 2 to 5 are not built (debt register).
 - `READ_ALL_EVIDENCE` is removed from `core/roles.py`, and `research/craft_page.without_evidence`
   is gone.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

@@ -1,6 +1,16 @@
 # 0010. Composer
 
+A new `app/composer/` layer writes answers from candidates in the evidence pack: the model quotes,
+the server cites, and stricter post-checks retry or drop any sentence the evidence does not support.
+When the evidence is not enough the answer says so, and the question and every passage reach the
+model inside untrusted blocks.
+
 Date: 2026-11-16. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -73,3 +83,10 @@ that turns an `EvidencePack` into candidates, and no answer for "nothing survive
   either the sections and open questions or `not_enough_evidence_message`.
 - Quoted spans become `Quote`s for write-back; their 300-character limit matches.
 - Number words and units without digits are still not checked (debt register).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-16; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

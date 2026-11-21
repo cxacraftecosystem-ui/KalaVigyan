@@ -1,6 +1,16 @@
 # 0034. Pictures and tappable terms
 
+Explainer sections show pictures from the web through one adapter per service, inline or as a link
+card by one rule, chosen by their relevance to the claim text. Terms are marked on the server and
+open short cited summaries.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
+| The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -104,3 +114,10 @@ credited link cards whose thumbnail loads from the source site and opens the sou
   term store and the picture store run on GitHub Actions.
 - New tables: `MediaRef`, `MediaRefClaim`, `Term`, `TermCraft`, `TermConcept`, `TermSummary`
   (row-level security on, public roles revoked).
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

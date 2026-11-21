@@ -1,7 +1,20 @@
 # 0106. One monograph template for every page, reached through fragments
 
+Every craft, family and category page is one monograph document drawn by one React renderer, its
+template split into a shell, fragments and a kit and its component kinds moved to specs a group at a
+time. Parity with the approved page is proven by screenshots before the switch, and every page
+follows.
+
 Date: 2026-11-19. Status: accepted (owner: "go ahead with round 3 after the release"). Implements
 decision 0101 build step 2's second half and item 14; builds on decision 0105.
+
+| For | Read |
+|---|---|
+| What it ended | [0100 The Kutch Ajrakh craft page is the hand-built monograph, served as built](0100-ajrakh-monograph-served-as-built.md): its renderer passed the parity proof on 2026-11-20, so the craft page draws its stored document |
+| What it builds on | [0101 One knowledge architecture for every craft: facts, sections, components, monographs](0101-knowledge-architecture-for-every-craft.md): build step 2's second half and item 14 |
+| What it builds on | [0105 The Ajrakh page as structured content, rebuilt by a static build](0105-ajrakh-page-as-structured-content.md): the structured content it renders |
+| What built on it | [0107 Craft articles are written in English, with room for translations](0107-craft-articles-in-english-with-room-for-translation.md): one monograph template |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -89,3 +102,11 @@ shell retires when the React shell reproduces it.
   spec (decision 0101 step 3).
 - Until 3c the renderer loads the kit's scripts, which act on fragment markup; a fragment's view
   must not be re-rendered by React after the kit has bound it.
+
+## How this record is kept true
+
+Its sections of 2026-11-19, Built and The first parity run, record what followed the decision.
+Beyond that it is not edited except to mark it superseded: a later choice is a new record that names
+this one, and the table above links the two both ways. It records the choice as taken on 2026-11-19;
+what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

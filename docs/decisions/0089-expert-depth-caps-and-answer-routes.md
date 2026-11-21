@@ -1,7 +1,16 @@
 # 0089. Expert answers research and write more, compose on Opus at high effort, and cost more; Hindi terms survive translation
 
+Expert answers research more queries and documents, write more sentences per section and compose on
+Opus at high effort, with routes tuned per depth and higher answer caps. A Hindi answer keeps its
+term spans through translation, so its quiz has sentences to ask.
+
 Date: 2026-11-18. Status: accepted. Item 3's output tokens and item 4's caps are superseded by
 decision 0093 (no caps for now; every call asks for its model's documented maximum).
+
+| For | Read |
+|---|---|
+| What superseded part of it | [0093 No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output](0093-no-caps-for-now.md): item 3's output tokens and item 4's caps |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -67,3 +76,11 @@ explainer draft.
 - Opus at high effort thinks longer: Expert sections take longer to arrive. The 60-second
   heartbeat keeps the stream open.
 - Builders no longer ride the Opus compose route, so their spend falls.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

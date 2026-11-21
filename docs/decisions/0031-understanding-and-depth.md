@@ -1,6 +1,17 @@
 # 0031. Understanding the question, and depth by role
 
+One understanding step works out the craft or crafts from the question and never blocks: a wrong
+guess is one tap to change, and a model failure is not the question's failure. Depth by role
+replaces the reader's mode choice, with caps per depth and one home for the spend refusal.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| What superseded part of it | [0093 No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output](0093-no-caps-for-now.md): its cap values; the code paths stand |
+| The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
+| The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -83,3 +94,11 @@ Before it, an ambiguous question stopped with pills, an unknown craft stopped wi
 - The cap is set by the asked depth, not the degraded one; the degraded answer spends less anyway.
 - Any-craft claims are reachable only by any-craft searches until a craft-scoped search also reads
   shared concepts. These, and the remaining items, are in `docs/TECH_DEBT.md`.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. The parts later records changed stay
+here as they were decided; the later record is the one that holds. It records the choice as taken on
+2026-11-17; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

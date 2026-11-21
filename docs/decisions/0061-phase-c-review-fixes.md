@@ -1,6 +1,16 @@
 # 0061. Phase C review fixes
 
+Phase C's review fixed thirteen issues: the frame blocks peer connections in every browser, the
+static check reads markup as a browser does and runs in linear time, and every generated explainer
+shown can be hidden. The ElevenLabs download is bounded, film mode reaches production, and the
+production E2E proves the phase.
+
 Date: 2026-11-18. Status: accepted.
+
+| For | Read |
+|---|---|
+| The lanes it reviewed | [0055](0055-generated-explainers.md), [0056](0056-what-if-lab.md), [0057](0057-zoom-story-and-timeline-map.md), [0058](0058-elevenlabs-music-sound-image-video.md), [0059](0059-sandbox-and-what-if-renderers.md) and [0060](0060-zoom-timeline-and-film-renderers.md) |
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -100,3 +110,10 @@ Decisions 0055 to 0060 left joining the four kinds to `BUILT_BLOCK_KINDS` to thi
 - Owner steps after the deploy: none beyond decision 0058's key permissions; dispatch E2E
   production with `questions=true` to prove the phase.
 - Items left are in `docs/TECH_DEBT.md` under decisions 0054 and 0061.
+
+## How this record is kept true
+
+It is not edited after acceptance except to mark it superseded: a later choice is a new record that
+names this one, and the table above links the two both ways. It records the choice as taken on
+2026-11-18; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
+[contracts](../contracts/README.md).

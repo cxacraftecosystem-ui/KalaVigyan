@@ -1,6 +1,14 @@
 # 0027. Geo ETL: district shapes are polygons only, and a part that loses a state fails
 
+The geo ETL keeps district shapes as polygons only, and each part states its coverage, so a part
+that loses a whole state fails instead of passing quietly. `--allow-failures` tolerates scattered
+districts only, and shards never outnumber the states asked for.
+
 Date: 2026-11-17. Status: accepted.
+
+| For | Read |
+|---|---|
+| Every decision, by group | [README.md](README.md) |
 
 ## Context
 
@@ -127,3 +135,10 @@ synthetic tests and run 43949571146's message, to list 553 under both keys inste
 state 31; that is not yet observed on the real grid. Left as debt under "Geo ETL state gaps": an
 unreachable tile or a grid read as nodata everywhere now reads as "no valid cells", and a silent
 district does not fail the part when another district of its state is accounted for.
+
+## How this record is kept true
+
+Its Addendum of 2026-11-17 records what followed the decision that day. Beyond that it is not edited
+except to mark it superseded: a later choice is a new record that names this one, and the table
+above links the two both ways. It records the choice as taken on 2026-11-17; what the code does
+today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the [contracts](../contracts/README.md).
