@@ -119,7 +119,7 @@ export const COMPONENT_HOMES: HomeBook = {
     "source_disagreements": [{"scope": "chem", "keys": ["id", "intro", "items", "title", "titleId"]}],
     "source_list": [{"scope": "rm", "keys": ["listing", "setting"]}, {"scope": "rm", "keys": ["setting", "statusId"]}],
     "specimen_plate": [{"scope": "mb", "keys": ["credit", "kicker", "name", "nameId", "phase", "picture", "replay", "sentence"]}],
-    "stage_player": [{"scope": "pt", "keys": ["drawing", "finish", "head", "key", "play", "restName", "source", "stages"]}],
+    "stage_player": [{"scope": "pt", "keys": ["afterLabel", "drawing", "finish", "head", "key", "play", "restName", "source", "stages"]}],
     "structure_diagram": [{"scope": "rm", "keys": ["head", "id", "key", "molecules", "scale"]}, {"scope": "rm", "keys": ["dekStyle", "head", "id", "key", "molecules", "notes", "scale", "swatchNote", "swatches"]}],
     "swatch_cards": [{"scope": "mb", "keys": ["chapterNo", "colours", "intro", "title", "titleId", "weave"]}],
     "timeline_map": [{"scope": "pt", "keys": ["axis", "caption", "cards", "comp", "drawing", "events", "head", "id", "items", "legend", "play", "rest", "status", "supply", "supplyNote", "views"]}],
