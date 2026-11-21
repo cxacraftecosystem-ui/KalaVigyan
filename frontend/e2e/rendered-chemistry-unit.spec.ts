@@ -33,7 +33,7 @@ test("the page draws its chemistry on the server and the equation reads it witho
   const rendered = renderedChemistry([{ equation: ALUM, display: false }]);
   expect(Object.keys(rendered)).toEqual([chemistryKey(ALUM, false)]);
   expect(rendered[chemistryKey(ALUM, false)]).toContain('class="katex"');
-  const html = renderToStaticMarkup(createElement(RenderedChemistryProvider, { rendered, children: createElement(ChemEquation, { equation: ALUM, display: false }) }));
+  const html = renderToStaticMarkup(createElement(RenderedChemistryProvider, { rendered }, createElement(ChemEquation, { equation: ALUM, display: false })));
   expect(html).toContain(`aria-label="${ALUM}"`);
   expect(html).toContain('class="katex"');
   expect([...eagerModules("@/components/answer/ChemEquation")]).not.toContain("lib/chemistry.ts");

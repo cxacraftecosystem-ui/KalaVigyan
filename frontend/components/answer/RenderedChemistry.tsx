@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const RenderedChemistryContext = createContext<RenderedChemistry>(NO_CHEMISTRY);
 
-export function RenderedChemistryProvider({ rendered, children }: { rendered: RenderedChemistry; children: ReactNode }) {
+export function RenderedChemistryProvider({ rendered, children }: { rendered: RenderedChemistry; children?: ReactNode }) {
   return <RenderedChemistryContext.Provider value={rendered}>{children}</RenderedChemistryContext.Provider>;
 }
 
