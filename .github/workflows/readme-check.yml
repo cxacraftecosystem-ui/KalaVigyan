@@ -9,6 +9,7 @@ on:
       - ".claude/skills/**"
       - ".github/workflows/readme-check.yml"
   push:
+    branches: [main, "round[0-9]", "round[0-9][0-9]"]
     paths:
       - "README.md"
       - "docs/readme-kit/**"

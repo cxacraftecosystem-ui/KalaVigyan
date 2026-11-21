@@ -674,7 +674,7 @@ from opening nested windows, because Chromium ignores the policy's `webrtc 'bloc
 | Backend checks | ruff, DB-free pytest, tools tests (hygiene, curation), hygiene check, the curation check of every dossier and the index (`tools/curation/check.py --check-index`, no network), offline migration render; then migrations, seeds and DB tests against PostGIS with pgvector, then the curated dossier import (decision 0053) |
 | Frontend checks | typecheck, lint and unit specs (after the lockfile audit and the no-comments check); the production build; the smoke specs against that build in a browser |
 | Hygiene | the hygiene check over the whole repository on every push to `main` and every pull request, whatever the paths, since Backend checks runs only for backend paths |
-| README check | on a change to `README.md`, a Markdown file under `docs/` or `.claude/skills/`, the README kit or its workflow: the kit rebuilt and diffed, every SVG checked, every mermaid block drawn by mermaid-cli and on github.com, every page rendered by GitHub (`docs/readme-kit/README_STYLE.md`, CI) |
+| README check | on a pull request, or a push to `main` or a round branch, that changes `README.md`, a Markdown file under `docs/` or `.claude/skills/`, the README kit or its workflow: the kit rebuilt and diffed, every SVG checked, every mermaid block drawn by mermaid-cli and on github.com, every page rendered by GitHub (`docs/readme-kit/README_STYLE.md`, CI) |
 | Craft data | master-list sha1, lint and tests of `etl/crafts`; weekly regeneration |
 | Geo ETL | `etl/geo` tests and the district statistics build |
 | Deploy backend | after Backend checks succeed on a push to `main` of `cxacraftecosystem-ui/KalaVigyan` |
