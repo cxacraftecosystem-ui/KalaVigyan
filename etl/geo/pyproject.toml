@@ -4,7 +4,7 @@ version = "0.0.1"
 description = "Per-district environment statistics from open datasets for KalaVigyan."
 requires-python = ">=3.14"
 dependencies = [
-    "numpy>=2.5.4",
+    "numpy>=2.5.5",
     "pandas>=3.1.1",
     "pyarrow>=26.0.1",
     "shapely>=2.2.0",
@@ -22,11 +22,11 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=9.2.0",
-    "ruff>=0.17.5",
+    "ruff>=0.17.6",
 ]
 
 [build-system]
-requires = ["setuptools>=84"]
+requires = ["setuptools>=84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]

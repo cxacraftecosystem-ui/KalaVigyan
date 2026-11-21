@@ -53,8 +53,8 @@ jobs:
       run:
         working-directory: etl/geo
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -132,8 +132,8 @@ jobs:
       run:
         working-directory: etl/geo
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -141,7 +141,7 @@ jobs:
       - name: Install
         run: python -m pip install --upgrade pip && python -m pip install -e .
       - name: Restore the download cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/kalavigyan-geo
           key: kalavigyan-geo-${{ matrix.part }}-${{ hashFiles('etl/geo/geo_etl/catalog.py') }}-${{ github.run_id }}
@@ -161,7 +161,7 @@ jobs:
           python -m geo_etl "${args[@]}"
       - name: Upload the part
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: geo-part-${{ matrix.part }}
           path: etl/geo/out/parts/
@@ -177,8 +177,8 @@ jobs:
       run:
         working-directory: etl/geo
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -186,7 +186,7 @@ jobs:
       - name: Install
         run: python -m pip install --upgrade pip && python -m pip install -e .
       - name: Download the parts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: geo-part-*
           path: etl/geo/out/parts
@@ -213,7 +213,7 @@ jobs:
               print(f"| {layer['layer']} | {layer['shard'] or ''} | {layer['rows']} | {layer['failureCount']} | {len(layer['districtsWithoutValues'])} | {len(layer['districtsWithoutCells'])} | {layer['seconds']} |")
           EOF
       - name: Upload the outputs
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: geo-district-env
           path: |
@@ -234,8 +234,8 @@ jobs:
       run:
         working-directory: etl/geo
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -243,7 +243,7 @@ jobs:
       - name: Install
         run: python -m pip install --upgrade pip && python -m pip install -e .
       - name: Download the outputs
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: geo-district-env
           path: etl/geo/out
@@ -266,8 +266,8 @@ jobs:
       run:
         working-directory: etl/geo
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -275,7 +275,7 @@ jobs:
       - name: Install
         run: python -m pip install --upgrade pip && python -m pip install -e .
       - name: Restore the download cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/kalavigyan-geo
           key: kalavigyan-geo-riverlines-${{ hashFiles('etl/geo/geo_etl/catalog.py') }}-${{ github.run_id }}
@@ -296,7 +296,7 @@ jobs:
           print(f"largest topology {sizes[-1]} bytes, median {sizes[len(sizes) // 2]} bytes")
           EOF
       - name: Upload the outputs
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: geo-river-lines
           path: etl/geo/out/rivers/
@@ -327,8 +327,8 @@ jobs:
           for v in AWS_REGION RIVER_LOAD_ROLE_ARN S3_BUCKET; do
             [ -n "${!v}" ] || { echo "::error::repository variable for $v is not set (see docs/RUNBOOK.md)"; exit 1; }
           done
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -336,12 +336,12 @@ jobs:
       - name: Install
         run: python -m pip install --upgrade pip && python -m pip install -e .
       - name: Download the outputs
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: geo-river-lines
           path: etl/geo/out/rivers
       - name: Assume the river load role
-        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_RIVER_LOAD_ROLE_ARN }}
           role-session-name: geo-etl-rivers-${{ github.run_id }}

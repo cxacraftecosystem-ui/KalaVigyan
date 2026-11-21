@@ -16,7 +16,7 @@
     "test:smoke": "playwright test --project=desktop --project=phone"
   },
   "dependencies": {
-    "@elevenlabs/client": "1.36.1",
+    "@elevenlabs/client": "1.37.1",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
@@ -24,7 +24,7 @@
     "any-ascii": "^0.3.3",
     "framer-motion": "^14.14.0",
     "katex": "^0.19.1",
-    "lucide-react": "^1.73.0",
+    "lucide-react": "^1.77.0",
     "next": "^16.4.6",
     "react": "^19.3.1",
     "react-day-picker": "^10.0.2",
@@ -46,7 +46,6 @@
     "typescript": "npm:@typescript/typescript6@^6.0.2"
   },
   "overrides": {
-    "postcss": "$postcss",
-    "minimatch": "^11.0.8"
+    "@typescript/native": "$@typescript/native"
   }
 }
