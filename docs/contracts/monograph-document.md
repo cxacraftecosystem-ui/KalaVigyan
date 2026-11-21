@@ -1,26 +1,57 @@
-# The monograph document, the template split and the kit (decision 0106, items 1 and 2)
+# The monograph document
 
 A page in the monograph form is a document: `research/monograph_document.MonographDocument`
 (schema 1), which one React renderer draws. The approved Kutch Ajrakh page (decisions 0100 and
 0105) is split into a shell, one fragment per component and a page-wide kit, and its static build
-reassembles them so the served page stays byte for byte what the owner approved.
+reassembles them so the served page stays byte for byte what the owner approved. This contract
+holds the document and its route, its versions, the generated document, the page in other
+languages, the authored files, the split, the kit and the golden (decision 0106, items 1 and 2);
+engineers changing any of them, the renderer or a page's translations read it.
 
-Last reviewed: 2026-11-20.
+| For | Read |
+|---|---|
+| Why one document and one renderer draw every page | [decision 0106](../decisions/0106-one-monograph-template-for-every-page.md), items 1 and 2; [0100](../decisions/0100-ajrakh-monograph-served-as-built.md); [0105](../decisions/0105-ajrakh-page-as-structured-content.md) |
+| Why articles are written in English, and how a page is translated | [decision 0107](../decisions/0107-craft-articles-in-english-with-room-for-translation.md); [0117](../decisions/0117-pages-in-other-languages.md) |
+| How the web draws the document | [monograph-renderer.md](monograph-renderer.md) |
+| A page's layout record and its generated document | [page-layout.md](page-layout.md) |
+| The field coverage a generated document carries | [coverage.md](coverage.md) |
+| A delivered component's spec | [component-specs-general.md](component-specs-general.md) |
+| `TRANSLATE` tasks and the bundle's `translation` part | [open-work.md](open-work.md), Pages in other languages |
+| Stored documents rebuilt, and pages refreshed, every night | [nightly-upkeep.md](nightly-upkeep.md) |
 
-Code: `research/monograph_page.py` (slots, `render_page`, `render_fragment`,
-`assemble_template`, the kit file format), `research/monograph_document.py` (the document,
-`spec_file_name`, `fragment_file_name`), `services/monograph_document.py` (the authored files, the
-document builder, storing and reading versions), `services/monograph_load.py` (stores the document
-when it changed), `models/monograph_documents.py` and migration `0041_monograph_documents` (the
-table), `api/routes/craft_monograph.py` (the route), `scripts/build_monograph.py` (the static page,
-the served kit and the golden), `scripts/split_monograph.py` (the split); the web shapes are
-`frontend/lib/monographDocument.ts` and `frontend/lib/componentViewContract.ts`. Migration
-`0045_document_language` keys stored documents by language (all rows English). A curated craft's
-structure: `services/document_components.py` (the structure read from the craft page),
-`document_components_parts.py` (its records as text units), `document_components_store.py` (the
-page it reads), `monograph_generated_structure.py` (placing it), `research/component_specs_blocks.py`
-(the `answer_block` kind); the sections: `services/monograph_generated_sections.py` (the one
-writer), `services/curation_sections.py` and `scripts/publish_curated_sections.py`.
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  Q["GET monograph<br/>lang, version, part, tag"] --> E{"English<br/>document"}
+  E -->|stored| S["MonographDocument<br/>latest version"]
+  E -->|none stored| G["Generated<br/>stored English copy"]
+  S --> L{"Passages<br/>translated?"}
+  G --> L
+  L -->|none| EN["English<br/>Content-Language en"]
+  L -->|some| V["Variant<br/>drawn on each read"]
+  EN --> P["Parts of 1 MB<br/>under one tag"]
+  V --> P
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class E accent
+```
+
+## Where the code is
+
+| Part | Code |
+|---|---|
+| The slots, `render_page`, `render_fragment`, `assemble_template` and the kit file format | `research/monograph_page.py` |
+| The document, `spec_file_name`, `fragment_file_name` | `research/monograph_document.py` |
+| The authored files, the document builder, storing and reading versions | `services/monograph_document.py` |
+| Storing the document when it changed | `services/monograph_load.py` |
+| The table | `models/monograph_documents.py` and migration `0041_monograph_documents`; migration `0045_document_language` keys stored documents by language (all rows English) |
+| The route | `api/routes/craft_monograph.py`; the family and category routes `api/routes/page_documents.py` |
+| The stored English copy of a generated document, its parts and tags | `services/stored_documents.py`, table `StoredDocument` (`models/stored_documents.py`, migration `0058_stored_documents`); `research/document_parts.py` and `api/document_reads.py` |
+| The static page, the served kit and the golden | `scripts/build_monograph.py` |
+| The split | `scripts/split_monograph.py` |
+| The web shapes | `frontend/lib/monographDocument.ts` and `frontend/lib/componentViewContract.ts` |
+| A curated craft's structure | `services/document_components.py` (the structure read from the craft page), `document_components_parts.py` (its records as text units), `document_components_store.py` (the page it reads), `monograph_generated_structure.py` (placing it), `research/component_specs_blocks.py` (the `answer_block` kind) |
+| The sections | `services/monograph_generated_sections.py` (the one writer), `services/curation_sections.py` and `scripts/publish_curated_sections.py` |
+| Pages in other languages | the code table of that section, below |
 
 ## GET /api/crafts/{slug}/monograph
 
@@ -101,34 +132,23 @@ never changed. Migration `0045_document_language` added `language` (existing row
 written into their JSON) and moved the unique key to subject, slug, language and version; its
 downgrade keeps only the English rows.
 
-- `store_document(session, document)` is the one writer. `contentHash` is the SHA-256 of the
-  document's JSON (by alias, keys sorted, compact) without `version` and `language`, the row's key.
-  When it equals the latest row's of that language, nothing is stored and it returns `None`;
-  otherwise it stores the next version of that language and returns its number.
-- `stored_document(session, subject_kind, slug, language="en")` returns the latest version as a
-  `MonographDocument`, or `None`. `document_row(session, kind, slug, language=, version=)` returns
-  the latest row, or that version's (the route serves its JSON without validating it again);
-  `latest_document_row` is the latest.
-- `load_monograph` (`python -m app.scripts.load_monograph`, and the nightly reload) stores the
-  document of a craft with authored content after its sections and components; its report's
-  `documentVersion` is the version it stored, or `null` when the document was unchanged or the
-  craft has no authored folder. A folder named by another slug than the craft's is refused.
+| Function | Does |
+|---|---|
+| `store_document(session, document)` | the one writer. `contentHash` is the SHA-256 of the document's JSON (by alias, keys sorted, compact) without `version` and `language`, the row's key. When it equals the latest row's of that language, nothing is stored and it returns `None`; otherwise it stores the next version of that language and returns its number |
+| `stored_document(session, subject_kind, slug, language="en")` | the latest version as a `MonographDocument`, or `None` |
+| `document_row(session, kind, slug, language=, version=)` | the latest row, or that version's (the route serves its JSON without validating it again); `latest_document_row` is the latest |
+| `load_monograph` (`python -m app.scripts.load_monograph`, and the nightly reload) | stores the document of a craft with authored content after its sections and components; its report's `documentVersion` is the version it stored, or `null` when the document was unchanged or the craft has no authored folder. A folder named by another slug than the craft's is refused |
 
 ## The generated document
 
 `services/monograph_generated_assembly.assembled_document` builds a page without authored content
 from its published sections, registered components, curated pictures and `PageLayout`:
 
-- chapter `opening` first: the masthead picture (the HERO role, its caption and credit units
-  within it), the label units (`masthead-kicker` `p` with the "Monograph" and family spans,
-  `masthead-title` `h1`, then `dt`/`dd` pairs `Place` and `GI`) and the lede: the first three
-  sentences of the OVERVIEW section that the layout does not place elsewhere;
-- every other chapter opens with its title, an `h2` unit `chapter-<key>` (`chapter_title`: "Why
-  <first state>" or "Where it is made", "Market and GI" only with a GI), then its pictures, its
-  sections (an `h3` section title unless it repeats the chapter's; a field's section, its fact grid
-  and its components sit in the chapter `coverage_chapters.FIELD_CHAPTERS` names, rule 23 of the
-  page checklist, `coverage.md`) and its components;
-- a closing `sources` chapter with its `h2`, under which the renderer lists the sources.
+| Chapter | Holds |
+|---|---|
+| `opening`, first | the masthead picture (the HERO role, its caption and credit units within it), the label units (`masthead-kicker` `p` with the "Monograph" and family spans, `masthead-title` `h1`, then `dt`/`dd` pairs `Place` and `GI`) and the lede: the first three sentences of the OVERVIEW section that the layout does not place elsewhere |
+| every other chapter | its title, an `h2` unit `chapter-<key>` (`chapter_title`: "`Why <first state>`" or "Where it is made", "Market and GI" only with a GI), then its pictures, its sections (an `h3` section title unless it repeats the chapter's; a field's section, its fact grid and its components sit in the chapter `coverage_chapters.FIELD_CHAPTERS` names, rule 23 of the page checklist, `coverage.md`) and its components |
+| `sources`, closing | its `h2`, under which the renderer lists the sources |
 
 A registered component a contributor delivered (`component-specs-general.md`) is drawn from the
 spec it was approved with: its units become the page's units `u5001` and on, held within it and
@@ -188,17 +208,34 @@ contribution brought (`origin`) are left out.
 
 ## Pages in other languages (decision 0117)
 
-Code: `research/translation_passages.py` (passages, their hash, their texts),
-`research/page_translation_gates.py` (the gates), `research/page_translation_variant.py` (the
-variant), `research/document_translation.py` (the document's `translation`),
-`research/page_translations.py` (the bundle's `translation` part, statuses, `task_problem`),
-`research/page_translation_views.py` (the site's views), `models/page_translations.py` and
-migration `0059_page_translations` (`PageTranslation`, `PageTextUnit`, `TranslationReader`),
-`services/page_translations.py` (proposing), `services/page_translation_preview.py` (previewing),
-`services/page_translation_serving.py` (serving), `services/page_translation_review.py` and
-`services/translation_readers.py` (review), `api/routes/page_translations.py`; the web side is
-`frontend/lib/documentLanguages.ts`, `lib/translationContract.ts`, `lib/documentVariant.ts` (a
-draft's variant, for the preview page) and `components/monograph/DocumentLanguages.tsx`.
+| Part | Code |
+|---|---|
+| Passages, their hash, their texts | `research/translation_passages.py` |
+| The gates | `research/page_translation_gates.py` |
+| The variant | `research/page_translation_variant.py` |
+| The document's `translation` | `research/document_translation.py` |
+| The bundle's `translation` part, statuses, `task_problem` | `research/page_translations.py` |
+| The site's views | `research/page_translation_views.py` |
+| The tables (`PageTranslation`, `PageTextUnit`, `TranslationReader`) | `models/page_translations.py` and migration `0059_page_translations` |
+| Proposing, previewing, serving | `services/page_translations.py`, `services/page_translation_preview.py`, `services/page_translation_serving.py` |
+| Review | `services/page_translation_review.py` and `services/translation_readers.py` |
+| The routes | `api/routes/page_translations.py` |
+| The web side | `frontend/lib/documentLanguages.ts`, `lib/translationContract.ts`, `lib/documentVariant.ts` (a draft's variant, for the preview page) and `components/monograph/DocumentLanguages.tsx` |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","transitionColor":"#AA69E9","transitionLabelColor":"#857F9E","stateLabelColor":"#1E1B2E","stateBkg":"#F2E9FE","compositeBackground":"#F9F5FF","compositeTitleBackground":"#F2E9FE"}}}%%
+stateDiagram-v2
+  [*] --> REJECTED: a gate refuses
+  [*] --> DRAFT: a newcomer, waiting
+  [*] --> IN_REVIEW: served, drawn for review
+  [*] --> APPROVED: served at once
+  DRAFT --> APPROVED: a reader approves
+  DRAFT --> REJECTED: rejected with a note
+  IN_REVIEW --> APPROVED: a reader approves
+  IN_REVIEW --> REJECTED: rejected with a note
+  APPROVED --> SUPERSEDED: a later one served
+  IN_REVIEW --> SUPERSEDED: a later one served
+```
 
 - **A passage** is a text unit with a letter outside a fixed mark (`i`, `sub`, `sup`: names in
   italic, botanical names, verbatim quotes, formula parts), the masthead title aside: a name is
@@ -208,21 +245,31 @@ draft's variant, for the preview page) and `components/monograph/DocumentLanguag
   removed}` (JSON, keys sorted, compact): the words and the claims a sentence rests on, not how
   its sources happen to be numbered.
 - **A translation** is one text for each English text, in order, for a passage named by its key and
-  the hash of the English it translates. The gates, in order, each stopping the rest when it fails:
-  `CURRENT` (the hash is the current English passage's), `SHAPE` (one text for each, every fixed
-  text exactly as it stands, the cited text not empty), `KEPT` (`research/translation.translation_problems`,
-  the answers' rule: every number, unit, formula and pH kept, none added, the prose written in the
-  language's script) and `ADDED` (at most 3 times the English prose plus 40 characters, and no link
-  the English lacks). Citations are never translated: the served passage takes every mark,
-  citation and attribute from the current English passage and only its texts from the translation,
-  so it keeps that sentence's citations whatever the translator sent; quotes stay in the popover in
-  their source's language.
+  the hash of the English it translates. The gates run in order, each stopping the rest when it
+  fails:
+
+  | Gate | Passes when |
+  |---|---|
+  | `CURRENT` | the hash is the current English passage's |
+  | `SHAPE` | one text for each, every fixed text exactly as it stands, the cited text not empty |
+  | `KEPT` | `research/translation.translation_problems`, the answers' rule: every number, unit, formula and pH kept, none added, the prose written in the language's script |
+  | `ADDED` | at most 3 times the English prose plus 40 characters, and no link the English lacks |
+
+  Citations are never translated: the served passage takes every mark, citation and attribute from
+  the current English passage and only its texts from the translation, so it keeps that sentence's
+  citations whatever the translator sent; quotes stay in the popover in their source's language.
 - **Placed by trust tiers** (`trust_tiers.tier_placement` with the review switch of the bundle's
-  origin): a Professor or above who reads the language (`TranslationReader`) is `APPROVED` at once,
-  a proven account `APPROVED` or drawn `IN_REVIEW`, a newcomer `DRAFT` (waiting), the rest as the
-  switch says; a refused passage is kept `REJECTED` with its checks. A served translation supersedes
-  the earlier served one of the same passage and hash (`SUPERSEDED`). `APPROVED` and `IN_REVIEW`
-  are served.
+  origin); `APPROVED` and `IN_REVIEW` are served:
+
+  | Who translated | Placed |
+  |---|---|
+  | a Professor or above who reads the language (`TranslationReader`) | `APPROVED` at once |
+  | a proven account | `APPROVED`, or drawn `IN_REVIEW` |
+  | a newcomer | `DRAFT` (waiting) |
+  | the rest | as the switch says |
+
+  A refused passage is kept `REJECTED` with its checks. A served translation supersedes the earlier
+  served one of the same passage and hash (`SUPERSEDED`).
 - **Review.** `GET /api/knowledge/translations/review` (Professor and above) lists `DRAFT` and
   `IN_REVIEW` translations in the languages the reviewer reads, oldest first, each with its English,
   its texts, its checks and whether its English is still current; `POST .../{id}/approve` and
@@ -287,6 +334,19 @@ model explainer's own `<style>` stays in its fragment. A kit file is its parts i
 marker line (`@kv-part <name>;` in CSS, `"kv-part <name>";` in JavaScript), the part's text and a
 newline that is not part of it. A part may not hold a marker line.
 
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  A["Authored files<br/>shell, fragments, specs"] --> B["build_monograph"]
+  K["Kit parts<br/>CSS and JavaScript"] --> B
+  C["content.json"] --> B
+  B --> P["Static page<br/>kutch-ajrakh/index.html"]
+  B --> S["Served kit<br/>monograph.css, monograph.js"]
+  B -.->|check| D["Every file that<br/>differs from its build"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class B accent
+```
+
 **The static page.** `python -m app.scripts.build_monograph` (from `backend`) writes
 `frontend/public/monographs/kutch-ajrakh/index.html` from the shell, the fragments, the kit and the
 content, and the served kit `frontend/public/monographs/kit/monograph.css` and `monograph.js`:
@@ -318,31 +378,35 @@ python -m app.scripts.build_monograph --document Kutch-Ajrakh --out ../shared/mo
 content, a fragment or a spec changes (a kind's spec landing moves that component from `fragments`
 to `specs`).
 
-## Tests
+## How this document is kept true
 
-`tests/research/test_component_specs_blocks.py` (the answer block spec),
-`tests/layouts/test_document_structure.py` and `tests/layouts/test_generated_structure.py` (the
-structure from Kutch Ajrakh's golden craft page, every claim of the page in the document),
-`tests/db/test_curated_sections_db.py` (sections at import, in order, a supersede, a category, the
-backfill), `tests/db/test_curated_documents_db.py` (every cited claim and figure of the craft page
-of Bastar Dhokra, Kutch Bandhani and Bagru in its document),
-`tests/research/test_monograph_slots.py` (the slots and the kit format),
-`tests/research/test_monograph_split.py` (the split's rules, its round trip on Ajrakh, one fragment
-per component that is the element its anchor selects, every slot where the layout puts it, the kit
-equal in the page and the served files), `tests/research/test_monograph_authored.py` (the builder,
-specs over fragments, the hash, the golden), `tests/research/test_monograph_page.py` (the static
-build byte for byte), `tests/public/test_craft_monograph_route.py` (the route) and
-`tests/db/test_monograph_document_db.py` (a new version stored, an unchanged one not, each
-language its own versions, the load), `tests/test_document_language_migration.py` (the key),
-`tests/layouts/test_generated_document.py` and `tests/layouts/test_generated_chapters.py` (the
-generated layout, chapter titles, the lede, the section minimum, the picture specs).
+| Claim | Kept true by |
+|---|---|
+| The answer block spec | `tests/research/test_component_specs_blocks.py` |
+| The structure from Kutch Ajrakh's golden craft page, every claim of the page in the document | `tests/layouts/test_document_structure.py` and `tests/layouts/test_generated_structure.py` |
+| Sections at import, in order, a supersede, a category, the backfill | `tests/db/test_curated_sections_db.py` |
+| Every cited claim and figure of the craft page of Bastar Dhokra, Kutch Bandhani and Bagru in its document | `tests/db/test_curated_documents_db.py` |
+| The slots and the kit format | `tests/research/test_monograph_slots.py` |
+| The split's rules, its round trip on Ajrakh, one fragment per component that is the element its anchor selects, every slot where the layout puts it, the kit equal in the page and the served files | `tests/research/test_monograph_split.py` |
+| The builder, specs over fragments, the hash, the golden | `tests/research/test_monograph_authored.py` |
+| The static build byte for byte | `tests/research/test_monograph_page.py` |
+| The route | `tests/public/test_craft_monograph_route.py` |
+| A new version stored, an unchanged one not, each language its own versions, the load | `tests/db/test_monograph_document_db.py` |
+| The key | `tests/test_document_language_migration.py` |
+| Parts, their budget and their tag | `tests/test_document_parts.py` and `tests/layouts/test_page_document_routes.py` |
+| A generated document stored, served and rebuilt, and a variant drawn from its stored English copy | `tests/db/test_stored_documents_db.py` and `tests/db/test_translated_documents_db.py` |
+| The documents of a craft, a family and a category | `tests/db/test_generated_documents_db.py` |
+| The generated layout, chapter titles, the lede, the section minimum, the picture specs | `tests/layouts/test_generated_document.py` and `tests/layouts/test_generated_chapters.py` |
+| Texts, fixed and cited, the hash | `tests/research/test_translation_passages.py` |
+| Each gate | `tests/research/test_page_translation_gates.py` |
+| The fallback, citations from the English, the hold, the marks the renderer writes | `tests/research/test_page_translation_variant.py` |
+| Languages, priority, the task key, the part | `tests/research/test_translation_regions.py` |
+| The web's codes, scripts and names are the server's | `tests/research/test_document_language_seam.py` |
+| The translations' tables | `tests/test_page_translations_migration.py` |
+| Placement, the variant, the hold on change, the preview | `tests/db/test_page_translations_db.py` |
+| The tasks, a claim completed, review | `tests/db/test_translation_work_db.py` |
+| The languages on the web | `frontend/e2e/document-languages-unit.spec.ts` |
 
-Pages in other languages: `tests/research/test_translation_passages.py` (texts, fixed and cited,
-the hash), `tests/research/test_page_translation_gates.py` (each gate),
-`tests/research/test_page_translation_variant.py` (the fallback, citations from the English, the
-hold, the marks the renderer writes), `tests/research/test_translation_regions.py` (languages,
-priority, the task key, the part), `tests/research/test_document_language_seam.py` (the web's
-codes, scripts and names are the server's), `tests/test_page_translations_migration.py`,
-`tests/db/test_page_translations_db.py` (placement, the variant, the hold on change, the preview)
-and `tests/db/test_translation_work_db.py` (the tasks, a claim completed, review), and the web's
-`frontend/e2e/document-languages-unit.spec.ts`.
+Test paths are relative to `backend/`, but the web's, which is relative to the repository. Last
+reviewed: 2026-11-20, and every path here checked against the code on 2026-11-22. Re-read it when a document field, the route's answers, a slot, the
+kit format, a translation gate or the golden changes.

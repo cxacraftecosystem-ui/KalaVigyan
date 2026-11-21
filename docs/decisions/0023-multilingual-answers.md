@@ -9,6 +9,7 @@ Date: 2026-11-16. Status: accepted.
 | For | Read |
 |---|---|
 | What built on it | [0107 Craft articles are written in English, with room for translations](0107-craft-articles-in-english-with-room-for-translation.md): answers in Indian languages, which keep their languages |
+| What built on it | [0117 A page in another language is the same page, translated passage by passage](0117-pages-in-other-languages.md): answers in Indian languages and their verified translation |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

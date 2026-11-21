@@ -11,6 +11,7 @@ allowances and contracts stand.
 | For | Read |
 |---|---|
 | What amended it | [0114 Component kinds any craft can use, and one dataset record](0114-kinds-and-datasets.md): the MCP tools, which gain a 22nd, `propose_dataset` |
+| What built on it | [0117 A page in another language is the same page, translated passage by passage](0117-pages-in-other-languages.md): the MCP tools, at most 22, which gain no tool |
 | What it amends | [0103 The MCP server, slice 1: public read tools over our own JSON-RPC framing](0103-mcp-server-read-slice.md): the tools it names; its services and contracts stand |
 | What it amends | [0108 An approved structure proposal becomes a curated fact of its dossier](0108-structure-proposals-become-curated-facts.md): the tools it names; its gates and contracts stand |
 | What it amends | [0110 Sources a contributor's AI can read and we cannot, and a studio to build a page in](0110-contributor-supplied-sources.md): the tools it names; its services, allowances and contracts stand |

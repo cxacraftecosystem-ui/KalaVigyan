@@ -11,6 +11,7 @@ english for now, we can add the scope for adding translation for a craft too"). 
 |---|---|
 | What it builds on | [0106 One monograph template for every page, reached through fragments](0106-one-monograph-template-for-every-page.md): one monograph template |
 | What it builds on | [0023 Answers in Indian languages](0023-multilingual-answers.md): answers in Indian languages, which keep their languages |
+| What built on it | [0117 A page in another language is the same page, translated passage by passage](0117-pages-in-other-languages.md): articles in English, room for translation |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -1,11 +1,40 @@
-# Open work, reservations, component proposals and the method on the MCP server
+# Open work
 
-Decision 0101's Knowledge API and MCP server: item 15 "Open work" and "The method travels with
-the server", and item 16's component proposals. The endpoint, framing and read tools are in
-`docs/contracts/knowledge-api.md`; `propose_facts`, a layout's proposal and `propose_structure` are in
-`knowledge-writes.md`.
+The tasks KalaVigyan lists as open work, how they are reserved and completed, component proposals,
+whole pages delivered, previewed and drafted, and the method the MCP server serves with them:
+decision 0101's Knowledge API and MCP server, item 15 "Open work" and "The method travels with the
+server", and item 16's component proposals. Engineers changing open work, the MCP work, page and
+source tools, its prompts or the served skill read it, and a contributor's agent reads the same text
+as `kalavigyan://contracts/open-work.md`. The endpoint, framing and read tools are in
+`docs/contracts/knowledge-api.md`; `propose_facts`, a layout's proposal and `propose_structure` are
+in `knowledge-writes.md`.
 
-## Code
+| For | Read |
+|---|---|
+| Why open work, the served method and component proposals are this way | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), items 15 and 16; [0110](../decisions/0110-contributor-supplied-sources.md); [0111](../decisions/0111-fewer-mcp-tools.md); [0113](../decisions/0113-questions-become-work.md); [0117](../decisions/0117-pages-in-other-languages.md) |
+| The endpoint, its framing, the read tools and the source tools' limits | [knowledge-api.md](knowledge-api.md) |
+| `propose_facts`, a layout's proposal, `propose_structure`, trust tiers and the hourly limits | [knowledge-writes.md](knowledge-writes.md) |
+| A delivered component's spec and its checks | [component-specs-general.md](component-specs-general.md) |
+| The field coverage the tasks count | [coverage.md](coverage.md) |
+| Held, failing and rotting facts, and the night that heals them | [nightly-upkeep.md](nightly-upkeep.md) |
+| A page's translations, as they are served and reviewed | [monograph-document.md](monograph-document.md), Pages in other languages |
+| Where component and layout proposals are decided | [review-queue.md](review-queue.md) |
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","transitionColor":"#AA69E9","transitionLabelColor":"#857F9E","stateLabelColor":"#1E1B2E","stateBkg":"#F2E9FE","compositeBackground":"#F9F5FF","compositeTitleBackground":"#F2E9FE"}}}%%
+stateDiagram-v2
+  [*] --> Open: computed on every call
+  Open --> Reserved: reserve_tasks claims it
+  Reserved --> Reserved: claimed again, renewed
+  Reserved --> COMPLETED: its proposal passes
+  Reserved --> RELEASED: given back, or refused
+  Reserved --> EXPIRED: two hours pass
+  RELEASED --> Open
+  EXPIRED --> Open
+  COMPLETED --> [*]
+```
+
+## Where the code is
 
 | Part | Where |
 |---|---|
@@ -21,6 +50,7 @@ the server", and item 16's component proposals. The endpoint, framing and read t
 | Counts per subject (one source, sources differ, links, demand) | `services/open_work_counts.py` |
 | Component kinds per craft | `services/open_work_components.py`, over the library's one applies-to query (`services/component_library.applies_to`, with `registered_pieces`) |
 | The family flagships: the backlog, the task, its proposal check; the kinds a family page draws | `research/open_work_flagship_backlog.py` (from the interactives skill's `references/flagships.md`, kept equal by a test), `research/open_work_flagships.py`; `services/open_work_flagships.py` |
+| Picture tasks (`MISSING_PICTURE`) | `services/open_work_pictures.py`; their keys `research/image_contributions_tasks.py` |
 | The nightly refresh of field work | `services/open_work_refresh.py` |
 | Pages in the monograph form | `services/open_work_pages.py`; the folder is `data/monograph_files.MONOGRAPHS_DIR` |
 | Listing, standings, review queues, live reservations | `services/open_work.py` |
@@ -69,6 +99,7 @@ at most 20 ids; `count` is the whole number.
 | `CORROBORATE_FACT` | shown facts with a quote that failed and another that holds, per primary field | `CORROBORATE_FACT:...[:<FIELD>]` | facts | none (`propose_source`) |
 | `FIND_ANOTHER_SOURCE` | shown facts resting only on rotten sources (`nightly-upkeep.md`, 1a); `factIds` the facts, `sourceIds` the sources | `FIND_ANOTHER_SOURCE:<subject>:<slug>` | facts | none (`propose_source`) |
 | `REVIEW` | a review queue holds items, shown to its reviewers only | `REVIEW:<QUEUE>` | items waiting | none |
+| `MISSING_PICTURE` | a craft that is not curated has no picture waiting or approved for its masthead, its GI record (a GI craft), one of its stages or one of its materials; the target is `slot-masthead`, `slot-record`, `stage-<id>` or `material-<id>` (`image-contributions.md`) | `MISSING_PICTURE:craft:<slug>:<target>` | 1 | `give_picture` |
 | `TRANSLATE` | a page with a monograph has passages not yet translated into a language it is offered in (Pages in other languages, below) | `TRANSLATE:<subject>:<slug>:<language>` | passages to translate | none (`preview_page`, `propose_page`) |
 | `ANSWER_GAP` | readers asked about a craft or family and the answer was thin or found no cited evidence (Questions readers asked, below) | `ANSWER_GAP:<subject>:<slug>:gap-<32 hex>` | readers who asked in the last 90 days | `research_field` |
 
@@ -81,68 +112,78 @@ every one of the 16 fields is a core field of every craft, family and category (
 a missing field is research, not a hole), so each field without cited facts is a `MISSING_FIELD`
 task and each under 3 a `THIN_FIELD` task; quotes are 25 to 300 characters.
 
-**What is counted.**
-- Facts and sections per field are the field coverage (`coverage.md`): cited claims shown on the
-  page, a craft's those about its open concepts, a category's those its dossier links
-  (`CuratedCategoryClaim`), under the primary field and each secondary field, with the communities'
-  claims counted for `SOCIETY` and the GI record's for `POLICY`; the `PUBLISHED` `ArticleSection`
-  per field and its sentence count.
-- One source: distinct `ClaimSource.sourceId` equal to 1. Sources differ: `Claim.sourcesDiffer`.
-- Sources with a link: an archive is a stored snapshot (`Source.snapshotKey`) or a curated
-  `externalIds.archivedUrl`; dead is the latest `WebFetch` of the link answering 404 or 410.
-- Held facts (every cited quote `FAIL`, `services/claim_holds.held_claim`) are left out of every count
-  above, the field coverage among them: a held fact is research, not a fact the page shows. They are
-  counted for `RESOURCE_FACT`. Failing facts (a `FAIL` quote, not held) for `CORROBORATE_FACT`. Rotten
-  sources (`SourceUpkeep.failures` at least 3, no archive of any kind) for `FIND_ANOTHER_SOURCE`, over
-  the facts that cite nothing else.
-- Components: registered pieces (a label, not hidden, not superseded) of the craft, linked to it, or
-  keyed to its concepts (its own, its stages', its materials'), its materials' compounds or its
-  districts, as the library search reaches them. Needs and the kinds that meet them:
+### What is counted
+
+| What | How it is counted |
+|---|---|
+| Facts and sections per field | the field coverage (`coverage.md`): cited claims shown on the page, a craft's those about its open concepts, a category's those its dossier links (`CuratedCategoryClaim`), under the primary field and each secondary field, with the communities' claims counted for `SOCIETY` and the GI record's for `POLICY`; the `PUBLISHED` `ArticleSection` per field and its sentence count |
+| One source | distinct `ClaimSource.sourceId` equal to 1 |
+| Sources differ | `Claim.sourcesDiffer` |
+| A source with a link, archived | a stored snapshot (`Source.snapshotKey`) or a curated `externalIds.archivedUrl` |
+| A source with a link, dead | the latest `WebFetch` of the link answering 404 or 410 |
+| Held facts | every cited quote `FAIL` (`services/claim_holds.held_claim`); left out of every count above, the field coverage among them: a held fact is research, not a fact the page shows. They are counted for `RESOURCE_FACT` |
+| Failing facts | a `FAIL` quote, not held; counted for `CORROBORATE_FACT` |
+| Rotten sources | `SourceUpkeep.failures` at least 3, no archive of any kind; counted for `FIND_ANOTHER_SOURCE`, over the facts that cite nothing else |
+| Components | registered pieces (a label, not hidden, not superseded) of the craft, linked to it, or keyed to its concepts (its own, its stages', its materials'), its materials' compounds or its districts, as the library search reaches them; the needs and the kinds that meet them are below |
+| Monograph form | a folder `data/monographs/<slug>` with `content.json`; a layout is a non-empty `layout` in it. Only `Kutch-Ajrakh` is in the form |
 
 | Need | Kinds |
 |---|---|
-| `what-if` | `what_if` |
+| `what-if` | `what_if`, `experiment_lab` |
 | `molecules` | `molecule_3d` |
 | `map` | `map_layer`, `region_story`, `timeline_map`, `supply_map`, `map_sequence` |
 | `reaction-player` | `reaction_player`, `indigo_vat`, `mordant_bath`, `lost_wax`, `firing`, `dip_player` |
 | `pictures` | `images`, `picture_plate`, `specimen_plate` |
 
-  A category has no `MISSING_COMPONENT` tasks: the registry keys components to crafts, concepts,
-  places and compounds, never to a category. A family page has its `FLAGSHIP` task instead.
-- Monograph form: a folder `data/monographs/<slug>` with `content.json`; a layout is a non-empty
-  `layout` in it. Only `Kutch-Ajrakh` is in the form.
-- Review queues and who sees them: `FACTS` (claims `PROPOSED` or `IN_REVIEW`, and every shown held
-  claim; `MARK_CLAIM_LEVEL`, Professor and above), `TESTIMONY` (pending artisans' testimony; `REVIEW_TESTIMONY`), `IMAGES`
-  (pending pictures; `REVIEW_CONTRIBUTIONS`, Admin and above), `COMPONENTS` (pending component
-  proposals; `REVIEW_CONTRIBUTIONS`), `LAYOUTS` (pending page layout proposals;
-  `REVIEW_CONTRIBUTIONS`), `STRUCTURE` (pending page structure proposals; `MARK_CLAIM_LEVEL`,
-  Professor and above). Queues are listed only without a subject filter.
+A category has no `MISSING_COMPONENT` tasks: the registry keys components to crafts, concepts,
+places and compounds, never to a category. A family page has its `FLAGSHIP` task instead.
 
-**Priority** per subject, then ordered:
-- `HIGH`: on the owner's first list (`kalavigyan-craft-pages` skill, "Order": Bidriware, Blue Pottery
-  of Jaipur, Kutch Bandhani, Machilipatnam Kalamkari, Madhubani, Orissa Pattachitra, Bastar Dhokra,
-  Channapatna), or 25 or more stored answers about the craft. Every review queue is `HIGH`.
-- `MEDIUM`: GI-registered (`Craft.giStatus` `GI`), curated (a `CuratedCraft` or `CuratedCategory`
-  row), or 5 or more stored answers.
-- `LOW`: every other craft and family, and every category; a family page's `FLAGSHIP` task is
-  `HIGH` all the same, since every craft of the family borrows the flagship.
+Review queues and who sees them; queues are listed only without a subject filter:
+
+| Queue | Holds | Seen by |
+|---|---|---|
+| `FACTS` | claims `PROPOSED` or `IN_REVIEW`, and every shown held claim | `MARK_CLAIM_LEVEL`, Professor and above |
+| `TESTIMONY` | pending artisans' testimony | `REVIEW_TESTIMONY` |
+| `IMAGES` | pending pictures | `REVIEW_CONTRIBUTIONS`, Admin and above |
+| `COMPONENTS` | pending component proposals | `REVIEW_CONTRIBUTIONS` |
+| `LAYOUTS` | pending page layout proposals | `REVIEW_CONTRIBUTIONS` |
+| `STRUCTURE` | pending page structure proposals | `MARK_CLAIM_LEVEL`, Professor and above |
+
+### Priority and order
+
+Priority is set per subject:
+
+| Priority | Subjects |
+|---|---|
+| `HIGH` | on the owner's first list (`kalavigyan-craft-pages` skill, "Order": Bidriware, Blue Pottery of Jaipur, Kutch Bandhani, Machilipatnam Kalamkari, Madhubani, Orissa Pattachitra, Bastar Dhokra, Channapatna), or 25 or more stored answers about the craft. Every review queue is `HIGH` |
+| `MEDIUM` | GI-registered (`Craft.giStatus` `GI`), curated (a `CuratedCraft` or `CuratedCategory` row), or 5 or more stored answers |
+| `LOW` | every other craft and family, and every category; a family page's `FLAGSHIP` task is `HIGH` all the same, since every craft of the family borrows the flagship |
+
 - Order (the subject's prominence): priority; then the owner's list order; GI before not; curated
   before not; then reader demand, most first; crafts, families, categories; name. Within a subject:
   healing first (re-source, corroborate, find another source; fields in vocabulary order), then
   the questions readers asked (their own priority, most askers first), then fields in vocabulary
-  order, components, page, corroboration, links. A page that lost a fact is
-  the first repair of its subject. Review queues lead the `HIGH` tasks.
+  order, components, the flagship, page, corroboration, links. A page that lost a fact is the first
+  repair of its subject. Review queues lead the `HIGH` tasks, and picture and translation tasks
+  follow the subjects' other tasks of their priority.
 - **The nightly upkeep** (`services/open_work_refresh.refresh_field_work`, the `fieldWork` part of
   its report) counts every open `MISSING_FIELD` and `THIN_FIELD` task by kind and priority and ends,
   as `COMPLETED`, each live reservation of a field task that is no longer open (its field was filled
   by an import or another way). Tasks themselves are computed on every call, so they are never
   stale.
 
-**Filters**: `craftSlug` (one craft; a family's slug is refused), `familySlug` (the family's page
-and the crafts sharing its sub-category), `categorySlug` (the category's page and its crafts and
-families), at most one of the three; `field`; `kind`; `priority`; `limit` 1 to 200, default 50.
-`OpenWork {schemaVersion 1, filters, total, reservationMinutes, tasks[]}`: `total` counts every
-matching task before the limit.
+### Filters
+
+| Filter | Takes |
+|---|---|
+| `craftSlug` | one craft; a family's slug is refused |
+| `familySlug` | the family's page and the crafts sharing its sub-category |
+| `categorySlug` | the category's page and its crafts and families |
+| `field`, `kind`, `priority` | one value each |
+| `limit` | 1 to 200, default 50 |
+
+At most one of `craftSlug`, `familySlug` and `categorySlug` is given. `OpenWork {schemaVersion 1,
+filters, total, reservationMinutes, tasks[]}`: `total` counts every matching task before the limit.
 
 A task reserved by another account is left out until its reservation ends; the caller's own carry
 `reservedUntil`. A `MISSING_COMPONENT` or `FLAGSHIP` task is closed while a `PENDING` or `APPROVED`
@@ -156,14 +197,10 @@ interactives skill's backlog (`kalavigyan://skills/kalavigyan-interactives/refer
 the mechanism, the anchor craft, the facts of its states (the candidates' rows left out) and what it
 still lacks (the backlog's Missing line); a test keeps the two equal.
 
-- **Open** while the family page draws no registered component of kind `reaction_player`,
-  `dip_player`, `stage_player` or `experiment_lab`: none rests on (`claimIds`) or is keyed to the
-  concepts of the page's facts (its `CuratedCategoryClaim` claims and those its `PUBLISHED`
-  sections cite), and none is named in its latest layout. `count` is the backlog's facts for it and
-  `factIds` those facts; `needed` names the mechanism, the anchor and what is still lacking.
-- **Completed** by a component proposal naming it as `task_key`: of one of those kinds, delivered
-  with its spec, and keyed to the anchor craft (a `CRAFT` subject or its `craft_slug`), sent in a
-  bundle for the category page. Any other proposal naming it is refused with the reason.
+| State | When |
+|---|---|
+| **Open** | while the family page draws no registered component of kind `reaction_player`, `dip_player`, `stage_player` or `experiment_lab`: none rests on (`claimIds`) or is keyed to the concepts of the page's facts (its `CuratedCategoryClaim` claims and those its `PUBLISHED` sections cite), and none is named in its latest layout. `count` is the backlog's facts for it and `factIds` those facts; `needed` names the mechanism, the anchor and what is still lacking |
+| **Completed** | by a component proposal naming it as `task_key`: of one of those kinds, delivered with its spec, and keyed to the anchor craft (a `CRAFT` subject or its `craft_slug`), sent in a bundle for the category page. Any other proposal naming it is refused with the reason |
 
 ## Questions readers asked (decision 0113)
 
@@ -177,10 +214,11 @@ scores low when the section ran research and its best stored fact scored at most
 words or names), or no stored fact was found; a section reused from stored pieces is not judged on
 retrieval. The store adds the cited facts holding a quote whose last check is `FAIL`.
 
-- `UNANSWERED`: no field holds a cited sentence (`NO_CITED_EVIDENCE`; every field is lacking).
-- `THIN`: a field lacks: `MISSING_FIELD` (no cited sentence), `FEW_SENTENCES` (1 or 2),
-  `LOW_RETRIEVAL`, `FAILED_QUOTE` (it cited such a fact).
-- `ANSWERED`: no field lacks.
+| Verdict | When |
+|---|---|
+| `UNANSWERED` | no field holds a cited sentence (`NO_CITED_EVIDENCE`; every field is lacking) |
+| `THIN` | a field lacks: `MISSING_FIELD` (no cited sentence), `FEW_SENTENCES` (1 or 2), `LOW_RETRIEVAL`, `FAILED_QUOTE` (it cited such a fact) |
+| `ANSWERED` | no field lacks |
 
 `AnswerVerdict {answerId (unique, cascading with the answer), craftId, verdict, fields[] (the
 answer's fields, vocabulary order), lacking[], lacks[], sentences, gapId, embedding, embeddingModel,
@@ -190,6 +228,23 @@ about no craft keeps a verdict and never a task.
 **The nightly step** (`services/answer_gap_refresh.refresh_answer_gaps`, `answerGaps` in the upkeep
 report `{questions, dropped, embedded, embeddingError, joined, opened, answered, lapsed, open,
 reservationsClosed}`), after the field work:
+
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  V["Thin and unanswered<br/>verdicts, 90 days"] --> A["Anonymised<br/>or dropped"]
+  A --> E["Embedded<br/>once"]
+  E --> J{"An open group<br/>within 0.15?"}
+  J -->|yes| G["Joined"]
+  J -->|no| N["A new group"]
+  G --> C["Recounted<br/>and ranked"]
+  N --> C
+  C --> K{"Every field<br/>2 or more?"}
+  K -->|yes| ANS["ANSWERED"]
+  K -->|no| T["ANSWER_GAP<br/>task"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class T accent
+```
 
 1. Takes at most 500 `THIN` and `UNANSWERED` verdicts about a craft, asked within 90 days and in no
    group, oldest first, and anonymises each question (Privacy, below); a dropped question stays out.
@@ -258,12 +313,25 @@ passages of each page's English document, `PageTextUnit`) and `services/open_wor
 (the tasks); the translations themselves are `monograph-document.md`'s.
 
 - **Which languages.** A craft's or family's home state (`Craft.stateOfOrigin`) gives its
-  regional language among the thirteen answer languages (`STATE_LANGUAGES`: Gujarat `gu`,
-  Maharashtra `mr`, West Bengal and Tripura `bn`, Assam `as`, Tamil Nadu and Puducherry `ta`,
-  Kerala `ml`, Karnataka `kn`, Andhra Pradesh and Telangana `te`, Odisha `or`, Punjab `pa`, Jammu
-  and Kashmir `ur`, the Hindi-speaking states `hi`); every page is also offered in Hindi, and a
-  category in Hindi alone. A state outside the table (All India, Goa, the north-east but Assam and
-  Tripura) offers Hindi alone.
+  regional language among the thirteen answer languages (`STATE_LANGUAGES`, below); every page is
+  also offered in Hindi, and a category in Hindi alone. A state outside the table (All India, Goa,
+  the north-east but Assam and Tripura) offers Hindi alone.
+
+  | Home state | Language |
+  |---|---|
+  | Gujarat | `gu` |
+  | Maharashtra | `mr` |
+  | West Bengal and Tripura | `bn` |
+  | Assam | `as` |
+  | Tamil Nadu and Puducherry | `ta` |
+  | Kerala | `ml` |
+  | Karnataka | `kn` |
+  | Andhra Pradesh and Telangana | `te` |
+  | Odisha | `or` |
+  | Punjab | `pa` |
+  | Jammu and Kashmir | `ur` |
+  | the Hindi-speaking states | `hi` |
+
 - **One task per page and language** with passages left, `TRANSLATE:<subject>:<slug>:<language>`.
   Its count is the passages of the page's English document (every text unit with a letter outside
   a fixed mark, the masthead title aside) that have no live translation (served or waiting) for
@@ -297,31 +365,37 @@ passages of each page's English document, `PageTextUnit`) and `services/open_wor
 - A live reservation of another account refuses the claim with its end. An expired one is ended
   (`EXPIRED`, at its expiry) by the next claim, and the task returns to the list by itself.
 - A release ends the caller's own reservation (`RELEASED`, or `EXPIRED` once past its time).
-- A component proposal naming its `task_key` ends the proposer's reservation `COMPLETED`.
-- A proposed fact (MCP `propose_facts`, a fact part of `propose_page`, or `POST /api/knowledge/facts`) naming a field, corroboration or question task as its
-  `taskKey` ends the proposer's reservation `COMPLETED` once the fact passes the gates (published or
-  waiting for review), and gives it back (`RELEASED`) when the fact is refused, so the task returns
-  to the list (`knowledge-writes.md`). The `research_field` prompt asks the agent to pass it.
-- A `propose_source` naming a `RESOURCE_FACT`, `CORROBORATE_FACT`, `FIND_ANOTHER_SOURCE`,
-  `SECOND_SOURCE` or `DEAD_SOURCE` task ends the proposer's reservation `COMPLETED` when its quotes
-  pass and gives it back when they refuse; the task must be open and list the fact (or one of its
-  sources, for `DEAD_SOURCE`), or list more than it shows (`knowledge-writes.md`, Source proposals).
-- A `propose_structure` (or `POST /api/knowledge/structure`) naming a field or corroboration task of
-  its page and field ends the proposer's reservation `COMPLETED` once its checks pass, and gives it
-  back when they refuse (`knowledge-writes.md`, Structure proposals).
 - One live reservation per key: a partial unique index on `taskKey` where `endedAt` is null.
   `userId` is kept for the reservation only and never shown to another account.
 
+A proposal that names a task ends the proposer's reservation:
+
+| The proposal | The task it names | Its reservation |
+|---|---|---|
+| A component proposal | its `task_key` | `COMPLETED` |
+| A proposed fact (MCP `propose_facts`, a fact part of `propose_page`, or `POST /api/knowledge/facts`) | a field, corroboration or question task, as its `taskKey` | `COMPLETED` once the fact passes the gates (published or waiting for review); given back (`RELEASED`) when the fact is refused, so the task returns to the list (`knowledge-writes.md`). The `research_field` prompt asks the agent to pass it |
+| A `propose_source` | a `RESOURCE_FACT`, `CORROBORATE_FACT`, `FIND_ANOTHER_SOURCE`, `SECOND_SOURCE` or `DEAD_SOURCE` task | `COMPLETED` when its quotes pass, given back when they refuse; the task must be open and list the fact (or one of its sources, for `DEAD_SOURCE`), or list more than it shows (`knowledge-writes.md`, Source proposals) |
+| A `propose_structure` (or `POST /api/knowledge/structure`) | a field or corroboration task of its page and field | `COMPLETED` once its checks pass, given back when they refuse (`knowledge-writes.md`, Structure proposals) |
+
 ## Component proposals (`ComponentProposal`)
 
-Arguments: `label` (`<craft-or-shared>/<field>/<name>`, the registry's pattern), `title`,
-`description` (40 to 600 characters, written for a model), `kind` (a piece kind), `field`,
-`fields[]`, `craft_slug?` (the owning craft; none for a shared component), `subjects[{kind, key}]`
-(1 to 20: a craft by slug, a concept or compound by id, a place by `lgd:<code>` or `basin:<id>`),
-`considered_labels[]` (registered labels only), `extends?` with `extension` (`SUBJECT_LINK` keeps the
-extended label; `VARIANT` takes a new one), `task_key?`, and the delivery: `spec` (the kind's spec
-data, any of the 22 contributable kinds, authored or declared) and `units` (`{u0001: {text, claimIds}}`), required on
-MCP except for a `SUBJECT_LINK`, which carries none (`component-specs-general.md`).
+| Argument | Holds |
+|---|---|
+| `label` | `<craft-or-shared>/<field>/<name>`, the registry's pattern |
+| `title` | the component's title |
+| `description` | 40 to 600 characters, written for a model |
+| `kind` | a piece kind |
+| `field`, `fields[]` | its field and fields |
+| `craft_slug?` | the owning craft; none for a shared component |
+| `subjects[{kind, key}]` | 1 to 20: a craft by slug, a concept or compound by id, a place by `lgd:<code>` or `basin:<id>` |
+| `considered_labels[]` | registered labels only |
+| `extends?` with `extension` | `SUBJECT_LINK` keeps the extended label; `VARIANT` takes a new one |
+| `task_key?` | the task it completes (the checks, below) |
+| `spec` | the delivery: the kind's spec data, any of the 22 contributable kinds, authored or declared |
+| `units` | the delivery's units, `{u0001: {text, claimIds}}` |
+
+The delivery, `spec` and `units`, is required on MCP except for a `SUBJECT_LINK`, which carries none
+(`component-specs-general.md`).
 
 - Checks, failing with a sentence the agent can act on: a `task_key` names a `MISSING_COMPONENT`
   task whose need the proposal's kind meets and whose craft the proposal is keyed to, or a
@@ -351,9 +425,6 @@ MCP except for a `SUBJECT_LINK`, which carries none (`component-specs-general.md
   without a spec (the site's form) is approved for a builder as before.
 
 ## MCP
-
-Last reviewed: 2026-11-21 (round 7: delivered components and pages, the source tools, supplied
-sources, drafts and the checklist report, decision 0110; the 21 tools of decision 0111).
 
 | Tool | Group | Scope | Hints | Returns |
 |---|---|---|---|---|
@@ -389,25 +460,36 @@ The page, draft and source tools need an account of Researcher or above (`PROPOS
   the account's role.
 - `initialize` declares `tools`, `prompts` (`listChanged` false) and `resources` (`subscribe` and
   `listChanged` false).
-- `prompts/list` and `prompts/get` (`api/mcp_prompts.py`, steps in `api/mcp_prompt_steps.py`):
-  `research_field {craft_slug, field}`, `write_section {craft_slug, field}`, `propose_component
-  {craft_slug, need?}`, and (round 7) `deliver_page {subject_kind, slug}`, `give_picture
-  {craft_slug}`, the prompt of `MISSING_PICTURE` tasks, and `deliver_dataset {craft_slug, kind?}`
-  (`kind` one of the declared kinds but `drawing`). Each returns one user message: the task, the
-  steps naming the tools in order (`list_open_work`, `reserve_tasks`, `get_facts` and `get_page`,
-  `list_components` first for a component, the source steps (`search_sources`, then `lookup`,
-  `read_source` for the text the gates will read and with `quotes` on every quote, with the agent's
-  own search where they find nothing; `write_section`, `propose_component` and `deliver_dataset`
-  name the same tools in their own steps, and `give_picture` ends on `search_sources` with kinds
-  pictures for open pictures the team places), `propose_facts` with idempotency keys and the claimed
-  task as `task_key`, then `get_proposal` or `my_work` for the outcome; a component or page is built
-  finished and seen with `preview_page` before `propose_page`; a picture is given with
-  `give_pictures` only after the person confirms the declaration in their own words), the method sections of the contributor
-  skill (Proposals and their progress, Finding and reading sources and Never; plus Writing a
-  section, Components, Pages, Structure and sources or Pictures; `give_picture` carries Pictures
-  and Finding and reading sources) and, whole, the references the prompt names (`Prompt.references`: sources,
-  quotes, fields and the page checklist; components for a component or a page; datasets for
-  `deliver_dataset`; none for `give_picture`). A wrong prompt or argument is `-32602`.
+- The server's `instructions` name the tools in the order of the work, the groups, the index and,
+  once for every tool, the data note (`api/mcp_protocol.py`).
+
+### Prompts
+
+`prompts/list` and `prompts/get` (`api/mcp_prompts.py`, steps in `api/mcp_prompt_steps.py`) give
+seven prompts. The method sections of the contributor skill are Proposals and their progress, Finding
+and reading sources and Never:
+
+| Prompt | Arguments | Sections of the contributor skill | References, whole (`Prompt.references`) |
+|---|---|---|---|
+| `research_field` | `craft_slug`, `field` | the method's three | sources, quotes, fields and the page checklist |
+| `write_section` | `craft_slug`, `field` | the method's three and Writing a section | the same four |
+| `propose_component` | `craft_slug`, `need?` | the method's three, Components and Pages | the four and components |
+| `deliver_page` (round 7) | `subject_kind`, `slug` | the method's three, Structure and sources, Components, Pages and Pictures | the four and components |
+| `give_picture` (round 7), the prompt of `MISSING_PICTURE` tasks | `craft_slug` | Pictures, Finding and reading sources and Never | none |
+| `deliver_dataset` (round 7) | `craft_slug`, `kind?` (one of the declared kinds but `drawing`) | the method's three, Components and Pages | the four, components and datasets |
+| `curate_page` (decision 0110) | `subject_kind?`, `slug?` | those of `deliver_page` | all six |
+
+- Each of the first six returns one user message: the task, the steps naming the tools in order
+  (`list_open_work`, `reserve_tasks`, `get_facts` and `get_page`, `list_components` first for a
+  component, the source steps (`search_sources`, then `lookup`, `read_source` for the text the gates
+  will read and with `quotes` on every quote, with the agent's own search where they find nothing;
+  `write_section`, `propose_component` and `deliver_dataset` name the same tools in their own steps,
+  and `give_picture` ends on `search_sources` with kinds pictures for open pictures the team places),
+  `propose_facts` with idempotency keys and the claimed task as `task_key`, then `get_proposal` or
+  `my_work` for the outcome; a component or page is built finished and seen with `preview_page`
+  before `propose_page`; a picture is given with `give_pictures` only after the person confirms the
+  declaration in their own words), the sections and the references above. A wrong prompt or
+  argument is `-32602`.
 - `curate_page {subject_kind?, slug?}` (decision 0110, `api/mcp_prompt_curate.py`) walks the whole
   job of one page in order: pick the page (`my_work`, `list_open_work`, `steward_craft`) or read the
   named one (`get_page`, `list_open_work`), claim its tasks, derive its lists (`get_page`,
@@ -419,89 +501,125 @@ The page, draft and source tools need an account of Researcher or above (`PROPOS
   the draft and fix against the report until no fixable failure is left, `propose_page` with the
   draft once, follow with `get_proposal`, `my_work` and `edit_draft` by its id, and what to do when
   each gate refuses. Its sections are those of `deliver_page`; its references are all six.
+
+### Resources
+
+`resources/list` and `resources/read` give these; an unknown uri is `-32002`.
+
+| Resource | Uri | Type |
+|---|---|---|
+| The index (round 7: every tool, prompt and resource with one line each) | `kalavigyan://index.md` | `text/markdown` |
+| The contributor skill | `kalavigyan://skills/kalavigyan-contributor/SKILL.md` | `text/markdown` |
+| The datasets skill | `kalavigyan://skills/kalavigyan-datasets/SKILL.md` | `text/markdown` |
+| The interactives skill and its two references (`skill_library.SKILL_FILES`) | `kalavigyan://skills/kalavigyan-interactives/SKILL.md`, `.../references/flagships.md` and `.../references/storyboard.md` | `text/markdown` |
+| The six references | `kalavigyan://skills/references/<name>.md` (`page-checklist`, `sources`, `quotes`, `fields`, `components`, `datasets`) | `text/markdown` |
+| The five contracts a contributor's client follows (round 7), each the same text as `docs/contracts/<name>.md` | `kalavigyan://contracts/<name>.md` (`knowledge-writes`, `open-work`, `component-specs-general`, `image-contributions`, `mcp-ask-and-upload`) | `text/markdown` |
+| The design tokens | `kalavigyan://design/tokens.json` | `application/json` |
+| The answer kit and view | `kalavigyan://design/answer-kit.md` and `ui://kalavigyan/answer.html` | `text/markdown`; `text/html;profile=mcp-app` |
+| The page preview view | `ui://kalavigyan/page-preview.html` | `text/html;profile=mcp-app` |
+| Each kind's spec schema (decision 0111) | `kalavigyan://components/{kind}.schema.json` | `application/schema+json` |
+
+- The page preview view is `data/design/page-preview-view.html` through `data/page_preview_view.py`:
+  one self-contained page, `default-src 'none'` and its one script allowed by hash, the four themes'
+  colours and the status colours inlined from `tokens.json`, every text set as text, `https` links
+  opened through `ui/open-link`; it draws a `preview_page` result: the private link, the rules failed
+  first with their evidence, coverage by field, figures, sources by grade, pictures by licence and
+  each part's outcome.
 - `resources/templates/list` gives `kalavigyan://components/{kind}.schema.json`, and every kind a
-  contributor may deliver is also listed as its own resource (`api/mcp_component_schemas.py`,
-  `application/schema+json`): the JSON schema of the kind's spec, the model the server checks a
-  delivered spec with (decision 0111).
-- `resources/list`, `resources/read`: the index
-  `kalavigyan://index.md` (round 7: every tool, prompt and resource with one line each), the skills
-  `kalavigyan://skills/kalavigyan-contributor/SKILL.md` and
-  `kalavigyan://skills/kalavigyan-datasets/SKILL.md`, the six references
-  `kalavigyan://skills/references/<name>.md` (`page-checklist`, `sources`, `quotes`, `fields`,
-  `components`, `datasets`), the five contracts a contributor's client follows
-  `kalavigyan://contracts/<name>.md` (round 7: `knowledge-writes`, `open-work`,
-  `component-specs-general`, `image-contributions`, `mcp-ask-and-upload`, each the same text as
-  `docs/contracts/<name>.md`; all `text/markdown`), `kalavigyan://design/tokens.json`
-  (`application/json`), the answer kit and view, and the page preview view
-  `ui://kalavigyan/page-preview.html` (`text/html;profile=mcp-app`, `data/design/page-preview-view.html`
-  through `data/page_preview_view.py`: one self-contained page, `default-src 'none'` and its one script
-  allowed by hash, the four themes' colours and the status colours inlined from `tokens.json`, every
-  text set as text, `https` links opened through `ui/open-link`; it draws a `preview_page`
-  result: the private link, the rules failed first with their evidence, coverage by
-  field, figures, sources by grade, pictures by licence and each part's outcome). An unknown uri is
-  `-32002`.
-- The server's `instructions` name the tools in the order of the work, the groups, the index and,
-  once for every tool, the data note (`api/mcp_protocol.py`).
+  contributor may deliver is also listed as its own resource (`api/mcp_component_schemas.py`): the
+  JSON schema of the kind's spec, the model the server checks a delivered spec with.
 
 ## HTTP
 
-- `GET /api/knowledge/open-work?craftSlug&familySlug&categorySlug&field&kind&priority&limit`:
-  anyone, counted against the public read limit when signed out; a signed-in reviewer also sees
-  the review queues. Wrong filters 422.
-- `POST /api/knowledge/open-work/claim` and `/release`, body `{taskKey}`: `PROPOSE_KNOWLEDGE`
-  (Researcher and above). A reservation conflict or the held maximum 409, a key that is not open 422.
-- `POST /api/knowledge/open-work/claims`, body `{taskKeys}` (1 to 10): `TaskClaims`.
-  `GET /api/knowledge/open-work/mine`: `MyTasks`. Both `PROPOSE_KNOWLEDGE`.
-- `GET /api/knowledge/stewardship` (`MyCrafts`), `PUT /api/knowledge/stewardship/{slug}` (adopt,
-  `StewardPackage`), `DELETE /api/knowledge/stewardship/{slug}` (drop, `Stewardship`):
-  `PROPOSE_KNOWLEDGE`; more than 10 crafts 409, a craft not stewarded or not known 422.
+| Route | Who | Answer |
+|---|---|---|
+| `GET /api/knowledge/open-work?craftSlug&familySlug&categorySlug&field&kind&priority&limit` | anyone, counted against the public read limit when signed out; a signed-in reviewer also sees the review queues | `OpenWork`; wrong filters 422 |
+| `POST /api/knowledge/open-work/claim` and `/release`, body `{taskKey}` | `PROPOSE_KNOWLEDGE` (Researcher and above) | a reservation conflict or the held maximum 409, a key that is not open 422 |
+| `POST /api/knowledge/open-work/claims`, body `{taskKeys}` (1 to 10) | `PROPOSE_KNOWLEDGE` | `TaskClaims` |
+| `GET /api/knowledge/open-work/mine` | `PROPOSE_KNOWLEDGE` | `MyTasks` |
+| `GET /api/knowledge/stewardship` | `PROPOSE_KNOWLEDGE` | `MyCrafts` |
+| `PUT /api/knowledge/stewardship/{slug}` | `PROPOSE_KNOWLEDGE` | adopt, `StewardPackage` |
+| `DELETE /api/knowledge/stewardship/{slug}` | `PROPOSE_KNOWLEDGE` | drop, `Stewardship` |
+
+For stewardship, more than 10 crafts is 409, and a craft not stewarded or not known 422.
 
 ## Stewardship (round 7)
 
 A contributor adopts crafts and families (`steward_craft {craft_slug, action adopt}`, at most
 `STEWARD_CRAFTS_MAX` = 10 live at once) and drops them (`action drop`). A steward sees each craft's
-open work as one package (in `my_work`, and in the reply to an adoption):
-`StewardPackage {craft (TaskSubject), adoptedAt, seenAt (the steward's last look, null before the
-first), stewards (how many accounts steward it; never who), newTasks[OpenTask] (open now and not open
-at the last look: the craft's new gaps, first), tasks[OpenTask] (the rest), total}`, the tasks
-`list_open_work` gives for the craft (a family with its crafts) to that account, at most 200. Each
-look records the keys it showed (`CraftSteward.seenTaskKeys`, `seenAt`), so the next look's new gaps
-are those opened since; at adoption every gap is new. Stewardship never reserves a task and never
-blocks anyone: other accounts list, claim and complete the craft's tasks as before, and a craft has
-any number of stewards. Table `CraftSteward` (`userId`, `craftId`, `adoptedAt`, `droppedAt`,
+open work as one package (in `my_work`, and in the reply to an adoption), the tasks
+`list_open_work` gives for the craft (a family with its crafts) to that account, at most 200:
+
+| `StewardPackage` | Holds |
+|---|---|
+| `craft` | the `TaskSubject` |
+| `adoptedAt` | when it was adopted |
+| `seenAt` | the steward's last look, null before the first |
+| `stewards` | how many accounts steward it; never who |
+| `newTasks[OpenTask]` | open now and not open at the last look: the craft's new gaps, first |
+| `tasks[OpenTask]` | the rest |
+| `total` | every matching task, before the limit |
+
+Each look records the keys it showed (`CraftSteward.seenTaskKeys`, `seenAt`), so the next look's new
+gaps are those opened since; at adoption every gap is new. Stewardship never reserves a task and
+never blocks anyone: other accounts list, claim and complete the craft's tasks as before, and a craft
+has any number of stewards. Table `CraftSteward` (`userId`, `craftId`, `adoptedAt`, `droppedAt`,
 `seenTaskKeys`, `seenAt`; one live row per account and craft by a partial unique index).
 
 ## Pages delivered whole (`propose_page`)
 
-One bundle builds one page: `PageBundle {schemaVersion 1, subject {kind craft, family or category,
-slug}, facts[] (each a `FactProposal`, at most 20), structure[] (each a `propose_structure`
-proposal, at most 20), components[] ({proposal, cites}, at most 10), layout? ({baseVersion,
-entries, note?}), pictures[] ({stageId?, claimIds, declaration?}, at most 10), note?}`, holding at
-least one part; over MCP it is `propose_page`'s and `preview_page`'s `bundle`, in snake_case, and a
-draft's parts make one too. One part alone is a bundle: a component by itself (in place of the
-retired `propose_component`) or a layout by itself (in place of `propose_layout`). Over MCP every
-component of a bundle or draft is delivered finished: a spec, except for a `SUBJECT_LINK`. A component's `cites` names, per unit, the bundle's facts it rests on besides its
-`claimIds`, as `fact:0`, `fact:1` and on (the facts' places in `facts`); a picture's `claimIds` may
-name them the same way. A reference beyond the bundle's facts, or to a unit the component lacks, is
-an argument error.
+```mermaid
+%%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
+flowchart LR
+  D["Draft<br/>edit_draft"] --> P["preview_page<br/>link and report"]
+  B["Bundle<br/>one call"] --> P
+  P -->|fix and preview again| D
+  P --> S["propose_page<br/>parts in order"]
+  S --> A["ACCEPTED<br/>stored"]
+  S --> R["REFUSED<br/>only itself rolled back"]
+  classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
+  class P accent
+```
+
+One bundle builds one page, `PageBundle {schemaVersion 1, subject, facts[], structure[],
+components[], layout?, pictures[], translation?, note?}`, holding at least one part:
+
+| Part | Holds | At most |
+|---|---|---|
+| `subject` | `{kind craft, family or category, slug}` | one |
+| `facts[]` | each a `FactProposal` | 20 |
+| `structure[]` | each a `propose_structure` proposal | 20 |
+| `components[]` | `{proposal, cites}` | 10 |
+| `layout?` | `{baseVersion, entries, note?}` | one |
+| `pictures[]` | `{stageId?, claimIds, declaration?}` | 10 |
+| `translation?` | a page's passages in one language (Pages in other languages, above; `monograph-document.md`) | one |
+| `note?` | a note | one |
+
+Over MCP it is `propose_page`'s and `preview_page`'s `bundle`, in snake_case, and a draft's parts make
+one too. One part alone is a bundle: a component by itself (in place of the retired
+`propose_component`) or a layout by itself (in place of `propose_layout`). Over MCP every component
+of a bundle or draft is delivered finished: a spec, except for a `SUBJECT_LINK`. A component's
+`cites` names, per unit, the bundle's facts it rests on besides its `claimIds`, as `fact:0`, `fact:1`
+and on (the facts' places in `facts`); a picture's `claimIds` may name them the same way. A reference
+beyond the bundle's facts, or to a unit the component lacks, is an argument error.
 
 Parts run in order (facts, structure, components, layout, pictures), each in its own savepoint and
 checked exactly as its own tool checks it: a fact through the gates (`knowledge-writes.md`), a
 structure item through its checks, a component through the delivery checks and the library search,
 the layout against the page's current version (stored for review, or written at once by an
 Admin), and a picture by starting its upload (the link and slot of `give_pictures`'s `upload:
-true`, `mcp_picture_tools.start_picture`, reported in the part's `upload`). Each part counts against
-its own kind's hourly limit, and a draft or a bundle of more than one part also against the page
-bundles; a bundle of one part counts against that part's kind alone, as its retired tool did. A part is also refused
-when it names another page (a fact's or structure item's subject), when a category's bundle carries
-structure or pictures, when a component is keyed to another craft (`craft_slug` or a `CRAFT`
-subject), or when it cites a bundle fact that was refused. A refused part rolls back only itself:
-the others stand, and one report lists every part `{part, index, outcome ACCEPTED or REFUSED,
-status, id, message, upload?, matches?, waysOn?}` with the counts; a component refused for a close
-match carries the matches and the two ways on. A component citing a bundle fact that waits for
-review is stored, and its approval waits until that fact is shown. HTTP: `POST
-/api/knowledge/pages` (`PROPOSE_KNOWLEDGE`, the contribution terms accepted), 422 for an argument
-or subject error.
+true`, `mcp_picture_tools.start_picture`, reported in the part's `upload`); a translation's passages
+are checked last, each reported on its own. Each part counts against its own kind's hourly limit,
+and a draft or a bundle of more than one part also against the page bundles; a bundle of one part
+counts against that part's kind alone, as its retired tool did. A part is also refused when it names
+another page (a fact's or structure item's subject), when a category's bundle carries structure or
+pictures, when a component is keyed to another craft (`craft_slug` or a `CRAFT` subject), or when it
+cites a bundle fact that was refused. A refused part rolls back only itself: the others stand, and
+one report lists every part `{part, index, outcome ACCEPTED or REFUSED, status, id, message,
+upload?, matches?, waysOn?}` with the counts; a component refused for a close match carries the
+matches and the two ways on. A component citing a bundle fact that waits for review is stored, and
+its approval waits until that fact is shown. HTTP: `POST /api/knowledge/pages` (`PROPOSE_KNOWLEDGE`,
+the contribution terms accepted), 422 for an argument or subject error.
 
 ## Previews before submitting (`preview_page`)
 
@@ -509,13 +627,12 @@ or subject error.
 proposing anything: the page's generated document (`page-layout.md`) built from the stored page
 plus the bundle (`PageAdditions` into `monograph_generated.generated_parts`):
 
-- each fact, and each structure item that states a fact, is one more sentence at the end of its
-  field's section, citing its proposed sources (unstored sources, numbered after the page's); a
-  conflict is listed only;
-- each component is drawn from its delivered spec where the page will draw it once registered;
-  the delivery checks run, so a component that would be refused is refused here;
-- the layout replaces the page's own as its next version, refused when its base version is stale;
-- pictures are listed: they are drawn once uploaded and approved.
+| Part | In the preview |
+|---|---|
+| A fact, and a structure item that states a fact | one more sentence at the end of its field's section, citing its proposed sources (unstored sources, numbered after the page's); a conflict is listed only |
+| A component | drawn from its delivered spec where the page will draw it once registered; the delivery checks run, so a component that would be refused is refused here |
+| The layout | replaces the page's own as its next version, refused when its base version is stale |
+| Pictures | listed: they are drawn once uploaded and approved |
 
 No source is fetched, so the gates' verdicts are only known when the bundle is proposed. Each part
 reports `SHOWN`, `LISTED` or `REFUSED`. A page with authored content (Kutch Ajrakh) is not
@@ -537,7 +654,7 @@ sign in and back, and any other answer is the not-found page.
 ## The checklist report (decision 0110)
 
 Over MCP, `preview_page`, of a bundle or a draft, reads back the stored preview document
-(`services/page_report.preview_report`) and report it against the page checklist
+(`services/page_report.preview_report`) and reports it against the page checklist
 (`research/page_report.py`, the rules in `research/page_report_rules.py`); a preview whose document
 cannot be read back carries `report: null`. The rule titles are read from the checklist reference
 (`services/page_report.checklist_titles`), its one copy.
@@ -632,9 +749,12 @@ rules), what counts as a source (grades and licences), quotes and locators (with
 sentence), the fields, authoring a component, and datasets. The contributor skill, the curation
 skill (`.claude/skills/kalavigyan-craft-pages`) and the datasets skill
 (`.claude/skills/kalavigyan-datasets`, its served copy `data/contributor/kalavigyan-datasets/
-SKILL.md`) name them and restate none of them; the prompts carry them whole. Copies: each reference
-at `frontend/public/skills/references/`, the datasets skill at `frontend/public/skills/
-kalavigyan-datasets/`, and the checklist at `.claude/skills/kalavigyan-craft-pages/references/`.
+SKILL.md`) name them and restate none of them, and the interactives skill's files
+(`.claude/skills/kalavigyan-interactives`, served from `data/contributor/kalavigyan-interactives/`)
+restate none either; the prompts carry them whole. Copies: each reference at
+`frontend/public/skills/references/`, the datasets skill at `frontend/public/skills/
+kalavigyan-datasets/`, the interactives skill at `frontend/public/skills/kalavigyan-interactives/`,
+and the checklist at `.claude/skills/kalavigyan-craft-pages/references/`.
 `tests/mcp/test_skill_references.py` fails when a copy differs from its source, when a skill shares
 a run of eight words or a heading with a reference, or when a skill stops naming a reference;
 `tests/mcp/test_reference_limits.py` ties each number a reference states (quote lengths, fact
@@ -663,3 +783,29 @@ server's tools, prompts and resources, one line each, or when a contract resourc
   and failure counts feed the three healing tasks; the site's contribution screens parse the kinds
   in `frontend/lib/ownProposalsContract.ts` (`TASK_KINDS`).
 - Proposals are limited per account and hour (`knowledge-writes.md`, Proposal limits).
+
+## How this document is kept true
+
+| Claim | Kept true by |
+|---|---|
+| Task kinds, keys, targets, priority and order | `backend/tests/research/test_open_work.py`, `test_open_work_prominence.py`, `backend/tests/test_open_work_shared_rules.py`, `test_open_work_queries.py` and `backend/tests/db/test_open_work_db.py` |
+| Healing tasks | `backend/tests/upkeep/test_healing_rules.py` and `test_healing_tasks.py` |
+| The family flagships | `backend/tests/research/test_open_work_flagships.py` and `backend/tests/db/test_flagship_tasks_db.py` |
+| Picture tasks | `backend/tests/db/test_open_work_pictures_db.py` and `test_my_tasks_db.py` |
+| Questions readers asked | `backend/tests/research/test_open_work_gaps.py`, `test_open_work_gap_tasks.py`, `test_open_work_gap_privacy.py`, `backend/tests/db/test_answer_gaps_db.py` and `test_gap_acceptance_db.py` |
+| Translation tasks | `backend/tests/research/test_translation_regions.py` and `backend/tests/db/test_translation_work_db.py` |
+| Reservations, claims and my work | `backend/tests/db/test_open_work_db.py`, `test_my_tasks_db.py`, `backend/tests/contribution_scale/test_mcp_task_tools.py` and `backend/tests/knowledge_writes/test_fact_task_key.py` |
+| Stewardship | `backend/tests/db/test_stewardship_db.py` |
+| Component proposals and their delivery | `backend/tests/research/test_component_proposals.py`, `backend/tests/db/test_component_proposals_db.py` and `test_delivered_components_db.py` |
+| Bundles, previews and the checklist report | `backend/tests/research/test_page_proposals.py`, `test_page_report.py`, `backend/tests/db/test_page_bundles_db.py`, `backend/tests/pages/test_page_preview_links.py` and `backend/tests/mcp/test_page_preview_view.py` |
+| Drafts | `backend/tests/research/test_page_drafts.py`, `backend/tests/db/test_page_drafts_db.py` and `backend/tests/mcp/test_mcp_page_tools.py` |
+| The HTTP routes | `backend/tests/test_open_work_routes.py` and `backend/tests/public/test_route_inventory.py` |
+| The prompts and resources | `backend/tests/mcp/test_mcp_prompts_resources.py` and `test_mcp_prompt_curate.py` |
+| The skills and references served | `backend/tests/mcp/test_contributor_kit.py`, `test_skill_references.py`, `test_reference_limits.py` and `test_interactives_skill.py` |
+| The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/open-work.md` byte for byte equal to this file |
+
+The MCP section was last reviewed on 2026-11-21 (round 7: delivered components and pages, the
+source tools, supplied sources, drafts and the checklist report, decision 0110; the 21 tools of
+decision 0111), and every path, task kind and served skill here was checked against the code on
+2026-11-22. Re-read it when a task kind, a prompt, a resource or a bundle part is added or changed;
+copy it to `backend/app/data/contributor/contracts/` in the same change.
