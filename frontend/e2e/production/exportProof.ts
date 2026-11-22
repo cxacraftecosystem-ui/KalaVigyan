@@ -2,29 +2,36 @@ import { readFile } from "node:fs/promises";
 
 import { expect, type Locator, type Page } from "@playwright/test";
 
-import { LESSONS_PATH } from "@/lib/lessonContract";
+import { LESSON_FORMATS, LESSONS_PATH, type LessonFormat } from "@/lib/lessonContract";
 import { CITATION_FORMAT_LABEL, CITATION_FORMAT_ORDER } from "@/lib/lessonView";
-import { canBuildLessons, ROLE_LABELS } from "@/lib/permissions";
 import { explainerHref } from "@/lib/savedView";
-import type { User } from "@/lib/types";
 
 import type { AnswerRecord, SourceRecord } from "./answers";
 import { settle } from "./capture";
 import { clip } from "./checks";
-import { citationFileProblems, pdfProblems, pptxProblems, type CitedSource } from "./exportFiles";
+import { citationFileProblems, htmlDeckProblems, pdfProblems, pptxProblems, type CitedSource } from "./exportFiles";
 
 export const PROOF_LABEL = "English";
 const FILE_WAIT_MS = 120_000;
 const SCREEN_WAIT_MS = 60_000;
-const LESSON_FORMATS = ["pptx", "pdf"] as const;
 
-export type ExportProof = { label: string; explainerId: string | null; files: string[]; problems: string[]; notes: string[] };
+export type ExportProof = {
+  label: string;
+  explainerId: string | null;
+  lessonExplainerId: string | null;
+  files: string[];
+  problems: string[];
+  notes: string[];
+};
 
 type Saved = { name: string; body: Buffer };
+type FileCheck = (where: string, file: Buffer, sources: readonly CitedSource[]) => string[];
 
-export function lessonRoleNote(user: User): string {
-  return `the E2E account is a ${ROLE_LABELS[user.role]}; building a lesson pack needs a Professor, so only the explainer's PDF and citations were checked (owner step in docs/PROGRESS.md)`;
-}
+const LESSON_FILE_CHECKS: Record<LessonFormat, { where: string; check: FileCheck }> = {
+  html: { where: "the lesson deck", check: htmlDeckProblems },
+  pptx: { where: "the lesson PPTX", check: pptxProblems },
+  pdf: { where: "the lesson PDF", check: pdfProblems }
+};
 
 async function saved(page: Page, start: () => Promise<void>): Promise<Saved> {
   const [download] = await Promise.all([page.waitForEvent("download", { timeout: FILE_WAIT_MS }), start()]);
@@ -32,7 +39,7 @@ async function saved(page: Page, start: () => Promise<void>): Promise<Saved> {
   return { name: download.suggestedFilename(), body: await readFile(path) };
 }
 
-async function attempt(proof: ExportProof, what: string, work: () => Promise<string[]>): Promise<void> {
+export async function attempt(proof: ExportProof, what: string, work: () => Promise<string[]>): Promise<void> {
   try {
     proof.problems.push(...(await work()));
   } catch (error) {
@@ -78,24 +85,31 @@ async function builtLesson(page: Page): Promise<{ sources: SourceRecord[] }> {
   return (await response.json()) as { sources: SourceRecord[] };
 }
 
-async function lessonFiles(page: Page, proof: ExportProof, explainerSources: readonly SourceRecord[]): Promise<void> {
-  const pack = await builtLesson(page);
+export function lessonSourceProblems(packSources: readonly SourceRecord[], explainerSources: readonly SourceRecord[]): string[] {
   const known = new Set(explainerSources.map((source) => source.id));
-  const foreign = pack.sources.filter((source) => !known.has(source.id));
-  if (pack.sources.length === 0) proof.problems.push("the lesson pack cites no source");
-  if (foreign.length > 0) proof.problems.push(`the lesson pack cites ${foreign.length} sources the explainer does not`);
+  const foreign = packSources.filter((source) => !known.has(source.id));
+  return [
+    ...(packSources.length === 0 ? ["the lesson pack cites no source"] : []),
+    ...(foreign.length > 0 ? [`the lesson pack cites ${foreign.length} sources the explainer does not`] : [])
+  ];
+}
+
+export async function lessonFiles(page: Page, proof: ExportProof, explainerSources: readonly SourceRecord[]): Promise<void> {
+  const pack = await builtLesson(page);
+  proof.problems.push(...lessonSourceProblems(pack.sources, explainerSources));
   for (const format of LESSON_FORMATS) {
-    await attempt(proof, `the lesson ${format}`, async () => {
+    const { where, check } = LESSON_FILE_CHECKS[format];
+    await attempt(proof, where, async () => {
       const file = await saved(page, () => page.getByTestId("lesson-files").locator(`[data-format="${format}"]`).click());
       proof.files.push(file.name);
-      return format === "pptx" ? pptxProblems("the lesson PPTX", file.body, pack.sources) : pdfProblems("the lesson PDF", file.body, pack.sources);
+      return check(where, file.body, pack.sources);
     });
   }
 }
 
-export async function proveExports(page: Page, records: readonly AnswerRecord[], user: User): Promise<ExportProof> {
+export async function proveExports(page: Page, records: readonly AnswerRecord[]): Promise<ExportProof> {
   const record = records.find((entry) => entry.label === PROOF_LABEL && entry.endedWith === "done" && entry.answerId);
-  const proof: ExportProof = { label: PROOF_LABEL, explainerId: record?.answerId ?? null, files: [], problems: [], notes: [] };
+  const proof: ExportProof = { label: PROOF_LABEL, explainerId: record?.answerId ?? null, lessonExplainerId: null, files: [], problems: [], notes: [] };
   if (!record?.answerId) {
     proof.problems.push(`the ${PROOF_LABEL} known answer did not finish, so nothing was exported`);
     return proof;
@@ -105,14 +119,6 @@ export async function proveExports(page: Page, records: readonly AnswerRecord[],
     await page.goto(explainerHref(explainerId), { waitUntil: "domcontentloaded" });
     await settle(page);
     await explainerFiles(page, proof, record.sources);
-    return [];
-  });
-  if (!canBuildLessons(user)) {
-    proof.notes.push(lessonRoleNote(user));
-    return proof;
-  }
-  await attempt(proof, "the lesson pack", async () => {
-    await lessonFiles(page, proof, record.sources);
     return [];
   });
   return proof;

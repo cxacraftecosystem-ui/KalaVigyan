@@ -14,11 +14,22 @@ from app.sources.records import AUTHORS_MAX, clean_text, https_or_none, partial_
 
 from .pdf import pdf_text
 
-__all__ = ["HTML_TYPES", "PDF_TYPE", "PLAIN_TYPE", "Extracted", "content_type_of", "extract"]
+__all__ = [
+    "HTML_TYPES",
+    "OCTET_STREAM_TYPES",
+    "PDF_SIGNATURE",
+    "PDF_TYPE",
+    "PLAIN_TYPE",
+    "Extracted",
+    "content_type_of",
+    "extract",
+]
 
 HTML_TYPES = frozenset({"text/html", "application/xhtml+xml"})
 PDF_TYPE = "application/pdf"
 PLAIN_TYPE = "text/plain"
+OCTET_STREAM_TYPES = frozenset({"application/octet-stream", "binary/octet-stream"})
+PDF_SIGNATURE = b"%PDF-"
 HIDDEN_XPATH = (
     "//script|//style|//noscript|//template|//iframe|//object|//embed|//svg|//canvas"
     "|//*[@hidden]|//*[@aria-hidden='true']|//input[@type='hidden']"
@@ -34,7 +45,9 @@ class Extracted:
     metadata: PageMetadata = field(default_factory=PageMetadata)
 
 
-def content_type_of(url: str, media_type: str) -> str:
+def content_type_of(url: str, media_type: str, body: bytes) -> str:
+    if media_type in OCTET_STREAM_TYPES and body.startswith(PDF_SIGNATURE):
+        return PDF_TYPE
     if media_type in HTML_TYPES:
         return "text/html"
     if media_type in (PDF_TYPE, PLAIN_TYPE):

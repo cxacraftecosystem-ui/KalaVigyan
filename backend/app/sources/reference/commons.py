@@ -15,7 +15,8 @@ from app.research.images import (
 )
 
 from ..adapter import HttpSourceAdapter, build_document, checked_k, usable_records
-from ..records import UnusableRecord, https_or_none, markup_text, partial_date_of, title_of
+from ..records import UnusableRecord, https_or_none, markup_text, title_of
+from .commons_dates import original_date
 from .mediawiki import (
     WIKIMEDIA_PUBLISHER,
     WIKIMEDIA_RATE,
@@ -66,8 +67,10 @@ DOCUMENT_LINES = (
     ("credit", "Credit: "),
     ("licence", "Licence: "),
 )
-ISO_DATE = re.compile(r"^\d{4}(-\d{2}){0,2}([ T]|$)")
 PAGE_ID = re.compile(r"^[1-9]\d*$")
+MEDIA_KIND = "MEDIA"
+DOCUMENT_KIND = "OTHER"
+DOCUMENT_MIMES = frozenset({"application/pdf", "image/vnd.djvu"})
 
 
 class WikimediaCommonsAdapter(HttpSourceAdapter):
@@ -99,7 +102,7 @@ class WikimediaCommonsAdapter(HttpSourceAdapter):
             id=f"{self.name}:{with_language(str(page['pageid']), language)}",
             adapter=self.name,
             tier=self.tier,
-            source_type="OTHER",
+            source_type=_file_kind(page),
             url=url,
             title=meta["title"] or file_title.removeprefix("File:"),
             authors=[meta["author"]] if meta["author"] else [],
@@ -173,12 +176,12 @@ def file_metadata(page: dict[str, Any]) -> dict[str, str | None]:
         raise UnusableRecord("not a file page")
     info = (page.get("imageinfo") or [{}])[0]
     meta = info.get("extmetadata") or {}
-    date = _field(meta, "DateTimeOriginal")
+    date = (meta.get("DateTimeOriginal") or {}).get("value")
     return {
         "title": _field(meta, "ObjectName"),
         "description": _field(meta, "ImageDescription"),
-        "date": date,
-        "published": partial_date_of(date) if date and ISO_DATE.match(date) else None,
+        "date": markup_text(date),
+        "published": original_date(date),
         "author": _field(meta, "Artist"),
         "credit": _field(meta, "Credit"),
         "licence": _field(meta, "LicenseShortName"),
@@ -188,6 +191,11 @@ def file_metadata(page: dict[str, Any]) -> dict[str, str | None]:
 
 def _field(meta: dict[str, Any], name: str) -> str | None:
     return markup_text((meta.get(name) or {}).get("value"))
+
+
+def _file_kind(page: dict[str, Any]) -> str:
+    mime = (page.get("imageinfo") or [{}])[0].get("mime")
+    return DOCUMENT_KIND if mime in DOCUMENT_MIMES else MEDIA_KIND
 
 
 def _attribution(meta: dict[str, str | None]) -> str:

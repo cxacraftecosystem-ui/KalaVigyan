@@ -4,6 +4,7 @@ import time
 
 import httpx
 
+from app.core.key_checks import KeyVerdict, checked_get
 from app.core.retry_after import retry_after_of
 
 from .base import (
@@ -17,7 +18,7 @@ from .base import (
     format_refused,
     names_the_format,
 )
-from .gemini_media import GeminiMediaWire
+from .gemini_media import GEMINI_API, GeminiMediaWire
 from .usage import gemini_cached_tokens
 
 _SCHEMA_NEEDLES = ("response_json_schema", "schema")
@@ -220,3 +221,9 @@ class GeminiAdapter(Adapter):
         if self._media_client is None:
             self._media_client = httpx.AsyncClient()
         return GeminiMediaWire(api_key=self.api_key or "", client=self._media_client)
+
+
+async def check_key(client: httpx.AsyncClient, value: str) -> KeyVerdict:
+    return await checked_get(
+        client, f"{GEMINI_API}/models", headers={"x-goog-api-key": value}, params={"pageSize": "1"}
+    )

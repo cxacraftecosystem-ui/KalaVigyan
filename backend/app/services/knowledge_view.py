@@ -104,6 +104,7 @@ def source_ref(source: Source) -> dict[str, Any]:
         "licence": source.licence,
         "attribution": source.attribution,
         "reliability": source.reliability,
+        **({"containerTitle": source.containerTitle} if source.containerTitle else {}),
     }
 
 

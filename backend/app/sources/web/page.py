@@ -2,19 +2,23 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 from app.core.errors import ExternalFailure, InvalidInput
 from app.research.evidence import EVIDENCE_ID_MAX_CHARS, EvidenceItem, SourceDocument
 from app.research.fetcher import FetchedPage, Fetcher, FetchRequest
+from app.research.images import without_tracking
+from app.research.web_trust import web_trust
 
 from ..adapter import Clock, HttpSourceAdapter, build_document, utc_now
 from ..http import SourceHttp
 from ..records import UnusableRecord, clean_text, https_or_none, partial_date_of, title_of
 
-__all__ = ["WEB_TRUST", "WebPageAdapter", "page_item"]
+__all__ = ["WebPageAdapter", "page_item", "readable_url"]
 
-WEB_TRUST = "C"
 PAGE_SOURCE_TYPES = {"text/html": "WEB_PAGE", "text/plain": "WEB_PAGE", "application/pdf": "OTHER"}
+PLAIN_HTTP = "http"
+PLAIN_HTTP_PORT = 80
 
 
 class WebPageAdapter(HttpSourceAdapter):
@@ -27,9 +31,9 @@ class WebPageAdapter(HttpSourceAdapter):
     def _hit(
         self, *, url: Any, title: Any, published: Any, publisher: Any, retrieved_at: datetime
     ) -> EvidenceItem:
-        page_url = https_or_none(url)
+        page_url = readable_url(url)
         if page_url is None:
-            raise UnusableRecord("not an https URL")
+            raise UnusableRecord("not a URL that can be read over https")
         item_id = f"{self.name}:{page_url}"
         if len(item_id) > EVIDENCE_ID_MAX_CHARS:
             raise UnusableRecord(f"URL longer than an evidence id allows ({EVIDENCE_ID_MAX_CHARS})")
@@ -43,7 +47,7 @@ class WebPageAdapter(HttpSourceAdapter):
             published=partial_date_of(published),
             retrieved_at=retrieved_at,
             publisher=clean_text(publisher),
-            trust=WEB_TRUST,
+            trust=web_trust(page_url),
         )
 
     async def _fetch_document(self, native: str, retrieved_at: datetime) -> SourceDocument:
@@ -73,6 +77,26 @@ def page_item(adapter: str, url: str, page: FetchedPage) -> EvidenceItem:
         retrieved_at=page.fetched_at,
         licence=metadata.licence,
         publisher=metadata.site_name,
-        trust=WEB_TRUST,
+        trust=web_trust(page.final_url),
         external_ids={"sha256": page.sha256},
     )
+
+
+def readable_url(value: Any) -> str | None:
+    text = clean_text(value)
+    if text is None:
+        return None
+    url = https_or_none(text) or https_or_none(_https_upgraded(text))
+    return without_tracking(url) if url is not None else None
+
+
+def _https_upgraded(url: str) -> str | None:
+    try:
+        parts = urlsplit(url)
+        port = parts.port
+    except ValueError:
+        return None
+    if parts.scheme.lower() != PLAIN_HTTP or port not in (None, PLAIN_HTTP_PORT) or "@" in parts.netloc:
+        return None
+    host = parts.netloc.rsplit(":", 1)[0] if port == PLAIN_HTTP_PORT else parts.netloc
+    return urlunsplit(("https", host, parts.path or "/", parts.query, parts.fragment))

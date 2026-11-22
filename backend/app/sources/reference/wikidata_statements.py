@@ -8,6 +8,7 @@ from urllib.parse import unquote
 
 from ..records import clean_text
 from .mediawiki import primary_language
+from .wikidata_times import time_text
 
 __all__ = [
     "ENTITY_PREFIX",
@@ -28,7 +29,6 @@ ONTOLOGY_PREFIX = "http://wikiba.se/ontology#"
 FILE_PATH_PREFIX = "http://commons.wikimedia.org/wiki/Special:FilePath/"
 UNITLESS = f"{ENTITY_PREFIX}Q199"
 EXTERNAL_ID_NAMES = {"P662": "pubchem_cid", "P231": "cas_number", "P683": "chebi"}
-TIME_FORMATS = {9: 4, 10: 7, 11: 10}
 STATEMENTS_QUERY = """SELECT ?property ?propertyLabel ?type ?value ?valueLabel ?unit ?unitLabel ?precision WHERE {
   VALUES ?item { wd:%(item)s }
   ?item ?claim ?statement .
@@ -116,14 +116,7 @@ def _rendered_value(row: Mapping[str, Any], value_type: str) -> str | None:
         unit_label = binding_value(row, "unitLabel")
         return raw if unit in (None, UNITLESS) or not unit_label else f"{raw} {unit_label}"
     if value_type == "Time":
-        return _time_text(raw, binding_value(row, "precision"))
+        return time_text(raw, binding_value(row, "precision"))
     if value_type == "CommonsMedia":
         return unquote(raw.removeprefix(FILE_PATH_PREFIX))
     return raw
-
-
-def _time_text(raw: str, precision: str | None) -> str | None:
-    if precision is None or not precision.isdigit() or int(precision) not in TIME_FORMATS:
-        return None
-    sign = "-" if raw.startswith("-") else ""
-    return sign + raw.lstrip("+-")[: TIME_FORMATS[int(precision)]]

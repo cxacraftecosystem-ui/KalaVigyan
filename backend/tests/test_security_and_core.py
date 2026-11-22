@@ -8,7 +8,6 @@ from app.core.config import get_settings, with_explicit_sslmode
 from app.core.db import build_runtime_database_url
 from app.core.deps import token_matches_user
 from app.core.logging import redact_secrets
-from app.core.rate_limit import SlidingWindow
 from app.core.security import (
     TOKEN_VERSION_CLAIM,
     create_access_token,
@@ -125,16 +124,6 @@ def test_redaction_hides_keys_in_query_strings() -> None:
     assert redact_secrets(line) == (
         "HTTP Request: GET https://api.example.org/works?q=dye&api_key=[redacted]&apiKey=[redacted] HTTP/1.1 200"
     )
-
-
-def test_sliding_window() -> None:
-    window = SlidingWindow()
-    assert window.attempt("k", 2, 10, now=0)[0]
-    assert window.attempt("k", 2, 10, now=1)[0]
-    allowed, retry = window.attempt("k", 2, 10, now=2)
-    assert not allowed
-    assert retry == pytest.approx(8)
-    assert window.attempt("k", 2, 10, now=11)[0]
 
 
 def test_hotp_rfc4226_vectors() -> None:

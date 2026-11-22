@@ -52,8 +52,9 @@ CITATION_MEDIA_TYPES: Mapping[str, str] = MappingProxyType(
     }
 )
 BIBTEX_VENUES: Mapping[str, str] = MappingProxyType(
-    {"article": "journal", "book": "publisher", "incollection": "publisher", "techreport": "institution"}
+    {"article": "publisher", "book": "publisher", "incollection": "publisher", "techreport": "institution"}
 )
+BIBTEX_CONTAINERS: Mapping[str, str] = MappingProxyType({"article": "journal", "incollection": "booktitle"})
 BIBTEX_ESCAPES: Mapping[str, str] = MappingProxyType(
     {
         "\\": r"\textbackslash{}",
@@ -102,7 +103,8 @@ def csl_item(number: int, cited: CitedThing, accessed: date | None) -> CslItem:
             "type": CSL_TYPES[cited.kind],
             "title": cited.title,
             "author": [{"literal": name} for name in cited.authors if name.strip()],
-            "publisher": cited.publisher or None,
+            "container-title": cited.container_title,
+            "publisher": _house(cited, beside_container=True),
             "DOI": cited.doi or None,
             "URL": cited.url,
         }
@@ -129,10 +131,7 @@ def bibtex_entry(number: int, cited: CitedThing) -> str:
     fields = [
         ("author", " and ".join(f"{{{_escaped(name)}}}" for name in names) if names else None),
         ("title", f"{{{_escaped(cited.title)}}}"),
-        (
-            BIBTEX_VENUES.get(entry_type, "howpublished"),
-            _escaped(cited.publisher) if cited.publisher else None,
-        ),
+        *((name, _escaped(value)) for name, value in _bibtex_venues(entry_type, cited)),
         ("year", str(cited.year) if isinstance(cited, SourceRef) and cited.year is not None else None),
         ("doi", _link(cited.doi) if isinstance(cited, SourceRef) and cited.doi else None),
         ("url", _link(cited.url) if cited.url else None),
@@ -149,7 +148,8 @@ def ris_record(number: int, cited: CitedThing) -> str:
         *(("AU", name) for name in _names(cited)),
         ("TI", cited.title),
         ("PY", str(year) if year is not None else None),
-        ("PB", cited.publisher),
+        ("T2", cited.container_title if isinstance(cited, SourceRef) else None),
+        ("PB", _house(cited, beside_container=True)),
         ("DO", cited.doi if isinstance(cited, SourceRef) else None),
         ("UR", cited.url),
         ("ID", citation_key(number)),
@@ -227,6 +227,21 @@ def _names(cited: CitedThing) -> list[str]:
     if isinstance(cited, SourceRef):
         return [name for name in cited.authors if name.strip()]
     return [cited.publisher] if cited.publisher else []
+
+
+def _bibtex_venues(entry_type: str, cited: CitedThing) -> list[tuple[str, str]]:
+    container = cited.container_title if isinstance(cited, SourceRef) else None
+    holder = BIBTEX_CONTAINERS.get(entry_type)
+    shown = [(holder, container)] if holder and container else []
+    house = _house(cited, beside_container=bool(shown))
+    return [*shown, *([(BIBTEX_VENUES.get(entry_type, "howpublished"), house)] if house else [])]
+
+
+def _house(cited: CitedThing, *, beside_container: bool) -> str | None:
+    container = cited.container_title if isinstance(cited, SourceRef) else None
+    if beside_container and container is not None and cited.publisher == container:
+        return None
+    return cited.publisher or None
 
 
 def _dataset_citation(thing: CitedThing) -> str | None:

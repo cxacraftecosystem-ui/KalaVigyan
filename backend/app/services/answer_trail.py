@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from datetime import datetime
 from typing import Any
 
@@ -16,10 +16,15 @@ from app.research.trail import (
     TRAIL_STAGES,
     TRAIL_TITLE_MAX_CHARS,
 )
+from app.sources.scholarly.pacing import AnswerPace, ServicePace, answer_pace
 
 __all__ = ["TrailLog", "piece_key", "stored_key"]
 
 STORED_GROUP = "STORED"
+PACED_EVENT = "paced"
+WAIT_DECIMALS = 3
+
+PaceReader = Callable[[], AnswerPace | None]
 STAGE_RANK = {stage: rank for rank, stage in enumerate(TRAIL_STAGES)}
 
 
@@ -32,17 +37,29 @@ def piece_key(piece_id: uuid.UUID) -> str:
 
 
 class TrailLog:
-    def __init__(self, emit: Emit) -> None:
+    def __init__(self, emit: Emit, *, paces: PaceReader = answer_pace) -> None:
         self._emit = emit
+        self._paces = paces
         self._entries: dict[str, dict[str, Any]] = {}
         self._stages: dict[str, int] = {}
+        self._paced: tuple[ServicePace, ...] = ()
 
     async def found(self, evidence: Sequence[PackedEvidence]) -> None:
         for entry in evidence:
             await self._move(_evidence_entry(entry.item), "FOUND")
+        await self.record_waits()
+
+    async def record_waits(self) -> None:
+        record = self._paces()
+        held = tuple(pace for pace in record.services if _held_back(pace)) if record else ()
+        if not held or held == self._paced:
+            return
+        self._paced = held
+        await self._emit(PACED_EVENT, {"services": [_wait_entry(pace) for pace in held]})
 
     async def read(self, document: SourceDocument) -> None:
         await self._move(_evidence_entry(document.item), "READ")
+        await self.record_waits()
 
     async def found_stored(self, sources: Iterable[Mapping[str, Any]]) -> None:
         for source in sources:
@@ -104,4 +121,18 @@ def _stored_entry(source: Mapping[str, Any]) -> dict[str, Any]:
         "year": source.get("year"),
         "sourceId": str(source["id"]),
         "storedAt": None,
+    }
+
+
+def _held_back(pace: ServicePace) -> bool:
+    return bool(pace.waited_requests or pace.refusals or pace.unsent)
+
+
+def _wait_entry(pace: ServicePace) -> dict[str, Any]:
+    return {
+        "service": pace.service,
+        "waitedSeconds": round(pace.waited_seconds, WAIT_DECIMALS),
+        "waitedRequests": pace.waited_requests,
+        "refusals": pace.refusals,
+        "unsent": pace.unsent,
     }

@@ -1186,18 +1186,10 @@ Last updated: 2026-11-20.
   re-render the box `.env` (`docs/RUNBOOK.md`, Alert digest). Until then the Monday **Alert
   digest** run sends nothing. In-app notes need nothing.
 
-- Lesson pack proof (decision 0070): the E2E account is a Researcher, building a lesson pack
-  needs `BUILD_LESSONS` (Professor), and a Professor must use two-step sign-in, which the run cannot
-  answer. Choose one: a Professor E2E account whose authenticator secret is stored as a GitHub
-  secret (`E2E_TOTP_SECRET`; the run then needs a small sign-in step to turn it into a code), or a
-  lesson pack built by hand from the English known answer after the deploy, its PPTX and PDF
-  checked against the explainer's sources. Until then each run checks the report PDF and the
-  citations and notes the lesson step.
-
 - Professor and Admin E2E accounts: apply the box role's `/kalavigyan/e2e/*` read, run
   `infra/scripts/seed_e2e_accounts.py`, and after the next backend deploy dispatch **E2E accounts**
   (`docs/RUNBOOK.md`, Professor and Admin E2E accounts). Until then E2E production skips the
-  `/lessons` and `/admin` screens.
+  `/lessons` and `/admin` screens, and a `questions=true` run fails its lesson pack proof.
 
 - Free OpenAlex, Semantic Scholar and Springer Nature API keys (Settings, API keys); without
   them OpenAlex shares a small daily allowance per IP, Semantic Scholar's shared pool answers

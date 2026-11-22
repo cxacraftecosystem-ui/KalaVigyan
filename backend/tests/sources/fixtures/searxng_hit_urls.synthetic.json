@@ -1,0 +1,107 @@
+{
+  "query": "ajrakh",
+  "number_of_results": 0,
+  "results": [
+    {
+      "url": "http://old.example.in/ajrakh.html",
+      "title": "Ajrakh on a plain http site",
+      "content": "",
+      "engine": "duckduckgo",
+      "engines": [
+        "duckduckgo"
+      ],
+      "score": 1.0,
+      "category": "general",
+      "publishedDate": null
+    },
+    {
+      "url": "http://old.example.in:80/bagh?x=1",
+      "title": "Bagh on the default http port",
+      "content": "",
+      "engine": "duckduckgo",
+      "engines": [
+        "duckduckgo"
+      ],
+      "score": 1.0,
+      "category": "general",
+      "publishedDate": null
+    },
+    {
+      "url": "http://old.example.in:8080/sanganer",
+      "title": "Sanganer on another port",
+      "content": "",
+      "engine": "duckduckgo",
+      "engines": [
+        "duckduckgo"
+      ],
+      "score": 1.0,
+      "category": "general",
+      "publishedDate": null
+    },
+    {
+      "url": "https://crafts.example.org/ajrakh?utm_source=newsletter&utm_campaign=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc&id=7",
+      "title": "Ajrakh with a long campaign tag",
+      "content": "",
+      "engine": "duckduckgo",
+      "engines": [
+        "duckduckgo"
+      ],
+      "score": 1.0,
+      "category": "general",
+      "publishedDate": null
+    },
+    {
+      "url": "https://crafts.example.org/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "title": "A path too long for an id",
+      "content": "",
+      "engine": "duckduckgo",
+      "engines": [
+        "duckduckgo"
+      ],
+      "score": 1.0,
+      "category": "general",
+      "publishedDate": null
+    },
+    {
+      "url": "https://crafts.example.org/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "title": "A long path that still fits",
+      "content": "",
+      "engine": "duckduckgo",
+      "engines": [
+        "duckduckgo"
+      ],
+      "score": 1.0,
+      "category": "general",
+      "publishedDate": null
+    },
+    {
+      "url": "https://www.incredibleindia.gov.in/en/gujarat/ajrakh",
+      "title": "Ajrakh on a government site",
+      "content": "",
+      "engine": "duckduckgo",
+      "engines": [
+        "duckduckgo"
+      ],
+      "score": 1.0,
+      "category": "general",
+      "publishedDate": null
+    },
+    {
+      "url": "https://search.ipindia.gov.in/GIRPublic/Application/Details/646",
+      "title": "Kutch Ajrakh in the GI registry",
+      "content": "",
+      "engine": "duckduckgo",
+      "engines": [
+        "duckduckgo"
+      ],
+      "score": 1.0,
+      "category": "general",
+      "publishedDate": null
+    }
+  ],
+  "answers": [],
+  "corrections": [],
+  "infoboxes": [],
+  "suggestions": [],
+  "unresponsive_engines": []
+}

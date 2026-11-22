@@ -173,8 +173,11 @@ class SourceAdapter(Protocol):
 - `search` returns at most `k` items (`1 <= k <= SEARCH_MAX_K` 50), each `tier` equal to the
   adapter's, best first. No hits is `[]`, not an error.
 - `EvidenceItem {id, adapter, tier, sourceType, url, title, authors[], published?, retrievedAt,
-  licence?, attribution?, doi?, publisher?, trust, quotes[Quote], externalIds{}}`.
-  `id` is `<adapter>:<id at the service>` (`openalex:W2741809807`). `trust` is the reliability
+  licence?, attribution?, doi?, publisher?, containerTitle?, trust, quotes[Quote], externalIds{}}`.
+  `id` is `<adapter>:<id at the service>` (`openalex:W2741809807`). `containerTitle` is the
+  journal or book a work is in; `item.journal` is it, or the `publisher` of an adapter that puts
+  the journal there (`JOURNAL_AS_PUBLISHER_ADAPTERS`: Europe PMC and Semantic Scholar), and is
+  stored as `Source.containerTitle` (decision 0143). `trust` is the reliability
   tier the adapter assigns (A peer-reviewed or official, B reputable reference, C general web,
   D unknown). `quotes` are verbatim passages (`Quote {text (1-300), locator?}`; locator such as
   `p. 12`, `section 3.2`, `para 4`); a search hit may have none.
@@ -209,42 +212,54 @@ the locator: its title search is retired (decision 0005), so it is not a `Source
 ### Scholarly adapters (`app/sources/`, decision 0005)
 
 `sources.scholarly.registry.scholarly_sources(keys, client) -> ScholarlySources {adapters,
-locator, unconfigured}` builds every T3 scholarly adapter; `services/scholarly_keys.
+locator, unconfigured, publisher?}` builds every T3 scholarly adapter, the open-copy locator
+(`open_copies.OpenCopyLocator`, named `open_access`: a Zenodo DOI to Zenodo, every other to
+Unpaywall) and, when a publisher key is set, `publisher` (`publishers.PublisherFullText`: the
+Elsevier and Springer Nature full text of a DOI Unpaywall calls closed, chosen by DOI prefix,
+stored for researchers only under its text-mining licence; decision 0139); `services/scholarly_keys.
 scholarly_keys(session)` reads the keys from the managed secrets and `RESEARCH_CONTACT_EMAIL`.
 The caller holds the result for the process.
 
-**Pacing (decision 0127).** Every scholarly adapter talks through a `sources.scholarly.pacing.
-PacedHttp` built on one process-wide `ScholarlyPacing` (`shared_pacing()`, or the `pacing`
-argument of `scholarly_sources`), so every rebuild of the live sources and every caller in the
-process shares one token bucket per service and request kind:
+**Pacing (decisions 0127, 0139).** Every scholarly adapter talks through a `sources.scholarly.pacing.
+PacedHttp` on `shared_pacing()`, whose state is `core/paces.SharedPaces`: one row per service and
+request kind in `SourcePace` (the next free slot and the `Retry-After` hold) and one expiring lease
+per request in flight in `SourceLease`, reserved atomically on the database clock, so every seat of
+an answer, every answer and every process (both API slots, the contribution worker, the coverage
+job) share one pace per service. `ScholarlyPacing()` alone keeps a memory store, for tests.
 
-- Each adapter declares its published limit beside it (`<NAME>_LIMITS`, a `ServiceLimits` of a
-  search `SourceLimit {requests, seconds, concurrency?}` and an optional lookup limit), and is
-  paced at `PACED_SHARE` (80 %) of it: Crossref's public pool 1 search a second and 5 DOI
-  lookups a second, one request at a time; Semantic Scholar 1 a second (its introductory keyed
-  rate, also kept without a key in the shared anonymous pool), one at a time; OpenAlex 10 a
-  second without a key; arXiv 1 every 3 seconds, one at a time; DOAJ 2 a second; Europe PMC,
-  CORE, Elsevier, Springer Nature and Unpaywall the rates they kept before.
-- A 429 or 503 holds the service for every client for its `Retry-After` (60 s when absent); a
+- Each adapter declares its documented limit beside it (`<NAME>_LIMITS`, a `ServiceLimits` of a
+  search `SourceLimit {requests, seconds, concurrency?}` and an optional lookup limit), read on
+  2026-11-22, and is paced at `PACED_SHARE` (80 %) of it: Crossref's polite pool 3 searches a
+  second and 10 DOI lookups a second, three at a time; Semantic Scholar 1 a second with or without
+  a key, one at a time; CORE 10 a minute (the lowest registered tier); OpenAlex 10 a second
+  without a key and 30 with one; arXiv 1 every 3 seconds, one at a time; DOAJ 2 a second; Zenodo
+  30 a minute; Europe PMC, Elsevier, Springer Nature and Unpaywall the rates they kept before.
+- A 429 or 503 holds the service for every process for its `Retry-After` (60 s when absent); a
   hold longer than `RatePolicy.max_retry_wait` (10 s) fails at once as `rate_limit` without
-  sending, a shorter one is waited out. More than `QUEUE_WAIT_MAX` (30 s) of requests already
-  queued fails as `unavailable`.
+  sending, a shorter one is waited out. A request whose turn is more than `QUEUE_WAIT_MAX` (30 s)
+  away, or whose service has no free lease within it, is not sent and fails as `unavailable`. A
+  store that cannot be read refuses the request.
 - Identical lookups are answered from the service's process-wide `ResponseCache` (600 s,
   longer than an answer) whatever the rebuild. Within one answer (its request id): a lookup
-  that failed is not asked again, and a service that refused `REFUSALS_MAX` (2) requests (a
-  `rate_limit`, a 403 or a 429) is not asked again; it fails at once as `rate_limit`.
-- Crossref is asked with `User-Agent: KalaVigyan/1 (+https://kalavigyan.vercel.app)` and no
-  `mailto`: the project's public address, never a person's e-mail.
+  that failed is not asked again, and a service whose own answers refused `REFUSALS_MAX` (2)
+  requests (a 403 or a 429) is not asked again; it fails at once as `rate_limit`.
+- `answer_pace()` is the answer's record: per service the seconds and requests that waited for
+  their turn, its refusals and the requests not sent; the answer stream sends it as `paced`
+  (`docs/contracts/explainer.md`).
+- Crossref is asked with `User-Agent: KalaVigyan/1 (+https://kalavigyan.vercel.app)` and
+  `mailto=RESEARCH_CONTACT_EMAIL` (the polite pool): the project's public address, never a
+  person's e-mail.
 
 | Adapter `name` | Service | Key | Id after the colon | `fetch` content |
 |---|---|---|---|---|
 | `openalex` | OpenAlex works | `OPENALEX_API_KEY` optional | `W…` | `ABSTRACT` |
-| `crossref` | Crossref works (public pool, abstracts only) | none | DOI | `ABSTRACT` |
+| `crossref` | Crossref works (polite pool, abstracts only) | none | DOI | `ABSTRACT` |
 | `semantic_scholar` | Semantic Scholar Graph | `SEMANTIC_SCHOLAR_API_KEY` optional | paper id | `ABSTRACT` |
 | `core` | CORE v3 | `CORE_API_KEY`; without it left out and listed in `unconfigured` | work id | `FULL_TEXT`, else `ABSTRACT` |
-| `europe_pmc` | Europe PMC REST | none | `<SRC>:<id>` | `ABSTRACT` |
+| `europe_pmc` | Europe PMC REST | none | `<SRC>:<id>` | `FULL_TEXT` (`fullTextXML`) for an open-access record held in Europe PMC, else `ABSTRACT` (also when the full text answers 404 or 500) |
 | `arxiv` | arXiv API | none | arXiv id with version | `ABSTRACT` |
 | `doaj` | DOAJ v4 articles | none | 32 hex | `ABSTRACT` |
+| `zenodo` | Zenodo records (trust `B`; open files reached through the locator and the fetcher) | none | record id | `ABSTRACT` |
 | `elsevier` | Scopus search and abstract | `ELSEVIER_API_KEY` (+ `ELSEVIER_INSTTOKEN`); dormant, left out silently | Scopus id | `ABSTRACT` |
 | `springer_nature` | Springer Nature open access | `SPRINGER_NATURE_API_KEY`; dormant, left out silently | DOI | `ABSTRACT` |
 
@@ -263,10 +278,13 @@ the four T3 reference adapters; none needs a key.
 | `wikipedia` | Action API search and TextExtracts | `<language>:<page id>` | `FULL_TEXT` | `ENCYCLOPEDIA`, `B` | the wiki's rightsinfo text, read live |
 | `wikidata` | `list=search`, `wbgetentities`, SPARQL statements; `wbsearchentities` and SPARQL P625 for places | `Q…`, or `<language>:Q…` outside English | `EXCERPT` | `DATASET`, `B` | `CC0 1.0` |
 | `pubchem` | PUG REST (names, formulas, properties), PUG View (GHS) | `<CID>` or `<CID>:ghs` | `EXCERPT` | `COMPOUND_RECORD`, `A` | NCBI policy URL; for `:ghs` the reporting sources' licence URLs |
-| `wikimedia_commons` | Action API file search with `extmetadata` | page id, or `<language>:<page id>` outside English | `EXCERPT` | `OTHER`, `C` | the file's licence short name |
+| `wikimedia_commons` | Action API file search with `extmetadata` | page id, or `<language>:<page id>` outside English | `EXCERPT` | `MEDIA` (`OTHER` for a PDF or DjVu document), `C` | the file's licence short name |
 
-- `SearchQuery.language` picks the Wikipedia (`WIKIPEDIA_LANGUAGES`: English and the Indian
-  languages with a Wikipedia; another language is `InvalidInput`), the Wikidata label language
+- `SearchQuery.language` picks the Wikipedia (`WIKIPEDIA_LANGUAGES`: every Wikipedia edition in
+  Wikimedia's sitematrix of 2026-11-22, vendored in `sources/reference/wikipedia_editions.json`
+  and checked on load; `LANGUAGE_ALIASES` maps ISO codes to editions named otherwise, `bho` to
+  `bh`, `yue` to `zh-yue`, `nb` to `no`; a language with no edition or a malformed tag is
+  `InvalidInput`, decision 0139), the Wikidata label language
   (with fallback) and the Commons metadata language. A Wikidata or Commons item found in another
   language than English carries it in its id (`mediawiki.with_language`), and `fetch` renders
   labels, descriptions, statement labels and file metadata in it (`language_and_native`); English
@@ -282,8 +300,15 @@ the four T3 reference adapters; none needs a key.
   `not_found`.
 - MediaWiki errors returned inside a 200 are `ExternalFailure`: unknown entity, title or page
   `not_found`, rate limits `rate_limit`, read-only `unavailable`, anything else `error`.
-- Commons files without a licence are left out of results. Wikidata time values coarser than a
-  year, and deprecated statements, are left out of the text.
+- Commons files without a licence are left out of results. A Commons file's `published` is its
+  original date when `DateTimeOriginal` states one day, month or year (an ISO date, a year, a
+  "circa" year, "January 1889", "20 July 2013", "Taken on ...", an Exif date, or the hidden
+  Wikidata date when it carries no qualifier, `sources/reference/commons_dates`); a range, a
+  decade or century, "before ...", an ambiguous `1/2/1934` or an upload date leaves it empty.
+  Deprecated Wikidata statements are left out. Wikidata times keep their precision: a day, month
+  or year as written; a decade, century or millennium in words as Wikibase counts them
+  (`1850s`, `19th century`, `5th century BCE`, `sources/reference/wikidata_times`); anything
+  coarser is left out (decision 0139).
 - Wikidata also places a named origin (decision 0047): `place_candidates(name)` asks
   `wbsearchentities` (English items, 10 hits) and keeps the hits whose matched label or alias is
   the name; `place_points(itemIds)` asks one SPARQL query (1 to 20 ids) for coordinate location
@@ -294,11 +319,18 @@ the four T3 reference adapters; none needs a key.
 
 | Adapter `name` | Service | Key | Id after the colon | `fetch` content | Source type, trust |
 |---|---|---|---|---|---|
-| `searxng` | SearXNG JSON API at `SEARXNG_URL` | none | the https URL | `FULL_TEXT` through the fetcher | `WEB_PAGE` (`OTHER` for a PDF), `C` |
-| `brave` | Brave Web Search API | `BRAVE_SEARCH_API_KEY`; without it left out silently | the https URL | `FULL_TEXT` through the fetcher | `WEB_PAGE` (`OTHER` for a PDF), `C` |
+| `searxng` | SearXNG JSON API at `SEARXNG_URL` | none | the https URL | `FULL_TEXT` through the fetcher | `WEB_PAGE` (`OTHER` for a PDF), `C`, or `A`/`B` by `research/web_trust.json` |
+| `brave` | Brave Web Search API | `BRAVE_SEARCH_API_KEY`; without it left out silently | the https URL | `FULL_TEXT` through the fetcher | `WEB_PAGE` (`OTHER` for a PDF), `C`, or `A`/`B` by `research/web_trust.json` |
 
-- Hits carry no quotes (snippets are not verbatim). Plain-http hits and URLs that would make an
-  id longer than `EVIDENCE_ID_MAX_CHARS` (500) are left out. SearXNG maps `freshnessDays` to the
+- Hits carry no quotes (snippets are not verbatim). A plain-http hit on the default port is read
+  as its https URL (`page.readable_url`; other ports are left out) and `utm_` parameters are
+  dropped; a URL that would make an id longer than `EVIDENCE_ID_MAX_CHARS` (500) is left out,
+  since the id is the URL `fetch` reads.
+- A hit, and a page by its final URL, takes the trust of the longest domain of the reviewed list
+  `research/web_trust.json` it ends in: `A` for records, standards bodies and peer-reviewed
+  journals (`ipindia.gov.in`, `bis.gov.in`, `iso.org`, `nopr.niscpr.res.in`), `B` for the
+  government, academic and research zones (`gov.in`, `nic.in`, `gov`, `ac.in`, `edu.in`, `edu`,
+  `ac.uk`, `res.in`) and named museums and institutions; any other page `C` (decision 0139). SearXNG maps `freshnessDays` to the
   narrowest `time_range` that covers it (day, week, month, year); Brave sends the exact date
   window; the date filter of the scholarly adapters then applies to both. Brave asks for at
   most 20 results.
@@ -367,7 +399,12 @@ in native digits supports the same figure (decision 0023).
 - A rule that stops a fetch raises `FetchRefused(url, reason, detail)` (a `Refused`); `reason`
   is one of `NOT_HTTPS`, `BAD_URL`, `PRIVATE_ADDRESS`, `TLS_MISMATCH`, `TOO_MANY_REDIRECTS`,
   `ROBOTS_DISALLOWED`, `CONTENT_TYPE`, `TOO_LARGE`, `TIME_LIMIT`, `PDF_LIMIT`, `PARSE_FAILED`,
-  and is stored in `WebFetch.blockedReason`. What the remote side does (DNS failure, 4xx, 5xx,
+  and is stored in `WebFetch.blockedReason`. The live sources' `FetcherClient` records every
+  fetch it answers (a page, a refusal or a remote failure) as one `WebFetch` row
+  (`services/web_fetches.web_fetch_recorder`); bytes already stored add a row with an empty
+  `sha256`, the first keeps the hash (decision 0139). The nightly upkeep, the candidate sources
+  and the picture client (`PictureFetcherClient(..., record=)`, the hash of the picture's bytes)
+  record theirs the same way. What the remote side does (DNS failure, 4xx, 5xx,
   reset) is an `ExternalFailure`.
 
 ### The fetcher service (`app/fetcher/`, decision 0007)
@@ -399,16 +436,24 @@ How the sandbox applies the rules:
   that host (`TLS_MISMATCH` when it is not).
 - Redirects: 301, 302, 303, 307, 308, at most `FETCH_MAX_REDIRECTS` (3), each target checked
   again before it is requested.
-- robots.txt (RFC 9309), agent `KalaVigyan`: read for each host the fetch touches and cached for
+- robots.txt (RFC 9309, `fetcher/robots_txt`), agent `KalaVigyan`: the longest matching rule
+  wins and `Allow` wins a tie, `*` and `$` patterns, the RFC's percent-encoding, the groups naming
+  the agent merged (else `*`), at most five redirects; a rule not starting with `/` or `*` is read
+  with a leading `/` (fails closed). Read for each host the fetch touches and cached for
   an hour; 4xx other than 429 allows all; 429, 5xx, an unreachable server or an unreadable file
   disallows all (`ROBOTS_DISALLOWED`) and is not cached.
-- Size and time: one time limit for the whole fetch including robots and redirects
-  (`TIME_LIMIT`); a declared or streamed body over `maxBytes` is `TOO_LARGE`.
+- Size and time: one time limit for the whole fetch including robots, redirects and parsing
+  (`TIME_LIMIT`); one client per host and address for the whole fetch, every hop resolved and
+  checked again; a declared or streamed body over `maxBytes` is `TOO_LARGE`.
 - Content: `text/html` and `application/xhtml+xml` (reported as `text/html`), `application/pdf`
-  and `text/plain`; anything else `CONTENT_TYPE`. HTML main text by trafilatura after scripts,
+  and `text/plain`, and a body starting `%PDF-` declared `application/octet-stream` or
+  `binary/octet-stream` (as Zenodo serves its files) read as a PDF; anything else `CONTENT_TYPE`. HTML main text by trafilatura after scripts,
   styles, `noscript`, `template`, embeds and hidden elements are removed; metadata from the page
   head, its licence link and `<html lang>`. PDF text by pypdf from the first `PDF_MAX_PAGES`
-  pages (`truncated` when more), `PDF_LIMIT` past `PDF_MAX_DECOMPRESSED_BYTES` of page content;
+  pages (`truncated` when more), `PDF_LIMIT` past `PDF_MAX_DECOMPRESSED_BYTES` of what text extraction decodes (page content,
+  form objects, fonts' Unicode maps and Type 1 font files; no single stream past it either);
+  parsing runs in two spawned worker processes (`fetcher/parsing`), a worker killed when the time
+  limit fires and replaced, and replaced after 200 parses;
   encrypted, broken or text-less documents, and pages with no main text, are `PARSE_FAILED`.
 
 ### Retrieved text is untrusted (`research/untrusted.py`)
@@ -952,7 +997,7 @@ fields that were set.
 |---|---|---|
 | `match` | `{status:"RESOLVED", craft}` / `{status:"AMBIGUOUS", candidates (1-5)}` / `{status:"NONE"}` | kept in the vocabulary; the answering flow sends `understood` instead (decision 0031) |
 | `status` | `{step, message}` | new; progress while research runs. `step` one of `RESOLVING`, `PLANNING`, `SEARCHING_STORED`, `RESEARCHING`, `READING`, `COMPOSING`, `WRITING_BACK`, `TRANSLATING`; `message` a short user-facing sentence. A step's count is the sum over the sections that reached it, sent again as it grows while that step is the latest shown; a step already passed adds to its sum silently (decision 0138) |
-| `source` | `SourceRef {id, kind, title, authors[], year, doi, url, publisher, licence, attribution, reliability}` | before the first citation naming it; `url` https or null |
+| `source` | `SourceRef {id, kind, title, authors[], year, doi, url, publisher, licence, attribution, reliability, containerTitle?}` | before the first citation naming it; `url` https or null; `containerTitle` (the journal) only when stored (decision 0143) |
 | `section` | `{id, heading, original?}` | kept in the vocabulary; the answering flow sends `section_started` instead (decision 0032) |
 | `sentence` | `{sectionId, sentence: AnswerSentence}` | kept in the vocabulary; sentences now arrive inside `prose` and `process_ladder` blocks (decision 0032) |
 | `open_question` | `{sectionId, heading?, sentence}` | hypothesis-level sentences |
@@ -961,7 +1006,7 @@ fields that were set.
 | `not_enough_evidence` | `{message}` | new; nothing cited could be shown. `message` is `not_enough_evidence_message` (what was searched); followed only by `done` |
 | `done` | `{answerId}` | last |
 | `error` | `{message}` | shown verbatim; never internal detail |
-| `understood`, `trail`, `section_started`, `section_state`, `block`, `section_done` | `docs/contracts/explainer.md` | the explainer stream (decision 0030); how the events above map onto it is in that page |
+| `understood`, `trail`, `paced`, `section_started`, `section_state`, `block`, `section_done` | `docs/contracts/explainer.md` | the explainer stream (decision 0030); how the events above map onto it is in that page |
 
 `SourceRef`, `Citation` and `AnswerSentence` live in `research/citations.py` (with
 `cited_source_ids`, the first-citation walk) and are re-exported here.
@@ -1020,12 +1065,14 @@ ModelUnderstander(model=StructuredModel, resolve=)` implements it with the craft
 - The call: system `UNDERSTAND_SYSTEM_PROMPT`; user `understand_message` (depth label, the
   depth's expert range, its section range `Sections: <min> to <max>`, the listed crafts each in a
   `craft_block`, the question in an untrusted block); schema `understand_schema(offered)` `{craft:
-  enum of the listed slugs and "", craftNames [string], compare[enum of the listed slugs and ""],
-  disciplines[DISCIPLINES], seats[EXPERT_SEATS], englishQuestion: string}` with only `type`,
+  enum of the listed slugs and "", craftNames [string], compare [string: a listed slug, or a name
+  as given in craftNames], disciplines[DISCIPLINES], seats[EXPERT_SEATS], englishQuestion: string}`
+  with only `type`,
   `enum`, `items`, `properties`, `required` and `additionalProperties: false`.
 - The reply (`understanding_prompt.parsed_reply`, decision 0123) is read field by field: a value
   the schema refuses (an unlisted craft slug, a name under 2 or over 300 characters, an unknown
-  slug, field or seat, an English rendering under 2 or over 1000 characters) is left out alone
+  slug, field or seat, a compared craft that is neither a listed slug nor one of the kept
+  craftNames, an English rendering under 2 or over 1000 characters) is left out alone
   and logged, and every other field is kept; duplicates are dropped and at most three names kept.
   A craft left out is the same as no reply about the craft; `""` is the reply that no single
   listed craft is meant. A reply that is not a JSON object, or keeps nothing, is no reply.
@@ -1040,10 +1087,12 @@ ModelUnderstander(model=StructuredModel, resolve=)` implements it with the craft
   that is not one of the candidates by name is resolved with a text-only `CraftQuery`, the first
   `RESOLVED` one is chosen and every other candidate found is offered, else any craft. At most
   five offers.
-- A comparison (`compared_choice`, decision 0064): when the reply's `compare` names at least two
-  listed crafts (unknown slugs dropped) and the reader did not ask for any craft, the first of them
-  leads (`craft`) and the next three at most are `compared`; a craft the reader picked leads
-  instead, and only when it is among them. The others stay offers. `PlanRequest.compared` carries
+- A comparison (`compared_choice`, decision 0064): when the reply's `compare` holds at least two
+  crafts and the reader did not ask for any craft, each name in it that is not a listed craft (by
+  slug or name) is resolved with a text-only `CraftQuery` (once per answer, shared with the named
+  lookup above) and only a `RESOLVED` one is kept; when at least two compared crafts remain, the
+  first of them leads (`craft`) and the next three at most are `compared`; a craft the reader
+  picked leads instead, and only when it is among them. The others stay offers. `PlanRequest.compared` carries
   them to the block builders (`compare`); research and composition still run for the lead craft.
 - The depth is `effective_depth(asked, role, past_degrade=reply.degraded)`.
 - The fields (`understanding.asked_fields`, `sections.answer_fields`, decision 0123): the
@@ -1071,7 +1120,9 @@ glossary and `section_images`).
 already known and raises instead of sending `error` (the nightly rebuild uses it); `AnswerStore {stored_claims (slug, question,
 mode), begin(ask, understanding) -> answer id, keep(answer_id, pack, composed) -> claims of each
 composed sentence, cited(claim_ids), process(slug) -> science.records.ProcessRecords | None,
-finish(answer_id, *, asked_at, plans: AnswerPlans, claim_ids, explainer: Explainer | None)}`, the reads
+finish(answer_id, *, asked_at, plans: AnswerPlans, claim_ids, explainer: Explainer | None),
+latest(explainer_id, user_id) -> the latest stored version (a follow-up that lost its version
+merges again onto it, `services/version_race`)}`, the reads
 returning `answer_events.CitedClaims {views, sources}`. `begin` writes the `Answer` row (its
 understanding and the depth's mode), `keep` one section's write-back, and `finish` the plans, the
 claims shown, the tiers used, `latencyMs` (from `AnswerAsk.asked_at`, set when the question is

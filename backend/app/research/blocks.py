@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from itertools import pairwise
 from typing import Any, ClassVar, Literal, Self
 
@@ -44,6 +44,7 @@ __all__ = [
     "StageAfter",
     "StagePicture",
     "named_in",
+    "named_in_texts",
     "require_facts",
     "require_findings",
     "sentences_in_payload",
@@ -320,7 +321,11 @@ def stated_texts(sentence: AnswerSentence) -> list[str]:
 
 
 def named_in(name: str, sentence: AnswerSentence) -> bool:
-    return any(quote_occurs(name.casefold(), text.casefold()) for text in stated_texts(sentence))
+    return named_in_texts(name, stated_texts(sentence))
+
+
+def named_in_texts(name: str, texts: Iterable[str]) -> bool:
+    return any(quote_occurs(name.casefold(), text.casefold()) for text in texts)
 
 
 def require_facts(owner: str, sentences: Sequence[ExplainerSentence]) -> None:

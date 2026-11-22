@@ -29,6 +29,7 @@ __all__ = [
     "VISION_OUTPUT_TOKENS",
     "Near",
     "ScreenSummary",
+    "ScreenTools",
     "ScreenVerdict",
     "VisionAnswer",
     "VisionRequest",
@@ -134,6 +135,11 @@ class VisionVerdict:
 
 class VisionScreen(Protocol):
     async def __call__(self, request: VisionRequest) -> VisionVerdict: ...
+
+
+@dataclass(frozen=True)
+class ScreenTools:
+    vision: VisionScreen | None
 
 
 @dataclass(frozen=True)

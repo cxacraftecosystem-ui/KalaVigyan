@@ -3,9 +3,9 @@ from typing import Any
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.managed_keys import STATUS_FAILED, STATUS_OK
 from app.models import Provider, RoutePolicy
-from app.services import managed_secrets
-from app.services.ai_providers import (
+from app.providers.catalogue import (
     PROVIDERS,
     PUBLIC_TEXT_TASKS,
     TASK_LABELS,
@@ -15,6 +15,7 @@ from app.services.ai_providers import (
     spec_for,
     supports,
 )
+from app.services import managed_secrets
 
 KEY_ABSENT = "ABSENT"
 KEY_UNTESTED = "UNTESTED"
@@ -26,9 +27,9 @@ def key_state(described: dict[str, Any] | None) -> tuple[str, Any, str | None]:
     if described is None or not described.get("configured"):
         return KEY_ABSENT, None, None
     status_text = described.get("lastStatus")
-    if status_text == managed_secrets.STATUS_OK:
+    if status_text == STATUS_OK:
         return KEY_PASSING, described.get("lastCheckedAt"), None
-    if status_text == managed_secrets.STATUS_FAILED:
+    if status_text == STATUS_FAILED:
         return KEY_FAILING, described.get("lastCheckedAt"), described.get("lastError")
     return KEY_UNTESTED, None, None
 

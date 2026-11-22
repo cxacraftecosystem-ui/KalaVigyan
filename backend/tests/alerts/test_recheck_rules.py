@@ -5,7 +5,7 @@ from app.research.alerts import AnswerImproved, FacetNews
 from app.research.explainer import explainer_blocks
 from app.retrieval.statements import CraftScope
 from app.services.notifications import merged_news
-from app.services.saved_recheck import LEVEL_RAISES, NewClaim, SavedCheck, answer_news, claim_facet
+from app.services.saved_recheck import LEVEL_RAISES, NewClaim, SavedCheck, answer_news, claim_facets
 
 from ..contracts.learning_golden import ALERTS, AlertsFixture, learning
 from .versions import follow_up_document, latest_golden
@@ -31,8 +31,8 @@ def check() -> SavedCheck:
     )
 
 
-def fresh(facet: str | None) -> NewClaim:
-    return NewClaim(claim_id=uuid.uuid4(), facet=facet)
+def fresh(*facets: str) -> NewClaim:
+    return NewClaim(claim_id=uuid.uuid4(), facets=facets)
 
 
 def test_a_re_check_with_no_new_claims_makes_no_note() -> None:
@@ -40,12 +40,14 @@ def test_a_re_check_with_no_new_claims_makes_no_note() -> None:
 
 
 def test_a_new_claim_on_a_field_the_reader_did_not_save_makes_no_note() -> None:
-    assert answer_news(check(), [fresh("ECONOMICS"), fresh(None)], checked_at=CHECKED_AT) is None
+    assert answer_news(check(), [fresh("ECONOMICS"), fresh()], checked_at=CHECKED_AT) is None
 
 
 def test_a_claim_the_latest_version_already_cites_is_not_news() -> None:
     cited = next(iter(check().cited))
-    assert answer_news(check(), [NewClaim(claim_id=cited, facet="GEOGRAPHY")], checked_at=CHECKED_AT) is None
+    assert (
+        answer_news(check(), [NewClaim(claim_id=cited, facets=("GEOGRAPHY",))], checked_at=CHECKED_AT) is None
+    )
 
 
 def test_new_findings_are_counted_per_saved_field_in_the_saved_order() -> None:
@@ -55,13 +57,17 @@ def test_new_findings_are_counted_per_saved_field_in_the_saved_order() -> None:
     assert news == alerts().notifications.items[0].payload
 
 
-def test_a_claim_counts_for_its_curated_field_first_then_its_concept_s_heading() -> None:
-    assert claim_facet("BOTANY", "HISTORICAL_CONTEXT") == "BOTANY"
-    assert claim_facet(None, "HISTORICAL_CONTEXT") == "HISTORY"
-    assert claim_facet(None, "ENVIRONMENTAL_CONDITION") == "GEOGRAPHY"
-    assert claim_facet(None, "SENSORY_CUE") == "PROCESS"
-    assert claim_facet(None, "MECHANISM") is None
-    assert claim_facet(None, None) is None
+def test_a_claim_counts_for_its_stored_field_and_every_field_it_is_also_filed_under() -> None:
+    assert claim_facets("BOTANY", ["HISTORY", "CHEMISTRY"]) == ("BOTANY", "HISTORY", "CHEMISTRY")
+    assert claim_facets("CHEMISTRY", []) == ("CHEMISTRY",)
+    assert claim_facets("PHYSICS", None) == ("PHYSICS",)
+    assert claim_facets(None, []) == ()
+
+
+def test_a_claim_filed_under_two_saved_fields_is_news_in_both() -> None:
+    news = answer_news(check(), [fresh("PHYSICS", "CHEMISTRY", "HISTORY")], checked_at=CHECKED_AT)
+    assert news is not None
+    assert [(entry.facet, entry.new_claims) for entry in news.news] == [("CHEMISTRY", 1), ("HISTORY", 1)]
 
 
 def test_a_raise_is_any_move_to_a_stronger_level() -> None:

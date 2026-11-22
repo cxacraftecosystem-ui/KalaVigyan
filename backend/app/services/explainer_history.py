@@ -38,6 +38,7 @@ __all__ = [
     "explainer_history",
     "explainer_version",
     "follow_up_of",
+    "latest_stored",
     "latest_version",
     "mark_seen",
     "owned_explainer",
@@ -111,11 +112,11 @@ async def explainer_version(
 async def latest_version(
     session: AsyncSession, explainer_id: uuid.UUID, user_id: uuid.UUID
 ) -> ExplainerVersionDocument:
-    return await shown_version(session, await _latest_stored(session, explainer_id, user_id))
+    return await shown_version(session, await latest_stored(session, explainer_id, user_id))
 
 
 async def follow_up_of(session: AsyncSession, user_id: uuid.UUID, builds_on: BuildsOn) -> FollowUp:
-    latest = await _latest_stored(session, builds_on.explainer_id, user_id)
+    latest = await latest_stored(session, builds_on.explainer_id, user_id)
     if latest.mark.version != builds_on.version:
         raise StaleVersion(builds_on.explainer_id, builds_on.version, latest.mark.version)
     return FollowUp(base=latest, facets=tuple(builds_on.facets))
@@ -129,7 +130,7 @@ async def mark_seen(session: AsyncSession, user_id: uuid.UUID, explainer_id: uui
     )
 
 
-async def _latest_stored(
+async def latest_stored(
     session: AsyncSession, explainer_id: uuid.UUID, user_id: uuid.UUID
 ) -> ExplainerVersionDocument:
     row = (

@@ -11,7 +11,7 @@ from typing import Any
 from sqlalchemy import ColumnElement, and_, exists, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.models import Claim, Concept, Craft, CuratedClaim, ReviewEvent, SavedItem
+from app.models import Claim, Craft, ReviewEvent, SavedItem
 from app.models.enums import EVIDENCE_LEVELS
 from app.research.alerts import AnswerImproved, FacetNews, SavedExplainer
 from app.research.depth import depth_policy
@@ -19,10 +19,8 @@ from app.research.vocabulary import FACT_LEVELS, LEVEL_ORDER
 from app.retrieval.statements import CraftScope, claim_conditions
 
 from .explainer_payload import EXPLAINER_PAYLOAD_KEY
-from .knowledge_view import section_heading
 from .notifications import note_improvement
 from .saved_explainers import saved_explainer, saved_join
-from .stored_explainer import HEADING_DISCIPLINES
 
 __all__ = [
     "LEVEL_RAISES",
@@ -30,7 +28,7 @@ __all__ = [
     "RecheckReport",
     "SavedCheck",
     "answer_news",
-    "claim_facet",
+    "claim_facets",
     "new_claims",
     "recheck_saved",
     "saved_checks",
@@ -38,7 +36,6 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
-CONCEPT_SUBJECT = "CONCEPT"
 LEVEL_RAISES = tuple(
     (lower, higher)
     for lower in EVIDENCE_LEVELS
@@ -59,7 +56,7 @@ class SavedCheck:
 @dataclass(frozen=True)
 class NewClaim:
     claim_id: uuid.UUID
-    facet: str | None
+    facets: tuple[str, ...]
 
 
 @dataclass
@@ -71,12 +68,10 @@ class RecheckReport:
         return {"checked": self.checked, "notified": self.notified, "ok": True}
 
 
-def claim_facet(discipline: str | None, concept_type: str | None) -> str | None:
-    if discipline is not None:
-        return discipline
-    if concept_type is None:
-        return None
-    return HEADING_DISCIPLINES.get(section_heading(concept_type))
+def claim_facets(field: str | None, fields: Sequence[str] | None) -> tuple[str, ...]:
+    if field is None:
+        return ()
+    return tuple(dict.fromkeys([field, *(fields or ())]))
 
 
 def answer_news(
@@ -86,7 +81,7 @@ def answer_news(
     if saved.craft is None:
         return None
     distinct = {claim.claim_id: claim for claim in claims if claim.claim_id not in check.cited}
-    counts = Counter(claim.facet for claim in distinct.values() if claim.facet in saved.facets)
+    counts = Counter(facet for claim in distinct.values() for facet in claim.facets if facet in saved.facets)
     news = [FacetNews(facet=facet, new_claims=counts[facet]) for facet in saved.facets if counts[facet]]
     if not news:
         return None
@@ -117,19 +112,13 @@ async def saved_checks(session: AsyncSession) -> list[SavedCheck]:
 
 async def new_claims(session: AsyncSession, check: SavedCheck) -> list[NewClaim]:
     rows = await session.execute(
-        select(Claim.id, CuratedClaim.discipline, Concept.type)
-        .outerjoin(CuratedClaim, CuratedClaim.claimId == Claim.id)
-        .outerjoin(Concept, and_(Claim.subjectType == CONCEPT_SUBJECT, Concept.id == Claim.subjectId))
-        .where(
+        select(Claim.id, Claim.field, Claim.fields).where(
             *claim_conditions(check.scope, mode=depth_policy(check.saved.depth).mode),
             Claim.evidenceLevel.in_(FACT_LEVELS),
             or_(Claim.createdAt > check.since, _raised_since(check.since)),
         )
     )
-    return [
-        NewClaim(claim_id, claim_facet(discipline, concept_type))
-        for claim_id, discipline, concept_type in rows
-    ]
+    return [NewClaim(claim_id, claim_facets(field, fields)) for claim_id, field, fields in rows]
 
 
 async def recheck_saved(sessions: async_sessionmaker[AsyncSession], *, now: datetime) -> RecheckReport:

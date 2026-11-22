@@ -9,13 +9,13 @@ from app.composer.composer import ModelComposer
 from app.core.db import dispose_engine, session_scope, sessionmaker
 from app.planner.orchestrator import ResearchPlanner
 from app.providers import budget, router
+from app.providers.catalogue import AiTask
 from app.providers.embedding import router_embedder
 from app.providers.structured import router_structured_model
 from app.research.composition import ComposedAnswer
 from app.research.evidence_pack import EvidencePack
 from app.retrieval.hybrid import StoredKnowledgeSearch
-from app.services.ai_providers import AiTask
-from app.services.coverage_enrichment import EnrichmentPipeline, run_coverage_enrichment
+from app.services.coverage_enrichment import EnrichmentPipeline, day_budget_left, run_coverage_enrichment
 from app.services.craft_resolver import CraftIndexStore
 from app.services.live_sources import live_source_client, live_sources
 
@@ -26,8 +26,10 @@ async def spent_since(request_id_prefix: str, since: datetime) -> Decimal:
 
 
 async def run() -> dict[str, Any]:
-    embed = router_embedder()
-    composer = ModelComposer(model=router_structured_model(AiTask.COMPOSE))
+    day_started_at = budget.day_start()
+    left = day_budget_left(spent_since, day_started_at=day_started_at)
+    embed = router_embedder(request_budget_usd=left)
+    composer = ModelComposer(model=router_structured_model(AiTask.COMPOSE, request_budget_usd=left))
 
     async def compose(pack: EvidencePack, question: str) -> ComposedAnswer:
         return await composer.compose(compose_request(pack, question))
@@ -35,7 +37,7 @@ async def run() -> dict[str, Any]:
     try:
         async with live_source_client() as client, sessionmaker()() as reader, sessionmaker()() as writer:
             planner = ResearchPlanner(
-                model=router_structured_model(AiTask.PLAN),
+                model=router_structured_model(AiTask.PLAN, request_budget_usd=left),
                 retriever=StoredKnowledgeSearch(reader, embed=embed),
                 sources=await live_sources(reader, client),
             )
@@ -45,9 +47,9 @@ async def run() -> dict[str, Any]:
                 embed=embed,
                 spent=spent_since,
                 index=CraftIndexStore(),
-                judge=router_structured_model(AiTask.EVAL_JUDGE),
+                judge=router_structured_model(AiTask.EVAL_JUDGE, request_budget_usd=left),
             )
-            report = await run_coverage_enrichment(writer, pipeline, day_started_at=budget.day_start())
+            report = await run_coverage_enrichment(writer, pipeline, day_started_at=day_started_at)
     finally:
         await dispose_engine()
     return report.as_dict()

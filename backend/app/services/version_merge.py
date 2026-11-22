@@ -1,24 +1,42 @@
 from __future__ import annotations
 
+import itertools
+import logging
+import re
 from collections.abc import Mapping, Sequence
+
+from pydantic import TypeAdapter, ValidationError
 
 from app.core.errors import InvalidInput
 from app.research.blocks import BlockBase
 from app.research.citations import SourceRef
-from app.research.explainer import EXPLAINER_SCHEMA_VERSION, Explainer, ExplainerSection
+from app.research.explainer import (
+    EXPLAINER_SCHEMA_VERSION,
+    Block,
+    Explainer,
+    ExplainerSection,
+    with_payload_sentences,
+)
 from app.research.explainer_versions import (
     IMAGES_KIND,
     ExplainerVersionDocument,
     SectionChange,
     VersionMark,
+    block_number,
     version_problems,
 )
+from app.research.sections import block_id
 
 from .explainer_payload import version_document
+from .section_deepening import shown_deepening
 
-__all__ = ["merged_version"]
+__all__ = ["last_section_number", "merged_version", "remerged_version"]
+
+logger = logging.getLogger(__name__)
 
 READY = "READY"
+SECTION_NUMBER = re.compile(r"^s(?P<number>\d+)$")
+BLOCKS = TypeAdapter(Block)
 
 
 def merged_version(base: ExplainerVersionDocument, follow_up: Explainer) -> ExplainerVersionDocument:
@@ -60,6 +78,76 @@ def merged_version(base: ExplainerVersionDocument, follow_up: Explainer) -> Expl
             f"{mark.explainer_id}: {'; '.join(problems)}"
         )
     return version_document(mark, merged)
+
+
+def remerged_version(
+    newer: ExplainerVersionDocument, follow_up: Explainer
+) -> ExplainerVersionDocument | None:
+    try:
+        moved = _moved_onto(newer.explainer, follow_up)
+        return None if moved is None else merged_version(newer, moved)
+    except (InvalidInput, ValidationError) as refused:
+        logger.info(
+            "follow-up %s does not fit version %s of explainer %s: %s",
+            follow_up.answer_id,
+            newer.mark.version,
+            newer.mark.explainer_id,
+            refused,
+        )
+        return None
+
+
+def last_section_number(sections: Sequence[ExplainerSection]) -> int:
+    found = (SECTION_NUMBER.match(section.id) for section in sections)
+    return max((int(match.group("number")) for match in found if match), default=0)
+
+
+def _moved_onto(newer: Explainer, follow_up: Explainer) -> Explainer | None:
+    by_field = {section.discipline: section for section in newer.sections}
+    numbers = itertools.count(last_section_number(newer.sections) + 1)
+    moved: list[ExplainerSection] = []
+    for section in (section for section in follow_up.sections if section.blocks):
+        held = by_field.get(section.discipline)
+        placed = _deepening_of(held, section) if held is not None else _added_as(section, f"s{next(numbers)}")
+        if placed is not None:
+            moved.append(placed)
+    if not moved:
+        return None
+    sections = [_placed(section, order) for order, section in enumerate(moved, 1)]
+    shown = [
+        *([follow_up.lede] if follow_up.lede else []),
+        *(b for section in sections for b in section.blocks),
+    ]
+    sources = _cited_sources(shown, follow_up.sources)
+    return Explainer(**{**dict(follow_up), "sections": sections, "sources": sources})
+
+
+def _deepening_of(held: ExplainerSection, section: ExplainerSection) -> ExplainerSection | None:
+    last = max((block_number(block.id, held.id) for block in held.blocks), default=0)
+    shown = shown_deepening(held.blocks, first_block=last + 1, claims=frozenset())
+    blocks = [block for block in section.blocks if not shown.repeats(block)]
+    if not blocks:
+        return None
+    placed = [_renumbered(block, block_id(held.id, shown.number(n))) for n, block in enumerate(blocks, 1)]
+    return ExplainerSection(**{**dict(held), "state": READY, "searched": None, "blocks": placed})
+
+
+def _added_as(section: ExplainerSection, section_id: str) -> ExplainerSection:
+    placed = [_renumbered(block, block_id(section_id, n)) for n, block in enumerate(section.blocks, 1)]
+    return ExplainerSection(**{**dict(section), "id": section_id, "blocks": placed})
+
+
+def _renumbered(block: Block, new_id: str) -> Block:
+    prefix = f"{block.id}."
+    payload = with_payload_sentences(
+        block.model_dump(mode="json", by_alias=True),
+        lambda sentence: {**sentence, "id": _moved_id(sentence["id"], prefix, f"{new_id}.")},
+    )
+    return BLOCKS.validate_python({**payload, "id": new_id})
+
+
+def _moved_id(value: str, prefix: str, new_prefix: str) -> str:
+    return f"{new_prefix}{value.removeprefix(prefix)}" if value.startswith(prefix) else value
 
 
 def _deepened(section: ExplainerSection, offered: ExplainerSection | None) -> ExplainerSection:

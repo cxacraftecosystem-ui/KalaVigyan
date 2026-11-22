@@ -37,6 +37,7 @@ html,body{margin:0;background:var(--kv-paper)}
 .kv-meta{color:var(--kv-muted);font-size:.8em}
 .kv-body{display:grid;grid-template-columns:minmax(0,1fr);gap:28px;align-items:start}
 .kv-body.kv-pictured{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}
+.kv-body.kv-lede{margin-top:28px}
 .kv-body ul,.kv-list{margin:0;padding-inline-start:1.1em}
 .kv-body li,.kv-list li{margin:0 0 .45em;line-height:1.35;overflow-wrap:anywhere}
 .kv-cite{color:var(--kv-accent);font-size:.7em;white-space:nowrap}
@@ -79,7 +80,7 @@ def _slide(
 ) -> str:
     kind = slide.kind
     if kind == "TITLE":
-        body = f"<h1>{escape(slide.title)}</h1>{_meta(pack)}"
+        body = f"<h1>{escape(slide.title)}</h1>{_meta(pack)}{_opening(slide, refs)}"
     elif kind == "SECTION":
         body = f"<h2>{escape(slide.title)}</h2>{_section(slide, refs, pictures)}"
     elif kind == "QUIZ":
@@ -99,11 +100,19 @@ def _meta(pack: LessonPack) -> str:
     return f'<p class="kv-meta">{escape(" · ".join(part for part in parts if part))}</p>'
 
 
-def _section(slide: Slide, refs: References, pictures: Mapping[uuid.UUID, Picture]) -> str:
-    bullets = "".join(
+def _bullets(slide: Slide, refs: References) -> str:
+    return "".join(
         f'<li>{escape(sentence.text)} <span class="kv-cite">{refs.sentence_marker(sentence)}</span></li>'
         for sentence in slide.bullets
     )
+
+
+def _opening(slide: Slide, refs: References) -> str:
+    return f'<div class="kv-body kv-lede"><ul>{_bullets(slide, refs)}</ul></div>' if slide.bullets else ""
+
+
+def _section(slide: Slide, refs: References, pictures: Mapping[uuid.UUID, Picture]) -> str:
+    bullets = _bullets(slide, refs)
     picture = pictures.get(slide.image.id) if slide.image is not None else None
     if slide.image is None or picture is None:
         return f'<div class="kv-body"><ul>{bullets}</ul></div>'

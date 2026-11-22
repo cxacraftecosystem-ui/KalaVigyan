@@ -18,6 +18,7 @@ from app.research.image_screens import (
     FLAGGED,
     NEAR_BITS,
     UNSCREENED,
+    ScreenTools,
     VisionRequest,
     VisionVerdict,
     screen_reasons,
@@ -28,7 +29,7 @@ from app.research.image_screens import (
 from app.retrieval.field_scope import held_images
 
 from .field_photo_crops import OpenSession, PhotoObjects
-from .image_screens import ScreenTools, nearest_stored
+from .image_screens import nearest_stored
 
 __all__ = ["SCREENS_PER_CALL", "SCREENS_PER_RUN", "PhotoNear", "ScreenReport", "screen_held_photos"]
 

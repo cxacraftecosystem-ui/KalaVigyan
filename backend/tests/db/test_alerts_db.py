@@ -60,7 +60,26 @@ async def test_a_re_check_with_no_new_claims_makes_no_note(db: Seeded) -> None:
 async def test_a_new_claim_on_another_field_makes_no_note(db: Seeded) -> None:
     user, craft, _ = await saved_reader(db)
     await claim_of(db.session, craft, PAST, created_at=NOW)
-    await claim_of(db.session, craft, "MECHANISM", created_at=NOW)
+    await claim_of(db.session, craft, "TRADITION", created_at=NOW)
+    assert (await recheck_saved(db.sessions, now=NOW)).notified == 0
+    assert (await notification_list(db.session, user.id)).unread == 0
+
+
+async def test_a_claim_is_news_in_every_saved_field_it_is_filed_under(db: Seeded) -> None:
+    user, craft, _ = await saved_reader(db)
+    await claim_of(db.session, craft, "MECHANISM", created_at=NOW, filed=("PHYSICS", "CHEMISTRY"))
+    await claim_of(db.session, craft, PAST, created_at=NOW, filed=("HISTORY", "GEOGRAPHY"))
+    assert (await recheck_saved(db.sessions, now=NOW)).notified == 1
+    (note,) = (await notification_list(db.session, user.id)).items
+    assert [(entry.facet, entry.new_claims) for entry in note.payload.news] == [
+        ("GEOGRAPHY", 1),
+        ("CHEMISTRY", 1),
+    ]
+
+
+async def test_a_claim_filed_under_no_field_is_not_news(db: Seeded) -> None:
+    user, craft, _ = await saved_reader(db)
+    await claim_of(db.session, craft, WATER, created_at=NOW, filed=())
     assert (await recheck_saved(db.sessions, now=NOW)).notified == 0
     assert (await notification_list(db.session, user.id)).unread == 0
 

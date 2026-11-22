@@ -6,15 +6,14 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from sqlalchemy import String, and_, case, cast, func, literal, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Claim, Concept, Craft, Term, TermConcept, TermCraft
-from app.research.blocks_learning import CONCEPT_CRAFTS_MAX
+from app.models import Craft, SharedTermCraft, Term
 from app.research.citations import SourceRef
 from app.research.crafts import CraftRef
 from app.research.offered_facts import OfferedFact
-from app.research.retrieval import HIDDEN_CLAIM_STATUSES, OPEN_CHUNK_ACLS, VISIBLE_SENSITIVITY
+from app.research.retrieval import OPEN_CHUNK_ACLS
 from app.research.shared_science import (
     SHARED_SCIENCE_NODES_MAX,
     SharedConcept,
@@ -24,13 +23,12 @@ from app.research.shared_science import (
     shared_concept,
     shared_science,
 )
-from app.research.vocabulary import FACT_LEVELS, LEVEL_ORDER
 
 from . import knowledge_view
 from .learning_facts import offered_fact, source_refs
+from .shared_term_crafts import TermCrafts, stored_term_crafts
 
 __all__ = [
-    "CLAIMS_PER_CONCEPT",
     "SHARED_TERMS_SCANNED",
     "TermOffers",
     "craft_shared_science",
@@ -39,10 +37,8 @@ __all__ = [
     "term_offers",
 ]
 
-CLAIMS_PER_CONCEPT = 3
 SHARED_TERMS_SCANNED = 2 * SHARED_SCIENCE_NODES_MAX
 MERGED = "MERGED"
-CONCEPT_SUBJECT = "CONCEPT"
 
 
 @dataclass(frozen=True)
@@ -54,7 +50,7 @@ class TermOffers:
 async def craft_shared_science(
     session: AsyncSession, craft: Craft, *, acls: Sequence[str] = OPEN_CHUNK_ACLS
 ) -> SharedScience:
-    found = await term_offers(session, await _shared_term_ids(session, craft.id), focus=craft.id, acls=acls)
+    found = await term_offers(session, await _shared_term_ids(session, craft.id), acls=acls)
     return shared_science(
         CraftRef.model_validate(knowledge_view.craft_ref(craft)), found.offers, found.sources
     )
@@ -66,7 +62,7 @@ async def shared_concept_of(
     term_ids = await term_ids_of(session, [term_key])
     if not term_ids:
         return None
-    found = await term_offers(session, term_ids, focus=focus.id if focus is not None else None, acls=acls)
+    found = await term_offers(session, term_ids, acls=acls)
     if not found.offers:
         return None
     return shared_concept(found.offers[0], found.sources, focus=focus.slug if focus is not None else None)
@@ -81,20 +77,16 @@ async def term_ids_of(session: AsyncSession, keys: Sequence[str]) -> list[uuid.U
 
 
 async def term_offers(
-    session: AsyncSession,
-    term_ids: Sequence[uuid.UUID],
-    *,
-    focus: uuid.UUID | None = None,
-    acls: Sequence[str] = OPEN_CHUNK_ACLS,
+    session: AsyncSession, term_ids: Sequence[uuid.UUID], *, acls: Sequence[str] = OPEN_CHUNK_ACLS
 ) -> TermOffers:
     if not term_ids:
         return TermOffers()
     terms = await _terms(session, term_ids)
-    crafts = await _term_crafts(session, term_ids, focus)
-    craft_ids = {craft_id for rows in crafts.values() for craft_id, _ in rows}
-    concepts = await _term_concepts(session, term_ids, craft_ids)
-    claim_ids = await _ranked_claim_ids(session, term_ids, [c for ids in concepts.values() for c in ids])
-    views, sources = await knowledge_view.claims_by_id(session, claim_ids, acls=acls)
+    shared = await stored_term_crafts(session, term_ids)
+    crafts = await _crafts(session, {row.craft_id for row in shared})
+    views, sources = await knowledge_view.claims_by_id(
+        session, [claim_id for row in shared for claim_id in row.claim_ids], acls=acls
+    )
     refs = source_refs(sources)
     facts: dict[uuid.UUID, list[OfferedFact]] = defaultdict(list)
     for view in views.values():
@@ -102,7 +94,7 @@ async def term_offers(
         if fact is not None and view.concept_id is not None:
             facts[view.concept_id].append(fact)
     offers = tuple(
-        _offer(terms[term_id], crafts.get(term_id, []), concepts, facts)
+        _offer(terms[term_id], [row for row in shared if row.term_id == term_id], crafts, facts)
         for term_id in term_ids
         if term_id in terms
     )
@@ -111,16 +103,19 @@ async def term_offers(
 
 def _offer(
     term: Any,
-    crafts: Sequence[tuple[uuid.UUID, CraftRef]],
-    concepts: Mapping[tuple[uuid.UUID, uuid.UUID], Sequence[uuid.UUID]],
+    shared: Sequence[TermCrafts],
+    crafts: Mapping[uuid.UUID, CraftRef],
     facts: Mapping[uuid.UUID, Sequence[OfferedFact]],
 ) -> TermOffer:
-    entries = []
-    for craft_id, craft in crafts:
-        own = tuple(concepts.get((term.id, craft_id), ()))
-        if own:
-            found = tuple(fact for concept_id in own for fact in facts.get(concept_id, ()))
-            entries.append(TermCraftOffer(craft=craft, concept_ids=own, facts=found))
+    entries = [
+        TermCraftOffer(
+            craft=crafts[row.craft_id],
+            concept_ids=row.concept_ids,
+            facts=tuple(fact for concept_id in row.concept_ids for fact in facts.get(concept_id, ())),
+        )
+        for row in shared
+        if row.craft_id in crafts
+    ]
     return TermOffer(
         key=term.key,
         label=term.label,
@@ -130,15 +125,10 @@ def _offer(
 
 
 async def _shared_term_ids(session: AsyncSession, craft_id: uuid.UUID) -> list[uuid.UUID]:
-    others = (
-        select(TermCraft.termId)
-        .join(Craft, Craft.id == TermCraft.craftId)
-        .where(TermCraft.craftId != craft_id, Craft.status != MERGED)
-    )
     rows = await session.scalars(
         select(Term.id)
-        .join(TermCraft, TermCraft.termId == Term.id)
-        .where(TermCraft.craftId == craft_id, Term.id.in_(others))
+        .join(SharedTermCraft, SharedTermCraft.termId == Term.id)
+        .where(SharedTermCraft.craftId == craft_id)
         .order_by(Term.label, Term.key)
         .limit(SHARED_TERMS_SCANNED)
     )
@@ -154,85 +144,10 @@ async def _terms(session: AsyncSession, term_ids: Sequence[uuid.UUID]) -> dict[u
     return {row.id: row for row in rows.all()}
 
 
-async def _term_crafts(
-    session: AsyncSession, term_ids: Sequence[uuid.UUID], focus: uuid.UUID | None
-) -> dict[uuid.UUID, list[tuple[uuid.UUID, CraftRef]]]:
-    first = case((Craft.id == focus, 0), else_=1) if focus is not None else literal(1)
-    numbered = (
-        select(
-            TermCraft.termId.label("term_id"),
-            Craft.id.label("craft_id"),
-            Craft.slug.label("slug"),
-            Craft.name.label("name"),
-            func.row_number()
-            .over(partition_by=TermCraft.termId, order_by=(first, Craft.name, Craft.slug))
-            .label("n"),
-        )
-        .join(Craft, Craft.id == TermCraft.craftId)
-        .where(TermCraft.termId.in_(list(term_ids)), Craft.status != MERGED)
-        .subquery()
-    )
-    rows = await session.execute(
-        select(numbered).where(numbered.c.n <= CONCEPT_CRAFTS_MAX).order_by(numbered.c.term_id, numbered.c.n)
-    )
-    crafts: dict[uuid.UUID, list[tuple[uuid.UUID, CraftRef]]] = defaultdict(list)
-    for row in rows.all():
-        ref = CraftRef(slug=row.slug, name=row.name, path=f"/crafts/{row.slug}")
-        crafts[row.term_id].append((row.craft_id, ref))
-    return crafts
-
-
-async def _term_concepts(
-    session: AsyncSession, term_ids: Sequence[uuid.UUID], craft_ids: set[uuid.UUID]
-) -> dict[tuple[uuid.UUID, uuid.UUID], list[uuid.UUID]]:
+async def _crafts(session: AsyncSession, craft_ids: set[uuid.UUID]) -> dict[uuid.UUID, CraftRef]:
     if not craft_ids:
         return {}
     rows = await session.execute(
-        select(TermConcept.termId, Concept.id, Concept.craftId)
-        .join(Concept, Concept.id == TermConcept.conceptId)
-        .where(
-            TermConcept.termId.in_(list(term_ids)),
-            Concept.craftId.in_(list(craft_ids)),
-            Concept.sensitivity == VISIBLE_SENSITIVITY,
-        )
-        .order_by(TermConcept.termId, Concept.craftId, Concept.name, Concept.id)
+        select(Craft.id, Craft.slug, Craft.name).where(Craft.id.in_(list(craft_ids)), Craft.status != MERGED)
     )
-    concepts: dict[tuple[uuid.UUID, uuid.UUID], list[uuid.UUID]] = defaultdict(list)
-    for row in rows.all():
-        concepts[(row.termId, row.craftId)].append(row.id)
-    return concepts
-
-
-async def _ranked_claim_ids(
-    session: AsyncSession, term_ids: Sequence[uuid.UUID], concept_ids: Sequence[uuid.UUID]
-) -> list[uuid.UUID]:
-    if not concept_ids:
-        return []
-    level_rank = case(dict(LEVEL_ORDER), value=cast(Claim.evidenceLevel, String), else_=len(LEVEL_ORDER))
-    names = case((func.strpos(func.lower(Claim.text), func.lower(Term.label)) > 0, 0), else_=1)
-    numbered = (
-        select(
-            Claim.id.label("claim_id"),
-            func.row_number()
-            .over(
-                partition_by=(TermConcept.termId, Claim.subjectId),
-                order_by=(names, level_rank, Claim.createdAt, Claim.id),
-            )
-            .label("n"),
-        )
-        .join(
-            TermConcept,
-            and_(TermConcept.conceptId == Claim.subjectId, TermConcept.termId.in_(list(term_ids))),
-        )
-        .join(Term, Term.id == TermConcept.termId)
-        .where(
-            Claim.subjectType == CONCEPT_SUBJECT,
-            Claim.subjectId.in_(list(dict.fromkeys(concept_ids))),
-            Claim.status.not_in(HIDDEN_CLAIM_STATUSES),
-            Claim.sensitivity == VISIBLE_SENSITIVITY,
-            Claim.evidenceLevel.in_(FACT_LEVELS),
-        )
-        .subquery()
-    )
-    rows = await session.scalars(select(numbered.c.claim_id).where(numbered.c.n <= CLAIMS_PER_CONCEPT))
-    return list(dict.fromkeys(rows))
+    return {row.id: CraftRef(slug=row.slug, name=row.name, path=f"/crafts/{row.slug}") for row in rows.all()}

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+  <apiMessage>This XML was provided by Springer Nature</apiMessage>
+  <query>doi:10.1007/s00000-026-00001-1</query>
+  <result>
+    <total>1</total>
+    <start>1</start>
+    <pageLength>1</pageLength>
+    <recordsDisplayed>1</recordsDisplayed>
+  </result>
+  <records>
+    <article xmlns:xlink="http://www.w3.org/1999/xlink" article-type="research-article" dtd-version="1.2">
+      <front>
+        <article-meta>
+          <article-id pub-id-type="doi">10.1007/s00000-026-00001-1</article-id>
+          <title-group><article-title>A synthetic article standing in for a recorded Springer Nature response</article-title></title-group>
+          <permissions>
+            <copyright-statement>Synthetic copyright statement</copyright-statement>
+            <license xlink:href="https://www.springernature.com/gp/researchers/text-and-data-mining"><license-p>A synthetic licence paragraph.</license-p></license>
+          </permissions>
+          <abstract id="Abs1"><title>Abstract</title><p id="Par1">A synthetic Springer Nature abstract.</p></abstract>
+        </article-meta>
+      </front>
+      <body>
+        <sec id="Sec1">
+          <title>Background</title>
+          <p id="Par2">Synthetic Springer Nature paragraph one.</p>
+          <fig id="Fig1"><label>Fig. 1</label><caption><p>A synthetic figure caption.</p></caption></fig>
+        </sec>
+      </body>
+      <back><ref-list><ref id="CR1"><mixed-citation>A synthetic reference that is left out.</mixed-citation></ref></ref-list></back>
+    </article>
+  </records>
+</response>

@@ -12,10 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import INDIA_TZ, INDIA_TZ_NAME
 from app.models import QueuedProposal, UsageEvent, User
+from app.providers.catalogue import AiTask
 from app.research.contribution_queue import STREAM_REQUEST_PREFIX, stream_request_id
 from app.research.cost_ledger import CostLedger, LedgerDay, LedgerRange, LedgerTotal
-
-from .ai_providers import AiTask
 
 __all__ = ["SETTLED_OUTCOMES", "cost_ledger", "stream_spend"]
 

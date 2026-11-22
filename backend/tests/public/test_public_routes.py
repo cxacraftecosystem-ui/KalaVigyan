@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any
 
@@ -59,6 +60,7 @@ CLAIM_READS = {
 READER_KEYS = ("email", "userId", "askedBy", "createdById", "ipHash", "passwordHash", "accessToken")
 SUMMARY_CACHE = "public, max-age=86400"
 ROUTE_LIMIT = 5
+MOMENT = datetime(2026, 11, 22, 10, 5, tzinfo=UTC)
 STUDENT = User(id=uuid.UUID(int=7), name="Asha", email="asha@example.com", role="STUDENT")
 RESEARCHER = User(id=uuid.UUID(int=8), name="Ravi", email="ravi@example.com", role="RESEARCHER")
 
@@ -177,14 +179,17 @@ def test_anonymous_reads_are_limited_per_address_and_signed_in_reads_are_not(
     assert reader_client(STUDENT).get("/api/map/crafts").status_code == 200
 
 
-def test_the_limit_counts_each_address_on_its_own() -> None:
+async def test_the_limit_counts_each_address_on_its_own() -> None:
     def visitor(address: str) -> Any:
         return SimpleNamespace(client=SimpleNamespace(host=address), headers={})
 
+    async def read(connection: Any) -> bool:
+        return (await rate_limit.public_read_attempt(connection, now=MOMENT))[0]
+
     first, second = visitor("203.0.113.5"), visitor("198.51.100.7")
-    assert all(rate_limit.public_read_attempt(first)[0] for _ in range(PUBLIC_READS_PER_WINDOW))
-    assert rate_limit.public_read_attempt(first)[0] is False
-    assert rate_limit.public_read_attempt(second)[0] is True
+    assert [await read(first) for _ in range(PUBLIC_READS_PER_WINDOW)] == [True] * PUBLIC_READS_PER_WINDOW
+    assert await read(first) is False
+    assert await read(second) is True
 
 
 @pytest.mark.usefixtures("stored")

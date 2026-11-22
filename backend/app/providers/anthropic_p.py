@@ -3,6 +3,9 @@ from __future__ import annotations
 import logging
 import time
 
+import httpx
+
+from app.core.key_checks import KeyVerdict, checked_get
 from app.core.retry_after import retry_after_of
 
 from .base import Adapter, ChatRequest, ChatResult, ProviderError, format_refused, names_the_format
@@ -10,6 +13,8 @@ from .usage import anthropic_usage
 
 _FORMAT_NEEDLES = ("output_config.format", "json_schema", "schema")
 REASON_CHARS = 300
+MODELS_URL = "https://api.anthropic.com/v1/models"
+API_VERSION = "2023-06-01"
 
 logger = logging.getLogger(__name__)
 
@@ -219,3 +224,9 @@ class AnthropicAdapter(Adapter):
 
     async def aclose(self) -> None:
         await self.client.close()
+
+
+async def check_key(client: httpx.AsyncClient, value: str) -> KeyVerdict:
+    return await checked_get(
+        client, MODELS_URL, headers={"x-api-key": value, "anthropic-version": API_VERSION}
+    )

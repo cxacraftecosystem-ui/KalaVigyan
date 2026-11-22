@@ -228,7 +228,7 @@ async def answers_stream(
     if not can(user, Capability.ASK_STANDARD) or ask.depth not in selectable_depths(user):
         raise HTTPException(status.HTTP_403_FORBIDDEN, refusal_for(Capability.ASK_STANDARD))
     if not is_uncapped(user):
-        refuse_when_throttled(ask_attempt(str(user.id)), THROTTLED_DETAIL)
+        refuse_when_throttled(await ask_attempt(str(user.id)), THROTTLED_DETAIL)
     pipeline = pipelines(ask.depth)
     offers = partial(answer_offers_quiz, sessionmaker(), user_id=user.id)
     return StreamingResponse(

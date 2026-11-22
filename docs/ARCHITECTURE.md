@@ -107,7 +107,7 @@ The diagram is the stack from the top down; the edges that may really be importe
 | entry points | `main.py`, `api/` (`router.py`, `routes/<area>.py`), `scripts/` | the app, the HTTP routes, and the scripts (seeds, sync, coverage job) |
 | voice | `voice/` | voice sessions, the custom-LLM turn, relay turns, the encrypted transcript, daily upkeep, agent provisioning (decision 0017; the call is switched off, decision 0035); Listen: narration of finished explainers with word timings, cached in the media bucket (0035); film mode's score: scenes, fixed prompts, content-addressed clips and a manifest per explainer and language (0058) |
 | media | `media/` | stage illustrations and clips: claim set, prompt, bundle, MP4 and PNG checks, the job routes' steps, the kv-worker queue and its SQL; `worker.py` runs it as kv-worker (decision 0018) |
-| adapters | `providers/` | model adapters, AI router, spend rules, the quota ledger, ElevenLabs |
+| adapters | `providers/` | model adapters and their key checks, the model catalogue, AI router, spend rules and settings, the quota ledger, ElevenLabs |
 | domain | `services/` | crafts, knowledge view, access roster, credentials, keys, routing, live-research write-back and the coverage job (decision 0011) |
 | domain | `schemas/` | request and response bodies, and the science, region, voice and media contracts (decision 0014), which reuse `research/`'s shapes |
 | domain | `science/` | the science engine: formulas, balancing, pint units, stage envelopes, the process view built from stored rows (decision 0015) |
@@ -115,11 +115,11 @@ The diagram is the stack from the top down; the edges that may really be importe
 | planner | `planner/` | plan call, facet coverage, parallel live search across the source adapters, dedupe, reading through the fetcher, open-access copies and cited DOIs into an evidence pack (decision 0009); the understanding step: craft choice, fields, seats (decision 0031) |
 | composer | `composer/` | evidence pack to cited candidates, the COMPOSE call, the per-sentence post-checks, one regenerate (decision 0010) |
 | retrieval | `retrieval/` | stored-knowledge search: craft-scoped claims and chunks, full text and pgvector fused by RRF, chunking and embedding fill |
-| sources | `sources/` | external research sources: paced HTTP, record rules, one adapter per service (`sources/scholarly/`: OpenAlex, Crossref, ...; `sources/reference/`: Wikipedia, Wikidata, PubChem, Commons; `sources/web/`: SearXNG, Brave, the fallback; `sources/images/`: Openverse and the image sources), the fetcher client |
-| fetcher | `fetcher/` | the separate kv-fetcher process: address-pinned https fetch, robots.txt, caps, trafilatura and pypdf extraction (no DB, no AWS) |
+| sources | `sources/` | external research sources: paced HTTP, record rules, one adapter per service (`sources/scholarly/`: OpenAlex, Crossref, ..., Zenodo, the open-copy locator and publisher full text, on one pace shared by every process; `sources/reference/`: Wikipedia, Wikidata, PubChem, Commons; `sources/web/`: SearXNG, Brave, the fallback; `sources/images/`: Openverse and the image sources), the fetcher client |
+| fetcher | `fetcher/` | the separate kv-fetcher process: address-pinned https fetch (one client per host and address per fetch), RFC 9309 robots.txt, caps, trafilatura and pypdf extraction in killable parser processes (no DB, no AWS) |
 | curation | `curation/` | curated craft dossiers: the model, the offline rules, the check file and the index, read by `tools/curation` and the importer; imports `research/`, `models/` and `data/` only (decision 0051) |
 | contracts | `research/` | research and answering types, protocols, post-check rules; the explainer document, blocks, stored pieces and depth by role (decision 0030); dataset rows, rivers, the calendar words, reaction rules and the expert panel (decision 0042) |
-| shared | `core/` | settings, db, security (passwords, tokens, secret keys), roles, deps, logging, rate limits, India time, HTTP revalidation, work shielded from a leaving caller |
+| shared | `core/` | settings, db, security (passwords, tokens, secret keys), the managed key store, roles, deps, logging, rate limits and allowances shared by every process, India time, HTTP revalidation, work shielded from a leaving caller |
 | foundation | `models/`, `data/` | ORM tables; vendored datasets and pure loaders |
 
 The allowed import edges are the table `LAYER_IMPORTS` in `tools/hygiene/layers.py`, listed in
@@ -127,8 +127,10 @@ the project bindings (`.claude/skills/engineering-practices/references/project-b
 The hygiene check fails on any other edge, including late imports inside functions, and on any
 package under `backend/app` that has no row yet. Two placements are deliberate and recorded:
 `core/deps.py` imports `models.User` because the current-user dependency returns the ORM row,
-and `providers/` imports `services/` for the model catalogue, app settings and managed keys
-(decision 0001). `schemas/` imports `research/` so the HTTP contracts reuse its citation, source
+and the provider layer sits below `services/`: the model catalogue is `providers/catalogue`, the
+AI spend settings `providers/spend_settings` and the key store `core/managed_keys`, so services
+call providers (the key checks, the catalogue) and providers read no service (decision 0139,
+which ended decision 0001's `providers -> services` edge). `schemas/` imports `research/` so the HTTP contracts reuse its citation, source
 and sentence shapes (decision 0014). `science/` imports `schemas/` for the process contract's rules; since
 `services/` may not import `schemas/`, `services/craft_process` reads the rows into
 `science/records` and the route hands them to `science/process_view` (decision 0015). `geo/`
@@ -306,12 +308,14 @@ sequenceDiagram
    document is kept in `Answer.payload.explainer` and the plans in `Answer.plan`.
 7. A follow-up (`buildsOn`, decision 0063) is the same flow with a layout
    (`services/follow_ups`): the explainer's crafts, depth and language are kept, a field it has
-   deepens that section (blocks numbered after its own, already-cited sentences and shown kinds
-   left out, never reused from or stored as pieces) and any other field is added after its
-   sections; `builds_on` follows `understood`. `services/version_merge` merges the follow-up into
-   the latest version, `version_problems` must hold, and the merged document is kept on the
-   follow-up's answer with its `VersionMark` (`Answer.explainerId`, `explainerVersion`); `version`
-   precedes `done`. Earlier versions are never rewritten.
+   deepens that section (blocks numbered after its own, already-cited sentences left out, a
+   block it shows already left out by its identity or, for kinds without one, by its kind; never
+   reused from or stored as pieces) and any other field is added after its sections; `builds_on`
+   follows `understood`. `services/version_merge` merges the follow-up into the latest version,
+   `version_problems` must hold, and the merged document is kept on the follow-up's answer with
+   its `VersionMark` (`Answer.explainerId`, `explainerVersion`); `version` precedes `done`. A
+   follow-up that finds the version taken meanwhile is merged again onto the newer one, its
+   blocks renumbered (`services/version_race`). Earlier versions are never rewritten.
 
 ## How a saved explainer gets better (decision 0063)
 
@@ -327,8 +331,9 @@ flowchart LR
 ```
 
 1. A reader saves an explainer (`SavedItem` with its first answer). Every night the last module of
-   the Coverage enrichment job, `app.scripts.recheck_saved`, counts per saved field the craft's
-   fact-level claims created or raised since the last check that the latest version does not cite,
+   the Coverage enrichment job, `app.scripts.recheck_saved`, counts per saved field (each field a
+   claim is filed under) the craft's fact-level claims created or raised since the last check that
+   the latest version does not cite,
    and writes one `ANSWER_IMPROVED` note when any field has news; no model is called.
 2. The note's Update asks a follow-up for the fields with news, as the reader and under the
    reader's caps. On Mondays the **Alert digest** workflow mails opted-in readers their unread
@@ -698,7 +703,8 @@ theirs in `lib/learningContract.ts`, `lib/lessonContract.ts`, `lib/sharedScience
 `lib/quizContract.ts`, `lib/compareContract.ts` and `lib/districtCraftsContract.ts` (decision
 0062). On the server the quiz, compare and the concept graph follow fixed
 rules in `research/quiz.py`, `research/craft_compare.py` and `research/shared_science.py`, read
-their rows through `services/shared_concepts.py` and `services/craft_compare.py`, and reach answers
+their rows through `services/shared_concepts.py` (from the per-term summary that
+`services/shared_term_crafts.py` rebuilds on release and nightly) and `services/craft_compare.py`, and reach answers
 through `services/learning_builders.py` (decision 0064). Local measures and market and GI
 follow fixed rules too: stated quantities, regional factors and prices in
 `research/stated_quantities.py` and `research/stated_prices.py` over the one Pint registry

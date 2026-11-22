@@ -1,0 +1,218 @@
+{
+ "version": "6.9",
+ "hitCount": 1,
+ "request": {
+  "queryString": "EXT_ID:41602741 AND SRC:MED",
+  "internalQuery": "EXT_ID:41602741 AND SRC:MED",
+  "resultType": "CORE",
+  "cursorMark": "*",
+  "pageSize": 1,
+  "sort": "",
+  "synonym": false
+ },
+ "resultList": {
+  "result": [
+   {
+    "id": "41602741",
+    "source": "MED",
+    "pmid": "41602741",
+    "pmcid": "PMC12834052",
+    "fullTextIdList": {
+     "fullTextId": [
+      "PMC12834052"
+     ]
+    },
+    "doi": "10.3762/bjoc.22.10",
+    "title": "A new synthesis of Tyrian purple (6,6'-dibromoindigo) and its corresponding sulfonate salts.",
+    "authorString": "Helmers H, Horton M, Concepcion J, Bjorklund J, Boaz NC.",
+    "authorList": {
+     "author": [
+      {
+       "fullName": "Helmers H",
+       "lastName": "Helmers",
+       "firstName": "Holly",
+       "initials": "H",
+       "authorAffiliationDetailsList": {
+        "authorAffiliation": [
+         {
+          "affiliation": "Department of Chemistry, North Central College, 121 S. Loomis Street, Naperville, IL 60540, USA."
+         }
+        ]
+       }
+      },
+      {
+       "fullName": "Horton M",
+       "lastName": "Horton",
+       "firstName": "Mark",
+       "initials": "M",
+       "authorAffiliationDetailsList": {
+        "authorAffiliation": [
+         {
+          "affiliation": "Department of Chemistry, North Central College, 121 S. Loomis Street, Naperville, IL 60540, USA."
+         }
+        ]
+       }
+      },
+      {
+       "fullName": "Concepcion J",
+       "lastName": "Concepcion",
+       "firstName": "Julie",
+       "initials": "J",
+       "authorAffiliationDetailsList": {
+        "authorAffiliation": [
+         {
+          "affiliation": "Department of Chemistry, North Central College, 121 S. Loomis Street, Naperville, IL 60540, USA."
+         }
+        ]
+       }
+      },
+      {
+       "fullName": "Bjorklund J",
+       "lastName": "Bjorklund",
+       "firstName": "Jeffrey",
+       "initials": "J",
+       "authorId": {
+        "type": "ORCID",
+        "value": "0009-0008-8314-606X"
+       },
+       "authorAffiliationDetailsList": {
+        "authorAffiliation": [
+         {
+          "affiliation": "Department of Chemistry, North Central College, 121 S. Loomis Street, Naperville, IL 60540, USA."
+         }
+        ]
+       }
+      },
+      {
+       "fullName": "Boaz NC",
+       "lastName": "Boaz",
+       "firstName": "Nicholas C",
+       "initials": "NC",
+       "authorId": {
+        "type": "ORCID",
+        "value": "0000-0002-4562-0233"
+       },
+       "authorAffiliationDetailsList": {
+        "authorAffiliation": [
+         {
+          "affiliation": "Department of Chemistry, North Central College, 121 S. Loomis Street, Naperville, IL 60540, USA."
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "authorIdList": {
+     "authorId": [
+      {
+       "type": "ORCID",
+       "value": "0000-0002-4562-0233"
+      },
+      {
+       "type": "ORCID",
+       "value": "0009-0008-8314-606X"
+      }
+     ]
+    },
+    "dataLinksTagsList": {
+     "dataLinkstag": [
+      "supporting_data"
+     ]
+    },
+    "journalInfo": {
+     "volume": "22",
+     "journalIssueId": 4087046,
+     "dateOfPublication": "2026 ",
+     "monthOfPublication": 0,
+     "yearOfPublication": 2026,
+     "journal": {
+      "medlineAbbreviation": "Beilstein J Org Chem",
+      "title": "Beilstein journal of organic chemistry",
+      "essn": "1860-5397",
+      "issn": "1860-5397",
+      "nlmid": "101250746",
+      "isoabbreviation": "Beilstein J Org Chem"
+     },
+     "printPublicationDate": "2026-01-01"
+    },
+    "pubYear": "2026",
+    "pageInfo": "167-174",
+    "abstractText": "6,6'-Dibromoindigo is the major component of a historic pigment, famous since ancient times, known as Tyrian purple. In this work, we report a new strategy for the synthesis of 6,6'-dibromoindigo in four steps from <i>p</i>-bromotoluene in 14.5% overall yield. A key improvement in the reported synthesis is the oxidation of the benzylic methyl group of 4-bromo-2-nitrotoluene to 4-bromo-2-nitrobenzaldehyde, which is accomplished by benzylic bromination followed by a Kornblum oxidation. This gentle oxidation avoids the need for chromium trioxide-mediated or nitrone-based methods. While other published syntheses of 6,6'-dibromoindigo have resulted in higher overall yields, our approach offers the advantages of inexpensive starting reagents, operationally simple reactions, and minimal purification of intermediates. Moreover, this work reports the successful sulfonation of 6,6'-dibromoindigo, producing water-soluble derivatives of this historically relevant dye.",
+    "affiliation": "Department of Chemistry, North Central College, 121 S. Loomis Street, Naperville, IL 60540, USA.",
+    "publicationStatus": "epublish",
+    "language": "eng",
+    "pubModel": "Electronic-eCollection",
+    "pubTypeList": {
+     "pubType": [
+      "research-article",
+      "Journal Article"
+     ]
+    },
+    "keywordList": {
+     "keyword": [
+      "Synthesis",
+      "Sulfonation",
+      "Dye",
+      "Tyrian Purple",
+      "6,6’-Dibromoindigo"
+     ]
+    },
+    "fullTextUrlList": {
+     "fullTextUrl": [
+      {
+       "availability": "Subscription required",
+       "availabilityCode": "S",
+       "documentStyle": "doi",
+       "site": "DOI",
+       "url": "https://doi.org/10.3762/bjoc.22.10"
+      },
+      {
+       "availability": "Open access",
+       "availabilityCode": "OA",
+       "documentStyle": "html",
+       "site": "Europe_PMC",
+       "url": "https://europepmc.org/articles/PMC12834052"
+      },
+      {
+       "availability": "Open access",
+       "availabilityCode": "OA",
+       "documentStyle": "pdf",
+       "site": "Europe_PMC",
+       "url": "https://europepmc.org/articles/PMC12834052?pdf=render"
+      }
+     ]
+    },
+    "isOpenAccess": "Y",
+    "inEPMC": "Y",
+    "inPMC": "Y",
+    "citedByCount": 0,
+    "hasReferences": "Y",
+    "hasTextMinedTerms": "Y",
+    "hasDbCrossReferences": "N",
+    "hasPDF": "Y",
+    "hasBook": "N",
+    "hasSuppl": "Y",
+    "hasLabsLinks": "Y",
+    "hasData": "Y",
+    "license": "cc by",
+    "authMan": "N",
+    "epmcAuthMan": "N",
+    "nihAuthMan": "N",
+    "hasTMAccessionNumbers": "Y",
+    "tmAccessionTypeList": {
+     "accessionType": [
+      "doi"
+     ]
+    },
+    "dateOfCompletion": "2026-01-28",
+    "dateOfCreation": "2026-01-28",
+    "dateOfRevision": "2026-01-31",
+    "electronicPublicationDate": "2026-01-21",
+    "firstPublicationDate": "2026-01-21",
+    "firstIndexDate": "2026-01-29",
+    "fullTextReceivedDate": "2026-01-27",
+    "hasEvaluations": "N"
+   }
+  ]
+ }
+}

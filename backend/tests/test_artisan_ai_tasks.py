@@ -1,4 +1,4 @@
-from app.services.ai_providers import (
+from app.providers.catalogue import (
     DEFAULT_ROUTES,
     PUBLIC_TEXT_TASKS,
     ROUTABLE_TASKS,

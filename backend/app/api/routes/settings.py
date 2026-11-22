@@ -9,9 +9,9 @@ from app.core.deps import require
 from app.core.errors import InvalidInput
 from app.core.roles import Capability
 from app.models import User
+from app.providers.catalogue import ROUTABLE_TASKS, AiTask, catalogue, spec_for, task_of
 from app.schemas.admin import AppSettingsUpdate, RouteOrderUpdate, RouteTestRequest, VoiceSettingsUpdate
 from app.services import app_settings, audit, managed_secrets, route_policy
-from app.services.ai_providers import ROUTABLE_TASKS, AiTask, catalogue, spec_for, task_of
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 

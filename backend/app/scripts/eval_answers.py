@@ -15,12 +15,12 @@ from app.core.shielded import ShieldedWork
 from app.models import Answer
 from app.providers import router
 from app.providers.answer_routes import answer_models
+from app.providers.catalogue import AiTask
 from app.providers.embedding import router_embedder
 from app.providers.router import Principal
 from app.providers.structured import router_structured_model
 from app.research.explainer import Explainer
 from app.research.mcp_ask import ASK_TIMEOUT_SECONDS
-from app.services.ai_providers import AiTask
 from app.services.answer_runs import AnswerRun, answer_to_the_end
 from app.services.answer_store import build_answer_pipeline
 from app.services.answering import AnswerAsk, AnswerPipeline

@@ -1,0 +1,63 @@
+{
+ "batchcomplete": true,
+ "query": {
+  "pages": [
+   {
+    "pageid": 10306665,
+    "ns": 6,
+    "title": "File:Raja Ravi Varma - Sankaracharya.jpg",
+    "imageinfo": [
+     {
+      "extmetadata": {
+       "DateTimeOriginal": {
+        "value": "<span style=\"color:red\">circa १९०४</span><div style=\"display: none;\">date QS:P571,+1904-00-00T00:00:00Z/9,P1480,Q5727902</div>"
+       }
+      }
+     }
+    ]
+   },
+   {
+    "pageid": 13196800,
+    "ns": 6,
+    "title": "File:Raja Ravi Varma, Judith.jpg",
+    "imageinfo": [
+     {
+      "extmetadata": {
+       "DateTimeOriginal": {
+        "value": "जनवरी १८८९<div style=\"display: none;\">date QS:P571,+1889-01-00T00:00:00Z/10</div>"
+       }
+      }
+     }
+    ]
+   },
+   {
+    "pageid": 46924665,
+    "ns": 6,
+    "title": "File:Spittoon (ugaldan) a Bidri ware, Hyderabad, India.jpg",
+    "imageinfo": [
+     {
+      "extmetadata": {
+       "DateTimeOriginal": {
+        "value": "१८५०<div style=\"display: none;\">date QS:P571,+1850-00-00T00:00:00Z/9</div>"
+       }
+      }
+     }
+    ]
+   },
+   {
+    "pageid": 60342338,
+    "ns": 6,
+    "title": "File:KALAMKARI HAND PAINTED CLOTH SRIKALAHASTI AP - panoramio.jpg",
+    "imageinfo": [
+     {
+      "extmetadata": {
+       "DateTimeOriginal": {
+        "value": "Taken on २० जुलाई २०१३"
+       }
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

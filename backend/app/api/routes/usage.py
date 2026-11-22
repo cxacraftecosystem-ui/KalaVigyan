@@ -12,9 +12,9 @@ from app.core.deps import get_current_user, require
 from app.core.roles import ALLOWANCE_RESOURCES, Capability, daily_allowance, is_uncapped
 from app.models import UsageEvent, User
 from app.providers import budget
+from app.providers.catalogue import TASK_LABELS, spec_for, task_of
 from app.providers.router import Principal, current_spend
 from app.services import app_settings
-from app.services.ai_providers import TASK_LABELS, spec_for, task_of
 
 router = APIRouter(prefix="/usage", tags=["usage"])
 

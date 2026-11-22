@@ -8,6 +8,7 @@ Date: 2026-11-16. Status: accepted.
 
 | For | Read |
 |---|---|
+| The provider layer moved below services, so `providers -> services` is gone (amends item 5) | [decision 0139](0139-sources-and-providers-reach-outside-services-once.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context
