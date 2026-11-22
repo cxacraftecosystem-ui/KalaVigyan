@@ -1209,14 +1209,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** serve each reach's districts in the basin file (lane 0043 computes them already)
   and read them instead of testing vertices.
 
-### A map chunk that failed to load stays hidden
-
-- **What:** `lazyBlock` turns a failed import into a block that draws nothing, and `React.lazy`
-  keeps that result, so a dropped connection while the chunk loads hides the map until the page
-  reloads.
-- **Why left:** a retry needs an error boundary per block; the answer is otherwise unaffected.
-- **Clears it:** a per-block error boundary with Try again that re-creates the lazy component.
-
 ## Reaction player, material cards and 3D molecules (decision 0045)
 
 ### The reaction player shows no conditions or reaction energies
@@ -1341,24 +1333,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** the library has no teardown for them, and an explainer draws at most one molecule
   per section.
 - **Clears it:** a 3Dmol.js release with a viewer teardown, called from `MoleculeScene.dispose`.
-
-### The conformer is fetched again on every draw
-
-- **What:** `fetchConformer` goes through `apiFetch`, which never keeps responses, so a molecule
-  drawn again (another answer, a reload) asks the route again, although the route allows a week's
-  private caching.
-- **Why left:** the route serves from the private bucket without calling PubChem, so a repeat
-  costs one small request; `apiFetch`'s only cache opt-in revalidates by ETag, which the route
-  does not send.
-- **Clears it:** the conformer route sending an ETag (the record's hash), then
-  `revalidateFromHttpCache` on the fetch.
-
-### Keyboard readers can turn a molecule but not tilt or zoom it
-
-- **What:** Turn rotates a quarter about the vertical axis; tilting and zooming need a pointer
-  (Explore), because 3Dmol.js reads only mouse, touch and wheel input.
-- **Why left:** the name, formula and record are text; the model is an illustration.
-- **Clears it:** Tilt and Zoom buttons calling the viewer's `rotate` about `x` and `zoom`.
 
 ## Curation tooling (decision 0051)
 
@@ -2387,15 +2361,6 @@ Last reviewed: 2026-11-22.
   one.
 - **Clears it:** each page lane switches to the editorial primitives, deletes `SourceDialog`, the
   replaced components and `onOpen` from `CitationLookup` and `CitationChip`.
-
-### The wordmark generator needs a package the backend environment lacks
-
-- **What:** `tools/brand/wordmark.py` reads the WOFF2 fonts in `frontend/fonts`, which needs
-  `brotli` beside `fontTools` and `uharfbuzz`; the backend virtual environment has the last two
-  only, so the outlines in `frontend/components/brandOutlines.ts` were written from a scratch
-  install.
-- **Why left:** adding a dependency to the backend for a one-off asset was not worth a lock change.
-- **Clears it:** add `brotli` to the tools' development dependencies, or read the fonts from TTF.
 
 ## No caps for now (decision 0093)
 

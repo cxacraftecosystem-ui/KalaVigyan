@@ -25,5 +25,5 @@ export function conformerSdf(value: unknown, pubchemCid: number): string {
 }
 
 export async function fetchConformer(pubchemCid: number): Promise<string> {
-  return conformerSdf(await apiFetch<unknown>(MOLECULE_CONFORMER_PATH(pubchemCid)), pubchemCid);
+  return conformerSdf(await apiFetch<unknown>(MOLECULE_CONFORMER_PATH(pubchemCid), {}, { revalidateFromHttpCache: true }), pubchemCid);
 }
