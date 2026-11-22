@@ -300,8 +300,17 @@ A turn renders a question not in Latin script in English for ranking
 (`answer_translation.english_question`), ranks the pack's claims by the stored hybrid search
 first (lexical, vector and entity rankings fused, the question embedded while the filler plays; a
 claim the pack does not hold is dropped) and by shared word stems after, falling back to the words
-alone when the search fails (decision 0140), composes and checks in English, picks what fits 60 English
-words, translates those sentences with `translated_sentences` (cache, number, formula, unit and script
+alone when the search fails (decision 0140). A `HYBRID` turn asks the same search for stored
+passages under its reader's access (`chunk_acls_for(role)`: a `RESEARCHER` passage only for a
+reader who may read researchers' quotes) and offers at most `PACK_PASSAGES` (3) of those long
+enough to quote as `EVIDENCE` candidates in their own words beside the ranked claims, screened as an
+answer's passages are (one naming another craft or a place abroad, and not the craft asked, is not
+offered). A sentence citing a passage is written back before it is spoken
+(`voice/passage_store.SqlTurnPassages`, `store_live_research` with `foundBy` `VOICE`, filed under
+the concept of the first ranked claim, through the same filing and gates as an answer's): it is
+spoken citing the fact written for it, and a sentence whose passage is refused, held or not written
+in time is not spoken (decision 0144). A `VERIFIED` turn reads no passage. The turn then composes
+and checks in English, picks what fits 60 English words, translates those sentences with `translated_sentences` (cache, number, formula, unit and script
 checks), and caps the spoken text at 60 words in the session language. Source labels stay names; the
 word before them is in the session language. A sentence whose translation fails twice is left out;
 when none translates the reply is `UNSAID_REPLIES` and the turn has no answer. Speech to text gets
@@ -367,6 +376,7 @@ in GitHub Actions secrets and the box `.env` (PLAN 15).
 | Starting a session, its checks in order and the switch | `backend/tests/voice/test_sessions.py` and `test_voice_routes.py` |
 | Session binding and the custom LLM turn | `backend/tests/voice/test_binding.py`, `test_agent_turn.py` and `test_llm_stream.py` |
 | Relay turns and their audio | `backend/tests/voice/test_relay.py`, `test_turns.py` and `test_audio.py` |
+| Passages a hybrid turn offers, under its reader's access, and writes back before it speaks them | `backend/tests/voice/test_turn_passages.py` and `backend/tests/db/test_stored_passages_db.py` |
 | Quota, consent, retention and languages | `backend/tests/voice/test_privacy.py`, `test_upkeep.py`, `test_languages.py` and `test_turn_languages.py` |
 | Listen and the film's score | `backend/tests/voice/test_listen.py`, `test_listen_routes.py`, `test_narration.py`, `test_film_score.py` and `test_film_routes.py` |
 | The store on Postgres | `backend/tests/db/test_voice_store_db.py` and `test_listen_db.py` |

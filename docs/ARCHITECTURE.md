@@ -283,9 +283,10 @@ sequenceDiagram
    kinds take every other early read; decision 0046), searches stored claims (every craft's, for any craft) and, for what they do not cover
    (every facet in `DEEP`), scholarly, reference and web sources, and reads the best documents,
    streaming each source to the trail as it is found and read. The composer (decision 0010) writes
-   the section's cited sentences and chooses process stages (Claude Sonnet first, Gemini next); what
-   was found is kept (`store_live_research`, decision 0011, run as shielded work that finishes
-   even when the learner leaves); the server then builds the section's blocks from stored rows and
+   the section's cited sentences from stored claims, stored passages (decision 0144) and read
+   documents and chooses process stages (Claude Sonnet first, Gemini next); what was found is kept
+   (`store_live_research`, decision 0011, run as shielded work that finishes even when the learner
+   leaves; a sentence citing a stored passage becomes a fact of that passage's source); the server then builds the section's blocks from stored rows and
    stored citations (a process ladder from the science tables, `science/ladder`; a prose block),
    checks each and drops one that fails, marks the glossary terms in each English sentence, and
    sends each block with its sources first, then the section's pictures (decision 0039). A section
@@ -451,7 +452,9 @@ answers 404 and no voice button is drawn. The steps hold when the setting is tru
 3. A turn (`voice/turns.py`) ranks the pack's claims by the stored hybrid search, then by shared
    words, against the scrubbed question (rendered in
    English first when it is not in Latin script), speaks stored claims (`VERIFIED`) or makes one
-   checked `VOICE_TURN` compose (`HYBRID`), translates what it will say into the session language
+   checked `VOICE_TURN` compose (`HYBRID`) from the ranked claims and the stored passages its
+   reader may read, writing back each sentence citing a passage before it is spoken
+   (`voice/passage_store.py`, decision 0144), translates what it will say into the session language
    (`answer_translation.translated_sentences`, decision 0025), and saves the turn to the encrypted
    transcript with an `Answer` row and its seconds in one transaction.
 4. Every day `kv-worker` (`app/worker.py`, `voice/daily_upkeep.py`) closes calls left open, purges

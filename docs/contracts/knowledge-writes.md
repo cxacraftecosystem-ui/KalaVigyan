@@ -660,7 +660,9 @@ Before the gates, a write-back is filed under the craft its sentence or its sour
 sentence, its passing quotes, the passage each quote sits in, then the cited sources' titles,
 and the first that names something decides: a fact goes under the craft researched (or a
 compared one) it names in whole words (its name, aliases, native names or GI place), under
-another catalogued craft it names instead, and nowhere when it names two of the compared crafts,
+another catalogued craft it names instead (by its full name, a longer alias, a native-script
+alias or a one-word alias that is neither an ordinary English word, such as casting, nor a word
+three or more crafts' names share; decision 0144), and nowhere when it names two of the compared crafts,
 several other crafts, or a place outside India or another culture's practice. Only after every
 level does a fact naming nothing go to its craft family's science (the shared concept named as
 the category, which a craft's scope reads, decision 0122) when it is chemistry, physics or
@@ -684,8 +686,23 @@ general sentence found for two families is one fact per family, and its duplicat
 gates and its closed-fact check read that category's facts (`candidate_store.FactSubject` of kind
 `category`, `owner_subject`), not every shared fact. Every other gate is unchanged.
 
-Every write-back goes through `research_write_back.write_through_gates` (round 7): the answer's and
-the coverage enrichment's (`store_live_research`) and the glossary term's
+**Stored passages** (decision 0144). A sentence may cite a stored passage, a passage of a source a
+visible fact already cites, offered to the composer in its own words. Its write-back is a fact of
+that passage's own `Source`, never a new source: the citation's evidence is named from the source
+row (its https address, else its DOI link, its reliability as the grade, its licence and reading
+date), so the writer re-finds that row, and its quote is the span the sentence quotes, checked
+against the stored passage (`PASS`) and linked to the passage that holds it, whose access decides
+who may read it (Citations and their passages, above). It is filed by the same ladder (the
+sentence, its quote, the paragraph of the passage around the quote, the source's title), so a
+passage about another craft files its fact under that craft, and passes the same gates under the
+same `RESEARCH` switch (`IN_REVIEW` under `AUTO`); a source with no https address and no DOI, or
+no reading date, is not cited. Answers offer `PUBLIC` passages only; a hybrid voice turn offers
+those its reader may read, writes back a sentence citing one before it is spoken, with
+`foundBy` `VOICE` and no `answerId` (the turn's `Answer` row is written after it is spoken, and
+lists the fact among its claims).
+
+Every write-back goes through `research_write_back.write_through_gates` (round 7): the answer's, the
+voice turn's and the coverage enrichment's (`store_live_research`) and the glossary term's
 (`term_store.SqlTermStore.write_back`, with no embedder, so the duplicate gate refuses identical
 texts only); no path writes a live-research claim without its checks. The write-backs stored before
 the gates (production showed every write-back of the 14 days to 2026-11-20 as `APPROVED` with no
@@ -698,10 +715,10 @@ and the first 50 with their verdicts, and writes nothing.
 
 **The filing report** (decision 0136). `python -m app.scripts.write_back_filing [--answer <id>]
 [--since <YYYY-MM-DD>]` (`services/write_back_filing_store.filing_report`, the rows and lines in
-`services/write_back_filing`) reads the live-research facts (a `ClaimSource.foundBy` of `ANSWER`
-or `BACKGROUND`, at most 500, oldest first), re-runs today's filing on each fact's statement, its
-passing quotes, the passage of each quote in its stored chunk and its sources' titles, for the
-craft its answer researched (else the craft it is under), and prints one JSON line per fact
+`services/write_back_filing`) reads the live-research facts (a `ClaimSource.foundBy` of `ANSWER`,
+`BACKGROUND` or `VOICE`, at most 500, oldest first), re-runs today's filing on each fact's
+statement, its passing quotes, the passage of each quote in its stored chunk and its sources'
+titles, for the craft its answer researched (else the craft it is under), and prints one JSON line per fact
 (`claim, status, checked, is, would, why, text`: `is` and `would` are `craft:<slug>`,
 `family:<category slug>`, `held:<slug>`, `shared`, `refused` or `unknown`) and a summary line
 (`claims, moves, held, refused, unknown, unchecked` with the ids of the facts that have no
@@ -740,7 +757,7 @@ field, or changes its meaning, is a new schema version.
 | Supplied sources | `backend/tests/db/test_supplied_sources_db.py` |
 | Citations and their passages | `backend/tests/db/test_quote_relinks_db.py` and `test_quote_visibility_db.py` |
 | Pages follow their facts | `backend/tests/db/test_review_queue_refresh_db.py` and `test_page_revalidation_db.py` |
-| The research write-back, and the craft a fact is filed under | `backend/tests/write_back/` (`test_write_back_names.py`, `test_write_back_context.py`, `test_write_back_passages.py`, `test_candidate_titles.py` and `test_write_back_filing_report.py`), `backend/tests/db/test_write_back_audit_db.py`, `test_write_back_report_db.py`, `test_term_write_back_gates_db.py`, `test_write_back_closed_db.py`, `test_held_write_backs_db.py` and `test_write_back_filing_report_db.py` |
+| The research write-back, and the craft a fact is filed under | `backend/tests/write_back/` (`test_write_back_names.py`, `test_write_back_context.py`, `test_write_back_passages.py`, `test_candidate_titles.py`, `test_write_back_filing_report.py`, `test_stored_passages.py` and `test_filing_names.py`), `backend/tests/voice/test_turn_passages.py`, `backend/tests/db/test_stored_passages_db.py`, `test_write_back_audit_db.py`, `test_write_back_report_db.py`, `test_term_write_back_gates_db.py`, `test_write_back_closed_db.py`, `test_held_write_backs_db.py` and `test_write_back_filing_report_db.py` |
 | The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/knowledge-writes.md` byte for byte equal to this file |
 
 Re-read it when a gate, a trust tier, a limit or a proposal kind is added or changed, and copy it to

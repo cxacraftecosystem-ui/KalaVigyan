@@ -192,20 +192,6 @@ Last reviewed: 2026-11-22.
   exposes them; route facet types to the sources that can serve them once the checks show
   which do.
 
-### Stored passages are not composer candidates (decision 0010)
-
-- **What:** a stored passage (T2 `ChunkHit`) other than a field voice is not offered to the
-  composer: a sentence citing one could not be kept, because the write-back
-  (`services/research_write_back.store_live_research` and `write_back_plan`) keeps only read
-  documents and field voices, and the stream's `Citation` names a claim. The other gaps of
-  decision 0010 are cleared: long documents give their best passages, a stored claim is offered
-  with its sources' quotes and names, and the pack lists every searcher asked (decision 0138).
-- **Why left:** keeping such a sentence is a write-back change, and the write-back lane was
-  changing those files in the same round.
-- **Clears it:** the write-back keeps a sentence citing a stored passage as a claim of that
-  passage's source, the way it keeps field voices; then `compose_request` offers stored passages
-  as `EVIDENCE`.
-
 ## Live research write-back (decision 0011)
 
 ### The composer does not yet ask for quote renderings (decisions 0013, 0023, 0139)
@@ -379,19 +365,6 @@ Last reviewed: 2026-11-22.
   `STT_LANGUAGE_CODES` (voice then stops offering it) or try `scribe_v3` with Hindi as a
   `secondary_language_codes` hint; the spike decides whether the agent gets an `agent.language`
   override or one agent per language.
-
-### T2 passages are not offered to a voice turn
-
-- **What:** a voice turn ranks the craft's visible claims by the stored hybrid search (lexical,
-  vector and entity rankings fused, the question embedded while the filler plays) ahead of shared
-  word stems (decision 0140), but no corpus passage (T2 chunk) is a candidate, so a passage that
-  states the answer and is not yet a claim is not spoken.
-- **Why left:** a spoken sentence is cited only through a stored claim, so a passage must be
-  written back as a claim before it can be cited; that write-back belongs to the write-back lane
-  (`services/write_back_*`), which was changing at the same time.
-- **Clears it:** hybrid turns ask the search for passages and offer each as an `EVIDENCE`
-  candidate with its verified quote, and a cited passage is written back (as
-  `services/field_voices_citations` does for field passages) before its sentence is spoken.
 
 ### An agent call cannot be hung up from our side
 

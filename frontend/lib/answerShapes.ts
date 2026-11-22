@@ -43,6 +43,7 @@ export const sourceRefShape: Shape<SourceRef> = object<SourceRef>({
   doi: nullable(text),
   url: nullable(HTTPS_URL),
   publisher: nullable(text),
+  containerTitle: optional(text),
   licence: nullable(text),
   attribution: nullable(text),
   reliability: nullable(oneOf(["A", "B", "C", "D"] as const))

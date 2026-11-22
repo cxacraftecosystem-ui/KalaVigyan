@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
 from app.research.composition import ComposeCandidate, ComposeFocus, ComposeRequest
 from app.research.evidence import SourceDocument
 from app.research.evidence_pack import EvidencePack
 from app.research.field_voices import FIELD_SOURCE_KIND, FIELD_VOICES_ADAPTER
+from app.research.quotes import trivial_quote
 from app.research.reading_style import ReadingStyle
 from app.research.research_summary import ResearchSummary, SearchedQuery
 from app.research.retrieval import ChunkHit, ClaimHit
@@ -17,6 +18,7 @@ from .passages import best_passages, passage_terms
 
 __all__ = [
     "EVIDENCE_LEVEL",
+    "STORED_PASSAGES_ADAPTER",
     "WHOLE_TEXT_MAX_CHARS",
     "ClaimSupport",
     "claim_candidate",
@@ -24,13 +26,18 @@ __all__ = [
     "document_candidate",
     "field_candidate",
     "field_evidence_id",
+    "offered_passages",
+    "passage_candidates",
     "research_summary",
     "stored_claim_candidate",
+    "stored_passage_candidate",
+    "stored_passage_id",
 ]
 
 WHOLE_TEXT_MAX_CHARS = 4000
 EVIDENCE_LEVEL = LABEL_LEVELS["QUOTED"]
 LABEL_MAX_CHARS = 300
+STORED_PASSAGES_ADAPTER = "stored_passages"
 
 
 @dataclass(frozen=True)
@@ -49,7 +56,7 @@ def compose_request(
 ) -> ComposeRequest:
     backing = support or {}
     claims = [claim_candidate(hit, backing.get(hit.claim_id)) for hit in pack.stored.claims]
-    fields = [field_candidate(hit) for hit in pack.stored.chunks if hit.source_kind == FIELD_SOURCE_KIND]
+    passages = passage_candidates(pack.stored.chunks)
     terms = passage_terms(pack.plan)
     documents = [
         candidate for doc in pack.documents if (candidate := document_candidate(doc, terms)) is not None
@@ -57,7 +64,7 @@ def compose_request(
     return ComposeRequest(
         question=question,
         craft=pack.plan.craft,
-        candidates=[*claims, *fields, *documents],
+        candidates=[*claims, *passages, *documents],
         searched=research_summary(pack),
         focus=focus,
         style=style,
@@ -83,8 +90,23 @@ def stored_claim_candidate(
     )
 
 
+def offered_passages(hits: Iterable[ChunkHit]) -> list[ChunkHit]:
+    return [hit for hit in hits if not trivial_quote(hit.text)]
+
+
+def passage_candidates(hits: Iterable[ChunkHit]) -> list[ComposeCandidate]:
+    return [
+        field_candidate(hit) if hit.source_kind == FIELD_SOURCE_KIND else stored_passage_candidate(hit)
+        for hit in offered_passages(hits)
+    ]
+
+
 def field_evidence_id(hit: ChunkHit) -> str:
     return f"{FIELD_VOICES_ADAPTER}:{hit.chunk_id}"
+
+
+def stored_passage_id(hit: ChunkHit) -> str:
+    return f"{STORED_PASSAGES_ADAPTER}:{hit.chunk_id}"
 
 
 def field_candidate(hit: ChunkHit) -> ComposeCandidate:
@@ -93,6 +115,18 @@ def field_candidate(hit: ChunkHit) -> ComposeCandidate:
     )
     return ComposeCandidate(
         id=field_evidence_id(hit),
+        kind="EVIDENCE",
+        text=hit.text,
+        source_label=label[:LABEL_MAX_CHARS],
+        level=EVIDENCE_LEVEL,
+    )
+
+
+def stored_passage_candidate(hit: ChunkHit) -> ComposeCandidate:
+    where = hit.locator or f"passage {hit.ordinal + 1}"
+    label = f"stored passage: {hit.source_title or 'a stored source'}, {where}"
+    return ComposeCandidate(
+        id=stored_passage_id(hit),
         kind="EVIDENCE",
         text=hit.text,
         source_label=label[:LABEL_MAX_CHARS],

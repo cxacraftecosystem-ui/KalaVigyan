@@ -44,7 +44,7 @@ WRITE_BACK_STATUS = "APPROVED"
 DEDUPE_NAMESPACE = "claim-write-back/v2"
 CATEGORY_KEY_PREFIX = "category:"
 KEY_SEPARATOR = "\x1f"
-FOUND_BY = ("ANSWER", "BACKGROUND")
+FOUND_BY = ("ANSWER", "BACKGROUND", "VOICE")
 HELD_REASON_MAX_CHARS = 500
 
 FoundBy = Literal[*FOUND_BY]
@@ -103,7 +103,7 @@ class ClaimWriteBack(ContractModel):
     @model_validator(mode="after")
     def _provenance_is_whole(self) -> Self:
         if (self.found_by == "ANSWER") != (self.answer_id is not None):
-            raise ValueError("an ANSWER write-back names its answer; a BACKGROUND one does not")
+            raise ValueError("an ANSWER write-back names its answer; a BACKGROUND or VOICE one does not")
         if self.label == "QUOTED" and not self.passing_quotes:
             raise ValueError("a QUOTED claim has at least one quote that passed the check")
         if self.value_unit is not None and self.value_num is None:
