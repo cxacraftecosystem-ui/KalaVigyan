@@ -7,10 +7,10 @@ from decimal import Decimal
 
 from app.core.errors import SPEND_REFUSAL_KIND
 from app.providers.base import MediaResult
+from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaAsk, MediaCall
 from app.providers.router import Principal, RouterError
 from app.research.explainer import Explainer
-from app.services.ai_providers import AiTask
 from app.voice.film_score import ScoreAsk, ScoreDeps, ScoreMaker
 
 from ..media.audio_routes import mp3

@@ -9,6 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import get_settings, is_local_db_host
+from app.core.research_gate import ResearchGate, gated_session_class, research_slots
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,7 @@ def build_runtime_database_url(base_url: str) -> RuntimeDatabase:
 
 _engine: AsyncEngine | None = None
 _sessionmaker: async_sessionmaker[AsyncSession] | None = None
+_research_sessionmaker: async_sessionmaker[AsyncSession] | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -113,8 +115,20 @@ async def ping() -> None:
 
 
 async def dispose_engine() -> None:
-    global _engine, _sessionmaker
+    global _engine, _sessionmaker, _research_sessionmaker
     if _engine is not None:
         await _engine.dispose()
     _engine = None
     _sessionmaker = None
+    _research_sessionmaker = None
+
+
+def research_sessionmaker() -> async_sessionmaker[AsyncSession]:
+    global _research_sessionmaker
+    if _research_sessionmaker is None:
+        settings = get_settings()
+        gate = ResearchGate(research_slots(settings.database_pool_size, settings.database_max_overflow))
+        _research_sessionmaker = async_sessionmaker(
+            get_engine(), class_=gated_session_class(gate), expire_on_commit=False, autoflush=False
+        )
+    return _research_sessionmaker

@@ -208,6 +208,7 @@ jobs:
           E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
           E2E_VERCEL_BYPASS: ${{ inputs.base_url && secrets.VERCEL_AUTOMATION_BYPASS_SECRET || '' }}
+          E2E_SIGN_IN_PROBE: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Deploy backend' && '1' || '' }}
         run: npx playwright test -c e2e/release/release.config.ts --project=post-deploy
 
       - name: Say what was read

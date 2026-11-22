@@ -6,7 +6,8 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from app.core.roles import PROFESSOR, RESEARCHER, STUDENT, daily_allowance
+from app.core.daily_allowances import daily_allowance
+from app.core.roles import PROFESSOR, RESEARCHER, STUDENT
 from app.schemas.media import (
     MEDIA_FILE_NAME_PATTERN,
     MEDIA_PROMPT_BANS,

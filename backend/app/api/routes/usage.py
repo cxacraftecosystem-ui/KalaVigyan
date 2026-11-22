@@ -6,10 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import daily_allowances
 from app.core.clock import INDIA_TZ, INDIA_TZ_NAME
 from app.core.db import get_session
 from app.core.deps import get_current_user, require
-from app.core.roles import ALLOWANCE_RESOURCES, Capability, daily_allowance, is_uncapped
+from app.core.roles import ALLOWANCE_RESOURCES, Capability, is_uncapped
 from app.models import UsageEvent, User
 from app.providers import budget
 from app.providers.catalogue import TASK_LABELS, spec_for, task_of
@@ -281,9 +282,10 @@ async def my_usage(
     settings_values = await app_settings.load_all(session)
     ceilings = budget.Ceilings.from_settings(settings_values)
     spend = await current_spend(session, Principal(user_id=user.id, role=user.role))
+    allowances = await daily_allowances.load_daily_allowances(session)
     return {
         "todayUsd": float(spend.user_day_usd),
         "dailyCapUsd": None if is_uncapped(user) else _cap(ceilings.role_cap(user.role)),
-        "allowances": {resource: daily_allowance(user, resource) for resource in ALLOWANCE_RESOURCES},
+        "allowances": {resource: allowances.of(user, resource) for resource in ALLOWANCE_RESOURCES},
         "platformDegraded": budget.past_degrade_mark(ceilings, spend),
     }

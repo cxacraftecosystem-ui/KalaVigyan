@@ -4,8 +4,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
 
+from app.research.citations import SourceRef
 from app.research.crafts import CraftRef
-from app.research.stream import SourceRef
 from app.schemas.region import DATASET_FACETS
 
 __all__ = [

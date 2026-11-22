@@ -11,6 +11,7 @@ Date: 2026-11-17. Status: accepted.
 | What superseded part of it | [0093 No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output](0093-no-caps-for-now.md): its cap values; the code paths stand |
 | The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
 | The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
+| The understanding's own route and the cap of the depth an answer runs at | [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

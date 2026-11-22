@@ -35,6 +35,7 @@ class RacingStore(FakeStore):
         explainer: Explainer | None,
         version: VersionMark | None = None,
         readings: Sequence[Any] = (),
+        steps: Sequence[Any] = (),
     ) -> None:
         if version is not None and version.version <= self.taken:
             self.raced.append(version.version)

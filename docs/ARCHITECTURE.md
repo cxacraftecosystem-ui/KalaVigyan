@@ -250,7 +250,7 @@ sequenceDiagram
    craft resolver (`services/craft_resolver.DatabaseCraftResolver`, decision 0004: the slug when
    the reader picked one, otherwise exact, fuzzy, family and region matching over every craft's
    names, aliases and spellings, and pgvector neighbours when that leaves no clear winner), then
-   one `PLAN` call for the choice among ambiguous candidates, crafts named but not matched, the
+   one call on the `UNDERSTAND` route (decision 0146) for the choice among ambiguous candidates, crafts named but not matched, the
    fields the question touches and the experts to seat. A craft is never required: the best match
    proceeds and the others are offered, nothing found is any craft, and a resolver failure leaves
    the choice to the model's reply (decision 0038). `understood` is the first event; past a set degrade mark Expert runs as Detailed for every role but Master Admin (no mark is set for now, decision 0093).

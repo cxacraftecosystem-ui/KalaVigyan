@@ -9,6 +9,7 @@ from typing import Protocol
 
 from app.core.clock import INDIA_TZ
 from app.core.errors import InvalidInput, Refused
+from app.providers.catalogue import AiTask
 from app.providers.elevenlabs import audio_seconds
 from app.providers.media_router import MediaAsk, MediaCall
 from app.providers.router import Principal
@@ -21,7 +22,6 @@ from app.schemas.film import (
     ScoreLabel,
     ScoreMusic,
 )
-from app.services.ai_providers import AiTask
 from app.services.naming import content_disposition, score_cue_file_name, score_key, score_music_file_name
 
 from .film_scenes import FilmScene, SceneCue, bed_seconds, film_scenes, scene_cues, scenes_hash

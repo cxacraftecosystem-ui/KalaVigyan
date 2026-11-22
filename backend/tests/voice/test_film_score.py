@@ -8,12 +8,12 @@ import pytest
 from app.core.errors import InvalidInput
 from app.providers.base import MediaResult
 from app.providers.budget import SpendState
+from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaCall
 from app.providers.router import RouterError
 from app.research.blocks_play import SimulationBlock
 from app.research.explainer import Explainer
 from app.schemas.film import FilmScore
-from app.services.ai_providers import AiTask
 from app.services.naming import score_key, score_manifest_key
 from app.voice.film_score import ScoreRefused, checked_score_audio, film_score
 from app.voice.score_cache import CLIP_LEAF

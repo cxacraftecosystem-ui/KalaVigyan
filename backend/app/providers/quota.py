@@ -11,8 +11,8 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import daily_allowances
 from app.core.errors import InvalidInput
-from app.core.roles import daily_allowance
 from app.models import QuotaLedger
 from app.models.enums import QUOTA_RESOURCES
 
@@ -40,6 +40,7 @@ class LedgerEntry:
 
 async def used_today(session: AsyncSession, *, user_id: uuid.UUID, resource: str, now: datetime) -> int:
     _known(resource)
+    await daily_allowances.refresh_if_stale(session)
     total = await session.scalar(
         select(func.coalesce(func.sum(QuotaLedger.units), 0)).where(
             QuotaLedger.userId == user_id,
@@ -52,7 +53,7 @@ async def used_today(session: AsyncSession, *, user_id: uuid.UUID, resource: str
 
 def remaining_today(user: Any, resource: str, used: int) -> int | None:
     _known(resource)
-    allowance = daily_allowance(user, resource)
+    allowance = daily_allowances.daily_allowance(user, resource)
     if allowance is None:
         return None
     return max(0, int(allowance) - used)

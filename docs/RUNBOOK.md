@@ -530,7 +530,10 @@ fixture or the category page (`docs/contracts/category-page.md`).
   UTC, and by hand: `gh workflow run post-deploy.yml -R cxacraftecosystem-ui/KalaVigyan -f
   commit=<sha>`. It reads 20 key pages and the public MCP tools, and keeps two issues: `Production is
   not serving main` and `Production pages or MCP tools are failing`, each closed when its check
-  passes.
+  passes. After Deploy backend only (`E2E_SIGN_IN_PROBE`), it also starts one Expert answer with the
+  E2E account, waits for its research to begin, signs in twice beside it and fails when a sign-in
+  takes more than 10 s (`frontend/e2e/release/signInProbe.ts`, decision 0146); it then closes the
+  answer, so the probe spends one partly researched Expert answer per backend deploy.
 - **`/api/version`**: `curl -s https://kalavigyan.vercel.app/api/version` names the commit production
   was built from.
 - **MCP client** (`mcp-client.yml`): the official MCP TypeScript SDK signs in through OAuth (dynamic

@@ -8,8 +8,8 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.models import Claim, ConceptEdge
+from app.research.citations import SourceRef
 from app.research.retrieval import CLAIM_SUBJECT_TYPES, EVERY_CHUNK_ACLS
-from app.research.stream import SourceRef
 
 from .knowledge_view import ClaimView, claims_by_id, source_ref
 

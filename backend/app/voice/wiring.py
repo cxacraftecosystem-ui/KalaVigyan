@@ -6,11 +6,11 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.errors import AppError
+from app.providers.catalogue import AiTask
 from app.providers.embedding import router_embedder
 from app.providers.router import Principal
 from app.providers.structured import router_structured_model
 from app.research.crafts import QUESTION_MAX_CHARS, CraftQuery, CraftRef
-from app.services.ai_providers import AiTask
 from app.services.answer_store import build_answer_translation
 from app.services.craft_resolver import CraftIndexStore, DatabaseCraftResolver
 

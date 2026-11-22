@@ -41,7 +41,7 @@ export type EvidenceKind = "QUOTED" | "INFERRED";
 
 export type AnswerMode = "VERIFIED" | "HYBRID" | "DEEP";
 
-export type AnswerStatusStep = "RESOLVING" | "PLANNING" | "SEARCHING_STORED" | "RESEARCHING" | "READING" | "COMPOSING" | "WRITING_BACK" | "TRANSLATING";
+export type AnswerStatusStep = "PLANNING" | "SEARCHING_STORED" | "RESEARCHING" | "READING" | "COMPOSING" | "WRITING_BACK" | "TRANSLATING";
 
 export type AnswerStatus = { step: AnswerStatusStep; message: string };
 

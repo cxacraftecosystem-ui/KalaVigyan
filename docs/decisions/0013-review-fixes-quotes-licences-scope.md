@@ -10,6 +10,7 @@ Date: 2026-11-16. Status: accepted.
 | For | Read |
 |---|---|
 | The lanes it reviewed | [0012](0012-answer-stream-end-to-end.md) |
+| The figure check reads quantities, number words and element formulas | [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

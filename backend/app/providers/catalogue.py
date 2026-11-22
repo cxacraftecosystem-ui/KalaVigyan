@@ -61,12 +61,15 @@ __all__ = [
     "task_of",
 ]
 
+_PLAN_ROUTES: tuple[tuple[AiProvider, str], ...] = (
+    (AiProvider.GEMINI, "gemini-3.5-flash-lite"),
+    (AiProvider.ANTHROPIC, "claude-haiku-5-5"),
+    (AiProvider.OPENAI, "gpt-6-luna"),
+)
+
 DEFAULT_ROUTES: dict[AiTask, tuple[tuple[AiProvider, str], ...]] = {
-    AiTask.PLAN: (
-        (AiProvider.GEMINI, "gemini-3.5-flash-lite"),
-        (AiProvider.ANTHROPIC, "claude-haiku-5-5"),
-        (AiProvider.OPENAI, "gpt-6-luna"),
-    ),
+    AiTask.PLAN: _PLAN_ROUTES,
+    AiTask.UNDERSTAND: _PLAN_ROUTES,
     AiTask.WEB_READ: (
         (AiProvider.GEMINI, "gemini-3.5-flash-lite"),
         (AiProvider.DEEPSEEK, "deepseek-flash"),

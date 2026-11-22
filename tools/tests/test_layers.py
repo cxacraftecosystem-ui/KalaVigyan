@@ -53,7 +53,7 @@ def test_relative_import_resolves_against_its_package() -> None:
 
 
 def test_schemas_reuse_research_shapes_but_not_models() -> None:
-    assert check("backend/app/schemas/science.py", "from app.research.stream import Citation\n") == []
+    assert check("backend/app/schemas/science.py", "from app.research.citations import Citation\n") == []
     found = check("backend/app/schemas/science.py", "from app.models.enums import STAGE_TYPES\n")
     assert found == [
         "backend/app/schemas/science.py:1: schemas imports app.models.enums (schemas may not import models)"

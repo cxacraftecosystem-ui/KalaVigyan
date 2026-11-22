@@ -9,9 +9,9 @@ from typing import Literal, Self
 from pydantic import Field, model_validator
 
 from app.research.base import ContractModel
+from app.research.citations import SourceRef
 from app.research.crafts import CraftRef
 from app.research.datasets import BOUNDARY_CAPTION, BOUNDARY_DATASET_CODE, INDIA_OUTLINE_CAPTION, DatasetRef
-from app.research.stream import SourceRef
 from app.research.vocabulary import EnvStat, EvidenceLevel
 
 __all__ = [

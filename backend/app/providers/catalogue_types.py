@@ -66,6 +66,7 @@ class AiTask(StrEnum):
     INTERVIEW = "INTERVIEW"
     TESTIMONY = "TESTIMONY"
     RERANK = "RERANK"
+    UNDERSTAND = "UNDERSTAND"
 
 
 TEXT_TASKS = frozenset({AiTask.PROOFREAD, AiTask.EXPAND, AiTask.SUMMARISE, AiTask.TRANSLATE})
@@ -73,6 +74,7 @@ TEXT_AND_VISION = TEXT_TASKS | {AiTask.CAPTION}
 RESEARCH_TEXT_TASKS = frozenset(
     {
         AiTask.PLAN,
+        AiTask.UNDERSTAND,
         AiTask.COMPOSE,
         AiTask.WEB_READ,
         AiTask.EXTRACT,
@@ -94,7 +96,8 @@ TASK_LABELS: dict[AiTask, str] = {
     AiTask.TRANSLATE: "Translate",
     AiTask.TRANSCRIBE: "Transcribe",
     AiTask.CAPTION: "Caption",
-    AiTask.PLAN: "Plan and craft choice",
+    AiTask.PLAN: "Plan research",
+    AiTask.UNDERSTAND: "Understand the question",
     AiTask.COMPOSE: "Compose answers",
     AiTask.WEB_READ: "Read web pages",
     AiTask.EXTRACT: "Extract claims",

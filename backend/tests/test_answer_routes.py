@@ -76,13 +76,14 @@ async def test_each_answer_model_runs_its_task_with_its_tuning(monkeypatch: pyte
     monkeypatch.setattr(router, "run", run)
     principal, optional = router.Principal(role="ADMIN"), router.Principal(role="ADMIN")
     models = answer_models("EXPERT", principal=principal, optional=optional)
-    for model in (models.compose, models.builder_compose, models.explainer, models.plan):
+    for model in (models.compose, models.builder_compose, models.explainer, models.plan, models.understand):
         await model(system="s", user="u", schema={"type": "object"})
     assert seen == [
         (AiTask.COMPOSE, COMPOSE_TUNINGS["EXPERT"]),
         (AiTask.COMPOSE, BUILDER_TUNING),
         (AiTask.COMPOSE, EXPLAINER_TUNINGS["EXPERT"]),
         (AiTask.PLAN, None),
+        (AiTask.UNDERSTAND, None),
     ]
 
 

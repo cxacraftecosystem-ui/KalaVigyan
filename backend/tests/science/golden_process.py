@@ -16,8 +16,8 @@ from app.models import (
     Source,
     StageMaterial,
 )
+from app.research.citations import Citation, SourceRef
 from app.research.crafts import CraftRef
-from app.research.stream import Citation, SourceRef
 from app.science.reactions import SpeciesProposal, check_reaction
 from app.science.records import (
     ConditionRecord,

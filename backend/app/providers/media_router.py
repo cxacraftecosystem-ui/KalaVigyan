@@ -28,6 +28,7 @@ from .router import (
     order_routes,
     reserve,
     settle,
+    settle_abandoned,
 )
 
 __all__ = ["PRICE_DRIFT_LIMIT", "VIDEO_POLL_SECONDS", "MediaAsk", "MediaCall", "MediaRouter", "media_cost"]
@@ -165,7 +166,8 @@ class MediaRouter:
             await self._settle_failure(event_id, choice, key, failure)
             raise
         except BaseException:
-            await asyncio.shield(self._settle_abandoned(event_id, _estimate(choice, ask, overrides)))
+            estimate = _estimate(choice, ask, overrides)
+            await settle_abandoned(self._sessions, event_id, estimate, answer=ask.principal.answer)
             raise
         finally:
             if adapter is not None:
@@ -215,10 +217,6 @@ class MediaRouter:
             )
             if failure.kind == "auth":
                 await mark_key_failed(session, choice.key_name, key, str(failure))
-
-    async def _settle_abandoned(self, event_id: uuid.UUID, estimate: Decimal) -> None:
-        async with self._sessions() as session:
-            await settle(session, event_id, outcome="CANCELLED", cost_usd=estimate, error_kind="abandoned")
 
 
 def media_cost(

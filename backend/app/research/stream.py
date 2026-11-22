@@ -5,7 +5,7 @@ import contextlib
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 from types import MappingProxyType
-from typing import Annotated, Any, Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
@@ -13,7 +13,6 @@ from app.core.errors import InvalidInput
 
 from .base import ContractModel, absent
 from .citations import AnswerSentence, Citation, SourceRef
-from .crafts import MAX_CANDIDATES, CraftRef
 from .explainer import EXPLAINER_EVENTS
 from .explainer_versions import VERSION_EVENTS
 from .vocabulary import ShownLevel
@@ -23,22 +22,14 @@ __all__ = [
     "HEARTBEAT_SECONDS",
     "STATUS_STEPS",
     "STREAM_EVENTS",
-    "AnswerSentence",
-    "Citation",
     "DoneEvent",
     "Emit",
     "ErrorEvent",
     "FollowUpsEvent",
-    "MatchAmbiguous",
-    "MatchNone",
-    "MatchResolved",
     "NotEnoughEvidenceEvent",
     "OpenQuestionEvent",
     "ReactionEvent",
     "ResearchProgress",
-    "SectionEvent",
-    "SentenceEvent",
-    "SourceRef",
     "StatusEvent",
     "StatusStep",
     "event_frame",
@@ -50,7 +41,6 @@ __all__ = [
 HEARTBEAT_SECONDS = 60
 HEARTBEAT_FRAME = ": keep-alive\n\n"
 STATUS_STEPS = (
-    "RESOLVING",
     "PLANNING",
     "SEARCHING_STORED",
     "RESEARCHING",
@@ -65,34 +55,9 @@ ResearchProgress = Callable[[StatusStep, int], Awaitable[None]]
 Emit = Callable[[str, Any], Awaitable[None]]
 
 
-class MatchResolved(ContractModel):
-    status: Literal["RESOLVED"]
-    craft: CraftRef
-
-
-class MatchAmbiguous(ContractModel):
-    status: Literal["AMBIGUOUS"]
-    candidates: list[CraftRef] = Field(min_length=1, max_length=MAX_CANDIDATES)
-
-
-class MatchNone(ContractModel):
-    status: Literal["NONE"]
-
-
 class StatusEvent(ContractModel):
     step: StatusStep
     message: str = Field(min_length=1, max_length=300)
-
-
-class SectionEvent(ContractModel):
-    id: str = Field(min_length=1)
-    heading: str = Field(min_length=1)
-    original: str | None = Field(default=None, min_length=1, exclude_if=absent)
-
-
-class SentenceEvent(ContractModel):
-    section_id: str = Field(min_length=1)
-    sentence: AnswerSentence
 
 
 class OpenQuestionEvent(ContractModel):
@@ -128,15 +93,10 @@ class NotEnoughEvidenceEvent(ContractModel):
     message: str = Field(min_length=1)
 
 
-MatchEvent = Annotated[MatchResolved | MatchAmbiguous | MatchNone, Field(discriminator="status")]
-
 STREAM_EVENTS: Mapping[str, TypeAdapter[Any]] = MappingProxyType(
     {
-        "match": TypeAdapter(MatchEvent),
         "status": TypeAdapter(StatusEvent),
         "source": TypeAdapter(SourceRef),
-        "section": TypeAdapter(SectionEvent),
-        "sentence": TypeAdapter(SentenceEvent),
         "open_question": TypeAdapter(OpenQuestionEvent),
         "reaction": TypeAdapter(ReactionEvent),
         "follow_ups": TypeAdapter(FollowUpsEvent),

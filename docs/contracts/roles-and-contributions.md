@@ -376,7 +376,7 @@ gives the reasons.
 | Setting | Artisan |
 |---|---|
 | default depth | `BASIC` (`ROLE_DEFAULT_DEPTHS`); every depth selectable |
-| daily allowances (`DAILY_ALLOWANCES`, `QuotaPolicy`) | none: the owner's direction of 2026-11-18 sets no caps for now on anyone, in money or tokens; spend is still recorded |
+| daily allowances (`QuotaPolicy.perDay`, read by `core/daily_allowances` and set on the AI budget screen, decision 0146) | none: the owner's direction of 2026-11-18 sets no caps for now on anyone, in money or tokens; spend is still recorded |
 | daily AI spend (`AI_ROLE_DAILY_USD`) | none: the owner's direction of 2026-11-18 sets no caps for now on anyone, in money or tokens; spend is still recorded |
 | two-step verification | not required |
 | who admits, changes and suspends Artisans | Professor and above (`assignable_roles`, `may_manage_target`) |
@@ -1165,7 +1165,8 @@ when it was written (the field voices lane's). The lead re-chains it at integrat
 5. **`KnowledgePiece.readingStyle`**: varchar(16), null, checked against the styles.
 6. **No caps for artisans.** The owner's direction of 2026-11-18 sets no caps for now, so no
    `QuotaPolicy` row is added, and the `AI_ROLE_DAILY_USD` setting gains an `ARTISAN` key set to null
-   (no cap) where absent, as `DEFAULTS` and `DAILY_ALLOWANCES` say, so artisans never fall back to
+   (no cap) where absent, as `DEFAULTS` says, and a role without a `QuotaPolicy` row has no allowance
+  (`core/daily_allowances`, decision 0146), so artisans never fall back to
    the Student limits.
 7. **`ConsentRecord.withdrawnAt`** (timestamptz null).
 8. **No route rows.** The default routes of `INTERVIEW` (as `VOICE_TURN`) and `TESTIMONY` (as

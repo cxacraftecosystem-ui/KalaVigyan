@@ -5,9 +5,9 @@ from typing import Any
 
 from app.core.config import get_settings
 from app.core.db import dispose_engine, sessionmaker
+from app.providers.catalogue import AiTask
 from app.providers.structured import router_structured_model
 from app.services import mailer
-from app.services.ai_providers import AiTask
 from app.services.alert_digest import send_alert_digests
 from app.services.answer_store import build_answer_translation
 

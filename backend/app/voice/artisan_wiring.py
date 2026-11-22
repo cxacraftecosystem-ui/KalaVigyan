@@ -9,10 +9,10 @@ from datetime import UTC, datetime
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.shielded import ShieldedWork
+from app.providers.catalogue import AiTask
 from app.providers.router import Principal
 from app.providers.structured import router_structured_model
 from app.research.structured import StructuredModel
-from app.services.ai_providers import AiTask
 from app.services.craft_resolver import CraftIndexStore
 
 from .artisan_extract import extract_contributions

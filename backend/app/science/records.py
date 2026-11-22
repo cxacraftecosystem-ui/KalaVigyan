@@ -4,8 +4,8 @@ import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass
 
+from app.research.citations import Citation, SourceRef
 from app.research.crafts import CraftRef
-from app.research.stream import Citation, SourceRef
 
 __all__ = [
     "CompoundRecord",

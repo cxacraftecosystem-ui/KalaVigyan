@@ -10,7 +10,7 @@ from math import ceil
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.reading_deps import PROFILE_REQUIRED_DETAIL
-from app.core.db import sessionmaker
+from app.core.db import research_sessionmaker
 from app.core.deps import (
     PASSWORD_CHANGE_REQUIRED_DETAIL,
     TWO_FACTOR_SETUP_REQUIRED_DETAIL,
@@ -71,7 +71,7 @@ def answer_pipeline_for(
     principal = Principal(user_id=user.id, role=user.role, answer=spend)
     optional = Principal(user_id=user.id, role=user.role, answer=spend.headroom())
     return build_answer_pipeline(
-        sessions=sessionmaker(),
+        sessions=research_sessionmaker(),
         index=index,
         live=live,
         models=answer_models(depth, principal=principal, optional=optional),

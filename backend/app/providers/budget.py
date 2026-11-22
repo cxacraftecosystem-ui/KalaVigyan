@@ -98,6 +98,9 @@ class AnswerSpend:
             return None
         return cap - self.held_usd - self.spent_usd
 
+    def follow(self, depth: str) -> None:
+        self.depth = depth
+
     def hold(self, amount: Decimal) -> None:
         self.held_usd += amount
 

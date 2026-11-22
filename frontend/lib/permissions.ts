@@ -162,6 +162,7 @@ export const ROUTE_GUARDS: RouteGuard[] = [
   { path: "/admin", ...ADMIN_GUARD },
   { path: "/admin/keys", ...MASTER_ADMIN_GUARD },
   { path: "/admin/routing", ...MASTER_ADMIN_GUARD },
+  { path: "/admin/budget", ...MASTER_ADMIN_GUARD, gate: "require(MANAGE_CEILINGS)" },
   { path: "/admin/usage", ...ADMIN_GUARD, can: canReadUsage, gate: "require_view_usage" },
   { path: "/admin/users", ...PROFESSOR_GUARD },
   { path: "/admin/access", ...PROFESSOR_GUARD, gate: "require_access_roster_manager" },
