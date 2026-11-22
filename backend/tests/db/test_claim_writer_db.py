@@ -27,6 +27,7 @@ from app.services.answering import AnswerAsk
 from app.services.candidate_writes import checks_of
 from app.services.claim_writer import SqlClaimWriter, write_back_claim_id
 from app.services.coverage_selection import least_covered_crafts
+from app.services.craft_resolver import CraftIndexStore
 from app.services.knowledge_view import claims_for
 from app.services.live_source_store import keep_document, live_source_id
 from app.services.research_write_back import sentence_claim_ids, store_live_research
@@ -40,6 +41,7 @@ from .write_back_seed import (
     ALUM_CONCEPT,
     ANSWER,
     CRAFT,
+    FIGURE_KEY,
     FIGURE_QUOTE,
     FIGURE_TEXT,
     IMPORTED,
@@ -101,7 +103,7 @@ async def test_a_write_back_keeps_each_read_document_and_embeds_only_the_cited_o
 
 async def test_a_write_back_stores_a_cited_claim_with_its_provenance(session: AsyncSession) -> None:
     stored = await write(session, answer(said(FIGURE_TEXT, ABSTRACT_ID, FIGURE_QUOTE)))
-    claim_id = expected_claim_id("mordant baths held 8 g/l alum and were heated to 60 °c")
+    claim_id = expected_claim_id(FIGURE_KEY)
     assert [(r.claim_id, r.created) for r in stored.results] == [(claim_id, True)]
     claim = await session.get(Claim, claim_id)
     assert (claim.subjectType, claim.subjectId, claim.evidenceLevel) == (
@@ -271,7 +273,7 @@ async def test_an_answer_keeps_its_research_and_cites_what_it_wrote(session: Asy
     ask = AnswerAsk(question="Why does alum keep Zelvar red?", depth="DETAILED")
     composed = answer(said(FIGURE_TEXT, ABSTRACT_ID, FIGURE_QUOTE))
     answer_id, claims_of = await kept_answer(store, ask, composed)
-    claim_id = expected_claim_id("mordant baths held 8 g/l alum and were heated to 60 °c")
+    claim_id = expected_claim_id(FIGURE_KEY)
     assert claims_of == ((claim_id,),)
     row = await session.get(Answer, answer_id)
     assert (row.question, row.mode, row.craftId, row.claimIds) == (ask.question, "HYBRID", CRAFT, [claim_id])
@@ -311,7 +313,7 @@ async def test_verified_answers_read_only_reviewed_and_verified_claims(session: 
     )
     verified = await store.stored_claims(ZELVAR.slug, "alum", "VERIFIED")
     hybrid = await store.stored_claims(ZELVAR.slug, "alum", "HYBRID")
-    claim_id = expected_claim_id("mordant baths held 8 g/l alum and were heated to 60 °c")
+    claim_id = expected_claim_id(FIGURE_KEY)
     assert claim_id not in verified.views
     assert claim_id in hybrid.views
 
@@ -323,9 +325,10 @@ async def test_research_for_any_craft_writes_its_claims_on_shared_concepts(sessi
         answer(said(FIGURE_TEXT, ABSTRACT_ID, FIGURE_QUOTE)),
         embed=FixedEmbedder(),
         found_by="ANSWER",
+        index=CraftIndexStore(),
         answer_id=ANSWER,
     )
-    claim_id = expected_claim_id("mordant baths held 8 g/l alum and were heated to 60 °c", craft_slug="")
+    claim_id = expected_claim_id(FIGURE_KEY, craft_slug="")
     assert [(result.claim_id, result.created) for result in stored.results] == [(claim_id, True)]
     claim = await session.get(Claim, claim_id)
     concept = await session.get(Concept, claim.subjectId)
@@ -372,10 +375,7 @@ async def test_research_that_repeats_a_held_fact_is_refused_and_its_sentence_kee
     composed = answer(said(FIGURE_TEXT, ABSTRACT_ID, FIGURE_QUOTE))
     stored = await write(session, composed)
     assert stored.results == ()
-    assert (
-        await session.get(Claim, expected_claim_id("mordant baths held 8 g/l alum and were heated to 60 °c"))
-        is None
-    )
+    assert await session.get(Claim, expected_claim_id(FIGURE_KEY)) is None
     (skipped,) = stored.skipped
     assert skipped.reason.startswith("refused at the DUPLICATE gate: the same statement is already held")
     assert sentence_claim_ids(composed, stored) == ((),)

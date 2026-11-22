@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Chunk, ClaimSource, Source
 from app.research.quotes import quote_key
 from app.research.retrieval import OPEN_CHUNK_ACLS, PUBLIC_CHUNK_ACL
+from app.research.storable import storable_text
 
 from .citation_access import FAILED_QUOTE, readable_citation
 from .quote_passages import Holding, QuotePassages, source_passages
@@ -98,7 +99,7 @@ class _KeptQuotes:
                 sourceId=self._source.id,
                 ordinal=self._ordinal + len(self.chunks),
                 locator=locator,
-                text=cite.quote,
+                text=storable_text(cite.quote),
                 lang=self._lang,
                 acl=PUBLIC_CHUNK_ACL,
                 sensitivity=self._source.sensitivity,

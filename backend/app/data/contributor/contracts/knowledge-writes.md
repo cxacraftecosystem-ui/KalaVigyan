@@ -652,6 +652,17 @@ the reason `fact <id> says the same and review closed it as <status>; research n
 closed fact back`, before any judge is asked. It gains no citation and is never shown instead.
 Statements are embedded once per write-back, for the closed-fact check and the later gates both.
 
+Before the gates, a write-back is filed under the craft it names (decision 0135, research.md,
+The writer and the coverage job): under a craft only when its text, else a passing quote, names
+that craft in whole words (its name, aliases, native names or GI place); under another
+catalogued craft it names instead; under its craft family's science (the shared concept named
+as the category, which a craft's scope reads, decision 0122) when it names no craft and no
+place and is chemistry, physics or materials; and not at all when it is about a place outside
+India or another culture's practice, or names no craft otherwise. A sentence so refused is in
+the write-back's `skipped` list with its reason, which the answer's write-back logs. Every
+other gate is unchanged. The text the write-back stores is storable text
+(`research/storable.storable_text`).
+
 Every write-back goes through `research_write_back.write_through_gates` (round 7): the answer's and
 the coverage enrichment's (`store_live_research`) and the glossary term's
 (`term_store.SqlTermStore.write_back`, with no embedder, so the duplicate gate refuses identical
@@ -697,7 +708,7 @@ field, or changes its meaning, is a new schema version.
 | Supplied sources | `backend/tests/db/test_supplied_sources_db.py` |
 | Citations and their passages | `backend/tests/db/test_quote_relinks_db.py` and `test_quote_visibility_db.py` |
 | Pages follow their facts | `backend/tests/db/test_review_queue_refresh_db.py` and `test_page_revalidation_db.py` |
-| The research write-back | `backend/tests/write_back/`, `backend/tests/db/test_write_back_audit_db.py`, `test_write_back_report_db.py`, `test_term_write_back_gates_db.py` and `test_write_back_closed_db.py` |
+| The research write-back, and the craft a fact is filed under | `backend/tests/write_back/` (`test_write_back_names.py`), `backend/tests/db/test_write_back_audit_db.py`, `test_write_back_report_db.py`, `test_term_write_back_gates_db.py` and `test_write_back_closed_db.py` |
 | The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/knowledge-writes.md` byte for byte equal to this file |
 
 Re-read it when a gate, a trust tier, a limit or a proposal kind is added or changed, and copy it to

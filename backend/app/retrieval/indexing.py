@@ -22,6 +22,7 @@ from app.research.retrieval import (
     RESTRICTED_SENSITIVITY,
     VISIBLE_SENSITIVITY,
 )
+from app.research.storable import storable_text
 
 from .chunking import TextChunk, chunk_text
 from .citation_links import cited_quotes, relink_quotes
@@ -196,21 +197,22 @@ def _over(deadline: Deadline | None) -> bool:
 def _apply(
     session: AsyncSession, chunk: Chunk | None, piece: TextChunk, *, source: Source, lang: str, acl: str
 ) -> None:
+    text = storable_text(piece.text)
     if chunk is None:
         session.add(
             Chunk(
                 sourceId=source.id,
                 ordinal=piece.ordinal,
                 locator=piece.locator,
-                text=piece.text,
+                text=text,
                 lang=lang,
                 acl=acl,
                 sensitivity=source.sensitivity,
             )
         )
         return
-    if chunk.text != piece.text:
-        chunk.text = piece.text
+    if chunk.text != text:
+        chunk.text = text
         chunk.embedding = None
     chunk.locator = piece.locator
     chunk.lang = lang

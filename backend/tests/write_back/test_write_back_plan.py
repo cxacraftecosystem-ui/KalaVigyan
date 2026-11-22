@@ -20,12 +20,13 @@ from ..composer.fixtures import (
     sentence,
 )
 from ..planner.fakes import FakeModel
+from .names import AJRAKH_NAMES, names_for
 
 ANSWER_ID = uuid.UUID("0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9")
 ABSTRACT_ID = "crossref:10.1000/lake"
 PAGE_ID = "searxng:https://crafts.example.org/ajrakh"
 FIGURE_QUOTE = "Mordanting baths of 8 g/L alum were heated to 60 °C"
-FIGURE_TEXT = "Mordant baths held 8 g/L alum and were heated to 60 °C."
+FIGURE_TEXT = "Ajrakh mordant baths held 8 g/L alum and were heated to 60 °C."
 WASH_QUOTE = "the lake withstood 20 washes"
 
 
@@ -57,6 +58,7 @@ def test_a_quoted_sentence_becomes_a_provisional_claim_on_its_facet() -> None:
         composed(cited(FIGURE_TEXT, (ABSTRACT_ID, FIGURE_QUOTE))),
         found_by="ANSWER",
         answer_id=ANSWER_ID,
+        names=AJRAKH_NAMES,
     )
     assert plan.skipped == ()
     (claim,) = plan.claims
@@ -76,7 +78,7 @@ def test_a_quoted_sentence_becomes_a_provisional_claim_on_its_facet() -> None:
     assert citation.quote == Quote(text=FIGURE_QUOTE)
     assert (citation.quote_check, citation.relation) == ("PASS", "DIRECT")
     assert citation.evidence.quotes == [Quote(text=FIGURE_QUOTE)]
-    assert claim.dedupe_key == expected_key("mordant baths held 8 g/l alum and were heated to 60 °c")
+    assert claim.dedupe_key == expected_key("ajrakh mordant baths held 8 g/l alum and were heated to 60 °c")
 
 
 def test_a_reader_quote_keeps_its_locator_and_is_not_added_twice() -> None:
@@ -85,6 +87,7 @@ def test_a_reader_quote_keeps_its_locator_and_is_not_added_twice() -> None:
         composed(cited("Ajrakh red survived 20 washes.", (PAGE_ID, WASH_QUOTE))),
         found_by="BACKGROUND",
         answer_id=None,
+        names=AJRAKH_NAMES,
     )
     (claim,) = plan.claims
     (citation,) = claim.citations
@@ -99,7 +102,9 @@ def test_sentences_on_stored_claims_only_are_not_written_again() -> None:
         (str(ALUM_CLAIM_ID), "Alum is the mordant that binds"),
         claims=(ALUM_CLAIM_ID,),
     )
-    plan = write_back_plan(pack(), composed(stored), found_by="ANSWER", answer_id=ANSWER_ID)
+    plan = write_back_plan(
+        pack(), composed(stored), found_by="ANSWER", answer_id=ANSWER_ID, names=AJRAKH_NAMES
+    )
     assert plan.claims == ()
     assert [(s.text, s.reason) for s in plan.skipped] == [
         ("Alum binds alizarin.", "cites stored claims only")
@@ -113,7 +118,9 @@ def test_a_sentence_citing_a_stored_fact_beside_a_live_page_is_not_written_with_
         (PAGE_ID, WASH_QUOTE),
         claims=(ALUM_CLAIM_ID,),
     )
-    plan = write_back_plan(pack(), composed(pooled), found_by="ANSWER", answer_id=ANSWER_ID)
+    plan = write_back_plan(
+        pack(), composed(pooled), found_by="ANSWER", answer_id=ANSWER_ID, names=AJRAKH_NAMES
+    )
     assert plan.claims == ()
     assert [skipped.reason for skipped in plan.skipped] == [SKIP_BESIDE_STORED]
     assert plan.sentence_keys == (None,)
@@ -123,7 +130,9 @@ def test_an_open_question_is_written_as_a_model_inference() -> None:
     guess = cited(
         "Washing may matter as much as the mordant.", (PAGE_ID, "fastness rose with mordant strength")
     )
-    plan = write_back_plan(pack(), composed(open_questions=(guess,)), found_by="ANSWER", answer_id=ANSWER_ID)
+    plan = write_back_plan(
+        pack(), composed(open_questions=(guess,)), found_by="ANSWER", answer_id=ANSWER_ID, names=AJRAKH_NAMES
+    )
     (claim,) = plan.claims
     assert (claim.label, claim.evidence_level, claim.level_reason) == (
         "INFERRED",
@@ -141,7 +150,9 @@ def test_an_open_question_on_a_stored_hypothesis_and_a_page_is_not_written() -> 
         (PAGE_ID, "fastness rose with mordant strength"),
         claims=(GUESS_CLAIM_ID,),
     )
-    plan = write_back_plan(pack(), composed(open_questions=(guess,)), found_by="ANSWER", answer_id=ANSWER_ID)
+    plan = write_back_plan(
+        pack(), composed(open_questions=(guess,)), found_by="ANSWER", answer_id=ANSWER_ID, names=AJRAKH_NAMES
+    )
     assert (plan.claims, [skipped.reason for skipped in plan.skipped]) == ((), [SKIP_BESIDE_STORED])
 
 
@@ -154,7 +165,9 @@ def test_a_quote_that_does_not_carry_the_sentence_is_contextual_and_the_claim_in
             QuotedSpan(ref=PAGE_ID, text="this phrase is not in the page"),
         ],
     )
-    (claim,) = write_back_plan(pack(), composed(sentence_), found_by="ANSWER", answer_id=ANSWER_ID).claims
+    (claim,) = write_back_plan(
+        pack(), composed(sentence_), found_by="ANSWER", answer_id=ANSWER_ID, names=AJRAKH_NAMES
+    ).claims
     assert claim.label == "INFERRED"
     assert [(c.evidence.id, c.quote_check, c.relation) for c in claim.citations] == [
         (ABSTRACT_ID, "PASS", "CONTEXTUAL"),
@@ -168,7 +181,9 @@ def test_quotes_that_carry_a_sentence_only_together_are_each_contextual() -> Non
         (ABSTRACT_ID, FIGURE_QUOTE),
         (PAGE_ID, WASH_QUOTE),
     )
-    (claim,) = write_back_plan(pack(), composed(both), found_by="ANSWER", answer_id=ANSWER_ID).claims
+    (claim,) = write_back_plan(
+        pack(), composed(both), found_by="ANSWER", answer_id=ANSWER_ID, names=AJRAKH_NAMES
+    ).claims
     assert claim.label == "QUOTED"
     assert [(c.evidence.id, c.quote_check, c.relation) for c in claim.citations] == [
         (ABSTRACT_ID, "PASS", "CONTEXTUAL"),
@@ -178,7 +193,9 @@ def test_quotes_that_carry_a_sentence_only_together_are_each_contextual() -> Non
 
 def test_a_figure_without_a_passing_quote_is_skipped_with_the_reason() -> None:
     unquoted = cited("The bath was heated to 90 °C.", (ABSTRACT_ID, "red lake with aluminium ions"))
-    plan = write_back_plan(pack(), composed(unquoted), found_by="ANSWER", answer_id=ANSWER_ID)
+    plan = write_back_plan(
+        pack(), composed(unquoted), found_by="ANSWER", answer_id=ANSWER_ID, names=AJRAKH_NAMES
+    )
     assert plan.claims == ()
     (skipped,) = plan.skipped
     assert skipped.reason.startswith("breaks the write-back contract")
@@ -190,7 +207,9 @@ def test_a_sentence_with_personal_data_is_skipped_with_the_reason() -> None:
         "Ask dyer@example.org how alizarin forms a red lake.",
         (ABSTRACT_ID, "Alizarin forms an insoluble red lake"),
     )
-    plan = write_back_plan(pack(), composed(contact), found_by="ANSWER", answer_id=ANSWER_ID)
+    plan = write_back_plan(
+        pack(), composed(contact), found_by="ANSWER", answer_id=ANSWER_ID, names=AJRAKH_NAMES
+    )
     assert plan.claims == ()
     (skipped,) = plan.skipped
     assert skipped.reason.startswith("breaks the write-back contract")
@@ -200,7 +219,9 @@ def test_a_sentence_with_personal_data_is_skipped_with_the_reason() -> None:
 def test_the_same_claim_twice_is_one_write_back_with_both_citations() -> None:
     first = cited("Alizarin forms a red lake.", (ABSTRACT_ID, "Alizarin forms an insoluble red lake"))
     second = cited("alizarin forms a  red lake", (PAGE_ID, WASH_QUOTE))
-    (claim,) = write_back_plan(pack(), composed(first, second), found_by="ANSWER", answer_id=ANSWER_ID).claims
+    (claim,) = write_back_plan(
+        pack(), composed(first, second), found_by="ANSWER", answer_id=ANSWER_ID, names=AJRAKH_NAMES
+    ).claims
     assert [c.evidence.id for c in claim.citations] == [ABSTRACT_ID, PAGE_ID]
 
 
@@ -218,7 +239,7 @@ async def test_composer_output_feeds_the_write_back_contract() -> None:
         )
     )
     result = await ModelComposer(model=FakeModel([reply])).compose(compose_request(pack(), QUESTION))
-    plan = write_back_plan(pack(), result, found_by="ANSWER", answer_id=ANSWER_ID)
+    plan = write_back_plan(pack(), result, found_by="ANSWER", answer_id=ANSWER_ID, names=AJRAKH_NAMES)
     (claim,) = plan.claims
     assert ClaimWriteBack.model_validate(claim.model_dump()) == claim
     assert claim.passing_quotes == [FIGURE_QUOTE]
@@ -234,6 +255,7 @@ def test_research_for_any_craft_writes_claims_that_name_no_craft() -> None:
         composed(cited(FIGURE_TEXT, (ABSTRACT_ID, FIGURE_QUOTE))),
         found_by="ANSWER",
         answer_id=ANSWER_ID,
+        names=names_for(None),
     )
     (claim,) = plan.claims
     assert claim.craft_slug is None

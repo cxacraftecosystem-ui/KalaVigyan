@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from app.core.errors import ExternalFailure, InvalidInput
 from app.research.evidence import SEARCH_MAX_K, EvidenceItem, SearchQuery, SourceDocument
 from app.research.fetcher import FETCH_TEXT_MAX_CHARS
+from app.research.storable import storable_text
 from app.research.vocabulary import LiveTier
 
 from .http import SourceHttp
@@ -103,11 +104,12 @@ def native_id(adapter: str, item_id: str) -> str:
 def build_document(
     item: EvidenceItem, text: str, content: DocumentContent, *, truncated: bool = False
 ) -> SourceDocument:
-    kept = text[:FETCH_TEXT_MAX_CHARS]
+    storable = storable_text(text)
+    kept = storable[:FETCH_TEXT_MAX_CHARS]
     return SourceDocument(
         item=item,
         text=kept,
         text_sha256=hashlib.sha256(kept.encode("utf-8")).hexdigest(),
-        truncated=truncated or len(text) > FETCH_TEXT_MAX_CHARS,
+        truncated=truncated or len(storable) > FETCH_TEXT_MAX_CHARS,
         content=content,
     )

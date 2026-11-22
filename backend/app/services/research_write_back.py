@@ -22,9 +22,11 @@ from app.retrieval.indexing import EmbeddedCounts, embed_written
 
 from .claim_pages import refresh_claim_pages
 from .claim_writer import SqlClaimWriter
+from .craft_resolver import CraftIndexStore
 from .field_voices_citations import field_documents
 from .live_source_store import keep_document
 from .write_back_gates import gate_write_back, record_write_back_runs, research_placement
+from .write_back_names import filing_names
 from .write_back_plan import SkippedSentence, composed_sentences, write_back_plan
 
 __all__ = [
@@ -42,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 NOTHING_EMBEDDED = EmbeddedCounts(claims=0, chunks=0)
 COMPARED_KEY = "compared"
+SKIPPED_SHOWN_CHARS = 160
 
 
 @dataclass(frozen=True)
@@ -78,18 +81,21 @@ async def store_live_research(
     *,
     embed: TextEmbedder,
     found_by: FoundBy,
+    index: CraftIndexStore,
     answer_id: uuid.UUID | None = None,
     judge: StructuredModel | None = None,
 ) -> StoredResearch:
     kept = {document.item.id: await keep_document(session, document) for document in pack.documents}
     fields = await field_documents(session, pack)
     compared = await compared_crafts(session, answer_id)
+    names = await filing_names(session, index, pack.plan.craft, compared)
     plan = write_back_plan(
-        pack, answer, found_by=found_by, answer_id=answer_id, field_documents=fields, compared=compared
+        pack, answer, found_by=found_by, answer_id=answer_id, names=names, field_documents=fields
     )
     written = await write_through_gates(
         session, plan.claims, _documents(pack, fields), embed=embed, judge=judge
     )
+    _log_skipped(answer_id, (*plan.skipped, *written.skipped))
     await session.commit()
     await refresh_claim_pages(session, shown_results(written.results, live=written.live))
     cited = cited_source_ids(written.claims, kept)
@@ -145,6 +151,14 @@ def cited_source_ids(
 
 def shown_results(results: Sequence[WriteBackResult], *, live: bool) -> list[uuid.UUID]:
     return [result.claim_id for result in results if live or not result.created]
+
+
+def _log_skipped(answer_id: uuid.UUID | None, skipped: Sequence[SkippedSentence]) -> None:
+    writer = f"answer {answer_id}" if answer_id is not None else "the coverage job"
+    for sentence in skipped:
+        logger.info(
+            "%s wrote no fact for '%s': %s", writer, sentence.text[:SKIPPED_SHOWN_CHARS], sentence.reason
+        )
 
 
 def _documents(pack: EvidencePack, fields: Mapping[str, SourceDocument]) -> dict[str, SourceDocument]:

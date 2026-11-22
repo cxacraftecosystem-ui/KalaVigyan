@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import select
@@ -10,6 +11,7 @@ from app.research.explainer import Explainer
 from app.research.explainer_versions import BuildsOn, ExplainerVersionDocument
 from app.research.sections import AnswerPlans
 from app.services.answer_store import SqlAnswerStore
+from app.services.craft_resolver import CraftIndexStore
 from app.services.explainer_history import (
     StaleVersion,
     UnknownExplainer,
@@ -57,9 +59,10 @@ async def stored_follow_up(db: Seeded, user_id: uuid.UUID, version: ExplainerVer
         Answer(id=version.mark.answer_id, userId=user_id, question=version.mark.question, mode="DEEP")
     )
     await db.session.commit()
-    store = SqlAnswerStore(db.sessions, embed=FixedEmbedder(), shield=ShieldedWork())
+    store = SqlAnswerStore(db.sessions, embed=FixedEmbedder(), shield=ShieldedWork(), index=CraftIndexStore())
     await store.finish(
         version.mark.answer_id,
+        asked_at=datetime.now(UTC),
         plans=NO_PLANS,
         claim_ids=[],
         explainer=version.explainer,

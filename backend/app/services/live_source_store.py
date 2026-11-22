@@ -14,6 +14,7 @@ from app.models import Chunk, Source
 from app.research.evidence import EvidenceItem, SourceDocument, canonical_url
 from app.research.licences import open_licence
 from app.research.retrieval import PUBLIC_CHUNK_ACL, RESEARCHER_CHUNK_ACL
+from app.research.storable import storable_text
 from app.research.write_back import WRITE_BACK_ORIGIN
 from app.retrieval.indexing import replace_source_chunks
 from app.retrieval.quote_passages import source_passages
@@ -59,19 +60,19 @@ def source_values(item: EvidenceItem, document: SourceDocument | None = None) ->
     return {
         "id": live_source_id(item.source_key),
         "kind": item.source_type,
-        "title": item.title,
-        "authors": list(item.authors),
+        "title": storable_text(item.title),
+        "authors": [storable_text(author) for author in item.authors],
         "year": int(item.published[:4]) if item.published else None,
         "doi": item.doi,
         "url": item.url,
-        "publisher": item.publisher,
-        "licence": item.licence,
+        "publisher": _storable_or_none(item.publisher),
+        "licence": _storable_or_none(item.licence),
         "reliability": item.trust,
         "storage": CONTENT_STORAGE[document.content] if document else LINK_ONLY,
         "sha256": document.text_sha256 if document else None,
         "retrievedAt": item.retrieved_at,
         "origin": WRITE_BACK_ORIGIN,
-        "attribution": item.attribution,
+        "attribution": _storable_or_none(item.attribution),
         "externalIds": {**item.external_ids, EVIDENCE_ID_KEY: item.id},
     }
 
@@ -133,6 +134,10 @@ def _replaces(source: Source, document: SourceDocument) -> bool:
     if source.origin != WRITE_BACK_ORIGIN:
         return full_text
     return full_text or source.storage != FULL_TEXT
+
+
+def _storable_or_none(text: str | None) -> str | None:
+    return None if text is None else storable_text(text)
 
 
 async def _has_chunks(session: AsyncSession, source_id: uuid.UUID) -> bool:

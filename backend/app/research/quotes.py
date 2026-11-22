@@ -4,6 +4,8 @@ import re
 import unicodedata
 from collections.abc import Iterable
 
+from .storable import storable_text
+
 __all__ = [
     "QUOTE_MIN_CHARS",
     "QUOTE_OVERLAP_MIN",
@@ -107,7 +109,7 @@ STOP_WORDS = frozenset(
 
 
 def normalise_quote_lines(text: str) -> list[str]:
-    folded = unicodedata.normalize("NFKC", text).replace(SOFT_HYPHEN, "")
+    folded = unicodedata.normalize("NFKC", storable_text(text)).replace(SOFT_HYPHEN, "")
     joined = LINE_BREAK_HYPHEN.sub(r"\1\2", folded).translate(TYPOGRAPHIC)
     return [line for line in (WHITESPACE.sub(" ", raw).strip() for raw in joined.splitlines()) if line]
 

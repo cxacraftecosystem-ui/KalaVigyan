@@ -1,6 +1,6 @@
 import uuid
 from collections.abc import AsyncIterator
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -64,7 +64,12 @@ async def test_a_finished_answer_keeps_its_verdict_its_fields_and_its_craft(sess
     await session.flush()
     readings = [FieldReading("CHEMISTRY", 1, claim_ids=(FAILED,)), FieldReading("HISTORY", 4)]
     await answer_store(session).finish(
-        answer, plans=AnswerPlans(sections=[]), claim_ids=[FAILED], explainer=None, readings=readings
+        answer,
+        asked_at=datetime.now(UTC),
+        plans=AnswerPlans(sections=[]),
+        claim_ids=[FAILED],
+        explainer=None,
+        readings=readings,
     )
     verdict = await session.scalar(select(AnswerVerdict).where(AnswerVerdict.answerId == answer))
     assert verdict is not None

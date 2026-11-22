@@ -8,6 +8,7 @@ from app.core.errors import ExternalFailure
 from app.models import Chunk, Claim, Source
 from app.retrieval.indexing import replace_source_chunks
 from app.services.answering import AnswerAsk
+from app.services.craft_resolver import CraftIndexStore
 from app.services.research_write_back import store_live_research
 
 from ..craft_fixtures import FixedEmbedder
@@ -15,6 +16,7 @@ from .write_back_seed import (
     ABSTRACT_ID,
     ALUM_CONCEPT,
     ANSWER,
+    FIGURE_KEY,
     FIGURE_QUOTE,
     FIGURE_TEXT,
     ZELVAR,
@@ -65,6 +67,7 @@ async def test_a_write_back_embeds_only_the_rows_it_wrote(session: AsyncSession)
         answer(said(FIGURE_TEXT, ABSTRACT_ID, FIGURE_QUOTE)),
         embed=embedder,
         found_by="ANSWER",
+        index=CraftIndexStore(),
         answer_id=ANSWER,
     )
     assert stored.embedded.claims == 1
@@ -85,9 +88,10 @@ async def test_a_failed_embedding_keeps_the_written_claims_for_later(session: As
         answer(said(FIGURE_TEXT, ABSTRACT_ID, FIGURE_QUOTE)),
         embed=FailingEmbedder(),
         found_by="ANSWER",
+        index=CraftIndexStore(),
         answer_id=ANSWER,
     )
-    claim_id = expected_claim_id("mordant baths held 8 g/l alum and were heated to 60 °c")
+    claim_id = expected_claim_id(FIGURE_KEY)
     assert [(r.claim_id, r.created) for r in stored.results] == [(claim_id, True)]
     assert (stored.embedded.claims, stored.embedded.chunks) == (0, 0)
     assert stored.embedding_error == "embedding route timed out"
@@ -102,7 +106,7 @@ async def test_stored_answers_rank_by_any_word_of_the_question(session: AsyncSes
         AnswerAsk(question="Why alum?", depth="DETAILED"),
         answer(said(FIGURE_TEXT, ABSTRACT_ID, FIGURE_QUOTE)),
     )
-    claim_id = expected_claim_id("mordant baths held 8 g/l alum and were heated to 60 °c")
+    claim_id = expected_claim_id(FIGURE_KEY)
     found = await store.stored_claims(ZELVAR.slug, "alum quixotically", "HYBRID")
     assert found.views[claim_id].rank > 0
     quiet = await store.stored_claims("Zelvar-Quiet", "alum", "HYBRID")

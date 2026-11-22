@@ -215,3 +215,12 @@ def alias_norm(text: Any) -> str:
 def alias_lang(text: Any) -> str | None:
     script = script_of(text)
     return "en" if script == "Latn" else SCRIPT_LANG.get(script)
+
+
+def key_phrases(key: str, max_tokens: int) -> list[str]:
+    tokens = key.split()
+    return [
+        " ".join(tokens[start:end])
+        for start in range(len(tokens))
+        for end in range(start + 1, min(len(tokens), start + max_tokens) + 1)
+    ]

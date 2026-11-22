@@ -2,26 +2,23 @@ import uuid
 
 import pytest
 
+from app.core.errors import InvalidInput
 from app.research.composition import ComposedAnswer, ComposedSection, ComposedSentence, QuotedSpan
-from app.research.crafts import CraftRef
 from app.research.evidence_pack import EvidencePack, PackedEvidence
 from app.research.planning import Facet, FacetCoverage
 from app.research.sections import DISCIPLINE_TITLES
-from app.services.write_back_crafts import SKIP_SEVERAL_CRAFTS, named_crafts
+from app.services.write_back_crafts import SKIP_ABROAD, SKIP_SEVERAL_CRAFTS
+from app.services.write_back_names import CraftNames
 from app.services.write_back_plan import section_discipline, write_back_plan
 from app.sources.adapter import build_document
 
 from ..composer.fixtures import ABSTRACT, ABSTRACT_ITEM, PLAN, pack
 from ..research.fixtures import AJRAKH, evidence_item
+from .names import AJRAKH_NAMES, BAGH, KHURJA, TEXTILE_FAMILY, names_for
 
 ANSWER_ID = uuid.UUID("5e1d2c3b-4a5e-4f60-8b71-2c3d4e5f6a71")
 FIGURE_QUOTE = "Mordanting baths of 8 g/L alum were heated to 60 °C"
-FIGURE_TEXT = "Mordant baths held 8 g/L alum and were heated to 60 °C."
-BAGH = CraftRef(
-    slug="Bagh-Prints-of-Madhya-Pradesh",
-    name="Bagh Prints of Madhya Pradesh",
-    path="/crafts/Bagh-Prints-of-Madhya-Pradesh",
-)
+FIGURE_TEXT = "Ajrakh mordant baths held 8 g/L alum and were heated to 60 °C."
 BAGH_PAGE = "https://crafts.example.org/bagh/dhawdi"
 BAGH_TEXT = (
     "In Bagh, printers boil the cloth with dhawdi flowers to brighten the red. "
@@ -66,8 +63,8 @@ def said(text: str, ref: str, span: str) -> ComposedSentence:
     return ComposedSentence(text=text, evidence_ids=[ref], spans=[QuotedSpan(ref=ref, text=span)])
 
 
-def written(evidence: EvidencePack, composed: ComposedAnswer, compared: tuple[CraftRef, ...] = ()):
-    return write_back_plan(evidence, composed, found_by="ANSWER", answer_id=ANSWER_ID, compared=compared)
+def written(evidence: EvidencePack, composed: ComposedAnswer, names: CraftNames = AJRAKH_NAMES):
+    return write_back_plan(evidence, composed, found_by="ANSWER", answer_id=ANSWER_ID, names=names)
 
 
 def test_a_section_heading_names_its_discipline() -> None:
@@ -117,13 +114,18 @@ def test_a_sentence_naming_a_compared_craft_is_filed_under_that_craft() -> None:
         BAGH_ITEM.id,
         "printers boil the cloth with dhawdi flowers",
     )
-    (claim,) = written(bagh_pack(), under("Materials", sentence), compared=(BAGH,)).claims
+    (claim,) = written(bagh_pack(), under("Materials", sentence), names_for(AJRAKH, (BAGH,))).claims
     assert claim.craft_slug == BAGH.slug
-    (alone,) = written(bagh_pack(), under("Materials", sentence)).claims
-    assert alone.craft_slug == AJRAKH.slug
+    by_name = said(
+        "Bagh print makers boil the cloth with dhawdi flowers.",
+        BAGH_ITEM.id,
+        "printers boil the cloth with dhawdi flowers",
+    )
+    (alone,) = written(bagh_pack(), under("Materials", by_name)).claims
+    assert alone.craft_slug == BAGH.slug
 
 
-def test_a_sentence_naming_two_compared_crafts_is_skipped_and_one_naming_none_stays_with_the_lead() -> None:
+def test_a_sentence_naming_two_compared_crafts_is_skipped_and_one_naming_none_goes_to_the_family() -> None:
     both = said(
         "Ajrakh and Bagh printers both mordant the cloth with alum.",
         BAGH_ITEM.id,
@@ -134,13 +136,33 @@ def test_a_sentence_naming_two_compared_crafts_is_skipped_and_one_naming_none_st
         BAGH_ITEM.id,
         "printers mordant the cloth with alum before the madder bath",
     )
-    plan = written(bagh_pack(), under("Materials", both, plain), compared=(BAGH,))
+    plan = written(bagh_pack(), under("Materials", both, plain), names_for(AJRAKH, (BAGH,)))
     assert [skipped.reason for skipped in plan.skipped] == [SKIP_SEVERAL_CRAFTS]
-    assert [claim.craft_slug for claim in plan.claims] == [AJRAKH.slug]
+    (claim,) = plan.claims
+    assert (claim.craft_slug, claim.field) == (None, "MATERIALS")
+    assert (claim.subject.concept_type, claim.subject.concept_name) == ("PROPERTY", TEXTILE_FAMILY)
 
 
-def test_a_craft_is_named_by_a_word_of_its_own_name_that_few_crafts_share() -> None:
-    crafts = [AJRAKH, BAGH]
-    assert named_crafts("Bagh printers boil the cloth.", crafts) == [BAGH]
-    assert named_crafts("In Kutch the print is washed in Madhya's rivers.", crafts) == [BAGH]
-    assert named_crafts("The print is washed in Pradesh rivers of Kutch.", crafts) == []
+def test_family_science_is_filed_under_the_family_concept_of_its_field() -> None:
+    sentence = said("Mordant baths held 8 g/L alum and were heated to 60 °C.", ABSTRACT_ITEM.id, FIGURE_QUOTE)
+    (claim,) = written(pack(), under("The chemistry", sentence)).claims
+    assert (claim.craft_slug, claim.stored_field) == (None, "CHEMISTRY")
+    assert (claim.subject.concept_type, claim.subject.concept_name) == ("MECHANISM", TEXTILE_FAMILY)
+
+
+def test_a_sentence_about_a_place_abroad_is_skipped_with_the_reason() -> None:
+    sentence = said(
+        "In Persian practice, mordant baths held 8 g/L alum and were heated to 60 °C.",
+        ABSTRACT_ITEM.id,
+        FIGURE_QUOTE,
+    )
+    plan = written(pack(), under("Materials", sentence))
+    assert plan.claims == ()
+    assert [skipped.reason for skipped in plan.skipped] == [SKIP_ABROAD.format(places="Persian")]
+
+
+def test_names_for_another_craft_than_the_research_s_are_refused() -> None:
+    with pytest.raises(InvalidInput, match="Khurja-Pottery"):
+        written(
+            pack(), under("Materials", said(FIGURE_TEXT, ABSTRACT_ITEM.id, FIGURE_QUOTE)), names_for(KHURJA)
+        )

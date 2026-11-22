@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, replace
 from types import MappingProxyType
 
 from pydantic import ValidationError
 
+from app.core.errors import InvalidInput
 from app.research.composition import ComposedAnswer, ComposedSentence
-from app.research.crafts import CraftRef
 from app.research.evidence import Quote, SourceDocument
 from app.research.evidence_pack import EvidencePack, PackedEvidence
 from app.research.quotes import QUOTE_OVERLAP_MIN, quote_occurs, quote_overlap, trivial_quote
@@ -16,7 +16,9 @@ from app.research.sections import DISCIPLINE_TITLES
 from app.research.vocabulary import CONCEPT_TYPE_DISCIPLINES
 from app.research.write_back import ClaimWriteBack, FoundBy, WriteBackCitation, WriteBackSubject
 
-from .write_back_crafts import craft_filing
+from .curation_keys import DISCIPLINE_CONCEPT_TYPES
+from .write_back_crafts import CraftFiling, craft_filing, researched_craft
+from .write_back_names import CraftNames
 
 __all__ = [
     "INFERRED_REASON",
@@ -68,8 +70,8 @@ class _Context:
     answer_id: uuid.UUID | None
     documents: Mapping[str, SourceDocument]
     packed: Mapping[str, PackedEvidence]
+    names: CraftNames
     field_ids: frozenset[str] = frozenset()
-    compared: tuple[CraftRef, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -77,7 +79,7 @@ class _Filing:
     subject: WriteBackSubject
     field: str | None
     section: str | None
-    craft_slug: str | None
+    craft_slug: str | None = None
 
 
 def write_back_plan(
@@ -86,9 +88,12 @@ def write_back_plan(
     *,
     found_by: FoundBy,
     answer_id: uuid.UUID | None,
+    names: CraftNames,
     field_documents: Mapping[str, SourceDocument] | None = None,
-    compared: Sequence[CraftRef] = (),
 ) -> WriteBackPlan:
+    lead = pack.plan.craft.slug if pack.plan.craft is not None else None
+    if names.lead_slug != lead:
+        raise InvalidInput(f"The craft names are for {names.lead_slug!r}, but the research was for {lead!r}")
     fields = dict(field_documents or {})
     context = _Context(
         pack=pack,
@@ -96,8 +101,8 @@ def write_back_plan(
         answer_id=answer_id,
         documents={document.item.id: document for document in pack.documents} | fields,
         packed={entry.item.id: entry for entry in pack.evidence} | _field_packed(pack, fields),
+        names=names,
         field_ids=frozenset(fields),
-        compared=tuple(compared),
     )
     claims: list[ClaimWriteBack] = []
     skipped: list[SkippedSentence] = []
@@ -133,15 +138,29 @@ def _planned(
         return SkippedSentence(sentence.text, SKIP_NO_EVIDENCE)
     if sentence.claim_ids:
         return SkippedSentence(sentence.text, SKIP_BESIDE_STORED)
-    craft = craft_filing(sentence.text, context.pack.plan.craft, context.compared)
-    filing = _filing(context, cited, section_discipline(heading), craft.slug)
+    filing = _filing(context, cited, section_discipline(heading))
+    craft = _craft(sentence, cited, context, filing)
     refused = craft.refused or _field_refusal(context, cited, filing)
     if refused is not None:
         return SkippedSentence(sentence.text, refused)
     try:
-        return _claim(sentence, cited, context, filing, inferred=heading is None)
+        return _claim(sentence, cited, context, _filed(filing, craft), inferred=heading is None)
     except ValidationError as error:
         return SkippedSentence(sentence.text, f"{SKIP_INVALID}: {_first_error(error)}")
+
+
+def _craft(sentence: ComposedSentence, cited: list[str], context: _Context, filing: _Filing) -> CraftFiling:
+    if all(ref in context.field_ids for ref in cited):
+        return researched_craft(context.names)
+    quotes = [quote.text for ref in cited for quote in _passing_quotes(sentence, context.documents[ref])]
+    return craft_filing(sentence.text, quotes, field=filing.field, names=context.names)
+
+
+def _filed(filing: _Filing, craft: CraftFiling) -> _Filing:
+    if craft.family is None or filing.field is None:
+        return replace(filing, craft_slug=craft.slug)
+    subject = WriteBackSubject(concept_type=DISCIPLINE_CONCEPT_TYPES[filing.field], concept_name=craft.family)
+    return replace(filing, craft_slug=None, subject=subject)
 
 
 def _claim(
@@ -207,7 +226,7 @@ def _passing_quotes(sentence: ComposedSentence, document: SourceDocument) -> lis
     return found
 
 
-def _filing(context: _Context, cited: list[str], section: str | None, craft_slug: str | None) -> _Filing:
+def _filing(context: _Context, cited: list[str], section: str | None) -> _Filing:
     facets = context.pack.plan.facets
     order = [ref for ref in cited if ref not in context.field_ids] or cited
     indexes = [index for ref in order for index in context.packed[ref].facet_indexes]
@@ -217,7 +236,6 @@ def _filing(context: _Context, cited: list[str], section: str | None, craft_slug
         subject=WriteBackSubject(concept_type=facet.type, concept_name=facet.target),
         field=section or CONCEPT_TYPE_DISCIPLINES.get(facet.type),
         section=section,
-        craft_slug=craft_slug,
     )
 
 

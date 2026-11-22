@@ -6,6 +6,7 @@ import pytest
 
 from app.core.shielded import ShieldedWork
 from app.services.answer_store import SqlAnswerStore
+from app.services.craft_resolver import CraftIndexStore
 
 from .answering.fakes import ANSWER_ID
 from .craft_fixtures import FixedEmbedder
@@ -77,7 +78,7 @@ async def test_shutdown_waits_a_bounded_time_and_reports_what_is_left(
 
 async def test_the_answer_stores_write_back_outlives_a_learner_who_leaves() -> None:
     shield, release = ShieldedWork(), asyncio.Event()
-    store = SqlAnswerStore(None, embed=FixedEmbedder(), shield=shield)
+    store = SqlAnswerStore(None, embed=FixedEmbedder(), shield=shield, index=CraftIndexStore())
     written: list[Any] = []
 
     async def kept(answer_id: Any, *_: Any) -> tuple[()]:

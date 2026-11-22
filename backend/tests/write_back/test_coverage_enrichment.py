@@ -18,6 +18,7 @@ from app.retrieval.indexing import EmbeddedCounts
 from app.services import coverage_enrichment
 from app.services.coverage_enrichment import EnrichmentPipeline, run_coverage_enrichment
 from app.services.coverage_selection import STANDARD_QUESTIONS, CraftToEnrich, open_questions
+from app.services.craft_resolver import CraftIndexStore
 from app.services.research_write_back import StoredResearch
 from app.services.write_back_plan import SkippedSentence
 
@@ -83,7 +84,11 @@ class FakePipeline:
 
     def as_pipeline(self) -> EnrichmentPipeline:
         return EnrichmentPipeline(
-            research=self.research, compose=self.compose, embed=FixedEmbedder(), spent=self.spent
+            research=self.research,
+            compose=self.compose,
+            embed=FixedEmbedder(),
+            spent=self.spent,
+            index=CraftIndexStore(),
         )
 
 

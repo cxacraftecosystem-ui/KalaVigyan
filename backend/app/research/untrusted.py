@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import re
 
+from .storable import UNSTORABLE_CONTROLS
+
 __all__ = ["UNTRUSTED_TAG", "clean_untrusted_text", "untrusted_block"]
 
 UNTRUSTED_TAG = "untrusted_source"
 INVISIBLE = re.compile(
-    r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f"
+    f"[{UNSTORABLE_CONTROLS}"
+    r"\x7f-\x9f"
     r"\u200b\u200e\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff\ufff9-\ufffb"
     r"\U000e0000-\U000e007f]"
 )

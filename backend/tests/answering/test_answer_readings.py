@@ -1,6 +1,7 @@
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from datetime import datetime
 
 import pytest
 
@@ -27,6 +28,7 @@ class ReadingStore(FakeStore):
         self,
         answer_id: uuid.UUID,
         *,
+        asked_at: datetime,
         plans: AnswerPlans,
         claim_ids: Sequence[uuid.UUID],
         explainer: Explainer | None,
@@ -35,7 +37,12 @@ class ReadingStore(FakeStore):
     ) -> None:
         self.readings.append(tuple(readings))
         await super().finish(
-            answer_id, plans=plans, claim_ids=claim_ids, explainer=explainer, version=version
+            answer_id,
+            asked_at=asked_at,
+            plans=plans,
+            claim_ids=claim_ids,
+            explainer=explainer,
+            version=version,
         )
 
 

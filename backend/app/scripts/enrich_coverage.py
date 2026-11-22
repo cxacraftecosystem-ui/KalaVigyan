@@ -16,6 +16,7 @@ from app.research.evidence_pack import EvidencePack
 from app.retrieval.hybrid import StoredKnowledgeSearch
 from app.services.ai_providers import AiTask
 from app.services.coverage_enrichment import EnrichmentPipeline, run_coverage_enrichment
+from app.services.craft_resolver import CraftIndexStore
 from app.services.live_sources import live_source_client, live_sources
 
 
@@ -43,6 +44,7 @@ async def run() -> dict[str, Any]:
                 compose=compose,
                 embed=embed,
                 spent=spent_since,
+                index=CraftIndexStore(),
                 judge=router_structured_model(AiTask.EVAL_JUDGE),
             )
             report = await run_coverage_enrichment(writer, pipeline, day_started_at=budget.day_start())

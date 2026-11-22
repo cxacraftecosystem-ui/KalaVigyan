@@ -182,8 +182,10 @@ class SourceAdapter(Protocol):
   `url:<canonical url>` (lowercased scheme and host, default port and fragment dropped,
   trailing slash removed except the root).
 - `fetch(item_id)` returns `SourceDocument {item, text, textSha256, truncated, content}`:
-  `text` is the cleaned plain text the quotes were taken from, `textSha256` its SHA-256 in
-  UTF-8, `content` one of `FULL_TEXT`, `ABSTRACT`, `EXCERPT`. Construction fails unless every
+  `text` is the cleaned plain text the quotes were taken from, made storable by
+  `adapter.build_document` (`research/storable.storable_text`: no NUL and no C0 control but tab,
+  line feed and carriage return, decision 0135), `textSha256` its SHA-256 in UTF-8, `content`
+  one of `FULL_TEXT`, `ABSTRACT`, `EXCERPT`. Construction fails unless every
   quote in `item.quotes` occurs in `text` (`quotes.quote_occurs`). Only `T4` adapters and
   full-text fetches go through the fetcher sandbox; API adapters fetch their own JSON.
 - Failures: `ExternalFailure` with a kind (an unknown id is `not_found`), `NotConfigured` for a
@@ -416,7 +418,11 @@ run. `clean_untrusted_text(text)` is applied to every text and metadata string t
 returns: C0 and C1 controls, bidirectional embeddings, overrides and isolates, zero-width
 space, invisible operators, the byte-order mark, interlinear annotation marks and the Unicode
 tag block are removed; ZWJ and ZWNJ are kept (Indic spelling); runs of spaces and of blank
-lines collapse. `untrusted_block(ref, label, text)` is how the composer puts any retrieved text
+lines collapse. Every text the database keeps from research (a document, its chunks and kept
+quote chunks, a live source's title, authors, publisher, licence and attribution, a written
+claim and its quote) passes the one rule `research/storable.storable_text`, so a PDF with NUL
+or other control bytes is stored and read; the quote key drops the same characters, so a quote
+matches the text as stored (decision 0135). `untrusted_block(ref, label, text)` is how the composer puts any retrieved text
 into a prompt: `<untrusted_source ref="..." label="...">`, the cleaned text, and the closing
 tag, with any copy of the tag inside the text defused so the block cannot be closed from
 inside. Retrieved text never goes into a system or tool message.
@@ -793,8 +799,8 @@ faster.
 
 ### The writer and the coverage job (decision 0011)
 
-- `services/write_back_plan.write_back_plan(pack, answer, *, found_by, answer_id,
-  field_documents=None, compared=()) -> WriteBackPlan {claims, skipped, sentence_keys}`: one
+- `services/write_back_plan.write_back_plan(pack, answer, *, found_by, answer_id, names,
+  field_documents=None) -> WriteBackPlan {claims, skipped, sentence_keys}`: one
   write-back per composed sentence that cites a read document of the pack and no stored claim
   (decision 0124). `sentence_keys` has one entry per sentence in `composed_sentences(answer)` order
   (sections, then open questions; each with its heading, `None` for an open question): the dedupe
@@ -808,11 +814,27 @@ faster.
   `DISCIPLINE_TITLES[discipline]`): the claim's `field` is that discipline and its subject the
   first facet a cited document was found by whose type is of that field, else the first; with no
   section discipline (an unfocused answer, an open question), the first facet and its type's field.
-  In a comparison (`compared`, the crafts the answer's understanding compares), a sentence naming
-  exactly one compared craft is filed under it, one naming two or more of the crafts is skipped,
-  and one naming none stays with the plan's craft (`write_back_crafts.craft_filing`): a craft is
-  named by a word of four letters or more of its name that no other craft of the comparison shares
-  and that fewer than three crafts of the master list use (`COMMON_NAME_USES`). Predicate
+  The craft (decision 0135, `write_back_crafts.craft_filing` over `write_back_names.CraftNames`,
+  which `filing_names` builds from the craft index, the research's craft and the crafts the
+  answer's understanding compares; `names` for any other craft is `InvalidInput`): a fact is
+  filed under a craft only when its text, else one of its passing quotes, names it in whole
+  words. The researched and compared crafts are named by a word of four letters or more of the
+  name that no other of them shares and fewer than three master-list crafts use
+  (`COMMON_NAME_USES`), by a name, alias or spelling of the craft index, or by a place of theirs
+  below a state (the GI place: a district, a place label, a district's other name, or a place
+  word of the craft's own name, as Kutch for Kutch Ajrakh); a word two of them share names
+  neither. Naming two of them skips the sentence. Naming none, a fact naming exactly one other
+  catalogued craft by a name, alias or spelling (`craft_matching.named_craft_ids`) goes to that
+  craft, and one naming several is skipped. A text naming a place outside India or another
+  culture (`data/places_abroad`) is refused (`SKIP_ABROAD`), and so is one naming any other
+  place of India, a state included (`SKIP_OTHER_PLACE`). A fact naming no craft and no place,
+  in chemistry, physics or materials (`MATERIAL_SCIENCE_FIELDS`), goes to its craft family's
+  science: no craft, the subject the shared concept named as the family's category (type
+  `curation_keys.DISCIPLINE_CONCEPT_TYPES[field]`), which the craft scope of decision 0122
+  reads; in a comparison only when every compared craft shares that category. Any other fact
+  naming no craft is skipped (`SKIP_UNNAMED`). A sentence resting on field interviews alone
+  stays with the craft researched (`researched_craft`). Research for no craft is filed as
+  before, on shared concepts. Predicate
   `WRITE_BACK_PREDICATE` (`states`). Sentences citing stored claims only, a stored claim beside live
   evidence (a new fact would not carry its citations), or breaking the contract are `skipped` with
   a reason.
@@ -834,9 +856,10 @@ faster.
   item's licence (CC0, CC BY, CC BY-SA, PDDL, public domain, by name or canonical URL) and the
   item is not a T4 page declaring its own licence; else `RESEARCHER` (decision 0013).
 - `services/research_write_back.store_live_research(session, pack, answer, *, embed, found_by,
-  answer_id=None) -> StoredResearch {source_ids, results, skipped, embedded, sentence_keys,
+  index, answer_id=None) -> StoredResearch {source_ids, results, skipped, embedded, sentence_keys,
   embedding_error}` keeps the documents, reads the compared crafts from the answer's stored
-  understanding (`compared_crafts`), writes the claims through the gates, commits, then embeds
+  understanding (`compared_crafts`), names the crafts with the `CraftIndexStore` it is given,
+  writes the claims through the gates, logs every skipped sentence with its reason, commits, then embeds
   only the claims it wrote and the chunks of the sources those claims cite (`cited_source_ids`,
   `embed_written`); the chunks of documents no written claim cites wait for `embed_knowledge`,
   since stored-knowledge search reads only chunks of sources a visible fact cites (decision 0124).
@@ -993,10 +1016,14 @@ glossary and `section_images`).
 already known and raises instead of sending `error` (the nightly rebuild uses it); `AnswerStore {stored_claims (slug, question,
 mode), begin(ask, understanding) -> answer id, keep(answer_id, pack, composed) -> claims of each
 composed sentence, cited(claim_ids), process(slug) -> science.records.ProcessRecords | None,
-finish(answer_id, *, plans: AnswerPlans, claim_ids, explainer: Explainer | None)}`, the reads
+finish(answer_id, *, asked_at, plans: AnswerPlans, claim_ids, explainer: Explainer | None)}`, the reads
 returning `answer_events.CitedClaims {views, sources}`. `begin` writes the `Answer` row (its
 understanding and the depth's mode), `keep` one section's write-back, and `finish` the plans, the
-claims shown, the tiers used and, when a section is ready, the explainer document in
+claims shown, the tiers used, `latencyMs` (from `AnswerAsk.asked_at`, set when the question is
+received, to the finish) and `costUsd` (the summed `UsageEvent.costUsd` of the request id the
+answer ran under: the HTTP request's, or the evaluation's per-question tag; outside a request
+id the cost is not recorded and a warning is logged; `services/answer_cost`, decision 0135)
+and, when a section is ready, the explainer document in
 `Answer.payload.explainer` (`answer_store.EXPLAINER_PAYLOAD_KEY`); each runs on
 `core/shielded.ShieldedWork`.
 `answer_store.build_answer_pipeline(sessions=, index=, live=, plan_model=, compose_model=,
@@ -1168,12 +1195,12 @@ tier and the reader that takes verbatim quotes from the pack's documents (`WEB_R
 
 | Claim | Kept true by |
 |---|---|
-| The types, their shapes and errors | `backend/tests/research/`, chiefly `test_crafts_and_planning.py`, `test_evidence_and_fetcher.py`, `test_quotes_and_errors.py`, `test_untrusted.py` and `test_stream.py` |
+| The types, their shapes and errors | `backend/tests/research/`, chiefly `test_crafts_and_planning.py`, `test_evidence_and_fetcher.py`, `test_quotes_and_errors.py`, `test_untrusted.py`, `test_storable.py` (storable text and the quote key) and `test_stream.py` |
 | The resolver | `backend/tests/test_craft_resolver.py` and `backend/tests/db/test_craft_resolver_db.py` |
 | The source adapters, against recorded answers | `backend/tests/sources/` |
 | The fetcher service | `backend/tests/fetcher/` |
-| The planner, the composer and the answering service | `backend/tests/planner/`, `backend/tests/composer/` and `backend/tests/answering/test_answer_flow.py` |
-| Write-back and the coverage job | `backend/tests/write_back/`, `backend/tests/research/test_composition_and_write_back.py`, `backend/tests/db/test_claim_writer_db.py`, `test_write_back_closed_db.py` and `test_coverage_backoff_db.py` |
+| The planner, the composer and the answering service | `backend/tests/planner/`, `backend/tests/composer/`, `backend/tests/answering/test_answer_flow.py`, `test_answer_cost.py` and `backend/tests/db/test_answer_cost_db.py` (an answer's cost and latency) |
+| Write-back and the coverage job | `backend/tests/write_back/` (the craft a fact names: `test_write_back_names.py` and `test_write_back_filing.py`), `backend/tests/research/test_composition_and_write_back.py`, `backend/tests/db/test_claim_writer_db.py`, `test_write_back_closed_db.py`, `test_storable_text_db.py` and `test_coverage_backoff_db.py` |
 | The stance, per-source and screen checks of a sentence, the names a live sentence must quote, a sentence dropped alone | `backend/tests/research/test_grounded_sentences.py`, `backend/tests/composer/test_grounded_compose.py` and `backend/tests/answering/test_grounded_blocks.py` |
 | Passages of long documents and the copy read | `backend/tests/composer/test_passages.py` and `backend/tests/planner/test_research_run.py` |
 | The stream as the client reads it | `frontend/e2e/answer-stream-golden-unit.spec.ts`, against `shared/answer-stream*.golden.sse` |

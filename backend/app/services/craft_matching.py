@@ -29,6 +29,7 @@ __all__ = [
     "LexicalMatch",
     "SemanticHit",
     "lexical_match",
+    "named_craft_ids",
     "ranked_candidates",
     "resolution_from",
     "slug_resolution",
@@ -140,6 +141,11 @@ def resolution_from(
 
 def ranked_candidates(index: CraftIndex, match: LexicalMatch) -> list[CraftCandidate]:
     return _rank(index, match.reasons, match.hints)
+
+
+def named_craft_ids(index: CraftIndex, text: str) -> frozenset[uuid.UUID]:
+    _, exact = _best_reading(index, _phrases(text, index.max_tokens))
+    return frozenset(entry.craft_id for phrase in exact for entry in index.entries[phrase.key])
 
 
 def _phrases(text: str, max_tokens: int) -> list[Phrase]:

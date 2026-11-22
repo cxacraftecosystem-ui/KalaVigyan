@@ -4,6 +4,7 @@ import logging
 import uuid
 from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Protocol
 
 from app.core.errors import AppError, spend_refusal
@@ -83,6 +84,7 @@ class AnswerAsk:
     fresh: bool = False
     builds_on: FollowUp | None = None
     reading_style: ReadingStyle | None = None
+    asked_at: datetime = field(default_factory=lambda: datetime.now(UTC), compare=False)
 
 
 class AnswerStore(Protocol):
@@ -100,6 +102,7 @@ class AnswerStore(Protocol):
         self,
         answer_id: uuid.UUID,
         *,
+        asked_at: datetime,
         plans: AnswerPlans,
         claim_ids: Sequence[uuid.UUID],
         explainer: Explainer | None,
@@ -322,6 +325,7 @@ async def _finish(
     stored = run.layout.stored(document, dict.fromkeys([*led, *(c for o in outcomes for c in o.claim_ids)]))
     await run.pipeline.store.finish(
         run.answer_id,
+        asked_at=run.ask.asked_at,
         plans=_plans(outcomes),
         claim_ids=list(stored.claim_ids),
         explainer=stored.explainer,

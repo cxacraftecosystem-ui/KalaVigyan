@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import func, literal, update
@@ -39,6 +40,7 @@ from app.science.records import ProcessRecords
 
 from . import knowledge_view
 from .answer_catalogue import catalogue_lookup
+from .answer_cost import answer_measures
 from .answer_events import CitedClaims, cited_claims
 from .answer_gaps import FieldReading, record_verdict
 from .answer_lede import LedeTools
@@ -83,11 +85,13 @@ class SqlAnswerStore:
         *,
         embed: TextEmbedder,
         shield: ShieldedWork,
+        index: CraftIndexStore,
         judge: StructuredModel | None = None,
     ) -> None:
         self._sessions = sessions
         self._embed = embed
         self._shield = shield
+        self._index = index
         self._judge = judge
 
     async def stored_claims(self, craft_slug: str, question: str, mode: str) -> CitedClaims:
@@ -110,6 +114,7 @@ class SqlAnswerStore:
         self,
         answer_id: uuid.UUID,
         *,
+        asked_at: datetime,
         plans: AnswerPlans,
         claim_ids: Sequence[uuid.UUID],
         explainer: Explainer | None,
@@ -117,7 +122,7 @@ class SqlAnswerStore:
         readings: Sequence[FieldReading] = (),
     ) -> None:
         stored = _StoredExplainer(explainer, version) if explainer is not None else None
-        finished = self._finished(answer_id, plans, claim_ids, stored, readings=readings)
+        finished = self._finished(answer_id, plans, claim_ids, stored, asked_at=asked_at, readings=readings)
         await self._shield.run(finished, name="answer record")
 
     async def process(self, craft_slug: str) -> ProcessRecords | None:
@@ -155,6 +160,7 @@ class SqlAnswerStore:
                     composed,
                     embed=self._embed,
                     found_by="ANSWER",
+                    index=self._index,
                     answer_id=answer_id,
                     judge=self._judge,
                 )
@@ -168,6 +174,7 @@ class SqlAnswerStore:
         claim_ids: Sequence[uuid.UUID],
         stored: _StoredExplainer | None,
         *,
+        asked_at: datetime,
         readings: Sequence[FieldReading] = (),
     ) -> None:
         tiers = dict.fromkeys(tier for section in plans.sections for tier in section.plan.tiers)
@@ -184,6 +191,7 @@ class SqlAnswerStore:
             values |= stored.values(answer_id)
         try:
             async with self._sessions() as session:
+                values |= await answer_measures(session, asked_at=asked_at, finished_at=datetime.now(UTC))
                 await session.execute(update(Answer).where(Answer.id == answer_id).values(**values))
                 await record_verdict(session, answer_id, readings)
                 await session.commit()
@@ -242,7 +250,7 @@ def build_answer_pipeline(
         understand=answer_understander(sessions, index, embed=embed, model=models.plan).understand,
         research=research,
         compose=composer.compose,
-        store=SqlAnswerStore(sessions, embed=embed, shield=shield, judge=models.judge),
+        store=SqlAnswerStore(sessions, embed=embed, shield=shield, index=index, judge=models.judge),
         translation=translation,
         pieces=SqlPieceStore(sessions, embed=embed, shield=shield),
         enrichment=build_answer_enrichment(sessions, live),

@@ -15,6 +15,7 @@ from app.services.research_write_back import StoredResearch, sentence_claim_ids
 from app.services.write_back_plan import write_back_plan
 
 from ..composer.fixtures import ALUM_CLAIM_ID, GUESS_CLAIM_ID, pack
+from ..write_back.names import AJRAKH_NAMES
 from .fakes import ANSWER_ID, SOURCES, VIEWS, WRITTEN_LAKE_ID
 
 LAKE_PAPER = "crossref:10.1000/lake"
@@ -51,7 +52,7 @@ def test_each_sentence_gets_the_claim_written_for_it_and_a_pooled_one_keeps_only
     )
     pooled = figure.model_copy(update={"claim_ids": [ALUM_CLAIM_ID]})
     answer = composed(said(ALUM_TEXT, claims=(ALUM_CLAIM_ID,)), figure, pooled)
-    plan = write_back_plan(pack(), answer, found_by="ANSWER", answer_id=ANSWER_ID)
+    plan = write_back_plan(pack(), answer, found_by="ANSWER", answer_id=ANSWER_ID, names=AJRAKH_NAMES)
     assert plan.sentence_keys == (None, plan.claims[0].dedupe_key, None)
     stored = StoredResearch(
         source_ids=(),

@@ -12,6 +12,7 @@ from app.core.errors import InvalidInput
 from app.data.craft_master_loader import ID_NAMESPACE
 from app.models import Claim, ClaimSource, Concept, Craft, Process, ProcessStage, ReviewEvent
 from app.research.quotes import quote_key
+from app.research.storable import storable_text
 from app.research.write_back import (
     WRITE_BACK_ORIGIN,
     WRITE_BACK_STATUS,
@@ -90,7 +91,7 @@ class SqlClaimWriter:
                 subjectType="CONCEPT",
                 subjectId=concept_id,
                 predicate=claim.predicate,
-                text=claim.text,
+                text=storable_text(claim.text),
                 textLang=claim.text_lang,
                 valueNum=claim.value_num,
                 valueUnit=claim.value_unit,
@@ -138,7 +139,7 @@ class SqlClaimWriter:
                 sourceId=source.id,
                 chunkId=chunk.chunk_id if chunk else None,
                 locator=(quote.locator if quote else None) or (chunk.locator if chunk else None),
-                quote=quote.text if quote else None,
+                quote=storable_text(quote.text) if quote else None,
                 quoteCheck=citation.quote_check,
                 checkedAt=item.retrieved_at if quote else None,
                 relation=citation.relation,

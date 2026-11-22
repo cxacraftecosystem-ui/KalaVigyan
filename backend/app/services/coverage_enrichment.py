@@ -20,6 +20,7 @@ from app.research.planning import PlanRequest
 from app.research.structured import StructuredModel
 
 from .coverage_selection import CraftToEnrich, least_covered_crafts, open_questions
+from .craft_resolver import CraftIndexStore
 from .research_write_back import store_live_research
 
 __all__ = [
@@ -55,6 +56,7 @@ class EnrichmentPipeline:
     compose: Callable[[EvidencePack, str], Awaitable[ComposedAnswer]]
     embed: TextEmbedder
     spent: SpentSince
+    index: CraftIndexStore
     judge: StructuredModel | None = None
 
 
@@ -156,7 +158,13 @@ async def _ask(run: _Run, craft: CraftToEnrich, question: str, outcome: CraftOut
         return
     answer = await run.pipeline.compose(pack, question)
     stored = await store_live_research(
-        run.session, pack, answer, embed=run.pipeline.embed, found_by="BACKGROUND", judge=run.pipeline.judge
+        run.session,
+        pack,
+        answer,
+        embed=run.pipeline.embed,
+        found_by="BACKGROUND",
+        index=run.pipeline.index,
+        judge=run.pipeline.judge,
     )
     outcome.documents += len(stored.source_ids)
     outcome.claims_created += stored.created

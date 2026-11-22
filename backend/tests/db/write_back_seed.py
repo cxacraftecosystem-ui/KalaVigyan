@@ -26,6 +26,7 @@ from app.research.understanding import Understanding
 from app.retrieval.indexing import replace_source_chunks
 from app.services.answer_store import SqlAnswerStore
 from app.services.answering import AnswerAsk
+from app.services.craft_resolver import CraftIndexStore
 from app.services.research_write_back import store_live_research
 from app.sources.adapter import build_document
 
@@ -43,9 +44,10 @@ ALUM_CONCEPT, STAGE_CONCEPT, PROCESS, STAGE = key("alum"), key("stage"), key("pr
 IMPORTED, ANSWER = key("imported-source"), key("answer")
 ZELVAR = CraftRef(slug="Zelvar-Dye", name="Zelvar Dye", path="/crafts/Zelvar-Dye")
 ABSTRACT_ID, PAGE_ID = ABSTRACT_ITEM.id, LONG_ITEM.id
-FIGURE_TEXT = "Mordant baths held 8 g/L alum and were heated to 60 °C."
+FIGURE_TEXT = "Zelvar mordant baths held 8 g/L alum and were heated to 60 °C."
+FIGURE_KEY = "zelvar mordant baths held 8 g/l alum and were heated to 60 °c"
 FIGURE_QUOTE = "Mordanting baths of 8 g/L alum were heated to 60 °C"
-WASH_TEXT = "The red withstood 20 washes."
+WASH_TEXT = "The Zelvar red withstood 20 washes."
 WASH_QUOTE = "the lake withstood 20 washes"
 UNDERSTOOD = Understanding(
     craft=ZELVAR,
@@ -136,7 +138,7 @@ def expected_claim_id(text: str, craft_slug: str = ZELVAR.slug, field: str = "MA
 
 
 async def write(session: AsyncSession, composed: ComposedAnswer, **options: object):
-    fields = {"found_by": "ANSWER", "answer_id": ANSWER} | options
+    fields = {"found_by": "ANSWER", "answer_id": ANSWER, "index": CraftIndexStore()} | options
     return await store_live_research(session, zelvar_pack(), composed, embed=FixedEmbedder(), **fields)
 
 
@@ -144,7 +146,7 @@ def answer_store(session: AsyncSession) -> SqlAnswerStore:
     def sessions() -> AsyncSession:
         return AsyncSession(bind=session.bind, expire_on_commit=False, autoflush=False)
 
-    return SqlAnswerStore(sessions, embed=FixedEmbedder(), shield=ShieldedWork())
+    return SqlAnswerStore(sessions, embed=FixedEmbedder(), shield=ShieldedWork(), index=CraftIndexStore())
 
 
 async def kept_answer(
@@ -155,5 +157,5 @@ async def kept_answer(
     claims_of = await store.keep(answer_id, pack, composed)
     plans = AnswerPlans(sections=[SectionPlan(section_id="s1", discipline="CHEMISTRY", plan=pack.plan)])
     claim_ids = list(dict.fromkeys(claim for claims in claims_of for claim in claims))
-    await store.finish(answer_id, plans=plans, claim_ids=claim_ids, explainer=None)
+    await store.finish(answer_id, asked_at=ask.asked_at, plans=plans, claim_ids=claim_ids, explainer=None)
     return answer_id, claims_of

@@ -165,7 +165,7 @@ flowchart LR
 | [0121](0121-quote-visibility.md) | A quote is shown only where its page allows | · |
 | [0122](0122-evidence-reach.md) | Evidence the knowledge base holds reaches the answers that need it | · |
 | [0123](0123-question-understanding.md) | A question is understood honestly before any evidence is read | · |
-| [0124](0124-live-research-write-back.md) | Live research writes back only what its sources say | · |
+| [0124](0124-live-research-write-back.md) | Live research writes back only what its sources say | [0135](0135-write-backs-filed-under-the-craft-they-name.md) |
 | [0125](0125-reranking.md) | Stored facts are reranked, and relevance decides when stored knowledge is enough | [0132](0132-a-ranking-votes-with-its-first-thirty.md) and [0133](0133-the-evaluation-scores-what-answers-read.md) |
 | [0126](0126-measurement-that-grows.md) | Measurement grows with the knowledge and alerts when it falls | [0133](0133-the-evaluation-scores-what-answers-read.md) |
 | [0127](0127-coherent-answers.md) | An answer says each fact once, never admits a gap, keeps the stages it is asked and paces its sources | · |
@@ -175,6 +175,7 @@ flowchart LR
 | [0132](0132-a-ranking-votes-with-its-first-thirty.md) | A ranking votes with its first thirty; deeper finds only fill the rerank pool | · |
 | [0133](0133-the-evaluation-scores-what-answers-read.md) | The evaluation scores what answers read | · |
 | [0134](0134-each-sentence-once-in-a-block.md) | A block says each sentence once, and the judge reads it as a reader does | · |
+| [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | · |
 
 ## How this document is kept true
 

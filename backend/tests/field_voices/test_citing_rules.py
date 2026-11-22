@@ -16,6 +16,7 @@ from app.research.retrieval import ChunkHit, KnowledgeHits, chunk_acls_for
 from app.services.field_voices_citations import writes_back
 from app.services.write_back_plan import write_back_plan
 from tests.composer.fixtures import ABSTRACT_ITEM, LONG_ITEM, PLAN, STORED, pack, packed
+from tests.write_back.names import AJRAKH_NAMES
 
 QUOTE = "We grind the alum with tamarind seed, and the paste must rest overnight."
 FIELD_CHUNK = uuid.UUID(int=41)
@@ -100,6 +101,7 @@ def test_a_field_interview_alone_may_support_the_speakers_own_process() -> None:
         found_by="ANSWER",
         answer_id=uuid.uuid4(),
         field_documents={FIELD_ID: field_document()},
+        names=AJRAKH_NAMES,
     )
     assert len(plan.claims) == 1
     citation = plan.claims[0].citations[0]
@@ -113,6 +115,7 @@ def test_a_field_interview_alone_never_supports_a_chemistry_claim() -> None:
         found_by="ANSWER",
         answer_id=uuid.uuid4(),
         field_documents={FIELD_ID: field_document()},
+        names=AJRAKH_NAMES,
     )
     assert plan.claims == ()
     assert plan.skipped[0].reason == "a field interview alone supports only the speaker's own practice"
@@ -151,6 +154,7 @@ def written(evidence_pack: Any, answer: ComposedAnswer) -> Any:
         found_by="ANSWER",
         answer_id=uuid.uuid4(),
         field_documents={FIELD_ID: field_document()},
+        names=AJRAKH_NAMES,
     )
 
 

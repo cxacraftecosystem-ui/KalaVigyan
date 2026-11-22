@@ -4,6 +4,7 @@ import re
 import uuid
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 from app.composer.composer import ModelComposer
@@ -24,23 +25,21 @@ from app.research.stream import ResearchProgress, event_stream
 from app.research.structured import StructuredReply
 from app.research.term_marking import GlossaryEntry
 from app.research.understanding import Understanding
-from app.research.write_back import WriteBackResult
-from app.retrieval.indexing import EmbeddedCounts
 from app.science.records import ProcessRecords
 from app.services import knowledge_view
 from app.services.answer_events import CitedClaims, cited_claims
 from app.services.answer_translation import AnswerTranslation
 from app.services.answering import AnswerAsk, AnswerPipeline, answer_question
-from app.services.research_write_back import StoredResearch, sentence_claim_ids
+from app.services.research_write_back import sentence_claim_ids
 from app.services.section_enrichment import PICTURES_WAIT_SECONDS, EnrichmentTools
 from app.services.section_images import IMAGE_SEARCH_SECONDS, SectionImages, SectionImagesAsk
-from app.services.write_back_plan import write_back_plan
 
 from ..composer.fixtures import ALUM_CLAIM_ID, GUESS_CLAIM_ID, pack
 from ..images.fakes import FakeMediaStore, FakeSource, candidate
 from ..planner.fakes import FakeModel
 from ..research.fixtures import AJRAKH
 from .piece_fakes import MemoryPieces
+from .written_fakes import written_research
 
 ANSWER_ID = uuid.UUID("0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9")
 WRITTEN_LAKE_ID = uuid.UUID("6c1e0f2a-3b4d-4e5f-8a9b-0c1d2e3f4a5b")
@@ -194,20 +193,7 @@ class FakeStore:
         self, answer_id: uuid.UUID, pack: EvidencePack, composed: ComposedAnswer
     ) -> tuple[tuple[uuid.UUID, ...], ...]:
         self.kept.append((answer_id, pack, composed))
-        plan = write_back_plan(pack, composed, found_by="ANSWER", answer_id=answer_id)
-        results = tuple(
-            WriteBackResult(dedupe_key=claim.dedupe_key, claim_id=WRITTEN_IDS[claim.text], created=True)
-            for claim in plan.claims
-            if claim.text in WRITTEN_IDS
-        )
-        stored = StoredResearch(
-            source_ids=(),
-            results=results,
-            skipped=plan.skipped,
-            embedded=EmbeddedCounts(claims=0, chunks=0),
-            sentence_keys=plan.sentence_keys,
-        )
-        return sentence_claim_ids(composed, stored)
+        return sentence_claim_ids(composed, written_research(pack, composed, answer_id, WRITTEN_IDS))
 
     async def cited(self, claim_ids: Iterable[uuid.UUID]) -> CitedClaims:
         wanted = list(claim_ids)
@@ -221,6 +207,7 @@ class FakeStore:
         self,
         answer_id: uuid.UUID,
         *,
+        asked_at: datetime,
         plans: AnswerPlans,
         claim_ids: Sequence[uuid.UUID],
         explainer: Explainer | None,

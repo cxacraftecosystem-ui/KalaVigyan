@@ -13,6 +13,7 @@ from ..craft_fixtures import unit
 from .write_back_seed import (
     ABSTRACT_ID,
     ALUM_CONCEPT,
+    FIGURE_KEY,
     FIGURE_QUOTE,
     FIGURE_TEXT,
     IMPORTED,
@@ -29,7 +30,6 @@ from .write_back_seed import (
 
 pytestmark = pytest.mark.db
 
-FIGURE_KEY_TEXT = "mordant baths held 8 g/l alum and were heated to 60 °c"
 CLOSED_REASON = "says the same and review closed it as {status}; research never writes a closed fact back"
 
 
@@ -73,13 +73,13 @@ async def test_research_never_writes_back_a_fact_review_closed_whatever_its_fiel
     reason = CLOSED_REASON.format(status=status.lower())
     assert skipped.reason == f"refused at the DUPLICATE gate: fact {closed} {reason}"
     assert sentence_claim_ids(composed, stored) == ((),)
-    assert await session.get(Claim, expected_claim_id(FIGURE_KEY_TEXT)) is None
+    assert await session.get(Claim, expected_claim_id(FIGURE_KEY)) is None
 
 
 async def test_a_closed_fact_in_nearly_the_same_words_is_refused_by_its_vector(session: AsyncSession) -> None:
-    close = "Mordant baths held 8 g/L of alum and were heated to 60 °C."
+    close = "Zelvar mordant baths held 8 g/L of alum and were heated to 60 °C."
     rejected = await closed_fact(session, "near-twin", close, "REJECTED", field="MATERIALS", vector=unit(1.0))
-    other = "Mordant baths held 8 g/L alum and were heated to 90 °C."
+    other = "Zelvar mordant baths held 8 g/L alum and were heated to 90 °C."
     await closed_fact(session, "other-figure", other, "RETRACTED", field="MATERIALS", vector=unit(1.0))
     stored = await write(session, answer(said(FIGURE_TEXT, ABSTRACT_ID, FIGURE_QUOTE)))
     assert stored.results == ()

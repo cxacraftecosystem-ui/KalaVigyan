@@ -3422,6 +3422,98 @@ Last reviewed: 2026-11-18.
   re-base the rubric floor in the same change; keep price claims out of the GI sentences in
   `services/market_builder`; carry each material's sentence-case name from the glossary.
 
+### Expert seats' gap admissions are dropped by their grounding
+
+- **What:** in answer 504968ea-49cc-469c-88f9-205a2ea90e8a (Khurja Pottery, EXPERT, 2026-11-22)
+  four of seven expert seats wrote a gap admission ("... but the stored statements do not name the
+  oxides behind Khurja's blue and turquoise.") that the grounding check then dropped as
+  `NEGATION_CHANGED`, so the seat's honest gap left no trace in the answer.
+- **Why left:** the write-back lane (decision 0135) changes how facts are filed, not what the seats
+  write or how their sentences are grounded.
+- **Clears it:** have the seats state a gap as an open question, never in a cited sentence, and turn a
+  grounded sentence that admits a gap into an open question (`research/gap_admissions`), with a
+  test from this sentence.
+
+### Simulation builders that run long and add nothing
+
+- **What:** in answer 504968ea-49cc-469c-88f9-205a2ea90e8a the simulation builders of two sections
+  each ran 150 s and added no block, most of the answer's 285 s.
+- **Why left:** builders and their time budgets are not this lane's.
+- **Clears it:** give the simulation builder a time budget well under the section's, skip it when the
+  section's facts state no quantity it can draw, and record why it added nothing.
+
+### Scholarly services rate-limited the research
+
+- **What:** in answer 504968ea-49cc-469c-88f9-205a2ea90e8a Crossref, Semantic Scholar and CORE
+  answered with rate limits, so seats read fewer papers than they searched for.
+- **Why left:** pacing is `sources/scholarly/pacing.py`'s, and the limits seen were the services'.
+- **Clears it:** share the per-service pace across the seats of one answer (one queue per service),
+  use the Semantic Scholar and CORE keys' higher limits where they are configured, and record the
+  wait in the answer's trail.
+
+### The answer did not name the oxides behind Khurja's blue and turquoise glazes
+
+- **What:** answer 504968ea-49cc-469c-88f9-205a2ea90e8a was asked what gives Khurja's glazes their
+  blue and turquoise colours and named no oxide. Cobalt and copper oxides are the usual ones, but the
+  research found no source saying so for Khurja.
+- **Why left:** finding the source is research and curation, not code.
+- **Clears it:** curate Khurja Pottery's glaze chemistry from a source that names its colourants (the
+  GI application, a ceramics institute's study of Khurja glazes), and let the planner search for the
+  colourant by its element names when a question asks what gives a colour.
+
+### Off-question sources were cited
+
+- **What:** answer 504968ea-49cc-469c-88f9-205a2ea90e8a cited sources about other crafts and places:
+  Jaipur blue pottery, a Nigerian porcelain study, a Taiwanese glaze and a commercial kiln-schedule
+  page. Decision 0135 keeps their facts off Khurja's page, but the answer still showed sentences
+  resting on them.
+- **Why left:** what an answer shows is the composer's and the reranker's; the lane changed what is
+  written back.
+- **Clears it:** apply the same naming rule to the composer's candidates (a passage about a place
+  outside India or another catalogued craft is offered only for a comparison, or labelled as such),
+  and score off-question citations in the answer evaluation.
+
+### Write-backs filed before decision 0135
+
+- **What:** the 19 facts answer 504968ea-49cc-469c-88f9-205a2ea90e8a wrote stay under Khurja
+  Pottery's concept in the review queue, among them the Khorezm, Nigerian, porcelain, kiln-schedule
+  and polymer-clay sentences; earlier live-research facts were filed by the old rule too.
+- **Why left:** stored facts on production are a person's to review; the lane changed no stored row.
+- **Clears it:** a reviewer rejects or re-files them in the review queue; a read-only report of the
+  live-research facts whose text and quotes name no craft they are filed under would list the rest.
+
+### Family science is gated and keyed as shared knowledge
+
+- **What:** a fact filed under a craft family's science (decision 0135) carries no craft, so its
+  dedupe key and its duplicate and novelty gates are those of all shared knowledge: the same general
+  sentence found for two families is one fact under the first family's concept, and it is compared
+  with every shared fact rather than its family's alone.
+- **Why left:** the write-back contract has no family field, and a general statement true for one
+  family is true for the next.
+- **Clears it:** carry the family's category on `ClaimWriteBack`, key and gate family facts by it
+  (`candidate_store.FactSubject` of kind category), and add a citation to the existing fact rather
+  than moving it.
+
+### The places that block filing are word lists
+
+- **What:** `data/places_abroad.json` is kept by hand, and the places of India that keep a fact out of
+  its family's science are the LGD state and district names and the craft index's place labels, so
+  a district named like a common word would keep a general fact out, and a foreign place missing
+  from the list lets one in.
+- **Why left:** no open gazetteer is vendored, and a model judging each sentence's places would cost
+  a call per sentence.
+- **Clears it:** check the list against a refused-sentence log after each round of live research, and
+  add places and other senses from what it shows.
+
+### An answer's cost is what was settled when it finished
+
+- **What:** `Answer.costUsd` sums the settled `UsageEvent` cost of the answer's request id when the
+  answer finishes (decision 0135), so work that outlives the finish is left out, and an answer run
+  outside a request id records no cost.
+- **Why left:** the row is written once, at the finish.
+- **Clears it:** let the nightly upkeep add the request's later settled cost to the answer row, and
+  give every answer path a request id.
+
 ## How this document is kept true
 
 | Change | What to do here |

@@ -15,6 +15,7 @@ and `docs/contracts/coverage.md`.
 | The gates a written-back claim passes | [knowledge-writes.md](../contracts/knowledge-writes.md), The research write-back |
 | The write-back, its key and the coverage job | [research.md](../contracts/research.md), Write-back of live research |
 | How fields are counted | [coverage.md](../contracts/coverage.md) |
+| A fact is filed under the craft it names, family science and places abroad (amends item 6) | [decision 0135](0135-write-backs-filed-under-the-craft-they-name.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -1,62 +1,71 @@
 from __future__ import annotations
 
-from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from app.data.craft_master_loader import load_master
-from app.data.craft_text import STOP_TOKENS, ascii_key
-from app.research.crafts import CraftRef
+from .write_back_names import CraftNames
 
 __all__ = [
-    "ANCHOR_MIN_CHARS",
-    "COMMON_NAME_USES",
+    "MATERIAL_SCIENCE_FIELDS",
+    "SKIP_ABROAD",
+    "SKIP_OTHER_PLACE",
+    "SKIP_SEVERAL_CATALOGUED",
     "SKIP_SEVERAL_CRAFTS",
+    "SKIP_UNNAMED",
     "CraftFiling",
     "craft_filing",
-    "named_crafts",
+    "researched_craft",
 ]
 
-ANCHOR_MIN_CHARS = 4
-COMMON_NAME_USES = 3
+MATERIAL_SCIENCE_FIELDS = frozenset({"CHEMISTRY", "PHYSICS", "MATERIALS"})
 SKIP_SEVERAL_CRAFTS = "names more than one of the compared crafts, so no one craft's page can hold it"
+SKIP_SEVERAL_CATALOGUED = "names {crafts} and not the craft researched, so no one craft's page can hold it"
+SKIP_ABROAD = "is about {places}, outside India or another culture's practice, so no Indian craft holds it"
+SKIP_OTHER_PLACE = "names {places} but no craft of it, so neither a craft's page nor its family holds it"
+SKIP_UNNAMED = (
+    "names no craft and is not material science its craft family shares, so no craft's page holds it"
+)
 
 
 @dataclass(frozen=True)
 class CraftFiling:
     slug: str | None
     refused: str | None = None
+    family: str | None = None
 
 
-def craft_filing(text: str, lead: CraftRef | None, compared: Sequence[CraftRef]) -> CraftFiling:
-    lead_slug = lead.slug if lead is not None else None
-    if not compared:
-        return CraftFiling(lead_slug)
-    named = named_crafts(text, [craft for craft in (lead, *compared) if craft is not None])
-    if len(named) > 1:
+def craft_filing(text: str, quotes: Sequence[str], *, field: str | None, names: CraftNames) -> CraftFiling:
+    if names.lead is None:
+        return CraftFiling(None)
+    for said in ((text,), tuple(quotes)):
+        named = _named(said, names)
+        if named is not None:
+            return named
+        abroad = names.abroad_in(said)
+        if abroad:
+            return CraftFiling(None, SKIP_ABROAD.format(places=", ".join(abroad)))
+    places = names.places_in((text, *quotes))
+    if places:
+        return CraftFiling(None, SKIP_OTHER_PLACE.format(places=", ".join(places)))
+    if field in MATERIAL_SCIENCE_FIELDS and names.family is not None:
+        return CraftFiling(None, family=names.family)
+    return CraftFiling(None, SKIP_UNNAMED)
+
+
+def researched_craft(names: CraftNames) -> CraftFiling:
+    return CraftFiling(names.lead_slug)
+
+
+def _named(said: Sequence[str], names: CraftNames) -> CraftFiling | None:
+    if not said:
+        return None
+    researched = names.researched(said)
+    if len(researched) > 1:
         return CraftFiling(None, SKIP_SEVERAL_CRAFTS)
-    return CraftFiling(named[0].slug if named else lead_slug)
-
-
-def named_crafts(text: str, crafts: Sequence[CraftRef]) -> list[CraftRef]:
-    words = set(ascii_key(text).split())
-    common = _common_name_words()
-    return [craft for craft in crafts if _anchors(craft, crafts, common) & words]
-
-
-def _anchors(craft: CraftRef, crafts: Sequence[CraftRef], common: frozenset[str]) -> set[str]:
-    shared = {word for other in crafts if other.slug != craft.slug for word in _words(other.name)}
-    return {
-        word
-        for word in _words(craft.name)
-        if len(word) >= ANCHOR_MIN_CHARS and word not in STOP_TOKENS | common | shared
-    }
-
-
-def _common_name_words() -> frozenset[str]:
-    uses = Counter(word for master in load_master() for word in set(_words(master.name)))
-    return frozenset(word for word, count in uses.items() if count >= COMMON_NAME_USES)
-
-
-def _words(name: str) -> list[str]:
-    return ascii_key(name).split()
+    if researched:
+        return CraftFiling(researched[0].slug)
+    others = names.catalogued(said)
+    if len(others) > 1:
+        crafts = ", ".join(craft.name for craft in others)
+        return CraftFiling(None, SKIP_SEVERAL_CATALOGUED.format(crafts=crafts))
+    return CraftFiling(others[0].slug) if others else None
