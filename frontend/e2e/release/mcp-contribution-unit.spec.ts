@@ -12,6 +12,7 @@ import {
   quoteFrom,
   readerFactProblems,
   readerProblems,
+  readText,
   sourceChoices
 } from "./mcpContribution";
 
@@ -36,6 +37,7 @@ test("a quote is a digit-free sentence of a closed reading, cut at a sentence en
     openLicence: false,
     passages: [{ text: "Table 2. Results of 12 dyes. Most textile dyes used in the hand block printing units have not been evaluated for health impact. Short one." }]
   };
+  expect(readText({ text: reading, quotes: [] })).toEqual(reading);
   expect(closedReading(reading)).toBe(true);
   expect(closedReading({ ...reading, openLicence: true })).toBe(false);
   expect(quoteFrom(reading)).toBe("Most textile dyes used in the hand block printing units have not been evaluated for health impact.");

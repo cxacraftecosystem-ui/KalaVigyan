@@ -20,6 +20,7 @@ import {
   quoteFrom,
   readerFactProblems,
   readerProblems,
+  readText,
   sourceChoices,
   type SourceChoice
 } from "./mcpContribution";
@@ -83,7 +84,8 @@ async function signedInRun(page: Page, account: Credentials): Promise<Run> {
 async function closedSource(run: Run): Promise<{ source: SourceChoice; quote: string }> {
   const facts = await tool(run, "get_facts", { craft_slug: CONTRIBUTION_CRAFT, limit: 50 }, true);
   for (const source of sourceChoices(facts)) {
-    const reading = await tool(run, "read_source", { url: source.url }, true).catch(() => null);
+    const answer = await tool(run, "read_source", { url: source.url }, true).catch(() => null);
+    const reading = answer ? readText(answer) : null;
     const quote = reading && closedReading(reading) ? quoteFrom(reading) : null;
     if (quote) return { source, quote };
   }

@@ -33,6 +33,10 @@ export function sourceChoices(facts: Json): SourceChoice[] {
     .slice(0, SOURCES_TRIED_MAX);
 }
 
+export function readText(reading: Json): Json | null {
+  return record(reading.text);
+}
+
 export function closedReading(reading: Json): boolean {
   return reading.readable === true && reading.openLicence === false && reading.restricted !== true;
 }
