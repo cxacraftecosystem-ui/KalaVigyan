@@ -9,9 +9,9 @@ from app.research.blocks_lede import LedeBlock
 from app.research.citations import SourceRef
 from app.research.explainer import EXPLAINER_SCHEMA_VERSION, Explainer, ExplainerSection, Understood
 
-from .answer_sections import SectionOutcome
 from .explainer_events import shown_title
 from .ledgered_explainer import ledgered_explainer
+from .section_context import SectionOutcome
 
 __all__ = ["explainer_document"]
 

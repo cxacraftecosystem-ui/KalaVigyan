@@ -66,6 +66,7 @@ class EvalTools:
     explainer: Callable[[uuid.UUID], Awaitable[Explainer | None]]
     judge: StructuredModel
     spent: SpentSince
+    off_question: Callable[[Explainer, str], Awaitable[int]] | None = None
 
 
 @dataclass(frozen=True)
@@ -135,7 +136,9 @@ async def _scored(run: _Run, question: EvalQuestion, answered: AnswerRun) -> _Sc
     explainer = await run.tools.explainer(answered.answer_id)
     if explainer is None:
         return _Scored(problem=answered.problem or NO_EXPLAINER)
-    measures = answer_measures(explainer, question.fields)
+    found = run.tools.off_question
+    off = await found(explainer, question.craft_slug) if found is not None else 0
+    measures = answer_measures(explainer, question.fields, off_question=off)
     try:
         reply = await run.tools.judge(
             system=JUDGE_SYSTEM_PROMPT,

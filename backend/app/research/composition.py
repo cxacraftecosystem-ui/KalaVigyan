@@ -12,7 +12,7 @@ from app.models.knowledge_pieces import DESCRIPTION_MAX_CHARS, LABEL_COLUMN_CHAR
 
 from .base import ContractModel
 from .crafts import QUESTION_MAX_CHARS, CraftRef
-from .evidence import EVIDENCE_ID_MAX_CHARS, SEARCH_QUERY_MAX_CHARS
+from .evidence import EVIDENCE_ID_MAX_CHARS
 from .quotes import (
     QUOTE_MIN_CHARS,
     QUOTE_OVERLAP_MIN,
@@ -22,14 +22,13 @@ from .quotes import (
     unsupported_figures,
 )
 from .reading_style import ReadingStyle
+from .research_summary import ResearchSummary, SearchedQuery
 from .sentence_support import SCREEN_KINDS, STANCE_KINDS, SupportGap, screen_gaps, stance_gaps, unrelated_refs
 from .vocabulary import (
     CANONICAL_LANGUAGE,
     AnswerLanguage,
-    AnswerMode,
     Discipline,
     EvidenceLevel,
-    LiveTier,
     PieceKind,
     weakest_level,
 )
@@ -58,12 +57,11 @@ __all__ = [
     "LedeRequest",
     "LedeSection",
     "QuotedSpan",
+    "RefusedSentence",
     "ResearchSummary",
     "SearchedQuery",
     "SentenceViolation",
     "StageOption",
-    "not_enough_evidence_message",
-    "searched_note",
     "sentence_level",
     "sentence_violations",
 ]
@@ -117,23 +115,6 @@ class ComposeCandidate(ContractModel):
         return [self.text, *self.quotes]
 
 
-class SearchedQuery(ContractModel):
-    tier: LiveTier
-    text: str = Field(min_length=2, max_length=SEARCH_QUERY_MAX_CHARS)
-
-
-class ResearchSummary(ContractModel):
-    craft: CraftRef | None
-    mode: AnswerMode
-    stored_claims: int = Field(ge=0)
-    stored_passages: int = Field(ge=0)
-    queries: tuple[SearchedQuery, ...] = ()
-    services: tuple[str, ...] = ()
-    evidence_found: int = Field(ge=0)
-    documents_read: int = Field(ge=0)
-    failures: int = Field(ge=0)
-
-
 class StageOption(ContractModel):
     id: uuid.UUID
     ordinal: int = Field(ge=0)
@@ -170,6 +151,11 @@ class ComposeFocus(ContractModel):
         return [component.label for component in self.components]
 
 
+class RefusedSentence(ContractModel):
+    text: str = Field(min_length=1, max_length=SENTENCE_MAX_CHARS)
+    problems: list[str] = Field(min_length=1)
+
+
 class ComposeRequest(ContractModel):
     question: str = Field(min_length=2, max_length=QUESTION_MAX_CHARS)
     language: AnswerLanguage = CANONICAL_LANGUAGE
@@ -178,6 +164,7 @@ class ComposeRequest(ContractModel):
     searched: ResearchSummary
     focus: ComposeFocus | None = None
     style: ReadingStyle | None = None
+    refused: list[RefusedSentence] = Field(default_factory=list, max_length=SECTION_SENTENCES_LIMIT)
 
     @field_validator("language")
     @classmethod
@@ -196,6 +183,8 @@ class ComposeRequest(ContractModel):
             raise ValueError("candidate ids are unique")
         if self.searched.craft != self.craft:
             raise ValueError("the research summary belongs to the request's craft")
+        if self.refused and (self.focus is None or any(c.kind != "CLAIM" for c in self.candidates)):
+            raise ValueError("a section is written again only from its stored claims")
         return self
 
     @property
@@ -355,38 +344,6 @@ def sentence_level(sentence: ComposedSentence, allowed: Mapping[str, ComposeCand
     if unknown:
         raise InvalidInput(f"The sentence cites ids outside the allowed set: {', '.join(unknown)}")
     return weakest_level(allowed[i].level for i in sentence.cited_ids)
-
-
-def not_enough_evidence_message(summary: ResearchSummary) -> str:
-    about = f" about {summary.craft.name}" if summary.craft else ""
-    return " ".join([f"There is not enough cited evidence to answer this{about} yet.", *_searched(summary)])
-
-
-def searched_note(summary: ResearchSummary) -> str:
-    return " ".join(_searched(summary))
-
-
-def _searched(summary: ResearchSummary) -> list[str]:
-    parts = [
-        f"Searched {_count(summary.stored_claims, 'stored claim')} and "
-        f"{_count(summary.stored_passages, 'stored source passage')}.",
-    ]
-    if summary.queries:
-        listed = "; ".join(f'{query.tier} "{query.text}"' for query in summary.queries)
-        parts.append(f"Live research ran {_count(len(summary.queries), 'query', 'queries')}: {listed}.")
-    else:
-        parts.append("No live research ran.")
-    if summary.services:
-        parts.append(f"Sources searched: {', '.join(summary.services)}.")
-    parts.append(
-        f"Found {_count(summary.evidence_found, 'item')}, read {_count(summary.documents_read, 'document')}"
-        f" and recorded {_count(summary.failures, 'failed request')}."
-    )
-    return parts
-
-
-def _count(n: int, singular: str, plural: str | None = None) -> str:
-    return f"{n} {singular if n == 1 else plural or singular + 's'}"
 
 
 @runtime_checkable

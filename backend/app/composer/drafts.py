@@ -20,15 +20,22 @@ from app.research.composition import (
     sentence_violations,
 )
 from app.research.evidence import personal_data_in
+from app.research.gap_admissions import without_source_gap
 from app.research.quotes import figures_in
 from app.research.sections import is_facet_label
+from app.research.sentence_support import NEGATION_CHANGED, negation_gap
 from app.research.structured import MODEL_SERVICE
 
 __all__ = [
     "LEDE_DRAFT_HEADING",
+    "MAX_SECTIONS",
+    "SECTION_SENTENCES_MAX",
+    "WHOLE_ANSWER_FORM",
+    "AnswerForm",
     "DraftAnswer",
     "DraftSection",
     "DraftSentence",
+    "checked_block_sentence",
     "checked_heading",
     "checked_sentence",
     "free_text_problem",
@@ -43,6 +50,20 @@ logger = logging.getLogger(__name__)
 LINK_OR_MARKUP = re.compile(r"https?:|www\.|<|>|\]\(", re.IGNORECASE)
 LEDE_DRAFT_HEADING = "The direct answer"
 HEADING_QUOTES = "\"'‘’“”"
+MAX_SECTIONS = 6
+SECTION_SENTENCES_MAX = 8
+
+
+@dataclass(frozen=True)
+class AnswerForm:
+    sections: int
+    sentences: int
+    follow_ups: int
+
+
+WHOLE_ANSWER_FORM = AnswerForm(
+    sections=MAX_SECTIONS, sentences=SECTION_SENTENCES_MAX, follow_ups=FOLLOW_UPS_MAX
+)
 
 
 @dataclass(frozen=True)
@@ -93,12 +114,17 @@ class _Chosen:
     dropped: int = 0
 
 
-def parsed_answer(reply: Mapping[str, Any], allowed: Mapping[str, ComposeCandidate]) -> DraftAnswer:
-    sections = _list(reply, "sections")
+def parsed_answer(
+    reply: Mapping[str, Any],
+    allowed: Mapping[str, ComposeCandidate],
+    *,
+    form: AnswerForm = WHOLE_ANSWER_FORM,
+) -> DraftAnswer:
+    sections = _list(reply, "sections")[: form.sections]
     follow_ups = _list(reply, "followUps")
     return DraftAnswer(
-        sections=tuple(_section(raw, allowed) for raw in sections),
-        follow_ups=tuple(_usable_follow_ups(follow_ups)),
+        sections=tuple(_section(raw, allowed, sentences_max=form.sentences) for raw in sections),
+        follow_ups=tuple(_usable_follow_ups(follow_ups)[: form.follow_ups]),
     )
 
 
@@ -113,7 +139,7 @@ def parsed_section(
     sentences = _list(reply, "sentences")[: focus.sentences_max]
     labels = _offered_only(reply, "components", focus.component_labels)
     return DraftAnswer(
-        sections=(DraftSection(title, tuple(checked_sentence(s, title, allowed) for s in sentences)),),
+        sections=(DraftSection(title, tuple(checked_block_sentence(s, title, allowed) for s in sentences)),),
         follow_ups=tuple(_usable_follow_ups(_list(reply, "followUps"))[:follow_ups_max]),
         stage_ids=_chosen_stages(reply, focus.stage_ids),
         heading=checked_heading(reply.get("heading")),
@@ -176,6 +202,18 @@ def checked_sentence(raw: Any, heading: str, allowed: Mapping[str, ComposeCandid
     return DraftSentence(heading, raw_text, sentence, problems)
 
 
+def checked_block_sentence(raw: Any, heading: str, allowed: Mapping[str, ComposeCandidate]) -> DraftSentence:
+    checked = checked_sentence(raw, heading, allowed)
+    sentence = checked.sentence
+    if sentence is None or NEGATION_CHANGED not in checked.problem_kinds:
+        return checked
+    stated = without_source_gap(sentence.text)
+    if stated is None or negation_gap(stated, [span.text for span in sentence.spans]) is not None:
+        return checked
+    kept = tuple(problem for problem in checked.problems if not problem.startswith(f"{NEGATION_CHANGED}:"))
+    return replace(checked, problems=kept)
+
+
 def free_text_problem(text: str) -> str | None:
     if LINK_OR_MARKUP.search(text):
         return "carries a link or markup"
@@ -185,14 +223,14 @@ def free_text_problem(text: str) -> str | None:
     return None
 
 
-def _section(raw: Any, allowed: Mapping[str, ComposeCandidate]) -> DraftSection:
+def _section(raw: Any, allowed: Mapping[str, ComposeCandidate], *, sentences_max: int) -> DraftSection:
     if not isinstance(raw, Mapping):
         raise _unusable("a section is not an object")
     heading = str(raw.get("heading", "")).strip()
     problem = _heading_problem(heading)
     if problem:
         raise _unusable(f"a section heading {problem}")
-    sentences = _list(raw, "sentences")
+    sentences = _list(raw, "sentences")[:sentences_max]
     return DraftSection(heading, tuple(checked_sentence(s, heading, allowed) for s in sentences))
 
 

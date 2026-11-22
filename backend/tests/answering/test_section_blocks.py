@@ -127,7 +127,7 @@ def test_a_research_budget_splits_with_the_remainder_to_the_first_sections() -> 
 
 
 def test_the_ledger_hands_out_no_more_than_the_depth_budget() -> None:
-    ledger = ResearchLedger(ResearchShare(queries=2, native_queries=0, fetches=5), 3)
+    ledger = ResearchLedger(ResearchShare(queries=2, native_queries=0, fetches=5), (1, 1, 1))
     first = ledger.take(ResearchShare(queries=2, native_queries=0, fetches=5))
     assert (first.queries, first.fetches) == (2, 5)
     assert ledger.take_fresh(ResearchShare(queries=0, native_queries=0, fetches=0)) is None
@@ -138,7 +138,7 @@ def test_the_ledger_hands_out_no_more_than_the_depth_budget() -> None:
 
 
 def test_a_later_section_takes_a_fair_part_of_the_budget_earlier_sections_left() -> None:
-    ledger = ResearchLedger(ResearchShare(queries=4, native_queries=0, fetches=10), 6)
+    ledger = ResearchLedger(ResearchShare(queries=4, native_queries=0, fetches=10), (1,) * 6)
     assert [(s.queries, s.fetches) for s in ledger.shares] == [(1, 2), (1, 2), (1, 2), (1, 2), (0, 1), (0, 1)]
     taken = [ledger.take_section(share) for share in ledger.shares[:4]]
     assert [(s.queries, s.fetches) for s in taken] == [(1, 2), (1, 2), (1, 2), (1, 2)]
@@ -151,7 +151,7 @@ def test_a_later_section_takes_a_fair_part_of_the_budget_earlier_sections_left()
 
 
 def test_a_section_that_starts_early_never_takes_the_share_of_one_still_waiting() -> None:
-    ledger = ResearchLedger(ResearchShare(queries=2, native_queries=0, fetches=5), 3)
+    ledger = ResearchLedger(ResearchShare(queries=2, native_queries=0, fetches=5), (1, 1, 1))
     first, second, third = ledger.shares
     taken = [ledger.take_section(third), ledger.take_section(first), ledger.take_section(second)]
     assert [(s.queries, s.fetches) for s in taken] == [(0, 1), (1, 2), (1, 2)]

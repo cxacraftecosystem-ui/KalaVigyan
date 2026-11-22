@@ -21,7 +21,6 @@ from app.research.understanding import Understanding
 from app.research.vocabulary import CANONICAL_LANGUAGE
 
 from .answer_events import CitedClaims, joined_claims
-from .answer_sections import SectionOutcome
 from .answer_translation import AnswerTranslation, translated_block
 from .claim_ledger import sentence_keys
 from .explainer_events import ExplainerStream
@@ -36,6 +35,7 @@ from .lede_evidence import (
 )
 from .piece_lookup import PieceLookup, ReusedSection
 from .section_blocks import BlockRefused, KeptSentence, lede_block
+from .section_context import SectionOutcome
 from .section_enrichment import Enrichment
 from .signature_blocks import FiguredLede, SignatureFigures
 

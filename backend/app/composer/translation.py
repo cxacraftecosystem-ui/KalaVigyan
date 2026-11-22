@@ -8,6 +8,7 @@ from app.core.errors import ExternalFailure
 from app.research.structured import MODEL_SERVICE, StructuredModel, reply_object, schema_object
 from app.research.translation import (
     TRANSLATION_ATTEMPTS,
+    TRANSLATION_ITEM_MAX_CHARS,
     TranslationItem,
     TranslationRequest,
     translation_problems,
@@ -85,6 +86,8 @@ def checked_translation(item: TranslationItem, translated: str | None, *, langua
     if translated is None:
         return ["the translation is missing"]
     found = translation_problems(item.text, translated, language=language)
+    if len(translated) > TRANSLATION_ITEM_MAX_CHARS:
+        found.append(f"the translation is longer than {TRANSLATION_ITEM_MAX_CHARS} characters")
     added = free_text_problem(translated)
     if added and not free_text_problem(item.text):
         found.append(f"the translation {added}")

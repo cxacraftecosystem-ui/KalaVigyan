@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 
 from app.composer.candidates import research_summary
-from app.research.composition import FOLLOW_UPS_MAX, not_enough_evidence_message
+from app.research.composition import FOLLOW_UPS_MAX
 from app.research.explainer import Explainer, ExplainerSection, Understood, explainer_blocks
 from app.research.explainer_versions import (
     BuildsOnEvent,
@@ -17,13 +17,14 @@ from app.research.explainer_versions import (
     VersionMark,
     block_number,
 )
+from app.research.research_summary import not_enough_evidence_message
 from app.research.sections import SectionSpec, fallback_heading, section_specs
 from app.research.understanding import Understanding
 
 from .answer_lede import Opening
-from .answer_sections import SectionOutcome
 from .answer_translation import AnswerTranslation, Segment, translate_segments
 from .explainer_events import ExplainerStream
+from .section_context import SectionOutcome
 from .section_deepening import Deepening
 from .version_merge import merged_version
 
@@ -118,6 +119,11 @@ class AnswerLayout:
 
     def understood(self, understanding: Understanding) -> Understood:
         return understood_for(understanding, self.follow_up)
+
+    def asked(self, understanding: Understanding) -> tuple[str, ...]:
+        if self.follow_up is not None and self.follow_up.facets:
+            return self.follow_up.facets
+        return tuple(understanding.asked)
 
     def stored(self, document: Explainer | None, claim_ids: Iterable[uuid.UUID]) -> StoredAnswer:
         if self.follow_up is None or document is None:

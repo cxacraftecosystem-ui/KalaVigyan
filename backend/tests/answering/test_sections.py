@@ -21,6 +21,7 @@ from .fakes import (
     streamed,
     understanding_model,
 )
+from .piece_fakes import MemoryPieces
 from .test_answer_flow import LAKE_PAPER, REPLY, events
 
 HISTORY_REPLY = section_reply(
@@ -139,7 +140,8 @@ async def test_stored_claims_that_compose_nothing_send_the_section_to_live_resea
         sentence("Alum is a mordant.", quote("openalex:W404", "a passage that was never read"))
     )
     model = SectionModel(replies={"The chemistry": [unusable, json.dumps({"sentences": []}), REPLY]})
-    found = events(await streamed(asked(), pipeline(research=research, compose_model=model)))
+    held = MemoryPieces(held_fields=("CHEMISTRY",))
+    found = events(await streamed(asked(), pipeline(research=research, compose_model=model, pieces=held)))
     first, fresh = research.requests
     assert (first.fresh, fresh.fresh) == (False, True)
     assert (fresh.share.queries, fresh.share.fetches) == (4, 10)
@@ -165,10 +167,10 @@ async def test_each_section_researches_its_own_field_within_a_share_of_the_depth
 
 async def test_a_section_whose_research_fails_ends_empty_while_the_others_answer() -> None:
     class HistoryFails(FakeResearch):
-        async def __call__(self, request, progress, trail):
+        async def __call__(self, request, progress, trail, *, reads=None):
             if request.focus == "HISTORY":
                 raise ExternalFailure("every source failed", kind="unavailable", service="live_research")
-            return await super().__call__(request, progress, trail)
+            return await super().__call__(request, progress, trail, reads=reads)
 
     model = SectionModel(replies={"The chemistry": [REPLY]})
     answer_pipeline = pipeline(

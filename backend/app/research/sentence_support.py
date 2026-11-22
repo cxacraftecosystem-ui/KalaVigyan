@@ -11,12 +11,15 @@ from .quotes import content_stems, figures_in, fold_digits, normalise_quote_text
 from .translation import NUMBER_UNITS, SYMBOL_UNITS
 
 __all__ = [
+    "NEGATION_CHANGED",
     "NUMBER_WORD_VALUES",
     "SCREEN_KINDS",
     "SPAN_SHARED_MIN",
     "STANCE_KINDS",
     "SupportGap",
+    "figure_units",
     "negation_count",
+    "negation_gap",
     "number_words_in",
     "screen_gaps",
     "stance_gaps",
@@ -24,7 +27,8 @@ __all__ = [
 ]
 
 SPAN_SHARED_MIN = 2
-STANCE_KINDS = ("NEGATION_CHANGED", "NUMBER_WORD", "UNIT_CHANGED", "DROPPED_HEDGE")
+NEGATION_CHANGED = "NEGATION_CHANGED"
+STANCE_KINDS = (NEGATION_CHANGED, "NUMBER_WORD", "UNIT_CHANGED", "DROPPED_HEDGE")
 SCREEN_KINDS = ("LINK_OR_MARKUP", "PERSONAL_DATA")
 NUMBER_WORD_VALUES: Mapping[str, float] = MappingProxyType(
     {
@@ -98,9 +102,9 @@ SupportGap = tuple[str, str]
 
 def stance_gaps(text: str, quotes: Sequence[str]) -> list[SupportGap]:
     gaps: list[SupportGap] = []
-    negation = _negation_gap(text, quotes)
+    negation = negation_gap(text, quotes)
     if negation is not None:
-        gaps.append(("NEGATION_CHANGED", negation))
+        gaps.append((NEGATION_CHANGED, negation))
     gaps += [("NUMBER_WORD", word) for word in _unheld_number_words(text, quotes)]
     gaps += [("UNIT_CHANGED", figure) for figure in _changed_units(text, quotes)]
     gaps += [("DROPPED_HEDGE", hedge) for hedge in dropped_doubt(text, quotes)]
@@ -131,12 +135,17 @@ def number_words_in(text: str) -> list[str]:
     return [found.group().casefold() for found in NUMBER_WORD.finditer(normalise_quote_text(text))]
 
 
-def _negation_gap(text: str, quotes: Sequence[str]) -> str | None:
+def negation_gap(text: str, quotes: Sequence[str]) -> str | None:
     counts = [negation_count(quote) for quote in quotes]
     said = negation_count(text)
     if not counts or max(counts) <= said <= sum(counts):
         return None
     return f"the sentence holds {said} negation(s) where its quotes hold {max(counts)} to {sum(counts)}"
+
+
+def figure_units(text: str) -> list[tuple[str, str]]:
+    folded = fold_digits(normalise_quote_text(text))
+    return [(found.group(1).replace(",", ""), found.group(2)) for found in FIGURE_UNIT.finditer(folded)]
 
 
 def _unheld_number_words(text: str, quotes: Sequence[str]) -> list[str]:
@@ -155,18 +164,13 @@ def _unheld_number_words(text: str, quotes: Sequence[str]) -> list[str]:
 def _changed_units(text: str, quotes: Iterable[str]) -> list[str]:
     held: dict[str, set[str]] = {}
     for quote in quotes:
-        for number, unit in _figure_units(quote):
+        for number, unit in figure_units(quote):
             held.setdefault(number, set()).add(unit.casefold())
     return [
         f"{number} {unit}"
-        for number, unit in dict.fromkeys(_figure_units(text))
+        for number, unit in dict.fromkeys(figure_units(text))
         if number in held and unit.casefold() not in held[number]
     ]
-
-
-def _figure_units(text: str) -> list[tuple[str, str]]:
-    folded = fold_digits(normalise_quote_text(text))
-    return [(found.group(1).replace(",", ""), found.group(2)) for found in FIGURE_UNIT.finditer(folded)]
 
 
 def _support_items(text: str) -> set[str]:

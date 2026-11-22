@@ -273,7 +273,10 @@ sequenceDiagram
    reuse nothing. The other sections are started at once and run in parallel while the lede is
    written (`services/answer_sections`, decisions 0032 and 0077). Each section
    researches its own field within its share of the depth's budget (Basic and Detailed `HYBRID`,
-   Expert `DEEP`): the planner (decision 0009) plans facets and queries for that field and its
+   Expert `DEEP`), the budget going first to the fields the question asks that the craft holds
+   fewer than three facts in, which start first and research fresh, and a field the question
+   did not ask writing half the sentences (`services/section_fields`, decision 0138); one read
+   per document per answer (`planner/reading.ReadCache`): the planner (decision 0009) plans facets and queries for that field and its
    experts (each seat speaking to the field is named with the kinds of source it reads, and those
    kinds take every other early read; decision 0046), searches stored claims (every craft's, for any craft) and, for what they do not cover
    (every facet in `DEEP`), scholarly, reference and web sources, and reads the best documents,
@@ -284,7 +287,10 @@ sequenceDiagram
    stored citations (a process ladder from the science tables, `science/ladder`; a prose block),
    checks each and drops one that fails, marks the glossary terms in each English sentence, and
    sends each block with its sources first, then the section's pictures (decision 0039). A section
-   whose stored claims compose nothing researches live once more. `section_started`,
+   whose stored claims compose nothing researches live once more, and a sentence its write-back
+   could not keep is rewritten once from stored claims (`services/section_rewrite`). Passages
+   about another craft or a place abroad are not offered to the composer outside a comparison
+   (`services/off_question`, decision 0138). `section_started`,
    `section_state`, `block` and `section_done` mark each section; `status` the overall step.
 5. Another answer language (decision 0023): each block is still composed and checked in
    English; `services/answer_translation.translated_block` then translates it in one `TRANSLATE`
@@ -528,7 +534,8 @@ sequenceDiagram
    is kept as a cross-craft piece by basin or districts and reused with its geography section
    (`services/region_pieces`). Geology and climate sections get the
    registry layer their sentences name, built as the layer route answers it. Climate sections also
-   get a seasons strip, the trends of the craft's districts with the section's cited claims on
+   get a seasons strip (their district's CHIRPS rainfall alone when no fact names a month,
+   decision 0138), the trends of the craft's districts with the section's cited claims on
    what they mean (`services/climate_risk`, decision 0065), and materials sections a supply map (`services/season_supply_builders`,
    decision 0047): the craft's stages and the section's claims placed only on the months or season
    their own text names, a season given months only by a cited quote that states them, the CHIRPS

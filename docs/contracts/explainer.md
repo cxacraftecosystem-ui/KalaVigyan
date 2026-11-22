@@ -156,7 +156,11 @@ fewer sentences than the live page, never more.
   (`research/gap_admissions.admits_gap`, the one pattern the answer evaluation's `noGaps` measure
   also reads) leaves its block and is sent as an `open_question` with its citations, translated
   with the section's blocks (`services/gap_routing.routed_gaps`): "the compounds have not been
-  identified", "the origins are unknown". A block left with no sentence or off its contract is not
+  identified", "the origins are unknown", "the stored statements do not name the oxides", "no
+  rainfall, temperature or seasonal detail" (decision 0138). A section's or a seat's sentence that
+  admits what its sources lack (`gap_admissions.SOURCE_GAP`) may carry that admission's negation
+  and no other (`composer/drafts.checked_block_sentence`), so it survives grounding to be asked
+  here; seats are told a gap is never part of their view. A block left with no sentence or off its contract is not
   sent, and its gap sentences are still asked; nothing is dropped silently. An open question
   citing a source the stream does not hold is left out with a warning.
 - **Once per answer:** a material card per material (PubChem CID, compound, material, term or
@@ -349,7 +353,8 @@ construct, and the builder that made it adds nothing.
   the mirrored difference (its `thisView` cites this view's `otherView` claims and the other way
   round). The client draws one "Experts differ" card per pair with both citations
   (`expertsDiffer`). **Piece:** the section's slot; the views of a section are one reuse set.
-- **`seasons`** `{rows[{stageId?, label, months[], season?, sentence}] (1+), rainfall:
+- **`seasons`** `{rows[{stageId?, label, months[], season?, sentence}] (0+; none only with
+  rainfall), rainfall:
   MonthlyRain?, datasets[DatasetRef]}`, `MonthlyRain {district: DistrictRef, datasetCode, period,
   millimetres[12]}` (the district by its register name and state, decision 0050). Server: the label (the stored stage's name, else the claim's subject), the
   months and season read from the sentence and its quotes (`calendar.months_named`,
@@ -565,7 +570,9 @@ gets neither.
   a day or a year is a date, not a month of the year) and `only_season` (a text naming two seasons
   gives none); a month, range or season whose clause holds a negating or excluding word within
   five words before it (`EXCLUDING_WORDS`: not, never, except, until, ...) times nothing, and Jan,
-  Mar or Dec before a capitalised word is a name (decision 0050). At most `SEASON_ROWS_MAX` (12) rows, timed first; no timed row is no block. A row
+  Mar or Dec before a capitalised word is a name (decision 0050). At most `SEASON_ROWS_MAX` (12) rows, timed first; no timed row is no block, except in a climate
+  section, which then shows its district's CHIRPS rainfall alone (`season_rows.rain_only_block`,
+  decision 0138); the climate section builds the block when the answer has one. A row
   with a season and no month takes the months of the one mapping every offered quote agrees on
   (`calendar.season_months`: a season word joined to one month range in a source's quote, with no
   sentence break, clause word or other month or season between; `season_mappings`), and its

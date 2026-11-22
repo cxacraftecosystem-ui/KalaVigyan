@@ -243,21 +243,19 @@ Last reviewed: 2026-11-22.
   exposes them; route facet types to the sources that can serve them once the checks show
   which do.
 
-### Composer: gaps left on 2026-11-16 (decision 0010)
+### Stored passages are not composer candidates (decision 0010)
 
-- **What:** (1) A read document longer than 4,000 characters gives the composer nothing until the
-  `WEB_READ` reader fills its item's quotes. (2) Stored passages (T2 `ChunkHit`) are not composer
-  candidates: a sentence can cite a claim or live evidence, and the stream's `Citation` names a
-  claim. (3) A stored claim is offered as its text alone; its citations' quotes and sources are
-  not in `ClaimHit`, so the model cannot quote the source behind a claim and the label says only
-  "stored claim". (4) `ResearchSummary.services` lists searchers that returned evidence or
-  failed, not every searcher asked.
-- **Why left:** the reader and the answering service are separate lanes; chunk citations and
-  claim sources need the stream and retrieval contracts to grow together.
-- **Clears it:** the reader fills quotes for long documents; the answering service builds
-  `compose_request` from the pack, joins each claim's sources and quotes from the database into
-  its candidate, and records which searchers ran in the pack; add a chunk candidate kind with a
-  source-only citation when the stream allows one.
+- **What:** a stored passage (T2 `ChunkHit`) other than a field voice is not offered to the
+  composer: a sentence citing one could not be kept, because the write-back
+  (`services/research_write_back.store_live_research` and `write_back_plan`) keeps only read
+  documents and field voices, and the stream's `Citation` names a claim. The other gaps of
+  decision 0010 are cleared: long documents give their best passages, a stored claim is offered
+  with its sources' quotes and names, and the pack lists every searcher asked (decision 0138).
+- **Why left:** keeping such a sentence is a write-back change, and the write-back lane was
+  changing those files in the same round.
+- **Clears it:** the write-back keeps a sentence citing a stored passage as a claim of that
+  passage's source, the way it keeps field voices; then `compose_request` offers stored passages
+  as `EVIDENCE`.
 
 ## Live research write-back (decision 0011)
 
@@ -1033,57 +1031,15 @@ Last reviewed: 2026-11-22.
 
 ## Sectioned composition (decision 0032)
 
-### Sections share the depth's budget evenly
+### The voice turn's reply limits are prompt lines
 
-- **What:** `split_share` gives every section the same part of the depth's queries and documents
-  (Basic: 2 queries over 3 or 4 sections), whether or not its stored claims already cover it; a
-  section without a query share reaches live research only through the fresh retry, and only
-  while the ledger has something left.
-- **Why left:** which fields need live research is known only after each section's plan call.
-- **Clears it:** plan every section first, then hand the budget to the sections with open facets.
-
-### Two sections can read the same document
-
-- **What:** each section runs its own planner and `DocumentReader`; the adapters cache searches
-  for 600 s but not reads, so a paper found by two fields is fetched twice.
-- **Why left:** a shared reader needs a per-answer cache passed through the planner.
-- **Clears it:** one per-answer read cache (by evidence id) held by the answering service.
-
-### A late failure drops the whole prose block
-
-- **What:** a prose block is refused whole when one sentence has no stored citation after the
-  write-back (for example a write-back skipped as invalid), although its other sentences passed;
-  the model's one regenerate covers only what the composer's checks see.
-- **Why left:** plan 2.1 drops a block with an uncited fact; such skips should be rare.
-- **Clears it:** count refused blocks by reason in production; if they occur, regenerate the
-  section once with the refused sentences named.
-
-### Section titles and progress counts are generic
-
-- **What:** a section's title is its field's label ("The chemistry"), not one written for the
-  question; the `status` line's counts are the first section's to reach each step.
-- **Why left:** `section_started` goes out before anything is composed and has no later title
-  event; per-section progress is carried by `section_state`.
-- **Clears it:** a title from the understanding call (validated like a heading), and a status
-  line that sums the sections' counts.
-
-### Schema counts are prompt lines
-
-- **What:** with portable schemas, the whole-answer composer's six sections, the voice turn's one
-  section of three sentences and the translation's length limit are no longer enforced by the
-  schema; the section composer and the planner trim on our side, the voice turn and the coverage
-  job's whole-answer composer do not.
-- **Why left:** the voice call is switched off and the coverage job only writes claims.
-- **Clears it:** trim in `parsed_answer` to its form's limits (sections, sentences, follow-ups).
-
-### Stored plans and the explainer are not read back yet
-
-- **What:** `Answer.plan` holds one plan per section and attempt and `Answer.mode` the first
-  section's mode; the data migration wrapping older plans has no database test of an old row.
-  The explainer is stored as the reader saw it (translated), not in English.
-- **Why left:** nothing reads them yet besides Listen, which wants the shown language.
-- **Clears it:** a DB test that seeds a pre-0014 plan and runs the upgrade, when a reader of
-  `Answer.plan` is written.
+- **What:** the voice turn's one section of three sentences and no follow-ups are lines of its
+  prompt only: `voice/compose.voice_composed` calls `parsed_answer` without a form, so a longer
+  reply is trimmed to the whole answer's six sections of eight sentences instead. The
+  whole-answer composer and the translation are trimmed and checked on our side (decision 0138).
+- **Why left:** `backend/app/voice/**` is the voice lane's, and the voice call is switched off.
+- **Clears it:** `voice_composed` passes `form=AnswerForm(sections=1, sentences=VOICE_MAX_SENTENCES,
+  follow_ups=0)`, with a unit test.
 
 ## Stored knowledge pieces (decision 0033)
 
@@ -2846,23 +2802,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** give the spinning page's catch a bound of its own well inside the test timeout, or
   run that spec alone in its project with a longer timeout.
 
-### Near-duplicate prose across sections
-
-- **What:** the judge of answer-quality run 44994632550 (13 answers on production, 2026-11-22) found
-  one fact told twice in different words across sections: the Bandhani GI answer (615162e4) repeats
-  the 1971 Gazetteer figures and the Sandhani report across ECONOMICS and HISTORY; the Bandhani
-  communities answer (6d7e0d44) repeats history and economics sentences nearly verbatim; the Bidri
-  history answer (68fa24b4) repeats the 1625 miniature and the Bidar and Hyderabad claims; the Ajrakh
-  dye plants answer (d006480e) repeats harde, kut and alizarin. These are different claims or
-  sentences, not copies of one item's sentence, so decision 0134 does not reach them, and the
-  restatement rule of decision 0127 lets them through (another claim group, or a sentence that adds
-  a number).
-- **Why left:** the sentence-once lane fixes a sentence repeated within a block; telling two claims
-  apart as one fact is a ledger rule.
-- **Clears it:** let the ledger treat two fact sentences that state the same numbers with the same
-  units about the same subject, or the same source's same passage, as one fact across sections,
-  keeping the first; measure the judge's notes and its cited part on the same 13 questions.
-
 ### Numbers in prose without a table or figure
 
 - **What:** in run 44994632550 the judge's figures part averaged 2.8 of 5 (36 of 65). The Ajrakh
@@ -2878,32 +2817,6 @@ Last reviewed: 2026-11-22.
   draws it), and name each figure's kind and the quantities it shows in the judge's message;
   measure the figures part on the same questions.
 
-### Answers drift into process and history while asked fields stay thin
-
-- **What:** in run 44994632550 the judge found answers padded with PROCESS and HISTORY the question
-  did not ask, while expected fields were missing or thin: ECOLOGY never addressed in the Ajrakh
-  water and climate answer (d9674645, fields 3); PHYSICS missing in the Jaipur body and glaze answer
-  (8943da7e, fields 3) and one sentence in the Bidri making-stages answer (c31398c8, cited 3);
-  POLICY with no sentences of its own in the Ajrakh makers and market answer (146493c2) and only
-  generic GI sentences in the Bandhani GI answer (615162e4).
-- **Why left:** seats, planning and research by field are not this lane's; nothing here changes
-  what an answer covers.
-- **Clears it:** plan the asked fields' sections first and cap the share of fields not asked; send
-  live research for an asked field with fewer than three stored facts for the craft (ECOLOGY and
-  PHYSICS here) before composing; file a craft's GI registry facts under POLICY; measure the fields
-  and cited parts on the same questions.
-
-### A gap admission the pattern misses
-
-- **What:** in run 44994632550 the Jaipur place answer (e94dbb80) shows a sentence, filed under
-  GEOGRAPHY, saying it has no rainfall, temperature or seasonal detail. The judge scored noGaps 2,
-  but `research/gap_admissions.GAP_ADMISSION` did not match the wording, so the rubric's noGaps
-  stayed 1 and the composer kept the sentence.
-- **Clears it:** add the "no ... detail" wordings to `GAP_ADMISSION`, with a test from this
-  sentence, so the composer turns such a sentence into an open question; give the craft's CLIMATE
-  section the seasons block from its district's CHIRPS normals, so the section has cited climate to
-  say.
-
 ### Leftovers of the sentence-once lane
 
 - **What:** the rubric's `cited` part counts every copy of a sentence a block carries
@@ -2918,18 +2831,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** count `shown_field_sentences` in `answer_measures` and `consulted_fields` and
   re-base the rubric floor in the same change; keep price claims out of the GI sentences in
   `services/market_builder`; carry each material's sentence-case name from the glossary.
-
-### Expert seats' gap admissions are dropped by their grounding
-
-- **What:** in answer 504968ea-49cc-469c-88f9-205a2ea90e8a (Khurja Pottery, EXPERT, 2026-11-22)
-  four of seven expert seats wrote a gap admission ("... but the stored statements do not name the
-  oxides behind Khurja's blue and turquoise.") that the grounding check then dropped as
-  `NEGATION_CHANGED`, so the seat's honest gap left no trace in the answer.
-- **Why left:** the write-back lane (decision 0135) changes how facts are filed, not what the seats
-  write or how their sentences are grounded.
-- **Clears it:** have the seats state a gap as an open question, never in a cited sentence, and turn a
-  grounded sentence that admits a gap into an open question (`research/gap_admissions`), with a
-  test from this sentence.
 
 ### Simulation builders that run long and add nothing
 
@@ -2957,18 +2858,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** curate Khurja Pottery's glaze chemistry from a source that names its colourants (the
   GI application, a ceramics institute's study of Khurja glazes), and let the planner search for the
   colourant by its element names when a question asks what gives a colour.
-
-### Off-question sources were cited
-
-- **What:** answer 504968ea-49cc-469c-88f9-205a2ea90e8a cited sources about other crafts and places:
-  Jaipur blue pottery, a Nigerian porcelain study, a Taiwanese glaze and a commercial kiln-schedule
-  page. Decision 0135 keeps their facts off Khurja's page, but the answer still showed sentences
-  resting on them.
-- **Why left:** what an answer shows is the composer's and the reranker's; the lane changed what is
-  written back.
-- **Clears it:** apply the same naming rule to the composer's candidates (a passage about a place
-  outside India or another catalogued craft is offered only for a comparison, or labelled as such),
-  and score off-question citations in the answer evaluation.
 
 ### Write-backs filed before decision 0135
 

@@ -38,7 +38,7 @@ flowchart LR
 | [0007](0007-web-search-and-fetcher.md) | Web search adapters and the fetcher sandbox | · |
 | [0008](0008-stored-knowledge-retrieval.md) | Stored-knowledge retrieval | · |
 | [0009](0009-planner-and-tiered-research.md) | Planner and tiered research | · |
-| [0010](0010-composer.md) | Composer | · |
+| [0010](0010-composer.md) | Composer | [0138](0138-answers-composed-from-the-asked-fields.md) |
 | [0011](0011-claim-write-back-and-coverage-enrichment.md) | Claim write-back and the coverage enrichment job | · |
 | [0012](0012-answer-stream-end-to-end.md) | The answer stream end to end | · |
 | [0013](0013-review-fixes-quotes-licences-scope.md) | Quote strength, open licences, one craft scope and scoped embedding | · |
@@ -65,7 +65,7 @@ flowchart LR
 |---|---|---|
 | [0030](0030-explainer-contract.md) | The explainer contract | · |
 | [0031](0031-understanding-and-depth.md) | Understanding the question, and depth by role | [0093](0093-no-caps-for-now.md) |
-| [0032](0032-sectioned-composition.md) | Sectioned composition: research per field, blocks per section | · |
+| [0032](0032-sectioned-composition.md) | Sectioned composition: research per field, blocks per section | [0138](0138-answers-composed-from-the-asked-fields.md) |
 | [0033](0033-knowledge-pieces-and-reuse.md) | Stored knowledge pieces and reuse | [0096](0096-reader-question-pieces-join-their-craft-page.md) |
 | [0034](0034-images-and-terms.md) | Pictures and tappable terms | · |
 | [0035](0035-listen-and-voice-switched-off.md) | Listen, and the live voice call switched off | · |
@@ -168,7 +168,7 @@ flowchart LR
 | [0124](0124-live-research-write-back.md) | Live research writes back only what its sources say | [0135](0135-write-backs-filed-under-the-craft-they-name.md) |
 | [0125](0125-reranking.md) | Stored facts are reranked, and relevance decides when stored knowledge is enough | [0132](0132-a-ranking-votes-with-its-first-thirty.md) and [0133](0133-the-evaluation-scores-what-answers-read.md) |
 | [0126](0126-measurement-that-grows.md) | Measurement grows with the knowledge and alerts when it falls | [0133](0133-the-evaluation-scores-what-answers-read.md) |
-| [0127](0127-coherent-answers.md) | An answer says each fact once, never admits a gap, keeps the stages it is asked and paces its sources | · |
+| [0127](0127-coherent-answers.md) | An answer says each fact once, never admits a gap, keeps the stages it is asked and paces its sources | [0138](0138-answers-composed-from-the-asked-fields.md) |
 | [0129](0129-first-stage-retrieval.md) | The stored search finds the right facts as the knowledge grows | · |
 | [0130](0130-a-craft-release.md) | One craft can be released as its own dataset with its own DOI | · |
 | [0131](0131-drawings-in-the-design.md) | Whatever an AI draws for KalaVigyan speaks the design and follows the reader's theme | · |
@@ -177,6 +177,7 @@ flowchart LR
 | [0134](0134-each-sentence-once-in-a-block.md) | A block says each sentence once, and the judge reads it as a reader does | · |
 | [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | · |
 | [0137](0137-limits-kept-by-choice.md) | Nine limits are kept by choice and leave the debt register | · |
+| [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | · |
 
 ## How this document is kept true
 

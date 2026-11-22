@@ -105,6 +105,7 @@ class AnswerMeasures(ContractModel):
     figures: int = Field(ge=0)
     gaps: list[str]
     fields: list[FieldMeasure]
+    off_question: int = Field(default=0, ge=0)
 
 
 class JudgeScores(ContractModel):
@@ -167,7 +168,9 @@ def eval_report(
     )
 
 
-def answer_measures(explainer: Explainer, expected: Sequence[str]) -> AnswerMeasures:
+def answer_measures(
+    explainer: Explainer, expected: Sequence[str], *, off_question: int = 0
+) -> AnswerMeasures:
     consulted = {field.field: field for field in consulted_fields(explainer)}
     sentences = field_sentences(explainer)
     listed = {source.id for source in explainer.sources}
@@ -182,6 +185,7 @@ def answer_measures(explainer: Explainer, expected: Sequence[str]) -> AnswerMeas
         figures=sum(field.figures for field in consulted.values()),
         gaps=gap_admissions([one.sentence.text for one in sentences]),
         fields=[_field_measure(field, set(expected), consulted.get(field)) for field in shown],
+        off_question=off_question,
     )
 
 
@@ -190,7 +194,7 @@ def rubric_score(measures: AnswerMeasures) -> float:
     parts = (
         reached,
         density,
-        1.0 if measures.sentences and not measures.unresolved else 0.0,
+        1.0 if measures.sentences and not measures.unresolved and not measures.off_question else 0.0,
         1.0 if measures.figures else 0.0,
         0.0 if measures.gaps else 1.0,
     )

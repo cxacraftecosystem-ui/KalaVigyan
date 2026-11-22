@@ -55,7 +55,8 @@ class ExplainerStream:
         self.ledger = ClaimLedger()
         self._lock = asyncio.Lock()
         self._sent_sources: set[str] = set()
-        self._steps: set[str] = set()
+        self._totals: dict[str, int] = {}
+        self._latest: tuple[str, str] = ("", "")
         self._open_questions = 0
         self._lede_settled = asyncio.Event()
         self._lede_settled.set()
@@ -77,13 +78,18 @@ class ExplainerStream:
         await self.emit("section_heading", {"sectionId": section_id, **shown})
 
     async def status(self, step: StatusStep, count: int = 0, *, craft: str = "") -> None:
-        if step in ONCE_STEPS and step in self._steps:
-            return
-        self._steps.add(step)
+        if step in ONCE_STEPS:
+            shown = step in self._totals
+            self._totals[step] = self._totals.get(step, 0) + count
+            if shown and step != self._latest[0]:
+                return
+            count = self._totals[step]
         label = ANSWER_LANGUAGE_SPECS[self.language].label
-        await self.emit(
-            "status", {"step": step, "message": status_message(step, count, craft, language=label)}
-        )
+        message = status_message(step, count, craft, language=label)
+        if (step, message) == self._latest:
+            return
+        self._latest = (step, message)
+        await self.emit("status", {"step": step, "message": message})
 
     async def section_started(self, spec: SectionSpec, *, titles: Mapping[str, str], state: str) -> None:
         await self.emit(

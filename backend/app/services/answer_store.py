@@ -17,6 +17,7 @@ from app.core.errors import InvalidInput
 from app.core.shielded import ShieldedWork
 from app.models import Answer
 from app.planner.orchestrator import ResearchPlanner
+from app.planner.reading import ReadCache
 from app.planner.understanding import ModelUnderstander
 from app.research.blocks import ImagesBlock
 from app.research.composition import ComposedAnswer
@@ -45,9 +46,8 @@ from .answer_events import CitedClaims, cited_claims
 from .answer_gaps import FieldReading, record_verdict
 from .answer_lede import LedeTools
 from .answer_models import AnswerModels
-from .answer_sections import ClaimsOf
 from .answer_translation import AnswerTranslation, english_question
-from .answering import AnswerAsk, AnswerPipeline
+from .answering import AnswerAsk, AnswerPipeline, NameLookup
 from .block_builders import BlockBuilders
 from .builder_interface import BuilderTools
 from .coverage import held_field_lookup
@@ -59,16 +59,19 @@ from .field_voices_citations import writes_back
 from .live_sources import LiveSourcesStore
 from .piece_store import SqlPieceStore
 from .research_write_back import sentence_claim_ids, store_live_research
+from .section_context import ClaimsOf
 from .section_enrichment import EnrichmentTools
 from .section_images import SectionImagesAsk, section_images
 from .signature_blocks import signature_figures
 from .term_glossary import glossary_entries
 from .translation_cache import SqlTranslationCache
+from .write_back_names import CraftNames, filing_names
 
 __all__ = [
     "EXPLAINER_PAYLOAD_KEY",
     "READING_STYLE_KEY",
     "SqlAnswerStore",
+    "answer_names",
     "answer_understander",
     "build_answer_enrichment",
     "build_answer_pipeline",
@@ -237,10 +240,10 @@ def build_answer_pipeline(
     )
 
     async def research(
-        request: PlanRequest, progress: ResearchProgress, trail: ResearchTrail
+        request: PlanRequest, progress: ResearchProgress, trail: ResearchTrail, reads: ReadCache | None = None
     ) -> EvidencePack:
         planner = ResearchPlanner(model=models.plan, retriever=retriever, sources=await live.get(sessions))
-        return await planner.research(request, progress=progress, trail=trail)
+        return await planner.research(request, progress=progress, trail=trail, reads=reads)
 
     tools = BuilderTools(
         sessions, live, models.builder_plan, models.builder_compose, models.explainer, retriever=retriever
@@ -257,7 +260,16 @@ def build_answer_pipeline(
         builders=BlockBuilders.from_registry(tools),
         lede=LedeTools(compose=composer.lede, figures=signature_figures(sessions), retriever=retriever),
         catalogue=catalogue_lookup(sessions),
+        names=answer_names(sessions, index),
     )
+
+
+def answer_names(sessions: async_sessionmaker[AsyncSession], index: CraftIndexStore) -> NameLookup:
+    async def names(lead: CraftRef | None, compared: Sequence[CraftRef]) -> CraftNames:
+        async with sessions() as session:
+            return await filing_names(session, index, lead, compared)
+
+    return names
 
 
 def answer_understander(

@@ -24,15 +24,22 @@ from .craft_process import process_records
 from .knowledge_view import resolve_craft
 from .monthly_rain import district_rainfall
 from .place_offers import district_refs, mapped_districts
-from .season_rows import SeasonOffer, season_facts, seasons_block, stage_claims
+from .season_rows import SeasonOffer, rain_only_block, season_facts, seasons_block, stage_claims
 from .supply_links import OriginPlace, supply_links, supply_map_block, supply_offer
 from .supply_places import PlaceFinder, origin_places
 
-__all__ = ["SUPPLY_MAP_WAIT_SECONDS", "SeasonsBuilder", "SupplyMapBuilder", "craft_rainfall"]
+__all__ = [
+    "RAIN_ONLY_FIELDS",
+    "SUPPLY_MAP_WAIT_SECONDS",
+    "SeasonsBuilder",
+    "SupplyMapBuilder",
+    "craft_rainfall",
+]
 
 logger = logging.getLogger(__name__)
 
 SUPPLY_MAP_WAIT_SECONDS = 30.0
+RAIN_ONLY_FIELDS = frozenset({"CLIMATE"})
 
 Places = Callable[[], Awaitable[PlaceFinder]]
 
@@ -63,7 +70,10 @@ class SeasonsBuilder:
             facts=season_facts(facts, stored.subjects),
             rainfall=stored.rainfall,
         )
-        block = seasons_block(offer, block_id=f"{ask.section.id}.seasons")
+        block_id = f"{ask.section.id}.seasons"
+        block = seasons_block(offer, block_id=block_id)
+        if block is None and ask.section.discipline in RAIN_ONLY_FIELDS:
+            block = rain_only_block(stored.rainfall, block_id=block_id)
         if block is None:
             return Built()
         return Built((block,), sources_beyond([block], stored.records.sources, ask.cited))
