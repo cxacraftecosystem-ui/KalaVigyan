@@ -20,7 +20,7 @@ flowchart LR
   class E accent
 ```
 
-Last reviewed: 2026-11-18.
+Last reviewed: 2026-11-22.
 
 ## Infrastructure
 
@@ -44,32 +44,6 @@ Last reviewed: 2026-11-18.
 - **Why left:** the Cloudflare widget has to be created by the owner.
 - **Clears it:** create the widget, set both values; Deploy backend copies them to Parameter
   Store.
-
-### The frontend can go live before the backend it needs
-
-- **What:** Vercel deploys every push to `main` straight to production through its git
-  integration, while Deploy backend waits for Backend checks. On 2026-11-18 release d51c504 failed
-  its database tests, so the backend stayed on 31890bf while Vercel served the new craft page,
-  whose `GET /api/crafts/{slug}/page` the old backend answers 404. The fix was promoting the
-  31890bf build by hand (`vercel promote`). Promoting an older build does not stop the next push
-  from taking the domain on the Hobby plan, so it was promoted again after the fix push, and the
-  new build was promoted once the backend was healthy.
-- **Why left:** found during that release; the frontend-checks and deploy workflows were not
-  changed mid-release.
-- **Clears it:** turn off Vercel's production deploys from git (`git.deploymentEnabled`) and have
-  Deploy backend call a Vercel deploy hook after its CloudFront smoke step, with a frontend-only
-  path that fires the same hook after Frontend checks when no backend file changed.
-
-### Slow craft page builds hold database connections
-
-- **What:** four concurrent readers exhausted the API's pool of 5 on 2026-11-19 (production E2E:
-  `QueuePool limit of size 5 overflow 0 reached`, 500s from `/api/crafts/*/page`,
-  `/shared-science`, `/region`, `/api/answers/config` and `/api/preferences/me`). The pooler now
-  holds 30 and the API 12 (RUNBOOK, Connection budget), but a page build still holds its
-  connection for seconds, so a classroom opening craft pages at once can queue behind them.
-- **Why left:** the cure is to build pages ahead of the reader, which is decision 0101, item 11.
-- **Clears it:** the nightly static pages of decision 0101, item 11. Re-run the production E2E
-  with four workers after each step.
 
 ## Backend structure
 
@@ -156,15 +130,6 @@ Last reviewed: 2026-11-18.
 - **Why left:** the craft page's merge is one module that edits no other file (decision 0096).
 - **Clears it:** one shared rule for "curated piece" (every cited claim curated and no answer id)
   used by `_supersede`, `answered_first` and the page merge, with a test that deletes an answer.
-
-### Craft descriptor embeddings are not filled
-
-- **What:** `app/scripts/embed_craft_descriptors.py` now runs after the seeds and the craft sync
-  on every release and first in the daily Coverage enrichment run (decision 0016), but it fills
-  only missing vectors, so a craft whose aliases change later (portal sync, enrichment) keeps
-  its old vector.
-- **Why left:** detecting a changed descriptor needs a stored hash per craft, a schema change.
-- **Clears it:** store a hash of `descriptor_text` per craft and embed again when it differs.
 
 ### Scholarly adapters: gaps left on 2026-11-16 (decision 0005)
 
@@ -385,7 +350,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** when the full `geo-etl` load exists, regenerate the layer fixture's values from
   it in a reviewed change.
 
-
 ## Region profile and map layers (decision 0016)
 
 ### A district place carries every stored value
@@ -418,20 +382,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** have the ETL write the share once with its name and write zero rows (or a
   coverage row per dataset), then drop both rules; or a contract test that runs the GLiM and
   MRDS row builders on a fixture.
-
-### Dataset links of rows loaded before migration 0005
-
-- **What:** `EnvDataset.url` is filled only by a geo load after the migration, so until the next
-  `geo-etl` run with `load` the region and layer answers send `url: null` for every dataset.
-- **Clears it:** the next Geo ETL run with `load` (any dataset), which upserts every dataset row.
-
-### States of practice are matched in two places
-
-- **What:** `geo/places.practice_states` and `services/knowledge_view.craft_locations` both
-  match `Craft.stateOfPractice` to `AdminState.name` case-insensitively; only the region skips
-  `All India` explicitly and logs other unmatched names.
-- **Clears it:** have the profile use `practice_states` (or an `AdminState` lookup in one service)
-  the next time `knowledge_view.py` is split.
 
 ## Geo ETL state gaps (decision 0027)
 
@@ -491,35 +441,6 @@ Last reviewed: 2026-11-18.
   differ.
 
 ## Craft page and region panel (decision 0019)
-
-### The profile still sends stages and science the page no longer reads
-
-- **What:** `GET /crafts/{slug}/profile` (`services/knowledge_view.craft_profile`) still returns
-  `stages` (with the uncited `durationText`) and an always-empty `science`; the craft page now
-  reads the process route instead, and uses `stages` only to keep the profile's citation numbers.
-- **Why left:** lane 0019 does not edit backend files.
-- **Clears it:** drop both fields from the profile route and `CraftProfile` in one change, and
-  number sources from the overview, materials and the process route.
-
-### Map layer values carry no district names
-
-- **What:** `MapLayer.values` is keyed by LGD code only and the client holds no district names, so
-  hovering or tapping a district on `/map` shows its value and not its name
-  (`components/map/MapLayerView.tsx`).
-- **Why left:** the region contract (decision 0014) fixes the layer body, and the backend is
-  another lane's.
-- **Clears it:** add district names to `MapLayer` (or a cached districts route) with the contract,
-  golden file and both tests, then show "Kachchh · pH 8.1".
-
-### Craft page and map layers not yet seen running
-
-- **What:** the timeline, region panel and choropleths are checked by typecheck, lint and unit
-  specs of their pure rules, not in a browser: there is no React renderer in the unit project and
-  nothing runs on the laptop. Their contrast, wrapping at phone width and the KaTeX rendering of
-  real reactions are unverified.
-- **Clears it:** the Production build job, then a signed-in smoke spec (craft page tabs, `/map`
-  with `?layer=`) with route fixtures from `shared/` at desktop and phone widths, and screenshots
-  once the 0015-0016 routes are deployed.
 
 ### The boundary caption has two homes
 
@@ -626,59 +547,6 @@ Last reviewed: 2026-11-18.
   rate (Safari's AAC is the likely case, unverified) sends shorter turns than a minute.
 - **Clears it:** measure the recorded rate per browser in the smoke spec; if one ignores it, raise
   that type's byte ceiling in the contract with its measured rate.
-
-### Audio worklets need `blob:` scripts
-
-- **What:** `@elevenlabs/client` loads its AudioWorklet processors from `blob:` and `data:` URLs.
-  The CSP has no `script-src` yet, so they load; the strict CSP of PLAN 15 would block them.
-- **Clears it:** copy `node_modules/@elevenlabs/client/worklets/*` into `public/` at build time
-  and pass `workletPaths` from `lib/elevenLabsAgent.ts`, in the change that adds `script-src`.
-
-## Media UI (decision 0021)
-
-### Sharing waits for the governance lane
-
-- **What:** the client draws Share, Withdraw and Stop sharing only when an asset carries
-  `sharing` (`docs/contracts/media.md`, Sharing), which no backend sends, and calls
-  `POST /api/media/assets/{id}/sharing`, which no route serves. A second professor cannot reach
-  an asset awaiting sign-off, because a job is visible to its requester only.
-- **Why left:** lane 0021 does not edit backend files; the contract gave the route to the
-  governance lane.
-- **Clears it:** the governance lane adds `sharing` to `MediaAssetView` for `SHARE_MEDIA` holders,
-  serves the route with the rules of the contract, adds the second professor's queue, and adds a
-  golden asset with `sharing` that both contract tests read.
-
-### Shared illustrations reach other readers only through the cache
-
-- **What:** a `CRAFT_SHARED` asset is shown to another reader only when they press Image on the
-  same stage and the prompt hash matches; no route lists a craft's shared assets, so the stage
-  does not show them on arrival.
-- **Clears it:** a route listing the shared assets of a craft's stages (with fresh URLs), read
-  by the media store and drawn by `components/craft/StageMedia.tsx` before the buttons.
-
-### The client's wait limit restates backend constants
-
-- **What:** `MEDIA_WAIT_LIMIT_SECONDS` (900, `frontend/lib/mediaView.ts`) is three attempts of
-  `JOB_TIMEOUT_SECONDS` (240) plus a queue's wait; a change to the backend's timeout or retries
-  does not move it.
-- **Clears it:** a deadline on the job view (for example `giveUpAt`) that the client reads
-  instead, with the contract, golden file and both tests.
-
-### No style hint
-
-- **What:** `MediaJobRequest.styleHint` is always sent as `null`; the UI has no field for it.
-- **Clears it:** a short field on the stage's media row (filtered with the contract's banned
-  words, refusals shown beside it) when the owner asks for one.
-
-### Media UI not yet seen running
-
-- **What:** the buttons, progress, figure, downloads and sharing steps are checked by typecheck,
-  lint and unit specs that drive the store with fakes and test the rules on the golden files; no
-  browser has drawn an asset, played a video, saved a blob from the bucket (its CORS allows
-  `https://kalavigyan.vercel.app`) or loaded every page under the new `img-src` and `media-src`.
-- **Clears it:** after lane 0018 deploys, a signed-in smoke spec with route fixtures from
-  `shared/` at desktop and phone widths (press, progress, figure, download name), and a pass over
-  every page with the CSP report in the console.
 
 ## Science engine (decision 0015)
 
@@ -852,15 +720,6 @@ Last reviewed: 2026-11-18.
 - **Why left:** older than the admin role; the master admin sends the whole map today.
 - **Clears it:** merge the sent roles into the stored map, or refuse a map that does not name
   every role.
-
-### Admin role not yet seen running
-
-- **What:** migration 0009 has been rendered offline only; the admin DB tests
-  (`backend/tests/db/test_admin_role_db.py`) run on GitHub Actions, and no browser has drawn the
-  hub, Manage users or the roster as an admin.
-- **Why left:** nothing runs on the laptop; the batch deploys once.
-- **Clears it:** Backend checks green on the batch, then sign in as an admin after the deploy and
-  walk the hub, Usage, Manage users and the roster.
 
 ## Yahoo sign-in (decision 0026)
 
@@ -1126,15 +985,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** measure on a long answer on a phone; if it drops frames, give each sentence a
   selector on the mark (only the sentence being read re-renders).
 
-### The understood line finds its controls by id
-
-- **What:** a part of the understood line moves focus to its control under the question box
-  through element ids (`components/ask/AskOptions.focusAskOption`), not refs.
-- **Why left:** the controls live in the asking screen's components and the explainer only needs
-  to hand focus over; threading refs through both trees for one focus call was heavier.
-- **Clears it:** if the asking screen gains a focus API (refs from `useAskScreen`), call it
-  instead.
-
 ## Listen and the switched-off call (decision 0035)
 
 ### Narration not yet heard from ElevenLabs
@@ -1304,25 +1154,7 @@ Last reviewed: 2026-11-18.
   `river_store.rivers_crossing(session, [449])` and `trace_river`, write its reach ids and outlet
   into the fixture, and remove `placeholders` from the fixture and its model.
 
-### PubChem records stored before decision 0042 keep random ids
-
-- **What:** `link_compounds` now stores a new record source under `record_source_id(cid)`;
-  record sources it stored earlier keep their random ids, and it reuses them (found by URL).
-- **Why left:** ids already cited by stored claims or pieces must not move.
-- **Clears it:** nothing needed while every reader takes the id from `Compound.sourceId`; a
-  migration could rewrite them if a reader ever derives the id from the CID.
-
 ## River lines, tracer and monthly rainfall (decision 0043)
-
-### The river ETL has run only on synthetic networks
-
-- **What:** `python -m geo_etl rivers` and `etl/geo/load_rivers.py` are tested on hand-made
-  networks and files; neither has read the real HydroRIVERS Asia file, uploaded a topology or
-  written `RiverReach`. The network checks may stop the first run on a real defect.
-- **Why left:** the extraction and load run only on GitHub Actions, after the deploy that carries
-  migration `0016_river_reaches`.
-- **Clears it:** the first Geo ETL dispatch with `riverlines` and `load` (`docs/RUNBOOK.md`, Geo
-  ETL); any problem it names is decided in an addendum to decision 0043.
 
 ### Districts reached are computed on every trace
 
@@ -1342,14 +1174,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** read the sizes in the `rivers` job summary after the load; if too large for a
   phone, a per-path or per-district topology, a coarser threshold for the largest basins, or
   compressed responses, in a contract change.
-
-### CHIRPS monthly normals are complete only after a full run
-
-- **What:** the region story's seasons rainfall reads the twelve `monthly_precipitation` rows of
-  the CHIRPS dataset row's period; districts whose CHIRPS shard failed in run 43884310432 (15
-  states, decision 0027) have none until CHIRPS is loaded again, and a district with a month from
-  another period has no rainfall.
-- **Clears it:** the CHIRPS dispatch in `docs/RUNBOOK.md`, Geo ETL, then the count check there.
 
 ## Place renderers (decision 0048)
 
@@ -1373,15 +1197,6 @@ Last reviewed: 2026-11-18.
   `shared/river.topology.golden.json` (the fixture's placeholder river 1, 2, 3 and a tributary,
   written by the geo ETL's encoder, reproduced by `etl/geo/tests/test_rivers.py` and parsed by
   `e2e/river-topology-golden-unit.spec.ts`); the place spec can now draw from it.
-
-### Map layer blocks carry district codes without names
-
-- **What:** a map layer's `highlighted` districts are LGD codes only, so the map layer reads
-  "Outlined · pH 7.9" (as on `/map`, entry "Map layer values carry no district names"). The
-  seasons rainfall names its district since decision 0050.
-- **Why left:** version 1 of the kind is fixed (decision 0042) and the client holds no register.
-- **Clears it:** a version 2 of `map_layer` with `DistrictRef`s, or the districts route of that
-  entry, then "Kachchh · pH 7.9".
 
 ### A stretch is the reaches with a vertex inside the district
 
@@ -1464,34 +1279,12 @@ Last reviewed: 2026-11-18.
 
 ## Expert panel (decision 0046)
 
-### Panels spend only in the first half of a capped answer
-
-- **What:** builders' plan and compose calls (panels, region stories, supply maps, material cards;
-  decision 0050 added the plan calls) hold `AnswerSpend.headroom()`, so for every role but Master
-  Admin such a call is refused once it would leave the answer less than half its depth's cap. At
-  the starting caps ($0.25, $0.50, $1.00) a Basic answer hears a panel in its first section or
-  two at most, and later sections of long answers hear none and get no story, map or cards.
-- **Why left:** a panel call is about as dear as the section's own compose call, and a section
-  refused for spend stops the whole answer; the caps are starting values (owner O3).
-- **Clears it:** set the caps from measured spend (the debt "Per-answer caps are starting values"),
-  then lower `OPTIONAL_WORK_KEEPS`, or let a section refused by the answer cap end `EMPTY` instead
-  of stopping the answer.
-
 ### One failing take sentence drops the view, with no regenerate
 
 - **What:** prose gets one regenerate for failing sentences; a panel take does not, so a view with
   one unquoted or unsupported sentence is not shown at all.
 - **Why left:** the panel is optional work inside a 90 s wait (decision 0099).
 - **Clears it:** one regenerate of the failing seats' takes when the wait and the headroom allow.
-
-### A seat's own search reads stored claims only
-
-- **What:** since round 4 each seat's search is filtered by its fields (`KnowledgeQuery.fields`),
-  but a seat still keeps a found claim only when it cites a source of one of the seat's kinds;
-  stored chunks the search returns are not offered (a take cites stored claims only), and no live
-  search runs for a seat.
-- **Why left:** stored evidence and the existing retrieval only (owner, 2026-11-19).
-- **Clears it:** the live write-back of chunks a seat reads into claims.
 
 ### Experts differ only on claims stored on one concept
 
@@ -1593,23 +1386,6 @@ Last reviewed: 2026-11-18.
 - **Why left:** one HTML reader for the live fetcher and curation; long books usually come as PDFs.
 - **Clears it:** a cap option on `extract` that curation passes.
 
-### Category dossiers are curated but not imported or shown
-
-- **What:** dossiers with scope `CATEGORY` (`backend/app/data/curation/categories/`) pass the
-  checker and the verifier, but nothing imports them (the importer reads only the top folder),
-  no route serves them and no page shows them (`docs/contracts/curation.md`, Scope).
-- **Why left:** the owner asked for category master documents to be curated now; the category
-  page belongs to the app rebuild.
-- **Clears it:** the rebuild's category page, with an import of category dossiers into their own
-  rows and the member-craft links resolved by slug.
-
-### The tools have not met a GI journal yet
-
-- **What:** the PDF path is tested on a hand-built PDF, and the live and Wayback paths were run once
-  on a Wikipedia page; no multi-hundred-page GI journal or Wayback-only source has been verified.
-- **Why left:** the pilot (wave 0) is the first real use.
-- **Clears it:** the pilot's verify runs, recording the largest PDF read and any extraction gap.
-
 ## Region story and map layers (decision 0044)
 
 ### Rivers are drawn unnamed
@@ -1634,14 +1410,6 @@ Last reviewed: 2026-11-18.
   a stored block shown without its mark would hide that it is earlier research.
 - **Clears it:** a registry path that places a reusable stored piece with its mark (the entry names
   the piece slot it reads), so the builder spends nothing when a current story exists.
-
-### "No river data" is logged once per answer, not once per process
-
-- **What:** the region story builder notes that the river lines are not loaded once per builder,
-  and the registry is built per request, so every geography section logs it once until the load.
-- **Why left:** no process-held builder state exists; the state would be module-level otherwise.
-- **Clears it:** the Geo ETL `riverlines` load, after which nothing is logged; or a process-held
-  notice passed in `BuilderTools`.
 
 ### Story steps are only the section's own claims
 
@@ -1729,15 +1497,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** a stored place table keyed by origin and context words with the item, its
   coordinates and revision, refreshed monthly; one matter read shared by a section's builders.
 
-### Seasons are built for climate sections only
-
-- **What:** the seasons builder runs for `CLIMATE` sections; a process section about when the work
-  is done shows its ladder without a month strip.
-- **Why left:** a process section's ladder already lists every stage, and a strip listing the cited
-  stages again would repeat it.
-- **Clears it:** a strip of timed stages only in process sections, once the production E2E shows how
-  often a climate section is planned.
-
 ### The seasons and supply builders have not met production
 
 - **What:** both are tested on fixtures, recorded Wikidata answers and, on GitHub Actions, the
@@ -1809,18 +1568,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** dispatch with `rivers_loaded` true from the first run after the `riverlines` load,
   then make it the default.
 
-### The answer route and the nightly rebuild each wire the answer's models
-
-- **What:** `api/routes/knowledge.answer_pipelines` and `scripts/rebuild_pieces.rebuild_pipeline`
-  each build the plan, compose, builder, translate and embedding models from an `AnswerSpend`; a
-  new model must be added to both (decision 0050 added the builder plan model to both, and a test
-  checks both).
-- **Why left:** the route builds principals with the reader's id and role and the script without,
-  and the models come from `providers`, which `services` may not import, so the shared builder
-  is a new provider module.
-- **Clears it:** one `providers/answer_models.answer_models(spend, user=)` returning the set, which
-  `build_answer_pipeline` takes as one argument.
-
 ## Curated import and craft page (decision 0053)
 
 ### The ladder and the process route still number unordered curated stages
@@ -1856,16 +1603,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** retrieval filtering by `CuratedClaim.discipline` (or a claim discipline column)
   when the facet maps to a discipline.
 
-### Curated materials link only to compounds already stored
-
-- **What:** a dossier material's PubChem CID sets `Material.compoundId` only when a `Compound`
-  with that CID exists; no compound row is created, so molecules and material cards do not see
-  the other curated substances.
-- **Why left:** a compound row needs a name and formula from PubChem, and the import makes no
-  HTTP call.
-- **Clears it:** the import adds `Compound` rows with the CID and name, and the nightly
-  `link_compounds` fills their formula from PubChem.
-
 ### Two homes for GI facts
 
 - **What:** the dossier's GI record lands in `CraftGiRecord`; the older `GiRegistration` table
@@ -1895,38 +1632,7 @@ Last reviewed: 2026-11-18.
   as a cited sentence.
 - **Clears it:** a `STORED` term summary built from the term's curated claims at import.
 
-### The old colour reads the new claim statuses during the first deploy
-
-- **What:** migration `0017_curated_dossiers` and the import run while the previous release still
-  serves; its `ClaimStatus` list lacks `SUPERSEDED` and `WITHDRAWN`, so a request that loads a
-  withdrawn edge claim (a stored piece citing one) can fail until nginx switches to the new colour.
-- **Why left:** the seed step runs before the switch by design (blue/green), and the window is the
-  health wait of one release.
-- **Clears it:** nothing after the first deploy that carries the migration.
-
-### The import's database tests have not run on a laptop
-
-- **What:** `tests/db/test_curation_import_db.py` (full Kutch Ajrakh import, idempotence,
-  supersession, seed-edge hiding, answers' claims untouched, the region builder's districts) runs
-  only on GitHub Actions; it was written without a local database (owner rule).
-- **Why left:** nothing heavy runs locally.
-- **Clears it:** the first Backend checks run of this change passing; then delete this entry.
-
 ## Phase C contract (decision 0054)
-
-### The static check reads script text by pattern
-
-- **What:** `research/sandbox` parses the markup but scans script text with patterns, not a
-  JavaScript parser. It refuses some good code (a string `"top"`, `"window"` or `"self"`, an
-  English "this," inside a string, a local named `parent`, `view` or `location`, a `class`
-  field read as `.constructor`), and it cannot follow every alias of the window (decision 0061
-  refuses `window`, `self`, `globalThis` and `this` handed on as values, `.view`,
-  `defaultView`, `contentWindow` and the reflection names, but a computed read of an object
-  that is the window under another name still passes).
-- **Why left:** no JavaScript parser runs on the server, and the frame's sandbox, policy and
-  guard are the boundary; the check is a filter that fails closed.
-- **Clears it:** a JavaScript tokenizer behind one adapter if production regenerations show the
-  check refusing good explainers, or an escape attempt it misses.
 
 ### Numbers the explainer computes are not checked
 
@@ -2011,14 +1717,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** let `Built` carry the pieces a builder placed and send their trail events with
   the blocks.
 
-### The generated explainer's database tests have not run on a laptop
-
-- **What:** `tests/db/test_simulation_pieces_db.py` (the stored pieces query, reuse with a kept
-  section, hiding, showing again, the 404 cases) and migration `0019_hidden_generated_explainers`
-  run only on GitHub Actions; they were written without a local database (owner rule).
-- **Why left:** nothing heavy runs locally.
-- **Clears it:** the first Backend checks run of this change passing; then delete this entry.
-
 ## What-if lab (decision 0056)
 
 ### Alternatives are read from English words beside each other
@@ -2063,14 +1761,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** an answer-level set of inputs already shown passed to the builders, or the
   what-if kept to the first section that names its stage.
 
-### The what-if database tests have not run on a laptop
-
-- **What:** `tests/db/test_what_if_db.py` (the seeded relationships and own claims of the red
-  dyes, their offer from the seeded rows, the builder rebuilding the fixture's options) runs only on
-  GitHub Actions; it was written without a local database (owner rule).
-- **Why left:** nothing runs a database locally.
-- **Clears it:** the next Backend checks run passing; then delete this entry.
-
 ## Zoom story and timeline map (decision 0057)
 
 ### No open-access paper figure is searched for the fibre level
@@ -2104,13 +1794,6 @@ Last reviewed: 2026-11-18.
 - **Why left:** the version-1 fields are fixed and a reinterpretation is not allowed.
 - **Clears it:** a version 2 of `timeline_map` with an `undated` list of cited sentences and
   their place, built with lane 0060's renderer.
-
-### The journey database tests have not run on a laptop
-
-- **What:** `tests/db/test_journey_db.py` (the zoom's stored reads: kept open pictures, the
-  craft's district claims, the boundary row) runs only on GitHub Actions.
-- **Why left:** nothing runs a database locally (owner rule).
-- **Clears it:** the next Backend checks run; this entry goes when it passes.
 
 ## ElevenLabs music, sound effects, image and video (decision 0058)
 
@@ -2179,31 +1862,6 @@ Last reviewed: 2026-11-18.
 - **Why left:** clips are shared across explainers by content, so deleting needs a reference count.
 - **Clears it:** a lifecycle rule or a sweep that deletes clips no manifest has named for 90 days.
 
-### The score's database tests have not run on a laptop
-
-- **What:** `tests/db/test_film_score_db.py` (the seeded routes, the media cap and the Master Admin
-  through the real ledger) runs only on GitHub Actions.
-- **Why left:** nothing runs a database locally (owner rule).
-- **Clears it:** the next Backend checks run; this entry goes when it passes.
-
-## Sandbox and what-if renderers (decision 0059)
-
-### A generated explainer can choose its own frame height
-
-- **What:** the frame's height comes from a message posted inside the frame (`FRAME_SIZER`);
-  generated code that slipped a `postMessage` past the static check could post another height.
-- **Why left:** the page cannot measure a frame of another origin, and the message moves nothing
-  but that frame's height, clamped to 120 to 1,200 px.
-- **Clears it:** nothing needed unless the bounds prove wrong in production.
-
-### A frame may navigate itself to Google's sign-in path
-
-- **What:** `frame-src` allows `https://accounts.google.com/gsi/` for the Google sign-in button,
-  so a generated explainer that navigated itself there (refused by the static check) would load
-  Google's page inside its own frame, still sandboxed.
-- **Why left:** `frame-src 'none'` would break Google sign-in; no other URL loads.
-- **Clears it:** a separate origin for the sign-in screens, or sign-in moving off the GSI button.
-
 ## Zoom, timeline and film renderers (decision 0060)
 
 ### A place beyond the India frame is a signpost, not a pin
@@ -2258,25 +1916,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** after the deploy, dispatch E2E production with `questions=true`; the Indigo row
   passing (or noting that no concept was chosen) and a materials and a history answer showing a
   zoom and a timeline clear this entry.
-
-### A hidden explainer is found by its content as well as its piece
-
-- **What:** a read-back explainer marks a generated explainer hidden when the piece it was kept as
-  or reused from is hidden, or when any hidden generated explainer piece has its content hash;
-  hiding a block no piece holds keeps it as a piece first, with no vector until
-  `embed_knowledge` fills it.
-- **Why left:** a later version carries a block whose piece was kept under an earlier answer, and
-  versions are never rewritten (decision 0063); two different explainers never share a content
-  hash because each carries its own build time.
-- **Clears it:** nothing needed unless pieces start being copied between answers.
-
-### The 0061 database tests have not run on a laptop
-
-- **What:** `tests/db/test_simulation_pieces_db.py` now also covers hiding an explainer never
-  kept as a piece and hiding a block carried into another answer; it and migration
-  `0024_piece_content_hash_index` run only on GitHub Actions.
-- **Why left:** nothing runs a database locally (owner rule).
-- **Clears it:** the next Backend checks run passing; then delete this entry.
 
 ## Phase D contract (decision 0062)
 
@@ -2373,21 +2012,7 @@ Last reviewed: 2026-11-18.
 - **Clears it:** a dossier field naming the claims that are signs of imitation, read first, and
   a reviewed list of per words.
 
-### The insight database test has not run on a laptop
-
-- **What:** `tests/db/test_insight_builders_db.py` (imported GI records and prices, a craft's
-  places, a stored regional quote) is written but runs only on GitHub Actions.
-- **Why left:** owner rule: no local database.
-- **Clears it:** the next Backend checks run on GitHub; then delete this entry.
-
 ## Climate and risk, and ask the map (decision 0065)
-
-### Climate blocks wait for the trend load
-
-- **What:** until the Geo ETL loads the 1981 series, no district has trend rows, so the climate
-  builder adds nothing and the seasons rainfall keeps the last load's ten-year period.
-- **Why left:** the load is an owner dispatch after the deploy that carries migration 0021.
-- **Clears it:** the Geo ETL dispatch in `docs/RUNBOOK.md`, Geo ETL, step 2, with its checks.
 
 ### No groundwater values
 
@@ -2409,14 +2034,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** the region and map screens fold a yearly series into one row with a sparkline
   (each year a dataset value), or a contract change that leaves yearly rows out of the facets.
 
-### The GHCN CAMS reader is tested on a hand-written file
-
-- **What:** `ghcncams.read_months` is tested through GDAL on a small netCDF classic file the test
-  writes; the real file is netCDF-4 (HDF5) and is first read by the Actions run.
-- **Why left:** the real file is about 190 MB and nothing heavy is downloaded on the laptop.
-- **Clears it:** the first `ghcncams` run; it fails loudly on non-consecutive months, other units
-  or a grid that does not hold India, and `test_ghcncams` gains a check of the run's summary.
-
 ### Ask the map matches a prose piece by the district's name
 
 - **What:** a place-facet prose piece's topic names its craft's districts by name slug
@@ -2427,13 +2044,6 @@ Last reviewed: 2026-11-18.
   contract change.
 - **Clears it:** place-facet topic keys by LGD code (`water:lgd-449`, as region stories already
   use), with a piece rebuild.
-
-### The 0065 database tests have not run on a laptop
-
-- **What:** `tests/db/test_climate_map_db.py` (the trend read, the builder over stored rows, ask
-  the map's crafts, stories, stale pieces and 404 cases) runs only on GitHub Actions.
-- **Why left:** no local database (owner rule).
-- **Clears it:** the next Backend checks run.
 
 ## Follow-ups, versions and alerts (decision 0063)
 
@@ -2469,22 +2079,7 @@ Last reviewed: 2026-11-18.
 - **Clears it:** merge the losing follow-up onto the newer version when its sections still fit,
   and stream the renumbered blocks.
 
-### The alerts database tests have not run on a laptop
-
-- **What:** `tests/db/test_alerts_db.py` and `tests/db/test_explainer_versions_db.py` run only on
-  GitHub Actions (no local database, owner rule).
-- **Why left:** the owner rule; the SQL is covered there with the rest of `tests/db`.
-- **Clears it:** the next Backend checks run.
-
 ## Learning block renderers (decision 0068)
-
-### Climate trends are drawn as slopes, not over the years
-
-- **What:** `climate_risk` draws each trend as its slope per decade from zero, with the mean in
-  words; there is no year-by-year line, because the block holds no annual series.
-- **Why left:** drawing a line through the period would show values no dataset row states.
-- **Clears it:** a later block version carrying the CHIRPS annual series (each year a dataset
-  value, loaded by the geo ETL), then a line chart of the series with its trend.
 
 ### The concept graph is a hub, not the researchers' full graph
 
@@ -2502,15 +2097,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** an attempts route if the owner wants scores kept (for a class, with the lesson
   builder).
 
-### Compare and the quiz options follow the viewport, not the block's width
-
-- **What:** compare goes side by side at `sm`, `md` or `lg` by craft count, and the quiz options
-  pair from `sm`, measured on the window rather than the section the block sits in.
-- **Why left:** every other block uses viewport breakpoints, and the section fills the reading
-  column at every width.
-- **Clears it:** container queries for blocks drawn in narrower places (a lesson slide, a side
-  panel).
-
 ## Quiz, compare and the shared-science explorer (decision 0064)
 
 ### A comparison is only of crafts the resolver listed
@@ -2523,16 +2109,6 @@ Last reviewed: 2026-11-18.
   question, and the resolver lists the crafts a question names in most cases.
 - **Clears it:** resolve `craftNames` when the reply also asks for a comparison, and add the
   `RESOLVED` ones to the compared crafts.
-
-### Fixed rules, not a model, choose quiz questions and compare cells
-
-- **What:** a quiz keys the first fitting term of each sentence and takes distractors walking on
-  from it; compare and the concept graph take the best-ranked fact. A distractor that also fits
-  the blank, or a cell that is true but off the point, is not caught.
-- **Why left:** a model call per quiz or block spends the reader's caps on choosing alone, and the
-  rules keep every value cited and the output the same for every reader.
-- **Clears it:** an optional plan-model pass that may only drop offered distractors and reorder
-  offered facts, measured against the rules on the known-answer questions.
 
 ### The explorer reads at most three claims per concept and 100 crafts per term
 
@@ -2564,17 +2140,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** an owner decision; if wanted, `description` on `PageCraft` (model, contract,
   fixture) drawn beside the register facts and marked as the register's.
 
-### The stage media client is mounted nowhere
-
-- **What:** the craft page no longer offers Image or Video on a stage. `lib/craftMedia.ts`,
-  `lib/mediaJobMemory.ts`, `lib/mediaView.ts`, `components/craft/StageMedia.tsx`,
-  `useStageMedia.tsx`, `MediaFigure.tsx` and `MediaShareButton.tsx` stay, with their specs
-  (`e2e/craft-media-unit.spec.ts`, `e2e/media-view-unit.spec.ts`).
-- **Why left:** whether generation returns on another surface or is retired with its routes is the
-  owner's call, and the media contract (`docs/contracts/media.md`) is another lane's.
-- **Clears it:** the owner's choice, then mounting the store where generation lives, or deleting
-  these modules and specs with the media routes.
-
 ### The profile and process client shapes outlive their screen
 
 - **What:** nothing in the frontend calls `GET /crafts/{slug}/profile` or `/process` any more; the
@@ -2596,13 +2161,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** coordinates (or a HydroRIVERS id) on `PagePlace`, drawn as pins or a river line.
 
 ## Learning screens (decision 0069)
-
-### Two citation lookups for cited text outside the explainer
-
-- **What:** `components/craft/useCraftReading` builds the same reading and citation contexts as
-  `components/answer/CitedReading`, with the craft page's own numbering.
-- **Why left:** the craft page was being rebuilt by lane 0071 in the same working tree.
-- **Clears it:** `useCraftReading` keeps its numbering and hands it to `CitedReading`.
 
 ### Check yourself asks for a quiz on every finished explainer
 
@@ -2681,13 +2239,6 @@ Last reviewed: 2026-11-18.
 - **Clears it:** a small per-process limit on concurrent export builds, if Usage shows memory
   pressure from them.
 
-### The lesson database tests have not run on a laptop
-
-- **What:** `tests/db/test_lessons_db.py` (building, listing, opening and deleting a pack, the
-  owner rule, access days) runs only on GitHub Actions.
-- **Why left:** nothing runs a database on the laptop (owner rule).
-- **Clears it:** the next Backend checks run.
-
 ## Phase D review (decision 0070)
 
 ### The curation checks a curated GI date only by its year, and a price's date not at all
@@ -2732,17 +2283,6 @@ Last reviewed: 2026-11-18.
 
 ## Frontend audit exceptions
 
-### picomatch ReDoS advisory excepted in development tooling
-
-- **What:** Frontend checks run `frontend/scripts/audit.mjs`. It fails on any advisory in production
-  dependencies, on any other advisory without an entry in `frontend/audit-exceptions.json`, and on
-  an entry the audit no longer reports. GHSA-fc5q-39xc-vjpf (picomatch, high) is excepted: it
-  reaches only ESLint tooling (`eslint-config-next`, `typescript-eslint`), never the built site.
-- **Why left:** no fixed picomatch exists. 4.0.7 is the newest release and is affected, and npm's
-  only suggestion is a downgrade of `eslint-config-next` to 14.
-- **Clears it:** a fixed picomatch. The audit then stops reporting the advisory, the check fails
-  on the stale entry, and removing the entry clears this.
-
 ### Field voices are stored and served, but not drawn on the craft page
 
 - **What:** the craft page carries `voices`, `fieldPhotos` and `fieldVoicesTotal`, and the list
@@ -2752,16 +2292,6 @@ Last reviewed: 2026-11-18.
   batch.
 - **Clears it:** a Voices part and a gallery on the craft page, each with its first page and
   "Show all N" through `fetchFieldVoices`, and "Read the full interview" linking `/voices/<id>`.
-
-### The field voices database tests have not run on a laptop
-
-- **What:** `backend/tests/db/test_field_voices_db.py` (storage, idempotency, ACLs by reader, the
-  craft page part, both tombstone cascades) and `test_field_voices_withdrawal_db.py` (the 7-day rule
-  and hidden streams across claims, chunks, the page, the reading view and the image route; claims
-  on a tombstone and on an edited turn; "Show all" over 60 quotes; re-keying; a stored explainer
-  after a withdrawal) run only on GitHub Actions.
-- **Why left:** nothing heavy runs locally (owner rule).
-- **Clears it:** the first green Backend checks run with this file.
 
 ### The expert panel's artisan seat quotes only transcript chunks that back a stored claim
 
@@ -2782,15 +2312,6 @@ Last reviewed: 2026-11-18.
 - **Why left:** the change was bounded to unit tests; database tests run only on GitHub Actions.
 - **Clears it:** a `tests/db` test that stores a field recording, its chunks and a quoting claim,
   and checks the artisan's sentence, name, craft and district.
-
-### The API index still names the single-call panel
-
-- **What:** `docs/CORE_API.md` (the `research/expert_panel` and `services/expert_views` rows)
-  still lists `compose_takes`, `PanelAsk`, `panel_message`, `panel_schema`, `parsed_panel` and
-  `PanelDraft`, removed by decision 0099, and does not list `panel_seats`, `voiced_seats`,
-  `kept_takes`, `compose_take`, `compose_differences`, `seat_search` or `artisan_seat`.
-- **Why left:** the change was bounded to the panel's files, its contract and its decision.
-- **Clears it:** rewrite both rows from `docs/contracts/explainer.md` ("Expert panel as built").
 
 ### Field images are not illustration candidates of their crafts' claims
 
@@ -2866,15 +2387,6 @@ Last reviewed: 2026-11-18.
   one.
 - **Clears it:** each page lane switches to the editorial primitives, deletes `SourceDialog`, the
   replaced components and `onOpen` from `CitationLookup` and `CitationChip`.
-
-### The map hover card lost its shadow with the legacy aliases
-
-- **What:** `shadow-panel`, `shadow-island`, `shadow-md` and `shadow-lg` now compile to none (only
-  popovers, menus, toasts, dialogs, labels on photographs and the phone sheet cast a shadow). The
-  menus and sheets this lane owns moved to `shadow-pop` and `shadow-sheet`; the map hover card
-  (`components/map/MapHoverCard.tsx`) keeps only its ring.
-- **Why left:** the map components belong to the maps lane running now.
-- **Clears it:** `MapHoverCard` takes `shadow-pop`.
 
 ### The wordmark generator needs a package the backend environment lacks
 
@@ -3134,14 +2646,6 @@ Last reviewed: 2026-11-18.
 
 ## Round 6 (2026-11-20)
 
-### The editorial stylesheet is over budget
-
-- **What:** `frontend/app/editorial.css` holds the reading templates' shared styles for the landing,
-  atlas, category hub, map and the craft without a monograph in one file of 937 lines; round 6's
-  board matching added to it.
-- **Clears it:** split it by template (landing, atlas, hub, map, craft record) and import each
-  where its template is drawn.
-
 ### Structure proposals: what they do not reach yet
 
 - **What:** a category page takes no structure proposals (crafts and families only), an approved
@@ -3207,13 +2711,6 @@ Last reviewed: 2026-11-18.
   (`python -m app.scripts.write_back_filing`, whose summary lists the facts with no `CandidateCheck`
   rows, decision 0136) and `python -m app.scripts.write_back_report --gate-less`, then rejects or
   re-files each in the review queue.
-
-### Nested proposal bodies keep camelCase keys
-
-- **What:** MCP tool arguments use one set of snake_case names (`craft_slug`, `task_key`, ...), but
-  `propose_structure` and `propose_source` take the Knowledge API's camelCase body, so their
-  descriptions still say `taskKey`.
-- **Clears it:** snake_case the MCP forms of those bodies with the old names accepted for a release.
 
 ### Leftovers of the map rebuild
 
