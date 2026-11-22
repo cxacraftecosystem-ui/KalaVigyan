@@ -48,7 +48,7 @@ export const CRAFT_PAGE_SCHEMA_VERSION = 3;
 export const GI_SHOWN = ["REGISTERED", "APPLIED"] as const;
 export const NATIVE_NAME_SOURCES = ["DOSSIER", "WIKIDATA"] as const;
 export const BORROWED_GROUPS = ["FAMILY", "KIN"] as const;
-export const PLACE_KINDS = ["VILLAGE", "TOWN", "DISTRICT", "STATE", "countRY", "REGION", "RIVER"] as const;
+export const PLACE_KINDS = ["VILLAGE", "TOWN", "DISTRICT", "STATE", "COUNTRY", "REGION", "RIVER"] as const;
 export const GROUP_KINDS = ["COMMUNITY", "PERSON", "ORGANISATION"] as const;
 
 export type Provenance = (typeof PROVENANCES)[number];

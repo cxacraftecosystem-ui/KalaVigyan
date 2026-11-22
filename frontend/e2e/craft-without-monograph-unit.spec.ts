@@ -6,7 +6,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { CraftWithoutMonograph } from "../components/craft/CraftWithoutMonograph";
-import { checkedCraftPage, craftPageShape, type CraftPage, type NativeName } from "../lib/craftPageContract";
+import { checkedCraftPage } from "../lib/craftPageChecks";
+import { craftPageShape, type CraftPage, type NativeName } from "../lib/craftPageContract";
 import { plateMaterial } from "../lib/craftPlate";
 import { craftRecordView, provenanceParts, recordNativeName, recordProvenance } from "../lib/craftRecord";
 import { parseShape } from "../lib/shape";
