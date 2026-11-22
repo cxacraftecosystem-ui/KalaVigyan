@@ -231,6 +231,23 @@ def test_a_quoted_write_back_is_stored_provisional() -> None:
     assert dumped["citations"][0]["quoteCheck"] == "PASS"
 
 
+def test_a_write_back_has_one_owner_and_a_held_one_names_its_craft() -> None:
+    family = write_back(craftSlug=None, categorySlug="Textiles-Based-Craft-Category")
+    parts = [
+        "claim-write-back/v2",
+        "category:Textiles-Based-Craft-Category",
+        "CHEMISTRY",
+        "alum binds alizarin at about 60 °c",
+    ]
+    assert family.dedupe_key == hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
+    assert family.dedupe_key != write_back(craftSlug=None).dedupe_key
+    with pytest.raises(ValidationError, match="not both"):
+        write_back(categorySlug="Textiles-Based-Craft-Category")
+    with pytest.raises(ValidationError, match="names the craft"):
+        write_back(craftSlug=None, heldBecause="names no craft")
+    assert write_back(heldBecause="names no craft").dedupe_key == write_back().dedupe_key
+
+
 def test_an_inferred_write_back_is_a_hypothesis_without_unquoted_figures() -> None:
     unquoted = [{"evidence": evidence_item(), "quote": None, "quoteCheck": "NA", "relation": "ANALOGOUS"}]
     claim = write_back(label="INFERRED", text="Alum may also brighten the red.", citations=unquoted)

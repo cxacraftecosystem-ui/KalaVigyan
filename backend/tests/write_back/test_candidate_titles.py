@@ -5,6 +5,7 @@ from collections import Counter
 from collections.abc import Sequence
 from types import SimpleNamespace
 
+from app.models.crafts import EMBEDDING_DIMENSIONS
 from app.research.candidate_gates import DUPLICATE_GATE, Candidate, GateOutcome, HeldFact
 from app.research.gate_thrift import VECTOR_TWIN_SIMILARITY, GateThrift
 from app.retrieval.claim_titles import claim_document
@@ -35,7 +36,8 @@ class WordCounts:
 
     def vector(self, text: str) -> list[float]:
         counts = words(text)
-        return [float(counts[word]) for word in self.vocabulary]
+        found = [float(counts[word]) for word in self.vocabulary]
+        return found + [0.0] * (EMBEDDING_DIMENSIONS - len(found))
 
     async def __call__(self, texts: list[str]) -> list[list[float]]:
         self.calls.append(texts)
