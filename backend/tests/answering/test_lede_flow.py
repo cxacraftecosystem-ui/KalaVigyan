@@ -13,7 +13,7 @@ from app.services.answer_events import cited_claims
 from app.services.answer_lede import LedeTools
 from app.services.answering import AnswerAsk, AnswerPipeline
 
-from ..composer.fixtures import lede_sentences, quote, section_reply, sentence
+from ..composer.fixtures import lede_sentences, quote, replacements, section_reply, sentence
 from ..planner.fakes import FakeModel
 from .fakes import (
     ALUM_CLAIM_ID,
@@ -131,8 +131,11 @@ def sections_model() -> SectionModel:
     process = section_reply(sentence(PROCESS_TEXT, quote(WEB_PAGE, "the lake withstood 20 washes")))
     return SectionModel(
         replies={
-            DISCIPLINE_TITLES["CHEMISTRY"]: [with_heading(chemistry, "Alum binds the red to cotton")],
-            DISCIPLINE_TITLES["PROCESS"]: [with_heading(process, "How it is made")],
+            DISCIPLINE_TITLES["CHEMISTRY"]: [
+                with_heading(chemistry, "Alum binds the red to cotton"),
+                replacements(),
+            ],
+            DISCIPLINE_TITLES["PROCESS"]: [with_heading(process, "How it is made"), replacements()],
         }
     )
 

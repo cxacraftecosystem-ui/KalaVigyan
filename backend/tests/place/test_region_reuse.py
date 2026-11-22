@@ -30,6 +30,7 @@ from ..answering.fakes import (
 from ..answering.piece_fakes import CRAFT_ID, MemoryPieces
 from ..answering.test_answer_flow import REPLY, events
 from ..answering.test_piece_reuse_flow import asked
+from ..composer.fixtures import replacements
 from ..research.fixtures import AJRAKH
 from .fixtures import KACHCHH, golden_story, kachchh_offer, no_session, place_tools, story_model, water_prose
 
@@ -112,7 +113,10 @@ def geography_pipeline(pieces: MemoryPieces, research: FakeResearch | None = Non
     builder = RegionStoryBuilder(place_tools(story_model(STORY_REPLY)))
     understand = {**UNDERSTOOD_REPLY, "disciplines": ["GEOGRAPHY"], "seats": ["HYDROLOGIST"]}
     answer = pipeline(
-        replies=[REPLY], pieces=pieces, research=research, understand_model=understanding_model(understand)
+        replies=[REPLY, replacements()],
+        pieces=pieces,
+        research=research,
+        understand_model=understanding_model(understand),
     )
     return dataclasses.replace(answer, builders=BlockBuilders([(entry, builder)]))
 
