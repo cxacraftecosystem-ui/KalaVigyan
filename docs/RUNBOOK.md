@@ -175,8 +175,11 @@ Decision 0017; contract `docs/contracts/voice.md`.
   box `.env` (`sudo kv-render-env`); no model call or key is needed.
 - Listen (decision 0035) needs only `ELEVENLABS_API_KEY` (Settings, API keys) and `S3_BUCKET`. Its
   audio lives under `media/narration/<cacheId>/` in the media bucket (part MP3s, then
-  `narration.json`); deleting a folder only makes the next listener synthesise it again. The
-  voice is `AppSetting` `voice.voice_id`; changing it starts a new cache.
+  `narration.json`, and a `lease.json` only while one request makes it); deleting a folder only
+  makes the next listener synthesise it again, and the bucket's `expire-narration` rule deletes
+  every narration object a year after it was written (`narration_days`, decision 0140). The voice
+  is `AppSetting` `voice.voice_id`; changing it starts a new cache. A voice call's reply audio is
+  kept under `media/voice-replies/` for a day (`expire-voice-replies`, `voice_reply_days`).
 - Film scores (decision 0058) use the same key through the media router: Settings, AI routing
   shows Film music (`music_v2_5`) and Film sound effects (`eleven_text_to_sound_v3`), seeded by
   migration `0022_elevenlabs_media`. The restricted key needs the Music and Sound Effects
@@ -190,9 +193,11 @@ Decision 0017; contract `docs/contracts/voice.md`.
   ElevenLabs has moved its downloads: add the new host to
   `providers/elevenlabs_download.DOWNLOAD_HOSTS` after checking the reference.
 
-- Transport: `AppSetting` `voice.transport` is `RELAY` until the ElevenLabs spike passes. To switch,
-  on the box: `INSERT INTO "AppSetting" (key, value) VALUES ('voice.transport', '"AGENT"') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;`
-  (the same for `voice.max_live_sessions`, default 5, and `voice.voice_id`).
+- Transport, calls at once and voice: a Master Admin sets them on the Settings hub's Voice calls
+  block (`GET` and `PUT /api/settings/voice`, decision 0140): `voice.transport` stays `RELAY` until
+  the ElevenLabs spike passes; `voice.max_live_sessions` (default 5, 0 to 100) is the bought plan's
+  concurrent-call limit; `voice.voice_id` is the ElevenLabs voice. Each save is audited
+  (`settings.voice_updated`).
 - Agent: `cd /opt/kalavigyan/current/backend && sudo -u kalavigyan bash -c 'set -a; . /opt/kalavigyan/.env; set +a; .venv/bin/python -m app.scripts.provision_voice_agent --dry-run'`
   prints the body; without `--dry-run` it creates or updates the workspace secret
   `KALAVIGYAN_VOICE_LLM_BEARER`, the client tools `show_on_map`, `open_stage`, `show_sources`,
@@ -200,8 +205,9 @@ Decision 0017; contract `docs/contracts/voice.md`.
   `PUBLIC_API_URL`, `VOICE_LLM_BEARER` and `ELEVENLABS_API_KEY`.
 - Rotating `VOICE_LLM_BEARER` (quarterly): `gh secret set VOICE_LLM_BEARER`, deploy, then run the
   provisioning script again so the workspace secret matches; calls in progress end with a 401.
-- Upkeep: `app.scripts.voice_upkeep` runs first in the daily **Coverage enrichment** box job; its JSON
-  line reports closed, purged, reconciled and refunded seconds.
+- Upkeep: `kv-worker` runs `voice/daily_upkeep.daily_voice_upkeep` when it starts and every 24 hours
+  after (decision 0140); its log line `daily voice upkeep` carries the JSON report of closed, purged,
+  reconciled and refunded seconds, at error level when a call could not be settled.
 
 ## Deploy
 
@@ -265,7 +271,7 @@ Field voices sync (`.github/workflows/field-voices-sync.yml`): daily at 22:17 UT
 
 Alert digest (`.github/workflows/alert-digest.yml`): Mondays at 03:30 UTC (09:00 India time) and on dispatch, runs `app.scripts.send_alert_digest` on the box over SSM, logging to `deploy/logs/alert-digest/<run id>/`. It prints `{enabled, weekOf, readers, sent, failed, ok}`; while `ALERT_DIGEST_ENABLED` is unset or false it sends nothing and succeeds. To switch it on, after an SES sender identity is verified for `MAIL_FROM_ADDRESS` (region `MAIL_SES_REGION`) and the account is out of the SES sandbox: put `ALERT_DIGEST_ENABLED=true` at `/kalavigyan/env/ALERT_DIGEST_ENABLED` as above and re-render the box `.env` (`sudo kv-render-env`). Enabled without `MAIL_FROM_ADDRESS` it fails without sending. Readers opt in under Settings (decision 0063).
 
-Coverage enrichment (`.github/workflows/coverage-enrichment.yml`): daily at 22:17 UTC and on dispatch, runs `app.scripts.voice_upkeep`, `app.scripts.embed_craft_descriptors` (missing craft name-and-alias vectors for the resolver, decision 0016), `app.scripts.embed_knowledge` (fills every missing claim, chunk and knowledge-piece vector, so the backlog is never embedded inside a learner's request, decision 0013), `app.scripts.link_compounds` (links every unlinked compound with a formula to its PubChem record, fills the formula of a compound a curated dossier gave only its CID, and prints `{linked, filled, notFound, failed, ok}`, decisions 0045 and 0088), `app.scripts.build_craft_chapters` (keeps the 3D conformers of the curated and read crafts' compounds in the media bucket and `Compound.conformerKeptAt`, stores the Wikidata points of dossier places, rebuilds both page snapshots of every curated craft and every craft with a snapshot, logs an error naming a craft whose page changed under an unchanged stamp, and prints `{crafts, conformersKept, conformersWithout3d, pointsKept, pagesRebuilt, pagesChanged, failed, ok}`, decision 0098) and last `app.scripts.recheck_saved` (re-checks every saved explainer for new cited claims in its fields, writes "This answer got better" notes, no model call, prints `{checked, notified, ok}`, decision 0063) in `/opt/kalavigyan/current/backend` on the box over SSM, logging to `deploy/logs/coverage-enrichment/<run id>/`; the step fails when any of them fails. Since commit fdf478c it no longer researches crafts or rebuilds pieces (`app.scripts.rebuild_pieces` and `app.scripts.enrich_coverage` are not run; the dataset is curated by Claude Code, `docs/plans/dataset-curation.md`).
+Coverage enrichment (`.github/workflows/coverage-enrichment.yml`): daily at 22:17 UTC and on dispatch, runs `app.scripts.embed_craft_descriptors` (missing craft name-and-alias vectors for the resolver, decision 0016), `app.scripts.embed_knowledge` (fills every missing claim, chunk and knowledge-piece vector, so the backlog is never embedded inside a learner's request, decision 0013), `app.scripts.link_compounds` (links every unlinked compound with a formula to its PubChem record, fills the formula and the PubChem record source of a compound whose CID a curated dossier or the science seed gave, when PubChem holds the same composition, and prints `{linked, filled, notFound, failed, ok}`, decisions 0045 and 0088), `app.scripts.build_craft_chapters` (keeps the 3D conformers of the curated and read crafts' compounds in the media bucket and `Compound.conformerKeptAt`, stores the Wikidata points of dossier places, rebuilds both page snapshots of every curated craft and every craft with a snapshot, logs an error naming a craft whose page changed under an unchanged stamp, and prints `{crafts, conformersKept, conformersWithout3d, pointsKept, pagesRebuilt, pagesChanged, failed, ok}`, decision 0098) and last `app.scripts.recheck_saved` (re-checks every saved explainer for new cited claims in its fields, writes "This answer got better" notes, no model call, prints `{checked, notified, ok}`, decision 0063) in `/opt/kalavigyan/current/backend` on the box over SSM, logging to `deploy/logs/coverage-enrichment/<run id>/`; the step fails when any of them fails. Since commit fdf478c it no longer researches crafts or rebuilds pieces (`app.scripts.rebuild_pieces` and `app.scripts.enrich_coverage` are not run; the dataset is curated by Claude Code, `docs/plans/dataset-curation.md`).
 
 Running the same sha again re-renders the env and restarts the live colour.
 

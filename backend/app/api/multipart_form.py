@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from email.message import Message
+from collections.abc import AsyncGenerator, AsyncIterator, Collection, Mapping
+from dataclasses import dataclass, field
 
 from fastapi import Request
+from starlette.datastructures import FormData
+from starlette.formparsers import MultiPartException, MultiPartParser
 
 from app.core.errors import InvalidInput
 
-__all__ = ["BodyTooLarge", "FormFile", "form_file", "limited_body"]
+__all__ = ["TEXT_FIELD_BYTES_MAX", "BodyTooLarge", "FormFile", "UploadedForm", "limited_body", "read_form"]
 
-HEADER_END = b"\r\n\r\n"
-LINE_END = b"\r\n"
+TEXT_FIELD_BYTES_MAX = 64 * 1024
 
 
 class BodyTooLarge(InvalidInput):
@@ -23,49 +24,70 @@ class FormFile:
     content: bytes
 
 
+@dataclass(frozen=True)
+class UploadedForm:
+    files: Mapping[str, FormFile]
+    texts: Mapping[str, str] = field(default_factory=dict)
+
+    def file(self, name: str) -> FormFile:
+        return self.files[name]
+
+    def text(self, name: str) -> str | None:
+        return self.texts.get(name)
+
+
 async def limited_body(request: Request, limit: int) -> bytes:
     collected = bytearray()
-    async for chunk in request.stream():
+    async for chunk in _limited(request.stream(), limit):
         collected += chunk
-        if len(collected) > limit:
-            raise BodyTooLarge(f"The body is over {limit} bytes")
     return bytes(collected)
 
 
-def form_file(content_type: str | None, body: bytes, field: str) -> FormFile:
-    header = _header(content_type or "")
-    boundary = header.get_param("boundary")
-    if header.get_content_type() != "multipart/form-data" or not isinstance(boundary, str) or not boundary:
-        raise InvalidInput("The upload is not multipart form data")
-    delimiter = b"--" + boundary.encode("latin-1")
-    segments = body.split(delimiter)
-    if len(segments) < 3 or not segments[-1].startswith(b"--"):
-        raise InvalidInput("The upload's form data is not closed")
-    found = [part for part in map(_part, segments[1:-1]) if part[0] == field]
-    if len(found) != 1:
-        raise InvalidInput(f"The upload carries {len(found)} {field!r} fields, not one")
-    _, part_type, content = found[0]
-    return FormFile(content_type=part_type, content=content)
-
-
-def _part(segment: bytes) -> tuple[str | None, str, bytes]:
-    if not segment.startswith(LINE_END) or not segment.endswith(LINE_END) or HEADER_END not in segment:
-        raise InvalidInput("A form data part is malformed")
-    head, content = segment[len(LINE_END) : -len(LINE_END)].split(HEADER_END, 1)
-    headers = Message()
-    for line in head.decode("latin-1").split("\r\n"):
-        if ":" in line:
-            name, value = line.split(":", 1)
-            headers[name.strip()] = value.strip()
-    disposition = Message()
-    disposition["content-type"] = (
-        "form-data; " + str(headers.get("content-disposition", "")).partition(";")[2]
+async def read_form(
+    request: Request, limit: int, *, files: Collection[str], texts: Collection[str] = ()
+) -> UploadedForm:
+    parser = MultiPartParser(
+        request.headers,
+        _limited(request.stream(), limit),
+        max_files=len(files),
+        max_fields=len(files) + len(texts),
+        max_part_size=TEXT_FIELD_BYTES_MAX,
     )
-    name = disposition.get_param("name")
-    return (name if isinstance(name, str) else None), headers.get_content_type(), content
+    try:
+        form = await parser.parse()
+    except MultiPartException as malformed:
+        raise InvalidInput(f"The upload's form data is refused: {malformed.message}") from malformed
+    try:
+        read = {name: await _one_part(form, name) for name in files}
+        return UploadedForm(files=read, texts={name: text for name in texts if (text := _text(form, name))})
+    finally:
+        await form.close()
 
 
-def _header(value: str) -> Message:
-    header = Message()
-    header["content-type"] = value
-    return header
+async def _limited(chunks: AsyncIterator[bytes], limit: int) -> AsyncGenerator[bytes]:
+    seen = 0
+    async for chunk in chunks:
+        seen += len(chunk)
+        if seen > limit:
+            raise BodyTooLarge(f"The body is over {limit} bytes")
+        yield chunk
+
+
+async def _one_part(form: FormData, name: str) -> FormFile:
+    found = form.getlist(name)
+    if len(found) != 1:
+        raise InvalidInput(f"The upload carries {len(found)} {name!r} parts, not one")
+    part = found[0]
+    if isinstance(part, str):
+        return FormFile(content_type="", content=part.encode("utf-8"))
+    bare = (part.content_type or "").partition(";")[0].strip().lower()
+    return FormFile(content_type=bare, content=await part.read())
+
+
+def _text(form: FormData, name: str) -> str | None:
+    found = form.getlist(name)
+    if not found:
+        return None
+    if len(found) != 1 or not isinstance(found[0], str):
+        raise InvalidInput(f"The upload carries {len(found)} {name!r} fields, not one")
+    return found[0]

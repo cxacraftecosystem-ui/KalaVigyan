@@ -24,7 +24,6 @@ from app.core.rate_limit import (
     ip_hash,
     refund_account,
     refund_ip,
-    retry_after_value,
     sign_in_attempt_by_account,
     sign_in_attempt_by_ip,
 )
@@ -39,6 +38,7 @@ from app.core.roles import (
     role_value,
 )
 from app.core.security import create_access_token, hash_password, verify_password, verify_password_or_decoy
+from app.core.throttle_refusal import refuse_when_throttled, too_many_requests
 from app.models import AccessRoster, ConsentRecord, PasswordResetRequest, RoleRequest, User
 from app.schemas.auth import (
     ConsentRequest,
@@ -82,6 +82,9 @@ ACCESS_SUSPENDED_DETAIL = "Your access has been suspended. Contact the administr
 ACCESS_NOT_RECORDED_DETAIL = "Access requests are closed for now. Contact the administrator directly."
 INVALID_CREDENTIALS_DETAIL = "Invalid email or password"
 THROTTLED_DETAIL = "Too many sign-in attempts. Wait a few minutes and try again."
+RESETS_SPENT_DETAIL = "Too many reset requests. Try again later."
+LINKS_SPENT_DETAIL = "Several links were issued this hour. Wait, or use one of them."
+LINKS_SPENT_WAIT_SECONDS = 3600
 PASSWORD_NOT_SET_HINT = "PASSWORD_NOT_SET"
 PASSWORD_NOT_SET_DETAIL = (
     "This account has no password yet. Sign in with {label}, or ask for a set-password link."
@@ -307,13 +310,7 @@ async def login_with_google(session: AsyncSession, token: str) -> tuple[User, An
 
 
 def _refuse_when_ip_throttled(request: Request) -> None:
-    allowed, retry = sign_in_attempt_by_ip(request)
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            THROTTLED_DETAIL,
-            {"Retry-After": retry_after_value(retry)},
-        )
+    refuse_when_throttled(sign_in_attempt_by_ip(request), THROTTLED_DETAIL)
 
 
 def code_grant(payload: OidcCodeFields) -> oidc_sign_in.CodeGrant:
@@ -371,12 +368,7 @@ async def login_with_password(
     allowed, retry = sign_in_attempt_by_ip(request)
     if allowed:
         allowed, retry = sign_in_attempt_by_account(account_key)
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            THROTTLED_DETAIL,
-            {"Retry-After": retry_after_value(retry)},
-        )
+    refuse_when_throttled((allowed, retry), THROTTLED_DETAIL)
     matched = await asyncio.to_thread(
         verify_password_or_decoy, payload.password or "", user.passwordHash if user else None
     )
@@ -458,7 +450,7 @@ async def login(
     await session.commit()
     if user.twoFactorEnabled:
         if two_factor.fully_locked(user):
-            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, two_factor.TOO_MANY_ATTEMPTS_DETAIL)
+            raise too_many_requests(two_factor.TOO_MANY_ATTEMPTS_DETAIL)
         return {
             "two_factor_required": True,
             "challenge_token": await two_factor.issue_challenge(session, user),
@@ -510,13 +502,7 @@ async def signup(
     background: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
-    allowed, retry = sign_in_attempt_by_ip(request)
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            THROTTLED_DETAIL,
-            {"Retry-After": retry_after_value(retry)},
-        )
+    refuse_when_throttled(sign_in_attempt_by_ip(request), THROTTLED_DETAIL)
     if turnstile.required_but_missing() or not mailer.mail_configured():
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, SIGNUP_CLOSED_DETAIL)
     if not await turnstile.verify(payload.turnstileToken, client_ip(request)):
@@ -701,11 +687,7 @@ async def issue_password_link(
             session, user=target, purpose=purpose, issued_by_id=actor.id
         )
     except credential_links.IssueThrottled as exc:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            "Several links were issued this hour. Wait, or use one of them.",
-            {"Retry-After": "3600"},
-        ) from exc
+        raise too_many_requests(LINKS_SPENT_DETAIL, LINKS_SPENT_WAIT_SECONDS) from exc
     await audit.record(
         session,
         action="auth.password_link_issued",
@@ -854,13 +836,7 @@ async def _request_password_reset(email: str, ip: str | None, user_agent: str | 
 async def forgot_password(
     payload: ForgotPasswordRequest, request: Request, response: Response, background: BackgroundTasks
 ) -> dict[str, str]:
-    allowed, retry = forgot_password_attempt(request)
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            "Too many reset requests. Try again later.",
-            {"Retry-After": retry_after_value(retry)},
-        )
+    refuse_when_throttled(forgot_password_attempt(request), RESETS_SPENT_DETAIL)
     background.add_task(
         _request_password_reset,
         str(payload.email).strip().lower(),

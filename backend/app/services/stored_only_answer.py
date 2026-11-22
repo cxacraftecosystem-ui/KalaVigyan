@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 
-from app.research.composition import ResearchSummary, not_enough_evidence_message
 from app.research.crafts import CraftRef
+from app.research.research_summary import ResearchSummary, not_enough_evidence_message
 from app.retrieval.text import query_terms
 
 from .answer_events import CitedClaims

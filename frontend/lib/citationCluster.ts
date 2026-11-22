@@ -1,5 +1,5 @@
 import { citationsBySource, sourceReliabilityLabel } from "@/lib/citations";
-import type { Citation, SourceReliability, SourceRef } from "@/lib/types";
+import type { Citation, EvidenceLevel, SourceReliability, SourceRef } from "@/lib/types";
 
 export type ClusterEntry = { sourceId: string; number: number | null; source: SourceRef | null; citations: Citation[] };
 
@@ -103,4 +103,30 @@ export function evidenceState(citation: Pick<Citation, "evidence" | "level">): E
   if (citation.level === "HYPOTHESIS") return "hypothesis";
   if (citation.level === "VERIFIED" || citation.level === "REVIEWED") return "verified";
   return "provisional";
+}
+
+export type EvidenceMarkWords = { state: EvidenceState; label: string };
+
+export type EvidenceSignal = "EXPERTS_DIFFER" | "UNBALANCED" | "BALANCED";
+
+const LEVEL_MARKS: Record<EvidenceLevel, EvidenceMarkWords> = {
+  VERIFIED: { state: "verified", label: "Verified" },
+  REVIEWED: { state: "verified", label: "Reviewed" },
+  PROVISIONAL: { state: "provisional", label: "Provisional" },
+  HYPOTHESIS: { state: "hypothesis", label: "Hypothesis" },
+  UNAVAILABLE: { state: "provisional", label: "No source found" }
+};
+
+const SIGNAL_MARKS: Record<EvidenceSignal, EvidenceMarkWords> = {
+  EXPERTS_DIFFER: { state: "differ", label: "Experts differ" },
+  UNBALANCED: { state: "provisional", label: "Unbalanced" },
+  BALANCED: { state: "verified", label: "Balanced" }
+};
+
+export function levelMark(level: EvidenceLevel): EvidenceMarkWords {
+  return LEVEL_MARKS[level];
+}
+
+export function signalMark(signal: EvidenceSignal): EvidenceMarkWords {
+  return SIGNAL_MARKS[signal];
 }

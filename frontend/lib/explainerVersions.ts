@@ -27,7 +27,8 @@ export function explainerStateOf(document: ExplainerVersionDocument): ExplainerS
     error: null,
     notice: null,
     mark,
-    basedOn: null
+    basedOn: null,
+    quizAvailable: null
   };
 }
 
@@ -50,7 +51,8 @@ export function followingExplainer(base: ExplainerState, ref: ExplainerRef, ques
     followUps: [],
     error: null,
     notice: null,
-    basedOn: ref
+    basedOn: ref,
+    quizAvailable: null
   };
 }
 
@@ -81,6 +83,20 @@ function settledState(sections: readonly SectionView[], done: SectionDone): Sect
   return done.state === "EMPTY" && held && held.blocks.length > 0 ? "READY" : done.state;
 }
 
+function markedAdded(sections: readonly SectionView[], id: string): SectionView[] {
+  return sections.map((section) => (section.id === id ? { ...section, added: true } : section));
+}
+
+function settledSection(section: SectionView): SectionView {
+  const stored = { ...section };
+  delete stored.added;
+  return stored;
+}
+
+export function storedSections(sections: readonly SectionView[]): SectionView[] {
+  return sections.filter((section) => !section.added || section.blocks.length > 0).map(settledSection);
+}
+
 function sameBase(ref: ExplainerRef, event: BuildsOnEvent): boolean {
   return ref.explainerId === event.explainerId && ref.version === event.version;
 }
@@ -91,7 +107,9 @@ function reduceFollowing(state: ExplainerState, ref: ExplainerRef, event: Explai
       return sameBase(ref, event.data) ? state : { ...state, phase: "failed", status: null, error: STALE_FOLLOW_UP };
     case "section_started": {
       const sections = reopened(state.sections, event.data);
-      return sections ? { ...state, phase: "streaming", sections } : reduceExplainer(state, event);
+      if (sections) return { ...state, phase: "streaming", sections };
+      const opened = reduceExplainer(state, event);
+      return { ...opened, sections: markedAdded(opened.sections, event.data.id) };
     }
     case "block":
       return { ...state, phase: "streaming", sections: deepened(state.sections, event.data.sectionId, event.data.block) };
@@ -103,7 +121,7 @@ function reduceFollowing(state: ExplainerState, ref: ExplainerRef, event: Explai
 }
 
 export function reduceAnswerEvent(state: ExplainerState, event: ExplainerEvent): ExplainerState {
-  if (event.type === "version") return { ...state, mark: event.data, basedOn: null };
+  if (event.type === "version") return { ...state, mark: event.data, basedOn: null, sections: storedSections(state.sections) };
   if (state.basedOn) return reduceFollowing(state, state.basedOn, event);
   return reduceExplainer(state, event);
 }

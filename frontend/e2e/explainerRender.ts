@@ -7,7 +7,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ENGLISH } from "@/lib/answerLanguages";
 
-export const NO_CITATIONS: CitationLookup = { numbers: new Map(), sourcesById: new Map(), onOpen: () => undefined };
+export const NO_CITATIONS: CitationLookup = { numbers: new Map(), sourcesById: new Map() };
 
 export function withReading(child: ReactElement, lookup: CitationLookup = NO_CITATIONS): string {
   const reading = { language: ENGLISH, original: false, hiddenTerms: new Set<string>(), onTerm: () => undefined, listen: null };

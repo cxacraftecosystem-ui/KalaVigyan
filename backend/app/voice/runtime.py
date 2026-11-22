@@ -4,7 +4,7 @@ import hashlib
 import logging
 import time
 import uuid
-from collections import OrderedDict
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import httpx
@@ -14,17 +14,20 @@ from app.core.config import Settings
 from app.core.errors import ExternalFailure, NotConfigured
 from app.core.security import secret_key_or_none
 from app.providers.elevenlabs import ELEVENLABS_KEY_NAME, ElevenLabs
+from app.research.retrieval import KnowledgeRetriever
 from app.schemas.voice import VOICE_TRANSPORTS
 from app.services import app_settings, managed_secrets
+from app.services.object_store import media_bucket
 
+from .audio_decode import Measure, decoded_seconds
 from .binding import HMAC_KEY_NAME
 from .pack import VoicePackStore
 from .privacy import TranscriptCipher, transcript_cipher
+from .reply_audio import ReplyAudio, ReplyObjects
 
 __all__ = [
     "BEARER_MIN_CHARS",
     "REACHABILITY_TTL_SECONDS",
-    "SpeechCache",
     "VoiceRuntime",
     "VoiceSettings",
     "voice_settings",
@@ -34,8 +37,7 @@ logger = logging.getLogger(__name__)
 
 BEARER_MIN_CHARS = 32
 REACHABILITY_TTL_SECONDS = 60.0
-SPEECH_HELD = 32
-SPEECH_TTL_SECONDS = 900.0
+SearchFor = Callable[[uuid.UUID, str], KnowledgeRetriever]
 
 
 @dataclass(frozen=True)
@@ -93,30 +95,27 @@ def _cipher_or_none(value: str | None) -> TranscriptCipher | None:
         return None
 
 
-class SpeechCache:
-    def __init__(self, *, held: int = SPEECH_HELD, ttl_seconds: float = SPEECH_TTL_SECONDS) -> None:
-        self._held = held
-        self._ttl = ttl_seconds
-        self._audio: OrderedDict[tuple[uuid.UUID, uuid.UUID], tuple[float, bytes]] = OrderedDict()
-
-    def put(self, session_id: uuid.UUID, turn_id: uuid.UUID, audio: bytes) -> None:
-        self._audio[(session_id, turn_id)] = (time.monotonic(), audio)
-        while len(self._audio) > self._held:
-            self._audio.popitem(last=False)
-
-    def get(self, session_id: uuid.UUID, turn_id: uuid.UUID) -> bytes | None:
-        found = self._audio.get((session_id, turn_id))
-        if found is None or time.monotonic() - found[0] > self._ttl:
-            return None
-        return found[1]
-
-
 class VoiceRuntime:
-    def __init__(self, *, client: httpx.AsyncClient | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        client: httpx.AsyncClient | None = None,
+        objects: ReplyObjects | None = None,
+        measure: Measure = decoded_seconds,
+        search: SearchFor | None = None,
+    ) -> None:
         self.client = client or httpx.AsyncClient(follow_redirects=False)
         self.packs = VoicePackStore()
-        self.speech = SpeechCache()
+        self.measure = measure
+        self._search = search
+        self._objects = objects
         self._reachable: tuple[float, str, bool] | None = None
+
+    def stored_search(self, user_id: uuid.UUID, role: str) -> KnowledgeRetriever | None:
+        return None if self._search is None else self._search(user_id, role)
+
+    def replies(self) -> ReplyAudio:
+        return ReplyAudio(self._objects or media_bucket())
 
     def elevenlabs(self, voice: VoiceSettings) -> ElevenLabs:
         if not voice.api_key:

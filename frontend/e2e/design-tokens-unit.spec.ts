@@ -1,11 +1,13 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
+import { SOUND_BAR_STAGGER_MS, SoundBars } from "@/components/ask/DictationControl";
 import { CHOROPLETH_TONES } from "@/components/map/DistrictLayer";
 import { PREFERENCES_BOOT_SCRIPT, THEME_COLOR } from "@/lib/preferences";
-import { retiredColors, retiredUtilityColors } from "../tailwind.migration";
 import { FRONTEND } from "./moduleGraph";
 
 const read = (...parts: string[]) => readFileSync(join(FRONTEND, ...parts), "utf8");
@@ -135,15 +137,16 @@ test("globals.css imports the generated tokens and carries none of the retired l
   for (const retired of ["oklch(", "grad-", "glass", "ministry", "gold", "backdrop-filter", "--purple", "--font-inter", "--font-jakarta"]) expect(GLOBALS, retired).not.toContain(retired);
 });
 
-test("every token the Tailwind config and its migration aliases name is defined", () => {
+test("every token the Tailwind config names is defined, and no migration alias is left", () => {
   const root = block(TOKENS, ":root");
-  const named = [read("tailwind.config.ts"), read("tailwind.migration.ts")].flatMap((source) => [...source.matchAll(/\bc\("([a-z0-9-]+)"/g)].map((found) => found[1]));
-  expect(named.length).toBeGreaterThan(40);
+  const config = read("tailwind.config.ts");
+  const named = [...config.matchAll(/\bc\("([a-z0-9-]+)"/g)].map((found) => found[1]);
+  expect(named).toHaveLength(27);
   expect(named.filter((name) => !root.has(`--c-${name}`))).toEqual([]);
-  const leaves = (value: unknown): string[] => (typeof value === "string" ? [value] : Object.values(value as Record<string, unknown>).flatMap(leaves));
-  const aliased = leaves([retiredColors((name) => name), retiredUtilityColors((name) => name)]);
-  expect(aliased.length).toBeGreaterThan(40);
-  expect(aliased.filter((name) => !root.has(`--c-${name}`))).toEqual([]);
+  expect(existsSync(join(FRONTEND, "tailwind.migration.ts"))).toBe(false);
+  for (const alias of [/legacy/, /\b900:/, /\b600:/, /\bdisplay:/, /[{ ]bold:/, /\bspring:/, /shadow[^}]*\bsm:/]) expect(config, String(alias)).not.toMatch(alias);
+  const colours = config.slice(config.indexOf("colors: {"), config.indexOf("fontFamily: {"));
+  expect(colours.match(/^\s+(?:"?[a-z-]+"?: |[a-z]+: \{)/gm)?.map((key) => key.trim().replace(/[":{ ]/g, ""))).toEqual(["transparent", "ground", "ink", "indigo", "madder", "turmeric", "error", "warning", "info", "success", "white"]);
 });
 
 test("every self-hosted face is named in a font stack, and every script stack opens on a hosted face", () => {
@@ -163,6 +166,15 @@ test("each metric-matched fallback face, named after its font's const, is named 
   expect(TOKENS).toMatch(/--font-reading: "Newsreader", [^;]*"newsreader Fallback",/);
   expect(TOKENS).toMatch(/--font-ui: "IBM Plex Sans", [^;]*"plexSans Fallback",/);
   expect(GLOBALS).not.toMatch(/--font-[a-z]+:/);
+});
+
+test("the dictation sound bars are a named CSS motion resting at their end state, and the retired springs are gone", () => {
+  expect(MOTION).toMatch(/\.motion-sound \{\s*transform: scaleY\(0\.64\);\s*animation: kv-sound var\(--dur-hold\) var\(--ease-inout\) infinite alternate;/);
+  const bars = renderToStaticMarkup(createElement(SoundBars));
+  expect(bars.match(/class="motion-sound /g)).toHaveLength(5);
+  expect([...bars.matchAll(/animation-delay:(\d+)ms/g)].map((found) => Number(found[1]))).toEqual([0, 150, 300, 450, 600]);
+  expect(SOUND_BAR_STAGGER_MS).toBe(150);
+  expect(existsSync(join(FRONTEND, "components", "guide", "guideMotion.ts"))).toBe(false);
 });
 
 test("the five choropleth classes stay five distinct density steps, lowest first, in light and in dark", () => {

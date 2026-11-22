@@ -22,6 +22,7 @@ from .write_back_plan import composed_sentences
 __all__ = [
     "SOURCES_DIFFER_FIELD",
     "BlockRefused",
+    "DroppedSentence",
     "KeptSentence",
     "SectionSentences",
     "cited_sentence",
@@ -56,9 +57,16 @@ class KeptSentence:
 
 
 @dataclass(frozen=True)
+class DroppedSentence:
+    sentence: KeptSentence
+    problems: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class SectionSentences:
     facts: tuple[KeptSentence, ...]
     open_questions: tuple[KeptSentence, ...]
+    dropped: tuple[DroppedSentence, ...] = ()
 
 
 def kept_sentences(composed: ComposedAnswer, claims_of: Sequence[Sequence[uuid.UUID]]) -> list[KeptSentence]:
@@ -81,6 +89,7 @@ def kept_sentences(composed: ComposedAnswer, claims_of: Sequence[Sequence[uuid.U
 def section_sentences(sentences: Sequence[KeptSentence], cited: CitedClaims) -> SectionSentences:
     facts: list[KeptSentence] = []
     open_questions: list[KeptSentence] = []
+    dropped: list[DroppedSentence] = []
     for sentence in sentences:
         views = _views(sentence, cited)
         if _level(views) == OPEN_QUESTION_LEVEL:
@@ -91,9 +100,10 @@ def section_sentences(sentences: Sequence[KeptSentence], cited: CitedClaims) -> 
             shown = facts
         if problems:
             logger.warning("dropped a sentence alone: %s", "; ".join(problems))
+            dropped.append(DroppedSentence(sentence, tuple(problems)))
         else:
             shown.append(sentence)
-    return SectionSentences(tuple(facts), tuple(open_questions))
+    return SectionSentences(tuple(facts), tuple(open_questions), tuple(dropped))
 
 
 def prose_problems(sentences: Sequence[KeptSentence], cited: CitedClaims) -> list[str]:

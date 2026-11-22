@@ -85,7 +85,7 @@ OUTPUT_FOLDERS = (
 def test_the_outputs_are_written_where_the_app_and_the_skill_read_them(tmp_path: Path) -> None:
     for folder in OUTPUT_FOLDERS:
         (tmp_path / folder).mkdir(parents=True)
-    assert len(stale_outputs(tmp_path, OUTPUTS)) == 7
+    assert len(stale_outputs(tmp_path, OUTPUTS)) == 8
 
 
 def test_the_backend_s_tokens_resource_is_written_by_the_generator_as_the_skill_s(tmp_path: Path) -> None:

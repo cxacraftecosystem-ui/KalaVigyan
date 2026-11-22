@@ -7,7 +7,7 @@ export type ExplainerPhase = "idle" | "asking" | "streaming" | "done" | "empty" 
 
 export type SectionState = WorkingSectionState | FinalSectionState;
 
-export type SectionView = Omit<SectionStarted, "state"> & { state: SectionState; blocks: ExplainerBlock[]; searched: string | null };
+export type SectionView = Omit<SectionStarted, "state"> & { state: SectionState; blocks: ExplainerBlock[]; searched: string | null; added?: true };
 
 export type ExplainerRef = { explainerId: string; version: number };
 
@@ -29,6 +29,7 @@ export type ExplainerState = {
   notice: string | null;
   mark: VersionMark | null;
   basedOn: ExplainerRef | null;
+  quizAvailable: boolean | null;
 };
 
 const SETTLED: ReadonlySet<ExplainerPhase> = new Set(["empty", "failed"]);
@@ -52,7 +53,8 @@ export function emptyExplainer(question = "", language = "en"): ExplainerState {
     error: null,
     notice: null,
     mark: null,
-    basedOn: null
+    basedOn: null,
+    quizAvailable: null
   };
 }
 
@@ -136,7 +138,7 @@ function reduceSettling(state: ExplainerState, event: ExplainerEvent): Explainer
     case "not_enough_evidence":
       return { ...state, phase: "empty", status: null, notice: event.data.message };
     case "done":
-      return { ...state, phase: SETTLED.has(state.phase) ? state.phase : "done", status: null, answerId: event.data.answerId ?? state.answerId };
+      return { ...state, phase: SETTLED.has(state.phase) ? state.phase : "done", status: null, answerId: event.data.answerId ?? state.answerId, quizAvailable: event.data.quizAvailable ?? null };
     case "error":
       return { ...state, phase: "failed", status: null, error: event.data.message };
     default:

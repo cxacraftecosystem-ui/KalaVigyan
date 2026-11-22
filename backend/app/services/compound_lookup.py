@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, Protocol
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ExternalFailure, InvalidInput
@@ -107,7 +107,9 @@ async def _fill_known_records(
     unfilled = (
         await session.scalars(
             select(Compound)
-            .where(Compound.pubchemCid.is_not(None), Compound.formula.is_(None))
+            .where(
+                Compound.pubchemCid.is_not(None), or_(Compound.formula.is_(None), Compound.sourceId.is_(None))
+            )
             .order_by(Compound.name)
         )
     ).all()
@@ -118,12 +120,23 @@ async def _fill_known_records(
             logger.warning("compound record lookup failed for %s: %s", compound.name, failure)
             report.failed.append(compound.name)
             continue
-        if found is None or found.cid != compound.pubchemCid or not found.formula:
+        if found is None or found.cid != compound.pubchemCid or not _record_of(compound, found):
             report.not_found.append(compound.name)
             continue
-        compound.formula = found.formula
+        compound.formula = compound.formula or found.formula
         _fill(compound, found, await _record_source(session, found, now))
         report.filled.append(compound.name)
+
+
+def _record_of(compound: Compound, found: PubChemCompound) -> bool:
+    if not found.formula:
+        return False
+    if not compound.formula:
+        return True
+    try:
+        return _same_composition(found, dict(parse_formula(compound.formula).counts))
+    except InvalidInput:
+        return False
 
 
 def _same_composition(candidate: PubChemCompound, counts: dict[str, int]) -> bool:

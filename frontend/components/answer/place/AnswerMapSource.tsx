@@ -22,10 +22,10 @@ function BoundaryDataset({ boundary }: { boundary: BoundaryNote }) {
   );
 }
 
-export function AnswerMapSource({ boundary, districts = true, coordinates = false }: { boundary: BoundaryNote | null; districts?: boolean; coordinates?: boolean }) {
+export function AnswerMapSource({ boundary, caption = boundary?.caption ?? null, coordinates = false }: { boundary: BoundaryNote | null; caption?: string | null; coordinates?: boolean }) {
   return (
     <>
-      <MapSourceLine boundary={boundary} districts={districts} counts={false} />
+      <MapSourceLine caption={caption} counts={false} />
       {boundary ? (
         <>
           {" "}

@@ -62,6 +62,7 @@ class EvidencePack(ContractModel):
     evidence: tuple[PackedEvidence, ...] = ()
     documents: tuple[SourceDocument, ...] = ()
     failures: tuple[ResearchFailure, ...] = ()
+    searched: tuple[str, ...] = ()
 
     @model_validator(mode="after")
     def _consistent(self) -> Self:
@@ -69,6 +70,8 @@ class EvidencePack(ContractModel):
             raise ValueError("stored knowledge belongs to the planned craft")
         if [entry.facet_index for entry in self.coverage] != list(range(len(self.plan.facets))):
             raise ValueError("coverage lists each planned facet once, in facet order")
+        if len(set(self.searched)) != len(self.searched):
+            raise ValueError("searched names each live searcher once")
         _check_evidence(self.evidence, len(self.plan.facets))
         _check_documents(self.documents, self.evidence, self.plan.max_fetches)
         return self

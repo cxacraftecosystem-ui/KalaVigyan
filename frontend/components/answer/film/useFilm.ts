@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { hasRenderer } from "@/components/answer/blockRenderers";
 import { ApiError, apiErrorMessage } from "@/lib/api";
+import type { LedeBlock } from "@/lib/explainerContract";
 import type { SectionView } from "@/lib/explainerState";
 import { FILM_START, filmDuration, filmElapsed, filmScenes, filmStep, sceneProgress, type FilmAction, type FilmClock, type FilmScene } from "@/lib/filmScenes";
 import { fetchListenScript, type ListenScript } from "@/lib/listen";
@@ -76,9 +77,9 @@ function useHoldTimer(holding: boolean, send: (action: FilmAction) => void) {
   }, [holding, send]);
 }
 
-export function useFilm(answerId: string, language: string, sections: readonly SectionView[]): Film {
+export function useFilm(answerId: string, language: string, sections: readonly SectionView[], lede: LedeBlock | null): Film {
   const { script, load, error, retry, broken } = useScript(answerId, language);
-  const scenes = useMemo(() => (script ? filmScenes(sections, script, hasRenderer) : []), [sections, script]);
+  const scenes = useMemo(() => (script ? filmScenes(sections, script, hasRenderer, lede) : []), [sections, script, lede]);
   const [clock, setClock] = useState<FilmClock>(FILM_START);
   const ready = load === "ready";
   const send = useCallback(

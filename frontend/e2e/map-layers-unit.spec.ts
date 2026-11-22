@@ -98,7 +98,7 @@ test("a quantile layer spreads its classes over the ramp, and a reversed one run
 test("the layer picker offers the land and water layers first, before the district layers", () => {
   expect(PHYSICAL_LAYERS.map((entry) => entry.id)).toEqual(["relief", "rivers", "minerals"]);
   expect([physicalLayerId("rivers"), physicalLayerId("clay-0-5cm"), physicalLayerId(null)]).toEqual(["rivers", null, null]);
-  const list: MapLayerList = { layers: [summary("clay-0-5cm", "clay")], datasets: [], boundary: { caption: "", dataset: layer("x", "x", {}).dataset } };
+  const list: MapLayerList = { layers: [summary("clay-0-5cm", "clay")], datasets: [], boundary: { caption: "", dataset: layer("x", "x", {}).dataset }, outlineCaption: "" };
   const options = pickerOptions(list);
   expect(options.map((option) => option.value)).toEqual(["relief", "rivers", "minerals", "clay-0-5cm"]);
   expect(options.slice(0, 3).every((option) => option.group === PHYSICAL_GROUP)).toBe(true);

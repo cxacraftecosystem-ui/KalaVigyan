@@ -36,6 +36,7 @@ from .fakes import (
     cipher,
     session,
 )
+from .listen_fakes import MemoryObjects
 
 FIXTURES = Path(__file__).parent / "fixtures"
 NOTICE_SHA256 = "c06c887978ff6d32269507ba5f9c25ed1203468f821e4e920c6940e4960fab99"
@@ -73,12 +74,20 @@ def settings(transport: str = "RELAY") -> VoiceSettings:
     )
 
 
+async def three_seconds(content: bytes) -> float:
+    return 3.0
+
+
 class Client:
     def __init__(
         self, store: MemoryStore, *, transport: str = "RELAY", user: User | None = None, call: bool = True
     ) -> None:
         app = create_app()
-        runtime = VoiceRuntime(client=httpx.AsyncClient(transport=httpx.MockTransport(elevenlabs_answer)))
+        runtime = VoiceRuntime(
+            client=httpx.AsyncClient(transport=httpx.MockTransport(elevenlabs_answer)),
+            objects=MemoryObjects(),
+            measure=three_seconds,
+        )
         learner = user or User(
             id=USER_ID,
             name="Meera Rao",

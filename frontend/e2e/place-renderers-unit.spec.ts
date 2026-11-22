@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
@@ -17,7 +17,6 @@ import { StorySteps } from "@/components/answer/place/StorySteps";
 import { SupplyMapView } from "@/components/answer/place/SupplyMapView";
 import { useRiverFlow, type RiverFlow } from "@/components/answer/place/useRiverFlow";
 import { SALT_EXTRA } from "@/components/map/ChoroplethLegend";
-import { DISTRICTS_INDICATIVE, SURVEY_OF_INDIA_CAPTION } from "@/components/map/MapAttribution";
 import { PLACE_PATTERN } from "@/components/map/MapBase";
 import { project } from "@/components/map/projection";
 import { decodeShapes, type DistrictShape, type ShapesFile } from "@/components/map/shapeGeometry";
@@ -123,6 +122,12 @@ function backendScalar(file: string, name: string): string {
   const found = new RegExp(`^${name} = \\(?\\s*"([^"]+)"`, "m").exec(read("backend", "app", ...file.split("/")));
   if (!found) throw new Error(`${name} is not a string in backend/app/${file}`);
   return found[1];
+}
+
+function sourcesHolding(folder: string, words: string): string[] {
+  return readdirSync(folder, { recursive: true, encoding: "utf8" })
+    .filter((name) => /\.(ts|tsx)$/.test(name))
+    .filter((name) => readFileSync(join(folder, name), "utf8").includes(words));
 }
 
 test("the basin topology decodes quantized arcs, reversed arcs and joined arcs to the coordinates worked out by hand", () => {
@@ -262,9 +267,11 @@ test("a chosen step outlines its district and draws its stretch of the river", (
   expect(stage(still())).not.toContain('data-testid="river-stretch"');
 });
 
-test("every map carries the boundary caption word for word, and the client's caption is the server's", () => {
-  const caption = backendScalar("research/datasets.py", "BOUNDARY_CAPTION").trim();
-  expect(`${SURVEY_OF_INDIA_CAPTION} ${DISTRICTS_INDICATIVE}`).toBe(caption);
+test("every map carries the boundary caption word for word from the server, and the client holds no copy of it", () => {
+  const outline = backendScalar("research/datasets.py", "INDIA_OUTLINE_CAPTION");
+  const caption = `${outline} ${backendScalar("research/datasets.py", "DISTRICTS_INDICATIVE")}`;
+  expect(caption).toBe("External boundaries of India as depicted by Survey of India. District boundaries are indicative.");
+  for (const folder of ["app", "components", "lib"]) expect(sourcesHolding(join(ROOT, "frontend", folder), outline), folder).toEqual([]);
   expect(story().boundaryCaption).toBe(caption);
   const storyHtml = withApp(createElement(RegionStory, { block: story() }));
   expect(storyHtml).toContain(caption);

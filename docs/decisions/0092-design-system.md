@@ -11,6 +11,7 @@ colour, type and motion choices of decisions 0019, 0021 and 0048; their behaviou
 | For | Read |
 |---|---|
 | What amended it | [0114 Component kinds any craft can use, and one dataset record](0114-kinds-and-datasets.md): the design tokens, now that a depicted material is a record |
+| What closed point 6 | [0141 The design system holds no migration alias](0141-design-system-and-answer-screens-without-debt.md): the aliases and `tailwind.migration.ts` deleted, the config generated in both places |
 | What it supersedes in part | [0019 Craft page process timeline, region panel and map choropleths](0019-craft-page-and-region-panel.md): its colour, type and motion choices; its behaviour stands |
 | What it supersedes in part | [0021 Media UI: Image and Video on the craft page's process stages](0021-media-ui.md): its colour, type and motion choices; its behaviour stands |
 | What it supersedes in part | [0048 Place renderers: region story, map layer, seasons and supply](0048-place-renderers.md): its colour, type and motion choices; its behaviour stands |

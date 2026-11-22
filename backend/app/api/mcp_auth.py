@@ -12,7 +12,8 @@ from app.api.mcp_tools import TOOLS
 from app.api.oauth_hosts import configured_endpoints, endpoints_or_none
 from app.api.public_deps import counted_anonymous_read
 from app.core.mcp_scopes import READ_SCOPE
-from app.core.rate_limit import mcp_connection_attempt, retry_after_value
+from app.core.rate_limit import mcp_connection_attempt
+from app.core.throttle_refusal import refuse_when_throttled
 from app.research.oauth_metadata import bearer_challenge
 from app.research.oauth_rules import joined_scopes, ordered_scopes
 from app.services import oauth_bearer
@@ -54,11 +55,7 @@ async def mcp_caller(request: Request, session: AsyncSession) -> McpCaller | Non
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED, refused.description, {"WWW-Authenticate": challenge}
         ) from refused
-    allowed, wait = mcp_connection_attempt(str(caller.grant_id))
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS, CONNECTION_SPENT, {"Retry-After": retry_after_value(wait)}
-        )
+    refuse_when_throttled(mcp_connection_attempt(str(caller.grant_id)), CONNECTION_SPENT)
     return caller
 
 

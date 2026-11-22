@@ -7,14 +7,15 @@ import { createElement } from "react";
 import { BLOCK_RENDERERS } from "@/components/answer/blockRenderers";
 import type { CitationLookup } from "@/components/answer/CitationContext";
 import { MaterialCardView } from "@/components/answer/matter/MaterialCardView";
-import { MoleculeView } from "@/components/answer/matter/MoleculeView";
+import { MOLECULE_MOVES, MoleculeTools, MoleculeView, moveMolecule } from "@/components/answer/matter/MoleculeView";
 import { ReactionPlayerView } from "@/components/answer/matter/ReactionPlayer";
 import { moleculeFailure } from "@/components/answer/matter/useMolecule";
 import { ApiError } from "@/lib/api";
-import { CONFORMER_MAX_BYTES, conformerSdf, MOLFILE_VERSIONS } from "@/lib/conformer";
+import { CONFORMER_MAX_BYTES, conformerSdf, fetchConformer, MOLFILE_VERSIONS } from "@/lib/conformer";
 import { MOLECULE_CONFORMER_PATH } from "@/lib/explainerMatter";
 import type { SectionView } from "@/lib/explainerState";
 import { blockCitations, blockSentences, blockSourceIds, explainerSourceNumbers } from "@/lib/explainerView";
+import { moleculeScene, type SceneViewer } from "@/lib/moleculeViewer";
 import { materialRoleText } from "@/lib/processView";
 import {
   carriedKeys,
@@ -226,9 +227,52 @@ test("the client checks a conformer as the PubChem adapter does, and asks the ba
   expect(MOLECULE_CONFORMER_PATH(6293)).toBe(`${prefix}${path?.replace("{pubchem_cid}", "6293")}`);
 });
 
+test("keyboard readers turn, tilt and zoom a molecule with buttons that drive the viewer's own rotate and zoom", () => {
+  const calls: unknown[][] = [];
+  const viewer = {
+    rotate: (...args: unknown[]) => calls.push(["rotate", ...args]),
+    zoom: (...args: unknown[]) => calls.push(["zoom", ...args]),
+    getCanvas: () => null,
+    clear: () => undefined
+  } as unknown as SceneViewer;
+  const scene = moleculeScene(viewer, {} as HTMLElement);
+  for (const { move } of MOLECULE_MOVES) moveMolecule(scene, move, false);
+  moveMolecule(scene, "tilt", true);
+  expect(calls).toEqual([
+    ["rotate", 90, "y", 600],
+    ["rotate", 90, "x", 600],
+    ["zoom", 1.25, 600],
+    ["zoom", 0.8, 600],
+    ["rotate", 90, "x", 0]
+  ]);
+  const html = withApp(createElement(MoleculeTools, { scene, exploring: false, reduce: false, onExplore: () => undefined }));
+  expect([...html.matchAll(/<button[^>]*>(?:<svg[\s\S]*?<\/svg>)?([^<]+)<\/button>/g)].map((found) => found[1])).toEqual(["Turn", "Tilt", "Zoom in", "Zoom out", "Explore"]);
+  expect(html).toContain('role="toolbar"');
+});
+
+test("a conformer drawn again revalidates the route's ETag from the browser cache instead of asking afresh", async () => {
+  const original = globalThis.fetch;
+  const sent: { url: string; cache: RequestCache | undefined }[] = [];
+  try {
+    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      sent.push({ url: String(input), cache: init?.cache });
+      return new Response(RECORDED_SDF, { status: 200, headers: { "content-type": "chemical/x-mdl-sdfile" } });
+    };
+    expect(await fetchConformer(6293)).toBe(RECORDED_SDF);
+  } finally {
+    globalThis.fetch = original;
+  }
+  expect(sent).toHaveLength(1);
+  expect(sent[0].url.endsWith("/api/molecules/6293/conformer")).toBe(true);
+  expect(sent[0].cache).toBe("no-cache");
+  const route = readRepo("backend", "app", "api", "routes", "molecules.py");
+  expect(route).toContain("unchanged_read(request, reader, version)");
+  expect(route).toContain("headers=read_headers(reader, version)");
+});
+
 test("a molecule waits for its view, names its compound and cites its PubChem record; a missing conformer hides it", () => {
   const source = PHASE_B.sources.find((entry) => entry.id === ALIZARIN_RECORD);
-  const lookup: CitationLookup = { numbers: new Map([[ALIZARIN_RECORD, 7]]), sourcesById: new Map(source ? [[source.id, source]] : []), onOpen: () => undefined };
+  const lookup: CitationLookup = { numbers: new Map([[ALIZARIN_RECORD, 7]]), sourcesById: new Map(source ? [[source.id, source]] : []) };
   const html = withApp(createElement(MoleculeView, { block: molecule() }), lookup);
   expect(attribute(html, "molecule-3d", "data-status")).toEqual(["waiting"]);
   expect(html).toContain('aria-label="Loading 3D view"');

@@ -60,7 +60,7 @@ function citedAnswer(state: ExplainerState): CitedAnswer | null {
 function Essay({ state, streaming, reduce, active, onActive, onFollowUp, direction, lang }: { state: ExplainerState; streaming: boolean; reduce: boolean; active: string | null; onActive: (id: string) => void; onFollowUp: ((question: string) => void) | null; direction: "ltr" | "rtl"; lang: string | undefined }) {
   const provenance = { sources: state.sources, craft: state.understood?.crafts[0] ?? null, answered: answeredOn(state.mark?.createdAt) };
   return (
-    <article lang={lang} dir={direction === "rtl" ? "rtl" : undefined} className="min-w-0" aria-busy={streaming || undefined} data-testid="answer-view">
+    <article lang={lang} dir={direction === "rtl" ? "rtl" : undefined} className="kv-essay min-w-0" data-signature={state.lede?.figure ? "" : undefined} aria-busy={streaming || undefined} data-testid="answer-view">
       <AnswerHead question={state.question} lede={state.lede} provenance={provenance} actions={<AnswerActions answer={citedAnswer(state)} />} />
       {state.lede?.figure ? (
         <div className="mt-18 rail:mt-28">
@@ -94,8 +94,8 @@ export function ExplainerView({ state, streaming, languages, depthLabel, change,
     setFilming(true);
   };
   const reading = useMemo<ExplainerReading>(
-    () => ({ language, original, hiddenTerms: terms.hidden, onTerm: terms.open, listen: listen.mark }),
-    [language, original, terms.hidden, terms.open, listen.mark]
+    () => ({ language, original, hiddenTerms: terms.hidden, onTerm: terms.open, listen: listen.marks }),
+    [language, original, terms.hidden, terms.open, listen.marks]
   );
   const craftName = state.understood?.crafts[0]?.name ?? null;
   const ask = onFollowUp ? (term: Term) => onFollowUp(termQuestion(term.label, craftName)) : null;
@@ -112,7 +112,7 @@ export function ExplainerView({ state, streaming, languages, depthLabel, change,
           <TermSheet span={terms.span} language={state.language} onClose={terms.close} onMissing={terms.missing} onAsk={ask} />
           <ListenDock listen={listen} language={language} />
           {filming && state.answerId ? (
-            <FilmPlayer answerId={state.answerId} question={state.question} language={language} sections={state.sections} scoreOffered={filmScore} onClose={() => setFilming(false)} />
+            <FilmPlayer answerId={state.answerId} question={state.question} language={language} sections={state.sections} lede={state.lede} scoreOffered={filmScore} onClose={() => setFilming(false)} />
           ) : null}
         </div>
       </CitationProvider>

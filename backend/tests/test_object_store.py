@@ -47,3 +47,37 @@ async def test_a_refused_read_fails_loudly() -> None:
     with stub, pytest.raises(ExternalFailure) as failure:
         await store.get(KEY)
     assert failure.value.kind == "auth" and "AccessDenied" in str(failure.value)
+
+
+def put_params(**extra: str) -> dict[str, object]:
+    return {
+        "Bucket": BUCKET,
+        "Key": KEY,
+        "Body": b"{}",
+        "ContentType": "application/json",
+        "ServerSideEncryption": "AES256",
+        **extra,
+    }
+
+
+async def test_a_new_object_is_written_only_where_none_is() -> None:
+    store, stub = stubbed()
+    stub.add_response("put_object", {}, put_params(IfNoneMatch="*"))
+    with stub:
+        assert await store.put_if_absent(KEY, b"{}", content_type="application/json") is True
+
+
+async def test_an_object_already_there_is_left_as_it_is() -> None:
+    store, stub = stubbed()
+    stub.add_client_error("put_object", service_error_code="PreconditionFailed", http_status_code=412)
+    stub.add_client_error("put_object", service_error_code="ConditionalRequestConflict", http_status_code=409)
+    with stub:
+        assert await store.put_if_absent(KEY, b"{}", content_type="application/json") is False
+        assert await store.put_if_absent(KEY, b"{}", content_type="application/json") is False
+
+
+async def test_a_refused_conditional_write_fails_loudly() -> None:
+    store, stub = stubbed()
+    stub.add_client_error("put_object", service_error_code="AccessDenied", http_status_code=403)
+    with stub, pytest.raises(ExternalFailure):
+        await store.put_if_absent(KEY, b"{}", content_type="application/json")

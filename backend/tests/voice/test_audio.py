@@ -1,11 +1,13 @@
 import io
 import struct
 import wave
+from collections.abc import Awaitable, Callable, Sequence
 
 import pytest
 
 from app.core.errors import InvalidInput, Refused
-from app.voice.audio import upload_floor_seconds, wav_seconds
+from app.voice.audio import upload_seconds, wav_seconds
+from app.voice.audio_decode import DECODE_ARGS, FFMPEG, decoded_seconds
 
 
 def wav(seconds: float, *, rate: int = 16_000, channels: int = 1, width: int = 2) -> bytes:
@@ -23,14 +25,14 @@ def test_a_wav_lasts_its_frames_over_its_rate() -> None:
     assert wav_seconds(wav(1.0, rate=48_000, channels=2)) == pytest.approx(1.0)
 
 
-def test_a_wav_is_charged_its_length_rounded_up() -> None:
-    assert upload_floor_seconds(wav(12.2), "audio/wav") == 13
-    assert upload_floor_seconds(wav(60.0, rate=8_000), "audio/wav") == 60
+async def test_a_wav_is_charged_its_length_rounded_up_without_decoding() -> None:
+    assert await upload_seconds(wav(12.2), "audio/wav", never_decoded) == 13
+    assert await upload_seconds(wav(60.0, rate=8_000), "audio/wav", never_decoded) == 60
 
 
-def test_a_wav_over_a_minute_is_refused_whatever_its_size() -> None:
+async def test_a_wav_over_a_minute_is_refused_whatever_its_size() -> None:
     with pytest.raises(Refused) as refused:
-        upload_floor_seconds(wav(61.0, rate=8_000, width=1), "audio/wav")
+        await upload_seconds(wav(61.0, rate=8_000, width=1), "audio/wav", never_decoded)
     assert refused.value.reason == "too_long"
 
 
@@ -48,12 +50,53 @@ def test_a_compressed_wav_or_a_stray_file_is_refused() -> None:
             wav_seconds(body)
 
 
-def test_compressed_audio_is_charged_at_least_its_bytes_over_5000_a_second() -> None:
-    assert upload_floor_seconds(b"x", "audio/webm") == 1
-    assert upload_floor_seconds(b"x" * 50_001, "audio/ogg") == 11
-    assert upload_floor_seconds(b"x" * 300_000, "audio/mp4") == 60
+async def test_compressed_audio_is_charged_its_decoded_length_rounded_up() -> None:
+    assert await upload_seconds(b"x", "audio/webm", lasting(0.2)) == 1
+    assert await upload_seconds(b"x" * 1_000, "audio/ogg", lasting(12.3)) == 13
 
 
-def test_compressed_audio_above_the_minute_ceiling_is_refused() -> None:
+async def test_a_low_rate_upload_decoding_past_a_minute_is_refused_before_speech_to_text() -> None:
+    with pytest.raises(Refused) as refused:
+        await upload_seconds(b"x" * 300_000, "audio/webm", lasting(400.0))
+    assert refused.value.reason == "too_long"
+
+
+async def test_compressed_audio_above_the_byte_ceiling_is_refused_without_decoding() -> None:
     with pytest.raises(Refused):
-        upload_floor_seconds(b"x" * 300_001, "audio/webm")
+        await upload_seconds(b"x" * 300_001, "audio/webm", never_decoded)
+
+
+async def test_the_decoder_s_last_progress_time_is_the_recording_s_length() -> None:
+    progress = b"frame=0\nout_time_us=5000000\nprogress=continue\nout_time_us=12340000\nprogress=end\n"
+    asked: list[tuple[str, ...]] = []
+
+    async def run(argv: Sequence[str], content: bytes) -> tuple[int, bytes]:
+        asked.append(tuple(argv))
+        assert content == b"opus"
+        return 0, progress
+
+    assert await decoded_seconds(b"opus", run=run) == 12.34
+    assert asked == [(FFMPEG, *DECODE_ARGS)] and "pipe:0" in DECODE_ARGS
+
+
+async def test_audio_the_decoder_cannot_read_or_that_holds_no_sound_is_refused() -> None:
+    async def failing(argv: Sequence[str], content: bytes) -> tuple[int, bytes]:
+        return 1, b""
+
+    async def silent(argv: Sequence[str], content: bytes) -> tuple[int, bytes]:
+        return 0, b"out_time_us=0\nprogress=end\n"
+
+    for run in (failing, silent):
+        with pytest.raises(InvalidInput):
+            await decoded_seconds(b"junk", run=run)
+
+
+def lasting(seconds: float) -> Callable[[bytes], Awaitable[float]]:
+    async def measure(content: bytes) -> float:
+        return seconds
+
+    return measure
+
+
+async def never_decoded(content: bytes) -> float:
+    raise AssertionError("this upload is measured without decoding")

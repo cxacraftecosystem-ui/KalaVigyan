@@ -9,10 +9,13 @@ from datetime import datetime
 from typing import Any
 
 from pydantic import TypeAdapter
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.composer.candidates import stored_claim_candidate
+from app.core.errors import AppError
 from app.research.composition import ComposeRequest, ResearchSummary
 from app.research.crafts import QUESTION_MAX_CHARS, CraftRef
+from app.research.retrieval import KnowledgeHits, KnowledgeQuery, KnowledgeRetriever
 from app.research.structured import StructuredModel
 from app.research.vocabulary import CANONICAL_LANGUAGE
 from app.schemas.voice import VoiceTurnView
@@ -23,7 +26,7 @@ from app.services.write_back_plan import composed_sentences
 
 from .actions import turn_actions
 from .compose import voice_composed
-from .pack import VoicePack, ranked_claims
+from .pack import PACK_CANDIDATES, VoicePack, ranked_claims, searched_claims
 from .phrases import NO_CRAFT_REPLIES, NO_EVIDENCE_REPLIES, UNSAID_REPLIES, phrase
 from .records import AnswerRecord, SessionRecord
 from .spoken import SpokenReply, spoken_reply
@@ -59,6 +62,7 @@ class TurnTools:
     resolve: Callable[[str, str], Awaitable[CraftRef | None]]
     compose: StructuredModel
     translation: AnswerTranslation
+    retriever: KnowledgeRetriever | None = None
 
 
 @dataclass(frozen=True)
@@ -156,7 +160,9 @@ async def _sentences(
 ) -> list[dict[str, Any]]:
     if len(ask.question) < MIN_QUESTION_CHARS:
         return []
-    ranked = ranked_claims(pack, await _ranking_question(ask, tools.translation, deadline))
+    english = await _ranking_question(ask, tools.translation, deadline)
+    found = await _stored_search(ask, pack, english, tools.retriever, deadline)
+    ranked = searched_claims(pack, found, ranked_claims(pack, english))
     if not ranked:
         return []
     if ask.session.mode == "VERIFIED":
@@ -179,6 +185,26 @@ async def _ranking_question(ask: TurnAsk, translation: AnswerTranslation, deadli
             "voice turn %s: the question was not rendered in English before the call ends", ask.turn_id
         )
         return ask.question
+
+
+async def _stored_search(
+    ask: TurnAsk, pack: VoicePack, english: str, retriever: KnowledgeRetriever | None, deadline: float
+) -> KnowledgeHits | None:
+    if retriever is None:
+        return None
+    query = KnowledgeQuery(
+        craft_slug=pack.craft.slug,
+        text=english[:QUESTION_MAX_CHARS],
+        mode=ask.session.mode,
+        passages=False,
+        limit=PACK_CANDIDATES,
+    )
+    try:
+        async with asyncio.timeout_at(deadline):
+            return await retriever.search(query)
+    except (AppError, SQLAlchemyError, TimeoutError) as error:
+        logger.warning("voice turn %s ranks the pack by its words alone: %s", ask.turn_id, error)
+        return None
 
 
 async def _said(

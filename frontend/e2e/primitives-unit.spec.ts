@@ -14,7 +14,7 @@ import { nextTabIndex } from "@/components/ui/Tabs";
 import { TOAST_DURATION, ToastCard } from "@/components/ui/Toast";
 import { Toggle } from "@/components/ui/Toggle";
 import { clampZoom, zoomBy, ZOOM_RESET } from "@/components/ui/useZoom";
-import { figureKicker, numberFigures } from "@/lib/editorialText";
+import { figureKicker } from "@/lib/editorialText";
 
 import { attribute } from "./explainerRender";
 import { primitivesPage } from "./primitivesPage";
@@ -143,8 +143,6 @@ test("a skeleton is shaped like what is coming, busy for assistive technology an
 test("figures and tables are numbered separately through a page, kicker first and the table behind All N values", () => {
   expect(figureKicker("figure", 3)).toBe("Fig. 3");
   expect(figureKicker("table", 1)).toBe("Table 1");
-  expect([...numberFigures([{ id: "blue", kind: "figure" }, { id: "rain", kind: "table" }, { id: "red", kind: "figure" }])]).toEqual([["blue", 1], ["rain", 1], ["red", 2]]);
-  expect(() => numberFigures([{ id: "a", kind: "figure" }, { id: "a", kind: "figure" }])).toThrow("listed twice");
   const props: Omit<FigureProps, "children"> = { number: 5, title: "Rain over Kachchh has risen", source: "CHIRPS 3.0", table: createElement("table"), valueCount: 45 };
   const markup = html(createElement(Figure, props as FigureProps, createElement("svg")));
   expect(words(markup).startsWith("Fig. 5 Rain over Kachchh has risen")).toBe(true);

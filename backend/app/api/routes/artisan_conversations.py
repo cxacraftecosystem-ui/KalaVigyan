@@ -10,17 +10,17 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import ValidationError
 
 from app.api.artisan_deps import artisan_store, artisan_voice_settings, require_artisan_conversation
-from app.api.multipart_form import BodyTooLarge, form_file, limited_body
+from app.api.multipart_form import BodyTooLarge, limited_body, read_form
 from app.api.voice_deps import voice_runtime, voice_store
 from app.core.db import sessionmaker
 from app.core.deps import get_current_user
-from app.core.errors import AppError, InvalidInput, Refused
+from app.core.errors import AppError, InvalidInput, NotConfigured, Refused
 from app.core.rate_limit import (
-    retry_after_value,
     voice_session_attempt,
     voice_speech_attempt,
     voice_turn_attempt,
 )
+from app.core.throttle_refusal import refuse_when_throttled
 from app.models import User
 from app.research.testimony import RECORDING_NOTICE_VERSION
 from app.schemas.artisan import ConversationStartRequest
@@ -59,6 +59,8 @@ router = APIRouter(
 LLM_BODY_LIMIT = 512 * 1024
 FORM_OVERHEAD_BYTES = 64 * 1024
 UPLOAD_LIMIT = max(RELAY_MAX_AUDIO_BYTES, RELAY_MAX_WAV_BYTES)
+AUDIO_FIELD = "audio"
+CONTINUED_FIELD = "continued"
 SSE_HEADERS = {"Cache-Control": "no-store", "X-Accel-Buffering": "no"}
 THROTTLED = {
     "start": "You have started many conversations in a few minutes. Wait a little and try again.",
@@ -109,7 +111,7 @@ async def start(
     voice: VoiceSettings = Depends(artisan_voice_settings),
     artisans: SqlArtisanStore = Depends(artisan_store),
 ) -> dict[str, Any]:
-    _throttled(voice_session_attempt(str(user.id)), THROTTLED["start"])
+    refuse_when_throttled(voice_session_attempt(str(user.id)), THROTTLED["start"])
     ask = StartConversation(user, payload.craft_slug, payload.language, payload.notice_version)
     try:
         return await start_conversation(ask, _deps(store, artisans, runtime, voice))
@@ -137,9 +139,9 @@ async def relay_turn(
         raise refusal(ArtisanRefused("not_found"))
     if conversation.ended_at is not None or not record.live_at(utc_now()):
         raise HTTPException(status.HTTP_409_CONFLICT, ENDED_DETAIL)
-    _throttled(voice_turn_attempt(str(user.id)), THROTTLED["turn"])
+    refuse_when_throttled(voice_turn_attempt(str(user.id)), THROTTLED["turn"])
     deps = _deps(store, artisans, runtime, voice)
-    upload = await _upload(request)
+    upload = await _upload(request, runtime)
     turn_deps = RelayTurnDeps(
         conversation=deps,
         tools=_tools(request, runtime, store, user.id, user.role),
@@ -169,7 +171,7 @@ async def speech(
     record = await store.by_id(conversation.voice_session_id) if conversation.voice_session_id else None
     if record is None or conversation.transport != "RELAY":
         raise refusal(ArtisanRefused("not_found"))
-    _throttled(voice_speech_attempt(str(user.id)), THROTTLED["speech"])
+    refuse_when_throttled(voice_speech_attempt(str(user.id)), THROTTLED["speech"])
     try:
         audio = await conversation_speech(
             conversation, record, turn_id, _deps(store, artisans, runtime, voice)
@@ -251,7 +253,7 @@ def _deps(
         runtime=runtime,
         voice=voice,
         cipher=voice.cipher,
-        speech=runtime.speech,
+        speech=runtime.replies(),
         clock=utc_now,
     )
 
@@ -276,40 +278,30 @@ async def _owned(artisans: SqlArtisanStore, user: User, conversation_id: uuid.UU
     return conversation
 
 
-def _throttled(attempt: tuple[bool, float], detail: str) -> None:
-    allowed, retry = attempt
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS, detail, {"Retry-After": retry_after_value(retry)}
-        )
-
-
-async def _upload(request: Request) -> ArtisanUpload:
+async def _upload(request: Request, runtime: VoiceRuntime) -> ArtisanUpload:
+    limit = UPLOAD_LIMIT + FORM_OVERHEAD_BYTES
     try:
-        body = await limited_body(request, UPLOAD_LIMIT + FORM_OVERHEAD_BYTES)
-        audio = form_file(request.headers.get("content-type"), body, "audio")
+        form = await read_form(request, limit, files=[AUDIO_FIELD], texts=[CONTINUED_FIELD])
     except BodyTooLarge:
         raise _audio_refusal(status.HTTP_413_CONTENT_TOO_LARGE) from None
     except InvalidInput:
         raise _audio_refusal(status.HTTP_400_BAD_REQUEST) from None
+    audio = form.file(AUDIO_FIELD)
     if audio.content_type not in RELAY_AUDIO_TYPES:
         raise _audio_refusal(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
     if not audio.content:
         raise _audio_refusal(status.HTTP_400_BAD_REQUEST)
+    continued = (form.text(CONTINUED_FIELD) or "").strip() == "true"
     try:
-        return ArtisanUpload.checked(audio.content, audio.content_type, continued=_continued(request, body))
+        return await ArtisanUpload.measured(
+            audio.content, audio.content_type, runtime.measure, continued=continued
+        )
     except Refused:
         raise _audio_refusal(status.HTTP_413_CONTENT_TOO_LARGE) from None
     except InvalidInput:
         raise _audio_refusal(status.HTTP_400_BAD_REQUEST) from None
-
-
-def _continued(request: Request, body: bytes) -> bool:
-    try:
-        field = form_file(request.headers.get("content-type"), body, "continued")
-    except InvalidInput:
-        return False
-    return field.content.strip() == b"true"
+    except NotConfigured:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, ARTISAN_MESSAGES["not_configured"]) from None
 
 
 def _audio_refusal(code: int) -> HTTPException:

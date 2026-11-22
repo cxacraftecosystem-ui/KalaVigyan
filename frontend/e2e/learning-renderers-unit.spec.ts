@@ -6,7 +6,7 @@ import { CompareTable } from "@/components/answer/learning/CompareTable";
 import { ConceptGraphView } from "@/components/answer/learning/ConceptGraphView";
 import { QuizView } from "@/components/answer/learning/QuizView";
 import { compareLayout, rowTitle } from "@/lib/compareView";
-import { graphLayout, graphSummary, ringPoints } from "@/lib/conceptGraph";
+import { graphLayout, graphSummary, LABEL_GAP_PX, ringPoints, separatedLabels } from "@/lib/conceptGraph";
 import type { ConceptNode } from "@/lib/explainerLearning";
 import type { SectionView } from "@/lib/explainerState";
 import { explainerSourceNumbers } from "@/lib/explainerView";
@@ -163,6 +163,27 @@ test("the concept graph draws its term at the hub with each sharing craft around
   const indigo = withReading(createElement(ConceptGraphView, { focus: block.focus, nodes: block.nodes, reduce: false, initialTermKey: "indigo" }));
   expect(attribute(indigo, "concept-list-craft", "data-testid")).toHaveLength(5);
   expect(indigo).not.toContain("opacity:0");
+});
+
+test("labels that touch on a crowded ring are pushed apart by their measured boxes, the hub stays put and nothing leaves the frame", () => {
+  const frame = { width: 300, height: 300 };
+  expect(separatedLabels([{ x: 100, y: 100, width: 80, height: 20 }, { x: 130, y: 100, width: 80, height: 20 }], frame)).toEqual([
+    { x: 100, y: 87 },
+    { x: 130, y: 113 }
+  ]);
+  expect(separatedLabels([{ x: 150, y: 150, width: 100, height: 30, fixed: true }, { x: 160, y: 160, width: 80, height: 20 }], frame)).toEqual([
+    { x: 150, y: 150 },
+    { x: 160, y: 181 }
+  ]);
+  expect(separatedLabels([{ x: 40, y: 100, width: 60, height: 20 }, { x: 260, y: 100, width: 60, height: 20 }], frame)).toEqual([
+    { x: 40, y: 100 },
+    { x: 260, y: 100 }
+  ]);
+  expect(separatedLabels([{ x: 100, y: 285, width: 80, height: 30 }, { x: 110, y: 290, width: 80, height: 30 }], frame)).toEqual([
+    { x: 100, y: 249 },
+    { x: 110, y: 285 }
+  ]);
+  expect(LABEL_GAP_PX).toBe(6);
 });
 
 test("a concept shared by many crafts draws seven and a count, and lists six with a way to all of them", () => {

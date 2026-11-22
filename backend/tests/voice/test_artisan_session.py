@@ -23,11 +23,13 @@ from app.voice.artisan_session import (
 )
 from app.voice.artisan_transcript import open_transcript, sealed_merge
 from app.voice.binding import ARTISAN_NONCE_CONTEXT, session_is_bound
-from app.voice.runtime import SpeechCache, VoiceRuntime, VoiceSettings
+from app.voice.reply_audio import ReplyAudio
+from app.voice.runtime import VoiceRuntime, VoiceSettings
 from app.voice.sessions import VoiceRefused
 
 from .artisan_fakes import OTHER_CRAFT, MemoryArtisanStore, artisan_turn as said, artisan_user, facts
 from .fakes import BEARER, CONVERSATION_ID, CRAFT, HMAC_KEY, START, MemoryStore, cipher, ids, session
+from .listen_fakes import MemoryObjects
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SPEECH = b"\xff\xfb" * 24_000
@@ -75,7 +77,7 @@ def deps(
         runtime=runtime(reachable=reachable),
         voice=settings or voice(),
         cipher=cipher(),
-        speech=SpeechCache(),
+        speech=ReplyAudio(MemoryObjects()),
         clock=lambda: START,
         ids=ids(*NEW_IDS),
     )
@@ -98,7 +100,7 @@ async def test_a_relay_conversation_opens_by_naming_the_craft_and_asking_how_the
     assert new.topics_asked == ("PROCESS",)
     opened = open_transcript(cipher(), new.transcript)
     assert [(t.ordinal, t.speaker, t.topic) for t in opened.turns] == [(0, "KALAVIGYAN", "PROCESS")]
-    assert chosen.speech.get(new.session.id, started.opening.turn_id) == SPEECH
+    assert await chosen.speech.get(new.session.id, started.opening.turn_id) == SPEECH
     assert sum(e.units for e in chosen.store.ledger.values()) > 0
 
 

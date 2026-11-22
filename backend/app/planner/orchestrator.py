@@ -13,10 +13,10 @@ from app.research.structured import StructuredModel
 from .coverage import facet_coverage, stored_knowledge
 from .drafting import draft_plan
 from .failures import FailureLog
-from .live_search import merged_evidence, run_searches
+from .live_search import asked_searchers, merged_evidence, run_searches
 from .plans import effective_mode, retrieval_plan, search_question
 from .policy import LIVE_BUDGETS, reference_reserve, seat_reading_kinds, stored_pack_limit
-from .reading import DocumentReader, LiveSources, reading_order
+from .reading import DocumentReader, LiveSources, ReadCache, reading_order
 from .references import cited_dois, follow_references
 
 __all__ = ["PlannedQuestion", "ResearchPlanner"]
@@ -42,6 +42,7 @@ class _Reading:
     report: ResearchProgress
     trail: ResearchTrail | None
     seat_kinds: tuple[tuple[str, ...], ...]
+    reads: ReadCache | None
 
 
 class ResearchPlanner:
@@ -75,6 +76,7 @@ class ResearchPlanner:
         *,
         progress: ResearchProgress | None = None,
         trail: ResearchTrail | None = None,
+        reads: ReadCache | None = None,
     ) -> EvidencePack:
         report = progress or _silent
         planned = await self.planned(request)
@@ -89,7 +91,7 @@ class ResearchPlanner:
             limit=stored_pack_limit(request.depth),
         )
         log = FailureLog()
-        reading = _Reading(log, report, trail, seat_reading_kinds(request))
+        reading = _Reading(log, report, trail, seat_reading_kinds(request), reads)
         findings = await self._live(plan, reading) if plan.queries else LiveFindings()
         return EvidencePack(
             plan=plan,
@@ -99,6 +101,7 @@ class ResearchPlanner:
             evidence=findings.evidence,
             documents=findings.documents,
             failures=log.failures,
+            searched=asked_searchers(plan, self._sources.searchers) if plan.queries else (),
         )
 
     async def _live(self, plan: RetrievalPlan, reading: _Reading) -> LiveFindings:
@@ -109,7 +112,9 @@ class ResearchPlanner:
             await reading.report("READING", len(evidence))
             if trail is not None:
                 await trail.found(evidence)
-        reader = DocumentReader(self._sources, mode=plan.mode, log=log, on_read=trail.read if trail else None)
+        reader = DocumentReader(
+            self._sources, mode=plan.mode, log=log, on_read=trail.read if trail else None, reads=reading.reads
+        )
         source = self._sources.doi_source
         follows = any(budget.follows_references for budget in LIVE_BUDGETS[plan.mode].values())
         ordered = reading_order(evidence, len(plan.facets), reading.seat_kinds)

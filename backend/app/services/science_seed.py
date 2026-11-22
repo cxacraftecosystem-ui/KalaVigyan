@@ -8,7 +8,7 @@ from itertools import batched
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -50,6 +50,7 @@ SEED_ORDER = (
     ("readings", ConditionReading),
 )
 STAGE_BOUND = ("stageMaterials", "reactions", "conditions")
+KEPT_WHEN_UNSEEDED = {"compounds": ("pubchemCid",)}
 
 
 @dataclass(frozen=True)
@@ -126,7 +127,12 @@ def science_seed_plan(science: dict[str, Any], claims_data: dict[str, Any]) -> S
     plan = SciencePlan()
     compounds = {row["key"]: seed_id("compound", row["key"]) for row in science["compounds"]}
     plan.rows["compounds"] = [
-        {"id": compounds[row["key"]], "name": row["name"], "formula": row["formula"]}
+        {
+            "id": compounds[row["key"]],
+            "name": row["name"],
+            "formula": row["formula"],
+            "pubchemCid": row.get("pubchemCid"),
+        }
         for row in science["compounds"]
     ]
     _plan_materials(plan, seed, science["materials"], compounds)
@@ -145,7 +151,10 @@ async def seed_science(
     constants = await seed_claims(session, constants_data(science))
     present = set((await session.scalars(select(ProcessStage.id))).all())
     skipped = _drop_missing_stages(plan, present)
-    written = {name: await _upsert(session, model, plan.rows[name]) for name, model in SEED_ORDER}
+    written = {
+        name: await _upsert(session, model, plan.rows[name], KEPT_WHEN_UNSEEDED.get(name, ()))
+        for name, model in SEED_ORDER
+    }
     await session.flush()
     return {"constants": constants, "total": plan.totals(), "written": written, "skippedRows": skipped}
 
@@ -285,9 +294,17 @@ def _drop_missing_stages(plan: SciencePlan, present: set[uuid.UUID]) -> int:
     return before - sum(len(rows) for rows in plan.rows.values())
 
 
-async def _upsert(session: AsyncSession, model: Any, rows: list[dict[str, Any]]) -> int:
+async def _upsert(
+    session: AsyncSession, model: Any, rows: list[dict[str, Any]], kept: tuple[str, ...] = ()
+) -> int:
     for chunk in batched(rows, BATCH, strict=False):
         statement = insert(model).values(list(chunk))
-        changed = {key: statement.excluded[key] for key in chunk[0] if key != "id"}
+        changed = {
+            key: func.coalesce(statement.excluded[key], getattr(model, key))
+            if key in kept
+            else statement.excluded[key]
+            for key in chunk[0]
+            if key != "id"
+        }
         await session.execute(statement.on_conflict_do_update(index_elements=["id"], set_=changed))
     return len(rows)

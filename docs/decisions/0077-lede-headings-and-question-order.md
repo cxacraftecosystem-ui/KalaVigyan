@@ -8,6 +8,7 @@ Date: 2026-11-18. Status: accepted.
 
 | For | Read |
 |---|---|
+| What amended part of it | [0140 Voice and Listen hold their state in the bucket, bill what they hear and read the lede first](0140-voice-and-listen-kept-true.md): Listen, film and the quiz read the lede |
 | What built on it | [0086 The four signature figures are built, as lede figures only, behind a setting](0086-signature-figures-built.md): item 6's signature figures |
 | Every decision, by group | [README.md](README.md) |
 

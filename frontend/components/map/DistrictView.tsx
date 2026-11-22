@@ -5,7 +5,7 @@ import { GitCompareArrows, X } from "lucide-react";
 
 import { ListedSources } from "@/components/answer/CitedReading";
 import { ExplainerBlockView } from "@/components/answer/ExplainerBlockView";
-import { BasisLine, FacetBlock } from "@/components/craft/RegionPlaceCard";
+import { BasisLine, FacetBlock } from "@/components/map/PlaceFacts";
 import { DatasetCredit } from "@/components/DatasetCredit";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { buttonLook } from "@/components/ui/button";

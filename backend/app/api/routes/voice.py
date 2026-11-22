@@ -9,18 +9,18 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import ValidationError
 
-from app.api.multipart_form import BodyTooLarge, form_file, limited_body
+from app.api.multipart_form import BodyTooLarge, limited_body, read_form
 from app.api.voice_deps import current_voice, require_voice_call, voice_runtime, voice_store
 from app.core.config import get_settings
 from app.core.db import sessionmaker
 from app.core.deps import get_current_user
-from app.core.errors import AppError, InvalidInput, Refused
+from app.core.errors import AppError, InvalidInput, NotConfigured, Refused
 from app.core.rate_limit import (
-    retry_after_value,
     voice_session_attempt,
     voice_speech_attempt,
     voice_turn_attempt,
 )
+from app.core.throttle_refusal import refuse_when_throttled
 from app.models import User
 from app.schemas.voice import (
     RELAY_AUDIO_TYPES,
@@ -59,6 +59,7 @@ THROTTLED_DETAIL = "You have started many calls in a few minutes. Wait a little 
 TURNS_THROTTLED_DETAIL = "That is many turns in a few minutes. Wait a little and try again."
 SPEECH_THROTTLED_DETAIL = "That is many replays in a few minutes. Wait a little and try again."
 UPLOAD_LIMIT = max(RELAY_MAX_AUDIO_BYTES, RELAY_MAX_WAV_BYTES)
+AUDIO_FIELD = "audio"
 REFUSAL_STATUS = {
     "capability": status.HTTP_403_FORBIDDEN,
     "unverified_email": status.HTTP_403_FORBIDDEN,
@@ -107,7 +108,7 @@ async def start(
     runtime: VoiceRuntime = Depends(voice_runtime),
     voice: VoiceSettings = Depends(current_voice),
 ) -> dict[str, Any]:
-    _throttled(voice_session_attempt(str(user.id)), THROTTLED_DETAIL)
+    refuse_when_throttled(voice_session_attempt(str(user.id)), THROTTLED_DETAIL)
     ask = StartAsk(user=user, craft_slug=payload.craft_slug, mode=payload.mode, language=payload.language)
     try:
         return await start_session(ask, store=store, runtime=runtime, voice=voice, now=utc_now())
@@ -185,10 +186,10 @@ async def relay_turn(
     record = await _relay_session(store, user, session_id)
     if not record.live_at(utc_now()):
         raise HTTPException(status.HTTP_409_CONFLICT, ENDED_DETAIL)
-    _throttled(voice_turn_attempt(str(user.id)), TURNS_THROTTLED_DETAIL)
+    refuse_when_throttled(voice_turn_attempt(str(user.id)), TURNS_THROTTLED_DETAIL)
     if voice.missing() or voice.cipher is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, MESSAGES["not_configured"])
-    audio = await _recording(request)
+    audio = await _recording(request, runtime)
     deps = _relay_deps(request, runtime, store, voice, record)
     return StreamingResponse(
         relay_turn_events(record, audio, deps), media_type="text/event-stream", headers=SSE_HEADERS
@@ -209,7 +210,7 @@ async def speech(
     record = await _relay_session(store, user, session_id)
     if voice.missing() or voice.cipher is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, MESSAGES["not_configured"])
-    _throttled(voice_speech_attempt(str(user.id)), SPEECH_THROTTLED_DETAIL)
+    refuse_when_throttled(voice_speech_attempt(str(user.id)), SPEECH_THROTTLED_DETAIL)
     try:
         audio = await turn_speech(record, turn_id, _relay_deps(request, runtime, store, voice, record))
     except VoiceRefused as error:
@@ -218,14 +219,6 @@ async def speech(
         logger.warning("relay speech failed: %s", error)
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, MESSAGES["not_configured"]) from None
     return Response(content=audio, media_type="audio/mpeg", headers={"Cache-Control": "private, no-store"})
-
-
-def _throttled(attempt: tuple[bool, float], detail: str) -> None:
-    allowed, retry = attempt
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS, detail, {"Retry-After": retry_after_value(retry)}
-        )
 
 
 async def _owned(store: SqlVoiceStore, user: User, session_id: uuid.UUID) -> SessionRecord:
@@ -242,10 +235,10 @@ async def _relay_session(store: SqlVoiceStore, user: User, session_id: uuid.UUID
     return record
 
 
-async def _recording(request: Request) -> RelayAudio:
+async def _recording(request: Request, runtime: VoiceRuntime) -> RelayAudio:
+    limit = UPLOAD_LIMIT + FORM_OVERHEAD_BYTES
     try:
-        body = await limited_body(request, UPLOAD_LIMIT + FORM_OVERHEAD_BYTES)
-        upload = form_file(request.headers.get("content-type"), body, "audio")
+        upload = (await read_form(request, limit, files=[AUDIO_FIELD])).file(AUDIO_FIELD)
     except BodyTooLarge:
         raise _audio_refusal(status.HTTP_413_CONTENT_TOO_LARGE) from None
     except InvalidInput:
@@ -255,11 +248,13 @@ async def _recording(request: Request) -> RelayAudio:
     if not upload.content:
         raise _audio_refusal(status.HTTP_400_BAD_REQUEST)
     try:
-        return RelayAudio.checked(upload.content, upload.content_type)
+        return await RelayAudio.measured(upload.content, upload.content_type, runtime.measure)
     except Refused:
         raise _audio_refusal(status.HTTP_413_CONTENT_TOO_LARGE) from None
     except InvalidInput:
         raise _audio_refusal(status.HTTP_400_BAD_REQUEST) from None
+    except NotConfigured:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, MESSAGES["not_configured"]) from None
 
 
 def _audio_refusal(code: int) -> HTTPException:
@@ -287,7 +282,7 @@ def _relay_deps(
         tools=_tools(request, runtime, store, record),
         elevenlabs=runtime.elevenlabs(voice),
         cipher=voice.cipher,
-        speech=runtime.speech,
+        speech=runtime.replies(),
         voice_id=voice.voice_id,
         clock=utc_now,
         shield=request.app.state.shielded_work,

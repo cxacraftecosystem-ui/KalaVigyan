@@ -47,6 +47,15 @@ class MemoryObjects:
     async def put(self, key: str, body: bytes, *, content_type: str) -> None:
         self.stored[key] = (body, content_type)
 
+    async def put_if_absent(self, key: str, body: bytes, *, content_type: str) -> bool:
+        if key in self.stored:
+            return False
+        self.stored[key] = (body, content_type)
+        return True
+
+    async def delete(self, key: str) -> None:
+        self.stored.pop(key, None)
+
     def presigned_get(self, key: str, *, disposition: str, seconds: int, now: datetime) -> PresignedGet:
         assert disposition.startswith("inline; filename=")
         return PresignedGet(

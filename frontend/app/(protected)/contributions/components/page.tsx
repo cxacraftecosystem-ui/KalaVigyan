@@ -1,6 +1,5 @@
 "use client";
 
-import { Blocks } from "lucide-react";
 
 import { ComponentForm } from "@/components/contributions/ComponentForm";
 import { ComponentResult } from "@/components/contributions/ComponentResult";
@@ -31,7 +30,6 @@ export default function ProposeComponentPage() {
       <PageHeader
         title="Propose a component"
         description="A 3D molecule, a what-if, a map, a reaction player or a plate of pictures that a craft's page can place. Search the library first: what it holds is placed or extended, never copied."
-        icon={<Blocks className="h-5 w-5" aria-hidden />}
       />
       <div className="grid gap-12">
         <p className="font-ui text-ui text-ink-2">

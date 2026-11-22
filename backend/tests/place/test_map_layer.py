@@ -21,6 +21,7 @@ from ..answering.fakes import (
 from ..answering.piece_fakes import MemoryPieces
 from ..answering.test_answer_flow import REPLY, events
 from ..answering.test_piece_reuse_flow import asked
+from ..composer.fixtures import replacements
 from ..geo.golden_region import golden_layer_values
 from .fixtures import KACHCHH, golden_layer, place_ask, place_tools
 
@@ -98,7 +99,10 @@ def climate_pipeline(pieces: MemoryPieces, research: FakeResearch | None = None)
     entry = next(entry for entry in BLOCK_BUILDERS if entry.kind == "map_layer")
     understand = {**UNDERSTOOD_REPLY, "disciplines": ["CLIMATE"], "seats": ["CLIMATOLOGIST"]}
     answer = pipeline(
-        replies=[REPLY], pieces=pieces, research=research, understand_model=understanding_model(understand)
+        replies=[REPLY, replacements()],
+        pieces=pieces,
+        research=research,
+        understand_model=understanding_model(understand),
     )
     return dataclasses.replace(answer, builders=BlockBuilders([(entry, MapLayerBuilder(place_tools()))]))
 

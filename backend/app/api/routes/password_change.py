@@ -17,8 +17,9 @@ from app.api.routes.auth import (
 )
 from app.core.db import get_session
 from app.core.deps import get_current_user, get_current_user_any_step
-from app.core.rate_limit import refund_account, retry_after_value, sign_in_attempt_by_account
+from app.core.rate_limit import refund_account, sign_in_attempt_by_account
 from app.core.security import hash_password, verify_password
+from app.core.throttle_refusal import refuse_when_throttled
 from app.models import User
 from app.schemas.auth import ChangePasswordRequest
 from app.services import (
@@ -141,13 +142,7 @@ async def change_password(
     user: User = Depends(get_current_user_any_step),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, bool]:
-    allowed, retry = sign_in_attempt_by_account(str(user.id))
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            THROTTLED_DETAIL,
-            {"Retry-After": retry_after_value(retry)},
-        )
+    refuse_when_throttled(sign_in_attempt_by_account(str(user.id)), THROTTLED_DETAIL)
     proved_by = None
     if user.passwordHash is None:
         proved_by = await _confirm_first_password(session, user, payload)

@@ -3,17 +3,18 @@
 import { useCallback, useState } from "react";
 
 import { ApiError, apiErrorMessage } from "@/lib/api";
-import { fetchListenScript, LISTEN_RATES, listenMark, nextRate, type ListenMark, type ListenPosition, type ListenScript } from "@/lib/listen";
+import { fetchListenScript, LISTEN_RATES, nextRate, type ListenScript } from "@/lib/listen";
+import { listenMarkStore, type ListenMarks } from "@/lib/listenMarks";
 
 export type ListenStatus = "idle" | "loading" | "playing" | "paused" | "failed";
 
 export type Listen = {
   status: ListenStatus;
   script: ListenScript | null;
-  position: ListenPosition;
+  track: number;
+  marks: ListenMarks;
   rate: number;
   error: string | null;
-  mark: ListenMark | null;
   start: () => void;
   toggle: () => void;
   stop: () => void;
@@ -24,21 +25,25 @@ export type Listen = {
   onRefused: () => void;
 };
 
-const START = { track: 0, time: 0 };
 const FAILED_TO_START = "Couldn't start listening. Try again.";
 const FAILED_TO_PLAY = "Couldn't play the audio. Try again.";
 
 export function useListen(answerId: string | null, language: string): Listen {
   const [script, setScript] = useState<ListenScript | null>(null);
   const [status, setStatus] = useState<ListenStatus>("idle");
-  const [position, setPosition] = useState<ListenPosition>(START);
+  const [track, setTrack] = useState(0);
+  const [marks] = useState(listenMarkStore);
   const [rate, setRate] = useState<number>(LISTEN_RATES[0]);
   const [error, setError] = useState<string | null>(null);
 
-  const fail = useCallback((message: string) => {
-    setError(message);
-    setStatus("failed");
-  }, []);
+  const fail = useCallback(
+    (message: string) => {
+      marks.follow(null, 0);
+      setError(message);
+      setStatus("failed");
+    },
+    [marks]
+  );
 
   const start = useCallback(() => {
     if (!answerId) return;
@@ -51,20 +56,22 @@ export function useListen(answerId: string | null, language: string): Listen {
     fetchListenScript(answerId, language)
       .then((loaded) => {
         setScript(loaded);
-        setPosition(START);
+        setTrack(0);
+        marks.follow(null, 0);
         setStatus("playing");
       })
       .catch((cause: unknown) => {
         if (!(cause instanceof ApiError)) console.error(cause);
         fail(apiErrorMessage(cause, FAILED_TO_START));
       });
-  }, [answerId, language, script, fail]);
+  }, [answerId, language, script, marks, fail]);
 
   const stop = useCallback(() => {
-    setPosition(START);
+    setTrack(0);
+    marks.follow(null, 0);
     setStatus("idle");
     setError(null);
-  }, []);
+  }, [marks]);
 
   const toggle = useCallback(() => {
     if (status === "playing") setStatus("paused");
@@ -72,12 +79,14 @@ export function useListen(answerId: string | null, language: string): Listen {
     else start();
   }, [status, start]);
 
-  const onTime = useCallback((time: number) => setPosition((current) => ({ track: current.track, time })), []);
+  const onTime = useCallback((time: number) => marks.follow(script?.tracks[track]?.words ?? null, time), [marks, script, track]);
 
   const onEnded = useCallback(() => {
-    if (script && position.track + 1 < script.tracks.length) setPosition({ track: position.track + 1, time: 0 });
-    else stop();
-  }, [script, position.track, stop]);
+    if (script && track + 1 < script.tracks.length) {
+      setTrack(track + 1);
+      marks.follow(script.tracks[track + 1].words, 0);
+    } else stop();
+  }, [script, track, marks, stop]);
 
   const onBroken = useCallback(() => {
     setScript(null);
@@ -86,6 +95,5 @@ export function useListen(answerId: string | null, language: string): Listen {
 
   const onRefused = useCallback(() => fail(FAILED_TO_PLAY), [fail]);
 
-  const mark = status === "playing" || status === "paused" ? listenMark(script, position) : null;
-  return { status, script, position, rate, error, mark, start, toggle, stop, cycleRate: () => setRate(nextRate), onTime, onEnded, onBroken, onRefused };
+  return { status, script, track, marks, rate, error, start, toggle, stop, cycleRate: () => setRate(nextRate), onTime, onEnded, onBroken, onRefused };
 }

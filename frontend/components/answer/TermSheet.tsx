@@ -5,7 +5,6 @@ import { CircleAlert } from "lucide-react";
 
 import { CitationProvider, type CitationLookup } from "@/components/answer/CitationContext";
 import { ExplainerSentence } from "@/components/answer/ExplainerSentence";
-import type { OpenCitation } from "@/components/answer/SourceDialog";
 import { SignInLink } from "@/components/auth/SignInLink";
 import { FieldDialog } from "@/components/dialogs/FieldDialog";
 import { failureMessage, useRemote, type RemoteFailure } from "@/components/hooks/useRemote";
@@ -76,7 +75,6 @@ export function TermSheet({
   onClose: () => void;
   onMissing: (termKey: string) => void;
   onAsk: ((term: Term) => void) | null;
-  onOpenCitation?: (open: OpenCitation) => void;
 }) {
   const remote = useTermSummary(span, language);
   const looked = remote.data && span && remote.data.key === span.termKey ? remote.data : null;

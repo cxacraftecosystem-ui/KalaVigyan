@@ -3,11 +3,12 @@ from __future__ import annotations
 import time
 import uuid
 from collections import OrderedDict
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 
 from app.research.crafts import CraftRef
 from app.research.quotes import content_stems
+from app.research.retrieval import KnowledgeHits
 from app.research.vocabulary import LEVEL_ORDER
 from app.services.answer_events import CitedClaims
 from app.services.knowledge_view import ClaimView
@@ -19,6 +20,7 @@ __all__ = [
     "VoicePack",
     "VoicePackStore",
     "ranked_claims",
+    "searched_claims",
 ]
 
 PACK_CANDIDATES = 12
@@ -48,6 +50,18 @@ def ranked_claims(pack: VoicePack, question: str, *, limit: int = PACK_CANDIDATE
     matching = [(score, view) for score, view in scored if score > 0]
     matching.sort(key=lambda pair: (-pair[0], LEVEL_ORDER.get(pair[1].level, 9), pair[1].text))
     return [view for _, view in matching[:limit]]
+
+
+def searched_claims(
+    pack: VoicePack,
+    found: KnowledgeHits | None,
+    by_words: Sequence[ClaimView],
+    *,
+    limit: int = PACK_CANDIDATES,
+) -> list[ClaimView]:
+    searched = [hit.claim_id for hit in found.claims if hit.claim_id in pack.cited.views] if found else []
+    ordered = dict.fromkeys([*searched, *(view.id for view in by_words)])
+    return [pack.cited.views[claim_id] for claim_id in ordered][:limit]
 
 
 class VoicePackStore:

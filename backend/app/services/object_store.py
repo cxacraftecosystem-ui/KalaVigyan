@@ -14,6 +14,8 @@ __all__ = ["SERVER_SIDE_ENCRYPTION", "ObjectStore", "PresignedGet", "media_bucke
 SERVER_SIDE_ENCRYPTION = "AES256"
 SERVICE = "s3"
 MISSING_CODES = frozenset({"NoSuchKey", "404"})
+PRESENT_CODES = frozenset({"PreconditionFailed", "ConditionalRequestConflict", "412"})
+ANY_OBJECT = "*"
 
 
 @dataclass(frozen=True)
@@ -36,6 +38,9 @@ class ObjectStore:
 
     async def put(self, key: str, body: bytes, *, content_type: str) -> None:
         await asyncio.to_thread(self._put, key, body, content_type)
+
+    async def put_if_absent(self, key: str, body: bytes, *, content_type: str) -> bool:
+        return await asyncio.to_thread(self._put_new, key, body, content_type)
 
     async def get(self, key: str) -> bytes | None:
         return await asyncio.to_thread(self._get, key)
@@ -82,15 +87,27 @@ class ObjectStore:
 
     def _put(self, key: str, body: bytes, content_type: str) -> None:
         try:
-            self._client.put_object(
-                Bucket=self.bucket,
-                Key=key,
-                Body=body,
-                ContentType=content_type,
-                ServerSideEncryption=SERVER_SIDE_ENCRYPTION,
-            )
+            self._client.put_object(**self._written(key, body, content_type))
         except Exception as error:
             raise _failure(error, "store") from error
+
+    def _put_new(self, key: str, body: bytes, content_type: str) -> bool:
+        try:
+            self._client.put_object(**self._written(key, body, content_type), IfNoneMatch=ANY_OBJECT)
+        except Exception as error:
+            if _error_code(error) in PRESENT_CODES:
+                return False
+            raise _failure(error, "store") from error
+        return True
+
+    def _written(self, key: str, body: bytes, content_type: str) -> dict[str, Any]:
+        return {
+            "Bucket": self.bucket,
+            "Key": key,
+            "Body": body,
+            "ContentType": content_type,
+            "ServerSideEncryption": SERVER_SIDE_ENCRYPTION,
+        }
 
 
 def object_store(settings: Settings, *, client: Any = None) -> ObjectStore:

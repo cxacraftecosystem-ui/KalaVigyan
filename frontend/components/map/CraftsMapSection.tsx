@@ -4,10 +4,11 @@ import { failureMessage } from "@/components/hooks/useRemote";
 import { NATURAL_EARTH_CREDIT } from "@/components/map/basemap";
 import { FOREIGN_EXTRA, SALT_EXTRA, WATER_EXTRA } from "@/components/map/ChoroplethLegend";
 import { CirclesLegend } from "@/components/map/CirclesLegend";
-import { SURVEY_OF_INDIA_CAPTION } from "@/components/map/MapAttribution";
+import { CRAFT_LIST_COUNTS } from "@/components/map/MapSourceLine";
 import { MapRetry } from "@/components/map/MapRetry";
 import { RankedList } from "@/components/map/RankedList";
 import { StatesMapCanvas } from "@/components/map/StatesMapCanvas";
+import { useOutlineCaption } from "@/components/map/useOutlineCaption";
 import { useStateRanking, type StateRanking } from "@/components/map/useStateRanking";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TextLink } from "@/components/ui/TextLink";
@@ -16,7 +17,9 @@ import { PHYSICAL_LAYERS } from "@/lib/mapPhysical";
 import { allCraftsLabel, allStatesLabel, rankDek, rankFinding } from "@/lib/mapStates";
 
 export const CRAFTS_MAP_HEADING = "Where the crafts are practised";
-export const CRAFTS_MAP_SOURCE = `${SURVEY_OF_INDIA_CAPTION} ${NATURAL_EARTH_CREDIT} Counts from the KalaVigyan craft list.`;
+export function craftsMapSource(outline: string | null): string {
+  return [outline, NATURAL_EARTH_CREDIT, CRAFT_LIST_COUNTS].filter(Boolean).join(" ");
+}
 export const CIRCLES_LABEL = "Crafts in a state; circle area to scale";
 export const MAP_EXTRAS = [SALT_EXTRA, FOREIGN_EXTRA, WATER_EXTRA];
 
@@ -89,11 +92,12 @@ function MapSide({ ranking }: { ranking: StateRanking }) {
 }
 
 function MapFigure({ ranking }: { ranking: StateRanking }) {
+  const outline = useOutlineCaption();
   return (
     <figure className="min-w-0" data-testid="crafts-map-figure">
       <StatesMapCanvas ranking={ranking} title="Where India's crafts are practised" />
       {ranking.points.failure ? <MapRetry message={failureMessage(ranking.points.failure, "The craft places could not be loaded.")} onRetry={ranking.points.retry} className="mt-3" /> : null}
-      <figcaption className="mt-3 font-ui text-caption text-ink-3">{CRAFTS_MAP_SOURCE}</figcaption>
+      <figcaption className="mt-3 font-ui text-caption text-ink-3">{craftsMapSource(outline)}</figcaption>
     </figure>
   );
 }

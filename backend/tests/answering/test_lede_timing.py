@@ -7,6 +7,7 @@ from typing import Any
 
 from app.composer.composer import ModelComposer
 from app.core.errors import ExternalFailure
+from app.planner.reading import ReadCache
 from app.research.evidence_pack import EvidencePack, ResearchTrail
 from app.research.planning import PlanRequest
 from app.research.stream import ResearchProgress
@@ -69,10 +70,15 @@ class SignalledResearch(FakeResearch):
     started: asyncio.Event = field(default_factory=asyncio.Event)
 
     async def __call__(
-        self, request: PlanRequest, progress: ResearchProgress, trail: ResearchTrail
+        self,
+        request: PlanRequest,
+        progress: ResearchProgress,
+        trail: ResearchTrail,
+        *,
+        reads: ReadCache | None = None,
     ) -> EvidencePack:
         self.started.set()
-        return await super().__call__(request, progress, trail)
+        return await super().__call__(request, progress, trail, reads=reads)
 
 
 def waiting(built: Any, seconds: float) -> Any:

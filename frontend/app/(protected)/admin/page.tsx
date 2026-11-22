@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 
 import { ReviewSwitchCard } from "@/components/admin/ReviewSwitchCard";
 import { SiteBuildCard } from "@/components/admin/SiteBuildCard";
+import { VoiceSettingsCard } from "@/components/admin/VoiceSettingsCard";
 import { useAuth } from "@/components/AuthProvider";
 import { usePendingAccessCount } from "@/components/hooks/usePendingAccessCount";
 import { PageHeader } from "@/components/PageHeader";
@@ -58,6 +59,7 @@ export default function SettingsHubPage() {
         </ul>
       </nav>
       <ReviewSwitchCard />
+      <VoiceSettingsCard />
       <SiteBuildCard />
     </>
   );

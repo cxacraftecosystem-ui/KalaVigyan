@@ -18,7 +18,6 @@ import { Figure } from "@/components/ui/Figure";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { PlaceMarker } from "@/lib/mapFamilies";
 import { loadPhysical, mineralFinding, mineralSites, physicalLayer, type MineralsFile, type PhysicalFiles, type PhysicalLayerId, type ReliefFile, type RiversFile } from "@/lib/mapPhysical";
-import type { BoundaryNote } from "@/lib/regionContract";
 
 const PLACE_MARKS_LABEL = "Craft places on the map";
 const LAYOUT = "grid gap-8 lg:grid-cols-[minmax(0,6.6fr)_minmax(0,4.4fr)] lg:items-start lg:gap-12";
@@ -81,12 +80,12 @@ function PhysicalMap({ id, view, markers }: { id: PhysicalLayerId; view: Drawn; 
   );
 }
 
-export function PhysicalLayerFigure({ id, markers, boundary, controls }: { id: PhysicalLayerId; markers: readonly PlaceMarker[]; boundary: BoundaryNote | null; controls?: ReactNode }) {
+export function PhysicalLayerFigure({ id, markers, caption, controls }: { id: PhysicalLayerId; markers: readonly PlaceMarker[]; caption: string | null; controls?: ReactNode }) {
   const load = useCallback(() => loadPhysical(id), [id]);
   const file = useRemote(load);
   const view = useMemo(() => (file.data ? drawn(id, file.data) : null), [id, file.data]);
   return (
-    <Figure number={1} kind="map" id="map-figure" title={physicalLayer(id).title} dek={view?.dek} source={<MapSourceLine boundary={boundary} districts={false} counts={false} />} table={view?.table.node} valueCount={view?.table.rows.length}>
+    <Figure number={1} kind="map" id="map-figure" title={physicalLayer(id).title} dek={view?.dek} source={<MapSourceLine caption={caption} counts={false} />} table={view?.table.node} valueCount={view?.table.rows.length}>
       <div className={LAYOUT} data-testid="physical-layer" data-layer={id}>
         <div className="min-w-0">{view ? <PhysicalMap id={id} view={view} markers={markers} /> : <Skeleton shape="chart" label="Drawing the layer" />}</div>
         <div className="grid content-start gap-[18px]">

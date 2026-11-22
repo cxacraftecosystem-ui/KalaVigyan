@@ -10,6 +10,7 @@ Date: 2026-11-17. Status: accepted.
 |---|---|
 | The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
 | The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
+| The budget by asked field, and a late failure rewritten once | [decision 0138](0138-answers-composed-from-the-asked-fields.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

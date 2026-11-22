@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PlugZap } from "lucide-react";
 
 import { ConsentForm } from "@/components/oauth/ConsentForm";
 import { PageHeader } from "@/components/PageHeader";
@@ -95,7 +94,6 @@ export default function AuthorizePage() {
             ? `It will use KalaVigyan in your name, then return you to ${asking.prompt.redirectHost}. Connect only an app you added yourself.`
             : undefined
         }
-        icon={<PlugZap className="h-5 w-5" aria-hidden />}
         back={false}
       />
       {view.state === "checking" ? <Skeleton shape="lede" label="Checking the app" /> : null}

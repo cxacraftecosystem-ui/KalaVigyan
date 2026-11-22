@@ -12,13 +12,11 @@ from app.research.composition import (
     ComposedSentence,
     ComposeRequest,
     QuotedSpan,
-    ResearchSummary,
-    SearchedQuery,
-    not_enough_evidence_message,
     sentence_level,
     sentence_violations,
 )
 from app.research.evidence import Quote
+from app.research.research_summary import ResearchSummary, SearchedQuery, not_enough_evidence_message
 from app.research.write_back import ClaimWriteBack
 
 from .fixtures import AJRAKH, ALUM_QUOTE, BAGRU, evidence_item

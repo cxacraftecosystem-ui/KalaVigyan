@@ -31,17 +31,28 @@ from .builder_interface import BuildAsk, BuilderTools, Built
 from .market_store import MarketOffers, PriceOffer, market_offers
 
 __all__ = [
+    "GI_FIELD",
+    "GI_PARTS",
     "IMITATION_MAX",
     "MARKET_FIELDS",
+    "MARKET_PARTS",
     "PRICES_MAX",
+    "PRICE_FIELD",
+    "PRICE_PARTS",
     "MarketGiBuilder",
     "MarketLoader",
     "market_block",
+    "section_parts",
 ]
 
 logger = logging.getLogger(__name__)
 
-MARKET_FIELDS = frozenset({"ECONOMICS", "POLICY"})
+GI_FIELD = "POLICY"
+PRICE_FIELD = "ECONOMICS"
+MARKET_FIELDS = frozenset({PRICE_FIELD, GI_FIELD})
+GI_PARTS = frozenset({"gi", "imitation"})
+PRICE_PARTS = frozenset({"prices"})
+MARKET_PARTS = GI_PARTS | PRICE_PARTS
 IMITATION_MAX = 3
 PRICES_MAX = 6
 MARKET_BLOCK_PREFIX = "market"
@@ -58,27 +69,37 @@ class MarketGiBuilder:
         if lead is None:
             return Built()
         shown = {block.craft.slug for block in ask.blocks if isinstance(block, MarketGiBlock)}
+        parts = section_parts(ask.section.discipline, ask.answer_fields)
         found = await self._offers((lead, *ask.request.compared))
         blocks: list[MarketGiBlock] = []
         sources: dict[str, SourceRef] = {}
         for number, offers in enumerate(found, start=1):
             if offers.craft.slug in shown:
                 continue
-            block = market_block(offers, block_id=f"{ask.section.id}.{MARKET_BLOCK_PREFIX}{number}")
+            block_id = f"{ask.section.id}.{MARKET_BLOCK_PREFIX}{number}"
+            block = market_block(offers, block_id=block_id, parts=parts)
             if block is not None:
                 blocks.append(block)
                 sources.update(offers.sources)
         return Built(tuple(blocks), sources_beyond(blocks, sources, ask.cited))
 
 
-def market_block(offers: MarketOffers, *, block_id: str) -> MarketGiBlock | None:
+def section_parts(discipline: str, answer_fields: Collection[str]) -> frozenset[str]:
+    if not {GI_FIELD, PRICE_FIELD} <= set(answer_fields):
+        return MARKET_PARTS
+    return GI_PARTS if discipline == GI_FIELD else PRICE_PARTS
+
+
+def market_block(
+    offers: MarketOffers, *, block_id: str, parts: frozenset[str] = MARKET_PARTS
+) -> MarketGiBlock | None:
     facts = {claim_id: fact for claim_id, view in offers.views.items() if (fact := known_fact(view))}
-    gi = _gi_status(offers, facts, block_id)
+    gi = _gi_status(offers, facts, block_id) if "gi" in parts else None
     shown = _claim_ids(gi.sentences if gi else [])
     priced = {price.claim_id for price in offers.prices}
     numbered = len(gi.sentences) if gi else 0
-    imitation = _imitation(offers, facts, shown | priced, block_id, numbered)
-    prices = _price_ranges(offers, facts, block_id, numbered + len(imitation))
+    imitation = _imitation(offers, facts, shown | priced, block_id, numbered) if "imitation" in parts else []
+    prices = _price_ranges(offers, facts, block_id, numbered + len(imitation)) if "prices" in parts else []
     if gi is None and not imitation and not prices:
         return None
     try:

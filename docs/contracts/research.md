@@ -507,8 +507,10 @@ it; the answer flow passes `providers/embedding.router_embedder(principal)`.
   and the reading order shares the section's reads with them; decision 0046), `share` (`ResearchShare {queries, nativeQueries, fetches}`, its part of the
   depth budget: `planner/policy.request_limits` takes the smaller of the share and the mode and
   depth limits) and `fresh` (live queries run for covered facets too, finding 8a.2; decision 0032).
-  `split_share(total, parts)` splits a budget evenly, the remainder to the first parts; it is
-  each section's floor, not its ceiling (`ResearchLedger.take_section`, below).
+  `split_share(total, parts)` splits a budget evenly, the remainder to the first parts; the
+  answer's ledger splits it among the sections of the first rank only
+  (`research_ledger.first_shares`, below), and a share is a floor, not a ceiling
+  (`ResearchLedger.take_section`).
 - `RetrievalPlan {schemaVersion 1, mode, craft | null, intent, language, needsRegion,
   facets[Facet] (1-8), tiers[], queries[PlannedQuery], maxFetches}`; stored per section in
   `Answer.plan` as `research/sections.AnswerPlans {schemaVersion 1, sections[{sectionId,
@@ -562,7 +564,10 @@ schema is never dropped for free text, and a format learned as refused before is
 ### The planner (`app/planner/`, decision 0009)
 
 `planner.orchestrator.ResearchPlanner(model=, retriever=, sources=LiveSources)` implements
-`Planner` and adds `research(PlanRequest, *, progress=None, trail=None) -> EvidencePack`.
+`Planner` and adds `research(PlanRequest, *, progress=None, trail=None, reads=None) ->
+EvidencePack`. `reads` is the answer's `reading.ReadCache` (decision 0138): every section and seat of
+one answer reads an evidence id once, a second asker awaiting the first read (a read that gave
+nothing is not tried again), and only the read that opened a document reports it to the trail.
 `progress` is a `stream.ResearchProgress` (`async (step, count)`), called with
 `SEARCHING_STORED` (facet count) before the stored search, `RESEARCHING` (query count) before
 live search and `READING` (evidence count) before reading when anything was found. `trail` is an
@@ -624,7 +629,9 @@ process: each adapter paces and caches itself.
 ### Evidence pack (`research/evidence_pack.py`)
 
 `EvidencePack {schemaVersion 1, plan, degraded, stored: KnowledgeHits, coverage[FacetCoverage],
-evidence[PackedEvidence], documents[SourceDocument], failures[ResearchFailure]}`.
+evidence[PackedEvidence], documents[SourceDocument], failures[ResearchFailure], searched[]}`.
+`searched` names every live searcher the plan's queries asked, once each in first-asked order
+(`live_search.asked_searchers`, decision 0138); empty when no live research ran.
 
 - `stored` is the question's stored search (limit `STORED_PACK_LIMIT` 20, or the depth's
   `stored_claims`: 40 at Expert, decision 0089) for the plan's craft
@@ -643,7 +650,10 @@ evidence[PackedEvidence], documents[SourceDocument], failures[ResearchFailure]}`
 
 - `ComposeRequest {question, craft | null (any craft), language ("en" only: the composer writes and checks English;
   translation follows, decision 0023), craft, candidates[ComposeCandidate] (unique ids, may be
-  empty), searched: ResearchSummary (same craft)}`; `request.allowed` maps id to candidate.
+  empty), searched: ResearchSummary (same craft), refused[RefusedSentence {text, problems[]}]
+  (at most 24)}`; `request.allowed` maps id to candidate. A request with `refused` sentences has a
+  focus and stored claims only: the composer then runs the regenerate prompt alone on those
+  sentences, and what passes is the section's rewrite (decision 0138).
 - `ComposeCandidate {id, kind, text, quotes[], sourceLabel, level}`. `CLAIM`: `id` is the claim
   UUID, `text` the claim text, `quotes` its citation quotes. `EVIDENCE` (a live item not yet
   written back): `id` is `<adapter>:<id>`, `text` and `quotes` verbatim passages of the read
@@ -651,9 +661,9 @@ evidence[PackedEvidence], documents[SourceDocument], failures[ResearchFailure]}`
   model sees each passage as data in a user-role message, never a reader's paraphrase, each
   wrapped by `untrusted.untrusted_block` with the candidate id as `ref`.
 - `ResearchSummary {craft, mode, storedClaims, storedPassages, queries[SearchedQuery {tier,
-  text}], services[], evidenceFound, documentsRead, failures}`: what was searched for the
-  question. `not_enough_evidence_message(summary)` is the one user-facing sentence that lists
-  it.
+  text}], services[], evidenceFound, documentsRead, failures}` (`research/research_summary.py`):
+  what was searched for the question. `not_enough_evidence_message(summary)` is the one
+  user-facing sentence that lists it, and `searched_note(summary)` a section's.
 - `ComposedAnswer {sections[{heading (1-120), sentences[ComposedSentence] (at least one)}],
   openQuestions[ComposedSentence], followUps[] (at most 5), notEnoughEvidence?}`: either cited
   sentences (sections or open questions) or `notEnoughEvidence`, never both, never neither.
@@ -723,8 +733,11 @@ Gemini).
   taken while at most `PASSAGES_PER_DOCUMENT` (3) fit within the same 4,000 characters, the best as
   the candidate's text and the rest as its quotes. No model call chooses them. A long document
   with no passage holding a facet word, and evidence not read, are left out. Label `<title> (<publisher or adapter>, <year or
-  undated>, <content>)`. `research_summary(pack)` fills `searched`; `services` are the searchers
-  that returned evidence and the services that failed, sorted.
+  undated>, <content>)`. A stored claim's candidate carries its citations' quotes as passages and
+  its sources' titles and years after `stored claim, <level>` in its label
+  (`candidates.ClaimSupport`, from the claims the section reads for its trail; decision 0138).
+  `research_summary(pack)` fills `searched`; `services` are every searcher the pack asked
+  (`EvidencePack.searched`), those that returned evidence and the services that failed, sorted.
 - **Call**: system `COMPOSE_SYSTEM_PROMPT` (rules only), user `compose_message(request)`
   (language, the craft name and slug in a block (`crafts.craft_block`), one block per passage,
   the question in a block), schema `compose_schema()` (portable; quote lengths, at least one
@@ -923,7 +936,7 @@ fields that were set.
 | Event | Payload | Notes |
 |---|---|---|
 | `match` | `{status:"RESOLVED", craft}` / `{status:"AMBIGUOUS", candidates (1-5)}` / `{status:"NONE"}` | kept in the vocabulary; the answering flow sends `understood` instead (decision 0031) |
-| `status` | `{step, message}` | new; progress while research runs. `step` one of `RESOLVING`, `PLANNING`, `SEARCHING_STORED`, `RESEARCHING`, `READING`, `COMPOSING`, `WRITING_BACK`, `TRANSLATING`; `message` a short user-facing sentence |
+| `status` | `{step, message}` | new; progress while research runs. `step` one of `RESOLVING`, `PLANNING`, `SEARCHING_STORED`, `RESEARCHING`, `READING`, `COMPOSING`, `WRITING_BACK`, `TRANSLATING`; `message` a short user-facing sentence. A step's count is the sum over the sections that reached it, sent again as it grows while that step is the latest shown; a step already passed adds to its sum silently (decision 0138) |
 | `source` | `SourceRef {id, kind, title, authors[], year, doi, url, publisher, licence, attribution, reliability}` | before the first citation naming it; `url` https or null |
 | `section` | `{id, heading, original?}` | kept in the vocabulary; the answering flow sends `section_started` instead (decision 0032) |
 | `sentence` | `{sectionId, sentence: AnswerSentence}` | kept in the vocabulary; sentences now arrive inside `prose` and `process_ladder` blocks (decision 0032) |
@@ -974,15 +987,19 @@ ModelUnderstander(model=StructuredModel, resolve=)` implements it with the craft
 - `UnderstandAsk {question, depth, language="en", craftSlug?, anyCraft=false, role?}`; a craft
   and any craft together do not construct.
 - `Understanding {schemaVersion 1, craft | null, candidates[CraftRef] (0-5), compared[CraftRef]
-  (0-3, left out when empty), disciplines [Discipline], seats[ExpertSeat], depth, language,
-  englishQuestion? (2-1000, left out when absent), basis: MODEL | RESOLVER, refusal?}`, stored on
+  (0-3, left out when empty), disciplines [Discipline], asked [Discipline] (left out when empty),
+  seats[ExpertSeat], depth, language, englishQuestion? (2-1000, left out when absent), basis: MODEL
+  | RESOLVER, refusal?}`, stored on
   `Answer.understanding`. `craft` null is any craft; each craft appears once across `craft`,
   `compared` and `candidates`; `compared` (decision 0064) are the crafts a comparison sets beside
   `craft`, only in a `MODEL` understanding with a craft; disciplines and seats are listed once
   each, seats at most the depth's `max_experts`. `MODEL` (the reply held something usable) names
   at least one discipline; `RESOLVER` (the model call failed or its reply held nothing usable)
   carries the fields the question's words name and their seats (below); only `RESOLVER` carries a
-  `refusal`, the router's own words when spend was refused. `englishQuestion` is the question in
+  `refusal`, the router's own words when spend was refused. `asked` are the fields the question
+  itself asks (the reply's, else the fields its words name), each once and each among
+  `disciplines`, before the depth's floor adds held fields; without it every field is asked
+  (decision 0138). `englishQuestion` is the question in
   English that every search of the answer reads (decision 0123). `understood()` is the stream's
   `Understood` event, its `crafts` the craft then the compared ones.
 - The call: system `UNDERSTAND_SYSTEM_PROMPT`; user `understand_message` (depth label, the
@@ -1083,7 +1100,12 @@ stream: each step opens its own.
    piece with `storedAt`, `section_started WRITING`, sources, the placed blocks, `section_done
    READY`), and nothing is reused when the ask is `fresh` or for any craft; every other
    `section_started` (`RESEARCHING`) is sent next. The depth's budget (`request_limits` of the question's plan
-   request) is split across the open sections (`services/research_ledger.ResearchLedger`); a
+   request) is shared by rank (`services/section_fields.SectionFields`, decision 0138): an asked field
+   the craft holds fewer than three curated facts in (`stored_fields.FIELD_CLAIMS_MIN`) first,
+   another asked field next, a field the question did not ask last; the first rank present splits
+   it and the rest start with none (`services/research_ledger.ResearchLedger`, `first_shares`).
+   Sections start in rank order; a thin asked field with no reused floor researches `fresh`; a
+   field not asked composes at most half the depth's section sentences. A
    section's first take (`take_section`) is its share plus a fair split, among the sections not
    yet started, of what is left above their shares, so budget an earlier section left reaches the
    later ones and no section takes the share of one still waiting (decision 0123); and up to
@@ -1104,7 +1126,14 @@ stream: each step opens its own.
      logged, a sentence that cites no visible stored claim (a sentence whose write-back was
      refused arrives claimless), is not a fact, states a figure that none of its claims' texts
      and quotes holds, or names what none states (above); the block is built from the rest and
-     is not shown only when nothing remains (decision 0120). `prose_block` itself still refuses
+     is not shown only when nothing remains (decision 0120). A dropped sentence that cited live
+     evidence (its write-back refused, or its figure or name not in what was kept) is named to the
+     composer once more, with the section's stored claims only (`ComposeRequest.refused`,
+     `services/section_rewrite.rewritten`); what passes joins the prose, and the drops are logged
+     by reason (decision 0138). Before composing, a live or field passage that names no craft
+     researched but another catalogued craft or a place abroad (`write_back_names.CraftNames`) is
+     not offered, or in a comparison is labelled for comparison only (`services/off_question`).
+     `prose_block` itself still refuses
      whole (`BlockRefused`) a list holding any such sentence, for the callers that hand it
      stored claims directly. A sentence citing a claim whose sources differ carries
      `sourcesDiffer: true` (`section_blocks.explainer_sentence`).

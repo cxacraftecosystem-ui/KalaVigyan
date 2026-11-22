@@ -3,7 +3,7 @@ import logging
 from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, datetime
-from functools import lru_cache
+from functools import lru_cache, partial
 from pathlib import Path
 from typing import Any, Self
 
@@ -22,8 +22,9 @@ from app.core.config import get_settings
 from app.core.db import get_session, sessionmaker
 from app.core.deps import get_current_user, refusal_for
 from app.core.errors import AppError
-from app.core.rate_limit import ask_attempt, retry_after_value
+from app.core.rate_limit import ask_attempt
 from app.core.roles import Capability, can, is_uncapped, role_value
+from app.core.throttle_refusal import refuse_when_throttled
 from app.models import User
 from app.providers.answer_routes import answer_models
 from app.providers.budget import AnswerSpend
@@ -37,6 +38,7 @@ from app.research.stream import event_stream
 from app.research.vocabulary import ANSWER_LANGUAGES, AnswerLanguage, Depth, language_option
 from app.schemas.common import APIModel
 from app.services import knowledge_view
+from app.services.answer_quiz import answer_offers_quiz, with_quiz_offer
 from app.services.answer_store import build_answer_pipeline
 from app.services.answering import AnswerAsk, AnswerPipeline, answer_question
 from app.services.explainer_history import (
@@ -226,16 +228,11 @@ async def answers_stream(
     if not can(user, Capability.ASK_STANDARD) or ask.depth not in selectable_depths(user):
         raise HTTPException(status.HTTP_403_FORBIDDEN, refusal_for(Capability.ASK_STANDARD))
     if not is_uncapped(user):
-        allowed, retry = ask_attempt(str(user.id))
-        if not allowed:
-            raise HTTPException(
-                status.HTTP_429_TOO_MANY_REQUESTS,
-                THROTTLED_DETAIL,
-                {"Retry-After": retry_after_value(retry)},
-            )
+        refuse_when_throttled(ask_attempt(str(user.id)), THROTTLED_DETAIL)
     pipeline = pipelines(ask.depth)
+    offers = partial(answer_offers_quiz, sessionmaker(), user_id=user.id)
     return StreamingResponse(
-        event_stream(lambda emit: answer_question(ask, pipeline, emit)),
+        event_stream(lambda emit: answer_question(ask, pipeline, with_quiz_offer(emit, offers))),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
     )

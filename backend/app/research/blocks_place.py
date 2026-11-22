@@ -162,12 +162,14 @@ class SeasonsBlock(BlockBase):
 
     kind: Literal["seasons"]
     version: Literal[1]
-    rows: list[SeasonRow] = Field(min_length=1)
+    rows: list[SeasonRow]
     rainfall: MonthlyRain | None
     datasets: list[DatasetRef]
 
     @model_validator(mode="after")
-    def _rows_cited_and_rain_from_its_dataset(self) -> Self:
+    def _cited_rows_or_rain_from_its_dataset(self) -> Self:
+        if not self.rows and self.rainfall is None:
+            raise ValueError(f"seasons {self.id} shows season rows, its district's rainfall or both")
         require_facts(f"seasons {self.id}", [row.sentence for row in self.rows])
         expected = [self.rainfall.dataset_code] if self.rainfall is not None else []
         if [dataset.code for dataset in self.datasets] != expected:

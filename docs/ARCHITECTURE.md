@@ -47,7 +47,7 @@ flowchart LR
 | Origin | nginx `:80` on EC2 `kalavigyan-api` (ap-south-1) | 403 without `X-Origin-Verify` |
 | API | `uvicorn app.main:app` | blue/green on 8000/8001 |
 | Database | Postgres 17 on Supabase | session pooler `:5432`; vector, postgis, pg_trgm, unaccent, citext |
-| Workers on the box | `kv-worker`, `kv-fetcher` and `kv-contributions` | the media queue (decision 0018), the fetcher sandbox (decision 0007) and the contribution queue's gates (round 7), as `docs/RUNBOOK.md` lists them under On the box |
+| Workers on the box | `kv-worker`, `kv-fetcher` and `kv-contributions` | the media queue (decision 0018) and the daily voice upkeep (decision 0140), the fetcher sandbox (decision 0007) and the contribution queue's gates (round 7), as `docs/RUNBOOK.md` lists them under On the box |
 
 Media goes to the private S3 bucket through presigned URLs. Ids, names and the deploy sequence
 are in `docs/RUNBOOK.md`; what the box assumes from the code is in `docs/contracts/infra.md`.
@@ -273,7 +273,10 @@ sequenceDiagram
    reuse nothing. The other sections are started at once and run in parallel while the lede is
    written (`services/answer_sections`, decisions 0032 and 0077). Each section
    researches its own field within its share of the depth's budget (Basic and Detailed `HYBRID`,
-   Expert `DEEP`): the planner (decision 0009) plans facets and queries for that field and its
+   Expert `DEEP`), the budget going first to the fields the question asks that the craft holds
+   fewer than three facts in, which start first and research fresh, and a field the question
+   did not ask writing half the sentences (`services/section_fields`, decision 0138); one read
+   per document per answer (`planner/reading.ReadCache`): the planner (decision 0009) plans facets and queries for that field and its
    experts (each seat speaking to the field is named with the kinds of source it reads, and those
    kinds take every other early read; decision 0046), searches stored claims (every craft's, for any craft) and, for what they do not cover
    (every facet in `DEEP`), scholarly, reference and web sources, and reads the best documents,
@@ -284,7 +287,10 @@ sequenceDiagram
    stored citations (a process ladder from the science tables, `science/ladder`; a prose block),
    checks each and drops one that fails, marks the glossary terms in each English sentence, and
    sends each block with its sources first, then the section's pictures (decision 0039). A section
-   whose stored claims compose nothing researches live once more. `section_started`,
+   whose stored claims compose nothing researches live once more, and a sentence its write-back
+   could not keep is rewritten once from stored claims (`services/section_rewrite`). Passages
+   about another craft or a place abroad are not offered to the composer outside a comparison
+   (`services/off_question`, decision 0138). `section_started`,
    `section_state`, `block` and `section_done` mark each section; `status` the overall step.
 5. Another answer language (decision 0023): each block is still composed and checked in
    English; `services/answer_translation.translated_block` then translates it in one `TRANSLATE`
@@ -392,8 +398,9 @@ sequenceDiagram
 2. `voice/narration.py` picks each block's cited sentences, in reading order and each in its own
    language, and the cache id per block (piece content hash, model, voice, language).
    `voice/narration_cache.py` reads each block's manifest from `media/narration/<cacheId>/`.
-3. For the misses only, `voice/listen.py` holds the estimated `VOICE_SECONDS` under the reader's
-   `User` row lock (429 when too few are left), asks `ElevenLabs.narration`
+3. For the misses only, `voice/listen.py` takes each block's lease in the bucket
+   (`voice/narration_lease.py`; a block another request is making is waited for, not paid again),
+   holds the estimated `VOICE_SECONDS` under the reader's `User` row lock (429 when too few are left), asks `ElevenLabs.narration`
    (`/with-timestamps`, `eleven_v4`) for each part of at most 2,000 characters, stores the audio
    and then the manifest, and settles the hold to the audio's seconds.
 4. The answer is one track per part: a one-hour presigned link and the words with their times,
@@ -404,8 +411,8 @@ sequenceDiagram
 1. `GET /api/answers/{answerId}/film-score?language=` (`api/routes/film.py`) checks `VOICE` and
    the 10-ask limit (Master Admin unlimited) and reads the reader's own explainer with hidden
    simulations marked, in one short session (`voice/film_store.py`).
-2. `voice/film_scenes.py` makes the scenes (drawn blocks in reading order, timed by their
-   narration estimate or `FILM_SCENE_SECONDS`), their hash, the bed length and the cues the
+2. `voice/film_scenes.py` makes the scenes (the lede first when the answer has one, then the drawn
+   blocks in reading order, timed by their narration estimate or `FILM_SCENE_SECONDS`), their hash, the bed length and the cues the
    fixed table of `voice/score_prompts.py` names. A manifest at
    `media/score/<answerId>/<language>/score.json` whose hash matches is served at once.
 3. Otherwise `voice/film_score.py` looks up each clip by its content address
@@ -436,13 +443,15 @@ answers 404 and no voice button is drawn. The steps hold when the setting is tru
    `voice/audio.py` measures it, `voice/relay.py` claims the turn under the session row's lock
    (a minute held, one of 40 turns), runs speech to text, writes back the unheard part, then the
    turn and text to speech, and streams the turn events.
-3. A turn (`voice/turns.py`) ranks the pack's claims against the scrubbed question (rendered in
+3. A turn (`voice/turns.py`) ranks the pack's claims by the stored hybrid search, then by shared
+   words, against the scrubbed question (rendered in
    English first when it is not in Latin script), speaks stored claims (`VERIFIED`) or makes one
    checked `VOICE_TURN` compose (`HYBRID`), translates what it will say into the session language
    (`answer_translation.translated_sentences`, decision 0025), and saves the turn to the encrypted
    transcript with an `Answer` row and its seconds in one transaction.
-4. Every day `app/scripts/voice_upkeep` closes calls left open, purges transcripts after 30 days and
-   reconciles agent calls with ElevenLabs in both directions (refund or charge).
+4. Every day `kv-worker` (`app/worker.py`, `voice/daily_upkeep.py`) closes calls left open, purges
+   transcripts after 30 days and reconciles agent calls with ElevenLabs in both directions (refund or
+   charge), once when it starts and every 24 hours after.
 
 ## How a stage illustration is made
 
@@ -528,7 +537,8 @@ sequenceDiagram
    is kept as a cross-craft piece by basin or districts and reused with its geography section
    (`services/region_pieces`). Geology and climate sections get the
    registry layer their sentences name, built as the layer route answers it. Climate sections also
-   get a seasons strip, the trends of the craft's districts with the section's cited claims on
+   get a seasons strip (their district's CHIRPS rainfall alone when no fact names a month,
+   decision 0138), the trends of the craft's districts with the section's cited claims on
    what they mean (`services/climate_risk`, decision 0065), and materials sections a supply map (`services/season_supply_builders`,
    decision 0047): the craft's stages and the section's claims placed only on the months or season
    their own text names, a season given months only by a cited quote that states them, the CHIRPS
@@ -638,7 +648,8 @@ settings, admin, contribute); `app/api/` holds route handlers that proxy auth an
 one API client and `lib/server/apiProxy.ts` the server-side proxy. Generic components are in
 `components/ui/`, domain components in `components/<area>/`. Design rules are the
 `kalavigyan-design` skill (Alum & Indigo, decision 0092): generated tokens reach components
-through `app/globals.css` and `tailwind.config.ts`, button rows and controls through the shared
+through `app/globals.css` (which imports the generated `app/tokens.css`) and `tailwind.config.ts`
+(written by the token generator, with no migration alias left; decision 0141), button rows and controls through the shared
 primitives in `components/ui/`, the reading primitives (the citation cluster and its sources,
 evidence marks, specimen label, masthead, plates, fact grid, chapter rail, margin notes) through
 `components/editorial/`, and their CSS through `app/primitives.css` and `app/editorial.css`.
@@ -678,8 +689,8 @@ what-if lab, the zoom story, the timeline map) and film mode with its score have
 shapes in `lib/explainerPlay.ts` and `lib/filmScore.ts` (decision 0054); the score's route is
 built (decision 0058). The zoom story and the timeline map are `components/answer/journey/`,
 loaded on demand (`lib/zoomView.ts`, `lib/timelineView.ts`, decision 0060). Film mode is
-`components/answer/film/`, loaded only when a film starts: one clock over the drawn blocks
-(`lib/filmScenes.ts`), the Listen script and audio for narration and captions, each block's own
+`components/answer/film/`, loaded only when a film starts: one clock over the lede and the drawn
+blocks (`lib/filmScenes.ts`), the Listen script and audio for narration and captions, each block's own
 animation driven through `components/answer/FilmScene.tsx`, and the optional score mixed by
 `lib/filmSound.ts`.
 The phase D kinds (the cloze quiz, compare, the concept graph, local measures, market and GI,

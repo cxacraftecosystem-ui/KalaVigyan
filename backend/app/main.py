@@ -19,6 +19,7 @@ from app.api.routes.auth import (
 )
 from app.api.routes.oauth_well_known import router as oauth_well_known_router
 from app.api.routes.password_change import CONFIRM_PROVIDER_HEADER
+from app.api.voice_deps import voice_stored_search
 from app.core.config import get_settings
 from app.core.db import dispose_engine, ping
 from app.core.deps import PASSWORD_CHANGE_REQUIRED_HEADER, TWO_FACTOR_SETUP_REQUIRED_HEADER
@@ -103,7 +104,7 @@ def create_app() -> FastAPI:
     app.state.craft_index = CraftIndexStore()
     app.state.live_sources = LiveSourcesStore()
     app.state.shielded_work = ShieldedWork()
-    app.state.voice_runtime = VoiceRuntime()
+    app.state.voice_runtime = VoiceRuntime(search=voice_stored_search)
     app.state.river_topologies = TopologyCache()
     app.state.public_summary = SummaryCache()
     app.state.craft_catalogue = new_catalogue_cache()

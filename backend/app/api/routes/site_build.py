@@ -1,4 +1,3 @@
-import math
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from typing import Any
@@ -13,6 +12,7 @@ from app.core.db import get_session
 from app.core.deps import get_current_user
 from app.core.errors import ExternalFailure, NotConfigured
 from app.core.roles import ADMIN, has_rank
+from app.core.throttle_refusal import too_many_requests
 from app.models import User
 from app.services.site_build import (
     BuildTooSoon,
@@ -74,8 +74,7 @@ async def post_site_build(
     except NotConfigured:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, NOT_CONFIGURED_DETAIL) from None
     except BuildTooSoon as early:
-        wait = str(max(1, math.ceil(early.retry_after)))
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, early.message, {"Retry-After": wait}) from None
+        raise too_many_requests(early.message, early.retry_after) from None
     except ExternalFailure:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, HOOK_FAILED_DETAIL) from None
     return (await site_build_state(session, configured=True, now=datetime.now(UTC))).as_dict()

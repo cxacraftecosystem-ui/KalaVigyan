@@ -6,6 +6,7 @@ import pytest
 from app.core.errors import InvalidInput
 from app.research.blocks_matter import ReactionPlayerBlock
 from app.research.blocks_place import RegionStoryBlock
+from app.research.explainer import Explainer
 from app.services.naming import score_cue_file_name, score_key, score_manifest_key, score_music_file_name
 from app.voice.film_scenes import FilmScene, bed_seconds, film_scenes, held_seconds, scene_cues, scenes_hash
 from app.voice.score_prompts import SCORE_PROMPT_VERSION, cue_prompt
@@ -38,6 +39,17 @@ def test_the_phase_a_scenes_are_its_blocks_in_reading_order_timed_by_narration_o
         (4, "s3.b1", "prose", "CHEMISTRY"),
     ]
     assert [s.seconds for s in scenes] == [39.0, 6.0, 18.0, 19.0]
+
+
+def test_a_film_opens_on_its_lede_timed_by_its_narration_and_given_no_cue() -> None:
+    scenes = film_scenes(Explainer.model_validate(golden_json("explainer.lede.golden.json")))
+    assert [(s.number, s.block_id, s.kind, s.discipline, s.seconds) for s in scenes] == [
+        (1, "lede", "lede", None, 17.0),
+        (2, "s1.b1", "prose", "CHEMISTRY", 10.0),
+        (3, "s2.b1", "prose", "MATERIALS", 14.0),
+        (4, "s3.b1", "prose", "PROCESS", 12.0),
+    ]
+    assert cue_prompt("lede", None) is None
 
 
 def test_sections_play_by_their_order_not_their_place_in_the_list() -> None:

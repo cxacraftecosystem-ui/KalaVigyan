@@ -10,6 +10,7 @@ from typing import Any
 from app.composer.composer import ModelComposer
 from app.composer.translation import ModelTranslator
 from app.models import ClaimSource, Source
+from app.planner.reading import ReadCache
 from app.planner.understanding import ModelUnderstander
 from app.providers.router import RouterError
 from app.research.blocks import ImagesBlock
@@ -233,11 +234,18 @@ class FakeResearch:
     requests: list[PlanRequest] = field(default_factory=list)
     failure: Exception | None = None
     packs: Mapping[str, Sequence[EvidencePack]] = field(default_factory=dict)
+    reads: list[ReadCache | None] = field(default_factory=list)
 
     async def __call__(
-        self, request: PlanRequest, progress: ResearchProgress, trail: ResearchTrail
+        self,
+        request: PlanRequest,
+        progress: ResearchProgress,
+        trail: ResearchTrail,
+        *,
+        reads: ReadCache | None = None,
     ) -> EvidencePack:
         self.requests.append(request)
+        self.reads.append(reads)
         found = self._pack(request)
         for step, count in self.steps:
             await progress(step, count)

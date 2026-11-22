@@ -31,7 +31,7 @@ const ANSWER = "6f1c2a8e-0b7d-4c3e-9f1a-2b3c4d5e6f70";
 const PIECE = "0e9d8c7b-6a5f-4e3d-8c2b-1a0f9e8d7c6b";
 const POLICY = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; webrtc 'block'";
 const DATA = '{"fallLowFeet":10,"fallHighFeet":15}';
-const LOOKUP: CitationLookup = { numbers: new Map([[WATER_SOURCE, 1]]), sourcesById: new Map(), onOpen: () => undefined };
+const LOOKUP: CitationLookup = { numbers: new Map([[WATER_SOURCE, 1]]), sourcesById: new Map() };
 const RAIN_ROW: RegionDataset = {
   code: "CHIRPS_2_0",
   title: "CHIRPS rainfall",

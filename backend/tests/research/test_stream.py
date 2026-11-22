@@ -53,7 +53,7 @@ WIRE = {
     ),
     "follow_ups": ({"items"}, {"items"}),
     "not_enough_evidence": ({"message"}, {"message"}),
-    "done": ({"answerId"}, {"answerId"}),
+    "done": ({"answerId", "quizAvailable"}, {"answerId"}),
     "error": ({"message"}, {"message"}),
 }
 CITATION = {"id", "claimId", "sourceId", "quote", "locator", "context", "evidence", "level"}
@@ -151,6 +151,11 @@ def test_the_golden_stream_follows_the_contract() -> None:
 
 def test_frames_are_one_compact_json_line() -> None:
     assert stream.event_frame("done", {"answerId": None}) == 'event: done\ndata: {"answerId":null}\n\n'
+    offered = {"answerId": "a1", "quizAvailable": False}
+    assert (
+        stream.event_frame("done", offered)
+        == 'event: done\ndata: {"answerId":"a1","quizAvailable":false}\n\n'
+    )
     frame = stream.event_frame("status", stream.StatusEvent(step="COMPOSING", message="Writing °C\nnow"))
     assert frame == 'event: status\ndata: {"step":"COMPOSING","message":"Writing °C\\nnow"}\n\n'
 
