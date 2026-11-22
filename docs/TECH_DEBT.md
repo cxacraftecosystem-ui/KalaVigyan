@@ -2136,14 +2136,6 @@ Last reviewed: 2026-11-22.
 
 ## Learning screens (decision 0069)
 
-### Check yourself asks for a quiz on every finished explainer
-
-- **What:** the explainer asks `GET /api/answers/{answerId}/quiz` once when it finishes, to offer
-  Check yourself only when a quiz exists (a 404 draws nothing).
-- **Why left:** the route is a read with no model call, and offering a control that then says
-  there is no quiz would be a dead end.
-- **Clears it:** a `quizAvailable` flag on the stored explainer or the stream's `done`.
-
 ### A lesson keeps the explainer's section order
 
 - **What:** the builder chooses sections but sends them in the explainer's order; the contract
@@ -2151,14 +2143,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** a reorder control needs the one drag and arrow implementation, which this app
   does not have yet (`lib/routing.moveRoute` is the AI routing page's).
 - **Clears it:** a shared list-order helper and Up and Down controls on the builder's rows.
-
-### An added section that found nothing shows until a reload
-
-- **What:** during a follow-up an added section that ends `EMPTY` shows what was searched; the
-  stored version leaves it out, so it is gone on the next visit.
-- **Why left:** what was searched is useful in the moment, and the stored version is the
-  record.
-- **Clears it:** reload the stored version after `version` arrives, or drop such sections then.
 
 ## Lesson packs and exports (decision 0067)
 

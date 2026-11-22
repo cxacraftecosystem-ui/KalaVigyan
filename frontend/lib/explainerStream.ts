@@ -40,6 +40,8 @@ export type TrailEntry = {
   storedAt: string | null;
 };
 
+export type StreamDone = { answerId: string | null; quizAvailable?: boolean };
+
 export type ExplainerEvent =
   | { type: "understood"; data: Understood }
   | { type: "builds_on"; data: BuildsOnEvent }
@@ -57,7 +59,7 @@ export type ExplainerEvent =
   | { type: "reaction"; data: AnswerReaction }
   | { type: "follow_ups"; data: { items: string[] } }
   | { type: "not_enough_evidence"; data: { message: string } }
-  | { type: "done"; data: { answerId: string | null } }
+  | { type: "done"; data: StreamDone }
   | { type: "error"; data: { message: string } };
 
 const EVENTS: { [K in ExplainerEvent["type"]]: Shape<Extract<ExplainerEvent, { type: K }>["data"]> } = {
@@ -106,7 +108,7 @@ const EVENTS: { [K in ExplainerEvent["type"]]: Shape<Extract<ExplainerEvent, { t
   }),
   follow_ups: object<{ items: string[] }>({ items: list(text) }),
   not_enough_evidence: object<{ message: string }>({ message: text }),
-  done: object<{ answerId: string | null }>({ answerId: nullable(UUID) }),
+  done: object<StreamDone>({ answerId: nullable(UUID), quizAvailable: optional(boolean) }),
   error: object<{ message: string }>({ message: text })
 };
 
