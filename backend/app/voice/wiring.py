@@ -10,11 +10,13 @@ from app.providers.embedding import router_embedder
 from app.providers.router import Principal
 from app.providers.structured import router_structured_model
 from app.research.crafts import QUESTION_MAX_CHARS, CraftQuery, CraftRef
+from app.research.retrieval import chunk_acls_for
 from app.services.ai_providers import AiTask
 from app.services.answer_store import build_answer_translation
 from app.services.craft_resolver import CraftIndexStore, DatabaseCraftResolver
 
 from .pack import VoicePack
+from .passage_store import SqlTurnPassages
 from .records import VoiceStore
 from .runtime import VoiceRuntime
 from .turns import TurnTools
@@ -57,4 +59,5 @@ def turn_tools(
             sessions, model=router_structured_model(AiTask.TRANSLATE, principal)
         ),
         retriever=runtime.stored_search(user_id, role),
+        passages=SqlTurnPassages(sessions, index=index, embed=embed, acls=chunk_acls_for(role)),
     )

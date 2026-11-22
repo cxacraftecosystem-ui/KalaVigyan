@@ -118,6 +118,20 @@ listed at `https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-a
 on 2026-11-22. A later release is vendored the same way, never edited by hand, and the test then
 names any country `places_abroad.json` lacks.
 
+## Ordinary English words (decision 0144)
+
+`backend/app/data/english_words.scowl.txt` is a word list, not a dataset, and nothing in it is
+shown to a reader: the words of SCOWL (Spell Checker Oriented Word Lists, Kevin Atkinson) release
+2020.12.07, its `english-words`, `american-words` and `british-words` lists at levels 10 to 50 (size
+50, a mid-size dictionary), folded to lower-case ASCII, possessives dropped, words of four letters
+or more: 62,862 words. It decides which one-word aliases of the craft catalogue are ordinary English
+words (casting, weaving, pottery) that name no craft when live research files a fact. SCOWL may be
+used, copied, modified, distributed and sold for any purpose with its copyright and permission
+notice, which the file's header carries. It was read from
+`https://downloads.sourceforge.net/project/wordlist/SCOWL/2020.12.07/scowl-2020.12.07.tar.gz` on
+2026-11-22 and is written by `python tools/english_words_build.py <scowl final directory>`, never
+by hand.
+
 ## Live scholarly sources
 
 Live research reads these services through `backend/app/sources/` (decision 0005) and cites each

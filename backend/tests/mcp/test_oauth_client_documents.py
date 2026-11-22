@@ -1,8 +1,11 @@
+import base64
+import json
 import uuid
 
 import pytest
 
 from app.research.oauth_client_documents import (
+    JWT_BEARER_ASSERTION,
     MetadataClient,
     cache_seconds,
     client_id_problem,
@@ -10,10 +13,14 @@ from app.research.oauth_client_documents import (
     is_metadata_client_key,
     metadata_client,
     metadata_client_key,
+    named_client_id,
 )
 from app.research.oauth_rules import OAuthError
 
 from .client_documents import (
+    CHATGPT_DOCUMENT,
+    CHATGPT_ID,
+    CHATGPT_RETURN,
     CLAUDE_DOCUMENT,
     CLAUDE_ID,
     CLAUDE_RETURN,
@@ -29,6 +36,12 @@ def test_claude_published_identity_names_the_client_and_its_one_return_address()
     assert made.host == "claude.ai"
     assert made.key.version == 5
     assert made.key != metadata_client_key(VSCODE_ID)
+
+
+def test_chatgpt_prefers_a_signed_assertion_but_can_sign_in_as_a_public_client_so_it_is_signed_in() -> None:
+    made = metadata_client(CHATGPT_ID, document_bytes(CHATGPT_DOCUMENT))
+    assert made == MetadataClient(client_id=CHATGPT_ID, name="ChatGPT", redirect_uris=(CHATGPT_RETURN,))
+    assert made.host == "chatgpt.com"
 
 
 def test_a_native_client_lists_a_loopback_return_and_grant_types_kalavigyan_does_not_offer() -> None:
@@ -54,6 +67,17 @@ def test_a_native_client_lists_a_loopback_return_and_grant_types_kalavigyan_does
         ({"token_endpoint_auth_method": "client_secret_basic"}, "public clients only"),
         ({"token_endpoint_auth_method": "private_key_jwt"}, "public clients only"),
         ({"token_endpoint_auth_methods_supported": ["private_key_jwt"]}, "public clients only"),
+        (
+            {
+                "token_endpoint_auth_method": "private_key_jwt",
+                "token_endpoint_auth_methods_supported": ["private_key_jwt"],
+            },
+            "public clients only",
+        ),
+        (
+            {"token_endpoint_auth_method": "none", "token_endpoint_auth_methods_supported": []},
+            "public clients only",
+        ),
         ({"client_secret": "s3cret"}, "client secret"),
         ({"client_secret_expires_at": 0}, "client secret"),
     ],
@@ -144,3 +168,51 @@ def test_a_document_is_held_as_its_cache_headers_say_within_a_minute_and_a_day(
     header: str | None, seconds: int
 ) -> None:
     assert cache_seconds(header) == seconds
+
+
+def _assertion(claims: object) -> str:
+    def part(value: object) -> str:
+        return base64.urlsafe_b64encode(json.dumps(value).encode("utf-8")).decode("ascii").rstrip("=")
+
+    return f"{part({'alg': 'RS256', 'typ': 'JWT'})}.{part(claims)}.c2lnbmF0dXJl"
+
+
+def test_a_token_request_names_its_client_by_client_id_first() -> None:
+    fields = {
+        "client_id": CLAUDE_ID,
+        "client_assertion_type": JWT_BEARER_ASSERTION,
+        "client_assertion": "x.y.z",
+    }
+    assert named_client_id(fields) == CLAUDE_ID
+
+
+def test_a_signed_assertion_names_its_client_when_the_form_gives_no_client_id() -> None:
+    fields = {
+        "client_assertion_type": JWT_BEARER_ASSERTION,
+        "client_assertion": _assertion(
+            {"iss": CHATGPT_ID, "sub": CHATGPT_ID, "aud": "https://kv/api/oauth/token"}
+        ),
+    }
+    assert named_client_id(fields) == CHATGPT_ID
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {},
+        {
+            "client_assertion_type": JWT_BEARER_ASSERTION,
+            "client_assertion": _assertion({"iss": CHATGPT_ID, "sub": CLAUDE_ID}),
+        },
+        {"client_assertion_type": JWT_BEARER_ASSERTION, "client_assertion": _assertion({"iss": CHATGPT_ID})},
+        {"client_assertion_type": JWT_BEARER_ASSERTION, "client_assertion": _assertion(["not", "claims"])},
+        {"client_assertion_type": JWT_BEARER_ASSERTION, "client_assertion": "not-a-jwt"},
+        {"client_assertion_type": JWT_BEARER_ASSERTION, "client_assertion": "a.%%%.c"},
+        {
+            "client_assertion_type": "urn:other",
+            "client_assertion": _assertion({"iss": CHATGPT_ID, "sub": CHATGPT_ID}),
+        },
+    ],
+)
+def test_an_assertion_that_does_not_name_one_client_names_none(fields: dict[str, str]) -> None:
+    assert named_client_id(fields) is None

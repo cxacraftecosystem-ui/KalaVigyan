@@ -26,6 +26,7 @@ __all__ = [
     "QUOTED_REASON",
     "SECTION_DISCIPLINES",
     "SKIP_BESIDE_STORED",
+    "SKIP_UNKEPT",
     "WRITE_BACK_PREDICATE",
     "SkippedSentence",
     "WriteBackPlan",
@@ -39,12 +40,14 @@ WRITE_BACK_PREDICATE = "states"
 QUOTED_REASON = "Live research: the sentence rests on verbatim passages that passed the quote check"
 INFERRED_REASON = "Live research: model inference from the cited sources without a passing quote"
 SKIP_NO_EVIDENCE = "cites stored claims only"
+SKIP_UNKEPT = "cites only evidence the write-back could not keep"
 SKIP_BESIDE_STORED = "cites a stored fact beside live research, and a new fact would not carry its citations"
 SKIP_INVALID = "breaks the write-back contract"
 SKIP_FIELD_ONLY = "a field interview alone supports only the speaker's own practice"
 SKIP_FIELD_BESIDE = "a field interview supports another discipline only beside an A or B source"
 FIELD_ONLY_DISCIPLINES = frozenset({"PROCESS", "MATERIALS", "DESIGN", "ECONOMICS", "SOCIETY"})
 FIELD_FOUND_BY = ("field_voices",)
+STORED_FOUND_BY = ("stored_passages",)
 BESIDE_FIELD_TRUST = frozenset({"A", "B"})
 SECTION_DISCIPLINES: Mapping[str, str] = MappingProxyType(
     {title: discipline for discipline, title in DISCIPLINE_TITLES.items()}
@@ -94,19 +97,18 @@ def write_back_plan(
     answer_id: uuid.UUID | None,
     names: CraftNames,
     field_documents: Mapping[str, SourceDocument] | None = None,
+    stored_documents: Mapping[str, SourceDocument] | None = None,
 ) -> WriteBackPlan:
     lead = pack.plan.craft.slug if pack.plan.craft is not None else None
     if names.lead_slug != lead:
         raise InvalidInput(f"The craft names are for {names.lead_slug!r}, but the research was for {lead!r}")
-    fields = dict(field_documents or {})
-    context = _Context(
-        pack=pack,
+    context = _context(
+        pack,
+        names,
         found_by=found_by,
         answer_id=answer_id,
-        documents={document.item.id: document for document in pack.documents} | fields,
-        packed={entry.item.id: entry for entry in pack.evidence} | _field_packed(pack, fields),
-        names=names,
-        field_ids=frozenset(fields),
+        fields=dict(field_documents or {}),
+        stored=dict(stored_documents or {}),
     )
     claims: list[ClaimWriteBack] = []
     skipped: list[SkippedSentence] = []
@@ -120,6 +122,29 @@ def write_back_plan(
             claims.append(planned)
             keys.append(planned.dedupe_key)
     return _plan(_distinct(claims), tuple(skipped), keys)
+
+
+def _context(
+    pack: EvidencePack,
+    names: CraftNames,
+    *,
+    found_by: FoundBy,
+    answer_id: uuid.UUID | None,
+    fields: dict[str, SourceDocument],
+    stored: dict[str, SourceDocument],
+) -> _Context:
+    packed = {entry.item.id: entry for entry in pack.evidence}
+    packed |= _passages_packed(fields, _field_facets(pack) or (0,), FIELD_FOUND_BY)
+    packed |= _passages_packed(stored, tuple(range(len(pack.plan.facets))), STORED_FOUND_BY)
+    return _Context(
+        pack=pack,
+        found_by=found_by,
+        answer_id=answer_id,
+        documents={document.item.id: document for document in pack.documents} | fields | stored,
+        packed=packed,
+        names=names,
+        field_ids=frozenset(fields),
+    )
 
 
 def _plan(
@@ -152,7 +177,7 @@ def _planned(
 ) -> ClaimWriteBack | SkippedSentence:
     cited = [ref for ref in sentence.evidence_ids if ref in context.documents and ref in context.packed]
     if not cited:
-        return SkippedSentence(sentence.text, SKIP_NO_EVIDENCE)
+        return SkippedSentence(sentence.text, SKIP_UNKEPT if sentence.evidence_ids else SKIP_NO_EVIDENCE)
     if sentence.claim_ids:
         return SkippedSentence(sentence.text, SKIP_BESIDE_STORED)
     filing = _filing(context, cited, section_discipline(heading))
@@ -273,13 +298,12 @@ def _filing(context: _Context, cited: list[str], section: str | None) -> _Filing
     )
 
 
-def _field_packed(pack: EvidencePack, fields: Mapping[str, SourceDocument]) -> dict[str, PackedEvidence]:
-    facets = _field_facets(pack) or (0,)
+def _passages_packed(
+    passages: Mapping[str, SourceDocument], facets: tuple[int, ...], found_by: tuple[str, ...]
+) -> dict[str, PackedEvidence]:
     return {
-        key: PackedEvidence(
-            item=document.item, facet_indexes=facets, found_by=FIELD_FOUND_BY, hits=1, best_rank=1
-        )
-        for key, document in fields.items()
+        key: PackedEvidence(item=document.item, facet_indexes=facets, found_by=found_by, hits=1, best_rank=1)
+        for key, document in passages.items()
     }
 
 
