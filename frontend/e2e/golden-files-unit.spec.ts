@@ -16,7 +16,8 @@ const BACKEND_ONLY: Record<string, string> = {
   "voice.llm.golden.sse": "the stream the API sends the voice agent's language model host, which ElevenLabs reads",
   "voice.llm-request.golden.json": "the request ElevenLabs sends the API's custom language model route",
   "sandbox.corpus.golden.json": "the static check's corpus of generated explainer markup, read by the backend's check",
-  "explainer.piece.golden.json": "a stored knowledge piece; the web reads its block inside explainer.document.golden.json"
+  "explainer.piece.golden.json": "a stored knowledge piece; the web reads its block inside explainer.document.golden.json",
+  "science.process.golden.json": "the science process the backend's contract tests check; the web retired its process route (decision 0145)"
 };
 
 function specSources(): Map<string, string> {
