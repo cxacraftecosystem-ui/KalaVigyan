@@ -184,7 +184,9 @@ missing bearer each get 401.
   temperature?, max_tokens?, tools[]}`; anything else is ignored. A request that does not stream,
   or carries no user message, is 400 (`bad_request`).
 - Pipeline (PLAN 10.3): the session's claim pack, prefetched at session start (T0 and T1 for the
-  craft) plus T2; no planner, no craft match when the session has a craft, no live web; one
+  craft) plus T2, read and kept per reader access (`VoicePackStore.get(craft, mode, acls, load)`,
+  `chunk_acls_for(role)`), so a student's turn cites a researcher-only page without its words
+  (decision 0149); no planner, no craft match when the session has a craft, no live web; one
   `VOICE_TURN` call through the AI router as the session's user; the per-sentence claim-id and
   figure checks of the composer before anything streams.
 - Reply: `LlmChunk {id: "chatcmpl-<turn id hex>", object: "chat.completion.chunk", created,

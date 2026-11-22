@@ -3,14 +3,22 @@ from __future__ import annotations
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import Field, ValidationError
 
 from app.core.errors import ExternalFailure
 
 from .base import ContractModel
-from .candidate_gates import COMPARISON_RELATIONS, Candidate, FactComparison, HeldFact, NoveltyVerdict
+from .candidate_gates import Candidate, FactComparison, HeldFact, NoveltyVerdict
+from .candidate_verdicts import (
+    NEW_DETAILS_MAX,
+    ComparedFacts,
+    comparison_relation,
+    novelty_adds,
+    novelty_reason,
+    relation_reason,
+)
 from .structured import MODEL_SERVICE, schema_object
 from .untrusted import untrusted_block
 
@@ -34,23 +42,29 @@ COMPARE_SYSTEM_PROMPT = (
     "it already holds for the same craft and field. Each candidate block is one proposed fact; each held block "
     "is a stored fact, and its label names the candidate it is compared with. Reply with one JSON object that "
     "matches the schema: comparisons holds exactly one entry for every pair of a candidate and a held fact "
-    "given with it.\n"
-    "- relation SAME: both state the same fact, whatever the wording, so the candidate tells a reader nothing "
-    "new.\n"
-    "- relation DIFFERS: both are about the same thing and disagree, for example on a number, date, name, "
-    "material, place or cause. Never judge which one is right.\n"
-    "- relation DISTINCT: they state different facts.\n"
-    "- reason: one sentence saying why.\n" + DATA_RULE
+    "given with it. Answer each question on its own; the verdict is worked out from your answers.\n"
+    "- same: both state the same fact, whatever the wording, so the candidate tells a reader nothing new.\n"
+    "- sameSubject: both speak of the same thing (one material, stage, place, study finding or practice).\n"
+    "- sameProperty: both state the same property of it (a duration, a quantity, a colour's source, a cause).\n"
+    "- sameWhen: both speak of the same stage, time, season or condition, or neither names one.\n"
+    "- bothTrue: both statements can be true at once. Two effects of one cause, two stages with their own "
+    "durations, a further example beside a first one, and two findings of one study can all be true together.\n"
+    "- subject, property, candidateValue, heldValue: name them in a few words when they are the same thing and "
+    "property; empty strings otherwise.\n"
+    "- reason: one sentence saying why. Never judge which one is right.\n" + DATA_RULE
 )
 NOVELTY_SYSTEM_PROMPT = (
     "You decide whether a fact proposed for a reference on Indian crafts and the science behind them adds to "
     "what the craft's article already says in one field. Each candidate block is one proposed fact; each held "
     "block is a fact the article already rests on, and its label names the candidate it goes with. Reply with "
-    "one JSON object that matches the schema: verdicts holds exactly one entry for every candidate.\n"
-    "- adds: true when the candidate states something its held facts do not (a detail, number, cause, step, "
-    "material, place, date or name) or changes what they say; false when they already say it, or when it is "
-    "too general to teach a reader anything about this craft.\n"
-    "- coveredBy: when adds is false, the refs of the held facts that already say it; otherwise empty.\n"
+    "one JSON object that matches the schema: verdicts holds exactly one entry for every candidate. Whether it "
+    "adds is worked out from your answers.\n"
+    "- newDetails: every detail the candidate states that none of its held facts states (a name, number, "
+    "cause, step, material, place, date or source), each in a few words; empty when the held facts already say "
+    "all it says.\n"
+    "- specific: true when the candidate teaches a reader something about this craft, its materials, place or "
+    "practice; false when it is too general to.\n"
+    "- coveredBy: when newDetails is empty, the refs of the held facts that already say it; otherwise empty.\n"
     "- reason: one sentence saying why.\n" + DATA_RULE
 )
 
@@ -71,8 +85,29 @@ class JudgeRequest:
 class _Comparison(ContractModel):
     candidate: str
     held: uuid.UUID
-    relation: Literal[*COMPARISON_RELATIONS]
+    same: bool
+    same_subject: bool
+    same_property: bool
+    same_when: bool
+    both_true: bool
+    subject: str
+    property: str
+    candidate_value: str
+    held_value: str
     reason: str = Field(min_length=1)
+
+    def compared(self) -> ComparedFacts:
+        return ComparedFacts(
+            same=self.same,
+            same_subject=self.same_subject,
+            same_property=self.same_property,
+            same_when=self.same_when,
+            both_true=self.both_true,
+            subject=self.subject,
+            property=self.property,
+            candidate_value=self.candidate_value,
+            held_value=self.held_value,
+        )
 
 
 class _Comparisons(ContractModel):
@@ -81,7 +116,8 @@ class _Comparisons(ContractModel):
 
 class _Verdict(ContractModel):
     candidate: str
-    adds: bool
+    new_details: list[str] = Field(max_length=NEW_DETAILS_MAX)
+    specific: bool
     covered_by: list[uuid.UUID]
     reason: str = Field(min_length=1)
 
@@ -91,11 +127,21 @@ class _Verdicts(ContractModel):
 
 
 def comparison_request(asks: Sequence[JudgeAsk]) -> JudgeRequest:
+    flag = {"type": "boolean"}
+    words = {"type": "string"}
     entry = schema_object(
         candidate=_refs(asks),
         held=_held_refs(asks),
-        relation={"type": "string", "enum": list(COMPARISON_RELATIONS)},
-        reason={"type": "string"},
+        same=flag,
+        sameSubject=flag,
+        sameProperty=flag,
+        sameWhen=flag,
+        bothTrue=flag,
+        subject=words,
+        property=words,
+        candidateValue=words,
+        heldValue=words,
+        reason=words,
     )
     schema = schema_object(comparisons={"type": "array", "items": entry})
     return JudgeRequest(COMPARE_SYSTEM_PROMPT, _message(asks), schema)
@@ -104,7 +150,8 @@ def comparison_request(asks: Sequence[JudgeAsk]) -> JudgeRequest:
 def novelty_request(asks: Sequence[JudgeAsk]) -> JudgeRequest:
     entry = schema_object(
         candidate=_refs(asks),
-        adds={"type": "boolean"},
+        newDetails={"type": "array", "items": {"type": "string"}},
+        specific={"type": "boolean"},
         coveredBy={"type": "array", "items": _held_refs(asks)},
         reason={"type": "string"},
     )
@@ -119,7 +166,10 @@ def parsed_comparisons(reply: Mapping[str, Any], asks: Sequence[JudgeAsk]) -> di
     for item in parsed.comparisons:
         pair = (item.candidate, item.held)
         if pair in asked and pair not in answered:
-            answered[pair] = FactComparison(held=item.held, relation=item.relation, reason=item.reason)
+            compared = item.compared()
+            relation = comparison_relation(compared)
+            reason = relation_reason(compared, relation, item.reason)
+            answered[pair] = FactComparison(held=item.held, relation=relation, reason=reason)
     missing = asked - set(answered)
     if missing:
         raise ExternalFailure(
@@ -135,8 +185,13 @@ def parsed_novelty(reply: Mapping[str, Any], asks: Sequence[JudgeAsk]) -> dict[s
     for item in parsed.verdicts:
         if item.candidate not in held or item.candidate in found:
             continue
+        adds = novelty_adds(item.new_details, specific=item.specific)
         covered = [fact_id for fact_id in dict.fromkeys(item.covered_by) if fact_id in held[item.candidate]]
-        found[item.candidate] = NoveltyVerdict(adds=item.adds, covered_by=covered, reason=item.reason)
+        found[item.candidate] = NoveltyVerdict(
+            adds=adds,
+            covered_by=[] if adds else covered,
+            reason=novelty_reason(item.new_details, specific=item.specific, said=item.reason),
+        )
     missing = set(held) - set(found)
     if missing:
         raise ExternalFailure(

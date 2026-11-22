@@ -22,12 +22,11 @@ from app.models import (
 )
 from app.providers.quota import LedgerEntry, record_units, remaining_today, used_today
 from app.research.crafts import CraftRef
-from app.research.retrieval import EVERY_CHUNK_ACLS
 from app.schemas.voice import MAX_TURNS, TRANSCRIPT_RETENTION_DAYS
 from app.services import knowledge_view
 from app.services.answer_events import cited_claims
 
-from .pack import VoicePack
+from .pack import Acls, VoicePack
 from .records import AnswerRecord, SessionRecord, TurnClaim, TurnHold, TurnSave
 from .seconds import AGENT_OCCUPANCY_SECONDS, VOICE_SECONDS, capped_seconds
 
@@ -65,12 +64,12 @@ class SqlVoiceStore:
             craft = await knowledge_view.resolve_craft(session, slug)
         return None if craft is None else CraftRef.model_validate(knowledge_view.craft_ref(craft))
 
-    async def pack(self, craft: CraftRef, mode: str) -> VoicePack:
+    async def pack(self, craft: CraftRef, mode: str, acls: Acls) -> VoicePack:
         async with self._sessions() as session:
             row = await knowledge_view.resolve_craft(session, craft.slug)
             if row is None:
                 return VoicePack(craft=craft, mode=mode, cited=cited_claims([], {}))
-            views, sources = await knowledge_view.claims_for(session, row, mode=mode, acls=EVERY_CHUNK_ACLS)
+            views, sources = await knowledge_view.claims_for(session, row, mode=mode, acls=acls)
             stages = await session.execute(
                 select(ProcessStage.conceptId, ProcessStage.id)
                 .join(Process, Process.id == ProcessStage.processId)

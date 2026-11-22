@@ -13,6 +13,7 @@ from app.core.roles import Capability, can
 from app.providers.elevenlabs import speech_seconds
 from app.providers.quota import remaining_today
 from app.research.crafts import CraftRef
+from app.research.retrieval import chunk_acls_for
 from app.research.testimony import RECORDING_NOTICE_VERSION
 from app.schemas.artisan import ConversationEnded, ConversationStarted, TranscriptTurn, artisan_speech_path
 from app.schemas.voice import (
@@ -134,7 +135,7 @@ async def start_conversation(ask: StartConversation, deps: ConversationDeps) -> 
     conversation = await deps.artisans.by_voice_session(record.id)
     if conversation is None:
         raise ArtisanRefused("not_found")
-    await deps.runtime.packs.get(craft, VERIFIED, deps.store.pack)
+    await deps.runtime.packs.get(craft, VERIFIED, chunk_acls_for(ask.user.role), deps.store.pack)
     payload = _started_payload(conversation, record, remaining)
     if voice.transport == "AGENT":
         payload |= {"transport": "AGENT", "conversationToken": await _bound(record, deps, now)}
