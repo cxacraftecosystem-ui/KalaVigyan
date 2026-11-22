@@ -8,9 +8,11 @@ os.environ.setdefault("SECRETS_ENCRYPTION_KEY", "")
 os.environ.setdefault("TWO_FACTOR_ENCRYPTION_KEY", "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
 os.environ.setdefault("BACKEND_CORS_ORIGINS", "http://localhost:3000")
 
+import math
+
 import pytest
 
-from app.core import allowances, roles
+from app.core import allowances, daily_allowances
 
 from .ai_caps import ALLOWANCES_AN_OWNER_MIGHT_SET
 from .allowance_counter import MemoryCounter
@@ -32,7 +34,16 @@ def allowance_counter(monkeypatch: pytest.MonkeyPatch) -> MemoryCounter:
     return counter
 
 
+@pytest.fixture(autouse=True)
+def allowance_cache(monkeypatch: pytest.MonkeyPatch) -> daily_allowances.AllowanceCache:
+    cache = daily_allowances.AllowanceCache()
+    monkeypatch.setattr(daily_allowances, "allowances", cache)
+    return cache
+
+
 @pytest.fixture
 def allowances_an_owner_might_set(monkeypatch: pytest.MonkeyPatch) -> dict[str, dict[str, int | None]]:
-    monkeypatch.setattr(roles, "DAILY_ALLOWANCES", ALLOWANCES_AN_OWNER_MIGHT_SET)
+    cache = daily_allowances.AllowanceCache(ttl_seconds=math.inf)
+    cache.hold(daily_allowances.DailyAllowances(ALLOWANCES_AN_OWNER_MIGHT_SET))
+    monkeypatch.setattr(daily_allowances, "allowances", cache)
     return ALLOWANCES_AN_OWNER_MIGHT_SET

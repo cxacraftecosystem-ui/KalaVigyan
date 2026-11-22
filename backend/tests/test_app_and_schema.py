@@ -176,9 +176,24 @@ def initial_enum_list() -> dict[str, tuple[str, ...]]:
     return {name: tuple(values) for name, values in pairs}
 
 
+def enum_removals() -> set[str]:
+    removed: set[str] = set()
+    for path in sorted(MIGRATIONS.glob("[0-9][0-9][0-9][0-9]_*.py")):
+        if path != MIGRATION:
+            removed |= set(
+                module_constant(ast.parse(path.read_text(encoding="utf-8")), "ENUM_REMOVALS") or ()
+            )
+    return removed
+
+
 def migration_enum_list() -> dict[str, tuple[str, ...]]:
     added = enum_additions()
-    return {name: values + added.get(name, ()) for name, values in initial_enum_list().items()}
+    removed = enum_removals()
+    return {
+        name: values + added.get(name, ())
+        for name, values in initial_enum_list().items()
+        if name not in removed
+    }
 
 
 def inline_enum(column: ast.Call) -> tuple[str, tuple[str, ...]] | None:

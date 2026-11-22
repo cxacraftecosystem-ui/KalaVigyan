@@ -59,6 +59,6 @@ export const answerSentenceShape: Shape<AnswerSentence> = object<AnswerSentence>
 });
 
 export const answerStatusShape: Shape<AnswerStatus> = object<AnswerStatus>({
-  step: oneOf(["RESOLVING", "PLANNING", "SEARCHING_STORED", "RESEARCHING", "READING", "COMPOSING", "WRITING_BACK", "TRANSLATING"] as const),
+  step: oneOf(["PLANNING", "SEARCHING_STORED", "RESEARCHING", "READING", "COMPOSING", "WRITING_BACK", "TRANSLATING"] as const),
   message: text
 });

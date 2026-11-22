@@ -10,8 +10,9 @@ from pydantic import Field, TypeAdapter, ValidationError, model_validator
 
 from app.core.errors import InvalidInput
 from app.research.base import ContractModel
+from app.research.citations import AnswerSentence, SourceRef
 from app.research.crafts import SLUG_MAX_CHARS, CraftRef
-from app.research.stream import AnswerSentence, ErrorEvent, SourceRef, sse_frame
+from app.research.stream import ErrorEvent, sse_frame
 from app.research.testimony import InterviewTopic
 from app.research.vocabulary import AnswerLanguage
 

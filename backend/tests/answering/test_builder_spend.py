@@ -63,7 +63,7 @@ def test_builders_plan_and_compose_only_from_the_answer_s_headroom(
     monkeypatch.setattr(answer_routes, "router_structured_model", model)
     for module in (knowledge, rebuild_pieces):
         monkeypatch.setattr(module, "router_embedder", lambda principal: None)
-    monkeypatch.setattr(knowledge, "sessionmaker", lambda: None)
+    monkeypatch.setattr(knowledge, "research_sessionmaker", lambda: None)
     monkeypatch.setattr(answer_store.BlockBuilders, "from_registry", classmethod(from_registry))
     build("DETAILED")
     (tools,) = started

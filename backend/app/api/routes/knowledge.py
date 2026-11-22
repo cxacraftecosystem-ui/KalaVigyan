@@ -19,7 +19,7 @@ from app.api.public_deps import cached_read, public_reader
 from app.api.reading_deps import asker_style
 from app.api.voice_deps import current_voice, voice_call_enabled, voice_runtime, voice_store
 from app.core.config import get_settings
-from app.core.db import get_session, sessionmaker
+from app.core.db import get_session, research_sessionmaker, sessionmaker
 from app.core.deps import get_current_user, refusal_for
 from app.core.errors import AppError
 from app.core.rate_limit import ask_attempt
@@ -170,7 +170,7 @@ def answer_pipelines(request: Request, user: User = Depends(get_current_user)) -
         principal = Principal(user_id=user.id, role=user.role, answer=spend)
         optional = Principal(user_id=user.id, role=user.role, answer=spend.headroom())
         return build_answer_pipeline(
-            sessions=sessionmaker(),
+            sessions=research_sessionmaker(),
             index=request.app.state.craft_index,
             live=request.app.state.live_sources,
             models=answer_models(depth, principal=principal, optional=optional),

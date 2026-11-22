@@ -4,6 +4,11 @@ import re
 import unicodedata
 from collections.abc import Iterable
 
+from .stated_figures import (
+    element_formulas_in,
+    quantities_in,
+    quantity_supported,
+)
 from .storable import storable_text
 
 __all__ = [
@@ -178,8 +183,21 @@ def figures_in(text: str) -> list[str]:
 
 
 def unsupported_figures(text: str, cited_texts: Iterable[str]) -> list[str]:
-    supported = {figure for cited in cited_texts for figure in figures_in(cited)}
-    return [figure for figure in figures_in(text) if figure not in supported]
+    cited = [_figure_text(each) for each in cited_texts]
+    said = _figure_text(text)
+    held = [quantity for each in cited for quantity in quantities_in(_without_digit_formulas(each))]
+    formulas = {formula for each in cited for formula in [*formulas_in(each), *element_formulas_in(each)]}
+    numbers = [
+        quantity.number
+        for quantity in quantities_in(_without_digit_formulas(said))
+        if not quantity_supported(quantity, held)
+    ]
+    shapes = [f for f in [*formulas_in(said), *element_formulas_in(said)] if f not in formulas]
+    return list(dict.fromkeys([*shapes, *numbers]))
+
+
+def _without_digit_formulas(text: str) -> str:
+    return FORMULA.sub(lambda match: " " if any(c.isdigit() for c in match.group()) else match.group(), text)
 
 
 def content_words(text: str) -> list[str]:

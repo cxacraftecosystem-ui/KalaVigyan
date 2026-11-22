@@ -34,6 +34,7 @@ class ReadingStore(FakeStore):
         explainer: Explainer | None,
         version: VersionMark | None = None,
         readings: Sequence[FieldReading] = (),
+        steps: Sequence[object] = (),
     ) -> None:
         self.readings.append(tuple(readings))
         await super().finish(

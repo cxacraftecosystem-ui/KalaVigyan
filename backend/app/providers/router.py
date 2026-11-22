@@ -15,7 +15,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core import managed_keys
-from app.core.errors import SPEND_REFUSAL_KIND, STOP_KINDS, AppError
+from app.core.errors import RETRYABLE_KINDS, SPEND_REFUSAL_KIND, STOP_KINDS, AppError
 from app.core.logging import current_request_id
 from app.models import ManagedSecret, Provider, RoutePolicy, SecretTestResult, UsageEvent
 from app.providers.catalogue import (
@@ -36,9 +36,10 @@ logger = logging.getLogger(__name__)
 
 BUDGET_LOCK_KEY = 0x4B565F4255444754
 RETRY_AFTER_CAP_SECONDS = 2.0
+ABANDONED_KIND = "abandoned"
 DEFAULT_MAX_OUTPUT_TOKENS = 4096
 DEGRADABLE_TASKS = frozenset(
-    {AiTask.COMPOSE, AiTask.EXTRACT, AiTask.VOICE_TURN, AiTask.PLAN, AiTask.WEB_READ}
+    {AiTask.COMPOSE, AiTask.EXTRACT, AiTask.VOICE_TURN, AiTask.PLAN, AiTask.UNDERSTAND, AiTask.WEB_READ}
 )
 EMBED_DIMENSIONS = 1536
 REASONING_EFFORT_PARAM = "reasoningEffort"
@@ -407,39 +408,19 @@ class _CallOutcome:
     meta: dict[str, Any] = field(default_factory=dict)
 
 
-async def _call(
-    adapter: Adapter,
-    task: AiTask,
-    choice: RouteChoice,
-    *,
-    system: str,
-    user: str,
-    json_schema: dict | None,
-    max_tokens: int,
-    temperature: float | None,
-    texts: list[str] | None,
-) -> _CallOutcome:
-    if task == AiTask.EMBED:
-        started = time.perf_counter()
-        vectors = await adapter.embed(texts or [], choice.model, dimensions=EMBED_DIMENSIONS)
-        latency = int((time.perf_counter() - started) * 1000)
-        tokens = sum(budget.estimate_tokens(t) for t in texts or [])
-        return _CallOutcome(
-            embeddings=vectors,
-            input_tokens=tokens,
-            output_tokens=0,
-            latency_ms=latency,
-            meta={"estimatedTokens": True},
-        )
+async def _call(adapter: Adapter, plan: _Plan, choice: RouteChoice) -> _CallOutcome:
+    ask = plan.ask
+    if ask.task == AiTask.EMBED:
+        return await _embedded(adapter, choice, ask.texts or [])
     result: ChatResult = await adapter.chat(
         ChatRequest(
             model=choice.model,
-            system=system,
-            user=user,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            reasoning_effort=reasoning_effort(task, choice),
-            json_schema=json_schema,
+            system=ask.system,
+            user=ask.user,
+            max_tokens=plan.output_cap(choice),
+            temperature=ask.temperature if ask.temperature is not None else choice.temperature,
+            reasoning_effort=reasoning_effort(ask.task, choice),
+            json_schema=ask.json_schema,
         )
     )
     return _CallOutcome(
@@ -450,6 +431,108 @@ async def _call(
         latency_ms=result.latency_ms,
         meta=result.meta,
     )
+
+
+async def _embedded(adapter: Adapter, choice: RouteChoice, texts: list[str]) -> _CallOutcome:
+    started = time.perf_counter()
+    vectors = await adapter.embed(texts, choice.model, dimensions=EMBED_DIMENSIONS)
+    latency = int((time.perf_counter() - started) * 1000)
+    return _CallOutcome(
+        embeddings=vectors,
+        input_tokens=sum(budget.estimate_tokens(text) for text in texts),
+        output_tokens=0,
+        latency_ms=latency,
+        meta={"estimatedTokens": True},
+    )
+
+
+async def settle_abandoned(
+    sessions: async_sessionmaker[AsyncSession],
+    event_id: uuid.UUID,
+    estimate_usd: Decimal,
+    *,
+    answer: budget.AnswerSpend | budget.AnswerHeadroom | None = None,
+) -> None:
+    if answer is not None:
+        answer.settle(estimate_usd, estimate_usd)
+    try:
+        await asyncio.shield(_settle_at_estimate(sessions, event_id, estimate_usd))
+    except Exception:
+        logger.exception("an abandoned call was not settled", extra={"usageEventId": str(event_id)})
+
+
+async def _settle_at_estimate(
+    sessions: async_sessionmaker[AsyncSession], event_id: uuid.UUID, estimate_usd: Decimal
+) -> None:
+    async with sessions() as session:
+        await settle(session, event_id, outcome="CANCELLED", cost_usd=estimate_usd, error_kind=ABANDONED_KIND)
+
+
+@dataclass(frozen=True)
+class _Ask:
+    task: AiTask
+    system: str
+    user: str
+    json_schema: dict | None
+    max_tokens: int | None
+    temperature: float | None
+    texts: list[str] | None
+    request_budget_usd: Decimal | None
+
+    @property
+    def prompt_tokens(self) -> int:
+        if self.task == AiTask.EMBED and self.texts:
+            return budget.estimate_tokens("\n".join(self.texts))
+        return budget.estimate_tokens(f"{self.system}\n{self.user}")
+
+
+@dataclass(frozen=True)
+class _Plan:
+    ask: _Ask
+    routes: list[RouteChoice]
+    overrides: dict[str, Any]
+    degrade: bool
+
+    def output_cap(self, choice: RouteChoice) -> int:
+        return output_tokens_for(choice, self.ask.max_tokens)
+
+    def estimate(self, choice: RouteChoice) -> Decimal:
+        return estimate_for(
+            choice,
+            self.ask.task,
+            prompt_tokens=self.ask.prompt_tokens,
+            max_tokens=self.output_cap(choice),
+            units=None,
+            overrides=self.overrides,
+        )
+
+    def ordered(self) -> list[RouteChoice]:
+        return order_routes(self.ask.task, self.routes, degrade=self.degrade, estimate=self.estimate)
+
+
+@dataclass
+class _Called:
+    outcome: _CallOutcome | None = None
+    failure: ProviderError | None = None
+    adapter: Adapter | None = None
+
+
+@dataclass(frozen=True)
+class _Attempt:
+    sessions: async_sessionmaker[AsyncSession]
+    plan: _Plan
+    choice: RouteChoice
+    who: Principal
+    attempts: list[dict[str, Any]]
+
+    @property
+    def estimate_usd(self) -> Decimal:
+        return self.plan.estimate(self.choice)
+
+    def noted(self, outcome: str) -> None:
+        self.attempts.append(
+            {"provider": self.choice.provider, "model": self.choice.model, "outcome": outcome}
+        )
 
 
 async def run(
@@ -466,6 +549,23 @@ async def run(
     session_factory: async_sessionmaker[AsyncSession] | None = None,
     tuning: RouteTuning | None = None,
 ) -> RouterResult:
+    resolved = _runnable(task, texts)
+    sessions = session_factory or _default_sessions()
+    who = principal or Principal()
+    ask = _Ask(resolved, system, user, json_schema, max_tokens, temperature, texts, request_budget_usd)
+    plan = await _planned(sessions, ask, who, tuning)
+    ordered = plan.ordered()
+    if not ordered:
+        raise RouterError("no_route", f"No enabled route can run {resolved.value}")
+    attempts: list[dict[str, Any]] = []
+    for choice in ordered:
+        result = await _attempt(_Attempt(sessions, plan, choice, who, attempts))
+        if result is not None:
+            return result
+    raise RouterError("exhausted", f"Every route for {resolved.value} failed", attempts=attempts)
+
+
+def _runnable(task: AiTask | str, texts: list[str] | None) -> AiTask:
     resolved = task_of(task)
     if resolved is None:
         raise RouterError("unsupported", f"Unknown task {task!r}")
@@ -473,173 +573,187 @@ async def run(
         raise RouterError("unsupported", "Media tasks reserve and settle through reserve() and settle()")
     if resolved == AiTask.EMBED and not texts:
         raise RouterError("bad_request", "Embedding needs texts")
-    if session_factory is None:
-        from app.core.db import sessionmaker
+    return resolved
 
-        session_factory = sessionmaker()
-    who = principal or Principal()
-    prompt_text = "\n".join(texts) if resolved == AiTask.EMBED and texts else f"{system}\n{user}"
-    prompt_tokens = budget.estimate_tokens(prompt_text)
 
-    async with session_factory() as session:
-        routes = [
-            tuning.applied(route) if tuning else route for route in await load_routes(session, resolved)
-        ]
+def _default_sessions() -> async_sessionmaker[AsyncSession]:
+    from app.core.db import sessionmaker
+
+    return sessionmaker()
+
+
+async def _planned(
+    sessions: async_sessionmaker[AsyncSession], ask: _Ask, who: Principal, tuning: RouteTuning | None
+) -> _Plan:
+    async with sessions() as session:
+        loaded = await load_routes(session, ask.task)
         settings_values = await spend_settings.load_spend_settings(session)
-        overrides = settings_values.get(spend_settings.MODEL_PRICES) or {}
-        ceilings = budget.Ceilings.from_settings(settings_values)
         spend = await current_spend(session, who)
         await managed_keys.refresh_if_stale(session)
+    ceilings = budget.Ceilings.from_settings(settings_values)
+    return _Plan(
+        ask=ask,
+        routes=[tuning.applied(route) if tuning else route for route in loaded],
+        overrides=settings_values.get(spend_settings.MODEL_PRICES) or {},
+        degrade=budget.degrades(ceilings, spend, role=who.role),
+    )
 
-    degrade = budget.degrades(ceilings, spend, role=who.role)
 
-    def output_cap(choice: RouteChoice) -> int:
-        return output_tokens_for(choice, max_tokens)
+async def _attempt(attempt: _Attempt) -> RouterResult | None:
+    event_id = await _reserved(attempt)
+    try:
+        called = await _called(attempt.plan, attempt.choice)
+    except BaseException:
+        await settle_abandoned(attempt.sessions, event_id, attempt.estimate_usd, answer=attempt.who.answer)
+        raise
+    if called.outcome is not None:
+        return await _succeeded(attempt, event_id, called, called.outcome)
+    assert called.failure is not None
+    await _failed(attempt, event_id, called, called.failure)
+    return None
 
-    def estimate(choice: RouteChoice) -> Decimal:
-        return estimate_for(
-            choice,
-            resolved,
-            prompt_tokens=prompt_tokens,
-            max_tokens=output_cap(choice),
-            units=None,
-            overrides=overrides,
+
+async def _reserved(attempt: _Attempt) -> uuid.UUID:
+    async with attempt.sessions() as session:
+        event_id, decision = await reserve(
+            session,
+            task=attempt.plan.ask.task,
+            choice=attempt.choice,
+            principal=attempt.who,
+            estimate_usd=attempt.estimate_usd,
+            request_budget_usd=attempt.plan.ask.request_budget_usd,
         )
-
-    ordered = order_routes(resolved, routes, degrade=degrade, estimate=estimate)
-    if not ordered:
-        raise RouterError("no_route", f"No enabled route can run {resolved.value}")
-
-    attempts: list[dict[str, Any]] = []
-    for choice in ordered:
-        estimate_usd = estimate(choice)
-        async with session_factory() as session:
-            event_id, decision = await reserve(
-                session,
-                task=resolved,
-                choice=choice,
-                principal=who,
-                estimate_usd=estimate_usd,
-                request_budget_usd=request_budget_usd,
-            )
-        if not decision.allowed:
-            raise RouterError(
-                SPEND_REFUSAL_KIND,
-                decision.message or "Budget reached",
-                reason=decision.reason,
-                attempts=attempts,
-            )
-        key_value = managed_keys.peek_secret(choice.key_name)
-        outcome: _CallOutcome | None = None
-        failure: ProviderError | None = None
-        adapter: Adapter | None = None
-        for retry in range(2):
-            try:
-                adapter = build_adapter(
-                    preset=choice.preset,
-                    kind=choice.kind,
-                    api_key=key_value,
-                    api_key_name=choice.key_name,
-                    base_url=choice.base_url,
-                    extra=choice.extra,
-                    learned=choice.learned,
-                )
-                async with _semaphore(choice):
-                    outcome = await _call(
-                        adapter,
-                        resolved,
-                        choice,
-                        system=system,
-                        user=user,
-                        json_schema=json_schema,
-                        max_tokens=output_cap(choice),
-                        temperature=temperature if temperature is not None else choice.temperature,
-                        texts=texts,
-                    )
-                failure = None
-                break
-            except ProviderError as exc:
-                failure = exc
-                wait = exc.retry_after
-                if (
-                    retry == 0
-                    and exc.kind in {"rate_limit", "unavailable"}
-                    and wait is not None
-                    and wait <= RETRY_AFTER_CAP_SECONDS
-                ):
-                    await asyncio.sleep(wait)
-                    continue
-                break
-            finally:
-                if adapter is not None:
-                    try:
-                        await adapter.aclose()
-                    except Exception:
-                        logger.debug("adapter close failed", exc_info=True)
-        async with session_factory() as session:
-            if adapter is not None:
-                await _persist_learned(session, choice, adapter)
-            if outcome is not None:
-                model = model_for(choice.provider, choice.model)
-                cost = budget.token_cost(
-                    model,
-                    input_tokens=outcome.input_tokens,
-                    output_tokens=outcome.output_tokens,
-                    cached_tokens=outcome.cached_tokens,
-                    overrides=overrides,
-                )
-                if who.answer is not None:
-                    who.answer.settle(estimate_usd, cost)
-                await settle(
-                    session,
-                    event_id,
-                    outcome="OK",
-                    cost_usd=cost,
-                    input_tokens=outcome.input_tokens,
-                    output_tokens=outcome.output_tokens,
-                    cached_tokens=outcome.cached_tokens,
-                    latency_ms=outcome.latency_ms,
-                    detail={"servedModel": outcome.meta.get("served_model"), "degraded": degrade},
-                )
-                attempts.append({"provider": choice.provider, "model": choice.model, "outcome": "OK"})
-                return RouterResult(
-                    task=resolved.value,
-                    provider=choice.provider,
-                    model=choice.model,
-                    ordinal=choice.ordinal,
-                    usage_event_id=event_id,
-                    cost_usd=cost,
-                    degraded=degrade,
-                    attempts=attempts,
-                    text=outcome.text,
-                    embeddings=outcome.embeddings,
-                    input_tokens=outcome.input_tokens,
-                    output_tokens=outcome.output_tokens,
-                    meta=outcome.meta,
-                )
-            assert failure is not None
-            stopped = failure.kind in STOP_KINDS
-            if who.answer is not None:
-                who.answer.release(estimate_usd)
-            await settle(
-                session,
-                event_id,
-                outcome="REFUSED_PROVIDER" if failure.kind == "refusal" else "ERROR",
-                error_kind=failure.kind,
-                detail={"status": failure.status},
-            )
-            if failure.kind == "auth":
-                await mark_key_failed(session, choice.key_name, key_value, str(failure))
-        attempts.append({"provider": choice.provider, "model": choice.model, "outcome": failure.kind})
-        logger.warning(
-            "route failed",
-            extra={
-                "task": resolved.value,
-                "provider": choice.provider,
-                "model": choice.model,
-                "kind": failure.kind,
-            },
+    if not decision.allowed:
+        raise RouterError(
+            SPEND_REFUSAL_KIND,
+            decision.message or "Budget reached",
+            reason=decision.reason,
+            attempts=attempt.attempts,
         )
-        if stopped:
-            raise RouterError(failure.kind, str(failure), attempts=attempts)
-    raise RouterError("exhausted", f"Every route for {resolved.value} failed", attempts=attempts)
+    return event_id
+
+
+async def _called(plan: _Plan, choice: RouteChoice) -> _Called:
+    called = _Called()
+    for retry in range(2):
+        try:
+            called.adapter = _adapter(choice)
+            async with _semaphore(choice):
+                called.outcome = await _call(called.adapter, plan, choice)
+            called.failure = None
+            return called
+        except ProviderError as exc:
+            called.failure = exc
+            if retry > 0 or not _worth_one_retry(exc):
+                return called
+            await asyncio.sleep(exc.retry_after or 0)
+        finally:
+            await _closed(called.adapter)
+    return called
+
+
+def _adapter(choice: RouteChoice) -> Adapter:
+    return build_adapter(
+        preset=choice.preset,
+        kind=choice.kind,
+        api_key=managed_keys.peek_secret(choice.key_name),
+        api_key_name=choice.key_name,
+        base_url=choice.base_url,
+        extra=choice.extra,
+        learned=choice.learned,
+    )
+
+
+def _worth_one_retry(failure: ProviderError) -> bool:
+    wait = failure.retry_after
+    return failure.kind in RETRYABLE_KINDS and wait is not None and wait <= RETRY_AFTER_CAP_SECONDS
+
+
+async def _closed(adapter: Adapter | None) -> None:
+    if adapter is None:
+        return
+    try:
+        await adapter.aclose()
+    except Exception:
+        logger.debug("adapter close failed", exc_info=True)
+
+
+async def _succeeded(
+    attempt: _Attempt, event_id: uuid.UUID, called: _Called, outcome: _CallOutcome
+) -> RouterResult:
+    choice, plan = attempt.choice, attempt.plan
+    cost = _cost(plan, choice, outcome)
+    if attempt.who.answer is not None:
+        attempt.who.answer.settle(attempt.estimate_usd, cost)
+    async with attempt.sessions() as session:
+        await settle(
+            session,
+            event_id,
+            outcome="OK",
+            cost_usd=cost,
+            input_tokens=outcome.input_tokens,
+            output_tokens=outcome.output_tokens,
+            cached_tokens=outcome.cached_tokens,
+            latency_ms=outcome.latency_ms,
+            detail={"servedModel": outcome.meta.get("served_model"), "degraded": plan.degrade},
+        )
+        if called.adapter is not None:
+            await _persist_learned(session, choice, called.adapter)
+    attempt.noted("OK")
+    return RouterResult(
+        task=plan.ask.task.value,
+        provider=choice.provider,
+        model=choice.model,
+        ordinal=choice.ordinal,
+        usage_event_id=event_id,
+        cost_usd=cost,
+        degraded=plan.degrade,
+        attempts=attempt.attempts,
+        text=outcome.text,
+        embeddings=outcome.embeddings,
+        input_tokens=outcome.input_tokens,
+        output_tokens=outcome.output_tokens,
+        meta=outcome.meta,
+    )
+
+
+def _cost(plan: _Plan, choice: RouteChoice, outcome: _CallOutcome) -> Decimal:
+    return budget.token_cost(
+        model_for(choice.provider, choice.model),
+        input_tokens=outcome.input_tokens,
+        output_tokens=outcome.output_tokens,
+        cached_tokens=outcome.cached_tokens,
+        overrides=plan.overrides,
+    )
+
+
+async def _failed(attempt: _Attempt, event_id: uuid.UUID, called: _Called, failure: ProviderError) -> None:
+    choice = attempt.choice
+    if attempt.who.answer is not None:
+        attempt.who.answer.release(attempt.estimate_usd)
+    async with attempt.sessions() as session:
+        await settle(
+            session,
+            event_id,
+            outcome="REFUSED_PROVIDER" if failure.kind == "refusal" else "ERROR",
+            error_kind=failure.kind,
+            detail={"status": failure.status},
+        )
+        if called.adapter is not None:
+            await _persist_learned(session, choice, called.adapter)
+        if failure.kind == "auth":
+            await mark_key_failed(
+                session, choice.key_name, managed_keys.peek_secret(choice.key_name), str(failure)
+            )
+    attempt.noted(failure.kind)
+    logger.warning(
+        "route failed",
+        extra={
+            "task": attempt.plan.ask.task.value,
+            "provider": choice.provider,
+            "model": choice.model,
+            "kind": failure.kind,
+        },
+    )
+    if failure.kind in STOP_KINDS:
+        raise RouterError(failure.kind, str(failure), attempts=attempt.attempts)

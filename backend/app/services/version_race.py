@@ -12,6 +12,7 @@ from app.research.explainer_versions import ExplainerVersionDocument, VersionMar
 from app.research.sections import AnswerPlans
 
 from .answer_gaps import FieldReading, answer_readings
+from .answer_steps import TracedStep
 from .explainer_history import StaleVersion
 from .follow_ups import AnswerLayout, StoredAnswer
 from .section_context import SectionOutcome, answer_plans
@@ -34,6 +35,7 @@ class VersionStore(Protocol):
         explainer: Explainer | None,
         version: VersionMark | None = None,
         readings: Sequence[FieldReading] = (),
+        steps: Sequence[TracedStep] = (),
     ) -> None: ...
 
     async def latest(
@@ -55,6 +57,7 @@ class VersionRace:
     answer_id: uuid.UUID
     asker: Asker
     outcomes: Sequence[SectionOutcome]
+    steps: Sequence[TracedStep] = ()
 
     async def kept(
         self, layout: AnswerLayout, document: Explainer | None, claim_ids: Iterable[uuid.UUID]
@@ -98,6 +101,7 @@ class VersionRace:
             explainer=stored.explainer,
             version=stored.version,
             readings=answer_readings(self.outcomes),
+            steps=self.steps,
         )
 
 

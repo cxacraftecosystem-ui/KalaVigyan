@@ -11,7 +11,7 @@ from app.geo.aggregation import state_aggregate
 from app.geo.climate import MEAN_STAT, TREND_DATASETS
 from app.geo.datasets import region_dataset, value_grid
 from app.geo.records import Coverage, DatasetRecord, PlaceRecord, RegionRecords, SeriesTotals, ValueRecord
-from app.research.stream import SourceRef
+from app.research.citations import SourceRef
 from app.research.vocabulary import ENV_STATS
 from app.schemas.region import (
     DATASET_FACETS,

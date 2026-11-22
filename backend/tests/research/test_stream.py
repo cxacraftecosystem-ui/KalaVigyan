@@ -1,5 +1,4 @@
 import asyncio
-import json
 import re
 import uuid
 from pathlib import Path
@@ -7,12 +6,11 @@ from pathlib import Path
 import pytest
 
 from app.core.errors import InvalidInput
-from app.models import ClaimSource, Craft, Source
+from app.models import ClaimSource, Source
 from app.research import stream
 from app.services import knowledge_view
 
 REPO = Path(__file__).resolve().parents[3]
-GOLDEN = REPO / "shared" / "answer-stream.golden.sse"
 
 WIRE = {
     "source": (
@@ -45,8 +43,6 @@ WIRE = {
         },
     ),
     "status": ({"step", "message"}, {"step", "message"}),
-    "section": ({"id", "heading", "original"}, {"id", "heading"}),
-    "sentence": ({"sectionId", "sentence"}, {"sectionId", "sentence"}),
     "open_question": ({"sectionId", "heading", "sentence"}, {"sectionId", "sentence"}),
     "reaction": (
         {"id", "label", "equation", "balanced", "level", "conditions", "citations"},
@@ -66,12 +62,9 @@ def schema_of(name: str) -> dict:
 
 def test_the_event_names_are_the_frontend_set_plus_status_and_the_explainer_events() -> None:
     assert set(stream.STREAM_EVENTS) == {
-        "match",
         "status",
         "not_enough_evidence",
         "source",
-        "section",
-        "sentence",
         "open_question",
         "reaction",
         "follow_ups",
@@ -100,7 +93,7 @@ def test_each_event_keeps_its_wire_fields(name: str) -> None:
 
 
 def test_sentences_and_citations_keep_their_wire_fields() -> None:
-    defs = schema_of("sentence")["$defs"]
+    defs = schema_of("open_question")["$defs"]
     assert set(defs["Citation"]["properties"]) == CITATION
     assert set(defs["Citation"]["required"]) == CITATION
     assert set(defs["AnswerSentence"]["properties"]) == {
@@ -114,41 +107,6 @@ def test_sentences_and_citations_keep_their_wire_fields() -> None:
     assert set(defs["AnswerSentence"]["required"]) == {"id", "text", "level", "citations"}
     assert defs["AnswerSentence"]["properties"]["citations"]["minItems"] == 1
     assert defs["Citation"]["properties"]["evidence"]["enum"] == ["QUOTED", "INFERRED"]
-
-
-def blocks(text: str) -> list[tuple[str | None, str | None, list[str]]]:
-    found = []
-    for block in text.split("\n\n"):
-        if not block:
-            continue
-        lines = block.split("\n")
-        comments = [line for line in lines if line.startswith(":")]
-        names = [line.removeprefix("event: ") for line in lines if line.startswith("event: ")]
-        data = [line.removeprefix("data: ") for line in lines if line.startswith("data: ")]
-        found.append((names[0] if names else None, data[0] if data else None, comments))
-    return found
-
-
-def test_the_golden_stream_follows_the_contract() -> None:
-    text = GOLDEN.read_text(encoding="utf-8")
-    assert text.endswith("\n\n") and "\r" not in text
-    parsed = blocks(text)
-    assert [name for name, _, _ in parsed] == [
-        "match",
-        "status",
-        None,
-        "source",
-        "section",
-        "sentence",
-        "open_question",
-        "reaction",
-        "follow_ups",
-        "done",
-    ]
-    assert parsed[2][2] == [stream.HEARTBEAT_FRAME.strip()]
-    for name, data, _ in parsed:
-        if name is not None:
-            stream.parse_event(name, json.loads(data))
 
 
 def test_frames_are_one_compact_json_line() -> None:
@@ -165,15 +123,33 @@ def test_frames_are_one_compact_json_line() -> None:
 def test_the_wire_refuses_uncited_sentences_and_unknown_events() -> None:
     sentence = {"id": "a", "text": "Alum works.", "level": "PROVISIONAL", "citations": []}
     with pytest.raises(InvalidInput):
-        stream.event_frame("sentence", {"sectionId": "s1", "sentence": sentence})
+        stream.event_frame("open_question", {"sectionId": "open", "sentence": sentence})
     with pytest.raises(InvalidInput):
         stream.event_frame("ping", {})
+
+
+@pytest.mark.parametrize("name", ["match", "section", "sentence"])
+def test_the_retired_events_are_no_longer_on_the_wire(name: str) -> None:
+    assert name not in stream.STREAM_EVENTS
     with pytest.raises(InvalidInput):
-        stream.event_frame("match", {"status": "AMBIGUOUS", "candidates": []})
+        stream.event_frame(name, {})
+
+
+def test_the_retired_resolving_step_is_refused() -> None:
+    assert stream.STATUS_STEPS == (
+        "PLANNING",
+        "SEARCHING_STORED",
+        "RESEARCHING",
+        "READING",
+        "COMPOSING",
+        "WRITING_BACK",
+        "TRANSLATING",
+    )
+    with pytest.raises(InvalidInput):
+        stream.event_frame("status", {"step": "RESOLVING", "message": "Finding the craft"})
 
 
 def test_what_the_stored_answer_path_emits_fits_the_contract() -> None:
-    craft = Craft(id=uuid.uuid4(), slug="Kutch-Ajrakh", name="Kutch Ajrakh")
     source = Source(
         id=uuid.uuid4(),
         kind="BOOK",
@@ -197,10 +173,9 @@ def test_what_the_stored_answer_path_emits_fits_the_contract() -> None:
         None,
         citations=[knowledge_view.citation(cite, "PROVISIONAL")],
     )
-    assert stream.parse_event("match", {"status": "RESOLVED", "craft": knowledge_view.craft_ref(craft)})
     ref = stream.parse_event("source", knowledge_view.source_ref(source))
     assert ref.url == "https://doi.org/10.1000/ajrakh"
-    assert stream.parse_event("sentence", {"sectionId": "s1", "sentence": view.payload()})
+    assert stream.parse_event("open_question", {"sectionId": "open", "sentence": view.payload()})
 
 
 def test_the_heartbeat_beats_every_proxy_timeout() -> None:
@@ -236,7 +211,7 @@ async def test_a_quick_stream_sends_no_heartbeat() -> None:
 
 async def test_a_payload_off_the_contract_fails_the_producer_loudly() -> None:
     async def produce(emit: stream.Emit) -> None:
-        await emit("section", {"id": "s1"})
+        await emit("status", {"step": "PLANNING"})
 
     with pytest.raises(InvalidInput):
         _ = [frame async for frame in stream.event_stream(produce)]

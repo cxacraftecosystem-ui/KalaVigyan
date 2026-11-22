@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import uuid
 from collections.abc import Callable, Mapping, Sequence
@@ -26,6 +25,7 @@ from .router import (
     order_routes,
     reserve,
     settle,
+    settle_abandoned,
 )
 
 __all__ = ["NO_KEY_KIND", "RerankRouter", "rerank_cost", "rerank_tokens", "router_reranker"]
@@ -113,7 +113,7 @@ class RerankRouter:
             await self._failed(event_id, choice, key, failure, estimate)
             raise
         except BaseException:
-            await asyncio.shield(self._abandoned(event_id, estimate))
+            await settle_abandoned(self._sessions(), event_id, estimate, answer=self._principal.answer)
             raise
         tokens = result.total_tokens
         if tokens is None:
@@ -171,10 +171,6 @@ class RerankRouter:
             )
             if failure.kind == "auth":
                 await mark_key_failed(session, choice.key_name, key, str(failure))
-
-    async def _abandoned(self, event_id: uuid.UUID, estimate: Decimal) -> None:
-        async with self._sessions()() as session:
-            await settle(session, event_id, outcome="CANCELLED", cost_usd=estimate, error_kind="abandoned")
 
 
 def rerank_cost(choice: RouteChoice, tokens: int, overrides: Mapping[str, Any]) -> Decimal:

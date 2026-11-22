@@ -107,9 +107,6 @@ ROLE_ONLY_CAPABILITIES: dict[Capability, frozenset[str]] = {
 }
 
 ALLOWANCE_RESOURCES: tuple[str, ...] = ("VOICE_SECONDS", "IMAGE", "VIDEO")
-DAILY_ALLOWANCES: dict[str, dict[str, int | None]] = {
-    role: dict.fromkeys(ALLOWANCE_RESOURCES) for role in ROLE_RANK
-}
 
 
 def role_value(user_or_role: Any) -> str:
@@ -173,7 +170,3 @@ def is_uncapped(user_or_role: Any) -> bool:
 
 def requires_two_factor(user_or_role: Any) -> bool:
     return role_value(user_or_role) in TWO_FACTOR_REQUIRED_ROLES
-
-
-def daily_allowance(user_or_role: Any, resource: str) -> int | None:
-    return DAILY_ALLOWANCES.get(role_value(user_or_role), DAILY_ALLOWANCES[STUDENT]).get(resource)

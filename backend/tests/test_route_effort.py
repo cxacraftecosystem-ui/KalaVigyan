@@ -4,9 +4,11 @@ import pytest
 
 from app.providers import router as ai_router
 from app.providers.anthropic_p import AnthropicAdapter
-from app.providers.base import Adapter, ChatRequest, ChatResult
+from app.providers.base import ChatRequest
 from app.providers.catalogue import AiTask
-from app.providers.router import REASONING_EFFORT_PARAM, RouteChoice, reasoning_effort
+from app.providers.router import REASONING_EFFORT_PARAM, Principal, RouteChoice, reasoning_effort
+
+from .router_fakes import record_router
 
 OPUS = "claude-opus-5-5"
 SONNET = "claude-sonnet-5-5"
@@ -24,19 +26,6 @@ def route(model: str, params: dict[str, Any] | None = None) -> RouteChoice:
         model=model,
         params=params or {},
     )
-
-
-class RecordingAdapter(Adapter):
-    def __init__(self) -> None:
-        super().__init__(api_key=None, base_url=None, preset="anthropic", extra={}, learned={})
-        self.requests: list[ChatRequest] = []
-
-    async def chat(self, req: ChatRequest) -> ChatResult:
-        self.requests.append(req)
-        return ChatResult(text="{}")
-
-    async def list_models(self) -> list[dict]:
-        return []
 
 
 def anthropic_adapter() -> AnthropicAdapter:
@@ -62,20 +51,17 @@ def test_an_unknown_stored_effort_falls_back_to_the_task_default(stored: Any) ->
     assert reasoning_effort(AiTask.COMPOSE, route(OPUS, {REASONING_EFFORT_PARAM: stored})) == "medium"
 
 
-async def test_the_router_sends_the_route_effort_to_the_model() -> None:
-    adapter = RecordingAdapter()
-    await ai_router._call(
-        adapter,
+async def test_the_router_sends_the_route_effort_to_the_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    recorded = record_router(monkeypatch)
+    await ai_router.run(
         AiTask.COMPOSE,
-        route(OPUS),
         system="s",
         user="u",
-        json_schema=None,
         max_tokens=100,
-        temperature=None,
-        texts=None,
+        principal=Principal(role="ADMIN"),
+        session_factory=recorded.sessions(),
     )
-    (sent,) = adapter.requests
+    (sent,) = recorded.requests
     assert sent.reasoning_effort == "medium"
     assert sent.reasoning is False
 

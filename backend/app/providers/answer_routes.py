@@ -4,8 +4,9 @@ from collections.abc import Mapping
 from types import MappingProxyType
 
 from app.providers.catalogue import AiProvider, AiTask
-from app.research.answer_models import AnswerModels
+from app.research.answer_models import AnswerModels, DepthFollower
 
+from .budget import AnswerSpend
 from .rerank_router import router_reranker
 from .router import Principal, RouteTuning
 from .structured import router_structured_model
@@ -17,6 +18,7 @@ __all__ = [
     "EXPERT_MODEL",
     "EXPLAINER_TUNINGS",
     "answer_models",
+    "depth_follower",
 ]
 
 EXPERT_MODEL = "claude-opus-5-5"
@@ -43,6 +45,7 @@ EXPLAINER_TUNINGS: Mapping[str, RouteTuning] = MappingProxyType(
 
 def answer_models(depth: str, *, principal: Principal, optional: Principal) -> AnswerModels:
     return AnswerModels(
+        understand=router_structured_model(AiTask.UNDERSTAND, principal),
         plan=router_structured_model(AiTask.PLAN, principal),
         compose=router_structured_model(AiTask.COMPOSE, principal, tuning=COMPOSE_TUNINGS[depth]),
         builder_plan=router_structured_model(AiTask.PLAN, optional),
@@ -51,4 +54,10 @@ def answer_models(depth: str, *, principal: Principal, optional: Principal) -> A
         translate=router_structured_model(AiTask.TRANSLATE, principal),
         judge=router_structured_model(AiTask.EVAL_JUDGE, optional),
         rerank=router_reranker(principal),
+        follow_depth=depth_follower(principal),
     )
+
+
+def depth_follower(principal: Principal) -> DepthFollower | None:
+    answer = principal.answer
+    return answer.follow if isinstance(answer, AnswerSpend) else None

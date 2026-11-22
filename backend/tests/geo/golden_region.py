@@ -13,8 +13,8 @@ from app.geo.records import (
     StoredLayer,
     ValueRecord,
 )
+from app.research.citations import SourceRef
 from app.research.crafts import CraftRef
-from app.research.stream import SourceRef
 from app.services.claim_seed import seed_id
 
 from ..contracts.golden import golden_json

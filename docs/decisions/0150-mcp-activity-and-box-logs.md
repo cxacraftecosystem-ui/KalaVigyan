@@ -9,7 +9,7 @@ statement parameter, capability token or body in any shipped line.
 Date: 2026-11-23. Status: accepted (the lead's debt-clearing brief, lane MCP activity and logs, from
 the owner's question of 2026-11-22, "How are we maintaining the MCP logs and all?", after the
 Sanganeri contribution through Claude). The contracts are `docs/contracts/mcp-oauth.md` (Guards, MCP
-activity, Storage), `docs/contracts/nightly-upkeep.md` (3c) and `docs/contracts/infra.md` (Logs);
+activity, Storage), `docs/contracts/nightly-upkeep.md` (3d) and `docs/contracts/infra.md` (Logs);
 the operator's side is `docs/RUNBOOK.md`, Logs.
 
 | For | Read |
@@ -49,7 +49,7 @@ the operator's side is `docs/RUNBOOK.md`, Logs.
    `0074_mcp_activity`). Counting by name groups a client's many registrations ("Claude" registers
    anew) and keeps the count meaningful after a registration or an account is deleted.
 3. **180 days of calls, counts for good.** The nightly step `mcp_activity_upkeep.keep_mcp_activity`
-   (3c) counts each finished India day whole, at most 31 days a night, into `McpToolCallDay` (day,
+   (3d) counts each finished India day whole, at most 31 days a night, into `McpToolCallDay` (day,
    client name, tool, outcome, calls; no connection and no account), and then deletes at most 20,000
    calls a night that are older than 180 days and whose day is counted, so no call is pruned before
    it is counted. A count is never recomputed from a pruned day.

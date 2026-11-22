@@ -37,8 +37,9 @@ Last updated: 2026-11-20.
   and its per-sentence post-checks, live-research write-back, and the answer stream with its
   60-second heartbeat (`docs/contracts/research.md`). `core/errors.py` is the shared error
   hierarchy (`ProviderError` and `RouterError` join it). The stored-answer route now validates
-  every frame against the stream contract; `shared/answer-stream.golden.sse` is checked by the
-  backend and frontend tests. No adapter, planner, composer or writer exists yet.
+  every frame against the stream contract; `shared/answer-stream.golden.sse` was checked by the
+  backend and frontend tests until decision 0146 retired it. No adapter, planner, composer or
+  writer exists yet.
 
 - **Craft sync from both portals (decision 0003).** `app/scripts/sync_portal_crafts` reads a
   signed craft feed from the designer and documentation portals, upserts crafts by slug with
@@ -1207,10 +1208,8 @@ Last updated: 2026-11-20.
   the custom-LLM request proves to carry the conversation id (`docs/contracts/voice.md`); it stays
   `RELAY` otherwise.
 
-- Yahoo sign-in: register the Yahoo app with the redirect URI
-  `https://kalavigyan.vercel.app/login/callback`, set `YAHOO_CLIENT_ID` and `YAHOO_CLIENT_SECRET` as
-  GitHub secrets and deploy the backend, then set `NEXT_PUBLIC_YAHOO_CLIENT_ID` in Vercel
-  (`docs/RUNBOOK.md`, Yahoo sign-in).
+- Yahoo sign-in is registered and live: sign in once with a rostered Yahoo address on the
+  production login page to prove the whole round trip.
 
 ## How this document is kept true
 

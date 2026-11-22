@@ -29,6 +29,7 @@ from .upkeep_archive import (
     sources_at_risk,
 )
 from .upkeep_clients import ClientsReport, abandoned_client_count, remove_abandoned_clients
+from .upkeep_costs import LateCostsReport, settle_late_costs
 from .upkeep_healing import HealingReport, heal
 from .upkeep_links import rotten_count
 from .upkeep_pages import (
@@ -86,6 +87,7 @@ class UpkeepReport:
     mcp_activity: McpActivityReport = field(default_factory=McpActivityReport)
     answer_gaps: AnswerGapsReport = field(default_factory=AnswerGapsReport)
     shared_terms: SharedTermsReport = field(default_factory=SharedTermsReport)
+    late_costs: LateCostsReport = field(default_factory=LateCostsReport)
 
     @property
     def ok(self) -> bool:
@@ -105,6 +107,7 @@ class UpkeepReport:
             "mcpActivity": self.mcp_activity.as_dict(),
             "answerGaps": self.answer_gaps.as_dict(),
             "sharedTerms": self.shared_terms.as_dict(),
+            "lateCosts": self.late_costs.as_dict(),
         }
 
 
@@ -117,6 +120,7 @@ async def run_nightly_upkeep(session: AsyncSession, tools: UpkeepTools, *, now: 
     report.orphans = await sweep_orphans(session, now=now)
     report.clients = await remove_abandoned_clients(session, now=now)
     report.allowances = await sweep_allowances(session, now=now)
+    report.late_costs = await settle_late_costs(session, now=now)
     report.mcp_activity = await keep_mcp_activity(session, now=now)
     await rebuild_monographs(session, tools.monographs, tools.load_monograph, now=now, report=report.pages)
     await rebuild_stale_pages(session, skip=frozenset(tools.monographs), report=report.pages)

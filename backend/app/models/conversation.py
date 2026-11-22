@@ -24,6 +24,7 @@ from app.models.base import Base, created_at, one_of, updated_at, uuid_pk
 from app.models.knowledge import QUOTE_MAX_CHARS
 from app.models.sharing import SharedByLink, shared_together
 
+REQUEST_ID_MAX_CHARS = 64
 EXPLAINER_VERSION_CHECK = (
     '("explainerId" IS NULL AND "explainerVersion" IS NULL) OR '
     '("explainerVersion" >= 1 AND ("explainerVersion" = 1) = ("explainerId" = "id"))'
@@ -72,14 +73,12 @@ class Answer(SharedByLink, Base):
     claimIds: Mapped[list[uuid.UUID]] = mapped_column(
         ARRAY(UUID(as_uuid=True)), nullable=False, server_default=sql_text("ARRAY[]::uuid[]")
     )
-    liveCandidateIds: Mapped[list[uuid.UUID]] = mapped_column(
-        ARRAY(UUID(as_uuid=True)), nullable=False, server_default=sql_text("ARRAY[]::uuid[]")
-    )
     tiersUsed: Mapped[list[str]] = mapped_column(
         ARRAY(Text), nullable=False, server_default=sql_text("ARRAY[]::text[]")
     )
     costUsd: Mapped[Decimal] = mapped_column(Numeric(10, 6), nullable=False, server_default=sql_text("0"))
     latencyMs: Mapped[int | None] = mapped_column(Integer)
+    requestId: Mapped[str | None] = mapped_column(String(REQUEST_ID_MAX_CHARS))
     route: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     staleSince: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     explainerId: Mapped[uuid.UUID | None] = mapped_column(
@@ -93,6 +92,7 @@ class Answer(SharedByLink, Base):
         Index(None, "conversationId"),
         Index(None, "userId", "createdAt"),
         Index(None, "craftId"),
+        Index(None, "requestId"),
         UniqueConstraint("explainerId", "explainerVersion"),
         CheckConstraint(EXPLAINER_VERSION_CHECK, name="explainerVersion"),
         shared_together(),
@@ -148,9 +148,6 @@ class AnswerCitation(Base):
     )
     claimSourceId: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("ClaimSource.id", ondelete="SET NULL")
-    )
-    liveCandidateId: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("LiveCandidate.id", ondelete="SET NULL")
     )
     sourceId: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("Source.id", ondelete="SET NULL")

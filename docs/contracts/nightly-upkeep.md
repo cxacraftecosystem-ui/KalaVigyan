@@ -12,7 +12,7 @@ moved are refreshed on the CDN; a night that changed nothing sends nothing. Answ
 constant, so a night's work and its load on other sites are known in advance.
 Operators and the engineers who add a step read it.
 
-Last reviewed: 2026-11-23 (step 3c, decision 0150).
+Last reviewed: 2026-11-23 (step 3d, decision 0150).
 
 | For | Read |
 |---|---|
@@ -59,7 +59,8 @@ The workflow runs `python -m app.scripts.nightly_upkeep` as the `kalavigyan` use
 | 3. Sweep orphaned concepts | `services/orphan_concepts.py` | `ORPHANS_PER_NIGHT` = 500; a concept stands at least `ORPHAN_MIN_AGE` = 7 days | `AuditLog` action `upkeep.orphans_reported` with the ids reported |
 | 3a. Remove abandoned MCP client registrations | `services/upkeep_clients.py` | `ABANDONED_CLIENTS_PER_NIGHT` = 1,000, oldest first; a client is abandoned `ABANDONED_CLIENT_AGE` = 30 days after registering | the `OAuthClient` rows deleted (their unexchanged codes go with them) |
 | 3b. Delete old allowance buckets | `services/upkeep_allowances.py`, `core/allowances.delete_old_buckets` | the allowance and rate-limit buckets (decision 0139) whose window started more than `KEPT_HOURS` = 24 hours before the current hour | the `AllowanceBucket` rows deleted |
-| 3c. Count and prune MCP calls | `services/mcp_activity_upkeep.py` | `DAYS_COUNTED_PER_NIGHT` = 31 finished India days, oldest first; `CALLS_PRUNED_PER_NIGHT` = 20,000 calls, oldest first, each older than `CALLS_KEPT_DAYS` = 180 days and on a counted day | `McpToolCallDay` (one row per day, client, tool and outcome, kept for good); the `McpToolCall` rows deleted (`mcp-oauth.md`, Guards) |
+| 3c. Add the cost settled after an answer finished | `services/upkeep_costs.settle_late_costs` | the answers of the last `LATE_COST_WINDOW` = 7 days with a `requestId`, against that request's `UsageEvent` rows from `REQUEST_SPAN` = 1 hour before (decision 0146) | `Answer.costUsd` set to its request's summed `UsageEvent.costUsd` where they differ |
+| 3d. Count and prune MCP calls | `services/mcp_activity_upkeep.py` | `DAYS_COUNTED_PER_NIGHT` = 31 finished India days, oldest first; `CALLS_PRUNED_PER_NIGHT` = 20,000 calls, oldest first, each older than `CALLS_KEPT_DAYS` = 180 days and on a counted day | `McpToolCallDay` (one row per day, client, tool and outcome, kept for good); the `McpToolCall` rows deleted (`mcp-oauth.md`, Guards) |
 | 4. Reload monographs | `services/upkeep_pages.py` through `services/monograph_load.py` | `MONOGRAPHS_PER_NIGHT` = 20, a window that rotates by night | `ArticleSection`, `KnowledgePiece` (only what changed) |
 | 5. Rebuild stale craft pages | `services/upkeep_pages.py` through `services/craft_page_snapshots.py` | `PAGES_PER_NIGHT` = 60, oldest snapshot first | `CraftPageSnapshot` |
 | 5a. Refresh the field work | `services/open_work_refresh.py` | every subject, once | `TaskReservation.ending` `COMPLETED` for a live reservation of a `MISSING_FIELD` or `THIN_FIELD` task no longer open (`open-work.md`) |
@@ -168,7 +169,7 @@ no token) is deleted; the delete re-checks the rule in the same statement, so a 
 in between is kept. A client with a connection, even an expired or revoked one, stays: Settings and
 the audit still name it (`mcp-oauth.md`).
 
-### 3c. MCP calls
+### 3d. MCP calls
 
 A day is an India day (`core/clock`); it is finished once the night's run starts after its midnight.
 Each finished day that has calls and no count yet is counted, oldest first, into one
@@ -233,6 +234,7 @@ The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
  pages {monographs[load report], pagesStale, pagesRebuilt, pagesChanged, pagesFailed[]},
  fieldWork {subjects, tasks {MISSING_FIELD, THIN_FIELD}, priorities {HIGH, MEDIUM, LOW}, reservationsClosed},
  allowances {bucketsDeleted},
+ lateCosts {answersUpdated},
  mcpActivity {daysCounted, callsCounted, callsPruned},
  answerGaps {questions, dropped, embedded, embeddingError, joined, opened, answered, lapsed, open, reservationsClosed},
  sharedTerms {terms, crafts},

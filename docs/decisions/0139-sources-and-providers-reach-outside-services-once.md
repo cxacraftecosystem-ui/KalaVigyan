@@ -24,6 +24,7 @@ fetcher) and `docs/contracts/explainer.md` (the `paced` event).
 | The pacing it shares across processes | [decision 0127](0127-coherent-answers.md), item 4 |
 | The adapters it extends | [0005](0005-scholarly-source-adapters.md), [0006](0006-reference-source-adapters.md), [0007](0007-web-search-and-fetcher.md) |
 | The coverage job and the licence rule | [0011](0011-claim-write-back-and-coverage-enrichment.md), [0013](0013-review-fixes-quotes-licences-scope.md) |
+| The `AiTask` re-export goes, and every router settles a cut-off call alike | [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

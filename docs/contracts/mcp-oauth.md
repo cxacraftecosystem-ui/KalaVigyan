@@ -11,7 +11,7 @@ the people who connect a client.
 | The read tools and the protocol, unchanged for a call without a token | [knowledge-api.md](knowledge-api.md) |
 | The terms a person accepts | [legal/mcp-terms-of-use.md](../legal/mcp-terms-of-use.md) |
 | Abandoned registrations removed every night | [nightly-upkeep.md](nightly-upkeep.md), 3a |
-| What each call keeps, how long, and the MCP activity screen | [decision 0150](../decisions/0150-mcp-activity-and-box-logs.md); [nightly-upkeep.md](nightly-upkeep.md), 3c |
+| What each call keeps, how long, and the MCP activity screen | [decision 0150](../decisions/0150-mcp-activity-and-box-logs.md); [nightly-upkeep.md](nightly-upkeep.md), 3d |
 
 ```mermaid
 %%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
@@ -289,7 +289,7 @@ its own documentation gives them).
   which the table's check holds.
 - **Kept**: a call is kept 180 days; every night the finished India days are counted into
   `McpToolCallDay {day, clientName, tool, outcome, calls}`, kept for good, and the counted calls
-  older than 180 days are deleted (`nightly-upkeep.md`, 3c).
+  older than 180 days are deleted (`nightly-upkeep.md`, 3d).
 
 ## MCP activity
 

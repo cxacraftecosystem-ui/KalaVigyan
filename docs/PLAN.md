@@ -226,7 +226,7 @@ Knowledge:
 | `Claim` | subjectType, subjectId, predicate, text, textLang, valueNum, valueUnit, evidenceLevel, levelReason, origin (IMPORT, RESEARCHER, ENRICHMENT, MODEL), status (DRAFT, PROPOSED, IN_REVIEW, APPROVED, REJECTED, RETRACTED), version, supersedesId, createdById null, createdByKind (USER, SYSTEM), sensitivity, embedding, tsv |
 | `ClaimSource` | claimId, sourceId, chunkId null, locator, quote (≤300 chars), quoteCheck (PASS, FAIL, NA), checkedAt, relation (DIRECT, CONTEXTUAL, ANALOGOUS, GENERAL_PRINCIPLE) |
 | `ReviewEvent` | claimId, actorId null, actorKind (USER, SYSTEM), systemActor text null (`import`, `enrichment`), fromStatus, toStatus, fromLevel, toLevel, note. Append-only. |
-| `LiveCandidate` | answerId, userId, tier (T3, T4), url, webFetchId, quote, quoteCheck, facet, expiresAt (30 days). Never embedded; never read by T1/T2. |
+| `LiveCandidate` | Dropped by decision 0146: live research writes back cited claims (section 0, decision 0011), so no answer keeps an unfiled candidate. |
 | `EnrichmentJob` | craftId, requestedById, mode, facets jsonb, budgetUsd, spentUsd, status, error |
 | `EnrichmentProposal` | jobId, claimId, dedupeOfClaimId null, checks jsonb |
 | `Objection` | craftId, claimId null, mediaAssetId null, raisedById null, contactEmail null, kind (FACTUAL, ATTRIBUTION, SACRED_OR_RESTRICTED, DEPICTION, OTHER), body, status (OPEN, ACKNOWLEDGED, UPHELD, DISMISSED), ackDueAt, decideDueAt, decidedById |
@@ -237,7 +237,7 @@ Conversation, media, evaluation:
 |---|---|
 | `Conversation` | userId, craftId, mode, channel (TEXT, VOICE), title |
 | `Message` | conversationId, role, content jsonb, answerId |
-| `Answer` | conversationId, question, mode, craftId, plan, payload, claimIds uuid[], liveCandidateIds uuid[], tiersUsed, costUsd, latencyMs, route |
+| `Answer` | conversationId, question, mode, craftId, plan, payload, claimIds uuid[], tiersUsed, costUsd, latencyMs, requestId, route |
 | `AnswerTrace` | answerId, step, ms, detail jsonb (search queries sent and to which provider; never voice transcripts) |
 | `WebFetch` | url, finalUrl, status, contentType, bytes, sha256 unique, snapshotKey, fetchedAt, blockedReason |
 | `VoiceSession` | userId, elConversationId unique, agentId, nonceHash, language, craftId, mode, startedAt, endedAt, turnCount, reservedSeconds, billedSeconds, transcriptEnc (Fernet), retentionUntil |
@@ -298,7 +298,7 @@ Not used:
 
 Search egress: queries are built only from the resolved craft name, sub-category and schema-enum facet targets. Free text from the user is never sent; when the planner needs an extra term it passes a deterministic scrub (email, phone, Aadhaar-like 12-digit runs, the user's own profile names) first. Each query and its provider is written to `AnswerTrace`.
 
-Live results are answer-scoped. T3/T4 output of a hybrid or deep question becomes `LiveCandidate` rows tied to that answer and user, kept 30 days, never embedded, never in T1/T2, never shown to another user. Only an `EnrichmentJob` writes `Claim` rows, as PROPOSED. A researcher can send a live candidate into an enrichment job.
+Live results are written back as cited claims by the answer that found them (section 0, decision 0011); the `LiveCandidate` rows this paragraph first planned were dropped in decision 0146.
 
 Fetcher (`kv-fetcher.service`, P1b for T3 full text, P2 for T4):
 - Separate systemd unit, own user, no AWS credentials, `MemoryMax=512M`, `CPUQuota=50%`, `LimitCPU`, 10 s timeout, 3 MB cap.

@@ -6,8 +6,9 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any, Protocol
 
+from app.core.daily_allowances import daily_allowance
 from app.core.errors import SPEND_REFUSAL_KIND, AppError
-from app.core.roles import PROFESSOR, Capability, can, daily_allowance, has_rank, role_value
+from app.core.roles import PROFESSOR, Capability, can, has_rank, role_value
 from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaAsk
 from app.providers.quota import remaining_today, seconds_until_next_day

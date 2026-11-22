@@ -1354,7 +1354,7 @@ Neither builder asks a model, so neither spends; both read stored rows in one sh
 - **`measure`** (`services/measure_builder.MeasureBuilder`, every field, a piece in its section's
   slot, not rebuilt on reuse): the stated quantities of the section's fact-level cited claims
   (`research/stated_quantities.stated_quantities`: a number or range directly before one of the
-  fixed unit words, `DEFINED_UNITS[...].words` and `LOCAL_UNITS` in `research/measures`). A
+  fixed unit words, `DEFINED_UNITS[...].words` in `research/measures` and `LOCAL_UNITS` in `research/local_units`). A
   defined unit converts by its definition cited to `UNIT_DEFINITIONS`. A local unit converts only
   by a `REGIONAL` factor (`services/measure_store.regional_factors`): a stored claim whose quote
   states "a <unit> ... is/equals/weighs <number> <metric unit>" or "<number> <metric unit> make a

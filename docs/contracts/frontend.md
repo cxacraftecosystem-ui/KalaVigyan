@@ -48,6 +48,7 @@ Everything a reader reads opens without signing in; only asking and the reader's
 |---|---|---|
 | `/admin` | Admin and above | `require_admin` (the hub itself calls no route) |
 | `/admin/keys`, `/admin/routing` | Master admin | `require_master_admin` |
+| `/admin/budget` (the AI budget: monthly, media and degrade mark, each depth's answer cap, each role's daily cap and daily allowances, an empty field being no cap, saved with a two-step code) | Master admin | `require(MANAGE_CEILINGS)` |
 | `/admin/usage` | Admin and above | `require_view_usage` |
 | `/admin/users` | Professor and above | `require_professor` |
 | `/admin/access` | Professor and above | `require_access_roster_manager` |
@@ -111,7 +112,7 @@ Changes to DR shapes the client assumes:
   - `reaction`: `{id, label, equation (mhchem source, no `\ce{}` needed), balanced, level, conditions|null, citations}`
   - `follow_ups`: `{items: string[]}`
   - `done`: `{answerId|null}`; `error`: `{message}` (shown verbatim)
-  - `status`: `{step, message}`, progress while the answer is worked out (`step` one of RESOLVING, PLANNING, SEARCHING_STORED, RESEARCHING, READING, COMPOSING, WRITING_BACK, TRANSLATING). The client shows `message` as the progress line (`AnswerProgress`, `role="status"`) and clears it on `done`, `error` or `not_enough_evidence`.
+  - `status`: `{step, message}`, progress while the answer is worked out (`step` one of PLANNING, SEARCHING_STORED, RESEARCHING, READING, COMPOSING, WRITING_BACK, TRANSLATING). The client shows `message` as the progress line (`AnswerProgress`, `role="status"`) and clears it on `done`, `error` or `not_enough_evidence`.
   - `not_enough_evidence`: `{message}`, nothing cited could be shown; `message` lists what was searched. The client's empty state (`NotEnoughEvidence`), not an error. Only `done` follows.
   - Depths: `/answers/config` lists the depths the asker may choose (every known role all three); a depth the role may not choose is a 403 with a sentence in `detail`.
   - Data states of the answer: loading (`asking`/`streaming` with the status line), empty (`empty`), error (`failed`, shown verbatim with Try again), success (`done`).

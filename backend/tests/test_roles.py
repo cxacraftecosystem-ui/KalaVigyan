@@ -6,12 +6,12 @@ from fastapi import HTTPException
 
 from app.api.routes.auth import role_for_email
 from app.core.config import get_settings
+from app.core.daily_allowances import daily_allowance
 from app.core.deps import MANAGE_TARGET_REFUSAL, refuse_unless_assignable, refuse_unless_manageable
 from app.core.roles import (
     ADMIN,
     ARTISAN,
     CAPABILITY_MIN_ROLE,
-    DAILY_ALLOWANCES,
     LOWEST_ROLE,
     MASTER_ADMIN,
     PROFESSOR,
@@ -24,7 +24,6 @@ from app.core.roles import (
     assignable_roles,
     can,
     capabilities_of,
-    daily_allowance,
     may_assign,
     may_manage_target,
     requires_two_factor,
@@ -231,6 +230,7 @@ def test_daily_allowances_follow_the_table_when_one_is_set() -> None:
     assert daily_allowance(MASTER_ADMIN, "VIDEO") is None
 
 
+@pytest.mark.usefixtures("allowances_an_owner_might_set")
 def test_artisans_have_no_allowance_cap_and_do_not_fall_back_to_students() -> None:
     for resource in ("VOICE_SECONDS", "IMAGE", "VIDEO"):
         assert daily_allowance(ARTISAN, resource) is None
@@ -244,7 +244,9 @@ def test_admin_daily_allowances_when_set() -> None:
 
 
 def test_artisans_have_their_own_rows_and_no_cap_in_them() -> None:
-    assert DAILY_ALLOWANCES[ARTISAN] == {"VOICE_SECONDS": None, "IMAGE": None, "VIDEO": None}
+    assert [daily_allowance(ARTISAN, resource) for resource in ("VOICE_SECONDS", "IMAGE", "VIDEO")] == [
+        None
+    ] * 3
     assert DEFAULTS[ROLE_DAILY_USD][ARTISAN] is None
     assert set(DEFAULTS[ROLE_DAILY_USD]) == set(ROLE_RANK)
 
