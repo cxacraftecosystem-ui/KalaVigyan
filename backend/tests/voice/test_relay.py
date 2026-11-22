@@ -12,7 +12,7 @@ import pytest
 from app.core.shielded import ShieldedWork
 from app.providers.elevenlabs import ElevenLabs
 from app.voice.relay import NOT_HEARD, SPEECH_GRACE, RelayAudio, RelayDeps, relay_turn_events, turn_speech
-from app.voice.runtime import SpeechCache
+from app.voice.reply_audio import ReplyAudio
 from app.voice.sessions import VoiceRefused
 from app.voice.transcript import stored_transcript
 
@@ -32,6 +32,7 @@ from .fakes import (
     translation,
     translation_reply,
 )
+from .listen_fakes import MemoryObjects
 
 FIXTURES = Path(__file__).parent / "fixtures"
 REPLY_AUDIO = b"\xff\xfb" * 48_000
@@ -60,7 +61,7 @@ def deps(store: MemoryStore, voice: ElevenLabs, *, values: list[uuid.UUID] | Non
         tools=tools(),
         elevenlabs=voice,
         cipher=cipher(),
-        speech=SpeechCache(),
+        speech=ReplyAudio(MemoryObjects()),
         voice_id="voice_1",
         clock=lambda: NOW,
         ids=ids(*(values or [TURN_ID, ANSWER_ID])),
@@ -107,7 +108,7 @@ async def test_a_relay_turn_holds_a_minute_then_keeps_heard_and_spoken_seconds_a
     assert store.ledger[f"voice:{SESSION_ID}:{TURN_ID}:speech"].units == 6
     record = store.sessions[SESSION_ID]
     assert record.reserved_seconds == 9 and record.turn_count == 1
-    assert relay.speech.get(SESSION_ID, TURN_ID) == REPLY_AUDIO
+    assert await relay.speech.get(SESSION_ID, TURN_ID) == REPLY_AUDIO
     [turn] = stored_transcript(cipher(), record.transcript).turns
     assert turn["turnId"] == str(TURN_ID)
 
@@ -127,6 +128,18 @@ async def test_a_cached_reply_plays_free_and_a_new_synthesis_is_billed_under_its
     assert store.sessions[SESSION_ID].reserved_seconds == 9 + 6
     with pytest.raises(VoiceRefused):
         await turn_speech(store.sessions[SESSION_ID], ANSWER_ID, deps(store, voice))
+
+
+async def test_a_reply_kept_in_the_bucket_plays_from_another_process_without_speech() -> None:
+    store = live_store()
+    voice, paths = elevenlabs()
+    bucket = MemoryObjects()
+    await turn_text(store, replace(deps(store, voice), speech=ReplyAudio(bucket)))
+    other = replace(deps(store, voice, values=[uuid.uuid4()]), speech=ReplyAudio(bucket))
+    assert await turn_speech(store.sessions[SESSION_ID], TURN_ID, other) == REPLY_AUDIO
+    assert (len(paths), store.sessions[SESSION_ID].reserved_seconds) == (2, 9)
+    assert list(bucket.stored) == [f"media/voice-replies/{SESSION_ID}/{TURN_ID}/reply.mp3"]
+    assert bucket.stored[f"media/voice-replies/{SESSION_ID}/{TURN_ID}/reply.mp3"][1] == "audio/mpeg"
 
 
 async def test_a_reply_is_not_synthesised_again_after_the_call_and_its_grace() -> None:

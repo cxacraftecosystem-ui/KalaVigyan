@@ -121,6 +121,28 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
   }
 
   rule {
+    id     = "expire-narration"
+    status = "Enabled"
+    filter {
+      prefix = "media/narration/"
+    }
+    expiration {
+      days = var.narration_days
+    }
+  }
+
+  rule {
+    id     = "expire-voice-replies"
+    status = "Enabled"
+    filter {
+      prefix = "media/voice-replies/"
+    }
+    expiration {
+      days = var.voice_reply_days
+    }
+  }
+
+  rule {
     id     = "expire-exports"
     status = "Enabled"
     filter {

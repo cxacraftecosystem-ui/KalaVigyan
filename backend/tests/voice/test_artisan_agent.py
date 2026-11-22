@@ -13,7 +13,7 @@ from app.voice.artisan_reply import ArtisanTools
 from app.voice.artisan_session import ArtisanRefused, ConversationDeps
 from app.voice.artisan_transcript import open_transcript
 from app.voice.binding import ARTISAN_NONCE_CONTEXT, nonce_hash, session_nonce
-from app.voice.runtime import SpeechCache
+from app.voice.reply_audio import ReplyAudio
 
 from .artisan_fakes import CONVERSATION_ID, MemoryArtisanStore, conversation, kalavigyan_turn as asked, sealed
 from .fakes import (
@@ -29,6 +29,7 @@ from .fakes import (
     session,
     tools,
 )
+from .listen_fakes import MemoryObjects
 from .test_artisan_session import runtime, voice
 
 NOW = START + timedelta(seconds=150)
@@ -65,7 +66,7 @@ def deps(record: Any, ended: bool = False) -> ConversationDeps:
         runtime=runtime(),
         voice=voice("AGENT"),
         cipher=cipher(),
-        speech=SpeechCache(),
+        speech=ReplyAudio(MemoryObjects()),
         clock=lambda: NOW,
         ids=ids(*[uuid.UUID(int=n) for n in range(301, 330)]),
     )

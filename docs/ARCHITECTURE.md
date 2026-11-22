@@ -392,8 +392,9 @@ sequenceDiagram
 2. `voice/narration.py` picks each block's cited sentences, in reading order and each in its own
    language, and the cache id per block (piece content hash, model, voice, language).
    `voice/narration_cache.py` reads each block's manifest from `media/narration/<cacheId>/`.
-3. For the misses only, `voice/listen.py` holds the estimated `VOICE_SECONDS` under the reader's
-   `User` row lock (429 when too few are left), asks `ElevenLabs.narration`
+3. For the misses only, `voice/listen.py` takes each block's lease in the bucket
+   (`voice/narration_lease.py`; a block another request is making is waited for, not paid again),
+   holds the estimated `VOICE_SECONDS` under the reader's `User` row lock (429 when too few are left), asks `ElevenLabs.narration`
    (`/with-timestamps`, `eleven_v4`) for each part of at most 2,000 characters, stores the audio
    and then the manifest, and settles the hold to the audio's seconds.
 4. The answer is one track per part: a one-hour presigned link and the words with their times,

@@ -175,8 +175,11 @@ Decision 0017; contract `docs/contracts/voice.md`.
   box `.env` (`sudo kv-render-env`); no model call or key is needed.
 - Listen (decision 0035) needs only `ELEVENLABS_API_KEY` (Settings, API keys) and `S3_BUCKET`. Its
   audio lives under `media/narration/<cacheId>/` in the media bucket (part MP3s, then
-  `narration.json`); deleting a folder only makes the next listener synthesise it again. The
-  voice is `AppSetting` `voice.voice_id`; changing it starts a new cache.
+  `narration.json`, and a `lease.json` only while one request makes it); deleting a folder only
+  makes the next listener synthesise it again, and the bucket's `expire-narration` rule deletes
+  every narration object a year after it was written (`narration_days`, decision 0140). The voice
+  is `AppSetting` `voice.voice_id`; changing it starts a new cache. A voice call's reply audio is
+  kept under `media/voice-replies/` for a day (`expire-voice-replies`, `voice_reply_days`).
 - Film scores (decision 0058) use the same key through the media router: Settings, AI routing
   shows Film music (`music_v2_5`) and Film sound effects (`eleven_text_to_sound_v3`), seeded by
   migration `0022_elevenlabs_media`. The restricted key needs the Music and Sound Effects

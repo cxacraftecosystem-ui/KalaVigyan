@@ -494,16 +494,6 @@ Last reviewed: 2026-11-22.
   the ElevenLabs conversation when the row ends, once the spike shows how; date settlement rows to
   the call's day.
 
-### Voice state held per process
-
-- **What:** claim packs (10 minutes), relay reply audio (15 minutes, 32 replies) and the ElevenLabs
-  reachability (1 minute) are held per API process. A reply missing from that process's cache
-  (another worker, a handover, eviction) is synthesised again, only while the call is live or two
-  minutes after it ended, billed under its own key and limited to 60 replays in 10 minutes
-  (decision 0022).
-- **Clears it:** keep reply audio in the media bucket under a short lifecycle rule, so a cache miss
-  never calls text to speech.
-
 ### Voice settings have no screen
 
 - **What:** `voice.transport`, `voice.max_live_sessions` and `voice.voice_id` are `AppSetting` rows set
@@ -978,23 +968,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** after the deploy, press Listen on one English and one Hindi Kutch Ajrakh answer;
   if `eleven_v4` is refused, set `NARRATION_MODEL` to `eleven_v4_turbo`; replace the fixture
   with the recorded answer.
-
-### Two readers missing the same block both pay for it
-
-- **What:** the narration cache is checked, then filled; two requests that miss the same block at
-  the same moment both synthesise it and both are billed (the second write wins, both are valid).
-- **Why left:** rare until many readers open the same new answer at once; a lock across processes
-  needs a table or a lease.
-- **Clears it:** an in-flight lease per cache id (a row with a short expiry, or an S3 conditional
-  put with `If-None-Match`) so the second request waits for the first.
-
-### Narration objects never age out
-
-- **What:** `media/narration/<cacheId>/` objects stay forever; a block that changes (a claim
-  retracted, a translation corrected) gets a new cache id and the old audio is orphaned.
-- **Why left:** the bucket lifecycle is Terraform, which agents do not change; the cost is small.
-- **Clears it:** a lifecycle rule expiring `media/narration/` objects not read for a year, or a
-  sweep of cache ids no stored explainer or piece names.
 
 ### Listen has no fallback voice
 

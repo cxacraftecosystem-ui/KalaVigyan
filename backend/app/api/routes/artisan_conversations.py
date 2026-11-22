@@ -243,7 +243,8 @@ async def custom_llm(
 def _deps(
     store: SqlVoiceStore, artisans: SqlArtisanStore, runtime: VoiceRuntime, voice: VoiceSettings
 ) -> ConversationDeps:
-    if voice.cipher is None:
+    replies = runtime.replies()
+    if voice.cipher is None or replies is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, ARTISAN_MESSAGES["not_configured"])
     return ConversationDeps(
         store=store,
@@ -251,7 +252,7 @@ def _deps(
         runtime=runtime,
         voice=voice,
         cipher=voice.cipher,
-        speech=runtime.speech,
+        speech=replies,
         clock=utc_now,
     )
 

@@ -95,7 +95,7 @@ async def conversation_speech(
     now = deps.clock()
     if not (record.live_at(now) or (record.ended_at is not None and now < record.ended_at + SPEECH_GRACE)):
         raise ArtisanRefused("speech_gone")
-    cached = deps.speech.get(record.id, turn_id)
+    cached = await deps.speech.get(record.id, turn_id)
     if cached is not None:
         return cached
     turn = open_transcript(deps.cipher, conversation.transcript).turn(turn_id)
@@ -111,7 +111,7 @@ async def conversation_speech(
     units = capped_seconds(speech_seconds(len(audio)), remaining)
     key = relay_replay_key(record.id, turn_id, deps.ids())
     await deps.store.reserve(record.id, ledger_entry(record, units=units, key=key))
-    deps.speech.put(record.id, turn_id, audio)
+    await deps.speech.put(record.id, turn_id, audio)
     return audio
 
 
@@ -281,7 +281,7 @@ class _ArtisanTurn:
             units = capped_seconds(speech_seconds(len(audio)), await self._remaining(self.base.clock()))
             seconds = (ledger_entry(session, units=units, key=relay_speech_key(session.id, reply.turn_id)),)
             self.billed += units
-            self.base.speech.put(session.id, reply.turn_id, audio)
+            await self.base.speech.put(session.id, reply.turn_id, audio)
         start = round((self.base.clock() - session.started_at).total_seconds() * MS)
         spoken_ms = round(audio_seconds(len(audio)) * MS) if audio else 0
         turn = transcript_turn(reply, start_ms=start, end_ms=start + spoken_ms)

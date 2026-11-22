@@ -260,8 +260,10 @@ recorded at the session's `audioBitsPerSecond` and sent as soon as it reaches ni
   call ends at its `maxDurationSeconds` with `end_call` (`quota` when the day's seconds cut it
   short, else `turns`) or at `MAX_TURNS`.
 - `RELAY`: a turn bills its audio as above (the hold, then the refund) plus the reply audio's
-  seconds (bytes at 128 kbit/s, rounded up) under `voice:<sessionId>:<turnId>:speech`. Each later
-  synthesis of the same reply (a cache miss on the speech route) is billed again under
+  seconds (bytes at 128 kbit/s, rounded up) under `voice:<sessionId>:<turnId>:speech`. The reply
+  audio is kept in the media bucket at `media/voice-replies/<sessionId>/<turnId>/reply.mp3` for a
+  day (decision 0140), so the speech route of any API process plays it free; only a reply whose
+  audio was never kept (its text to speech or its store failed) is synthesised again, billed under
   `voice:<sessionId>:<turnId>:speech:<replay id>`, capped at what is left today.
 - Exhaustion mid-call ends it (`end_call`, or `sessionEnded` in relay); a new session needs 30 s.
 
@@ -329,6 +331,7 @@ document), or one section of it, through `ElevenLabs.narration` (`eleven_v4`, ch
 | What is read | the whole answer opens with its lede (block `lede`), then each section's blocks; one section reads only its own; each block's cited sentences in reading order (prose, a ladder's stage sentences) except a hypothesis, which only the page shows with its Hypothesis badge (decision 0140); pictures, titles and labels are not read; a translated sentence in the explainer's language, an untranslated one in English, one request per language |
 | Parts | whole sentences, at most `PART_CHARACTERS` (2,000) characters and one language each; neighbours' text as `previous_text` and `next_text`; one track per part |
 | Words | runs of non-space characters of a sentence; `start` the first character's start, `end` the last character's end, seconds to the millisecond, never earlier than the previous word |
+| One maker | a request that misses a block puts `media/narration/<cacheId>/lease.json` (`NarrationLease {schemaVersion 1, cacheId, takenAt}`) only where none is (`If-None-Match: *`); a second request that finds a live lease holds no seconds and polls for the manifest each second until the lease lapses at 120 s, then makes the block itself, taking the lapsed lease over; the maker deletes the lease once the manifest is stored or the making fails (decision 0140) |
 | Cache | per block: SHA-256 of `kalavigyan-narration`, `NARRATION_VERSION` (2 since hypotheses left Listen), voice id, explainer language and piece content hash (U+001F between); parts at `media/narration/<cacheId>/KalaVigyan_Explainer_<date>_<HHMM>_Narration_Part-NN.mp3`, then `narration.json` (the `NarrationManifest`) last; presigned GET links of 3,600 s |
 | Seconds | a cache hit is free; misses hold `ceil(characters × 60 / 1000)` `VOICE_SECONDS` under `listen:<requestId>:hold` (429 + `Retry-After` until midnight IST when less is left), then `listen-refund:<requestId>` or `listen-settle:<requestId>` settle to the audio (bytes at 128 kbit/s); Master Admin never refused |
 | Answers | 200 `ListenScript {schemaVersion 1, answerId, language, tracks[{blockId, audioUrl, durationSeconds, words[{sentenceId, text, start, end}]}]}` (`schemas/listen.py`, `shared/listen.script.golden.json`, `frontend/lib/listen.ts`); 404 another reader's answer, no explainer, another language or nothing to read; 422 a malformed `language` or `section`; 503 the bucket, key or ElevenLabs failing |

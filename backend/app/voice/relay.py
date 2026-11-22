@@ -17,7 +17,7 @@ from app.services.answering import status_message
 from .audio import upload_floor_seconds
 from .privacy import TranscriptCipher, heard_text
 from .records import SessionRecord, TurnClaim, TurnHold, TurnSave, VoiceStore
-from .runtime import SpeechCache
+from .reply_audio import ReplyAudio
 from .seconds import (
     VOICE_SECONDS,
     capped_seconds,
@@ -62,7 +62,7 @@ class RelayDeps:
     tools: TurnTools
     elevenlabs: ElevenLabs
     cipher: TranscriptCipher
-    speech: SpeechCache
+    speech: ReplyAudio
     voice_id: str
     clock: Clock
     ids: Callable[[], uuid.UUID] = uuid.uuid4
@@ -196,7 +196,7 @@ class _RelayTurn:
             key = relay_speech_key(self.record.id, self.turn_id)
             seconds = (ledger_entry(self.record, units=units, key=key),)
             self.billed += units
-            self.deps.speech.put(self.record.id, self.turn_id, audio)
+            await self.deps.speech.put(self.record.id, self.turn_id, audio)
         await self.deps.store.save_turn(
             self.record.id, TurnSave(merge=merge, answer=turn.answer(latency), seconds=seconds)
         )
@@ -233,7 +233,7 @@ async def turn_speech(record: SessionRecord, turn_id: uuid.UUID, deps: RelayDeps
     now = deps.clock()
     if not _speakable(record, now):
         raise VoiceRefused("speech_gone")
-    cached = deps.speech.get(record.id, turn_id)
+    cached = await deps.speech.get(record.id, turn_id)
     if cached is not None:
         return cached
     spoken = stored_transcript(deps.cipher, record.transcript).spoken_of(turn_id)
@@ -244,7 +244,7 @@ async def turn_speech(record: SessionRecord, turn_id: uuid.UUID, deps: RelayDeps
         raise VoiceRefused("quota", retry_after=seconds_until_next_day(now))
     audio = await deps.elevenlabs.speech(spoken, voice_id=deps.voice_id, language=record.language)
     await turn.bill(speech_seconds(len(audio)), relay_replay_key(record.id, turn_id, deps.ids()))
-    deps.speech.put(record.id, turn_id, audio)
+    await deps.speech.put(record.id, turn_id, audio)
     return audio
 
 

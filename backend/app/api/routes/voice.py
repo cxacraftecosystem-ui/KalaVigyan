@@ -272,14 +272,15 @@ def _tools(request: Request, runtime: VoiceRuntime, store: SqlVoiceStore, record
 def _relay_deps(
     request: Request, runtime: VoiceRuntime, store: SqlVoiceStore, voice: VoiceSettings, record: SessionRecord
 ) -> RelayDeps:
-    if voice.cipher is None:
+    replies = runtime.replies()
+    if voice.cipher is None or replies is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, MESSAGES["not_configured"])
     return RelayDeps(
         store=store,
         tools=_tools(request, runtime, store, record),
         elevenlabs=runtime.elevenlabs(voice),
         cipher=voice.cipher,
-        speech=runtime.speech,
+        speech=replies,
         voice_id=voice.voice_id,
         clock=utc_now,
         shield=request.app.state.shielded_work,

@@ -86,6 +86,18 @@ variable "export_days" {
   default     = 7
 }
 
+variable "narration_days" {
+  description = "Days a Listen narration part or manifest under media/narration/ is kept; a block heard again after that is spoken once more."
+  type        = number
+  default     = 365
+}
+
+variable "voice_reply_days" {
+  description = "Days a voice call's reply audio under media/voice-replies/ is kept; a reply plays for at most two minutes after its call ends."
+  type        = number
+  default     = 1
+}
+
 variable "deploy_artifact_days" {
   description = "Days a release tarball or deploy log under deploy/ is kept."
   type        = number
