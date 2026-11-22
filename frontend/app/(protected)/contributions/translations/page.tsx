@@ -1,6 +1,5 @@
 "use client";
 
-import { Languages } from "lucide-react";
 
 import { OpenWorkStarts } from "@/components/contributions/OpenWorkStarts";
 import { FormPending } from "@/components/contributions/ProposalFields";
@@ -28,7 +27,6 @@ export default function TranslatePage() {
       <PageHeader
         title="Translate a page"
         description="A page in another language is the same page: each sentence translated from its English sentence, keeping its citations, numbers, names and quotes. A reviewer who reads the language approves it."
-        icon={<Languages className="h-5 w-5" aria-hidden />}
       />
       <div className="grid gap-12">
         <OpenWorkStarts kinds={TRANSLATE_KINDS} subjects={PAGE_SUBJECTS} disabled={work.busy} onPick={(task) => void work.startFrom(task)} />
