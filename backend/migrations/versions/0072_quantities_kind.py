@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from alembic import op
 
 revision: str = "0072_quantities_kind"
-down_revision: str | Sequence[str] | None = "0071_understand_and_answer_rows"
+down_revision: str | Sequence[str] | None = "0074_mcp_activity"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

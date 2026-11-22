@@ -51,6 +51,7 @@ flowchart LR
 | Search | SearXNG at `SEARXNG_URL` (`http://127.0.0.1:8888`) with JSON enabled: `/search?q=…&format=json`. The API process calls it (`sources/web/searxng.py`); Brave is the fallback when `BRAVE_SEARCH_API_KEY` is set. |
 | Redis | `REDIS_URL` (`redis://127.0.0.1:6379/0`), loopback only, 256 MB LRU. Treat it as a cache. The job queue stays in Postgres (PLAN §3). |
 | Request body | nginx accepts up to 200 MB. Large media goes to S3 directly. |
+| Logs | Each process logs JSON lines to stdout (`core/logging.configure_logging`), never a secret, statement parameter or request body (`redact_secrets`, the engine's `hide_parameters`, the request line's masked capability tokens). Each unit names itself with `SyslogIdentifier` (`kv-api`, `kv-worker`, `kv-fetcher`, `kv-contributions`); journald forwards to rsyslog, which writes `/var/log/kalavigyan/<identifier>.log`, and the CloudWatch agent ships those and nginx's `kalavigyan-access.log` and `error.log` to `/kalavigyan/<service>` (30 days). A new process's identifier needs its line in `infra/deploy/logs/rsyslog.conf`, `cloudwatch-agent.json` and `infra/terraform/logs.tf` (decision 0150, RUNBOOK Logs). |
 
 ## Frontend
 
@@ -68,6 +69,7 @@ flowchart LR
 | When checks run and deploys start | `.github/workflows/backend-checks.yml`, `deploy-backend.yml` and `deploy-web.yml`, and `frontend/vercel.json` |
 | How a release starts, migrates, seeds and switches | `infra/deploy/release.sh` and `infra/deploy/blue_green.sh`; `backend/tests/test_deploy_page_order.py` holds the order of its page steps |
 | The box's processes | `infra/deploy/units/` (`kv-api@`, `kv-worker`, `kv-fetcher`, `kv-contributions`, the watchdog), installed on every release |
+| What the box logs and ships | `backend/tests/test_log_shipping.py` (units, rsyslog, the agent, Terraform and nginx agree; capability tokens masked), `backend/tests/test_log_redaction.py` and `backend/tests/db/test_log_safety_db.py` |
 | The environment's names | `infra/.env.example` and `infra/scripts/seed_secrets.py` |
 
 Re-read it when a workflow's trigger, a box unit, an environment name or the web build changes.

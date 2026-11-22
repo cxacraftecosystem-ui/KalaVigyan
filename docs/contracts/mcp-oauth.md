@@ -11,6 +11,7 @@ the people who connect a client.
 | The read tools and the protocol, unchanged for a call without a token | [knowledge-api.md](knowledge-api.md) |
 | The terms a person accepts | [legal/mcp-terms-of-use.md](../legal/mcp-terms-of-use.md) |
 | Abandoned registrations removed every night | [nightly-upkeep.md](nightly-upkeep.md), 3a |
+| What each call keeps, how long, and the MCP activity screen | [decision 0150](../decisions/0150-mcp-activity-and-box-logs.md); [nightly-upkeep.md](nightly-upkeep.md), 3d |
 
 ```mermaid
 %%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
@@ -270,19 +271,54 @@ its own documentation gives them).
   rotated tokens so a refresh does not reset it, and across every API process and both slots
   (decision 0139), then 429 with `Retry-After`
   (`core/rate_limit.mcp_connection_attempt`). It protects the service and is not a spend cap.
-- **Audit**: each `tools/call` with a token writes `McpToolCall {grantId, tokenId, tool, outcome,
-  calledAt}`, outcome `OK`, `TOOL_ERROR` or `PROTOCOL_ERROR`. A name that is not a tool is
+- **Audit**: each `tools/call` with a token writes `McpToolCall {grantId, tokenId, clientName,
+  tool, outcome, reason, calledAt}`, outcome `OK`, `TOOL_ERROR` or `PROTOCOL_ERROR`, and
+  `clientName` the connection's `OAuthClient.name` (decision 0150). A name that is not a tool is
   stored as `(unknown)`. Arguments and results are never stored. `OAuthGrant.lastUsedAt` moves at
   most once a minute.
+- **The reason of a failed call** (`api/mcp_auth.call_reason`, `research/mcp_activity.failure_reason`)
+  is the refusal's own message: a tool error's text, a protocol error's `message`, or "The call was
+  sent as a notification, so it had no reply." for a `tools/call` sent without an id. Every string
+  the call sent as an argument (and the name of a tool that does not exist) is replaced by `…`,
+  email addresses and phone or Aadhaar-like numbers become `[email]` and `[number]`
+  (`research/evidence.without_personal_data`), key and token shapes become `[redacted]`
+  (`core/logging.redact_secrets`), and the text is cut to 300 characters ending in `…`. A call
+  the server failed while answering is rolled back and recorded as `PROTOCOL_ERROR` with "The
+  server failed while answering; call the tool again." (`record_failed_call`), then the failure
+  goes on as before (a 500, or the streamed JSON-RPC error). A call that succeeded keeps no reason,
+  which the table's check holds.
+- **Kept**: a call is kept 180 days; every night the finished India days are counted into
+  `McpToolCallDay {day, clientName, tool, outcome, calls}`, kept for good, and the counted calls
+  older than 180 days are deleted (`nightly-upkeep.md`, 3d).
+
+## MCP activity
+
+`GET /api/settings/mcp-activity?days=7|30|180[&client=<name>|&connection=<id>]`, Master Admin only
+(`require_master_admin`), answers `McpActivity {schemaVersion 1, days, firstDay, lastDay, unit
+(day, or week for 180 days), client, connection, keptDays, series[{start, ok, toolErrors,
+protocolErrors}], tools[{tool, …}], clients[{clientName, connections, lastUsedAt, …}],
+connections[{id, clientName, accountName, accountEmail, scopes, connectedAt, lastUsedAt, ended,
+…}], failures[{calledAt, clientName, connectionId, tool, outcome, reason}]}`, golden
+`shared/mcp.activity.golden.json`; any other period, or a client and a connection together, is 422.
+Days are India days (`core/clock`). The series and tools follow the scope: by client they read
+the daily counts for counted days and the calls of the days not yet counted; by connection they read
+the calls (180 days). Clients and connections are the whole period; a connection is listed while it
+is live or made a call in the period, at most 200, by last use. Failures are the newest 50 in the
+scope. The screen is `<WEB>/admin/mcp` (`app/(protected)/admin/mcp/*`, `lib/mcpActivityContract.ts`,
+`lib/mcpActivityView.ts`), linked from the settings hub; the period and the scope live in its
+address.
 
 ## Storage
 
 Migration `0037_oauth`: `OAuthClient`, `OAuthGrant` (a connection: client, account, scopes,
 resource, the account's token version, connected, last used, expires, revoked), `OAuthCode`,
 `OAuthToken` (`ACCESS` or `REFRESH`, with its scopes), `McpTermsAcceptance`, `McpToolCall`, all
-with row-level security on and no grants to `anon` or `authenticated`. Codes and tokens are
+with row-level security on and no grants to `anon` or `authenticated`. Migration
+`0074_mcp_activity` adds `McpToolCall.clientName` (filled from each call's connection) and
+`reason` (300 characters, only on a failure) and the table `McpToolCallDay` (primary key day,
+client name, tool and outcome; `calls` at least 1), the same way protected. Codes and tokens are
 random (`kvmcp_ac_`, `kvmcp_at_`, `kvmcp_rt_` and 32 random bytes) and stored only as their
-SHA-256; they are never logged.
+SHA-256; they are never logged, and `redact_secrets` masks their shape in any log line.
 
 ## Code
 
@@ -293,13 +329,17 @@ SHA-256; they are never logged.
   holding times, the fetcher route's contract).
 - Services: `oauth_clients` (registered and published clients), `oauth_client_documents` (reading
   through the fetcher and holding documents), `oauth_consent`, `oauth_tokens`, `oauth_bearer`,
-  `oauth_connections`. Fetcher: `fetcher/client_documents.py`.
+  `oauth_connections`; the activity: `research/mcp_activity.py` (the reason rule, the series and
+  the contract), `services/mcp_activity.py` and `mcp_activity_connections.py` (the reads),
+  `mcp_activity_days.py` (India days) and `mcp_activity_upkeep.py` (the night). Fetcher:
+  `fetcher/client_documents.py`.
 - Routes: `api/routes/oauth_well_known.py`, `api/routes/oauth.py`, `api/routes/oauth_consent.py`,
-  `api/routes/mcp.py`; `api/oauth_hosts.py` (paths and URLs), `api/oauth_wire.py` (form and error
-  bodies), `api/mcp_auth.py` (the bearer, the challenges and the audit), `api/mcp_cors.py` (browser
-  clients); the clean-up `services/upkeep_clients.py`.
+  `api/routes/mcp.py`, `api/routes/mcp_activity.py`; `api/oauth_hosts.py` (paths and URLs),
+  `api/oauth_wire.py` (form and error bodies), `api/mcp_auth.py` (the bearer, the challenges, the
+  audit and the reason), `api/mcp_cors.py` (browser clients); the clean-up
+  `services/upkeep_clients.py`.
 - Web: `app/oauth/authorize/page.tsx`, `components/oauth/*`, `lib/oauthContract.ts`,
-  `lib/oauthConsent.ts`.
+  `lib/oauthConsent.ts`; the activity screen `app/(protected)/admin/mcp/*`.
 - Tests: `tests/mcp/test_oauth_client_documents.py` (the rules on hand-written documents),
   `tests/fetcher/test_client_documents.py` (the fetcher route),
   `tests/mcp/test_oauth_client_document_reads.py` (through the fetcher to the API, held and
@@ -312,6 +352,8 @@ SHA-256; they are never logged.
 | Metadata, registration, authorization, tokens and revocation | `backend/tests/mcp/test_oauth_rules.py` and `test_oauth_routes.py` |
 | Sessions, rotation and the token version | `backend/tests/mcp/test_oauth_sessions.py` and `backend/tests/db/test_oauth_db.py` |
 | The bearer on the MCP server and its challenges | `backend/tests/mcp/test_mcp_bearer_route.py` |
+| A failed call's reason, its client, and a call the server failed | `backend/tests/mcp/test_mcp_activity_reason.py` and `backend/tests/db/test_mcp_activity_db.py` |
+| The activity route, its golden and its series | `backend/tests/mcp/test_mcp_activity_route.py`, `frontend/e2e/mcp-activity-unit.spec.ts` and `backend/tests/db/test_mcp_activity_db.py` |
 | Browser clients from any origin | `backend/tests/mcp/test_mcp_cors.py` |
 | Published identities, on hand-written documents, through the fetcher and end to end | `backend/tests/mcp/test_oauth_client_documents.py`, `backend/tests/fetcher/test_client_documents.py`, `backend/tests/mcp/test_oauth_client_document_reads.py` and `backend/tests/db/test_oauth_metadata_clients_db.py` |
 | The terms of use as the consent screen shows them | `backend/tests/mcp/test_mcp_terms_copy.py` |

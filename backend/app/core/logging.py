@@ -25,7 +25,11 @@ _SECRET_PATTERNS = (
     re.compile(r"AIza[0-9A-Za-z_\-]{20,}"),
     re.compile(r"(?i)(bearer\s+)[A-Za-z0-9._\-]{16,}"),
     re.compile(r"(?i)([?&](?:api[_-]?key|insttoken|access[_-]?token)=)[^&\s\"'#]+"),
+    re.compile(r"kv(?:mcp_(?:ac|at|rt)|1)_[A-Za-z0-9_\-]{16,}"),
+    re.compile(r"(?m)^(DETAIL:\s*).+$"),
 )
+SECRET_PATH_PARAMS = frozenset({"token"})
+REDACTED = "[redacted]"
 
 _STANDARD_ATTRS = frozenset(
     {
@@ -59,8 +63,17 @@ _STANDARD_ATTRS = frozenset(
 def redact_secrets(value: str) -> str:
     redacted = value
     for pattern in _SECRET_PATTERNS:
-        redacted = pattern.sub(lambda m: (m.group(1) if m.groups() else "") + "[redacted]", redacted)
+        redacted = pattern.sub(lambda m: (m.group(1) if m.groups() else "") + REDACTED, redacted)
     return redacted
+
+
+def logged_path(scope: Scope) -> str | None:
+    path = scope.get("path")
+    params = scope.get("path_params") or {}
+    hidden = {str(value) for name, value in params.items() if name in SECRET_PATH_PARAMS}
+    if path is None or not hidden:
+        return path
+    return "/".join(REDACTED if part in hidden else part for part in path.split("/"))
 
 
 def current_request_id() -> str | None:
@@ -170,7 +183,7 @@ class RequestContextMiddleware:
                 "request",
                 extra={
                     "method": scope.get("method"),
-                    "path": scope.get("path"),
+                    "path": logged_path(scope),
                     "status": status_holder["status"],
                     "durationMs": round((time.perf_counter() - started) * 1000, 1),
                 },

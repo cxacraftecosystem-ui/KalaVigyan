@@ -12,6 +12,7 @@ Environment=MALLOC_ARENA_MAX=2
 Environment=PYTHONUNBUFFERED=1
 EnvironmentFile=/opt/kalavigyan/.env
 Environment=KV_PROCESS=contributions
+SyslogIdentifier=kv-contributions
 Environment=CONTRIBUTION_WORKERS=4
 ExecStart=/opt/kalavigyan/current/backend/.venv/bin/python -m app.scripts.contribution_worker --concurrency ${CONTRIBUTION_WORKERS}
 MemoryAccounting=yes

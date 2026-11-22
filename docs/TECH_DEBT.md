@@ -511,13 +511,12 @@ Last reviewed: 2026-11-22.
 
 ### Yahoo sign-in not yet seen running
 
-- **What:** migration 0010 has been rendered offline only; the Yahoo DB tests
-  (`backend/tests/db/test_oidc_sign_in_db.py`) run on GitHub Actions, and no real Yahoo account
-  has signed in: the token endpoint's acceptance of the secret in the form body and of the PKCE
-  parameters is taken from DR, where it has run since 2026-10-10.
-- **Why left:** the Yahoo app is not registered yet and nothing runs on the laptop.
-- **Clears it:** register the app (`docs/RUNBOOK.md`, Yahoo sign-in), deploy, and sign in once
-  with a rostered Yahoo address.
+- **What:** the Yahoo app is registered and live: `YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET` and
+  `NEXT_PUBLIC_YAHOO_CLIENT_ID` were set on 2026-11-16 and production's `/auth/config` reports
+  `yahooEnabled` (checked 2026-11-23). No account has signed in with Yahoo yet (production has
+  password and Google accounts only), so the token endpoint's acceptance of the secret in the form
+  body and of the PKCE parameters is still taken from DR, where it has run since 2026-10-10.
+- **Clears it:** one sign-in with a rostered Yahoo address on the production login page.
 
 ## First-password proof (decision 0028)
 

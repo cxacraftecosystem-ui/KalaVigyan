@@ -109,3 +109,9 @@ variable "cloudfront_price_class" {
   type        = string
   default     = "PriceClass_200"
 }
+
+variable "log_retention_days" {
+  description = "Days CloudWatch Logs keeps each of the box's log groups."
+  type        = number
+  default     = 30
+}

@@ -22,6 +22,7 @@ This page lists what is provisioned, how to deploy, and how to roll back. It hol
 | Terraform state | `s3://kalavigyan-tfstate-626159998512/kalavigyan/infra.tfstate` (versioned, private, S3 lockfile). DR's and FR's state are not touched. |
 | IAM | user `kalavigyan-media` (API's S3 key), role + instance profile `kalavigyan-box`, role `kalavigyan-deploy` (GitHub OIDC, `repo:cxacraftecosystem-ui/KalaVigyan:ref:refs/heads/main` only) |
 | Parameter Store | `/kalavigyan/env/*` (SecureString, one parameter per env key, the box's source of truth). `/kalavigyan/db-password` (Supabase DB password backup) |
+| CloudWatch Logs | `/kalavigyan/kv-api`, `kv-worker`, `kv-fetcher`, `kv-contributions`, `nginx-access`, `nginx-error`, each kept 30 days; the box role may write them (inline policy `kalavigyan-box-logs`). See Logs |
 | Database | Supabase project `science-behind-craft`, ref `inqbqiqspgvhfamupwuc`, org `pifvglrcqwrizapmooik`, ap-south-1, Postgres 17.11 on Small compute (`max_connections` 90). Session pooler `aws-1-ap-south-1.pooler.supabase.com:5432`, user `postgres.inqbqiqspgvhfamupwuc`, pool size 30 (`max_client_conn` 400); see Connection budget |
 | Web | Vercel project `kalavigyan` (`prj_5hRNy7S9CS4fkhVVBRW5mbmAAUSd`), team `team_pcTf4Alb2DCIwq2IZcdu00dS`, root `frontend`, Node 26.x, no Git link, `https://kalavigyan.vercel.app` |
 | Repository | `github.com/cxacraftecosystem-ui/KalaVigyan` (deploys); mirror `github.com/ankits1802/science-behind-craft` (public, no deploys) |
@@ -41,6 +42,7 @@ This page lists what is provisioned, how to deploy, and how to roll back. It hol
 | Docker `searxng` | `127.0.0.1:8888`, image `searxng/searxng:2026.11.15-2d500cb6b`, settings `/etc/searxng/settings.yml` |
 | `/opt/cpython/<version>+<build>` | Standalone CPython (python-build-standalone, sha256-checked), one directory per interpreter a release has pinned in `infra/deploy/python.pin`: `3.15.2+20261110` from round 7 (decision 0118) beside `3.14.10+20261110`, which the box was built with and the releases before it still run. Nothing removes one. uv 0.13.9 in `/usr/local/bin` |
 | `/usr/local/sbin/kv-blue-green`, `kv-render-env` | Installed from `infra/deploy/` on every release |
+| `amazon-cloudwatch-agent`, rsyslog | Ship `/var/log/kalavigyan/*.log` and nginx's logs to CloudWatch Logs; their files are installed from `infra/deploy/logs/` on every release (see Logs) |
 | certbot | Installed, unused: TLS ends at CloudFront. It is there for a custom domain later. |
 
 ## Monographs
@@ -103,6 +105,81 @@ change it). Each process's SQLAlchemy pool opens connections as it needs them, u
 aws ssm start-session --target i-0a58a2feb528241aa --region ap-south-1
 sudo kv-blue-green status
 ```
+
+## Logs
+
+Every service on the box writes one JSON line per log record to its journal (`core/logging.py`).
+journald also forwards each line to rsyslog (`/etc/systemd/journald.conf.d/forward.conf`), which
+writes it, by the unit's `SyslogIdentifier`, to `/var/log/kalavigyan/<service>.log`
+(`/etc/rsyslog.d/20-kalavigyan.conf`; rotated daily and kept three days by
+`/etc/logrotate.d/kalavigyan`). nginx writes one JSON line per request to
+`/var/log/nginx/kalavigyan-access.log` (`/etc/nginx/conf.d/kalavigyan-logs.conf`) beside its own
+`access.log` and `error.log`. The CloudWatch agent (`amazon-cloudwatch-agent`, user `cwagent` in group
+`adm`) ships those six files to CloudWatch Logs, one group per service, each kept 30 days
+(decision 0150). The journal stays as it was: `journalctl -u kv-api@8000` still reads a colour on
+the box.
+
+| Group | What it holds |
+|---|---|
+| `/kalavigyan/kv-api` | both API colours: every log record, and one `request` line per request with `method`, `path`, `status`, `durationMs` and `requestId` |
+| `/kalavigyan/kv-worker` | the media queue and the daily voice upkeep |
+| `/kalavigyan/kv-fetcher` | the fetcher sandbox |
+| `/kalavigyan/kv-contributions` | the contribution queue's gates |
+| `/kalavigyan/nginx-access` | one line per request at the origin: `time`, `method`, `path`, `status`, `bytes`, `seconds`, `upstreamSeconds`, `requestId`, `agent` |
+| `/kalavigyan/nginx-error` | nginx's error log, less any line naming a capability route |
+
+Each group has one stream, named after the instance id. What never leaves the box: secrets
+(`redact_secrets` masks provider keys, bearer values, KalaVigyan's own `kvmcp_` and `kv1_` tokens,
+key and token query values and Postgres `DETAIL` lines, which name a refused row's values);
+statement parameters (the engine's `hide_parameters`); the capability token of a shared answer or
+lesson, a page preview, an upload link or an upload slot (masked in the API's request line by its
+route and in nginx's line by a map; an nginx error line naming one of those routes is dropped by the
+agent); request and response bodies, query strings, client addresses, referrers, cookies and
+`Authorization` headers, which no shipped line holds. `backend/tests/test_log_shipping.py` and
+`test_log_redaction.py` hold all of it.
+
+A new box installs rsyslog and the agent from `user_data.sh` (the version and SHA-256 in
+`infra/deploy/cloudwatch-agent.pin`, checked before it is installed); every release, the first one
+included, installs the files of `infra/deploy/logs/` and the pinned agent if it differs
+(`infra/deploy/ship_logs.sh`, run by `release.sh` after the environment is rendered). The rsyslog,
+logrotate and nginx files are checked before they are applied (`rsyslogd -N1`, `logrotate -d`,
+`nginx -t`), and the previous one comes back when its check refuses it. A release whose log step fails says so as a warning and goes on;
+nothing then ships until a release succeeds at it.
+
+**Searching.** In the console: CloudWatch, Logs Insights, region Asia Pacific (Mumbai), choose the
+groups. Every API line carries `requestId`, which the API also returns as `X-Request-ID` and nginx's
+line carries too, so one request is found across both. From a shell with the owner's credentials:
+
+```bash
+aws logs tail /kalavigyan/kv-api --since 1h --follow --region ap-south-1
+aws logs tail /kalavigyan/kv-api --since 24h --filter-pattern '{ $.level = "ERROR" }' --region ap-south-1
+aws logs tail /kalavigyan/nginx-access --since 6h --filter-pattern '{ $.status >= 500 }' --region ap-south-1
+```
+
+Logs Insights queries:
+
+| To find | Groups | Query |
+|---|---|---|
+| The latest errors | `kv-api`, `kv-worker`, `kv-contributions` | `fields @timestamp, @log, logger, message \| filter level = "ERROR" \| sort @timestamp desc \| limit 50` |
+| One request end to end | `kv-api`, `nginx-access` | `fields @timestamp, @log, message, path, status \| filter requestId = "<id>" \| sort @timestamp asc` |
+| Slow routes | `kv-api` | `filter message = "request" \| stats count(), pct(durationMs, 95) by path \| sort pct(durationMs, 95) desc \| limit 20` |
+| Server errors at the origin | `nginx-access` | `filter status >= 500 \| stats count() by path, status \| sort count() desc` |
+| An MCP connection's failures | `kv-api` | the MCP activity screen (`/admin/mcp`, Master Admin) already lists them with their reasons |
+
+**Cost.** Ingestion is about US$0.67 per GB in ap-south-1 (Standard class), with storage and Logs
+Insights scans billed apart. At today's volume that comes to a few dollars a month (the estimate of
+2026-11-22, when the journal was the only copy and was capped at 500 MB); the groups'
+`IncomingBytes` metric gives the real figure:
+
+```bash
+aws cloudwatch get-metric-statistics --namespace AWS/Logs --metric-name IncomingBytes \
+  --dimensions Name=LogGroupName,Value=/kalavigyan/kv-api --statistics Sum --period 86400 \
+  --start-time "$(date -u -d '-7 days' +%FT%TZ)" --end-time "$(date -u +%FT%TZ)" --region ap-south-1
+```
+
+**On the box**: `sudo amazon-cloudwatch-agent-ctl -a status` shows whether the agent runs, and its
+own log is `/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log`; an `AccessDenied` or
+`ResourceNotFoundException` there means the Terraform below was not applied yet.
 
 ## Secrets
 
@@ -698,6 +775,10 @@ terraform plan      # must read "No changes" before any edit
 - The instance and the bucket have `prevent_destroy`.
 - `ami` and `user_data` are ignored after creation, so an edit to `user_data.sh` only affects a rebuilt box.
 - State holds the media user's secret and the origin header value. It lives only in the state bucket.
+- `logs.tf` holds the six log groups (`aws_cloudwatch_log_group.box`, retention `log_retention_days`
+  = 30) and the box role's `kalavigyan-box-logs` policy (create streams, put events, describe
+  streams, on those groups only). Apply it before the first release that ships the agent's files,
+  or the agent logs `ResourceNotFoundException` until it is applied; nothing else waits on it.
 
 Rebuilding the box:
 

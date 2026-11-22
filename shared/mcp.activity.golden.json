@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "days": 7,
+  "firstDay": "2026-11-16",
+  "lastDay": "2026-11-22",
+  "unit": "day",
+  "client": null,
+  "connection": null,
+  "keptDays": 180,
+  "series": [
+    { "ok": 4, "toolErrors": 0, "protocolErrors": 0, "start": "2026-11-16" },
+    { "ok": 0, "toolErrors": 0, "protocolErrors": 0, "start": "2026-11-17" },
+    { "ok": 12, "toolErrors": 1, "protocolErrors": 0, "start": "2026-11-18" },
+    { "ok": 0, "toolErrors": 0, "protocolErrors": 0, "start": "2026-11-19" },
+    { "ok": 7, "toolErrors": 0, "protocolErrors": 1, "start": "2026-11-20" },
+    { "ok": 0, "toolErrors": 0, "protocolErrors": 0, "start": "2026-11-21" },
+    { "ok": 9, "toolErrors": 2, "protocolErrors": 0, "start": "2026-11-22" }
+  ],
+  "tools": [
+    { "ok": 18, "toolErrors": 2, "protocolErrors": 0, "tool": "propose_facts" },
+    { "ok": 14, "toolErrors": 1, "protocolErrors": 0, "tool": "get_facts" },
+    { "ok": 0, "toolErrors": 0, "protocolErrors": 1, "tool": "(unknown)" }
+  ],
+  "clients": [
+    {
+      "ok": 28,
+      "toolErrors": 3,
+      "protocolErrors": 0,
+      "clientName": "Claude",
+      "connections": 2,
+      "lastUsedAt": "2026-11-22T09:15:00Z"
+    },
+    {
+      "ok": 4,
+      "toolErrors": 0,
+      "protocolErrors": 1,
+      "clientName": "ChatGPT",
+      "connections": 1,
+      "lastUsedAt": "2026-11-20T14:02:00Z"
+    }
+  ],
+  "connections": [
+    {
+      "ok": 28,
+      "toolErrors": 3,
+      "protocolErrors": 0,
+      "id": "8f3e2c1a-0000-4000-8000-000000000001",
+      "clientName": "Claude",
+      "accountName": "Ravi Shah",
+      "accountEmail": "ravi@example.org",
+      "scopes": ["read", "contribute"],
+      "connectedAt": "2026-11-10T06:30:00Z",
+      "lastUsedAt": "2026-11-22T09:15:00Z",
+      "ended": false
+    },
+    {
+      "ok": 4,
+      "toolErrors": 0,
+      "protocolErrors": 1,
+      "id": "8f3e2c1a-0000-4000-8000-000000000002",
+      "clientName": "ChatGPT",
+      "accountName": "Meera Iyer",
+      "accountEmail": "meera@example.org",
+      "scopes": ["read"],
+      "connectedAt": "2026-11-19T11:00:00Z",
+      "lastUsedAt": "2026-11-20T14:02:00Z",
+      "ended": false
+    },
+    {
+      "ok": 0,
+      "toolErrors": 0,
+      "protocolErrors": 0,
+      "id": "8f3e2c1a-0000-4000-8000-000000000003",
+      "clientName": "Claude",
+      "accountName": "Ravi Shah",
+      "accountEmail": "ravi@example.org",
+      "scopes": ["read"],
+      "connectedAt": "2026-10-02T08:00:00Z",
+      "lastUsedAt": null,
+      "ended": false
+    }
+  ],
+  "failures": [
+    {
+      "calledAt": "2026-11-22T09:10:00Z",
+      "clientName": "Claude",
+      "connectionId": "8f3e2c1a-0000-4000-8000-000000000001",
+      "tool": "propose_facts",
+      "outcome": "TOOL_ERROR",
+      "reason": "The quote is not in the source's text; read_source shows the text the gates read."
+    },
+    {
+      "calledAt": "2026-11-20T14:02:00Z",
+      "clientName": "ChatGPT",
+      "connectionId": "8f3e2c1a-0000-4000-8000-000000000002",
+      "tool": "(unknown)",
+      "outcome": "PROTOCOL_ERROR",
+      "reason": "no tool is named …; tools/list gives them"
+    }
+  ]
+}

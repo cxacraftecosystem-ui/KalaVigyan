@@ -5,13 +5,14 @@ quotes are re-verified against their sources, a fact none of whose quotes is fou
 from its pages until a quote is found again, a link that keeps failing gets its archived copy or
 becomes work, live open sources are archived before their links rot, orphaned research concepts are
 swept, MCP client registrations that never signed anyone in are
-removed, the monograph sections and components and the craft
+removed, each finished day's MCP calls are counted for good and calls older than 180 days are
+deleted, the monograph sections and components and the craft
 page snapshots and stored documents whose facts moved are rebuilt, and only the pages whose content
 moved are refreshed on the CDN; a night that changed nothing sends nothing. Answers stay live. Every step is bounded per night by a named
 constant, so a night's work and its load on other sites are known in advance.
 Operators and the engineers who add a step read it.
 
-Last reviewed: 2026-11-20.
+Last reviewed: 2026-11-23 (step 3d, decision 0150).
 
 | For | Read |
 |---|---|
@@ -26,7 +27,7 @@ Last reviewed: 2026-11-20.
 flowchart LR
   Q["1 Re-verify quotes"] --> H["1a Hold and heal"]
   H --> A["2 Archive sources"]
-  A --> O["3 Sweep orphans<br/>clients, buckets"]
+  A --> O["3 Sweep orphans<br/>clients, buckets, MCP calls"]
   O --> M["4 Reload monographs"]
   M --> P["5 Rebuild stale pages<br/>refresh work and gaps"]
   P --> B["6 Refresh the changed pages"]
@@ -59,6 +60,7 @@ The workflow runs `python -m app.scripts.nightly_upkeep` as the `kalavigyan` use
 | 3a. Remove abandoned MCP client registrations | `services/upkeep_clients.py` | `ABANDONED_CLIENTS_PER_NIGHT` = 1,000, oldest first; a client is abandoned `ABANDONED_CLIENT_AGE` = 30 days after registering | the `OAuthClient` rows deleted (their unexchanged codes go with them) |
 | 3b. Delete old allowance buckets | `services/upkeep_allowances.py`, `core/allowances.delete_old_buckets` | the allowance and rate-limit buckets (decision 0139) whose window started more than `KEPT_HOURS` = 24 hours before the current hour | the `AllowanceBucket` rows deleted |
 | 3c. Add the cost settled after an answer finished | `services/upkeep_costs.settle_late_costs` | the answers of the last `LATE_COST_WINDOW` = 7 days with a `requestId`, against that request's `UsageEvent` rows from `REQUEST_SPAN` = 1 hour before (decision 0146) | `Answer.costUsd` set to its request's summed `UsageEvent.costUsd` where they differ |
+| 3d. Count and prune MCP calls | `services/mcp_activity_upkeep.py` | `DAYS_COUNTED_PER_NIGHT` = 31 finished India days, oldest first; `CALLS_PRUNED_PER_NIGHT` = 20,000 calls, oldest first, each older than `CALLS_KEPT_DAYS` = 180 days and on a counted day | `McpToolCallDay` (one row per day, client, tool and outcome, kept for good); the `McpToolCall` rows deleted (`mcp-oauth.md`, Guards) |
 | 4. Reload monographs | `services/upkeep_pages.py` through `services/monograph_load.py` | `MONOGRAPHS_PER_NIGHT` = 20, a window that rotates by night | `ArticleSection`, `KnowledgePiece` (only what changed) |
 | 5. Rebuild stale craft pages | `services/upkeep_pages.py` through `services/craft_page_snapshots.py` | `PAGES_PER_NIGHT` = 60, oldest snapshot first | `CraftPageSnapshot` |
 | 5a. Refresh the field work | `services/open_work_refresh.py` | every subject, once | `TaskReservation.ending` `COMPLETED` for a live reservation of a `MISSING_FIELD` or `THIN_FIELD` task no longer open (`open-work.md`) |
@@ -167,6 +169,18 @@ no token) is deleted; the delete re-checks the rule in the same statement, so a 
 in between is kept. A client with a connection, even an expired or revoked one, stays: Settings and
 the audit still name it (`mcp-oauth.md`).
 
+### 3d. MCP calls
+
+A day is an India day (`core/clock`); it is finished once the night's run starts after its midnight.
+Each finished day that has calls and no count yet is counted, oldest first, into one
+`McpToolCallDay` row per client name, tool and outcome, in one statement that skips a row already
+there, so a second run counts nothing twice. A day is counted whole or not at all, and a day with
+counts is never counted again. Then the calls older than 180 days whose day is counted are deleted,
+oldest first; a call on a day not yet counted waits for its count, however old. The counts name the
+client, never the connection or the account, so they outlive a deleted account; a call itself goes
+with its connection. The MCP activity screen reads the counts for counted days and the calls for the
+rest (`mcp-oauth.md`, MCP activity).
+
 ### 4 and 5. Pages
 
 - Monographs (today Kutch Ajrakh, `scripts/build_monograph.SERVED_FOLDERS`) are reloaded from
@@ -221,6 +235,7 @@ The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
  fieldWork {subjects, tasks {MISSING_FIELD, THIN_FIELD}, priorities {HIGH, MEDIUM, LOW}, reservationsClosed},
  allowances {bucketsDeleted},
  lateCosts {answersUpdated},
+ mcpActivity {daysCounted, callsCounted, callsPruned},
  answerGaps {questions, dropped, embedded, embeddingError, joined, opened, answered, lapsed, open, reservationsClosed},
  sharedTerms {terms, crafts},
  refresh {ok, pages, refreshed, unrefreshed[], reason?}}
@@ -229,7 +244,8 @@ The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
 `ok` is false when a monograph or page failed to rebuild, the fetcher was away or a changed page
 could not be refreshed; an unreachable source or a failed archive is expected and only counted. An
 unset `WEB_REVALIDATE_SECRET` is reported (`reason`) and is not a failure. `--dry-run` prints `{ok, dryRun, sourcesDue,
-sourcesAtRisk, claimsHeld, sourcesRotten, monographs, pagesStale, clientsAbandoned, orphans[]}` and writes
+sourcesAtRisk, claimsHeld, sourcesRotten, monographs, pagesStale, clientsAbandoned, orphans[], mcpDaysToCount,
+mcpCallsToPrune}` and writes
 nothing.
 
 ## What the owner sets
@@ -270,6 +286,7 @@ the build as not triggered, and the admin control says so.
 | A contributor's `get_facts` keeps a held fact and a reader's leaves it out; one hold rule | `backend/tests/db/test_claim_view_reads_db.py`, `backend/tests/mcp/test_held_fact_reads.py` and `backend/tests/upkeep/test_one_hold_rule.py` |
 | Archives and orphaned concepts | `backend/tests/upkeep/test_archive_and_orphans.py` and `backend/tests/db/test_orphan_concepts_db.py` |
 | Abandoned client registrations | `backend/tests/db/test_upkeep_clients_db.py` |
+| Counting and pruning MCP calls, and their bounds | `backend/tests/db/test_mcp_activity_db.py` |
 | The rotating monograph window and stale page rebuilds | `backend/tests/upkeep/test_rotation.py` and `test_page_rebuilds.py` |
 | The build route and its throttle | `backend/tests/upkeep/test_site_build_routes.py` |
 | The changed pages and their refresh | `backend/tests/upkeep/test_page_rebuilds.py` and `backend/tests/test_page_batches.py` |

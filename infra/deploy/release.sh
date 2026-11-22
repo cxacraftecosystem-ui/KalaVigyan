@@ -123,6 +123,7 @@ prune() {
 
 install_units
 /usr/local/sbin/kv-render-env
+bash "$HERE/ship_logs.sh" || say "::warning::the box's logs are not shipped to CloudWatch Logs this release; read the error above"
 if [ -f "$REL/.complete" ] && [ "$(readlink -f "$APP/current" 2>/dev/null || true)" = "$(readlink -f "$REL")" ]; then
   say "$SHA is already live; restarting it so it reads the current environment"
   /usr/local/sbin/kv-blue-green restart
