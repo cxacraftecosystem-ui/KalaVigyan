@@ -1957,11 +1957,18 @@ Last reviewed: 2026-11-22.
 
 ### Places abroad and rivers are listed, not drawn
 
-- **What:** the Region map fills and tags Indian districts by LGD code only; a place abroad
-  (Sindh) or a river (Dhamadka River) is listed with its roles but has no mark of its own.
-- **Why left:** `PagePlace` carries no coordinates or river id, and the map has no geometry for
-  places outside the district outlines.
-- **Clears it:** coordinates (or a HydroRIVERS id) on `PagePlace`, drawn as pins or a river line.
+- **What:** the tabbed craft screen's Region map is retired; a craft's places are now drawn by its
+  document's ground figure (`services/place_ground`, from the craft's located `CraftLocation`
+  rows) and its timeline map. A place abroad (Sindh) or a river (Dhamadka River) that a dossier
+  names has no located row, so it is listed in `GET /crafts/{slug}/page` (`PagePlace`, with its
+  `wikidataId`) but has no mark of its own on any map of the document.
+- **Why left:** the ground figure places only points inside India's district outlines; a place
+  abroad needs the stored Wikidata point (job step 1, run on production) and a frame that reaches
+  past the outline, and a river needs a HydroRIVERS id or a named-river dataset (see the timeline
+  map entry below).
+- **Clears it:** the stored Wikidata point carried to the ground figure as a pin outside the
+  outline, and a river line from a named-river dataset, with a capture of Kutch Ajrakh's
+  generated and authored maps.
 
 ## Lesson packs and exports (decision 0067)
 
