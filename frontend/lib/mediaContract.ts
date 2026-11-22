@@ -1,26 +1,22 @@
 import { craftLinkShape, HTTPS_URL, INSTANT, UUID, type CraftLink } from "@/lib/answerShapes";
 import { apiFetch } from "@/lib/api";
-import { boolean, integer, list, matching, nullable, number, object, oneOf, optional, parseShape, ShapeError, text, type Shape } from "@/lib/shape";
+import { boolean, integer, list, matching, nullable, number, object, oneOf, parseShape, ShapeError, text, type Shape } from "@/lib/shape";
 
 export const MEDIA_JOBS_PATH = "/media/jobs";
 export const MEDIA_JOB_PATH = (id: string) => `/media/jobs/${encodeURIComponent(id)}`;
 export const MEDIA_OPTIONS_PATH = (slug: string) => `/media/options?craftSlug=${encodeURIComponent(slug)}`;
-export const MEDIA_ASSET_SHARING_PATH = (assetId: string) => `/media/assets/${encodeURIComponent(assetId)}/sharing`;
 
 export const MEDIA_KINDS = ["IMAGE", "VIDEO"] as const;
 export const MEDIA_JOB_STATUSES = ["QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "BLOCKED"] as const;
 export const OPEN_JOB_STATUSES: readonly MediaJobStatus[] = ["QUEUED", "RUNNING"];
-export const MEDIA_SHARE_ACTIONS = ["SHARE", "UNSHARE"] as const;
 export const ASSET_LABEL = "AI illustration";
 export const STYLE_HINT_MAX_CHARS = 120;
 export const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{16,160}$/;
 
 export type MediaKind = (typeof MEDIA_KINDS)[number];
 export type MediaJobStatus = (typeof MEDIA_JOB_STATUSES)[number];
-export type MediaShareAction = (typeof MEDIA_SHARE_ACTIONS)[number];
 export type MediaJobRequest = { kind: MediaKind; stageId: string; idempotencyKey: string; styleHint: string | null };
 export type MediaLabel = { text: typeof ASSET_LABEL; model: string; generatedOn: string };
-export type MediaSharing = { actions: MediaShareAction[]; awaitingSecondProfessor: boolean };
 export type MediaAsset = {
   id: string;
   mime: "image/png" | "video/mp4";
@@ -33,7 +29,6 @@ export type MediaAsset = {
   label: MediaLabel;
   altText: string;
   visibility: "PRIVATE" | "CRAFT_SHARED";
-  sharing?: MediaSharing;
 };
 export type MediaJob = {
   id: string;
@@ -63,11 +58,6 @@ const FILE_ENTITY: Record<MediaKind, string> = { IMAGE: "KalaVigyan_Generated-Im
 
 const KIND = oneOf(MEDIA_KINDS);
 
-const sharingShape: Shape<MediaSharing> = object<MediaSharing>({
-  actions: list(oneOf(MEDIA_SHARE_ACTIONS)),
-  awaitingSecondProfessor: boolean
-});
-
 export const mediaAssetShape: Shape<MediaAsset> = object<MediaAsset>({
   id: UUID,
   mime: oneOf(["image/png", "video/mp4"] as const),
@@ -80,7 +70,6 @@ export const mediaAssetShape: Shape<MediaAsset> = object<MediaAsset>({
   label: object<MediaLabel>({ text: oneOf([ASSET_LABEL] as const), model: text, generatedOn: matching(/^\d{4}-\d{2}-\d{2}$/, "a date") }),
   altText: text,
   visibility: oneOf(["PRIVATE", "CRAFT_SHARED"] as const),
-  sharing: optional(sharingShape)
 });
 
 export const mediaJobShape: Shape<MediaJob> = object<MediaJob>({
@@ -125,27 +114,11 @@ export function checkedMediaOptions(options: MediaOptions, craftSlug: string): M
   return options;
 }
 
-function checkedSharing(asset: MediaAsset): void {
-  const sharing = asset.sharing;
-  if (!sharing) return;
-  if (!distinct(sharing.actions)) throw new ShapeError(`asset ${asset.id}.sharing.actions`, "each action once");
-  const shared = asset.visibility === "CRAFT_SHARED";
-  if (shared && sharing.awaitingSecondProfessor) throw new ShapeError(`asset ${asset.id}.sharing`, "a shared asset awaiting nobody");
-  const signed = shared || sharing.awaitingSecondProfessor;
-  if (sharing.actions.includes("SHARE") && signed) {
-    throw new ShapeError(`asset ${asset.id}.sharing.actions`, "SHARE only for a private asset nobody has signed");
-  }
-  if (sharing.actions.includes("UNSHARE") && !signed) {
-    throw new ShapeError(`asset ${asset.id}.sharing.actions`, "UNSHARE only for a shared or signed asset");
-  }
-}
-
 export function checkedMediaAsset(asset: MediaAsset, kind: MediaKind): MediaAsset {
   if (asset.mime !== MEDIA_OUTPUT_MIME[kind] || !asset.fileName.startsWith(FILE_ENTITY[kind])) {
     throw new ShapeError(`asset ${asset.id}.mime`, `a ${MEDIA_OUTPUT_MIME[kind]} named for its kind`);
   }
   if ((asset.durationSeconds === null) !== (kind === "IMAGE")) throw new ShapeError(`asset ${asset.id}.durationSeconds`, "a duration for a video only");
-  checkedSharing(asset);
   return asset;
 }
 
@@ -173,13 +146,6 @@ export async function createMediaJob(request: MediaJobRequest): Promise<MediaJob
 
 export async function fetchMediaJob(jobId: string): Promise<MediaJob> {
   return checkedMediaJob(parseShape(mediaJobShape, await apiFetch<unknown>(MEDIA_JOB_PATH(jobId))));
-}
-
-export async function setMediaSharing(asset: MediaAsset, kind: MediaKind, action: MediaShareAction): Promise<MediaAsset> {
-  const body = await apiFetch<unknown>(MEDIA_ASSET_SHARING_PATH(asset.id), { method: "POST", body: JSON.stringify({ action }) });
-  const shared = checkedMediaAsset(parseShape(mediaAssetShape, body), kind);
-  if (shared.id !== asset.id) throw new ShapeError("id", asset.id);
-  return shared;
 }
 
 export function offeredKinds(options: MediaOptions, stageId: string): MediaKindOffer[] {

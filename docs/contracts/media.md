@@ -46,7 +46,6 @@ Last reviewed: 2026-11-18.
 | GET | `/api/media/options?craftSlug=<slug>` | signed in | `MediaOptions`: the kinds the asker may still make today and the stages that can be illustrated |
 | POST | `/api/media/jobs` | `GENERATE_IMAGE` / `GENERATE_VIDEO` | body `MediaJobRequest`; 202 `MediaJobView` for a new job, 200 for a repeat of the same key or a shared asset |
 | GET | `/api/media/jobs/{id}` | the requester | `MediaJobView`; 404 for anyone else |
-| POST | `/api/media/assets/{id}/sharing` | `SHARE_MEDIA` | body `{action: SHARE\|UNSHARE}`; `MediaAssetView` (governance lane; not served yet, see Sharing) |
 
 ### Options
 
@@ -185,7 +184,7 @@ shows on Usage. The official reference was read on 2026-11-18 (decision 0058 lis
   songs, labels or lyrics (the score's prompts are fixed and name nothing); the stored clips are
   played only under their films and never offered as a library.
 - Score prompts are fixed text from a versioned table (`voice/score_prompts.py`,
-  `SCORE_PROMPT_VERSION` `film-score/v1`): never a claim, a craft, place, community or person
+  `SCORE_PROMPT_VERSION` `film-score/v2`): never a claim, a craft, place, community or person
   name, a style hint or model output. The audio is checked before it is stored: MP3, non-empty and
   within 1 s of the asked length at 128 kbps (`voice/film_score.checked_score_audio`).
 
@@ -202,7 +201,15 @@ shows on Usage. The official reference was read on 2026-11-18 (decision 0058 lis
   the usage metadata.
 - A job that ends `FAILED` (after its retries) or `BLOCKED` (the provider refused the content) is
   refunded: one `media-refund:<jobId>` row returns the unit and the reservation is released.
-  `refunded` is true exactly then.
+  `refunded` is true exactly then. The refund row is dated to the job's creation, so a job failing
+  after midnight IST returns its unit to the day that spent it (decision 0154).
+- The creation hold counts against the budget while it is fresh (15 minutes); the worker renews
+  the hold of every queued job older than half that, once a minute, until the job starts
+  (`media/queue.py`, `queue_store.renew_holds`). `MediaJob.costUsd` holds the call that made the
+  asset; every call, failed or abandoned too, is in `UsageEvent`.
+- The worker writes a heartbeat (`AppSetting` `worker.heartbeat`, every 60 s) and pings systemd's
+  watchdog (`kv-worker.service` `WatchdogSec=300`); options offer no kind and a new job is refused
+  `not_configured` while the last beat is more than 5 minutes old (`media/heartbeat.py`).
 
 ## Job view
 
@@ -222,26 +229,23 @@ label {text, model, generatedOn}, altText, visibility}`.
   the asset (`MediaAsset.model`) and the IST date it was stored.
   Every asset is drawn with its label and never in the evidence column.
 - `altText` is written from the claim texts the prompt used.
-- `visibility` `PRIVATE` until shared. Sharing needs a professor (`SHARE_MEDIA`); an asset that
-  depicts a named cluster (`depictsNamedCluster`) needs a second professor's sign-off. The
-  sharing route belongs to the governance lane.
+- `visibility` `PRIVATE` until shared; an asset that depicts a named cluster
+  (`depictsNamedCluster`) needs two professors' sign-off. Sharing is decided on the craft page
+  (below).
 
-## Sharing (client side fixed by lane 0021; producer: the governance lane)
+## Sharing on the craft page (decision 0154)
 
-- `MediaAssetView.sharing` is optional and sent only to a caller holding `SHARE_MEDIA`, once the
-  route below exists: `{actions: ("SHARE"|"UNSHARE")[], awaitingSecondProfessor: bool}`. The
-  client draws a sharing control only when it is present, for a professor or above, and
-  only for a listed action; absent means no control.
-- Rules (the client refuses a body that breaks them): `SHARE` only for a `PRIVATE` asset with
-  `awaitingSecondProfessor` false; `UNSHARE` only for a `CRAFT_SHARED` asset or one awaiting a
-  second professor; a `CRAFT_SHARED` asset awaits nobody; each action once.
-- `POST /api/media/assets/{id}/sharing` body `{action}` answers the updated `MediaAssetView`
-  (fresh presigned URL). `SHARE` by a first professor of an asset with `depictsNamedCluster`
-  leaves it `PRIVATE` with `awaitingSecondProfessor` true; by a second professor, or for any other
-  asset, it becomes `CRAFT_SHARED`. `UNSHARE` returns it to `PRIVATE` and withdraws a pending
-  sign-off. 403 without `SHARE_MEDIA`, 404 for an asset the caller cannot see, 409 with a
-  sentence for an action not listed. The second professor reaches the asset through the
-  governance lane's queue, since a job is visible to its requester only.
+- On success the worker stores a second, requester-free copy at
+  `media/craft/<sha256 of the bytes>/<fileName>` (`naming.page_media_key`), sets
+  `MediaAsset.pageKey` and shares the asset (`CRAFT_SHARED`) unless `depictsNamedCluster` holds;
+  the chapters job copies older assets the same way (`services/craft_ai_media.py`). A shared asset
+  joins its craft's chapters as `ai_media` and is read at `GET /api/crafts/media/{assetId}`
+  (`docs/contracts/craft-page.md`).
+- A Professor or above hides or shows it with `PUT /api/crafts/{slug}/media/{assetId}/hidden`.
+  Showing an asset that depicts a named cluster records the first professor's sign-off
+  (`approvedById`) and keeps it hidden; a second, different professor's show records
+  `secondApprovedById` and shares it. Hiding withdraws both sign-offs. Each step is audited.
+- The client sends no sharing request and `MediaAssetView` carries no sharing field.
 
 ## Naming and storage (PLAN 14.3, the naming skill)
 

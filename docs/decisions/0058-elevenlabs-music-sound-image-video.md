@@ -11,6 +11,7 @@ Date: 2026-11-18. Status: accepted.
 | The contract it was built to | [0054 Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode](0054-phase-c-contract.md) |
 | The review that fixed it | [0061 Phase C review fixes](0061-phase-c-review-fixes.md) |
 | The contracts it names | [media.md](../contracts/media.md) |
+| The score made once under a lease, timed by the heard narration, cued by stored facets (version 2) and swept | [decision 0154](0154-ai-media-and-film-scores-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

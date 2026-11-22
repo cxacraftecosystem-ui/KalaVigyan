@@ -157,15 +157,6 @@ Last reviewed: 2026-11-22.
 
 ## Science, region, voice and media contracts (decision 0014)
 
-### Contracts ahead of their producers
-
-- **What:** the models, golden files and contract tests exist; the process (decision 0015),
-  region (decision 0016), voice (decision 0017) and media (decision 0018) routes produce theirs,
-  and `services/naming.py` with `shared/naming-golden.json` names media files. The media
-  sharing route is still unserved.
-- **Why left:** decision 0014 is the contract lane; sharing belongs to the governance lane.
-- **Clears it:** the governance lane serves `POST /api/media/assets/{id}/sharing`.
-
 ### ElevenLabs behaviour not yet verified
 
 - **What:** the voice binding rests on `custom_llm.request_headers` substituting
@@ -174,14 +165,11 @@ Last reviewed: 2026-11-22.
   `end_call` and client tools, Hindi in agents, CSP hosts and the plan's retention minimum
   (`docs/contracts/voice.md`). Relay text to speech cannot run with zero retention
   (`enable_logging=false` is enterprise only).
-- **Why left:** only a recorded round trip against a test agent can settle them (PLAN 10.1). Lane
-  0017 built the agent path on the contract's assumptions (`custom_llm.url` ending `/api/voice/llm/v1`,
-  the bearer, the header template) and its adapter tests on the documented response shapes; the
-  spike workflow is not written, because it calls the real account.
-- **Clears it:** the spike on GitHub Actions with a test agent made by
-  `app/scripts/provision_voice_agent.py`, replacing the fixtures in `backend/tests/voice/fixtures`
-  with recorded responses; `voice.transport` stays `RELAY` until it passes. Retention: an
-  enterprise plan, or the Gemini voice for relay speech.
+- **Waits on:** waits on the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154): its agent turn binds a session to the conversation it opens and asks one
+  question, so a reply in `agent_turn_events.json` settles the header, the bearer and the suffix;
+  commit it as `backend/tests/voice/fixtures/agent_turn_events.json`; `voice.transport` stays
+  `RELAY` until it passes. Tool calls, Hindi in agents, the CSP hosts and retention still need a
+  browser call on the box; retention also needs an enterprise plan or the Gemini voice.
 
 ### Contract tests read files their workflow does not watch
 
@@ -423,22 +411,16 @@ Last reviewed: 2026-11-22.
 ### Gemini media behaviour not yet seen live
 
 - **What:** how a safety block reads on the Interactions API, the image output type when none is
-  asked for (PNG assumed), `DELETE /v1beta/interactions/{id}`, the clip's exact duration and the
-  interaction id alphabet are unverified; the fixtures in `backend/tests/media/fixtures/` follow
-  the documented shapes, not captured traffic.
-- **Why left:** no paid call runs from the laptop and nothing is deployed yet.
-- **Clears it:** after the deploy, make one image and one video, read the `UsageEvent` and the
-  worker logs, replace the fixtures with the recorded answers (key-free) and adjust
-  `providers/gemini_media.py` where the shapes differ.
-
-### Video without the stage image as its first frame
-
-- **What:** PLAN 11 allows the generated stage image as the only reference; videos are
-  `text_to_video` only.
-- **Why left:** it needs an S3 read and an image input in the request, which the first live runs
-  should shape.
-- **Clears it:** pass the requester's image asset of the same stage as an `image` input with
-  `video_config.task` `image_to_video`, read through `services/object_store`.
+  asked for (PNG assumed), the image's token breakdown and the interaction id alphabet are
+  unverified for images; for video also `DELETE /v1beta/interactions/{id}`, the clip's exact
+  duration, and the shape of an `image` input that would make the requester's stage image the
+  clip's first frame (PLAN 11 allows it; videos are `text_to_video` until the shape is seen, because
+  a wrong input fails every clip). The fixtures in `backend/tests/media/fixtures/` follow the
+  documented shapes, not captured traffic.
+- **Waits on:** images waits on the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154): commit its `image_completed_recorded.json` as
+  `backend/tests/media/fixtures/image_completed.json` and adjust `providers/gemini_media.py` where
+  the shapes differ. Video and the first frame wait on the owner approving one paid Gemini clip,
+  which the approval of 2026-11-22 does not include.
 
 ### Community and caste names caught by group words only
 
@@ -448,35 +430,15 @@ Last reviewed: 2026-11-22.
   `depictsNamedCluster` compares only the craft's located place names.
 - **Why left:** no register of community and caste names exists; PLAN 13a names them only from
   cited sources.
-- **Clears it:** the governance lane keeps the named practitioners per craft as data; the claim
-  set and the named-cluster flag check against it.
+- **Waits on:** the owner's and the governance lane's decision to keep the named practitioners per
+  craft as cited data; the claim set and the named-cluster flag then check against it.
 
-### India time is written again outside the backend package
+### Media image output priced at one rate
 
-- **What:** `core/clock.INDIA_TZ` is the backend's one home (decision 0022), but the geo ETL keeps
-  its own `IST` offset for its run date (`etl/geo/geo_etl/__main__.py`) and `Craft`'s
-  `recordedTimezone` default names `Asia/Kolkata` in the model, which may import nothing.
-- **Clears it:** let the ETL import the backend's clock when it gains a dependency on the backend
-  package, and move the model default into the migration that next touches the column.
-
-### Media spend and units approximations
-
-- **What:** a refund row counts on the day it is written, so a job failing after midnight IST
-  returns a unit to the new day; the creation hold stops counting after 15 minutes
-  (`RESERVATION_TTL`) while a job waits; `MediaJob.costUsd` holds the successful call only (failed
-  and abandoned calls stay in `UsageEvent`); text and thinking tokens are priced at the media
-  output rate, which overstates cost slightly.
-- **Why left:** each is bounded and small next to the daily allowance and the monthly cap.
-- **Clears it:** date refunds to their job's day, renew holds while queued, and price output by
-  modality once the token breakdown is seen live.
-
-### No signal that the worker is running
-
-- **What:** the options route cannot tell whether `kv-worker` is up; if it is stopped, jobs queue
-  and the client stops polling after 15 minutes.
-- **Why left:** the watchdog covers the API only and the unit restarts itself.
-- **Clears it:** a worker heartbeat (Redis or `AppSetting`) that options read, and the watchdog
-  checking the unit.
+- **What:** a media call's text and thinking tokens are priced at the media output rate, which
+  overstates the cost of an image slightly.
+- **Waits on:** waits on the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154): its `image_completed_recorded.json` shows the
+  `output_tokens_by_modality` breakdown; then price each modality at its own rate.
 
 ## Admin role (decision 0024)
 
@@ -707,10 +669,10 @@ Last reviewed: 2026-11-22.
   reached ElevenLabs, so `eleven_v4` on that endpoint, the alignment spelling the text in every
   language, bracketed text read as text rather than as a v4 audio tag, and the real speaking rate
   behind the 1,000-characters-a-minute hold are unverified (decision 0035, Unverified).
-- **Why left:** no provider call with a real key from the laptop; nothing is deployed by agents.
-- **Clears it:** after the deploy, press Listen on one English and one Hindi Kutch Ajrakh answer;
-  if `eleven_v4` is refused, set `NARRATION_MODEL` to `eleven_v4_turbo`; replace the fixture
-  with the recorded answer.
+- **Waits on:** waits on the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154): commit its `narration_en.json` and `narration_hi.json` as
+  `backend/tests/voice/fixtures/narration_with_timestamps.json` and a Hindi sibling; its report
+  gives each reply's characters a minute and whether the alignment spells the text. If `eleven_v4`
+  is refused, set `NARRATION_MODEL` to `eleven_v4_turbo`.
 
 ### Listen has no fallback voice
 
@@ -1320,46 +1282,9 @@ Last reviewed: 2026-11-22.
   $0.275 a minute, sound effects $0.120 or $0.060 a minute or per generation); image and video
   prices appear only on the scale-tier page. The catalogue keeps the higher figure per second or
   image (`providers/catalogue_specs.py`, `_ELEVENLABS`), so Usage may show more than ElevenLabs bills.
-- **Why left:** no invoice exists yet and no paid call is made while building.
-- **Clears it:** compare the first month's ElevenLabs invoice with Usage, set the confirmed prices
+- **Waits on:** the paid check run by the lead and the ElevenLabs invoice of that month: compare
+  the invoice with the check's `paid_checks_report.json` and Usage, then set the confirmed prices
   and `price_verified` true, or set admin price overrides.
-
-### The music bed is timed by an estimate of the narration
-
-- **What:** `voice/film_scenes` times a narrated scene at 1,000 characters a minute (Listen's hold
-  estimate), not by the narration's real length, so the bed can be shorter than the film; the
-  client loops it.
-- **Why left:** the score must not depend on whether Listen has run, and the cache keys on the
-  length.
-- **Clears it:** time narrated scenes from the stored narration manifests when every block is
-  narrated, falling back to the estimate.
-
-### Two asks for the same score can both make it
-
-- **What:** two readers asking at once for an uncached score of the same explainer and language
-  each call ElevenLabs; both store identical content-addressed clips and the last manifest wins,
-  so the spend is doubled once.
-- **Why left:** only the asker can read an explainer, so it needs the same reader in two tabs.
-- **Clears it:** a per-answer and language advisory lock around the making, held without a
-  database connection across the calls (decision 0040).
-
-### The cue table reads section fields, not their words
-
-- **What:** prose in a geography section gets running water and every process ladder tapping
-  tools, whatever the section is about; other kinds and fields get no cue.
-- **Why left:** prompts may carry no claim text or names, so a cue can only follow the block kind
-  and field.
-- **Clears it:** a version 2 table keyed by stored facets (water, dyeing, firing) once pieces carry
-  them.
-
-### A long score may outlast the request
-
-- **What:** a 180 s bed and twelve cues can take longer than CloudFront's 120 s origin timeout; the
-  making continues as shielded work and the next ask is served from the cache, but that first film
-  plays without its score.
-- **Why left:** ElevenLabs answers music synchronously and no job queue for audio exists.
-- **Clears it:** make scores in `kv-worker` like stage media and let the client poll, if
-  production shows first scores timing out.
 
 ### Flows content is fetched only from the host the reference shows
 
@@ -1369,15 +1294,8 @@ Last reviewed: 2026-11-22.
   promises no host, so a move to another host fails every ElevenLabs picture and clip loudly.
 - **Why left:** an unpinned host could stream any body into the API box; ElevenLabs image and video
   are route choices no seeded chain uses.
-- **Clears it:** the first production generation confirms the host; if ElevenLabs names another,
-  add it to `DOWNLOAD_HOSTS` after checking the reference.
-
-### Old score clips and manifests stay in the bucket
-
-- **What:** a changed explainer writes a new manifest over the old one, and clips no manifest
-  names any more are never deleted.
-- **Why left:** clips are shared across explainers by content, so deleting needs a reference count.
-- **Clears it:** a lifecycle rule or a sweep that deletes clips no manifest has named for 90 days.
+- **Waits on:** one paid ElevenLabs image or video, which the owner's approval of 2026-11-22 does
+  not include; if it names another host, add it to `DOWNLOAD_HOSTS` after checking the reference.
 
 ## Zoom, timeline and film renderers (decision 0060)
 
@@ -1391,36 +1309,13 @@ Last reviewed: 2026-11-22.
 - **Clears it:** an inset frame for points abroad (the same projection, its own bounds, the plain
   ground only), chosen by the timeline when it places a point outside the India frame.
 
-### Film volumes do nothing on iPhones and iPads
+### Film volumes on iPhones and iPads not yet heard
 
-- **What:** the film sets the music and effects volume through `HTMLMediaElement.volume`, which
-  iOS Safari ignores, so there the bed plays at full level under the narration and the two
-  volume sliders change nothing. Mute works there: since decision 0061 it sets `muted` on the
-  narration, the bed and the cues.
-- **Why left:** a Web Audio gain needs the score's audio served with CORS headers from the
-  private bucket, and the bucket's CORS is infrastructure this lane does not change.
-- **Clears it:** CORS `GET` from the site's origins on the media bucket, then the bed and cues
-  through one Web Audio gain adapter in `components/answer/film/FilmSound.tsx`.
-
-### The score's bed is cut from the server's estimate of the film
-
-- **What:** the server sizes the bed and numbers the cues from scenes timed by an estimate of
-  each block's narration (`voice/film_scenes.film_scenes`), while the client times the film by
-  the Listen script's real durations; the bed loops or ends early and fades over the film's last
-  2 s either way.
-- **Why left:** the score is made before Listen's audio exists for that language, and the client
-  rule (loop, fade, resync) covers both cases.
-- **Clears it:** nothing needed unless readers notice; otherwise the score route times scenes
-  from the Listen manifest when one is cached.
-
-### Film mode has not met a browser end to end
-
-- **What:** the unit specs render the player's parts and check the clock, captions, mix and keys
-  as pure rules; no spec plays the narration, the bed or a cue in a browser, and the production
-  E2E does not open Film.
-- **Why left:** audio needs the deployed Listen and score routes and a signed-in browser.
-- **Clears it:** a step in the production E2E that opens Film on a known-answer question, checks
-  the caption and the played bar advance, and closes it with Escape; then delete this entry.
+- **What:** where a browser fixes `HTMLMediaElement.volume` (iOS Safari), the bed and the cues now
+  play through one Web Audio gain each (`components/answer/film/FilmSound.tsx`, decision 0154),
+  loaded with CORS from the media bucket (`cors_allowed_origins` holds the site's origin). The unit
+  specs check the detection and the levels; the production E2E's Chromium never takes that path.
+- **Waits on:** a person playing a film with music on an iPhone or iPad and moving both sliders.
 
 ## Phase C review fixes (decision 0061)
 
@@ -1817,16 +1712,15 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the rest of decision 0096's items 1 to 4 in the same module, with the question
   screen and its tests.
 
-### AI media, film scores and media routes on the craft page
+### The craft page's film score and its AI media on the monograph
 
-- **What:** AI images and videos made from a craft's claims don't join its page. Nothing builds
-  `ai_media`. There's no `MediaAsset.pageKey`, no craft-neutral copy, no `GET /api/crafts/media/{assetId}`
-  and no film-score route. The chapters job (`scripts/build_craft_chapters.py`) doesn't exist, so
-  nothing sets `Compound.conformerKeptAt`, and a live page shows no `molecule_3d` until a job sets it.
-- **Why left:** these were the CURATION lane's (decision 0096 item 5, the job and the media
-  worker's page copy), and that lane stopped.
-- **Clears it:** a migration adding `MediaAsset.pageKey`, the media worker's copy, the public
-  redirect route, the job with its conformer step, and an `ai_media` loader in `chapter_records`.
+- **What:** AI images and clips now get a page copy, join their craft's chapters as `ai_media` and
+  are served at `GET /api/crafts/media/{assetId}` (decision 0154). Left: the page's film score (job
+  step 5 and `GET /api/crafts/{slug}/film-score`) is not built, and the monograph document the craft
+  page renders for a curated craft does not draw the chapters' `ai_media` part.
+- **Why left:** the media-and-film lane of 2026-11-22 built the producer side; the page's film and
+  the monograph's picture slots are the craft page's and the monograph's own work.
+- **Clears it:** job step 5 with the route, and an AI media slot in the monograph document.
 
 ### The craft page golden's climate series is synthetic
 

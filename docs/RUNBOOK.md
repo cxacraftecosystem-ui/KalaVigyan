@@ -122,7 +122,7 @@ the box.
 | Group | What it holds |
 |---|---|
 | `/kalavigyan/kv-api` | both API colours: every log record, and one `request` line per request with `method`, `path`, `status`, `durationMs` and `requestId` |
-| `/kalavigyan/kv-worker` | the media queue and the daily voice upkeep |
+| `/kalavigyan/kv-worker` | the media queue, the daily voice upkeep, the daily score sweep and the heartbeat |
 | `/kalavigyan/kv-fetcher` | the fetcher sandbox |
 | `/kalavigyan/kv-contributions` | the contribution queue's gates |
 | `/kalavigyan/nginx-access` | one line per request at the origin: `time`, `method`, `path`, `status`, `bytes`, `seconds`, `upstreamSeconds`, `requestId`, `agent` |
@@ -282,6 +282,10 @@ Decision 0017; contract `docs/contracts/voice.md`.
   `PUBLIC_API_URL`, `VOICE_LLM_BEARER` and `ELEVENLABS_API_KEY`.
 - Rotating `VOICE_LLM_BEARER` (quarterly): `gh secret set VOICE_LLM_BEARER`, deploy, then run the
   provisioning script again so the workspace secret matches; calls in progress end with a 401.
+- Worker health: `kv-worker` writes `AppSetting` `worker.heartbeat` every 60 s and pings systemd's
+  watchdog (`WatchdogSec=300` restarts a worker silent for 5 minutes); media options offer nothing
+  while the last beat is older than 5 minutes. Its daily score sweep marks clips no score names and
+  deletes them 90 days later (decision 0154).
 - Upkeep: `kv-worker` runs `voice/daily_upkeep.daily_voice_upkeep` when it starts and every 24 hours
   after (decision 0140); its log line `daily voice upkeep` carries the JSON report of closed, purged,
   reconciled and refunded seconds, at error level when a call could not be settled.
@@ -634,6 +638,14 @@ fixture or the category page (`docs/contracts/category-page.md`).
   the `eval-questions-<run id>` artifact; commit its `retrieval_questions.json` as
   `backend/app/data/eval/generated/retrieval_questions.json`. A later run reuses the kept questions
   and pays only for new facts.
+- **Paid voice and media checks** (`paid-checks.yml`, decision 0154): by hand only, from main, once
+  the owner has approved the spend (US$5 on 2026-11-22):
+  `gh workflow run paid-checks.yml -R cxacraftecosystem-ui/KalaVigyan --ref main -f cap=5`. On the box
+  it makes one English and one Hindi narration, a 10 s music bed, a Gemini image and one agent turn
+  (a Master Admin voice session bound to the conversation it opens, ended and deleted after one
+  question), each estimated first and skipped when the total would pass the cap. The
+  `paid-checks-<run id>` artifact holds every reply and `paid_checks_report.json` (the spend and
+  each finding); commit the replies as the fixtures `docs/TECH_DEBT.md` names.
 - **Re-embed knowledge** (`embed-knowledge.yml`): by hand only, from main, once after a release that
   changes the embedding stamp's recipe (decision 0129):
   `gh workflow run embed-knowledge.yml -R cxacraftecosystem-ui/KalaVigyan --ref main` (`-f seconds=`,

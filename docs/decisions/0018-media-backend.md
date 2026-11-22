@@ -11,6 +11,7 @@ Date: 2026-11-16. Status: accepted.
 | The contract it was built to | [0014 Contracts for process science, region profile, voice and media](0014-science-region-voice-media-contracts.md) |
 | The review that fixed it | [0022 Voice spend fails closed, a filtered style hint, region sources and one home per rule](0022-batch-3-review-fixes.md) |
 | The contracts it names | [media.md](../contracts/media.md) |
+| The worker's heartbeat, renewed holds, refunds dated to their job, page copies and sharing on the craft page | [decision 0154](0154-ai-media-and-film-scores-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

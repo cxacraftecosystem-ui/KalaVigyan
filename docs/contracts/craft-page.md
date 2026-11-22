@@ -53,7 +53,7 @@ item that names them). Not built yet (decision
 0098 and `docs/TECH_DEBT.md`): `what_if`, `concept_graph`, `zoom_story`, `supply_map` and `measure` on the page;
 reaction players cut per mechanism (one player holds every step until `science/mechanisms.craft_concepts` lands);
 concept pictures in the database loader; a river in the region story (basins carry no name); the rest of the 0096
-merge (cross-craft pieces, the question screen, AI media, `MediaAsset.pageKey`); the media and film-score routes;
+merge (cross-craft pieces, the question screen); the film-score route;
 and job steps 2 to 5. The goldens are generated as follows.
 
 Modules. Models: `backend/app/research/craft_page.py` (the page), `research/craft_chapters.py`

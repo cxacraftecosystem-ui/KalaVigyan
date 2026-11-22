@@ -12,6 +12,7 @@ assets made from a craft's claims.
 |---|---|
 | What it amends | [0033 Stored knowledge pieces and reuse](0033-knowledge-pieces-and-reuse.md): stored pieces served only to answers |
 | What it builds on | [0095 The craft page becomes a monograph in chapters, public to read, built without a question](0095-craft-page-chapters.md): craft page schema version 3 |
+| AI pictures' page copies, their `ai_media` chapters part and `GET /api/crafts/media/{assetId}` | [decision 0154](0154-ai-media-and-film-scores-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

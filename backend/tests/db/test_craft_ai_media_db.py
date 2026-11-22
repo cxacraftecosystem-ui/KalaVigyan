@@ -3,10 +3,13 @@ import uuid
 from decimal import Decimal
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.media.records import NewAsset
-from app.models import MediaAsset, ProcessStage, User
+from app.models import Craft, MediaAsset, ProcessStage, User
+from app.services import craft_page_hiding
 from app.services.craft_ai_media import copied_older_media, page_media_key_of, shared_ai_media
+from app.services.craft_page_hiding import set_page_media_hidden
 
 from .test_media_store_db import Stores, queued, stage_with_claims, stores, user
 
@@ -74,6 +77,42 @@ async def test_a_page_copy_shares_the_asset_unless_it_names_a_cluster(stores: St
     )
     assert await page_media_key_of(session, shown.id) == shown.page_key
     assert await page_media_key_of(session, named.id) is None
+
+
+async def professor(session: AsyncSession, name: str) -> User:
+    found = User(
+        id=uuid.uuid4(), name=name, email=f"{name}-{uuid.uuid4().hex[:8]}@example.com", role="PROFESSOR"
+    )
+    session.add(found)
+    await session.commit()
+    return found
+
+
+async def test_a_named_cluster_is_shown_only_once_two_professors_have_signed_it(
+    stores: Stores, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    media, _, session = stores
+    stage, ids = await stage_with_claims(session)
+    owner = await user(session)
+    named = asset(owner, page_key=f"media/craft/{'d' * 64}/named.png", named=True)
+    await succeeded(stores, stage, ids, named, owner)
+    craft = await session.get(Craft, (await media.stage(stage.id)).craft.id)
+    first, second = await professor(session, "first"), await professor(session, "second")
+
+    async def refreshed(owners: object) -> bool:
+        return True
+
+    monkeypatch.setattr(craft_page_hiding, "refresh_pages", refreshed)
+    assert await set_page_media_hidden(session, craft, named.id, hidden=False, user=first) is True
+    assert await set_page_media_hidden(session, craft, named.id, hidden=False, user=first) is True
+    row = await session.get(MediaAsset, named.id)
+    assert (row.visibility, row.approvedById, row.secondApprovedById) == ("PRIVATE", first.id, None)
+    assert await set_page_media_hidden(session, craft, named.id, hidden=False, user=second) is False
+    await session.refresh(row)
+    assert (row.visibility, row.secondApprovedById) == ("CRAFT_SHARED", second.id)
+    assert await set_page_media_hidden(session, craft, named.id, hidden=True, user=second) is True
+    await session.refresh(row)
+    assert (row.visibility, row.approvedById, row.secondApprovedById) == ("PRIVATE", None, None)
 
 
 async def test_the_job_copies_an_older_asset_once_and_shares_it(stores: Stores) -> None:

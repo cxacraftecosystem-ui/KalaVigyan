@@ -1166,11 +1166,15 @@ A film plays an explainer on the client (plan feature 3, lane 0060); no video is
 - The score is optional. `/answers/config` adds `film {score}` (`FilmOffer`): true when the music
   route has a key and media can be made now; absent, off the contract or false, no score control
   is drawn. Starting a film with the score on asks `GET /api/answers/{answerId}/film-score
-  ?language=<code>` once; the narration starts at once and the score joins when it arrives; any
-  failure plays the film without it and says why under the switch ("Couldn't load the music. Try
-  again." or the route's own detail, decision 0061). Mute silences the narration, the bed and the
-  cues through `muted`, so it holds on iPhones and iPads, which ignore `volume`. The bed loops under a longer film at a fixed low gain under
-  the narration and fades over the last 2 s; a cue plays once at its scene's start plus its offset.
+  ?language=<code>`; the narration starts at once and the score joins when it arrives; while the
+  route answers 202 the client asks again after `pollAfterSeconds`, at most 60 times
+  (`SCORE_ASKS_MAX`); any failure plays the film without it and says why under the switch
+  ("Couldn't load the music. Try again." or the route's own detail, decision 0061). Mute silences
+  the narration, the bed and the cues through `muted`. Where a browser fixes the element volume
+  (iOS Safari ignores `volume`), the bed and each cue play through one Web Audio gain, loaded with
+  CORS from the bucket and started on the reader's first press (decision 0154). The bed loops under
+  a longer film at a fixed low gain under the narration and fades over the last 2 s; a cue plays
+  once at its scene's start plus its offset.
 
 `GET /api/answers/{answerId}/film-score?language=<code>` (the asker, holding `VOICE`; 10 in 10
 minutes, Master Admin unlimited) answers `FilmScore` (`schemas/film.py`, `lib/filmScore.ts`,
@@ -1182,24 +1186,36 @@ in reading order; `label.models` the models that made it, once each, the music's
 links are one-hour presigned GETs on the private bucket, as Listen's. The client refuses a score
 for another answer or language (`checkedFilmScore`). 404 for another's answer or one without an
 explainer, 422 for a language that is not an answer language, 429 past the limit, 503 `{detail}`
-when the router refuses or ElevenLabs or the bucket fails.
+when the router refuses or ElevenLabs or the bucket fails. A score being made answers 202
+`FilmScoreMaking {answerId, language, pollAfterSeconds}` (`SCORE_POLL_SECONDS` 5): when another
+ask holds its lease, or when this ask's making has not finished within 45 s
+(`SCORE_WAIT_SECONDS`; the making goes on as shielded work). The limit counts only the asks that
+start a making; a stored score and a score being made are answered without counting (decision
+0154).
 
 - Made on demand by ElevenLabs through the media router (`MUSIC` and `SOUND_EFFECT`,
   `docs/contracts/media.md`; built by decision 0058, `voice/film_scenes.py`,
   `voice/score_prompts.py`, `voice/score_cache.py`, `voice/film_score.py`, `api/routes/film.py`):
   one instrumental bed (no vocals) as long as the film in that language rounded up to 10 s, from
-  30 s to 180 s, where the server times a narrated scene by its spoken characters at 1,000 a
-  minute (Listen's estimate) and any other scene by `FILM_SCENE_SECONDS` (`schemas/film.py`:
-  `step` 4, `picture` 3, `block` 6); at most one sound-effect cue per scene, 2 s by default, for
-  the block kinds and section fields the versioned table names (`SCORE_PROMPT_VERSION`
-  `film-score/v1`: the process ladder, prose in a geography section, the river story, the
-  reaction player, seasons, map layers and molecules), at most 12 in reading order. Prompts are
+  30 s to 180 s. When Listen has stored the narration of every spoken block for the reader's voice
+  and language, a narrated scene lasts as long as its stored parts (`voice/film_plan.py`);
+  otherwise by its spoken characters at 1,000 a minute (Listen's estimate). Any other scene lasts
+  `FILM_SCENE_SECONDS` (`schemas/film.py`: `step` 4, `picture` 3, `block` 6). At most one
+  sound-effect cue per scene, 2 s by default, from the versioned table keyed by a block's kind
+  and the facet it stores (`SCORE_PROMPT_VERSION` `film-score/v2`): a process ladder by the facet
+  most of its stages share (`TOOLS` for print, carve and shape; `WATER` for scour, mordant, dye and
+  wash; `FIRE` for fire and cast; ties to the first), a region story only when it holds a river,
+  and the reaction player, seasons, map layers and molecules by kind; prose gets none. At most 12
+  in reading order. Prompts are
   fixed text from that table: no claim text, no craft, place, community or person name, never
   model output. Without a sound-effect route the score is the bed alone.
 - Cached per explainer and language: a manifest at `media/score/<answerId>/<language>/score.json`
   (`ScoreManifest {schemaVersion 1, answerId, language, scenesHash, music, cues, createdAt}`, with
-  object keys, not links) answers again without calling ElevenLabs while `scenesHash` matches:
-  the SHA-256 of the compact JSON array of `[blockId, kind]` pairs in scene order. The audio is
+  object keys, not links) answers again without calling ElevenLabs while `scenesHash` matches
+  and its bed is as long as the scenes now ask: the hash is the SHA-256 of the compact JSON
+  `[promptVersion, [[blockId, kind, facet], ...]]` in scene order. One ask makes a score at a time:
+  it takes a lease at `media/score/<answerId>/<language>/lease.json` (`voice/object_lease.py`, 600
+  s), released when the making ends; no database connection is held across the calls. The audio is
   content-addressed: a clip's cache id is the SHA-256 of `kalavigyan-score`, the prompt version,
   the task, the model, the prompt and the length in seconds (`%g`) joined by U+001F, and the clip
   lives at `media/score/<cacheId>/<fileName>` beside its record `clip.json`, named by the naming
@@ -1208,7 +1224,10 @@ when the router refuses or ElevenLabs or the bucket fails.
   files. A refused reservation, a failed call or audio more than 1 s from its asked length stores
   no score and no clip for that call; clips made before it stay for the next ask. The making runs
   as shielded work, so a reader who leaves still fills the cache. `label.generatedOn` is the IST
-  day the manifest was made; `urlExpiresAt` the links' expiry.
+  day the manifest was made; `urlExpiresAt` the links' expiry. A clip no manifest names is marked
+  `unnamed.json` by the worker's daily sweep (`voice/score_sweep.py`) and deleted with its folder
+  90 days after it was first found unnamed; a manifest naming it again, or a making reusing it,
+  lifts the mark.
 
 ### Phase D blocks (decision 0062)
 
