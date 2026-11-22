@@ -76,7 +76,13 @@ class MaterialCardBuilder:
         cards: list[Block] = []
         for choice in choices:
             offer = by_ref.pop(choice.material, None)
-            card = None if offer is None else material_card(offer, choice, block_id=_card_id(ask, len(cards)))
+            card = (
+                None
+                if offer is None
+                else material_card(
+                    offer, choice, block_id=_card_id(ask, len(cards)), records=matter.record_sources
+                )
+            )
             if card is not None:
                 cards.append(card)
         return Built(

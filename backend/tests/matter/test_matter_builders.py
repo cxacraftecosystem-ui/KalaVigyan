@@ -137,6 +137,14 @@ async def test_a_card_shows_a_formula_and_cid_only_from_its_pubchem_record(store
     assert built.sources == {ALUM_RECORD: alum_record_source()}
 
 
+async def test_a_card_cites_only_a_record_its_builder_holds(stored: dict[str, Any]) -> None:
+    linked = matter(alum_linked=True)
+    stored["matter"] = replace(linked, record_sources={ALIZARIN_RECORD: alizarin_record_source()})
+    built = await MaterialCardBuilder(tools()).build(chemistry_ask())
+    (card,) = built.blocks
+    assert (card.pubchem_cid, card.source_id, built.sources) == (24856, None, {})
+
+
 async def test_a_card_without_a_linked_record_cites_none(stored: dict[str, Any]) -> None:
     (card,) = (await MaterialCardBuilder(tools()).build(chemistry_ask())).blocks
     assert (card.pubchem_cid, card.source_id) == (None, None)

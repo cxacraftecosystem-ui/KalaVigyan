@@ -226,7 +226,9 @@ def _cards(ctx: ChapterContext, matter: CraftMatter) -> list:
             facts=[f"{ref}.{key}" for key in facts],
             handling=[f"{ref}.{key}" for key in handling],
         )
-        card = material_card(offer, choice, block_id=f"chem.card-{len(cards) + 1}")
+        card = material_card(
+            offer, choice, block_id=f"chem.card-{len(cards) + 1}", records=ctx.rows.record_sources
+        )
         if card is not None:
             cards.append(card)
     return cards
