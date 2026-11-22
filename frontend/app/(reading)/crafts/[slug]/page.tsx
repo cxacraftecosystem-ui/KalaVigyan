@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 
-import { FieldVoicesPart } from "@/components/craft/FieldVoicesPart";
 import { craftRecordView } from "@/lib/craftRecord";
 import { monographMetadata } from "@/lib/monographMetadata";
 import { serverPageLanguages } from "@/lib/monographLanguagesServer";
@@ -38,12 +37,12 @@ export default async function CraftPage({ params }: CraftRoute) {
   const { slug } = await params;
   const document = await serverCraftDocument(slug);
   if (document) {
-    const reading = serverPageLanguages(document.subjectKind, document.subjectSlug);
-    if (document.shell !== null) return <MonographShellPage document={document} deferred languages={await reading} />;
-    const [languages, voices] = await Promise.all([reading, craftFieldVoices(slug)]);
-    return <MonographDocumentPage document={document} deferred languages={languages} tail={<FieldVoicesPart first={voices} className="kv-page pb-24" />} />;
+    const languages = await serverPageLanguages(document.subjectKind, document.subjectSlug);
+    if (document.shell !== null) return <MonographShellPage document={document} deferred languages={languages} />;
+    const voices = await craftFieldVoices(slug);
+    return <MonographDocumentPage document={document} deferred languages={languages} voices={voices} />;
   }
   const [page, voices] = await Promise.all([craftRecordPage(slug), craftFieldVoices(slug)]);
   if (!page) notFound();
-  return <CraftWithoutMonograph record={craftRecordView(page)} voices={<FieldVoicesPart first={voices} />} />;
+  return <CraftWithoutMonograph record={craftRecordView(page)} voices={voices} />;
 }

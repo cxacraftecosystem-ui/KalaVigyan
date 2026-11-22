@@ -62,7 +62,8 @@ test("a flagged sentence draws only the Sources differ tag, never the readings",
   const sentence = twoReadings(explainerSentenceShape.parse(PAYLOAD, "sentence"));
   const flagged = withReading(createElement(ExplainerSentence, { sentence }));
   expect(attribute(flagged, "evidence-tag", "data-level")).toEqual(["differ"]);
-  expect(flagged).not.toContain("<button");
+  expect(flagged.match(/<button\b/g)?.length).toBe(flagged.match(/data-testid="citation-chip"/g)?.length);
+  expect(flagged).not.toContain("aria-controls");
   expect(flagged).not.toContain("Alum alone fixes the red");
   expect(flagged).not.toContain("<details");
   const plain = withReading(createElement(ExplainerSentence, { sentence: explainerSentenceShape.parse(PAYLOAD, "sentence") }));

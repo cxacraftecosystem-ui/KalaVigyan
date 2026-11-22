@@ -106,14 +106,18 @@ async def test_a_panel_whose_every_seat_is_seated_again_is_reused_whole() -> Non
 
 @pytest.mark.parametrize(
     ("depth", "seats"),
-    [("DETAILED", ["HISTORIAN", "DESIGN_HISTORIAN"]), ("BASIC", ["HISTORIAN"])],
+    [("DETAILED", ["DESIGN_HISTORIAN", "HISTORIAN"]), ("BASIC", ["HISTORIAN"])],
 )
 async def test_the_reused_section_seats_the_new_understanding_s_experts_at_its_depth(
     depth: str, seats: list[str]
 ) -> None:
     stored = await stored_panel(differing_trio())
     request = PlanRequest(
-        question=QUESTION, mode="HYBRID", craft=AJRAKH, depth=depth, seats=("HISTORIAN", "DESIGN_HISTORIAN")
+        question=QUESTION,
+        mode="HYBRID",
+        craft=AJRAKH,
+        depth=depth,
+        seats=("HISTORIAN", "ECONOMIST", "DESIGN_HISTORIAN"),
     )
     builds = ReuseBuilds(builders=BlockBuilders(), answer_id=ANSWER, request=request)
     spec = SectionSpec(id="s2", discipline="HISTORY", title="History", order=2)

@@ -1,14 +1,15 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 
+import { FieldVoicesPart } from "@/components/craft/FieldVoicesPart";
 import { FactGrid } from "@/components/editorial/FactGrid";
 import { Masthead } from "@/components/editorial/Masthead";
 import { TypographicPlate } from "@/components/editorial/TypographicPlate";
 import { EmptyState } from "@/components/EmptyState";
 import { buttonLook } from "@/components/ui/button";
 import { RECORD_HEADING, RECORD_KICKER, START_BODY, type CraftRecordView } from "@/lib/craftRecord";
+import type { FieldVoicesFirst } from "@/lib/fieldVoicesView";
 
-export function CraftWithoutMonograph({ record, voices = null }: { record: CraftRecordView; voices?: ReactNode }) {
+export function CraftWithoutMonograph({ record, voices = null }: { record: CraftRecordView; voices?: FieldVoicesFirst | null }) {
   const plate = <TypographicPlate material={record.material} englishName={record.name} nativeName={record.nativeName} size="small" decorative />;
   const provenance = record.provenance.map((part) => <span key={part}>{part}</span>);
   return (
@@ -29,7 +30,7 @@ export function CraftWithoutMonograph({ record, voices = null }: { record: Craft
             <FactGrid facts={record.facts} />
           </section>
         ) : null}
-        {voices}
+        <FieldVoicesPart first={voices} />
         <section className="kv-unc-start">
           <EmptyState
             plate={plate}
