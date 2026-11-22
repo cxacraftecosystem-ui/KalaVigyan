@@ -52,7 +52,7 @@ async def curated_term_claims(session: AsyncSession, keys: Collection[str]) -> d
             )
             continue
         for term in terms:
-            if term.term_key in keys:
+            if term.term_key is not None and term.term_key in keys:
                 found.setdefault(term.term_key, []).extend(term.claim_ids)
     return {key: list(dict.fromkeys(claim_ids)) for key, claim_ids in found.items()}
 

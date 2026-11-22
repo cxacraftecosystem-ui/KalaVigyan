@@ -167,7 +167,7 @@ async def import_dossier(
     overview = await _overview(session, plan, craft)
     changed["pieces"] = await write_pieces(session, overview, previous.piece_ids() if previous else {})
     changed["curatedCraft"] = await _write_page(session, plan, overview, (digest, stored.get(craft.id)))
-    keys = [term.term_key for term in plan.index.glossary if term.term_key]
+    keys = [key for key in (term.term_key for term in plan.index.glossary) if key is not None]
     changed["termSummaries"] = await write_curated_term_summaries(session, keys)
     return DossierOutcome(
         file=f"{dossier.craft_slug}.json",
