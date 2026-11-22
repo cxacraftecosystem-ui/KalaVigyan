@@ -15,6 +15,7 @@ __all__ = [
     "SIMULATION_KIND",
     "ClaimState",
     "answered_first",
+    "curated_piece",
     "piece_group_key",
     "reusable_groups",
     "reusable_simulation",
@@ -81,8 +82,20 @@ def piece_group_key(piece: KnowledgePiece) -> tuple[str, uuid.UUID]:
     return piece.facet, piece.created_from_answer_id or piece.id
 
 
-def answered_first(groups: Sequence[tuple[KnowledgePiece, ...]]) -> list[tuple[KnowledgePiece, ...]]:
-    answered = [group for group in groups if any(piece.created_from_answer_id for piece in group)]
+def curated_piece(
+    answer_id: uuid.UUID | None, claim_ids: Collection[uuid.UUID], curated: Collection[uuid.UUID]
+) -> bool:
+    return answer_id is None and bool(claim_ids) and all(claim_id in curated for claim_id in claim_ids)
+
+
+def answered_first(
+    groups: Sequence[tuple[KnowledgePiece, ...]], curated: Collection[uuid.UUID]
+) -> list[tuple[KnowledgePiece, ...]]:
+    answered = [
+        group
+        for group in groups
+        if not all(curated_piece(piece.created_from_answer_id, piece.claim_ids, curated) for piece in group)
+    ]
     return answered or list(groups)
 
 

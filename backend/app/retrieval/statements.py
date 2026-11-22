@@ -42,6 +42,7 @@ from app.research.retrieval import (
     RESTRICTED_SENSITIVITY,
     VISIBLE_SENSITIVITY,
 )
+from app.research.vocabulary import CONCEPT_TYPE_DISCIPLINES
 
 from .citation_access import HELD_LEFT_OUT, HeldFacts, readable_citation, unheld
 from .field_scope import field_interview_sources, withheld_field_sources
@@ -67,6 +68,7 @@ __all__ = [
     "claim_entity_ranking",
     "claim_lexical_ranking",
     "claim_vector_ranking",
+    "facet_disciplines",
     "field_condition",
     "field_passages",
     "filed_under",
@@ -139,10 +141,20 @@ def scope_claims(scope: CraftScope, *, facets: Sequence[str] = ()) -> ColumnElem
     edges = select(ConceptEdge.id).where(
         or_(ConceptEdge.srcId.in_(concepts), ConceptEdge.dstId.in_(concepts))
     )
-    return or_(
-        and_(Claim.subjectType == "CONCEPT", Claim.subjectId.in_(concepts)),
+    typed = or_(
+        and_(Claim.subjectType == CONCEPT_SUBJECT, Claim.subjectId.in_(concepts)),
         and_(Claim.subjectType == "EDGE", Claim.subjectId.in_(edges)),
     )
+    disciplines = facet_disciplines(facets)
+    if not disciplines:
+        return typed
+    owned = scope_concepts(scope)
+    filed = and_(Claim.subjectType == CONCEPT_SUBJECT, Claim.subjectId.in_(owned), filed_under(disciplines))
+    return or_(typed, filed)
+
+
+def facet_disciplines(facets: Sequence[str]) -> list[str]:
+    return sorted({CONCEPT_TYPE_DISCIPLINES[facet] for facet in facets if facet in CONCEPT_TYPE_DISCIPLINES})
 
 
 def field_condition(fields: Sequence[str]) -> ColumnElement[bool]:

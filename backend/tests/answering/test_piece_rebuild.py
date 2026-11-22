@@ -105,3 +105,25 @@ async def test_a_spend_refusal_stops_the_run_and_other_failures_are_reported() -
     ]
     assert (report.stopped, report.ok) == ("SPEND_REFUSED", False)
     assert report.as_dict()["budget_usd"] == "2.50"
+
+
+async def test_a_group_whose_rebuild_ran_is_marked_tried_and_a_failed_one_is_not() -> None:
+    marked: list[str] = []
+
+    async def rebuild(stale: StaleGroup) -> str:
+        if stale.facet == "HISTORY":
+            raise ExternalFailure("research failed", kind="unavailable", service="live_research")
+        return "EMPTY" if stale.facet == "DESIGN" else "REBUILT"
+
+    async def tried(stale: StaleGroup) -> None:
+        marked.append(stale.facet)
+
+    report = await run_piece_rebuild(
+        [group(), group("HISTORY"), group("DESIGN")],
+        rebuild=rebuild,
+        remaining=left("2.00"),
+        budget_usd=BUDGET,
+        tried=tried,
+    )
+    assert [g.status for g in report.groups] == ["REBUILT", "FAILED", "EMPTY"]
+    assert marked == ["CHEMISTRY", "DESIGN"]

@@ -27,7 +27,7 @@ def ladder_stage_options(records: ProcessRecords) -> list[StageOption]:
         StageOption(id=stage.id, ordinal=stage.ordinal, name=stage.name)
         for process in craft_process(records).processes
         for stage in process.stages
-        if _facts(stage.claims)
+        if stage.ordered and _facts(stage.claims)
     ]
 
 
@@ -67,6 +67,8 @@ def ladder_problems(block: ProcessLadderBlock, records: ProcessRecords) -> list[
             continue
         if (stage.ordinal, stage.name, stage.stage_type) != (row.ordinal, row.name, row.stage_type):
             problems.append(f"stage {stage.stage_id} does not match its stored row")
+        if not row.ordered:
+            problems.append(f"stage {stage.stage_id} has no order a source states, so no ladder numbers it")
         problems += _stage_problems(stage, row, records)
     return problems
 
@@ -75,7 +77,7 @@ def _ladder_stages(process: ProcessView, wanted: set[uuid.UUID], block_id: str) 
     stages: list[LadderStage] = []
     count = 0
     for view in process.stages:
-        facts = _facts(view.claims) if view.id in wanted else []
+        facts = _facts(view.claims) if view.id in wanted and view.ordered else []
         if not facts:
             continue
         sentences = [_sentence(f"{block_id}.{count + n}", claim) for n, claim in enumerate(facts, start=1)]

@@ -57,6 +57,9 @@ class MemoryPieces:
         newest_first = sorted(self.pieces, key=lambda piece: piece.created_at, reverse=True)
         own = [piece for piece in newest_first if piece.craft_id == CRAFT_ID]
         regions = [piece for piece in newest_first if piece.craft_id is None]
+        curated = frozenset(
+            claim for piece in own if piece.created_from_answer_id is None for claim in piece.claim_ids
+        )
         reused = {}
         for facet, topic in topics.items():
             ask_for = ReuseAsk(
@@ -66,11 +69,11 @@ class MemoryPieces:
                 depth=ask.depth,
                 reading_style=ask.reading_style,
             )
-            groups = answered_first(reusable_groups(own, ask_for, states))
+            groups = answered_first(reusable_groups(own, ask_for, states), curated)
             if groups:
                 shown = with_region_story(groups[0], regions, depth=ask.depth, current=states)
                 shown = with_simulation(shown, regions, depth=ask.depth, current=states)
-                reused[facet] = ReusedSection(pieces=shown, cited=cited)
+                reused[facet] = ReusedSection(pieces=shown, cited=cited, curated=curated)
         return PieceLookup(craft_id=CRAFT_ID, topics=topics, reused=reused)
 
     async def keep(
