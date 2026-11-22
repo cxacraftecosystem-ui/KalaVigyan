@@ -846,7 +846,11 @@ datasets, "Model" is all a model may do, and every validator fails closed. Lanes
   points[TimelinePoint], routes[TimelineRoute], datasets[DatasetRef] (exactly 1),
   boundaryCaption}`, `TimelinePlace {name, wikidataId?, latitude?, longitude?}`, `TimelinePoint
   {place, yearFrom, yearTo, sentence}`, `TimelineRoute {start, end, yearFrom, yearTo, sentence}`
-  (places by index). Server: the years a sentence and its quotes name
+  (places by index). Version 2 (decision 0147) adds `undated[TimelineUndated]` (at most 6, left
+  out when empty), `TimelineUndated {place?, sentence}`: a cited history sentence that states no
+  year, with the listed place it names; and `TimelinePlace.districtLgd?`, a place the LGD district
+  register places at its district's centroid. A block carrying neither stays version 1, and
+  version 1 refuses both. Server: the years a sentence and its quotes name
   (`research/timeline.years_named`: four-digit years 1000 to 2099 not followed by BC or BCE, ranges such as
   `1586-1631`, `1855 - ca. 1879`, `1855-79` and `1947 to 2001` with each end named too, decades
   such as `1950s`, ordinal centuries in digits or words such as `15th-century`, `fifteenth century`
@@ -858,7 +862,8 @@ datasets, "Model" is all a model may do, and every validator fails closed. Lanes
   query), else the place is listed without a pin; `DR_DISTRICT_SHAPES` and the caption. Model:
   which history claims become points and routes, the listed place each names, its years among
   those named. Rules: places once each (name case-folded, Wikidata id), in order of first use
-  (points, then routes), each used; placed only with a Wikidata id and both coordinates; a point's
+  (points, then routes, then undated sentences), each used; placed only with both coordinates and
+  a Wikidata id or a register district; an undated sentence's place is named by it; a point's
   place is named by its sentence or quotes; every span of years is one its sentence or quotes
   name; points in time order; a route joins two different places and one of its texts states the
   move (`timeline.states_movement`: `from <start>`, the end's name and a `MOVEMENT_WORDS` word such
@@ -924,7 +929,8 @@ joined both kinds to `BUILT_BLOCK_KINDS` (decision 0061), their renderers being 
 - **`timeline_map`** (`HISTORY`, 30 s). The statements are the section's fact claims whose
   sentence or quotes state a span of years (`timeline.years_offered`: `years_named` without a
   single year whose numeral is followed by a plural noun, "1500 artisans", other than "hundreds",
-  "thousands", "millions" or "dozens", and without a temperature, a sum of money or a multiplied
+  "thousands", "millions" or "dozens", or by an irregular counted noun, "1500 people", "1200 men"
+  (`timeline.IRREGULAR_COUNTED`), and without a temperature, a sum of money or a multiplied
   count, "1250-1280°C", "Rs 2000 crore", "1450 million years"), at most 12, each
   offered with its quotes (at most 3) and its spans by ref (`y1`, ...) in a server line outside
   the untrusted blocks. No dated statement or no `DR_DISTRICT_SHAPES` row asks no model. One
@@ -933,9 +939,15 @@ joined both kinds to `BUILT_BLOCK_KINDS` (decision 0061), their renderers being 
   offered and its sentence or quotes name the place, a route when its refs were offered, its ends
   differ and one of its texts states the move (`states_movement`); each statement once as a point
   and once as a route, at most 10 points (in time order) and 6 routes. Places are listed in order
-  of first use (case-folded) and placed through `supply_places.named_places`, the supply origins'
-  rule with the capitalised words of every text using the place; a failed lookup lists every place
-  without a pin. Undated statements are not on the timeline: version 1 has no undated point.
+  of first use (case-folded) and placed first through the district register
+  (`services/place_register.register_points`: a name that is one LGD district as the register or
+  its other-names table spells it, at `AdminDistrict.centroid`), then through a Wikidata id the
+  craft's curation stores on a place of that name (`curated_points`, the `WikidataPoint` the
+  nightly chapters job keeps), and only then through `supply_places.named_places`, the supply
+  origins' rule with the capitalised words of every text using the place; a failed Wikidata
+  lookup lists the places it would have placed without a pin. The section's fact claims that state
+  no year (at most 6) are the undated sentences, each with the first listed place it names, else a
+  register district it names (decision 0147).
 
 ### The generated explainer's static check and frame
 

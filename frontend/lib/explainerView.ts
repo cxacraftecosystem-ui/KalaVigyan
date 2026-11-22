@@ -222,7 +222,7 @@ export function blockSentences(block: TypedBlock): ExplainerSentence[] {
   if (block.kind === "expert_view") return [...block.take, ...block.differs.flatMap((difference) => [difference.thisView, difference.otherView])];
   if (block.kind === "what_if") return block.options.flatMap((option) => option.outcomes.map((outcome) => outcome.sentence));
   if (block.kind === "zoom_story") return block.levels.map((level) => level.sentence);
-  if (block.kind === "timeline_map") return [...block.points.map((point) => point.sentence), ...block.routes.map((route) => route.sentence)];
+  if (block.kind === "timeline_map") return [...block.points.map((point) => point.sentence), ...block.routes.map((route) => route.sentence), ...(block.undated ?? []).map((entry) => entry.sentence)];
   if (block.kind === "indigo_vat" || block.kind === "mordant_bath" || block.kind === "lost_wax" || block.kind === "firing") return signatureSentences(block);
   return learningSentences(block);
 }

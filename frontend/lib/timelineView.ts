@@ -6,7 +6,7 @@ import type { LongitudeLatitudeBox } from "@/lib/supplyView";
 export type TimelineEntryKind = "point" | "route";
 export type TimelineEntryState = "past" | "current" | "later";
 export type TimelineEntry = { key: string; kind: TimelineEntryKind; yearFrom: number; yearTo: number; places: number[]; sentence: ExplainerSentence };
-export type PlacedPlace = { index: number; name: string; wikidataId: string; latitude: number; longitude: number; pin: number; beyond: boolean };
+export type PlacedPlace = { index: number; name: string; wikidataId: string | null; latitude: number; longitude: number; pin: number; beyond: boolean };
 export type TimelineRouteLine = { key: string; start: PlacedPlace; end: PlacedPlace; entry: TimelineEntry };
 
 const YEARS_PER_CENTURY = 100;
@@ -67,7 +67,7 @@ export function placedPlaces(block: TimelineMapBlock, box: LongitudeLatitudeBox)
   const placed: PlacedPlace[] = [];
   block.places.forEach((place, index) => {
     const { wikidataId, latitude, longitude } = place;
-    if (wikidataId === null || latitude === null || longitude === null) return;
+    if ((wikidataId === null && place.districtLgd === undefined) || latitude === null || longitude === null) return;
     placed.push({ index, name: place.name, wikidataId, latitude, longitude, pin: placed.length + 1, beyond: !inBox(latitude, longitude, box) });
   });
   return placed;

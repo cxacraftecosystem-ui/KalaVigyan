@@ -21,10 +21,10 @@ from .craft_matter import CraftMatter, MaterialRows, craft_matter
 from .matter_builders import MOLECULE_CANDIDATES_MAX, molecule_candidates
 from .molecule_conformers import ConformerCache, ConformerObjects, ConformerSource, live_pubchem
 from .object_store import media_bucket
+from .place_register import KnownPointsLoader, stored_known_points
 from .region_records import dataset_records
-from .supply_links import OriginPlace
 from .supply_places import PlaceFinder, named_places
-from .timeline_story import TimelineEntries, timeline_block, timeline_entries, timeline_offer
+from .timeline_story import ShownPlace, TimelineEntries, timeline_block, timeline_entries, timeline_offer
 from .zoom_pictures import LevelPicture, PicturesAsk, ZoomPictures, fibre_named, zoom_pictures
 from .zoom_story import (
     Captions,
@@ -121,9 +121,12 @@ class ZoomStoryBuilder:
 
 
 class TimelineMapBuilder:
-    def __init__(self, tools: BuilderTools, *, places: Places | None = None) -> None:
+    def __init__(
+        self, tools: BuilderTools, *, places: Places | None = None, known: KnownPointsLoader | None = None
+    ) -> None:
         self._tools = tools
         self._places = places or (lambda: tools.live.reference(tools.sessions, WikidataAdapter))
+        self._known = known or stored_known_points(tools.sessions)
 
     async def build(self, ask: BuildAsk) -> Built:
         offer = timeline_offer(ask.blocks, ask.cited)
@@ -139,16 +142,21 @@ class TimelineMapBuilder:
         entries = timeline_entries(offer, await choose_timeline(self._tools.plan_model, offer.brief()))
         if not entries.points and not entries.routes:
             return Built()
-        places = await self._placed(entries)
+        craft = ask.request.craft.slug if ask.request.craft is not None else None
+        places = await self._placed(entries, craft)
         block = timeline_block(entries, places, region_dataset(record), block_id=f"{ask.section.id}.timeline")
         return Built((block,)) if block is not None else Built()
 
-    async def _placed(self, entries: TimelineEntries) -> dict[str, OriginPlace]:
+    async def _placed(self, entries: TimelineEntries, craft: str | None) -> dict[str, ShownPlace]:
+        named = entries.places()
+        known = await self._known(craft, [name for name, _ in named.values()])
+        rest = {key: place for key, place in named.items() if not known.placed(key)}
+        found: dict[str, ShownPlace] = {**known.curated, **known.register}
         try:
-            return await named_places(await self._places(), entries.places())
+            return {**await named_places(await self._places(), rest), **found}
         except (ExternalFailure, NotConfigured) as failure:
-            logger.warning("timeline places are listed without pins: %s", failure)
-            return {}
+            logger.warning("timeline places beyond the register are listed without pins: %s", failure)
+            return found
 
 
 def _compound_materials(matter: CraftMatter) -> list[MaterialRows]:
