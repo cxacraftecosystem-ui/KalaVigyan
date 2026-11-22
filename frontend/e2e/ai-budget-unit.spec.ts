@@ -3,6 +3,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { AiBudgetForm } from "@/components/admin/AiBudgetForm";
+import { AuthProvider } from "@/components/AuthProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { aiBudgetShape, ALLOWANCE_MAX, budgetDraft, budgetProblems, CAPPED_ROLES, draftBudget, USD_CAP_MAX, type AiBudgetView } from "@/lib/aiBudgetContract";
 import { canAccessRoute } from "@/lib/permissions";
 import { parseShape, ShapeError } from "@/lib/shape";
@@ -58,7 +60,8 @@ test("a draft is checked as the server checks it", () => {
 });
 
 test("the form shows every cap with No cap as its empty state and saves with one primary button", () => {
-  const html = renderToStaticMarkup(createElement(AiBudgetForm, { view: VIEW, busy: false, onSave: () => undefined }));
+  const form = createElement(AiBudgetForm, { view: VIEW, busy: false, onSave: () => undefined });
+  const html = renderToStaticMarkup(createElement(AuthProvider, null, createElement(ThemeProvider, null, form)));
   expect(html).toContain("Monthly ceiling, dollars");
   expect(html).toContain("Expert, dollars");
   expect(html).toContain("Student&#x27;s daily allowances");
