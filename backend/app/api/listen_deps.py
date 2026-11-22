@@ -11,8 +11,8 @@ from app.api.voice_deps import current_voice, voice_runtime
 from app.core.db import sessionmaker
 from app.core.deps import get_current_user, require
 from app.core.errors import AppError
-from app.core.rate_limit import retry_after_value
 from app.core.roles import Capability, can, is_uncapped
+from app.core.throttle_refusal import refuse_when_throttled
 from app.models import User
 from app.schemas.listen import ListenOffer
 from app.services.object_store import media_bucket
@@ -46,12 +46,8 @@ class ListenTools:
 
 def throttled_voice_user(attempt: Callable[[str], tuple[bool, float]], detail: str) -> Callable[..., User]:
     def throttle(user: User = Depends(require(Capability.VOICE))) -> User:
-        if is_uncapped(user):
-            return user
-        allowed, retry = attempt(str(user.id))
-        if not allowed:
-            wait = retry_after_value(retry)
-            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, detail, {"Retry-After": wait})
+        if not is_uncapped(user):
+            refuse_when_throttled(attempt(str(user.id)), detail)
         return user
 
     return throttle

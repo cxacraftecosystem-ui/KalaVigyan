@@ -16,11 +16,11 @@ from app.core.db import sessionmaker
 from app.core.deps import get_current_user
 from app.core.errors import AppError, InvalidInput, Refused
 from app.core.rate_limit import (
-    retry_after_value,
     voice_session_attempt,
     voice_speech_attempt,
     voice_turn_attempt,
 )
+from app.core.throttle_refusal import refuse_when_throttled
 from app.models import User
 from app.schemas.voice import (
     RELAY_AUDIO_TYPES,
@@ -107,7 +107,7 @@ async def start(
     runtime: VoiceRuntime = Depends(voice_runtime),
     voice: VoiceSettings = Depends(current_voice),
 ) -> dict[str, Any]:
-    _throttled(voice_session_attempt(str(user.id)), THROTTLED_DETAIL)
+    refuse_when_throttled(voice_session_attempt(str(user.id)), THROTTLED_DETAIL)
     ask = StartAsk(user=user, craft_slug=payload.craft_slug, mode=payload.mode, language=payload.language)
     try:
         return await start_session(ask, store=store, runtime=runtime, voice=voice, now=utc_now())
@@ -185,7 +185,7 @@ async def relay_turn(
     record = await _relay_session(store, user, session_id)
     if not record.live_at(utc_now()):
         raise HTTPException(status.HTTP_409_CONFLICT, ENDED_DETAIL)
-    _throttled(voice_turn_attempt(str(user.id)), TURNS_THROTTLED_DETAIL)
+    refuse_when_throttled(voice_turn_attempt(str(user.id)), TURNS_THROTTLED_DETAIL)
     if voice.missing() or voice.cipher is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, MESSAGES["not_configured"])
     audio = await _recording(request)
@@ -209,7 +209,7 @@ async def speech(
     record = await _relay_session(store, user, session_id)
     if voice.missing() or voice.cipher is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, MESSAGES["not_configured"])
-    _throttled(voice_speech_attempt(str(user.id)), SPEECH_THROTTLED_DETAIL)
+    refuse_when_throttled(voice_speech_attempt(str(user.id)), SPEECH_THROTTLED_DETAIL)
     try:
         audio = await turn_speech(record, turn_id, _relay_deps(request, runtime, store, voice, record))
     except VoiceRefused as error:
@@ -218,14 +218,6 @@ async def speech(
         logger.warning("relay speech failed: %s", error)
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, MESSAGES["not_configured"]) from None
     return Response(content=audio, media_type="audio/mpeg", headers={"Cache-Control": "private, no-store"})
-
-
-def _throttled(attempt: tuple[bool, float], detail: str) -> None:
-    allowed, retry = attempt
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS, detail, {"Retry-After": retry_after_value(retry)}
-        )
 
 
 async def _owned(store: SqlVoiceStore, user: User, session_id: uuid.UUID) -> SessionRecord:

@@ -47,7 +47,7 @@ flowchart LR
 | Origin | nginx `:80` on EC2 `kalavigyan-api` (ap-south-1) | 403 without `X-Origin-Verify` |
 | API | `uvicorn app.main:app` | blue/green on 8000/8001 |
 | Database | Postgres 17 on Supabase | session pooler `:5432`; vector, postgis, pg_trgm, unaccent, citext |
-| Workers on the box | `kv-worker`, `kv-fetcher` and `kv-contributions` | the media queue (decision 0018), the fetcher sandbox (decision 0007) and the contribution queue's gates (round 7), as `docs/RUNBOOK.md` lists them under On the box |
+| Workers on the box | `kv-worker`, `kv-fetcher` and `kv-contributions` | the media queue (decision 0018) and the daily voice upkeep (decision 0140), the fetcher sandbox (decision 0007) and the contribution queue's gates (round 7), as `docs/RUNBOOK.md` lists them under On the box |
 
 Media goes to the private S3 bucket through presigned URLs. Ids, names and the deploy sequence
 are in `docs/RUNBOOK.md`; what the box assumes from the code is in `docs/contracts/infra.md`.
@@ -441,8 +441,9 @@ answers 404 and no voice button is drawn. The steps hold when the setting is tru
    checked `VOICE_TURN` compose (`HYBRID`), translates what it will say into the session language
    (`answer_translation.translated_sentences`, decision 0025), and saves the turn to the encrypted
    transcript with an `Answer` row and its seconds in one transaction.
-4. Every day `app/scripts/voice_upkeep` closes calls left open, purges transcripts after 30 days and
-   reconciles agent calls with ElevenLabs in both directions (refund or charge).
+4. Every day `kv-worker` (`app/worker.py`, `voice/daily_upkeep.py`) closes calls left open, purges
+   transcripts after 30 days and reconciles agent calls with ElevenLabs in both directions (refund or
+   charge), once when it starts and every 24 hours after.
 
 ## How a stage illustration is made
 

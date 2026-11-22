@@ -159,7 +159,11 @@ def test_voice_orchestrates_providers_and_contracts_and_only_entry_points_import
     allowed = "from app.providers.elevenlabs import ElevenLabs\nfrom app.schemas.voice import MAX_TURNS\n"
     assert check("backend/app/voice/relay.py", allowed) == []
     assert check("backend/app/api/routes/voice.py", "from app.voice.relay import relay_turn_events\n") == []
-    assert check("backend/app/scripts/voice_upkeep.py", "from app.voice.upkeep import run_upkeep\n") == []
+    assert check("backend/app/worker.py", "from app.voice.daily_upkeep import daily_voice_upkeep\n") == []
+    found = check("backend/app/worker.py", "from app.providers.elevenlabs import ElevenLabs\n")
+    assert found == [
+        "backend/app/worker.py:1: worker imports app.providers.elevenlabs (worker may not import providers)"
+    ]
     found = check("backend/app/voice/relay.py", "from app.api import voice_deps\n")
     assert found == ["backend/app/voice/relay.py:1: voice imports app.api (voice may not import api)"]
     found = check("backend/app/services/answering.py", "from app.voice import turns\n")

@@ -622,7 +622,7 @@ daily upkeep, as calls are.
   the conversation is `PENDING` or `APPROVED`.
   - Once neither holds, they are purged: at once when the last change was a withdrawal or a
     deletion, otherwise `TESTIMONY_RETENTION_DAYS` later (`retentionUntil`).
-  - The daily upkeep (`voice_upkeep`) deletes the audio objects, then their rows, and clears
+  - The daily upkeep (`kv-worker`, `voice/daily_upkeep`) deletes the audio objects, then their rows, and clears
     `transcriptEnc`.
 
 ### 7.8 The artisan agent (`AGENT` only)

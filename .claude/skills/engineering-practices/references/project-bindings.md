@@ -79,7 +79,8 @@ backend/app/voice/       voice calls: sessions and their binding, the custom-LLM
                          film mode's score: scenes, fixed prompts and its caches (decision 0058)
 backend/app/media/       stage illustrations and clips: claim set, prompt, bundle, MP4 and PNG
                          checks, the job routes' steps, the worker queue and its SQL (decision 0018)
-backend/app/worker.py    the kv-worker process (python -m app.worker): the media queue
+backend/app/worker.py    the kv-worker process (python -m app.worker): the media queue and the
+                         daily voice upkeep (decision 0140)
 backend/app/services/    domain services: crafts, knowledge, access, credentials, keys, routing
 backend/app/providers/   model-provider adapters (and the one ElevenLabs adapter with its media
                          router wrapper, decision 0058), the AI router, the budget rules and the
@@ -96,8 +97,8 @@ backend/app/scripts/     entry points: seed commands run by the deploy (seed_cra
                          the PubChem compound lookup (link_compounds), the nightly craft
                          chapters job (build_craft_chapters, decision 0098), the nightly re-check
                          of saved explainers (recheck_saved) and the weekly alert digest
-                         (send_alert_digest, decision 0063), the daily voice upkeep
-                         (voice_upkeep), the voice agent's provisioning (provision_voice_agent)
+                         (send_alert_digest, decision 0063), the voice agent's provisioning
+                         (provision_voice_agent)
                          and the E2E account's provisioning (provision_e2e_account); shared
                          operator input in operator_input
 backend/app/main.py      the ASGI app
@@ -127,7 +128,7 @@ api       -> voice, media, providers, services, science, geo, retrieval, researc
 scripts   -> voice, providers, services, planner, composer, retrieval, research, core, models, data
 voice     -> providers, services, composer, schemas, research, core, models
 media     -> providers, services, schemas, research, core, models
-worker    -> media, core
+worker    -> media, voice, core
 providers -> services, research, core, models
 services  -> science, geo, planner, composer, retrieval, sources, curation, research, core, models, data
 planner   -> sources, research, core, models

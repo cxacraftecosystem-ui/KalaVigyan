@@ -477,14 +477,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** prefetch the claim vectors with the pack and embed the question in parallel with
   the filler; add T2 chunks as `EVIDENCE` candidates with their verified quotes.
 
-### Voice upkeep rides the daily Coverage enrichment run
-
-- **What:** purging transcripts after 30 days, closing calls left open and reconciling agent calls
-  run as the first module of the daily box job in `coverage-enrichment.yml`; `kv-worker`
-  (`app/worker.py`, decision 0018) runs only the media queue.
-- **Why left:** the worker arrived with the media lane, which did not take on voice scheduling.
-- **Clears it:** move `app.scripts.voice_upkeep` into the worker's schedule.
-
 ### Voice billing approximations
 
 - **What:** a relay upload's floor is its bytes at 5 000 a second; compressed audio is not decoded,
@@ -1022,14 +1014,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** highlighting needs timings; a fallback without them is a second Listen.
 - **Clears it:** a Gemini read-aloud that highlights by sentence only, if the owner wants Listen
   while ElevenLabs is down.
-
-### The Listen route repeats the throttle shape
-
-- **What:** `api/routes/listen.throttle` repeats the `Retry-After` arithmetic of the other route
-  throttles (`terms`, `knowledge`, `voice`, `auth`, `password_change`).
-- **Why left:** those routes belong to other lanes working in the tree at the same time.
-- **Clears it:** one `core/rate_limit.refused(attempt, detail)` that raises the 429 with its
-  `Retry-After`, used by every route.
 
 ## Sectioned composition (decision 0032)
 

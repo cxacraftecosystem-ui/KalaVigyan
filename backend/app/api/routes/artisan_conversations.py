@@ -16,11 +16,11 @@ from app.core.db import sessionmaker
 from app.core.deps import get_current_user
 from app.core.errors import AppError, InvalidInput, Refused
 from app.core.rate_limit import (
-    retry_after_value,
     voice_session_attempt,
     voice_speech_attempt,
     voice_turn_attempt,
 )
+from app.core.throttle_refusal import refuse_when_throttled
 from app.models import User
 from app.research.testimony import RECORDING_NOTICE_VERSION
 from app.schemas.artisan import ConversationStartRequest
@@ -109,7 +109,7 @@ async def start(
     voice: VoiceSettings = Depends(artisan_voice_settings),
     artisans: SqlArtisanStore = Depends(artisan_store),
 ) -> dict[str, Any]:
-    _throttled(voice_session_attempt(str(user.id)), THROTTLED["start"])
+    refuse_when_throttled(voice_session_attempt(str(user.id)), THROTTLED["start"])
     ask = StartConversation(user, payload.craft_slug, payload.language, payload.notice_version)
     try:
         return await start_conversation(ask, _deps(store, artisans, runtime, voice))
@@ -137,7 +137,7 @@ async def relay_turn(
         raise refusal(ArtisanRefused("not_found"))
     if conversation.ended_at is not None or not record.live_at(utc_now()):
         raise HTTPException(status.HTTP_409_CONFLICT, ENDED_DETAIL)
-    _throttled(voice_turn_attempt(str(user.id)), THROTTLED["turn"])
+    refuse_when_throttled(voice_turn_attempt(str(user.id)), THROTTLED["turn"])
     deps = _deps(store, artisans, runtime, voice)
     upload = await _upload(request)
     turn_deps = RelayTurnDeps(
@@ -169,7 +169,7 @@ async def speech(
     record = await store.by_id(conversation.voice_session_id) if conversation.voice_session_id else None
     if record is None or conversation.transport != "RELAY":
         raise refusal(ArtisanRefused("not_found"))
-    _throttled(voice_speech_attempt(str(user.id)), THROTTLED["speech"])
+    refuse_when_throttled(voice_speech_attempt(str(user.id)), THROTTLED["speech"])
     try:
         audio = await conversation_speech(
             conversation, record, turn_id, _deps(store, artisans, runtime, voice)
@@ -274,14 +274,6 @@ async def _owned(artisans: SqlArtisanStore, user: User, conversation_id: uuid.UU
     if conversation is None or conversation.user_id != user.id or conversation.deleted_at is not None:
         raise refusal(ArtisanRefused("not_found"))
     return conversation
-
-
-def _throttled(attempt: tuple[bool, float], detail: str) -> None:
-    allowed, retry = attempt
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS, detail, {"Retry-After": retry_after_value(retry)}
-        )
 
 
 async def _upload(request: Request) -> ArtisanUpload:

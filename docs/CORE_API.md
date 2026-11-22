@@ -107,6 +107,13 @@ Last reviewed: 2026-11-18.
 | `retry_after_value(wait_seconds) -> str` | The `Retry-After` value for a refused attempt: whole seconds, at least 1. |
 | `reset_all()` | Clears every window (tests only). |
 
+## core/throttle_refusal.py: the 429 every route sends
+
+| Name | Guarantee |
+|---|---|
+| `too_many_requests(detail, wait_seconds=None) -> HTTPException` | The one 429 refusal: `Retry-After` is `retry_after_value(wait_seconds)` (whole seconds, at least 1), and absent when no wait is known (a locked second factor). Raise it. |
+| `refuse_when_throttled(attempt, detail)` | Raises `too_many_requests(detail, wait)` when an `(allowed, wait)` attempt was refused, else returns. Every throttled route uses it: auth, two-step, password change, asking, terms, Listen and film (`throttled_voice_user`), voice and artisan calls, public reads, MCP connections and client registration (decision 0140). The proposal allowances keep their own 503-or-429 answer (`api/proposal_limits`). |
+
 ## core/errors.py: the error hierarchy
 
 | Name | Guarantee |

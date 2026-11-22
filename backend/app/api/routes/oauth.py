@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,7 +11,8 @@ from app.api.oauth_wire import NO_STORE, form_fields, oauth_error_response, regi
 from app.api.routes.mcp import mcp_enabled
 from app.api.routes.oauth_consent import router as consent_router
 from app.core.db import get_session
-from app.core.rate_limit import client_registration_attempt, retry_after_value
+from app.core.rate_limit import client_registration_attempt
+from app.core.throttle_refusal import refuse_when_throttled
 from app.research.oauth_rules import OAuthError
 from app.services import oauth_clients, oauth_tokens
 
@@ -22,11 +23,7 @@ REGISTRATIONS_SPENT = "Many clients were registered from this address in the las
 
 @router.post(REGISTER_ROUTE, dependencies=[Depends(mcp_enabled)])
 async def register_client(request: Request, session: AsyncSession = Depends(get_session)) -> Response:
-    allowed, wait = client_registration_attempt(request)
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS, REGISTRATIONS_SPENT, {"Retry-After": retry_after_value(wait)}
-        )
+    refuse_when_throttled(client_registration_attempt(request), REGISTRATIONS_SPENT)
     try:
         registration = await registration_from(request)
         registered = await oauth_clients.register_client(session, registration, now=_now())

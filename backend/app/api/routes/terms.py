@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, 
 from app.api.public_deps import cached_read, public_reader, reading_acls
 from app.core.db import sessionmaker
 from app.core.errors import Refused
-from app.core.rate_limit import retry_after_value, term_attempt
+from app.core.rate_limit import term_attempt
 from app.core.roles import is_uncapped
+from app.core.throttle_refusal import refuse_when_throttled
 from app.models import User
 from app.providers.embedding import router_embedder
 from app.providers.router import Principal
@@ -40,11 +41,7 @@ async def term_lookup(request: Request, reader: User | None = Depends(public_rea
 def throttle(reader: User | None = Depends(public_reader)) -> None:
     if reader is None or is_uncapped(reader):
         return
-    allowed, retry = term_attempt(str(reader.id))
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS, THROTTLED_DETAIL, {"Retry-After": retry_after_value(retry)}
-        )
+    refuse_when_throttled(term_attempt(str(reader.id)), THROTTLED_DETAIL)
 
 
 @router.get("/terms/{key}", dependencies=[Depends(throttle)])

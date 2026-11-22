@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import Depends, HTTPException, Request, Response, status
+from fastapi import Depends, Request, Response
 from starlette.requests import HTTPConnection
 
 from app.core.deps import get_optional_user
@@ -13,8 +13,9 @@ from app.core.http_cache import (
     not_modified,
     revalidation_headers,
 )
-from app.core.rate_limit import public_asset_attempt, public_read_attempt, retry_after_value
+from app.core.rate_limit import public_asset_attempt, public_read_attempt
 from app.core.roles import LOWEST_ROLE
+from app.core.throttle_refusal import refuse_when_throttled
 from app.models import User
 from app.research.retrieval import chunk_acls_for
 
@@ -93,8 +94,4 @@ def cached_read(
 
 
 def _refuse_when_spent(attempt: tuple[bool, float]) -> None:
-    allowed, retry = attempt
-    if not allowed:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS, THROTTLED_DETAIL, {"Retry-After": retry_after_value(retry)}
-        )
+    refuse_when_throttled(attempt, THROTTLED_DETAIL)
