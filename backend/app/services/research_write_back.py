@@ -5,10 +5,12 @@ import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from types import MappingProxyType
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.composer.candidates import offered_passages
 from app.core.errors import AppError, InvalidInput
 from app.models import Answer
 from app.research.composition import ComposedAnswer
@@ -27,7 +29,8 @@ from .field_voices_citations import field_documents
 from .live_source_store import keep_document
 from .write_back_gates import gate_write_back, record_write_back_runs, research_placement
 from .write_back_names import filing_names
-from .write_back_plan import SkippedSentence, composed_sentences, write_back_plan
+from .write_back_plan import SkippedSentence, WriteBackPlan, composed_sentences, write_back_plan
+from .write_back_stored import stored_documents
 
 __all__ = [
     "NOTHING_EMBEDDED",
@@ -38,6 +41,7 @@ __all__ = [
     "shown_results",
     "store_live_research",
     "write_through_gates",
+    "writes_back",
 ]
 
 logger = logging.getLogger(__name__)
@@ -45,6 +49,9 @@ logger = logging.getLogger(__name__)
 NOTHING_EMBEDDED = EmbeddedCounts(claims=0, chunks=0)
 COMPARED_KEY = "compared"
 SKIPPED_SHOWN_CHARS = 160
+WRITERS: Mapping[str, str] = MappingProxyType(
+    {"ANSWER": "answer {answer_id}", "BACKGROUND": "the coverage job", "VOICE": "a voice turn"}
+)
 
 
 @dataclass(frozen=True)
@@ -84,6 +91,10 @@ class StoredResearch:
         return sum(1 for result in self.results if result.created)
 
 
+def writes_back(pack: EvidencePack) -> bool:
+    return bool(pack.documents) or bool(offered_passages(pack.stored.chunks))
+
+
 async def store_live_research(
     session: AsyncSession,
     pack: EvidencePack,
@@ -96,18 +107,15 @@ async def store_live_research(
     judge: StructuredModel | None = None,
 ) -> StoredResearch:
     kept = {document.item.id: await keep_document(session, document) for document in pack.documents}
-    fields = await field_documents(session, pack)
-    compared = await compared_crafts(session, answer_id)
-    names = await filing_names(session, index, pack.plan.craft, compared)
-    plan = write_back_plan(
-        pack, answer, found_by=found_by, answer_id=answer_id, names=names, field_documents=fields
-    )
+    planned = await _planned(session, pack, answer, found_by=found_by, answer_id=answer_id, index=index)
+    plan = planned.plan
     written = await write_through_gates(
-        session, (*plan.claims, *plan.held), _documents(pack, fields), embed=embed, judge=judge
+        session, (*plan.claims, *plan.held), planned.documents, embed=embed, judge=judge
     )
     held = [claim for claim in written.claims if claim.dedupe_key in written.held_keys]
-    _log_skipped(answer_id, (*plan.skipped, *written.skipped))
-    _log_held(answer_id, held)
+    writer = WRITERS[found_by].format(answer_id=answer_id)
+    _log_skipped(writer, (*plan.skipped, *written.skipped))
+    _log_held(writer, held)
     await session.commit()
     await refresh_claim_pages(session, shown_results(written.filed, live=written.live))
     cited = cited_source_ids([claim for claim in written.claims if claim not in held], kept)
@@ -121,6 +129,36 @@ async def store_live_research(
         embedding_error=error,
         held=written.held,
     )
+
+
+@dataclass(frozen=True)
+class _Planned:
+    plan: WriteBackPlan
+    documents: dict[str, SourceDocument]
+
+
+async def _planned(
+    session: AsyncSession,
+    pack: EvidencePack,
+    answer: ComposedAnswer,
+    *,
+    found_by: FoundBy,
+    answer_id: uuid.UUID | None,
+    index: CraftIndexStore,
+) -> _Planned:
+    fields, stored = await field_documents(session, pack), await stored_documents(session, pack)
+    names = await filing_names(session, index, pack.plan.craft, await compared_crafts(session, answer_id))
+    plan = write_back_plan(
+        pack,
+        answer,
+        found_by=found_by,
+        answer_id=answer_id,
+        names=names,
+        field_documents=fields,
+        stored_documents=stored,
+    )
+    documents = {document.item.id: document for document in pack.documents} | dict(fields) | dict(stored)
+    return _Planned(plan=plan, documents=documents)
 
 
 async def write_through_gates(
@@ -171,16 +209,14 @@ def shown_results(results: Sequence[WriteBackResult], *, live: bool) -> list[uui
     return [result.claim_id for result in results if live or not result.created]
 
 
-def _log_skipped(answer_id: uuid.UUID | None, skipped: Sequence[SkippedSentence]) -> None:
-    writer = f"answer {answer_id}" if answer_id is not None else "the coverage job"
+def _log_skipped(writer: str, skipped: Sequence[SkippedSentence]) -> None:
     for sentence in skipped:
         logger.info(
             "%s wrote no fact for '%s': %s", writer, sentence.text[:SKIPPED_SHOWN_CHARS], sentence.reason
         )
 
 
-def _log_held(answer_id: uuid.UUID | None, held: Sequence[ClaimWriteBack]) -> None:
-    writer = f"answer {answer_id}" if answer_id is not None else "the coverage job"
+def _log_held(writer: str, held: Sequence[ClaimWriteBack]) -> None:
     for claim in held:
         logger.info(
             "%s held '%s' for a reviewer, suggested for %s: it %s",
@@ -189,10 +225,6 @@ def _log_held(answer_id: uuid.UUID | None, held: Sequence[ClaimWriteBack]) -> No
             claim.craft_slug,
             claim.held_because,
         )
-
-
-def _documents(pack: EvidencePack, fields: Mapping[str, SourceDocument]) -> dict[str, SourceDocument]:
-    return {document.item.id: document for document in pack.documents} | dict(fields)
 
 
 async def _embed_written(

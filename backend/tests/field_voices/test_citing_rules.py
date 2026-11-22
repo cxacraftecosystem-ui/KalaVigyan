@@ -13,7 +13,7 @@ from app.research.evidence import EvidenceItem, SourceDocument
 from app.research.media_refs import MediaRef
 from app.research.planning import FacetCoverage
 from app.research.retrieval import ChunkHit, KnowledgeHits, chunk_acls_for
-from app.services.field_voices_citations import writes_back
+from app.services.research_write_back import writes_back
 from app.services.write_back_plan import write_back_plan
 from tests.composer.fixtures import ABSTRACT_ITEM, LONG_ITEM, PLAN, STORED, pack, packed
 from tests.write_back.names import AJRAKH_NAMES

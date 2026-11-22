@@ -16,6 +16,7 @@ from app.services.knowledge_view import ClaimView
 __all__ = [
     "PACKS_HELD",
     "PACK_CANDIDATES",
+    "PACK_PASSAGES",
     "PACK_TTL_SECONDS",
     "VoicePack",
     "VoicePackStore",
@@ -24,6 +25,7 @@ __all__ = [
 ]
 
 PACK_CANDIDATES = 12
+PACK_PASSAGES = 3
 PACK_TTL_SECONDS = 600.0
 PACKS_HELD = 64
 REQUEST_WORDS = "tell explain describe know please something anything more give talk craft crafts"

@@ -23,6 +23,7 @@ write-back) and `docs/contracts/review-queue.md` (Decisions).
 | How a fact's craft is chosen | [research.md](../contracts/research.md), The writer and the coverage job |
 | Held write-backs, family keys and the filing report | [knowledge-writes.md](../contracts/knowledge-writes.md), The research write-back |
 | Filing a fact under another craft | [review-queue.md](../contracts/review-queue.md), Decisions |
+| A one-word alias that is an ordinary English word or shared by three crafts' names names no other craft (amends item 1) | [decision 0144](0144-stored-passages-as-evidence.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

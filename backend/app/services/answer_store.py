@@ -55,10 +55,9 @@ from .craft_process import process_records
 from .craft_resolver import CraftIndexStore, DatabaseCraftResolver
 from .explainer_history import StaleVersion, UnknownExplainer, latest_stored
 from .explainer_payload import EXPLAINER_PAYLOAD_KEY, FIRST_VERSION, stored_payload
-from .field_voices_citations import writes_back
 from .live_sources import LiveSourcesStore
 from .piece_store import SqlPieceStore
-from .research_write_back import sentence_claim_ids, store_live_research
+from .research_write_back import sentence_claim_ids, store_live_research, writes_back
 from .section_context import ClaimsOf
 from .section_enrichment import EnrichmentTools
 from .section_images import SectionImagesAsk, section_images

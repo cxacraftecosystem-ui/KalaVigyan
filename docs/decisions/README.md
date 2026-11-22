@@ -38,7 +38,7 @@ flowchart LR
 | [0007](0007-web-search-and-fetcher.md) | Web search adapters and the fetcher sandbox | · |
 | [0008](0008-stored-knowledge-retrieval.md) | Stored-knowledge retrieval | · |
 | [0009](0009-planner-and-tiered-research.md) | Planner and tiered research | · |
-| [0010](0010-composer.md) | Composer | [0138](0138-answers-composed-from-the-asked-fields.md) |
+| [0010](0010-composer.md) | Composer | [0138](0138-answers-composed-from-the-asked-fields.md) and [0144](0144-stored-passages-as-evidence.md) |
 | [0011](0011-claim-write-back-and-coverage-enrichment.md) | Claim write-back and the coverage enrichment job | · |
 | [0012](0012-answer-stream-end-to-end.md) | The answer stream end to end | · |
 | [0013](0013-review-fixes-quotes-licences-scope.md) | Quote strength, open licences, one craft scope and scoped embedding | · |
@@ -165,7 +165,7 @@ flowchart LR
 | [0121](0121-quote-visibility.md) | A quote is shown only where its page allows | · |
 | [0122](0122-evidence-reach.md) | Evidence the knowledge base holds reaches the answers that need it | · |
 | [0123](0123-question-understanding.md) | A question is understood honestly before any evidence is read | · |
-| [0124](0124-live-research-write-back.md) | Live research writes back only what its sources say | [0135](0135-write-backs-filed-under-the-craft-they-name.md) |
+| [0124](0124-live-research-write-back.md) | Live research writes back only what its sources say | [0135](0135-write-backs-filed-under-the-craft-they-name.md) and [0144](0144-stored-passages-as-evidence.md) |
 | [0125](0125-reranking.md) | Stored facts are reranked, and relevance decides when stored knowledge is enough | [0132](0132-a-ranking-votes-with-its-first-thirty.md) and [0133](0133-the-evaluation-scores-what-answers-read.md) |
 | [0126](0126-measurement-that-grows.md) | Measurement grows with the knowledge and alerts when it falls | [0133](0133-the-evaluation-scores-what-answers-read.md) |
 | [0127](0127-coherent-answers.md) | An answer says each fact once, never admits a gap, keeps the stages it is asked and paces its sources | [0138](0138-answers-composed-from-the-asked-fields.md) and [0139](0139-sources-and-providers-reach-outside-services-once.md) |
@@ -176,13 +176,14 @@ flowchart LR
 | [0133](0133-the-evaluation-scores-what-answers-read.md) | The evaluation scores what answers read | · |
 | [0134](0134-each-sentence-once-in-a-block.md) | A block says each sentence once, and the judge reads it as a reader does | · |
 | [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | [0136](0136-write-backs-filed-by-their-source.md) |
-| [0136](0136-write-backs-filed-by-their-source.md) | A write-back is filed by what its source says around it, and what nothing names waits for a reviewer | · |
+| [0136](0136-write-backs-filed-by-their-source.md) | A write-back is filed by what its source says around it, and what nothing names waits for a reviewer | [0144](0144-stored-passages-as-evidence.md) |
 | [0137](0137-limits-kept-by-choice.md) | Nine limits are kept by choice and leave the debt register | · |
 | [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | · |
 | [0139](0139-sources-and-providers-reach-outside-services-once.md) | Sources and providers reach outside services once, at the pace and spend every process shares | · |
-| [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | · |
+| [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | [0144](0144-stored-passages-as-evidence.md) |
 | [0141](0141-design-system-and-answer-screens-without-debt.md) | The design system holds no migration alias, and the answer screens number their figures, read every caption from the server and keep only what is stored | · |
 | [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | · |
+| [0144](0144-stored-passages-as-evidence.md) | A stored passage is evidence an answer and a voice turn may cite, kept as a fact of its own source | · |
 | [0145](0145-monograph-pages-and-speed-without-debt.md) | Pages read what their screens draw: one coverage read, one decision route, one unit pattern, and renderers loaded when placed | · |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
 

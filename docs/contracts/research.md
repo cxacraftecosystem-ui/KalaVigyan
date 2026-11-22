@@ -702,7 +702,8 @@ evidence[PackedEvidence], documents[SourceDocument], failures[ResearchFailure], 
 - `ComposeCandidate {id, kind, text, quotes[], sourceLabel, level}`. `CLAIM`: `id` is the claim
   UUID, `text` the claim text, `quotes` its citation quotes. `EVIDENCE` (a live item not yet
   written back): `id` is `<adapter>:<id>`, `text` and `quotes` verbatim passages of the read
-  document. `cited_texts` (`text` and `quotes`) is what a quoted span is checked against. The
+  document; a stored passage is `stored_passages:<chunk id>` and a field interview passage
+  `field_voices:<chunk id>`, `text` the stored passage itself (decision 0144). `cited_texts` (`text` and `quotes`) is what a quoted span is checked against. The
   model sees each passage as data in a user-role message, never a reader's paraphrase, each
   wrapped by `untrusted.untrusted_block` with the candidate id as `ref`.
 - `ResearchSummary {craft, mode, storedClaims, storedPassages, queries[SearchedQuery {tier,
@@ -767,8 +768,14 @@ passes `providers/structured.router_structured_model(AiTask.COMPOSE, principal)`
 Gemini).
 
 - **Candidates**: `composer.candidates.compose_request(pack, question)`: every stored claim hit
-  as `CLAIM` (its level, label `stored claim, <level>`), then every read document as `EVIDENCE`
-  (level `PROVISIONAL`, `LABEL_LEVELS["QUOTED"]`): the whole text when at most
+  as `CLAIM` (its level, label `stored claim, <level>`), then every stored passage of the pack in
+  search order as `EVIDENCE` in its own words, level `PROVISIONAL` (`passage_candidates`, decision
+  0144): a field interview labelled `field interview: <title>, <locator or whole recording>`
+  (`field_candidate`), any other `stored passage: <title>, <locator or passage n>`
+  (`stored_passage_candidate`); a passage too short to quote (`quotes.trivial_quote`, under 20
+  characters once folded) is not offered (`offered_passages`). The stored pack holds `PUBLIC`
+  passages only (`OPEN_CHUNK_ACLS`), as an answer can be shared (decision 0121). Then every read
+  document as `EVIDENCE` (level `PROVISIONAL`, `LABEL_LEVELS["QUOTED"]`): the whole text when at most
   `WHOLE_TEXT_MAX_CHARS` (4,000) characters, else its item's quotes, else its best passages
   (`composer/passages.best_passages`, decision 0124): the text is cut into passages of whole
   sentences of at most `PASSAGE_MAX_CHARS` (1,200) characters; the facet words are the content
@@ -844,8 +851,9 @@ faster.
   reader inference, stored `HYPOTHESIS`. Live research never stores a level above
   `PROVISIONAL`; only a professor, admin or master admin `ReviewEvent` raises one.
 - Every figure in `text` and `valueNum` must appear in a quote that passed; a unit needs a
-  value. `foundBy` is `ANSWER` (with `answerId`) or `BACKGROUND` (the coverage job, no
-  `answerId`).
+  value. `foundBy` is `ANSWER` (with `answerId`), `BACKGROUND` (the coverage job) or `VOICE` (a
+  hybrid voice turn, whose `Answer` row is written only after it is spoken; decision 0144), the
+  last two with no `answerId`.
 - Stored as `Claim.origin=LIVE_RESEARCH`, `status=APPROVED` (`WRITE_BACK_ORIGIN`,
   `WRITE_BACK_STATUS`), `createdByKind=SYSTEM`, with one `ReviewEvent` (`actorKind=SYSTEM`,
   `systemActor=live_research`). A held write-back is stored `DRAFT` with `systemActor`
@@ -865,9 +873,18 @@ faster.
 ### The writer and the coverage job (decision 0011)
 
 - `services/write_back_plan.write_back_plan(pack, answer, *, found_by, answer_id, names,
-  field_documents=None) -> WriteBackPlan {claims, skipped, sentence_keys, held}`: one
-  write-back per composed sentence that cites a read document of the pack and no stored claim
-  (decision 0124). `held` are the write-backs kept for a reviewer (below), never in `claims`.
+  field_documents=None, stored_documents=None) -> WriteBackPlan {claims, skipped, sentence_keys,
+  held}`: one write-back per composed sentence that cites a read document, a field interview
+  passage or a stored passage of the pack and no stored claim (decision 0124). A stored passage
+  (`write_back_stored.stored_documents`, decision 0144) is cited as its own `Source`: the evidence
+  item is named from the source row (its https address, else its DOI link; its reliability as the
+  grade, its licence, year and reading date), so the writer re-finds that row and links the quote
+  to the passage that holds it (decision 0121); a source with neither address, or no reading date,
+  is not cited (logged), and a sentence resting only on what could not be kept is skipped
+  (`SKIP_UNKEPT`). A stored passage answered the whole question, not one facet, so it is packed
+  with every facet of the plan: its sentence takes the facet of its section's discipline, else
+  the first, and the filing reads its paragraph around the quote and its source's title as a read
+  document's. `held` are the write-backs kept for a reviewer (below), never in `claims`.
   `sentence_keys` has one entry per sentence in `composed_sentences(answer)` order
   (sections, then open questions; each with its heading, `None` for an open question): the dedupe
   key of the claim written for it, or `None` (a held sentence has none). Every span of the sentence found in its cited
@@ -891,7 +908,12 @@ faster.
   titles. Field-interview documents give their quotes but no passage or title. At each level, in
   whole words: naming two of the researched and compared crafts skips the sentence
   (`SKIP_SEVERAL_CRAFTS`); naming one of them files it there; else naming exactly one other
-  catalogued craft by a name, alias or spelling (`craft_matching.named_craft_ids`) files it
+  catalogued craft by a name, alias or spelling (`craft_matching.named_craft_ids` over
+  `write_back_names.filing_index`: its full name, a name or alias of two words or more once stop
+  words are dropped, a native-script alias, or a one-word alias that is neither an ordinary English
+  word (`data/english_words.scowl.txt`, SCOWL size 50) nor a word three or more master crafts use in
+  their names, so slip casting names no craft and Bidri, Ajrakh and Bandhani still do; decision
+  0144) files it
   there and several skip it; else a place outside India or another culture (`data/places_abroad`)
   refuses it (`SKIP_ABROAD`). The researched and compared crafts are named by a word of four
   letters or more of the name that no other of them shares and fewer than three master-list crafts
@@ -910,9 +932,9 @@ faster.
   review switch (knowledge-writes.md, The research write-back). A sentence resting on field
   interviews alone stays with the craft researched (`researched_craft`). Research for no craft
   is filed as before, on shared concepts. Predicate
-  `WRITE_BACK_PREDICATE` (`states`). Sentences citing stored claims only, a stored claim beside live
-  evidence (a new fact would not carry its citations), or breaking the contract are `skipped` with
-  a reason.
+  `WRITE_BACK_PREDICATE` (`states`). Sentences citing stored claims only, only evidence that could
+  not be kept, a stored claim beside live evidence (a new fact would not carry its citations), or
+  breaking the contract are `skipped` with a reason.
 - `services/claim_writer.SqlClaimWriter(session)` implements `ClaimWriter`. Claim id
   `uuid5(ID_NAMESPACE, "claim-write-back:" + dedupeKey)`; citation id from claim, source key and
   `quote_key(quote)`; inserts never duplicate. The concept is the given `conceptId` (of the
@@ -932,9 +954,11 @@ faster.
   item is not a T4 page declaring its own licence; else `RESEARCHER` (decision 0013).
 - `services/research_write_back.store_live_research(session, pack, answer, *, embed, found_by,
   index, answer_id=None) -> StoredResearch {source_ids, results, skipped, embedded, sentence_keys,
-  embedding_error, held}` keeps the documents, reads the compared crafts from the answer's stored
-  understanding (`compared_crafts`), names the crafts with the `CraftIndexStore` it is given,
-  writes the claims and the held write-backs through the gates, logs every skipped sentence with
+  embedding_error, held}` keeps the documents, names the field and stored passages it may cite
+  (`field_voices_citations.field_documents`, `write_back_stored.stored_documents`;
+  `writes_back(pack)` is true when the pack read a document or holds a passage long enough to
+  quote), reads the compared crafts from the answer's stored understanding (`compared_crafts`),
+  names the crafts with the `CraftIndexStore` it is given, writes the claims and the held write-backs through the gates, logs every skipped sentence with
   its reason and every held one with its suggested craft, commits, refreshes the pages of the
   filed claims only (`held` are hidden and refresh nothing), then embeds
   only the claims it wrote and the chunks of the sources those claims cite (`cited_source_ids`,
@@ -1177,7 +1201,7 @@ stream: each step opens its own.
      evidence (its write-back refused, or its figure or name not in what was kept) is named to the
      composer once more, with the section's stored claims only (`ComposeRequest.refused`,
      `services/section_rewrite.rewritten`); what passes joins the prose, and the drops are logged
-     by reason (decision 0138). Before composing, a live or field passage that names no craft
+     by reason (decision 0138). Before composing, a live, field or stored passage that names no craft
      researched but another catalogued craft or a place abroad (`write_back_names.CraftNames`) is
      not offered, or in a comparison is labelled for comparison only (`services/off_question`).
      `prose_block` itself still refuses
@@ -1299,7 +1323,7 @@ tier and the reader that takes verbatim quotes from the pack's documents (`WEB_R
 | The source adapters, against recorded answers | `backend/tests/sources/` |
 | The fetcher service | `backend/tests/fetcher/` |
 | The planner, the composer and the answering service | `backend/tests/planner/`, `backend/tests/composer/`, `backend/tests/answering/test_answer_flow.py`, `test_answer_cost.py` and `backend/tests/db/test_answer_cost_db.py` (an answer's cost and latency) |
-| Write-back and the coverage job | `backend/tests/write_back/` (the craft a fact names: `test_write_back_names.py`, `test_write_back_filing.py`, `test_write_back_context.py` and `test_write_back_passages.py`), `backend/tests/research/test_composition_and_write_back.py`, `backend/tests/db/test_claim_writer_db.py`, `test_held_write_backs_db.py`, `test_write_back_closed_db.py`, `test_storable_text_db.py` and `test_coverage_backoff_db.py` |
+| Write-back and the coverage job | `backend/tests/write_back/` (the craft a fact names: `test_write_back_names.py`, `test_write_back_filing.py`, `test_write_back_context.py` and `test_write_back_passages.py`; stored passages: `test_stored_passages.py`; the words that name another craft: `test_filing_names.py`), `backend/tests/research/test_composition_and_write_back.py`, `backend/tests/db/test_claim_writer_db.py`, `test_stored_passages_db.py`, `test_held_write_backs_db.py`, `test_write_back_closed_db.py`, `test_storable_text_db.py` and `test_coverage_backoff_db.py` |
 | The stance, per-source and screen checks of a sentence, the names a live sentence must quote, a sentence dropped alone | `backend/tests/research/test_grounded_sentences.py`, `backend/tests/composer/test_grounded_compose.py` and `backend/tests/answering/test_grounded_blocks.py` |
 | Passages of long documents and the copy read | `backend/tests/composer/test_passages.py` and `backend/tests/planner/test_research_run.py` |
 | The stream as the client reads it | `frontend/e2e/answer-stream-golden-unit.spec.ts`, against `shared/answer-stream*.golden.sse` |
