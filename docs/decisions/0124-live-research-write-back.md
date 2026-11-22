@@ -16,6 +16,7 @@ and `docs/contracts/coverage.md`.
 | The write-back, its key and the coverage job | [research.md](../contracts/research.md), Write-back of live research |
 | How fields are counted | [coverage.md](../contracts/coverage.md) |
 | A fact is filed under the craft it names, family science and places abroad (amends item 6) | [decision 0135](0135-write-backs-filed-under-the-craft-they-name.md) |
+| A sentence citing a stored passage kept as a fact of its source, and the voice turn as a finder | [decision 0144](0144-stored-passages-as-evidence.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context
