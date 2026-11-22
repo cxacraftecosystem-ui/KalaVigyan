@@ -4,7 +4,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "0080_stream_stamps_differs_on"
-down_revision: str | Sequence[str] | None = "0074_mcp_activity"
+down_revision: str | Sequence[str] | None = "0075_mcp_call_name_filled"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

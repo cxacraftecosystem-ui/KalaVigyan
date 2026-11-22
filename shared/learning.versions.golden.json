@@ -728,6 +728,8 @@
                   "id": "s3.b1.3",
                   "text": "Gach with alum is printed where larger red areas are required (red ground gudh or mavi infill); the clay and millet resist indigo while the alum acts as mordant.",
                   "level": "PROVISIONAL",
+                  "sourcesDiffer": true,
+                  "differsOn": "where the alum paste is printed",
                   "citations": [
                     {
                       "id": "0d79016f-5404-513c-be49-dc6754cecd1b",
@@ -776,6 +778,7 @@
           "discipline": "HISTORY",
           "title": "History",
           "order": 4,
+          "withdrawn": 1,
           "state": "READY",
           "blocks": [
             {
