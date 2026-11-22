@@ -2308,12 +2308,6 @@ Last reviewed: 2026-11-22.
   drawn as `object-position`. Two ways to say one thing.
 - **Clears it:** express Ajrakh's crops as focal boxes and drop the crop classes.
 
-### Generated picture units are numbered from u9001
-
-- **What:** the plate spec's unit references are `u` and four digits (Ajrakh's ids), so a generated
-  page numbers its picture caption and credit units from `u9001`.
-- **Clears it:** one unit id pattern for authored and generated documents.
-
 ### Kutch Ajrakh's React page draws the authored shell
 
 - **What:** `MonographDocument.shell` carries the approved page's main markup with every component

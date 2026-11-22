@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import re
 import uuid
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Annotated, Any, Self
@@ -28,13 +27,12 @@ from .component_specs_general import (
 from .component_specs_tools import spec_unit_refs
 from .drawing_spec_rules import THEMES_KEY, spec_design_problems
 from .quotes import numbers_in, unsupported_figures
+from .unit_ids import UNIT_REF, UNIT_REF_PATTERN
 
 __all__ = [
     "CLAIMS_PER_UNIT_MAX",
     "CONTAINER_KINDS",
     "DELIVERED_KEY",
-    "DELIVERED_UNIT_END",
-    "DELIVERED_UNIT_START",
     "LABEL_MAX_CHARS",
     "UNITS_MAX",
     "CitedCell",
@@ -45,28 +43,22 @@ __all__ = [
     "cited_dataset",
     "delivered_claim_ids",
     "delivered_of",
-    "fresh_unit_ids",
     "problems_sentence",
     "renamed_spec",
     "spec_problems",
     "unit_problems",
 ]
 
-UNIT_KEY_PATTERN = r"^u\d{4}$"
-UNIT_KEY = re.compile(UNIT_KEY_PATTERN)
 UNITS_MAX = 400
 UNIT_TEXT_MAX = 600
 LABEL_MAX_CHARS = 80
 CLAIMS_PER_UNIT_MAX = 20
-DELIVERED_UNIT_START = 5001
-DELIVERED_UNIT_END = 8999
-UNIT_PREFIX = "u"
 CITE_MARK = "cite"
 DELIVERED_KEY = "delivered"
 PROBLEMS_SHOWN = 6
 THEMES_SENT = "the server draws a drawing in each of the four themes from its svg, so a spec sends no themes"
 
-UnitKey = Annotated[str, Field(pattern=UNIT_KEY_PATTERN)]
+UnitKey = Annotated[str, Field(pattern=UNIT_REF_PATTERN)]
 NO_ROWS: Mapping[str, Sequence[str]] = MappingProxyType({})
 CONTAINER_KINDS = frozenset({"experiment_lab"})
 
@@ -151,23 +143,9 @@ def problems_sentence(problems: Sequence[str]) -> str:
     return f"{shown}; and {more} more" if more > 0 else shown
 
 
-def fresh_unit_ids(count: int, taken: Iterable[str]) -> list[str]:
-    used = set(taken)
-    fresh: list[str] = []
-    number = DELIVERED_UNIT_START
-    while len(fresh) < count:
-        if number > DELIVERED_UNIT_END:
-            raise InvalidInput("The page holds no more room for delivered units")
-        key = f"{UNIT_PREFIX}{number:04d}"
-        if key not in used:
-            fresh.append(key)
-        number += 1
-    return fresh
-
-
 def renamed_spec(value: Any, names: Mapping[str, str]) -> Any:
     if isinstance(value, str):
-        return names.get(value, value) if UNIT_KEY.match(value) else value
+        return names.get(value, value) if UNIT_REF.match(value) else value
     if isinstance(value, list):
         return [renamed_spec(item, names) for item in value]
     if isinstance(value, dict):

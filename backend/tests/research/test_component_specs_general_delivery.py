@@ -10,12 +10,12 @@ from app.research.component_specs_general_delivery import (
     DeliveredUnit,
     delivered_claim_ids,
     delivered_of,
-    fresh_unit_ids,
     problems_sentence,
     renamed_spec,
     spec_problems,
     unit_problems,
 )
+from app.research.unit_ids import DELIVERED_UNITS
 
 from .general_spec_fixtures import CHART, TABLE, TIMELINE, chart_units, table_units
 
@@ -131,9 +131,9 @@ def test_a_label_citing_nothing_states_no_number() -> None:
 
 
 def test_fresh_unit_ids_start_at_5001_and_skip_those_taken() -> None:
-    assert fresh_unit_ids(3, {"u5001", "u5003", "overview-ab12"}) == ["u5002", "u5004", "u5005"]
+    assert DELIVERED_UNITS.fresh(3, {"u5001", "u5003", "overview-ab12"}) == ["u5002", "u5004", "u5005"]
     with pytest.raises(InvalidInput, match="no more room"):
-        fresh_unit_ids(4000, {"u5001"})
+        DELIVERED_UNITS.fresh(4000, {"u5001"})
 
 
 def test_a_spec_is_renamed_unit_by_unit_and_nothing_else_changes() -> None:

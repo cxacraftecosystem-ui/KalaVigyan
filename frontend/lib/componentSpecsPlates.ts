@@ -1,6 +1,7 @@
 import { DEPICTED_MATERIALS } from "@/lib/depictedMaterials";
 import type { MonographMark, MonographNode } from "@/lib/monographDocument";
 import { boolean, integer, list, matching, nullable, number, object, oneOf, optional, ShapeError, text, type Shape } from "@/lib/shape";
+import { UNIT_REF } from "@/lib/unitIds";
 
 export const DRAWING_TAGS = ["svg", "g", "defs", "title", "desc", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon", "text", "tspan", "use", "linearGradient", "radialGradient", "stop", "pattern", "mask", "clipPath", "filter", "feGaussianBlur"] as const;
 export const PLATE_SETTINGS = ["figure", "row", "pull", "opener", "masthead"] as const;
@@ -33,7 +34,7 @@ export type PictureFocal = { x: number; y: number; width: number; height: number
 export type Picture = { src: string; width: number; height: number; alt: string; loading: "eager" | "lazy" | null; fetchPriority: "high" | null; decoding: "sync" | "async" | null; focal?: PictureFocal; themed?: boolean };
 export type ArtFrame = { symbol: string; viewBox: string; width: number; height: number };
 
-export const unitRef = matching(/^u\d{4}$/, "a unit id");
+export const unitRef = matching(UNIT_REF, "a unit id");
 export const componentLabel = matching(/^[a-z0-9]+(-[a-z0-9]+)*(\/[a-z0-9]+(-[a-z0-9]+)*){2,}$/, "a component label");
 export const className = matching(/^[A-Za-z][A-Za-z0-9_-]*$/, "a class name");
 export const domId = matching(/^[A-Za-z][A-Za-z0-9_:.-]*$/, "an element id");
