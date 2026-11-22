@@ -14,7 +14,8 @@ from app.research.blocks_insight import (
     UnitConversion,
 )
 from app.research.crafts import CraftRef
-from app.research.measures import DEFINED_UNITS, LOCAL_UNITS, UNIT_DEFINITIONS, metric_value
+from app.research.local_units import LOCAL_UNITS
+from app.research.measures import DEFINED_UNITS, UNIT_DEFINITIONS, metric_value
 from app.research.stated_quantities import StatedQuantity, stated_quantities
 from app.science.records import KnownClaim
 

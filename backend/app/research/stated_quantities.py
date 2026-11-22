@@ -7,7 +7,8 @@ from decimal import Decimal, InvalidOperation
 from functools import lru_cache
 from types import MappingProxyType
 
-from .measures import DEFINED_UNITS, LOCAL_UNITS
+from .local_units import LOCAL_UNITS
+from .measures import DEFINED_UNITS
 from .unit_registry import measures_alike, metric_unit_named
 
 __all__ = [
