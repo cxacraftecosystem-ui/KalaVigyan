@@ -468,14 +468,18 @@ Last reviewed: 2026-11-22.
   `secondary_language_codes` hint; the spike decides whether the agent gets an `agent.language`
   override or one agent per language.
 
-### The voice pack is claims only, ranked by words
+### T2 passages are not offered to a voice turn
 
-- **What:** PLAN 10.3 asks for the T0/T1 pack with embeddings plus T2 passages; the pack is the
-  craft's visible claims ranked by shared word stems (`voice/pack.ranked_claims`), without vectors
-  or corpus chunks.
-- **Why left:** a query embedding per turn is a second model call before the first sentence.
-- **Clears it:** prefetch the claim vectors with the pack and embed the question in parallel with
-  the filler; add T2 chunks as `EVIDENCE` candidates with their verified quotes.
+- **What:** a voice turn ranks the craft's visible claims by the stored hybrid search (lexical,
+  vector and entity rankings fused, the question embedded while the filler plays) ahead of shared
+  word stems (decision 0140), but no corpus passage (T2 chunk) is a candidate, so a passage that
+  states the answer and is not yet a claim is not spoken.
+- **Why left:** a spoken sentence is cited only through a stored claim, so a passage must be
+  written back as a claim before it can be cited; that write-back belongs to the write-back lane
+  (`services/write_back_*`), which was changing at the same time.
+- **Clears it:** hybrid turns ask the search for passages and offer each as an `EVIDENCE`
+  candidate with its verified quote, and a cited passage is written back (as
+  `services/field_voices_citations` does for field passages) before its sentence is spoken.
 
 ### An agent call cannot be hung up from our side
 

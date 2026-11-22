@@ -297,7 +297,10 @@ direction}`, the shape of the answer languages, and the client offers only those
 another language is 400 (`language`).
 
 A turn renders a question not in Latin script in English for ranking
-(`answer_translation.english_question`), composes and checks in English, picks what fits 60 English
+(`answer_translation.english_question`), ranks the pack's claims by the stored hybrid search
+first (lexical, vector and entity rankings fused, the question embedded while the filler plays; a
+claim the pack does not hold is dropped) and by shared word stems after, falling back to the words
+alone when the search fails (decision 0140), composes and checks in English, picks what fits 60 English
 words, translates those sentences with `translated_sentences` (cache, number, formula, unit and script
 checks), and caps the spoken text at 60 words in the session language. Source labels stay names; the
 word before them is in the session language. A sentence whose translation fails twice is left out;

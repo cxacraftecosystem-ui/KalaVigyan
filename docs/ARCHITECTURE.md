@@ -437,7 +437,8 @@ answers 404 and no voice button is drawn. The steps hold when the setting is tru
    `voice/audio.py` measures it, `voice/relay.py` claims the turn under the session row's lock
    (a minute held, one of 40 turns), runs speech to text, writes back the unheard part, then the
    turn and text to speech, and streams the turn events.
-3. A turn (`voice/turns.py`) ranks the pack's claims against the scrubbed question (rendered in
+3. A turn (`voice/turns.py`) ranks the pack's claims by the stored hybrid search, then by shared
+   words, against the scrubbed question (rendered in
    English first when it is not in Latin script), speaks stored claims (`VERIFIED`) or makes one
    checked `VOICE_TURN` compose (`HYBRID`), translates what it will say into the session language
    (`answer_translation.translated_sentences`, decision 0025), and saves the turn to the encrypted

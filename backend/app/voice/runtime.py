@@ -3,6 +3,8 @@ from __future__ import annotations
 import hashlib
 import logging
 import time
+import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import httpx
@@ -12,6 +14,7 @@ from app.core.config import Settings
 from app.core.errors import ExternalFailure, NotConfigured
 from app.core.security import secret_key_or_none
 from app.providers.elevenlabs import ELEVENLABS_KEY_NAME, ElevenLabs
+from app.research.retrieval import KnowledgeRetriever
 from app.schemas.voice import VOICE_TRANSPORTS
 from app.services import app_settings, managed_secrets
 from app.services.object_store import media_bucket
@@ -34,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 BEARER_MIN_CHARS = 32
 REACHABILITY_TTL_SECONDS = 60.0
+SearchFor = Callable[[uuid.UUID, str], KnowledgeRetriever]
 
 
 @dataclass(frozen=True)
@@ -98,12 +102,17 @@ class VoiceRuntime:
         client: httpx.AsyncClient | None = None,
         objects: ReplyObjects | None = None,
         measure: Measure = decoded_seconds,
+        search: SearchFor | None = None,
     ) -> None:
         self.client = client or httpx.AsyncClient(follow_redirects=False)
         self.packs = VoicePackStore()
         self.measure = measure
+        self._search = search
         self._objects = objects
         self._reachable: tuple[float, str, bool] | None = None
+
+    def stored_search(self, user_id: uuid.UUID, role: str) -> KnowledgeRetriever | None:
+        return None if self._search is None else self._search(user_id, role)
 
     def replies(self) -> ReplyAudio:
         return ReplyAudio(self._objects or media_bucket())

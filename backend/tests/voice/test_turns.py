@@ -1,9 +1,12 @@
-from dataclasses import replace
+import uuid
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 
+from app.core.errors import ExternalFailure
+from app.research.retrieval import ClaimHit, KnowledgeHits, KnowledgeQuery
 from app.schemas.voice import VoiceTranscript, VoiceTurnView
 from app.voice.compose import VOICE_TURN_SCHEMA, VOICE_TURN_SYSTEM_PROMPT
-from app.voice.pack import ranked_claims
+from app.voice.pack import ranked_claims, searched_claims
 from app.voice.transcript import StoredTranscript, transcript_view
 from app.voice.turns import TurnAsk, spoken_turn
 
@@ -108,3 +111,65 @@ def test_asking_only_about_the_craft_ranks_its_strongest_claims() -> None:
     pack = alum_pack(weak, alum_view())
     assert [v.id for v in ranked_claims(pack, "Tell me about Kutch Ajrakh")] == [CLAIM_ID, TURN_ID]
     assert [v.id for v in ranked_claims(pack, "Why the river wash?")] == [TURN_ID]
+
+
+@dataclass
+class FakeSearch:
+    found: tuple[uuid.UUID, ...] = ()
+    failing: bool = False
+    asked: list[KnowledgeQuery] = field(default_factory=list)
+
+    async def search(self, query: KnowledgeQuery) -> KnowledgeHits:
+        self.asked.append(query)
+        if self.failing:
+            raise ExternalFailure("the embedding model did not answer", kind="unavailable", service="voyage")
+        hits = tuple(
+            ClaimHit(
+                claim_id=c, text="x", level="PROVISIONAL", subject_type="CONCEPT", subject_id=c, score=1.0
+            )
+            for c in self.found
+        )
+        return KnowledgeHits(craft_slug=query.craft_slug, claims=hits)
+
+
+async def test_a_question_sharing_no_word_with_a_claim_is_answered_from_the_stored_search() -> None:
+    stranger = uuid.UUID(int=77)
+    search = FakeSearch(found=(stranger, CLAIM_ID))
+    chosen = replace(tools(alum_pack(mode="VERIFIED"), model=FakeModel([])), retriever=search)
+    turn = await spoken_turn(ask("Which songs do the printers sing?", mode="VERIFIED"), chosen)
+    assert [s["text"] for s in turn.sentences] == [ALUM] and turn.claim_ids == (CLAIM_ID,)
+    [query] = search.asked
+    assert (query.craft_slug, query.text, query.mode, query.passages) == (
+        CRAFT.slug,
+        "Which songs do the printers sing?",
+        "VERIFIED",
+        False,
+    )
+
+
+async def test_a_failed_stored_search_leaves_the_word_ranking() -> None:
+    chosen = replace(tools(model=FakeModel([])), retriever=FakeSearch(failing=True))
+    turn = await spoken_turn(ask("Which songs do the printers sing?"), chosen)
+    assert turn.sentences == () and turn.answer_id is None
+
+
+def test_the_stored_search_leads_and_the_words_follow_each_claim_once() -> None:
+    river = replace(alum_view(), id=TURN_ID, text="Printers wash cloth in the river.")
+    pack = alum_pack(river, alum_view())
+    found = KnowledgeHits(
+        craft_slug=CRAFT.slug,
+        claims=(
+            ClaimHit(
+                claim_id=CLAIM_ID,
+                text="x",
+                level="PROVISIONAL",
+                subject_type="CONCEPT",
+                subject_id=CLAIM_ID,
+                score=1.0,
+            ),
+        ),
+    )
+    by_words = ranked_claims(pack, "Why the river wash?")
+    assert [v.id for v in searched_claims(pack, found, by_words)] == [CLAIM_ID, TURN_ID]
+    assert [v.id for v in searched_claims(pack, None, by_words)] == [TURN_ID]
+    assert [v.id for v in searched_claims(pack, found, by_words, limit=1)] == [CLAIM_ID]

@@ -56,4 +56,5 @@ def turn_tools(
         translation=build_answer_translation(
             sessions, model=router_structured_model(AiTask.TRANSLATE, principal)
         ),
+        retriever=runtime.stored_search(user_id, role),
     )
