@@ -94,8 +94,8 @@ export function ExplainerView({ state, streaming, languages, depthLabel, change,
     setFilming(true);
   };
   const reading = useMemo<ExplainerReading>(
-    () => ({ language, original, hiddenTerms: terms.hidden, onTerm: terms.open, listen: listen.mark }),
-    [language, original, terms.hidden, terms.open, listen.mark]
+    () => ({ language, original, hiddenTerms: terms.hidden, onTerm: terms.open, listen: listen.marks }),
+    [language, original, terms.hidden, terms.open, listen.marks]
   );
   const craftName = state.understood?.crafts[0]?.name ?? null;
   const ask = onFollowUp ? (term: Term) => onFollowUp(termQuestion(term.label, craftName)) : null;
@@ -112,7 +112,7 @@ export function ExplainerView({ state, streaming, languages, depthLabel, change,
           <TermSheet span={terms.span} language={state.language} onClose={terms.close} onMissing={terms.missing} onAsk={ask} />
           <ListenDock listen={listen} language={language} />
           {filming && state.answerId ? (
-            <FilmPlayer answerId={state.answerId} question={state.question} language={language} sections={state.sections} scoreOffered={filmScore} onClose={() => setFilming(false)} />
+            <FilmPlayer answerId={state.answerId} question={state.question} language={language} sections={state.sections} lede={state.lede} scoreOffered={filmScore} onClose={() => setFilming(false)} />
           ) : null}
         </div>
       </CitationProvider>

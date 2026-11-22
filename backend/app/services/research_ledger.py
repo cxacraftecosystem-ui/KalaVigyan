@@ -1,21 +1,23 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from app.research.evidence_pack import EvidencePack
 from app.research.planning import MODE_POLICIES, ResearchShare, split_share
 from app.research.vocabulary import CANONICAL_LANGUAGE
 
-__all__ = ["FRESH_MIN_FETCHES", "ResearchLedger", "may_research_fresh"]
+__all__ = ["FRESH_MIN_FETCHES", "NOTHING", "ResearchLedger", "first_shares", "may_research_fresh"]
 
 FRESH_MIN_FETCHES = 2
 NOTHING = ResearchShare(queries=0, native_queries=0, fetches=0)
 
 
 class ResearchLedger:
-    def __init__(self, total: ResearchShare, parts: int) -> None:
+    def __init__(self, total: ResearchShare, priorities: Sequence[int]) -> None:
         self._left = total
-        self._waiting = parts
+        self._waiting = len(priorities)
         self._reserved = total
-        self.shares = split_share(total, parts)
+        self.shares = first_shares(total, priorities)
 
     @property
     def left(self) -> ResearchShare:
@@ -56,6 +58,15 @@ class ResearchLedger:
             return granted
         self.give_back(granted)
         return None
+
+
+def first_shares(total: ResearchShare, priorities: Sequence[int]) -> list[ResearchShare]:
+    if not priorities:
+        raise ValueError("a research budget is shared among at least one section")
+    first = max(priorities)
+    leading = split_share(total, sum(1 for priority in priorities if priority == first))
+    parts = iter(leading)
+    return [next(parts) if priority == first else NOTHING for priority in priorities]
 
 
 def may_research_fresh(pack: EvidencePack) -> bool:

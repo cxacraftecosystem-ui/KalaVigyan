@@ -5,6 +5,7 @@ from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 
 from app.core.errors import AppError, ExternalFailure, spend_refusal
+from app.models.enums import DISCIPLINES
 from app.research.coverage_seats import covering_seats, relevant_fields
 from app.research.crafts import COMPARED_CRAFTS_MAX, MAX_CANDIDATES, CraftQuery, CraftRef, CraftResolution
 from app.research.depth import depth_policy, effective_depth
@@ -183,6 +184,7 @@ def _understanding(
         candidates=list(choice.others[:MAX_CANDIDATES]),
         compared=list(choice.compared) if reply else [],
         disciplines=answer_fields(asked, depth, held or ()),
+        asked=[discipline for discipline in dict.fromkeys(asked) if discipline in DISCIPLINES],
         seats=understood_seats(asked, reply.seats if reply else (), depth=depth, held=held),
         depth=depth,
         language=ask.language,

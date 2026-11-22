@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from app.planner.policy import SEAT_LIVE_SHARE, SEAT_RESEARCH_DEPTHS, SEAT_SENTENCES_MAX, seat_gap_field
+from app.planner.reading import ReadCache
 from app.research.composition import ComposedAnswer, ComposeRequest
 from app.research.coverage import CoverageSubject, Holdings, field_coverage
 from app.research.evidence_pack import EvidencePack
@@ -66,7 +67,9 @@ class FakeTools:
     composed: list[ComposeRequest] = field(default_factory=list)
     kept: list[EvidencePack] = field(default_factory=list)
 
-    async def research(self, request: PlanRequest, progress: Any, trail: Any) -> EvidencePack:
+    async def research(
+        self, request: PlanRequest, progress: Any, trail: Any, *, reads: ReadCache | None = None
+    ) -> EvidencePack:
         self.requests.append(request)
         if self.failure is not None:
             raise self.failure
@@ -86,7 +89,7 @@ class FakeTools:
 
 
 def researcher(tools: FakeTools, budget: ResearchShare) -> tuple[GapResearch, ResearchLedger]:
-    ledger = ResearchLedger(budget, 1)
+    ledger = ResearchLedger(budget, (1,))
     base = build_ask(("CHEMIST",), discipline="CHEMISTRY", depth="EXPERT").request
     gap = GapResearch(uuid.uuid4(), base, ledger, tools.research, tools.compose, tools, trail=None)  # type: ignore[arg-type]
     return gap, ledger

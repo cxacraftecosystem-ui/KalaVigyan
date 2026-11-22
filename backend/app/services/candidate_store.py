@@ -14,6 +14,7 @@ from app.research.candidate_gates import HeldFact
 from app.research.knowledge_writes import ProposalSubject
 from app.research.retrieval import VISIBLE_SENSITIVITY
 from app.retrieval.statements import CraftScope, scope_claims
+from app.retrieval.text import context_title
 
 from . import knowledge_view
 
@@ -22,9 +23,12 @@ __all__ = [
     "HELD_STATUSES",
     "FactSubject",
     "SqlHeldFacts",
+    "category_subject",
     "craft_subject",
+    "owner_subject",
     "proposal_subject",
     "subject_claims",
+    "subject_title",
 ]
 
 HELD_STATUSES = ("DRAFT", "PROPOSED", "IN_REVIEW", "APPROVED")
@@ -51,11 +55,25 @@ SHARED_SUBJECT = FactSubject(kind=SHARED, name=None)
 async def proposal_subject(session: AsyncSession, subject: ProposalSubject) -> FactSubject:
     if subject.kind == CRAFT:
         return await craft_subject(session, subject.slug)
+    return await category_subject(session, subject.slug)
+
+
+async def owner_subject(
+    session: AsyncSession, *, craft_slug: str | None, category_slug: str | None
+) -> FactSubject:
+    if craft_slug is not None and category_slug is not None:
+        raise InvalidInput("A fact is held under a craft or under a category, not both")
+    if category_slug is not None:
+        return await category_subject(session, category_slug)
+    return await craft_subject(session, craft_slug)
+
+
+async def category_subject(session: AsyncSession, slug: str) -> FactSubject:
     category = await session.scalar(
-        select(CraftCategory).where(func.lower(CraftCategory.slug) == subject.slug.lower())
+        select(CraftCategory).where(func.lower(CraftCategory.slug) == slug.lower())
     )
     if category is None:
-        raise InvalidInput(f"No category has the slug {subject.slug!r}")
+        raise InvalidInput(f"No category has the slug {slug!r}")
     return FactSubject(kind=CATEGORY, name=category.name, slug=category.slug, category_id=category.id)
 
 
@@ -110,6 +128,10 @@ class SqlHeldFacts:
         if field is not None:
             conditions.append(or_(Claim.field == field, Claim.fields.contains([field])))
         return conditions
+
+
+def subject_title(subject: FactSubject, concept: str | None, field: str | None) -> str | None:
+    return context_title(subject.name, concept, field)
 
 
 def subject_claims(subject: FactSubject) -> ColumnElement[bool]:

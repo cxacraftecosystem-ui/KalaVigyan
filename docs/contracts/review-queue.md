@@ -153,7 +153,7 @@ filter or cursor.
 
 | Route | Body | For |
 |---|---|---|
-| `POST /api/review-queue/{kind}/{id}/approve` | `{note?, version?, englishChecked?}` | every kind |
+| `POST /api/review-queue/{kind}/{id}/approve` | `{note?, version?, englishChecked?, craft?}` | every kind; `craft` (a craft slug) for facts only |
 | `POST /api/review-queue/{kind}/{id}/reject` | `{reason, version?, testimonyReason?}` | every kind |
 | `POST /api/review-queue/FACTS/{id}/raise` | `{note?}` | facts |
 | `POST /api/review-queue/FACTS/{id}/retract` | `{reason}` | facts |
@@ -175,6 +175,15 @@ Approving or raising a waiting (`DRAFT`) fact publishes it and calls
 `candidate_writes.mark_sources_differ`, so a fact the duplicate gate found to differ from a held
 one is shown with that one as "sources differ" (item 5). The page rebuilds through nightly upkeep,
 whose page stamps follow the facts' status and level.
+
+**Filing under another craft** (decision 0136, `review_queue_refile.py`). Approving a fact with
+`craft` files it under that craft in the same decision: its claim moves to the craft's concept
+of the same type and name (found, else created, as the write-back's writer finds one), the event's
+note ends `filed under <slug>` and the audit entry's detail carries `filedUnder`. This is how a
+reviewer files a held write-back (knowledge-writes.md, The research write-back) or re-files one
+filed before decision 0135; rejecting drops it. `craft` on any other kind, an unknown craft, or a
+fact not about a concept is refused (422). The route refreshes the signed-out pages the fact was
+on before the move as well as those it moves to.
 
 **Component proposals** (`review_queue_components.py`): approve records `APPROVED` with the
 reviewer, the time and the note: it waits for a builder to build and register it in the library;
@@ -279,7 +288,7 @@ stay, and list decided items.
 
 | Claim | Kept true by |
 |---|---|
-| Who sees which kind, what is pending, the page and the decisions | `backend/tests/review_queue/` (rules and routes), `backend/tests/db/test_review_queue_db.py` and `test_review_queue_decisions_db.py` |
+| Who sees which kind, what is pending, the page and the decisions | `backend/tests/review_queue/` (rules and routes), `backend/tests/db/test_review_queue_db.py`, `test_review_queue_decisions_db.py` and `test_review_queue_refile_db.py` (filing under another craft) |
 | Layout proposals | `backend/tests/db/test_layout_proposals_db.py` and `backend/tests/layouts/` (layout proposal rules and routes) |
 | Structure proposals | `backend/tests/structure/`, `backend/tests/db/test_structure_proposals_db.py`, `test_structure_writes_db.py` and `test_structure_export_db.py` |
 | Refreshing signed-out pages | `backend/tests/test_page_revalidation.py`, `backend/tests/db/test_page_revalidation_db.py` and `test_review_queue_refresh_db.py` |

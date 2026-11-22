@@ -1,7 +1,7 @@
 import { UUID } from "@/lib/answerShapes";
 import { envelope, explainerSentenceShape, TERM_KEY, WIKIDATA_ID, type BlockEnvelope, type ExplainerSentence } from "@/lib/explainerBlockBase";
 import { datasetShape, type RegionDataset } from "@/lib/regionContract";
-import { integer, list, matching, nullable, number, object, oneOf, text, type Shape } from "@/lib/shape";
+import { integer, list, matching, nullable, number, object, oneOf, ShapeError, text, type Shape } from "@/lib/shape";
 
 export const SEASONS = ["MONSOON", "WINTER", "SUMMER"] as const;
 export const HYDRORIVERS_DATASET_CODE = "HYDRORIVERS_1_0";
@@ -76,15 +76,21 @@ export const mapLayerBlockShape: Shape<MapLayerBlock> = object<MapLayerBlock>({
   boundaryCaption: text
 });
 
-export const seasonsBlockShape: Shape<SeasonsBlock> = object<SeasonsBlock>({
+const seasonsFields: Shape<SeasonsBlock> = object<SeasonsBlock>({
   ...envelope("seasons"),
-  rows: list(
-    object<SeasonRow>({ stageId: nullable(UUID), label: text, months: list(month), season: nullable(oneOf(SEASONS)), sentence: explainerSentenceShape }),
-    1
-  ),
+  rows: list(object<SeasonRow>({ stageId: nullable(UUID), label: text, months: list(month), season: nullable(oneOf(SEASONS)), sentence: explainerSentenceShape })),
   rainfall: nullable(object<MonthlyRain>({ district: districtShape, datasetCode: text, period: text, millimetres: list(number, 12) })),
   datasets: list(datasetShape)
 });
+
+export const seasonsBlockShape: Shape<SeasonsBlock> = {
+  expected: seasonsFields.expected,
+  parse(value, path) {
+    const block = seasonsFields.parse(value, path);
+    if (block.rows.length === 0 && block.rainfall === null) throw new ShapeError(path, "season rows, the district's rainfall or both");
+    return block;
+  }
+};
 
 export const supplyMapBlockShape: Shape<SupplyMapBlock> = object<SupplyMapBlock>({
   ...envelope("supply_map"),

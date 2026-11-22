@@ -121,6 +121,21 @@ test("sections play by their order, and a hidden generated explainer is left out
   expect(withSimulation(true)).toEqual(["s3.b1"]);
 });
 
+test("a film opens on the lede, drawn as its sentences without a heading, narrated by the lede's track", () => {
+  const answered = parseShape(explainerShape, JSON.parse(readRepo("shared", "explainer.lede.golden.json")));
+  const lede = answered.lede ?? null;
+  const unheard = filmScenes(answered.sections as SectionView[], null, hasRenderer, lede);
+  expect(unheard.map((scene) => scene.block.id)).toEqual(["lede", "s1.b1", "s2.b1", "s3.b1"]);
+  expect(unheard[0].section).toBeNull();
+  expect(unheard[0].seconds).toBe(FILM_SCENE_SECONDS.block);
+  expect(filmCaption(unheard[0], 0, ENGLISH)).toMatchObject({ text: "Alum is the mordant that fixes the red, together with dhaori (tamarisk galls).", narrated: false, mark: null });
+  const words = [{ sentenceId: "lede.1", text: "Alum", start: 0, end: 0.4 }, { sentenceId: "lede.1", text: "is", start: 0.5, end: 0.6 }];
+  const heard: ListenScript = { schemaVersion: 1, answerId: answered.answerId, language: "en", tracks: [{ blockId: "lede", audioUrl: "https://example.org/lede.mp3", durationSeconds: 9.5, words }] };
+  const [opening] = filmScenes(answered.sections as SectionView[], heard, hasRenderer, lede);
+  expect([opening.tracks.length, opening.seconds]).toEqual([1, 9.5]);
+  expect(filmCaption(opening, 0.55, ENGLISH)).toMatchObject({ narrated: true, mark: { from: 5, to: 7 } });
+});
+
 test("the hold per kind is the server's", () => {
   const server = /FILM_SCENE_SECONDS: Mapping\[str, float\] = MappingProxyType\(\{"step": ([\d.]+), "picture": ([\d.]+), "block": ([\d.]+)\}\)/.exec(readRepo("backend", "app", "schemas", "film.py"));
   expect(server?.slice(1).map(Number)).toEqual([FILM_SCENE_SECONDS.step, FILM_SCENE_SECONDS.picture, FILM_SCENE_SECONDS.block]);
@@ -324,7 +339,7 @@ test("the ask screen hands the config's film offer through the explainer to the 
   expect(readRepo("frontend", "components", "answer", "ExplainerView.tsx")).toContain("scoreOffered={filmScore}");
   const started = (offer: unknown) => {
     const scoreOffered = normaliseAskConfig({ film: offer }).filmScore;
-    const body = createElement(FilmPlayerBody, { answerId: document().answerId, language: ENGLISH, sections: sections(), scoreOffered, playRef: createRef<HTMLButtonElement>() });
+    const body = createElement(FilmPlayerBody, { answerId: document().answerId, language: ENGLISH, sections: sections(), lede: null, scoreOffered, playRef: createRef<HTMLButtonElement>() });
     return withReading(createElement(AuthProvider, null, createElement(ThemeProvider, null, body)));
   };
   expect(started({ score: true })).toContain('data-testid="film-score"');

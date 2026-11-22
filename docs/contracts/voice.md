@@ -123,7 +123,7 @@ voice routes live under `/api/voice/` (checked by `test_voice_contract.py`).
 | POST | `/api/voice/session/{id}/end` | its user | `VoiceSessionEnded`; ending twice answers the same |
 | GET | `/api/voice/session/{id}/transcript` | its user | `VoiceTranscript` until `retentionUntil`, then 404 |
 | POST | `/api/voice/llm/v1/chat/completions` | ElevenLabs (bearer) | `text/event-stream` of `LlmChunk` frames and `data: [DONE]` |
-| POST | `/api/voice/session/{id}/turns` | its user, `RELAY`; 40 per 10 min (429 + `Retry-After`) | multipart `audio`, one of `RELAY_AUDIO_TYPES`: WebM, Ogg and MP4 at most `RELAY_MAX_AUDIO_BYTES` (300 000 bytes, a minute at `RELAY_AUDIO_BITS_PER_SECOND` 32 kbit/s with a quarter's headroom), WAV uncompressed PCM of at most `RELAY_MAX_TURN_SECONDS` (60 s) by its own sample rate, channels and sample size and at most `RELAY_MAX_WAV_BYTES` (4 MiB); larger 413, unreadable WAV 400; `text/event-stream` of relay events |
+| POST | `/api/voice/session/{id}/turns` | its user, `RELAY`; 40 per 10 min (429 + `Retry-After`) | multipart `audio`, one of `RELAY_AUDIO_TYPES`: WebM, Ogg and MP4 at most `RELAY_MAX_AUDIO_BYTES` (300 000 bytes, a minute at `RELAY_AUDIO_BITS_PER_SECOND` 32 kbit/s with a quarter's headroom) that decode to at most a minute, WAV uncompressed PCM of at most `RELAY_MAX_TURN_SECONDS` (60 s) by its own sample rate, channels and sample size and at most `RELAY_MAX_WAV_BYTES` (4 MiB); larger 413, unreadable WAV 400; `text/event-stream` of relay events |
 | GET | `/api/voice/session/{id}/turns/{turnId}/speech` | its user, `RELAY`; 60 per 10 min (429 + `Retry-After`) | `audio/mpeg` (`mp3_44100_128`); only while the call is live or for `SPEECH_GRACE` (2 minutes) after it ended, else 410; 429 when no seconds are left today |
 
 ### Starting a session
@@ -231,8 +231,12 @@ session must be live and below `MAX_TURNS`, the day must have at least the uploa
 counts one of the 40 turns. So every upload, heard or not, takes a turn, and parallel uploads
 each hold their own minute. After speech to text the turn keeps the larger of the floor and the
 heard seconds (the last word's end) and writes the rest back as `voice-refund:<sessionId>:<turnId>`.
-The floor is the WAV's length, or the upload's bytes over 5 000 a second (a full 300 000-byte
-upload is a minute), at least 1 s.
+The floor is the recording's length rounded up, at least 1 s: a WAV's from its header, any other
+upload's as `ffmpeg` decodes it (`voice/audio_decode.py`, the last `out_time_us` of its progress),
+so an upload encoded below the asked bit rate that decodes past `RELAY_MAX_TURN_SECONDS` is refused
+413 before speech to text is paid; an upload `ffmpeg` cannot decode is refused 400, and a machine
+without `ffmpeg` answers 503 (decision 0140). The form is read by `python-multipart` through
+Starlette's parser, with the body cut off at its limit as it streams (`api/multipart_form.read_form`).
 
 `POST /api/voice/session/{id}/turns` streams, in order: `heard {text, language}` (the speech to
 text result, scrubbed), `status` steps, `source` before the first citation of it, `sentence
@@ -256,12 +260,15 @@ recorded at the session's `audioBitsPerSecond` and sent as soon as it reaches ni
   `QuotaLedger` under `voice:<sessionId>:hold`; custom-LLM turns write nothing more. Reconciliation
   (the daily upkeep, and the user's next start) reads `metadata.call_duration_secs` and settles both
   ways: one `voice-refund:<sessionId>` row for any surplus, one `voice-settle:<sessionId>` row for
-  time past the hold (a call left connected after its row ended); `billedSeconds` is then set. The
+  time past the hold (a call left connected after its row ended), each dated to the call's start so
+  it counts on the call's day, not the day it is written (decision 0140); `billedSeconds` is then set. The
   call ends at its `maxDurationSeconds` with `end_call` (`quota` when the day's seconds cut it
   short, else `turns`) or at `MAX_TURNS`.
 - `RELAY`: a turn bills its audio as above (the hold, then the refund) plus the reply audio's
-  seconds (bytes at 128 kbit/s, rounded up) under `voice:<sessionId>:<turnId>:speech`. Each later
-  synthesis of the same reply (a cache miss on the speech route) is billed again under
+  seconds (bytes at 128 kbit/s, rounded up) under `voice:<sessionId>:<turnId>:speech`. The reply
+  audio is kept in the media bucket at `media/voice-replies/<sessionId>/<turnId>/reply.mp3` for a
+  day (decision 0140), so the speech route of any API process plays it free; only a reply whose
+  audio was never kept (its text to speech or its store failed) is synthesised again, billed under
   `voice:<sessionId>:<turnId>:speech:<replay id>`, capped at what is left today.
 - Exhaustion mid-call ends it (`end_call`, or `sessionEnded` in relay); a new session needs 30 s.
 
@@ -290,7 +297,10 @@ direction}`, the shape of the answer languages, and the client offers only those
 another language is 400 (`language`).
 
 A turn renders a question not in Latin script in English for ranking
-(`answer_translation.english_question`), composes and checks in English, picks what fits 60 English
+(`answer_translation.english_question`), ranks the pack's claims by the stored hybrid search
+first (lexical, vector and entity rankings fused, the question embedded while the filler plays; a
+claim the pack does not hold is dropped) and by shared word stems after, falling back to the words
+alone when the search fails (decision 0140), composes and checks in English, picks what fits 60 English
 words, translates those sentences with `translated_sentences` (cache, number, formula, unit and script
 checks), and caps the spoken text at 60 words in the session language. Source labels stay names; the
 word before them is in the session language. A sentence whose translation fails twice is left out;
@@ -304,8 +314,10 @@ the call's hard end.
 - Code: `backend/app/voice/` (sessions, binding, turns, relay, transcript, upkeep, agent body),
   `backend/app/providers/elevenlabs.py` (the one ElevenLabs adapter), `backend/app/providers/quota.py`
   (the ledger), `backend/app/api/routes/voice.py`. `GET /api/answers/config` sends `VoiceAvailability`.
-- `AppSetting` keys: `voice.transport` (`RELAY` by default), `voice.max_live_sessions` (5),
-  `voice.voice_id` (the relay voice). `expiresAt` is the start plus `START_WINDOW_SECONDS` (120).
+- `AppSetting` keys: `voice.transport` (`RELAY` by default), `voice.max_live_sessions` (5, 0 to
+  100), `voice.voice_id` (the relay voice, letters and digits), set by a Master Admin through
+  `GET`/`PUT /api/settings/voice` (`VoiceSettingsUpdate`; `{transport, maxLiveSessions, voiceId,
+  defaults}`; decision 0140). `expiresAt` is the start plus `START_WINDOW_SECONDS` (120).
 - Relay ledger keys: `voice:<sessionId>:<turnId>` (the turn's hold), `voice-refund:<sessionId>:<turnId>`
   (its unheard part), `voice:<sessionId>:<turnId>:speech` (reply audio) and
   `voice:<sessionId>:<turnId>:speech:<replay id>` (each synthesis the speech route makes again);
@@ -326,10 +338,11 @@ document), or one section of it, through `ElevenLabs.narration` (`eleven_v4`, ch
 
 | Rule | Value |
 |---|---|
-| What is read | each block's cited sentences in reading order (prose, a ladder's stage sentences); pictures, titles and labels are not read; a translated sentence in the explainer's language, an untranslated one in English, one request per language |
+| What is read | the whole answer opens with its lede (block `lede`), then each section's blocks; one section reads only its own; each block's cited sentences in reading order (prose, a ladder's stage sentences) except a hypothesis, which only the page shows with its Hypothesis badge (decision 0140); pictures, titles and labels are not read; a translated sentence in the explainer's language, an untranslated one in English, one request per language |
 | Parts | whole sentences, at most `PART_CHARACTERS` (2,000) characters and one language each; neighbours' text as `previous_text` and `next_text`; one track per part |
 | Words | runs of non-space characters of a sentence; `start` the first character's start, `end` the last character's end, seconds to the millisecond, never earlier than the previous word |
-| Cache | per block: SHA-256 of `kalavigyan-narration`, `NARRATION_VERSION`, model, voice id, explainer language and piece content hash (U+001F between); parts at `media/narration/<cacheId>/KalaVigyan_Explainer_<date>_<HHMM>_Narration_Part-NN.mp3`, then `narration.json` (the `NarrationManifest`) last; presigned GET links of 3,600 s |
+| One maker | a request that misses a block puts `media/narration/<cacheId>/lease.json` (`NarrationLease {schemaVersion 1, cacheId, takenAt}`) only where none is (`If-None-Match: *`); a second request that finds a live lease holds no seconds and polls for the manifest each second until the lease lapses at 120 s, then makes the block itself, taking the lapsed lease over; the maker deletes the lease once the manifest is stored or the making fails (decision 0140) |
+| Cache | per block: SHA-256 of `kalavigyan-narration`, `NARRATION_VERSION` (2 since hypotheses left Listen), voice id, explainer language and piece content hash (U+001F between); parts at `media/narration/<cacheId>/KalaVigyan_Explainer_<date>_<HHMM>_Narration_Part-NN.mp3`, then `narration.json` (the `NarrationManifest`) last; presigned GET links of 3,600 s |
 | Seconds | a cache hit is free; misses hold `ceil(characters × 60 / 1000)` `VOICE_SECONDS` under `listen:<requestId>:hold` (429 + `Retry-After` until midnight IST when less is left), then `listen-refund:<requestId>` or `listen-settle:<requestId>` settle to the audio (bytes at 128 kbit/s); Master Admin never refused |
 | Answers | 200 `ListenScript {schemaVersion 1, answerId, language, tracks[{blockId, audioUrl, durationSeconds, words[{sentenceId, text, start, end}]}]}` (`schemas/listen.py`, `shared/listen.script.golden.json`, `frontend/lib/listen.ts`); 404 another reader's answer, no explainer, another language or nothing to read; 422 a malformed `language` or `section`; 503 the bucket, key or ElevenLabs failing |
 

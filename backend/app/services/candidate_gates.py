@@ -50,6 +50,8 @@ __all__ = [
     "HeldFacts",
     "LaterGates",
     "NoveltyFailure",
+    "candidate_text",
+    "candidate_vectors",
     "first_gates",
     "gate_run",
     "later_gates",
@@ -153,7 +155,7 @@ async def later_gates(
         return {}
     ladder = () if judge is None else (judge, *escalate)
     judging = _Judging(ladder=ladder, thrift=thrift, novelty_failure=novelty_failure)
-    vectors = await _vectors(embed, candidates)
+    vectors = await candidate_vectors(embed, candidates)
     held = {c.ref: await _held(store, c, vectors.get(c.ref), thrift) for c in candidates}
     duplicates = await _duplicates(judging, candidates, held, vectored=embed is not None)
     passing = [candidate for candidate in candidates if duplicates[candidate.ref].passed]
@@ -169,12 +171,18 @@ async def later_gates(
     }
 
 
-async def _vectors(embed: TextEmbedder | None, candidates: Sequence[Candidate]) -> dict[str, list[float]]:
-    if embed is None:
+async def candidate_vectors(
+    embed: TextEmbedder | None, candidates: Sequence[Candidate]
+) -> dict[str, list[float]]:
+    if embed is None or not candidates:
         return {}
-    texts = [document_text(candidate.statement) for candidate in candidates]
+    texts = [candidate_text(candidate) for candidate in candidates]
     found = checked_vectors(await embed(texts), expected=len(texts))
     return {candidate.ref: vector for candidate, vector in zip(candidates, found, strict=True)}
+
+
+def candidate_text(candidate: Candidate) -> str:
+    return document_text(candidate.statement, title=candidate.title)
 
 
 async def _held(

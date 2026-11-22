@@ -15,7 +15,7 @@ from app.voice.artisan_reply import ArtisanTools
 from app.voice.artisan_session import ArtisanRefused, ConversationDeps
 from app.voice.artisan_transcript import open_transcript
 from app.voice.relay import SPEECH_GRACE
-from app.voice.runtime import SpeechCache
+from app.voice.reply_audio import ReplyAudio
 
 from .artisan_fakes import CONVERSATION_ID, MemoryArtisanStore, conversation, kalavigyan_turn as asked, sealed
 from .fakes import (
@@ -30,6 +30,7 @@ from .fakes import (
     session,
     tools,
 )
+from .listen_fakes import MemoryObjects
 from .test_artisan_session import runtime, voice
 
 SPEECH = b"\xff\xfb" * 24_000
@@ -108,7 +109,7 @@ def setup(
         runtime=runtime(),
         voice=voice(),
         cipher=cipher(),
-        speech=SpeechCache(),
+        speech=ReplyAudio(MemoryObjects()),
         clock=lambda: now or START + timedelta(seconds=40),
         ids=ids(*NEW_IDS),
     )
@@ -203,7 +204,7 @@ async def test_a_reply_is_replayed_from_the_transcript_and_gone_after_the_grace(
     record = chosen.artisans.conversations[CONVERSATION_ID]
     turn_id = open_transcript(cipher(), record.transcript).turns[2].id
     base = chosen.deps.conversation
-    fresh = replace(base, speech=SpeechCache())
+    fresh = replace(base, speech=ReplyAudio(MemoryObjects()))
     assert await conversation_speech(record, chosen.store.sessions[SESSION_ID], turn_id, fresh) == SPEECH
     ended = replace(chosen.store.sessions[SESSION_ID], ended_at=START)
     late = replace(fresh, clock=lambda: START + SPEECH_GRACE + timedelta(seconds=1))

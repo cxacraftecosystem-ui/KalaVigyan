@@ -7,19 +7,32 @@ import { createElement } from "react";
 import { SeasonsStrip } from "@/components/answer/place/SeasonsStrip";
 import { BLOCK_SHAPES, BUILT_BLOCK_KINDS, explainerBlockShape } from "@/lib/explainerContract";
 import type { SeasonsBlock } from "@/lib/explainerPlace";
-import { parseShape } from "@/lib/shape";
+import { blockSentences } from "@/lib/explainerView";
+import { parseShape, ShapeError } from "@/lib/shape";
 
 import { withReading } from "./explainerRender";
 
-const FIXTURE = JSON.parse(readFileSync(join(__dirname, "..", "..", "shared", "explainer.phase-b.golden.json"), "utf8")) as {
-  sections: { blocks: { id: string }[] }[];
-};
+const shared = (name: string) => JSON.parse(readFileSync(join(__dirname, "..", "..", "shared", name), "utf8")) as { sections: { blocks: { id: string; datasets?: { code: string }[] }[] }[] };
+const FIXTURE = shared("explainer.phase-b.golden.json");
+const PHASE_D = shared("explainer.phase-d.golden.json");
 const STAGE = "6b0f7a52-5d55-5c8e-9d6e-7b1a3c2e9f10";
+const KACHCHH_MM = [0.4, 0.9, 0.3, 0.2, 2.1, 38.5, 141.2, 112.6, 61.3, 9.8, 2.4, 0.6];
 
 function fixtureBlock(id: string): Record<string, unknown> {
   const found = FIXTURE.sections.flatMap((section) => section.blocks).find((block) => block.id === id);
   if (!found) throw new Error(`the phase B fixture has block ${id}`);
   return structuredClone(found) as Record<string, unknown>;
+}
+
+function chirpsRow(): Record<string, unknown> {
+  const found = PHASE_D.sections.flatMap((section) => section.blocks).flatMap((block) => block.datasets ?? []).find((dataset) => dataset.code === "CHIRPS_3_0");
+  if (!found) throw new Error("the phase D fixture cites the CHIRPS_3_0 dataset row");
+  return structuredClone(found) as Record<string, unknown>;
+}
+
+function rainOnly(): Record<string, unknown> {
+  const rainfall = { district: { districtLgd: 449, name: "Kachchh", stateName: "Gujarat" }, datasetCode: "CHIRPS_3_0", period: "1981-2025", millimetres: KACHCHH_MM };
+  return { ...fixtureBlock("s3.b1"), id: "s3.seasons", rows: [], rainfall, datasets: [chirpsRow()] };
 }
 
 test("seasons and supply maps are built kinds the explainer parser admits", () => {
@@ -42,4 +55,14 @@ test("a stage with no dated claim is listed without months, and a mapped season 
   expect(cells.map((on, index) => (on ? index + 1 : 0)).filter(Boolean)).toEqual([6, 7, 8, 9]);
   expect(html).toContain("Pa (alum mordant printing for red)");
   for (const row of strip.rows) expect(html).toContain(row.sentence.text);
+});
+
+test("a seasons block may show its district's rainfall with no season rows, and never neither", () => {
+  const block = parseShape(BLOCK_SHAPES.seasons, rainOnly());
+  expect([block.rows, blockSentences(block)]).toEqual([[], []]);
+  expect(() => parseShape(BLOCK_SHAPES.seasons, { ...rainOnly(), rainfall: null, datasets: [] })).toThrow(ShapeError);
+  const html = withReading(createElement(SeasonsStrip, { block }));
+  expect(html).toContain('data-testid="rainfall-bars"');
+  expect(html).not.toContain('data-testid="season-row"');
+  expect(html).toContain(">July is the wettest month in Kachchh: 141 mm of a 370 mm year<");
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { CircleAlert, Pause, Play, X } from "lucide-react";
 
 import { ListenAudio } from "@/components/answer/ListenAudio";
@@ -15,9 +16,10 @@ const PLAY_BUTTON = "grid h-12 w-12 shrink-0 place-items-center rounded-full bg-
 const DOCK_PLACE = { bottom: "calc(var(--bottom-nav-h, 0px) + 0.75rem)" };
 
 function Timing({ listen }: { listen: Listen }) {
+  const time = useSyncExternalStore(listen.marks.subscribe, listen.marks.time, listen.marks.time);
   if (!listen.script) return null;
   const total = scriptDuration(listen.script);
-  const elapsed = Math.min(total, elapsedOf(listen.script, listen.position));
+  const elapsed = Math.min(total, elapsedOf(listen.script, { track: listen.track, time }));
   const percent = total > 0 ? Math.round((elapsed / total) * 100) : 0;
   return (
     <div className="grid min-w-0 flex-1 gap-1.5">
@@ -47,7 +49,7 @@ function Player({ listen }: { listen: Listen }) {
 
 export function ListenDock({ listen, language }: { listen: Listen; language: AnswerLanguage }) {
   if (listen.status === "idle") return null;
-  const track = listen.script?.tracks[listen.position.track] ?? null;
+  const track = listen.script?.tracks[listen.track] ?? null;
   return (
     <aside
       aria-label="Listen"
@@ -75,7 +77,7 @@ export function ListenDock({ listen, language }: { listen: Listen; language: Ans
       )}
       {track ? (
         <ListenAudio
-          key={listen.position.track}
+          key={listen.track}
           src={track.audioUrl}
           playing={listen.status === "playing"}
           rate={listen.rate}

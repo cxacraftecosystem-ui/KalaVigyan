@@ -412,7 +412,7 @@ first. A craft with no such claim has no edge; a term left with fewer than two c
 {schemaVersion 1, answerId, language, quiz: QuizBlock (id `quiz`), sources}` built from the
 stored explainer of that answer (any version: each version's answer row holds the whole merged
 document) by the quiz rules below, from the chosen sections (each once, every section when none
-is given), read with the hidden marks of its generated explainers (a hidden one adds nothing,
+is given, and then the lede's sentences first, decision 0140), read with the hidden marks of its generated explainers (a hidden one adds nothing,
 decision 0070); `sources` are the sources its sentences cite, in order of first citation. 404 for an
 answer that is not the asker's or holds no explainer; 204 with no body for an explainer that yields
 no question (decision 0089; the client reads it as no quiz and draws no Check yourself); 422 for a

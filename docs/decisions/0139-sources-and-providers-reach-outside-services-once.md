@@ -63,7 +63,9 @@ shared facts nor capped a single call.
    holds any window's start. Postgres over Redis: the table and its counting pool exist, and no
    new service or dependency is needed; the cost is one statement per counted read. Holders are
    an HMAC of the subject, never an address or an e-mail. A count that cannot be read refuses
-   with a 60 s wait (a guard fails closed); a refund that cannot be written is logged.
+   with a 60 s wait (a guard fails closed); a refund that cannot be written is logged. Every
+   route awaits its attempt and refuses through `core/throttle_refusal.refuse_when_throttled`,
+   the one 429 of [decision 0140](0140-voice-and-listen-kept-true.md), item 11.
 4. **One scholarly pace for every process.** `core/paces` reserves each service's next slot and
    holds its `Retry-After` in `SourcePace`, and its requests in flight as expiring leases in
    `SourceLease`, both atomically on the database clock (migration 0065); `ScholarlyPacing`

@@ -182,6 +182,23 @@ async def test_expired_transcripts_are_purged_and_agent_calls_settled(store: Sto
     )
 
 
+async def test_a_settlement_counts_on_the_day_its_call_started(store: Stores) -> None:
+    voice, session = store
+    user = await learner(session)
+    yesterday = NOW - timedelta(days=1)
+    record = live(
+        user, transport="AGENT", started_at=yesterday, expires_at=yesterday + timedelta(seconds=120)
+    )
+    await voice.create(record)
+    await voice.reserve(record.id, ledger_entry(record, units=20, key=f"voice:{record.id}:today"))
+    refund = ledger_entry(record, units=-8, key=refund_key(record.id))
+    await voice.settle(record, 42, refund)
+    await voice.settle(record, 42, refund)
+    row = await session.scalar(select(QuotaLedger).where(QuotaLedger.idempotencyKey == refund_key(record.id)))
+    assert row is not None and row.createdAt == yesterday and row.units == -8
+    assert await voice.seconds_used(user.id, NOW) == 20
+
+
 async def test_consent_is_read_by_version(store: Stores) -> None:
     voice, session = store
     user = await learner(session)

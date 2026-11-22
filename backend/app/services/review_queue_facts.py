@@ -28,6 +28,7 @@ from . import audit
 from .candidate_writes import mark_sources_differ
 from .claim_holds import is_held
 from .review_queue_errors import DecisionConflict, OwnItem, UnknownItem
+from .review_queue_refile import REFILED_NOTE, refile_fact
 
 __all__ = ["FactDecision", "decide_fact"]
 
@@ -44,6 +45,14 @@ MESSAGES = {
 class FactDecision:
     action: str
     note: str | None
+    craft: str | None = None
+
+    @property
+    def noted(self) -> str | None:
+        if self.craft is None:
+            return self.note
+        filed = REFILED_NOTE.format(craft=self.craft)
+        return f"{self.note}; {filed}" if self.note else filed
 
 
 async def decide_fact(
@@ -53,16 +62,18 @@ async def decide_fact(
     problem = fact_move_problem(decision.action, claim.status, claim.evidenceLevel)
     if problem is not None:
         raise DecisionConflict(problem)
+    if decision.craft is not None:
+        await refile_fact(session, claim, decision.craft)
     was_status, was_level = claim.status, claim.evidenceLevel
     move = FACT_MOVES[decision.action]
     claim.status = move.to_status
     if move.to_level is not None:
         claim.evidenceLevel = move.to_level
         claim.levelReason = _reviewed_reason(reviewer, now)
-    session.add(_event(claim, reviewer, decision.note, was_status=was_status, was_level=was_level))
+    session.add(_event(claim, reviewer, decision.noted, was_status=was_status, was_level=was_level))
     await session.flush()
     differ = await _published(session, claim, was_status)
-    await _record(session, reviewer, claim, decision.action, was_status)
+    await _record(session, reviewer, claim, decision, was_status)
     return QueueDecision(
         kind=FACTS,
         id=claim.id,
@@ -109,12 +120,15 @@ def _reviewed_reason(reviewer: User, now: datetime) -> str:
     return f"Reviewed against its quoted sources by a {ROLE_LABELS.get(role, role)} on {day}"
 
 
-async def _record(session: AsyncSession, reviewer: User, claim: Claim, action: str, was_status: str) -> None:
+async def _record(
+    session: AsyncSession, reviewer: User, claim: Claim, decision: FactDecision, was_status: str
+) -> None:
+    detail = {"from": was_status, "to": claim.status, "level": claim.evidenceLevel}
     await audit.record(
         session,
-        action=f"review.fact_{PAST_TENSE[action]}",
+        action=f"review.fact_{PAST_TENSE[decision.action]}",
         actor=reviewer,
         target_type="Claim",
         target_id=claim.id,
-        detail={"from": was_status, "to": claim.status, "level": claim.evidenceLevel},
+        detail=detail | ({"filedUnder": decision.craft} if decision.craft is not None else {}),
     )

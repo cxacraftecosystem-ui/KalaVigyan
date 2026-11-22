@@ -315,6 +315,7 @@ class QueueApproval(ContractModel):
     note: Note | None = None
     version: int | None = Field(default=None, ge=1)
     english_checked: bool = False
+    craft: str | None = Field(default=None, min_length=1, max_length=SLUG_MAX_CHARS)
 
 
 class QueueRejection(ContractModel):

@@ -13,6 +13,7 @@ MCP server and our own research write-back, and carries layouts, structure, sour
 | A page's layout record | [page-layout.md](page-layout.md) |
 | Signing in and the `contribute` scope | [mcp-oauth.md](mcp-oauth.md) |
 | Facts held and healed every night | [nightly-upkeep.md](nightly-upkeep.md) |
+| Where a live-research fact is filed, held for a reviewer and keyed | [decision 0135](../decisions/0135-write-backs-filed-under-the-craft-they-name.md) and [decision 0136](../decisions/0136-write-backs-filed-by-their-source.md) |
 
 ## A fact's path
 
@@ -50,7 +51,7 @@ route queue the fact first (The contribution queue, below).
 | Running the gates with the adapters | `services/candidate_gates.py` |
 | The stored outcomes and sources differ | `services/candidate_writes.py` |
 | `propose_fact` | `services/proposal_writes.py` and `services/fact_proposals.py` |
-| The research write-back | `services/write_back_gates.py` |
+| The research write-back | `services/write_back_gates.py`; where a fact is filed in `services/write_back_crafts.py` and `write_back_passages.py`; the filing report in `services/write_back_filing.py` and `write_back_filing_store.py` |
 | Routes and tools | `api/routes/knowledge_writes.py`, `api/mcp_fact_tools.py`, `api/proposal_deps.py` |
 | The limits | `core/rate_limit.py` and `api/proposal_limits.py` |
 | Layout proposals | `research/layout_proposals.py`, `services/page_layout_proposals.py`, `services/review_queue_layouts.py`, `api/mcp_page_tools.py`, `models/layout_proposals.py` |
@@ -123,7 +124,9 @@ A refusal stops the run; every gate that ran is stored as one `CandidateCheck` r
    only whether quotes are public: a fetched page's full text is stored for researchers
    (`chunk_acl`), so its quotes are withheld from public views and exports, whether or not a
    passage holds them (Citations and their passages, below).
-3. **DUPLICATE.** The statement is embedded in the stored document form and compared with the
+3. **DUPLICATE.** The statement is embedded in the stored document form, titled as the stored
+   facts are (`Candidate.title`, `candidate_gates.candidate_text`: the owner, the concept and the
+   field, `candidate_store.subject_title`; decision 0136), and compared with the
    subject's held facts in the field (primary or secondary): shown or waiting statuses (`DRAFT`,
    `PROPOSED`, `IN_REVIEW`, `APPROVED`), open sensitivity. The same statement once case and final
    stops are folded is refused at once. Otherwise the 8 nearest held facts at cosine similarity
@@ -652,16 +655,34 @@ the reason `fact <id> says the same and review closed it as <status>; research n
 closed fact back`, before any judge is asked. It gains no citation and is never shown instead.
 Statements are embedded once per write-back, for the closed-fact check and the later gates both.
 
-Before the gates, a write-back is filed under the craft it names (decision 0135, research.md,
-The writer and the coverage job): under a craft only when its text, else a passing quote, names
-that craft in whole words (its name, aliases, native names or GI place); under another
-catalogued craft it names instead; under its craft family's science (the shared concept named
-as the category, which a craft's scope reads, decision 0122) when it names no craft and no
-place and is chemistry, physics or materials; and not at all when it is about a place outside
-India or another culture's practice, or names no craft otherwise. A sentence so refused is in
-the write-back's `skipped` list with its reason, which the answer's write-back logs. Every
-other gate is unchanged. The text the write-back stores is storable text
+Before the gates, a write-back is filed under the craft its sentence or its source names
+(decisions 0135 and 0136, research.md, The writer and the coverage job). The filing reads the
+sentence, its passing quotes, the passage each quote sits in, then the cited sources' titles,
+and the first that names something decides: a fact goes under the craft researched (or a
+compared one) it names in whole words (its name, aliases, native names or GI place), under
+another catalogued craft it names instead, and nowhere when it names two of the compared crafts,
+several other crafts, or a place outside India or another culture's practice. Only after every
+level does a fact naming nothing go to its craft family's science (the shared concept named as
+the category, which a craft's scope reads, decision 0122) when it is chemistry, physics or
+materials. A refused sentence is in the write-back's `skipped` list with its reason, which the
+answer's write-back logs. The text the write-back stores is storable text
 (`research/storable.storable_text`).
+
+**Held write-backs** (decision 0136). A sentence that names no craft, or a place of India but
+no craft of it, and is not family science, is not dropped: it goes through the same gates under
+the craft researched, its suggestion, and is stored `DRAFT` (hidden, never read by retrieval or
+shown to a reader) whatever the `RESEARCH` switch, with a `ReviewEvent` by `live_research_held`
+whose note names the reason and the suggested craft. It waits in the review queue as a researched
+fact of that craft; it keeps no claim on the answer's sentence and refreshes no page. A
+reviewer's one decision files it: approve files it under the suggested craft, approve with
+`craft` files it under another (review-queue.md, Decisions), reject drops it. A held sentence that
+another sentence of the same answer files is one filed fact.
+
+**Family science is its family's** (decision 0136). A family-science write-back carries its
+family's category (`ClaimWriteBack.categorySlug`): its dedupe key is the category's, so the same
+general sentence found for two families is one fact per family, and its duplicate and novelty
+gates and its closed-fact check read that category's facts (`candidate_store.FactSubject` of kind
+`category`, `owner_subject`), not every shared fact. Every other gate is unchanged.
 
 Every write-back goes through `research_write_back.write_through_gates` (round 7): the answer's and
 the coverage enrichment's (`store_live_research`) and the glossary term's
@@ -674,6 +695,17 @@ the gates (production showed every write-back of the 14 days to 2026-11-20 as `A
 sources, the source gate with the stored grade and licence, and the identical-text duplicate check
 against the subject's held facts; it reports `claims`, `byStatus`, `wouldPass`, `wouldBeRefusedAt`
 and the first 50 with their verdicts, and writes nothing.
+
+**The filing report** (decision 0136). `python -m app.scripts.write_back_filing [--answer <id>]
+[--since <YYYY-MM-DD>]` (`services/write_back_filing_store.filing_report`, the rows and lines in
+`services/write_back_filing`) reads the live-research facts (a `ClaimSource.foundBy` of `ANSWER`
+or `BACKGROUND`, at most 500, oldest first), re-runs today's filing on each fact's statement, its
+passing quotes, the passage of each quote in its stored chunk and its sources' titles, for the
+craft its answer researched (else the craft it is under), and prints one JSON line per fact
+(`claim, status, checked, is, would, why, text`: `is` and `would` are `craft:<slug>`,
+`family:<category slug>`, `held:<slug>`, `shared`, `refused` or `unknown`) and a summary line
+(`claims, moves, held, refused, unknown, unchecked` with the ids of the facts that have no
+`CandidateCheck` rows). It writes nothing; a reviewer re-files or rejects what it lists.
 
 Without a judge (the default until the callers pass one), the duplicate gate refuses only
 identical texts and records that no judge compared the close facts, and the novelty gate is
@@ -708,7 +740,7 @@ field, or changes its meaning, is a new schema version.
 | Supplied sources | `backend/tests/db/test_supplied_sources_db.py` |
 | Citations and their passages | `backend/tests/db/test_quote_relinks_db.py` and `test_quote_visibility_db.py` |
 | Pages follow their facts | `backend/tests/db/test_review_queue_refresh_db.py` and `test_page_revalidation_db.py` |
-| The research write-back, and the craft a fact is filed under | `backend/tests/write_back/` (`test_write_back_names.py`), `backend/tests/db/test_write_back_audit_db.py`, `test_write_back_report_db.py`, `test_term_write_back_gates_db.py` and `test_write_back_closed_db.py` |
+| The research write-back, and the craft a fact is filed under | `backend/tests/write_back/` (`test_write_back_names.py`, `test_write_back_context.py`, `test_write_back_passages.py`, `test_candidate_titles.py` and `test_write_back_filing_report.py`), `backend/tests/db/test_write_back_audit_db.py`, `test_write_back_report_db.py`, `test_term_write_back_gates_db.py`, `test_write_back_closed_db.py`, `test_held_write_backs_db.py` and `test_write_back_filing_report_db.py` |
 | The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/knowledge-writes.md` byte for byte equal to this file |
 
 Re-read it when a gate, a trust tier, a limit or a proposal kind is added or changed, and copy it to

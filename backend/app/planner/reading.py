@@ -19,8 +19,10 @@ __all__ = [
     "FETCH_STAGE",
     "LOCATE_STAGE",
     "MANUSCRIPT_VERSIONS",
+    "CachedRead",
     "DocumentReader",
     "LiveSources",
+    "ReadCache",
     "copy_read",
     "reading_order",
     "with_abstract",
@@ -50,6 +52,25 @@ class LiveSources:
         names = [searcher.name for searcher in self.searchers]
         if len(set(names)) != len(names):
             raise ValueError(f"live searchers have distinct names, not {names}")
+
+
+@dataclass(frozen=True)
+class CachedRead:
+    document: SourceDocument | None
+    reused: bool
+
+
+class ReadCache:
+    def __init__(self) -> None:
+        self._reads: dict[str, asyncio.Future[SourceDocument | None]] = {}
+
+    async def read(
+        self, evidence_id: str, opening: Callable[[], Awaitable[SourceDocument | None]]
+    ) -> CachedRead:
+        reused = evidence_id in self._reads
+        if not reused:
+            self._reads[evidence_id] = asyncio.ensure_future(opening())
+        return CachedRead(await asyncio.shield(self._reads[evidence_id]), reused=reused)
 
 
 def reading_order(
@@ -89,6 +110,7 @@ class DocumentReader:
         mode: str,
         log: FailureLog,
         on_read: Callable[[SourceDocument], Awaitable[None]] | None = None,
+        reads: ReadCache | None = None,
     ) -> None:
         self._sources = sources
         self._searchers = {searcher.name: searcher for searcher in sources.searchers}
@@ -96,6 +118,7 @@ class DocumentReader:
         self._log = log
         self._gate = asyncio.Semaphore(READ_CONCURRENCY)
         self._on_read = on_read
+        self._reads = reads
 
     async def read_best(self, ordered: Sequence[PackedEvidence], *, limit: int) -> list[SourceDocument]:
         documents: list[SourceDocument] = []
@@ -110,10 +133,15 @@ class DocumentReader:
         return documents[:limit]
 
     async def read(self, entry: PackedEvidence) -> SourceDocument | None:
-        document = await self._opened(entry)
-        if document is not None and self._on_read is not None:
-            await self._on_read(document)
-        return document
+        read = await self._shared(entry)
+        if read.document is not None and not read.reused and self._on_read is not None:
+            await self._on_read(read.document)
+        return read.document
+
+    async def _shared(self, entry: PackedEvidence) -> CachedRead:
+        if self._reads is None:
+            return CachedRead(await self._opened(entry), reused=False)
+        return await self._reads.read(entry.item.id, lambda: self._opened(entry))
 
     async def _opened(self, entry: PackedEvidence) -> SourceDocument | None:
         async with self._gate:

@@ -6,10 +6,11 @@ import struct
 from app.core.errors import InvalidInput, Refused
 from app.schemas.voice import RELAY_MAX_AUDIO_BYTES, RELAY_MAX_TURN_SECONDS, RELAY_MAX_WAV_BYTES
 
-__all__ = ["BYTES_PER_SECOND_CEILING", "WAV_TYPE", "upload_floor_seconds", "wav_seconds"]
+from .audio_decode import Measure
+
+__all__ = ["WAV_TYPE", "upload_seconds", "wav_seconds"]
 
 WAV_TYPE = "audio/wav"
-BYTES_PER_SECOND_CEILING = RELAY_MAX_AUDIO_BYTES / RELAY_MAX_TURN_SECONDS
 TOO_LONG = "too_long"
 PCM = 1
 FLOAT = 3
@@ -21,7 +22,7 @@ FMT_BYTES = 16
 EXTENSIBLE_FMT_BYTES = 26
 
 
-def upload_floor_seconds(content: bytes, content_type: str) -> int:
+async def upload_seconds(content: bytes, content_type: str, measure: Measure) -> int:
     if content_type == WAV_TYPE:
         if len(content) > RELAY_MAX_WAV_BYTES:
             raise _too_long()
@@ -29,7 +30,7 @@ def upload_floor_seconds(content: bytes, content_type: str) -> int:
     else:
         if len(content) > RELAY_MAX_AUDIO_BYTES:
             raise _too_long()
-        seconds = len(content) / BYTES_PER_SECOND_CEILING
+        seconds = await measure(content)
     if seconds > RELAY_MAX_TURN_SECONDS:
         raise _too_long()
     return max(1, math.ceil(seconds))

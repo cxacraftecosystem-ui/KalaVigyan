@@ -38,7 +38,7 @@ class FilmScene:
     number: int
     block_id: str
     kind: str
-    discipline: str
+    discipline: str | None
     seconds: float
 
 
@@ -50,7 +50,8 @@ class SceneCue:
 
 def film_scenes(explainer: Explainer) -> list[FilmScene]:
     narrated = {block.block_id: _narrated_seconds(block) for block in spoken_blocks(explainer, None)}
-    drawn = [
+    opening: list[tuple[str | None, BlockBase]] = [] if explainer.lede is None else [(None, explainer.lede)]
+    drawn = opening + [
         (section.discipline, block)
         for section in sorted(explainer.sections, key=lambda section: section.order)
         for block in section.blocks

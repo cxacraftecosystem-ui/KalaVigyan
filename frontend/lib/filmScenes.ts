@@ -1,4 +1,5 @@
 import { headingView, sentenceView, type AnswerLanguage, type ShownText } from "@/lib/answerLanguages";
+import type { LedeBlock } from "@/lib/explainerContract";
 import type { SectionView } from "@/lib/explainerState";
 import { blockSentences, type TextRange, type TypedBlock } from "@/lib/explainerView";
 import { trackMark, wordRanges, type ListenMark, type ListenScript, type ListenTrack } from "@/lib/listen";
@@ -7,7 +8,7 @@ export const FILM_SCENE_SECONDS = { step: 4, picture: 3, block: 6 } as const;
 export const PREVIOUS_RESTARTS_AFTER_SECONDS = 2;
 
 export type FilmTrack = { at: number; start: number; track: ListenTrack };
-export type FilmScene = { block: TypedBlock; section: SectionView; tracks: FilmTrack[]; start: number; seconds: number };
+export type FilmScene = { block: TypedBlock; section: SectionView | null; tracks: FilmTrack[]; start: number; seconds: number };
 export type FilmClock = { scene: number; time: number; playing: boolean; ended: boolean; take: number };
 export type FilmAction =
   | { type: "play" | "pause" | "toggle" | "next" | "previous" }
@@ -44,16 +45,23 @@ function narrationSeconds(tracks: readonly FilmTrack[]): number {
   return tracks.reduce((sum, entry) => sum + entry.track.durationSeconds, 0);
 }
 
-export function filmScenes(sections: readonly SectionView[], script: ListenScript | null, drawn: (block: TypedBlock) => boolean): FilmScene[] {
+export function ledeScene(lede: LedeBlock): TypedBlock {
+  return { id: lede.id, kind: "prose", version: 1, reuse: null, sentences: lede.sentences };
+}
+
+export function filmScenes(sections: readonly SectionView[], script: ListenScript | null, drawn: (block: TypedBlock) => boolean, lede: LedeBlock | null = null): FilmScene[] {
   const scenes: FilmScene[] = [];
   let start = 0;
+  const play = (block: TypedBlock, section: SectionView | null) => {
+    const tracks = blockTracks(script, block.id);
+    const seconds = tracks.length > 0 ? narrationSeconds(tracks) : holdSeconds(block);
+    scenes.push({ block, section, tracks, start, seconds });
+    start += seconds;
+  };
+  if (lede) play(ledeScene(lede), null);
   for (const section of [...sections].sort((a, b) => a.order - b.order)) {
     for (const block of section.blocks as TypedBlock[]) {
-      if (!drawn(block) || (block.kind === "simulation" && block.hidden)) continue;
-      const tracks = blockTracks(script, block.id);
-      const seconds = tracks.length > 0 ? narrationSeconds(tracks) : holdSeconds(block);
-      scenes.push({ block, section, tracks, start, seconds });
-      start += seconds;
+      if (drawn(block) && !(block.kind === "simulation" && block.hidden)) play(block, section);
     }
   }
   return scenes;
@@ -146,8 +154,11 @@ export function filmMark(scene: FilmScene | undefined, time: number): ListenMark
 }
 
 function titleCaption(scene: FilmScene, language: AnswerLanguage): FilmCaption {
-  const title = headingView({ id: scene.section.id, heading: scene.section.title, original: scene.section.original, sentences: [] }, language, false);
-  return { ...title, mark: null, narrated: false };
+  const section = scene.section;
+  const shown = section
+    ? headingView({ id: section.id, heading: section.title, original: section.original, sentences: [] }, language, false)
+    : sentenceView(blockSentences(scene.block)[0], language, false);
+  return { ...shown, mark: null, narrated: false };
 }
 
 export function filmCaption(scene: FilmScene, time: number, language: AnswerLanguage): FilmCaption {

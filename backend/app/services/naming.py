@@ -39,6 +39,7 @@ __all__ = [
     "score_key",
     "score_manifest_key",
     "score_music_file_name",
+    "voice_reply_key",
 ]
 
 PORTAL = "KalaVigyan"
@@ -51,6 +52,8 @@ MOLECULE_FOLDER = "molecules"
 RIVER_FOLDER = "rivers"
 SCORE_FOLDER = "score"
 FIELD_VOICE_FOLDER = "field-voices"
+VOICE_REPLY_FOLDER = "voice-replies"
+VOICE_REPLY_LEAF = "reply.mp3"
 FIELD_VOICE_EXTENSIONS = ("jpg", "png")
 SCORE_MANIFEST_LEAF = "score.json"
 RIVER_TOPOLOGY_SUBJECT = "HydroRIVERS-1-0"
@@ -261,6 +264,10 @@ def artisan_audio_key(owner_id: uuid.UUID, leaf: str, *, token: uuid.UUID | None
     return (
         f"{MEDIA_PREFIX}/{owner_id}/{(token or uuid.uuid4()).hex}/{_one_file_name(leaf, 'artisan recording')}"
     )
+
+
+def voice_reply_key(session_id: uuid.UUID, turn_id: uuid.UUID) -> str:
+    return f"{MEDIA_PREFIX}/{VOICE_REPLY_FOLDER}/{session_id}/{turn_id}/{VOICE_REPLY_LEAF}"
 
 
 def field_voice_key(sha256: str, leaf: str) -> str:

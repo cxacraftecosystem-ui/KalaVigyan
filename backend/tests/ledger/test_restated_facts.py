@@ -95,13 +95,21 @@ def test_the_same_fact_filed_under_two_fields_is_said_once() -> None:
     assert ([b.id for b in first], again) == (["s1.b1"], [])
 
 
-def test_the_same_words_from_other_evidence_still_say_something_new() -> None:
+def test_the_same_date_of_one_certificate_from_other_evidence_is_said_once() -> None:
     other = "The registry's journal lists the certificate of Kutch Ajrakh as granted on 22 April 2024."
     ledger = ClaimLedger()
     ledger.admit("s1", [said_in("s1", gi_sentence("s1.b1.1", GI_SAID, "gi-economics"))], REFS)
     told = gi_sentence("s2.b1.1", GI_TOLD_AGAIN, "gi-history", quote=other)
+    assert ledger.admit("s2", [said_in("s2", told)], REFS) == []
+
+
+def test_another_passage_of_the_same_source_still_says_something_new() -> None:
+    makers = "The registry's journal names the Khatri community of Dhamadka and Ajrakhpur as its makers."
+    ledger = ClaimLedger()
+    ledger.admit("s1", [said_in("s1", gi_sentence("s1.b1.1", GI_SAID, "gi-economics"))], REFS)
+    told = gi_sentence("s2.b1.1", makers, "gi-makers", quote=makers)
     (kept,) = ledger.admit("s2", [said_in("s2", told)], REFS)
-    assert [sentence.text for sentence in kept.cited_sentences()] == [GI_TOLD_AGAIN]
+    assert [sentence.text for sentence in kept.cited_sentences()] == [makers]
 
 
 def test_a_near_copy_that_changes_a_quantity_or_a_negation_is_kept() -> None:

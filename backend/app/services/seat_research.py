@@ -7,24 +7,24 @@ from typing import TYPE_CHECKING
 
 from app.composer.candidates import compose_request
 from app.planner.policy import SEAT_LIVE_SHARE, SEAT_SENTENCES_MAX
+from app.planner.reading import ReadCache
 from app.research.composition import ComposedAnswer, ComposeFocus, ComposeRequest
-from app.research.evidence_pack import EvidencePack, ResearchTrail
+from app.research.evidence_pack import ResearchTrail
 from app.research.expert_panel import SeatBrief
 from app.research.explainer import Block
 from app.research.planning import PlanRequest, ResearchShare
 from app.research.sections import DISCIPLINE_TITLES, SectionSpec
-from app.research.stream import ResearchProgress, StatusStep
+from app.research.stream import StatusStep
 
 from .answer_events import CitedClaims
 from .builder_interface import BuildAsk
 from .research_ledger import ResearchLedger
 
 if TYPE_CHECKING:
-    from .answer_sections import SectionContext, SectionStore
+    from .section_context import Research, SectionContext, SectionStore
 
 __all__ = ["BuildAsk", "GapResearch", "gap_research", "seat_request", "seat_share", "section_ask"]
 
-Research = Callable[[PlanRequest, ResearchProgress, ResearchTrail], Awaitable[EvidencePack]]
 Compose = Callable[[ComposeRequest], Awaitable[ComposedAnswer]]
 
 
@@ -37,13 +37,15 @@ class GapResearch:
     compose: Compose
     store: SectionStore
     trail: ResearchTrail
+    reads: ReadCache | None = None
 
     async def __call__(self, brief: SeatBrief, discipline: str) -> CitedClaims:
         share = seat_share(self.ledger)
         if share is None:
             return CitedClaims()
         try:
-            pack = await self.research(seat_request(self.base, brief, discipline, share), _quiet, self.trail)
+            request = seat_request(self.base, brief, discipline, share)
+            pack = await self.research(request, _quiet, self.trail, reads=self.reads)
         except BaseException:
             self.ledger.give_back(share)
             raise
@@ -68,13 +70,22 @@ def gap_research(context: SectionContext) -> GapResearch:
         compose=tools.compose,
         store=tools.store,
         trail=context.stream.trail,
+        reads=context.reads,
     )
 
 
 def section_ask(
     context: SectionContext, spec: SectionSpec, blocks: tuple[Block, ...], cited: CitedClaims
 ) -> BuildAsk:
-    return BuildAsk(context.answer_id, spec, context.base, blocks, cited, research=gap_research(context))
+    return BuildAsk(
+        context.answer_id,
+        spec,
+        context.base,
+        blocks,
+        cited,
+        research=gap_research(context),
+        answer_fields=context.fields.shown,
+    )
 
 
 def seat_share(ledger: ResearchLedger) -> ResearchShare | None:

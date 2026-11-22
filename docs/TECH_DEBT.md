@@ -31,19 +31,12 @@ Last reviewed: 2026-11-22.
   group and the `X-Origin-Verify` header, but the hop between CloudFront and the box is not
   encrypted. The designer and documentation portals use the same pattern.
 - **Why left:** TLS ends at CloudFront; there is no custom domain or origin certificate yet, and
-  the pattern matches the portals so they can be changed together.
+  the pattern matches the portals so they can be changed together. Deferred by the owner on
+  2026-11-22 ("we will take care of it later on") as D43 of the cross-portal list of decisions
+  deferred to launch (`C:/dev/IIT/docs/DEFERRED_FOR_LAUNCH.md`).
 - **Clears it:** an origin certificate (custom domain with certbot, already installed and
-  unused on the box) and `https-only` origin protocol, done for all three portals in one change.
-
-### Turnstile keys pending
-
-- **What:** `TURNSTILE_SECRET_KEY` (GitHub secret) and `TURNSTILE_SITE_KEY` (GitHub variable) are
-  not yet issued for `kalavigyan.vercel.app`. With `APP_ENV=production` and either missing,
-  email sign-up answers 503 and the sign-up page offers Google only
-  (`docs/contracts/infra.md`, `backend/app/services/turnstile.py`).
-- **Why left:** the Cloudflare widget has to be created by the owner.
-- **Clears it:** create the widget, set both values; Deploy backend copies them to Parameter
-  Store.
+  unused on the box) and `https-only` origin protocol, done for all three portals in one change,
+  with a certificate-expiry check in each post-deploy run.
 
 ## Backend structure
 
@@ -199,21 +192,19 @@ Last reviewed: 2026-11-22.
   exposes them; route facet types to the sources that can serve them once the checks show
   which do.
 
-### Composer: gaps left on 2026-11-16 (decision 0010)
+### Stored passages are not composer candidates (decision 0010)
 
-- **What:** (1) A read document longer than 4,000 characters gives the composer nothing until the
-  `WEB_READ` reader fills its item's quotes. (2) Stored passages (T2 `ChunkHit`) are not composer
-  candidates: a sentence can cite a claim or live evidence, and the stream's `Citation` names a
-  claim. (3) A stored claim is offered as its text alone; its citations' quotes and sources are
-  not in `ClaimHit`, so the model cannot quote the source behind a claim and the label says only
-  "stored claim". (4) `ResearchSummary.services` lists searchers that returned evidence or
-  failed, not every searcher asked.
-- **Why left:** the reader and the answering service are separate lanes; chunk citations and
-  claim sources need the stream and retrieval contracts to grow together.
-- **Clears it:** the reader fills quotes for long documents; the answering service builds
-  `compose_request` from the pack, joins each claim's sources and quotes from the database into
-  its candidate, and records which searchers ran in the pack; add a chunk candidate kind with a
-  source-only citation when the stream allows one.
+- **What:** a stored passage (T2 `ChunkHit`) other than a field voice is not offered to the
+  composer: a sentence citing one could not be kept, because the write-back
+  (`services/research_write_back.store_live_research` and `write_back_plan`) keeps only read
+  documents and field voices, and the stream's `Citation` names a claim. The other gaps of
+  decision 0010 are cleared: long documents give their best passages, a stored claim is offered
+  with its sources' quotes and names, and the pack lists every searcher asked (decision 0138).
+- **Why left:** keeping such a sentence is a write-back change, and the write-back lane was
+  changing those files in the same round.
+- **Clears it:** the write-back keeps a sentence citing a stored passage as a claim of that
+  passage's source, the way it keeps field voices; then `compose_request` offers stored passages
+  as `EVIDENCE`.
 
 ## Live research write-back (decision 0011)
 
@@ -400,77 +391,43 @@ Last reviewed: 2026-11-22.
   `secondary_language_codes` hint; the spike decides whether the agent gets an `agent.language`
   override or one agent per language.
 
-### The voice pack is claims only, ranked by words
+### T2 passages are not offered to a voice turn
 
-- **What:** PLAN 10.3 asks for the T0/T1 pack with embeddings plus T2 passages; the pack is the
-  craft's visible claims ranked by shared word stems (`voice/pack.ranked_claims`), without vectors
-  or corpus chunks.
-- **Why left:** a query embedding per turn is a second model call before the first sentence.
-- **Clears it:** prefetch the claim vectors with the pack and embed the question in parallel with
-  the filler; add T2 chunks as `EVIDENCE` candidates with their verified quotes.
+- **What:** a voice turn ranks the craft's visible claims by the stored hybrid search (lexical,
+  vector and entity rankings fused, the question embedded while the filler plays) ahead of shared
+  word stems (decision 0140), but no corpus passage (T2 chunk) is a candidate, so a passage that
+  states the answer and is not yet a claim is not spoken.
+- **Why left:** a spoken sentence is cited only through a stored claim, so a passage must be
+  written back as a claim before it can be cited; that write-back belongs to the write-back lane
+  (`services/write_back_*`), which was changing at the same time.
+- **Clears it:** hybrid turns ask the search for passages and offer each as an `EVIDENCE`
+  candidate with its verified quote, and a cited passage is written back (as
+  `services/field_voices_citations` does for field passages) before its sentence is spoken.
 
-### Voice upkeep rides the daily Coverage enrichment run
+### An agent call cannot be hung up from our side
 
-- **What:** purging transcripts after 30 days, closing calls left open and reconciling agent calls
-  run as the first module of the daily box job in `coverage-enrichment.yml`; `kv-worker`
-  (`app/worker.py`, decision 0018) runs only the media queue.
-- **Why left:** the worker arrived with the media lane, which did not take on voice scheduling.
-- **Clears it:** move `app.scripts.voice_upkeep` into the worker's schedule.
-
-### Voice billing approximations
-
-- **What:** a relay upload's floor is its bytes at 5 000 a second; compressed audio is not decoded,
-  so a client encoding below the dock's 32 kbit/s (Opus goes down to 6 kbit/s) gets up to about
-  6.7 times the floor's seconds of speech to text inside the 300 000-byte ceiling, still within
-  the day's seconds. Parallel uploads are allowed; each holds its own minute under the row lock,
-  so they cannot pass the day's seconds. An agent call cannot be hung up from our side: after its
-  row ends the ElevenLabs call can run to the agent's 600 s, which reconciliation charges (the user
-  may go below zero for that day). Refund and settle rows count on the day they are written, not
-  the call's day.
-- **Why left:** decoding needs ffmpeg on the box; ending a call needs an ElevenLabs endpoint the
-  spike has not confirmed. Each is bounded by the day's seconds, the turn and replay limits and
-  the 40-turn cap (decision 0022).
-- **Clears it:** decode the upload's duration (ffprobe) before speech to text and bill that; end
-  the ElevenLabs conversation when the row ends, once the spike shows how; date settlement rows to
-  the call's day.
-
-### Voice state held per process
-
-- **What:** claim packs (10 minutes), relay reply audio (15 minutes, 32 replies) and the ElevenLabs
-  reachability (1 minute) are held per API process. A reply missing from that process's cache
-  (another worker, a handover, eviction) is synthesised again, only while the call is live or two
-  minutes after it ended, billed under its own key and limited to 60 replays in 10 minutes
-  (decision 0022).
-- **Clears it:** keep reply audio in the media bucket under a short lifecycle rule, so a cache miss
-  never calls text to speech.
-
-### Voice settings have no screen
-
-- **What:** `voice.transport`, `voice.max_live_sessions` and `voice.voice_id` are `AppSetting` rows set
-  in SQL (`docs/RUNBOOK.md`); `voice.max_live_sessions` defaults to 5, an assumption about the bought
-  plan's concurrent-call limit.
-- **Clears it:** a master-admin voice block in Settings, and the limit from the plan once bought.
-
-### A hand-written multipart reader
-
-- **What:** relay uploads are read by `api/multipart_form.py` rather than `python-multipart`.
-- **Why left:** the lockfile cannot be regenerated on this machine (no `uv`), and one field is
-  enough.
-- **Clears it:** add `python-multipart` with `uv add` where `uv` runs and read the form with
-  Starlette's limits.
+- **What:** after an `AGENT` call's row ends, the ElevenLabs call can run on to the agent's 600 s,
+  which reconciliation charges, so the user may go below zero for the call's day (the settlement
+  row counts on that day, decision 0140).
+- **Why left:** ending a conversation needs an ElevenLabs endpoint the spike has not confirmed; it
+  is bounded by the day's seconds, the turn and replay limits and the 40-turn cap (decision 0022).
+- **Clears it:** end the ElevenLabs conversation when the row ends, once the spike shows how.
 
 ## Voice UI (decision 0020)
 
-### The voice dock has not run in a browser
+### The live agent call has not run in a browser
 
-- **What:** the dock, orb, microphone recording, speech playback and the ElevenLabs WebRTC call
-  are checked by typecheck, lint and unit specs that drive `VoiceCall` with fakes; no browser has
-  recorded, played or joined a LiveKit room, and the dock's layout above the bottom island, its
-  contrast in both themes and the transcript at phone width are unverified. The `AGENT` path also
-  assumes the server writes each turn to the transcript as it is spoken.
-- **Clears it:** after lane 0017 deploys, a signed-in smoke spec with a fake microphone
-  (`--use-fake-device-for-media-stream`) on `RELAY`, route fixtures from `shared/` at desktop and
-  phone widths, then one real `AGENT` call once the spike passes.
+- **What:** the release check `e2e/production/voice.spec.ts` drives the dock on `/design/voice`
+  at desktop and phone widths in both themes: the notice, a relay turn recorded from Chromium's
+  fake microphone, sent, answered from the relay goldens and played, and the end, with the dock
+  inside the screen and its contrast checked (decision 0140). The `AGENT` path (the ElevenLabs
+  WebRTC call joining a LiveKit room, the server writing each turn to the transcript as it is
+  spoken) has not run, nor has the dock above the bottom island, since no page with the island
+  mounts it while the call is switched off (decision 0035).
+- **Why left:** an `AGENT` call needs a real ElevenLabs agent and conversation (the spike); the
+  dock's page comes back with the call.
+- **Clears it:** one real `AGENT` call once the spike passes, and the same check run on the page
+  that mounts the dock when `VOICE_CALL_ENABLED` brings the call back.
 
 ### The dock asks for a bit rate it cannot enforce
 
@@ -587,15 +544,6 @@ Last reviewed: 2026-11-22.
   cited sources.
 - **Clears it:** the governance lane keeps the named practitioners per craft as data; the claim
   set and the named-cluster flag check against it.
-
-### The KalaVigyan token is not in the cross-portal naming document
-
-- **What:** PLAN 14.3 adds `KalaVigyan` and its entities to
-  `C:/dev/IIT/docs/conventions/NAMING_2026-10-18.md`; only this repository's helper and golden
-  rows know them.
-- **Why left:** that document is outside this repository and shared with both portals.
-- **Clears it:** add the token, the `Generated-Image` and `Generated-Video` entities and the
-  `Step-NN` sequence there at the portals' next release.
 
 ### India time is written again outside the backend package
 
@@ -906,17 +854,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** after the deploy, load `/ask`, ask the Kutch Ajrakh known-answer questions and
   see each section's pictures with their credits and underlined terms that open their summary.
 
-## Explainer view (decision 0037)
-
-### Listen re-renders every sentence on each time update
-
-- **What:** the word being read travels through the reading context, so each `timeupdate`
-  (about four a second) re-renders every sentence of the explainer.
-- **Why left:** not measured as slow on an Expert answer; memoising every sentence first would be
-  a guess.
-- **Clears it:** measure on a long answer on a phone; if it drops frames, give each sentence a
-  selector on the mark (only the sentence being read re-renders).
-
 ## Listen and the switched-off call (decision 0035)
 
 ### Narration not yet heard from ElevenLabs
@@ -930,23 +867,6 @@ Last reviewed: 2026-11-22.
   if `eleven_v4` is refused, set `NARRATION_MODEL` to `eleven_v4_turbo`; replace the fixture
   with the recorded answer.
 
-### Two readers missing the same block both pay for it
-
-- **What:** the narration cache is checked, then filled; two requests that miss the same block at
-  the same moment both synthesise it and both are billed (the second write wins, both are valid).
-- **Why left:** rare until many readers open the same new answer at once; a lock across processes
-  needs a table or a lease.
-- **Clears it:** an in-flight lease per cache id (a row with a short expiry, or an S3 conditional
-  put with `If-None-Match`) so the second request waits for the first.
-
-### Narration objects never age out
-
-- **What:** `media/narration/<cacheId>/` objects stay forever; a block that changes (a claim
-  retracted, a translation corrected) gets a new cache id and the old audio is orphaned.
-- **Why left:** the bucket lifecycle is Terraform, which agents do not change; the cost is small.
-- **Clears it:** a lifecycle rule expiring `media/narration/` objects not read for a year, or a
-  sweep of cache ids no stored explainer or piece names.
-
 ### Listen has no fallback voice
 
 - **What:** PLAN 10.6 reads aloud with the Gemini voice when ElevenLabs is down; Listen is hidden
@@ -955,67 +875,17 @@ Last reviewed: 2026-11-22.
 - **Clears it:** a Gemini read-aloud that highlights by sentence only, if the owner wants Listen
   while ElevenLabs is down.
 
-### The Listen route repeats the throttle shape
-
-- **What:** `api/routes/listen.throttle` repeats the `Retry-After` arithmetic of the other route
-  throttles (`terms`, `knowledge`, `voice`, `auth`, `password_change`).
-- **Why left:** those routes belong to other lanes working in the tree at the same time.
-- **Clears it:** one `core/rate_limit.refused(attempt, detail)` that raises the 429 with its
-  `Retry-After`, used by every route.
-
 ## Sectioned composition (decision 0032)
 
-### Sections share the depth's budget evenly
+### The voice turn's reply limits are prompt lines
 
-- **What:** `split_share` gives every section the same part of the depth's queries and documents
-  (Basic: 2 queries over 3 or 4 sections), whether or not its stored claims already cover it; a
-  section without a query share reaches live research only through the fresh retry, and only
-  while the ledger has something left.
-- **Why left:** which fields need live research is known only after each section's plan call.
-- **Clears it:** plan every section first, then hand the budget to the sections with open facets.
-
-### Two sections can read the same document
-
-- **What:** each section runs its own planner and `DocumentReader`; the adapters cache searches
-  for 600 s but not reads, so a paper found by two fields is fetched twice.
-- **Why left:** a shared reader needs a per-answer cache passed through the planner.
-- **Clears it:** one per-answer read cache (by evidence id) held by the answering service.
-
-### A late failure drops the whole prose block
-
-- **What:** a prose block is refused whole when one sentence has no stored citation after the
-  write-back (for example a write-back skipped as invalid), although its other sentences passed;
-  the model's one regenerate covers only what the composer's checks see.
-- **Why left:** plan 2.1 drops a block with an uncited fact; such skips should be rare.
-- **Clears it:** count refused blocks by reason in production; if they occur, regenerate the
-  section once with the refused sentences named.
-
-### Section titles and progress counts are generic
-
-- **What:** a section's title is its field's label ("The chemistry"), not one written for the
-  question; the `status` line's counts are the first section's to reach each step.
-- **Why left:** `section_started` goes out before anything is composed and has no later title
-  event; per-section progress is carried by `section_state`.
-- **Clears it:** a title from the understanding call (validated like a heading), and a status
-  line that sums the sections' counts.
-
-### Schema counts are prompt lines
-
-- **What:** with portable schemas, the whole-answer composer's six sections, the voice turn's one
-  section of three sentences and the translation's length limit are no longer enforced by the
-  schema; the section composer and the planner trim on our side, the voice turn and the coverage
-  job's whole-answer composer do not.
-- **Why left:** the voice call is switched off and the coverage job only writes claims.
-- **Clears it:** trim in `parsed_answer` to its form's limits (sections, sentences, follow-ups).
-
-### Stored plans and the explainer are not read back yet
-
-- **What:** `Answer.plan` holds one plan per section and attempt and `Answer.mode` the first
-  section's mode; the data migration wrapping older plans has no database test of an old row.
-  The explainer is stored as the reader saw it (translated), not in English.
-- **Why left:** nothing reads them yet besides Listen, which wants the shown language.
-- **Clears it:** a DB test that seeds a pre-0014 plan and runs the upgrade, when a reader of
-  `Answer.plan` is written.
+- **What:** the voice turn's one section of three sentences and no follow-ups are lines of its
+  prompt only: `voice/compose.voice_composed` calls `parsed_answer` without a form, so a longer
+  reply is trimmed to the whole answer's six sections of eight sentences instead. The
+  whole-answer composer and the translation are trimmed and checked on our side (decision 0138).
+- **Why left:** `backend/app/voice/**` is the voice lane's, and the voice call is switched off.
+- **Clears it:** `voice_composed` passes `form=AnswerForm(sections=1, sentences=VOICE_MAX_SENTENCES,
+  follow_ups=0)`, with a unit test.
 
 ## Stored knowledge pieces (decision 0033)
 
@@ -1676,15 +1546,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** curation storing condition ranges with the outcomes a source ties to each, or
   water sources as materials with their relations; then an input kind over them in a version 2.
 
-### Listen reads a hypothesis outcome without its label
-
-- **What:** Listen speaks every outcome sentence of a what-if (all options, in reading order),
-  and a hypothesis is spoken like a finding; on screen it carries the Hypothesis badge.
-- **Why left:** the narration and its cache are decision 0035's and shared with film mode
-  (0060); changing what is spoken changes every cached narration's hash.
-- **Clears it:** Listen leaving hypotheses out, or a spoken "possibly" prefix, with the narration
-  cache version raised.
-
 ### One answer can show the same what-if in two sections
 
 - **What:** builders see only their own section, so a process and a chemistry section that both
@@ -2200,18 +2061,16 @@ Last reviewed: 2026-11-22.
 
 ## The lede on the page (decision 0077)
 
-### Listen, film, the quiz and lesson packs leave the lede out
+### Lesson packs leave the lede out
 
-- **What:** the explainer page opens with the lede (`components/answer/LedeBlock.tsx`), and so do
-  the report PDF and the citations export, but Listen narrates sections only
-  (`voice/narration.spoken_blocks`): it starts at the first section and never marks a lede word.
-  Film mode's scenes (`voice/film_scenes.film_scenes`, `lib/filmScenes.ts`), the quiz
-  (`research/quiz.py`) and lesson packs (`research/lesson_builder.py`) also read sections only.
-- **Why left:** decision 0077 kept these readers on sections; task 3-03 draws the lede and adds no
-  Listen or film behaviour.
-- **Clears it:** `spoken_blocks` yields the lede first for a whole-answer narration (the Listen
-  golden and the narration cache keys change with it) and film opens on a lede scene; the quiz and
-  lesson packs take the lede only if the owner wants the direct answer in them.
+- **What:** a lesson pack is built from the sections a teacher chooses, and its title slide carries
+  only the title, so the answer's lede (the direct answer) is on no slide. Listen and film open on
+  the lede and a whole-answer quiz asks from it (decision 0140).
+- **Why left:** a lede on the title slide changes the slide contract that the deck, the PPTX file
+  and the lesson screen draw, and decision 0077 left the lesson packs to the owner's wish.
+- **Clears it:** the owner's yes; then the `TITLE` slide carries the lede's sentences as bullets
+  (block id `lede`) in `research/lesson_builder`, `services/lesson_deck`, `services/lesson_pptx`
+  and the lesson screen, with `docs/contracts/learning.md`.
 
 ## Frontend audit exceptions
 
@@ -2635,12 +2494,14 @@ Last reviewed: 2026-11-22.
 
 ### Live research write-backs skipped the candidate gates
 
-- **What:** every live-research write-back of the 14 days to 2026-11-20 is `APPROVED` with no
-  `CandidateCheck` rows, where `knowledge-writes.md` expects `IN_REVIEW` with checks under the
-  RESEARCH `AUTO` switch. The last write-back ran on 2026-11-17; production has had no answers since
-  2026-11-18, so the path has not been exercised since.
-- **Clears it:** route write-back through the same gates as proposals (the contribution queue), prove
-  it with one real question in production, and re-check the earlier write-backs.
+- **What:** on production since 2026-11-21 every live-research write-back is `IN_REVIEW` with
+  `CandidateCheck` rows (47 claims, 220 checks), so this is left only for the older approved
+  write-backs, stored `APPROVED` with no checks before the write-back went through the gates.
+- **Why left:** stored facts on production are a person's to review; no lane changes them.
+- **Clears it:** a reviewer re-checks them with the filing report
+  (`python -m app.scripts.write_back_filing`, whose summary lists the facts with no `CandidateCheck`
+  rows, decision 0136) and `python -m app.scripts.write_back_report --gate-less`, then rejects or
+  re-files each in the review queue.
 
 ### Leftovers of the map rebuild
 
@@ -2664,16 +2525,13 @@ Last reviewed: 2026-11-22.
 
 ### Source tools: what they do not cover yet
 
-- **What:** the lookup allowances are counted in each process's memory, as the proposal limits are,
-  so each worker keeps its own count. The production `LookupStore` (`source_lookup_store.from_live`)
-  has no test, since every tool test uses fake adapters. PubChem synonyms come only from a stored
-  Compound, because the PubChem adapter has no synonyms call. `kalavigyan://index.md` and the
-  contributor skill are written by hand and must name every tool, which the tests enforce; the five
-  contract copies in `backend/app/data/contributor/contracts` must stay byte-identical to
-  `docs/contracts`.
-- **Clears it:** allowances in the shared store the trust tiers use; a contract test of the live store
-  against recorded adapter responses; a synonyms call on the PubChem adapter; the index generated from
-  the server's registry.
+- **What:** the production `LookupStore` (`source_lookup_store.from_live`) has no test, since every
+  tool test uses fake adapters. PubChem synonyms come only from a stored Compound, because the
+  PubChem adapter has no synonyms call. `kalavigyan://index.md` and the contributor skill are
+  written by hand and must name every tool, which the tests enforce; the five contract copies in
+  `backend/app/data/contributor/contracts` must stay byte-identical to `docs/contracts`.
+- **Clears it:** a contract test of the live store against recorded adapter responses; a synonyms
+  call on the PubChem adapter; the index generated from the server's registry.
 
 ### No MCP path for a new map layer's dataset
 
@@ -2696,20 +2554,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** building `exactextract` from source needs GEOS and GDAL headers on every runner.
 - **Clears it:** when `exactextract` publishes a cp315 wheel, move `etl/geo/pyproject.toml` and
   `geo-etl.yml` together; `backend/tests/test_python_version.py` keeps the two agreeing.
-
-### The duplicate gate embeds candidates without the stored facts' titles
-
-- **What:** since decision 0129 a stored fact is embedded titled by its craft, concept and field
-  (`title: Kutch Ajrakh · Washing · Process | text: ...`), but `services/candidate_gates._vectors`
-  embeds a candidate statement untitled (`document_text(statement)`). A paraphrase of a stored fact
-  therefore sits a little further from it than before, and the 0.97 vector-twin shortcut fires less
-  often. Text twins and the novelty judge, which reads the nearest facts whatever their distance,
-  still catch duplicates, and the reranker folds restatements into one slot at read time.
-- **Why left:** a candidate does not carry its concept, so titling it like for like needs the
-  gates' callers (proposals, structure, live-research write-back) to pass craft, concept and field;
-  found the night the first-stage lane merged, before a release that could not wait on it.
-- **Clears it:** give `Candidate` an optional title (craft, concept, field) from its callers, embed it
-  with `text.context_title`, and test that a stored fact's paraphrase reaches the twin floor again.
 
 ### Leftovers of the design-conformance lane
 
@@ -2778,23 +2622,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** give the spinning page's catch a bound of its own well inside the test timeout, or
   run that spec alone in its project with a longer timeout.
 
-### Near-duplicate prose across sections
-
-- **What:** the judge of answer-quality run 44994632550 (13 answers on production, 2026-11-22) found
-  one fact told twice in different words across sections: the Bandhani GI answer (615162e4) repeats
-  the 1971 Gazetteer figures and the Sandhani report across ECONOMICS and HISTORY; the Bandhani
-  communities answer (6d7e0d44) repeats history and economics sentences nearly verbatim; the Bidri
-  history answer (68fa24b4) repeats the 1625 miniature and the Bidar and Hyderabad claims; the Ajrakh
-  dye plants answer (d006480e) repeats harde, kut and alizarin. These are different claims or
-  sentences, not copies of one item's sentence, so decision 0134 does not reach them, and the
-  restatement rule of decision 0127 lets them through (another claim group, or a sentence that adds
-  a number).
-- **Why left:** the sentence-once lane fixes a sentence repeated within a block; telling two claims
-  apart as one fact is a ledger rule.
-- **Clears it:** let the ledger treat two fact sentences that state the same numbers with the same
-  units about the same subject, or the same source's same passage, as one fact across sections,
-  keeping the first; measure the judge's notes and its cited part on the same 13 questions.
-
 ### Numbers in prose without a table or figure
 
 - **What:** in run 44994632550 the judge's figures part averaged 2.8 of 5 (36 of 65). The Ajrakh
@@ -2810,32 +2637,6 @@ Last reviewed: 2026-11-22.
   draws it), and name each figure's kind and the quantities it shows in the judge's message;
   measure the figures part on the same questions.
 
-### Answers drift into process and history while asked fields stay thin
-
-- **What:** in run 44994632550 the judge found answers padded with PROCESS and HISTORY the question
-  did not ask, while expected fields were missing or thin: ECOLOGY never addressed in the Ajrakh
-  water and climate answer (d9674645, fields 3); PHYSICS missing in the Jaipur body and glaze answer
-  (8943da7e, fields 3) and one sentence in the Bidri making-stages answer (c31398c8, cited 3);
-  POLICY with no sentences of its own in the Ajrakh makers and market answer (146493c2) and only
-  generic GI sentences in the Bandhani GI answer (615162e4).
-- **Why left:** seats, planning and research by field are not this lane's; nothing here changes
-  what an answer covers.
-- **Clears it:** plan the asked fields' sections first and cap the share of fields not asked; send
-  live research for an asked field with fewer than three stored facts for the craft (ECOLOGY and
-  PHYSICS here) before composing; file a craft's GI registry facts under POLICY; measure the fields
-  and cited parts on the same questions.
-
-### A gap admission the pattern misses
-
-- **What:** in run 44994632550 the Jaipur place answer (e94dbb80) shows a sentence, filed under
-  GEOGRAPHY, saying it has no rainfall, temperature or seasonal detail. The judge scored noGaps 2,
-  but `research/gap_admissions.GAP_ADMISSION` did not match the wording, so the rubric's noGaps
-  stayed 1 and the composer kept the sentence.
-- **Clears it:** add the "no ... detail" wordings to `GAP_ADMISSION`, with a test from this
-  sentence, so the composer turns such a sentence into an open question; give the craft's CLIMATE
-  section the seasons block from its district's CHIRPS normals, so the section has cited climate to
-  say.
-
 ### Leftovers of the sentence-once lane
 
 - **What:** the rubric's `cited` part counts every copy of a sentence a block carries
@@ -2850,18 +2651,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** count `shown_field_sentences` in `answer_measures` and `consulted_fields` and
   re-base the rubric floor in the same change; keep price claims out of the GI sentences in
   `services/market_builder`; carry each material's sentence-case name from the glossary.
-
-### Expert seats' gap admissions are dropped by their grounding
-
-- **What:** in answer 504968ea-49cc-469c-88f9-205a2ea90e8a (Khurja Pottery, EXPERT, 2026-11-22)
-  four of seven expert seats wrote a gap admission ("... but the stored statements do not name the
-  oxides behind Khurja's blue and turquoise.") that the grounding check then dropped as
-  `NEGATION_CHANGED`, so the seat's honest gap left no trace in the answer.
-- **Why left:** the write-back lane (decision 0135) changes how facts are filed, not what the seats
-  write or how their sentences are grounded.
-- **Clears it:** have the seats state a gap as an open question, never in a cited sentence, and turn a
-  grounded sentence that admits a gap into an open question (`research/gap_admissions`), with a
-  test from this sentence.
 
 ### Simulation builders that run long and add nothing
 
@@ -2881,49 +2670,49 @@ Last reviewed: 2026-11-22.
   GI application, a ceramics institute's study of Khurja glazes), and let the planner search for the
   colourant by its element names when a question asks what gives a colour.
 
-### Off-question sources were cited
-
-- **What:** answer 504968ea-49cc-469c-88f9-205a2ea90e8a cited sources about other crafts and places:
-  Jaipur blue pottery, a Nigerian porcelain study, a Taiwanese glaze and a commercial kiln-schedule
-  page. Decision 0135 keeps their facts off Khurja's page, but the answer still showed sentences
-  resting on them.
-- **Why left:** what an answer shows is the composer's and the reranker's; the lane changed what is
-  written back.
-- **Clears it:** apply the same naming rule to the composer's candidates (a passage about a place
-  outside India or another catalogued craft is offered only for a comparison, or labelled as such),
-  and score off-question citations in the answer evaluation.
-
 ### Write-backs filed before decision 0135
 
 - **What:** the 19 facts answer 504968ea-49cc-469c-88f9-205a2ea90e8a wrote stay under Khurja
   Pottery's concept in the review queue, among them the Khorezm, Nigerian, porcelain, kiln-schedule
   and polymer-clay sentences; earlier live-research facts were filed by the old rule too.
-- **Why left:** stored facts on production are a person's to review; the lane changed no stored row.
-- **Clears it:** a reviewer rejects or re-files them in the review queue; a read-only report of the
-  live-research facts whose text and quotes name no craft they are filed under would list the rest.
-
-### Family science is gated and keyed as shared knowledge
-
-- **What:** a fact filed under a craft family's science (decision 0135) carries no craft, so its
-  dedupe key and its duplicate and novelty gates are those of all shared knowledge: the same general
-  sentence found for two families is one fact under the first family's concept, and it is compared
-  with every shared fact rather than its family's alone.
-- **Why left:** the write-back contract has no family field, and a general statement true for one
-  family is true for the next.
-- **Clears it:** carry the family's category on `ClaimWriteBack`, key and gate family facts by it
-  (`candidate_store.FactSubject` of kind category), and add a citation to the existing fact rather
-  than moving it.
+- **Why left:** stored facts on production are a person's to review; no lane changes a stored row.
+- **Clears it:** a reviewer runs `python -m app.scripts.write_back_filing --answer
+  504968ea-49cc-469c-88f9-205a2ea90e8a` (and `--since` for the older ones), which prints where each
+  fact is against where today's rule files it (decision 0136), and approves each under the craft it
+  names (approve with `craft`), approves it where it is, or rejects it.
 
 ### The places that block filing are word lists
 
-- **What:** `data/places_abroad.json` is kept by hand, and the places of India that keep a fact out of
-  its family's science are the LGD state and district names and the craft index's place labels, so
-  a district named like a common word would keep a general fact out, and a foreign place missing
-  from the list lets one in.
-- **Why left:** no open gazetteer is vendored, and a model judging each sentence's places would cost
-  a call per sentence.
-- **Clears it:** check the list against a refused-sentence log after each round of live research, and
-  add places and other senses from what it shows.
+- **What:** the regions and cultures abroad in `data/places_abroad.json` are kept by hand (its
+  countries are now held to Natural Earth's sovereign states by a test), and the places of India that
+  hold a fact for a reviewer instead of filing it are the LGD state and district names and the craft
+  index's place labels. Since decision 0136 they are read in a quote's passage and its source's title
+  too, so a district named like a common word in a paragraph holds a general fact that names nothing
+  else, and a region abroad missing from the list lets one through.
+- **Why left:** no open gazetteer of regions and cultures is vendored, and a model judging each
+  sentence's places would cost a call per sentence.
+- **Clears it:** read the held and refused write-backs the filing report lists after each round of
+  live research, and add places, other senses and left-out names from what it shows.
+
+### The review page does not show why a write-back is held
+
+- **What:** a held write-back (decision 0136) waits in the review queue as a `DRAFT` researched fact
+  of its suggested craft. Its reason is only in its `ReviewEvent` note and the filing report, and the
+  Review page cannot file it under another craft, though the approve route takes `craft`.
+- **Why left:** the web app's `FactReview` shape refuses unknown fields, so a new field in the queue
+  item would break the page, and frontend files were another lane's this round.
+- **Clears it:** add `held {reason, suggestedCraft}` to `FactReview` and to `lib/reviewQueueContract.ts`
+  in one change, and a craft picker beside Approve that sends `craft`.
+
+### A held write-back found again stays held
+
+- **What:** when research later files a sentence a reviewer has not yet decided, under the craft it
+  was held for, the write-back is re-found by its key and keeps its `DRAFT` status: it gains the new
+  citations but does not go live as a filed write-back would under the `AUTO` switch.
+- **Why left:** a re-found write-back never changes status (decision 0124), and a reviewer sees it in
+  the queue anyway.
+- **Clears it:** when a filed write-back meets its held twin, move it to the switch's status with a
+  `ReviewEvent` by `live_research`.
 
 ### An answer's cost is what was settled when it finished
 

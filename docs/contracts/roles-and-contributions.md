@@ -57,7 +57,7 @@ re-exports them, and the research modules named build their `Literal` types and 
 | consent kind | `ARTISAN_RECORDING` and `GUARDIAN_CONSENT`, joining `PRIVACY_NOTICE` and `VOICE_NOTICE` | `models/enums.CONSENT_KINDS` |
 | claim origin | `ARTISAN`, joining `CLAIM_ORIGINS` | `models/enums.py` |
 | source origin | `CONTRIBUTION`, joining `SOURCE_ORIGINS` | `models/enums.py` |
-| AI task | `INTERVIEW` (the interviewer's turns) and `TESTIMONY` (drawing contributions), joining `AI_TASKS`; neither is a public-text task | `models/enums.py`, `services/ai_providers.py` |
+| AI task | `INTERVIEW` (the interviewer's turns) and `TESTIMONY` (drawing contributions), joining `AI_TASKS`; neither is a public-text task | `models/enums.py`, `providers/catalogue_types.py` |
 | voice session purpose | `ASK` (the existing call), `ARTISAN` | `schemas/voice.py` |
 
 Limits, as named constants in `research/testimony.py` unless noted:
@@ -622,7 +622,7 @@ daily upkeep, as calls are.
   the conversation is `PENDING` or `APPROVED`.
   - Once neither holds, they are purged: at once when the last change was a withdrawal or a
     deletion, otherwise `TESTIMONY_RETENTION_DAYS` later (`retentionUntil`).
-  - The daily upkeep (`voice_upkeep`) deletes the audio objects, then their rows, and clears
+  - The daily upkeep (`kv-worker`, `voice/daily_upkeep`) deletes the audio objects, then their rows, and clears
     `transcriptEnc`.
 
 ### 7.8 The artisan agent (`AGENT` only)
@@ -1169,7 +1169,7 @@ when it was written (the field voices lane's). The lead re-chains it at integrat
    the Student limits.
 7. **`ConsentRecord.withdrawnAt`** (timestamptz null).
 8. **No route rows.** The default routes of `INTERVIEW` (as `VOICE_TURN`) and `TESTIMONY` (as
-   `COMPOSE`) are the code defaults in `services/ai_providers.py`, which the master admin can change
+   `COMPOSE`) are the code defaults in `providers/catalogue.py`, which the master admin can change
    in AI routing.
 
 The downgrade works in reverse:

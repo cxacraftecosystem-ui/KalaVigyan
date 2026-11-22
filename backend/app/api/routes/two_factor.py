@@ -13,7 +13,8 @@ from app.api.routes.auth import (
 )
 from app.core.db import get_session
 from app.core.deps import get_current_user_any_step, is_break_glass_master
-from app.core.rate_limit import code_attempt, refund_code, retry_after_value
+from app.core.rate_limit import code_attempt, refund_code
+from app.core.throttle_refusal import refuse_when_throttled, too_many_requests
 from app.models import User
 from app.schemas.auth import TwoFactorCodeRequest, TwoFactorVerifyRequest
 from app.services import audit, two_factor
@@ -36,10 +37,7 @@ def _refuse(error: two_factor.TwoFactorError) -> HTTPException:
 
 
 async def _spend_budget(user_id: str) -> None:
-    allowed, retry = await code_attempt(user_id)
-    if not allowed:
-        wait = {"Retry-After": retry_after_value(retry)}
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, CODE_THROTTLED_DETAIL, wait)
+    refuse_when_throttled(await code_attempt(user_id), CODE_THROTTLED_DETAIL)
 
 
 @router.get("")
@@ -151,9 +149,7 @@ async def two_factor_verify(
     try:
         accepted = await two_factor.check_second_factor(session, user, payload.code)
     except two_factor.SecondFactorLocked as locked:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS, two_factor.TOO_MANY_ATTEMPTS_DETAIL
-        ) from locked
+        raise too_many_requests(two_factor.TOO_MANY_ATTEMPTS_DETAIL) from locked
     if not accepted:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, two_factor.WRONG_CODE_DETAIL)
     await refund_code(str(user.id))

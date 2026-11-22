@@ -86,9 +86,9 @@ id (`answer-eval-<run>-q<NNN>`), then scores the stored explainer.
 |---|---|
 | fields | the share of the question's fields the answer consulted (a ready section in the field) |
 | cited | per question field, cited sentences over 3 (at most 1), averaged over the question's fields |
-| everyCited | 1 when every sentence's citations name sources the answer lists |
+| everyCited | 1 when every sentence's citations name sources the answer lists and no shown sentence rests on a passage about another catalogued craft or a place abroad (`offQuestion`, counted with the write-back's naming rule, `services/off_question.explainer_off_question`, decision 0138) |
 | figures | 1 when the answer shows a figure (any block that is not text) |
-| noGaps | 1 when no sentence admits a gap (`research/gap_admissions.GAP_ADMISSION`, the one home the composer's routing also reads: no source or evidence, not enough evidence, could not find, not known or documented, little is known, sources do not say, we do not know, is, are or remains unknown or unclear, and has, have or had not or never been identified, established, determined, documented, recorded or studied) |
+| noGaps | 1 when no sentence admits a gap (`research/gap_admissions.GAP_ADMISSION`, the one home the composer's routing also reads: no source or evidence, not enough evidence, could not find, no ... detail, not known or documented, little is known, sources, statements, records, texts, passages, studies or findings do not say, name or give, we do not know, is, are or remains unknown or unclear, and has, have or had not or never been identified, established, determined, documented, recorded or studied) |
 
 **The judge** (the existing `EVAL_JUDGE` route, `router_structured_model(AiTask.EVAL_JUDGE)`) scores
 the same five parts 0 to 5 with a note, reading the question and the answer's sentences by field as
@@ -106,7 +106,7 @@ it. Each answer has the MCP ask's limit, `ASK_TIMEOUT_SECONDS` (600).
 **The report** is printed as one JSON line: `EvalReport {schemaVersion 1, startedAt, capUsd,
 spentUsd, stopped, asked, answered, rubricMean, judgeMean, questions[{id, craftSlug, depth,
 answerId, problem, measures {expected, consulted, missed, sentences, unresolved, figures, gaps,
-fields[]}, rubric, judge, judgeShare, spentUsd}]}`. A question whose answer fails is kept with its
+fields[], offQuestion}, rubric, judge, judgeShare, spentUsd}]}`. A question whose answer fails is kept with its
 problem and the run goes on. The exit status is 0 when at least one question was scored.
 
 **The workflow** `.github/workflows/answer-quality.yml` (dispatched by hand, inputs `limit`, `only`,

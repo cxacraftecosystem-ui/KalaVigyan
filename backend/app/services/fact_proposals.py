@@ -25,7 +25,7 @@ from app.retrieval.indexing import embed_written
 from . import app_settings, trust_tiers
 from .candidate_gates import GateRun, HeldFacts, first_gates, gate_run, later_gates
 from .candidate_sources import ReadSource, read_sources
-from .candidate_store import SqlHeldFacts, proposal_subject
+from .candidate_store import FactSubject, SqlHeldFacts, proposal_subject, subject_title
 from .candidate_writes import mark_sources_differ, record_checks
 from .fact_proposals_words import placement_message, placement_note
 from .fact_task_checks import check_question_task
@@ -94,7 +94,7 @@ async def propose_fact_run(
     standing = await trust_tiers.account_standing(session, proposer.id)
     subject = await proposal_subject(session, proposal.subject)
     read = await read_sources(session, adapters.fetcher, proposal, proposer_id=proposer.id)
-    run = await _gated(proposal, read, adapters, SqlHeldFacts(session, subject))
+    run = await _gated(_candidate(proposal, subject), read, adapters, SqlHeldFacts(session, subject))
     switch = await app_settings.review_switch(session)
     tiered = _placed(run, switch, origin, role=role, tier=standing.tier, ticket=ticket)
     note = placement_note(origin, tiered, run, role)
@@ -113,10 +113,18 @@ async def propose_fact_run(
     return ProposalRun(reply=_reply(claim_id, written, tiered, differ), kept_sources=tuple(kept))
 
 
+def _candidate(proposal: FactProposal, subject: FactSubject) -> Candidate:
+    return Candidate(
+        ref=PROPOSAL_REF,
+        statement=proposal.statement,
+        field=proposal.field,
+        title=subject_title(subject, subject.name, proposal.field),
+    )
+
+
 async def _gated(
-    proposal: FactProposal, read: Sequence[ReadSource], adapters: ProposalAdapters, held: HeldFacts
+    candidate: Candidate, read: Sequence[ReadSource], adapters: ProposalAdapters, held: HeldFacts
 ) -> GateRun:
-    candidate = Candidate(ref=PROPOSAL_REF, statement=proposal.statement, field=proposal.field)
     first = first_gates(candidate, [source.cited for source in read])
     if not all(outcome.passed for outcome in first):
         return gate_run(candidate, first, None)

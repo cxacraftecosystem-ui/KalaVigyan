@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import uuid
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Protocol
 
-from app.core.errors import Refused
+from app.core.errors import AppError, Refused
 from app.providers.elevenlabs import NARRATION_MODEL, TimedSpeech, speech_seconds
 from app.providers.quota import LedgerEntry, seconds_until_next_day
 from app.research.explainer import Explainer
@@ -32,6 +33,7 @@ from .narration_cache import (
     store_manifest,
     stored_manifest,
 )
+from .narration_lease import LeasedObjects, release_lease, take_lease, waited_manifest
 from .seconds import VOICE_SECONDS, capped_seconds, listen_hold_key, listen_refund_key, listen_settle_key
 
 __all__ = [
@@ -47,6 +49,8 @@ __all__ = [
     "Narrator",
     "listen_script",
 ]
+
+logger = logging.getLogger(__name__)
 
 LISTEN_CONCURRENCY = 3
 NARRATION_LINK_SECONDS = 3600
@@ -83,10 +87,11 @@ class Narrator(Protocol):
 @dataclass(frozen=True)
 class ListenDeps:
     ledger: ListenLedger
-    objects: NarrationObjects
+    objects: LeasedObjects
     narrator: Narrator
     voice_id: str
     clock: Callable[[], datetime]
+    sleep: Callable[[float], Awaitable[None]] = asyncio.sleep
 
 
 @dataclass(frozen=True)
@@ -186,6 +191,36 @@ class _Synthesis:
 
 
 async def _made(
+    ask: ListenAsk, deps: ListenDeps, missing: dict[str, SpokenBlock]
+) -> dict[str, NarrationManifest]:
+    found = await _made_elsewhere(deps, missing)
+    ours = {cache_id: block for cache_id, block in missing.items() if cache_id not in found}
+    if not ours:
+        return found
+    try:
+        return found | await _paid(ask, deps, ours)
+    finally:
+        await _released(deps.objects, ours)
+
+
+async def _made_elsewhere(deps: ListenDeps, missing: dict[str, SpokenBlock]) -> dict[str, NarrationManifest]:
+    tries = await asyncio.gather(*(take_lease(deps.objects, cid, now=deps.clock()) for cid in missing))
+    held = [tried.lease for tried in tries if not tried.ours]
+    waited = await asyncio.gather(
+        *(waited_manifest(deps.objects, lease, clock=deps.clock, sleep=deps.sleep) for lease in held)
+    )
+    return {manifest.cache_id: manifest for manifest in waited if manifest is not None}
+
+
+async def _released(objects: LeasedObjects, ours: dict[str, SpokenBlock]) -> None:
+    for cache_id in ours:
+        try:
+            await release_lease(objects, cache_id)
+        except AppError as error:
+            logger.warning("the lease on narration %s lapses on its own: %s", cache_id, error)
+
+
+async def _paid(
     ask: ListenAsk, deps: ListenDeps, missing: dict[str, SpokenBlock]
 ) -> dict[str, NarrationManifest]:
     characters = sum(len(part.text) for block in missing.values() for part in narration_parts(block))

@@ -18,6 +18,7 @@ answering service) and `docs/contracts/knowledge-writes.md` (The research write-
 | The craft resolver whose names it matches | [decision 0004](0004-craft-resolver.md) |
 | How a fact's craft is chosen | [research.md](../contracts/research.md), The writer and the coverage job |
 | The write-back's gates | [knowledge-writes.md](../contracts/knowledge-writes.md), The research write-back |
+| The filing reads the passage and the source's title, holds what nothing names, keys family science by its family (amends items 3 and 5) | [decision 0136](0136-write-backs-filed-by-their-source.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

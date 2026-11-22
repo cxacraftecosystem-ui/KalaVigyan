@@ -17,7 +17,6 @@ from app.science.ladder import ladder_problems, ladder_stage_options, process_la
 from app.science.records import ProcessRecords
 
 from .answer_lede import Opening
-from .answer_sections import SectionOutcome
 from .answer_translation import AnswerTranslation
 from .block_builders import AddedBlocks, BlockBuilders, SectionBuilds
 from .builder_interface import BuildAsk
@@ -25,6 +24,7 @@ from .claim_ledger import COVERED_NOTE, admission_batches
 from .explainer_events import ExplainerStream, shown_title
 from .piece_lookup import PieceLookup, ReusedSection
 from .reuse_enrichment import Placed, claim_texts, kept_with_reuse, placed_section, process_sources
+from .section_context import SectionOutcome
 from .section_enrichment import Enrichment, PictureSearches
 from .section_headings import Headed, headed_specs, heading_supports
 from .section_language import block_in_language

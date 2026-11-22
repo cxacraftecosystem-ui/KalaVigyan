@@ -12,13 +12,13 @@ from app.planner.policy import request_limits
 from app.research.composition import ComposedAnswer, ComposeRequest
 from app.research.crafts import CraftRef
 from app.research.depth import depth_policy
-from app.research.evidence_pack import EvidencePack, ResearchTrail
+from app.research.evidence_pack import EvidencePack
 from app.research.explainer import Explainer
 from app.research.explainer_versions import VersionMark
 from app.research.planning import PlanRequest
 from app.research.reading_style import ReadingStyle
-from app.research.sections import LADDER_DISCIPLINE, AnswerPlans, SectionPlan, SectionSpec
-from app.research.stream import Emit, ResearchProgress
+from app.research.sections import LADDER_DISCIPLINE, AnswerPlans, SectionSpec
+from app.research.stream import Emit
 from app.research.understanding import UnderstandAsk, Understanding, UnknownCraft
 from app.research.vocabulary import CANONICAL_LANGUAGE
 from app.science.records import ProcessRecords
@@ -27,14 +27,7 @@ from .answer_catalogue import CatalogueLookup, no_catalogue
 from .answer_events import CitedClaims
 from .answer_gaps import FieldReading, answer_readings
 from .answer_lede import AnswerOpening, LedeTools, LedeWriting, Opening, lede_plan
-from .answer_sections import (
-    ClaimsOf,
-    ResearchLedger,
-    SectionContext,
-    SectionOutcome,
-    SectionTools,
-    run_sections,
-)
+from .answer_sections import run_sections
 from .answer_translation import AnswerTranslation, Segment, translate_segments, with_english_question
 from .block_builders import BlockBuilders
 from .explainer_document import explainer_document
@@ -43,11 +36,22 @@ from .explainer_history import STALE_VERSION_DETAIL, StaleVersion
 from .follow_ups import AnswerLayout, FollowUp, answer_layout, closed_answer, left_open, understood_for
 from .piece_lookup import PieceAsk, PieceLookup, ReusedSection
 from .piece_store import BuiltSection, PieceStore
+from .research_ledger import ResearchLedger
 from .reuse_enrichment import expert_floors, floor_deepening, floors_by_section
 from .reused_sections import ReuseBuilds, ReusedShowing, stream_reused_beside
+from .section_context import (
+    ClaimsOf,
+    Research,
+    SectionContext,
+    SectionOutcome,
+    SectionTools,
+    answer_plans,
+)
 from .section_enrichment import Enrichment, EnrichmentTools
+from .section_fields import SectionFields
 from .stored_fields import with_stored_fields
 from .stored_only_answer import STORED_ONLY_MODE, stored_only_answer
+from .write_back_names import CraftNames
 
 __all__ = [
     "NOT_FOUND_DETAIL",
@@ -58,6 +62,7 @@ __all__ = [
     "AnswerAsk",
     "AnswerPipeline",
     "AnswerStore",
+    "NameLookup",
     "answer_question",
     "answer_understood",
     "status_message",
@@ -69,6 +74,8 @@ NOT_FOUND_DETAIL = "No craft has that address."
 RESOLVER_FAILED_DETAIL = "Finding the craft failed just now. Try again."
 RESEARCH_FAILED_DETAIL = "Research failed just now. Try again."
 UNEXPECTED_DETAIL = "Something went wrong while answering. Try again."
+
+NameLookup = Callable[[CraftRef | None, Sequence[CraftRef]], Awaitable[CraftNames]]
 
 
 @dataclass(frozen=True)
@@ -114,7 +121,7 @@ class AnswerStore(Protocol):
 @dataclass(frozen=True)
 class AnswerPipeline:
     understand: Callable[[UnderstandAsk], Awaitable[Understanding]]
-    research: Callable[[PlanRequest, ResearchProgress, ResearchTrail], Awaitable[EvidencePack]]
+    research: Research
     compose: Callable[[ComposeRequest], Awaitable[ComposedAnswer]]
     store: AnswerStore
     translation: AnswerTranslation
@@ -123,6 +130,7 @@ class AnswerPipeline:
     builders: BlockBuilders = field(default_factory=BlockBuilders)
     lede: LedeTools = field(default_factory=LedeTools)
     catalogue: CatalogueLookup = no_catalogue
+    names: NameLookup | None = None
 
 
 @dataclass(frozen=True)
@@ -283,6 +291,9 @@ async def _research(specs: Sequence[SectionSpec], run: _Run) -> list[SectionOutc
         return []
     pipeline = run.pipeline
     base = _plan_request(run.ask, run.understanding)
+    craft = run.understanding.craft
+    held = await run.pipeline.pieces.fields(craft.slug) if craft is not None else ()
+    fields = SectionFields.of(run.layout.asked(run.understanding), held, run.layout.specs)
     floors = floors_by_section(specs, run.floors, run.enrichment, run.process)
     deepening = {**run.layout.deepening, **{sid: floor_deepening(f.placed) for sid, f in floors.items()}}
     context = SectionContext(
@@ -292,15 +303,24 @@ async def _research(specs: Sequence[SectionSpec], run: _Run) -> list[SectionOutc
         stream=run.stream,
         answer_id=run.answer_id,
         base=base,
-        ledger=ResearchLedger(request_limits(base, base.mode), len(specs)),
+        ledger=ResearchLedger(
+            request_limits(base, base.mode), [fields.priority(spec.discipline) for spec in specs]
+        ),
         enrichment=run.enrichment,
         process=run.process,
         builders=run.builders,
         deepening=deepening,
         floors=floors,
         reading_style=run.ask.reading_style,
+        fields=fields,
+        names=await _names(run),
     )
     return await run_sections(specs, context)
+
+
+async def _names(run: _Run) -> CraftNames | None:
+    found = run.pipeline.names
+    return await found(run.understanding.craft, run.understanding.compared) if found else None
 
 
 async def _finish(
@@ -326,7 +346,7 @@ async def _finish(
     await run.pipeline.store.finish(
         run.answer_id,
         asked_at=run.ask.asked_at,
-        plans=_plans(outcomes),
+        plans=answer_plans(outcomes),
         claim_ids=list(stored.claim_ids),
         explainer=stored.explainer,
         version=stored.version,
@@ -353,16 +373,6 @@ async def _process(
     if craft is None or all(spec.discipline != LADDER_DISCIPLINE for spec in specs):
         return None
     return await store.process(craft.slug)
-
-
-def _plans(outcomes: Sequence[SectionOutcome]) -> AnswerPlans:
-    return AnswerPlans(
-        sections=[
-            SectionPlan(section_id=outcome.spec.id, discipline=outcome.spec.discipline, plan=plan)
-            for outcome in outcomes
-            for plan in outcome.plans
-        ]
-    )
 
 
 def _plan_request(ask: AnswerAsk, understanding: Understanding) -> PlanRequest:

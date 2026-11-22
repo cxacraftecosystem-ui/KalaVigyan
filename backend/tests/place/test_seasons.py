@@ -4,13 +4,16 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from app.geo.rainfall import MonthValue, rainfall_from
-from app.research.blocks_place import DistrictRef
+from app.research.blocks_place import DistrictRef, SeasonsBlock
 from app.research.knowledge_pieces import PieceSlot, knowledge_piece, piece_slot
 from app.science.records import KnownClaim, StageRecord
 from app.services import season_supply_builders
 from app.services.block_builders import BLOCK_BUILDERS, BlockBuilders
+from app.services.claim_ledger import ClaimLedger
+from app.services.piece_store import storable
 from app.services.season_rows import SeasonFact, SeasonOffer, seasons_block
 from app.services.season_supply_builders import SeasonsBuilder
 
@@ -55,6 +58,11 @@ DRYING = written_claim(
     "drying",
     "Printed cloth is dried in the sun from October to March.",
     "Printed cloth is dried in the open sun through the dry months.",
+)
+SHADED_DRYING = written_claim(
+    "shaded-drying",
+    "Glazed pots are dried in the shade before firing.",
+    "pots are dried in the shade before firing",
 )
 
 
@@ -115,9 +123,23 @@ def shown(block: Any) -> list[tuple[str, Any, list[int], Any]]:
     return [(row.label, row.stage_id, row.months, row.season) for row in block.rows]
 
 
-async def build(claims: list[KnownClaim]) -> Any:
-    built = await SeasonsBuilder(season_tools()).build(section_ask(claims))
+async def build(claims: list[KnownClaim], *, discipline: str = "CLIMATE") -> Any:
+    built = await SeasonsBuilder(season_tools()).build(section_ask(claims, discipline=discipline))
     return built.blocks[0] if built.blocks else None
+
+
+def rain_only(block_id: str) -> SeasonsBlock:
+    found = rainfall_from(KACHCHH_REF, CHIRPS, months(KACHCHH_MM))
+    assert found is not None
+    return SeasonsBlock(
+        id=block_id,
+        kind="seasons",
+        version=1,
+        reuse=None,
+        rows=[],
+        rainfall=found.rain,
+        datasets=[found.dataset],
+    )
 
 
 def test_the_fixture_s_seasons_are_its_monsoon_claim_with_no_month() -> None:
@@ -195,7 +217,7 @@ async def test_a_date_is_not_a_month_of_the_year(stored: dict[str, Any]) -> None
     dated = written_claim(
         "gi", "The application was advertised in December 2023.", "advertised December 19, 2023"
     )
-    assert await build([dated]) is None
+    assert await build([dated], discipline="PROCESS") is None
 
 
 async def test_rainfall_is_the_first_craft_district_with_twelve_normals(stored: dict[str, Any]) -> None:
@@ -234,9 +256,64 @@ async def test_missing_monthly_data_drops_the_rainfall_row(stored: dict[str, Any
 
 
 async def test_no_timed_row_and_no_craft_build_nothing(stored: dict[str, Any]) -> None:
-    assert await build([pa_claim()]) is None
+    assert await build([pa_claim()], discipline="PROCESS") is None
     built = await SeasonsBuilder(season_tools()).build(section_ask(season_claims(), craft=False))
     assert built.blocks == ()
+
+
+async def test_a_climate_section_whose_facts_name_no_month_shows_its_district_s_rainfall_alone(
+    stored: dict[str, Any],
+) -> None:
+    (entry,) = [entry for entry in BLOCK_BUILDERS if entry.kind == "seasons"]
+    added = await BlockBuilders([(entry, entry.make(season_tools()))]).added(section_ask([SHADED_DRYING]))
+    (block,) = added.blocks
+    assert (block.kind, block.id, block.rows, added.sources) == ("seasons", BLOCK_ID, [], {})
+    assert block.rainfall.model_dump(by_alias=True) == {
+        "district": {"districtLgd": 449, "name": "Kachchh", "stateName": "Gujarat"},
+        "datasetCode": "CHIRPS_3_0",
+        "period": "2016-2025",
+        "millimetres": [0.4, 0.9, 0.3, 0.2, 2.1, 38.5, 141.2, 112.6, 61.3, 9.8, 2.4, 0.6],
+    }
+    assert [(dataset.code, dataset.period) for dataset in block.datasets] == [("CHIRPS_3_0", "2016-2025")]
+
+
+@pytest.mark.parametrize("discipline", ["PROCESS", "GEOGRAPHY"])
+async def test_another_field_whose_facts_name_no_month_gets_no_seasons_block(
+    stored: dict[str, Any], discipline: str
+) -> None:
+    assert await build([SHADED_DRYING], discipline=discipline) is None
+
+
+async def test_a_climate_section_with_no_month_and_no_stored_rainfall_gets_no_seasons_block(
+    stored: dict[str, Any],
+) -> None:
+    stored["rain"] = {}
+    assert await build([SHADED_DRYING]) is None
+
+
+def test_a_seasons_block_shows_rows_its_district_s_rainfall_or_both_and_never_neither() -> None:
+    shown = rain_only(BLOCK_ID)
+    assert (shown.rows, shown.cited_source_ids(), shown.cites_datasets()) == ([], [], True)
+    body = shown.model_dump(mode="json", by_alias=True)
+    with pytest.raises(ValidationError, match="rows, its district's rainfall or both"):
+        SeasonsBlock.model_validate({**body, "rainfall": None})
+    with pytest.raises(ValidationError):
+        SeasonsBlock.model_validate({**body, "rainfall": None, "datasets": []})
+
+
+def test_a_rain_only_block_is_shown_once_per_answer_and_kept_as_no_piece() -> None:
+    ledger = ClaimLedger()
+    first = ledger.admit("s3", [rain_only("s3.seasons")], {})
+    again = ledger.admit("s5", [rain_only("s5.seasons")], {})
+    (kept,) = first
+    assert isinstance(kept, SeasonsBlock)
+    assert (kept.id, kept.rows, kept.rainfall, again) == (
+        "s3.seasons",
+        [],
+        rain_only("s3.seasons").rainfall,
+        [],
+    )
+    assert storable(kept) is False
 
 
 async def test_the_registry_adds_the_seasons_block_with_the_sources_it_cites(stored: dict[str, Any]) -> None:

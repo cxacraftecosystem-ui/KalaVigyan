@@ -14,7 +14,14 @@ from app.research.vocabulary import CANONICAL_LANGUAGE
 from .failures import FailureLog
 from .policy import LIVE_BUDGETS, NATIVE_QUERY_SEARCHERS, SEARCH_CONCURRENCY, SEARCH_TIMEOUT_SECONDS
 
-__all__ = ["LIVE_RESEARCH_SERVICE", "SEARCH_STAGE", "SearchHit", "merged_evidence", "run_searches"]
+__all__ = [
+    "LIVE_RESEARCH_SERVICE",
+    "SEARCH_STAGE",
+    "SearchHit",
+    "asked_searchers",
+    "merged_evidence",
+    "run_searches",
+]
 
 LIVE_RESEARCH_SERVICE = "live_research"
 SEARCH_STAGE = "SEARCH"
@@ -32,12 +39,10 @@ class SearchHit:
 async def run_searches(
     plan: RetrievalPlan, searchers: Sequence[SourceAdapter], log: FailureLog
 ) -> list[SearchHit]:
-    by_tier = _searchers_by_tier(plan, searchers)
     gate = asyncio.Semaphore(SEARCH_CONCURRENCY)
     calls = [
         _search(gate, searcher, index, query, mode=plan.mode, log=log)
-        for index, query in enumerate(plan.queries)
-        for searcher in _query_searchers(query, by_tier)
+        for index, query, searcher in _routed(plan, searchers)
     ]
     if not calls:
         return []
@@ -50,6 +55,10 @@ async def run_searches(
             service=LIVE_RESEARCH_SERVICE,
         )
     return [hit for result in results if result for hit in result]
+
+
+def asked_searchers(plan: RetrievalPlan, searchers: Sequence[SourceAdapter]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(searcher.name for _, _, searcher in _routed(plan, searchers)))
 
 
 def merged_evidence(plan: RetrievalPlan, hits: Sequence[SearchHit]) -> list[PackedEvidence]:
@@ -80,6 +89,17 @@ def _packed(plan: RetrievalPlan, group: Sequence[SearchHit]) -> PackedEvidence:
         hits=len({(hit.searcher, hit.query_index) for hit in group}),
         best_rank=min(hit.rank for hit in group),
     )
+
+
+def _routed(
+    plan: RetrievalPlan, searchers: Sequence[SourceAdapter]
+) -> list[tuple[int, PlannedQuery, SourceAdapter]]:
+    by_tier = _searchers_by_tier(plan, searchers)
+    return [
+        (index, query, searcher)
+        for index, query in enumerate(plan.queries)
+        for searcher in _query_searchers(query, by_tier)
+    ]
 
 
 def _searchers_by_tier(

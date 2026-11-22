@@ -12,7 +12,7 @@ import pytest
 from app.core.shielded import ShieldedWork
 from app.providers.elevenlabs import ElevenLabs
 from app.voice.relay import NOT_HEARD, SPEECH_GRACE, RelayAudio, RelayDeps, relay_turn_events, turn_speech
-from app.voice.runtime import SpeechCache
+from app.voice.reply_audio import ReplyAudio
 from app.voice.sessions import VoiceRefused
 from app.voice.transcript import stored_transcript
 
@@ -32,6 +32,7 @@ from .fakes import (
     translation,
     translation_reply,
 )
+from .listen_fakes import MemoryObjects
 
 FIXTURES = Path(__file__).parent / "fixtures"
 REPLY_AUDIO = b"\xff\xfb" * 48_000
@@ -60,7 +61,7 @@ def deps(store: MemoryStore, voice: ElevenLabs, *, values: list[uuid.UUID] | Non
         tools=tools(),
         elevenlabs=voice,
         cipher=cipher(),
-        speech=SpeechCache(),
+        speech=ReplyAudio(MemoryObjects()),
         voice_id="voice_1",
         clock=lambda: NOW,
         ids=ids(*(values or [TURN_ID, ANSWER_ID])),
@@ -77,8 +78,10 @@ def live_store(used_before: int = 60, **changes: object) -> MemoryStore:
     return store
 
 
-async def turn_text(store: MemoryStore, relay: RelayDeps, content: bytes = b"recorded") -> str:
-    audio = RelayAudio.checked(content, "audio/webm")
+async def turn_text(
+    store: MemoryStore, relay: RelayDeps, content: bytes = b"recorded", *, seconds: int = 1
+) -> str:
+    audio = RelayAudio(content, "audio/webm", least_seconds=seconds)
     return "".join([frame async for frame in relay_turn_events(store.sessions[SESSION_ID], audio, relay)])
 
 
@@ -107,7 +110,7 @@ async def test_a_relay_turn_holds_a_minute_then_keeps_heard_and_spoken_seconds_a
     assert store.ledger[f"voice:{SESSION_ID}:{TURN_ID}:speech"].units == 6
     record = store.sessions[SESSION_ID]
     assert record.reserved_seconds == 9 and record.turn_count == 1
-    assert relay.speech.get(SESSION_ID, TURN_ID) == REPLY_AUDIO
+    assert await relay.speech.get(SESSION_ID, TURN_ID) == REPLY_AUDIO
     [turn] = stored_transcript(cipher(), record.transcript).turns
     assert turn["turnId"] == str(TURN_ID)
 
@@ -127,6 +130,18 @@ async def test_a_cached_reply_plays_free_and_a_new_synthesis_is_billed_under_its
     assert store.sessions[SESSION_ID].reserved_seconds == 9 + 6
     with pytest.raises(VoiceRefused):
         await turn_speech(store.sessions[SESSION_ID], ANSWER_ID, deps(store, voice))
+
+
+async def test_a_reply_kept_in_the_bucket_plays_from_another_process_without_speech() -> None:
+    store = live_store()
+    voice, paths = elevenlabs()
+    bucket = MemoryObjects()
+    await turn_text(store, replace(deps(store, voice), speech=ReplyAudio(bucket)))
+    other = replace(deps(store, voice, values=[uuid.uuid4()]), speech=ReplyAudio(bucket))
+    assert await turn_speech(store.sessions[SESSION_ID], TURN_ID, other) == REPLY_AUDIO
+    assert (len(paths), store.sessions[SESSION_ID].reserved_seconds) == (2, 9)
+    assert list(bucket.stored) == [f"media/voice-replies/{SESSION_ID}/{TURN_ID}/reply.mp3"]
+    assert bucket.stored[f"media/voice-replies/{SESSION_ID}/{TURN_ID}/reply.mp3"][1] == "audio/mpeg"
 
 
 async def test_a_reply_is_not_synthesised_again_after_the_call_and_its_grace() -> None:
@@ -208,12 +223,12 @@ async def test_unheard_audio_is_one_error_then_done_and_still_costs_its_floor() 
     assert store.sessions[SESSION_ID].turn_count == 1
 
 
-async def test_a_silent_upload_is_billed_by_its_size_and_uses_a_turn() -> None:
+async def test_a_silent_upload_is_billed_by_its_decoded_length_and_uses_a_turn() -> None:
     store = live_store()
     voice, paths = elevenlabs(answering(SILENCE))
-    found = events(await turn_text(store, deps(store, voice), b"\x00" * 50_000))
+    found = events(await turn_text(store, deps(store, voice), b"\x00" * 50_000, seconds=10))
     assert found[0] == ("error", {"message": NOT_HEARD})
-    assert found[1][1]["billedSeconds"] == 50_000 // 5_000
+    assert found[1][1]["billedSeconds"] == 10
     record = store.sessions[SESSION_ID]
     assert record.turn_count == 1 and record.reserved_seconds == 10
     assert paths == ["/v1/speech-to-text"]
@@ -231,7 +246,7 @@ async def test_every_upload_takes_one_of_the_forty_turns() -> None:
 async def test_an_upload_bigger_than_the_time_left_is_refused_before_speech_to_text() -> None:
     store = live_store(used_before=600 - 5)
     voice, paths = elevenlabs()
-    found = events(await turn_text(store, deps(store, voice), b"\x00" * 30_000))
+    found = events(await turn_text(store, deps(store, voice), b"\x00" * 30_000, seconds=6))
     assert found[0] == ("error", {"message": "Not enough voice time is left today."})
     assert found[1][1]["billedSeconds"] == 0 and found[1][1]["sessionEnded"] is False
     assert paths == [] and store.ledger == {} and store.sessions[SESSION_ID].turn_count == 0
@@ -275,7 +290,7 @@ async def test_a_caller_who_leaves_during_speech_to_text_still_gets_the_unheard_
         api_key="test-only-elevenlabs-key", client=httpx.AsyncClient(transport=httpx.MockTransport(answer))
     )
     relay = replace(deps(store, voice), shield=ShieldedWork())
-    consumer = asyncio.create_task(turn_text(store, relay, b"\x00" * 25_000))
+    consumer = asyncio.create_task(turn_text(store, relay, b"\x00" * 25_000, seconds=5))
     await asyncio.wait_for(asked.wait(), timeout=5)
     consumer.cancel()
     with pytest.raises(asyncio.CancelledError):

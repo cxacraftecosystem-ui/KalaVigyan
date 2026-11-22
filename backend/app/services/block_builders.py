@@ -81,6 +81,11 @@ class BuilderEntry:
     reused_from: str = FIRST_DEPTH
     places_pieces: bool = False
     adds_pictures: bool = False
+    prefers: str | None = None
+
+    def builds_in(self, discipline: str, answer_fields: Collection[str]) -> bool:
+        preferred = self.prefers
+        return preferred is None or preferred == discipline or preferred not in answer_fields
 
     def __post_init__(self) -> None:
         if BLOCK_PHASES.get(self.kind, PHASE_A) == PHASE_A:
@@ -93,6 +98,8 @@ class BuilderEntry:
             raise InvalidInput(f"the {self.kind} builder replaces a stored block only when rebuilt on reuse")
         if self.reused_from not in EXPLAINER_DEPTHS:
             raise InvalidInput(f"the {self.kind} builder names the depth it is reused from")
+        if self.prefers is not None and self.prefers not in self.disciplines:
+            raise InvalidInput(f"the {self.kind} builder prefers a field it adds blocks to")
 
 
 BLOCK_BUILDERS: tuple[BuilderEntry, ...] = (
@@ -104,7 +111,7 @@ BLOCK_BUILDERS: tuple[BuilderEntry, ...] = (
         rebuilt_on_reuse=True,
     ),
     BuilderEntry("map_layer", frozenset({"GEOLOGY", "CLIMATE"}), MapLayerBuilder, rebuilt_on_reuse=True),
-    BuilderEntry("seasons", SEASONS_FIELDS, SeasonsBuilder),
+    BuilderEntry("seasons", SEASONS_FIELDS, SeasonsBuilder, prefers="CLIMATE"),
     BuilderEntry(
         "climate_risk",
         frozenset({"CLIMATE"}),
@@ -193,7 +200,12 @@ class BlockBuilders:
         return SectionBuilds(self)
 
     async def added(self, ask: BuildAsk) -> AddedBlocks:
-        chosen = [pair for pair in self.for_section(ask.section.discipline) if self._took(pair[0])]
+        field = ask.section.discipline
+        chosen = [
+            pair
+            for pair in self.for_section(field)
+            if pair[0].builds_in(field, ask.answer_fields) and self._took(pair[0])
+        ]
         if not chosen:
             return AddedBlocks()
         results = await asyncio.gather(*(_bounded(entry, builder, ask) for entry, builder in chosen))

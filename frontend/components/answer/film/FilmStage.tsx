@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { renderBlock } from "@/components/answer/blockRenderers";
@@ -8,9 +8,11 @@ import { ExplainerReadingProvider, useExplainerReading } from "@/components/answ
 import { FilmSceneProvider } from "@/components/answer/FilmScene";
 import { swapVariants } from "@/components/guide/guideMotion";
 import { headingView } from "@/lib/answerLanguages";
+import type { SectionView } from "@/lib/explainerState";
 import { DISCIPLINE_LABEL } from "@/lib/explainerView";
 import type { FilmCaption as Caption, FilmScene } from "@/lib/filmScenes";
 import type { ListenMark } from "@/lib/listen";
+import { listenMarkStore } from "@/lib/listenMarks";
 
 export function FilmCaption({ caption }: { caption: Caption }) {
   const before = caption.mark ? caption.text.slice(0, caption.mark.from) : caption.text;
@@ -35,12 +37,12 @@ export function FilmCaption({ caption }: { caption: Caption }) {
   );
 }
 
-function SceneHeading({ scene }: { scene: FilmScene }) {
+function SceneHeading({ section }: { section: SectionView }) {
   const { language } = useExplainerReading();
-  const title = headingView({ id: scene.section.id, heading: scene.section.title, original: scene.section.original, sentences: [] }, language, false);
+  const title = headingView({ id: section.id, heading: section.title, original: section.original, sentences: [] }, language, false);
   return (
     <div className="mb-3 min-w-0">
-      <p className="kicker">{DISCIPLINE_LABEL[scene.section.discipline]}</p>
+      <p className="kicker">{DISCIPLINE_LABEL[section.discipline]}</p>
       <p lang={title.lang} dir={title.dir} className="mt-1 font-headline text-h3 text-ink-1">
         {title.text}
       </p>
@@ -50,14 +52,16 @@ function SceneHeading({ scene }: { scene: FilmScene }) {
 
 export function FilmStage({ scene, progress, mark, reduce }: { scene: FilmScene; progress: number; mark: ListenMark | null; reduce: boolean }) {
   const reading = useExplainerReading();
-  const narrated = useMemo(() => ({ ...reading, listen: mark }), [reading, mark]);
+  const [marks] = useState(() => listenMarkStore(mark));
+  useLayoutEffect(() => marks.show(mark), [marks, mark]);
+  const narrated = useMemo(() => ({ ...reading, listen: marks }), [reading, marks]);
   const shown = useMemo(() => ({ progress }), [progress]);
   const content = useMemo(() => renderBlock(scene.block), [scene.block]);
   return (
     <div className="relative max-h-[46dvh] min-w-0 overflow-y-auto overscroll-contain rounded-card border border-rule bg-ground p-3 sm:p-5 lg:max-h-[58dvh]" data-testid="film-stage">
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={scene.block.id} variants={swapVariants(reduce)} initial="hidden" animate="show" exit="exit" className="min-w-0" data-testid="film-scene" data-kind={scene.block.kind} data-block-id={scene.block.id}>
-          <SceneHeading scene={scene} />
+          {scene.section ? <SceneHeading section={scene.section} /> : null}
           <ExplainerReadingProvider value={narrated}>
             <FilmSceneProvider value={shown}>{content}</FilmSceneProvider>
           </ExplainerReadingProvider>

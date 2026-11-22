@@ -21,7 +21,8 @@ from .artisan_records import AudioWrite, ConversationRecord, TurnWrite
 from .artisan_reply import ArtisanTools, KalaVigyanTurn, kalavigyan_turn, transcript_turn
 from .artisan_session import ArtisanRefused, ConversationDeps, end_conversation
 from .artisan_transcript import open_transcript, sealed_merge, words_from
-from .audio import upload_floor_seconds
+from .audio import upload_seconds
+from .audio_decode import Measure
 from .privacy import heard_text
 from .records import SessionRecord, TurnClaim, TurnHold
 from .relay import SPEECH_GRACE
@@ -58,8 +59,10 @@ class ArtisanUpload:
     continued: bool
 
     @classmethod
-    def checked(cls, content: bytes, content_type: str, *, continued: bool) -> ArtisanUpload:
-        return cls(content, content_type, upload_floor_seconds(content, content_type), continued)
+    async def measured(
+        cls, content: bytes, content_type: str, measure: Measure, *, continued: bool
+    ) -> ArtisanUpload:
+        return cls(content, content_type, await upload_seconds(content, content_type, measure), continued)
 
 
 @dataclass(frozen=True)
@@ -95,7 +98,7 @@ async def conversation_speech(
     now = deps.clock()
     if not (record.live_at(now) or (record.ended_at is not None and now < record.ended_at + SPEECH_GRACE)):
         raise ArtisanRefused("speech_gone")
-    cached = deps.speech.get(record.id, turn_id)
+    cached = await deps.speech.get(record.id, turn_id)
     if cached is not None:
         return cached
     turn = open_transcript(deps.cipher, conversation.transcript).turn(turn_id)
@@ -111,7 +114,7 @@ async def conversation_speech(
     units = capped_seconds(speech_seconds(len(audio)), remaining)
     key = relay_replay_key(record.id, turn_id, deps.ids())
     await deps.store.reserve(record.id, ledger_entry(record, units=units, key=key))
-    deps.speech.put(record.id, turn_id, audio)
+    await deps.speech.put(record.id, turn_id, audio)
     return audio
 
 
@@ -281,7 +284,7 @@ class _ArtisanTurn:
             units = capped_seconds(speech_seconds(len(audio)), await self._remaining(self.base.clock()))
             seconds = (ledger_entry(session, units=units, key=relay_speech_key(session.id, reply.turn_id)),)
             self.billed += units
-            self.base.speech.put(session.id, reply.turn_id, audio)
+            await self.base.speech.put(session.id, reply.turn_id, audio)
         start = round((self.base.clock() - session.started_at).total_seconds() * MS)
         spoken_ms = round(audio_seconds(len(audio)) * MS) if audio else 0
         turn = transcript_turn(reply, start_ms=start, end_ms=start + spoken_ms)

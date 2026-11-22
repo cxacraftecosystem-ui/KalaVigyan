@@ -31,6 +31,7 @@ from app.research.review_queue import (
     reviewed_kinds,
 )
 from app.services import review_queue_decisions as decisions
+from app.services.page_revalidation import refresh_pages
 from app.services.review_queue import QueueAdapters, list_review_queue
 from app.services.review_queue_errors import (
     DecisionConflict,
@@ -39,6 +40,7 @@ from app.services.review_queue_errors import (
     UnknownCraft,
     UnknownItem,
 )
+from app.services.review_queue_refile import filed_owners
 from app.services.review_queue_refresh import refresh_after_decision
 from app.services.testimony_views import Turns
 from app.services.written_vectors import embed_decided
@@ -101,7 +103,9 @@ async def approve(
     session: AsyncSession = Depends(get_session),
 ) -> QueueDecision:
     ref = decisions.ItemRef(kind, item_id)
+    moved_from = await filed_owners(session, kind, item_id, body.craft)
     decided = await _decided(session, decisions.approve_item(session, ref, user, body, now=_now()))
+    await refresh_pages(moved_from)
     await embed_decided(session, router_embedder(Principal(user_id=user.id, role=user.role)), decided)
     return decided
 

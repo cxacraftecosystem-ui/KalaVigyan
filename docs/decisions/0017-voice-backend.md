@@ -9,6 +9,7 @@ Date: 2026-11-16. Status: accepted; item 12 superseded by decision 0025.
 
 | For | Read |
 |---|---|
+| What amended part of it | [0140 Voice and Listen hold their state in the bucket, bill what they hear and read the lede first](0140-voice-and-listen-kept-true.md): upkeep in the worker, reply audio in the bucket, decoded billing, the form reader and the pack's ranking |
 | What superseded part of it | [0025 Voice in every answer language](0025-multilingual-voice.md): item 12, the languages voice offers |
 | The contract it was built to | [0014 Contracts for process science, region profile, voice and media](0014-science-region-voice-media-contracts.md) |
 | The review that fixed it | [0022 Voice spend fails closed, a filtered style hint, region sources and one home per rule](0022-batch-3-review-fixes.md) |

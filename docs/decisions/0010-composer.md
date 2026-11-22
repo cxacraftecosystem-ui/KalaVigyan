@@ -10,6 +10,7 @@ Date: 2026-11-16. Status: accepted.
 | For | Read |
 |---|---|
 | The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| A claim's sources in its candidate, the searchers asked, and a refused sentence rewritten once | [decision 0138](0138-answers-composed-from-the-asked-fields.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

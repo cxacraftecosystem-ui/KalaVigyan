@@ -1,7 +1,7 @@
 from app.composer.candidates import compose_request, research_summary
 from app.composer.prompt import compose_message
-from app.research.composition import not_enough_evidence_message
 from app.research.crafts import ANY_CRAFT_LINE, craft_block, craft_line
+from app.research.research_summary import not_enough_evidence_message
 
 from ..research.fixtures import AJRAKH
 from .fixtures import PLAN, QUESTION, STORED, pack

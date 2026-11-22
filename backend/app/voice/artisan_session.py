@@ -31,7 +31,8 @@ from .binding import ARTISAN_NONCE_CONTEXT, nonce_hash, session_nonce
 from .languages import VOICE_LANGUAGES
 from .privacy import TranscriptCipher
 from .records import SessionRecord, VoiceStore
-from .runtime import SpeechCache, VoiceRuntime, VoiceSettings
+from .reply_audio import ReplyAudio
+from .runtime import VoiceRuntime, VoiceSettings
 from .seconds import (
     START_WINDOW_SECONDS,
     VOICE_SECONDS,
@@ -94,7 +95,7 @@ class ConversationDeps:
     runtime: VoiceRuntime
     voice: VoiceSettings
     cipher: TranscriptCipher
-    speech: SpeechCache
+    speech: ReplyAudio
     clock: Callable[[], datetime]
     ids: Callable[[], uuid.UUID] = field(default=uuid.uuid4)
 
@@ -261,7 +262,7 @@ async def _spoken_opening(record: SessionRecord, turn: TranscriptTurn, deps: Con
     await deps.store.reserve(
         record.id, ledger_entry(record, units=units, key=relay_speech_key(record.id, turn.id))
     )
-    deps.speech.put(record.id, turn.id, audio)
+    await deps.speech.put(record.id, turn.id, audio)
 
 
 async def _bound(record: SessionRecord, deps: ConversationDeps, now: datetime) -> str:

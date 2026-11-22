@@ -3,7 +3,7 @@ from collections.abc import Sequence
 
 from app.research.crafts import CraftRef
 from app.services.craft_index import AliasRecord, CraftRecord, build_index
-from app.services.write_back_names import CraftNames, craft_names
+from app.services.write_back_names import CraftFamily, CraftNames, craft_names
 
 from ..research.fixtures import AJRAKH
 
@@ -20,8 +20,8 @@ KHURJA = ref("Khurja-Pottery", "Khurja Pottery")
 BLUE_POTTERY = ref("Blue-Pottery-Of-Jaipur", "Blue Pottery of Jaipur")
 NIZAMABAD = ref("Nizamabad-Black-Pottery", "Nizamabad Black Pottery")
 BAGH = ref("Bagh-Prints-of-Madhya-Pradesh", "Bagh Prints of Madhya Pradesh")
-MUD_FAMILY = "Mud based Craft Category"
-TEXTILE_FAMILY = "Textiles Based Craft Category"
+MUD_FAMILY = CraftFamily(name="Mud based Craft Category", slug="Mud-based-Craft-Category")
+TEXTILE_FAMILY = CraftFamily(name="Textiles Based Craft Category", slug="Textiles-Based-Craft-Category")
 PLACES = {
     AJRAKH.slug: ("Gujarat", "Kachchh"),
     KHURJA.slug: ("Uttar Pradesh", "Bulandshahr", "Khurja"),
@@ -47,7 +47,7 @@ INDEX = build_index(
 
 
 def names_for(
-    lead: CraftRef | None, compared: Sequence[CraftRef] = (), *, family: str | None = TEXTILE_FAMILY
+    lead: CraftRef | None, compared: Sequence[CraftRef] = (), *, family: CraftFamily | None = TEXTILE_FAMILY
 ) -> CraftNames:
     return craft_names(INDEX, lead, compared, family=family)
 

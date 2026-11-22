@@ -38,17 +38,17 @@ flowchart LR
 | [0007](0007-web-search-and-fetcher.md) | Web search adapters and the fetcher sandbox | · |
 | [0008](0008-stored-knowledge-retrieval.md) | Stored-knowledge retrieval | · |
 | [0009](0009-planner-and-tiered-research.md) | Planner and tiered research | · |
-| [0010](0010-composer.md) | Composer | · |
+| [0010](0010-composer.md) | Composer | [0138](0138-answers-composed-from-the-asked-fields.md) |
 | [0011](0011-claim-write-back-and-coverage-enrichment.md) | Claim write-back and the coverage enrichment job | · |
 | [0012](0012-answer-stream-end-to-end.md) | The answer stream end to end | · |
 | [0013](0013-review-fixes-quotes-licences-scope.md) | Quote strength, open licences, one craft scope and scoped embedding | · |
 | [0014](0014-science-region-voice-media-contracts.md) | Contracts for process science, region profile, voice and media | · |
 | [0015](0015-science-engine.md) | Science engine: balancing, units, envelopes, the science seed and the process route | · |
 | [0016](0016-region-profile.md) | Region profile and map layers from the stored district statistics | · |
-| [0017](0017-voice-backend.md) | Voice backend: sessions, the custom LLM, the relay path and upkeep | [0025](0025-multilingual-voice.md) |
+| [0017](0017-voice-backend.md) | Voice backend: sessions, the custom LLM, the relay path and upkeep | [0025](0025-multilingual-voice.md) and [0140](0140-voice-and-listen-kept-true.md) |
 | [0018](0018-media-backend.md) | Media backend: stage illustrations and clips through the router, the job queue and S3 | · |
 | [0019](0019-craft-page-and-region-panel.md) | Craft page process timeline, region panel and map choropleths | [0092](0092-design-system.md) |
-| [0020](0020-voice-ui.md) | Voice UI: the voice dock on /ask and the craft page | · |
+| [0020](0020-voice-ui.md) | Voice UI: the voice dock on /ask and the craft page | [0140](0140-voice-and-listen-kept-true.md) |
 | [0021](0021-media-ui.md) | Media UI: Image and Video on the craft page's process stages | [0092](0092-design-system.md) |
 | [0022](0022-batch-3-review-fixes.md) | Voice spend fails closed, a filtered style hint, region sources and one home per rule | · |
 | [0023](0023-multilingual-answers.md) | Answers in Indian languages | [0117](0117-pages-in-other-languages.md) |
@@ -65,12 +65,12 @@ flowchart LR
 |---|---|---|
 | [0030](0030-explainer-contract.md) | The explainer contract | · |
 | [0031](0031-understanding-and-depth.md) | Understanding the question, and depth by role | [0093](0093-no-caps-for-now.md) |
-| [0032](0032-sectioned-composition.md) | Sectioned composition: research per field, blocks per section | · |
+| [0032](0032-sectioned-composition.md) | Sectioned composition: research per field, blocks per section | [0138](0138-answers-composed-from-the-asked-fields.md) |
 | [0033](0033-knowledge-pieces-and-reuse.md) | Stored knowledge pieces and reuse | [0096](0096-reader-question-pieces-join-their-craft-page.md) |
 | [0034](0034-images-and-terms.md) | Pictures and tappable terms | · |
-| [0035](0035-listen-and-voice-switched-off.md) | Listen, and the live voice call switched off | · |
+| [0035](0035-listen-and-voice-switched-off.md) | Listen, and the live voice call switched off | [0140](0140-voice-and-listen-kept-true.md) |
 | [0036](0036-asking-screen.md) | The asking screen: dictation, an optional craft, depth by role | · |
-| [0037](0037-explainer-ui.md) | The explainer view | · |
+| [0037](0037-explainer-ui.md) | The explainer view | [0140](0140-voice-and-listen-kept-true.md) |
 | [0038](0038-phase-a-review-fixes.md) | Phase A review fixes | · |
 | [0039](0039-pictures-and-terms-wired.md) | Pictures and terms in the answer stream | · |
 | [0040](0040-no-connection-held-across-a-model-call.md) | No connection held across a model call | · |
@@ -89,7 +89,7 @@ flowchart LR
 | [0053](0053-curated-dossier-import.md) | Curated dossiers are imported on deploy and served as one craft page | · |
 | [0054](0054-phase-c-contract.md) | Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode | · |
 | [0055](0055-generated-explainers.md) | Generated explainers: built from cited figures, checked, stored, reused and hidden | · |
-| [0056](0056-what-if-lab.md) | The what-if lab's builder | · |
+| [0056](0056-what-if-lab.md) | The what-if lab's builder | [0140](0140-voice-and-listen-kept-true.md) |
 | [0057](0057-zoom-story-and-timeline-map.md) | Zoom story and timeline map builders | · |
 | [0058](0058-elevenlabs-music-sound-image-video.md) | ElevenLabs music, sound effects, image and video | · |
 | [0059](0059-sandbox-and-what-if-renderers.md) | Sandbox and what-if renderers | · |
@@ -113,7 +113,7 @@ flowchart LR
 | [0072](0072-field-voices-contract.md) | Field voices come through signed peer routes, filtered by consent at the portal | [0084](0084-field-voices-v2.md) |
 | [0075](0075-reader-names-normals-and-citation-clusters.md) | Reader names, one normal per quantity and citation clusters | · |
 | [0076](0076-release-gate-that-sees.md) | The release gate looks at what the reader sees | · |
-| [0077](0077-lede-headings-and-question-order.md) | Every answer opens with a lede, its sections carry headings shaped by the question | · |
+| [0077](0077-lede-headings-and-question-order.md) | Every answer opens with a lede, its sections carry headings shaped by the question | [0140](0140-voice-and-listen-kept-true.md) |
 | [0078](0078-category-dossiers-in-the-app.md) | Category dossiers are imported keyed to their category and served as public category pages | · |
 | [0079](0079-public-reading.md) | Craft, category, map and science pages read without signing in | [0084](0084-field-voices-v2.md), [0091](0091-field-voices-kalavigyan-side.md) and [0095](0095-craft-page-chapters.md) |
 | [0080](0080-claim-ledger.md) | An answer renders each claim once: the claim ledger | · |
@@ -168,16 +168,19 @@ flowchart LR
 | [0124](0124-live-research-write-back.md) | Live research writes back only what its sources say | [0135](0135-write-backs-filed-under-the-craft-they-name.md) |
 | [0125](0125-reranking.md) | Stored facts are reranked, and relevance decides when stored knowledge is enough | [0132](0132-a-ranking-votes-with-its-first-thirty.md) and [0133](0133-the-evaluation-scores-what-answers-read.md) |
 | [0126](0126-measurement-that-grows.md) | Measurement grows with the knowledge and alerts when it falls | [0133](0133-the-evaluation-scores-what-answers-read.md) |
-| [0127](0127-coherent-answers.md) | An answer says each fact once, never admits a gap, keeps the stages it is asked and paces its sources | [0139](0139-sources-and-providers-reach-outside-services-once.md) |
+| [0127](0127-coherent-answers.md) | An answer says each fact once, never admits a gap, keeps the stages it is asked and paces its sources | [0138](0138-answers-composed-from-the-asked-fields.md) and [0139](0139-sources-and-providers-reach-outside-services-once.md) |
 | [0129](0129-first-stage-retrieval.md) | The stored search finds the right facts as the knowledge grows | · |
 | [0130](0130-a-craft-release.md) | One craft can be released as its own dataset with its own DOI | · |
 | [0131](0131-drawings-in-the-design.md) | Whatever an AI draws for KalaVigyan speaks the design and follows the reader's theme | · |
 | [0132](0132-a-ranking-votes-with-its-first-thirty.md) | A ranking votes with its first thirty; deeper finds only fill the rerank pool | · |
 | [0133](0133-the-evaluation-scores-what-answers-read.md) | The evaluation scores what answers read | · |
 | [0134](0134-each-sentence-once-in-a-block.md) | A block says each sentence once, and the judge reads it as a reader does | · |
-| [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | · |
+| [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | [0136](0136-write-backs-filed-by-their-source.md) |
+| [0136](0136-write-backs-filed-by-their-source.md) | A write-back is filed by what its source says around it, and what nothing names waits for a reviewer | · |
 | [0137](0137-limits-kept-by-choice.md) | Nine limits are kept by choice and leave the debt register | · |
+| [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | · |
 | [0139](0139-sources-and-providers-reach-outside-services-once.md) | Sources and providers reach outside services once, at the pace and spend every process shares | · |
+| [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | · |
 
 ## How this document is kept true
 

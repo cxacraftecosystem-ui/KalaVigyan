@@ -8,7 +8,16 @@ from app.research.retrieval import KnowledgeHits
 from app.services.answer_sections import SECTION_STOPPED_NOTE
 from app.services.answering import AnswerAsk, answer_question
 
-from ..composer.fixtures import ALUM_CLAIM_ID, PLAN, QUESTION, pack, quote, section_reply, sentence
+from ..composer.fixtures import (
+    ALUM_CLAIM_ID,
+    PLAN,
+    QUESTION,
+    pack,
+    quote,
+    replacements,
+    section_reply,
+    sentence,
+)
 from ..planner.fakes import FakeModel
 from ..science.golden_process import KUT, PA, RED, golden_records, stage_id
 from .fakes import (
@@ -21,6 +30,7 @@ from .fakes import (
     streamed,
     understanding_model,
 )
+from .piece_fakes import MemoryPieces
 from .test_answer_flow import LAKE_PAPER, REPLY, events
 
 HISTORY_REPLY = section_reply(
@@ -91,7 +101,7 @@ async def test_a_sentence_with_no_stored_claim_is_dropped_alone_and_the_section_
             quote(LAKE_PAPER, "Alizarin forms an insoluble red lake with aluminium ions"),
         ),
     )
-    found = events(await streamed(asked(), pipeline(replies=[reply])))
+    found = events(await streamed(asked(), pipeline(replies=[reply, replacements()])))
     (prose,) = [data["block"] for name, data in found if name == "block" and data["block"]["kind"] == "prose"]
     assert [s["text"] for s in prose["sentences"]] == ["Alum is the mordant that binds alizarin to cotton."]
     assert ("section_done", {"sectionId": "s1", "state": "READY", "searched": None}) in found
@@ -105,7 +115,7 @@ async def test_a_section_whose_every_sentence_lacks_a_stored_claim_says_what_it_
             quote(LAKE_PAPER, "Alizarin forms an insoluble red lake with aluminium ions"),
         ),
     )
-    found = events(await streamed(asked(), pipeline(replies=[reply])))
+    found = events(await streamed(asked(), pipeline(replies=[reply, replacements()])))
     assert [name for name, _ in found if name == "block"] == []
     assert ("section_done", {"sectionId": "s1", "state": "EMPTY", "searched": SEARCHED}) in found
     message = f"There is not enough cited evidence to answer this about Kutch Ajrakh yet. {SEARCHED}"
@@ -139,7 +149,8 @@ async def test_stored_claims_that_compose_nothing_send_the_section_to_live_resea
         sentence("Alum is a mordant.", quote("openalex:W404", "a passage that was never read"))
     )
     model = SectionModel(replies={"The chemistry": [unusable, json.dumps({"sentences": []}), REPLY]})
-    found = events(await streamed(asked(), pipeline(research=research, compose_model=model)))
+    held = MemoryPieces(held_fields=("CHEMISTRY",))
+    found = events(await streamed(asked(), pipeline(research=research, compose_model=model, pieces=held)))
     first, fresh = research.requests
     assert (first.fresh, fresh.fresh) == (False, True)
     assert (fresh.share.queries, fresh.share.fetches) == (4, 10)
@@ -165,10 +176,10 @@ async def test_each_section_researches_its_own_field_within_a_share_of_the_depth
 
 async def test_a_section_whose_research_fails_ends_empty_while_the_others_answer() -> None:
     class HistoryFails(FakeResearch):
-        async def __call__(self, request, progress, trail):
+        async def __call__(self, request, progress, trail, *, reads=None):
             if request.focus == "HISTORY":
                 raise ExternalFailure("every source failed", kind="unavailable", service="live_research")
-            return await super().__call__(request, progress, trail)
+            return await super().__call__(request, progress, trail, reads=reads)
 
     model = SectionModel(replies={"The chemistry": [REPLY]})
     answer_pipeline = pipeline(

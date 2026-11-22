@@ -57,6 +57,7 @@ class Understanding(ContractModel):
     candidates: list[CraftRef] = Field(max_length=MAX_CANDIDATES)
     compared: list[CraftRef] = Field(default_factory=list, max_length=COMPARED_CRAFTS_MAX, exclude_if=empty)
     disciplines: list[Discipline] = Field(max_length=len(DISCIPLINES))
+    asked: list[Discipline] = Field(default_factory=list, max_length=len(DISCIPLINES), exclude_if=empty)
     seats: list[ExpertSeat]
     depth: Depth
     language: AnswerLanguage
@@ -77,6 +78,8 @@ class Understanding(ContractModel):
             raise ValueError("a comparison is a model understanding that chose a craft to lead it")
         if len(set(self.disciplines)) != len(self.disciplines) or len(set(self.seats)) != len(self.seats):
             raise ValueError("each discipline and each seat is listed once")
+        if len(set(self.asked)) != len(self.asked) or not set(self.asked) <= set(self.disciplines):
+            raise ValueError("the asked fields are listed once, each among the answer's fields")
         if len(self.seats) > depth_policy(self.depth).max_experts:
             raise ValueError(f"{self.depth} seats at most {depth_policy(self.depth).max_experts} experts")
         if self.basis == "MODEL" and not self.disciplines:

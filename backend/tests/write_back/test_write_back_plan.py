@@ -217,8 +217,8 @@ def test_a_sentence_with_personal_data_is_skipped_with_the_reason() -> None:
 
 
 def test_the_same_claim_twice_is_one_write_back_with_both_citations() -> None:
-    first = cited("Alizarin forms a red lake.", (ABSTRACT_ID, "Alizarin forms an insoluble red lake"))
-    second = cited("alizarin forms a  red lake", (PAGE_ID, WASH_QUOTE))
+    first = cited("Ajrakh alizarin forms a red lake.", (ABSTRACT_ID, "Alizarin forms an insoluble red lake"))
+    second = cited("ajrakh alizarin forms a  red lake", (PAGE_ID, WASH_QUOTE))
     (claim,) = write_back_plan(
         pack(), composed(first, second), found_by="ANSWER", answer_id=ANSWER_ID, names=AJRAKH_NAMES
     ).claims

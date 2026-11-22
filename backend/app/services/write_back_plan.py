@@ -17,8 +17,9 @@ from app.research.vocabulary import CONCEPT_TYPE_DISCIPLINES
 from app.research.write_back import ClaimWriteBack, FoundBy, WriteBackCitation, WriteBackSubject
 
 from .curation_keys import DISCIPLINE_CONCEPT_TYPES
-from .write_back_crafts import CraftFiling, craft_filing, researched_craft
+from .write_back_crafts import CraftFiling, FilingTexts, craft_filing, researched_craft
 from .write_back_names import CraftNames
+from .write_back_passages import passage_around
 
 __all__ = [
     "INFERRED_REASON",
@@ -61,6 +62,7 @@ class WriteBackPlan:
     claims: tuple[ClaimWriteBack, ...]
     skipped: tuple[SkippedSentence, ...]
     sentence_keys: tuple[str | None, ...] = ()
+    held: tuple[ClaimWriteBack, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -80,6 +82,8 @@ class _Filing:
     field: str | None
     section: str | None
     craft_slug: str | None = None
+    category_slug: str | None = None
+    held: str | None = None
 
 
 def write_back_plan(
@@ -115,7 +119,20 @@ def write_back_plan(
         else:
             claims.append(planned)
             keys.append(planned.dedupe_key)
-    return WriteBackPlan(claims=_distinct(claims), skipped=tuple(skipped), sentence_keys=tuple(keys))
+    return _plan(_distinct(claims), tuple(skipped), keys)
+
+
+def _plan(
+    claims: tuple[ClaimWriteBack, ...], skipped: tuple[SkippedSentence, ...], keys: list[str | None]
+) -> WriteBackPlan:
+    filed = tuple(claim for claim in claims if claim.held_because is None)
+    shown = {claim.dedupe_key for claim in filed}
+    return WriteBackPlan(
+        claims=filed,
+        skipped=skipped,
+        sentence_keys=tuple(key if key in shown else None for key in keys),
+        held=tuple(claim for claim in claims if claim.held_because is not None),
+    )
 
 
 def composed_sentences(answer: ComposedAnswer) -> Iterable[tuple[ComposedSentence, str | None]]:
@@ -152,15 +169,30 @@ def _planned(
 def _craft(sentence: ComposedSentence, cited: list[str], context: _Context, filing: _Filing) -> CraftFiling:
     if all(ref in context.field_ids for ref in cited):
         return researched_craft(context.names)
-    quotes = [quote.text for ref in cited for quote in _passing_quotes(sentence, context.documents[ref])]
-    return craft_filing(sentence.text, quotes, field=filing.field, names=context.names)
+    return craft_filing(_filing_texts(sentence, cited, context), field=filing.field, names=context.names)
+
+
+def _filing_texts(sentence: ComposedSentence, cited: list[str], context: _Context) -> FilingTexts:
+    quoted = [
+        (ref, quote.text) for ref in cited for quote in _passing_quotes(sentence, context.documents[ref])
+    ]
+    read = [ref for ref in cited if ref not in context.field_ids]
+    passages = (passage_around(context.documents[ref].text, quote) for ref, quote in quoted if ref in read)
+    return FilingTexts(
+        text=sentence.text,
+        quotes=tuple(quote for _, quote in quoted),
+        passages=tuple(dict.fromkeys(passage for passage in passages if passage)),
+        titles=tuple(dict.fromkeys(context.documents[ref].item.title for ref in read)),
+    )
 
 
 def _filed(filing: _Filing, craft: CraftFiling) -> _Filing:
     if craft.family is None or filing.field is None:
-        return replace(filing, craft_slug=craft.slug)
-    subject = WriteBackSubject(concept_type=DISCIPLINE_CONCEPT_TYPES[filing.field], concept_name=craft.family)
-    return replace(filing, craft_slug=None, subject=subject)
+        return replace(filing, craft_slug=craft.slug, held=craft.held)
+    subject = WriteBackSubject(
+        concept_type=DISCIPLINE_CONCEPT_TYPES[filing.field], concept_name=craft.family.name
+    )
+    return replace(filing, craft_slug=None, category_slug=craft.family.slug, subject=subject)
 
 
 def _claim(
@@ -175,6 +207,8 @@ def _claim(
     quoted = not inferred and quote_overlap(sentence.text, passing) >= QUOTE_OVERLAP_MIN
     return ClaimWriteBack(
         craft_slug=filing.craft_slug,
+        category_slug=filing.category_slug,
+        held_because=filing.held,
         subject=filing.subject,
         field=filing.field,
         predicate=WRITE_BACK_PREDICATE,
@@ -280,17 +314,17 @@ def _distinct(claims: list[ClaimWriteBack]) -> tuple[ClaimWriteBack, ...]:
     by_key: dict[str, ClaimWriteBack] = {}
     for claim in claims:
         kept = by_key.get(claim.dedupe_key)
-        if kept is None:
-            by_key[claim.dedupe_key] = claim
-        elif kept.label == "INFERRED" and claim.label == "QUOTED":
-            by_key[claim.dedupe_key] = claim.model_copy(
-                update={"citations": [*claim.citations, *kept.citations]}
-            )
-        else:
-            by_key[claim.dedupe_key] = kept.model_copy(
-                update={"citations": [*kept.citations, *claim.citations]}
-            )
+        by_key[claim.dedupe_key] = claim if kept is None else _merged(kept, claim)
     return tuple(by_key.values())
+
+
+def _merged(kept: ClaimWriteBack, claim: ClaimWriteBack) -> ClaimWriteBack:
+    held = kept.held_because if claim.held_because is not None else None
+    if kept.label == "INFERRED" and claim.label == "QUOTED":
+        return claim.model_copy(
+            update={"citations": [*claim.citations, *kept.citations], "held_because": held}
+        )
+    return kept.model_copy(update={"citations": [*kept.citations, *claim.citations], "held_because": held})
 
 
 def _first_error(error: ValidationError) -> str:

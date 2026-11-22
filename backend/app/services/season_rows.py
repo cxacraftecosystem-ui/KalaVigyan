@@ -21,6 +21,7 @@ __all__ = [
     "SeasonMapping",
     "SeasonOffer",
     "StageClaims",
+    "rain_only_block",
     "season_facts",
     "season_mappings",
     "seasons_block",
@@ -79,20 +80,11 @@ def seasons_block(offer: SeasonOffer, *, block_id: str) -> SeasonsBlock | None:
     rows = _rows(planned, season_mappings(_offered_claims(offer)), block_id)
     if not any(row.months or row.season for row in rows):
         return None
-    rain = offer.rainfall
-    try:
-        return SeasonsBlock(
-            id=block_id,
-            kind="seasons",
-            version=1,
-            reuse=None,
-            rows=rows,
-            rainfall=rain.rain if rain is not None else None,
-            datasets=[rain.dataset] if rain is not None else [],
-        )
-    except ValidationError as refused:
-        logger.warning("the seasons block %s is refused: %s", block_id, refused)
-        return None
+    return _seasons(block_id, rows, offer.rainfall)
+
+
+def rain_only_block(rainfall: DistrictRainfall | None, *, block_id: str) -> SeasonsBlock | None:
+    return None if rainfall is None else _seasons(block_id, [], rainfall)
 
 
 def stage_claims(records: ProcessRecords) -> tuple[StageClaims, ...]:
@@ -209,4 +201,20 @@ def _season_row(plan: _Planned, mappings: Mapping[str, SeasonMapping], sentence_
         )
     except ValidationError as refused:
         logger.info("the season row %r is left out: %s", plan.label, refused)
+        return None
+
+
+def _seasons(block_id: str, rows: list[SeasonRow], rain: DistrictRainfall | None) -> SeasonsBlock | None:
+    try:
+        return SeasonsBlock(
+            id=block_id,
+            kind="seasons",
+            version=1,
+            reuse=None,
+            rows=rows,
+            rainfall=rain.rain if rain is not None else None,
+            datasets=[rain.dataset] if rain is not None else [],
+        )
+    except ValidationError as refused:
+        logger.warning("the seasons block %s is refused: %s", block_id, refused)
         return None

@@ -261,6 +261,8 @@ ADMIN_ROUTES = {
     ("GET", "/api/settings/ai-routing/{task}"),
     ("PUT", "/api/settings/ai-routing/{task}"),
     ("POST", "/api/settings/ai-routing/{task}/test"),
+    ("GET", "/api/settings/voice"),
+    ("PUT", "/api/settings/voice"),
     ("GET", "/api/testimony/review"),
     ("GET", "/api/testimony/review/{contribution_id}"),
     ("PUT", "/api/testimony/review/{contribution_id}"),

@@ -15,6 +15,7 @@ from .stated_prices import stated_prices
 from .vocabulary import Discipline, TrustTier
 
 __all__ = [
+    "CANDIDATE_TITLE_MAX_CHARS",
     "COMPARISON_RELATIONS",
     "DUPLICATE_GATE",
     "GATES",
@@ -53,6 +54,7 @@ NEIGHBOUR_MIN_SIMILARITY = 0.8
 REASONS_MAX = 20
 REASON_MAX_CHARS = 600
 MODEL_NAME_MAX_CHARS = 120
+CANDIDATE_TITLE_MAX_CHARS = 600
 NO_QUOTE_REASON = "no quote was offered, so the fact is kept as a hypothesis, never as a quoted fact"
 UNVECTORED_REASON = (
     "only identical texts were looked for: the statement could not be embedded, so held facts were not "
@@ -78,6 +80,7 @@ class Candidate(ContractModel):
     ref: str = Field(min_length=1, max_length=80)
     statement: str = Field(min_length=1, max_length=1000)
     field: Discipline | None
+    title: str | None = Field(default=None, min_length=1, max_length=CANDIDATE_TITLE_MAX_CHARS)
 
 
 class CitedSource(ContractModel):

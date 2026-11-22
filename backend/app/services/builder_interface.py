@@ -44,6 +44,7 @@ class BuildAsk:
     blocks: tuple[Block, ...]
     cited: CitedClaims
     research: SeatResearch | None = None
+    answer_fields: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)

@@ -14,7 +14,7 @@ from app.sources.adapter import build_document
 
 from ..composer.fixtures import ABSTRACT, ABSTRACT_ITEM, PLAN, pack
 from ..research.fixtures import AJRAKH, evidence_item
-from .names import AJRAKH_NAMES, BAGH, KHURJA, TEXTILE_FAMILY, names_for
+from .names import AJRAKH_NAMES, BAGH, KHURJA, MUD_FAMILY, TEXTILE_FAMILY, names_for
 
 ANSWER_ID = uuid.UUID("5e1d2c3b-4a5e-4f60-8b71-2c3d4e5f6a71")
 FIGURE_QUOTE = "Mordanting baths of 8 g/L alum were heated to 60 °C"
@@ -125,7 +125,7 @@ def test_a_sentence_naming_a_compared_craft_is_filed_under_that_craft() -> None:
     assert alone.craft_slug == BAGH.slug
 
 
-def test_a_sentence_naming_two_compared_crafts_is_skipped_and_one_naming_none_goes_to_the_family() -> None:
+def test_a_sentence_naming_two_compared_crafts_or_whose_passage_names_both_is_skipped() -> None:
     both = said(
         "Ajrakh and Bagh printers both mordant the cloth with alum.",
         BAGH_ITEM.id,
@@ -137,17 +137,34 @@ def test_a_sentence_naming_two_compared_crafts_is_skipped_and_one_naming_none_go
         "printers mordant the cloth with alum before the madder bath",
     )
     plan = written(bagh_pack(), under("Materials", both, plain), names_for(AJRAKH, (BAGH,)))
-    assert [skipped.reason for skipped in plan.skipped] == [SKIP_SEVERAL_CRAFTS]
-    (claim,) = plan.claims
-    assert (claim.craft_slug, claim.field) == (None, "MATERIALS")
-    assert (claim.subject.concept_type, claim.subject.concept_name) == ("PROPERTY", TEXTILE_FAMILY)
+    assert [skipped.reason for skipped in plan.skipped] == [SKIP_SEVERAL_CRAFTS, SKIP_SEVERAL_CRAFTS]
+    assert (plan.claims, plan.held) == ((), ())
+
+
+def test_in_a_comparison_material_science_naming_nothing_goes_to_the_shared_family() -> None:
+    sentence = said("Mordant baths held 8 g/L alum and were heated to 60 °C.", ABSTRACT_ITEM.id, FIGURE_QUOTE)
+    (claim,) = written(pack(), under("Materials", sentence), names_for(AJRAKH, (BAGH,))).claims
+    assert (claim.craft_slug, claim.category_slug, claim.field) == (None, TEXTILE_FAMILY.slug, "MATERIALS")
+    assert (claim.subject.concept_type, claim.subject.concept_name) == ("PROPERTY", TEXTILE_FAMILY.name)
 
 
 def test_family_science_is_filed_under_the_family_concept_of_its_field() -> None:
     sentence = said("Mordant baths held 8 g/L alum and were heated to 60 °C.", ABSTRACT_ITEM.id, FIGURE_QUOTE)
     (claim,) = written(pack(), under("The chemistry", sentence)).claims
-    assert (claim.craft_slug, claim.stored_field) == (None, "CHEMISTRY")
-    assert (claim.subject.concept_type, claim.subject.concept_name) == ("MECHANISM", TEXTILE_FAMILY)
+    assert (claim.craft_slug, claim.category_slug, claim.stored_field) == (
+        None,
+        TEXTILE_FAMILY.slug,
+        "CHEMISTRY",
+    )
+    assert (claim.subject.concept_type, claim.subject.concept_name) == ("MECHANISM", TEXTILE_FAMILY.name)
+
+
+def test_the_same_general_sentence_is_one_fact_per_family() -> None:
+    sentence = said("Mordant baths held 8 g/L alum and were heated to 60 °C.", ABSTRACT_ITEM.id, FIGURE_QUOTE)
+    textiles = written(pack(), under("The chemistry", sentence)).claims[0]
+    clay = written(pack(), under("The chemistry", sentence), names_for(AJRAKH, family=MUD_FAMILY)).claims[0]
+    assert (textiles.category_slug, clay.category_slug) == (TEXTILE_FAMILY.slug, MUD_FAMILY.slug)
+    assert textiles.dedupe_key != clay.dedupe_key
 
 
 def test_a_sentence_about_a_place_abroad_is_skipped_with_the_reason() -> None:

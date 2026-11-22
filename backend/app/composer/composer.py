@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import uuid
 from collections import Counter
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from functools import partial
 from typing import Any
@@ -19,6 +19,7 @@ from app.research.composition import (
     ComposedSentence,
     ComposeRequest,
     LedeRequest,
+    RefusedSentence,
     sentence_level,
 )
 from app.research.planning import OPEN_QUESTION_LEVEL
@@ -50,7 +51,15 @@ from .prompt import (
     styled,
 )
 
-__all__ = ["ModelComposer", "ReplyForm", "assembled_answer", "assembled_lede", "lede_form", "reply_form"]
+__all__ = [
+    "ModelComposer",
+    "ReplyForm",
+    "assembled_answer",
+    "assembled_lede",
+    "lede_form",
+    "refused_drafts",
+    "reply_form",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +99,8 @@ class ModelComposer:
     async def compose(self, request: ComposeRequest) -> ComposedAnswer:
         if not request.candidates:
             return ComposedAnswer(not_enough_evidence=request.searched)
+        if request.refused:
+            return assembled_answer(await self._rewritten(request), request)
         draft = await self._checked(reply_form(request), compose_message(request), request.allowed)
         return assembled_answer(draft, request)
 
@@ -119,6 +130,15 @@ class ModelComposer:
                 logger.warning("compose reply %d unusable: %s", attempt + 1, error)
         reply = await self._model(system=form.system, user=user, schema=form.schema)
         return form.parse(reply_object(reply), allowed), 0
+
+    async def _rewritten(self, request: ComposeRequest) -> DraftAnswer:
+        heading = request.focus.title if request.focus else ""
+        refused = refused_drafts(request.refused, heading)
+        empty = DraftAnswer(sections=(DraftSection(heading, refused),), follow_ups=())
+        rewritten = await self._regenerated(compose_message(request), empty, request.allowed, request.style)
+        kept = tuple(sentence for sentence in rewritten.sections[0].sentences if sentence.passes)
+        logger.info("rewrote %d of %d refused sentence(s) from stored claims", len(kept), len(refused))
+        return replace(rewritten, sections=(DraftSection(heading, kept),))
 
     async def _regenerated(
         self,
@@ -198,6 +218,10 @@ def _with_replacements(draft: DraftAnswer, replacements: Mapping[int, DraftSente
             slot += 1
         sections.append(DraftSection(section.heading, tuple(sentences)))
     return replace(draft, sections=tuple(sections))
+
+
+def refused_drafts(refused: Sequence[RefusedSentence], heading: str) -> tuple[DraftSentence, ...]:
+    return tuple(DraftSentence(heading, one.text, None, tuple(one.problems)) for one in refused)
 
 
 def _is_open_question(sentence: ComposedSentence, allowed: Mapping[str, ComposeCandidate]) -> bool:

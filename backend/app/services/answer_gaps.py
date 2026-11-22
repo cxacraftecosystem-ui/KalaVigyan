@@ -12,8 +12,8 @@ from app.research.retrieval import ClaimHit
 from app.research.vocabulary import FACT_LEVELS
 from app.retrieval.fusion import RRF_K
 
-from .answer_sections import SectionOutcome
 from .claim_holds import FAILED_QUOTE
+from .section_context import SectionOutcome
 
 __all__ = [
     "ANSWERING_RELEVANCE",

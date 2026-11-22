@@ -98,14 +98,25 @@ units (seer, maund, tola, gaj, ...) are never converted by a table: only by a va
 states for the region (owner O5). Pint holds each of them as a dimension of its own, so it has no
 value for any of them (decision 0066).
 
-## Places outside India (decision 0135)
+## Places outside India (decisions 0135 and 0136)
 
 `backend/app/data/places_abroad.json` is a hand-kept word list, not a dataset, and nothing in it is
-shown to a reader: the United Nations' member and observer states other than India, with Taiwan and
-Kosovo, under their English short names and the adjectives English uses for them, the regions and
-cultures craft literature names, and the other senses in which a place word names a material or a
-sea. A live-research write-back that names one of them is not filed under an Indian craft. The words
-left out on purpose, and why, are in the file's `about`.
+shown to a reader: the United Nations' member and observer states other than India, with Taiwan,
+Kosovo, Somaliland and Northern Cyprus, under their English short names, the names Natural Earth
+gives them and the adjectives English uses for them, the regions and cultures craft literature
+names, and the other senses in which a place word names a material or a sea. A live-research
+write-back that names one of them is not filed under an Indian craft. The words left out on
+purpose are in its `leftOut`, each with the Indian sense that keeps it out.
+
+`backend/app/data/places_abroad.natural_earth.json` holds the list a test checks it against: the
+`SOVEREIGNT` name of every feature of Natural Earth's 1:10m Cultural Vectors, Admin 0 -
+Sovereignty layer (`ne_10m_admin_0_sovereignty`, version 5.1.2) whose `TYPE` is Sovereign country,
+Sovereignty, Disputed or Breakaway, India left out: 197 names. Natural Earth is in the
+[public domain](https://www.naturalearthdata.com/about/terms-of-use/); the file was read from the
+release's GeoJSON (`https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_admin_0_sovereignty.geojson`,
+listed at `https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-0-sovereignty/`)
+on 2026-11-22. A later release is vendored the same way, never edited by hand, and the test then
+names any country `places_abroad.json` lacks.
 
 ## Live scholarly sources
 

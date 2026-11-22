@@ -34,6 +34,7 @@ from app.services.coverage_eval import (
 from app.services.craft_resolver import CraftIndexStore
 from app.services.explainer_payload import stored_explainer
 from app.services.live_sources import LiveSourcesStore
+from app.services.off_question import explainer_off_question
 
 TIMED_OUT = "the answer did not finish within {seconds} seconds"
 INDEX = CraftIndexStore()
@@ -71,6 +72,11 @@ async def explainer(answer_id: uuid.UUID) -> Explainer | None:
     return stored_explainer(answer_id, payload)
 
 
+async def off_question(found: Explainer, craft_slug: str) -> int:
+    async with session_scope() as session:
+        return await explainer_off_question(session, INDEX, found, craft_slug)
+
+
 async def spent_since(request_id_prefix: str, since: datetime) -> Decimal:
     async with session_scope() as session:
         return await router.tagged_spend(session, request_id_prefix=request_id_prefix, since=since)
@@ -84,6 +90,7 @@ async def run(*, only: list[str], limit: int | None, cap: Decimal) -> dict[str, 
         explainer=explainer,
         judge=router_structured_model(AiTask.EVAL_JUDGE),
         spent=spent_since,
+        off_question=off_question,
     )
     try:
         report = await run_answer_eval(questions, tools, started_at=datetime.now(UTC), cap_usd=cap)
