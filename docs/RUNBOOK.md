@@ -556,7 +556,17 @@ fixture or the category page (`docs/contracts/category-page.md`).
   3 by default). It writes a question for each sampled published fact on the box and keeps the set as
   the `eval-questions-<run id>` artifact; commit its `retrieval_questions.json` as
   `backend/app/data/eval/generated/retrieval_questions.json`. A later run reuses the kept questions
-  and pays only for new facts.
+  and pays only for new facts. A fact whose question reused its words is asked once more, naming the
+  words (decision 0151); the summary reports `asked`, `keptEnglish`, `keptShare`, `askedAgain` and
+  `rewritten`.
+- **Fusion weights** (decision 0151): read-only, on the box, after a release that carries the sweep:
+  `cd /opt/kalavigyan/current/backend && sudo -u kalavigyan bash -c 'set -a; . /opt/kalavigyan/.env; set +a; .venv/bin/python -m app.scripts.eval_retrieval --fusion --out /tmp/fusion.json'`.
+  It embeds every hand-written and generated question once (no rerank, no judge), reads each one's
+  three claim rankings and scores the 60 weightings of `FUSION_GRID` in the fused order per set; the
+  printed `picked` row is the weighting that scores the generated English questions best without
+  lowering the hand-written ones. Commit `/tmp/fusion.json` over `backend/app/data/eval/fusion.json`
+  when `changed` is true, and raise the fused floors in `floors.json` to the picked row's numbers
+  less 0.05 in the same change.
 - **Re-embed knowledge** (`embed-knowledge.yml`): by hand only, from main, once after a release that
   changes the embedding stamp's recipe (decision 0129):
   `gh workflow run embed-knowledge.yml -R cxacraftecosystem-ui/KalaVigyan --ref main` (`-f seconds=`,

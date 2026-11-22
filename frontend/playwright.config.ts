@@ -102,6 +102,7 @@ export default defineConfig({
   workers: Number(process.env.E2E_WORKERS ?? 2),
   retries: Number(process.env.E2E_RETRIES ?? 0),
   reporter: [["list"]],
+  globalSetup: SMOKE && LOCAL ? "./e2e/smokeApi.ts" : undefined,
   globalTeardown: PRODUCTION ? "./e2e/production/teardown.ts" : undefined,
   use: {
     baseURL: BASE_URL,
