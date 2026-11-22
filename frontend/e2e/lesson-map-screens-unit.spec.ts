@@ -18,7 +18,8 @@ import { craftsHeading, districtTitle } from "@/lib/districtView";
 import type { Explainer } from "@/lib/explainerContract";
 import { explainerHistoryShape } from "@/lib/learningContract";
 import { lessonListShape, lessonPackShape } from "@/lib/lessonContract";
-import { lessonRequest, lessonSections, LESSON_SECTIONS_MAX, slideCountText } from "@/lib/lessonView";
+import { chosenInOrder, lessonRequest, lessonSections, LESSON_SECTIONS_MAX, slideCountText } from "@/lib/lessonView";
+import { inListedOrder, moveItem, movedText, usableAfterMove } from "@/lib/listOrder";
 import { canAccessRoute, routeGuardFor } from "@/lib/permissions";
 import { parseShape } from "@/lib/shape";
 import type { SourceRef, User, UserRole } from "@/lib/types";
@@ -45,7 +46,7 @@ function text(html: string): string {
 }
 
 function lookupOf(sources: readonly SourceRef[]): CitationLookup {
-  return { numbers: listedSourceNumbers(sources), sourcesById: new Map(sources.map((source) => [source.id, source])), onOpen: () => undefined };
+  return { numbers: listedSourceNumbers(sources), sourcesById: new Map(sources.map((source) => [source.id, source])) };
 }
 
 const NARROW_TRACK = /^(auto|[0-3](\.\d+)?rem)$/;
@@ -78,6 +79,31 @@ test("the lesson builder starts with every finished section chosen and the quiz 
   expect(html).toMatch(/role="switch"[^>]*aria-checked="true"/);
   expect(html).not.toMatch(/data-testid="lesson-build"[^>]*disabled/);
   fitsAPhone(html);
+});
+
+test("the lesson builder's rows move up and down, and the lesson asks for its sections in the reader's order", () => {
+  const html = withApp(createElement(LessonBuilder, { document: FIRST_DOCUMENT, onBuilt: () => undefined }));
+  expect(html.match(/aria-label="Move [^"]+ (?:up|down)"/g)).toEqual([
+    'aria-label="Move How it is made up"',
+    'aria-label="Move How it is made down"',
+    'aria-label="Move Why the water matters up"',
+    'aria-label="Move Why the water matters down"',
+    'aria-label="Move The chemistry of the colours up"',
+    'aria-label="Move The chemistry of the colours down"'
+  ]);
+  expect(html.match(/<button[^>]*data-testid="move-(?:up|down)"[^>]*>/g)?.map((button) => button.includes("disabled"))).toEqual([true, false, false, false, false, true]);
+  expect(html).toContain('aria-live="polite"');
+  const sections = lessonSections(FIRST);
+  const ids = moveItem(sections.map((section) => section.id), 2, 0);
+  expect(ids).toEqual(["s3", "s1", "s2"]);
+  const ordered = inListedOrder(sections, ids);
+  expect(chosenInOrder(ordered, new Set(["s1", "s3"]))).toEqual(["s3", "s1"]);
+  const ref = { explainerId: FIRST_DOCUMENT.mark.explainerId, version: 1 };
+  expect(lessonRequest(ref, "", chosenInOrder(ordered, new Set(["s1", "s3"])), true)?.sectionIds).toEqual(["s3", "s1"]);
+  expect(inListedOrder(sections, ["s2"]).map((section) => section.id)).toEqual(["s2", "s1", "s3"]);
+  expect([usableAfterMove(2, 0, 3), usableAfterMove(0, 2, 3), usableAfterMove(0, 1, 3), usableAfterMove(2, 1, 3)]).toEqual(["down", "up", "down", "up"]);
+  expect(movedText("Why the water matters", 0, 3)).toBe("Why the water matters moved to position 1 of 3.");
+  expect(moveItem(["a", "b"], 0, 5)).toEqual(["a", "b"]);
 });
 
 test("a built pack previews its slides in order with the picture, quiz, reading list and files", () => {
@@ -130,6 +156,9 @@ test("a tapped district shows its cited crafts, the stored land story, its value
   expect(html).toContain('href="/crafts/Kutch-Ajrakh"');
   expect(text(html)).toContain("Practised");
   expect(text(html)).toContain("[1]");
+  const basis = /<p[^>]*data-testid="place-basis"[^>]*>[\s\S]*?<\/p>/.exec(html)?.[0] ?? "";
+  expect(basis).toContain('<span class="kv-ev-tag" data-level="provisional" data-testid="evidence-tag">Provisional</span>');
+  expect(basis).not.toMatch(/purple|ink-[579]00|font-display|font-bold|text-xs/);
   expect(attribute(html, "explainer-block", "data-kind")).toEqual(["region_story"]);
   expect(html).toContain('data-testid="reuse-marker"');
   for (const facet of ["SOIL", "CLIMATE", "TERRAIN"]) expect(html).toContain(`data-testid="region-facet-${facet}"`);

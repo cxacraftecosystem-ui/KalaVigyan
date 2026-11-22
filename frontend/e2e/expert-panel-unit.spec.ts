@@ -48,8 +48,7 @@ test("the panel draws each seat's cited take and one Experts differ card with bo
       [GI_JOURNAL, 2],
       [KHAMIR_PART_1, 3]
     ]),
-    sourcesById: new Map(),
-    onOpen: () => undefined
+    sourcesById: new Map()
   };
   const views = [historian(), anthropologist()];
   const html = withReading(createElement(ExpertPanel, { views, reduce: true }), lookup);

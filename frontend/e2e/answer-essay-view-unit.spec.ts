@@ -2,22 +2,25 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
-import { createElement } from "react";
+import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { ExplainerView } from "@/components/answer/ExplainerView";
 import { LadderStageCard } from "@/components/answer/LadderStageCard";
+import { AnswerFigure, NumberedFigures } from "@/components/answer/place/AnswerFigure";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ENGLISH, type AnswerLanguage } from "@/lib/answerLanguages";
 import type { ExplainerSentence } from "@/lib/explainerBlockBase";
-import { explainerShape, type Explainer, type LadderStage } from "@/lib/explainerContract";
+import { explainerShape, ledeBlockShape, type Explainer, type LadderStage } from "@/lib/explainerContract";
 import type { ExplainerState } from "@/lib/explainerState";
 import { explainerStateOf } from "@/lib/explainerVersions";
 import type { UnderstoodPart } from "@/lib/explainerView";
 import { parseShape } from "@/lib/shape";
 
 import { attribute, shownText, withReading } from "./explainerRender";
+
+type FigureProps = ComponentProps<typeof AnswerFigure>;
 
 const URDU: AnswerLanguage = { code: "ur", label: "Urdu", autonym: "اردو", script: "Arab", direction: "rtl" };
 const RETIRED_LOOK = /purple|field-button|class="panel|eyebrow|font-display|text-ink-900|bg-card|text-white/;
@@ -91,4 +94,26 @@ test("a reached stage takes the ink leading rule and its number an ink tile, nev
   expect(reached).toContain("bg-ink-1 text-ground");
   expect(resting).toContain("border-s-transparent");
   expect(`${reached}${resting}`).not.toMatch(/bg-indigo|purple/);
+});
+
+test("the essay numbers its figures through one counter that starts after the signature figure, and nowhere else numbers them", () => {
+  const plain = drawn(saved());
+  expect(plain).toMatch(/<article[^>]*class="kv-essay min-w-0"/);
+  expect(plain).not.toMatch(/<article[^>]*data-signature/);
+  const lede = parseShape(ledeBlockShape, JSON.parse(readFileSync(join(__dirname, "..", "..", "shared", "explainer.signature-lede.golden.json"), "utf8")));
+  expect(lede.figure).not.toBeNull();
+  expect(drawn(saved({ ...explainer(), lede }))).toMatch(/<article[^>]*data-signature=""/);
+  const map = createElement("svg");
+  const numbered = renderToStaticMarkup(createElement(NumberedFigures.Provider, { value: true }, createElement(AnswerFigure, { texts: { kicker: "Rainfall", title: "Kachchh and Barmer" } } as FigureProps, map)));
+  expect(numbered).toContain('<p class="kv-fig-no mb-0"><span class="kv-fig-count" data-testid="figure-number"></span> · Rainfall</p>');
+  const untitled = renderToStaticMarkup(createElement(NumberedFigures.Provider, { value: true }, createElement(AnswerFigure, { texts: { title: "Kachchh and Barmer" } } as FigureProps, map)));
+  expect(untitled).toContain('<p class="kv-fig-no mb-0"><span class="kv-fig-count" data-testid="figure-number"></span></p>');
+  const elsewhere = renderToStaticMarkup(createElement(AnswerFigure, { texts: { title: "Kachchh and Barmer" } } as FigureProps, map));
+  expect(elsewhere).not.toContain("kv-fig-no");
+  const css = readFileSync(join(__dirname, "..", "app", "editorial-figure.css"), "utf8");
+  expect(css).toMatch(/\.kv-essay \{\s*counter-reset: kv-figure;/);
+  expect(css).toMatch(/\.kv-essay\[data-signature\] \{\s*counter-reset: kv-figure 1;/);
+  expect(css).toMatch(/\.kv-essay \.kv-fig-count \{\s*counter-increment: kv-figure;/);
+  expect(css).toMatch(/\.kv-essay \.kv-fig-count::before \{\s*content: "Fig\. ";/);
+  expect(css).toMatch(/\.kv-essay \.kv-fig-count::after \{\s*content: counter\(kv-figure\);/);
 });

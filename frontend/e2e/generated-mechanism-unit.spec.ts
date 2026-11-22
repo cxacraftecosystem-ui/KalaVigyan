@@ -19,8 +19,7 @@ const EQUATION = "Fe + 2 CH3COOH -> Fe(CH3COO)2 + H2";
 const IRON_REACTION = "d9643f49-fefc-5e3a-ad08-a5ae499a4161";
 const LOOKUP: CitationLookup = {
   numbers: new Map(MECHANISM.sources.map((source, index) => [source.id, index + 1])),
-  sourcesById: new Map(),
-  onOpen: () => undefined
+  sourcesById: new Map()
 };
 
 function mechanism(): SimulationBlock {

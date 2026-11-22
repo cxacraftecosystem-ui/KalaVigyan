@@ -87,6 +87,27 @@
     font-weight: 600;
   }
 
+  .kv-essay {
+    counter-reset: kv-figure;
+  }
+
+  .kv-essay[data-signature] {
+    counter-reset: kv-figure 1;
+  }
+
+  .kv-essay .kv-fig-count {
+    counter-increment: kv-figure;
+  }
+
+  .kv-essay .kv-fig-count::before {
+    content: "Fig. ";
+  }
+
+  .kv-essay .kv-fig-count::after {
+    content: counter(kv-figure);
+    color: var(--ink-1);
+  }
+
   @media (forced-colors: active) {
     .kv-photo {
       border: 1px solid CanvasText;

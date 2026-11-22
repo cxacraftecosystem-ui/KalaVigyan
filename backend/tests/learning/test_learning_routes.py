@@ -15,7 +15,7 @@ from app.research.craft_compare import CraftComparison
 from app.research.explainer import Explainer
 from app.research.quiz import ExplainerQuiz, explainer_quiz
 from app.research.shared_science import SharedConcept, SharedScience
-from app.services import knowledge_view
+from app.services import answer_quiz, knowledge_view
 
 from ..contracts.explainer_golden import DOCUMENT, golden_json
 from ..contracts.learning_golden import SHARED_SCIENCE, learning
@@ -113,7 +113,7 @@ def test_a_quiz_can_be_made_from_chosen_sections(monkeypatch: pytest.MonkeyPatch
 
 def test_an_explainer_with_nothing_to_quiz_answers_no_content(monkeypatch: pytest.MonkeyPatch) -> None:
     http, _ = client(monkeypatch)
-    monkeypatch.setattr(learning_views, "explainer_quiz", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(answer_quiz, "explainer_quiz", lambda *_args, **_kwargs: None)
     reply = http.get(f"/api/answers/{DOCUMENT_ID}/quiz")
     assert (reply.status_code, reply.content) == (204, b"")
     assert reply.headers["cache-control"] == "private, no-cache"

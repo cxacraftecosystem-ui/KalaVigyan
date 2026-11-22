@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
 import { FieldBlock } from "@/components/FormControls";
+import { useMoveFocus } from "@/components/hooks/useMoveFocus";
 import { RecordNotice } from "@/components/records/RecordNotice";
 import { RecordSection } from "@/components/records/RecordSection";
 import { RouteList, type RouteListHandlers, type RouteNames } from "@/components/settings/RouteList";
@@ -16,7 +17,6 @@ import { useToast } from "@/components/ui/Toast";
 import {
   fetchRouting,
   modelsForTask,
-  moveRoute,
   routeKey,
   sameRoutes,
   saveTaskRoute,
@@ -25,6 +25,7 @@ import {
   type RoutingState,
   type TaskRoute
 } from "@/lib/routing";
+import { moveItem, movedText } from "@/lib/listOrder";
 
 function useRoutingState() {
   const [state, setState] = useState<RoutingState | null>(null);
@@ -71,21 +72,13 @@ export function RoutingPanel() {
   const [testing, setTesting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
-  const focusAfterMove = useRef<string | null>(null);
-  const buttons = useRef(new Map<string, HTMLButtonElement | null>());
+  const moveFocus = useMoveFocus(draft);
 
   useEffect(() => {
     setDraft(current ? current.routes : []);
     setAdding("");
     setError(null);
   }, [current]);
-
-  useEffect(() => {
-    const key = focusAfterMove.current;
-    if (!key) return;
-    focusAfterMove.current = null;
-    buttons.current.get(key)?.focus();
-  }, [draft]);
 
   const candidates = useMemo(() => {
     if (!state || !current) return [];
@@ -98,10 +91,9 @@ export function RoutingPanel() {
   function move(from: number, to: number) {
     if (to < 0 || to >= draft.length) return;
     const row = draft[from];
-    setDraft((list) => moveRoute(list, from, to));
-    setAnnouncement(`${names.model(row)} moved to position ${to + 1} of ${draft.length}.`);
-    const usable = to === 0 ? "down" : to === draft.length - 1 ? "up" : to > from ? "down" : "up";
-    focusAfterMove.current = `${routeKey(row)}:${usable}`;
+    setDraft((list) => moveItem(list, from, to));
+    setAnnouncement(movedText(names.model(row), to, draft.length));
+    moveFocus.followMove(routeKey(row), from, to, draft.length);
   }
 
   function add() {
@@ -166,7 +158,7 @@ export function RoutingPanel() {
     onMove: move,
     onRemove: (row) => setDraft((list) => list.filter((item) => routeKey(item) !== routeKey(row))),
     onEnable: (row, enabled) => setDraft((list) => list.map((item) => (routeKey(item) === routeKey(row) ? { ...item, enabled } : item))),
-    register: (key, node) => buttons.current.set(key, node)
+    register: moveFocus.register
   };
 
   return (

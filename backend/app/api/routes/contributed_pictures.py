@@ -12,7 +12,7 @@ from app.models import User
 from app.research.image_intake_svg import SVG_POLICY
 from app.services.answering import NOT_FOUND_DETAIL
 from app.services.contributed_pictures import shown_picture
-from app.services.drawing_themes import THEME_PATTERN, themed_picture
+from app.services.drawing_themes import THEME_PATTERN, picture_version, themed_picture
 from app.services.object_store import media_bucket
 
 router = APIRouter(prefix="/crafts", tags=["crafts"])
@@ -35,7 +35,8 @@ async def get_contributed_picture(
     await release_connection(session)
     if shown is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND_DETAIL)
-    unchanged = not_modified(request, shown.sha256, cache_control=PICTURE_CACHE)
+    version = picture_version(shown.sha256, shown.mime, theme)
+    unchanged = not_modified(request, version, cache_control=PICTURE_CACHE)
     if unchanged is not None:
         unchanged.headers.update(NO_SNIFF)
         return unchanged
@@ -49,5 +50,5 @@ async def get_contributed_picture(
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, NO_PICTURES) from None
     if data is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND_DETAIL)
-    headers = {**revalidation_headers(shown.sha256, cache_control=PICTURE_CACHE), **NO_SNIFF}
+    headers = {**revalidation_headers(version, cache_control=PICTURE_CACHE), **NO_SNIFF}
     return Response(themed_picture(data, shown.mime, theme), media_type=shown.mime, headers=headers)

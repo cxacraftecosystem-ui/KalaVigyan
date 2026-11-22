@@ -1,4 +1,4 @@
-import type { HTMLAttributes, ReactNode } from "react";
+import { createContext, useContext, type HTMLAttributes, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -11,11 +11,25 @@ export function valuesLabel(count: number): string {
   return count === 1 ? "The value" : `All ${count} values`;
 }
 
+export const NumberedFigures = createContext(false);
+
+function FigureNumber({ kicker }: { kicker?: ReactNode }) {
+  const numbered = useContext(NumberedFigures);
+  if (!numbered && !kicker) return null;
+  return (
+    <p className="kv-fig-no mb-0">
+      {numbered ? <span className="kv-fig-count" data-testid="figure-number" /> : null}
+      {numbered && kicker ? " · " : null}
+      {kicker}
+    </p>
+  );
+}
+
 function FigureHead({ texts }: { texts: FigureTexts }) {
   if (!texts.kicker && !texts.title && !texts.dek) return null;
   return (
     <figcaption className="mb-3.5 grid min-w-0 gap-1.5">
-      {texts.kicker ? <p className="kv-fig-no mb-0">{texts.kicker}</p> : null}
+      <FigureNumber kicker={texts.kicker} />
       {texts.title ? <p className="break-words font-reading text-h3 text-ink-1 [font-variant-numeric:lining-nums]">{texts.title}</p> : null}
       {texts.dek ? <p className="max-w-measure font-ui text-ui font-normal text-ink-2">{texts.dek}</p> : null}
     </figcaption>

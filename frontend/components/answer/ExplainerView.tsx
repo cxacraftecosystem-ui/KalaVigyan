@@ -60,7 +60,7 @@ function citedAnswer(state: ExplainerState): CitedAnswer | null {
 function Essay({ state, streaming, reduce, active, onActive, onFollowUp, direction, lang }: { state: ExplainerState; streaming: boolean; reduce: boolean; active: string | null; onActive: (id: string) => void; onFollowUp: ((question: string) => void) | null; direction: "ltr" | "rtl"; lang: string | undefined }) {
   const provenance = { sources: state.sources, craft: state.understood?.crafts[0] ?? null, answered: answeredOn(state.mark?.createdAt) };
   return (
-    <article lang={lang} dir={direction === "rtl" ? "rtl" : undefined} className="min-w-0" aria-busy={streaming || undefined} data-testid="answer-view">
+    <article lang={lang} dir={direction === "rtl" ? "rtl" : undefined} className="kv-essay min-w-0" data-signature={state.lede?.figure ? "" : undefined} aria-busy={streaming || undefined} data-testid="answer-view">
       <AnswerHead question={state.question} lede={state.lede} provenance={provenance} actions={<AnswerActions answer={citedAnswer(state)} />} />
       {state.lede?.figure ? (
         <div className="mt-18 rail:mt-28">

@@ -12,7 +12,7 @@ from app.core.errors import InvalidInput
 from app.geo.climate import MEAN_STAT, TREND_DATASETS
 from app.geo.datasets import region_dataset, value_grid
 from app.geo.records import DatasetRecord, LayerListing, LayerSpec, LayerValues, StoredLayer
-from app.research.datasets import BOUNDARY_CAPTION, BOUNDARY_DATASET_CODE
+from app.research.datasets import BOUNDARY_CAPTION, BOUNDARY_DATASET_CODE, INDIA_OUTLINE_CAPTION
 from app.schemas.region import (
     LAYER_CLASS_MAX,
     BoundaryNote,
@@ -130,6 +130,7 @@ def map_layer_list(listing: LayerListing) -> MapLayerList:
         layers=[_summary(layer, listing.datasets[layer.spec.dataset_code]) for layer in listing.layers],
         datasets=[region_dataset(listing.datasets[code]) for code in codes],
         boundary=boundary_note(listing.boundary),
+        outline_caption=INDIA_OUTLINE_CAPTION,
     )
 
 

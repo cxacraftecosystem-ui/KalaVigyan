@@ -1,6 +1,5 @@
 "use client";
 
-import { BookPlus } from "lucide-react";
 
 import { FactForm } from "@/components/contributions/FactForm";
 import { FactReply } from "@/components/contributions/FactReply";
@@ -22,7 +21,6 @@ export default function ProposeFactPage() {
       <PageHeader
         title="Propose a fact"
         description="One fact about a craft, in one sentence, with the words of the sources that state it. Every source is read and checked before anything is shown."
-        icon={<BookPlus className="h-5 w-5" aria-hidden />}
       />
       <div className="grid gap-12">
         <p className="font-ui text-ui text-ink-2">

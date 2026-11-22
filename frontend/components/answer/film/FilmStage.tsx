@@ -1,12 +1,10 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 
 import { renderBlock } from "@/components/answer/blockRenderers";
 import { ExplainerReadingProvider, useExplainerReading } from "@/components/answer/ExplainerReading";
 import { FilmSceneProvider } from "@/components/answer/FilmScene";
-import { swapVariants } from "@/components/guide/guideMotion";
 import { headingView } from "@/lib/answerLanguages";
 import type { SectionView } from "@/lib/explainerState";
 import { DISCIPLINE_LABEL } from "@/lib/explainerView";
@@ -50,7 +48,7 @@ function SceneHeading({ section }: { section: SectionView }) {
   );
 }
 
-export function FilmStage({ scene, progress, mark, reduce }: { scene: FilmScene; progress: number; mark: ListenMark | null; reduce: boolean }) {
+export function FilmStage({ scene, progress, mark }: { scene: FilmScene; progress: number; mark: ListenMark | null }) {
   const reading = useExplainerReading();
   const [marks] = useState(() => listenMarkStore(mark));
   useLayoutEffect(() => marks.show(mark), [marks, mark]);
@@ -59,14 +57,12 @@ export function FilmStage({ scene, progress, mark, reduce }: { scene: FilmScene;
   const content = useMemo(() => renderBlock(scene.block), [scene.block]);
   return (
     <div className="relative max-h-[46dvh] min-w-0 overflow-y-auto overscroll-contain rounded-card border border-rule bg-ground p-3 sm:p-5 lg:max-h-[58dvh]" data-testid="film-stage">
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={scene.block.id} variants={swapVariants(reduce)} initial="hidden" animate="show" exit="exit" className="min-w-0" data-testid="film-scene" data-kind={scene.block.kind} data-block-id={scene.block.id}>
-          {scene.section ? <SceneHeading section={scene.section} /> : null}
-          <ExplainerReadingProvider value={narrated}>
-            <FilmSceneProvider value={shown}>{content}</FilmSceneProvider>
-          </ExplainerReadingProvider>
-        </motion.div>
-      </AnimatePresence>
+      <div key={scene.block.id} className="motion-enter min-w-0" data-testid="film-scene" data-kind={scene.block.kind} data-block-id={scene.block.id}>
+        {scene.section ? <SceneHeading section={scene.section} /> : null}
+        <ExplainerReadingProvider value={narrated}>
+          <FilmSceneProvider value={shown}>{content}</FilmSceneProvider>
+        </ExplainerReadingProvider>
+      </div>
     </div>
   );
 }

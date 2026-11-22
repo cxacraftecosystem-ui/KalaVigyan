@@ -12,6 +12,7 @@ comparison with nothing cited are told apart).
 |---|---|
 | What amended it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md): item 3, notes held per account, and item 7, an unknown craft told apart from a comparison with nothing cited |
 | What amended it | [0067 Lesson packs, the explainer PDF and citation export](0067-lessons-and-exports.md): item 5, with lesson files and the report PDF as signed links |
+| What amended it | [0141](0141-design-system-and-answer-screens-without-debt.md), items 6 to 8: Check yourself asks only when `done` offers a quiz, an empty added section leaves with its version, and a lesson's sections reorder |
 | The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
 | The contracts it names | [learning.md](../contracts/learning.md) |
 | Every decision, by group | [README.md](README.md) |
