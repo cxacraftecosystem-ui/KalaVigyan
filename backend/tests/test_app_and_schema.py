@@ -142,7 +142,18 @@ def migration_tables() -> dict[str, dict[str, ast.Call]]:
         else:
             assert column not in tables[table], f"{table}.{column} is added twice"
             tables[table][column] = call
+    for table in later_dropped_tables():
+        assert tables.pop(table, None) is not None, f"{table} is dropped but never created"
     return tables
+
+
+def later_dropped_tables() -> list[str]:
+    return [
+        name
+        for step in later_upgrade_steps()
+        for node in ast.walk(step)
+        if is_call_to(node, "drop_table") and (name := first_string(node)) is not None
+    ]
 
 
 def later_column_changes() -> list[tuple[str, str, ast.Call | None]]:
@@ -165,9 +176,24 @@ def initial_enum_list() -> dict[str, tuple[str, ...]]:
     return {name: tuple(values) for name, values in pairs}
 
 
+def enum_removals() -> set[str]:
+    removed: set[str] = set()
+    for path in sorted(MIGRATIONS.glob("[0-9][0-9][0-9][0-9]_*.py")):
+        if path != MIGRATION:
+            removed |= set(
+                module_constant(ast.parse(path.read_text(encoding="utf-8")), "ENUM_REMOVALS") or ()
+            )
+    return removed
+
+
 def migration_enum_list() -> dict[str, tuple[str, ...]]:
     added = enum_additions()
-    return {name: values + added.get(name, ()) for name, values in initial_enum_list().items()}
+    removed = enum_removals()
+    return {
+        name: values + added.get(name, ())
+        for name, values in initial_enum_list().items()
+        if name not in removed
+    }
 
 
 def inline_enum(column: ast.Call) -> tuple[str, tuple[str, ...]] | None:

@@ -4,13 +4,16 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision: str = "0071_understanding_route_and_answer_rows"
+revision: str = "0071_understand_and_answer_rows"
 down_revision: str | Sequence[str] | None = "0068_journals_and_shared_terms"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 UNDERSTAND = "UNDERSTAND"
 PLAN = "PLAN"
+ENUM_ADDITIONS: tuple[tuple[str, tuple[str, ...]], ...] = (("AiTask", ("UNDERSTAND",)),)
+ENUM_REMOVALS: tuple[str, ...] = ("LiveTier",)
+LIVE_TIERS = ("T3", "T4")
 TASK_COLUMNS = (("RoutePolicy", "task"), ("UsageEvent", "task"))
 REQUEST_ID_CHARS = 64
 LIVE = "LiveCandidate"
@@ -28,17 +31,23 @@ UNDERSTAND_USAGE_AS_PLAN = (
 
 def upgrade() -> None:
     with op.get_context().autocommit_block():
-        op.execute(f"ALTER TYPE \"AiTask\" ADD VALUE IF NOT EXISTS '{UNDERSTAND}'")
+        for enum_name, values in ENUM_ADDITIONS:
+            for value in values:
+                op.execute(f"ALTER TYPE \"{enum_name}\" ADD VALUE IF NOT EXISTS '{value}'")
     op.execute(sa.text(COPY_PLAN_ROUTES).bindparams(understand=UNDERSTAND, plan=PLAN))
     op.add_column("Answer", sa.Column("requestId", sa.String(length=REQUEST_ID_CHARS), nullable=True))
     op.create_index(op.f("Answer_requestId_idx"), "Answer", ["requestId"], unique=False)
     op.drop_constraint(op.f("AnswerCitation_liveCandidateId_fkey"), "AnswerCitation", type_="foreignkey")
     op.drop_column("AnswerCitation", "liveCandidateId")
     op.drop_column("Answer", "liveCandidateIds")
-    op.drop_table(LIVE)
+    op.drop_table("LiveCandidate")
+    for enum_name in ENUM_REMOVALS:
+        op.execute(f'DROP TYPE "{enum_name}"')
 
 
 def downgrade() -> None:
+    listed = ", ".join(f"'{tier}'" for tier in LIVE_TIERS)
+    op.execute(f'CREATE TYPE "LiveTier" AS ENUM ({listed})')
     _live_candidates()
     op.add_column(
         "Answer",

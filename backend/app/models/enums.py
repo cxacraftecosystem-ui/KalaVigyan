@@ -309,7 +309,6 @@ ClaimOrigin = pg_enum("ClaimOrigin", CLAIM_ORIGINS)
 ClaimStatus = pg_enum("ClaimStatus", CLAIM_STATUSES)
 QuoteCheck = pg_enum("QuoteCheck", QUOTE_CHECKS)
 SourceRelation = pg_enum("SourceRelation", SOURCE_RELATIONS)
-LiveTier = pg_enum("LiveTier", LIVE_TIERS)
 JobStatus = pg_enum("JobStatus", JOB_STATUSES)
 ObjectionKind = pg_enum("ObjectionKind", OBJECTION_KINDS)
 ObjectionStatus = pg_enum("ObjectionStatus", OBJECTION_STATUSES)
@@ -360,7 +359,6 @@ ALL_ENUMS = (
     ClaimStatus,
     QuoteCheck,
     SourceRelation,
-    LiveTier,
     JobStatus,
     ObjectionKind,
     ObjectionStatus,

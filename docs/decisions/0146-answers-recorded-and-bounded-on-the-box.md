@@ -4,8 +4,8 @@ Every answer runs under a request id and keeps its sentences, citations and stre
 nightly upkeep adds the cost that settles after it finishes; the understanding call has its own
 route; a degraded answer is held to the cap of the depth it runs at; a call cut off by anything
 but a provider failure is settled at its estimate; research holds at most the database pool less
-two connections; daily allowances are a setting; the figure post-check reads quantities, number
-words and element formulas; and the stream drops the vocabulary nothing sends.
+two connections; daily allowances are a setting; the figure post-check reads converted
+quantities and element formulas; and the stream drops the vocabulary nothing sends.
 
 Date: 2026-11-22. Status: accepted (the lead's debt-clearing brief of 2026-11-22, research runtime
 lane, after the live Khurja test of answer 504968ea-49cc-469c-88f9-205a2ea90e8a and post-deploy run
@@ -107,29 +107,33 @@ formulas only.
     write-back, so the claim ledger admits each sentence once; the stored-claim sentences reach the
     reader before any write-back in the early lede (decision 0077), written from stored findings
     while the sections research.
-11. **The figure check reads quantities.** `unsupported_figures` reads each number with a unit
-    (`research/stated_figures.UNIT_WORDS`) and supports it by the same number bare or in the same
-    unit, or by a cited quantity of the same dimension that converts to it at the sentence's
-    precision through the one Pint registry (60 °C by 140 °F, never 60 g by 60 °C); number words
-    two to ninety, a dozen, hundred and thousand are figures on both sides ("one" is not, being
-    mostly a pronoun); a run of element symbols with a two-letter one (NaCl, CuO) is a formula,
-    while capital acronyms (WHO, NHS) are not. `figures_in` and `numbers_in` are unchanged, so
-    translation and gate comparisons read digits as before.
+11. **The figure check reads quantities and element formulas.** `unsupported_figures` reads each
+    number with a unit (`research/stated_figures.UNIT_WORDS`) and supports it by the same number
+    in its cited texts, as before, or by a cited quantity of the same dimension that converts to it
+    at the sentence's precision through the one Pint registry (60 °C by 140 °F, 2 km by 2000 m); a
+    run of element symbols with a two-letter one (NaCl, CuO) is a formula, while capital acronyms
+    (WHO, NHS) are not. Number words and a number whose unit changed stay with the composer's
+    stance checks (`research/sentence_support`: `NUMBER_WORD`, `UNIT_CHANGED`), which already read
+    them; repeating them here would refuse a sentence twice and hold the curated component units
+    to words their facts state as digits. The local Indian units move to `research/local_units`, so
+    the registry no longer reads the quote rules through `research/measures`. `figures_in` and
+    `numbers_in` are unchanged.
 12. **The stream says only what is sent.** `RESOLVING`, `match`, `section`, `sentence` and
     `shared/answer-stream.golden.sse` are gone; the citation shapes are imported from
     `research/citations` only; and `services/ai_providers.py` is deleted.
 
 ## Consequences
 
-- Migration 0071 adds `AiTask` `UNDERSTAND` with the `PLAN` routes copied, adds `Answer.requestId`
-  with its index, and drops `LiveCandidate`; its downgrade restores the table and columns and folds
-  `UNDERSTAND` usage back into `PLAN`.
+- Migration `0071_understand_and_answer_rows` adds `AiTask` `UNDERSTAND` with the `PLAN` routes
+  copied, adds `Answer.requestId` with its index, and drops `LiveCandidate` and its `LiveTier` type;
+  its downgrade restores them and folds `UNDERSTAND` usage back into `PLAN`. The schema tests now read
+  a later migration's `drop_table` and its `ENUM_REMOVALS`.
 - Usage shows the understanding on its own line from the first answer after the release.
 - An answer holds three research sessions at once on a five-connection pool; more wait for a slot
   instead of the pool's 30 s timeout.
 - Each answer adds one statement per sentence batch, citation batch and trace batch to its finish.
-- More sentences are dropped where a number word, a converted unit or an element formula has no
-  support, and fewer where a quote states the same quantity in another unit or in words.
+- A sentence naming an element formula its quotes do not hold is dropped, and one stating a
+  quantity its quote gives in another unit is kept.
 - The voice turn's `Answer` rows record no cost or request id; their file belongs to the voice
   service, which writes them.
 
