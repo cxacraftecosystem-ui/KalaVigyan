@@ -12,7 +12,8 @@ from app.core.shielded import ShieldedWork
 from app.providers.elevenlabs import ElevenLabs, HeardSpeech, speech_seconds
 from app.providers.quota import LedgerEntry, remaining_today, seconds_until_next_day
 from app.schemas.voice import MAX_TURNS, RELAY_MAX_TURN_SECONDS, relay_frame, speech_path
-from app.services.answering import status_message
+from app.services.interface_words import reviewed_words
+from app.services.status_lines import status_message
 
 from .audio import upload_seconds
 from .audio_decode import Measure
@@ -110,9 +111,9 @@ class _RelayTurn:
             yield await self.done(None)
             return
         yield relay_frame("heard", {"text": text, "language": self.record.language})
-        yield relay_frame(
-            "status", {"step": "SEARCHING_STORED", "message": status_message("SEARCHING_STORED")}
-        )
+        language = self.record.language
+        searching = status_message("SEARCHING_STORED", language=language, words=reviewed_words(language))
+        yield relay_frame("status", {"step": "SEARCHING_STORED", "message": searching})
         saved, earlier = await self._answered(claim.session, text)
         for frame in self._answer_frames(saved, earlier):
             yield frame

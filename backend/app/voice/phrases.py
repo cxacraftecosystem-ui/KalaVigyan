@@ -3,139 +3,66 @@ from __future__ import annotations
 from collections.abc import Mapping
 from types import MappingProxyType
 
+from app.research.vocabulary import ANSWER_LANGUAGES, CANONICAL_LANGUAGE
+from app.services.interface_words import written_words
+
 __all__ = [
     "END_CALL_REPLIES",
     "FILLERS",
     "NO_CRAFT_REPLIES",
     "NO_EVIDENCE_REPLIES",
+    "PHRASE_TABLES",
     "SOURCE_WORDS",
     "UNSAID_REPLIES",
     "phrase",
+    "phrased_languages",
 ]
 
-FILLERS: Mapping[str, str] = MappingProxyType(
-    {
-        "en": "Let me check the sources... ",
-        "hi": "एक पल, स्रोत देखते हैं... ",
-        "bn": "এক মুহূর্ত, সূত্রগুলো দেখে নিই... ",
-        "ta": "ஒரு நொடி, ஆதாரங்களைப் பார்க்கிறேன்... ",
-        "te": "ఒక్క క్షణం, మూలాలను చూస్తున్నాను... ",
-        "mr": "एक क्षण, स्रोत पाहूया... ",
-        "gu": "એક ક્ષણ, સ્રોતો જોઈએ... ",
-        "kn": "ಒಂದು ಕ್ಷಣ, ಮೂಲಗಳನ್ನು ನೋಡೋಣ... ",
-        "ml": "ഒരു നിമിഷം, സ്രോതസ്സുകൾ നോക്കട്ടെ... ",
-        "or": "ଗୋଟିଏ ମୁହୂର୍ତ୍ତ, ଉତ୍ସଗୁଡ଼ିକ ଦେଖୁଛି... ",
-        "pa": "ਇੱਕ ਪਲ, ਸਰੋਤ ਵੇਖਦੇ ਹਾਂ... ",
-        "as": "এক মুহূৰ্ত, উৎসবোৰ চাই লওঁ... ",
-        "ur": "ایک لمحہ، مآخذ دیکھتے ہیں... ",
-    }
-)
-NO_EVIDENCE_REPLIES: Mapping[str, str] = MappingProxyType(
-    {
-        "en": "I found no cited answer to that about {craft} yet.",
-        "hi": "{craft} के बारे में इसका कोई स्रोत-सहित उत्तर अभी नहीं मिला।",
-        "bn": "{craft} সম্পর্কে এর কোনো সূত্রসহ উত্তর এখনও পাইনি।",
-        "ta": "{craft} பற்றி இதற்கு ஆதாரத்துடன் கூடிய பதில் இன்னும் கிடைக்கவில்லை.",
-        "te": "{craft} గురించి దీనికి మూలాలతో కూడిన సమాధానం ఇంకా దొరకలేదు.",
-        "mr": "{craft} बद्दल याचे स्रोतासह उत्तर अजून मिळाले नाही.",
-        "gu": "{craft} વિશે આનો સ્રોત સાથેનો જવાબ હજી મળ્યો નથી.",
-        "kn": "{craft} ಬಗ್ಗೆ ಇದಕ್ಕೆ ಮೂಲಸಹಿತ ಉತ್ತರ ಇನ್ನೂ ಸಿಕ್ಕಿಲ್ಲ.",
-        "ml": "{craft} സംബന്ധിച്ച് ഇതിന് സ്രോതസ്സുള്ള ഉത്തരം ഇതുവരെ ലഭിച്ചില്ല.",
-        "or": "{craft} ବିଷୟରେ ଏହାର ଉତ୍ସ ସହିତ ଉତ୍ତର ଏପର୍ଯ୍ୟନ୍ତ ମିଳିନାହିଁ।",
-        "pa": "{craft} ਬਾਰੇ ਇਸ ਦਾ ਸਰੋਤ ਸਮੇਤ ਜਵਾਬ ਅਜੇ ਨਹੀਂ ਮਿਲਿਆ।",
-        "as": "{craft} সম্পৰ্কে ইয়াৰ উৎসসহ উত্তৰ এতিয়াও পোৱা নাই।",
-        "ur": "{craft} کے بارے میں اس کا حوالہ سمیت جواب ابھی نہیں ملا۔",
-    }
-)
-NO_CRAFT_REPLIES: Mapping[str, str] = MappingProxyType(
-    {
-        "en": "Which craft do you mean? Name it and ask again.",
-        "hi": "आप किस शिल्प की बात कर रहे हैं? उसका नाम बताइए।",
-        "bn": "আপনি কোন শিল্পের কথা বলছেন? তার নাম বলুন।",
-        "ta": "எந்தக் கைவினையைக் குறிப்பிடுகிறீர்கள்? அதன் பெயரைச் சொல்லுங்கள்.",
-        "te": "మీరు ఏ చేతిపని గురించి అడుగుతున్నారు? దాని పేరు చెప్పండి.",
-        "mr": "तुम्ही कोणत्या हस्तकलेबद्दल बोलत आहात? तिचे नाव सांगा.",
-        "gu": "તમે કઈ હસ્તકળાની વાત કરો છો? તેનું નામ કહો.",
-        "kn": "ನೀವು ಯಾವ ಕರಕುಶಲದ ಬಗ್ಗೆ ಕೇಳುತ್ತಿದ್ದೀರಿ? ಅದರ ಹೆಸರು ಹೇಳಿ.",
-        "ml": "ഏത് കരകൗശലത്തെക്കുറിച്ചാണ് ചോദിക്കുന്നത്? അതിന്റെ പേര് പറയൂ.",
-        "or": "ଆପଣ କେଉଁ ହସ୍ତଶିଳ୍ପ ବିଷୟରେ କହୁଛନ୍ତି? ତାହାର ନାମ କୁହନ୍ତୁ।",
-        "pa": "ਤੁਸੀਂ ਕਿਹੜੀ ਦਸਤਕਾਰੀ ਦੀ ਗੱਲ ਕਰ ਰਹੇ ਹੋ? ਉਸ ਦਾ ਨਾਮ ਦੱਸੋ।",
-        "as": "আপুনি কোনটো শিল্পৰ কথা কৈছে? তাৰ নাম কওক।",
-        "ur": "آپ کس دستکاری کی بات کر رہے ہیں؟ اس کا نام بتائیے۔",
-    }
-)
-UNSAID_REPLIES: Mapping[str, str] = MappingProxyType(
-    {
-        "en": "I could not prepare that answer just now. Please ask again.",
-        "hi": "अभी यह उत्तर तैयार नहीं हो सका। कृपया फिर से पूछिए।",
-        "bn": "এখন উত্তরটি তৈরি করা গেল না। আবার জিজ্ঞাসা করুন।",
-        "ta": "இப்போது இந்தப் பதிலைத் தயாரிக்க முடியவில்லை. மீண்டும் கேளுங்கள்.",
-        "te": "ఇప్పుడు ఈ సమాధానం సిద్ధం చేయలేకపోయాను. మళ్ళీ అడగండి.",
-        "mr": "आत्ता हे उत्तर तयार होऊ शकले नाही. कृपया पुन्हा विचारा.",
-        "gu": "અત્યારે આ જવાબ તૈયાર થઈ શક્યો નહીં. ફરી પૂછો.",
-        "kn": "ಈಗ ಈ ಉತ್ತರ ಸಿದ್ಧಪಡಿಸಲು ಆಗಲಿಲ್ಲ. ಮತ್ತೆ ಕೇಳಿ.",
-        "ml": "ഇപ്പോൾ ഈ ഉത്തരം തയ്യാറാക്കാനായില്ല. വീണ്ടും ചോദിക്കൂ.",
-        "or": "ବର୍ତ୍ତମାନ ଏହି ଉତ୍ତର ପ୍ରସ୍ତୁତ ହୋଇପାରିଲା ନାହିଁ। ପୁଣି ପଚାରନ୍ତୁ।",
-        "pa": "ਹੁਣੇ ਇਹ ਜਵਾਬ ਤਿਆਰ ਨਹੀਂ ਹੋ ਸਕਿਆ। ਦੁਬਾਰਾ ਪੁੱਛੋ।",
-        "as": "এতিয়া এই উত্তৰ প্ৰস্তুত কৰিব পৰা নগ'ল। আকৌ সোধক।",
-        "ur": "ابھی یہ جواب تیار نہیں ہو سکا۔ دوبارہ پوچھیے۔",
-    }
-)
+FILLER = "Let me check the sources... "
+NO_EVIDENCE = "I found no cited answer to that about {craft} yet."
+NO_CRAFT = "Which craft do you mean? Name it and ask again."
+UNSAID = "I could not prepare that answer just now. Please ask again."
+QUOTA_END = "That is all the voice time for today."
+TURNS_END = "That is the end of this call."
+SOURCE_WORD = ("Source", "Sources")
+
+
+def _table(key: str, english: str) -> Mapping[str, str]:
+    others = (code for code in ANSWER_LANGUAGES if code != CANONICAL_LANGUAGE)
+    written = {code: written_words(code).shown(key, english) for code in others}
+    return MappingProxyType({CANONICAL_LANGUAGE: english, **{c: text for c, text in written.items() if text}})
+
+
+FILLERS = _table("voice.filler", FILLER)
+NO_EVIDENCE_REPLIES = _table("voice.noEvidence", NO_EVIDENCE)
+NO_CRAFT_REPLIES = _table("voice.noCraft", NO_CRAFT)
+UNSAID_REPLIES = _table("voice.unsaid", UNSAID)
 END_CALL_REPLIES: Mapping[str, Mapping[str, str]] = MappingProxyType(
-    {
-        "quota": MappingProxyType(
-            {
-                "en": "That is all the voice time for today.",
-                "hi": "आज का बातचीत का समय पूरा हो गया।",
-                "bn": "আজকের কথা বলার সময় শেষ হয়ে গেছে।",
-                "ta": "இன்றைய பேச்சு நேரம் முடிந்துவிட்டது.",
-                "te": "ఈ రోజు మాట్లాడే సమయం పూర్తయింది.",
-                "mr": "आजचा बोलण्याचा वेळ संपला.",
-                "gu": "આજનો વાતચીતનો સમય પૂરો થયો.",
-                "kn": "ಇಂದಿನ ಮಾತಿನ ಸಮಯ ಮುಗಿದಿದೆ.",
-                "ml": "ഇന്നത്തെ സംസാര സമയം കഴിഞ്ഞു.",
-                "or": "ଆଜିର କଥାବାର୍ତ୍ତା ସମୟ ସରିଗଲା।",
-                "pa": "ਅੱਜ ਦਾ ਗੱਲਬਾਤ ਦਾ ਸਮਾਂ ਪੂਰਾ ਹੋ ਗਿਆ।",
-                "as": "আজিৰ কথা-বতৰাৰ সময় শেষ হ'ল।",
-                "ur": "آج کی بات چیت کا وقت پورا ہو گیا۔",
-            }
-        ),
-        "turns": MappingProxyType(
-            {
-                "en": "That is the end of this call.",
-                "hi": "यह बातचीत यहीं पूरी होती है।",
-                "bn": "এই কথোপকথন এখানেই শেষ।",
-                "ta": "இந்த உரையாடல் இத்துடன் முடிகிறது.",
-                "te": "ఈ సంభాషణ ఇక్కడితో ముగుస్తుంది.",
-                "mr": "हे संभाषण इथेच संपते.",
-                "gu": "આ વાતચીત અહીં પૂરી થાય છે.",
-                "kn": "ಈ ಸಂಭಾಷಣೆ ಇಲ್ಲಿಗೆ ಮುಗಿಯುತ್ತದೆ.",
-                "ml": "ഈ സംഭാഷണം ഇവിടെ അവസാനിക്കുന്നു.",
-                "or": "ଏହି କଥାବାର୍ତ୍ତା ଏଠାରେ ଶେଷ ହେଉଛି।",
-                "pa": "ਇਹ ਗੱਲਬਾਤ ਇੱਥੇ ਹੀ ਖ਼ਤਮ ਹੁੰਦੀ ਹੈ।",
-                "as": "এই কথা-বতৰা ইয়াতে শেষ হ'ল।",
-                "ur": "یہ بات چیت یہیں ختم ہوتی ہے۔",
-            }
-        ),
-    }
+    {"quota": _table("voice.endCall", QUOTA_END), "turns": _table("voice.endCall", TURNS_END)}
 )
+_SOURCE_WORDS = tuple(_table("voice.sourceWord", word) for word in SOURCE_WORD)
 SOURCE_WORDS: Mapping[str, tuple[str, str]] = MappingProxyType(
     {
-        "en": ("Source", "Sources"),
-        "hi": ("स्रोत", "स्रोत"),
-        "bn": ("সূত্র", "সূত্র"),
-        "ta": ("ஆதாரம்", "ஆதாரங்கள்"),
-        "te": ("మూలం", "మూలాలు"),
-        "mr": ("स्रोत", "स्रोत"),
-        "gu": ("સ્રોત", "સ્રોતો"),
-        "kn": ("ಮೂಲ", "ಮೂಲಗಳು"),
-        "ml": ("സ്രോതസ്സ്", "സ്രോതസ്സുകൾ"),
-        "or": ("ଉତ୍ସ", "ଉତ୍ସଗୁଡ଼ିକ"),
-        "pa": ("ਸਰੋਤ", "ਸਰੋਤ"),
-        "as": ("উৎস", "উৎসসমূহ"),
-        "ur": ("ماخذ", "مآخذ"),
+        language: (one, _SOURCE_WORDS[1][language])
+        for language, one in _SOURCE_WORDS[0].items()
+        if language in _SOURCE_WORDS[1]
     }
 )
+PHRASE_TABLES: tuple[Mapping[str, str], ...] = (
+    FILLERS,
+    NO_EVIDENCE_REPLIES,
+    NO_CRAFT_REPLIES,
+    UNSAID_REPLIES,
+    *END_CALL_REPLIES.values(),
+)
+
+
+def phrased_languages(candidates: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(
+        language
+        for language in candidates
+        if language in SOURCE_WORDS and all(language in t for t in PHRASE_TABLES)
+    )
 
 
 def phrase(table: Mapping[str, str], language: str, **values: str) -> str:

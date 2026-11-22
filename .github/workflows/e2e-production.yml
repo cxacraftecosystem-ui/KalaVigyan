@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       questions:
-        description: Also ask the four known-answer questions (the mordant in English and Hindi and Kachchh's water at Detailed depth, indigo's generated explainer at Expert depth)
+        description: Also ask the five known-answer questions (the mordant in English, Hindi and Urdu and Kachchh's water at Detailed depth, indigo's generated explainer at Expert depth)
         type: boolean
         default: false
       rivers_loaded:

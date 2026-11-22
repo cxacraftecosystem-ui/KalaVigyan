@@ -9,16 +9,17 @@ from app.research.blocks_lede import LedeBlock
 from app.research.explainer import Block
 from app.research.sections import SectionSpec
 from app.research.stream import Emit, StatusStep
-from app.research.vocabulary import ANSWER_LANGUAGE_SPECS
 
 from .answer_events import OPEN_HEADING, OPEN_SECTION_ID
 from .answer_steps import StepLog
 from .answer_trail import TrailLog
 from .claim_ledger import ClaimLedger
 from .gap_routing import gap_block, open_question, routed_gaps
+from .interface_words import InterfaceWords, reviewed_words
 from .ledger_payloads import Payload
+from .status_lines import status_message
 
-__all__ = ["ONCE_STEPS", "ExplainerStream", "InLanguage", "shown_title", "status_message"]
+__all__ = ["ONCE_STEPS", "ExplainerStream", "InLanguage", "shown_title"]
 
 logger = logging.getLogger(__name__)
 
@@ -29,30 +30,18 @@ ONCE_STEPS = frozenset(
 InLanguage = Callable[[Block], Awaitable[Block]]
 
 
-def status_message(step: StatusStep, count: int = 0, craft: str = "", *, language: str = "") -> str:
-    messages = {
-        "PLANNING": f"Planning the research on {craft}" if craft else "Planning the research",
-        "SEARCHING_STORED": "Searching stored findings",
-        "RESEARCHING": f"Searching {_counted(count, 'live query', 'live queries')}",
-        "READING": f"Reading the best of {_counted(count, 'source', 'sources')} found",
-        "COMPOSING": f"Writing a cited answer from {_counted(count, 'passage', 'passages')}",
-        "WRITING_BACK": f"Saving {_counted(count, 'source', 'sources')} for the next question",
-        "TRANSLATING": f"Translating the answer into {language}",
-    }
-    return messages[step]
-
-
 def shown_title(spec: SectionSpec, titles: Mapping[str, str]) -> dict[str, str]:
     title = titles.get(spec.id, spec.title)
     return {"title": title, "original": spec.title} if title != spec.title else {"title": title}
 
 
 class ExplainerStream:
-    def __init__(self, emit: Emit, *, language: str) -> None:
+    def __init__(self, emit: Emit, *, language: str, words: InterfaceWords | None = None) -> None:
         self.steps = StepLog()
         self.emit = self.steps.traced(emit)
         self.trail = TrailLog(self.emit)
         self.language = language
+        self.words = reviewed_words(language) if words is None else words
         self.ledger = ClaimLedger()
         self._lock = asyncio.Lock()
         self._sent_sources: set[str] = set()
@@ -86,8 +75,7 @@ class ExplainerStream:
             if shown and step != self._latest[0]:
                 return
             count = self._totals[step]
-        label = ANSWER_LANGUAGE_SPECS[self.language].label
-        message = status_message(step, count, craft, language=label)
+        message = status_message(step, count, craft, language=self.language, words=self.words)
         if (step, message) == self._latest:
             return
         self._latest = (step, message)
@@ -205,7 +193,3 @@ def _sourced(section_id: str, block: Block, known: Mapping[str, Mapping[str, Any
             ", ".join(missing),
         )
     return not missing
-
-
-def _counted(count: int, singular: str, plural: str) -> str:
-    return f"{count} {singular if count == 1 else plural}"

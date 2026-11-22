@@ -51,9 +51,9 @@ flowchart LR
 | [0020](0020-voice-ui.md) | Voice UI: the voice dock on /ask and the craft page | [0140](0140-voice-and-listen-kept-true.md) |
 | [0021](0021-media-ui.md) | Media UI: Image and Video on the craft page's process stages | [0092](0092-design-system.md) |
 | [0022](0022-batch-3-review-fixes.md) | Voice spend fails closed, a filtered style hint, region sources and one home per rule | · |
-| [0023](0023-multilingual-answers.md) | Answers in Indian languages | [0117](0117-pages-in-other-languages.md) |
+| [0023](0023-multilingual-answers.md) | Answers in Indian languages | [0117](0117-pages-in-other-languages.md) and [0157](0157-translations-read-back-and-reviewed-interface-words.md) |
 | [0024](0024-admin-role.md) | Admin role | · |
-| [0025](0025-multilingual-voice.md) | Voice in every answer language | · |
+| [0025](0025-multilingual-voice.md) | Voice in every answer language | [0157](0157-translations-read-back-and-reviewed-interface-words.md) |
 | [0026](0026-yahoo-sign-in.md) | Yahoo sign-in (and Microsoft, off): DR's OpenID Connect module, ported | · |
 | [0027](0027-geo-etl-state-gaps.md) | Geo ETL: district shapes are polygons only, and a part that loses a state fails | · |
 | [0028](0028-first-password-provider-proof.md) | A first password needs a fresh provider proof: DR's rule, ported | · |
@@ -191,6 +191,7 @@ flowchart LR
 | [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | · |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
 | [0150](0150-mcp-activity-and-box-logs.md) | Each MCP call keeps its client and its reason for 180 days and its count for good, and the box ships its logs to CloudWatch | · |
+| [0157](0157-translations-read-back-and-reviewed-interface-words.md) | A translation is read back before it is shown, and every fixed word in another language is sourced, reviewed data | · |
 
 ## How this document is kept true
 

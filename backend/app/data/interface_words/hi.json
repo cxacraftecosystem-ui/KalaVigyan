@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "language": "hi",
+  "words": [
+    {
+      "key": "essay.provenance",
+      "english": "Answer",
+      "text": "उत्तर",
+      "source": "The Hindi answer panel of the Kutch Ajrakh monograph (backend/app/data/monographs/Kutch-Ajrakh/fragments/kutch-ajrakh__overview__answer-in-hindi-and-urdu.html)",
+      "review": null
+    },
+    {
+      "key": "essay.provenance",
+      "english": "Drawn from {count} sources",
+      "text": "{count} स्रोतों से",
+      "source": "The Hindi answer panel of the Kutch Ajrakh monograph (backend/app/data/monographs/Kutch-Ajrakh/fragments/kutch-ajrakh__overview__answer-in-hindi-and-urdu.html)",
+      "note": "The panel writes “44 स्रोतों से”, from 44 sources, without a word for drawn.",
+      "review": null
+    },
+    {
+      "key": "essay.provenance",
+      "english": "Answered {date}",
+      "text": "उत्तर दिया {date}",
+      "source": "The Hindi answer panel of the Kutch Ajrakh monograph (backend/app/data/monographs/Kutch-Ajrakh/fragments/kutch-ajrakh__overview__answer-in-hindi-and-urdu.html)",
+      "review": null
+    },
+    {
+      "key": "essay.actions",
+      "english": "Save",
+      "text": "सहेजें",
+      "source": "The Hindi answer panel of the Kutch Ajrakh monograph (backend/app/data/monographs/Kutch-Ajrakh/fragments/kutch-ajrakh__overview__answer-in-hindi-and-urdu.html)",
+      "review": null
+    },
+    {
+      "key": "essay.actions",
+      "english": "Cite this answer",
+      "text": "इस उत्तर का हवाला दें",
+      "source": "The Hindi answer panel of the Kutch Ajrakh monograph (backend/app/data/monographs/Kutch-Ajrakh/fragments/kutch-ajrakh__overview__answer-in-hindi-and-urdu.html)",
+      "review": null
+    },
+    {
+      "key": "voice.filler",
+      "english": "Let me check the sources... ",
+      "text": "एक पल, स्रोत देखते हैं... ",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.noEvidence",
+      "english": "I found no cited answer to that about {craft} yet.",
+      "text": "{craft} के बारे में इसका कोई स्रोत-सहित उत्तर अभी नहीं मिला।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.noCraft",
+      "english": "Which craft do you mean? Name it and ask again.",
+      "text": "आप किस शिल्प की बात कर रहे हैं? उसका नाम बताइए।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.unsaid",
+      "english": "I could not prepare that answer just now. Please ask again.",
+      "text": "अभी यह उत्तर तैयार नहीं हो सका। कृपया फिर से पूछिए।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.endCall",
+      "english": "That is all the voice time for today.",
+      "text": "आज का बातचीत का समय पूरा हो गया।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.endCall",
+      "english": "That is the end of this call.",
+      "text": "यह बातचीत यहीं पूरी होती है।",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.sourceWord",
+      "english": "Source",
+      "text": "स्रोत",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.sourceWord",
+      "english": "Sources",
+      "text": "स्रोत",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    }
+  ]
+}

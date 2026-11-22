@@ -18,7 +18,7 @@ import type { UnderstoodChange } from "@/components/answer/UnderstoodLine";
 import { useListen } from "@/components/answer/useListen";
 import { useTermState } from "@/components/answer/useTermState";
 import { useAppReducedMotion } from "@/components/guide/useAppReducedMotion";
-import { answeredOn, essayDirection, essaySections, essaySourceNumbers } from "@/lib/answerEssay";
+import { essayDirection, essaySections, essaySourceNumbers } from "@/lib/answerEssay";
 import { languageFor, type AnswerLanguage } from "@/lib/answerLanguages";
 import type { Term } from "@/lib/explainerContract";
 import type { ExplainerState } from "@/lib/explainerState";
@@ -57,11 +57,23 @@ function citedAnswer(state: ExplainerState): CitedAnswer | null {
   return { explainerId: ref.explainerId, version: ref.version, question: state.question };
 }
 
-function Essay({ state, streaming, reduce, active, onActive, onFollowUp, direction, lang }: { state: ExplainerState; streaming: boolean; reduce: boolean; active: string | null; onActive: (id: string) => void; onFollowUp: ((question: string) => void) | null; direction: "ltr" | "rtl"; lang: string | undefined }) {
-  const provenance = { sources: state.sources, craft: state.understood?.crafts[0] ?? null, answered: answeredOn(state.mark?.createdAt) };
+type EssayProps = {
+  state: ExplainerState;
+  streaming: boolean;
+  reduce: boolean;
+  active: string | null;
+  onActive: (id: string) => void;
+  onFollowUp: ((question: string) => void) | null;
+  direction: "ltr" | "rtl";
+  lang: string | undefined;
+  wording: AnswerLanguage | null;
+};
+
+function Essay({ state, streaming, reduce, active, onActive, onFollowUp, direction, lang, wording }: EssayProps) {
+  const provenance = { sources: state.sources, craft: state.understood?.crafts[0] ?? null, answeredAt: state.mark?.createdAt ?? null, language: wording };
   return (
     <article lang={lang} dir={direction === "rtl" ? "rtl" : undefined} className="kv-essay min-w-0" data-signature={state.lede?.figure ? "" : undefined} aria-busy={streaming || undefined} data-testid="answer-view">
-      <AnswerHead question={state.question} lede={state.lede} provenance={provenance} actions={<AnswerActions answer={citedAnswer(state)} />} />
+      <AnswerHead question={state.question} lede={state.lede} provenance={provenance} actions={<AnswerActions answer={citedAnswer(state)} language={wording} />} />
       {state.lede?.figure ? (
         <div className="mt-18 rail:mt-28">
           <SignatureFigure block={state.lede.figure} number={1} />
@@ -106,7 +118,17 @@ export function ExplainerView({ state, streaming, languages, depthLabel, change,
         <div className="grid min-w-0 gap-4">
           <ExplainerHeader understood={state.understood} depthLabel={depthLabel} language={language} change={change} shown={{ translated, original, onShow: setShown }} onListen={null} onFresh={null} />
           {versions}
-          <Essay state={state} streaming={streaming} reduce={reduce} active={active} onActive={setActive} onFollowUp={onFollowUp} direction={direction} lang={direction === "rtl" ? language.code : undefined} />
+          <Essay
+            state={state}
+            streaming={streaming}
+            reduce={reduce}
+            active={active}
+            onActive={setActive}
+            onFollowUp={onFollowUp}
+            direction={direction}
+            lang={direction === "rtl" ? language.code : undefined}
+            wording={translated && !original ? language : null}
+          />
           <ReadingToolsBand onListen={listenable ? listen.start : null} onFilm={filmable ? startFilm : null} onFresh={refreshable ? onFreshResearch : null} tools={tools} />
           {footer ? <div className="mx-auto mt-8 w-full max-w-measure">{footer}</div> : null}
           <TermSheet span={terms.span} language={state.language} onClose={terms.close} onMissing={terms.missing} onAsk={ask} />
