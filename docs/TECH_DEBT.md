@@ -442,15 +442,6 @@ Last reviewed: 2026-11-22.
 
 ## Craft page and region panel (decision 0019)
 
-### The boundary caption has two homes
-
-- **What:** maps drawn without the layer list (the craft page) print the caption from
-  `components/map/MapAttribution.tsx`; `/map` prints the server's `boundary.caption`
-  (`research/datasets.BOUNDARY_CAPTION` since decision 0042). The two are equal today. Explainer
-  map blocks carry the server's caption in the block.
-- **Clears it:** have the craft page read the caption from `GET /map/layers` (or a shared
-  boundary route) and delete the client constants.
-
 ## Voice backend (decision 0017)
 
 ### Voice in other languages is checked by text only (decision 0025)

@@ -12,7 +12,6 @@ import { Figure } from "@/components/ui/Figure";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ALL_INDIA, type StateCounts } from "@/lib/atlasIndex";
 import { allStatesLabel, rankDek, rankFinding, stateAnchor } from "@/lib/mapStates";
-import type { BoundaryNote } from "@/lib/regionContract";
 
 export const STATES_TITLE = "Crafts practised in each state";
 const COLUMNS = [
@@ -50,7 +49,7 @@ function StatesSide({ ranking }: { ranking: StateRanking }) {
   );
 }
 
-export function MapStatesFigure({ ranking, boundary }: { ranking: StateRanking; boundary: BoundaryNote | null }) {
+export function MapStatesFigure({ ranking, caption }: { ranking: StateRanking; caption: string | null }) {
   const { counts } = ranking;
   const tableRows = counts ? stateTableRows(counts) : null;
   const table = tableRows ? <DataTable caption={STATES_TITLE} columns={COLUMNS} rows={tableRows} /> : undefined;
@@ -61,7 +60,7 @@ export function MapStatesFigure({ ranking, boundary }: { ranking: StateRanking; 
       id="map-figure"
       title={STATES_TITLE}
       dek={counts ? rankFinding(counts.states) : undefined}
-      source={<MapSourceLine boundary={boundary} districts={false} counts />}
+      source={<MapSourceLine caption={caption} counts />}
       table={table}
       valueCount={tableRows?.length}
       className={SIDE_BY_SIDE}

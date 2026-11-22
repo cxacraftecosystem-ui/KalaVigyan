@@ -10,7 +10,7 @@ from pydantic import Field, model_validator
 
 from app.research.base import ContractModel
 from app.research.crafts import CraftRef
-from app.research.datasets import BOUNDARY_CAPTION, BOUNDARY_DATASET_CODE, DatasetRef
+from app.research.datasets import BOUNDARY_CAPTION, BOUNDARY_DATASET_CODE, INDIA_OUTLINE_CAPTION, DatasetRef
 from app.research.stream import SourceRef
 from app.research.vocabulary import EnvStat, EvidenceLevel
 
@@ -230,9 +230,12 @@ class MapLayerList(ContractModel):
     layers: list[MapLayerSummary]
     datasets: list[DatasetRef]
     boundary: BoundaryNote
+    outline_caption: str
 
     @model_validator(mode="after")
     def _datasets_are_the_listed_ones(self) -> Self:
+        if self.outline_caption != INDIA_OUTLINE_CAPTION:
+            raise ValueError("the outline caption is the Survey of India line of the boundary caption")
         if [d.code for d in self.datasets] != sorted({layer.dataset_code for layer in self.layers}):
             raise ValueError("datasets lists every layer's dataset once, by code")
         if len({layer.id for layer in self.layers}) != len(self.layers):

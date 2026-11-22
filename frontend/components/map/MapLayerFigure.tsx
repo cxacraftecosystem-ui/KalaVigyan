@@ -103,7 +103,7 @@ export function MapLayerFigure({ data, markers, boundary, pick, controls }: { da
   const shown = useMemo(() => (layer ? districtTable(layer, names) : null), [layer, names]);
   const failure = data.layer.failure ?? data.shapes.failure;
   return (
-    <Figure number={1} kind="map" id="map-figure" title={layer?.layer.title ?? "District values"} dek={layer ? layerCaption(layer) : undefined} source={<MapSourceLine boundary={boundary} districts counts={false} />} table={shown?.table} valueCount={shown?.rows.length}>
+    <Figure number={1} kind="map" id="map-figure" title={layer?.layer.title ?? "District values"} dek={layer ? layerCaption(layer) : undefined} source={<MapSourceLine caption={boundary?.caption ?? null} counts={false} />} table={shown?.table} valueCount={shown?.rows.length}>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,6.6fr)_minmax(0,4.4fr)] lg:items-start lg:gap-12">
         <div className="min-w-0">{layer && shapes ? <LayerMap layer={layer} shapes={shapes} names={names} markers={markers} pick={pick} /> : <Skeleton shape="chart" label="Drawing the district values" />}</div>
         <div className="grid content-start gap-[18px]">

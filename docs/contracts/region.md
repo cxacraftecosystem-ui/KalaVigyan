@@ -175,13 +175,20 @@ value of an unmapped dataset is left out and logged with its code.
 ## Map layers
 
 ```
-MapLayerList {layers: MapLayerSummary[], datasets: RegionDataset[], boundary: BoundaryNote}
+MapLayerList {layers: MapLayerSummary[], datasets: RegionDataset[], boundary: BoundaryNote,
+              outlineCaption}
 MapLayerSummary {id, facet, title, datasetCode, variable, depth|null, period, stat, unit}
 MapLayer {layer: MapLayerSummary, dataset: RegionDataset, resolution, classes: LayerClass[] (1-5),
           values: {"<district lgd>": number}, version, boundary: BoundaryNote}
 LayerClass {min, max}
 BoundaryNote {caption, dataset}
 ```
+
+- `boundary.caption` is the Survey of India line and "District boundaries are indicative." for a
+  map that draws districts; `outlineCaption` is the Survey of India line alone, for a map of
+  states or places (`research/datasets.INDIA_OUTLINE_CAPTION`, `DISTRICTS_INDICATIVE`). Every
+  client map prints one of the two from here or from its block; the web app holds no copy
+  (decision 0141).
 
 - Layers are a registry (`geo/layers.MAP_LAYERS`, decision 0016), each one dataset, variable,
   stored depth or period and stat, with an id of lowercase words and hyphens (`soil-ph-0-5cm`),
