@@ -23,10 +23,17 @@ def test_the_english_phrases_that_say_no_are_the_two_the_checker_reads_as_negate
     assert (NO_EVIDENCE_REPLIES["en"], UNSAID_REPLIES["en"]) == NEGATED_ENGLISH
 
 
-def test_every_phrase_that_says_no_says_it_in_every_offered_language() -> None:
-    for table in (NO_EVIDENCE_REPLIES, UNSAID_REPLIES):
+def test_every_phrase_says_no_in_every_offered_language_exactly_where_its_english_does() -> None:
+    for table in PHRASE_TABLES:
+        negated = negation_marked(table["en"], "en")
         for language in VOICE_LANGUAGES:
-            assert negation_marked(table[language], language), (language, table[language])
+            assert negation_marked(table[language], language) == negated, (language, table[language])
+
+
+def test_a_bengali_pronoun_ending_like_a_negative_is_not_read_as_one() -> None:
+    assert not negation_marked("আপনি কোন শিল্পের কথা বলছেন?", "bn")
+    assert not negation_marked("তিনি কাপড়ে ছাপ দেন।", "bn")
+    assert negation_marked("তিনি কাপড়ে ছাপ দেননি।", "bn")
 
 
 def test_a_fused_negative_is_read_as_a_negation_and_its_positive_is_not() -> None:

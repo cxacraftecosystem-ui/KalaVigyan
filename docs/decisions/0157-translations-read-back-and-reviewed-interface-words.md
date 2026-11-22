@@ -87,11 +87,12 @@ the reviewers'.
    each language's phrase from its file, reviewed or not: a call cannot switch to English mid-call
    (decision 0025, item 4), so the phrases are spoken before review, and a reader's review of the
    `voice.*` entries is the native sign-off. Voice offers only a language whose every phrase is
-   written (`phrases.phrased_languages`). What a test can check is checked: every phrase whose
-   English says no carries its language's negation (the stance markers learn Odia's fused
-   ନାହିଁ, Telugu's negative verbs in -లేను and -లేకపోయాను, and Assamese নগ'ল and নহ'ল), and a
-   relay turn in every offered language sends Scribe its code, speech its code and speaks the
-   source word of that language.
+   written (`phrases.phrased_languages`). What a test can check is checked: every phrase says no
+   in every offered language exactly where its English does (so the stance markers learn Odia's
+   fused ନାହିଁ, Telugu's negative verbs in -లేను and -లేకపోయాను and Assamese নগ'ল and নহ'ল, and
+   stop reading Bengali আপনি and তিনি, whose ending is the negative's, as a negation;
+   `research/stance_marker_words`), and a relay turn in every offered language sends Scribe its
+   code, speech its code and speaks the source word of that language.
 8. **An Urdu answer runs in production.** The production E2E asks a fifth known-answer question,
    the mordant in Urdu, and holds it, live at 1440 and in its saved explainer at 834 and 390 in
    light and dark, to at least one translated sentence, an article that reads right to left in

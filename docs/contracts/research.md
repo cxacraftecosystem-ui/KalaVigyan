@@ -1293,7 +1293,7 @@ a number), compared after NFKC; prose (protected tokens removed) at least half i
 script; the English original's negation and hedge kept (decision 0120): an original with a
 negation (`gate_thrift.NEGATION`) needs one of the target language's negation words or endings,
 and an original with a hedge (`hedges.hedges_in`: a word of doubt, or about, around, some and the
-like before a figure) one of its hedge words or endings (`research/stance_markers`, a list for
+like before a figure) one of its hedge words or endings (`research/stance_marker_words`, a list for
 each answer language; a missing one names the problem, a negation or hedge the translation adds
 is not refused, since idioms such as "until ... नहीं" carry one); and
 (`composer/translation.checked_translation`) no link, markup or personal data the
