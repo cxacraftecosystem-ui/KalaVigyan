@@ -24,7 +24,17 @@ from .open_data_scope_seed import (
     OTHER_TEXT,
     seed_neighbours,
 )
-from .open_data_seed import ALUM_QUOTE, CATEGORY, CONTRIBUTOR, FAMILY, IDS, SHOWN, SLUG, seed_open_data
+from .open_data_seed import (
+    ALUM_QUOTE,
+    CATEGORY,
+    CONTRIBUTOR,
+    FAMILY,
+    IDS,
+    RESEARCHER_ONLY,
+    SHOWN,
+    SLUG,
+    seed_open_data,
+)
 
 pytestmark = pytest.mark.db
 
@@ -69,7 +79,7 @@ async def test_a_craft_release_holds_the_facts_an_answer_about_the_craft_reads_a
 ) -> None:
     tables = await read_tables(session, site=SITE, craft=await craft_slice(session, SLUG))
     rows = tables.rows
-    expected = {str(SHOWN), str(FAMILY_CLAIM), str(CATEGORY_CLAIM)}
+    expected = {str(SHOWN), str(RESEARCHER_ONLY), str(FAMILY_CLAIM), str(CATEGORY_CLAIM)}
     assert _ids(rows["claims"], "id") == expected
     assert _ids(rows["citations"], "claim_id") == expected
     assert _ids(rows["sources"], "id") == {str(IDS["paper"])}

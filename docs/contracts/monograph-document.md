@@ -169,7 +169,7 @@ page's quote is left out, as everywhere). The renderer draws consecutive `li` un
 facts are the subject's own fact-level facts filed under the field (`open_work_counts.owned_facts`, the
 facts coverage counts), so a field the coverage counts is never empty on the page. A field with only
 listed facts is carried as a section of version 0, so the document's version still sums its written
-sections. A fact stops being listed when a section cites it. The authored Kutch Ajrakh page lists
+sections. A fact stops being listed when a section cites it. A curated craft's page already draws every fact it shows as a sentence of its field (`monograph_generated_structure.with_page_claims`), so its list holds only what that page leaves out. The authored Kutch Ajrakh page lists
 none: its chapters are written by hand.
 
 ### A curated craft's sections
