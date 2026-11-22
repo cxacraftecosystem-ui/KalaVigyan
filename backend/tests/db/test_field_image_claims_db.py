@@ -118,7 +118,8 @@ async def test_a_changed_photograph_is_linked_again_from_its_caption_and_labels(
         change = copy.deepcopy(recorded("field-images-all-1")["changes"][0])
         change["caption"] = "Printing the first resist again"
         resigned(change)
-        change["updatedAt"] = "2026-11-18T07:00:00.000001Z"
+        change["updatedAt"] = "2026-11-18T02:59:00.000001Z"
+        change["image"]["expiresAt"] = "2026-11-18T03:10:00Z"
         await ledger_for(session, store).apply_page(page_of("images", "all", "fr-i-1", [change]), {})
         assert (named, "TEXT") in await links(session, media)
 
