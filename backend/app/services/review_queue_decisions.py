@@ -38,6 +38,7 @@ from .review_queue_components import approve_component, reject_component
 from .review_queue_errors import DecisionConflict, NotYourQueue, OwnItem, UnknownItem
 from .review_queue_facts import FactDecision, decide_fact
 from .review_queue_layouts import approve_layout, reject_layout
+from .review_queue_refile import refiling_problem
 from .review_queue_structure import approve_structure_item, reject_structure_item
 from .testimony_store import MoveRefused, OwnContribution, StaleContribution, UnknownContribution
 
@@ -68,6 +69,9 @@ async def approve_item(
     session: AsyncSession, ref: ItemRef, reviewer: User, decision: QueueApproval, *, now: datetime
 ) -> QueueDecision:
     _allowed(reviewer, ref.kind, APPROVE)
+    problem = refiling_problem(ref.kind, decision.craft)
+    if problem is not None:
+        raise InvalidInput(problem)
     return await _APPROVERS[ref.kind](session, ref.item_id, reviewer, decision, now=now)
 
 
@@ -100,7 +104,8 @@ def _allowed(reviewer: User, kind: str, action: str) -> None:
 async def _approve_fact(
     session: AsyncSession, item_id: uuid.UUID, reviewer: User, decision: QueueApproval, *, now: datetime
 ) -> QueueDecision:
-    return await decide_fact(session, item_id, reviewer, FactDecision(APPROVE, decision.note), now=now)
+    approval = FactDecision(APPROVE, decision.note, craft=decision.craft)
+    return await decide_fact(session, item_id, reviewer, approval, now=now)
 
 
 async def _reject_fact(

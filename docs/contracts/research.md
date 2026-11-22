@@ -764,11 +764,14 @@ Gemini).
 created}]`. What live research found becomes stored, cited claims so the next answer is
 faster.
 
-- `ClaimWriteBack {schemaVersion 1, craftSlug | null, subject, field?, predicate, text,
-  textLang="en", valueNum?, valueUnit?, label, levelReason, citations[WriteBackCitation] (at least
-  one), foundBy, answerId?}`. `field` is the claim's primary field; without one, `storedField` is
-  the subject's concept type's field (`CONCEPT_TYPE_DISCIPLINES`). `text` never carries personal
-  data (`evidence.personal_data_in`, the rule contributors' facts follow).
+- `ClaimWriteBack {schemaVersion 1, craftSlug | null, categorySlug?, heldBecause?, subject, field?,
+  predicate, text, textLang="en", valueNum?, valueUnit?, label, levelReason,
+  citations[WriteBackCitation] (at least one), foundBy, answerId?}`. `field` is the claim's primary
+  field; without one, `storedField` is the subject's concept type's field
+  (`CONCEPT_TYPE_DISCIPLINES`). `text` never carries personal data (`evidence.personal_data_in`,
+  the rule contributors' facts follow). `categorySlug` names the craft family a family-science
+  fact belongs to (no craft with it); `heldBecause` (at most 500 characters) is why a held
+  write-back waits for a reviewer, and needs the `craftSlug` it is suggested for (decision 0136).
 - `subject = WriteBackSubject {conceptId?, conceptType, conceptName}`: the writer attaches the
   claim to that craft's concept of that type and name, creating it when absent, so the stored
   answer path (`knowledge_view.claims_for`, which reads `retrieval/statements.claim_conditions`)
@@ -787,11 +790,15 @@ faster.
   `answerId`).
 - Stored as `Claim.origin=LIVE_RESEARCH`, `status=APPROVED` (`WRITE_BACK_ORIGIN`,
   `WRITE_BACK_STATUS`), `createdByKind=SYSTEM`, with one `ReviewEvent` (`actorKind=SYSTEM`,
-  `systemActor=live_research`).
-- `dedupeKey` is the SHA-256 of `claim-write-back/v2`, craft slug, `storedField` and folded text
+  `systemActor=live_research`). A held write-back is stored `DRAFT` with `systemActor`
+  `live_research_held` and a note naming its reason and suggested craft
+  (`claim_writer.HELD_WRITE_BACK_STATUS`, `HELD_WRITE_BACK_ACTOR`).
+- `dedupeKey` is the SHA-256 of `claim-write-back/v2`, the owner, `storedField` and folded text
   joined by U+001F (folded: quote-normalised, case-folded, trailing full stop dropped), never the
   model's facet target, type or predicate (decision 0124): the same sentence found under another
-  facet is the same fact. A second write with the same key adds its new citations to the
+  facet is the same fact. The owner is the craft slug, else `category:` and the craft family's
+  category slug for a family-science fact (`categorySlug`, decision 0136), else empty: the same
+  general sentence found for two families is one fact per family. A second write with the same key adds its new citations to the
   existing claim and answers `created=false`; it never creates a duplicate, and when that claim is
   closed it is refused instead (knowledge-writes.md, The research write-back). Write-backs keyed
   `v1` keep their ids; a `v2` twin of one is caught by the duplicate gate's identical-text check.
@@ -800,11 +807,12 @@ faster.
 ### The writer and the coverage job (decision 0011)
 
 - `services/write_back_plan.write_back_plan(pack, answer, *, found_by, answer_id, names,
-  field_documents=None) -> WriteBackPlan {claims, skipped, sentence_keys}`: one
+  field_documents=None) -> WriteBackPlan {claims, skipped, sentence_keys, held}`: one
   write-back per composed sentence that cites a read document of the pack and no stored claim
-  (decision 0124). `sentence_keys` has one entry per sentence in `composed_sentences(answer)` order
+  (decision 0124). `held` are the write-backs kept for a reviewer (below), never in `claims`.
+  `sentence_keys` has one entry per sentence in `composed_sentences(answer)` order
   (sections, then open questions; each with its heading, `None` for an open question): the dedupe
-  key of the claim written for it, or `None`. Every span of the sentence found in its cited
+  key of the claim written for it, or `None` (a held sentence has none). Every span of the sentence found in its cited
   document's text is a `PASS` citation quote and joins the item's quotes; a citation is `DIRECT`
   only when its own quote carries the sentence (`quote_carries`: `quote_overlap` of that quote
   alone at `QUOTE_OVERLAP_MIN`), else `CONTEXTUAL`, and a cited document with no passing span is a
@@ -814,27 +822,36 @@ faster.
   `DISCIPLINE_TITLES[discipline]`): the claim's `field` is that discipline and its subject the
   first facet a cited document was found by whose type is of that field, else the first; with no
   section discipline (an unfocused answer, an open question), the first facet and its type's field.
-  The craft (decision 0135, `write_back_crafts.craft_filing` over `write_back_names.CraftNames`,
-  which `filing_names` builds from the craft index, the research's craft and the crafts the
-  answer's understanding compares; `names` for any other craft is `InvalidInput`): a fact is
-  filed under a craft only when its text, else one of its passing quotes, names it in whole
-  words. The researched and compared crafts are named by a word of four letters or more of the
-  name that no other of them shares and fewer than three master-list crafts use
-  (`COMMON_NAME_USES`), by a name, alias or spelling of the craft index, or by a place of theirs
-  below a state (the GI place: a district, a place label, a district's other name, or a place
-  word of the craft's own name, as Kutch for Kutch Ajrakh); a word two of them share names
-  neither. Naming two of them skips the sentence. Naming none, a fact naming exactly one other
-  catalogued craft by a name, alias or spelling (`craft_matching.named_craft_ids`) goes to that
-  craft, and one naming several is skipped. A text naming a place outside India or another
-  culture (`data/places_abroad`) is refused (`SKIP_ABROAD`), and so is one naming any other
-  place of India, a state included (`SKIP_OTHER_PLACE`). A fact naming no craft and no place,
-  in chemistry, physics or materials (`MATERIAL_SCIENCE_FIELDS`), goes to its craft family's
-  science: no craft, the subject the shared concept named as the family's category (type
-  `curation_keys.DISCIPLINE_CONCEPT_TYPES[field]`), which the craft scope of decision 0122
-  reads; in a comparison only when every compared craft shares that category. Any other fact
-  naming no craft is skipped (`SKIP_UNNAMED`). A sentence resting on field interviews alone
-  stays with the craft researched (`researched_craft`). Research for no craft is filed as
-  before, on shared concepts. Predicate
+  The craft (decisions 0135 and 0136, `write_back_crafts.craft_filing(FilingTexts, *, field,
+  names)` over `write_back_names.CraftNames`, which `filing_names` builds from the craft index,
+  the research's craft and the crafts the answer's understanding compares; `names` for any other
+  craft is `InvalidInput`) reads four levels, in order: the sentence's text, its passing quotes,
+  the passage each quote sits in within its cited document (`write_back_passages.passage_around`:
+  the paragraph holding the quote, split on blank lines, or, when the text has none or the
+  paragraph is over `PASSAGE_MAX_CHARS` (1,200), the quote's sentences and their neighbours, one
+  before and one after at a time, while the passage stays within it), then the cited documents'
+  titles. Field-interview documents give their quotes but no passage or title. At each level, in
+  whole words: naming two of the researched and compared crafts skips the sentence
+  (`SKIP_SEVERAL_CRAFTS`); naming one of them files it there; else naming exactly one other
+  catalogued craft by a name, alias or spelling (`craft_matching.named_craft_ids`) files it
+  there and several skip it; else a place outside India or another culture (`data/places_abroad`)
+  refuses it (`SKIP_ABROAD`). The researched and compared crafts are named by a word of four
+  letters or more of the name that no other of them shares and fewer than three master-list crafts
+  use (`COMMON_NAME_USES`), by a name, alias or spelling of the craft index, or by a place of
+  theirs below a state (the GI place: a district, a place label, a district's other name, or a
+  place word of the craft's own name, as Kutch for Kutch Ajrakh); a word two of them share names
+  neither. When the text and quotes name nothing but a place of India, a state included, the
+  sentence is held (`HELD_OTHER_PLACE`) before its context is read; a place of India in the
+  passage or title alone holds it only when no level names a craft. After every level, a fact in
+  chemistry, physics or materials (`MATERIAL_SCIENCE_FIELDS`) goes to its craft family's science:
+  no craft, `categorySlug` the family's category, the subject the shared concept named as the
+  category (type `curation_keys.DISCIPLINE_CONCEPT_TYPES[field]`), which the craft scope of
+  decision 0122 reads; in a comparison only when every compared craft shares that category. Any
+  other is held (`HELD_UNNAMED`). A held write-back is filed under the craft researched with
+  `heldBecause` set to the reason: it is written hidden (`DRAFT`) for a reviewer whatever the
+  review switch (knowledge-writes.md, The research write-back). A sentence resting on field
+  interviews alone stays with the craft researched (`researched_craft`). Research for no craft
+  is filed as before, on shared concepts. Predicate
   `WRITE_BACK_PREDICATE` (`states`). Sentences citing stored claims only, a stored claim beside live
   evidence (a new fact would not carry its citations), or breaking the contract are `skipped` with
   a reason.
@@ -857,9 +874,11 @@ faster.
   item is not a T4 page declaring its own licence; else `RESEARCHER` (decision 0013).
 - `services/research_write_back.store_live_research(session, pack, answer, *, embed, found_by,
   index, answer_id=None) -> StoredResearch {source_ids, results, skipped, embedded, sentence_keys,
-  embedding_error}` keeps the documents, reads the compared crafts from the answer's stored
+  embedding_error, held}` keeps the documents, reads the compared crafts from the answer's stored
   understanding (`compared_crafts`), names the crafts with the `CraftIndexStore` it is given,
-  writes the claims through the gates, logs every skipped sentence with its reason, commits, then embeds
+  writes the claims and the held write-backs through the gates, logs every skipped sentence with
+  its reason and every held one with its suggested craft, commits, refreshes the pages of the
+  filed claims only (`held` are hidden and refresh nothing), then embeds
   only the claims it wrote and the chunks of the sources those claims cite (`cited_source_ids`,
   `embed_written`); the chunks of documents no written claim cites wait for `embed_knowledge`,
   since stored-knowledge search reads only chunks of sources a visible fact cites (decision 0124).
@@ -1200,7 +1219,7 @@ tier and the reader that takes verbatim quotes from the pack's documents (`WEB_R
 | The source adapters, against recorded answers | `backend/tests/sources/` |
 | The fetcher service | `backend/tests/fetcher/` |
 | The planner, the composer and the answering service | `backend/tests/planner/`, `backend/tests/composer/`, `backend/tests/answering/test_answer_flow.py`, `test_answer_cost.py` and `backend/tests/db/test_answer_cost_db.py` (an answer's cost and latency) |
-| Write-back and the coverage job | `backend/tests/write_back/` (the craft a fact names: `test_write_back_names.py` and `test_write_back_filing.py`), `backend/tests/research/test_composition_and_write_back.py`, `backend/tests/db/test_claim_writer_db.py`, `test_write_back_closed_db.py`, `test_storable_text_db.py` and `test_coverage_backoff_db.py` |
+| Write-back and the coverage job | `backend/tests/write_back/` (the craft a fact names: `test_write_back_names.py`, `test_write_back_filing.py`, `test_write_back_context.py` and `test_write_back_passages.py`), `backend/tests/research/test_composition_and_write_back.py`, `backend/tests/db/test_claim_writer_db.py`, `test_held_write_backs_db.py`, `test_write_back_closed_db.py`, `test_storable_text_db.py` and `test_coverage_backoff_db.py` |
 | The stance, per-source and screen checks of a sentence, the names a live sentence must quote, a sentence dropped alone | `backend/tests/research/test_grounded_sentences.py`, `backend/tests/composer/test_grounded_compose.py` and `backend/tests/answering/test_grounded_blocks.py` |
 | Passages of long documents and the copy read | `backend/tests/composer/test_passages.py` and `backend/tests/planner/test_research_run.py` |
 | The stream as the client reads it | `frontend/e2e/answer-stream-golden-unit.spec.ts`, against `shared/answer-stream*.golden.sse` |

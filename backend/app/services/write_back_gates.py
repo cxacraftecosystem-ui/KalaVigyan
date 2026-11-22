@@ -23,19 +23,22 @@ from .candidate_gates import (
     GateRun,
     HeldFacts,
     LaterGates,
+    candidate_vectors,
     first_gates,
     gate_run,
     later_gates,
 )
-from .candidate_store import CLOSED_STATUSES, SqlHeldFacts, craft_subject
+from .candidate_store import CLOSED_STATUSES, FactSubject, SqlHeldFacts, subject_title
 from .candidate_writes import mark_sources_differ, record_checks
 from .write_back_closed import (
     KeptVectors,
-    by_craft,
+    Owner,
+    by_owner,
     closed_by_id,
     closed_refusals,
     kept_vectors,
-    statement_vectors,
+    owner_of,
+    owner_subjects,
     stored_statuses,
 )
 from .write_back_plan import SkippedSentence
@@ -66,6 +69,13 @@ class _Gating:
     documents: Mapping[str, SourceDocument]
     embed: TextEmbedder | None
     judge: StructuredModel | None
+
+
+@dataclass(frozen=True)
+class _Batch:
+    claims: tuple[ClaimWriteBack, ...]
+    candidates: Mapping[str, Candidate]
+    subjects: Mapping[Owner, FactSubject]
 
 
 async def research_placement(session: AsyncSession) -> Placement:
@@ -133,25 +143,29 @@ async def record_write_back_runs(
 async def _runs(
     session: AsyncSession, claims: Sequence[ClaimWriteBack], gating: _Gating
 ) -> tuple[dict[str, GateRun], set[str]]:
-    candidates = {claim.dedupe_key: _candidate(claim) for claim in claims}
+    subjects = await owner_subjects(session, claims)
+    candidates = {claim.dedupe_key: _candidate(claim, subjects[owner_of(claim)]) for claim in claims}
     first = {
         claim.dedupe_key: first_gates(candidates[claim.dedupe_key], _cited(claim, gating.documents))
         for claim in claims
     }
     passing = [claim for claim in claims if all(outcome.passed for outcome in first[claim.dedupe_key])]
-    vectors = await _vectors(gating.embed, passing)
-    closed = await closed_refusals(session, passing, vectors)
-    open_claims = [claim for claim in passing if claim.dedupe_key not in closed]
-    later = await _later(session, open_claims, kept_vectors(open_claims, vectors), gating.judge)
+    vectors = await _vectors(gating.embed, [candidates[claim.dedupe_key] for claim in passing])
+    closed = await closed_refusals(session, passing, vectors, subjects)
+    batch = _Batch(
+        claims=tuple(claim for claim in passing if claim.dedupe_key not in closed),
+        candidates=candidates,
+        subjects=subjects,
+    )
+    kept = kept_vectors([candidates[claim.dedupe_key] for claim in batch.claims], vectors)
+    later = await _later(session, batch, kept, gating.judge)
     later |= {key: LaterGates(outcomes=(outcome,), vector=None) for key, outcome in closed.items()}
     return {key: gate_run(candidates[key], first[key], later.get(key)) for key in candidates}, set(closed)
 
 
-async def _vectors(embed: TextEmbedder | None, claims: Sequence[ClaimWriteBack]) -> dict[str, list[float]]:
-    if embed is None:
-        return {}
+async def _vectors(embed: TextEmbedder | None, candidates: Sequence[Candidate]) -> dict[str, list[float]]:
     try:
-        return await statement_vectors(embed, claims)
+        return await candidate_vectors(embed, candidates)
     except AppError as error:
         logger.warning(
             "write-back statements were not embedded, so facts are matched by text only: %s", error
@@ -160,16 +174,13 @@ async def _vectors(embed: TextEmbedder | None, claims: Sequence[ClaimWriteBack])
 
 
 async def _later(
-    session: AsyncSession,
-    claims: Sequence[ClaimWriteBack],
-    vectors: KeptVectors,
-    judge: StructuredModel | None,
+    session: AsyncSession, batch: _Batch, vectors: KeptVectors, judge: StructuredModel | None
 ) -> dict[str, LaterGates]:
     embed = vectors if vectors.by_text else None
     found: dict[str, LaterGates] = {}
-    for craft_slug, group in by_craft(claims).items():
-        store = SqlHeldFacts(session, await craft_subject(session, craft_slug))
-        candidates = [_candidate(claim) for claim in group]
+    for owner, group in by_owner(batch.claims).items():
+        store = SqlHeldFacts(session, batch.subjects[owner])
+        candidates = [batch.candidates[claim.dedupe_key] for claim in group]
         found |= await write_back_later_gates(store, candidates, embed=embed, judge=judge)
     return found
 
@@ -190,8 +201,9 @@ async def write_back_later_gates(
         return await later_gates(store, candidates, embed=None, judge=None)
 
 
-def _candidate(claim: ClaimWriteBack) -> Candidate:
-    return Candidate(ref=claim.dedupe_key, statement=claim.text, field=claim.stored_field)
+def _candidate(claim: ClaimWriteBack, subject: FactSubject | None = None) -> Candidate:
+    title = subject_title(subject, claim.subject.concept_name, claim.stored_field) if subject else None
+    return Candidate(ref=claim.dedupe_key, statement=claim.text, field=claim.stored_field, title=title)
 
 
 def _cited(claim: ClaimWriteBack, documents: Mapping[str, SourceDocument]) -> list[CitedSource]:

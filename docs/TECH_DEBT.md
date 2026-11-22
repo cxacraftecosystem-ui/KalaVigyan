@@ -3199,12 +3199,14 @@ Last reviewed: 2026-11-18.
 
 ### Live research write-backs skipped the candidate gates
 
-- **What:** every live-research write-back of the 14 days to 2026-11-20 is `APPROVED` with no
-  `CandidateCheck` rows, where `knowledge-writes.md` expects `IN_REVIEW` with checks under the
-  RESEARCH `AUTO` switch. The last write-back ran on 2026-11-17; production has had no answers since
-  2026-11-18, so the path has not been exercised since.
-- **Clears it:** route write-back through the same gates as proposals (the contribution queue), prove
-  it with one real question in production, and re-check the earlier write-backs.
+- **What:** on production since 2026-11-21 every live-research write-back is `IN_REVIEW` with
+  `CandidateCheck` rows (47 claims, 220 checks), so this is left only for the older approved
+  write-backs, stored `APPROVED` with no checks before the write-back went through the gates.
+- **Why left:** stored facts on production are a person's to review; no lane changes them.
+- **Clears it:** a reviewer re-checks them with the filing report
+  (`python -m app.scripts.write_back_filing`, whose summary lists the facts with no `CandidateCheck`
+  rows, decision 0136) and `python -m app.scripts.write_back_report --gate-less`, then rejects or
+  re-files each in the review queue.
 
 ### Nested proposal bodies keep camelCase keys
 
@@ -3267,20 +3269,6 @@ Last reviewed: 2026-11-18.
 - **Why left:** building `exactextract` from source needs GEOS and GDAL headers on every runner.
 - **Clears it:** when `exactextract` publishes a cp315 wheel, move `etl/geo/pyproject.toml` and
   `geo-etl.yml` together; `backend/tests/test_python_version.py` keeps the two agreeing.
-
-### The duplicate gate embeds candidates without the stored facts' titles
-
-- **What:** since decision 0129 a stored fact is embedded titled by its craft, concept and field
-  (`title: Kutch Ajrakh · Washing · Process | text: ...`), but `services/candidate_gates._vectors`
-  embeds a candidate statement untitled (`document_text(statement)`). A paraphrase of a stored fact
-  therefore sits a little further from it than before, and the 0.97 vector-twin shortcut fires less
-  often. Text twins and the novelty judge, which reads the nearest facts whatever their distance,
-  still catch duplicates, and the reranker folds restatements into one slot at read time.
-- **Why left:** a candidate does not carry its concept, so titling it like for like needs the
-  gates' callers (proposals, structure, live-research write-back) to pass craft, concept and field;
-  found the night the first-stage lane merged, before a release that could not wait on it.
-- **Clears it:** give `Candidate` an optional title (craft, concept, field) from its callers, embed it
-  with `text.context_title`, and test that a stored fact's paraphrase reaches the twin floor again.
 
 ### Leftovers of the design-conformance lane
 
@@ -3478,32 +3466,44 @@ Last reviewed: 2026-11-18.
 - **What:** the 19 facts answer 504968ea-49cc-469c-88f9-205a2ea90e8a wrote stay under Khurja
   Pottery's concept in the review queue, among them the Khorezm, Nigerian, porcelain, kiln-schedule
   and polymer-clay sentences; earlier live-research facts were filed by the old rule too.
-- **Why left:** stored facts on production are a person's to review; the lane changed no stored row.
-- **Clears it:** a reviewer rejects or re-files them in the review queue; a read-only report of the
-  live-research facts whose text and quotes name no craft they are filed under would list the rest.
-
-### Family science is gated and keyed as shared knowledge
-
-- **What:** a fact filed under a craft family's science (decision 0135) carries no craft, so its
-  dedupe key and its duplicate and novelty gates are those of all shared knowledge: the same general
-  sentence found for two families is one fact under the first family's concept, and it is compared
-  with every shared fact rather than its family's alone.
-- **Why left:** the write-back contract has no family field, and a general statement true for one
-  family is true for the next.
-- **Clears it:** carry the family's category on `ClaimWriteBack`, key and gate family facts by it
-  (`candidate_store.FactSubject` of kind category), and add a citation to the existing fact rather
-  than moving it.
+- **Why left:** stored facts on production are a person's to review; no lane changes a stored row.
+- **Clears it:** a reviewer runs `python -m app.scripts.write_back_filing --answer
+  504968ea-49cc-469c-88f9-205a2ea90e8a` (and `--since` for the older ones), which prints where each
+  fact is against where today's rule files it (decision 0136), and approves each under the craft it
+  names (approve with `craft`), approves it where it is, or rejects it.
 
 ### The places that block filing are word lists
 
-- **What:** `data/places_abroad.json` is kept by hand, and the places of India that keep a fact out of
-  its family's science are the LGD state and district names and the craft index's place labels, so
-  a district named like a common word would keep a general fact out, and a foreign place missing
-  from the list lets one in.
-- **Why left:** no open gazetteer is vendored, and a model judging each sentence's places would cost
-  a call per sentence.
-- **Clears it:** check the list against a refused-sentence log after each round of live research, and
-  add places and other senses from what it shows.
+- **What:** the regions and cultures abroad in `data/places_abroad.json` are kept by hand (its
+  countries are now held to Natural Earth's sovereign states by a test), and the places of India that
+  hold a fact for a reviewer instead of filing it are the LGD state and district names and the craft
+  index's place labels. Since decision 0136 they are read in a quote's passage and its source's title
+  too, so a district named like a common word in a paragraph holds a general fact that names nothing
+  else, and a region abroad missing from the list lets one through.
+- **Why left:** no open gazetteer of regions and cultures is vendored, and a model judging each
+  sentence's places would cost a call per sentence.
+- **Clears it:** read the held and refused write-backs the filing report lists after each round of
+  live research, and add places, other senses and left-out names from what it shows.
+
+### The review page does not show why a write-back is held
+
+- **What:** a held write-back (decision 0136) waits in the review queue as a `DRAFT` researched fact
+  of its suggested craft. Its reason is only in its `ReviewEvent` note and the filing report, and the
+  Review page cannot file it under another craft, though the approve route takes `craft`.
+- **Why left:** the web app's `FactReview` shape refuses unknown fields, so a new field in the queue
+  item would break the page, and frontend files were another lane's this round.
+- **Clears it:** add `held {reason, suggestedCraft}` to `FactReview` and to `lib/reviewQueueContract.ts`
+  in one change, and a craft picker beside Approve that sends `craft`.
+
+### A held write-back found again stays held
+
+- **What:** when research later files a sentence a reviewer has not yet decided, under the craft it
+  was held for, the write-back is re-found by its key and keeps its `DRAFT` status: it gains the new
+  citations but does not go live as a filed write-back would under the `AUTO` switch.
+- **Why left:** a re-found write-back never changes status (decision 0124), and a reviewer sees it in
+  the queue anyway.
+- **Clears it:** when a filed write-back meets its held twin, move it to the switch's status with a
+  `ReviewEvent` by `live_research`.
 
 ### An answer's cost is what was settled when it finished
 
