@@ -52,7 +52,7 @@ jobs:
           test -f backend/pyproject.toml || { echo "::error::backend/pyproject.toml is missing"; exit 1; }
           test -f backend/app/main.py || { echo "::error::backend/app/main.py is missing; the box runs app.main:app"; exit 1; }
           test -f backend/uv.lock || echo "::warning::backend/uv.lock is missing; the box will resolve dependencies itself"
-          bash -n infra/deploy/release.sh infra/deploy/blue_green.sh infra/deploy/render_env.sh infra/deploy/api-watchdog.sh
+          bash -n infra/deploy/release.sh infra/deploy/blue_green.sh infra/deploy/render_env.sh infra/deploy/api-watchdog.sh infra/deploy/ship_logs.sh
 
       - name: Assume the deploy role
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0

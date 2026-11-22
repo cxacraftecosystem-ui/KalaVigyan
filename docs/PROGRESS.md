@@ -1208,10 +1208,8 @@ Last updated: 2026-11-20.
   the custom-LLM request proves to carry the conversation id (`docs/contracts/voice.md`); it stays
   `RELAY` otherwise.
 
-- Yahoo sign-in: register the Yahoo app with the redirect URI
-  `https://kalavigyan.vercel.app/login/callback`, set `YAHOO_CLIENT_ID` and `YAHOO_CLIENT_SECRET` as
-  GitHub secrets and deploy the backend, then set `NEXT_PUBLIC_YAHOO_CLIENT_ID` in Vercel
-  (`docs/RUNBOOK.md`, Yahoo sign-in).
+- Yahoo sign-in is registered and live: sign in once with a rostered Yahoo address on the
+  production login page to prove the whole round trip.
 
 ## How this document is kept true
 

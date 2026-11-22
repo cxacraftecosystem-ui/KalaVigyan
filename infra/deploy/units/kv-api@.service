@@ -12,6 +12,7 @@ Environment=MALLOC_ARENA_MAX=2
 Environment=PYTHONUNBUFFERED=1
 EnvironmentFile=/opt/kalavigyan/.env
 Environment=KV_PROCESS=api
+SyslogIdentifier=kv-api
 ExecStart=/opt/kalavigyan/slot-%i/backend/.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port %i --workers ${API_WORKERS} --no-proxy-headers --timeout-graceful-shutdown 15
 MemoryAccounting=yes
 MemoryHigh=2400M

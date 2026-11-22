@@ -78,6 +78,7 @@ def get_engine() -> AsyncEngine:
             pool_timeout=settings.database_pool_timeout,
             pool_pre_ping=True,
             pool_recycle=1800,
+            hide_parameters=True,
         )
         _sessionmaker = async_sessionmaker(_engine, expire_on_commit=False, autoflush=False)
     return _engine

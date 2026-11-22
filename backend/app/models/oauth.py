@@ -1,18 +1,31 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, created_at, one_of, subset_of, uuid_pk
 
 __all__ = [
+    "CLIENT_NAME_CHARS",
+    "MCP_REASON_CHARS",
     "MCP_SCOPE_VALUES",
     "MCP_TOOL_OUTCOMES",
     "OAUTH_TOKEN_KINDS",
     "McpTermsAcceptance",
     "McpToolCall",
+    "McpToolCallDay",
     "OAuthClient",
     "OAuthCode",
     "OAuthGrant",
@@ -28,6 +41,9 @@ CLIENT_NAME_CHARS = 120
 SOFTWARE_CHARS = 120
 TERMS_VERSION_CHARS = 40
 TOOL_NAME_CHARS = 64
+OUTCOME_CHARS = 16
+MCP_REASON_CHARS = 300
+REASON_ONLY_ON_FAILURE = '"outcome" <> \'OK\' OR "reason" IS NULL'
 SCOPES_WITHIN = subset_of("scopes", MCP_SCOPE_VALUES)
 REDIRECT_URIS_COUNT = 'cardinality("redirectUris") BETWEEN 1 AND 10'
 
@@ -150,13 +166,31 @@ class McpToolCall(Base):
     tokenId: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("OAuthToken.id", ondelete="SET NULL")
     )
+    clientName: Mapped[str] = mapped_column(String(CLIENT_NAME_CHARS), nullable=False)
     tool: Mapped[str] = mapped_column(String(TOOL_NAME_CHARS), nullable=False)
-    outcome: Mapped[str] = mapped_column(String(16), nullable=False)
+    outcome: Mapped[str] = mapped_column(String(OUTCOME_CHARS), nullable=False)
+    reason: Mapped[str | None] = mapped_column(String(MCP_REASON_CHARS))
     calledAt: Mapped[datetime] = _stamp()
 
     __table_args__ = (
         CheckConstraint(one_of("outcome", MCP_TOOL_OUTCOMES), name="outcome"),
+        CheckConstraint(REASON_ONLY_ON_FAILURE, name="reason"),
         Index(None, "grantId", "calledAt"),
         Index(None, "tokenId"),
         Index(None, "calledAt"),
+    )
+
+
+class McpToolCallDay(Base):
+    __tablename__ = "McpToolCallDay"
+
+    day: Mapped[date] = mapped_column(Date, primary_key=True)
+    clientName: Mapped[str] = mapped_column(String(CLIENT_NAME_CHARS), primary_key=True)
+    tool: Mapped[str] = mapped_column(String(TOOL_NAME_CHARS), primary_key=True)
+    outcome: Mapped[str] = mapped_column(String(OUTCOME_CHARS), primary_key=True)
+    calls: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(one_of("outcome", MCP_TOOL_OUTCOMES), name="outcome"),
+        CheckConstraint('"calls" >= 1', name="calls"),
     )

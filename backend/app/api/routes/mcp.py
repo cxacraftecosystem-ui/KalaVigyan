@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.mcp_auth import mcp_caller, record_call, scope_challenge
+from app.api.mcp_auth import SERVER_FAILED, mcp_caller, record_call, record_failed_call, scope_challenge
 from app.api.mcp_cors import is_web_origin
 from app.api.mcp_protocol import INTERNAL_ERROR, PARSE_ERROR, error_reply, supported_version
 from app.api.mcp_stream import EVENT_STREAM, STREAM_HEADERS, progress_token, reply_stream, streams
@@ -30,7 +30,6 @@ NOT_ENABLED = "The KalaVigyan MCP server is not switched on."
 FOREIGN_ORIGIN = "This web origin may not call the KalaVigyan MCP server."
 UNKNOWN_VERSION = "This MCP protocol version is not supported; initialize again."
 UNREADABLE = "The body is not JSON."
-FAILED = "The server failed while answering; call the tool again."
 STREAMED_CALL = "mcp tools/call"
 
 Sessions = Callable[[], AbstractAsyncContextManager[AsyncSession]]
@@ -90,11 +89,16 @@ async def _answered_alone(
             return await _answered(message, _context(request, caller, session), caller)
     except Exception:
         logger.exception("a streamed MCP call failed")
-        return error_reply(message.get("id"), INTERNAL_ERROR, FAILED)
+        return error_reply(message.get("id"), INTERNAL_ERROR, SERVER_FAILED)
 
 
 async def _answered(message: Any, context: ToolContext, caller: McpCaller | None) -> dict[str, Any] | None:
-    reply = await answer(message, context)
+    try:
+        reply = await answer(message, context)
+    except Exception:
+        if caller is not None:
+            await record_failed_call(context.session, caller, message)
+        raise
     if caller is not None:
         await record_call(context.session, caller, message, reply)
     return reply

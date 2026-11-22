@@ -327,23 +327,30 @@ async def test_each_tool_call_is_audited_per_connection_with_no_arguments_kept(s
     _user, _client_id, reply = await connected(session)
     caller = await oauth_bearer.caller_for(session, reply.access_token, resource=RESOURCE, now=NOW)
     later = NOW + timedelta(minutes=3)
-    await oauth_bearer.record_tool_call(session, caller, tool="find_crafts", outcome="OK", now=later)
+    assert caller.client_name == "Claude"
+    await oauth_bearer.record_tool_call(
+        session, caller, tool="find_crafts", outcome="OK", reason=None, now=later
+    )
     await session.flush()
     [call] = (
         await session.execute(select(McpToolCall).where(McpToolCall.grantId == caller.grant_id))
     ).scalars()
-    assert (call.tool, call.outcome, call.tokenId, call.calledAt) == (
+    assert (call.tool, call.outcome, call.tokenId, call.calledAt, call.clientName, call.reason) == (
         "find_crafts",
         "OK",
         caller.token_id,
         later,
+        "Claude",
+        None,
     )
     assert set(McpToolCall.__table__.columns.keys()) == {
         "id",
         "grantId",
         "tokenId",
+        "clientName",
         "tool",
         "outcome",
+        "reason",
         "calledAt",
     }
     grant = await session.get(OAuthGrant, caller.grant_id)
