@@ -118,7 +118,9 @@ async def test_a_quote_spanning_two_long_paragraphs_rests_on_both_closed_passage
     assert await chunk_for_quote(session, cite.sourceId, SPANNING_QUOTE) == QuoteChunk(first, "paras 1-2")
     public, _ = await claims_by_id(session, [result.claim_id], acls=OPEN_CHUNK_ACLS)
     researcher, _ = await claims_by_id(session, [result.claim_id], acls=EVERY_CHUNK_ACLS)
-    assert (set(public), set(researcher)) == (set(), {result.claim_id})
+    assert set(public) == set(researcher) == {result.claim_id}
+    assert [c["quote"] for c in public[result.claim_id].citations] == [None]
+    assert [c["quote"] == cite.quote for c in researcher[result.claim_id].citations] == [True]
 
 
 async def test_a_hyphen_broken_at_a_line_end_is_found_as_one_word(session: AsyncSession) -> None:
@@ -180,8 +182,9 @@ async def test_a_curated_source_read_in_full_keeps_its_curated_quote_public_and_
     assert new is not None
     await fact(session, NEW_FACT, Cite(MUSEUM, NEW_QUOTE, chunk_id=new.chunk_id, locator=new.locator))
     public, _ = await claims_by_id(session, [CURATED_FACT, NEW_FACT], acls=OPEN_CHUNK_ACLS)
-    assert set(public) == {CURATED_FACT}
+    assert set(public) == {CURATED_FACT, NEW_FACT}
     assert [c["quote"] for c in public[CURATED_FACT].citations] == [CURATED_QUOTE]
+    assert [c["quote"] for c in public[NEW_FACT].citations] == [None]
     researcher, _ = await claims_by_id(session, [CURATED_FACT, NEW_FACT], acls=EVERY_CHUNK_ACLS)
     assert set(researcher) == {CURATED_FACT, NEW_FACT}
 

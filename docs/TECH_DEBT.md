@@ -1967,11 +1967,17 @@ Last reviewed: 2026-11-22.
 ### The answer did not name the oxides behind Khurja's blue and turquoise glazes
 
 - **What:** answer 504968ea-49cc-469c-88f9-205a2ea90e8a was asked what gives Khurja's glazes their
-  blue and turquoise colours and named no oxide. Cobalt and copper oxides are the usual ones, but the
-  research found no source saying so for Khurja.
-- **Why left:** finding the source is research and curation, not code.
-- **Clears it:** curate Khurja Pottery's glaze chemistry from a source that names its colourants (the
-  GI application, a ceramics institute's study of Khurja glazes), and let the planner search for the
+  blue and turquoise colours and named no oxide. An open-source search on 2026-11-23 found none that
+  names them for Khurja: the GI record (application 178) lists a statement of case of 2009 and a reply
+  of 2013 as PDFs the text fetcher does not reach; the RIPA Khurja leaflet names only cupric oxide for
+  the hand-painted designs and is all rights reserved; khurjaceramic.com (a maker's site) says
+  "cobalt for blue" without a licence; the cobalt and copper account of blue and turquoise (imp-art.org)
+  is about Jaipur blue pottery.
+- **Why left:** the colourant must come from a source that names it for Khurja and can be cited, and
+  Khurja Pottery's facts are written through the MCP server, not a dossier.
+- **Clears it:** open the two statement-of-case PDFs of application 178 at search.ipindia.gov.in in a
+  browser, read the glaze and colour section, and propose its sentence (cobalt, copper, or whatever it
+  names) through `propose_facts` with `supply_source` for the PDF; let the planner search for the
   colourant by its element names when a question asks what gives a colour.
 
 ### Write-backs filed before decision 0135
@@ -2017,6 +2023,17 @@ Last reviewed: 2026-11-22.
   the queue anyway.
 - **Clears it:** when a filed write-back meets its held twin, move it to the switch's status with a
   `ReviewEvent` by `live_research`.
+
+### The count of hidden facts has no admin screen
+
+- **What:** the nightly count of approved facts a signed-out reader cannot see, by craft and reason
+  (decision 0149), is in the night's report and at `GET /api/coverage/hidden-facts` for admins, but
+  no admin screen shows it.
+- **Why left:** the contributions-visible lane built the count, its route and the failing night;
+  the admin screens belong to the design-system work, and a screen needs the kalavigyan-design
+  review of a new admin card.
+- **Clears it:** a card on the admin settings page that reads the route and lists each craft's
+  hidden facts by reason, with the unexplained ones first, and a unit spec of its shape.
 
 ## How this document is kept true
 

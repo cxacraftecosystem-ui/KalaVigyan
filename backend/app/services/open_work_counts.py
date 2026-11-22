@@ -15,8 +15,7 @@ from app.research.open_work import TASK_ITEMS_MAX, Items
 from app.research.open_work_links import ARCHIVED_URL_KEY, SourceLink
 from app.research.retrieval import SHOWN_CLAIM_STATUSES, VISIBLE_SENSITIVITY
 from app.research.vocabulary import FACT_LEVELS
-
-from .claim_holds import held_claim
+from app.retrieval.citation_access import reader_fact
 
 __all__ = ["Owners", "SubjectCounts", "owned_claims", "owned_facts", "subject_counts"]
 
@@ -52,7 +51,7 @@ async def subject_counts(session: AsyncSession, owners: Owners) -> SubjectCounts
 
 
 def owned_facts(owners: Owners) -> CTE:
-    return owned_claims(owners, ~held_claim())
+    return owned_claims(owners, and_(*reader_fact()))
 
 
 def owned_claims(owners: Owners, condition: ColumnElement[bool]) -> CTE:

@@ -39,7 +39,6 @@ from app.retrieval.statements import (
     claim_entity_ranking,
     claim_lexical_ranking,
     claim_vector_ranking,
-    readable_citations,
 )
 
 from ..craft_fixtures import FixedEmbedder
@@ -91,9 +90,9 @@ def test_claims_are_scoped_to_the_craft_and_its_family_and_need_a_visible_source
     assert '"Claim"."subjectType" = %(subjectType_1)s::VARCHAR' in sql
     assert params["subjectType_1"] == "CONCEPT" and params["subjectType_2"] == "EDGE"
     assert '"ConceptEdge"."srcId" IN' in sql and '"ConceptEdge"."dstId" IN' in sql
-    assert '"ClaimSource"."claimId" = "Claim".id' in sql
-    assert '"Source".sensitivity != %(sensitivity_3)s' in sql
-    assert params_with(params, "sensitivity_") == ["OPEN", "OPEN", "RESTRICTED"]
+    assert 'reader_cite."claimId" = "Claim".id' in sql
+    assert "reader_source.sensitivity != %(sensitivity_5)s" in sql
+    assert params_with(params, "sensitivity_") == ["OPEN", "OPEN", "OPEN", "OPEN", "RESTRICTED"]
 
 
 def test_a_craft_without_a_family_reads_only_its_own_concepts() -> None:
@@ -218,19 +217,6 @@ def test_chunks_come_from_sources_cited_by_scoped_claims_or_shown_field_intervie
     )
 
 
-def test_a_citation_is_read_from_a_passage_the_reader_may_quote_and_an_unlinked_quote_by_its_page() -> None:
-    sql, params = compiled(readable_citations([CRAFT], acls=("PUBLIC",)))
-    assert sql.startswith('SELECT "ClaimSource".id') and 'JOIN "Chunk"' not in sql
-    assert '"Chunk".id = "ClaimSource"."chunkId" AND "Chunk".acl IN' in sql
-    assert '"ClaimSource"."chunkId" IS NULL AND ("ClaimSource".quote IS NULL OR ' in sql
-    assert '"Chunk"."sourceId" = "ClaimSource"."sourceId" AND (' in sql and '"Chunk".acl NOT IN' in sql
-    assert '"Source".id = "ClaimSource"."sourceId" AND "Source".sensitivity = ' in sql
-    assert 'FROM "Chunk", "ClaimSource"' not in sql and 'FROM "Source", "ClaimSource"' not in sql
-    assert params_with(params, "acl_") == [["PUBLIC"], ["PUBLIC"]]
-    assert params_with(params, "sensitivity_") == ["RESTRICTED", "RESTRICTED", "RESTRICTED"]
-    assert params_with(params, "claimId_") == [[CRAFT]]
-
-
 def test_held_facts_are_left_out_of_every_mode_unless_kept_for_contributors() -> None:
     for mode in MODE_CLAIM_STATUSES:
         sql, params = compiled(claim_lexical_ranking(claim_conditions(SCOPE, mode=mode), "alum"))
@@ -261,7 +247,7 @@ def test_any_craft_reads_every_visible_concept() -> None:
     sql, params = compiled(claim_lexical_ranking(claim_conditions(EVERY_CRAFT, mode="HYBRID"), "alum"))
     assert "craftId" not in sql and "subCategoryId" not in sql
     assert '"Concept".sensitivity = %(sensitivity_1)s' in sql
-    assert params_with(params, "sensitivity_") == ["OPEN", "OPEN", "RESTRICTED"]
+    assert params_with(params, "sensitivity_") == ["OPEN", "OPEN", "OPEN", "OPEN", "RESTRICTED"]
 
 
 def test_a_craft_scope_reads_its_family_science_and_the_crafts_merged_into_it() -> None:

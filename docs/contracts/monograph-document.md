@@ -157,6 +157,21 @@ cited from the facts they rest on, so its numerals are the page's like every sen
 A picture's spec is the full `PicturePlateSpec` (`checked_spec`, every field written); a picture
 whose file is off the picture contract is left out.
 
+### Facts no section cites
+
+A field's facts that a reader can see (`retrieval.md`, A fact a reader can see) and that no published
+section or curated structure of the page cites are listed in the field's chapter until a
+section is written (`services/craft_page_unwritten.py`, decision 0149): after the field's written
+sentences and fact grid, or under the field's `h3` title when it has no section, up to twelve facts
+(`UNWRITTEN_PER_FIELD`, the strongest level first, then by text), each an `li` unit `fact-<field>-<id>`
+whose text is the fact's statement, carrying its claim id and cited like every sentence (a closed
+page's quote is left out, as everywhere). The renderer draws consecutive `li` units as a list. The
+facts are the subject's own fact-level facts filed under the field (`open_work_counts.owned_facts`, the
+facts coverage counts), so a field the coverage counts is never empty on the page. A field with only
+listed facts is carried as a section of version 0, so the document's version still sums its written
+sections. A fact stops being listed when a section cites it. A curated craft's page already draws every fact it shows as a sentence of its field (`monograph_generated_structure.with_page_claims`), so its list holds only what that page leaves out. The authored Kutch Ajrakh page lists
+none: its chapters are written by hand.
+
 ### A curated craft's sections
 
 The curation import (`import_dossier`, and `import_category` for a category) publishes one

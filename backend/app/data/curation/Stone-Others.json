@@ -5054,7 +5054,7 @@
         "discipline": "PROCESS",
         "sentences": [
           {
-            "text": "The GI application lists the Namakkal stages as raw material selection, primary cutting, shaping, hollowing, detailing, smoothening, colour uniforming, finishing, seasoning of cookware and final inspection.",
+            "text": "The GI application lists the stages as raw material selection, primary cutting, shaping, hollowing, detailing, smoothening, colour uniforming, finishing, seasoning of cookware and final inspection.",
             "claimIds": [
               "C016"
             ]
@@ -5088,7 +5088,7 @@
             ]
           },
           {
-            "text": "In Jaisalmer, stone slabs are first made into pillar-like pieces, which are turned on an electric lathe and then smoothed with sandpaper.",
+            "text": "Stone slabs are first made into pillar-like pieces, which are turned on an electric lathe and then smoothed with sandpaper.",
             "claimIds": [
               "C144",
               "C145"

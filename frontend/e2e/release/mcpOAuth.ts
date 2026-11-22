@@ -25,6 +25,8 @@ export class MemoryOAuthProvider implements OAuthClientProvider {
   private verifier: string | undefined;
   private discovery: OAuthDiscoveryState | undefined;
 
+  constructor(readonly scope: string = CLIENT_SCOPE) {}
+
   get redirectUrl(): string {
     return REDIRECT_URI;
   }
@@ -36,7 +38,7 @@ export class MemoryOAuthProvider implements OAuthClientProvider {
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
       token_endpoint_auth_method: "none",
-      scope: CLIENT_SCOPE
+      scope: this.scope
     };
   }
 
