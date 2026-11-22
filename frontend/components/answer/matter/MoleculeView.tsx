@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Move3d, RotateCw } from "lucide-react";
+import { Move3d, Rotate3d, RotateCw, ZoomIn, ZoomOut, type LucideIcon } from "lucide-react";
 
 import { MoleculeCaption } from "@/components/answer/matter/MoleculeCaption";
 import { useMolecule, type MoleculeStatus } from "@/components/answer/matter/useMolecule";
@@ -14,14 +14,33 @@ import type { MoleculeScene } from "@/lib/moleculeViewer";
 
 export const TURN_STEP_DEGREES = 90;
 export const TURN_STEP_MILLISECONDS = 600;
+export const ZOOM_STEP = 1.25;
 
-function MoleculeTools({ scene, exploring, reduce, onExplore }: { scene: MoleculeScene; exploring: boolean; reduce: boolean; onExplore: (on: boolean) => void }) {
+export type MoleculeMove = "turn" | "tilt" | "zoomIn" | "zoomOut";
+
+export const MOLECULE_MOVES: readonly { move: MoleculeMove; label: string; Icon: LucideIcon }[] = [
+  { move: "turn", label: "Turn", Icon: RotateCw },
+  { move: "tilt", label: "Tilt", Icon: Rotate3d },
+  { move: "zoomIn", label: "Zoom in", Icon: ZoomIn },
+  { move: "zoomOut", label: "Zoom out", Icon: ZoomOut }
+];
+
+export function moveMolecule(scene: MoleculeScene, move: MoleculeMove, reduce: boolean): void {
+  const milliseconds = reduce ? 0 : TURN_STEP_MILLISECONDS;
+  if (move === "turn") scene.turn(TURN_STEP_DEGREES, milliseconds);
+  else if (move === "tilt") scene.tilt(TURN_STEP_DEGREES, milliseconds);
+  else scene.zoom(move === "zoomIn" ? ZOOM_STEP : 1 / ZOOM_STEP, milliseconds);
+}
+
+export function MoleculeTools({ scene, exploring, reduce, onExplore }: { scene: MoleculeScene; exploring: boolean; reduce: boolean; onExplore: (on: boolean) => void }) {
   return (
     <ActionGroup align="start" role="toolbar" aria-label="3D view" data-testid="molecule-tools">
-      <Button variant="quiet" size="sm" onClick={() => scene.turn(TURN_STEP_DEGREES, reduce ? 0 : TURN_STEP_MILLISECONDS)}>
-        <RotateCw className="h-4 w-4" aria-hidden />
-        Turn
-      </Button>
+      {MOLECULE_MOVES.map(({ move, label, Icon }) => (
+        <Button key={move} variant="quiet" size="sm" onClick={() => moveMolecule(scene, move, reduce)}>
+          <Icon className="h-4 w-4" aria-hidden />
+          {label}
+        </Button>
+      ))}
       <Button variant="quiet" size="sm" aria-pressed={exploring} onClick={() => onExplore(!exploring)}>
         <Move3d className="h-4 w-4" aria-hidden />
         Explore

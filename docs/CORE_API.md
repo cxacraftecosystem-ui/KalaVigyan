@@ -179,7 +179,8 @@ cited sentence with its terms, `BLOCK_ID`, `TERM_KEY`, `WIKIDATA_ID`), `explaine
 typed kind and `explainerBlockShape` admits the built ones only. Each built kind has one renderer
 in `components/answer/blockRenderers.ts` (`BLOCK_RENDERERS`, `renderBlock`, `hasRenderer`); a kind
 without one is not drawn. Client pieces shared by renderers (decision 0048): `lazyBlock(load,
-placeholder)` (a block whose code loads on demand; a failed load draws nothing),
+placeholder)` (a block whose code loads on demand inside its own `BlockBoundary`; a failed load
+offers Try again, which `retryableLazy` answers with a fresh import),
 `ProseBlockView.CitedText` (cited sentences as one paragraph with the reading's `lang` and `dir`),
 `RemotePanels.RetryLine`, `DistrictLayer.DistrictOutlines`, `ChoroplethLegend.Swatch`,
 `components/map/indiaBounds.INDIA_BOUNDS`, `lib/riverTopology` (`riverBasinOf`, `fetchRiverBasin`),
@@ -232,8 +233,7 @@ contract is `lib/craftPageContract.ts` (shapes, `checkedCraftPage`), its rules
 `lib/craftPageView.ts` and `lib/craftPlaces.ts`, and its specs share `e2e/craftPageFixture.ts`
 (the golden page curated, uncurated and empty, drawn inside the page's contexts). Added by decision 0060:
 `components/answer/FilmScene` (`FilmSceneProvider`, `useFilmScene`: a film scene's progress from 0
-to 1, null outside a film, which a block's own animation follows), `guideMotion.cameraMove` and
-`zoomThrough` (a map moving into a place, a level growing out as the next settles in),
+to 1, null outside a film, which a block's own animation follows),
 `ListenAudio`'s `muted`, `listen.trackMark` (the sentence and word being read on one track, which
 `listenMark` uses), `filmScore.filmScoreOffered` and `fetchFilmScore`, `lib/filmScenes`
 (`FILM_SCENE_SECONDS` as the server's, `filmScenes` (the lede first, drawn as its sentences by `ledeScene`), `filmStep`, `stepAt`, `sceneStep`,
@@ -248,12 +248,14 @@ dialog and the term sheet for cited text outside the explainer; `ListedSources`)
 `citations.listedSourceNumbers` (sources numbered in their listed order), `download.downloadApiFile`
 and `dispositionFileName` (an API file saved under the server's `Content-Disposition` name,
 refused without one), `lib/searchParams.positiveParam`, `preferences.PREFERENCES_PATH`,
-`RegionPlaceCard.BasisLine` and `FacetBlock`, `permissions.canSaveExport`, `lib/learningApi` and
+`map/PlaceFacts.BasisLine` and `FacetBlock`, `permissions.canSaveExport`, `lib/learningApi` and
 `lib/lessonApi` (the learning routes' calls), `lib/explainerVersions` (`explainerStateOf`,
 `explainerRef`, `followingExplainer`, `followUpRequest`, `reduceAnswerEvent`,
 `withDeepeningBlock`, `knownVersions`, `versionOptions`, `versionChanges`), `lib/savedView`,
 `lib/lessonView`, `lib/districtView`, `lib/comparePage` and `components/learn/DownloadMenu` (a
-menu of downloads with its busy and failed states). Added by decision 0070: `lib/notesStore`
+menu of downloads with its busy and failed states). Added by decision 0141: `lib/listOrder` (`moveItem`,
+`usableAfterMove`, `movedText`, `inListedOrder`), `ui/MoveButtons` and `hooks/useMoveFocus` (the one
+Up and Down control of a reorderable list, on the AI routing page and the lesson builder). Added by decision 0070: `lib/notesStore`
 (`notesStore(load, now)`: the "This answer got better" notes held for one account, dropped when
 another reader signs in and never filled by a late answer for the previous one; `useNotes(account)`
 and the nav's unread badge read it), `comparePage.compareState` (an unknown craft, a comparison with
@@ -499,6 +501,7 @@ Shapes and rules are `docs/contracts/media.md`. Only `api` and the worker (`app/
 | Name | Guarantee |
 |---|---|
 | `services/craft_catalogue`: `load_catalogue(session, *, include_inactive)`, `reader_catalogue(session, kept)`, `new_catalogue_cache()`, `CATALOGUE_KEPT_SECONDS`, `assemble_catalogue(...)`, `catalogue_editorial()`; `research/craft_catalogue`: `CraftCatalogue`, `CatalogueCraft`, `CatalogueCraftRecord`, `CatalogueSummary`, `CatalogueConcept`, `CatalogueHero`, `CatalogueDepth`, `catalogue_text`; `services/catalogue_rows`: `catalogue_summary`, `is_reader_craft`, `catalogue_concepts`, `catalogue_hero`, `curated_hero`, `local_name_of`, `material_link`, `keys_of`, `CatalogueExtras`, `ConceptLink`, `HERO_THUMB_WIDTH`; `services/catalogue_records`: `load_catalogue_extras`; `services/craft_claim_counts`: `craft_claim_counts(session, craft_ids=None, *, mode)` | The catalogue v2 every craft list reads (decision 0082): reader names, family and kind labels, palette, local name, hero, depth and GI year per craft; concepts for search; and the one counting rule for readers (active, not a catch-all row) that the index, the map header, the landing and `/public/summary` share. The reader list is kept 300 seconds per process (`app.state.craft_catalogue`); a hero is a Commons thumbnail only when the stored width is over `HERO_THUMB_WIDTH`. `craft_claim_counts` is the visible concept-claim count per craft in a mode, which the catalogue's depth and the craft page's relative cards share. |
+| `services/answer_quiz`: `owned_explainer`, `shown_explainer`, `shown_quiz`, `answer_offers_quiz`, `with_quiz_offer` | The one way to a reader's quiz (decision 0141): the asker's stored explainer, as shown now (hidden marks, withdrawn field voices), quizzed over the claims still visible; `with_quiz_offer` wraps the answer stream's emit so `done` says `quizAvailable`, leaving it out when it cannot be read. |
 | `services/audit.record(session, *, action, actor=None, target_type=None, target_id=None, detail=None, ip_hash=None)` | Adds an `AuditLog` row in the caller's transaction, with the request id, and logs the action without its detail. |
 | `services/app_settings`: `load_all`, `get_value`, `set_value`, `public_view`, `sent_budget_fields(values, sent)`, `budget_changes(update, current)`, `voice_view(values)`, `voice_changes(sent)`, `UNCAPPED_ROLE_DAILY_USD`, `UNCAPPED_ANSWER_USD` | Admin-set settings stored in `AppSetting` (ceilings, per-answer caps by depth, prices, sign-up mode, domain allow-list, `voice.transport`, `voice.max_live_sessions`, `voice.voice_id`), with the key names as constants. Every AI cap defaults to `None`, no cap (decision 0093); a stored row brings one back. `sent_budget_fields` keeps the fields a body sent, a `null` kept only for the monthly ceiling, the media cap and the degrade mark (no cap, never degrade); `budget_changes` checks an AI budget update (no Master Admin cap, known roles, a media cap within a set ceiling) and merges the depth caps, where `null` lifts a depth's cap; `voice_view` shows the three voice settings beside their defaults and `voice_changes` keeps the ones a body sent (the Settings hub's Voice calls block, `lib/voiceSettingsContract.ts`, decision 0140). |
 | `services/managed_secrets`: `get_secret`, `peek_secret`, `env_value`, `set_secret`, `delete_secret`, `test_secret`, `list_managed_secrets`, `describe_secret`, `hint`, `fingerprint`, `encrypt`, `decrypt` | Provider keys stored encrypted (Fernet) with the environment as fallback; responses carry a hint and fingerprint, never the value. |

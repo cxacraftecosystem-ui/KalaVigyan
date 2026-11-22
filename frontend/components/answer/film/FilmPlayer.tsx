@@ -38,14 +38,14 @@ function keyHandler(film: Film, onMute: () => void) {
   };
 }
 
-function FilmBody({ film, language, reduce }: { film: Film; language: AnswerLanguage; reduce: boolean }) {
+function FilmBody({ film, language }: { film: Film; language: AnswerLanguage }) {
   const { scene, clock } = film;
   const mark = useMemo(() => filmMark(scene, clock.time), [scene, clock.time]);
   if (film.load === "failed") return <RetryLine message={film.error ?? "Couldn't start the film. Try again."} onRetry={film.retry} />;
   if (!scene) return <div role="status" aria-label="Preparing the film" className="motion-pulse aspect-[16/9] w-full rounded-card bg-sunk" />;
   return (
     <>
-      <FilmStage scene={scene} progress={film.progress} mark={mark} reduce={reduce} />
+      <FilmStage scene={scene} progress={film.progress} mark={mark} />
       <FilmCaption caption={filmCaption(scene, clock.time, language)} />
     </>
   );
@@ -59,7 +59,7 @@ export function FilmPlayerBody({ answerId, language, sections, lede, scoreOffere
   const onMute = () => setMix((current) => ({ ...current, muted: !current.muted }));
   return (
     <div className="mt-4 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4" onKeyDown={keyHandler(film, onMute)} data-testid="film-player" data-motion={reduce ? "none" : "scenes"}>
-      <FilmBody film={film} language={language} reduce={reduce} />
+      <FilmBody film={film} language={language} />
       <FilmTiming film={film} />
       <FilmButtons film={film} muted={mix.muted} onMute={onMute} playRef={playRef} />
       {scoreOffered ? <FilmScoreControls score={score} mix={mix} onMix={setMix} /> : null}

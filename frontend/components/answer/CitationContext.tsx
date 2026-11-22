@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 export type CitationLookup = {
   numbers: Map<string, number>;
   sourcesById: Map<string, SourceRef>;
-  onOpen?: (citations: readonly Citation[]) => void;
 };
 
 const CitationContext = createContext<CitationLookup | null>(null);

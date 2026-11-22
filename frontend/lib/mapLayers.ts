@@ -6,7 +6,7 @@ import { parseShape } from "@/lib/shape";
 export const LAYER_PARAM = "layer";
 
 export async function fetchMapLayers(): Promise<MapLayerList> {
-  return parseShape(mapLayerListShape, await apiFetch<unknown>(MAP_LAYERS_PATH));
+  return parseShape(mapLayerListShape, await apiFetch<unknown>(MAP_LAYERS_PATH, {}, { revalidateFromHttpCache: true }));
 }
 
 export async function fetchMapLayer(id: string): Promise<MapLayer> {

@@ -1,23 +1,21 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Mic } from "lucide-react";
 
 import type { Dictation } from "@/components/ask/useDictation";
-import { soundBar } from "@/components/guide/guideMotion";
-import { useAppReducedMotion } from "@/components/guide/useAppReducedMotion";
 import type { AnswerLanguage } from "@/lib/answerLanguages";
 import { listeningLabel } from "@/lib/dictation";
 import { cn } from "@/lib/utils";
 
 const BARS = [0, 1, 2, 3, 4];
 
-function SoundBars() {
-  const reduce = useAppReducedMotion();
+export const SOUND_BAR_STAGGER_MS = 150;
+
+export function SoundBars() {
   return (
-    <span className="hidden h-6 items-center gap-1 sm:flex" aria-hidden>
+    <span className="hidden h-6 items-center gap-1 sm:flex" aria-hidden data-testid="sound-bars">
       {BARS.map((index) => (
-        <motion.span key={index} initial={false} {...soundBar(reduce, index)} className="h-[22px] w-1 origin-center rounded-full bg-ink-2" />
+        <span key={index} className="motion-sound h-[22px] w-1 origin-center rounded-full bg-ink-2" style={{ animationDelay: `${index * SOUND_BAR_STAGGER_MS}ms` }} />
       ))}
     </span>
   );

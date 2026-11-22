@@ -8,7 +8,6 @@ export type PageHeaderProps = {
   description?: ReactNode;
   kicker?: string;
   actions?: ReactNode;
-  icon?: ReactNode;
   back?: boolean;
 };
 

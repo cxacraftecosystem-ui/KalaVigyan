@@ -2,16 +2,17 @@
 
 import { useMemo } from "react";
 
-import { EvidenceSignalBadge } from "@/components/answer/EvidenceBadge";
 import { ExplainerBlockView } from "@/components/answer/ExplainerBlockView";
 import { CitedText } from "@/components/answer/ProseBlockView";
+import { EvidenceTag } from "@/components/editorial/EvidenceMark";
+import { signalMark } from "@/lib/citationCluster";
 import { expertsDiffer, type ExpertViewBlock } from "@/lib/explainerExperts";
 import { differCards, type DifferCard } from "@/lib/expertPanel";
 
 export function ExpertsDifferCard({ card }: { card: DifferCard }) {
   return (
     <div className="min-w-0 border-s-2 border-madder py-1 ps-4" data-testid="experts-differ">
-      <EvidenceSignalBadge signal="EXPERTS_DIFFER" />
+      <EvidenceTag {...signalMark("EXPERTS_DIFFER")} />
       <div className="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-[repeat(2,minmax(0,1fr))]">
         {card.sides.map((side) => (
           <div key={`${side.seat}:${side.view.id}`} className="min-w-0" data-testid="experts-differ-side" data-seat={side.seat}>

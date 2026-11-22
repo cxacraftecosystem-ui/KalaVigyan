@@ -1,12 +1,14 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 import type { StatusTone } from "@/components/records/statusTone";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { MoveButtons } from "@/components/ui/MoveButtons";
 import { ToggleSwitch } from "@/components/ui/Toggle";
 import { formatDateTime } from "@/lib/format";
+import type { MoveDirection } from "@/lib/listOrder";
 import { routeKey, type KeyState, type RouteRow } from "@/lib/routing";
 import { cn } from "@/lib/utils";
 
@@ -25,17 +27,8 @@ export type RouteListHandlers = {
   onMove: (from: number, to: number) => void;
   onRemove: (row: RouteRow) => void;
   onEnable: (row: RouteRow, enabled: boolean) => void;
-  register: (key: string, node: HTMLButtonElement | null) => void;
+  register: (key: string, direction: MoveDirection, node: HTMLButtonElement | null) => void;
 };
-
-function MoveButton({ direction, disabled, label, register, onMove }: { direction: "up" | "down"; disabled: boolean; label: string; register: (node: HTMLButtonElement | null) => void; onMove: () => void }) {
-  const Icon = direction === "up" ? ChevronUp : ChevronDown;
-  return (
-    <Button ref={register} variant="quiet" size="icon" disabled={disabled} aria-label={label} onClick={onMove}>
-      <Icon className="size-4" aria-hidden />
-    </Button>
-  );
-}
 
 function RouteItem({ row, index, count, names, on }: { row: RouteRow; index: number; count: number; names: RouteNames; on: RouteListHandlers }) {
   const key = routeKey(row);
@@ -59,8 +52,7 @@ function RouteItem({ row, index, count, names, on }: { row: RouteRow; index: num
         <Button variant="quiet" size="sm" busy={on.testing === key} busyLabel="Testing" disabled={on.testing !== null && on.testing !== key} aria-label={`Test ${model}`} onClick={() => on.onTest(row)}>
           Test
         </Button>
-        <MoveButton direction="up" disabled={index === 0} label={`Move ${model} up`} register={(node) => on.register(`${key}:up`, node)} onMove={() => on.onMove(index, index - 1)} />
-        <MoveButton direction="down" disabled={index === count - 1} label={`Move ${model} down`} register={(node) => on.register(`${key}:down`, node)} onMove={() => on.onMove(index, index + 1)} />
+        <MoveButtons name={model} index={index} count={count} register={(direction, node) => on.register(key, direction, node)} onMove={on.onMove} />
         <Button variant="danger" size="icon" aria-label={`Remove ${model}`} onClick={() => on.onRemove(row)}>
           <Trash2 className="size-4" aria-hidden />
         </Button>

@@ -3,7 +3,7 @@ import logging
 from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, datetime
-from functools import lru_cache
+from functools import lru_cache, partial
 from pathlib import Path
 from typing import Any, Self
 
@@ -38,6 +38,7 @@ from app.research.stream import event_stream
 from app.research.vocabulary import ANSWER_LANGUAGES, AnswerLanguage, Depth, language_option
 from app.schemas.common import APIModel
 from app.services import knowledge_view
+from app.services.answer_quiz import answer_offers_quiz, with_quiz_offer
 from app.services.answer_store import build_answer_pipeline
 from app.services.answering import AnswerAsk, AnswerPipeline, answer_question
 from app.services.explainer_history import (
@@ -229,8 +230,9 @@ async def answers_stream(
     if not is_uncapped(user):
         refuse_when_throttled(ask_attempt(str(user.id)), THROTTLED_DETAIL)
     pipeline = pipelines(ask.depth)
+    offers = partial(answer_offers_quiz, sessionmaker(), user_id=user.id)
     return StreamingResponse(
-        event_stream(lambda emit: answer_question(ask, pipeline, emit)),
+        event_stream(lambda emit: answer_question(ask, pipeline, with_quiz_offer(emit, offers))),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
     )

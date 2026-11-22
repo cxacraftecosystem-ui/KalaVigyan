@@ -18,7 +18,7 @@ const simulation = () => phaseCBlock("simulation", "s1.b1");
 const GI_JOURNAL = "d0f53ee9-4b97-5df7-a367-686957bdb7c8";
 const MORDANT_PAPER = "9187df8b-62e3-510a-ba5d-827ec098c84c";
 const WATER_SOURCE = "3cb53e85-da56-502e-8333-4fdbbb34b3ae";
-const LOOKUP: CitationLookup = { numbers: new Map([[GI_JOURNAL, 1], [MORDANT_PAPER, 2]]), sourcesById: new Map(), onOpen: () => undefined };
+const LOOKUP: CitationLookup = { numbers: new Map([[GI_JOURNAL, 1], [MORDANT_PAPER, 2]]), sourcesById: new Map() };
 
 function lab(block: WhatIfBlock, reduce: boolean): string {
   return withReading(createElement(WhatIfLabView, { block, reduce }), LOOKUP);

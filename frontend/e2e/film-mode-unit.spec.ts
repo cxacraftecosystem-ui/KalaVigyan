@@ -242,12 +242,12 @@ test("the score control is drawn only when the config offers it", () => {
 
 test("the stage plays a scene's own block with the sentence being read marked, and the ladder fills with the scene", () => {
   const all = scenes();
-  const prose = withApp(createElement(FilmStage, { scene: all[2], progress: 0.1, mark: filmMark(all[2], 0.5), reduce: false }));
+  const prose = withApp(createElement(FilmStage, { scene: all[2], progress: 0.1, mark: filmMark(all[2], 0.5) }));
   expect(attribute(prose, "film-scene", "data-kind")).toEqual(["prose"]);
   expect(attribute(prose, "answer-sentence", "data-listening")[0]).toBe("true");
   expect(prose).toContain('data-testid="listen-word">of</mark>');
   expect(shownText(prose)).toContain("Why the water matters");
-  const ladder = (progress: number) => attribute(withApp(createElement(FilmStage, { scene: all[0], progress, mark: null, reduce: false })), "process-ladder", "data-reached");
+  const ladder = (progress: number) => attribute(withApp(createElement(FilmStage, { scene: all[0], progress, mark: null })), "process-ladder", "data-reached");
   expect([ladder(0), ladder(0.5), ladder(1)]).toEqual([["1"], ["2"], ["4"]]);
 });
 

@@ -95,7 +95,7 @@ test("the cluster is one button glued to the word before it, named, described an
 });
 
 test("a citation lookup draws one cluster per sentence, whatever the number of sources", () => {
-  const lookup: CitationLookup = { numbers: NUMBERS, sourcesById: SOURCES, onOpen: () => undefined };
+  const lookup: CitationLookup = { numbers: NUMBERS, sourcesById: SOURCES };
   const html = renderToStaticMarkup(createElement(CitationProvider, { value: lookup }, createElement(CitationChips, { citations: SENTENCE })));
   expect(attribute(html, "citation-chip", "data-numbers")).toEqual(["1,2"]);
   expect(renderToStaticMarkup(createElement(CitationProvider, { value: lookup }, createElement(CitationChips, { citations: [] })))).toBe("");

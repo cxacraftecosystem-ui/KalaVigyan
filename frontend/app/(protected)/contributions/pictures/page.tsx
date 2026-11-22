@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ImagePlus } from "lucide-react";
 
 import { MyPictures } from "@/components/contributions/MyPictures";
 import { PictureForm } from "@/components/contributions/PictureForm";
@@ -46,7 +45,6 @@ export default function GivePicturePage() {
       <PageHeader
         title="Give a picture"
         description="A photograph, a drawing or an AI-made illustration of a craft. AI-made pictures are always shown as illustrations."
-        icon={<ImagePlus className="h-5 w-5" aria-hidden />}
       />
       <div className="grid gap-12">
         <PictureForm

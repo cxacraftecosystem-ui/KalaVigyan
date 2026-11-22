@@ -10,7 +10,9 @@ from fastapi.testclient import TestClient
 from app.api.routes import contributed_pictures as route
 from app.core.db import get_session
 from app.core.errors import ExternalFailure
+from app.data.design_palette import THEMES
 from app.main import create_app
+from app.services import drawing_themes
 from app.services.contributed_pictures import ShownPicture
 
 PICTURE = uuid.UUID("5c0e0000-0000-4000-8000-000000000001")
@@ -53,9 +55,10 @@ def served(
     bucket: bool = True,
     stored: bool = True,
     failure: Exception | None = None,
+    mime: str = "image/webp",
 ) -> tuple[TestClient, Calls]:
     calls = Calls()
-    picture = ShownPicture(key=KEY, mime="image/webp", sha256=DIGEST)
+    picture = ShownPicture(key=KEY, mime=mime, sha256=DIGEST)
 
     async def shown_picture(session: Any, contribution_id: uuid.UUID) -> ShownPicture | None:
         calls.made.append(f"query {contribution_id}")
@@ -120,3 +123,28 @@ def test_a_contribution_is_named_by_its_uuid(monkeypatch: pytest.MonkeyPatch) ->
     http, calls = served(monkeypatch)
     assert http.get("/api/crafts/contributed/not-a-picture").status_code == 422
     assert calls.made == []
+
+
+def themed_tag(theme: str, tokens: str) -> str:
+    return hashlib.sha256(f"{DIGEST}:{theme}:{tokens}".encode()).hexdigest()
+
+
+def test_an_svg_picture_is_tagged_per_theme_and_per_token_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    tokens = hashlib.sha256(drawing_themes.design_tokens().encode("utf-8")).hexdigest()
+    assert drawing_themes.token_set_hash() == tokens
+    assert drawing_themes.picture_version(DIGEST, "image/webp", "dark") == DIGEST
+    tags = {theme: drawing_themes.picture_version(DIGEST, "image/svg+xml", theme) for theme in THEMES}
+    assert tags == {theme: themed_tag(theme, tokens) for theme in THEMES}
+    assert len(set(tags.values())) == len(THEMES)
+    assert drawing_themes.picture_version(DIGEST, "image/svg+xml", None) == tags[THEMES[0]]
+    http, calls = served(monkeypatch, mime="image/svg+xml")
+    held = http.get(
+        PATH, params={"theme": "dark"}, headers={"If-None-Match": f'"{themed_tag("dark", tokens)}"'}
+    )
+    assert held.status_code == 304
+    assert not any(call.startswith("bucket") for call in calls.made)
+    monkeypatch.setattr(drawing_themes, "token_set_hash", lambda: "a-changed-token-set")
+    assert drawing_themes.picture_version(DIGEST, "image/svg+xml", "dark") == themed_tag(
+        "dark", "a-changed-token-set"
+    )
+    assert drawing_themes.picture_version(DIGEST, "image/svg+xml", "dark") != tags["dark"]

@@ -2,7 +2,6 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ImagePlus } from "lucide-react";
 
 import { ClosedUploadLink } from "@/components/contributions/ClosedUploadLink";
 import { LinkedPictureForm } from "@/components/contributions/LinkedPictureForm";
@@ -28,7 +27,7 @@ export default function UploadLinkPage() {
 }
 
 function Header() {
-  return <PageHeader title="Give a picture" description={DESCRIPTION} icon={<ImagePlus className="h-5 w-5" aria-hidden />} />;
+  return <PageHeader title="Give a picture" description={DESCRIPTION} />;
 }
 
 function UploadLink() {

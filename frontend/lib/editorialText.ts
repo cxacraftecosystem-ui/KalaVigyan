@@ -25,17 +25,6 @@ export function figureReference(kind: FigureKind, number: number): string {
   return `(${figureKicker(kind, number)})`;
 }
 
-export function numberFigures(items: readonly { id: string; kind: FigureKind }[]): Map<string, number> {
-  const counts: Record<FigureKind, number> = { figure: 0, table: 0 };
-  const numbers = new Map<string, number>();
-  for (const item of items) {
-    if (numbers.has(item.id)) throw new Error(`Figure "${item.id}" is listed twice`);
-    counts[item.kind] += 1;
-    numbers.set(item.id, counts[item.kind]);
-  }
-  return numbers;
-}
-
 export function shownNativeName(name: NativeName | null | undefined): ShownNativeName | null {
   if (!name || !name.reviewed || !name.sourceId || !name.text.trim()) return null;
   return { ...name, sourceId: name.sourceId, dir: RIGHT_TO_LEFT.has(name.script) ? "rtl" : "ltr" };

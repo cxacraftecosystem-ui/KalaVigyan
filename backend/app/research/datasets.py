@@ -13,7 +13,9 @@ __all__ = [
     "BOUNDARY_DATASET_CODE",
     "DATASET_BUILDS",
     "DATASET_CODE_PATTERN",
+    "DISTRICTS_INDICATIVE",
     "DOI_PATTERN",
+    "INDIA_OUTLINE_CAPTION",
     "SHA256_PATTERN",
     "DatasetEntry",
     "DatasetRef",
@@ -25,9 +27,9 @@ DOI_PATTERN = r"^10\.\d{4,9}/\S+$"
 SHA256_PATTERN = r"^[0-9a-f]{64}$"
 DATASET_BUILDS = ("geo-etl", "maplayers", "contributed")
 BOUNDARY_DATASET_CODE = "DR_DISTRICT_SHAPES"
-BOUNDARY_CAPTION = (
-    "External boundaries of India as depicted by Survey of India. District boundaries are indicative."
-)
+INDIA_OUTLINE_CAPTION = "External boundaries of India as depicted by Survey of India."
+DISTRICTS_INDICATIVE = "District boundaries are indicative."
+BOUNDARY_CAPTION = f"{INDIA_OUTLINE_CAPTION} {DISTRICTS_INDICATIVE}"
 
 
 class DatasetRef(ContractModel):

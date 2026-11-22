@@ -82,7 +82,7 @@ function reading(onTerm: ExplainerReading["onTerm"]): ExplainerReading {
 }
 
 function withReading(child: ReactElement, onTerm: ExplainerReading["onTerm"] = () => undefined): string {
-  const lookup: CitationLookup = { numbers: new Map(), sourcesById: new Map(), onOpen: () => undefined };
+  const lookup: CitationLookup = { numbers: new Map(), sourcesById: new Map() };
   return renderToStaticMarkup(createElement(ExplainerReadingProvider, { value: reading(onTerm) }, createElement(CitationProvider, { value: lookup }, child)));
 }
 

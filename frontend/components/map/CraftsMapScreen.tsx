@@ -58,6 +58,7 @@ export function CraftsMapScreen({ initial = null }: { initial?: CraftCatalogue |
   const markers = useMemo(() => placeMarkers(ranking.points.data ?? [], ranking.catalogue), [ranking.points.data, ranking.catalogue]);
   const pick = { lgd: districtLgd, onPick: (lgd: number | null) => write(DISTRICT_PARAM, lgd === null ? null : String(lgd)) };
   const boundary = layers.data?.boundary ?? null;
+  const outline = layers.data?.outlineCaption ?? null;
   const shown = showPlaces ? markers : [];
   const placesToggle = markers.length ? <Toggle label={PLACES_TOGGLE} description={placesNote(markers.length)} checked={showPlaces} onChange={setShowPlaces} className="border-b border-rule" testId="places-toggle" /> : null;
 
@@ -73,11 +74,11 @@ export function CraftsMapScreen({ initial = null }: { initial?: CraftCatalogue |
         <LayerPicker list={layers.data} value={physical ?? layerId} onChange={(id) => write(LAYER_PARAM, id)} />
       </header>
       {physical ? (
-        <PhysicalLayerFigure id={physical} markers={shown} boundary={boundary} controls={placesToggle} />
+        <PhysicalLayerFigure id={physical} markers={shown} caption={outline} controls={placesToggle} />
       ) : layerId ? (
         <MapLayerFigure data={layerData} markers={shown} boundary={boundary} pick={pick} controls={placesToggle} />
       ) : (
-        <MapStatesFigure ranking={ranking} boundary={boundary} />
+        <MapStatesFigure ranking={ranking} caption={outline} />
       )}
       {districtLgd !== null ? <DistrictPanel district={district} onClose={() => pick.onPick(null)} /> : null}
       {!layerId && !physical && ranking.lists ? <StateCraftsList lists={ranking.lists} /> : null}
