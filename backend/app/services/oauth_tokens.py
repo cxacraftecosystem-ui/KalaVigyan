@@ -12,6 +12,7 @@ from app.core.deps import token_matches_user
 from app.core.security import TOKEN_VERSION_CLAIM
 from app.models import OAuthClient, OAuthCode, OAuthGrant, OAuthToken, User
 from app.research.oauth_authorization import same_resource
+from app.research.oauth_client_documents import named_client_id
 from app.research.oauth_contract import TokenReply
 from app.research.oauth_metadata import AUTHORIZATION_CODE, REFRESH_TOKEN
 from app.research.oauth_rules import (
@@ -83,7 +84,7 @@ async def grant_tokens(
 ) -> TokenReply:
     if fields.get("client_secret"):
         raise OAuthError(INVALID_CLIENT, "KalaVigyan clients are public and hold no secret", status=401)
-    client = await find_client(session, fields.get("client_id"))
+    client = await find_client(session, named_client_id(fields))
     if client is None:
         raise OAuthError(INVALID_CLIENT, "client_id is not registered; register the client again", status=401)
     if not same_resource(fields.get("resource"), resource):
@@ -99,7 +100,7 @@ async def grant_tokens(
 
 
 async def revoke_token(session: AsyncSession, fields: Mapping[str, str], *, now: datetime) -> None:
-    client = await find_client(session, fields.get("client_id"))
+    client = await find_client(session, named_client_id(fields))
     if client is None:
         raise OAuthError(INVALID_CLIENT, "client_id is not registered", status=401)
     raw = _required(fields, "token")
