@@ -6,7 +6,13 @@ from sqlalchemy.sql.sqltypes import Enum
 from app.models import Base
 from app.models.base import pg_enum
 
-from .db.previous_release_probe import engine_url, labels_it_refuses, reads_later_labels, unwritable_columns
+from .db.previous_release_probe import (
+    engine_url,
+    labels_it_refuses,
+    reads_later_labels,
+    trigger_filled,
+    unwritable_columns,
+)
 
 LISTED = ("OPENAI", "GEMINI")
 
@@ -52,6 +58,15 @@ def test_a_required_column_the_release_before_does_not_map_makes_its_writes_fail
         {"name": "words", "nullable": False, "default": None, "computed": {"sqltext": "to_tsvector(name)"}},
     ]
     assert unwritable_columns(["id", "name"], stored) == ["weight"]
+    assert unwritable_columns(["id"], stored, filled={"name", "weight"}) == []
+
+
+def test_a_column_a_before_insert_trigger_assigns_is_filled_for_the_release_before() -> None:
+    source = (
+        'BEGIN IF NEW."clientName" IS NULL THEN SELECT k."name" INTO NEW."clientName" FROM x; END IF; END'
+    )
+    assert trigger_filled([source], ["clientName", "tool", "name"]) == {"clientName"}
+    assert trigger_filled([], ["clientName"]) == set()
 
 
 def test_the_probe_reaches_postgres_through_psycopg() -> None:

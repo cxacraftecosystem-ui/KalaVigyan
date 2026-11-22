@@ -14,6 +14,11 @@ from sqlalchemy.sql.sqltypes import Enum
 LATER_LABEL = "A_LABEL_A_LATER_RELEASE_ADDS"
 DRIVER = "postgresql+psycopg"
 ENUM_LABELS = text("SELECT t.typname, e.enumlabel FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid")
+ROW_BEFORE_INSERT = 7
+INSERT_TRIGGERS = text(
+    "SELECT p.prosrc FROM pg_trigger t JOIN pg_proc p ON p.oid = t.tgfoid "
+    "WHERE t.tgrelid = to_regclass(:table) AND NOT t.tgisinternal AND t.tgtype & :kind = :kind"
+)
 
 
 def reads_later_labels(kind: Enum) -> bool:
@@ -34,8 +39,14 @@ def needs_a_value(column: Mapping[str, Any]) -> bool:
     return not column["nullable"] and not filled
 
 
-def unwritable_columns(mapped: Iterable[str], stored: Iterable[Mapping[str, Any]]) -> list[str]:
-    known = set(mapped)
+def trigger_filled(sources: Iterable[str], columns: Iterable[str]) -> set[str]:
+    return {column for column in columns if any(f'NEW."{column}"' in source for source in sources)}
+
+
+def unwritable_columns(
+    mapped: Iterable[str], stored: Iterable[Mapping[str, Any]], *, filled: Iterable[str] = ()
+) -> list[str]:
+    known = set(mapped) | set(filled)
     return sorted(
         column["name"] for column in stored if needs_a_value(column) and column["name"] not in known
     )
@@ -55,7 +66,7 @@ def probe(engine: Engine, mappers: Iterable[Mapper[Any]]) -> dict[str, Any]:
         report["tables"] += 1
         report["unreadable"] += _unreadable(engine, mapper)
         report["refusedLabels"] += _refused(table, labels)
-        report["unwritable"] += _unwritable(schema, table)
+        report["unwritable"] += _unwritable(engine, schema, table)
     return report
 
 
@@ -95,14 +106,15 @@ def _refused(table: Table, labels: Mapping[str, list[str]]) -> list[str]:
     return found
 
 
-def _unwritable(schema: Inspector, table: Table) -> list[str]:
+def _unwritable(engine: Engine, schema: Inspector, table: Table) -> list[str]:
     if not schema.has_table(table.name):
         return []
     stored = schema.get_columns(table.name)
-    return [
-        f"{table.name}.{name}"
-        for name in unwritable_columns([column.name for column in table.columns], stored)
-    ]
+    with engine.connect() as connection:
+        sources = connection.scalars(INSERT_TRIGGERS, {"table": f'"{table.name}"', "kind": ROW_BEFORE_INSERT})
+        filled = trigger_filled(list(sources), [column["name"] for column in stored])
+    mapped = [column.name for column in table.columns]
+    return [f"{table.name}.{name}" for name in unwritable_columns(mapped, stored, filled=filled)]
 
 
 def main() -> int:

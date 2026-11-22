@@ -2130,6 +2130,18 @@ Last reviewed: 2026-11-22.
   `eval_retrieval --fusion --out /tmp/fusion.json` on the box (RUNBOOK, Fusion weights), commits the
   picked file and raises the fused floors to its numbers less 0.05.
 
+### The MCP call's client name is filled by a trigger for the release before
+
+- **What:** migration `0075_mcp_call_name_filled` adds a `BEFORE INSERT` trigger on `McpToolCall`
+  that fills a missing `clientName` from the grant's client, because production's release records
+  MCP calls without it while migration 0074 made it required. The rule then has two homes:
+  `services/oauth_bearer.record_tool_call` and the trigger.
+- **Why left:** the trigger is needed only while the release before 0074 can still serve the
+  migrated database (decision 0151).
+- **Clears it:** in the first release after the one that carries 0074, drop the trigger and
+  `kv_fill_mcp_client_name()` in a migration; the release-before check passes once the release
+  before maps the column.
+
 ### Goldens that do not yet show every field
 
 - **What:** 174 fields of 37 models the web is served (the craft page's field voices, field photos,

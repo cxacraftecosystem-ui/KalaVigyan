@@ -71,9 +71,12 @@ question writer). The contracts are `docs/contracts/frontend.md`, `docs/contract
    while a golden in `shared/` is read by no unit spec and is not listed as read only outside the web.
 4. **Every migration stays readable and writable by the release before it.** Every PostgreSQL enum
    is declared through `models.base.pg_enum`, an `OpenEnum` that reads a label it does not list as
-   its text, so a label may be added once a release that reads it has shipped; a column the release
-   before does not map is nullable or has a default; a renamed value keeps its old form current until
-   the switch. Backend checks, after `alembic upgrade head`, the seeds, the database tests and the
+   its text, so a label may be added once a release that reads it has shipped; a required column the
+   release before does not map has a default or is filled by a `BEFORE INSERT` row trigger; a renamed
+   value keeps its old form current until the switch. The probe found one on its first run: migration
+   0074 made `McpToolCall.clientName` required, and production's release records MCP calls without
+   it, so a stopped round 7 release would have failed every call it recorded; migration
+   `0075_mcp_call_name_filled` fills a missing name from the grant's client, as 0074's backfill does. Backend checks, after `alembic upgrade head`, the seeds, the database tests and the
    curated import, checks out the release before (`main`, or the push's previous head on `main`) and
    runs `tests/db/previous_release_probe.py` under its models: every mapped table is loaded whole,
    every enum label the database holds must be listed or read as later, and every required column
