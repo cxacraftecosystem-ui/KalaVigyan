@@ -1,7 +1,8 @@
+import json
 from functools import cache
+from pathlib import Path
 from typing import Any
 
-import pytest
 from pydantic import Field
 
 from app.research.base import ContractModel, absent
@@ -46,6 +47,10 @@ GOLDEN_MODELS: dict[str, Any] = {
     "learning.lesson.golden.json": LessonFixture,
 }
 SERVED = (CraftPage, CategoryPage, CategoryList, CraftCatalogue, CraftComparison, Explainer)
+NOT_SERVED_TO_THE_WEB = {
+    "app.research.craft_catalogue.CatalogueCraftRecord": "the catalogue's records, served only to the MCP tools"
+}
+UNSHOWN_FILE = Path(__file__).with_name("unshown_fields.json")
 
 
 class Cited(ContractModel):
@@ -78,6 +83,20 @@ def test_every_golden_file_of_a_served_payload_is_listed() -> None:
         assert {path.name for path in SHARED.glob(f"{prefix}*.golden.json")} <= listed
 
 
-@pytest.mark.parametrize("root", SERVED, ids=lambda root: root.__name__)
-def test_every_field_a_served_payload_can_carry_appears_in_a_golden(root: Any) -> None:
-    assert unshown_fields([root], set(every_shown())) == []
+def served_unshown() -> set[str]:
+    unshown = set(unshown_fields(SERVED, set(every_shown())))
+    return {name for name in unshown if name.rsplit(".", 1)[0] not in NOT_SERVED_TO_THE_WEB}
+
+
+def test_every_field_a_served_payload_can_carry_appears_in_a_golden_or_in_the_shrinking_list() -> None:
+    listed = set(json.loads(UNSHOWN_FILE.read_text(encoding="utf-8"))["fields"])
+    unshown = served_unshown()
+    assert sorted(unshown - listed) == [], "show these fields in a golden"
+    assert sorted(listed - unshown) == [], (
+        f"these are shown or gone now; remove them from {UNSHOWN_FILE.name}"
+    )
+
+
+def test_a_model_kept_out_of_the_web_s_payloads_is_one_they_can_hold() -> None:
+    reachable = {f"{model.__module__}.{model.__qualname__}" for model in reachable_models(SERVED)}
+    assert set(NOT_SERVED_TO_THE_WEB) <= reachable

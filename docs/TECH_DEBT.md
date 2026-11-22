@@ -2131,6 +2131,22 @@ Last reviewed: 2026-11-22.
   `eval_retrieval --fusion --out /tmp/fusion.json` on the box (RUNBOOK, Fusion weights), commits the
   picked file and raises the fused floors to its numbers less 0.05.
 
+### Goldens that do not yet show every field
+
+- **What:** 174 fields of 37 models the web is served (the craft page's field voices, field photos,
+  contributed plates, AI media and searched parts, the people and component blocks, groundwater,
+  monthly rain and dataset references, a source's journal name, a translated sentence's original)
+  appear in no golden in `shared/`, so the web's strict parse of the goldens does not test them.
+  `backend/tests/contracts/unshown_fields.json` lists them; `test_golden_fields.py` fails on any
+  other unshown field, so every field added since decision 0151 is shown, and on a listed field that
+  is shown, so the list only shrinks.
+- **Why left:** the craft page goldens are the Kutch Ajrakh dossier and Farrukhabad Prints as the
+  preview builds them, and neither has field voices, contributed or AI pictures, people blocks or a
+  journal paper; showing them needs inputs for those builders, a change of its own.
+- **Clears it:** give the preview builders inputs that carry each part (a recorded voice and field
+  photo in `craft.page.inputs.json`, a contributed and an AI plate, a journal source), add the
+  missing block kinds to the explainer fixtures, regenerate the goldens and empty the list.
+
 ### The question writer keeps few of the facts it samples
 
 - **What:** generation run 44993519051 sampled 727 facts and dropped 580 questions because they

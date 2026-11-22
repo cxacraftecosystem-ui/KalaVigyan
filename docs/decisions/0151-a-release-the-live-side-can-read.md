@@ -65,7 +65,9 @@ question writer). The contracts are `docs/contracts/frontend.md`, `docs/contract
    reachable from a served payload (the craft page, the category page and list, the catalogue, the
    compare screen, the explainer) appears in no golden, so a field the backend adds, even one sent
    only sometimes, fails the pull request until a golden carries it, and the web's strict parse of
-   that golden then fails until its shape knows it. `frontend/e2e/golden-files-unit.spec.ts` fails
+   that golden then fails until its shape knows it. The 174 fields no golden showed on 2026-11-23 are
+   listed in `tests/contracts/unshown_fields.json`, which the test holds exact, so it only shrinks;
+   the catalogue's records, served only to the MCP tools, are kept out by name. `frontend/e2e/golden-files-unit.spec.ts` fails
    while a golden in `shared/` is read by no unit spec and is not listed as read only outside the web.
 4. **Every migration stays readable and writable by the release before it.** Every PostgreSQL enum
    is declared through `models.base.pg_enum`, an `OpenEnum` that reads a label it does not list as
