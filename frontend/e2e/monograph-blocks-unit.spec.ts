@@ -20,7 +20,7 @@ const REF_FIELDS = ["id", "kind", "title", "authors", "year", "doi", "url", "pub
 
 async function provided(element: ReactElement): Promise<string> {
   const { prelude } = await prerender(createElement(AuthProvider, null, createElement(ThemeProvider, null, element)));
-  return new Response(prelude).text();
+  return (await new Response(prelude).text()).replaceAll("<!-- -->", "");
 }
 
 function pageBlock(kind: string): PageBlock {

@@ -267,7 +267,8 @@ test("the craft page loads the monograph or the craft list's record only when it
   const shellPage = [...eagerModules("@/components/monograph/MonographShellPage")];
   expect(shellPage.filter((file) => /MonographDocumentPage|MonographChapters|ComponentSlot\.tsx/.test(file))).toEqual([]);
   expect([...eagerModules("@/components/answer/ChemEquation")]).not.toContain("lib/chemistry.ts");
-  expect(graph).toContain("components/monograph/kinds/blocks/AnswerBlockView.tsx");
+  expect(graph).toContain("components/monograph/kinds/blocks/LazyAnswerBlockView.tsx");
+  expect(graph.filter((file) => /kinds\/blocks\/AnswerBlockView|components\/answer\/blockRenderers/.test(file))).toEqual([]);
   expect(graph.filter((file) => /CraftScreen|CraftTabs|CraftReference|craftMedia|StageMedia|mediaContract/.test(file))).toEqual([]);
   expect(texts.filter((text) => /\/(profile|process)`/.test(text))).toEqual([]);
 });
