@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import AsyncIterator
 from decimal import Decimal
 
@@ -8,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_engine
 from app.models import Claim, ClaimSource, CuratedClaim
 from app.research.crafts import CraftRef
+from app.research.retrieval import EVERY_CHUNK_ACLS
 from app.services import knowledge_view
 from app.services.curation_import import import_curation
 from app.services.market_builder import market_block
@@ -64,16 +66,13 @@ async def test_a_seer_converts_only_once_a_stored_quote_states_its_value_for_kac
     places = await craft_places(session, craft)
     assert KACHCHH in places.districts and {GUJARAT, 8} <= places.states
     assert (await regional_factors(session, AJRAKH.slug, {"seer"})).factors == {}
-    curated = (
-        select(CuratedClaim.claimId)
-        .join(Claim, Claim.id == CuratedClaim.claimId)
-        .where(CuratedClaim.craftId == craft.id, Claim.evidenceLevel == "PROVISIONAL")
+    curated = select(CuratedClaim.claimId).where(CuratedClaim.craftId == craft.id)
+    candidates = await session.scalars(
+        select(Claim.id).where(Claim.id.in_(curated), Claim.evidenceLevel == "PROVISIONAL").order_by(Claim.id)
     )
-    cite = (
-        await session.scalars(
-            select(ClaimSource).where(ClaimSource.claimId.in_(curated)).order_by(ClaimSource.id)
-        )
-    ).first()
+    views, _ = await knowledge_view.claims_by_id(session, list(candidates), acls=EVERY_CHUNK_ACLS)
+    shown = next(view for view in views.values() if view.citations)
+    cite = await session.get(ClaimSource, uuid.UUID(shown.citations[0]["id"]))
     assert cite is not None
     cite.quote = "In Kachchh a seer weighed 0.933 kg."
     await session.flush()
