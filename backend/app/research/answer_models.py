@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.research.reranking import Reranker
-from app.research.structured import StructuredModel
+from .reranking import Reranker
+from .structured import StructuredModel
 
 __all__ = ["AnswerModels"]
 

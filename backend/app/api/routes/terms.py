@@ -9,12 +9,12 @@ from app.core.rate_limit import term_attempt
 from app.core.roles import is_uncapped
 from app.core.throttle_refusal import refuse_when_throttled
 from app.models import User
+from app.providers.catalogue import AiTask
 from app.providers.embedding import router_embedder
 from app.providers.router import Principal
 from app.providers.structured import router_structured_model
 from app.research.subject_keys import TERM_KEY_MAX_CHARS
 from app.research.vocabulary import CANONICAL_LANGUAGE, AnswerLanguage
-from app.services.ai_providers import AiTask
 from app.services.term_summaries import NEEDS_LOOKUP_REASON, TermReader
 from app.services.term_wiring import build_term_lookup, stored_term_lookup
 
@@ -38,10 +38,10 @@ async def term_lookup(request: Request, reader: User | None = Depends(public_rea
     )
 
 
-def throttle(reader: User | None = Depends(public_reader)) -> None:
+async def throttle(reader: User | None = Depends(public_reader)) -> None:
     if reader is None or is_uncapped(reader):
         return
-    refuse_when_throttled(term_attempt(str(reader.id)), THROTTLED_DETAIL)
+    refuse_when_throttled(await term_attempt(str(reader.id)), THROTTLED_DETAIL)
 
 
 @router.get("/terms/{key}", dependencies=[Depends(throttle)])

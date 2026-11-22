@@ -195,7 +195,7 @@ twice.
   (`ANONYMOUS_LOOKUP_LIMITS`: 120 searches and 600 reads an hour). A spent allowance is a tool error
   saying how long to wait; nothing was fetched. An unknown `craft_slug` is refused before anything
   is spent. Every allowance is counted once for all API processes and both deploy slots, in
-  Postgres (`core/allowances`, table `AllowanceBucket`: one row per holder, kind and hour,
+  Postgres (`core/allowances`, table `AllowanceBucket`: one row per holder, kind and window start,
   incremented by one `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` on a small connection pool of
   its own, so a call granted is always counted). When the count cannot be read within
   `COUNT_SECONDS` (5) the call is refused for a minute (fail closed) and nothing is fetched. The

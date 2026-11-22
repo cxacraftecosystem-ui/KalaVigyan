@@ -7,11 +7,13 @@ pictures come only from the open-image hosts.
 
 Date: 2026-11-18. Status: accepted. Amended by 0070 (APA references are written in the
 worker thread; the export libraries load on the first file; hidden generated explainers are left
-out).
+out) and 0143 (the lede on the title slide, the journal, files made without a picture, two builds at
+once, measured slide text, the PDF's drawings).
 
 | For | Read |
 |---|---|
 | What amended it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md): APA in the worker thread, the export libraries loaded on the first file, hidden generated explainers left out |
+| What amended it later | [0143](0143-lessons-exports-and-follow-ups-kept-true.md): the lede on the title slide, the journal, files made without a picture, two builds at once, measured slide text, the PDF's drawings |
 | What it amends | [0069 Learning screens: follow-ups, saved answers, notes, lessons, exports, the map and compare](0069-learning-screens.md): item 5, with lesson files and the report PDF as signed links |
 | What it amends | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md): item 10, with APA written by citeproc-py while BibTeX and RIS keep the stated rules |
 | The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |

@@ -14,7 +14,7 @@ from app.research.crafts import CraftRef
 from app.research.depth import depth_policy
 from app.research.evidence_pack import EvidencePack
 from app.research.explainer import Explainer
-from app.research.explainer_versions import VersionMark
+from app.research.explainer_versions import ExplainerVersionDocument, VersionMark
 from app.research.planning import PlanRequest
 from app.research.reading_style import ReadingStyle
 from app.research.sections import LADDER_DISCIPLINE, AnswerPlans, SectionSpec
@@ -25,7 +25,7 @@ from app.science.records import ProcessRecords
 
 from .answer_catalogue import CatalogueLookup, no_catalogue
 from .answer_events import CitedClaims
-from .answer_gaps import FieldReading, answer_readings
+from .answer_gaps import FieldReading
 from .answer_lede import AnswerOpening, LedeTools, LedeWriting, Opening, lede_plan
 from .answer_sections import run_sections
 from .answer_translation import AnswerTranslation, Segment, translate_segments, with_english_question
@@ -39,18 +39,12 @@ from .piece_store import BuiltSection, PieceStore
 from .research_ledger import ResearchLedger
 from .reuse_enrichment import expert_floors, floor_deepening, floors_by_section
 from .reused_sections import ReuseBuilds, ReusedShowing, stream_reused_beside
-from .section_context import (
-    ClaimsOf,
-    Research,
-    SectionContext,
-    SectionOutcome,
-    SectionTools,
-    answer_plans,
-)
+from .section_context import ClaimsOf, Research, SectionContext, SectionOutcome, SectionTools
 from .section_enrichment import Enrichment, EnrichmentTools
 from .section_fields import SectionFields
 from .stored_fields import with_stored_fields
 from .stored_only_answer import STORED_ONLY_MODE, stored_only_answer
+from .version_race import VersionRace
 from .write_back_names import CraftNames
 
 __all__ = [
@@ -116,6 +110,10 @@ class AnswerStore(Protocol):
         version: VersionMark | None = None,
         readings: Sequence[FieldReading] = (),
     ) -> None: ...
+
+    async def latest(
+        self, explainer_id: uuid.UUID, user_id: uuid.UUID | None
+    ) -> ExplainerVersionDocument: ...
 
 
 @dataclass(frozen=True)
@@ -342,16 +340,8 @@ async def _finish(
         lede_sources=opened.sources,
     )
     led = [uuid.UUID(citation.claim_id) for citation in opened.lede.citations()] if opened.lede else []
-    stored = run.layout.stored(document, dict.fromkeys([*led, *(c for o in outcomes for c in o.claim_ids)]))
-    await run.pipeline.store.finish(
-        run.answer_id,
-        asked_at=run.ask.asked_at,
-        plans=answer_plans(outcomes),
-        claim_ids=list(stored.claim_ids),
-        explainer=stored.explainer,
-        version=stored.version,
-        readings=answer_readings(outcomes),
-    )
+    race = VersionRace(run.pipeline.store, run.answer_id, run.ask, outcomes)
+    stored = await race.kept(run.layout, document, [*led, *(c for o in outcomes for c in o.claim_ids)])
     if stored.version is not None:
         await run.stream.emit("version", stored.version)
 

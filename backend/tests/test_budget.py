@@ -6,8 +6,8 @@ import pytest
 from app.core.roles import ROLE_RANK
 from app.models.enums import EXPLAINER_DEPTHS
 from app.providers import budget
+from app.providers.catalogue import model_for
 from app.services import app_settings
-from app.services.ai_providers import model_for
 
 from .ai_caps import ceilings, unlimited
 

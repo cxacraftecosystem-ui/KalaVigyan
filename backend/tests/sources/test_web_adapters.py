@@ -75,13 +75,22 @@ def brave(recorder: Recorder, fetcher: PageFetcher | None = None) -> BraveAdapte
 
 
 async def test_searxng_hits_are_https_web_pages_without_quotes() -> None:
-    recorder = Recorder({SEARXNG: Reply("searxng_search.json")})
+    recorder = Recorder({SEARXNG: Reply("searxng_search.synthetic.json")})
     hits = await searxng(recorder).search(QUERY, 10)
     assert [(h.id, h.title, h.published, h.trust, h.tier, h.source_type, h.quotes) for h in hits] == [
         (
             f"searxng:{ARTICLE}",
             "Ajrakh resist printing | Craft Notes",
             "2024-03-18",
+            "C",
+            "T4",
+            "WEB_PAGE",
+            [],
+        ),
+        (
+            "searxng:https://old.example.in/ajrakh.html",
+            "Ajrakh (insecure mirror)",
+            None,
             "C",
             "T4",
             "WEB_PAGE",
@@ -112,18 +121,19 @@ def test_freshness_maps_to_the_narrowest_searxng_range_that_covers_it(
 
 
 async def test_brave_hits_carry_the_site_name_and_the_key_stays_out_of_the_cache_key() -> None:
-    recorder = Recorder({BRAVE: Reply("brave_search.json")})
+    recorder = Recorder({BRAVE: Reply("brave_search.synthetic.json")})
     adapter = brave(recorder)
     hits = await adapter.search(QUERY, 3)
-    assert [(h.url, h.title, h.publisher, h.published) for h in hits] == [
-        (ARTICLE, "Ajrakh resist printing", "Craft Notes", "2024-03-18"),
+    assert [(h.url, h.title, h.publisher, h.published, h.trust) for h in hits] == [
+        (ARTICLE, "Ajrakh resist printing", "Craft Notes", "2024-03-18", "C"),
         (
             "https://textiles.example.ac.in/natural-dyes/kutch",
             "Natural dyes of Kutch",
             "Textile Archive",
             "2021-11",
+            "B",
         ),
-        ("https://chem.example.org/alizarin", "Alizarin lake", "Chem Notes", None),
+        ("https://chem.example.org/alizarin", "Alizarin lake", "Chem Notes", None, "C"),
     ]
     sent = recorder.requests[0]
     assert sent.headers["x-subscription-token"] == BRAVE_KEY
@@ -132,13 +142,13 @@ async def test_brave_hits_carry_the_site_name_and_the_key_stays_out_of_the_cache
 
 
 async def test_brave_freshness_is_an_explicit_date_window() -> None:
-    recorder = Recorder({BRAVE: Reply("brave_search.json")})
+    recorder = Recorder({BRAVE: Reply("brave_search.synthetic.json")})
     await brave(recorder).search(SearchQuery(text="ajrakh", freshness_days=30), 5)
     assert recorder.requests[0].url.params["freshness"] == "2026-10-17to2026-11-16"
 
 
 async def test_brave_without_web_results_is_no_hits() -> None:
-    assert await brave(Recorder({BRAVE: Reply("brave_no_web.json")})).search(QUERY, 5) == []
+    assert await brave(Recorder({BRAVE: Reply("brave_no_web.synthetic.json")})).search(QUERY, 5) == []
 
 
 def test_brave_refuses_to_build_without_a_key() -> None:
@@ -285,7 +295,9 @@ async def test_the_registry_skips_brave_silently_without_a_key() -> None:
 
 
 async def test_an_empty_searxng_answer_with_blocked_engines_turns_to_brave() -> None:
-    recorder = Recorder({SEARXNG: Reply("searxng_empty.json"), BRAVE: Reply("brave_search.json")})
+    recorder = Recorder(
+        {SEARXNG: Reply("searxng_empty.synthetic.json"), BRAVE: Reply("brave_search.synthetic.json")}
+    )
     search = WebSearch(searxng(recorder), brave(recorder))
     hits = await search.search(QUERY, 5)
     assert [h.adapter for h in hits] == ["brave", "brave", "brave"]

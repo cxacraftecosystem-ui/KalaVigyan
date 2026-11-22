@@ -26,7 +26,7 @@ from app.research.image_intake_fetch import (
 from app.research.image_intake_types import received_type
 
 from .targets import Target, checked_target, redirect_target
-from .transport import Hop, PinnedHttp, remote_failure
+from .transport import Hop, PinnedHttp, PinnedSession, remote_failure
 
 __all__ = ["PICTURE_FETCH_CONCURRENCY", "FoundPicture", "PictureFetch", "add_picture_route"]
 
@@ -69,27 +69,29 @@ class PictureFetch:
 
     async def _followed(self, request: PictureFetchRequest) -> Hop:
         target = checked_target(request.url)
-        hop = await self._hop(target, request)
-        for _ in range(FETCH_MAX_REDIRECTS):
-            if not hop.is_redirect:
-                break
-            if not hop.location:
-                raise ExternalFailure(f"{target.host} redirected without a location", service="fetcher")
-            target = redirect_target(target, hop.location)
-            hop = await self._hop(target, request)
+        async with self.http.session() as hops:
+            hop = await _hop(hops, target, request)
+            for _ in range(FETCH_MAX_REDIRECTS):
+                if not hop.is_redirect:
+                    break
+                if not hop.location:
+                    raise ExternalFailure(f"{target.host} redirected without a location", service="fetcher")
+                target = redirect_target(target, hop.location)
+                hop = await _hop(hops, target, request)
         if hop.is_redirect:
             raise FetchRefused(request.url, "TOO_MANY_REDIRECTS", f"more than {FETCH_MAX_REDIRECTS}")
         if not hop.is_success:
             raise remote_failure(hop)
         return hop
 
-    async def _hop(self, target: Target, request: PictureFetchRequest) -> Hop:
-        return await self.http.get(
-            target,
-            max_bytes=request.max_bytes,
-            timeout=PICTURE_FETCH_TIMEOUT_SECONDS,
-            accept=PICTURE_FETCH_ACCEPT,
-        )
+
+async def _hop(hops: PinnedSession, target: Target, request: PictureFetchRequest) -> Hop:
+    return await hops.get(
+        target,
+        max_bytes=request.max_bytes,
+        timeout=PICTURE_FETCH_TIMEOUT_SECONDS,
+        accept=PICTURE_FETCH_ACCEPT,
+    )
 
 
 def add_picture_route(app: FastAPI, pictures: PictureFetch) -> None:

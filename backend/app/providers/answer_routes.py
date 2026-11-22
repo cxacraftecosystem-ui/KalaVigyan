@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from types import MappingProxyType
 
-from app.services.ai_providers import AiProvider, AiTask
-from app.services.answer_models import AnswerModels
+from app.providers.catalogue import AiProvider, AiTask
+from app.research.answer_models import AnswerModels
 
 from .rerank_router import router_reranker
 from .router import Principal, RouteTuning

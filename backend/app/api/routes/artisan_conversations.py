@@ -111,7 +111,7 @@ async def start(
     voice: VoiceSettings = Depends(artisan_voice_settings),
     artisans: SqlArtisanStore = Depends(artisan_store),
 ) -> dict[str, Any]:
-    refuse_when_throttled(voice_session_attempt(str(user.id)), THROTTLED["start"])
+    refuse_when_throttled(await voice_session_attempt(str(user.id)), THROTTLED["start"])
     ask = StartConversation(user, payload.craft_slug, payload.language, payload.notice_version)
     try:
         return await start_conversation(ask, _deps(store, artisans, runtime, voice))
@@ -139,7 +139,7 @@ async def relay_turn(
         raise refusal(ArtisanRefused("not_found"))
     if conversation.ended_at is not None or not record.live_at(utc_now()):
         raise HTTPException(status.HTTP_409_CONFLICT, ENDED_DETAIL)
-    refuse_when_throttled(voice_turn_attempt(str(user.id)), THROTTLED["turn"])
+    refuse_when_throttled(await voice_turn_attempt(str(user.id)), THROTTLED["turn"])
     deps = _deps(store, artisans, runtime, voice)
     upload = await _upload(request, runtime)
     turn_deps = RelayTurnDeps(
@@ -171,7 +171,7 @@ async def speech(
     record = await store.by_id(conversation.voice_session_id) if conversation.voice_session_id else None
     if record is None or conversation.transport != "RELAY":
         raise refusal(ArtisanRefused("not_found"))
-    refuse_when_throttled(voice_speech_attempt(str(user.id)), THROTTLED["speech"])
+    refuse_when_throttled(await voice_speech_attempt(str(user.id)), THROTTLED["speech"])
     try:
         audio = await conversation_speech(
             conversation, record, turn_id, _deps(store, artisans, runtime, voice)

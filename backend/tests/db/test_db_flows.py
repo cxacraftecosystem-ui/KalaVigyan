@@ -12,6 +12,7 @@ from app.core.security import hash_password
 from app.models import AccessRoster, Provider, RoutePolicy, UsageEvent, User
 from app.providers import router as ai_router
 from app.providers.base import Adapter, ChatResult, ProviderError
+from app.providers.spend_settings import UNCAPPED_ROLE_DAILY_USD
 from app.services import app_settings, two_factor
 
 from .accounts import PASSWORD, bearer, code, create_user, login, unique_email
@@ -469,6 +470,4 @@ async def test_a_student_is_uncapped_by_default_and_a_set_role_cap_refuses(
         assert refused.value.reason == "ROLE_DAILY_CAP"
     finally:
         async with session_scope() as session:
-            await app_settings.set_value(
-                session, app_settings.ROLE_DAILY_USD, dict(app_settings.UNCAPPED_ROLE_DAILY_USD)
-            )
+            await app_settings.set_value(session, app_settings.ROLE_DAILY_USD, dict(UNCAPPED_ROLE_DAILY_USD))

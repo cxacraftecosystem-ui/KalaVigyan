@@ -20,6 +20,7 @@ from app.models import (
     UserPreference,
 )
 from app.research.explainer import Explainer
+from app.research.vocabulary import CONCEPT_TYPE_DISCIPLINES
 from app.services.explainer_payload import FIRST_VERSION, stored_payload
 
 from ..contracts.explainer_golden import DOCUMENT, golden_json
@@ -112,11 +113,13 @@ async def claim_of(
     *,
     created_at: datetime,
     level: str = "PROVISIONAL",
+    filed: tuple[str, ...] | None = None,
 ) -> uuid.UUID:
     concept = Concept(id=uuid.uuid4(), craftId=craft.id, type=concept_type, name=f"{concept_type} finding")
     source = Source(id=uuid.uuid4(), kind="PAPER", title=f"A paper on {concept_type.lower()}")
     session.add_all([concept, source])
     await session.flush()
+    field, fields = _filed(concept_type, filed)
     claim = Claim(
         id=uuid.uuid4(),
         subjectType="CONCEPT",
@@ -125,6 +128,8 @@ async def claim_of(
         text=f"A cited {concept_type.lower()} finding.",
         evidenceLevel=level,
         origin="IMPORT",
+        field=field,
+        fields=fields,
         createdAt=created_at,
     )
     session.add(claim)
@@ -132,3 +137,9 @@ async def claim_of(
     session.add(ClaimSource(claimId=claim.id, sourceId=source.id, quote="A cited finding."))
     await session.commit()
     return claim.id
+
+
+def _filed(concept_type: str, filed: tuple[str, ...] | None) -> tuple[str | None, list[str]]:
+    if filed is None:
+        return CONCEPT_TYPE_DISCIPLINES.get(concept_type), []
+    return (filed[0], list(filed[1:])) if filed else (None, [])

@@ -8,8 +8,10 @@ import type { User, UserRole } from "@/lib/types";
 
 import { readRepo } from "./phaseBFixture";
 import { NAV_BY_ROLE } from "./production/checks";
-import { citationFileProblems, pdfLinks, pdfProblems, pptxProblems, zipEntries, type CitedSource } from "./production/exportFiles";
-import { lessonRoleNote } from "./production/exportProof";
+import type { SourceRecord } from "./production/answers";
+import { citationFileProblems, htmlDeckProblems, pdfLinks, pdfProblems, pptxProblems, zipEntries, type CitedSource } from "./production/exportFiles";
+import { lessonSourceProblems } from "./production/exportProof";
+import { PROFESSOR_SECRETS, lessonStep, professorProblems } from "./production/lessonProof";
 import type { AnswersReport } from "./production/report";
 import { summaryMarkdown } from "./production/summaryMarkdown";
 
@@ -89,27 +91,62 @@ test("a PPTX opens as a zip of slides whose links are the sources' links", () =>
   expect(pptxProblems("the lesson PPTX", Buffer.from("not a zip"), [])[0]).toContain("does not open");
 });
 
-test("a Researcher's run reports that lesson packs need a Professor instead of failing", () => {
-  const researcher: User = { id: "e2e", email: "e2e@example.org", name: "E2E", role: "RESEARCHER" };
-  expect(canBuildLessons(researcher)).toBe(false);
+test("a lesson deck opens as a whole HTML file of slides that carries the sources' links, entities read back", () => {
+  const deck = Buffer.from(
+    '<!doctype html>\n<html lang="en"><body><div class="slides"><section data-kind="SOURCES" data-number="5"><ol class="kv-list"><li value="1">Linked. https://example.org/a?b=1&amp;c=(2)</li></ol></section></div></body>\n</html>\n',
+    "utf8"
+  );
+  expect(htmlDeckProblems("the lesson deck", deck, [LINKED])).toEqual([]);
+  expect(htmlDeckProblems("the lesson deck", deck, [LINKED, STRAY])).toEqual(["the lesson deck lacks the link of 1 of the explainer's sources: https://doi.org/10.5555/stray"]);
+  expect(htmlDeckProblems("the lesson deck", Buffer.from('<!doctype html>\n<html><div class="slides"></div></html>\n', "utf8"), [])).toEqual(["the lesson deck holds no slide"]);
+  expect(htmlDeckProblems("the lesson deck", Buffer.from("%PDF-1.7", "latin1"), [])).toEqual(["the lesson deck is not a whole HTML file"]);
+});
+
+const PRODUCTION = "https://kalavigyan.vercel.app";
+const PREVIEW = "https://kalavigyan-a1b2c3d4e-cxacraftecosystem-8028s-projects.vercel.app";
+const PROFESSOR_ACCOUNT = { email: "e2e-professor@kalavigyan.example", password: "not-a-real-password", totpSecret: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ" };
+
+test("production proves a lesson pack as the Professor, fails without the Professor's secrets, and a preview only notes it", () => {
   expect(/Capability\.BUILD_LESSONS: (\w+),/.exec(readRepo("backend", "app", "core", "roles.py"))?.[1]).toBe("PROFESSOR");
-  const note = lessonRoleNote(researcher);
-  expect(note).toContain("Researcher");
-  expect(note).toContain("docs/PROGRESS.md");
+  expect(lessonStep(PRODUCTION, PROFESSOR_ACCOUNT)).toEqual({ kind: "prove", account: PROFESSOR_ACCOUNT });
+  const missing = lessonStep(PRODUCTION, null);
+  expect(missing.kind).toBe("problem");
+  expect(missing.kind === "problem" && missing.text).toContain(PROFESSOR_SECRETS);
+  const preview = lessonStep(PREVIEW, PROFESSOR_ACCOUNT);
+  expect(preview.kind).toBe("note");
+  expect(preview.kind === "note" && preview.text).toContain(`never on ${PREVIEW}`);
+  const researcher: User = { id: "e2e", email: "e2e@example.org", name: "E2E", role: "RESEARCHER" };
+  const professor: User = { id: "e2e-professor", email: PROFESSOR_ACCOUNT.email, name: "E2E Professor", role: "PROFESSOR" };
+  expect(canBuildLessons(researcher)).toBe(false);
+  expect(professorProblems(professor)).toEqual([]);
+  expect(professorProblems(researcher)).toEqual(["the Professor E2E account signed in as a Researcher, who may not build a lesson pack"]);
+});
+
+test("a lesson pack fails when it cites nothing or a source its explainer never streamed", () => {
+  const source = (id: string): SourceRecord => ({ id, kind: "PAPER", title: id, publisher: null, year: null, doi: null, url: `https://example.org/${id}` });
+  expect(lessonSourceProblems([source("a")], [source("a"), source("b")])).toEqual([]);
+  expect(lessonSourceProblems([], [source("a")])).toEqual(["the lesson pack cites no source"]);
+  expect(lessonSourceProblems([source("a"), source("c"), source("d")], [source("a")])).toEqual(["the lesson pack cites 2 sources the explainer does not"]);
+});
+
+test("a preview run's lesson note is listed under the exports, which still pass", () => {
+  const note = lessonStep(PREVIEW, null);
+  expect(note.kind).toBe("note");
+  const text = note.kind === "note" ? note.text : "";
   const report: AnswersReport = {
     kind: "answers",
-    baseUrl: "https://example.org",
+    baseUrl: PREVIEW,
     runId: "7",
     startedAt: "x",
     role: "RESEARCHER",
     problemCount: 0,
     unasked: [],
     questions: [],
-    exports: { label: "English", explainerId: "e1", files: ["a.pdf", "a.bib"], problems: [], notes: [note] }
+    exports: { label: "English", explainerId: "e1", lessonExplainerId: null, files: ["a.pdf", "a.bib"], problems: [], notes: [text] }
   };
   const markdown = summaryMarkdown([report], { runId: null, baseUrl: null, startedAt: "x", questionsRequested: true });
   expect(markdown).toContain("### Exports\n\nFrom the English explainer: 2 files, Pass.");
-  expect(markdown).toContain(`- ${note}`);
+  expect(markdown).toContain("- no lesson pack was built: The Professor and Admin accounts sign in only on");
 });
 
 const LEARNER_CAPABILITIES = ["ASK_STANDARD", "VOICE", "GENERATE_IMAGE", "SAVE_EXPORT"];

@@ -28,6 +28,7 @@ WIRE = {
             "licence",
             "attribution",
             "reliability",
+            "containerTitle",
         },
         {
             "id",
@@ -84,6 +85,7 @@ def test_the_event_names_are_the_frontend_set_plus_status_and_the_explainer_even
         "section_heading",
         "lede",
         "trail",
+        "paced",
         "builds_on",
         "version",
     }

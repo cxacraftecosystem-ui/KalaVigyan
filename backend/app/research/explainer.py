@@ -39,7 +39,7 @@ from .blocks_signature import FiringBlock, IndigoVatBlock, LostWaxBlock, Mordant
 from .citations import SourceRef
 from .composition import FOLLOW_UPS_MAX, HEADING_MAX_CHARS
 from .crafts import MAX_CANDIDATES, QUESTION_MAX_CHARS, CraftRef
-from .trail import TrailEvent
+from .trail import PacedEvent, TrailEvent
 from .vocabulary import AnswerLanguage, Depth, Discipline
 
 __all__ = [
@@ -393,5 +393,6 @@ EXPLAINER_EVENTS: Mapping[str, TypeAdapter[Any]] = MappingProxyType(
         "section_heading": TypeAdapter(SectionHeadingEvent),
         "lede": TypeAdapter(LedeEvent),
         "trail": TypeAdapter(TrailEvent),
+        "paced": TypeAdapter(PacedEvent),
     }
 )

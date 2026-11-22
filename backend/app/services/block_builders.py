@@ -9,6 +9,7 @@ from typing import Any, Self
 
 from app.core.errors import InvalidInput
 from app.models.enums import DISCIPLINES, EXPLAINER_DEPTHS
+from app.research.block_identity import repeats_shown
 from app.research.depth import depth_at_least
 from app.research.expert_panel import PANEL_FIELDS
 from app.research.explainer import BLOCK_PHASES, BUILT_BLOCK_KINDS, Block
@@ -178,10 +179,12 @@ class BlockBuilders:
         builders: Iterable[Pair] = (),
         *,
         taken: set[str] | None = None,
+        shown: Collection[str] = (),
         record: BuildRecord | None = None,
     ) -> None:
         self._builders = tuple(builders)
         self._taken = taken
+        self._shown = frozenset(shown)
         self._record = record
 
     @classmethod
@@ -212,8 +215,9 @@ class BlockBuilders:
     def replaced_on_reuse(self, discipline: str) -> frozenset[str]:
         return frozenset(entry.kind for entry, _ in self.for_section(discipline) if entry.replaces_stored)
 
-    def without(self, kinds: Collection[str]) -> BlockBuilders:
-        return self._kept(pair for pair in self._builders if pair[0].kind not in kinds)
+    def without(self, kinds: Collection[str], *, shown: Collection[str] = ()) -> BlockBuilders:
+        kept = (pair for pair in self._builders if pair[0].kind not in kinds)
+        return BlockBuilders(kept, taken=self._taken, shown=shown, record=self._record)
 
     def note_shown(self, kinds: Iterable[str]) -> None:
         if self._taken is not None:
@@ -237,7 +241,7 @@ class BlockBuilders:
         outcomes: list[BuilderOutcome] = []
         for (entry, _), (built, seconds) in zip(chosen, results, strict=True):
             known = {**ask.cited.sources, **built.sources}
-            checked = _checked(entry, built, known, ask)
+            checked = [block for block in _checked(entry, built, known, ask) if not self._repeats(block, ask)]
             if not checked:
                 self._give_back(entry)
             blocks += checked
@@ -248,7 +252,15 @@ class BlockBuilders:
         return AddedBlocks(tuple(blocks), sources)
 
     def _kept(self, pairs: Iterable[Pair]) -> BlockBuilders:
-        return BlockBuilders(pairs, taken=self._taken, record=self._record)
+        return BlockBuilders(pairs, taken=self._taken, shown=self._shown, record=self._record)
+
+    def _repeats(self, block: Block, ask: BuildAsk) -> bool:
+        if not repeats_shown(block, self._shown):
+            return False
+        logger.info(
+            "a %s block of section %s is dropped: the section shows it already", block.kind, ask.section.id
+        )
+        return True
 
     def _took(self, entry: BuilderEntry) -> bool:
         if self._taken is None or entry.kind not in ONCE_PER_ANSWER_KINDS:

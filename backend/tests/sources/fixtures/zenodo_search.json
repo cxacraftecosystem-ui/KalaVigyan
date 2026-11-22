@@ -1,0 +1,922 @@
+{
+ "hits": {
+  "hits": [
+   {
+    "created": "2019-05-07T00:07:34.292186+00:00",
+    "modified": "2019-05-07T00:07:37.410515+00:00",
+    "id": 2669693,
+    "conceptrecid": "2656764",
+    "doi": "10.5281/zenodo.2669693",
+    "conceptdoi": "10.5281/zenodo.2656764",
+    "doi_url": "https://doi.org/10.5281/zenodo.2669693",
+    "metadata": {
+     "title": "jmjamison/DyePlant_Lessons: Useable lesson materials",
+     "doi": "10.5281/zenodo.2669693",
+     "publication_date": "2019-05-01",
+     "description": "<p>Usable lesson materials</p>",
+     "access_right": "open",
+     "creators": [
+      {
+       "name": "jamie jamison",
+       "affiliation": "UCLA Library Data Science Center"
+      }
+     ],
+     "keywords": [
+      "dye-plants, vegitable-dyes"
+     ],
+     "related_identifiers": [
+      {
+       "identifier": "https://github.com/jmjamison/DyePlant_Lessons/tree/v1",
+       "relation": "isSupplementTo",
+       "scheme": "url"
+      }
+     ],
+     "version": "v2",
+     "resource_type": {
+      "title": "Lesson",
+      "type": "lesson"
+     },
+     "license": {
+      "id": "other-open"
+     },
+     "relations": {
+      "version": [
+       {
+        "index": 2,
+        "is_last": true,
+        "parent": {
+         "pid_type": "recid",
+         "pid_value": "2656764"
+        }
+       }
+      ]
+     },
+     "notes": "Added cotton mordant notes, John Liles/alum-acetate"
+    },
+    "title": "jmjamison/DyePlant_Lessons: Useable lesson materials",
+    "links": {
+     "self": "https://zenodo.org/api/records/2669693",
+     "self_html": "https://zenodo.org/records/2669693",
+     "preview_html": "https://zenodo.org/records/2669693?preview=1",
+     "doi": "https://doi.org/10.5281/zenodo.2669693",
+     "self_doi": "https://doi.org/10.5281/zenodo.2669693",
+     "self_doi_html": "https://zenodo.org/doi/10.5281/zenodo.2669693",
+     "reserve_doi": "https://zenodo.org/api/records/2669693/draft/pids/doi",
+     "parent": "https://zenodo.org/api/records/2656764",
+     "parent_html": "https://zenodo.org/records/2656764",
+     "parent_doi": "https://doi.org/10.5281/zenodo.2656764",
+     "parent_doi_html": "https://zenodo.org/doi/10.5281/zenodo.2656764",
+     "self_iiif_manifest": "https://zenodo.org/api/iiif/record:2669693/manifest",
+     "self_iiif_sequence": "https://zenodo.org/api/iiif/record:2669693/sequence/default",
+     "files": "https://zenodo.org/api/records/2669693/files",
+     "media_files": "https://zenodo.org/api/records/2669693/media-files",
+     "latest": "https://zenodo.org/api/records/2669693/versions/latest",
+     "latest_html": "https://zenodo.org/records/2669693/latest",
+     "versions": "https://zenodo.org/api/records/2669693/versions",
+     "draft": "https://zenodo.org/api/records/2669693/draft",
+     "access_links": "https://zenodo.org/api/records/2669693/access/links",
+     "access_grants": "https://zenodo.org/api/records/2669693/access/grants",
+     "access_users": "https://zenodo.org/api/records/2669693/access/users",
+     "access_request": "https://zenodo.org/api/records/2669693/access/request",
+     "access": "https://zenodo.org/api/records/2669693/access",
+     "communities": "https://zenodo.org/api/records/2669693/communities",
+     "communities-suggestions": "https://zenodo.org/api/records/2669693/communities-suggestions",
+     "request_deletion": "https://zenodo.org/api/records/2669693/request-deletion",
+     "file_modification": "https://zenodo.org/api/records/2669693/file-modification",
+     "quota_increase": "https://zenodo.org/api/records/2669693/quota-increase",
+     "requests": "https://zenodo.org/api/records/2669693/requests"
+    },
+    "updated": "2019-05-07T00:07:37.410515+00:00",
+    "recid": "2669693",
+    "revision": 1,
+    "files": [
+     {
+      "id": "7ad1a2fc-e9bf-4c40-a694-39d16a7e25be",
+      "key": "DyePlant_Lessons.zip",
+      "size": 12016024,
+      "checksum": "md5:37e413d5a76f4731e6dcca4e408c27eb",
+      "links": {
+       "self": "https://zenodo.org/api/records/2669693/files/DyePlant_Lessons.zip/content"
+      }
+     },
+     {
+      "id": "005b4f15-fc33-49e1-b533-249600c6cd0c",
+      "key": "jmjamison/DyePlant_Lessons-v1.zip",
+      "size": 12054092,
+      "checksum": "md5:faa1c4202cfddd87ebac62d0016467d0",
+      "links": {
+       "self": "https://zenodo.org/api/records/2669693/files/jmjamison/DyePlant_Lessons-v1.zip/content"
+      }
+     }
+    ],
+    "swh": null,
+    "owners": [
+     {
+      "id": "36022"
+     }
+    ],
+    "status": "published",
+    "stats": {
+     "downloads": 124,
+     "unique_downloads": 114,
+     "views": 255,
+     "unique_views": 237,
+     "version_downloads": 66,
+     "version_unique_downloads": 60,
+     "version_unique_views": 115,
+     "version_views": 118
+    },
+    "state": "done",
+    "submitted": true
+   },
+   {
+    "created": "2023-03-03T08:50:17.655173+00:00",
+    "modified": "2024-07-12T13:21:59.982439+00:00",
+    "id": 7694966,
+    "conceptrecid": "7694965",
+    "doi": "10.5281/zenodo.7694966",
+    "conceptdoi": "10.5281/zenodo.7694965",
+    "doi_url": "https://doi.org/10.5281/zenodo.7694966",
+    "metadata": {
+     "title": "DYEING ANALYSIS WITH BIO-MORDANT SOURCE IN ORGANIC COTTON DYEING WITH MADDER (Rubia tinctorum L.)",
+     "doi": "10.5281/zenodo.7694966",
+     "publication_date": "2023-03-03",
+     "description": "<p>This study aimed at investigating organic cotton fabrics dyed with five different percentages (5 %, 10 %, 20 %, 40 % and 80 %) of the roots of madder (<em>Rubia tinctorum</em> L.) via the shellacs of gall oak (<em>Quercus infectoria</em> Olivier; 1 %, 2%, 4%, 8 %, 16 %) mordant. In this case, the natural dyeing was completely performed without a chemical mordant. For this reason, this dyeing can be called environmentally friendly. A reversed - phase high performance liquid chromatography with diode array detection method (RP-HPLC-DAD) was utilized for the identification of natural dyes (anthraquinones and tannins) present in the natural - dyed organic cotton extracts. The naturally dyed cotton samples were studied calorimetrically and their colour coordinates L<sup>*</sup>, a<sup>*</sup>, b<sup>*</sup>, C<sup>*</sup>, h, K/S and ∆E<sup>*</sup> values were determined. At the same time, the view related to the organic cotton fabric was taken by a scanning electron microscope (SEM).</p>",
+     "access_right": "open",
+     "creators": [
+      {
+       "name": "Ozan Deveoglu *",
+       "affiliation": null
+      }
+     ],
+     "keywords": [
+      "Madder, Gall oak, HPLC, Colour, Organic cotton, Tannin."
+     ],
+     "resource_type": {
+      "title": "Journal article",
+      "type": "publication",
+      "subtype": "article"
+     },
+     "journal": {
+      "issue": "2",
+      "pages": "10-22",
+      "title": "INTERNATIONAL JOURNAL OF ENGINEERING SCIENCES & RESEARCH TECHNOLOGY",
+      "volume": "12"
+     },
+     "license": {
+      "id": "cc-by-4.0"
+     },
+     "relations": {
+      "version": [
+       {
+        "index": 0,
+        "is_last": true,
+        "parent": {
+         "pid_type": "recid",
+         "pid_value": "7694965"
+        }
+       }
+      ]
+     }
+    },
+    "title": "DYEING ANALYSIS WITH BIO-MORDANT SOURCE IN ORGANIC COTTON DYEING WITH MADDER (Rubia tinctorum L.)",
+    "links": {
+     "self": "https://zenodo.org/api/records/7694966",
+     "self_html": "https://zenodo.org/records/7694966",
+     "preview_html": "https://zenodo.org/records/7694966?preview=1",
+     "doi": "https://doi.org/10.5281/zenodo.7694966",
+     "self_doi": "https://doi.org/10.5281/zenodo.7694966",
+     "self_doi_html": "https://zenodo.org/doi/10.5281/zenodo.7694966",
+     "reserve_doi": "https://zenodo.org/api/records/7694966/draft/pids/doi",
+     "parent": "https://zenodo.org/api/records/7694965",
+     "parent_html": "https://zenodo.org/records/7694965",
+     "parent_doi": "https://doi.org/10.5281/zenodo.7694965",
+     "parent_doi_html": "https://zenodo.org/doi/10.5281/zenodo.7694965",
+     "self_iiif_manifest": "https://zenodo.org/api/iiif/record:7694966/manifest",
+     "self_iiif_sequence": "https://zenodo.org/api/iiif/record:7694966/sequence/default",
+     "files": "https://zenodo.org/api/records/7694966/files",
+     "media_files": "https://zenodo.org/api/records/7694966/media-files",
+     "thumbnails": {
+      "10": "https://zenodo.org/api/iiif/record:7694966:2.pdf/full/%5E10,/0/default.jpg",
+      "50": "https://zenodo.org/api/iiif/record:7694966:2.pdf/full/%5E50,/0/default.jpg",
+      "100": "https://zenodo.org/api/iiif/record:7694966:2.pdf/full/%5E100,/0/default.jpg",
+      "250": "https://zenodo.org/api/iiif/record:7694966:2.pdf/full/%5E250,/0/default.jpg",
+      "750": "https://zenodo.org/api/iiif/record:7694966:2.pdf/full/%5E750,/0/default.jpg",
+      "1200": "https://zenodo.org/api/iiif/record:7694966:2.pdf/full/%5E1200,/0/default.jpg"
+     },
+     "latest": "https://zenodo.org/api/records/7694966/versions/latest",
+     "latest_html": "https://zenodo.org/records/7694966/latest",
+     "versions": "https://zenodo.org/api/records/7694966/versions",
+     "draft": "https://zenodo.org/api/records/7694966/draft",
+     "access_links": "https://zenodo.org/api/records/7694966/access/links",
+     "access_grants": "https://zenodo.org/api/records/7694966/access/grants",
+     "access_users": "https://zenodo.org/api/records/7694966/access/users",
+     "access_request": "https://zenodo.org/api/records/7694966/access/request",
+     "access": "https://zenodo.org/api/records/7694966/access",
+     "communities": "https://zenodo.org/api/records/7694966/communities",
+     "communities-suggestions": "https://zenodo.org/api/records/7694966/communities-suggestions",
+     "request_deletion": "https://zenodo.org/api/records/7694966/request-deletion",
+     "file_modification": "https://zenodo.org/api/records/7694966/file-modification",
+     "quota_increase": "https://zenodo.org/api/records/7694966/quota-increase",
+     "requests": "https://zenodo.org/api/records/7694966/requests"
+    },
+    "updated": "2024-07-12T13:21:59.982439+00:00",
+    "recid": "7694966",
+    "revision": 5,
+    "files": [
+     {
+      "id": "89d067f7-58b8-43e2-8088-fba452e4854d",
+      "key": "2.pdf",
+      "size": 1056335,
+      "checksum": "md5:f0a15bd39a9dcef23fc4b4dd38b172a6",
+      "links": {
+       "self": "https://zenodo.org/api/records/7694966/files/2.pdf/content"
+      }
+     }
+    ],
+    "swh": null,
+    "owners": [
+     {
+      "id": "24456"
+     }
+    ],
+    "status": "published",
+    "stats": {
+     "downloads": 265,
+     "unique_downloads": 250,
+     "views": 102,
+     "unique_views": 99,
+     "version_downloads": 265,
+     "version_unique_downloads": 250,
+     "version_unique_views": 99,
+     "version_views": 102
+    },
+    "state": "done",
+    "submitted": true
+   },
+   {
+    "created": "2026-08-01T06:29:31.970440+00:00",
+    "modified": "2026-08-01T06:29:32.213468+00:00",
+    "id": 21735698,
+    "conceptrecid": "21735697",
+    "doi": "10.5281/zenodo.21735698",
+    "conceptdoi": "10.5281/zenodo.21735697",
+    "doi_url": "https://doi.org/10.5281/zenodo.21735698",
+    "metadata": {
+     "title": "Eco-Friendly Dyeing of Cotton Fabric Mordanted with Glycine max Protein Extract Using Natural Pigments from Achiote (Bixa orellana) Seeds",
+     "doi": "10.5281/zenodo.21735698",
+     "publication_date": "2026-08-01",
+     "description": "<p class=\"MsoNormal\"><strong><span>ABSTRACT:</span></strong><span> </span></p>\n<p class=\"MsoNormal\"><span>This study investigates an eco-friendly approach to cotton fabric coloration using a natural dye extracted from achiote tree seeds (Bixa orellana) combined with a sustainable, bio-mordant. The primary objective is to extract and characterize plant based biodegradable natural dye and mordant that can be used as alternative option for toxic synthetic colorants and hazardous metallic mordants in dyeing of cotton. Through optimized alkaline extraction at 85&deg;C for 2 hours, a maximum crude dye yield of 25 % was achieved. Subsequent exhaust dyeing trials demonstrated optimum color strength (K/S) of 5.18. The protein-mordanted cotton substrates exhibited reliable fastness characteristics, presenting a sustainable, non-hazardous alternative for eco-conscious textile product development.</span></p>\n<p class=\"MsoNormal\"><strong><span>Keywords:</span></strong><span> <em>Glycine max protein mordant, Bixa orellana seed, color strength, color fastness</em></span></p>",
+     "access_right": "open",
+     "creators": [
+      {
+       "name": "Redait Zerihun Negiya",
+       "affiliation": "Department of Textile processing research and development desk, Textile and garment industry research and development center, Addis Ababa, Ethiopia."
+      },
+      {
+       "name": "Yesuf Seyd Ahmed",
+       "affiliation": "Department of Textile processing research and development desk, Textile and garment industry research and development center, Addis Ababa, Ethiopia."
+      }
+     ],
+     "keywords": [
+      "Glycine max protein mordant",
+      "Bixa orellana seed",
+      "color strength",
+      "color fastness"
+     ],
+     "language": "eng",
+     "custom": {
+      "code:codeRepository": "https://msipublishers.com/wp-content/uploads/2026/08/MSIJMR5592026-GS.pdf"
+     },
+     "resource_type": {
+      "title": "Journal article",
+      "type": "publication",
+      "subtype": "article"
+     },
+     "journal": {
+      "issue": "Issue 8",
+      "pages": "01-17",
+      "title": "MSI Journal of Multidisciplinary Research (MSIJMR)",
+      "volume": "Volume 3"
+     },
+     "license": {
+      "id": "cc-by-4.0"
+     },
+     "relations": {
+      "version": [
+       {
+        "index": 0,
+        "is_last": true,
+        "parent": {
+         "pid_type": "recid",
+         "pid_value": "21735697"
+        }
+       }
+      ]
+     }
+    },
+    "title": "Eco-Friendly Dyeing of Cotton Fabric Mordanted with Glycine max Protein Extract Using Natural Pigments from Achiote (Bixa orellana) Seeds",
+    "links": {
+     "self": "https://zenodo.org/api/records/21735698",
+     "self_html": "https://zenodo.org/records/21735698",
+     "preview_html": "https://zenodo.org/records/21735698?preview=1",
+     "doi": "https://doi.org/10.5281/zenodo.21735698",
+     "self_doi": "https://doi.org/10.5281/zenodo.21735698",
+     "self_doi_html": "https://zenodo.org/doi/10.5281/zenodo.21735698",
+     "reserve_doi": "https://zenodo.org/api/records/21735698/draft/pids/doi",
+     "parent": "https://zenodo.org/api/records/21735697",
+     "parent_html": "https://zenodo.org/records/21735697",
+     "parent_doi": "https://doi.org/10.5281/zenodo.21735697",
+     "parent_doi_html": "https://zenodo.org/doi/10.5281/zenodo.21735697",
+     "self_iiif_manifest": "https://zenodo.org/api/iiif/record:21735698/manifest",
+     "self_iiif_sequence": "https://zenodo.org/api/iiif/record:21735698/sequence/default",
+     "files": "https://zenodo.org/api/records/21735698/files",
+     "media_files": "https://zenodo.org/api/records/21735698/media-files",
+     "thumbnails": {
+      "10": "https://zenodo.org/api/iiif/record:21735698:MSIJMR5592026%20%20GS.pdf/full/%5E10,/0/default.jpg",
+      "50": "https://zenodo.org/api/iiif/record:21735698:MSIJMR5592026%20%20GS.pdf/full/%5E50,/0/default.jpg",
+      "100": "https://zenodo.org/api/iiif/record:21735698:MSIJMR5592026%20%20GS.pdf/full/%5E100,/0/default.jpg",
+      "250": "https://zenodo.org/api/iiif/record:21735698:MSIJMR5592026%20%20GS.pdf/full/%5E250,/0/default.jpg",
+      "750": "https://zenodo.org/api/iiif/record:21735698:MSIJMR5592026%20%20GS.pdf/full/%5E750,/0/default.jpg",
+      "1200": "https://zenodo.org/api/iiif/record:21735698:MSIJMR5592026%20%20GS.pdf/full/%5E1200,/0/default.jpg"
+     },
+     "latest": "https://zenodo.org/api/records/21735698/versions/latest",
+     "latest_html": "https://zenodo.org/records/21735698/latest",
+     "versions": "https://zenodo.org/api/records/21735698/versions",
+     "draft": "https://zenodo.org/api/records/21735698/draft",
+     "access_links": "https://zenodo.org/api/records/21735698/access/links",
+     "access_grants": "https://zenodo.org/api/records/21735698/access/grants",
+     "access_users": "https://zenodo.org/api/records/21735698/access/users",
+     "access_request": "https://zenodo.org/api/records/21735698/access/request",
+     "access": "https://zenodo.org/api/records/21735698/access",
+     "communities": "https://zenodo.org/api/records/21735698/communities",
+     "communities-suggestions": "https://zenodo.org/api/records/21735698/communities-suggestions",
+     "request_deletion": "https://zenodo.org/api/records/21735698/request-deletion",
+     "file_modification": "https://zenodo.org/api/records/21735698/file-modification",
+     "quota_increase": "https://zenodo.org/api/records/21735698/quota-increase",
+     "requests": "https://zenodo.org/api/records/21735698/requests"
+    },
+    "updated": "2026-08-01T06:29:32.213468+00:00",
+    "recid": "21735698",
+    "revision": 4,
+    "files": [
+     {
+      "id": "28c8d6b1-4178-42b9-a9a5-d0b1e9101f9a",
+      "key": "MSIJMR5592026  GS.pdf",
+      "size": 849901,
+      "checksum": "md5:d1027a2832e776722548077dc318ec90",
+      "links": {
+       "self": "https://zenodo.org/api/records/21735698/files/MSIJMR5592026%20%20GS.pdf/content"
+      }
+     }
+    ],
+    "swh": null,
+    "owners": [
+     {
+      "id": "1705127"
+     }
+    ],
+    "status": "published",
+    "stats": {
+     "downloads": 22,
+     "unique_downloads": 21,
+     "views": 51,
+     "unique_views": 46,
+     "version_downloads": 22,
+     "version_unique_downloads": 21,
+     "version_unique_views": 46,
+     "version_views": 51
+    },
+    "state": "done",
+    "submitted": true
+   }
+  ],
+  "total": 10799
+ },
+ "aggregations": {
+  "publication_date": {
+   "buckets": [
+    {
+     "key": "2000",
+     "doc_count": 3,
+     "label": "2000",
+     "is_selected": false
+    },
+    {
+     "key": "2001",
+     "doc_count": 9,
+     "label": "2001",
+     "is_selected": false
+    },
+    {
+     "key": "2002",
+     "doc_count": 5,
+     "label": "2002",
+     "is_selected": false
+    },
+    {
+     "key": "2003",
+     "doc_count": 15,
+     "label": "2003",
+     "is_selected": false
+    },
+    {
+     "key": "2004",
+     "doc_count": 23,
+     "label": "2004",
+     "is_selected": false
+    },
+    {
+     "key": "2005",
+     "doc_count": 39,
+     "label": "2005",
+     "is_selected": false
+    },
+    {
+     "key": "2006",
+     "doc_count": 53,
+     "label": "2006",
+     "is_selected": false
+    },
+    {
+     "key": "2007",
+     "doc_count": 58,
+     "label": "2007",
+     "is_selected": false
+    },
+    {
+     "key": "2008",
+     "doc_count": 53,
+     "label": "2008",
+     "is_selected": false
+    },
+    {
+     "key": "2009",
+     "doc_count": 51,
+     "label": "2009",
+     "is_selected": false
+    },
+    {
+     "key": "2010",
+     "doc_count": 73,
+     "label": "2010",
+     "is_selected": false
+    },
+    {
+     "key": "2011",
+     "doc_count": 90,
+     "label": "2011",
+     "is_selected": false
+    },
+    {
+     "key": "2012",
+     "doc_count": 134,
+     "label": "2012",
+     "is_selected": false
+    },
+    {
+     "key": "2013",
+     "doc_count": 182,
+     "label": "2013",
+     "is_selected": false
+    },
+    {
+     "key": "2014",
+     "doc_count": 314,
+     "label": "2014",
+     "is_selected": false
+    },
+    {
+     "key": "2015",
+     "doc_count": 322,
+     "label": "2015",
+     "is_selected": false
+    },
+    {
+     "key": "2016",
+     "doc_count": 308,
+     "label": "2016",
+     "is_selected": false
+    },
+    {
+     "key": "2017",
+     "doc_count": 339,
+     "label": "2017",
+     "is_selected": false
+    },
+    {
+     "key": "2018",
+     "doc_count": 421,
+     "label": "2018",
+     "is_selected": false
+    },
+    {
+     "key": "2019",
+     "doc_count": 357,
+     "label": "2019",
+     "is_selected": false
+    },
+    {
+     "key": "2020",
+     "doc_count": 486,
+     "label": "2020",
+     "is_selected": false
+    },
+    {
+     "key": "2021",
+     "doc_count": 495,
+     "label": "2021",
+     "is_selected": false
+    },
+    {
+     "key": "2022",
+     "doc_count": 769,
+     "label": "2022",
+     "is_selected": false
+    },
+    {
+     "key": "2023",
+     "doc_count": 1367,
+     "label": "2023",
+     "is_selected": false
+    },
+    {
+     "key": "2024",
+     "doc_count": 1167,
+     "label": "2024",
+     "is_selected": false
+    },
+    {
+     "key": "2025",
+     "doc_count": 1152,
+     "label": "2025",
+     "is_selected": false
+    },
+    {
+     "key": "2026",
+     "doc_count": 1713,
+     "label": "2026",
+     "is_selected": false
+    }
+   ],
+   "label": "Publication date"
+  },
+  "access_status": {
+   "buckets": [
+    {
+     "key": "open",
+     "doc_count": 9988,
+     "label": "Open",
+     "is_selected": false
+    },
+    {
+     "key": "restricted",
+     "doc_count": 799,
+     "label": "Restricted",
+     "is_selected": false
+    },
+    {
+     "key": "embargoed",
+     "doc_count": 12,
+     "label": "Embargoed",
+     "is_selected": false
+    }
+   ],
+   "label": "Access status"
+  },
+  "resource_type": {
+   "buckets": [
+    {
+     "key": "publication",
+     "doc_count": 8981,
+     "label": "Publication",
+     "is_selected": false,
+     "inner": {
+      "buckets": [
+       {
+        "key": "publication-article",
+        "doc_count": 6028,
+        "label": "Journal article",
+        "is_selected": false
+       },
+       {
+        "key": "publication-taxonomictreatment",
+        "doc_count": 1754,
+        "label": "Taxonomic treatment",
+        "is_selected": false
+       },
+       {
+        "key": "publication-conferencepaper",
+        "doc_count": 313,
+        "label": "Conference paper",
+        "is_selected": false
+       },
+       {
+        "key": "publication-section",
+        "doc_count": 89,
+        "label": "Book chapter",
+        "is_selected": false
+       },
+       {
+        "key": "publication-preprint",
+        "doc_count": 82,
+        "label": "Preprint",
+        "is_selected": false
+       },
+       {
+        "key": "publication-journal",
+        "doc_count": 73,
+        "label": "Journal",
+        "is_selected": false
+       },
+       {
+        "key": "publication-book",
+        "doc_count": 64,
+        "label": "Book",
+        "is_selected": false
+       },
+       {
+        "key": "publication-other",
+        "doc_count": 53,
+        "label": "Other",
+        "is_selected": false
+       },
+       {
+        "key": "publication-report",
+        "doc_count": 49,
+        "label": "Report",
+        "is_selected": false
+       },
+       {
+        "key": "publication-dissertation",
+        "doc_count": 31,
+        "label": "Thesis",
+        "is_selected": false
+       }
+      ]
+     }
+    },
+    {
+     "key": "dataset",
+     "doc_count": 811,
+     "label": "Dataset",
+     "is_selected": false,
+     "inner": {
+      "buckets": []
+     }
+    },
+    {
+     "key": "image",
+     "doc_count": 674,
+     "label": "Image",
+     "is_selected": false,
+     "inner": {
+      "buckets": [
+       {
+        "key": "image-figure",
+        "doc_count": 622,
+        "label": "Figure",
+        "is_selected": false
+       },
+       {
+        "key": "image-other",
+        "doc_count": 14,
+        "label": "Other",
+        "is_selected": false
+       },
+       {
+        "key": "image-photo",
+        "doc_count": 8,
+        "label": "Photo",
+        "is_selected": false
+       },
+       {
+        "key": "image-diagram",
+        "doc_count": 5,
+        "label": "Diagram",
+        "is_selected": false
+       },
+       {
+        "key": "image-drawing",
+        "doc_count": 3,
+        "label": "Drawing",
+        "is_selected": false
+       },
+       {
+        "key": "image-plot",
+        "doc_count": 1,
+        "label": "Plot",
+        "is_selected": false
+       }
+      ]
+     }
+    },
+    {
+     "key": "software",
+     "doc_count": 118,
+     "label": "Software",
+     "is_selected": false,
+     "inner": {
+      "buckets": [
+       {
+        "key": "software-computationalnotebook",
+        "doc_count": 3,
+        "label": "Computational notebook",
+        "is_selected": false
+       }
+      ]
+     }
+    },
+    {
+     "key": "other",
+     "doc_count": 65,
+     "label": "Other",
+     "is_selected": false,
+     "inner": {
+      "buckets": []
+     }
+    },
+    {
+     "key": "presentation",
+     "doc_count": 52,
+     "label": "Presentation",
+     "is_selected": false,
+     "inner": {
+      "buckets": []
+     }
+    },
+    {
+     "key": "poster",
+     "doc_count": 36,
+     "label": "Poster",
+     "is_selected": false,
+     "inner": {
+      "buckets": []
+     }
+    },
+    {
+     "key": "model",
+     "doc_count": 28,
+     "label": "Model",
+     "is_selected": false,
+     "inner": {
+      "buckets": []
+     }
+    },
+    {
+     "key": "lesson",
+     "doc_count": 11,
+     "label": "Lesson",
+     "is_selected": false,
+     "inner": {
+      "buckets": []
+     }
+    },
+    {
+     "key": "video",
+     "doc_count": 8,
+     "label": "Video/Audio",
+     "is_selected": false,
+     "inner": {
+      "buckets": []
+     }
+    }
+   ],
+   "label": "Resource types"
+  },
+  "subject": {
+   "buckets": [
+    {
+     "key": "Biodiversity",
+     "doc_count": 3916,
+     "label": "Biodiversity",
+     "is_selected": false
+    },
+    {
+     "key": "Taxonomy",
+     "doc_count": 3696,
+     "label": "Taxonomy",
+     "is_selected": false
+    },
+    {
+     "key": "Animalia",
+     "doc_count": 2508,
+     "label": "Animalia",
+     "is_selected": false
+    },
+    {
+     "key": "Arthropoda",
+     "doc_count": 1713,
+     "label": "Arthropoda",
+     "is_selected": false
+    },
+    {
+     "key": "Insecta",
+     "doc_count": 1273,
+     "label": "Insecta",
+     "is_selected": false
+    },
+    {
+     "key": "Lepidoptera",
+     "doc_count": 479,
+     "label": "Lepidoptera",
+     "is_selected": false
+    },
+    {
+     "key": "Arachnida",
+     "doc_count": 386,
+     "label": "Arachnida",
+     "is_selected": false
+    },
+    {
+     "key": "Mollusca",
+     "doc_count": 368,
+     "label": "Mollusca",
+     "is_selected": false
+    },
+    {
+     "key": "Chordata",
+     "doc_count": 350,
+     "label": "Chordata",
+     "is_selected": false
+    },
+    {
+     "key": "Papilionidae",
+     "doc_count": 347,
+     "label": "Papilionidae",
+     "is_selected": false
+    }
+   ],
+   "label": "Subjects"
+  },
+  "file_type": {
+   "buckets": [
+    {
+     "key": "pdf",
+     "doc_count": 6649,
+     "label": "PDF",
+     "is_selected": false
+    },
+    {
+     "key": "html",
+     "doc_count": 1846,
+     "label": "HTML",
+     "is_selected": false
+    },
+    {
+     "key": "png",
+     "doc_count": 609,
+     "label": "PNG",
+     "is_selected": false
+    },
+    {
+     "key": "zip",
+     "doc_count": 271,
+     "label": "ZIP",
+     "is_selected": false
+    },
+    {
+     "key": "jpg",
+     "doc_count": 180,
+     "label": "JPG",
+     "is_selected": false
+    },
+    {
+     "key": "xlsx",
+     "doc_count": 149,
+     "label": "XLSX",
+     "is_selected": false
+    },
+    {
+     "key": "docx",
+     "doc_count": 127,
+     "label": "DOCX",
+     "is_selected": false
+    },
+    {
+     "key": "csv",
+     "doc_count": 116,
+     "label": "CSV",
+     "is_selected": false
+    },
+    {
+     "key": "txt",
+     "doc_count": 107,
+     "label": "TXT",
+     "is_selected": false
+    },
+    {
+     "key": "md",
+     "doc_count": 104,
+     "label": "MD",
+     "is_selected": false
+    }
+   ],
+   "label": "File type"
+  }
+ },
+ "links": {
+  "self": "https://zenodo.org/api/records?page=1&q=alizarin+mordant+cotton&size=3&sort=bestmatch",
+  "next": "https://zenodo.org/api/records?page=2&q=alizarin+mordant+cotton&size=3&sort=bestmatch"
+ }
+}

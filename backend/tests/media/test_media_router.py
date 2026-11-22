@@ -10,9 +10,9 @@ import pytest
 from app.providers import media_router
 from app.providers.base import Adapter, MediaPoll, MediaRequest, MediaResult, ProviderError
 from app.providers.budget import BudgetDecision
+from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaAsk, MediaRouter
 from app.providers.router import Principal, RouteChoice, RouterError
-from app.services.ai_providers import AiTask
 
 from .fakes import media_result, png_bytes
 from .mp4_builder import movie
@@ -68,9 +68,9 @@ def ledger(monkeypatch: pytest.MonkeyPatch) -> Ledger:
     monkeypatch.setattr(media_router, "load_routes", load_routes)
     monkeypatch.setattr(media_router, "reserve", reserve)
     monkeypatch.setattr(media_router, "settle", settle)
-    monkeypatch.setattr(media_router.app_settings, "load_all", nothing)
-    monkeypatch.setattr(media_router.managed_secrets, "refresh_if_stale", nothing)
-    monkeypatch.setattr(media_router.managed_secrets, "peek_secret", lambda name: "test-only-key")
+    monkeypatch.setattr(media_router.spend_settings, "load_spend_settings", nothing)
+    monkeypatch.setattr(media_router.managed_keys, "refresh_if_stale", nothing)
+    monkeypatch.setattr(media_router.managed_keys, "peek_secret", lambda name: "test-only-key")
     return found
 
 

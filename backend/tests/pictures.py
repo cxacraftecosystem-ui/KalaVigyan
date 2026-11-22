@@ -8,8 +8,7 @@ from decimal import Decimal
 
 from PIL import Image, ImageDraw, PngImagePlugin
 
-from app.research.image_screens import VisionRequest, VisionVerdict
-from app.services.image_screens import ScreenTools
+from app.research.image_screens import ScreenTools, VisionRequest, VisionVerdict
 from app.services.object_store import PresignedGet
 
 __all__ = [

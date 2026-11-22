@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 
 from app.core.errors import InvalidInput
+from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaAsk
 from app.providers.router import Principal
 from app.schemas.media import (
@@ -18,7 +19,6 @@ from app.schemas.media import (
     names_a_group,
     style_hint_problem,
 )
-from app.services.ai_providers import AiTask
 
 from .records import ClaimFacts
 

@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "about": "Domains whose web pages live research ranks above the general web's trust C (docs/contracts/research.md, web search adapters). A page's host takes the trust of the longest listed domain it equals or ends in, after a dot; any other host is C. A is kept for statutory records, national and international standards and peer-reviewed journals (the letter's 'peer-reviewed or official'); B for the sites of governments, universities, research institutes, museums and heritage bodies, whose pages rank with the reports, theses and repository copies the scholarly adapters call B. A zone counts only when its registry admits nobody else; a named institution is listed for what its own pages are.",
+  "domains": [
+    {
+      "domain": "gov.in",
+      "trust": "B",
+      "kind": "government",
+      "reason": "The gov.in zone is registered only to Indian central, state and local government bodies (NIC's registration rules). Its pages are official, but most are notices, scheme pages and reports rather than reviewed records, so they rank with reports."
+    },
+    {
+      "domain": "nic.in",
+      "trust": "B",
+      "kind": "government",
+      "reason": "The National Informatics Centre's zone for ministries, departments and districts, such as handicrafts.nic.in of the Development Commissioner (Handicrafts) and texmin.nic.in of the Ministry of Textiles; official sites ranked with reports, as gov.in."
+    },
+    {
+      "domain": "gov",
+      "trust": "B",
+      "kind": "government",
+      "reason": "The .gov top-level domain is registered only to United States government organisations (CISA's .gov rules), among them the Forest Products Laboratory (fpl.fs.usda.gov) and NCBI (ncbi.nlm.nih.gov); official sites ranked with reports."
+    },
+    {
+      "domain": "ipindia.gov.in",
+      "trust": "A",
+      "kind": "government",
+      "reason": "The Office of the Controller General of Patents, Designs and Trade Marks, which keeps the Geographical Indications Registry; the GI applications and journals it publishes are statutory records under the Geographical Indications of Goods Act, 1999."
+    },
+    {
+      "domain": "ipindia.nic.in",
+      "trust": "A",
+      "kind": "government",
+      "reason": "The earlier address of the same office and GI Registry, which still serves many GI journals and application documents; statutory records under the Geographical Indications of Goods Act, 1999."
+    },
+    {
+      "domain": "bis.gov.in",
+      "trust": "A",
+      "kind": "standards body",
+      "reason": "The Bureau of Indian Standards, India's national standards body under the Bureau of Indian Standards Act, 2016; its pages state Indian Standards, among them the test methods for colour fastness of textiles."
+    },
+    {
+      "domain": "iso.org",
+      "trust": "A",
+      "kind": "standards body",
+      "reason": "The International Organization for Standardization; its pages are the official records of international standards, among them the ISO 105 series on colour fastness of textiles."
+    },
+    {
+      "domain": "ac.in",
+      "trust": "B",
+      "kind": "university",
+      "reason": "The ac.in zone is registered only to academic institutions recognised in India (ERNET India's rules); university and college sites rank with the theses and repository copies the scholarly adapters call B."
+    },
+    {
+      "domain": "edu.in",
+      "trust": "B",
+      "kind": "university",
+      "reason": "The edu.in zone is registered only to Indian educational institutions (ERNET India's rules); ranked with university sites."
+    },
+    {
+      "domain": "edu",
+      "trust": "B",
+      "kind": "university",
+      "reason": "The .edu top-level domain is limited to accredited United States post-secondary institutions (EDUCAUSE's eligibility rules); it also holds the Smithsonian (si.edu) and the Getty (getty.edu)."
+    },
+    {
+      "domain": "ac.uk",
+      "trust": "B",
+      "kind": "university",
+      "reason": "The ac.uk zone is registered only to UK higher-education and research bodies (Jisc's eligibility rules); it also holds the Victoria and Albert Museum (vam.ac.uk) and the Ashmolean (ashmolean.ox.ac.uk)."
+    },
+    {
+      "domain": "res.in",
+      "trust": "B",
+      "kind": "research institute",
+      "reason": "The res.in zone is registered only to Indian research institutions (ERNET India's rules), such as the CSIR laboratories; ranked with the reports and repository copies the scholarly adapters call B."
+    },
+    {
+      "domain": "nopr.niscpr.res.in",
+      "trust": "A",
+      "kind": "research institute",
+      "reason": "NOPR is CSIR-NIScPR's repository of its own peer-reviewed journals, among them the Indian Journal of Traditional Knowledge and the Indian Journal of Fibre and Textile Research; the scholarly adapters rank journal articles A."
+    },
+    {
+      "domain": "kew.org",
+      "trust": "B",
+      "kind": "research institute",
+      "reason": "The Royal Botanic Gardens, Kew, a botanical research institution; Plants of the World Online (powo.science.kew.org) is its curated register of accepted plant names, used for dye, fibre and gum plants."
+    },
+    {
+      "domain": "britishmuseum.org",
+      "trust": "B",
+      "kind": "museum",
+      "reason": "The British Museum's collection records, written and kept by its curators, with object descriptions, materials and techniques; a reputable reference."
+    },
+    {
+      "domain": "metmuseum.org",
+      "trust": "B",
+      "kind": "museum",
+      "reason": "The Metropolitan Museum of Art's collection records and Heilbrunn Timeline essays, written by its curators and conservators; a reputable reference."
+    },
+    {
+      "domain": "harvardartmuseums.org",
+      "trust": "B",
+      "kind": "museum",
+      "reason": "Harvard Art Museums' collection records and its Straus Center for Conservation and Technical Studies, which keeps the Forbes Pigment Collection; a reputable reference for pigments and dyes."
+    },
+    {
+      "domain": "calicomuseum.org",
+      "trust": "B",
+      "kind": "museum",
+      "reason": "The Calico Museum of Textiles, Ahmedabad, India's principal museum of textiles, whose pages describe its collections and the techniques behind them; a reputable reference."
+    },
+    {
+      "domain": "unesco.org",
+      "trust": "B",
+      "kind": "heritage body",
+      "reason": "UNESCO; its Intangible Cultural Heritage lists (ich.unesco.org) publish nomination files that its evaluation body examines before inscription; a reputable reference."
+    },
+    {
+      "domain": "intach.org",
+      "trust": "B",
+      "kind": "heritage body",
+      "reason": "The Indian National Trust for Art and Cultural Heritage, whose intangible heritage division documents crafts and their practitioners; a reputable reference."
+    }
+  ]
+}

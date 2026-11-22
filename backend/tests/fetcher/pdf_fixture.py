@@ -34,6 +34,44 @@ def pdf_with_pages(
     return _assembled(objects, info_id)
 
 
+FORM_ENTRIES = "/Type /XObject /Subtype /Form /BBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >>"
+IMAGE_ENTRIES = "/Type /XObject /Subtype /Image /Height 1 /ColorSpace /DeviceGray /BitsPerComponent 8"
+PAGE_HEAD = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >>"
+
+
+def pdf_with_resources(
+    text: str, *, form_text: str | None = None, image: bytes | None = None, to_unicode: bytes | None = None
+) -> bytes:
+    objects: dict[int, bytes] = {
+        1: b"<< /Type /Catalog /Pages 2 0 R >>",
+        2: b"<< /Type /Pages /Kids [4 0 R] /Count 1 >>",
+        6: b"null",
+        7: b"null",
+        8: b"null",
+    }
+    drawing = f"BT /F1 12 Tf 72 720 Td ({_escaped(text)}) Tj ET"
+    if form_text is not None:
+        form = f"BT /F1 12 Tf 72 700 Td ({_escaped(form_text)}) Tj ET".encode("latin-1")
+        objects[6] = _stream(form, FORM_ENTRIES)
+        drawing += " /Fm1 Do"
+    if image is not None:
+        objects[7] = _stream(image, f"{IMAGE_ENTRIES} /Width {len(image)}")
+        drawing += " q 10 0 0 10 0 0 cm /Im1 Do Q"
+    unicode_map = ""
+    if to_unicode is not None:
+        objects[8] = _stream(to_unicode)
+        unicode_map = " /ToUnicode 8 0 R"
+    objects[3] = f"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica{unicode_map} >>".encode()
+    objects[4] = f"{PAGE_HEAD} /XObject << /Fm1 6 0 R /Im1 7 0 R >> >> /Contents 5 0 R >>".encode()
+    objects[5] = _stream(drawing.encode("latin-1"))
+    return _assembled(objects, None)
+
+
+def _stream(data: bytes, entries: str = "") -> bytes:
+    head = f"<< {entries} /Length {len(data)} >>" if entries else f"<< /Length {len(data)} >>"
+    return head.encode() + b"\nstream\n" + data + b"\nendstream"
+
+
 def _assembled(objects: dict[int, bytes], info_id: int | None) -> bytes:
     out = bytearray(b"%PDF-1.4\n")
     offsets: dict[int, int] = {}

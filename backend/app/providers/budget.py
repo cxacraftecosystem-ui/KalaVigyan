@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import ROUND_HALF_UP, Decimal
@@ -7,7 +8,9 @@ from typing import Any
 
 from app.core.clock import INDIA_TZ
 from app.core.roles import is_uncapped
-from app.services.ai_providers import UNKNOWN_TOKEN_PRICE, UNKNOWN_UNIT_PRICE, AiModel
+
+from . import spend_settings as keys
+from .catalogue import UNKNOWN_TOKEN_PRICE, UNKNOWN_UNIT_PRICE, AiModel
 
 CACHED_INPUT_FRACTION = Decimal("0.25")
 OPTIONAL_WORK_KEEPS = Decimal("0.5")
@@ -30,6 +33,13 @@ REFUSAL_MESSAGES = {
 }
 
 
+RequestBudget = Callable[[], Awaitable[Decimal]]
+
+
+async def request_budget_now(budget: RequestBudget | None) -> Decimal | None:
+    return None if budget is None else await budget()
+
+
 def usd(value: Any) -> Decimal:
     return Decimal(str(value or 0)).quantize(MICRO, rounding=ROUND_HALF_UP)
 
@@ -48,8 +58,6 @@ class Ceilings:
 
     @classmethod
     def from_settings(cls, values: dict[str, Any]) -> Ceilings:
-        from app.services import app_settings as keys
-
         role_caps = values.get(keys.ROLE_DAILY_USD) or {}
         answer_caps = values.get(keys.ANSWER_CAP_USD) or {}
         degrade_at = values.get(keys.DEGRADE_AT_FRACTION)

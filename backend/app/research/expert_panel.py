@@ -148,7 +148,7 @@ EXPERT_PANEL: Mapping[str, SeatBrief] = MappingProxyType(
                 "HISTORIAN",
                 "Historian",
                 "Explains origins, dates, migrations and trade from documents and dated objects.",
-                ("BOOK", "PAPER", "GI_JOURNAL", "ENCYCLOPEDIA", "BOOK_CHAPTER", "WEB_PAGE", "OTHER"),
+                ("BOOK", "PAPER", "GI_JOURNAL", "ENCYCLOPEDIA", "BOOK_CHAPTER", "WEB_PAGE", "MEDIA", "OTHER"),
                 ("HISTORY", "OVERVIEW"),
             ),
             _seat(
@@ -169,7 +169,7 @@ EXPERT_PANEL: Mapping[str, SeatBrief] = MappingProxyType(
                 "DESIGN_HISTORIAN",
                 "Design and art historian",
                 "Explains motifs, styles and their lineage, from museum objects and design literature.",
-                ("BOOK", "PAPER", "WEB_PAGE", "BOOK_CHAPTER", "OTHER"),
+                ("BOOK", "PAPER", "WEB_PAGE", "BOOK_CHAPTER", "MEDIA", "OTHER"),
                 ("DESIGN", "HISTORY"),
             ),
             _seat(

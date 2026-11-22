@@ -16,8 +16,8 @@ from app.research.evidence_pack import EvidencePack
 from app.research.planning import PlanRequest
 from app.retrieval.indexing import EmbeddedCounts
 from app.services import coverage_enrichment
-from app.services.coverage_enrichment import EnrichmentPipeline, run_coverage_enrichment
-from app.services.coverage_selection import STANDARD_QUESTIONS, CraftToEnrich, open_questions
+from app.services.coverage_enrichment import EnrichmentPipeline, day_budget_left, run_coverage_enrichment
+from app.services.coverage_selection import STANDARD_QUESTIONS, CraftToEnrich, open_questions, weighted_claims
 from app.services.craft_resolver import CraftIndexStore
 from app.services.research_write_back import StoredResearch
 from app.services.write_back_plan import SkippedSentence
@@ -247,3 +247,23 @@ def test_a_request_id_scope_tags_and_restores() -> None:
     assert current_request_id() is None
     with pytest.raises(ValueError), request_id_scope("bad id!"):
         pass
+
+
+async def test_the_day_budget_left_is_read_again_before_each_call() -> None:
+    spend = {"enrichment-a": Decimal("1.20"), "enrichment-b": Decimal("0.90"), "answer-c": Decimal("5")}
+
+    async def spent(prefix: str, since: datetime) -> Decimal:
+        assert (prefix, since) == ("enrichment-", DAY)
+        return sum((amount for tag, amount in spend.items() if tag.startswith(prefix)), Decimal(0))
+
+    left = day_budget_left(spent, day_started_at=DAY, budget_usd=Decimal("2.50"))
+    assert await left() == Decimal("0.40")
+    spend["enrichment-d"] = Decimal("0.55")
+    assert await left() == Decimal("-0.15")
+
+
+def test_shared_family_claims_count_half_beside_the_craft_s_own() -> None:
+    own = {"MATERIALS": 1, None: 1}
+    shared = {"MATERIALS": 2, "CHEMISTRY": 3}
+    assert weighted_claims(own, shared) == (4.5, {"CHEMISTRY": 1.5, "MATERIALS": 2.0})
+    assert weighted_claims({}, {}) == (0, {})

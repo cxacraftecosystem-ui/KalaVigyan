@@ -58,10 +58,10 @@ flowchart LR
   | Ecologist | paper, government report, dataset, book chapter, other |
   | Botanist | paper, book, encyclopedia, book chapter, web page |
   | Toxicologist | compound record, paper, government report, book chapter |
-  | Historian | book, paper, GI journal, encyclopedia, book chapter, web page, other |
+  | Historian | book, paper, GI journal, encyclopedia, book chapter, web page, media, other |
   | Anthropologist | field testimony, paper, book, web page, book chapter, other |
   | Economist | government report, paper, dataset, book chapter, web page, other |
-  | Design and art historian | book, paper, web page, book chapter, other |
+  | Design and art historian | book, paper, web page, book chapter, media, other |
   | Conservator | paper, book, web page, book chapter, other |
   | GI and policy expert | GI journal, government report, web page, other |
   | Artisan's voice | field testimony, web page |

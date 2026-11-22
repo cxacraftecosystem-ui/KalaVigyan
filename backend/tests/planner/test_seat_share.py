@@ -14,7 +14,16 @@ from ..research.fixtures import evidence_item
 from .fakes import FakeAdapter, FakeFetcher, FakeLocator, ids, model_for, request, web_page
 from .test_research_run import OPEN_COPY, P1, W1, planner
 
-HISTORIAN_READS = ("BOOK", "PAPER", "GI_JOURNAL", "ENCYCLOPEDIA", "BOOK_CHAPTER", "WEB_PAGE", "OTHER")
+HISTORIAN_READS = (
+    "BOOK",
+    "PAPER",
+    "GI_JOURNAL",
+    "ENCYCLOPEDIA",
+    "BOOK_CHAPTER",
+    "WEB_PAGE",
+    "MEDIA",
+    "OTHER",
+)
 TOXICOLOGIST_READS = ("COMPOUND_RECORD", "PAPER", "GOVERNMENT_REPORT", "BOOK_CHAPTER")
 CHEMIST_READS = ("PAPER", "BOOK", "COMPOUND_RECORD", "ENCYCLOPEDIA", "BOOK_CHAPTER", "GI_JOURNAL", "WEB_PAGE")
 

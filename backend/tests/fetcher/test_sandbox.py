@@ -228,3 +228,13 @@ async def test_a_pdf_is_read_through_the_light_extractor() -> None:
         "Alum fixes the red dye on cotton.",
         "Mordants",
     )
+
+
+@pytest.mark.parametrize("served_as", ["application/octet-stream", "binary/octet-stream"])
+async def test_a_pdf_served_as_an_octet_stream_is_read_as_a_pdf(served_as: str) -> None:
+    body = pdf_with_pages(["Alum fixes the red dye on cotton."])
+    site = article_site(
+        **{f"{HOST}/files/notes.pdf": httpx.Response(200, content=body, headers={"content-type": served_as})}
+    )
+    page = await site.fetcher().fetch(FetchRequest(url=f"https://{HOST}/files/notes.pdf"))
+    assert (page.content_type, page.text) == ("application/pdf", "Alum fixes the red dye on cotton.")

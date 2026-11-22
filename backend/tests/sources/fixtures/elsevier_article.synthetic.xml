@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<full-text-retrieval-response xmlns="http://www.elsevier.com/xml/svapi/article/dtd" xmlns:prism="http://prismstandard.org/namespaces/basic/2.0/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xocs="http://www.elsevier.com/xml/xocs/dtd" xmlns:ja="http://www.elsevier.com/xml/ja/dtd" xmlns:ce="http://www.elsevier.com/xml/common/dtd">
+  <coredata>
+    <prism:url>https://api.elsevier.com/content/article/pii/S0143720826000001</prism:url>
+    <dc:identifier>doi:10.1016/j.dyepig.2026.114301</dc:identifier>
+    <prism:doi>10.1016/j.dyepig.2026.114301</prism:doi>
+    <dc:title>A synthetic article standing in for a recorded Elsevier response</dc:title>
+    <prism:publicationName>Dyes and Pigments</prism:publicationName>
+    <prism:coverDate>2026-06-01</prism:coverDate>
+    <dc:creator>Tester, Ada</dc:creator>
+    <dc:description>
+      A synthetic abstract standing in for a recorded Elsevier response.
+    </dc:description>
+    <openaccess>0</openaccess>
+    <openaccessArticle>false</openaccessArticle>
+    <openaccessUserLicense/>
+  </coredata>
+  <originalText>
+    <xocs:doc>
+      <xocs:meta><xocs:content-type>JL</xocs:content-type></xocs:meta>
+      <xocs:serial-item>
+        <ja:article>
+          <ja:head>
+            <ce:title>A synthetic article standing in for a recorded Elsevier response</ce:title>
+          </ja:head>
+          <ja:body>
+            <ce:sections>
+              <ce:section>
+                <ce:section-title>Introduction</ce:section-title>
+                <ce:para>Synthetic Elsevier paragraph one, with a cross reference <ce:cross-ref refid="bib1">[1]</ce:cross-ref>.</ce:para>
+                <ce:para>Synthetic Elsevier paragraph two.</ce:para>
+              </ce:section>
+            </ce:sections>
+          </ja:body>
+          <ja:tail>
+            <ce:bibliography><ce:bibliography-sec><ce:bib-reference id="bib1"><ce:label>[1]</ce:label><ce:other-ref><ce:textref>A synthetic reference that is left out.</ce:textref></ce:other-ref></ce:bib-reference></ce:bibliography-sec></ce:bibliography>
+          </ja:tail>
+        </ja:article>
+      </xocs:serial-item>
+    </xocs:doc>
+  </originalText>
+</full-text-retrieval-response>

@@ -66,6 +66,7 @@ def source_values(item: EvidenceItem, document: SourceDocument | None = None) ->
         "doi": item.doi,
         "url": item.url,
         "publisher": _storable_or_none(item.publisher),
+        "containerTitle": _storable_or_none(item.journal),
         "licence": _storable_or_none(item.licence),
         "reliability": item.trust,
         "storage": CONTENT_STORAGE[document.content] if document else LINK_ONLY,

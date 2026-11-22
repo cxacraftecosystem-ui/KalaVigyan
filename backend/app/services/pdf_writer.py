@@ -1,18 +1,32 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from io import BytesIO
+from itertools import pairwise
 from typing import Literal
 
 from fpdf import FPDF
-from fpdf.enums import Align, XPos, YPos
+from fpdf.enums import Align, MethodReturnValue, XPos, YPos
 
 from app.data.export_assets import font_files
 from app.research.vocabulary import ANSWER_LANGUAGE_SPECS, RIGHT_TO_LEFT_SCRIPTS
 
 from .export_pictures import Picture
 
-__all__ = ["ACCENT", "INK", "MUTED", "PdfWriter", "TextStyle"]
+__all__ = [
+    "ACCENT",
+    "INK",
+    "LINE_RATIO",
+    "MUTED",
+    "RULE",
+    "SUNK",
+    "Box",
+    "Colour",
+    "PdfWriter",
+    "Point",
+    "TextStyle",
+]
 
 LATIN_SCRIPT = "Latn"
 LATIN_FAMILY = "kv-latn"
@@ -21,20 +35,36 @@ MARGIN_MM = 16.0
 INK = (17, 24, 39)
 MUTED = (75, 85, 99)
 ACCENT = (91, 33, 182)
+RULE = (209, 213, 219)
+SUNK = (243, 244, 246)
 CREDIT_SIZE = 8.0
 LINE_RATIO = 0.5
 PICTURE_GAP_MM = 2.0
 CREDIT_LINES = 3
+LINE_MM = 0.2
+DASH_MM = (0.8, 0.6)
+POLYGON_POINTS_MIN = 3
 
 Orientation = Literal["portrait", "landscape"]
+Colour = tuple[int, int, int]
+Point = tuple[float, float]
+TextAlign = Literal["L", "C", "R"]
 
 
 @dataclass(frozen=True)
 class TextStyle:
     size: float
     bold: bool = False
-    colour: tuple[int, int, int] = INK
+    colour: Colour = INK
     gap_after: float = 2.0
+
+
+@dataclass(frozen=True)
+class Box:
+    x: float
+    y: float
+    width: float
+    height: float
 
 
 class PdfWriter:
@@ -117,12 +147,58 @@ class PdfWriter:
         self._pdf.multi_cell(width, CREDIT_SIZE * LINE_RATIO, credit, align=self._align, new_y=YPos.NEXT)
         return float(self._pdf.get_y())
 
+    def room(self, height: float) -> float:
+        if self._pdf.get_y() + height > self.bottom:
+            self.new_page()
+        return self.y
+
+    def rect(
+        self, box: Box, *, fill: Colour | None = None, line: Colour | None = None, dashed: bool = False
+    ) -> None:
+        self._paint(fill, line, dashed=dashed)
+        self._pdf.rect(box.x, box.y, box.width, box.height, style=_style(fill, line))
+        self._pdf.set_dash_pattern()
+
+    def shape(
+        self, points: Sequence[Point], *, fill: Colour | None = None, line: Colour | None = None
+    ) -> None:
+        if len(points) < POLYGON_POINTS_MIN:
+            return
+        self._paint(fill, line, dashed=False)
+        self._pdf.polygon(list(points), style=_style(fill, line))
+
+    def stroke(self, points: Sequence[Point], colour: Colour) -> None:
+        self._paint(None, colour, dashed=False)
+        for start, end in pairwise(points):
+            self._pdf.line(*start, *end)
+
+    def label(self, text: str, style: TextStyle, box: Box, *, align: TextAlign = "L") -> None:
+        self._set(style)
+        self._pdf.set_xy(box.x, box.y)
+        self._pdf.cell(box.width, box.height, text, align=align)
+
+    def line_count(self, text: str, style: TextStyle, width: float) -> int:
+        self._set(style)
+        lines = self._pdf.multi_cell(
+            width, style.size * LINE_RATIO, text, dry_run=True, output=MethodReturnValue.LINES
+        )
+        return len(lines) if isinstance(lines, list) else 1
+
     def output(self) -> bytes:
         return bytes(self._pdf.output())
 
     def _set(self, style: TextStyle) -> None:
         self._pdf.set_font(self._family, "B" if style.bold else "", style.size)
         self._pdf.set_text_color(*style.colour)
+
+    def _paint(self, fill: Colour | None, line: Colour | None, *, dashed: bool) -> None:
+        self._pdf.set_line_width(LINE_MM)
+        if fill is not None:
+            self._pdf.set_fill_color(*fill)
+        if line is not None:
+            self._pdf.set_draw_color(*line)
+        if dashed:
+            self._pdf.set_dash_pattern(dash=DASH_MM[0], gap=DASH_MM[1])
 
     def _fonts(self, script: str) -> str:
         latin = font_files(LATIN_SCRIPT)
@@ -135,3 +211,9 @@ class PdfWriter:
         self._pdf.add_font(SCRIPT_FAMILY, "B", own.bold)
         self._pdf.set_fallback_fonts([LATIN_FAMILY], exact_match=False)
         return SCRIPT_FAMILY
+
+
+def _style(fill: Colour | None, line: Colour | None) -> str:
+    if fill is not None and line is not None:
+        return "DF"
+    return "F" if fill is not None else "D"

@@ -1295,7 +1295,8 @@
             "GI_JOURNAL",
             "GOVERNMENT_REPORT",
             "COMPOUND_RECORD",
-            "OTHER"
+            "OTHER",
+            "MEDIA"
           ],
           "title": "Kind",
           "type": "string"

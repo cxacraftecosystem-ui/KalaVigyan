@@ -23,7 +23,7 @@ REGISTRATIONS_SPENT = "Many clients were registered from this address in the las
 
 @router.post(REGISTER_ROUTE, dependencies=[Depends(mcp_enabled)])
 async def register_client(request: Request, session: AsyncSession = Depends(get_session)) -> Response:
-    refuse_when_throttled(client_registration_attempt(request), REGISTRATIONS_SPENT)
+    refuse_when_throttled(await client_registration_attempt(request), REGISTRATIONS_SPENT)
     try:
         registration = await registration_from(request)
         registered = await oauth_clients.register_client(session, registration, now=_now())

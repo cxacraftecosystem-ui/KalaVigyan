@@ -46,7 +46,7 @@ async def two_processes() -> AsyncIterator[tuple[SharedCounter, SharedCounter]]:
 
 async def stored(bucket: allowances.Bucket) -> AllowanceBucket | None:
     async with sessionmaker()() as session:
-        return await session.get(AllowanceBucket, (bucket.holder, bucket.kind, bucket.hour))
+        return await session.get(AllowanceBucket, (bucket.holder, bucket.kind, bucket.start))
 
 
 async def test_two_processes_counting_at_once_never_grant_more_than_the_limit(
@@ -54,8 +54,8 @@ async def test_two_processes_counting_at_once_never_grant_more_than_the_limit(
 ) -> None:
     bucket = bucket_of(holder(), SOURCE_SEARCHES, NOW)
     calls = [two_processes[n % 2].take(bucket, Ask(wanted=1, limit=30)) for n in range(40)]
-    granted = await asyncio.gather(*calls)
-    assert sorted(granted) == [0] * 10 + [1] * 30
+    counted = await asyncio.gather(*calls)
+    assert sorted(each.granted for each in counted) == [0] * 10 + [1] * 30
     row = await stored(bucket)
     assert row is not None and (row.used, row.lastTaken) == (30, 0)
 
@@ -110,7 +110,7 @@ async def test_a_count_held_up_past_its_time_by_a_locked_bucket_refuses_the_call
 ) -> None:
     bucket = bucket_of(holder(), SOURCE_READS, NOW)
     first, _ = two_processes
-    assert await first.take(bucket, Ask(wanted=1, limit=120)) == 1
+    assert (await first.take(bucket, Ask(wanted=1, limit=120))).granted == 1
     slow = SharedCounter(seconds=0.5)
     try:
         async with sessionmaker()() as holding:
@@ -141,7 +141,7 @@ async def _lock(session: AsyncSession, bucket: allowances.Bucket) -> None:
         .where(
             AllowanceBucket.holder == bucket.holder,
             AllowanceBucket.kind == bucket.kind,
-            AllowanceBucket.hourStart == bucket.hour,
+            AllowanceBucket.hourStart == bucket.start,
         )
         .with_for_update()
     )

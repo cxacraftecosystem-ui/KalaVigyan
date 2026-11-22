@@ -10,7 +10,7 @@ os.environ.setdefault("BACKEND_CORS_ORIGINS", "http://localhost:3000")
 
 import pytest
 
-from app.core import allowances, rate_limit, roles
+from app.core import allowances, roles
 
 from .ai_caps import ALLOWANCES_AN_OWNER_MIGHT_SET
 from .allowance_counter import MemoryCounter
@@ -23,11 +23,6 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     for item in items:
         if "db" in item.keywords:
             item.add_marker(skip)
-
-
-@pytest.fixture(autouse=True)
-def _fresh_rate_limits() -> None:
-    rate_limit.reset_all()
 
 
 @pytest.fixture(autouse=True)

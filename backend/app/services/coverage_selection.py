@@ -4,8 +4,9 @@ import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import Any
 
-from sqlalchemy import Select, and_, func, select
+from sqlalchemy import ColumnElement, Select, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Claim, Concept, Craft, EnrichmentJob
@@ -18,11 +19,13 @@ from app.research.write_back import WRITE_BACK_ORIGIN
 __all__ = [
     "ENRICHMENT_COOLDOWN",
     "FRUITLESS_BACKOFF",
+    "SHARED_CLAIM_WEIGHT",
     "STANDARD_QUESTIONS",
     "CraftToEnrich",
     "StandardQuestion",
     "least_covered_crafts",
     "open_questions",
+    "weighted_claims",
 ]
 
 ENRICHMENT_COOLDOWN = timedelta(days=7)
@@ -30,6 +33,9 @@ FRUITLESS_BACKOFF = timedelta(days=28)
 ACTIVE_CRAFT = "ACTIVE"
 FINISHED_JOB = "SUCCEEDED"
 CONCEPT_SUBJECT = "CONCEPT"
+SHARED_CLAIM_WEIGHT = 0.5
+
+FieldCounts = Mapping[str | None, int]
 
 
 @dataclass(frozen=True)
@@ -60,8 +66,8 @@ class CraftToEnrich:
     craft_id: uuid.UUID
     slug: str
     name: str
-    claims: int
-    field_claims: Mapping[str, int] = field(default_factory=dict)
+    claims: float
+    field_claims: Mapping[str, float] = field(default_factory=dict)
     resting: frozenset[str] = frozenset()
 
     @property
@@ -78,56 +84,62 @@ def open_questions(craft: CraftToEnrich) -> list[StandardQuestion]:
     ]
 
 
+def weighted_claims(own: FieldCounts, shared: FieldCounts) -> tuple[float, dict[str, float]]:
+    fields = {name for name in (*own, *shared) if name is not None}
+    by_field = {name: own.get(name, 0) + SHARED_CLAIM_WEIGHT * shared.get(name, 0) for name in sorted(fields)}
+    total = sum(own.values()) + SHARED_CLAIM_WEIGHT * sum(shared.values())
+    return total, by_field
+
+
 async def least_covered_crafts(session: AsyncSession, *, now: datetime, limit: int) -> list[CraftToEnrich]:
     if limit < 1:
         raise ValueError(f"Pick at least one craft, not {limit}")
-    counted = _counted_claims().subquery()
     recent = select(EnrichmentJob.id).where(
         EnrichmentJob.craftId == Craft.id, EnrichmentJob.createdAt >= now - ENRICHMENT_COOLDOWN
     )
     rows = await session.execute(
-        select(Craft.id, Craft.slug, Craft.name, func.coalesce(func.sum(counted.c.claims), 0).label("claims"))
-        .outerjoin(counted, counted.c.craftId == Craft.id)
-        .where(Craft.status == ACTIVE_CRAFT, Craft.isCatchAll.is_(False), ~recent.exists())
-        .group_by(Craft.id, Craft.slug, Craft.name)
-        .order_by("claims", Craft.slug)
+        select(Craft.id, Craft.slug, Craft.name, Craft.subCategoryId).where(
+            Craft.status == ACTIVE_CRAFT, Craft.isCatchAll.is_(False), ~recent.exists()
+        )
     )
-    fields = await _field_claims(session)
+    own = await _counts(session, Concept.craftId, Concept.craftId.is_not(None))
+    shared = await _counts(
+        session, Concept.subCategoryId, and_(Concept.craftId.is_(None), Concept.subCategoryId.is_not(None))
+    )
     resting = await _resting(session, now)
     crafts = [
-        CraftToEnrich(
-            row.id,
-            row.slug,
-            row.name,
-            int(row.claims),
-            fields.get(row.id, {}),
-            resting.get(row.id, frozenset()),
+        _to_enrich(
+            row, own.get(row.id, {}), shared.get(row.subCategoryId, {}), resting.get(row.id, frozenset())
         )
         for row in rows
     ]
+    crafts.sort(key=lambda craft: (craft.claims, craft.slug))
     return [craft for craft in crafts if open_questions(craft)][:limit]
 
 
-def _counted_claims() -> Select[tuple[uuid.UUID, str | None, int]]:
+def _to_enrich(row: Any, own: FieldCounts, shared: FieldCounts, resting: frozenset[str]) -> CraftToEnrich:
+    total, by_field = weighted_claims(own, shared)
+    return CraftToEnrich(row.id, row.slug, row.name, total, by_field, resting)
+
+
+async def _counts(
+    session: AsyncSession, owner: Any, condition: ColumnElement[bool]
+) -> dict[uuid.UUID, dict[str | None, int]]:
     visible = and_(
         Claim.subjectType == CONCEPT_SUBJECT,
         Claim.subjectId == Concept.id,
         Claim.status.not_in(HIDDEN_CLAIM_STATUSES),
         Claim.sensitivity == VISIBLE_SENSITIVITY,
     )
-    return (
-        select(Concept.craftId, Claim.field, func.count(Claim.id).label("claims"))
+    statement = (
+        select(owner.label("owner"), Claim.field, func.count(Claim.id).label("claims"))
         .join(Claim, visible)
-        .where(Concept.craftId.is_not(None), Concept.sensitivity == VISIBLE_SENSITIVITY)
-        .group_by(Concept.craftId, Claim.field)
+        .where(condition, Concept.sensitivity == VISIBLE_SENSITIVITY)
+        .group_by(owner, Claim.field)
     )
-
-
-async def _field_claims(session: AsyncSession) -> dict[uuid.UUID, dict[str, int]]:
-    counts: dict[uuid.UUID, dict[str, int]] = {}
-    for row in await session.execute(_counted_claims()):
-        if row.field is not None:
-            counts.setdefault(row.craftId, {})[row.field] = int(row.claims)
+    counts: dict[uuid.UUID, dict[str | None, int]] = {}
+    for row in await session.execute(statement):
+        counts.setdefault(row.owner, {})[row.field] = int(row.claims)
     return counts
 
 

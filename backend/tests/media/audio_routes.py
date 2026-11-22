@@ -10,9 +10,9 @@ import pytest
 
 from app.providers import budget, media_router
 from app.providers.base import Adapter, MediaRequest, MediaResult
+from app.providers.catalogue import MEDIA_TASKS, AiTask
 from app.providers.media_router import MediaRouter
 from app.providers.router import RouteChoice
-from app.services.ai_providers import MEDIA_TASKS, AiTask
 
 __all__ = [
     "BYTES_PER_SECOND",
@@ -88,9 +88,9 @@ def budgeted(monkeypatch: pytest.MonkeyPatch, routes: dict[AiTask, list[RouteCho
     monkeypatch.setattr(media_router, "load_routes", load_routes)
     monkeypatch.setattr(media_router, "reserve", reserve)
     monkeypatch.setattr(media_router, "settle", settle)
-    monkeypatch.setattr(media_router.app_settings, "load_all", nothing)
-    monkeypatch.setattr(media_router.managed_secrets, "refresh_if_stale", nothing)
-    monkeypatch.setattr(media_router.managed_secrets, "peek_secret", lambda name: "test-only-key")
+    monkeypatch.setattr(media_router.spend_settings, "load_spend_settings", nothing)
+    monkeypatch.setattr(media_router.managed_keys, "refresh_if_stale", nothing)
+    monkeypatch.setattr(media_router.managed_keys, "peek_secret", lambda name: "test-only-key")
     return found
 
 
