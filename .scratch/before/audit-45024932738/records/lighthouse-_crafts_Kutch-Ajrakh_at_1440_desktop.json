@@ -1,0 +1,20 @@
+{
+  "check": "lighthouse",
+  "target": "/crafts/Kutch-Ajrakh at 1440 (desktop)",
+  "subject": "/crafts/Kutch-Ajrakh",
+  "variant": "desktop",
+  "ok": true,
+  "problems": [],
+  "notes": [
+    "median of 3 runs"
+  ],
+  "numbers": {
+    "performance": 97,
+    "accessibility": 100,
+    "best-practices": 100,
+    "lcpMs": 1289,
+    "cls": 0.001,
+    "tbtMs": 0,
+    "bytes": 1739682
+  }
+}

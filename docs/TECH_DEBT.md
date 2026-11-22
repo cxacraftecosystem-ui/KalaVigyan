@@ -2371,20 +2371,13 @@ Last reviewed: 2026-11-22.
 
 ### Small differences from the boards left after round 6
 
-- **What:** the map finding text sets about 5% narrower than the board's (the self-hosted Newsreader
-  against the board's Google Fonts copy), so it wraps in two lines where the board has three; the
-  hub's monographs shelf leaves two empty cells at 834 and 1440 with seven monographs; at 360 the
-  landing's specimen label is 13px narrower because the board's label spills into the page margin;
-  the Urdu answer keeps its interface words in English where the Urdu board shows Urdu.
-- **Why left (2026-11-22, decision 0141):** each part waits on an owner choice. Two are the boards'
-  own copies: the board sets the finding in Google's Newsreader and lets its label spill into the
-  page margin, so the choice is which side moves. The board has no hub screen, so no shelf rule for
-  an odd count is drawn to follow. The Urdu board gives five of the essay's interface words (جواب,
-  ماخذوں سے, مرتب, محفوظ کریں, اس جواب کا حوالہ دیں) but not "Saved", the other answer languages
-  or a craft's name in Urdu, which may not be transliterated by us.
-- **Clears it:** the owner picks the side for the two board differences and a shelf rule for an odd
-  count, and approves a sourced list of interface words for each answer language; then the copy
-  table and the shelf rule follow.
+- **What:** the Urdu answer keeps its interface words in English where the Urdu board shows Urdu.
+- **Why left:** the interface words of each answer language belong to the languages lane. The Urdu
+  board gives five of the essay's interface words (جواب, ماخذوں سے, مرتب, محفوظ کریں, اس جواب کا
+  حوالہ دیں) but not "Saved", the other answer languages or a craft's name in Urdu, which may not be
+  transliterated by us.
+- **Clears it:** the languages lane's sourced list of interface words for each answer language,
+  approved by the owner; then the copy table follows.
 
 ## Round 7 (2026-11-20)
 

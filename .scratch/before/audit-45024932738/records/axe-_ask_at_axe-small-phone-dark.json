@@ -1,0 +1,10 @@
+{
+  "check": "axe",
+  "target": "/ask at axe-small-phone-dark",
+  "subject": "/ask",
+  "variant": "axe-small-phone-dark",
+  "ok": true,
+  "problems": [],
+  "notes": [],
+  "numbers": {}
+}

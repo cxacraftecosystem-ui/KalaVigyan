@@ -1,0 +1,20 @@
+{
+  "check": "lighthouse",
+  "target": "/ask at 1440 (desktop)",
+  "subject": "/ask",
+  "variant": "desktop",
+  "ok": true,
+  "problems": [],
+  "notes": [
+    "median of 3 runs"
+  ],
+  "numbers": {
+    "performance": 100,
+    "accessibility": 100,
+    "best-practices": 100,
+    "lcpMs": 769,
+    "cls": 0.005,
+    "tbtMs": 0,
+    "bytes": 1151492
+  }
+}

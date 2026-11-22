@@ -1,0 +1,10 @@
+{
+  "check": "axe",
+  "target": "/crafts/Kutch-Ajrakh at axe-small-phone-light",
+  "subject": "/crafts/Kutch-Ajrakh",
+  "variant": "axe-small-phone-light",
+  "ok": true,
+  "problems": [],
+  "notes": [],
+  "numbers": {}
+}

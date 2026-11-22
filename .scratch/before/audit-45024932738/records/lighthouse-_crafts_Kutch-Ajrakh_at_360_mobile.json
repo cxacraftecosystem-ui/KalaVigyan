@@ -1,0 +1,23 @@
+{
+  "check": "lighthouse",
+  "target": "/crafts/Kutch-Ajrakh at 360 (mobile)",
+  "subject": "/crafts/Kutch-Ajrakh",
+  "variant": "mobile",
+  "ok": false,
+  "problems": [
+    "performance scores 78; the budget is 80",
+    "Largest contentful paint (ms) is 5711; the budget is 5442"
+  ],
+  "notes": [
+    "median of 3 runs"
+  ],
+  "numbers": {
+    "performance": 78,
+    "accessibility": 100,
+    "best-practices": 100,
+    "lcpMs": 5711,
+    "cls": 0.029,
+    "tbtMs": 112,
+    "bytes": 1386804
+  }
+}

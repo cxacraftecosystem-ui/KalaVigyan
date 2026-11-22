@@ -117,6 +117,21 @@ test("a shelf with no photographed craft leads with its first plate, so the lead
   expect(html.match(/data-testid="collection-plate"/g)).toHaveLength(5);
 });
 
+test("a hub's shelf of seven monographs fills its rows from the start, as an atlas shelf does", () => {
+  const body = catalogue();
+  const [textiles] = familyShelves(body);
+  const plates = Array.from({ length: 6 }, (_, at) => ({ ...textiles.plates[0], href: `/crafts/m${at}`, craft: { ...textiles.plates[0].craft, id: `m${at}`, slug: `m${at}`, hero: null } }));
+  const lead = textiles.lead ? { ...textiles.lead, craft: { ...textiles.lead.craft, hero: null } } : null;
+  const seven = { ...textiles, id: "hub-monographs", name: "Monographs", count: 7, lead, plates, more: [], big: true };
+  const grid = (html: string) => /<div id="[^"]+" class="([^"]+)"/.exec(html)?.[1] ?? "";
+  const hub = renderToStaticMarkup(createElement(CollectionShelf, { shelf: seven, level: 2 }));
+  const atlas = renderToStaticMarkup(createElement(CollectionShelf, { shelf: textiles, all: { href: "/categories/Textiles-Based-Craft-Category" } }));
+  expect(grid(hub)).toBe(grid(atlas));
+  expect(grid(hub)).not.toMatch(/justify-(center|end|between|around|evenly)|place-content|place-items/);
+  expect(hub.match(/data-testid="collection-plate"/g)).toHaveLength(7);
+  expect([...hub.matchAll(/href="\/crafts\/(m\d)"/g)].map((found) => found[1])).toEqual(["m0", "m1", "m2", "m3", "m4", "m5"]);
+});
+
 test("states count each reader craft once, all of India apart", () => {
   const counts = stateCounts(catalogue());
   expect(counts.states).toEqual([
