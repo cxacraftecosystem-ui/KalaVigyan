@@ -11,6 +11,7 @@ Date: 2026-11-17. Status: accepted.
 | What amended it | [0096 Every piece built for a reader's question joins its craft's page, whoever asked](0096-reader-question-pieces-join-their-craft-page.md): stored pieces served only to answers |
 | The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
 | The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
+| The rebuild rests a group it tried for a week and spends no more than the day has left | [decision 0142](0142-curated-crafts-read-only-curated-rows.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

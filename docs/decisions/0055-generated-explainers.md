@@ -10,6 +10,7 @@ Date: 2026-11-18. Status: accepted.
 |---|---|
 | The contract it was built to | [0054 Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode](0054-phase-c-contract.md) |
 | The review that fixed it | [0061 Phase C review fixes](0061-phase-c-review-fixes.md) |
+| The builder drafts within a 60 s budget inside a 75 s wait, skips a section with no quantity, takes dataset rows and records why it added nothing | [decision 0142](0142-curated-crafts-read-only-curated-rows.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context
