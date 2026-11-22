@@ -16,7 +16,7 @@ dependencies = [
     "requests>=2.34.2",
     "defusedxml>=0.7.1",
     "psycopg[binary]>=3.3.9",
-    "boto3>=1.44.3",
+    "boto3>=1.44.6",
 ]
 
 [dependency-groups]
