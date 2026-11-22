@@ -54,6 +54,7 @@ class KnowledgePiece(Base):
         UUID(as_uuid=True), ForeignKey("Answer.id", ondelete="SET NULL")
     )
     staleSince: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rebuildTriedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     supersededById: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("KnowledgePiece.id", ondelete="SET NULL")
     )

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput
 from app.models import Craft, Process, ProcessStage
+from app.models.science import live_process
 from app.research.image_contributions import PictureTarget
 from app.research.image_contributions_tasks import CRAFT_SUBJECT, PICTURE_TASK, PictureAim, picture_aim
 from app.research.open_work import parse_task_key
@@ -71,7 +72,7 @@ async def stage_name(session: AsyncSession, craft_id: uuid.UUID, stage_id: uuid.
     return await session.scalar(
         select(ProcessStage.name)
         .join(Process, Process.id == ProcessStage.processId)
-        .where(ProcessStage.id == stage_id, Process.craftId == craft_id)
+        .where(ProcessStage.id == stage_id, Process.craftId == craft_id, live_process())
     )
 
 
