@@ -28,6 +28,7 @@ WIRE = {
             "licence",
             "attribution",
             "reliability",
+            "containerTitle",
         },
         {
             "id",
