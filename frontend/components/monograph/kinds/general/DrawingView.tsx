@@ -47,11 +47,11 @@ export function DrawingView({ spec, renderUnit }: ComponentViewProps) {
   const roles = drawingRoles(drawing.svg);
   return (
     <GeneralFigure kind="drawing" head={drawing.head} titleId={titleId} renderUnit={renderUnit}>
-      <div className="grid gap-2">
-        <div className="w-full min-w-0 max-w-measure [forced-color-adjust:none]" role="img" aria-labelledby={titleId} aria-describedby={altId} data-drawing={drawing.themes ? "themed" : roles ? "roles" : "fixed"}>
+      <div className="grid gap-2 lg:grid-cols-[minmax(0,42rem)_minmax(0,20rem)] lg:items-end lg:gap-x-8">
+        <div className="w-full min-w-0 [forced-color-adjust:none]" role="img" aria-labelledby={titleId} aria-describedby={altId} data-drawing={drawing.themes ? "themed" : roles ? "roles" : "fixed"}>
           {drawing.themes ? <ThemedDrawing themes={drawing.themes} box={box} /> : roles ? <RoleDrawing svg={drawing.svg} box={box} /> : <FixedDrawing svg={drawing.svg} box={box} />}
         </div>
-        <p id={altId} className="max-w-measure font-ui text-label text-ink-2">
+        <p id={altId} className="max-w-measure border-t border-rule pt-2 font-ui text-label text-ink-2 lg:border-t-0 lg:border-s lg:ps-4 lg:pt-0">
           {renderUnit(drawing.alt)}
         </p>
       </div>
