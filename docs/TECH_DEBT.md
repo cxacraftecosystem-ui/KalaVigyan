@@ -49,14 +49,14 @@ Last reviewed: 2026-11-22.
 
 ### Python code over budget
 
-- **What:** recorded in `tools/hygiene_baseline.json` on 2026-11-16: 12 files over 400 lines, 54
-  functions over 40 lines, 9 functions with more than 5 positional parameters. The largest files:
+- **What:** recorded in `tools/hygiene_baseline.json`, 9 files over 400 lines, 46 functions over
+  40 lines and 9 functions with more than 5 positional parameters on 2026-11-22 (12, 54 and 9 on
+  2026-11-16). The largest files:
   `backend/migrations/versions/0001_initial_schema.py` (2853), `etl/crafts/wikidata_link.py`
   (1121), `backend/app/api/routes/auth.py` (784), `backend/app/services/two_factor.py` (703),
   `etl/crafts/seed_claims.py` (642), `backend/app/providers/router.py` (566),
   `etl/crafts/aliases.py` (543),
   `backend/tests/db/test_db_flows.py` (464), `backend/app/services/knowledge_view.py` (502),
-  `backend/app/services/managed_secrets.py` (496), `backend/app/services/ai_providers.py` (454),
   `backend/app/data/craft_master_loader.py` (433).
 - **Why left:** most were ported from the designer portal with the same shapes so the portals
   stay mergeable; splitting them is a separate restructuring change.
@@ -95,30 +95,16 @@ Last reviewed: 2026-11-22.
 - **Clears it:** parse quantities with pint on both sides and compare values and dimensions;
   match number words; treat element-symbol sequences as formulas.
 
-### Model catalogue sits in services, used by providers
+### The model catalogue's old path re-exports `AiTask` (decision 0139)
 
-- **What:** `providers/budget.py` and `providers/router.py` import `services/ai_providers.py`,
-  `services/app_settings.py` and `services/managed_secrets.py`, so the adapter layer sits above
-  services (decision 0001). `providers/budget.py` also imports `app_settings` inside a function.
-- **Clears it:** move the catalogue into `providers/` (kept in the designer portal's shape) and
-  pass settings and keys in from the caller.
-
-### Provider calls outside the adapters
-
-- **What:** `services/managed_secrets.py` probes provider endpoints over HTTP itself to test a
-  key, and `services/ai_providers.py` still holds `ModelDeclined` and `gemini_reply_text`, which
-  nothing calls. One adapter per external service is the rule.
-- **Clears it:** give each adapter a key-test call used by `test_secret`, and delete the unused
-  Gemini helpers.
-
-### Rate limits are per process
-
-- **What:** `core/rate_limit.py` keeps its windows in module-level memory, so each API colour
-  and worker counts separately and a restart resets them. The same holds for the scholarly
-  adapters' pacing, Retry-After pauses and response cache (`sources/http.SourceHttp`): each
-  process that builds `scholarly_sources` paces itself, so two workers can together exceed a
-  service's interval.
-- **Clears it:** a shared store (Redis is on the box) behind the same functions.
+- **What:** `backend/app/services/ai_providers.py` re-exports `AiTask` from `providers/catalogue`
+  for the voice lane's files that still import it there (`voice/artisan_wiring.py`,
+  `voice/film_score.py`, `voice/wiring.py`, `tests/voice/score_fakes.py`,
+  `tests/voice/test_film_score.py`); two import paths for one name.
+- **Why left:** those files belonged to the voice lane of round 7, which ran beside the sources and
+  providers lane that moved the catalogue down.
+- **Clears it:** in the next round, import `AiTask` from `app.providers.catalogue` in those files
+  and delete `services/ai_providers.py`.
 
 ### An answer piece whose answer was deleted reads as curated for supersession
 
@@ -131,71 +117,41 @@ Last reviewed: 2026-11-22.
 - **Clears it:** one shared rule for "curated piece" (every cited claim curated and no answer id)
   used by `_supersede`, `answered_first` and the page merge, with a test that deletes an answer.
 
-### Scholarly adapters: gaps left on 2026-11-16 (decision 0005)
+### Scholarly adapters: what waits on keys and the planner (decisions 0005, 0139)
 
 - **What:**
-  - The answering service and the coverage job call `scholarly_sources` through
-    `live_sources`; the API rebuilds them every 600 s (`LiveSourcesStore`), which resets each
-    adapter's pacing and cache.
-  - Two fixtures are not plain recordings. Semantic Scholar's search answered 429 to every
-    unauthenticated try, so `tests/sources/fixtures/semantic_scholar_search.json` wraps two
-    recorded paper records in the search envelope; and no `SPRINGER_NATURE_API_KEY` exists, so
-    `springer_nature_search.synthetic.json` is hand-written from the documented shape (only its
-    401 is recorded).
-  - The configured `ELSEVIER_API_KEY` may search Scopus but not read abstracts (the abstract
-    record has no `dc:description`, and `view=META_ABS` answers 401), so `elsevier` fetch is
-    `not_found` for every record until an institutional token is set.
-  - Publisher full text (Elsevier article, Springer Nature JATS, Wiley TDM) for DOIs Unpaywall
-    reports closed (PLAN 17.1a) is not built; nor are the Zenodo adapter (PLAN 17.1) and
-    Europe PMC full text.
-  - OpenAlex without a key shares $0.10 a day per IP; the box will exhaust it quickly.
-- **Why left:** keys, an institution token and the callers do not exist yet.
-- **Clears it:** the owner sets `OPENALEX_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY` and
-  `SPRINGER_NATURE_API_KEY` (and an Elsevier institution token); record the missing fixtures
-  then; add the publisher full-text adapters behind the Unpaywall `CLOSED` check.
+  - Fixtures that are not recordings: `semantic_scholar_search.json` wraps two recorded paper
+    records in the search envelope (search answered 429 without a key);
+    `springer_nature_search.synthetic.json`, `springer_nature_jats.synthetic.xml`,
+    `springer_nature_jats_none.synthetic.xml` and `elsevier_article.synthetic.xml` are hand-written
+    from the documented shapes (`backend/tests/sources/fixtures`).
+  - The configured `ELSEVIER_API_KEY` may search Scopus but not read abstracts or full text
+    without an institution token, so `elsevier` fetch is `not_found` for every record.
+  - OpenAlex without `OPENALEX_API_KEY` allows $0.10 a day per address, about 100 searches; after
+    that it answers 429 until midnight UTC and the shared hold pauses every process.
+  - Publisher full text (`ScholarlySources.publisher`, `sources/scholarly/publishers`) is built
+    but nothing asks it: the planner reads only the open-copy locator.
+  - Wiley TDM is not read: it serves PDF only, behind a redirect, with its token, and the fetcher
+    sends no keys.
+- **Why left:** no `OPENALEX_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY` or `SPRINGER_NATURE_API_KEY` and
+  no Elsevier institution token exist yet; the planner belonged to the answer-composition lane of
+  round 7, which ran beside the sources and providers lane.
+- **Clears it:** the owner sets the three keys (Springer Nature's with text-mining terms) and
+  `ELSEVIER_INSTTOKEN`, each tested from the settings screen, and the fixtures are recorded then; give `planner/reading.LiveSources` a
+  `publisher` field, set it in `services/live_sources` from `scholarly.publisher`, and let
+  `DocumentReader.open_access_document` read a closed DOI the publisher holds; read Wiley's PDF
+  once the fetcher can carry one host's token.
 
-### Reference adapters: gaps left on 2026-11-16 (decision 0006)
+### Web search and fetcher: recordings and the box (decisions 0007, 0139)
 
-- **What:**
-  - The per-process pacing above applies to `reference_sources` too.
-  - Wikidata time values coarser than a year (decade, century) are left out of the item text,
-    and the Commons `published` date is empty unless the original date is ISO.
-  - PubChem hazards keep at most three reporting sources; the ECHA terms allow non-commercial
-    reuse only, which suits the IIT research use but would need review for any commercial use.
-  - Commons media use `SourceKind` `OTHER`: the enum has no image or media kind.
-  - `WIKIPEDIA_LANGUAGES` is English and Indian languages only; a learner writing in another
-    language gets `InvalidInput` from the Wikipedia adapter.
-- **Why left:** no caller yet needs other wikis; a media source kind needs a migration of the
-  `SourceKind` enum.
-- **Clears it:** add a `MEDIA` source kind with its migration when the media lane stores Commons
-  files; widen the language list when the planner asks for it.
-
-### Web search and fetcher: gaps left on 2026-11-16 (decision 0007)
-
-- **What:**
-  - Parsing runs in a worker thread; when the time limit fires, the fetch is refused at once but
-    the thread keeps parsing until it ends. A hostile document can hold a thread and memory
-    past 10 seconds (bounded by the 3 MiB body, pypdf's limits and the unit's 768 MB cap).
-  - robots.txt is read with the standard library parser, which applies the first matching rule
-    rather than RFC 9309's longest match. It can refuse a page an `Allow` line permits (fails
-    closed, never the reverse for one agent group).
-  - The PDF decompression cap counts page content streams only; images and fonts are left to
-    pypdf's own limits.
-  - Every web page is trust `C`; a government, museum or university site is not yet ranked
-    higher.
-  - Search hits on plain http and URLs longer than about 490 characters are left out (ids are
-    the URL and at most 500 characters).
-  - The SearXNG and Brave fixtures are hand-written to the documented response shapes, not
-    recordings: SearXNG runs only on the box and no Brave key was available on the laptop.
-  - Only the planner calls the web search and the fetcher; `WebFetch` rows are not written;
-    the fetcher service has not run on the box.
-  - Each hop opens a fresh client (no connection reuse), which costs one TLS handshake per hop.
-- **Why left:** no caller yet; a kill-able parser needs a subprocess pool; ranking by domain
-  needs a reviewed list; recording needs the box or a key.
-- **Clears it:** run the parsers in a process pool that can be killed on timeout; switch to a
-  longest-match robots parser; record SearXNG and Brave fixtures from the box; add a reviewed
-  domain trust list; write `WebFetch` rows from the answering service; smoke-test
-  `kv-fetcher` on the box after the next deploy.
+- **What:** the SearXNG and Brave fixtures (`backend/tests/sources/fixtures/*.synthetic.json`) are
+  hand-written to the documented shapes, and `kv-fetcher` with its parser processes has not been
+  smoke-tested on the box.
+- **Why left:** SearXNG runs only on the box, there is no Brave key on the laptop, and the box is
+  reached only through a deploy.
+- **Clears it:** after the next deploy, check `/health`, one HTML and one PDF fetch, the parser
+  processes staying under the 768 MB cap and the `WebFetch` row an answer writes; then record one
+  SearXNG and one Brave answer to replace the synthetic fixtures.
 
 ### Stored-knowledge retrieval: what is left (decision 0008, round 4)
 
@@ -261,46 +217,22 @@ Last reviewed: 2026-11-22.
 
 ## Live research write-back (decision 0011)
 
-### The quote overlap reads English passages only (decisions 0013, 0023)
+### The composer does not yet ask for quote renderings (decisions 0013, 0023, 0139)
 
-- **What:** answers are composed and checked in English and translated afterwards (decision
-  0023), so the overlap holds for English sources. `UNRELATED_QUOTE` still compares the sentence's
-  English content words with its quotes' words (`backend/app/research/quotes.py`,
-  `quote_overlap`), so a sentence resting only on a Hindi Wikipedia or Wikidata passage, found by
-  a native-language query, is dropped; such passages count only beside an English passage that
-  carries the wording.
-- **Why left:** the owner kept every existing check unchanged; a cross-language overlap needs a
-  checked translation of the quote first.
-- **Clears it:** translate a non-English quote into English with the TRANSLATE route, check it
-  with `translation_problems`, and compute the overlap against that rendering while the citation
-  keeps the verbatim quote.
-
-### Licence allow-list is by string
-
-- **What:** `open_licence` matches licence names and canonical URLs; national ports of CC
-  licences (for example `CC BY 2.5 IN`) and licences named only in prose are closed, so their
-  full text is stored for researchers only (`backend/app/research/licences.py`).
-- **Why left:** closed is the safe side; the common spellings from the adapters are covered.
-- **Clears it:** add each further spelling with a test when a source shows it.
-
-### Coverage counts only a craft's own concepts
-
-- **What:** `least_covered_crafts` and the open-facet test count claims on concepts whose
-  `craftId` is the craft; claims on the sub-category's shared concepts, which stored retrieval
-  also reads, do not count (`backend/app/services/coverage_selection.py`).
-- **Why left:** shared family claims are general; the job's purpose is craft-specific coverage.
-- **Clears it:** weight shared claims (for example half) once family pages exist.
-
-### The coverage job has no per-call spend cap
-
-- **What:** the daily budget is checked before each question; a single question's planner,
-  reading and composer calls are not capped, so a run can pass the day's budget by one question
-  (`ENRICHMENT_QUESTION_RESERVE_USD` $0.25 is the assumed size). `router_structured_model` has
-  no `request_budget_usd` parameter (`backend/app/providers/structured.py`).
-- **Why left:** the overshoot is bounded and small, and production no longer runs the job (no
-  monthly ceiling is set either, decision 0093).
-- **Clears it:** pass the remaining day budget as `request_budget_usd` through
-  `router_structured_model` and `router_embedder`.
+- **What:** `research/quote_renderings.english_renderings` renders a draft's non-English quotes into
+  English through the TRANSLATE route and keeps a rendering only when `translation_problems`, read
+  from the quote's language, finds nothing; `research/composition.sentence_violations(...,
+  renderings=)` then measures the overlap, the unrelated-source and the stance checks on the
+  rendering while the citation keeps the verbatim quote. Nothing calls it yet: the composer's
+  post-check (`composer/drafts.checked_sentence`) passes no renderings and the write-back's quote
+  gate (`services/write_back_plan`) compares raw quotes, so a sentence resting only on a Hindi
+  passage is still dropped.
+- **Why left:** the composer and the write-back plan belonged to the answer-composition and
+  write-back lanes of round 7, which ran beside the sources and providers lane.
+- **Clears it:** in `composer/drafts`, collect the spans whose evidence item's `language` is not
+  English as `QuotedIn`, call `english_renderings` with the TRANSLATE route's `ModelTranslator`
+  once per draft, and pass the renderings to `sentence_violations`; let `write_back_plan`'s
+  overlap read the same renderings.
 
 ## Science, region, voice and media contracts (decision 0014)
 
@@ -1802,7 +1734,7 @@ Last reviewed: 2026-11-22.
 - **What:** the API pricing page, its own FAQ and the scale-tier page disagree (music $0.150 or
   $0.275 a minute, sound effects $0.120 or $0.060 a minute or per generation); image and video
   prices appear only on the scale-tier page. The catalogue keeps the higher figure per second or
-  image (`services/ai_providers.py`, `_ELEVENLABS`), so Usage may show more than ElevenLabs bills.
+  image (`providers/catalogue_specs.py`, `_ELEVENLABS`), so Usage may show more than ElevenLabs bills.
 - **Why left:** no invoice exists yet and no paid call is made while building.
 - **Clears it:** compare the first month's ElevenLabs invoice with Usage, set the confirmed prices
   and `price_verified` true, or set admin price overrides.
@@ -2938,15 +2870,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** builders and their time budgets are not this lane's.
 - **Clears it:** give the simulation builder a time budget well under the section's, skip it when the
   section's facts state no quantity it can draw, and record why it added nothing.
-
-### Scholarly services rate-limited the research
-
-- **What:** in answer 504968ea-49cc-469c-88f9-205a2ea90e8a Crossref, Semantic Scholar and CORE
-  answered with rate limits, so seats read fewer papers than they searched for.
-- **Why left:** pacing is `sources/scholarly/pacing.py`'s, and the limits seen were the services'.
-- **Clears it:** share the per-service pace across the seats of one answer (one queue per service),
-  use the Semantic Scholar and CORE keys' higher limits where they are configured, and record the
-  wait in the answer's trail.
 
 ### The answer did not name the oxides behind Khurja's blue and turquoise glazes
 

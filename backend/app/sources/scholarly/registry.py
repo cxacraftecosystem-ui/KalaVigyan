@@ -13,13 +13,16 @@ from .arxiv import ARXIV_LIMITS, ArxivAdapter
 from .core_works import CORE_LIMITS, CoreAdapter
 from .crossref import CROSSREF_LIMITS, CrossrefAdapter
 from .doaj import DOAJ_LIMITS, DoajAdapter
-from .elsevier import ELSEVIER_LIMITS, ElsevierAdapter
+from .elsevier import ELSEVIER_LIMITS, ElsevierAdapter, ElsevierFullText
 from .europe_pmc import EUROPE_PMC_LIMITS, EuropePmcAdapter
-from .openalex import OPENALEX_LIMITS, OpenAlexAdapter
+from .open_copies import OpenCopyLocator
+from .openalex import OPENALEX_KEYED_LIMITS, OPENALEX_LIMITS, OpenAlexAdapter
 from .pacing import PacedHttp, ScholarlyPacing, ServiceLimits, shared_pacing
+from .publishers import PublisherFullText, PublisherReader
 from .semantic_scholar import SEMANTIC_SCHOLAR_LIMITS, SemanticScholarAdapter
-from .springer_nature import SPRINGER_NATURE_LIMITS, SpringerNatureAdapter
+from .springer_nature import SPRINGER_NATURE_LIMITS, SpringerNatureAdapter, SpringerNatureFullText
 from .unpaywall import UNPAYWALL_LIMITS, UnpaywallLocator
+from .zenodo import ZENODO_LIMITS, ZenodoAdapter, ZenodoLocator
 
 __all__ = ["SCHOLARLY_KEY_NAMES", "ScholarlyKeys", "ScholarlySources", "scholarly_sources"]
 
@@ -56,8 +59,9 @@ class ScholarlyKeys:
 @dataclass(frozen=True)
 class ScholarlySources:
     adapters: tuple[HttpSourceAdapter, ...]
-    locator: UnpaywallLocator
+    locator: OpenCopyLocator
     unconfigured: tuple[str, ...]
+    publisher: PublisherFullText | None = None
 
 
 def scholarly_sources(
@@ -71,19 +75,22 @@ def scholarly_sources(
         raise NotConfigured("RESEARCH_CONTACT_EMAIL", "Scholarly APIs need a contact email address")
     http = _http_factory(client, pacing or shared_pacing())
     keyed, unconfigured = _keyed_adapters(keys, http, clock)
-    locator = UnpaywallLocator(
+    unpaywall = UnpaywallLocator(
         http("unpaywall", UNPAYWALL_LIMITS), contact_email=keys.contact_email, clock=clock
     )
-    return ScholarlySources((*_open_adapters(keys, http, clock), *keyed), locator, unconfigured)
+    locator = OpenCopyLocator(unpaywall, ZenodoLocator(http("zenodo", ZENODO_LIMITS), clock=clock))
+    adapters = (*_open_adapters(keys, http, clock), *keyed)
+    return ScholarlySources(adapters, locator, unconfigured, _publisher(keys, http, locator))
 
 
 def _open_adapters(keys: ScholarlyKeys, http: HttpFactory, clock: Clock) -> list[HttpSourceAdapter]:
     email = keys.contact_email
+    openalex_limits = OPENALEX_KEYED_LIMITS if keys.openalex_api_key else OPENALEX_LIMITS
     return [
         OpenAlexAdapter(
-            http("openalex", OPENALEX_LIMITS), contact_email=email, api_key=keys.openalex_api_key, clock=clock
+            http("openalex", openalex_limits), contact_email=email, api_key=keys.openalex_api_key, clock=clock
         ),
-        CrossrefAdapter(http("crossref", CROSSREF_LIMITS), clock=clock),
+        CrossrefAdapter(http("crossref", CROSSREF_LIMITS), contact_email=email, clock=clock),
         SemanticScholarAdapter(
             http("semantic_scholar", SEMANTIC_SCHOLAR_LIMITS),
             api_key=keys.semantic_scholar_api_key,
@@ -92,6 +99,7 @@ def _open_adapters(keys: ScholarlyKeys, http: HttpFactory, clock: Clock) -> list
         EuropePmcAdapter(http("europe_pmc", EUROPE_PMC_LIMITS), clock=clock),
         ArxivAdapter(http("arxiv", ARXIV_LIMITS), clock=clock),
         DoajAdapter(http("doaj", DOAJ_LIMITS), clock=clock),
+        ZenodoAdapter(http("zenodo", ZENODO_LIMITS), clock=clock),
     ]
 
 
@@ -117,6 +125,25 @@ def _keyed_adapters(
             SpringerNatureAdapter(springer_http, api_key=keys.springer_nature_api_key, clock=clock)
         )
     return adapters, unconfigured
+
+
+def _publisher(keys: ScholarlyKeys, http: HttpFactory, locator: OpenCopyLocator) -> PublisherFullText | None:
+    readers: list[PublisherReader] = []
+    if keys.elsevier_api_key and keys.elsevier_insttoken:
+        readers.append(
+            ElsevierFullText(
+                http("elsevier", ELSEVIER_LIMITS),
+                api_key=keys.elsevier_api_key,
+                insttoken=keys.elsevier_insttoken,
+            )
+        )
+    if keys.springer_nature_api_key:
+        readers.append(
+            SpringerNatureFullText(
+                http("springer_nature", SPRINGER_NATURE_LIMITS), api_key=keys.springer_nature_api_key
+            )
+        )
+    return PublisherFullText(locator, readers) if readers else None
 
 
 def _http_factory(client: httpx.AsyncClient, pacing: ScholarlyPacing) -> HttpFactory:

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from types import MappingProxyType
 from typing import Any
 from urllib.parse import quote
 
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
-from ..adapter import HttpSourceAdapter, build_document
+from ..adapter import Clock, HttpSourceAdapter, build_document, utc_now
+from ..http import SourceHttp
 from ..records import (
     AUTHORS_MAX,
     UnusableRecord,
@@ -21,13 +21,12 @@ from ..records import (
 )
 from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["CROSSREF_AGENT", "CROSSREF_LIMITS", "CrossrefAdapter"]
+__all__ = ["CROSSREF_LIMITS", "CrossrefAdapter"]
 
 CROSSREF_API = "https://api.crossref.org"
-CROSSREF_AGENT = MappingProxyType({"User-Agent": "KalaVigyan/1 (+https://kalavigyan.vercel.app)"})
 CROSSREF_LIMITS = ServiceLimits(
-    search=SourceLimit(requests=1, concurrency=1),
-    lookup=SourceLimit(requests=5, concurrency=1),
+    search=SourceLimit(requests=3, concurrency=3),
+    lookup=SourceLimit(requests=10, concurrency=3),
     search_path="/works",
 )
 WORK_FIELDS = "DOI,title,author,issued,type,publisher,abstract,license,container-title"
@@ -49,9 +48,20 @@ TYPE_KINDS = {
 class CrossrefAdapter(HttpSourceAdapter):
     name = "crossref"
 
+    def __init__(self, http: SourceHttp, *, contact_email: str, clock: Clock = utc_now) -> None:
+        if not contact_email:
+            raise ValueError("Crossref's polite pool needs RESEARCH_CONTACT_EMAIL")
+        super().__init__(http, clock=clock)
+        self._polite = {"mailto": contact_email}
+
     async def _search_records(self, query: SearchQuery, k: int) -> list[Any]:
-        params = {"query": query.text, "rows": str(k), "filter": "has-abstract:true", "select": WORK_FIELDS}
-        response = await self.http.get(f"{CROSSREF_API}/works", params=params, headers=CROSSREF_AGENT)
+        params = self._polite | {
+            "query": query.text,
+            "rows": str(k),
+            "filter": "has-abstract:true",
+            "select": WORK_FIELDS,
+        }
+        response = await self.http.get(f"{CROSSREF_API}/works", params=params)
         return list((response.json(self.name).get("message") or {}).get("items") or [])
 
     def _item(self, record: Any, retrieved_at: datetime) -> EvidenceItem:
@@ -78,9 +88,7 @@ class CrossrefAdapter(HttpSourceAdapter):
         )
 
     async def _fetch_document(self, native: str, retrieved_at: datetime) -> SourceDocument:
-        response = await self.http.get(
-            f"{CROSSREF_API}/works/{quote(native, safe='/')}", headers=CROSSREF_AGENT
-        )
+        response = await self.http.get(f"{CROSSREF_API}/works/{quote(native, safe='/')}", params=self._polite)
         record = response.json(self.name).get("message") or {}
         abstract = markup_text(record.get("abstract"))
         if abstract is None:

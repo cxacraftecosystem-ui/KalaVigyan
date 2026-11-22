@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from types import MappingProxyType
 
-from .ai_providers import PROVIDERS, AiModel, AiTask, ProviderSpec, supports
+from app.providers.catalogue import PROVIDERS, AiModel, AiTask, ProviderSpec, supports
 
 __all__ = ["JUDGE_TASK", "cheapest_judge_models", "cheapest_model"]
 

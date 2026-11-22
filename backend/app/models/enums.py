@@ -123,6 +123,7 @@ SOURCE_KINDS = (
     "GOVERNMENT_REPORT",
     "COMPOUND_RECORD",
     "FIELD_TESTIMONY",
+    "MEDIA",
     "OTHER",
 )
 RELIABILITIES = ("A", "B", "C", "D")

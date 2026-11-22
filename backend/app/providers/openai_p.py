@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import time
 
+import httpx
+
+from app.core.key_checks import KeyCheck, KeyVerdict, checked_get
 from app.core.retry_after import retry_after_of
 
 from .base import Adapter, ChatRequest, ChatResult, ProviderError, format_refused, names_the_format
@@ -237,3 +240,12 @@ class OpenAICompatAdapter(Adapter):
 
     async def aclose(self) -> None:
         await self.client.close()
+
+
+def key_check_at(base_url: str) -> KeyCheck:
+    models_url = f"{base_url.rstrip('/')}/models"
+
+    async def check_key(client: httpx.AsyncClient, value: str) -> KeyVerdict:
+        return await checked_get(client, models_url, headers={"Authorization": f"Bearer {value}"})
+
+    return check_key

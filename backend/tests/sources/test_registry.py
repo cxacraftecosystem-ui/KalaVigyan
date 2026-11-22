@@ -10,7 +10,7 @@ from app.sources.scholarly.unpaywall import UnpaywallLocator
 
 from .recorded import CONTACT, RETRIEVED, Recorder, Reply, fixed_clock, source_http
 
-OPEN_ADAPTERS = ["openalex", "crossref", "semantic_scholar", "europe_pmc", "arxiv", "doaj"]
+OPEN_ADAPTERS = ["openalex", "crossref", "semantic_scholar", "europe_pmc", "arxiv", "doaj", "zenodo"]
 
 
 def build(keys: ScholarlyKeys):
@@ -44,12 +44,13 @@ def test_each_adapter_is_paced_under_its_published_limit() -> None:
     assert intervals == pytest.approx(
         {
             "openalex": 0.125,
-            "crossref": 1.25,
+            "crossref": 5 / 12,
             "semantic_scholar": 1.25,
             "europe_pmc": 0.25,
             "arxiv": 3.75,
             "doaj": 0.625,
-            "core": 2.5,
+            "zenodo": 2.5,
+            "core": 7.5,
         }
     )
     assert {adapter.name: adapter.http.policy.min_interval for adapter in sources.adapters} == dict.fromkeys(

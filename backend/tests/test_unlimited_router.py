@@ -11,9 +11,9 @@ from app.models.enums import EXPLAINER_DEPTHS
 from app.providers import budget, router as ai_router
 from app.providers.answer_routes import COMPOSE_TUNINGS, EXPLAINER_TUNINGS
 from app.providers.base import Adapter, ChatRequest, ChatResult
+from app.providers.catalogue import AiTask
 from app.providers.router import Principal, RouteChoice, RouteTuning
 from app.services import app_settings
-from app.services.ai_providers import AiTask
 
 FAR_PAST_ANY_EARLIER_CAP = budget.SpendState(Decimal(1_000_000), Decimal(1_000_000), Decimal(1_000_000))
 USAGE = {"input_tokens": 2_000, "output_tokens": 30_000}
@@ -96,11 +96,11 @@ def recorded(monkeypatch: pytest.MonkeyPatch) -> Recorded:
         return None
 
     monkeypatch.setattr(ai_router, "load_routes", load_routes)
-    monkeypatch.setattr(ai_router.app_settings, "load_all", load_all)
+    monkeypatch.setattr(ai_router.spend_settings, "load_spend_settings", load_all)
     monkeypatch.setattr(ai_router, "current_spend", current_spend)
     monkeypatch.setattr(ai_router, "settle", settle)
-    monkeypatch.setattr(ai_router.managed_secrets, "refresh_if_stale", refresh_if_stale)
-    monkeypatch.setattr(ai_router.managed_secrets, "peek_secret", lambda _key: "k")
+    monkeypatch.setattr(ai_router.managed_keys, "refresh_if_stale", refresh_if_stale)
+    monkeypatch.setattr(ai_router.managed_keys, "peek_secret", lambda _key: "k")
     monkeypatch.setattr(ai_router, "build_adapter", lambda **_: RecordingAdapter(found.requests))
     return found
 

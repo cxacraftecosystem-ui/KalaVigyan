@@ -13,7 +13,7 @@ from app.api.routes.auth import (
 )
 from app.core.db import get_session
 from app.core.deps import get_current_user_any_step, is_break_glass_master
-from app.core.rate_limit import code_attempt, refund_code
+from app.core.rate_limit import code_attempt, refund_code, retry_after_value
 from app.models import User
 from app.schemas.auth import TwoFactorCodeRequest, TwoFactorVerifyRequest
 from app.services import audit, two_factor
@@ -35,10 +35,11 @@ def _refuse(error: two_factor.TwoFactorError) -> HTTPException:
     return HTTPException(status_code=_STATUS[error.kind], detail=error.detail)
 
 
-def _spend_budget(user_id: str) -> None:
-    allowed, _retry = code_attempt(user_id)
+async def _spend_budget(user_id: str) -> None:
+    allowed, retry = await code_attempt(user_id)
     if not allowed:
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, CODE_THROTTLED_DETAIL)
+        wait = {"Retry-After": retry_after_value(retry)}
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, CODE_THROTTLED_DETAIL, wait)
 
 
 @router.get("")
@@ -78,12 +79,12 @@ async def two_factor_enable(
     user: User = Depends(get_current_user_any_step),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
-    _spend_budget(str(user.id))
+    await _spend_budget(str(user.id))
     try:
         codes = await two_factor.enable(session, user, payload.code)
     except two_factor.TwoFactorError as error:
         raise _refuse(error) from error
-    refund_code(str(user.id))
+    await refund_code(str(user.id))
     fresh = await reload_user(session, user.id)
     await audit.record(
         session, action="auth.two_factor_enabled", actor=fresh, target_type="User", target_id=fresh.id
@@ -101,12 +102,12 @@ async def two_factor_disable(
     user: User = Depends(get_current_user_any_step),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
-    _spend_budget(str(user.id))
+    await _spend_budget(str(user.id))
     try:
         await two_factor.disable(session, user, payload.code)
     except two_factor.TwoFactorError as error:
         raise _refuse(error) from error
-    refund_code(str(user.id))
+    await refund_code(str(user.id))
     fresh = await reload_user(session, user.id)
     await audit.record(
         session, action="auth.two_factor_disabled", actor=fresh, target_type="User", target_id=fresh.id
@@ -123,12 +124,12 @@ async def two_factor_recovery_codes(
     user: User = Depends(get_current_user_any_step),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, list[str]]:
-    _spend_budget(str(user.id))
+    await _spend_budget(str(user.id))
     try:
         codes = await two_factor.regenerate_recovery_codes(session, user, payload.code)
     except two_factor.TwoFactorError as error:
         raise _refuse(error) from error
-    refund_code(str(user.id))
+    await refund_code(str(user.id))
     return {"recovery_codes": codes}
 
 
@@ -141,7 +142,7 @@ async def two_factor_verify(
     except two_factor.TwoFactorError as error:
         raise _refuse(error) from error
     dead = HTTPException(status.HTTP_401_UNAUTHORIZED, two_factor.CHALLENGE_DEAD_DETAIL)
-    _spend_budget(str(challenge.user_id))
+    await _spend_budget(str(challenge.user_id))
     if not await two_factor.spend_challenge_attempt(session, challenge):
         raise dead
     user = await session.get(User, challenge.user_id)
@@ -155,7 +156,7 @@ async def two_factor_verify(
         ) from locked
     if not accepted:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, two_factor.WRONG_CODE_DETAIL)
-    refund_code(str(user.id))
+    await refund_code(str(user.id))
     if not await two_factor.close_challenge(session, challenge):
         raise dead
     await session.commit()

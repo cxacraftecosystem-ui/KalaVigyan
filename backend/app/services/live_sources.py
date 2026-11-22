@@ -9,10 +9,12 @@ import httpx
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import get_settings
+from app.core.db import session_scope
 from app.core.errors import NotConfigured
 from app.planner.reading import LiveSources
 from app.research.images import ImageSource
 from app.services.scholarly_keys import scholarly_keys
+from app.services.web_fetches import web_fetch_recorder
 from app.services.web_sources import web_search_config
 from app.sources.adapter import HttpSourceAdapter
 from app.sources.fetcher_client import FetcherClient
@@ -35,7 +37,7 @@ def live_source_client() -> httpx.AsyncClient:
 
 
 async def live_sources(session: AsyncSession, client: httpx.AsyncClient) -> LiveSources:
-    fetcher = FetcherClient(get_settings().fetcher_url, client)
+    fetcher = FetcherClient(get_settings().fetcher_url, client, record=web_fetch_recorder(session_scope))
     scholarly = scholarly_sources(await scholarly_keys(session), client)
     web = web_search(await web_search_config(session), client, fetcher)
     doi_source = next((adapter for adapter in scholarly.adapters if adapter.name == DOI_SOURCE), None)

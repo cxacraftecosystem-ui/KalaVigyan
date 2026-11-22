@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -44,11 +44,13 @@ class ListenTools:
     voice_id: str
 
 
-def throttled_voice_user(attempt: Callable[[str], tuple[bool, float]], detail: str) -> Callable[..., User]:
-    def throttle(user: User = Depends(require(Capability.VOICE))) -> User:
+def throttled_voice_user(
+    attempt: Callable[[str], Awaitable[tuple[bool, float]]], detail: str
+) -> Callable[..., Awaitable[User]]:
+    async def throttle(user: User = Depends(require(Capability.VOICE))) -> User:
         if is_uncapped(user):
             return user
-        allowed, retry = attempt(str(user.id))
+        allowed, retry = await attempt(str(user.id))
         if not allowed:
             wait = retry_after_value(retry)
             raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, detail, {"Retry-After": wait})

@@ -13,8 +13,8 @@ from app.providers.answer_routes import (
     EXPLAINER_TUNINGS,
     answer_models,
 )
+from app.providers.catalogue import AiTask
 from app.providers.router import RouteChoice, RouteTuning, reasoning_effort
-from app.services.ai_providers import AiTask
 
 
 def _route(provider: str, model: str, *, cap: int | None = None) -> RouteChoice:

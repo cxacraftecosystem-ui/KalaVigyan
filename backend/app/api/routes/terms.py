@@ -8,12 +8,12 @@ from app.core.errors import Refused
 from app.core.rate_limit import retry_after_value, term_attempt
 from app.core.roles import is_uncapped
 from app.models import User
+from app.providers.catalogue import AiTask
 from app.providers.embedding import router_embedder
 from app.providers.router import Principal
 from app.providers.structured import router_structured_model
 from app.research.subject_keys import TERM_KEY_MAX_CHARS
 from app.research.vocabulary import CANONICAL_LANGUAGE, AnswerLanguage
-from app.services.ai_providers import AiTask
 from app.services.term_summaries import NEEDS_LOOKUP_REASON, TermReader
 from app.services.term_wiring import build_term_lookup, stored_term_lookup
 
@@ -37,10 +37,10 @@ async def term_lookup(request: Request, reader: User | None = Depends(public_rea
     )
 
 
-def throttle(reader: User | None = Depends(public_reader)) -> None:
+async def throttle(reader: User | None = Depends(public_reader)) -> None:
     if reader is None or is_uncapped(reader):
         return
-    allowed, retry = term_attempt(str(reader.id))
+    allowed, retry = await term_attempt(str(reader.id))
     if not allowed:
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS, THROTTLED_DETAIL, {"Retry-After": retry_after_value(retry)}

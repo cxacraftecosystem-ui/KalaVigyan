@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.core.db import session_scope
 from app.core.errors import ExternalFailure
 from app.models import Source
 from app.research.candidate_gates import CitedSource
@@ -22,6 +23,7 @@ from app.sources.fetcher_client import FetcherClient
 from app.sources.web.page import page_item
 
 from .supplied_sources_gate import supplied_read
+from .web_fetches import web_fetch_recorder
 
 __all__ = [
     "PROPOSAL_ADAPTER",
@@ -55,7 +57,7 @@ class _Fetched:
 @asynccontextmanager
 async def proposal_fetcher() -> AsyncIterator[Fetcher]:
     async with httpx.AsyncClient() as client:
-        yield FetcherClient(get_settings().fetcher_url, client)
+        yield FetcherClient(get_settings().fetcher_url, client, record=web_fetch_recorder(session_scope))
 
 
 async def read_sources(

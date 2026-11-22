@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
+from types import MappingProxyType
 from typing import Any
 
 from app.core.errors import InvalidInput
@@ -19,42 +21,28 @@ from .mediawiki import (
     primary_language,
     rights_text,
 )
+from .wikipedia_editions import WIKIPEDIA_EDITIONS_FILE, wikipedia_editions
 
-__all__ = ["WIKIPEDIA_LANGUAGES", "WIKIPEDIA_RATE", "WikipediaAdapter", "wiki_language"]
+__all__ = ["LANGUAGE_ALIASES", "WIKIPEDIA_LANGUAGES", "WIKIPEDIA_RATE", "WikipediaAdapter", "wiki_language"]
 
 WIKIPEDIA_RATE = WIKIMEDIA_RATE
-WIKIPEDIA_LANGUAGES = frozenset(
+WIKIPEDIA_LANGUAGES = wikipedia_editions(WIKIPEDIA_EDITIONS_FILE)
+LANGUAGE_ALIASES: Mapping[str, str] = MappingProxyType(
     {
-        "en",
-        "as",
-        "awa",
-        "bh",
-        "bn",
-        "bpy",
-        "gom",
-        "gu",
-        "hi",
-        "kn",
-        "ks",
-        "mai",
-        "ml",
-        "mni",
-        "mr",
-        "ne",
-        "new",
-        "or",
-        "pa",
-        "sa",
-        "sat",
-        "sd",
-        "ta",
-        "tcy",
-        "te",
-        "ur",
+        "bho": "bh",
+        "gsw": "als",
+        "kok": "gom",
+        "lzh": "zh-classical",
+        "nan": "zh-min-nan",
+        "nb": "no",
+        "ori": "or",
+        "rup": "roa-rup",
+        "sgs": "bat-smg",
+        "vro": "fiu-vro",
+        "yue": "zh-yue",
     }
 )
-LANGUAGE_ALIASES = {"bho": "bh", "kok": "gom", "ori": "or"}
-NATIVE_ID = re.compile(r"^([a-z]{2,3}):([1-9]\d*)$")
+NATIVE_ID = re.compile(r"^([a-z]{2,8}(?:-[a-z]{2,8})*):([1-9]\d*)$")
 PAGE_PROPS = {
     "prop": "info|pageprops|revisions",
     "inprop": "url",
@@ -144,9 +132,7 @@ def wiki_language(language: str) -> str:
     primary = primary_language(language)
     code = LANGUAGE_ALIASES.get(primary, primary)
     if code not in WIKIPEDIA_LANGUAGES:
-        raise InvalidInput(
-            f"No Wikipedia is searched for language {language!r}; use one of {sorted(WIKIPEDIA_LANGUAGES)}"
-        )
+        raise InvalidInput(f"No Wikipedia edition is written in language {language!r}")
     return code
 
 

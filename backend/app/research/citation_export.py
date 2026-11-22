@@ -43,6 +43,7 @@ CSL_TYPES: Mapping[str, str] = MappingProxyType(
         "GOVERNMENT_REPORT": "report",
         "COMPOUND_RECORD": "dataset",
         "FIELD_TESTIMONY": "interview",
+        "MEDIA": "graphic",
         "OTHER": "document",
     }
 )
@@ -58,6 +59,7 @@ BIBTEX_TYPES: Mapping[str, str] = MappingProxyType(
         "GOVERNMENT_REPORT": "techreport",
         "COMPOUND_RECORD": "misc",
         "FIELD_TESTIMONY": "misc",
+        "MEDIA": "misc",
         "OTHER": "misc",
     }
 )
@@ -73,6 +75,7 @@ RIS_TYPES: Mapping[str, str] = MappingProxyType(
         "GOVERNMENT_REPORT": "RPRT",
         "COMPOUND_RECORD": "DBASE",
         "FIELD_TESTIMONY": "PCOMM",
+        "MEDIA": "ART",
         "OTHER": "GEN",
     }
 )

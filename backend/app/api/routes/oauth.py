@@ -22,7 +22,7 @@ REGISTRATIONS_SPENT = "Many clients were registered from this address in the las
 
 @router.post(REGISTER_ROUTE, dependencies=[Depends(mcp_enabled)])
 async def register_client(request: Request, session: AsyncSession = Depends(get_session)) -> Response:
-    allowed, wait = client_registration_attempt(request)
+    allowed, wait = await client_registration_attempt(request)
     if not allowed:
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS, REGISTRATIONS_SPENT, {"Retry-After": retry_after_value(wait)}

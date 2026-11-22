@@ -20,11 +20,11 @@ from app.media.records import (
     StageFacts,
 )
 from app.providers.base import MediaResult
+from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaAsk, MediaCall
 from app.providers.quota import LedgerEntry
 from app.providers.router import RouterError
 from app.research.crafts import CraftRef
-from app.services.ai_providers import AiTask
 from app.services.naming import PlaceParts
 from app.services.object_store import PresignedGet
 

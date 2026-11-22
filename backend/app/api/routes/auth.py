@@ -306,8 +306,8 @@ async def login_with_google(session: AsyncSession, token: str) -> tuple[User, An
     return await sign_in_verified_mailbox(session, mailbox)
 
 
-def _refuse_when_ip_throttled(request: Request) -> None:
-    allowed, retry = sign_in_attempt_by_ip(request)
+async def _refuse_when_ip_throttled(request: Request) -> None:
+    allowed, retry = await sign_in_attempt_by_ip(request)
     if not allowed:
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,
@@ -347,9 +347,9 @@ async def login_with_oidc(session: AsyncSession, payload: LoginRequest, request:
     label = oidc_sign_in.label_of(name)
     if oidc_sign_in.provider(name) is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, PROVIDER_UNAVAILABLE_DETAIL.format(label=label))
-    _refuse_when_ip_throttled(request)
+    await _refuse_when_ip_throttled(request)
     proved = await _prove_with_provider(session, payload, label)
-    refund_ip(request)
+    await refund_ip(request)
     mailbox = VerifiedMailbox(
         email=proved.email, display_name=proved.name, avatar_url=None, provider=proved.provider
     )
@@ -368,9 +368,9 @@ async def login_with_password(
             {SIGN_IN_HINT_HEADER: PASSWORD_NOT_SET_HINT},
         )
     account_key = str(user.id) if user is not None else f"addr:{email}"
-    allowed, retry = sign_in_attempt_by_ip(request)
+    allowed, retry = await sign_in_attempt_by_ip(request)
     if allowed:
-        allowed, retry = sign_in_attempt_by_account(account_key)
+        allowed, retry = await sign_in_attempt_by_account(account_key)
     if not allowed:
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,
@@ -393,8 +393,8 @@ async def login_with_password(
             EMAIL_UNVERIFIED_DETAIL,
             {SIGN_IN_HINT_HEADER: EMAIL_UNVERIFIED_HINT},
         )
-    refund_account(account_key)
-    refund_ip(request)
+    await refund_account(account_key)
+    await refund_ip(request)
     access = await assert_access_admits(session, user.email, is_master=is_break_glass_master(user))
     return user, access
 
@@ -403,8 +403,8 @@ async def login_with_password(
 async def google_nonce(request: Request, session: AsyncSession = Depends(get_session)) -> dict[str, Any]:
     if not google_auth.google_enabled():
         raise HTTPException(status.HTTP_404_NOT_FOUND, GOOGLE_UNAVAILABLE_DETAIL)
-    _refuse_when_ip_throttled(request)
-    refund_ip(request)
+    await _refuse_when_ip_throttled(request)
+    await refund_ip(request)
     nonce, expires = await auth_nonces.issue_nonce(
         session, purpose="GOOGLE_SIGN_IN", ip_hash=ip_hash(client_ip(request))
     )
@@ -419,8 +419,8 @@ async def oidc_nonce(
     if client_id is None:
         label = oidc_sign_in.label_of(payload.provider)
         raise HTTPException(status.HTTP_404_NOT_FOUND, PROVIDER_UNAVAILABLE_DETAIL.format(label=label))
-    _refuse_when_ip_throttled(request)
-    refund_ip(request)
+    await _refuse_when_ip_throttled(request)
+    await refund_ip(request)
     nonce, expires = await auth_nonces.issue_nonce(
         session, purpose=oidc_sign_in.NONCE_PURPOSE, ip_hash=ip_hash(client_ip(request))
     )
@@ -510,7 +510,7 @@ async def signup(
     background: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
-    allowed, retry = sign_in_attempt_by_ip(request)
+    allowed, retry = await sign_in_attempt_by_ip(request)
     if not allowed:
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,
@@ -854,7 +854,7 @@ async def _request_password_reset(email: str, ip: str | None, user_agent: str | 
 async def forgot_password(
     payload: ForgotPasswordRequest, request: Request, response: Response, background: BackgroundTasks
 ) -> dict[str, str]:
-    allowed, retry = forgot_password_attempt(request)
+    allowed, retry = await forgot_password_attempt(request)
     if not allowed:
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,

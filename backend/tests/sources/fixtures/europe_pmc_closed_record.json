@@ -1,0 +1,272 @@
+{
+ "version": "6.9",
+ "hitCount": 1,
+ "request": {
+  "queryString": "EXT_ID:41889078 AND SRC:MED",
+  "internalQuery": "EXT_ID:41889078 AND SRC:MED",
+  "resultType": "CORE",
+  "cursorMark": "*",
+  "pageSize": 1,
+  "sort": "",
+  "synonym": false
+ },
+ "resultList": {
+  "result": [
+   {
+    "id": "41889078",
+    "source": "MED",
+    "pmid": "41889078",
+    "pmcid": "PMC13432356",
+    "fullTextIdList": {
+     "fullTextId": [
+      "PMC13432356"
+     ]
+    },
+    "doi": "10.1111/jfd.70172",
+    "title": "Macroscopic Examination of Skeletal Tissues in Phosphorus-Deficient Rainbow Trout Oncorhynchus mykiss.",
+    "authorString": "Sugiura SH.",
+    "authorList": {
+     "author": [
+      {
+       "fullName": "Sugiura SH",
+       "lastName": "Sugiura",
+       "firstName": "Shozo H",
+       "initials": "SH",
+       "authorId": {
+        "type": "ORCID",
+        "value": "0000-0002-2292-2087"
+       },
+       "authorAffiliationDetailsList": {
+        "authorAffiliation": [
+         {
+          "affiliation": "Graduate School of Environmental Sciences, The University of Shiga Prefecture, Hikone-city, Shiga, Japan."
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "authorIdList": {
+     "authorId": [
+      {
+       "type": "ORCID",
+       "value": "0000-0002-2292-2087"
+      }
+     ]
+    },
+    "dataLinksTagsList": {
+     "dataLinkstag": [
+      "supporting_data"
+     ]
+    },
+    "journalInfo": {
+     "issue": "9",
+     "volume": "49",
+     "journalIssueId": 4237052,
+     "dateOfPublication": "2026 Sep",
+     "monthOfPublication": 9,
+     "yearOfPublication": 2026,
+     "journal": {
+      "medlineAbbreviation": "J Fish Dis",
+      "title": "Journal of fish diseases",
+      "essn": "1365-2761",
+      "issn": "0140-7775",
+      "nlmid": "9881188",
+      "isoabbreviation": "J Fish Dis"
+     },
+     "printPublicationDate": "2026-09-01"
+    },
+    "pubYear": "2026",
+    "pageInfo": "e70172",
+    "abstractText": "Phosphorus (P) deficiency in aquacultured fish has become increasingly prevalent due to stricter environmental regulations and reduced dietary P inputs. P-deficient fish have been reported to exhibit morphometric alterations, notably in the ribs and neural/hemal spines; however, whether these deformities represent true pathological manifestations remains uncertain. This study re-examined skeletal tissues of juvenile rainbow trout Oncorhynchus mykiss using alternative protocols. Fish were fed either a P-deficient or a control diet for 1.5 months. Following formalin fixation, muscular tissues were enzymatically digested, and the skeletons were stained with alizarin red, alcian blue and aniline blue for detailed examination. P-deficient fish exhibited only minor rib deformities but showed extensive non-calcified regions across the skeleton, teeth, fins and scales. These findings were further confirmed by scanning electron microscopy coupled with energy-dispersive X-ray spectroscopy (SEM-EDS). In contrast, heating the skeletons (70°C or 100°C) markedly exacerbated skeletal deformities in P-deficient fish but not in control fish. These results indicate that bending deformities previously reported as clinical signs of P deficiency are not evident in intact fish but become conspicuous only after heating during analytical procedures. The expansion of non-calcified skeletal regions may serve as a sensitive diagnostic indicator of P deficiency in farmed fish.",
+    "affiliation": "Graduate School of Environmental Sciences, The University of Shiga Prefecture, Hikone-city, Shiga, Japan.",
+    "publicationStatus": "ppublish",
+    "language": "eng",
+    "pubModel": "Print-Electronic",
+    "pubTypeList": {
+     "pubType": [
+      "research-article",
+      "Journal Article"
+     ]
+    },
+    "grantsList": {
+     "grant": [
+      {
+       "agency": "University of Shiga Prefecture",
+       "orderIn": 0
+      }
+     ]
+    },
+    "meshHeadingList": {
+     "meshHeading": [
+      {
+       "majorTopic_YN": "Y",
+       "descriptorName": "Bone and Bones",
+       "meshQualifierList": {
+        "meshQualifier": [
+         {
+          "majorTopic_YN": "N",
+          "abbreviation": "PA",
+          "qualifierName": "pathology"
+         }
+        ]
+       }
+      },
+      {
+       "majorTopic_YN": "N",
+       "descriptorName": "Animals"
+      },
+      {
+       "majorTopic_YN": "Y",
+       "descriptorName": "Oncorhynchus mykiss"
+      },
+      {
+       "majorTopic_YN": "Y",
+       "descriptorName": "Fish Diseases",
+       "meshQualifierList": {
+        "meshQualifier": [
+         {
+          "majorTopic_YN": "N",
+          "abbreviation": "ET",
+          "qualifierName": "etiology"
+         },
+         {
+          "majorTopic_YN": "N",
+          "abbreviation": "PA",
+          "qualifierName": "pathology"
+         }
+        ]
+       }
+      },
+      {
+       "majorTopic_YN": "Y",
+       "descriptorName": "Phosphorus",
+       "meshQualifierList": {
+        "meshQualifier": [
+         {
+          "majorTopic_YN": "N",
+          "abbreviation": "DF",
+          "qualifierName": "deficiency"
+         }
+        ]
+       }
+      },
+      {
+       "majorTopic_YN": "N",
+       "descriptorName": "Microscopy, Electron, Scanning",
+       "meshQualifierList": {
+        "meshQualifier": [
+         {
+          "majorTopic_YN": "N",
+          "abbreviation": "VE",
+          "qualifierName": "veterinary"
+         }
+        ]
+       }
+      },
+      {
+       "majorTopic_YN": "N",
+       "descriptorName": "Spectrometry, X-Ray Emission",
+       "meshQualifierList": {
+        "meshQualifier": [
+         {
+          "majorTopic_YN": "N",
+          "abbreviation": "VE",
+          "qualifierName": "veterinary"
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "keywordList": {
+     "keyword": [
+      "Phosphorus deficiency",
+      "diagnostic indicators",
+      "Bone Decalcification",
+      "Skeletal Deformities",
+      "Analytical Artefact",
+      "Fish Rickets"
+     ]
+    },
+    "chemicalList": {
+     "chemical": [
+      {
+       "name": "Phosphorus",
+       "registryNumber": "27YLU75U4W"
+      }
+     ]
+    },
+    "subsetList": {
+     "subset": [
+      {
+       "code": "IM",
+       "name": "Index Medicus"
+      }
+     ]
+    },
+    "fullTextUrlList": {
+     "fullTextUrl": [
+      {
+       "availability": "Subscription required",
+       "availabilityCode": "S",
+       "documentStyle": "doi",
+       "site": "DOI",
+       "url": "https://doi.org/10.1111/jfd.70172"
+      },
+      {
+       "availability": "Free",
+       "availabilityCode": "F",
+       "documentStyle": "html",
+       "site": "Europe_PMC",
+       "url": "https://europepmc.org/articles/PMC13432356"
+      },
+      {
+       "availability": "Free",
+       "availabilityCode": "F",
+       "documentStyle": "pdf",
+       "site": "Europe_PMC",
+       "url": "https://europepmc.org/articles/PMC13432356?pdf=render"
+      },
+      {
+       "availability": "Free",
+       "availabilityCode": "F",
+       "documentStyle": "doi",
+       "site": "DOI",
+       "url": "https://doi.org/10.1111/jfd.70172"
+      }
+     ]
+    },
+    "isOpenAccess": "N",
+    "inEPMC": "Y",
+    "inPMC": "Y",
+    "citedByCount": 0,
+    "hasReferences": "Y",
+    "hasTextMinedTerms": "Y",
+    "hasDbCrossReferences": "N",
+    "hasPDF": "Y",
+    "hasBook": "N",
+    "hasSuppl": "N",
+    "hasLabsLinks": "N",
+    "hasData": "Y",
+    "authMan": "N",
+    "epmcAuthMan": "N",
+    "nihAuthMan": "N",
+    "hasTMAccessionNumbers": "Y",
+    "tmAccessionTypeList": {
+     "accessionType": [
+      "doi"
+     ]
+    },
+    "dateOfCompletion": "2026-08-03",
+    "dateOfCreation": "2026-03-27",
+    "dateOfRevision": "2026-08-13",
+    "electronicPublicationDate": "2026-03-26",
+    "firstPublicationDate": "2026-03-26",
+    "firstIndexDate": "2026-03-27",
+    "fullTextReceivedDate": "2026-09-04",
+    "hasEvaluations": "N"
+   }
+  ]
+ }
+}

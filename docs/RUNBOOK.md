@@ -318,7 +318,7 @@ A craft release (decision 0130): give `craft` its exact slug, for Kutch Ajrakh `
 
 ### Contributions at scale (round 7)
 
-- **Allowances** are counted per account and kind in each clock hour (UTC) in Postgres (`AllowanceBucket`, `core/allowances.py`), so a restart does not reset them and both deploy slots share them; the nightly upkeep deletes buckets over a day old. A refusal saying the call "could not be counted" means the allowance database was unreachable or slow; it lifts in a minute.
+- **Allowances and rate limits** are counted in Postgres (`AllowanceBucket`, `core/allowances.py`): allowances per account and kind in each clock hour (UTC), every rate limit of `core/rate_limit.py` in its sliding window (decision 0139), so a restart does not reset them and both deploy slots share them; the scholarly services' pace and requests in flight are shared the same way (`SourcePace`, `SourceLease`, `core/paces.py`); the nightly upkeep deletes buckets over a day old. A refusal saying the call "could not be counted" means the allowance database was unreachable or slow; it lifts in a minute.
 - **The release checks**: the post-deploy check reads `E2E_EMAIL` and `E2E_PASSWORD`, takes an optional `base_url`, operates every control of the live site (`frontend/e2e/release/controls.spec.ts`) and skips its page job after a deploy that built no web. Lighthouse on a preview blocks `vercel.live`, whose feedback toolbar otherwise costs best practices; production never carries it.
 
 - **The contribution worker** `kv-contributions` (a systemd unit beside `kv-worker` and `kv-fetcher`,

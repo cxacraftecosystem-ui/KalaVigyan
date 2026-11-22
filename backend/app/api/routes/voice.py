@@ -107,7 +107,7 @@ async def start(
     runtime: VoiceRuntime = Depends(voice_runtime),
     voice: VoiceSettings = Depends(current_voice),
 ) -> dict[str, Any]:
-    _throttled(voice_session_attempt(str(user.id)), THROTTLED_DETAIL)
+    _throttled(await voice_session_attempt(str(user.id)), THROTTLED_DETAIL)
     ask = StartAsk(user=user, craft_slug=payload.craft_slug, mode=payload.mode, language=payload.language)
     try:
         return await start_session(ask, store=store, runtime=runtime, voice=voice, now=utc_now())
@@ -185,7 +185,7 @@ async def relay_turn(
     record = await _relay_session(store, user, session_id)
     if not record.live_at(utc_now()):
         raise HTTPException(status.HTTP_409_CONFLICT, ENDED_DETAIL)
-    _throttled(voice_turn_attempt(str(user.id)), TURNS_THROTTLED_DETAIL)
+    _throttled(await voice_turn_attempt(str(user.id)), TURNS_THROTTLED_DETAIL)
     if voice.missing() or voice.cipher is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, MESSAGES["not_configured"])
     audio = await _recording(request)
@@ -209,7 +209,7 @@ async def speech(
     record = await _relay_session(store, user, session_id)
     if voice.missing() or voice.cipher is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, MESSAGES["not_configured"])
-    _throttled(voice_speech_attempt(str(user.id)), SPEECH_THROTTLED_DETAIL)
+    _throttled(await voice_speech_attempt(str(user.id)), SPEECH_THROTTLED_DETAIL)
     try:
         audio = await turn_speech(record, turn_id, _relay_deps(request, runtime, store, voice, record))
     except VoiceRefused as error:

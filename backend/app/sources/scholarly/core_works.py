@@ -3,6 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+import httpx
+
+from app.core.key_checks import KeyVerdict, checked_get
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
 from ..adapter import Clock, HttpSourceAdapter, build_document, utc_now
@@ -20,10 +23,10 @@ from ..records import (
 )
 from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["CORE_LIMITS", "CoreAdapter"]
+__all__ = ["CORE_LIMITS", "CoreAdapter", "check_key"]
 
 CORE_API = "https://api.core.ac.uk/v3"
-CORE_LIMITS = ServiceLimits(search=SourceLimit(requests=1, seconds=2.0))
+CORE_LIMITS = ServiceLimits(search=SourceLimit(requests=10, seconds=60.0))
 
 
 class CoreAdapter(HttpSourceAdapter):
@@ -80,3 +83,12 @@ class CoreAdapter(HttpSourceAdapter):
         if abstract is None:
             raise self._not_found(native, "no full text or abstract")
         return build_document(item, abstract, "ABSTRACT")
+
+
+async def check_key(client: httpx.AsyncClient, value: str) -> KeyVerdict:
+    return await checked_get(
+        client,
+        f"{CORE_API}/search/works",
+        headers={"Authorization": f"Bearer {value}"},
+        params={"q": "mordant", "limit": "1"},
+    )

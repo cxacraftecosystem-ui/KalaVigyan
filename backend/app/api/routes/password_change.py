@@ -141,7 +141,7 @@ async def change_password(
     user: User = Depends(get_current_user_any_step),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, bool]:
-    allowed, retry = sign_in_attempt_by_account(str(user.id))
+    allowed, retry = await sign_in_attempt_by_account(str(user.id))
     if not allowed:
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,
@@ -153,7 +153,7 @@ async def change_password(
         proved_by = await _confirm_first_password(session, user, payload)
     else:
         await _confirm_current_password(user, payload)
-    refund_account(str(user.id))
+    await refund_account(str(user.id))
     user = await _store_new_password(session, user, payload.newPassword, proved_by=proved_by)
     response.headers[SESSION_TOKEN_HEADER] = session_token(user)
     await mailer.send(mailer.password_changed_mail(user.email))

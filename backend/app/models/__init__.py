@@ -105,6 +105,7 @@ from app.models.monograph_documents import MonographDocument
 from app.models.oauth import McpTermsAcceptance, McpToolCall, OAuthClient, OAuthCode, OAuthGrant, OAuthToken
 from app.models.open_data import OpenDataRelease
 from app.models.open_work import ComponentProposal, TaskReservation
+from app.models.paces import SourceLease, SourcePace
 from app.models.page_layouts import PageLayout
 from app.models.page_previews import PagePreview
 from app.models.page_translations import PageTextUnit, PageTranslation, TranslationReader
@@ -252,6 +253,8 @@ __all__ = [
     "SavedItem",
     "SecretTestResult",
     "Source",
+    "SourceLease",
+    "SourcePace",
     "SourceUpkeep",
     "StageMaterial",
     "StoredDocument",

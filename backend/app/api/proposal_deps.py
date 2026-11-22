@@ -5,12 +5,12 @@ from datetime import UTC, datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import User
+from app.providers.catalogue import AiTask
 from app.providers.embedding import router_embedder
 from app.providers.router import Principal
 from app.providers.structured import router_structured_model
 from app.research.fetcher import Fetcher
 from app.research.knowledge_writes import FactProposal, ProposalReply
-from app.services.ai_providers import AiTask
 from app.services.candidate_sources import proposal_fetcher
 from app.services.claim_pages import published_claims, refresh_claim_pages
 from app.services.fact_proposals import ProposalAdapters, propose_fact

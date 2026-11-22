@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.db import session_scope
 from app.research.embedding import TextEmbedder
 from app.research.fetcher import Fetcher
 from app.sources.fetcher_client import FetcherClient
@@ -39,6 +40,7 @@ from .upkeep_pages import (
     stale_crafts,
 )
 from .upkeep_quotes import QUOTE_SOURCES_PER_NIGHT, QuotesReport, recheck_quotes, sources_due
+from .web_fetches import web_fetch_recorder
 
 __all__ = ["UpkeepReport", "UpkeepTools", "plan_nightly_upkeep", "run_nightly_upkeep", "upkeep_tools"]
 
@@ -61,7 +63,7 @@ def upkeep_tools(
     embed: TextEmbedder | None = None,
 ) -> UpkeepTools:
     return UpkeepTools(
-        fetcher=FetcherClient(fetcher_url, client),
+        fetcher=FetcherClient(fetcher_url, client, record=web_fetch_recorder(session_scope)),
         archiver=WaybackSaver(client),
         monographs=tuple(monographs),
         load_monograph=load,

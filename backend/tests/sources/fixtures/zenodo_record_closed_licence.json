@@ -1,0 +1,132 @@
+{
+ "created": "2019-07-17T07:13:11.400448+00:00",
+ "modified": "2024-07-22T20:45:55.481044+00:00",
+ "id": 3339065,
+ "conceptrecid": "3339064",
+ "doi": "10.5281/zenodo.3339065",
+ "conceptdoi": "10.5281/zenodo.3339064",
+ "doi_url": "https://doi.org/10.5281/zenodo.3339065",
+ "metadata": {
+  "title": "Effects of Tin Chloride on Dyeing Wool Fibers with Saffron Petals",
+  "doi": "10.5281/zenodo.3339065",
+  "publication_date": "2014-10-17",
+  "description": "<p>Saffron petals can be used as natural source for dyeing wool fibers to enhance green color.<br>\nIran is a main producer of world&rsquo;s saffron and a large amount of saffron petals is produced each year as<br>\nby-product during saffron harvesting. Only small part of this product is used as food color or medical<br>\nuses. In this research work saffron petals taken from the northeast of Iran is used for dyeing wool yarns<br>\nusing in hand woven carpet industry as pile yarn. The main goal of this study is to find a proper method<br>\nfor using saffron petals and to gain green natural color from a botanical source.<br>\nFor experiments woolen yarn (7Nm) using as piles in hand woven carpet was selected and then<br>\nwashed with detergent at 60&deg;C for 15 minutes for cleansing, following rinsing with tap water and<br>\nsqueezing. Then wool yarns pre-treated with tin chloride (SnCl4) as a colorless mordant at 3% with<br>\ndifferent acids such as acetic acid, citric acid, lactic acid and oxalic acid. A sample is also was prepared<br>\nwithout mordant. Then the yarn samples were dyed with 50% (owf) saffron petals in acidic condition. At<br>\nthe end all the samples were washed with clean water and dried at room.<br>\nThe chromaticity coordinates of samples measured in CIELAB system. Color and wash fastness<br>\nof the dyed samples were also measured using standard methods. According to the results green<br>\nhue can be gained using saffron petals in acidic conditions. Natural mordents bind dye molecule to<br>\nthe active sites of the fiber andaffects on final hue. The best way of dyeing wool with natural<br>\ncolorants is pre mordanting method that increases the dye stability. The sample treated with oxalic acid<br>\nshowed the best green color among samples and also sample treated with citric acid showed green<br>\ncolor. Washing fastness of the samples varies between 4-4.5 for different acids in dyeing bath. Same<br>\nresult is also gained for light fastness of the samples, i.e. 4.5. According to the findings saffron petals<br>\ncan be considered as a natural dye for wool fibers.<br>\n&nbsp;</p>",
+  "access_right": "open",
+  "creators": [
+   {
+    "name": "Farideh Talebpour",
+    "affiliation": "Professor, Alzahra University, Art Department, Tehran,Iran.",
+    "orcid": "0000-0002-0274-1908"
+   },
+   {
+    "name": "Mohammad Veysian",
+    "affiliation": "National Iran Carpet Center, Tehran, Iran"
+   }
+  ],
+  "keywords": [
+   "Wool, Saffron, Dyeing, Tin chloride, Textiles, carpet, sustainability."
+  ],
+  "language": "eng",
+  "resource_type": {
+   "title": "Poster",
+   "type": "poster"
+  },
+  "meeting": {
+   "title": "International Forum on natural dyes and WEFT 2014",
+   "dates": "2014",
+   "place": "TAIWAN",
+   "session": "poster",
+   "session_part": "25"
+  },
+  "license": {
+   "id": "cc-by-nc-nd-1.0"
+  },
+  "relations": {
+   "version": [
+    {
+     "index": 0,
+     "is_last": true,
+     "parent": {
+      "pid_type": "recid",
+      "pid_value": "3339064"
+     }
+    }
+   ]
+  },
+  "notes": "This topic relates to sustainability in textile dyeing"
+ },
+ "title": "Effects of Tin Chloride on Dyeing Wool Fibers with Saffron Petals",
+ "links": {
+  "self": "https://zenodo.org/api/records/3339065",
+  "self_html": "https://zenodo.org/records/3339065",
+  "preview_html": "https://zenodo.org/records/3339065?preview=1",
+  "doi": "https://doi.org/10.5281/zenodo.3339065",
+  "self_doi": "https://doi.org/10.5281/zenodo.3339065",
+  "self_doi_html": "https://zenodo.org/doi/10.5281/zenodo.3339065",
+  "reserve_doi": "https://zenodo.org/api/records/3339065/draft/pids/doi",
+  "parent": "https://zenodo.org/api/records/3339064",
+  "parent_html": "https://zenodo.org/records/3339064",
+  "parent_doi": "https://doi.org/10.5281/zenodo.3339064",
+  "parent_doi_html": "https://zenodo.org/doi/10.5281/zenodo.3339064",
+  "self_iiif_manifest": "https://zenodo.org/api/iiif/record:3339065/manifest",
+  "self_iiif_sequence": "https://zenodo.org/api/iiif/record:3339065/sequence/default",
+  "files": "https://zenodo.org/api/records/3339065/files",
+  "media_files": "https://zenodo.org/api/records/3339065/media-files",
+  "thumbnails": {
+   "10": "https://zenodo.org/api/iiif/record:3339065:25-Farideh%20Talebpour-Effects%20of%20Tin%20Chloride%20on%20Dyeing%20Wool%20.pdf/full/%5E10,/0/default.jpg",
+   "50": "https://zenodo.org/api/iiif/record:3339065:25-Farideh%20Talebpour-Effects%20of%20Tin%20Chloride%20on%20Dyeing%20Wool%20.pdf/full/%5E50,/0/default.jpg",
+   "100": "https://zenodo.org/api/iiif/record:3339065:25-Farideh%20Talebpour-Effects%20of%20Tin%20Chloride%20on%20Dyeing%20Wool%20.pdf/full/%5E100,/0/default.jpg",
+   "250": "https://zenodo.org/api/iiif/record:3339065:25-Farideh%20Talebpour-Effects%20of%20Tin%20Chloride%20on%20Dyeing%20Wool%20.pdf/full/%5E250,/0/default.jpg",
+   "750": "https://zenodo.org/api/iiif/record:3339065:25-Farideh%20Talebpour-Effects%20of%20Tin%20Chloride%20on%20Dyeing%20Wool%20.pdf/full/%5E750,/0/default.jpg",
+   "1200": "https://zenodo.org/api/iiif/record:3339065:25-Farideh%20Talebpour-Effects%20of%20Tin%20Chloride%20on%20Dyeing%20Wool%20.pdf/full/%5E1200,/0/default.jpg"
+  },
+  "latest": "https://zenodo.org/api/records/3339065/versions/latest",
+  "latest_html": "https://zenodo.org/records/3339065/latest",
+  "versions": "https://zenodo.org/api/records/3339065/versions",
+  "draft": "https://zenodo.org/api/records/3339065/draft",
+  "access_links": "https://zenodo.org/api/records/3339065/access/links",
+  "access_grants": "https://zenodo.org/api/records/3339065/access/grants",
+  "access_users": "https://zenodo.org/api/records/3339065/access/users",
+  "access_request": "https://zenodo.org/api/records/3339065/access/request",
+  "access": "https://zenodo.org/api/records/3339065/access",
+  "communities": "https://zenodo.org/api/records/3339065/communities",
+  "communities-suggestions": "https://zenodo.org/api/records/3339065/communities-suggestions",
+  "request_deletion": "https://zenodo.org/api/records/3339065/request-deletion",
+  "file_modification": "https://zenodo.org/api/records/3339065/file-modification",
+  "quota_increase": "https://zenodo.org/api/records/3339065/quota-increase",
+  "requests": "https://zenodo.org/api/records/3339065/requests"
+ },
+ "updated": "2024-07-22T20:45:55.481044+00:00",
+ "recid": "3339065",
+ "revision": 7,
+ "files": [
+  {
+   "id": "a3acbd0c-bd51-4721-93e5-5b0dc836e79a",
+   "key": "25-Farideh Talebpour-Effects of Tin Chloride on Dyeing Wool .pdf",
+   "size": 85781,
+   "checksum": "md5:8befc23438c842f04d7df845e3e7a302",
+   "links": {
+    "self": "https://zenodo.org/api/records/3339065/files/25-Farideh%20Talebpour-Effects%20of%20Tin%20Chloride%20on%20Dyeing%20Wool%20.pdf/content"
+   }
+  }
+ ],
+ "swh": {},
+ "owners": [
+  {
+   "id": "72478"
+  }
+ ],
+ "status": "published",
+ "stats": {
+  "downloads": 111,
+  "unique_downloads": 100,
+  "views": 109,
+  "unique_views": 108,
+  "version_downloads": 111,
+  "version_unique_downloads": 100,
+  "version_unique_views": 105,
+  "version_views": 106
+ },
+ "state": "done",
+ "submitted": true
+}

@@ -128,8 +128,8 @@ scripts   -> voice, providers, services, planner, composer, retrieval, research,
 voice     -> providers, services, composer, schemas, research, core, models
 media     -> providers, services, schemas, research, core, models
 worker    -> media, core
-providers -> services, research, core, models
-services  -> science, geo, planner, composer, retrieval, sources, curation, research, core, models, data
+providers -> research, core, models
+services  -> providers, science, geo, planner, composer, retrieval, sources, curation, research, core, models, data
 planner   -> sources, research, core, models
 composer  -> research, core, models
 retrieval -> research, core, models
@@ -200,7 +200,9 @@ Quick index (the catalogue is authoritative): settings (`core/config.py`), datab
 and the pooler URL (`core/db.py`), passwords, JWTs and HMAC keys (`core/security.py`), India time
 (`core/clock.py`), roles, ranks and capabilities (`core/roles.py`), the current user and capability guards (`core/deps.py`), JSON
 logging, request ids and secret redaction (`core/logging.py`), sliding-window rate limits and
-the client address (`core/rate_limit.py`), the error hierarchy (`core/errors.py`), Retry-After parsing
+the client address (`core/rate_limit.py`), counts shared by every process (`core/allowances.py`),
+the managed key store and its names (`core/managed_keys.py`, `core/key_catalogue.py`), key checks
+(`core/key_checks.py`), the error hierarchy (`core/errors.py`), Retry-After parsing
 (`core/retry_after.py`), ETag revalidation (`core/http_cache.py`), work that outlives a leaving
 caller (`core/shielded.py`), paced and cached source HTTP and record rules (`sources/http.py`,
 `sources/records.py`, `sources/adapter.py`), JSON model calls (`research/structured.py`,
@@ -208,9 +210,9 @@ caller (`core/shielded.py`), paced and cached source HTTP and record rules (`sou
 composer (`composer/`), live research budgets (`planner/policy.py`), the MediaWiki Action API
 (`sources/reference/mediawiki.py`), quote matching and strength (`research/quotes.py`), open
 licences (`research/licences.py`), the craft claim scope (`retrieval/statements.py`), audit
-records (`services/audit.py`), managed keys (`services/managed_secrets.py`), the model catalogue
-(`services/ai_providers.py`), the AI router (`providers/router.py`), spend rules
-(`providers/budget.py`), the quota ledger (`providers/quota.py`), the ElevenLabs adapter
+records (`services/audit.py`), the keys' settings screen (`services/managed_secrets.py`), the model
+catalogue (`providers/catalogue.py`), the AI router (`providers/router.py`), spend rules and settings
+(`providers/budget.py`, `providers/spend_settings.py`), the quota ledger (`providers/quota.py`), the ElevenLabs adapter
 (`providers/elevenlabs.py`), the media router and Gemini media wire
 (`providers/media_router.py`, `providers/gemini_media.py`), generated names (`services/naming.py`),
 the S3 adapter (`services/object_store.py`), personal-data patterns (`research/evidence.py`), the research and answering contracts (`research/`), the craft master

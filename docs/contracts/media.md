@@ -159,7 +159,7 @@ shows on Usage. The official reference was read on 2026-11-18 (decision 0058 lis
 | `IMAGE` | Gemini (seeded); ElevenLabs `gemini-3.1-flash-image` as a choice | `POST /v1/flows/image` `{model_id, prompt, aspect_ratio: "1:1", resolution: "1K"}`, then `GET /v1/flows/image/{id}` every 2 s (90 polls at most) | `image/png` at 1K, as above |
 | `VIDEO` | Gemini (seeded); ElevenLabs `veo-3.1-fast-generate-001` as a choice | `POST /v1/flows/video` `{model_id, prompt, aspect_ratio: "16:9", resolution: "720p", duration_secs: "8", generate_audio: false, enhance_prompt: false}`, then `GET /v1/flows/video/{id}` every 10 s | `video/mp4`, 8 s, 720p, 16:9, any audio stripped, as above |
 
-- `MUSIC` and `SOUND_EFFECT` are in `AiTask` (`services/ai_providers.py`), the `AiTask` database
+- `MUSIC` and `SOUND_EFFECT` are in `AiTask` (`providers/catalogue_types.py`), the `AiTask` database
   enum and `MEDIA_TASKS` (with `AUDIO_TASKS`), so `budget.evaluate` counts them as media; they
   appear on the routing page (Film music, Film sound effects) and on Usage. `ELEVENLABS` is in
   `AiProvider` with the managed key `ELEVENLABS_API_KEY` (the Listen key). Migration

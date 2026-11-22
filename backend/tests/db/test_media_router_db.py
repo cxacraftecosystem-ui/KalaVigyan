@@ -9,9 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.db import get_engine
 from app.models import UsageEvent, User
 from app.providers.base import Adapter, MediaRequest, MediaResult
+from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaAsk, MediaRouter
 from app.providers.router import Principal
-from app.services.ai_providers import AiTask
 
 from ..media.fakes import media_result, png_bytes
 

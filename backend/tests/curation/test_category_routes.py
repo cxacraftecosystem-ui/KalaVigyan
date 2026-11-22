@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import uuid
-from collections.abc import Iterator
 from typing import Any
 
 import pytest
@@ -11,7 +10,6 @@ from fastapi.testclient import TestClient
 from app.api.routes import categories
 from app.core.db import get_session
 from app.core.http_cache import PRIVATE_NO_CACHE, PUBLIC_READ_CACHE
-from app.core.rate_limit import reset_all
 from app.main import create_app
 from app.models import User
 from app.services.category_page import CategoryPageRecords
@@ -33,7 +31,7 @@ def plain_records(slug: str) -> CategoryPageRecords:
 
 
 @pytest.fixture
-def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
+def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     async def page_records(_session: Any, slug: str) -> Any:
         if slug == LEATHER:
             return leather_records()
@@ -46,11 +44,9 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
 
     monkeypatch.setattr(categories, "category_page_records", page_records)
     monkeypatch.setattr(categories, "category_list_records", list_records)
-    reset_all()
     app = create_app()
     app.dependency_overrides[get_session] = no_session
-    yield TestClient(app)
-    reset_all()
+    return TestClient(app)
 
 
 def test_a_category_page_is_read_without_signing_in(client: TestClient) -> None:

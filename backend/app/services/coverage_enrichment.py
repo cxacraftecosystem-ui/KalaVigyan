@@ -34,6 +34,7 @@ __all__ = [
     "CraftOutcome",
     "EnrichmentPipeline",
     "EnrichmentReport",
+    "day_budget_left",
     "run_coverage_enrichment",
 ]
 
@@ -48,6 +49,16 @@ BUDGET_STOP = "BUDGET"
 ERROR_MAX_CHARS = 1000
 
 SpentSince = Callable[[str, datetime], Awaitable[Decimal]]
+BudgetLeft = Callable[[], Awaitable[Decimal]]
+
+
+def day_budget_left(
+    spent: SpentSince, *, day_started_at: datetime, budget_usd: Decimal = ENRICHMENT_DAILY_BUDGET_USD
+) -> BudgetLeft:
+    async def left() -> Decimal:
+        return budget_usd - await spent(ENRICHMENT_TAG, day_started_at)
+
+    return left
 
 
 @dataclass(frozen=True)
@@ -98,7 +109,10 @@ class _Run:
     budget_usd: Decimal
 
     async def remaining(self) -> Decimal:
-        return self.budget_usd - await self.pipeline.spent(ENRICHMENT_TAG, self.day_started_at)
+        left = day_budget_left(
+            self.pipeline.spent, day_started_at=self.day_started_at, budget_usd=self.budget_usd
+        )
+        return await left()
 
 
 async def run_coverage_enrichment(

@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.db import get_engine
 from app.models import UsageEvent
 from app.providers.budget import ANSWER_CAP, MONTHLY_CEILING, AnswerSpend
+from app.providers.catalogue import AiTask
 from app.providers.router import Principal, reserve
 from app.services import app_settings
-from app.services.ai_providers import AiTask
 
 pytestmark = pytest.mark.db
 

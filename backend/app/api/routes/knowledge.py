@@ -226,7 +226,7 @@ async def answers_stream(
     if not can(user, Capability.ASK_STANDARD) or ask.depth not in selectable_depths(user):
         raise HTTPException(status.HTTP_403_FORBIDDEN, refusal_for(Capability.ASK_STANDARD))
     if not is_uncapped(user):
-        allowed, retry = ask_attempt(str(user.id))
+        allowed, retry = await ask_attempt(str(user.id))
         if not allowed:
             raise HTTPException(
                 status.HTTP_429_TOO_MANY_REQUESTS,

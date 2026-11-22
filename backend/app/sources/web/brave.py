@@ -3,7 +3,10 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any
 
+import httpx
+
 from app.core.errors import ExternalFailure, NotConfigured
+from app.core.key_checks import KeyVerdict, checked_get
 from app.research.evidence import EvidenceItem, SearchQuery
 from app.research.fetcher import Fetcher
 
@@ -12,10 +15,22 @@ from ..http import RatePolicy, SourceHttp
 from ..records import UnusableRecord
 from .page import WebPageAdapter
 
-__all__ = ["BRAVE_ENDPOINT", "BRAVE_KEY_NAME", "BRAVE_MAX_COUNT", "BRAVE_RATE", "BraveAdapter"]
+__all__ = [
+    "BRAVE_CHECK_QUERY",
+    "BRAVE_ENDPOINT",
+    "BRAVE_KEY_HEADER",
+    "BRAVE_KEY_NAME",
+    "BRAVE_MAX_COUNT",
+    "BRAVE_RATE",
+    "BraveAdapter",
+    "check_key",
+]
 
 BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search"
 BRAVE_KEY_NAME = "BRAVE_SEARCH_API_KEY"
+BRAVE_KEY_HEADER = "X-Subscription-Token"
+BRAVE_CHECK_QUERY = {"q": "kalamkari", "count": "1"}
+JSON_ACCEPT = {"Accept": "application/json"}
 BRAVE_RATE = RatePolicy(min_interval=1.0)
 BRAVE_MAX_COUNT = 20
 
@@ -44,8 +59,8 @@ class BraveAdapter(WebPageAdapter):
         response = await self.http.get(
             BRAVE_ENDPOINT,
             params=params,
-            headers={"Accept": "application/json"},
-            secret_headers={"X-Subscription-Token": self._api_key},
+            headers=JSON_ACCEPT,
+            secret_headers={BRAVE_KEY_HEADER: self._api_key},
         )
         return _web_results(response.json(self.name))
 
@@ -60,6 +75,12 @@ class BraveAdapter(WebPageAdapter):
             publisher=profile.get("name") if isinstance(profile, dict) else None,
             retrieved_at=retrieved_at,
         )
+
+
+async def check_key(client: httpx.AsyncClient, value: str) -> KeyVerdict:
+    return await checked_get(
+        client, BRAVE_ENDPOINT, headers=JSON_ACCEPT | {BRAVE_KEY_HEADER: value}, params=BRAVE_CHECK_QUERY
+    )
 
 
 def _web_results(payload: Any) -> list[Any]:

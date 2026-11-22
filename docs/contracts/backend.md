@@ -219,7 +219,7 @@ The routes, refusals, claim set, prompt, quotas and job view are `docs/contracts
 
 `/settings/ai-routing` generalises DR `/settings/transcription-providers` to one ordered list per task (stored in `RoutePolicy`).
 
-Routable tasks (`ai_providers.ROUTABLE_TASKS`, the keys of `DEFAULT_ROUTES`): PLAN, WEB_READ, COMPOSE, VOICE_TURN, INTERVIEW, TESTIMONY, TRANSLATE, EXTRACT, SUMMARISE, EMBED, EVAL_JUDGE, IMAGE, VIDEO, MUSIC, SOUND_EFFECT, RERANK. WEB_READ and EXTRACT are public-text tasks; DeepSeek (PUBLIC_TEXT_ONLY) is offered and accepted only there. RERANK has one model, Voyage `rerank-3` (provider VOYAGE, migration `0060_reranking`, decision 0125).
+Routable tasks (`providers/catalogue.ROUTABLE_TASKS`, the keys of `DEFAULT_ROUTES`): PLAN, WEB_READ, COMPOSE, VOICE_TURN, INTERVIEW, TESTIMONY, TRANSLATE, EXTRACT, SUMMARISE, EMBED, EVAL_JUDGE, IMAGE, VIDEO, MUSIC, SOUND_EFFECT, RERANK. WEB_READ and EXTRACT are public-text tasks; DeepSeek (PUBLIC_TEXT_ONLY) is offered and accepted only there. RERANK has one model, Voyage `rerank-3` (provider VOYAGE, migration `0060_reranking`, decision 0125).
 
 Task state:
 ```

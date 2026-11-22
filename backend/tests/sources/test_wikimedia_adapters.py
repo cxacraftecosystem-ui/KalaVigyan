@@ -11,6 +11,8 @@ from .recorded import RETRIEVED, Recorder, Reply, fixed_clock, source_http
 
 EN_API = "en.wikipedia.org/w/api.php"
 HI_API = "hi.wikipedia.org/w/api.php"
+FR_API = "fr.wikipedia.org/w/api.php"
+YUE_API = "zh-yue.wikipedia.org/w/api.php"
 COMMONS_API = "commons.wikimedia.org/w/api.php"
 CC_BY_SA_4 = "Creative Commons Attribution-Share Alike 4.0"
 
@@ -62,14 +64,28 @@ async def test_wikipedia_searches_the_wiki_of_the_query_language() -> None:
     assert items[0].published == "2024-07-20"
 
 
-def test_wikipedia_languages_are_an_allow_list() -> None:
+def test_a_language_searches_its_own_wikipedia_edition_wherever_one_exists() -> None:
     assert wiki_language("en") == "en"
     assert wiki_language("ta-IN") == "ta"
+    assert wiki_language("fr-FR") == "fr"
     assert wiki_language("bho") == "bh"
+    assert wiki_language("yue-HK") == "zh-yue"
+    assert wiki_language("nb-NO") == "no"
     with pytest.raises(InvalidInput, match="No Wikipedia"):
         wiki_language("xx")
     with pytest.raises(InvalidInput):
         wiki_language("evil.example.com/")
+
+
+async def test_a_wikipedia_id_in_another_language_is_read_from_that_edition() -> None:
+    adapter, recorder = adapter_for(
+        WikipediaAdapter,
+        {FR_API: Reply("wikipedia_missing.json"), YUE_API: Reply("wikipedia_missing.json")},
+    )
+    for native in ("wikipedia:fr:1", "wikipedia:zh-yue:1"):
+        with pytest.raises(ExternalFailure, match="no article"):
+            await adapter.fetch(native)
+    assert [request.url.host for request in recorder.requests] == ["fr.wikipedia.org", "zh-yue.wikipedia.org"]
 
 
 async def test_wikipedia_no_hits_is_an_empty_list() -> None:
@@ -103,7 +119,14 @@ async def test_wikipedia_unknown_page_is_not_found() -> None:
 
 async def test_wikipedia_ids_name_a_supported_wiki_and_a_page() -> None:
     adapter, _ = adapter_for(WikipediaAdapter, {})
-    for bad in ("wikipedia:Ajrak", "wikipedia:xx:12", "wikipedia:en:0", "wikipedia:en:12/../1"):
+    for bad in (
+        "wikipedia:Ajrak",
+        "wikipedia:xx:12",
+        "wikipedia:EN:12",
+        "wikipedia:fr-:12",
+        "wikipedia:en:0",
+        "wikipedia:en:12/../1",
+    ):
         with pytest.raises(InvalidInput):
             await adapter.fetch(bad)
 
@@ -132,7 +155,7 @@ async def test_commons_search_keeps_licence_and_attribution() -> None:
     )
     assert ajrak.authors == ["Ahub1988"]
     assert ajrak.published == "2010-05-31"
-    assert (ajrak.source_type, ajrak.trust) == ("OTHER", "C")
+    assert (ajrak.source_type, ajrak.trust) == ("MEDIA", "C")
     assert ajrak.external_ids == {
         "commons_file": "File:Ajrak.jpg",
         "commons_media": "M15565262",
@@ -159,6 +182,16 @@ async def test_commons_fetch_drops_hidden_markup_and_unparseable_dates() -> None
     assert item.licence == "CC0"
     assert item.attribution == "CC0, via Wikimedia Commons"
     assert item.authors == []
+    assert item.source_type == "MEDIA"
+
+
+async def test_a_scanned_document_on_commons_is_not_a_media_file() -> None:
+    adapter, _ = adapter_for(WikimediaCommonsAdapter, {COMMONS_API: Reply("commons_document.json")})
+    document = await adapter.fetch("wikimedia_commons:92241461")
+    item = document.item
+    assert (item.source_type, item.licence) == ("OTHER", "Public domain")
+    assert item.title == "Journal of the Bombay Natural History Society"
+    assert item.attribution == "Bombay Natural History Society, Public domain, via Wikimedia Commons"
 
 
 async def test_commons_page_that_is_not_a_file_is_not_found() -> None:

@@ -18,6 +18,7 @@ from app.core.shielded import ShieldedWork
 from app.models import Answer
 from app.planner.orchestrator import ResearchPlanner
 from app.planner.understanding import ModelUnderstander
+from app.research.answer_models import AnswerModels
 from app.research.blocks import ImagesBlock
 from app.research.composition import ComposedAnswer
 from app.research.crafts import CraftQuery, CraftRef, CraftResolution
@@ -44,7 +45,6 @@ from .answer_cost import answer_measures
 from .answer_events import CitedClaims, cited_claims
 from .answer_gaps import FieldReading, record_verdict
 from .answer_lede import LedeTools
-from .answer_models import AnswerModels
 from .answer_sections import ClaimsOf
 from .answer_translation import AnswerTranslation, english_question
 from .answering import AnswerAsk, AnswerPipeline

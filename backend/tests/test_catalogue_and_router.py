@@ -2,8 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from app.providers.router import RouteChoice, estimate_for, order_routes, route_allowed
-from app.services.ai_providers import (
+from app.providers.catalogue import (
     DEFAULT_ROUTES,
     MEDIA_TASKS,
     PROVIDERS,
@@ -15,6 +14,7 @@ from app.services.ai_providers import (
     looks_like_key,
     supports,
 )
+from app.providers.router import RouteChoice, estimate_for, order_routes, route_allowed
 
 
 def test_deepseek_is_registered_as_public_text_only() -> None:

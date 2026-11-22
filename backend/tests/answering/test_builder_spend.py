@@ -9,10 +9,10 @@ import pytest
 from app.api.routes import knowledge
 from app.models import User
 from app.providers import answer_routes, budget
+from app.providers.catalogue import AiTask
 from app.providers.router import Principal
 from app.scripts import rebuild_pieces
 from app.services import answer_store
-from app.services.ai_providers import AiTask
 from app.services.block_builders import BlockBuilders
 from app.services.builder_interface import BuilderTools
 

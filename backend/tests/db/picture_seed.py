@@ -22,8 +22,8 @@ from app.models import (
     User,
 )
 from app.research.image_contributions import IMAGE_TERMS_VERSION, ImageDeclaration
+from app.research.image_screens import ScreenTools
 from app.services import image_contributions as images
-from app.services.image_screens import ScreenTools
 
 from ..pictures import FakeObjects, screen_tools
 from .testimony_seed import rolled_back_session

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ssl
 from dataclasses import dataclass, field
+from typing import Protocol
 
 import httpx
 
@@ -12,7 +13,15 @@ from app.research.fetcher import FetchRefused
 from .addresses import IpAddress, Resolver, public_addresses, system_resolver
 from .targets import Target
 
-__all__ = ["FETCHER_USER_AGENT", "REDIRECT_STATUSES", "Hop", "PinnedHttp", "remote_failure"]
+__all__ = [
+    "FETCHER_USER_AGENT",
+    "REDIRECT_STATUSES",
+    "Hop",
+    "HopGetter",
+    "PinnedHttp",
+    "PinnedSession",
+    "remote_failure",
+]
 
 FETCHER_USER_AGENT = "KalaVigyan-Fetcher/1 (+https://kalavigyan.vercel.app)"
 REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
@@ -44,14 +53,49 @@ class _Unreachable(Exception):
     pass
 
 
+class HopGetter(Protocol):
+    async def get(self, target: Target, *, max_bytes: int, timeout: float, accept: str) -> Hop: ...
+
+
 @dataclass
 class PinnedHttp:
     resolve: Resolver = system_resolver
     ssl_context: ssl.SSLContext = field(default_factory=httpx.create_ssl_context)
     transport: httpx.AsyncBaseTransport | None = None
 
+    def session(self) -> PinnedSession:
+        return PinnedSession(self)
+
     async def get(self, target: Target, *, max_bytes: int, timeout: float, accept: str) -> Hop:
-        addresses = await public_addresses(target.host, target.port, resolve=self.resolve, url=target.url)
+        async with self.session() as session:
+            return await session.get(target, max_bytes=max_bytes, timeout=timeout, accept=accept)
+
+    def client(self) -> httpx.AsyncClient:
+        if self.transport is not None:
+            return httpx.AsyncClient(transport=self.transport, follow_redirects=False, trust_env=False)
+        return httpx.AsyncClient(verify=self.ssl_context, follow_redirects=False, trust_env=False)
+
+
+@dataclass
+class PinnedSession:
+    http: PinnedHttp
+    _clients: dict[tuple[str, IpAddress], httpx.AsyncClient] = field(default_factory=dict)
+
+    async def __aenter__(self) -> PinnedSession:
+        return self
+
+    async def __aexit__(self, *exc: object) -> None:
+        await self.aclose()
+
+    async def aclose(self) -> None:
+        clients, self._clients = list(self._clients.values()), {}
+        for client in clients:
+            await client.aclose()
+
+    async def get(self, target: Target, *, max_bytes: int, timeout: float, accept: str) -> Hop:
+        addresses = await public_addresses(
+            target.host, target.port, resolve=self.http.resolve, url=target.url
+        )
         for address in addresses:
             try:
                 return await self._get_from(
@@ -66,32 +110,30 @@ class PinnedHttp:
     async def _get_from(
         self, address: IpAddress, target: Target, *, max_bytes: int, timeout: float, accept: str
     ) -> Hop:
-        async with self._client(timeout) as client:
-            request = client.build_request(
-                "GET",
-                f"https://{_netloc(address)}{target.path}",
-                headers={
-                    "Host": target.host,
-                    "User-Agent": FETCHER_USER_AGENT,
-                    "Accept": accept,
-                    "Accept-Encoding": "identity",
-                },
-                extensions={"sni_hostname": target.host},
-            )
-            response = await _send(client, request, target)
-            try:
-                return await _read(response, target, max_bytes)
-            finally:
-                await response.aclose()
-
-    def _client(self, timeout: float) -> httpx.AsyncClient:
-        if self.transport is not None:
-            return httpx.AsyncClient(
-                transport=self.transport, timeout=timeout, follow_redirects=False, trust_env=False
-            )
-        return httpx.AsyncClient(
-            verify=self.ssl_context, timeout=timeout, follow_redirects=False, trust_env=False
+        client = self._client_for(target.host, address)
+        request = client.build_request(
+            "GET",
+            f"https://{_netloc(address)}{target.path}",
+            headers={
+                "Host": target.host,
+                "User-Agent": FETCHER_USER_AGENT,
+                "Accept": accept,
+                "Accept-Encoding": "identity",
+            },
+            extensions={"sni_hostname": target.host},
+            timeout=timeout,
         )
+        response = await _send(client, request, target)
+        try:
+            return await _read(response, target, max_bytes)
+        finally:
+            await response.aclose()
+
+    def _client_for(self, host: str, address: IpAddress) -> httpx.AsyncClient:
+        client = self._clients.get((host, address))
+        if client is None:
+            client = self._clients[(host, address)] = self.http.client()
+        return client
 
 
 def remote_failure(hop: Hop) -> ExternalFailure:

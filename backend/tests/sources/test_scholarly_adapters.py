@@ -18,6 +18,12 @@ from app.sources.scholarly.springer_nature import SpringerNatureAdapter
 from .recorded import CONTACT, RETRIEVED, Recorder, Reply, fixed_clock, source_http
 
 QUERY = SearchQuery(text="alizarin mordant cotton")
+EUROPE_PMC_RECORD = {
+    "www.ebi.ac.uk/europepmc/webservices/rest/search": Reply("europe_pmc_record.json"),
+    "www.ebi.ac.uk/europepmc/webservices/rest/PMC13503851/fullTextXML": Reply(
+        "europe_pmc_full_text_missing.json", status=500
+    ),
+}
 
 
 def adapter_for(cls, routes: dict, **options):
@@ -89,6 +95,7 @@ async def test_crossref_search_and_fetch() -> None:
             "api.crossref.org/works": Reply("crossref_search.json"),
             "api.crossref.org/works/10.55041/ijsrem46137": Reply("crossref_work.json"),
         },
+        contact_email=CONTACT,
     )
     items = await adapter.search(QUERY, 5)
     assert [item.id for item in items] == [
@@ -103,10 +110,9 @@ async def test_crossref_search_and_fetch() -> None:
     assert article.publisher == "Edtech Publishers (OPC) Private Limited"
     assert (article.source_type, article.trust) == ("PAPER", "A")
     assert recorder.requests[0].url.params["filter"] == "has-abstract:true"
-    assert "mailto" not in recorder.requests[0].url.params
-    assert recorder.requests[0].headers["User-Agent"] == "KalaVigyan/1 (+https://kalavigyan.vercel.app)"
-    assert CONTACT not in str(recorder.requests[0].url)
+    assert recorder.requests[0].url.params["mailto"] == CONTACT
     document = await adapter.fetch("crossref:10.55041/ijsrem46137")
+    assert recorder.requests[1].url.params["mailto"] == CONTACT
     assert document.text.startswith(
         "Abstract Clothing serves several essential functions, including protection, identification, and adornment."
     )
@@ -118,6 +124,7 @@ async def test_crossref_unknown_doi_is_not_found() -> None:
     adapter, _ = adapter_for(
         CrossrefAdapter,
         {"api.crossref.org/works/10.9999/missing": Reply("crossref_missing.txt", status=404)},
+        contact_email=CONTACT,
     )
     with pytest.raises(ExternalFailure) as failure:
         await adapter.fetch("crossref:10.9999/missing")
@@ -204,9 +211,7 @@ async def test_europe_pmc_search_and_fetch() -> None:
         "Scientific reports",
     )
     assert first.url == "https://doi.org/10.1038/s41598-026-52122-5"
-    fetcher, fetch_recorder = adapter_for(
-        EuropePmcAdapter, {"www.ebi.ac.uk/europepmc/webservices/rest/search": Reply("europe_pmc_record.json")}
-    )
+    fetcher, fetch_recorder = adapter_for(EuropePmcAdapter, EUROPE_PMC_RECORD)
     document = await fetcher.fetch("europe_pmc:MED:42168406")
     assert document.text.startswith("This study presents an improved natural dyeing method for wool fabric")
     assert fetch_recorder.requests[0].url.params["query"] == "EXT_ID:42168406 AND SRC:MED"
@@ -347,7 +352,7 @@ async def test_a_record_without_an_id_is_left_out_and_logged(caplog: pytest.LogC
     ],
 )
 def test_every_adapter_meets_the_source_adapter_contract(cls) -> None:
-    options = {"contact_email": CONTACT} if cls is OpenAlexAdapter else {}
+    options = {"contact_email": CONTACT} if cls in (OpenAlexAdapter, CrossrefAdapter) else {}
     if cls in (CoreAdapter, ElsevierAdapter, SpringerNatureAdapter):
         options["api_key"] = "key"
     adapter, _ = adapter_for(cls, {}, **options)
@@ -356,9 +361,7 @@ def test_every_adapter_meets_the_source_adapter_contract(cls) -> None:
 
 
 async def test_a_quote_taken_from_a_fetched_document_passes_the_contract_check() -> None:
-    adapter, _ = adapter_for(
-        EuropePmcAdapter, {"www.ebi.ac.uk/europepmc/webservices/rest/search": Reply("europe_pmc_record.json")}
-    )
+    adapter, _ = adapter_for(EuropePmcAdapter, EUROPE_PMC_RECORD)
     document = await adapter.fetch("europe_pmc:MED:42168406")
     quote = Quote(text="integrating iron mordant treatment with atmospheric-pressure")
     quoted = EvidenceItem.model_validate(document.item.model_dump() | {"quotes": [quote]})

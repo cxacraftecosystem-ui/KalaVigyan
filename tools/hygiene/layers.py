@@ -27,6 +27,7 @@ LAYER_IMPORTS: dict[str, frozenset[str]] = {
     "services": frozenset(
         {
             "services",
+            "providers",
             "science",
             "geo",
             "planner",
@@ -40,7 +41,7 @@ LAYER_IMPORTS: dict[str, frozenset[str]] = {
             "data",
         }
     ),
-    "providers": frozenset({"providers", "services", "research", "core", "models"}),
+    "providers": frozenset({"providers", "research", "core", "models"}),
     "voice": frozenset(
         {"voice", "providers", "services", "composer", "schemas", "research", "core", "models"}
     ),

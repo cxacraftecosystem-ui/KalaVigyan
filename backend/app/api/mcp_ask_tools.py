@@ -100,7 +100,7 @@ async def _asked(context: ToolContext, user: User, arguments: Ask) -> AnswerAsk:
     if refusal is not None:
         raise InvalidInput(refusal)
     style = await asker_reading_style(context.session, user)
-    throttled = throttle_refusal(user)
+    throttled = await throttle_refusal(user)
     if throttled is not None:
         raise InvalidInput(throttled)
     await release_connection(context.session)

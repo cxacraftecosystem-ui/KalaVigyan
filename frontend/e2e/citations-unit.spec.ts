@@ -65,6 +65,7 @@ test("chemical equations go through mhchem with trust off", () => {
 
 test("source types and reliability tiers read as words in the source dialog", () => {
   expect(sourceKindLabel("WEB_PAGE")).toBe("Web page");
+  expect(sourceKindLabel("MEDIA")).toBe("Media file");
   expect(sourceKindLabel("SOMETHING_NEW")).toBe("Other");
   expect(sourceReliabilityLabel("A")).toBe("A · peer-reviewed or official");
   expect(sourceReliabilityLabel("C")).toBe("C · general web");

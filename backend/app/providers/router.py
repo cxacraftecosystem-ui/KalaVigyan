@@ -14,11 +14,11 @@ from sqlalchemy import case, func, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core import managed_keys
 from app.core.errors import SPEND_REFUSAL_KIND, STOP_KINDS, AppError
 from app.core.logging import current_request_id
 from app.models import ManagedSecret, Provider, RoutePolicy, SecretTestResult, UsageEvent
-from app.services import app_settings, managed_secrets
-from app.services.ai_providers import (
+from app.providers.catalogue import (
     MEDIA_TASKS,
     PUBLIC_TEXT_TASKS,
     AiTask,
@@ -28,7 +28,7 @@ from app.services.ai_providers import (
     task_of,
 )
 
-from . import budget
+from . import budget, spend_settings
 from .base import Adapter, ChatRequest, ChatResult, ProviderError
 from .registry import build_adapter, merge_learned
 
@@ -280,7 +280,7 @@ async def reserve(
     units: float | None = None,
 ) -> tuple[uuid.UUID, budget.BudgetDecision]:
     await session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": BUDGET_LOCK_KEY})
-    ceilings = budget.Ceilings.from_settings(await app_settings.load_all(session))
+    ceilings = budget.Ceilings.from_settings(await spend_settings.load_spend_settings(session))
     spend = await current_spend(session, principal)
     answer = principal.answer
     decision = budget.evaluate(
@@ -369,14 +369,14 @@ async def mark_key_failed(session: AsyncSession, key_name: str, value: str | Non
     result = await session.execute(
         update(ManagedSecret)
         .where(ManagedSecret.key == key_name)
-        .values(lastStatus=managed_secrets.STATUS_FAILED, lastCheckedAt=now, lastError=message[:500])
+        .values(lastStatus=managed_keys.STATUS_FAILED, lastCheckedAt=now, lastError=message[:500])
     )
     if not result.rowcount and value:
         payload = {
-            "status": managed_secrets.STATUS_FAILED,
+            "status": managed_keys.STATUS_FAILED,
             "checkedAt": now,
             "error": message[:500],
-            "fingerprint": managed_secrets.fingerprint(value),
+            "fingerprint": managed_keys.fingerprint(value),
         }
         await session.execute(
             insert(SecretTestResult)
@@ -384,7 +384,7 @@ async def mark_key_failed(session: AsyncSession, key_name: str, value: str | Non
             .on_conflict_do_update(index_elements=[SecretTestResult.key], set_=payload)
         )
     await session.commit()
-    managed_secrets.invalidate()
+    managed_keys.invalidate()
 
 
 async def _persist_learned(session: AsyncSession, choice: RouteChoice, adapter: Adapter) -> None:
@@ -485,11 +485,11 @@ async def run(
         routes = [
             tuning.applied(route) if tuning else route for route in await load_routes(session, resolved)
         ]
-        settings_values = await app_settings.load_all(session)
-        overrides = settings_values.get(app_settings.MODEL_PRICES) or {}
+        settings_values = await spend_settings.load_spend_settings(session)
+        overrides = settings_values.get(spend_settings.MODEL_PRICES) or {}
         ceilings = budget.Ceilings.from_settings(settings_values)
         spend = await current_spend(session, who)
-        await managed_secrets.refresh_if_stale(session)
+        await managed_keys.refresh_if_stale(session)
 
     degrade = budget.degrades(ceilings, spend, role=who.role)
 
@@ -529,7 +529,7 @@ async def run(
                 reason=decision.reason,
                 attempts=attempts,
             )
-        key_value = managed_secrets.peek_secret(choice.key_name)
+        key_value = managed_keys.peek_secret(choice.key_name)
         outcome: _CallOutcome | None = None
         failure: ProviderError | None = None
         adapter: Adapter | None = None

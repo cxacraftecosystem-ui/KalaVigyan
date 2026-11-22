@@ -100,6 +100,7 @@ def test_reused_pieces_stream_first() -> None:
 def test_every_source_type_has_a_trail_group() -> None:
     assert set(TRAIL_GROUP_OF_SOURCE) == set(SourceType.__args__)
     assert set(TRAIL_GROUP_OF_SOURCE.values()) == set(TRAIL_GROUPS) - {"STORED"}
+    assert TRAIL_GROUP_OF_SOURCE["MEDIA"] == TRAIL_GROUP_OF_SOURCE["WEB_PAGE"] == "WEB"
 
 
 @pytest.mark.parametrize(

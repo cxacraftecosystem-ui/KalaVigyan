@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from app.core.errors import InvalidInput
 from app.models import Craft, ImageContribution, UploadLink, User
+from app.research.image_screens import ScreenTools
 from app.research.upload_links import (
     SlotDeclaration,
     UploadSlot,
@@ -19,7 +20,6 @@ from app.research.upload_links import (
     upload_page_url,
 )
 from app.services import image_contributions as images, knowledge_view, upload_links as links
-from app.services.image_screens import ScreenTools
 
 NOW = datetime(2026, 11, 19, 12, tzinfo=UTC)
 CRAFT = Craft(id=uuid.UUID(int=7), name="Kutch Ajrakh", slug="Kutch-Ajrakh")

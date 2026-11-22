@@ -11,7 +11,7 @@ from app.api.mcp_tools import ToolContext, answer
 from app.api.proposal_limits import refuse_tool_when_spent, wait_words
 from app.api.routes import knowledge_writes
 from app.core import allowances
-from app.core.allowances import ALLOWANCE_UNREAD, AllowanceUnread, Ask, Bucket, Taken
+from app.core.allowances import ALLOWANCE_UNREAD, AllowanceUnread, Ask, Bucket, Counted, Taken
 from app.core.db import get_session
 from app.core.deps import get_current_user
 from app.core.mcp_scopes import CONTRIBUTE_SCOPE, READ_SCOPE
@@ -110,7 +110,7 @@ def spent_already(counter: MemoryCounter, kind: str, user: User) -> None:
 
 
 class UnreadCounter:
-    async def take(self, bucket: Bucket, ask: Ask) -> int:
+    async def take(self, bucket: Bucket, ask: Ask) -> Counted:
         raise AllowanceUnread(f"the {bucket.kind} allowance of {bucket.holder} was not counted")
 
 
@@ -332,4 +332,4 @@ def test_the_site_s_picture_and_component_routes_share_the_limits(
     assert response.status_code == 429 and "retry-after" in response.headers
     student = person("STUDENT", 33)
     assert client(student).post(path, json={}).status_code == 403
-    assert (str(student.id), kind) not in allowance_counter.used
+    assert not allowance_counter.asked(str(student.id), kind)
