@@ -124,7 +124,7 @@ headline set per facet. The production Geo ETL runs' artifacts (runs 43884310432
    region route since the tabbed page was retired, so no "More" view was added; every value stays
    on the map's district view and its layers.
 12. **State series are stored by each load.** `StateEnvValue` (migration
-   `0077_state_values_and_reach_districts`) holds each state's grouped series; one statement in
+   `0077_state_and_reach_districts`) holds each state's grouped series; one statement in
    backend Python (`services/state_values.state_values_insert`) is compiled to
    `shared/region.state-values.sql`, which `etl/geo/load.py` runs after every load and
    `seed_districts` runs after every seed, so the grouping keeps one home and a request reads rows
@@ -159,7 +159,7 @@ headline set per facet. The production Geo ETL runs' artifacts (runs 43884310432
 
 ## Consequences
 
-- Migration `0077_state_values_and_reach_districts` adds `StateEnvValue` and `RiverReachDistrict`
+- Migration `0077_state_and_reach_districts` adds `StateEnvValue` and `RiverReachDistrict`
   and restores the CHIRPS and GHCN CAMS periods the registry sync had overwritten, from their
   stored trend rows. Until the next river load `RiverReachDistrict` is empty, so `rivers_loaded` is
   false and no new region story is built, and a stored story lights its districts at the source

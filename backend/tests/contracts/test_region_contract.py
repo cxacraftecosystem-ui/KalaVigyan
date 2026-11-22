@@ -140,7 +140,7 @@ def test_region_datasets_are_exactly_the_cited_ones() -> None:
 def test_layer_classes_are_contiguous_and_hold_every_value() -> None:
     body = golden_json("region.layer.golden.json")
     gap = copy.deepcopy(body)
-    gap["classes"][1]["min"] = 7.1
+    gap["classes"][1]["min"] = (gap["classes"][1]["min"] + gap["classes"][1]["max"]) / 2
     with pytest.raises(ValidationError, match="contiguous"):
         MapLayer.model_validate(gap)
     outside = copy.deepcopy(body)

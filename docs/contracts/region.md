@@ -161,7 +161,7 @@ is unchanged; the client keeps the name `RegionDataset` (`datasetShape`).
 - **State aggregates** (`valuesFrom` `STATE`), over the state's districts with polygons that
   have the value, weighted by district area (`ST_Area` of `AdminDistrict.geom` on the sphere). The
   sums are stored, not computed per request: `StateEnvValue` (migration
-  `0077_state_values_and_reach_districts`) holds one row per state and series (dataset, variable,
+  `0077_state_and_reach_districts`) holds one row per state and series (dataset, variable,
   `depthOrPeriod`, stat, unit, value text) of the stats below, with its district count,
   area-weighted sum, area, total, minimum, maximum, grids and methods, and the count and area of the
   state's districts holding any value of the dataset. `etl/geo/load.py` refreshes it after every
@@ -276,7 +276,7 @@ RiverTrace {datasetCode: "HYDRORIVERS_1_0", mainRiv, reachIds[] (>= 1), district
   Actions, `riverlines`) in `RiverReach` (a `LINESTRING` in EPSG:4326) and `RiverBasin`
   (`mainRiv`, the `HYDRORIVERS_1_0` dataset row, reach count, topology SHA-256), migration
   `0016_river_reaches`, with the districts each reach crosses in `RiverReachDistrict` (migration
-  `0077_state_values_and_reach_districts`, decision 0153); a load replaces all three tables.
+  `0077_state_and_reach_districts`, decision 0153); a load replaces all three tables.
 - **The traced path.** A river is shown from its source to its outlet: from a reach downstream
   over `nextDown` to the outlet, and upstream at each junction to a reach of the named river the
   start reach belongs to, if any (`river_trace.traced_reach_ids(..., named=...)`, decision 0153),

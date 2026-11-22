@@ -55,6 +55,6 @@ async def test_a_period_the_registry_overwrote_is_restored_from_the_loaded_trend
     await session.flush()
     session.add_all([trend(chirps.id, "1981-2024"), trend(chirps.id, "1981-2025"), trend(soil.id, "2020")])
     await session.flush()
-    await session.execute(text(migration("0077_state_values_and_reach_districts").RUN_PERIOD_REPAIR))
+    await session.execute(text(migration("0077_state_and_reach_districts").RUN_PERIOD_REPAIR))
     periods = dict((await session.execute(select(EnvDataset.code, EnvDataset.period))).all())
     assert periods == {"CHIRPS_3_0": "1981-2025", "GHCN_CAMS_T2M": "1981-2025", "SOILGRIDS_2_0": OVERWRITTEN}

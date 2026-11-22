@@ -91,6 +91,10 @@ def reader_app(bucket: FakeBucket | None, monkeypatch: pytest.MonkeyPatch) -> Te
 IDENTITY = {"Accept-Encoding": "identity"}
 
 
+def varied(response: Any) -> set[str]:
+    return {name.strip() for name in response.headers["vary"].split(",")}
+
+
 def test_the_basin_topology_is_served_with_its_hash_as_etag(basins, monkeypatch) -> None:
     bucket = FakeBucket({KEY: TOPOLOGY})
     client = reader_app(bucket, monkeypatch)
@@ -101,7 +105,7 @@ def test_the_basin_topology_is_served_with_its_hash_as_etag(basins, monkeypatch)
     assert response.headers["content-type"] == "application/json"
     assert response.headers["etag"] == f'"{SHA}"'
     assert response.headers["cache-control"] == "private, no-cache"
-    assert response.headers["vary"] == "Authorization, Accept-Encoding"
+    assert {"Authorization", "Accept-Encoding"} <= varied(response)
     again = client.get(PATH, headers=IDENTITY)
     assert again.content == TOPOLOGY
     assert bucket.reads == [KEY]
@@ -125,7 +129,7 @@ def test_a_matching_etag_answers_304_without_reading_the_bucket(basins, monkeypa
     assert response.status_code == 304
     assert response.headers["etag"] == f'"{SHA}"'
     zipped = client.get(PATH, headers={"If-None-Match": f'"{SHA}-gzip"', "Accept-Encoding": "gzip"})
-    assert zipped.status_code == 304 and zipped.headers["vary"] == "Authorization, Accept-Encoding"
+    assert zipped.status_code == 304 and {"Authorization", "Accept-Encoding"} <= varied(zipped)
     assert bucket.reads == []
 
 

@@ -178,7 +178,7 @@ district reads nothing and needs no key.
 
 - `RiverBasin`: `mainRiv` (key), `datasetId`, `reachCount`, `topologySha256`.
 - `RiverReach`: `hyrivId` (key), `nextDown`, `mainRiv`, `ordStra`, `uplandSkm`, `disAvCms`, `lengthKm`, `geom` (written as hex EWKB).
-- `RiverReachDistrict`: `hyrivId` and `districtLgd` (key, each a foreign key that cascades), `entry` (0 to 1), from `river_reach_districts.parquet`, keeping only districts `AdminDistrict` holds (an empty `AdminDistrict` stops the load: seed the districts first); migration `0077_state_values_and_reach_districts`. The backend reads it for every trace and crossing (`services/river_store`), so a load that changes the district shapes needs the river load again.
+- `RiverReachDistrict`: `hyrivId` and `districtLgd` (key, each a foreign key that cascades), `entry` (0 to 1), from `river_reach_districts.parquet`, keeping only districts `AdminDistrict` holds (an empty `AdminDistrict` stops the load: seed the districts first); migration `0077_state_and_reach_districts`. The backend reads it for every trace and crossing (`services/river_store`), so a load that changes the district shapes needs the river load again.
 
 It reads the database URL from `DATABASE_URL` (`--dsn-env`) and the bucket from `S3_BUCKET` (`--bucket-env`), AWS credentials from the standard `AWS_*` variables (on GitHub Actions the short-lived ones of the `kalavigyan-river-load` role, decision 0050), and never takes a value on the command line. Exit codes: 0 loaded, 1 validation failed, 2 an env var not set; a missing table stops it with a pointer to this file. `backend/tests/contracts/test_river_contract.py` pins these column lists, the topology object name and the key to the backend's models and `services/naming`.
 
