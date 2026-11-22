@@ -14,13 +14,18 @@ from .craft_text import core_key, key_phrases
 __all__ = [
     "PLACES_ABROAD_FILE",
     "PLACES_ABROAD_SCHEMA_VERSION",
+    "SOVEREIGN_NAMES_FILE",
     "PlacesAbroad",
     "load_places_abroad",
+    "load_sovereign_names",
     "parse_places_abroad",
+    "parse_sovereign_names",
 ]
 
 PLACES_ABROAD_FILE = DATA_DIR / "places_abroad.json"
+SOVEREIGN_NAMES_FILE = DATA_DIR / "places_abroad.natural_earth.json"
 PLACES_ABROAD_SCHEMA_VERSION = 1
+SOVEREIGN_NAMES_SCHEMA_VERSION = 1
 NAME_MIN_CHARS = 4
 INDIA = frozenset({"india", "indian"})
 
@@ -30,6 +35,11 @@ class PlacesAbroad:
     names: Mapping[str, str]
     other_senses: re.Pattern[str] | None
     longest: int
+    left_out: frozenset[str] = frozenset()
+
+    def accounts_for(self, name: str) -> bool:
+        key = core_key(name)
+        return key in self.names or key in self.left_out
 
     def named_in(self, text: str) -> tuple[str, ...]:
         found: list[str] = []
@@ -57,12 +67,44 @@ def parse_places_abroad(raw: Mapping[str, Any]) -> PlacesAbroad:
         names=MappingProxyType(names),
         other_senses=_senses_pattern(senses) if senses else None,
         longest=max(len(key.split()) for key in names),
+        left_out=_left_out(raw.get("leftOut") or {}, names),
     )
+
+
+def parse_sovereign_names(raw: Mapping[str, Any]) -> tuple[str, ...]:
+    if raw.get("schemaVersion") != SOVEREIGN_NAMES_SCHEMA_VERSION:
+        raise ValueError(f"sovereign names need schemaVersion {SOVEREIGN_NAMES_SCHEMA_VERSION}")
+    names = raw.get("names")
+    if (
+        not isinstance(names, list)
+        or not names
+        or not all(isinstance(name, str) and name.strip() for name in names)
+    ):
+        raise ValueError("sovereign names are a list of names")
+    if any(set(core_key(name).split()) & INDIA for name in names):
+        raise ValueError("sovereign names leave India out")
+    return tuple(names)
 
 
 @lru_cache(maxsize=1)
 def load_places_abroad() -> PlacesAbroad:
     return parse_places_abroad(json.loads(PLACES_ABROAD_FILE.read_text(encoding="utf-8")))
+
+
+def load_sovereign_names() -> tuple[str, ...]:
+    return parse_sovereign_names(json.loads(SOVEREIGN_NAMES_FILE.read_text(encoding="utf-8")))
+
+
+def _left_out(reasons: Mapping[str, Any], names: Mapping[str, str]) -> frozenset[str]:
+    unexplained = sorted(
+        label for label, reason in reasons.items() if not isinstance(reason, str) or not reason
+    )
+    if unexplained:
+        raise ValueError(f"a name left out says why: {', '.join(unexplained)}")
+    listed = sorted(label for label in reasons if core_key(label) in names)
+    if listed:
+        raise ValueError(f"left out but listed: {', '.join(listed)}")
+    return frozenset(core_key(label) for label in reasons)
 
 
 def _keyed(labels: Iterable[str]) -> dict[str, str]:

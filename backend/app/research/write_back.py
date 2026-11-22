@@ -23,8 +23,10 @@ from .vocabulary import (
 )
 
 __all__ = [
+    "CATEGORY_KEY_PREFIX",
     "DEDUPE_NAMESPACE",
     "FOUND_BY",
+    "HELD_REASON_MAX_CHARS",
     "WRITE_BACK_ORIGIN",
     "WRITE_BACK_STATUS",
     "ClaimWriteBack",
@@ -40,8 +42,10 @@ WRITE_BACK_SCHEMA_VERSION = 1
 WRITE_BACK_ORIGIN = "LIVE_RESEARCH"
 WRITE_BACK_STATUS = "APPROVED"
 DEDUPE_NAMESPACE = "claim-write-back/v2"
+CATEGORY_KEY_PREFIX = "category:"
 KEY_SEPARATOR = "\x1f"
 FOUND_BY = ("ANSWER", "BACKGROUND")
+HELD_REASON_MAX_CHARS = 500
 
 FoundBy = Literal[*FOUND_BY]
 
@@ -73,6 +77,8 @@ class WriteBackCitation(ContractModel):
 class ClaimWriteBack(ContractModel):
     schema_version: Literal[1] = WRITE_BACK_SCHEMA_VERSION
     craft_slug: str | None = Field(min_length=1, max_length=SLUG_MAX_CHARS)
+    category_slug: str | None = Field(default=None, min_length=1, max_length=SLUG_MAX_CHARS)
+    held_because: str | None = Field(default=None, min_length=1, max_length=HELD_REASON_MAX_CHARS)
     subject: WriteBackSubject
     field: Discipline | None = None
     predicate: str = Field(min_length=1, max_length=120)
@@ -105,6 +111,14 @@ class ClaimWriteBack(ContractModel):
         return self
 
     @model_validator(mode="after")
+    def _one_owner(self) -> Self:
+        if self.craft_slug is not None and self.category_slug is not None:
+            raise ValueError("a fact is filed under a craft or under a craft family's category, not both")
+        if self.held_because is not None and self.craft_slug is None:
+            raise ValueError("a held fact names the craft it is suggested for")
+        return self
+
+    @model_validator(mode="after")
     def _figures_are_quoted(self) -> Self:
         quotes = self.passing_quotes
         missing = unsupported_figures(self.text, quotes)
@@ -130,7 +144,9 @@ class ClaimWriteBack(ContractModel):
 
     @property
     def dedupe_key(self) -> str:
-        return claim_dedupe_key(self.craft_slug, self.stored_field, self.text)
+        return claim_dedupe_key(
+            self.craft_slug, self.stored_field, self.text, category_slug=self.category_slug
+        )
 
 
 class WriteBackResult(ContractModel):
@@ -139,8 +155,11 @@ class WriteBackResult(ContractModel):
     created: bool
 
 
-def claim_dedupe_key(craft_slug: str | None, field: str | None, text: str) -> str:
-    parts = [DEDUPE_NAMESPACE, craft_slug or "", field or "", _fold(text)]
+def claim_dedupe_key(
+    craft_slug: str | None, field: str | None, text: str, *, category_slug: str | None = None
+) -> str:
+    owner = craft_slug or (CATEGORY_KEY_PREFIX + category_slug if category_slug else "")
+    parts = [DEDUPE_NAMESPACE, owner, field or "", _fold(text)]
     return hashlib.sha256(KEY_SEPARATOR.join(parts).encode("utf-8")).hexdigest()
 
 

@@ -1220,9 +1220,6 @@ Last updated: 2026-11-20.
   GitHub secrets and deploy the backend, then set `NEXT_PUBLIC_YAHOO_CLIENT_ID` in Vercel
   (`docs/RUNBOOK.md`, Yahoo sign-in).
 
-- Cloudflare Turnstile widget for `kalavigyan.vercel.app` (email sign-up is Google-only in
-  production until then).
-
 ## How this document is kept true
 
 | Change | What to do here |

@@ -22,6 +22,7 @@ from .craft_resolver import CraftIndexStore
 __all__ = [
     "ANCHOR_MIN_CHARS",
     "COMMON_NAME_USES",
+    "CraftFamily",
     "CraftNames",
     "NamedCraft",
     "craft_names",
@@ -39,13 +40,19 @@ class NamedCraft:
 
 
 @dataclass(frozen=True)
+class CraftFamily:
+    name: str
+    slug: str
+
+
+@dataclass(frozen=True)
 class CraftNames:
     lead: NamedCraft | None
     compared: tuple[NamedCraft, ...]
     index: CraftIndex
     places: frozenset[str]
     abroad: PlacesAbroad
-    family: str | None = None
+    family: CraftFamily | None = None
 
     @property
     def lead_slug(self) -> str | None:
@@ -75,7 +82,7 @@ def craft_names(
     lead: CraftRef | None,
     compared: Sequence[CraftRef] = (),
     *,
-    family: str | None = None,
+    family: CraftFamily | None = None,
     abroad: PlacesAbroad | None = None,
 ) -> CraftNames:
     others = list({c.slug: c for c in compared if lead is None or c.slug != lead.slug}.values())
@@ -149,18 +156,18 @@ def _words(name: str) -> list[str]:
     return ascii_key(name).split()
 
 
-async def _shared_family(session: AsyncSession, crafts: Sequence[CraftRef]) -> str | None:
+async def _shared_family(session: AsyncSession, crafts: Sequence[CraftRef]) -> CraftFamily | None:
     if not crafts:
         return None
     rows = (
         await session.execute(
-            select(Craft.slug, CraftCategory.name)
+            select(Craft.slug, CraftCategory.name, CraftCategory.slug.label("category"))
             .join(CraftSubCategory, CraftSubCategory.id == Craft.subCategoryId)
             .join(CraftCategory, CraftCategory.id == CraftSubCategory.categoryId)
             .where(Craft.slug.in_([craft.slug for craft in crafts]))
         )
     ).all()
-    families = {row.name for row in rows}
+    families = {CraftFamily(name=row.name, slug=row.category) for row in rows}
     if {row.slug for row in rows} != {craft.slug for craft in crafts} or len(families) != 1:
         return None
     return families.pop()

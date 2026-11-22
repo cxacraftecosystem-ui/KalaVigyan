@@ -12,6 +12,7 @@ from app.core.deps import get_current_user
 from app.core.errors import InvalidInput
 from app.main import create_app
 from app.models import User
+from app.research.page_revalidation import PageOwners
 from app.research.review_queue import (
     COMPONENTS,
     FACTS,
@@ -141,6 +142,46 @@ def test_an_approval_is_committed_and_answered(monkeypatch: pytest.MonkeyPatch) 
     assert refreshed == [DECIDED]
     assert seen == [(decisions.ItemRef(IMAGES, ITEM), QueueApproval(note="Clear."))]
     assert (session.commits, session.rollbacks) == (1, 0)
+
+
+def test_filing_a_fact_under_another_craft_refreshes_the_pages_it_leaves_after_the_commit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    order: list[str] = []
+    session = Recorded()
+
+    async def owners(opened: Any, kind: str, item_id: uuid.UUID, craft: str | None) -> PageOwners:
+        order.append(f"owners {kind} {craft}")
+        return PageOwners(crafts=("Old-Craft",))
+
+    async def approved(
+        opened: Any, ref: decisions.ItemRef, user: User, body: QueueApproval, *, now: datetime
+    ) -> Any:
+        order.append(f"approve {body.craft}")
+        return DECIDED
+
+    async def refresh(opened: Any, decision: QueueDecision) -> bool:
+        order.append(f"refresh the fact's pages after {session.commits} commit")
+        return True
+
+    async def pages(found: PageOwners) -> bool:
+        order.append(f"refresh {found.crafts[0]}")
+        return True
+
+    monkeypatch.setattr(route, "filed_owners", owners)
+    monkeypatch.setattr(decisions, "approve_item", approved)
+    monkeypatch.setattr(route, "refresh_after_decision", refresh)
+    monkeypatch.setattr(route, "refresh_pages", pages)
+    response = client("PROFESSOR", session).post(
+        f"/api/review-queue/FACTS/{ITEM}/approve", json={"craft": "Other-Craft"}
+    )
+    assert response.status_code == 200
+    assert order == [
+        "owners FACTS Other-Craft",
+        "approve Other-Craft",
+        "refresh the fact's pages after 1 commit",
+        "refresh Old-Craft",
+    ]
 
 
 @pytest.mark.parametrize(

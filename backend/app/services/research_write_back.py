@@ -55,9 +55,18 @@ class GatedWrite:
     skipped: tuple[SkippedSentence, ...]
     vectored: int
     live: bool
+    held_keys: frozenset[str] = frozenset()
 
     def claim_ids(self) -> dict[str, uuid.UUID]:
         return {result.dedupe_key: result.claim_id for result in (*self.held_instead, *self.results)}
+
+    @property
+    def filed(self) -> tuple[WriteBackResult, ...]:
+        return tuple(result for result in self.results if result.dedupe_key not in self.held_keys)
+
+    @property
+    def held(self) -> tuple[WriteBackResult, ...]:
+        return tuple(result for result in self.results if result.dedupe_key in self.held_keys)
 
 
 @dataclass(frozen=True)
@@ -68,6 +77,7 @@ class StoredResearch:
     embedded: EmbeddedCounts
     sentence_keys: tuple[str | None, ...] = ()
     embedding_error: str | None = None
+    held: tuple[WriteBackResult, ...] = ()
 
     @property
     def created(self) -> int:
@@ -93,20 +103,23 @@ async def store_live_research(
         pack, answer, found_by=found_by, answer_id=answer_id, names=names, field_documents=fields
     )
     written = await write_through_gates(
-        session, plan.claims, _documents(pack, fields), embed=embed, judge=judge
+        session, (*plan.claims, *plan.held), _documents(pack, fields), embed=embed, judge=judge
     )
+    held = [claim for claim in written.claims if claim.dedupe_key in written.held_keys]
     _log_skipped(answer_id, (*plan.skipped, *written.skipped))
+    _log_held(answer_id, held)
     await session.commit()
-    await refresh_claim_pages(session, shown_results(written.results, live=written.live))
-    cited = cited_source_ids(written.claims, kept)
-    embedded, error = await _embed_written(session, embed, list(written.results), cited)
+    await refresh_claim_pages(session, shown_results(written.filed, live=written.live))
+    cited = cited_source_ids([claim for claim in written.claims if claim not in held], kept)
+    embedded, error = await _embed_written(session, embed, list(written.filed), cited)
     return StoredResearch(
         source_ids=tuple(dict.fromkeys(kept.values())),
-        results=written.results,
+        results=written.filed,
         skipped=(*plan.skipped, *written.skipped),
         embedded=EmbeddedCounts(claims=embedded.claims + written.vectored, chunks=embedded.chunks),
         sentence_keys=plan.sentence_keys,
         embedding_error=error,
+        held=written.held,
     )
 
 
@@ -121,9 +134,13 @@ async def write_through_gates(
     gated = await gate_write_back(session, claims, documents, embed=embed, judge=judge)
     placed = await research_placement(session)
     results = await SqlClaimWriter(session, status=placed.status).write(gated.claims)
+    held = frozenset(claim.dedupe_key for claim in gated.claims if claim.held_because is not None)
+    checked_at = datetime.now(UTC)
+    filed = [result for result in results if result.dedupe_key not in held]
+    waiting = [result for result in results if result.dedupe_key in held]
     vectored = await record_write_back_runs(
-        session, results, gated.runs, live=placed.live, checked_at=datetime.now(UTC)
-    )
+        session, filed, gated.runs, live=placed.live, checked_at=checked_at
+    ) + await record_write_back_runs(session, waiting, gated.runs, live=False, checked_at=checked_at)
     return GatedWrite(
         claims=gated.claims,
         results=tuple(results),
@@ -131,6 +148,7 @@ async def write_through_gates(
         skipped=gated.skipped,
         vectored=vectored,
         live=placed.live,
+        held_keys=held,
     )
 
 
@@ -158,6 +176,18 @@ def _log_skipped(answer_id: uuid.UUID | None, skipped: Sequence[SkippedSentence]
     for sentence in skipped:
         logger.info(
             "%s wrote no fact for '%s': %s", writer, sentence.text[:SKIPPED_SHOWN_CHARS], sentence.reason
+        )
+
+
+def _log_held(answer_id: uuid.UUID | None, held: Sequence[ClaimWriteBack]) -> None:
+    writer = f"answer {answer_id}" if answer_id is not None else "the coverage job"
+    for claim in held:
+        logger.info(
+            "%s held '%s' for a reviewer, suggested for %s: it %s",
+            writer,
+            claim.text[:SKIPPED_SHOWN_CHARS],
+            claim.craft_slug,
+            claim.held_because,
         )
 
 

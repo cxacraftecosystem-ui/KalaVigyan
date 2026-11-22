@@ -12,6 +12,7 @@ from app.core.errors import InvalidInput
 from app.data.craft_master_loader import ID_NAMESPACE
 from app.models import Claim, ClaimSource, Concept, Craft, Process, ProcessStage, ReviewEvent
 from app.research.quotes import quote_key
+from app.research.review_switch import WAITING_STATUS
 from app.research.storable import storable_text
 from app.research.write_back import (
     WRITE_BACK_ORIGIN,
@@ -25,6 +26,8 @@ from app.research.write_back import (
 from .live_source_store import chunk_for_quote, source_for
 
 __all__ = [
+    "HELD_WRITE_BACK_ACTOR",
+    "HELD_WRITE_BACK_STATUS",
     "LIVE_CONCEPT_ORIGIN",
     "SHARED_CONCEPT_KEYS",
     "WRITE_BACK_ACTOR",
@@ -37,6 +40,11 @@ __all__ = [
 ]
 
 WRITE_BACK_ACTOR = "live_research"
+HELD_WRITE_BACK_ACTOR = "live_research_held"
+HELD_WRITE_BACK_STATUS = WAITING_STATUS
+HELD_NOTE = (
+    "; held for a reviewer: it {reason}; approving files it under {craft} or the craft the reviewer names"
+)
 LIVE_CONCEPT_ORIGIN = "live_research"
 STAGE_CONCEPT_TYPE = "PROCESS_STAGE"
 RAISABLE_LEVEL = "HYPOTHESIS"
@@ -98,7 +106,7 @@ class SqlClaimWriter:
                 evidenceLevel=claim.evidence_level,
                 levelReason=claim.level_reason,
                 origin=WRITE_BACK_ORIGIN,
-                status=self._status,
+                status=self._status_of(claim),
                 createdByKind="SYSTEM",
                 field=claim.stored_field,
             )
@@ -107,8 +115,11 @@ class SqlClaimWriter:
         )
         if inserted is None:
             return False
-        self._session.add(_event(claim_id, claim, from_level=None, to_status=self._status))
+        self._session.add(_event(claim_id, claim, from_level=None, to_status=self._status_of(claim)))
         return True
+
+    def _status_of(self, claim: ClaimWriteBack) -> str:
+        return HELD_WRITE_BACK_STATUS if claim.held_because is not None else self._status
 
     async def _raise_level(self, claim_id: uuid.UUID, claim: ClaimWriteBack) -> None:
         if claim.evidence_level != QUOTED_LEVEL:
@@ -225,21 +236,23 @@ async def _named_concept(
 def _event(
     claim_id: uuid.UUID, claim: ClaimWriteBack, *, from_level: str | None, to_status: str | None
 ) -> ReviewEvent:
+    held = claim.held_because is not None and to_status is not None
     return ReviewEvent(
         claimId=claim_id,
         actorKind="SYSTEM",
-        systemActor=WRITE_BACK_ACTOR,
+        systemActor=HELD_WRITE_BACK_ACTOR if held else WRITE_BACK_ACTOR,
         toStatus=to_status,
         fromLevel=from_level,
         toLevel=claim.evidence_level,
-        note=_note(claim),
+        note=_note(claim, held=held),
     )
 
 
-def _note(claim: ClaimWriteBack) -> str:
-    if claim.answer_id is None:
-        return f"{claim.found_by} write-back"
-    return f"{claim.found_by} write-back, answer {claim.answer_id}"
+def _note(claim: ClaimWriteBack, *, held: bool) -> str:
+    written = f"{claim.found_by} write-back"
+    if claim.answer_id is not None:
+        written += f", answer {claim.answer_id}"
+    return written + HELD_NOTE.format(reason=claim.held_because, craft=claim.craft_slug) if held else written
 
 
 def _folded(name: str) -> str:

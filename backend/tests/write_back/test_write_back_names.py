@@ -1,12 +1,18 @@
 import pytest
 
-from app.data.places_abroad import load_places_abroad, parse_places_abroad
+from app.data.places_abroad import (
+    load_places_abroad,
+    load_sovereign_names,
+    parse_places_abroad,
+    parse_sovereign_names,
+)
 from app.services.write_back_crafts import (
+    HELD_OTHER_PLACE,
+    HELD_UNNAMED,
     SKIP_ABROAD,
-    SKIP_OTHER_PLACE,
     SKIP_SEVERAL_CRAFTS,
-    SKIP_UNNAMED,
     CraftFiling,
+    FilingTexts,
     craft_filing,
 )
 
@@ -28,10 +34,11 @@ PORCELAIN = (
 KILN_SCHEDULE = "A kiln-schedule guide likewise says damp or thick-walled work needs a longer candle."
 POLYMER = "It adds that synthetic and polymer clays offer greater consistency, durability, and ease of use."
 IN_KHURJA = "In Khurja, shaped items are air-dried and then fired in kilns, often wood-fired or coal-fired."
+KHURJA_STUDY = "Clay bodies and glazes of Khurja pottery"
 
 
 def filed(text: str, *quotes: str, field: str | None = "MATERIALS", names=KHURJA_NAMES) -> CraftFiling:
-    return craft_filing(text, quotes, field=field, names=names)
+    return craft_filing(FilingTexts(text, tuple(quotes)), field=field, names=names)
 
 
 def test_a_fact_naming_khurja_stays_under_khurja() -> None:
@@ -65,14 +72,15 @@ def test_material_science_naming_no_craft_and_no_place_goes_to_the_family(text: 
     assert filed(text, field="CHEMISTRY") == CraftFiling(None, family=MUD_FAMILY)
 
 
-def test_a_statement_naming_no_craft_outside_material_science_has_no_home() -> None:
-    assert filed(KILN_SCHEDULE, field="PROCESS") == CraftFiling(None, SKIP_UNNAMED)
+def test_a_statement_naming_no_craft_outside_material_science_is_held_for_the_craft_researched() -> None:
+    assert filed(KILN_SCHEDULE, field="PROCESS") == CraftFiling(KHURJA.slug, held=HELD_UNNAMED)
     assert filed(KILN_SCHEDULE, field="PHYSICS") == CraftFiling(None, family=MUD_FAMILY)
-    assert filed(POLYMER, field="HISTORY") == CraftFiling(None, SKIP_UNNAMED)
+    assert filed(POLYMER, field="HISTORY") == CraftFiling(KHURJA.slug, held=HELD_UNNAMED)
 
 
-def test_without_a_family_material_science_naming_no_craft_has_no_home() -> None:
-    assert filed(PORCELAIN, names=names_for(KHURJA, family=None)) == CraftFiling(None, SKIP_UNNAMED)
+def test_without_a_family_material_science_naming_no_craft_is_held() -> None:
+    names = names_for(KHURJA, family=None)
+    assert filed(PORCELAIN, names=names) == CraftFiling(KHURJA.slug, held=HELD_UNNAMED)
 
 
 def test_a_fact_naming_another_catalogued_craft_goes_to_that_craft() -> None:
@@ -80,11 +88,11 @@ def test_a_fact_naming_another_catalogued_craft_goes_to_that_craft() -> None:
     assert filed(text, field="PROCESS") == CraftFiling(BLUE_POTTERY.slug)
 
 
-def test_a_fact_naming_another_indian_place_but_no_craft_has_no_home() -> None:
+def test_a_fact_naming_another_indian_place_but_no_craft_is_held() -> None:
     assert filed("Clays from Azamgarh fire black.") == CraftFiling(
-        None, SKIP_OTHER_PLACE.format(places="azamgarh")
+        KHURJA.slug, held=HELD_OTHER_PLACE.format(places="azamgarh")
     )
-    assert filed("In Uttar Pradesh, kaolin is fired white.").refused == SKIP_OTHER_PLACE.format(
+    assert filed("In Uttar Pradesh, kaolin is fired white.").held == HELD_OTHER_PLACE.format(
         places="uttar pradesh"
     )
 
@@ -96,7 +104,9 @@ def test_a_place_word_in_another_sense_names_no_place_abroad() -> None:
 
 
 def test_names_match_as_whole_words() -> None:
-    assert filed("The Khurjan kiln is fired with wood.", field="PROCESS") == CraftFiling(None, SKIP_UNNAMED)
+    assert filed("The Khurjan kiln is fired with wood.", field="PROCESS") == CraftFiling(
+        KHURJA.slug, held=HELD_UNNAMED
+    )
     assert filed("Ochre gives a brown colour.") == CraftFiling(None, family=MUD_FAMILY)
 
 
@@ -120,8 +130,8 @@ def test_a_craft_is_named_by_its_gi_place_but_not_by_its_state() -> None:
     names = names_for(AJRAKH)
     assert filed("In Kutch the cloth is washed twice.", field="PROCESS", names=names).slug == AJRAKH.slug
     assert filed("In Kachchh the cloth is washed twice.", field="PROCESS", names=names).slug == AJRAKH.slug
-    assert filed("In Gujarat the cloth is washed twice.", field="PROCESS", names=names).refused == (
-        SKIP_OTHER_PLACE.format(places="gujarat")
+    assert filed("In Gujarat the cloth is washed twice.", field="PROCESS", names=names) == CraftFiling(
+        AJRAKH.slug, held=HELD_OTHER_PLACE.format(places="gujarat")
     )
 
 
@@ -133,3 +143,55 @@ def test_the_places_abroad_list_names_no_place_of_india_and_each_other_sense_hol
         parse_places_abroad({"schemaVersion": 1, "countries": {"India": []}})
     with pytest.raises(ValueError, match="must hold a listed place word"):
         parse_places_abroad({"schemaVersion": 1, "countries": {"Peru": []}, "otherSenses": ["china clay"]})
+
+
+def test_every_sovereign_state_natural_earth_lists_is_a_place_abroad_or_left_out_for_a_reason() -> None:
+    abroad = load_places_abroad()
+    names = load_sovereign_names()
+    assert len(names) == 197
+    assert [name for name in names if not abroad.accounts_for(name)] == []
+    assert abroad.accounts_for("United Republic of Tanzania") and abroad.accounts_for("Mali")
+    assert abroad.named_in("Potters of Mali and Tonga") == ()
+    assert not abroad.accounts_for("Khurja")
+
+
+def test_a_name_left_out_says_why_and_is_not_also_listed() -> None:
+    with pytest.raises(ValueError, match="left out but listed: Peru"):
+        parse_places_abroad({"schemaVersion": 1, "countries": {"Peru": []}, "leftOut": {"Peru": "a reason"}})
+    with pytest.raises(ValueError, match="says why: Mali"):
+        parse_places_abroad({"schemaVersion": 1, "countries": {"Peru": []}, "leftOut": {"Mali": ""}})
+    with pytest.raises(ValueError, match="leave India out"):
+        parse_sovereign_names({"schemaVersion": 1, "names": ["Peru", "India"]})
+
+
+def test_the_sentence_s_own_words_decide_before_its_passage_and_its_source_s_title() -> None:
+    texts = FilingTexts(
+        "In Uttar Pradesh, kaolin is fired white.",
+        passages=("Jaipur blue pottery is fired once.",),
+        titles=(KHURJA_STUDY,),
+    )
+    assert craft_filing(texts, field="PROCESS", names=KHURJA_NAMES) == CraftFiling(
+        KHURJA.slug, held=HELD_OTHER_PLACE.format(places="uttar pradesh")
+    )
+
+
+def test_a_passage_decides_before_the_title_and_a_place_in_the_passage_alone_holds_the_fact() -> None:
+    blue = FilingTexts(
+        "The body is fired once.", passages=("Jaipur blue pottery is fired once.",), titles=(KHURJA_STUDY,)
+    )
+    assert craft_filing(blue, field="PROCESS", names=KHURJA_NAMES) == CraftFiling(BLUE_POTTERY.slug)
+    elsewhere = FilingTexts(
+        "The clay is aged.", passages=("Clays from Azamgarh are aged.",), titles=(KHURJA_STUDY,)
+    )
+    assert craft_filing(elsewhere, field="PROCESS", names=KHURJA_NAMES) == CraftFiling(KHURJA.slug)
+    untitled = FilingTexts("The clay is aged.", passages=("Clays from Azamgarh are aged.",))
+    assert craft_filing(untitled, field="CHEMISTRY", names=KHURJA_NAMES) == CraftFiling(
+        KHURJA.slug, held=HELD_OTHER_PLACE.format(places="azamgarh")
+    )
+
+
+def test_a_title_from_abroad_refuses_what_its_passage_left_unnamed() -> None:
+    texts = FilingTexts("Feldspar melts first.", titles=("Characterisation of Nigerian porcelain bodies",))
+    assert craft_filing(texts, field="CHEMISTRY", names=KHURJA_NAMES) == CraftFiling(
+        None, SKIP_ABROAD.format(places="Nigerian")
+    )

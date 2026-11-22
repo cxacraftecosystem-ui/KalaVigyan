@@ -332,6 +332,12 @@ A craft release (decision 0130): give `craft` its exact slug, for Kutch Ajrakh `
   hashes, and restart `kv-fetcher` if a deploy did not.
 - **Live research write-back** can be checked read-only with `python -m app.scripts.write_back_report`
   (the runs of the last 14 days, their gate checks and states).
+- **Where each write-back belongs** (decision 0136): `python -m app.scripts.write_back_filing
+  --answer <answer id>` or `--since YYYY-MM-DD` re-runs today's filing on each live-research fact's
+  statement, quote, the stored passage and the source's title, and prints where it would be filed
+  against where it is, plus the facts with no gate checks. It never writes. A reviewer acts on it in
+  the review queue: approve (optionally with `craft` to file a held fact under another craft) or
+  reject. Held facts are `DRAFT`, which no reader or search sees.
 
 ## Nightly upkeep and page builds
 
