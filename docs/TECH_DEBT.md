@@ -2195,20 +2195,18 @@ Last reviewed: 2026-11-22.
 
 ### The timeline map has no pins for Kutch Ajrakh, and the region story never draws a river
 
-- **What:** job step 1 stores a Wikidata point only for a dossier place with a `wikidataId`, and no
-  Kutch Ajrakh place carries one, so every `timeline_map` place of its page is unpinned (the route
-  Sindh to Kutch is drawn between named places). `region_story` never chooses a river: HydroRIVERS
-  basins carry no name, so no offered basin's name can occur in a step's sentence or quote.
-  Several curated `whyClaimId`s (C062, C080, C088) describe a step rather than explain it, and the
-  page now leaves a stage's why out when its claim is already one of the stage's sentences (Scouring,
-  Alum mordant printing, Indigo dyeing, Washing, Final wash show none).
-- **Why left:** Wikidata ids for places, and better why claims, are dossier content (the curation
-  lane, one agent per dossier); placing by name was tried against Wikidata and does not resolve
-  Ajrakhpur or Dhamadka, picks a family name for Kutch and two items for Sindh. Basin names need a
-  named river dataset.
-- **Clears it:** the curation lane adds `wikidataId` to the Kutch Ajrakh places (Sindh Q37211,
-  Kutch district Q1063417) and reviews its why claims; a river-name source joined to HydroRIVERS
-  basins.
+- **What:** Kutch Ajrakh's dossier places Khavda, Barmer, Sindh and Pethapur carry Wikidata ids, but
+  their `timeline_map` pins appear only once job step 1 (`app.scripts.build_craft_chapters`, nightly
+  from Coverage enrichment) has stored their points on production; Ajrakhpur and Dhamadka have no
+  Wikidata item that names them. `region_story` never chooses a river: HydroRIVERS basins carry no
+  name, so no offered basin's name can occur in a step's sentence or quote. Several curated
+  `whyClaimId`s (C062, C080, C088) describe a step rather than explain it.
+- **Why left:** storing the points is a run on production (the lead's); basin names need a named
+  river dataset joined to HydroRIVERS, which is a new source with its licence (the datasets method,
+  `kalavigyan-datasets`); the why claims are dossier content a reviewer rewrites (the curation
+  lane, one agent per dossier).
+- **Clears it:** the job's next run on production (then a capture of the timeline map); a recorded
+  river-name dataset joined to the basins; the three why claims reviewed in the dossier.
 
 ### The decision 0096 merge is the minimal novelty rule
 
@@ -2331,15 +2329,17 @@ Last reviewed: 2026-11-22.
 
 ### Curated craft documents: what they do not carry yet
 
-- **What:** since round 6 every curated craft is drawn as its document (the tabbed `CraftScreen`
-  is retired). The key facts and the record use the passage renderer's plain term list rather than
-  the board's four-column FactGrid, and what answers and contributions added to the craft page (AI
-  media, contributed plates, field photos, relatives) is not carried into the document. Left
-  unused by the retirement: the voice call UI (`components/voice/*`, `lib/voice*.ts`,
-  `lib/elevenLabsAgent.ts`), `useHasSession`, `useRevealRow`, `IndiaMapStage`, `MapPlaceList` and
-  `MediaActionButton`.
-- **Clears it:** a FactGrid component kind for the record; contributed media as document
-  components; delete the unused files or give them a new caller.
+- **What:** a generated craft document draws its curated plates, its contributed plates and its
+  record (key facts as the fact grid, the record strip), but not the craft page's reviewed field
+  photographs (decision 0112) or its kin crafts (`relatives`), which `GET /crafts/{slug}/page`
+  still carries in its chapters. AI images and videos made from a craft's claims are not carried
+  either.
+- **Why left:** field photographs and kin crafts need a placement each in the document's layout
+  (a `picture_plate` per reviewed photograph with its consent credit, a `related_crafts` component
+  in the kin chapter) and a parity check of the generated pages; AI imagery on a page waits on the
+  owner's ruling on principle 9 (see the production E2E defects below).
+- **Clears it:** both as generated document components with their tests and a capture of a
+  generated page; the owner's ruling for AI media.
 
 ## Round 6 (2026-11-20)
 

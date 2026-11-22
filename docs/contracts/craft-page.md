@@ -47,7 +47,9 @@ three hide routes, job steps 1 and 6 (nightly), and both goldens. In the golden,
 `market_gi`, `communities`, `artisan_voice`, `field_photos`, `relatives`, `source_list`, `open_questions`,
 `searched` and `start_research`. A reader's answer pieces join by the minimal rule of
 `services/craft_page_answer_assets.py` (debt register). Live pages show `molecule_3d` only once the job has kept
-conformers, and Kutch Ajrakh's timeline has no pins until its places carry Wikidata ids. Not built yet (decision
+conformers, and a timeline place is pinned once the job has stored the Wikidata point of its `wikidataId` (Kutch
+Ajrakh's Khavda, Barmer, Sindh and Pethapur carry one since 2026-11-22; Ajrakhpur and Dhamadka have no Wikidata
+item that names them). Not built yet (decision
 0098 and `docs/TECH_DEBT.md`): `what_if`, `concept_graph`, `zoom_story`, `supply_map` and `measure` on the page;
 reaction players cut per mechanism (one player holds every step until `science/mechanisms.craft_concepts` lands);
 concept pictures in the database loader; a river in the region story (basins carry no name); the rest of the 0096
