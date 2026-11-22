@@ -25,6 +25,7 @@ from app.services.export_files import (
     lesson_file_link,
     opened_export_tools,
 )
+from app.services.export_store import EXPORT_BUILDS_AT_ONCE
 from app.services.naming import content_disposition, explainer_file_name
 from app.services.object_store import media_bucket
 
@@ -42,12 +43,14 @@ CITATIONS_WHAT = "Citations"
 
 logger = logging.getLogger(__name__)
 
+_export_builds = asyncio.Semaphore(EXPORT_BUILDS_AT_ONCE)
+
 
 async def export_tools() -> AsyncIterator[ExportTools]:
     objects = media_bucket()
     if objects is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, EXPORT_UNAVAILABLE_DETAIL)
-    async with opened_export_tools(objects) as tools:
+    async with opened_export_tools(objects, _export_builds) as tools:
         yield tools
 
 

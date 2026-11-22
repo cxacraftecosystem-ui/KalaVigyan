@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import AsyncIterator, Sequence
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -14,6 +15,7 @@ from app.models import Claim, ClaimSource, Craft, User
 from app.research.retrieval import EVERY_CHUNK_ACLS, OPEN_CHUNK_ACLS
 from app.services.claim_seed import seed_id
 from app.services.craft_process import process_records
+from app.services.shared_term_crafts import refresh_shared_terms
 from app.services.term_store import SqlTermStore
 from app.services.term_summaries import StoredTermLookup, TermLookup
 
@@ -87,6 +89,7 @@ async def hide_material(session: AsyncSession) -> None:
         for claim_id, text in ((guarded, GUARDED), (withdrawn, WITHDRAWN))
     )
     await session.flush()
+    await refresh_shared_terms(session, now=datetime.now(UTC))
 
 
 async def alum_claim(session: AsyncSession, text: str, **fields: Any) -> uuid.UUID:

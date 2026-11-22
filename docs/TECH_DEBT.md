@@ -1908,37 +1908,18 @@ Last reviewed: 2026-11-22.
 
 ## Follow-ups, versions and alerts (decision 0063)
 
-### The digest is in English
+### A follow-up that lost a race shows its old block numbers until a reload
 
-- **What:** the weekly digest mail is plain English text whatever the reader's answer language;
-  each item links to its explainer (`/ask?explainer=<explainerId>`, decision 0070).
-- **Why left:** the digest stays off until the owner verifies an SES sender, and its few fixed
-  lines have no translation yet.
-- **Clears it:** write the mail in the reader's answer language through the translation cache.
-
-### A deepened section never repeats a kind it shows
-
-- **What:** a follow-up does not build a second block of a kind the deepened section already
-  shows, so a second map layer or region story that would fit is left out with the duplicate.
-- **Why left:** blocks of one kind carry no shared identity to tell a duplicate from a new one.
-- **Clears it:** compare per kind (a map layer's code, a story's basin, a reaction's equation)
-  and drop only true duplicates.
-
-### Only mapped fields are news
-
-- **What:** the re-check counts a claim only through a curated discipline or a concept heading
-  in `HEADING_DISCIPLINES`; mechanism, results, comparison and edge claims are never news.
-- **Why left:** those headings span several fields and guessing one would misreport.
-- **Clears it:** curated claims carry their discipline; as curation covers crafts, fewer claims
-  rely on headings.
-
-### A follow-up that loses a race keeps no text
-
-- **What:** when two follow-ups build on one version, the second's answer row keeps no explainer
-  (its research is still written back as claims).
-- **Why left:** re-merging onto the newer version would renumber blocks the reader already saw.
-- **Clears it:** merge the losing follow-up onto the newer version when its sections still fit,
-  and stream the renumbered blocks.
+- **What:** a follow-up that finds a newer version saved meanwhile is merged onto it and stored
+  with its blocks renumbered (decision 0143), and its `version` event carries the new mark
+  (`basedOn` the newer version); the reader still sees the blocks under the numbers they streamed
+  with, beside the version they asked on, until the page is reloaded.
+- **Why left:** the stream has no event that renumbers shown blocks, and the client's version
+  reader (`frontend/lib/explainerVersions`) belonged to the design lane running at the same time
+  (2026-11-22).
+- **Clears it:** the client reloads the stored version when `version.basedOn` differs from the
+  `builds_on` version, as "An added section that found nothing shows until a reload" asks after
+  every follow-up.
 
 ## Learning block renderers (decision 0068)
 
@@ -1960,34 +1941,18 @@ Last reviewed: 2026-11-22.
 
 ## Quiz, compare and the shared-science explorer (decision 0064)
 
-### A comparison is only of crafts the resolver listed
+### A shared-science node lists at most 100 of the crafts sharing its term
 
-- **What:** the understanding reply names compared crafts by the slugs the craft resolver listed
-  for the question; a craft the question names that the resolver did not list (it only reaches
-  `craftNames`) is not compared, and a craft the reader picked is compared only with crafts listed
-  beside it.
-- **Why left:** resolving every named craft again for a comparison adds a lookup per name to every
-  question, and the resolver lists the crafts a question names in most cases.
-- **Clears it:** resolve `craftNames` when the reply also asks for a comparison, and add the
-  `RESOLVED` ones to the compared crafts.
-
-### The explorer reads at most three claims per concept and 100 crafts per term
-
-- **What:** a craft whose naming claim is its fourth about a concept, or a term shared by more
-  than 100 crafts (by name after the focus craft), can leave a sharing craft out of a node.
-- **Why left:** a term like cotton or indigo may be shared by most crafts once curation ends; the
-  small EC2 box must answer the explorer in one short read.
-- **Clears it:** a stored per-term summary refreshed by the curation import (crafts, concept ids
-  and the chosen claim), read whole by the routes.
-
-### A claim's field is its concept type's when it was not curated
-
-- **What:** compare places uncurated claims by their concept type (as the craft page does): a
-  mechanism falls in chemistry even when it is physics, and outcomes and comparisons fall in
-  overview.
-- **Why left:** curated claims carry their discipline, and the curation run covers every craft.
-- **Clears it:** the curation of every craft (decision 0053), or a discipline column on `Claim`
-  written by the import and by answers.
+- **What:** the explorer and the concept graph now read every craft whose claims name a term, with
+  all its naming claims (`SharedTermCraft`, rebuilt by `refresh_shared_terms` at each release and
+  each night, decision 0143), but a node (`ConceptNode.crafts`, `CONCEPT_CRAFTS_MAX` in the
+  contract) still lists at most 100 of them, the focus craft first and then by name, and does not
+  say how many share the term.
+- **Why left:** a term such as cotton or indigo can be shared by hundreds of crafts and a craft's
+  explorer answers up to 24 nodes; a longer list or a count changes the shape the client draws
+  (`frontend/lib`), which belonged to the design lane at the time (2026-11-22).
+- **Clears it:** a node carries how many crafts share its term and the route pages a node's crafts,
+  in the contract, the backend and the client together.
 
 ## Craft page rebuild (decision 0071)
 
@@ -2049,56 +2014,20 @@ Last reviewed: 2026-11-22.
 
 ## Lesson packs and exports (decision 0067)
 
-### A paper's APA reference names no journal
+### Papers from six adapters still name no journal
 
-- **What:** the APA style prints a journal article's venue from `container-title`, which no
-  source stores; `Source.publisher` holds a journal for some adapters (Europe PMC, Semantic
-  Scholar) and a publishing house for others (Crossref, OpenAlex), so CSL items pass it as
-  `publisher` and a paper's reference ends with its DOI or URL, without the journal.
-- **Why left:** naming the journal from a field whose meaning differs by adapter would guess.
-- **Clears it:** sources store the container title apart from the publisher (each scholarly
-  adapter fills it), and `citation_formats.csl_item` passes it as `container-title`.
-
-### A file made while a picture could not be read keeps no picture for a week
-
-- **What:** an export is filed under the hash of what it was made from, which does not include
-  whether its pictures could be read, so a file made while Commons or Openverse failed is reused
-  without the picture until the bucket's `exports/` rule removes it (seven days).
-- **Why left:** knowing the pictures before checking the bucket would read them on every
-  download, which the reuse is there to avoid.
-- **Clears it:** file such a build under a short-lived marker (or skip storing it) so the next
-  request tries the pictures again.
-
-### The explainer PDF shows sentences and credits, not drawn blocks
-
-- **What:** maps, river stories, players, molecules, charts and generated explainers appear in
-  the PDF as their cited sentences and dataset credits only; the climate slopes, seasons and
-  map values a reader sees on screen are not drawn.
-- **Why left:** drawing them needs per-kind PDF renderers (and the district geometry) that this
-  lane did not have time for; a picture of them would need a headless browser, which the box
-  must not run.
-- **Clears it:** small per-kind PDF drawings built from the block's own values (a table of
-  trends, a month strip, a district outline from the shapes the client already has), each with
-  its dataset credit and, for maps, the boundary caption.
-
-### Slide text is sized by its length, not measured
-
-- **What:** the PPTX picks a body size from the characters a slide holds (20 pt down to 11 pt);
-  a slide with very long references can still run past its box, and PowerPoint does not shrink
-  text it did not lay out itself.
-- **Why left:** measuring needs the font metrics of every script per run; the pack keeps at most
-  five bullets a slide and lists its sources on one slide by contract.
-- **Clears it:** measure with the vendored fonts (python-pptx `fit_text` per script) or split the
-  reading and sources slides in the files when they overflow.
-
-### Exports are built one request at a time, without a queue
-
-- **What:** a lesson file or report PDF is built in a worker thread of the request that first
-  asks for it; two first requests for different files build at once, and nothing caps how many
-  builds run on the box together.
-- **Why left:** builds take well under a second for the fixtures and only Professors build packs.
-- **Clears it:** a small per-process limit on concurrent export builds, if Usage shows memory
-  pressure from them.
+- **What:** a source now stores the journal it is in (`Source.containerTitle`, decision 0143), and
+  a paper's APA, CSL, BibTeX and RIS name it; but only Europe PMC and Semantic Scholar papers carry
+  one (their `publisher` is the journal, `JOURNAL_AS_PUBLISHER_ADAPTERS`). Crossref
+  (`container-title`, already requested), OpenAlex (`primary_location.source.display_name`), DOAJ
+  (`bibjson.journal.title`), Springer Nature (`publicationName`), Elsevier
+  (`prism:publicationName`, which it now uses as a fallback publisher) and CORE (`journals[].title`)
+  do not fill `EvidenceItem.container_title`, so their papers' references still end without it.
+- **Why left:** the adapters (`backend/app/sources/scholarly/`) belonged to the sources lane
+  running at the same time (2026-11-22).
+- **Clears it:** each scholarly adapter fills `container_title` from the field above (Europe PMC and
+  Semantic Scholar too, which retires `JOURNAL_AS_PUBLISHER_ADAPTERS`); sources stored before keep
+  no journal until a script reads their DOIs again.
 
 ## Phase D review (decision 0070)
 
@@ -2115,30 +2044,17 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the curation rules check each GI and price date with `stated_dates.states_date`
   at its own precision and report a record whose day, month or year no quote states.
 
-### Lesson packs are not proved in production
-
-- **What:** the production E2E builds no lesson pack: its account is a Researcher, and
-  `BUILD_LESSONS` needs a Professor, a role that must use two-step sign-in, which the E2E cannot
-  answer. The run checks the explainer's report PDF and its four citation files and notes the
-  lesson step instead of failing.
-- **Why left:** granting a role is the owner's decision (`docs/PROGRESS.md`, Waiting on the
-  owner).
-- **Clears it:** a Professor E2E account whose authenticator secret is a GitHub secret the run
-  turns into a code at sign-in, or the owner's other choice; the run then builds the pack and
-  checks its PPTX and PDF (`e2e/production/exportProof.ts` already does when the role allows).
-
 ## The lede on the page (decision 0077)
 
-### Lesson packs leave the lede out
+### The lesson screen's title slide does not show the lede
 
-- **What:** a lesson pack is built from the sections a teacher chooses, and its title slide carries
-  only the title, so the answer's lede (the direct answer) is on no slide. Listen and film open on
-  the lede and a whole-answer quiz asks from it (decision 0140).
-- **Why left:** a lede on the title slide changes the slide contract that the deck, the PPTX file
-  and the lesson screen draw, and decision 0077 left the lesson packs to the owner's wish.
-- **Clears it:** the owner's yes; then the `TITLE` slide carries the lede's sentences as bullets
-  (block id `lede`) in `research/lesson_builder`, `services/lesson_deck`, `services/lesson_pptx`
-  and the lesson screen, with `docs/contracts/learning.md`.
+- **What:** a lesson pack's `TITLE` slide now opens with the answer's lede as cited bullets (block
+  id `lede`), and the HTML deck, the PPTX and the PDF draw them (decision 0143); the lesson screen's
+  slide preview (`frontend/components/learn/SlidePreview.tsx`) still draws a title slide as its
+  title and craft only.
+- **Why left:** the component belonged to the design lane running at the same time (2026-11-22).
+- **Clears it:** `SlideBody` draws a `TITLE` slide's bullets with `ExplainerSentence`, as it draws a
+  section's, under the craft name.
 
 ## Frontend audit exceptions
 

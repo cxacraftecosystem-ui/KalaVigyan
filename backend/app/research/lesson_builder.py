@@ -9,6 +9,7 @@ from app.core.errors import AppError
 
 from .blocks import ExplainerSentence, ImagesBlock
 from .blocks_learning import QuizBlock
+from .blocks_lede import LEDE_BLOCK_ID, LedeBlock
 from .blocks_play import hidden_block
 from .citations import AnswerSentence, cited_source_ids
 from .explainer import ExplainerSection
@@ -36,6 +37,7 @@ __all__ = [
     "LessonNotBuildable",
     "UnknownLessonSection",
     "first_picture",
+    "lede_bullets",
     "lesson_pack",
     "lesson_title",
     "section_bullets",
@@ -101,18 +103,15 @@ def lesson_pack(
     explainer = version.explainer
     sections = _chosen_sections(version, request.section_ids)
     taught = [section_bullets(section, visible_claim_ids) for section in sections]
-    quiz = (
-        quiz_block([[b.sentence for b in bullets] for bullets in taught], block_id=LESSON_QUIZ_BLOCK_ID)
-        if request.quiz
-        else None
-    )
+    quiz = _lesson_quiz(taught) if request.quiz else None
     title = request.title or lesson_title(version.mark.question)
     section_slides = [
         draft
         for section, bullets in zip(sections, taught, strict=True)
         for draft in _slides_of(section, bullets, visible_claim_ids)
     ]
-    slides = _numbered(title, section_slides, quiz, explainer.understood.language)
+    opening = _title_draft(title, lede_bullets(explainer.lede, visible_claim_ids))
+    slides = _numbered(opening, section_slides, quiz, explainer.understood.language)
     shown = _shown(slides, quiz)
     known = {source.id: source for source in explainer.sources}
     sources = [known[source_id] for source_id in cited_source_ids(shown)]
@@ -150,6 +149,13 @@ def section_bullets(section: ExplainerSection, visible_claim_ids: frozenset[str]
         and sentence.level in FACT_LEVELS
         and still_cited(sentence, visible_claim_ids)
     ]
+
+
+def lede_bullets(lede: LedeBlock | None, visible_claim_ids: frozenset[str]) -> list[ExplainerSentence]:
+    if lede is None:
+        return []
+    taught = [s for s in lede.sentences if s.level in FACT_LEVELS and still_cited(s, visible_claim_ids)]
+    return taught[:LESSON_BULLETS_MAX]
 
 
 def section_picture(
@@ -206,12 +212,14 @@ def _slides_of(
         )
 
 
-def _numbered(title: str, sections: Sequence[_Draft], quiz: QuizBlock | None, language: str) -> list[Slide]:
+def _numbered(
+    opening: _Draft, sections: Sequence[_Draft], quiz: QuizBlock | None, language: str
+) -> list[Slide]:
     if not sections:
         raise LessonNotBuildable(NOTHING_LEFT_DETAIL)
     words = lesson_words(language)
     drafts = [
-        _fixed("TITLE", title),
+        opening,
         *sections,
         *(_fixed("QUIZ", words.question_title(n + 1), question=n) for n in range(_asked(quiz))),
         _fixed("READING", words.reading),
@@ -220,6 +228,16 @@ def _numbered(title: str, sections: Sequence[_Draft], quiz: QuizBlock | None, la
     if len(drafts) > LESSON_SLIDES_MAX:
         raise LessonNotBuildable(TOO_MANY_SLIDES_DETAIL)
     return [draft.slide(number) for number, draft in enumerate(drafts, 1)]
+
+
+def _title_draft(title: str, lede: Sequence[ExplainerSentence]) -> _Draft:
+    if not lede:
+        return _fixed("TITLE", title)
+    return _Draft(kind="TITLE", title=title, block_ids=(LEDE_BLOCK_ID,), bullets=tuple(lede))
+
+
+def _lesson_quiz(taught: Sequence[Sequence[Bullet]]) -> QuizBlock | None:
+    return quiz_block([[b.sentence for b in bullets] for bullets in taught], block_id=LESSON_QUIZ_BLOCK_ID)
 
 
 def _fixed(kind: str, title: str, *, question: int | None = None) -> _Draft:

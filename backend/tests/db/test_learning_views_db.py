@@ -1,16 +1,19 @@
+import uuid
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
-from app.models import Claim, Craft
+from app.models import Claim, ClaimSource, Concept, Craft, Source, Term, TermConcept
 from app.research.blocks import named_in
 from app.services import knowledge_view
 from app.services.claim_seed import seed_id
 from app.services.craft_compare import craft_comparison
 from app.services.shared_concepts import craft_shared_science, shared_concept_of
+from app.services.shared_term_crafts import refresh_shared_terms
 
 pytestmark = pytest.mark.db
 
@@ -24,6 +27,8 @@ ALUM_SENTENCES = [
     "more shades.",
     "Post-mordanting with diluted alum (fitkari) makes the fugitive turmeric-pomegranate yellow fast.",
 ]
+FOURTH_ALUM = "Alum is ground into the gum paste for the red outline."
+REFRESHED_AT = datetime(2026, 11, 22, 3, 0, tzinfo=UTC)
 INDIGO_CELLS = [
     "In Dhamadka a small amount of indigo was grown while the river was active.",
     "Indigo blue (nil) is extracted from Indigofera tinctoria; synthetic indigo granules are also used nowadays.",
@@ -36,6 +41,7 @@ async def session() -> AsyncIterator[AsyncSession]:
         transaction = await connection.begin()
         try:
             session = AsyncSession(bind=connection, expire_on_commit=False, autoflush=False)
+            await refresh_shared_terms(session, now=REFRESHED_AT)
             yield session
             await session.close()
         finally:
@@ -101,3 +107,58 @@ async def test_ajrakh_and_bagru_are_compared_term_by_term_on_their_own_materials
 async def test_a_field_neither_craft_has_claims_in_is_not_compared(session: AsyncSession) -> None:
     crafts = [await craft(session, AJRAKH), await craft(session, BAGRU)]
     assert await craft_comparison(session, crafts, ["HEALTH"]) is None
+
+
+async def test_a_craft_whose_naming_claim_is_its_fourth_about_a_concept_still_shares_the_term(
+    session: AsyncSession,
+) -> None:
+    bagru = await craft(session, BAGRU)
+    concepts = list(
+        await session.scalars(
+            select(Concept.id)
+            .join(TermConcept, TermConcept.conceptId == Concept.id)
+            .join(Term, Term.id == TermConcept.termId)
+            .where(Term.key == "alum", Concept.craftId == bagru.id)
+            .order_by(Concept.id)
+        )
+    )
+    await session.execute(update(Claim).where(Claim.subjectId.in_(concepts)).values(status="WITHDRAWN"))
+    source = Source(id=uuid.uuid4(), kind="PAPER", title="A paper on Bagru reds")
+    session.add(source)
+    await session.flush()
+    texts = ["Aluminium pots are kept out of the dye house."] * 3 + [FOURTH_ALUM]
+    for n, text in enumerate(texts):
+        claim_id = uuid.uuid4()
+        session.add(
+            Claim(
+                id=claim_id,
+                subjectType="CONCEPT",
+                subjectId=concepts[0],
+                predicate="states",
+                text=text,
+                evidenceLevel="PROVISIONAL",
+                origin="LIVE_RESEARCH",
+                createdAt=REFRESHED_AT + timedelta(minutes=n),
+            )
+        )
+        await session.flush()
+        session.add(ClaimSource(claimId=claim_id, sourceId=source.id, quote=text))
+    await session.flush()
+    await refresh_shared_terms(session, now=REFRESHED_AT)
+    alum = await shared_concept_of(session, "alum", None)
+    assert alum is not None
+    assert [entry.craft.slug for entry in alum.node.crafts] == [BAGRU, AJRAKH, *ALUM_CRAFTS[2:]]
+    assert alum.node.crafts[0].sentence.text == FOURTH_ALUM
+
+
+async def test_a_claim_is_compared_under_the_field_it_is_filed_under_not_its_concept_type(
+    session: AsyncSession,
+) -> None:
+    crafts = [await craft(session, AJRAKH), await craft(session, BAGRU)]
+    filed = select(Claim.id).where(Claim.text.in_(ALUM_SENTENCES[:2]))
+    await session.execute(update(Claim).where(Claim.id.in_(filed)).values(field="PHYSICS", fields=[]))
+    compared = await craft_comparison(session, crafts, ["PHYSICS"])
+    assert compared is not None
+    (row, *_) = compared.comparison.rows
+    assert (row.facet, row.term.key if row.term else None) == ("PHYSICS", "alum")
+    assert [cell.sentence.text for cell in row.cells if cell is not None] == ALUM_SENTENCES[:2]

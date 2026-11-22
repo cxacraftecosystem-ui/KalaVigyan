@@ -116,8 +116,6 @@ def _stored_concepts(tools: BuilderTools) -> GraphLoader:
             row = await knowledge_view.resolve_craft(session, craft.slug)
             if row is None:
                 return TermOffers()
-            return await term_offers(
-                session, await term_ids_of(session, keys), focus=row.id, acls=EVERY_CHUNK_ACLS
-            )
+            return await term_offers(session, await term_ids_of(session, keys), acls=EVERY_CHUNK_ACLS)
 
     return load

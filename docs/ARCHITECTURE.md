@@ -305,12 +305,14 @@ sequenceDiagram
    document is kept in `Answer.payload.explainer` and the plans in `Answer.plan`.
 7. A follow-up (`buildsOn`, decision 0063) is the same flow with a layout
    (`services/follow_ups`): the explainer's crafts, depth and language are kept, a field it has
-   deepens that section (blocks numbered after its own, already-cited sentences and shown kinds
-   left out, never reused from or stored as pieces) and any other field is added after its
-   sections; `builds_on` follows `understood`. `services/version_merge` merges the follow-up into
-   the latest version, `version_problems` must hold, and the merged document is kept on the
-   follow-up's answer with its `VersionMark` (`Answer.explainerId`, `explainerVersion`); `version`
-   precedes `done`. Earlier versions are never rewritten.
+   deepens that section (blocks numbered after its own, already-cited sentences left out, a
+   block it shows already left out by its identity or, for kinds without one, by its kind; never
+   reused from or stored as pieces) and any other field is added after its sections; `builds_on`
+   follows `understood`. `services/version_merge` merges the follow-up into the latest version,
+   `version_problems` must hold, and the merged document is kept on the follow-up's answer with
+   its `VersionMark` (`Answer.explainerId`, `explainerVersion`); `version` precedes `done`. A
+   follow-up that finds the version taken meanwhile is merged again onto the newer one, its
+   blocks renumbered (`services/version_race`). Earlier versions are never rewritten.
 
 ## How a saved explainer gets better (decision 0063)
 
@@ -326,8 +328,9 @@ flowchart LR
 ```
 
 1. A reader saves an explainer (`SavedItem` with its first answer). Every night the last module of
-   the Coverage enrichment job, `app.scripts.recheck_saved`, counts per saved field the craft's
-   fact-level claims created or raised since the last check that the latest version does not cite,
+   the Coverage enrichment job, `app.scripts.recheck_saved`, counts per saved field (each field a
+   claim is filed under) the craft's fact-level claims created or raised since the last check that
+   the latest version does not cite,
    and writes one `ANSWER_IMPROVED` note when any field has news; no model is called.
 2. The note's Update asks a follow-up for the fields with news, as the reader and under the
    reader's caps. On Mondays the **Alert digest** workflow mails opted-in readers their unread
@@ -694,7 +697,8 @@ theirs in `lib/learningContract.ts`, `lib/lessonContract.ts`, `lib/sharedScience
 `lib/quizContract.ts`, `lib/compareContract.ts` and `lib/districtCraftsContract.ts` (decision
 0062). On the server the quiz, compare and the concept graph follow fixed
 rules in `research/quiz.py`, `research/craft_compare.py` and `research/shared_science.py`, read
-their rows through `services/shared_concepts.py` and `services/craft_compare.py`, and reach answers
+their rows through `services/shared_concepts.py` (from the per-term summary that
+`services/shared_term_crafts.py` rebuilds on release and nightly) and `services/craft_compare.py`, and reach answers
 through `services/learning_builders.py` (decision 0064). Local measures and market and GI
 follow fixed rules too: stated quantities, regional factors and prices in
 `research/stated_quantities.py` and `research/stated_prices.py` over the one Pint registry

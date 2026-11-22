@@ -5,11 +5,13 @@ is made on request, a comparison is understood and compared per field, and the c
 the terms a section marks. Reads have sane limits.
 
 Date: 2026-11-18. Status: accepted. Amended by 0070 (a comparison with nothing
-cited answers 204; the quiz reads hidden marks).
+cited answers 204; the quiz reads hidden marks) and 0143 (compared crafts named outside the
+resolver's list, fields by what a claim is filed under, the stored shared-term summary).
 
 | For | Read |
 |---|---|
 | What amended it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md): a comparison with nothing cited answers 204, and the quiz reads hidden marks |
+| What amended it later | [0143](0143-lessons-exports-and-follow-ups-kept-true.md): compared crafts named outside the resolver's list, fields by what a claim is filed under, the stored shared-term summary |
 | The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
 | The contracts it names | [learning.md](../contracts/learning.md) |
 | Every decision, by group | [README.md](README.md) |

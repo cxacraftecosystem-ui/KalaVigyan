@@ -26,7 +26,7 @@ from app.research.depth import depth_policy
 from app.research.embedding import TextEmbedder
 from app.research.evidence_pack import EvidencePack, ResearchTrail
 from app.research.explainer import Explainer
-from app.research.explainer_versions import VersionMark
+from app.research.explainer_versions import ExplainerVersionDocument, VersionMark
 from app.research.planning import PlanRequest
 from app.research.retrieval import EVERY_CHUNK_ACLS
 from app.research.sections import AnswerPlans
@@ -53,7 +53,7 @@ from .builder_interface import BuilderTools
 from .coverage import held_field_lookup
 from .craft_process import process_records
 from .craft_resolver import CraftIndexStore, DatabaseCraftResolver
-from .explainer_history import StaleVersion
+from .explainer_history import StaleVersion, UnknownExplainer, latest_stored
 from .explainer_payload import EXPLAINER_PAYLOAD_KEY, FIRST_VERSION, stored_payload
 from .field_voices_citations import writes_back
 from .live_sources import LiveSourcesStore
@@ -132,6 +132,12 @@ class SqlAnswerStore:
         async with self._sessions() as session:
             craft = await knowledge_view.resolve_craft(session, craft_slug)
             return await process_records(session, craft, acls=EVERY_CHUNK_ACLS) if craft is not None else None
+
+    async def latest(self, explainer_id: uuid.UUID, user_id: uuid.UUID | None) -> ExplainerVersionDocument:
+        if user_id is None:
+            raise UnknownExplainer(explainer_id)
+        async with self._sessions() as session:
+            return await latest_stored(session, explainer_id, user_id)
 
     async def _begun(self, ask: AnswerAsk, understanding: Understanding) -> uuid.UUID:
         answer_id = uuid.uuid4()

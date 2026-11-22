@@ -30,7 +30,7 @@ from app.sources.images.picture_files import picture_files
 
 from .apa_references import apa_references
 from .export_pictures import Picture, PictureSource, export_pictures
-from .export_store import ExportFile, ExportObjects, stored_export_link
+from .export_store import BuiltExport, ExportFile, ExportObjects, stored_export_link
 from .lesson_deck import lesson_deck
 from .naming import explainer_file_name, lesson_file_name
 
@@ -81,16 +81,20 @@ class ExportTools:
     pictures: PictureSource
     apa: ApaReferences
     clock: Callable[[], datetime]
+    builds: asyncio.Semaphore
 
 
 @asynccontextmanager
-async def opened_export_tools(objects: ExportObjects) -> AsyncIterator[ExportTools]:
+async def opened_export_tools(
+    objects: ExportObjects, builds: asyncio.Semaphore
+) -> AsyncIterator[ExportTools]:
     async with source_client(get_settings().research_contact_email) as client:
         yield ExportTools(
             objects=objects,
             pictures=picture_files(client),
             apa=apa_references,
             clock=lambda: datetime.now(UTC),
+            builds=builds,
         )
 
 
@@ -121,12 +125,12 @@ async def lesson_file_link(
         refs = References(tuple(citation_entries(pack.sources, accessed=accessed, apa=tools.apa)))
         return render(pack, refs, pictures)
 
-    async def build() -> bytes:
+    async def build() -> BuiltExport:
         pictures = await export_pictures(_pictures_of(pack), tools.pictures)
-        return await asyncio.to_thread(written, pictures)
+        return BuiltExport(await asyncio.to_thread(written, pictures.found), pictures.unread)
 
     export = ExportFile(owner_id=owner_id, fmt=fmt, file_name=name, made_from=made_from)
-    return await stored_export_link(tools.objects, export, build, now=tools.clock())
+    return await stored_export_link(tools.objects, export, build, now=tools.clock(), builds=tools.builds)
 
 
 async def explainer_pdf_link(
@@ -148,12 +152,12 @@ async def explainer_pdf_link(
         refs = References(tuple(explainer_citations(document, accessed, tools.apa).entries))
         return _report(document, refs, pictures)
 
-    async def build() -> bytes:
+    async def build() -> BuiltExport:
         pictures = await export_pictures(_explainer_pictures(document), tools.pictures)
-        return await asyncio.to_thread(written, pictures)
+        return BuiltExport(await asyncio.to_thread(written, pictures.found), pictures.unread)
 
     export = ExportFile(owner_id=owner_id, fmt=PDF, file_name=name, made_from=made_from)
-    return await stored_export_link(tools.objects, export, build, now=tools.clock())
+    return await stored_export_link(tools.objects, export, build, now=tools.clock(), builds=tools.builds)
 
 
 def _pictures_of(pack: LessonPack) -> list[MediaRef]:

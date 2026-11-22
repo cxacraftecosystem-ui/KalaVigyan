@@ -164,13 +164,35 @@ async def test_one_listed_craft_or_any_craft_is_no_comparison(compare: list[str]
     assert len(found.understood().crafts) <= 1
 
 
-async def test_a_picked_craft_is_compared_only_with_crafts_the_resolver_listed_beside_it() -> None:
+async def test_a_picked_craft_is_never_compared_with_a_slug_the_resolver_did_not_list() -> None:
     picked = resolution("RESOLVED", (BAGRU, 1.0), (AJRAKH, 0.4))
     found, _ = await understood(picked, {**READ, "compare": [AJRAKH.slug, BAGRU.slug]}, craft_slug=BAGRU.slug)
     assert (found.craft, found.compared) == (BAGRU, [AJRAKH])
     alone = resolution("RESOLVED", (BAGRU, 1.0))
     found, _ = await understood(alone, {**READ, "compare": [AJRAKH.slug, BAGRU.slug]}, craft_slug=BAGRU.slug)
     assert (found.craft, found.compared) == (BAGRU, [])
+
+
+async def test_a_craft_the_question_names_beside_a_listed_one_is_resolved_and_compared() -> None:
+    named = {"Bagru block print": resolution("RESOLVED", (BAGRU, 1.0))}
+    reply = {**READ, "craftNames": ["Bagru block print"], "compare": [AJRAKH.slug, "Bagru block print"]}
+    resolver = Resolver(RESOLVED, named)
+    found = await ModelUnderstander(model=FakeModel([json.dumps(reply)]), resolve=resolver).understand(ask())
+    assert (found.craft, found.compared, found.candidates) == (AJRAKH, [BAGRU], [BARMER])
+    assert [query.text for query in resolver.queries] == [QUESTION, "Bagru block print"]
+
+
+async def test_a_picked_craft_is_compared_with_a_craft_the_question_names() -> None:
+    alone = resolution("RESOLVED", (BAGRU, 1.0))
+    reply = {**READ, "craftNames": ["Kutch Ajrakh"], "compare": ["Kutch Ajrakh", BAGRU.slug]}
+    found, _ = await understood(alone, reply, named={"Kutch Ajrakh": RESOLVED}, craft_slug=BAGRU.slug)
+    assert (found.craft, found.compared, found.candidates) == (BAGRU, [AJRAKH], [])
+
+
+async def test_a_named_craft_the_resolver_cannot_confirm_is_not_compared() -> None:
+    reply = {**READ, "craftNames": ["Bagru block print"], "compare": [AJRAKH.slug, "Bagru block print"]}
+    found, _ = await understood(RESOLVED, reply, named={"Bagru block print": AMBIGUOUS})
+    assert (found.craft, found.compared) == (AJRAKH, [])
 
 
 async def test_the_compared_crafts_reach_the_builders_through_the_plan_request() -> None:
@@ -342,7 +364,7 @@ def test_the_schema_uses_only_widely_supported_keywords_and_the_registered_vocab
     assert keywords(schema) <= SCHEMA_KEYWORDS
     assert schema["required"] == ["craft", "craftNames", "compare", "disciplines", "seats", "englishQuestion"]
     assert schema["properties"]["englishQuestion"] == {"type": "string"}
-    assert schema["properties"]["compare"]["items"]["enum"] == [AJRAKH.slug, ""]
+    assert schema["properties"]["compare"]["items"] == {"type": "string"}
     assert schema["additionalProperties"] is False
     assert schema["properties"]["disciplines"]["items"]["enum"] == list(DISCIPLINES)
     assert schema["properties"]["seats"]["items"]["enum"] == list(EXPERT_SEATS)

@@ -96,6 +96,9 @@ class CslItem(ContractModel):
     author: list[CslName]
     issued: CslDate | None = Field(default=None, exclude_if=absent)
     accessed: CslDate | None = Field(default=None, exclude_if=absent)
+    container_title: str | None = Field(
+        default=None, alias="container-title", min_length=1, exclude_if=absent
+    )
     publisher: str | None = Field(default=None, min_length=1, exclude_if=absent)
     version: str | None = Field(default=None, min_length=1, exclude_if=absent)
     doi: str | None = Field(default=None, alias="DOI", min_length=1, exclude_if=absent)

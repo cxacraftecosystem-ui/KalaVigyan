@@ -15,6 +15,7 @@ from app.research.lesson_builder import first_picture
 from app.research.lesson_words import LessonWords, lesson_words
 from app.research.lessons import LessonPack, Slide
 
+from .export_pdf_figures import draw_figure
 from .export_pictures import Picture
 from .pdf_writer import ACCENT, MUTED, PdfWriter, TextStyle
 
@@ -91,6 +92,7 @@ def _lesson_page(
         writer.go_to(writer.bottom / 3)
         writer.text(slide.title, TITLE)
         writer.text(_meta(pack.craft.name if pack.craft else None, pack.created_at, None), META)
+        _bullet_items(writer, slide, refs, writer.width)
         return
     writer.text(slide.title, HEADING)
     if slide.kind == "SECTION":
@@ -118,8 +120,12 @@ def _section_page(
             max_height=writer.bottom - top,
         )
         writer.go_to(top)
+    _bullet_items(writer, slide, refs, text_width)
+
+
+def _bullet_items(writer: PdfWriter, slide: Slide, refs: References, width: float) -> None:
     for sentence in slide.bullets:
-        writer.item(BULLET, f"{sentence.text} {refs.sentence_marker(sentence)}", SLIDE_BODY, width=text_width)
+        writer.item(BULLET, f"{sentence.text} {refs.sentence_marker(sentence)}", SLIDE_BODY, width=width)
 
 
 def _question_page(writer: PdfWriter, slide: Slide, pack: LessonPack) -> None:
@@ -143,6 +149,7 @@ def _answers(writer: PdfWriter, pack: LessonPack, refs: References, words: Lesso
 def _block(writer: PdfWriter, block: BlockBase, refs: References) -> None:
     if isinstance(block, ImagesBlock) or hidden_block(block):
         return
+    draw_figure(writer, block)
     for sentence in block.cited_sentences():
         writer.text(f"{sentence.text} {refs.sentence_marker(sentence)}", BODY)
     for dataset in cited_datasets([block]):

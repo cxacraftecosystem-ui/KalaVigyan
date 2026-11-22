@@ -26,6 +26,7 @@ __all__ = [
     "first_version",
     "golden_pack",
     "golden_request",
+    "lede_version",
     "pack_references",
     "picture_bytes",
     "pictures_of",
@@ -36,10 +37,19 @@ BUILT_AT = datetime(2026, 11, 18, 10, 0, tzinfo=UTC)
 SEED_RETRIEVED = date(2026, 10, 14)
 PICTURE_SIDE = (800, 600)
 BUCKET_HOST = "https://kalavigyan-media-example.s3.ap-south-1.amazonaws.com"
+LEDE_DOCUMENT = "explainer.lede.golden.json"
 
 
 def first_version() -> ExplainerVersionDocument:
     explainer = Explainer.model_validate(golden_json(DOCUMENT))
+    mark = first_version_mark(
+        answer_id=explainer.answer_id, question=explainer.question, created_at=explainer.created_at
+    )
+    return version_document(mark, explainer)
+
+
+def lede_version() -> ExplainerVersionDocument:
+    explainer = Explainer.model_validate(golden_json(LEDE_DOCUMENT))
     mark = first_version_mark(
         answer_id=explainer.answer_id, question=explainer.question, created_at=explainer.created_at
     )

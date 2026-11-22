@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, date, datetime
@@ -22,6 +23,7 @@ from app.services.apa_references import apa_references
 from app.services.explainer_history import UnknownExplainer
 from app.services.explainer_payload import stored_payload
 from app.services.export_files import ExportTools
+from app.services.export_store import EXPORT_BUILDS_AT_ONCE
 from app.services.knowledge_view import ClaimView
 from app.services.public_explainer import public_explainer
 
@@ -78,7 +80,11 @@ def client(reader: User | None, *, bucket: FakeBucket | None = None) -> TestClie
 
     async def tools() -> AsyncIterator[ExportTools]:
         yield ExportTools(
-            objects=bucket or FakeBucket(), pictures=Pictures(), apa=apa_references, clock=lambda: NOW
+            objects=bucket or FakeBucket(),
+            pictures=Pictures(),
+            apa=apa_references,
+            clock=lambda: NOW,
+            builds=asyncio.Semaphore(EXPORT_BUILDS_AT_ONCE),
         )
 
     app.dependency_overrides[get_session] = no_session

@@ -5,11 +5,13 @@ an earlier one, and a deepened section only adds. Saved explainers reuse `SavedI
 job checks them again with no model call, and the weekly digest is built and switched off.
 
 Date: 2026-11-18. Status: accepted. Amended by 0070 (the digest links each item to
-its explainer).
+its explainer) and 0143 (the digest in the reader's language, deepening that drops only true
+repeats, a follow-up that loses a race merged onto the newer version, news by stored field).
 
 | For | Read |
 |---|---|
 | What amended it | [0070 Phase D review fixes](0070-phase-d-review-fixes.md): the digest links each item to its explainer |
+| What amended it later | [0143](0143-lessons-exports-and-follow-ups-kept-true.md): the digest's language, deepening by identity, the version race, news by stored field |
 | The contract it was built to | [0062 Phase D contract: learning blocks, versions, alerts, lessons, exports and the map](0062-phase-d-contract.md) |
 | The contracts it names | [learning.md](../contracts/learning.md) |
 | Every decision, by group | [README.md](README.md) |

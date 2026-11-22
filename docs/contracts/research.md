@@ -173,8 +173,11 @@ class SourceAdapter(Protocol):
 - `search` returns at most `k` items (`1 <= k <= SEARCH_MAX_K` 50), each `tier` equal to the
   adapter's, best first. No hits is `[]`, not an error.
 - `EvidenceItem {id, adapter, tier, sourceType, url, title, authors[], published?, retrievedAt,
-  licence?, attribution?, doi?, publisher?, trust, quotes[Quote], externalIds{}}`.
-  `id` is `<adapter>:<id at the service>` (`openalex:W2741809807`). `trust` is the reliability
+  licence?, attribution?, doi?, publisher?, containerTitle?, trust, quotes[Quote], externalIds{}}`.
+  `id` is `<adapter>:<id at the service>` (`openalex:W2741809807`). `containerTitle` is the
+  journal or book a work is in; `item.journal` is it, or the `publisher` of an adapter that puts
+  the journal there (`JOURNAL_AS_PUBLISHER_ADAPTERS`: Europe PMC and Semantic Scholar), and is
+  stored as `Source.containerTitle` (decision 0143). `trust` is the reliability
   tier the adapter assigns (A peer-reviewed or official, B reputable reference, C general web,
   D unknown). `quotes` are verbatim passages (`Quote {text (1-300), locator?}`; locator such as
   `p. 12`, `section 3.2`, `para 4`); a search hit may have none.
@@ -933,7 +936,7 @@ fields that were set.
 |---|---|---|
 | `match` | `{status:"RESOLVED", craft}` / `{status:"AMBIGUOUS", candidates (1-5)}` / `{status:"NONE"}` | kept in the vocabulary; the answering flow sends `understood` instead (decision 0031) |
 | `status` | `{step, message}` | new; progress while research runs. `step` one of `RESOLVING`, `PLANNING`, `SEARCHING_STORED`, `RESEARCHING`, `READING`, `COMPOSING`, `WRITING_BACK`, `TRANSLATING`; `message` a short user-facing sentence. A step's count is the sum over the sections that reached it, sent again as it grows while that step is the latest shown; a step already passed adds to its sum silently (decision 0138) |
-| `source` | `SourceRef {id, kind, title, authors[], year, doi, url, publisher, licence, attribution, reliability}` | before the first citation naming it; `url` https or null |
+| `source` | `SourceRef {id, kind, title, authors[], year, doi, url, publisher, licence, attribution, reliability, containerTitle?}` | before the first citation naming it; `url` https or null; `containerTitle` (the journal) only when stored (decision 0143) |
 | `section` | `{id, heading, original?}` | kept in the vocabulary; the answering flow sends `section_started` instead (decision 0032) |
 | `sentence` | `{sectionId, sentence: AnswerSentence}` | kept in the vocabulary; sentences now arrive inside `prose` and `process_ladder` blocks (decision 0032) |
 | `open_question` | `{sectionId, heading?, sentence}` | hypothesis-level sentences |
@@ -1001,12 +1004,14 @@ ModelUnderstander(model=StructuredModel, resolve=)` implements it with the craft
 - The call: system `UNDERSTAND_SYSTEM_PROMPT`; user `understand_message` (depth label, the
   depth's expert range, its section range `Sections: <min> to <max>`, the listed crafts each in a
   `craft_block`, the question in an untrusted block); schema `understand_schema(offered)` `{craft:
-  enum of the listed slugs and "", craftNames [string], compare[enum of the listed slugs and ""],
-  disciplines[DISCIPLINES], seats[EXPERT_SEATS], englishQuestion: string}` with only `type`,
+  enum of the listed slugs and "", craftNames [string], compare [string: a listed slug, or a name
+  as given in craftNames], disciplines[DISCIPLINES], seats[EXPERT_SEATS], englishQuestion: string}`
+  with only `type`,
   `enum`, `items`, `properties`, `required` and `additionalProperties: false`.
 - The reply (`understanding_prompt.parsed_reply`, decision 0123) is read field by field: a value
   the schema refuses (an unlisted craft slug, a name under 2 or over 300 characters, an unknown
-  slug, field or seat, an English rendering under 2 or over 1000 characters) is left out alone
+  slug, field or seat, a compared craft that is neither a listed slug nor one of the kept
+  craftNames, an English rendering under 2 or over 1000 characters) is left out alone
   and logged, and every other field is kept; duplicates are dropped and at most three names kept.
   A craft left out is the same as no reply about the craft; `""` is the reply that no single
   listed craft is meant. A reply that is not a JSON object, or keeps nothing, is no reply.
@@ -1021,10 +1026,12 @@ ModelUnderstander(model=StructuredModel, resolve=)` implements it with the craft
   that is not one of the candidates by name is resolved with a text-only `CraftQuery`, the first
   `RESOLVED` one is chosen and every other candidate found is offered, else any craft. At most
   five offers.
-- A comparison (`compared_choice`, decision 0064): when the reply's `compare` names at least two
-  listed crafts (unknown slugs dropped) and the reader did not ask for any craft, the first of them
-  leads (`craft`) and the next three at most are `compared`; a craft the reader picked leads
-  instead, and only when it is among them. The others stay offers. `PlanRequest.compared` carries
+- A comparison (`compared_choice`, decision 0064): when the reply's `compare` holds at least two
+  crafts and the reader did not ask for any craft, each name in it that is not a listed craft (by
+  slug or name) is resolved with a text-only `CraftQuery` (once per answer, shared with the named
+  lookup above) and only a `RESOLVED` one is kept; when at least two compared crafts remain, the
+  first of them leads (`craft`) and the next three at most are `compared`; a craft the reader
+  picked leads instead, and only when it is among them. The others stay offers. `PlanRequest.compared` carries
   them to the block builders (`compare`); research and composition still run for the lead craft.
 - The depth is `effective_depth(asked, role, past_degrade=reply.degraded)`.
 - The fields (`understanding.asked_fields`, `sections.answer_fields`, decision 0123): the
@@ -1052,7 +1059,9 @@ glossary and `section_images`).
 already known and raises instead of sending `error` (the nightly rebuild uses it); `AnswerStore {stored_claims (slug, question,
 mode), begin(ask, understanding) -> answer id, keep(answer_id, pack, composed) -> claims of each
 composed sentence, cited(claim_ids), process(slug) -> science.records.ProcessRecords | None,
-finish(answer_id, *, asked_at, plans: AnswerPlans, claim_ids, explainer: Explainer | None)}`, the reads
+finish(answer_id, *, asked_at, plans: AnswerPlans, claim_ids, explainer: Explainer | None),
+latest(explainer_id, user_id) -> the latest stored version (a follow-up that lost its version
+merges again onto it, `services/version_race`)}`, the reads
 returning `answer_events.CitedClaims {views, sources}`. `begin` writes the `Answer` row (its
 understanding and the depth's mode), `keep` one section's write-back, and `finish` the plans, the
 claims shown, the tiers used, `latencyMs` (from `AnswerAsk.asked_at`, set when the question is

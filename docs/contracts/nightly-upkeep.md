@@ -62,6 +62,7 @@ The workflow runs `python -m app.scripts.nightly_upkeep` as the `kalavigyan` use
 | 5. Rebuild stale craft pages | `services/upkeep_pages.py` through `services/craft_page_snapshots.py` | `PAGES_PER_NIGHT` = 60, oldest snapshot first | `CraftPageSnapshot` |
 | 5a. Refresh the field work | `services/open_work_refresh.py` | every subject, once | `TaskReservation.ending` `COMPLETED` for a live reservation of a `MISSING_FIELD` or `THIN_FIELD` task no longer open (`open-work.md`) |
 | 5b. Questions become work | `services/answer_gap_refresh.py` | the thin and unanswered answers of the last 90 days, once | `AnswerGap` groups by craft and meaning, anonymised; `TaskReservation.ending` `COMPLETED` for an `ANSWER_GAP` task whose acceptance holds (`open-work.md`, Questions readers asked; decision 0113) |
+| 5c. Refresh the shared terms | `services/shared_term_crafts.refresh_shared_terms` | every glossary term linked to the concepts of two crafts or more, in batches of `TERMS_PER_BATCH` = 200 | `SharedTermCraft` rebuilt whole: each term and craft whose own fact-level claims name the term, with their concept and claim ids, the summary the shared-science explorer reads (`learning.md`; the release also runs it after the curation import) |
 | 6. Refresh the changed pages | `services/page_revalidation.nightly_refresh`, with the pages from `upkeep_pages.PagesReport.changed_owners` | the crafts whose monograph or snapshot changed and the documents that moved, in batches of `REVALIDATE_TARGETS_MAX` = 40 targets; none when nothing changed | nothing stored; the web's `/api/revalidate` drops those pages' cached copies |
 
 The orchestration is `services/nightly_upkeep.py` (`run_nightly_upkeep`, and the read-only
@@ -219,6 +220,7 @@ The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
  fieldWork {subjects, tasks {MISSING_FIELD, THIN_FIELD}, priorities {HIGH, MEDIUM, LOW}, reservationsClosed},
  allowances {bucketsDeleted},
  answerGaps {questions, dropped, embedded, embeddingError, joined, opened, answered, lapsed, open, reservationsClosed},
+ sharedTerms {terms, crafts},
  refresh {ok, pages, refreshed, unrefreshed[], reason?}}
 ```
 
@@ -269,6 +271,7 @@ the build as not triggered, and the admin control says so.
 | The rotating monograph window and stale page rebuilds | `backend/tests/upkeep/test_rotation.py` and `test_page_rebuilds.py` |
 | The build route and its throttle | `backend/tests/upkeep/test_site_build_routes.py` |
 | The changed pages and their refresh | `backend/tests/upkeep/test_page_rebuilds.py` and `backend/tests/test_page_batches.py` |
+| The shared terms' summary | `backend/tests/learning/test_shared_term_crafts.py`, `backend/tests/db/test_learning_views_db.py` and `backend/tests/test_deploy_page_order.py` |
 | The whole run and its report on Postgres | `backend/tests/db/test_nightly_upkeep_db.py` |
 | The pages the build pre-renders | `frontend/e2e/site-pages-unit.spec.ts`, against `shared/site.pages.golden.json` |
 

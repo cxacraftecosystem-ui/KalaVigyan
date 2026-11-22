@@ -96,11 +96,11 @@ flowchart LR
 | [0060](0060-zoom-timeline-and-film-renderers.md) | Zoom, timeline and film mode renderers | · |
 | [0061](0061-phase-c-review-fixes.md) | Phase C review fixes | · |
 | [0062](0062-phase-d-contract.md) | Phase D contract: learning blocks, versions, alerts, lessons, exports and the map | [0067](0067-lessons-and-exports.md) |
-| [0063](0063-follow-ups-versions-and-alerts.md) | Follow-ups that build, version history, saved explainers and alerts | [0070](0070-phase-d-review-fixes.md) |
-| [0064](0064-quiz-compare-and-shared-science.md) | Quiz, compare and the shared-science explorer | [0070](0070-phase-d-review-fixes.md) |
+| [0063](0063-follow-ups-versions-and-alerts.md) | Follow-ups that build, version history, saved explainers and alerts | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
+| [0064](0064-quiz-compare-and-shared-science.md) | Quiz, compare and the shared-science explorer | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0065](0065-climate-risk-and-ask-the-map.md) | Climate and risk, and ask the map | · |
 | [0066](0066-local-measures-and-market-gi.md) | Local measures, and market and GI | [0070](0070-phase-d-review-fixes.md) |
-| [0067](0067-lessons-and-exports.md) | Lesson packs, the explainer PDF and citation export | [0070](0070-phase-d-review-fixes.md) |
+| [0067](0067-lessons-and-exports.md) | Lesson packs, the explainer PDF and citation export | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0068](0068-learning-block-renderers.md) | Learning block renderers | · |
 | [0069](0069-learning-screens.md) | Learning screens: follow-ups, saved answers, notes, lessons, exports, the map and compare | [0070](0070-phase-d-review-fixes.md) and [0067](0067-lessons-and-exports.md) |
 | [0070](0070-phase-d-review-fixes.md) | Phase D review fixes | · |
@@ -113,7 +113,7 @@ flowchart LR
 | [0072](0072-field-voices-contract.md) | Field voices come through signed peer routes, filtered by consent at the portal | [0084](0084-field-voices-v2.md) |
 | [0075](0075-reader-names-normals-and-citation-clusters.md) | Reader names, one normal per quantity and citation clusters | · |
 | [0076](0076-release-gate-that-sees.md) | The release gate looks at what the reader sees | · |
-| [0077](0077-lede-headings-and-question-order.md) | Every answer opens with a lede, its sections carry headings shaped by the question | [0140](0140-voice-and-listen-kept-true.md) |
+| [0077](0077-lede-headings-and-question-order.md) | Every answer opens with a lede, its sections carry headings shaped by the question | [0140](0140-voice-and-listen-kept-true.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0078](0078-category-dossiers-in-the-app.md) | Category dossiers are imported keyed to their category and served as public category pages | · |
 | [0079](0079-public-reading.md) | Craft, category, map and science pages read without signing in | [0084](0084-field-voices-v2.md), [0091](0091-field-voices-kalavigyan-side.md) and [0095](0095-craft-page-chapters.md) |
 | [0080](0080-claim-ledger.md) | An answer renders each claim once: the claim ledger | · |
@@ -180,6 +180,7 @@ flowchart LR
 | [0137](0137-limits-kept-by-choice.md) | Nine limits are kept by choice and leave the debt register | · |
 | [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | · |
 | [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | · |
+| [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | · |
 
 ## How this document is kept true
 

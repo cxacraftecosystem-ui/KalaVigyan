@@ -64,7 +64,7 @@ from app.models.field_voices import (
     FieldSegment,
     FieldVoiceStream,
 )
-from app.models.glossary import Term, TermConcept, TermCraft, TermSummary
+from app.models.glossary import SharedTermCraft, Term, TermConcept, TermCraft, TermSummary
 from app.models.identity import (
     AccessRoster,
     AuditLog,
@@ -95,7 +95,6 @@ from app.models.knowledge import (
     Objection,
     ReviewEvent,
     Source,
-    WebFetch,
 )
 from app.models.knowledge_pieces import KnowledgePiece, KnowledgePieceSubject
 from app.models.layout_proposals import LayoutProposal
@@ -127,6 +126,7 @@ from app.models.structure_proposals import StructureProposal
 from app.models.studio import PageDraft, SuppliedSource
 from app.models.testimony import ArtisanContribution, ArtisanConversation, ArtisanConversationAudio
 from app.models.upload_links import UploadLink
+from app.models.web_fetches import WebFetch
 
 __all__ = [
     "AccessRoster",
@@ -251,6 +251,7 @@ __all__ = [
     "RoutePolicy",
     "SavedItem",
     "SecretTestResult",
+    "SharedTermCraft",
     "Source",
     "SourceUpkeep",
     "StageMaterial",

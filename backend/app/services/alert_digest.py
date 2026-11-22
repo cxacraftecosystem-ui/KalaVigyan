@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import logging
 import uuid
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+from types import MappingProxyType
 from typing import Any
 
 from sqlalchemy import delete, exists, func, select
@@ -17,15 +18,22 @@ from app.research.alerts import ALERTS_SCHEMA_VERSION, DIGEST_ITEMS_MAX, AnswerI
 from app.research.sections import DISCIPLINE_TITLES
 
 from .access_roster import ACTIVE
+from .answer_translation import AnswerTranslation
+from .digest_language import DigestTranslations, digest_language
 from .mailer import Mail
 from .notifications import unread_improvements
 
 __all__ = [
+    "DIGEST_OPENING",
+    "DIGEST_STOP",
     "DIGEST_SUBJECT",
     "DIGEST_WINDOW",
+    "DigestReader",
     "DigestReport",
     "digest_mail",
+    "digest_texts",
     "explainer_url",
+    "news_line",
     "send_alert_digests",
     "week_of",
     "weekly_digest",
@@ -34,9 +42,12 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 DIGEST_SUBJECT = "Your saved KalaVigyan explainers got better"
+DIGEST_OPENING = "New cited findings arrived this week for explainers you saved."
+DIGEST_STOP = "Stop these emails in Settings:"
 DIGEST_WINDOW = timedelta(days=7)
 SETTINGS_PATH = "/settings"
 EXPLAINER_PATH = "/ask?explainer="
+ENGLISH: Mapping[str, str] = MappingProxyType({})
 
 Send = Callable[[Mail], Awaitable[bool]]
 
@@ -46,6 +57,13 @@ class DigestWeek:
     week: date
     since: datetime
     web_url: str
+
+
+@dataclass(frozen=True)
+class DigestReader:
+    user_id: uuid.UUID
+    email: str
+    language: str
 
 
 @dataclass
@@ -81,20 +99,45 @@ def weekly_digest(items: Sequence[AnswerImproved], *, week: date, web_url: str) 
     )
 
 
-def digest_mail(to: str, digest: WeeklyDigest, *, web_url: str) -> Mail:
-    lines = ["New cited findings arrived this week for explainers you saved.", ""]
+def digest_texts(digest: WeeklyDigest) -> list[str]:
+    return [DIGEST_SUBJECT, DIGEST_OPENING, *(news_line(item) for item in digest.items), DIGEST_STOP]
+
+
+def digest_mail(
+    to: str, digest: WeeklyDigest, *, web_url: str, rendered: Mapping[str, str] = ENGLISH
+) -> Mail:
+    lines = [rendered.get(DIGEST_OPENING, DIGEST_OPENING), ""]
     for item in digest.items:
-        lines += [item.question, f"{item.craft.name}: {_news_line(item)}", explainer_url(web_url, item), ""]
-    lines.append(f"Stop these emails in Settings: {digest.settings_url}")
-    return Mail(to=to, subject=DIGEST_SUBJECT, text="\n".join(lines))
+        news = news_line(item)
+        lines += [
+            item.question,
+            f"{item.craft.name}: {rendered.get(news, news)}",
+            explainer_url(web_url, item),
+            "",
+        ]
+    lines.append(f"{rendered.get(DIGEST_STOP, DIGEST_STOP)} {digest.settings_url}")
+    return Mail(to=to, subject=rendered.get(DIGEST_SUBJECT, DIGEST_SUBJECT), text="\n".join(lines))
 
 
 def explainer_url(web_url: str, item: AnswerImproved) -> str:
     return f"{web_url.rstrip('/')}{EXPLAINER_PATH}{item.explainer_id}"
 
 
+def news_line(item: AnswerImproved) -> str:
+    parts = [f"{entry.new_claims} in {DISCIPLINE_TITLES[entry.facet]}" for entry in item.news]
+    total = sum(entry.new_claims for entry in item.news)
+    noun = "finding" if total == 1 else "findings"
+    return f"{total} new {noun} ({', '.join(parts)})"
+
+
 async def send_alert_digests(
-    sessions: async_sessionmaker[AsyncSession], *, now: datetime, enabled: bool, web_url: str, send: Send
+    sessions: async_sessionmaker[AsyncSession],
+    *,
+    now: datetime,
+    enabled: bool,
+    web_url: str,
+    send: Send,
+    translation: AnswerTranslation | None = None,
 ) -> DigestReport:
     if not enabled:
         return DigestReport(enabled=False)
@@ -103,15 +146,17 @@ async def send_alert_digests(
     async with sessions() as session:
         readers = await _readers(session, digest_week.week)
     report.readers = len(readers)
-    for user_id, email in readers:
-        digest = await _claimed_digest(sessions, user_id, digest_week)
+    words = DigestTranslations(translation)
+    for reader in readers:
+        digest = await _claimed_digest(sessions, reader.user_id, digest_week)
         if digest is None:
             continue
-        if await send(digest_mail(email, digest, web_url=web_url)):
+        rendered = await words.rendered(reader.language, digest_texts(digest))
+        if await send(digest_mail(reader.email, digest, web_url=web_url, rendered=rendered)):
             report.sent += 1
             continue
         report.failed += 1
-        await _released(sessions, user_id, digest_week)
+        await _released(sessions, reader.user_id, digest_week)
     return report
 
 
@@ -145,10 +190,10 @@ async def _released(
         await session.commit()
 
 
-async def _readers(session: AsyncSession, week: date) -> list[tuple[uuid.UUID, str]]:
+async def _readers(session: AsyncSession, week: date) -> list[DigestReader]:
     sent = exists().where(AlertDigestSend.userId == User.id, AlertDigestSend.weekOf == week)
     rows = await session.execute(
-        select(User.id, User.email)
+        select(User.id, User.email, UserPreference.answerLanguage)
         .join(UserPreference, UserPreference.userId == User.id)
         .join(AccessRoster, AccessRoster.email == func.lower(User.email))
         .where(
@@ -159,11 +204,4 @@ async def _readers(session: AsyncSession, week: date) -> list[tuple[uuid.UUID, s
         )
         .order_by(User.id)
     )
-    return [(user_id, email) for user_id, email in rows]
-
-
-def _news_line(item: AnswerImproved) -> str:
-    parts = [f"{entry.new_claims} in {DISCIPLINE_TITLES[entry.facet]}" for entry in item.news]
-    total = sum(entry.new_claims for entry in item.news)
-    noun = "finding" if total == 1 else "findings"
-    return f"{total} new {noun} ({', '.join(parts)})"
+    return [DigestReader(user_id, email, digest_language(language)) for user_id, email, language in rows]

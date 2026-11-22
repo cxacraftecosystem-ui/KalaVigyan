@@ -97,7 +97,8 @@ backend/app/scripts/     entry points: seed commands run by the deploy (seed_cra
                          the PubChem compound lookup (link_compounds), the nightly craft
                          chapters job (build_craft_chapters, decision 0098), the nightly re-check
                          of saved explainers (recheck_saved) and the weekly alert digest
-                         (send_alert_digest, decision 0063), the voice agent's provisioning
+                         (send_alert_digest, decision 0063), the shared-science summary
+                         refreshed after each release's import (refresh_shared_terms), the voice agent's provisioning
                          (provision_voice_agent)
                          and the E2E account's provisioning (provision_e2e_account); shared
                          operator input in operator_input

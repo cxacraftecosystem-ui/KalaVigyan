@@ -79,3 +79,23 @@ class TermSummary(Base):
         UniqueConstraint("termId", "language"),
         CheckConstraint(one_of("basis", TERM_BASES), name="basis"),
     )
+
+
+class SharedTermCraft(Base):
+    __tablename__ = "SharedTermCraft"
+
+    termId: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("Term.id", ondelete="CASCADE"), primary_key=True
+    )
+    craftId: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("Craft.id", ondelete="CASCADE"), primary_key=True
+    )
+    conceptIds: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), nullable=False)
+    claimIds: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), nullable=False)
+    refreshedAt: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        Index(None, "craftId"),
+        CheckConstraint('cardinality("conceptIds") > 0', name="concepts"),
+        CheckConstraint('cardinality("claimIds") > 0', name="claims"),
+    )

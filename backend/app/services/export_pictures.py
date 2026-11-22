@@ -14,6 +14,7 @@ from app.research.media_refs import MediaRef
 __all__ = [
     "PICTURE_MAX_PIXELS",
     "PICTURE_MAX_SIDE",
+    "ExportPictures",
     "Picture",
     "PictureSource",
     "export_pictures",
@@ -35,26 +36,34 @@ class Picture:
     height: int
 
 
+@dataclass(frozen=True)
+class ExportPictures:
+    found: Mapping[uuid.UUID, Picture]
+    unread: frozenset[uuid.UUID] = frozenset()
+
+
 class PictureSource(Protocol):
     async def picture(self, url: str) -> bytes: ...
 
 
-async def export_pictures(medias: Iterable[MediaRef], source: PictureSource) -> Mapping[uuid.UUID, Picture]:
+async def export_pictures(medias: Iterable[MediaRef], source: PictureSource) -> ExportPictures:
     found: dict[uuid.UUID, Picture] = {}
+    unread: set[uuid.UUID] = set()
     for media in medias:
-        if media.id in found:
+        if media.id in found or media.id in unread:
             continue
         try:
             raw = await source.picture(media.image_url)
         except AppError as error:
             logger.warning("picture %s is left out of the export: %s", media.id, error)
+            unread.add(media.id)
             continue
         picture = await asyncio.to_thread(normalised, raw)
         if picture is None:
             logger.warning("picture %s is not an image a document can hold", media.id)
             continue
         found[media.id] = picture
-    return found
+    return ExportPictures(found=found, unread=frozenset(unread))
 
 
 def normalised(raw: bytes) -> Picture | None:

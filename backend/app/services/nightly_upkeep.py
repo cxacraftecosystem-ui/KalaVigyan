@@ -17,6 +17,7 @@ from .answer_gap_refresh import AnswerGapsReport, refresh_answer_gaps
 from .claim_holds import shown_held_ids
 from .open_work_refresh import FieldWorkReport, refresh_field_work
 from .orphan_concepts import OrphansReport, orphan_concepts, sweep_orphans
+from .shared_term_crafts import SharedTermsReport, refresh_shared_terms
 from .upkeep_allowances import AllowancesReport, sweep_allowances
 from .upkeep_archive import (
     ARCHIVES_PER_NIGHT,
@@ -80,6 +81,7 @@ class UpkeepReport:
     field_work: FieldWorkReport = field(default_factory=FieldWorkReport)
     allowances: AllowancesReport = field(default_factory=AllowancesReport)
     answer_gaps: AnswerGapsReport = field(default_factory=AnswerGapsReport)
+    shared_terms: SharedTermsReport = field(default_factory=SharedTermsReport)
 
     @property
     def ok(self) -> bool:
@@ -97,6 +99,7 @@ class UpkeepReport:
             "fieldWork": self.field_work.as_dict(),
             "allowances": self.allowances.as_dict(),
             "answerGaps": self.answer_gaps.as_dict(),
+            "sharedTerms": self.shared_terms.as_dict(),
         }
 
 
@@ -114,6 +117,7 @@ async def run_nightly_upkeep(session: AsyncSession, tools: UpkeepTools, *, now: 
     await rebuild_documents(session, report=report.pages)
     report.field_work = await refresh_field_work(session, now=now)
     report.answer_gaps = await refresh_answer_gaps(session, tools.embed, now=now)
+    report.shared_terms = await refresh_shared_terms(session, now=now)
     return report
 
 
