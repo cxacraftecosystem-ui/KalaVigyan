@@ -2565,8 +2565,15 @@ Last reviewed: 2026-11-22.
   hub's monographs shelf leaves two empty cells at 834 and 1440 with seven monographs; at 360 the
   landing's specimen label is 13px narrower because the board's label spills into the page margin;
   the Urdu answer keeps its interface words in English where the Urdu board shows Urdu.
-- **Clears it:** compare the font files' metrics; a shelf rule for an odd count; interface words
-  for the answer's languages.
+- **Why left (2026-11-22, decision 0141):** each part waits on an owner choice. Two are the boards'
+  own copies: the board sets the finding in Google's Newsreader and lets its label spill into the
+  page margin, so the choice is which side moves. The board has no hub screen, so no shelf rule for
+  an odd count is drawn to follow. The Urdu board gives five of the essay's interface words (جواب,
+  ماخذوں سے, مرتب, محفوظ کریں, اس جواب کا حوالہ دیں) but not "Saved", the other answer languages
+  or a craft's name in Urdu, which may not be transliterated by us.
+- **Clears it:** the owner picks the side for the two board differences and a shelf rule for an odd
+  count, and approves a sourced list of interface words for each answer language; then the copy
+  table and the shelf rule follow.
 
 ## Round 7 (2026-11-20)
 
