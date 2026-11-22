@@ -37,8 +37,9 @@ Last updated: 2026-11-20.
   and its per-sentence post-checks, live-research write-back, and the answer stream with its
   60-second heartbeat (`docs/contracts/research.md`). `core/errors.py` is the shared error
   hierarchy (`ProviderError` and `RouterError` join it). The stored-answer route now validates
-  every frame against the stream contract; `shared/answer-stream.golden.sse` is checked by the
-  backend and frontend tests. No adapter, planner, composer or writer exists yet.
+  every frame against the stream contract; `shared/answer-stream.golden.sse` was checked by the
+  backend and frontend tests until decision 0146 retired it. No adapter, planner, composer or
+  writer exists yet.
 
 - **Craft sync from both portals (decision 0003).** `app/scripts/sync_portal_crafts` reads a
   signed craft feed from the designer and documentation portals, upserts crafts by slug with
