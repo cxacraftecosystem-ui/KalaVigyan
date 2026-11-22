@@ -56,6 +56,7 @@ class SizedText:
 class SlideText:
     def __init__(self, language: str) -> None:
         self._writer = PdfWriter(language, orientation="landscape", title=language)
+        self._writer.new_page()
 
     def line_height(self, line: str, size: int, frame: TextFrameSize, *, bold: bool = False) -> float:
         style = TextStyle(size=size, bold=bold)
