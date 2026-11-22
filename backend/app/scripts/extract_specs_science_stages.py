@@ -93,7 +93,7 @@ def _check_ribbon(ribbon: Element, key: str, entries: list[dict[str, Any]]) -> N
     for stage, (entry, button) in enumerate(zip(entries, buttons, strict=True), start=1):
         picture, label = kids(expect(button, "button", "rb"))
         number, name = kids(expect(label, "span", "rb-l"))
-        expected = (str(stage), f"{key}-st-{stage}", f"Stage {stage}, {entry['name']}")
+        expected = (str(stage), f"{key}-st-{stage}", f"{stage} {entry['name']}")
         found = (button.attrs["data-go"], button.attrs["aria-controls"], button.attrs["aria-label"])
         if found != expected or text_of(number) != str(stage) or text_of(name) != entry["name"]:
             raise InvalidInput(f"ribbon button {stage} names its stage: {button.attrs}")
