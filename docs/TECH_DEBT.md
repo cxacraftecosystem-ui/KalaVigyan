@@ -2136,14 +2136,6 @@ Last reviewed: 2026-11-22.
 
 ## Learning screens (decision 0069)
 
-### A lesson keeps the explainer's section order
-
-- **What:** the builder chooses sections but sends them in the explainer's order; the contract
-  allows any order.
-- **Why left:** a reorder control needs the one drag and arrow implementation, which this app
-  does not have yet (`lib/routing.moveRoute` is the AI routing page's).
-- **Clears it:** a shared list-order helper and Up and Down controls on the builder's rows.
-
 ## Lesson packs and exports (decision 0067)
 
 ### A paper's APA reference names no journal
