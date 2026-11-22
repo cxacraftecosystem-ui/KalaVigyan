@@ -78,8 +78,10 @@ def live_store(used_before: int = 60, **changes: object) -> MemoryStore:
     return store
 
 
-async def turn_text(store: MemoryStore, relay: RelayDeps, content: bytes = b"recorded") -> str:
-    audio = RelayAudio(content, "audio/webm", least_seconds=1)
+async def turn_text(
+    store: MemoryStore, relay: RelayDeps, content: bytes = b"recorded", *, seconds: int = 1
+) -> str:
+    audio = RelayAudio(content, "audio/webm", least_seconds=seconds)
     return "".join([frame async for frame in relay_turn_events(store.sessions[SESSION_ID], audio, relay)])
 
 
@@ -221,12 +223,12 @@ async def test_unheard_audio_is_one_error_then_done_and_still_costs_its_floor() 
     assert store.sessions[SESSION_ID].turn_count == 1
 
 
-async def test_a_silent_upload_is_billed_by_its_size_and_uses_a_turn() -> None:
+async def test_a_silent_upload_is_billed_by_its_decoded_length_and_uses_a_turn() -> None:
     store = live_store()
     voice, paths = elevenlabs(answering(SILENCE))
-    found = events(await turn_text(store, deps(store, voice), b"\x00" * 50_000))
+    found = events(await turn_text(store, deps(store, voice), b"\x00" * 50_000, seconds=10))
     assert found[0] == ("error", {"message": NOT_HEARD})
-    assert found[1][1]["billedSeconds"] == 50_000 // 5_000
+    assert found[1][1]["billedSeconds"] == 10
     record = store.sessions[SESSION_ID]
     assert record.turn_count == 1 and record.reserved_seconds == 10
     assert paths == ["/v1/speech-to-text"]
@@ -244,7 +246,7 @@ async def test_every_upload_takes_one_of_the_forty_turns() -> None:
 async def test_an_upload_bigger_than_the_time_left_is_refused_before_speech_to_text() -> None:
     store = live_store(used_before=600 - 5)
     voice, paths = elevenlabs()
-    found = events(await turn_text(store, deps(store, voice), b"\x00" * 30_000))
+    found = events(await turn_text(store, deps(store, voice), b"\x00" * 30_000, seconds=6))
     assert found[0] == ("error", {"message": "Not enough voice time is left today."})
     assert found[1][1]["billedSeconds"] == 0 and found[1][1]["sessionEnded"] is False
     assert paths == [] and store.ledger == {} and store.sessions[SESSION_ID].turn_count == 0
@@ -288,7 +290,7 @@ async def test_a_caller_who_leaves_during_speech_to_text_still_gets_the_unheard_
         api_key="test-only-elevenlabs-key", client=httpx.AsyncClient(transport=httpx.MockTransport(answer))
     )
     relay = replace(deps(store, voice), shield=ShieldedWork())
-    consumer = asyncio.create_task(turn_text(store, relay, b"\x00" * 25_000))
+    consumer = asyncio.create_task(turn_text(store, relay, b"\x00" * 25_000, seconds=5))
     await asyncio.wait_for(asked.wait(), timeout=5)
     consumer.cancel()
     with pytest.raises(asyncio.CancelledError):
