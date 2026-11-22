@@ -67,6 +67,7 @@ The workflow runs `python -m app.scripts.nightly_upkeep` as the `kalavigyan` use
 | 5b. Questions become work | `services/answer_gap_refresh.py` | the thin and unanswered answers of the last 90 days, once | `AnswerGap` groups by craft and meaning, anonymised; `TaskReservation.ending` `COMPLETED` for an `ANSWER_GAP` task whose acceptance holds (`open-work.md`, Questions readers asked; decision 0113) |
 | 5c. Refresh the shared terms | `services/shared_term_crafts.refresh_shared_terms` | every glossary term linked to the concepts of two crafts or more, in batches of `TERMS_PER_BATCH` = 200 | `SharedTermCraft` rebuilt whole: each term and craft whose own fact-level claims name the term, with their concept and claim ids, the summary the shared-science explorer reads (`learning.md`; the release also runs it after the curation import) |
 | 6. Refresh the changed pages | `services/page_revalidation.nightly_refresh`, with the pages from `upkeep_pages.PagesReport.changed_owners` | the crafts whose monograph or snapshot changed and the documents that moved, in batches of `REVALIDATE_TARGETS_MAX` = 40 targets; none when nothing changed | nothing stored; the web's `/api/revalidate` drops those pages' cached copies |
+| 5d. Count the facts readers cannot see | `services/upkeep_hidden.py`, `services/reader_facts.py` | every approved fact of a craft once; the views read 2,000 facts at a time (`VIEWS_PER_BATCH`) | `AppSetting` `upkeep.hiddenFacts` |
 
 The orchestration is `services/nightly_upkeep.py` (`run_nightly_upkeep`, and the read-only
 `plan_nightly_upkeep` behind `--dry-run`).
@@ -209,6 +210,20 @@ cached. A change that must reach readers who are not signed in at once (a hidden
 retracted claim) refreshes its pages when it is written, and an Admin's Start a build remains for
 anything else; the admin control refuses a second build within 10 minutes (429 with `Retry-After`).
 
+### 5d. Facts readers cannot see
+
+Every guard that hides a fact fails closed, so over-hiding is silent; the night counts it
+(`services/upkeep_hidden.count_hidden_facts`, `services/reader_facts.craft_hidden`, decision 0149).
+For every craft it counts the approved facts of the craft's concepts and, by the one rule
+(`retrieval.md`, A fact a reader can see), the ones a signed-out reader cannot see, by reason:
+`RESTRICTED_FACT` (the fact is restricted), `HIDDEN_CONCEPT` (filed under a concept readers cannot
+see), `NO_SHOWN_SOURCE` (every source is restricted or a withheld field recording) and `HELD` (every
+quote failed its check). It then reads the facts the rule shows through a signed-out reader's view
+(`knowledge_view.claims_by_id`, 2,000 at a time) and names each one the view leaves out as
+`unexplained`: no rule expects it, so the night's `ok` is false while any is left. The report is
+stored in `AppSetting` `upkeep.hiddenFacts` and read by an Admin at `GET /api/coverage/hidden-facts`
+(`{report}`, null before the first night).
+
 ## Routes
 
 | Method | Path | Who | Answer |
@@ -216,6 +231,7 @@ anything else; the admin control refuses a second build within 10 minutes (429 w
 | GET | `/api/site/pages` | anyone (public reading limits) | `StaticPages {schemaVersion 1, crafts[slug], categories[slug]}`: crafts with an `OPEN` snapshot by slug, categories in master order; golden `shared/site.pages.golden.json` |
 | GET | `/api/site/build` | Admin, Master Admin | `SiteBuildState {configured, lastTriggeredAt, nextAllowedAt}` |
 | POST | `/api/site/build` | Admin, Master Admin | 202 `SiteBuildState`; 503 when the hook is not set, 429 within 10 minutes of the last build, 502 when the hook refuses |
+| GET | `/api/coverage/hidden-facts` | Admin, Master Admin | `{report}`: the last night's `hiddenFacts` (step 5d), or null |
 
 The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
 `frontend/e2e/site-pages-unit.spec.ts`); the control is `components/admin/SiteBuildCard.tsx`.
@@ -238,10 +254,13 @@ The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
  mcpActivity {daysCounted, callsCounted, callsPruned},
  answerGaps {questions, dropped, embedded, embeddingError, joined, opened, answered, lapsed, open, reservationsClosed},
  sharedTerms {terms, crafts},
+ hiddenFacts {countedAt, crafts, byReason {HELD, RESTRICTED_FACT, HIDDEN_CONCEPT, NO_SHOWN_SOURCE},
+              unexplained, craftsUnexplained[], perCraft[{craft, approved, hidden, unexplained[]}]},
  refresh {ok, pages, refreshed, unrefreshed[], reason?}}
 ```
 
-`ok` is false when a monograph or page failed to rebuild, the fetcher was away or a changed page
+`ok` is false when a monograph or page failed to rebuild, the fetcher was away, an approved fact the
+read rule shows was left out of a reader's view (`hiddenFacts.unexplained`) or a changed page
 could not be refreshed; an unreachable source or a failed archive is expected and only counted. An
 unset `WEB_REVALIDATE_SECRET` is reported (`reason`) and is not a failure. `--dry-run` prints `{ok, dryRun, sourcesDue,
 sourcesAtRisk, claimsHeld, sourcesRotten, monographs, pagesStale, clientsAbandoned, orphans[], mcpDaysToCount,

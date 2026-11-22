@@ -29,7 +29,7 @@ from app.research.coverage import (
     field_coverage,
     held_fields,
 )
-from app.research.retrieval import RESTRICTED_SENSITIVITY
+from app.retrieval.citation_access import shown_source
 
 from . import knowledge_view
 from .open_work_components import craft_pieces, registered_pieces
@@ -158,7 +158,7 @@ async def _cited_claims(
         select(owned.c.owner, owned.c.claim, owned.c.field, owned.c.fields, ClaimSource.sourceId)
         .join(ClaimSource, ClaimSource.claimId == owned.c.claim)
         .join(Source, Source.id == ClaimSource.sourceId)
-        .where(Source.sensitivity != RESTRICTED_SENSITIVITY)
+        .where(shown_source())
     )
     filed: dict[uuid.UUID, dict[str, frozenset[str]]] = defaultdict(dict)
     sources: ByOwner = defaultdict(lambda: defaultdict(set))

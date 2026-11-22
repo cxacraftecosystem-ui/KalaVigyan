@@ -628,6 +628,19 @@ fixture or the category page (`docs/contracts/category-page.md`).
   and leaves the issue as it is.
   Its artifact holds the judged revision of the generated questions: commit `retrieval_questions.json`
   over `backend/app/data/eval/generated/retrieval_questions.json` when `generatedRevision` rose.
+- **Gate judge evaluation** (`judge-eval.yml`): runs `app.scripts.eval_judges` on the box every night
+  at 01:37 UTC and by hand from main: `gh workflow run judge-eval.yml -R cxacraftecosystem-ui/KalaVigyan
+  --ref main`. Two judge calls score the duplicate and novelty judges on the labelled cases in
+  `backend/app/data/eval/judge_cases.json` and fail below its floors (decision 0149); the summary lists
+  each case judged otherwise than labelled.
+- **MCP contribution round trip** (the `contribution` job of `post-deploy.yml`): after a release is
+  served, the Professor E2E account (`E2E_PROFESSOR_*` secrets) proposes a marked test fact through
+  MCP quoting a page with no open licence, checks that `get_facts`, the field's coverage count and the
+  craft page show it to a signed-out reader without the quote, retracts it and checks it is gone.
+- **Lead scripts for contributions** (on the box, as `kalavigyan` with the box's `.env`):
+  `python -m app.scripts.rejudge_differing` re-judges every live pair flagged sources differ and
+  writes nothing; `python -m app.scripts.retitle_sources` lists sources whose title is a file name or
+  under three words, and `--set <id> --title "<the work's title>"` replaces one with an audit row.
 - **Generated retrieval questions** (`eval-questions.yml`): by hand only, from main:
   `gh workflow run eval-questions.yml -R cxacraftecosystem-ui/KalaVigyan --ref main` (`-f cap=<USD>`,
   3 by default). It writes a question for each sampled published fact on the box and keeps the set as

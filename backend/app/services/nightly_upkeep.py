@@ -31,6 +31,7 @@ from .upkeep_archive import (
 from .upkeep_clients import ClientsReport, abandoned_client_count, remove_abandoned_clients
 from .upkeep_costs import LateCostsReport, settle_late_costs
 from .upkeep_healing import HealingReport, heal
+from .upkeep_hidden import HiddenReport, count_hidden_facts
 from .upkeep_links import rotten_count
 from .upkeep_pages import (
     MONOGRAPHS_PER_NIGHT,
@@ -88,10 +89,11 @@ class UpkeepReport:
     answer_gaps: AnswerGapsReport = field(default_factory=AnswerGapsReport)
     shared_terms: SharedTermsReport = field(default_factory=SharedTermsReport)
     late_costs: LateCostsReport = field(default_factory=LateCostsReport)
+    hidden: HiddenReport = field(default_factory=HiddenReport)
 
     @property
     def ok(self) -> bool:
-        return not self.pages.failed and not self.quotes.fetcher_unavailable
+        return not self.pages.failed and not self.quotes.fetcher_unavailable and not self.hidden.unexplained
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -108,6 +110,7 @@ class UpkeepReport:
             "answerGaps": self.answer_gaps.as_dict(),
             "sharedTerms": self.shared_terms.as_dict(),
             "lateCosts": self.late_costs.as_dict(),
+            "hiddenFacts": self.hidden.as_dict(),
         }
 
 
@@ -128,6 +131,7 @@ async def run_nightly_upkeep(session: AsyncSession, tools: UpkeepTools, *, now: 
     report.field_work = await refresh_field_work(session, now=now)
     report.answer_gaps = await refresh_answer_gaps(session, tools.embed, now=now)
     report.shared_terms = await refresh_shared_terms(session, now=now)
+    report.hidden = await count_hidden_facts(session, now=now)
     return report
 
 
