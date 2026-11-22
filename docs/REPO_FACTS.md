@@ -15,12 +15,13 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 ## HTTP API
 
-**242 operations** in `backend/app/api/routes/` and `backend/app/main.py`: 123 GET, 81 POST, 24 PUT, 2 PATCH, 12 DELETE.
+**244 operations** in `backend/app/api/routes/` and `backend/app/main.py`: 124 GET, 81 POST, 25 PUT, 2 PATCH, 12 DELETE.
 
 | Module | Operations |
 | --- | ---: |
 | `auth.py` | 16 |
 | `contribution_streams.py` | 12 |
+| `settings.py` | 9 |
 | `users.py` | 9 |
 | `image_contributions.py` | 8 |
 | `lessons.py` | 8 |
@@ -28,7 +29,6 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 | `own_proposals.py` | 7 |
 | `page_translations.py` | 7 |
 | `profile.py` | 7 |
-| `settings.py` | 7 |
 | `two_factor.py` | 7 |
 | `voice.py` | 7 |
 | `access.py` | 6 |
@@ -105,16 +105,16 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 | Python suite | Files | Tests |
 | --- | ---: | ---: |
-| Backend, without a database | 581 | 4507 |
-| Backend, on Postgres | 149 | 736 |
+| Backend, without a database | 585 | 4538 |
+| Backend, on Postgres | 149 | 737 |
 | Tools | 21 | 183 |
 | Craft data ETL | 5 | 46 |
 | Geo ETL | 16 | 151 |
 
 | Frontend (`frontend/e2e/`) | Files | Tests |
 | --- | ---: | ---: |
-| Unit specs (`*-unit.spec.ts`) | 156 | 1178 |
-| Browser and release specs | 13 | 46 |
+| Unit specs (`*-unit.spec.ts`) | 159 | 1190 |
+| Browser and release specs | 14 | 47 |
 
 A Python test is a `test_` function in a `test_` file; a frontend test is a `test(` call at the start of a line. Every suite runs on GitHub Actions, never on a development machine.
 
@@ -122,7 +122,7 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | What | Count |
 | --- | ---: |
-| Decision records (`docs/decisions/`) | 132 |
+| Decision records (`docs/decisions/`) | 134 |
 | Contracts (`docs/contracts/`) | 40 |
 | Workflows (`.github/workflows/`) | 26 |
 | Curated craft dossiers | 32 |
@@ -132,16 +132,16 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | Area | Files | Lines |
 | --- | ---: | ---: |
-| `backend/app` | 1223 | 175,271 |
-| `backend/tests` | 874 | 116,715 |
+| `backend/app` | 1227 | 175,695 |
+| `backend/tests` | 878 | 117,216 |
 | `backend/migrations` | 62 | 9,476 |
-| `frontend/app` | 99 | 9,574 |
-| `frontend/components` | 597 | 41,131 |
-| `frontend/lib` | 244 | 25,369 |
-| `frontend/e2e` | 248 | 28,469 |
+| `frontend/app` | 101 | 9,627 |
+| `frontend/components` | 599 | 41,287 |
+| `frontend/lib` | 247 | 25,493 |
+| `frontend/e2e` | 253 | 28,751 |
 | `etl` | 52 | 8,442 |
-| `tools` | 93 | 8,099 |
-| `infra` | 15 | 1,993 |
+| `tools` | 93 | 8,103 |
+| `infra` | 15 | 2,027 |
 
 Code files are `.py`, `.ts`, `.tsx`, `.mjs`, `.css`, `.sh`, `.tf` and `.sql`; lines are newlines.
 
