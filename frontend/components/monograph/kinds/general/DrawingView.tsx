@@ -48,7 +48,7 @@ export function DrawingView({ spec, renderUnit }: ComponentViewProps) {
   return (
     <GeneralFigure kind="drawing" head={drawing.head} titleId={titleId} renderUnit={renderUnit}>
       <div className="grid gap-2">
-        <div className="min-w-0 [forced-color-adjust:none]" role="img" aria-labelledby={titleId} aria-describedby={altId} data-drawing={drawing.themes ? "themed" : roles ? "roles" : "fixed"}>
+        <div className="w-full min-w-0 max-w-measure [forced-color-adjust:none]" role="img" aria-labelledby={titleId} aria-describedby={altId} data-drawing={drawing.themes ? "themed" : roles ? "roles" : "fixed"}>
           {drawing.themes ? <ThemedDrawing themes={drawing.themes} box={box} /> : roles ? <RoleDrawing svg={drawing.svg} box={box} /> : <FixedDrawing svg={drawing.svg} box={box} />}
         </div>
         <p id={altId} className="max-w-measure font-ui text-label text-ink-2">

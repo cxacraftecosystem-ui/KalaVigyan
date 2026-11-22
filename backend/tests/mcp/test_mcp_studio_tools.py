@@ -277,7 +277,7 @@ async def test_a_draft_s_preview_returns_the_private_link_and_the_report(
         "structuredContent"
     ]
     assert content["previewUrl"] == f"{SITE}/preview/token" and content["draftId"] == str(DRAFT_ID)
-    assert (content["report"]["failed"], len(content["report"]["rules"])) == (report.failed, 26)
+    assert (content["report"]["failed"], len(content["report"]["rules"])) == (report.failed, 27)
     assert recorded == [DRAFT_ID] and session.commits == 1
 
 

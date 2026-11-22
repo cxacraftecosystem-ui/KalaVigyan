@@ -57,5 +57,6 @@ test("a flagged sentence citing two quoted sources opens both readings, quoted a
   expect(html).not.toContain("Alum again");
   expect(html).not.toContain("<details");
   const single = withReading(createElement(ExplainerSentence, { sentence: { ...sentence, sourcesDiffer: true } }));
-  expect(single).not.toContain("aria-expanded");
+  expect(single).not.toContain("sources-differ-readings");
+  expect(attribute(single, "evidence-tag", "data-level")).toEqual(["differ"]);
 });
