@@ -90,6 +90,7 @@ def hidden_reason() -> ColumnElement[str | None]:
 async def craft_hidden(session: AsyncSession) -> list[CraftHidden]:
     rows = await session.execute(
         select(Craft.slug, Claim.id, hidden_reason())
+        .select_from(Claim)
         .join(Concept, and_(Claim.subjectType == CONCEPT_SUBJECT, Concept.id == Claim.subjectId))
         .join(Craft, Craft.id == Concept.craftId)
         .where(Claim.status == APPROVED_STATUS)
