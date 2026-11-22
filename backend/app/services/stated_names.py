@@ -31,7 +31,11 @@ class RegisterPlace:
 def unstated_names(text: str, supports: Sequence[str]) -> list[str]:
     months = sorted(months_named([text]) - months_named(supports))
     seasons = sorted(seasons_named([text]) - seasons_named(supports))
-    places = [place.written for place in register_places(text) if not _stated(place.register, supports)]
+    places = [
+        place.written
+        for place in register_places(text)
+        if place.written == place.register and not _stated(place.register, supports)
+    ]
     return [*(MONTH_NAMES[month - 1] for month in months), *(season.lower() for season in seasons), *places]
 
 

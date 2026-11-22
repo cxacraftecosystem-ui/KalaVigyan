@@ -87,7 +87,8 @@ def test_a_district_written_by_its_other_name_is_read_as_its_register_place() ->
     assert (
         unstated_names("Dyers in Kachchh work in winter.", ["dyers of kutch work in the cold season"]) == []
     )
-    assert unstated_names("Dyers in Kutch print.", ["dyers of barmer print"]) == ["Kutch"]
+    assert unstated_names("Dyers in Kachchh print.", ["dyers of barmer print"]) == ["Kachchh"]
+    assert unstated_names("Kutch Ajrakh is printed in Barmer.", ["ajrakh is printed in barmer"]) == []
 
 
 def test_a_sentence_naming_what_its_sources_do_not_is_dropped_alone() -> None:
