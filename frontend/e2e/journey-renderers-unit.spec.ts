@@ -44,8 +44,7 @@ const LOOKUP: CitationLookup = {
     [TEXTILE_SOCIETY, 4],
     [AJRAKH_INTRODUCTION, 5]
   ]),
-  sourcesById: new Map(),
-  onOpen: () => undefined
+  sourcesById: new Map()
 };
 
 let shapesCache: DistrictShape[] | null = null;

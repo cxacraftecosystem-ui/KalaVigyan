@@ -10,6 +10,7 @@ from app.core.db import get_engine
 from app.models import Compound, Source
 from app.services.claim_seed import seed_id
 from app.services.compound_lookup import link_compounds, record_source_id
+from app.services.science_seed import seed_science
 from app.sources.reference.pubchem import PubChemCompound
 
 from ..science.test_compound_lookup import FakeFinder
@@ -26,6 +27,16 @@ ALIZARIN = PubChemCompound(
     "RGCKGOZRHPZPFP-UHFFFAOYSA-N",
     None,
 )
+LEUCOINDIGO = PubChemCompound(
+    23035,
+    "Leucoindigo",
+    "C16H12N2O2",
+    "264.28",
+    "2-(3-hydroxy-1H-indol-2-yl)-1H-indol-3-ol",
+    "VIFKLIUAPGUEBV-UHFFFAOYSA-N",
+    None,
+)
+INDIGO_AT_LEUCO_CID = PubChemCompound(23035, "Indigo", "C16H10N2O2", None, None, None, None)
 
 
 @pytest.fixture
@@ -61,3 +72,24 @@ async def test_a_seeded_compound_is_linked_to_its_pubchem_record(session: AsyncS
     assert again.linked == []
     sources = (await session.scalars(select(Source).where(Source.url == source.url))).all()
     assert len(sources) == 1
+
+
+async def test_a_seeded_cid_gets_its_record_only_when_pubchem_holds_the_same_composition(
+    session: AsyncSession,
+) -> None:
+    leuco = await session.get(Compound, seed_id("compound", "leucoindigo"))
+    assert (leuco.pubchemCid, leuco.formula, leuco.sourceId) == (23035, "C16H12N2O2", None)
+    wrong = await link_compounds(session, FakeFinder({}, {23035: INDIGO_AT_LEUCO_CID}), now=NOW)
+    assert "Leucoindigo" in wrong.not_found and leuco.sourceId is None
+    report = await link_compounds(session, FakeFinder({}, {23035: LEUCOINDIGO}), now=NOW)
+    assert "Leucoindigo" in report.filled
+    assert (leuco.pubchemCid, leuco.formula, leuco.sourceId) == (23035, "C16H12N2O2", record_source_id(23035))
+    assert leuco.inchiKey == "VIFKLIUAPGUEBV-UHFFFAOYSA-N"
+
+
+async def test_seeding_again_keeps_a_cid_the_lookup_linked(session: AsyncSession) -> None:
+    await link_compounds(session, FakeFinder({"Alizarin": [ALIZARIN]}), now=NOW)
+    await seed_science(session)
+    alizarin = await session.get(Compound, seed_id("compound", "alizarin"))
+    await session.refresh(alizarin)
+    assert (alizarin.pubchemCid, alizarin.sourceId) == (6293, record_source_id(6293))

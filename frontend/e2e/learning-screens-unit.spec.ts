@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { ConfirmProvider } from "@/components/dialogs/ConfirmDialog";
 import { NAV_ITEMS, isNavItemVisible } from "@/components/DynamicIslandNav";
-import { CompareLinks, FollowUpBox } from "@/components/learn/ExplainerFooter";
+import { CompareLinks, FollowUpBox, selfCheckOffered } from "@/components/learn/ExplainerFooter";
 import { ExplainerActions, VersionPicker } from "@/components/learn/ExplainerTools";
 import { NotesInbox, type NotesActions } from "@/components/learn/NotesInbox";
 import { SavedList } from "@/components/learn/SavedList";
@@ -12,7 +12,7 @@ import { ApiError } from "@/lib/api";
 import { compareSuggestions } from "@/lib/comparePage";
 import { dispositionFileName, downloadApiFile } from "@/lib/download";
 import type { Explainer } from "@/lib/explainerContract";
-import { emptyExplainer } from "@/lib/explainerState";
+import { askingExplainer, emptyExplainer } from "@/lib/explainerState";
 import { parseExplainerStreamBlock, type ExplainerEvent } from "@/lib/explainerStream";
 import {
   explainerRef,
@@ -133,6 +133,38 @@ test("a deepening block goes before the section's pictures, and a stale base fai
   expect(explainerRef(settled)).toEqual({ explainerId: EXPLAINER_ID, version: 1 });
 });
 
+test("Check yourself asks for a quiz only when the finished stream did not say there is none", () => {
+  const finished = (frame: string) => reduceAnswerEvent(askingExplainer("Why is ajrakh blue?", "en"), parseExplainerStreamBlock(frame)!);
+  const offered = finished(`event: done\ndata: {"answerId":"${EXPLAINER_ID}","quizAvailable":true}`);
+  const none = finished(`event: done\ndata: {"answerId":"${EXPLAINER_ID}","quizAvailable":false}`);
+  const unknown = finished(`event: done\ndata: {"answerId":"${EXPLAINER_ID}"}`);
+  expect([offered.quizAvailable, none.quizAvailable, unknown.quizAvailable]).toEqual([true, false, null]);
+  expect([selfCheckOffered(offered), selfCheckOffered(none), selfCheckOffered(unknown)]).toEqual([true, false, true]);
+  expect(selfCheckOffered({ ...offered, answerId: null })).toBe(false);
+  expect(selfCheckOffered(explainerStateOf(FIRST_DOCUMENT))).toBe(true);
+  expect(followingExplainer(none, { explainerId: EXPLAINER_ID, version: 1 }, "Why?").quizAvailable).toBeNull();
+});
+
+test("an added section that found nothing shows what was searched until the version is stored, which leaves it out", () => {
+  const base = explainerStateOf(FIRST_DOCUMENT);
+  const asking = followingExplainer(base, { explainerId: EXPLAINER_ID, version: 1 }, LATEST.mark.question);
+  const [understood, buildsOn, ...rest] = followUpEvents();
+  const version = rest.find((event) => event.type === "version")!;
+  const searching: ExplainerEvent[] = [
+    understood,
+    buildsOn,
+    ...rest.filter((event) => event.type !== "version" && event.type !== "done"),
+    { type: "section_started", data: { id: "s5", discipline: "HISTORY", title: "History", order: 5, state: "RESEARCHING" } },
+    { type: "section_done", data: { sectionId: "s5", state: "EMPTY", searched: "Khamir" } }
+  ];
+  const moment = searching.reduce(reduceAnswerEvent, asking);
+  expect(moment.sections.map((section) => [section.id, section.state, section.searched])).toContainEqual(["s5", "EMPTY", "Khamir"]);
+  const stored = reduceAnswerEvent(moment, version);
+  expect(stored.sections.map((section) => section.id)).toEqual(LATEST.explainer.sections.map((section) => section.id));
+  expect(stored.sections.map((section) => section.id)).toEqual(["s1", "s2", "s3", "s4"]);
+  expect(stored.sections.some((section) => "added" in section)).toBe(false);
+});
+
 test("the follow-up request carries only the question and what it builds on", () => {
   const request = followUpRequest({ explainerId: EXPLAINER_ID, version: 1 }, "  Why did water push Ajrakh printers?  ");
   expect(request).toEqual({ question: "Why did water push Ajrakh printers?", depth: null, buildsOn: VERSIONS.request });
@@ -206,13 +238,13 @@ test("a note says what got better, links to its explainer and offers the update"
   expect(unreadText(0)).toBeNull();
   expect(NOTES_SHOWN_MAX).toBe(Number(/NOTIFICATIONS_SHOWN_MAX = (\d+)/.exec(readRepo("backend", "app", "research", "alerts.py"))?.[1]));
   expect([notesCapText(49), notesCapText(50)]).toEqual([null, "Showing the latest 50."]);
-  const html = withReading(createElement(NotesInbox, { notes: NOTES.items, actions: NO_ACTIONS, reduce: true }));
+  const html = withReading(createElement(NotesInbox, { notes: NOTES.items, actions: NO_ACTIONS }));
   expect(text(html)).toContain("This answer got better");
   expect(attribute(html, "note", "data-unread")).toEqual(["true"]);
   expect(html).toContain('data-testid="note-update"');
   expect(html).toContain('data-testid="note-read"');
   expect(html).toContain(`href="${explainerHref(EXPLAINER_ID)}"`);
-  const read = withReading(createElement(NotesInbox, { notes: [{ ...note, readAt: "2026-11-19T08:00:00Z" }], actions: NO_ACTIONS, reduce: true }));
+  const read = withReading(createElement(NotesInbox, { notes: [{ ...note, readAt: "2026-11-19T08:00:00Z" }], actions: NO_ACTIONS }));
   expect(attribute(read, "note", "data-unread")).toEqual(["false"]);
   expect(read).not.toContain('data-testid="note-read"');
   const empty = text(withReading(createElement(NotesInbox, { notes: [], actions: NO_ACTIONS })));
@@ -220,11 +252,10 @@ test("a note says what got better, links to its explainer and offers the update"
   expect(empty).not.toMatch(/nothing|yet/i);
 });
 
-test("notes are drawn finished at first paint, whatever the motion setting", () => {
-  const moving = withReading(createElement(NotesInbox, { notes: NOTES.items, actions: NO_ACTIONS, reduce: false }));
-  const still = withReading(createElement(NotesInbox, { notes: NOTES.items, actions: NO_ACTIONS, reduce: true }));
-  expect(moving).toBe(still);
-  expect(moving).not.toMatch(/translateY|opacity:\s*0/);
+test("notes are drawn finished at first paint and take no motion setting", () => {
+  const html = withReading(createElement(NotesInbox, { notes: NOTES.items, actions: NO_ACTIONS }));
+  expect(html).not.toMatch(/translateY|opacity:\s*0/);
+  expect(readRepo("frontend", "components", "learn", "NotesInbox.tsx")).not.toMatch(/reduce/);
 });
 
 test("saved answers list their version, mark a newer one and say when there are none", () => {

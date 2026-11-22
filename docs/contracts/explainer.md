@@ -1377,7 +1377,8 @@ neither spends: the server chooses by fixed rules and fills every value.
   craft gets none.
 - **`quiz`** has no builder: it is made on request for an explainer the reader has (`GET
   /api/answers/{answerId}/quiz`) and inside lesson packs, by `research/quiz.quiz_block`
-  (`docs/contracts/learning.md`).
+  (`docs/contracts/learning.md`). A finished stream says in `done.quizAvailable` whether the route
+  has one, so Check yourself asks only then (`services/answer_quiz.with_quiz_offer`).
 
 `compare` and `concept_graph` joined `BUILT_BLOCK_KINDS` on both sides with this lane, their
 renderers being in place (decision 0068). `quiz` is never streamed in an answer, so it stays out
@@ -1564,7 +1565,9 @@ from it); reused pieces then stream (their `trail` with `storedAt`, `section_sta
 interleave and `order` places them
 (within a section: its trail, `WRITING`, `CHECKING`, sources and blocks, open questions,
 `section_done`, then `trail` `QUOTED` for what it quoted; a section researching again goes back
-to `RESEARCHING`); `follow_ups` or `not_enough_evidence`; `done {answerId}` last. A section's
+to `RESEARCHING`); `follow_ups` or `not_enough_evidence`; `done {answerId, quizAvailable?}` last,
+`quizAvailable` saying whether the quiz route has a quiz for the asker at that moment (absent
+when it could not be read; decision 0141). A section's
 `images` block, when it has one, is its last block. The researched
 and stored answers no longer send `section` or `sentence` (decision 0032). The heartbeat stays: an
 SSE comment after 60 s of silence (`HEARTBEAT_SECONDS`).

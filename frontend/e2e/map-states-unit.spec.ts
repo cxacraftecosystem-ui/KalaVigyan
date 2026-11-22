@@ -81,7 +81,7 @@ test("from 1024px the map page's caption, ranked list and legend stand beside th
   const counts = { states: [state("Uttar Pradesh", 64), state("Gujarat", 37)], allIndia: 46 };
   const rows = counts.states.map((entry) => ({ key: entry.name, name: entry.name, value: entry.count }));
   const ranking = { catalogue: null, points: { data: [], failure: null, retry: () => undefined }, counts, lists: null, circles: [], marks: [], rows, catalogueError: null, reloadCatalogue: () => undefined };
-  const html = renderToStaticMarkup(createElement(MapStatesFigure, { ranking, boundary: null }));
+  const html = renderToStaticMarkup(createElement(MapStatesFigure, { ranking, caption: null }));
   expect(html).toMatch(/<figure id="map-figure" class="kv-figure lg:grid lg:grid-cols-\[minmax\(0,6.6fr\)_minmax\(0,4.4fr\)\]/);
   expect(html).toContain("lg:[&amp;&gt;figcaption]:col-start-2");
   expect(html).toContain("lg:[&amp;&gt;div]:contents");

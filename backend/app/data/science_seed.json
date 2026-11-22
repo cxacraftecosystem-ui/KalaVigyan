@@ -241,7 +241,7 @@
     {"key": "iron-ii-acetate", "name": "Iron(II) acetate", "formula": "Fe(CH3COO)2"},
     {"key": "alizarin", "name": "Alizarin", "formula": "C14H8O4"},
     {"key": "indigo", "name": "Indigo", "formula": "C16H10N2O2"},
-    {"key": "leucoindigo", "name": "Leucoindigo", "formula": "C16H12N2O2"},
+    {"key": "leucoindigo", "name": "Leucoindigo", "formula": "C16H12N2O2", "pubchemCid": 23035},
     {"key": "potassium-alum", "name": "Potassium alum", "formula": "KAl(SO4)2·12H2O"}
   ],
   "materials": {

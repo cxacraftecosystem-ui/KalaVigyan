@@ -3,12 +3,19 @@ import type * as ThreeDmolModule from "3dmol";
 type ThreeDmol = typeof ThreeDmolModule;
 type GLViewer = ThreeDmolModule.GLViewer;
 
-export type MoleculeScene = { turn: (degrees: number, milliseconds: number) => void; dispose: () => void };
+export type MoleculeScene = {
+  turn: (degrees: number, milliseconds: number) => void;
+  tilt: (degrees: number, milliseconds: number) => void;
+  zoom: (factor: number, milliseconds: number) => void;
+  dispose: () => void;
+};
 export type MoleculeViewer = { show: (element: HTMLElement, sdf: string) => MoleculeScene | null };
+export type SceneViewer = Pick<GLViewer, "rotate" | "zoom" | "getCanvas" | "clear">;
 
 export const MOLECULE_STYLE = { stick: { radius: 0.14 }, sphere: { scale: 0.24 } } as const;
 export const VIEWER_SPEC = { backgroundAlpha: 0, antialias: true } as const;
 export const TURN_AXIS = "y";
+export const TILT_AXIS = "x";
 
 let loading: Promise<MoleculeViewer> | null = null;
 
@@ -33,10 +40,16 @@ export function webglAvailable(): boolean {
   }
 }
 
-function sceneOf(viewer: GLViewer, element: HTMLElement): MoleculeScene {
+export function moleculeScene(viewer: SceneViewer, element: HTMLElement): MoleculeScene {
   return {
     turn(degrees, milliseconds) {
       viewer.rotate(degrees, TURN_AXIS, milliseconds);
+    },
+    tilt(degrees, milliseconds) {
+      viewer.rotate(degrees, TILT_AXIS, milliseconds);
+    },
+    zoom(factor, milliseconds) {
+      viewer.zoom(factor, milliseconds);
     },
     dispose() {
       const canvas = viewer.getCanvas();
@@ -67,7 +80,7 @@ function viewerOf(module: ThreeDmol & { default?: ThreeDmol }): MoleculeViewer {
       viewer.setStyle({}, { stick: { ...MOLECULE_STYLE.stick }, sphere: { ...MOLECULE_STYLE.sphere } });
       viewer.zoomTo();
       viewer.render();
-      return sceneOf(viewer, element);
+      return moleculeScene(viewer, element);
     }
   };
 }

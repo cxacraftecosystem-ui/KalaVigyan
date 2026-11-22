@@ -26,7 +26,8 @@ const RETIRED_CLASS = new RegExp(
   `(?<![\\w-])(?:${COLOUR_UTILITIES})-(?:(?:${RETIRED_RAMPS.join("|")})-[a-z0-9]+|(?:${STOCK_PALETTES.join("|")})-${SHADE}|black)${END}`,
   "g"
 );
-const ALIAS_COLOURS = "ink(?:-(?:900|700|500|300|body|muted|soft))?|line-200|surface-50|bg-0|progress-(?:track|fill|done)|secondary(?:-foreground)?|accent(?:-foreground)?|white|card|error-(?:100|600)|success-(?:100|600)";
+const SHADCN_COLOURS = "primary(?:-foreground)?|ring|border|input|background|foreground|popover(?:-foreground)?|muted(?:-foreground)?|destructive(?:-foreground)?";
+const ALIAS_COLOURS = `ink(?:-(?:900|700|500|300|body|muted|soft))?|line-200|surface-50|bg-0|progress-(?:track|fill|done)|secondary(?:-foreground)?|accent(?:-foreground)?|white|card|error-(?:100|600)|success-(?:100|600)|${SHADCN_COLOURS}`;
 const ALIAS_CLASS = new RegExp(
   [
     `(?<![\\w-])(?:${COLOUR_UTILITIES})-(?:${ALIAS_COLOURS})${END}`,

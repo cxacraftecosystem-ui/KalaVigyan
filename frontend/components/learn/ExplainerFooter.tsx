@@ -77,11 +77,15 @@ export function SelfCheck({ answerId, reduce }: { answerId: string; reduce: bool
   );
 }
 
+export function selfCheckOffered(state: Pick<ExplainerState, "phase" | "answerId" | "quizAvailable">): boolean {
+  return state.phase === "done" && state.answerId !== null && state.quizAvailable !== false;
+}
+
 export function ExplainerNext({ state, canFollow, onFollowUp, reduce }: { state: ExplainerState; canFollow: boolean; onFollowUp: (question: string) => void; reduce: boolean }) {
   return (
     <div className="grid min-w-0 gap-6" data-testid="explainer-next">
       {state.understood ? <CompareLinks understood={state.understood} /> : null}
-      {state.phase === "done" && state.answerId ? <SelfCheck answerId={state.answerId} reduce={reduce} /> : null}
+      {selfCheckOffered(state) && state.answerId ? <SelfCheck answerId={state.answerId} reduce={reduce} /> : null}
       {canFollow ? <FollowUpBox onAsk={onFollowUp} /> : null}
     </div>
   );

@@ -26,12 +26,13 @@ This file covers the common case. The full specification is in `references/`:
 | `references/SYSTEM.md` | the whole system: every token in four themes, ramps, maps, type tables, scripts, right to left, every component's states, templates, migration counts, and section 9, the decisions | your task touches a section: read that section in full; read section 9 before overturning anything |
 | `references/tokens.json` | the source of truth: values in light, dark, high-contrast light and dark, contrast classes, the generator's checks | you need a value, a ratio or a class |
 | `references/tokens.css` | the generated CSS, also written to `frontend/app/tokens.css`, which `globals.css` imports | wiring or reading tokens |
-| `references/tailwind.config.ts` | the generated config with its neutral, type and radius aliases | wiring `frontend/tailwind.config.ts`, which adds the retired-ramp aliases of `frontend/tailwind.migration.ts` |
+| `references/tailwind.config.ts` | the generated config, which the generator also writes to `frontend/tailwind.config.ts`; it holds no migration alias (decision 0141) | you need to know whether a class exists |
 
 The three outputs come from one generator that refuses a token set breaking a check:
 `tools/design/` (inputs in `tools/design/system.json`, code beside it), run with
 `backend\.venv\Scripts\python.exe tools\design_tokens.py`. It writes `references/tokens.json`,
-`references/tokens.css`, `references/tailwind.config.ts` and `frontend/app/tokens.css`;
+`references/tokens.css`, `references/tailwind.config.ts`, `frontend/app/tokens.css` and
+`frontend/tailwind.config.ts`;
 `--check` fails when any of them differs from what the generator writes, and
 `tools/tests/test_design_tokens.py` runs that check. Change `system.json` or the generator and
 regenerate; never hand-edit a value in an output or type a colour in a component.
@@ -251,9 +252,9 @@ of India outline), `-water` (never indigo, never a ramp step), `-coast`, `-water
 | UI | IBM Plex Sans 400, 500, 600, italic 400 | `font-ui` (`font-sans`) | `text-caption`, `text-label`, `text-ui`, `text-ui-lg`, `text-h4` | everything you operate or scan: buttons, nav, tabs, labels, meta, inputs, toasts, kickers, h4 |
 | Mono for codes | IBM Plex Mono 400, 500, lining tabular | `font-code` | the size of its context | the six-box sign-in code, API keys, PubChem CIDs, slugs |
 
-`font-display` is only a migration alias of the UI face: never set a display line in it, and add
-no new use. Each size class carries its line height, tracking and weight; do not restate them.
-It does not carry the family: inside reading text a UI size (`text-caption`, `text-label`,
+`font-display` no longer exists (decision 0141): display lines are `font-headline`. Each size
+class carries its line height, tracking and weight; do not restate them. It does not carry the
+family: inside reading text a UI size (`text-caption`, `text-label`,
 `text-ui`, `text-ui-lg`, `text-h4`) needs `font-ui`, and inside UI text a reading or headline size
 needs `font-reading` or `font-headline`.
 
@@ -367,8 +368,9 @@ thumb.
   code reads the switches with `useAppReducedMotion()` (`components/guide/useAppReducedMotion.ts`),
   never framer's `useReducedMotion()`, which sees only the OS. Gate the motion, never the markup:
   server and first client render move nothing. GSAP is gone (decision 0094); add none. The
-  `guideMotion.ts` factories (springs, stagger, rise, slide) belong to the retired look: no new
-  uses. The thread motion is retired (SYSTEM.md section 9).
+  retired look's `guideMotion.ts` factories (springs, stagger, rise, slide) are deleted (decision
+  0141); scroll to an anchor with `scrollToAnchor()` (`components/motion/`), which reads both
+  switches. The thread motion is retired (SYSTEM.md section 9).
 - **Never**: Ken Burns drift, word-by-word or letter headline reveals, staggered rise-in of cards,
   parallax, scroll-linked decoration, a first paint at opacity 0 for the largest element, overshoot
   anywhere but a switch thumb, two animation systems on one property, smooth scrolling under a
@@ -527,48 +529,39 @@ Every page has one h1. Full detail in SYSTEM.md section 4; the master board is t
 
 Decide by job, not by name: a purple class on something you can press becomes indigo; on a
 surface, border or decoration it becomes a neutral or disappears (a hairline instead of a box).
-The neutral, type and radius keys still in use are aliased in the config so nothing silently
-vanishes (`ink-900` to `ink-1`, `ink-700` to `ink-2`, `ink-500` to `ink-3`, `line-200` to `rule`,
-`surface-50` to `sunk`, `text-sm` to `text-ui`, `rounded-sm` to 4px, `rounded-md` to 6px,
-`font-bold` to 600). Round 6 deleted every alias with no use left: the legacy shadows,
-`ease-spring`, `font-mono`, bare `rounded` and `rounded-lg` to `-2xl`, `text-xl` to `-4xl`,
-`ink-300` and the `ink` default, `bg-0`, `progress-*`, `secondary`, `accent` and the `-100` and
-`-600` status steps. A deleted alias compiles to nothing, so use the token class.
+The migration is finished (decision 0141): every retired ramp, every neutral, type and radius
+alias and the shadcn colour names are gone from the config, and `frontend/tailwind.migration.ts`
+with them. Any of those classes compiles to nothing, so write the token class:
 
-The retired ramps are aliased too, unlike what SYSTEM.md section 6 planned (decision 0092,
-point 6): `frontend/tailwind.migration.ts` keeps every unmigrated screen drawn in the new tokens.
-The aliases guess by lightness, not by job, so they are wrong wherever lightness and job
-disagree:
-
-- Purple text, rings, outlines and the 300 to 700 fills compile to indigo, so `bg-purple-700` on
-  a badge, a stage number or a reached step still paints a non-pressable thing indigo. Migrate
-  it: badges and stage numbers to `bg-ink-1 text-ground` or `bg-sunk text-ink-1`, a reached step
-  to the 2px ink-1 leading rule.
-- `bg-purple-50` and `-100` compile to sunk; `bg-purple-200` is the highlighter
-  (`turmeric-wash`); `bg-purple-800` is indigo-hover in both themes, so a `dark:bg-purple-800`
-  highlight is an indigo block in dark. A highlight is `bg-turmeric-wash text-ink-1`.
-- `text-purple-100` is ink-2 (it mostly sits on purple-950, which is sunk); on an indigo fill it
-  is unreadable. Text on indigo is `text-indigo-on`.
-- `text-white` is on-indigo, which is near-black in dark: never on a photograph or a scrim (use
-  photo ink). `bg-white`, `fill-white` and `stroke-white` stay #FFF.
-- Purple fills and strokes on maps, and the errand, steward and archive ramps, map to map, ramp
-  and series tokens through `--legacy-<ramp>-<shade>`; the choropleth fill has its own dark order
-  so its five classes stay five distinct density steps in each theme.
-- `amber`, `red`, `emerald`, `evidence`, `gold` and `field` map to the status tokens, turmeric
-  and the surfaces; other stock palettes (`text-indigo-600`, `bg-blue-50`) compile to nothing.
+- `ink-900`, `ink-700` and `ink-500` are `ink-1`, `ink-2` and `ink-3`; `line-200` is `rule`;
+  `surface-50` is `sunk`; `text-xs` and `text-sm` are `text-caption` and `text-ui`;
+  `rounded-sm` and `rounded-md` are `rounded-control` and `rounded-card`; `font-bold` is
+  `font-semibold`; `font-display` on a display line is `font-headline`.
+- `primary` and `ring` are `indigo`, `border` is `rule`, `input` is `rule-strong`, `background`
+  is `ground`, `foreground` is `ink-1`, `card` and `popover` are `raised`, `muted` is `sunk`,
+  `destructive` is `madder`, and each `-foreground` is the ink that sits on it (`text-indigo-on`,
+  `text-madder-on`, `text-ink-1`, `text-ink-3`).
+- A purple badge, stage number or reached step is not pressable: badges and stage numbers are
+  `bg-ink-1 text-ground` or `bg-sunk text-ink-1`, a reached step the 2px ink-1 leading rule. A
+  highlight is `bg-turmeric-wash text-ink-1`; text on an indigo fill is `text-indigo-on`.
+- `bg-white`, `fill-white` and `stroke-white` stay #FFF in every theme (the sandbox canvas);
+  `text-white` never sits on a photograph or a scrim (use photo ink).
+- Stock palettes (`text-indigo-600`, `bg-blue-50`, `text-amber-700`) compile to nothing; status is
+  the status tokens.
 
 `e2e/design-guard-unit.spec.ts` keeps all of this from growing. Per file, against
 `e2e/design-guard-baseline.json`, it counts and blocks any rise in: retired ramp and stock
 palette classes and `black` (`retired`); hex colours outside `app/tokens.css` and the sign-in
 brand marks (`hex`); `rgb()`, `hsl()`, `oklch()` and other colour literals (`literal`); every
-alias above, `bg-card`, `text-white` and `font-mono` (`alias`); physical left and right utilities
-and, in CSS, physical properties (`physical`); media queries, `min-[…]:`/`max-[…]:` variants and
+alias above, the shadcn colour names, `bg-card`, `text-white` and `font-mono` (`alias`); physical
+left and right utilities and, in CSS, physical properties (`physical`); media queries,
+`min-[…]:`/`max-[…]:` variants and
 `matchMedia` widths off the breakpoint list (`media`); and `[var(--…)]` or `-(--…)` values outside
 `components/charts`, `map`, `cloth` and `crafts` (`arbitraryVar`). It parses arbitrary, important
 and responsive forms and `@apply`. A new file starts at zero. After migrating, record the lower
 counts on GitHub: dispatch the **Design guard** workflow (`.github/workflows/design-guard.yml`,
 which runs the guard with `DESIGN_GUARD_SHRINK=1`) on the branch and commit the baseline it
-uploads; each alias is deleted when its count reaches zero. While touching a file, also: `.panel` and `bg-card` around prose go
+uploads. While touching a file, also: `.panel` and `bg-card` around prose go
 (interactive cards keep `bg-raised border border-rule rounded-card`), `.eyebrow` becomes `.kicker`,
 `.field-button*` becomes Button, `.field-input` becomes Input, physical left and right become
 logical, arbitrary sizes become named tokens, and `dark:` overrides of a token are deleted (tokens
@@ -600,21 +593,21 @@ theme themselves). The full table with counts is SYSTEM.md section 6.
 
 ## 13. Trap index
 
-- **`text-indigo-600` or any stock palette class** compiles to nothing, silently, and `amber`,
-  `red` and `emerald` compile to stand-ins; only the guard catches them. It is `text-indigo`, and
-  the status tokens for status.
+- **`text-indigo-600` or any stock palette or retired class** compiles to nothing, silently; only
+  the guard catches it. It is `text-indigo`, and the status tokens for status.
 - **An unknown class compiles to nothing.** Tailwind reports no error; check the class exists in
   `frontend/tailwind.config.ts` before you rely on it.
 - **`text-on-indigo` does not exist**: on-fill ink is `text-indigo-on` and `text-madder-on`.
-- **`text-white` is on-indigo**, near-black in dark: on a photograph or scrim it vanishes. Use
-  photo ink; on an indigo fill write `text-indigo-on`.
-- **A purple class migrated by its alias**: the alias guesses by lightness, so a badge or stage
-  number stays indigo and a highlight stays sunk or indigo. Migrate by job (section 11).
+- **`text-white` does not theme**: on a photograph or scrim use photo ink; on an indigo fill write
+  `text-indigo-on`.
+- **An old alias class** (`text-ink-900`, `text-sm`, `rounded-md`, `bg-primary`, `bg-purple-700`)
+  compiles to nothing since decision 0141 deleted the aliases. Migrate by job (section 11).
 - **A UI size inside reading text renders in Newsreader**: size classes carry no family; add
   `font-ui`.
-- **`font-display` looks right and is the UI face.** Display lines are `font-headline`.
+- **`font-display` and `font-bold` compile to nothing.** Display lines are `font-headline`; bold
+  is `font-semibold`.
 - **A size class sets weight.** `text-h2` is 480 and `text-h4` 600; an extra `font-semibold`
-  overrides the token. `font-bold` is 600 because Plex has no 700.
+  overrides the token. Plex has no 700.
 - **A ramp step on a bar or line** inverts in dark; bars and lines take a series token.
 - **The Rann drawn as water**, or the page's district as a solid terracotta fill: salt is
   stippled land; place is outline and 45 degree hatch.

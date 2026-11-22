@@ -3,10 +3,10 @@ import type { ReactNode } from "react";
 import { EVIDENCE_WORDS, reliabilityFill, reliabilityWords, type EvidenceState } from "@/lib/citationCluster";
 import type { SourceReliability } from "@/lib/types";
 
-export function EvidenceTag({ state }: { state: EvidenceState }) {
+export function EvidenceTag({ state, label = EVIDENCE_WORDS[state] }: { state: EvidenceState; label?: string }) {
   return (
     <span className="kv-ev-tag" data-level={state} data-testid="evidence-tag">
-      {EVIDENCE_WORDS[state]}
+      {label}
     </span>
   );
 }

@@ -8,7 +8,7 @@ on:
         required: false
         default: ""
       paths:
-        description: Comma-separated paths to capture at 360, 834, 1440 and 1920 in light and dark (empty captures the default set)
+        description: Comma-separated paths to capture at 360, 834, 1440 and 1920 in light and dark, and at 360 in high contrast light and dark (empty captures the default set)
         required: false
         default: ""
       audit:
@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   capture:
-    name: Capture pages and the master board at 360, 834, 1440 and 1920 in light and dark
+    name: Capture pages and the master board at 360, 834, 1440 and 1920 in light and dark, and in high contrast at 360
     if: github.repository == 'cxacraftecosystem-ui/KalaVigyan'
     runs-on: ubuntu-26.04
     timeout-minutes: 30

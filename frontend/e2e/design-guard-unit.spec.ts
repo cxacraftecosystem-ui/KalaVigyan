@@ -49,6 +49,12 @@ test("the guard finds every migration alias and spares the named tokens", () => 
   expect(aliasClasses("text-ink-1 text-ink-3 border-rule bg-sunk bg-raised text-indigo-on text-ui text-h2 font-headline font-semibold font-code rounded-card rounded-full rounded-pill shadow-pop ease-out text-error bg-success-wash")).toEqual([]);
 });
 
+test("the guard counts the shadcn colour names as aliases, since components use the semantic names", () => {
+  const shadcn = "bg-primary text-primary-foreground ring-ring border-border border-input bg-background text-foreground bg-popover text-popover-foreground bg-muted text-muted-foreground bg-destructive text-destructive-foreground ring-offset-background";
+  expect(aliasClasses(shadcn)).toEqual(shadcn.split(" "));
+  expect(aliasClasses("border border-s-2 ring-2 ring-indigo outline-indigo bg-indigo text-ink-1 border-rule-strong bg-madder-wash")).toEqual([]);
+});
+
 test("the guard finds physical left and right utilities and properties, and spares the logical ones", () => {
   expect(physicalUtilities("ml-auto pl-10 -right-2.5 left-1/2 text-left border-l rounded-r-md rounded-tl-sm float-right")).toEqual(["ml-auto", "pl-10", "-right-2.5", "left-1/2", "text-left", "border-l", "rounded-r-md", "rounded-tl-sm", "float-right"]);
   expect(physicalUtilities("ms-auto ps-10 -end-2.5 start-1/2 text-start border-s rounded-e-md inset-x-0 rect.left placement?.right")).toEqual([]);

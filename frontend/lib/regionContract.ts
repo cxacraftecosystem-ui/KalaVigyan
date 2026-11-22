@@ -96,7 +96,7 @@ export type MapLayerSummary = {
   stat: (typeof ENV_STATS)[number];
   unit: string;
 };
-export type MapLayerList = { layers: MapLayerSummary[]; datasets: RegionDataset[]; boundary: BoundaryNote };
+export type MapLayerList = { layers: MapLayerSummary[]; datasets: RegionDataset[]; boundary: BoundaryNote; outlineCaption: string };
 export type LayerClass = { min: number; max: number };
 export type MapLayer = {
   layer: MapLayerSummary;
@@ -196,7 +196,8 @@ export const craftRegionShape: Shape<CraftRegion> = object<CraftRegion>({
 export const mapLayerListShape: Shape<MapLayerList> = object<MapLayerList>({
   layers: list(layerSummaryShape),
   datasets: list(datasetShape),
-  boundary: boundaryShape
+  boundary: boundaryShape,
+  outlineCaption: text
 });
 
 export const mapLayerShape: Shape<MapLayer> = object<MapLayer>({

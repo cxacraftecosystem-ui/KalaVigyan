@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { CircleAlert } from "lucide-react";
 
 import { useAuth } from "@/components/AuthProvider";
-import { useAppReducedMotion } from "@/components/guide/useAppReducedMotion";
 import { failureMessage, useRemote } from "@/components/hooks/useRemote";
 import { NotesInbox, type NotesActions } from "@/components/learn/NotesInbox";
 import { SavedList } from "@/components/learn/SavedList";
@@ -40,7 +39,6 @@ function useBusy() {
 
 export default function SavedPage() {
   const router = useRouter();
-  const reduce = useAppReducedMotion();
   const account = useAuth().user?.id ?? null;
   const notes = useNotes(account);
   const saved = useRemote(fetchSavedExplainers);
@@ -92,7 +90,7 @@ export default function SavedPage() {
           Notes
         </h2>
         {notes.list ? (
-          <NotesInbox notes={notes.list.items} actions={noteActions} reduce={reduce} />
+          <NotesInbox notes={notes.list.items} actions={noteActions} />
         ) : notes.failure ? (
           <RetryPanel message={apiErrorMessage(notes.failure, NOTES_FAILED)} onRetry={() => void refreshNotes()} />
         ) : (

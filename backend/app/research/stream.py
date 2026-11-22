@@ -117,6 +117,7 @@ class FollowUpsEvent(ContractModel):
 
 class DoneEvent(ContractModel):
     answer_id: str | None
+    quiz_available: bool | None = Field(default=None, exclude_if=absent)
 
 
 class ErrorEvent(ContractModel):

@@ -431,17 +431,6 @@ Last reviewed: 2026-11-22.
   (a `--chirps-last-year` option), and have `combine` refuse parts of one dataset whose rows
   differ.
 
-## Craft page and region panel (decision 0019)
-
-### The boundary caption has two homes
-
-- **What:** maps drawn without the layer list (the craft page) print the caption from
-  `components/map/MapAttribution.tsx`; `/map` prints the server's `boundary.caption`
-  (`research/datasets.BOUNDARY_CAPTION` since decision 0042). The two are equal today. Explainer
-  map blocks carry the server's caption in the block.
-- **Clears it:** have the craft page read the caption from `GET /map/layers` (or a shared
-  boundary route) and delete the client constants.
-
 ## Voice backend (decision 0017)
 
 ### Voice in other languages is checked by text only (decision 0025)
@@ -1079,14 +1068,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** serve each reach's districts in the basin file (lane 0043 computes them already)
   and read them instead of testing vertices.
 
-### A map chunk that failed to load stays hidden
-
-- **What:** `lazyBlock` turns a failed import into a block that draws nothing, and `React.lazy`
-  keeps that result, so a dropped connection while the chunk loads hides the map until the page
-  reloads.
-- **Why left:** a retry needs an error boundary per block; the answer is otherwise unaffected.
-- **Clears it:** a per-block error boundary with Try again that re-creates the lazy component.
-
 ## Reaction player, material cards and 3D molecules (decision 0045)
 
 ### The reaction player shows no conditions or reaction energies
@@ -1211,24 +1192,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** the library has no teardown for them, and an explainer draws at most one molecule
   per section.
 - **Clears it:** a 3Dmol.js release with a viewer teardown, called from `MoleculeScene.dispose`.
-
-### The conformer is fetched again on every draw
-
-- **What:** `fetchConformer` goes through `apiFetch`, which never keeps responses, so a molecule
-  drawn again (another answer, a reload) asks the route again, although the route allows a week's
-  private caching.
-- **Why left:** the route serves from the private bucket without calling PubChem, so a repeat
-  costs one small request; `apiFetch`'s only cache opt-in revalidates by ETag, which the route
-  does not send.
-- **Clears it:** the conformer route sending an ETag (the record's hash), then
-  `revalidateFromHttpCache` on the fetch.
-
-### Keyboard readers can turn a molecule but not tilt or zoom it
-
-- **What:** Turn rotates a quarter about the vertical axis; tilting and zooming need a pointer
-  (Explore), because 3Dmol.js reads only mouse, touch and wheel input.
-- **Why left:** the name, formula and record are text; the model is an illustration.
-- **Clears it:** Tilt and Zoom buttons calling the viewer's `rotate` about `x` and `zoom`.
 
 ## Curation tooling (decision 0051)
 
@@ -1917,20 +1880,11 @@ Last reviewed: 2026-11-22.
 - **Why left:** the stream has no event that renumbers shown blocks, and the client's version
   reader (`frontend/lib/explainerVersions`) belonged to the design lane running at the same time
   (2026-11-22).
-- **Clears it:** the client reloads the stored version when `version.basedOn` differs from the
-  `builds_on` version, as "An added section that found nothing shows until a reload" asks after
-  every follow-up.
+- **Clears it:** `reduceAnswerEvent` reloads the stored version when the `version` event's
+  `basedOn` differs from the `builds_on` version it followed, instead of keeping the streamed
+  sections.
 
 ## Learning block renderers (decision 0068)
-
-### The concept graph is a hub, not the researchers' full graph
-
-- **What:** the figure shows one term at a time with at most seven crafts and a count; on a phone
-  long craft names on a crowded ring can touch. The list under it holds every craft.
-- **Why left:** a force layout across terms and crafts needs a layout library or a measured
-  label pass, and the hub answers the explainer's question.
-- **Clears it:** a whole-graph view for researchers on the craft page's Shared science tab
-  (decision 0070), with label collision handled.
 
 ### Quiz picks are kept in the page only
 
@@ -1985,32 +1939,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** `PagePlace` carries no coordinates or river id, and the map has no geometry for
   places outside the district outlines.
 - **Clears it:** coordinates (or a HydroRIVERS id) on `PagePlace`, drawn as pins or a river line.
-
-## Learning screens (decision 0069)
-
-### Check yourself asks for a quiz on every finished explainer
-
-- **What:** the explainer asks `GET /api/answers/{answerId}/quiz` once when it finishes, to offer
-  Check yourself only when a quiz exists (a 404 draws nothing).
-- **Why left:** the route is a read with no model call, and offering a control that then says
-  there is no quiz would be a dead end.
-- **Clears it:** a `quizAvailable` flag on the stored explainer or the stream's `done`.
-
-### A lesson keeps the explainer's section order
-
-- **What:** the builder chooses sections but sends them in the explainer's order; the contract
-  allows any order.
-- **Why left:** a reorder control needs the one drag and arrow implementation, which this app
-  does not have yet (`lib/routing.moveRoute` is the AI routing page's).
-- **Clears it:** a shared list-order helper and Up and Down controls on the builder's rows.
-
-### An added section that found nothing shows until a reload
-
-- **What:** during a follow-up an added section that ends `EMPTY` shows what was searched; the
-  stored version leaves it out, so it is gone on the next visit.
-- **Why left:** what was searched is useful in the moment, and the stored version is the
-  record.
-- **Clears it:** reload the stored version after `version` arrives, or drop such sections then.
 
 ## Lesson packs and exports (decision 0067)
 
@@ -2123,54 +2051,18 @@ Last reviewed: 2026-11-22.
 
 ## The design system migration (decision 0092)
 
-### Retired classes still compile through migration aliases
+### The voice call screen still mounts the retired source dialog
 
-- **What:** round 6 recorded the baseline (196 files down to 24) and deleted every alias whose
-  use reached zero. Still counted: the purple, evidence and red ramps of
-  `frontend/tailwind.migration.ts` and the neutral, type and radius aliases in
-  `frontend/tailwind.config.ts`, whose last users were the retired tabbed craft page (its files
-  are gone, so the next baseline run should bring them to zero); `SandboxFrame`'s `bg-white` (a
-  white canvas for sandboxed HTML, deliberate) and the two theme-colour hex values in
-  `lib/preferences.ts` that the spec requires.
-- **Clears it:** dispatch **Design guard** on `main`, commit the baseline, delete the aliases that
-  reach zero and `tailwind.migration.ts` when it is empty.
-
-### The design guard does not see shadcn colour names or inline styles
-
-- **What:** `frontend/e2e/designGuard.ts` counts retired and stock classes, hex and colour
-  literals, aliases, physical utilities and CSS properties, off-list media queries and misplaced
-  `var()` values per file. It does not count the shadcn names the approved config keeps
-  (`primary`, `ring`, `border`, `input`, `background`, `foreground`, `popover`, `muted`,
-  `destructive`), physical keys in inline `style` objects, or a class built by string
-  concatenation, and it cannot tell a badge's indigo from a button's.
-- **Why left:** the shadcn names are part of the approved config rather than migration aliases;
-  inline positions are computed at run time (popover placement); job is a judgement.
-- **Clears it:** add the shadcn names to the alias count once the components that use them move
-  to the semantic names; review by job stays with the skill's section 11.
-
-### The source dialog and the evidence badge outlive the new primitives
-
-- **What:** citation clusters open their own popover or sheet (`editorial/SourcePanel.tsx`, which
-  shows each source's attribution and licence beside the byline), so nothing opens
-  `components/answer/SourceDialog` any more: `CitationLookup.onOpen` and the `SourceDialog` mounted
-  by `ExplainerView`, `CitedReading` and `TermSheet` (through `onOpenCitation`) are dead wiring, and
-  `CitationChip` ignores its `onOpen` prop. `components/answer/EvidenceBadge` (purple and amber
-  badges) stands beside `components/editorial/EvidenceMark`; `craft/MediaFigure`,
-  `craft/CraftTabs`, `craft/CraftOverview` and `craft/SourcesDiffer` are not yet drawn with
-  `Plate`, `ChapterRail`, `FactGrid` and `SourcesDifferNote`.
-- **Why left:** those files belong to the answer and craft page migrations running beside this
-  one.
-- **Clears it:** each page lane switches to the editorial primitives, deletes `SourceDialog`, the
-  replaced components and `onOpen` from `CitationLookup` and `CitationChip`.
-
-### The wordmark generator needs a package the backend environment lacks
-
-- **What:** `tools/brand/wordmark.py` reads the WOFF2 fonts in `frontend/fonts`, which needs
-  `brotli` beside `fontTools` and `uharfbuzz`; the backend virtual environment has the last two
-  only, so the outlines in `frontend/components/brandOutlines.ts` were written from a scratch
-  install.
-- **Why left:** adding a dependency to the backend for a one-off asset was not worth a lock change.
-- **Clears it:** add `brotli` to the tools' development dependencies, or read the fonts from TTF.
+- **What:** citation clusters open their own popover or sheet (`editorial/SourcePanel.tsx`), so no
+  citation opens `components/answer/SourceDialog` any more. Only the voice call screen still wires
+  it: `components/voice/VoiceCallBody.tsx` mounts `SourceDialog` and builds `openedSource` in an
+  `onOpen` it hands `VoiceTranscript`, which no citation calls.
+- **Why left:** the voice screens were another lane's files while decision 0141 cleared the rest
+  (the evidence badge folded into `EvidenceTag`, `CitationLookup.onOpen` and `TermSheet`'s
+  `onOpenCitation` deleted).
+- **Clears it:** drop the `onOpen`, `openedSource` and `SourceDialog` wiring from `VoiceCallBody`
+  and `VoiceTranscript`, then delete `components/answer/SourceDialog.tsx` and
+  `e2e/source-dialog-unit.spec.ts`.
 
 ## No caps for now (decision 0093)
 
@@ -2448,31 +2340,15 @@ Last reviewed: 2026-11-22.
   hub's monographs shelf leaves two empty cells at 834 and 1440 with seven monographs; at 360 the
   landing's specimen label is 13px narrower because the board's label spills into the page margin;
   the Urdu answer keeps its interface words in English where the Urdu board shows Urdu.
-- **Clears it:** compare the font files' metrics; a shelf rule for an odd count; interface words
-  for the answer's languages.
-
-## Round 5 (2026-11-20)
-
-### Answer figures are not numbered
-
-- **What:** the answer's figures carry their kicker but no "Fig. N": blocks render on their own and
-  the essay does not yet pass numbers down.
-- **Clears it:** the answer essay numbers its figures and passes the number to `AnswerFigure`.
-
-### Fig. 1's equation needs leucoindigo's compound record
-
-- **What:** the vat figure draws its balanced equation and atom count only when both leucoindigo
-  and indigo have a compound record; only indigo blue (CID 10215) has one, so the equation is not
-  drawn.
-- **Clears it:** a sourced leucoindigo compound in the compound library.
-
-### Old props and helpers kept for files outside a lane
-
-- **What:** `PageHeader` still accepts an `icon` it no longer draws; `NotesInbox` keeps an ignored
-  `reduce` prop for the saved page; `components/guide/guideMotion.ts` (retired springs) is still
-  imported by 16 files; `SourceDialog`, `openedSource`, `EvidenceBadge` and `TermSheet`'s
-  `onOpenCitation` stay for the restored tabbed craft page and the voice screens.
-- **Clears it:** drop each when its last caller moves (the craft bridge's retirement clears most).
+- **Why left (2026-11-22, decision 0141):** each part waits on an owner choice. Two are the boards'
+  own copies: the board sets the finding in Google's Newsreader and lets its label spill into the
+  page margin, so the choice is which side moves. The board has no hub screen, so no shelf rule for
+  an odd count is drawn to follow. The Urdu board gives five of the essay's interface words (جواب,
+  ماخذوں سے, مرتب, محفوظ کریں, اس جواب کا حوالہ دیں) but not "Saved", the other answer languages
+  or a craft's name in Urdu, which may not be transliterated by us.
+- **Clears it:** the owner picks the side for the two board differences and a shelf rule for an odd
+  count, and approves a sourced list of interface words for each answer language; then the copy
+  table and the shelf rule follow.
 
 ## Round 7 (2026-11-20)
 
@@ -2546,16 +2422,20 @@ Last reviewed: 2026-11-22.
 
 - **What:** an answer sentence flagged Sources differ opens both readings under the sentence, not in
   a details element after its paragraph as SYSTEM.md draws it, and its summary cannot name what the
-  sources differ on, because the payload carries only `sourcesDiffer` and the citations. The board
-  `docs/design/master-board.html` still names its ribbon buttons "Stage N, name". A drawing stored
-  without server variants (the kind fixtures on `/design/kinds`) shows a sunk placeholder until it
-  hydrates. An SVG picture's ETag is the stored file's hash for every `?theme=` variant, so a token
-  change reaches a cached picture only after its five-minute max-age. Captures cover light and dark
-  only. Left at the end of round 7 (decision 0131).
-- **Clears it:** carry the readings and what they differ on in the answer payload and let the
-  paragraph's host components (`LadderStageCard` and the other callers) draw the details after the
-  paragraph; rename the board's buttons; serve the fixtures with their variants; put the token
-  set's hash in the themed ETag; add high contrast to the capture run.
+  sources differ on, because the payload carries only `sourcesDiffer` and the citations (a flagged
+  claim stores no "about"). A drawing stored without server variants (the kind fixtures on
+  `/design/kinds`) shows a sunk placeholder until it hydrates. Decision 0141 renamed the board's
+  ribbon buttons, put the token set's hash in the themed picture ETag and added high contrast to
+  the capture run.
+- **Why left:** the sentence's own drawing is `components/answer/ExplainerSentence.tsx`, the voice
+  lane's file while decision 0141 ran, and a flagged claim has no stored subject to name; the
+  fixtures are delivered specs, which may not carry `themes` (`component_specs_general_delivery`),
+  and the page bundles them instead of asking the server, which adds the variants.
+- **Clears it:** store what two readings differ on with the flag (the write-back marks it), carry
+  it with the readings on the sentence, draw `SourcesDifferNote` after the paragraph in the host
+  components (`LadderStageCard`, `CitedText` and the other callers) and only the tag in
+  `ExplainerSentence`; serve the kind preview's specs through the backend, which adds the four
+  variants with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
 
 ### A stopped release leaves the live code on the migrated database
 
