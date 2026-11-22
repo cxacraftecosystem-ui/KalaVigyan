@@ -2234,15 +2234,22 @@ Last reviewed: 2026-11-22.
 
 ### Speed left after the quality lane
 
-- **What:** on a phone Kutch Ajrakh scores 90 with an LCP of 3.6 s, not 2.5 s. Before LCP it loads
-  about 470 KB of fonts (Newsreader italic 144 KB, and Newsreader latin-ext 96 KB pulled in by the
-  one arrow, U+2192, in the vat equation) and about 450 KB of JavaScript, because the craft route
-  imports the uncurated-craft page and the full renderer statically. The Textiles hub inlines its
-  whole category document (LCP 8.4 s, score 73), and `/ask` draws its picture only after hydration
-  because the protected shell renders on the client.
-- **Clears it:** subset the Newsreader faces and give the arrow a face whose latin subset holds it;
-  dynamic imports for the uncurated page and the answer renderers; split curated documents the way
-  Ajrakh's shell is split; a server-rendered shell for `/ask`.
+- **What:** on a phone (Lighthouse at 360, median of three, 2026-11-22) Kutch Ajrakh scores 78 with
+  an LCP of 5.7 s against the 2.5 s target: about 1 MB is requested before its masthead picture
+  paints, namely the six first-screen font files the layout preloads (364 KB, Newsreader italic
+  143 KB and roman 128 KB among them), the kit stylesheet (78 KB, render-blocking) and about
+  400 KB of scripts. Signed out, `/ask` lands on the sign-in page (83, LCP 4.7 s), whose photograph
+  shares the first round with Google's sign-in script (104 KB). The Textiles hub scores 100 (LCP
+  1.5 s).
+- **Why left:** what the entry named is in: Newsreader subset to weights 300 to 600 and its kept
+  features (`tools/webfonts`), the arrow on Plex's symbols face, the uncurated page and (decision
+  0145) the answer renderers loaded on demand, curated documents split like Ajrakh's shell, and
+  `/ask` drawn before its scripts. Before and after this lane Ajrakh measured 78 and 5.7 s on the
+  phone (TBT 112 ms to 83 ms, 1.39 MB to 1.35 MB). What is left is a choice of which first-screen
+  bytes wait: the first-screen faces are preloaded by choice (round 7, so the first screen never
+  swaps its type), and the kit stylesheet is the owner-approved page's.
+- **Clears it:** the owner's or lead's choice of the faces to preload and of a kit stylesheet split
+  by chapter, then the change proven by Monograph parity and Lighthouse at 360.
 
 ### Source tools: what they do not cover yet
 
