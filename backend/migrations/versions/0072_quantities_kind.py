@@ -41,7 +41,7 @@ BLOCK_KINDS_BEFORE = (
     "firing",
     "component",
 )
-BLOCK_KINDS = (*BLOCK_KINDS_BEFORE[:25], *ADDED_KINDS, *BLOCK_KINDS_BEFORE[25:])
+BLOCK_KINDS = (*BLOCK_KINDS_BEFORE[:-1], *ADDED_KINDS, BLOCK_KINDS_BEFORE[-1])
 COMPONENT_KINDS = (
     "ai_illustration",
     "ai_video",

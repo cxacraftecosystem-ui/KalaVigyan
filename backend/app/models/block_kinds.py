@@ -26,10 +26,10 @@ BLOCK_KINDS = (
     "measure",
     "market_gi",
     "climate_risk",
-    "quantities",
     "indigo_vat",
     "mordant_bath",
     "lost_wax",
     "firing",
+    "quantities",
     "component",
 )

@@ -111,11 +111,11 @@ export const BLOCK_KINDS = [
   "measure",
   "market_gi",
   "climate_risk",
-  "quantities",
   "indigo_vat",
   "mordant_bath",
   "lost_wax",
   "firing",
+  "quantities",
   "component"
 ] as const;
 export const BUILT_BLOCK_KINDS = ["prose", "process_ladder", "images", "region_story", "map_layer", "expert_view", "seasons", "supply_map", "reaction_player", "material_card", "molecule_3d", "compare", "concept_graph", "climate_risk", "measure", "market_gi", "quantities", "simulation", "what_if", "zoom_story", "timeline_map", "component"] as const;
