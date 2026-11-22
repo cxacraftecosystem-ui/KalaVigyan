@@ -56,6 +56,7 @@ export type SourceRef = {
   doi: string | null;
   url: string | null;
   publisher: string | null;
+  containerTitle?: string;
   licence: string | null;
   attribution: string | null;
   reliability: SourceReliability | null;

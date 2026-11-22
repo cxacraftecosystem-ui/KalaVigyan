@@ -14,10 +14,11 @@ from app.research.chapter_keys import CHAPTER_KEYS, DISCIPLINE_CHAPTERS
 from app.research.citations import SourceRef
 from app.research.craft_chapters import PAGE_BLOCK_KINDS, AskedQuestion, ItemOrigin
 from app.research.explainer import Block
+from app.research.piece_reuse import curated_piece
 
 from .chapter_draft import ChapterDraft, Drafted
 from .knowledge_view import source_ref
-from .piece_lookup import stored_piece
+from .piece_lookup import curated_claim_ids, stored_piece
 
 __all__ = [
     "KIND_CHAPTERS",
@@ -98,20 +99,7 @@ class AnswerPieces:
 
 
 async def answer_pieces(session: AsyncSession, craft_id: uuid.UUID) -> AnswerPieces:
-    rows = await session.scalars(
-        select(PieceRow)
-        .where(
-            PieceRow.craftId == craft_id,
-            PieceRow.createdFromAnswerId.is_not(None),
-            PieceRow.language == ENGLISH,
-            PieceRow.readingStyle.is_(None),
-            PieceRow.staleSince.is_(None),
-            PieceRow.supersededById.is_(None),
-            PieceRow.hiddenAt.is_(None),
-            PieceRow.kind.in_(sorted(PAGE_BLOCK_KINDS)),
-        )
-        .order_by(PieceRow.createdAt.desc(), PieceRow.id)
-    )
+    rows = await _readers_rows(session, craft_id)
     found = []
     for row in rows:
         piece = stored_piece(row)
@@ -130,6 +118,27 @@ async def answer_pieces(session: AsyncSession, craft_id: uuid.UUID) -> AnswerPie
     sources = await session.scalars(select(Source).where(Source.id.in_(wanted))) if wanted else []
     refs = {str(row.id): SourceRef.model_validate(source_ref(row)) for row in sources}
     return AnswerPieces(tuple(found), refs)
+
+
+async def _readers_rows(session: AsyncSession, craft_id: uuid.UUID) -> list[PieceRow]:
+    rows = await session.scalars(
+        select(PieceRow)
+        .where(
+            PieceRow.craftId == craft_id,
+            PieceRow.label.is_(None),
+            PieceRow.language == ENGLISH,
+            PieceRow.readingStyle.is_(None),
+            PieceRow.staleSince.is_(None),
+            PieceRow.supersededById.is_(None),
+            PieceRow.hiddenAt.is_(None),
+            PieceRow.kind.in_(sorted(PAGE_BLOCK_KINDS)),
+        )
+        .order_by(PieceRow.createdAt.desc(), PieceRow.id)
+    )
+    listed = list(rows)
+    answerless = (claim for row in listed if row.createdFromAnswerId is None for claim in row.claimIds)
+    curated = await curated_claim_ids(session, answerless)
+    return [row for row in listed if not curated_piece(row.createdFromAnswerId, row.claimIds, curated)]
 
 
 def joining_pieces(

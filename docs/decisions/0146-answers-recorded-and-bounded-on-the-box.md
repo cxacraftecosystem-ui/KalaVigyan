@@ -102,7 +102,8 @@ formulas only.
    chunks whoever asks, and a quoted citation's `context` is its stored passage only when that
    passage is `PUBLIC` and not restricted: an answer is kept as pieces, shared by link and read by
    others, so passing a researcher's `RESEARCHER` access through, as the register proposed, would
-   leak closed text into them.
+   leak closed text into them. [Decision 0144](0144-stored-passages-as-evidence.md), item 4, holds an
+   answer's stored pack to `PUBLIC` passages for the same reason.
 10. **Stored findings come first through the lede.** A section's prose is still sent whole after its
     write-back, so the claim ledger admits each sentence once; the stored-claim sentences reach the
     reader before any write-back in the early lede (decision 0077), written from stored findings

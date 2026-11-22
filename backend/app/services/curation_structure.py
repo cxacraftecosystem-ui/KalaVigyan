@@ -94,6 +94,7 @@ def process_row(dossier: Dossier, craft: CraftTarget) -> dict[str, Any] | None:
         "craftId": craft.id,
         "name": CURATED_PROCESS_NAME,
         "variant": CURATED_PROCESS_VARIANT,
+        "archivedAt": None,
     }
 
 

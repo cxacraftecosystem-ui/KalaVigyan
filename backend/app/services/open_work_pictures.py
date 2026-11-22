@@ -9,6 +9,7 @@ from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Craft, ImageContribution, Material, Process, ProcessStage, StageMaterial
+from app.models.science import live_process
 from app.research.image_contributions_tasks import CRAFT_SUBJECT, PICTURE_TASK, PictureAim, picture_detail
 from app.research.open_work import TASK_PROMPTS, OpenTask, SubjectStanding, task_key
 from app.research.open_work_tasks import subject_priority
@@ -44,7 +45,7 @@ def craft_materials(craft_ids: Sequence[uuid.UUID]) -> Select[tuple[uuid.UUID, u
         .join(ProcessStage, ProcessStage.processId == Process.id)
         .join(StageMaterial, StageMaterial.stageId == ProcessStage.id)
         .join(Material, Material.id == StageMaterial.materialId)
-        .where(Process.craftId.in_(craft_ids))
+        .where(Process.craftId.in_(craft_ids), live_process())
         .distinct()
     )
 
@@ -106,7 +107,7 @@ async def _found(session: AsyncSession, craft_ids: list[uuid.UUID]) -> _Found:
     staged = await session.execute(
         select(Process.craftId, ProcessStage.id, ProcessStage.name)
         .join(ProcessStage, ProcessStage.processId == Process.id)
-        .where(Process.craftId.in_(craft_ids))
+        .where(Process.craftId.in_(craft_ids), live_process())
         .order_by(Process.craftId, Process.name, ProcessStage.ordinal)
     )
     for craft_id, stage_id, name in staged.all():

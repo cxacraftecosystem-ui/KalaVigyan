@@ -25,6 +25,8 @@ from app.services.block_builders import (
     built_by_registry,
 )
 from app.services.builder_interface import BuildAsk, Built
+from app.services.builder_record import BuilderOutcome
+from app.services.simulation_builder import SIMULATION_BUDGET_SECONDS, SIMULATION_WAIT_SECONDS
 
 from ..composer.fixtures import pack
 from ..contracts.phase_b_golden import phase_b, phase_b_blocks
@@ -286,3 +288,44 @@ def test_an_entry_replaces_a_stored_block_only_when_rebuilt_and_names_a_depth_it
         BuilderEntry("what_if", frozenset({"CHEMISTRY"}), FakeBuilder, reused_from="DEEP")
     reused = {entry.kind: entry.reused_from for entry in BLOCK_BUILDERS if entry.reused_from != "BASIC"}
     assert reused == {"expert_view": "EXPERT", "simulation": "EXPERT"}
+
+
+@dataclasses.dataclass
+class Says:
+    note: str
+
+    async def build(self, ask: BuildAsk) -> Built:
+        return Built(note=self.note)
+
+
+async def test_each_builder_s_outcome_and_time_is_recorded_for_its_section() -> None:
+    recorded: list[tuple[uuid.UUID, str, list[BuilderOutcome]]] = []
+
+    async def record(answer_id: uuid.UUID, section_id: str, outcomes: list[BuilderOutcome]) -> None:
+        recorded.append((answer_id, section_id, list(outcomes)))
+
+    pairs = [
+        (entry("simulation"), Says("NO_QUANTITY")),
+        (entry("material_card"), FakeBuilder()),
+        (entry("what_if", wait=0.01), FakeBuilder(delay=1.0)),
+        (entry("molecule_3d"), FakeBuilder(failure=RuntimeError("broken"))),
+    ]
+    asked = ask()
+    added = await BlockBuilders(pairs, record=record).added(asked)
+    assert [block.kind for block in added.blocks] == ["material_card"]
+    ((answer_id, section_id, outcomes),) = recorded
+    assert (answer_id, section_id) == (asked.answer_id, "s1")
+    assert [(o.kind, o.outcome, o.blocks) for o in outcomes] == [
+        ("simulation", "NO_QUANTITY", 0),
+        ("material_card", "ADDED", 1),
+        ("what_if", "TIMED_OUT", 0),
+        ("molecule_3d", "FAILED", 0),
+    ]
+    assert all(outcome.seconds >= 0 for outcome in outcomes)
+
+
+def test_the_generated_explainer_drafts_within_a_budget_well_under_its_wait() -> None:
+    entries = {item.kind: item for item in BLOCK_BUILDERS}
+    assert entries["simulation"].wait_seconds == SIMULATION_WAIT_SECONDS == 75.0
+    assert SIMULATION_BUDGET_SECONDS == 60.0
+    assert entries["expert_view"].wait_seconds > SIMULATION_WAIT_SECONDS

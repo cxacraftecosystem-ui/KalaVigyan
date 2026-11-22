@@ -57,17 +57,6 @@ Last reviewed: 2026-11-22.
   `tools/hygiene_check.py --update-baseline` after each clean-up. The initial migration stays
   one file (migrations are not rewritten).
 
-### An answer piece whose answer was deleted reads as curated for supersession
-
-- **What:** decision 0090 item 2 keeps "a piece no answer made" from being superseded, and
-  `services/piece_store._supersede` tells such a piece by `createdFromAnswerId` being null. That
-  column is set null when an answer is deleted, so a reader's piece outlives its answer as if it
-  were curated. The craft page tells them apart by the curated claims a piece cites (decision 0096
-  item 2), but supersession and reuse order (`piece_reuse.answered_first`) still read the id alone.
-- **Why left:** the craft page's merge is one module that edits no other file (decision 0096).
-- **Clears it:** one shared rule for "curated piece" (every cited claim curated and no answer id)
-  used by `_supersede`, `answered_first` and the page merge, with a test that deletes an answer.
-
 ### Scholarly adapters: what waits on keys and the planner (decisions 0005, 0139)
 
 - **What:**
@@ -146,20 +135,6 @@ Last reviewed: 2026-11-22.
   one batch; follow reference lists through OpenAlex `referenced_works` when that adapter
   exposes them; route facet types to the sources that can serve them once the checks show
   which do.
-
-### Stored passages are not composer candidates (decision 0010)
-
-- **What:** a stored passage (T2 `ChunkHit`) other than a field voice is not offered to the
-  composer: a sentence citing one could not be kept, because the write-back
-  (`services/research_write_back.store_live_research` and `write_back_plan`) keeps only read
-  documents and field voices, and the stream's `Citation` names a claim. The other gaps of
-  decision 0010 are cleared: long documents give their best passages, a stored claim is offered
-  with its sources' quotes and names, and the pack lists every searcher asked (decision 0138).
-- **Why left:** keeping such a sentence is a write-back change, and the write-back lane was
-  changing those files in the same round.
-- **Clears it:** the write-back keeps a sentence citing a stored passage as a claim of that
-  passage's source, the way it keeps field voices; then `compose_request` offers stored passages
-  as `EVIDENCE`.
 
 ## Live research write-back (decision 0011)
 
@@ -334,19 +309,6 @@ Last reviewed: 2026-11-22.
   `STT_LANGUAGE_CODES` (voice then stops offering it) or try `scribe_v3` with Hindi as a
   `secondary_language_codes` hint; the spike decides whether the agent gets an `agent.language`
   override or one agent per language.
-
-### T2 passages are not offered to a voice turn
-
-- **What:** a voice turn ranks the craft's visible claims by the stored hybrid search (lexical,
-  vector and entity rankings fused, the question embedded while the filler plays) ahead of shared
-  word stems (decision 0140), but no corpus passage (T2 chunk) is a candidate, so a passage that
-  states the answer and is not yet a claim is not spoken.
-- **Why left:** a spoken sentence is cited only through a stored claim, so a passage must be
-  written back as a claim before it can be cited; that write-back belongs to the write-back lane
-  (`services/write_back_*`), which was changing at the same time.
-- **Clears it:** hybrid turns ask the search for passages and offer each as an `EVIDENCE`
-  candidate with its verified quote, and a cited passage is written back (as
-  `services/field_voices_citations` does for field passages) before its sentence is spoken.
 
 ### An agent call cannot be hung up from our side
 
@@ -776,46 +738,35 @@ Last reviewed: 2026-11-22.
 ### Topic keys match only the same glossary terms
 
 - **What:** a facet's topic is the glossary terms the question names (else the place or the
-  craft), so "Why does alum fix alizarin?" and "How do alum and alizarin bond?" meet, but a
-  rephrasing that names one more or one fewer term researches again; a question in an Indian
-  script matches only the glossary's local names, so it falls back to the craft's topic.
-- **Why left:** accuracy over speed; a model-chosen topic would be another model output to check,
-  and rendering every question in English costs a TRANSLATE call before any reuse.
-- **Clears it:** measure reuse in production; if near misses are common, add the planner's facet
-  targets to the stored piece and accept a stored set whose terms are a subset of the question's
-  when its vector is near the question's.
+  craft), so a rephrasing that names one more or one fewer term researches again, and a question
+  in an Indian script matches only the glossary's local names. Reusing a stored set whose terms are
+  a subset of the question's is safe only within a nearness of the question's vector to the
+  stored piece's, and nothing in the code can tell that nearness.
+- **Why left:** the nearness is a production measurement (checked 2026-11-22, decision 0142); a
+  guessed one would serve a narrower set for a broader question.
+- **Clears it:** the lead measures, over the answers of the last 30 days that researched a facet
+  (`Answer.tiersUsed` holding `T3` or `T4`), how many researched facets had a current stored piece
+  of the same craft and facet whose topic terms are a strict subset of the question's marked terms,
+  and the cosine distance between the question's vector and that piece's `embedding`. If such near
+  misses are common, accept a subset set within the distance below which those pieces' claims all
+  reappear in the fresh answer (`piece_store.reusable`, `research/piece_topics`); if they are rare,
+  delete this entry.
 
 ### Answers never grow the Process tab
 
-- **What:** plan 2.2 wants process stages found by answers to land in the science tables, so the
-  craft page's Process tab and later ladders use them. No answer writes `Process` or
-  `ProcessStage` rows: stage concepts a `PROCESS` section cites stay concepts (their claims still
-  appear in prose). Lane 0033 made the cited stages the process of a craft with none, numbered in
-  the order the model wrote its sentences; decision 0038 removed that, since step numbers and
-  order would have come from the model, not from a source.
-- **Why left:** no source-stated order exists to build from: the write-back records claims on
-  stage concepts, not which stage follows which.
-- **Clears it:** a cited-order route: write `PRECEDES` edges between stage concepts only from
-  claims that state the sequence, with their citations; create a live process only when those
-  edges order every stage, taking ordinals from the edges; take stage names only from curated or
-  seeded concepts, never from a planner's facet targets; or a professor places the stages from
-  the review screen.
-
-### A rebuild that composes nothing is tried every night
-
-- **What:** a stale piece whose rebuild shows no block stays stale and unsuperseded, so the
-  nightly job tries it again each night (within the budget, most-asked crafts first).
-- **Why left:** a retracted claim usually leaves its topic answerable; a topic that cannot be is
-  rare and bounded by the daily budget.
-- **Clears it:** record each rebuild attempt on the piece and skip one tried in the last week.
-
-### The rebuild may overshoot the day by one answer
-
-- **What:** the rebuild checks the day's remaining budget before each group (at least
-  `ENRICHMENT_QUESTION_RESERVE_USD`), and one Expert group can spend up to the Expert per-answer
-  cap, above the reserve.
-- **Why left:** the coverage job has the same shape; the cap bounds the overshoot.
-- **Clears it:** hold each rebuild to the smaller of its depth's cap and what the day has left.
+- **What:** plan 2.2 wants process stages answers find to land in the science tables. No answer
+  writes `Process` or `ProcessStage` rows (decision 0038). The cited-order route (order stages only
+  by `PRECEDES` edges from claims that state the sequence, names only from curated or seeded
+  concepts) can create nothing: every craft holding curated or seeded stage concepts already has
+  its process (checked 2026-11-22: the six seeded crafts with stage concepts each have a seed
+  process, every dossier with stages writes its curated process), and the stages answers find carry
+  the names a planner chose, which the route may not use.
+- **Why left:** an answer-found stage can only join a craft's existing process by a person's
+  placing it (decision 0142).
+- **Clears it:** the other route this entry named: a review-queue item for an answer-found stage
+  concept and a review screen where a Professor places it in the craft's process or rejects it,
+  writing the `ProcessStage` with the review's note. It waits on that screen (design and answer UI
+  lane) and its review-queue item being scheduled together.
 
 ## Phase B contract (decision 0042)
 
@@ -1228,70 +1179,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** dispatch with `rivers_loaded` true from the first run after the `riverlines` load,
   then make it the default.
 
-## Curated import and craft page (decision 0053)
-
-### The ladder and the process route still number unordered curated stages
-
-- **What:** curated stages no source orders are stored with `ProcessStage.ordered` false and an
-  ordinal after the ordered ones. The craft page's Process tab shows them unnumbered (decision
-  0071), but `GET /crafts/{slug}/process` (`schemas/science.ProcessStageView.ordinal`) and the
-  answers' process ladder (`science/ladder`) still show every stage's ordinal.
-- **Why left:** both read the science contract and its golden fixtures, which the import did not
-  need to change; `science/records.StageRecord.ordered` already carries the flag.
-- **Clears it:** an `ordered` field in the science contract and the ladder, and the composer told
-  which stages have no stated order.
-
-### A seeded craft keeps its seed process and seed claims beside the curated ones
-
-- **What:** Kutch Ajrakh (and any other seeded craft once curated) keeps the "Seed process" next
-  to the curated process, so `/process` lists both and an answer's ladder may choose either; its
-  seed claims (edge sentences withdrawn) stay visible to answers and in All evidence, folded under
-  a curated near-duplicate where one exists.
-- **Why left:** the plan withdraws only the edge sentences; retiring the rest of a seeded craft's
-  seed rows is a reading of the plan the owner has not made.
-- **Clears it:** an owner decision, then the import superseding a curated craft's seed claims and
-  process (status `SUPERSEDED`, rows kept).
-
-### Facet search finds curated claims by their subject's concept type
-
-- **What:** the planner's facets filter by `Concept.type`; curated places are
-  `ENVIRONMENTAL_CONDITION` and communities `TRADITION` whatever the claim's discipline, so a
-  history facet does not see a history claim about a place. Craft-level claims are typed by
-  discipline (`curation_keys.DISCIPLINE_CONCEPT_TYPES`).
-- **Why left:** concept types are the retrieval vocabulary the planner's schema enumerates;
-  adding types or a discipline filter changes the planner contract.
-- **Clears it:** retrieval filtering by `CuratedClaim.discipline` (or a claim discipline column)
-  when the facet maps to a discipline.
-
-### Two homes for GI facts
-
-- **What:** the dossier's GI record lands in `CraftGiRecord`; the older `GiRegistration` table
-  (PLAN section 4) is still never written.
-- **Why left:** `GiRegistration` has no fields for the journal issue, filing date, proprietors
-  as a list, the authorised-user count or the claims, and the market and GI builder reads only
-  `CraftGiRecord` and the registry claims (decision 0066). Dropping the empty table needs a
-  migration with its row-level security, which the GI lane did not batch with parallel lanes'
-  migrations.
-- **Clears it:** the next migration that touches the crafts' tables drops `GiRegistration` (its
-  downgrade recreating the table and its policy) and removes the model.
-
-### A dossier removed from the folder is not un-imported
-
-- **What:** the import reads the dossiers present; deleting a dossier file leaves its claims,
-  pieces and `CuratedCraft` row as they were.
-- **Why left:** no dossier has been retired, and deletion would need its own supersession rule.
-- **Clears it:** an explicit retire step that supersedes the claims and pieces of a craft whose
-  dossier is gone.
-
-### A curated glossary meaning does not reach the term route
-
-- **What:** the page shows the dossier's meaning of each term, but `Term` rows are inserted only
-  when the key is new (the seed glossary owns its rows and rewrites them on every deploy), and
-  `GET /terms/{key}` builds its summary from defining claims, Wikipedia or a search.
-- **Why left:** writing a cached `TermSummary` from the curated meaning needs the meaning checked
-  as a cited sentence.
-- **Clears it:** a `STORED` term summary built from the term's curated claims at import.
-
 ## Phase C contract (decision 0054)
 
 ### Numbers the explainer computes are not checked
@@ -1345,37 +1232,17 @@ Last reviewed: 2026-11-22.
 
 ## Generated explainers (decision 0055)
 
-### Dataset rows are not offered to a generated explainer
-
-- **What:** the builder offers only figures the section's cited quotes state; the contract also
-  allows a value resting on a dataset row (`datasetCode`), such as a district's CHIRPS rainfall,
-  but no dataset value is offered, so an explainer cannot show one.
-- **Why left:** a section's dataset rows reach the builder only through other builders' reads
-  (the region and climate rows), and an explainer resting on rows alone is no piece and would be
-  paid for on every answer.
-- **Clears it:** offer the rows of the craft's first district that the section's blocks cite
-  (`DatasetRef` with its value), keyed apart from quoted values, and keep row-only explainers out
-  unless they also rest on a claim.
-
 ### A redraft can run past the builder's wait
 
-- **What:** the first draft and its one redraft share the registry's 60 s ceiling; a slow route
-  can leave the redraft cut off, and the section then shows no generated explainer.
-- **Why left:** the section waits for its builders before its pictures, and 60 s is the most a
-  builder may hold it (decision 0042).
-- **Clears it:** production timings of the first answers; if redrafts are often cut, build the
+- **What:** the generated explainer drafts within `SIMULATION_BUDGET_SECONDS` (60 s) and redrafts
+  only when the time left is at least what the first draft took (decision 0142), so the registry's
+  wait no longer cuts a redraft, but a slow route can still leave a section without its explainer:
+  the builder then records `OUT_OF_TIME` or `NO_TIME_TO_REDRAFT` under `Answer.plan.builds`.
+- **Why left:** how often that happens is a production measurement.
+- **Clears it:** the lead reads `plan->'builds'` of a week of Expert answers on production. If
+  `OUT_OF_TIME` and `NO_TIME_TO_REDRAFT` are a large share of the `simulation` outcomes, build the
   explainer after `section_done` as a late block, which needs a stream event the contract does not
-  have yet.
-
-### A generated explainer reused inside a fresh section has no trail entry
-
-- **What:** a stored explainer placed by the builder in a freshly researched section carries its
-  reuse mark ("From earlier research") but adds no `trail FOUND piece:<id>` event; reused sections
-  send one per piece.
-- **Why left:** builders return blocks, not trail events, and the block's own mark tells the
-  reader where it came from.
-- **Clears it:** let `Built` carry the pieces a builder placed and send their trail events with
-  the blocks.
+  have yet; otherwise delete this entry.
 
 ## What-if lab (decision 0056)
 
@@ -2330,14 +2197,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** count `shown_field_sentences` in `answer_measures` and `consulted_fields` and
   re-base the rubric floor in the same change; keep price claims out of the GI sentences in
   `services/market_builder`; carry each material's sentence-case name from the glossary.
-
-### Simulation builders that run long and add nothing
-
-- **What:** in answer 504968ea-49cc-469c-88f9-205a2ea90e8a the simulation builders of two sections
-  each ran 150 s and added no block, most of the answer's 285 s.
-- **Why left:** builders and their time budgets are not this lane's.
-- **Clears it:** give the simulation builder a time budget well under the section's, skip it when the
-  section's facts state no quantity it can draw, and record why it added nothing.
 
 ### The answer did not name the oxides behind Khurja's blue and turquoise glazes
 

@@ -53,7 +53,7 @@ read; no model is called while answering it.
 ```
 CraftProcess {schemaVersion: 1, craft: CraftRef, processes: ProcessView[], sources: SourceRef[]}
 ProcessView {id, name, variant|null, stages: ProcessStageView[]}           stages by rising ordinal
-ProcessStageView {id, ordinal, name, stageType, level, claims: CitedClaim[],
+ProcessStageView {id, ordinal, ordered?, name, stageType, level, claims: CitedClaim[],
                   materials: StageMaterialView[], conditions: StageCondition[], reactions: ReactionView[]}
 StageMaterialView {id, name, kind, role, quantityText|null, compound: CompoundRef|null, level, claims (>=1)}
 CompoundRef {id, name, formula|null, pubchemCid|null}
@@ -143,8 +143,14 @@ Vocabulary: `stageType` is `StageType`, `kind` of a material `MaterialKind`, `ro
 The route is `api/routes/crafts.py`; `services/craft_process.process_records` reads the rows
 and `science/process_view.craft_process` builds the answer.
 
-- Processes and stages: `Process`, `ProcessStage` of the craft (the seed has one
-  `Seed process` per craft, its stages from the immersive stage concepts with an ordinal).
+- Processes and stages: the live `Process` rows of the craft (`archivedAt` null,
+  `models.science.live_process`) and their `ProcessStage` rows (the seed has one `Seed process`
+  per craft, its stages from the immersive stage concepts with an ordinal; a craft with a curated
+  dossier has its seed process archived, decision 0142). `ordered` is `false` for a stage no
+  source orders (`ProcessStage.ordered`, a curated stage placed after the ordered ones) and left
+  out when a source orders it; a process ladder (`science/ladder`) offers the composer only ordered
+  stages, marks an unordered stage it holds `unnumbered` (as the craft page's ladder does), and a
+  stored ladder that numbers a stage now unordered fails `ladder_problems`.
 - Stage claims: visible claims whose subject is the stage's concept, if that concept is `OPEN`.
 - Materials: `StageMaterial` joined to `Material` (and `Compound`); their claims are the
   `StageMaterial.claimId` claim and the visible claims on `Material.conceptId`. A material's

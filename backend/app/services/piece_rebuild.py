@@ -9,7 +9,7 @@ from decimal import Decimal
 from typing import Any
 
 from pydantic import ValidationError
-from sqlalchemy import func, select
+from sqlalchemy import ColumnElement, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError, spend_refusal
@@ -28,10 +28,12 @@ from .coverage_enrichment import ENRICHMENT_QUESTION_RESERVE_USD, ENRICHMENT_TAG
 __all__ = [
     "PIECE_REBUILD_ASK_WINDOW",
     "PIECE_REBUILD_CRAFTS",
+    "PIECE_REBUILD_RETRY_AFTER",
     "PIECE_REBUILD_TAG",
     "PieceRebuildReport",
     "RebuildOutcome",
     "StaleGroup",
+    "mark_rebuild_tried",
     "rebuild_group",
     "rebuild_understanding",
     "run_piece_rebuild",
@@ -42,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 PIECE_REBUILD_ASK_WINDOW = timedelta(days=30)
 PIECE_REBUILD_CRAFTS = 10
+PIECE_REBUILD_RETRY_AFTER = timedelta(days=7)
 PIECE_REBUILD_TAG = f"{ENRICHMENT_TAG}rebuild-"
 BUDGET_STOP = "BUDGET"
 SPEND_STOP = "SPEND_REFUSED"
@@ -59,6 +62,7 @@ class StaleGroup:
     seats: tuple[str, ...] = ()
     withheld_terms: tuple[str, ...] = ()
     reading_style: ReadingStyle | None = None
+    piece_ids: tuple[uuid.UUID, ...] = ()
 
 
 @dataclass
@@ -86,6 +90,8 @@ class PieceRebuildReport:
 
 Rebuild = Callable[[StaleGroup], Awaitable[str]]
 Remaining = Callable[[], Awaitable[Decimal]]
+Tried = Callable[[StaleGroup], Awaitable[None]]
+TRIED_STATUSES = (REBUILT, EMPTY)
 
 
 async def stale_groups(
@@ -100,31 +106,50 @@ async def stale_groups(
         .limit(crafts)
         .subquery()
     )
+    grouped = (
+        PieceRow.facet,
+        PieceRow.depth,
+        PieceRow.readingStyle,
+        Answer.question,
+        Answer.understanding,
+        User.name.label("askerName"),
+        Craft.slug.label("craftSlug"),
+        Craft.name.label("craftName"),
+        asks.c.asks,
+    )
     rows = await session.execute(
-        select(
-            PieceRow.facet,
-            PieceRow.depth,
-            PieceRow.readingStyle,
-            Answer.question,
-            Answer.understanding,
-            User.name.label("askerName"),
-            Craft.slug.label("craftSlug"),
-            Craft.name.label("craftName"),
-            asks.c.asks,
-        )
+        select(*grouped, func.array_agg(PieceRow.id).label("pieceIds"))
         .join(Answer, Answer.id == PieceRow.createdFromAnswerId)
         .join(Craft, Craft.id == PieceRow.craftId)
         .join(asks, asks.c.craftId == PieceRow.craftId)
         .outerjoin(User, User.id == Answer.userId)
-        .where(PieceRow.staleSince.is_not(None), PieceRow.supersededById.is_(None))
-        .distinct()
+        .where(PieceRow.staleSince.is_not(None), PieceRow.supersededById.is_(None), _untried(now))
+        .group_by(*grouped)
         .order_by(asks.c.asks.desc(), Craft.slug, PieceRow.facet, PieceRow.depth, Answer.question)
     )
     return [_group(row) for row in rows]
 
 
+async def mark_rebuild_tried(session: AsyncSession, group: StaleGroup, *, now: datetime) -> int:
+    if not group.piece_ids:
+        return 0
+    result = await session.execute(
+        update(PieceRow).where(PieceRow.id.in_(list(group.piece_ids))).values(rebuildTriedAt=now)
+    )
+    return max(result.rowcount or 0, 0)
+
+
+def _untried(now: datetime) -> ColumnElement[bool]:
+    return or_(PieceRow.rebuildTriedAt.is_(None), PieceRow.rebuildTriedAt < now - PIECE_REBUILD_RETRY_AFTER)
+
+
 async def run_piece_rebuild(
-    groups: Sequence[StaleGroup], *, rebuild: Rebuild, remaining: Remaining, budget_usd: Decimal
+    groups: Sequence[StaleGroup],
+    *,
+    rebuild: Rebuild,
+    remaining: Remaining,
+    budget_usd: Decimal,
+    tried: Tried | None = None,
 ) -> PieceRebuildReport:
     report = PieceRebuildReport(budget_usd=str(budget_usd))
     for group in groups:
@@ -137,6 +162,8 @@ async def run_piece_rebuild(
         report.groups.append(outcome)
         try:
             outcome.status = await rebuild(group)
+            if tried is not None and outcome.status in TRIED_STATUSES:
+                await tried(group)
         except AppError as error:
             outcome.error = str(error)
             if spend_refusal(error):
@@ -186,6 +213,7 @@ def _group(row: Any) -> StaleGroup:
         seats=_seats(row.understanding, row.depth),
         withheld_terms=withheld_name(row.askerName),
         reading_style=row.readingStyle,
+        piece_ids=tuple(sorted(row.pieceIds, key=str)),
     )
 
 

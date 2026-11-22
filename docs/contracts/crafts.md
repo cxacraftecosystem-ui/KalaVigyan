@@ -87,7 +87,7 @@ The backend imports `app.data.craft_master_loader` and calls `seed_plan()`. It r
 
 ## `craft_wikidata.json`
 
-One row per master craft: `status` is `MATCHED` (112), `LOW_CONFIDENCE` (115), `NO_MATCH` (193) or `CATCH_ALL` (35, never searched). `match` is filled only for `MATCHED`. `LOW_CONFIDENCE` keeps its best guess under `candidate`, and nothing downstream uses it as a match. Each match carries `qid`, `label`, `description`, `enwiki`, Indic `sitelinks`, `labels` and `aliases` in 24 Indian languages plus English, `instanceOf`, `country`, `locatedIn` (with place coordinates where Wikidata has them), `coordinates`, `commonsCategory`, `image`, and `gi` (`tagged`, `wikidataCertification` = P1389 Q98399252, `wikipediaCategories`). `masterGiNotTaggedOnWikidata` lists 19 matched GI crafts whose Wikidata item has no GI marker. These are leads for the GiRegistration import, not corrections.
+One row per master craft: `status` is `MATCHED` (112), `LOW_CONFIDENCE` (115), `NO_MATCH` (193) or `CATCH_ALL` (35, never searched). `match` is filled only for `MATCHED`. `LOW_CONFIDENCE` keeps its best guess under `candidate`, and nothing downstream uses it as a match. Each match carries `qid`, `label`, `description`, `enwiki`, Indic `sitelinks`, `labels` and `aliases` in 24 Indian languages plus English, `instanceOf`, `country`, `locatedIn` (with place coordinates where Wikidata has them), `coordinates`, `commonsCategory`, `image`, and `gi` (`tagged`, `wikidataCertification` = P1389 Q98399252, `wikipediaCategories`). `masterGiNotTaggedOnWikidata` lists 19 matched GI crafts whose Wikidata item has no GI marker. These are leads for a curated GI record (`CraftGiRecord`), not corrections.
 
 How a match is scored:
 

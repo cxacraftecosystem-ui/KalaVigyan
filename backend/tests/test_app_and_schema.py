@@ -143,17 +143,17 @@ def migration_tables() -> dict[str, dict[str, ast.Call]]:
             assert column not in tables[table], f"{table}.{column} is added twice"
             tables[table][column] = call
     for table in later_dropped_tables():
-        assert tables.pop(table, None) is not None, f"{table} is dropped but never created"
+        assert table in tables, f"{table} is dropped before it is created"
+        tables.pop(table)
     return tables
 
 
 def later_dropped_tables() -> list[str]:
-    return [
-        name
-        for step in later_upgrade_steps()
-        for node in ast.walk(step)
-        if is_call_to(node, "drop_table") and (name := first_string(node)) is not None
+    calls = [
+        node for step in later_upgrade_steps() for node in ast.walk(step) if is_call_to(node, "drop_table")
     ]
+    names = [first_string(call) for call in calls if isinstance(call, ast.Call)]
+    return [name for name in names if name is not None]
 
 
 def later_column_changes() -> list[tuple[str, str, ast.Call | None]]:

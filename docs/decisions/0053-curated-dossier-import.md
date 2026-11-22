@@ -11,6 +11,7 @@ Date: 2026-11-18. Status: accepted.
 |---|---|
 | What built on it | [0108 An approved structure proposal becomes a curated fact of its dossier](0108-structure-proposals-become-curated-facts.md): the database as the source of truth and the dossiers as its export |
 | The contracts it names | [craft-page.md](../contracts/craft-page.md) |
+| The seed rows of a curated craft retired, a removed dossier retired by name, the curated glossary meaning stored as the term's summary | [decision 0142](0142-curated-crafts-read-only-curated-rows.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

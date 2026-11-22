@@ -106,6 +106,7 @@ def _stage_view(stage: StageRecord, index: _Index) -> ProcessStageView:
     return ProcessStageView(
         id=stage.id,
         ordinal=stage.ordinal,
+        ordered=stage.ordered,
         name=stage.name,
         stage_type=stage.stage_type,
         level=weakest_level(c.level for c in claims) if claims else UNAVAILABLE_LEVEL,

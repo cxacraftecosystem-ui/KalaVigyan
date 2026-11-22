@@ -374,7 +374,10 @@ construct, and the builder that made it adds nothing.
 
 Pieces of one answer never supersede each other: a section may store several pieces of one kind
 (material cards, expert views), and only pieces from earlier answers are superseded
-(`piece_store._supersede`, decision 0045).
+(`piece_store._supersede`, decision 0045). A curated piece is never superseded: one rule tells it,
+no answer id and every claim it cites curated (`piece_reuse.curated_piece`, fed the curated claim
+ids by `piece_lookup.curated_claim_ids`, decision 0142), so a reader's piece whose answer was
+deleted (its answer id set null) is superseded and reused like any reader's piece.
 
 ### The expert panel (`research/expert_panel.py`)
 
@@ -462,11 +465,13 @@ builders run over the floor and the new blocks together, and the kept group hold
 floor. Each floor is sent as soon as its section starts, before the section waits for one of the
 `SECTION_CONCURRENCY` research slots, and a failure while sending it stops that section alone. A
 section whose floor shows something is never researched again on the web for composing nothing
-new (`_needs_fresh`). An answer's keep never supersedes a piece no answer made
-(`createdFromAnswerId` null): the curated pieces stay current for the craft page, the district page
-and compare, and serve reuse again once the answer's group goes stale, while reuse takes a group an
-answer made before a curated one of the same field (`piece_reuse.answered_first`), so the next ask
-reuses the richer group and an Expert ask is not floored twice. Also at `EXPERT`, every field with at least `FIELD_CLAIMS_MIN` (3) visible curated claims joins
+new (`_needs_fresh`). An answer's keep never supersedes a curated piece (no answer id and every
+cited claim curated, `piece_reuse.curated_piece`): the curated pieces stay current for the craft
+page, the district page and compare, and serve reuse again once the answer's group goes stale,
+while reuse takes a group holding any piece that is not curated before a curated one of the same
+field (`piece_reuse.answered_first`), so the next ask reuses the richer group and an Expert ask is
+not floored twice; a floor is a section whose craft pieces are all curated
+(`reuse_enrichment.curated_section`). Also at `EXPERT`, every field with at least `FIELD_CLAIMS_MIN` (3) visible curated claims joins
 the understanding's fields after those it chose (`stored_fields.with_stored_fields`,
 `AnswerStore.fields`). Field reach of the builders: `seasons` `CLIMATE`, `PROCESS`, `GEOGRAPHY`;
 `supply_map` `MATERIALS`, `PROCESS`, `ECONOMICS`; `zoom_story` `MATERIALS`, `CHEMISTRY`, `PROCESS`;
@@ -1059,8 +1064,20 @@ block wrapper, no reuse note).
 
 Registered in `BLOCK_BUILDERS` from `services/simulation_builder.py` for `piece_reuse.SIMULATION_FACETS`
 (`PROCESS`, `CHEMISTRY`, `PHYSICS`, `MATERIALS`, `GEOGRAPHY`, `GEOLOGY`, `CLIMATE`), waiting
-`SIMULATION_WAIT_SECONDS` (150 s, within `BUILDER_WAIT_MAX_SECONDS` 180 s), with `places_pieces`
-and `adds_pictures` (the one entry that may also return `images` blocks, its concept pictures).
+`SIMULATION_WAIT_SECONDS` (75 s, under the expert panel's 90 s; 150 s before decision 0142), with
+`places_pieces` and `adds_pictures` (the one entry that may also return `images` blocks, its
+concept pictures). Its model calls draft within `SIMULATION_BUDGET_SECONDS` (60 s, the builder's
+own `SimulationBudget`): a draft that runs past it adds nothing (`OUT_OF_TIME`), and a draft that
+fails its checks is redrafted only when the time left is at least the time the first draft took
+(else `NO_TIME_TO_REDRAFT`).
+
+- **Why nothing was added** (decision 0142): every builder of a section returns `Built.note` when
+  it adds nothing; the registry records each builder's kind, outcome (`ADDED`, `NOTHING`,
+  `TIMED_OUT`, `FAILED` or the builder's note), blocks shown and seconds taken under
+  `Answer.plan.builds` (`services/builder_record`, one row per builder per section). The generated
+  explainer's notes are `NO_CONCEPT`, `NO_QUANTITY` (the section's facts state no figure, offer no
+  dataset row and the concept plays no reaction, so no model is asked), `NO_MECHANISM`,
+  `CHECKS_FAILED`, `HIDDEN_AGAIN`, `OUT_OF_TIME` and `NO_TIME_TO_REDRAFT`.
 
 - **Concepts** (decision 0087, `science/mechanisms.section_concepts`, fixed rules, no model): the
   craft's stored reactions whose claims are facts, grouped when they share a compound or a species
@@ -1090,6 +1107,12 @@ and `adds_pictures` (the one entry that may also return `images` blocks, its con
   offered), once per claim, at most 40, refs `v1`, `v2`, ... in citation order, each with its one
   citation and its stated words: the quote's own words around it, up to `STATED_WORDS_AROUND` (3)
   either side, stopping at a clause mark. A section whose quotes state no figure asks no model.
+- **Offered dataset rows** (`simulation_datasets.first_district_rows`, `simulation_draft.offered_rows`,
+  decision 0142): the rows of the datasets the section's blocks cite (`DatasetRef`), for the
+  craft's first mapped district (`place_offers.mapped_districts`), refs `d1`, `d2`, ... apart from
+  the quoted values, each with its value, unit and the words that name it; a value taken from one
+  is a `dataset_code` value with no citation, and the block cites that `DatasetRef`. An explainer
+  resting on dataset rows alone, with no cited value, statement or reaction, is a `VALUE` problem.
 - **Reuse before any call.** The builder reads, in one short session closed before any model
   call, the stored simulation pieces of the section's facet whose claims the section's checked
   claims hold (`services/simulation_pieces`: `claimIds <@`, current and not stale, and every
@@ -1111,7 +1134,8 @@ and `adds_pictures` (the one entry that may also return `images` blocks, its con
   scanned, and a reply past 200 KiB is off its schema (decision 0061); each value an offered ref,
   used once, its unit words its stated words hold or none, its label no figure (rule `VALUE`);
   each statement and reaction an offered ref, used once (rule `GROUND`); at least one value,
-  statement or reaction; then the static check over the data object `{key: value}` together with
+  statement or reaction, and at least one of them a cited claim's; then the static check over the
+  data object `{key: value}` together with
   the coefficients of the reactions used (`blocks_play.simulation_data`), so an equation's
   coefficients may be shown and no other figure; then the block's validators (`BLOCK`). On any problem one
   redraft is asked with every failed check listed (inside an untrusted block); a second failure
@@ -1548,7 +1572,7 @@ validated by `event_frame` like every other: a payload off the contract never re
 | Event | Payload | Notes |
 |---|---|---|
 | `understood` | `Understood {crafts[CraftRef] (0-5), candidates[CraftRef] (0-5), depth, language, basis?}` | first. `crafts` empty is "Any craft"; several crafts is a comparison; `candidates` are the others offered, one tap to change. Each craft appears once across both lists. `basis` (`UNDERSTANDING_BASES`: `MODEL` or `RESOLVER`) says whether the model's reply or the craft resolver's fallback read the question (`Understanding.basis`); every answer sends it, for diagnosis and the answer evaluation, and the client shows nothing for it. An explainer stored before it has none and still reads |
-| `trail` | `{key, stage, group, title, url?, publisher?, year?, sourceId?, storedAt?}` | a source found, read or quoted. `key` is the evidence id (`openalex:W...`), `source:<uuid>` for stored sources or `piece:<uuid>` for a reused piece; stored keys are group `STORED` and never `READ`; a piece carries `storedAt`; a stored source names `sourceId`. Groups: `PAPERS`, `ENCYCLOPAEDIA`, `DATASETS`, `WEB`, `STORED` (`TRAIL_GROUP_OF_SOURCE` maps every source type). A key's stage only moves forward: `FOUND`, `READ`, `QUOTED` |
+| `trail` | `{key, stage, group, title, url?, publisher?, year?, sourceId?, storedAt?}` | a source found, read or quoted. `key` is the evidence id (`openalex:W...`), `source:<uuid>` for stored sources or `piece:<uuid>` for a reused piece; stored keys are group `STORED` and never `READ`; a piece carries `storedAt`; a stored source names `sourceId`. Every block sent with a reuse mark gets its piece's `FOUND` entry just before it (the started section's shown title, `ExplainerStream._found_piece`, decision 0142), so a stored explainer a builder places in a freshly researched section is on the trail too. Groups: `PAPERS`, `ENCYCLOPAEDIA`, `DATASETS`, `WEB`, `STORED` (`TRAIL_GROUP_OF_SOURCE` maps every source type). A key's stage only moves forward: `FOUND`, `READ`, `QUOTED` |
 | `paced` | `{services: [{service, waitedSeconds, waitedRequests, refusals, unsent}]}` | what the scholarly services' shared pace cost this answer so far (decision 0139): per service, the seconds its requests waited for their turn and how many waited, the service's own refusals (429 or 403) and the requests not sent because the service was paused or its queue was full. Sent after a `trail` `FOUND` or `READ` whenever the record changed; only services that held a request back are listed. A client that does not draw it ignores it |
 | `section_started` | `{id, discipline, title, original?, order, state}` | `state` `RESEARCHING`, `WRITING` or `CHECKING` |
 | `section_state` | `{sectionId, state}` | a later working state of a started section |

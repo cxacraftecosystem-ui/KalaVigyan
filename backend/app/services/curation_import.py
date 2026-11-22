@@ -31,7 +31,9 @@ from .curation_overview import OverviewPieces, indexed_overview, overview_pieces
 from .curation_plan import CurationPlan, curation_plan
 from .curation_rows import CraftTarget
 from .curation_sections import publish_dossier_sections
+from .curation_seed_rows import SeedRetirement, retire_curated_seed_rows
 from .curation_store import source_aliases, write_evidence, write_records, write_structure
+from .curation_terms import write_curated_term_summaries
 from .curation_writes import insert_missing, stored_values, sync_rows
 from .monograph_generated_sections import SectionOwner
 from .piece_lookup import craft_districts
@@ -83,6 +85,8 @@ class DossierOutcome:
 class ImportReport:
     withdrawn_edges: int
     dossiers: tuple[DossierOutcome, ...]
+    retired_seed_rows: SeedRetirement = field(default_factory=SeedRetirement)
+    term_summaries: int = 0
 
     @property
     def refused(self) -> list[DossierOutcome]:
@@ -91,6 +95,8 @@ class ImportReport:
     def summary(self) -> dict[str, Any]:
         return {
             "withdrawnEdgeSentences": self.withdrawn_edges,
+            "retiredSeedRows": self.retired_seed_rows.summary(),
+            "termSummaries": self.term_summaries,
             "imported": sum(1 for outcome in self.dossiers if outcome.status == IMPORTED),
             "refused": len(self.refused),
             "waiting": sum(1 for outcome in self.dossiers if outcome.status == WAITING),
@@ -111,7 +117,13 @@ async def import_curation(
     withdrawn = await withdraw_seed_edges(session)
     checking = context or default_context()
     outcomes = [await import_path(session, path, checking) for path in dossier_paths(directory)]
-    return ImportReport(withdrawn_edges=withdrawn, dossiers=tuple(outcomes))
+    retired = await retire_curated_seed_rows(session)
+    return ImportReport(
+        withdrawn_edges=withdrawn,
+        dossiers=tuple(outcomes),
+        retired_seed_rows=retired,
+        term_summaries=await write_curated_term_summaries(session),
+    )
 
 
 async def import_path(session: AsyncSession, path: Path, context: CheckContext) -> DossierOutcome:

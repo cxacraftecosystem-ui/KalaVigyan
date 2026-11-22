@@ -14,13 +14,13 @@ from app.models import (
     CraftGiRecord,
     CraftLocation,
     CuratedCraft,
-    GiRegistration,
     Material,
     Process,
     ProcessStage,
     Term,
     TermCraft,
 )
+from app.models.science import live_process
 from app.research.craft_catalogue import CatalogueDepth, CatalogueHero
 from app.research.retrieval import VISIBLE_SENSITIVITY
 
@@ -100,6 +100,7 @@ async def _stage_counts(session: AsyncSession) -> dict[str, int]:
     rows = await session.execute(
         select(Process.craftId, func.max(per_process.c.stages))
         .join(per_process, per_process.c.processId == Process.id)
+        .where(live_process())
         .group_by(Process.craftId)
     )
     return {str(craft_id): int(count) for craft_id, count in rows.all()}
@@ -115,19 +116,12 @@ async def _place_counts(session: AsyncSession) -> dict[str, int]:
 
 
 async def _gi_years(session: AsyncSession) -> dict[str, int]:
-    registry = await session.execute(
-        select(GiRegistration.craftId, func.min(GiRegistration.registeredOn))
-        .where(GiRegistration.craftId.is_not(None), GiRegistration.registeredOn.is_not(None))
-        .group_by(GiRegistration.craftId)
-    )
-    years = {str(craft_id): registered.year for craft_id, registered in registry.all()}
     records = await session.execute(
         select(CraftGiRecord.craftId, CraftGiRecord.registeredOn).where(
             CraftGiRecord.registeredOn.is_not(None)
         )
     )
-    years.update((str(craft_id), int(str(registered)[:4])) for craft_id, registered in records.all())
-    return years
+    return {str(craft_id): int(str(registered)[:4]) for craft_id, registered in records.all()}
 
 
 async def _concept_links(session: AsyncSession) -> tuple[ConceptLink, ...]:

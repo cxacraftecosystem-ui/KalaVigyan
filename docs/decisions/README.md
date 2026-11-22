@@ -38,7 +38,7 @@ flowchart LR
 | [0007](0007-web-search-and-fetcher.md) | Web search adapters and the fetcher sandbox | · |
 | [0008](0008-stored-knowledge-retrieval.md) | Stored-knowledge retrieval | · |
 | [0009](0009-planner-and-tiered-research.md) | Planner and tiered research | · |
-| [0010](0010-composer.md) | Composer | [0138](0138-answers-composed-from-the-asked-fields.md) |
+| [0010](0010-composer.md) | Composer | [0138](0138-answers-composed-from-the-asked-fields.md) and [0144](0144-stored-passages-as-evidence.md) |
 | [0011](0011-claim-write-back-and-coverage-enrichment.md) | Claim write-back and the coverage enrichment job | · |
 | [0012](0012-answer-stream-end-to-end.md) | The answer stream end to end | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0013](0013-review-fixes-quotes-licences-scope.md) | Quote strength, open licences, one craft scope and scoped embedding | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
@@ -66,7 +66,7 @@ flowchart LR
 | [0030](0030-explainer-contract.md) | The explainer contract | · |
 | [0031](0031-understanding-and-depth.md) | Understanding the question, and depth by role | [0093](0093-no-caps-for-now.md) and [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0032](0032-sectioned-composition.md) | Sectioned composition: research per field, blocks per section | [0138](0138-answers-composed-from-the-asked-fields.md) |
-| [0033](0033-knowledge-pieces-and-reuse.md) | Stored knowledge pieces and reuse | [0096](0096-reader-question-pieces-join-their-craft-page.md) |
+| [0033](0033-knowledge-pieces-and-reuse.md) | Stored knowledge pieces and reuse | [0096](0096-reader-question-pieces-join-their-craft-page.md), [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0034](0034-images-and-terms.md) | Pictures and tappable terms | · |
 | [0035](0035-listen-and-voice-switched-off.md) | Listen, and the live voice call switched off | [0140](0140-voice-and-listen-kept-true.md) |
 | [0036](0036-asking-screen.md) | The asking screen: dictation, an optional craft, depth by role | · |
@@ -86,9 +86,9 @@ flowchart LR
 | [0050](0050-phase-b-review-fixes.md) | Phase B review fixes | · |
 | [0051](0051-curation-tooling.md) | Curation tooling: the dossier model, fetch, verify and check | · |
 | [0052](0052-opus-composes-at-medium-effort.md) | Opus 5.5 composes answers, at medium effort | · |
-| [0053](0053-curated-dossier-import.md) | Curated dossiers are imported on deploy and served as one craft page | · |
+| [0053](0053-curated-dossier-import.md) | Curated dossiers are imported on deploy and served as one craft page | [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0054](0054-phase-c-contract.md) | Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode | · |
-| [0055](0055-generated-explainers.md) | Generated explainers: built from cited figures, checked, stored, reused and hidden | · |
+| [0055](0055-generated-explainers.md) | Generated explainers: built from cited figures, checked, stored, reused and hidden | [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0056](0056-what-if-lab.md) | The what-if lab's builder | [0140](0140-voice-and-listen-kept-true.md) |
 | [0057](0057-zoom-story-and-timeline-map.md) | Zoom story and timeline map builders | · |
 | [0058](0058-elevenlabs-music-sound-image-video.md) | ElevenLabs music, sound effects, image and video | · |
@@ -126,7 +126,7 @@ flowchart LR
 | [0087](0087-generated-explainers-per-concept.md) | A generated explainer, or a picture, for every concept that needs one | · |
 | [0088](0088-reactions-step-by-step-and-molecules.md) | Reactions play step by step with their stage, conditions, colours and why; curated CIDs become compounds | [0095](0095-craft-page-chapters.md) |
 | [0089](0089-expert-depth-caps-and-answer-routes.md) | Expert answers research and write more, compose on Opus at high effort, and cost more; Hindi terms survive translation | [0093](0093-no-caps-for-now.md) |
-| [0090](0090-reused-and-curated-sections-enriched.md) | Reused and curated sections are enriched like researched ones | · |
+| [0090](0090-reused-and-curated-sections-enriched.md) | Reused and curated sections are enriched like researched ones | [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0091](0091-field-voices-kalavigyan-side.md) | Field voices v2 in KalaVigyan: storage, citation, the craft page and the reading view | [0097](0097-public-reading-everywhere-but-asking.md) and [0112](0112-reviewed-field-photographs.md) |
 | [0092](0092-design-system.md) | The KalaVigyan design system: Alum & Indigo | [0114](0114-kinds-and-datasets.md) and [0141](0141-design-system-and-answer-screens-without-debt.md) |
 | [0093](0093-no-caps-for-now.md) | No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
@@ -165,7 +165,7 @@ flowchart LR
 | [0121](0121-quote-visibility.md) | A quote is shown only where its page allows | · |
 | [0122](0122-evidence-reach.md) | Evidence the knowledge base holds reaches the answers that need it | · |
 | [0123](0123-question-understanding.md) | A question is understood honestly before any evidence is read | · |
-| [0124](0124-live-research-write-back.md) | Live research writes back only what its sources say | [0135](0135-write-backs-filed-under-the-craft-they-name.md) |
+| [0124](0124-live-research-write-back.md) | Live research writes back only what its sources say | [0135](0135-write-backs-filed-under-the-craft-they-name.md) and [0144](0144-stored-passages-as-evidence.md) |
 | [0125](0125-reranking.md) | Stored facts are reranked, and relevance decides when stored knowledge is enough | [0132](0132-a-ranking-votes-with-its-first-thirty.md) and [0133](0133-the-evaluation-scores-what-answers-read.md) |
 | [0126](0126-measurement-that-grows.md) | Measurement grows with the knowledge and alerts when it falls | [0133](0133-the-evaluation-scores-what-answers-read.md) |
 | [0127](0127-coherent-answers.md) | An answer says each fact once, never admits a gap, keeps the stages it is asked and paces its sources | [0138](0138-answers-composed-from-the-asked-fields.md) and [0139](0139-sources-and-providers-reach-outside-services-once.md) |
@@ -176,13 +176,15 @@ flowchart LR
 | [0133](0133-the-evaluation-scores-what-answers-read.md) | The evaluation scores what answers read | · |
 | [0134](0134-each-sentence-once-in-a-block.md) | A block says each sentence once, and the judge reads it as a reader does | · |
 | [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | [0136](0136-write-backs-filed-by-their-source.md) and [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
-| [0136](0136-write-backs-filed-by-their-source.md) | A write-back is filed by what its source says around it, and what nothing names waits for a reviewer | · |
+| [0136](0136-write-backs-filed-by-their-source.md) | A write-back is filed by what its source says around it, and what nothing names waits for a reviewer | [0144](0144-stored-passages-as-evidence.md) |
 | [0137](0137-limits-kept-by-choice.md) | Nine limits are kept by choice and leave the debt register | · |
 | [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | · |
 | [0139](0139-sources-and-providers-reach-outside-services-once.md) | Sources and providers reach outside services once, at the pace and spend every process shares | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
-| [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | · |
+| [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | [0144](0144-stored-passages-as-evidence.md) |
 | [0141](0141-design-system-and-answer-screens-without-debt.md) | The design system holds no migration alias, and the answer screens number their figures, read every caption from the server and keep only what is stored | · |
+| [0142](0142-curated-crafts-read-only-curated-rows.md) | A curated craft reads only its curated rows, stored pieces keep one curated rule, and the generated explainer works within a budget | · |
 | [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | · |
+| [0144](0144-stored-passages-as-evidence.md) | A stored passage is evidence an answer and a voice turn may cite, kept as a fact of its own source | · |
 | [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | · |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
 

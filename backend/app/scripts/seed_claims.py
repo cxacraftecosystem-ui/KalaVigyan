@@ -12,6 +12,7 @@ async def run() -> dict[str, Any]:
     from app.core.db import dispose_engine, session_scope
     from app.services.claim_seed import seed_claims
     from app.services.claim_seed_passages import store_seed_passages
+    from app.services.curation_seed_rows import retire_curated_seed_rows
     from app.services.science_seed import seed_science
     from app.services.term_glossary import seed_terms
 
@@ -21,7 +22,11 @@ async def run() -> dict[str, Any]:
             claims = await seed_claims(session, data)
             passages = await store_seed_passages(session, data)
             science = await seed_science(session)
-            return {**claims, "passages": passages, "science": science, "terms": await seed_terms(session)}
+            terms = await seed_terms(session)
+            retired = await retire_curated_seed_rows(session)
+            return {**claims, "passages": passages, "science": science, "terms": terms} | {
+                "retiredSeedRows": retired.summary()
+            }
     finally:
         await dispose_engine()
 

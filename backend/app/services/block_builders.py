@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from typing import Any, Self
@@ -17,6 +18,14 @@ from app.research.sections import block_id
 
 from .artisan_voice_builder import ARTISAN_VOICE_FIELDS, ArtisanVoiceBuilder
 from .builder_interface import BlockBuilder, BuildAsk, BuilderTools, Built, SourceRefs
+from .builder_record import (
+    ADDED,
+    FAILED,
+    NOTHING,
+    TIMED_OUT,
+    BuilderOutcome,
+    BuildRecord,
+)
 from .claim_ledger import ONCE_PER_ANSWER_KINDS
 from .climate_risk import CLIMATE_RISK_WAIT_SECONDS, ClimateRiskBuilder
 from .expert_views import EXPERT_VIEW_WAIT_SECONDS, ExpertPanelBuilder
@@ -166,18 +175,31 @@ class AddedBlocks:
 
 class BlockBuilders:
     def __init__(
-        self, builders: Iterable[Pair] = (), *, taken: set[str] | None = None, shown: Collection[str] = ()
+        self,
+        builders: Iterable[Pair] = (),
+        *,
+        taken: set[str] | None = None,
+        shown: Collection[str] = (),
+        record: BuildRecord | None = None,
     ) -> None:
         self._builders = tuple(builders)
         self._taken = taken
         self._shown = frozenset(shown)
+        self._record = record
 
     @classmethod
-    def from_registry(cls, tools: BuilderTools, entries: Sequence[BuilderEntry] = BLOCK_BUILDERS) -> Self:
-        return cls([(entry, entry.make(tools)) for entry in entries if entry.kind in BUILT_BLOCK_KINDS])
+    def from_registry(
+        cls,
+        tools: BuilderTools,
+        entries: Sequence[BuilderEntry] = BLOCK_BUILDERS,
+        *,
+        record: BuildRecord | None = None,
+    ) -> Self:
+        made = [(entry, entry.make(tools)) for entry in entries if entry.kind in BUILT_BLOCK_KINDS]
+        return cls(made, record=record)
 
     def for_answer(self) -> BlockBuilders:
-        return BlockBuilders(self._builders, taken=set())
+        return BlockBuilders(self._builders, taken=set(), record=self._record)
 
     def for_section(self, discipline: str) -> tuple[Pair, ...]:
         return tuple(pair for pair in self._builders if discipline in pair[0].disciplines)
@@ -195,7 +217,7 @@ class BlockBuilders:
 
     def without(self, kinds: Collection[str], *, shown: Collection[str] = ()) -> BlockBuilders:
         kept = (pair for pair in self._builders if pair[0].kind not in kinds)
-        return BlockBuilders(kept, taken=self._taken, shown=shown)
+        return BlockBuilders(kept, taken=self._taken, shown=shown, record=self._record)
 
     def note_shown(self, kinds: Iterable[str]) -> None:
         if self._taken is not None:
@@ -216,17 +238,21 @@ class BlockBuilders:
         results = await asyncio.gather(*(_bounded(entry, builder, ask) for entry, builder in chosen))
         blocks: list[Block] = []
         sources: dict[str, Mapping[str, Any]] = {}
-        for (entry, _), built in zip(chosen, results, strict=True):
+        outcomes: list[BuilderOutcome] = []
+        for (entry, _), (built, seconds) in zip(chosen, results, strict=True):
             known = {**ask.cited.sources, **built.sources}
             checked = [block for block in _checked(entry, built, known, ask) if not self._repeats(block, ask)]
             if not checked:
                 self._give_back(entry)
             blocks += checked
             sources.update({sid: known[sid] for block in checked for sid in block.cited_source_ids()})
+            outcomes.append(_outcome(entry, built, len(checked), seconds))
+        if self._record is not None:
+            await self._record(ask.answer_id, ask.section.id, outcomes)
         return AddedBlocks(tuple(blocks), sources)
 
     def _kept(self, pairs: Iterable[Pair]) -> BlockBuilders:
-        return BlockBuilders(pairs, taken=self._taken, shown=self._shown)
+        return BlockBuilders(pairs, taken=self._taken, shown=self._shown, record=self._record)
 
     def _repeats(self, block: Block, ask: BuildAsk) -> bool:
         if not repeats_shown(block, self._shown):
@@ -283,10 +309,11 @@ def built_by_registry(entries: Sequence[BuilderEntry] = BLOCK_BUILDERS) -> froze
     return frozenset(entry.kind for entry in entries)
 
 
-async def _bounded(entry: BuilderEntry, builder: BlockBuilder, ask: BuildAsk) -> Built:
+async def _bounded(entry: BuilderEntry, builder: BlockBuilder, ask: BuildAsk) -> tuple[Built, float]:
+    started = time.monotonic()
     try:
         async with asyncio.timeout(entry.wait_seconds):
-            return await builder.build(ask)
+            built = await builder.build(ask)
     except TimeoutError:
         logger.warning(
             "the %s builder for section %s took over %s s; it adds nothing",
@@ -294,11 +321,17 @@ async def _bounded(entry: BuilderEntry, builder: BlockBuilder, ask: BuildAsk) ->
             ask.section.id,
             entry.wait_seconds,
         )
+        built = Built(note=TIMED_OUT)
     except Exception:
         logger.warning(
             "the %s builder for section %s failed; it adds nothing", entry.kind, ask.section.id, exc_info=True
         )
-    return Built()
+        built = Built(note=FAILED)
+    return built, time.monotonic() - started
+
+
+def _outcome(entry: BuilderEntry, built: Built, shown: int, seconds: float) -> BuilderOutcome:
+    return BuilderOutcome(entry.kind, built.note or (ADDED if shown else NOTHING), shown, seconds)
 
 
 def _checked(entry: BuilderEntry, built: Built, known: SourceRefs, ask: BuildAsk) -> list[Block]:

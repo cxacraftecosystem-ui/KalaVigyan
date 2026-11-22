@@ -8,6 +8,7 @@ Date: 2026-11-18. Status: accepted.
 
 | For | Read |
 |---|---|
+| Which piece is curated, by its claims (amends item 2) | [decision 0142](0142-curated-crafts-read-only-curated-rows.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

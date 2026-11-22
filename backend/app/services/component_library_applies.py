@@ -17,6 +17,7 @@ from app.models import (
     StageMaterial,
 )
 from app.models.enums import DISTRICT_PLACE_PREFIX
+from app.models.science import live_process
 
 __all__ = ["APPLIED_CRAFT", "APPLIED_PIECE", "DISTRICT_KEY_PREFIX", "applies_to", "registered_pieces"]
 
@@ -57,7 +58,7 @@ def _by_stage_concept(crafts: list[uuid.UUID]) -> Select[Any]:
         _keyed(Process.craftId)
         .join(ProcessStage, ProcessStage.conceptId == Subject.conceptId)
         .join(Process, Process.id == ProcessStage.processId)
-        .where(Process.craftId.in_(crafts))
+        .where(Process.craftId.in_(crafts), live_process())
     )
 
 
@@ -68,7 +69,7 @@ def _by_material(crafts: list[uuid.UUID], material_key: Any, subject_key: Any) -
         .join(StageMaterial, StageMaterial.materialId == Material.id)
         .join(ProcessStage, ProcessStage.id == StageMaterial.stageId)
         .join(Process, Process.id == ProcessStage.processId)
-        .where(Process.craftId.in_(crafts))
+        .where(Process.craftId.in_(crafts), live_process())
     )
 
 

@@ -38,6 +38,7 @@ from app.research.piece_reuse import (
     SIMULATION_FACETS,
     ClaimState,
     answered_first,
+    curated_piece,
     reusable_groups,
     with_region_story,
     with_simulation,
@@ -58,8 +59,10 @@ from .piece_lookup import (
     PieceAsk,
     PieceLookup,
     ReusedSection,
+    answerless_claims,
     candidate_pieces,
     claim_states,
+    curated_claim_ids,
     topic_subjects,
 )
 from .region_pieces import region_story_pieces
@@ -145,6 +148,7 @@ class SqlPieceStore:
             states, cited = await claim_states(session, [*pieces, *regions], acls=EVERY_CHUNK_ACLS)
             checked = any(isinstance(piece.payload, PROCESS_BLOCKS) for piece in pieces)
             records = await process_records(session, craft, acls=EVERY_CHUNK_ACLS) if checked else None
+            curated = await curated_claim_ids(session, answerless_claims(pieces))
         reused: dict[str, ReusedSection] = {}
         for facet, topic in topics.items():
             reuse = ReuseAsk(
@@ -154,12 +158,12 @@ class SqlPieceStore:
                 depth=ask.depth,
                 reading_style=ask.reading_style,
             )
-            groups = _facet_groups(pieces, reuse, states, records)
+            groups = answered_first(_facet_groups(pieces, reuse, states, records), curated)
             if groups:
                 closest = await self._closest(groups, ask.question)
                 shown = with_region_story(closest, regions, depth=ask.depth, current=states)
                 shown = with_simulation(shown, simulations, depth=ask.depth, current=states)
-                reused[facet] = ReusedSection(pieces=shown, cited=cited)
+                reused[facet] = ReusedSection(pieces=shown, cited=cited, curated=curated)
         return PieceLookup(craft_id=craft.id, topics=topics, reused=reused, craft_slug=craft.slug)
 
     async def keep(
@@ -216,8 +220,7 @@ def _facet_groups(
     states: Mapping[uuid.UUID, ClaimState],
     records: ProcessRecords | None,
 ) -> list[tuple[KnowledgePiece, ...]]:
-    held = [group for group in reusable_groups(pieces, reuse, states) if _process_blocks_hold(group, records)]
-    return answered_first(held)
+    return [group for group in reusable_groups(pieces, reuse, states) if _process_blocks_hold(group, records)]
 
 
 def _process_blocks_hold(group: Sequence[KnowledgePiece], records: ProcessRecords | None) -> bool:
@@ -317,9 +320,8 @@ async def _insert(session: AsyncSession, piece: KnowledgePiece) -> None:
 async def _supersede(session: AsyncSession, piece: KnowledgePiece) -> None:
     shallower = [depth for depth in EXPLAINER_DEPTHS if depth_at_least(piece.depth, depth)]
     same_claims = [PieceRow.claimIds == piece.claim_ids] if piece.kind in CLAIM_KEYED_KINDS else []
-    await session.execute(
-        update(PieceRow)
-        .where(
+    rows = await session.execute(
+        select(PieceRow.id, PieceRow.createdFromAnswerId, PieceRow.claimIds).where(
             PieceRow.craftId == piece.craft_id,
             PieceRow.facet == piece.facet,
             PieceRow.topicKey == piece.topic_key,
@@ -327,11 +329,15 @@ async def _supersede(session: AsyncSession, piece: KnowledgePiece) -> None:
             PieceRow.depth.in_(shallower),
             PieceRow.readingStyle.is_not_distinct_from(piece.reading_style),
             PieceRow.id != piece.id,
-            PieceRow.createdFromAnswerId.is_not(None),
             PieceRow.createdFromAnswerId.is_distinct_from(piece.created_from_answer_id),
             PieceRow.supersededById.is_(None),
             PieceRow.createdAt <= piece.created_at,
             *same_claims,
         )
-        .values(supersededById=piece.id)
     )
+    found = rows.all()
+    answerless = (claim for row in found if row.createdFromAnswerId is None for claim in row.claimIds)
+    curated = await curated_claim_ids(session, answerless)
+    older = [row.id for row in found if not curated_piece(row.createdFromAnswerId, row.claimIds, curated)]
+    if older:
+        await session.execute(update(PieceRow).where(PieceRow.id.in_(older)).values(supersededById=piece.id))

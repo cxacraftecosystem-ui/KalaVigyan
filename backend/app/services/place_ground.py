@@ -39,6 +39,7 @@ from app.models import (
     Source,
     StageMaterial,
 )
+from app.models.science import live_process
 from app.research.citations import SourceRef
 from app.research.crafts import CraftRef
 from app.research.place_ground import PLACE_PRECISIONS, MapPlaceGround
@@ -214,7 +215,7 @@ async def _materials(session: AsyncSession, craft: Craft) -> tuple[CraftMaterial
         .join(StageMaterial, StageMaterial.materialId == Material.id)
         .join(ProcessStage, ProcessStage.id == StageMaterial.stageId)
         .join(Process, Process.id == ProcessStage.processId)
-        .where(Process.craftId == craft.id, StageMaterial.role != TOOL_ROLE)
+        .where(Process.craftId == craft.id, live_process(), StageMaterial.role != TOOL_ROLE)
         .distinct()
     )
     rows = (await session.execute(statement)).all()

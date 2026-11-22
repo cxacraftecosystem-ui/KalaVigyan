@@ -415,9 +415,11 @@ or stored on the page.
   belongs where its original did (the module's DB test checks that the nightly rebuild keeps its
   craft and answer id). An answer's kept pictures belong to the craft whose page lists a claim they
   illustrate.
-- **Readers' or curated.** A piece with an answer id is a reader's; a piece without one is curated
-  only when every claim it cites is curated, else it is a reader's whose answer was deleted (the
-  answer id is set null on delete), so such a piece is never taken for curation.
+- **Readers' or curated.** One rule, shared with supersession and reuse
+  (`research/piece_reuse.curated_piece`, decision 0142): a piece is curated when it has no answer id
+  and every claim it cites is curated (`CuratedClaim` or `CuratedCategoryClaim`); any other piece
+  that is not a registered component (`label` null) is a reader's, including one whose answer was
+  deleted (the answer id is set null on delete), which joins the page as a reader's piece.
 - **Which show.** A current piece of the craft (`staleSince`, `supersededById` and `hiddenAt` null),
   English, whose every claim is visible as cited for the variant
   (`research/piece_reuse.visible_as_cited`) and is a claim this page lists, and which passes its

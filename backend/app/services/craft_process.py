@@ -25,6 +25,7 @@ from app.models import (
     ReactionCitation,
     StageMaterial,
 )
+from app.models.science import live_process
 from app.research.citations import Citation, SourceRef
 from app.research.crafts import CraftRef
 from app.research.retrieval import OPEN_CHUNK_ACLS, VISIBLE_SENSITIVITY
@@ -82,7 +83,7 @@ async def _load_rows(session: AsyncSession, craft: Craft) -> _Rows:
     processes = (
         await session.scalars(
             select(Process)
-            .where(Process.craftId == craft.id)
+            .where(Process.craftId == craft.id, live_process())
             .order_by(Process.name, Process.variant, Process.id)
         )
     ).all()
