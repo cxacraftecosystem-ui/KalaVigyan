@@ -7,7 +7,7 @@ Every count that changes with the code, generated from the working tree by `tool
 | What | Count |
 | --- | ---: |
 | Tables (`__tablename__` in `backend/app/models/`) | 147 |
-| Migrations (`backend/migrations/versions/`) | 67 |
+| Migrations (`backend/migrations/versions/`) | 68 |
 
 Newest migration: `0077_state_values_and_reach_districts`.
 
@@ -106,16 +106,16 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 | Python suite | Files | Tests |
 | --- | ---: | ---: |
-| Backend, without a database | 657 | 4992 |
-| Backend, on Postgres | 173 | 818 |
+| Backend, without a database | 661 | 5014 |
+| Backend, on Postgres | 175 | 822 |
 | Tools | 23 | 188 |
 | Craft data ETL | 5 | 46 |
 | Geo ETL | 21 | 221 |
 
 | Frontend (`frontend/e2e/`) | Files | Tests |
 | --- | ---: | ---: |
-| Unit specs (`*-unit.spec.ts`) | 167 | 1243 |
-| Browser and release specs | 15 | 52 |
+| Unit specs (`*-unit.spec.ts`) | 169 | 1252 |
+| Browser and release specs | 16 | 54 |
 
 A Python test is a `test_` function in a `test_` file; a frontend test is a `test(` call at the start of a line. Every suite runs on GitHub Actions, never on a development machine.
 
@@ -123,7 +123,7 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | What | Count |
 | --- | ---: |
-| Decision records (`docs/decisions/`) | 147 |
+| Decision records (`docs/decisions/`) | 148 |
 | Contracts (`docs/contracts/`) | 40 |
 | Workflows (`.github/workflows/`) | 27 |
 | Curated craft dossiers | 32 |
@@ -133,13 +133,13 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | Area | Files | Lines |
 | --- | ---: | ---: |
-| `backend/app` | 1315 | 186,353 |
-| `backend/tests` | 981 | 129,062 |
-| `backend/migrations` | 68 | 10,121 |
+| `backend/app` | 1317 | 186,821 |
+| `backend/tests` | 989 | 129,737 |
+| `backend/migrations` | 69 | 10,159 |
 | `frontend/app` | 109 | 9,983 |
 | `frontend/components` | 604 | 41,559 |
-| `frontend/lib` | 255 | 25,897 |
-| `frontend/e2e` | 267 | 30,225 |
+| `frontend/lib` | 255 | 25,913 |
+| `frontend/e2e` | 272 | 30,409 |
 | `etl` | 66 | 10,894 |
 | `tools` | 96 | 8,232 |
 | `infra` | 17 | 2,178 |

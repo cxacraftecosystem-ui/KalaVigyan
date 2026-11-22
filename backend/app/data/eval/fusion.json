@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "about": "How the first stage fuses the claim rankings (decision 0151): each ranking's reciprocal ranks 1 / (k + rank) are summed times its weight, items each ranking places in its first 30 voting first. The full-text (lexical), vector and named-concept (entity) rankings weigh the same here, as they did before decision 0151. python -m app.scripts.eval_retrieval --fusion measures every weighting of its grid on the hand-written and generated questions in the fused order, read-only, and --out writes the weighting it picks; the lead commits that file with the fused floors it supports.",
+  "k": 60,
+  "claims": {
+    "lexical": 1.0,
+    "vector": 1.0,
+    "entity": 1.0
+  }
+}

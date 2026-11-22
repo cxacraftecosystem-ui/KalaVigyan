@@ -166,8 +166,11 @@ included. A citation that already points at the right passage and locator is not
 
 ### Ranking
 
-- Claims: three rankings of at most `RANKING_DEPTH` (60) each, fused by reciprocal rank fusion
-  (`score = sum(1 / (60 + rank))`). Each ranking votes with its first `VOTING_DEPTH` (30) items
+- Claims: three rankings of at most `RANKING_DEPTH` (60) each, fused by weighted reciprocal rank
+  fusion (`score = sum(weight / (k + rank))`, with `k` and the lexical, vector and entity weights
+  read from `app/data/eval/fusion.json` by `fusion_settings.fusion_settings()`: k 60 and equal
+  weights until the lead commits the weighting `eval_retrieval --fusion` picks, decision 0151).
+  Each ranking votes with its first `VOTING_DEPTH` (30) items
   (`fusion.reciprocal_rank_fusion`, decision 0132): the fused order sorts by the score of those
   ranks, then by the whole score, then by best single rank, then id, so an item found only below
   rank 30 in every ranking follows every voted item and only fills the rerank pool. `score` stays
@@ -471,8 +474,11 @@ it from the live database:
   (`quotes.content_stems`: words of four letters or more, stop words left out, their first four
   letters) less the stems of the craft's names and those common to the craft (in at least three of
   its facts and a fifth of them). A question may reuse at most `UNAVOIDABLE_MAX` (2) distinctive
-  stems, and only those of the terms it lists as unavoidable; one that reuses more is dropped and
-  counted.
+  stems, and only those of the terms it lists as unavoidable. The facts whose question (in either
+  language) reused more are asked once more in one call (`REWRITER_SYSTEM_PROMPT`, request id
+  `<batch id>-again`), each fact's line naming the words it reused
+  (`question_writing.rewriting_message`, decision 0151); a question kept then counts as
+  `rewritten`, and one that reuses them again is dropped and counted as copied.
 - **A second language.** For about one fact in five (`SECOND_LANGUAGE_EVERY`, by the SHA-256 of
   `"<seed>:language:<fact id>"`) the same question is also asked in the craft's own language: the
   first language of its states of origin (`app/data/state_languages.json`) the site answers in,
@@ -488,8 +494,10 @@ it from the live database:
 - **Spend.** The router meters every call; before each batch the run's spend (`router.tagged_spend`
   on its request id prefix) must leave `WRITING_RESERVE_USD` (0.05) of `--cap` (default
   `GENERATION_CAP_USD`, 3 US dollars). A refused spend stops the writing, and the facts left are
-  counted as unwritten. The script prints `{ok, crafts, facts, questions, reused, batches,
-  dropped{reason: count}, stopped, model, revision, spentUsd, capUsd, out}`.
+  counted as unwritten. The script prints `{ok, crafts, facts, questions, reused, batches, asked,
+  keptEnglish, keptShare, askedAgain, rewritten, dropped{reason: count}, stopped, model, revision,
+  spentUsd, capUsd, out}`: `asked` is the facts the writer answered for, and `keptShare` the share of
+  them that keep an English question.
 
 The lead runs it on production with `.github/workflows/eval-questions.yml` (dispatched by hand,
 input `cap`), which keeps the set as the `eval-questions-<run id>` artifact for 90 days, to be
@@ -541,6 +549,18 @@ absent[], misses{}, byField{}, byCraft{}}`, the reranked order also `fellBackToF
 `searchSpentUsd` is what the run's query embeddings and reranks spent, read by
 `router.tagged_spend` on its request id `eval-search-<run>`. With `--out` it writes the judged
 revision there.
+
+`python -m app.scripts.eval_retrieval --fusion [--out PATH]` (decision 0151) is read-only and makes
+no rerank or judge call: it embeds every hand-written and generated question once, reads each one's
+three claim rankings once (`SessionScopedSearch.rankings`) and fuses them in memory under the
+weighting in `fusion.json` and each of the 60 of `fusion_sweep.FUSION_GRID` (k 60 or 20, lexical 1
+or 0.5, vector 1, 1.5, 2, 3 or 5, entity 1, 0.5 or 0.25). It prints `{ok, current, picked, changed,
+absent[], rows[]}`, each row `{fusion, sets{handWritten, generatedEnglish, generatedOther,
+releaseSample}}` in the fused order's `{questions, recallAt5, meanReciprocalRank, recallAt20}`. The
+pick is the weighting whose generated English recall at 5, then reciprocal rank, is highest among
+those whose hand-written recall at 5 and reciprocal rank are at least the current weighting's; ties
+keep the earlier row, so the current weighting stays unless another does better. With `--out` it
+writes the pick as a `fusion.json` whose `about` names the run and its numbers.
 
 ### Floors
 
