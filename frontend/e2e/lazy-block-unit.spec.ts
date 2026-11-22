@@ -1,4 +1,3 @@
-import { text } from "node:stream/consumers";
 
 import { expect, test } from "@playwright/test";
 import { createElement, Suspense, type ComponentType, type ReactElement } from "react";
@@ -10,7 +9,7 @@ import { BLOCK_FAILED, BlockBoundary, retryableLazy } from "@/components/answer/
 async function prerendered(Block: ComponentType<object>): Promise<{ html: string; errors: unknown[] }> {
   const errors: unknown[] = [];
   const { prelude } = await prerender(createElement(Suspense, { fallback: "waiting" }, createElement(Block)), { onError: (cause) => void errors.push(cause) });
-  return { html: await text(prelude), errors };
+  return { html: await new Response(prelude).text(), errors };
 }
 
 test("a block whose chunk fails to load raises the failure, and Try again draws it from a fresh import", async () => {
