@@ -4,6 +4,7 @@ import uuid
 from collections.abc import Sequence
 from dataclasses import replace
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.dialects.postgresql import insert
@@ -40,6 +41,7 @@ __all__ = [
     "SqlTermStore",
     "claim_for_sentence",
     "glossary_term",
+    "glossary_terms",
     "kept_summary",
     "stored_claims",
     "write_back_subject",
@@ -124,11 +126,24 @@ class SqlTermStore:
 
 
 async def glossary_term(session: AsyncSession, key: str) -> GlossaryTerm | None:
-    row = await session.scalar(select(TermRow).where(TermRow.key == key))
-    if row is None:
-        return None
-    crafts = (await session.execute(_crafts_of(row.id))).all()
-    concepts = (await session.execute(_concepts_of(row.id))).all()
+    return (await glossary_terms(session, [key])).get(key)
+
+
+async def glossary_terms(session: AsyncSession, keys: Sequence[str]) -> dict[str, GlossaryTerm]:
+    rows = (await session.scalars(select(TermRow).where(TermRow.key.in_(list(keys))))).all()
+    if not rows:
+        return {}
+    ids = [row.id for row in rows]
+    crafts: dict[uuid.UUID, list[Any]] = {}
+    for craft in (await session.execute(_crafts_of(ids))).all():
+        crafts.setdefault(craft.termId, []).append(craft)
+    concepts: dict[uuid.UUID, list[Any]] = {}
+    for concept in (await session.execute(_concepts_of(ids))).all():
+        concepts.setdefault(concept.termId, []).append(concept)
+    return {row.key: _glossary_term(row, crafts.get(row.id, []), concepts.get(row.id, [])) for row in rows}
+
+
+def _glossary_term(row: TermRow, crafts: Sequence[Any], concepts: Sequence[Any]) -> GlossaryTerm:
     return GlossaryTerm(
         id=row.id,
         key=row.key,
@@ -225,22 +240,22 @@ def claim_for_sentence(
     )
 
 
-def _crafts_of(term_id: uuid.UUID) -> Select:
+def _crafts_of(term_ids: Sequence[uuid.UUID]) -> Select:
     return (
-        select(Craft.slug, Craft.name)
+        select(TermCraft.termId, Craft.slug, Craft.name)
         .join(TermCraft, TermCraft.craftId == Craft.id)
-        .where(TermCraft.termId == term_id)
-        .order_by(Craft.slug)
+        .where(TermCraft.termId.in_(list(term_ids)))
+        .order_by(TermCraft.termId, Craft.slug)
     )
 
 
-def _concepts_of(term_id: uuid.UUID) -> Select:
+def _concepts_of(term_ids: Sequence[uuid.UUID]) -> Select:
     return (
-        select(Concept.id, Concept.type, Concept.name, Concept.description, Craft.slug)
+        select(TermConcept.termId, Concept.id, Concept.type, Concept.name, Concept.description, Craft.slug)
         .join(TermConcept, TermConcept.conceptId == Concept.id)
         .join(Craft, Craft.id == Concept.craftId)
-        .where(TermConcept.termId == term_id)
-        .order_by(Craft.slug, Concept.type, Concept.name)
+        .where(TermConcept.termId.in_(list(term_ids)))
+        .order_by(TermConcept.termId, Craft.slug, Concept.type, Concept.name)
     )
 
 

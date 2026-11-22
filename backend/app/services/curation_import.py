@@ -86,6 +86,7 @@ class ImportReport:
     withdrawn_edges: int
     dossiers: tuple[DossierOutcome, ...]
     retired_seed_rows: SeedRetirement = field(default_factory=SeedRetirement)
+    term_summaries: int = 0
 
     @property
     def refused(self) -> list[DossierOutcome]:
@@ -95,6 +96,7 @@ class ImportReport:
         return {
             "withdrawnEdgeSentences": self.withdrawn_edges,
             "retiredSeedRows": self.retired_seed_rows.summary(),
+            "termSummaries": self.term_summaries,
             "imported": sum(1 for outcome in self.dossiers if outcome.status == IMPORTED),
             "refused": len(self.refused),
             "waiting": sum(1 for outcome in self.dossiers if outcome.status == WAITING),
@@ -116,7 +118,12 @@ async def import_curation(
     checking = context or default_context()
     outcomes = [await import_path(session, path, checking) for path in dossier_paths(directory)]
     retired = await retire_curated_seed_rows(session)
-    return ImportReport(withdrawn_edges=withdrawn, dossiers=tuple(outcomes), retired_seed_rows=retired)
+    return ImportReport(
+        withdrawn_edges=withdrawn,
+        dossiers=tuple(outcomes),
+        retired_seed_rows=retired,
+        term_summaries=await write_curated_term_summaries(session),
+    )
 
 
 async def import_path(session: AsyncSession, path: Path, context: CheckContext) -> DossierOutcome:
@@ -167,8 +174,6 @@ async def import_dossier(
     overview = await _overview(session, plan, craft)
     changed["pieces"] = await write_pieces(session, overview, previous.piece_ids() if previous else {})
     changed["curatedCraft"] = await _write_page(session, plan, overview, (digest, stored.get(craft.id)))
-    keys = [key for key in (term.term_key for term in plan.index.glossary) if key is not None]
-    changed["termSummaries"] = await write_curated_term_summaries(session, keys)
     return DossierOutcome(
         file=f"{dossier.craft_slug}.json",
         status=IMPORTED,
