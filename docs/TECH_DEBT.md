@@ -1899,18 +1899,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the curation rules check each GI and price date with `stated_dates.states_date`
   at its own precision and report a record whose day, month or year no quote states.
 
-## The lede on the page (decision 0077)
-
-### The lesson screen's title slide does not show the lede
-
-- **What:** a lesson pack's `TITLE` slide now opens with the answer's lede as cited bullets (block
-  id `lede`), and the HTML deck, the PPTX and the PDF draw them (decision 0143); the lesson screen's
-  slide preview (`frontend/components/learn/SlidePreview.tsx`) still draws a title slide as its
-  title and craft only.
-- **Why left:** the component belonged to the design lane running at the same time (2026-11-22).
-- **Clears it:** `SlideBody` draws a `TITLE` slide's bullets with `ExplainerSentence`, as it draws a
-  section's, under the craft name.
-
 ## Frontend audit exceptions
 
 ### Field voices are stored and served, but not drawn on the craft page
