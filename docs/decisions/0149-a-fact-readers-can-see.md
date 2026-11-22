@@ -75,7 +75,7 @@ contribution from MCP to a signed-out reader.
    refreshes its craft page, as the REST route's already did.
 5. **A field's facts no section cites are listed in its chapter.** The generated page lists, after
    a field's written sentences (or under the field's heading when it has none), up to twelve of
-   the field's facts no section or component cites, each a list item carrying its claim and its
+   the field's facts no section or curated structure of the page cites, each a list item carrying its claim and its
    citations (`craft_page_unwritten`). The web client draws list items already.
 6. **Judges answer in parts.** The duplicate judge answers, per pair, whether the two say the same,
    speak of the same thing, property and stage or time, and can both be true, and names the two

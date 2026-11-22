@@ -160,7 +160,7 @@ whose file is off the picture contract is left out.
 ### Facts no section cites
 
 A field's facts that a reader can see (`retrieval.md`, A fact a reader can see) and that no published
-section, curated structure or component of the page cites are listed in the field's chapter until a
+section or curated structure of the page cites are listed in the field's chapter until a
 section is written (`services/craft_page_unwritten.py`, decision 0149): after the field's written
 sentences and fact grid, or under the field's `h3` title when it has no section, up to twelve facts
 (`UNWRITTEN_PER_FIELD`, the strongest level first, then by text), each an `li` unit `fact-<field>-<id>`
