@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { partFileName, railStops, sliceTops } from "./captureParts";
+import { captureLooks, captureProjectName, partFileName, railStops, sliceTops } from "./captureParts";
 
 test("a long page is captured in slices of the height, at most six", () => {
   expect(sliceTops(14_500, 6000)).toEqual([0, 6000, 12_000]);
@@ -13,6 +13,17 @@ test("the rail is captured at its first, middle and last chapter", () => {
   expect(railStops(["answer", "cloth", "made", "chemistry", "sources"])).toEqual({ first: "answer", middle: "made", last: "sources" });
   expect(railStops(["glance"])).toEqual({ first: "glance", middle: "glance", last: "glance" });
   expect(railStops([])).toEqual({});
+});
+
+test("the capture run shoots light and dark at every width, and high contrast in both at 360", () => {
+  expect(captureLooks("desktop", "small-phone").map((look) => captureProjectName("desktop", look))).toEqual(["capture-desktop-light", "capture-desktop-dark"]);
+  expect(captureLooks("small-phone", "small-phone").map((look) => captureProjectName("small-phone", look))).toEqual([
+    "capture-small-phone-light",
+    "capture-small-phone-dark",
+    "capture-small-phone-contrast-light",
+    "capture-small-phone-contrast-dark"
+  ]);
+  expect(captureLooks("small-phone", "small-phone").filter((look) => look.contrast).map((look) => look.scheme)).toEqual(["light", "dark"]);
 });
 
 test("a part's picture is named after its page, its selector and its place", () => {

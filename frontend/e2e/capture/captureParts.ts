@@ -18,3 +18,16 @@ export function partFileName(stem: string, selector: string, at: number): string
   const key = selector.replace(/[^A-Za-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
   return `${stem}-part-${key}-${at + 1}.png`;
 }
+
+export type CaptureLook = { scheme: "light" | "dark"; contrast: boolean };
+
+export const CAPTURE_SCHEMES = ["light", "dark"] as const;
+
+export function captureLooks(widthKey: string, contrastWidthKey: string): CaptureLook[] {
+  const plain = CAPTURE_SCHEMES.map((scheme) => ({ scheme, contrast: false }));
+  return widthKey === contrastWidthKey ? [...plain, ...CAPTURE_SCHEMES.map((scheme) => ({ scheme, contrast: true }))] : plain;
+}
+
+export function captureProjectName(widthKey: string, look: CaptureLook): string {
+  return `capture-${widthKey}-${look.contrast ? "contrast-" : ""}${look.scheme}`;
+}

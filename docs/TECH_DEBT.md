@@ -2652,16 +2652,20 @@ Last reviewed: 2026-11-22.
 
 - **What:** an answer sentence flagged Sources differ opens both readings under the sentence, not in
   a details element after its paragraph as SYSTEM.md draws it, and its summary cannot name what the
-  sources differ on, because the payload carries only `sourcesDiffer` and the citations. The board
-  `docs/design/master-board.html` still names its ribbon buttons "Stage N, name". A drawing stored
-  without server variants (the kind fixtures on `/design/kinds`) shows a sunk placeholder until it
-  hydrates. An SVG picture's ETag is the stored file's hash for every `?theme=` variant, so a token
-  change reaches a cached picture only after its five-minute max-age. Captures cover light and dark
-  only. Left at the end of round 7 (decision 0131).
-- **Clears it:** carry the readings and what they differ on in the answer payload and let the
-  paragraph's host components (`LadderStageCard` and the other callers) draw the details after the
-  paragraph; rename the board's buttons; serve the fixtures with their variants; put the token
-  set's hash in the themed ETag; add high contrast to the capture run.
+  sources differ on, because the payload carries only `sourcesDiffer` and the citations (a flagged
+  claim stores no "about"). A drawing stored without server variants (the kind fixtures on
+  `/design/kinds`) shows a sunk placeholder until it hydrates. Decision 0141 renamed the board's
+  ribbon buttons, put the token set's hash in the themed picture ETag and added high contrast to
+  the capture run.
+- **Why left:** the sentence's own drawing is `components/answer/ExplainerSentence.tsx`, the voice
+  lane's file while decision 0141 ran, and a flagged claim has no stored subject to name; the
+  fixture's four variants are what the backend's `themed_spec` writes, which is generated, not
+  typed.
+- **Clears it:** store what two readings differ on with the flag (the write-back marks it), carry
+  it with the readings on the sentence, draw `SourcesDifferNote` after the paragraph in the host
+  components (`LadderStageCard`, `CitedText` and the other callers) and only the tag in
+  `ExplainerSentence`; write `themes` into `frontend/lib/kindFixtures/drawing.json` from
+  `services/drawing_themes.themed_spec` with a test that pins them to it.
 
 ### A stopped release leaves the live code on the migrated database
 
