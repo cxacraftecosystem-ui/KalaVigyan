@@ -1,6 +1,7 @@
 import { cache } from "react";
 
-import { CRAFT_PAGE_PATH, checkedCraftPage, craftPageShape, type CraftPage } from "@/lib/craftPageContract";
+import { checkedCraftPage } from "@/lib/craftPageChecks";
+import { CRAFT_PAGE_PATH, craftPageShape, type CraftPage } from "@/lib/craftPageContract";
 import { craftPageTag, STATIC_FETCH_TIMEOUT_MS } from "@/lib/server/readingPages";
 import { publicFetch } from "@/lib/server/serverFetch";
 import { parseShape } from "@/lib/shape";

@@ -85,9 +85,11 @@ Two golden fixtures, both reproduced byte for byte by the backend and parsed by 
   ../shared/craft.page.register.golden.json`.
 
 Both commands run from `backend/`. Change the models, this page, the fixtures and both sides'
-tests together. The web client parses the page with `frontend/lib/craftPageContract.ts` (the
-version 2 parts with `frontend/lib/craftPageContext.ts`, the chapters with
-`frontend/lib/craftChapters.ts`, the blocks with the explainer's own parser); its specs are
+tests together. The web client parses the page with `frontend/lib/craftPageContract.ts` and
+checks it with `frontend/lib/craftPageChecks.ts` (the version 2 parts with
+`frontend/lib/craftPageContext.ts` and `craftPageProcess.ts`, the chapters with
+`frontend/lib/craftChapters.ts` and what they show with `craftChapterReads.ts`, the blocks with
+the explainer's own parser); its specs are
 `frontend/e2e/craft-page-unit.spec.ts`, `craft-page-context-unit.spec.ts` and
 `craft-chapters-unit.spec.ts`, and the vocabularies are
 pinned in `frontend/e2e/backend-vocabulary-unit.spec.ts`. The contract test also holds the served

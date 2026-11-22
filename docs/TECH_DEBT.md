@@ -2172,16 +2172,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** delete the share's objects when it stops, by recording each file's key against
   the share.
 
-### Reading-page metadata reads the version 2 craft page fields
-
-- **What:** `frontend/lib/readingMetadata.craftPageMetadata` takes the description from
-  `overview.lede` and the preview picture from the `HERO` entry of `pictures`, which craft page
-  schema 3 keeps only until schema 4 (decision 0095, removal by 2026-12-18).
-- **Why left:** the client contract for schema 3 (`lib/craftPageContract.ts`) belongs to the
-  chapters lane and had not landed when the reading pages moved (decision 0097).
-- **Clears it:** read `lede` and `masthead.picture` when the chapter screen replaces the tabs, in
-  the same change that drops the flat fields.
-
 ### Shared answers draw in English reading metadata
 
 - **What:** `/shared/answers/[token]` and `/shared/lessons/[token]` pass `[ENGLISH]` as the
@@ -2299,12 +2289,6 @@ Last reviewed: 2026-11-22.
   services as `/api/review-queue/{kind}/{id}/{action}`.
 - **Clears it:** an optional decide prop on `PictureReviewCard` and the testimony card, then retire the
   old routes.
-
-### Two frontend files over budget
-
-- **What:** `frontend/lib/craftPageContract.ts` (531 lines) and `frontend/lib/craftChapters.ts` were
-  over 400 lines before round 2.
-- **Clears it:** split each by part (the round 3 template work touches both).
 
 ## Track 1, round 3 (decision 0106, 2026-11-19)
 

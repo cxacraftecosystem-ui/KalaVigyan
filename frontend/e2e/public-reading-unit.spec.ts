@@ -77,16 +77,17 @@ test("sharing asks first and names what the link makes readable", () => {
   expect(source("app/(protected)/lessons/[id]/page.tsx")).toContain('kind="lesson"');
 });
 
-test("a craft page previews with its name, first lede sentence and hero plate at a Commons width with its credit", () => {
+test("a craft page previews with its name, first lede sentence and masthead plate at a Commons width with its credit", () => {
   const page = curatedPage();
   const metadata = craftPageMetadata(page);
   expect(metadata.title).toBe("Kutch Ajrakh");
-  expect(metadata.description).toBe(page.overview.lede[0].text);
+  expect(metadata.description).toBe("Kutch Ajrakh is an elaborate resist block-printing technique of direct and resist printing and dyeing, made by Khatri artisans as a double-sided textile.");
   const images = (metadata.openGraph?.images ?? []) as { url: string; width: number; alt: string }[];
   expect(images).toHaveLength(1);
   expect(images[0].url).toBe(`https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Ajrak_Craft.jpeg/${SHARE_PICTURE_WIDTH}px-Ajrak_Craft.jpeg`);
   expect(images[0].alt).toBe("An ajrakh made by Kutch artisans, held up to show its repeated field and multiple borders. Photo: Visdaviva, CC BY-SA 3.0, via Wikimedia Commons");
-  expect(craftPageMetadata(curatedPage((body) => (body.pictures = body.pictures.filter((picture) => picture.role !== "HERO")))).openGraph?.images).toEqual([]);
+  expect(craftPageMetadata(curatedPage((body) => (body.masthead.picture = null))).openGraph?.images).toEqual([]);
+  expect(craftPageMetadata(curatedPage((body) => (body.lede = []))).description).toBe("Textiles based Craft Category › Hand Block Printing");
   expect(craftPageMetadata(null)).toEqual({});
 });
 
