@@ -19,10 +19,12 @@ from .blocks_play import (
     simulation_data,
 )
 from .citations import Citation
+from .datasets import DatasetRef
 from .quotes import normalise_quote_text, numbers_in, quote_occurs
 from .sandbox import SANDBOX_MAX_BYTES, SandboxProblem, sandbox_problems
 
 __all__ = [
+    "DATASET_REF_PREFIX",
     "DRAFT_RULES",
     "NO_GROUNDING",
     "OFFER_REF_PREFIX",
@@ -37,15 +39,18 @@ __all__ = [
     "OfferedReaction",
     "OfferedStatement",
     "OfferedValue",
+    "RowValue",
     "SimulationDraft",
     "checked_draft",
     "data_object",
+    "offered_rows",
     "offered_values",
     "stated_figures",
 ]
 
 DRAFT_RULES = ("VALUE", "GROUND", "BLOCK")
 OFFER_REF_PREFIX = "v"
+DATASET_REF_PREFIX = "d"
 STATEMENT_REF_PREFIX = "s"
 REACTION_REF_PREFIX = "r"
 STATED_WORDS_AROUND = 3
@@ -63,11 +68,26 @@ class OfferedValue:
     figure: str
     value: float
     stated: str
-    citation: Citation
+    citation: Citation | None = None
+    dataset: DatasetRef | None = None
+
+    def __post_init__(self) -> None:
+        if (self.citation is None) == (self.dataset is None):
+            raise ValueError(
+                f"offered value {self.ref} rests on a cited quote or on a dataset row, one of them"
+            )
 
     @property
-    def claim_id(self) -> uuid.UUID:
-        return uuid.UUID(self.citation.claim_id)
+    def claim_id(self) -> uuid.UUID | None:
+        return uuid.UUID(self.citation.claim_id) if self.citation is not None else None
+
+
+@dataclass(frozen=True)
+class RowValue:
+    value: float
+    unit: str | None
+    stated: str
+    dataset: DatasetRef
 
 
 @dataclass(frozen=True)
@@ -129,8 +149,19 @@ def offered_values(citations: Iterable[Citation]) -> list[OfferedValue]:
             if len(offered) == SIMULATION_VALUES_MAX:
                 return list(offered.values())
             ref = f"{OFFER_REF_PREFIX}{len(offered) + 1}"
-            offered[seen] = OfferedValue(ref, figure, value, stated, citation)
+            offered[seen] = OfferedValue(ref, figure, value, stated, citation=citation)
     return list(offered.values())
+
+
+def offered_rows(rows: Iterable[RowValue], *, limit: int = SIMULATION_VALUES_MAX) -> list[OfferedValue]:
+    offered: list[OfferedValue] = []
+    for row in rows:
+        if len(offered) == limit:
+            break
+        figure = f"{row.value:g} {row.unit}" if row.unit else f"{row.value:g}"
+        ref = f"{DATASET_REF_PREFIX}{len(offered) + 1}"
+        offered.append(OfferedValue(ref, figure, row.value, row.stated, dataset=row.dataset))
+    return offered
 
 
 def stated_figures(quote: str) -> Iterator[tuple[str, float, str]]:
@@ -164,13 +195,25 @@ def checked_draft(
     problems += missing
     if not (values or grounds or reactions):
         problems.append(SandboxProblem("VALUE", "no offered value, statement or reaction is used"))
+    elif not (grounds or reactions or any(value.citations for value in values)):
+        problems.append(
+            SandboxProblem("VALUE", "dataset rows alone are no explainer; it also rests on a cited claim")
+        )
     if problems:
         return DraftCheck(None, tuple(problems))
     sandboxed = sandbox_problems(draft.html, simulation_data(values, reactions))
     if sandboxed:
         return DraftCheck(None, tuple(sandboxed))
-    block = {"id": block_id, "model": model, "created_at": created_at, "values": values}
+    datasets = _datasets_used(values, offers)
+    block = {"id": block_id, "model": model, "created_at": created_at, "values": values, "datasets": datasets}
     return _drafted_block(draft, block | {"grounds": grounds, "reactions": reactions})
+
+
+def _datasets_used(values: Sequence[SimulationValue], offers: Sequence[OfferedValue]) -> list[DatasetRef]:
+    refs = {offer.dataset.code: offer.dataset for offer in offers if offer.dataset is not None}
+    return [
+        refs[code] for code in dict.fromkeys(value.dataset_code for value in values if value.dataset_code)
+    ]
 
 
 def _drafted_block(draft: SimulationDraft, fields: Mapping[str, object]) -> DraftCheck:
@@ -185,7 +228,6 @@ def _drafted_block(draft: SimulationDraft, fields: Mapping[str, object]) -> Draf
                 "title": draft.title,
                 "html": draft.html,
                 "html_sha256": hashlib.sha256(draft.html.encode("utf-8")).hexdigest(),
-                "datasets": [],
                 "hidden": False,
             }
         )
@@ -247,16 +289,18 @@ def _draft_grounds(
 
 def _value(chosen: DraftValue, offer: OfferedValue) -> SimulationValue:
     unit = chosen.unit or None
-    if unit is not None and not quote_occurs(unit, offer.stated):
-        raise ValueError(f"value {chosen.key} gives the unit {unit!r}, which {offer.stated!r} does not")
+    said = offer.figure if offer.dataset is not None else offer.stated
+    if unit is not None and not quote_occurs(unit, said):
+        raise ValueError(f"value {chosen.key} gives the unit {unit!r}, which {said!r} does not")
+    from_row = offer.dataset is not None
     return SimulationValue(
         key=chosen.key,
         label=chosen.label,
         value=offer.value,
         unit=unit,
-        stated=offer.stated,
-        citations=[offer.citation],
-        dataset_code=None,
+        stated=None if from_row else offer.stated,
+        citations=[offer.citation] if offer.citation is not None else [],
+        dataset_code=offer.dataset.code if offer.dataset is not None else None,
     )
 
 

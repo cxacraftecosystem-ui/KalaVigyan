@@ -9,7 +9,14 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import AdminDistrict, Craft, CraftLocation, KnowledgePiece as PieceRow
+from app.models import (
+    AdminDistrict,
+    Craft,
+    CraftLocation,
+    CuratedCategoryClaim,
+    CuratedClaim,
+    KnowledgePiece as PieceRow,
+)
 from app.research.crafts import CraftRef
 from app.research.knowledge_pieces import PIECE_SCHEMA_VERSION, KnowledgePiece
 from app.research.piece_reuse import ClaimState
@@ -28,9 +35,11 @@ __all__ = [
     "PieceAsk",
     "PieceLookup",
     "ReusedSection",
+    "answerless_claims",
     "candidate_pieces",
     "claim_states",
     "craft_districts",
+    "curated_claim_ids",
     "stored_piece",
     "stored_pieces",
     "topic_subjects",
@@ -56,6 +65,7 @@ class PieceAsk:
 class ReusedSection:
     pieces: tuple[KnowledgePiece, ...]
     cited: CitedClaims
+    curated: frozenset[uuid.UUID] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -101,6 +111,19 @@ async def candidate_pieces(
     )
     pieces = [stored_piece(row) for row in rows]
     return [piece for piece in pieces if piece is not None]
+
+
+async def curated_claim_ids(session: AsyncSession, claim_ids: Iterable[uuid.UUID]) -> frozenset[uuid.UUID]:
+    wanted = list(dict.fromkeys(claim_ids))
+    if not wanted:
+        return frozenset()
+    crafts = select(CuratedClaim.claimId).where(CuratedClaim.claimId.in_(wanted))
+    categories = select(CuratedCategoryClaim.claimId).where(CuratedCategoryClaim.claimId.in_(wanted))
+    return frozenset((await session.scalars(crafts.union(categories))).all())
+
+
+def answerless_claims(pieces: Iterable[KnowledgePiece]) -> list[uuid.UUID]:
+    return [claim for piece in pieces if piece.created_from_answer_id is None for claim in piece.claim_ids]
 
 
 async def claim_states(

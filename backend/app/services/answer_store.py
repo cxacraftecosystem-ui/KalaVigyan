@@ -50,6 +50,7 @@ from .answer_translation import AnswerTranslation, english_question
 from .answering import AnswerAsk, AnswerPipeline, NameLookup
 from .block_builders import BlockBuilders
 from .builder_interface import BuilderTools
+from .builder_record import answer_build_record
 from .coverage import held_field_lookup
 from .craft_process import process_records
 from .craft_resolver import CraftIndexStore, DatabaseCraftResolver
@@ -262,7 +263,7 @@ def build_answer_pipeline(
         translation=translation,
         pieces=SqlPieceStore(sessions, embed=embed, shield=shield),
         enrichment=build_answer_enrichment(sessions, live),
-        builders=BlockBuilders.from_registry(tools),
+        builders=BlockBuilders.from_registry(tools, record=answer_build_record(sessions)),
         lede=LedeTools(compose=composer.lede, figures=signature_figures(sessions), retriever=retriever),
         catalogue=catalogue_lookup(sessions),
         names=answer_names(sessions, index),

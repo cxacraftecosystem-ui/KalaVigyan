@@ -8,6 +8,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.models import Job, MediaAsset, MediaJob, Process, ProcessStage
+from app.models.science import live_process
 from app.providers.quota import record_units, used_today
 from app.schemas.media import JOB_RETRIES, MEDIA_PROMPT_VERSION
 from app.services.knowledge_view import resolve_craft
@@ -49,7 +50,7 @@ class SqlMediaStore:
                 await session.scalars(
                     select(ProcessStage.id)
                     .join(Process, Process.id == ProcessStage.processId)
-                    .where(Process.craftId == craft.id)
+                    .where(Process.craftId == craft.id, live_process())
                     .order_by(Process.name, Process.variant, ProcessStage.ordinal, ProcessStage.id)
                 )
             ).all()

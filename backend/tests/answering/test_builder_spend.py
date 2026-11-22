@@ -16,7 +16,7 @@ from app.services import answer_store
 from app.services.block_builders import BlockBuilders
 from app.services.builder_interface import BuilderTools
 
-from ..test_budget import ceilings
+from ..ai_caps import ceilings, unlimited
 
 ADMIN = User(id=uuid.UUID(int=7), name="Asha Rao", email="asha@example.org", role="ADMIN")
 STATE = SimpleNamespace(craft_index=None, live_sources=None, shielded_work=None)
@@ -27,7 +27,9 @@ def from_the_route(depth: str) -> None:
 
 
 def from_the_nightly_rebuild(depth: str) -> None:
-    rebuild_pieces.rebuild_pipeline(depth, sessions=None, index=None, live=None, shield=None)
+    rebuild_pieces.rebuild_pipeline(
+        depth, day_left_usd=Decimal("100"), sessions=None, index=None, live=None, shield=None
+    )
 
 
 def asked(principal: Principal) -> budget.BudgetDecision:
@@ -54,7 +56,7 @@ def test_builders_plan_and_compose_only_from_the_answer_s_headroom(
         made.append(SimpleNamespace(task=task, principal=principal))
         return made[-1]
 
-    def from_registry(cls: type, tools: BuilderTools, *_: Any) -> BlockBuilders:
+    def from_registry(cls: type, tools: BuilderTools, *_: Any, **__: Any) -> BlockBuilders:
         started.append(tools)
         return BlockBuilders()
 
@@ -75,3 +77,14 @@ def test_builders_plan_and_compose_only_from_the_answer_s_headroom(
     refused = asked(tools.plan_model.principal)
     assert (refused.allowed, refused.reason) == (False, budget.ANSWER_CAP)
     assert asked(answering.principal).allowed
+
+
+def test_a_rebuild_is_held_to_the_smaller_of_its_depth_cap_and_what_the_day_has_left() -> None:
+    held = rebuild_pieces.DayHeldSpend(depth="EXPERT", day_left_usd=Decimal("0.40"))
+    assert held.left(ceilings()) == Decimal("0.40")
+    held.settle(Decimal(0), Decimal("0.10"))
+    assert held.left(ceilings()) == Decimal("0.30")
+    roomy = rebuild_pieces.DayHeldSpend(depth="EXPERT", day_left_usd=Decimal("10"))
+    assert roomy.left(ceilings()) == Decimal("2.5")
+    uncapped = rebuild_pieces.DayHeldSpend(depth="EXPERT", day_left_usd=Decimal("0.40"))
+    assert uncapped.left(unlimited()) == Decimal("0.40")

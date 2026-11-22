@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    ColumnElement,
     DateTime,
     ForeignKey,
     Index,
@@ -34,10 +35,15 @@ class Process(Base):
     )
     name: Mapped[str] = mapped_column(String(300), nullable=False)
     variant: Mapped[str | None] = mapped_column(String(200))
+    archivedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     createdAt: Mapped[datetime] = created_at()
     updatedAt: Mapped[datetime] = updated_at()
 
     __table_args__ = (Index(None, "craftId"),)
+
+
+def live_process() -> ColumnElement[bool]:
+    return Process.archivedAt.is_(None)
 
 
 class ProcessStage(Base):

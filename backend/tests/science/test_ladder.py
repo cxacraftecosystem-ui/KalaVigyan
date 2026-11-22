@@ -1,7 +1,10 @@
+import dataclasses
 import uuid
 
 from app.research.crafts import CraftRef
 from app.science.ladder import ladder_problems, ladder_stage_options, process_ladder
+from app.science.process_view import craft_process
+from app.science.records import ProcessRecords
 
 from .golden_process import KUT, PA, PROCESS_ID, RED, STAGE_CLAIMS, golden_records, known_claim, stage_id
 
@@ -90,3 +93,38 @@ def test_a_ladder_for_another_craft_is_refused() -> None:
     assert ladder_problems(forged, golden_records()) == [
         "ladder s1.b1 is for Bagru-Hand-Block-Print, not Kutch-Ajrakh"
     ]
+
+
+def with_pa_unordered() -> ProcessRecords:
+    records = golden_records()
+    stages = tuple(
+        dataclasses.replace(stage, ordered=False) if stage.id == stage_id(PA) else stage
+        for stage in records.stages
+    )
+    return dataclasses.replace(records, stages=stages)
+
+
+def test_a_stage_no_source_orders_is_never_offered_to_a_ladder_and_shown_unnumbered_in_one() -> None:
+    records = with_pa_unordered()
+    assert [option.id for option in ladder_stage_options(records)] == [stage_id(KUT), stage_id(RED)]
+    built = process_ladder(records, block_id="s1.b1", stage_ids=[stage_id(KUT), stage_id(PA), stage_id(RED)])
+    assert built is not None
+    assert [(stage.stage_id, stage.unnumbered) for stage in built.stages] == [
+        (stage_id(KUT), None),
+        (stage_id(PA), True),
+        (stage_id(RED), None),
+    ]
+    assert ladder_problems(built, records) == []
+
+
+def test_a_stored_ladder_numbering_a_stage_now_unordered_is_refused() -> None:
+    stored = ladder(KUT, PA)
+    problems = ladder_problems(stored, with_pa_unordered())
+    assert problems == [f"stage {stage_id(PA)} has no order a source states, so no ladder numbers it"]
+
+
+def test_the_process_route_marks_only_an_unordered_stage() -> None:
+    (process,) = craft_process(with_pa_unordered()).processes
+    shown = {stage.id: stage.model_dump(mode="json", by_alias=True) for stage in process.stages}
+    assert shown[stage_id(PA)]["ordered"] is False
+    assert "ordered" not in shown[stage_id(KUT)]

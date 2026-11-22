@@ -63,6 +63,7 @@ from app.models import (
     TermCraft,
     WikidataPoint,
 )
+from app.models.science import live_process
 from app.research.craft_page import CRAFT_PAGE_SCHEMA_VERSION
 from app.research.field_voices import ARTISAN_IMAGES_SETTING
 from app.retrieval.field_scope import FIELD_STALE_AFTER
@@ -125,7 +126,7 @@ def craft_compound_ids(craft: Craft) -> Select[Any]:
 
 
 def _craft_materials(craft: Craft) -> Select[Any]:
-    processes = select(Process.id).where(Process.craftId == craft.id)
+    processes = select(Process.id).where(Process.craftId == craft.id, live_process())
     stages = select(ProcessStage.id).where(ProcessStage.processId.in_(processes))
     staged = select(StageMaterial.materialId).where(StageMaterial.stageId.in_(stages))
     concepts = scope_concepts(CraftScope(craft.id, craft.subCategoryId))
@@ -185,7 +186,7 @@ def _relative_terms(craft: Craft) -> Terms:
 
 
 def _science_terms(craft: Craft) -> Terms:
-    processes = select(Process.id).where(Process.craftId == craft.id)
+    processes = select(Process.id).where(Process.craftId == craft.id, live_process())
     stages = select(ProcessStage.id).where(ProcessStage.processId.in_(processes))
     materials = _craft_materials(craft)
     compounds = craft_compound_ids(craft)

@@ -589,8 +589,14 @@ Runs on every deploy right after `seed_crafts`, `seed_claims` and `seed_district
 (`infra/deploy/blue_green.sh`) and in Backend checks after the database tests. It first withdraws
 the seed's edge sentences (claims with `subjectType` `EDGE` and origin `IMPORT` become `WITHDRAWN`,
 a review event each; their `ConceptEdge` rows stay), then imports every dossier whose checks pass
-(the rules above and a current check file), each whole or not at all. It prints one JSON report
-(`withdrawnEdgeSentences`, `imported`, `refused`, `waiting`, and per dossier its `status`,
+(the rules above and a current check file), each whole or not at all, then retires the seed rows of
+every craft with a curated dossier (`curation_seed_rows.retire_curated_seed_rows`, decision 0142):
+its seed claims (a claim the seed's review event `seed import <id>` marks, on the craft's concepts
+or their edges, not hidden) become `SUPERSEDED` with a review event (`systemActor` `curation`, the
+status it had kept as `fromStatus`), and its `Seed process` is archived (`Process.archivedAt`), so
+no page, search or answer reads them and nothing is deleted. `seed_claims` runs the same step after
+it seeds, so a later seed never brings them back. It prints one JSON report
+(`withdrawnEdgeSentences`, `retiredSeedRows`, `termSummaries`, `imported`, `refused`, `waiting`, and per dossier its `status`,
 `changed` row counts, `problems` and the overview sentences the prose validator dropped) and
 exits 2 when a dossier is refused. The craft is found by slug in the database; a portal-added
 craft (above) the database does not hold yet is `WAITING`, not refused, until the portal craft
@@ -608,7 +614,7 @@ sync stores it. Ids are `uuid5(ID_NAMESPACE, "curation:<slug>:<id>")` for claims
 | stages | `Process` (variant `curation`) and `ProcessStage` (`ordered` false and an ordinal after the ordered stages when no source states the order; `durationText`); materials and tools are `Material` rows, their uses `StageMaterial` (tools with role `TOOL`) |
 | reactions | `Reaction` balanced by the science engine and `ReactionCitation` to every quote of its claims; no formula, no equation; a reaction without a stage is a page fact |
 | pictures | `MediaRef` (provider `curation`, `INLINE` under an open licence with its author, `width` and `height` the dossier's) and `MediaRefClaim`; a stored row of the same file with no size gets the dossier's size, and nothing else of a stored row changes |
-| glossary | `Term` (key from the first spelling of a comma list, the rest aliases; inserted only when the key is new), `TermCraft`, `TermConcept` |
+| glossary | `Term` (key from the first spelling of a comma list, the rest aliases; inserted only when the key is new), `TermCraft`, `TermConcept`, and the English `TermSummary` with basis `STORED`, written once per import after the dossiers, built from the curated claims every dossier's glossary names for that key (in craft slug order, the fact-level cited ones, `curation_terms.write_curated_term_summaries`, decision 0142), so `GET /terms/{key}` serves the curated meaning; its other languages are dropped when the English changes and translated again on the next ask |
 | GI record | `CraftGiRecord {craftId, applicationNumber, certificateNumber, filedOn, registeredOn, journalIssue, proprietors[], authorisedUserCount, claimIds[]}`, one per craft; dates are partial (`YYYY`, `YYYY-MM`, `YYYY-MM-DD`) as the dossier gives them |
 | prices | `CraftPrice {id, craftId, claimId, pricedOn (partial date), placeName, stateLgd, districtLgd}` |
 | workforce | `CraftWorkforce {id, craftId, claimId, year}` |
@@ -621,6 +627,16 @@ pieces are superseded, dropped ones marked stale; curated locations, stage struc
 and dropped quotes of kept claims are replaced. Claims written by answers are never touched.
 Imported claims and pieces get their vectors from the nightly `embed_knowledge`. The craft page
 that reads all this is `docs/contracts/craft-page.md`.
+
+A dossier removed from the folder is not un-imported by the deploy, since a craft curated over MCP
+waits in the database for its export (`docs/contracts/dossier-export.md`). It is retired
+explicitly: `python -m app.scripts.import_curation --retire <craftSlug>` refuses while
+`<craftSlug>.json` is still in the folder or the craft has no imported dossier, then supersedes the
+craft's curated claims (review note `curated dossier retired, its file left the curation folder`),
+marks its overview pieces stale, archives its curated process, deletes its `CuratedCraft` row and
+restores the seed rows the dossier had retired (`curation_retire.retire_dossier`, decision 0142).
+Importing the dossier again restores its claims (`SUPERSEDED` curated claims return to `APPROVED`)
+and its process (the planned process row sets `archivedAt` back to null).
 
 ### Category dossiers (`services/category_import.py`, decision 0078)
 

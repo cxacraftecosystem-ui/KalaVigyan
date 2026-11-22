@@ -192,9 +192,14 @@ class ReactionView(ContractModel):
         return self
 
 
+def _source_ordered(value: object) -> bool:
+    return value is True
+
+
 class ProcessStageView(ContractModel):
     id: uuid.UUID
     ordinal: int = Field(ge=0)
+    ordered: bool = Field(default=True, exclude_if=_source_ordered)
     name: str = Field(min_length=1, max_length=300)
     stage_type: StageType
     level: ShownLevel

@@ -10,7 +10,7 @@ from typing import Any
 from app.research.blocks import ProcessLadderBlock
 from app.research.explainer import Block
 from app.research.knowledge_pieces import KnowledgePiece, placed_block, shows_alike
-from app.research.piece_reuse import REGION_STORY_KIND, SIMULATION_KIND
+from app.research.piece_reuse import REGION_STORY_KIND, SIMULATION_KIND, curated_piece
 from app.research.sections import LADDER_DISCIPLINE, SectionSpec, block_id
 from app.science.ladder import ladder_problems, process_ladder
 from app.science.process_view import craft_process
@@ -71,7 +71,9 @@ class Floor:
 
 def curated_section(section: ReusedSection) -> bool:
     own = [piece for piece in section.pieces if piece.craft_id is not None]
-    return bool(own) and all(piece.created_from_answer_id is None for piece in own)
+    return bool(own) and all(
+        curated_piece(piece.created_from_answer_id, piece.claim_ids, section.curated) for piece in own
+    )
 
 
 def expert_floors(depth: str, lookup: PieceLookup) -> tuple[PieceLookup, dict[str, ReusedSection]]:

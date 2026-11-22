@@ -82,26 +82,41 @@ async def test_a_reused_group_leaves_out_the_stored_player_it_rebuilds() -> None
     assert kept_with_reuse(placed, (player_of(curated, "s2.b2"),)) == ()
 
 
-def test_a_curated_section_is_one_whose_craft_pieces_no_answer_made() -> None:
+def test_a_curated_section_is_one_whose_craft_pieces_no_answer_made_from_curated_claims() -> None:
     curated = curated_ajrakh()
     (piece, *_) = curated.pieces
-    assert curated_section(ReusedSection(pieces=(piece,), cited=CitedClaims()))
+    marked = frozenset(piece.claim_ids)
+    assert curated_section(ReusedSection(pieces=(piece,), cited=CitedClaims(), curated=marked))
     made = piece.model_copy(update={"created_from_answer_id": uuid.uuid4()})
-    assert not curated_section(ReusedSection(pieces=(piece, made), cited=CitedClaims()))
+    assert not curated_section(ReusedSection(pieces=(piece, made), cited=CitedClaims(), curated=marked))
     region = piece.model_copy(update={"craft_id": None, "created_from_answer_id": uuid.uuid4()})
-    assert curated_section(ReusedSection(pieces=(piece, region), cited=CitedClaims()))
+    assert curated_section(ReusedSection(pieces=(piece, region), cited=CitedClaims(), curated=marked))
+    orphaned = piece.model_copy(update={"id": uuid.uuid4(), "claim_ids": [uuid.uuid4()]})
+    assert not curated_section(ReusedSection(pieces=(piece, orphaned), cited=CitedClaims(), curated=marked))
 
 
 def test_a_group_an_answer_made_is_reused_before_the_curated_one() -> None:
     (piece, *_) = curated_ajrakh().pieces
+    marked = frozenset(piece.claim_ids)
     made = piece.model_copy(update={"id": uuid.uuid4(), "created_from_answer_id": uuid.uuid4()})
-    assert answered_first([(piece,), (made,)]) == [(made,)]
-    assert answered_first([(piece,)]) == [(piece,)]
+    assert answered_first([(piece,), (made,)], marked) == [(made,)]
+    assert answered_first([(piece,)], marked) == [(piece,)]
+
+
+def test_a_piece_whose_answer_was_deleted_still_reads_as_a_reader_s() -> None:
+    (piece, *_) = curated_ajrakh().pieces
+    marked = frozenset(piece.claim_ids)
+    orphaned = piece.model_copy(update={"id": uuid.uuid4(), "claim_ids": [uuid.uuid4()]})
+    assert orphaned.created_from_answer_id is None
+    assert answered_first([(piece,), (orphaned,)], marked) == [(orphaned,)]
 
 
 def test_at_expert_a_curated_section_becomes_the_floor_of_a_researched_one() -> None:
     curated = curated_ajrakh()
-    reused = {piece.facet: ReusedSection(pieces=(piece,), cited=CitedClaims()) for piece in curated.pieces}
+    reused = {
+        piece.facet: ReusedSection(pieces=(piece,), cited=CitedClaims(), curated=frozenset(piece.claim_ids))
+        for piece in curated.pieces
+    }
     lookup = PieceLookup(craft_id=curated.pieces[0].craft_id, reused=reused)
     left, floors = expert_floors("EXPERT", lookup)
     assert (dict(left.reused), set(floors)) == ({}, set(reused))

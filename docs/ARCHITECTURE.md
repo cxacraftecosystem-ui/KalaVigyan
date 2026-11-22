@@ -564,7 +564,11 @@ sequenceDiagram
    the section's cited quotes state is offered with its own words; a stored explainer whose claims
    the section offers is placed first with no model call; otherwise one `COMPOSE` call from the
    headroom chooses values and writes an HTML fragment that must pass the value, static
-   (`research/sandbox`) and block checks, with one redraft; it is kept as a cross-craft piece by
+   (`research/sandbox`) and block checks, with one redraft, all within a 60 s budget, and no call
+   at all when the section's facts state no quantity it can draw (dataset rows of the datasets the
+   section's blocks cite are offered beside the quoted figures, decision 0142); each builder's
+   outcome and time is recorded under the answer's `plan.builds` (`services/builder_record`);
+   it is kept as a cross-craft piece by
    concept and claim set from any section (also an any-craft answer and a deepened follow-up), and
    a professor's hide (`PUT /api/answers/{answerId}/simulations/{blockId}/hidden`) keeps it from
    being served or built again; every route that reads a stored explainer back marks it hidden.
@@ -610,8 +614,10 @@ Craft data is vendored from the designer portal (`docs/contracts/crafts.md`); di
 environment data come from open datasets (`docs/contracts/geo.md`, `docs/DATA_SOURCES.md`).
 Seeds (`app/scripts/seed_crafts`, `seed_claims`, `seed_districts`) run on every deploy and are
 idempotent; right after them `app/scripts/import_curation` imports every checked dossier of
-`backend/app/data/curation/` into the same tables, withdraws the seed's edge sentences and
-supersedes claims a new dossier version drops (decision 0053), then every checked category
+`backend/app/data/curation/` into the same tables, withdraws the seed's edge sentences,
+supersedes claims a new dossier version drops (decision 0053) and retires the seed claims and seed
+process of every curated craft (superseded and archived, never deleted; `seed_claims` retires them
+too, decision 0142), then every checked category
 dossier of `curation/categories/`, keyed to its category (decision 0078). `seed_claims` also runs the science seed (`app/data/science_seed.json`: constants,
 materials, compounds, reactions, readings; decision 0015); `app/scripts/link_compounds` looks
 the seeded compounds up in PubChem, nightly in the Coverage enrichment run (decision 0045). After them, `app/scripts/sync_portal_crafts` adds every craft the two portals hold

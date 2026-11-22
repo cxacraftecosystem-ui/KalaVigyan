@@ -4,6 +4,7 @@ import uuid
 from collections.abc import Sequence
 from dataclasses import replace
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.dialects.postgresql import insert
@@ -35,7 +36,16 @@ from .term_summaries import StoredClaims, cites_only_shown
 from .write_back_plan import QUOTED_REASON, WRITE_BACK_PREDICATE, quote_carries
 from .written_vectors import embed_now
 
-__all__ = ["CONCEPT_SUBJECT_TYPE", "SqlTermStore", "claim_for_sentence", "write_back_subject"]
+__all__ = [
+    "CONCEPT_SUBJECT_TYPE",
+    "SqlTermStore",
+    "claim_for_sentence",
+    "glossary_term",
+    "glossary_terms",
+    "kept_summary",
+    "stored_claims",
+    "write_back_subject",
+]
 
 CONCEPT_SUBJECT_TYPE = "CONCEPT"
 TERM_FACET = "CONCEPT"
@@ -56,23 +66,7 @@ class SqlTermStore:
 
     async def term(self, key: str) -> GlossaryTerm | None:
         async with self._sessions() as session:
-            row = await session.scalar(select(TermRow).where(TermRow.key == key))
-            if row is None:
-                return None
-            crafts = (await session.execute(_crafts_of(row.id))).all()
-            concepts = (await session.execute(_concepts_of(row.id))).all()
-        return GlossaryTerm(
-            id=row.id,
-            key=row.key,
-            label=row.label,
-            meaning=row.meaning,
-            local_names=tuple(row.localNames),
-            aliases=tuple(row.aliases),
-            craft_slugs=tuple(craft.slug for craft in crafts),
-            craft_names=tuple(craft.name for craft in crafts),
-            concepts=tuple(TermConceptRef(c.id, c.slug, c.type, c.name, c.description) for c in concepts),
-            wikidata_id=row.wikidataId,
-        )
+            return await glossary_term(session, key)
 
     async def cached(self, term_id: uuid.UUID, language: str) -> Term | None:
         async with self._sessions() as session:
@@ -103,10 +97,7 @@ class SqlTermStore:
                 row.subjectId: row.id for row in rows if _folded(row.text) == described[row.subjectId]
             }
             ordered = [defining[c.concept_id] for c in term.concepts if c.concept_id in defining]
-            views, sources = await knowledge_view.claims_by_id(session, ordered, acls=self._acls)
-            stored = _stored(ordered, views, sources)
-            changed = await _changed_at(session, stored.views)
-        return replace(stored, changed_at=changed)
+            return await stored_claims(session, ordered, acls=self._acls)
 
     async def write_back(self, term: GlossaryTerm, researched: ResearchedSummary) -> list[uuid.UUID]:
         craft_slug, subject = write_back_subject(term)
@@ -129,27 +120,72 @@ class SqlTermStore:
         return _stored(claim_ids, views, sources)
 
     async def remember(self, term_id: uuid.UUID, summary: Term) -> None:
-        claim_ids = sorted(
-            {uuid.UUID(c.claim_id) for sentence in summary.summary for c in sentence.citations}, key=str
-        )
-        values = {
-            "termId": term_id,
-            "language": summary.language,
-            "basis": summary.basis,
-            "payload": summary.model_dump(mode="json", by_alias=True),
-            "claimIds": claim_ids,
-            "checkedAt": summary.checked_at,
-        }
-        statement = insert(TermSummary).values(values)
-        changed = {key: statement.excluded[key] for key in ("basis", "payload", "claimIds", "checkedAt")}
         async with self._sessions() as session:
-            await session.execute(
-                statement.on_conflict_do_update(
-                    index_elements=[TermSummary.termId, TermSummary.language],
-                    set_={**changed, "updatedAt": func.now()},
-                )
-            )
+            await kept_summary(session, term_id, summary)
             await session.commit()
+
+
+async def glossary_term(session: AsyncSession, key: str) -> GlossaryTerm | None:
+    return (await glossary_terms(session, [key])).get(key)
+
+
+async def glossary_terms(session: AsyncSession, keys: Sequence[str]) -> dict[str, GlossaryTerm]:
+    rows = (await session.scalars(select(TermRow).where(TermRow.key.in_(list(keys))))).all()
+    if not rows:
+        return {}
+    ids = [row.id for row in rows]
+    crafts: dict[uuid.UUID, list[Any]] = {}
+    for craft in (await session.execute(_crafts_of(ids))).all():
+        crafts.setdefault(craft.termId, []).append(craft)
+    concepts: dict[uuid.UUID, list[Any]] = {}
+    for concept in (await session.execute(_concepts_of(ids))).all():
+        concepts.setdefault(concept.termId, []).append(concept)
+    return {row.key: _glossary_term(row, crafts.get(row.id, []), concepts.get(row.id, [])) for row in rows}
+
+
+def _glossary_term(row: TermRow, crafts: Sequence[Any], concepts: Sequence[Any]) -> GlossaryTerm:
+    return GlossaryTerm(
+        id=row.id,
+        key=row.key,
+        label=row.label,
+        meaning=row.meaning,
+        local_names=tuple(row.localNames),
+        aliases=tuple(row.aliases),
+        craft_slugs=tuple(craft.slug for craft in crafts),
+        craft_names=tuple(craft.name for craft in crafts),
+        concepts=tuple(TermConceptRef(c.id, c.slug, c.type, c.name, c.description) for c in concepts),
+        wikidata_id=row.wikidataId,
+    )
+
+
+async def stored_claims(
+    session: AsyncSession, claim_ids: Sequence[uuid.UUID], *, acls: Sequence[str]
+) -> StoredClaims:
+    views, sources = await knowledge_view.claims_by_id(session, claim_ids, acls=acls)
+    stored = _stored(claim_ids, views, sources)
+    return replace(stored, changed_at=await _changed_at(session, stored.views))
+
+
+async def kept_summary(session: AsyncSession, term_id: uuid.UUID, summary: Term) -> None:
+    claim_ids = sorted(
+        {uuid.UUID(c.claim_id) for sentence in summary.summary for c in sentence.citations}, key=str
+    )
+    values = {
+        "termId": term_id,
+        "language": summary.language,
+        "basis": summary.basis,
+        "payload": summary.model_dump(mode="json", by_alias=True),
+        "claimIds": claim_ids,
+        "checkedAt": summary.checked_at,
+    }
+    statement = insert(TermSummary).values(values)
+    changed = {key: statement.excluded[key] for key in ("basis", "payload", "claimIds", "checkedAt")}
+    await session.execute(
+        statement.on_conflict_do_update(
+            index_elements=[TermSummary.termId, TermSummary.language],
+            set_={**changed, "updatedAt": func.now()},
+        )
+    )
 
 
 def write_back_subject(term: GlossaryTerm) -> tuple[str | None, WriteBackSubject]:
@@ -204,22 +240,22 @@ def claim_for_sentence(
     )
 
 
-def _crafts_of(term_id: uuid.UUID) -> Select:
+def _crafts_of(term_ids: Sequence[uuid.UUID]) -> Select:
     return (
-        select(Craft.slug, Craft.name)
+        select(TermCraft.termId, Craft.slug, Craft.name)
         .join(TermCraft, TermCraft.craftId == Craft.id)
-        .where(TermCraft.termId == term_id)
-        .order_by(Craft.slug)
+        .where(TermCraft.termId.in_(list(term_ids)))
+        .order_by(TermCraft.termId, Craft.slug)
     )
 
 
-def _concepts_of(term_id: uuid.UUID) -> Select:
+def _concepts_of(term_ids: Sequence[uuid.UUID]) -> Select:
     return (
-        select(Concept.id, Concept.type, Concept.name, Concept.description, Craft.slug)
+        select(TermConcept.termId, Concept.id, Concept.type, Concept.name, Concept.description, Craft.slug)
         .join(TermConcept, TermConcept.conceptId == Concept.id)
         .join(Craft, Craft.id == Concept.craftId)
-        .where(TermConcept.termId == term_id)
-        .order_by(Craft.slug, Concept.type, Concept.name)
+        .where(TermConcept.termId.in_(list(term_ids)))
+        .order_by(TermConcept.termId, Craft.slug, Concept.type, Concept.name)
     )
 
 

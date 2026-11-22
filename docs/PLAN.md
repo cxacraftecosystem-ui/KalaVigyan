@@ -202,7 +202,7 @@ Crafts and geography:
 | `CraftLocation` | craftId, precision (STATE, DISTRICT, POINT), stateLgd, districtLgd, geom geography(Point,4326) null, placeLabel, sourceId, evidenceLevel |
 | `AdminState` | lgd pk, name, geom MultiPolygon 4326 |
 | `AdminDistrict` | lgd pk, stateLgd, name, geom, centroid, boundarySource (SOI_1M, KAGGLE_INDICATIVE), indicative |
-| `GiRegistration` | giNo unique, name, goodsClass, state, registeredOn, status, holder, craftId null |
+| `CraftGiRecord` | craftId, applicationNumber, certificateNumber, filedOn, registeredOn, journalIssue, proprietors[], authorisedUserCount, claimIds[] (the curated GI record; `GiRegistration` was dropped, decision 0142) |
 
 Environment:
 
@@ -347,7 +347,7 @@ ETL in `etl/`, run by `ingest-geo.yml` (`workflow_dispatch`) on GitHub Actions, 
 | Groundwater quality | India-WRIS / CGWB | Registered download; acknowledge CWC/CGWB | P1b | Wells → district | Median fluoride, iron, hardness, EC |
 | Geology, minerals | GSI Bhukosh / NGDR 1:2M + mineral occurrences | GSI 2019 policy, free baseline | P1b if download arrives; else P2 | 1:2M | `DistrictGeology` |
 | LULC stats | Bhuvan LULC via data.gov.in | GODL | P2 | 1:250K stats | Class shares |
-| GI registry | search.ipindia.gov.in/GIRPublic | Public record | P1a, manual curated | — | `GiRegistration` |
+| GI registry | search.ipindia.gov.in/GIRPublic | Public record | P1a, manual curated | — | `CraftGiRecord` |
 
 SoilGrids handling: tile WCS requests per state in native CRS; zonal statistics with exactextract in Actions; CRS and resampling recorded in `method`.
 
@@ -516,7 +516,7 @@ Enforcement: capability sets in `core/deps.py`; `shared/roles.json` ranks with a
 ## 13a. Cultural governance (P1a)
 
 - `sensitivity` on Source, Chunk, Concept, Claim: OPEN, ATTRIBUTE_REQUIRED, RESTRICTED. RESTRICTED never enters retrieval, prompts or media; it is visible only in the review queue. Enforced in retrieval SQL and tested.
-- Attribution: craft pages and answers show the practising community or cluster and the GI holder (from `GiRegistration`) as named in a cited source. Community and caste names appear only when a source names them, only as practitioners, never inferred by a model, never in media prompts.
+- Attribution: craft pages and answers show the practising community or cluster and the GI holder (from `CraftGiRecord`) as named in a cited source. Community and caste names appear only when a source names them, only as practitioners, never inferred by a model, never in media prompts.
 - Objections: "Raise a concern" on craft pages, answers and shared media → `Objection` queue at `/review/objections`. Acknowledge within 2 working days, decide within 10 (values pending O5). Upheld → retraction or media unshare, audited.
 - Media bans and named-cluster sign-off per §11.
 - Policy text approved by the owner (O5) and published at `/about/governance`.

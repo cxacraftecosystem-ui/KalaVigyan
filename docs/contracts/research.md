@@ -984,11 +984,15 @@ faster.
 - The nightly piece rebuild (`python -m app.scripts.rebuild_pieces`, in the same workflow before
   the coverage job, decision 0033): `services/piece_rebuild.stale_groups` lists the stale,
   unsuperseded pieces of the 10 crafts most asked about by signed-in readers in 30 days, one group
-  per facet, depth and stored question; each is answered again through `answer_understood` with
-  `fresh`, for that facet only, at its depth, as a principal held to the depth's per-answer cap,
-  its calls tagged `enrichment-rebuild-<id>` so `ENRICHMENT_DAILY_BUDGET_USD` covers both jobs. It
-  stops below `ENRICHMENT_QUESTION_RESERVE_USD` or on a spend refusal; the report is one JSON
-  object and any failed group exits 1.
+  per facet, depth and stored question with the ids of its pieces; each is answered again through
+  `answer_understood` with `fresh`, for that facet only, at its depth, as a principal held to the
+  smaller of the depth's per-answer cap and what the day's budget has left
+  (`rebuild_pieces.DayHeldSpend`, decision 0142), its calls tagged `enrichment-rebuild-<id>` so
+  `ENRICHMENT_DAILY_BUDGET_USD` covers both jobs. A group whose rebuild ran, rebuilt or empty,
+  stamps its pieces' `KnowledgePiece.rebuildTriedAt`, and a group tried within
+  `PIECE_REBUILD_RETRY_AFTER` (7 days) is not listed again; a failed rebuild is not stamped and is
+  tried the next night. It stops below `ENRICHMENT_QUESTION_RESERVE_USD` or on a spend refusal; the
+  report is one JSON object and any failed group exits 1.
 
 ## Answer stream (`research/stream.py`)
 

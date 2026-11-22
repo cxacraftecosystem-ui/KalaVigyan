@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -8,7 +8,6 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    Date,
     DateTime,
     ForeignKey,
     Index,
@@ -263,29 +262,6 @@ class CraftLocation(Base):
         Index(None, "stateLgd"),
         Index("CraftLocation_geom_gist_idx", "geom", postgresql_using="gist"),
     )
-
-
-class GiRegistration(Base):
-    __tablename__ = "GiRegistration"
-
-    id: Mapped[uuid.UUID] = uuid_pk()
-    giNo: Mapped[str] = mapped_column(String(40), nullable=False, unique=True)
-    name: Mapped[str] = mapped_column(String(300), nullable=False)
-    goodsClass: Mapped[str | None] = mapped_column(String(80))
-    state: Mapped[str | None] = mapped_column(String(120))
-    registeredOn: Mapped[date | None] = mapped_column(Date)
-    status: Mapped[str | None] = mapped_column(String(80))
-    holder: Mapped[str | None] = mapped_column(Text)
-    craftId: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("Craft.id", ondelete="SET NULL")
-    )
-    sourceId: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("Source.id", ondelete="SET NULL")
-    )
-    createdAt: Mapped[datetime] = created_at()
-    updatedAt: Mapped[datetime] = updated_at()
-
-    __table_args__ = (Index(None, "craftId"),)
 
 
 class EnvDataset(Base):

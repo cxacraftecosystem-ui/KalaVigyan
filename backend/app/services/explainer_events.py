@@ -55,6 +55,7 @@ class ExplainerStream:
         self.ledger = ClaimLedger()
         self._lock = asyncio.Lock()
         self._sent_sources: set[str] = set()
+        self._section_titles: dict[str, str] = {}
         self._totals: dict[str, int] = {}
         self._latest: tuple[str, str] = ("", "")
         self._open_questions = 0
@@ -92,12 +93,14 @@ class ExplainerStream:
         await self.emit("status", {"step": step, "message": message})
 
     async def section_started(self, spec: SectionSpec, *, titles: Mapping[str, str], state: str) -> None:
+        shown = shown_title(spec, titles)
+        self._section_titles[spec.id] = shown["title"]
         await self.emit(
             "section_started",
             {
                 "id": spec.id,
                 "discipline": spec.discipline,
-                **shown_title(spec, titles),
+                **shown,
                 "order": spec.order,
                 "state": state,
             },
@@ -128,10 +131,21 @@ class ExplainerStream:
             sent = [block for block in shown if _sourced(section_id, block, known)]
             for block in sent:
                 await self._sources(block.cited_source_ids(), known)
+                await self._found_piece(section_id, block)
                 await self.emit("block", {"sectionId": section_id, "block": block})
         if routed.gaps:
             await self.open_questions(await _asked(section_id, routed.gaps, in_language), sources)
         return sent
+
+    async def _found_piece(self, section_id: str, block: Block) -> None:
+        marker = block.reuse
+        if marker is None:
+            return
+        title = self._section_titles.get(section_id)
+        if title is None:
+            logger.warning("block %s reuses piece %s in a section never started", block.id, marker.piece_id)
+            return
+        await self.trail.found_piece(marker.piece_id, title=title, stored_at=marker.stored_at)
 
     def shown_sources(self) -> dict[str, dict[str, Any]]:
         return self.ledger.sources.refs()

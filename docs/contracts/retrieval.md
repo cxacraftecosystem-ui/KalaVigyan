@@ -77,6 +77,12 @@ and vector are made, and call the reranker after their turn; searches through
   in any mode: `statements.claim_conditions(..., held=HELD_LEFT_OUT)` by default, so answers,
   coverage and the saved-answer re-check never rest on it. `held=HELD_KEPT` keeps it, for the
   reads a contributor re-sources it from (decision 0121).
+- `facets` keeps the claims whose subject concept is of one of the facet's concept types, and,
+  for a facet type that belongs to a discipline (`vocabulary.CONCEPT_TYPE_DISCIPLINES`,
+  `statements.facet_disciplines`), every claim of the scope filed under that discipline whatever
+  its subject's type (decision 0142): a history facet (`HISTORICAL_CONTEXT`) finds a `HISTORY`
+  claim about a curated place, which is an `ENVIRONMENTAL_CONDITION` concept. An empty tuple reads
+  every type.
 - `fields` keeps the claims filed under one of the fields (as their field or a secondary field)
   and the claims with no field yet; passages follow the claims kept. An empty tuple reads every
   field.

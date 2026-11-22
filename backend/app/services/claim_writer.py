@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import InvalidInput
 from app.data.craft_master_loader import ID_NAMESPACE
 from app.models import Claim, ClaimSource, Concept, Craft, Process, ProcessStage, ReviewEvent
+from app.models.science import live_process
 from app.research.quotes import quote_key
 from app.research.review_switch import WAITING_STATUS
 from app.research.storable import storable_text
@@ -213,6 +214,7 @@ async def _named_concept(
             .join(Process, Process.id == ProcessStage.processId)
             .where(
                 Process.craftId == craft.craft_id,
+                live_process(),
                 ProcessStage.conceptId.is_not(None),
                 func.lower(ProcessStage.name) == name,
             )

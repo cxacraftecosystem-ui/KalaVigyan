@@ -51,6 +51,7 @@ class BuildAsk:
 class Built:
     blocks: tuple[Block, ...] = ()
     sources: SourceRefs = field(default_factory=dict)
+    note: str | None = None
 
 
 class BlockBuilder(Protocol):

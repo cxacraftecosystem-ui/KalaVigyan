@@ -42,7 +42,6 @@ from app.models.crafts import (
     DistrictEnvValue,
     DistrictGeology,
     EnvDataset,
-    GiRegistration,
 )
 from app.models.curation import (
     CraftGiRecord,
@@ -200,7 +199,6 @@ __all__ = [
     "FieldRecordingCraft",
     "FieldSegment",
     "FieldVoiceStream",
-    "GiRegistration",
     "ImageContribution",
     "ImageFingerprint",
     "ImageScreen",

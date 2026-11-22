@@ -2,10 +2,10 @@ import hashlib
 import json
 import uuid
 from collections.abc import AsyncIterator, Sequence
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import exists, select, update
+from sqlalchemy import delete, exists, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
@@ -17,6 +17,7 @@ from app.models import (
     ClaimSource,
     Concept,
     Craft,
+    CuratedClaim,
     KnowledgePiece as PieceRow,
     Process,
     ProcessStage,
@@ -34,7 +35,7 @@ from app.science.ladder import process_ladder
 from app.services import knowledge_view
 from app.services.craft_process import process_records
 from app.services.piece_lookup import PieceAsk, PieceLookup
-from app.services.piece_rebuild import stale_groups
+from app.services.piece_rebuild import StaleGroup, mark_rebuild_tried, stale_groups
 from app.services.piece_store import BuiltSection, SqlPieceStore, piece_values
 
 pytestmark = pytest.mark.db
@@ -261,7 +262,7 @@ async def test_cited_stage_concepts_never_become_a_process_of_their_own(session:
     ).all() == []
 
 
-async def test_stale_pieces_of_asked_crafts_are_listed_for_the_nightly_rebuild(session: AsyncSession) -> None:
+async def stale_geography_piece(session: AsyncSession) -> PieceRow:
     asker = User(
         id=uuid.uuid4(),
         email=f"asker-{uuid.uuid4().hex[:8]}@example.com",
@@ -280,10 +281,34 @@ async def test_stale_pieces_of_asked_crafts_are_listed_for_the_nightly_rebuild(s
         .values(createdFromAnswerId=await answer_row(session, user_id=asker.id))
     )
     await session.execute(update(Claim).where(Claim.id == WATER_CLAIMS[0]).values(evidenceLevel="REVIEWED"))
-    groups = await stale_groups(session, now=datetime.now(UTC))
-    found = [group for group in groups if group.craft.slug == AJRAKH.slug and group.facet == "GEOGRAPHY"]
+    return row
+
+
+async def geography_groups(session: AsyncSession, now: datetime) -> list[StaleGroup]:
+    groups = await stale_groups(session, now=now)
+    return [group for group in groups if group.craft.slug == AJRAKH.slug and group.facet == "GEOGRAPHY"]
+
+
+async def test_stale_pieces_of_asked_crafts_are_listed_for_the_nightly_rebuild(session: AsyncSession) -> None:
+    row = await stale_geography_piece(session)
+    found = await geography_groups(session, datetime.now(UTC))
     assert found and found[0].question == QUESTION and found[0].depth == "EXPERT"
     assert found[0].asks >= 3 and found[0].withheld_terms == ("Meera Rao",)
+    assert row.id in found[0].piece_ids
+
+
+async def test_a_group_tried_in_the_last_week_waits_a_week_before_it_is_tried_again(
+    session: AsyncSession,
+) -> None:
+    row = await stale_geography_piece(session)
+    now = datetime.now(UTC)
+    (group,) = await geography_groups(session, now)
+    assert await mark_rebuild_tried(session, group, now=now) == len(group.piece_ids)
+    assert await session.scalar(select(PieceRow.rebuildTriedAt).where(PieceRow.id == row.id)) == now
+    assert await geography_groups(session, now + timedelta(days=6)) == []
+    assert [found.piece_ids for found in await geography_groups(session, now + timedelta(days=8))] == [
+        group.piece_ids
+    ]
 
 
 async def test_a_stored_ladder_is_reused_only_while_it_matches_the_process_rows(
@@ -323,6 +348,8 @@ async def curated_piece(session: AsyncSession, claims: Sequence[uuid.UUID]) -> u
         block, slot, piece_id=uuid.uuid4(), answer_id=None, created_at=datetime(2026, 11, 1, tzinfo=UTC)
     )
     session.add(PieceRow(**piece_values(piece)))
+    for n, claim in enumerate(claims, start=1):
+        session.add(CuratedClaim(claimId=claim, craftId=craft.id, key=f"C9{n:02d}", discipline="GEOGRAPHY"))
     await session.flush()
     return piece.id
 
@@ -340,3 +367,16 @@ async def test_an_answer_never_supersedes_a_curated_piece_and_is_reused_before_i
     assert await reused_ids(store) == [row.id]
     await session.execute(update(Claim).where(Claim.id == WATER_CLAIMS[2]).values(status="RETRACTED"))
     assert await reused_ids(store) == [curated]
+
+
+async def test_a_piece_whose_answer_was_deleted_is_superseded_like_any_reader_s(
+    session: AsyncSession,
+) -> None:
+    store = store_for(session)
+    _, first = await kept(session, store)
+    await session.execute(delete(Answer).where(Answer.id == first.createdFromAnswerId))
+    await session.refresh(first)
+    assert first.createdFromAnswerId is None
+    _, second = await kept(session, store)
+    await session.refresh(first)
+    assert first.supersededById == second.id
