@@ -56,7 +56,7 @@ def test_builders_plan_and_compose_only_from_the_answer_s_headroom(
         made.append(SimpleNamespace(task=task, principal=principal))
         return made[-1]
 
-    def from_registry(cls: type, tools: BuilderTools, *_: Any) -> BlockBuilders:
+    def from_registry(cls: type, tools: BuilderTools, *_: Any, **__: Any) -> BlockBuilders:
         started.append(tools)
         return BlockBuilders()
 

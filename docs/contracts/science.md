@@ -148,8 +148,9 @@ and `science/process_view.craft_process` builds the answer.
   per craft, its stages from the immersive stage concepts with an ordinal; a craft with a curated
   dossier has its seed process archived, decision 0142). `ordered` is `false` for a stage no
   source orders (`ProcessStage.ordered`, a curated stage placed after the ordered ones) and left
-  out when a source orders it; a process ladder (`science/ladder`) offers and numbers only ordered
-  stages, and a stored ladder that numbers a stage now unordered fails `ladder_problems`.
+  out when a source orders it; a process ladder (`science/ladder`) offers the composer only ordered
+  stages, marks an unordered stage it holds `unnumbered` (as the craft page's ladder does), and a
+  stored ladder that numbers a stage now unordered fails `ladder_problems`.
 - Stage claims: visible claims whose subject is the stage's concept, if that concept is `OPEN`.
 - Materials: `StageMaterial` joined to `Material` (and `Compound`); their claims are the
   `StageMaterial.claimId` claim and the visible claims on `Material.conceptId`. A material's

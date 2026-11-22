@@ -104,12 +104,17 @@ def with_pa_unordered() -> ProcessRecords:
     return dataclasses.replace(records, stages=stages)
 
 
-def test_a_stage_no_source_orders_is_never_offered_to_a_ladder_or_numbered_by_one() -> None:
+def test_a_stage_no_source_orders_is_never_offered_to_a_ladder_and_shown_unnumbered_in_one() -> None:
     records = with_pa_unordered()
     assert [option.id for option in ladder_stage_options(records)] == [stage_id(KUT), stage_id(RED)]
     built = process_ladder(records, block_id="s1.b1", stage_ids=[stage_id(KUT), stage_id(PA), stage_id(RED)])
     assert built is not None
-    assert [stage.stage_id for stage in built.stages] == [stage_id(KUT), stage_id(RED)]
+    assert [(stage.stage_id, stage.unnumbered) for stage in built.stages] == [
+        (stage_id(KUT), None),
+        (stage_id(PA), True),
+        (stage_id(RED), None),
+    ]
+    assert ladder_problems(built, records) == []
 
 
 def test_a_stored_ladder_numbering_a_stage_now_unordered_is_refused() -> None:

@@ -69,11 +69,13 @@ no page, search or answer, and restorable. Five choices had real alternatives.
    group was refused as a change to the client's contract for a diagnostic. Dataset rows are offered
    only from the datasets the section's blocks already cite, for the craft's first mapped district,
    and an explainer resting on them alone is refused.
-5. **Ladders take only ordered stages, and the process route marks the others.**
+5. **Ladders number only ordered stages, and the process route marks the others.**
    `ProcessStageView.ordered` is `false` for a stage no source orders and left out otherwise, so the
    golden files and the client's strict shapes stay as they are; the ladder offers the composer only
-   ordered stages and refuses a stored ladder that numbers an unordered one, so the composer never
-   numbers a stage without a stated order and its prompt needs no change.
+   ordered stages, marks an unordered stage it holds `unnumbered` (the field the craft page's ladder
+   already carries, so the client draws it unnumbered), and refuses a stored ladder that numbers an
+   unordered one, so the composer is never offered a stage without a stated order and its prompt
+   needs no change.
 
 Smaller rules follow the entries' own plans: a curated glossary meaning becomes the term's English
 `STORED` summary from the curated claims every dossier names for its key; `GiRegistration`, never
