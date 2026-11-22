@@ -139,6 +139,20 @@ async def test_retracting_a_published_fact_hides_it_with_the_reason(
         )
 
 
+async def test_a_contributor_may_retract_their_own_published_fact(
+    seeded: tuple[AsyncSession, People],
+) -> None:
+    session, people = seeded
+    claim = await session.get(Claim, PUBLISHED)
+    assert claim is not None
+    claim.createdById = people.professor.id
+    await session.flush()
+    decided = await decisions.retract_fact(
+        session, PUBLISHED, people.professor, FactRetraction(reason=REASON), now=NOW
+    )
+    assert (decided.status, (await session.get(Claim, PUBLISHED)).status) == ("RETRACTED", "RETRACTED")
+
+
 async def test_a_reviewer_never_decides_their_own_fact_nor_an_ungated_one(
     seeded: tuple[AsyncSession, People],
 ) -> None:
