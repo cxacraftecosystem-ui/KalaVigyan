@@ -57,3 +57,9 @@ export const fieldCoverageShape: Shape<FieldCoverage> = object<FieldCoverage>({
   missing: list(field),
   fields: list(fieldCountShape, DISCIPLINES.length)
 });
+
+export type MonographCoverage = { schemaVersion: 1; crafts: FieldCoverage[] };
+
+export const MONOGRAPH_COVERAGE_PATH = "/crafts/coverage";
+
+export const monographCoverageShape: Shape<MonographCoverage> = object<MonographCoverage>({ schemaVersion: oneOf([1] as const), crafts: list(fieldCoverageShape) });

@@ -20,6 +20,7 @@ __all__ = [
     "WorkSubject",
     "craft_subject",
     "craft_subjects",
+    "curated_craft_subjects",
     "is_family",
     "subject_by_key",
     "work_subjects",
@@ -78,6 +79,10 @@ async def craft_subjects(session: AsyncSession, slugs: Sequence[str]) -> list[Wo
     if not slugs:
         return []
     return await _crafts(session, Craft.slug.in_(list(dict.fromkeys(slugs))))
+
+
+async def curated_craft_subjects(session: AsyncSession) -> list[WorkSubject]:
+    return await _crafts(session, CuratedCraft.craftId.is_not(None))
 
 
 async def _crafts(session: AsyncSession, *conditions: ColumnElement[bool]) -> list[WorkSubject]:

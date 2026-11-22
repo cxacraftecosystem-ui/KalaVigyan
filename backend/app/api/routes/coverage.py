@@ -10,12 +10,23 @@ from app.models import User
 from app.research.coverage import FieldCoverage
 from app.research.crafts import SLUG_MAX_CHARS
 from app.services import knowledge_view
-from app.services.coverage import category_coverage, craft_coverage
+from app.services.coverage import category_coverage, craft_coverage, monograph_coverage
 
 router = APIRouter(tags=["coverage"])
 
 CRAFT_NOT_FOUND_DETAIL = "No craft has that address."
 CATEGORY_NOT_FOUND_DETAIL = "There is no craft category by that name."
+
+
+@router.get("/crafts/coverage")
+async def get_monograph_coverage(
+    request: Request,
+    response: Response,
+    reader: User | None = Depends(public_reader),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    coverage = await monograph_coverage(session)
+    return cached_read(request, response, reader, coverage.model_dump(mode="json", by_alias=True))
 
 
 @router.get("/crafts/{slug}/coverage")

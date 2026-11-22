@@ -2419,14 +2419,6 @@ Last reviewed: 2026-11-22.
   rows, decision 0136) and `python -m app.scripts.write_back_report --gate-less`, then rejects or
   re-files each in the review queue.
 
-### Leftovers of the map rebuild
-
-- **What:** `answer/place/storyGeometry.ts` imports `boardBox` and `RANN_SALT_FLATS` from the
-  pass-through `boardGeometry.ts`. The landing asks for field coverage once per monograph every five
-  minutes (30 requests today). (`StateLines` draws the Survey of India state borders again on every
-  map, as the owner asked on 2026-11-21.)
-- **Clears it:** drop the import and the pass-through; a collection-wide coverage route.
-
 ### Speed left after the quality lane
 
 - **What:** on a phone Kutch Ajrakh scores 90 with an LCP of 3.6 s, not 2.5 s. Before LCP it loads

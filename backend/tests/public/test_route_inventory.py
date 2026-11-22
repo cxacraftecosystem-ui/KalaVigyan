@@ -37,6 +37,7 @@ PUBLIC_ROUTES = {
     ("GET", "/api/compare"),
     ("GET", "/api/crafts/catalogue"),
     ("GET", "/api/crafts/contributed/{contribution_id}"),
+    ("GET", "/api/crafts/coverage"),
     ("GET", "/api/crafts/{slug}/coverage"),
     ("GET", "/api/crafts/{slug}/field-voices"),
     ("GET", "/api/crafts/{slug}/ground"),
