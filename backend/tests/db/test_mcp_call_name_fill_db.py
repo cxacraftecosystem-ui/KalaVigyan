@@ -10,11 +10,12 @@ pytestmark = pytest.mark.db
 
 LAST_USED = datetime(2026, 11, 22, 18, 0, tzinfo=UTC)
 AS_THE_RELEASE_BEFORE = text(
-    'INSERT INTO "McpToolCall" ("grantId", "tool", "outcome") VALUES (:grant, :tool, \'OK\') RETURNING "clientName"'
+    'INSERT INTO "McpToolCall" ("grantId", "tool", "outcome", "calledAt") '
+    "VALUES (:grant, :tool, 'OK', now()) RETURNING \"clientName\""
 )
 AS_THIS_RELEASE = text(
-    'INSERT INTO "McpToolCall" ("grantId", "clientName", "tool", "outcome") '
-    "VALUES (:grant, :name, :tool, 'OK') RETURNING \"clientName\""
+    'INSERT INTO "McpToolCall" ("grantId", "clientName", "tool", "outcome", "calledAt") '
+    "VALUES (:grant, :name, :tool, 'OK', now()) RETURNING \"clientName\""
 )
 
 
