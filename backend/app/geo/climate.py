@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from app.geo.datasets import region_dataset, value_grid
 from app.geo.records import DatasetRecord, ValueRecord
-from app.research.blocks_climate import TREND_SIGNIFICANCE, TREND_UNITS, ClimateTrend
+from app.research.blocks_climate import TREND_SIGNIFICANCE, TREND_UNITS, ClimateTrend, GroundwaterValue
 from app.research.blocks_place import DistrictRef
 from app.research.datasets import DatasetRef
 
@@ -42,6 +42,7 @@ ValueKey = tuple[int, str, str, str, str]
 class ClimateTrends:
     trends: tuple[ClimateTrend, ...] = ()
     datasets: tuple[DatasetRef, ...] = ()
+    groundwater: tuple[GroundwaterValue, ...] = ()
 
 
 def climate_trends(

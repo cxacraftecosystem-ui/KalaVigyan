@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
 
+from app.geo.region_rules import region_rules
 from app.research.citations import SourceRef
 from app.research.crafts import CraftRef
 from app.schemas.region import DATASET_FACETS
@@ -12,8 +13,8 @@ __all__ = [
     "GEOLOGY_STAT",
     "GEOLOGY_UNIT",
     "GEOLOGY_VARIABLE",
+    "LITHOLOGY_DATASET",
     "LITHOLOGY_TWIN_PREFIX",
-    "Coverage",
     "DatasetRecord",
     "LayerListing",
     "LayerRow",
@@ -31,7 +32,8 @@ __all__ = [
 GEOLOGY_VARIABLE = "lithology"
 GEOLOGY_STAT = "SHARE"
 GEOLOGY_UNIT = "fraction"
-LITHOLOGY_TWIN_PREFIX = "lithology_"
+LITHOLOGY_DATASET = "GLIM_1_0_05DEG"
+LITHOLOGY_TWIN_PREFIX = region_rules().lithology_twin_prefix
 
 
 @dataclass(frozen=True)
@@ -87,14 +89,8 @@ class SeriesTotals:
     high: float
     resolutions: tuple[str | None, ...]
     methods: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class Coverage:
-    state_lgd: int
-    dataset_code: str
-    districts: int
-    area: float
+    dataset_districts: int
+    dataset_area: float
 
 
 @dataclass(frozen=True)
@@ -145,7 +141,6 @@ class RegionRecords:
     places: tuple[PlaceRecord, ...]
     district_values: tuple[ValueRecord, ...]
     state_totals: tuple[SeriesTotals, ...]
-    coverage: tuple[Coverage, ...]
     district_totals: Mapping[int, int]
     datasets: Mapping[str, DatasetRecord]
     sources: Mapping[str, SourceRef]

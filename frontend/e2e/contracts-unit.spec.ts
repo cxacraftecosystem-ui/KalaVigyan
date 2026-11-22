@@ -75,7 +75,7 @@ test("a choropleth value falls in its class, the top class closed", () => {
   const layer = parsed(mapLayerShape, "region.layer.golden.json");
   expect(layerClassOf(layer, layer.values["444"])).toBe(0);
   expect(layerClassOf(layer, 7.08)).toBe(1);
-  expect(layerClassOf(layer, layer.values["460"])).toBe(4);
+  expect(layerClassOf(layer, layer.values["441"])).toBe(4);
   expect(() => layerClassOf(layer, 8.4)).toThrow(RangeError);
   expect(layer.boundary.caption).toBe("External boundaries of India as depicted by Survey of India. District boundaries are indicative.");
 });

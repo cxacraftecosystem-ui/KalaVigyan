@@ -10,7 +10,8 @@ from app.core.errors import InvalidInput
 from app.geo.aggregation import state_aggregate
 from app.geo.climate import MEAN_STAT, TREND_DATASETS
 from app.geo.datasets import region_dataset, value_grid
-from app.geo.records import Coverage, DatasetRecord, PlaceRecord, RegionRecords, SeriesTotals, ValueRecord
+from app.geo.headline import headline_rows
+from app.geo.records import DatasetRecord, PlaceRecord, RegionRecords, SeriesTotals, ValueRecord
 from app.research.citations import SourceRef
 from app.research.vocabulary import ENV_STATS
 from app.schemas.region import (
@@ -68,9 +69,8 @@ NormalKey = tuple[str, str | None]
 
 
 def craft_region(records: RegionRecords) -> CraftRegion:
-    district_values = _by_key(_mapped(records.district_values), lambda row: row.district_lgd)
-    state_totals = _by_key(_mapped(records.state_totals), lambda row: row.state_lgd)
-    coverage = {(c.state_lgd, c.dataset_code): c for c in records.coverage}
+    district_values = _by_key(_headline(records, records.district_values), lambda row: row.district_lgd)
+    state_totals = _by_key(_headline(records, records.state_totals), lambda row: row.state_lgd)
     shown_states: dict[int, list[RegionValue]] = {}
     places: list[RegionPlace] = []
     for place in records.places:
@@ -80,9 +80,7 @@ def craft_region(records: RegionRecords) -> CraftRegion:
         else:
             lgd = place.state.lgd
             if lgd not in shown_states:
-                shown_states[lgd] = [
-                    _state_value(records, series, coverage) for series in state_totals.get(lgd, [])
-                ]
+                shown_states[lgd] = [_state_value(records, series) for series in state_totals.get(lgd, [])]
             values = shown_states[lgd]
         places.append(_region_place(place, values))
     cited = sorted({value.dataset_code for place in places for f in place.facets for value in f.values})
@@ -191,11 +189,9 @@ def district_value(row: ValueRecord, dataset: DatasetRecord) -> RegionValue:
     )
 
 
-def _state_value(
-    records: RegionRecords, series: SeriesTotals, coverage: Mapping[tuple[int, str], Coverage]
-) -> RegionValue:
+def _state_value(records: RegionRecords, series: SeriesTotals) -> RegionValue:
     dataset = _dataset(records, series.dataset_code)
-    aggregate = state_aggregate(series, coverage)
+    aggregate = state_aggregate(series)
     total = records.district_totals.get(series.state_lgd)
     if total is None:
         raise InvalidInput(f"state {series.state_lgd} has no district count")
@@ -229,6 +225,13 @@ def _dataset(records: RegionRecords, code: str) -> DatasetRecord:
     if dataset is None:
         raise InvalidInput(f"a stored value cites dataset {code}, which has no EnvDataset row")
     return dataset
+
+
+def _headline[R: ValueRecord | SeriesTotals](records: RegionRecords, rows: Iterable[R]) -> list[R]:
+    mapped = _mapped(rows)
+    for code in sorted({row.dataset_code for row in mapped}):
+        _dataset(records, code)
+    return headline_rows(mapped, records.datasets)
 
 
 def _mapped[R: ValueRecord | SeriesTotals](rows: Iterable[R]) -> list[R]:

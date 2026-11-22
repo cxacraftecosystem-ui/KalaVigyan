@@ -23,7 +23,7 @@ from .datasets import (
     DatasetRef,
     dataset_codes_problems,
 )
-from .rivers import RiverTrace
+from .rivers import RIVER_NAME_DATASET_CODES, RiverTrace
 from .subject_keys import TermKey
 from .terms import WIKIDATA_ID_PATTERN
 
@@ -89,7 +89,7 @@ class RegionStoryBlock(BlockBase):
             problems.append(f"region story {self.id} lists each district and layer once")
         problems += _step_district_problems(self.id, self.districts, self.steps)
         if self.river is not None:
-            problems += _river_problems(self.id, self.river, listed, self.steps)
+            problems += _river_problems(self.id, self.river, listed, self.steps, self.datasets)
         if problems:
             raise ValueError("; ".join(problems))
         return self
@@ -240,10 +240,22 @@ def _step_district_problems(block_id: str, districts: list[DistrictRef], steps: 
     return []
 
 
-def _river_problems(block_id: str, river: RiverPath, listed: list[int], steps: list[StoryStep]) -> list[str]:
+def _river_problems(
+    block_id: str, river: RiverPath, listed: list[int], steps: list[StoryStep], datasets: list[DatasetRef]
+) -> list[str]:
     problems = []
     if listed[: len(river.district_lgds)] != river.district_lgds:
         problems.append(f"region story {block_id} lists the river's districts first, in path order")
-    if river.name is not None and not any(named_in(river.name, step.sentence) for step in steps):
-        problems.append(f"region story {block_id} names the river only as a cited step states it")
-    return problems
+    return problems + _river_name_problems(block_id, river, steps, datasets)
+
+
+def _river_name_problems(
+    block_id: str, river: RiverPath, steps: list[StoryStep], datasets: list[DatasetRef]
+) -> list[str]:
+    if river.name is None or any(named_in(river.name, step.sentence) for step in steps):
+        return []
+    if any(dataset.code in RIVER_NAME_DATASET_CODES for dataset in datasets):
+        return []
+    return [
+        f"region story {block_id} names the river only as a cited step or a river names dataset row states it"
+    ]

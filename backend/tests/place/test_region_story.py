@@ -1,5 +1,6 @@
 import dataclasses
 import logging
+from collections.abc import Sequence
 from typing import Any
 
 import pytest
@@ -9,7 +10,7 @@ from app.composer.region_story import StoryChoice, StoryStepChoice
 from app.core.errors import ExternalFailure
 from app.research import explainer
 from app.research.blocks_place import RegionStoryBlock
-from app.research.datasets import BOUNDARY_DATASET_CODE
+from app.research.datasets import BOUNDARY_DATASET_CODE, DatasetRef
 from app.research.rivers import HYDRORIVERS_DATASET_CODE
 from app.research.structured import schema_problems
 from app.services import place_builders
@@ -42,7 +43,7 @@ def stored(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     async def loaded(session: Any) -> bool:
         return found["loaded"]
 
-    async def offer(session: Any, craft_slug: str) -> RegionOffer | None:
+    async def offer(session: Any, craft_slug: str, *, texts: Sequence[str] = ()) -> RegionOffer | None:
         found["asked"].append(craft_slug)
         return found["offer"]
 
@@ -135,10 +136,44 @@ async def test_without_the_boundary_row_no_story_is_told(stored: dict[str, Any])
     assert await story(stored) is None
 
 
-async def test_the_river_is_drawn_unnamed_because_no_dataset_names_it(stored: dict[str, Any]) -> None:
+OSM_NAMES = DatasetRef(
+    code="OSM_RIVER_NAMES",
+    title="OpenStreetMap river names (waterway=river, India extract)",
+    publisher="OpenStreetMap contributors, India extract by Geofabrik",
+    edition="2026-11-23",
+    period="2026-11-23",
+    native_resolution="way geometry, matched to HydroRIVERS reaches within 1 km",
+    licence="ODbL 1.0",
+    licence_url="https://opendatacommons.org/licenses/odbl/1-0/",
+    attribution="© OpenStreetMap contributors",
+    citation=None,
+    url="https://download.geofabrik.de/asia/india-latest.osm.pbf",
+)
+
+
+def named_offer(datasets: dict[str, DatasetRef]) -> RegionOffer:
+    offer = kachchh_offer(datasets=datasets)
+    (river,) = offer.rivers
+    named = dataclasses.replace(river, name="Suran River", name_dataset=OSM_NAMES.code)
+    return dataclasses.replace(offer, rivers=(named,))
+
+
+async def test_an_unnamed_river_is_drawn_unnamed(stored: dict[str, Any]) -> None:
     block = await story(stored)
     assert block.steps[1].sentence.text.startswith("The river Saran in Dhamadka")
     assert block.river.name is None
+
+
+async def test_a_river_the_names_dataset_names_is_drawn_with_that_name_citing_its_row(
+    stored: dict[str, Any],
+) -> None:
+    stored["offer"] = named_offer({**dataset_rows(), OSM_NAMES.code: OSM_NAMES})
+    block = await story(stored)
+    assert block.river.name == "Suran River"
+    assert codes(block.datasets)[:3] == [BOUNDARY_DATASET_CODE, HYDRORIVERS_DATASET_CODE, OSM_NAMES.code]
+    stored["offer"] = named_offer(dataset_rows())
+    unnamed = await story(stored)
+    assert unnamed.river.name is None and OSM_NAMES.code not in codes(unnamed.datasets)
 
 
 async def test_no_river_data_adds_no_block_and_logs_once(

@@ -12,6 +12,7 @@ Date: 2026-11-16. Status: accepted.
 | The contract it was built to | [0014 Contracts for process science, region profile, voice and media](0014-science-region-voice-media-contracts.md) |
 | The review that fixed it | [0022 Voice spend fails closed, a filtered style hint, region sources and one home per rule](0022-batch-3-review-fixes.md) |
 | The contracts it names | [region.md](../contracts/region.md) |
+| What amended it | [0153 Rivers are named from Wikidata then OpenStreetMap, groundwater comes from the India data portal, a region place shows its headline values, and the geo ETL fails every gap it can see](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md): the region's headline values and its stored state series |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -7,15 +7,20 @@ import { decodeRings } from "@/components/map/basemap";
 import { indiaRings } from "@/components/map/indiaGeometry";
 import { mineralColour, symbolPath } from "@/components/map/physical/MineralsLayer";
 import { RotatedLabel } from "@/components/map/physical/RotatedLabel";
+import { AbroadPins, NamedRivers } from "@/components/map/place-context/GroundBeyond";
+import type { DrawnRiver } from "@/components/map/place-context/useGroundRivers";
 import { useNeighbourRings } from "@/components/map/place-context/useNeighbourRings";
 import { RANN_RINGS } from "@/components/map/rannGeometry";
 import { frameView, kmUnits, linePath, placed, ringsIn, ringsPath, type FrameView } from "@/lib/groundFrame";
 import { riverWidth } from "@/lib/mapPhysical";
-import type { GroundDeposit, GroundFrame } from "@/lib/placeGround";
+import type { GroundDeposit, GroundFrame, GroundPin } from "@/lib/placeGround";
 import { elevationStep, km } from "@/lib/placeGroundView";
 
 export type MapPin = { key: string; label: string; longitude: number; latitude: number };
-export type GroundMapProps = { frame: GroundFrame; pins: readonly MapPin[]; deposits: readonly GroundDeposit[]; radiusKm: number; title: string; description: string };
+export type GroundMarks = { abroad: readonly GroundPin[]; rivers: readonly DrawnRiver[] };
+export type GroundMapProps = { frame: GroundFrame; pins: readonly MapPin[]; deposits: readonly GroundDeposit[]; radiusKm: number; title: string; description: string; marks?: GroundMarks };
+
+const NO_MARKS: GroundMarks = { abroad: [], rivers: [] };
 
 export const PIN_PX = 5.5;
 export const DEPOSIT_PX = 3.2;
@@ -153,7 +158,7 @@ function SaltPattern({ id }: { id: string }) {
   );
 }
 
-export function GroundMap({ frame, pins, deposits, radiusKm, title, description }: GroundMapProps) {
+export function GroundMap({ frame, pins, deposits, radiusKm, title, description, marks = NO_MARKS }: GroundMapProps) {
   const ref = useRef<SVGSVGElement | null>(null);
   const view = useMemo(() => frameView(frame), [frame]);
   const k = useFitScale(ref, view.width);
@@ -174,10 +179,12 @@ export function GroundMap({ frame, pins, deposits, radiusKm, title, description 
       <SaltPattern id={`${id}-salt`} />
       <Land frame={frame} view={view} saltId={`${id}-salt`} />
       <Water frame={frame} view={view} />
+      <NamedRivers rivers={marks.rivers} frame={frame} view={view} />
       <Reach pins={pins} view={view} radiusKm={radiusKm} k={k} />
       <Deposits deposits={deposits} view={view} k={k} />
       <Labels frame={frame} view={view} />
       <Pins pins={pins} view={view} k={k} />
+      <AbroadPins pins={marks.abroad} view={view} k={k} />
     </svg>
   );
 }

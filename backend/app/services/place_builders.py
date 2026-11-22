@@ -35,7 +35,8 @@ class RegionStoryBuilder:
             return Built()
         async with self._tools.sessions() as session:
             loaded = await rivers_loaded(session)
-            offer = await region_offer(session, craft.slug) if loaded else None
+            texts = [claim.text for claim in statements.values()]
+            offer = await region_offer(session, craft.slug, texts=texts) if loaded else None
         if not loaded:
             self._note_unloaded()
             return Built()

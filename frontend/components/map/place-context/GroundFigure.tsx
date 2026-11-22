@@ -6,8 +6,9 @@ import { GroundCredits, GroundTables, groundValueCount, PlaceSource } from "@/co
 import { GroundFacts, type NotesFor } from "@/components/map/place-context/GroundFacts";
 import { GroundLegend } from "@/components/map/place-context/GroundLegend";
 import { GroundMap, type MapPin } from "@/components/map/place-context/GroundMap";
+import { useGroundRivers } from "@/components/map/place-context/useGroundRivers";
 import { TextLink } from "@/components/ui/TextLink";
-import type { CraftGround, GroundNote, GroundPlace } from "@/lib/placeGround";
+import type { CraftGround, GroundNote, GroundPin, GroundPlace } from "@/lib/placeGround";
 import { frameDek, listText, materialSentence, notesFor, placeLine, placesTitle } from "@/lib/placeGroundView";
 
 import "./placeContext.css";
@@ -19,6 +20,7 @@ export const MAP_KICKER = "Map";
 export type RenderUnit = (ref: string) => ReactNode;
 export type GroundFigureProps = { ground: CraftGround; notes?: readonly GroundNote[]; renderUnit?: RenderUnit };
 
+const NO_PINS: readonly GroundPin[] = [];
 const NUMBER_BADGE = "inline-grid h-6 w-6 shrink-0 place-items-center rounded-full bg-sunk font-ui text-label text-ink-1 [font-variant-numeric:lining-nums_tabular-nums]";
 
 export function mapPins(places: readonly GroundPlace[]): MapPin[] {
@@ -100,6 +102,8 @@ export function GroundFigure({ ground, notes = [], renderUnit }: GroundFigurePro
   const title = placesTitle(ground.places);
   const dek = frameDek(ground.radiusKm, ground.places.length);
   const values = groundValueCount(ground);
+  const abroad = ground.abroad ?? NO_PINS;
+  const rivers = useGroundRivers(ground.rivers, ground.frame);
   return (
     <figure className="kv-figure" data-testid="why-here" data-places={ground.places.length}>
       <figcaption className="grid gap-1.5">
@@ -109,12 +113,12 @@ export function GroundFigure({ ground, notes = [], renderUnit }: GroundFigurePro
       </figcaption>
       <div className="mt-5 grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start lg:gap-12">
         <div className="grid min-w-0 gap-4">
-          <GroundMap frame={ground.frame} pins={mapPins(ground.places)} deposits={ground.deposits} radiusKm={ground.radiusKm} title={title} description={dek} />
-          <GroundLegend frame={ground.frame} deposits={ground.deposits} classes={ground.classes} radiusKm={ground.radiusKm} placed={PLACED_LABEL} />
+          <GroundMap frame={ground.frame} pins={mapPins(ground.places)} deposits={ground.deposits} radiusKm={ground.radiusKm} title={title} description={dek} marks={{ abroad, rivers }} />
+          <GroundLegend frame={ground.frame} deposits={ground.deposits} classes={ground.classes} radiusKm={ground.radiusKm} placed={PLACED_LABEL} named={{ abroad: abroad.length > 0, rivers: rivers.length > 0 }} />
         </div>
         <Places ground={ground} notes={notesWriter(notes, renderUnit)} />
       </div>
-      <GroundCredits layers={ground.layers} datasets={ground.datasets} sources={ground.sources} />
+      <GroundCredits layers={ground.layers} datasets={ground.datasets} sources={ground.sources} marks={{ abroad, rivers: rivers.map((drawn) => drawn.river) }} />
       <details className="mt-2 min-w-0">
         <summary className="kv-link inline-flex min-h-target cursor-pointer items-center font-ui text-ui">{`All ${values} values`}</summary>
         <div className="overflow-x-auto pt-2">

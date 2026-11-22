@@ -1,5 +1,6 @@
 import dataclasses
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any
@@ -126,7 +127,7 @@ def offered(monkeypatch: pytest.MonkeyPatch) -> None:
     async def loaded(session: Any) -> bool:
         return True
 
-    async def offer(session: Any, craft_slug: str) -> RegionOffer:
+    async def offer(session: Any, craft_slug: str, *, texts: Sequence[str] = ()) -> RegionOffer:
         return kachchh_offer()
 
     monkeypatch.setattr(place_builders, "rivers_loaded", loaded)

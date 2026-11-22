@@ -5,7 +5,7 @@ import pytest
 
 from app.data.dataset_registry import REGISTRY_PATH, registry_rows
 from app.research.datasets import DATASET_BUILDS, DatasetEntry
-from app.services.dataset_registry import dataset_registry, entry_columns, registry_entries
+from app.services.dataset_registry import dataset_registry, entry_columns, registry_entries, synced_columns
 
 REPO = Path(__file__).resolve().parents[3]
 LAYERS = REPO / "frontend" / "public" / "layers"
@@ -31,7 +31,7 @@ RECORD_FIELDS = (
 
 def test_every_dataset_has_one_record_of_one_shape() -> None:
     entries = registry_entries(registry_rows())
-    assert len({entry.code for entry in entries}) == len(entries) == 13
+    assert len({entry.code for entry in entries}) == len(entries) == 16
     assert {entry.build for entry in entries} == set(DATASET_BUILDS) - {"contributed"}
     assert all(entry.landing_url and entry.crs and entry.version for entry in entries)
 
@@ -78,3 +78,11 @@ def test_a_row_s_columns_are_the_record_s_fields() -> None:
         columns["landingUrl"] == entry.landing_url and columns["nativeResolution"] == entry.native_resolution
     )
     assert set(columns) == set(RECORD_FIELDS) - {"code"} | {"url"}
+
+
+def test_a_value_each_run_sets_is_never_overwritten_by_the_registry() -> None:
+    chirps = synced_columns(dataset_registry()["CHIRPS_3_0"])
+    assert "period" not in chirps and chirps["edition"] == "3.0"
+    assert synced_columns(dataset_registry()["SOILGRIDS_2_0"]) == entry_columns(
+        dataset_registry()["SOILGRIDS_2_0"]
+    )

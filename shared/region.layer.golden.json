@@ -26,38 +26,38 @@
   "resolution": "250 m",
   "classes": [
     {
-      "min": 6.4,
-      "max": 7.08
+      "min": 6.673111,
+      "max": 6.88
     },
     {
-      "min": 7.08,
-      "max": 7.64
+      "min": 6.88,
+      "max": 7.09
     },
     {
-      "min": 7.64,
-      "max": 7.88
+      "min": 7.09,
+      "max": 7.28
     },
     {
-      "min": 7.88,
-      "max": 8.04
+      "min": 7.28,
+      "max": 7.31
     },
     {
-      "min": 8.04,
-      "max": 8.3
+      "min": 7.31,
+      "max": 7.350742
     }
   ],
   "values": {
-    "438": 7.8,
-    "441": 7.6,
-    "444": 6.4,
-    "447": 7.9,
-    "449": 8.1,
-    "455": 8.0,
-    "459": 7.2,
-    "460": 8.3,
-    "462": 6.9
+    "438": 7.281131,
+    "441": 7.350742,
+    "444": 6.673111,
+    "447": 7.04553,
+    "449": 7.281044,
+    "455": 7.343617,
+    "459": 6.947537,
+    "460": 7.281387,
+    "462": 6.780816
   },
-  "version": "7b36c96bd1605ed33ed7bb4714bff0192188cdb19d9fc1590b201d0f60ee95b8",
+  "version": "8f78f124df7b7af9153a46e7aec5f075c2e2c5c1f93d600a3c2f2508b6bde8d2",
   "boundary": {
     "caption": "External boundaries of India as depicted by Survey of India. District boundaries are indicative.",
     "dataset": {

@@ -44,7 +44,7 @@ flowchart LR
 | [0013](0013-review-fixes-quotes-licences-scope.md) | Quote strength, open licences, one craft scope and scoped embedding | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0014](0014-science-region-voice-media-contracts.md) | Contracts for process science, region profile, voice and media | · |
 | [0015](0015-science-engine.md) | Science engine: balancing, units, envelopes, the science seed and the process route | · |
-| [0016](0016-region-profile.md) | Region profile and map layers from the stored district statistics | · |
+| [0016](0016-region-profile.md) | Region profile and map layers from the stored district statistics | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
 | [0017](0017-voice-backend.md) | Voice backend: sessions, the custom LLM, the relay path and upkeep | [0025](0025-multilingual-voice.md) and [0140](0140-voice-and-listen-kept-true.md) |
 | [0018](0018-media-backend.md) | Media backend: stage illustrations and clips through the router, the job queue and S3 | · |
 | [0019](0019-craft-page-and-region-panel.md) | Craft page process timeline, region panel and map choropleths | [0092](0092-design-system.md) |
@@ -55,7 +55,7 @@ flowchart LR
 | [0024](0024-admin-role.md) | Admin role | · |
 | [0025](0025-multilingual-voice.md) | Voice in every answer language | · |
 | [0026](0026-yahoo-sign-in.md) | Yahoo sign-in (and Microsoft, off): DR's OpenID Connect module, ported | · |
-| [0027](0027-geo-etl-state-gaps.md) | Geo ETL: district shapes are polygons only, and a part that loses a state fails | · |
+| [0027](0027-geo-etl-state-gaps.md) | Geo ETL: district shapes are polygons only, and a part that loses a state fails | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
 | [0028](0028-first-password-provider-proof.md) | A first password needs a fresh provider proof: DR's rule, ported | · |
 | [0029](0029-e2e-production-run.md) | E2E against production, on dispatch, as one Researcher account | · |
 
@@ -76,14 +76,14 @@ flowchart LR
 | [0040](0040-no-connection-held-across-a-model-call.md) | No connection held across a model call | · |
 | [0041](0041-one-gemini-content-per-embedded-text.md) | One Gemini content per embedded text | · |
 | [0042](0042-phase-b-contract.md) | Phase B contract: place, matter and the expert panel | · |
-| [0043](0043-river-lines-tracer-and-monthly-rain.md) | River lines, the tracer and monthly rainfall | · |
-| [0044](0044-region-story-and-map-layers.md) | Region story and map layers | · |
+| [0043](0043-river-lines-tracer-and-monthly-rain.md) | River lines, the tracer and monthly rainfall | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
+| [0044](0044-region-story-and-map-layers.md) | Region story and map layers | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
 | [0045](0045-reactions-materials-molecules.md) | Reaction player, material cards and 3D molecules | · |
 | [0046](0046-expert-panel.md) | The expert panel | [0093](0093-no-caps-for-now.md) |
 | [0047](0047-seasons-and-supply.md) | Seasons and supply | · |
-| [0048](0048-place-renderers.md) | Place renderers: region story, map layer, seasons and supply | [0092](0092-design-system.md) |
+| [0048](0048-place-renderers.md) | Place renderers: region story, map layer, seasons and supply | [0092](0092-design-system.md) and [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
 | [0049](0049-matter-and-expert-renderers.md) | Matter and expert renderers | · |
-| [0050](0050-phase-b-review-fixes.md) | Phase B review fixes | · |
+| [0050](0050-phase-b-review-fixes.md) | Phase B review fixes | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
 | [0051](0051-curation-tooling.md) | Curation tooling: the dossier model, fetch, verify and check | · |
 | [0052](0052-opus-composes-at-medium-effort.md) | Opus 5.5 composes answers, at medium effort | · |
 | [0053](0053-curated-dossier-import.md) | Curated dossiers are imported on deploy and served as one craft page | [0142](0142-curated-crafts-read-only-curated-rows.md) |
@@ -98,7 +98,7 @@ flowchart LR
 | [0062](0062-phase-d-contract.md) | Phase D contract: learning blocks, versions, alerts, lessons, exports and the map | [0067](0067-lessons-and-exports.md) |
 | [0063](0063-follow-ups-versions-and-alerts.md) | Follow-ups that build, version history, saved explainers and alerts | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0064](0064-quiz-compare-and-shared-science.md) | Quiz, compare and the shared-science explorer | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
-| [0065](0065-climate-risk-and-ask-the-map.md) | Climate and risk, and ask the map | · |
+| [0065](0065-climate-risk-and-ask-the-map.md) | Climate and risk, and ask the map | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
 | [0066](0066-local-measures-and-market-gi.md) | Local measures, and market and GI | [0070](0070-phase-d-review-fixes.md) |
 | [0067](0067-lessons-and-exports.md) | Lesson packs, the explainer PDF and citation export | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0068](0068-learning-block-renderers.md) | Learning block renderers | · |
@@ -191,6 +191,7 @@ flowchart LR
 | [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | · |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
 | [0150](0150-mcp-activity-and-box-logs.md) | Each MCP call keeps its client and its reason for 180 days and its count for good, and the box ships its logs to CloudWatch | · |
+| [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) | Rivers are named from Wikidata then OpenStreetMap, groundwater comes from the India data portal, a region place shows its headline values, and the geo ETL fails every gap it can see | · |
 
 ## How this document is kept true
 

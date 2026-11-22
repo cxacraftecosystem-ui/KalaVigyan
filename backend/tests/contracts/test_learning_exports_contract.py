@@ -129,11 +129,20 @@ def test_a_tapped_district_lists_its_cited_crafts_and_the_land_s_stored_story() 
     phase_b_story = golden_json("explainer.phase-b.golden.json")["sections"][0]["blocks"][0]
     assert story.kind == "region_story" and story.reuse is not None
     assert [s.sentence.text for s in story.steps] == [s["sentence"]["text"] for s in phase_b_story["steps"]]
-    assert [f.facet for f in body.land.facets] == ["SOIL", "CLIMATE", "TERRAIN"]
+    assert [f.facet for f in body.land.facets] == ["SOIL", "CLIMATE", "WATER", "TERRAIN"]
+    shown = {(v.dataset_code, v.variable, v.stat): v.value for f in body.land.facets for v in f.values}
+    card = {
+        (v["datasetCode"], v["variable"], v["stat"]): v["value"] for f in place["facets"] for v in f["values"]
+    }
+    assert shown.items() <= card.items()
+    assert shown[("SOILGRIDS_2_0", "phh2o", "DISTRICT_MEAN")] == 7.281044
     assert [d.code for d in body.datasets] == [
         "DR_DISTRICT_SHAPES",
         "CHELSA_2_1_1981_2010",
+        "CHIRPS_3_0",
         "COPERNICUS_DEM_GLO90",
+        "GHCN_CAMS_T2M",
+        "HYDRORIVERS_1_0",
         "SOILGRIDS_2_0",
     ]
     assert body.boundary_caption == BOUNDARY_CAPTION

@@ -8,9 +8,10 @@ import numpy as np
 import pandas as pd
 import requests
 
-from geo_etl import raster
+from geo_etl import raster, remote
 from geo_etl.catalog import CHIRPS, CLIMATE_FIRST_YEAR
-from geo_etl.layers import USER_AGENT, Measured, Options, Result, failure, with_retries
+from geo_etl.layers import Measured, Options, Result, failure
+from geo_etl.remote import ABSENT, RETRY_ON, answered, with_retries
 from geo_etl.rows import Rows, pick
 from geo_etl.trend import AnnualSeries, add_trend_rows
 
@@ -18,9 +19,6 @@ BASE = "https://data.chc.ucsb.edu/products/CHIRPS/v3.0"
 ANNUAL_DIR = f"{BASE}/annual/global/tifs/"
 ANNUAL_FILE = re.compile(r"chirps-v3\.0\.(\d{4})\.tif(?![\w.])")
 LOOKBACK_YEARS = 4
-ABSENT = (404, 410)
-PROBE_TIMEOUT_S = (10, 60)
-RETRY_ON = (requests.RequestException,)
 MONSOON = (6, 7, 8, 9)
 METHOD = (
     "exactextract coverage weight area_spherical_km2 on the native 0.05 degree grid; negative values treated as "
@@ -68,23 +66,20 @@ def listed_year(candidates: list[int]) -> int:
     return max(listed)
 
 
-def answered(method: str, url: str) -> requests.Response:
-    response = requests.request(method, url, timeout=PROBE_TIMEOUT_S, headers={"User-Agent": USER_AGENT})
-    if response.status_code not in ABSENT:
-        response.raise_for_status()
-    return response
-
-
 def district_means(url: str, districts: gpd.GeoDataFrame, bounds, *, measured: Measured) -> pd.DataFrame:
     grid = raster.read([url], bounds, valid_min=0.0, dtype="float32")
     if grid is None:
-        raise RuntimeError(f"{url} not reachable")
+        raise RuntimeError(f"{url} not found")
     table = measured.add(raster.zonal(grid, districts, raster.continuous_ops(grid)))
     return table.set_index("districtLgd")
 
 
+def last_year(options: Options) -> int:
+    return latest_year() if options.chirps_last_year is None else options.chirps_last_year
+
+
 def run(districts: gpd.GeoDataFrame, options: Options) -> Result:
-    years = run_years(options.climate_first_year, latest_year())
+    years = run_years(options.climate_first_year, last_year(options))
     period = f"{years[0]}-{years[-1]}"
     reads = Reads(districts)
     rows = Rows(dataclasses.replace(CHIRPS, period=period), METHOD)
@@ -120,14 +115,18 @@ class Reads:
     districts: gpd.GeoDataFrame
     measured: Measured = dataclasses.field(default_factory=Measured)
     failures: list[dict] = dataclasses.field(default_factory=list)
+    unreachable: bool = False
 
     def each[K](self, urls: dict[K, str], step: str) -> dict[K, pd.DataFrame]:
         bounds = raster.bounds_in(self.districts, "EPSG:4326", 0.1)
         tables: dict[K, pd.DataFrame] = {}
         for key, url in urls.items():
+            if self.unreachable:
+                break
             try:
                 tables[key] = district_means(url, self.districts, bounds, measured=self.measured)
             except Exception as error:
+                self.unreachable = isinstance(error, remote.Unreachable)
                 self.failures.append(failure(self.districts, f"{step} {step_key(key)}", error))
         return tables
 

@@ -536,7 +536,8 @@ boundaryCaption}`, read with no model call:
 
 Fixture: `shared/map.district-crafts.golden.json`: Kachchh (449), Kutch Ajrakh placed by the GI
 journal, the phase B region story placed from its basin piece, and the region golden's soil,
-climate and terrain values.
+climate, water and terrain values (real Geo ETL rows, `backend/tests/geo/geo_district_env_extract.json`;
+`backend/tests/geo/test_district_view.py` rebuilds the file byte for byte).
 
 **As built (decision 0065, `api/routes/map_districts.py`, `services/district_crafts.py`,
 `geo/district_view.py`).** Read on the request's one session, no model, HTTP or bucket call. The

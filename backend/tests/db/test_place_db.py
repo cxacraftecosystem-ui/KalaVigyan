@@ -17,9 +17,9 @@ from app.models import (
     KnowledgePiece as PieceRow,
     RiverBasin,
     RiverReach,
+    RiverReachDistrict,
 )
 from app.research.blocks_place import DistrictRef
-from app.research.datasets import DatasetRef
 from app.services import knowledge_view
 from app.services.answer_events import cited_claims
 from app.services.piece_lookup import PieceAsk
@@ -27,7 +27,6 @@ from app.services.piece_store import BuiltSection
 from app.services.place_offers import region_offer, section_map_layer
 from app.services.region_story import region_story_block, story_statements
 
-from ..contracts.phase_b_golden import phase_b_blocks
 from ..geo.golden_region import GI_JOURNAL, KACHCHH, TEMPERATURE_NORMAL, golden_datasets
 from .test_knowledge_pieces_db import AJRAKH, QUESTION, WATER_CLAIMS, answer_row, prose_of, store_for
 
@@ -58,13 +57,8 @@ async def session() -> AsyncIterator[AsyncSession]:
             await transaction.rollback()
 
 
-def hydrorivers_row() -> DatasetRef:
-    rows = phase_b_blocks()["s1.b1"]["datasets"]
-    return DatasetRef.model_validate(next(row for row in rows if row["code"] == HYDRORIVERS))
-
-
 async def store_datasets(session: AsyncSession) -> dict[str, uuid.UUID]:
-    records = [*golden_datasets().values(), hydrorivers_row()]
+    records = list(golden_datasets().values())
     ids = {record.code: uuid.uuid4() for record in records}
     session.add_all(
         EnvDataset(
@@ -115,6 +109,11 @@ async def store_rivers(session: AsyncSession, dataset_id: uuid.UUID) -> None:
             reach(OUTLET, 0, OUTLET, "69.70 23.25, 69.90 23.15", (410.0, 2, 1.2)),
             reach(COAST, 0, COAST, "70.10 23.30, 70.20 23.25", (900.0, 3, 0.6)),
         ]
+    )
+    await session.flush()
+    session.add_all(
+        RiverReachDistrict(hyrivId=hyriv_id, districtLgd=KACHCHH, entry=0.0)
+        for hyriv_id in (HEAD, MIDDLE, SIDE, OUTLET, COAST)
     )
 
 

@@ -22,15 +22,15 @@ import { project } from "@/components/map/projection";
 import { decodeShapes, type DistrictShape, type ShapesFile } from "@/components/map/shapeGeometry";
 import { ApiError } from "@/lib/api";
 import { BLOCK_SHAPES } from "@/lib/explainerContract";
-import { HYDRORIVERS_DATASET_CODE, RIVER_BASIN_PATH, RIVER_REACHES_OBJECT, type MapLayerBlock, type RegionStoryBlock, type SeasonsBlock, type SupplyMapBlock } from "@/lib/explainerPlace";
+import type { MapLayerBlock, RegionStoryBlock, SeasonsBlock, SupplyMapBlock } from "@/lib/explainerPlace";
 import { blockCitations, blockSentences } from "@/lib/explainerView";
 import { isGone } from "@/lib/placeView";
-import { BOUNDARY_DATASET_CODE, type RegionDataset } from "@/lib/regionContract";
-import { ALL_PASSED, districtEntries, flowThresholds, NOT_YET, passedFraction, playingStep, stepBadges, stretchOf, type Course } from "@/lib/regionStory";
-import { cumulativeLengths, framedView, insideRings, joinLines, orientDownstream, pointAlong, type Point } from "@/lib/riverGeometry";
-import { riverBasinOf } from "@/lib/riverTopology";
+import type { RegionDataset } from "@/lib/regionContract";
+import { ALL_PASSED, districtEntries, flowThresholds, NOT_YET, passedFraction, playingStep, riverCourse, stepBadges, stretchOf, type Course, type CourseSpan } from "@/lib/regionStory";
+import { cumulativeLengths, framedView, joinLines, lineLength, orientDownstream, pointAlong, type Point } from "@/lib/riverGeometry";
+import { riverBasinOf, type RiverBasin } from "@/lib/riverTopology";
 import { annualRain, monthsText, rainfallFinding, rainText, wettestMonth } from "@/lib/seasonsView";
-import { parseShape, ShapeError } from "@/lib/shape";
+import { parseShape } from "@/lib/shape";
 import { supplyLayout } from "@/lib/supplyView";
 
 import { attribute, withApp, withReading } from "./explainerRender";
@@ -38,7 +38,7 @@ import { eagerModules } from "./moduleGraph";
 
 const ROOT = join(__dirname, "..", "..");
 const read = (...parts: string[]) => readFileSync(join(ROOT, ...parts), "utf8");
-const FIXTURE = JSON.parse(read("shared", "explainer.phase-b.golden.json")) as { sections: { blocks: { id: string }[] }[] };
+const FIXTURE = JSON.parse(read("shared", "explainer.phase-b.golden.json")) as { placeholders: { mainRiv: number }; sections: { blocks: { id: string }[] }[] };
 const KACHCHH = 449;
 const INDIA_BOX = { minLongitude: 68.206, maxLongitude: 97.394, minLatitude: 6.756, maxLatitude: 37.082 };
 
@@ -57,28 +57,14 @@ const layerBlock = (): MapLayerBlock => parseShape(BLOCK_SHAPES.map_layer, fixtu
 const seasons = (): SeasonsBlock => parseShape(BLOCK_SHAPES.seasons, fixtureBlock("s3.b1"));
 const supply = (): SupplyMapBlock => parseShape(BLOCK_SHAPES.supply_map, fixtureBlock("s6.b1"));
 
-function topology() {
-  return {
-    type: "Topology",
-    transform: { scale: [0.01, 0.01], translate: [69.5, 23.0] },
-    objects: {
-      reaches: {
-        type: "GeometryCollection",
-        geometries: [
-          { type: "LineString", id: 1, arcs: [0], properties: { nextDown: 2, ordStra: 2 } },
-          { type: "LineString", id: 2, arcs: [1], properties: { nextDown: 3, ordStra: 3 } },
-          { type: "LineString", id: 3, arcs: [-3], properties: { nextDown: 0, ordStra: 3 } },
-          { type: "LineString", id: 4, arcs: [3], properties: { nextDown: 2, ordStra: 1 } }
-        ]
-      }
-    },
-    arcs: [
-      [[30, 60], [-5, -10]],
-      [[25, 50], [-5, -10]],
-      [[10, 20], [10, 20]],
-      [[40, 45], [-15, 5]]
-    ]
-  };
+type GoldenTopology = { objects: { reaches: { geometries: { properties: { districts?: unknown } }[] } } };
+const goldenTopology = (): GoldenTopology => JSON.parse(read("shared", "river.topology.golden.json")) as GoldenTopology;
+const basin = (): RiverBasin => riverBasinOf(goldenTopology(), FIXTURE.placeholders.mainRiv);
+
+function basinWithoutDistricts(): RiverBasin {
+  const topology = goldenTopology();
+  for (const geometry of topology.objects.reaches.geometries) delete geometry.properties.districts;
+  return riverBasinOf(topology, FIXTURE.placeholders.mainRiv);
 }
 
 let shapesCache: DistrictShape[] | null = null;
@@ -87,8 +73,8 @@ function shapes(): DistrictShape[] {
   return shapesCache;
 }
 
-function storyGeometryOfFixture(): StoryGeometry {
-  const geometry = storyGeometry(placedStory(), shapes(), riverBasinOf(topology(), 3));
+function storyGeometryOfFixture(drawnFrom: RiverBasin = basin()): StoryGeometry {
+  const geometry = storyGeometry(placedStory(), shapes(), drawnFrom);
   if (!geometry) throw new Error("the fixture story draws");
   return geometry;
 }
@@ -105,8 +91,7 @@ function focusOf(flow: RiverFlow, geometry: StoryGeometry, district: number | nu
   return { district, stretch, reached: geometry.fractions.map((fraction) => fraction <= flow.passed), onStep: () => undefined };
 }
 
-function stage(flow: RiverFlow, focus?: StageFocus): string {
-  const geometry = storyGeometryOfFixture();
+function stage(flow: RiverFlow, focus?: StageFocus, geometry = storyGeometryOfFixture()): string {
   return renderToStaticMarkup(
     createElement(RiverStage, {
       geometry,
@@ -130,38 +115,6 @@ function sourcesHolding(folder: string, words: string): string[] {
     .filter((name) => readFileSync(join(folder, name), "utf8").includes(words));
 }
 
-test("the basin topology decodes quantized arcs, reversed arcs and joined arcs to the coordinates worked out by hand", () => {
-  const basin = riverBasinOf(topology(), 3);
-  const line = (id: number) => basin.reaches.get(id)?.line.map(([x, y]) => [Number(x.toFixed(6)), Number(y.toFixed(6))]);
-  expect(line(1)).toEqual([[69.8, 23.6], [69.75, 23.5]]);
-  expect(line(3)).toEqual([[69.7, 23.4], [69.6, 23.2]]);
-  expect(basin.reaches.get(4)).toMatchObject({ nextDown: 2, ordStra: 1 });
-  const joined = topology();
-  joined.objects.reaches.geometries[0].arcs = [0, 1];
-  expect(riverBasinOf(joined, 3).reaches.get(1)?.line.map(([x, y]) => [Number(x.toFixed(6)), Number(y.toFixed(6))])).toEqual([[69.8, 23.6], [69.75, 23.5], [69.7, 23.4]]);
-  const { type, objects } = topology();
-  const plain = { type, objects, arcs: [[[69.8, 23.6], [69.75, 23.5]], [[69.75, 23.5], [69.7, 23.4]], [[69.6, 23.2], [69.7, 23.4]], [[69.9, 23.45], [69.75, 23.5]]] };
-  expect(riverBasinOf(plain, 3).reaches.get(3)?.line).toEqual([[69.7, 23.4], [69.6, 23.2]]);
-});
-
-test("a basin off the river contract is refused", () => {
-  expect(() => riverBasinOf({ ...topology(), extra: true }, 3)).toThrow(ShapeError);
-  expect(() => riverBasinOf(topology(), 2)).toThrow("its outlet reach 2");
-  const missingArc = topology();
-  missingArc.objects.reaches.geometries[0].arcs = [9];
-  expect(() => riverBasinOf(missingArc, 3)).toThrow("arc indexes below 4");
-  const offEarth = topology();
-  offEarth.transform.translate = [200, 23];
-  expect(() => riverBasinOf(offEarth, 3)).toThrow(ShapeError);
-  const twice = topology();
-  twice.objects.reaches.geometries[1].id = 1;
-  expect(() => riverBasinOf(twice, 3)).toThrow("one geometry per reach");
-  expect(RIVER_REACHES_OBJECT).toBe(backendScalar("research/rivers.py", "RIVER_REACHES_OBJECT"));
-  expect(HYDRORIVERS_DATASET_CODE).toBe(backendScalar("research/rivers.py", "HYDRORIVERS_DATASET_CODE"));
-  expect(`/api${RIVER_BASIN_PATH(3)}`).toBe(backendScalar("research/rivers.py", "RIVER_BASIN_ROUTE").replace("{mainRiv}", "3"));
-  expect(BOUNDARY_DATASET_CODE).toBe(backendScalar("research/datasets.py", "BOUNDARY_DATASET_CODE"));
-});
-
 test("reaches are turned to flow downstream, joined once at each junction and measured along the path", () => {
   const oriented = orientDownstream([[[0, 0], [1, 0]], [[2, 0], [1, 0]], [[2, 0], [3, 0]]]);
   expect(oriented).toEqual([[[0, 0], [1, 0]], [[1, 0], [2, 0]], [[2, 0], [3, 0]]]);
@@ -174,24 +127,39 @@ test("reaches are turned to flow downstream, joined once at each junction and me
   expect(pointAlong(points, [0, 1, 2, 3], 2)).toEqual([3, 0]);
 });
 
-test("a point inside a hole is outside its district, and the view keeps the story's 4:3 frame and minimum span", () => {
-  const rings: Point[][] = [
-    [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]],
-    [[4, 4], [6, 4], [6, 6], [4, 6], [4, 4]]
-  ];
-  expect([insideRings([2, 2], rings), insideRings([5, 5], rings), insideRings([11, 5], rings)]).toEqual([true, false, false]);
+test("each reach of a course starts where the reaches before it and the gaps between them end", () => {
+  const lines: Record<number, Point[]> = { 1: [[0, 0], [3, 4]], 2: [[6, 4], [3, 4]], 3: [[3, 8], [3, 10]] };
+  const reachOf = (id: number) => ({ line: lines[id], districts: id === 3 ? [{ lgd: 7, entry: 0.5 }] : null });
+  expect(lineLength([[0, 0], [3, 4], [3, 6]])).toBe(7);
+  expect(riverCourse([1, 2], reachOf).spans.map(({ start, length }) => [start, length])).toEqual([[0, 5], [5, 3]]);
+  const gapped = riverCourse([1, 3], reachOf);
+  expect(gapped.spans.map(({ start, length }) => [start, length])).toEqual([[0, 5], [9, 2]]);
+  expect(gapped.lengths[gapped.lengths.length - 1]).toBe(11);
+  expect([...districtEntries(gapped, [7])]).toEqual([[7, 10 / 11]]);
+});
+
+test("the view keeps the story's 4:3 frame and minimum span", () => {
   expect(framedView({ minX: 0, minY: 0, maxX: 40, maxY: 10 }, { aspect: 4 / 3, minSpan: 20, padding: 0.1 })).toEqual({ x: -4, y: -13, width: 48, height: 36 });
   expect(framedView({ minX: 0, minY: 0, maxX: 2, maxY: 1 }, { aspect: 4 / 3, minSpan: 120, padding: 0.1 })).toEqual({ x: -59, y: -44.5, width: 120, height: 90 });
 });
 
-test("districts light in the server's path order, each step is reached when the water enters its district, and badges group steps", () => {
+test("districts light where the basin file says the water enters them, in the server's path order, and badges group steps", () => {
   const lines: Point[][] = [[[0, 0], [1, 0]], [[1, 0], [2, 0]], [[2, 0], [3, 0]]];
-  const course: Course = { lines, points: [[0, 0], [1, 0], [2, 0], [3, 0]], lengths: [0, 1, 2, 3] };
-  const box = (from: number, to: number): Point[][] => [[[from, -1], [to, -1], [to, 1], [from, 1], [from, -1]]];
-  const rings = new Map([[1, box(-0.5, 1.5)], [2, box(1.5, 3.5)]]);
-  expect([...districtEntries(course, [1, 2, 7], rings)]).toEqual([[1, 0], [2, 2 / 3], [7, 2 / 3]]);
-  expect([...districtEntries(course, [2, 1], rings)]).toEqual([[2, 2 / 3], [1, 2 / 3]]);
-  expect(stretchOf(course, box(1.5, 3.5))).toEqual([lines[1], lines[2]]);
+  const course = (districts: CourseSpan["districts"][]): Course => ({
+    lines,
+    points: [[0, 0], [1, 0], [2, 0], [3, 0]],
+    lengths: [0, 1, 2, 3],
+    spans: districts.map((found, at) => ({ start: at, length: 1, districts: found }))
+  });
+  const known = course([[{ lgd: 1, entry: 0 }], [{ lgd: 1, entry: 0 }, { lgd: 2, entry: 0.5 }], [{ lgd: 2, entry: 0 }]]);
+  expect([...districtEntries(known, [1, 2, 7])]).toEqual([[1, 0], [2, 0.5], [7, 0.5]]);
+  expect([...districtEntries(known, [2, 1])]).toEqual([[2, 0.5], [1, 0.5]]);
+  expect(stretchOf(known, 2)).toEqual([lines[1], lines[2]]);
+  expect(stretchOf(known, 1)).toEqual([lines[0], lines[1]]);
+  expect(stretchOf(known, 7)).toEqual([]);
+  const unknown = course([null, null, null]);
+  expect([...districtEntries(unknown, [1, 2])]).toEqual([[1, 0], [2, 0]]);
+  expect(stretchOf(unknown, 2)).toEqual([]);
   expect(flowThresholds(new Map([[1, 0], [2, 0.5]]), [0.5, 1])).toEqual([0, 0.5, 1]);
   expect([passedFraction([0, 0.5, 1], -0.1), passedFraction([0, 0.5, 1], 0.4), passedFraction([0, 0.5, 1], 1)]).toEqual([NOT_YET, 0, 1]);
   expect([playingStep([0, 0.5, 1, 0], 0.6), playingStep([0.5, 0.5], 0.5), playingStep([0, 0.5], 1), playingStep([0, 0.5], NOT_YET)]).toEqual([1, 0, null, null]);
@@ -202,11 +170,12 @@ test("districts light in the server's path order, each step is reached when the 
   expect(stepBadges(mixed)).toEqual([{ districtLgd: KACHCHH, label: "1, 3", first: 0 }, { districtLgd: 7, label: "2", first: 1 }]);
 });
 
-test("the Kutch Ajrakh story is drawn from its basin and the real Kachchh polygon, framed 4:3 around them", () => {
+test("the Kutch Ajrakh story is drawn from the geo ETL's basin file and the real Kachchh polygon, framed 4:3 around them", () => {
   const geometry = storyGeometryOfFixture();
-  const source = project(69.8, 23.6);
-  expect(geometry.river?.course.points[0][0]).toBeCloseTo(source.x, 6);
-  expect(geometry.river?.course.points[0][1]).toBeCloseTo(source.y, 6);
+  const [source, outlet] = [project(69.6, 23.45), project(69.92, 23.2)];
+  const points = geometry.river?.course.points ?? [];
+  const ends = [points[0], points.at(-1)].flatMap((point) => point ?? [Number.NaN, Number.NaN]);
+  [source.x, source.y, outlet.x, outlet.y].forEach((value, at) => expect(ends[at]).toBeCloseTo(value, 3));
   expect(geometry.river?.course.lines).toHaveLength(3);
   expect(geometry.river?.tributaries.map((line) => line.order)).toEqual([1]);
   expect([...geometry.entries]).toEqual([[KACHCHH, 0]]);
@@ -215,7 +184,7 @@ test("the Kutch Ajrakh story is drawn from its basin and the real Kachchh polygo
   expect(geometry.badges.map(({ districtLgd, label }) => [districtLgd, label])).toEqual([[KACHCHH, "1–4"]]);
   expect(geometry.view.width / geometry.view.height).toBeCloseTo(4 / 3, 9);
   expect(geometry.context.some((shape) => shape.lgd === KACHCHH)).toBe(true);
-  expect(geometry.river?.stretches.get(KACHCHH)).toMatch(/^M/);
+  expect(geometry.river?.stretches.get(KACHCHH)?.match(/M/g)).toHaveLength(3);
 });
 
 test("the story rests complete, with the full river, every reached district and every step; the flow plays only when asked", () => {
@@ -251,7 +220,7 @@ test("the story rests complete, with the full river, every reached district and 
 });
 
 test("a step the server could not place in a district its sentence names is numbered, with no district and no badge", () => {
-  const unplaced = storyGeometry(story(), shapes(), riverBasinOf(topology(), 3));
+  const unplaced = storyGeometry(story(), shapes(), basin());
   expect(unplaced?.badges).toEqual([]);
   const html = withReading(createElement(StorySteps, { block: story(), focus: { district: null, stretch: false, reached: [true, true, true, true], onStep: () => undefined }, step: null }));
   expect(html.replace(/<[^>]+>/g, " ")).toMatch(/Step 1[\s\S]*Step 2[\s\S]*Step 3[\s\S]*Step 4/);
@@ -265,6 +234,15 @@ test("a chosen step outlines its district and draws its stretch of the river", (
   expect(chosen).toContain('data-testid="river-stretch"');
   expect(chosen).toContain('data-testid="district-outlines"');
   expect(stage(still())).not.toContain('data-testid="river-stretch"');
+});
+
+test("a basin file that does not list each reach's districts draws no stretch and lights every district where the water starts", () => {
+  const geometry = storyGeometryOfFixture(basinWithoutDistricts());
+  expect([...geometry.entries]).toEqual([[KACHCHH, 0]]);
+  expect(geometry.river?.stretches.get(KACHCHH)).toBe("");
+  const chosen = stage(still(), focusOf(still(), geometry, KACHCHH, true), geometry);
+  expect(chosen).toContain('data-testid="district-outlines"');
+  expect(chosen).not.toContain('data-testid="river-stretch"');
 });
 
 test("every map carries the boundary caption word for word from the server, and the client holds no copy of it", () => {

@@ -285,7 +285,8 @@ construct, and the builder that made it adds nothing.
   a step names its district only when its sentence or quotes name it (`blocks.named_in`, decision
   0050); the
   river's districts lead `districts` in path order; a river `name` is stated by a step sentence or
-  its quote; the builder checks the trace against the stored reaches (`rivers.trace_problems`).
+  its quote, or by a river names dataset row the block cites (`rivers.RIVER_NAME_DATASET_CODES`,
+  decision 0153); the builder checks the trace against the stored reaches (`rivers.trace_problems`).
   Cites the steps' claims and the dataset rows. **Piece:** cross-craft (`craftId` null), the
   section's facet, topic `<facet namespace>:basin-<mainRiv>`, else `<namespace>:lgd-<code>` for
   each district (`knowledge_pieces.piece_slot`).
@@ -533,9 +534,12 @@ route's district places), gets neither.
 
 - **`region_story`** (`GEOGRAPHY`, 20 s). Nothing until the river lines are loaded
   (`river_store.rivers_loaded`; logged once per answer). One short session reads the offer
-  (`place_offers.region_offer`): the craft's districts; at most 3 rivers crossing them
-  (`rivers_crossing`, by the crossing reach's Strahler order, then mean discharge, then upstream
-  area), each traced with the 0043 tracer; district names from the register; the registry layers
+  (`place_offers.region_offer`): the craft's districts; at most 3 rivers crossing them, first those
+  of the river names datasets whose names the statements name (`stated_crossings`, decision 0153),
+  then by the crossing reach's Strahler order, then mean discharge, then upstream area
+  (`rivers_crossing`, over `RiverReachDistrict`), each traced with the 0043 tracer, which climbs a
+  named river's own reaches first, and named by the reach it is traced through
+  (`app/data/river_names`); district names from the register; the registry layers
   of the water, climate, soil, geology and terrain facets with a value in a craft district; their
   dataset rows. Then one plan-model call (`composer/region_story`, every river, district, layer
   and statement in its own untrusted block) answers refs: a river or `none`, at most 8 steps
@@ -545,8 +549,9 @@ route's district places), gets neither.
   or the step's sentence and quotes do not name leaves the step unplaced (shown as "Step n" with no
   map focus, decision 0050), an unoffered layer or one whose dataset row is missing is left out.
   `datasets` is `DR_DISTRICT_SHAPES` (no row, no story), `HYDRORIVERS_1_0` with a river (no row,
-  no river) and each listed layer's row. `river.name` is always null: HydroRIVERS names no river
-  (decision 0044). No chosen step is no story.
+  no river), the name's `WIKIDATA_RIVER_NAMES` or `OSM_RIVER_NAMES` row with a named river (no
+  row, no name) and each listed layer's row. `river.name` is that name as its dataset states it,
+  or null for a river neither dataset names (decision 0153). No chosen step is no story.
 - **`map_layer`** (`GEOLOGY`, `CLIMATE`, 8 s, no model): the facet's registry layers
   (`geo/section_layers`: soil, geology and terrain for `GEOLOGY`, climate for `CLIMATE`) in
   registry order, those whose subject words (`LAYER_SUBJECTS`, whole words) a section sentence
@@ -668,8 +673,11 @@ The place kinds (decision 0048) enter through `components/answer/place/placeRend
 `region_story` and `map_layer` load their map code on demand (`lazyBlock`), `seasons` and
 `supply_map` are drawn at once and load a pin map only for a placed origin. A region story draws
 the river from `GET /api/rivers/{mainRiv}` (`lib/riverTopology.ts`) and the districts from the
-district shapes, lights each district as the water reaches it in `river.districtLgds` order, and
-outlines a step's district and draws its stretch when the step is chosen; under either
+district shapes, lights each district as the water reaches it in `river.districtLgds` order, at
+the first path reach whose basin-file `districts` list it plus its entry along that reach, and
+outlines a step's district and draws its stretch, the path reaches listing it, when the step is
+chosen (a basin file without `districts` draws no stretch and lights each district at the
+source; decision 0153); under either
 reduced-motion switch the full course, every district and every step show at once. A layer the
 reader picks for the story redraws the districts on the map in that layer's values, classed by
 inclusive quantiles over the districts drawn (`lib/layerClasses.viewClasses`, the server's
@@ -678,7 +686,8 @@ district's reading listed; the story map and a zoomed district map carry an Indi
 (`components/map/IndiaLocator.tsx`) that marks their districts, and the story's frame, on the
 India outline and district shapes the client already holds. Every map
 carries the block's `boundaryCaption` (the supply pin map the client's identical caption); the
-river cites its `HYDRORIVERS_1_0` row and a layer its route's dataset row. A map layer the layer
+river cites its `HYDRORIVERS_1_0` row (and a named river its name's row) and a layer its route's
+dataset row. A map layer the layer
 route answers 404 for is not drawn. `explainerView.blockSentences` and `blockCitations` read the
 steps', rows' and links' sentences, so their citations join the answer's one numbering.
 
@@ -1311,8 +1320,13 @@ The routes around them (versions, saved explainers, lessons, exports, the explor
   rows (`NORMAL` over the trend period, and the stats `TREND_PER_DECADE` and `TREND_P_VALUE` it
   adds to `ENV_STATS` with its migration), the dataset row's period the trend's; the temperature
   dataset is an open one the lane names in `docs/DATA_SOURCES.md`. `GroundwaterValue {district,
-  datasetCode, variable, period, value?, valueText?, unit?, resolution}` is shown only where an
-  open groundwater dataset is loaded (a unit exactly with a number). `meaning`: fact-level claims
+  datasetCode, variable, period, value?, valueText?, unit?, resolution}` is a district's stored
+  groundwater figure (`app.geo.groundwater`): `annual_groundwater_recharge`,
+  `annual_extractable_groundwater` and `annual_groundwater_extraction` (`TOTAL`, ham) and
+  `stage_of_groundwater_extraction` (`SHARE`, %) of `GROUNDWATER_DATASETS` (today
+  `OGD_GW_RESOURCES_RAJASTHAN_2023`, Rajasthan as on 31 March 2023, decision 0153) over the
+  dataset row's period, a unit exactly with a number; a figure in another unit or period is not
+  shown (logged). `meaning`: fact-level claims
   of the craft about water, rainfall, heat or groundwater that say what the values mean for the
   craft. Model: which offered claims are meaning sentences. Rules: a trend or a groundwater value;
   each district's trend of a variable once; `datasets` are exactly the rows the values name, once
@@ -1328,14 +1342,16 @@ it is never a piece. It reads the trends of the craft's first four mapped distri
 `TREND_P_VALUE` rows of its variable's dataset (`TREND_DATASETS`: `annual_precipitation` from
 `CHIRPS_3_0`, `annual_mean_temperature` from `GHCN_CAMS_T2M`) over the dataset row's period, in
 `TREND_UNITS` (the p-value's unit is `p-value`); a district missing any row, another period or
-unit, or a period under 30 years has no trend. No trend, no block. Meaning: the section's
+unit, or a period under 30 years has no trend. No trend and no groundwater figure, no block (the
+craft page's climate chapter still needs a trend). Meaning: the section's
 fact-level cited claims (`builder_evidence.section_facts`) whose text names water, rain, monsoon,
 drought, groundwater, wells, rivers, floods, heat, temperature, humidity, climate, aquifers,
 salinity or dryness (`MEANING_WORDS`), at most 12, offered as untrusted blocks to one plan-model
 call (`composer/climate_meaning`, within the answer's headroom) that returns at most six refs; a
 ref not offered adds nothing, a claim twice once, and a failed call shows the trends without
-meaning. Sentence ids are `<block>.<n>`; no groundwater value is loaded yet (`docs/DATA_SOURCES.md`,
-Groundwater). The geo ETL writes the trend rows (Theil-Sen slope times ten, two-sided Mann-Kendall
+meaning. Sentence ids are `<block>.<n>`; groundwater figures follow the trends, in district order, and
+their dataset row follows the trend rows in `datasets` (`geo/groundwater.with_groundwater`;
+`docs/DATA_SOURCES.md`, Groundwater). The geo ETL writes the trend rows (Theil-Sen slope times ten, two-sided Mann-Kendall
 p-value with the tie-corrected variance and continuity correction, only for a complete series of
 at least 30 years; `etl/geo/geo_etl/trend.py`, its constants pinned to these by
 `tests/contracts/test_climate_contract.py`). With its renderer (decision 0068) present, the kind

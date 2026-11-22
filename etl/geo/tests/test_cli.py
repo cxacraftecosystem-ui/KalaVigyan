@@ -1,4 +1,5 @@
 import argparse
+import dataclasses
 import datetime as dt
 import json
 import re
@@ -7,7 +8,7 @@ import pandas as pd
 import pytest
 
 from geo_etl import __main__ as cli
-from geo_etl.catalog import BOUNDARIES, SOILGRIDS
+from geo_etl.catalog import BOUNDARIES, CHIRPS, GLIM, SOILGRIDS
 from geo_etl.layers import Result
 from geo_etl.rows import COLUMNS, Rows
 
@@ -95,6 +96,8 @@ def test_extract_and_combine_offline(tmp_path, monkeypatch, capsys):
     assert [d["code"] for d in summary["datasets"]] == [SOILGRIDS.code]
     assert summary["layers"][0]["failureCount"] == 0
     assert summary["layers"][0]["districtsWithoutValues"] == []
+    assert summary["layers"][0]["silentDistricts"] == []
+    assert summary["layers"][0]["unexpectedWithoutCells"] == []
     assert summary["layers"][0]["lostStates"] == []
     assert (out / "district_geology.parquet").exists()
     assert len(summary["csv"]) == 1
@@ -156,15 +159,20 @@ def test_extract_fails_a_state_left_without_values_even_with_allow_failures(tmp_
     meta = json.loads((parts / "partial.json").read_text(encoding="utf-8"))
     assert meta["lostStates"] == [31]
     assert meta["districtsWithoutValues"] == [553]
+    assert meta["silentDistricts"] == [553]
     assert "states [31]" in capsys.readouterr().err
 
 
-def test_extract_keeps_a_state_whose_only_district_was_measured_without_cells(tmp_path, monkeypatch, capsys):
-    def ocean_only(districts, options):
+def ocean_only(dataset):
+    def run(districts, options):
         lgds = sorted(int(v) for v in districts["districtLgd"])
-        return Result(SOILGRIDS, Rows(SOILGRIDS, "fake").frame(), districts_without_cells=lgds)
+        return Result(dataset, Rows(dataset, "fake").frame(), districts_without_cells=lgds)
 
-    monkeypatch.setattr(cli, "LAYERS", {"ocean": ocean_only})
+    return run
+
+
+def test_extract_keeps_a_state_whose_only_district_is_reviewed_as_without_cells(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "LAYERS", {"ocean": ocean_only(GLIM)})
     parts = tmp_path / "parts"
     out = tmp_path / "out"
     argv = ["--datasets", "ocean", "--states", "31", "--parts", str(parts), "--cache", str(tmp_path)]
@@ -173,12 +181,44 @@ def test_extract_keeps_a_state_whose_only_district_was_measured_without_cells(tm
     assert meta["rows"] == 0
     assert meta["districtsWithoutValues"] == [553]
     assert meta["districtsWithoutCells"] == [553]
+    assert meta["unexpectedWithoutCells"] == []
+    assert meta["silentDistricts"] == []
     assert meta["lostStates"] == []
     summary = json.loads((out / "district_env_summary.json").read_text(encoding="utf-8"))
     assert summary["layers"][0]["districtsWithoutValues"] == [553]
     assert summary["layers"][0]["districtsWithoutCells"] == [553]
+    assert summary["layers"][0]["unexpectedWithoutCells"] == []
     assert summary["layers"][0]["lostStates"] == []
     assert "ocean: 0 rows, 0 failures, 1 districts without cells" in capsys.readouterr().out
+
+
+def test_extract_fails_a_district_without_cells_outside_the_reviewed_list_even_with_allow_failures(
+    tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setattr(cli, "LAYERS", {"masked": ocean_only(SOILGRIDS)})
+    parts = tmp_path / "parts"
+    argv = ["extract", "--datasets", "masked", "--states", "31", "--parts", str(parts), "--cache", str(tmp_path)]
+    assert cli.main([*argv, "--allow-failures"]) == 1
+    meta = json.loads((parts / "masked.json").read_text(encoding="utf-8"))
+    assert meta["districtsWithoutCells"] == [553]
+    assert meta["unexpectedWithoutCells"] == [553]
+    assert meta["lostStates"] == []
+    assert "districts [553] were measured without a valid cell" in capsys.readouterr().err
+
+
+def test_extract_fails_a_silent_district_whose_state_has_values_even_with_allow_failures(tmp_path, monkeypatch, capsys):
+    def all_but_mahe(districts, options):
+        return fake_layer(districts[districts["districtLgd"] != 599], options)
+
+    monkeypatch.setattr(cli, "LAYERS", {"quiet": all_but_mahe})
+    parts = tmp_path / "parts"
+    argv = ["extract", "--datasets", "quiet", "--states", "34", "--parts", str(parts), "--cache", str(tmp_path)]
+    assert cli.main([*argv, "--allow-failures"]) == 1
+    meta = json.loads((parts / "quiet.json").read_text(encoding="utf-8"))
+    assert meta["rows"] == 3
+    assert meta["silentDistricts"] == [599]
+    assert meta["lostStates"] == []
+    assert "districts [599] have no values, no failure" in capsys.readouterr().err
 
 
 def test_extract_fails_a_step_lost_for_a_whole_state_even_with_allow_failures(tmp_path, monkeypatch):
@@ -216,6 +256,28 @@ def test_combine_rejects_duplicate_keys(tmp_path):
     assert cli.main(["combine", "--parts", str(parts), "--out", str(tmp_path / "out")]) == 1
 
 
+def test_combine_refuses_parts_of_one_dataset_read_over_different_periods(tmp_path, capsys):
+    parts = tmp_path / "parts"
+    parts.mkdir()
+    for stem, lgd, period in (("chirps-shard1of2", 599, "1981-2024"), ("chirps-shard2of2", 553, "1981-2025")):
+        dataset = dataclasses.replace(CHIRPS, period=period)
+        rows = Rows(dataset, "fake")
+        rows.add(pd.Series({"districtLgd": lgd, "stateLgd": 34, "districtName": "d"}), "x", period, "NORMAL", 1.0, "mm")
+        rows.frame().to_parquet(parts / f"{stem}.parquet", index=False)
+        meta = {"stem": stem, "dataset": dataset.as_row(), "retrievedAt": "2026-11-16T00:00:00+00:00"}
+        (parts / f"{stem}.json").write_text(json.dumps(meta), encoding="utf-8")
+    out = tmp_path / "out"
+    assert cli.main(["combine", "--parts", str(parts), "--out", str(out)]) == 1
+    assert "CHIRPS_3_0: its parts differ in {'period': ['1981-2024', '1981-2025']}" in capsys.readouterr().err
+    assert not (out / "district_env.parquet").exists()
+
+
+def test_the_chirps_last_year_command_prints_the_year_for_every_shard(monkeypatch, capsys):
+    monkeypatch.setattr(cli.chirps, "latest_year", lambda: 2025)
+    assert cli.main(["chirps-last-year"]) == 0
+    assert capsys.readouterr().out == "2025\n"
+
+
 def test_options_from_flags(tmp_path):
     parser_args = [
         "extract",
@@ -232,11 +294,15 @@ def test_options_from_flags(tmp_path):
         "--no-soil-uncertainty",
         "--no-chelsa-months",
         "--no-chirps-monthly",
+        "--chirps-last-year",
+        "2024",
     ]
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command")
     cli.add_extract_args(sub.add_parser("extract"))
     options = cli.options_from(parser.parse_args(parser_args))
+    assert options.chirps_last_year == 2024
+    assert cli.options_from(parser.parse_args(["extract", "--cache", str(tmp_path)])).chirps_last_year is None
     assert options.worldcover_factor == 8
     assert options.hansen_factor == 1
     assert options.soil_vars == ("clay", "sand")

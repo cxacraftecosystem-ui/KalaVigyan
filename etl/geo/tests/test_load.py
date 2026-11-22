@@ -231,3 +231,43 @@ def test_every_value_key_column_matches_by_equality_once_the_table_marks_it_not_
     clause = load.key_match(load.VALUE_KEY, set(load.VALUE_KEY))
     assert "distinct" not in clause
     assert clause.count(" = ") == len(load.VALUE_KEY)
+
+
+class StateCursor:
+    def __init__(self, columns: list[str], written: int = 0):
+        self.columns = columns
+        self.written = written
+        self.statements: list[str] = []
+        self.found: list[tuple] = []
+        self.rowcount = -1
+
+    def execute(self, query: str, params=None):
+        self.statements.append(query)
+        if params == (load.STATE_TABLE,):
+            self.found = [(column, "text") for column in self.columns]
+        else:
+            self.rowcount = self.written
+
+    def fetchall(self):
+        return self.found
+
+
+def test_refresh_replaces_every_state_series_with_the_shared_refresh(tmp_path):
+    refresh = tmp_path / "refresh.sql"
+    refresh.write_text('INSERT INTO "StateEnvValue" SELECT 1\n', encoding="utf-8")
+    cur = StateCursor(sorted(load.STATE_REQUIRED), written=12)
+    assert load.refresh_state_values(cur, refresh) == 12
+    assert cur.statements[-2:] == ['delete from "StateEnvValue"', 'INSERT INTO "StateEnvValue" SELECT 1\n']
+
+
+def test_refresh_stops_before_deleting_when_the_table_is_missing(tmp_path):
+    cur = StateCursor([])
+    with pytest.raises(SystemExit, match='table "StateEnvValue" does not exist'):
+        load.refresh_state_values(cur, tmp_path / "refresh.sql")
+    assert not any(statement.startswith("delete") for statement in cur.statements)
+
+
+def test_the_refresh_the_load_runs_is_the_one_the_backend_writes():
+    statement = (load.SHARED / load.STATE_SQL_NAME).read_text(encoding="utf-8")
+    assert statement.startswith("WITH district_area AS MATERIALIZED\n")
+    assert 'INSERT INTO "StateEnvValue" ("stateLgd", "datasetId",' in statement

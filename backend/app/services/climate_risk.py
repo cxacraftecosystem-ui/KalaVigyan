@@ -46,7 +46,7 @@ class ClimateRiskBuilder:
             return Built()
         async with self._tools.sessions() as session:
             climate = await craft_climate(session, craft.slug)
-        if not climate.trends:
+        if not climate.trends and not climate.groundwater:
             return Built()
         statements = meaning_statements(ask.blocks, ask.cited)
         chosen = await self._chosen(statements)
@@ -78,7 +78,7 @@ def climate_risk_block(
         version=1,
         reuse=None,
         trends=list(climate.trends),
-        groundwater=[],
+        groundwater=list(climate.groundwater),
         meaning=[fact_sentence(claim, f"{block_id}.{n}") for n, claim in enumerate(picked, start=1)],
         datasets=list(climate.datasets),
     )

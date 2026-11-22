@@ -48,6 +48,10 @@ export function cumulativeLengths(points: readonly Point[]): number[] {
   return lengths;
 }
 
+export function lineLength(points: readonly Point[]): number {
+  return cumulativeLengths(points)[points.length - 1] ?? 0;
+}
+
 export function pointAlong(points: readonly Point[], lengths: readonly number[], fraction: number): Point {
   const total = lengths[lengths.length - 1];
   const target = Math.min(Math.max(fraction, 0), 1) * total;
@@ -58,19 +62,6 @@ export function pointAlong(points: readonly Point[], lengths: readonly number[],
   const [x0, y0] = points[after - 1];
   const [x1, y1] = points[after];
   return [x0 + (x1 - x0) * share, y0 + (y1 - y0) * share];
-}
-
-export function insideRings(point: Point, rings: readonly (readonly Point[])[]): boolean {
-  const [x, y] = point;
-  let inside = false;
-  for (const ring of rings) {
-    for (let index = 0, previous = ring.length - 1; index < ring.length; previous = index, index += 1) {
-      const [xi, yi] = ring[index];
-      const [xj, yj] = ring[previous];
-      if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-    }
-  }
-  return inside;
 }
 
 export function boundsOf(sets: Iterable<readonly Point[]>): Bounds | null {

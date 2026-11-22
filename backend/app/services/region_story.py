@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import logging
 import uuid
 from collections.abc import Iterable, Mapping, Sequence
@@ -50,6 +51,8 @@ class OfferedRiver:
     trace: RiverTrace
     ord_stra: int
     dis_av_cms: float
+    name: str | None = None
+    name_dataset: str | None = None
 
 
 @dataclass(frozen=True)
@@ -99,7 +102,7 @@ def region_story_block(
         logger.info("the region story %s chose no stored statement and is not shown", block_id)
         return None
     layers = _layers(choice.layers, offer)
-    drawn = [boundary, *([offer.datasets[HYDRORIVERS_DATASET_CODE]] if river else [])]
+    drawn = [boundary, *_river_rows(offer, river)]
     cited = [*drawn, *(offer.datasets[layer.dataset_code] for layer in layers)]
     datasets = list({row.code: row for row in cited}.values())
     try:
@@ -134,7 +137,19 @@ def _story_river(offer: RegionOffer, ref: str) -> OfferedRiver | None:
     if unnamed:
         logger.warning("river %s reaches districts with no register row: %s", river.trace.main_riv, unnamed)
         return None
+    if river.name_dataset is not None and river.name_dataset not in offer.datasets:
+        logger.warning(
+            "no %s dataset row; river %s is drawn unnamed", river.name_dataset, river.trace.main_riv
+        )
+        return dataclasses.replace(river, name=None, name_dataset=None)
     return river
+
+
+def _river_rows(offer: RegionOffer, river: OfferedRiver | None) -> list[DatasetRef]:
+    if river is None:
+        return []
+    named = [offer.datasets[river.name_dataset]] if river.name_dataset and river.name else []
+    return [offer.datasets[HYDRORIVERS_DATASET_CODE], *named]
 
 
 def _listed_districts(offer: RegionOffer, river: OfferedRiver | None) -> list[int]:
@@ -193,7 +208,7 @@ def _river_path(river: OfferedRiver | None) -> RiverPath | None:
         main_riv=trace.main_riv,
         reach_ids=list(trace.reach_ids),
         district_lgds=list(trace.district_lgds),
-        name=None,
+        name=river.name,
     )
 
 
@@ -220,8 +235,9 @@ def _river_text(river: OfferedRiver, districts: Mapping[int, DistrictRef]) -> st
     reached = [_place(districts[lgd]) for lgd in river.trace.district_lgds if lgd in districts]
     shown = reached[:RIVER_DISTRICTS_OFFERED]
     more = f", and {len(reached) - len(shown)} more" if len(reached) > len(shown) else ""
+    named = f"Named {river.name} in the river names dataset {river.name_dataset}. " if river.name else ""
     return (
-        f"Strahler stream order {river.ord_stra}; mean discharge {river.dis_av_cms:g} m3/s. "
+        f"{named}Strahler stream order {river.ord_stra}; mean discharge {river.dis_av_cms:g} m3/s. "
         f"From its source to its mouth it reaches: {'; '.join(shown)}{more}."
     )
 

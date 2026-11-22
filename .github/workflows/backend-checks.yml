@@ -8,6 +8,11 @@ on:
       - "infra/deploy/**"
       - "tools/**"
       - ".github/workflows/backend-checks.yml"
+      - "docs/PLAN.md"
+      - "docs/plans/**"
+      - "etl/geo/geo_etl/**"
+      - "etl/geo/load*.py"
+      - "infra/terraform/**"
   push:
     branches: [main, "round[0-9]", "round[0-9][0-9]"]
     paths:

@@ -5,12 +5,15 @@ import zipfile
 from pathlib import Path
 
 import geopandas as gpd
+import pandas as pd
 import pytest
 from river_fixture import PLACEHOLDER_OUTLET, PLACEHOLDER_REACHES, placeholder_basin
-from shapely.geometry import LineString, MultiLineString, box
+from shapely.geometry import LineString, MultiLineString, Polygon, box
 
 from geo_etl import rivers, topology
 from geo_etl.__main__ import main
+from geo_etl.districts import load_districts
+from geo_etl.river_districts import REACH_DISTRICTS_FILE, districts_by_reach, reach_districts
 from geo_etl.rivers import (
     BASINS_FILE,
     REACHES_FILE,
@@ -28,6 +31,7 @@ from geo_etl.rivers import (
 SHARED = Path(__file__).resolve().parents[3] / "shared"
 SOURCE, BEND, TRIBUTARY, MOUTH = 41000010, 41000020, 41000030, 41000040
 COAST = 41000090
+KACHCHH = 449
 
 
 def reach(hyriv_id, next_down, main_riv, coords, *, upland=150.0, order=2):
@@ -142,7 +146,7 @@ def decoded(topo: dict) -> dict[int, list[tuple[int, int]]]:
 def test_the_simplified_topology_keeps_every_junction():
     reaches = kachchh_like()
     basin = reaches[reaches["mainRiv"] == MOUTH]
-    topo = topology.basin_topology(basin)
+    topo = topology.basin_topology(basin, {})
     lines = decoded(topo)
     for _, row in basin.iterrows():
         if row["nextDown"]:
@@ -153,7 +157,8 @@ def test_the_simplified_topology_keeps_every_junction():
 
 def test_the_topology_is_quantized_over_the_basin_and_carries_its_reaches():
     reaches = kachchh_like()
-    topo = topology.basin_topology(reaches[reaches["mainRiv"] == MOUTH])
+    hits = districts_by_reach(reach_districts(reaches, districts()))
+    topo = topology.basin_topology(reaches[reaches["mainRiv"] == MOUTH], hits)
     assert topo["bbox"] == [69.0, 23.1, 69.2, 23.7]
     scale, translate = topo["transform"]["scale"], topo["transform"]["translate"]
     assert translate == [69.0, 23.1]
@@ -164,10 +169,10 @@ def test_the_topology_is_quantized_over_the_basin_and_carries_its_reaches():
     assert lines[SOURCE][0][0] == 0
     geometries = topo["objects"][topology.OBJECT]["geometries"]
     assert [(g["id"], g["properties"]) for g in geometries] == [
-        (SOURCE, {"nextDown": BEND, "ordStra": 2}),
-        (BEND, {"nextDown": MOUTH, "ordStra": 3}),
-        (TRIBUTARY, {"nextDown": BEND, "ordStra": 2}),
-        (MOUTH, {"nextDown": 0, "ordStra": 3}),
+        (SOURCE, {"nextDown": BEND, "ordStra": 2, "districts": []}),
+        (BEND, {"nextDown": MOUTH, "ordStra": 3, "districts": [[449, 0.5]]}),
+        (TRIBUTARY, {"nextDown": BEND, "ordStra": 2, "districts": []}),
+        (MOUTH, {"nextDown": 0, "ordStra": 3, "districts": [[449, 0.0]]}),
     ]
 
 
@@ -176,18 +181,22 @@ def test_a_reach_shorter_than_one_step_keeps_two_positions():
         network(
             reach(MOUTH, 0, MOUTH, [(70.0, 20.0), (70.0000001, 20.0000001)]),
             reach(COAST, MOUTH, MOUTH, [(71.0, 21.0), (70.0, 20.0)]),
-        )
+        ),
+        {},
     )
     assert decoded(topo)[MOUTH] == [(0, 0), (0, 0)]
 
 
 def test_write_rivers_writes_reaches_topologies_and_their_hashes(tmp_path):
     reaches = india_reaches(kachchh_like(), districts())
-    manifest = write_rivers(reaches, tmp_path, retrieved_at=dt.datetime(2026, 11, 17, tzinfo=dt.UTC))
+    hits = reach_districts(reaches, districts())
+    manifest = write_rivers(reaches, hits, tmp_path, retrieved_at=dt.datetime(2026, 11, 17, tzinfo=dt.UTC))
     assert (tmp_path / REACHES_FILE).is_file()
     assert json.loads((tmp_path / BASINS_FILE).read_text(encoding="utf-8")) == manifest
     assert manifest["uplandMinSkm"] == 100
     assert manifest["reaches"] == 4
+    assert manifest["reachDistricts"] == 2
+    assert pd.read_parquet(tmp_path / REACH_DISTRICTS_FILE).values.tolist() == [[BEND, 449, 0.5], [MOUTH, 449, 0.0]]
     assert manifest["dataset"]["code"] == "HYDRORIVERS_1_0"
     [basin] = manifest["basins"]
     body = (tmp_path / basin["file"]).read_bytes()
@@ -223,7 +232,8 @@ def test_the_rivers_command_reports_what_it_wrote_or_why_it_wrote_nothing(monkey
 
 def test_the_placeholder_basin_reproduces_the_shared_river_golden():
     golden = (SHARED / "river.topology.golden.json").read_bytes()
-    topo = topology.basin_topology(placeholder_basin())
+    basin = placeholder_basin()
+    topo = topology.basin_topology(basin, districts_by_reach(reach_districts(basin, load_districts({KACHCHH}))))
     assert topology.encoded(topo) + b"\n" == golden
     lines = decoded(topo)
     for hyriv_id, next_down, *_ in PLACEHOLDER_REACHES:
@@ -252,3 +262,26 @@ def test_read_reaches_keeps_only_reaches_of_the_threshold_from_the_zipped_shapef
     assert reaches["hyrivId"].tolist() == [BEND, MOUTH]
     assert reaches.crs.to_epsg() == 4326
     assert network_problems(reaches) == []
+
+
+def test_a_reach_enters_each_district_it_crosses_at_its_first_point_inside():
+    line = network(
+        reach(MOUTH, 0, MOUTH, [(0.0, 0.0), (10.0, 0.0)]),
+        reach(COAST, 0, COAST, [(0.0, 5.0), (1.0, 5.0)]),
+    )
+    corner = Polygon([(6.0, 0.0), (5.0, -1.0), (7.0, -1.0)])
+    shapes = gpd.GeoDataFrame(
+        {"districtLgd": [101, 102, 103]},
+        geometry=[box(-1.0, -1.0, 4.0, 1.0), box(4.0, -1.0, 11.0, 1.0), corner],
+        crs="EPSG:4326",
+    )
+    hits = reach_districts(line, shapes)
+    assert hits.values.tolist() == [[MOUTH, 101, 0.0], [MOUTH, 102, 0.4], [MOUTH, 103, 0.6]]
+    assert districts_by_reach(hits) == {MOUTH: [[101, 0.0], [102, 0.4], [103, 0.6]]}
+
+
+def test_reaches_in_no_district_have_no_hits():
+    far = network(reach(COAST, 0, COAST, [(75.00, 15.00), (75.10, 14.90)]))
+    hits = reach_districts(far, districts())
+    assert list(hits.columns) == ["hyrivId", "districtLgd", "entry"]
+    assert hits.empty

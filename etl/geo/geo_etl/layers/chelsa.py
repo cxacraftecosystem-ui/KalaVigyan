@@ -1,6 +1,6 @@
 import geopandas as gpd
 
-from geo_etl import raster
+from geo_etl import raster, remote
 from geo_etl.catalog import CHELSA
 from geo_etl.layers import Measured, Options, Result, failure
 from geo_etl.rows import Rows, pick
@@ -53,7 +53,7 @@ def run(districts: gpd.GeoDataFrame, options: Options) -> Result:
         try:
             grid = raster.read([url], bounds, nodata_values=NODATA, dtype="float32")
             if grid is None:
-                raise RuntimeError(f"{url} not reachable")
+                raise RuntimeError(f"{url} not found")
             table = measured.add(raster.zonal(grid, districts, raster.continuous_ops(grid)))
             for _, record in table.iterrows():
                 district = lookup.loc[int(record["districtLgd"])].copy()
@@ -64,4 +64,6 @@ def run(districts: gpd.GeoDataFrame, options: Options) -> Result:
                 rows.add(district, variable, period, "DISTRICT_P90", pick(record, "p90"), unit, pixels=pixels)
         except Exception as error:
             failures.append(failure(districts, f"chelsa {variable} {period}", error))
+            if isinstance(error, remote.Unreachable):
+                break
     return Result(CHELSA, rows.frame(), failures=failures, districts_without_cells=measured.without_cells())

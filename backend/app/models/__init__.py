@@ -115,7 +115,7 @@ from app.models.page_layouts import PageLayout
 from app.models.page_previews import PagePreview
 from app.models.page_translations import PageTextUnit, PageTranslation, TranslationReader
 from app.models.profiles import ArtisanCraft, ArtisanProfile, StudentProfile
-from app.models.rivers import RiverBasin, RiverReach
+from app.models.rivers import RiverBasin, RiverReach, RiverReachDistrict
 from app.models.science import (
     Compound,
     ConditionReading,
@@ -128,6 +128,7 @@ from app.models.science import (
     StageMaterial,
 )
 from app.models.source_upkeep import SourceUpkeep
+from app.models.state_values import StateEnvValue
 from app.models.stored_documents import StoredDocument
 from app.models.structure_proposals import StructureProposal
 from app.models.studio import PageDraft, SuppliedSource
@@ -253,6 +254,7 @@ __all__ = [
     "ReviewEvent",
     "RiverBasin",
     "RiverReach",
+    "RiverReachDistrict",
     "RoleRequest",
     "RoutePolicy",
     "SavedItem",
@@ -263,6 +265,7 @@ __all__ = [
     "SourcePace",
     "SourceUpkeep",
     "StageMaterial",
+    "StateEnvValue",
     "StoredDocument",
     "StructureProposal",
     "StudentProfile",

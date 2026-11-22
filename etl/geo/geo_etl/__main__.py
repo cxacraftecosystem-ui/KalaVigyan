@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from geo_etl import catalog, rivers
+from geo_etl import catalog, river_names_files, rivers
 from geo_etl.coverage import coverage_of
 from geo_etl.districts import SHAPES_PATH, districts_without_shapes, load_districts, sha256_of
 from geo_etl.layers import (
@@ -21,6 +21,7 @@ from geo_etl.layers import (
     copdem,
     geology,
     ghcncams,
+    groundwater,
     hansen,
     hydrorivers,
     soilgrids,
@@ -37,6 +38,7 @@ LAYERS: dict[str, Callable[..., Result]] = {
     "chelsa": chelsa.run,
     "chirps": chirps.run,
     "ghcncams": ghcncams.run,
+    "groundwater": groundwater.run,
     "copdem": copdem.run,
     "hydrorivers": hydrorivers.run,
     "mrds": geology.run_mrds,
@@ -50,6 +52,7 @@ DATASET_LABELS = {
     "CHELSA_2_1_1981_2010": "CHELSA-2-1-1981-2010",
     "CHIRPS_3_0": "CHIRPS-3-0",
     "GHCN_CAMS_T2M": "GHCN-CAMS-T2M",
+    "OGD_GW_RESOURCES_RAJASTHAN_2023": "Groundwater-Rajasthan-2023",
     "COPERNICUS_DEM_GLO90": "Copernicus-DEM-GLO-90",
     "HYDRORIVERS_1_0": "HydroRIVERS-1-0",
     "USGS_MRDS": "USGS-MRDS",
@@ -64,11 +67,21 @@ SUMMARY_LAYER_KEYS = (
     "geologyRows",
     "districtsWithoutValues",
     "districtsWithoutCells",
+    "unexpectedWithoutCells",
+    "silentDistricts",
     "lostStates",
     "seconds",
     "notes",
     "options",
 )
+PART_FAILING = {
+    "lostStates": "states {} have no district with values or without valid cells, or lost a whole step",
+    "silentDistricts": "districts {} have no values, no failure and no listing without valid cells",
+    "unexpectedWithoutCells": (
+        "districts {} were measured without a valid cell but are not in coverage.EXPECTED_WITHOUT_CELLS; "
+        "check the grid, then fix the read or add them there with the evidence"
+    ),
+}
 
 
 def dataset_label(code: str) -> str:
@@ -119,7 +132,7 @@ def select_shard(districts: pd.DataFrame, shard: str | None):
 
 def options_from(args: argparse.Namespace) -> Options:
     options = Options(cache=Path(args.cache))
-    for name in ("worldcover_factor", "hansen_factor", "dem_factor", "climate_first_year"):
+    for name in ("worldcover_factor", "hansen_factor", "dem_factor", "climate_first_year", "chirps_last_year"):
         if getattr(args, name, None) is not None:
             options = dataclasses.replace(options, **{name: getattr(args, name)})
     if args.soil_vars:
@@ -170,6 +183,8 @@ def extract_layer(key: str, districts: pd.DataFrame, options: Options, *, parts:
         "failures": result.failures,
         "districtsWithoutValues": reach.districts_without_values,
         "districtsWithoutCells": reach.districts_without_cells,
+        "unexpectedWithoutCells": reach.unexpected_without_cells,
+        "silentDistricts": reach.silent_districts,
         "lostStates": reach.lost_states,
         "notes": result.notes,
         "options": {k: (str(v) if isinstance(v, Path) else v) for k, v in dataclasses.asdict(options).items()},
@@ -186,15 +201,17 @@ def extract_layer(key: str, districts: pd.DataFrame, options: Options, *, parts:
 
 
 def part_status(metas: list[dict], *, allow_failures: bool) -> int:
-    lost = [m for m in metas if m["lostStates"]]
-    for meta in lost:
-        print(
-            f"{meta['layer']}: states {meta['lostStates']} have no district with values or without valid cells, "
-            "or lost a whole step; a lost state fails the part even with --allow-failures",
-            file=sys.stderr,
-        )
+    failing = False
+    for meta in metas:
+        for key, problem in PART_FAILING.items():
+            if meta[key]:
+                failing = True
+                print(
+                    f"{meta['layer']}: {problem.format(meta[key])}; this fails the part even with --allow-failures",
+                    file=sys.stderr,
+                )
     failed = any(m["failures"] for m in metas)
-    return 1 if lost or (failed and not allow_failures) else 0
+    return 1 if failing or (failed and not allow_failures) else 0
 
 
 def combine(args: argparse.Namespace) -> int:
@@ -202,10 +219,15 @@ def combine(args: argparse.Namespace) -> int:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     metas = [json.loads(p.read_text(encoding="utf-8")) for p in sorted(parts.glob("*.json"))]
+    disagreeing = disagreeing_datasets(metas)
+    for code, fields in disagreeing.items():
+        print(f"{code}: its parts differ in {fields}; the parts of one dataset share one dataset row", file=sys.stderr)
+    if disagreeing:
+        return 1
     frames = [pd.read_parquet(parts / f"{m['stem']}.parquet") for m in metas]
     values = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=COLUMNS)
-    values = values.sort_values(["districtLgd", "datasetCode", "variable", "depthOrPeriod", "stat"], kind="stable")
     key = ["districtLgd", "datasetCode", "variable", "depthOrPeriod", "stat"]
+    values = values.sort_values(key, kind="stable")
     duplicates = int(values.duplicated(key).sum())
     if duplicates:
         print(f"{duplicates} duplicate keys in the combined table", file=sys.stderr)
@@ -216,11 +238,36 @@ def combine(args: argparse.Namespace) -> int:
     geo_frames = [pd.read_parquet(p) for p in sorted(parts.glob("*.geology.parquet"))]
     geology_table = pd.concat(geo_frames, ignore_index=True) if geo_frames else pd.DataFrame(columns=GEOLOGY_COLUMNS)
     geology_table.to_parquet(out / "district_geology.parquet", index=False)
+    summary = summary_of(metas, values, geology_table, generated=generated, csv_names=csv_names)
+    (out / "district_env_summary.json").write_text(json.dumps(summary, indent=1, default=str), encoding="utf-8")
+    print(f"combined {len(values)} rows over {summary['districts']} districts into {out}")
+    return 0
+
+
+def disagreeing_datasets(metas: list[dict]) -> dict[str, dict[str, list]]:
+    rows: dict[str, list[dict]] = {}
+    for meta in metas:
+        rows.setdefault(meta["dataset"]["code"], []).append(meta["dataset"])
+    disagreeing = {}
+    for code, held in rows.items():
+        fields = sorted({name for row in held for name in row if row.get(name) != held[0].get(name)})
+        if fields:
+            disagreeing[code] = {name: sorted({str(row.get(name)) for row in held}) for name in fields}
+    return disagreeing
+
+
+def summary_of(
+    metas: list[dict],
+    values: pd.DataFrame,
+    geology_table: pd.DataFrame,
+    *,
+    generated: dt.datetime,
+    csv_names: list[str],
+) -> dict:
     datasets = {m["dataset"]["code"]: {**m["dataset"], "retrievedAt": m["retrievedAt"]} for m in metas}
-    boundaries = catalog.BOUNDARIES.as_row() | {"sha256": sha256_of(SHAPES_PATH)}
-    summary = {
+    return {
         "generatedAt": generated.isoformat(timespec="seconds"),
-        "boundaries": boundaries,
+        "boundaries": catalog.BOUNDARIES.as_row() | {"sha256": sha256_of(SHAPES_PATH)},
         "datasets": list(datasets.values()),
         "layers": [
             {k: m[k] for k in SUMMARY_LAYER_KEYS}
@@ -234,9 +281,6 @@ def combine(args: argparse.Namespace) -> int:
         "districtsWithoutShapes": districts_without_shapes(),
         "csv": csv_names,
     }
-    (out / "district_env_summary.json").write_text(json.dumps(summary, indent=1, default=str), encoding="utf-8")
-    print(f"combined {len(values)} rows over {summary['districts']} districts into {out}")
-    return 0
 
 
 def add_extract_args(parser: argparse.ArgumentParser) -> None:
@@ -249,6 +293,11 @@ def add_extract_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--hansen-factor", type=int)
     parser.add_argument("--dem-factor", type=int)
     parser.add_argument("--climate-first-year", type=int)
+    parser.add_argument(
+        "--chirps-last-year",
+        type=int,
+        help="the last CHIRPS year, resolved once for every shard (chirps-last-year); without it the layer finds it",
+    )
     parser.add_argument("--soil-vars")
     parser.add_argument("--soil-depths")
     parser.add_argument("--chelsa-bio")
@@ -259,8 +308,8 @@ def add_extract_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--allow-failures",
         action="store_true",
-        help="keep a part whose failures are scattered districts; a state none of whose districts has values or "
-        "was measured without valid cells, or with a step failed for every one of its districts, still fails the part",
+        help="keep a part whose failures are scattered districts; a lost state, a silent district or a district "
+        "unexpectedly without valid cells still fails the part",
     )
     parser.add_argument("--shard", help="k/n: process the k-th of n state groups, balanced by area")
 
@@ -281,6 +330,15 @@ def river_lines(args: argparse.Namespace) -> int:
     return 0
 
 
+def river_names(args: argparse.Namespace) -> int:
+    summary = river_names_files.build_names(Path(args.rivers), scratch=Path(args.scratch))
+    print(
+        f"{summary['wikidataRivers']} rivers named from Wikidata over {summary['wikidataReaches']} reaches, "
+        f"{summary['osmRivers']} from OpenStreetMap over {summary['osmReaches']} reaches"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="geo_etl")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -294,9 +352,18 @@ def main(argv: list[str] | None = None) -> int:
     rivers_parser = sub.add_parser("rivers")
     rivers_parser.add_argument("--out", default=str(ROOT / "out" / "rivers"))
     rivers_parser.add_argument("--cache", default=str(Path.home() / ".cache" / "kalavigyan-geo"))
+    names_parser = sub.add_parser("river-names")
+    names_parser.add_argument("--rivers", default=str(ROOT / "out" / "rivers"))
+    names_parser.add_argument("--scratch", default=str(ROOT / "out" / "osm"))
+    sub.add_parser("chirps-last-year")
     args = parser.parse_args(argv)
+    if args.command == "chirps-last-year":
+        print(chirps.latest_year())
+        return 0
     if args.command == "rivers":
         return river_lines(args)
+    if args.command == "river-names":
+        return river_names(args)
     if args.command == "extract":
         return extract(args)
     if args.command == "combine":

@@ -96,6 +96,10 @@ KalaVigyan measures the land under every recorded craft place itself; nobody typ
   lake shore, the USGS MRDS deposits within `DEPOSIT_RADIUS_KM` (50) by class and commodity, and,
   from the stored district values, the district's rainfall, soil and cover readings
   (`ground_readings.READING_LAYERS`), each with its dataset and edition.
+- A place abroad that the dossier names is pinned from its stored Wikidata point when it lies within
+  500 km of a located place, and a river it names is drawn from its basin file, matched by name and
+  district through the river names datasets (`app/data/river_names.place_river`), citing HydroRIVERS
+  and its name's dataset row (decision 0153).
 - A material meets a deposit only through `ground_materials.COMMODITY_TERMS`, which maps the words
   of a material's name to MRDS commodity names; clays and earths are also listed beside the soil
   readings. Add a term with its MRDS name and a test with a hand-counted fixture.

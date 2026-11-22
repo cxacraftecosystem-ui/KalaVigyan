@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 
 from sqlalchemy import select, text
@@ -15,7 +15,7 @@ from app.geo.river_trace import (
     river_trace,
     traced_reach_ids,
 )
-from app.models import EnvDataset, RiverBasin, RiverReach
+from app.models import EnvDataset, RiverBasin, RiverReach, RiverReachDistrict
 from app.research.rivers import RiverTrace, trace_problems
 
 __all__ = [
@@ -26,6 +26,7 @@ __all__ = [
     "basin_file",
     "basin_links",
     "district_hits",
+    "named_crossing",
     "rivers_crossing",
     "rivers_loaded",
     "stored_trace_problems",
@@ -37,17 +38,9 @@ RIVERS_CROSSING_MAX = 5
 
 DISTRICT_HITS = text(
     """
-    SELECT p.ord AS position, d.lgd AS district_lgd,
-           MIN(ST_LineLocatePoint(
-               r.geom,
-               CASE WHEN GeometryType(part.geom) = 'POINT' THEN part.geom ELSE ST_StartPoint(part.geom) END
-           )) AS entry
+    SELECT p.ord AS position, h."districtLgd" AS district_lgd, h."entry" AS entry
     FROM unnest(CAST(:reach_ids AS integer[])) WITH ORDINALITY AS p(id, ord)
-    JOIN "RiverReach" r ON r."hyrivId" = p.id
-    JOIN "AdminDistrict" d ON d.geom IS NOT NULL AND ST_Intersects(r.geom, d.geom)
-    CROSS JOIN LATERAL ST_Dump(ST_Intersection(r.geom, d.geom)) AS part
-    WHERE GeometryType(part.geom) IN ('POINT', 'LINESTRING')
-    GROUP BY p.ord, d.lgd
+    JOIN "RiverReachDistrict" h ON h."hyrivId" = p.id
     """
 )
 
@@ -57,12 +50,25 @@ RIVERS_CROSSING = text(
         SELECT DISTINCT ON (r."mainRiv") r."mainRiv" AS main_riv, r."hyrivId" AS hyriv_id,
                r."uplandSkm" AS upland_skm, r."ordStra" AS ord_stra, r."disAvCms" AS dis_av_cms
         FROM "RiverReach" r
-        JOIN "AdminDistrict" d ON d.geom IS NOT NULL AND ST_Intersects(r.geom, d.geom)
-        WHERE d.lgd = ANY(CAST(:district_lgds AS integer[]))
+        JOIN "RiverReachDistrict" h ON h."hyrivId" = r."hyrivId"
+        WHERE h."districtLgd" = ANY(CAST(:district_lgds AS integer[]))
         ORDER BY r."mainRiv", r."uplandSkm" DESC, r."hyrivId"
     ) crossing
     ORDER BY ord_stra DESC, dis_av_cms DESC, upland_skm DESC, main_riv
     LIMIT :limit
+    """
+)
+
+NAMED_CROSSING = text(
+    """
+    SELECT r."mainRiv" AS main_riv, r."hyrivId" AS hyriv_id, r."uplandSkm" AS upland_skm,
+           r."ordStra" AS ord_stra, r."disAvCms" AS dis_av_cms
+    FROM "RiverReach" r
+    JOIN "RiverReachDistrict" h ON h."hyrivId" = r."hyrivId"
+    WHERE h."districtLgd" = ANY(CAST(:district_lgds AS integer[]))
+      AND r."hyrivId" = ANY(CAST(:reach_ids AS integer[]))
+    ORDER BY r."uplandSkm" DESC, r."hyrivId"
+    LIMIT 1
     """
 )
 
@@ -116,11 +122,13 @@ async def district_hits(session: AsyncSession, reach_ids: Sequence[int]) -> list
     ]
 
 
-async def trace_river(session: AsyncSession, reach_id: int) -> RiverTrace | None:
+async def trace_river(
+    session: AsyncSession, reach_id: int, *, named: Collection[int] = ()
+) -> RiverTrace | None:
     links = await basin_links(session, reach_id)
     if not links:
         return None
-    path = traced_reach_ids(reach_id, links)
+    path = traced_reach_ids(reach_id, links, named=named)
     districts = districts_in_path_order(await district_hits(session, path))
     return river_trace(path, links, districts)
 
@@ -143,8 +151,26 @@ async def rivers_crossing(
     ]
 
 
+async def named_crossing(
+    session: AsyncSession, district_lgds: Sequence[int], reach_ids: Sequence[int]
+) -> RiverCrossing | None:
+    if not district_lgds or not reach_ids:
+        return None
+    params = {"district_lgds": list(district_lgds), "reach_ids": list(reach_ids)}
+    row = (await session.execute(NAMED_CROSSING, params)).first()
+    if row is None:
+        return None
+    return RiverCrossing(
+        main_riv=row.main_riv,
+        hyriv_id=row.hyriv_id,
+        upland_skm=row.upland_skm,
+        ord_stra=row.ord_stra,
+        dis_av_cms=row.dis_av_cms,
+    )
+
+
 async def rivers_loaded(session: AsyncSession) -> bool:
-    return (await session.scalar(select(RiverBasin.mainRiv).limit(1))) is not None
+    return (await session.scalar(select(RiverReachDistrict.hyrivId).limit(1))) is not None
 
 
 async def stored_trace_problems(session: AsyncSession, trace: RiverTrace) -> list[str]:

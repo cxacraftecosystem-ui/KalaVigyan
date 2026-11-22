@@ -18,14 +18,15 @@ from app.research.place_ground import (
     Tally,
     Water,
 )
-from app.research.why_here import CraftGround, GroundDeposit, GroundFrame
+from app.research.why_here import CraftGround, GroundDeposit, GroundFrame, GroundPin, GroundRiver
 
 from .ground_frame import framed, place_box
 from .ground_layers import Deposit, GroundLayers
 from .ground_materials import CraftMaterial, material_commodities, material_deposits, soil_materials
-from .ground_measure import Nearest, elevation_band, nearest_lake, nearest_line, within
+from .ground_measure import Nearest, elevation_band, haversine_km, nearest_lake, nearest_line, within
 
 __all__ = [
+    "ABROAD_REACH_KM",
     "COMMODITIES_SHOWN",
     "DEPOSITS_SHOWN",
     "GroundInputs",
@@ -37,8 +38,10 @@ __all__ = [
     "ground_at",
     "map_place_ground",
     "measured",
+    "pins_in_reach",
 ]
 
+ABROAD_REACH_KM = 500
 COMMODITIES_SHOWN = 8
 DEPOSITS_SHOWN = 160
 KM_PLACES = 1
@@ -78,6 +81,8 @@ class GroundInputs:
     readings: Mapping[int, tuple[GroundReading, ...]] = field(default_factory=dict)
     datasets: tuple[DatasetRef, ...] = ()
     sources: tuple[SourceRef, ...] = ()
+    abroad: tuple[GroundPin, ...] = ()
+    rivers: tuple[GroundRiver, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -172,13 +177,25 @@ def _deposits(found: Sequence[Measured], wanted: set[str]) -> list[GroundDeposit
     ]
 
 
+def pins_in_reach(places: Sequence[LocatedPlace], pins: Sequence[GroundPin]) -> list[GroundPin]:
+    return [
+        pin
+        for pin in pins
+        if any(
+            haversine_km((place.longitude, place.latitude), (pin.longitude, pin.latitude)) <= ABROAD_REACH_KM
+            for place in places
+        )
+    ]
+
+
 def craft_ground(inputs: GroundInputs, measures: Measures) -> CraftGround | None:
     if not inputs.places:
         return None
     layers = measures.layers
     found = [measures.at((place.longitude, place.latitude)) for place in inputs.places]
     wanted = {name for material in inputs.materials for name in material_commodities(material)}
-    points = [(place.longitude, place.latitude) for place in inputs.places]
+    abroad = pins_in_reach(inputs.places, inputs.abroad)
+    points = [(p.longitude, p.latitude) for p in inputs.places] + [(p.longitude, p.latitude) for p in abroad]
     return CraftGround(
         schema_version=GROUND_SCHEMA_VERSION,
         craft=inputs.craft,
@@ -193,6 +210,8 @@ def craft_ground(inputs: GroundInputs, measures: Measures) -> CraftGround | None
         layers=list(layers.layers),
         datasets=list(inputs.datasets),
         sources=list(inputs.sources),
+        abroad=abroad,
+        rivers=list(inputs.rivers),
     )
 
 

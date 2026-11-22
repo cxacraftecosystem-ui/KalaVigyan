@@ -183,116 +183,6 @@ Last reviewed: 2026-11-22.
   with recorded responses; `voice.transport` stays `RELAY` until it passes. Retention: an
   enterprise plan, or the Gemini voice for relay speech.
 
-### Contract tests read files their workflow does not watch
-
-- **What:** `backend/tests/contracts` reads `etl/geo/geo_etl/catalog.py`, `infra/terraform/*` and
-  `docs/PLAN.md`, but Backend checks do not run on a push that changes only those. Adding them to
-  the push filter would make such a push deploy the backend. The frontend side is closed: Frontend
-  checks (which deploy nothing) watch `backend/app/models/enums.py`, `backend/app/schemas/**`,
-  `backend/app/core/roles.py`, `shared/roles.json` and `infra/terraform/variables.tf`, the files
-  its unit specs read (decision 0022).
-- **Clears it:** a separate contract-check job (or a paths filter on pull requests only) that runs
-  `tests/contracts` when those files change.
-
-### Region golden values are hand-written
-
-- **What:** the district numbers in `shared/region.craft.golden.json` and
-  `shared/region.layer.golden.json` are illustrative shapes for tests, not ETL output; only the
-  dataset rows are real, and the layer's classes and version are computed from the hand-written
-  numbers (decision 0016).
-- **Clears it:** when the full `geo-etl` load exists, regenerate the layer fixture's values from
-  it in a reviewed change.
-
-## Region profile and map layers (decision 0016)
-
-### A district place carries every stored value
-
-- **What:** `GET /crafts/{slug}/region` sends every stored value of a district (about 300 with
-  the full load: monthly normals, yearly forest loss, percentiles and uncertainty bounds) and
-  every aggregable series of a state, and a craft practised in many states sends one such place
-  per state. The panel lists them all.
-- **Why left:** the contract (decision 0014) asks for every row; choosing a headline set is a
-  product decision.
-- **Clears it:** a curated set of headline variables per facet in the contract (the layer
-  registry is a start), with the rest behind a "More" view or left to the map.
-
-### State aggregates are computed per request
-
-- **What:** each region request groups the state's district rows in Postgres (one grouped query
-  per request over the states it shows); nothing is cached.
-- **Why left:** correct and fast enough for a handful of states; a cache needs invalidation on
-  every geo load.
-- **Clears it:** a `StateEnvValue` table filled by `etl/geo/load.py` after each load, or a
-  materialised view refreshed by it.
-
-### Two region rules mirror how the geo ETL writes rows
-
-- **What:** `geo/records.LITHOLOGY_TWIN_PREFIX` assumes GLiM writes each class share both as
-  `lithology_<code>` and as a `DistrictGeology` row, and `geo/aggregation.ABSENT_MEANS_ZERO`
-  that GLiM shares and MRDS per-commodity counts exist only where present. Migration 0005 also
-  copies the GLiM legend (`geo_etl/layers/geology.GLIM_CLASSES`) to name rows loaded earlier.
-  No test reads the ETL to keep them in step.
-- **Clears it:** have the ETL write the share once with its name and write zero rows (or a
-  coverage row per dataset), then drop both rules; or a contract test that runs the GLiM and
-  MRDS row builders on a fixture.
-
-## Geo ETL state gaps (decision 0027)
-
-### An unreachable tile reads as an absent one
-
-- **What:** `etl/geo/geo_etl/raster.exists` turns any open error, a timeout or a server error as
-  much as a 404, into "no such file", caches that answer for the process, and `raster.read`
-  mosaics only the tiles it found. A WorldCover, Hansen or Copernicus DEM district whose tile did
-  not answer is computed from the tiles that did, with no failure listed; when the tiles under its
-  polygon did not answer but another tile in its padded bounds did, it comes back without valid
-  cells and, since the addendum to 0027, counts as accounted for, even as a state's only district
-  (when no tile answers, the read fails); a CHELSA or CHIRPS file
-  that did not answer fails its step for the whole shard (which now fails the part). After the
-  CHIRPS year lookup, file reads still rely on GDAL's own retries (7 tries of up to 120 s per
-  request in the workflow), so a stalled server can still hold a job for hours.
-- **Why left:** run 43884310432's gaps all came from the district shapes; telling an ocean tile
-  from an unreachable one needs each layer's tile index, a change to every tiled layer.
-- **Clears it:** probe tiles over HTTP as the CHIRPS lookup does (only 404 means absent, other
-  errors retried then raised), or list each dataset's tiles once and treat a listed tile that
-  cannot be read as a failure; cap GDAL's retries with an overall deadline per file.
-
-### A grid read as nodata everywhere counts as "no valid cells"
-
-- **What:** since the addendum to 0027, `coverage_of` trusts `Result.districts_without_cells`. A
-  read that returns a grid of nodata (a SoilGrids WCS answer of masked cells for a whole state, a
-  grid registered in the wrong place) lists every district without cells, accounts for every
-  state, and the part passes with no rows. Before, it lost those states and failed.
-- **Why left:** telling such a read from a real gap (Lakshadweep in GLiM, Mumbai in SoilGrids)
-  needs a reference the layers do not have; a guard on "no valid cell in the whole grid" would also
-  fail a run that selects only Lakshadweep.
-- **Clears it:** fail a step whose grid holds no valid cell at all while the selection has land
-  cells in an independent mask (for example the Copernicus DEM or WorldCover land fraction), or
-  keep a reviewed list of districts expected without cells per dataset and fail any other.
-
-### A silent district does not fail the part when its state has another district accounted for
-
-- **What:** a selected district with no row, no no-cells listing and no failure is listed only
-  under `districtsWithoutValues`; its state is lost only when none of its districts is accounted
-  for. That includes a state with no rows at all where one district is listed without cells and
-  another is silent, which the rule before the addendum failed. Every raster path now lists its no-cells districts, so such a district means a defect, and
-  can only be found as `districtsWithoutValues` minus `districtsWithoutCells` minus the failed
-  districts.
-- **Why left:** the addendum to 0027 keeps the state-level rule the owner asked for; failing on a
-  single silent district is a stricter rule not yet agreed.
-- **Clears it:** list such districts under their own key in the part JSON and fail the part when
-  it is not empty, or at least lose a state without rows unless every one of its districts is
-  listed without cells.
-
-### Each shard resolves the CHIRPS period on its own
-
-- **What:** every CHIRPS extract job calls `latest_year` itself. Should CHC publish a new annual
-  file while a run is going, shards could end on different years, and the combined table would
-  hold two periods for one dataset; `combine` keeps the last dataset row it reads.
-- **Why left:** CHC publishes once a year and a run takes under an hour.
-- **Clears it:** resolve the year once in the workflow's plan job, pass it to every shard
-  (a `--chirps-last-year` option), and have `combine` refuse parts of one dataset whose rows
-  differ.
-
 ## Voice backend (decision 0017)
 
 ### Voice in other languages is checked by text only (decision 0025)
@@ -790,61 +680,6 @@ Last reviewed: 2026-11-22.
   `river_store.rivers_crossing(session, [449])` and `trace_river`, write its reach ids and outlet
   into the fixture, and remove `placeholders` from the fixture and its model.
 
-## River lines, tracer and monthly rainfall (decision 0043)
-
-### Districts reached are computed on every trace
-
-- **What:** `river_store.trace_river` intersects every reach of the path with the district
-  polygons each time it runs; a long main stem has about a thousand reaches.
-- **Why left:** it always follows the stored district shapes and serves one story at a time; it
-  has not been measured.
-- **Clears it:** time it in production after the load; if slow, a reach-district table with entry
-  fractions filled by the river load and refilled when districts are seeded again.
-
-### The largest basin files are a few MB
-
-- **What:** the Ganga-Brahmaputra and Indus topologies hold every stored reach of the basin (tens
-  of thousands), estimated at a few MB of JSON each; the API sends them uncompressed and the client
-  loads a whole basin to draw one path.
-- **Why left:** the contract serves one file per basin (decision 0042).
-- **Clears it:** read the sizes in the `rivers` job summary after the load; if too large for a
-  phone, a per-path or per-district topology, a coarser threshold for the largest basins, or
-  compressed responses, in a contract change.
-
-## Place renderers (decision 0048)
-
-### Place renderers not yet seen running
-
-- **What:** the river flow, the layer pills, the rainfall bars and the supply pins are checked by
-  typecheck, lint and server-rendered unit specs, not in a browser: the lazy chunks under a Next
-  build, the flow timing, touch targets on the map badges, and the contrast of the `errand` and
-  `archive` tones in dark mode are unverified.
-- **Clears it:** once the kinds are built, the production E2E asks the Kutch Ajrakh water question
-  at 1440, 834 and 390 px, with screenshots of the story before, during and after the flow and
-  with reduced motion on.
-
-### The river spec reads a hand-written basin
-
-- **What:** `e2e/place-renderers-unit.spec.ts` decodes a small quantized topology written for the
-  test (reaches 1, 2, 3 and a tributary inside Kachchh), because no basin file exists yet.
-- **Why left:** HydroRIVERS and the basin TopoJSON are lane 0043's.
-- **Clears it:** when lane 0043 commits a golden basin file for the fixture's river, the spec parses
-  it with `riverBasinOf` and draws the fixture story from it. Decision 0043 committed
-  `shared/river.topology.golden.json` (the fixture's placeholder river 1, 2, 3 and a tributary,
-  written by the geo ETL's encoder, reproduced by `etl/geo/tests/test_rivers.py` and parsed by
-  `e2e/river-topology-golden-unit.spec.ts`); the place spec can now draw from it.
-
-### A stretch is the reaches with a vertex inside the district
-
-- **What:** a step's stretch and a district's entry point are found on the simplified basin lines
-  (`regionStory.stretchOf`, `districtEntries`); a reach that crosses a district corner without a
-  vertex inside it is left out of the stretch, and its district lights at the previous district's
-  point.
-- **Why left:** the server's order (`river.districtLgds`, PostGIS on full geometry) still decides
-  the order, and the error is a few kilometres at district scale.
-- **Clears it:** serve each reach's districts in the basin file (lane 0043 computes them already)
-  and read them instead of testing vertices.
-
 ## Reaction player, material cards and 3D molecules (decision 0045)
 
 ### The reaction player shows no conditions or reaction energies
@@ -1055,7 +890,7 @@ Last reviewed: 2026-11-22.
 
 - **What:** the builders are tested on fixture reaches and, on GitHub Actions, on a hand-made
   network in Kachchh; no answer has yet traced a real HydroRIVERS basin, so the time of a large
-  basin's trace (the Ganga's links and PostGIS district hits) inside the 20 s wait is unmeasured.
+  basin's trace (the Ganga's links and its stored reach districts) inside the 20 s wait is unmeasured.
 - **Why left:** the river lines load only after the deploy (decision 0043).
 - **Clears it:** after the `riverlines` load, one Expert answer for a Ganga craft and one for Kutch
   Ajrakh in production, recording the builder's time; if a trace nears the wait, cache traces per
@@ -1531,25 +1366,30 @@ Last reviewed: 2026-11-22.
 
 ## Climate and risk, and ask the map (decision 0065)
 
-### No groundwater values
+### Groundwater values only for Rajasthan
 
-- **What:** `climate_risk.groundwater` is always empty; groundwater reaches a reader only as cited
-  claims.
-- **Why left:** no open, key-free, machine-readable district groundwater dataset exists: CGWB's
-  Dynamic Ground Water Resources tables are state PDFs and the India data portal's copies need an
-  API key (`docs/DATA_SOURCES.md`, Groundwater).
-- **Clears it:** an open district dataset (or the owner's choice to take the portal key into the
-  ETL), loaded as `DistrictEnvValue` rows and read into `GroundwaterValue`.
+- **What:** `climate_risk.groundwater` shows stored groundwater figures only for Rajasthan's 33
+  districts as on 31 March 2023 (`OGD_GW_RESOURCES_RAJASTHAN_2023`); a craft in any other state shows
+  groundwater only through cited claims.
+- **Why left:** the India data portal holds no all-India district table of the Dynamic Ground Water
+  Resources assessment as an API resource (searched 2026-11-23): the Ministry of Jal Shakti's
+  assessment catalogues there are empty, the National Compilation gives district tables only in PDF
+  annexures, and the portal's other district-wise tables are Rajya Sabha answers for single states or
+  urban areas (Delhi and Bengaluru by assessment unit).
+- **Clears it:** a district table for more states on the portal (each a new dataset row and a table
+  in `etl/geo/geo_etl/layers/groundwater.py`), or the owner's choice to load the National Compilation's
+  district annexure another way (for example a transcription recorded as its own dataset).
 
-### The region panel lists every year of the series
+### Ask the map lists every year of the series
 
-- **What:** the region route and ask the map list each district value, so Climate now shows 45
-  years of CHIRPS annual means (with their 10th and 90th percentiles) and 45 years of GHCN CAMS
-  means beside the normals and trends.
-- **Why left:** the routes give a district's values as stored (contract); folding a series is a
+- **What:** ask the map lists each district value, so Climate shows 45 years of CHIRPS annual
+  means (with their 10th and 90th percentiles) and 45 years of GHCN CAMS means beside the normals
+  and trends. The region route no longer does: a place there sends only its facets' headline
+  values (`geo/headline.HEADLINE_SERIES`, decision 0153).
+- **Why left:** ask the map gives a district's values as stored (contract); folding a series is a
   screen choice.
-- **Clears it:** the region and map screens fold a yearly series into one row with a sparkline
-  (each year a dataset value), or a contract change that leaves yearly rows out of the facets.
+- **Clears it:** the map screen folds a yearly series into one row with a sparkline (each year a
+  dataset value), or a contract change that leaves yearly rows out of its facets.
 
 ### Ask the map matches a prose piece by the district's name
 
@@ -1785,20 +1625,21 @@ Last reviewed: 2026-11-22.
   run the job after the deploy's import. Read archived bodies back through the live field-voice
   filters instead of stripping them.
 
-### The timeline map has no pins for Kutch Ajrakh, and the region story never draws a river
+### Kutch Ajrakh's timeline pins and named river are not yet seen, and three why claims describe steps
 
-- **What:** Kutch Ajrakh's dossier places Khavda, Barmer, Sindh and Pethapur carry Wikidata ids, but
-  their `timeline_map` pins appear only once job step 1 (`app.scripts.build_craft_chapters`, nightly
-  from Coverage enrichment) has stored their points on production; Ajrakhpur and Dhamadka have no
-  Wikidata item that names them. `region_story` never chooses a river: HydroRIVERS basins carry no
-  name, so no offered basin's name can occur in a step's sentence or quote. Several curated
-  `whyClaimId`s (C062, C080, C088) describe a step rather than explain it.
-- **Why left:** storing the points is a run on production (the lead's); basin names need a named
-  river dataset joined to HydroRIVERS, which is a new source with its licence (the datasets method,
-  `kalavigyan-datasets`); the why claims are dossier content a reviewer rewrites (the curation
-  lane, one agent per dossier).
-- **Clears it:** the job's next run on production (then a capture of the timeline map); a recorded
-  river-name dataset joined to the basins; the three why claims reviewed in the dossier.
+- **What:** job step 1 (`app.scripts.build_craft_chapters`, nightly from Coverage enrichment) stored
+  the curated places' Wikidata points on production on 2026-11-19 (run 44452306889, `pointsKept`
+  46; every later run found none missing), so Khavda, Barmer, Sindh and Pethapur have their
+  `timeline_map` pins; Ajrakhpur and Dhamadka have no Wikidata item that names them. A region story
+  now names its river from the river names datasets and is offered the rivers its statements name
+  first (decision 0153), but no capture of Kutch Ajrakh's timeline map or of a Kutch Ajrakh water
+  answer's region story has been taken on production. Several curated `whyClaimId`s (C062, C080,
+  C088) describe a step rather than explain it.
+- **Why left:** a capture needs a browser on production (the production E2E's water question,
+  `e2e/production/waterStory.ts`, after the river load of decision 0153); the why claims are dossier
+  content a reviewer rewrites (the curation lane, one agent per dossier).
+- **Clears it:** the production E2E's capture of the timeline map and the water story after the
+  river reload; the three why claims reviewed in the dossier.
 
 ### The decision 0096 merge is the minimal novelty rule
 
@@ -1827,16 +1668,6 @@ Last reviewed: 2026-11-22.
   worker's page copy), and that lane stopped.
 - **Clears it:** a migration adding `MediaAsset.pageKey`, the media worker's copy, the public
   redirect route, the job with its conformer step, and an `ai_media` loader in `chapter_records`.
-
-### The craft page golden's climate series is synthetic
-
-- **What:** `shared/craft.page.inputs.json` holds 45 yearly values per variable for Kachchh. They
-  were generated around the stored trend (mean and slope from `explainer.phase-d.golden.json`),
-  not read from CHIRPS or GHCN-CAMS.
-- **Why left:** the geo ETL output on the laptop holds no Kachchh yearly rows, and nothing heavy
-  runs locally.
-- **Clears it:** replace the two series with the loaded `DISTRICT_MEAN` rows of district 449 once
-  the ETL's yearly output is in the repository, then regenerate the golden.
 
 ## Track 1, round 1 (decision 0101, 2026-11-19)
 

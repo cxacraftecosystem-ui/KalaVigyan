@@ -1,7 +1,7 @@
 import { craftLinkShape, sourceRefShape, type CraftLink } from "@/lib/answerShapes";
 import { PLACE_ROLES } from "@/lib/districtCraftsContract";
 import { datasetShape, type RegionDataset } from "@/lib/regionContract";
-import { boolean, integer, list, matching, nullable, number, object, oneOf, parseShape, ShapeError, text, type Shape } from "@/lib/shape";
+import { boolean, integer, list, matching, nullable, number, object, oneOf, optional, parseShape, positive, ShapeError, text, type Shape } from "@/lib/shape";
 import type { SourceRef } from "@/lib/types";
 
 export const WHY_HERE_KIND = "why_here";
@@ -51,6 +51,8 @@ export type FrameLine = { rank: number; points: Point[] };
 export type FrameLabel = { text: string; longitude: number; latitude: number; angle: number };
 export type GroundFrame = { west: number; south: number; east: number; north: number; bands: FrameBand[]; rivers: FrameLine[]; lakes: Point[][]; labels: FrameLabel[] };
 export type GroundDeposit = { depId: number; name: string; longitude: number; latitude: number; classIndex: number; status: string; commodities: string; nearestKm: number; matched: boolean };
+export type GroundPin = { key: string; name: string; roles: (typeof PLACE_ROLES)[number][]; country: string; wikidataId: string; longitude: number; latitude: number };
+export type GroundRiver = { key: string; name: string; mainRiv: number; reachIds: number[]; hydrorivers: RegionDataset; names: RegionDataset };
 export type CraftGround = {
   schemaVersion: 1;
   craft: CraftLink;
@@ -63,6 +65,8 @@ export type CraftGround = {
   layers: GroundLayer[];
   datasets: RegionDataset[];
   sources: SourceRef[];
+  abroad?: GroundPin[];
+  rivers?: GroundRiver[];
 };
 export type MapPlaceGround = {
   schemaVersion: 1;
@@ -148,6 +152,18 @@ const depositShape = object<GroundDeposit>({
   matched: boolean
 });
 
+const pinShape = object<GroundPin>({
+  key: text,
+  name: text,
+  roles: list(oneOf(PLACE_ROLES), 1),
+  country: text,
+  wikidataId: matching(/^Q[1-9]\d*$/, "a Wikidata item"),
+  longitude: number,
+  latitude: number
+});
+
+const riverShape = object<GroundRiver>({ key: text, name: text, mainRiv: positive, reachIds: list(positive, 1), hydrorivers: datasetShape, names: datasetShape });
+
 export const craftGroundShape: Shape<CraftGround> = object<CraftGround>({
   schemaVersion: oneOf([1] as const),
   craft: craftLinkShape,
@@ -159,7 +175,9 @@ export const craftGroundShape: Shape<CraftGround> = object<CraftGround>({
   frame: frameShape,
   layers: list(layerShape, 1),
   datasets: list(datasetShape),
-  sources: list(sourceRefShape)
+  sources: list(sourceRefShape),
+  abroad: optional(list(pinShape)),
+  rivers: optional(list(riverShape))
 });
 
 export const mapPlaceGroundShape: Shape<MapPlaceGround> = object<MapPlaceGround>({

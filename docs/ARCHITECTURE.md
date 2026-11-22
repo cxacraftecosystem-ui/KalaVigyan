@@ -540,7 +540,8 @@ sequenceDiagram
    database connection before the bucket and PubChem (decision 0050). The place builders
    (`services/place_builders`, decision 0044) read a craft's cited districts in one short session
    (`services/place_offers`): a geography section's region story offers the rivers crossing them
-   (by stream order and discharge, traced through the stored network), the districts and the
+   (those its statements name first, then by stream order and discharge, traced through the stored
+   network and named from the vendored river names, decision 0153), the districts and the
    layers with values there, and one plan-model call chooses a river, the stored claims for its
    steps and their order by ref, a step keeping its district only when its sentence names it; it
    is kept as a cross-craft piece by basin or districts and reused with its geography section
@@ -636,17 +637,23 @@ at once: its chunks, the claims that rest on it alone (`retrieval/field_scope`),
 of stored explainers that cite it (`services/field_voices_readback`).
 Then `app/scripts/embed_craft_descriptors` fills missing craft name-and-alias vectors for the
 resolver; the daily Coverage enrichment run fills them first too (decision 0016). The region
-routes read the geo ETL's per-district statistics and compute state aggregates in Postgres per
-request; nothing environmental is queried live (decision 0016). River lines (decision 0043) are
-HydroRIVERS reaches the geo ETL loads into `RiverReach` and `RiverBasin` and writes as one
-TopoJSON per basin to the media bucket (`riverlines` in the Geo ETL run); `services/river_store`
-traces a river through a reach (`geo/river_trace`: the largest upstream branch to the source,
-`NEXT_DOWN` to the mouth) and orders the districts it crosses with PostGIS, and
-`GET /api/rivers/{mainRiv}` serves the basin's file. A district's CHIRPS monthly normals reach a
+routes read the geo ETL's per-district statistics and the state series every geo load and
+district seed stores in `StateEnvValue`, and send each place's headline values; nothing
+environmental is queried live (decisions 0016 and 0153). River lines (decision 0043) are
+HydroRIVERS reaches the geo ETL loads into `RiverReach`, `RiverBasin` and `RiverReachDistrict`
+(the districts each reach crosses and where it enters them, computed once in the ETL) and writes
+as one TopoJSON per basin, each reach carrying its districts, to the media bucket (`riverlines` in
+the Geo ETL run); `services/river_store` traces a river through a reach (`geo/river_trace`: a named
+river's own reaches, else the largest upstream branch, to the source, `NEXT_DOWN` to the mouth) and
+orders the districts it crosses from `RiverReachDistrict`, and `GET /api/rivers/{mainRiv}` serves
+the basin's file, gzip-compressed to a reader that accepts it. River names come from Wikidata, then
+OpenStreetMap, matched to the reaches by the geo ETL's `river-names` step and vendored in
+`backend/app/data/rivers/` (`app/data/river_names`, decision 0153). A district's CHIRPS monthly normals reach a
 `seasons` block through `services/monthly_rain`. The CHIRPS and GHCN CAMS layers write each
 district's yearly series from 1981 with its normal and its Theil-Sen and Mann-Kendall trend
 (`etl/geo/geo_etl/trend.py`); `services/climate_store` reads a craft's district trends through
-`geo/climate` for a `climate_risk` block (decision 0065).
+`geo/climate`, and the craft's Rajasthan districts' groundwater through `geo/groundwater`, for a
+`climate_risk` block (decisions 0065 and 0153).
 
 ## Frontend
 

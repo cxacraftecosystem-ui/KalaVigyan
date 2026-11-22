@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Collection, Iterable, Mapping
 from dataclasses import dataclass
 
 from pydantic import ValidationError
@@ -41,10 +41,10 @@ class DistrictHit:
     entry: float
 
 
-def traced_reach_ids(start: int, links: Mapping[int, ReachLink]) -> list[int]:
+def traced_reach_ids(start: int, links: Mapping[int, ReachLink], *, named: Collection[int] = ()) -> list[int]:
     if start not in links:
         raise RiverNetworkError(f"reach {start} is not stored")
-    above = _main_stem_above(start, _largest_upstream(links))
+    above = _main_stem_above(start, _largest_upstream(links, frozenset(named)))
     below = _downstream_of(start, links)
     path = [*reversed(above), start, *below]
     if len(path) > TRACE_REACHES_MAX:
@@ -77,15 +77,19 @@ def river_trace(path: list[int], links: Mapping[int, ReachLink], district_lgds: 
     return trace
 
 
-def _largest_upstream(links: Mapping[int, ReachLink]) -> dict[int, ReachLink]:
+def _largest_upstream(links: Mapping[int, ReachLink], named: frozenset[int]) -> dict[int, ReachLink]:
     largest: dict[int, ReachLink] = {}
     for link in links.values():
         if link.next_down == MOUTH:
             continue
         held = largest.get(link.next_down)
-        if held is None or (link.upland_skm, -link.hyriv_id) > (held.upland_skm, -held.hyriv_id):
+        if held is None or _climb_rank(link, named) > _climb_rank(held, named):
             largest[link.next_down] = link
     return largest
+
+
+def _climb_rank(link: ReachLink, named: frozenset[int]) -> tuple[bool, float, int]:
+    return link.hyriv_id in named, link.upland_skm, -link.hyriv_id
 
 
 def _main_stem_above(start: int, largest: Mapping[int, ReachLink]) -> list[int]:

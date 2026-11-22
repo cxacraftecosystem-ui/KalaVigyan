@@ -56,3 +56,20 @@ class RiverReach(Base):
         Index(None, "nextDown"),
         Index("RiverReach_geom_gist_idx", "geom", postgresql_using="gist"),
     )
+
+
+class RiverReachDistrict(Base):
+    __tablename__ = "RiverReachDistrict"
+
+    hyrivId: Mapped[int] = mapped_column(
+        Integer, ForeignKey("RiverReach.hyrivId", ondelete="CASCADE"), primary_key=True, autoincrement=False
+    )
+    districtLgd: Mapped[int] = mapped_column(
+        Integer, ForeignKey("AdminDistrict.lgd", ondelete="CASCADE"), primary_key=True, autoincrement=False
+    )
+    entry: Mapped[float] = mapped_column(Float, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint('"entry" >= 0 AND "entry" <= 1', name="entry"),
+        Index(None, "districtLgd"),
+    )

@@ -10,11 +10,15 @@ import numpy as np
 import pandas as pd
 
 OUT = Path(__file__).resolve().parent / "out"
+SHARED = Path(__file__).resolve().parents[2] / "shared"
 
 DATASET_TABLE = "EnvDataset"
 VALUE_TABLE = "DistrictEnvValue"
 GEOLOGY_TABLE = "DistrictGeology"
 DISTRICT_TABLE = "AdminDistrict"
+STATE_TABLE = "StateEnvValue"
+STATE_SQL_NAME = "region.state-values.sql"
+STATE_REQUIRED = {"stateLgd", "datasetId", "variable", "depthOrPeriod", "stat", "datasetDistricts", "datasetArea"}
 
 DATASET_COLUMNS = [
     "code",
@@ -241,9 +245,17 @@ def upsert(cur, table: str, frame: pd.DataFrame, key: list[str], columns: list[s
     return written, pruned
 
 
+def refresh_state_values(cur, sql_path: Path = SHARED / STATE_SQL_NAME) -> int:
+    require(STATE_TABLE, table_columns(cur, STATE_TABLE), STATE_REQUIRED)
+    statement = sql_path.read_text(encoding="utf-8")
+    cur.execute(f"delete from {quote(STATE_TABLE)}")
+    cur.execute(statement)
+    return cur.rowcount
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Upsert etl/geo/out into EnvDataset, DistrictEnvValue, DistrictGeology"
+        description="Upsert etl/geo/out into EnvDataset, DistrictEnvValue, DistrictGeology and refresh StateEnvValue"
     )
     parser.add_argument("--out", default=str(OUT))
     parser.add_argument("--dsn-env", default="DATABASE_URL")
@@ -296,6 +308,7 @@ def main(argv: list[str] | None = None) -> int:
                 cur, GEOLOGY_TABLE, geology, GEOLOGY_KEY, GEOLOGY_COLUMNS, GEOLOGY_REQUIRED, args.prune
             )
             print(f"{GEOLOGY_TABLE}: {written} upserted, {pruned} pruned")
+        print(f"{STATE_TABLE}: {refresh_state_values(cur)} state series")
         conn.commit()
     return 0
 

@@ -5,7 +5,6 @@ from collections.abc import Collection, Iterable, Sequence
 from typing import Any
 
 from sqlalchemy import (
-    CTE,
     ColumnElement,
     Float,
     Row,
@@ -14,7 +13,6 @@ from sqlalchemy import (
     and_,
     case,
     cast,
-    distinct,
     func,
     literal,
     not_,
@@ -25,14 +23,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql.selectable import Subquery
 
-from app.geo.aggregation import ABSENT_MEANS_ZERO, AGGREGATED_STATS
 from app.geo.places import practice_states, region_places
 from app.geo.records import (
     GEOLOGY_STAT,
     GEOLOGY_UNIT,
     GEOLOGY_VARIABLE,
     LITHOLOGY_TWIN_PREFIX,
-    Coverage,
     DatasetRecord,
     LocationRecord,
     PlaceRecord,
@@ -50,6 +46,7 @@ from app.models import (
     DistrictGeology,
     EnvDataset,
     Source,
+    StateEnvValue,
 )
 from app.research.citations import SourceRef
 from app.research.crafts import CraftRef
@@ -86,7 +83,6 @@ async def region_records(session: AsyncSession, craft: Craft) -> RegionRecords:
         places=places,
         district_values=values,
         state_totals=totals,
-        coverage=await _coverage(session, states),
         district_totals=await _district_totals(session, states),
         datasets=await dataset_records(session, codes),
         sources=await _place_sources(session, places),
@@ -111,6 +107,7 @@ def region_values() -> Subquery:
         select(
             DistrictEnvValue.districtLgd.label("district_lgd"),
             EnvDataset.code.label("dataset_code"),
+            EnvDataset.id.label("dataset_id"),
             DistrictEnvValue.variable.label("variable"),
             DistrictEnvValue.depthOrPeriod.label("depth_or_period"),
             cast(DistrictEnvValue.stat, Text).label("stat"),
@@ -127,6 +124,7 @@ def region_values() -> Subquery:
         select(
             DistrictGeology.districtLgd,
             EnvDataset.code,
+            EnvDataset.id,
             cast(literal(GEOLOGY_VARIABLE), String),
             cast(literal(""), String),
             cast(literal(GEOLOGY_STAT), Text),
@@ -258,91 +256,36 @@ async def district_values(
     )
 
 
-def _district_areas(states: Sequence[int]) -> CTE:
-    return (
-        select(
-            AdminDistrict.lgd.label("lgd"),
-            AdminDistrict.stateLgd.label("state_lgd"),
-            func.ST_Area(func.geography(AdminDistrict.geom), False).label("area"),
-        )
-        .where(AdminDistrict.geom.is_not(None), AdminDistrict.stateLgd.in_(states))
-        .cte("district_area")
-        .prefix_with("MATERIALIZED")
-    )
-
-
 async def _state_totals(session: AsyncSession, states: Sequence[int]) -> tuple[SeriesTotals, ...]:
     if not states:
         return ()
-    values, area = region_values(), _district_areas(states)
-    series = (
-        area.c.state_lgd,
-        values.c.dataset_code,
-        values.c.variable,
-        values.c.depth_or_period,
-        values.c.stat,
-        values.c.unit,
-        values.c.value_text,
-    )
     statement = (
-        select(
-            *series,
-            func.count().label("districts"),
-            func.sum(area.c.area * values.c.value).label("weighted_sum"),
-            func.sum(area.c.area).label("area"),
-            func.sum(values.c.value).label("total"),
-            func.min(values.c.value).label("low"),
-            func.max(values.c.value).label("high"),
-            func.array_agg(distinct(values.c.resolution)).label("resolutions"),
-            func.array_agg(distinct(values.c.method)).label("methods"),
-        )
-        .select_from(values)
-        .join(area, area.c.lgd == values.c.district_lgd)
-        .where(values.c.value.is_not(None), values.c.stat.in_(AGGREGATED_STATS))
-        .group_by(*series)
+        select(StateEnvValue, EnvDataset.code)
+        .join(EnvDataset, EnvDataset.id == StateEnvValue.datasetId)
+        .where(StateEnvValue.stateLgd.in_(states))
     )
-    return tuple(_series(row) for row in (await session.execute(statement)).all())
+    return tuple(_series(stored, code) for stored, code in (await session.execute(statement)).all())
 
 
-def _series(row: Row[Any]) -> SeriesTotals:
-    found = row._mapping
+def _series(stored: StateEnvValue, dataset_code: str) -> SeriesTotals:
     return SeriesTotals(
-        state_lgd=found["state_lgd"],
-        dataset_code=found["dataset_code"],
-        variable=found["variable"],
-        depth_or_period=found["depth_or_period"],
-        stat=found["stat"],
-        unit=found["unit"],
-        value_text=found["value_text"],
-        districts=int(found["districts"]),
-        weighted_sum=float(found["weighted_sum"]),
-        area=float(found["area"]),
-        total=float(found["total"]),
-        low=float(found["low"]),
-        high=float(found["high"]),
-        resolutions=tuple(found["resolutions"] or ()),
-        methods=tuple(method for method in found["methods"] or () if method),
-    )
-
-
-async def _coverage(session: AsyncSession, states: Sequence[int]) -> tuple[Coverage, ...]:
-    if not states:
-        return ()
-    values, area = region_values(), _district_areas(states)
-    present = (
-        select(area.c.state_lgd, values.c.dataset_code, values.c.district_lgd, area.c.area)
-        .select_from(values)
-        .join(area, area.c.lgd == values.c.district_lgd)
-        .where(values.c.dataset_code.in_(tuple(ABSENT_MEANS_ZERO)))
-        .distinct()
-        .subquery("present")
-    )
-    statement = select(
-        present.c.state_lgd, present.c.dataset_code, func.count(), func.sum(present.c.area)
-    ).group_by(present.c.state_lgd, present.c.dataset_code)
-    return tuple(
-        Coverage(state_lgd=lgd, dataset_code=code, districts=int(count), area=float(total))
-        for lgd, code, count, total in (await session.execute(statement)).all()
+        state_lgd=stored.stateLgd,
+        dataset_code=dataset_code,
+        variable=stored.variable,
+        depth_or_period=stored.depthOrPeriod,
+        stat=stored.stat,
+        unit=stored.unit,
+        value_text=stored.valueText,
+        districts=stored.districts,
+        weighted_sum=stored.weightedSum,
+        area=stored.area,
+        total=stored.total,
+        low=stored.low,
+        high=stored.high,
+        resolutions=tuple(stored.resolutions),
+        methods=tuple(method for method in stored.methods if method),
+        dataset_districts=stored.datasetDistricts,
+        dataset_area=stored.datasetArea,
     )
 
 

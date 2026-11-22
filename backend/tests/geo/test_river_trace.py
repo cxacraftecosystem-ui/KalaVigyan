@@ -43,6 +43,15 @@ def test_equal_upstream_areas_take_the_lowest_reach_id() -> None:
     assert traced_reach_ids(JUNCTION, branching(link(16, JUNCTION, 150.0))) == [SOURCE_B, JUNCTION, OUTLET]
 
 
+def test_a_named_river_is_climbed_along_its_own_reaches_before_the_largest_branch() -> None:
+    assert traced_reach_ids(OUTLET, branching(), named=[SOURCE_A, JUNCTION, OUTLET]) == [
+        SOURCE_A,
+        JUNCTION,
+        OUTLET,
+    ]
+    assert traced_reach_ids(OUTLET, branching(), named=[OUTLET]) == [TRIBUTARY, OUTLET]
+
+
 def test_a_reach_with_no_next_down_ends_the_river_where_it_starts() -> None:
     assert traced_reach_ids(41, {41: link(41, 0, 130.0, main_riv=41)}) == [41]
 

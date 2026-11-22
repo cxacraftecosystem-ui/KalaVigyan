@@ -1,3 +1,4 @@
+import dataclasses
 import uuid
 from collections.abc import AsyncIterator, Iterable
 from typing import Any
@@ -10,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine, get_session
 from app.core.deps import get_current_user, get_optional_user
+from app.geo.records import ValueRecord
 from app.main import app
 from app.models import (
     AdminDistrict,
@@ -19,24 +21,26 @@ from app.models import (
     DistrictGeology,
     EnvDataset,
     Source,
+    StateEnvValue,
     User,
 )
 from app.schemas.region import CraftRegion, MapLayer, MapLayerList
 
-from ..contracts.golden import dumped, golden_text
+from ..contracts.golden import REPO, dumped, golden_text
 from ..geo.golden_region import (
     GI_JOURNAL,
     GOLDEN_CRAFT,
     GOLDEN_LAYER,
     GOLDEN_LAYERS,
     KACHCHH,
-    KACHCHH_ROWS,
     LISTED_ROWS,
-    SOIL_PH,
     VAV_THARAD,
     WORLDCOVER_READ,
+    GeologyRow,
+    env_rows,
+    geology_rows,
     golden_datasets,
-    golden_methods,
+    layer_rows,
 )
 from ..migration_scripts import migration
 from ..readers import sign_in_as
@@ -46,15 +50,7 @@ pytestmark = pytest.mark.db
 AHMEDABAD = 438
 GUJARAT_DISTRICTS = 34
 GLIM = "GLIM_1_0_05DEG"
-GLIM_DATASET = {
-    "code": GLIM,
-    "title": "Global Lithological Map Database v1.0 (gridded to 0.5 degree)",
-    "publisher": "Universitat Hamburg, via PANGAEA",
-    "edition": "1.0",
-    "period": "2012",
-    "nativeResolution": "0.5 degree",
-    "licence": "CC BY 3.0",
-}
+STATE_REFRESH = REPO / "shared" / "region.state-values.sql"
 
 
 @pytest.fixture
@@ -76,7 +72,7 @@ async def ajrakh(session: AsyncSession) -> Craft:
     return craft
 
 
-async def store_datasets(session: AsyncSession, *extra: dict[str, Any]) -> dict[str, uuid.UUID]:
+async def store_datasets(session: AsyncSession) -> dict[str, uuid.UUID]:
     ids: dict[str, uuid.UUID] = {}
     for record in golden_datasets().values():
         ids[record.code] = uuid.uuid4()
@@ -96,27 +92,54 @@ async def store_datasets(session: AsyncSession, *extra: dict[str, Any]) -> dict[
                 url=record.url,
             )
         )
-    for row in extra:
-        ids[row["code"]] = uuid.uuid4()
-        session.add(EnvDataset(id=ids[row["code"]], **row))
     await session.flush()
     return ids
 
 
-def env_row(
-    ids: dict[str, uuid.UUID], lgd: int, row: tuple[Any, ...], method: str | None = None
-) -> DistrictEnvValue:
-    code, variable, stored, stat, value, unit, grid = row
+def stat_row(lgd: int, series: tuple[str, str, str], value: float, unit: str) -> ValueRecord:
+    code, variable, stat = series
+    stored = "0-5cm" if code == "SOILGRIDS_2_0" else ""
+    return ValueRecord(lgd, code, variable, stored, stat, value, None, unit, None, None)
+
+
+def env_row(ids: dict[str, uuid.UUID], row: ValueRecord) -> DistrictEnvValue:
     return DistrictEnvValue(
-        districtLgd=lgd,
-        datasetId=ids[code],
-        variable=variable,
-        depthOrPeriod=stored,
-        stat=stat,
-        value=value,
-        unit=unit,
-        resolution=grid,
-        method=method,
+        districtLgd=row.district_lgd,
+        datasetId=ids[row.dataset_code],
+        variable=row.variable,
+        depthOrPeriod=row.depth_or_period,
+        stat=row.stat,
+        value=row.value,
+        valueText=row.value_text,
+        unit=row.unit,
+        resolution=row.resolution,
+        method=row.method,
+    )
+
+
+def geology_row(ids: dict[str, uuid.UUID], row: GeologyRow) -> DistrictGeology:
+    return DistrictGeology(
+        districtLgd=row.district_lgd,
+        datasetId=ids[row.dataset_code],
+        lithology=row.lithology,
+        lithologyName=row.lithology_name,
+        areaShare=row.area_share,
+        mineralOccurrences=row.mineral_occurrences,
+        method=row.method,
+    )
+
+
+async def store_district(session: AsyncSession, ids: dict[str, uuid.UUID], lgd: int) -> None:
+    session.add_all(env_row(ids, row) for row in env_rows(lgd))
+    session.add_all(geology_row(ids, row) for row in geology_rows(lgd))
+    await session.flush()
+
+
+async def refresh_states(session: AsyncSession) -> None:
+    await session.execute(delete(StateEnvValue))
+    connection = await session.connection()
+    await connection.exec_driver_sql(
+        STATE_REFRESH.read_text(encoding="utf-8"), execution_options={"no_parameters": True}
     )
 
 
@@ -158,8 +181,7 @@ async def region(session: AsyncSession) -> CraftRegion:
 async def test_the_region_route_reproduces_the_golden_region_from_stored_rows(session: AsyncSession) -> None:
     craft = await ajrakh(session)
     ids = await store_datasets(session)
-    methods = golden_methods()
-    session.add_all(env_row(ids, KACHCHH, row, methods[row[0]]) for row in KACHCHH_ROWS)
+    await store_district(session, ids, KACHCHH)
     await locate(
         session,
         craft,
@@ -176,9 +198,7 @@ async def test_the_region_route_reproduces_the_golden_region_from_stored_rows(se
 
 async def test_the_layer_routes_reproduce_the_golden_list_and_layer(session: AsyncSession) -> None:
     ids = await store_datasets(session)
-    soil = ("SOILGRIDS_2_0", "phh2o", "0-5cm", "DISTRICT_MEAN")
-    session.add_all(env_row(ids, lgd, (*soil, value, "pH", None)) for lgd, value in SOIL_PH.items())
-    session.add_all(env_row(ids, KACHCHH, row) for row in LISTED_ROWS)
+    session.add_all(env_row(ids, row) for row in (*layer_rows(), *LISTED_ROWS))
     await session.flush()
     listed = await fetched(session, "/api/map/layers")
     assert listed.status_code == 200, listed.text
@@ -198,16 +218,16 @@ async def test_a_district_without_a_polygon_shows_gujarats_area_weighted_values(
 ) -> None:
     craft = await ajrakh(session)
     ids = await store_datasets(session)
-    soil = ("SOILGRIDS_2_0", "phh2o", "0-5cm")
-    session.add_all(
-        [
-            env_row(ids, KACHCHH, (*soil, "DISTRICT_MEAN", 8.1, "pH", None)),
-            env_row(ids, AHMEDABAD, (*soil, "DISTRICT_MEAN", 7.8, "pH", None)),
-            env_row(ids, KACHCHH, (*soil, "DISTRICT_P10", 7.5, "pH", None)),
-            env_row(ids, KACHCHH, ("USGS_MRDS", "mineral_occurrences", "", "COUNT", 41.0, "sites", None)),
-            env_row(ids, AHMEDABAD, ("USGS_MRDS", "mineral_occurrences", "", "COUNT", 3.0, "sites", None)),
-        ]
+    rows = (
+        stat_row(KACHCHH, ("SOILGRIDS_2_0", "phh2o", "DISTRICT_MEAN"), 8.1, "pH"),
+        stat_row(AHMEDABAD, ("SOILGRIDS_2_0", "phh2o", "DISTRICT_MEAN"), 7.8, "pH"),
+        stat_row(KACHCHH, ("SOILGRIDS_2_0", "phh2o", "DISTRICT_P10"), 7.5, "pH"),
+        stat_row(KACHCHH, ("USGS_MRDS", "mineral_occurrences", "COUNT"), 41.0, "sites"),
+        stat_row(AHMEDABAD, ("USGS_MRDS", "mineral_occurrences", "COUNT"), 3.0, "sites"),
     )
+    session.add_all(env_row(ids, row) for row in rows)
+    await session.flush()
+    await refresh_states(session)
     await locate(session, craft, precision="DISTRICT", districtLgd=VAV_THARAD, sourceId=uuid.UUID(GI_JOURNAL))
     weights = await areas(session, [KACHCHH, AHMEDABAD])
     expected = round(
@@ -257,17 +277,18 @@ async def test_glim_rock_types_are_named_shares_and_an_absent_type_counts_as_non
     session: AsyncSession,
 ) -> None:
     await ajrakh(session)
-    ids = await store_datasets(session, GLIM_DATASET)
+    ids = await store_datasets(session)
     shares = ((KACHCHH, "su", 0.6), (KACHCHH, "ss", 0.4), (AHMEDABAD, "su", 1.0))
     for lgd, code, share in shares:
         session.add(DistrictGeology(districtLgd=lgd, datasetId=ids[GLIM], lithology=code, areaShare=share))
-        session.add(env_row(ids, lgd, (GLIM, f"lithology_{code}", "", "SHARE", share, "fraction", None)))
+        session.add(env_row(ids, stat_row(lgd, (GLIM, f"lithology_{code}", "SHARE"), share, "fraction")))
     await session.flush()
     await session.execute(
         update(DistrictGeology)
         .where(DistrictGeology.lithology == "ss")
         .values(lithologyName="Siliciclastic sedimentary rocks")
     )
+    await refresh_states(session)
     weights = await areas(session, [KACHCHH, AHMEDABAD])
     total = weights[KACHCHH] + weights[AHMEDABAD]
     [place] = (await region(session)).places
@@ -324,13 +345,24 @@ async def test_before_any_geo_load_places_answer_without_facets_and_there_are_no
 
 
 async def test_rows_loaded_before_the_migration_get_their_grid_and_rock_names(session: AsyncSession) -> None:
-    ids = await store_datasets(session, GLIM_DATASET)
-    cover = ("ESA_WORLDCOVER_2021_V200", "landcover_cropland", "2021", "SHARE", 0.236, "fraction", None)
+    ids = await store_datasets(session)
+    cover = ValueRecord(
+        KACHCHH,
+        "ESA_WORLDCOVER_2021_V200",
+        "landcover_cropland",
+        "2021",
+        "SHARE",
+        0.236,
+        None,
+        "fraction",
+        None,
+        None,
+    )
     method = (
         f"exactextract class fractions, coverage weight area_spherical_km2, read at {WORLDCOVER_READ}; share"
     )
-    session.add(env_row(ids, KACHCHH, cover, method))
-    session.add(env_row(ids, AHMEDABAD, (*cover[:6], None), "zonal mean"))
+    session.add(env_row(ids, dataclasses.replace(cover, method=method)))
+    session.add(env_row(ids, dataclasses.replace(cover, district_lgd=AHMEDABAD, method="zonal mean")))
     session.add(DistrictGeology(districtLgd=KACHCHH, datasetId=ids[GLIM], lithology="su", areaShare=1.0))
     await session.flush()
     for statement in migration("0005_region_profile").backfills():

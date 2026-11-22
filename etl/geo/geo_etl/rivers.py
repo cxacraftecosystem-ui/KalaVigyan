@@ -11,6 +11,7 @@ import shapely
 from geo_etl.catalog import HYDRORIVERS
 from geo_etl.districts import load_districts
 from geo_etl.layers.hydrorivers import cached_archive, shapefile_member
+from geo_etl.river_districts import REACH_DISTRICTS_FILE, districts_by_reach, reach_districts
 from geo_etl.topology import SIMPLIFY_DEGREES, basin_topology, encoded
 
 LINE_UPLAND_MIN_SKM = 100
@@ -144,12 +145,13 @@ def cycle_members(down: dict[int, int]) -> list[int]:
     return sorted(looped)
 
 
-def basin_entries(reaches: gpd.GeoDataFrame, out: Path) -> list[dict]:
+def basin_entries(reaches: gpd.GeoDataFrame, hits: pd.DataFrame, out: Path) -> list[dict]:
     folder = out / TOPOLOGY_DIR
     folder.mkdir(parents=True, exist_ok=True)
+    districts_of = districts_by_reach(hits)
     entries = []
     for main_riv, group in reaches.groupby("mainRiv", sort=True):
-        body = encoded(basin_topology(group))
+        body = encoded(basin_topology(group, districts_of))
         name = f"{int(main_riv)}.json"
         (folder / name).write_bytes(body)
         entries.append(
@@ -164,16 +166,18 @@ def basin_entries(reaches: gpd.GeoDataFrame, out: Path) -> list[dict]:
     return entries
 
 
-def write_rivers(reaches: gpd.GeoDataFrame, out: Path, *, retrieved_at: dt.datetime) -> dict:
+def write_rivers(reaches: gpd.GeoDataFrame, hits: pd.DataFrame, out: Path, *, retrieved_at: dt.datetime) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     reaches.to_parquet(out / REACHES_FILE, index=False)
+    hits.to_parquet(out / REACH_DISTRICTS_FILE, index=False)
     manifest = {
         "generatedAt": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
         "dataset": HYDRORIVERS.as_row() | {"retrievedAt": retrieved_at.isoformat(timespec="seconds")},
         "uplandMinSkm": LINE_UPLAND_MIN_SKM,
         "simplifyDegrees": SIMPLIFY_DEGREES,
         "reaches": int(len(reaches)),
-        "basins": basin_entries(reaches, out),
+        "reachDistricts": int(len(hits)),
+        "basins": basin_entries(reaches, hits, out),
     }
     (out / BASINS_FILE).write_text(json.dumps(manifest, indent=1), encoding="utf-8")
     return manifest
@@ -182,8 +186,9 @@ def write_rivers(reaches: gpd.GeoDataFrame, out: Path, *, retrieved_at: dt.datet
 def build(out: Path, *, cache: Path) -> dict:
     archive = cached_archive(cache)
     retrieved_at = dt.datetime.now(dt.UTC)
-    reaches = india_reaches(read_reaches(archive), load_districts())
+    districts = load_districts()
+    reaches = india_reaches(read_reaches(archive), districts)
     problems = network_problems(reaches)
     if problems:
         raise RiverNetworkError(problems)
-    return write_rivers(reaches, out, retrieved_at=retrieved_at)
+    return write_rivers(reaches, reach_districts(reaches, districts), out, retrieved_at=retrieved_at)

@@ -6,6 +6,8 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from .state_values import refresh_state_values
+
 DATA = Path(__file__).resolve().parents[1] / "data"
 SHAPES_PATH = DATA / "district-shapes.json"
 REGISTER_PATH = DATA / "lgd_register.json"
@@ -142,6 +144,7 @@ async def seed_districts(session: AsyncSession) -> dict[str, int]:
     for start in range(0, len(rows), BATCH):
         await session.execute(DISTRICT_UPSERT, rows[start : start + BATCH])
     await session.execute(STATE_SHAPES)
+    await refresh_state_values(session)
     counts = (
         await session.execute(
             text(

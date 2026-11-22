@@ -46,7 +46,10 @@ def test_every_fixture_block_validates() -> None:
         ),
         (lambda b: b["steps"][0].update(districtLgd=90), "only districts it lists"),
         (lambda b: b["river"].update(districtLgds=[90]), "river's districts first"),
-        (lambda b: b["river"].update(name="Indus Delta"), "names the river only as a cited step states it"),
+        (
+            lambda b: b["river"].update(name="Indus Delta"),
+            "names the river only as a cited step or a river names dataset row states it",
+        ),
         (lambda b: b["river"].update(reachIds=[1, 3, 2]), "source to its outlet"),
         (lambda b: b.update(layers=["river-density", "river-density"]), "each district and layer once"),
         (
@@ -59,6 +62,26 @@ def test_a_region_story_fails_closed(change: Any, message: str) -> None:
     body = fixture_block("s1.b1")
     change(body)
     refused(body, message)
+
+
+def test_a_river_name_no_step_states_stands_on_its_river_names_dataset_row() -> None:
+    body = fixture_block("s1.b1")
+    body["river"]["name"] = "Indus Delta"
+    names = {
+        "code": "WIKIDATA_RIVER_NAMES",
+        "title": "Wikidata river items: English names, mouths and sources",
+        "publisher": "Wikidata, Wikimedia Foundation",
+        "edition": "2026-11-23",
+        "period": "2026-11-23",
+        "nativeResolution": "item coordinates (river mouth and river source)",
+        "licence": "CC0 1.0",
+        "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "attribution": "River names from Wikidata",
+        "citation": None,
+        "url": "https://query.wikidata.org/sparql",
+    }
+    body["datasets"].append(names)
+    assert BLOCK.validate_python(body).river.name == "Indus Delta"
 
 
 def test_a_region_story_without_a_river_needs_only_the_boundary_dataset() -> None:
