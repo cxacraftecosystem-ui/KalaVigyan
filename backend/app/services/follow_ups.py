@@ -25,8 +25,8 @@ from .answer_lede import Opening
 from .answer_translation import AnswerTranslation, Segment, translate_segments
 from .explainer_events import ExplainerStream
 from .section_context import SectionOutcome
-from .section_deepening import Deepening
-from .version_merge import merged_version
+from .section_deepening import Deepening, shown_deepening
+from .version_merge import last_section_number, merged_version, remerged_version
 
 __all__ = [
     "LEFT_OPEN_QUESTIONS",
@@ -40,7 +40,6 @@ __all__ = [
     "understood_for",
 ]
 
-SECTION_NUMBER = re.compile(r"^s(?P<number>\d+)$")
 QUESTION_KEY = re.compile(r"[^\W_]+")
 LEFT_OPEN_QUESTIONS: Mapping[str, str] = MappingProxyType(
     {
@@ -128,9 +127,20 @@ class AnswerLayout:
     def stored(self, document: Explainer | None, claim_ids: Iterable[uuid.UUID]) -> StoredAnswer:
         if self.follow_up is None or document is None:
             return StoredAnswer(document, tuple(claim_ids))
-        version = merged_version(self.follow_up.base, document)
-        cited = [uuid.UUID(c.claim_id) for b in explainer_blocks(version.explainer) for c in b.citations()]
-        return StoredAnswer(version.explainer, tuple(dict.fromkeys([*cited, *claim_ids])), version.mark)
+        return _stored_version(merged_version(self.follow_up.base, document), claim_ids)
+
+    def stored_onto(
+        self, newer: ExplainerVersionDocument, document: Explainer | None, claim_ids: Iterable[uuid.UUID]
+    ) -> StoredAnswer | None:
+        if self.follow_up is None or document is None:
+            return None
+        version = remerged_version(newer, document)
+        return None if version is None else _stored_version(version, claim_ids)
+
+
+def _stored_version(version: ExplainerVersionDocument, claim_ids: Iterable[uuid.UUID]) -> StoredAnswer:
+    cited = [uuid.UUID(c.claim_id) for b in explainer_blocks(version.explainer) for c in b.citations()]
+    return StoredAnswer(version.explainer, tuple(dict.fromkeys([*cited, *claim_ids])), version.mark)
 
 
 def understood_for(understanding: Understanding, follow_up: FollowUp | None) -> Understood:
@@ -201,7 +211,7 @@ def _follow_up_layout(follow_up: FollowUp, disciplines: Sequence[str], craft: st
     explainer = follow_up.explainer
     by_field = {section.discipline: section for section in explainer.sections}
     shown = frozenset(uuid.UUID(c.claim_id) for b in explainer_blocks(explainer) for c in b.citations())
-    numbers = itertools.count(_last_section_number(explainer.sections) + 1)
+    numbers = itertools.count(last_section_number(explainer.sections) + 1)
     orders = itertools.count(len(explainer.sections) + 1)
     specs: list[SectionSpec] = []
     titles: dict[str, str] = {}
@@ -232,11 +242,4 @@ def _deepened_spec(section: ExplainerSection) -> SectionSpec:
 
 def _deepening(section: ExplainerSection, shown: frozenset[uuid.UUID]) -> Deepening:
     last = max((block_number(block.id, section.id) for block in section.blocks), default=0)
-    return Deepening(
-        first_block=last + 1, kinds=frozenset(block.kind for block in section.blocks), claims=shown
-    )
-
-
-def _last_section_number(sections: Sequence[ExplainerSection]) -> int:
-    found = (SECTION_NUMBER.match(section.id) for section in sections)
-    return max((int(match.group("number")) for match in found if match), default=0)
+    return shown_deepening(section.blocks, first_block=last + 1, claims=shown)

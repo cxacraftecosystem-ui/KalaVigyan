@@ -13,7 +13,12 @@ const ZIP_LOCAL = 0x04034b50;
 const STORED = 0;
 const DEFLATED = 8;
 const XML_ENTITIES: Record<string, string> = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&apos;": "'" };
-const SLIDE = /^ppt\/slides\/slide\d+\.xml$/;
+const HTML_ENTITIES: Record<string, string> = { ...XML_ENTITIES, "&#x27;": "'", "&#39;": "'" };
+const HTML_ENTITY = /&(?:amp|lt|gt|quot|apos|#x27|#39);/g;
+const HTML_START = /^<!doctype html>/i;
+const HTML_END = "</html>";
+const DECK_SLIDE = /<section\b/g;
+const SLIDE =/^ppt\/slides\/slide\d+\.xml$/;
 const SLIDE_RELS = /^ppt\/slides\/_rels\/slide\d+\.xml\.rels$/;
 const RELS_TARGET = /Target="(https?:\/\/[^"]+)"/g;
 const BIBTEX_LINK: Record<string, string> = { "\\": "%5C", "{": "%7B", "}": "%7D" };
@@ -87,6 +92,15 @@ export function pptxProblems(where: string, file: Buffer, sources: readonly Cite
     if (SLIDE_RELS.test(name)) for (const match of body.toString("utf8").matchAll(RELS_TARGET)) links.add(xmlText(match[1]));
   }
   return missingLinks(where, links, sources);
+}
+
+export function htmlDeckProblems(where: string, file: Buffer, sources: readonly CitedSource[]): string[] {
+  const text = file.toString("utf8");
+  if (!HTML_START.test(text) || !text.trimEnd().endsWith(HTML_END)) return [`${where} is not a whole HTML file`];
+  if ((text.match(DECK_SLIDE) ?? []).length === 0) return [`${where} holds no slide`];
+  const shown = text.replace(HTML_ENTITY, (entity) => HTML_ENTITIES[entity] ?? entity);
+  const found = new Set(sources.map(referenceLink).filter((link): link is string => link !== null && shown.includes(link)));
+  return missingLinks(where, found, sources);
 }
 
 function bibtexLink(link: string): string {

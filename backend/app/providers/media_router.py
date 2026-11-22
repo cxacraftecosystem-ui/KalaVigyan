@@ -10,11 +10,11 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core import managed_keys
 from app.core.errors import SPEND_REFUSAL_KIND, STOP_KINDS
-from app.services import app_settings, managed_secrets
-from app.services.ai_providers import AUDIO_TASKS, MEDIA_TASKS, AiTask, model_for
+from app.providers.catalogue import AUDIO_TASKS, MEDIA_TASKS, AiTask, model_for
 
-from . import budget
+from . import budget, spend_settings
 from .base import Adapter, MediaRequest, MediaResult, ProviderError
 from .registry import build_adapter
 from .router import (
@@ -85,11 +85,11 @@ class MediaRouter:
 
     async def available(self, ask: MediaAsk) -> bool:
         routes = await self._routes(ask.task)
-        keyed = [c for c in routes.choices if managed_secrets.peek_secret(c.key_name)]
+        keyed = [c for c in routes.choices if managed_keys.peek_secret(c.key_name)]
         if not keyed:
             return False
         async with self._sessions() as session:
-            ceilings = budget.Ceilings.from_settings(await app_settings.load_all(session))
+            ceilings = budget.Ceilings.from_settings(await spend_settings.load_spend_settings(session))
             spend = await current_spend(session, ask.principal)
         decision = budget.evaluate(
             ceilings,
@@ -133,10 +133,10 @@ class MediaRouter:
             raise RouterError("unsupported", f"{task.value} is not a media task")
         async with self._sessions() as session:
             loaded = await load_routes(session, task)
-            values = await app_settings.load_all(session)
-            await managed_secrets.refresh_if_stale(session)
+            values = await spend_settings.load_spend_settings(session)
+            await managed_keys.refresh_if_stale(session)
         ordered = order_routes(task, loaded, degrade=False, estimate=lambda _: Decimal(0))
-        return _Routes(choices=ordered, overrides=values.get(app_settings.MODEL_PRICES) or {})
+        return _Routes(choices=ordered, overrides=values.get(spend_settings.MODEL_PRICES) or {})
 
     async def _reserve(self, choice: RouteChoice, ask: MediaAsk, overrides: dict[str, Any]) -> uuid.UUID:
         async with self._sessions() as session:
@@ -156,7 +156,7 @@ class MediaRouter:
 
     async def _call(self, choice: RouteChoice, ask: MediaAsk, overrides: dict[str, Any]) -> MediaCall:
         event_id = await self._reserve(choice, ask, overrides)
-        key = managed_secrets.peek_secret(choice.key_name)
+        key = managed_keys.peek_secret(choice.key_name)
         adapter: Adapter | None = None
         try:
             adapter = self._adapter_factory(choice, key)

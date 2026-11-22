@@ -22,8 +22,8 @@ from app.research.image_screens import (
     NEAR_IDENTICAL_BITS,
     Near,
     ScreenSummary,
+    ScreenTools,
     VisionRequest,
-    VisionScreen,
     VisionVerdict,
     screen_flags,
     screen_reasons,
@@ -36,7 +36,6 @@ from .image_contributions_errors import ContributionRefused
 
 __all__ = [
     "DECODES_AT_ONCE",
-    "ScreenTools",
     "Screened",
     "nearest_stored",
     "recorded_screen",
@@ -54,11 +53,6 @@ VECTOR = "An SVG drawing is not looked at automatically."
 BIT_WIDTH = 64
 
 _decodes = asyncio.Semaphore(DECODES_AT_ONCE)
-
-
-@dataclass(frozen=True)
-class ScreenTools:
-    vision: VisionScreen | None
 
 
 @dataclass(frozen=True)

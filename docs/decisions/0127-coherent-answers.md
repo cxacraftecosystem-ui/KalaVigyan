@@ -17,6 +17,7 @@ claim, one rendering; No gap on the page; the reused and the composed ladder) an
 | The evaluation that found the faults | [answer-eval.md](../contracts/answer-eval.md) |
 | The scholarly adapters it paces | [0005-scholarly-source-adapters.md](0005-scholarly-source-adapters.md) and [research.md](../contracts/research.md), Scholarly adapters |
 | One fact across sections, and gaps from any author (amends items 1 and 2) | [decision 0138](0138-answers-composed-from-the-asked-fields.md) |
+| One pace for every process, Crossref in the polite pool, and the wait in the trail (amends item 4) | [decision 0139](0139-sources-and-providers-reach-outside-services-once.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

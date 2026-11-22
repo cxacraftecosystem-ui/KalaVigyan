@@ -1,0 +1,66 @@
+{
+ "batchcomplete": true,
+ "query": {
+  "pages": [
+   {
+    "pageid": 92241461,
+    "ns": 6,
+    "title": "File:Journal of the Bombay Natural History Society (IA journalofbomba9111994bomb).pdf",
+    "imagerepository": "local",
+    "imageinfo": [
+     {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/6/66/Journal_of_the_Bombay_Natural_History_Society_%28IA_journalofbomba9111994bomb%29.pdf?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "descriptionurl": "https://commons.wikimedia.org/wiki/File:Journal_of_the_Bombay_Natural_History_Society_(IA_journalofbomba9111994bomb).pdf",
+      "descriptionshorturl": "https://commons.wikimedia.org/wiki/Special:Redirect/page/92241461",
+      "extmetadata": {
+       "ObjectName": {
+        "value": "<div class=\"fn\">\nJournal of the Bombay Natural History Society</div>",
+        "source": "commons-desc-page"
+       },
+       "Artist": {
+        "value": "<div class=\"fn value\">\nBombay Natural History Society</div>",
+        "source": "commons-desc-page"
+       },
+       "ImageDescription": {
+        "value": "<div class=\"description\">\n<dl><dd>Vol. 1-24, 1886-1917; v. 18-24, 1907-14. 1 v.; v. 25-30, 1918-25. 1 v.; v. 31-36, 1926-33 1 v.; v. 37-42, 1934-41. 1 v</dd>\n<dd>digitized</dd>\n<dd>Elecresource</dd></dl>\n<br>Subjects: Natural history</div>",
+        "source": "commons-desc-page"
+       },
+       "Credit": {
+        "value": "<dl><dd><a href=\"//archive.org/details/journalofbomba9111994bomb\" class=\"extiw\" title=\"iarchive:journalofbomba9111994bomb\"><bdi class=\"description en\" lang=\"en\" dir=\"ltr\">Internet Archive identifier:</bdi> journalofbomba9111994bomb</a></dd>\n<dd><a rel=\"nofollow\" class=\"external free\" href=\"https://archive.org/download/journalofbomba9111994bomb/journalofbomba9111994bomb.pdf\">https://archive.org/download/journalofbomba9111994bomb/journalofbomba9111994bomb.pdf</a></dd></dl>",
+        "source": "commons-desc-page"
+       },
+       "LicenseShortName": {
+        "value": "Public domain",
+        "source": "commons-desc-page",
+        "hidden": ""
+       },
+       "AttributionRequired": {
+        "value": "false",
+        "source": "commons-desc-page",
+        "hidden": ""
+       }
+      },
+      "mime": "application/pdf"
+     }
+    ],
+    "contentmodel": "wikitext",
+    "pagelanguage": "en",
+    "pagelanguagehtmlcode": "en",
+    "pagelanguagedir": "ltr",
+    "touched": "2026-11-19T04:05:04Z",
+    "lastrevid": 1120534278,
+    "length": 1217,
+    "fullurl": "https://commons.wikimedia.org/wiki/File:Journal_of_the_Bombay_Natural_History_Society_(IA_journalofbomba9111994bomb).pdf",
+    "editurl": "https://commons.wikimedia.org/w/index.php?title=File:Journal_of_the_Bombay_Natural_History_Society_(IA_journalofbomba9111994bomb).pdf&action=edit",
+    "canonicalurl": "https://commons.wikimedia.org/wiki/File:Journal_of_the_Bombay_Natural_History_Society_(IA_journalofbomba9111994bomb).pdf",
+    "revisions": [
+     {
+      "revid": 1120534278,
+      "parentid": 754155671,
+      "timestamp": "2025-11-24T00:01:11Z"
+     }
+    ]
+   }
+  ]
+ }
+}

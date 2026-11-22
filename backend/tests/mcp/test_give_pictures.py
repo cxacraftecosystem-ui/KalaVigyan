@@ -11,9 +11,8 @@ from app.api.mcp_picture_arguments import GivePictures
 from app.api.mcp_tools import ToolContext, answer
 from app.research.image_contributions_give import GivenPicture, GivenPictures
 from app.research.image_intake_fetch import FetchedPicture
-from app.research.image_screens import ScreenSummary
+from app.research.image_screens import ScreenSummary, ScreenTools
 from app.research.upload_links import SlotCraft
-from app.services.image_screens import ScreenTools
 from app.services.upload_links_give import Giving
 
 from .test_picture_uploads import DECLARATION, OWNER, WORDS, context, issuing

@@ -7,6 +7,8 @@ from pathlib import Path
 
 import httpx
 
+from app.fetcher.extract import Extracted
+from app.fetcher.parsing import ParseJob, extract_document
 from app.fetcher.robots import RobotsPolicy
 from app.fetcher.sandbox import SandboxFetcher
 from app.fetcher.transport import PinnedHttp
@@ -34,12 +36,27 @@ def redirect(location: str, status: int = 302) -> httpx.Response:
     return httpx.Response(status, headers={"location": location})
 
 
+class InlineParser:
+    async def parse(self, job: ParseJob) -> Extracted:
+        return extract_document(job)
+
+
+class SiteTransport(httpx.MockTransport):
+    def __init__(self, site: Site) -> None:
+        super().__init__(site.handle)
+        self.site = site
+
+    async def aclose(self) -> None:
+        self.site.clients_closed += 1
+
+
 @dataclass
 class Site:
     routes: dict[str, httpx.Response | Handler] = field(default_factory=dict)
     dns: dict[str, list[str]] = field(default_factory=dict)
     requests: list[httpx.Request] = field(default_factory=list)
     lookups: list[str] = field(default_factory=list)
+    clients_closed: int = 0
 
     async def resolve(self, host: str, port: int) -> list[str]:
         self.lookups.append(host)
@@ -61,12 +78,11 @@ class Site:
         return answer if isinstance(answer, httpx.Response) else await answer
 
     def pinned(self) -> PinnedHttp:
-        return PinnedHttp(resolve=self.resolve, transport=httpx.MockTransport(self.handle))
+        return PinnedHttp(resolve=self.resolve, transport=SiteTransport(self))
 
     def fetcher(self, *, clock: Callable[[], float] | None = None) -> SandboxFetcher:
-        pinned = self.pinned()
-        robots = RobotsPolicy(pinned, clock=clock) if clock else RobotsPolicy(pinned)
-        return SandboxFetcher(pinned, robots, clock=lambda: FETCHED)
+        robots = RobotsPolicy(clock=clock) if clock else RobotsPolicy()
+        return SandboxFetcher(self.pinned(), robots, InlineParser(), clock=lambda: FETCHED)
 
     def page_requests(self) -> list[str]:
         return [

@@ -9,6 +9,7 @@ import { askKnownAnswer } from "./asking";
 import { NetworkQuiet, captureScreen, readyForCapture, sightProblems, type Captured } from "./capture";
 import { clip } from "./checks";
 import { proveExports, type ExportProof } from "./exportProof";
+import { proveLessonPack } from "./lessonProof";
 import { ANSWER_WIDTHS, QUESTIONS_SCHEME, QUESTIONS_WIDTH, SCHEMES, contextOptions, runLabel } from "./matrix";
 import { passPreviewProtection } from "./preview";
 import type { AnswersReport } from "./report";
@@ -120,7 +121,9 @@ test("four known-answer questions: the mordant in English and Hindi and Kachchh'
     }
     write();
   }
-  exports = await proveExports(page, records, user);
+  exports = await proveExports(page, records);
+  write();
+  await proveLessonPack(browser, exports);
   write();
   const kept = await keepFirstAnswer(page, records);
   const viewed = await answerViews(browser, page, records, user.role);

@@ -19,6 +19,8 @@ __all__ = [
     "TRAIL_PUBLISHER_MAX_CHARS",
     "TRAIL_STAGES",
     "TRAIL_TITLE_MAX_CHARS",
+    "PacedEvent",
+    "ServiceWait",
     "TrailEvent",
 ]
 
@@ -30,6 +32,7 @@ PIECE_PREFIX = "piece"
 STORED_TRAIL_PREFIXES = (STORED_SOURCE_PREFIX, PIECE_PREFIX)
 TRAIL_TITLE_MAX_CHARS = 1000
 TRAIL_PUBLISHER_MAX_CHARS = 300
+SERVICE_NAME_MAX_CHARS = 40
 TRAIL_GROUP_OF_SOURCE: Mapping[str, str] = MappingProxyType(
     {
         "PAPER": "PAPERS",
@@ -42,6 +45,7 @@ TRAIL_GROUP_OF_SOURCE: Mapping[str, str] = MappingProxyType(
         "DATASET": "DATASETS",
         "COMPOUND_RECORD": "DATASETS",
         "WEB_PAGE": "WEB",
+        "MEDIA": "WEB",
         "OTHER": "WEB",
     }
 )
@@ -76,3 +80,15 @@ class TrailEvent(ContractModel):
         if prefix == "source" and self.source_id != rest:
             raise ValueError(f"trail {self.key} names its stored source")
         return self
+
+
+class ServiceWait(ContractModel):
+    service: str = Field(min_length=1, max_length=SERVICE_NAME_MAX_CHARS)
+    waited_seconds: float = Field(ge=0)
+    waited_requests: int = Field(ge=0)
+    refusals: int = Field(ge=0)
+    unsent: int = Field(ge=0)
+
+
+class PacedEvent(ContractModel):
+    services: list[ServiceWait] = Field(min_length=1)

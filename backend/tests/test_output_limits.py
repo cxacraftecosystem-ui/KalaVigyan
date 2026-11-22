@@ -1,14 +1,7 @@
 import pytest
 
 from app.providers.answer_routes import BUILDER_TUNING, COMPOSE_TUNINGS, EXPLAINER_TUNINGS
-from app.providers.router import (
-    DEFAULT_MAX_OUTPUT_TOKENS,
-    RouteChoice,
-    RouteTuning,
-    output_tokens_for,
-    route_allowed,
-)
-from app.services.ai_providers import (
+from app.providers.catalogue import (
     CHAT_TASKS,
     DEFAULT_ROUTES,
     PROVIDERS,
@@ -16,6 +9,13 @@ from app.services.ai_providers import (
     catalogue,
     output_limit,
     supports,
+)
+from app.providers.router import (
+    DEFAULT_MAX_OUTPUT_TOKENS,
+    RouteChoice,
+    RouteTuning,
+    output_tokens_for,
+    route_allowed,
 )
 
 DOCUMENTED_MAXIMA = {

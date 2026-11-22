@@ -55,7 +55,7 @@ async def mcp_caller(request: Request, session: AsyncSession) -> McpCaller | Non
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED, refused.description, {"WWW-Authenticate": challenge}
         ) from refused
-    refuse_when_throttled(mcp_connection_attempt(str(caller.grant_id)), CONNECTION_SPENT)
+    refuse_when_throttled(await mcp_connection_attempt(str(caller.grant_id)), CONNECTION_SPENT)
     return caller
 
 

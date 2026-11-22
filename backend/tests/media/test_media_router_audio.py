@@ -6,9 +6,9 @@ import pytest
 
 from app.providers.base import MediaPoll, MediaRequest, MediaResult
 from app.providers.budget import SpendState
+from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaAsk, MediaRouter
 from app.providers.router import Principal, RouterError
-from app.services.ai_providers import AiTask
 
 from .audio_routes import SoundStudio, budgeted, elevenlabs_route, mp3, no_session, studio_router
 from .mp4_builder import movie

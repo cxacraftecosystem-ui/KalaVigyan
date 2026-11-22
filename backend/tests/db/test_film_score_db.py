@@ -9,10 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.db import get_engine
 from app.models import UsageEvent, User
 from app.providers.budget import MEDIA_CAP
+from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaAsk, MediaRouter
 from app.providers.router import Principal, RouterError, load_routes
 from app.services import app_settings
-from app.services.ai_providers import AiTask
 
 from ..media.audio_routes import SoundStudio
 

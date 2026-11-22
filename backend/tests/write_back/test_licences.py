@@ -66,6 +66,59 @@ def test_every_other_licence_is_closed(licence: str | None) -> None:
     assert not open_licence(licence)
 
 
+@pytest.mark.parametrize(
+    "licence",
+    [
+        "CC BY 2.5 IN",
+        "cc by-sa 2.5 in",
+        "CC BY-SA 3.0 DE",
+        "CC-BY-SA-2.0-UK",
+        "Creative Commons Attribution 2.5 India",
+        "Creative Commons Attribution-Share Alike 3.0 Germany",
+        "https://creativecommons.org/licenses/by/2.5/in/",
+    ],
+)
+def test_national_ports_of_open_cc_licences_are_open(licence: str) -> None:
+    assert open_licence(licence)
+
+
+@pytest.mark.parametrize(
+    "licence",
+    [
+        "This is an open access article under the CC BY license (http://creativecommons.org/licenses/by/4.0/).",
+        "This article is licensed under a Creative Commons Attribution 4.0 International License.",
+        "This is an open access article distributed under the terms of the Creative Commons Attribution "
+        "License, which permits unrestricted use, distribution, and reproduction in any medium.",
+        "Attribution 4.0 International (CC BY 4.0)",
+        "Text is available under the Creative Commons Attribution-ShareAlike 4.0 License; additional terms may apply.",
+        "This file is made available under the Creative Commons CC0 1.0 Universal Public Domain Dedication.",
+        "This work is in the public domain.",
+        "Open Data Commons Public Domain Dedication and License",
+        "Licensed under CC BY-SA 2.5 IN.",
+    ],
+)
+def test_common_prose_naming_an_open_licence_is_open(licence: str) -> None:
+    assert open_licence(licence)
+
+
+@pytest.mark.parametrize(
+    "licence",
+    [
+        "CC BY-NC 2.5 IN",
+        "Creative Commons Attribution-NonCommercial 4.0 International License",
+        "Creative Commons Attribution-NoDerivatives 4.0 International License",
+        "This is an open access article under the CC BY-NC-ND license.",
+        "Text under CC BY 4.0; figures copyright the publisher, all rights reserved.",
+        "Licensed under a Creative Commons licence.",
+        "This work is in the public domain in India because its term of copyright has expired.",
+        "This is an open access article under the CC BY license (https://www.elsevier.com/tdm/userlicense/1.0/).",
+        "PD Dr. Meier holds the rights.",
+    ],
+)
+def test_prose_with_a_restriction_a_place_or_no_named_open_licence_is_closed(licence: str) -> None:
+    assert not open_licence(licence)
+
+
 def test_full_text_under_an_open_licence_is_public() -> None:
     item = scholarly("W7", doi="10.1000/w7").model_copy(update={"licence": "CC BY 4.0"})
     assert full_text(item) == "PUBLIC"

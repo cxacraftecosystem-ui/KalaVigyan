@@ -2,10 +2,9 @@ import pytest
 
 from app.fetcher.extract import content_type_of, extract
 from app.fetcher.pdf import pdf_text
-from app.fetcher.robots import rules_for_answer
 from app.research.fetcher import FETCH_TEXT_MAX_CHARS, FetchRefused, PageMetadata
 
-from .pdf_fixture import pdf_with_pages
+from .pdf_fixture import pdf_with_pages, pdf_with_resources
 from .site import fixture
 
 URL = "https://crafts.example.org/ajrakh/resist-printing"
@@ -70,13 +69,37 @@ def test_an_unknown_charset_falls_back_to_utf8() -> None:
     ],
 )
 def test_accepted_content_types(declared: str, kept: str) -> None:
-    assert content_type_of(URL, declared) == kept
+    assert content_type_of(URL, declared, b"<p>Alum</p>") == kept
 
 
-@pytest.mark.parametrize("declared", ["image/png", "application/octet-stream", "application/javascript", ""])
-def test_other_content_types_are_refused(declared: str) -> None:
+@pytest.mark.parametrize(
+    ("declared", "body", "kept"),
+    [
+        ("application/octet-stream", b"%PDF-1.7 rest", "application/pdf"),
+        ("binary/octet-stream", b"%PDF-1.4 rest", "application/pdf"),
+        ("text/html", b"%PDF-1.4 rest", "text/html"),
+        ("text/plain", b"%PDF-1.4 rest", "text/plain"),
+    ],
+)
+def test_only_an_octet_stream_is_read_as_a_pdf_by_its_signature(
+    declared: str, body: bytes, kept: str
+) -> None:
+    assert content_type_of(URL, declared, body) == kept
+
+
+@pytest.mark.parametrize(
+    ("declared", "body"),
+    [
+        ("image/png", b"%PDF-1.4 rest"),
+        ("application/octet-stream", b"PK zipped"),
+        ("binary/octet-stream", b" %PDF-1.4 rest"),
+        ("application/javascript", b"%PDF-1.4 rest"),
+        ("", b"%PDF-1.4 rest"),
+    ],
+)
+def test_other_content_types_are_refused(declared: str, body: bytes) -> None:
     with pytest.raises(FetchRefused) as refused:
-        content_type_of(URL, declared)
+        content_type_of(URL, declared, body)
     assert refused.value.reason == "CONTENT_TYPE"
 
 
@@ -114,17 +137,26 @@ def test_a_broken_pdf_fails_to_parse(body: bytes) -> None:
     assert refused.value.reason == "PARSE_FAILED"
 
 
-ROBOTS = b"User-agent: *\nDisallow: /private/\n\nUser-agent: KalaVigyan\nDisallow: /drafts/\n"
+FORM_TEXT = "Indigo vats ferment for ten days. " * 40
 
 
-def test_robots_rules_for_our_agent_apply() -> None:
-    rules = rules_for_answer(200, ROBOTS)
-    assert rules.allows("https://crafts.example.org/ajrakh") is True
-    assert rules.allows("https://crafts.example.org/drafts/x") is False
+def test_a_form_drawn_on_the_page_is_read_and_counted_toward_the_decompressed_cap() -> None:
+    body = pdf_with_resources("Alum fixes the red dye.", form_text=FORM_TEXT)
+    text, _, _ = pdf_text(PDF_URL, body, max_decompressed=5000)
+    assert "Indigo vats ferment for ten days." in text
+    with pytest.raises(FetchRefused) as refused:
+        pdf_text(PDF_URL, body, max_decompressed=1000)
+    assert (refused.value.reason, refused.value.detail) == ("PDF_LIMIT", "content past 1000 bytes by page 1")
 
 
-@pytest.mark.parametrize(
-    ("status", "allowed"), [(404, True), (410, True), (401, True), (429, False), (500, False), (503, False)]
-)
-def test_robots_answers_without_a_file_follow_rfc_9309(status: int, allowed: bool) -> None:
-    assert rules_for_answer(status, b"").allows("https://crafts.example.org/") is allowed
+def test_a_font_s_unicode_map_counts_toward_the_decompressed_cap() -> None:
+    body = pdf_with_resources("Alum fixes the red dye.", to_unicode=b"% filler\n" * 250)
+    with pytest.raises(FetchRefused) as refused:
+        pdf_text(PDF_URL, body, max_decompressed=1000)
+    assert refused.value.reason == "PDF_LIMIT"
+
+
+def test_an_image_text_extraction_never_decodes_is_not_counted() -> None:
+    body = pdf_with_resources("Alum fixes the red dye.", image=bytes(5000))
+    text, truncated, _ = pdf_text(PDF_URL, body, max_decompressed=1000)
+    assert (text.strip(), truncated) == ("Alum fixes the red dye.", False)

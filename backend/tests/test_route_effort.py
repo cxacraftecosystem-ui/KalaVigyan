@@ -5,8 +5,8 @@ import pytest
 from app.providers import router as ai_router
 from app.providers.anthropic_p import AnthropicAdapter
 from app.providers.base import Adapter, ChatRequest, ChatResult
+from app.providers.catalogue import AiTask
 from app.providers.router import REASONING_EFFORT_PARAM, RouteChoice, reasoning_effort
-from app.services.ai_providers import AiTask
 
 OPUS = "claude-opus-5-5"
 SONNET = "claude-sonnet-5-5"

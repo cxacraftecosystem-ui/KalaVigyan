@@ -1,5 +1,7 @@
 import subprocess
 import sys
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -8,7 +10,7 @@ import pytest
 from app.core.errors import ExternalFailure
 from app.fetcher.server import create_app
 from app.research.fetcher import FETCHER_HEALTH_PATH, FetchedPage, FetchRefused, FetchRequest
-from app.sources.fetcher_client import FetcherClient
+from app.sources.fetcher_client import FetcherClient, FetchRecord
 from app.sources.web.searxng import SearxngAdapter
 
 from ..sources.recorded import Recorder, source_http
@@ -133,6 +135,71 @@ async def test_a_web_hit_is_read_through_the_sandbox_service_end_to_end() -> Non
     assert document.item.publisher == "Craft Notes"
     assert "alum is printed where red is wanted." in document.text
     assert "ignore previous instructions" not in document.text
+
+
+ASKED = datetime(2026, 11, 22, 8, 15, tzinfo=UTC)
+INTRANET = "https://intranet.example.org/admin"
+
+
+@dataclass
+class Records:
+    kept: list[FetchRecord] = field(default_factory=list)
+
+    async def __call__(self, record: FetchRecord) -> None:
+        self.kept.append(record)
+
+
+def recorded_client(fetcher: object, records: Records) -> FetcherClient:
+    transport = httpx.ASGITransport(app=create_app(fetcher))
+    client = httpx.AsyncClient(transport=transport)
+    return FetcherClient("http://fetcher.test/", client, record=records, clock=lambda: ASKED)
+
+
+async def test_a_page_is_recorded_with_its_final_url_status_type_size_and_hash() -> None:
+    records = Records()
+    await recorded_client(Scripted(sample_page()), records).fetch(FetchRequest(url=ARTICLE))
+    assert records.kept == [
+        FetchRecord(
+            url=ARTICLE,
+            fetched_at=FETCHED,
+            final_url=ARTICLE,
+            status=200,
+            content_type="text/html",
+            bytes=12,
+            sha256="a" * 64,
+        )
+    ]
+
+
+async def test_a_refusal_is_recorded_with_its_reason_and_where_it_stopped() -> None:
+    records = Records()
+    refusal = FetchRefused(INTRANET, "PRIVATE_ADDRESS", "resolves to 10.1.2.3")
+    with pytest.raises(FetchRefused):
+        await recorded_client(Scripted(refusal), records).fetch(FetchRequest(url=ARTICLE))
+    assert records.kept == [
+        FetchRecord(url=ARTICLE, fetched_at=ASKED, final_url=INTRANET, blocked_reason="PRIVATE_ADDRESS")
+    ]
+
+
+async def test_a_remote_failure_is_recorded_with_the_status_the_site_answered() -> None:
+    records = Records()
+    failure = ExternalFailure("crafts.example.org answered 404", kind="not_found", status=404)
+    with pytest.raises(ExternalFailure):
+        await recorded_client(Scripted(failure), records).fetch(FetchRequest(url=ARTICLE))
+    assert records.kept == [FetchRecord(url=ARTICLE, fetched_at=ASKED, status=404)]
+
+
+async def test_nothing_is_recorded_when_the_fetcher_itself_cannot_be_reached() -> None:
+    def down(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("refused")
+
+    records = Records()
+    client = FetcherClient(
+        "http://fetcher.test", httpx.AsyncClient(transport=httpx.MockTransport(down)), record=records
+    )
+    with pytest.raises(ExternalFailure):
+        await client.fetch(FetchRequest(url=ARTICLE))
+    assert records.kept == []
 
 
 def test_the_fetcher_process_loads_no_api_settings_database_or_aws_code() -> None:

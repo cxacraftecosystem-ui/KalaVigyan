@@ -14,6 +14,7 @@ from app.core.roles import Capability, can
 from app.core.security import TOKEN_VERSION_CLAIM
 from app.models import Craft, ImageContribution, UploadLink, User
 from app.research.image_contributions import ImageDeclaration
+from app.research.image_screens import ScreenTools
 from app.research.retrieval import OPEN_CHUNK_ACLS
 from app.research.upload_links import (
     LINK_PREFIX,
@@ -35,7 +36,7 @@ from app.research.upload_links import (
 
 from . import image_contributions as images, knowledge_view
 from .image_contributions_checks import checked_craft, checked_target, material_name, stage_name
-from .image_screens import Screened, ScreenTools, screened
+from .image_screens import Screened, screened
 from .oauth_tokens import new_secret, stored_secret
 from .object_store import ObjectStore
 

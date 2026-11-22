@@ -50,6 +50,12 @@ def test_a_release_brings_stored_dataset_records_up_to_the_registry_before_the_c
     assert called_in_order(seed, "app.scripts.sync_dataset_registry", "app.scripts.import_curation")
 
 
+def test_a_release_refreshes_the_shared_terms_after_the_curation_import_and_before_the_pages() -> None:
+    seed = shell_function("seed")
+    assert called_in_order(seed, "app.scripts.import_curation", "app.scripts.refresh_shared_terms")
+    assert called_in_order(seed, "app.scripts.refresh_shared_terms", 'rebuild_pages "$tree"')
+
+
 def test_the_pages_step_rebuilds_stored_documents_within_their_own_budget() -> None:
     pages = shell_function("rebuild_pages")
     assert "--seconds $PAGES_SECONDS --document-seconds $DOCUMENTS_SECONDS" in pages

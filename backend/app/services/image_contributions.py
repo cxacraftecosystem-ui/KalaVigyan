@@ -9,12 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ImageContribution, MediaAsset, PictureDeclaration, User
 from app.research.image_contributions import ImageBatch, ImageDeclaration
+from app.research.image_screens import ScreenTools
 
 from .image_contributions_checks import check_claims, checked_craft, checked_target
 from .image_contributions_errors import ContributionRefused, UnknownImage
 from .image_contributions_store import APPROVED, PENDING, REJECTED, Decision, decide, stored
 from .image_contributions_views import views
-from .image_screens import Screened, ScreenTools, screened
+from .image_screens import Screened, screened
 from .object_store import ObjectStore
 
 __all__ = [

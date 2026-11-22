@@ -120,10 +120,11 @@ async def _section(
 async def _built_on(
     spec: SectionSpec, shown: Attempt, context: SectionContext, ask: BuildAsk
 ) -> tuple[tuple[Block, ...], AddedBlocks]:
-    shown_kinds = {*context.deepening_of(spec.id).kinds, *stood_for(shown.blocks)}
+    deepening = context.deepening_of(spec.id)
+    shown_kinds = {*deepening.kinds, *stood_for(shown.blocks)}
     async with (
         context.enrichment.searching() as pictures,
-        context.builders.without(shown_kinds).building() as builds,
+        context.builders.without(shown_kinds, shown=deepening.keys).building() as builds,
     ):
         builds.start(ask)
         return await _shown(spec, shown, context, pictures, builds)

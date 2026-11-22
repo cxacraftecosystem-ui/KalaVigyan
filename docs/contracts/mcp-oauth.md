@@ -261,7 +261,8 @@ its own documentation gives them).
 ## Guards
 
 - **Rate limit per connection**: 1,200 calls in 10 minutes for one connection, counted across its
-  rotated tokens so a refresh does not reset it, then 429 with `Retry-After`
+  rotated tokens so a refresh does not reset it, and across every API process and both slots
+  (decision 0139), then 429 with `Retry-After`
   (`core/rate_limit.mcp_connection_attempt`). It protects the service and is not a spend cap.
 - **Audit**: each `tools/call` with a token writes `McpToolCall {grantId, tokenId, tool, outcome,
   calledAt}`, outcome `OK`, `TOOL_ERROR` or `PROTOCOL_ERROR`. A name that is not a tool is

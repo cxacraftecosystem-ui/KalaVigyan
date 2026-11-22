@@ -1,0 +1,180 @@
+{
+ "created": "2024-01-11T05:49:43.672017+00:00",
+ "modified": "2024-07-07T13:19:46.436945+00:00",
+ "id": 10486092,
+ "conceptrecid": "10486091",
+ "doi": "10.1016/j.phytochem.2015.06.015",
+ "doi_url": "https://doi.org/10.1016/j.phytochem.2015.06.015",
+ "metadata": {
+  "title": "Isolation and extraction of ruberythric acid from Rubia tinctorum L. and crystal structure elucidation",
+  "doi": "10.1016/j.phytochem.2015.06.015",
+  "publication_date": "2015-09-30",
+  "description": "Ford, Lauren, Rayner, Christopher M., Blackburn, Richard S. (2015): Isolation and extraction of ruberythric acid from Rubia tinctorum L. and crystal structure elucidation. Phytochemistry 117: 168-173, DOI: 10.1016/j.phytochem.2015.06.015, URL: http://dx.doi.org/10.1016/j.phytochem.2015.06.015",
+  "access_right": "restricted",
+  "creators": [
+   {
+    "name": "Ford, Lauren",
+    "affiliation": "School of Chemistry, University of Leeds, Leeds LS2 9JT, UK & Centre for Technical Textiles, University of Leeds, Leeds LS2 9JT, UK"
+   },
+   {
+    "name": "Rayner, Christopher M.",
+    "affiliation": null
+   },
+   {
+    "name": "Blackburn, Richard S.",
+    "affiliation": null
+   }
+  ],
+  "keywords": [
+   "Biodiversity",
+   "Taxonomy"
+  ],
+  "related_identifiers": [
+   {
+    "identifier": "10.5281/zenodo.10486094",
+    "relation": "hasPart",
+    "resource_type": "image-figure",
+    "scheme": "doi"
+   },
+   {
+    "identifier": "10.5281/zenodo.10486096",
+    "relation": "hasPart",
+    "resource_type": "image-figure",
+    "scheme": "doi"
+   },
+   {
+    "identifier": "10.5281/zenodo.10486098",
+    "relation": "hasPart",
+    "resource_type": "image-figure",
+    "scheme": "doi"
+   },
+   {
+    "identifier": "10.5281/zenodo.10486100",
+    "relation": "hasPart",
+    "resource_type": "image-figure",
+    "scheme": "doi"
+   },
+   {
+    "identifier": "10.5281/zenodo.10486102",
+    "relation": "hasPart",
+    "resource_type": "image-figure",
+    "scheme": "doi"
+   }
+  ],
+  "references": [
+   "Baghalian, K., Maghsodi, M., Naghavi, M.R., 2010. Genetic diversity of Iranian madder (Rubia tinctorum) populations based on agro-morphological traits, phytochemical content and RAPD markers. Ind. Crops Prod. 31, 557-562.",
+   "Balakina, G.G., Vasiliev, V.G., Karpova, E.V., Mamatyuk, V.I., 2006. HPLC and molecular spectroscopic investigations of the red dye obtained from an ancient Pazyryk textile. Dyes Pigm. 71, 54-60.",
+   "Bechtold, T., 2009. Natural colorants - quinoid, naphthoquinoid and anthraquinoid dyes. In: Bechtold, T., Mussak, R. (Eds.), Handbook of Natural Colorants. John Wiley & Sons Ltd, Chichester, pp. 159-171.",
+   "Cardon, D., 2007. Natural Dyes: Sources, Tradition, Technology and Science. Archetype Publications Ltd, London.",
+   "Desrochers, P., 2008. Bringing interregional linkages back. In: industrial symbiosis, international trade and the emergence of the synthetic dyes industry in the late 19th century Progress in Industrial Ecology - An International Journal 5, 465-481.",
+   "Derksen, G.C.H., van Beek, T.A., de Groot, AE. , Capelle, A., 1998. High-performance liquid chromatographic method for the analysis of anthraquinone glycosides and aglycones in madder root (Rubia tinctorum L.). J. Chromatogr. A 816, 227-281.",
+   "Derksen, G.C.H., van Beek ,, T.A., 2002. Rubia tinctorum L. In: ur-Rahman, A. (Ed.), Studies in Natural Product Chemistry, Vol. 26. Elsevier, Amsterdam, pp. 629- 684, Part G.",
+   "Derksen, G., Beek, T., Niederlander, H., 2002. Analysis of anthraquinones in Rubia tinctorum L. by liquid chromatography coupled with diode-array UV and mass spectrometric detection. J. Chromatogr. A 978, 119-127.",
+   "Derksen, G.C., Naayer, M., van Beek, T.A., Capelle, A., Haaksman, I.K., van Doren, H.A., de Groot, A., 2003. Chemical and enzymatic hydrolysis of anthraquinone glycosides from madder roots. Phytochem. Anal. 14, 137-144.",
+   "Derksen, G.C., Lelyveld, G.P., van Beek, T.A., Capelle, A., de Groot, A.E., 2004. Two validated hplc methods for the quantification of alizarin and other anthraquinones in Rubia tinctorum cultivars. Phytochem. Anal. 15, 397-406.",
+   "Drivas, I., Blackburn, R.S., Rayner, C.M., 2011. Natural anthraquinonoid colorants as platform chemicals in the synthesis of sustainable disperse dyes for polyesters. Dyes Pigm. 88, 7-17.",
+   "Henderson, R.L., Rayner, C.M., Blackburn, R.S., 2013. Isolation and extraction of lucidin primeveroside from Rubia tinctorum L. and crystal structure elucidation. Phytochemistry 95, 105-108.",
+   "Hofenk de Graaff, J., 2004. The Colourful Past. Archetype Publications Ltd, London.",
+   "Karapanagiotis, I., Daniilia, Sist., Tsakalof, A., Chryssoulakis, Y., 2005. Identification of red natural dyes in post-byzantine icons by HPLC. J. Liq. Chromatogr. Related Technol. 28, 739-749.",
+   "Lech, K., Jarosz, M., 2011. Novel methodology for the extraction and identification of natural dyestuffs in historical textiles by HPLC-UV-Vis-ESI MS. Case study: chasubles from the Wawel Cathedral collection. Anal. Bioanal. Chem. 399, 3241-3251.",
+   "Novotna, P., Pacakova, V., Bosakova, Z., Stulik, K., 1999. High-performance liquid chromatographic determination of some anthraquinone and naphthoquinone dyes occurring in historical textiles. J. Chromatogr. A, 235-241.",
+   "Schweppe, H., 1993. Handbuch der Naturfarbstoffe: Vorkommen, Verwendung, Nachweis. Ecomed, Landsberg/Lech, p. 231.",
+   "Silverstein, R., Bassler, G., Morrill, T., 1976. Spectrometric Identification of Organic Compounds. John Wiley & Sons Inc, New York.",
+   "Zhang, X., Laursen, R., 2005. Development of mild extraction methods for the analysis of natural dyes in textiles of historical interest using LC-diode array detector-MS. J. Anal. Chem. 77, 2022-2025."
+  ],
+  "resource_type": {
+   "title": "Journal article",
+   "type": "publication",
+   "subtype": "article"
+  },
+  "journal": {
+   "pages": "168-173",
+   "title": "Phytochemistry",
+   "volume": "117"
+  },
+  "alternate_identifiers": [
+   {
+    "identifier": "urn:lsid:plazi.org:pub:145AFFF5FFA6FF8FC811FF9E3939FFBA"
+   }
+  ],
+  "communities": [
+   {
+    "id": "biosyslit"
+   }
+  ],
+  "relations": {
+   "version": [
+    {
+     "index": 0,
+     "is_last": true,
+     "parent": {
+      "pid_type": "recid",
+      "pid_value": "10486091"
+     }
+    }
+   ]
+  }
+ },
+ "title": "Isolation and extraction of ruberythric acid from Rubia tinctorum L. and crystal structure elucidation",
+ "links": {
+  "self": "https://zenodo.org/api/records/10486092",
+  "self_html": "https://zenodo.org/records/10486092",
+  "preview_html": "https://zenodo.org/records/10486092?preview=1",
+  "doi": "https://doi.org/10.1016/j.phytochem.2015.06.015",
+  "self_doi": "https://doi.org/10.1016/j.phytochem.2015.06.015",
+  "self_doi_html": "https://zenodo.org/doi/10.1016/j.phytochem.2015.06.015",
+  "reserve_doi": "https://zenodo.org/api/records/10486092/draft/pids/doi",
+  "parent": "https://zenodo.org/api/records/10486091",
+  "parent_html": "https://zenodo.org/records/10486091",
+  "self_iiif_manifest": "https://zenodo.org/api/iiif/record:10486092/manifest",
+  "self_iiif_sequence": "https://zenodo.org/api/iiif/record:10486092/sequence/default",
+  "files": "https://zenodo.org/api/records/10486092/files",
+  "media_files": "https://zenodo.org/api/records/10486092/media-files",
+  "thumbnails": {
+   "10": "https://zenodo.org/api/iiif/record:10486092:source.pdf/full/%5E10,/0/default.jpg",
+   "50": "https://zenodo.org/api/iiif/record:10486092:source.pdf/full/%5E50,/0/default.jpg",
+   "100": "https://zenodo.org/api/iiif/record:10486092:source.pdf/full/%5E100,/0/default.jpg",
+   "250": "https://zenodo.org/api/iiif/record:10486092:source.pdf/full/%5E250,/0/default.jpg",
+   "750": "https://zenodo.org/api/iiif/record:10486092:source.pdf/full/%5E750,/0/default.jpg",
+   "1200": "https://zenodo.org/api/iiif/record:10486092:source.pdf/full/%5E1200,/0/default.jpg"
+  },
+  "latest": "https://zenodo.org/api/records/10486092/versions/latest",
+  "latest_html": "https://zenodo.org/records/10486092/latest",
+  "versions": "https://zenodo.org/api/records/10486092/versions",
+  "draft": "https://zenodo.org/api/records/10486092/draft",
+  "access_links": "https://zenodo.org/api/records/10486092/access/links",
+  "access_grants": "https://zenodo.org/api/records/10486092/access/grants",
+  "access_users": "https://zenodo.org/api/records/10486092/access/users",
+  "access_request": "https://zenodo.org/api/records/10486092/access/request",
+  "access": "https://zenodo.org/api/records/10486092/access",
+  "communities": "https://zenodo.org/api/records/10486092/communities",
+  "communities-suggestions": "https://zenodo.org/api/records/10486092/communities-suggestions",
+  "request_deletion": "https://zenodo.org/api/records/10486092/request-deletion",
+  "file_modification": "https://zenodo.org/api/records/10486092/file-modification",
+  "quota_increase": "https://zenodo.org/api/records/10486092/quota-increase",
+  "requests": "https://zenodo.org/api/records/10486092/requests"
+ },
+ "updated": "2024-07-07T13:19:46.436945+00:00",
+ "recid": "10486092",
+ "revision": 9,
+ "files": [],
+ "swh": {},
+ "owners": [
+  {
+   "id": "1161"
+  }
+ ],
+ "status": "published",
+ "stats": {
+  "downloads": 0,
+  "unique_downloads": 0,
+  "views": 61,
+  "unique_views": 61,
+  "version_downloads": 0,
+  "version_unique_downloads": 0,
+  "version_unique_views": 61,
+  "version_views": 61
+ },
+ "state": "done",
+ "submitted": true
+}

@@ -261,7 +261,7 @@ async def test_the_thirty_first_ask_in_ten_minutes_is_refused_and_says_when_to_a
     asked = answered_with_player()
     user = person()
     for _ in range(30):
-        assert ask_attempt(str(user.id))[0]
+        assert (await ask_attempt(str(user.id)))[0]
     with pytest.raises(InvalidInput, match=r"Ask again in \d+ seconds"):
         await ask_tool(asked.tools()).run(context(user), Ask(question=QUESTION))
     assert asked.runs == []
@@ -271,7 +271,7 @@ async def test_the_master_admin_is_not_counted() -> None:
     asked = answered_with_player()
     user = person("MASTER_ADMIN", twoFactorEnabled=True)
     for _ in range(30):
-        ask_attempt(str(user.id))
+        await ask_attempt(str(user.id))
     reply = await ask_tool(asked.tools()).run(context(user), Ask(question=QUESTION))
     assert reply.answer_id == ANSWER_ID
 

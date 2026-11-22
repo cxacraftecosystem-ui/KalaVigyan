@@ -8,7 +8,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import AwareDatetime, Field, field_validator, model_validator
 
-from app.models.knowledge import QUOTE_MAX_CHARS
+from app.models.knowledge import CONTAINER_TITLE_CHARS, QUOTE_MAX_CHARS
 
 from .base import ContractModel, HttpsUrl, PartialDate
 from .quotes import quote_occurs
@@ -18,6 +18,7 @@ __all__ = [
     "ADAPTER_NAME_PATTERN",
     "DOI_PATTERN",
     "EVIDENCE_ID_MAX_CHARS",
+    "JOURNAL_AS_PUBLISHER_ADAPTERS",
     "OPEN_ACCESS_STATUSES",
     "SEARCH_MAX_K",
     "SEARCH_QUERY_MAX_CHARS",
@@ -39,6 +40,7 @@ SEARCH_QUERY_MAX_CHARS = 300
 ADAPTER_NAME_PATTERN = r"^[a-z][a-z0-9_]{1,39}$"
 DOI_PATTERN = r"^10\.\d{4,9}/\S+$"
 OPEN_ACCESS_STATUSES = ("GOLD", "DIAMOND", "HYBRID", "BRONZE", "GREEN", "CLOSED")
+JOURNAL_AS_PUBLISHER_ADAPTERS = frozenset({"europe_pmc", "semantic_scholar"})
 PERSONAL_DATA = {
     "email address": re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+"),
     "spoken email address": re.compile(r"\b[\w.+-]+\s+at\s+[\w-]+(?:\s+dot\s+[a-z]{2,})+\b", re.IGNORECASE),
@@ -72,6 +74,7 @@ class EvidenceItem(ContractModel):
     attribution: str | None = None
     doi: str | None = Field(default=None, pattern=DOI_PATTERN, max_length=255)
     publisher: str | None = Field(default=None, max_length=300)
+    container_title: str | None = Field(default=None, min_length=1, max_length=CONTAINER_TITLE_CHARS)
     trust: TrustTier
     quotes: list[Quote] = Field(default_factory=list)
     external_ids: dict[str, str] = Field(default_factory=dict)
@@ -81,6 +84,12 @@ class EvidenceItem(ContractModel):
         if not self.id.startswith(f"{self.adapter}:") or self.id == f"{self.adapter}:":
             raise ValueError("an evidence id is '<adapter>:<id at the service>'")
         return self
+
+    @property
+    def journal(self) -> str | None:
+        if self.container_title is not None:
+            return self.container_title
+        return self.publisher if self.adapter in JOURNAL_AS_PUBLISHER_ADAPTERS else None
 
     @property
     def source_key(self) -> str:

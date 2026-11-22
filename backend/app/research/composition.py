@@ -13,6 +13,7 @@ from app.models.knowledge_pieces import DESCRIPTION_MAX_CHARS, LABEL_COLUMN_CHAR
 from .base import ContractModel
 from .crafts import QUESTION_MAX_CHARS, CraftRef
 from .evidence import EVIDENCE_ID_MAX_CHARS
+from .quote_renderings import NO_RENDERINGS, read_as
 from .quotes import (
     QUOTE_MIN_CHARS,
     QUOTE_OVERLAP_MIN,
@@ -277,7 +278,10 @@ class SentenceViolation(ContractModel):
 
 
 def sentence_violations(
-    sentence: ComposedSentence, allowed: Mapping[str, ComposeCandidate]
+    sentence: ComposedSentence,
+    allowed: Mapping[str, ComposeCandidate],
+    *,
+    renderings: Mapping[str, str] = NO_RENDERINGS,
 ) -> list[SentenceViolation]:
     cited = sentence.cited_ids
     if not cited:
@@ -286,7 +290,7 @@ def sentence_violations(
     if not sentence.spans:
         found.append(SentenceViolation(kind="UNQUOTED", detail="the sentence quotes no source"))
     verified, span_problems = _checked_spans(sentence, cited, allowed)
-    found += _support_violations(sentence.text, verified)
+    found += _support_violations(sentence.text, verified, renderings)
     found += _violations(screen_gaps(sentence.text))
     return found + span_problems
 
@@ -305,20 +309,22 @@ def _checked_spans(
     return verified, problems
 
 
-def _support_violations(text: str, verified: Mapping[str, list[str]]) -> list[SentenceViolation]:
+def _support_violations(
+    text: str, verified: Mapping[str, list[str]], renderings: Mapping[str, str]
+) -> list[SentenceViolation]:
     quotes = [quote for spans in verified.values() for quote in spans]
     found = [
         SentenceViolation(kind="UNSUPPORTED_FIGURE", detail=f) for f in unsupported_figures(text, quotes)
     ]
     if not quotes:
         return found
-    if quote_overlap(text, quotes) < QUOTE_OVERLAP_MIN:
+    read = {ref: read_as(spans, renderings) for ref, spans in verified.items()}
+    said = [quote for spans in read.values() for quote in spans]
+    if quote_overlap(text, said) < QUOTE_OVERLAP_MIN:
         found.append(SentenceViolation(kind="UNRELATED_QUOTE", detail="the quotes do not carry its wording"))
     else:
-        found += [
-            SentenceViolation(kind="UNRELATED_SPAN", detail=ref) for ref in unrelated_refs(text, verified)
-        ]
-    return found + _violations(stance_gaps(text, quotes))
+        found += [SentenceViolation(kind="UNRELATED_SPAN", detail=ref) for ref in unrelated_refs(text, read)]
+    return found + _violations(stance_gaps(text, said))
 
 
 def _violations(gaps: list[SupportGap]) -> list[SentenceViolation]:

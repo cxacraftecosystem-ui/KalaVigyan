@@ -2,9 +2,7 @@ import ast
 from pathlib import Path
 
 from app.models.enums import AI_PROVIDERS, AI_TASKS
-from app.providers.presets import ALLOWED_KEY_NAMES, BY_PRESET
-from app.services import managed_secrets
-from app.services.ai_providers import (
+from app.providers.catalogue import (
     DEFAULT_ROUTES,
     PROVIDERS,
     ROUTABLE_TASKS,
@@ -14,6 +12,8 @@ from app.services.ai_providers import (
     catalogue,
     supports,
 )
+from app.providers.presets import ALLOWED_KEY_NAMES, BY_PRESET
+from app.services import managed_secrets
 
 MIGRATION = Path(__file__).resolve().parents[1] / "migrations" / "versions" / "0060_reranking.py"
 

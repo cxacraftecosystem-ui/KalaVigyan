@@ -8,6 +8,7 @@ from typing import Any, Protocol
 
 from app.core.errors import SPEND_REFUSAL_KIND, AppError
 from app.core.roles import PROFESSOR, Capability, can, daily_allowance, has_rank, role_value
+from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaAsk
 from app.providers.quota import remaining_today, seconds_until_next_day
 from app.providers.router import RouterError
@@ -20,7 +21,6 @@ from app.schemas.media import (
     MediaOptions,
     MediaStageOption,
 )
-from app.services.ai_providers import AiTask
 
 from .bundle import sealed_bundle
 from .claim_set import claim_set, enough_claims

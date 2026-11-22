@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from sqlalchemy import distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Concept, Craft, CuratedClaim, KnowledgePiece as PieceRow, Term, TermConcept, TermCraft
+from app.models import Claim, Concept, Craft, KnowledgePiece as PieceRow, Term, TermConcept, TermCraft
 from app.research.blocks import ExplainerSentence
 from app.research.blocks_learning import COMPARE_CRAFTS_MIN
 from app.research.citations import SourceRef
@@ -24,8 +24,7 @@ from app.research.knowledge_pieces import KnowledgePiece
 from app.research.offered_facts import PIECE_FIRST, OfferedFact, fact_rank, sentence_claim_ids
 from app.research.piece_reuse import visible_as_cited
 from app.research.retrieval import OPEN_CHUNK_ACLS
-from app.research.sections import FALLBACK_DISCIPLINE
-from app.research.vocabulary import CANONICAL_LANGUAGE, CONCEPT_TYPE_DISCIPLINES
+from app.research.vocabulary import CANONICAL_LANGUAGE
 
 from . import knowledge_view
 from .learning_facts import offered_fact, source_refs
@@ -35,8 +34,10 @@ __all__ = [
     "COMPARE_MODE",
     "COMPARE_PIECES_MAX",
     "CompareOffers",
+    "claim_fields",
     "comparison_offers",
     "craft_comparison",
+    "filed_facets",
 ]
 
 COMPARE_MODE = "HYBRID"
@@ -98,25 +99,33 @@ async def _claim_facts(
     refs = source_refs(found)
     sources.update(refs)
     own = set(await session.scalars(select(Concept.id).where(Concept.craftId == craft.id)))
-    curated = await _curated_disciplines(session, [view.id for view in views])
+    filed = await claim_fields(session, [view.id for view in views])
     facts: list[OfferedFact] = []
     for view in views:
         if view.concept_id not in own or view.concept_type == knowledge_view.EDGE_SECTION:
             continue
-        facet = curated.get(view.id) or CONCEPT_TYPE_DISCIPLINES.get(view.concept_type, FALLBACK_DISCIPLINE)
-        fact = offered_fact(view, refs, facet=facet) if facet in facets else None
-        if fact is not None:
-            facts.append(fact)
+        for facet in filed_facets(filed.get(view.id, ()), facets):
+            fact = offered_fact(view, refs, facet=facet)
+            if fact is not None:
+                facts.append(fact)
     return facts
 
 
-async def _curated_disciplines(session: AsyncSession, claim_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, str]:
+def filed_facets(filed: Sequence[str], facets: Sequence[str]) -> list[str]:
+    return [facet for facet in dict.fromkeys(facets) if facet in filed]
+
+
+async def claim_fields(
+    session: AsyncSession, claim_ids: Sequence[uuid.UUID]
+) -> dict[uuid.UUID, tuple[str, ...]]:
     if not claim_ids:
         return {}
     rows = await session.execute(
-        select(CuratedClaim.claimId, CuratedClaim.discipline).where(CuratedClaim.claimId.in_(list(claim_ids)))
+        select(Claim.id, Claim.field, Claim.fields).where(
+            Claim.id.in_(list(claim_ids)), Claim.field.is_not(None)
+        )
     )
-    return {row.claimId: row.discipline for row in rows.all()}
+    return {row.id: (row.field, *row.fields) for row in rows.all()}
 
 
 async def _piece_facts(

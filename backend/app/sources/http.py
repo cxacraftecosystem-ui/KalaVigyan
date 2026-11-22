@@ -15,6 +15,7 @@ from app.core.retry_after import parse_headers
 
 __all__ = [
     "DEFAULT_BLOCK_SECONDS",
+    "RATE_LIMITED_STATUSES",
     "SOURCE_MAX_BYTES",
     "SOURCE_TIMEOUT_SECONDS",
     "RatePolicy",
@@ -27,6 +28,7 @@ __all__ = [
 SOURCE_TIMEOUT_SECONDS = 20.0
 SOURCE_MAX_BYTES = 8 * 1024 * 1024
 DEFAULT_BLOCK_SECONDS = 60.0
+RATE_LIMITED_STATUSES = frozenset({429, 503})
 CACHE_TTL_SECONDS = 600.0
 CACHE_MAX_ENTRIES = 512
 
@@ -152,7 +154,7 @@ class SourceHttp:
                     raise self._failure(f"sent more than {SOURCE_MAX_BYTES} bytes", kind="error")
             content_type = streamed.headers.get("content-type", "").split(";")[0].strip().lower()
             retry_after = None
-            if streamed.status_code in (429, 503):
+            if streamed.status_code in RATE_LIMITED_STATUSES:
                 retry_after = parse_headers(streamed.headers)
                 self._note_rate_limit(retry_after)
             return SourceResponse(streamed.status_code, content_type, bytes(body), retry_after)

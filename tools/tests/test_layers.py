@@ -170,3 +170,11 @@ def test_voice_orchestrates_providers_and_contracts_and_only_entry_points_import
     assert found == [
         "backend/app/services/answering.py:1: services imports app.voice (services may not import voice)"
     ]
+
+
+def test_providers_sit_below_services_and_services_call_them() -> None:
+    found = check("backend/app/providers/router.py", "from app.services import app_settings\n")
+    assert found == [
+        "backend/app/providers/router.py:1: providers imports app.services (providers may not import services)"
+    ]
+    assert check("backend/app/services/managed_secrets.py", "from app.providers import anthropic_p\n") == []

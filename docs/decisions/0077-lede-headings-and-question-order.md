@@ -4,11 +4,13 @@ Every answer opens with a lede, composed and streamed first outside the sections
 carry headings written for the question, in the question's order. Follow-ups come from what the
 answer left open, and signature figures are declared but not built.
 
-Date: 2026-11-18. Status: accepted.
+Date: 2026-11-18. Status: accepted. Amended by 0143 (a lesson pack's title slide opens with the
+lede).
 
 | For | Read |
 |---|---|
 | What amended part of it | [0140 Voice and Listen hold their state in the bucket, bill what they hear and read the lede first](0140-voice-and-listen-kept-true.md): Listen, film and the quiz read the lede |
+| What amended it later | [0143](0143-lessons-exports-and-follow-ups-kept-true.md): a lesson pack's title slide opens with the lede |
 | What built on it | [0086 The four signature figures are built, as lede figures only, behind a setting](0086-signature-figures-built.md): item 6's signature figures |
 | Every decision, by group | [README.md](README.md) |
 

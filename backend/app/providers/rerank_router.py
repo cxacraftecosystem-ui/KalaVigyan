@@ -9,12 +9,12 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core import managed_keys
 from app.core.errors import SPEND_REFUSAL_KIND, STOP_KINDS
+from app.providers.catalogue import AiTask, model_for
 from app.research.reranking import Relevance
-from app.services import app_settings, managed_secrets
-from app.services.ai_providers import AiTask, model_for
 
-from . import budget
+from . import budget, spend_settings
 from .base import Adapter, ProviderError, RerankRequest, RerankResult
 from .registry import build_adapter
 from .router import (
@@ -54,7 +54,7 @@ class RerankRouter:
         principal: Principal,
         session_factory: async_sessionmaker[AsyncSession] | None = None,
         adapter_factory: AdapterFactory | None = None,
-        keys: KeyLookup = managed_secrets.peek_secret,
+        keys: KeyLookup = managed_keys.peek_secret,
     ) -> None:
         self._principal = principal
         self._session_factory = session_factory
@@ -97,10 +97,10 @@ class RerankRouter:
     async def _routes(self) -> tuple[list[RouteChoice], dict[str, Any]]:
         async with self._sessions()() as session:
             loaded = await load_routes(session, AiTask.RERANK)
-            values = await app_settings.load_all(session)
-            await managed_secrets.refresh_if_stale(session)
+            values = await spend_settings.load_spend_settings(session)
+            await managed_keys.refresh_if_stale(session)
         ordered = order_routes(AiTask.RERANK, loaded, degrade=False, estimate=lambda _: Decimal(0))
-        return ordered, values.get(app_settings.MODEL_PRICES) or {}
+        return ordered, values.get(spend_settings.MODEL_PRICES) or {}
 
     async def _call(
         self, choice: RouteChoice, key: str, request: RerankRequest, overrides: Mapping[str, Any]

@@ -11,10 +11,10 @@ from app.core.deps import get_current_user
 from app.core.errors import AppError
 from app.core.roles import Capability, can
 from app.models import User
+from app.providers.catalogue import AiTask
 from app.providers.media_router import MediaAsk, MediaRouter
 from app.providers.router import Principal
 from app.schemas.film import FilmOffer
-from app.services.ai_providers import AiTask
 from app.services.object_store import media_bucket
 from app.voice.film_scenes import BED_SECONDS_MIN
 from app.voice.film_score import ScoreMaker

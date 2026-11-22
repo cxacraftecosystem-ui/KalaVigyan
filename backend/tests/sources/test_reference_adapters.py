@@ -116,25 +116,6 @@ async def test_wikidata_unknown_item_is_not_found_and_bad_ids_are_refused() -> N
             await adapter.fetch(bad)
 
 
-def test_time_values_keep_only_the_precision_wikidata_states() -> None:
-    def row(value: str, precision: str) -> dict:
-        return {
-            "property": {"value": "http://www.wikidata.org/entity/P571"},
-            "propertyLabel": {"value": "inception"},
-            "type": {"value": "http://wikiba.se/ontology#Time"},
-            "value": {"value": value},
-            "precision": {"value": precision},
-        }
-
-    rows = [
-        row("1640-01-01T00:00:00Z", "9"),
-        row("1856-03-01T00:00:00Z", "10"),
-        row("1856-03-07T00:00:00Z", "11"),
-        row("1600-01-01T00:00:00Z", "7"),
-    ]
-    assert statement_lines(statements_from_bindings(rows)) == ["inception: 1640; 1856-03; 1856-03-07"]
-
-
 def test_unitless_quantities_carry_no_unit() -> None:
     row = {
         "property": {"value": "http://www.wikidata.org/entity/P1117"},

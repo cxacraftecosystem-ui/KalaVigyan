@@ -137,7 +137,9 @@ def written_in(text: str, script: str) -> bool:
     return inside / len(letters) >= TARGET_SCRIPT_MIN_SHARE
 
 
-def translation_problems(original: str, translated: str, *, language: str) -> list[str]:
+def translation_problems(
+    original: str, translated: str, *, language: str, source_language: str = CANONICAL_LANGUAGE
+) -> list[str]:
     if not translated.strip():
         return ["the translation is empty"]
     problems: list[str] = []
@@ -150,17 +152,28 @@ def translation_problems(original: str, translated: str, *, language: str) -> li
     script = ANSWER_LANGUAGE_SPECS[language].script
     if _letters(_prose(original, kept)) and not written_in(_prose(translated, made), script):
         problems.append(f"the translation is not written in the {script} script")
-    return problems + _stance_problems(original, translated, language)
+    return problems + _stance_problems(original, translated, language, source_language)
 
 
-def _stance_problems(original: str, translated: str, language: str) -> list[str]:
+def _stance_problems(original: str, translated: str, language: str, source_language: str) -> list[str]:
     problems: list[str] = []
-    if negation_marked(original, CANONICAL_LANGUAGE) and not negation_marked(translated, language):
+    if negation_marked(original, source_language) and not negation_marked(translated, language):
         problems.append("the original's negation (not, no, never, without) is missing")
-    hedges = hedges_in(original)
-    if hedges and not hedge_marked(translated, language):
-        problems.append(f"the original's hedge ({', '.join(hedges)}) is missing")
+    if _hedged(original, source_language) and not hedge_marked(translated, language):
+        problems.append(_hedge_missing(original, source_language))
     return problems
+
+
+def _hedged(original: str, source_language: str) -> bool:
+    if source_language == CANONICAL_LANGUAGE:
+        return bool(hedges_in(original))
+    return hedge_marked(original, source_language)
+
+
+def _hedge_missing(original: str, source_language: str) -> str:
+    if source_language == CANONICAL_LANGUAGE:
+        return f"the original's hedge ({', '.join(hedges_in(original))}) is missing"
+    return "the original's hedge is missing"
 
 
 def _prose(text: str, tokens: set[str]) -> str:

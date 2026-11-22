@@ -42,12 +42,12 @@ async def public_reader(
 ) -> User | None:
     if user is not None:
         return user
-    _refuse_when_spent(public_read_attempt(connection))
+    _refuse_when_spent(await public_read_attempt(connection))
     return None
 
 
 async def counted_anonymous_read(connection: HTTPConnection) -> None:
-    _refuse_when_spent(public_read_attempt(connection))
+    _refuse_when_spent(await public_read_attempt(connection))
 
 
 async def public_asset_reader(
@@ -55,7 +55,7 @@ async def public_asset_reader(
 ) -> User | None:
     if user is not None:
         return user
-    _refuse_when_spent(public_asset_attempt(connection))
+    _refuse_when_spent(await public_asset_attempt(connection))
     return None
 
 

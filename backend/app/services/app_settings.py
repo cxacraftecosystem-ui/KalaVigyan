@@ -8,16 +8,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import InvalidInput
 from app.core.roles import ROLE_RANK, is_uncapped
 from app.models import AppSetting
-from app.models.enums import EXPLAINER_DEPTHS
+from app.providers.spend_settings import (
+    ANSWER_CAP_USD,
+    DEGRADE_AT_FRACTION,
+    MEDIA_CAP_USD,
+    MONTHLY_CEILING_USD,
+    ROLE_DAILY_USD,
+    spend_defaults,
+)
 from app.research.field_voices import ARTISAN_IMAGES_HIDDEN, ARTISAN_IMAGES_SETTING
 from app.research.review_switch import SWITCH_DEFAULTS, ReviewSwitch, ReviewSwitchUpdate, stored_switch
 
-MONTHLY_CEILING_USD = "AI_MONTHLY_CEILING_USD"
-MEDIA_CAP_USD = "AI_MEDIA_CAP_USD"
-ROLE_DAILY_USD = "AI_ROLE_DAILY_USD"
-DEGRADE_AT_FRACTION = "AI_DEGRADE_AT_FRACTION"
-ANSWER_CAP_USD = "AI_ANSWER_CAP_USD"
-MODEL_PRICES = "AI_MODEL_PRICES"
 SIGN_UP_MODE = "SIGN_UP_MODE"
 DOMAIN_ALLOWLIST = "DOMAIN_ALLOWLIST"
 VOICE_TRANSPORT = "voice.transport"
@@ -35,9 +36,6 @@ BUDGET_FIELDS: dict[str, str] = {
     "domainAllowlist": DOMAIN_ALLOWLIST,
 }
 
-UNCAPPED_ROLE_DAILY_USD: dict[str, None] = dict.fromkeys(ROLE_RANK)
-UNCAPPED_ANSWER_USD: dict[str, None] = dict.fromkeys(EXPLAINER_DEPTHS)
-
 CAP_FIELDS = frozenset({"monthlyCeilingUsd", "mediaCapUsd", "degradeAtFraction"})
 VOICE_FIELDS: dict[str, str] = {
     "transport": VOICE_TRANSPORT,
@@ -46,12 +44,7 @@ VOICE_FIELDS: dict[str, str] = {
 }
 
 DEFAULTS: dict[str, Any] = {
-    MONTHLY_CEILING_USD: None,
-    MEDIA_CAP_USD: None,
-    ROLE_DAILY_USD: dict(UNCAPPED_ROLE_DAILY_USD),
-    DEGRADE_AT_FRACTION: None,
-    ANSWER_CAP_USD: dict(UNCAPPED_ANSWER_USD),
-    MODEL_PRICES: {},
+    **spend_defaults(),
     SIGN_UP_MODE: "ROSTER",
     DOMAIN_ALLOWLIST: [],
     VOICE_TRANSPORT: "RELAY",

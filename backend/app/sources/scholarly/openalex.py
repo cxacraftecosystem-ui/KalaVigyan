@@ -3,6 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+import httpx
+
+from app.core.key_checks import KeyVerdict, checked_get
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
 from ..adapter import Clock, HttpSourceAdapter, build_document, utc_now
@@ -19,10 +22,11 @@ from ..records import (
 )
 from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["OPENALEX_LIMITS", "OpenAlexAdapter", "abstract_from_index"]
+__all__ = ["OPENALEX_KEYED_LIMITS", "OPENALEX_LIMITS", "OpenAlexAdapter", "abstract_from_index", "check_key"]
 
 OPENALEX_API = "https://api.openalex.org"
 OPENALEX_LIMITS = ServiceLimits(search=SourceLimit(requests=10))
+OPENALEX_KEYED_LIMITS = ServiceLimits(search=SourceLimit(requests=30))
 WORK_FIELDS = (
     "id,doi,display_name,publication_date,publication_year,type,authorships,primary_location,best_oa_location"
 )
@@ -87,6 +91,10 @@ class OpenAlexAdapter(HttpSourceAdapter):
         if abstract is None:
             raise self._not_found(native, "no abstract")
         return build_document(self._item(record, retrieved_at), abstract, "ABSTRACT")
+
+
+async def check_key(client: httpx.AsyncClient, value: str) -> KeyVerdict:
+    return await checked_get(client, f"{OPENALEX_API}/works", params={"per-page": "1", "api_key": value})
 
 
 def abstract_from_index(index: Any) -> str | None:

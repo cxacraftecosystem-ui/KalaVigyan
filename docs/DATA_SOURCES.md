@@ -121,7 +121,7 @@ names any country `places_abroad.json` lacks.
 ## Live scholarly sources
 
 Live research reads these services through `backend/app/sources/` (decision 0005) and cites each
-work by DOI or the service's record URL; only short quoted passages are stored.
+work by DOI or the service's record URL; what is kept of what it reads is below the table.
 
 | Adapter | Service | Terms that bind us |
 |---|---|---|
@@ -129,11 +129,32 @@ work by DOI or the service's record URL; only short quoted passages are stored.
 | `crossref` | Crossref REST API, polite pool (`mailto`) | Metadata free to reuse; abstracts remain the publishers' |
 | `semantic_scholar` | Semantic Scholar Academic Graph | API licence; publishers may elide abstracts |
 | `core` | CORE API v3 | Key required; full texts keep their own licences |
-| `europe_pmc` | Europe PMC REST | Per-article licence (the `licence` field) |
+| `europe_pmc` | Europe PMC REST: search, and `fullTextXML` for a record that is open access and in Europe PMC | Per-article licence (the `license` field); the full text keeps it |
 | `arxiv` | arXiv API | One request every 3 s; papers keep their own licences |
 | `doaj` | DOAJ API v4 | Articles under their journals' licences |
+| `zenodo` | Zenodo REST API (`/api/records`, anonymous: 30 searches a minute, 60 requests a minute, 2,000 an hour) | Metadata CC0 except e-mail addresses; files under the licence the depositor chose (https://about.zenodo.org/policies/) |
 | `elsevier`, `springer_nature` | Scopus, Springer Nature open access | Only with keys; quotes and DOI links, never a full copy (PLAN 17.1a) |
-| Unpaywall (locator) | Unpaywall DOI API (`email`) | Open-access status and legal copy location only |
+| Open copies (locator `open_access`) | Unpaywall DOI API (`email`); Zenodo records for DOIs Zenodo minted (`10.5281/zenodo.*`) | Open-access status and legal copy location only |
+
+Every document live research reads is kept as a source with its text cut into passages
+(`services/live_source_store.keep_document`). An abstract, and a full text under an open licence
+(CC0, CC BY, CC BY-SA, public domain: `research/licences.open_licence`), is public; any other full
+text, and one with no licence stated, is kept for researchers only (`chunk_acl`). A reader sees
+quotes from it with the work's DOI or record link.
+
+### Full text read from scholarly services
+
+| Source | Read when | Licence and terms | Attribution | What is stored |
+|---|---|---|---|---|
+| Europe PMC full text (`europe_pmc` fetch) | the record says `isOpenAccess` and `inEPMC`, and has a PMCID | the article's licence from the record; Europe PMC's open-access subset | the article by DOI, or its Europe PMC page | abstract and body paragraphs (no tables, references or formulas); public only under an open licence |
+| Zenodo files (`open_access` locator, read by the fetcher) | the record is open access, its licence is open, and it has a PDF; the fetcher reads it once it takes a PDF Zenodo serves as `application/octet-stream` (`docs/TECH_DEBT.md`) | the depositor's licence, kept on the source | the record by DOI | the PDF's text, public (only openly licensed files are offered) |
+| Elsevier article retrieval (`publisher_full_text`) | Unpaywall reports the DOI `CLOSED`, its prefix is Elsevier's (`10.1016`), and both `ELSEVIER_API_KEY` and `ELSEVIER_INSTTOKEN` are set | Elsevier's text and data mining user licence (https://www.elsevier.com/tdm/userlicense/1.0/) unless the article states an open one | the article by DOI | abstract and body paragraphs (no references), for researchers only |
+| Springer Nature full-text TDM (`publisher_full_text`, `/xmldata/jats`) | Unpaywall reports the DOI `CLOSED`, its prefix is Springer Nature's (`10.1007`, `10.1038`, `10.1186`, `10.1057`), and `SPRINGER_NATURE_API_KEY` is set with Springer Nature's TDM terms in place | the licence the JATS states, else Springer Nature's TDM terms (https://www.springer.com/tdm) | the article by DOI | abstract and body paragraphs (no references), for researchers only |
+
+Publisher full text (`ScholarlySources.publisher`) is read only when the planner asks it for a
+DOI the open-copy locator reports closed (`docs/TECH_DEBT.md`). Wiley's TDM API
+(`WILEY_TDM_TOKEN`) is not read: it serves PDF only, which no part of the API process may parse
+yet (`docs/TECH_DEBT.md`).
 
 ## Live reference sources
 
@@ -142,7 +163,7 @@ attribution; only short quoted passages are stored, with a link back.
 
 | Adapter | Service | Licence and attribution |
 |---|---|---|
-| `wikipedia` | Wikipedia Action API (English and Indian-language wikis) | CC BY-SA 4.0, read live from each wiki's rightsinfo; attributed to "Wikipedia contributors" with the article title and revision |
+| `wikipedia` | Wikipedia Action API (every language edition in Wikimedia's sitematrix, vendored on 2026-11-22) | CC BY-SA 4.0, read live from each wiki's rightsinfo; attributed to "Wikipedia contributors" with the article title and revision |
 | `wikidata` | Wikidata Action API and query service (SPARQL) | Structured data CC0 1.0; cited by item id and revision; an item's coordinate location (P625) places a supply origin, linked by its item id (decision 0047), and a craft page's timeline place, stored in `WikidataPoint` by the chapters job for a dossier place's item (decision 0098) |
 | `pubchem` | PubChem PUG REST and PUG View, National Library of Medicine | Compound properties: NCBI places no restrictions (https://www.ncbi.nlm.nih.gov/home/about/policies/). GHS hazards keep the reporting source's terms; for ECHA, non-commercial reuse with "Source: European Chemicals Agency, http://echa.europa.eu/" (https://echa.europa.eu/web/guest/legal-notice) |
 | `wikimedia_commons` | Wikimedia Commons file metadata | Each file's own licence (short name and URL) and author, attributed "author, licence, via Wikimedia Commons" |
@@ -183,6 +204,12 @@ honoured for the agent `KalaVigyan`.
 |---|---|---|
 | `searxng` | Self-hosted SearXNG metasearch on the box | Results come from the engines SearXNG queries; each hit links to its page |
 | `brave` | Brave Web Search API (fallback, only with `BRAVE_SEARCH_API_KEY`) | Brave Search API terms; results are used to find pages, and the pages themselves are cited |
+
+A web page's trust comes from KalaVigyan's own reviewed list, `backend/app/research/web_trust.json`
+(decision 0139), not from any outside dataset: each row names a domain and why it is ranked, from
+the registry rules of its zone (NIC for `gov.in` and `nic.in`, ERNET for `ac.in`, `edu.in` and
+`res.in`, CISA for `gov`, EDUCAUSE for `edu`, Jisc for `ac.uk`) or the institution it is. The owner
+reviews the list; a page on no listed domain stays `C`.
 
 ## Pictures from the web
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 
 from app.core.errors import AppError, ExternalFailure, spend_refusal
@@ -31,6 +31,7 @@ __all__ = [
     "asked_fields",
     "chosen_craft",
     "compared_choice",
+    "named_choice",
     "understood_seats",
 ]
 
@@ -38,6 +39,7 @@ logger = logging.getLogger(__name__)
 
 Resolve = Callable[[CraftQuery], Awaitable[CraftResolution]]
 HeldFields = Callable[[str], Awaitable[Sequence[str]]]
+Named = Mapping[str, CraftResolution]
 
 
 @dataclass(frozen=True)
@@ -67,9 +69,10 @@ class ModelUnderstander:
         offered = _offered(resolution)
         reading = await self._read(ask, offered)
         choice = chosen_craft(ask, resolution, reading.reply)
+        named = await self._looked_up(ask, choice, reading.reply, offered)
         if choice.craft is None and not ask.any_craft and reading.reply is not None:
-            choice = await self._named(reading.reply, offered)
-        chosen = compared_choice(ask, choice, reading.reply, offered)
+            choice = named_choice(reading.reply, offered, named)
+        chosen = compared_choice(ask, choice, reading.reply, offered, named)
         return _understanding(ask, chosen, reading, await self._held_fields(chosen.craft, reading))
 
     async def _held_fields(self, craft: CraftRef | None, reading: Reading) -> tuple[str, ...] | None:
@@ -109,20 +112,35 @@ class ModelUnderstander:
             logger.warning("understanding the question fell back to the craft resolver: %s", error)
             return Reading(reply=None, degraded=reply.degraded)
 
-    async def _named(self, reply: UnderstandReply, offered: Sequence[CraftRef]) -> CraftChoice:
-        chosen: CraftRef | None = None
-        others: list[CraftRef] = list(offered)
-        listed = {craft.name.casefold() for craft in offered}
-        for name in (name for name in reply.craft_names if name.casefold() not in listed):
+    async def _looked_up(
+        self,
+        ask: UnderstandAsk,
+        choice: CraftChoice,
+        reply: UnderstandReply | None,
+        offered: Sequence[CraftRef],
+    ) -> dict[str, CraftResolution]:
+        if reply is None or ask.any_craft:
+            return {}
+        wanted = _unlisted(reply.craft_names, offered) if choice.craft is None else []
+        if reply.compares():
+            wanted += reply.compared_names(offered)
+        found: dict[str, CraftResolution] = {}
+        for name in dict.fromkeys(wanted):
             try:
-                resolution = await self._resolve(CraftQuery(text=name))
+                found[name] = await self._resolve(CraftQuery(text=name))
             except AppError as error:
                 logger.warning("a craft the question names could not be looked up: %s", error)
-                continue
-            if chosen is None and resolution.status == "RESOLVED":
-                chosen = resolution.craft
-            others.extend(candidate.craft for candidate in resolution.candidates)
-        return CraftChoice(craft=chosen, others=_distinct(others, without=chosen))
+        return found
+
+
+def named_choice(reply: UnderstandReply, offered: Sequence[CraftRef], named: Named) -> CraftChoice:
+    chosen: CraftRef | None = None
+    others: list[CraftRef] = list(offered)
+    for resolution in (named[name] for name in _unlisted(reply.craft_names, offered) if name in named):
+        if chosen is None and resolution.status == "RESOLVED":
+            chosen = resolution.craft
+        others.extend(candidate.craft for candidate in resolution.candidates)
+    return CraftChoice(craft=chosen, others=_distinct(others, without=chosen))
 
 
 def chosen_craft(
@@ -142,9 +160,13 @@ def chosen_craft(
 
 
 def compared_choice(
-    ask: UnderstandAsk, choice: CraftChoice, reply: UnderstandReply | None, offered: Sequence[CraftRef]
+    ask: UnderstandAsk,
+    choice: CraftChoice,
+    reply: UnderstandReply | None,
+    offered: Sequence[CraftRef],
+    named: Named | None = None,
 ) -> CraftChoice:
-    listed = _distinct(reply.compared(offered), without=None) if reply is not None else ()
+    listed = _distinct(reply.compared(offered, _resolved(named)), without=None) if reply is not None else ()
     if ask.any_craft or len(listed) < 2:
         return choice
     slugs = [craft.slug for craft in listed]
@@ -192,6 +214,19 @@ def _understanding(
         basis="MODEL" if reply else "RESOLVER",
         refusal=reading.refusal,
     )
+
+
+def _resolved(named: Named | None) -> dict[str, CraftRef]:
+    kept: dict[str, CraftRef] = {}
+    for name, found in (named or {}).items():
+        if found.status == "RESOLVED" and found.craft is not None:
+            kept[name] = found.craft
+    return kept
+
+
+def _unlisted(names: Sequence[str], offered: Sequence[CraftRef]) -> list[str]:
+    listed = {craft.name.casefold() for craft in offered}
+    return [name for name in names if name.casefold() not in listed]
 
 
 def _offered(resolution: CraftResolution | None) -> list[CraftRef]:

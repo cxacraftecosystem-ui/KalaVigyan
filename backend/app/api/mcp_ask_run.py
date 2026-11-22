@@ -118,10 +118,10 @@ async def asker_reading_style(session: AsyncSession, user: User) -> ReadingStyle
     return reading_style_for(user, profile)
 
 
-def throttle_refusal(user: User) -> str | None:
+async def throttle_refusal(user: User) -> str | None:
     if is_uncapped(user):
         return None
-    allowed, retry = ask_attempt(str(user.id))
+    allowed, retry = await ask_attempt(str(user.id))
     return None if allowed else THROTTLED.format(seconds=max(1, ceil(retry)))
 
 

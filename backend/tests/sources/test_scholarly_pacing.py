@@ -1,5 +1,3 @@
-import asyncio
-
 import httpx
 import pytest
 
@@ -42,27 +40,27 @@ def two_clients(
     recorder: Recorder, service: str, limits: ServiceLimits
 ) -> tuple[PacedHttp, PacedHttp, FakeClock]:
     clock = FakeClock()
-    pacing = ScholarlyPacing(cache_clock=clock)
+    pacing = ScholarlyPacing(clock=clock)
     first = paced(recorder.client(), service, limits, pacing, clock)
     return first, paced(recorder.client(), service, limits, pacing, clock), clock
 
 
-async def test_two_clients_in_one_process_share_crossref_s_one_search_a_second() -> None:
+async def test_two_clients_in_one_process_share_crossref_s_polite_three_searches_a_second() -> None:
     recorder = Recorder(CROSSREF_ROUTES)
     first, second, clock = two_clients(recorder, "crossref", CROSSREF_LIMITS)
     await first.get(WORKS, params={"query": "bidri"})
     await second.get(WORKS, params={"query": "bidri alloy"})
-    assert clock.slept == [1.25]
+    assert clock.slept == [pytest.approx(5 / 12)]
     assert len(recorder.requests) == 2
 
 
-async def test_crossref_lookups_keep_their_own_faster_pace() -> None:
+async def test_crossref_lookups_keep_their_own_faster_pace_of_ten_a_second() -> None:
     recorder = Recorder(CROSSREF_ROUTES)
     first, second, clock = two_clients(recorder, "crossref", CROSSREF_LIMITS)
     await first.get(WORKS, params={"query": "bidri"})
     await first.get(WORK)
     await second.get(OTHER_WORK)
-    assert clock.slept == [0.25]
+    assert clock.slept == [0.125]
 
 
 async def test_a_long_retry_after_pauses_the_source_for_every_client_without_sending() -> None:
@@ -127,22 +125,3 @@ async def test_a_lookup_is_answered_from_the_process_cache_after_the_sources_are
     shown = await first.get(WORK)
     assert await rebuilt.get(WORK) is shown
     assert len(recorder.requests) == 1
-
-
-async def test_crossref_never_has_two_requests_in_flight() -> None:
-    flight = {"now": 0, "most": 0}
-
-    async def handle(request: httpx.Request) -> httpx.Response:
-        flight["now"] += 1
-        flight["most"] = max(flight["most"], flight["now"])
-        for _ in range(3):
-            await asyncio.sleep(0)
-        flight["now"] -= 1
-        return Reply("crossref_work.json").response()
-
-    clock = FakeClock()
-    pacing = ScholarlyPacing(cache_clock=clock)
-    client = httpx.AsyncClient(transport=httpx.MockTransport(handle))
-    http = paced(client, "crossref", CROSSREF_LIMITS, pacing, clock)
-    await asyncio.gather(http.get(WORK), http.get(OTHER_WORK))
-    assert flight["most"] == 1

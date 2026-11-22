@@ -131,6 +131,13 @@ def test_a_dataset_row_is_cited_under_its_publisher_edition_and_access_day() -> 
     )
 
 
+def test_a_media_file_is_cited_as_a_graphic_work() -> None:
+    picture = latest_sources()[0].model_copy(update={"kind": "MEDIA"})
+    assert csl_item(1, picture, None).type == "graphic"
+    assert ris_record(1, picture).startswith("TY  - ART\r\n")
+    assert bibtex_entry(1, picture).startswith("@misc{kv1,\n")
+
+
 def test_a_dataset_with_its_own_citation_text_is_cited_in_those_words() -> None:
     stated = CHIRPS.model_copy(
         update={

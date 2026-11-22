@@ -3,6 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+import httpx
+
+from app.core.key_checks import KeyVerdict, checked_get
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
 from ..adapter import Clock, HttpSourceAdapter, build_document, utc_now
@@ -21,7 +24,7 @@ from ..records import (
 )
 from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["SEMANTIC_SCHOLAR_LIMITS", "SemanticScholarAdapter"]
+__all__ = ["SEMANTIC_SCHOLAR_LIMITS", "SemanticScholarAdapter", "check_key"]
 
 SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org/graph/v1"
 SEMANTIC_SCHOLAR_LIMITS = ServiceLimits(search=SourceLimit(requests=1, concurrency=1))
@@ -95,6 +98,15 @@ class SemanticScholarAdapter(HttpSourceAdapter):
         if abstract is None:
             raise self._not_found(native, "no abstract")
         return build_document(self._item(record, retrieved_at), abstract, "ABSTRACT")
+
+
+async def check_key(client: httpx.AsyncClient, value: str) -> KeyVerdict:
+    return await checked_get(
+        client,
+        f"{SEMANTIC_SCHOLAR_API}/paper/search",
+        headers={"x-api-key": value},
+        params={"query": "mordant", "limit": "1"},
+    )
 
 
 def _work_kind(record: dict[str, Any]) -> str:

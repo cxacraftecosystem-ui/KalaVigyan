@@ -5,8 +5,8 @@ from sqlalchemy import select, update
 
 from app.core.db import session_scope
 from app.models import Provider, RoutePolicy
+from app.providers.catalogue import AiTask
 from app.providers.router import REASONING_EFFORT_PARAM
-from app.services.ai_providers import AiTask
 from app.services.route_policy import save_order
 
 pytestmark = pytest.mark.db

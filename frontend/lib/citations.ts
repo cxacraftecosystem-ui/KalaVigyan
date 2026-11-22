@@ -119,6 +119,7 @@ const SOURCE_KIND_LABEL: Record<string, string> = {
   GOVERNMENT_REPORT: "Government report",
   COMPOUND_RECORD: "Compound record",
   FIELD_TESTIMONY: "Field testimony",
+  MEDIA: "Media file",
   OTHER: "Other"
 };
 

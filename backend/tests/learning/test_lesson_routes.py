@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, date, datetime
@@ -21,6 +22,7 @@ from app.services import knowledge_view, lesson_packs
 from app.services.apa_references import apa_references
 from app.services.explainer_history import UnknownExplainer
 from app.services.export_files import ExportTools
+from app.services.export_store import EXPORT_BUILDS_AT_ONCE
 
 from ..contracts.learning_golden import CITATIONS, LESSON, VERSIONS, learning
 from .lesson_fixtures import FakeBucket, first_version, golden_pack, picture_bytes
@@ -67,6 +69,7 @@ def client(
             pictures=pictures or CountingPictures(),
             apa=apa_references,
             clock=lambda: NOW,
+            builds=asyncio.Semaphore(EXPORT_BUILDS_AT_ONCE),
         )
 
     app.dependency_overrides[get_current_user] = lambda: user

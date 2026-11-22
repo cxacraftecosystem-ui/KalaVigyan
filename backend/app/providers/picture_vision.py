@@ -5,9 +5,11 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
+from app.core import managed_keys
 from app.core.db import sessionmaker
-from app.providers import budget
+from app.providers import budget, spend_settings
 from app.providers.base import ChatRequest, ChatResult, ProviderError
+from app.providers.catalogue import AiTask, model_for
 from app.providers.registry import build_adapter
 from app.providers.router import (
     Principal,
@@ -22,15 +24,13 @@ from app.research.image_screens import (
     NOT_SCREENED,
     VISION_ANSWER_SCHEMA,
     VISION_OUTPUT_TOKENS,
+    ScreenTools,
     VisionRequest,
     VisionVerdict,
     unscreened,
     vision_prompt,
     vision_verdict,
 )
-from app.services import app_settings, managed_secrets
-from app.services.ai_providers import AiTask, model_for
-from app.services.image_screens import ScreenTools
 
 __all__ = ["IMAGE_TOKENS", "VISION_TASK", "picture_screen_tools", "provider_content", "screen_with_vision"]
 
@@ -106,8 +106,8 @@ async def _cheapest(prompt_tokens: int) -> _Route | None:
             for route in await load_routes(session, VISION_TASK)
             if route_allowed(route, VISION_TASK) and route.kind in CONTENT_KINDS
         ]
-        overrides = (await app_settings.load_all(session)).get(app_settings.MODEL_PRICES) or {}
-        await managed_secrets.refresh_if_stale(session)
+        overrides = (await spend_settings.load_spend_settings(session)).get(spend_settings.MODEL_PRICES) or {}
+        await managed_keys.refresh_if_stale(session)
     if not routes:
         return None
 
@@ -129,7 +129,7 @@ async def _called(choice: RouteChoice, chat: ChatRequest) -> ChatResult:
     adapter = build_adapter(
         preset=choice.preset,
         kind=choice.kind,
-        api_key=managed_secrets.peek_secret(choice.key_name),
+        api_key=managed_keys.peek_secret(choice.key_name),
         api_key_name=choice.key_name,
         base_url=choice.base_url,
         extra=choice.extra,

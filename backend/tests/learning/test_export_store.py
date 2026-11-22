@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -19,7 +20,13 @@ from app.data.export_assets import (
 )
 from app.research.export_links import EXPORT_LINK_SECONDS
 from app.services.export_pictures import PICTURE_MAX_SIDE, export_pictures, normalised
-from app.services.export_store import ExportFile, export_digest, stored_export_link
+from app.services.export_store import (
+    EXPORT_BUILDS_AT_ONCE,
+    BuiltExport,
+    ExportFile,
+    export_digest,
+    stored_export_link,
+)
 from app.services.naming import explainer_file_name, export_key, lesson_file_name
 from app.services.object_store import ObjectStore
 from app.sources.images.picture_files import picture_files
@@ -29,6 +36,7 @@ from .lesson_fixtures import FakeBucket, golden_pack, picture_bytes
 
 NOW = datetime(2026, 11, 18, 10, 0, tzinfo=UTC)
 OWNER = uuid.UUID(int=7)
+UNREAD = uuid.UUID(int=9)
 VENDORED_SHA256 = {
     "reveal/reveal.js": "aa1bbbf2617b23a623b23612cb3c5bdb63de512e652bf20fcfa832b045d37844",
     "reveal/reveal.css": "615ee850cbbb98a0f688b60ed37b21819a3f54c9f3e6f20e33e63693ab74a0c0",
@@ -45,9 +53,9 @@ async def test_a_file_is_built_once_and_reused_through_a_short_lived_link() -> N
     bucket = FakeBucket()
     builds: list[int] = []
 
-    async def build() -> bytes:
+    async def build() -> BuiltExport:
         builds.append(1)
-        return b"%PDF-1.7"
+        return BuiltExport(b"%PDF-1.7")
 
     export = ExportFile(
         owner_id=OWNER,
@@ -55,8 +63,8 @@ async def test_a_file_is_built_once_and_reused_through_a_short_lived_link() -> N
         file_name="KalaVigyan_Lesson_2026-11-18_Mordants_Lesson.pdf",
         made_from={"pack": 1},
     )
-    first = await stored_export_link(bucket, export, build, now=NOW)
-    second = await stored_export_link(bucket, export, build, now=NOW)
+    first = await stored_export_link(bucket, export, build, now=NOW, builds=one_at_a_time())
+    second = await stored_export_link(bucket, export, build, now=NOW, builds=one_at_a_time())
     assert builds == [1] and first == second
     key = f"exports/{OWNER}/{export_digest('pdf', {'pack': 1})}/{export.file_name}"
     assert list(bucket.stored) == [key] and bucket.stored[key][1] == "application/pdf"
@@ -67,13 +75,89 @@ async def test_a_file_is_built_once_and_reused_through_a_short_lived_link() -> N
 async def test_a_changed_explainer_is_filed_under_a_new_key() -> None:
     bucket = FakeBucket()
 
-    async def build() -> bytes:
-        return b"x"
+    async def build() -> BuiltExport:
+        return BuiltExport(b"x")
 
     for made_from in ({"explainer": "v1"}, {"explainer": "v1 changed"}):
         export = ExportFile(owner_id=OWNER, fmt="pdf", file_name="a.pdf", made_from=made_from)
-        await stored_export_link(bucket, export, build, now=NOW)
+        await stored_export_link(bucket, export, build, now=NOW, builds=one_at_a_time())
     assert len(bucket.stored) == 2
+
+
+def one_at_a_time() -> asyncio.Semaphore:
+    return asyncio.Semaphore(1)
+
+
+async def test_a_file_made_while_a_picture_was_unread_is_never_reused() -> None:
+    bucket = FakeBucket()
+    builds: list[frozenset[uuid.UUID]] = []
+    unread = [frozenset({UNREAD}), frozenset({UNREAD}), frozenset()]
+
+    async def build() -> BuiltExport:
+        builds.append(unread[len(builds)])
+        return BuiltExport(b"%PDF-1.7", builds[-1])
+
+    export = ExportFile(owner_id=OWNER, fmt="pdf", file_name="a.pdf", made_from={"pack": 1})
+    for _ in range(4):
+        await stored_export_link(bucket, export, build, now=NOW, builds=one_at_a_time())
+    partial = hashlib.sha256(
+        b'["kalavigyan-export/v1","pdf",{"madeFrom":{"pack":1},'
+        b'"unread":["00000000-0000-0000-0000-000000000009"]}]'
+    ).hexdigest()
+    complete = hashlib.sha256(b'["kalavigyan-export/v1","pdf",{"pack":1}]').hexdigest()
+    assert len(builds) == 3
+    assert sorted(bucket.stored) == sorted(
+        [f"exports/{OWNER}/{partial}/a.pdf", f"exports/{OWNER}/{complete}/a.pdf"]
+    )
+    assert [signed[0] for signed in bucket.signed] == [
+        f"exports/{OWNER}/{partial}/a.pdf",
+        f"exports/{OWNER}/{partial}/a.pdf",
+        f"exports/{OWNER}/{complete}/a.pdf",
+        f"exports/{OWNER}/{complete}/a.pdf",
+    ]
+
+
+async def test_no_more_builds_run_at_once_than_the_limit() -> None:
+    bucket, release = FakeBucket(), asyncio.Event()
+    started: list[int] = []
+
+    async def build() -> BuiltExport:
+        started.append(1)
+        await release.wait()
+        return BuiltExport(b"x")
+
+    limit = asyncio.Semaphore(EXPORT_BUILDS_AT_ONCE)
+    exports = [
+        ExportFile(owner_id=OWNER, fmt="pdf", file_name="a.pdf", made_from={"pack": n})
+        for n in range(EXPORT_BUILDS_AT_ONCE + 1)
+    ]
+    running = [
+        asyncio.create_task(stored_export_link(bucket, one, build, now=NOW, builds=limit)) for one in exports
+    ]
+    for _ in range(5):
+        await asyncio.sleep(0)
+    assert len(started) == EXPORT_BUILDS_AT_ONCE == 2
+    release.set()
+    await asyncio.gather(*running)
+    assert len(started) == 3 and len(bucket.stored) == 3
+
+
+async def test_a_second_first_request_waits_and_reuses_the_first_build() -> None:
+    bucket = FakeBucket()
+    builds: list[int] = []
+
+    async def build() -> BuiltExport:
+        builds.append(1)
+        await asyncio.sleep(0)
+        return BuiltExport(b"x")
+
+    export = ExportFile(owner_id=OWNER, fmt="pdf", file_name="a.pdf", made_from={"pack": 1})
+    limit = one_at_a_time()
+    await asyncio.gather(
+        stored_export_link(bucket, export, build, now=NOW, builds=limit),
+        stored_export_link(bucket, export, build, now=NOW, builds=limit),
+    )
+    assert builds == [1] and len(bucket.stored) == 1
 
 
 def test_the_digest_is_the_sha256_of_the_canonical_inputs() -> None:
@@ -167,7 +251,8 @@ async def test_a_picture_that_cannot_be_read_is_left_out_of_the_pack_s_files() -
         async def picture(self, url: str) -> bytes:
             raise ExternalFailure("picture_files answered 404", service="picture_files")
 
-    assert await export_pictures(media, Refusing()) == {}
+    pictures = await export_pictures(media, Refusing())
+    assert pictures.found == {} and pictures.unread == frozenset(one.id for one in media)
 
 
 async def test_the_bucket_answers_whether_an_export_is_already_filed() -> None:

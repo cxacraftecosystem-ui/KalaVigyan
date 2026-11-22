@@ -5,7 +5,7 @@ from typing import Protocol, Self
 
 from pydantic import Field, model_validator
 
-from app.models.knowledge import QUOTE_MAX_CHARS
+from app.models.knowledge import CONTAINER_TITLE_CHARS, QUOTE_MAX_CHARS
 
 from .base import ContractModel, HttpsUrl, absent
 from .vocabulary import EvidenceLabel, ShownLevel, SourceType, TrustTier
@@ -32,6 +32,9 @@ class SourceRef(ContractModel):
     licence: str | None
     attribution: str | None
     reliability: TrustTier | None
+    container_title: str | None = Field(
+        default=None, min_length=1, max_length=CONTAINER_TITLE_CHARS, exclude_if=absent
+    )
 
 
 class Citation(ContractModel):

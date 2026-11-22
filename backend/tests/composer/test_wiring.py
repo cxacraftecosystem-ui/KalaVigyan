@@ -9,9 +9,9 @@ from app.composer.prompt import COMPOSE_SYSTEM_PROMPT, compose_schema
 from app.core.errors import NEXT_ROUTE_KINDS
 from app.providers import router
 from app.providers.base import ProviderError
+from app.providers.catalogue import DEFAULT_ROUTES, AiProvider, AiTask
 from app.providers.registry import build_adapter
 from app.providers.structured import router_structured_model
-from app.services.ai_providers import DEFAULT_ROUTES, AiProvider, AiTask
 
 from .fixtures import ALUM_CLAIM_ID, QUESTION, answer, pack, quote, sentence
 
