@@ -71,7 +71,9 @@ async def test_a_seer_converts_only_once_a_stored_quote_states_its_value_for_kac
         select(Claim.id).where(Claim.id.in_(curated), Claim.evidenceLevel == "PROVISIONAL").order_by(Claim.id)
     )
     views, _ = await knowledge_view.claims_by_id(session, list(candidates), acls=EVERY_CHUNK_ACLS)
-    shown = next(view for view in views.values() if view.citations)
+    shown = next(
+        view for _, view in sorted(views.items()) if view.citations and view.citations[0].get("quote")
+    )
     cite = await session.get(ClaimSource, uuid.UUID(shown.citations[0]["id"]))
     assert cite is not None
     cite.quote = "In Kachchh a seer weighed 0.933 kg."
