@@ -520,7 +520,9 @@ ask. An answer for any craft gets none.
   shown. `role` only when every stage use agrees; `termKey`, `localNames` and `wikidataId` from
   the linked term whose label the material's name contains; `formula` and `pubchemCid` only from
   a compound the compound lookup linked to its PubChem record, and `sourceId` that record when the
-  compound holds it (the builder returns its reference with the card, as the molecule builder does).
+  compound holds it and the craft's matter read holds the record (the builder returns its reference
+  with the card, as the molecule builder does; a craft page's chemistry chapter cites it only from
+  its chapter rows' record sources, so a page built without them cites none).
 - **`molecule_3d`** (`CHEMISTRY`, `MATERIALS`, 8 s): the compounds, in order of first mention and
   then (in `CHEMISTRY`, `PLAYED_FIELDS`) those of every stored reaction of the craft, with a
   CID, a stored record source and a 3D conformer, one per CID; at most `MOLECULES_PER_SECTION` (3)
