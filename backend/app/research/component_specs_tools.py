@@ -9,6 +9,7 @@ from pydantic import Field, model_validator
 
 from .base import ContractModel
 from .monograph_page import COMPONENT_LABEL_PATTERN
+from .unit_ids import UNIT_REF_PATTERN
 
 __all__ = [
     "SPEC_MODELS_TOOLS",
@@ -25,7 +26,6 @@ __all__ = [
     "spec_unit_refs",
 ]
 
-UNIT_REF_PATTERN = r"^u\d{4,}$"
 LANG_PATTERN = r"^[a-z]{2,3}$"
 
 UnitRef = Annotated[str, Field(pattern=UNIT_REF_PATTERN)]

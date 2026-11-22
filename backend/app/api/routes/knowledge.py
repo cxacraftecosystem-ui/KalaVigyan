@@ -35,7 +35,7 @@ from app.research.explainer_versions import BuildsOn
 from app.research.planning import withheld_name
 from app.research.reading_style import ReadingStyle
 from app.research.stream import event_stream
-from app.research.vocabulary import ANSWER_LANGUAGES, AnswerLanguage, Depth, language_option
+from app.research.vocabulary import AnswerLanguage, Depth, answer_language_options
 from app.schemas.common import APIModel
 from app.services import knowledge_view
 from app.services.answer_quiz import answer_offers_quiz, with_quiz_offer
@@ -130,8 +130,15 @@ async def answers_config(
         "listen": listen,
         "film": film,
         "conversation": conversation,
-        "languages": answer_languages(),
+        "languages": answer_language_options(),
     }
+
+
+@router.get("/answers/languages")
+async def answers_languages(
+    request: Request, response: Response, reader: User | None = Depends(public_reader)
+) -> Any:
+    return cached_read(request, response, reader, {"languages": answer_language_options()})
 
 
 class AskRequest(APIModel):
@@ -151,10 +158,6 @@ class AskRequest(APIModel):
         if self.buildsOn is not None and (self.anyCraft or self.craftSlug or self.depth or self.language):
             raise ValueError("A follow-up keeps the explainer's craft, depth and language.")
         return self
-
-
-def answer_languages() -> list[dict[str, str]]:
-    return [language_option(code) for code in ANSWER_LANGUAGES]
 
 
 def withheld_terms(user: User) -> tuple[str, ...]:

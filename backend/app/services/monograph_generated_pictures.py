@@ -22,6 +22,7 @@ from app.research.image_intake_svg import SVG
 from app.research.media_refs import MediaRef
 from app.research.monograph_page import TextUnit
 from app.research.page_layout import HERO_CHAPTER, PICTURE_ROLES, PageLayoutEntry
+from app.research.unit_ids import PLATE_UNITS
 
 from .contributed_pictures import CONTRIBUTED_READ_MAX, shown_contributions
 from .curated_index import IndexPicture
@@ -48,8 +49,6 @@ SLOT_PLACEMENTS: Mapping[str, tuple[str, str]] = MappingProxyType(
 )
 PICTURE_KIND = "picture_plate"
 PLATE_CLASS = "plate"
-PLATE_UNIT_PREFIX = "u"
-PLATE_UNIT_START = 9001
 STAGE_PLACEMENT = (field_chapter("PROCESS"), PICTURE_ROLES["STAGE"])
 MATERIAL_PLACEMENT = (field_chapter("MATERIALS"), PICTURE_ROLES["MATERIAL"])
 LOOSE_ROLE = PICTURE_ROLES["PLATE"]
@@ -80,7 +79,7 @@ def plate_spec(
 ) -> tuple[dict[str, Any], dict[str, TextUnit]] | None:
     if source.width is None or source.height is None:
         return None
-    caption_id, credit_id = (f"{PLATE_UNIT_PREFIX}{PLATE_UNIT_START + 2 * drawn + n}" for n in (0, 1))
+    caption_id, credit_id = (PLATE_UNITS.unit(2 * drawn + n) for n in (0, 1))
     caption = entry.caption if entry is not None and entry.caption else source.caption
     units = {caption_id: _plain_unit(caption), credit_id: _plain_unit(source.credit)}
     crop = (

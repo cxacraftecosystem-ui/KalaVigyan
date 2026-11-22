@@ -7,10 +7,10 @@ import type { MonographComponent, MonographDocument } from "@/lib/monographDocum
 import { bundleSources } from "@/lib/monographRenderKit";
 import { componentBundles, placedComponents, slotId, specStrings } from "@/lib/monographRenderLayout";
 import { appDrawn, componentHome } from "@/lib/monographScopes";
+import { UNIT_REF } from "@/lib/unitIds";
 
 export type SlotDrawing = "view" | "fragment" | "none";
 
-const UNIT_REF = /^u\d{4,}$/;
 
 export function unitsHeld(document: MonographDocument, label: string): boolean {
   return Object.values(componentBundles(document, label)).every((bundle) => specStrings(bundle.spec).every((value) => !UNIT_REF.test(value) || Object.hasOwn(document.content.units, value)));

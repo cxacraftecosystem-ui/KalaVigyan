@@ -46,8 +46,11 @@ A reviewer never decides their own picture.
 | `GET /mine` | none | `ImageContributionView[]`, newest first, at most 100 |
 | `POST /{id}/withdraw` | none | `ImageContributionView`, `WITHDRAWN`, only while the picture waits for its file or for review; an approved picture stays (409): consent cannot be revoked |
 | `GET /review?state=PENDING` | none | `ImageQueue {status, items[]}`, oldest first, at most 100 |
-| `POST /review/{id}/approve` | `{note?}` | `ImageContributionView`, `APPROVED`; the picture is shared |
-| `POST /review/{id}/reject` | `{note}` (3 to 500 characters) | `ImageContributionView`, `REJECTED` |
+
+A picture is approved or rejected on the review queue, `POST /api/review-queue/IMAGES/{id}/approve`
+(`{note?}`) and `.../reject` (`{reason}`, 3 to 500 characters, kept as the note to the
+contributor), which share it on its craft or keep it private (`review-queue.md`, Decisions); the
+routes under `/review/{id}/` retired with decision 0145.
 
 Refusals: 404 for a contribution that is not the caller's (or does not exist), 409 for a state
 that does not allow the step (a second file, a decided picture, a repeat of a picture KalaVigyan

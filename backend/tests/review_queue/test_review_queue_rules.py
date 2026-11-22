@@ -22,6 +22,7 @@ from app.research.review_queue import (
     STRUCTURE,
     TESTIMONY,
     FactRetraction,
+    QueueApproval,
     QueueEntry,
     QueueKey,
     QueueRejection,
@@ -249,6 +250,23 @@ def test_a_rejection_or_retraction_needs_a_reason_of_three_to_five_hundred_chara
         QueueRejection.model_validate({"reason": reason})
     with pytest.raises(ValidationError):
         FactRetraction.model_validate({"reason": reason})
+
+
+def test_a_rejection_names_its_reason_in_words_unless_testimony_gives_its_reason() -> None:
+    with pytest.raises(ValidationError, match="in words, or a testimony reason"):
+        QueueRejection.model_validate({})
+    misheard = QueueRejection.model_validate({"testimonyReason": "MISHEARD", "version": 2})
+    assert (misheard.reason, misheard.testimony_reason) == (None, "MISHEARD")
+    with pytest.raises(InvalidInput, match="reason in words"):
+        misheard.stated()
+    assert QueueRejection.model_validate({"reason": "Blurred."}).stated() == "Blurred."
+
+
+def test_a_testimony_approval_names_at_most_five_corroborating_facts() -> None:
+    five = [str(uuid.UUID(int=n)) for n in range(1, 6)]
+    assert len(QueueApproval.model_validate({"corroboratingClaimIds": five}).corroborating_claim_ids) == 5
+    with pytest.raises(ValidationError):
+        QueueApproval.model_validate({"corroboratingClaimIds": [*five, str(uuid.UUID(int=6))]})
 
 
 def test_a_reason_at_the_limits_is_kept() -> None:

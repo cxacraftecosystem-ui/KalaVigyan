@@ -137,7 +137,10 @@ What it holds (`MonographDocument`, `docs/decisions/0106`):
 - **Pictures** are the curated dossier's inline pictures, each a `picture_plate` component labelled
   as in the backfill, in its placement's chapter with its role, drawn from a spec: `{media
   (MediaRef), caption (the layout's override or the dossier's), standIn, focal (the layout's crop or
-  the dossier's focal box), role, size, claimIds}`.
+  the dossier's focal box), role, size, claimIds}`. A spec names its units by the one unit id
+  pattern every document's specs use, `u` and four digits (`research/unit_ids.py`, decision 0145),
+  in ranges by origin: an authored page's own units `u0001` to `u5000`, delivered components'
+  `u5001` to `u8999`, generated pictures' captions and credits `u9001` to `u9999`.
 - **Registered components** that apply: for a craft or family
   `services/component_library.library_components` with its slug; for a category every labelled,
   visible component keyed to a concept its curated or section facts are about, or resting on one of

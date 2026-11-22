@@ -46,7 +46,6 @@ PAGE = f"/api/crafts/{AJRAKH}/page"
 SHARED_ALUM = f"/api/shared-science/alum?craft={AJRAKH}"
 CLAIM_READS = (
     PAGE,
-    f"/api/crafts/{AJRAKH}/process",
     f"/api/crafts/{AJRAKH}/shared-science",
     SHARED_ALUM,
     f"/api/compare?crafts={AJRAKH}&crafts={BAGRU}&facets=MATERIALS",

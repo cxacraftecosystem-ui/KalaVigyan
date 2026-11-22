@@ -15,6 +15,7 @@ and 0095 (item 7).
 | What it amends | [0095 The craft page becomes a monograph in chapters, public to read, built without a question](0095-craft-page-chapters.md): item 7, what on the page is public |
 | What it builds on | [0079 Craft, category, map and science pages read without signing in](0079-public-reading.md): public reading, widened to everything but asking |
 | The contracts it names | [field-voices.md](../contracts/field-voices.md), [craft-page.md](../contracts/craft-page.md) |
+| Shared answers read their language from a public list of the answer languages | [decision 0145](0145-monograph-pages-and-speed-without-debt.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

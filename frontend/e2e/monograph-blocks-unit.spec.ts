@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { createElement, type ReactElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { prerender } from "react-dom/static";
 
 import { AuthProvider } from "../components/AuthProvider";
 import { ComponentSlot, slotDrawing } from "../components/monograph/ComponentSlot";
@@ -12,12 +12,16 @@ import type { MonographDocument, MonographSource } from "../lib/monographDocumen
 import type { SourceRef } from "../lib/types";
 
 import { rawPage } from "./craftPageFixture";
+import { eagerModules } from "./moduleGraph";
 
 const LABEL = "kutch-ajrakh/blocks/made-ladder";
 const LADDER_STAGES = 14;
 const REF_FIELDS = ["id", "kind", "title", "authors", "year", "doi", "url", "publisher", "licence", "attribution", "reliability"] as const;
 
-const provided = (element: ReactElement) => renderToStaticMarkup(createElement(AuthProvider, null, createElement(ThemeProvider, null, element)));
+async function provided(element: ReactElement): Promise<string> {
+  const { prelude } = await prerender(createElement(AuthProvider, null, createElement(ThemeProvider, null, element)));
+  return (await new Response(prelude).text()).replaceAll("<!-- -->", "");
+}
 
 function pageBlock(kind: string): PageBlock {
   for (const chapter of rawPage().chapters) for (const item of chapter.items) if (item.block && item.block.kind === kind) return item.block;
@@ -107,11 +111,17 @@ test("a block's numerals are the document's numbers for its listed sources", () 
   expect([...numbers.keys()]).toEqual(parsed.sources.map((listed) => listed.ref.id));
 });
 
-test("the document draws an answer block natively, as the answer's own ladder inside its figure", () => {
+test("a monograph loads the answer renderers only when it places an answer block", () => {
+  const eager = eagerModules("@/components/monograph/componentViews");
+  expect(eager.has("components/monograph/kinds/blocks/index.ts")).toBe(true);
+  expect([...eager].filter((file) => file === "components/monograph/kinds/blocks/AnswerBlockView.tsx" || file === "components/answer/blockRenderers.ts")).toEqual([]);
+});
+
+test("the document draws an answer block natively, as the answer's own ladder inside its figure, its renderers loaded on demand", async () => {
   expect(COMPONENT_VIEWS[ANSWER_BLOCK_KIND]).toBeDefined();
   const document = documentWith(spec("process_ladder", { kind: "FIGURE", number: 1, title: "How Kutch Ajrakh is made, in 14 stages" }));
   expect(slotDrawing(document, LABEL)).toBe("view");
-  const html = provided(createElement(ComponentSlot, { document, label: LABEL }));
+  const html = await provided(createElement(ComponentSlot, { document, label: LABEL }));
   expect(html).toContain('<div class="spread"><div class="main">');
   expect(html).toContain('data-testid="answer-block"');
   expect(html).toContain('data-block-kind="process_ladder"');

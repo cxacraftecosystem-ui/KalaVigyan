@@ -25,6 +25,7 @@ __all__ = [
     "FieldCount",
     "FieldCoverage",
     "Holdings",
+    "MonographCoverage",
     "field_coverage",
     "field_standing",
     "held_fields",
@@ -93,6 +94,20 @@ class FieldCoverage(ContractModel):
 
     def count(self, discipline: str) -> FieldCount:
         return next(count for count in self.fields if count.field == discipline)
+
+
+class MonographCoverage(ContractModel):
+    schema_version: Literal[1] = COVERAGE_SCHEMA_VERSION
+    crafts: list[FieldCoverage]
+
+    @model_validator(mode="after")
+    def _each_craft_once_by_slug(self) -> Self:
+        slugs = [coverage.subject_slug for coverage in self.crafts]
+        if slugs != sorted(set(slugs)):
+            raise ValueError("the collection lists each craft once, in slug order")
+        if any(coverage.subject_kind == "category" for coverage in self.crafts):
+            raise ValueError("the collection lists crafts and families, never a category")
+        return self
 
 
 @dataclass(frozen=True)

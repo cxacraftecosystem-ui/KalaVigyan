@@ -23,6 +23,7 @@ import swatchPair from "@/lib/kindFixtures/swatch_pair.json";
 import timeline from "@/lib/kindFixtures/timeline.json";
 import voice from "@/lib/kindFixtures/voice.json";
 import { dictionary, integer, list, matching, nullable, object, oneOf, parseShape, ShapeError, text, type Shape } from "@/lib/shape";
+import { UNIT_REF } from "@/lib/unitIds";
 
 export type FixtureUnit = { text: string; claims: string[] };
 export type FixtureQuote = { source: string; locator: string; quote: string };
@@ -64,7 +65,7 @@ const fixtureShape: Shape<KindFixture> = object<KindFixture>({
   field: text,
   within: nullable(text),
   spec: record,
-  units: dictionary(/^u\d{4}$/, object<FixtureUnit>({ text, claims: list(text) })),
+  units: dictionary(UNIT_REF, object<FixtureUnit>({ text, claims: list(text) })),
   facts: dictionary(ANY_KEY, object<FixtureFact>({ text, quotes: list(object<FixtureQuote>({ source: text, locator: text, quote: text }), 1) })),
   sources: dictionary(ANY_KEY, object<FixtureSource>({ title: text, publisher: nullable(text), year: nullable(integer), url: nullable(text), reliability: nullable(text) }))
 });

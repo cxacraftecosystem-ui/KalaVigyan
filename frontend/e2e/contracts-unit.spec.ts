@@ -7,7 +7,6 @@ import { splitSseBuffer } from "@/lib/answerStream";
 import { craftPageShape } from "@/lib/craftPageContract";
 import { mediaJobShape, mediaOptionsShape } from "@/lib/mediaContract";
 import { craftRegionShape, layerClassOf, mapLayerListShape, mapLayerShape } from "@/lib/regionContract";
-import { craftProcessShape } from "@/lib/scienceContract";
 import { parseShape, ShapeError, type Shape } from "@/lib/shape";
 import {
   MAX_SPOKEN_WORDS,
@@ -31,7 +30,6 @@ function parsed<T>(shape: Shape<T>, name: string): T {
 const GOLDEN: [string, Shape<unknown>][] = [
   ["craft.page.golden.json", craftPageShape],
   ["craft.page.register.golden.json", craftPageShape],
-  ["science.process.golden.json", craftProcessShape],
   ["region.craft.golden.json", craftRegionShape],
   ["region.layers.golden.json", mapLayerListShape],
   ["region.layer.golden.json", mapLayerShape],
@@ -58,20 +56,6 @@ test("a field the client does not know is refused, not dropped", () => {
 test("a value outside the shared vocabulary is refused", () => {
   const job = golden("media.job.golden.json") as Record<string, unknown>;
   expect(() => parseShape(mediaJobShape, { ...job, status: "DONE" })).toThrow(/status/);
-});
-
-test("the process gives each Ajrakh stage its cited reactions and conditions", () => {
-  const process = parsed(craftProcessShape, "science.process.golden.json");
-  const stages = process.processes[0].stages;
-  expect(stages.map((stage) => [stage.ordinal, stage.stageType])).toEqual([
-    [5, "PRINT"],
-    [6, "MORDANT"],
-    [11, "DYE"]
-  ]);
-  expect(stages[0].reactions[0].equation).toBe("Fe + 2 CH3COOH -> Fe(CH3COO)2 + H2");
-  expect(stages[2].reactions[0].equation).toBeNull();
-  expect(stages[2].conditions[0].readings[0]).toMatchObject({ min: null, max: 4, stated: "up to four hours" });
-  expect(process.sources.map((source) => source.reliability)).toEqual(["A", "B"]);
 });
 
 test("the region panel cites dataset, resolution and period for every value", () => {

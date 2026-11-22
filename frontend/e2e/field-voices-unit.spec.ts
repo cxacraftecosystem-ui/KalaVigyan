@@ -3,7 +3,8 @@ import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { checkedCraftPage, craftPageShape } from "@/lib/craftPageContract";
+import { checkedCraftPage } from "@/lib/craftPageChecks";
+import { craftPageShape } from "@/lib/craftPageContract";
 import { fieldTranscriptShape, fieldVoicesListShape, pageFieldPhotoShape, pageVoiceShape, FIELD_VOICES_PATH } from "@/lib/fieldVoicesContract";
 import { parseShape, ShapeError } from "@/lib/shape";
 

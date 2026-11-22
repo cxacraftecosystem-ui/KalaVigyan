@@ -14,7 +14,7 @@ from app.core.roles import Capability
 from app.models import ArtisanContribution, ArtisanConversation, Craft, User
 from app.research.testimony import CONTRIBUTION_STATUSES
 from app.research.vocabulary import ANSWER_LANGUAGES
-from app.schemas.testimony import ApproveBody, EditBody, RejectBody
+from app.schemas.testimony import EditBody
 from app.services import knowledge_view, testimony_store, testimony_writes
 from app.services.testimony_views import Turns, review_item
 
@@ -123,54 +123,6 @@ async def edit_contribution(
         return refusal(error)
     await session.commit()
     return await _item(session, edited, transcripts)
-
-
-@router.post("/{contribution_id}/approve")
-async def approve_contribution(
-    contribution_id: uuid.UUID,
-    body: ApproveBody,
-    user: User = Depends(reviewer),
-    session: AsyncSession = Depends(get_session),
-) -> Any:
-    try:
-        approved = await testimony_writes.approve(
-            session,
-            contribution_id,
-            user,
-            version=body.version,
-            english_checked=body.englishChecked,
-            corroborating_ids=body.corroboratingClaimIds,
-            now=datetime.now(UTC),
-        )
-    except testimony_errors as error:
-        await session.rollback()
-        return refusal(error)
-    await session.commit()
-    return await _item(session, approved, _Transcripts(session))
-
-
-@router.post("/{contribution_id}/reject")
-async def reject_contribution(
-    contribution_id: uuid.UUID,
-    body: RejectBody,
-    user: User = Depends(reviewer),
-    session: AsyncSession = Depends(get_session),
-) -> Any:
-    try:
-        rejected = await testimony_writes.reject(
-            session,
-            contribution_id,
-            user,
-            version=body.version,
-            reason=body.reason,
-            note=body.note,
-            now=datetime.now(UTC),
-        )
-    except testimony_errors as error:
-        await session.rollback()
-        return refusal(error)
-    await session.commit()
-    return await _item(session, rejected, _Transcripts(session))
 
 
 @router.get("/{contribution_id}/corroboration")

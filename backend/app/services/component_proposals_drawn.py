@@ -14,9 +14,9 @@ from app.research.component_specs_general_delivery import (
     DeliveredComponent,
     delivered_claim_ids,
     delivered_of,
-    fresh_unit_ids,
     renamed_spec,
 )
+from app.research.unit_ids import DELIVERED_UNITS
 
 from . import knowledge_view
 from .knowledge_view import ClaimView
@@ -59,7 +59,7 @@ def drawn_delivery(
     if any(claim not in visible for claim in delivered_claim_ids(delivered.units)):
         return None
     refs = sorted(delivered.units)
-    names = dict(zip(refs, fresh_unit_ids(len(refs), taken), strict=True))
+    names = dict(zip(refs, DELIVERED_UNITS.fresh(len(refs), taken), strict=True))
     drafts = {
         names[ref]: DraftUnit(
             names[ref],

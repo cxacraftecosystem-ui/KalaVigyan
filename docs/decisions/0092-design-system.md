@@ -17,6 +17,7 @@ colour, type and motion choices of decisions 0019, 0021 and 0048; their behaviou
 | What it supersedes in part | [0048 Place renderers: region story, map layer, seasons and supply](0048-place-renderers.md): its colour, type and motion choices; its behaviour stands |
 | What it supersedes in part | the frontend system of [PLAN.md](../PLAN.md), section 14.1 |
 | What built on it | [0094 The design primitives: one citation cluster, one motion owner, the editorial folder](0094-design-primitives.md): its components, SYSTEM.md section 3 |
+| The chart title and the landing label follow the tokens on the boards, and an odd hub shelf follows the atlas shelf | [decision 0145](0145-monograph-pages-and-speed-without-debt.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

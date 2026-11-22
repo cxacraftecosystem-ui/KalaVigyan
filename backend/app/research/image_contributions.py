@@ -28,8 +28,6 @@ __all__ = [
     "ImageQueue",
     "PictureSlot",
     "PictureTarget",
-    "RejectDecision",
-    "ReviewDecision",
     "SharedDeclaration",
     "declaration_problem",
     "shown_label",
@@ -159,14 +157,6 @@ class ImageBatch(SharedDeclaration):
     def declarations(self) -> list[ImageDeclaration]:
         shared = self.shared()
         return [picture.declared(self.craft_slug, shared) for picture in self.pictures]
-
-
-class ReviewDecision(ContractModel):
-    note: str | None = Field(default=None, min_length=1, max_length=REVIEW_NOTE_MAX_CHARS)
-
-
-class RejectDecision(ContractModel):
-    note: str = Field(min_length=3, max_length=REVIEW_NOTE_MAX_CHARS)
 
 
 class ImageContributionView(ContractModel):

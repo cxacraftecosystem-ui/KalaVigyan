@@ -241,6 +241,22 @@ async def test_testimony_is_decided_through_its_own_service_with_its_reason(
     )
 
 
+async def test_testimony_rejected_by_its_reason_alone_keeps_no_note(
+    seeded: tuple[AsyncSession, People],
+) -> None:
+    session, people = seeded
+    testimony = await seed_testimony(session)
+    rejection = QueueRejection(version=1, testimony_reason="UNCLEAR")
+    decided = await decisions.reject_item(
+        session, ref("TESTIMONY", testimony.contribution.id), people.admin, rejection, now=NOW
+    )
+    assert (decided.status, testimony.contribution.rejectReason, testimony.contribution.reviewNote) == (
+        "REJECTED",
+        "UNCLEAR",
+        None,
+    )
+
+
 async def test_erased_testimony_takes_the_concept_it_alone_rested_on(
     seeded: tuple[AsyncSession, People],
 ) -> None:

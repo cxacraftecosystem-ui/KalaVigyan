@@ -7,13 +7,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { categoriesHeading, monographLine } from "@/components/landing/CategoriesSection";
 import { COLLECTION_DEK, CollectionSection } from "@/components/landing/CollectionSection";
-import { batches, COVERAGE_BATCH, coveragePath } from "@/components/landing/fieldCoverageServer";
+import { coveragesOf } from "@/components/landing/fieldCoverageServer";
 import { FIELD_CHAPTER, fieldHoldings, fieldsFinding } from "@/components/landing/fieldHoldings";
 import { FieldsSection, fieldNumber, fieldsDek, leadLine } from "@/components/landing/FieldsSection";
 import { collectionStats, documentPlates, familyBlocks, interleaved, landingCollection } from "@/components/landing/landingCollection";
 import { parseCraftCatalogue } from "@/lib/craftCatalogueContract";
 import { DISCIPLINES, type Discipline } from "@/lib/explainerBlockBase";
-import type { FieldCoverage } from "@/lib/fieldCoverage";
+import { MONOGRAPH_COVERAGE_PATH, monographCoverageShape, type FieldCoverage } from "@/lib/fieldCoverage";
+import { parseShape, ShapeError } from "@/lib/shape";
 
 import { FRONTEND } from "./moduleGraph";
 
@@ -56,9 +57,15 @@ test("a field opens at the chapter the backend files it under", () => {
   const filed = Object.fromEntries([...source.matchAll(/"([A-Z]+)": "([a-z]+)"/g)].map((found) => [found[1], found[2]]));
   expect(FIELD_CHAPTER).toEqual(filed);
   expect(Object.keys(filed)).toHaveLength(16);
-  expect(coveragePath("Kutch-Ajrakh")).toBe("/crafts/Kutch-Ajrakh/coverage");
-  expect(batches([1, 2, 3, 4, 5, 6, 7], 3)).toEqual([[1, 2, 3], [4, 5, 6], [7]]);
-  expect(COVERAGE_BATCH).toBeLessThanOrEqual(8);
+});
+
+test("the landing reads every monograph's coverage in one request and keeps the catalogue's monographs", () => {
+  expect(MONOGRAPH_COVERAGE_PATH).toBe("/crafts/coverage");
+  const read = parseShape(monographCoverageShape, { schemaVersion: 1, crafts: COVERAGES });
+  expect(coveragesOf(read.crafts, ["Kutch-Ajrakh", "Agra-Marble-Inlay"])?.map((coverage) => coverage.name)).toEqual(["Kutch Ajrakh", "Agra Marble Inlay"]);
+  expect(coveragesOf(read.crafts, ["Kutch-Ajrakh", "Channapatna-Toys"])).toBeNull();
+  expect(coveragesOf([], [])).toEqual([]);
+  expect(() => parseShape(monographCoverageShape, { schemaVersion: 2, crafts: COVERAGES })).toThrow(ShapeError);
 });
 
 test("the fields section draws sixteen rows from coverage, and the sixteen names when coverage cannot be read", () => {

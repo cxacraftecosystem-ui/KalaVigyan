@@ -113,7 +113,7 @@ Every generated document (`page-layout.md`, Generated documents) draws a registe
 draws a component with a spec file: `subject_components` reads `payload.delivered` into the
 `RegisteredComponent` (`stored_delivery`; a payload off its contract is logged and left out), the
 facts it rests on join the page's shown facts (`with_delivered_claims`), and `_drawn` renames its
-units to page-unique ids `u5001` to `u8999` in unit order (`fresh_unit_ids`), rewrites the spec's
+units to page-unique ids `u5001` to `u8999` in unit order (`unit_ids.DELIVERED_UNITS`), rewrites the spec's
 refs (`renamed_spec`), and places the units within the component (`within` its label) as cited
 units, so each carries its citation cluster, quotes and claims like any sentence of the page. A
 delivery whose facts are no longer shown is left out of the page. The web app draws the spec with

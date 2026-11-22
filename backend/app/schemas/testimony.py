@@ -11,11 +11,9 @@ from app.research.testimony import (
     CLAIM_TEXT_MAX,
     CONCEPT_NAME_MAX,
     CONTRIBUTION_STATUSES,
-    CORROBORATING_CLAIMS_MAX,
     ENGLISH_MAX,
     LOCATOR_PRECISIONS,
     QUOTE_MAX_CHARS,
-    REVIEW_NOTE_MAX,
     TESTIMONY_CONCEPT_TYPES,
     TESTIMONY_ENGLISH_SOURCES,
     TESTIMONY_REJECT_REASONS,
@@ -26,11 +24,9 @@ from app.research.vocabulary import Discipline
 from .common import APIModel
 
 __all__ = [
-    "ApproveBody",
     "ContributionOut",
     "ContributionsOut",
     "EditBody",
-    "RejectBody",
     "ReviewItemOut",
     "WithdrawnContributionOut",
 ]
@@ -45,18 +41,6 @@ class EditBody(APIModel):
     discipline: Discipline | None = None
     conceptType: Literal[*TESTIMONY_CONCEPT_TYPES] | None = None
     conceptName: str | None = Field(default=None, min_length=1, max_length=CONCEPT_NAME_MAX)
-
-
-class ApproveBody(APIModel):
-    version: int = Field(ge=1)
-    englishChecked: bool = False
-    corroboratingClaimIds: list[uuid.UUID] = Field(default_factory=list, max_length=CORROBORATING_CLAIMS_MAX)
-
-
-class RejectBody(APIModel):
-    version: int = Field(ge=1)
-    reason: Literal[*TESTIMONY_REJECT_REASONS]
-    note: str | None = Field(default=None, max_length=REVIEW_NOTE_MAX)
 
 
 Status = Literal[*CONTRIBUTION_STATUSES]

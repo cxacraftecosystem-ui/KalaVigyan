@@ -40,17 +40,24 @@ function QuizBody({ quiz, index }: { quiz: QuizBlock | null; index: number | nul
   );
 }
 
+function Bullets({ slide }: { slide: Slide }) {
+  if (!slide.bullets.length) return null;
+  return (
+    <ul className="grid list-disc gap-1.5 ps-5 font-reading text-body-sm text-ink-1 marker:text-ink-3">
+      {slide.bullets.map((bullet) => (
+        <li key={bullet.id} className="break-words">
+          <ExplainerSentence sentence={bullet} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function SlideBody({ slide, pack }: { slide: Slide; pack: LessonPack }) {
   if (slide.kind === "SECTION") {
     return (
       <div className="grid min-w-0 gap-3">
-        <ul className="grid list-disc gap-1.5 ps-5 font-reading text-body-sm text-ink-1 marker:text-ink-3">
-          {slide.bullets.map((bullet) => (
-            <li key={bullet.id} className="break-words">
-              <ExplainerSentence sentence={bullet} />
-            </li>
-          ))}
-        </ul>
+        <Bullets slide={slide} />
         <SlidePicture slide={slide} />
       </div>
     );
@@ -58,7 +65,12 @@ function SlideBody({ slide, pack }: { slide: Slide; pack: LessonPack }) {
   if (slide.kind === "QUIZ") return <QuizBody quiz={pack.quiz} index={slide.question} />;
   if (slide.kind === "READING") return <p className="font-ui text-ui font-normal text-ink-2 tabular-nums">{countNoun(pack.readingList.length, "reading")}</p>;
   if (slide.kind === "SOURCES") return <p className="font-ui text-ui font-normal text-ink-2 tabular-nums">{countNoun(pack.sources.length, "source")}</p>;
-  return pack.craft ? <p className="font-ui text-ui font-normal text-ink-2">{pack.craft.name}</p> : null;
+  return (
+    <div className="grid min-w-0 gap-3">
+      {pack.craft ? <p className="font-ui text-ui font-normal text-ink-2">{pack.craft.name}</p> : null}
+      <Bullets slide={slide} />
+    </div>
+  );
 }
 
 export function SlidePreview({ pack }: { pack: LessonPack }) {

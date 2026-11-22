@@ -1,10 +1,10 @@
 import type { KindFixture } from "@/lib/kindFixtures";
 import { SOURCES_CHAPTER } from "@/lib/monographRenderLayout";
 import type { MonographComponent, MonographDocument, MonographLayoutEntry, MonographNode, MonographQuote, MonographSource, MonographUnit } from "@/lib/monographDocument";
+import { UNIT_REF } from "@/lib/unitIds";
 
 export const KIND_PREVIEW_PATH = "/design/kinds";
 export const KIND_PREVIEW_TITLE = "Every kind on other crafts";
-const UNIT_REF = /^u\d{4}$/;
 const BLOCK = 100;
 const OPENING = "opening";
 const SLUG = "Kind-Fixtures";

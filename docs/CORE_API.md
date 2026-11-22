@@ -245,8 +245,10 @@ and the craft page: `ImageStrip.PictureView` (one picture, inline with its credi
 card), `components/answer/useTermState` (the open term and the terms whose route answered 404),
 `ExplainerSentence.TERM_CLASS`, `explainerBlockBase.termSpanShape`, `answerShapes.CRAFT_PATH` and
 `processView.SpeciesTerm` (the species fields the reaction helpers read). The craft page's client
-contract is `lib/craftPageContract.ts` (shapes, `checkedCraftPage`), its rules
-`lib/craftPageView.ts` and `lib/craftPlaces.ts`, and its specs share `e2e/craftPageFixture.ts`
+contract is `lib/craftPageContract.ts` (the page's shapes) with `lib/craftPageChecks.ts`
+(`checkedCraftPage`, `fetchCraftPage` and what the page shows), `lib/craftPageProcess.ts` (the
+version 2 process part) and `lib/craftChapterReads.ts` (the sentences, citations, sources and
+pictures a chapter shows), its rules `lib/craftPageView.ts` and `lib/craftPlaces.ts`, and its specs share `e2e/craftPageFixture.ts`
 (the golden page curated, uncurated and empty, drawn inside the page's contexts). Added by decision 0060:
 `components/answer/FilmScene` (`FilmSceneProvider`, `useFilmScene`: a film scene's progress from 0
 to 1, null outside a film, which a block's own animation follows),
@@ -385,7 +387,8 @@ Decisions 0005, 0006 and 0007; the adapters themselves are listed in `docs/contr
 
 Shapes and rules are in `docs/contracts/science.md`, `region.md`, `voice.md` and `media.md`;
 the client side is `frontend/lib/{scienceContract,regionContract,voiceContract,mediaContract}.ts`
-over the runtime shape kit `frontend/lib/shape.ts` and `answerShapes.ts`. The client's voice
+over the runtime shape kit `frontend/lib/shape.ts` (with `ruled`, a shape with one more rule, and
+the whole numbers `count` from 0 and `positive` from 1) and `answerShapes.ts`. The client's voice
 rules (offer, tool re-checks, the transcript ledger) are `frontend/lib/voiceRules.ts`, and its one
 call controller is `frontend/lib/voiceCall.ts` (decision 0020). The client's media rules
 (`checkedMediaJob`, `checkedMediaOptions`, `offeredKinds`) are in `frontend/lib/mediaContract.ts`;
