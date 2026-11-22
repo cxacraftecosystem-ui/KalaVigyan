@@ -1,30 +1,19 @@
-from typing import Any, Literal
+from typing import Any
 
 import pytest
-from pydantic import Field, ValidationError
+from pydantic import ValidationError
 
-from app.research.base import ContractModel
 from app.research.blocks_insight import QuantitiesBlock
-from app.research.citations import SourceRef
 from app.research.coverage_answers import FIGURE_KINDS
-from app.research.crafts import CraftRef
 from app.research.explainer import BLOCK_PHASES, BUILT_BLOCK_KINDS
 from app.services.quantities_builder import amounts_stated_in, quantities_block
 
 from ..place.season_supply_fixtures import claims_of
+from .blocks_golden import QUANTITIES, BlocksFixture
 from .explainer_golden import citations_in, golden_json, seed_citations, seed_claims
 from .golden import reproduces
-from .phase_b_golden import FixtureSection
 
-QUANTITIES = "explainer.quantities.golden.json"
 BLOCK_ID = "s1.b1"
-
-
-class QuantitiesFixture(ContractModel):
-    schema_version: Literal[1]
-    craft: CraftRef
-    sections: list[FixtureSection] = Field(min_length=1, max_length=1)
-    sources: list[SourceRef]
 
 
 def golden_block() -> dict[str, Any]:
@@ -34,7 +23,7 @@ def golden_block() -> dict[str, Any]:
 
 
 def test_the_quantities_fixture_is_reproduced_byte_for_byte() -> None:
-    assert reproduces(QuantitiesFixture, QUANTITIES)
+    assert reproduces(BlocksFixture, QUANTITIES)
 
 
 def test_the_quantities_table_is_a_built_phase_d_figure() -> None:

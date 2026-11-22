@@ -16,6 +16,7 @@ from app.research.reranking import Reranker
 from app.research.retrieval import ChunkHit, ClaimHit, EnglishRendering, KnowledgeHits, KnowledgeQuery
 
 from .fusion import FusedItem, fused_order, reciprocal_rank_fusion
+from .fusion_settings import FusionSettings, fusion_settings
 from .rerank import RerankCandidates, collapsed, pool_size, rerank_candidates, reranked
 from .statements import (
     EVERY_CRAFT,
@@ -35,6 +36,7 @@ from .text import or_tsquery, query_text
 __all__ = [
     "CORPUS_TIER",
     "MERGE_HOPS_MAX",
+    "ClaimRankings",
     "SessionScopedSearch",
     "StoredKnowledgeSearch",
     "craft_scope",
@@ -46,6 +48,8 @@ CORPUS_TIER = "T2"
 SCORE_DIGITS = 9
 RANK_FIELDS = ("lexical_rank", "vector_rank", "entity_rank")
 MERGE_HOPS_MAX = 5
+
+ClaimRankings = tuple[list[uuid.UUID], ...]
 
 
 class SessionScopedSearch:
@@ -69,6 +73,11 @@ class SessionScopedSearch:
             )
             return await stored.search(query)
 
+    async def rankings(self, query: KnowledgeQuery) -> ClaimRankings:
+        async with self._sessions() as session:
+            stored = StoredKnowledgeSearch(session, embed=self._embed, english=self._english)
+            return await stored.rankings(query)
+
 
 class StoredKnowledgeSearch:
     def __init__(
@@ -78,16 +87,17 @@ class StoredKnowledgeSearch:
         embed: TextEmbedder,
         english: EnglishRendering | None = None,
         rerank: Reranker | None = None,
+        fusion: FusionSettings | None = None,
     ) -> None:
         self._session = session
         self._embed = embed
         self._english = english
         self._rerank = rerank
+        self._fusion = fusion if fusion is not None else fusion_settings()
         self._turn = asyncio.Lock()
 
     async def search(self, query: KnowledgeQuery) -> KnowledgeHits:
-        words = await search_words(query.text, self._english)
-        (vector,) = checked_vectors(await self._embed([query_text(query.text)]), expected=1)
+        words, vector = await self._asked(query)
         async with self._turn:
             found = await self._searched(query, words, vector)
             candidates = await self._candidates(query, found)
@@ -105,18 +115,38 @@ class StoredKnowledgeSearch:
             await release_connection(self._session)
         return candidates
 
-    async def _searched(self, query: KnowledgeQuery, words: str, vector: list[float]) -> KnowledgeHits:
-        scope = await craft_scope(self._session, query.craft_slug)
+    async def rankings(self, query: KnowledgeQuery) -> ClaimRankings:
+        words, vector = await self._asked(query)
+        async with self._turn:
+            scope = await craft_scope(self._session, query.craft_slug)
+            return await self._claim_rankings(query, scope, words, vector)
+
+    async def _asked(self, query: KnowledgeQuery) -> tuple[str, list[float]]:
+        words = await search_words(query.text, self._english)
+        (vector,) = checked_vectors(await self._embed([query_text(query.text)]), expected=1)
+        return words, vector
+
+    async def _claim_rankings(
+        self, query: KnowledgeQuery, scope: CraftScope, words: str, vector: list[float]
+    ) -> ClaimRankings:
         tsquery = or_tsquery(words)
         conditions = _claim_conditions(query, scope)
-        claims = await self._fuse(
+        return await self._ranked(
             [
                 claim_lexical_ranking(conditions, tsquery) if tsquery else None,
                 claim_vector_ranking(conditions, vector),
                 claim_entity_ranking(conditions, scope, words),
-            ],
-            limit=pool_size(query.limit) if query.rerank else query.limit,
+            ]
         )
+
+    async def _searched(self, query: KnowledgeQuery, words: str, vector: list[float]) -> KnowledgeHits:
+        scope = await craft_scope(self._session, query.craft_slug)
+        tsquery = or_tsquery(words)
+        claims = reciprocal_rank_fusion(
+            await self._claim_rankings(query, scope, words, vector),
+            k=self._fusion.k,
+            weights=self._fusion.claims.ordered(),
+        )[: pool_size(query.limit) if query.rerank else query.limit]
         chunks: list[FusedItem[uuid.UUID]] = []
         if query.passages and CORPUS_TIER in MODE_POLICIES[query.mode].tiers:
             chunks = await self._passages(query, scope, tsquery, vector)
@@ -147,11 +177,15 @@ class StoredKnowledgeSearch:
     async def _fuse(
         self, rankings: Sequence[Select[tuple[uuid.UUID]] | None], *, limit: int
     ) -> list[FusedItem[uuid.UUID]]:
-        found = [
-            list((await self._session.scalars(ranking)).all()) if ranking is not None else []
-            for ranking in rankings
-        ]
-        return reciprocal_rank_fusion(found)[:limit]
+        return reciprocal_rank_fusion(await self._ranked(rankings))[:limit]
+
+    async def _ranked(self, rankings: Sequence[Select[tuple[uuid.UUID]] | None]) -> ClaimRankings:
+        return tuple(
+            [
+                list((await self._session.scalars(ranking)).all()) if ranking is not None else []
+                for ranking in rankings
+            ]
+        )
 
     async def _claim_hits(self, fused: Sequence[FusedItem[uuid.UUID]]) -> list[ClaimHit]:
         if not fused:

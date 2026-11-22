@@ -122,7 +122,7 @@ def test_migration_0072_widens_both_kind_checks_by_the_quantities_table_only() -
     migration = load("0072_quantities_kind")
     assert (migration.revision, migration.down_revision) == (
         "0072_quantities_kind",
-        "0074_mcp_activity",
+        "0075_mcp_call_name_filled",
     )
     assert migration.BLOCK_KINDS == enums.BLOCK_KINDS
     assert set(migration.BLOCK_KINDS) - set(migration.BLOCK_KINDS_BEFORE) == {"quantities"}

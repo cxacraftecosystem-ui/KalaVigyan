@@ -12,7 +12,9 @@ from app.services.place_register import KnownPoints, RegisterPoint, register_dis
 from app.services.supply_links import OriginPlace
 from app.services.timeline_story import timeline_block, timeline_entries, timeline_offer
 
-from ..place.season_supply_fixtures import written_claim
+from ..contracts.blocks_golden import TIMELINE_UNDATED, BlocksFixture
+from ..contracts.golden import golden_json, reproduces
+from ..place.season_supply_fixtures import claims_of, written_claim
 from .fixtures import (
     FUSTAT_POINT,
     TIMELINE,
@@ -139,3 +141,17 @@ class NoCandidates:
 
     async def place_points(self, item_ids: Any) -> dict[str, Any]:
         return {}
+
+
+def test_the_version_2_fixture_is_the_builder_s_timeline_with_its_undated_sentence_and_register_place() -> (
+    None
+):
+    assert reproduces(BlocksFixture, TIMELINE_UNDATED)
+    (section,) = golden_json(TIMELINE_UNDATED)["sections"]
+    (golden,) = section["blocks"]
+    undated = claims_of([entry["sentence"] for entry in golden["undated"]])
+    offer = timeline_offer(*_history(undated))
+    assert offer is not None
+    places = {"fustat": OriginPlace(*FUSTAT_POINT), "kutch": KACHCHH}
+    block = timeline_block(timeline_entries(offer, _choice()), places, boundary_dataset(), block_id=TIMELINE)
+    assert block is not None and block.model_dump(mode="json", by_alias=True) == golden

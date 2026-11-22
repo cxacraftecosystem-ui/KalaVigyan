@@ -12,6 +12,7 @@ on 2026-11-22; within the owner's go-ahead of 2026-11-22 to finish the round). I
 | The pool it amends | [decision 0125](0125-reranking.md) |
 | The check that found it | [decision 0126](0126-measurement-that-grows.md) |
 | The ranking rule | [retrieval.md](../contracts/retrieval.md), Ranking |
+| The fusion weighted by a measured file (amends the fusion) | [decision 0151](0151-a-release-the-live-side-can-read.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context
