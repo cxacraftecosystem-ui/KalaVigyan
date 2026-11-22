@@ -63,6 +63,12 @@ standing}`:
   **`GET /api/categories/{slug}/coverage`**: the `FieldCoverage`, a public read counted like every
   public read, with its tag and `Cache-Control` (`cached_read`); an unknown or inactive subject is
   404.
+- **`GET /api/crafts/coverage`** (decision 0145): `MonographCoverage {schemaVersion 1, crafts
+  [FieldCoverage]}`, the coverage of every active craft or family with a curated monograph, each
+  once in slug order, counted in one pass (`services/coverage.monograph_coverage`), a public cached
+  read like the one above. The landing reads it once, tagged with every monograph's page tag, and
+  keeps the monographs its catalogue lists (`components/landing/fieldCoverageServer.ts`); a
+  monograph missing from the answer leaves the fields section on its plain list.
 - **MCP**: `get_page` with its coverage, and the per-field counts on `find_crafts`
   (`knowledge-api.md`).
 

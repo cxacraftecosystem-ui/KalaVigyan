@@ -7,11 +7,11 @@ from pydantic import AfterValidator, ConfigDict, Field, field_validator
 
 from .base import ContractModel
 from .depicted_materials import DEPICTED_MATERIALS
+from .unit_ids import UNIT_REF_PATTERN
 
 __all__ = [
     "COLOUR_TOKEN_PATTERN",
     "SVG_TAGS",
-    "UNIT_REF_PATTERN",
     "AtomRow",
     "AtomTable",
     "Colour",
@@ -36,7 +36,6 @@ __all__ = [
     "known_colour_token",
 ]
 
-UNIT_REF_PATTERN = r"^u\d{4,}$"
 DOM_ID_PATTERN = r"^[A-Za-z][\w-]*$"
 STYLE_PATTERN = r"^[a-z][a-z0-9-]*( [a-z][a-z0-9-]*)*$"
 FIGURE_KEY_PATTERN = r"^[a-z]+:[A-Za-z0-9.]+$"

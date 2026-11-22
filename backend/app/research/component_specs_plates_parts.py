@@ -11,6 +11,7 @@ from .base import ContractModel, absent, empty
 from .craft_parts import Focal
 from .depicted_materials import DEPICTED_MATERIALS
 from .monograph_page import COMPONENT_LABEL_PATTERN, ITALIC_ROLES, MARK_TAGS
+from .unit_ids import UNIT_REF_PATTERN
 
 __all__ = [
     "DRAWING_TAGS",
@@ -29,7 +30,6 @@ __all__ = [
     "held_text",
 ]
 
-UNIT_REF_PATTERN = r"^u\d{4}$"
 CLASS_PATTERN = r"^[A-Za-z][A-Za-z0-9_-]*$"
 DOM_ID_PATTERN = r"^[A-Za-z][A-Za-z0-9_:.-]*$"
 PICTURE_PATTERN = (

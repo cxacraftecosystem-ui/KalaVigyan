@@ -1,8 +1,10 @@
 # Science: process stages and reactions
 
-What `GET /api/crafts/{slug}/process` answers, and the rules every value in it follows: stages,
+The process view the answer builders read, and the rules every value in it follows: stages,
 materials, conditions and reactions, each built from stored rows and shown at its evidence level.
-Engineers changing the science engine, the reaction player or the client's process shapes read it.
+Engineers changing the science engine, the reaction player or the client's process vocabulary read
+it. No route serves the whole view since decision 0145: the ladder, the reaction player, the
+material cards and the page's chapters read it in the backend.
 
 | For | Read |
 |---|---|
@@ -15,38 +17,35 @@ Engineers changing the science engine, the reaction player or the client's proce
 %%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
 flowchart LR
   SC[("Seed claims<br/>and science rows")] --> PV["Process view<br/>science/"]
-  PV --> RT["GET process"]
-  RT --> CL["scienceContract.ts<br/>craftProcessShape"]
+  PV --> AB["Answer and page builders<br/>ladder, cards, chapters"]
   PV --> RP["Reaction player<br/>re-checked steps"]
+  RP --> CL["scienceContract.ts<br/>vocabulary and species"]
   classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
   class PV accent
 ```
 
 ## Where the code is
 
-The models are `backend/app/schemas/science.py`; the client's types and runtime shapes are
-`frontend/lib/scienceContract.ts`; the golden answer is `shared/science.process.golden.json`
-(Kutch Ajrakh, from the seeded GI Journal claims). Change the three together, with
-`backend/tests/contracts/test_science_contract.py` and `frontend/e2e/contracts-unit.spec.ts`.
+The models are `backend/app/schemas/science.py`; the client keeps only the vocabulary and the
+reaction species the answers' blocks carry (`frontend/lib/scienceContract.ts`, checked against the
+backend's enums by `frontend/e2e/backend-vocabulary-unit.spec.ts`); the golden view is
+`shared/science.process.golden.json` (Kutch Ajrakh, from the seeded GI Journal claims). Change the
+models and the golden together, with `backend/tests/contracts/test_science_contract.py`.
 Design choices: decision 0014. PLAN 7 is the specification; PLAN 0 overrides it.
 `ReactionSpecies`, `mhchem_equation`, `reaction_level` and the unbalanced cap live in
 `backend/app/research/reactions.py` since decision 0042, shared with the explainer's reaction
 player (`reactionSpeciesShape` on the client); the rules below are unchanged. The reaction
-player's steps are this route's reaction views, in process order, and are re-checked against
+player's steps are this view's reactions, in process order, and are re-checked against
 these rows when built and reused (`science/reaction_player`, decision 0045).
 
-Last reviewed: 2026-11-17 (decision 0042).
+Last reviewed: 2026-11-22 (decision 0145, the route retired).
 
-## Route
+## Reading it
 
-| Method | Path | Auth | Answer |
-|---|---|---|---|
-| GET | `/api/crafts/{slug}/process` | public (decision 0079) | `CraftProcess`; 404 `{detail}` for an unknown slug (`NOT_FOUND_DETAIL`); a `MERGED` slug answers with its target's process, as the profile does |
-
-`Cache-Control: private, no-cache` with a token and `public, max-age=300` without, with
-`Vary: Authorization` and an `ETag` of the body that a matching `If-None-Match` turns into a 304
-(decision 0079). The body is built only from stored rows, quoting only chunks the reader may
-read; no model is called while answering it.
+`science/process_view.craft_process(await services.craft_process.process_records(session, craft,
+acls=...))` builds the view from stored rows, quoting only chunks the given reader may read; no
+model is called. The route `GET /api/crafts/{slug}/process` retired with decision 0145, when no
+screen read it.
 
 ## Shape
 
@@ -140,8 +139,8 @@ Vocabulary: `stageType` is `StageType`, `kind` of a material `MaterialKind`, `ro
 
 ## Where the values come from (decision 0015)
 
-The route is `api/routes/crafts.py`; `services/craft_process.process_records` reads the rows
-and `science/process_view.craft_process` builds the answer.
+`services/craft_process.process_records` reads the rows
+and `science/process_view.craft_process` builds the view.
 
 - Processes and stages: the live `Process` rows of the craft (`archivedAt` null,
   `models.science.live_process`) and their `ProcessStage` rows (the seed has one `Seed process`
@@ -189,13 +188,12 @@ Re-read it when a stage, condition or reaction field changes, or a seeded consta
 `backend/tests/contracts/test_science_contract.py` reproduces the golden file byte for byte from
 the models and checks each rule above with hand-worked values (kaolinite dehydroxylation
 `Al2Si2O5(OH)4 -> Al2Si2O7 + 2 H2O`, a doubled equation refused, 60 vs 90 °C differing and 60 vs
-80 °C not, pH 4.0 vs 4.8 differing and 4.0 vs 4.6 not). `frontend/e2e/contracts-unit.spec.ts`
-parses the same file with `craftProcessShape`, which refuses unknown fields and values.
+80 °C not, pH 4.0 vs 4.8 differing and 4.0 vs 4.6 not).
 
 The producer is checked on both sides of its seams: `backend/tests/science/test_process_view.py`
 builds the golden answer from records made from the real seed claims and hand-written science
-rows (`tests/science/golden_process.py`), `test_process_route.py` serves it through the route,
-and `backend/tests/db/test_craft_process_db.py` (GitHub Actions) stores the same rows and reads
-the golden file back from `GET /api/crafts/Kutch-Ajrakh/process`. Balancing, units, envelopes,
+rows (`tests/science/golden_process.py`), and `backend/tests/db/test_craft_process_db.py`
+(GitHub Actions) stores the same rows and reads the golden file back through `process_records`
+with a signed-in reader's chunk access. Balancing, units, envelopes,
 the seed plan and the compound lookup have their own tests with hand-derived values in
 `backend/tests/science/`.

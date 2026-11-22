@@ -1,18 +1,5 @@
-import type {
-  CraftPage,
-  EvidenceEntry,
-  EvidenceGroup,
-  PageClaim,
-  PageCraft,
-  PagePicture,
-  PageProcess,
-  PageSentence,
-  PageStage,
-  PageTerm,
-  Provenance,
-  StageTiming,
-  SubjectKind
-} from "@/lib/craftPageContract";
+import type { CraftPage, EvidenceEntry, EvidenceGroup, PageClaim, PageCraft, PagePicture, PageSentence, PageTerm, Provenance, SubjectKind } from "@/lib/craftPageContract";
+import type { PageProcess, PageStage, StageTiming } from "@/lib/craftPageProcess";
 import type { ExplainerSentence } from "@/lib/explainerBlockBase";
 import { sourceReliabilityLabel } from "@/lib/citations";
 import { ShapeError } from "@/lib/shape";

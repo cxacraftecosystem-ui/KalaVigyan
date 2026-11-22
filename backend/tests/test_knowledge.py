@@ -14,6 +14,7 @@ from app.models import User
 from app.research import stream
 from app.research.crafts import CraftResolution
 from app.research.understanding import UnderstandAsk, Understanding
+from app.research.vocabulary import answer_language_options
 from app.services import answering, craft_matching, knowledge_view
 from app.services.answer_events import stored_follow_ups
 from app.services.answering import AnswerAsk, AnswerPipeline
@@ -192,12 +193,27 @@ def test_the_config_offers_every_depth_with_the_roles_default(role: str, default
     assert "modes" not in body
 
 
+def test_the_answer_languages_are_a_public_read_for_shared_answers() -> None:
+    response = TestClient(create_app()).get("/api/answers/languages")
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "public, max-age=300"
+    languages = response.json()["languages"]
+    assert [language["code"] for language in languages][:2] == ["en", "hi"]
+    assert languages[-1] == {
+        "code": "ur",
+        "label": "Urdu",
+        "autonym": "اردو",
+        "script": "Arab",
+        "direction": "rtl",
+    }
+
+
 def offered(code: str, label: str, autonym: str, script: str, direction: str = "ltr") -> dict[str, str]:
     return {"code": code, "label": label, "autonym": autonym, "script": script, "direction": direction}
 
 
 def test_the_config_offers_english_and_twelve_indian_languages_with_urdu_right_to_left() -> None:
-    assert knowledge.answer_languages() == [
+    assert answer_language_options() == [
         offered("en", "English", "English", "Latn"),
         offered("hi", "Hindi", "हिन्दी", "Deva"),
         offered("bn", "Bengali", "বাংলা", "Beng"),

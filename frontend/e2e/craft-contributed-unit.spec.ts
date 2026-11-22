@@ -3,9 +3,11 @@ import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { itemSentences, type ChapterItem, type ChapterKey } from "@/lib/craftChapters";
+import { itemSentences } from "@/lib/craftChapterReads";
+import type { ChapterItem, ChapterKey } from "@/lib/craftChapters";
 import { contributedCredit, contributedPlacement, type ContributedPlate } from "@/lib/craftContributed";
-import { chapterClaimIds, checkedCraftPage, craftPageShape, type CraftPage } from "@/lib/craftPageContract";
+import { chapterClaimIds, checkedCraftPage } from "@/lib/craftPageChecks";
+import { craftPageShape, type CraftPage } from "@/lib/craftPageContract";
 import type { ExplainerSentence } from "@/lib/explainerBlockBase";
 import { parseShape, ShapeError } from "@/lib/shape";
 

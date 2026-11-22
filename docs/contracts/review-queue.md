@@ -153,8 +153,8 @@ filter or cursor.
 
 | Route | Body | For |
 |---|---|---|
-| `POST /api/review-queue/{kind}/{id}/approve` | `{note?, version?, englishChecked?, craft?}` | every kind; `craft` (a craft slug) for facts only |
-| `POST /api/review-queue/{kind}/{id}/reject` | `{reason, version?, testimonyReason?}` | every kind |
+| `POST /api/review-queue/{kind}/{id}/approve` | `{note?, version?, englishChecked?, craft?, corroboratingClaimIds?}` | every kind; `craft` (a craft slug) for facts only; `corroboratingClaimIds` (0 to 5) for testimony only |
+| `POST /api/review-queue/{kind}/{id}/reject` | `{reason?, version?, testimonyReason?}` | every kind; `reason` (3 to 500 characters) may be left out only by a testimony rejection that names its `testimonyReason` |
 | `POST /api/review-queue/FACTS/{id}/raise` | `{note?}` | facts |
 | `POST /api/review-queue/FACTS/{id}/retract` | `{reason}` | facts |
 
@@ -207,8 +207,12 @@ written. Audit `review.structure_<approved|rejected>` with the kind and the fact
 an audit entry `review.image_<...>`. **Testimony** goes through `testimony_writes.approve` and
 `.reject`: a testimony decision names the `version` it was read at (422 without it; 409 when the
 item changed since); approval takes `englishChecked`; a rejection takes `testimonyReason` (one of
-the testimony reasons, `OTHER` by default) with `reason` as the note to the artisan. The old routes
-(`/api/contributions/images/review/...`, `/api/testimony/review/...`) keep working.
+the testimony reasons, `OTHER` by default) with `reason` as the note to the artisan, which a
+testimony rejection may leave out (every other kind's rejection names its reason in words, 422
+without). These are the only decision routes for pictures and testimony: the review page, the
+pictures page and the testimony page decide through them, and the old decision routes
+(`/api/contributions/images/review/{id}/...`, `/api/testimony/review/{id}/approve` and `/reject`)
+retired with decision 0145.
 
 Refusals: 403 for a kind the account does not review or for one's own item, 404 for an unknown item
 (and for a fact that never went through the gates), 409 for a decision the item's state does not

@@ -25,6 +25,7 @@ from app.research.coverage import (
     CoverageSubject,
     FieldCoverage,
     Holdings,
+    MonographCoverage,
     field_coverage,
     held_fields,
 )
@@ -33,7 +34,13 @@ from app.research.retrieval import RESTRICTED_SENSITIVITY
 from . import knowledge_view
 from .open_work_components import craft_pieces, registered_pieces
 from .open_work_counts import Owners, owned_facts
-from .open_work_subjects import CATEGORY, WorkSubject, craft_subject, subject_by_key
+from .open_work_subjects import (
+    CATEGORY,
+    WorkSubject,
+    craft_subject,
+    curated_craft_subjects,
+    subject_by_key,
+)
 
 __all__ = [
     "COVERAGE_CLAIMS_MIN",
@@ -42,6 +49,7 @@ __all__ = [
     "coverage_of",
     "craft_coverage",
     "held_field_lookup",
+    "monograph_coverage",
     "owners_of",
     "subject_coverage",
     "subject_holdings",
@@ -105,6 +113,12 @@ async def craft_coverage(session: AsyncSession, slug: str) -> FieldCoverage:
 
 async def category_coverage(session: AsyncSession, slug: str) -> FieldCoverage:
     return await coverage_of(session, await subject_by_key(session, CATEGORY, slug))
+
+
+async def monograph_coverage(session: AsyncSession) -> MonographCoverage:
+    subjects = sorted(await curated_craft_subjects(session), key=lambda subject: subject.slug)
+    found = await subject_coverage(session, subjects)
+    return MonographCoverage(crafts=[found[subject.id] for subject in subjects])
 
 
 def owners_of(subjects: Sequence[WorkSubject]) -> Owners:

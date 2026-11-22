@@ -1,8 +1,8 @@
 import type { MonographDocument, MonographNode, MonographUnit } from "@/lib/monographDocument";
 import { nodesText } from "@/lib/monographRender";
 import { componentBundles, type PagePlan } from "@/lib/monographRenderLayout";
+import { UNIT_REF } from "@/lib/unitIds";
 
-const UNIT_REF = /^u\d{4,}$/;
 const FIGURE_KEY = /^[a-z]+:\d+$/;
 const NUMBER_TEXT = /^(Fig\.|Table)\s+\d+$/;
 const NUMBER_IN_TEXT = /(Fig\.|Table)\s+\d+/;

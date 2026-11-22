@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 
 import { commonsThumb, isCommonsFile } from "@/lib/commonsPicture";
 import type { CraftCatalogue } from "@/lib/craftCatalogueContract";
-import type { CraftPage, PagePicture } from "@/lib/craftPageContract";
+import type { PagePlate } from "@/lib/craftChapters";
+import type { CraftPage } from "@/lib/craftPageContract";
 import { craftSubtitle } from "@/lib/craftPageView";
 import { photoCredit } from "@/lib/editorialText";
 
@@ -13,8 +14,8 @@ type SharedPicture = { url: string; width: number; alt: string };
 
 export function craftPageMetadata(page: CraftPage | null): Metadata {
   if (!page) return {};
-  const description = page.overview.lede[0]?.text ?? craftSubtitle(page.craft);
-  const picture = sharedPicture(page.pictures.find((item) => item.role === "HERO") ?? null);
+  const description = page.lede[0]?.text ?? craftSubtitle(page.craft);
+  const picture = sharedPicture(page.masthead.picture);
   return {
     title: page.craft.name,
     description,
@@ -30,7 +31,7 @@ export function atlasMetadata(catalogue: CraftCatalogue | null): Metadata {
   return { title: ATLAS_TITLE, description, openGraph: { title: ATLAS_TITLE, description, type: "website", url: "/crafts" } };
 }
 
-export function sharedPicture(picture: PagePicture | null): SharedPicture | null {
+export function sharedPicture(picture: Pick<PagePlate, "media" | "caption"> | null): SharedPicture | null {
   if (!picture || !isCommonsFile(picture.media.imageUrl)) return null;
   const { author, licence } = picture.media;
   const credit = author && licence ? photoCredit(author, licence) : picture.media.credit;

@@ -12,7 +12,7 @@ import {
   type StructureEntry,
   type StructureKind
 } from "@/lib/structureReviewContract";
-import { reviewEntryShape, type ClosedReviewItem, type ReviewItem } from "@/lib/testimonyContract";
+import { reviewEntryShape, type ClosedReviewItem, type RejectReason, type ReviewItem } from "@/lib/testimonyContract";
 
 export const REVIEW_QUEUE_PATH = "/review-queue";
 export const QUEUE_KINDS = ["FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE"] as const;
@@ -330,7 +330,27 @@ export async function fetchReviewQueue(filters: ReviewFilters, cursor: string | 
   return parseShape(reviewQueuePageShape, await apiFetch<unknown>(`${REVIEW_QUEUE_PATH}?${queueQuery(filters, cursor)}`));
 }
 
+export type TestimonyDecision = { action: "approve"; englishChecked: boolean } | { action: "reject"; reason: RejectReason; note: string };
+
+export function testimonyDecisionBody(item: Pick<ReviewItem, "version">, decision: TestimonyDecision): Record<string, unknown> {
+  if (decision.action === "approve") return { version: item.version, englishChecked: decision.englishChecked };
+  return { version: item.version, testimonyReason: decision.reason, reason: decision.note.trim() || null };
+}
+
+export function testimonyNoteReady(reason: RejectReason | "", note: string): boolean {
+  const words = note.trim();
+  if (!reason || (reason === "OTHER" && !words)) return false;
+  return words.length === 0 || (words.length >= REASON_MIN && words.length <= REASON_MAX);
+}
+
+async function decided(kind: QueueKind, id: string, action: QueueAction, body: Record<string, unknown>): Promise<QueueDecision> {
+  return parseShape(queueDecisionShape, await apiFetch<unknown>(DECISION_PATH(kind, id, action), { method: "POST", body: JSON.stringify(body) }));
+}
+
 export async function decideQueueItem(kind: QueueKind, id: string, action: QueueAction, words: string): Promise<QueueDecision> {
-  const body = JSON.stringify(decisionBody(action, words));
-  return parseShape(queueDecisionShape, await apiFetch<unknown>(DECISION_PATH(kind, id, action), { method: "POST", body }));
+  return decided(kind, id, action, decisionBody(action, words));
+}
+
+export async function decideTestimony(item: ReviewItem, decision: TestimonyDecision): Promise<QueueDecision> {
+  return decided("TESTIMONY", item.id, decision.action, testimonyDecisionBody(item, decision));
 }

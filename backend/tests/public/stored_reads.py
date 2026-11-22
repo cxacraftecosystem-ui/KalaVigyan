@@ -33,7 +33,6 @@ from ..contracts.learning_golden import SHARED_SCIENCE, learning
 from ..geo.golden_region import golden_layer_values, golden_listing, golden_region_records
 from ..geo.test_district_view import records as district_records
 from ..geo.test_river_routes import KEY, OUTLET, SHA, TOPOLOGY, FakeBucket
-from ..science.golden_process import golden_records as process_records
 from ..sources.recorded import recorded
 from ..terms.fakes import CHECKED_AT, FakeResearch, FakeTermStore, golden_claims, kut_term
 from ..voice.listen_fakes import MemoryObjects
@@ -125,7 +124,6 @@ def _craft_reads(asked: Asked) -> dict[Any, dict[str, Any]]:
             "served_page": served,
             "archived_page": nothing,
             "region_records": returning(golden_region_records()),
-            "process_records": asked.loader("process_records", process_records()),
         },
     }
 

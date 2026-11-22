@@ -1613,25 +1613,20 @@ Last reviewed: 2026-11-22.
 - **Clears it:** an owner decision; if wanted, `description` on `PageCraft` (model, contract,
   fixture) drawn beside the register facts and marked as the register's.
 
-### The profile and process client shapes outlive their screen
-
-- **What:** nothing in the frontend calls `GET /crafts/{slug}/profile` or `/process` any more; the
-  profile client is deleted. `lib/scienceContract.craftProcessShape` and the process-route rules in
-  `lib/processView.ts` (`checkedProcess`, `shownVariants`, `stageHasContent`, `readingClaim`,
-  `readingRange`, `isUnbalanced`, `deltaHClaim`, `deltaHText`, `pubchemHref`, `citationsOf`) are
-  used only by `e2e/process-view-unit.spec.ts` and `e2e/contracts-unit.spec.ts`.
-- **Why left:** both backend routes stay; the specs keep the client half of the science contract
-  checked against `shared/science.process.golden.json` until the routes are retired.
-- **Clears it:** retiring `/profile` and `/process` in the backend, then deleting these shapes,
-  rules and specs (the species helpers the answers use stay).
-
 ### Places abroad and rivers are listed, not drawn
 
-- **What:** the Region map fills and tags Indian districts by LGD code only; a place abroad
-  (Sindh) or a river (Dhamadka River) is listed with its roles but has no mark of its own.
-- **Why left:** `PagePlace` carries no coordinates or river id, and the map has no geometry for
-  places outside the district outlines.
-- **Clears it:** coordinates (or a HydroRIVERS id) on `PagePlace`, drawn as pins or a river line.
+- **What:** the tabbed craft screen's Region map is retired; a craft's places are now drawn by its
+  document's ground figure (`services/place_ground`, from the craft's located `CraftLocation`
+  rows) and its timeline map. A place abroad (Sindh) or a river (Dhamadka River) that a dossier
+  names has no located row, so it is listed in `GET /crafts/{slug}/page` (`PagePlace`, with its
+  `wikidataId`) but has no mark of its own on any map of the document.
+- **Why left:** the ground figure places only points inside India's district outlines; a place
+  abroad needs the stored Wikidata point (job step 1, run on production) and a frame that reaches
+  past the outline, and a river needs a HydroRIVERS id or a named-river dataset (see the timeline
+  map entry below).
+- **Clears it:** the stored Wikidata point carried to the ground figure as a pin outside the
+  outline, and a river line from a named-river dataset, with a capture of Kutch Ajrakh's
+  generated and authored maps.
 
 ## Lesson packs and exports (decision 0067)
 
@@ -1664,18 +1659,6 @@ Last reviewed: 2026-11-22.
   tree.
 - **Clears it:** the curation rules check each GI and price date with `stated_dates.states_date`
   at its own precision and report a record whose day, month or year no quote states.
-
-## The lede on the page (decision 0077)
-
-### The lesson screen's title slide does not show the lede
-
-- **What:** a lesson pack's `TITLE` slide now opens with the answer's lede as cited bullets (block
-  id `lede`), and the HTML deck, the PPTX and the PDF draw them (decision 0143); the lesson screen's
-  slide preview (`frontend/components/learn/SlidePreview.tsx`) still draws a title slide as its
-  title and craft only.
-- **Why left:** the component belonged to the design lane running at the same time (2026-11-22).
-- **Clears it:** `SlideBody` draws a `TITLE` slide's bullets with `ExplainerSentence`, as it draws a
-  section's, under the craft name.
 
 ## Frontend audit exceptions
 
@@ -1781,26 +1764,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** delete the share's objects when it stops, by recording each file's key against
   the share.
 
-### Reading-page metadata reads the version 2 craft page fields
-
-- **What:** `frontend/lib/readingMetadata.craftPageMetadata` takes the description from
-  `overview.lede` and the preview picture from the `HERO` entry of `pictures`, which craft page
-  schema 3 keeps only until schema 4 (decision 0095, removal by 2026-12-18).
-- **Why left:** the client contract for schema 3 (`lib/craftPageContract.ts`) belongs to the
-  chapters lane and had not landed when the reading pages moved (decision 0097).
-- **Clears it:** read `lede` and `masthead.picture` when the chapter screen replaces the tabs, in
-  the same change that drops the flat fields.
-
-### Shared answers draw in English reading metadata
-
-- **What:** `/shared/answers/[token]` and `/shared/lessons/[token]` pass `[ENGLISH]` as the
-  answer languages, so a shared Hindi or Urdu answer reads with English language metadata (script
-  and direction) in its header and reading styles.
-- **Why left:** the list of answer languages comes from `GET /answers/config`, a signed-in read
-  (decision 0097 keeps asking signed in).
-- **Clears it:** serve the answer language list from a public read (or ship it in the shared
-  body) and pass it to the shared screens.
-
 ### Craft page chapters not built yet (decision 0098)
 
 - **What:** the version 3 page (`services/chapter_*.py`) doesn't build `what_if`, `concept_graph`,
@@ -1824,20 +1787,18 @@ Last reviewed: 2026-11-22.
 
 ### The timeline map has no pins for Kutch Ajrakh, and the region story never draws a river
 
-- **What:** job step 1 stores a Wikidata point only for a dossier place with a `wikidataId`, and no
-  Kutch Ajrakh place carries one, so every `timeline_map` place of its page is unpinned (the route
-  Sindh to Kutch is drawn between named places). `region_story` never chooses a river: HydroRIVERS
-  basins carry no name, so no offered basin's name can occur in a step's sentence or quote.
-  Several curated `whyClaimId`s (C062, C080, C088) describe a step rather than explain it, and the
-  page now leaves a stage's why out when its claim is already one of the stage's sentences (Scouring,
-  Alum mordant printing, Indigo dyeing, Washing, Final wash show none).
-- **Why left:** Wikidata ids for places, and better why claims, are dossier content (the curation
-  lane, one agent per dossier); placing by name was tried against Wikidata and does not resolve
-  Ajrakhpur or Dhamadka, picks a family name for Kutch and two items for Sindh. Basin names need a
-  named river dataset.
-- **Clears it:** the curation lane adds `wikidataId` to the Kutch Ajrakh places (Sindh Q37211,
-  Kutch district Q1063417) and reviews its why claims; a river-name source joined to HydroRIVERS
-  basins.
+- **What:** Kutch Ajrakh's dossier places Khavda, Barmer, Sindh and Pethapur carry Wikidata ids, but
+  their `timeline_map` pins appear only once job step 1 (`app.scripts.build_craft_chapters`, nightly
+  from Coverage enrichment) has stored their points on production; Ajrakhpur and Dhamadka have no
+  Wikidata item that names them. `region_story` never chooses a river: HydroRIVERS basins carry no
+  name, so no offered basin's name can occur in a step's sentence or quote. Several curated
+  `whyClaimId`s (C062, C080, C088) describe a step rather than explain it.
+- **Why left:** storing the points is a run on production (the lead's); basin names need a named
+  river dataset joined to HydroRIVERS, which is a new source with its licence (the datasets method,
+  `kalavigyan-datasets`); the why claims are dossier content a reviewer rewrites (the curation
+  lane, one agent per dossier).
+- **Clears it:** the job's next run on production (then a capture of the timeline map); a recorded
+  river-name dataset joined to the basins; the three why claims reviewed in the dossier.
 
 ### The decision 0096 merge is the minimal novelty rule
 
@@ -1899,22 +1860,6 @@ Last reviewed: 2026-11-22.
   the clean-up of abandoned registrations were built in round 4.)
 - **Clears it:** each in the change that next touches its file.
 
-## Track 1, round 2 (decision 0101, 2026-11-19)
-
-### The review page's picture and testimony cards use their old routes
-
-- **What:** on `/admin/review`, pictures and testimony are decided through
-  `/api/contributions/images/review/...` and `/api/testimony/review/...`, which reach the same
-  services as `/api/review-queue/{kind}/{id}/{action}`.
-- **Clears it:** an optional decide prop on `PictureReviewCard` and the testimony card, then retire the
-  old routes.
-
-### Two frontend files over budget
-
-- **What:** `frontend/lib/craftPageContract.ts` (531 lines) and `frontend/lib/craftChapters.ts` were
-  over 400 lines before round 2.
-- **Clears it:** split each by part (the round 3 template work touches both).
-
 ## Track 1, round 3 (decision 0106, 2026-11-19)
 
 ### Cited passages held outside text units
@@ -1953,12 +1898,6 @@ Last reviewed: 2026-11-22.
   drawn as `object-position`. Two ways to say one thing.
 - **Clears it:** express Ajrakh's crops as focal boxes and drop the crop classes.
 
-### Generated picture units are numbered from u9001
-
-- **What:** the plate spec's unit references are `u` and four digits (Ajrakh's ids), so a generated
-  page numbers its picture caption and credit units from `u9001`.
-- **Clears it:** one unit id pattern for authored and generated documents.
-
 ### Kutch Ajrakh's React page draws the authored shell
 
 - **What:** `MonographDocument.shell` carries the approved page's main markup with every component
@@ -1982,15 +1921,17 @@ Last reviewed: 2026-11-22.
 
 ### Curated craft documents: what they do not carry yet
 
-- **What:** since round 6 every curated craft is drawn as its document (the tabbed `CraftScreen`
-  is retired). The key facts and the record use the passage renderer's plain term list rather than
-  the board's four-column FactGrid, and what answers and contributions added to the craft page (AI
-  media, contributed plates, field photos, relatives) is not carried into the document. Left
-  unused by the retirement: the voice call UI (`components/voice/*`, `lib/voice*.ts`,
-  `lib/elevenLabsAgent.ts`), `useHasSession`, `useRevealRow`, `IndiaMapStage`, `MapPlaceList` and
-  `MediaActionButton`.
-- **Clears it:** a FactGrid component kind for the record; contributed media as document
-  components; delete the unused files or give them a new caller.
+- **What:** a generated craft document draws its curated plates, its contributed plates and its
+  record (key facts as the fact grid, the record strip), but not the craft page's reviewed field
+  photographs (decision 0112) or its kin crafts (`relatives`), which `GET /crafts/{slug}/page`
+  still carries in its chapters. AI images and videos made from a craft's claims are not carried
+  either.
+- **Why left:** field photographs and kin crafts need a placement each in the document's layout
+  (a `picture_plate` per reviewed photograph with its consent credit, a `related_crafts` component
+  in the kin chapter) and a parity check of the generated pages; AI imagery on a page waits on the
+  owner's ruling on principle 9 (see the production E2E defects below).
+- **Clears it:** both as generated document components with their tests and a capture of a
+  generated page; the owner's ruling for AI media.
 
 ## Round 6 (2026-11-20)
 
@@ -2007,29 +1948,25 @@ Last reviewed: 2026-11-22.
 
 - **What:** on Kutch Ajrakh, the labels under the equation's species ("leucoindigo, on the fibre")
   overflow their 15ch box (`white-space: nowrap` on `.bx-chem .eq .side` in the kit's
-  `monograph.css`), and at 360 the ion charges spill out of the formula; the Textiles category hub
-  draws no family science because the families' monographs answer 404; Kutch Ajrakh's document
+  `monograph.css`), and at 360 the ion charges spill out of the formula; Kutch Ajrakh's document
   carries aria-labels that begin "AI illustration:", which principle 9 (no AI imagery) may not
-  allow. The answer essay check waits for one paid `questions=true` run to save an answer.
-- **Clears it:** a kit fix proven by Monograph parity; family monographs for the categories; the
-  owner's ruling on the illustrations' labels.
+  allow. The answer essay check waits for one paid `questions=true` run to save an answer. (The
+  Textiles hub draws its science from the category's own monograph, served since round 7.)
+- **Why left:** the kit is the owner-approved page's stylesheet, so a fix changes the approved page
+  at 360 and needs the owner's sight of it beside the parity run; the labels wait on the owner's
+  ruling; the paid run is the lead's.
+- **Clears it:** a kit fix shown to the owner at 360 and proven by Monograph parity; the owner's
+  ruling on the illustrations' labels; the lead's paid run.
 
 ### Small differences from the boards left after round 6
 
-- **What:** the map finding text sets about 5% narrower than the board's (the self-hosted Newsreader
-  against the board's Google Fonts copy), so it wraps in two lines where the board has three; the
-  hub's monographs shelf leaves two empty cells at 834 and 1440 with seven monographs; at 360 the
-  landing's specimen label is 13px narrower because the board's label spills into the page margin;
-  the Urdu answer keeps its interface words in English where the Urdu board shows Urdu.
-- **Why left (2026-11-22, decision 0141):** each part waits on an owner choice. Two are the boards'
-  own copies: the board sets the finding in Google's Newsreader and lets its label spill into the
-  page margin, so the choice is which side moves. The board has no hub screen, so no shelf rule for
-  an odd count is drawn to follow. The Urdu board gives five of the essay's interface words (جواب,
-  ماخذوں سے, مرتب, محفوظ کریں, اس جواب کا حوالہ دیں) but not "Saved", the other answer languages
-  or a craft's name in Urdu, which may not be transliterated by us.
-- **Clears it:** the owner picks the side for the two board differences and a shelf rule for an odd
-  count, and approves a sourced list of interface words for each answer language; then the copy
-  table and the shelf rule follow.
+- **What:** the Urdu answer keeps its interface words in English where the Urdu board shows Urdu.
+- **Why left:** the interface words of each answer language belong to the languages lane. The Urdu
+  board gives five of the essay's interface words (جواب, ماخذوں سے, مرتب, محفوظ کریں, اس جواب کا
+  حوالہ دیں) but not "Saved", the other answer languages or a craft's name in Urdu, which may not be
+  transliterated by us.
+- **Clears it:** the languages lane's sourced list of interface words for each answer language,
+  approved by the owner; then the copy table follows.
 
 ## Round 7 (2026-11-20)
 
@@ -2044,25 +1981,24 @@ Last reviewed: 2026-11-22.
   rows, decision 0136) and `python -m app.scripts.write_back_report --gate-less`, then rejects or
   re-files each in the review queue.
 
-### Leftovers of the map rebuild
-
-- **What:** `answer/place/storyGeometry.ts` imports `boardBox` and `RANN_SALT_FLATS` from the
-  pass-through `boardGeometry.ts`. The landing asks for field coverage once per monograph every five
-  minutes (30 requests today). (`StateLines` draws the Survey of India state borders again on every
-  map, as the owner asked on 2026-11-21.)
-- **Clears it:** drop the import and the pass-through; a collection-wide coverage route.
-
 ### Speed left after the quality lane
 
-- **What:** on a phone Kutch Ajrakh scores 90 with an LCP of 3.6 s, not 2.5 s. Before LCP it loads
-  about 470 KB of fonts (Newsreader italic 144 KB, and Newsreader latin-ext 96 KB pulled in by the
-  one arrow, U+2192, in the vat equation) and about 450 KB of JavaScript, because the craft route
-  imports the uncurated-craft page and the full renderer statically. The Textiles hub inlines its
-  whole category document (LCP 8.4 s, score 73), and `/ask` draws its picture only after hydration
-  because the protected shell renders on the client.
-- **Clears it:** subset the Newsreader faces and give the arrow a face whose latin subset holds it;
-  dynamic imports for the uncurated page and the answer renderers; split curated documents the way
-  Ajrakh's shell is split; a server-rendered shell for `/ask`.
+- **What:** on a phone (Lighthouse at 360, median of three, 2026-11-22) Kutch Ajrakh scores 78 with
+  an LCP of 5.7 s against the 2.5 s target: about 1 MB is requested before its masthead picture
+  paints, namely the six first-screen font files the layout preloads (364 KB, Newsreader italic
+  143 KB and roman 128 KB among them), the kit stylesheet (78 KB, render-blocking) and about
+  400 KB of scripts. Signed out, `/ask` lands on the sign-in page (83, LCP 4.7 s), whose photograph
+  shares the first round with Google's sign-in script (104 KB). The Textiles hub scores 100 (LCP
+  1.5 s).
+- **Why left:** what the entry named is in: Newsreader subset to weights 300 to 600 and its kept
+  features (`tools/webfonts`), the arrow on Plex's symbols face, the uncurated page and (decision
+  0145) the answer renderers loaded on demand, curated documents split like Ajrakh's shell, and
+  `/ask` drawn before its scripts. Before and after this lane Ajrakh measured 78 and 5.7 s on the
+  phone (TBT 112 ms to 83 ms, 1.39 MB to 1.35 MB). What is left is a choice of which first-screen
+  bytes wait: the first-screen faces are preloaded by choice (round 7, so the first screen never
+  swaps its type), and the kit stylesheet is the owner-approved page's.
+- **Clears it:** the owner's or lead's choice of the faces to preload and of a kit stylesheet split
+  by chapter, then the change proven by Monograph parity and Lighthouse at 360.
 
 ### Source tools: what they do not cover yet
 

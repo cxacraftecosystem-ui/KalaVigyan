@@ -1,7 +1,8 @@
 import { cache } from "react";
 
 import { CRAFT_CATALOGUE_PATH, parseCraftCatalogue, type CraftCatalogue } from "@/lib/craftCatalogueContract";
-import { CRAFT_PAGE_PATH, checkedCraftPage, craftPageShape, type CraftPage } from "@/lib/craftPageContract";
+import { checkedCraftPage } from "@/lib/craftPageChecks";
+import { CRAFT_PAGE_PATH, craftPageShape, type CraftPage } from "@/lib/craftPageContract";
 import { publicFetch } from "@/lib/server/serverFetch";
 import { parseShape } from "@/lib/shape";
 import { SITE_PAGES_PATH, STATIC_PAGE_REVALIDATE_SECONDS, parseStaticPages, type CraftParams, type StaticPages } from "@/lib/sitePagesContract";

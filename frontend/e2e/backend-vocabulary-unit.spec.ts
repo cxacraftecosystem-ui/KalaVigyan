@@ -5,7 +5,8 @@ import { expect, test } from "@playwright/test";
 
 import { AI_MEDIA_KINDS, BORROWED_SCOPES, CHAPTER_KEYS, FIGURE_KINDS, GENERATED_KINDS, ORIGIN_BASES, SOURCE_GROUPS } from "@/lib/craftChapters";
 import { DEPTH_BASES, ENVIRONMENT_FACTORS, EVENT_KINDS, PICTURE_ROLES } from "@/lib/craftPageContext";
-import { COVERAGE_CLASSES, CRAFT_GI_STATUSES, GI_SHOWN, GROUP_KINDS, NATIVE_NAME_SOURCES, PLACE_KINDS, PROVENANCES, SECTION_BASES, SPECIES_ROLES, SUBJECT_KINDS, TIMING_KINDS } from "@/lib/craftPageContract";
+import { COVERAGE_CLASSES, CRAFT_GI_STATUSES, GI_SHOWN, GROUP_KINDS, NATIVE_NAME_SOURCES, PLACE_KINDS, PROVENANCES, SECTION_BASES, SUBJECT_KINDS } from "@/lib/craftPageContract";
+import { SPECIES_ROLES, TIMING_KINDS } from "@/lib/craftPageProcess";
 import { PLACE_ROLES } from "@/lib/districtCraftsContract";
 import { IMAGE_RELEVANCE, MEDIA_DISPLAYS } from "@/lib/explainerBlockBase";
 import { BLOCK_KINDS, BUILT_BLOCK_KINDS, BUILT_FIGURE_KINDS, DEPTHS, DISCIPLINES, FINAL_SECTION_STATES, TERM_BASES, WORKING_SECTION_STATES } from "@/lib/explainerContract";
@@ -19,8 +20,9 @@ import { NOTIFICATION_KINDS, SECTION_CHANGES } from "@/lib/learningContract";
 import { CITATION_FORMATS, LESSON_FORMATS, SLIDE_KINDS } from "@/lib/lessonContract";
 import { COLOUR_SIDES, FORMULA_BASES } from "@/lib/explainerMatter";
 import { MEDIA_JOB_STATUSES, MEDIA_KINDS } from "@/lib/mediaContract";
+import { UNIT_REF } from "@/lib/unitIds";
 import { AGGREGATIONS, ENV_STATS, PLACE_BASES, PLACE_SCOPES, REGION_FACETS } from "@/lib/regionContract";
-import { CONDITION_QUANTITIES, ENVELOPE_STATUSES, MATERIAL_KINDS, MATERIAL_ROLES, REACTION_KINDS, STAGE_TYPES } from "@/lib/scienceContract";
+import { MATERIAL_KINDS, MATERIAL_ROLES, REACTION_KINDS, STAGE_TYPES } from "@/lib/scienceContract";
 import { CLIENT_TOOL_NAMES, RELAY_AUDIO_TYPES, VOICE_MODES } from "@/lib/voiceContract";
 import { INTERVIEW_TOPICS } from "@/lib/conversationContract";
 import { AGE_BANDS, CREDIT_MODES, GENDERS } from "@/lib/profileContract";
@@ -44,8 +46,6 @@ const PAIRS: [string, string, readonly string[]][] = [
   ["models/enums.py", "REACTION_KINDS", REACTION_KINDS],
   ["models/enums.py", "ENV_STATS", ENV_STATS],
   ["models/enums.py", "MEDIA_KINDS", MEDIA_KINDS],
-  ["schemas/science.py", "CONDITION_QUANTITIES", CONDITION_QUANTITIES],
-  ["schemas/science.py", "ENVELOPE_STATUSES", ENVELOPE_STATUSES],
   ["schemas/region.py", "REGION_FACETS", REGION_FACETS],
   ["schemas/region.py", "AGGREGATIONS", AGGREGATIONS],
   ["schemas/region.py", "PLACE_SCOPES", PLACE_SCOPES],
@@ -129,4 +129,11 @@ for (const [file, name, client] of PAIRS) {
 
 test("a name the backend file does not define fails instead of matching nothing", () => {
   expect(() => backendTuple("models/enums.py", "NOT_A_TUPLE")).toThrow("NOT_A_TUPLE is not a tuple");
+});
+
+test("the client reads a spec's unit refs by the backend's one unit id pattern", () => {
+  const source = readFileSync(join(__dirname, "..", "..", "backend", "app", "research", "unit_ids.py"), "utf8");
+  const pattern = /^UNIT_REF_PATTERN = r"([^"]+)"$/m.exec(source)?.[1];
+  expect(UNIT_REF.source).toBe(pattern);
+  expect(["u0001", "u5001", "u9001", "u10001", "chemistry-ab12"].map((unit) => UNIT_REF.test(unit))).toEqual([true, true, true, false, false]);
 });

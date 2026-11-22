@@ -2,24 +2,11 @@ import { readFileSync } from "node:fs";
 
 import { expect, test } from "@playwright/test";
 
-import {
-  CHAPTER_KEYS,
-  chapterForTab,
-  figureNumbers,
-  itemCitations,
-  itemKind,
-  itemSourceIds,
-  PAGE_BLOCK_KINDS,
-  type Chapter,
-  type ChapterItem,
-  type ChapterKey,
-  type ItemOrigin,
-  type PageAiMedia,
-  type PageBlock,
-  type PagePart
-} from "@/lib/craftChapters";
+import { chapterForTab, figureNumbers, itemCitations, itemKind, itemSourceIds } from "@/lib/craftChapterReads";
+import { CHAPTER_KEYS, PAGE_BLOCK_KINDS, type Chapter, type ChapterItem, type ChapterKey, type ItemOrigin, type PageAiMedia, type PageBlock, type PagePart } from "@/lib/craftChapters";
 import { originLabel } from "@/lib/craftOrigins";
-import { checkedCraftPage, CRAFT_PAGE_PATH, craftEdition, craftPageShape, type CraftPage, type EvidenceEntry } from "@/lib/craftPageContract";
+import { checkedCraftPage } from "@/lib/craftPageChecks";
+import { CRAFT_PAGE_PATH, craftEdition, craftPageShape, type CraftPage, type EvidenceEntry } from "@/lib/craftPageContract";
 import type { ExplainerSentence } from "@/lib/explainerBlockBase";
 import { BLOCK_SHAPES, type LadderStage } from "@/lib/explainerContract";
 import type { ExpertViewBlock } from "@/lib/explainerExperts";

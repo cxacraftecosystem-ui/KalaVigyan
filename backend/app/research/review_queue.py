@@ -6,9 +6,9 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from types import MappingProxyType
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from app.core.errors import InvalidInput
 from app.core.roles import Capability, can
@@ -31,7 +31,11 @@ from .review_switch import (
     RESEARCH,
     WAITING_STATUS,
 )
-from .testimony import REVIEW_NOTE_MAX as TESTIMONY_NOTE_MAX_CHARS, TESTIMONY_REJECT_REASONS
+from .testimony import (
+    CORROBORATING_CLAIMS_MAX,
+    REVIEW_NOTE_MAX as TESTIMONY_NOTE_MAX_CHARS,
+    TESTIMONY_REJECT_REASONS,
+)
 from .vocabulary import LABEL_LEVELS, Discipline, EvidenceLevel
 from .write_back import WRITE_BACK_ORIGIN
 
@@ -52,8 +56,10 @@ __all__ = [
     "PENDING_FACT_STATUSES",
     "QUEUE_KINDS",
     "RAISE",
+    "REASON_IN_WORDS",
     "REASON_MAX_CHARS",
     "REASON_MIN_CHARS",
+    "REASON_NOT_GIVEN",
     "REJECT",
     "RETRACT",
     "REVIEWED_LEVEL",
@@ -129,6 +135,8 @@ REVIEWED_LEVEL: EvidenceLevel = "REVIEWED"
 PAGE_DEFAULT = 25
 PAGE_MAX = 50
 REASON_MIN_CHARS = 3
+REASON_NOT_GIVEN = "a rejection gives its reason in words, or a testimony reason"
+REASON_IN_WORDS = "This item is rejected with its reason in words, at least three characters."
 REASON_MAX_CHARS = min(PICTURE_NOTE_MAX_CHARS, TESTIMONY_NOTE_MAX_CHARS)
 CURSOR_MAX_CHARS = 60
 EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
@@ -316,12 +324,26 @@ class QueueApproval(ContractModel):
     version: int | None = Field(default=None, ge=1)
     english_checked: bool = False
     craft: str | None = Field(default=None, min_length=1, max_length=SLUG_MAX_CHARS)
+    corroborating_claim_ids: list[uuid.UUID] = Field(
+        default_factory=list, max_length=CORROBORATING_CLAIMS_MAX
+    )
 
 
 class QueueRejection(ContractModel):
-    reason: Reason
+    reason: Reason | None = None
     version: int | None = Field(default=None, ge=1)
     testimony_reason: TestimonyReason | None = None
+
+    @model_validator(mode="after")
+    def _a_reason_is_given(self) -> Self:
+        if self.reason is None and self.testimony_reason is None:
+            raise ValueError(REASON_NOT_GIVEN)
+        return self
+
+    def stated(self) -> str:
+        if self.reason is None:
+            raise InvalidInput(REASON_IN_WORDS)
+        return self.reason
 
 
 class FactLevelRaise(ContractModel):

@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { checkedCraftPage, craftPageShape, type CraftPage, type OverviewSection, type PageClaim, type PageEvidence } from "@/lib/craftPageContract";
+import { checkedCraftPage } from "@/lib/craftPageChecks";
+import { craftPageShape, type CraftPage, type OverviewSection, type PageClaim, type PageEvidence } from "@/lib/craftPageContract";
 import type { PageGi } from "@/lib/craftPageContext";
 import { parseShape } from "@/lib/shape";
 

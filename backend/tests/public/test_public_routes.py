@@ -23,7 +23,6 @@ SUMMARY = "/api/public/summary"
 PUBLIC_READS = (
     "/api/crafts/catalogue",
     f"/api/crafts/{AJRAKH}/page",
-    f"/api/crafts/{AJRAKH}/process",
     f"/api/crafts/{AJRAKH}/region",
     f"/api/crafts/{AJRAKH}/shared-science",
     f"/api/shared-science/alum?craft={AJRAKH}",
@@ -50,7 +49,6 @@ PAGE_VIEW_READS = (
 )
 CLAIM_READS = {
     f"/api/crafts/{AJRAKH}/page": "craft_page_records",
-    f"/api/crafts/{AJRAKH}/process": "process_records",
     f"/api/crafts/{AJRAKH}/shared-science": "craft_shared_science",
     f"/api/shared-science/alum?craft={AJRAKH}": "shared_concept_of",
     f"/api/compare?crafts={AJRAKH}&crafts={BAGRU}": "craft_comparison",

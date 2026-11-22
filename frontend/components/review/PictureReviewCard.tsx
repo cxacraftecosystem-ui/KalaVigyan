@@ -7,7 +7,8 @@ import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { apiErrorMessage } from "@/lib/api";
 import { HeldReasons } from "@/components/contributions/HeldReasons";
-import { decideImage, heldReasons, type ImageContribution } from "@/lib/imageContributionContract";
+import { heldReasons, type ImageContribution } from "@/lib/imageContributionContract";
+import { decideQueueItem, REASON_MIN } from "@/lib/reviewQueueContract";
 
 export function PictureReviewCard({ item, onDecided }: { item: ImageContribution; onDecided: () => void }) {
   const [note, setNote] = useState("");
@@ -19,7 +20,7 @@ export function PictureReviewCard({ item, onDecided }: { item: ImageContribution
     setBusy(true);
     setError(null);
     try {
-      await decideImage(item.id, decision, note.trim() || null);
+      await decideQueueItem("IMAGES", item.id, decision, note);
       onDecided();
     } catch (cause) {
       setError(apiErrorMessage(cause, "Couldn't save the decision. Reload it."));
@@ -59,7 +60,7 @@ export function PictureReviewCard({ item, onDecided }: { item: ImageContribution
             {error ? <p role="alert" className="text-ui font-ui text-error">{error}</p> : null}
             <ActionGroup align="start">
               <Button type="button" disabled={busy} onClick={() => void decide("approve")}>Approve</Button>
-              <Button type="button" variant="danger" disabled={busy || note.trim().length < 3} onClick={() => void decide("reject")} data-danger>
+              <Button type="button" variant="danger" disabled={busy || note.trim().length < REASON_MIN} onClick={() => void decide("reject")} data-danger>
                 Refuse
               </Button>
             </ActionGroup>
