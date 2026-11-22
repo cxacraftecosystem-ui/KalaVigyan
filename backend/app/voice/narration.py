@@ -3,14 +3,15 @@ from __future__ import annotations
 import hashlib
 import math
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 from app.core.errors import InvalidInput
 from app.providers.elevenlabs import NARRATION_MAX_CHARACTERS, NARRATION_MODEL, TimedSpeech, audio_seconds
 from app.research.blocks import BlockBase
-from app.research.explainer import Explainer
+from app.research.explainer import Explainer, explainer_blocks
 from app.research.knowledge_pieces import piece_content_hash
-from app.research.vocabulary import CANONICAL_LANGUAGE
+from app.research.vocabulary import CANONICAL_LANGUAGE, HYPOTHESIS_LEVEL
 from app.schemas.listen import ListenWord
 
 __all__ = [
@@ -29,7 +30,7 @@ __all__ = [
     "spoken_blocks",
 ]
 
-NARRATION_VERSION = 1
+NARRATION_VERSION = 2
 PART_CHARACTERS = 2_000
 CHARACTERS_PER_MINUTE = 1_000
 SENTENCE_GAP = " "
@@ -63,8 +64,7 @@ class NarrationPart:
 
 def spoken_blocks(explainer: Explainer, section_id: str | None) -> list[SpokenBlock]:
     language = explainer.understood.language
-    chosen = [section for section in explainer.sections if section_id in (None, section.id)]
-    spoken = (_spoken(block, language) for section in chosen for block in section.blocks)
+    spoken = (_spoken(block, language) for block in _read_blocks(explainer, section_id))
     return [block for block in spoken if block is not None]
 
 
@@ -120,6 +120,15 @@ def estimated_seconds(characters: int) -> int:
     return math.ceil(characters * 60 / CHARACTERS_PER_MINUTE)
 
 
+def _read_blocks(explainer: Explainer, section_id: str | None) -> Iterator[BlockBase]:
+    if section_id is None:
+        yield from explainer_blocks(explainer)
+        return
+    for section in explainer.sections:
+        if section.id == section_id:
+            yield from section.blocks
+
+
 def _spoken(block: BlockBase, language: str) -> SpokenBlock | None:
     sentences = tuple(
         SpokenSentence(
@@ -128,6 +137,7 @@ def _spoken(block: BlockBase, language: str) -> SpokenBlock | None:
             language=language if sentence.translated else CANONICAL_LANGUAGE,
         )
         for sentence in block.cited_sentences()
+        if sentence.level != HYPOTHESIS_LEVEL
     )
     if not sentences:
         return None

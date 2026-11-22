@@ -47,5 +47,5 @@ SCORE_CUES: Mapping[tuple[str, str | None], CuePrompt] = MappingProxyType(
 )
 
 
-def cue_prompt(kind: str, discipline: str) -> CuePrompt | None:
+def cue_prompt(kind: str, discipline: str | None) -> CuePrompt | None:
     return SCORE_CUES.get((kind, discipline)) or SCORE_CUES.get((kind, None))

@@ -966,17 +966,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** after the deploy, load `/ask`, ask the Kutch Ajrakh known-answer questions and
   see each section's pictures with their credits and underlined terms that open their summary.
 
-## Explainer view (decision 0037)
-
-### Listen re-renders every sentence on each time update
-
-- **What:** the word being read travels through the reading context, so each `timeupdate`
-  (about four a second) re-renders every sentence of the explainer.
-- **Why left:** not measured as slow on an Expert answer; memoising every sentence first would be
-  a guess.
-- **Clears it:** measure on a long answer on a phone; if it drops frames, give each sentence a
-  selector on the mark (only the sentence being read re-renders).
-
 ## Listen and the switched-off call (decision 0035)
 
 ### Narration not yet heard from ElevenLabs
@@ -1728,15 +1717,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** curation storing condition ranges with the outcomes a source ties to each, or
   water sources as materials with their relations; then an input kind over them in a version 2.
 
-### Listen reads a hypothesis outcome without its label
-
-- **What:** Listen speaks every outcome sentence of a what-if (all options, in reading order),
-  and a hypothesis is spoken like a finding; on screen it carries the Hypothesis badge.
-- **Why left:** the narration and its cache are decision 0035's and shared with film mode
-  (0060); changing what is spoken changes every cached narration's hash.
-- **Clears it:** Listen leaving hypotheses out, or a spoken "possibly" prefix, with the narration
-  cache version raised.
-
 ### One answer can show the same what-if in two sections
 
 - **What:** builders see only their own section, so a process and a chemistry section that both
@@ -2252,18 +2232,16 @@ Last reviewed: 2026-11-22.
 
 ## The lede on the page (decision 0077)
 
-### Listen, film, the quiz and lesson packs leave the lede out
+### Lesson packs leave the lede out
 
-- **What:** the explainer page opens with the lede (`components/answer/LedeBlock.tsx`), and so do
-  the report PDF and the citations export, but Listen narrates sections only
-  (`voice/narration.spoken_blocks`): it starts at the first section and never marks a lede word.
-  Film mode's scenes (`voice/film_scenes.film_scenes`, `lib/filmScenes.ts`), the quiz
-  (`research/quiz.py`) and lesson packs (`research/lesson_builder.py`) also read sections only.
-- **Why left:** decision 0077 kept these readers on sections; task 3-03 draws the lede and adds no
-  Listen or film behaviour.
-- **Clears it:** `spoken_blocks` yields the lede first for a whole-answer narration (the Listen
-  golden and the narration cache keys change with it) and film opens on a lede scene; the quiz and
-  lesson packs take the lede only if the owner wants the direct answer in them.
+- **What:** a lesson pack is built from the sections a teacher chooses, and its title slide carries
+  only the title, so the answer's lede (the direct answer) is on no slide. Listen and film open on
+  the lede and a whole-answer quiz asks from it (decision 0140).
+- **Why left:** a lede on the title slide changes the slide contract that the deck, the PPTX file
+  and the lesson screen draw, and decision 0077 left the lesson packs to the owner's wish.
+- **Clears it:** the owner's yes; then the `TITLE` slide carries the lede's sentences as bullets
+  (block id `lede`) in `research/lesson_builder`, `services/lesson_deck`, `services/lesson_pptx`
+  and the lesson screen, with `docs/contracts/learning.md`.
 
 ## Frontend audit exceptions
 

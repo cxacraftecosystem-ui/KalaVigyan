@@ -3,7 +3,7 @@
 import { useId, useState, type ReactNode } from "react";
 
 import { CitationChips } from "@/components/answer/CitationContext";
-import { useExplainerReading } from "@/components/answer/ExplainerReading";
+import { useExplainerReading, useSentenceListening } from "@/components/answer/ExplainerReading";
 import { EvidenceTag, HypothesisText, InferredText } from "@/components/editorial/EvidenceMark";
 import { sentenceAnchor, sentenceMark } from "@/lib/answerEssay";
 import { sentenceView } from "@/lib/answerLanguages";
@@ -73,7 +73,7 @@ export function ExplainerSentence({ sentence }: { sentence: Sentence }) {
   const reading = useExplainerReading();
   const shown = sentenceView(sentence, reading.language, reading.original);
   const terms = sentence.terms.filter((span) => !reading.hiddenTerms.has(span.termKey));
-  const listening = reading.listen?.sentenceId === sentence.id ? reading.listen : null;
+  const listening = useSentenceListening(sentence.id);
   const mark = listening ? (wordRanges(shown.text, listening.words)[listening.wordIndex] ?? null) : null;
   const segments = sentenceSegments(shown.text, terms, mark);
   const evidence = sentenceMark(sentence);

@@ -12,6 +12,7 @@ import { FieldDialog } from "@/components/dialogs/FieldDialog";
 import { useAppReducedMotion } from "@/components/guide/useAppReducedMotion";
 import { RetryLine } from "@/components/RemotePanels";
 import { attributesForText, type AnswerLanguage } from "@/lib/answerLanguages";
+import type { LedeBlock } from "@/lib/explainerContract";
 import type { SectionView } from "@/lib/explainerState";
 import { filmCaption, filmKey, filmMark } from "@/lib/filmScenes";
 import { FULL_MIX, type FilmMix } from "@/lib/filmSound";
@@ -21,6 +22,7 @@ export type FilmPlayerProps = {
   question: string;
   language: AnswerLanguage;
   sections: readonly SectionView[];
+  lede: LedeBlock | null;
   scoreOffered: boolean;
   onClose: () => void;
 };
@@ -49,9 +51,9 @@ function FilmBody({ film, language, reduce }: { film: Film; language: AnswerLang
   );
 }
 
-export function FilmPlayerBody({ answerId, language, sections, scoreOffered, playRef }: Omit<FilmPlayerProps, "question" | "onClose"> & { playRef: RefObject<HTMLButtonElement | null> }) {
+export function FilmPlayerBody({ answerId, language, sections, lede, scoreOffered, playRef }: Omit<FilmPlayerProps, "question" | "onClose"> & { playRef: RefObject<HTMLButtonElement | null> }) {
   const reduce = useAppReducedMotion();
-  const film = useFilm(answerId, language.code, sections);
+  const film = useFilm(answerId, language.code, sections, lede);
   const score = useFilmScore(answerId, language.code);
   const [mix, setMix] = useState<FilmMix>(FULL_MIX);
   const onMute = () => setMix((current) => ({ ...current, muted: !current.muted }));
@@ -66,12 +68,12 @@ export function FilmPlayerBody({ answerId, language, sections, scoreOffered, pla
   );
 }
 
-export function FilmPlayer({ answerId, question, language, sections, scoreOffered, onClose }: FilmPlayerProps) {
+export function FilmPlayer({ answerId, question, language, sections, lede, scoreOffered, onClose }: FilmPlayerProps) {
   const playRef = useRef<HTMLButtonElement | null>(null);
   const title = attributesForText(question, language);
   return (
     <FieldDialog open onClose={onClose} title={<span {...title}>{question}</span>} className="max-w-5xl" initialFocusRef={playRef}>
-      <FilmPlayerBody answerId={answerId} language={language} sections={sections} scoreOffered={scoreOffered} playRef={playRef} />
+      <FilmPlayerBody answerId={answerId} language={language} sections={sections} lede={lede} scoreOffered={scoreOffered} playRef={playRef} />
     </FieldDialog>
   );
 }

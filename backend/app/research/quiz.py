@@ -9,7 +9,7 @@ from typing import Literal, Self
 from pydantic import ValidationError, model_validator
 
 from .base import ContractModel
-from .blocks import ExplainerSentence, named_in
+from .blocks import BlockBase, ExplainerSentence, named_in
 from .blocks_learning import QUIZ_MAX_QUESTIONS, QUIZ_OPTIONS_MAX, QuizBlock, QuizQuestion, quiz_prompt
 from .blocks_play import hidden_block
 from .citations import SourceRef, cited_source_ids
@@ -64,15 +64,19 @@ class _Placed:
 def quiz_sentences(explainer: Explainer, section_ids: Sequence[str] = ()) -> list[list[ExplainerSentence]]:
     by_id = {section.id: section for section in explainer.sections}
     chosen = [by_id[section_id] for section_id in section_ids] if section_ids else explainer.sections
+    asked = [_quizzed(section.blocks) for section in chosen]
+    if section_ids or explainer.lede is None:
+        return asked
+    return [_quizzed([explainer.lede]), *asked]
+
+
+def _quizzed(blocks: Sequence[BlockBase]) -> list[ExplainerSentence]:
     return [
-        [
-            sentence
-            for block in section.blocks
-            if block.kind not in UNQUIZZED_KINDS and not hidden_block(block)
-            for sentence in block.cited_sentences()
-            if isinstance(sentence, ExplainerSentence)
-        ]
-        for section in chosen
+        sentence
+        for block in blocks
+        if block.kind not in UNQUIZZED_KINDS and not hidden_block(block)
+        for sentence in block.cited_sentences()
+        if isinstance(sentence, ExplainerSentence)
     ]
 
 

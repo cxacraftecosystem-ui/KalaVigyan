@@ -1123,13 +1123,14 @@ A film plays an explainer on the client (plan feature 3, lane 0060); no video is
 
 - Offered exactly where Listen is: after `done`, with an answer id, in a language the
   `/answers/config` `listen` offer lists.
-- Scenes are the drawn blocks in reading order (sections by `order`, blocks in order), a hidden
-  simulation left out. A scene lasts as long as its block's Listen tracks together, else 4 s per
+- Scenes are the lede, when the answer has one, drawn as its sentences without a heading, then
+  the drawn blocks in reading order (sections by `order`, blocks in order), a hidden simulation
+  left out (decision 0140). A scene lasts as long as its block's Listen tracks together, else 4 s per
   step of a reaction player or region story, 3 s per picture of an images block and 6 s for any
   other block (`FILM_SCENE_SECONDS`). Each scene plays its block's own animation (the ladder
   filling, the river flowing, the reaction steps, the zoom levels, the time slider) under the
   narration of its tracks, captioned with the sentence being read in the answer language (Listen's
-  words), a scene with no narration with its section's title. Under either reduced-motion switch a
+  words), a scene with no narration with its section's title (the lede with its first sentence). Under either reduced-motion switch a
   scene shows its block's static end state and the film advances at the narration's pace.
 - The score is optional. `/answers/config` adds `film {score}` (`FilmOffer`): true when the music
   route has a key and media can be made now; absent, off the contract or false, no score control

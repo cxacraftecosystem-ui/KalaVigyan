@@ -1,9 +1,11 @@
+import hashlib
 from datetime import UTC, datetime
 
 import pytest
 
 from app.core.errors import InvalidInput
 from app.providers.elevenlabs import NARRATION_MAX_CHARACTERS, TimedSpeech
+from app.research.explainer import Explainer
 from app.services.naming import narration_file_name, narration_key
 from app.voice.narration import (
     PART_CHARACTERS,
@@ -47,6 +49,43 @@ def test_listen_reads_the_cited_sentences_of_each_block_in_reading_order_and_ski
 def test_one_section_reads_only_its_own_blocks_and_an_unknown_section_reads_nothing() -> None:
     assert [b.block_id for b in spoken_blocks(golden_explainer(), "s2")] == ["s2.b1"]
     assert spoken_blocks(golden_explainer(), "s9") == []
+
+
+def test_the_whole_answer_opens_with_its_lede_and_a_section_leaves_it_out() -> None:
+    answered = Explainer.model_validate(golden_json("explainer.lede.golden.json"))
+    whole = spoken_blocks(answered, None)
+    assert [b.block_id for b in whole] == ["lede", "s1.b1", "s2.b1", "s3.b1"]
+    assert [s.sentence_id for s in whole[0].sentences] == ["lede.1", "lede.2", "lede.3"]
+    assert [b.block_id for b in spoken_blocks(answered, "s1")] == ["s1.b1"]
+
+
+def test_a_hypothesis_outcome_is_not_read_aloud() -> None:
+    [what_if] = spoken_blocks(what_if_explainer(hypothesis="s2.b1.2"), None)
+    assert [s.sentence_id for s in what_if.sentences] == ["s2.b1.1", "s2.b1.3", "s2.b1.4"]
+
+
+def test_the_cache_id_is_version_two_since_hypotheses_left_listen() -> None:
+    parts = ("kalavigyan-narration", "2", "eleven_v4", "voice_1", "en", HASH)
+    by_hand = hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
+    assert narration_cache_id(HASH, language="en", voice_id="voice_1") == by_hand
+
+
+def what_if_explainer(*, hypothesis: str) -> Explainer:
+    document = golden_json("explainer.document.golden.json")
+    fixture = golden_json("explainer.phase-c.golden.json")
+    block = fixture["sections"][1]["blocks"][0]
+    for option in block["options"]:
+        for outcome in option["outcomes"]:
+            if outcome["sentence"]["id"] == hypothesis:
+                outcome["sentence"]["level"] = "HYPOTHESIS"
+                for citation in outcome["sentence"]["citations"]:
+                    citation.update({"evidence": "INFERRED", "level": "HYPOTHESIS"})
+    cited = [
+        c["sourceId"] for o in block["options"] for x in o["outcomes"] for c in x["sentence"]["citations"]
+    ]
+    sources = {source["id"]: source for source in fixture["sources"]}
+    section = {**document["sections"][1], "order": 1, "blocks": [block]}
+    return golden_explainer(sections=[section], sources=[sources[sid] for sid in dict.fromkeys(cited)])
 
 
 def test_a_sentence_left_in_english_inside_a_hindi_explainer_is_spoken_in_english() -> None:

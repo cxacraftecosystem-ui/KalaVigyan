@@ -13,6 +13,7 @@ from app.research.quiz import (
     ExplainerQuiz,
     explainer_quiz,
     quiz_block,
+    quiz_sentences,
 )
 
 from ..contracts.explainer_golden import DOCUMENT, golden_json
@@ -201,3 +202,15 @@ def test_a_quiz_lists_the_sources_it_cites_in_order() -> None:
     with pytest.raises(ValidationError, match="every source it cites once"):
         ExplainerQuiz.model_validate(payload | {"sources": list(reversed(payload["sources"]))})
     assert ExplainerQuiz.model_validate(payload | {"answerId": str(uuid.UUID(int=1))}).quiz == quiz.quiz
+
+
+def test_a_whole_answer_quiz_asks_from_its_lede_first_and_chosen_sections_leave_it_out() -> None:
+    answered = Explainer.model_validate(golden_json("explainer.lede.golden.json"))
+    whole = [[s.id for s in group] for group in quiz_sentences(answered)]
+    assert whole == [
+        ["lede.1", "lede.2", "lede.3"],
+        ["s1.b1.1", "s1.b1.2"],
+        ["s2.b1.1", "s2.b1.2"],
+        ["s3.b1.1", "s3.b1.2"],
+    ]
+    assert [[s.id for s in group] for group in quiz_sentences(answered, ["s2"])] == [["s2.b1.1", "s2.b1.2"]]

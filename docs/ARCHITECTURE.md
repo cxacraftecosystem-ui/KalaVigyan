@@ -404,8 +404,8 @@ sequenceDiagram
 1. `GET /api/answers/{answerId}/film-score?language=` (`api/routes/film.py`) checks `VOICE` and
    the 10-ask limit (Master Admin unlimited) and reads the reader's own explainer with hidden
    simulations marked, in one short session (`voice/film_store.py`).
-2. `voice/film_scenes.py` makes the scenes (drawn blocks in reading order, timed by their
-   narration estimate or `FILM_SCENE_SECONDS`), their hash, the bed length and the cues the
+2. `voice/film_scenes.py` makes the scenes (the lede first when the answer has one, then the drawn
+   blocks in reading order, timed by their narration estimate or `FILM_SCENE_SECONDS`), their hash, the bed length and the cues the
    fixed table of `voice/score_prompts.py` names. A manifest at
    `media/score/<answerId>/<language>/score.json` whose hash matches is served at once.
 3. Otherwise `voice/film_score.py` looks up each clip by its content address
@@ -673,8 +673,8 @@ what-if lab, the zoom story, the timeline map) and film mode with its score have
 shapes in `lib/explainerPlay.ts` and `lib/filmScore.ts` (decision 0054); the score's route is
 built (decision 0058). The zoom story and the timeline map are `components/answer/journey/`,
 loaded on demand (`lib/zoomView.ts`, `lib/timelineView.ts`, decision 0060). Film mode is
-`components/answer/film/`, loaded only when a film starts: one clock over the drawn blocks
-(`lib/filmScenes.ts`), the Listen script and audio for narration and captions, each block's own
+`components/answer/film/`, loaded only when a film starts: one clock over the lede and the drawn
+blocks (`lib/filmScenes.ts`), the Listen script and audio for narration and captions, each block's own
 animation driven through `components/answer/FilmScene.tsx`, and the optional score mixed by
 `lib/filmSound.ts`.
 The phase D kinds (the cloze quiz, compare, the concept graph, local measures, market and GI,
