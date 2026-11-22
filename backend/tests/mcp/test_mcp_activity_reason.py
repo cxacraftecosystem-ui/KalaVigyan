@@ -60,8 +60,8 @@ def test_a_reason_withholds_every_argument_the_call_sent() -> None:
 
 
 def test_a_reason_keeps_no_personal_data_or_secret() -> None:
-    text = "Write to ravi@example.org or call 98765 43210 with Bearer abcdefghijklmnopqrstuvwx."
-    assert failure_reason(text, sent=()) == "Write to [email] or call [number] with Bearer [redacted]."
+    text = "Write to ravi@example.org or call 98765 43210 with Bearer abcdefghijklmnopqrstuvwx today."
+    assert failure_reason(text, sent=()) == "Write to [email] or call [number] with Bearer [redacted] today."
     token = "kvmcp_at_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v"
     assert failure_reason(f"refused {token} here", sent=()) == "refused [redacted] here"
 

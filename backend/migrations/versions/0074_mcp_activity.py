@@ -36,8 +36,8 @@ $do$
 
 
 def upgrade() -> None:
-    op.add_column(CALLS, sa.Column("clientName", sa.String(length=CLIENT_NAME_CHARS), nullable=True))
-    op.add_column(CALLS, sa.Column("reason", sa.String(length=REASON_CHARS), nullable=True))
+    op.add_column("McpToolCall", sa.Column("clientName", sa.String(length=CLIENT_NAME_CHARS), nullable=True))
+    op.add_column("McpToolCall", sa.Column("reason", sa.String(length=REASON_CHARS), nullable=True))
     op.execute(NAME_EACH_CALL)
     op.alter_column(CALLS, "clientName", nullable=False)
     op.create_check_constraint(op.f(f"{CALLS}_reason_check"), CALLS, REASON_ONLY_ON_FAILURE)
@@ -57,7 +57,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_table(DAYS)
+    op.drop_table("McpToolCallDay")
     op.drop_constraint(op.f(f"{CALLS}_reason_check"), CALLS, type_="check")
-    op.drop_column(CALLS, "reason")
-    op.drop_column(CALLS, "clientName")
+    op.drop_column("McpToolCall", "reason")
+    op.drop_column("McpToolCall", "clientName")
