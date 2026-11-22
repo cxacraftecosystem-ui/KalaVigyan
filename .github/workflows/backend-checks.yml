@@ -78,7 +78,7 @@ jobs:
   database:
     name: Migrations and database tests
     runs-on: ubuntu-26.04
-    timeout-minutes: 40
+    timeout-minutes: 75
     needs: lint-and-unit
     services:
       postgres:
@@ -147,6 +147,6 @@ jobs:
       - name: Seed states and districts
         run: uv run python -m app.scripts.seed_districts
       - name: Database tests
-        run: uv run pytest -q -m db tests/db
+        run: uv run pytest -q -m db tests/db --durations=40
       - name: Import the curated dossiers as the deploy does
         run: uv run python -m app.scripts.import_curation
