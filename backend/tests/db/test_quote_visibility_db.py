@@ -62,9 +62,15 @@ async def _sources(session: AsyncSession) -> None:
     await replace_source_chunks(session, OPEN_PAGE, OPEN_TEXT)
 
 
-async def test_a_quote_no_passage_holds_takes_the_access_of_its_pages_passages(session: AsyncSession) -> None:
-    public, _ = await claims_by_id(session, [UNLINKED, UNQUOTED, BOOK_QUOTED], acls=OPEN_CHUNK_ACLS)
-    assert set(public) == {UNQUOTED, BOOK_QUOTED}
+async def test_a_quote_no_passage_holds_takes_the_access_of_its_pages_passages_and_its_fact_stays(
+    session: AsyncSession,
+) -> None:
+    public, sources = await claims_by_id(session, [UNLINKED, UNQUOTED, BOOK_QUOTED], acls=OPEN_CHUNK_ACLS)
+    assert set(public) == {UNLINKED, UNQUOTED, BOOK_QUOTED}
+    assert [(c["sourceId"], c["quote"], c["evidence"]) for c in public[UNLINKED].citations] == [
+        (str(CLOSED_PAGE), None, "INFERRED")
+    ]
+    assert CLOSED_PAGE in sources
     assert [(c["quote"], c["evidence"]) for c in public[UNQUOTED].citations] == [(None, "INFERRED")]
     assert [(c["quote"], c["evidence"]) for c in public[BOOK_QUOTED].citations] == [(BOOK_QUOTE, "QUOTED")]
     researcher, _ = await claims_by_id(session, [UNLINKED], acls=EVERY_CHUNK_ACLS)
