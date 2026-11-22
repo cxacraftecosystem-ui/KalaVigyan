@@ -9,7 +9,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
 from app.core.errors import InvalidInput
-from app.models import Claim, Concept, CuratedClaim, CuratedCraft, Process, Term, TermSummary
+from app.models import (
+    Claim,
+    Concept,
+    CuratedClaim,
+    CuratedCraft,
+    KnowledgePiece,
+    Process,
+    Term,
+    TermSummary,
+)
 from app.models.science import live_process
 from app.research.retrieval import HIDDEN_CLAIM_STATUSES
 from app.retrieval.statements import EVERY_CRAFT, claim_conditions
@@ -18,6 +27,7 @@ from app.services.claim_seed import SEED_PROCESS_VARIANT
 from app.services.craft_page import craft_page
 from app.services.craft_page_records import craft_page_records
 from app.services.craft_process import process_records
+from app.services.curated_index import CuratedPage
 from app.services.curation_import import import_curation
 from app.services.curation_keys import CURATED_PROCESS_VARIANT, curated_id
 from app.services.curation_retire import retire_dossier
@@ -136,14 +146,20 @@ async def test_a_retired_dossier_leaves_its_claims_superseded_and_its_seed_rows_
 ) -> None:
     before = await shown_seed_rows(session, AJRAKH)
     await import_curation(session)
+    owner = await craft_id(session, AJRAKH)
+    page = CuratedPage.model_validate(
+        await session.scalar(select(CuratedCraft.page).where(CuratedCraft.craftId == owner))
+    )
     with pytest.raises(InvalidInput):
         await retire_dossier(session, AJRAKH)
     retired = await retire_dossier(session, AJRAKH, directory=tmp_path)
-    owner = await craft_id(session, AJRAKH)
     curated = select(CuratedClaim.claimId).where(CuratedClaim.craftId == owner)
     statuses = await session.scalars(select(Claim.status).where(Claim.id.in_(curated)).distinct())
     assert set(statuses.all()) == {"SUPERSEDED"}
-    assert retired.claims == len(raw(AJRAKH)["claims"]) and retired.processes == 1 and retired.pieces >= 1
+    assert retired.claims == len(raw(AJRAKH)["claims"]) and retired.processes == 1
+    overview = list(page.piece_ids().values())
+    stale = await session.scalars(select(KnowledgePiece.staleSince).where(KnowledgePiece.id.in_(overview)))
+    assert overview and all(stamp is not None for stamp in stale.all())
     assert await session.scalar(select(CuratedCraft.craftId).where(CuratedCraft.craftId == owner)) is None
     curated_process = select(func.count()).where(
         Process.craftId == owner, Process.variant == CURATED_PROCESS_VARIANT, live_process()

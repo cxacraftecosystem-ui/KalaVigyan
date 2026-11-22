@@ -1,4 +1,3 @@
-import uuid
 from collections.abc import AsyncIterator
 from decimal import Decimal
 
@@ -7,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
-from app.models import ClaimSource
+from app.models import Claim, ClaimSource, CuratedClaim
 from app.research.crafts import CraftRef
 from app.services import knowledge_view
 from app.services.curation_import import import_curation
@@ -20,7 +19,6 @@ pytestmark = pytest.mark.db
 AJRAKH = CraftRef(slug="Kutch-Ajrakh", name="Kutch Ajrakh", path="/crafts/Kutch-Ajrakh")
 DHOKRA = CraftRef(slug="Bastar-Dhokra", name="Bastar Dhokra", path="/crafts/Bastar-Dhokra")
 TIKULI = CraftRef(slug="Tikuli-Painting", name="Tikuli Painting", path="/crafts/Tikuli-Painting")
-WATER_TABLE_CLAIM = uuid.UUID("00885460-e0ce-5a6e-905c-28da38a06a16")
 KACHCHH, GUJARAT, BARMER = 449, 24, 90
 
 
@@ -66,8 +64,15 @@ async def test_a_seer_converts_only_once_a_stored_quote_states_its_value_for_kac
     places = await craft_places(session, craft)
     assert KACHCHH in places.districts and {GUJARAT, 8} <= places.states
     assert (await regional_factors(session, AJRAKH.slug, {"seer"})).factors == {}
+    curated = (
+        select(CuratedClaim.claimId)
+        .join(Claim, Claim.id == CuratedClaim.claimId)
+        .where(CuratedClaim.craftId == craft.id, Claim.evidenceLevel == "PROVISIONAL")
+    )
     cite = (
-        await session.scalars(select(ClaimSource).where(ClaimSource.claimId == WATER_TABLE_CLAIM))
+        await session.scalars(
+            select(ClaimSource).where(ClaimSource.claimId.in_(curated)).order_by(ClaimSource.id)
+        )
     ).first()
     assert cite is not None
     cite.quote = "In Kachchh a seer weighed 0.933 kg."
