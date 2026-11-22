@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 
+import { CitedList } from "@/components/monograph/CitedList";
 import { TermGroupView } from "@/components/monograph/TermGroups";
 import { unitNodes, UnitView } from "@/components/monograph/UnitView";
 import type { MonographDocument, MonographUnit } from "@/lib/monographDocument";
@@ -32,9 +33,7 @@ type PieceProps = { document: MonographDocument; chapter: ChapterPlan; piece: Pa
 
 function Piece({ document, chapter, piece, titled }: PieceProps) {
   const { units, sources } = document.content;
-  if (piece.kind === "list") {
-    return <ul className="kv-list">{piece.refs.map((ref) => <li key={ref}>{unitNodes(units[ref], sources)}</li>)}</ul>;
-  }
+  if (piece.kind === "list") return <CitedList units={units} sources={sources} refs={piece.refs} />;
   if (piece.kind === "terms") return <TermGroupView units={units} sources={sources} piece={piece} />;
   if (piece.kind === "paragraph") {
     return (
