@@ -632,7 +632,8 @@ settings, admin, contribute); `app/api/` holds route handlers that proxy auth an
 one API client and `lib/server/apiProxy.ts` the server-side proxy. Generic components are in
 `components/ui/`, domain components in `components/<area>/`. Design rules are the
 `kalavigyan-design` skill (Alum & Indigo, decision 0092): generated tokens reach components
-through `app/globals.css` and `tailwind.config.ts`, button rows and controls through the shared
+through `app/globals.css` and `tailwind.config.ts` (both written by the token generator, with no
+migration alias left; decision 0141), button rows and controls through the shared
 primitives in `components/ui/`, the reading primitives (the citation cluster and its sources,
 evidence marks, specimen label, masthead, plates, fact grid, chapter rail, margin notes) through
 `components/editorial/`, and their CSS through `app/primitives.css` and `app/editorial.css`.
