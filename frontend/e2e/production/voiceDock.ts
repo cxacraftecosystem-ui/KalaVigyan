@@ -19,6 +19,7 @@ function golden(name: string): string {
 export const RELAY_STARTED = JSON.parse(golden("voice.session-relay.golden.json")) as { voiceSessionId: string };
 export const RELAY_TURN = golden("voice.turn.golden.sse");
 export const HEARD_SENTENCE = "Alum is used as a mordant to fasten the colours.";
+const SPEECH_PATH = /\/api\/voice\/session\/[^/]+\/turns\/[^/]+\/speech$/;
 
 export function silentWav(seconds = SPEECH_SECONDS, rate = SPEECH_RATE): Buffer {
   const samples = Math.round(seconds * rate);
@@ -49,7 +50,7 @@ export async function routeRelayCall(page: Page, sent: SentTurn[]): Promise<void
     sent.push({ contentType: request.headers()["content-type"] ?? "", bytes: request.postDataBuffer()?.length ?? 0 });
     await route.fulfill({ status: 200, contentType: "text/event-stream", body: RELAY_TURN });
   });
-  await page.route(`${session}/turns/*/speech`, (route) => route.fulfill({ status: 200, contentType: "audio/wav", body: silentWav() }));
+  await page.route(SPEECH_PATH, (route) => route.fulfill({ status: 200, contentType: "audio/wav", body: silentWav() }));
   await page.route(`${session}/end`, (route) => route.fulfill({ json: JSON.parse(golden("voice.session-ended.golden.json")) }));
   await page.route(`${session}/transcript`, (route) => route.fulfill({ json: JSON.parse(golden("voice.transcript.golden.json")) }));
 }
