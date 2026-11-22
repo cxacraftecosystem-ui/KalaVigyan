@@ -111,7 +111,9 @@ A refusal stops the run; every gate that ran is stored as one `CandidateCheck` r
    live research uses) and every quote must be found verbatim in the fetched text
    (`research/quotes.quote_occurs`: NFKC, typographic dashes and quotes, line-break hyphens and
    whitespace folded) and be at least 20 characters. Every number or formula in the statement
-   must appear in one of its quotes. A page that is refused (robots, size, type), missing or
+   must appear in one of its quotes, except a cited source's own publication year, or its full
+   date written day.month.year, which the statement may give without a quote holding it
+   (`candidate_gates.publication_figures`; decision 0149). A page that is refused (robots, size, type), missing or
    blank refuses its quotes with the reason. When our fetcher itself is down nothing is stored
    and the caller is asked to try again (503, or a tool error). A source the proposer supplied
    (Supplied sources, below) is read from the supplied text instead of being fetched, and the
@@ -119,7 +121,10 @@ A refusal stops the run; every gate that ran is stored as one `CandidateCheck` r
 2. **SOURCE.** Each source is graded: a source already stored keeps its own reliability; a newly
    fetched page takes the grade the research pipeline gives a web page (C). A fact resting only on
    D sources is refused, except an ECONOMICS fact stating a price (the curation rule). A source
-   stored as RESTRICTED is refused. A licence declared open (CC BY, CC0, public domain) that the
+   stored as RESTRICTED is refused. A source whose title is a file name or has fewer than three
+   words of letters takes the proposal's title, else the document's first such heading
+   (`research/source_titles.usable_title`); one with none of them is refused, asking for the
+   work's title, and a stored source with such a title takes the next proposal's usable title. A licence declared open (CC BY, CC0, public domain) that the
    page itself contradicts is refused. Otherwise the licence passes and is recorded; it decides
    only whether quotes are public: a fetched page's full text is stored for researchers
    (`chunk_acl`), so its quotes are withheld from public views and exports, whether or not a
@@ -130,14 +135,27 @@ A refusal stops the run; every gate that ran is stored as one `CandidateCheck` r
    subject's held facts in the field (primary or secondary): shown or waiting statuses (`DRAFT`,
    `PROPOSED`, `IN_REVIEW`, `APPROVED`), open sensitivity. The same statement once case and final
    stops are folded is refused at once. Otherwise the 8 nearest held facts at cosine similarity
-   0.8 or more go to the judge (the structured model, `EVAL_JUDGE`), which names each pair SAME,
-   DIFFERS or DISTINCT with a reason. SAME refuses; DIFFERS passes and is kept as sources differ,
-   never resolved; DISTINCT passes. Held facts without a vector are found only by the identical
-   text.
-4. **NOVELTY.** The judge decides whether the fact adds to or changes what the section says,
-   against the subject's 12 nearest held facts in the field, and its reason is stored. A fact that
-   differs from a held fact passes without the judge (it changes the section), and so does the
-   first fact of a field. A refusal names the held facts that already say it.
+   0.8 or more go to the judge (the structured model, `EVAL_JUDGE`), which answers per pair in
+   parts: `same`, `sameSubject`, `sameProperty`, `sameWhen`, `bothTrue` (can both be true at
+   once), the `subject` and `property` and the two values, and a reason. The relation is worked out
+   from them (`research/candidate_verdicts.comparison_relation`): SAME when `same`; DIFFERS only
+   when it is one subject, property and stage or time, both cannot be true and the two values
+   differ; DISTINCT otherwise. SAME refuses; DIFFERS passes and is kept as sources differ, never
+   resolved, its reason naming the two values; DISTINCT passes. Held facts without a vector are
+   found only by the identical text.
+4. **NOVELTY.** The judge lists the details the fact states that the subject's 12 nearest held
+   facts in the field do not (`newDetails`) and says whether it is specific to the craft; it adds
+   exactly when the list is not empty and it is specific (`candidate_verdicts.novelty_adds`), and
+   the stored reason names the details. A fact that differs from a held fact passes without the
+   judge (it changes the section), and so does the first fact of a field. A refusal names the held
+   facts that already say it.
+
+The judges are scored every night on labelled cases (`app/data/eval/judge_cases.json`,
+`app.scripts.eval_judges`, `.github/workflows/judge-eval.yml`), asked as the queue asks them (the
+cheapest priced model first, then the default route), and the run fails below the floors in that
+file: duplicate accuracy 0.80, compatible pairs kept DISTINCT 0.85, novelty accuracy 0.80
+(decision 0149). `app.scripts.rejudge_differing` re-judges every live pair flagged sources differ
+and writes nothing.
 
 The subject's facts are the craft's (its own concepts and its sub-category's), or a category's
 (its curated claims and the shared concepts named for it). All text sent to the judge is quoted
@@ -219,8 +237,15 @@ version the page has left; 429 with `Retry-After` when the account's proposal li
 when the fetcher, the embedding route or the judge could not run (nothing is stored).
 
 `ProposalReply {schemaVersion 1, outcome, claimId, status, level, approvedAtOnce, inReviewQueue,
-sourcesDiffer, differsFrom[], gates[{gate, passed, reasons[]}], message}`. A refused proposal is
-still a 200: the reply's outcome and the failing gate's reasons say why.
+sourcesDiffer, differsFrom[], gates[{gate, passed, reasons[]}], message, readers?}`. A refused proposal is
+still a 200: the reply's outcome and the failing gate's reasons say why. A proposal that passed the
+gates carries `readers {shown, reason, pageUrl, chapter, field, inProse, writeTask}`
+(`services/fact_proposals_readers.reader_place`, decision 0149): `shown` is whether a signed-out
+reader sees the fact now by the one rule (`retrieval/citation_access.reader_fact`); a fact not shown
+names why (`WAITING` for a reviewer, `HELD`, `RESTRICTED_FACT`, `HIDDEN_CONCEPT`, `NO_SHOWN_SOURCE`);
+a shown one names its page, field and chapter, whether a published section cites it (`inProse`) and
+otherwise the open write-section task. The message says "Readers see it now at …" or "Readers cannot
+see it yet: …"; a contributor's AI tells a person a fact is on the page only when `shown` is true.
 
 ## MCP
 
@@ -623,7 +648,7 @@ owners by `page_revalidation.claim_owners`, then `refresh_pages`), always after 
 
 | The fact | Where |
 |---|---|
-| published by a proposal (`PUBLISHED`, at once or unreviewed), with the facts it differs from | `api/proposal_deps.proposed`, for the route and a fact part of `propose_page` |
+| published by a proposal (`PUBLISHED`, at once or unreviewed), with the facts it differs from | `api/proposal_deps.proposed`, for the route and a fact part of `propose_page`; `services/contribution_queue_worker.work_on`, for `propose_facts` |
 | written or re-found by a live research write-back (written ones only when the switch shows them) | `services/research_write_back.store_live_research` |
 | approved, raised, rejected or retracted in the review queue | `services/review_queue_refresh.refresh_after_decision` (every fact decision) |
 | held or lifted by the nightly upkeep | `services/upkeep_healing.heal` |

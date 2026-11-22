@@ -10,6 +10,7 @@ Date: 2026-11-19. Status: accepted (owner direction, 2026-11-19).
 | For | Read |
 |---|---|
 | What amended it | [0115 MCP clients sign in with their published identity](0115-client-id-metadata-documents.md): item 15, Authentication, for published client identities |
+| What amended it | [0149 A fact is shown to every reader with its citation, and only its quote follows its page](0149-a-fact-readers-can-see.md): item 15's gates 1, 3 and 4 and the sources-differ rule, judged in parts and measured |
 | What built on it | [0102 Fields on facts, section records and the component registry: step 1 as built](0102-knowledge-fields-schema-as-built.md): build step 1 |
 | What built on it | [0103 The MCP server, slice 1: public read tools over our own JSON-RPC framing](0103-mcp-server-read-slice.md): slice 1 of the MCP server of items 7, 9 and 15 |
 | What built on it | [0104 Image contributions: declared, read byte by byte, private until approved](0104-image-contributions-intake.md): the backend of item 17's contributed pictures |

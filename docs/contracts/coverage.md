@@ -44,7 +44,7 @@ standing}`:
 
 | Count | What it counts |
 |---|---|
-| `claims` | the distinct cited claims filed under the field. A claim is the subject's when it is about one of the craft's open concepts (a category: its `CuratedCategoryClaim` links), shown on the page (`SHOWN_CLAIM_STATUSES`), a fact level (not a hypothesis) and `OPEN`; it is cited when a source that is not `RESTRICTED` cites it. It is filed under its primary field and each secondary field |
+| `claims` | the distinct cited claims filed under the field. A claim is the subject's when it is about one of the craft's open concepts (a category: its `CuratedCategoryClaim` links), a fact a reader can see (`retrieval/citation_access.reader_fact`: shown, `OPEN`, not held, cited by a source that is neither `RESTRICTED` nor a withheld field recording; decision 0149) and a fact level (not a hypothesis); it is cited when such a source cites it, so coverage counts exactly the facts `get_facts` and the page show a signed-out reader. It is filed under its primary field and each secondary field |
 | `structureClaims` | claims counted in the field only because structure cites them, as the gap script counts them (`.claude/skills/kalavigyan-craft-pages/scripts/gaps.py`): the curated communities' claims (`CuratedCraft.page.communities[].claimIds`, a category's too) count for `SOCIETY`, the GI record's (`CraftGiRecord.claimIds`) for `POLICY`. Only cited claims of the subject count, and a claim is counted once per field |
 | `sources` | the distinct sources citing the field's claims |
 | `sections`, `sentences` | 1 and its sentence count when the field has a `PUBLISHED` `ArticleSection`, else 0 and 0 |

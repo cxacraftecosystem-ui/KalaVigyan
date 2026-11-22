@@ -44,7 +44,7 @@ from app.research.retrieval import (
 )
 from app.research.vocabulary import CONCEPT_TYPE_DISCIPLINES
 
-from .citation_access import HELD_LEFT_OUT, HeldFacts, readable_citation, unheld
+from .citation_access import HELD_LEFT_OUT, HeldFacts, reader_fact
 from .field_scope import field_interview_sources, withheld_field_sources
 from .glossary_words import TEXT_SEARCH_CONFIG, any_slot, named_by, slot_query, text_query
 from .nearest import ANY_CRAFT, vector_ranking
@@ -73,7 +73,6 @@ __all__ = [
     "field_passages",
     "filed_under",
     "lexical_rank",
-    "readable_citations",
     "scope_claims",
     "scope_concepts",
     "text_query",
@@ -169,19 +168,10 @@ def claim_conditions(
     fields: Sequence[str] = (),
     held: HeldFacts = HELD_LEFT_OUT,
 ) -> list[ColumnElement[bool]]:
-    cited = exists().where(
-        ClaimSource.claimId == Claim.id,
-        ClaimSource.sourceId == Source.id,
-        Source.sensitivity != RESTRICTED_SENSITIVITY,
-        Source.id.not_in(withheld_field_sources()),
-    )
     conditions = [
         scope_claims(scope, facets=facets),
-        Claim.status.in_(MODE_CLAIM_STATUSES[mode]),
         Claim.evidenceLevel.in_(MODE_CLAIM_LEVELS[mode]),
-        Claim.sensitivity == VISIBLE_SENSITIVITY,
-        cited,
-        *unheld(held),
+        *reader_fact(held, statuses=MODE_CLAIM_STATUSES[mode]),
         *_every_craft(scope),
     ]
     return [*conditions, field_condition(fields)] if fields else conditions
@@ -189,14 +179,6 @@ def claim_conditions(
 
 def _every_craft(scope: CraftScope) -> list[ColumnElement[bool]]:
     return [ANY_CRAFT] if scope.craft_id is None else []
-
-
-def readable_citations(claim_ids: Sequence[uuid.UUID], *, acls: Sequence[str]) -> Select[tuple[ClaimSource]]:
-    return select(ClaimSource).where(
-        ClaimSource.claimId.in_(list(claim_ids)),
-        ClaimSource.sourceId.not_in(withheld_field_sources()),
-        readable_citation(acls),
-    )
 
 
 def chunk_conditions(

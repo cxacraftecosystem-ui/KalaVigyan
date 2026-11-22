@@ -15,7 +15,7 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 ## HTTP API
 
-**242 operations** in `backend/app/api/routes/` and `backend/app/main.py`: 126 GET, 77 POST, 25 PUT, 2 PATCH, 12 DELETE.
+**243 operations** in `backend/app/api/routes/` and `backend/app/main.py`: 127 GET, 77 POST, 25 PUT, 2 PATCH, 12 DELETE.
 
 | Module | Operations |
 | --- | ---: |
@@ -39,6 +39,7 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 | `artisan_conversations.py` | 5 |
 | `knowledge.py` | 5 |
 | `review_queue.py` | 5 |
+| `coverage.py` | 4 |
 | `knowledge_writes.py` | 4 |
 | `learning_views.py` | 4 |
 | `page_documents.py` | 4 |
@@ -46,7 +47,6 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 | `secrets.py` | 4 |
 | `testimony_review.py` | 4 |
 | `upload_links.py` | 4 |
-| `coverage.py` | 3 |
 | `explainer_exports.py` | 3 |
 | `field_photo_reviews.py` | 3 |
 | `field_voices.py` | 3 |
@@ -106,16 +106,16 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 | Python suite | Files | Tests |
 | --- | ---: | ---: |
-| Backend, without a database | 648 | 4948 |
-| Backend, on Postgres | 170 | 803 |
+| Backend, without a database | 654 | 4970 |
+| Backend, on Postgres | 172 | 812 |
 | Tools | 23 | 188 |
 | Craft data ETL | 5 | 46 |
 | Geo ETL | 16 | 151 |
 
 | Frontend (`frontend/e2e/`) | Files | Tests |
 | --- | ---: | ---: |
-| Unit specs (`*-unit.spec.ts`) | 165 | 1233 |
-| Browser and release specs | 15 | 52 |
+| Unit specs (`*-unit.spec.ts`) | 166 | 1238 |
+| Browser and release specs | 16 | 53 |
 
 A Python test is a `test_` function in a `test_` file; a frontend test is a `test(` call at the start of a line. Every suite runs on GitHub Actions, never on a development machine.
 
@@ -123,9 +123,9 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | What | Count |
 | --- | ---: |
-| Decision records (`docs/decisions/`) | 146 |
+| Decision records (`docs/decisions/`) | 147 |
 | Contracts (`docs/contracts/`) | 40 |
-| Workflows (`.github/workflows/`) | 26 |
+| Workflows (`.github/workflows/`) | 27 |
 | Curated craft dossiers | 32 |
 | Curated category dossiers | 9 |
 
@@ -133,13 +133,13 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | Area | Files | Lines |
 | --- | ---: | ---: |
-| `backend/app` | 1298 | 184,719 |
-| `backend/tests` | 969 | 127,271 |
+| `backend/app` | 1311 | 185,962 |
+| `backend/tests` | 979 | 128,210 |
 | `backend/migrations` | 68 | 10,039 |
 | `frontend/app` | 109 | 9,983 |
 | `frontend/components` | 602 | 41,395 |
-| `frontend/lib` | 255 | 25,837 |
-| `frontend/e2e` | 264 | 29,592 |
+| `frontend/lib` | 255 | 25,859 |
+| `frontend/e2e` | 267 | 29,944 |
 | `etl` | 52 | 8,442 |
 | `tools` | 96 | 8,232 |
 | `infra` | 17 | 2,177 |
