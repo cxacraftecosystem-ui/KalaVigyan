@@ -84,9 +84,35 @@ export function drawnStyles({ scope, vars }: { scope: string; vars: string[] }):
     const style = getComputedStyle(element);
     const box = element.getBoundingClientRect();
     const props: Record<string, string> = {};
-    for (const name of [...style]) props[name] = style.getPropertyValue(name);
+    for (const name of [...style].filter((found) => !found.startsWith("--"))) props[name] = style.getPropertyValue(name);
     for (const name of vars) props[name] = style.getPropertyValue(name).trim();
-    const edges = [box.left - top.left, box.top - top.top, box.width, box.height].map((value) => value.toFixed(2)).join(" ");
+    const edges = element.getClientRects().length ? [box.left - top.left, box.top - top.top, box.width, box.height].map((value) => value.toFixed(2)).join(" ") : "none";
     return { tag: element.tagName.toLowerCase(), svg: element.closest("svg") !== null, inner: element.parentElement?.closest("svg") != null, box: edges, props };
   });
+}
+
+export function elementProps(selector: string): Record<string, string> | null {
+  const element = document.querySelector(selector);
+  if (!element) return null;
+  const style = getComputedStyle(element);
+  return Object.fromEntries([...style].filter((name) => !name.startsWith("--")).map((name) => [name, style.getPropertyValue(name)]));
+}
+
+export function placeProbe({ host, markup, probe }: { host: string; markup: string; probe: string }): boolean {
+  const parent = document.querySelector(host);
+  const holder = document.createElement("template");
+  holder.innerHTML = markup;
+  const element = holder.content.firstElementChild;
+  if (!parent || !element) return false;
+  element.setAttribute(probe, "");
+  parent.append(element);
+  return true;
+}
+
+export function placedOffsets(): Record<string, string> {
+  const host = document.getElementById("kv-main");
+  if (!host) return {};
+  const top = host.getBoundingClientRect().top;
+  const placed = [...host.querySelectorAll("[id]")].filter((element) => element.getClientRects().length > 0);
+  return Object.fromEntries(placed.map((element) => [element.id, (element.getBoundingClientRect().top - top).toFixed(2)]));
 }

@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 import type { DrawnElement } from "./figureBrowser";
-import { figureDifferences, heldDifferences, offsetDifferences, tally } from "./figureCheck";
+import { figureDifferences, heldDifferences, offsetDifferences, tally, withoutIdReferences } from "./figureCheck";
 import { complexSelectors, declaredNames, isRootCompound, layerOrder, matchingForm, nestedCss, rootScopedSelector, scopedSelector, structuralSelectors, varNames, type SheetRead } from "./figureCss";
-import { figureFragment, withStyle } from "./figureMarkup";
-import { figureStyles } from "./figureRules";
+import { emptyFrame, figureFragment, withStyle } from "./figureMarkup";
+import { figureStyles, inheritedResidue, residueRule } from "./figureRules";
 
 const SCOPE = ".s";
 
@@ -72,12 +72,15 @@ const SHEETS: SheetRead = {
     { kind: "style", sheet: 0, chain: ["@layer utilities"], selector: ".mt-9", body: "margin-top: 9px;", vars: [] },
     { kind: "property", sheet: 0, name: "--tw-font-weight", text: '@property --tw-font-weight { syntax: "*"; inherits: false; }' },
     { kind: "style", sheet: 1, chain: [], selector: ":root", body: "--map-water: #abc;", vars: [["--map-water", "#abc", ""]] },
-    { kind: "style", sheet: 0, chain: ["@layer utilities"], selector: ".font-medium", body: "--tw-font-weight: 500; font-weight: 500;", vars: [["--tw-font-weight", "500", ""]] }
+    { kind: "style", sheet: 0, chain: ["@layer utilities"], selector: ".font-medium", body: "--tw-font-weight: 500; font-weight: 500;", vars: [["--tw-font-weight", "500", ""]] },
+    { kind: "style", sheet: 0, chain: ["@layer utilities"], selector: ".kv-vat", body: "--vat: 0%;", vars: [["--vat", "0%", ""]] },
+    { kind: "property", sheet: 0, name: "--vat", text: '@property --vat { syntax: "<percentage>"; inherits: false; }' },
+    { kind: "property", sheet: 1, name: "--vat", text: '@property --vat { syntax: "<percentage>"; inherits: true; }' }
   ]
 };
 
-test("the figure keeps the app rules that match it, the tokens they read that the kit does not set later, and their registered properties", () => {
-  const styles = figureStyles(SHEETS, new Set([".p-3", ".text-ink-1", ".font-medium"]), '<div class="kv-why-here" data-app=""><svg fill="var(--map-water)"></svg></div>', SCOPE);
+test("the figure keeps the app rules that match it, the tokens they read that the kit does not set later, and the registered properties the kit does not use", () => {
+  const styles = figureStyles(SHEETS, new Set([".p-3", ".text-ink-1", ".font-medium", ".kv-vat"]), '<div class="kv-why-here" data-app=""><svg fill="var(--map-water)"></svg></div>', SCOPE);
   expect(styles.css).toBe(
     [
       "@layer theme, utilities;",
@@ -93,11 +96,12 @@ test("the figure keeps the app rules that match it, the tokens they read that th
       ":is(.p-3):where(.s, .s *) { padding: calc(var(--spacing) * 3); }",
       ":is(.text-ink-1):where(.s, .s *) { color: var(--ink-1); }",
       ":is(.font-medium):where(.s, .s *) { --tw-font-weight: 500; font-weight: 500; }",
+      ":is(.kv-vat):where(.s, .s *) { --vat: 0%; }",
       "}"
     ].join("\n")
   );
   expect(styles.vars).toEqual(["--ink-1", "--map-water", "--spacing"]);
-  expect([styles.matched, styles.tokens, styles.properties]).toEqual([3, 3, 1]);
+  expect([styles.matched, styles.tokens, styles.properties]).toEqual([4, 3, 1]);
 });
 
 test("the fragment drops React's markers, names its ids once and for all, and carries its styles first", () => {
@@ -122,4 +126,18 @@ test("away from the capture width only the map's own drawing may differ, and the
   expect(tally(differences).box.count).toBe(2);
   expect(figureDifferences(approved, [])[0].property).toBe("figure");
   expect(offsetDifferences({ a: "1.00", b: "2.00", c: "3.00" }, { a: "1.00", b: "2.50" })).toEqual([{ id: "b", approved: "2.00", rendered: "2.50" }]);
+});
+
+test("the frame takes only what it inherits on the React page and the approved page does not give it", () => {
+  const residue = inheritedResidue({ "tab-size": "4", color: "red", height: "10px" }, { "tab-size": "4", color: "red", height: "99px" }, { "tab-size": "8", color: "red", height: "0px" });
+  expect(residue).toEqual({ "tab-size": "4" });
+  expect(residueRule(residue, SCOPE)).toBe(":where(.s) { tab-size: 4; }");
+  expect(residueRule({}, SCOPE)).toBe("");
+  expect(emptyFrame('<div class="kv-page" data-app=""><figure></figure></div>', "a {}")).toBe('<div class="kv-page" data-app=""><style>a {}</style></div>');
+});
+
+test("a fill that points at a renamed pattern reads the same on both pages", () => {
+  expect(withoutIdReferences('url("#kv-why-here-3")')).toBe("url(#)");
+  expect(withoutIdReferences('url("#_r_0_-salt")')).toBe("url(#)");
+  expect(withoutIdReferences("rgb(1, 2, 3)")).toBe("rgb(1, 2, 3)");
 });

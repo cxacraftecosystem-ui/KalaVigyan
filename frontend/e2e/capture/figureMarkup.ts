@@ -24,3 +24,9 @@ export function withStyle(markup: string, css: string): string {
 export function figureFragment(outerHtml: string, css: string, idPrefix: string): string {
   return withStyle(fixedIds(withoutComments(outerHtml), idPrefix), css);
 }
+
+export function emptyFrame(outerHtml: string, css: string): string {
+  const tag = /^<([A-Za-z][\w-]*)/.exec(outerHtml)?.[1];
+  if (!tag) throw new Error("The figure's markup does not open with an element");
+  return withStyle(`${outerHtml.slice(0, outerHtml.indexOf(">") + 1)}</${tag}>`, css);
+}

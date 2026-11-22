@@ -7,14 +7,14 @@ import { mainLines, openedPage } from "../monographNativeBrowser";
 import { specFile } from "../monographMarkup";
 import { lineDiff } from "../parity/parityMeasure";
 import { restingVat } from "../parity/parityRest";
-import { chapterOffsets, selfHostedFaces, servedFaces } from "../parity/parityStyles";
+import { selfHostedFaces, servedFaces } from "../parity/parityStyles";
 import { passPreviewProtection } from "../production/preview";
 
-import { drawnStyles, matchedForms, outerMarkup, readSheets } from "./figureBrowser";
+import { drawnStyles, elementProps, matchedForms, outerMarkup, placedOffsets, placeProbe, readSheets } from "./figureBrowser";
 import { heldDifferences, figureDifferences, offsetDifferences, tally } from "./figureCheck";
 import { selectorForms } from "./figureCss";
-import { figureFragment } from "./figureMarkup";
-import { figureStyles } from "./figureRules";
+import { emptyFrame, figureFragment } from "./figureMarkup";
+import { figureStyles, inheritedResidue, residueRule } from "./figureRules";
 
 const LABEL = "kutch-ajrakh/geography/why-here";
 const SCOPE = ".kv-why-here[data-app]";
@@ -29,6 +29,7 @@ const STEP = process.env.E2E_FIGURE_STEP ?? "capture";
 const CAPTURE_PROJECT = "figure-desktop-light";
 const CAPTURE_WIDTH_PROJECTS = /^figure-desktop-/;
 const SUMMARY = "figure.json";
+const PROBE = "data-kv-probe";
 const DRAWN_TIMEOUT_MS = 30_000;
 const RUN_TIMEOUT_MS = 10 * 60_000;
 
@@ -47,6 +48,20 @@ async function prepared(context: BrowserContext): Promise<void> {
   mkdirSync(join(REPORT_DIR, test.info().project.name), { recursive: true });
   await passPreviewProtection(context, process.env.E2E_BASE_URL ?? "", process.env.E2E_VERCEL_BYPASS ?? "");
   await restingVat(context);
+}
+
+async function frameResidue(page: Page, markup: string, css: string): Promise<Record<string, string>> {
+  const host = await page.evaluate((scope) => document.querySelector(scope)?.parentElement?.id ?? null, SCOPE);
+  if (!host) throw new Error(`${SCOPE} sits in no chapter with an id`);
+  const drawn = await page.evaluate(elementProps, SCOPE);
+  const parent = await page.evaluate(elementProps, `#${host}`);
+  const approved = await page.context().newPage();
+  await approved.goto(APPROVED, { waitUntil: "load" });
+  const placed = await approved.evaluate(placeProbe, { host: `#${host}`, markup: emptyFrame(markup, css), probe: PROBE });
+  const probe = placed ? await approved.evaluate(elementProps, `[${PROBE}]`) : null;
+  await approved.close();
+  if (!drawn || !parent || !probe) throw new Error(`The figure's frame could not be read in #${host} on both pages`);
+  return inheritedResidue(drawn, parent, probe);
 }
 
 async function servedDocument(page: Page): Promise<Served> {
@@ -69,12 +84,14 @@ test("the ground figure is captured from the React page with the styles that dra
   const markup = await page.evaluate(outerMarkup, SCOPE);
   if (markup === null) throw new Error(`${SCOPE} is not on ${RENDERED}`);
   const styles = figureStyles(read, new Set(matched.hits), markup, SCOPE);
-  const fragment = figureFragment(markup, styles.css, ID_PREFIX);
+  const residue = await frameResidue(page, markup, styles.css);
+  const css = [styles.css, residueRule(residue, SCOPE)].filter(Boolean).join("\n");
+  const fragment = figureFragment(markup, css, ID_PREFIX);
   const served = await servedDocument(page);
   save("fragment.html", fragment);
   save("served-component.json", served.component);
   save("served-spec.json", served.spec);
-  save(SUMMARY, { label: LABEL, scope: SCOPE, sheets: read.sheets, kit: read.kit, layers: read.layers, matched: styles.matched, tokens: styles.tokens, properties: styles.properties, structural: styles.structural, refused: matched.refused, cssBytes: styles.css.length, fragmentBytes: fragment.length, vars: styles.vars });
+  save(SUMMARY, { label: LABEL, scope: SCOPE, sheets: read.sheets, kit: read.kit, layers: read.layers, matched: styles.matched, tokens: styles.tokens, properties: styles.properties, structural: styles.structural, refused: matched.refused, residue, cssBytes: css.length, fragmentBytes: fragment.length, vars: styles.vars });
   expect(read.kit, `${KIT_CSS} is one of the React page's stylesheets`).toBeGreaterThanOrEqual(0);
   expect(served.spec, "the committed spec is the served document's").toEqual(JSON.parse(readFileSync(specFile(LABEL), "utf8")));
 });
@@ -90,7 +107,7 @@ test("the rebuilt approved page reads and measures as the React page, and draws 
   await servedFaces(approved, await selfHostedFaces(page));
   await openedPage(approved, APPROVED);
   const text = lineDiff(await mainLines(approved), await mainLines(page));
-  const offsets = offsetDifferences(await chapterOffsets(approved), await chapterOffsets(page));
+  const offsets = offsetDifferences(await approved.evaluate(placedOffsets), await page.evaluate(placedOffsets));
   const vars = (JSON.parse(readFileSync(join(REPORT_DIR, SUMMARY), "utf8")) as { vars: string[] }).vars;
   const differences = figureDifferences(await approved.evaluate(drawnStyles, { scope: SCOPE, vars }), await page.evaluate(drawnStyles, { scope: SCOPE, vars }));
   const held = heldDifferences(differences, CAPTURE_WIDTH_PROJECTS.test(test.info().project.name));

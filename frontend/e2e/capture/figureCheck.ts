@@ -4,14 +4,20 @@ export type FigureDifference = { at: number; tag: string; svg: boolean; inner: b
 export type OffsetDifference = { id: string; approved: string; rendered: string };
 export type DifferenceTally = Record<string, { count: number; first: FigureDifference }>;
 
-export const MAP_SIZED = new Set(["r", "cx", "cy", "x", "y", "d", "rx", "ry", "width", "height", "transform", "transform-origin", "perspective-origin", "inline-size", "block-size", "font-size", "stroke-width", "--k"]);
+export const MAP_SIZED = new Set(["r", "cx", "cy", "x", "y", "d", "rx", "ry", "width", "height", "transform", "transform-origin", "perspective-origin", "inline-size", "block-size", "font-size", "line-height", "stroke-width", "--k"]);
 export const BOX = "box";
+
+const ID_REFERENCE = /url\("?#[^")]*"?\)/g;
+
+export function withoutIdReferences(value: string | undefined): string {
+  return (value ?? "").replace(ID_REFERENCE, "url(#)");
+}
 
 function elementDifferences(at: number, approved: DrawnElement, rendered: DrawnElement): FigureDifference[] {
   const base = { at, tag: rendered.tag, svg: rendered.svg, inner: rendered.inner };
   if (approved.tag !== rendered.tag) return [{ ...base, property: "tag", approved: approved.tag, rendered: rendered.tag }];
   const names = [...new Set([...Object.keys(approved.props), ...Object.keys(rendered.props)])];
-  const differing = names.filter((name) => approved.props[name] !== rendered.props[name]);
+  const differing = names.filter((name) => withoutIdReferences(approved.props[name]) !== withoutIdReferences(rendered.props[name]));
   const props = differing.map((name) => ({ ...base, property: name, approved: approved.props[name] ?? "", rendered: rendered.props[name] ?? "" }));
   return approved.box === rendered.box ? props : [...props, { ...base, property: BOX, approved: approved.box, rendered: rendered.box }];
 }

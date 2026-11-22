@@ -16,6 +16,7 @@ import {
 } from "./figureCss";
 
 export type FigureStyles = { css: string; vars: string[]; matched: number; tokens: number; properties: number; structural: string[] };
+export type ComputedProps = Readonly<Record<string, string>>;
 
 export type TokenRule = { at: number; entry: StyleEntry; roots: string[] };
 type Placed = { at: number; rule: PlacedRule };
@@ -46,6 +47,16 @@ function tokenRules(read: SheetRead): TokenRule[] {
 export function kitTokenNames(read: SheetRead): Set<string> {
   const kit = read.entries.filter((entry): entry is StyleEntry => entry.kind === "style" && entry.sheet === read.kit && complexSelectors(entry.selector).some(isRootCompound));
   return new Set(kit.flatMap((entry) => entry.vars.map(([name]) => name)));
+}
+
+export function kitPropertyNames(read: SheetRead): Set<string> {
+  const kit = read.entries.filter((entry) => entry.sheet === read.kit);
+  return new Set(kit.flatMap((entry) => (entry.kind === "property" ? [entry.name] : [...varNames(entry.body), ...declaredNames(entry.body)])));
+}
+
+function registeredProperties(read: SheetRead, declared: ReadonlySet<string>): string[] {
+  const kit = kitPropertyNames(read);
+  return read.entries.flatMap((entry) => (entry.kind === "property" && entry.sheet !== read.kit && declared.has(entry.name) && !kit.has(entry.name) ? [entry.text] : []));
 }
 
 function shadowedByKit(read: SheetRead, kitNames: ReadonlySet<string>, entry: StyleEntry, name: string): boolean {
@@ -86,7 +97,16 @@ export function figureStyles(read: SheetRead, matched: ReadonlySet<string>, mark
   const values = placedTokens(tokens, names, shadowed, scope);
   const rules = [...kept, ...values].sort((a, b) => a.at - b.at).map((placed) => placed.rule);
   const declared = new Set([...names, ...rules.flatMap((rule) => declaredNames(rule.text))]);
-  const properties = read.entries.flatMap((entry) => (entry.kind === "property" && entry.sheet !== read.kit && declared.has(entry.name) ? [entry.text] : []));
+  const properties = registeredProperties(read, declared);
   const css = [layerOrder(rules, read.layers), ...properties, nestedCss(rules)].filter(Boolean).join("\n");
   return { css, vars: [...names].sort(), matched: kept.length, tokens: values.length, properties: properties.length, structural: structuralSelectors(kept.map((placed) => placed.rule), scope) };
+}
+
+export function inheritedResidue(drawn: ComputedProps, parent: ComputedProps, probe: ComputedProps): Record<string, string> {
+  return Object.fromEntries(Object.entries(drawn).filter(([name, value]) => parent[name] === value && probe[name] !== value));
+}
+
+export function residueRule(residue: ComputedProps, scope: string): string {
+  const declared = Object.entries(residue).map(([name, value]) => `${name}: ${value};`);
+  return declared.length ? `:where(${scope}) { ${declared.join(" ")} }` : "";
 }
