@@ -892,9 +892,13 @@ The queue needs `REVIEW_TESTIMONY` (Professor, Admin, Master Admin).
 | GET | `/api/testimony/review?status=&craft=&language=&cursor=` | | 200 `{counts: {pending, approved, rejected, withdrawn}, total, items[ReviewItem], nextCursor}`; `status` defaults to `PENDING`; oldest first, 25 a page; `total` counts the filter, so the screen offers "Show all N" and the last item is reachable |
 | GET | `/api/testimony/review/{id}` | | 200 `ReviewItem` |
 | PUT | `/api/testimony/review/{id}` | `{version, quote?, english?, englishChecked?, claimText?, discipline?, conceptType?, conceptName?}` | 200 `ReviewItem`; `PENDING` or `APPROVED` only, else 409 |
-| POST | `/api/testimony/review/{id}/approve` | `{version, englishChecked, corroboratingClaimIds[] (0 to 5)}` | 200 `ReviewItem` |
-| POST | `/api/testimony/review/{id}/reject` | `{version, reason, note?}` | 200 `ReviewItem`; from `PENDING`, or from `APPROVED` to unshow |
 | GET | `/api/testimony/review/{id}/corroboration?q=` | | 200 `{claims: [{id, text, level, citation: Citation}]}`: visible `OPEN` claims of the craft in `HYBRID` scope that match `q`, at most 20 |
+
+An item is approved (`{version, englishChecked, corroboratingClaimIds[] (0 to 5)}`) or rejected
+(`{version, testimonyReason, reason?}`, `reason` the note to the artisan; from `PENDING`, or from
+`APPROVED` to unshow) on the review queue, `POST /api/review-queue/TESTIMONY/{id}/approve` and
+`.../reject` (`review-queue.md`); the testimony review's own approve and reject routes retired with
+decision 0145.
 
 ```
 ReviewItem {

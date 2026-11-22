@@ -201,16 +201,6 @@ export async function fetchReviewPage(status: ContributionStatus, cursor: string
   return parseShape(reviewPageShape, await apiFetch<unknown>(`${REVIEW_PATH}?${query.toString()}`));
 }
 
-export async function approveItem(item: ReviewItem, englishChecked: boolean): Promise<void> {
-  const body = { version: item.version, englishChecked, corroboratingClaimIds: [] };
-  await apiFetch<unknown>(`${REVIEW_ITEM_PATH(item.id)}/approve`, { method: "POST", body: JSON.stringify(body) });
-}
-
-export async function rejectItem(item: ReviewItem, reason: RejectReason, note: string | null): Promise<void> {
-  const body = { version: item.version, reason, note };
-  await apiFetch<unknown>(`${REVIEW_ITEM_PATH(item.id)}/reject`, { method: "POST", body: JSON.stringify(body) });
-}
-
 export async function editItem(item: ReviewItem, changes: { claimText?: string; english?: string }): Promise<ReviewItem> {
   const body = { version: item.version, ...changes };
   return parseShape(reviewItemShape, await apiFetch<unknown>(REVIEW_ITEM_PATH(item.id), { method: "PUT", body: JSON.stringify(body) }));

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { NAV_ITEMS, isNavItemVisible } from "@/components/DynamicIslandNav";
 import { canAccessRoute } from "@/lib/permissions";
-import { decisionBody, DECISION_PATH, queueQuery, reviewQueuePageShape, type QueueItem, type ReviewQueuePage } from "@/lib/reviewQueueContract";
+import { decisionBody, DECISION_PATH, queueQuery, reviewQueuePageShape, testimonyDecisionBody, testimonyNoteReady, type QueueItem, type ReviewQueuePage } from "@/lib/reviewQueueContract";
 import {
   factActions,
   fieldsLine,
@@ -118,6 +118,16 @@ test("each decision goes to its own route with a reason or a note", () => {
   expect(decisionBody("retract", "Wrong vat.")).toEqual({ reason: "Wrong vat." });
   expect(decisionBody("approve", "   ")).toEqual({ note: null });
   expect(decisionBody("raise", "Checked.")).toEqual({ note: "Checked." });
+});
+
+test("pictures and testimony are decided through the queue's route, testimony with its version and reason", () => {
+  expect(DECISION_PATH("IMAGES", "p1", "reject")).toBe("/review-queue/IMAGES/p1/reject");
+  expect(DECISION_PATH("TESTIMONY", "t1", "approve")).toBe("/review-queue/TESTIMONY/t1/approve");
+  expect(testimonyDecisionBody({ version: 4 }, { action: "approve", englishChecked: true })).toEqual({ version: 4, englishChecked: true });
+  expect(testimonyDecisionBody({ version: 4 }, { action: "reject", reason: "MISHEARD", note: "   " })).toEqual({ version: 4, testimonyReason: "MISHEARD", reason: null });
+  expect(testimonyDecisionBody({ version: 4 }, { action: "reject", reason: "OTHER", note: " Off topic. " })).toEqual({ version: 4, testimonyReason: "OTHER", reason: "Off topic." });
+  expect([testimonyNoteReady("", ""), testimonyNoteReady("MISHEARD", ""), testimonyNoteReady("OTHER", ""), testimonyNoteReady("OTHER", "ok"), testimonyNoteReady("OTHER", "Off topic.")]).toEqual([false, true, false, false, true]);
+  expect(testimonyNoteReady("UNCLEAR", "x".repeat(501))).toBe(false);
 });
 
 test("a waiting fact is rejected and a live one retracted, and only a reason lets either through", () => {

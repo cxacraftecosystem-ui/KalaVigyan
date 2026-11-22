@@ -21,8 +21,6 @@ from app.research.image_contributions import (
     ImageContributionView,
     ImageDeclaration,
     ImageQueue,
-    RejectDecision,
-    ReviewDecision,
 )
 from app.research.image_intake import IMAGE_BYTES_MAX
 from app.services import image_contributions as images
@@ -109,26 +107,6 @@ async def review_queue(
     return ImageQueue(
         status=state, items=await images.views(session, rows, objects=media_bucket(), now=_now())
     )
-
-
-@router.post("/review/{contribution_id}/approve")
-async def approve_image(
-    contribution_id: uuid.UUID,
-    body: ReviewDecision,
-    user: User = Depends(reviewer),
-    session: AsyncSession = Depends(get_session),
-) -> ImageContributionView:
-    return await _answer(session, images.approve(session, contribution_id, user, body.note, now=_now()))
-
-
-@router.post("/review/{contribution_id}/reject")
-async def reject_image(
-    contribution_id: uuid.UUID,
-    body: RejectDecision,
-    user: User = Depends(reviewer),
-    session: AsyncSession = Depends(get_session),
-) -> ImageContributionView:
-    return await _answer(session, images.reject(session, contribution_id, user, body.note, now=_now()))
 
 
 def _now() -> datetime:

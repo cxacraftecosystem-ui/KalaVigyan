@@ -2280,16 +2280,6 @@ Last reviewed: 2026-11-22.
   the clean-up of abandoned registrations were built in round 4.)
 - **Clears it:** each in the change that next touches its file.
 
-## Track 1, round 2 (decision 0101, 2026-11-19)
-
-### The review page's picture and testimony cards use their old routes
-
-- **What:** on `/admin/review`, pictures and testimony are decided through
-  `/api/contributions/images/review/...` and `/api/testimony/review/...`, which reach the same
-  services as `/api/review-queue/{kind}/{id}/{action}`.
-- **Clears it:** an optional decide prop on `PictureReviewCard` and the testimony card, then retire the
-  old routes.
-
 ## Track 1, round 3 (decision 0106, 2026-11-19)
 
 ### Cited passages held outside text units

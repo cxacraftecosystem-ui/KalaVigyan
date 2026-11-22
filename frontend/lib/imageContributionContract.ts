@@ -7,8 +7,6 @@ export const IMAGE_WITHDRAW_PATH = (id: string) => `/contributions/images/${enco
 export const IMAGE_MINE_PATH = "/contributions/images/mine";
 export const IMAGE_BATCH_PATH = "/contributions/images/batch";
 export const IMAGE_REVIEW_PATH = "/contributions/images/review";
-export const IMAGE_DECISION_PATH = (id: string, decision: "approve" | "reject") =>
-  `/contributions/images/review/${encodeURIComponent(id)}/${decision}`;
 
 export const IMAGE_ORIGINS = ["PHOTOGRAPH", "DRAWING", "AI_GENERATED"] as const;
 export const IMAGE_STATUSES = ["AWAITING_FILE", "PENDING", "APPROVED", "REJECTED", "WITHDRAWN"] as const;
@@ -207,9 +205,4 @@ export async function withdrawImage(id: string): Promise<ImageContribution> {
 
 export async function fetchImageQueue(status: ImageStatus): Promise<ImageQueue> {
   return parseShape(imageQueueShape, await apiFetch<unknown>(`${IMAGE_REVIEW_PATH}?state=${status}`));
-}
-
-export async function decideImage(id: string, decision: "approve" | "reject", note: string | null): Promise<ImageContribution> {
-  const body = await apiFetch<unknown>(IMAGE_DECISION_PATH(id, decision), { method: "POST", body: JSON.stringify({ note }) });
-  return parseShape(imageContributionShape, body);
 }
