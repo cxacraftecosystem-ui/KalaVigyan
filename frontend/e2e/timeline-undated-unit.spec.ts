@@ -10,20 +10,21 @@ import { parseShape, ShapeError } from "@/lib/shape";
 import { placedPlaces } from "@/lib/timelineView";
 
 import { attribute, shownText, withApp } from "./explainerRender";
+import { readRepo } from "./phaseBFixture";
 import { phaseCBlock } from "./playFixture";
 
-const DHAMADKA = "Block printers once worked at Dhamadka on the Saran river.";
+type BlocksFixture = { sections: { blocks: unknown[] }[] };
+
+const GOLDEN = JSON.parse(readRepo("shared", "explainer.timeline-undated.golden.json")) as BlocksFixture;
+const DHAMADKA = "Dhamadka is located approximately 50 km east of Bhuj.";
 
 function versionTwo(): TimelineMapBlock {
-  const block = phaseCBlock("timeline_map", "s4.b1");
-  const places = block.places.map((place) => (place.name === "Kutch" ? { ...place, latitude: 23.25, longitude: 69.67, districtLgd: 449 } : place));
-  const dhamadka = places.findIndex((place) => place.name === "Dhamadka");
-  const sentence = { ...block.points[0].sentence, id: "s4.b1.5", text: DHAMADKA };
-  return parseShape(BLOCK_SHAPES.timeline_map, { ...block, version: 2, places, undated: [{ place: dhamadka, sentence }] });
+  return parseShape(BLOCK_SHAPES.timeline_map, structuredClone(GOLDEN.sections[0].blocks[0]));
 }
 
 test("version 2 pins a place the district register places, without a Wikidata link", () => {
   const block = versionTwo();
+  expect(block.version).toBe(2);
   const kutch = placedPlaces(block, INDIA_BOUNDS).find((place) => place.name === "Kutch");
   expect(kutch).toMatchObject({ wikidataId: null, latitude: 23.25, longitude: 69.67 });
   const html = withApp(createElement(TimelineMapView, { block, at: 2, onChoose: () => undefined }));
