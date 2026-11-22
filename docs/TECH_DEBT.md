@@ -2172,16 +2172,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** delete the share's objects when it stops, by recording each file's key against
   the share.
 
-### Shared answers draw in English reading metadata
-
-- **What:** `/shared/answers/[token]` and `/shared/lessons/[token]` pass `[ENGLISH]` as the
-  answer languages, so a shared Hindi or Urdu answer reads with English language metadata (script
-  and direction) in its header and reading styles.
-- **Why left:** the list of answer languages comes from `GET /answers/config`, a signed-in read
-  (decision 0097 keeps asking signed in).
-- **Clears it:** serve the answer language list from a public read (or ship it in the shared
-  body) and pass it to the shared screens.
-
 ### Craft page chapters not built yet (decision 0098)
 
 - **What:** the version 3 page (`services/chapter_*.py`) doesn't build `what_if`, `concept_graph`,

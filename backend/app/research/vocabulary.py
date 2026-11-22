@@ -71,6 +71,7 @@ __all__ = [
     "StageType",
     "TextDirection",
     "TrustTier",
+    "answer_language_options",
     "language_option",
     "text_direction",
     "weakest_level",
@@ -177,6 +178,10 @@ def text_direction(language: str) -> TextDirection:
     if spec is None:
         raise InvalidInput(f"Unknown answer language {language!r}")
     return "rtl" if spec.script in RIGHT_TO_LEFT_SCRIPTS else "ltr"
+
+
+def answer_language_options() -> list[dict[str, str]]:
+    return [language_option(code) for code in ANSWER_LANGUAGES]
 
 
 def language_option(language: str) -> dict[str, str]:

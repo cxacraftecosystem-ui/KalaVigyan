@@ -6,7 +6,8 @@ import { askPagePath, signedOutAskHref } from "@/lib/askEntry";
 import { atlasMetadata, craftPageMetadata, SHARE_PICTURE_WIDTH } from "@/lib/readingMetadata";
 import { isReadingRoute, READING_ROUTES } from "@/lib/readingRoutes";
 import { mayHoldSession } from "@/lib/session";
-import { checkedShareLink, EXPLAINER_SHARE_PATH, LESSON_SHARE_PATH, NOT_SHARED, sharedAddress, shareLinkShape, SHARED_ANSWER_PATH } from "@/lib/shareContract";
+import { ENGLISH } from "@/lib/answerLanguages";
+import { ANSWER_LANGUAGES_PATH, checkedShareLink, EXPLAINER_SHARE_PATH, LESSON_SHARE_PATH, NOT_SHARED, sharedAddress, shareLinkShape, SHARED_ANSWER_PATH, withReadingLanguages } from "@/lib/shareContract";
 import { SHARE_NOTICE } from "@/lib/shareNotice";
 import { parseShape, ShapeError } from "@/lib/shape";
 
@@ -64,6 +65,21 @@ test("a share link has a path and a time exactly while it is shared", () => {
   expect(sharedAddress("https://kalavigyan.vercel.app", parseShape(shareLinkShape, shared))).toBe(`https://kalavigyan.vercel.app/shared/answers/${TOKEN}`);
   expect(sharedAddress("https://kalavigyan.vercel.app", NOT_SHARED)).toBeNull();
   expect([EXPLAINER_SHARE_PATH("e1", 2), LESSON_SHARE_PATH("l1")]).toEqual(["/explainers/e1/versions/2/share", "/lessons/l1/share"]);
+});
+
+test("a shared answer reads with the answer languages' script and direction, and in English when they cannot be read", async () => {
+  const urdu = { code: "ur", label: "Urdu", autonym: "اردو", script: "Arab", direction: "rtl" as const };
+  expect(ANSWER_LANGUAGES_PATH).toBe("/answers/languages");
+  expect(await withReadingLanguages(Promise.resolve("answer"), async () => [ENGLISH, urdu])).toEqual({ body: "answer", languages: [ENGLISH, urdu] });
+  const quiet = console.error;
+  console.error = () => undefined;
+  try {
+    expect(await withReadingLanguages(Promise.resolve("answer"), async () => Promise.reject(new Error("offline")))).toEqual({ body: "answer", languages: [ENGLISH] });
+  } finally {
+    console.error = quiet;
+  }
+  await expect(withReadingLanguages(Promise.reject(new Error("gone")), async () => [ENGLISH])).rejects.toThrow("gone");
+  expect(source("components/learn/SharedScreens.tsx")).not.toContain("[ENGLISH]");
 });
 
 test("sharing asks first and names what the link makes readable", () => {
