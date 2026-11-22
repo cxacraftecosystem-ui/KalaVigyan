@@ -23,7 +23,7 @@ def key(name: str) -> uuid.UUID:
 EXPOSURE, DYES, RESTRICTED, FASTNESS = key("exposure"), key("dyes"), key("restricted"), key("fastness")
 DYES_TEXT = "Most textile dyes used by the printers have not been evaluated for their health impact."
 RESTRICTED_TEXT = "A guarded recipe keeps its mordant measure from readers."
-FASTNESS_TEXT = "Cloth printed with the alum paste keeps its red through many washes."
+FASTNESS_TEXT = "Printed cloth keeps its red colour through many washes."
 FACTS = (
     (DYES, DYES_TEXT, "HEALTH", "OPEN"),
     (RESTRICTED, RESTRICTED_TEXT, "HEALTH", "RESTRICTED"),
@@ -75,7 +75,7 @@ async def test_a_field_with_no_section_lists_its_facts_in_its_chapter_under_its_
     heading = next(ref for ref in refs if document.content.units[ref].nodes == ["Health and safety"])
     fact_ref = next(ref for ref, unit in document.content.units.items() if unit is fact)
     assert refs.index(heading) < refs.index(fact_ref)
-    assert units_with(document, RESTRICTED_TEXT) == []
+    assert units_with(document, RESTRICTED_TEXT[:30]) == []
     assert document.version == 3
 
 
@@ -84,7 +84,7 @@ async def test_a_fact_no_section_cites_follows_its_field_s_section_and_a_cited_o
 ) -> None:
     document = await generated_document(session, "craft", CRAFT_SLUG)
     assert document is not None
-    (listed,) = units_with(document, FASTNESS_TEXT)
+    (listed,) = units_with(document, FASTNESS_TEXT[:30])
     assert (listed.tag, listed.chapter, listed.field, listed.claim_ids) == (
         "li",
         "chem",
