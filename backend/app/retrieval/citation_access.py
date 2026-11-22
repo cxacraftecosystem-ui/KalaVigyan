@@ -88,13 +88,14 @@ def cited_for_readers() -> ColumnElement[bool]:
 
 def filed_for_readers() -> ColumnElement[bool]:
     concept = aliased(Concept, name="reader_concept")
-    visible = select(concept.id).where(concept.sensitivity == VISIBLE_SENSITIVITY).correlate(None)
     direct = select(concept.id).where(
         concept.id == Claim.subjectId, concept.sensitivity == VISIBLE_SENSITIVITY
     )
     edge = aliased(ConceptEdge, name="reader_edge")
-    linked = select(edge.id).where(
-        edge.id == Claim.subjectId, or_(edge.srcId.in_(visible), edge.dstId.in_(visible))
+    linked = (
+        select(edge.id)
+        .join(concept, or_(concept.id == edge.srcId, concept.id == edge.dstId))
+        .where(edge.id == Claim.subjectId, concept.sensitivity == VISIBLE_SENSITIVITY)
     )
     return or_(
         and_(Claim.subjectType == CONCEPT_SUBJECT, direct.correlate(Claim).exists()),

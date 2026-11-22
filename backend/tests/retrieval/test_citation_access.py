@@ -48,7 +48,7 @@ def test_a_fact_a_reader_sees_is_shown_open_filed_where_readers_look_cited_by_a_
     assert params_with(params, "status_") == [list(SHOWN_CLAIM_STATUSES)]
     assert params_with(params, "sensitivity_") == ["OPEN", "OPEN", "OPEN", "RESTRICTED"]
     assert 'reader_concept.id = "Claim"."subjectId" AND reader_concept.sensitivity = ' in sql
-    assert 'reader_edge."srcId" IN (SELECT reader_concept.id' in sql
+    assert 'reader_concept.id = reader_edge."srcId" OR reader_concept.id = reader_edge."dstId"' in sql
     assert 'reader_cite."claimId" = "Claim".id AND reader_source.sensitivity != ' in sql
     assert 'reader_source.id NOT IN (SELECT "FieldRecording"."sourceId"' in sql
     assert '"ClaimSource"."quoteCheck" != ' in sql and params_with(params, "quoteCheck_") == ["FAIL"]
