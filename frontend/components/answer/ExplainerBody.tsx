@@ -5,6 +5,7 @@ import { AnswerProgress } from "@/components/answer/AnswerProgress";
 import { useCitations } from "@/components/answer/CitationContext";
 import { useExplainerReading } from "@/components/answer/ExplainerReading";
 import { ExplainerSectionView } from "@/components/answer/ExplainerSectionView";
+import { NumberedFigures } from "@/components/answer/place/AnswerFigure";
 import { ReactionsPanel } from "@/components/answer/ReactionsPanel";
 import { ResearchTrail } from "@/components/answer/ResearchTrail";
 import { SectionBar } from "@/components/answer/SectionBar";
@@ -78,9 +79,11 @@ export function ExplainerBody({ state, sections, streaming, reduce, active, onAc
           <AnswerProgress status={state.status} writing={writing} />
         </div>
       ) : null}
-      {sections.map((section, index) => (
-        <ExplainerSectionView key={section.id} section={section} number={index + 1} streaming={streaming} reduce={reduce} onActive={onActive} />
-      ))}
+      <NumberedFigures.Provider value>
+        {sections.map((section, index) => (
+          <ExplainerSectionView key={section.id} section={section} number={index + 1} streaming={streaming} reduce={reduce} onActive={onActive} />
+        ))}
+      </NumberedFigures.Provider>
       {closing ? (
         <Spread className="border-t border-ink-1 pt-12">
           <div className="grid min-w-0 gap-12">

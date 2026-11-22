@@ -109,6 +109,17 @@ def test_a_reaction_on_a_stage_that_is_not_seeded_is_refused() -> None:
         plan_with(wrong)
 
 
+def test_leucoindigo_is_seeded_with_its_pubchem_record_and_no_other_compound_claims_one() -> None:
+    rows = {row["name"]: row for row in plan().rows["compounds"]}
+    assert (rows["Leucoindigo"]["formula"], rows["Leucoindigo"]["pubchemCid"]) == ("C16H12N2O2", 23035)
+    assert {name: row["pubchemCid"] for name, row in rows.items() if name != "Leucoindigo"} == {
+        "Iron(II) acetate": None,
+        "Alizarin": None,
+        "Indigo": None,
+        "Potassium alum": None,
+    }
+
+
 def test_the_constants_are_seeded_as_cited_claims_through_the_claim_seed() -> None:
     constants = claim_seed_plan(constants_data(load_science_seed()))
     assert len(constants["claims"]) == 5

@@ -2614,21 +2614,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** compare the font files' metrics; a shelf rule for an odd count; interface words
   for the answer's languages.
 
-## Round 5 (2026-11-20)
-
-### Answer figures are not numbered
-
-- **What:** the answer's figures carry their kicker but no "Fig. N": blocks render on their own and
-  the essay does not yet pass numbers down.
-- **Clears it:** the answer essay numbers its figures and passes the number to `AnswerFigure`.
-
-### Fig. 1's equation needs leucoindigo's compound record
-
-- **What:** the vat figure draws its balanced equation and atom count only when both leucoindigo
-  and indigo have a compound record; only indigo blue (CID 10215) has one, so the equation is not
-  drawn.
-- **Clears it:** a sourced leucoindigo compound in the compound library.
-
 ## Round 7 (2026-11-20)
 
 ### Live research write-backs skipped the candidate gates
