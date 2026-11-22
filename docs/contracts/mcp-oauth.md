@@ -95,8 +95,11 @@ connector dialog), VS Code's `https://vscode.dev/oauth/client-metadata.json`. A 
   `Cache-Control` back in `X-Client-Document-Cache-Control`.
 - **The document** is a JSON object with `client_id` exactly the address it was read from,
   `client_name` (1 to 120 characters), 1 to 10 `redirect_uris` that each pass the registration
-  rule below, no `client_secret` or `client_secret_expires_at`, and `token_endpoint_auth_method`
-  absent or `none` (`token_endpoint_auth_methods_supported`, when given, includes `none`). Other
+  rule below, no `client_secret` or `client_secret_expires_at`, and a way to sign in as a public
+  client: `token_endpoint_auth_methods_supported`, when given, includes `none` (it decides,
+  whatever the preferred `token_endpoint_auth_method`, so ChatGPT's document, which prefers
+  `private_key_jwt` and lists `none`, signs in with PKCE as a public client; decision 0148);
+  without it, `token_endpoint_auth_method` is absent or `none`. Other
   fields, `grant_types` and `response_types` included, are ignored
   (`research/oauth_client_documents.metadata_client`).
 - **Held** in the API process for its `max-age`, at least 60 seconds and at most a day; no
@@ -174,7 +177,10 @@ is ignored); when absent it is taken to be that.
 ## Tokens
 
 `POST /api/oauth/token`, `application/x-www-form-urlencoded`, each parameter at most once, an
-empty value treated as absent. `client_id` is required and `client_secret` refused.
+empty value treated as absent. `client_id` is required and `client_secret` refused; a request
+without `client_id` that carries a `client_assertion` of type
+`urn:ietf:params:oauth:client-assertion-type:jwt-bearer` is named by the assertion's `sub`, when
+it equals its `iss` (the assertion is otherwise not read; decision 0148).
 
 - `grant_type=authorization_code` with `code`, `redirect_uri` (exactly the one the code was
   issued for), `code_verifier` (43 to 128 unreserved characters whose base64url SHA-256 is the

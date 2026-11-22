@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import uuid
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlsplit
@@ -22,6 +25,7 @@ __all__ = [
     "CLIENT_DOCUMENT_FETCH_PATH",
     "CLIENT_DOCUMENT_MAX_BYTES",
     "CLIENT_DOCUMENT_TIMEOUT_SECONDS",
+    "JWT_BEARER_ASSERTION",
     "ClientDocumentRequest",
     "MetadataClient",
     "cache_seconds",
@@ -30,6 +34,7 @@ __all__ = [
     "is_metadata_client_key",
     "metadata_client",
     "metadata_client_key",
+    "named_client_id",
 ]
 
 CLIENT_DOCUMENT_FETCH_PATH = "/fetch-client-document"
@@ -43,6 +48,9 @@ CACHE_CEILING_SECONDS = 24 * 60 * 60
 HTTPS_PORT = 443
 METADATA_KEY_VERSION = 5
 SECRET_FIELDS = ("client_secret", "client_secret_expires_at")
+JWT_BEARER_ASSERTION = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+JWT_PARTS = 3
+ASSERTION_MAX_CHARS = 8 * 1024
 UNCACHED = frozenset({"no-store", "no-cache"})
 
 
@@ -104,6 +112,16 @@ def client_id_problem(client_id: str) -> str | None:
     return None
 
 
+def named_client_id(fields: Mapping[str, str]) -> str | None:
+    if fields.get("client_id"):
+        return fields["client_id"]
+    if fields.get("client_assertion_type") != JWT_BEARER_ASSERTION:
+        return None
+    claims = _unverified_claims(fields.get("client_assertion") or "")
+    subject = claims.get("sub")
+    return subject if isinstance(subject, str) and subject and subject == claims.get("iss") else None
+
+
 def metadata_client(client_id: str, body: bytes) -> MetadataClient:
     raw = _document_object(body)
     if raw.get("client_id") != client_id:
@@ -144,12 +162,28 @@ def _document_object(body: bytes) -> dict[str, Any]:
 
 
 def _check_public(document: ClientDocument) -> None:
-    method = document.token_endpoint_auth_method
-    supported = document.token_endpoint_auth_methods_supported
-    if method not in (None, PUBLIC_CLIENT_AUTH) or (
-        supported is not None and PUBLIC_CLIENT_AUTH not in supported
-    ):
-        raise _refused("asks for client authentication; KalaVigyan signs in public clients only, with PKCE")
+    if PUBLIC_CLIENT_AUTH not in _sign_in_methods(document):
+        raise _refused(
+            "cannot sign in as a public client; KalaVigyan signs in public clients only, with PKCE"
+        )
+
+
+def _sign_in_methods(document: ClientDocument) -> tuple[str, ...]:
+    if document.token_endpoint_auth_methods_supported is not None:
+        return tuple(document.token_endpoint_auth_methods_supported)
+    return (document.token_endpoint_auth_method or PUBLIC_CLIENT_AUTH,)
+
+
+def _unverified_claims(assertion: str) -> dict[str, Any]:
+    parts = assertion.split(".")
+    if len(parts) != JWT_PARTS or len(assertion) > ASSERTION_MAX_CHARS:
+        return {}
+    try:
+        payload = base64.urlsafe_b64decode(parts[1] + "=" * (-len(parts[1]) % 4))
+        claims = json.loads(payload)
+    except ValueError, binascii.Error:
+        return {}
+    return claims if isinstance(claims, dict) else {}
 
 
 def _directives(header: str) -> dict[str, str]:

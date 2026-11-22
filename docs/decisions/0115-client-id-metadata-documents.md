@@ -12,6 +12,7 @@ dynamic client registration stays as it was.
 |---|---|
 | What it amends | [0101 One knowledge architecture for every craft: facts, sections, components, monographs](0101-knowledge-architecture-for-every-craft.md): item 15, Authentication, for published client identities |
 | What it amends | [mcp-oauth.md](../contracts/mcp-oauth.md); dynamic client registration stays as it was |
+| Later changed by | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md): a document listing `none` among its supported methods signs in as a public client |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context
