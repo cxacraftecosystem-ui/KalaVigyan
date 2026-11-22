@@ -10,7 +10,7 @@ __all__ = ["EDITIONS_SCHEMA_VERSION", "EDITION_CODE", "WIKIPEDIA_EDITIONS_FILE",
 
 WIKIPEDIA_EDITIONS_FILE = Path(__file__).with_name("wikipedia_editions.json")
 EDITIONS_SCHEMA_VERSION = 1
-EDITION_CODE = re.compile(r"[a-z]{2,8}(?:-[a-z]{2,8})*")
+EDITION_CODE = re.compile(r"[a-z]{2,8}(?:-[a-z]{2,9})*")
 
 
 def wikipedia_editions(path: Path) -> frozenset[str]:
