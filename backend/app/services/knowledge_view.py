@@ -90,6 +90,10 @@ class ClaimView:
     def readable_citation_ids(self) -> frozenset[str]:
         return frozenset(str(cite["id"]) for cite in self.citations) - self.closed
 
+    def shows_citation(self, citation_id: str, *, quoted: bool) -> bool:
+        shown = any(str(cite["id"]) == citation_id for cite in self.citations)
+        return shown and not (quoted and citation_id in self.closed)
+
 
 def source_ref(source: Source) -> dict[str, Any]:
     authors = [str(a) if not isinstance(a, dict) else str(a.get("name") or "") for a in source.authors or []]
