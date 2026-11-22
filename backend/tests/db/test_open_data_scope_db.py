@@ -97,7 +97,7 @@ async def test_a_craft_release_names_its_craft_leaves_out_its_neighbour_and_buil
     assert b"Alum fixes the madder red." in every
     for left_out in (OTHER_TEXT, ALUM_QUOTE, CONTRIBUTOR, "open-data-contributor@example.com"):
         assert left_out.encode() not in every
-    assert first.counts["crafts"] == 1 and first.counts["claims"] == 3
+    assert first.counts["crafts"] == 1 and first.counts["claims"] == 4
 
 
 async def test_the_latest_release_and_its_changes_are_kept_per_target_and_scope(
