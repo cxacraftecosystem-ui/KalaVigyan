@@ -2187,6 +2187,17 @@ Last reviewed: 2026-11-22.
 - **Clears it:** when a filed write-back meets its held twin, move it to the switch's status with a
   `ReviewEvent` by `live_research`.
 
+### The count of hidden facts has no admin screen
+
+- **What:** the nightly count of approved facts a signed-out reader cannot see, by craft and reason
+  (decision 0149), is in the night's report and at `GET /api/coverage/hidden-facts` for admins, but
+  no admin screen shows it.
+- **Why left:** the contributions-visible lane built the count, its route and the failing night;
+  the admin screens belong to the design-system work, and a screen needs the kalavigyan-design
+  review of a new admin card.
+- **Clears it:** a card on the admin settings page that reads the route and lists each craft's
+  hidden facts by reason, with the unexplained ones first, and a unit spec of its shape.
+
 ## How this document is kept true
 
 | Change | What to do here |

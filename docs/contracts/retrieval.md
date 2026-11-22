@@ -8,6 +8,7 @@ ranking, the embedding runs or the evaluation read it.
 |---|---|
 | Why retrieval works this way | [decision 0008](../decisions/0008-stored-knowledge-retrieval.md) and [0101](../decisions/0101-knowledge-architecture-for-every-craft.md), item 10 and build step 3 |
 | Why a quote follows its page and a held fact leaves answers | [decision 0121](../decisions/0121-quote-visibility.md) |
+| Why a fact stays for every reader when its quotes are closed, and the one rule for a fact a reader sees | [decision 0149](../decisions/0149-a-fact-readers-can-see.md) |
 | Why stored facts are reranked, and when stored knowledge is enough | [decision 0125](../decisions/0125-reranking.md) |
 | Why vectors carry their context, the glossary reaches the words search and any-craft questions use the vector indexes | [decision 0129](../decisions/0129-first-stage-retrieval.md) |
 | Why retrieval is measured as it grows, and why the evaluation scores the reranked and the fused order | [decision 0126](../decisions/0126-measurement-that-grows.md) and [0133](../decisions/0133-the-evaluation-scores-what-answers-read.md) |
@@ -98,11 +99,29 @@ and vector are made, and call the reranker after their turn; searches through
 - `chunkAcls` is the reader's passage access (`chunk_acls_for(reader)`); restricted chunks and
   sources and withheld field recordings are never read.
 
+### A fact a reader can see
+
+`citation_access.reader_fact(held, statuses)` is the one rule for which facts a reader sees
+(decision 0149): shown status (`PROPOSED`, `IN_REVIEW`, `APPROVED`, narrowed by a mode), sensitivity
+`OPEN`, filed under a concept readers see (a relation: one of its two concepts), cited by at least one
+source that is not `RESTRICTED` and not a withheld field recording (`cited_for_readers`), and not held
+unless `HELD_KEPT`. Search (`statements.claim_conditions`), the views (`knowledge_view.claims_for`,
+`claims_by_id`), coverage and the field tasks (`open_work_counts.owned_facts`), the open data, the
+proposal reply and the nightly count of hidden facts read it. Whether a closed page's words may be
+read never decides whether the fact is shown.
+
+`citation_access.reader_citations(claim_ids, acls)` reads every citation of those facts whose source
+readers may see, with whether its words are readable at `acls`. A view shows each such citation with
+its source and locator, and its quote only when the words are readable and the quote has not failed;
+otherwise it is unquoted and labelled `INFERRED`. `ClaimView.closed` keeps the ids of the citations
+whose words it hid, and `readable_citation_ids()` leaves them out, so a stored piece quoting them is
+never reused for that reader.
+
 ### Who may read a citation
 
-A citation (`ClaimSource`) is read through `citation_access.readable_citation(acls)`, the one rule
-behind `statements.readable_citations` (every view of a fact), the open-data export (`acls`
-`PUBLIC`) and the re-reading below (decision 0121):
+A citation's words (`ClaimSource.quote`) are read through `citation_access.readable_citation(acls)`,
+the one rule behind `reader_citations` (every view of a fact) and the re-reading below (decision
+0121):
 
 - linked to a passage (`chunkId`): that passage's `acl` is one of `acls` and it is not
   `RESTRICTED`;

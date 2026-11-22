@@ -144,7 +144,7 @@ flowchart LR
 
 | Decision | What was decided | Later changed by |
 |---|---|---|
-| [0101](0101-knowledge-architecture-for-every-craft.md) | One knowledge architecture for every craft: facts, sections, components, monographs | [0115](0115-client-id-metadata-documents.md), [0117](0117-pages-in-other-languages.md) and [0145](0145-monograph-pages-and-speed-without-debt.md) |
+| [0101](0101-knowledge-architecture-for-every-craft.md) | One knowledge architecture for every craft: facts, sections, components, monographs | [0115](0115-client-id-metadata-documents.md), [0117](0117-pages-in-other-languages.md), [0145](0145-monograph-pages-and-speed-without-debt.md) and [0149](0149-a-fact-readers-can-see.md) |
 | [0102](0102-knowledge-fields-schema-as-built.md) | Fields on facts, section records and the component registry: step 1 as built | · |
 | [0103](0103-mcp-server-read-slice.md) | The MCP server, slice 1: public read tools over our own JSON-RPC framing | [0111](0111-fewer-mcp-tools.md) |
 | [0104](0104-image-contributions-intake.md) | Image contributions: declared, read byte by byte, private until approved | [0109](0109-image-formats-and-screens.md) |
@@ -159,12 +159,12 @@ flowchart LR
 | [0113](0113-questions-become-work.md) | Questions KalaVigyan cannot answer well become open work | · |
 | [0114](0114-kinds-and-datasets.md) | Component kinds any craft can use, and one dataset record | [0131](0131-drawings-in-the-design.md) |
 | [0115](0115-client-id-metadata-documents.md) | MCP clients sign in with their published identity | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) |
-| [0116](0116-open-data-with-a-doi.md) | KalaVigyan's knowledge is an open dataset with a DOI | [0130](0130-a-craft-release.md) |
+| [0116](0116-open-data-with-a-doi.md) | KalaVigyan's knowledge is an open dataset with a DOI | [0130](0130-a-craft-release.md) and [0149](0149-a-fact-readers-can-see.md) |
 | [0117](0117-pages-in-other-languages.md) | A page in another language is the same page, translated passage by passage | · |
 | [0118](0118-python-3-15.md) | The backend runs on Python 3.15, and each release pins its interpreter | · |
 | [0119](0119-nightly-refresh-of-changed-pages.md) | The night refreshes only the pages that changed; it never rebuilds the site | · |
 | [0120](0120-grounded-sentences.md) | Every sentence says no more than the quotes it cites | · |
-| [0121](0121-quote-visibility.md) | A quote is shown only where its page allows | · |
+| [0121](0121-quote-visibility.md) | A quote is shown only where its page allows | [0149](0149-a-fact-readers-can-see.md) |
 | [0122](0122-evidence-reach.md) | Evidence the knowledge base holds reaches the answers that need it | · |
 | [0123](0123-question-understanding.md) | A question is understood honestly before any evidence is read | · |
 | [0124](0124-live-research-write-back.md) | Live research writes back only what its sources say | [0135](0135-write-backs-filed-under-the-craft-they-name.md) and [0144](0144-stored-passages-as-evidence.md) |
@@ -190,6 +190,7 @@ flowchart LR
 | [0145](0145-monograph-pages-and-speed-without-debt.md) | Pages read what their screens draw: one coverage read, one decision route, one unit pattern, and renderers loaded when placed | · |
 | [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | · |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
+| [0149](0149-a-fact-readers-can-see.md) | A fact is shown to every reader with its citation, and only its quote follows its page | · |
 | [0150](0150-mcp-activity-and-box-logs.md) | Each MCP call keeps its client and its reason for 180 days and its count for good, and the box ships its logs to CloudWatch | · |
 
 ## How this document is kept true
