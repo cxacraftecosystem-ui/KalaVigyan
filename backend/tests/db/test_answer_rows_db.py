@@ -1,4 +1,5 @@
 import json
+import uuid
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -8,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import request_id_scope
-from app.models import Answer, AnswerCitation, AnswerSentence, AnswerTrace
+from app.models import Answer, AnswerCitation, AnswerSentence, AnswerTrace, Claim
 from app.research.explainer import Explainer
 from app.research.sections import AnswerPlans
 from app.services.answer_steps import TracedStep
@@ -38,6 +39,19 @@ async def counted(session: AsyncSession, model: Any, column: Any, answer_id: Any
     return int(await session.scalar(select(func.count()).select_from(model).where(column == answer_id)) or 0)
 
 
+async def kept_claims(session: AsyncSession, explainer: Explainer) -> list[str]:
+    cited = [
+        citation.claim_id
+        for section in explainer.sections
+        for each in section.blocks
+        for sentence in each.shown_sentences()
+        for citation in sentence.citations
+    ]
+    ids = {uuid.UUID(claim) for claim in cited}
+    stored = {str(claim) for claim in await session.scalars(select(Claim.id).where(Claim.id.in_(ids)))}
+    return sorted(claim if claim in stored else "None" for claim in cited)
+
+
 async def test_a_finished_answer_keeps_its_sentences_citations_steps_and_request(
     session: AsyncSession,
 ) -> None:
@@ -64,12 +78,11 @@ async def test_a_finished_answer_keeps_its_sentences_citations_steps_and_request
         .where(AnswerSentence.answerId == answer_id)
     )
     assert await session.scalar(cited) == 16
-    unknown = (
-        select(func.count())
-        .select_from(AnswerCitation)
-        .join(AnswerSentence)
-        .where(AnswerSentence.answerId == answer_id, AnswerCitation.claimId.is_not(None))
-    )
-    assert await session.scalar(unknown) == 0
+    stored = (
+        await session.scalars(
+            select(AnswerCitation.claimId).join(AnswerSentence).where(AnswerSentence.answerId == answer_id)
+        )
+    ).all()
+    assert sorted(str(claim) for claim in stored) == await kept_claims(session, golden(answer_id))
     (trace,) = (await session.scalars(select(AnswerTrace).where(AnswerTrace.answerId == answer_id))).all()
     assert (trace.step, trace.ordinal, trace.ms, trace.detail) == ("status", 0, 12, dict(PLANNED.detail))
