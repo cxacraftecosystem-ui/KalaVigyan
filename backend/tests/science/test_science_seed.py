@@ -127,12 +127,18 @@ def test_leucoindigo_is_seeded_with_its_pubchem_record_and_no_other_compound_cla
 
 def test_the_constants_are_seeded_as_cited_claims_through_the_claim_seed() -> None:
     constants = claim_seed_plan(constants_data(load_science_seed()))
-    assert len(constants["claims"]) == 5
+    assert len(constants["claims"]) == 6
+    named = [claim for claim in load_science_seed()["constants"]["claims"] if "constant" in claim]
+    assert len(named) == 5
     assert {row["quoteCheck"] for row in constants["claimSources"]} == {"PASS"}
     assert {row["evidenceLevel"] for row in constants["claims"]} == {"PROVISIONAL"}
+    wikipedia = [s for s in constants["sources"] if s["attribution"].startswith("Wikipedia contributors")]
+    papers = [s for s in constants["sources"] if s["doi"]]
+    assert len(wikipedia) + len(papers) == len(constants["sources"])
+    assert [paper["doi"] for paper in papers] == ["10.1007/s42860-020-00082-w"]
     for source in constants["sources"]:
         assert open_licence(source["licence"])
-        assert source["attribution"].startswith("Wikipedia contributors")
+    for source in wikipedia:
         assert "&oldid=" in source["url"]
 
 

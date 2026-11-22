@@ -7,7 +7,7 @@ import { createElement } from "react";
 import type { CitationLookup } from "@/components/answer/CitationContext";
 import { MaterialCardView } from "@/components/answer/matter/MaterialCardView";
 import { StepDetail } from "@/components/answer/matter/StepDetail";
-import { itemSourceIds } from "@/lib/craftChapters";
+import { itemSourceIds } from "@/lib/craftChapterReads";
 import { materialCardBlockShape, reactionPlayerBlockShape, stepEnergy } from "@/lib/explainerMatter";
 import type { SectionView } from "@/lib/explainerState";
 import { blockSourceIds, explainerSourceNumbers } from "@/lib/explainerView";
