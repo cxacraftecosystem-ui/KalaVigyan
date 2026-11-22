@@ -168,6 +168,7 @@ class MemoryStore:
     consents: set[tuple[uuid.UUID, str]] = field(default_factory=set)
     crafts: dict[str, CraftRef] = field(default_factory=lambda: {CRAFT.slug: CRAFT})
     packs: dict[str, VoicePack] = field(default_factory=lambda: {CRAFT.slug: alum_pack()})
+    pack_acls: list[tuple[str, ...]] = field(default_factory=list)
     used_before: int = 0
 
     async def consented(self, user_id: uuid.UUID, version: str) -> bool:
@@ -176,7 +177,8 @@ class MemoryStore:
     async def craft(self, slug: str) -> CraftRef | None:
         return self.crafts.get(slug)
 
-    async def pack(self, craft: CraftRef, mode: str) -> VoicePack:
+    async def pack(self, craft: CraftRef, mode: str, acls: tuple[str, ...]) -> VoicePack:
+        self.pack_acls.append(acls)
         return replace(self.packs[craft.slug], mode=mode)
 
     async def close_lapsed(self, now: datetime) -> int:

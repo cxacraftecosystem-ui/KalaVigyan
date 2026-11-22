@@ -5,7 +5,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import ColumnElement, Select, and_, exists, or_, select
+from sqlalchemy import ColumnElement, Select, and_, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased, defer
 
@@ -18,16 +18,10 @@ from app.models import (
     CuratedCategoryClaim,
     Source,
 )
-from app.research.retrieval import (
-    OPEN_CHUNK_ACLS,
-    RESTRICTED_SENSITIVITY,
-    SHOWN_CLAIM_STATUSES,
-    VISIBLE_SENSITIVITY,
-)
-from app.retrieval.citation_access import readable_citation
+from app.research.retrieval import RESTRICTED_SENSITIVITY, VISIBLE_SENSITIVITY
+from app.retrieval.citation_access import reader_fact
 from app.retrieval.field_scope import withheld_field_sources
 
-from .claim_holds import held_claim
 from .open_data_crafts import NO_PLACE, CraftLookup, Placement
 from .open_data_values import Row, day_of, number_of, stamp_of, text_of
 
@@ -88,14 +82,7 @@ def _published(statement: Select[Any], within: Sequence[ColumnElement[bool]]) ->
         .outerjoin(_to, _to.id == _edge.dstId)
     )
     return joined.where(
-        Claim.status.in_(SHOWN_CLAIM_STATUSES),
-        Claim.sensitivity == VISIBLE_SENSITIVITY,
-        or_(
-            _direct.sensitivity == VISIBLE_SENSITIVITY,
-            _from.sensitivity == VISIBLE_SENSITIVITY,
-            _to.sensitivity == VISIBLE_SENSITIVITY,
-        ),
-        ~held_claim(),
+        *reader_fact(),
         exists().where(ClaimSource.claimId == Claim.id, *_exportable_citation()),
         *within,
     )
@@ -113,7 +100,6 @@ def _exportable_citation() -> list[ColumnElement[bool]]:
         .correlate(None)
     )
     return [
-        readable_citation(OPEN_CHUNK_ACLS),
         ClaimSource.sourceId.in_(open_sources),
         ClaimSource.sourceId.not_in(withheld_field_sources()),
     ]

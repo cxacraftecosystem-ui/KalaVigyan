@@ -1,5 +1,5 @@
 import uuid
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Collection, Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -17,19 +17,19 @@ from app.models import (
     CraftLocation,
     Source,
 )
-from app.research.retrieval import (
-    HIDDEN_CLAIM_STATUSES,
-    OPEN_CHUNK_ACLS,
-    RESTRICTED_SENSITIVITY,
-    VISIBLE_SENSITIVITY,
-)
+from app.research.retrieval import OPEN_CHUNK_ACLS
 from app.research.vocabulary import LEVEL_ORDER
-from app.retrieval.citation_access import FAILED_QUOTE, HELD_KEPT, HELD_LEFT_OUT, unheld
+from app.retrieval.citation_access import (
+    FAILED_QUOTE,
+    HELD_KEPT,
+    HELD_LEFT_OUT,
+    reader_citations,
+    reader_fact,
+)
 from app.retrieval.statements import (
     CraftScope,
     claim_conditions,
     lexical_rank,
-    readable_citations,
     scope_concepts,
     text_query,
 )
@@ -82,9 +82,17 @@ class ClaimView:
     rank: float = 0.0
     citations: list[dict[str, Any]] = field(default_factory=list)
     sources_differ: bool = False
+    closed: frozenset[str] = frozenset()
 
     def payload(self) -> dict[str, Any]:
         return {"id": str(self.id), "text": self.text, "level": self.level, "citations": self.citations}
+
+    def readable_citation_ids(self) -> frozenset[str]:
+        return frozenset(str(cite["id"]) for cite in self.citations) - self.closed
+
+    def shows_citation(self, citation_id: str, *, quoted: bool) -> bool:
+        shown = any(str(cite["id"]) == citation_id for cite in self.citations)
+        return shown and not (quoted and citation_id in self.closed)
 
 
 def source_ref(source: Source) -> dict[str, Any]:
@@ -108,8 +116,8 @@ def source_ref(source: Source) -> dict[str, Any]:
     }
 
 
-def citation(cite: ClaimSource, level: str) -> dict[str, Any]:
-    quote = shown_quote(cite)
+def citation(cite: ClaimSource, level: str, *, readable: bool = True) -> dict[str, Any]:
+    quote = shown_quote(cite, readable=readable)
     return {
         "id": str(cite.id),
         "claimId": str(cite.claimId),
@@ -122,8 +130,8 @@ def citation(cite: ClaimSource, level: str) -> dict[str, Any]:
     }
 
 
-def shown_quote(cite: ClaimSource) -> str | None:
-    return None if cite.quoteCheck == FAILED_QUOTE else cite.quote
+def shown_quote(cite: ClaimSource, *, readable: bool = True) -> str | None:
+    return None if not readable or cite.quoteCheck == FAILED_QUOTE else cite.quote
 
 
 def section_heading(concept_type: str) -> str:
@@ -241,13 +249,8 @@ async def claims_by_id(
 
 
 async def _visible_claims(session: AsyncSession, condition: Any, rank_column: Any) -> list[Any]:
-    filters = [
-        condition,
-        Claim.status.not_in(HIDDEN_CLAIM_STATUSES),
-        Claim.sensitivity == VISIBLE_SENSITIVITY,
-        *unheld(HELD_LEFT_OUT),
-    ]
-    return list((await session.execute(select(Claim, rank_column).where(*filters))).all())
+    statement = select(Claim, rank_column).where(condition, *reader_fact(HELD_LEFT_OUT))
+    return list((await session.execute(statement)).all())
 
 
 async def _cited_views(
@@ -259,36 +262,34 @@ async def _cited_views(
 ) -> tuple[list[ClaimView], dict[uuid.UUID, Source]]:
     if not rows:
         return [], {}
-    claim_ids = [claim.id for claim, _ in rows]
-    cites = (await session.execute(readable_citations(claim_ids, acls=acls))).scalars().all()
-    source_ids = {cite.sourceId for cite in cites}
+    read = (await session.execute(reader_citations([claim.id for claim, _ in rows], acls=acls))).all()
+    closed = frozenset(cite.id for cite, readable in read if not readable)
+    source_ids = {cite.sourceId for cite, _ in read}
     sources = {
-        source.id: source
-        for source in (
-            await session.execute(
-                select(Source).where(Source.id.in_(source_ids), Source.sensitivity != RESTRICTED_SENSITIVITY)
-            )
-        )
-        .scalars()
-        .all()
+        source.id: source for source in await session.scalars(select(Source).where(Source.id.in_(source_ids)))
     }
     by_claim: dict[uuid.UUID, list[ClaimSource]] = {}
-    for cite in cites:
-        if cite.sourceId in sources:
-            by_claim.setdefault(cite.claimId, []).append(cite)
+    for cite, _ in read:
+        by_claim.setdefault(cite.claimId, []).append(cite)
     views: list[ClaimView] = []
     for claim, rank in rows:
         attached = by_claim.get(claim.id)
         if attached:
-            views.append(cited_view(claim, attached, placed(claim), rank=float(rank or 0)))
+            views.append(cited_view(claim, attached, placed(claim), rank=float(rank or 0), closed=closed))
     return views, sources
 
 
 def cited_view(
-    claim: Claim, cites: list[ClaimSource], placed: tuple[uuid.UUID | None, str], *, rank: float = 0.0
+    claim: Claim,
+    cites: list[ClaimSource],
+    placed: tuple[uuid.UUID | None, str],
+    *,
+    rank: float = 0.0,
+    closed: Collection[uuid.UUID] = frozenset(),
 ) -> ClaimView:
     concept_id, concept_type = placed
-    ordered = sorted(cites, key=lambda c: (shown_quote(c) is None, str(c.id)))
+    shown = {cite.id: cite.id not in closed for cite in cites}
+    ordered = sorted(cites, key=lambda c: (shown_quote(c, readable=shown[c.id]) is None, str(c.id)))
     return ClaimView(
         id=claim.id,
         text=claim.text,
@@ -296,8 +297,9 @@ def cited_view(
         concept_type=concept_type,
         concept_id=concept_id,
         rank=rank,
-        citations=[citation(c, claim.evidenceLevel) for c in ordered],
+        citations=[citation(c, claim.evidenceLevel, readable=shown[c.id]) for c in ordered],
         sources_differ=bool(claim.sourcesDiffer),
+        closed=frozenset(str(c.id) for c in cites if not shown[c.id]),
     )
 
 

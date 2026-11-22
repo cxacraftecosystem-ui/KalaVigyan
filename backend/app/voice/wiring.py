@@ -39,7 +39,7 @@ def turn_tools(
     embed = router_embedder(principal)
 
     async def pack(craft: CraftRef, mode: str) -> VoicePack:
-        return await runtime.packs.get(craft, mode, store.pack)
+        return await runtime.packs.get(craft, mode, chunk_acls_for(role), store.pack)
 
     async def resolve(question: str, language: str) -> CraftRef | None:
         query = CraftQuery(text=question[:QUESTION_MAX_CHARS], language=language)

@@ -37,8 +37,11 @@ PROPOSE_DESCRIPTION = (
 GET_DESCRIPTION = (
     "The state of one of this account's proposals: QUEUED with the number of proposals ahead of it, CHECKING "
     "while the gates run, DONE with the reply (published, waiting for a reviewer or refused, each gate's "
-    "reasons, the fact's id) and the model calls and cost the checks took, or FAILED when the checks could not "
-    "run after five tries (nothing was stored; send it again with the same idempotency_key)."
+    "reasons, the fact's id, and readers: whether a signed-out reader sees the fact now, on which page and field, "
+    "whether a written section cites it or which write-section task is open, or why readers cannot see it) and "
+    "the model calls and cost the checks took, or FAILED when the checks could not run after five tries (nothing "
+    "was stored; send it again with the same idempotency_key). Tell a person a fact is on the page only when "
+    "readers.shown is true."
 )
 
 

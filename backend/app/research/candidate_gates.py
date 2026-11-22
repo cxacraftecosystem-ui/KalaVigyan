@@ -8,7 +8,7 @@ from pydantic import Field
 
 from app.models.candidate_checks import CANDIDATE_GATES
 
-from .base import ContractModel
+from .base import ContractModel, PartialDate
 from .licences import open_licence
 from .quotes import QUOTE_MIN_CHARS, quote_key, quote_occurs, trivial_quote, unsupported_figures
 from .stated_prices import stated_prices
@@ -24,6 +24,7 @@ __all__ = [
     "NOVELTY_GATE",
     "NO_QUOTE_REASON",
     "QUOTES_GATE",
+    "REASON_MAX_CHARS",
     "SOURCE_GATE",
     "WEAKEST_GRADE",
     "Candidate",
@@ -38,6 +39,7 @@ __all__ = [
     "duplicate_outcome",
     "held_twin",
     "novelty_outcome",
+    "publication_figures",
     "quote_gate",
     "source_gate",
     "statement_key",
@@ -55,6 +57,8 @@ REASONS_MAX = 20
 REASON_MAX_CHARS = 600
 MODEL_NAME_MAX_CHARS = 120
 CANDIDATE_TITLE_MAX_CHARS = 600
+DATE_SEPARATOR = "-"
+FULL_DATE_PARTS = 3
 NO_QUOTE_REASON = "no quote was offered, so the fact is kept as a hypothesis, never as a quoted fact"
 UNVECTORED_REASON = (
     "only identical texts were looked for: the statement could not be embedded, so held facts were not "
@@ -93,6 +97,8 @@ class CitedSource(ContractModel):
     stated_licence: str | None = None
     restricted: bool = False
     supplied: str | None = None
+    published: PartialDate | None = None
+    untitled: str | None = None
 
 
 class HeldFact(ContractModel):
@@ -121,7 +127,8 @@ def statement_key(text: str) -> str:
 def quote_gate(statement: str, sources: Sequence[CitedSource]) -> GateOutcome:
     problems = [problem for source in sources for problem in _quote_problems(source)]
     quoted = [quote for source in sources for quote in source.quotes]
-    missing = unsupported_figures(statement, quoted)
+    dated = {figure for source in sources for figure in publication_figures(source.published)}
+    missing = [figure for figure in unsupported_figures(statement, quoted) if figure not in dated]
     if missing:
         problems.append(f"{', '.join(missing)} in the statement appears in none of its quotes")
     if problems:
@@ -136,6 +143,21 @@ def quote_gate(statement: str, sources: Sequence[CitedSource]) -> GateOutcome:
             *(f"{source.url}: {source.supplied}" for source in sources if source.supplied),
         ],
     )
+
+
+def publication_figures(published: str | None) -> set[str]:
+    if not published:
+        return set()
+    parts = published.split(DATE_SEPARATOR)
+    if len(parts) != FULL_DATE_PARTS:
+        return {parts[0]}
+    year, month, day = parts
+    dotted = {
+        f"{shown_day}.{shown_month}.{year}"
+        for shown_day in (day, day.lstrip("0"))
+        for shown_month in (month, month.lstrip("0"))
+    }
+    return {year, *dotted}
 
 
 def source_gate(statement: str, field: str | None, sources: Sequence[CitedSource]) -> GateOutcome:
@@ -248,6 +270,11 @@ def _source_problems(source: CitedSource) -> list[str]:
     problems = []
     if source.grade is None:
         problems.append(f"{source.url} has no grade")
+    if source.untitled is not None:
+        problems.append(
+            f"{source.url} names no title of its own (its file says {source.untitled!r}); give the work's title "
+            "as the source's title"
+        )
     if source.restricted:
         problems.append(f"{source.url} is a restricted source, whose words are never published")
     if _contradicted(source):

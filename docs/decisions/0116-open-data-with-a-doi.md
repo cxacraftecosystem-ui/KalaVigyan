@@ -12,6 +12,7 @@ DOI."). The contract is `docs/contracts/open-data.md`.
 |---|---|
 | The contract it fixes | [open-data.md](../contracts/open-data.md) |
 | A release scoped to one craft, with its own DOI (amends this record) | [decision 0130](0130-a-craft-release.md) |
+| A fact whose quotes sit on closed passages is released with its citation and none of their words (amends what the export leaves out) | [decision 0149](0149-a-fact-readers-can-see.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

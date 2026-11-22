@@ -16,6 +16,7 @@ from app.research.why_here import CraftGround
 
 from .component_places import PlacesHeld
 from .component_proposals_drawn import drawn_delivery
+from .craft_page_unwritten import listed_units
 from .document_components import DocumentStructure, StructureBlock
 from .document_components_data import (
     READER_SCOPE,
@@ -76,6 +77,7 @@ class GeneratedParts:
     structure: DocumentStructure | None = None
     places: PlacesHeld = field(default_factory=PlacesHeld)
     ground: CraftGround | None = None
+    unwritten: Mapping[str, tuple[ClaimView, ...]] = field(default_factory=dict)
 
 
 @dataclass
@@ -148,12 +150,14 @@ def _texts(parts: GeneratedParts, page: _Page) -> dict[str, list[str]]:
         if section.field == LEDE_FIELD and not page.lede:
             page.lede = [draft.unit_id for draft in drafts if draft.unit_id not in named][:LEDE_SENTENCES]
         body = [d for d in drafts if d.unit_id not in page.lede and not set(d.claim_ids) <= shown]
-        if not body:
+        listed = listed_units(section.field, parts.unwritten, page.drafts, taken)
+        if not body and not listed:
             continue
         refs = by_chapter.setdefault(field_chapter(section.field), [])
         refs.extend(_section_heading(section.field, parts.record, page))
         refs.extend(draft.unit_id for draft in body)
-        refs.extend(_grid(body, parts, page))
+        refs.extend(_grid(body, parts, page) if body else ())
+        refs.extend(listed)
     return by_chapter
 
 

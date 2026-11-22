@@ -16,7 +16,7 @@ from app.research.candidate_gates import Candidate
 from app.research.embedding import TextEmbedder
 from app.research.fetcher import Fetcher
 from app.research.gate_thrift import GateThrift
-from app.research.knowledge_writes import FactProposal, ProposalReply, gate_reports
+from app.research.knowledge_writes import FactProposal, ProposalReply, ReaderPlace, gate_reports
 from app.research.review_switch import ReviewSwitch, refused_placement
 from app.research.structured import StructuredModel
 from app.research.trust_tiers import SWITCH, TierPlacement, drawn_for_review, tier_placement
@@ -27,6 +27,7 @@ from .candidate_gates import GateRun, HeldFacts, first_gates, gate_run, later_ga
 from .candidate_sources import ReadSource, read_sources
 from .candidate_store import FactSubject, SqlHeldFacts, proposal_subject, subject_title
 from .candidate_writes import mark_sources_differ, record_checks
+from .fact_proposals_readers import reader_place
 from .fact_proposals_words import placement_message, placement_note
 from .fact_task_checks import check_question_task
 from .proposal_writes import ProposedClaim, cite_proposal, proposal_level, write_proposed_claim
@@ -110,7 +111,10 @@ async def propose_fact_run(
     if proposal.task_key is not None:
         settle = complete_task if run.passed else give_back_task
         await settle(session, proposer.id, proposal.task_key, now=now)
-    return ProposalRun(reply=_reply(claim_id, written, tiered, differ), kept_sources=tuple(kept))
+    readers = (
+        await reader_place(session, claim_id, subject, proposal.field, tiered.placed) if run.passed else None
+    )
+    return ProposalRun(reply=_reply(claim_id, written, tiered, differ, readers), kept_sources=tuple(kept))
 
 
 def _candidate(proposal: FactProposal, subject: FactSubject) -> Candidate:
@@ -169,7 +173,11 @@ async def embed_sources(session: AsyncSession, embed: TextEmbedder, source_ids: 
 
 
 def _reply(
-    claim_id: uuid.UUID, written: ProposedClaim, tiered: TierPlacement, differ: list[uuid.UUID]
+    claim_id: uuid.UUID,
+    written: ProposedClaim,
+    tiered: TierPlacement,
+    differ: list[uuid.UUID],
+    readers: ReaderPlace | None,
 ) -> ProposalReply:
     run, placed = written.run, written.placed
     return ProposalReply(
@@ -182,5 +190,6 @@ def _reply(
         sources_differ=bool(differ),
         differs_from=run.differs_from,
         gates=gate_reports(list(run.outcomes)),
-        message=placement_message(tiered, run),
+        message=placement_message(tiered, run, readers),
+        readers=readers,
     )
