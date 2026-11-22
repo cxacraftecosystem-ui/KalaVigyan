@@ -156,7 +156,7 @@ flowchart LR
 | [0112](0112-reviewed-field-photographs.md) | Each field photograph filed on an artisan is reviewed by a person before it is shown | · |
 | [0113](0113-questions-become-work.md) | Questions KalaVigyan cannot answer well become open work | · |
 | [0114](0114-kinds-and-datasets.md) | Component kinds any craft can use, and one dataset record | [0131](0131-drawings-in-the-design.md) |
-| [0115](0115-client-id-metadata-documents.md) | MCP clients sign in with their published identity | · |
+| [0115](0115-client-id-metadata-documents.md) | MCP clients sign in with their published identity | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) |
 | [0116](0116-open-data-with-a-doi.md) | KalaVigyan's knowledge is an open dataset with a DOI | [0130](0130-a-craft-release.md) |
 | [0117](0117-pages-in-other-languages.md) | A page in another language is the same page, translated passage by passage | · |
 | [0118](0118-python-3-15.md) | The backend runs on Python 3.15, and each release pins its interpreter | · |
@@ -184,6 +184,7 @@ flowchart LR
 | [0141](0141-design-system-and-answer-screens-without-debt.md) | The design system holds no migration alias, and the answer screens number their figures, read every caption from the server and keep only what is stored | · |
 | [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | · |
 | [0147](0147-time-market-and-figures-kept-true.md) | Quantities in prose are also a table, the timeline lists undated history and places what the register holds, and market and measure readers read what sources state | · |
+| [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
 
 ## How this document is kept true
 
