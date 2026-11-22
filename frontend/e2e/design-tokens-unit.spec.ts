@@ -144,7 +144,9 @@ test("every token the Tailwind config names is defined, and no migration alias i
   expect(named).toHaveLength(27);
   expect(named.filter((name) => !root.has(`--c-${name}`))).toEqual([]);
   expect(existsSync(join(FRONTEND, "tailwind.migration.ts"))).toBe(false);
-  for (const alias of ["legacy", "900:", "600:", "display:", "bold:", "primary", "foreground", "popover", "muted", "destructive", "card:", "input:"]) expect(config, alias).not.toContain(alias);
+  for (const alias of [/legacy/, /\b900:/, /\b600:/, /\bdisplay:/, /[{ ]bold:/, /\bspring:/, /shadow[^}]*\bsm:/]) expect(config, String(alias)).not.toMatch(alias);
+  const colours = config.slice(config.indexOf("colors: {"), config.indexOf("fontFamily: {"));
+  expect(colours.match(/^\s+(?:"?[a-z-]+"?: |[a-z]+: \{)/gm)?.map((key) => key.trim().replace(/[":{ ]/g, ""))).toEqual(["transparent", "ground", "ink", "indigo", "madder", "turmeric", "error", "warning", "info", "success", "white"]);
 });
 
 test("every self-hosted face is named in a font stack, and every script stack opens on a hosted face", () => {
