@@ -9,13 +9,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.data.craft_master_loader import load_master
-from app.data.craft_text import STOP_TOKENS, ascii_key, core_key, key_phrases
+from app.data.craft_text import STOP_TOKENS, ascii_key, core_key, key_phrases, script_of
 from app.data.district_register import load_district_other_names, load_district_register
+from app.data.english_words import load_english_words
 from app.data.places_abroad import PlacesAbroad, load_places_abroad
 from app.models import Craft, CraftCategory, CraftSubCategory
 from app.research.crafts import CraftRef
 
-from .craft_index import MAX_NGRAM_TOKENS, CraftIndex, keys_of
+from .craft_index import MAX_NGRAM_TOKENS, CraftIndex, NameEntry, keys_of
 from .craft_matching import named_craft_ids
 from .craft_resolver import CraftIndexStore
 
@@ -26,11 +27,14 @@ __all__ = [
     "CraftNames",
     "NamedCraft",
     "craft_names",
+    "filing_index",
     "filing_names",
 ]
 
 ANCHOR_MIN_CHARS = 4
 COMMON_NAME_USES = 3
+FULL_NAME = "EXACT_NAME"
+LATIN_SCRIPTS = frozenset({"Latn", "Zyyy"})
 
 
 @dataclass(frozen=True)
@@ -50,6 +54,7 @@ class CraftNames:
     lead: NamedCraft | None
     compared: tuple[NamedCraft, ...]
     index: CraftIndex
+    filing: CraftIndex
     places: frozenset[str]
     abroad: PlacesAbroad
     family: CraftFamily | None = None
@@ -64,7 +69,7 @@ class CraftNames:
 
     def catalogued(self, texts: Sequence[str]) -> list[CraftRef]:
         own = {target.craft_id for c in self._crafts() if (target := self.index.slugs.get(c.ref.slug))}
-        found = {craft_id for text in texts for craft_id in named_craft_ids(self.index, text)} - own
+        found = {craft_id for text in texts for craft_id in named_craft_ids(self.filing, text)} - own
         return sorted((self.index.refs[i] for i in found if i in self.index.refs), key=lambda ref: ref.slug)
 
     def abroad_in(self, texts: Sequence[str]) -> tuple[str, ...]:
@@ -96,6 +101,7 @@ def craft_names(
         lead=NamedCraft(lead, frozenset(named[lead.slug])) if lead is not None else None,
         compared=tuple(NamedCraft(craft, frozenset(named[craft.slug])) for craft in others),
         index=index,
+        filing=filing_index(index),
         places=places | frozenset(index.places),
         abroad=abroad or load_places_abroad(),
         family=family,
@@ -108,6 +114,22 @@ async def filing_names(
     index = await store.get(session)
     family = await _shared_family(session, [craft for craft in (lead, *compared) if craft is not None])
     return craft_names(index, lead, compared, family=family)
+
+
+def filing_index(index: CraftIndex) -> CraftIndex:
+    ordinary = _ordinary_words()
+    entries = {
+        key: kept
+        for key, found in index.entries.items()
+        if (kept := tuple(entry for entry in found if _names_its_craft(key, entry, ordinary)))
+    }
+    return CraftIndex(index.refs, index.slugs, entries, index.places, index.craft_places, index.embedded)
+
+
+def _names_its_craft(key: str, entry: NameEntry, ordinary: frozenset[str]) -> bool:
+    if entry.kind == FULL_NAME or len(key.split()) > 1:
+        return True
+    return script_of(entry.label) not in LATIN_SCRIPTS or key not in ordinary
 
 
 def _keys(craft: CraftRef, crafts: Sequence[CraftRef], index: CraftIndex, local: frozenset[str]) -> set[str]:
@@ -135,6 +157,11 @@ def _anchors(craft: CraftRef, crafts: Sequence[CraftRef], common: frozenset[str]
 def _common_name_words() -> frozenset[str]:
     uses = Counter(word for master in load_master() for word in set(_words(master.name)))
     return frozenset(word for word, count in uses.items() if count >= COMMON_NAME_USES)
+
+
+@lru_cache(maxsize=1)
+def _ordinary_words() -> frozenset[str]:
+    return load_english_words() | _common_name_words()
 
 
 @lru_cache(maxsize=1)

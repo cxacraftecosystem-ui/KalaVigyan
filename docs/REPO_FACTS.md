@@ -105,9 +105,9 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 | Python suite | Files | Tests |
 | --- | ---: | ---: |
-| Backend, without a database | 629 | 4854 |
+| Backend, without a database | 630 | 4859 |
 | Backend, on Postgres | 159 | 771 |
-| Tools | 22 | 186 |
+| Tools | 23 | 188 |
 | Craft data ETL | 5 | 46 |
 | Geo ETL | 16 | 151 |
 
@@ -132,15 +132,15 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | Area | Files | Lines |
 | --- | ---: | ---: |
-| `backend/app` | 1276 | 181,805 |
-| `backend/tests` | 936 | 124,180 |
+| `backend/app` | 1277 | 181,860 |
+| `backend/tests` | 937 | 124,252 |
 | `backend/migrations` | 64 | 9,635 |
 | `frontend/app` | 101 | 9,649 |
 | `frontend/components` | 601 | 41,294 |
 | `frontend/lib` | 248 | 25,623 |
 | `frontend/e2e` | 255 | 29,140 |
 | `etl` | 52 | 8,442 |
-| `tools` | 94 | 8,139 |
+| `tools` | 96 | 8,232 |
 | `infra` | 15 | 2,027 |
 
 Code files are `.py`, `.ts`, `.tsx`, `.mjs`, `.css`, `.sh`, `.tf` and `.sql`; lines are newlines.

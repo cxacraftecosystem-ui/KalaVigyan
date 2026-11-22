@@ -908,7 +908,12 @@ faster.
   titles. Field-interview documents give their quotes but no passage or title. At each level, in
   whole words: naming two of the researched and compared crafts skips the sentence
   (`SKIP_SEVERAL_CRAFTS`); naming one of them files it there; else naming exactly one other
-  catalogued craft by a name, alias or spelling (`craft_matching.named_craft_ids`) files it
+  catalogued craft by a name, alias or spelling (`craft_matching.named_craft_ids` over
+  `write_back_names.filing_index`: its full name, a name or alias of two words or more once stop
+  words are dropped, a native-script alias, or a one-word alias that is neither an ordinary English
+  word (`data/english_words.scowl.txt`, SCOWL size 50) nor a word three or more master crafts use in
+  their names, so slip casting names no craft and Bidri, Ajrakh and Bandhani still do; decision
+  0144) files it
   there and several skip it; else a place outside India or another culture (`data/places_abroad`)
   refuses it (`SKIP_ABROAD`). The researched and compared crafts are named by a word of four
   letters or more of the name that no other of them shares and fewer than three master-list crafts
@@ -1318,7 +1323,7 @@ tier and the reader that takes verbatim quotes from the pack's documents (`WEB_R
 | The source adapters, against recorded answers | `backend/tests/sources/` |
 | The fetcher service | `backend/tests/fetcher/` |
 | The planner, the composer and the answering service | `backend/tests/planner/`, `backend/tests/composer/`, `backend/tests/answering/test_answer_flow.py`, `test_answer_cost.py` and `backend/tests/db/test_answer_cost_db.py` (an answer's cost and latency) |
-| Write-back and the coverage job | `backend/tests/write_back/` (the craft a fact names: `test_write_back_names.py`, `test_write_back_filing.py`, `test_write_back_context.py` and `test_write_back_passages.py`; stored passages: `test_stored_passages.py`), `backend/tests/research/test_composition_and_write_back.py`, `backend/tests/db/test_claim_writer_db.py`, `test_stored_passages_db.py`, `test_held_write_backs_db.py`, `test_write_back_closed_db.py`, `test_storable_text_db.py` and `test_coverage_backoff_db.py` |
+| Write-back and the coverage job | `backend/tests/write_back/` (the craft a fact names: `test_write_back_names.py`, `test_write_back_filing.py`, `test_write_back_context.py` and `test_write_back_passages.py`; stored passages: `test_stored_passages.py`; the words that name another craft: `test_filing_names.py`), `backend/tests/research/test_composition_and_write_back.py`, `backend/tests/db/test_claim_writer_db.py`, `test_stored_passages_db.py`, `test_held_write_backs_db.py`, `test_write_back_closed_db.py`, `test_storable_text_db.py` and `test_coverage_backoff_db.py` |
 | The stance, per-source and screen checks of a sentence, the names a live sentence must quote, a sentence dropped alone | `backend/tests/research/test_grounded_sentences.py`, `backend/tests/composer/test_grounded_compose.py` and `backend/tests/answering/test_grounded_blocks.py` |
 | Passages of long documents and the copy read | `backend/tests/composer/test_passages.py` and `backend/tests/planner/test_research_run.py` |
 | The stream as the client reads it | `frontend/e2e/answer-stream-golden-unit.spec.ts`, against `shared/answer-stream*.golden.sse` |

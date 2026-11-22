@@ -660,7 +660,9 @@ Before the gates, a write-back is filed under the craft its sentence or its sour
 sentence, its passing quotes, the passage each quote sits in, then the cited sources' titles,
 and the first that names something decides: a fact goes under the craft researched (or a
 compared one) it names in whole words (its name, aliases, native names or GI place), under
-another catalogued craft it names instead, and nowhere when it names two of the compared crafts,
+another catalogued craft it names instead (by its full name, a longer alias, a native-script
+alias or a one-word alias that is neither an ordinary English word, such as casting, nor a word
+three or more crafts' names share; decision 0144), and nowhere when it names two of the compared crafts,
 several other crafts, or a place outside India or another culture's practice. Only after every
 level does a fact naming nothing go to its craft family's science (the shared concept named as
 the category, which a craft's scope reads, decision 0122) when it is chemistry, physics or
@@ -755,7 +757,7 @@ field, or changes its meaning, is a new schema version.
 | Supplied sources | `backend/tests/db/test_supplied_sources_db.py` |
 | Citations and their passages | `backend/tests/db/test_quote_relinks_db.py` and `test_quote_visibility_db.py` |
 | Pages follow their facts | `backend/tests/db/test_review_queue_refresh_db.py` and `test_page_revalidation_db.py` |
-| The research write-back, and the craft a fact is filed under | `backend/tests/write_back/` (`test_write_back_names.py`, `test_write_back_context.py`, `test_write_back_passages.py`, `test_candidate_titles.py`, `test_write_back_filing_report.py` and `test_stored_passages.py`), `backend/tests/voice/test_turn_passages.py`, `backend/tests/db/test_stored_passages_db.py`, `test_write_back_audit_db.py`, `test_write_back_report_db.py`, `test_term_write_back_gates_db.py`, `test_write_back_closed_db.py`, `test_held_write_backs_db.py` and `test_write_back_filing_report_db.py` |
+| The research write-back, and the craft a fact is filed under | `backend/tests/write_back/` (`test_write_back_names.py`, `test_write_back_context.py`, `test_write_back_passages.py`, `test_candidate_titles.py`, `test_write_back_filing_report.py`, `test_stored_passages.py` and `test_filing_names.py`), `backend/tests/voice/test_turn_passages.py`, `backend/tests/db/test_stored_passages_db.py`, `test_write_back_audit_db.py`, `test_write_back_report_db.py`, `test_term_write_back_gates_db.py`, `test_write_back_closed_db.py`, `test_held_write_backs_db.py` and `test_write_back_filing_report_db.py` |
 | The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/knowledge-writes.md` byte for byte equal to this file |
 
 Re-read it when a gate, a trust tier, a limit or a proposal kind is added or changed, and copy it to
