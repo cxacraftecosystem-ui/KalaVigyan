@@ -20,7 +20,7 @@ from .blocks import (
 )
 from .blocks_climate import ClimateRiskBlock
 from .blocks_component import ComponentBlock
-from .blocks_insight import MarketGiBlock, MeasureBlock
+from .blocks_insight import MarketGiBlock, MeasureBlock, QuantitiesBlock
 from .blocks_journey import TimelineMapBlock, ZoomStoryBlock
 from .blocks_learning import CompareBlock, ConceptGraphBlock, QuizBlock
 from .blocks_lede import LEDE_KIND, LedeBlock
@@ -82,6 +82,7 @@ WORKING_SECTION_STATES = ("RESEARCHING", "WRITING", "CHECKING")
 FINAL_SECTION_STATES = ("READY", "EMPTY")
 SECTION_STATES = (*WORKING_SECTION_STATES, *FINAL_SECTION_STATES)
 SIGNATURE_PHASE = "SIGNATURE"
+BUILT_FIGURE_KINDS = ("indigo_vat", "mordant_bath", "lost_wax", "firing")
 
 WorkingState = Literal[*WORKING_SECTION_STATES]
 FinalState = Literal[*FINAL_SECTION_STATES]
@@ -114,6 +115,7 @@ BLOCK_MODELS: Mapping[str, type[BlockBase]] = MappingProxyType(
         "measure": MeasureBlock,
         "market_gi": MarketGiBlock,
         "climate_risk": ClimateRiskBlock,
+        "quantities": QuantitiesBlock,
         "indigo_vat": IndigoVatBlock,
         "mordant_bath": MordantBathBlock,
         "lost_wax": LostWaxBlock,
@@ -146,12 +148,10 @@ BLOCK_PHASES: Mapping[str, str] = MappingProxyType(
         "measure": "D",
         "market_gi": "D",
         "climate_risk": "D",
+        "quantities": "D",
         "artisan_voice": "E",
         "designs": "DEFERRED",
-        "indigo_vat": SIGNATURE_PHASE,
-        "mordant_bath": SIGNATURE_PHASE,
-        "lost_wax": SIGNATURE_PHASE,
-        "firing": SIGNATURE_PHASE,
+        **dict.fromkeys(BUILT_FIGURE_KINDS, SIGNATURE_PHASE),
         "component": "A",
     }
 )
@@ -173,14 +173,13 @@ BUILT_BLOCK_KINDS = (
     "climate_risk",
     "measure",
     "market_gi",
+    "quantities",
     "simulation",
     "what_if",
     "zoom_story",
     "timeline_map",
     "component",
 )
-BUILT_FIGURE_KINDS = ("indigo_vat", "mordant_bath", "lost_wax", "firing")
-
 Block = Annotated[
     ProseBlock
     | ProcessLadderBlock
@@ -207,6 +206,7 @@ Block = Annotated[
     | MeasureBlock
     | MarketGiBlock
     | ClimateRiskBlock
+    | QuantitiesBlock
     | IndigoVatBlock
     | MordantBathBlock
     | LostWaxBlock

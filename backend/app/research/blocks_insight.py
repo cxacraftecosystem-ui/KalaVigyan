@@ -31,6 +31,7 @@ from .measures import (
     stated_numbers,
 )
 from .quotes import figures_in
+from .stated_amounts import AMOUNT_KINDS, AMOUNT_UNITS
 from .stated_dates import states_date
 
 __all__ = [
@@ -39,6 +40,8 @@ __all__ = [
     "GI_STATUSES",
     "MEASURE_ROWS_MAX",
     "PRICE_SCALES",
+    "QUANTITY_ROWS_MAX",
+    "QUANTITY_ROWS_MIN",
     "SCALE_WORDS",
     "GiStatus",
     "MarketGiBlock",
@@ -47,10 +50,14 @@ __all__ = [
     "MeasureRow",
     "MetricAmount",
     "PriceRange",
+    "QuantitiesBlock",
+    "QuantityRow",
     "UnitConversion",
 ]
 
 MEASURE_ROWS_MAX = 12
+QUANTITY_ROWS_MIN = 3
+QUANTITY_ROWS_MAX = 12
 GI_STATUSES = ("APPLIED", "REGISTERED", "WITHDRAWN")
 CURRENCIES = ("INR", "USD")
 CURRENCY_MARKS: Mapping[str, tuple[str, ...]] = MappingProxyType(
@@ -64,6 +71,7 @@ ConversionBasis = Literal[*CONVERSION_BASES]
 GiStatusName = Literal[*GI_STATUSES]
 Currency = Literal[*CURRENCIES]
 PriceScale = Literal[*PRICE_SCALES]
+AmountKind = Literal[*AMOUNT_KINDS]
 Lgd = Annotated[int, Field(ge=1)]
 
 
@@ -165,6 +173,45 @@ class MeasureBlock(BlockBase):
 
     def cites_datasets(self) -> bool:
         return any(row.conversion.dataset is not None for row in self.rows)
+
+    def shown_labels(self) -> list[str]:
+        return [row.stated for row in self.rows]
+
+
+class QuantityRow(ContractModel):
+    stated: str = Field(min_length=1, max_length=120)
+    low: float = Field(ge=0)
+    high: float | None
+    unit: UnitKey
+    measures: AmountKind
+    sentence: ExplainerSentence
+
+    @model_validator(mode="after")
+    def _a_quantity_as_its_sentence_states_it(self) -> Self:
+        unit = AMOUNT_UNITS.get(self.unit)
+        if unit is None or unit.measures != self.measures:
+            raise ValueError(f"quantity {self.stated!r} measures what its unit {self.unit!r} measures")
+        if not named_in(self.stated, self.sentence):
+            raise ValueError(f"quantity {self.stated!r} is what its sentence or quotes state")
+        if not _states_range(self.stated, self.low, self.high):
+            raise ValueError(f"quantity {self.stated!r} carries the numbers it states, low then high")
+        return self
+
+
+class QuantitiesBlock(BlockBase):
+    SENTENCES: ClassVar[SentenceSpec] = (("rows", [(("sentence", SENTENCE),)]),)
+
+    kind: Literal["quantities"]
+    version: Literal[1]
+    rows: list[QuantityRow] = Field(min_length=QUANTITY_ROWS_MIN, max_length=QUANTITY_ROWS_MAX)
+
+    @model_validator(mode="after")
+    def _each_stated_quantity_once(self) -> Self:
+        require_facts(f"quantities {self.id}", [row.sentence for row in self.rows])
+        stated = [(row.stated.casefold(), row.sentence.original or row.sentence.text) for row in self.rows]
+        if len(set(stated)) != len(stated):
+            raise ValueError(f"quantities {self.id} list each stated quantity of a sentence once")
+        return self
 
     def shown_labels(self) -> list[str]:
         return [row.stated for row in self.rows]

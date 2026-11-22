@@ -213,6 +213,7 @@ after such a sentence (`components/answer/ExplainerSentence.tsx`, decision 0120)
 | `quiz` | D | made by its route and in lesson packs (0064), never streamed |
 | `climate_risk` | D | yes (0065) |
 | `measure`, `market_gi` | D | yes (0066) |
+| `quantities` | D | yes (0147) |
 | `in_practice`, `open_questions` | D | declared |
 | `artisan_voice` | E | declared |
 | `designs` | deferred (owner, 2026-11-17) | declared |
@@ -732,6 +733,7 @@ the items one sentence backs are drawn together under it, in the order of the fi
 |---|---|
 | `supply_map` | materials that share a sentence, directly or through another material, are one row (`supplyView.materialRows`, `sentenceGroups.joinedBy`): its heading names them in order in sentence case, "a, b and c", a later name lowered where the sentences write it in lower case (`namesText`); its origins once each; its sentences once each. A material on sentences of its own keeps its own row. Each placed origin is one pin, numbered in reading order, the same number wherever the origin is listed; the pin names the materials it supplies |
 | `measure`, `market_gi` prices | the rows of one sentence sit in one item, the sentence beside them once (`bySentence`) |
+| `quantities` | the rows of one sentence are one table body, the sentence under them once (`bySentence`) |
 | `timeline_map` | a point and a route of one sentence are one entry (above) |
 | `firing` | the atmosphere and temperature facts of one sentence are one fact, their labels joined with " · " (`answerSignature.factsOnce`) |
 | `indigo_vat` | read in order: the dek (the first dip), the three frames, then the facts; a frame keeps its title without a sentence already said, and the contents and later dips of one sentence are one fact, left out when an earlier part said it (`answerVat.vatText`) |
@@ -749,7 +751,7 @@ time. The answer evaluation's judge reads each block the same way (`BlockBase.sh
 
 The phase D kinds (decision 0068) enter through `components/answer/learning/learningRenderers.tsx`
 (`quiz`, `compare`, `concept_graph`) and `components/answer/insight/insightRenderers.tsx`
-(`measure`, `market_gi`, `climate_risk`); the five built kinds draw in explainers, and the quiz is drawn
+(`measure`, `market_gi`, `climate_risk`, `quantities`); the six built kinds draw in explainers, and the quiz is drawn
 from its route (Check yourself, lesson packs), never streamed. A quiz shows each
 blanked prompt with its options in alphabetical order (`lib/quizView.optionOrder`), takes a
 question's first pick, marks the key and a wrong pick in colour, icon and words, then shows the
@@ -1255,6 +1257,21 @@ The routes around them (versions, saved explainers, lessons, exports, the explor
   that region are shown; a factor derived through another unit is refused). Model: nothing (lane
   0066 reads the units from the sentence with fixed unit words). Rules as above; each stated
   quantity of a sentence once. **Piece:** the section's slot.
+- **`quantities`** (decision 0147) `{rows[QuantityRow] (3-12)}`, `QuantityRow {stated, low,
+  high?, unit, measures, sentence}`. The quantities a section's cited facts state, metric units
+  included, as a table, so numbers given in prose are also shown as a figure. Server: `stated`
+  (the words as the sentence states them, `named_in`), `low` and `high` (its numbers in order),
+  `unit` (a key of `research/stated_amounts.AMOUNT_UNITS`: temperatures, times, masses, lengths,
+  areas, volumes, concentrations, shares, pH and the local units) and `measures` (that unit's
+  kind, `AMOUNT_KINDS`). Model: nothing. Rules: a row measures what its unit measures; each stated
+  quantity of a sentence once; facts only; at least `QUANTITY_ROWS_MIN` (3) rows, so a section
+  stating fewer numbers shows none. Feet, inches, yards, miles and square feet are left to
+  `measure`, which converts them. The client draws a table with a kicker caption, a row per
+  quantity (what it measures, the stated words in tabular figures) and the sentence of its rows
+  once under them (`components/answer/insight/QuantitiesView.tsx`). Migration
+  `0072_quantities_kind` widens the `KnowledgePiece` and `ComponentProposal` kind checks.
+  **Piece:** the section's slot. Golden: `shared/explainer.quantities.golden.json` (the process
+  quantities of Bagh prints from GI Journal No. 75).
 - **`market_gi`** `{craft, gi: GiStatus?, imitation[sentence], prices[PriceRange]}`.
   `GiStatus {status, applicationNumber?, certificateNumber?, filedOn?, registeredOn?,
   journalIssue?, proprietors[], authorisedUserCount?, sentences (1+)}` is the craft's registry
@@ -1320,7 +1337,7 @@ joined `BUILT_BLOCK_KINDS` on both sides in this lane.
 `knowledge_pieces.UNSTORED_BLOCK_KINDS` (`quiz`, `compare`, `concept_graph`, `climate_risk`,
 `artisan_voice` and, since decision 0101, `component`) are refused by `KnowledgePiece` and left
 out by `piece_store.storable`; `piece_reuse.PIECE_BLOCK_ORDER`
-places `climate_risk` after `seasons`, `measure` and `market_gi` after `supply_map`, and `compare`
+places `climate_risk` after `seasons`, `measure`, `quantities` and `market_gi` after `supply_map`, and `compare`
 and `concept_graph` after `timeline_map`.
 
 ### Local measures, and market and GI as built (decision 0066)
@@ -1341,6 +1358,12 @@ Neither builder asks a model, so neither spends; both read stored rows in one sh
   its state's and two different values convert nothing. Pint defines each local unit as a
   dimension of its own, so it never converts one by itself. A quantity without a factor stays as
   its sentence states it. At most `MEASURE_ROWS_MAX` rows, sentence ids `<block>.<n>`.
+- **`quantities`** (`services/quantities_builder.QuantitiesBuilder`, every field, a piece in its
+  section's slot, decision 0147): every amount of the section's fact-level cited claims
+  (`research/stated_amounts.stated_amounts`: a number or range directly before a unit word or
+  symbol, symbols of two characters matched as written, or "pH" before a number), in claim order,
+  each stated words once per claim, at most `QUANTITY_ROWS_MAX` (12) rows, sentence ids
+  `<block>.<n>`; fewer than three rows build nothing.
 - **`market_gi`** (`services/market_builder.MarketGiBuilder`, `ECONOMICS`, one block per craft:
   the answer's craft and each compared craft; rebuilt on reuse for the crafts a reused section
   does not show; `piece_store.kept_for` keeps only the answer craft's block as a piece). Rows:
@@ -1352,9 +1375,11 @@ Neither builder asks a model, so neither spends; both read stored rows in one sh
   sentence says registered without a certificate or date. Imitation: up to `IMITATION_MAX` (3)
   fact-level claims citing a GI journal whose text names imitation or passing off
   (`states_imitation`; "substitute" alone is not a sign). Prices: the curated rows only, each
-  stated price of the row's claim (`research/stated_prices`; `per` only after "per" or "/"), up
-  to `PRICES_MAX` (6); a row whose year or place its sentence does not state is dropped. Sentence
-  ids number GI, imitation and prices in that order; a block with nothing is not added.
+  stated price of the row's claim (`research/stated_prices`; `per` after "per", "a", "an" or "/",
+  never a quantity word such as "few" nor a word followed by "ago"; decision 0147), up to
+  `PRICES_MAX` (6); a row whose year or place its sentence does not state is dropped. A claim of a
+  price row is never a GI sentence, so the block says it once, beside its price. Sentence ids
+  number GI, imitation and prices in that order; a block with nothing is not added.
 
 ### Quiz, compare and concept graph as built (decision 0064)
 
