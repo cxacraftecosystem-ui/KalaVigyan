@@ -62,7 +62,7 @@ async def test_the_review_queue_is_refused_to_artisans_and_researchers(
         }
 
 
-def testimony(item: object) -> decisions.ItemRef:
+def queued(item: object) -> decisions.ItemRef:
     return decisions.ItemRef("TESTIMONY", item.id)  # type: ignore[attr-defined]
 
 
@@ -73,7 +73,7 @@ async def test_a_stale_version_is_refused_with_the_reload_sentence() -> None:
         DecisionConflict, match=r"Someone changed this testimony since it was read. Reload it."
     ):
         await decisions.approve_item(
-            fakes.session_for(item), testimony(item), reviewer, QueueApproval(version=2), now=fakes.at(9)
+            fakes.session_for(item), queued(item), reviewer, QueueApproval(version=2), now=fakes.at(9)
         )
 
 
@@ -87,7 +87,7 @@ async def test_a_held_back_name_blocks_approval_and_names_the_problem() -> None:
     reviewer = person("PROFESSOR", fakes.REVIEWER)
     with pytest.raises(InvalidInput) as refused:
         await decisions.approve_item(
-            session, testimony(item), reviewer, QueueApproval(version=2), now=fakes.at(9)
+            session, queued(item), reviewer, QueueApproval(version=2), now=fakes.at(9)
         )
     assert refused.value.problems == [  # type: ignore[attr-defined]
         "a held-back name is in the quote, the English or the claim; edit it out first"
@@ -100,7 +100,7 @@ async def test_a_quote_not_in_english_needs_its_english_before_approval() -> Non
     reviewer = person("ADMIN", fakes.REVIEWER)
     with pytest.raises(InvalidInput, match="a quote not in English needs its English"):
         await decisions.approve_item(
-            fakes.session_for(item), testimony(item), reviewer, QueueApproval(version=2), now=fakes.at(9)
+            fakes.session_for(item), queued(item), reviewer, QueueApproval(version=2), now=fakes.at(9)
         )
 
 
@@ -110,7 +110,7 @@ async def test_a_rejection_of_other_needs_a_note() -> None:
     rejection = QueueRejection(version=2, testimony_reason="OTHER")
     with pytest.raises(InvalidInput, match="a reason of OTHER needs a note"):
         await decisions.reject_item(
-            fakes.session_for(item), testimony(item), reviewer, rejection, now=fakes.at(9)
+            fakes.session_for(item), queued(item), reviewer, rejection, now=fakes.at(9)
         )
 
 
