@@ -1428,16 +1428,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** nothing in this repository; drop the screens walk's exception once Chromium
   recognises the directive.
 
-### Timeline places are placed by exact Wikidata label only
-
-- **What:** places are placed with the supply origins' rule (decision 0047), so a spelling that is
-  no item's label or alias stays unplaced (Ajrakhpur, Dhamadka), "Sindh" has three exact items none
-  described by the claim's words, and "Kutch" matches only a family name, which has no
-  coordinates. The fixture places only Fustat.
-- **Why left:** a wrong pin is worse than none, and the rule is shared with supply maps.
-- **Clears it:** the place register (decision 0047's entry) or a Wikidata id stored on the
-  claim's place by curation.
-
 ## Generated explainers (decision 0055)
 
 ### Dataset rows are not offered to a generated explainer
@@ -1531,15 +1521,6 @@ Last reviewed: 2026-11-22.
   may never open; the lists hold the words the stored pictures use.
 - **Clears it:** the glossary's terms tagged with a zoom level, or a vision check of the top
   candidate per level within the answer's headroom.
-
-### Undated history claims are not on the timeline
-
-- **What:** the plan lists undated or unplaced claims without a point; version 1 of the timeline
-  (decision 0054) gives every point and route a span of years, so an undated history claim is not
-  offered at all. Unplaced places are listed without a pin.
-- **Why left:** the version-1 fields are fixed and a reinterpretation is not allowed.
-- **Clears it:** a version 2 of `timeline_map` with an `undated` list of cited sentences and
-  their place, built with lane 0060's renderer.
 
 ## ElevenLabs music, sound effects, image and video (decision 0058)
 
@@ -1650,18 +1631,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** audio needs the deployed Listen and score routes and a signed-in browser.
 - **Clears it:** a step in the production E2E that opens Film on a known-answer question, checks
   the caption and the played bar advance, and closes it with Escape; then delete this entry.
-
-## Phase C review fixes (decision 0061)
-
-### The phase C kinds have not met production
-
-- **What:** `simulation`, `what_if`, `zoom_story` and `timeline_map` joined the built kinds on
-  both sides; no production answer has built one yet, and the first generated explainer will be
-  the production E2E's indigo question.
-- **Why left:** nothing is deployed from a lane (owner rule).
-- **Clears it:** after the deploy, dispatch E2E production with `questions=true`; the Indigo row
-  passing (or noting that no concept was chosen) and a materials and a history answer showing a
-  zoom and a timeline clear this entry.
 
 ## Phase D contract (decision 0062)
 
@@ -2384,35 +2353,32 @@ Last reviewed: 2026-11-22.
 - **Clears it:** give the spinning page's catch a bound of its own well inside the test timeout, or
   run that spec alone in its project with a longer timeout.
 
-### Numbers in prose without a table or figure
+### The quantities table has not been measured by the judge
 
-- **What:** in run 44994632550 the judge's figures part averaged 2.8 of 5 (36 of 65). The Ajrakh
-  indigo answer (bed43e9f), the Jaipur safe-handling answer (af3f7ac2) and the Bandhani tie-and-dye
-  answer (4978c466) each scored 1: dip times, kiln temperatures, tying days and lengths are given
-  only in prose, though the rubric counted 6 to 18 figure blocks in them. The measure block converts
-  only local units, and the judge's message gives a count of figures per field, not which numbers
-  they show.
-- **Why left:** a new table kind and the judge's wording of figures are changes of their own; the
-  sentence-once lane changes neither the blocks built nor the judge's criteria.
-- **Clears it:** build a cited quantities table for a section whose facts state three or more
-  numbers (metric units too, each row its stated words, the sentence said once as decision 0134
-  draws it), and name each figure's kind and the quantities it shows in the judge's message;
-  measure the figures part on the same questions.
+- **What:** in run 44994632550 the judge's figures part averaged 2.8 of 5 (36 of 65); the Ajrakh
+  indigo (bed43e9f), Jaipur safe-handling (af3f7ac2) and Bandhani tie-and-dye (4978c466) answers
+  scored 1 because dip times, kiln temperatures, tying days and lengths were only in prose.
+  Decision 0147 built the `quantities` table for a section whose facts state three or more
+  quantities and names each figure's kind and quantities in the judge's message, and re-based the
+  rubric floor to the lowest mean the shown-sentence count can give (0.82); no run has measured
+  either since.
+- **Why left:** answer-quality spends money and only the lead dispatches it (owner rule).
+- **Clears it:** the lead runs answer-quality on the same questions after the release, records the
+  figures part of those three answers, and raises `rubricMean` in
+  `backend/app/data/eval/floors.json` to the run's mean less 0.05, rounded down.
 
 ### Leftovers of the sentence-once lane
 
-- **What:** the rubric's `cited` part counts every copy of a sentence a block carries
-  (`field_sentences`), so a supply map whose five links share a sentence counts five cited
-  sentences for its field while the judge reads one (decision 0134). A market block can show one
-  claim in its GI record and again beside a price. A ladder stage's Sources differ readings are not
-  checked against the stage sentences. The supply heading lowers a later material name only when a
-  block sentence writes its first word in lower case, so a name met only at a sentence's start
-  keeps its capital.
-- **Why left:** the lane kept the judge's criteria and scores unchanged; the others are rare, and
-  the case rule needs the payload to say which names are proper names.
-- **Clears it:** count `shown_field_sentences` in `answer_measures` and `consulted_fields` and
-  re-base the rubric floor in the same change; keep price claims out of the GI sentences in
-  `services/market_builder`; carry each material's sentence-case name from the glossary.
+- **What:** a ladder stage's Sources differ readings are not checked against the stage
+  sentences, so a reading may repeat a sentence the stage says. The supply heading lowers a later
+  material name only when a block sentence writes its first word in lower case, so a name met only
+  at a sentence's start keeps its capital ("Indigo and Alum"). (The rubric's shown-sentence count
+  and the market block's GI and price sentences were cleared by decision 0147.)
+- **Why left:** both are rare; the glossary holds no sentence-case name (its labels are title case
+  for seeded and curated terms alike), so the payload cannot yet say which names are proper names.
+- **Clears it:** `explainerView.stagesSaidOnce` leaves out a differ reading a stage sentence says;
+  curation gives each glossary term its sentence-case name (a `Term` field the import fills), the
+  supply builder carries it on `SupplyLink.material`, and `namesText` keeps a later name as carried.
 
 ### Simulation builders that run long and add nothing
 
