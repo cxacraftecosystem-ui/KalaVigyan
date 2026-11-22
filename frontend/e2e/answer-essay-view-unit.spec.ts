@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
-import { createElement } from "react";
+import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { ExplainerView } from "@/components/answer/ExplainerView";
@@ -19,6 +19,8 @@ import type { UnderstoodPart } from "@/lib/explainerView";
 import { parseShape } from "@/lib/shape";
 
 import { attribute, shownText, withReading } from "./explainerRender";
+
+type FigureProps = ComponentProps<typeof AnswerFigure>;
 
 const URDU: AnswerLanguage = { code: "ur", label: "Urdu", autonym: "اردو", script: "Arab", direction: "rtl" };
 const RETIRED_LOOK = /purple|field-button|class="panel|eyebrow|font-display|text-ink-900|bg-card|text-white/;
@@ -102,11 +104,11 @@ test("the essay numbers its figures through one counter that starts after the si
   expect(lede.figure).not.toBeNull();
   expect(drawn(saved({ ...explainer(), lede }))).toMatch(/<article[^>]*data-signature=""/);
   const map = createElement("svg");
-  const numbered = renderToStaticMarkup(createElement(NumberedFigures.Provider, { value: true }, createElement(AnswerFigure, { texts: { kicker: "Rainfall", title: "Kachchh and Barmer" }, children: map })));
+  const numbered = renderToStaticMarkup(createElement(NumberedFigures.Provider, { value: true }, createElement(AnswerFigure, { texts: { kicker: "Rainfall", title: "Kachchh and Barmer" } } as FigureProps, map)));
   expect(numbered).toContain('<p class="kv-fig-no mb-0"><span class="kv-fig-count" data-testid="figure-number"></span> · Rainfall</p>');
-  const untitled = renderToStaticMarkup(createElement(NumberedFigures.Provider, { value: true }, createElement(AnswerFigure, { texts: { title: "Kachchh and Barmer" }, children: map })));
+  const untitled = renderToStaticMarkup(createElement(NumberedFigures.Provider, { value: true }, createElement(AnswerFigure, { texts: { title: "Kachchh and Barmer" } } as FigureProps, map)));
   expect(untitled).toContain('<p class="kv-fig-no mb-0"><span class="kv-fig-count" data-testid="figure-number"></span></p>');
-  const elsewhere = renderToStaticMarkup(createElement(AnswerFigure, { texts: { title: "Kachchh and Barmer" }, children: map }));
+  const elsewhere = renderToStaticMarkup(createElement(AnswerFigure, { texts: { title: "Kachchh and Barmer" } } as FigureProps, map));
   expect(elsewhere).not.toContain("kv-fig-no");
   const css = readFileSync(join(__dirname, "..", "app", "editorial-figure.css"), "utf8");
   expect(css).toMatch(/\.kv-essay \{\s*counter-reset: kv-figure;/);
