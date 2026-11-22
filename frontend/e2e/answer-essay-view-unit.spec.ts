@@ -102,11 +102,11 @@ test("the essay numbers its figures through one counter that starts after the si
   expect(lede.figure).not.toBeNull();
   expect(drawn(saved({ ...explainer(), lede }))).toMatch(/<article[^>]*data-signature=""/);
   const map = createElement("svg");
-  const numbered = renderToStaticMarkup(createElement(NumberedFigures.Provider, { value: true }, createElement(AnswerFigure, { texts: { kicker: "Rainfall", title: "Kachchh and Barmer" } }, map)));
+  const numbered = renderToStaticMarkup(createElement(NumberedFigures.Provider, { value: true }, createElement(AnswerFigure, { texts: { kicker: "Rainfall", title: "Kachchh and Barmer" }, children: map })));
   expect(numbered).toContain('<p class="kv-fig-no mb-0"><span class="kv-fig-count" data-testid="figure-number"></span> · Rainfall</p>');
-  const untitled = renderToStaticMarkup(createElement(NumberedFigures.Provider, { value: true }, createElement(AnswerFigure, { texts: { title: "Kachchh and Barmer" } }, map)));
+  const untitled = renderToStaticMarkup(createElement(NumberedFigures.Provider, { value: true }, createElement(AnswerFigure, { texts: { title: "Kachchh and Barmer" }, children: map })));
   expect(untitled).toContain('<p class="kv-fig-no mb-0"><span class="kv-fig-count" data-testid="figure-number"></span></p>');
-  const elsewhere = renderToStaticMarkup(createElement(AnswerFigure, { texts: { title: "Kachchh and Barmer" } }, map));
+  const elsewhere = renderToStaticMarkup(createElement(AnswerFigure, { texts: { title: "Kachchh and Barmer" }, children: map }));
   expect(elsewhere).not.toContain("kv-fig-no");
   const css = readFileSync(join(__dirname, "..", "app", "editorial-figure.css"), "utf8");
   expect(css).toMatch(/\.kv-essay \{\s*counter-reset: kv-figure;/);
