@@ -1403,12 +1403,12 @@ Last reviewed: 2026-11-22.
 
 ## Curated import and craft page (decision 0053)
 
-### The ladder and the process route still number unordered curated stages
+### The ladder still numbers unordered curated stages
 
 - **What:** curated stages no source orders are stored with `ProcessStage.ordered` false and an
-  ordinal after the ordered ones. The craft page's Process tab shows them unnumbered (decision
-  0071), but `GET /crafts/{slug}/process` (`schemas/science.ProcessStageView.ordinal`) and the
-  answers' process ladder (`science/ladder`) still show every stage's ordinal.
+  ordinal after the ordered ones. The craft page's Process tab showed them unnumbered (decision
+  0071), but the process view (`schemas/science.ProcessStageView.ordinal`) and the answers'
+  process ladder (`science/ladder`) still show every stage's ordinal.
 - **Why left:** both read the science contract and its golden fixtures, which the import did not
   need to change; `science/records.StageRecord.ordered` already carries the flag.
 - **Clears it:** an `ordered` field in the science contract and the ladder, and the composer told
@@ -1417,7 +1417,7 @@ Last reviewed: 2026-11-22.
 ### A seeded craft keeps its seed process and seed claims beside the curated ones
 
 - **What:** Kutch Ajrakh (and any other seeded craft once curated) keeps the "Seed process" next
-  to the curated process, so `/process` lists both and an answer's ladder may choose either; its
+  to the curated process, so the process view lists both and an answer's ladder may choose either; its
   seed claims (edge sentences withdrawn) stay visible to answers and in All evidence, folded under
   a curated near-duplicate where one exists.
 - **Why left:** the plan withdraws only the edge sentences; retiring the rest of a seeded craft's
@@ -1954,18 +1954,6 @@ Last reviewed: 2026-11-22.
   otherwise never shows as a sentence.
 - **Clears it:** an owner decision; if wanted, `description` on `PageCraft` (model, contract,
   fixture) drawn beside the register facts and marked as the register's.
-
-### The profile and process client shapes outlive their screen
-
-- **What:** nothing in the frontend calls `GET /crafts/{slug}/profile` or `/process` any more; the
-  profile client is deleted. `lib/scienceContract.craftProcessShape` and the process-route rules in
-  `lib/processView.ts` (`checkedProcess`, `shownVariants`, `stageHasContent`, `readingClaim`,
-  `readingRange`, `isUnbalanced`, `deltaHClaim`, `deltaHText`, `pubchemHref`, `citationsOf`) are
-  used only by `e2e/process-view-unit.spec.ts` and `e2e/contracts-unit.spec.ts`.
-- **Why left:** both backend routes stay; the specs keep the client half of the science contract
-  checked against `shared/science.process.golden.json` until the routes are retired.
-- **Clears it:** retiring `/profile` and `/process` in the backend, then deleting these shapes,
-  rules and specs (the species helpers the answers use stay).
 
 ### Places abroad and rivers are listed, not drawn
 

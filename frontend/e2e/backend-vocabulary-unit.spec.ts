@@ -20,7 +20,7 @@ import { CITATION_FORMATS, LESSON_FORMATS, SLIDE_KINDS } from "@/lib/lessonContr
 import { COLOUR_SIDES, FORMULA_BASES } from "@/lib/explainerMatter";
 import { MEDIA_JOB_STATUSES, MEDIA_KINDS } from "@/lib/mediaContract";
 import { AGGREGATIONS, ENV_STATS, PLACE_BASES, PLACE_SCOPES, REGION_FACETS } from "@/lib/regionContract";
-import { CONDITION_QUANTITIES, ENVELOPE_STATUSES, MATERIAL_KINDS, MATERIAL_ROLES, REACTION_KINDS, STAGE_TYPES } from "@/lib/scienceContract";
+import { MATERIAL_KINDS, MATERIAL_ROLES, REACTION_KINDS, STAGE_TYPES } from "@/lib/scienceContract";
 import { CLIENT_TOOL_NAMES, RELAY_AUDIO_TYPES, VOICE_MODES } from "@/lib/voiceContract";
 import { INTERVIEW_TOPICS } from "@/lib/conversationContract";
 import { AGE_BANDS, CREDIT_MODES, GENDERS } from "@/lib/profileContract";
@@ -44,8 +44,6 @@ const PAIRS: [string, string, readonly string[]][] = [
   ["models/enums.py", "REACTION_KINDS", REACTION_KINDS],
   ["models/enums.py", "ENV_STATS", ENV_STATS],
   ["models/enums.py", "MEDIA_KINDS", MEDIA_KINDS],
-  ["schemas/science.py", "CONDITION_QUANTITIES", CONDITION_QUANTITIES],
-  ["schemas/science.py", "ENVELOPE_STATUSES", ENVELOPE_STATUSES],
   ["schemas/region.py", "REGION_FACETS", REGION_FACETS],
   ["schemas/region.py", "AGGREGATIONS", AGGREGATIONS],
   ["schemas/region.py", "PLACE_SCOPES", PLACE_SCOPES],

@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.public_deps import cached_read, public_reader, read_headers, reading_acls, unchanged_read
+from app.api.public_deps import cached_read, public_reader, read_headers, unchanged_read
 from app.core.db import get_session
 from app.core.deps import SIGN_IN_DETAIL, require
 from app.core.errors import Refused
@@ -14,14 +14,12 @@ from app.core.roles import PROFESSOR, Capability, can, has_rank
 from app.geo.region_view import craft_region
 from app.models import Craft, User
 from app.schemas.craft_page import PageHiding
-from app.science.process_view import craft_process
 from app.services import craft_catalogue, knowledge_view
 from app.services.answering import NOT_FOUND_DETAIL
 from app.services.craft_page_archive import archived_page, curation_version
 from app.services.craft_page_cache import PageCache, ServedPage
 from app.services.craft_page_hiding import SIMULATION, set_page_media_hidden, set_page_piece_hidden
 from app.services.craft_page_snapshots import OPEN, RESEARCHER, served_page
-from app.services.craft_process import process_records
 from app.services.region_records import region_records
 
 router = APIRouter(prefix="/crafts", tags=["crafts"])
@@ -56,19 +54,6 @@ async def get_craft_catalogue(
     else:
         catalogue = await craft_catalogue.reader_catalogue(session, kept)
     return cached_read(request, response, reader, catalogue, version=catalogue["version"])
-
-
-@router.get("/{slug}/process")
-async def get_craft_process(
-    slug: str,
-    request: Request,
-    response: Response,
-    reader: User | None = Depends(public_reader),
-    session: AsyncSession = Depends(get_session),
-) -> Any:
-    craft = await _known_craft(session, slug)
-    process = craft_process(await process_records(session, craft, acls=reading_acls(reader)))
-    return cached_read(request, response, reader, process.model_dump(mode="json", by_alias=True))
 
 
 @router.get("/{slug}/page")

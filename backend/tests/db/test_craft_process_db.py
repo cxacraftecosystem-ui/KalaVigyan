@@ -1,15 +1,11 @@
 import uuid
 from collections.abc import AsyncIterator
-from typing import Any
 
-import httpx
 import pytest
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.db import get_engine, get_session
-from app.core.deps import get_current_user, get_optional_user
-from app.main import app
+from app.core.db import get_engine
 from app.models import (
     Claim,
     Compound,
@@ -22,15 +18,14 @@ from app.models import (
     Reaction,
     ReactionCitation,
     StageMaterial,
-    User,
 )
+from app.research.retrieval import SIGNED_IN_CHUNK_ACLS
 from app.schemas.science import CraftProcess
 from app.science.process_view import craft_process
 from app.services.craft_process import process_records
 from app.services.science_seed import seed_science
 
 from ..contracts.golden import dumped, golden_text
-from ..readers import sign_in_as
 from ..science.golden_process import GOLDEN, LEFT_OUT_OF_THE_EXCERPT, claim_id, golden_rows
 
 pytestmark = pytest.mark.db
@@ -79,26 +74,11 @@ async def store_the_golden_excerpt(session: AsyncSession) -> None:
         await session.flush()
 
 
-async def test_the_route_reproduces_the_golden_process_from_stored_rows(session: AsyncSession) -> None:
+async def test_the_stored_rows_reproduce_the_golden_process(session: AsyncSession) -> None:
     await store_the_golden_excerpt(session)
-
-    async def this_session() -> AsyncIterator[Any]:
-        yield session
-
-    reader = User(id=uuid.uuid4(), name="Reader", email="reader@example.com", role="STUDENT")
-    app.dependency_overrides[get_session] = this_session
-    sign_in_as(app, lambda: reader)
-    try:
-        transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-            response = await client.get("/api/crafts/Kutch-Ajrakh/process")
-    finally:
-        app.dependency_overrides.pop(get_session, None)
-        app.dependency_overrides.pop(get_current_user, None)
-        app.dependency_overrides.pop(get_optional_user, None)
-    assert response.status_code == 200, response.text
-    assert response.headers["cache-control"] == "private, no-cache"
-    assert dumped(CraftProcess, CraftProcess.model_validate(response.json())) == golden_text(GOLDEN)
+    ajrakh = await craft(session, "Kutch-Ajrakh")
+    process = craft_process(await process_records(session, ajrakh, acls=SIGNED_IN_CHUNK_ACLS))
+    assert dumped(CraftProcess, process) == golden_text(GOLDEN)
 
 
 async def test_the_seeded_ajrakh_process_carries_its_reactions_and_readings(session: AsyncSession) -> None:
