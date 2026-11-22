@@ -1,5 +1,6 @@
 from typing import Any
 
+from app.research.blocks import ProseBlock
 from app.research.citations import SourceRef
 from app.research.explainer import Explainer
 from app.services.field_voices_readback import (
@@ -140,3 +141,22 @@ def test_a_sentence_closed_to_a_public_reader_is_taken_out_without_a_withdrawn_c
     assert shown is not None
     assert sentence_ids(shown, "s2") == ["s2.b1.2", "s2.b1.3"]
     assert withdrawn_counts(shown) == {"s1": 0, "s2": 0, "s3": 0}
+
+
+def test_the_withdrawn_golden_is_the_document_with_a_withdrawn_count_and_a_named_difference() -> None:
+    golden = golden_json("explainer.withdrawn.golden.json")
+    third = Explainer.model_validate(golden).sections[2]
+    (prose,) = third.blocks
+    assert isinstance(prose, ProseBlock)
+    flagged = prose.sentences[2]
+    assert (third.id, third.withdrawn) == ("s3", 1)
+    assert (flagged.id, flagged.sources_differ, flagged.differs_on) == (
+        "s3.b1.3",
+        True,
+        "where the alum paste is printed",
+    )
+    shown = golden["sections"][2]
+    assert shown.pop("withdrawn") == 1
+    assert shown["blocks"][0]["sentences"][2].pop("sourcesDiffer") is True
+    assert shown["blocks"][0]["sentences"][2].pop("differsOn") == "where the alum paste is printed"
+    assert golden == golden_json("explainer.document.golden.json")

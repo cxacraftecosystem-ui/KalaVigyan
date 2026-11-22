@@ -105,7 +105,10 @@ explainer with no `READY` section left is not served (404).
 `ExplainerSection {id, discipline, title (1-120), original?, order >= 1, state, blocks[Block],
 searched, withdrawn?}`. Stored sections are `READY` (at least one block, `searched` null) or `EMPTY`
 (no blocks, `searched` the one sentence of what was searched). `withdrawn` (at least 1, left out
-when 0) is set only by the field voices readback above; the stream never sends it. `original` is the English title when
+when 0) is set only by the field voices readback above; the stream never sends it. Fixture:
+`shared/explainer.withdrawn.golden.json`, the document golden as read after a withdrawal, its
+`s3` carrying `withdrawn` 1 and its sentence `s3.b1.3` a named difference (`sourcesDiffer`,
+`differsOn`), so both fields stand in a golden (decision 0151). `original` is the English title when
 `title` is a translation. An image block may illustrate only claims another block of the same
 section cites. Disciplines (`models/enums.DISCIPLINES`): `OVERVIEW`, `PROCESS`, `CHEMISTRY`,
 `PHYSICS`, `MATERIALS`, `GEOGRAPHY` (geography and water), `GEOLOGY` (geology and soil),

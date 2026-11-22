@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { expect, test } from "@playwright/test";
 import { createElement } from "react";
 
@@ -5,14 +8,15 @@ import { ExplainerSectionView } from "@/components/answer/ExplainerSectionView";
 import { ExplainerSentence } from "@/components/answer/ExplainerSentence";
 import { CitedText } from "@/components/answer/ProseBlockView";
 import { explainerSentenceShape, type ExplainerSentence as Sentence } from "@/lib/explainerBlockBase";
-import { explainerSectionShape, type ExplainerBlock } from "@/lib/explainerContract";
+import { explainerSectionShape, explainerShape, type ExplainerBlock } from "@/lib/explainerContract";
 import type { SectionView } from "@/lib/explainerState";
 import { withdrawnNote } from "@/lib/explainerView";
-import { ShapeError } from "@/lib/shape";
+import { parseShape, ShapeError } from "@/lib/shape";
 import { differingReadings, differNotes } from "@/lib/sourcesDiffer";
 
 import { attribute, shownText, withReading } from "./explainerRender";
 
+const SHARED = join(__dirname, "..", "..", "shared");
 const ABOUT = "How long the red dye bath lasts";
 const PAYLOAD = {
   id: "s1.b1.1",
@@ -105,4 +109,13 @@ test("a section a withdrawn interview shortened counts what was taken out under 
   expect(shownText(html)).toContain(withdrawnNote(1));
   const whole = withReading(createElement(ExplainerSectionView, { section: { ...section, withdrawn: undefined }, streaming: false, reduce: true, onActive: () => undefined }));
   expect(whole).not.toContain("section-withdrawn");
+});
+
+test("the withdrawn golden parses with its section's count and its sentence's named difference", () => {
+  const read = parseShape(explainerShape, JSON.parse(readFileSync(join(SHARED, "explainer.withdrawn.golden.json"), "utf8")));
+  const third = read.sections[2];
+  expect([third.id, third.withdrawn]).toEqual(["s3", 1]);
+  const [prose] = third.blocks;
+  const flagged = prose.kind === "prose" ? prose.sentences[2] : null;
+  expect([flagged?.id, flagged?.sourcesDiffer, flagged?.differsOn]).toEqual(["s3.b1.3", true, "where the alum paste is printed"]);
 });
