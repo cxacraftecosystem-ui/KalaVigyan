@@ -206,13 +206,13 @@ test("a note says what got better, links to its explainer and offers the update"
   expect(unreadText(0)).toBeNull();
   expect(NOTES_SHOWN_MAX).toBe(Number(/NOTIFICATIONS_SHOWN_MAX = (\d+)/.exec(readRepo("backend", "app", "research", "alerts.py"))?.[1]));
   expect([notesCapText(49), notesCapText(50)]).toEqual([null, "Showing the latest 50."]);
-  const html = withReading(createElement(NotesInbox, { notes: NOTES.items, actions: NO_ACTIONS, reduce: true }));
+  const html = withReading(createElement(NotesInbox, { notes: NOTES.items, actions: NO_ACTIONS }));
   expect(text(html)).toContain("This answer got better");
   expect(attribute(html, "note", "data-unread")).toEqual(["true"]);
   expect(html).toContain('data-testid="note-update"');
   expect(html).toContain('data-testid="note-read"');
   expect(html).toContain(`href="${explainerHref(EXPLAINER_ID)}"`);
-  const read = withReading(createElement(NotesInbox, { notes: [{ ...note, readAt: "2026-11-19T08:00:00Z" }], actions: NO_ACTIONS, reduce: true }));
+  const read = withReading(createElement(NotesInbox, { notes: [{ ...note, readAt: "2026-11-19T08:00:00Z" }], actions: NO_ACTIONS }));
   expect(attribute(read, "note", "data-unread")).toEqual(["false"]);
   expect(read).not.toContain('data-testid="note-read"');
   const empty = text(withReading(createElement(NotesInbox, { notes: [], actions: NO_ACTIONS })));
@@ -220,11 +220,10 @@ test("a note says what got better, links to its explainer and offers the update"
   expect(empty).not.toMatch(/nothing|yet/i);
 });
 
-test("notes are drawn finished at first paint, whatever the motion setting", () => {
-  const moving = withReading(createElement(NotesInbox, { notes: NOTES.items, actions: NO_ACTIONS, reduce: false }));
-  const still = withReading(createElement(NotesInbox, { notes: NOTES.items, actions: NO_ACTIONS, reduce: true }));
-  expect(moving).toBe(still);
-  expect(moving).not.toMatch(/translateY|opacity:\s*0/);
+test("notes are drawn finished at first paint and take no motion setting", () => {
+  const html = withReading(createElement(NotesInbox, { notes: NOTES.items, actions: NO_ACTIONS }));
+  expect(html).not.toMatch(/translateY|opacity:\s*0/);
+  expect(readRepo("frontend", "components", "learn", "NotesInbox.tsx")).not.toMatch(/reduce/);
 });
 
 test("saved answers list their version, mark a newer one and say when there are none", () => {

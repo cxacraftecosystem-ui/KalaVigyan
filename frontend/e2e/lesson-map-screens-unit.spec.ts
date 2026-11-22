@@ -45,7 +45,7 @@ function text(html: string): string {
 }
 
 function lookupOf(sources: readonly SourceRef[]): CitationLookup {
-  return { numbers: listedSourceNumbers(sources), sourcesById: new Map(sources.map((source) => [source.id, source])), onOpen: () => undefined };
+  return { numbers: listedSourceNumbers(sources), sourcesById: new Map(sources.map((source) => [source.id, source])) };
 }
 
 const NARROW_TRACK = /^(auto|[0-3](\.\d+)?rem)$/;
@@ -130,6 +130,9 @@ test("a tapped district shows its cited crafts, the stored land story, its value
   expect(html).toContain('href="/crafts/Kutch-Ajrakh"');
   expect(text(html)).toContain("Practised");
   expect(text(html)).toContain("[1]");
+  const basis = /<p[^>]*data-testid="place-basis"[^>]*>[\s\S]*?<\/p>/.exec(html)?.[0] ?? "";
+  expect(basis).toContain('<span class="kv-ev-tag" data-level="provisional" data-testid="evidence-tag">Provisional</span>');
+  expect(basis).not.toMatch(/purple|ink-[579]00|font-display|font-bold|text-xs/);
   expect(attribute(html, "explainer-block", "data-kind")).toEqual(["region_story"]);
   expect(html).toContain('data-testid="reuse-marker"');
   for (const facet of ["SOIL", "CLIMATE", "TERRAIN"]) expect(html).toContain(`data-testid="region-facet-${facet}"`);

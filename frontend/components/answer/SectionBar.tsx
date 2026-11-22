@@ -1,7 +1,7 @@
 "use client";
 
 import { useExplainerReading } from "@/components/answer/ExplainerReading";
-import { scrollToStep } from "@/components/guide/guideMotion";
+import { scrollToAnchor } from "@/components/motion/scrollToAnchor";
 import { headingView } from "@/lib/answerLanguages";
 import type { SectionView } from "@/lib/explainerState";
 import { sectionAnchor, workingLabel } from "@/lib/explainerView";
@@ -12,13 +12,11 @@ export function SectionBar({
   sections,
   active,
   streaming,
-  reduce,
   onPick
 }: {
   sections: readonly SectionView[];
   active: string | null;
   streaming: boolean;
-  reduce: boolean;
   onPick: (id: string) => void;
 }) {
   const { language, original } = useExplainerReading();
@@ -37,7 +35,7 @@ export function SectionBar({
                 onClick={(event) => {
                   event.preventDefault();
                   onPick(section.id);
-                  scrollToStep(sectionAnchor(section.id), reduce);
+                  scrollToAnchor(sectionAnchor(section.id));
                 }}
               >
                 <b>{index + 1}</b>

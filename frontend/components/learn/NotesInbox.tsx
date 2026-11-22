@@ -55,7 +55,7 @@ function NoteCard({ note, actions }: { note: Notification; actions: NotesActions
   );
 }
 
-export function NotesInbox({ notes, actions }: { notes: readonly Notification[]; actions: NotesActions; reduce?: boolean }) {
+export function NotesInbox({ notes, actions }: { notes: readonly Notification[]; actions: NotesActions }) {
   if (notes.length === 0) {
     return (
       <div data-testid="notes-empty">

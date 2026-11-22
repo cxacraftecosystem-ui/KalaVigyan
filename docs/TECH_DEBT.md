@@ -2322,45 +2322,18 @@ Last reviewed: 2026-11-22.
 
 ## The design system migration (decision 0092)
 
-### Retired classes still compile through migration aliases
+### The voice call screen still mounts the retired source dialog
 
-- **What:** round 6 recorded the baseline (196 files down to 24) and deleted every alias whose
-  use reached zero. Still counted: the purple, evidence and red ramps of
-  `frontend/tailwind.migration.ts` and the neutral, type and radius aliases in
-  `frontend/tailwind.config.ts`, whose last users were the retired tabbed craft page (its files
-  are gone, so the next baseline run should bring them to zero); `SandboxFrame`'s `bg-white` (a
-  white canvas for sandboxed HTML, deliberate) and the two theme-colour hex values in
-  `lib/preferences.ts` that the spec requires.
-- **Clears it:** dispatch **Design guard** on `main`, commit the baseline, delete the aliases that
-  reach zero and `tailwind.migration.ts` when it is empty.
-
-### The design guard does not see shadcn colour names or inline styles
-
-- **What:** `frontend/e2e/designGuard.ts` counts retired and stock classes, hex and colour
-  literals, aliases, physical utilities and CSS properties, off-list media queries and misplaced
-  `var()` values per file. It does not count the shadcn names the approved config keeps
-  (`primary`, `ring`, `border`, `input`, `background`, `foreground`, `popover`, `muted`,
-  `destructive`), physical keys in inline `style` objects, or a class built by string
-  concatenation, and it cannot tell a badge's indigo from a button's.
-- **Why left:** the shadcn names are part of the approved config rather than migration aliases;
-  inline positions are computed at run time (popover placement); job is a judgement.
-- **Clears it:** add the shadcn names to the alias count once the components that use them move
-  to the semantic names; review by job stays with the skill's section 11.
-
-### The source dialog and the evidence badge outlive the new primitives
-
-- **What:** citation clusters open their own popover or sheet (`editorial/SourcePanel.tsx`, which
-  shows each source's attribution and licence beside the byline), so nothing opens
-  `components/answer/SourceDialog` any more: `CitationLookup.onOpen` and the `SourceDialog` mounted
-  by `ExplainerView`, `CitedReading` and `TermSheet` (through `onOpenCitation`) are dead wiring, and
-  `CitationChip` ignores its `onOpen` prop. `components/answer/EvidenceBadge` (purple and amber
-  badges) stands beside `components/editorial/EvidenceMark`; `craft/MediaFigure`,
-  `craft/CraftTabs`, `craft/CraftOverview` and `craft/SourcesDiffer` are not yet drawn with
-  `Plate`, `ChapterRail`, `FactGrid` and `SourcesDifferNote`.
-- **Why left:** those files belong to the answer and craft page migrations running beside this
-  one.
-- **Clears it:** each page lane switches to the editorial primitives, deletes `SourceDialog`, the
-  replaced components and `onOpen` from `CitationLookup` and `CitationChip`.
+- **What:** citation clusters open their own popover or sheet (`editorial/SourcePanel.tsx`), so no
+  citation opens `components/answer/SourceDialog` any more. Only the voice call screen still wires
+  it: `components/voice/VoiceCallBody.tsx` mounts `SourceDialog` and builds `openedSource` in an
+  `onOpen` it hands `VoiceTranscript`, which no citation calls.
+- **Why left:** the voice screens were another lane's files while decision 0141 cleared the rest
+  (the evidence badge folded into `EvidenceTag`, `CitationLookup.onOpen` and `TermSheet`'s
+  `onOpenCitation` deleted).
+- **Clears it:** drop the `onOpen`, `openedSource` and `SourceDialog` wiring from `VoiceCallBody`
+  and `VoiceTranscript`, then delete `components/answer/SourceDialog.tsx` and
+  `e2e/source-dialog-unit.spec.ts`.
 
 ## No caps for now (decision 0093)
 
@@ -2655,14 +2628,6 @@ Last reviewed: 2026-11-22.
   and indigo have a compound record; only indigo blue (CID 10215) has one, so the equation is not
   drawn.
 - **Clears it:** a sourced leucoindigo compound in the compound library.
-
-### Old props and helpers kept for files outside a lane
-
-- **What:** `PageHeader` still accepts an `icon` it no longer draws; `NotesInbox` keeps an ignored
-  `reduce` prop for the saved page; `components/guide/guideMotion.ts` (retired springs) is still
-  imported by 16 files; `SourceDialog`, `openedSource`, `EvidenceBadge` and `TermSheet`'s
-  `onOpenCitation` stay for the restored tabbed craft page and the voice screens.
-- **Clears it:** drop each when its last caller moves (the craft bridge's retirement clears most).
 
 ## Round 7 (2026-11-20)
 

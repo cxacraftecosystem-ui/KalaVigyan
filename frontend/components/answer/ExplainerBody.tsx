@@ -72,7 +72,7 @@ export function ExplainerBody({ state, sections, streaming, reduce, active, onAc
   return (
     <>
       {streaming ? <ResearchTrail trail={state.trail} /> : null}
-      <SectionBar sections={sections} active={active} streaming={streaming} reduce={reduce} onPick={onActive} />
+      <SectionBar sections={sections} active={active} streaming={streaming} onPick={onActive} />
       {streaming ? (
         <div className="mx-auto mt-6 max-w-measure">
           <AnswerProgress status={state.status} writing={writing} />

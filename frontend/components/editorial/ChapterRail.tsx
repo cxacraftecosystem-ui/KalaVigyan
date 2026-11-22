@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 
+import { scrollToAnchor } from "@/components/motion/scrollToAnchor";
 import { motionAllowedNow } from "@/components/motion/useMotionAllowed";
 import { IconButton } from "@/components/ui/IconButton";
 import { chapterFromQuery, currentChapter, type Chapter } from "@/lib/chapters";
@@ -133,7 +134,7 @@ export function ChapterRail({ chapters, label = "Chapters", aliases = NO_ALIASES
   useEffect(() => {
     if (window.location.hash) return;
     const target = chapterFromQuery(window.location.search, aliases, chapters);
-    if (target) document.getElementById(target)?.scrollIntoView({ behavior: motionAllowedNow() ? "smooth" : "auto", block: "start" });
+    if (target) scrollToAnchor(target);
   }, [aliases, chapters]);
 
   return (

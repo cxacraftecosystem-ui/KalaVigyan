@@ -2,10 +2,11 @@
 
 import { ChemEquation } from "@/components/answer/ChemEquation";
 import { CitationChips } from "@/components/answer/CitationContext";
-import { EvidenceLevelBadge, EvidenceSignalBadge } from "@/components/answer/EvidenceBadge";
 import { StepColours } from "@/components/answer/matter/StepColours";
 import { CitedText } from "@/components/answer/ProseBlockView";
 import { SpeciesRow } from "@/components/answer/SpeciesRow";
+import { EvidenceTag } from "@/components/editorial/EvidenceMark";
+import { levelMark, signalMark } from "@/lib/citationCluster";
 import type { ExplainerSentence } from "@/lib/explainerBlockBase";
 import type { ReactionStep } from "@/lib/explainerMatter";
 import { reactionSpoken, speciesNamesLine } from "@/lib/processView";
@@ -44,8 +45,8 @@ export function StepDetail({ step, notes, animate }: { step: ReactionStep; notes
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 pb-3 sm:ps-11" data-testid="reaction-step-detail">
       <span className="flex flex-wrap items-center gap-1.5">
-        {signal ? <EvidenceSignalBadge signal={signal} /> : null}
-        <EvidenceLevelBadge level={step.level} />
+        {signal ? <EvidenceTag {...signalMark(signal)} /> : null}
+        <EvidenceTag {...levelMark(step.level)} />
       </span>
       {step.equation ? (
         <>

@@ -272,7 +272,7 @@ test("a conformer drawn again revalidates the route's ETag from the browser cach
 
 test("a molecule waits for its view, names its compound and cites its PubChem record; a missing conformer hides it", () => {
   const source = PHASE_B.sources.find((entry) => entry.id === ALIZARIN_RECORD);
-  const lookup: CitationLookup = { numbers: new Map([[ALIZARIN_RECORD, 7]]), sourcesById: new Map(source ? [[source.id, source]] : []), onOpen: () => undefined };
+  const lookup: CitationLookup = { numbers: new Map([[ALIZARIN_RECORD, 7]]), sourcesById: new Map(source ? [[source.id, source]] : []) };
   const html = withApp(createElement(MoleculeView, { block: molecule() }), lookup);
   expect(attribute(html, "molecule-3d", "data-status")).toEqual(["waiting"]);
   expect(html).toContain('aria-label="Loading 3D view"');

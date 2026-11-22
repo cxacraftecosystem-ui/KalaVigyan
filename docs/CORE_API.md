@@ -172,7 +172,8 @@ cited sentence with its terms, `BLOCK_ID`, `TERM_KEY`, `WIKIDATA_ID`), `explaine
 typed kind and `explainerBlockShape` admits the built ones only. Each built kind has one renderer
 in `components/answer/blockRenderers.ts` (`BLOCK_RENDERERS`, `renderBlock`, `hasRenderer`); a kind
 without one is not drawn. Client pieces shared by renderers (decision 0048): `lazyBlock(load,
-placeholder)` (a block whose code loads on demand; a failed load draws nothing),
+placeholder)` (a block whose code loads on demand inside its own `BlockBoundary`; a failed load
+offers Try again, which `retryableLazy` answers with a fresh import),
 `ProseBlockView.CitedText` (cited sentences as one paragraph with the reading's `lang` and `dir`),
 `RemotePanels.RetryLine`, `DistrictLayer.DistrictOutlines`, `ChoroplethLegend.Swatch`,
 `components/map/indiaBounds.INDIA_BOUNDS`, `lib/riverTopology` (`riverBasinOf`, `fetchRiverBasin`),
@@ -225,8 +226,7 @@ contract is `lib/craftPageContract.ts` (shapes, `checkedCraftPage`), its rules
 `lib/craftPageView.ts` and `lib/craftPlaces.ts`, and its specs share `e2e/craftPageFixture.ts`
 (the golden page curated, uncurated and empty, drawn inside the page's contexts). Added by decision 0060:
 `components/answer/FilmScene` (`FilmSceneProvider`, `useFilmScene`: a film scene's progress from 0
-to 1, null outside a film, which a block's own animation follows), `guideMotion.cameraMove` and
-`zoomThrough` (a map moving into a place, a level growing out as the next settles in),
+to 1, null outside a film, which a block's own animation follows),
 `ListenAudio`'s `muted`, `listen.trackMark` (the sentence and word being read on one track, which
 `listenMark` uses), `filmScore.filmScoreOffered` and `fetchFilmScore`, `lib/filmScenes`
 (`FILM_SCENE_SECONDS` as the server's, `filmScenes`, `filmStep`, `stepAt`, `sceneStep`,
@@ -241,7 +241,7 @@ dialog and the term sheet for cited text outside the explainer; `ListedSources`)
 `citations.listedSourceNumbers` (sources numbered in their listed order), `download.downloadApiFile`
 and `dispositionFileName` (an API file saved under the server's `Content-Disposition` name,
 refused without one), `lib/searchParams.positiveParam`, `preferences.PREFERENCES_PATH`,
-`RegionPlaceCard.BasisLine` and `FacetBlock`, `permissions.canSaveExport`, `lib/learningApi` and
+`map/PlaceFacts.BasisLine` and `FacetBlock`, `permissions.canSaveExport`, `lib/learningApi` and
 `lib/lessonApi` (the learning routes' calls), `lib/explainerVersions` (`explainerStateOf`,
 `explainerRef`, `followingExplainer`, `followUpRequest`, `reduceAnswerEvent`,
 `withDeepeningBlock`, `knownVersions`, `versionOptions`, `versionChanges`), `lib/savedView`,
