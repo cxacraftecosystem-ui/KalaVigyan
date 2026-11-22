@@ -94,9 +94,10 @@ def market_block(
     offers: MarketOffers, *, block_id: str, parts: frozenset[str] = MARKET_PARTS
 ) -> MarketGiBlock | None:
     facts = {claim_id: fact for claim_id, view in offers.views.items() if (fact := known_fact(view))}
-    gi = _gi_status(offers, facts, block_id) if "gi" in parts else None
-    shown = _claim_ids(gi.sentences if gi else [])
     priced = {price.claim_id for price in offers.prices}
+    registry = {claim_id: fact for claim_id, fact in facts.items() if claim_id not in priced}
+    gi = _gi_status(offers, registry, block_id) if "gi" in parts else None
+    shown = _claim_ids(gi.sentences if gi else [])
     numbered = len(gi.sentences) if gi else 0
     imitation = _imitation(offers, facts, shown | priced, block_id, numbered) if "imitation" in parts else []
     prices = _price_ranges(offers, facts, block_id, numbered + len(imitation)) if "prices" in parts else []

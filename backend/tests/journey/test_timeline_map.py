@@ -191,6 +191,13 @@ def test_a_numeral_that_counts_is_not_offered_as_a_year() -> None:
     )
 
 
+def test_a_numeral_before_an_irregular_counted_noun_is_not_offered_as_a_year() -> None:
+    texts = ["About 1500 people, 1200 men and 1100 children printed there by 1890."]
+    assert {(1500, 1500), (1200, 1200), (1100, 1100)} <= years_named(texts)
+    assert years_offered(texts) == {(1890, 1890)}
+    assert years_offered(["The workshop opened in 1956 as a cooperative."]) == {(1956, 1956)}
+
+
 async def test_undated_statements_ask_no_model_and_build_nothing(boundary: dict[str, Any]) -> None:
     (fustat, *_) = timeline_claims()
     quoted = fustat.citations[0].model_copy(

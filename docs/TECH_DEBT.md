@@ -1428,16 +1428,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** nothing in this repository; drop the screens walk's exception once Chromium
   recognises the directive.
 
-### Years are read by pattern
-
-- **What:** `research/timeline.years_named` reads any four-digit numeral from 1000 to 2099 as a
-  year; the timeline builder offers `years_offered`, which drops a numeral followed by a plural
-  lowercase noun ("1500 artisans", decision 0057), but a count before a singular or irregular
-  noun ("1500 people", "1200 men") is still offered. Relative dates ("400 years ago") name none,
-  so such claims never date a point.
-- **Why left:** the history claims held state dates as years, ranges and centuries.
-- **Clears it:** a short list of irregular counted nouns, or curation storing a claim's dates.
-
 ### Timeline places are placed by exact Wikidata label only
 
 - **What:** places are placed with the supply origins' rule (decision 0047), so a spelling that is
@@ -1730,15 +1720,6 @@ Last reviewed: 2026-11-22.
 
 ## Local measures, and market and GI (decision 0066)
 
-### A region is named only by its register spelling
-
-- **What:** a regional factor holds only where its quote or claim names an LGD register district
-  or state as the register spells it, so "a seer of Kutch" gives no region and converts nothing.
-- **Why left:** no alias table of district names exists; guessing that "Kutch" is Kachchh would
-  be a place no source names in the register's terms.
-- **Clears it:** a reviewed alias list per district in `app/data` (Kutch, Kachchh), read by
-  `stated_names.register_places_named` for every region reader at once.
-
 ### Prices come only from curated rows
 
 - **What:** a price is shown only from a `CraftPrice` row (a curated dossier's `market.prices`);
@@ -1888,21 +1869,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** each scholarly adapter fills `container_title` from the field above (Europe PMC and
   Semantic Scholar too, which retires `JOURNAL_AS_PUBLISHER_ADAPTERS`); sources stored before keep
   no journal until a script reads their DOIs again.
-
-## Phase D review (decision 0070)
-
-### The curation checks a curated GI date only by its year, and a price's date not at all
-
-- **What:** `curation/entity_rules._gi_messages` (decision 0053) accepts a curated `filedOn` or
-  `registeredOn` whose year a quote states, even when no quote states its day or month, and a
-  curated price's `date` (`curation/records.Price`) is not checked against its claim's quotes. The
-  market builder cuts such a date to the precision its quotes state before showing it, and drops
-  a price whose quotes state none (`research/stated_dates.stated_precision`), so no unstated day
-  reaches a screen, but the curation check does not report the record.
-- **Why left:** the curation and importer files belong to lane 0053, which was running in the same
-  tree.
-- **Clears it:** the curation rules check each GI and price date with `stated_dates.states_date`
-  at its own precision and report a record whose day, month or year no quote states.
 
 ## The lede on the page (decision 0077)
 
