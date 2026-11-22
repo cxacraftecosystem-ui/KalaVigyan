@@ -15,7 +15,7 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 ## HTTP API
 
-**244 operations** in `backend/app/api/routes/` and `backend/app/main.py`: 124 GET, 81 POST, 25 PUT, 2 PATCH, 12 DELETE.
+**241 operations** in `backend/app/api/routes/` and `backend/app/main.py`: 125 GET, 77 POST, 25 PUT, 2 PATCH, 12 DELETE.
 
 | Module | Operations |
 | --- | ---: |
@@ -23,9 +23,7 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 | `contribution_streams.py` | 12 |
 | `settings.py` | 9 |
 | `users.py` | 9 |
-| `image_contributions.py` | 8 |
 | `lessons.py` | 8 |
-| `crafts.py` | 7 |
 | `own_proposals.py` | 7 |
 | `page_translations.py` | 7 |
 | `profile.py` | 7 |
@@ -33,19 +31,22 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 | `voice.py` | 7 |
 | `access.py` | 6 |
 | `artisan_contributions.py` | 6 |
+| `crafts.py` | 6 |
 | `explainers.py` | 6 |
+| `image_contributions.py` | 6 |
 | `oauth_consent.py` | 6 |
 | `shared.py` | 6 |
-| `testimony_review.py` | 6 |
 | `artisan_conversations.py` | 5 |
+| `knowledge.py` | 5 |
 | `review_queue.py` | 5 |
-| `knowledge.py` | 4 |
 | `knowledge_writes.py` | 4 |
 | `learning_views.py` | 4 |
 | `page_documents.py` | 4 |
 | `page_proposals.py` | 4 |
 | `secrets.py` | 4 |
+| `testimony_review.py` | 4 |
 | `upload_links.py` | 4 |
+| `coverage.py` | 3 |
 | `explainer_exports.py` | 3 |
 | `field_photo_reviews.py` | 3 |
 | `field_voices.py` | 3 |
@@ -58,7 +59,6 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 | `site_build.py` | 3 |
 | `usage.py` | 3 |
 | `categories.py` | 2 |
-| `coverage.py` | 2 |
 | `field_voices_held.py` | 2 |
 | `main.py` | 2 |
 | `map_layers.py` | 2 |
@@ -105,15 +105,15 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 | Python suite | Files | Tests |
 | --- | ---: | ---: |
-| Backend, without a database | 627 | 4842 |
-| Backend, on Postgres | 158 | 768 |
+| Backend, without a database | 627 | 4847 |
+| Backend, on Postgres | 158 | 770 |
 | Tools | 22 | 186 |
 | Craft data ETL | 5 | 46 |
 | Geo ETL | 16 | 151 |
 
 | Frontend (`frontend/e2e/`) | Files | Tests |
 | --- | ---: | ---: |
-| Unit specs (`*-unit.spec.ts`) | 160 | 1208 |
+| Unit specs (`*-unit.spec.ts`) | 160 | 1207 |
 | Browser and release specs | 14 | 47 |
 
 A Python test is a `test_` function in a `test_` file; a frontend test is a `test(` call at the start of a line. Every suite runs on GitHub Actions, never on a development machine.
@@ -122,7 +122,7 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | What | Count |
 | --- | ---: |
-| Decision records (`docs/decisions/`) | 139 |
+| Decision records (`docs/decisions/`) | 140 |
 | Contracts (`docs/contracts/`) | 40 |
 | Workflows (`.github/workflows/`) | 26 |
 | Curated craft dossiers | 32 |
@@ -132,13 +132,13 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | Area | Files | Lines |
 | --- | ---: | ---: |
-| `backend/app` | 1273 | 181,404 |
-| `backend/tests` | 933 | 123,581 |
+| `backend/app` | 1274 | 181,396 |
+| `backend/tests` | 933 | 123,644 |
 | `backend/migrations` | 64 | 9,635 |
-| `frontend/app` | 101 | 9,649 |
-| `frontend/components` | 601 | 41,294 |
-| `frontend/lib` | 248 | 25,623 |
-| `frontend/e2e` | 255 | 29,140 |
+| `frontend/app` | 101 | 9,650 |
+| `frontend/components` | 599 | 41,188 |
+| `frontend/lib` | 252 | 25,464 |
+| `frontend/e2e` | 255 | 29,076 |
 | `etl` | 52 | 8,442 |
 | `tools` | 94 | 8,139 |
 | `infra` | 15 | 2,027 |
