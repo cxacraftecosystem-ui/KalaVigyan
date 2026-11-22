@@ -22,7 +22,7 @@ def _name(columns: Sequence[str], suffix: str) -> str:
 
 
 def upgrade() -> None:
-    op.add_column(TABLE, sa.Column("scope", sa.String(length=SCOPE_CHARS), nullable=True))
+    op.add_column("OpenDataRelease", sa.Column("scope", sa.String(length=SCOPE_CHARS), nullable=True))
     op.create_check_constraint(op.f(f"{TABLE}_scope_check"), TABLE, SCOPE_RULE)
     op.drop_constraint(op.f(_name(UNIQUE_BEFORE, "key")), TABLE, type_="unique")
     op.create_unique_constraint(
@@ -39,4 +39,4 @@ def downgrade() -> None:
     op.drop_constraint(op.f(_name(UNIQUE_AFTER, "key")), TABLE, type_="unique")
     op.create_unique_constraint(op.f(_name(UNIQUE_BEFORE, "key")), TABLE, list(UNIQUE_BEFORE))
     op.drop_constraint(op.f(f"{TABLE}_scope_check"), TABLE, type_="check")
-    op.drop_column(TABLE, "scope")
+    op.drop_column("OpenDataRelease", "scope")
