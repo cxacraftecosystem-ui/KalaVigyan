@@ -66,11 +66,11 @@ The approved page carries the ground figure the API places in Kutch Ajrakh's why
 screens** with `figure` on (production, or a preview as `base_url`): it takes the drawn
 `.kv-why-here` at 1440 in light with the app's rules that draw it, scoped to the figure, fails if
 the committed spec is not the served document's, rebuilds the page and the golden document with
-`build_monograph`, checks the rebuilt page against the React page at 360, 834 and 1440 in light and
-dark (every text line, every id's place, every figure element's computed style) and keeps the
-fragment, the page and the golden under `files/` in its artifact, to commit. After the deploy,
-`load_monograph` on the box stores the document with the figure, which the page then draws from
-its fragment.
+`build_monograph` and the component homes and kit defs with `write_component_homes`, checks the
+rebuilt page against the React page at 360, 834 and 1440 in light and dark (every text line, every
+laid-out id's place, every figure element's computed style) and keeps every file it changed under
+`files/` in its artifact, to commit. After the deploy, `load_monograph` on the box stores the
+document with the figure, which the page then draws from its fragment, sized for 1440.
 
 Each backend deploy rebuilds the stale craft page snapshots after the import (`app.scripts.rebuild_stale_pages`,
 at most `PAGES_SECONDS`, 480 by default), because a curated craft's document reads its snapshot and a

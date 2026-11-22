@@ -196,12 +196,14 @@ jobs:
       - name: Place the fragment
         run: cp figure-run/fragment.html "$FIGURE_FRAGMENT"
 
-      - name: Build the approved page and the golden document
+      - name: Build the approved page, the golden document, the component homes and the kit defs
         working-directory: backend
         run: |
           uv run python -m app.scripts.build_monograph
           uv run python -m app.scripts.build_monograph --document Kutch-Ajrakh --out ../shared/monograph.document.golden.json
+          uv run python -m app.scripts.write_component_homes
           uv run python -m app.scripts.build_monograph --check
+          uv run python -m app.scripts.write_component_homes --check
 
       - name: Check the rebuilt page against the React page at 360, 834 and 1440 in light and dark
         env:
@@ -213,9 +215,10 @@ jobs:
         working-directory: .
         run: |
           mkdir -p frontend/figure-run/files
-          git status --porcelain --untracked-files=all -- backend/app/data/monographs frontend/public/monographs shared | tee frontend/figure-run/files/changed.txt
-          for path in "${FIGURE_FRAGMENT#../}" frontend/public/monographs/kutch-ajrakh/index.html shared/monograph.document.golden.json; do
-            if [ -f "$path" ]; then mkdir -p "frontend/figure-run/files/$(dirname "$path")" && cp "$path" "frontend/figure-run/files/$path"; fi
+          git status --porcelain --untracked-files=all -- backend/app/data/monographs frontend/public/monographs frontend/lib/componentHomes.ts frontend/generated shared > frontend/figure-run/changed.txt
+          cat frontend/figure-run/changed.txt
+          cut -c4- frontend/figure-run/changed.txt | while read -r path; do
+            mkdir -p "frontend/figure-run/files/$(dirname "$path")" && cp "$path" "frontend/figure-run/files/$path"
           done
 
       - name: Keep the figure, the rebuilt page and the reports
