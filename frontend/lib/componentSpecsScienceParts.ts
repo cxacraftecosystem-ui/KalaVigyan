@@ -1,5 +1,6 @@
 import { DEPICTED_MATERIALS } from "@/lib/depictedMaterials";
 import { dictionary, integer, list, matching, nullable, object, oneOf, optional, ShapeError, text, type Shape } from "@/lib/shape";
+import { UNIT_REF } from "@/lib/unitIds";
 
 export const SVG_TAGS = [
   "svg", "g", "defs", "title", "desc", "clipPath", "mask", "marker", "pattern", "linearGradient", "stop", "filter",
@@ -7,7 +8,6 @@ export const SVG_TAGS = [
   "polygon", "text", "tspan"
 ] as const;
 
-const UNIT_REF = /^u\d{4,}$/;
 const DOM_ID = /^[A-Za-z][\w-]*$/;
 const STYLE_NAME = /^[a-z][a-z0-9-]*( [a-z][a-z0-9-]*)*$/;
 const FIGURE_KEY = /^[a-z]+:[A-Za-z0-9.]+$/;

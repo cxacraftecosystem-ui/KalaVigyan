@@ -155,7 +155,7 @@ def cites_only_shown(summary: Term, views: Mapping[uuid.UUID, ClaimView]) -> boo
     for sentence in summary.summary:
         for citation in sentence.citations:
             view = views.get(uuid.UUID(citation.claim_id))
-            if view is None or citation.id not in {shown["id"] for shown in view.citations}:
+            if view is None or not view.shows_citation(citation.id, quoted=citation.quote is not None):
                 return False
     return True
 

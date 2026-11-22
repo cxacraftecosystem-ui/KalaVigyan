@@ -11,13 +11,11 @@ import {
   differReadingShape,
   type BlockByKind,
   type DifferReading,
-  type LadderStage,
   type TypedBlockKind
 } from "@/lib/explainerContract";
 import { datasetShape, type RegionDataset } from "@/lib/regionContract";
 import { pageFieldPhotoShape, type PageFieldPhoto } from "@/lib/fieldVoicesContract";
-import { blockCitations, blockSentences, blockSourceIds } from "@/lib/explainerView";
-import { integer, list, matching, nullable, number, object, oneOf, ShapeError, tagged, text, type Shape } from "@/lib/shape";
+import { integer, list, matching, nullable, number, object, oneOf, ruled, ShapeError, tagged, text, type Shape } from "@/lib/shape";
 import type { Citation } from "@/lib/types";
 
 export const CHAPTER_KEYS = ["glance", "made", "chem", "why", "history", "market", "whatif", "people", "kin", "sources"] as const;
@@ -129,19 +127,6 @@ export type ChapterItem = { block: PageBlock | null; part: PagePart | null; figu
 export type Chapter = { key: ChapterKey; title: string; opener: PagePlate | null; items: ChapterItem[] };
 
 const AI_GENERATED = { IMAGE: "AI_IMAGE", VIDEO: "AI_VIDEO" } as const;
-
-export function ruled<T>(inner: Shape<T>, expected: string, rule: (value: T) => boolean): Shape<T> {
-  return {
-    expected: inner.expected,
-    parse(value, path) {
-      const parsed = inner.parse(value, path);
-      if (!rule(parsed)) throw new ShapeError(path, expected);
-      return parsed;
-    }
-  };
-}
-
-export const COUNT: Shape<number> = ruled(integer, "a whole number from 0", (whole) => whole >= 0);
 
 const sentences = (min = 0) => list(explainerSentenceShape, min);
 const facts = (min = 0) => ruled(sentences(min), "facts only; a hypothesis is an open question", (shown) => shown.every((sentence) => sentence.level !== "HYPOTHESIS"));
@@ -288,130 +273,8 @@ function unique(values: readonly string[]): boolean {
   return new Set(values).size === values.length;
 }
 
-export function itemKind(item: ChapterItem): string {
-  return item.block?.kind ?? item.part?.kind ?? "";
-}
-
-export function isKinItem(item: ChapterItem): boolean {
-  return (KIN_ITEM_KINDS as readonly string[]).includes(itemKind(item));
-}
-
-function stageExtras(block: PageBlock): ExplainerSentence[] {
-  if (block.kind !== "process_ladder") return [];
-  return block.stages.flatMap((stage) => [...(stage.why ? [stage.why] : []), ...(stage.differs ?? []).flatMap(readingSentences)]);
-}
-
-function stageCitations(stage: LadderStage): Citation[] {
-  const sentences = [...stage.sentences, ...(stage.why ? [stage.why] : []), ...(stage.differs ?? []).flatMap(readingSentences)];
-  return [
-    ...sentences.flatMap((sentence) => sentence.citations),
-    ...stage.materials.flatMap((material) => material.citations),
-    ...stage.conditions.flatMap((condition) => condition.citations),
-    ...(stage.tools ?? []).flatMap((tool) => tool.citations),
-    ...(stage.after?.citations ?? [])
-  ];
-}
-
-export function readingSentences(reading: DifferReading): ExplainerSentence[] {
-  return reading.readings.flatMap((read) => (read.sentence ? [read.sentence] : []));
-}
-
-export function plateSentences(plate: PagePlate | null): ExplainerSentence[] {
-  return plate ? plate.sentences : [];
-}
-
-export function partSentences(part: PagePart): ExplainerSentence[] {
-  switch (part.kind) {
-    case "plate":
-      return part.plate.sentences;
-    case "record":
-      return part.entries.flatMap((entry) => [...entry.sentences, ...plateSentences(entry.plate)]);
-    case "sources_differ":
-      return readingSentences(part.reading);
-    case "places":
-      return part.places.flatMap((place) => place.sentences);
-    case "communities":
-      return part.communities.flatMap((community) => community.sentences);
-    case "open_questions":
-      return part.questions.flatMap((question) => question.sentences);
-    case "ai_media":
-      return part.media.flatMap((item) => item.sentences);
-    case "contributed":
-      return part.pictures.flatMap((plate) => plate.sentences);
-    default:
-      return [];
-  }
-}
-
-export function partCitations(part: PagePart): Citation[] {
-  if (part.kind === "key_facts") return part.facts.flatMap((fact) => fact.citations);
-  if (part.kind === "relatives") return part.crafts.flatMap((relative) => relative.lede?.citations ?? []);
-  return partSentences(part).flatMap((sentence) => sentence.citations);
-}
-
-export function itemSentences(item: ChapterItem): ExplainerSentence[] {
-  if (item.part) return partSentences(item.part);
-  return item.block ? [...blockSentences(item.block), ...stageExtras(item.block)] : [];
-}
-
-export function itemCitations(item: ChapterItem): Citation[] {
-  if (item.part) return partCitations(item.part);
-  if (!item.block) return [];
-  return item.block.kind === "process_ladder" ? item.block.stages.flatMap(stageCitations) : blockCitations(item.block);
-}
-
-export function itemSourceIds(item: ChapterItem): string[] {
-  const cited = itemCitations(item).map((citation) => citation.sourceId);
-  if (!item.block) return cited;
-  const formulas = item.block.kind === "reaction_player" ? item.block.steps.flatMap((step) => step.formulaSources ?? []) : [];
-  return [...cited, ...blockSourceIds(item.block), ...formulas];
-}
-
-export function itemMedia(item: ChapterItem): MediaRef[] {
-  const part = item.part;
-  if (part?.kind === "plate") return [part.plate.media];
-  if (part?.kind === "record") return part.entries.flatMap((entry) => (entry.plate ? [entry.plate.media] : []));
-  if (part?.kind === "relatives") return part.crafts.flatMap((relative) => (relative.hero ? [relative.hero.media] : []));
-  const block = item.block;
-  if (block?.kind === "images") return block.items.map((entry) => entry.media);
-  if (block?.kind === "zoom_story") return block.levels.flatMap((level) => (level.media ? [level.media] : []));
-  return [];
-}
-
-export function chapterCitations(chapter: Chapter, { kin }: { kin: boolean }): Citation[] {
-  const items = chapter.items.filter((item) => kin || !isKinItem(item));
-  return [...plateSentences(chapter.opener).flatMap((sentence) => sentence.citations), ...items.flatMap(itemCitations)];
-}
-
-export function chapterSourceIds(chapter: Chapter): string[] {
-  return [...plateSentences(chapter.opener).flatMap((sentence) => sentence.citations.map((citation) => citation.sourceId)), ...chapter.items.flatMap(itemSourceIds)];
-}
-
-export function chapterMedia(chapter: Chapter): MediaRef[] {
-  return [...(chapter.opener ? [chapter.opener.media] : []), ...chapter.items.flatMap(itemMedia)];
-}
-
-export function chapterSentences(chapter: Chapter): ExplainerSentence[] {
-  return [...plateSentences(chapter.opener), ...chapter.items.flatMap(itemSentences)];
-}
-
 export function checkChapters(chapters: readonly Chapter[]): void {
   const keys = chapters.map((chapter) => chapter.key);
   if (!unique(keys)) throw new ShapeError("chapters", "each chapter once");
   if (keys.join() !== CHAPTER_KEYS.filter((key) => keys.includes(key)).join()) throw new ShapeError("chapters", "the monograph's order");
-}
-
-export function figureNumbers(chapters: readonly Chapter[]): Map<ChapterItem, string> {
-  const counts = { FIGURE: 0, TABLE: 0 };
-  const numbers = new Map<ChapterItem, string>();
-  for (const item of chapters.flatMap((chapter) => chapter.items)) {
-    if (!item.figure) continue;
-    counts[item.figure.kind] += 1;
-    numbers.set(item, `${item.figure.kind === "TABLE" ? "Table" : "Fig."} ${counts[item.figure.kind]}`);
-  }
-  return numbers;
-}
-
-export function chapterForTab(tab: string | null | undefined): ChapterKey | null {
-  return tab && tab in TAB_CHAPTERS ? TAB_CHAPTERS[tab as keyof typeof TAB_CHAPTERS] : null;
 }

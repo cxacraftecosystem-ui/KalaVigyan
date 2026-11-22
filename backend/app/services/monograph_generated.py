@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.models import Source
 from app.research.monograph_document import MonographDocument
 
 from . import knowledge_view
@@ -13,7 +14,9 @@ from .claim_holds import unheld_by_id
 from .component_places_held import subject_places
 from .component_proposals_drawn import with_delivered_claims
 from .coverage import coverage_of
+from .craft_page_unwritten import unwritten_facts, with_listed_fields
 from .document_components_store import subject_structure
+from .knowledge_view import ClaimView
 from .monograph_generated_assembly import GeneratedParts, assembled_document
 from .monograph_generated_drawings import Drawings
 from .monograph_generated_grids import stated_values
@@ -65,26 +68,21 @@ async def generated_parts(
         return None
     structure = await subject_structure(session, subject)
     sections = with_page_claims(stored, structure)
-    claim_ids = _sentence_claims(sections)
-    if not claim_ids:
+    written = [*_sentence_claims(sections), *structure_claim_ids(structure)]
+    found = await _written_views(session, sections, written, additions)
+    if found is None:
         return None
-    looked_up = [
-        claim for claim in [*claim_ids, *structure_claim_ids(structure)] if claim not in additions.claims
-    ]
-    visible, rows = await knowledge_view.claims_by_id(session, looked_up)
-    visible = await unheld_by_id(session, visible)
-    visible = {**visible, **additions.claims}
-    if not visible:
-        return None
-    components = additions.components(await subject_components(session, subject, list(visible)))
-    visible, rows = await with_delivered_claims(session, components, visible, rows)
+    unwritten = await unwritten_facts(session, subject, written)
+    components = additions.components(await subject_components(session, subject, list(found[0])))
+    visible, rows = await with_delivered_claims(session, components, *found)
+    visible, rows = {**visible, **unwritten.views()}, {**rows, **unwritten.sources}
     sources = {str(key): stored_source(knowledge_view.source_ref(row)) for key, row in rows.items()}
     return GeneratedParts(
         subject_kind=subject.kind,
         subject_slug=subject.slug,
         page_url=page_url(subject),
         record=await subject_record(session, subject),
-        sections=tuple(sections),
+        sections=tuple(with_listed_fields(sections, unwritten.by_field)),
         visible=visible,
         sources={**sources, **additions.sources},
         components=components,
@@ -95,7 +93,22 @@ async def generated_parts(
         structure=structure,
         places=await subject_places(session, subject),
         ground=await subject_ground(session, subject.id) if subject.kind == CRAFT else None,
+        unwritten=unwritten.by_field,
     )
+
+
+async def _written_views(
+    session: AsyncSession,
+    sections: Sequence[StoredSection],
+    written: Sequence[uuid.UUID],
+    additions: PageAdditions,
+) -> tuple[dict[uuid.UUID, ClaimView], dict[uuid.UUID, Source]] | None:
+    if not _sentence_claims(sections):
+        return None
+    looked_up = [claim for claim in written if claim not in additions.claims]
+    visible, rows = await knowledge_view.claims_by_id(session, looked_up)
+    visible = {**await unheld_by_id(session, visible), **additions.claims}
+    return (visible, rows) if visible else None
 
 
 def _sentence_claims(sections: Sequence[StoredSection]) -> list[uuid.UUID]:

@@ -337,3 +337,72 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run mcp-client.yml -R "$GITHUB_REPOSITORY" --ref main
+
+  contribution:
+    name: A Professor's MCP fact reaches a signed-out reader, then is retracted
+    needs: [served, pages]
+    if: >-
+      !cancelled() && github.repository == 'cxacraftecosystem-ui/KalaVigyan' &&
+      github.event_name == 'workflow_run' && needs.served.outputs.verdict == 'served'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      E2E_BASE_URL: ${{ vars.WEB_ORIGIN || 'https://kalavigyan.vercel.app' }}
+      E2E_API_URL: ${{ vars.API_BASE_URL }}
+      E2E_REPORT_DIR: contribution-run
+      E2E_REPORT_TITLE: MCP contribution round trip
+      E2E_WORKERS: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: frontend/package.json
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install npm 12
+        run: npm install --global npm@12 && npm --version
+
+      - name: Install
+        run: npm ci
+
+      - name: Check the Professor account secrets and the API variable
+        env:
+          E2E_PROFESSOR_EMAIL: ${{ secrets.E2E_PROFESSOR_EMAIL }}
+          E2E_PROFESSOR_PASSWORD: ${{ secrets.E2E_PROFESSOR_PASSWORD }}
+          E2E_PROFESSOR_TOTP_SECRET: ${{ secrets.E2E_PROFESSOR_TOTP_SECRET }}
+        run: |
+          set -euo pipefail
+          missing=""
+          [ -n "$E2E_PROFESSOR_EMAIL" ] || missing="$missing E2E_PROFESSOR_EMAIL"
+          [ -n "$E2E_PROFESSOR_PASSWORD" ] || missing="$missing E2E_PROFESSOR_PASSWORD"
+          [ -n "$E2E_PROFESSOR_TOTP_SECRET" ] || missing="$missing E2E_PROFESSOR_TOTP_SECRET"
+          [ -z "$missing" ] || { echo "::error::Set the repository secrets:$missing (docs/RUNBOOK.md, Professor and Admin E2E accounts)"; exit 1; }
+          [ -n "$E2E_API_URL" ] || { echo "::error::repository variable API_BASE_URL is not set (docs/RUNBOOK.md)"; exit 1; }
+          echo "::add-mask::$E2E_PROFESSOR_PASSWORD"
+          echo "::add-mask::$E2E_PROFESSOR_TOTP_SECRET"
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Propose a test fact through MCP, read it signed out on get_facts, the count and the page, then retract it
+        env:
+          E2E_PROFESSOR_EMAIL: ${{ secrets.E2E_PROFESSOR_EMAIL }}
+          E2E_PROFESSOR_PASSWORD: ${{ secrets.E2E_PROFESSOR_PASSWORD }}
+          E2E_PROFESSOR_TOTP_SECRET: ${{ secrets.E2E_PROFESSOR_TOTP_SECRET }}
+        run: npx playwright test -c e2e/release/release.config.ts --project=mcp-contribution
+
+      - name: Say what the round trip found
+        if: always()
+        run: |
+          if [ -f contribution-run/summary.md ]; then
+            cat contribution-run/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No contribution summary was written; see the step above." >> "$GITHUB_STEP_SUMMARY"
+          fi

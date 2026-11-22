@@ -28,6 +28,7 @@ from app.research.contribution_queue import (
 )
 from app.research.knowledge_writes import FactProposal, ProposalReply
 
+from .claim_pages import published_claims, refresh_claim_pages
 from .cost_ledger import stream_spend
 from .fact_proposals import ProposalAdapters, ProposalRun, embed_sources, propose_fact_run
 
@@ -119,6 +120,7 @@ async def work_on(
     else:
         await _done(session, row, ran.reply, now=clock())
         await session.commit()
+        await refresh_claim_pages(session, published_claims(ran.reply))
         await _embedded(session, adapters, ran, row)
     await session.commit()
     return row.state

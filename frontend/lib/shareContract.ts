@@ -1,10 +1,12 @@
 import { apiFetch } from "@/lib/api";
+import { answerLanguagesOf, type AnswerLanguage } from "@/lib/answerLanguages";
 import { INSTANT } from "@/lib/answerShapes";
 import { EXPLAINER_VERSION_PATH, explainerVersionDocumentShape, type ExplainerVersionDocument } from "@/lib/learningContract";
 import { LESSON_PATH, lessonPackShape, type LessonPack } from "@/lib/lessonContract";
 import { boolean, matching, nullable, object, oneOf, parseShape, ShapeError, type Shape } from "@/lib/shape";
 
 export const SHARE_TOKEN = /^[A-Za-z0-9_-]{22,64}$/;
+export const ANSWER_LANGUAGES_PATH = "/answers/languages";
 export const SHARED_ANSWER_PAGE = "/shared/answers";
 export const SHARED_LESSON_PAGE = "/shared/lessons";
 export const SHARED_ANSWER_PATH = (token: string) => `/shared/answers/${encodeURIComponent(token)}`;
@@ -51,6 +53,22 @@ export function sharedAddress(origin: string, link: ShareLink): string | null {
 
 export async function fetchSharedAnswer(token: string): Promise<ExplainerVersionDocument> {
   return parseShape(explainerVersionDocumentShape, await apiFetch<unknown>(SHARED_ANSWER_PATH(token)));
+}
+
+export async function fetchReadingLanguages(): Promise<AnswerLanguage[]> {
+  const body = await apiFetch<{ languages?: unknown }>(ANSWER_LANGUAGES_PATH);
+  return answerLanguagesOf(body.languages);
+}
+
+export type SharedReading<T> = { body: T; languages: AnswerLanguage[] };
+
+export async function withReadingLanguages<T>(read: Promise<T>, languages: () => Promise<AnswerLanguage[]> = fetchReadingLanguages): Promise<SharedReading<T>> {
+  const listed = languages().catch((cause: unknown) => {
+    console.error(cause);
+    return answerLanguagesOf(null);
+  });
+  const [body, shown] = await Promise.all([read, listed]);
+  return { body, languages: shown };
 }
 
 export async function fetchSharedLesson(token: string): Promise<LessonPack> {

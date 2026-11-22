@@ -121,6 +121,22 @@ test("a built pack previews its slides in order with the picture, quiz, reading 
   fitsAPhone(html);
 });
 
+test("the title slide opens with the answer's lede under the craft's name, cited as a section's bullets are", () => {
+  const section = PACK.slides.find((slide) => slide.kind === "SECTION" && slide.bullets.length > 0);
+  if (!section) throw new Error("the golden lesson has a section with bullets");
+  const lede = { ...section.bullets[0], id: "lede" };
+  const pack = { ...PACK, slides: PACK.slides.map((slide) => (slide.kind === "TITLE" ? { ...slide, bullets: [lede] } : slide)) };
+  const html = withApp(createElement(SlidePreview, { pack }), lookupOf(PACK.sources));
+  const start = html.indexOf('data-kind="TITLE"');
+  const title = html.slice(start, html.indexOf('data-testid="slide"', start + 1));
+  expect(title.indexOf("Kutch Ajrakh")).toBeGreaterThan(-1);
+  expect(title.indexOf("Kutch Ajrakh")).toBeLessThan(title.indexOf("<ul"));
+  expect(title.match(/<li class="break-words">/g)).toHaveLength(1);
+  const plain = withApp(createElement(SlidePreview, { pack: PACK }), lookupOf(PACK.sources));
+  const bare = plain.slice(plain.indexOf('data-kind="TITLE"'), plain.indexOf('data-testid="slide"', plain.indexOf('data-kind="TITLE"') + 1));
+  expect(bare).not.toContain("<ul");
+});
+
 test("slides are drawn finished at first paint, with no rise-in", () => {
   const html = withApp(createElement(SlidePreview, { pack: PACK }), lookupOf(PACK.sources));
   expect(attribute(html, "slide", "data-kind")).toHaveLength(16);

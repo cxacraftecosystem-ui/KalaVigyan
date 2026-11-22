@@ -47,7 +47,9 @@ three hide routes, job steps 1 and 6 (nightly), and both goldens. In the golden,
 `market_gi`, `communities`, `artisan_voice`, `field_photos`, `relatives`, `source_list`, `open_questions`,
 `searched` and `start_research`. A reader's answer pieces join by the minimal rule of
 `services/craft_page_answer_assets.py` (debt register). Live pages show `molecule_3d` only once the job has kept
-conformers, and Kutch Ajrakh's timeline has no pins until its places carry Wikidata ids. Not built yet (decision
+conformers, and a timeline place is pinned once the job has stored the Wikidata point of its `wikidataId` (Kutch
+Ajrakh's Khavda, Barmer, Sindh and Pethapur carry one since 2026-11-22; Ajrakhpur and Dhamadka have no Wikidata
+item that names them). Not built yet (decision
 0098 and `docs/TECH_DEBT.md`): `what_if`, `concept_graph`, `zoom_story`, `supply_map` and `measure` on the page;
 reaction players cut per mechanism (one player holds every step until `science/mechanisms.craft_concepts` lands);
 concept pictures in the database loader; a river in the region story (basins carry no name); the rest of the 0096
@@ -85,9 +87,11 @@ Two golden fixtures, both reproduced byte for byte by the backend and parsed by 
   ../shared/craft.page.register.golden.json`.
 
 Both commands run from `backend/`. Change the models, this page, the fixtures and both sides'
-tests together. The web client parses the page with `frontend/lib/craftPageContract.ts` (the
-version 2 parts with `frontend/lib/craftPageContext.ts`, the chapters with
-`frontend/lib/craftChapters.ts`, the blocks with the explainer's own parser); its specs are
+tests together. The web client parses the page with `frontend/lib/craftPageContract.ts` and
+checks it with `frontend/lib/craftPageChecks.ts` (the version 2 parts with
+`frontend/lib/craftPageContext.ts` and `craftPageProcess.ts`, the chapters with
+`frontend/lib/craftChapters.ts` and what they show with `craftChapterReads.ts`, the blocks with
+the explainer's own parser); its specs are
 `frontend/e2e/craft-page-unit.spec.ts`, `craft-page-context-unit.spec.ts` and
 `craft-chapters-unit.spec.ts`, and the vocabularies are
 pinned in `frontend/e2e/backend-vocabulary-unit.spec.ts`. The contract test also holds the served
@@ -105,7 +109,6 @@ Last reviewed: 2026-11-19 (schema version 3 served; build status above).
 | GET | `/api/crafts/media/{assetId}` | public reading | 302 to a 15-minute presigned GET of the AI asset's page copy (`MediaAsset.pageKey`), as the field image route does; 404 unless the asset is `CRAFT_SHARED` with a page copy; 503 `{detail}` without the bucket. |
 | GET | `/api/crafts/contributed/{contributionId}` | public asset (`public_asset_reader`) | The picture of an approved image contribution (`docs/contracts/image-contributions.md`), its bytes with its stored MIME type, `Cache-Control: private, max-age=300`, an `ETag` of the cleaned file's SHA-256 (304 on a match, without reading the bucket) and `X-Content-Type-Options: nosniff`, as the field image route does. 404 `{detail}` for anything not `APPROVED` and shared, or a file the bucket no longer holds; 503 `{detail}` without the bucket or when it fails. Never names the contributor. |
 | GET | `/api/crafts/{slug}/film-score` | public reading | The `FilmScore` (`schemas/film.py`) the job stored for the page's current film scenes, with fresh one-hour links; 404 when there is none. Never makes one. |
-| GET | `/api/crafts/{slug}/process` | public reading | The science process view (`docs/contracts/science.md`). No web screen calls it since decision 0071; it stays for the voice and science callers and is marked for retirement once nothing reads it. |
 
 ## What is public
 

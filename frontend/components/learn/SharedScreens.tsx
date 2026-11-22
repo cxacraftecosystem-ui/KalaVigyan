@@ -14,15 +14,14 @@ import { PageHeader } from "@/components/PageHeader";
 import { RemoteView } from "@/components/RemotePanels";
 import { buttonLook } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
-import { ENGLISH, languageFor } from "@/lib/answerLanguages";
+import { languageFor, type AnswerLanguage } from "@/lib/answerLanguages";
 import { listedSourceNumbers } from "@/lib/citations";
 import { explainerStateOf } from "@/lib/explainerVersions";
 import type { ExplainerVersionDocument } from "@/lib/learningContract";
 import type { LessonPack } from "@/lib/lessonContract";
 import { recordLoadFailure } from "@/lib/recordView";
-import { fetchSharedAnswer, fetchSharedLesson } from "@/lib/shareContract";
+import { fetchSharedAnswer, fetchSharedLesson, withReadingLanguages } from "@/lib/shareContract";
 
-const READING_LANGUAGES = [ENGLISH];
 const NO_CHANGE: UnderstoodChange = { parts: new Set(), onChange: () => undefined };
 
 function sharedFailure(noun: string): (failure: RemoteFailure) => string {
@@ -34,18 +33,18 @@ function sharedFailure(noun: string): (failure: RemoteFailure) => string {
 }
 
 export function SharedAnswerScreen({ token }: { token: string }) {
-  const load = useMemo(() => () => fetchSharedAnswer(token), [token]);
+  const load = useMemo(() => () => withReadingLanguages(fetchSharedAnswer(token)), [token]);
   const remote = useRemote(load);
   return (
     <div className="grid min-w-0 gap-4" data-testid="shared-answer">
       <RemoteView remote={remote} failed={sharedFailure("answer")}>
-        {(document) => <SharedAnswer document={document} />}
+        {(shared) => <SharedAnswer document={shared.body} languages={shared.languages} />}
       </RemoteView>
     </div>
   );
 }
 
-function SharedAnswer({ document }: { document: ExplainerVersionDocument }) {
+function SharedAnswer({ document, languages }: { document: ExplainerVersionDocument; languages: AnswerLanguage[] }) {
   const state = useMemo(() => explainerStateOf(document), [document]);
   const askHref = useAskHref({ craft: document.explainer.understood.crafts[0]?.slug ?? null });
   const ask = (
@@ -58,7 +57,7 @@ function SharedAnswer({ document }: { document: ExplainerVersionDocument }) {
     <ExplainerView
       state={state}
       streaming={false}
-      languages={READING_LANGUAGES}
+      languages={languages}
       depthLabel={null}
       change={NO_CHANGE}
       listenLanguages={[]}
@@ -70,22 +69,22 @@ function SharedAnswer({ document }: { document: ExplainerVersionDocument }) {
 }
 
 export function SharedLessonScreen({ token }: { token: string }) {
-  const load = useMemo(() => () => fetchSharedLesson(token), [token]);
+  const load = useMemo(() => () => withReadingLanguages(fetchSharedLesson(token)), [token]);
   const remote = useRemote(load);
   return (
     <div data-testid="shared-lesson">
-      <PageHeader title={remote.data?.title ?? "Shared lesson"} />
+      <PageHeader title={remote.data?.body.title ?? "Shared lesson"} />
       <RemoteView remote={remote} failed={sharedFailure("lesson")}>
-        {(pack) => <SharedLesson pack={pack} />}
+        {(shared) => <SharedLesson pack={shared.body} languages={shared.languages} />}
       </RemoteView>
     </div>
   );
 }
 
-function SharedLesson({ pack }: { pack: LessonPack }) {
+function SharedLesson({ pack, languages }: { pack: LessonPack; languages: AnswerLanguage[] }) {
   const numbers = useMemo(() => listedSourceNumbers(pack.sources), [pack]);
   return (
-    <CitedReading sources={pack.sources} numbers={numbers} language={languageFor(pack.language, READING_LANGUAGES)}>
+    <CitedReading sources={pack.sources} numbers={numbers} language={languageFor(pack.language, languages)}>
       <LessonPackView pack={pack} />
     </CitedReading>
   );

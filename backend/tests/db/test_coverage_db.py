@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
@@ -22,7 +23,7 @@ from app.models import (
 )
 from app.research.coverage import COVERED, MISSING, THIN
 from app.research.knowledge_api import FactQuantity
-from app.services.coverage import craft_coverage, held_field_lookup
+from app.services.coverage import craft_coverage, held_field_lookup, monograph_coverage
 from app.services.coverage_reads import read_subject_coverage
 from app.services.knowledge_api import craft_facts, craft_sections
 
@@ -240,3 +241,19 @@ async def test_get_section_without_a_field_lists_every_section_and_the_fields_st
     assert [section.field for section in read.sections] == ["CHEMISTRY"]
     assert [(entry.field, entry.sentences, entry.claims) for entry in read.by_field] == [("CHEMISTRY", 2, 1)]
     assert f"SECTION:craft:{SLUG}:CHEMISTRY" in {task.key for task in read.open_work}
+
+
+async def test_the_collection_counts_every_curated_craft_once_as_its_own_page_does(
+    session: AsyncSession,
+) -> None:
+    session.add(Craft(id=uuid.uuid4(), name="Coverage Uncurated Craft", slug="Coverage-Uncurated-Craft"))
+    await session.flush()
+    collection = await monograph_coverage(session)
+    slugs = [coverage.subject_slug for coverage in collection.crafts]
+    curated = set(
+        (await session.scalars(select(Craft.slug).join(CuratedCraft, CuratedCraft.craftId == Craft.id))).all()
+    )
+    assert slugs == sorted(curated)
+    assert "Coverage-Uncurated-Craft" not in slugs
+    own = next(coverage for coverage in collection.crafts if coverage.subject_slug == SLUG)
+    assert own == await craft_coverage(session, SLUG)

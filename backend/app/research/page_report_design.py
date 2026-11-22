@@ -4,8 +4,8 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 from .component_specs_general import GENERAL_DRAWING
-from .component_specs_general_delivery import DELIVERED_UNIT_END, DELIVERED_UNIT_START
 from .drawing_spec_rules import THEMES_KEY, spec_design_problems
+from .unit_ids import DELIVERED_UNITS
 
 __all__ = ["DESIGN_RULE", "THEME_NAMES", "delivered", "design_evidence"]
 
@@ -13,12 +13,10 @@ DESIGN_RULE = 27
 THEME_NAMES = frozenset({"light", "dark", "hcLight", "hcDark"})
 ALT_KEY = "alt"
 PICTURE_KEY = "picture"
-UNIT_PREFIX = "u"
 
 
 def delivered(units: Sequence[str]) -> bool:
-    numbers = [int(unit[1:]) for unit in units if unit.startswith(UNIT_PREFIX) and unit[1:].isdigit()]
-    return any(DELIVERED_UNIT_START <= number <= DELIVERED_UNIT_END for number in numbers)
+    return any(DELIVERED_UNITS.holds(unit) for unit in units)
 
 
 def design_evidence(

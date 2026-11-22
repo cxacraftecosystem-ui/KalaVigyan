@@ -1,11 +1,12 @@
 import type { MonographNode } from "@/lib/monographDocument";
 import { monographNodeShape } from "@/lib/monographDocumentShape";
 import { boolean, integer, list, matching, object, oneOf, optional, parseShape, ShapeError, text, type Shape } from "@/lib/shape";
+import { UNIT_REF } from "@/lib/unitIds";
 
 export const TOOL_KINDS = ["explainer", "quiz", "ask_next", "language_switch", "reading_level", "generator"] as const;
 export type ToolKind = (typeof TOOL_KINDS)[number];
 
-const UNIT_REF = matching(/^u\d{4,}$/, "a unit ref");
+const UNIT_REF_SHAPE = matching(UNIT_REF, "a unit ref");
 const LABEL = matching(/^[a-z0-9]+(-[a-z0-9]+)*(\/[a-z0-9]+(-[a-z0-9]+)*){2,}$/, "a component label");
 const LANG = matching(/^[a-z]{2,3}$/, "a language code");
 const DIRECTION = oneOf(["ltr", "rtl"] as const);
@@ -66,15 +67,15 @@ function exactlyOne<T>(inner: Shape<T>, pairs: readonly (readonly [keyof T, keyo
 }
 
 const quoteCardShape = exactlyOne(
-  object<QuoteCard>({ source: text, byline: text, quote: optional(text), quoteUnit: optional(UNIT_REF), locator: text, keyed: boolean }),
+  object<QuoteCard>({ source: text, byline: text, quote: optional(text), quoteUnit: optional(UNIT_REF_SHAPE), locator: text, keyed: boolean }),
   [["quote", "quoteUnit"]]
 );
 
 export const explainerSpecShape: Shape<ExplainerSpec> = object<ExplainerSpec>({
-  kicker: UNIT_REF,
-  title: UNIT_REF,
-  sentence: UNIT_REF,
-  keys: list(UNIT_REF, 1),
+  kicker: UNIT_REF_SHAPE,
+  title: UNIT_REF_SHAPE,
+  sentence: UNIT_REF_SHAPE,
+  keys: list(UNIT_REF_SHAPE, 1),
   cardsLabel: text,
   cards: list(quoteCardShape, 1)
 });
@@ -94,11 +95,11 @@ const quizQuestionShape: Shape<QuizQuestion> = {
 };
 
 export const quizSpecShape: Shape<QuizSpec> = object<QuizSpec>({
-  title: UNIT_REF,
+  title: UNIT_REF_SHAPE,
   kicker: text,
-  dek: UNIT_REF,
-  score: UNIT_REF,
-  status: UNIT_REF,
+  dek: UNIT_REF_SHAPE,
+  score: UNIT_REF_SHAPE,
+  status: UNIT_REF_SHAPE,
   nextLabel: text,
   questions: list(quizQuestionShape, 1)
 });
@@ -113,7 +114,7 @@ const provenanceShape: Shape<PanelProvenance> = object<PanelProvenance>({
   listen: object({ label: text, minutes: integer, unit: text })
 });
 
-const plateShape: Shape<MarginPlate> = object<MarginPlate>({ src: matching(/^\/[\w./-]+$/, "a path on this site"), width: integer, height: integer, alt: text, caption: NODES, credit: UNIT_REF });
+const plateShape: Shape<MarginPlate> = object<MarginPlate>({ src: matching(/^\/[\w./-]+$/, "a path on this site"), width: integer, height: integer, alt: text, caption: NODES, credit: UNIT_REF_SHAPE });
 
 const panelShape: Shape<LanguagePanel> = object<LanguagePanel>({
   lang: LANG,
@@ -121,9 +122,9 @@ const panelShape: Shape<LanguagePanel> = object<LanguagePanel>({
   provenance: provenanceShape,
   lede: NODES,
   actions: object({ save: text, cite: text }),
-  section: object({ kind: text, title: UNIT_REF, body: NODES }),
+  section: object({ kind: text, title: UNIT_REF_SHAPE, body: NODES }),
   figure: optional(LABEL),
-  notes: list(UNIT_REF),
+  notes: list(UNIT_REF_SHAPE),
   plate: optional(plateShape)
 });
 
@@ -133,7 +134,7 @@ export const languageSwitchSpecShape: Shape<LanguageSwitchSpec> = {
     const parsed = object<LanguageSwitchSpec>({
       label: text,
       options: list(object<LanguageOption>({ lang: LANG, name: text, direction: DIRECTION, status: text }), 2),
-      english: UNIT_REF,
+      english: UNIT_REF_SHAPE,
       panels: list(panelShape)
     }).parse(value, path);
     const others = parsed.options.slice(1).map((option) => option.lang).join();
@@ -142,16 +143,16 @@ export const languageSwitchSpecShape: Shape<LanguageSwitchSpec> = {
   }
 };
 
-export const readingLevelSpecShape: Shape<ReadingLevelSpec> = object<ReadingLevelSpec>({ level: matching(/^[a-z]+$/, "a level"), summary: text, detail: text, title: UNIT_REF, lede: UNIT_REF });
+export const readingLevelSpecShape: Shape<ReadingLevelSpec> = object<ReadingLevelSpec>({ level: matching(/^[a-z]+$/, "a level"), summary: text, detail: text, title: UNIT_REF_SHAPE, lede: UNIT_REF_SHAPE });
 
 const sectionShape = exactlyOne(
   object<GeneratorSection>({
     number: integer,
     title: optional(text),
-    titleUnit: optional(UNIT_REF),
+    titleUnit: optional(UNIT_REF_SHAPE),
     kind: text,
     text: optional(NODES),
-    textUnit: optional(UNIT_REF),
+    textUnit: optional(UNIT_REF_SHAPE),
     media: list(LABEL),
     split: boolean
   }),
@@ -166,8 +167,8 @@ export const generatorSpecShape: Shape<GeneratorSpec> = object<GeneratorSpec>({
   status: text,
   sections: list(sectionShape, 1),
   film: optional(LABEL),
-  railTitle: UNIT_REF,
-  railDetail: UNIT_REF,
+  railTitle: UNIT_REF_SHAPE,
+  railDetail: UNIT_REF_SHAPE,
   jobs: list(object({ title: text, state: text }))
 });
 

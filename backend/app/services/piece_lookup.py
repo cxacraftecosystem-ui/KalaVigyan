@@ -136,8 +136,7 @@ async def claim_states(
 
 def view_states(views: Iterable[knowledge_view.ClaimView]) -> dict[uuid.UUID, ClaimState]:
     return {
-        view.id: ClaimState(level=view.level, citation_ids=frozenset(c["id"] for c in view.citations))
-        for view in views
+        view.id: ClaimState(level=view.level, citation_ids=view.readable_citation_ids()) for view in views
     }
 
 

@@ -46,13 +46,12 @@ PAGE = f"/api/crafts/{AJRAKH}/page"
 SHARED_ALUM = f"/api/shared-science/alum?craft={AJRAKH}"
 CLAIM_READS = (
     PAGE,
-    f"/api/crafts/{AJRAKH}/process",
     f"/api/crafts/{AJRAKH}/shared-science",
     SHARED_ALUM,
     f"/api/compare?crafts={AJRAKH}&crafts={BAGRU}&facets=MATERIALS",
 )
 NEVER_SHOWN = (RESTRICTED_CHUNK_QUOTE, RESTRICTED_SOURCE_QUOTE, GUARDED, WITHDRAWN)
-NOT_FOR_STUDENTS = (CLOSED_QUOTE, CLOSED_ONLY, *NEVER_SHOWN)
+NOT_FOR_STUDENTS = (CLOSED_QUOTE, *NEVER_SHOWN)
 STUDENT = User(id=uuid.uuid4(), name="Asha", email="asha@example.com", role="STUDENT")
 RESEARCHER = User(id=uuid.uuid4(), name="Ravi", email="ravi@example.com", role="RESEARCHER")
 
@@ -151,6 +150,8 @@ async def test_an_anonymous_reader_gets_a_student_s_reads_and_no_closed_restrict
         assert (anonymous.status_code, student.status_code) == (200, 200), path
         assert anonymous.json() == student.json(), path
         assert shown(anonymous.text, NOT_FOR_STUDENTS) == [], path
+    page = await read(session, PAGE, None)
+    assert CLOSED_ONLY in page.text
 
 
 async def test_a_researcher_still_reads_the_closed_quotes_and_never_the_restricted_text(

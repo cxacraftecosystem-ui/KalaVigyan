@@ -9,7 +9,7 @@ from pydantic import Field, field_validator, model_validator
 
 from app.models.knowledge import QUOTE_MAX_CHARS
 
-from .base import ContractModel, HttpsUrl
+from .base import ContractModel, HttpsUrl, absent
 from .candidate_gates import Gate, GateOutcome
 from .evidence import canonical_url, personal_data_in
 from .open_work import TASK_KEY_MAX_CHARS, parse_task_key
@@ -31,6 +31,7 @@ __all__ = [
     "ProposalSubject",
     "ProposedQuote",
     "ProposedSource",
+    "ReaderPlace",
     "fact_task_problem",
     "gap_fields_problem",
     "gate_reports",
@@ -121,6 +122,24 @@ class GateReport(ContractModel):
     reasons: list[str]
 
 
+class ReaderPlace(ContractModel):
+    shown: bool
+    reason: str | None = None
+    page_url: str | None = None
+    chapter: str | None = None
+    field: Discipline | None = None
+    in_prose: bool = False
+    write_task: str | None = Field(default=None, max_length=TASK_KEY_MAX_CHARS)
+
+    @model_validator(mode="after")
+    def _a_reason_exactly_when_hidden(self) -> Self:
+        if self.shown == (self.reason is not None):
+            raise ValueError("a fact readers cannot see says why, and only such a fact")
+        if self.write_task is not None and (self.in_prose or not self.shown):
+            raise ValueError("a write-section task is named only for a shown fact no section cites")
+        return self
+
+
 class ProposalReply(ContractModel):
     schema_version: Literal[1] = KNOWLEDGE_WRITES_SCHEMA_VERSION
     outcome: ProposalOutcome
@@ -133,6 +152,7 @@ class ProposalReply(ContractModel):
     differs_from: list[uuid.UUID]
     gates: list[GateReport]
     message: str
+    readers: ReaderPlace | None = Field(default=None, exclude_if=absent)
 
 
 def fact_task_problem(key: str, subject: ProposalSubject, fields: tuple[str, ...]) -> str | None:

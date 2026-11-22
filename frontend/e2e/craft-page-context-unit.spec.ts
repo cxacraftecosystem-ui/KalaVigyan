@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { referencedClaimIds } from "@/lib/craftPageContract";
+import { referencedClaimIds } from "@/lib/craftPageChecks";
 import { ShapeError } from "@/lib/shape";
 
 import { curatedPage, registerPage } from "./craftPageFixture";

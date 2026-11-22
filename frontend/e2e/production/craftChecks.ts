@@ -1,6 +1,7 @@
 import { expect, type Page, type Response } from "@playwright/test";
 
-import { checkedCraftPage, CRAFT_PAGE_PATH, craftPageShape } from "@/lib/craftPageContract";
+import { checkedCraftPage } from "@/lib/craftPageChecks";
+import { CRAFT_PAGE_PATH, craftPageShape } from "@/lib/craftPageContract";
 import { parseShape } from "@/lib/shape";
 
 import { curatedOverviewProblems, overviewNote, type OverviewServed } from "./checks";

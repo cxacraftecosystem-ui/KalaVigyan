@@ -111,7 +111,7 @@ async def _approve_fact(
 async def _reject_fact(
     session: AsyncSession, item_id: uuid.UUID, reviewer: User, decision: QueueRejection, *, now: datetime
 ) -> QueueDecision:
-    return await decide_fact(session, item_id, reviewer, FactDecision(REJECT, decision.reason), now=now)
+    return await decide_fact(session, item_id, reviewer, FactDecision(REJECT, decision.stated()), now=now)
 
 
 async def _approve_component(
@@ -123,7 +123,7 @@ async def _approve_component(
 async def _reject_component(
     session: AsyncSession, item_id: uuid.UUID, reviewer: User, decision: QueueRejection, *, now: datetime
 ) -> QueueDecision:
-    return await reject_component(session, item_id, reviewer, reason=decision.reason, now=now)
+    return await reject_component(session, item_id, reviewer, reason=decision.stated(), now=now)
 
 
 async def _approve_layout(
@@ -135,7 +135,7 @@ async def _approve_layout(
 async def _reject_layout(
     session: AsyncSession, item_id: uuid.UUID, reviewer: User, decision: QueueRejection, *, now: datetime
 ) -> QueueDecision:
-    return await reject_layout(session, item_id, reviewer, reason=decision.reason, now=now)
+    return await reject_layout(session, item_id, reviewer, reason=decision.stated(), now=now)
 
 
 async def _approve_structure(
@@ -147,7 +147,7 @@ async def _approve_structure(
 async def _reject_structure(
     session: AsyncSession, item_id: uuid.UUID, reviewer: User, decision: QueueRejection, *, now: datetime
 ) -> QueueDecision:
-    return await reject_structure_item(session, item_id, reviewer, reason=decision.reason, now=now)
+    return await reject_structure_item(session, item_id, reviewer, reason=decision.stated(), now=now)
 
 
 async def _approve_testimony(
@@ -161,7 +161,7 @@ async def _approve_testimony(
             reviewer,
             version=version,
             english_checked=decision.english_checked,
-            corroborating_ids=[],
+            corroborating_ids=decision.corroborating_claim_ids,
             now=now,
         )
     return QueueDecision(
@@ -202,7 +202,7 @@ async def _reject_picture(
 ) -> QueueDecision:
     await _refuse_own_picture(session, item_id, reviewer)
     with _picture_refusals():
-        row = await images.reject(session, item_id, reviewer, decision.reason, now=now)
+        row = await images.reject(session, item_id, reviewer, decision.stated(), now=now)
     return await _picture_decided(session, reviewer, row)
 
 

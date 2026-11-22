@@ -31,6 +31,32 @@ export const number = shape("a number", (value): value is number => typeof value
 export const integer = shape("an integer", (value): value is number => Number.isInteger(value));
 export const boolean = shape("true or false", (value): value is boolean => typeof value === "boolean");
 
+export function ruled<T>(inner: Shape<T>, expected: string, rule: (value: T) => boolean): Shape<T> {
+  return {
+    expected: inner.expected,
+    parse(value, path) {
+      const parsed = inner.parse(value, path);
+      if (!rule(parsed)) throw new ShapeError(path, expected);
+      return parsed;
+    }
+  };
+}
+
+function wholeFrom(least: number): Shape<number> {
+  const expected = `a whole number from ${least}`;
+  return {
+    expected,
+    parse(value, path) {
+      const whole = integer.parse(value, path);
+      if (whole < least) throw new ShapeError(path, expected);
+      return whole;
+    }
+  };
+}
+
+export const count = wholeFrom(0);
+export const positive = wholeFrom(1);
+
 export function oneOf<const T extends readonly (string | number)[]>(values: T): Shape<T[number]> {
   return shape(`one of ${values.join(", ")}`, (value): value is T[number] => values.includes(value as T[number]));
 }

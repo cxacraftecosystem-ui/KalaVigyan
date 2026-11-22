@@ -9,15 +9,8 @@ import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { Toggle } from "@/components/ui/Toggle";
 import { apiErrorMessage } from "@/lib/api";
-import {
-  approveItem,
-  editItem,
-  REJECT_REASON_LABELS,
-  rejectItem,
-  TESTIMONY_REJECT_REASONS,
-  type RejectReason,
-  type ReviewItem
-} from "@/lib/testimonyContract";
+import { decideTestimony, testimonyNoteReady } from "@/lib/reviewQueueContract";
+import { editItem, REJECT_REASON_LABELS, TESTIMONY_REJECT_REASONS, type RejectReason, type ReviewItem } from "@/lib/testimonyContract";
 
 const REASON_OPTIONS = TESTIMONY_REJECT_REASONS.map((value) => ({ value, label: REJECT_REASON_LABELS[value] }));
 const SCREEN_LABELS: Record<string, string> = { NAME_HELD_BACK: "Names someone the credit holds back. Edit it first." };
@@ -46,8 +39,8 @@ export function ReviewCard({ item, onDecided }: { item: ReviewItem; onDecided: (
   }
 
   const saveEdit = () => run(async () => setCurrent(await editItem(current, { claimText, english })));
-  const approve = () => run(async () => { await approveItem(current, checked); onDecided(); });
-  const reject = () => run(async () => { if (reason) await rejectItem(current, reason, note.trim() || null); onDecided(); });
+  const approve = () => run(async () => { await decideTestimony(current, { action: "approve", englishChecked: checked }); onDecided(); });
+  const reject = () => run(async () => { if (reason) await decideTestimony(current, { action: "reject", reason, note }); onDecided(); });
 
   return (
     <li className="grid gap-4 border-t border-rule pt-5 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-8" data-testid="review-card">
@@ -91,7 +84,7 @@ export function ReviewCard({ item, onDecided }: { item: ReviewItem; onDecided: (
         <div className="grid gap-3 border-t border-rule pt-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] sm:items-end">
           <SearchableSelect value={reason} onChange={(next) => setReason(next as RejectReason)} options={REASON_OPTIONS} ariaLabel="Reason" placeholder="Reason" searchable={false} />
           <input value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} placeholder="Note for the artisan" aria-label="Note for the artisan" className="kv-input" />
-          <Button type="button" variant="danger" data-danger disabled={busy || !reason || (reason === "OTHER" && !note.trim())} onClick={() => void reject()}>
+          <Button type="button" variant="danger" data-danger disabled={busy || !testimonyNoteReady(reason, note)} onClick={() => void reject()}>
             Reject
           </Button>
         </div>

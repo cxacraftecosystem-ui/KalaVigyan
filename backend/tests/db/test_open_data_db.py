@@ -59,11 +59,13 @@ def _by(rows: list[dict[str, object]], column: str, value: object) -> list[dict[
     return [row for row in rows if row[column] == value]
 
 
-async def test_only_published_facts_with_an_open_public_citation_are_released(session: AsyncSession) -> None:
+async def test_only_published_facts_citing_a_source_readers_may_see_are_released(
+    session: AsyncSession,
+) -> None:
     tables = await read_tables(session, site=SITE)
     claims = {row["id"]: row for row in tables.rows["claims"]}
-    assert str(SHOWN) in claims
-    for hidden in (RESTRICTED_ONLY, TESTIMONY_ONLY, HELD, RETRACTED, RESEARCHER_ONLY):
+    assert str(SHOWN) in claims and str(RESEARCHER_ONLY) in claims
+    for hidden in (RESTRICTED_ONLY, TESTIMONY_ONLY, HELD, RETRACTED):
         assert str(hidden) not in claims
     shown = claims[str(SHOWN)]
     assert (shown["craft"], shown["family"], shown["category"]) == (SLUG, FAMILY, CATEGORY)
@@ -81,7 +83,7 @@ async def test_only_published_facts_with_an_open_public_citation_are_released(se
     assert {str(IDS["secret"]), str(IDS["testimony"])}.isdisjoint(sources)
 
 
-async def test_a_quote_no_passage_holds_follows_the_researchers_only_text_of_its_page(
+async def test_a_fact_quoting_a_researchers_only_page_is_released_with_its_citation_and_none_of_its_words(
     session: AsyncSession,
 ) -> None:
     await add_claim(
@@ -93,9 +95,10 @@ async def test_a_quote_no_passage_holds_follows_the_researchers_only_text_of_its
     await add_claim(session, LATER, "Alum is weighed by hand.", cite=(IDS["paper"], None, "NA", None))
     tables = await read_tables(session, site=SITE)
     claims = {row["id"] for row in tables.rows["claims"]}
-    assert str(UNLINKED) not in claims
-    assert str(LATER) in claims and str(SHOWN) in claims
-    assert {row["claim_id"] for row in tables.rows["citations"]} >= {str(LATER), str(SHOWN)}
+    assert {str(UNLINKED), str(LATER), str(SHOWN)} <= claims
+    (cite,) = _by(tables.rows["citations"], "claim_id", str(UNLINKED))
+    assert (cite["source_id"], cite["quoted"]) == (str(IDS["paper"]), True)
+    assert "alum is weighed by eye" not in repr(tables.rows)
 
 
 async def test_the_curated_structure_keeps_only_what_rests_on_released_facts(session: AsyncSession) -> None:

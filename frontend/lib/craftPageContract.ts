@@ -1,29 +1,6 @@
-import { apiFetch } from "@/lib/api";
-import {
-  BORROWED_SCOPES,
-  chapterMedia,
-  chapterSentences,
-  chapterShape,
-  chapterCitations,
-  chapterSourceIds,
-  checkChapters,
-  COUNT,
-  isKinItem,
-  itemCitations,
-  itemSourceIds,
-  pagePlateShape,
-  ruled,
-  SOURCE_GROUPS,
-  type Borrowed,
-  type Chapter,
-  type PagePlate
-} from "@/lib/craftChapters";
-import { checkContributed } from "@/lib/craftContributed";
+import { BORROWED_SCOPES, chapterShape, pagePlateShape, SOURCE_GROUPS, type Borrowed, type Chapter, type PagePlate } from "@/lib/craftChapters";
 import { citationShape, CRAFT_PATH, INSTANT, sourceRefShape, storedLevelShape, UUID, type CraftLink, type StoredLevel } from "@/lib/answerShapes";
 import {
-  checkDepth,
-  checkEvents,
-  checkRelatives,
   COVERAGE_CLASSES,
   CRAFT_GI_STATUSES,
   DEPTH_BASES,
@@ -50,8 +27,8 @@ import { PARTIAL_DATE } from "@/lib/explainerInsight";
 import { PLACE_ROLES } from "@/lib/districtCraftsContract";
 import { fieldVoicesTotalsShape, pageFieldPhotoShape, pageVoiceShape, type FieldVoicesTotals, type PageFieldPhoto, type PageVoice } from "@/lib/fieldVoicesContract";
 import { DISCIPLINES, type Discipline } from "@/lib/explainerContract";
-import { MATERIAL_KINDS, MATERIAL_ROLES, REACTION_KINDS, STAGE_TYPES } from "@/lib/scienceContract";
-import { boolean, integer, list, matching, nullable, object, oneOf, parseShape, ShapeError, text, type Shape } from "@/lib/shape";
+import { pageProcessShape, type PageProcess } from "@/lib/craftPageProcess";
+import { boolean, count, integer, list, matching, nullable, object, oneOf, positive, ruled, ShapeError, text, type Shape } from "@/lib/shape";
 import type { Citation, SourceRef } from "@/lib/types";
 
 export const CRAFT_PAGE_PATH = (slug: string, version?: number) =>
@@ -66,8 +43,6 @@ export function craftEdition(segment: string): number | null {
 export const PROVENANCES = ["CURATED", "SEED", "FROM_ANSWERS", "RESEARCHER"] as const;
 export const SECTION_BASES = ["CURATED", "STORED_CLAIMS"] as const;
 export const SUBJECT_KINDS = ["CRAFT", "STAGE", "MATERIAL", "TOOL", "PLACE", "COMMUNITY", "TERM", "CONCEPT"] as const;
-export const TIMING_KINDS = ["DURATION", "SEASON"] as const;
-export const SPECIES_ROLES = ["REACTANT", "PRODUCT"] as const;
 export { COVERAGE_CLASSES, CRAFT_GI_STATUSES };
 export const CRAFT_PAGE_SCHEMA_VERSION = 3;
 export const GI_SHOWN = ["REGISTERED", "APPLIED"] as const;
@@ -126,41 +101,6 @@ export type PagePlace = {
   claimIds: string[];
 };
 export type PageCommunity = { key: string; kind: GroupKind; name: string; localNames: string[]; honours: string[]; place: string | null; placeKey: string | null; claimIds: string[] };
-export type StageItem = {
-  id: string;
-  name: string;
-  kind: (typeof MATERIAL_KINDS)[number];
-  role: (typeof MATERIAL_ROLES)[number];
-  localNames: string[];
-  botanicalName: string | null;
-  pubchemCid: number | null;
-  claimIds: string[];
-};
-export type StageTiming = { kind: (typeof TIMING_KINDS)[number]; text: string; claimId: string };
-export type PageSpecies = { role: (typeof SPECIES_ROLES)[number]; name: string | null; formula: string | null; coefficient: number | null };
-export type PageReaction = {
-  id: string | null;
-  kind: (typeof REACTION_KINDS)[number];
-  label: string;
-  species: PageSpecies[];
-  balanced: boolean;
-  equation: string | null;
-  claimIds: string[];
-};
-export type PageStage = {
-  id: string;
-  order: number | null;
-  name: string;
-  localName: string | null;
-  stageType: (typeof STAGE_TYPES)[number];
-  claimIds: string[];
-  materials: StageItem[];
-  tools: StageItem[];
-  timing: StageTiming[];
-  reactions: PageReaction[];
-  differ: string[];
-};
-export type PageProcess = { processId: string | null; stages: PageStage[]; reactions: PageReaction[] };
 export type PageTerm = { key: string | null; label: string; names: string[]; meaning: string | null; language: string | null; script: string | null; claimIds: string[] };
 export type PagePicture = { media: MediaRef; caption: string; role: PictureRole; stageId: string | null; claimIds: string[] };
 export type PageQuestion = { key: string | null; question: string; settledBy: string | null; claimIds: string[] };
@@ -218,14 +158,6 @@ export type CraftPage = {
 };
 
 const CLAIM_IDS = list(UUID, 1);
-const POSITIVE: Shape<number> = {
-  expected: "a whole number from 1",
-  parse(value, path) {
-    const whole = integer.parse(value, path);
-    if (whole < 1) throw new ShapeError(path, "a whole number from 1");
-    return whole;
-  }
-};
 
 const DAY = matching(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, "a day, YYYY-MM-DD");
 
@@ -242,8 +174,8 @@ const mastheadShape: Shape<Masthead> = object<Masthead>({
   provenance: ruled(
     object<MastheadProvenance>({
       basis: oneOf(DEPTH_BASES),
-      sources: COUNT,
-      reliability: object<Reliability>({ a: COUNT, b: COUNT, c: COUNT, d: COUNT }),
+      sources: count,
+      reliability: object<Reliability>({ a: count, b: count, c: count, d: count }),
       curatedOn: nullable(DAY),
       updatedOn: nullable(DAY)
     }),
@@ -255,7 +187,7 @@ const mastheadShape: Shape<Masthead> = object<Masthead>({
 });
 
 const citeShape: Shape<CiteThis> = ruled(
-  object<CiteThis>({ url: matching(/^\/crafts\/[a-z0-9-]+(\/v[1-9]\d*)?$/, "a lower-case craft address"), version: nullable(POSITIVE), curatedOn: nullable(DAY), text, bibtex: text }),
+  object<CiteThis>({ url: matching(/^\/crafts\/[a-z0-9-]+(\/v[1-9]\d*)?$/, "a lower-case craft address"), version: nullable(positive), curatedOn: nullable(DAY), text, bibtex: text }),
   "a versioned address with its version and day, or a plain one with neither",
   (cite) => (cite.version === null) === (cite.curatedOn === null) && (cite.version === null) === !/\/v\d+$/.test(cite.url)
 );
@@ -270,7 +202,7 @@ const pageSourceShape: Shape<PageSource> = {
       ...sourceRefShape.parse(source, path),
       group: oneOf(SOURCE_GROUPS).parse(group, at("group")),
       from: nullable(object<Borrowed>({ scope: oneOf(BORROWED_SCOPES), slug: text, label: text })).parse(from, at("from")),
-      supports: COUNT.parse(supports, at("supports"))
+      supports: count.parse(supports, at("supports"))
     };
     if ((BORROWED_GROUPS as readonly string[]).includes(listed.group) !== (listed.from !== null)) throw new ShapeError(at("from"), "the monograph a borrowed source comes from, only when borrowed");
     return listed;
@@ -281,41 +213,6 @@ const sentenceShape: Shape<PageSentence> = object<PageSentence>({ id: text, text
 const areaShape: Shape<PageArea> = object<PageArea>({ lgd: nullable(integer), name: text });
 const subjectShape: Shape<SubjectRef> = object<SubjectRef>({ id: nullable(UUID), name: text, kind: oneOf(SUBJECT_KINDS) });
 const entryShape: Shape<EvidenceEntry> = object<EvidenceEntry>({ claimId: UUID, foldedIds: list(UUID) });
-
-const stageItemShape: Shape<StageItem> = object<StageItem>({
-  id: UUID,
-  name: text,
-  kind: oneOf(MATERIAL_KINDS),
-  role: oneOf(MATERIAL_ROLES),
-  localNames: list(text),
-  botanicalName: nullable(text),
-  pubchemCid: nullable(POSITIVE),
-  claimIds: CLAIM_IDS
-});
-
-const reactionShape: Shape<PageReaction> = object<PageReaction>({
-  id: nullable(UUID),
-  kind: oneOf(REACTION_KINDS),
-  label: text,
-  species: list(object<PageSpecies>({ role: oneOf(SPECIES_ROLES), name: nullable(text), formula: nullable(text), coefficient: nullable(POSITIVE) }), 2),
-  balanced: boolean,
-  equation: nullable(text),
-  claimIds: CLAIM_IDS
-});
-
-const stageShape: Shape<PageStage> = object<PageStage>({
-  id: UUID,
-  order: nullable(POSITIVE),
-  name: text,
-  localName: nullable(text),
-  stageType: oneOf(STAGE_TYPES),
-  claimIds: CLAIM_IDS,
-  materials: list(stageItemShape),
-  tools: list(stageItemShape),
-  timing: list(object<StageTiming>({ kind: oneOf(TIMING_KINDS), text, claimId: UUID })),
-  reactions: list(reactionShape),
-  differ: list(text)
-});
 
 const overviewShape: Shape<PageOverview> = object<PageOverview>({
   lede: list(sentenceShape),
@@ -382,7 +279,7 @@ export const craftPageShape: Shape<CraftPage> = object<CraftPage>({
   cite: nullable(citeShape),
   curation: nullable(
     object<CurationHeader>({
-      version: POSITIVE,
+      version: positive,
       curatedAt: INSTANT,
       coverage: oneOf(COVERAGE_CLASSES),
       searched: list(object<SearchedFor>({ query: text, site: text }))
@@ -398,7 +295,7 @@ export const craftPageShape: Shape<CraftPage> = object<CraftPage>({
   sourcesDiffer: list(object<DifferRow>({ key: text, about: text, weight: oneOf(DIFFER_WEIGHTS), claimIds: list(UUID, 2) })),
   places: list(placeShape),
   communities: list(communityShape),
-  process: object<PageProcess>({ processId: nullable(UUID), stages: list(stageShape), reactions: list(reactionShape) }),
+  process: pageProcessShape,
   glossary: list(
     object<PageTerm>({ key: nullable(TERM_KEY), label: text, names: list(text), meaning: nullable(text), language: nullable(text), script: nullable(text), claimIds: list(UUID) })
   ),
@@ -416,117 +313,3 @@ export const craftPageShape: Shape<CraftPage> = object<CraftPage>({
   sources: list(pageSourceShape)
 });
 
-export async function fetchCraftPage(slug: string, version?: number): Promise<CraftPage> {
-  return checkedCraftPage(parseShape(craftPageShape, await apiFetch<unknown>(CRAFT_PAGE_PATH(slug, version))));
-}
-
-function headCitations(page: CraftPage): Citation[] {
-  const { masthead } = page;
-  return [...(masthead.gi?.citations ?? []), ...[...(masthead.picture?.sentences ?? []), ...page.lede].flatMap((sentence) => sentence.citations)];
-}
-
-export function shownCitations(page: CraftPage, { kin }: { kin: boolean }): Citation[] {
-  return [...headCitations(page), ...page.chapters.flatMap((chapter) => chapterCitations(chapter, { kin }))];
-}
-
-export function readingSourceIds(page: CraftPage): string[] {
-  return [...new Set([...headCitations(page).map((citation) => citation.sourceId), ...page.chapters.flatMap(chapterSourceIds)])];
-}
-
-export function chapterClaimIds(page: CraftPage): string[] {
-  return shownCitations(page, { kin: false }).map((citation) => citation.claimId);
-}
-
-export function shownSentences(page: CraftPage): ExplainerSentence[] {
-  return [...(page.masthead.picture?.sentences ?? []), ...page.lede, ...page.chapters.flatMap(chapterSentences)];
-}
-
-export function shownPictures(page: CraftPage): MediaRef[] {
-  return [...(page.masthead.picture ? [page.masthead.picture.media] : []), ...page.chapters.flatMap(chapterMedia)];
-}
-
-export function referencedClaimIds(page: CraftPage): string[] {
-  const { overview, process } = page;
-  const sentences = [...overview.lede, ...overview.sections.flatMap((section) => section.sentences)];
-  const context = [...page.craft.localNames, page.giCard, ...page.events, ...page.environment];
-  const rows = [...context, ...overview.keyFacts, ...page.sourcesDiffer, ...page.places, ...page.communities, ...page.glossary, ...page.pictures, ...page.openQuestions];
-  const reactions = [...process.reactions, ...process.stages.flatMap((stage) => stage.reactions)];
-  const items = process.stages.flatMap((stage) => [...stage.materials, ...stage.tools]);
-  return [
-    ...[...sentences, ...rows, ...reactions, ...items, ...process.stages].flatMap((row) => row.claimIds),
-    ...process.stages.flatMap((stage) => stage.timing.map((timing) => timing.claimId))
-  ];
-}
-
-function checkEvidence(evidence: PageEvidence, levels: Map<string, StoredLevel>): void {
-  const filed: [EvidenceEntry, boolean][] = [
-    ...evidence.groups.flatMap((group) => group.subjects.flatMap((subject) => subject.entries.map((entry) => [entry, false] as [EvidenceEntry, boolean]))),
-    ...evidence.hypotheses.map((entry) => [entry, true] as [EvidenceEntry, boolean])
-  ];
-  const seen = new Set<string>();
-  for (const [entry, hypotheses] of filed) {
-    for (const id of [entry.claimId, ...entry.foldedIds]) {
-      const level = levels.get(id);
-      if (!level) throw new ShapeError(`evidence ${id}`, "a claim the page lists");
-      if ((level === "HYPOTHESIS") !== hypotheses) throw new ShapeError(`evidence ${id}`, "hypotheses filed apart from facts");
-      if (seen.has(id)) throw new ShapeError(`evidence ${id}`, "each claim filed once");
-      seen.add(id);
-    }
-  }
-  if (seen.size !== levels.size) throw new ShapeError("evidence", "every listed claim filed");
-}
-
-export function checkedCraftPage(page: CraftPage): CraftPage {
-  if (page.curated !== (page.curation !== null)) throw new ShapeError("curation", "a header exactly when the page is curated");
-  const levels = new Map(page.claims.map((claim) => [claim.id, claim.level]));
-  if (levels.size !== page.claims.length) throw new ShapeError("claims", "each claim listed once");
-  for (const id of [...referencedClaimIds(page), ...chapterClaimIds(page)]) if (!levels.has(id)) throw new ShapeError(`claim ${id}`, "a claim the page lists");
-  const sources = new Set(page.sources.map((source) => source.id));
-  if (sources.size !== page.sources.length) throw new ShapeError("sources", "each source listed once");
-  for (const claim of page.claims) {
-    for (const citation of claim.citations) if (!sources.has(citation.sourceId)) throw new ShapeError(`claim ${claim.id}`, `source ${citation.sourceId} listed`);
-  }
-  for (const voice of page.voices) if (!sources.has(voice.sourceId)) throw new ShapeError(`voice ${voice.itemId}`, `source ${voice.sourceId} listed`);
-  const shown = [...shownCitations(page, { kin: true }).map((citation) => citation.sourceId), ...page.chapters.flatMap((chapter) => chapter.items.flatMap(itemSourceIds))];
-  for (const id of shown) if (!sources.has(id)) throw new ShapeError(`source ${id}`, "a source the page lists");
-  if (page.voices.length > page.fieldVoicesTotal.quotes || page.fieldPhotos.length > page.fieldVoicesTotal.images) {
-    throw new ShapeError("fieldVoicesTotal", "no more field voices shown than counted");
-  }
-  for (const sentence of [...page.overview.lede, ...page.overview.sections.flatMap((section) => section.sentences)]) {
-    if (sentence.level === "HYPOTHESIS") throw new ShapeError(`sentence ${sentence.id}`, "a sentence resting on facts, never a hypothesis");
-  }
-  for (const reaction of [...page.process.reactions, ...page.process.stages.flatMap((stage) => stage.reactions)]) {
-    if ((reaction.equation !== null) !== reaction.balanced) throw new ShapeError(`reaction ${reaction.label}`, "an equation only when balanced");
-  }
-  checkEvidence(page.evidence, levels);
-  checkChapters(page.chapters);
-  checkContributed(page.chapters);
-  checkPictures(page);
-  checkParts(page);
-  return page;
-}
-
-function checkPictures(page: CraftPage): void {
-  const seen = new Set<string>();
-  for (const media of shownPictures(page)) {
-    for (const key of [media.id, media.imageUrl]) {
-      if (seen.has(key)) throw new ShapeError(`picture ${media.title}`, "each picture shown once");
-      seen.add(key);
-    }
-  }
-}
-
-function checkParts(page: CraftPage): void {
-  if (page.pictures.filter((picture) => picture.role === "HERO").length > 1) throw new ShapeError("pictures", "one hero picture at most");
-  const keys = page.sourcesDiffer.map((row) => row.key);
-  if (new Set(keys).size !== keys.length) throw new ShapeError("sourcesDiffer", "each row with its own key");
-  for (const stage of page.process.stages) {
-    for (const key of stage.differ) if (!keys.includes(key)) throw new ShapeError(`stage ${stage.id}`, `a sources-differ row the page lists, not ${key}`);
-  }
-  const placed = new Set(page.places.map((place) => place.key));
-  const pointed = [...page.communities.map((group) => group.placeKey), ...page.environment.map((step) => step.place?.key ?? null)];
-  for (const key of pointed) if (key !== null && !placed.has(key)) throw new ShapeError("places", `a place the page lists, not ${key}`);
-  checkDepth(page.depth, "depth");
-  checkEvents(page.events);
-  checkRelatives(page.craft.slug, page.sameFamily);
-}

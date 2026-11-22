@@ -73,7 +73,7 @@ server serves the ones a contributor needs.
 | [field-voices.md](field-voices.md) | The portals' transcripts and craft images, by cursor with tombstones |
 | [geo.md](geo.md) | The geo lane's per-district environment statistics and how they are loaded |
 | [region.md](region.md) | What a craft's region panel and the map's choropleths receive |
-| [science.md](science.md) | What `GET /api/crafts/{slug}/process` answers: stages, materials, conditions and reactions |
+| [science.md](science.md) | The process view the builders read: stages, materials, conditions and reactions |
 | [voice.md](voice.md) | How a two-way voice conversation is started, bound to one user and answered |
 | [media.md](media.md) | Generated stage images and videos: what they are built from and how they are served |
 

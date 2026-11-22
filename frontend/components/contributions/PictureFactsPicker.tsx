@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { TextInput } from "@/components/FormControls";
-import { fetchCraftPage, type PageClaim } from "@/lib/craftPageContract";
+import { fetchCraftPage } from "@/lib/craftPageChecks";
+import type { PageClaim } from "@/lib/craftPageContract";
 import { IMAGE_FACTS_MAX } from "@/lib/imageContributionContract";
 
 const SHOWN_MAX = 40;

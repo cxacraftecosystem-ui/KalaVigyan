@@ -171,8 +171,8 @@ side is `docs/contracts/frontend.md`. `GET /api/crafts/{slug}/page` (in `crafts`
 curated overview and facts and All evidence (`docs/contracts/craft-page.md`, decision 0053);
 `GET /api/categories` and `/api/categories/{slug}` (in `categories`, public reading) answer the
 nine categories and a category's curated master page (`docs/contracts/category-page.md`, decision
-0078); `GET /api/crafts/{slug}/process` (in `crafts`) answers a craft's
-stages, materials, conditions and reactions (`docs/contracts/science.md`);
+0078); a craft's stages, materials, conditions and reactions are the process view the answer
+builders read from stored rows (`docs/contracts/science.md`), served by no route since decision 0145;
 `GET /api/crafts/{slug}/region` its places and their environment, and `GET /api/map/layers` and
 `/api/map/layers/{layer}` (in `map_layers`) the district choropleths, all from the stored
 district statistics (`docs/contracts/region.md`). `GET /api/map/districts/{districtLgd}` (in

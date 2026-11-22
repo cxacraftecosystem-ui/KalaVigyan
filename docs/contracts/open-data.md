@@ -12,6 +12,7 @@ Last reviewed: 2026-11-22.
 | Why the data is released this way | [decision 0116](../decisions/0116-open-data-with-a-doi.md) |
 | Why one craft can be released as its own dataset | [decision 0130](../decisions/0130-a-craft-release.md) |
 | Which citations an anonymous reader may read | [decision 0121](../decisions/0121-quote-visibility.md) |
+| Why a fact with closed quotes is released without their words | [decision 0149](../decisions/0149-a-fact-readers-can-see.md) |
 | Running a release | [RUNBOOK.md](../RUNBOOK.md), Open data with a DOI |
 | The datasets behind the maps, whose records (never values) are released | [DATA_SOURCES.md](../DATA_SOURCES.md) |
 
@@ -60,7 +61,7 @@ flowchart LR
 
 | Table | Key | Rows |
 |---|---|---|
-| `claims` | `id` | every published fact: status shown, sensitivity OPEN, not held, a visible subject concept, and at least one exportable citation |
+| `claims` | `id` | every published fact a reader can see (`retrieval/citation_access.reader_fact`: status shown, sensitivity OPEN, not held, a visible subject concept, a source readers may see) with at least one exportable citation |
 | `citations` | `id` | the exportable citations of those facts: no quote text, only `quoted` and `quote_check` |
 | `sources` | `id` | the sources those citations name |
 | `crafts` | `slug` | every craft that is not merged into another, with its Wikidata item (matched with confidence only) |
@@ -72,11 +73,11 @@ flowchart LR
 | `components` | `label` | the component catalogue's metadata and the released facts each rests on |
 | `datasets` | `code` | the records of the datasets behind the maps, never their values |
 
-An exportable citation is one an anonymous reader may read (`retrieval/citation_access.readable_citation`
-with `PUBLIC`, decision 0121): a PUBLIC chunk that is not RESTRICTED; or no chunk and no quote; or no
-chunk, a quote, and every passage of its source PUBLIC and not RESTRICTED, so a quote of a page kept
-for researchers is never released through a missing link. It also has a source that is not RESTRICTED
-and not `FIELD_TESTIMONY`, and a source that is not a withheld field recording. Every
+An exportable citation has a source that is not RESTRICTED and not `FIELD_TESTIMONY`, and a source
+that is not a withheld field recording. Whether its quote's page is open does not matter: the
+statement is KalaVigyan's own words, and a citation row carries no quote text, so a fact whose quotes
+sit on passages kept for researchers is released with its citations and none of their words
+(decision 0149, which amends decisions 0116 and 0121). Every
 claim id a structure, component or GI row lists is a released fact; others are dropped. Every
 field, its type, whether it may be empty and its meaning are in `datapackage.json`, the README and
 `GET /api/open-data` (`tables`).
