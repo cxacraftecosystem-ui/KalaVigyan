@@ -32,6 +32,7 @@ __all__ = [
 ]
 
 PACE_SECONDS = 5.0
+STORED_DIGITS = 6
 LEASE_LOCK_PREFIX = "source-lease:"
 
 Sessions = async_sessionmaker[AsyncSession]
@@ -142,7 +143,7 @@ class SharedPaces:
             until_free = (await session.execute(_reserving(lane, ask))).scalar_one_or_none()
             held = None if until_free is not None else (await session.execute(_held_for(lane))).scalar_one()
         if until_free is not None:
-            return PaceSlot(wait=max(float(until_free) - ask.interval, 0.0))
+            return PaceSlot(wait=max(round(float(until_free) - ask.interval, STORED_DIGITS), 0.0))
         return PaceSlot(wait=None, held_for=max(float(held or 0), 0.0))
 
     async def hold(self, lanes: Sequence[PaceLane], seconds: float) -> None:
