@@ -10,6 +10,7 @@ export type Width = {
 };
 
 export const SCHEMES: readonly Scheme[] = ["light", "dark"];
+export const FAKE_MICROPHONE_ARGS = ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"];
 
 export const WIDE: Width = { key: "wide", label: "Wide 1920", device: "Desktop Chrome", viewport: { width: 1920, height: 1080 } };
 export const DESKTOP: Width = { key: "desktop", label: "Desktop 1440", device: "Desktop Chrome", viewport: { width: 1440, height: 900 } };

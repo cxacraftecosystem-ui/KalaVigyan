@@ -492,16 +492,19 @@ Last reviewed: 2026-11-22.
 
 ## Voice UI (decision 0020)
 
-### The voice dock has not run in a browser
+### The live agent call has not run in a browser
 
-- **What:** the dock, orb, microphone recording, speech playback and the ElevenLabs WebRTC call
-  are checked by typecheck, lint and unit specs that drive `VoiceCall` with fakes; no browser has
-  recorded, played or joined a LiveKit room, and the dock's layout above the bottom island, its
-  contrast in both themes and the transcript at phone width are unverified. The `AGENT` path also
-  assumes the server writes each turn to the transcript as it is spoken.
-- **Clears it:** after lane 0017 deploys, a signed-in smoke spec with a fake microphone
-  (`--use-fake-device-for-media-stream`) on `RELAY`, route fixtures from `shared/` at desktop and
-  phone widths, then one real `AGENT` call once the spike passes.
+- **What:** the release check `e2e/production/voice.spec.ts` drives the dock on `/design/voice`
+  at desktop and phone widths in both themes: the notice, a relay turn recorded from Chromium's
+  fake microphone, sent, answered from the relay goldens and played, and the end, with the dock
+  inside the screen and its contrast checked (decision 0140). The `AGENT` path (the ElevenLabs
+  WebRTC call joining a LiveKit room, the server writing each turn to the transcript as it is
+  spoken) has not run, nor has the dock above the bottom island, since no page with the island
+  mounts it while the call is switched off (decision 0035).
+- **Why left:** an `AGENT` call needs a real ElevenLabs agent and conversation (the spike); the
+  dock's page comes back with the call.
+- **Clears it:** one real `AGENT` call once the spike passes, and the same check run on the page
+  that mounts the dock when `VOICE_CALL_ENABLED` brings the call back.
 
 ### The dock asks for a bit rate it cannot enforce
 
