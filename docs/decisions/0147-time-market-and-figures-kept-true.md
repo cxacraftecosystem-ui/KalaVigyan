@@ -83,6 +83,10 @@ checked by its year only and a price date not at all, and "1500 people" was offe
 - Migration `0072_quantities_kind` (down revision `0074_mcp_activity`) only widens two
   check constraints; its downgrade deletes quantities pieces.
 - A history answer's timeline may now arrive as version 2; clients read both versions.
+- The new kind joins the piece-kind enums of two MCP tools (`list_components`, `edit_draft`),
+  which took the tools list's input to 61,450 bytes, 10 over its 60 KB budget; the budget is now
+  62 KB (`tests/mcp/test_tool_budget.py`, `docs/contracts/knowledge-api.md`) rather than leaving
+  the kind out of a filter that reads stored pieces.
 - The quantities table repeats sentences the section's prose already says, as `measure` does; the
   claim ledger keeps each fact once in prose.
 - The rubric's scores can only fall with the shown-sentence count, never rise.

@@ -280,8 +280,9 @@ validated on the server by its kind's spec model, whose JSON schema is served as
 `kalavigyan://components/<kind>.schema.json` (listed in `resources/list`, in
 `resources/templates/list` as `kalavigyan://components/{kind}.schema.json`, and in
 `kalavigyan://index.md`); output schemas are compact and listed only where a client reads the
-result. `tests/mcp/test_tool_budget.py` fails when the list grows past 22 tools, 60 KB of input
-schemas and descriptions, or 120 KB in all.
+result. `tests/mcp/test_tool_budget.py` fails when the list grows past 22 tools, 62 KB of input
+schemas and descriptions (60 KB until decision 0147's `quantities` kind joined the piece kinds two
+tools enumerate), or 120 KB in all.
 
 ## Coverage
 
@@ -320,7 +321,7 @@ not break (decision 0101, item 15). `serverInfo.version` is `1.0.0`.
 
 | Claim | Kept true by |
 |---|---|
-| The tools, their groups and the list's budget | `backend/tests/mcp/test_tool_budget.py`: 22 tools in the six groups, 60 KB of input, 120 KB in all |
+| The tools, their groups and the list's budget | `backend/tests/mcp/test_tool_budget.py`: 22 tools in the six groups, 62 KB of input, 120 KB in all |
 | The protocol, framing and the event stream | `backend/tests/mcp/test_mcp_protocol.py`, `test_mcp_route.py` and `test_mcp_stream.py` |
 | Browser clients | `backend/tests/mcp/test_mcp_cors.py` |
 | The read tools | `backend/tests/mcp/test_mcp_page_read.py`, `test_mcp_fact_tools.py`, `backend/tests/contribution_scale/test_craft_finding.py` and `backend/tests/db/test_craft_finder_db.py` |
