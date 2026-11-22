@@ -34,6 +34,7 @@ export const COMPONENT_HOMES: HomeBook = {
     "kutch-ajrakh/geography/suran-dry-below-tapar-dam-map": {"kind": "map_layer", "scope": "pt", "frame": [], "root": "svg.geo.mini", "within": "kutch-ajrakh/geography/suran-earthquake-ajrakhpur-cards"},
     "kutch-ajrakh/geography/suran-earthquake-ajrakhpur-cards": {"kind": "map_sequence", "scope": "pt", "frame": [{"classes": ["screen"], "box": true}, {"classes": ["sec", "why"], "box": false}, {"classes": ["wrap"], "box": true}], "root": "figure.fig.ws-fig"},
     "kutch-ajrakh/geography/suran-flowing-north-map": {"kind": "map_layer", "scope": "pt", "frame": [], "root": "svg.geo.mini", "within": "kutch-ajrakh/geography/suran-earthquake-ajrakhpur-cards"},
+    "kutch-ajrakh/geography/why-here": {"kind": "why_here", "scope": null, "frame": [], "root": "div.kv-page.kv-why-here"},
     "kutch-ajrakh/geology/ajrakhpur-borewell-depth": {"kind": "diagram", "scope": "pt", "frame": [], "root": "svg.well-svg.kv-well", "within": "kutch-ajrakh/geography/suran-earthquake-ajrakhpur-cards"},
     "kutch-ajrakh/geology/dhamadka-epicentre-circle-map": {"kind": "map_layer", "scope": "pt", "frame": [], "root": "svg.geo.mini", "within": "kutch-ajrakh/geography/suran-earthquake-ajrakhpur-cards"},
     "kutch-ajrakh/history/ai-caravan-on-salt-flat": {"kind": "ai_illustration", "scope": "rm", "frame": [{"classes": ["screen"], "box": true}, {"classes": ["wrap"], "box": true}, {"classes": ["gen-wrap"], "box": false}, {"classes": ["gen-grid"], "box": false}, {"classes": ["gen-secs"], "box": false}, {"classes": ["gsec"], "box": false}, {"classes": ["gsec-body", "split"], "box": false}, {"classes": ["gsec-media"], "box": false}], "root": "figure.ai.ai-only"},
@@ -123,6 +124,7 @@ export const COMPONENT_HOMES: HomeBook = {
     "structure_diagram": [{"scope": "rm", "keys": ["head", "id", "key", "molecules", "scale"]}, {"scope": "rm", "keys": ["dekStyle", "head", "id", "key", "molecules", "notes", "scale", "swatchNote", "swatches"]}],
     "swatch_cards": [{"scope": "mb", "keys": ["chapterNo", "colours", "intro", "title", "titleId", "weave"]}],
     "timeline_map": [{"scope": "pt", "keys": ["axis", "caption", "cards", "comp", "drawing", "events", "head", "id", "items", "legend", "play", "rest", "status", "supply", "supplyNote", "views"]}],
-    "voice": [{"scope": "mb", "keys": ["coda", "setting"]}, {"scope": "sa", "keys": ["setting", "testimony"]}]
+    "voice": [{"scope": "mb", "keys": ["coda", "setting"]}, {"scope": "sa", "keys": ["setting", "testimony"]}],
+    "why_here": [{"scope": null, "keys": ["ground"]}]
   }
 };
