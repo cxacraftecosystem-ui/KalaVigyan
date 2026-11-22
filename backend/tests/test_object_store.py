@@ -81,3 +81,37 @@ async def test_a_refused_conditional_write_fails_loudly() -> None:
     stub.add_client_error("put_object", service_error_code="AccessDenied", http_status_code=403)
     with stub, pytest.raises(ExternalFailure):
         await store.put_if_absent(KEY, b"{}", content_type="application/json")
+
+
+async def test_keys_under_a_prefix_are_read_across_pages_in_order() -> None:
+    store, stub = stubbed()
+    clip = "media/score/" + "b" * 64 + "/clip.json"
+    stub.add_response(
+        "list_objects_v2",
+        {"Contents": [{"Key": clip}], "IsTruncated": True, "NextContinuationToken": "next"},
+        {"Bucket": BUCKET, "Prefix": "media/score/"},
+    )
+    stub.add_response(
+        "list_objects_v2",
+        {"Contents": [{"Key": KEY}], "IsTruncated": False},
+        {"Bucket": BUCKET, "Prefix": "media/score/", "ContinuationToken": "next"},
+    )
+    with stub:
+        assert await store.keys("media/score/") == [KEY, clip]
+
+
+async def test_a_copy_stays_in_the_bucket_and_is_encrypted() -> None:
+    store, stub = stubbed()
+    target = "media/craft/" + "c" * 64 + "/KalaVigyan_Generated-Image.png"
+    stub.add_response(
+        "copy_object",
+        {},
+        {
+            "Bucket": BUCKET,
+            "Key": target,
+            "CopySource": {"Bucket": BUCKET, "Key": KEY},
+            "ServerSideEncryption": "AES256",
+        },
+    )
+    with stub:
+        await store.copy(KEY, target)

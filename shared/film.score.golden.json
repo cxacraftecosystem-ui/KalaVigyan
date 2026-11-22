@@ -3,22 +3,15 @@
   "answerId": "0c5e7a1d-2b3f-4c6d-8e9f-a0b1c2d3e4f5",
   "language": "en",
   "music": {
-    "audioUrl": "https://kalavigyan-media-example.s3.ap-south-1.amazonaws.com/media/score/aabf93e884f1de6d8fc2e4705594e82d9a2f0b838d6ca37e0d27ff957fac3727/KalaVigyan_Explainer_2026-11-18_1030_Music.mp3?X-Amz-Expires=3600",
+    "audioUrl": "https://kalavigyan-media-example.s3.ap-south-1.amazonaws.com/media/score/96b3f28f5bb1e734f287b8e1dc56ad067e63a933e022eb787ce72c4d223ee374/KalaVigyan_Explainer_2026-11-18_1030_Music.mp3?X-Amz-Expires=3600",
     "durationSeconds": 90.0,
     "model": "music_v2_5"
   },
   "cues": [
     {
       "blockId": "s1.b1",
-      "offsetSeconds": 0.0,
-      "audioUrl": "https://kalavigyan-media-example.s3.ap-south-1.amazonaws.com/media/score/32a6410b88f26b557782998ca01c002d897602248eaf1643f55a7958e2c5527b/KalaVigyan_Explainer_2026-11-18_1030_Sound-Effect_Scene-01.mp3?X-Amz-Expires=3600",
-      "durationSeconds": 2.0,
-      "model": "eleven_text_to_sound_v3"
-    },
-    {
-      "blockId": "s2.b1",
       "offsetSeconds": 0.5,
-      "audioUrl": "https://kalavigyan-media-example.s3.ap-south-1.amazonaws.com/media/score/c851e5075513f4db819184bd1a3777ec9b76c360a5b2ba4adb59f2f3a22fa1a6/KalaVigyan_Explainer_2026-11-18_1030_Sound-Effect_Scene-03.mp3?X-Amz-Expires=3600",
+      "audioUrl": "https://kalavigyan-media-example.s3.ap-south-1.amazonaws.com/media/score/f07f8dda8a24c5163795b53b98285b004030490249a55ac7c00f7395e949c1c5/KalaVigyan_Explainer_2026-11-18_1030_Sound-Effect_Scene-01.mp3?X-Amz-Expires=3600",
       "durationSeconds": 3.0,
       "model": "eleven_text_to_sound_v3"
     }

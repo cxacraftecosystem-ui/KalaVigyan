@@ -24,6 +24,7 @@ from .score_prompts import SCORE_PROMPT_VERSION
 
 __all__ = [
     "CLIP_LEAF",
+    "UNNAMED_LEAF",
     "ScoreClip",
     "ScoreManifest",
     "ScoredCue",
@@ -38,6 +39,7 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 CLIP_LEAF = "clip.json"
+UNNAMED_LEAF = "unnamed.json"
 MANIFEST_TYPE = "application/json"
 HEX_64 = r"^[0-9a-f]{64}$"
 ScoreTask = Literal["MUSIC", "SOUND_EFFECT"]

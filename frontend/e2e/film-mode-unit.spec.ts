@@ -36,7 +36,7 @@ import {
   type FilmClock,
   type FilmScene
 } from "@/lib/filmScenes";
-import { applyLevel, bedDrifted, bedTime, bedVolume, cueDue, cueVolume, filmLevels, FULL_MIX, sceneCue, scoreCredit } from "@/lib/filmSound";
+import { applyLevel, bedDrifted, bedTime, bedVolume, cueDue, cueVolume, filmLevels, FULL_MIX, sceneCue, scoreCredit, volumeIsFixed } from "@/lib/filmSound";
 import { checkedScript, type ListenScript } from "@/lib/listen";
 import { parseShape } from "@/lib/shape";
 
@@ -145,9 +145,9 @@ test("the hold per kind is the server's", () => {
 test("the score golden's cues are numbered by these scenes", () => {
   const numbered = new Map(scenes().map((scene, index) => [scene.block.id, String(index + 1).padStart(2, "0")]));
   for (const cue of score().cues) expect(cue.audioUrl).toContain(`Scene-${numbered.get(cue.blockId)}.mp3`);
-  expect(sceneCue(score(), "s2.b1")?.offsetSeconds).toBe(0.5);
-  expect(sceneCue(score(), "s3.b1")).toBeNull();
-  expect(sceneCue(null, "s2.b1")).toBeNull();
+  expect(sceneCue(score(), "s1.b1")?.offsetSeconds).toBe(0.5);
+  expect(sceneCue(score(), "s2.b1")).toBeNull();
+  expect(sceneCue(null, "s1.b1")).toBeNull();
 });
 
 test("the clock holds, advances, ends and restarts as the narration and the controls say", () => {
@@ -218,7 +218,7 @@ test("the score sits low under the narration, fades over the film's last two sec
   expect([cueVolume(FULL_MIX), cueVolume({ ...FULL_MIX, effects: 0.5 }), cueVolume({ ...FULL_MIX, muted: true })]).toEqual([0.8, 0.4, 0]);
   expect(bedTime(130, 60)).toBe(10);
   expect([bedDrifted(10.5, 130, 60), bedDrifted(20, 130, 60), bedDrifted(59.9, 120.2, 60)]).toEqual([false, true, false]);
-  const cue = sceneCue(score(), "s2.b1")!;
+  const cue = sceneCue(score(), "s1.b1")!;
   expect([cueDue(cue, 0.4), cueDue(cue, 0.5)]).toEqual([false, true]);
   expect(scoreCredit(score())).toBe(scoreLine());
 });
@@ -307,9 +307,31 @@ test("mute silences the bed and the cues by muting them, not only by their volum
   applyLevel(audio, muted.bed);
   expect(audio).toEqual({ volume: 0, muted: true });
   const sound = readRepo("frontend", "components", "answer", "film", "FilmSound.tsx");
-  expect(sound.split("applyLevel(audio, { volume, muted });")).toHaveLength(3);
+  expect(sound.split("applyLevel(audio, { volume, muted }, node.current);")).toHaveLength(3);
   expect(sound).toContain("level={levels.bed}");
   expect(sound).toContain("level={levels.cue}");
+});
+
+test("where a browser fixes the element volume the bed and cues are levelled by one gain each", () => {
+  const fixed = {
+    get volume() {
+      return 1;
+    },
+    set volume(value: number) {
+      void value;
+    }
+  };
+  expect(volumeIsFixed(fixed)).toBe(true);
+  expect(volumeIsFixed({ volume: 1 })).toBe(false);
+  const audio = { volume: 1, muted: false };
+  const gain = { gain: { value: 1 } };
+  applyLevel(audio, { volume: 0.2, muted: false }, gain);
+  expect([audio.volume, gain.gain.value, audio.muted]).toEqual([1, 0.2, false]);
+  applyLevel(audio, { volume: 0, muted: true }, gain);
+  expect([audio.volume, gain.gain.value, audio.muted]).toEqual([1, 0, true]);
+  const sound = readRepo("frontend", "components", "answer", "film", "FilmSound.tsx");
+  expect(sound.split('crossOrigin={gain.routed ? "anonymous" : undefined}')).toHaveLength(3);
+  expect(sound).toContain("createMediaElementSource(audio).connect(gain).connect(sound.destination)");
 });
 
 function finished(phase: ExplainerState["phase"]): ExplainerState {

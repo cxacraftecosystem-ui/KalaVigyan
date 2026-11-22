@@ -7,6 +7,7 @@ from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
+from app.media.heartbeat import WORKER_SILENT_AFTER
 from app.media.records import (
     AssetRecord,
     CitationFacts,
@@ -177,7 +178,9 @@ class MemoryMedia:
     queued: list[uuid.UUID] = field(default_factory=list)
     retries: list[tuple[uuid.UUID, str, datetime]] = field(default_factory=list)
     stale_ids: list[uuid.UUID] = field(default_factory=list)
+    renewals: list[datetime] = field(default_factory=list)
     now: datetime = NOW
+    worker_heard_at: datetime | None = NOW
 
     async def craft_stages(self, slug: str) -> tuple[CraftFacts, list[StageFacts]] | None:
         found = [s for s in self.stages.values() if s.craft.ref.slug == slug]
@@ -193,6 +196,9 @@ class MemoryMedia:
         return max(
             0, sum(e.units for e in self.ledger.values() if e.user_id == user_id and e.resource == kind)
         )
+
+    async def worker_listening(self, now: datetime) -> bool:
+        return self.worker_heard_at is not None and now - self.worker_heard_at <= WORKER_SILENT_AFTER
 
     async def active_jobs(self, user_id: uuid.UUID) -> int:
         return sum(
@@ -240,6 +246,10 @@ class MemoryMedia:
     async def stale(self, older_than: datetime) -> list[uuid.UUID]:
         found, self.stale_ids = self.stale_ids, []
         return found
+
+    async def renew_holds(self, older_than: datetime) -> int:
+        self.renewals.append(older_than)
+        return 0
 
     async def claim(self, kind: str, *, limit: int, worker_id: str) -> list[uuid.UUID]:
         ready = [i for i in self.queued if self.jobs[i].kind == kind][:limit]

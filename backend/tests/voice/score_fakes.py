@@ -56,5 +56,7 @@ def score_ask(explainer: Explainer, role: str = "STUDENT") -> ScoreAsk:
     return ScoreAsk(principal=Principal(user_id=LEARNER, role=role), explainer=explainer)
 
 
-def score_deps(objects: MemoryObjects, maker: ScoreMaker, at: datetime = MADE_AT) -> ScoreDeps:
-    return ScoreDeps(objects=objects, maker=maker, clock=lambda: at)
+def score_deps(
+    objects: MemoryObjects, maker: ScoreMaker, at: datetime = MADE_AT, voice_id: str | None = None
+) -> ScoreDeps:
+    return ScoreDeps(objects=objects, maker=maker, clock=lambda: at, voice_id=voice_id)

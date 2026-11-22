@@ -28,4 +28,5 @@ def refund_entry(job: JobRecord) -> LedgerEntry:
         key=f"media-refund:{job.id}",
         ref_type=LEDGER_REF_TYPE,
         ref_id=str(job.id),
+        counted_at=job.created_at,
     )

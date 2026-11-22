@@ -6,9 +6,10 @@ from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import Text, cast, func, select, text, update
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.models import Job, MediaAsset, MediaJob
+from app.models import Job, MediaAsset, MediaJob, UsageEvent
 from app.providers.quota import LedgerEntry, record_units
 from app.schemas.media import ASSET_LABEL, QUEUE_CONCURRENCY
 
@@ -19,6 +20,7 @@ from .store import queue_key
 __all__ = ["SqlQueueStore"]
 
 HOLD_PARAM = "holdId"
+RESERVED = "RESERVED"
 
 
 class SqlQueueStore:
@@ -62,6 +64,20 @@ class SqlQueueStore:
                 )
             ).all()
             return [await _start(session, row, worker_id) for row in rows]
+
+    async def renew_holds(self, older_than: datetime) -> int:
+        held = select(cast(MediaJob.params[HOLD_PARAM].astext, PG_UUID(as_uuid=True))).where(
+            MediaJob.status == "QUEUED", MediaJob.params.has_key(HOLD_PARAM)
+        )
+        async with self._sessions() as session, session.begin():
+            renewed = await session.execute(
+                update(UsageEvent)
+                .where(
+                    UsageEvent.id.in_(held), UsageEvent.outcome == RESERVED, UsageEvent.createdAt < older_than
+                )
+                .values(createdAt=func.now())
+            )
+            return int(getattr(renewed, "rowcount", 0) or 0)
 
     async def job(self, job_id: uuid.UUID) -> JobRecord | None:
         async with self._sessions() as session:

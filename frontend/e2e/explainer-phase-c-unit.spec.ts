@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { BLOCK_SHAPES, BUILT_BLOCK_KINDS, explainerBlockShape, type TypedBlockKind } from "@/lib/explainerContract";
 import { SANDBOX_ATTRIBUTE, SANDBOX_CSP, SANDBOX_DATA_ELEMENT_ID, SANDBOX_MAX_BYTES, type SimulationBlock, type TimelineMapBlock } from "@/lib/explainerPlay";
 import { parseExplainerStreamBlock } from "@/lib/explainerStream";
-import { checkedFilmScore, filmOfferShape, filmScorePath, SCORE_LABEL } from "@/lib/filmScore";
+import { checkedFilmScore, filmOfferShape, filmScorePath, SCORE_LABEL, scoreMaking } from "@/lib/filmScore";
 import { parseShape, ShapeError } from "@/lib/shape";
 
 import { readRepo } from "./phaseBFixture";
@@ -111,7 +111,7 @@ test("the film score is read only for the answer and language asked", () => {
   const answerId = String(SCORE.answerId);
   const score = checkedFilmScore(structuredClone(SCORE), answerId, "en");
   expect(score.label.text).toBe(SCORE_LABEL);
-  expect(score.cues.map((cue) => cue.blockId)).toEqual(["s1.b1", "s2.b1"]);
+  expect(score.cues.map((cue) => cue.blockId)).toEqual(["s1.b1"]);
   expect(filmScorePath(answerId, "hi")).toBe(`/answers/${answerId}/film-score?language=hi`);
   expect(() => checkedFilmScore(structuredClone(SCORE), answerId, "hi")).toThrow(ShapeError);
   expect(() => checkedFilmScore(structuredClone(SCORE), "00000000-0000-4000-8000-000000000000", "en")).toThrow(ShapeError);
@@ -120,6 +120,12 @@ test("the film score is read only for the answer and language asked", () => {
   expect(() => checkedFilmScore({ ...SCORE, music: null, cues: [] }, answerId, "en")).toThrow(ShapeError);
   const music = SCORE.music as Record<string, unknown>;
   expect(() => checkedFilmScore({ ...SCORE, music: { ...music, audioUrl: "http://example.org/a.mp3" } }, answerId, "en")).toThrow(ShapeError);
+  const making = { answerId, language: "en", pollAfterSeconds: 5 };
+  expect(scoreMaking(making, answerId, "en")).toEqual(making);
+  expect(scoreMaking(structuredClone(SCORE), answerId, "en")).toBeNull();
+  expect(() => scoreMaking({ ...making, language: "hi" }, answerId, "en")).toThrow(ShapeError);
+  expect(() => scoreMaking({ ...making, pollAfterSeconds: 0 }, answerId, "en")).toThrow(ShapeError);
+  expect(() => scoreMaking({ ...making, pollAfterSeconds: 2.5 }, answerId, "en")).toThrow(ShapeError);
   expect(parseShape(filmOfferShape, { score: false })).toEqual({ score: false });
   expect(() => parseShape(filmOfferShape, { score: "yes" })).toThrow(ShapeError);
 });

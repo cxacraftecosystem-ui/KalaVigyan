@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from app.providers.elevenlabs import TimedSpeech
 from app.services.naming import narration_key
 from app.voice.listen import listen_script
-from app.voice.narration_lease import LEASE_LEAF, NarrationLease
+from app.voice.object_lease import LEASE_LEAF, ObjectLease
 
 from .listen_fakes import LISTENED_AT, Listening, Narrations, ask, golden_explainer
 
@@ -27,7 +27,7 @@ class GatedNarrations(Narrations):
 
 
 def leased(listening: Listening, taken_at: datetime) -> None:
-    lease = NarrationLease(schema_version=1, cache_id=WATER_CACHE_ID, taken_at=taken_at)
+    lease = ObjectLease(schema_version=1, cache_id=WATER_CACHE_ID, taken_at=taken_at)
     listening.objects.stored[LEASE_KEY] = (lease.model_dump_json(by_alias=True).encode(), "application/json")
 
 

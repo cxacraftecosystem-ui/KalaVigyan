@@ -51,6 +51,30 @@ class ObjectStore:
     async def delete(self, key: str) -> None:
         await asyncio.to_thread(self._delete, key)
 
+    async def keys(self, prefix: str) -> list[str]:
+        return await asyncio.to_thread(self._keys, prefix)
+
+    async def copy(self, source: str, target: str) -> None:
+        await asyncio.to_thread(self._copy, source, target)
+
+    def _keys(self, prefix: str) -> list[str]:
+        try:
+            pages = self._client.get_paginator("list_objects_v2").paginate(Bucket=self.bucket, Prefix=prefix)
+            return sorted(item["Key"] for page in pages for item in page.get("Contents", []))
+        except Exception as error:
+            raise _failure(error, "list") from error
+
+    def _copy(self, source: str, target: str) -> None:
+        try:
+            self._client.copy_object(
+                Bucket=self.bucket,
+                Key=target,
+                CopySource={"Bucket": self.bucket, "Key": source},
+                ServerSideEncryption=SERVER_SIDE_ENCRYPTION,
+            )
+        except Exception as error:
+            raise _failure(error, "copy") from error
+
     def presigned_get(self, key: str, *, disposition: str, seconds: int, now: datetime) -> PresignedGet:
         url = self._client.generate_presigned_url(
             "get_object",

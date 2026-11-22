@@ -6,6 +6,7 @@ import uuid
 from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
+from functools import partial
 from typing import Protocol
 
 from app.core.errors import AppError, Refused
@@ -33,7 +34,7 @@ from .narration_cache import (
     store_manifest,
     stored_manifest,
 )
-from .narration_lease import LeasedObjects, release_lease, take_lease, waited_manifest
+from .object_lease import LEASE_LEAF, LeasedObjects, LeaseTry, release_lease, take_lease, waited
 from .seconds import VOICE_SECONDS, capped_seconds, listen_hold_key, listen_refund_key, listen_settle_key
 
 __all__ = [
@@ -204,18 +205,26 @@ async def _made(
 
 
 async def _made_elsewhere(deps: ListenDeps, missing: dict[str, SpokenBlock]) -> dict[str, NarrationManifest]:
-    tries = await asyncio.gather(*(take_lease(deps.objects, cid, now=deps.clock()) for cid in missing))
-    held = [tried.lease for tried in tries if not tried.ours]
-    waited = await asyncio.gather(
-        *(waited_manifest(deps.objects, lease, clock=deps.clock, sleep=deps.sleep) for lease in held)
+    tries = await asyncio.gather(
+        *(take_lease(deps.objects, _lease_key(cid), cid, now=deps.clock()) for cid in missing)
     )
-    return {manifest.cache_id: manifest for manifest in waited if manifest is not None}
+    found = await asyncio.gather(*(_waited(deps, tried) for tried in tries if not tried.ours))
+    return {manifest.cache_id: manifest for manifest in found if manifest is not None}
+
+
+async def _waited(deps: ListenDeps, held: LeaseTry) -> NarrationManifest | None:
+    found = partial(stored_manifest, deps.objects, held.lease.cache_id)
+    return await waited(found, held, clock=deps.clock, sleep=deps.sleep)
+
+
+def _lease_key(cache_id: str) -> str:
+    return narration_key(cache_id, LEASE_LEAF)
 
 
 async def _released(objects: LeasedObjects, ours: dict[str, SpokenBlock]) -> None:
     for cache_id in ours:
         try:
-            await release_lease(objects, cache_id)
+            await release_lease(objects, _lease_key(cache_id))
         except AppError as error:
             logger.warning("the lease on narration %s lapses on its own: %s", cache_id, error)
 

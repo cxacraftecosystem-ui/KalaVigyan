@@ -37,6 +37,7 @@ __all__ = [
     "river_topology_key",
     "score_cue_file_name",
     "score_key",
+    "score_lease_key",
     "score_manifest_key",
     "score_music_file_name",
     "voice_reply_key",
@@ -56,6 +57,7 @@ VOICE_REPLY_FOLDER = "voice-replies"
 VOICE_REPLY_LEAF = "reply.mp3"
 FIELD_VOICE_EXTENSIONS = ("jpg", "png")
 SCORE_MANIFEST_LEAF = "score.json"
+SCORE_LEASE_LEAF = "lease.json"
 RIVER_TOPOLOGY_SUBJECT = "HydroRIVERS-1-0"
 NARRATION_PARTS_MAX = 99
 LESSON_FILE_WHAT = {"html": "Slides", "pptx": "Slides", "pdf": "Lesson"}
@@ -199,9 +201,17 @@ def score_key(cache_id: str, leaf: str) -> str:
 
 
 def score_manifest_key(answer_id: uuid.UUID, language: str) -> str:
+    return _score_answer_key(answer_id, language, SCORE_MANIFEST_LEAF)
+
+
+def score_lease_key(answer_id: uuid.UUID, language: str) -> str:
+    return _score_answer_key(answer_id, language, SCORE_LEASE_LEAF)
+
+
+def _score_answer_key(answer_id: uuid.UUID, language: str, leaf: str) -> str:
     if not language.isascii() or not language.isalpha():
         raise InvalidInput("A score is filed under its answer and language code")
-    return f"{MEDIA_PREFIX}/{SCORE_FOLDER}/{answer_id}/{language}/{SCORE_MANIFEST_LEAF}"
+    return f"{MEDIA_PREFIX}/{SCORE_FOLDER}/{answer_id}/{language}/{leaf}"
 
 
 def molecule_key(pubchem_cid: int, leaf: str) -> str:

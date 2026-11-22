@@ -19,7 +19,7 @@ from app.services.object_store import media_bucket
 from app.voice.languages import LISTEN_LANGUAGES
 from app.voice.listen import Narrator
 from app.voice.listen_store import SqlListenStore
-from app.voice.narration_lease import LeasedObjects
+from app.voice.object_lease import LeasedObjects
 
 __all__ = [
     "NO_LISTEN",

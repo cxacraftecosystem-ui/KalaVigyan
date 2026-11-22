@@ -50,6 +50,17 @@ async def test_a_caller_that_stays_gets_the_result_and_the_error() -> None:
     assert shield.running == 0
 
 
+async def test_work_waited_for_a_bounded_time_keeps_running_after_the_wait_ends() -> None:
+    shield, started, release, kept = ShieldedWork(), asyncio.Event(), asyncio.Event(), []
+    with pytest.raises(TimeoutError):
+        await shield.run_within(write_back(started, release, kept), name="film score", seconds=0.01)
+    assert started.is_set() and kept == [] and shield.running == 1
+    release.set()
+    assert await shield.drain() == 0
+    assert kept == ["committed"] and shield.running == 0
+    assert await shield.run_within(write_back(started, release, kept), name="film score", seconds=5) == "kept"
+
+
 async def test_a_failure_after_the_caller_left_is_logged(caplog: pytest.LogCaptureFixture) -> None:
     shield, release = ShieldedWork(), asyncio.Event()
 

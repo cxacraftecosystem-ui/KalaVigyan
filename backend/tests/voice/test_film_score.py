@@ -31,7 +31,7 @@ SFX = "eleven_text_to_sound_v3"
 
 
 def clip_id(task: str, model: str, prompt: str, seconds: str) -> str:
-    parts = ("kalavigyan-score", "film-score/v1", task, model, prompt, seconds)
+    parts = ("kalavigyan-score", "film-score/v2", task, model, prompt, seconds)
     return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
 
 
@@ -63,11 +63,11 @@ def made_call(data: bytes, mime: str = "audio/mpeg") -> MediaCall:
 async def test_the_phase_a_score_is_made_once_then_served_from_the_cache_as_the_golden() -> None:
     objects, maker = MemoryObjects(), MemoryMaker()
     await film_score(score_ask(golden_explainer()), score_deps(objects, maker))
-    assert maker.tasks() == ["MUSIC", "SOUND_EFFECT", "SOUND_EFFECT"]
-    assert [call.output for call in maker.calls] == [{"seconds": "90"}, {"seconds": "2"}, {"seconds": "3"}]
-    assert [call.units for call in maker.calls] == [90.0, 2.0, 3.0]
+    assert maker.tasks() == ["MUSIC", "SOUND_EFFECT"]
+    assert [call.output for call in maker.calls] == [{"seconds": "90"}, {"seconds": "3"}]
+    assert [call.units for call in maker.calls] == [90.0, 3.0]
     again = await film_score(score_ask(golden_explainer()), score_deps(objects, maker, SERVED_AT))
-    assert len(maker.calls) == 3
+    assert len(maker.calls) == 2
     assert dumped(FilmScore, again) == golden_text("film.score.golden.json")
     assert manifests(objects) == [score_manifest_key(ANSWER, "en")]
 
@@ -76,10 +76,10 @@ async def test_audio_is_content_addressed_so_another_language_reuses_the_cues() 
     objects, maker = MemoryObjects(), MemoryMaker()
     await film_score(score_ask(golden_explainer()), score_deps(objects, maker))
     score = await film_score(score_ask(in_hindi(golden_explainer())), score_deps(objects, maker))
-    assert maker.tasks() == ["MUSIC", "SOUND_EFFECT", "SOUND_EFFECT"]
-    water = clip_id("SOUND_EFFECT", SFX, SCORE_CUES["prose", "GEOGRAPHY"].prompt, "3")
-    assert (score.language, len(score.cues)) == ("hi", 2)
-    assert score.cues[1].audio_url.startswith(f"{BUCKET_HOST}/media/score/{water}/")
+    assert maker.tasks() == ["MUSIC", "SOUND_EFFECT"]
+    water = clip_id("SOUND_EFFECT", SFX, SCORE_CUES["process_ladder", "WATER"].prompt, "3")
+    assert (score.language, len(score.cues)) == ("hi", 1)
+    assert score.cues[0].audio_url.startswith(f"{BUCKET_HOST}/media/score/{water}/")
     assert manifests(objects) == sorted([score_manifest_key(ANSWER, "en"), score_manifest_key(ANSWER, "hi")])
 
 
@@ -96,14 +96,14 @@ async def test_a_failed_call_adds_nothing_and_the_next_ask_reuses_what_was_made(
     with pytest.raises(RouterError):
         await film_score(score_ask(golden_explainer()), score_deps(objects, maker))
     assert manifests(objects) == []
-    tapping = clip_id("SOUND_EFFECT", SFX, SCORE_CUES["process_ladder", None].prompt, "2")
-    assert not any(key.startswith(f"media/score/{tapping}/") for key in objects.stored)
+    water = clip_id("SOUND_EFFECT", SFX, SCORE_CUES["process_ladder", "WATER"].prompt, "3")
+    assert not any(key.startswith(f"media/score/{water}/") for key in objects.stored)
     music = clip_id("MUSIC", "music_v2_5", SCORE_MUSIC_PROMPT, "90")
     assert score_key(music, CLIP_LEAF) in objects.stored
     maker.failing = None
     maker.calls.clear()
     score = await film_score(score_ask(golden_explainer()), score_deps(objects, maker))
-    assert maker.tasks() == ["SOUND_EFFECT", "SOUND_EFFECT"] and score.music is not None
+    assert maker.tasks() == ["SOUND_EFFECT"] and score.music is not None
 
 
 async def test_audio_of_the_wrong_length_is_never_stored() -> None:
@@ -129,9 +129,9 @@ async def test_through_the_media_router_a_master_admin_is_never_refused(
     assert refused.value.kind == "ceiling" and calls == [] and objects.stored == {}
     master = score_ask(golden_explainer(), role="MASTER_ADMIN")
     score = await film_score(master, score_deps(objects, studio_router(calls)))
-    assert [call.kind for call in calls] == ["MUSIC", "SOUND_EFFECT", "SOUND_EFFECT"]
+    assert [call.kind for call in calls] == ["MUSIC", "SOUND_EFFECT"]
     assert score.label.models == ["music_v2_5", SFX]
-    assert [entry["allowed"] for entry in found.reserved][-3:] == [True, True, True]
+    assert [entry["allowed"] for entry in found.reserved][-2:] == [True, True]
 
 
 async def test_only_fixed_table_prompts_are_sent_never_the_explainer_s_words() -> None:
@@ -161,11 +161,11 @@ async def test_a_changed_explainer_or_a_damaged_manifest_is_scored_again() -> No
     await film_score(score_ask(golden_explainer()), score_deps(objects, maker))
     shorter = golden_explainer().model_copy(update={"sections": golden_explainer().sections[:2]})
     await film_score(score_ask(shorter), score_deps(objects, maker))
-    assert maker.tasks()[3:] == ["MUSIC"]
-    assert maker.calls[3].units == 70.0
+    assert maker.tasks()[2:] == ["MUSIC"]
+    assert maker.calls[2].units == 70.0
     objects.stored[score_manifest_key(ANSWER, "en")] = (b"{}", "application/json")
     await film_score(score_ask(golden_explainer()), score_deps(objects, maker))
-    assert len(maker.calls) == 4
+    assert len(maker.calls) == 3
 
 
 async def test_a_hidden_simulation_is_no_scene_and_an_explainer_with_nothing_else_is_refused() -> None:
@@ -173,7 +173,7 @@ async def test_a_hidden_simulation_is_no_scene_and_an_explainer_with_nothing_els
     score = await film_score(
         score_ask(with_hidden_simulation(alone=False)), score_deps(MemoryObjects(), maker)
     )
-    assert [cue.block_id for cue in score.cues] == ["s1.b1", "s2.b1"]
+    assert [cue.block_id for cue in score.cues] == ["s1.b1"]
     with pytest.raises(ScoreRefused) as refused:
         await film_score(score_ask(with_hidden_simulation(alone=True)), score_deps(MemoryObjects(), maker))
     assert refused.value.reason == "nothing"

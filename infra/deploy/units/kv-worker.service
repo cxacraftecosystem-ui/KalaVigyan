@@ -6,6 +6,9 @@ ConditionPathExists=|/opt/kalavigyan/current/backend/app/worker.py
 ConditionPathExists=|/opt/kalavigyan/current/backend/app/worker/__main__.py
 
 [Service]
+Type=notify
+NotifyAccess=main
+WatchdogSec=300
 User=kalavigyan
 Group=kalavigyan
 WorkingDirectory=/opt/kalavigyan/current/backend
