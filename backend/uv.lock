@@ -821,6 +821,7 @@ dependencies = [
     { name = "trafilatura" },
     { name = "uharfbuzz" },
     { name = "uvicorn", extra = ["standard"] },
+    { name = "websockets" },
 ]
 
 [package.dev-dependencies]
@@ -869,6 +870,7 @@ requires-dist = [
     { name = "trafilatura", specifier = ">=2.3.1" },
     { name = "uharfbuzz", specifier = ">=0.57.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54.0" },
+    { name = "websockets", specifier = ">=17.4" },
 ]
 
 [package.metadata.requires-dev]
