@@ -1386,7 +1386,10 @@ Neither builder asks a model, so neither spends; both read stored rows in one sh
   quotes (different values across claims give none); the status by `gi_status_name`, none when a
   sentence says registered without a certificate or date. Imitation: up to `IMITATION_MAX` (3)
   fact-level claims citing a GI journal whose text names imitation or passing off
-  (`states_imitation`; "substitute" alone is not a sign). Prices: the curated rows only, each
+  (`states_imitation`; "substitute" alone is not a sign). Prices: the curated rows; a craft with
+  none reads up to 40 of its claims naming a price (`market_store.stated_price_offer`, decision
+  0147) and keeps a claim stating exactly one price, one year and one LGD district (by its register
+  spelling or another name). Each
   stated price of the row's claim (`research/stated_prices`; `per` after "per", "a", "an" or "/",
   never a quantity word such as "few" nor a word followed by "ago"; decision 0147), up to
   `PRICES_MAX` (6); a row whose year or place its sentence does not state is dropped. A claim of a

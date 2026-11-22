@@ -1413,7 +1413,8 @@ Last reviewed: 2026-11-22.
   run time needs a rule the plan does not have.
 - **Clears it:** an owner rule for derived figures (for example, only products of a data value and
   an input step the data object names), then that runtime guard in `lib/sandboxFrame`'s prelude
-  posting a refusal that `SandboxFrame` turns into hiding the block.
+  posting a refusal that `SandboxFrame` turns into hiding the block. Waits on the owner's rule
+  (checked again on 2026-11-22: the static check covers code numerals since decision 0061).
 
 ### Chromium ignores the frame policy's webrtc directive
 
@@ -1642,10 +1643,12 @@ Last reviewed: 2026-11-22.
   regional path is built and tested on hand-written quotes (decision 0066).
 - **Why left:** a regional value has to come from a source a curator verifies; inventing one would
   break O5.
-- **Clears it:** a dossier claim quoting a regional table (a district gazetteer or a state's
-  weights-and-measures record) as an equality ("a seer of Kachchh weighs ... kg") that names the
-  district or state by its LGD register spelling; then the review adds a `REGIONAL` row to the
-  fixture from that claim.
+- **Clears it:** curation only; the code path is built, and since decision 0147 the region may
+  be named by its register spelling or any other name `data/district_other_names.json` lists
+  ("a seer of Kutch" now names Kachchh). For Kutch Ajrakh: a dossier claim quoting the weights and
+  measures table of the Kutch district gazetteer (Gujarat State Gazetteers, Kutch District, 1971,
+  or the Gazetteer of the Bombay Presidency, Cutch, 1880) as an equality ("a seer ... weighs ...
+  kg", "a gaj is ... m"); then the review adds a `REGIONAL` row to the fixture from that claim.
 
 ### The phase D fixture shows no price and no Kutch Ajrakh sign of imitation
 
@@ -1685,18 +1688,25 @@ Last reviewed: 2026-11-22.
   the master list knows only by its state of practice is not listed for any district.
 - **Why left:** placing a state-level craft in every district of the state would be a claim no
   source makes.
-- **Clears it:** cited locations for more crafts (curation adds them district by district).
+- **Clears it:** curation only; the code path reads any cited district or point location. For
+  each GI craft the master list places by state alone, a dossier place naming its district from
+  the GI journal's "geographical area" passage or the district gazetteer, starting with the GI
+  crafts no dossier covers yet (Tharu embroidery, Kutch embroidery, Kasuti embroidery and the
+  other GI rows of `craft_master_list.json` without a dossier).
 
 ## Local measures, and market and GI (decision 0066)
 
-### Prices come only from curated rows
+### A price stated with several years, places or prices needs a curated row
 
-- **What:** a price is shown only from a `CraftPrice` row (a curated dossier's `market.prices`);
-  seed and answer claims that state a price are not shown, because nothing records their date and
-  place apart from the text.
-- **Why left:** reading a date and a place out of free text would choose among several; the
-  contract names the curated rows as the source.
-- **Clears it:** the curation run adds `market.prices` for each craft whose sources state one.
+- **What:** without curated rows, a price is read from a cited claim of the craft only when the
+  claim states exactly one price, one year and one LGD district (decision 0147,
+  `market_store.stated_price_offer`); a claim stating two prices, a range of years or two places
+  ("a cotton bandhani cost Rs. 10 to Rs. 50 and a georgette one Rs. 50 to Rs. 250") shows none.
+  19 prices in 12 dossiers are curated today.
+- **Why left:** choosing among several dates or places in one sentence would be a guess.
+- **Clears it:** curation only: `market.prices` rows for those claims, starting with the crafts
+  whose GI journal or gazetteer prices state several items (Kutch Bandhani, Tikuli Painting,
+  Uttarakhand Ringal Craft), each row naming its date and place.
 
 ### GI fields are read by their labels
 
@@ -1704,19 +1714,22 @@ Last reviewed: 2026-11-22.
   and government claims ("application 183", "Certificate Date 11-05-2011", "Journal Number 37");
   a claim phrased otherwise adds nothing, and two claims stating different values give no status.
 - **Why left:** the registry offers no open API, and a curated record replaces the reading.
-- **Clears it:** curated GI records for every GI craft (the curation run), after which the label
-  reader serves only crafts without a dossier.
+- **Clears it:** curation only: a `market.gi` record for each GI craft (21 of the master list's
+  209 GI crafts have one), read from its GI journal and registry pages as the 21 are, starting with
+  Tharu Embroidery, Kutch Embroidery, Kasuti Embroidery, Sandur Lambani Embroidery and Toda
+  Embroidery; the label reader then serves only crafts without a dossier.
 
-### Imitation and per are fixed word lists
+### Imitation is a fixed word list
 
 - **What:** a sign of imitation must name one of the listed words (fake, imitation, counterfeit,
   spurious, knock-off, passed off, screen-printed, machine-made, power loom, mill-made);
-  "duplicate", "copies" and "substitute" are left out because they also name other things. A
-  price's `per` is read only after "per" or "/", so "Rs 1,500 a metre" shows no per.
-- **Why left:** a model choosing either would spend on every economics section; the lists err
-  toward showing less.
-- **Clears it:** a dossier field naming the claims that are signs of imitation, read first, and
-  a reviewed list of per words.
+  "duplicate", "copies" and "substitute" are left out because they also name other things. (A
+  price's `per` is read after "per", "a", "an" or "/" since decision 0147.)
+- **Why left:** a model choosing would spend on every economics section; the list errs toward
+  showing less; a dossier field needs a stored column the curated import writes, and the import
+  belongs to the curated-import lane, which was running in the same tree.
+- **Clears it:** a dossier `market.imitation` list of claim ids (each citing a GI journal), stored
+  by the curated import and read before the word list by `services/market_builder`.
 
 ## Climate and risk, and ask the map (decision 0065)
 
