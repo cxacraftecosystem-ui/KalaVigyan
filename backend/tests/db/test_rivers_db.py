@@ -205,7 +205,9 @@ async def test_the_basin_route_revalidates_from_the_stored_hash(session: AsyncSe
     try:
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-            same = await client.get(f"/api/rivers/{OUTLET}", headers={"If-None-Match": f'"{SHA}"'})
+            same = await client.get(
+                f"/api/rivers/{OUTLET}", headers={"If-None-Match": f'"{SHA}"', "Accept-Encoding": "identity"}
+            )
             unknown = await client.get(f"/api/rivers/{SOURCE_A}")
     finally:
         app.dependency_overrides.pop(get_session, None)

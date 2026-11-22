@@ -57,8 +57,8 @@ def state_values_sql() -> str:
 
 async def refresh_state_values(session: AsyncSession) -> int:
     await session.execute(delete(StateEnvValue))
-    written = await session.execute(state_values_insert())
-    return int(getattr(written, "rowcount", 0) or 0)
+    await session.execute(state_values_insert())
+    return int(await session.scalar(select(func.count()).select_from(StateEnvValue)) or 0)
 
 
 def _district_areas() -> CTE:

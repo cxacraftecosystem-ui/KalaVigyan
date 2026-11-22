@@ -15,8 +15,8 @@ from sqlalchemy.orm import aliased
 
 from app.core.errors import InvalidInput
 from app.data.map_layers import LAYERS_DIR, MINERALS_FILE, RELIEF_FILE, RIVERS_FILE
-from app.data.river_names import NamedRiver, place_river
-from app.geo.datasets import region_dataset
+from app.data.river_names import NamedRiver, load_river_names, place_river
+from app.geo.datasets import region_dataset, registry_row_ref
 from app.geo.ground_frame import framed
 from app.geo.ground_layers import GroundLayers, ground_layers
 from app.geo.ground_materials import CraftMaterial
@@ -64,6 +64,7 @@ __all__ = [
     "ground_measures",
     "ground_rivers",
     "map_ground_at",
+    "name_dataset",
     "named_rivers",
     "stored_layers",
     "subject_ground",
@@ -165,6 +166,11 @@ def abroad_pins(places: Sequence[IndexPlace], points: Mapping[str, PlacePoint]) 
     return tuple(sorted(held.values(), key=lambda pin: (pin.name.casefold(), pin.key)))
 
 
+def name_dataset(code: str) -> DatasetRef | None:
+    row = load_river_names().dataset(code)
+    return registry_row_ref(row) if row is not None else None
+
+
 def named_rivers(places: Sequence[IndexPlace]) -> tuple[NamedRiver, ...]:
     found: dict[tuple[int, tuple[int, ...]], NamedRiver] = {}
     for place in places:
@@ -221,10 +227,12 @@ async def _rivers(session: AsyncSession, places: Sequence[IndexPlace]) -> tuple[
     named = named_rivers(places)
     if not named:
         return ()
-    records = await dataset_records(
-        session, {HYDRORIVERS_DATASET_CODE, *(river.dataset_code for river in named)}
-    )
-    return ground_rivers(named, {code: region_dataset(record) for code, record in records.items()})
+    lines = (await dataset_records(session, [HYDRORIVERS_DATASET_CODE])).get(HYDRORIVERS_DATASET_CODE)
+    codes = {river.dataset_code for river in named}
+    datasets = {code: found for code in codes if (found := name_dataset(code)) is not None}
+    if lines is not None:
+        datasets[HYDRORIVERS_DATASET_CODE] = region_dataset(lines)
+    return ground_rivers(named, datasets)
 
 
 async def map_ground_at(session: AsyncSession, point: tuple[float, float]) -> MapPlaceGround | None:

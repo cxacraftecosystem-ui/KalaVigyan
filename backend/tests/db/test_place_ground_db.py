@@ -18,6 +18,7 @@ from app.models import (
     AdminState,
     Claim,
     ClaimSource,
+    Concept,
     Craft,
     CraftLocation,
     CuratedCraft,
@@ -30,8 +31,9 @@ from app.models import (
     StageMaterial,
     WikidataPoint,
 )
+from app.research.datasets import DatasetRef
 from app.research.rivers import HYDRORIVERS_DATASET_CODE
-from app.services import place_ground as service
+from app.services import knowledge_view, place_ground as service
 
 from ..geo.ground_fixtures import fixture_layers
 
@@ -259,12 +261,11 @@ async def seed_beyond(session: AsyncSession) -> Craft:
     session.add_all(
         WikidataPoint(wikidataId=k, longitude=x, latitude=y, keptAt=NOW) for k, (x, y) in points.items()
     )
-    session.add_all(
-        [
-            dataset_row(HYDRORIVERS_DATASET_CODE, "HydroRIVERS", "WWF"),
-            dataset_row(OSM_NAMES, "Names", OSM_CREDIT),
-        ]
+    session.add(dataset_row(HYDRORIVERS_DATASET_CODE, "HydroRIVERS", "WWF"))
+    session.add(
+        Concept(id=NAMED_CONCEPT, craftId=CRAFT, type="ENVIRONMENTAL_CONDITION", name="Abroad region")
     )
+    await session.flush()
     for claim_id, status in ((NAMED_CLAIM, "APPROVED"), (WITHDRAWN_CLAIM, "RETRACTED")):
         session.add(
             Claim(
@@ -285,12 +286,31 @@ async def seed_beyond(session: AsyncSession) -> Craft:
     return craft
 
 
+def names_row() -> DatasetRef:
+    return DatasetRef(
+        code=OSM_NAMES,
+        title="Names",
+        publisher=None,
+        edition="1",
+        period="static",
+        native_resolution="vector",
+        licence="ODbL 1.0",
+        licence_url=None,
+        attribution=OSM_CREDIT,
+        citation=None,
+        url=None,
+    )
+
+
 async def test_a_place_abroad_within_reach_is_pinned_and_a_named_river_is_cited_from_both_its_rows(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     named = {("Test River", DISTRICT): NAMED_RIVER}
     monkeypatch.setattr(service, "place_river", lambda name, lgd: named.get((name, lgd)))
+    monkeypatch.setattr(service, "name_dataset", {OSM_NAMES: names_row()}.get)
     craft = await seed_beyond(session)
+    shown, _ = await knowledge_view.claims_by_id(session, [NAMED_CLAIM, WITHDRAWN_CLAIM])
+    assert list(shown) == [NAMED_CLAIM]
     ground = await service.craft_ground_of(session, craft)
     assert ground is not None
     assert [(p.key, p.name, p.roles, p.country, p.longitude, p.latitude) for p in ground.abroad] == [
@@ -315,8 +335,8 @@ async def test_a_river_without_its_name_s_dataset_row_is_not_drawn(
     session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(service, "place_river", lambda name, lgd: NAMED_RIVER)
+    monkeypatch.setattr(service, "name_dataset", {}.get)
     craft = await seed_beyond(session)
-    await session.execute(delete(EnvDataset).where(EnvDataset.code == OSM_NAMES))
     ground = await service.craft_ground_of(session, craft)
     assert ground is not None
     assert (len(ground.abroad), ground.rivers) == (1, [])
