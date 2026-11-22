@@ -10,7 +10,9 @@ from typing import Any
 
 from app.models.enums import EXPLAINER_DEPTHS
 from app.research.blocks import ProcessLadderBlock
+from app.research.expert_panel import panel_seats
 from app.research.explainer import Block
+from app.research.piece_reuse import seated_pieces
 from app.research.planning import PlanRequest
 from app.research.sections import LADDER_DISCIPLINE, SectionSpec, named_stage_ids
 from app.science.ladder import ladder_problems, ladder_stage_options, process_ladder
@@ -42,6 +44,11 @@ class ReuseBuilds:
     answer_id: uuid.UUID
     request: PlanRequest
     process: ProcessRecords | None = None
+
+    def seated(self, spec: SectionSpec, reused: ReusedSection) -> ReusedSection:
+        seats = panel_seats(spec.discipline, self.request.seats, depth=self.request.depth)
+        pieces = seated_pieces(reused.pieces, seats)
+        return reused if pieces == reused.pieces else replace(reused, pieces=pieces)
 
     def placed(self, spec: SectionSpec, reused: ReusedSection, enrichment: Enrichment) -> Placed:
         replaced = self.builders.replaced_on_reuse(spec.discipline)
@@ -95,12 +102,12 @@ class _Reused:
 async def stream_reused(
     specs: Sequence[SectionSpec], lookup: PieceLookup, showing: ReusedShowing
 ) -> list[SectionOutcome]:
+    builds = showing.builds
     chosen = [
-        (spec, lookup.reused[spec.discipline])
+        (spec, builds.seated(spec, lookup.reused[spec.discipline]))
         for spec in sorted(specs, key=lambda spec: spec.order)
         if spec.discipline in lookup.reused
     ]
-    builds = showing.builds
     placed = {spec.id: builds.placed(spec, reused, showing.enrichment) for spec, reused in chosen}
     builds.builders.note_shown(kind for one in placed.values() for kind in one.kinds)
     async with AsyncExitStack() as stack:

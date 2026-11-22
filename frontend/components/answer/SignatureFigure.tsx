@@ -1,6 +1,7 @@
 "use client";
 
 import { ExplainerSentence } from "@/components/answer/ExplainerSentence";
+import { SentencesDiffer, SentenceWithReadings } from "@/components/answer/SentencesDiffer";
 import { VatFigure } from "@/components/answer/VatFigure";
 import { FactGrid, type Fact } from "@/components/editorial/FactGrid";
 import { Figure } from "@/components/ui/Figure";
@@ -8,7 +9,7 @@ import { firingFacts, firingTitle, lostWaxTitle, mordantLabel, mordantTitle, sig
 import type { FiringBlock, LostWaxBlock, MordantBathBlock, SignatureBlock } from "@/lib/explainerSignature";
 
 function MordantFigure({ block, number }: { block: MordantBathBlock; number: number }) {
-  const facts: Fact[] = block.swatches.map((swatch) => ({ label: mordantLabel(swatch), value: <ExplainerSentence sentence={swatch.sentence} /> }));
+  const facts: Fact[] = block.swatches.map((swatch) => ({ label: mordantLabel(swatch), value: <SentenceWithReadings sentence={swatch.sentence} /> }));
   return (
     <Figure number={number} kind="diagram" title={mordantTitle(block)} id="fig-signature">
       <FactGrid facts={facts} columns={facts.length > 2 ? 4 : 2} />
@@ -27,6 +28,7 @@ function LostWaxFigure({ block, number }: { block: LostWaxBlock; number: number 
             <p className="mt-1.5 font-reading text-body-sm text-ink-2">
               <ExplainerSentence sentence={step.sentence} />
             </p>
+            <SentencesDiffer sentences={[step.sentence]} />
           </li>
         ))}
       </ol>
@@ -35,7 +37,7 @@ function LostWaxFigure({ block, number }: { block: LostWaxBlock; number: number 
 }
 
 function FiringFigure({ block, number }: { block: FiringBlock; number: number }) {
-  const facts: Fact[] = firingFacts(block).map((fact) => ({ label: fact.label, value: <ExplainerSentence sentence={fact.sentence} /> }));
+  const facts: Fact[] = firingFacts(block).map((fact) => ({ label: fact.label, value: <SentenceWithReadings sentence={fact.sentence} /> }));
   return (
     <Figure number={number} kind="diagram" title={firingTitle(block)} id="fig-signature">
       <FactGrid facts={facts} columns={facts.length > 2 ? 4 : 2} />

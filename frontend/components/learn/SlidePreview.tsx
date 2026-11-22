@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 
-import { ExplainerSentence } from "@/components/answer/ExplainerSentence";
+import { SentenceWithReadings } from "@/components/answer/SentencesDiffer";
 import { PictureView } from "@/components/answer/ImageStrip";
 import type { QuizBlock } from "@/lib/explainerLearning";
 import { countNoun } from "@/lib/format";
@@ -46,7 +46,7 @@ function Bullets({ slide }: { slide: Slide }) {
     <ul className="grid list-disc gap-1.5 ps-5 font-reading text-body-sm text-ink-1 marker:text-ink-3">
       {slide.bullets.map((bullet) => (
         <li key={bullet.id} className="break-words">
-          <ExplainerSentence sentence={bullet} />
+          <SentenceWithReadings sentence={bullet} />
         </li>
       ))}
     </ul>

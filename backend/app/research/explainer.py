@@ -290,6 +290,7 @@ class ExplainerSection(ContractModel):
     state: FinalState
     blocks: list[Block]
     searched: str | None = Field(min_length=1, max_length=SEARCHED_MAX_CHARS)
+    withdrawn: int = Field(default=0, ge=0, exclude_if=lambda value: value == 0)
 
     @model_validator(mode="after")
     def _ready_with_blocks_or_empty_with_a_reason(self) -> Self:

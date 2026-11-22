@@ -9,6 +9,7 @@ from pydantic import AwareDatetime, Field, model_validator
 from pydantic.alias_generators import to_camel
 
 from app.models.enums import EVIDENCE_LEVELS, IMAGE_RELEVANCE
+from app.models.knowledge import DIFFERS_ON_CHARS
 
 from .base import ContractModel, absent, empty
 from .citations import AnswerSentence, Citation
@@ -78,10 +79,13 @@ def _unflagged(value: object) -> bool:
 class ExplainerSentence(AnswerSentence):
     terms: list[TermSpan]
     sources_differ: bool = Field(default=False, exclude_if=_unflagged)
+    differs_on: str | None = Field(default=None, min_length=1, max_length=DIFFERS_ON_CHARS, exclude_if=absent)
 
     @model_validator(mode="after")
-    def _terms_mark_the_shown_text(self) -> Self:
+    def _terms_and_differences_hold(self) -> Self:
         problems = span_problems(self.text, self.terms)
+        if self.differs_on is not None and not self.sources_differ:
+            problems.append("it names what its sources differ on only when they differ")
         if problems:
             raise ValueError(f"sentence {self.id}: {'; '.join(problems)}")
         return self

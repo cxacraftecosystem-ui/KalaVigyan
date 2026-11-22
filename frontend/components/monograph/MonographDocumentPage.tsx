@@ -22,7 +22,7 @@ function DocumentChapters({ document, plan, masthead, rail, rest }: ChaptersProp
   );
 }
 
-export function MonographDocumentPage({ document: given, masthead = true, deferred = false, languages = null }: MonographPageProps) {
+export function MonographDocumentPage({ document: given, masthead = true, deferred = false, languages = null, tail = null }: MonographPageProps & { tail?: ReactNode }) {
   const { document, plan } = shownPage(given);
   const rail = <MonographRail chapters={railChapters(plan)} />;
   const later = railAfterMasthead(document, plan, masthead);
@@ -31,6 +31,7 @@ export function MonographDocumentPage({ document: given, masthead = true, deferr
     <MonographFrame document={document} given={given} dataDeferred={rest !== null} languages={languages}>
       {later ? null : rail}
       <DocumentChapters document={document} plan={plan} masthead={masthead} rail={later ? rail : null} rest={rest} />
+      {tail}
       <KitDefs document={given} />
     </MonographFrame>
   );
