@@ -105,9 +105,8 @@ class VoiceRuntime:
         self._objects = objects
         self._reachable: tuple[float, str, bool] | None = None
 
-    def replies(self) -> ReplyAudio | None:
-        objects = self._objects or media_bucket()
-        return None if objects is None else ReplyAudio(objects)
+    def replies(self) -> ReplyAudio:
+        return ReplyAudio(self._objects or media_bucket())
 
     def elevenlabs(self, voice: VoiceSettings) -> ElevenLabs:
         if not voice.api_key:

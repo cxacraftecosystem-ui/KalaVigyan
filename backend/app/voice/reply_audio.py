@@ -21,14 +21,19 @@ class ReplyObjects(Protocol):
 
 
 class ReplyAudio:
-    def __init__(self, objects: ReplyObjects) -> None:
+    def __init__(self, objects: ReplyObjects | None) -> None:
         self._objects = objects
 
     async def put(self, session_id: uuid.UUID, turn_id: uuid.UUID, audio: bytes) -> None:
+        if self._objects is None:
+            logger.error("no media bucket keeps reply %s, so its speech route makes it again", turn_id)
+            return
         try:
             await self._objects.put(voice_reply_key(session_id, turn_id), audio, content_type=REPLY_TYPE)
         except AppError as error:
             logger.warning("reply %s was not kept, so its speech route makes it again: %s", turn_id, error)
 
     async def get(self, session_id: uuid.UUID, turn_id: uuid.UUID) -> bytes | None:
+        if self._objects is None:
+            return None
         return await self._objects.get(voice_reply_key(session_id, turn_id))
