@@ -92,7 +92,7 @@ shared facts nor capped a single call.
    stance checks on it while the citation keeps the verbatim quote. The composer's side, asking
    for the renderings, is open in the register for the answer-composition lane.
 9. **Reference sources.** Commons files are `SourceKind` `MEDIA` (PDF and DjVu stay `OTHER`;
-   `MEDIA` sorts before `OTHER`, is grouped with `WEB` in the trail and read by the history
+   `MEDIA` is appended after `OTHER`, as every enum value added later is, is grouped with `WEB` in the trail and read by the history
    seats); every Wikipedia edition of Wikimedia's sitematrix is accepted, with ISO aliases;
    Wikidata decades, centuries and millennia are written as Wikibase counts them; Commons
    original dates are read from their common forms. PubChem keeps three hazard sources: the

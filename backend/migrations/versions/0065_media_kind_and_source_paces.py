@@ -14,6 +14,7 @@ TABLES = (PACE, LEASE)
 STAMP = sa.DateTime(timezone=True)
 SERVICE_CHARS = 40
 LANE_CHARS = 20
+ENUM_ADDITIONS: tuple[tuple[str, tuple[str, ...]], ...] = (("SourceKind", ("MEDIA",)),)
 COMMONS_FILES = (
     "UPDATE \"Source\" SET kind = 'MEDIA' WHERE kind = 'OTHER' "
     "AND url LIKE 'https://commons.wikimedia.org/wiki/File:%' "
@@ -36,7 +37,9 @@ $do$
 
 def upgrade() -> None:
     with op.get_context().autocommit_block():
-        op.execute("ALTER TYPE \"SourceKind\" ADD VALUE IF NOT EXISTS 'MEDIA' BEFORE 'OTHER'")
+        for enum_name, values in ENUM_ADDITIONS:
+            for value in values:
+                op.execute(f"ALTER TYPE \"{enum_name}\" ADD VALUE IF NOT EXISTS '{value}'")
     op.execute(COMMONS_FILES)
     _paces()
     _leases()
