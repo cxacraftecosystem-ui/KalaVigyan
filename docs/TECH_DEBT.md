@@ -440,8 +440,6 @@ Last reviewed: 2026-11-22.
   (a `--chirps-last-year` option), and have `combine` refuse parts of one dataset whose rows
   differ.
 
-## Craft page and region panel (decision 0019)
-
 ## Voice backend (decision 0017)
 
 ### Voice in other languages is checked by text only (decision 0025)
@@ -2046,15 +2044,6 @@ Last reviewed: 2026-11-22.
 
 ## Learning block renderers (decision 0068)
 
-### The concept graph is a hub, not the researchers' full graph
-
-- **What:** the figure shows one term at a time with at most seven crafts and a count; on a phone
-  long craft names on a crowded ring can touch. The list under it holds every craft.
-- **Why left:** a force layout across terms and crafts needs a layout library or a measured
-  label pass, and the hub answers the explainer's question.
-- **Clears it:** a whole-graph view for researchers on the craft page's Shared science tab
-  (decision 0070), with label collision handled.
-
 ### Quiz picks are kept in the page only
 
 - **What:** a reload or a new visit clears the reader's answers and score.
@@ -2124,8 +2113,6 @@ Last reviewed: 2026-11-22.
 - **Why left:** `PagePlace` carries no coordinates or river id, and the map has no geometry for
   places outside the district outlines.
 - **Clears it:** coordinates (or a HydroRIVERS id) on `PagePlace`, drawn as pins or a river line.
-
-## Learning screens (decision 0069)
 
 ## Lesson packs and exports (decision 0067)
 
