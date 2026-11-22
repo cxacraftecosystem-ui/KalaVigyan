@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
 from rapidfuzz import fuzz
 
 from app.core.errors import InvalidInput
+from app.data.english_words import load_english_words
 from app.research.subject_keys import term_key
 from app.research.terms import TERM_LABEL_MAX_CHARS
 
@@ -23,6 +24,7 @@ __all__ = [
     "compounds_of",
     "concepts_of",
     "glossary_plan",
+    "stated_local_names",
     "wikidata_links",
 ]
 
@@ -37,6 +39,15 @@ NUMBERING = re.compile(r"^\d+\.\s*")
 GLOSSED = re.compile(r"^(?P<head>[^()]+?)\s*\((?P<gloss>[^()]+)\)\s*(?:$|[—–-]\s)")
 GLOSS_ITEMS = re.compile(r"\s*[,/;]\s*")
 NOT_A_HEAD = re.compile(r"[\d/:;,()]")
+LOCAL_NAME_PHRASE = re.compile(
+    r"\b(?:locally\s+(?:known\s+as|called(?:\s+as)?)|known\s+locally\s+as|called\s+locally)\s+",
+    re.IGNORECASE,
+)
+QUOTED_NAME = re.compile(r"[\"'‘“](?P<name>[^\"'’”]+)[\"'’”]")
+NAME_RUN = re.compile(r"[^\W\d_][\w'’-]*(?:[ \t]+[^\W\d_][\w'’-]*)*")
+WORD = re.compile(r"[^\W\d_]+")
+NAMED_BEFORE_WORDS = 6
+NAME_WORD_MIN_CHARS = 4
 
 
 @dataclass(frozen=True)
@@ -61,6 +72,7 @@ class SeedConcept:
     type: str
     name: str
     local_terms: tuple[str, ...]
+    claim_texts: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -132,6 +144,10 @@ def wikidata_links(document: Mapping[str, Any]) -> dict[str, WikidataLink]:
 
 
 def concepts_of(seed_claims: Mapping[str, Any]) -> list[SeedConcept]:
+    texts: dict[str, list[str]] = {}
+    for claim in seed_claims.get("claims") or []:
+        if claim.get("subjectType") == "CONCEPT":
+            texts.setdefault(claim["subjectKey"], []).append(claim["text"])
     return [
         SeedConcept(
             key=row["key"],
@@ -139,9 +155,25 @@ def concepts_of(seed_claims: Mapping[str, Any]) -> list[SeedConcept]:
             type=row["type"],
             name=row["name"],
             local_terms=tuple(term.strip() for term in row.get("localTerms") or [] if term.strip()),
+            claim_texts=tuple(texts.get(row["key"], ())),
         )
         for row in seed_claims.get("concepts") or []
     ]
+
+
+def stated_local_names(
+    head: str, texts: Iterable[str], *, english: Collection[str] | None = None
+) -> list[str]:
+    ordinary = load_english_words() if english is None else english
+    found: list[str] = []
+    for text in texts:
+        for phrase in LOCAL_NAME_PHRASE.finditer(text):
+            if not _names_head(head, text[: phrase.start()]):
+                continue
+            name = _name_after(text[phrase.end() :], ordinary)
+            if name is not None and _usable_head(name):
+                found.append(name)
+    return found
 
 
 def compounds_of(science_seed: Mapping[str, Any]) -> list[SeedCompound]:
@@ -169,6 +201,13 @@ def _craft_term(craft: CraftNames, link: WikidataLink | None, traditions: list[s
 
 
 def _concept_term(concept: SeedConcept) -> TermSeed | None:
+    seed = _glossed_term(concept)
+    if seed is not None:
+        _extend(seed.local_names, stated_local_names(seed.label, concept.claim_texts), leave_out=seed.label)
+    return seed
+
+
+def _glossed_term(concept: SeedConcept) -> TermSeed | None:
     if concept.type not in CONCEPT_TERM_TYPES or not concept.craft_slug:
         return None
     name = NUMBERING.sub("", concept.name).strip()
@@ -213,6 +252,28 @@ def _seed(label: str, *, craft_slugs: list[str], concept_keys: list[str] | None 
     except InvalidInput:
         return None
     return TermSeed(key=key, label=shown, craft_slugs=craft_slugs, concept_keys=list(concept_keys or []))
+
+
+def _names_head(head: str, before: str) -> bool:
+    named = {_stem(word) for word in WORD.findall(head) if len(word) >= NAME_WORD_MIN_CHARS}
+    return any(_stem(word) in named for word in WORD.findall(before)[-NAMED_BEFORE_WORDS:])
+
+
+def _name_after(rest: str, ordinary: Collection[str]) -> str | None:
+    quoted = QUOTED_NAME.match(rest)
+    if quoted is not None:
+        return " ".join(quoted["name"].split()) or None
+    run = NAME_RUN.match(rest)
+    words: list[str] = []
+    for word in run.group(0).split() if run else []:
+        if len(word) < NAME_WORD_MIN_CHARS or word.casefold() in ordinary or len(words) == HEAD_WORDS_MAX:
+            break
+        words.append(word)
+    return " ".join(words) or None
+
+
+def _stem(word: str) -> str:
+    return word.casefold().removesuffix("s")
 
 
 def _usable_head(head: str) -> bool:

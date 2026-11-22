@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "about": "Hand-curated science seed (decision 0015): physical constants as cited claims, compounds, the kind and role of each seeded material, the PLAN 7 reactions with the citations that support them, and condition readings stated in seed claims. Species are proposed here; coefficients are always computed by app/science/balance.py.",
+  "about": "Hand-curated science seed (decision 0015): physical constants as cited claims, compounds, the kind and role of each seeded material (with a stage's own role in stageRoles where that stage's cited quote states one; tools are seeded with a fixed kind and role and are not listed), the PLAN 7 reactions with the citations that support them, and condition readings stated in seed claims. Species are proposed here; coefficients are always computed by app/science/balance.py.",
   "constants": {
     "sources": [
       {
@@ -56,6 +56,34 @@
         "origin": "IMPORT",
         "sensitivity": "OPEN",
         "evidenceKind": "REFERENCE_WORK"
+      },
+      {
+        "id": "sci:doi:10.1007/s42860-020-00082-w",
+        "kind": "PAPER",
+        "title": "Comprehensive Examination of Dehydroxylation of Kaolinite, Disordered Kaolinite, and Dickite: Experimental Studies and Density Functional Theory",
+        "authors": [
+          "Mohammadreza Izadifar",
+          "Peter Thissen",
+          "Annett Steudel",
+          "Reinhard Kleeberg",
+          "Stephan Kaufhold",
+          "Jonas Kaltenbach",
+          "Rainer Schuhmann",
+          "Frank Dehn",
+          "Katja Emmerich"
+        ],
+        "year": 2020,
+        "doi": "10.1007/s42860-020-00082-w",
+        "url": "https://www.cambridge.org/core/journals/clays-and-clay-minerals/article/comprehensive-examination-of-dehydroxylation-of-kaolinite-disordered-kaolinite-and-dickite-experimental-studies-and-density-functional-theory/9F667C379036AB2F76DAC9B237B49CDF",
+        "publisher": "Clays and Clay Minerals, Vol. 68, Issue 4, pp. 319-333, Cambridge University Press",
+        "licence": "Creative Commons Attribution 4.0",
+        "attribution": "Izadifar, Thissen, Steudel, Kleeberg, Kaufhold, Kaltenbach, Schuhmann, Dehn and Emmerich (2020), Clays and Clay Minerals 68(4), 319-333, doi:10.1007/s42860-020-00082-w, CC BY 4.0",
+        "reliability": "A",
+        "storage": "EXCERPT",
+        "retrievedAt": "2026-11-23",
+        "origin": "IMPORT",
+        "sensitivity": "OPEN",
+        "evidenceKind": "SCIENTIFIC_LITERATURE"
       },
       {
         "id": "sci:wikipedia:Beeswax",
@@ -164,8 +192,31 @@
         ]
       },
       {
-        "id": "sci-constant-kaolinite-dehydroxylation",
+        "id": "sci-constant-kaolinite-dehydroxylation-range",
         "constant": "kaolinite-dehydroxylation",
+        "subjectType": "CONCEPT",
+        "subjectKey": "inf:terracotta:dehydroxylation",
+        "predicate": "PROPERTY",
+        "text": "Dehydroxylation of kaolinite commonly occurs between 400 and 700 °C.",
+        "textLang": "en",
+        "evidenceLevel": "PROVISIONAL",
+        "levelReason": "quote re-found verbatim in the cited article",
+        "origin": "IMPORT",
+        "status": "PROPOSED",
+        "createdByKind": "SYSTEM",
+        "sensitivity": "OPEN",
+        "sources": [
+          {
+            "sourceId": "sci:doi:10.1007/s42860-020-00082-w",
+            "locator": "Introduction, paragraph 4",
+            "quote": "Dehydroxylation of kaolinite commonly occurs between 400 and 700°C",
+            "quoteCheck": "PASS",
+            "relation": "DIRECT"
+          }
+        ]
+      },
+      {
+        "id": "sci-constant-kaolinite-dehydroxylation",
         "subjectType": "CONCEPT",
         "subjectKey": "inf:terracotta:dehydroxylation",
         "predicate": "PROPERTY",
@@ -291,7 +342,12 @@
     "ie:dabu.material.myrobalan-and-mordants": {"kind": "MORDANT", "role": "MORDANT", "compound": null},
     "ie:machilipatnam-kalamkari.material.cow-dung": {"kind": "OTHER", "role": "INPUT", "compound": null},
     "ie:machilipatnam-kalamkari.material.kora-cotton-cloth": {"kind": "FIBRE", "role": "INPUT", "compound": null},
-    "ie:machilipatnam-kalamkari.material.myrobalan-karakkaya": {"kind": "MORDANT", "role": "MORDANT", "compound": null},
+    "ie:machilipatnam-kalamkari.material.myrobalan-karakkaya": {
+      "kind": "MORDANT",
+      "role": "MORDANT",
+      "compound": null,
+      "stageRoles": {"ie:machilipatnam-kalamkari.process_stage.second-printing": "DYE"}
+    },
     "ie:machilipatnam-kalamkari.material.buffalo-milk": {"kind": "OTHER", "role": "INPUT", "compound": null},
     "ie:machilipatnam-kalamkari.material.kasim-iron-acetate": {"kind": "MORDANT", "role": "MORDANT", "compound": "iron-ii-acetate"},
     "ie:machilipatnam-kalamkari.material.gum-binder": {"kind": "OTHER", "role": "BINDER", "compound": null},

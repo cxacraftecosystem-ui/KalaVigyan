@@ -84,6 +84,7 @@ export function blockSourceIds(block: TypedBlock): string[] {
   if (block.kind === "indigo_vat") return [...cited, ...signatureSourceIds(block)];
   if (block.kind === "zoom_story") return [...cited, ...block.levels.flatMap((level) => (level.compound ? [level.compound.sourceId] : []))];
   if (block.kind === "component") return componentSourceIds(block);
+  if (block.kind === "material_card") return block.sourceId ? [...cited, block.sourceId] : cited;
   return block.kind === "molecule_3d" ? [...cited, block.sourceId] : cited;
 }
 

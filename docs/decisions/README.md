@@ -43,7 +43,7 @@ flowchart LR
 | [0012](0012-answer-stream-end-to-end.md) | The answer stream end to end | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0013](0013-review-fixes-quotes-licences-scope.md) | Quote strength, open licences, one craft scope and scoped embedding | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0014](0014-science-region-voice-media-contracts.md) | Contracts for process science, region profile, voice and media | · |
-| [0015](0015-science-engine.md) | Science engine: balancing, units, envelopes, the science seed and the process route | · |
+| [0015](0015-science-engine.md) | Science engine: balancing, units, envelopes, the science seed and the process route | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
 | [0016](0016-region-profile.md) | Region profile and map layers from the stored district statistics | · |
 | [0017](0017-voice-backend.md) | Voice backend: sessions, the custom LLM, the relay path and upkeep | [0025](0025-multilingual-voice.md) and [0140](0140-voice-and-listen-kept-true.md) |
 | [0018](0018-media-backend.md) | Media backend: stage illustrations and clips through the router, the job queue and S3 | · |
@@ -78,18 +78,18 @@ flowchart LR
 | [0042](0042-phase-b-contract.md) | Phase B contract: place, matter and the expert panel | · |
 | [0043](0043-river-lines-tracer-and-monthly-rain.md) | River lines, the tracer and monthly rainfall | · |
 | [0044](0044-region-story-and-map-layers.md) | Region story and map layers | · |
-| [0045](0045-reactions-materials-molecules.md) | Reaction player, material cards and 3D molecules | · |
+| [0045](0045-reactions-materials-molecules.md) | Reaction player, material cards and 3D molecules | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
 | [0046](0046-expert-panel.md) | The expert panel | [0093](0093-no-caps-for-now.md) |
 | [0047](0047-seasons-and-supply.md) | Seasons and supply | · |
 | [0048](0048-place-renderers.md) | Place renderers: region story, map layer, seasons and supply | [0092](0092-design-system.md) |
-| [0049](0049-matter-and-expert-renderers.md) | Matter and expert renderers | · |
+| [0049](0049-matter-and-expert-renderers.md) | Matter and expert renderers | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
 | [0050](0050-phase-b-review-fixes.md) | Phase B review fixes | · |
 | [0051](0051-curation-tooling.md) | Curation tooling: the dossier model, fetch, verify and check | · |
 | [0052](0052-opus-composes-at-medium-effort.md) | Opus 5.5 composes answers, at medium effort | · |
 | [0053](0053-curated-dossier-import.md) | Curated dossiers are imported on deploy and served as one craft page | [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0054](0054-phase-c-contract.md) | Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode | · |
 | [0055](0055-generated-explainers.md) | Generated explainers: built from cited figures, checked, stored, reused and hidden | [0142](0142-curated-crafts-read-only-curated-rows.md) |
-| [0056](0056-what-if-lab.md) | The what-if lab's builder | [0140](0140-voice-and-listen-kept-true.md) |
+| [0056](0056-what-if-lab.md) | The what-if lab's builder | [0140](0140-voice-and-listen-kept-true.md), [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
 | [0057](0057-zoom-story-and-timeline-map.md) | Zoom story and timeline map builders | · |
 | [0058](0058-elevenlabs-music-sound-image-video.md) | ElevenLabs music, sound effects, image and video | · |
 | [0059](0059-sandbox-and-what-if-renderers.md) | Sandbox and what-if renderers | · |
@@ -188,6 +188,7 @@ flowchart LR
 | [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | · |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
 | [0150](0150-mcp-activity-and-box-logs.md) | Each MCP call keeps its client and its reason for 180 days and its count for good, and the box ships its logs to CloudWatch | · |
+| [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) | An answer reads a craft's matter once and shows each card, molecule and what-if once, matter blocks cite every value they show, and the science seed deletes what it no longer plans | · |
 
 ## How this document is kept true
 

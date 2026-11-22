@@ -100,6 +100,7 @@ def material_card(offer: CardOffer, choice: CardChoice, *, block_id: str) -> Mat
             local_names=list(_local_names(term)),
             facts=sentences[: len(facts)],
             handling=sentences[len(facts) :],
+            source_id=str(linked.source_id) if linked is not None and linked.source_id else None,
         )
     except ValidationError as refused:
         logger.warning("the %s card is refused: %s", offer.material.name, refused)

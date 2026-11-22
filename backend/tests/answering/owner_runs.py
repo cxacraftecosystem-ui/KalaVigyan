@@ -7,7 +7,7 @@ import pytest
 
 from app.research.explainer import Explainer
 from app.science.records import ProcessRecords
-from app.services import matter_builders
+from app.services import craft_matter as craft_matter_module
 from app.services.answering import AnswerAsk, AnswerPipeline
 from app.services.block_builders import BLOCK_BUILDERS, BlockBuilders
 from app.services.builder_interface import BuilderTools
@@ -44,7 +44,7 @@ def seeded_matter(monkeypatch: pytest.MonkeyPatch, records: ProcessRecords | Non
     async def load(sessions: Any, craft: Any) -> CraftMatter:
         return CraftMatter(records=records or golden_records())
 
-    monkeypatch.setattr(matter_builders, "craft_matter", load)
+    monkeypatch.setattr(craft_matter_module, "craft_matter", load)
 
 
 def owner_pieces() -> MemoryPieces:

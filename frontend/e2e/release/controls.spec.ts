@@ -1,13 +1,13 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
-import { SMALL_PHONE, contextOptions } from "../production/matrix";
+import { PHONE, SMALL_PHONE, contextOptions, type Scheme, type Width } from "../production/matrix";
 import { passPreviewProtection } from "../production/preview";
 
 import { answerSession } from "./answerControls";
 import { ControlWatch } from "./controlWatch";
 import { documentSession, phoneDocumentSession } from "./documentControls";
 import { walkMapLayers } from "./mapControls";
-import { playerSession, whatIf } from "./playerControls";
+import { darkTouchSession, playerSession, whatIf } from "./playerControls";
 import { atlasControls, compareControls, landingControls, readingLink } from "./readingControls";
 import { bypassToken, siteOrigin } from "./site";
 
@@ -16,6 +16,10 @@ const GENERATED = "/crafts/Bagru-Hand-Block-Print";
 const SESSION_TIMEOUT_MS = 8 * 60_000;
 
 type Session = (watch: ControlWatch, page: Page) => Promise<void>;
+type Phone = { width: Width; scheme: Scheme };
+
+const LIGHT_PHONE: Phone = { width: SMALL_PHONE, scheme: "light" };
+const DARK_TOUCH_PHONE: Phone = { width: PHONE, scheme: "dark" };
 
 function settled(watch: ControlWatch): void {
   const problems = watch.keep();
@@ -32,8 +36,8 @@ async function opened(page: Page, target: string, path: string): Promise<Control
   return watch;
 }
 
-async function onPhone(browser: Browser, target: string, path: string, session: Session): Promise<string[]> {
-  const context = await browser.newContext({ ...contextOptions(SMALL_PHONE, "light"), baseURL: siteOrigin() });
+async function onPhone(browser: Browser, phone: Phone, target: string, path: string, session: Session): Promise<string[]> {
+  const context = await browser.newContext({ ...contextOptions(phone.width, phone.scheme), baseURL: siteOrigin() });
   try {
     const page = await context.newPage();
     const watch = await opened(page, target, path);
@@ -74,8 +78,15 @@ test.describe("a reader operates every control", () => {
   });
 
   test("on a phone: the theme toggle, the chapter menu and citation sheets", async ({ browser }) => {
-    const curated = await onPhone(browser, "Kutch Ajrakh on a phone", CURATED, phoneDocumentSession);
-    const generated = await onPhone(browser, "Bagru Hand Block Print on a phone", GENERATED, phoneDocumentSession);
+    const curated = await onPhone(browser, LIGHT_PHONE, "Kutch Ajrakh on a phone", CURATED, phoneDocumentSession);
+    const generated = await onPhone(browser, LIGHT_PHONE, "Bagru Hand Block Print on a phone", GENERATED, phoneDocumentSession);
+    const problems = [...curated, ...generated];
+    expect(problems, problems.join("\n")).toEqual([]);
+  });
+
+  test("on a dark touch phone: the species cast's contrast, the figure molecule's clear canvas and Explore by touch", async ({ browser }) => {
+    const curated = await onPhone(browser, DARK_TOUCH_PHONE, "Kutch Ajrakh on a dark touch phone", CURATED, darkTouchSession);
+    const generated = await onPhone(browser, DARK_TOUCH_PHONE, "Bagru Hand Block Print on a dark touch phone", GENERATED, darkTouchSession);
     const problems = [...curated, ...generated];
     expect(problems, problems.join("\n")).toEqual([]);
   });

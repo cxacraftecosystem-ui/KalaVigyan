@@ -34,7 +34,7 @@ from app.science.records import ProcessRecords
 from .builder_evidence import section_facts, sources_beyond
 from .builder_interface import BuildAsk, BuilderTools, Built
 from .concept_pictures import ConceptPictures, PictureSearch
-from .craft_matter import CraftMatter, craft_matter
+from .craft_matter import CraftMatter
 from .section_images import SectionImagesAsk, section_images
 from .simulation_datasets import cited_datasets, first_district_rows
 from .simulation_grounding import (
@@ -116,7 +116,7 @@ class SimulationBuilder:
         self._tools = tools
         self._stored = stored or self._stored_in_database
         self._clock = clock or (lambda: datetime.now(UTC))
-        self._matter = matter or self._matter_in_database
+        self._matter = matter
         self._pictures = ConceptPictures(pictures or self._searched_picture)
         self._datasets = datasets or self._datasets_in_database
         self._budget = budget or SimulationBudget()
@@ -124,7 +124,7 @@ class SimulationBuilder:
 
     async def build(self, ask: BuildAsk) -> Built:
         answer = self._answers.setdefault(ask.answer_id, AnswerConcepts(explainer_limit(ask.request.depth)))
-        matter = await self._matter(ask.request.craft) if ask.request.craft is not None else None
+        matter = await self._matter_of(ask)
         concepts = section_concepts(matter.records, ask.blocks) if matter is not None else []
         chosen = next((concept for concept in concepts if answer.take(concept.key)), None)
         key = chosen.key if chosen is not None else _figures_key(ask, concepts, answer)
@@ -235,8 +235,13 @@ class SimulationBuilder:
         async with self._tools.sessions() as session:
             return await simulation_pieces(session, claim_ids, [facet])
 
-    async def _matter_in_database(self, craft: CraftRef) -> CraftMatter | None:
-        return await craft_matter(self._tools.sessions, craft)
+    async def _matter_of(self, ask: BuildAsk) -> CraftMatter | None:
+        craft = ask.request.craft
+        if craft is None:
+            return None
+        if self._matter is not None:
+            return await self._matter(craft)
+        return await ask.matter.read(self._tools.sessions, craft)
 
     async def _datasets_in_database(self, ask: BuildAsk) -> list[RowValue]:
         if ask.request.craft is None or not cited_datasets(ask.blocks):

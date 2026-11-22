@@ -2,16 +2,16 @@ import asyncio
 import json
 from typing import Any
 
-from app.core.db import dispose_engine, session_scope
+from app.core.db import dispose_engine, sessionmaker
 from app.services.compound_lookup import link_compounds, pubchem_finder
 from app.services.live_sources import live_source_client
 
 
 async def run() -> dict[str, Any]:
     try:
-        async with live_source_client() as client, session_scope() as session:
+        async with live_source_client() as client:
             pubchem = pubchem_finder(client)
-            report = await link_compounds(session, pubchem, now=pubchem.clock())
+            report = await link_compounds(sessionmaker(), pubchem, now=pubchem.clock())
     finally:
         await dispose_engine()
     return report.as_dict()

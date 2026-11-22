@@ -10,7 +10,7 @@ from app.composer.supply_map import SupplyLinkChoice, choose_supply_links, suppl
 from app.core.errors import ExternalFailure
 from app.research.knowledge_pieces import PieceSlot, knowledge_piece
 from app.research.structured import schema_problems
-from app.services import season_supply_builders
+from app.services import craft_matter as craft_matter_module
 from app.services.block_builders import BLOCK_BUILDERS, BlockBuilders
 from app.services.craft_matter import CraftMatter
 from app.services.season_supply_builders import SupplyMapBuilder
@@ -69,7 +69,7 @@ def stored(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     async def load(sessions: Any, craft: Any) -> Any:
         return found["matter"]
 
-    monkeypatch.setattr(season_supply_builders, "craft_matter", load)
+    monkeypatch.setattr(craft_matter_module, "craft_matter", load)
     return found
 
 

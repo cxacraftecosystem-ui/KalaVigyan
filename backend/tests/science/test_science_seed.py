@@ -66,7 +66,12 @@ def test_the_iron_acetate_equation_is_written_from_its_species() -> None:
 
 
 def test_each_seeded_stage_material_has_a_kind_and_a_role_and_no_entry_is_unused() -> None:
-    materials = {row["id"] for row in plan().rows["materials"]}
+    tools = {
+        seed_id("material", concept["key"])
+        for concept in seed_claims_data()["concepts"]
+        if concept["type"] == "TOOL"
+    }
+    materials = {row["id"] for row in plan().rows["materials"]} - tools
     listed = {seed_id("material", key) for key in load_science_seed()["materials"]}
     assert materials == listed
     assert all(row["claimId"] is not None for row in plan().rows["stageMaterials"])

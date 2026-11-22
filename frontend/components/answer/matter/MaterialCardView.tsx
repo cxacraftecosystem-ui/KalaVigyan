@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 
 import { ChemEquation } from "@/components/answer/ChemEquation";
+import { SourceChip } from "@/components/answer/matter/SourceChip";
 import { CitedText } from "@/components/answer/ProseBlockView";
 import type { MaterialCardBlock } from "@/lib/explainerMatter";
 import { materialRoleText, pubchemHref } from "@/lib/processView";
@@ -27,18 +28,40 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+function CompoundRecord({ block }: { block: MaterialCardBlock }) {
+  if (!block.sourceId) {
+    const pubchem = pubchemHref(block.pubchemCid);
+    return pubchem ? <Outbound href={pubchem}>PubChem</Outbound> : null;
+  }
+  return (
+    <span className="font-code text-label text-ink-3" data-testid="material-record">
+      {block.pubchemCid === null ? null : `PubChem CID ${block.pubchemCid}`}
+      {block.formula ? null : <SourceChip sourceId={block.sourceId} />}
+    </span>
+  );
+}
+
+function CompoundFact({ block }: { block: MaterialCardBlock }) {
+  return (
+    <Fact label={block.formula ? "Formula" : "Compound"}>
+      {block.formula ? (
+        <span className="min-w-0 break-words" data-testid="material-formula">
+          <ChemEquation equation={block.formula} display={false} label={block.formula} className="text-body" />
+          {block.sourceId ? <SourceChip sourceId={block.sourceId} /> : null}
+        </span>
+      ) : null}
+      <CompoundRecord block={block} />
+    </Fact>
+  );
+}
+
 function MaterialFacts({ block }: { block: MaterialCardBlock }) {
   const role = materialRoleText(block.role, block.materialKind);
-  const pubchem = pubchemHref(block.pubchemCid);
-  if (!block.formula && !role) return null;
+  const compound = Boolean(block.formula || block.sourceId);
+  if (!compound && !role) return null;
   return (
     <dl className="grid min-w-0 grid-cols-[minmax(0,1fr)] border-t border-ink-1 sm:grid-cols-[repeat(2,minmax(0,1fr))] sm:gap-x-8">
-      {block.formula ? (
-        <Fact label="Formula">
-          <ChemEquation equation={block.formula} display={false} label={block.formula} className="text-body" />
-          {pubchem ? <Outbound href={pubchem}>PubChem</Outbound> : null}
-        </Fact>
-      ) : null}
+      {compound ? <CompoundFact block={block} /> : null}
       {role ? (
         <Fact label="Role">
           <span className="font-ui text-ui-lg text-ink-1">{role}</span>
