@@ -13,16 +13,21 @@ from .open_data_descriptor import PACKAGE_FILE, jsonl_file
 from .open_data_files import manifest_text
 from .open_data_readme import MANIFEST_FILE
 from .open_data_release import released_on
+from .open_data_scope import WHOLE, ReleaseScope, scope_of_descriptor
 from .open_data_tables import TABLES
 from .open_data_zenodo import ZenodoDeposit, deposit_metadata
 
-__all__ = ["ReleaseFolder", "deposit_files", "read_release_folder", "release_folder"]
+__all__ = ["ReleaseFolder", "checked_scope", "deposit_files", "read_release_folder", "release_folder"]
 
 DOI_PREFIX = "https://doi.org/"
 NO_MANIFEST = "The release folder holds no {name}; build the release again."
 BAD_MANIFEST = "The release files do not match {name}; build the release again and copy every file."
 MISSING_FILE = "The release folder lacks {name}; build the release again and copy every file."
 OTHER_DRAFT = "The release files name the DOI {built}, but draft {record} reserved {reserved}."
+OTHER_SCOPE = (
+    "The release files hold {held}, but this run releases {asked}; build the release this run names."
+)
+WHOLE_WORDS = "the whole knowledge base"
 
 
 @dataclass(frozen=True)
@@ -31,6 +36,17 @@ class ReleaseFolder:
     version: str
     doi: str
     counts: dict[str, int]
+    scope: ReleaseScope = WHOLE
+
+
+def checked_scope(folder: ReleaseFolder, craft: str | None) -> ReleaseFolder:
+    if folder.scope.craft != craft:
+        raise InvalidInput(OTHER_SCOPE.format(held=_words(folder.scope.craft), asked=_words(craft)))
+    return folder
+
+
+def _words(craft: str | None) -> str:
+    return WHOLE_WORDS if craft is None else f"the craft {craft}"
 
 
 def read_release_folder(folder: Path) -> ReleaseFolder:
@@ -56,6 +72,7 @@ def release_folder(files: Mapping[str, bytes]) -> ReleaseFolder:
         version=version,
         doi=str(descriptor["id"]).removeprefix(DOI_PREFIX),
         counts={table.name: files[jsonl_file(table)].count(b"\n") for table in TABLES},
+        scope=scope_of_descriptor(descriptor),
     )
 
 
@@ -66,12 +83,14 @@ def deposit_files(
     if draft.doi != folder.doi:
         raise InvalidInput(OTHER_DRAFT.format(built=folder.doi, record=record_id, reserved=draft.doi))
     zenodo.upload(draft, folder.files)
-    zenodo.describe(
-        draft,
-        deposit_metadata(
-            version=folder.version, released=released_on(folder.version), counts=folder.counts, site=site
-        ),
+    metadata = deposit_metadata(
+        version=folder.version,
+        released=released_on(folder.version),
+        counts=folder.counts,
+        site=site,
+        scope=folder.scope,
     )
+    zenodo.describe(draft, metadata)
     result: dict[str, Any] = {"recordId": draft.record_id, "doi": draft.doi, "conceptDoi": draft.concept_doi}
     if not publish:
         return {**result, "published": False}

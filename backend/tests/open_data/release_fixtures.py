@@ -1,8 +1,19 @@
+from dataclasses import replace
+
 from app.services.open_data_release import ReleaseStamp
 from app.services.open_data_rows import OpenDataTables, checked_tables
+from app.services.open_data_scope import ReleaseScope
 from app.services.open_data_tables import TABLES
 
-__all__ = ["SITE", "STAMP", "empty_tables", "family_row", "tables_with"]
+__all__ = [
+    "AJRAKH",
+    "AJRAKH_STAMP",
+    "SITE",
+    "STAMP",
+    "empty_tables",
+    "family_row",
+    "tables_with",
+]
 
 SITE = "https://kalavigyan.example"
 STAMP = ReleaseStamp(
@@ -13,6 +24,8 @@ STAMP = ReleaseStamp(
     record_id=200,
     concept_record_id=199,
 )
+AJRAKH = ReleaseScope(craft="Kutch-Ajrakh", name="Kutch Ajrakh")
+AJRAKH_STAMP = replace(STAMP, craft="Kutch-Ajrakh")
 
 
 def empty_tables() -> OpenDataTables:

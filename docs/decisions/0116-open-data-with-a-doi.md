@@ -11,6 +11,7 @@ DOI."). The contract is `docs/contracts/open-data.md`.
 | For | Read |
 |---|---|
 | The contract it fixes | [open-data.md](../contracts/open-data.md) |
+| A release scoped to one craft, with its own DOI (amends this record) | [decision 0130](0130-a-craft-release.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

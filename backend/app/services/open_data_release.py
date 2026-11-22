@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from app.core.errors import InvalidInput
-from app.models.open_data import DEPOSIT_TARGETS
+from app.models.open_data import DEPOSIT_TARGETS, SCOPE_CHARS
 
 __all__ = [
     "DOI_PATTERN",
@@ -13,6 +13,7 @@ __all__ = [
     "VERSION_PATTERN",
     "ZENODO",
     "ReleaseStamp",
+    "checked_craft",
     "checked_doi",
     "checked_target",
     "released_on",
@@ -26,6 +27,8 @@ BAD_VERSION = (
 )
 BAD_DOI = "{doi!r} is not a DOI such as 10.5281/zenodo.1234567."
 BAD_TARGET = "The deposit target is SANDBOX or ZENODO, not {target!r}."
+CRAFT_PATTERN = re.compile(rf"^\S{{1,{SCOPE_CHARS}}}$")
+BAD_CRAFT = "A craft release names one craft by its slug, such as Kutch-Ajrakh; {craft!r} is not a slug."
 
 
 @dataclass(frozen=True)
@@ -36,12 +39,14 @@ class ReleaseStamp:
     concept_doi: str
     record_id: int
     concept_record_id: int
+    craft: str | None = None
 
     def __post_init__(self) -> None:
         checked_target(self.target)
         released_on(self.version)
         checked_doi(self.doi)
         checked_doi(self.concept_doi)
+        checked_craft(self.craft)
         if self.record_id < 1 or self.concept_record_id < 1:
             raise InvalidInput("Zenodo record ids are positive integers.")
 
@@ -71,6 +76,12 @@ def checked_doi(doi: str) -> str:
     if DOI_PATTERN.fullmatch(doi) is None:
         raise InvalidInput(BAD_DOI.format(doi=doi))
     return doi
+
+
+def checked_craft(craft: str | None) -> str | None:
+    if craft is not None and CRAFT_PATTERN.fullmatch(craft) is None:
+        raise InvalidInput(BAD_CRAFT.format(craft=craft))
+    return craft
 
 
 def checked_target(target: str) -> str:

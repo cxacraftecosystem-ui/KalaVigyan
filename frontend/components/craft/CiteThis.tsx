@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useState } from "react";
 
+import { CraftReleaseDoi } from "@/components/openData/CraftReleaseDoi";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { SegmentedChoice } from "@/components/ui/SegmentedChoice";
@@ -42,6 +43,7 @@ export function CiteThis({ cite }: { cite: Citable }) {
       <p className="kv-citethis-url">
         <a href={cite.url}>{cite.url}</a>
       </p>
+      {cite.kind === "monograph" ? <CraftReleaseDoi pageUrl={cite.url} /> : null}
       <ActionGroup align="start">
         <Button variant="quiet" size="sm" onClick={copy}>
           Copy citation

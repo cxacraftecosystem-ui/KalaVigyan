@@ -1,19 +1,22 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Mapping, Sequence
 from datetime import date, datetime
 from typing import Any, Literal
 from urllib.parse import quote
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import OpenDataRelease
+from app.data.craft_names import load_craft_names
+from app.models import Craft, OpenDataRelease
 from app.research.base import ContractModel
 
-from .open_data import published_releases
+from .open_data import craft_releases, published_releases
 from .open_data_descriptor import csv_file, jsonl_file
 from .open_data_release import ZENODO
 from .open_data_schema import Table
+from .open_data_scope import WHOLE, ReleaseScope
 from .open_data_tables import TABLES
 from .open_data_text import (
     ATTRIBUTION,
@@ -26,8 +29,6 @@ from .open_data_text import (
     LICENCE_NAME,
     LICENCE_URL,
     SUMMARY,
-    citation_bibtex,
-    citation_text,
     data_page,
     page_citation_bibtex,
     page_citation_text,
@@ -35,6 +36,7 @@ from .open_data_text import (
 
 __all__ = [
     "OPEN_DATA_SCHEMA_VERSION",
+    "CraftRelease",
     "DatasetField",
     "DatasetLicence",
     "DatasetTable",
@@ -67,6 +69,14 @@ class PublishedRelease(ContractModel):
     changes: dict[str, dict[str, int]]
     citation: str
     bibtex: str
+
+
+class CraftRelease(PublishedRelease):
+    craft: str
+    craft_name: str
+    title: str
+    concept_doi: str
+    concept_doi_url: str
 
 
 class DatasetField(ContractModel):
@@ -108,15 +118,24 @@ class OpenDataListing(ContractModel):
     bibtex: str
     latest: PublishedRelease | None
     releases: list[PublishedRelease]
+    craft_releases: list[CraftRelease]
     tables: list[DatasetTable]
 
 
 async def open_data_listing(session: AsyncSession, *, site: str) -> OpenDataListing:
-    return listing_of(await published_releases(session, ZENODO), site=site)
+    scoped = await craft_releases(session, ZENODO)
+    names = await _craft_names(session, {row.scope for row in scoped if row.scope is not None})
+    return listing_of(await published_releases(session, ZENODO), site=site, crafts=scoped, names=names)
 
 
-def listing_of(rows: Sequence[OpenDataRelease], *, site: str) -> OpenDataListing:
-    releases = [_release(row) for row in rows]
+def listing_of(
+    rows: Sequence[OpenDataRelease],
+    *,
+    site: str,
+    crafts: Sequence[OpenDataRelease] = (),
+    names: Mapping[str, str] | None = None,
+) -> OpenDataListing:
+    releases = [PublishedRelease(**_release_fields(row, WHOLE)) for row in rows]
     concept = rows[0].conceptDoi if rows else None
     return OpenDataListing(
         page_url=data_page(site),
@@ -126,29 +145,51 @@ def listing_of(rows: Sequence[OpenDataRelease], *, site: str) -> OpenDataListing
         bibtex=releases[0].bibtex if releases else page_citation_bibtex(site),
         latest=releases[0] if releases else None,
         releases=releases,
+        craft_releases=[_craft_release(row, names or {}) for row in crafts],
         tables=[_table(table) for table in TABLES],
     )
 
 
-def _release(row: OpenDataRelease) -> PublishedRelease:
+async def _craft_names(session: AsyncSession, slugs: Collection[str]) -> dict[str, str]:
+    if not slugs:
+        return {}
+    rows = await session.execute(select(Craft.slug, Craft.name).where(Craft.slug.in_(list(slugs))))
+    shown = load_craft_names()
+    return {slug: shown.display_name(slug, name) for slug, name in rows.tuples().all()}
+
+
+def _craft_release(row: OpenDataRelease, names: Mapping[str, str]) -> CraftRelease:
+    craft = str(row.scope)
+    scope = ReleaseScope(craft=craft, name=names.get(craft, craft))
+    return CraftRelease(
+        **_release_fields(row, scope),
+        craft=craft,
+        craft_name=str(scope.name),
+        title=scope.title,
+        concept_doi=row.conceptDoi,
+        concept_doi_url=f"https://doi.org/{row.conceptDoi}",
+    )
+
+
+def _release_fields(row: OpenDataRelease, scope: ReleaseScope) -> dict[str, Any]:
     record = (row.recordUrl or "").rstrip("/")
     published = row.publishedAt
     if published is None:
         raise ValueError(f"release {row.version} is listed as published without a publication time")
-    return PublishedRelease(
-        version=row.version,
-        released_on=row.releasedOn,
-        doi=row.doi,
-        doi_url=f"https://doi.org/{row.doi}",
-        record_url=record,
-        published_at=published,
-        total_bytes=row.totalBytes,
-        files=[_file(record, entry) for entry in row.files],
-        counts=dict(row.counts),
-        changes={name: dict(counts) for name, counts in row.changes.items()},
-        citation=citation_text(row.version, row.releasedOn, row.doi),
-        bibtex=citation_bibtex(row.version, row.releasedOn, row.doi),
-    )
+    return {
+        "version": row.version,
+        "released_on": row.releasedOn,
+        "doi": row.doi,
+        "doi_url": f"https://doi.org/{row.doi}",
+        "record_url": record,
+        "published_at": published,
+        "total_bytes": row.totalBytes,
+        "files": [_file(record, entry) for entry in row.files],
+        "counts": dict(row.counts),
+        "changes": {name: dict(counts) for name, counts in row.changes.items()},
+        "citation": scope.citation(row.version, row.releasedOn, row.doi),
+        "bibtex": scope.bibtex(row.version, row.releasedOn, row.doi),
+    }
 
 
 def _file(record: str, entry: dict[str, Any]) -> ReleaseFile:

@@ -6,21 +6,17 @@ from collections.abc import Mapping
 from .open_data_changes import EXAMPLES_MAX, ReleaseChanges, TableChanges
 from .open_data_release import ReleaseStamp
 from .open_data_schema import Table
+from .open_data_scope import WHOLE, ReleaseScope
 from .open_data_tables import TABLES
 from .open_data_text import (
     ATTRIBUTION,
     CITED_WORKS,
     CODE_URL,
     CREATOR,
-    DATASET_TITLE,
-    KEYWORDS,
     LEFT_OUT,
     LICENCE_ID,
     LICENCE_NAME,
     LICENCE_URL,
-    SUMMARY,
-    citation_bibtex,
-    citation_text,
     data_page,
 )
 
@@ -30,15 +26,17 @@ MANIFEST_FILE = "SHA256SUMS"
 FIRST_RELEASE = "This is the first release."
 
 
-def readme_text(stamp: ReleaseStamp, counts: Mapping[str, int], *, site: str) -> str:
+def readme_text(
+    stamp: ReleaseStamp, counts: Mapping[str, int], *, site: str, scope: ReleaseScope = WHOLE
+) -> str:
     parts = [
-        f"# {DATASET_TITLE}\n",
+        f"# {scope.title}\n",
         f"Version {stamp.version}, released {stamp.released.isoformat()}.\n",
-        f"{SUMMARY}\n",
+        f"{scope.summary}\n",
         "## Cite this dataset\n",
-        f"{citation_text(stamp.version, stamp.released, stamp.doi)}\n",
+        f"{scope.citation(stamp.version, stamp.released, stamp.doi)}\n",
         f"This version: {stamp.doi_url()}. Every version: {stamp.concept_doi_url()}.\n",
-        "```bibtex\n" + citation_bibtex(stamp.version, stamp.released, stamp.doi) + "\n```\n",
+        "```bibtex\n" + scope.bibtex(stamp.version, stamp.released, stamp.doi) + "\n```\n",
         "## Licence\n",
         f"KalaVigyan's own text and structure in this release are licensed under {LICENCE_NAME} "
         f"({LICENCE_ID}, {LICENCE_URL}). Give this attribution: {ATTRIBUTION}\n",
@@ -52,10 +50,20 @@ def readme_text(stamp: ReleaseStamp, counts: Mapping[str, int], *, site: str) ->
         "## Fields\n",
         "\n".join(_fields(table) for table in TABLES),
         "## About\n",
-        f"KalaVigyan: {site.rstrip('/')}. This dataset's page: {data_page(site)}. The code that builds it: "
-        f"{CODE_URL}. Its changes against the previous release are in CHANGES.md.\n",
+        _about(site, scope),
     ]
     return "\n".join(parts)
+
+
+def _about(site: str, scope: ReleaseScope) -> str:
+    about = (
+        f"KalaVigyan: {site.rstrip('/')}. This dataset's page: {data_page(site)}. The code that builds it: "
+        f"{CODE_URL}. Its changes against the previous release are in CHANGES.md.\n"
+    )
+    page, whole = scope.craft_page(site), scope.whole_note(site)
+    if page is None or whole is None:
+        return about
+    return f"{about}\nThe monograph of {scope.name}: {page}. {whole}\n"
 
 
 def changes_text(stamp: ReleaseStamp, changes: ReleaseChanges) -> str:
@@ -74,13 +82,13 @@ def changes_text(stamp: ReleaseStamp, changes: ReleaseChanges) -> str:
     )
 
 
-def citation_cff(stamp: ReleaseStamp, *, site: str) -> str:
+def citation_cff(stamp: ReleaseStamp, *, site: str, scope: ReleaseScope = WHOLE) -> str:
     quoted = json.dumps
     lines = [
         "cff-version: 1.2.0",
         f"message: {quoted('If you use this dataset, cite it as below.')}",
         "type: dataset",
-        f"title: {quoted(DATASET_TITLE)}",
+        f"title: {quoted(scope.title)}",
         f"version: {quoted(stamp.version)}",
         f"doi: {quoted(stamp.doi)}",
         f"date-released: {quoted(stamp.released.isoformat())}",
@@ -96,11 +104,19 @@ def citation_cff(stamp: ReleaseStamp, *, site: str) -> str:
         "  - type: doi",
         f"    value: {quoted(stamp.doi)}",
         f"    description: {quoted('This version')}",
+        *_page_identifier(scope.craft_page(site), scope.name),
         "keywords:",
-        *(f"  - {quoted(keyword)}" for keyword in KEYWORDS),
-        f"abstract: {quoted(SUMMARY)}",
+        *(f"  - {quoted(keyword)}" for keyword in scope.keywords),
+        f"abstract: {quoted(scope.summary)}",
     ]
     return "\n".join(lines) + "\n"
+
+
+def _page_identifier(page: str | None, name: str | None) -> list[str]:
+    if page is None:
+        return []
+    described = json.dumps(f"The monograph of {name}")
+    return ["  - type: url", f"    value: {json.dumps(page)}", f"    description: {described}"]
 
 
 def _holdings(counts: Mapping[str, int]) -> str:

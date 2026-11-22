@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -54,9 +54,11 @@ class PublishedFacts:
         return {row["id"] for row in self.claims}
 
 
-async def published_facts(session: AsyncSession, lookup: CraftLookup) -> PublishedFacts:
+async def published_facts(
+    session: AsyncSession, lookup: CraftLookup, within: Sequence[ColumnElement[bool]] = ()
+) -> PublishedFacts:
     categories = await _category_claims(session)
-    statement = _published(select(Claim, _direct, _from, _to)).options(
+    statement = _published(select(Claim, _direct, _from, _to), within).options(
         defer(Claim.embedding), defer(Claim.tsv)
     )
     rows = (await session.execute(statement)).all()
@@ -64,10 +66,9 @@ async def published_facts(session: AsyncSession, lookup: CraftLookup) -> Publish
         _claim_row(claim, _subject(direct, start, end), lookup, categories)
         for claim, direct, start, end in rows
     ]
-    cites = (await session.scalars(_citations(ClaimSource))).all()
-    sources = (
-        await session.scalars(select(Source).where(Source.id.in_(_citations(ClaimSource.sourceId))))
-    ).all()
+    cites = (await session.scalars(_citations(within, ClaimSource))).all()
+    cited = _citations(within, ClaimSource.sourceId)
+    sources = (await session.scalars(select(Source).where(Source.id.in_(cited)))).all()
     return PublishedFacts(
         claims=sorted(claims, key=lambda row: row["id"]),
         citations=sorted(
@@ -77,7 +78,7 @@ async def published_facts(session: AsyncSession, lookup: CraftLookup) -> Publish
     )
 
 
-def _published(statement: Select[Any]) -> Select[Any]:
+def _published(statement: Select[Any], within: Sequence[ColumnElement[bool]]) -> Select[Any]:
     joined = (
         statement.outerjoin(
             _direct, and_(Claim.subjectType == CONCEPT_SUBJECT, _direct.id == Claim.subjectId)
@@ -96,11 +97,12 @@ def _published(statement: Select[Any]) -> Select[Any]:
         ),
         ~held_claim(),
         exists().where(ClaimSource.claimId == Claim.id, *_exportable_citation()),
+        *within,
     )
 
 
-def _citations(*columns: Any) -> Select[Any]:
-    published = _published(select(Claim.id))
+def _citations(within: Sequence[ColumnElement[bool]], *columns: Any) -> Select[Any]:
+    published = _published(select(Claim.id), within)
     return select(*columns).where(ClaimSource.claimId.in_(published), *_exportable_citation())
 
 

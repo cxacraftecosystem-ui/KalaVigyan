@@ -11,21 +11,27 @@ import httpx
 
 from app.core.config import get_settings
 from app.core.db import dispose_engine, session_scope
+from app.core.errors import InvalidInput
 from app.services.open_data import Publication, build_release, latest_release, record_release
-from app.services.open_data_deposit import deposit_files, read_release_folder
-from app.services.open_data_release import ReleaseStamp, released_on
+from app.services.open_data_deposit import checked_scope, deposit_files, read_release_folder
+from app.services.open_data_release import ReleaseStamp, checked_craft, released_on
+from app.services.open_data_scope import WHOLE, ReleaseScope
+from app.services.open_data_slice import craft_slice
 from app.services.open_data_zenodo import ZenodoDeposit, deposit_metadata
 
 RESULT_MARK = "OPEN_DATA_RESULT"
 TOKEN_VARIABLE = "ZENODO_TOKEN"
 ZENODO_TIMEOUT = httpx.Timeout(60.0, write=600.0)
+NAMELESS_CRAFT = "A craft release's draft takes --craft-name, the name the latest step printed for the craft."
 
 
 async def _latest(args: argparse.Namespace) -> dict[str, Any]:
     async with session_scope() as session:
-        found = await latest_release(session, args.target)
+        scope = (await craft_slice(session, args.craft)).scope if args.craft is not None else WHOLE
+        found = await latest_release(session, args.target, craft=scope.craft)
+    craft = None if scope.craft is None else {"slug": scope.craft, "name": scope.name, "title": scope.title}
     if found is None:
-        return {"latest": None}
+        return {"latest": None, "craft": craft}
     return {
         "latest": {
             "version": found.version,
@@ -33,7 +39,8 @@ async def _latest(args: argparse.Namespace) -> dict[str, Any]:
             "conceptRecordId": found.conceptRecordId,
             "doi": found.doi,
             "conceptDoi": found.conceptDoi,
-        }
+        },
+        "craft": craft,
     }
 
 
@@ -45,6 +52,7 @@ async def _build(args: argparse.Namespace) -> dict[str, Any]:
         concept_doi=args.concept_doi,
         record_id=args.record_id,
         concept_record_id=args.concept_record_id,
+        craft=args.craft,
     )
     site = get_settings().public_web_url.rstrip("/")
     async with session_scope() as session:
@@ -62,11 +70,13 @@ async def _record(args: argparse.Namespace) -> dict[str, Any]:
         doi=args.doi,
         record_url=args.record_url,
         published_at=datetime.fromisoformat(args.published_at),
+        craft=args.craft,
     )
     async with session_scope() as session:
         release = await record_release(session, publication)
     return {
         "version": release.version,
+        "craft": release.scope,
         "doi": release.doi,
         "recordUrl": release.recordUrl,
         "state": release.state,
@@ -75,7 +85,11 @@ async def _record(args: argparse.Namespace) -> dict[str, Any]:
 
 def _draft(args: argparse.Namespace) -> dict[str, Any]:
     metadata = deposit_metadata(
-        version=args.version, released=released_on(args.version), counts={}, site=args.site
+        version=args.version,
+        released=released_on(args.version),
+        counts={},
+        site=args.site,
+        scope=_named_scope(args.craft, args.craft_name),
     )
     with httpx.Client(timeout=ZENODO_TIMEOUT) as client:
         zenodo = ZenodoDeposit(client, target=args.target, token=os.environ.get(TOKEN_VARIABLE, ""))
@@ -83,10 +97,18 @@ def _draft(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _deposit(args: argparse.Namespace) -> dict[str, Any]:
-    folder = read_release_folder(args.files)
+    folder = checked_scope(read_release_folder(args.files), args.craft)
     with httpx.Client(timeout=ZENODO_TIMEOUT) as client:
         zenodo = ZenodoDeposit(client, target=args.target, token=os.environ.get(TOKEN_VARIABLE, ""))
         return deposit_files(zenodo, folder, record_id=args.record_id, publish=args.publish, site=args.site)
+
+
+def _named_scope(craft: str | None, name: str | None) -> ReleaseScope:
+    if checked_craft(craft) is None:
+        return WHOLE
+    if not name or not name.strip():
+        raise InvalidInput(NAMELESS_CRAFT)
+    return ReleaseScope(craft=craft, name=name.strip())
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -95,13 +117,14 @@ def _parser() -> argparse.ArgumentParser:
         description="Build KalaVigyan's open data release and deposit it on Zenodo (docs/contracts/open-data.md).",
     )
     steps = parser.add_subparsers(dest="step", required=True)
-    latest = steps.add_parser("latest", help="print the latest published release of a target")
+    latest = steps.add_parser("latest", help="print the latest published release of a target and scope")
     _target(latest)
     draft = steps.add_parser("draft", help="open a Zenodo draft and reserve its DOI")
     _target(draft)
     draft.add_argument("--version", required=True)
     draft.add_argument("--site", required=True, help="the site's address, for the dataset's page")
-    draft.add_argument("--latest-record", type=int, default=None, help="the latest published record, if any")
+    draft.add_argument("--latest-record", type=int, default=None, help="the scope's latest published record")
+    draft.add_argument("--craft-name", default=None, help="the craft's name, as the latest step printed it")
     build = steps.add_parser("build", help="build the release files from the database")
     _target(build)
     for name in ("--version", "--doi", "--concept-doi"):
@@ -124,6 +147,7 @@ def _parser() -> argparse.ArgumentParser:
 
 def _target(step: argparse.ArgumentParser) -> None:
     step.add_argument("--target", required=True, choices=("SANDBOX", "ZENODO"))
+    step.add_argument("--craft", default=None, help="a craft's slug, for a release of that craft alone")
 
 
 async def _with_database(

@@ -24,6 +24,7 @@ export type PublishedRelease = {
   citation: string;
   bibtex: string;
 };
+export type CraftRelease = PublishedRelease & { craft: string; craftName: string; title: string; conceptDoi: string; conceptDoiUrl: string };
 export type DatasetField = { name: string; type: string; description: string; required: boolean };
 export type DatasetTable = { name: string; title: string; description: string; key: string[]; files: string[]; fields: DatasetField[] };
 export type DatasetLicence = { id: string; name: string; url: string };
@@ -44,12 +45,13 @@ export type OpenDataListing = {
   bibtex: string;
   latest: PublishedRelease | null;
   releases: PublishedRelease[];
+  craftReleases: CraftRelease[];
   tables: DatasetTable[];
 };
 
 const changeCountsShape: Shape<ChangeCounts> = object({ added: integer, removed: integer, changed: integer });
 
-const releaseShape: Shape<PublishedRelease> = object({
+const releaseFields = {
   version: matching(/^\d{4}\.\d{2}\.\d{2}(\.\d{1,2})?$/, "a release version"),
   releasedOn: DAY,
   doi: text,
@@ -62,7 +64,11 @@ const releaseShape: Shape<PublishedRelease> = object({
   changes: dictionary(TABLE_NAME, changeCountsShape),
   citation: text,
   bibtex: text
-});
+};
+
+const releaseShape: Shape<PublishedRelease> = object<PublishedRelease>(releaseFields);
+
+const craftReleaseShape: Shape<CraftRelease> = object<CraftRelease>({ ...releaseFields, craft: text, craftName: text, title: text, conceptDoi: text, conceptDoiUrl: HTTPS });
 
 const tableShape: Shape<DatasetTable> = object({
   name: matching(TABLE_NAME, "a table name"),
@@ -90,6 +96,7 @@ const listingShape: Shape<OpenDataListing> = object({
   bibtex: text,
   latest: nullable(releaseShape),
   releases: list(releaseShape),
+  craftReleases: list(craftReleaseShape),
   tables: list(tableShape, 1)
 });
 

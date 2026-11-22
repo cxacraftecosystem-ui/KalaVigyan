@@ -304,7 +304,7 @@ origins; the issuer is the API origin and the consent page is `<PUBLIC_WEB_URL>/
    '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'` lists the read, proposal and open-work tools.
 3. Switch off: `MCP_SERVER_ENABLED=false` and re-render; the route answers 404.
 
-### Open data with a DOI (decision 0116)
+### Open data with a DOI (decisions 0116 and 0130)
 
 `.github/workflows/open-data.yml` (dispatch only, from `main`) builds a release of KalaVigyan's open knowledge on the box (`app.scripts.build_open_data`), deposits it on Zenodo from the runner and records it (`OpenDataRelease`); `/data` and `GET /api/open-data` show it. Before the first release the owner, once:
 
@@ -313,6 +313,8 @@ origins; the issuer is the API origin and the consent page is `<PUBLIC_WEB_URL>/
 3. Adds them as repository secrets `ZENODO_SANDBOX_TOKEN` and `ZENODO_TOKEN`.
 
 A dispatch without `publish=true` goes to the sandbox; `publish=true` publishes on Zenodo and needs `ZENODO_TOKEN` (the run stops before sending anything without it). The Zenodo token never reaches the box. A published version is never rebuilt.
+
+A craft release (decision 0130): give `craft` its exact slug, for Kutch Ajrakh `Kutch-Ajrakh` (`gh workflow run open-data.yml -R cxacraftecosystem-ui/KalaVigyan --ref main -f craft=Kutch-Ajrakh`, unticked so it goes to the sandbox). Its first run opens a new Zenodo record with its own concept DOI; later runs for the same craft add versions to it, never to the whole-knowledge record. An unknown or merged slug stops the run at `latest`, before anything is sent. Until the owner says otherwise (2026-11-22: "do not publish anything yet, just sandbox it"), craft releases run on the sandbox only.
 
 ### Contributions at scale (round 7)
 

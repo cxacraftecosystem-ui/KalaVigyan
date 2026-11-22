@@ -13,6 +13,7 @@ from .open_data_readme import MANIFEST_FILE, changes_text, citation_cff, readme_
 from .open_data_release import ReleaseStamp
 from .open_data_rows import OpenDataTables
 from .open_data_schema import Table
+from .open_data_scope import WHOLE, ReleaseScope
 from .open_data_tables import TABLES
 from .open_data_values import Row
 
@@ -32,6 +33,7 @@ README_FILE = "README.md"
 CITATION_FILE = "CITATION.cff"
 CHANGES_FILE = "CHANGES.md"
 UTF8 = "utf-8"
+OTHER_SCOPE = "The release's words name the craft {scope!r}, but its stamp names {stamp!r}."
 
 
 @dataclass(frozen=True)
@@ -52,17 +54,24 @@ class ReleaseFiles:
 
 
 def release_files(
-    tables: OpenDataTables, stamp: ReleaseStamp, changes: ReleaseChanges, *, site: str
+    tables: OpenDataTables,
+    stamp: ReleaseStamp,
+    changes: ReleaseChanges,
+    *,
+    site: str,
+    scope: ReleaseScope = WHOLE,
 ) -> ReleaseFiles:
+    if scope.craft != stamp.craft:
+        raise ValueError(OTHER_SCOPE.format(scope=scope.craft, stamp=stamp.craft))
     files: dict[str, bytes] = {}
     for table in TABLES:
         files[jsonl_file(table)] = jsonl_bytes(table, tables.of(table))
         files[csv_file(table)] = csv_bytes(table, tables.of(table))
     facts = {name: (len(body), sha256_of(body)) for name, body in files.items()}
-    descriptor = package_descriptor(stamp, facts, site=site)
+    descriptor = package_descriptor(stamp, facts, site=site, scope=scope)
     files[PACKAGE_FILE] = (json.dumps(descriptor, ensure_ascii=False, indent=2) + "\n").encode(UTF8)
-    files[README_FILE] = readme_text(stamp, tables.counts(), site=site).encode(UTF8)
-    files[CITATION_FILE] = citation_cff(stamp, site=site).encode(UTF8)
+    files[README_FILE] = readme_text(stamp, tables.counts(), site=site, scope=scope).encode(UTF8)
+    files[CITATION_FILE] = citation_cff(stamp, site=site, scope=scope).encode(UTF8)
     files[CHANGES_FILE] = changes_text(stamp, changes).encode(UTF8)
     files[MANIFEST_FILE] = manifest_text(files).encode(UTF8)
     return ReleaseFiles(files=dict(sorted(files.items())))

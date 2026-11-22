@@ -8,6 +8,7 @@ from .open_data_tables import TABLES
 
 __all__ = [
     "ATTRIBUTION",
+    "BIBTEX_KEY",
     "CITED_WORKS",
     "CODE_URL",
     "CREATOR",
@@ -28,6 +29,7 @@ __all__ = [
 ]
 
 DATASET_TITLE = "KalaVigyan open knowledge"
+BIBTEX_KEY = "kalavigyan_open_knowledge"
 CREATOR = "KalaVigyan, Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform, IIT Kharagpur"
 PUBLISHER = "Zenodo"
 LICENCE_ID = "CC-BY-4.0"
@@ -75,18 +77,20 @@ def data_page(site: str) -> str:
     return f"{site.rstrip('/')}{DATA_PATH}"
 
 
-def citation_text(version: str, released: date, doi: str) -> str:
+def citation_text(version: str, released: date, doi: str, *, title: str = DATASET_TITLE) -> str:
     return (
-        f"{CREATOR}. ({released.year}). {DATASET_TITLE} (Version {version}) [Data set]. "
+        f"{CREATOR}. ({released.year}). {title} (Version {version}) [Data set]. "
         f"{PUBLISHER}. https://doi.org/{doi}"
     )
 
 
-def citation_bibtex(version: str, released: date, doi: str) -> str:
-    key = f"kalavigyan_open_knowledge_{version.replace('.', '_')}"
+def citation_bibtex(
+    version: str, released: date, doi: str, *, title: str = DATASET_TITLE, key: str = BIBTEX_KEY
+) -> str:
+    versioned = f"{key}_{version.replace('.', '_')}"
     fields = (
         ("author", f"{{{CREATOR}}}"),
-        ("title", DATASET_TITLE),
+        ("title", title),
         ("year", str(released.year)),
         ("version", version),
         ("publisher", PUBLISHER),
@@ -94,7 +98,7 @@ def citation_bibtex(version: str, released: date, doi: str) -> str:
         ("url", f"https://doi.org/{doi}"),
     )
     lines = [f"  {name} = {{{value}}}" for name, value in fields]
-    return f"@misc{{{key},\n" + ",\n".join(lines) + "\n}"
+    return f"@misc{{{versioned},\n" + ",\n".join(lines) + "\n}"
 
 
 def page_citation_text(site: str) -> str:
@@ -107,14 +111,14 @@ def page_citation_bibtex(site: str) -> str:
     return "@misc{kalavigyan_open_knowledge,\n" + ",\n".join(lines) + "\n}"
 
 
-def zenodo_description(counts: Mapping[str, int]) -> str:
+def zenodo_description(counts: Mapping[str, int], *, summary: str = SUMMARY) -> str:
     rows = "".join(
         f"<li>{html.escape(table.title)} ({html.escape(table.name)}): {counts.get(table.name, 0)}</li>"
         for table in TABLES
     )
     left_out = "".join(f"<li>{html.escape(item)}</li>" for item in LEFT_OUT)
     return (
-        f"<p>{html.escape(SUMMARY)}</p>"
+        f"<p>{html.escape(summary)}</p>"
         f"<p>{html.escape(CITED_WORKS)}</p>"
         f"<p>Rows in this version:</p><ul>{rows}</ul>"
         f"<p>Left out:</p><ul>{left_out}</ul>"

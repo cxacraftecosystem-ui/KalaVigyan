@@ -3,15 +3,17 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from datetime import date
+from html import escape
 from typing import Any
 from urllib.parse import quote
 
 import httpx
 
-from app.core.errors import ExternalFailure, NotConfigured
+from app.core.errors import ExternalFailure, InvalidInput, NotConfigured
 
 from .open_data_release import SANDBOX, ZENODO, checked_doi, checked_target
-from .open_data_text import CODE_URL, CREATOR, DATASET_TITLE, KEYWORDS, SUMMARY, data_page, zenodo_description
+from .open_data_scope import WHOLE, ReleaseScope
+from .open_data_text import CODE_URL, CREATOR, data_page, zenodo_description
 
 __all__ = [
     "DEPOSITIONS",
@@ -37,6 +39,11 @@ UNREACHABLE = "Zenodo could not be reached for {method} {path}: {kind}"
 NO_DRAFT = "Zenodo opened no draft of a new version of record {record}."
 NO_DOI = "Zenodo reserved no DOI for draft {record}."
 OTHER_DOI = "Zenodo published {published}, not the reserved DOI {reserved} the files name."
+OTHER_CONCEPT = (
+    "Record {record} is a version of '{inherited}', not of '{title}'; nothing was changed in the draft Zenodo "
+    "opened ({draft}). Delete that draft on Zenodo's uploads page, then give the latest record of this "
+    "release's own concept, or none for its first release."
+)
 
 
 @dataclass(frozen=True)
@@ -73,6 +80,16 @@ class ZenodoDeposit:
             if latest_record is None
             else self._new_version(latest_record)
         )
+        inherited = (opened.get("metadata") or {}).get("title")
+        if latest_record is not None and inherited and inherited != metadata.get("title"):
+            raise InvalidInput(
+                OTHER_CONCEPT.format(
+                    record=latest_record,
+                    inherited=inherited,
+                    title=metadata.get("title"),
+                    draft=opened.get("id"),
+                )
+            )
         for found in opened.get("files") or []:
             self._call("DELETE", f"{DEPOSITIONS}/{opened['id']}/files/{found['id']}")
         described = self._call("PUT", f"{DEPOSITIONS}/{opened['id']}", json={"metadata": dict(metadata)})
@@ -142,24 +159,38 @@ class ZenodoDeposit:
         return response.json() if response.content else {}
 
 
-def deposit_metadata(*, version: str, released: date, counts: Mapping[str, int], site: str) -> dict[str, Any]:
+def deposit_metadata(
+    *, version: str, released: date, counts: Mapping[str, int], site: str, scope: ReleaseScope = WHOLE
+) -> dict[str, Any]:
+    described = (
+        zenodo_description(counts, summary=scope.summary) if counts else f"<p>{escape(scope.summary)}</p>"
+    )
     return {
         "upload_type": "dataset",
-        "title": DATASET_TITLE,
+        "title": scope.title,
         "publication_date": released.isoformat(),
         "version": version,
         "creators": [{"name": CREATOR}],
-        "description": zenodo_description(counts) if counts else f"<p>{SUMMARY}</p>",
-        "keywords": list(KEYWORDS),
+        "description": described,
+        "keywords": list(scope.keywords),
         "license": ZENODO_LICENCE,
         "access_right": "open",
         "language": "eng",
         "prereserve_doi": True,
-        "related_identifiers": [
-            {"identifier": data_page(site), "relation": "isDocumentedBy", "resource_type": "other"},
-            {"identifier": CODE_URL, "relation": "isSupplementedBy", "resource_type": "software"},
-        ],
+        "related_identifiers": _related(site, scope),
     }
+
+
+def _related(site: str, scope: ReleaseScope) -> list[dict[str, str]]:
+    page = scope.craft_page(site)
+    documents = [data_page(site), *([page] if page is not None else [])]
+    return [
+        *(
+            {"identifier": found, "relation": "isDocumentedBy", "resource_type": "other"}
+            for found in documents
+        ),
+        {"identifier": CODE_URL, "relation": "isSupplementedBy", "resource_type": "software"},
+    ]
 
 
 def _draft(body: Mapping[str, Any], *, minted: str | None) -> Draft:

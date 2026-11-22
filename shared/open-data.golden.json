@@ -105,6 +105,36 @@
       "bibtex": "@misc{kalavigyan_open_knowledge_2026_10_01,\n  title = {KalaVigyan open knowledge}\n}"
     }
   ],
+  "craftReleases": [
+    {
+      "version": "2026.11.22",
+      "releasedOn": "2026-11-22",
+      "doi": "10.5281/zenodo.400",
+      "doiUrl": "https://doi.org/10.5281/zenodo.400",
+      "recordUrl": "https://zenodo.org/records/400",
+      "publishedAt": "2026-11-22T10:00:00Z",
+      "totalBytes": 65536,
+      "files": [
+        {
+          "path": "claims.jsonl",
+          "bytes": 40960,
+          "downloadUrl": "https://zenodo.org/records/400/files/claims.jsonl?download=1"
+        }
+      ],
+      "counts": {
+        "claims": 321,
+        "crafts": 1
+      },
+      "changes": {},
+      "citation": "KalaVigyan, Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform, IIT Kharagpur. (2026). Kutch Ajrakh: KalaVigyan open knowledge (Version 2026.11.22) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.400",
+      "bibtex": "@misc{kalavigyan_kutch_ajrakh_2026_11_22,\n  title = {Kutch Ajrakh: KalaVigyan open knowledge}\n}",
+      "craft": "Kutch-Ajrakh",
+      "craftName": "Kutch Ajrakh",
+      "title": "Kutch Ajrakh: KalaVigyan open knowledge",
+      "conceptDoi": "10.5281/zenodo.399",
+      "conceptDoiUrl": "https://doi.org/10.5281/zenodo.399"
+    }
+  ],
   "tables": [
     {
       "name": "families",

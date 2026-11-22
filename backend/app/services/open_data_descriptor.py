@@ -5,17 +5,9 @@ from typing import Any
 
 from .open_data_release import ReleaseStamp
 from .open_data_schema import Column, Table
+from .open_data_scope import PACKAGE_NAME, WHOLE, ReleaseScope
 from .open_data_tables import TABLES
-from .open_data_text import (
-    CREATOR,
-    DATASET_TITLE,
-    KEYWORDS,
-    LICENCE_ID,
-    LICENCE_NAME,
-    LICENCE_URL,
-    SUMMARY,
-    data_page,
-)
+from .open_data_text import CREATOR, LICENCE_ID, LICENCE_NAME, LICENCE_URL, data_page
 
 __all__ = [
     "CSV_SUFFIX",
@@ -30,7 +22,6 @@ __all__ = [
 ]
 
 PACKAGE_FILE = "datapackage.json"
-PACKAGE_NAME = "kalavigyan-open-knowledge"
 JSONL_SUFFIX = ".jsonl"
 CSV_SUFFIX = ".csv"
 CSV_RESOURCE = "{name}-csv"
@@ -58,17 +49,20 @@ def csv_file(table: Table) -> str:
     return f"{table.name}{CSV_SUFFIX}"
 
 
-def package_descriptor(stamp: ReleaseStamp, files: FileFacts, *, site: str) -> dict[str, Any]:
+def package_descriptor(
+    stamp: ReleaseStamp, files: FileFacts, *, site: str, scope: ReleaseScope = WHOLE
+) -> dict[str, Any]:
     return {
         "profile": "data-package",
-        "name": PACKAGE_NAME,
+        "name": scope.package_name,
         "id": stamp.doi_url(),
-        "title": DATASET_TITLE,
-        "description": SUMMARY,
+        "title": scope.title,
+        "description": scope.summary,
         "version": stamp.version,
         "created": f"{stamp.released.isoformat()}T00:00:00Z",
         "homepage": data_page(site),
-        "keywords": list(KEYWORDS),
+        "keywords": list(scope.keywords),
+        **scope.descriptor_property(site),
         "licenses": [{"name": LICENCE_ID, "path": LICENCE_URL, "title": LICENCE_NAME}],
         "contributors": [{"title": CREATOR, "role": "author"}],
         "sources": [{"title": "KalaVigyan", "path": site.rstrip("/")}],

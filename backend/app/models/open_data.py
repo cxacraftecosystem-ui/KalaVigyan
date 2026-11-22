@@ -22,12 +22,14 @@ __all__ = [
     "DEPOSIT_TARGETS",
     "DOI_CHARS",
     "RELEASE_STATES",
+    "SCOPE_CHARS",
     "VERSION_CHARS",
     "OpenDataRelease",
 ]
 
 DEPOSIT_TARGETS = ("SANDBOX", "ZENODO")
 RELEASE_STATES = ("DRAFT", "PUBLISHED")
+SCOPE_CHARS = 160
 VERSION_CHARS = 20
 DOI_CHARS = 255
 STATE_CHARS = 16
@@ -43,6 +45,7 @@ class OpenDataRelease(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     target: Mapped[str] = mapped_column(String(STATE_CHARS), nullable=False)
+    scope: Mapped[str | None] = mapped_column(String(SCOPE_CHARS))
     version: Mapped[str] = mapped_column(String(VERSION_CHARS), nullable=False)
     releasedOn: Mapped[date] = mapped_column(Date, nullable=False)
     state: Mapped[str] = mapped_column(String(STATE_CHARS), nullable=False, server_default="DRAFT")
@@ -67,6 +70,7 @@ class OpenDataRelease(Base):
         CheckConstraint("\"manifestSha256\" ~ '^[0-9a-f]{64}$'", name="manifestSha256"),
         CheckConstraint('"totalBytes" >= 0', name="totalBytes"),
         CheckConstraint('("state" = \'PUBLISHED\') = ("publishedAt" IS NOT NULL)', name="published"),
-        UniqueConstraint("target", "version"),
-        Index(None, "target", "state", "releasedOn"),
+        CheckConstraint('"scope" IS NULL OR "scope" <> \'\'', name="scope"),
+        UniqueConstraint("target", "scope", "version", postgresql_nulls_not_distinct=True),
+        Index(None, "target", "scope", "state", "releasedOn"),
     )

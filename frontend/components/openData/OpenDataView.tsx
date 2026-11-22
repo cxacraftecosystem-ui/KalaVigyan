@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { FactGrid } from "@/components/editorial/FactGrid";
+import { CraftReleases } from "@/components/openData/CraftReleases";
 import { DatasetCitation } from "@/components/openData/DatasetCitation";
 import { DatasetTerms } from "@/components/openData/DatasetTerms";
 import { OpenDataSection } from "@/components/openData/OpenDataSection";
@@ -52,6 +53,7 @@ export function OpenDataView({ listing }: { listing: OpenDataListing }) {
           <ReleaseHistory releases={listing.releases} />
         </OpenDataSection>
       ) : null}
+      {listing.craftReleases.length > 0 ? <CraftReleases releases={listing.craftReleases} /> : null}
     </div>
   );
 }
