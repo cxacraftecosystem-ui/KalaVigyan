@@ -54,10 +54,13 @@ async def test_a_daily_allowance_is_set_on_the_budget_and_read_by_every_check(
     assert daily_allowances.daily_allowance("ARTISAN", "VOICE_SECONDS") is None
 
 
-async def test_a_master_admin_allowance_or_an_unknown_resource_is_refused(
+async def test_a_master_admin_allowance_is_refused(client: httpx.AsyncClient, master: dict[str, Any]) -> None:
+    capped = await put_budget(client, master, {"dailyAllowances": {"MASTER_ADMIN": {"IMAGE": 3}}})
+    assert (capped.status_code, capped.json()["detail"]) == (422, "Master Admins have no caps.")
+
+
+async def test_an_allowance_of_an_unknown_resource_is_refused(
     client: httpx.AsyncClient, master: dict[str, Any]
 ) -> None:
-    capped = await put_budget(client, master, {"dailyAllowances": {"MASTER_ADMIN": {"IMAGE": 3}}})
     unknown = await put_budget(client, master, {"dailyAllowances": {"STUDENT": {"TEXT_Q": 3}}})
-    assert (capped.status_code, unknown.status_code) == (422, 422)
-    assert capped.json()["detail"] == "Master Admins have no caps."
+    assert (unknown.status_code, unknown.json()["detail"]) == (422, "Unknown allowances: TEXT_Q")

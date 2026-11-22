@@ -12,7 +12,7 @@ from app.services.upkeep_costs import settle_late_costs
 
 pytestmark = pytest.mark.db
 
-NOW = datetime(2026, 11, 22, 21, 30, tzinfo=UTC)
+NOW = datetime(2031, 1, 6, 21, 30, tzinfo=UTC)
 
 
 @pytest.fixture
