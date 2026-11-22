@@ -58,6 +58,11 @@ output "ssm_session_command" {
   value       = "aws ssm start-session --target ${aws_instance.api.id} --region ${var.aws_region}"
 }
 
+output "log_groups" {
+  description = "CloudWatch Logs groups the box ships its services' and nginx's logs to."
+  value       = sort([for group in aws_cloudwatch_log_group.box : group.name])
+}
+
 output "media_access_key_id" {
   description = "Access key id of the API's media user (AWS_ACCESS_KEY_ID)."
   value       = aws_iam_access_key.media.id

@@ -186,6 +186,7 @@ flowchart LR
 | [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | · |
 | [0144](0144-stored-passages-as-evidence.md) | A stored passage is evidence an answer and a voice turn may cite, kept as a fact of its own source | · |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
+| [0150](0150-mcp-activity-and-box-logs.md) | Each MCP call keeps its client and its reason for 180 days and its count for good, and the box ships its logs to CloudWatch | · |
 
 ## How this document is kept true
 

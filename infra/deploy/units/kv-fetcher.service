@@ -15,6 +15,7 @@ Environment=FETCHER_HOST=127.0.0.1
 Environment=FETCHER_PORT=8090
 EnvironmentFile=/opt/kalavigyan/fetcher.env
 Environment=KV_PROCESS=fetcher
+SyslogIdentifier=kv-fetcher
 ExecStart=/opt/kalavigyan/current/backend/.venv/bin/python -m app.fetcher
 MemoryAccounting=yes
 MemoryHigh=600M

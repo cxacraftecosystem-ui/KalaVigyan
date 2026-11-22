@@ -9,6 +9,9 @@ PY_SHA256="182e7adf7e4f0e32dafac5143f00d466afd20eef45918ea170f78884e503ac18"
 UV_VERSION="0.13.9"
 UV_SHA256="a7fbaff2b9a271d85c1bdb540941090fd1ce011797b4abeb48e4dcd39c2471d5"
 SEARXNG_IMAGE="docker.io/searxng/searxng:2026.11.15-2d500cb6b"
+CW_VERSION="1.300075.0b2061"
+CW_URL="https://amazoncloudwatch-agent-ap-south-1.s3.ap-south-1.amazonaws.com/ubuntu/amd64/1.300075.0b2061/amazon-cloudwatch-agent.deb"
+CW_SHA256="7b22430a255ebdeae68398f83b1e36d10194c5dc8824526c0d4f26ce3b6ea696"
 
 if [ ! -f /swapfile ]; then
   fallocate -l 4G /swapfile
@@ -26,7 +29,7 @@ systemctl restart systemd-journald
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
-apt-get install -y ca-certificates curl gnupg git jq unzip openssl libatomic1 ffmpeg nginx redis-server certbot python3-certbot-nginx
+apt-get install -y ca-certificates curl gnupg git jq unzip openssl libatomic1 ffmpeg nginx redis-server certbot python3-certbot-nginx rsyslog
 
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL --retry 5 https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
@@ -40,6 +43,16 @@ systemctl enable --now docker
 if ! command -v aws >/dev/null 2>&1; then
   snap install aws-cli --classic
 fi
+
+if [ "$(cat /opt/aws/amazon-cloudwatch-agent/bin/CWAGENT_VERSION 2>/dev/null || true)" != "$CW_VERSION" ]; then
+  t="$(mktemp -d)"
+  curl -fsSL --proto '=https' --tlsv1.2 --retry 5 --retry-delay 10 --retry-all-errors --connect-timeout 30 --max-time 900 -o "$t/agent.deb" "$CW_URL"
+  echo "${CW_SHA256}  $t/agent.deb" | sha256sum -c -
+  dpkg -i "$t/agent.deb"
+  rm -rf "$t"
+fi
+usermod -aG adm cwagent
+install -d -o syslog -g adm -m 0750 /var/log/kalavigyan
 
 if [ "$(/usr/local/bin/uv --version 2>/dev/null | awk '{print $2}')" != "$UV_VERSION" ]; then
   t="$(mktemp -d)"

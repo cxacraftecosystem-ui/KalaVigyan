@@ -22,7 +22,8 @@ const TOOLS: HubTool[] = [
   { href: "/admin/users", title: "Manage users", note: "Change roles, suspend accounts, reset two-step verification." },
   { href: "/admin/keys", title: "API keys", note: "Set and test the provider keys." },
   { href: "/admin/routing", title: "AI routing", note: "The model order for each task." },
-  { href: "/admin/usage", title: "Usage", note: "Calls, tokens and spend, by task, model and day." }
+  { href: "/admin/usage", title: "Usage", note: "Calls, tokens and spend, by task, model and day." },
+  { href: "/admin/mcp", title: "MCP activity", note: "Calls to the MCP server by client and connection, and why calls failed." }
 ];
 
 function ToolRow({ tool, waiting }: { tool: HubTool; waiting: number }) {

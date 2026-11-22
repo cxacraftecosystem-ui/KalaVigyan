@@ -16,6 +16,7 @@ from app.sources.wayback_save import WaybackSaver
 
 from .answer_gap_refresh import AnswerGapsReport, refresh_answer_gaps
 from .claim_holds import shown_held_ids
+from .mcp_activity_upkeep import McpActivityReport, keep_mcp_activity, mcp_activity_plan
 from .open_work_refresh import FieldWorkReport, refresh_field_work
 from .orphan_concepts import OrphansReport, orphan_concepts, sweep_orphans
 from .shared_term_crafts import SharedTermsReport, refresh_shared_terms
@@ -82,6 +83,7 @@ class UpkeepReport:
     pages: PagesReport = field(default_factory=PagesReport)
     field_work: FieldWorkReport = field(default_factory=FieldWorkReport)
     allowances: AllowancesReport = field(default_factory=AllowancesReport)
+    mcp_activity: McpActivityReport = field(default_factory=McpActivityReport)
     answer_gaps: AnswerGapsReport = field(default_factory=AnswerGapsReport)
     shared_terms: SharedTermsReport = field(default_factory=SharedTermsReport)
 
@@ -100,6 +102,7 @@ class UpkeepReport:
             "pages": self.pages.as_dict(),
             "fieldWork": self.field_work.as_dict(),
             "allowances": self.allowances.as_dict(),
+            "mcpActivity": self.mcp_activity.as_dict(),
             "answerGaps": self.answer_gaps.as_dict(),
             "sharedTerms": self.shared_terms.as_dict(),
         }
@@ -114,6 +117,7 @@ async def run_nightly_upkeep(session: AsyncSession, tools: UpkeepTools, *, now: 
     report.orphans = await sweep_orphans(session, now=now)
     report.clients = await remove_abandoned_clients(session, now=now)
     report.allowances = await sweep_allowances(session, now=now)
+    report.mcp_activity = await keep_mcp_activity(session, now=now)
     await rebuild_monographs(session, tools.monographs, tools.load_monograph, now=now, report=report.pages)
     await rebuild_stale_pages(session, skip=frozenset(tools.monographs), report=report.pages)
     await rebuild_documents(session, report=report.pages)
@@ -141,4 +145,5 @@ async def plan_nightly_upkeep(
         "pagesStale": len(stale),
         "clientsAbandoned": await abandoned_client_count(session, now=now),
         "orphans": [orphan.as_dict() for orphan in orphans],
+        **await mcp_activity_plan(session, now=now),
     }

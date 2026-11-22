@@ -48,6 +48,7 @@ flowchart LR
 | API | `uvicorn app.main:app` | blue/green on 8000/8001 |
 | Database | Postgres 17 on Supabase | session pooler `:5432`; vector, postgis, pg_trgm, unaccent, citext |
 | Workers on the box | `kv-worker`, `kv-fetcher` and `kv-contributions` | the media queue (decision 0018) and the daily voice upkeep (decision 0140), the fetcher sandbox (decision 0007) and the contribution queue's gates (round 7), as `docs/RUNBOOK.md` lists them under On the box |
+| Logs | the CloudWatch agent on the box | each service's journal lines and nginx's access and error logs, shipped to the CloudWatch Logs groups `/kalavigyan/<service>` and kept 30 days (decision 0150, `docs/RUNBOOK.md` Logs) |
 
 Media goes to the private S3 bucket through presigned URLs. Ids, names and the deploy sequence
 are in `docs/RUNBOOK.md`; what the box assumes from the code is in `docs/contracts/infra.md`.

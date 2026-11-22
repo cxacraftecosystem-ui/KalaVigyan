@@ -46,10 +46,12 @@ def signed_in(monkeypatch: pytest.MonkeyPatch, scopes: frozenset[str]) -> dict[s
 
     async def fake_caller(session: Any, raw: str, *, resource: str, now: datetime) -> McpCaller:
         seen.update(raw=raw, resource=resource)
-        return McpCaller(user=reader, scopes=scopes, grant_id=GRANT, token_id=TOKEN)
+        return McpCaller(user=reader, scopes=scopes, grant_id=GRANT, token_id=TOKEN, client_name="Claude")
 
-    async def fake_record(session: Any, caller: McpCaller, *, tool: str, outcome: str, now: datetime) -> None:
-        seen["calls"].append({"grant": caller.grant_id, "tool": tool, "outcome": outcome})
+    async def fake_record(
+        session: Any, caller: McpCaller, *, tool: str, outcome: str, reason: str | None, now: datetime
+    ) -> None:
+        seen["calls"].append({"grant": caller.grant_id, "tool": tool, "outcome": outcome, "reason": reason})
 
     async def fake_touch(session: Any, caller: McpCaller, *, now: datetime) -> None:
         seen["touched"] = caller.grant_id
@@ -105,7 +107,7 @@ def test_a_valid_token_puts_the_account_and_scopes_on_the_tool_context(
     assert reply.status_code == 200
     assert (seen["raw"], seen["resource"]) == ("kvmcp_at_live", RESOURCE)
     assert (contexts[0].user, contexts[0].scopes) == (seen["reader"], frozenset({"read", "ask"}))
-    assert seen["calls"] == [{"grant": GRANT, "tool": "find_crafts", "outcome": "OK"}]
+    assert seen["calls"] == [{"grant": GRANT, "tool": "find_crafts", "outcome": "OK", "reason": None}]
     assert PRIVATE_WORDS not in repr(seen["calls"])
     assert session.commits == 1
 

@@ -28,6 +28,7 @@ from app.api.routes import (
     map_districts,
     map_layers,
     mcp,
+    mcp_activity,
     me,
     media,
     molecules,
@@ -95,6 +96,7 @@ api_router.include_router(listen.router)
 api_router.include_router(map_districts.router)
 api_router.include_router(map_layers.router)
 api_router.include_router(mcp.router)
+api_router.include_router(mcp_activity.router)
 api_router.include_router(media.router)
 api_router.include_router(molecules.router)
 api_router.include_router(notifications.router)
