@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, 
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.multipart_form import BodyTooLarge, form_file, limited_body
+from app.api.multipart_form import BodyTooLarge, limited_body, read_form
 from app.api.public_deps import counted_anonymous_read
 from app.core.config import get_settings
 from app.core.db import get_session
@@ -116,12 +116,15 @@ async def _shown(
 
 
 async def _form_picture(request: Request) -> links.Picture:
-    body = await _body(request, IMAGE_BYTES_MAX + FORM_OVERHEAD_BYTES)
-    content_type = request.headers.get("content-type")
+    limit = IMAGE_BYTES_MAX + FORM_OVERHEAD_BYTES
+    if _declared_over(request, limit):
+        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, TOO_LARGE_DETAIL)
     try:
-        declaration = form_file(content_type, body, DECLARATION_FIELD)
-        picture = form_file(content_type, body, PICTURE_FIELD)
+        form = await read_form(request, limit, files=[DECLARATION_FIELD, PICTURE_FIELD])
+        declaration, picture = form.file(DECLARATION_FIELD), form.file(PICTURE_FIELD)
         parsed = SlotDeclaration.model_validate_json(declaration.content)
+    except BodyTooLarge as too_large:
+        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, TOO_LARGE_DETAIL) from too_large
     except InvalidInput as invalid:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(invalid)) from invalid
     except ValidationError as refused:
@@ -131,9 +134,13 @@ async def _form_picture(request: Request) -> links.Picture:
     return links.Picture(declaration=parsed, data=picture.content)
 
 
-async def _body(request: Request, limit: int) -> bytes:
+def _declared_over(request: Request, limit: int) -> bool:
     declared = request.headers.get("content-length", "")
-    if declared.isdigit() and int(declared) > limit:
+    return declared.isdigit() and int(declared) > limit
+
+
+async def _body(request: Request, limit: int) -> bytes:
+    if _declared_over(request, limit):
         raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, TOO_LARGE_DETAIL)
     try:
         return await limited_body(request, limit)

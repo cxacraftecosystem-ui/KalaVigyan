@@ -74,6 +74,10 @@ def settings(transport: str = "RELAY") -> VoiceSettings:
     )
 
 
+async def three_seconds(content: bytes) -> float:
+    return 3.0
+
+
 class Client:
     def __init__(
         self, store: MemoryStore, *, transport: str = "RELAY", user: User | None = None, call: bool = True
@@ -82,6 +86,7 @@ class Client:
         runtime = VoiceRuntime(
             client=httpx.AsyncClient(transport=httpx.MockTransport(elevenlabs_answer)),
             objects=MemoryObjects(),
+            measure=three_seconds,
         )
         learner = user or User(
             id=USER_ID,

@@ -37,6 +37,7 @@ dependencies = [
     "uharfbuzz>=0.57.0",
     "pillow>=13.0.0",
     "pillow-heif>=1.8.1",
+    "python-multipart>=0.0.34",
 ]
 
 [dependency-groups]

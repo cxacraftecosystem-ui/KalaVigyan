@@ -16,6 +16,7 @@ from app.schemas.voice import VOICE_TRANSPORTS
 from app.services import app_settings, managed_secrets
 from app.services.object_store import media_bucket
 
+from .audio_decode import Measure, decoded_seconds
 from .binding import HMAC_KEY_NAME
 from .pack import VoicePackStore
 from .privacy import TranscriptCipher, transcript_cipher
@@ -92,10 +93,15 @@ def _cipher_or_none(value: str | None) -> TranscriptCipher | None:
 
 class VoiceRuntime:
     def __init__(
-        self, *, client: httpx.AsyncClient | None = None, objects: ReplyObjects | None = None
+        self,
+        *,
+        client: httpx.AsyncClient | None = None,
+        objects: ReplyObjects | None = None,
+        measure: Measure = decoded_seconds,
     ) -> None:
         self.client = client or httpx.AsyncClient(follow_redirects=False)
         self.packs = VoicePackStore()
+        self.measure = measure
         self._objects = objects
         self._reachable: tuple[float, str, bool] | None = None
 

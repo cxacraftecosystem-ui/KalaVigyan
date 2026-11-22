@@ -79,7 +79,7 @@ def live_store(used_before: int = 60, **changes: object) -> MemoryStore:
 
 
 async def turn_text(store: MemoryStore, relay: RelayDeps, content: bytes = b"recorded") -> str:
-    audio = RelayAudio.checked(content, "audio/webm")
+    audio = RelayAudio(content, "audio/webm", least_seconds=1)
     return "".join([frame async for frame in relay_turn_events(store.sessions[SESSION_ID], audio, relay)])
 
 

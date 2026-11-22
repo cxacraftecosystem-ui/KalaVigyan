@@ -9,7 +9,17 @@ from sqlalchemy import DateTime, Interval, and_, case, func, literal, or_, selec
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.models import Answer, ConsentRecord, Conversation, Craft, Process, ProcessStage, User, VoiceSession
+from app.models import (
+    Answer,
+    ConsentRecord,
+    Conversation,
+    Craft,
+    Process,
+    ProcessStage,
+    QuotaLedger,
+    User,
+    VoiceSession,
+)
 from app.providers.quota import LedgerEntry, record_units, remaining_today, used_today
 from app.research.crafts import CraftRef
 from app.research.retrieval import EVERY_CHUNK_ACLS
@@ -238,8 +248,12 @@ class SqlVoiceStore:
 
     async def settle(self, record: SessionRecord, billed: int, entry: LedgerEntry | None) -> None:
         async with self._sessions() as session:
-            if entry is not None:
-                await record_units(session, entry)
+            if entry is not None and await record_units(session, entry):
+                await session.execute(
+                    update(QuotaLedger)
+                    .where(QuotaLedger.idempotencyKey == entry.key)
+                    .values(createdAt=record.started_at)
+                )
             await session.execute(
                 update(VoiceSession).where(VoiceSession.id == record.id).values(billedSeconds=billed)
             )

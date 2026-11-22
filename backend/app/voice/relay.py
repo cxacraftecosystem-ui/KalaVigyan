@@ -14,7 +14,8 @@ from app.providers.quota import LedgerEntry, remaining_today, seconds_until_next
 from app.schemas.voice import MAX_TURNS, RELAY_MAX_TURN_SECONDS, relay_frame, speech_path
 from app.services.answering import status_message
 
-from .audio import upload_floor_seconds
+from .audio import upload_seconds
+from .audio_decode import Measure
 from .privacy import TranscriptCipher, heard_text
 from .records import SessionRecord, TurnClaim, TurnHold, TurnSave, VoiceStore
 from .reply_audio import ReplyAudio
@@ -52,8 +53,8 @@ class RelayAudio:
     least_seconds: int
 
     @classmethod
-    def checked(cls, content: bytes, content_type: str) -> RelayAudio:
-        return cls(content, content_type, upload_floor_seconds(content, content_type))
+    async def measured(cls, content: bytes, content_type: str, measure: Measure) -> RelayAudio:
+        return cls(content, content_type, await upload_seconds(content, content_type, measure))
 
 
 @dataclass(frozen=True)

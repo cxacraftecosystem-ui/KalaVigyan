@@ -123,7 +123,7 @@ voice routes live under `/api/voice/` (checked by `test_voice_contract.py`).
 | POST | `/api/voice/session/{id}/end` | its user | `VoiceSessionEnded`; ending twice answers the same |
 | GET | `/api/voice/session/{id}/transcript` | its user | `VoiceTranscript` until `retentionUntil`, then 404 |
 | POST | `/api/voice/llm/v1/chat/completions` | ElevenLabs (bearer) | `text/event-stream` of `LlmChunk` frames and `data: [DONE]` |
-| POST | `/api/voice/session/{id}/turns` | its user, `RELAY`; 40 per 10 min (429 + `Retry-After`) | multipart `audio`, one of `RELAY_AUDIO_TYPES`: WebM, Ogg and MP4 at most `RELAY_MAX_AUDIO_BYTES` (300 000 bytes, a minute at `RELAY_AUDIO_BITS_PER_SECOND` 32 kbit/s with a quarter's headroom), WAV uncompressed PCM of at most `RELAY_MAX_TURN_SECONDS` (60 s) by its own sample rate, channels and sample size and at most `RELAY_MAX_WAV_BYTES` (4 MiB); larger 413, unreadable WAV 400; `text/event-stream` of relay events |
+| POST | `/api/voice/session/{id}/turns` | its user, `RELAY`; 40 per 10 min (429 + `Retry-After`) | multipart `audio`, one of `RELAY_AUDIO_TYPES`: WebM, Ogg and MP4 at most `RELAY_MAX_AUDIO_BYTES` (300 000 bytes, a minute at `RELAY_AUDIO_BITS_PER_SECOND` 32 kbit/s with a quarter's headroom) that decode to at most a minute, WAV uncompressed PCM of at most `RELAY_MAX_TURN_SECONDS` (60 s) by its own sample rate, channels and sample size and at most `RELAY_MAX_WAV_BYTES` (4 MiB); larger 413, unreadable WAV 400; `text/event-stream` of relay events |
 | GET | `/api/voice/session/{id}/turns/{turnId}/speech` | its user, `RELAY`; 60 per 10 min (429 + `Retry-After`) | `audio/mpeg` (`mp3_44100_128`); only while the call is live or for `SPEECH_GRACE` (2 minutes) after it ended, else 410; 429 when no seconds are left today |
 
 ### Starting a session
@@ -231,8 +231,12 @@ session must be live and below `MAX_TURNS`, the day must have at least the uploa
 counts one of the 40 turns. So every upload, heard or not, takes a turn, and parallel uploads
 each hold their own minute. After speech to text the turn keeps the larger of the floor and the
 heard seconds (the last word's end) and writes the rest back as `voice-refund:<sessionId>:<turnId>`.
-The floor is the WAV's length, or the upload's bytes over 5 000 a second (a full 300 000-byte
-upload is a minute), at least 1 s.
+The floor is the recording's length rounded up, at least 1 s: a WAV's from its header, any other
+upload's as `ffmpeg` decodes it (`voice/audio_decode.py`, the last `out_time_us` of its progress),
+so an upload encoded below the asked bit rate that decodes past `RELAY_MAX_TURN_SECONDS` is refused
+413 before speech to text is paid; an upload `ffmpeg` cannot decode is refused 400, and a machine
+without `ffmpeg` answers 503 (decision 0140). The form is read by `python-multipart` through
+Starlette's parser, with the body cut off at its limit as it streams (`api/multipart_form.read_form`).
 
 `POST /api/voice/session/{id}/turns` streams, in order: `heard {text, language}` (the speech to
 text result, scrubbed), `status` steps, `source` before the first citation of it, `sentence
@@ -256,7 +260,8 @@ recorded at the session's `audioBitsPerSecond` and sent as soon as it reaches ni
   `QuotaLedger` under `voice:<sessionId>:hold`; custom-LLM turns write nothing more. Reconciliation
   (the daily upkeep, and the user's next start) reads `metadata.call_duration_secs` and settles both
   ways: one `voice-refund:<sessionId>` row for any surplus, one `voice-settle:<sessionId>` row for
-  time past the hold (a call left connected after its row ended); `billedSeconds` is then set. The
+  time past the hold (a call left connected after its row ended), each dated to the call's start so
+  it counts on the call's day, not the day it is written (decision 0140); `billedSeconds` is then set. The
   call ends at its `maxDurationSeconds` with `end_call` (`quota` when the day's seconds cut it
   short, else `turns`) or at `MAX_TURNS`.
 - `RELAY`: a turn bills its audio as above (the hold, then the refund) plus the reply audio's

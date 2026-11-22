@@ -477,22 +477,14 @@ Last reviewed: 2026-11-22.
 - **Clears it:** prefetch the claim vectors with the pack and embed the question in parallel with
   the filler; add T2 chunks as `EVIDENCE` candidates with their verified quotes.
 
-### Voice billing approximations
+### An agent call cannot be hung up from our side
 
-- **What:** a relay upload's floor is its bytes at 5 000 a second; compressed audio is not decoded,
-  so a client encoding below the dock's 32 kbit/s (Opus goes down to 6 kbit/s) gets up to about
-  6.7 times the floor's seconds of speech to text inside the 300 000-byte ceiling, still within
-  the day's seconds. Parallel uploads are allowed; each holds its own minute under the row lock,
-  so they cannot pass the day's seconds. An agent call cannot be hung up from our side: after its
-  row ends the ElevenLabs call can run to the agent's 600 s, which reconciliation charges (the user
-  may go below zero for that day). Refund and settle rows count on the day they are written, not
-  the call's day.
-- **Why left:** decoding needs ffmpeg on the box; ending a call needs an ElevenLabs endpoint the
-  spike has not confirmed. Each is bounded by the day's seconds, the turn and replay limits and
-  the 40-turn cap (decision 0022).
-- **Clears it:** decode the upload's duration (ffprobe) before speech to text and bill that; end
-  the ElevenLabs conversation when the row ends, once the spike shows how; date settlement rows to
-  the call's day.
+- **What:** after an `AGENT` call's row ends, the ElevenLabs call can run on to the agent's 600 s,
+  which reconciliation charges, so the user may go below zero for the call's day (the settlement
+  row counts on that day, decision 0140).
+- **Why left:** ending a conversation needs an ElevenLabs endpoint the spike has not confirmed; it
+  is bounded by the day's seconds, the turn and replay limits and the 40-turn cap (decision 0022).
+- **Clears it:** end the ElevenLabs conversation when the row ends, once the spike shows how.
 
 ### Voice settings have no screen
 
@@ -500,14 +492,6 @@ Last reviewed: 2026-11-22.
   in SQL (`docs/RUNBOOK.md`); `voice.max_live_sessions` defaults to 5, an assumption about the bought
   plan's concurrent-call limit.
 - **Clears it:** a master-admin voice block in Settings, and the limit from the plan once bought.
-
-### A hand-written multipart reader
-
-- **What:** relay uploads are read by `api/multipart_form.py` rather than `python-multipart`.
-- **Why left:** the lockfile cannot be regenerated on this machine (no `uv`), and one field is
-  enough.
-- **Clears it:** add `python-multipart` with `uv add` where `uv` runs and read the form with
-  Starlette's limits.
 
 ## Voice UI (decision 0020)
 
