@@ -6,7 +6,7 @@ from app.providers.catalogue import AiTask
 from app.providers.router import RouterError
 from app.research.explainer import Explainer
 from app.schemas.listen import ListenWord
-from app.services.naming import narration_key, score_key, score_lease_key
+from app.services.naming import narration_key, score_key, score_manifest_key
 from app.voice.film_score import (
     SCORE_LEASE_SECONDS,
     ScoreBeingMade,
@@ -17,14 +17,14 @@ from app.voice.film_score import (
 )
 from app.voice.narration import narration_cache_id, spoken_blocks
 from app.voice.narration_cache import NarratedPart, NarrationManifest, store_manifest
-from app.voice.object_lease import ObjectLease
+from app.voice.object_lease import LEASE_LEAF, ObjectLease
 from app.voice.score_cache import UNNAMED_LEAF
 
 from .listen_fakes import VOICE_ID, MemoryObjects, golden_explainer
 from .score_fakes import MADE_AT, MemoryMaker, score_ask, score_deps
 
 ANSWER = golden_explainer().answer_id
-LEASE = score_lease_key(ANSWER, "en")
+LEASE = score_manifest_key(ANSWER, "en", leaf=LEASE_LEAF)
 HEARD = {"s1.b1": 60.0, "s2.b1": 40.0, "s3.b1": 40.0}
 
 

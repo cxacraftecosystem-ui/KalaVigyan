@@ -14,6 +14,7 @@ from app.research.craft_parts import SourceListPart
 from app.research.datasets import DatasetRef
 from app.research.media_refs import MediaRef
 
+from .chapter_ai_media import with_ai_media
 from .chapter_chem import chem_chapter
 from .chapter_context import ChapterContext
 from .chapter_contributed import with_contributed
@@ -97,6 +98,7 @@ def _drafts(
     ]
     drafts = with_loose_differ(ctx, drafts, (parts["process"], parts["sources_differ"]))
     drafts = with_contributed(ctx, drafts)
+    drafts = with_ai_media(ctx, drafts)
     drafts = with_answer_pieces(drafts, ctx.rows.answers.pieces, ctx.claims)
     return [*drafts, sources_chapter(ctx, parts["open_questions"])]
 

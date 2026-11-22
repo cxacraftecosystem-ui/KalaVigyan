@@ -7,6 +7,7 @@ from typing import Any
 from app.core.db import dispose_engine, session_scope
 from app.services.craft_chapters_job import build_craft_chapters, chapter_crafts, chapter_lookups
 from app.services.live_sources import live_source_client
+from app.services.object_store import media_bucket
 
 
 async def run(slug: str | None) -> dict[str, Any]:
@@ -14,7 +15,9 @@ async def run(slug: str | None) -> dict[str, Any]:
         async with live_source_client() as client, session_scope() as session:
             lookups = chapter_lookups(client)
             crafts = await chapter_crafts(session, slug)
-            report = await build_craft_chapters(session, crafts, lookups=lookups, now=datetime.now(UTC))
+            report = await build_craft_chapters(
+                session, crafts, lookups=lookups, now=datetime.now(UTC), media=media_bucket()
+            )
     finally:
         await dispose_engine()
     return report.as_dict() | {"conformersChecked": lookups[0] is not None}

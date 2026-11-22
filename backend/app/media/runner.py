@@ -14,6 +14,7 @@ from app.core.logging import request_id_scope
 from app.providers.media_router import MediaAsk, MediaCall
 from app.providers.router import RouterError
 from app.schemas.media import JOB_RETRIES, JOB_TIMEOUT_SECONDS
+from app.services.craft_ai_media import page_copy_key
 from app.services.naming import MediaName, generated_media_file_name, media_key
 
 from .bundle import opened_bundle
@@ -123,6 +124,8 @@ async def _made(deps: RunnerDeps, job: JobRecord, stage: StageFacts, role: str) 
     leaf = generated_media_file_name(_media_name(job, stage, deps.clock()))
     key = media_key(job.requested_by, leaf)
     await deps.objects.put(key, output.data, content_type=output.mime)
+    page_key = page_copy_key(output.data, key)
+    await deps.objects.put(page_key, output.data, content_type=output.mime)
     asset = NewAsset(
         id=uuid.uuid4(),
         s3_key=key,
@@ -134,6 +137,7 @@ async def _made(deps: RunnerDeps, job: JobRecord, stage: StageFacts, role: str) 
         model=call.model,
         alt_text=job.alt_text,
         depicts_named_cluster=names_a_place(job.prompt, stage.craft.place_names),
+        page_key=page_key,
     )
     return _Made(asset=asset, cost_usd=call.cost_usd, billed_tokens=call.result.output_tokens)
 

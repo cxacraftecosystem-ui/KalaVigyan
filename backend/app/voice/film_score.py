@@ -26,14 +26,14 @@ from app.services.naming import (
     content_disposition,
     score_cue_file_name,
     score_key,
-    score_lease_key,
+    score_manifest_key,
     score_music_file_name,
 )
 
 from .film_plan import ScorePlan, score_plan
 from .film_scenes import SceneCue, scene_cues
 from .narration_cache import AUDIO_TYPE
-from .object_lease import LeasedObjects, held_lease, release_lease, take_lease
+from .object_lease import LEASE_LEAF, LeasedObjects, held_lease, release_lease, take_lease
 from .score_cache import (
     UNNAMED_LEAF,
     ScoreClip,
@@ -154,7 +154,7 @@ async def made_score(ask: ScoreAsk, deps: ScoreDeps, plan: ScorePlan) -> FilmSco
 
 
 def _lease_key(ask: ScoreAsk) -> str:
-    return score_lease_key(ask.explainer.answer_id, ask.explainer.understood.language)
+    return score_manifest_key(ask.explainer.answer_id, ask.explainer.understood.language, leaf=LEASE_LEAF)
 
 
 def checked_score_audio(call: MediaCall, seconds: float) -> bytes:

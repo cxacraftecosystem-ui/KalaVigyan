@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import re
 import uuid
 from dataclasses import replace
@@ -71,8 +72,11 @@ async def test_a_successful_image_is_named_stored_labelled_and_charged_once() ->
     assert generator.released == [hold] and memory.jobs[job_id].hold_id is None
     ask: MediaAsk = generator.asks[0]
     assert (ask.units, ask.principal.user_id, ask.principal.role) == (1.0, USER_ID, "STUDENT")
-    (key,) = objects.puts
+    key, page = objects.puts
     assert re.fullmatch(MEDIA_S3_KEY_PATTERN, key)
+    leaf = key.rsplit("/", 1)[-1]
+    assert page == f"media/craft/{hashlib.sha256(objects.puts[key][0]).hexdigest()}/{leaf}"
+    assert objects.puts[page] == objects.puts[key] and str(USER_ID) not in page
     assert key.endswith(
         "/KalaVigyan_Generated-Image_2026-11-16_1430_Ajrakhpur-Kachchh_Kutch-Ajrakh"
         "_Pa-Alum-Mordant-Printing-For-Red_Image_Step-06.png"
@@ -160,8 +164,9 @@ async def test_a_video_is_stored_silent_with_its_duration() -> None:
     generator = FakeGenerator([media_call(clip, model="gemini-omni-1.2-flash")])
     assert await run_job(runner(memory, generator, objects), job_id) == "SUCCEEDED"
     assert generator.asks[0].units == 8.0
-    ((key, (data, mime)),) = objects.puts.items()
+    (key, (data, mime)), (page, copy) = objects.puts.items()
     assert key.endswith("_Video_Step-06.mp4") and mime == "video/mp4" and b"soun" not in data
+    assert page.startswith("media/craft/") and copy == (data, mime)
     view = await view_of(memory, job_id, RESEARCHER)
     assert view.asset is not None and view.asset.duration_seconds == 8.0
 

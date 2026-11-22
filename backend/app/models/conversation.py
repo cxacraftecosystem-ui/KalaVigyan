@@ -278,6 +278,7 @@ class MediaAsset(Base):
         UUID(as_uuid=True), ForeignKey("MediaJob.id", ondelete="SET NULL")
     )
     s3Key: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    pageKey: Mapped[str | None] = mapped_column(Text)
     mime: Mapped[str] = mapped_column(String(120), nullable=False)
     bytes: Mapped[int | None] = mapped_column(Integer)
     width: Mapped[int | None] = mapped_column(Integer)

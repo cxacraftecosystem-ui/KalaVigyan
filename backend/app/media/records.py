@@ -125,6 +125,7 @@ class NewAsset:
     model: str
     alt_text: str
     depicts_named_cluster: bool
+    page_key: str | None = None
 
 
 @dataclass(frozen=True)

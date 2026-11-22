@@ -37,6 +37,7 @@ PUBLIC_ROUTES = {
     ("GET", "/api/compare"),
     ("GET", "/api/crafts/catalogue"),
     ("GET", "/api/crafts/contributed/{contribution_id}"),
+    ("GET", "/api/crafts/media/{asset_id}"),
     ("GET", "/api/crafts/coverage"),
     ("GET", "/api/crafts/{slug}/coverage"),
     ("GET", "/api/crafts/{slug}/field-voices"),
@@ -72,6 +73,7 @@ PUBLIC_ROUTES = {
 }
 ASSET_ROUTES = {
     ("GET", "/api/crafts/contributed/{contribution_id}"),
+    ("GET", "/api/crafts/media/{asset_id}"),
     ("GET", "/api/field-voices/images/{image_id}"),
     ("GET", "/api/map/layers/{layer}"),
     ("GET", "/api/molecules/{pubchem_cid}/conformer"),

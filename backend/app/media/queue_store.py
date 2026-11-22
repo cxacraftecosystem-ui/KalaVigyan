@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.models import Job, MediaAsset, MediaJob, UsageEvent
 from app.providers.quota import LedgerEntry, record_units
 from app.schemas.media import ASSET_LABEL, QUEUE_CONCURRENCY
+from app.services.craft_ai_media import page_visibility
 
 from .records import MEDIA_QUEUES, JobRecord, NewAsset, StageFacts
 from .rows import job_record, stage_facts
@@ -20,6 +21,7 @@ from .store import queue_key
 __all__ = ["SqlQueueStore"]
 
 HOLD_PARAM = "holdId"
+PRIVATE = "PRIVATE"
 RESERVED = "RESERVED"
 
 
@@ -174,8 +176,11 @@ def _asset_row(job_id: uuid.UUID, asset: NewAsset) -> MediaAsset:
         label=ASSET_LABEL,
         model=asset.model,
         altText=asset.alt_text,
-        visibility="PRIVATE",
+        visibility=PRIVATE
+        if asset.page_key is None
+        else page_visibility(depicts_named_cluster=asset.depicts_named_cluster),
         depictsNamedCluster=asset.depicts_named_cluster,
+        pageKey=asset.page_key,
     )
 
 

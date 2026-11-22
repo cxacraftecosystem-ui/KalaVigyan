@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from collections import Counter
 from collections.abc import Sequence
+from typing import Protocol
 
 from app.research.chapter_keys import CHAPTER_KEYS, DISCIPLINE_CHAPTERS
 from app.research.craft_contributed import (
@@ -19,7 +20,13 @@ from .chapter_context import ChapterContext
 from .chapter_draft import ChapterDraft, Drafted
 from .contributed_pictures import ContributedRecord
 
-__all__ = ["contributed_chapter", "contributed_plate", "with_contributed"]
+__all__ = [
+    "PlacedRecord",
+    "contributed_chapter",
+    "contributed_plate",
+    "every_fact_listed",
+    "with_contributed",
+]
 
 MADE = "made"
 GLANCE = "glance"
@@ -44,7 +51,7 @@ def with_contributed(ctx: ChapterContext, drafts: Sequence[ChapterDraft]) -> lis
 
 def contributed_plate(ctx: ChapterContext, record: ContributedRecord) -> ContributedPlate | None:
     ai = record.origin == AI_GENERATED
-    if ai and not _every_fact_listed(ctx, record.claim_ids):
+    if ai and not every_fact_listed(ctx, record.claim_ids):
         return None
     made_with = record.generator if ai else None
     return ContributedPlate(
@@ -63,7 +70,15 @@ def contributed_plate(ctx: ChapterContext, record: ContributedRecord) -> Contrib
     )
 
 
-def contributed_chapter(ctx: ChapterContext, record: ContributedRecord) -> str:
+class PlacedRecord(Protocol):
+    @property
+    def stage_id(self) -> uuid.UUID | None: ...
+
+    @property
+    def claim_ids(self) -> Sequence[uuid.UUID]: ...
+
+
+def contributed_chapter(ctx: ChapterContext, record: PlacedRecord) -> str:
     if record.stage_id is not None:
         return MADE
     fields = [ctx.claims[claim_id].discipline for claim_id in _facts(ctx, record.claim_ids)]
@@ -73,7 +88,7 @@ def contributed_chapter(ctx: ChapterContext, record: ContributedRecord) -> str:
     return min(counted, key=lambda key: (-counted[key], CHAPTER_KEYS.index(key)))
 
 
-def _every_fact_listed(ctx: ChapterContext, claim_ids: Sequence[uuid.UUID]) -> bool:
+def every_fact_listed(ctx: ChapterContext, claim_ids: Sequence[uuid.UUID]) -> bool:
     return bool(claim_ids) and len(_facts(ctx, claim_ids)) == len(set(claim_ids))
 
 

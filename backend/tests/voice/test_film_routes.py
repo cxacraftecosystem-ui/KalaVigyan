@@ -19,9 +19,9 @@ from app.providers.media_router import MediaRouter
 from app.providers.router import RouterError
 from app.research.explainer import Explainer
 from app.schemas.film import FilmScore, FilmScoreMaking
-from app.services.naming import score_lease_key
+from app.services.naming import score_manifest_key
 from app.voice.availability import HIDDEN_VOICE
-from app.voice.object_lease import ObjectLease
+from app.voice.object_lease import LEASE_LEAF, ObjectLease
 
 from .listen_fakes import LEARNER, MemoryObjects, golden_explainer
 from .score_fakes import MemoryMaker, score_ask, score_deps
@@ -115,7 +115,7 @@ def test_a_stored_score_is_served_again_without_counting_against_the_throttle() 
 def test_a_score_another_ask_is_making_answers_202_with_when_to_ask_again() -> None:
     client = Client()
     lease = ObjectLease(schema_version=1, cache_id="d" * 64, taken_at=datetime.now(UTC))
-    client.objects.stored[score_lease_key(ANSWER, "en")] = (
+    client.objects.stored[score_manifest_key(ANSWER, "en", leaf=LEASE_LEAF)] = (
         lease.model_dump_json().encode(),
         "application/json",
     )

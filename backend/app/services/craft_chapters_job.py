@@ -20,6 +20,7 @@ from app.sources.reference.wikidata import WikidataAdapter
 from app.sources.reference.wikidata_places import COORDINATES_IDS_MAX, PlacePoint
 
 from . import knowledge_view
+from .craft_ai_media import PageCopyObjects, copied_older_media
 from .craft_page_snapshots import rebuild_snapshots
 from .craft_page_stamp import craft_compound_ids
 from .curated_index import stored_curated_page
@@ -52,6 +53,7 @@ class ChaptersReport:
     conformers_kept: int = 0
     conformers_without_3d: int = 0
     points_kept: int = 0
+    ai_media_copied: int = 0
     pages_rebuilt: int = 0
     pages_changed: int = 0
     failed: list[str] = field(default_factory=list)
@@ -67,6 +69,7 @@ class ChaptersReport:
             "conformersKept": self.conformers_kept,
             "conformersWithout3d": self.conformers_without_3d,
             "pointsKept": self.points_kept,
+            "aiMediaCopied": self.ai_media_copied,
             "pagesRebuilt": self.pages_rebuilt,
             "pagesChanged": self.pages_changed,
             "failed": self.failed,
@@ -101,12 +104,15 @@ async def build_craft_chapters(
     *,
     lookups: tuple[ConformerKeeper | None, PointFinder],
     now: datetime,
+    media: PageCopyObjects | None = None,
 ) -> ChaptersReport:
     conformers, points = lookups
     report = ChaptersReport(crafts=len(crafts))
     if conformers is not None:
         await _keep_conformers(session, crafts, conformers, (report, now))
     await _keep_points(session, crafts, points, (report, now))
+    if media is not None:
+        report.ai_media_copied = await copied_older_media(session, media)
     for craft in crafts:
         try:
             changed = await rebuild_snapshots(session, craft)

@@ -32,12 +32,12 @@ __all__ = [
     "molecule_key",
     "narration_file_name",
     "narration_key",
+    "page_media_key",
     "place_field",
     "river_topology_file_name",
     "river_topology_key",
     "score_cue_file_name",
     "score_key",
-    "score_lease_key",
     "score_manifest_key",
     "score_music_file_name",
     "voice_reply_key",
@@ -53,11 +53,11 @@ MOLECULE_FOLDER = "molecules"
 RIVER_FOLDER = "rivers"
 SCORE_FOLDER = "score"
 FIELD_VOICE_FOLDER = "field-voices"
+PAGE_MEDIA_FOLDER = "craft"
 VOICE_REPLY_FOLDER = "voice-replies"
 VOICE_REPLY_LEAF = "reply.mp3"
 FIELD_VOICE_EXTENSIONS = ("jpg", "png")
 SCORE_MANIFEST_LEAF = "score.json"
-SCORE_LEASE_LEAF = "lease.json"
 RIVER_TOPOLOGY_SUBJECT = "HydroRIVERS-1-0"
 NARRATION_PARTS_MAX = 99
 LESSON_FILE_WHAT = {"html": "Slides", "pptx": "Slides", "pdf": "Lesson"}
@@ -179,9 +179,7 @@ def narration_file_name(generated_at: datetime, part: int) -> str:
 
 
 def narration_key(cache_id: str, leaf: str) -> str:
-    if not _hex_digest(cache_id):
-        raise InvalidInput("A narration key is filed under its 64-hex cache id")
-    return f"{MEDIA_PREFIX}/{NARRATION_FOLDER}/{cache_id}/{_one_file_name(leaf, 'narration')}"
+    return _hashed_key(NARRATION_FOLDER, cache_id, leaf, "A narration key is filed under its 64-hex cache id")
 
 
 def score_music_file_name(generated_at: datetime) -> str:
@@ -195,20 +193,10 @@ def score_cue_file_name(generated_at: datetime, scene: int) -> str:
 
 
 def score_key(cache_id: str, leaf: str) -> str:
-    if not _hex_digest(cache_id):
-        raise InvalidInput("A score clip is filed under its 64-hex cache id")
-    return f"{MEDIA_PREFIX}/{SCORE_FOLDER}/{cache_id}/{_one_file_name(leaf, 'score')}"
+    return _hashed_key(SCORE_FOLDER, cache_id, leaf, "A score clip is filed under its 64-hex cache id")
 
 
-def score_manifest_key(answer_id: uuid.UUID, language: str) -> str:
-    return _score_answer_key(answer_id, language, SCORE_MANIFEST_LEAF)
-
-
-def score_lease_key(answer_id: uuid.UUID, language: str) -> str:
-    return _score_answer_key(answer_id, language, SCORE_LEASE_LEAF)
-
-
-def _score_answer_key(answer_id: uuid.UUID, language: str, leaf: str) -> str:
+def score_manifest_key(answer_id: uuid.UUID, language: str, *, leaf: str = SCORE_MANIFEST_LEAF) -> str:
     if not language.isascii() or not language.isalpha():
         raise InvalidInput("A score is filed under its answer and language code")
     return f"{MEDIA_PREFIX}/{SCORE_FOLDER}/{answer_id}/{language}/{leaf}"
@@ -281,9 +269,18 @@ def voice_reply_key(session_id: uuid.UUID, turn_id: uuid.UUID) -> str:
 
 
 def field_voice_key(sha256: str, leaf: str) -> str:
-    if not _hex_digest(sha256):
-        raise InvalidInput("A field image is filed under the 64-hex SHA-256 of KalaVigyan's copy")
-    return f"{MEDIA_PREFIX}/{FIELD_VOICE_FOLDER}/{sha256}/{_one_file_name(leaf, 'field image')}"
+    refusal = "A field image is filed under the 64-hex SHA-256 of KalaVigyan's copy"
+    return _hashed_key(FIELD_VOICE_FOLDER, sha256, leaf, refusal)
+
+
+def page_media_key(sha256: str, leaf: str) -> str:
+    return _hashed_key(PAGE_MEDIA_FOLDER, sha256, leaf, "A page copy is filed under its 64-hex SHA-256")
+
+
+def _hashed_key(folder: str, digest: str, leaf: str, refusal: str) -> str:
+    if not _hex_digest(digest):
+        raise InvalidInput(refusal)
+    return f"{MEDIA_PREFIX}/{folder}/{digest}/{_one_file_name(leaf, folder)}"
 
 
 def _hex_digest(value: str) -> bool:
