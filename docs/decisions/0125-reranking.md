@@ -18,6 +18,7 @@ Gemini Embedding 2: "skip it, it is fine"). The contracts are `docs/contracts/re
 | The fusion this builds on | [0008](0008-stored-knowledge-retrieval.md) |
 | The low-retrieval rule this replaces where scores exist | [0113](0113-questions-become-work.md) |
 | Only the first 30 of each ranking vote in the fused order (amends this record) | [decision 0132](0132-a-ranking-votes-with-its-first-thirty.md) |
+| The evaluation scores the reranked order too (amends this record) | [decision 0133](0133-the-evaluation-scores-what-answers-read.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

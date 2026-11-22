@@ -3312,6 +3312,35 @@ Last reviewed: 2026-11-18.
   `alembic upgrade head`; or run the retrieval check on the new tree before migrating where the
   schema allows.
 
+### The fused order is weak on paraphrased English questions
+
+- **What:** on the production knowledge base on 2026-11-22 (release db09b9e7) the fused first-stage
+  order scored recall at 5 of 0.414 and a mean reciprocal rank of 0.296 on the 58 generated English
+  questions, which reword their fact, against 1.000 and 0.855 reranked. The full-text and
+  named-concept rankings find words the question shares with many of the craft's facts and outvote
+  the vector ranking, which places the expected fact in its first three for 52 of 55 such questions.
+  Answers read the reranked order, but a failed rerank, and any search that does not ask for
+  reranking, gets the fused one; the floors (decision 0133) only hold it where it stands
+  (`releaseSample` fused recall at 5 0.38).
+- **Why left:** the evaluation had to measure what answers read first; changing the fusion is a
+  ranking change of its own, measured on the same sets.
+- **Clears it:** weight the vector ranking in the fusion, or fuse by weights learned on the
+  hand-written and generated sets, measured on the generated English questions in the fused order
+  without lowering the hand-written ones; then raise the fused floors.
+
+### The question writer keeps few of the facts it samples
+
+- **What:** generation run 44993519051 sampled 727 facts and dropped 580 questions because they
+  reused their fact's distinctive words (more than `UNAVOIDABLE_MAX`, or terms not listed as
+  unavoidable), so the generated set holds 169 questions, 58 in English, where its sampling allows
+  several times more, and crafts with few facts are scored on very few questions.
+- **Why left:** the rule keeps the questions honest paraphrases, which is what makes the set
+  measure retrieval rather than word matching; loosening it was not part of making the evaluation
+  score what answers read.
+- **Clears it:** ask the writer again, once, for the facts whose question was dropped as copied,
+  naming the words it reused, or count a reused stem only when the fact has a synonym the writer
+  could have used; measure the kept share and the fused order's scores on the new questions.
+
 ### The stuck-page unit spec can time out under load
 
 - **What:** `frontend/e2e/stuck-page-unit.spec.ts` ("a page whose script never yields is caught")

@@ -10,8 +10,10 @@ from typing import Any
 
 from app.core.db import dispose_engine, session_scope, sessionmaker
 from app.core.errors import AppError
+from app.core.logging import request_id_scope
 from app.providers import router
 from app.providers.embedding import router_embedder
+from app.providers.rerank_router import router_reranker
 from app.providers.router import Principal, RouteTuning
 from app.providers.structured import router_structured_model
 from app.research.crafts import CraftQuery
@@ -29,7 +31,9 @@ from app.services.claim_seed import seed_id
 from app.services.craft_resolver import CraftIndexStore, DatabaseCraftResolver
 
 SEED_PREFIX = "seed-"
+SEARCH_TAG = "eval-search-"
 EXIT_FAILED = 1
+SPEND_PLACES = Decimal("0.0001")
 
 
 def golden_claim_id(key: str) -> uuid.UUID:
@@ -41,7 +45,13 @@ def golden_claim_ids(golden: Sequence[GoldenQuestion]) -> dict[str, uuid.UUID]:
 
 
 def eval_tools() -> EvalTools:
-    return EvalTools(sessions=sessionmaker(), embed=router_embedder(), claim_id=golden_claim_id)
+    return EvalTools(
+        sessions=sessionmaker(), embed=router_embedder(), rerank=router_reranker(), claim_id=golden_claim_id
+    )
+
+
+def run_tag(prefix: str) -> str:
+    return f"{prefix}{uuid.uuid4().hex[:12]}"
 
 
 def cheapest_judge() -> StructuredModel:
@@ -55,21 +65,27 @@ async def spent_since(tag: str, since: datetime) -> Decimal:
 
 
 async def weekly(cap: Decimal, out: Path | None) -> dict[str, Any]:
-    started, tag = datetime.now(UTC), f"{MISS_JUDGE_TAG}{uuid.uuid4().hex[:12]}"
+    started, tag, searches = datetime.now(UTC), run_tag(MISS_JUDGE_TAG), run_tag(SEARCH_TAG)
 
     async def spent() -> Decimal:
         return await spent_since(tag, started)
 
     judge = JudgeTools(judge=cheapest_judge(), spent=spent, tag=tag, cap_usd=cap)
-    run = await weekly_run(
-        eval_tools(), QuestionSets(golden_questions(), generated_set()), judge=judge, floors=eval_floors()
-    )
+    with request_id_scope(searches):
+        run = await weekly_run(
+            eval_tools(), QuestionSets(golden_questions(), generated_set()), judge=judge, floors=eval_floors()
+        )
     written = None
     if out is not None and run.revised is not None:
         out.write_text(run.revised.model_dump_json(by_alias=True, indent=1) + "\n", encoding="utf-8")
         written = str(out)
-    spend = (await spent()).quantize(Decimal("0.0001"))
-    return {**run.as_dict(), "judgeSpentUsd": str(spend), "judgeCapUsd": str(cap), "out": written}
+    return {
+        **run.as_dict(),
+        "searchSpentUsd": str((await spent_since(searches, started)).quantize(SPEND_PLACES)),
+        "judgeSpentUsd": str((await spent()).quantize(SPEND_PLACES)),
+        "judgeCapUsd": str(cap),
+        "out": written,
+    }
 
 
 async def release(seconds: float) -> tuple[dict[str, Any], int]:

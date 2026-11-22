@@ -30,6 +30,15 @@ def test_the_weekly_retrieval_run_keeps_one_issue_while_a_floor_is_broken() -> N
     )
 
 
+def test_a_weekly_run_whose_rerank_failed_warns_and_leaves_the_issue_as_it_is() -> None:
+    text = workflow("retrieval-eval.yml")
+    warned = text.index("elif jq -e '(.warnings // []) | length > 0'")
+    assert text.index("if jq -e '.belowFloor == true'") < warned < text.index("else outcome=passing")
+    assert "then outcome=warned" in text[warned:]
+    assert re.search(r"^\s+warned\) headline=", text, re.M)
+    assert ".value.fellBackToFused" in text and ".sets.handWritten.reranked.misses" in text
+
+
 def test_the_answer_run_keeps_its_own_issue_and_compares_only_a_whole_run() -> None:
     text = workflow("answer-quality.yml")
     assert triggers(text) == {"workflow_dispatch"}

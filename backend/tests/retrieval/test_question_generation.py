@@ -126,6 +126,39 @@ async def test_a_question_kept_from_the_last_set_is_reused_with_its_judged_claim
     assert built.revision == 4 and len(built.questions) == 2
 
 
+async def test_a_kept_question_not_in_its_language_s_script_is_dropped_and_not_reused() -> None:
+    first, second = facts("scripts", 2)
+    english = kept_question(first, extra=fact_id("extra"), rejected=fact_id("refused"))
+    devanagari = english.model_copy(
+        update={"key": f"{first.id}-bn", "language": "bn", "question": "कौन सा नमक पहले पूछा गया था?"}
+    )
+    bengali = GeneratedQuestion(
+        key=f"{second.id}-bn",
+        craft_slug="A-Craft",
+        question="কোন লবণ আগে জিজ্ঞাসা করা হয়েছিল?",
+        expected=((str(second.id),),),
+        field="CHEMISTRY",
+        fact=second.id,
+        language="bn",
+    )
+    previous = GeneratedSet(
+        version=1,
+        revision=1,
+        generated_at=datetime(2026, 11, 22, tzinfo=UTC),
+        seed=7,
+        facts_per_craft=20,
+        questions=(english, devanagari, bengali),
+    )
+    writer = Writer()
+    outcome = await generate_questions(
+        stream(craft("A-Craft", (first, second))), tools(writer), GenerationPlan(), previous
+    )
+    assert writer.sizes == []
+    assert outcome.reused == 2
+    assert sorted(question.key for question in outcome.questions) == sorted([english.key, bengali.key])
+    assert outcome.dropped == {"the second-language question is not written in that language": 1}
+
+
 async def test_no_batch_is_written_once_the_spend_cap_leaves_less_than_the_reserve() -> None:
     writer = Writer()
     plan = GenerationPlan(cap_usd=Decimal("1.00"))

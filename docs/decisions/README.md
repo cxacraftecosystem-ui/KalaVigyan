@@ -166,13 +166,14 @@ flowchart LR
 | [0122](0122-evidence-reach.md) | Evidence the knowledge base holds reaches the answers that need it | · |
 | [0123](0123-question-understanding.md) | A question is understood honestly before any evidence is read | · |
 | [0124](0124-live-research-write-back.md) | Live research writes back only what its sources say | · |
-| [0125](0125-reranking.md) | Stored facts are reranked, and relevance decides when stored knowledge is enough | [0132](0132-a-ranking-votes-with-its-first-thirty.md) |
-| [0126](0126-measurement-that-grows.md) | Measurement grows with the knowledge and alerts when it falls | · |
+| [0125](0125-reranking.md) | Stored facts are reranked, and relevance decides when stored knowledge is enough | [0132](0132-a-ranking-votes-with-its-first-thirty.md) and [0133](0133-the-evaluation-scores-what-answers-read.md) |
+| [0126](0126-measurement-that-grows.md) | Measurement grows with the knowledge and alerts when it falls | [0133](0133-the-evaluation-scores-what-answers-read.md) |
 | [0127](0127-coherent-answers.md) | An answer says each fact once, never admits a gap, keeps the stages it is asked and paces its sources | · |
 | [0129](0129-first-stage-retrieval.md) | The stored search finds the right facts as the knowledge grows | · |
 | [0130](0130-a-craft-release.md) | One craft can be released as its own dataset with its own DOI | · |
 | [0131](0131-drawings-in-the-design.md) | Whatever an AI draws for KalaVigyan speaks the design and follows the reader's theme | · |
 | [0132](0132-a-ranking-votes-with-its-first-thirty.md) | A ranking votes with its first thirty; deeper finds only fill the rerank pool | · |
+| [0133](0133-the-evaluation-scores-what-answers-read.md) | The evaluation scores what answers read | · |
 
 ## How this document is kept true
 

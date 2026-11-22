@@ -9,7 +9,7 @@ from typing import Any
 from app.research.vocabulary import CANONICAL_LANGUAGE
 
 from .eval_floors import FloorCheck, broken
-from .evaluation import RetrievalReport
+from .evaluation import SetReport
 from .golden import GeneratedQuestion
 from .question_writing import seeded_rank
 
@@ -22,10 +22,12 @@ __all__ = [
     "RELEASE_SAMPLE_MAX",
     "RELEASE_SECONDS",
     "RELEASE_SEED",
+    "RERANK_FAILED",
     "TIMED_OUT",
     "ReleaseCheck",
     "ReleaseVerdict",
     "release_sample",
+    "rerank_warnings",
 ]
 
 RELEASE_SAMPLE_MAX = 400
@@ -37,6 +39,10 @@ EXIT_WARNED = 2
 EXIT_BELOW_FLOOR = 3
 NO_GENERATED = "no generated questions are kept, so only the hand-written questions were scored"
 TIMED_OUT = "the time budget ran out before every question was asked, so no floor was compared"
+RERANK_FAILED = (
+    "the rerank failed for {count} of {questions} questions of {name}, which kept the fused order, "
+    "so the reranked floors of {name} were not compared"
+)
 
 
 class ReleaseVerdict(StrEnum):
@@ -54,7 +60,7 @@ EXIT_CODES: Mapping[ReleaseVerdict, int] = {
 
 @dataclass(frozen=True)
 class ReleaseCheck:
-    reports: Mapping[str, RetrievalReport] = field(default_factory=dict)
+    reports: Mapping[str, SetReport] = field(default_factory=dict)
     checks: tuple[FloorCheck, ...] = ()
     warnings: tuple[str, ...] = ()
     error: str | None = None
@@ -69,26 +75,34 @@ class ReleaseCheck:
             return ReleaseVerdict.WARNED
         if broken(self.checks):
             return ReleaseVerdict.BELOW_FLOOR
-        return ReleaseVerdict.WARNED if self.warnings else ReleaseVerdict.PASSED
+        return ReleaseVerdict.WARNED if self.all_warnings() else ReleaseVerdict.PASSED
 
     @property
     def exit_code(self) -> int:
         return EXIT_CODES[self.verdict]
 
+    def all_warnings(self) -> tuple[str, ...]:
+        timed_out = (TIMED_OUT,) if self.error is None and not self.complete else ()
+        return (*self.warnings, *rerank_warnings(self.reports), *timed_out)
+
     def as_dict(self) -> dict[str, Any]:
-        warnings = [*self.warnings, *([TIMED_OUT] if self.error is None and not self.complete else [])]
         return {
             "ok": self.verdict is not ReleaseVerdict.BELOW_FLOOR,
             "verdict": self.verdict.value,
             "complete": self.complete,
-            "warnings": warnings,
+            "warnings": list(self.all_warnings()),
             "error": self.error,
-            "sets": {
-                name: {**report.overall().as_dict(), "skipped": report.skipped}
-                for name, report in self.reports.items()
-            },
+            "sets": {name: report.summary() for name, report in self.reports.items()},
             "floors": [check.as_dict() for check in self.checks],
         }
+
+
+def rerank_warnings(reports: Mapping[str, SetReport]) -> tuple[str, ...]:
+    return tuple(
+        RERANK_FAILED.format(count=len(report.fell_back), questions=len(report.reranked.results), name=name)
+        for name, report in reports.items()
+        if report.fell_back
+    )
 
 
 def release_sample(

@@ -18,11 +18,13 @@ from .golden import GENERATED_VERSION, GeneratedQuestion, GeneratedSet
 from .question_writing import (
     FACTS_PER_CRAFT,
     GENERATION_SEED,
+    NOT_TRANSLATED,
     WRITER_SYSTEM_PROMPT,
     WRITING_BATCH,
     CraftFacts,
     EvalFact,
     WrittenQuestion,
+    in_its_script,
     writing_message,
     writing_schema,
     written_questions,
@@ -176,13 +178,25 @@ def _reused(
 ) -> list[EvalFact]:
     waiting: list[EvalFact] = []
     for fact in fresh:
-        earlier = kept.get((craft.slug, str(fact.id)))
+        earlier = _in_their_scripts(outcome, kept.get((craft.slug, str(fact.id)), []))
         if not earlier:
             waiting.append(fact)
             continue
         outcome.reused += len(earlier)
         outcome.questions += [_refreshed(question, fact) for question in earlier]
     return waiting
+
+
+def _in_their_scripts(
+    outcome: GenerationOutcome, earlier: Sequence[GeneratedQuestion]
+) -> list[GeneratedQuestion]:
+    kept: list[GeneratedQuestion] = []
+    for question in earlier:
+        if in_its_script(question.question, question.language):
+            kept.append(question)
+        else:
+            outcome.dropped[NOT_TRANSLATED] += 1
+    return kept
 
 
 def _refreshed(question: GeneratedQuestion, fact: EvalFact) -> GeneratedQuestion:

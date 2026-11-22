@@ -42,9 +42,10 @@ def question(key: str, *, rejected: tuple[uuid.UUID, ...] = ()) -> GeneratedQues
     )
 
 
-def result(key: str, ranked: tuple[uuid.UUID, ...]) -> QuestionResult:
+def result(key: str, ranked: tuple[uuid.UUID | tuple[uuid.UUID, ...], ...]) -> QuestionResult:
+    hits = tuple(hit if isinstance(hit, tuple) else (hit,) for hit in ranked)
     return QuestionResult(
-        key=key, ranked=ranked, facts=({FACT: str(FACT), TWIN: str(TWIN)},), craft_slug="Kutch-Ajrakh"
+        key=key, ranked=hits, facts=({FACT: str(FACT), TWIN: str(TWIN)},), craft_slug="Kutch-Ajrakh"
     )
 
 
@@ -52,18 +53,21 @@ QUESTIONS = {
     "missed": question("missed"),
     "found": question("found"),
     "known": question("known", rejected=(REJECTED,)),
+    "folded": question("folded"),
 }
 REPORT = RetrievalReport(
     (
         result("missed", (OTHER, NOISE, FACT)),
         result("found", (TWIN, OTHER)),
         result("known", (REJECTED, FACT)),
+        result("folded", ((NOISE, TWIN), OTHER)),
     )
 )
 TEXTS = {FACT: "Iron and tannin make the black.", OTHER: "The black comes from iron acetate on tannin."}
 
 
 def test_only_a_question_whose_first_hit_is_an_unjudged_other_fact_goes_to_the_judge() -> None:
+    assert next(one for one in REPORT.results if one.key == "folded").other_first is None
     assert texts_to_read(REPORT, QUESTIONS) == {FACT, OTHER}
     asks = miss_asks(REPORT, QUESTIONS, TEXTS)
     assert [(ask.key, ask.other, ask.expected, ask.other_text) for ask in asks] == [

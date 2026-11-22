@@ -1,10 +1,12 @@
 import hashlib
 import re
 import uuid
+from dataclasses import replace
 from pathlib import Path
 
-from app.retrieval.eval_floors import FloorCheck
-from app.retrieval.evaluation import QuestionResult, RetrievalReport
+from app.retrieval.eval_floors import FloorCheck, parse_floors
+from app.retrieval.eval_runs import set_checks
+from app.retrieval.evaluation import QuestionResult, RetrievalReport, SetReport
 from app.retrieval.golden import GeneratedQuestion
 from app.retrieval.release_check import (
     EXIT_BELOW_FLOOR,
@@ -14,6 +16,7 @@ from app.retrieval.release_check import (
     ReleaseCheck,
     ReleaseVerdict,
     release_sample,
+    rerank_warnings,
 )
 
 REPO = Path(__file__).resolve().parents[3]
@@ -54,14 +57,34 @@ def test_a_craft_s_two_questions_are_those_first_by_the_hash_of_their_key() -> N
     assert sample == tuple(expected)
 
 
-def report(*, skipped: int = 0) -> RetrievalReport:
-    found = uuid.uuid5(uuid.NAMESPACE_URL, "test-release/found")
-    return RetrievalReport((QuestionResult("q", (found,), ({found: "f"},)),), skipped=skipped)
+FOUND = uuid.uuid5(uuid.NAMESPACE_URL, "test-release/found")
+NOISE = uuid.uuid5(uuid.NAMESPACE_URL, "test-release/noise")
+FLOORS = parse_floors(
+    {
+        "version": 2,
+        "retrieval": {
+            "handWritten": {
+                "reranked": {"recallAt5": 0.9, "meanReciprocalRank": 0.9},
+                "fused": {"recallAt5": 0.5},
+            }
+        },
+        "answers": {},
+    }
+)
+
+
+def one_order(*ranked: tuple[uuid.UUID, ...], skipped: int = 0) -> RetrievalReport:
+    return RetrievalReport((QuestionResult("q", ranked, ({FOUND: "f"},)),), skipped=skipped)
+
+
+def report(*, skipped: int = 0, fell_back: tuple[str, ...] = ()) -> SetReport:
+    found = one_order((FOUND,), skipped=skipped)
+    return SetReport(reranked=found, fused=found, fell_back=fell_back)
 
 
 def test_the_verdict_stops_only_a_complete_check_below_its_floor() -> None:
-    held = (FloorCheck("handWritten.recallAt5", 0.82, 0.9),)
-    low = (FloorCheck("handWritten.recallAt5", 0.82, 0.7),)
+    held = (FloorCheck("handWritten.reranked.recallAt5", 0.82, 0.9),)
+    low = (FloorCheck("handWritten.reranked.recallAt5", 0.82, 0.7),)
     assert ReleaseCheck({"handWritten": report()}, held).verdict is ReleaseVerdict.PASSED
     assert ReleaseCheck({"handWritten": report()}, low).exit_code == EXIT_BELOW_FLOOR
     assert ReleaseCheck({"handWritten": report(skipped=3)}, low).exit_code == EXIT_WARNED
@@ -69,8 +92,44 @@ def test_the_verdict_stops_only_a_complete_check_below_its_floor() -> None:
     assert ReleaseCheck(error="ExternalFailure: the embedding route is down").exit_code == EXIT_WARNED
     assert ReleaseCheck({"handWritten": report()}, held).exit_code == EXIT_PASSED
     shown = ReleaseCheck({"handWritten": report(skipped=3)}, low).as_dict()
-    assert shown["ok"] and not shown["complete"] and shown["sets"]["handWritten"]["skipped"] == 3
+    assert shown["ok"] and not shown["complete"]
+    assert shown["sets"]["handWritten"]["reranked"]["skipped"] == 3
+    assert shown["sets"]["handWritten"]["fused"]["skipped"] == 3
     assert shown["warnings"][-1].startswith("the time budget ran out")
+
+
+def test_a_rerank_that_failed_warns_and_never_passes() -> None:
+    held = (FloorCheck("handWritten.fused.recallAt5", 0.5, 1.0),)
+    low = (FloorCheck("handWritten.fused.recallAt5", 0.5, 0.0),)
+    fell_back = ReleaseCheck({"handWritten": report(fell_back=("q",))}, held)
+    assert (fell_back.verdict, fell_back.exit_code) == (ReleaseVerdict.WARNED, EXIT_WARNED)
+    shown = fell_back.as_dict()
+    assert shown["warnings"] == [
+        "the rerank failed for 1 of 1 questions of handWritten, which kept the fused order, "
+        "so the reranked floors of handWritten were not compared"
+    ]
+    assert shown["sets"]["handWritten"]["reranked"]["fellBackToFused"] == ["q"]
+    assert shown["sets"]["handWritten"]["fused"].get("fellBackToFused") is None
+    below = ReleaseCheck({"handWritten": report(fell_back=("q",))}, low)
+    assert below.exit_code == EXIT_BELOW_FLOOR
+    assert rerank_warnings({"handWritten": report()}) == ()
+
+
+def test_each_order_meets_its_floors_and_the_reranked_only_when_every_question_was_reranked() -> None:
+    both = SetReport(reranked=one_order((NOISE, FOUND)), fused=one_order((NOISE,), (FOUND,)))
+    checks = set_checks({"handWritten": both}, FLOORS)
+    assert [(check.measure, check.value, check.held) for check in checks] == [
+        ("handWritten.reranked.recallAt5", 1.0, True),
+        ("handWritten.reranked.meanReciprocalRank", 1.0, True),
+        ("handWritten.fused.recallAt5", 1.0, True),
+    ]
+    fell_back = replace(both, fell_back=("q",))
+    assert [check.measure for check in set_checks({"handWritten": fell_back}, FLOORS)] == [
+        "handWritten.fused.recallAt5"
+    ]
+    unfolded = SetReport(reranked=one_order((NOISE,), (FOUND,)), fused=one_order((NOISE,), (FOUND,)))
+    (recall, rank, _) = set_checks({"handWritten": unfolded}, FLOORS)
+    assert (recall.value, recall.held, rank.value, rank.held) == (1.0, True, 0.5, False)
 
 
 def shell_function(name: str) -> str:

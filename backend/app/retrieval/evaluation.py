@@ -5,24 +5,15 @@ import uuid
 from collections import defaultdict
 from collections.abc import Callable, Collection, Hashable, Mapping, Sequence
 from dataclasses import dataclass, replace
-from itertools import batched
 from statistics import fmean
 from typing import Any
 
 from pydantic import Field, field_validator
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput
-from app.models import Claim
 from app.research.base import ContractModel
 from app.research.crafts import QUESTION_MAX_CHARS
-from app.research.retrieval import (
-    HIDDEN_CLAIM_STATUSES,
-    VISIBLE_SENSITIVITY,
-    KnowledgeQuery,
-    KnowledgeRetriever,
-)
+from app.research.retrieval import ClaimHit, KnowledgeHits, KnowledgeQuery, KnowledgeRetriever
 from app.research.vocabulary import Discipline
 
 from .deadline import Deadline
@@ -31,21 +22,27 @@ __all__ = [
     "ALTERNATIVES_JOIN",
     "EVAL_DEPTH",
     "EVAL_MODE",
+    "FELL_BACK",
+    "FUSED",
+    "ORDERS",
     "RECALL_DEPTH",
+    "RERANKED",
     "WIDE_DEPTH",
     "EvalPace",
     "ExpectedFact",
     "GoldenQuestion",
+    "Hit",
     "Measures",
     "QuestionResult",
     "RetrievalReport",
-    "claim_texts",
+    "SetReport",
     "evaluate_golden",
     "fact_alternatives",
+    "hit_claims",
+    "kept_fused_order",
     "measures",
     "recall_at",
     "reciprocal_rank",
-    "visible_claims",
 ]
 
 RECALL_DEPTH = 5
@@ -54,10 +51,14 @@ EVAL_DEPTH = WIDE_DEPTH
 EVAL_MODE = "HYBRID"
 DIGITS = 4
 ALTERNATIVES_JOIN = " or "
-READ_CHUNK = 5000
+RERANKED = "reranked"
+FUSED = "fused"
+ORDERS = (RERANKED, FUSED)
+FELL_BACK = "fellBackToFused"
 
 ExpectedFact = str | tuple[str, ...]
 FactClaims = Mapping[uuid.UUID, str]
+Hit = tuple[uuid.UUID, ...]
 
 
 def fact_alternatives(fact: ExpectedFact) -> tuple[str, ...]:
@@ -91,7 +92,7 @@ class GoldenQuestion(ContractModel):
 @dataclass(frozen=True)
 class QuestionResult:
     key: str
-    ranked: tuple[uuid.UUID, ...]
+    ranked: tuple[Hit, ...]
     facts: tuple[FactClaims, ...]
     field: str | None = None
     craft_slug: str | None = None
@@ -110,12 +111,18 @@ class QuestionResult:
 
     @property
     def missed(self) -> tuple[str, ...]:
-        top = set(self.ranked[:RECALL_DEPTH])
+        top = _found_within(self.ranked, RECALL_DEPTH)
         return tuple(ALTERNATIVES_JOIN.join(fact.values()) for fact in self.facts if not top & set(fact))
 
     @property
     def first(self) -> uuid.UUID | None:
-        return self.ranked[0] if self.ranked else None
+        return self.ranked[0][0] if self.ranked else None
+
+    @property
+    def other_first(self) -> uuid.UUID | None:
+        if not self.ranked or self.expected_claims & set(self.ranked[0]):
+            return None
+        return self.ranked[0][0]
 
     @property
     def expected_claims(self) -> frozenset[uuid.UUID]:
@@ -198,6 +205,39 @@ class RetrievalReport:
 
 
 @dataclass(frozen=True)
+class SetReport:
+    reranked: RetrievalReport
+    fused: RetrievalReport
+    fell_back: tuple[str, ...] = ()
+
+    @property
+    def complete(self) -> bool:
+        return self.reranked.complete and self.fused.complete
+
+    def orders(self) -> dict[str, RetrievalReport]:
+        return {RERANKED: self.reranked, FUSED: self.fused}
+
+    def compared(self) -> dict[str, RetrievalReport]:
+        return {
+            order: found for order, found in self.orders().items() if order == FUSED or not self.fell_back
+        }
+
+    def as_dict(self) -> dict[str, Any]:
+        return self._with_fallback({order: found.as_dict() for order, found in self.orders().items()})
+
+    def summary(self) -> dict[str, Any]:
+        return self._with_fallback(
+            {
+                order: {**found.overall().as_dict(), "skipped": found.skipped}
+                for order, found in self.orders().items()
+            }
+        )
+
+    def _with_fallback(self, orders: dict[str, dict[str, Any]]) -> dict[str, Any]:
+        return {**orders, RERANKED: {**orders[RERANKED], FELL_BACK: list(self.fell_back)}}
+
+
+@dataclass(frozen=True)
 class EvalPace:
     concurrency: int = 1
     deadline: Deadline | None = None
@@ -207,18 +247,28 @@ class EvalPace:
             raise InvalidInput("An evaluation asks at least one question at a time")
 
 
-def recall_at[K: Hashable](ranked: Sequence[K], facts: Sequence[Collection[K]], depth: int) -> float:
+def recall_at[K: Hashable](
+    ranked: Sequence[Collection[K]], facts: Sequence[Collection[K]], depth: int
+) -> float:
     if not facts or not all(facts):
         raise InvalidInput("Recall needs at least one expected fact, each stated by at least one claim")
-    top = set(ranked[:depth])
+    top = _found_within(ranked, depth)
     return sum(1 for fact in facts if top & set(fact)) / len(facts)
 
 
-def reciprocal_rank[K: Hashable](ranked: Sequence[K], facts: Sequence[Collection[K]]) -> float:
+def reciprocal_rank[K: Hashable](ranked: Sequence[Collection[K]], facts: Sequence[Collection[K]]) -> float:
     wanted = {claim for fact in facts for claim in fact}
     if not wanted:
         raise InvalidInput("A reciprocal rank needs at least one expected hit")
-    return next((1.0 / rank for rank, key in enumerate(ranked, start=1) if key in wanted), 0.0)
+    return next((1.0 / rank for rank, hit in enumerate(ranked, start=1) if wanted & set(hit)), 0.0)
+
+
+def hit_claims(hit: ClaimHit) -> Hit:
+    return (hit.claim_id, *hit.corroborating_ids)
+
+
+def kept_fused_order(hits: KnowledgeHits) -> bool:
+    return bool(hits.claims) and all(hit.relevance_score is None for hit in hits.claims)
 
 
 async def evaluate_golden(
@@ -228,12 +278,12 @@ async def evaluate_golden(
     claim_id: Callable[[str], uuid.UUID],
     present: Collection[uuid.UUID] | None = None,
     pace: EvalPace | None = None,
-) -> RetrievalReport:
+) -> SetReport:
     asked, absent = _expected(golden, claim_id, present)
     paced = pace or EvalPace()
     gate = asyncio.Semaphore(paced.concurrency)
 
-    async def one(question: GoldenQuestion, facts: tuple[FactClaims, ...]) -> QuestionResult | None:
+    async def one(question: GoldenQuestion, facts: tuple[FactClaims, ...]) -> _AskedTwice | None:
         async with gate:
             if paced.deadline is not None and paced.deadline.passed():
                 return None
@@ -245,31 +295,7 @@ async def evaluate_golden(
     except ExceptionGroup as failed:
         raise failed.exceptions[0] from None
     found = [task.result() for task in tasks]
-    results = tuple(result for result in found if result is not None)
-    return RetrievalReport(results, tuple(absent), skipped=len(found) - len(results))
-
-
-async def visible_claims(session: AsyncSession, claim_ids: Collection[uuid.UUID]) -> set[uuid.UUID]:
-    found: set[uuid.UUID] = set()
-    for chunk in batched(sorted(set(claim_ids)), READ_CHUNK, strict=False):
-        found |= set(
-            await session.scalars(
-                select(Claim.id).where(
-                    Claim.id.in_(list(chunk)),
-                    Claim.status.not_in(HIDDEN_CLAIM_STATUSES),
-                    Claim.sensitivity == VISIBLE_SENSITIVITY,
-                )
-            )
-        )
-    return found
-
-
-async def claim_texts(session: AsyncSession, claim_ids: Collection[uuid.UUID]) -> dict[uuid.UUID, str]:
-    texts: dict[uuid.UUID, str] = {}
-    for chunk in batched(sorted(set(claim_ids)), READ_CHUNK, strict=False):
-        rows = await session.execute(select(Claim.id, Claim.text).where(Claim.id.in_(list(chunk))))
-        texts |= {row.id: row.text for row in rows}
-    return texts
+    return _set_report([pair for pair in found if pair is not None], absent, questions=len(found))
 
 
 def _expected(
@@ -289,9 +315,16 @@ def _expected(
     return asked, absent
 
 
+@dataclass(frozen=True)
+class _AskedTwice:
+    fused: QuestionResult
+    reranked: QuestionResult
+    fell_back: bool
+
+
 async def _asked(
     retriever: KnowledgeRetriever, question: GoldenQuestion, facts: tuple[FactClaims, ...]
-) -> QuestionResult:
+) -> _AskedTwice:
     query = KnowledgeQuery(
         craft_slug=question.craft_slug,
         text=question.question,
@@ -299,10 +332,34 @@ async def _asked(
         fields=question.fields,
         limit=EVAL_DEPTH,
     )
-    ranked = tuple(hit.claim_id for hit in (await retriever.search(query)).claims)
-    return QuestionResult(
-        key=question.key, ranked=ranked, facts=facts, field=question.field, craft_slug=question.craft_slug
+    fused = await retriever.search(query)
+    reranked = await retriever.search(query.model_copy(update={"rerank": True}))
+    return _AskedTwice(
+        _result(question, facts, fused), _result(question, facts, reranked), kept_fused_order(reranked)
     )
+
+
+def _result(question: GoldenQuestion, facts: tuple[FactClaims, ...], hits: KnowledgeHits) -> QuestionResult:
+    return QuestionResult(
+        key=question.key,
+        ranked=tuple(hit_claims(hit) for hit in hits.claims),
+        facts=facts,
+        field=question.field,
+        craft_slug=question.craft_slug,
+    )
+
+
+def _set_report(asked: Sequence[_AskedTwice], absent: Sequence[str], *, questions: int) -> SetReport:
+    skipped = questions - len(asked)
+    return SetReport(
+        reranked=RetrievalReport(tuple(one.reranked for one in asked), tuple(absent), skipped=skipped),
+        fused=RetrievalReport(tuple(one.fused for one in asked), tuple(absent), skipped=skipped),
+        fell_back=tuple(one.reranked.key for one in asked if one.fell_back),
+    )
+
+
+def _found_within[K: Hashable](ranked: Sequence[Collection[K]], depth: int) -> set[K]:
+    return {claim for hit in ranked[:depth] for claim in hit}
 
 
 def _grouped(

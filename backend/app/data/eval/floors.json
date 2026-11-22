@@ -1,18 +1,40 @@
 {
-  "version": 1,
-  "about": "The floors the evaluation runs alert on (decision 0126). Retrieval floors are per question set: handWritten is retrieval_questions.json, generated is generated/retrieval_questions.json; a null floor is measured and reported but never alerts. Answer floors compare answer-quality's judge and rubric means. Set on 2026-11-22 at the live numbers of 2026-11-21 minus 0.05; the lead raises them as the numbers improve.",
+  "version": 2,
+  "about": "The floors the evaluation runs alert on (decisions 0126 and 0133). Retrieval floors are per question set and per order: reranked is the order answers read (the fused candidates reordered by the reranker, a restatement folded into a hit counting as that hit), fused is the first-stage order a failed rerank keeps; a null or missing floor is measured and reported but never alerts, and the reranked floors of a set are not compared when any of its questions kept the fused order because the rerank failed. handWritten is retrieval_questions.json, scored by the weekly run and the release check. generated is the whole of generated/retrieval_questions.json (169 questions on 2026-11-22: 58 English and 111 in other languages), scored by the weekly run, whose judge may only widen what counts as found. releaseSample is what the release check scores instead: at most two English questions per craft of that file (41 on 2026-11-22), so it holds only the paraphrased English questions the fused order finds worst, and its fused floors sit far below the whole set's. Set on 2026-11-22 at the live numbers of release db09b9e7 less 0.05, rounded down to two places: handWritten reranked 0.987 and 0.982, fused 0.936 and 0.707; generated reranked 0.994 and 0.917 (the English 1.000 and 0.855 and the other languages 0.991 and 0.950, weighted by their counts), fused 0.787 and 0.700; releaseSample reranked 1.000 and 0.855 (the reranked figures of all 58 English questions, since the sample's own were not measured apart; its fused 0.439 and 0.297 match the 58's 0.414 and 0.296 closely), fused 0.439 and 0.297. Answer floors compare answer-quality's judge and rubric means; they were re-based on 2026-11-22 to the judge that now judges: the first baseline (judge 0.936, rubric 0.911 on 2026-11-21) was judged entirely by Gemini 4 Argon, while answer-quality run 44994632550 on release db09b9e7 (13 answers before its cap) was judged throughout by Claude Opus 5.5, a stricter judge, at a judge mean of 0.815, and its rubric mean rose with round 7's fixes to 0.969; each less 0.05, rounded down. The lead raises the floors as the numbers improve.",
   "retrieval": {
     "handWritten": {
-      "recallAt5": 0.82,
-      "meanReciprocalRank": 0.64
+      "reranked": {
+        "recallAt5": 0.93,
+        "meanReciprocalRank": 0.93
+      },
+      "fused": {
+        "recallAt5": 0.88,
+        "meanReciprocalRank": 0.65
+      }
     },
     "generated": {
-      "recallAt5": null,
-      "meanReciprocalRank": null
+      "reranked": {
+        "recallAt5": 0.94,
+        "meanReciprocalRank": 0.86
+      },
+      "fused": {
+        "recallAt5": 0.73,
+        "meanReciprocalRank": 0.65
+      }
+    },
+    "releaseSample": {
+      "reranked": {
+        "recallAt5": 0.95,
+        "meanReciprocalRank": 0.8
+      },
+      "fused": {
+        "recallAt5": 0.38,
+        "meanReciprocalRank": 0.24
+      }
     }
   },
   "answers": {
-    "judgeMean": 0.85,
-    "rubricMean": 0.85
+    "judgeMean": 0.76,
+    "rubricMean": 0.91
   }
 }

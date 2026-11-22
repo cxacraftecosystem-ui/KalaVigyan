@@ -12,21 +12,50 @@ from app.retrieval.eval_floors import (
     parse_floors,
 )
 
-LIVE_RECALL_AT_5 = 0.87
-LIVE_MEAN_RECIPROCAL_RANK = 0.69
 MARGIN = 0.05
+ENGLISH, OTHERS = 58, 111
+GENERATED_RERANKED = (
+    (ENGLISH * 1.000 + OTHERS * 0.991) / (ENGLISH + OTHERS),
+    (ENGLISH * 0.855 + OTHERS * 0.950) / (ENGLISH + OTHERS),
+)
+LIVE = {
+    ("handWritten", "reranked"): (0.987, 0.982),
+    ("handWritten", "fused"): (0.936, 0.707),
+    ("generated", "reranked"): GENERATED_RERANKED,
+    ("generated", "fused"): (0.787, 0.700),
+    ("releaseSample", "reranked"): (1.000, 0.855),
+    ("releaseSample", "fused"): (0.439, 0.297),
+}
+FLOORS = {
+    ("handWritten", "reranked"): {"recallAt5": 0.93, "meanReciprocalRank": 0.93},
+    ("handWritten", "fused"): {"recallAt5": 0.88, "meanReciprocalRank": 0.65},
+    ("generated", "reranked"): {"recallAt5": 0.94, "meanReciprocalRank": 0.86},
+    ("generated", "fused"): {"recallAt5": 0.73, "meanReciprocalRank": 0.65},
+    ("releaseSample", "reranked"): {"recallAt5": 0.95, "meanReciprocalRank": 0.80},
+    ("releaseSample", "fused"): {"recallAt5": 0.38, "meanReciprocalRank": 0.24},
+}
+LIVE_ANSWERS = {"judgeMean": 0.815, "rubricMean": 0.969}
+ANSWER_FLOORS = {"judgeMean": 0.76, "rubricMean": 0.91}
 
 
-def test_the_floors_start_at_the_live_numbers_less_a_margin() -> None:
+def rounded_down_below(live: float, floor: float) -> bool:
+    return live - MARGIN - 0.01 < floor <= live - MARGIN + 1e-9
+
+
+def test_each_set_and_order_starts_at_its_live_numbers_less_a_margin_rounded_down() -> None:
     floors = eval_floors()
-    assert floors.retrieval_floors("handWritten") == {
-        "recallAt5": pytest.approx(LIVE_RECALL_AT_5 - MARGIN),
-        "meanReciprocalRank": pytest.approx(LIVE_MEAN_RECIPROCAL_RANK - MARGIN),
-    }
-    assert floors.retrieval_floors("handWritten") == {"recallAt5": 0.82, "meanReciprocalRank": 0.64}
-    assert floors.retrieval_floors("generated") == {}
-    assert floors.answers.named() == {"judgeMean": 0.85, "rubricMean": 0.85}
-    assert json.loads(FLOORS_FILE.read_text(encoding="utf-8"))["version"] == 1
+    for (name, order), expected in FLOORS.items():
+        assert floors.retrieval_floors(name, order) == expected, (name, order)
+        recall, rank = LIVE[(name, order)]
+        assert rounded_down_below(recall, expected["recallAt5"]), (name, order)
+        assert rounded_down_below(rank, expected["meanReciprocalRank"]), (name, order)
+    assert json.loads(FLOORS_FILE.read_text(encoding="utf-8"))["version"] == 2
+
+
+def test_the_answer_floors_start_at_the_claude_judge_s_numbers_less_a_margin() -> None:
+    assert eval_floors().answers.named() == ANSWER_FLOORS
+    for name, floor in ANSWER_FLOORS.items():
+        assert rounded_down_below(LIVE_ANSWERS[name], floor), name
 
 
 def test_a_floor_holds_at_or_above_its_value_after_rounding() -> None:
@@ -44,12 +73,39 @@ def test_only_the_named_floors_are_checked_and_a_missing_value_breaks_its_floor(
     assert checks[0].as_dict() == {"measure": "recallAt5", "floor": 0.82, "value": 0.9, "held": True}
 
 
-def test_the_floors_file_is_versioned_and_names_only_known_sets() -> None:
-    plain = {"version": 1, "retrieval": {"handWritten": {"recallAt5": 0.5}}, "answers": {}}
-    assert parse_floors(plain).retrieval_floors("handWritten") == {"recallAt5": 0.5}
-    with pytest.raises(InvalidInput, match="version 1"):
-        parse_floors({**plain, "version": 2})
+def test_the_floors_file_names_floors_per_set_and_order_and_only_known_ones() -> None:
+    plain = {"version": 2, "retrieval": {"handWritten": {"reranked": {"recallAt5": 0.5}}}, "answers": {}}
+    parsed = parse_floors(plain)
+    assert parsed.retrieval_floors("handWritten", "reranked") == {"recallAt5": 0.5}
+    assert parsed.retrieval_floors("handWritten", "fused") == {}
+    assert parsed.retrieval_floors("releaseSample", "reranked") == {}
+    with pytest.raises(InvalidInput, match="orders reranked, fused"):
+        parsed.retrieval_floors("handWritten", "vector")
+    with pytest.raises(InvalidInput, match="version 2"):
+        parse_floors({**plain, "version": 3})
     with pytest.raises(InvalidInput, match="malformed"):
-        parse_floors({**plain, "retrieval": {"someOther": {"recallAt5": 0.5}}})
+        parse_floors({**plain, "retrieval": {"someOther": {"fused": {"recallAt5": 0.5}}}})
     with pytest.raises(InvalidInput, match="malformed"):
-        parse_floors({**plain, "retrieval": {"handWritten": {"recallAt5": 1.5}}})
+        parse_floors({**plain, "retrieval": {"handWritten": {"vector": {"recallAt5": 0.5}}}})
+    with pytest.raises(InvalidInput, match="malformed"):
+        parse_floors({**plain, "retrieval": {"handWritten": {"fused": {"recallAt5": 1.5}}}})
+
+
+def test_a_version_1_file_is_migrated_with_its_floors_on_the_fused_order() -> None:
+    first = {
+        "version": 1,
+        "about": "kept",
+        "retrieval": {"handWritten": {"recallAt5": 0.82, "meanReciprocalRank": 0.64}, "generated": {}},
+        "answers": {"judgeMean": 0.85},
+    }
+    migrated = parse_floors(first)
+    assert (migrated.version, migrated.about) == (2, "kept")
+    assert migrated.retrieval_floors("handWritten", "fused") == {
+        "recallAt5": 0.82,
+        "meanReciprocalRank": 0.64,
+    }
+    assert migrated.retrieval_floors("handWritten", "reranked") == {}
+    assert migrated.retrieval_floors("generated", "fused") == {}
+    assert migrated.answers.named() == {"judgeMean": 0.85}
+    with pytest.raises(InvalidInput, match="per question set"):
+        parse_floors({**first, "retrieval": ["handWritten"]})

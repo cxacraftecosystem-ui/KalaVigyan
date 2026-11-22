@@ -529,7 +529,9 @@ fixture or the category page (`docs/contracts/category-page.md`).
   weekly and by hand, from main only (the deploy role trusts main):
   `gh workflow run retrieval-eval.yml -R cxacraftecosystem-ui/KalaVigyan --ref main` (`-f cap=<USD>`
   lowers the judge's spend, at most 1 US dollar). It scores the hand-written and generated questions
-  against `backend/app/data/eval/floors.json` and keeps the issue `Retrieval fell below its floor`.
+  in the reranked and the fused order against `backend/app/data/eval/floors.json`, one Voyage rerank
+  per question, and keeps the issue `Retrieval fell below its floor`; a run whose rerank failed warns
+  and leaves the issue as it is.
   Its artifact holds the judged revision of the generated questions: commit `retrieval_questions.json`
   over `backend/app/data/eval/generated/retrieval_questions.json` when `generatedRevision` rose.
 - **Generated retrieval questions** (`eval-questions.yml`): by hand only, from main:
@@ -547,9 +549,12 @@ fixture or the category page (`docs/contracts/category-page.md`).
 - **Answer quality** (`answer-quality.yml`): by hand, from main (`-f limit=`, `-f only=`, `-f cap=`).
   A run that asks every question compares the judge and rubric means with the answer floors and
   keeps the issue `Answers fell below their floor`.
-- **Floors**: raise a floor in `backend/app/data/eval/floors.json` as the live numbers improve; a
-  `null` floor is reported and never alerts. The release (`blue_green.sh`, `check_retrieval`, within
-  `CHECK_SECONDS`, 180) stops below a retrieval floor and warns when it could not compare one.
+- **Floors**: raise a floor in `backend/app/data/eval/floors.json` (version 2: per question set,
+  `handWritten`, `generated` for the weekly whole set and `releaseSample` for the release check's
+  sample, and per order, `reranked` and `fused`) as the live numbers improve; a `null` floor is
+  reported and never alerts. The release (`blue_green.sh`, `check_retrieval`, within
+  `CHECK_SECONDS`, 180) stops below a retrieval floor and warns when it could not compare one,
+  including when a rerank failed and kept the fused order.
 - **Craft-matching cases**: after the craft master list or `craft_aliases.json` changes, rebuild them
   from `backend/` with `.venv/Scripts/python.exe -m app.scripts.build_craft_cases`;
   `tests/retrieval/test_craft_cases.py` fails until they are rebuilt. `python -m

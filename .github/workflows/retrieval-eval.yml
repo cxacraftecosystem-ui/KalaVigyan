@@ -105,7 +105,7 @@ jobs:
           aws s3 cp --only-show-errors "$files/retrieval_questions.json" "$out/retrieval_questions.json" 2>/dev/null \
             || echo "no judged revision of the generated questions was written"
           if [ -s "$out/stdout.txt" ] && tail -n 1 "$out/stdout.txt" | jq -e . > "$out/report.json" 2> /dev/null; then
-            jq '{ok, error, floors, belowFloor, generatedRevision, judgeStopped, judgeSpentUsd, judged: ((.judged // []) | length)}' "$out/report.json"
+            jq '{ok, error, floors, belowFloor, warnings, generatedRevision, judgeStopped, searchSpentUsd, judgeSpentUsd, judged: ((.judged // []) | length)}' "$out/report.json"
           else
             echo "::warning::the box printed no JSON report"
           fi
@@ -122,23 +122,28 @@ jobs:
             measures="the evaluation wrote no report"
           else
             measures="$(jq -r '[.floors[] | "\(.measure) \(.value // "none") (floor \(.floor))"] | join(", ")' "$report")"
-            if jq -e '.belowFloor == true' "$report" > /dev/null; then outcome=failing; else outcome=passing; fi
+            if jq -e '.belowFloor == true' "$report" > /dev/null; then outcome=failing
+            elif jq -e '(.warnings // []) | length > 0' "$report" > /dev/null; then outcome=warned
+            else outcome=passing; fi
+            jq -r '(.warnings // [])[] | "::warning::\(.)"' "$report"
             {
               echo "### Retrieval evaluation"
               echo ""
-              echo "Floors: ${measures:-none set}. Judged $(jq '(.judged // []) | length' "$report") missed generated questions for \$$(jq -r '.judgeSpentUsd // "0"' "$report")."
+              echo "Floors: ${measures:-none set}. Asking the questions spent \$$(jq -r '.searchSpentUsd // "0"' "$report") (query embeddings and one rerank per question). Judged $(jq '(.judged // []) | length' "$report") missed generated questions for \$$(jq -r '.judgeSpentUsd // "0"' "$report")."
               echo ""
-              echo "| Set | Questions | Recall at 5 | Mean reciprocal rank | Recall at 20 |"
-              echo "|---|---|---|---|---|"
-              jq -r '.sets | to_entries[] | "| \(.key) | \(.value.questions) | \(.value.recallAt5) | \(.value.meanReciprocalRank) | \(.value.recallAt20) |"' "$report"
+              jq -r '(.warnings // [])[] | "- \(.)"' "$report"
               echo ""
-              echo "| Set | Field | Questions | Recall at 5 | Mean reciprocal rank |"
-              echo "|---|---|---|---|---|"
-              jq -r '.sets | to_entries[] | .key as $set | .value.byField | to_entries[] | "| \($set) | \(.key) | \(.value.questions) | \(.value.recallAt5) | \(.value.meanReciprocalRank) |"' "$report"
+              echo "| Set | Order | Questions | Recall at 5 | Mean reciprocal rank | Recall at 20 | Fell back to fused |"
+              echo "|---|---|---|---|---|---|---|"
+              jq -r '.sets | to_entries[] | .key as $set | .value | to_entries[] | "| \($set) | \(.key) | \(.value.questions) | \(.value.recallAt5) | \(.value.meanReciprocalRank) | \(.value.recallAt20) | \((.value.fellBackToFused // []) | length) |"' "$report"
               echo ""
-              echo "| Hand-written question | Claims missed in the top 5 |"
-              echo "|---|---|"
-              jq -r '(.sets.handWritten.misses // {}) | to_entries[] | "| \(.key) | \(.value | join(", ")) |"' "$report"
+              echo "| Set | Field | Questions | Reranked recall at 5 | Reranked mean reciprocal rank | Fused recall at 5 | Fused mean reciprocal rank |"
+              echo "|---|---|---|---|---|---|---|"
+              jq -r '.sets | to_entries[] | .key as $set | .value.reranked.byField as $r | .value.fused.byField as $f | $r | keys[] | "| \($set) | \(.) | \($r[.].questions) | \($r[.].recallAt5) | \($r[.].meanReciprocalRank) | \($f[.].recallAt5 // "none") | \($f[.].meanReciprocalRank // "none") |"' "$report"
+              echo ""
+              echo "| Hand-written question | Missed in the reranked top 5 | Missed in the fused top 5 |"
+              echo "|---|---|---|"
+              jq -r '(.sets.handWritten.reranked.misses // {}) as $r | (.sets.handWritten.fused.misses // {}) as $f | ($r + $f) | keys[] | "| \(.) | \(($r[.] // []) | join(", ")) | \(($f[.] // []) | join(", ")) |"' "$report"
             } >> "$GITHUB_STEP_SUMMARY"
           fi
           echo "outcome=$outcome" >> "$GITHUB_OUTPUT"
@@ -193,6 +198,7 @@ jobs:
           case "${OUTCOME:-unknown}" in
             failing) headline="Live retrieval fell below its floor: ${MEASURES}." ;;
             passing) headline="Live retrieval is at or above its floors again: ${MEASURES}." ;;
+            warned) headline="The rerank failed during the retrieval evaluation, so only the fused floors were compared where it did: ${MEASURES}." ;;
             *) headline="The retrieval evaluation wrote no report, so the floors were not compared." ;;
           esac
           printf '%s\n\nThe floors are in backend/app/data/eval/floors.json (decision 0126). Run: %s\n' "$headline" "$RUN_URL" > "$body"

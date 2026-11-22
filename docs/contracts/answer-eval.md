@@ -10,6 +10,7 @@ names the fields it consulted. Engineers changing the planner, the seats or the 
 | The coverage count the seats read | [coverage.md](coverage.md) |
 | The `ask` result that carries the provenance | [mcp-ask-and-upload.md](mcp-ask-and-upload.md) |
 | How each seat searches stored knowledge | [retrieval.md](retrieval.md) |
+| Why the answer floors follow the judge that judges | [decision 0133](../decisions/0133-the-evaluation-scores-what-answers-read.md) |
 
 ```mermaid
 %%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
@@ -112,9 +113,11 @@ and writes the asked, answered, means and spend into the run summary.
 
 **The floors.** The printed line also carries `{floorsApplied, floors[{measure, floor, value, held}],
 belowFloor}` (`services/coverage_eval.floor_report`): the judge's and rubric means compared with the
-answer floors of `backend/app/data/eval/floors.json` (both 0.85 from 2026-11-22; decision 0126 and
-[retrieval.md](retrieval.md), Floors). They are compared only for a run that asked every question
-and was not stopped by the cap; a mean that is missing breaks its floor. The workflow then fails
+answer floors of `backend/app/data/eval/floors.json` (judge 0.76 and rubric 0.91, re-based on
+2026-11-22 when the judge changed from Gemini 4 Argon to Claude Opus 5.5, a stricter judge: run
+44994632550 scored judge 0.815 and rubric 0.969, each less 0.05 and rounded down; decisions 0126 and
+0133 and [retrieval.md](retrieval.md), Floors). They are compared only for a run that asked every
+question and was not stopped by the cap; a mean that is missing breaks its floor. The workflow then fails
 when a floor is broken and keeps one issue, `Answers fell below their floor`, through
 `.github/actions/release-issue`: opened or commented on while a floor is broken, closed when a whole
 run passes, left as it is after a partial run.

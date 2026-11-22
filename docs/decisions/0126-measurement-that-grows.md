@@ -15,6 +15,7 @@ lanes and the retrieval lanes"). The contracts are `docs/contracts/retrieval.md`
 | The question sets, the scoring, the floors, the release check and craft matching | [retrieval.md](../contracts/retrieval.md), Evaluation |
 | The answer floors | [answer-eval.md](../contracts/answer-eval.md) |
 | The duplicate gate whose sameness the restatements follow | [knowledge-writes.md](../contracts/knowledge-writes.md) |
+| Both orders scored, floors per order, the release sample's own floors and the answer floors re-based (amends this record) | [decision 0133](0133-the-evaluation-scores-what-answers-read.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

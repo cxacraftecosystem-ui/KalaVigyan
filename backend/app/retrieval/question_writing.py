@@ -12,6 +12,7 @@ from app.core.errors import ExternalFailure
 from app.research.crafts import QUESTION_MAX_CHARS
 from app.research.quotes import content_stems
 from app.research.structured import MODEL_SERVICE, StructuredReply, reply_object, schema_object
+from app.research.translation import written_in
 from app.research.untrusted import untrusted_block
 from app.research.vocabulary import ANSWER_LANGUAGE_SPECS, CANONICAL_LANGUAGE
 
@@ -20,6 +21,7 @@ __all__ = [
     "COMMON_SHARE",
     "FACTS_PER_CRAFT",
     "GENERATION_SEED",
+    "NOT_TRANSLATED",
     "SECOND_LANGUAGE_DEFAULT",
     "SECOND_LANGUAGE_EVERY",
     "UNAVOIDABLE_MAX",
@@ -31,6 +33,7 @@ __all__ = [
     "WrittenQuestion",
     "common_stems",
     "distinctive_stems",
+    "in_its_script",
     "sampled_facts",
     "second_language_of",
     "seeded_rank",
@@ -131,6 +134,13 @@ def distinctive_stems(fact: EvalFact, names: Sequence[str], common: frozenset[st
     return frozenset(content_stems(fact.text) - named - common)
 
 
+def in_its_script(question: str, language: str) -> bool:
+    if language == CANONICAL_LANGUAGE:
+        return True
+    spec = ANSWER_LANGUAGE_SPECS.get(language)
+    return spec is not None and written_in(question, spec.script)
+
+
 def worded_apart(question: str, distinctive: frozenset[str], unavoidable: Sequence[str]) -> bool:
     if len(unavoidable) > UNAVOIDABLE_MAX:
         return False
@@ -210,7 +220,7 @@ def _checked(
 def _problem(text: Any, language: str, distinctive: frozenset[str], unavoidable: Sequence[str]) -> str | None:
     if not isinstance(text, str) or not text.strip() or len(text) > QUESTION_MAX_CHARS:
         return NOT_TEXT
-    if language != CANONICAL_LANGUAGE and not any(ch.isalpha() and not ch.isascii() for ch in text):
+    if not in_its_script(text, language):
         return NOT_TRANSLATED
     if not worded_apart(text, distinctive, unavoidable):
         return COPIED

@@ -1,11 +1,14 @@
 import hashlib
 import math
 import re
+from collections.abc import Sequence
 
 import pytest
 
 from app.models.crafts import EMBEDDING_DIMENSIONS
-from app.retrieval.evaluation import evaluate_golden, visible_claims
+from app.research.reranking import Relevance
+from app.retrieval.eval_runs import visible_claims
+from app.retrieval.evaluation import evaluate_golden
 from app.retrieval.golden import golden_questions
 from app.retrieval.hybrid import StoredKnowledgeSearch
 from app.retrieval.indexing import embed_pending
@@ -48,6 +51,14 @@ async def word_embedder(texts: list[str]) -> list[list[float]]:
     return [word_vector(text) for text in texts]
 
 
+async def word_reranker(query: str, documents: Sequence[str]) -> list[Relevance]:
+    asked = word_vector(query)
+    return [
+        Relevance(index=index, score=sum(a * b for a, b in zip(asked, word_vector(document), strict=True)))
+        for index, document in enumerate(documents)
+    ]
+
+
 def test_the_word_vectors_score_shared_words() -> None:
     alum = word_vector("task: search result | query: alum mordant")
     same = word_vector("title: none | text: Alum mordant.")
@@ -66,10 +77,11 @@ async def test_the_golden_questions_find_their_seeded_claims_above_the_floors() 
         await embed_pending(session, word_embedder, batch_size=500)
         present = await visible_claims(session, ids.values())
         retriever = StoredKnowledgeSearch(session, embed=word_embedder)
-        report = await evaluate_golden(retriever, golden, claim_id=ids.__getitem__, present=present)
-        summary = report.as_dict()
+        found = await evaluate_golden(retriever, golden, claim_id=ids.__getitem__, present=present)
+        report, summary = found.fused, found.fused.as_dict()
         seeded = [q for q in golden if any(ids[key] in present for fact in q.facts for key in fact)]
         assert len(seeded) >= SEEDED_QUESTIONS_FLOOR, summary
         assert summary["questions"] == len(seeded), summary
         assert report.recall_at_depth is not None and report.recall_at_depth >= RECALL_AT_5_FLOOR, summary
         assert report.mean_reciprocal_rank is not None and report.mean_reciprocal_rank >= MRR_FLOOR, summary
+        assert found.fell_back == tuple(result.key for result in found.reranked.results if result.ranked)

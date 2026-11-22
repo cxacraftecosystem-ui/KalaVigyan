@@ -180,6 +180,39 @@ def test_a_second_question_must_be_written_in_its_language_and_only_where_asked(
     assert [one.language for one in unasked.questions] == ["en"]
 
 
+HINDI = "कौन सा नमक लाल रंग को कपड़े पर टिकाता है?"
+BENGALI = "কোন লবণ লাল রং কাপড়ে ধরে রাখে?"
+TELUGU = "ఏ ఉప్పు ఎరుపు రంగును బట్టపై నిలుపుతుంది?"
+
+
+@pytest.mark.parametrize(
+    ("language", "translated", "kept"),
+    [
+        ("bn", HINDI, False),
+        ("bn", BENGALI, True),
+        ("as", BENGALI, True),
+        ("te", HINDI, False),
+        ("te", TELUGU, True),
+        ("mr", HINDI, True),
+        ("hi", BENGALI, False),
+        ("hi", "Kaun sa namak lāl rang ko ṭikātā hai?", False),
+    ],
+)
+def test_a_second_question_is_kept_only_when_half_its_letters_or_more_are_in_its_language_s_script(
+    language: str, translated: str, kept: bool
+) -> None:
+    seed = seed_where_only_the_first_fact_asks_a_second_language()
+    item = {"ref": "1", "question": "Which salt makes the red stay on the textile?", "unavoidable": []}
+    written = written_questions(
+        reply({**item, "translated": translated}), craft(language), (ALUM,), seed=seed
+    )
+    languages = [one.language for one in written.questions]
+    assert languages == (["en", language] if kept else ["en"])
+    assert written.dropped == (
+        () if kept else ("the second-language question is not written in that language",)
+    )
+
+
 def test_a_reply_without_a_questions_list_is_an_external_failure() -> None:
     with pytest.raises(ExternalFailure):
         written_questions(StructuredReply(text="{}", degraded=False), craft(), (ALUM,), seed=7)

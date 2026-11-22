@@ -20,7 +20,7 @@ from app.research.structured import (
 )
 from app.research.untrusted import untrusted_block
 
-from .evaluation import RetrievalReport
+from .evaluation import QuestionResult, RetrievalReport
 from .golden import GeneratedQuestion, GeneratedSet
 
 __all__ = [
@@ -90,13 +90,10 @@ class JudgeTools:
 def texts_to_read(report: RetrievalReport, questions: Mapping[str, GeneratedQuestion]) -> set[uuid.UUID]:
     wanted: set[uuid.UUID] = set()
     for result in report.results:
-        question, first = questions.get(result.key), result.first
-        if (
-            question is not None
-            and first is not None
-            and _unjudged_first(first, result.expected_claims, question)
-        ):
-            wanted |= {question.fact, first}
+        unjudged = _unjudged(result, questions)
+        if unjudged is not None:
+            question, other = unjudged
+            wanted |= {question.fact, other}
     return wanted
 
 
@@ -105,13 +102,13 @@ def miss_asks(
 ) -> list[MissAsk]:
     asks: list[MissAsk] = []
     for result in report.results:
-        question = questions.get(result.key)
-        first = result.first
-        if question is None or first is None or not _unjudged_first(first, result.expected_claims, question):
+        unjudged = _unjudged(result, questions)
+        if unjudged is None:
             continue
-        expected, other = texts.get(question.fact), texts.get(first)
-        if expected is not None and other is not None:
-            asks.append(MissAsk(result.key, question.question, expected, first, other))
+        question, other = unjudged
+        expected, other_text = texts.get(question.fact), texts.get(other)
+        if expected is not None and other_text is not None:
+            asks.append(MissAsk(result.key, question.question, expected, other, other_text))
     return asks
 
 
@@ -185,10 +182,13 @@ def next_revision(generated: GeneratedSet, decisions: Sequence[MissDecision]) ->
     return generated.model_copy(update={"revision": generated.revision + 1, "questions": questions})
 
 
-def _unjudged_first(
-    first: uuid.UUID | None, expected: frozenset[uuid.UUID], question: GeneratedQuestion
-) -> bool:
-    return first is not None and first not in expected and first not in question.rejected
+def _unjudged(
+    result: QuestionResult, questions: Mapping[str, GeneratedQuestion]
+) -> tuple[GeneratedQuestion, uuid.UUID] | None:
+    question, other = questions.get(result.key), result.other_first
+    if question is None or other is None or other in question.rejected:
+        return None
+    return question, other
 
 
 def _decided(question: GeneratedQuestion, decisions: Sequence[MissDecision]) -> GeneratedQuestion:

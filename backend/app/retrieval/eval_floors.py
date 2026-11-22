@@ -12,8 +12,11 @@ from pydantic import Field, ValidationError, field_validator
 from app.core.errors import InvalidInput
 from app.research.base import ContractModel
 
+from .evaluation import FUSED, ORDERS, RERANKED
+
 __all__ = [
     "EVAL_DIR",
+    "FIRST_FLOORS_VERSION",
     "FLOORS_FILE",
     "FLOORS_VERSION",
     "FLOOR_DIGITS",
@@ -23,24 +26,29 @@ __all__ = [
     "MEAN_RECIPROCAL_RANK",
     "QUESTION_SETS",
     "RECALL_AT_5",
+    "RELEASE_SAMPLE",
     "RUBRIC_MEAN",
     "AnswerFloors",
     "EvalFloors",
     "FloorCheck",
     "RetrievalFloors",
+    "SetFloors",
     "broken",
     "eval_floors",
     "floor_checks",
+    "floors_of_version_1",
     "parse_floors",
 ]
 
 EVAL_DIR = Path(__file__).resolve().parents[1] / "data" / "eval"
 FLOORS_FILE = EVAL_DIR / "floors.json"
-FLOORS_VERSION = 1
+FLOORS_VERSION = 2
+FIRST_FLOORS_VERSION = 1
 FLOOR_DIGITS = 4
 HAND_WRITTEN = "handWritten"
 GENERATED = "generated"
-QUESTION_SETS = (HAND_WRITTEN, GENERATED)
+RELEASE_SAMPLE = "releaseSample"
+QUESTION_SETS = (HAND_WRITTEN, GENERATED, RELEASE_SAMPLE)
 RECALL_AT_5 = "recallAt5"
 MEAN_RECIPROCAL_RANK = "meanReciprocalRank"
 JUDGE_MEAN = "judgeMean"
@@ -58,6 +66,16 @@ class RetrievalFloors(ContractModel):
         return {name: floor for name, floor in floors.items() if floor is not None}
 
 
+class SetFloors(ContractModel):
+    reranked: RetrievalFloors = Field(default_factory=RetrievalFloors)
+    fused: RetrievalFloors = Field(default_factory=RetrievalFloors)
+
+    def named(self, order: str) -> dict[str, float]:
+        if order not in ORDERS:
+            raise InvalidInput(f"Floors name only the orders {', '.join(ORDERS)}, not {order!r}")
+        return (self.reranked if order == RERANKED else self.fused).named()
+
+
 class AnswerFloors(ContractModel):
     judge_mean: Share | None = Field(default=None, alias=JUDGE_MEAN)
     rubric_mean: Share | None = Field(default=None, alias=RUBRIC_MEAN)
@@ -68,22 +86,22 @@ class AnswerFloors(ContractModel):
 
 
 class EvalFloors(ContractModel):
-    version: Literal[1]
+    version: Literal[2]
     about: str = ""
-    retrieval: dict[str, RetrievalFloors]
+    retrieval: dict[str, SetFloors]
     answers: AnswerFloors
 
     @field_validator("retrieval")
     @classmethod
-    def _known_sets(cls, sets: dict[str, RetrievalFloors]) -> dict[str, RetrievalFloors]:
+    def _known_sets(cls, sets: dict[str, SetFloors]) -> dict[str, SetFloors]:
         unknown = sorted(set(sets) - set(QUESTION_SETS))
         if unknown:
             raise ValueError(f"Floors name only the question sets {', '.join(QUESTION_SETS)}, not {unknown}")
         return sets
 
-    def retrieval_floors(self, question_set: str) -> dict[str, float]:
-        floors = self.retrieval.get(question_set)
-        return floors.named() if floors is not None else {}
+    def retrieval_floors(self, question_set: str, order: str) -> dict[str, float]:
+        floors = self.retrieval.get(question_set, SetFloors())
+        return floors.named(order)
 
 
 @dataclass(frozen=True)
@@ -110,9 +128,25 @@ def broken(checks: Sequence[FloorCheck]) -> list[FloorCheck]:
     return [check for check in checks if not check.held]
 
 
+def floors_of_version_1(data: Mapping[str, Any]) -> dict[str, Any]:
+    sets = data.get("retrieval")
+    if not isinstance(sets, Mapping):
+        raise InvalidInput("The version 1 evaluation floors name their retrieval floors per question set")
+    return {
+        **data,
+        "version": FLOORS_VERSION,
+        "retrieval": {name: {FUSED: floors} for name, floors in sets.items()},
+    }
+
+
 def parse_floors(data: Any) -> EvalFloors:
+    if isinstance(data, dict) and data.get("version") == FIRST_FLOORS_VERSION:
+        data = floors_of_version_1(data)
     if not isinstance(data, dict) or data.get("version") != FLOORS_VERSION:
-        raise InvalidInput(f"The evaluation floors must be a version {FLOORS_VERSION} object")
+        raise InvalidInput(
+            f"The evaluation floors must be a version {FLOORS_VERSION} object "
+            f"(version {FIRST_FLOORS_VERSION} is migrated)"
+        )
     try:
         return EvalFloors.model_validate(data)
     except ValidationError as error:

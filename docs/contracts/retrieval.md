@@ -10,6 +10,7 @@ ranking, the embedding runs or the evaluation read it.
 | Why a quote follows its page and a held fact leaves answers | [decision 0121](../decisions/0121-quote-visibility.md) |
 | Why stored facts are reranked, and when stored knowledge is enough | [decision 0125](../decisions/0125-reranking.md) |
 | Why vectors carry their context, the glossary reaches the words search and any-craft questions use the vector indexes | [decision 0129](../decisions/0129-first-stage-retrieval.md) |
+| Why retrieval is measured as it grows, and why the evaluation scores the reranked and the fused order | [decision 0126](../decisions/0126-measurement-that-grows.md) and [0133](../decisions/0133-the-evaluation-scores-what-answers-read.md) |
 | The seats that each search their own fields | [answer-eval.md](answer-eval.md) |
 | Where retrieval sits in answering | [research.md](research.md) |
 
@@ -232,8 +233,10 @@ The reranker is `research/reranking.Reranker`, `async (query, documents) -> [Rel
 score}]`, checked by `checked_relevance` (each index inside the documents, once; finite scores).
 The answer pipeline passes `providers/rerank_router.router_reranker(principal)` as
 `AnswerModels.rerank` to its `SessionScopedSearch`, with the answer's spend as `principal.answer`;
-the route, prices and refusals are `docs/contracts/backend.md`, AI router. The evaluation,
-the coverage enrichment and direct callers build their searches without a reranker.
+the route, prices and refusals are `docs/contracts/backend.md`, AI router. The evaluation passes
+`router_reranker()` and asks each question with and without `rerank` (Evaluation, Scoring); the
+coverage enrichment and direct callers build their searches without a reranker. A reranked search
+whose hits carry no `relevanceScore` kept the fused order (`evaluation.kept_fused_order`).
 
 ### Questions without Latin words
 
@@ -448,11 +451,15 @@ it from the live database:
 - **A second language.** For about one fact in five (`SECOND_LANGUAGE_EVERY`, by the SHA-256 of
   `"<seed>:language:<fact id>"`) the same question is also asked in the craft's own language: the
   first language of its states of origin (`app/data/state_languages.json`) the site answers in,
-  else Hindi. The model leaves it empty where it cannot write it; one with no letter outside ASCII,
-  or one that copies the fact, is dropped.
+  else Hindi. The model leaves it empty where it cannot write it; one with fewer than half of its
+  letters in that language's script (`question_writing.in_its_script`: `translation.written_in` with
+  the script of `ANSWER_LANGUAGE_SPECS`, so Devanagari for Hindi and Marathi, Bengali for Bengali
+  and Assamese, Arabic for Urdu; decision 0133), or one that copies the fact, is dropped.
 - **Reuse.** The questions of the previous set (`--previous`, the kept file by default) for a fact
   still sampled for the same craft are kept with their judged claims and the restatements found now,
-  so a regeneration pays only for new facts. The new set's `revision` is the previous one's plus one.
+  so a regeneration pays only for new facts; a kept question not in its language's script is
+  dropped and counted, and a fact left with no kept question is written again. The new set's
+  `revision` is the previous one's plus one.
 - **Spend.** The router meters every call; before each batch the run's spend (`router.tagged_spend`
   on its request id prefix) must leave `WRITING_RESERVE_USD` (0.05) of `--cap` (default
   `GENERATION_CAP_USD`, 3 US dollars). A refused spend stops the writing, and the facts left are
@@ -461,62 +468,94 @@ it from the live database:
 
 The lead runs it on production with `.github/workflows/eval-questions.yml` (dispatched by hand,
 input `cap`), which keeps the set as the `eval-questions-<run id>` artifact for 90 days, to be
-committed as the generated file.
+committed as the generated file. The first, from run 44993519051 (revision 1, `claude-haiku-5-5`,
+169 questions on 34 crafts, 58 of them in English), was committed on 2026-11-22.
 
 ### Scoring
 
 `retrieval/evaluation.evaluate_golden(retriever, questions, *, claim_id, present=None, pace=None)`
-asks each question in `HYBRID` mode for `EVAL_DEPTH` (20) claims, at most `pace.concurrency` at
-once and none once `pace.deadline` has passed (those are `skipped`), and keeps each ranking. Per
-question it measures recall at 5 (the share of its facts with any of their claims in the first
-five), the reciprocal rank of the first claim of any fact, and recall at 20. A `RetrievalReport`
-averages them overall, by field and by craft (`Measures {questions, recallAt5,
-meanReciprocalRank, recallAt20}`), with the facts each question missed in its first five
-(`a or b`). Expected claims not visible are reported as `absent` and not scored; a fact whose
-claims are all absent is dropped.
+asks each question twice in `HYBRID` mode for `EVAL_DEPTH` (20) claims, first without and then with
+`rerank` (decision 0133), at most `pace.concurrency` questions at once and none once
+`pace.deadline` has passed (those are `skipped`), and keeps both rankings. A hit is its claim and
+its `corroboratingIds` (`hit_claims`), so a restatement the reranked search folded into a hit is the
+same fact found there; the fused order folds nothing. Per question and order it measures recall at
+5 (the share of its facts with any of their claims in the first five hits), the reciprocal rank of
+the first hit holding a claim of any fact, and recall at 20. It returns a `SetReport {reranked,
+fused, fell_back}`: a `RetrievalReport` per order, each averaging the measures overall, by field
+and by craft (`Measures {questions, recallAt5, meanReciprocalRank, recallAt20}`) with the facts each
+question missed in its first five (`a or b`), and the keys of the questions whose reranked ask came
+back with no `relevanceScore` on any hit, so kept the fused order (`kept_fused_order`). The reranked
+order is primary, as answers read it; the fused order is what a failed rerank keeps. Expected claims
+not visible are reported as `absent` and not scored; a fact whose claims are all absent is dropped.
+`SetReport.compared()` is the orders whose floors are compared: the fused order always, the
+reranked only when no question fell back.
 
-`eval_runs.scored` reads which expected claims are visible, embeds every question once, in batches
-of `EMBED_BATCH` (50), before the searches (`prefetched_embedder`; a search that embeds another text
-embeds it then), and searches through `SessionScopedSearch`, `EVAL_CONCURRENCY` (4) questions at a
-time.
+`eval_runs.scored` reads which expected claims are visible (`eval_runs.visible_claims`), embeds
+every question once, in batches of `EMBED_BATCH` (50), before the searches (`prefetched_embedder`,
+so both asks of a question share one vector; a search that embeds another text embeds it then), and
+searches through one `SessionScopedSearch` given `EvalTools.rerank`, `EVAL_CONCURRENCY` (4)
+questions at a time. The script passes `router_reranker()`, so each run makes one Voyage call per
+question it asks (about 60 short documents, about 0.0002 US dollars at list price), reserved and
+settled by the rerank router like every model call.
 
-**Misses judged once.** In the weekly run, a generated question whose first hit is a claim neither
-expected nor rejected is shown with both facts to the same cheapest route as the writer
+**Misses judged once.** In the weekly run, a generated question whose first reranked hit holds no
+expected claim and is headed by a claim not rejected is shown with both facts to the same cheapest
+route as the writer
 (`miss_judging`, `MISS_JUDGE_SYSTEM_PROMPT`, 20 asks a call, request id `eval-misses-<run>-j<NNNNN>`),
 within `--cap` (at most `MISS_JUDGE_CAP_USD`, 1 US dollar; reserve 0.05). A claim the judge says
-answers the question as fully counts as found in that run's scores and joins the question's expected
-claims in the next revision of the generated file; one it refuses joins `rejected`. Neither is asked
-again. An ask left unjudged (by the cap or a failed call) stays a miss.
+answers the question as fully counts as found in that run's scores of both orders and joins the
+question's expected claims in the next revision of the generated file; one it refuses joins
+`rejected`. Neither is asked again. An ask left unjudged (by the cap or a failed call) stays a miss.
 
 `python -m app.scripts.eval_retrieval [--cap USD] [--out PATH]` scores both sets on the live
-database with the embedding route and prints `{ok, sets {handWritten, generated}, judged[{question,
-claim, answers}], judgeStopped, generatedRevision, floors[{measure, floor, value, held}], belowFloor,
-judgeSpentUsd, judgeCapUsd, out}`, each set `{questions, recallAt5, meanReciprocalRank, recallAt20,
-skipped, absent[], misses{}, byField{}, byCraft{}}`. With `--out` it writes the judged revision there.
+database with the embedding and rerank routes and prints `{ok, sets {handWritten, generated},
+judged[{question, claim, answers}], judgeStopped, generatedRevision, floors[{measure, floor, value,
+held}], belowFloor, warnings[], searchSpentUsd, judgeSpentUsd, judgeCapUsd, out}`, each set
+`{reranked, fused}` and each order `{questions, recallAt5, meanReciprocalRank, recallAt20, skipped,
+absent[], misses{}, byField{}, byCraft{}}`, the reranked order also `fellBackToFused[]`.
+`searchSpentUsd` is what the run's query embeddings and reranks spent, read by
+`router.tagged_spend` on its request id `eval-search-<run>`. With `--out` it writes the judged
+revision there.
 
 ### Floors
 
-`app/data/eval/floors.json` (version 1, read by `eval_floors.eval_floors()`) holds, per question
-set, a floor for recall at 5 and for mean reciprocal rank, and floors for the answer judge's and
-rubric means ([answer-eval.md](answer-eval.md)). A floor holds when the value, rounded to four
-places, is at or above it; a missing value breaks it; a `null` floor is reported and never alerts.
-They were set on 2026-11-22 at the live numbers of 2026-11-21 less 0.05: hand-written recall at 5
-0.82 and mean reciprocal rank 0.64; the generated set has none until its first live run; answers
-0.85 and 0.85. The lead raises them as the numbers improve.
+`app/data/eval/floors.json` (version 2, read by `eval_floors.eval_floors()`) holds, per question
+set and per order, a floor for recall at 5 and for mean reciprocal rank
+(`retrieval{set: {reranked: {recallAt5, meanReciprocalRank}, fused: {...}}}`), and floors for the
+answer judge's and rubric means ([answer-eval.md](answer-eval.md)). The sets are `handWritten`,
+`generated` (the whole generated file, scored by the weekly run) and `releaseSample` (the release
+check's sample of it, below). `eval_floors.parse_floors` migrates a version 1 file, whose floors
+were per set only and measured the fused order, by putting each set's floors on `fused`; any other
+version is refused. A floor holds when the value, rounded to four places, is at or above it; a
+missing value breaks it; a `null` or absent floor is reported and never alerts. Checks are named
+`<set>.<order>.<measure>` (`eval_runs.set_checks`), and a set's reranked floors are not compared
+when any of its questions fell back to the fused order. They were set on 2026-11-22 at the live
+numbers of release db09b9e7 less 0.05, rounded down to two places (decision 0133):
+
+| Set | Reranked recall at 5 / MRR | Fused recall at 5 / MRR |
+|---|---|---|
+| `handWritten` (78) | 0.93 / 0.93 | 0.88 / 0.65 |
+| `generated` (169) | 0.94 / 0.86 | 0.73 / 0.65 |
+| `releaseSample` (41) | 0.95 / 0.80 | 0.38 / 0.24 |
+
+Answers: judge 0.76 and rubric 0.91, re-based on 2026-11-22 to the Claude judge. The lead raises
+them as the numbers improve.
 
 `.github/workflows/retrieval-eval.yml` (weekly on Monday at 04:11 UTC and by hand, input `cap`) runs
 the script on the box over SSM, keeps `report.json`, `stdout.txt` and the judged revision
-`retrieval_questions.json` as the `retrieval-eval-<run id>` artifact for 90 days, writes the sets,
-the fields and the hand-written misses into the run summary, fails when a floor is broken, and keeps
-one issue, `Retrieval fell below its floor`, through `.github/actions/release-issue`: opened or
+`retrieval_questions.json` as the `retrieval-eval-<run id>` artifact for 90 days, writes the warnings,
+each set's orders (with the questions that fell back), the fields of both orders and the
+hand-written misses of both orders into the run summary, fails when a floor is broken, and keeps one
+issue, `Retrieval fell below its floor`, through `.github/actions/release-issue`: opened or
 commented on while a floor is broken, closed when a run passes, left as it is when no report was
-written.
+written or when the run warned (outcome `warned`: no floor broken, but a rerank failed, so some
+reranked floors were not compared).
 
 `tests/db/test_retrieval_eval.py` keeps its own floors on the seeded test database: it seeds the
 claims and passages, embeds them with a hashed bag-of-words embedder (deterministic, no network),
 scores the hand-written questions with a seeded claim (at least the 22 seed-keyed ones) and asserts
-recall at 5 of at least 0.9 and a mean reciprocal rank of at least 0.7; a change that lowers either
-below its floor fails.
+recall at 5 of at least 0.9 and a mean reciprocal rank of at least 0.7 in the fused order (it has no
+reranker, so every reranked ask falls back); a change that lowers either below its floor fails.
 
 ### The release check
 
@@ -524,19 +563,22 @@ below its floor fails.
 sync, the embedding steps and the page rebuild, and before traffic moves:
 `python -m app.scripts.eval_retrieval --release --seconds $CHECK_SECONDS` (180) from the new
 colour's tree inside `timeout` of that plus `EMBED_GRACE` (60), against the same database, with the
-embedding route only (no answer is composed and no judge is asked). It scores the hand-written
-questions and a fixed, stratified sample of the generated English ones
-(`release_check.release_sample`: two per craft, the first by the SHA-256 of `"<seed>:<key>"`, crafts
-in the order of `"<seed>:craft:<slug>"`, so that with the hand-written set there are at most
-`RELEASE_SAMPLE_MAX` (400) questions), and compares each set with its floors. It prints `{ok,
-verdict, complete, warnings[], error, sets{name: {questions, recallAt5, meanReciprocalRank,
-recallAt20, skipped}}, floors[]}` and exits:
+embedding and rerank routes only (no answer is composed and no judge is asked). It scores the
+hand-written questions (`handWritten`) and a fixed, stratified sample of the generated English ones
+as their own set, `releaseSample` (`release_check.release_sample`: two per craft, the first by the
+SHA-256 of `"<seed>:<key>"`, crafts in the order of `"<seed>:craft:<slug>"`, so that with the
+hand-written set there are at most `RELEASE_SAMPLE_MAX` (400) questions; 41 from 29 crafts on
+2026-11-22), in both orders, and compares each set and order with its floors. The sample holds only
+paraphrased English questions, which the fused order finds worst, so it has floors of its own and
+the weekly run's `generated` floors never apply to it. It prints `{ok, verdict, complete,
+warnings[], error, sets{name: {reranked: {questions, recallAt5, meanReciprocalRank, recallAt20,
+skipped, fellBackToFused[]}, fused: {...}}}, floors[]}` and exits:
 
 | Exit | Verdict | The release |
 |---|---|---|
-| 0 | `PASSED`: every question asked, every floor held | goes on |
-| 2 | `WARNED`: no generated set, the embedding route or another call failed, or the time ran out before every question was asked (no floor is compared then) | goes on, with a warning |
-| 3 | `BELOW_FLOOR`: every question asked and a floor broken | stops like a failed seed; nginx still proxies to the old colour |
+| 0 | `PASSED`: every question asked, reranked in both sets, every floor held | goes on |
+| 2 | `WARNED`: no generated set, the embedding route or another call failed, the time ran out before every question was asked (no floor is compared then), or a rerank failed and kept the fused order (`release_check.RERANK_FAILED`: that set's reranked floors are not compared) | goes on, with a warning |
+| 3 | `BELOW_FLOOR`: every question asked and a compared floor broken, a fused one included when a rerank failed | stops like a failed seed; nginx still proxies to the old colour |
 
 Any other exit (a crash, a time-out) is a warning and the release goes on.
 
@@ -576,10 +618,10 @@ route, so the misspelt and partial names that need the semantic step are scored 
 | Claim | Kept true by |
 |---|---|
 | Recall at 5 of at least 0.9 and a mean reciprocal rank of at least 0.7 | `backend/tests/db/test_retrieval_eval.py`; a change that lowers either fails |
-| The scorer, its depths and its report | `backend/tests/retrieval/test_evaluation.py` |
-| The generated set, its schema and its writing | `backend/tests/retrieval/test_generated_set.py`, `test_question_writing.py`, `test_question_generation.py` and `backend/tests/db/test_measurement_db.py` |
-| Misses judged once, the floors and the workflows' issues | `backend/tests/retrieval/test_miss_judging.py`, `test_eval_floors.py`, `test_eval_workflows.py` and `backend/tests/db/test_measurement_db.py` |
-| The release check and its place in a release | `backend/tests/retrieval/test_release_check.py` and `backend/tests/db/test_measurement_db.py` |
+| The scorer, its depths, both orders, folded restatements, the fallback and its report | `backend/tests/retrieval/test_evaluation.py` |
+| The generated set, its schema, its writing and the script check | `backend/tests/retrieval/test_generated_set.py`, `test_question_writing.py`, `test_question_generation.py` and `backend/tests/db/test_measurement_db.py` |
+| Misses judged once, the floors per set and order, their migration and the workflows' issues | `backend/tests/retrieval/test_miss_judging.py`, `test_eval_floors.py`, `test_eval_workflows.py` and `backend/tests/db/test_measurement_db.py` |
+| The release check, its warning on a failed rerank and its place in a release | `backend/tests/retrieval/test_release_check.py` and `backend/tests/db/test_measurement_db.py` |
 | The craft-matching cases and the lexical resolver's floor | `backend/tests/retrieval/test_craft_cases.py` and `backend/tests/db/test_craft_matching_db.py` |
 | Fusion, rarity weighting and the search words | `backend/tests/retrieval/test_fusion_and_text.py` and `test_search_words.py` |
 | Claim titles, the glossary's names, short words, the any-craft index and one embedding per text | `backend/tests/retrieval/test_first_stage.py`, `test_statements.py` and `backend/tests/db/test_first_stage_db.py` |
