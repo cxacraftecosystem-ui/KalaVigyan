@@ -19,7 +19,7 @@ from app.core.db import get_session
 from app.core.deps import get_current_user, get_current_user_any_step
 from app.core.rate_limit import refund_account, sign_in_attempt_by_account
 from app.core.security import hash_password, verify_password
-from app.core.throttle_refusal import refuse_when_throttled
+from app.core.throttle_refusal import refuse_when_throttled, too_many_requests
 from app.models import User
 from app.schemas.auth import ChangePasswordRequest
 from app.services import (
@@ -90,20 +90,30 @@ async def _confirm_first_password(session: AsyncSession, user: User, payload: Ch
     proof = _provider_proof(payload)
     if proof.provider is None:
         raise _confirm_refusal(expected, CONFIRM_FIRST_DETAIL)
-    if user.twoFactorEnabled and not payload.twoFactorCode:
+    code = payload.twoFactorCode if user.twoFactorEnabled else None
+    if user.twoFactorEnabled and not code:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, TWO_FACTOR_CODE_DETAIL, {TWO_FACTOR_REQUIRED_HEADER: "1"}
         )
+    if code and two_factor.is_locked(user, two_factor.budget_for(code, allow_recovery=True)):
+        raise too_many_requests(two_factor.TOO_MANY_ATTEMPTS_DETAIL)
     try:
         await provider_proof.require_fresh_proof(session, user, proof)
     except provider_proof.ProofRefused as exc:
         logger.info("first-password proof refused", extra={"provider": exc.provider, "reason": exc.reason})
         raise _confirm_refusal(expected, CONFIRM_AGAIN_DETAIL) from exc
-    if user.twoFactorEnabled and not await two_factor.step_up(session, user, payload.twoFactorCode):
+    if code and not await _second_factor_accepted(session, user, code):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, two_factor.WRONG_CODE_DETAIL, {TWO_FACTOR_REQUIRED_HEADER: "1"}
         )
     return expected
+
+
+async def _second_factor_accepted(session: AsyncSession, user: User, code: str) -> bool:
+    try:
+        return await two_factor.check_second_factor(session, user, code, allow_recovery=True)
+    except two_factor.SecondFactorLocked as locked:
+        raise too_many_requests(two_factor.TOO_MANY_ATTEMPTS_DETAIL) from locked
 
 
 async def _confirm_current_password(user: User, payload: ChangePasswordRequest) -> None:

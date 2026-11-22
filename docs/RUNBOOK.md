@@ -779,6 +779,13 @@ terraform plan      # must read "No changes" before any edit
   = 30) and the box role's `kalavigyan-box-logs` policy (create streams, put events, describe
   streams, on those groups only). Apply it before the first release that ships the agent's files,
   or the agent logs `ResourceNotFoundException` until it is applied; nothing else waits on it.
+- `iam.tf`'s `AppStoppedShareFiles` lets the media user delete objects under
+  `exports/00000000-0000-0000-0000-000000000000/` only, the files a share link's readers are given
+  (decision 0155); the owner's own exports stay put-and-read. Apply it with
+  `terraform plan -target=aws_iam_user_policy.media` (the plan must change only that policy, in
+  place) and `terraform apply -target=aws_iam_user_policy.media`. Until it is applied, stopping a
+  share logs that its files are kept for the next sweep, and the `exports/` lifecycle rule removes
+  them as before.
 
 Rebuilding the box:
 

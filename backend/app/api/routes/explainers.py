@@ -20,6 +20,7 @@ from app.services.explainer_history import (
     latest_version,
     mark_seen,
 )
+from app.services.object_store import media_bucket
 from app.services.share_links import (
     NOTHING_PUBLIC_DETAIL,
     NothingPublic,
@@ -117,7 +118,7 @@ async def delete_explainer_share(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
-    if not await unshare_answer(session, user.id, explainer_id, version):
+    if not await unshare_answer(session, user.id, explainer_id, version, objects=media_bucket()):
         raise HTTPException(status.HTTP_404_NOT_FOUND, UNKNOWN_EXPLAINER_DETAIL)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

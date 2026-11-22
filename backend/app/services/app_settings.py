@@ -15,6 +15,7 @@ from app.providers.spend_settings import (
     MONTHLY_CEILING_USD,
     ROLE_DAILY_USD,
     spend_defaults,
+    stored_spend_value,
 )
 from app.research.field_voices import ARTISAN_IMAGES_HIDDEN, ARTISAN_IMAGES_SETTING
 from app.research.review_switch import SWITCH_DEFAULTS, ReviewSwitch, ReviewSwitchUpdate, stored_switch
@@ -59,13 +60,13 @@ async def load_all(session: AsyncSession) -> dict[str, Any]:
     rows = (await session.execute(select(AppSetting))).scalars().all()
     values = dict(DEFAULTS)
     for row in rows:
-        values[row.key] = row.value
+        values[row.key] = stored_spend_value(row.key, row.value)
     return values
 
 
 async def get_value(session: AsyncSession, key: str) -> Any:
     row = (await session.execute(select(AppSetting).where(AppSetting.key == key))).scalar_one_or_none()
-    return row.value if row is not None else DEFAULTS.get(key)
+    return stored_spend_value(key, row.value) if row is not None else DEFAULTS.get(key)
 
 
 async def set_value(session: AsyncSession, key: str, value: Any, updated_by_id: Any = None) -> None:

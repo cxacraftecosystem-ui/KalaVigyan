@@ -41,6 +41,12 @@ resource "aws_iam_user_policy" "media" {
         Resource = "${aws_s3_bucket.media.arn}/exports/*"
       },
       {
+        Sid      = "AppStoppedShareFiles"
+        Effect   = "Allow"
+        Action   = "s3:DeleteObject"
+        Resource = "${aws_s3_bucket.media.arn}/exports/00000000-0000-0000-0000-000000000000/*"
+      },
+      {
         Sid      = "AppListOwnPrefixes"
         Effect   = "Allow"
         Action   = "s3:ListBucket"

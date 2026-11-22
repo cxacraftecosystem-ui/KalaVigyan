@@ -7,7 +7,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from app.core.clock import INDIA_TZ
-from app.core.roles import is_uncapped
+from app.core.roles import LOWEST_ROLE, is_uncapped
 
 from . import spend_settings as keys
 from .catalogue import UNKNOWN_TOKEN_PRICE, UNKNOWN_UNIT_PRICE, AiModel
@@ -58,7 +58,7 @@ class Ceilings:
 
     @classmethod
     def from_settings(cls, values: dict[str, Any]) -> Ceilings:
-        role_caps = values.get(keys.ROLE_DAILY_USD) or {}
+        role_caps = keys.stored_spend_value(keys.ROLE_DAILY_USD, values.get(keys.ROLE_DAILY_USD) or {})
         answer_caps = values.get(keys.ANSWER_CAP_USD) or {}
         degrade_at = values.get(keys.DEGRADE_AT_FRACTION)
         return cls(
@@ -72,9 +72,7 @@ class Ceilings:
     def role_cap(self, role: str | None) -> Decimal | None:
         if not role:
             return None
-        if role not in self.role_daily_usd:
-            return self.role_daily_usd.get("STUDENT")
-        return self.role_daily_usd[role]
+        return self.role_daily_usd.get(role, self.role_daily_usd.get(LOWEST_ROLE))
 
 
 @dataclass(frozen=True)

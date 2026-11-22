@@ -50,7 +50,15 @@ class FakeAccounts:
         self.calls: list[str] = []
 
     async def upsert(
-        self, session: Any, *, email: str, name: str, role: str, password: str, now: datetime
+        self,
+        session: Any,
+        *,
+        email: str,
+        name: str,
+        role: str,
+        password: str,
+        now: datetime,
+        objects: Any,
     ) -> PasswordAccount:
         self.calls.append(email)
         user = self.users.get(email)
@@ -75,7 +83,9 @@ def accounts(monkeypatch: pytest.MonkeyPatch) -> FakeAccounts:
 
 async def provision_all(now: datetime, secrets: dict[str, str] = SECRETS) -> list[PasswordAccount]:
     return [
-        await provision_role_account(None, account, PASSWORDS[account.role], secrets[account.role], now=now)
+        await provision_role_account(
+            None, account, PASSWORDS[account.role], secrets[account.role], objects=None, now=now
+        )
         for account in E2E_ROLE_ACCOUNTS
     ]
 
@@ -125,7 +135,7 @@ async def test_provisioning_turns_two_step_on_with_the_secret_it_was_given(accou
 
 async def test_a_code_from_the_given_secret_passes_the_servers_check(accounts: FakeAccounts) -> None:
     spaced = " ".join(SECRETS[PROFESSOR][i : i + 4] for i in range(0, 32, 4)).lower()
-    await provision_role_account(None, E2E_PROFESSOR, PASSWORDS[PROFESSOR], spaced, now=FIRST)
+    await provision_role_account(None, E2E_PROFESSOR, PASSWORDS[PROFESSOR], spaced, objects=None, now=FIRST)
     stored = two_factor.decrypt_secret(accounts.users[E2E_PROFESSOR.email].twoFactorSecret)
     assert stored == SECRETS[PROFESSOR]
     assert two_factor.match_totp_step(stored, two_factor.current_totp(SECRETS[PROFESSOR])) is not None
@@ -161,7 +171,9 @@ async def test_provisioning_restores_an_account_someone_locked_or_changed(accoun
     changed.twoFactorLockedUntil = LATER
     changed.twoFactorPendingSecret = "pending"
     accounts.users[E2E_ADMIN.email] = changed
-    done = await provision_role_account(None, E2E_ADMIN, PASSWORDS[ADMIN], SECRETS[ADMIN], now=FIRST)
+    done = await provision_role_account(
+        None, E2E_ADMIN, PASSWORDS[ADMIN], SECRETS[ADMIN], objects=None, now=FIRST
+    )
     assert done.outcome == UPDATED
     assert (changed.role, changed.name, changed.twoFactorEnabled) == (ADMIN, E2E_ADMIN.name, True)
     assert (
@@ -200,7 +212,7 @@ async def test_an_account_outside_the_registry_is_refused_before_any_write(
     forged: E2ERoleAccount, accounts: FakeAccounts
 ) -> None:
     with pytest.raises(NotAnE2EAccount):
-        await provision_role_account(None, forged, PASSWORDS[ADMIN], SECRETS[ADMIN], now=FIRST)
+        await provision_role_account(None, forged, PASSWORDS[ADMIN], SECRETS[ADMIN], objects=None, now=FIRST)
     assert accounts.calls == []
     assert accounts.users == {}
 
@@ -224,7 +236,7 @@ async def test_a_weak_password_or_secret_is_refused_before_any_write_and_not_ech
     password: str, secret: str, accounts: FakeAccounts
 ) -> None:
     with pytest.raises(ValueError) as refused:
-        await provision_role_account(None, E2E_ADMIN, password, secret, now=FIRST)
+        await provision_role_account(None, E2E_ADMIN, password, secret, objects=None, now=FIRST)
     assert password not in str(refused.value)
     assert secret not in str(refused.value)
     assert accounts.calls == []

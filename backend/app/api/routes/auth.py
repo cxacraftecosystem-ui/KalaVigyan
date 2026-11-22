@@ -64,6 +64,7 @@ from app.services import (
     turnstile,
     two_factor,
 )
+from app.services.object_store import media_bucket
 from app.services.users import serialize_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -196,7 +197,7 @@ async def _adopt_admitted_role(session: AsyncSession, account: User, row: Any) -
     admitted = access_roster.role_of(row) if access_roster.admits(row) else None
     if not admitted or role_value(account) in (admitted, MASTER_ADMIN):
         return
-    await reader_profiles.apply_role_change(session, account, admitted)
+    await reader_profiles.apply_role_change(session, account, admitted, objects=media_bucket())
     account.role = admitted
     account.tokenVersion += 1
 
@@ -259,7 +260,7 @@ async def _update_verified_account(
         existing.avatarUrl = mailbox.avatar_url
     existing.emailVerifiedAt = existing.emailVerifiedAt or datetime.now(UTC)
     if role == MASTER_ADMIN and existing.passwordHash is None and role_value(existing) != MASTER_ADMIN:
-        await reader_profiles.apply_role_change(session, existing, MASTER_ADMIN)
+        await reader_profiles.apply_role_change(session, existing, MASTER_ADMIN, objects=media_bucket())
         existing.role = MASTER_ADMIN
         existing.tokenVersion += 1
     await session.flush()

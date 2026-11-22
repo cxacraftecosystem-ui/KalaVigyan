@@ -12,6 +12,7 @@ from app.services.e2e_account import (
     provision_role_account,
     totp_secret_refusal,
 )
+from app.services.object_store import media_bucket
 from app.services.password_accounts import operator_password_refusal
 
 __all__ = [
@@ -118,7 +119,9 @@ async def run(credentials: list[RoleCredentials]) -> list[dict[str, Any]]:
     try:
         async with session_scope() as session:
             for item in credentials:
-                done = await provision_role_account(session, item.account, item.password, item.totp_secret)
+                done = await provision_role_account(
+                    session, item.account, item.password, item.totp_secret, objects=media_bucket()
+                )
                 report.append(
                     {
                         "email": done.user.email,

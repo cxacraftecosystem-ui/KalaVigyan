@@ -12,6 +12,7 @@ from app.services.password_accounts import (
     operator_password_refusal,
     upsert_password_account,
 )
+from app.services.shared_files import FileDeleter
 
 __all__ = [
     "E2E_ACCOUNT_EMAIL",
@@ -84,11 +85,22 @@ def totp_secret_refusal(secret: str) -> str | None:
 
 
 async def provision_e2e_account(
-    session: AsyncSession, password: str, *, email: str = E2E_ACCOUNT_EMAIL, now: datetime | None = None
+    session: AsyncSession,
+    password: str,
+    *,
+    objects: FileDeleter | None,
+    email: str = E2E_ACCOUNT_EMAIL,
+    now: datetime | None = None,
 ) -> PasswordAccount:
     moment = now or datetime.now(UTC)
     account = await upsert_password_account(
-        session, email=email, name=E2E_ACCOUNT_NAME, role=E2E_ACCOUNT_ROLE, password=password, now=moment
+        session,
+        email=email,
+        name=E2E_ACCOUNT_NAME,
+        role=E2E_ACCOUNT_ROLE,
+        password=password,
+        now=moment,
+        objects=objects,
     )
     user = account.user
     user.emailVerifiedAt = user.emailVerifiedAt or moment
@@ -105,19 +117,20 @@ async def provision_role_account(
     password: str,
     totp_secret: str,
     *,
+    objects: FileDeleter | None,
     now: datetime | None = None,
 ) -> PasswordAccount:
-    if account not in E2E_ROLE_ACCOUNTS:
-        raise NotAnE2EAccount(
-            f"{account.email} as {account.role} is not an E2E role account; nothing was changed."
-        )
-    refusal = operator_password_refusal(password) or totp_secret_refusal(totp_secret)
-    if refusal:
-        raise ValueError(refusal)
+    _refuse_unless_provisionable(account, password, totp_secret)
     address = e2e_address(account.email)
     moment = now or datetime.now(UTC)
     provisioned = await upsert_password_account(
-        session, email=address, name=account.name, role=account.role, password=password, now=moment
+        session,
+        email=address,
+        name=account.name,
+        role=account.role,
+        password=password,
+        now=moment,
+        objects=objects,
     )
     user = provisioned.user
     secret = canonical_totp_secret(totp_secret)
@@ -135,3 +148,13 @@ async def provision_role_account(
     provisioned.roster.fullName = account.name
     provisioned.roster.notes = E2E_ROLE_NOTE
     return provisioned
+
+
+def _refuse_unless_provisionable(account: E2ERoleAccount, password: str, totp_secret: str) -> None:
+    if account not in E2E_ROLE_ACCOUNTS:
+        raise NotAnE2EAccount(
+            f"{account.email} as {account.role} is not an E2E role account; nothing was changed."
+        )
+    refusal = operator_password_refusal(password) or totp_secret_refusal(totp_secret)
+    if refusal:
+        raise ValueError(refusal)

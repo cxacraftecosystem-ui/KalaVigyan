@@ -27,11 +27,11 @@ from .explainer_history import UnknownExplainer, owned_explainer, shown_version
 from .explainer_payload import stored_version
 from .lesson_packs import stored_pack
 from .public_explainer import PUBLIC_READING_ACLS, public_version
+from .shared_files import FileDeleter, drop_stopped_share_files
 from .visible_claims import visible_claim_ids
 
 __all__ = [
     "NOTHING_PUBLIC_DETAIL",
-    "SHARED_EXPORT_OWNER",
     "NothingPublic",
     "answer_share",
     "lesson_share",
@@ -45,7 +45,6 @@ __all__ = [
 ]
 
 SHARE_TOKEN_BYTES = 24
-SHARED_EXPORT_OWNER = uuid.UUID(int=0)
 READY = "READY"
 SECTION_SLIDE = "SECTION"
 NOTHING_PUBLIC_DETAIL = (
@@ -78,11 +77,15 @@ async def share_answer(
 
 
 async def unshare_answer(
-    session: AsyncSession, user_id: uuid.UUID, explainer_id: uuid.UUID, version: int
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    explainer_id: uuid.UUID,
+    version: int,
+    *,
+    objects: FileDeleter | None,
 ) -> bool:
-    return await _unmark(
-        session, Answer, *owned_explainer(explainer_id, user_id), Answer.explainerVersion == version
-    )
+    owned = (*owned_explainer(explainer_id, user_id), Answer.explainerVersion == version)
+    return await _unmark(session, objects, Answer, *owned)
 
 
 async def shared_answer(session: AsyncSession, token: str) -> ExplainerVersionDocument | None:
@@ -117,8 +120,10 @@ async def share_lesson(
     return None if row is None else _link(SHARED_LESSON_PAGE, row.shareToken, row.sharedAt)
 
 
-async def unshare_lesson(session: AsyncSession, user_id: uuid.UUID, lesson_id: uuid.UUID) -> bool:
-    return await _unmark(session, LessonRow, LessonRow.id == lesson_id, LessonRow.userId == user_id)
+async def unshare_lesson(
+    session: AsyncSession, user_id: uuid.UUID, lesson_id: uuid.UUID, *, objects: FileDeleter | None
+) -> bool:
+    return await _unmark(session, objects, LessonRow, LessonRow.id == lesson_id, LessonRow.userId == user_id)
 
 
 async def shared_lesson(session: AsyncSession, token: str) -> LessonPack | None:
@@ -219,11 +224,13 @@ async def _mark_shared(session: AsyncSession, table: Any, row_id: uuid.UUID, now
     await session.commit()
 
 
-async def _unmark(session: AsyncSession, table: Any, *owned: Any) -> bool:
+async def _unmark(session: AsyncSession, objects: FileDeleter | None, table: Any, *owned: Any) -> bool:
     found = await session.execute(
         update(table).where(*owned).values(shareToken=None, sharedAt=None).returning(table.id)
     )
     hit = found.first() is not None
+    if hit:
+        await drop_stopped_share_files(session, objects)
     await session.commit()
     return hit
 

@@ -72,11 +72,6 @@ export function canManageAccessRoster(user: User | null | undefined) {
   return hasRank(user, "PROFESSOR");
 }
 
-export function canManageAccessEntry(user: User | null | undefined, admitRole: UserRole | null): boolean {
-  if (!canManageAccessRoster(user)) return false;
-  return isMasterAdmin(user) || roleRank(admitRole) < roleRank(user);
-}
-
 export function canShareMedia(user: User | null | undefined) {
   return hasRank(user, "PROFESSOR");
 }

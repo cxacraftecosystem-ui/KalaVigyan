@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import MAX_PASSWORD_LENGTH, hash_password
 from app.models import AccessRoster, User
 from app.services import access_roster, reader_profiles
+from app.services.shared_files import FileDeleter
 
 __all__ = [
     "CREATED",
@@ -44,7 +45,14 @@ async def account_by_email(session: AsyncSession, email: str) -> User | None:
 
 
 async def upsert_password_account(
-    session: AsyncSession, *, email: str, name: str, role: str, password: str, now: datetime
+    session: AsyncSession,
+    *,
+    email: str,
+    name: str,
+    role: str,
+    password: str,
+    now: datetime,
+    objects: FileDeleter | None,
 ) -> PasswordAccount:
     address = access_roster.normalise_email(email)
     user = await account_by_email(session, address)
@@ -55,7 +63,7 @@ async def upsert_password_account(
     else:
         user.tokenVersion += 1
         outcome = UPDATED
-        await reader_profiles.apply_role_change(session, user, role)
+        await reader_profiles.apply_role_change(session, user, role, objects=objects)
     user.role = role
     user.passwordHash = hash_password(password)
     user.passwordSetAt = now

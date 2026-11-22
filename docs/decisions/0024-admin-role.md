@@ -9,6 +9,7 @@ Date: 2026-11-16. Status: accepted.
 
 | For | Read |
 |---|---|
+| The roster's offers from the routes' guards, and users sorted by rank | [decision 0155](0155-accounts-and-sharing-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

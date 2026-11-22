@@ -8,14 +8,12 @@ from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routes.auth import role_for_email
-from app.core.config import get_settings
 from app.core.db import get_session
 from app.core.deps import refuse_unless_assignable, require
 from app.core.roles import (
     ROLE_RANK,
     Capability,
     assignable_roles,
-    can,
     is_master_admin,
     may_assign,
     may_manage_target,
@@ -24,8 +22,9 @@ from app.core.security import hash_password
 from app.models import AccessRoster, User
 from app.schemas.admin import AccessDecision, AccessRosterCreate, AccessRosterUpdate
 from app.schemas.common import normalize_pagination, page_payload
-from app.services import access_roster, audit, reader_profiles
+from app.services import access_guards, access_roster, audit, reader_profiles
 from app.services.access_roster import access_payload, normalise_email, people_for
+from app.services.object_store import media_bucket
 
 router = APIRouter(prefix="/access", tags=["access"])
 
@@ -102,46 +101,12 @@ async def _account_at(session: AsyncSession, email: str) -> User | None:
     ).scalar_one_or_none()
 
 
-async def _assert_may_bar(session: AsyncSession, actor: User, row: AccessRoster) -> None:
-    if normalise_email(row.email) == normalise_email(get_settings().master_admin_email):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "The master admin's access can't be withdrawn.")
-    account = await _account_at(session, row.email)
-    if account is not None and not may_manage_target(actor, account):
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN, "You can't change access for an account at or above your role."
-        )
-    if (
-        row.admitRole
-        and not is_master_admin(actor)
-        and ROLE_RANK.get(row.admitRole, 0) >= ROLE_RANK.get(actor.role, 0)
-    ):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "You can't change access for this role.")
-
-
-async def _assert_may_change(session: AsyncSession, actor: User, row: AccessRoster) -> None:
-    if is_master_admin(actor):
-        return
-    if normalise_email(row.email) == normalise_email(get_settings().master_admin_email):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "The master admin's access can't be changed.")
-    account = await _account_at(session, row.email)
-    if account is not None and not may_manage_target(actor, account):
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN, "You can't change access for an account at or above your role."
-        )
-    if row.admitRole and ROLE_RANK.get(row.admitRole, 0) >= ROLE_RANK.get(actor.role, 0):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "You can't change access for this role.")
-
-
-async def _assert_may_reinstate(session: AsyncSession, actor: User, row: AccessRoster) -> None:
-    if access_roster.status_of(row) not in access_roster.BARRED:
-        await _assert_may_change(session, actor, row)
-        return
-    if not can(actor, Capability.DISABLE_USERS):
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            "Only admins can restore access that was suspended or refused.",
-        )
-    await _assert_may_bar(session, actor, row)
+async def _refuse_when(
+    session: AsyncSession, actor: User, row: AccessRoster, guard: access_guards.Guard
+) -> None:
+    refusal = guard(actor, row, await _account_at(session, row.email))
+    if refusal is not None:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, refusal)
 
 
 async def _apply_role_to_account(
@@ -155,7 +120,7 @@ async def _apply_role_to_account(
     if not may_manage_target(actor, account) or not may_assign(actor, role):
         return f"The account at {account.email} keeps its {account.role} role."
     before = account.role
-    await reader_profiles.apply_role_change(session, account, role)
+    await reader_profiles.apply_role_change(session, account, role, objects=media_bucket())
     account.role = role
     account.tokenVersion += 1
     await audit.record(
@@ -246,7 +211,13 @@ async def list_access_roster(
     total = int((await session.execute(count_query)).scalar_one())
     rows = list((await session.execute(rows_query)).scalars().all())
     people = await people_for(session, rows)
-    return page_payload([access_payload(r, people) for r in rows], total, clean_page, clean_size) | {
+    accounts = await access_guards.accounts_at(session, rows)
+    items = [
+        access_payload(r, people)
+        | {"offers": access_guards.entry_offers(_, r, accounts.get(normalise_email(r.email)))}
+        for r in rows
+    ]
+    return page_payload(items, total, clean_page, clean_size) | {
         "roleMatchTruncated": False,
         "assignableRoles": assignable_roles(_),
     }
@@ -313,19 +284,21 @@ async def decide_access_request(
 ) -> dict[str, Any]:
     row = await _row_or_404(session, row_id)
     if payload.decision == "REJECT":
-        await _assert_may_bar(session, actor, row)
+        await _refuse_when(session, actor, row, access_guards.bar_refusal)
         row.status = access_roster.REJECTED
         row.decidedAt = datetime.now(UTC)
         row.decidedById = actor.id
         if payload.notes is not None:
             row.notes = _clean(payload.notes)
-        await access_roster.bar_account(session, row.email, actor=actor, cause="access.rejected")
+        await access_roster.bar_account(
+            session, row.email, actor=actor, cause="access.rejected", objects=media_bucket()
+        )
         await audit.record(
             session, action="access.rejected", actor=actor, target_type="AccessRoster", target_id=row.id
         )
         await session.commit()
         return await _payload(session, row, accountPromotionHeld=None)
-    await _assert_may_reinstate(session, actor, row)
+    await _refuse_when(session, actor, row, access_guards.reinstate_refusal)
     granted = payload.role or access_roster.role_of(row) or role_for_email(row.email)
     refuse_unless_assignable(actor, granted)
     row = await access_roster.admit(
@@ -358,7 +331,7 @@ async def update_access_entry(
     row = await _row_or_404(session, row_id)
     values = payload.model_dump(exclude_unset=True)
     if values:
-        await _assert_may_change(session, actor, row)
+        await _refuse_when(session, actor, row, access_guards.change_refusal)
     held = None
     if "role" in values:
         refuse_unless_assignable(actor, values["role"] or role_for_email(row.email))
@@ -388,11 +361,13 @@ async def suspend_access_entry(
     row = await _row_or_404(session, row_id)
     if access_roster.status_of(row) == access_roster.SUSPENDED:
         return await _payload(session, row)
-    await _assert_may_bar(session, actor, row)
+    await _refuse_when(session, actor, row, access_guards.bar_refusal)
     row.status = access_roster.SUSPENDED
     row.decidedAt = row.decidedAt or datetime.now(UTC)
     row.decidedById = row.decidedById or actor.id
-    await access_roster.bar_account(session, row.email, actor=actor, cause="access.suspended")
+    await access_roster.bar_account(
+        session, row.email, actor=actor, cause="access.suspended", objects=media_bucket()
+    )
     await audit.record(
         session, action="access.suspended", actor=actor, target_type="AccessRoster", target_id=row.id
     )

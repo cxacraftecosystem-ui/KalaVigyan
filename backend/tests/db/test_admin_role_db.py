@@ -48,6 +48,12 @@ async def roster_entry(status: str, role: str) -> str:
         return str(row.id)
 
 
+async def roster_id(email: str) -> str:
+    async with session_scope() as session:
+        found = await session.execute(select(AccessRoster.id).where(AccessRoster.email == email))
+        return str(found.scalar_one())
+
+
 async def entry(row_id: str) -> AccessRoster:
     async with session_scope() as session:
         row = await session.get(AccessRoster, uuid.UUID(row_id))
@@ -193,6 +199,30 @@ async def test_admin_restores_a_barred_professor_entry(client: httpx.AsyncClient
     assert (await entry(row_id)).status == "ACTIVE"
 
 
+async def test_the_roster_offers_each_row_only_what_its_account_lets_the_viewer_do(
+    client: httpx.AsyncClient,
+) -> None:
+    token = await signed_in(client, "ADMIN")
+    tag = uuid.uuid4().hex[:10]
+    promoted, peer = f"offers-{tag}-promoted@example.com", f"offers-{tag}-professor@example.com"
+    await create_user(promoted, "ADMIN", rostered=False)
+    await create_user(peer, "PROFESSOR")
+    async with session_scope() as session:
+        session.add(AccessRoster(email=promoted, status="ACTIVE", admitRole="PROFESSOR"))
+    listed = await send(client, token, "GET", f"/api/access/roster?search=offers-{tag}")
+    assert listed.status_code == 200, listed.text
+    offers = {item["email"]: item["offers"] for item in listed.json()["items"]}
+    assert offers == {
+        promoted: {"update": False, "suspend": False, "admit": False, "refuse": False},
+        peer: {"update": True, "suspend": True, "admit": False, "refuse": False},
+    }
+    rows = {email: await roster_id(email) for email in offers}
+    refused = await send(client, token, "PATCH", f"/api/access/roster/{rows[promoted]}", {"notes": "x"})
+    assert refused.status_code == 403, refused.text
+    corrected = await send(client, token, "PATCH", f"/api/access/roster/{rows[peer]}", {"notes": "x"})
+    assert corrected.status_code == 200, corrected.text
+
+
 async def test_master_admin_assigns_admin(client: httpx.AsyncClient) -> None:
     token = await signed_in(client, "MASTER_ADMIN")
     roster = (await client.get("/api/access/roster", headers=bearer(token))).json()
@@ -217,6 +247,22 @@ async def test_master_admin_assigns_admin(client: httpx.AsyncClient) -> None:
     )
     assert added.status_code == 201, added.text
     assert added.json()["admitRole"] == "ADMIN"
+
+
+async def test_sorting_users_by_role_follows_the_rank_not_the_stored_order(client: httpx.AsyncClient) -> None:
+    token = await signed_in(client, "ADMIN")
+    tag = uuid.uuid4().hex[:10]
+    for role in ("STUDENT", "ADMIN", "ARTISAN", "PROFESSOR", "RESEARCHER"):
+        await create_user(f"rank-{tag}-{role.lower()}@example.com", role)
+    ranked = ["ADMIN", "PROFESSOR", "RESEARCHER", "ARTISAN", "STUDENT"]
+    for direction, expected in (("desc", ranked), ("asc", ranked[::-1])):
+        listed = await client.get(
+            "/api/users",
+            params={"search": f"rank-{tag}", "sort": "role", "dir": direction},
+            headers=bearer(token),
+        )
+        assert listed.status_code == 200, listed.text
+        assert [item["role"] for item in listed.json()["items"]] == expected, direction
 
 
 async def test_admin_allowances_and_daily_cap_are_unlimited_for_now(client: httpx.AsyncClient) -> None:

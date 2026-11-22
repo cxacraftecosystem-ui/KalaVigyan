@@ -1,10 +1,10 @@
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.api.routes.auth import session_token
 from app.core.config import get_settings
@@ -203,6 +203,49 @@ async def test_a_two_step_account_is_asked_for_its_code_before_the_proof_is_spen
     assert missing.status_code == 400
     assert missing.headers["x-two-factor-required"] == "1"
     answer = await set_first(client, token, googleIdToken=proof, twoFactorCode=code(secret))
+    assert answer.status_code == 200, answer.text
+
+
+async def recovery_codes_for(email: str, count: int) -> list[str]:
+    codes = two_factor.generate_recovery_codes(count)
+    hashes = await two_factor.hash_recovery_codes(codes)
+    async with session_scope() as session:
+        await session.execute(update(User).where(User.email == email).values(twoFactorRecoveryCodes=hashes))
+    return codes
+
+
+async def recovery_locked_until(email: str, until: datetime | None) -> None:
+    async with session_scope() as session:
+        await session.execute(
+            update(User).where(User.email == email).values(twoFactorRecoveryLockedUntil=until)
+        )
+
+
+async def test_a_recovery_code_stands_in_for_the_authenticator_and_is_spent(
+    client: httpx.AsyncClient, google: FakeGoogle
+) -> None:
+    email, token = await provider_account("GOOGLE", two_factor_secret=two_factor.generate_secret())
+    first, _second = await recovery_codes_for(email, 2)
+    proof = google.mint(email, (await confirm_nonce(client, token))["nonce"])
+    answer = await set_first(client, token, googleIdToken=proof, twoFactorCode=first)
+    assert answer.status_code == 200, answer.text
+    account = await account_at(email)
+    assert verify_password(NEW_PASSWORD, account.passwordHash)
+    assert len(account.twoFactorRecoveryCodes) == 1
+
+
+async def test_a_locked_second_factor_is_answered_429_before_the_proof_is_spent(
+    client: httpx.AsyncClient, google: FakeGoogle
+) -> None:
+    email, token = await provider_account("GOOGLE", two_factor_secret=two_factor.generate_secret())
+    (recovery,) = await recovery_codes_for(email, 1)
+    await recovery_locked_until(email, datetime.now(UTC) + timedelta(minutes=10))
+    proof = google.mint(email, (await confirm_nonce(client, token))["nonce"])
+    locked = await set_first(client, token, googleIdToken=proof, twoFactorCode=recovery)
+    assert (locked.status_code, locked.json()["detail"]) == (429, "Too many attempts. Try again later.")
+    assert (await account_at(email)).passwordHash is None
+    await recovery_locked_until(email, None)
+    answer = await set_first(client, token, googleIdToken=proof, twoFactorCode=recovery)
     assert answer.status_code == 200, answer.text
 
 

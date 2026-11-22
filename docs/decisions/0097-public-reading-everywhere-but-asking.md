@@ -16,6 +16,7 @@ and 0095 (item 7).
 | What it builds on | [0079 Craft, category, map and science pages read without signing in](0079-public-reading.md): public reading, widened to everything but asking |
 | The contracts it names | [field-voices.md](../contracts/field-voices.md), [craft-page.md](../contracts/craft-page.md) |
 | Shared answers read their language from a public list of the answer languages | [decision 0145](0145-monograph-pages-and-speed-without-debt.md) |
+| A share's files recorded and deleted from the bucket when it stops | [decision 0155](0155-accounts-and-sharing-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

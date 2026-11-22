@@ -54,7 +54,7 @@ Everything a reader reads opens without signing in; only asking and the reader's
 | `/admin/access` | Professor and above | `require_access_roster_manager` |
 | `/lessons` | Professor and above | `require(BUILD_LESSONS)` |
 
-A professor assigns only `RESEARCHER` and `STUDENT`; an admin assigns up to `PROFESSOR`, changes roles, suspends and restores accounts and resets two-step verification for accounts ranked below Admin; only the master admin assigns `ADMIN` or acts on an admin. Each admin nav item is shown by its own route guard (`routeAllows`), and the hub lists the areas whose guard admits the viewer. The access roster shows only the actions the viewer may take on each entry (`accessEntryOffers`, by the entry's role). The admin view toggle stays with the master admin (`hasAdminView`).
+A professor assigns only `RESEARCHER` and `STUDENT`; an admin assigns up to `PROFESSOR`, changes roles, suspends and restores accounts and resets two-step verification for accounts ranked below Admin; only the master admin assigns `ADMIN` or acts on an admin. Each admin nav item is shown by its own route guard (`routeAllows`), and the hub lists the areas whose guard admits the viewer. The access roster shows exactly the actions the server offers on each entry (`accessEntryOffers`, reading the row's `offers`, which the routes' own guards compute from the entry and the account at its address); a row without `offers` shows none (decision 0155). The admin view toggle stays with the master admin (`hasAdminView`).
 
 ## 3. Routes ported from DR, called in DR's shape
 

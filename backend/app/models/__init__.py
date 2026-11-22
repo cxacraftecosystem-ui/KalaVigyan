@@ -127,6 +127,7 @@ from app.models.science import (
     ReactionCitation,
     StageMaterial,
 )
+from app.models.sharing import SharedExportFile
 from app.models.source_upkeep import SourceUpkeep
 from app.models.stored_documents import StoredDocument
 from app.models.structure_proposals import StructureProposal
@@ -257,6 +258,7 @@ __all__ = [
     "RoutePolicy",
     "SavedItem",
     "SecretTestResult",
+    "SharedExportFile",
     "SharedTermCraft",
     "Source",
     "SourceLease",

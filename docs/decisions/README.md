@@ -52,11 +52,11 @@ flowchart LR
 | [0021](0021-media-ui.md) | Media UI: Image and Video on the craft page's process stages | [0092](0092-design-system.md) |
 | [0022](0022-batch-3-review-fixes.md) | Voice spend fails closed, a filtered style hint, region sources and one home per rule | · |
 | [0023](0023-multilingual-answers.md) | Answers in Indian languages | [0117](0117-pages-in-other-languages.md) |
-| [0024](0024-admin-role.md) | Admin role | · |
+| [0024](0024-admin-role.md) | Admin role | [0155](0155-accounts-and-sharing-kept-true.md) |
 | [0025](0025-multilingual-voice.md) | Voice in every answer language | · |
 | [0026](0026-yahoo-sign-in.md) | Yahoo sign-in (and Microsoft, off): DR's OpenID Connect module, ported | · |
 | [0027](0027-geo-etl-state-gaps.md) | Geo ETL: district shapes are polygons only, and a part that loses a state fails | · |
-| [0028](0028-first-password-provider-proof.md) | A first password needs a fresh provider proof: DR's rule, ported | · |
+| [0028](0028-first-password-provider-proof.md) | A first password needs a fresh provider proof: DR's rule, ported | [0155](0155-accounts-and-sharing-kept-true.md) |
 | [0029](0029-e2e-production-run.md) | E2E against production, on dispatch, as one Researcher account | · |
 
 ## The answer experience, phases A to D
@@ -135,7 +135,7 @@ flowchart LR
 | [0094](0094-design-primitives.md) | The design primitives: one citation cluster, one motion owner, the editorial folder | · |
 | [0095](0095-craft-page-chapters.md) | The craft page becomes a monograph in chapters, public to read, built without a question | [0097](0097-public-reading-everywhere-but-asking.md) and [0100](0100-ajrakh-monograph-served-as-built.md) |
 | [0096](0096-reader-question-pieces-join-their-craft-page.md) | Every piece built for a reader's question joins its craft's page, whoever asked | · |
-| [0097](0097-public-reading-everywhere-but-asking.md) | Everything reads without signing in except asking | [0145](0145-monograph-pages-and-speed-without-debt.md) |
+| [0097](0097-public-reading-everywhere-but-asking.md) | Everything reads without signing in except asking | [0145](0145-monograph-pages-and-speed-without-debt.md) and [0155](0155-accounts-and-sharing-kept-true.md) |
 | [0098](0098-craft-page-chapters-build.md) | How the craft page chapters were built: the readings taken where the contract was open | [0100](0100-ajrakh-monograph-served-as-built.md) |
 | [0099](0099-wider-expert-panel.md) | The expert panel searches its own fields, calls each seat on its own, seats up to 12 at Expert, and hears the artisan from field transcripts | · |
 | [0100](0100-ajrakh-monograph-served-as-built.md) | The Kutch Ajrakh craft page is the hand-built monograph, served as built | [0106](0106-one-monograph-template-for-every-page.md) |
@@ -191,6 +191,7 @@ flowchart LR
 | [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | · |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
 | [0150](0150-mcp-activity-and-box-logs.md) | Each MCP call keeps its client and its reason for 180 days and its count for good, and the box ships its logs to CloudWatch | · |
+| [0155](0155-accounts-and-sharing-kept-true.md) | The roster offers what its guards allow, a recovery code may add a first password, roles sort and cap by rank, and a stopped share's files leave the bucket | · |
 
 ## How this document is kept true
 

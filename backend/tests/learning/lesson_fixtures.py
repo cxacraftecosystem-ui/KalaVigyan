@@ -97,6 +97,9 @@ class FakeBucket:
     async def put(self, key: str, body: bytes, *, content_type: str) -> None:
         self.stored[key] = (body, content_type)
 
+    async def delete(self, key: str) -> None:
+        self.stored.pop(key, None)
+
     def presigned_get(self, key: str, *, disposition: str, seconds: int, now: datetime) -> PresignedGet:
         self.signed.append((key, disposition, seconds))
         return PresignedGet(url=f"{BUCKET_HOST}/{key}?signed", expires_at=now + timedelta(seconds=seconds))

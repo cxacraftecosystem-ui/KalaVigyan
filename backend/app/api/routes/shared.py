@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, status
@@ -21,7 +22,8 @@ from app.research.explainer_versions import ExplainerVersionDocument
 from app.research.lessons import LESSON_FORMATS, LessonPack
 from app.research.share_links import SHARE_TOKEN_PATTERN
 from app.services.export_files import ExportTools
-from app.services.share_links import SHARED_EXPORT_OWNER, shared_answer, shared_lesson
+from app.services.share_links import shared_answer, shared_lesson
+from app.services.shared_files import SHARED_EXPORT_OWNER, SignedKeys, record_shared_files
 
 router = APIRouter(prefix="/shared", tags=["shared"])
 
@@ -78,7 +80,10 @@ async def get_shared_pdf(
     session: AsyncSession = Depends(get_session),
     tools: ExportTools = Depends(export_tools),
 ) -> dict[str, Any]:
-    link = await explainer_pdf(session, tools, SHARED_EXPORT_OWNER, await _shared_answer(session, token))
+    document = await _shared_answer(session, token)
+    signed = SignedKeys(tools.objects)
+    link = await explainer_pdf(session, replace(tools, objects=signed), SHARED_EXPORT_OWNER, document)
+    await record_shared_files(session, token, signed.keys, objects=tools.objects)
     response.headers["Cache-Control"] = PRIVATE_NO_CACHE
     return link.model_dump(mode="json", by_alias=True)
 
@@ -105,7 +110,10 @@ async def get_shared_lesson_file(
     session: AsyncSession = Depends(get_session),
     tools: ExportTools = Depends(export_tools),
 ) -> dict[str, Any]:
-    link = await lesson_file(session, tools, SHARED_EXPORT_OWNER, await _shared_lesson(session, token), fmt)
+    pack = await _shared_lesson(session, token)
+    signed = SignedKeys(tools.objects)
+    link = await lesson_file(session, replace(tools, objects=signed), SHARED_EXPORT_OWNER, pack, fmt)
+    await record_shared_files(session, token, signed.keys, objects=tools.objects)
     response.headers["Cache-Control"] = PRIVATE_NO_CACHE
     return link.model_dump(mode="json", by_alias=True)
 

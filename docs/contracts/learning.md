@@ -406,8 +406,13 @@ answer); its question is the asker's own words, which the asker sees before shar
 its explainer with the stored pack's title, sections (those still `READY`) and quiz choice, its id
 and `createdAt` kept (`share_links.public_lesson`), so it never shows more than the shared answer
 would. Files of a share are filed under the neutral owner id `00000000-0000-0000-0000-000000000000`
-(`share_links.SHARED_EXPORT_OWNER`), so no signed link names the asker; they expire with the
-`exports/` rule like every other file.
+(`shared_files.SHARED_EXPORT_OWNER`), so no signed link names the asker. Each key a reader is given
+a link to is recorded against the share's token (`SharedExportFile`, migration
+`0079_shared_export_files`); whenever a share stops (its owner stops it, deletes the lesson, or the
+account is suspended, refused, deleted or loses `BUILD_LESSONS`), the files no live share holds are
+deleted from the bucket in the same transaction, a file the bucket refuses to delete is kept for the
+next sweep, and a file recorded after its share stopped is deleted at once
+(`services/shared_files`, decision 0155). The `exports/` rule still removes any file after it.
 
 ## Shared-science explorer (decision 0064 builds it)
 

@@ -478,35 +478,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** a worker heartbeat (Redis or `AppSetting`) that options read, and the watchdog
   checking the unit.
 
-## Admin role (decision 0024)
-
-### The roster screen judges an entry by its own role
-
-- **What:** `accessEntryOffers` (`frontend/lib/accessRoster.ts`) hides roster actions by the
-  entry's `admitRole`; the server also refuses when the account at that address holds a role at
-  or above the viewer's, so such a row can show an action that answers 403 with a sentence.
-- **Why left:** the roster row does not carry the account's role, and adding it means a second
-  query per page.
-- **Clears it:** the roster list sends the actions the viewer may take on each row, computed with
-  the same guards as the routes, and the screen draws exactly those.
-
-### Sorting users by role follows the enum, not the rank
-
-- **What:** `UserRole` lists `ADMIN` last (Postgres appends a new value), so
-  `GET /users?sort=role` puts admins after students.
-- **Why left:** the web client never sends that sort, and moving the value means recreating the
-  type.
-- **Clears it:** order that sort by `ROLE_RANK` with a `CASE` expression.
-
-### A partial role-cap update drops the other roles to the student cap
-
-- **What:** `PUT /settings/ai-budget` replaces the whole `roleDailyUsd` map; a role it leaves out
-  falls back to the student's $0.50 in `providers/budget.evaluate` and shows no cap in
-  `/usage/me`.
-- **Why left:** older than the admin role; the master admin sends the whole map today.
-- **Clears it:** merge the sent roles into the stored map, or refuse a map that does not name
-  every role.
-
 ## Yahoo sign-in (decision 0026)
 
 ### Yahoo sign-in not yet seen running
@@ -520,25 +491,17 @@ Last reviewed: 2026-11-22.
 
 ## First-password proof (decision 0028)
 
-### A recovery code is offered for a first password but not taken
+### First-password proof not yet seen in a browser
 
-- **What:** the Settings card's two-step entry (`ChangePasswordCard.tsx`, `allowRecovery`) lets an
-  account with two-step on type a recovery code before its first password, but
-  `POST /auth/change-password` checks the code with `two_factor.step_up`, which takes only an
-  authenticator code, so a recovery code is refused as a wrong code. DR accepts one there.
-- **Why left:** older than decision 0028, and whether a recovery code may add a password is a
-  security choice for the owner.
-- **Clears it:** either check the first-password code with `check_second_factor(...,
-  allow_recovery=True)` and answer its lock as 429, or drop `allowRecovery` from the card.
-
-### First-password proof not yet seen running
-
-- **What:** migration 0011 has been rendered offline only; the route tests
-  (`backend/tests/db/test_first_password_db.py`) run on GitHub Actions, and no browser has added a
-  password through the Google or Yahoo round trip.
-- **Why left:** nothing runs on the laptop, and Yahoo is not registered yet.
-- **Clears it:** Backend checks green on the batch, then after the deploy add a password in
-  Settings from a Google-only account (and a Yahoo one once Yahoo is registered).
+- **What:** the route tests (`backend/tests/db/test_first_password_db.py`, the Google and Yahoo
+  proofs, the two-step order, a recovery code and a locked second factor) and the card's unit spec
+  (`frontend/e2e/first-password-unit.spec.ts`) run on every push, and migration
+  `0011_first_password_proof` runs on Postgres in Backend checks, but no person has yet added a
+  password in Settings through the real Google or Yahoo round trip.
+- **Why left:** the round trip signs in to Google or Yahoo in a browser with a real account, which
+  no check in the repository can do.
+- **Clears it:** after a deploy, a person adds a password in Settings from a Google-only account and
+  from a Yahoo-only one.
 
 ## Understanding and depth (decision 0031)
 
@@ -1752,17 +1715,6 @@ Last reviewed: 2026-11-22.
   the field voices writer and its tests, and the field voices lane was finishing its own changes.
 - **Clears it:** a migration that sets every `SIGNED_IN` chunk to `PUBLIC` and drops the value,
   `field_voices_records` writing `PUBLIC`, and `SIGNED_IN_CHUNK_ACLS` removed.
-
-### A stopped share's files stay in the bucket until they expire
-
-- **What:** the report PDF and lesson files of a share are filed once under the neutral owner id
-  (`services/share_links.SHARED_EXPORT_OWNER`) and kept until the `exports/` lifecycle rule
-  removes them. Stopping the share ends the routes and every new link at once, but not the
-  stored object.
-- **Why left:** the key carries the SHA-256 of what the file was made from, so it cannot be
-  guessed, and every signed link lasts 300 seconds; the owner's own exports work the same way.
-- **Clears it:** delete the share's objects when it stops, by recording each file's key against
-  the share.
 
 ### Craft page chapters not built yet (decision 0098)
 

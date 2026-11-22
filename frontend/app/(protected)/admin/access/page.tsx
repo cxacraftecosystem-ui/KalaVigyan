@@ -263,7 +263,7 @@ function PlatformAccessScreen() {
     );
   }
 
-  const offersFor = (entry: AccessRosterEntry) => accessEntryOffers(user, entry);
+  const offersFor = accessEntryOffers;
   const handlers: EntryHandlers = { offersFor, view: setViewing, update: startEdit, suspend, admit: restore, refuse: reject };
   const sort: RosterSortControl = { kind: KIND, filters, onChange: applyFilters };
 
@@ -289,7 +289,7 @@ function PlatformAccessScreen() {
         description={viewing?.email}
         details={viewing ? accessEntryDetails(viewing) : []}
         onUpdate={
-          viewing && accessEntryOffers(user, viewing).update
+          viewing && accessEntryOffers(viewing).update
             ? () => {
                 setViewing(null);
                 startEdit(viewing);
