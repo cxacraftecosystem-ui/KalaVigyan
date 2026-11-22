@@ -2211,12 +2211,15 @@ Last reviewed: 2026-11-22.
 
 - **What:** on Kutch Ajrakh, the labels under the equation's species ("leucoindigo, on the fibre")
   overflow their 15ch box (`white-space: nowrap` on `.bx-chem .eq .side` in the kit's
-  `monograph.css`), and at 360 the ion charges spill out of the formula; the Textiles category hub
-  draws no family science because the families' monographs answer 404; Kutch Ajrakh's document
+  `monograph.css`), and at 360 the ion charges spill out of the formula; Kutch Ajrakh's document
   carries aria-labels that begin "AI illustration:", which principle 9 (no AI imagery) may not
-  allow. The answer essay check waits for one paid `questions=true` run to save an answer.
-- **Clears it:** a kit fix proven by Monograph parity; family monographs for the categories; the
-  owner's ruling on the illustrations' labels.
+  allow. The answer essay check waits for one paid `questions=true` run to save an answer. (The
+  Textiles hub draws its science from the category's own monograph, served since round 7.)
+- **Why left:** the kit is the owner-approved page's stylesheet, so a fix changes the approved page
+  at 360 and needs the owner's sight of it beside the parity run; the labels wait on the owner's
+  ruling; the paid run is the lead's.
+- **Clears it:** a kit fix shown to the owner at 360 and proven by Monograph parity; the owner's
+  ruling on the illustrations' labels; the lead's paid run.
 
 ### Small differences from the boards left after round 6
 
