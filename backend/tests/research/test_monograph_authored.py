@@ -142,7 +142,7 @@ def test_the_ajrakh_document_draws_every_component_once_and_validates_from_its_j
     ajrakh: MonographDocument,
 ) -> None:
     labels = {c.label for c in ajrakh.content.components}
-    assert len(labels) == 79
+    assert len(labels) == 80
     assert ajrakh.shell is not None and ajrakh.fragments == {}
     assert set(ajrakh.specs) == authored.native_views("Kutch-Ajrakh")
     placed = _placed_by_natives(ajrakh)

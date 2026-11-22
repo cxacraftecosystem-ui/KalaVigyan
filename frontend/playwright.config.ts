@@ -10,7 +10,9 @@ const SMOKE = process.env.E2E_SMOKE === "1";
 const PRODUCTION = process.env.E2E_PRODUCTION === "1";
 const PARITY = process.env.E2E_PARITY === "1";
 const CAPTURE = process.env.E2E_CAPTURE === "1";
+const FIGURE = process.env.E2E_FIGURE === "1";
 const CAPTURE_SPEC = /[\\/]e2e[\\/]capture[\\/]capture\.spec\.ts$/;
+const FIGURE_SPEC = /[\\/]e2e[\\/]capture[\\/]figure\.spec\.ts$/;
 const PARITY_SPEC = /[\\/]e2e[\\/]parity[\\/]monograph-parity\.spec\.ts$/;
 const PARITY_WIDTHS: readonly Width[] = [SMALL_PHONE, TABLET, DESKTOP];
 const CAPTURE_WIDTHS: readonly Width[] = [...PARITY_WIDTHS, WIDE];
@@ -59,16 +61,17 @@ function anonymousProject(width: Width): Project {
   };
 }
 
-function parityProject(width: Width, scheme: Scheme): Project {
+function pageProject(prefix: string, spec: RegExp, width: Width, scheme: Scheme): Project {
   return {
-    name: `parity-${width.key}-${scheme}`,
-    testMatch: [PARITY_SPEC],
+    name: `${prefix}-${width.key}-${scheme}`,
+    testMatch: [spec],
     retries: 0,
     use: { ...devices[width.device], ...contextOptions(width, scheme), ...RUN_USE }
   };
 }
 
-const PARITY_PROJECTS: Project[] = PARITY_WIDTHS.flatMap((width) => SCHEMES.map((scheme) => parityProject(width, scheme)));
+const PARITY_PROJECTS: Project[] = PARITY_WIDTHS.flatMap((width) => SCHEMES.map((scheme) => pageProject("parity", PARITY_SPEC, width, scheme)));
+const FIGURE_PROJECTS: Project[] = PARITY_WIDTHS.flatMap((width) => SCHEMES.map((scheme) => pageProject("figure", FIGURE_SPEC, width, scheme)));
 
 function captureProject(width: Width, look: CaptureLook): Project {
   const contrast = look.contrast ? { contrast: "more" as const } : {};
@@ -115,7 +118,8 @@ export default defineConfig({
     { name: "phone", testMatch: /smoke\.spec\.ts$/, testIgnore: PRODUCTION_SPECS, use: { ...devices["Pixel 7"] } },
     ...(PRODUCTION ? PRODUCTION_PROJECTS : []),
     ...(PARITY ? PARITY_PROJECTS : []),
-    ...(CAPTURE ? CAPTURE_PROJECTS : [])
+    ...(CAPTURE ? CAPTURE_PROJECTS : []),
+    ...(FIGURE ? FIGURE_PROJECTS : [])
   ],
   webServer:
     SMOKE && LOCAL

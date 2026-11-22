@@ -1875,14 +1875,20 @@ Last reviewed: 2026-11-22.
 
 ### Fragments are a bridge
 
-- **What:** 9 of Kutch Ajrakh's 79 components still draw from their fragments (70 are native since
+- **What:** 10 of Kutch Ajrakh's 80 components still draw from their fragments (70 are native since
   round 6, `monographs/Kutch-Ajrakh/native.json`): the stage player (its stage 11 "Why" is held
-  text), the two structure diagrams (their descriptions are the answer's held sentences) and the six
-  page tools, whose views draw their own markup on purpose. The kit's script still drives the
-  native views' behaviour by ids and classes, and a generated page reuses another monograph's
-  fragment for a shared component without a spec.
-- **Clears it:** the stage player's held line as a unit, science specs that carry held text, then
-  the kit's behaviour moved into the views and the fragments retired.
+  text), the two structure diagrams (their descriptions are the answer's held sentences), the six
+  page tools, whose views draw their own markup on purpose, and the ground figure
+  (`kutch-ajrakh/geography/why-here`, decision 0151). The ground figure's fragment is the React
+  page's drawing with the app rules that draw it, captured by **Capture screens** with `figure`,
+  because its map fills the neighbouring countries and sizes its pins only after it is drawn in
+  the browser, so its view's first drawing is not the figure readers see; once the stored document
+  carries it, a change to the ground data reaches the page only through a new capture. The kit's
+  script still drives the native views' behaviour by ids and classes, and a generated page reuses
+  another monograph's fragment for a shared component without a spec.
+- **Clears it:** the stage player's held line as a unit, science specs that carry held text, the
+  ground map drawing its neighbours and pins in its first drawing (then the figure listed in
+  `native.json`), then the kit's behaviour moved into the views and the fragments retired.
 
 ### What the document does not carry yet
 
@@ -2065,24 +2071,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** after the release that carries decision 0151, the lead runs
   `eval_retrieval --fusion --out /tmp/fusion.json` on the box (RUNBOOK, Fusion weights), commits the
   picked file and raises the fused floors to its numbers less 0.05.
-
-### Kutch Ajrakh's approved page does not yet carry the ground figure
-
-- **What:** the API places the "why here" ground figure in Kutch Ajrakh's why chapter
-  (`services/monograph_generated_why_here.with_why_here`), and the owner approved it on 2026-11-23
-  (decision 0151), but the approved static page (`frontend/public/monographs/kutch-ajrakh`, built
-  from `backend/app/data/monographs/Kutch-Ajrakh`) does not carry it. The Monograph parity run, which
-  since decision 0151 compares the text and chapters after every deploy, reports the figure's 137
-  lines (run 45049769331) and the headings below it, which sit a fraction of a pixel lower.
-- **Why left:** the approved page draws a component from its fragment, and the figure's fragment
-  must be the markup the React view draws from production's ground data, captured in a browser,
-  then built with `build_monograph`; this lane's machine runs neither a browser nor the build.
-- **Clears it:** capture the drawn `.kv-why-here` figure from `/crafts/Kutch-Ajrakh/monograph` as
-  `fragments/kutch-ajrakh__geography__why-here.html`, add its component (kind `why_here`, its spec
-  from the served document) to `content.json` and its slot to the why chapter of the template, run
-  `python -m app.scripts.build_monograph` and `--document Kutch-Ajrakh --out
-  ../shared/monograph.document.golden.json`, and after the deploy `load_monograph` on the box; the
-  parity run then passes with the figure on both pages.
 
 ### The MCP call's client name is filled by a trigger for the release before
 

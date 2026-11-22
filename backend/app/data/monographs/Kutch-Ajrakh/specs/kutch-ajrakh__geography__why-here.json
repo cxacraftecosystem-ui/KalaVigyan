@@ -1,0 +1,1766 @@
+{
+ "ground": {
+  "schemaVersion": 1,
+  "craft": {
+   "slug": "Kutch-Ajrakh",
+   "name": "Kutch Ajrakh",
+   "path": "/crafts/Kutch-Ajrakh"
+  },
+  "radiusKm": 50,
+  "places": [
+   {
+    "key": "place-0e003952-7a29-567e-8c01-e9d42cba17d6",
+    "name": "Ajrakhpur",
+    "roles": [
+     "PRACTISED",
+     "MIGRATED_TO"
+    ],
+    "precision": "DISTRICT",
+    "district": "Kachchh",
+    "state": "Gujarat",
+    "longitude": 69.843,
+    "latitude": 23.464,
+    "sourceId": "c1fa6a39-5386-5d7d-8623-393e1e61f6db",
+    "ground": {
+     "elevation": {
+      "lowM": null,
+      "highM": 100
+     },
+     "river": {
+      "distanceKm": 192.3,
+      "scaleRank": 3,
+      "longitude": 68.025,
+      "latitude": 23.934
+     },
+     "lake": {
+      "distanceKm": 562.6,
+      "scaleRank": null,
+      "longitude": 75.298,
+      "latitude": 24.316
+     },
+     "depositClasses": [],
+     "commodities": [],
+     "readings": [
+      {
+       "reading": "soil",
+       "datasetCode": "SOILGRIDS_2_0",
+       "variable": "clay",
+       "depth": "0-5cm",
+       "period": "modelled, 2020 release",
+       "stat": "DISTRICT_MEAN",
+       "value": 22.216968,
+       "unit": "%",
+       "resolution": "250 m"
+      },
+      {
+       "reading": "soil",
+       "datasetCode": "SOILGRIDS_2_0",
+       "variable": "phh2o",
+       "depth": "0-5cm",
+       "period": "modelled, 2020 release",
+       "stat": "DISTRICT_MEAN",
+       "value": 7.281044,
+       "unit": "pH",
+       "resolution": "250 m"
+      },
+      {
+       "reading": "cover",
+       "datasetCode": "ESA_WORLDCOVER_2021_V200",
+       "variable": "landcover_tree_cover",
+       "depth": null,
+       "period": "2021",
+       "stat": "SHARE",
+       "value": 0.016477,
+       "unit": "fraction",
+       "resolution": "40 m (overview read, factor 4, nearest)"
+      },
+      {
+       "reading": "cover",
+       "datasetCode": "ESA_WORLDCOVER_2021_V200",
+       "variable": "landcover_cropland",
+       "depth": null,
+       "period": "2021",
+       "stat": "SHARE",
+       "value": 0.301403,
+       "unit": "fraction",
+       "resolution": "40 m (overview read, factor 4, nearest)"
+      }
+     ]
+    },
+    "materials": []
+   },
+   {
+    "key": "place-29546d37-0e36-5c3d-af44-a6203089103b",
+    "name": "Barmer",
+    "roles": [
+     "PRACTISED"
+    ],
+    "precision": "DISTRICT",
+    "district": "Barmer",
+    "state": "Rajasthan",
+    "longitude": 71.513,
+    "latitude": 25.844,
+    "sourceId": "c1fa6a39-5386-5d7d-8623-393e1e61f6db",
+    "ground": {
+     "elevation": {
+      "lowM": 100,
+      "highM": 300
+     },
+     "river": {
+      "distanceKm": 231.0,
+      "scaleRank": 8,
+      "longitude": 73.542,
+      "latitude": 24.867
+     },
+     "lake": {
+      "distanceKm": 407.1,
+      "scaleRank": null,
+      "longitude": 75.38,
+      "latitude": 24.755
+     },
+     "depositClasses": [],
+     "commodities": [],
+     "readings": [
+      {
+       "reading": "soil",
+       "datasetCode": "SOILGRIDS_2_0",
+       "variable": "clay",
+       "depth": "0-5cm",
+       "period": "modelled, 2020 release",
+       "stat": "DISTRICT_MEAN",
+       "value": 22.812117,
+       "unit": "%",
+       "resolution": "250 m"
+      },
+      {
+       "reading": "soil",
+       "datasetCode": "SOILGRIDS_2_0",
+       "variable": "phh2o",
+       "depth": "0-5cm",
+       "period": "modelled, 2020 release",
+       "stat": "DISTRICT_MEAN",
+       "value": 7.847382,
+       "unit": "pH",
+       "resolution": "250 m"
+      },
+      {
+       "reading": "cover",
+       "datasetCode": "ESA_WORLDCOVER_2021_V200",
+       "variable": "landcover_tree_cover",
+       "depth": null,
+       "period": "2021",
+       "stat": "SHARE",
+       "value": 0.010689,
+       "unit": "fraction",
+       "resolution": "40 m (overview read, factor 4, nearest)"
+      },
+      {
+       "reading": "cover",
+       "datasetCode": "ESA_WORLDCOVER_2021_V200",
+       "variable": "landcover_cropland",
+       "depth": null,
+       "period": "2021",
+       "stat": "SHARE",
+       "value": 0.411624,
+       "unit": "fraction",
+       "resolution": "40 m (overview read, factor 4, nearest)"
+      }
+     ]
+    },
+    "materials": []
+   },
+   {
+    "key": "place-8604b8c3-7f8e-5ecf-823d-d33652a3f828",
+    "name": "Dhamadka",
+    "roles": [
+     "PRACTISED",
+     "HISTORIC_CENTRE",
+     "MIGRATED_FROM"
+    ],
+    "precision": "DISTRICT",
+    "district": "Kachchh",
+    "state": "Gujarat",
+    "longitude": 69.843,
+    "latitude": 23.464,
+    "sourceId": "29ff4c54-3b6b-55b3-94d8-4bf24abb1190",
+    "ground": {
+     "elevation": {
+      "lowM": null,
+      "highM": 100
+     },
+     "river": {
+      "distanceKm": 192.3,
+      "scaleRank": 3,
+      "longitude": 68.025,
+      "latitude": 23.934
+     },
+     "lake": {
+      "distanceKm": 562.6,
+      "scaleRank": null,
+      "longitude": 75.298,
+      "latitude": 24.316
+     },
+     "depositClasses": [],
+     "commodities": [],
+     "readings": [
+      {
+       "reading": "soil",
+       "datasetCode": "SOILGRIDS_2_0",
+       "variable": "clay",
+       "depth": "0-5cm",
+       "period": "modelled, 2020 release",
+       "stat": "DISTRICT_MEAN",
+       "value": 22.216968,
+       "unit": "%",
+       "resolution": "250 m"
+      },
+      {
+       "reading": "soil",
+       "datasetCode": "SOILGRIDS_2_0",
+       "variable": "phh2o",
+       "depth": "0-5cm",
+       "period": "modelled, 2020 release",
+       "stat": "DISTRICT_MEAN",
+       "value": 7.281044,
+       "unit": "pH",
+       "resolution": "250 m"
+      },
+      {
+       "reading": "cover",
+       "datasetCode": "ESA_WORLDCOVER_2021_V200",
+       "variable": "landcover_tree_cover",
+       "depth": null,
+       "period": "2021",
+       "stat": "SHARE",
+       "value": 0.016477,
+       "unit": "fraction",
+       "resolution": "40 m (overview read, factor 4, nearest)"
+      },
+      {
+       "reading": "cover",
+       "datasetCode": "ESA_WORLDCOVER_2021_V200",
+       "variable": "landcover_cropland",
+       "depth": null,
+       "period": "2021",
+       "stat": "SHARE",
+       "value": 0.301403,
+       "unit": "fraction",
+       "resolution": "40 m (overview read, factor 4, nearest)"
+      }
+     ]
+    },
+    "materials": []
+   },
+   {
+    "key": "place-a1e882da-b7c4-5281-b884-9dc1dfc42e39",
+    "name": "Khavda",
+    "roles": [
+     "PRACTISED",
+     "HISTORIC_CENTRE"
+    ],
+    "precision": "DISTRICT",
+    "district": "Kachchh",
+    "state": "Gujarat",
+    "longitude": 69.843,
+    "latitude": 23.464,
+    "sourceId": "c1fa6a39-5386-5d7d-8623-393e1e61f6db",
+    "ground": {
+     "elevation": {
+      "lowM": null,
+      "highM": 100
+     },
+     "river": {
+      "distanceKm": 192.3,
+      "scaleRank": 3,
+      "longitude": 68.025,
+      "latitude": 23.934
+     },
+     "lake": {
+      "distanceKm": 562.6,
+      "scaleRank": null,
+      "longitude": 75.298,
+      "latitude": 24.316
+     },
+     "depositClasses": [],
+     "commodities": [],
+     "readings": [
+      {
+       "reading": "soil",
+       "datasetCode": "SOILGRIDS_2_0",
+       "variable": "clay",
+       "depth": "0-5cm",
+       "period": "modelled, 2020 release",
+       "stat": "DISTRICT_MEAN",
+       "value": 22.216968,
+       "unit": "%",
+       "resolution": "250 m"
+      },
+      {
+       "reading": "soil",
+       "datasetCode": "SOILGRIDS_2_0",
+       "variable": "phh2o",
+       "depth": "0-5cm",
+       "period": "modelled, 2020 release",
+       "stat": "DISTRICT_MEAN",
+       "value": 7.281044,
+       "unit": "pH",
+       "resolution": "250 m"
+      },
+      {
+       "reading": "cover",
+       "datasetCode": "ESA_WORLDCOVER_2021_V200",
+       "variable": "landcover_tree_cover",
+       "depth": null,
+       "period": "2021",
+       "stat": "SHARE",
+       "value": 0.016477,
+       "unit": "fraction",
+       "resolution": "40 m (overview read, factor 4, nearest)"
+      },
+      {
+       "reading": "cover",
+       "datasetCode": "ESA_WORLDCOVER_2021_V200",
+       "variable": "landcover_cropland",
+       "depth": null,
+       "period": "2021",
+       "stat": "SHARE",
+       "value": 0.301403,
+       "unit": "fraction",
+       "resolution": "40 m (overview read, factor 4, nearest)"
+      }
+     ]
+    },
+    "materials": []
+   }
+  ],
+  "soilMaterials": [
+   "Clay",
+   "Fuller's earth"
+  ],
+  "deposits": [],
+  "classes": [
+   {
+    "id": "iron",
+    "label": "Iron"
+   },
+   {
+    "id": "alloy",
+    "label": "Manganese, chromium and alloy metals"
+   },
+   {
+    "id": "aluminium",
+    "label": "Aluminium"
+   },
+   {
+    "id": "base",
+    "label": "Copper, lead, zinc and precious metals"
+   },
+   {
+    "id": "sands",
+    "label": "Titanium, zirconium and rare earths"
+   },
+   {
+    "id": "industrial",
+    "label": "Industrial minerals"
+   }
+  ],
+  "frame": {
+   "west": 68.585,
+   "south": 22.752,
+   "east": 72.771,
+   "north": 26.556,
+   "bands": [
+    {
+     "lowM": 100,
+     "rings": [
+      [
+       [
+        71.292,
+        22.752
+       ],
+       [
+        71.292,
+        22.808
+       ],
+       [
+        71.325,
+        22.808
+       ],
+       [
+        71.325,
+        22.842
+       ],
+       [
+        71.458,
+        22.808
+       ],
+       [
+        71.458,
+        22.775
+       ],
+       [
+        71.492,
+        22.775
+       ],
+       [
+        71.492,
+        22.752
+       ]
+      ],
+      [
+       [
+        69.025,
+        23.508
+       ],
+       [
+        69.058,
+        23.508
+       ],
+       [
+        69.058,
+        23.475
+       ],
+       [
+        69.125,
+        23.475
+       ],
+       [
+        69.158,
+        23.408
+       ],
+       [
+        69.292,
+        23.408
+       ],
+       [
+        69.292,
+        23.375
+       ],
+       [
+        69.425,
+        23.408
+       ],
+       [
+        69.425,
+        23.342
+       ],
+       [
+        69.492,
+        23.342
+       ],
+       [
+        69.525,
+        23.408
+       ],
+       [
+        69.592,
+        23.408
+       ],
+       [
+        69.592,
+        23.342
+       ],
+       [
+        69.625,
+        23.342
+       ],
+       [
+        69.625,
+        23.275
+       ],
+       [
+        69.658,
+        23.275
+       ],
+       [
+        69.658,
+        23.242
+       ],
+       [
+        69.725,
+        23.242
+       ],
+       [
+        69.725,
+        23.275
+       ],
+       [
+        69.758,
+        23.275
+       ],
+       [
+        69.758,
+        23.375
+       ],
+       [
+        69.958,
+        23.342
+       ],
+       [
+        69.958,
+        23.275
+       ],
+       [
+        69.925,
+        23.275
+       ],
+       [
+        69.925,
+        23.242
+       ],
+       [
+        69.958,
+        23.242
+       ],
+       [
+        69.958,
+        23.142
+       ],
+       [
+        69.925,
+        23.142
+       ],
+       [
+        69.892,
+        23.075
+       ],
+       [
+        69.858,
+        23.075
+       ],
+       [
+        69.858,
+        23.042
+       ],
+       [
+        69.192,
+        23.042
+       ],
+       [
+        69.192,
+        23.075
+       ],
+       [
+        69.125,
+        23.108
+       ],
+       [
+        69.125,
+        23.142
+       ],
+       [
+        69.158,
+        23.142
+       ],
+       [
+        69.158,
+        23.208
+       ],
+       [
+        69.125,
+        23.208
+       ],
+       [
+        69.125,
+        23.275
+       ],
+       [
+        69.092,
+        23.275
+       ],
+       [
+        69.092,
+        23.342
+       ],
+       [
+        69.058,
+        23.342
+       ],
+       [
+        69.025,
+        23.408
+       ],
+       [
+        68.992,
+        23.408
+       ],
+       [
+        68.992,
+        23.508
+       ],
+       [
+        68.958,
+        23.508
+       ],
+       [
+        68.958,
+        23.542
+       ],
+       [
+        68.858,
+        23.542
+       ],
+       [
+        68.858,
+        23.642
+       ],
+       [
+        68.892,
+        23.642
+       ],
+       [
+        68.892,
+        23.675
+       ],
+       [
+        68.958,
+        23.708
+       ],
+       [
+        68.958,
+        23.675
+       ],
+       [
+        69.025,
+        23.675
+       ],
+       [
+        69.025,
+        23.642
+       ],
+       [
+        68.958,
+        23.642
+       ],
+       [
+        68.958,
+        23.575
+       ],
+       [
+        69.025,
+        23.575
+       ]
+      ],
+      [
+       [
+        70.558,
+        23.375
+       ],
+       [
+        70.558,
+        23.408
+       ],
+       [
+        70.458,
+        23.408
+       ],
+       [
+        70.458,
+        23.508
+       ],
+       [
+        70.558,
+        23.508
+       ],
+       [
+        70.558,
+        23.542
+       ],
+       [
+        70.725,
+        23.542
+       ],
+       [
+        70.725,
+        23.442
+       ],
+       [
+        70.692,
+        23.442
+       ],
+       [
+        70.692,
+        23.408
+       ],
+       [
+        70.592,
+        23.408
+       ],
+       [
+        70.592,
+        23.375
+       ]
+      ],
+      [
+       [
+        69.858,
+        23.875
+       ],
+       [
+        69.792,
+        23.875
+       ],
+       [
+        69.758,
+        23.942
+       ],
+       [
+        69.892,
+        23.942
+       ],
+       [
+        69.925,
+        23.875
+       ],
+       [
+        69.858,
+        23.842
+       ]
+      ],
+      [
+       [
+        72.771,
+        26.556
+       ],
+       [
+        72.771,
+        23.408
+       ],
+       [
+        72.625,
+        23.408
+       ],
+       [
+        72.625,
+        23.442
+       ],
+       [
+        72.592,
+        23.442
+       ],
+       [
+        72.592,
+        23.475
+       ],
+       [
+        72.525,
+        23.508
+       ],
+       [
+        72.525,
+        23.542
+       ],
+       [
+        72.458,
+        23.542
+       ],
+       [
+        72.458,
+        23.675
+       ],
+       [
+        72.425,
+        23.675
+       ],
+       [
+        72.392,
+        23.742
+       ],
+       [
+        72.358,
+        23.742
+       ],
+       [
+        72.358,
+        23.775
+       ],
+       [
+        72.292,
+        23.775
+       ],
+       [
+        72.292,
+        23.808
+       ],
+       [
+        72.258,
+        23.808
+       ],
+       [
+        72.258,
+        23.875
+       ],
+       [
+        72.225,
+        23.875
+       ],
+       [
+        72.192,
+        24.008
+       ],
+       [
+        72.158,
+        24.008
+       ],
+       [
+        72.158,
+        24.042
+       ],
+       [
+        72.092,
+        24.042
+       ],
+       [
+        72.092,
+        24.108
+       ],
+       [
+        72.058,
+        24.108
+       ],
+       [
+        72.058,
+        24.142
+       ],
+       [
+        71.992,
+        24.142
+       ],
+       [
+        71.992,
+        24.175
+       ],
+       [
+        71.925,
+        24.208
+       ],
+       [
+        71.925,
+        24.275
+       ],
+       [
+        71.892,
+        24.275
+       ],
+       [
+        71.892,
+        24.408
+       ],
+       [
+        71.858,
+        24.408
+       ],
+       [
+        71.858,
+        24.475
+       ],
+       [
+        71.892,
+        24.475
+       ],
+       [
+        71.892,
+        24.608
+       ],
+       [
+        71.925,
+        24.608
+       ],
+       [
+        71.925,
+        24.775
+       ],
+       [
+        71.958,
+        24.775
+       ],
+       [
+        71.958,
+        24.875
+       ],
+       [
+        71.992,
+        24.875
+       ],
+       [
+        71.992,
+        24.908
+       ],
+       [
+        72.058,
+        24.942
+       ],
+       [
+        72.058,
+        25.042
+       ],
+       [
+        72.092,
+        25.042
+       ],
+       [
+        72.092,
+        25.075
+       ],
+       [
+        72.158,
+        25.075
+       ],
+       [
+        72.192,
+        25.208
+       ],
+       [
+        72.225,
+        25.208
+       ],
+       [
+        72.225,
+        25.275
+       ],
+       [
+        72.192,
+        25.275
+       ],
+       [
+        72.192,
+        25.308
+       ],
+       [
+        72.158,
+        25.308
+       ],
+       [
+        72.125,
+        25.375
+       ],
+       [
+        72.092,
+        25.375
+       ],
+       [
+        72.092,
+        25.442
+       ],
+       [
+        72.058,
+        25.442
+       ],
+       [
+        72.058,
+        25.608
+       ],
+       [
+        72.092,
+        25.608
+       ],
+       [
+        72.092,
+        25.675
+       ],
+       [
+        71.958,
+        25.742
+       ],
+       [
+        71.958,
+        25.808
+       ],
+       [
+        71.925,
+        25.808
+       ],
+       [
+        71.925,
+        25.708
+       ],
+       [
+        71.958,
+        25.708
+       ],
+       [
+        71.958,
+        25.642
+       ],
+       [
+        71.925,
+        25.642
+       ],
+       [
+        71.925,
+        25.608
+       ],
+       [
+        71.858,
+        25.608
+       ],
+       [
+        71.858,
+        25.575
+       ],
+       [
+        71.792,
+        25.575
+       ],
+       [
+        71.792,
+        25.542
+       ],
+       [
+        71.725,
+        25.542
+       ],
+       [
+        71.725,
+        25.508
+       ],
+       [
+        71.592,
+        25.508
+       ],
+       [
+        71.558,
+        25.442
+       ],
+       [
+        71.492,
+        25.442
+       ],
+       [
+        71.492,
+        25.375
+       ],
+       [
+        71.425,
+        25.375
+       ],
+       [
+        71.392,
+        25.308
+       ],
+       [
+        71.358,
+        25.308
+       ],
+       [
+        71.358,
+        25.275
+       ],
+       [
+        71.325,
+        25.275
+       ],
+       [
+        71.292,
+        25.208
+       ],
+       [
+        71.258,
+        25.208
+       ],
+       [
+        71.258,
+        25.175
+       ],
+       [
+        71.192,
+        25.175
+       ],
+       [
+        71.158,
+        25.108
+       ],
+       [
+        71.092,
+        25.108
+       ],
+       [
+        71.058,
+        25.042
+       ],
+       [
+        70.925,
+        25.008
+       ],
+       [
+        70.89,
+        25.148
+       ],
+       [
+        70.753,
+        25.279
+       ],
+       [
+        70.738,
+        25.333
+       ],
+       [
+        70.666,
+        25.397
+       ],
+       [
+        70.68,
+        25.523
+       ],
+       [
+        70.661,
+        25.703
+       ],
+       [
+        70.608,
+        25.716
+       ],
+       [
+        70.53,
+        25.685
+       ],
+       [
+        70.387,
+        25.675
+       ],
+       [
+        70.358,
+        25.685
+       ],
+       [
+        70.358,
+        25.742
+       ],
+       [
+        70.392,
+        25.742
+       ],
+       [
+        70.392,
+        25.775
+       ],
+       [
+        70.358,
+        25.775
+       ],
+       [
+        70.325,
+        25.908
+       ],
+       [
+        70.392,
+        25.942
+       ],
+       [
+        70.392,
+        25.975
+       ],
+       [
+        70.358,
+        25.975
+       ],
+       [
+        70.358,
+        26.108
+       ],
+       [
+        70.292,
+        26.142
+       ],
+       [
+        70.292,
+        26.242
+       ],
+       [
+        70.225,
+        26.275
+       ],
+       [
+        70.258,
+        26.342
+       ],
+       [
+        70.225,
+        26.342
+       ],
+       [
+        70.225,
+        26.475
+       ],
+       [
+        70.192,
+        26.475
+       ],
+       [
+        70.192,
+        26.556
+       ]
+      ],
+      [
+       [
+        71.992,
+        25.842
+       ],
+       [
+        71.992,
+        25.808
+       ],
+       [
+        72.058,
+        25.808
+       ],
+       [
+        72.058,
+        25.842
+       ]
+      ]
+     ]
+    },
+    {
+     "lowM": 300,
+     "rings": [
+      [
+       [
+        72.458,
+        24.442
+       ],
+       [
+        72.492,
+        24.442
+       ],
+       [
+        72.492,
+        24.475
+       ],
+       [
+        72.625,
+        24.508
+       ],
+       [
+        72.625,
+        24.442
+       ],
+       [
+        72.558,
+        24.442
+       ],
+       [
+        72.525,
+        24.375
+       ],
+       [
+        72.458,
+        24.375
+       ]
+      ],
+      [
+       [
+        72.492,
+        24.675
+       ],
+       [
+        72.492,
+        24.642
+       ],
+       [
+        72.358,
+        24.642
+       ],
+       [
+        72.325,
+        24.842
+       ],
+       [
+        72.358,
+        24.842
+       ],
+       [
+        72.358,
+        24.908
+       ],
+       [
+        72.392,
+        24.908
+       ],
+       [
+        72.392,
+        24.942
+       ],
+       [
+        72.458,
+        24.908
+       ],
+       [
+        72.458,
+        24.775
+       ],
+       [
+        72.525,
+        24.742
+       ],
+       [
+        72.525,
+        24.675
+       ]
+      ],
+      [
+       [
+        72.292,
+        25.542
+       ],
+       [
+        72.325,
+        25.608
+       ],
+       [
+        72.392,
+        25.608
+       ],
+       [
+        72.392,
+        25.508
+       ],
+       [
+        72.425,
+        25.508
+       ],
+       [
+        72.425,
+        25.475
+       ],
+       [
+        72.392,
+        25.475
+       ],
+       [
+        72.392,
+        25.442
+       ],
+       [
+        72.325,
+        25.442
+       ],
+       [
+        72.325,
+        25.542
+       ]
+      ],
+      [
+       [
+        71.225,
+        25.642
+       ],
+       [
+        71.158,
+        25.642
+       ],
+       [
+        71.158,
+        25.675
+       ],
+       [
+        71.225,
+        25.708
+       ]
+      ],
+      [
+       [
+        72.558,
+        26.556
+       ],
+       [
+        72.558,
+        26.508
+       ],
+       [
+        72.525,
+        26.508
+       ],
+       [
+        72.525,
+        26.475
+       ],
+       [
+        72.458,
+        26.475
+       ],
+       [
+        72.458,
+        26.542
+       ],
+       [
+        72.492,
+        26.542
+       ],
+       [
+        72.492,
+        26.556
+       ]
+      ],
+      [
+       [
+        71.525,
+        26.556
+       ],
+       [
+        71.525,
+        26.542
+       ],
+       [
+        71.492,
+        26.542
+       ],
+       [
+        71.458,
+        26.475
+       ],
+       [
+        71.392,
+        26.475
+       ],
+       [
+        71.392,
+        26.508
+       ],
+       [
+        71.358,
+        26.508
+       ],
+       [
+        71.358,
+        26.556
+       ]
+      ],
+      [
+       [
+        72.558,
+        24.708
+       ],
+       [
+        72.525,
+        24.775
+       ],
+       [
+        72.558,
+        24.775
+       ],
+       [
+        72.592,
+        24.842
+       ],
+       [
+        72.625,
+        24.842
+       ],
+       [
+        72.625,
+        24.875
+       ],
+       [
+        72.725,
+        24.875
+       ],
+       [
+        72.725,
+        24.842
+       ],
+       [
+        72.758,
+        24.842
+       ],
+       [
+        72.758,
+        24.875
+       ],
+       [
+        72.771,
+        24.875
+       ],
+       [
+        72.771,
+        24.108
+       ],
+       [
+        72.758,
+        24.108
+       ],
+       [
+        72.758,
+        24.208
+       ],
+       [
+        72.725,
+        24.208
+       ],
+       [
+        72.725,
+        24.175
+       ],
+       [
+        72.658,
+        24.175
+       ],
+       [
+        72.658,
+        24.142
+       ],
+       [
+        72.592,
+        24.175
+       ],
+       [
+        72.592,
+        24.275
+       ],
+       [
+        72.625,
+        24.275
+       ],
+       [
+        72.592,
+        24.342
+       ],
+       [
+        72.625,
+        24.342
+       ],
+       [
+        72.625,
+        24.375
+       ],
+       [
+        72.692,
+        24.375
+       ],
+       [
+        72.692,
+        24.408
+       ],
+       [
+        72.758,
+        24.408
+       ],
+       [
+        72.758,
+        24.442
+       ],
+       [
+        72.771,
+        24.448
+       ],
+       [
+        72.771,
+        24.508
+       ],
+       [
+        72.658,
+        24.508
+       ],
+       [
+        72.658,
+        24.542
+       ],
+       [
+        72.625,
+        24.542
+       ],
+       [
+        72.625,
+        24.608
+       ],
+       [
+        72.658,
+        24.608
+       ],
+       [
+        72.658,
+        24.675
+       ],
+       [
+        72.692,
+        24.675
+       ],
+       [
+        72.692,
+        24.708
+       ]
+      ]
+     ]
+    },
+    {
+     "lowM": 600,
+     "rings": [
+      [
+       [
+        72.725,
+        24.642
+       ],
+       [
+        72.758,
+        24.708
+       ],
+       [
+        72.771,
+        24.708
+       ],
+       [
+        72.771,
+        24.542
+       ],
+       [
+        72.692,
+        24.542
+       ],
+       [
+        72.692,
+        24.642
+       ]
+      ]
+     ]
+    },
+    {
+     "lowM": 1000,
+     "rings": [
+      [
+       [
+        72.758,
+        24.642
+       ],
+       [
+        72.758,
+        24.675
+       ],
+       [
+        72.771,
+        24.675
+       ],
+       [
+        72.771,
+        24.601
+       ],
+       [
+        72.758,
+        24.575
+       ],
+       [
+        72.725,
+        24.575
+       ],
+       [
+        72.725,
+        24.642
+       ]
+      ]
+     ]
+    }
+   ],
+   "rivers": [],
+   "lakes": [],
+   "labels": []
+  },
+  "layers": [
+   {
+    "key": "ETOPO1",
+    "title": "ETOPO1 1 Arc-Minute Global Relief Model, ice surface",
+    "publisher": "NOAA National Centers for Environmental Information",
+    "edition": "1",
+    "url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/etopo180.esriAscii?altitude%5B(37.6):1:(5.6)%5D%5B(65):1:(98.2)%5D",
+    "licence": "Public domain (U.S. Government work)",
+    "citation": "Amante, C. and B.W. Eakins, 2009. ETOPO1 1 Arc-Minute Global Relief Model: Procedures, Data Sources and Analysis. NOAA Technical Memorandum NESDIS NGDC-24. https://doi.org/10.7289/V5C8276M"
+   },
+   {
+    "key": "NE_RIVERS",
+    "title": "Natural Earth 1:10m ne_10m_rivers_lake_centerlines",
+    "publisher": "Natural Earth",
+    "edition": "5.0.0",
+    "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_rivers_lake_centerlines.zip",
+    "licence": "Public domain",
+    "citation": null
+   },
+   {
+    "key": "NE_LAKES",
+    "title": "Natural Earth 1:10m ne_10m_lakes",
+    "publisher": "Natural Earth",
+    "edition": "5.0.0",
+    "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_lakes.zip",
+    "licence": "Public domain",
+    "citation": null
+   },
+   {
+    "key": "USGS_MRDS",
+    "title": "Mineral Resources Data System",
+    "publisher": "U.S. Geological Survey",
+    "edition": "compiled to 2011",
+    "url": "https://mrdata.usgs.gov/mrds/mrds-csv.zip",
+    "licence": "Public domain (U.S. Government work)",
+    "citation": "U.S. Geological Survey. Mineral Resources Data System (MRDS). Reston, Virginia. https://mrdata.usgs.gov/mrds/"
+   }
+  ],
+  "datasets": [
+   {
+    "code": "ESA_WORLDCOVER_2021_V200",
+    "title": "ESA WorldCover 10 m 2021 v200",
+    "publisher": "European Space Agency",
+    "edition": "v200",
+    "period": "2021",
+    "nativeResolution": "10 m (1/12000 degree)",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+    "citation": "Zanaga, D., Van De Kerchove, R., Daems, D., et al. (2022). ESA WorldCover 10 m 2021 v200. https://doi.org/10.5281/zenodo.7254221",
+    "url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/",
+    "version": "v200",
+    "crs": "EPSG:4326",
+    "redistributable": true,
+    "doi": "10.5281/zenodo.7254221",
+    "landingUrl": "https://esa-worldcover.org/en",
+    "readOn": "2026-11-16"
+   },
+   {
+    "code": "SOILGRIDS_2_0",
+    "title": "SoilGrids 2.0",
+    "publisher": "ISRIC World Soil Information",
+    "edition": "2.0",
+    "period": "modelled, 2020 release",
+    "nativeResolution": "250 m",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "SoilGrids 2.0, ISRIC World Soil Information",
+    "citation": "Poggio, L., de Sousa, L. M., Batjes, N. H., et al. (2021). SoilGrids 2.0: producing soil information for the globe with quantified spatial uncertainty. SOIL 7, 217-240. https://doi.org/10.5194/soil-7-217-2021",
+    "url": "https://files.isric.org/soilgrids/latest/data/",
+    "version": "2.0",
+    "crs": "Interrupted Goode Homolosine (ESRI:54052)",
+    "redistributable": true,
+    "doi": "10.5194/soil-7-217-2021",
+    "landingUrl": "https://www.isric.org/explore/soilgrids",
+    "readOn": "2026-11-16"
+   }
+  ],
+  "sources": [
+   {
+    "id": "c1fa6a39-5386-5d7d-8623-393e1e61f6db",
+    "kind": "GI_JOURNAL",
+    "title": "Geographical Indications Journal No. 188: Kutch Ajrakh, G.I. Application No. 1050",
+    "authors": [],
+    "year": 2023,
+    "doi": null,
+    "url": "https://search.ipindia.gov.in/IPOJournal/Journal/ViewJournal?FileName=ipo-docs%5CIPIndia_Docs%5CGIR%5C2023%5CJournal_188%5CJournal+188.pdf",
+    "publisher": "Geographical Indications Registry, Government of India",
+    "licence": null,
+    "attribution": null,
+    "reliability": "A"
+   },
+   {
+    "id": "29ff4c54-3b6b-55b3-94d8-4bf24abb1190",
+    "kind": "PAPER",
+    "title": "Ajrakh: From Caste Dress to Catwalk",
+    "authors": [
+     "Eiluned Mair Edwards"
+    ],
+    "year": 2016,
+    "doi": "10.1080/00404969.2016.1211436",
+    "url": "https://irep.ntu.ac.uk/id/eprint/29181/1/PubSub6671_Edwards.pdf",
+    "publisher": "Textile History, Pasold Research Fund",
+    "licence": null,
+    "attribution": null,
+    "reliability": "A"
+   }
+  ]
+ },
+ "notes": []
+}

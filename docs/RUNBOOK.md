@@ -61,6 +61,17 @@ also writes the kit to `frontend/public/monographs/kit/`. After a change to the 
 rewrite the golden document with
 `python -m app.scripts.build_monograph --document Kutch-Ajrakh --out ../shared/monograph.document.golden.json`.
 
+The approved page carries the ground figure the API places in Kutch Ajrakh's why chapter
+(decision 0151) as a fragment captured from the React page. To capture it again, run **Capture
+screens** with `figure` on (production, or a preview as `base_url`): it takes the drawn
+`.kv-why-here` at 1440 in light with the app's rules that draw it, scoped to the figure, fails if
+the committed spec is not the served document's, rebuilds the page and the golden document with
+`build_monograph`, checks the rebuilt page against the React page at 360, 834 and 1440 in light and
+dark (every text line, every id's place, every figure element's computed style) and keeps the
+fragment, the page and the golden under `files/` in its artifact, to commit. After the deploy,
+`load_monograph` on the box stores the document with the figure, which the page then draws from
+its fragment.
+
 Each backend deploy rebuilds the stale craft page snapshots after the import (`app.scripts.rebuild_stale_pages`,
 at most `PAGES_SECONDS`, 480 by default), because a curated craft's document reads its snapshot and a
 stale one is rebuilt on every read (about 9 s), which times the web build out. The nightly upkeep

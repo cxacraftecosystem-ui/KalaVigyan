@@ -143,7 +143,7 @@ def test_every_component_has_one_fragment_and_one_slot_and_its_fragment_is_the_e
     ajrakh: tuple[MonographContent, str, dict[str, str]],
 ) -> None:
     content, shell, stored = ajrakh
-    assert len(content.components) == 79
+    assert len(content.components) == 80
     assert sorted(stored) == sorted(fragment_file_name(c.label) for c in content.components)
     slots = slot_keys(shell + "".join(stored.values()), COMPONENT_SLOT)
     assert sorted(slots) == sorted(c.label for c in content.components)
