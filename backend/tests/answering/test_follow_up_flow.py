@@ -10,7 +10,7 @@ from app.services.follow_ups import FollowUp
 
 from ..composer.fixtures import QUESTION, quote, section_reply, sentence
 from ..research.fixtures import AJRAKH
-from .fakes import ALUM_CLAIM_ID, ANSWER_ID, WRITTEN_LAKE_ID, FakeStore, pipeline, streamed
+from .fakes import ALUM_CLAIM_ID, ANSWER_ID, WRITTEN_IDS, WRITTEN_LAKE_ID, FakeStore, pipeline, streamed
 
 SECOND_ID = uuid.UUID("5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b")
 FOLLOW_UP = "How hot is the alum mordant bath for Kutch Ajrakh?"
@@ -22,6 +22,10 @@ ALUM = sentence(
 BATH = sentence(
     "Mordant baths held 8 g/L alum and were heated to 60 °C.",
     quote(LAKE_PAPER, "Mordanting baths of 8 g/L alum were heated to 60 °C"),
+)
+KUTCH_BATH_TEXT = "Kutch Ajrakh mordant baths held 8 g/L alum and were heated to 60 °C."
+KUTCH_BATH = sentence(
+    KUTCH_BATH_TEXT, quote(LAKE_PAPER, "Mordanting baths of 8 g/L alum were heated to 60 °C")
 )
 
 
@@ -57,7 +61,7 @@ def follow_up_of(explainer: Explainer, *facets: str) -> AnswerAsk:
 
 
 async def asked_again(ask: AnswerAsk, *items: dict[str, Any]) -> tuple[list[tuple[str, Any]], FakeStore]:
-    store = FakeStore(answer_id=SECOND_ID)
+    store = FakeStore(answer_id=SECOND_ID, written={**WRITTEN_IDS, KUTCH_BATH_TEXT: WRITTEN_LAKE_ID})
     text = await streamed(ask, pipeline(replies=[section_reply(*items)], store=store))
     return events(text), store
 
@@ -99,7 +103,7 @@ async def test_a_follow_up_keeps_the_older_version_intact() -> None:
 
 async def test_a_follow_up_on_a_new_field_adds_a_section_after_the_explainer_s_own() -> None:
     first = await first_version()
-    found, store = await asked_again(follow_up_of(first, "HISTORY"), BATH)
+    found, store = await asked_again(follow_up_of(first, "HISTORY"), KUTCH_BATH)
     started = [payload for name, payload in found if name == "section_started"]
     assert [(s["id"], s["discipline"], s["order"]) for s in started] == [("s2", "HISTORY", 2)]
     (finished,) = store.finished

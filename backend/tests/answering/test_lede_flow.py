@@ -19,6 +19,7 @@ from .fakes import (
     ALUM_CLAIM_ID,
     BOOK,
     SOURCES,
+    WRITTEN_IDS,
     WRITTEN_LAKE_ID,
     WRITTEN_WASH_ID,
     FakeStore,
@@ -37,6 +38,7 @@ MORDANT = "Which mordant fixes the red in Kutch Ajrakh block printing?"
 INDIGO = "How does indigo turn blue on Kutch Ajrakh cloth?"
 WATER = "How does the water of Kachchh shape Kutch Ajrakh?"
 WEB_PAGE = "searxng:https://crafts.example.org/ajrakh"
+PROCESS_TEXT = "Kutch Ajrakh's red lake withstood 20 washes."
 ALUM_RED_ID = uuid.UUID("4b1c2d3e-0000-4000-8000-00000000a1a1")
 HARDE_ID = uuid.UUID("4b1c2d3e-0000-4000-8000-00000000b2b2")
 ALUM_RED = stored_view(
@@ -126,9 +128,7 @@ def sections_model() -> SectionModel:
         ),
         follow_ups=["How hot must the alum bath be?"],
     )
-    process = section_reply(
-        sentence("The red lake withstood 20 washes.", quote(WEB_PAGE, "the lake withstood 20 washes"))
-    )
+    process = section_reply(sentence(PROCESS_TEXT, quote(WEB_PAGE, "the lake withstood 20 washes")))
     return SectionModel(
         replies={
             DISCIPLINE_TITLES["CHEMISTRY"]: [with_heading(chemistry, "Alum binds the red to cotton")],
@@ -147,7 +147,10 @@ def lede_pipeline(
 
 
 def mordant_store() -> LedeStore:
-    return LedeStore(stored=cited_claims([ALUM_RED, HARDE], SOURCES))
+    return LedeStore(
+        stored=cited_claims([ALUM_RED, HARDE], SOURCES),
+        written={**WRITTEN_IDS, PROCESS_TEXT: WRITTEN_WASH_ID},
+    )
 
 
 def understood_as(*disciplines: str) -> Any:

@@ -174,6 +174,7 @@ class FakeStore:
     questions: list[str] = field(default_factory=list)
     modes: list[str] = field(default_factory=list)
     answer_id: uuid.UUID = ANSWER_ID
+    written: Mapping[str, uuid.UUID] = field(default_factory=lambda: dict(WRITTEN_IDS))
 
     @property
     def understood(self) -> list[Understanding]:
@@ -193,7 +194,7 @@ class FakeStore:
         self, answer_id: uuid.UUID, pack: EvidencePack, composed: ComposedAnswer
     ) -> tuple[tuple[uuid.UUID, ...], ...]:
         self.kept.append((answer_id, pack, composed))
-        return sentence_claim_ids(composed, written_research(pack, composed, answer_id, WRITTEN_IDS))
+        return sentence_claim_ids(composed, written_research(pack, composed, answer_id, self.written))
 
     async def cited(self, claim_ids: Iterable[uuid.UUID]) -> CitedClaims:
         wanted = list(claim_ids)
