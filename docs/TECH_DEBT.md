@@ -2666,13 +2666,13 @@ Last reviewed: 2026-11-22.
   the capture run.
 - **Why left:** the sentence's own drawing is `components/answer/ExplainerSentence.tsx`, the voice
   lane's file while decision 0141 ran, and a flagged claim has no stored subject to name; the
-  fixture's four variants are what the backend's `themed_spec` writes, which is generated, not
-  typed.
+  fixtures are delivered specs, which may not carry `themes` (`component_specs_general_delivery`),
+  and the page bundles them instead of asking the server, which adds the variants.
 - **Clears it:** store what two readings differ on with the flag (the write-back marks it), carry
   it with the readings on the sentence, draw `SourcesDifferNote` after the paragraph in the host
   components (`LadderStageCard`, `CitedText` and the other callers) and only the tag in
-  `ExplainerSentence`; write `themes` into `frontend/lib/kindFixtures/drawing.json` from
-  `services/drawing_themes.themed_spec` with a test that pins them to it.
+  `ExplainerSentence`; serve the kind preview's specs through the backend, which adds the four
+  variants with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
 
 ### A stopped release leaves the live code on the migrated database
 
