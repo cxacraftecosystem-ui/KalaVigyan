@@ -96,12 +96,14 @@ export function LadderStageCard({ stage, craft, reached }: { stage: LadderStage;
           {stage.localName ? " · " : null}
           {stage.name}
         </h3>
-        <p className="mt-1.5 font-reading text-body-sm text-ink-1">
-          {stage.sentences.map((sentence) => (
-            <ExplainerSentence key={sentence.id} sentence={sentence} />
-          ))}
-          {stage.why ? <ExplainerSentence sentence={stage.why} /> : null}
-        </p>
+        {stage.sentences.length > 0 || stage.why ? (
+          <p className="mt-1.5 font-reading text-body-sm text-ink-1">
+            {stage.sentences.map((sentence) => (
+              <ExplainerSentence key={sentence.id} sentence={sentence} />
+            ))}
+            {stage.why ? <ExplainerSentence sentence={stage.why} /> : null}
+          </p>
+        ) : null}
         <Differs stage={stage} />
         {stage.after ? (
           <p className="mt-2 font-reading text-body-sm text-ink-2" data-cite-host="">

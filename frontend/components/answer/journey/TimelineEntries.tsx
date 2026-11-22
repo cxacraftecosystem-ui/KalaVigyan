@@ -6,7 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { PIN_DISC, READING_PROSE } from "@/components/answer/place/figureMarks";
 import { CitedText } from "@/components/answer/ProseBlockView";
 import type { TimelineMapBlock } from "@/lib/explainerPlay";
-import { entryState, stopLabel, yearSpanText, type PlacedPlace, type TimelineEntry, type TimelineEntryState } from "@/lib/timelineView";
+import { entryGroups, groupState, stopLabel, yearSpanText, type PlacedPlace, type TimelineEntry, type TimelineEntryState } from "@/lib/timelineView";
 import { cn } from "@/lib/utils";
 
 const ENTRY_RULE: Record<TimelineEntryState, string> = {
@@ -79,28 +79,35 @@ function EntryPlaces({ block, entry, pins }: { block: TimelineMapBlock; entry: T
   );
 }
 
+function EntryLine({ block, entry, pins, state }: { block: TimelineMapBlock; entry: TimelineEntry; pins: ReadonlyMap<number, number>; state: TimelineEntryState }) {
+  return (
+    <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1" data-testid="timeline-item" data-kind={entry.kind}>
+      <span className={cn("font-ui text-h4 [font-variant-numeric:lining-nums_tabular-nums]", state === "later" ? "text-ink-3" : "text-ink-1")} data-testid="timeline-years">
+        {yearSpanText(entry.yearFrom, entry.yearTo)}
+      </span>
+      <EntryPlaces block={block} entry={entry} pins={pins} />
+    </div>
+  );
+}
+
 export function TimelineEntries({ block, entries, placed, year }: { block: TimelineMapBlock; entries: readonly TimelineEntry[]; placed: readonly PlacedPlace[]; year: number }) {
   const pins = new Map(placed.map((place) => [place.index, place.pin]));
   return (
     <ol className="grid min-w-0 grid-cols-[minmax(0,1fr)] border-t border-ink-1" aria-label="Through time" data-testid="timeline-entries">
-      {entries.map((entry) => {
-        const state = entryState(entry, year);
+      {entryGroups(entries).map((group) => {
+        const state = groupState(group.items, year);
         return (
           <li
-            key={entry.key}
+            key={group.key}
             aria-current={state === "current" ? "step" : undefined}
-            className={cn("min-w-0 border-b border-s-2 border-b-rule py-3 ps-3 transition-colors duration-state sm:ps-4", ENTRY_RULE[state])}
+            className={cn("grid min-w-0 gap-y-1 border-b border-s-2 border-b-rule py-3 ps-3 transition-colors duration-state sm:ps-4", ENTRY_RULE[state])}
             data-testid="timeline-entry"
-            data-kind={entry.kind}
             data-state={state}
           >
-            <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className={cn("font-ui text-h4 [font-variant-numeric:lining-nums_tabular-nums]", state === "later" ? "text-ink-3" : "text-ink-1")} data-testid="timeline-years">
-                {yearSpanText(entry.yearFrom, entry.yearTo)}
-              </span>
-              <EntryPlaces block={block} entry={entry} pins={pins} />
-            </div>
-            <CitedText id={entry.sentence.id} sentences={[entry.sentence]} className={state === "later" ? "mt-1.5 max-w-measure font-reading text-body-sm text-ink-2" : `mt-1.5 ${READING_PROSE}`} />
+            {group.items.map((entry) => (
+              <EntryLine key={entry.key} block={block} entry={entry} pins={pins} state={state} />
+            ))}
+            <CitedText id={group.sentence.id} sentences={[group.sentence]} className={state === "later" ? "mt-0.5 max-w-measure font-reading text-body-sm text-ink-2" : `mt-0.5 ${READING_PROSE}`} />
           </li>
         );
       })}

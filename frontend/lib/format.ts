@@ -69,6 +69,15 @@ export function numberRuns(numbers: readonly number[]): string[] {
   return runs;
 }
 
+export function upperFirst(text: string): string {
+  const trimmed = text.trim();
+  return trimmed ? `${trimmed[0].toLocaleUpperCase("en-GB")}${trimmed.slice(1)}` : trimmed;
+}
+
+export function lowerFirst(text: string): string {
+  return text ? `${text[0].toLocaleLowerCase("en-GB")}${text.slice(1)}` : text;
+}
+
 export function listText(names: readonly string[]): string {
   if (names.length <= 1) return names.join("");
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;

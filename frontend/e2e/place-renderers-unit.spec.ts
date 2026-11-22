@@ -32,7 +32,7 @@ import { cumulativeLengths, framedView, insideRings, joinLines, orientDownstream
 import { riverBasinOf } from "@/lib/riverTopology";
 import { annualRain, monthsText, rainfallFinding, rainText, wettestMonth } from "@/lib/seasonsView";
 import { parseShape, ShapeError } from "@/lib/shape";
-import { supplyGroups } from "@/lib/supplyView";
+import { supplyLayout } from "@/lib/supplyView";
 
 import { attribute, withApp, withReading } from "./explainerRender";
 import { eagerModules } from "./moduleGraph";
@@ -338,8 +338,8 @@ test("rainfall draws twelve months with the wettest month read out, and a month 
 
 test("supply groups origins by material, states a shared sentence once and pins only placed origins inside the map", () => {
   const block = supply();
-  const groups = supplyGroups(block, INDIA_BOX);
-  expect(groups.map((group) => [group.material, group.origins.map((origin) => origin.origin), group.sentences.length])).toEqual([
+  const { groups } = supplyLayout(block, INDIA_BOX);
+  expect(groups.map((group) => [group.heading, group.origins.map((origin) => origin.origin), group.sentences.length])).toEqual([
     ["Indigo", ["Shikarpur", "Dhamadka"], 1],
     ["Blocks", ["Pethapur"], 1]
   ]);
@@ -356,7 +356,7 @@ test("supply groups origins by material, states a shared sentence once and pins 
       block.links[2]
     ]
   });
-  const pins = supplyGroups(placed, INDIA_BOX).flatMap((group) => group.origins.map((origin) => [origin.origin, origin.place?.pin ?? null]));
+  const pins = supplyLayout(placed, INDIA_BOX).groups.flatMap((group) => group.origins.map((origin) => [origin.origin, origin.pin]));
   expect(pins).toEqual([["Shikarpur", null], ["Dhamadka", 1], ["Pethapur", null]]);
   const html = withReading(createElement(SupplyMapView, { block: placed }));
   expect(html).toContain('data-testid="map-placeholder"');

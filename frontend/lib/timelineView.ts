@@ -1,5 +1,6 @@
 import type { ExplainerSentence } from "@/lib/explainerBlockBase";
 import type { TimelineMapBlock } from "@/lib/explainerPlay";
+import { bySentence, type SentenceGroup } from "@/lib/sentenceGroups";
 import type { LongitudeLatitudeBox } from "@/lib/supplyView";
 
 export type TimelineEntryKind = "point" | "route";
@@ -32,6 +33,16 @@ export function timelineEntries(block: TimelineMapBlock): TimelineEntry[] {
   const points = block.points.map((point, index) => ({ key: `point:${index}`, kind: "point" as const, yearFrom: point.yearFrom, yearTo: point.yearTo, places: [point.place], sentence: point.sentence }));
   const routes = block.routes.map((route, index) => ({ key: `route:${index}`, kind: "route" as const, yearFrom: route.yearFrom, yearTo: route.yearTo, places: [route.start, route.end], sentence: route.sentence }));
   return [...points, ...routes].sort((a, b) => a.yearFrom - b.yearFrom || a.yearTo - b.yearTo);
+}
+
+export function entryGroups(entries: readonly TimelineEntry[]): SentenceGroup<TimelineEntry>[] {
+  return bySentence(entries, (entry) => entry.sentence);
+}
+
+export function groupState(entries: readonly TimelineEntry[], year: number): TimelineEntryState {
+  const yearFrom = Math.min(...entries.map((entry) => entry.yearFrom));
+  const yearTo = Math.max(...entries.map((entry) => entry.yearTo));
+  return entryState({ yearFrom, yearTo }, year);
 }
 
 export function timelineStops(entries: readonly TimelineEntry[]): number[] {

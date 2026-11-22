@@ -1,4 +1,11 @@
+import type { ExplainerSentence } from "@/lib/explainerBlockBase";
 import type { FIRING_ATMOSPHERES, FiringBlock, LOST_WAX_STEPS, LostWaxBlock, MordantBathBlock, MordantSwatch } from "@/lib/explainerSignature";
+import { upperFirst } from "@/lib/format";
+import { bySentence } from "@/lib/sentenceGroups";
+
+export type SaidFact = { label: string; sentence: ExplainerSentence };
+
+export const FACT_LABEL_JOIN = " · ";
 
 type SignatureStep = (typeof LOST_WAX_STEPS)[number] | (typeof FIRING_ATMOSPHERES)[number];
 
@@ -11,11 +18,6 @@ const STEP_LABEL: Record<SignatureStep, string> = {
   OXIDISING: "Oxidising fire",
   REDUCING: "Reducing fire"
 };
-
-export function upperFirst(text: string): string {
-  const trimmed = text.trim();
-  return trimmed ? `${trimmed[0].toLocaleUpperCase("en-GB")}${trimmed.slice(1)}` : trimmed;
-}
 
 export function signatureStepLabel(step: SignatureStep, colour?: string): string {
   return colour ? `${STEP_LABEL[step]}, ${colour}` : STEP_LABEL[step];
@@ -31,6 +33,16 @@ export function mordantLabel(swatch: Pick<MordantSwatch, "mordant" | "colour">):
 
 export function lostWaxTitle(block: Pick<LostWaxBlock, "metal">): string {
   return `Casting ${block.metal} by lost wax`;
+}
+
+export function factsOnce(facts: readonly SaidFact[]): SaidFact[] {
+  return bySentence(facts, (fact) => fact.sentence).map((group) => ({ label: group.items.map((fact) => fact.label).join(FACT_LABEL_JOIN), sentence: group.sentence }));
+}
+
+export function firingFacts(block: Pick<FiringBlock, "atmospheres" | "temperature">): SaidFact[] {
+  const atmospheres = block.atmospheres.map((atmosphere) => ({ label: signatureStepLabel(atmosphere.atmosphere, atmosphere.colour), sentence: atmosphere.sentence }));
+  const temperature = block.temperature ? [{ label: `Temperature, ${block.temperature.stated}`, sentence: block.temperature.sentence }] : [];
+  return factsOnce([...atmospheres, ...temperature]);
 }
 
 export function firingTitle(block: Pick<FiringBlock, "body">): string {

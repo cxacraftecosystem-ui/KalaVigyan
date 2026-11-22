@@ -1,36 +1,69 @@
 import type { ExplainerSentence } from "@/lib/explainerBlockBase";
 import type { SupplyLink, SupplyMapBlock } from "@/lib/explainerPlace";
+import { joinedBy, namesText, onceEach, sentenceKey, sentenceWords } from "@/lib/sentenceGroups";
 
 export type LongitudeLatitudeBox = { minLongitude: number; maxLongitude: number; minLatitude: number; maxLatitude: number };
-export type SupplyOrigin = { key: string; origin: string; material: string; wikidataId: string | null; place: { latitude: number; longitude: number; pin: number } | null };
-export type SupplyGroup = { key: string; material: string; origins: SupplyOrigin[]; sentences: ExplainerSentence[] };
+export type SupplyOrigin = { key: string; origin: string; wikidataId: string | null; pin: number | null };
+export type SupplyGroup = { key: string; names: string[]; heading: string; origins: SupplyOrigin[]; sentences: ExplainerSentence[] };
+export type SupplyPin = { key: string; origin: string; materials: string; latitude: number; longitude: number; pin: number };
+export type SupplyLayout = { groups: SupplyGroup[]; pins: SupplyPin[] };
+
+type PlacedLink = SupplyLink & { latitude: number; longitude: number; wikidataId: string };
 
 export function wikidataUrl(id: string): string {
   return `https://www.wikidata.org/wiki/${encodeURIComponent(id)}`;
 }
 
-function inBox(link: SupplyLink, box: LongitudeLatitudeBox): link is SupplyLink & { latitude: number; longitude: number; wikidataId: string } {
+function materialKey(link: SupplyLink): string {
+  return link.material.toLocaleLowerCase("en");
+}
+
+function originKey(link: SupplyLink): string {
+  return link.origin.toLocaleLowerCase("en");
+}
+
+function inBox(link: SupplyLink, box: LongitudeLatitudeBox): link is PlacedLink {
   const { latitude, longitude, wikidataId } = link;
   if (latitude === null || longitude === null || wikidataId === null) return false;
   return longitude >= box.minLongitude && longitude <= box.maxLongitude && latitude >= box.minLatitude && latitude <= box.maxLatitude;
 }
 
-export function supplyGroups(block: SupplyMapBlock, box: LongitudeLatitudeBox): SupplyGroup[] {
-  const groups = new Map<string, SupplyGroup>();
-  let pins = 0;
-  for (const link of block.links) {
-    const key = link.material.toLocaleLowerCase("en");
-    const group = groups.get(key) ?? { key, material: link.material, origins: [], sentences: [] };
-    const place = inBox(link, box) ? { latitude: link.latitude, longitude: link.longitude, pin: (pins += 1) } : null;
-    group.origins.push({ key: `${key}:${link.origin.toLocaleLowerCase("en")}`, origin: link.origin, material: group.material, wikidataId: link.wikidataId, place });
-    if (!group.sentences.some((sentence) => sentence.text === link.sentence.text)) group.sentences.push(link.sentence);
-    groups.set(key, group);
-  }
-  return [...groups.values()];
+function firstOf(links: readonly SupplyLink[], keyOf: (link: SupplyLink) => string): SupplyLink[] {
+  const kept = new Map<string, SupplyLink>();
+  for (const link of links) if (!kept.has(keyOf(link))) kept.set(keyOf(link), link);
+  return [...kept.values()];
 }
 
-export type PlacedOrigin = SupplyOrigin & { place: NonNullable<SupplyOrigin["place"]> };
+export function materialRows(links: readonly SupplyLink[]): SupplyLink[][] {
+  return joinedBy(links, (link) => [`material:${materialKey(link)}`, `sentence:${sentenceKey(link.sentence)}`]);
+}
 
-export function placedOrigins(groups: readonly SupplyGroup[]): PlacedOrigin[] {
-  return groups.flatMap((group) => group.origins.flatMap((origin) => (origin.place ? [{ ...origin, place: origin.place }] : [])));
+function placedPins(links: readonly SupplyLink[], box: LongitudeLatitudeBox, words: ReadonlySet<string>): SupplyPin[] {
+  const placed = new Map<string, { link: PlacedLink; names: string[] }>();
+  for (const link of links) {
+    if (!inBox(link, box)) continue;
+    const pin = placed.get(originKey(link)) ?? { link, names: [] };
+    pin.names.push(link.material);
+    placed.set(originKey(link), pin);
+  }
+  return [...placed.entries()].map(([key, { link, names }], index) => ({ key, origin: link.origin, materials: namesText(names, words), latitude: link.latitude, longitude: link.longitude, pin: index + 1 }));
+}
+
+function supplyGroup(links: readonly SupplyLink[], pins: ReadonlyMap<string, number>, words: ReadonlySet<string>): SupplyGroup {
+  const names = firstOf(links, materialKey).map((link) => link.material);
+  const origins = firstOf(links, originKey).map((first) => {
+    const key = originKey(first);
+    const wikidataId = links.find((link) => originKey(link) === key && link.wikidataId !== null)?.wikidataId ?? null;
+    return { key, origin: first.origin, wikidataId, pin: pins.get(key) ?? null };
+  });
+  const key = names.map((name) => name.toLocaleLowerCase("en")).join("+");
+  return { key, names, heading: namesText(names, words), origins, sentences: onceEach(links.map((link) => link.sentence)) };
+}
+
+export function supplyLayout(block: SupplyMapBlock, box: LongitudeLatitudeBox): SupplyLayout {
+  const words = sentenceWords(block.links.map((link) => link.sentence));
+  const rows = materialRows(block.links);
+  const pins = placedPins(rows.flat(), box, words);
+  const numbers = new Map(pins.map((pin) => [pin.key, pin.pin]));
+  return { groups: rows.map((links) => supplyGroup(links, numbers, words)), pins };
 }

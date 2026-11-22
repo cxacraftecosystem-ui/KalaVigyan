@@ -225,7 +225,7 @@ test("points and routes are listed in time order, each with its years, places an
   const html = drawn(createElement(TimelineMapView, { block: timeline(), at: 2, onChoose: () => undefined }));
   const shown = shownText(html);
   expect(attribute(html, "timeline-map", "data-year")).toEqual(["2001"]);
-  expect(attribute(html, "timeline-entry", "data-kind")).toEqual(["point", "point", "route", "point"]);
+  expect(attribute(html, "timeline-item", "data-kind")).toEqual(["point", "point", "route", "point"]);
   expect(attribute(html, "timeline-entry", "data-state")).toEqual(["past", "past", "past", "current"]);
   expect([...html.matchAll(/data-testid="timeline-years">([^<]+)</g)].map((found) => found[1])).toEqual(["15th century", "1586", "1586–1631", "2001"]);
   expect(shown).toContain("Sindh");

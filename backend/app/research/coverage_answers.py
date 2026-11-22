@@ -22,6 +22,7 @@ __all__ = [
     "FieldSentence",
     "consulted_fields",
     "field_sentences",
+    "shown_field_sentences",
 ]
 
 READY = "READY"
@@ -57,6 +58,16 @@ def field_sentences(explainer: Explainer) -> list[FieldSentence]:
         for section in explainer.sections
         if section.state == READY
         for sentence in _sentences(section)
+    ]
+
+
+def shown_field_sentences(explainer: Explainer) -> list[FieldSentence]:
+    return [
+        FieldSentence(section.discipline, sentence)
+        for section in explainer.sections
+        if section.state == READY
+        for block in section.blocks
+        for sentence in block.shown_sentences()
     ]
 
 

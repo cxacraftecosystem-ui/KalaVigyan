@@ -92,7 +92,10 @@ id (`answer-eval-<run>-q<NNN>`), then scores the stored explainer.
 **The judge** (the existing `EVAL_JUDGE` route, `router_structured_model(AiTask.EVAL_JUDGE)`) scores
 the same five parts 0 to 5 with a note, reading the question and the answer's sentences by field as
 untrusted data (`JUDGE_SYSTEM_PROMPT`, `judge_message`, `judge_schema`); its share is the sum over 25.
-A judge that fails leaves the measures and says so.
+It reads what a reader sees: each block's sentences once by their English words
+(`BlockBase.shown_sentences`, `coverage_answers.shown_field_sentences`), as the client draws a
+sentence several items share once (decision 0134); the rubric's counts still read every sentence
+the blocks carry (`field_sentences`). A judge that fails leaves the measures and says so.
 
 **Spend.** The run stops before a question when the spend so far (`router.tagged_spend` on the run's
 request id prefix) leaves less than `EVAL_QUESTION_RESERVE_USD` (2.50) of the cap. The cap is
@@ -125,6 +128,7 @@ run passes, left as it is after a partial run.
 |---|---|
 | A relevant field with stored claims always has a speaking seat | `backend/tests/planner/test_field_seats.py` |
 | The rubric, the judge's share and the report | `backend/tests/research/test_coverage_eval.py` |
+| The judge reads each block's sentences once | `backend/tests/research/test_shown_sentences.py` |
 | The run, its spend cap and the consulted fields | `backend/tests/answering/test_answer_eval.py` |
 | The answer floors and when they are compared | `backend/tests/answering/test_answer_floors.py` and `backend/tests/retrieval/test_eval_workflows.py` |
 | The questions | `backend/app/data/eval/answer_questions.json`, read by the script as it runs |

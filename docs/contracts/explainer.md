@@ -125,7 +125,8 @@ fewer sentences than the live page, never more.
   restates a shown sentence; a story that would not stand without its restating items keeps the
   first of them (then, if it still does not stand, every one), so a figure is never lost to the
   prose it draws. In one call they are let through before the restating blocks; a
-  supply map may repeat a sentence within itself (the client shows it once per material). A
+  story block may repeat a sentence within itself, one copy per item it backs (the client says it
+  once: Each sentence once, under Block renderers). A
   `process_ladder` is the process's skeleton: a stage drops a sentence said word for word, and a
   restating sentence only while the stage keeps another, so a stage the question names is never
   emptied by another section (decision 0127). **A restatement** (`services/restatements.restates`,
@@ -682,7 +683,8 @@ as the PubChem adapter checks it (`lib/conformer.ts`); without WebGL, on a 404 o
 contract it draws nothing, and it cites its record source with a numbered chip
 (`explainerView.blockSourceIds`). A section's expert views are one panel where the first one
 stands (`lib/expertPanel.sectionRuns`): seat cards, then one "Experts differ" card per pair both
-seats state, the two sentences side by side with their citations.
+seats state, the two sentences side by side with their citations; pairs that share a sentence are
+one card with each side once (`differCards`).
 
 The generated explainer and the what-if lab (decision 0059) enter through
 `components/answer/play/playRenderers.tsx`; they draw once their kinds are built. A generated
@@ -704,8 +706,9 @@ frame), a picture with its author, licence and site, the molecule through `Molec
 record chip; each level's cited sentence under it. Under either reduced-motion switch every level
 is listed in zoom order with no rail or motion. A timeline lists its points and routes in time
 order, each with its span as the texts state it (`lib/timelineView.yearSpanText`: `1586`,
-`1586–1631`, `1950s`, `15th century`, `11th–14th century`), its places and its cited sentence,
-beside a slider over the distinct first years (opening at the last, so everything shows; an entry
+`1586–1631`, `1950s`, `15th century`, `11th–14th century`), its places and its cited sentence (a
+point and a route one sentence states are one entry with both their lines, past, current or later
+over their joint span, `entryGroups`, `groupState`), beside a slider over the distinct first years (opening at the last, so everything shows; an entry
 is past, current or later at the chosen year). Placed places are numbered in order of first use
 and link their Wikidata item; a place inside the India frame is a pin, one outside it a signpost
 at the frame's edge pointing toward it with its number and name, never another country's outline;
@@ -713,6 +716,29 @@ a route is a line between two placed ends once its year is reached; the map carr
 caption and the shapes row, and with nothing placed there is no map. `blockSentences` reads a
 zoom's levels and a timeline's points, then routes; `blockSourceIds` adds a zoom compound's record
 after its citations, so both join the one numbering.
+
+**Each sentence once** (decision 0134). A block says each sentence once, keyed by its English words
+(`lib/sentenceGroups.sentenceKey`: the `original` of a translated sentence, else its text), and
+the items one sentence backs are drawn together under it, in the order of the first:
+
+| Kind | How a shared sentence is drawn |
+|---|---|
+| `supply_map` | materials that share a sentence, directly or through another material, are one row (`supplyView.materialRows`, `sentenceGroups.joinedBy`): its heading names them in order in sentence case, "a, b and c", a later name lowered where the sentences write it in lower case (`namesText`); its origins once each; its sentences once each. A material on sentences of its own keeps its own row. Each placed origin is one pin, numbered in reading order, the same number wherever the origin is listed; the pin names the materials it supplies |
+| `measure`, `market_gi` prices | the rows of one sentence sit in one item, the sentence beside them once (`bySentence`) |
+| `timeline_map` | a point and a route of one sentence are one entry (above) |
+| `firing` | the atmosphere and temperature facts of one sentence are one fact, their labels joined with " · " (`answerSignature.factsOnce`) |
+| `indigo_vat` | read in order: the dek (the first dip), the three frames, then the facts; a frame keeps its title without a sentence already said, and the contents and later dips of one sentence are one fact, left out when an earlier part said it (`answerVat.vatText`) |
+| `process_ladder` | a stage leaves out a sentence, or its why, an earlier stage said, keeping its name, materials and conditions (`explainerView.stagesSaidOnce`) |
+| expert views | see the panel above |
+
+Already one item per sentence, by their builders: `region_story` (a step per claim), `seasons` (a
+row per claim), `zoom_story` (a caption claim used once), `compare` (a claim shown once across
+cells), `quiz` (its pool unique by text), `reaction_player` (a note per claim), `material_card`
+(facts and handling share one taken set), `climate_risk` (one meaning per claim), `mordant_bath`
+(a sentence names exactly one mordant), `lost_wax` (a used set) and the lede (written sentences).
+`what_if` options and `concept_graph` nodes may share a sentence but show one option or node at a
+time. The answer evaluation's judge reads each block the same way (`BlockBase.shown_sentences`,
+[answer-eval.md](answer-eval.md)).
 
 The phase D kinds (decision 0068) enter through `components/answer/learning/learningRenderers.tsx`
 (`quiz`, `compare`, `concept_graph`) and `components/answer/insight/insightRenderers.tsx`
@@ -727,9 +753,10 @@ dash. The concept graph draws the chosen term at a hub with up to seven crafts a
 count for the rest (`lib/conceptGraph`), the asked craft outlined, over the accessible list of
 every craft linked with its cited sentence (six, then Show all). A measure shows the stated words,
 the server's metric value, the conversion with its basis (and its region and citation when
-regional) and the definitions' dataset row. Market and GI shows the status, the registry's
-facts, proprietors and sentences, signs of imitation apart, and prices as stated with per, place
-and date. Climate and risk draws each variable's trends as slopes per decade from zero (solid when
+regional) and the definitions' dataset row; the quantities one sentence states sit together under
+it. Market and GI shows the status, the registry's facts, proprietors and sentences, signs of
+imitation apart, and prices as stated with per, place and date, the prices one sentence states
+together under it. Climate and risk draws each variable's trends as slopes per decade from zero (solid when
 significant), with the slope, significance, mean, period and resolution in words; groundwater
 where loaded; the meaning sentences; each dataset row once with the trend method
 (`lib/climateView`). Under either reduced-motion switch the reveal, the graph and the bars are
@@ -1838,6 +1865,7 @@ rebuilt-each-time kinds, the stream's `builds_on` and `version`, the learning ro
 | Stored pieces | `backend/tests/contracts/test_knowledge_piece_contract.py` and `backend/tests/db/test_knowledge_pieces_db.py` |
 | The client's shapes and the stream reduced to the document | `frontend/e2e/explainer-contract-unit.spec.ts`, `explainer-phase-b-unit.spec.ts`, `explainer-phase-c-unit.spec.ts`, `explainer-phase-d-unit.spec.ts` and `explainer-view-unit.spec.ts` |
 | Each kind's renderer | `frontend/e2e/place-renderers-unit.spec.ts`, `matter-renderers-unit.spec.ts`, `expert-panel-unit.spec.ts`, `journey-renderers-unit.spec.ts`, `learning-renderers-unit.spec.ts`, `insight-renderers-unit.spec.ts` and `sandbox-frame-unit.spec.ts` |
+| Each sentence once in a block, on the page and for the judge | `frontend/e2e/sentence-once-unit.spec.ts`, `sentence-once-figures-unit.spec.ts` and `backend/tests/research/test_shown_sentences.py` |
 | The block builders and their checks | `backend/tests/answering/test_block_builders.py`, `test_section_blocks.py` and `backend/tests/research/test_explainer_blocks.py` |
 | One claim, one rendering | `backend/tests/ledger/test_ledger_rules.py`, `test_ledger_kinds.py` and `test_restated_facts.py` |
 | No gap on the page, and a question's named stages on its ladder | `backend/tests/ledger/test_gap_routing.py`, `backend/tests/research/test_gap_admissions.py`, `test_named_stages.py` and `backend/tests/answering/test_reused_stages.py` |

@@ -1,6 +1,8 @@
+import { factsOnce, type SaidFact } from "@/lib/answerSignature";
 import type { ExplainerSentence } from "@/lib/explainerBlockBase";
-import type { IndigoVatBlock } from "@/lib/explainerSignature";
+import type { IndigoVatBlock, VatDip } from "@/lib/explainerSignature";
 import type { VatPhase } from "@/lib/motion";
+import { onceSaid } from "@/lib/sentenceGroups";
 
 export type Atoms = ReadonlyMap<string, number>;
 export type FormulaPart = { symbol: string; count: string };
@@ -8,6 +10,7 @@ export type Species = { coefficient: number; formula: string; name: string };
 export type AtomRow = { atom: string; before: string; after: string };
 export type VatEquation = { reactants: Species[]; products: Species[]; rows: AtomRow[]; spoken: string };
 export type VatFrame = { key: "in" | "lifted" | "air"; title: string; sentence: ExplainerSentence | null };
+export type VatText = { dek: ExplainerSentence | null; frames: VatFrame[]; facts: SaidFact[] };
 
 export const VAT_DIPS = 4;
 
@@ -82,13 +85,23 @@ export function vatEquation(leuco: { formula: string | null; name: string }, ket
   return rows ? { reactants, products, rows, spoken: `${spokenSide(reactants)} gives ${spokenSide(products)}` } : null;
 }
 
-export function vatFrames(block: IndigoVatBlock): VatFrame[] {
-  const form = (kind: "LEUCO" | "KETO") => block.forms.find((entry) => entry.form === kind)?.sentence ?? null;
-  return [
-    { key: "in", title: "In the vat", sentence: form("LEUCO") },
-    { key: "lifted", title: "Lifted", sentence: block.lift },
-    { key: "air", title: "In the air", sentence: form("KETO") }
+export function dipLabel(dip: Pick<VatDip, "stated" | "shade">): string {
+  return dip.shade ? `${dip.stated}, ${dip.shade}` : dip.stated;
+}
+
+export function vatText(block: IndigoVatBlock): VatText {
+  const say = onceSaid();
+  const form = (kind: "LEUCO" | "KETO") => block.forms.find((entry) => entry.form === kind)?.sentence;
+  const dek = say(block.dips[0]?.sentence);
+  const frames: VatFrame[] = [
+    { key: "in", title: "In the vat", sentence: say(form("LEUCO")) },
+    { key: "lifted", title: "Lifted", sentence: say(block.lift) },
+    { key: "air", title: "In the air", sentence: say(form("KETO")) }
   ];
+  const contents = block.contents.map((content) => ({ label: content.name, sentence: content.sentence }));
+  const dips = block.dips.slice(1).map((dip) => ({ label: dipLabel(dip), sentence: dip.sentence }));
+  const facts = factsOnce([...contents, ...dips]).flatMap((fact) => (say(fact.sentence) ? [fact] : []));
+  return { dek, frames, facts };
 }
 
 export function currentFrame(phase: VatPhase): VatFrame["key"] {

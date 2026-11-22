@@ -6,6 +6,7 @@ import { BadgeCheck, Clock, MinusCircle, type LucideIcon } from "lucide-react";
 import { CitedText } from "@/components/answer/ProseBlockView";
 import type { GiStatus, MarketGiBlock, PriceRange } from "@/lib/explainerInsight";
 import { GI_STATUS_LABEL, giFacts, priceMeta } from "@/lib/insightView";
+import { bySentence, type SentenceGroup } from "@/lib/sentenceGroups";
 import { cn } from "@/lib/utils";
 
 const STATUS_LOOK: Record<GiStatus["status"], { Icon: LucideIcon; className: string }> = {
@@ -62,14 +63,24 @@ function Imitation({ block }: { block: MarketGiBlock }) {
 
 function Price({ price }: { price: PriceRange }) {
   return (
-    <li className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1 border-b border-rule py-3 md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] md:gap-x-8" data-testid="price-range">
-      <span className="grid min-w-0 content-start gap-0.5">
-        <span className="break-words font-ui text-ui-lg font-semibold text-ink-1 [font-variant-numeric:lining-nums_tabular-nums]">{price.stated}</span>
-        <span className="font-ui text-label text-ink-3" data-testid="price-meta">
-          {priceMeta(price)}
-        </span>
+    <li className="grid min-w-0 content-start gap-0.5" data-testid="price-range">
+      <span className="break-words font-ui text-ui-lg font-semibold text-ink-1 [font-variant-numeric:lining-nums_tabular-nums]">{price.stated}</span>
+      <span className="font-ui text-label text-ink-3" data-testid="price-meta">
+        {priceMeta(price)}
       </span>
-      <CitedText id={price.sentence.id} sentences={[price.sentence]} className={PROSE} />
+    </li>
+  );
+}
+
+function PriceSentence({ group }: { group: SentenceGroup<PriceRange> }) {
+  return (
+    <li className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1 border-b border-rule py-3 md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] md:gap-x-8" data-testid="price-sentence">
+      <ul className="grid min-w-0 content-start gap-2">
+        {group.items.map((price, index) => (
+          <Price key={`${index}-${price.stated}`} price={price} />
+        ))}
+      </ul>
+      <CitedText id={group.sentence.id} sentences={[group.sentence]} className={PROSE} />
     </li>
   );
 }
@@ -92,8 +103,8 @@ export function MarketGiView({ block }: { block: MarketGiBlock }) {
         <section className="grid min-w-0 gap-2" aria-label="Prices">
           <h4 className="kicker">Prices</h4>
           <ul className="grid min-w-0 grid-cols-[minmax(0,1fr)] border-t border-ink-1">
-            {block.prices.map((price) => (
-              <Price key={price.sentence.id} price={price} />
+            {bySentence(block.prices, (price) => price.sentence).map((group) => (
+              <PriceSentence key={group.key} group={group} />
             ))}
           </ul>
         </section>

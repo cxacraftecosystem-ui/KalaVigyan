@@ -97,6 +97,13 @@ class BlockBase(ContractModel):
     def cited_sentences(self) -> Iterator[AnswerSentence]:
         yield from _model_sentences(self, self.SENTENCES)
 
+    def shown_sentences(self) -> Iterator[AnswerSentence]:
+        shown: set[str] = set()
+        for sentence in self.cited_sentences():
+            if (key := sentence.original or sentence.text) not in shown:
+                shown.add(key)
+                yield sentence
+
     def shown_labels(self) -> list[str]:
         return []
 

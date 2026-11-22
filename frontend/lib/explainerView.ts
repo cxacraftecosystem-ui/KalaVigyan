@@ -6,6 +6,7 @@ import { signatureSentences, signatureSourceIds } from "@/lib/explainerSignature
 import type { SectionState, SectionView } from "@/lib/explainerState";
 import { TRAIL_GROUPS, TRAIL_STAGES, type TrailEntry } from "@/lib/explainerStream";
 import { byCount, formatDate } from "@/lib/format";
+import { onceSaid } from "@/lib/sentenceGroups";
 import type { AnswerReaction, AnswerSection, Citation } from "@/lib/types";
 
 export type UnderstoodPart = "craft" | "depth" | "language";
@@ -140,6 +141,15 @@ export function reusedLabel(storedAt: string): string {
 
 export function showsEarlierResearch(sections: readonly SectionView[]): boolean {
   return sections.some((section) => section.blocks.some((block) => block.reuse !== null));
+}
+
+export function stagesSaidOnce(stages: readonly LadderStage[]): LadderStage[] {
+  const say = onceSaid();
+  return stages.map(({ why: stated, ...stage }) => {
+    const sentences = stage.sentences.flatMap((sentence) => say(sentence) ?? []);
+    const why = say(stated);
+    return why ? { ...stage, sentences, why } : { ...stage, sentences };
+  });
 }
 
 export function ladderReach(progress: number, count: number, reduce: boolean): number {

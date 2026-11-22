@@ -41,7 +41,8 @@ function regionalMeasure(): MeasureBlock {
     citation,
     dataset: null
   };
-  const seer = { ...row, stated: "2 seer", low: 2, high: null, unitLabel: "seer", conversion, metric: { low: 1.87, high: null, unit: "kg" } };
+  const sentence = { ...row.sentence, id: "s4.b1.2", text: "A dyer of Kachchh weighs out 2 seer of alum for one bath." };
+  const seer = { ...row, stated: "2 seer", low: 2, high: null, unitLabel: "seer", conversion, metric: { low: 1.87, high: null, unit: "kg" }, sentence };
   return parseShape(BLOCK_SHAPES.measure, { ...block, rows: [row, seer] });
 }
 

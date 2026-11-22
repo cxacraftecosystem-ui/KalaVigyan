@@ -3320,6 +3320,79 @@ Last reviewed: 2026-11-18.
 - **Clears it:** give the spinning page's catch a bound of its own well inside the test timeout, or
   run that spec alone in its project with a longer timeout.
 
+### Near-duplicate prose across sections
+
+- **What:** the judge of answer-quality run 44994632550 (13 answers on production, 2026-11-22) found
+  one fact told twice in different words across sections: the Bandhani GI answer (615162e4) repeats
+  the 1971 Gazetteer figures and the Sandhani report across ECONOMICS and HISTORY; the Bandhani
+  communities answer (6d7e0d44) repeats history and economics sentences nearly verbatim; the Bidri
+  history answer (68fa24b4) repeats the 1625 miniature and the Bidar and Hyderabad claims; the Ajrakh
+  dye plants answer (d006480e) repeats harde, kut and alizarin. These are different claims or
+  sentences, not copies of one item's sentence, so decision 0134 does not reach them, and the
+  restatement rule of decision 0127 lets them through (another claim group, or a sentence that adds
+  a number).
+- **Why left:** the sentence-once lane fixes a sentence repeated within a block; telling two claims
+  apart as one fact is a ledger rule.
+- **Clears it:** let the ledger treat two fact sentences that state the same numbers with the same
+  units about the same subject, or the same source's same passage, as one fact across sections,
+  keeping the first; measure the judge's notes and its cited part on the same 13 questions.
+
+### Numbers in prose without a table or figure
+
+- **What:** in run 44994632550 the judge's figures part averaged 2.8 of 5 (36 of 65). The Ajrakh
+  indigo answer (bed43e9f), the Jaipur safe-handling answer (af3f7ac2) and the Bandhani tie-and-dye
+  answer (4978c466) each scored 1: dip times, kiln temperatures, tying days and lengths are given
+  only in prose, though the rubric counted 6 to 18 figure blocks in them. The measure block converts
+  only local units, and the judge's message gives a count of figures per field, not which numbers
+  they show.
+- **Why left:** a new table kind and the judge's wording of figures are changes of their own; the
+  sentence-once lane changes neither the blocks built nor the judge's criteria.
+- **Clears it:** build a cited quantities table for a section whose facts state three or more
+  numbers (metric units too, each row its stated words, the sentence said once as decision 0134
+  draws it), and name each figure's kind and the quantities it shows in the judge's message;
+  measure the figures part on the same questions.
+
+### Answers drift into process and history while asked fields stay thin
+
+- **What:** in run 44994632550 the judge found answers padded with PROCESS and HISTORY the question
+  did not ask, while expected fields were missing or thin: ECOLOGY never addressed in the Ajrakh
+  water and climate answer (d9674645, fields 3); PHYSICS missing in the Jaipur body and glaze answer
+  (8943da7e, fields 3) and one sentence in the Bidri making-stages answer (c31398c8, cited 3);
+  POLICY with no sentences of its own in the Ajrakh makers and market answer (146493c2) and only
+  generic GI sentences in the Bandhani GI answer (615162e4).
+- **Why left:** seats, planning and research by field are not this lane's; nothing here changes
+  what an answer covers.
+- **Clears it:** plan the asked fields' sections first and cap the share of fields not asked; send
+  live research for an asked field with fewer than three stored facts for the craft (ECOLOGY and
+  PHYSICS here) before composing; file a craft's GI registry facts under POLICY; measure the fields
+  and cited parts on the same questions.
+
+### A gap admission the pattern misses
+
+- **What:** in run 44994632550 the Jaipur place answer (e94dbb80) shows a sentence, filed under
+  GEOGRAPHY, saying it has no rainfall, temperature or seasonal detail. The judge scored noGaps 2,
+  but `research/gap_admissions.GAP_ADMISSION` did not match the wording, so the rubric's noGaps
+  stayed 1 and the composer kept the sentence.
+- **Clears it:** add the "no ... detail" wordings to `GAP_ADMISSION`, with a test from this
+  sentence, so the composer turns such a sentence into an open question; give the craft's CLIMATE
+  section the seasons block from its district's CHIRPS normals, so the section has cited climate to
+  say.
+
+### Leftovers of the sentence-once lane
+
+- **What:** the rubric's `cited` part counts every copy of a sentence a block carries
+  (`field_sentences`), so a supply map whose five links share a sentence counts five cited
+  sentences for its field while the judge reads one (decision 0134). A market block can show one
+  claim in its GI record and again beside a price. A ladder stage's Sources differ readings are not
+  checked against the stage sentences. The supply heading lowers a later material name only when a
+  block sentence writes its first word in lower case, so a name met only at a sentence's start
+  keeps its capital.
+- **Why left:** the lane kept the judge's criteria and scores unchanged; the others are rare, and
+  the case rule needs the payload to say which names are proper names.
+- **Clears it:** count `shown_field_sentences` in `answer_measures` and `consulted_fields` and
+  re-base the rubric floor in the same change; keep price claims out of the GI sentences in
+  `services/market_builder`; carry each material's sentence-case name from the glossary.
+
 ## How this document is kept true
 
 | Change | What to do here |

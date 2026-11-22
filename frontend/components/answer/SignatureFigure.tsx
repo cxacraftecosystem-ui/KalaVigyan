@@ -4,7 +4,7 @@ import { ExplainerSentence } from "@/components/answer/ExplainerSentence";
 import { VatFigure } from "@/components/answer/VatFigure";
 import { FactGrid, type Fact } from "@/components/editorial/FactGrid";
 import { Figure } from "@/components/ui/Figure";
-import { firingTitle, lostWaxTitle, mordantLabel, mordantTitle, signatureStepLabel } from "@/lib/answerSignature";
+import { firingFacts, firingTitle, lostWaxTitle, mordantLabel, mordantTitle, signatureStepLabel } from "@/lib/answerSignature";
 import type { FiringBlock, LostWaxBlock, MordantBathBlock, SignatureBlock } from "@/lib/explainerSignature";
 
 function MordantFigure({ block, number }: { block: MordantBathBlock; number: number }) {
@@ -35,10 +35,7 @@ function LostWaxFigure({ block, number }: { block: LostWaxBlock; number: number 
 }
 
 function FiringFigure({ block, number }: { block: FiringBlock; number: number }) {
-  const facts: Fact[] = [
-    ...block.atmospheres.map((atmosphere) => ({ label: signatureStepLabel(atmosphere.atmosphere, atmosphere.colour), value: <ExplainerSentence sentence={atmosphere.sentence} /> })),
-    ...(block.temperature ? [{ label: `Temperature, ${block.temperature.stated}`, value: <ExplainerSentence sentence={block.temperature.sentence} /> }] : [])
-  ];
+  const facts: Fact[] = firingFacts(block).map((fact) => ({ label: fact.label, value: <ExplainerSentence sentence={fact.sentence} /> }));
   return (
     <Figure number={number} kind="diagram" title={firingTitle(block)} id="fig-signature">
       <FactGrid facts={facts} columns={facts.length > 2 ? 4 : 2} />

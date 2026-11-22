@@ -12,7 +12,8 @@ import { useVatMoment } from "@/components/motion/useVatMoment";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { Figure } from "@/components/ui/Figure";
-import { currentFrame, dipStatus, nextDip, vatEquation, vatFrames, VAT_DIPS, type VatFrame } from "@/lib/answerVat";
+import type { SaidFact } from "@/lib/answerSignature";
+import { currentFrame, dipStatus, nextDip, vatEquation, vatText, VAT_DIPS, type VatFrame } from "@/lib/answerVat";
 import type { IndigoVatBlock } from "@/lib/explainerSignature";
 import { cn } from "@/lib/utils";
 
@@ -53,11 +54,8 @@ function Frames({ frames, current, dip, dipRef, airRef }: VatArtRefs & { frames:
   );
 }
 
-function VatFacts({ block }: { block: IndigoVatBlock }) {
-  const facts = [
-    ...block.contents.map((content) => ({ label: content.name, value: <ExplainerSentence sentence={content.sentence} /> })),
-    ...block.dips.slice(1).map((dip) => ({ label: `${dip.stated}${dip.shade ? `, ${dip.shade}` : ""}`, value: <ExplainerSentence sentence={dip.sentence} /> }))
-  ];
+function VatFacts({ block, said }: { block: IndigoVatBlock; said: readonly SaidFact[] }) {
+  const facts = said.map((fact) => ({ label: fact.label, value: <ExplainerSentence sentence={fact.sentence} /> }));
   if (facts.length === 0) return null;
   return (
     <section className="mt-6" aria-label={block.vat === "FERMENTED" ? "What the fermented vat holds" : "What the vat holds"}>
@@ -84,11 +82,12 @@ export function VatFigure({ block, number }: { block: IndigoVatBlock; number: nu
   const keto = block.forms.find((form) => form.form === "KETO");
   const equation = leuco && keto ? vatEquation({ formula: leuco.compound?.formula ?? null, name: leuco.name }, { formula: keto.compound?.formula ?? null, name: keto.name }) : null;
   const restart = vat.phase === "rest" && dip >= VAT_DIPS;
-  const dek = block.dips[0] ? <ExplainerSentence sentence={block.dips[0].sentence} /> : undefined;
+  const text = vatText(block);
+  const dek = text.dek ? <ExplainerSentence sentence={text.dek} /> : undefined;
   return (
     <Figure number={number} kind="diagram" title="One dip, three states" dek={dek} className="kv-vat" id="fig-vat">
       <div className="grid grid-cols-1 gap-7 rail:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] rail:items-start rail:gap-12" data-testid="vat-figure" data-dip={dip} data-phase={vat.phase}>
-        <Frames frames={vatFrames(block)} current={currentFrame(vat.phase)} dip={dip} dipRef={dipRef} airRef={airRef} />
+        <Frames frames={text.frames} current={currentFrame(vat.phase)} dip={dip} dipRef={dipRef} airRef={airRef} />
         <div className="min-w-0">
           <div className="grid justify-items-center gap-3 text-center rail:border-b rail:border-rule rail:pb-5.5 rail:pt-4.5">
             <p role="status" aria-live="polite" className="min-h-[1.5em] font-ui text-ui font-normal text-ink-2" data-testid="vat-status">
@@ -101,7 +100,7 @@ export function VatFigure({ block, number }: { block: IndigoVatBlock; number: nu
             </ActionGroup>
           </div>
           {equation ? <VatEquationView equation={equation} leuco={leuco} keto={keto} /> : null}
-          <VatFacts block={block} />
+          <VatFacts block={block} said={text.facts} />
         </div>
       </div>
     </Figure>

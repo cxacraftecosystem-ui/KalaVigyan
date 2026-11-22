@@ -11,7 +11,13 @@ from app.core.errors import ExternalFailure
 from app.models.enums import DISCIPLINES
 
 from .base import ContractModel
-from .coverage_answers import ConsultedField, FieldSentence, consulted_fields, field_sentences
+from .coverage_answers import (
+    ConsultedField,
+    FieldSentence,
+    consulted_fields,
+    field_sentences,
+    shown_field_sentences,
+)
 from .crafts import QUESTION_MAX_CHARS, SLUG_MAX_CHARS
 from .explainer import Explainer
 from .gap_admissions import gap_admissions
@@ -194,7 +200,7 @@ def rubric_score(measures: AnswerMeasures) -> float:
 def judge_message(question: str, explainer: Explainer, expected: Sequence[str]) -> str:
     lines = [
         f"[{one.field}] {one.sentence.text} ({len(one.sentence.citations)} citations)"
-        for one in field_sentences(explainer)
+        for one in shown_field_sentences(explainer)
     ]
     figures = [f"{field.field}: {field.figures} figures" for field in consulted_fields(explainer)]
     return "\n".join(
