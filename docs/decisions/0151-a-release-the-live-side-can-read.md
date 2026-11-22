@@ -89,7 +89,15 @@ question writer). The contracts are `docs/contracts/frontend.md`, `docs/contract
    read-only, fuses them under 60 weightings in memory, and picks the one that scores the generated
    English questions best without lowering the hand-written ones; `--out` writes it. The weights
    change, and the fused floors rise, only with the lead's production run.
-6. **A copied question is asked again once.** The facts whose question reused their distinctive
+6. **The approved Kutch Ajrakh page includes the ground figure, and every release compares all of
+   it.** The "why here" figure the API places in Kutch Ajrakh's why chapter (`with_why_here`, a
+   round 7 lane) is part of the approved page by the owner's word of 2026-11-23. The Monograph parity
+   run after each deploy compares the text, the chapters, the first citation and figure, and the
+   borrowed components (it compared the borrowed components only), so any later difference from the
+   approved page fails the release's parity run. Until the approved page carries the figure through
+   its own update path (a fragment, its content entry and the build), the text and chapter
+   comparisons report the figure's lines and the chapters below it.
+7. **A copied question is asked again once.** The facts whose question reused their distinctive
    words are sent back in one more call naming the words reused (`REWRITER_SYSTEM_PROMPT`); a question
    kept then counts as `rewritten`, one copied again as copied. The run reports the facts asked, the
    English questions kept and their share.
@@ -117,4 +125,5 @@ names this one, and the table above links the two both ways. It records the choi
 `frontend/e2e/shape-unknown-fields-unit.spec.ts`, `frontend/e2e/later-backend.smoke.spec.ts`,
 `frontend/e2e/golden-files-unit.spec.ts`, `backend/tests/contracts/test_golden_fields.py`,
 `backend/tests/test_release_compatibility.py`, `backend/tests/db/test_previous_release_db.py`,
+`backend/tests/db/test_mcp_call_name_fill_db.py`,
 `backend/tests/retrieval/test_fusion_weights.py` and `backend/tests/retrieval/test_question_rewriting.py`.

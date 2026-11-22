@@ -74,10 +74,14 @@ and refused, and exits 2 only when a dossier does not parse).
 Each curated craft's first `PageLayout` comes from its dossier's picture placements: run
 `python -m app.scripts.backfill_layouts` on the box once after the deploy that adds migration 0042.
 
-The parity proof of decision 0106 is the **Monograph parity** workflow (Actions, run it by hand,
-optionally on a preview URL). It compares `/crafts/Kutch-Ajrakh/monograph` with the approved static
-page at 360, 834 and 1440 in light and dark and keeps `text.json`, `pixels.json`,
-`interactions.json` and the differing chapters' screenshots as its artifact.
+The parity proof of decision 0106 is the **Monograph parity** workflow, which runs after every
+deploy of main once production serves it, and by hand (optionally on a preview URL, or with
+`check` set to `monograph` or `borrowed` for one part). It compares `/crafts/Kutch-Ajrakh/monograph`
+with the approved static page at 360, 834 and 1440 in light and dark, text, chapters and the first
+citation and figure, then every component borrowed from Kutch Ajrakh on the pages that place it
+(decision 0151: the run after a deploy compares all of it, so a change to the approved page fails
+the release), and keeps `text.json`, `pixels.json`, `interactions.json` and the differing chapters'
+screenshots as its artifact.
 
 ## Connection budget
 

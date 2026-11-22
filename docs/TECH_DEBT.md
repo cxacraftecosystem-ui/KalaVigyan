@@ -2066,6 +2066,24 @@ Last reviewed: 2026-11-22.
   `eval_retrieval --fusion --out /tmp/fusion.json` on the box (RUNBOOK, Fusion weights), commits the
   picked file and raises the fused floors to its numbers less 0.05.
 
+### Kutch Ajrakh's approved page does not yet carry the ground figure
+
+- **What:** the API places the "why here" ground figure in Kutch Ajrakh's why chapter
+  (`services/monograph_generated_why_here.with_why_here`), and the owner approved it on 2026-11-23
+  (decision 0151), but the approved static page (`frontend/public/monographs/kutch-ajrakh`, built
+  from `backend/app/data/monographs/Kutch-Ajrakh`) does not carry it. The Monograph parity run, which
+  since decision 0151 compares the text and chapters after every deploy, reports the figure's 137
+  lines (run 45049769331) and the headings below it, which sit a fraction of a pixel lower.
+- **Why left:** the approved page draws a component from its fragment, and the figure's fragment
+  must be the markup the React view draws from production's ground data, captured in a browser,
+  then built with `build_monograph`; this lane's machine runs neither a browser nor the build.
+- **Clears it:** capture the drawn `.kv-why-here` figure from `/crafts/Kutch-Ajrakh/monograph` as
+  `fragments/kutch-ajrakh__geography__why-here.html`, add its component (kind `why_here`, its spec
+  from the served document) to `content.json` and its slot to the why chapter of the template, run
+  `python -m app.scripts.build_monograph` and `--document Kutch-Ajrakh --out
+  ../shared/monograph.document.golden.json`, and after the deploy `load_monograph` on the box; the
+  parity run then passes with the figure on both pages.
+
 ### The MCP call's client name is filled by a trigger for the release before
 
 - **What:** migration `0075_mcp_call_name_filled` adds a `BEFORE INSERT` trigger on `McpToolCall`
