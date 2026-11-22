@@ -9,6 +9,7 @@ from app.research.structured import StructuredReply
 from app.services.candidate_gates import later_gates
 
 from ..knowledge_writes.fakes import JUDGE_MODEL, FakeEmbedder, FakeHeldFacts, FakeJudge, held
+from ..knowledge_writes.judge_replies import compared, verdict
 
 VECTOR = [1.0] + [0.0] * (EMBEDDING_DIMENSIONS - 1)
 STATEMENT = "Ajrakh cloth is dipped in the indigo vat four times before it is washed."
@@ -20,12 +21,8 @@ NEGATED = held(
 )
 FAR = held("far", "Kharad weavers of Kutch spin camel wool on a hand wheel.", 0.41)
 NEAR = held("near", "Ajrakh cloth goes into the indigo vat several times.", 0.86)
-ADDS = {"verdicts": [{"candidate": "c1", "adds": True, "coveredBy": [], "reason": "It counts the dips."}]}
-DISTINCT = {
-    "comparisons": [
-        {"candidate": "c1", "held": str(NEAR.id), "relation": "DISTINCT", "reason": "Not a count."}
-    ]
-}
+ADDS = {"verdicts": [verdict("c1", adds=True, reason="It counts the dips.")]}
+DISTINCT = {"comparisons": [compared("c1", NEAR.id, "DISTINCT", "Not a count.")]}
 
 
 class RawJudge:
@@ -69,9 +66,7 @@ async def test_a_reworded_held_fact_is_refused_without_asking_the_judge() -> Non
 
 
 async def test_without_thrift_the_same_held_fact_goes_to_the_judge() -> None:
-    same = {
-        "comparisons": [{"candidate": "c1", "held": str(REWORDED.id), "relation": "SAME", "reason": "Same."}]
-    }
+    same = {"comparisons": [compared("c1", REWORDED.id, "SAME", "Same.")]}
     judge = FakeJudge(same)
     later = await later_gates(
         FakeHeldFacts(nearest=[REWORDED]), [CANDIDATE], embed=FakeEmbedder(VECTOR), judge=judge

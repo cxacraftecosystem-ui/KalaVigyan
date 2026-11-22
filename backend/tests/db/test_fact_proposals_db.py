@@ -33,6 +33,7 @@ from app.services.knowledge_view import claims_for
 
 from ..craft_fixtures import unit
 from ..knowledge_writes.fakes import PAGE_URL, QUOTE, STATEMENT, FakeEmbedder, FakeFetcher, FakeJudge, page
+from ..knowledge_writes.judge_replies import added_reason, compared, verdict
 from .testimony_seed import rolled_back_session
 
 pytestmark = pytest.mark.db
@@ -55,9 +56,7 @@ CATEGORY, FAMILY, CRAFT, CONCEPT, HELD = (
 )
 HELD_TEXT = "Ajrakh printers resist the cloth with lime and gum arabic before dyeing."
 CLOSE_REST = 0.4358898943540674
-ADDS = {
-    "verdicts": [{"candidate": "proposal", "adds": True, "coveredBy": [], "reason": "It counts the dips."}]
-}
+ADDS = {"verdicts": [verdict("proposal", adds=True, reason="It counts the dips.")]}
 
 
 @dataclass(frozen=True)
@@ -185,7 +184,7 @@ async def test_a_contributor_s_fact_passes_every_gate_and_waits_hidden_by_defaul
         ("NOVELTY", True),
     ]
     assert (checks[3].reasons, checks[3].model, checks[3].checkedAt) == (
-        ["It counts the dips."],
+        [added_reason("It counts the dips.")],
         "judge-model-1",
         NOW,
     )
@@ -295,12 +294,7 @@ async def test_a_fact_that_disagrees_is_published_as_sources_differ(
     near = key("near")
     session.add(_held(near, "Ajrakh cloth is dipped in the indigo vat twice.", unit(0.9, CLOSE_REST)))
     await session.flush()
-    differs = {
-        "candidate": "proposal",
-        "held": str(near),
-        "relation": "DIFFERS",
-        "reason": "Two dips, not four.",
-    }
+    differs = compared("proposal", near, "DIFFERS", "Two dips, not four.")
     reply = await proposed(session, people.professor, "CONTRIBUTION", adapters({"comparisons": [differs]}))
     assert (reply.outcome, reply.sources_differ, reply.differs_from) == ("PUBLISHED", True, [near])
     assert (await session.get(Claim, near)).sourcesDiffer is True

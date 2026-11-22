@@ -16,6 +16,7 @@ from app.research.knowledge_writes import FactProposal
 from app.research.structured import schema_problems
 
 from .fakes import PAGE_URL, QUOTE, STATEMENT, fact_id, held
+from .judge_replies import compared, verdict
 
 NEAR = held("near", "Ajrakh is dipped four times in indigo.", 0.92)
 OTHER = held("other", "Ajrakh is washed in the river.", 0.85)
@@ -42,12 +43,10 @@ def test_both_requests_use_only_portable_schema_keywords_and_mark_facts_as_data(
 
 
 def test_every_asked_pair_must_be_answered() -> None:
-    reply = {
-        "comparisons": [{"candidate": "c1", "held": str(NEAR.id), "relation": "SAME", "reason": "Same."}]
-    }
+    reply = {"comparisons": [compared("c1", NEAR.id, "SAME", "Same.")]}
     with pytest.raises(ExternalFailure, match="1 comparison"):
         parsed_comparisons(reply, [ASK])
-    other = {"candidate": "c1", "held": str(OTHER.id), "relation": "DISTINCT", "reason": "Washing."}
+    other = compared("c1", OTHER.id, "DISTINCT", "Washing.")
     parsed = parsed_comparisons({"comparisons": [*reply["comparisons"], other]}, [ASK])
     assert [(item.held, item.relation) for item in parsed["c1"]] == [
         (NEAR.id, "SAME"),
@@ -56,20 +55,17 @@ def test_every_asked_pair_must_be_answered() -> None:
 
 
 def test_a_comparison_outside_the_schema_is_an_external_failure() -> None:
-    wrong = {"comparisons": [{"candidate": "c1", "held": str(NEAR.id), "relation": "MAYBE", "reason": "?"}]}
-    with pytest.raises(ExternalFailure, match="off its schema"):
-        parsed_comparisons(wrong, [ASK])
+    old_form = {"candidate": "c1", "held": str(NEAR.id), "relation": "DIFFERS", "reason": "?"}
+    for wrong in (old_form, {**compared("c1", NEAR.id, "DISTINCT"), "bothTrue": "maybe"}):
+        with pytest.raises(ExternalFailure, match="off its schema"):
+            parsed_comparisons({"comparisons": [wrong]}, [ASK])
 
 
 def test_a_novelty_verdict_keeps_only_covering_facts_it_was_given() -> None:
-    stray = str(fact_id("stray"))
-    reply = {
-        "verdicts": [
-            {"candidate": "c1", "adds": False, "coveredBy": [str(NEAR.id), stray], "reason": "Held."}
-        ]
-    }
-    verdict = parsed_novelty(reply, [ASK])["c1"]
-    assert (verdict.adds, verdict.covered_by) == (False, [NEAR.id])
+    stray = fact_id("stray")
+    reply = {"verdicts": [verdict("c1", adds=False, covered=[NEAR.id, stray], reason="Held.")]}
+    found = parsed_novelty(reply, [ASK])["c1"]
+    assert (found.adds, found.covered_by) == (False, [NEAR.id])
     with pytest.raises(ExternalFailure, match="without a verdict"):
         parsed_novelty({"verdicts": []}, [ASK])
 
