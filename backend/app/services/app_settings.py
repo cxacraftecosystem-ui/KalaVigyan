@@ -39,6 +39,11 @@ UNCAPPED_ROLE_DAILY_USD: dict[str, None] = dict.fromkeys(ROLE_RANK)
 UNCAPPED_ANSWER_USD: dict[str, None] = dict.fromkeys(EXPLAINER_DEPTHS)
 
 CAP_FIELDS = frozenset({"monthlyCeilingUsd", "mediaCapUsd", "degradeAtFraction"})
+VOICE_FIELDS: dict[str, str] = {
+    "transport": VOICE_TRANSPORT,
+    "maxLiveSessions": VOICE_MAX_LIVE_SESSIONS,
+    "voiceId": VOICE_VOICE_ID,
+}
 
 DEFAULTS: dict[str, Any] = {
     MONTHLY_CEILING_USD: None,
@@ -102,6 +107,15 @@ def public_view(values: dict[str, Any]) -> dict[str, Any]:
         "signUpMode": values[SIGN_UP_MODE],
         "domainAllowlist": values[DOMAIN_ALLOWLIST],
     }
+
+
+def voice_view(values: Mapping[str, Any]) -> dict[str, Any]:
+    shown = {name: values[key] for name, key in VOICE_FIELDS.items()}
+    return {**shown, "defaults": {name: DEFAULTS[key] for name, key in VOICE_FIELDS.items()}}
+
+
+def voice_changes(sent: Mapping[str, Any]) -> dict[str, Any]:
+    return {VOICE_FIELDS[name]: value for name, value in sent.items() if value is not None}
 
 
 def sent_budget_fields(values: Mapping[str, Any], sent: Iterable[str]) -> dict[str, Any]:

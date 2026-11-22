@@ -9,7 +9,7 @@ from app.core.deps import require
 from app.core.errors import InvalidInput
 from app.core.roles import Capability
 from app.models import User
-from app.schemas.admin import AppSettingsUpdate, RouteOrderUpdate, RouteTestRequest
+from app.schemas.admin import AppSettingsUpdate, RouteOrderUpdate, RouteTestRequest, VoiceSettingsUpdate
 from app.services import app_settings, audit, managed_secrets, route_policy
 from app.services.ai_providers import ROUTABLE_TASKS, AiTask, catalogue, spec_for, task_of
 
@@ -119,6 +119,34 @@ async def test_task_provider(
     )
     await session.commit()
     return await route_policy.task_state(session, resolved)
+
+
+@router.get("/voice")
+async def get_voice(
+    _: User = Depends(routing_manager), session: AsyncSession = Depends(get_session)
+) -> dict[str, Any]:
+    return app_settings.voice_view(await app_settings.load_all(session))
+
+
+@router.put("/voice")
+async def update_voice(
+    payload: VoiceSettingsUpdate,
+    actor: User = Depends(routing_manager),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    changes = app_settings.voice_changes(payload.model_dump())
+    for key, value in changes.items():
+        await app_settings.set_value(session, key, value, actor.id)
+    if changes:
+        await audit.record(
+            session,
+            action="settings.voice_updated",
+            actor=actor,
+            target_type="AppSetting",
+            detail={"keys": sorted(changes)},
+        )
+    await session.commit()
+    return app_settings.voice_view(await app_settings.load_all(session))
 
 
 @router.get("/ai-budget")

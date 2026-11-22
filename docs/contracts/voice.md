@@ -311,8 +311,10 @@ the call's hard end.
 - Code: `backend/app/voice/` (sessions, binding, turns, relay, transcript, upkeep, agent body),
   `backend/app/providers/elevenlabs.py` (the one ElevenLabs adapter), `backend/app/providers/quota.py`
   (the ledger), `backend/app/api/routes/voice.py`. `GET /api/answers/config` sends `VoiceAvailability`.
-- `AppSetting` keys: `voice.transport` (`RELAY` by default), `voice.max_live_sessions` (5),
-  `voice.voice_id` (the relay voice). `expiresAt` is the start plus `START_WINDOW_SECONDS` (120).
+- `AppSetting` keys: `voice.transport` (`RELAY` by default), `voice.max_live_sessions` (5, 0 to
+  100), `voice.voice_id` (the relay voice, letters and digits), set by a Master Admin through
+  `GET`/`PUT /api/settings/voice` (`VoiceSettingsUpdate`; `{transport, maxLiveSessions, voiceId,
+  defaults}`; decision 0140). `expiresAt` is the start plus `START_WINDOW_SECONDS` (120).
 - Relay ledger keys: `voice:<sessionId>:<turnId>` (the turn's hold), `voice-refund:<sessionId>:<turnId>`
   (its unheard part), `voice:<sessionId>:<turnId>:speech` (reply audio) and
   `voice:<sessionId>:<turnId>:speech:<replay id>` (each synthesis the speech route makes again);

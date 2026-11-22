@@ -193,9 +193,11 @@ Decision 0017; contract `docs/contracts/voice.md`.
   ElevenLabs has moved its downloads: add the new host to
   `providers/elevenlabs_download.DOWNLOAD_HOSTS` after checking the reference.
 
-- Transport: `AppSetting` `voice.transport` is `RELAY` until the ElevenLabs spike passes. To switch,
-  on the box: `INSERT INTO "AppSetting" (key, value) VALUES ('voice.transport', '"AGENT"') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;`
-  (the same for `voice.max_live_sessions`, default 5, and `voice.voice_id`).
+- Transport, calls at once and voice: a Master Admin sets them on the Settings hub's Voice calls
+  block (`GET` and `PUT /api/settings/voice`, decision 0140): `voice.transport` stays `RELAY` until
+  the ElevenLabs spike passes; `voice.max_live_sessions` (default 5, 0 to 100) is the bought plan's
+  concurrent-call limit; `voice.voice_id` is the ElevenLabs voice. Each save is audited
+  (`settings.voice_updated`).
 - Agent: `cd /opt/kalavigyan/current/backend && sudo -u kalavigyan bash -c 'set -a; . /opt/kalavigyan/.env; set +a; .venv/bin/python -m app.scripts.provision_voice_agent --dry-run'`
   prints the body; without `--dry-run` it creates or updates the workspace secret
   `KALAVIGYAN_VOICE_LLM_BEARER`, the client tools `show_on_map`, `open_stage`, `show_sources`,

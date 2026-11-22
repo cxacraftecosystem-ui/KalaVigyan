@@ -486,13 +486,6 @@ Last reviewed: 2026-11-22.
   is bounded by the day's seconds, the turn and replay limits and the 40-turn cap (decision 0022).
 - **Clears it:** end the ElevenLabs conversation when the row ends, once the spike shows how.
 
-### Voice settings have no screen
-
-- **What:** `voice.transport`, `voice.max_live_sessions` and `voice.voice_id` are `AppSetting` rows set
-  in SQL (`docs/RUNBOOK.md`); `voice.max_live_sessions` defaults to 5, an assumption about the bought
-  plan's concurrent-call limit.
-- **Clears it:** a master-admin voice block in Settings, and the limit from the plan once bought.
-
 ## Voice UI (decision 0020)
 
 ### The voice dock has not run in a browser

@@ -5,6 +5,10 @@ from pydantic import EmailStr, Field
 from app.core.security import MAX_PASSWORD_LENGTH
 from app.research.vocabulary import Depth
 from app.schemas.common import APIModel
+from app.schemas.voice import VoiceTransport
+
+VOICE_ID_PATTERN = r"^[A-Za-z0-9]{1,64}$"
+MAX_LIVE_SESSIONS_CEILING = 100
 
 
 class AccessRosterCreate(APIModel):
@@ -70,6 +74,12 @@ class RouteOrderUpdate(APIModel):
 class RouteTestRequest(APIModel):
     provider: str = Field(min_length=1, max_length=40)
     model: str | None = Field(default=None, max_length=120)
+
+
+class VoiceSettingsUpdate(APIModel):
+    transport: VoiceTransport | None = None
+    maxLiveSessions: int | None = Field(default=None, ge=0, le=MAX_LIVE_SESSIONS_CEILING)
+    voiceId: str | None = Field(default=None, pattern=VOICE_ID_PATTERN)
 
 
 class AppSettingsUpdate(APIModel):
