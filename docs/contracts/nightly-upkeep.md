@@ -58,6 +58,7 @@ The workflow runs `python -m app.scripts.nightly_upkeep` as the `kalavigyan` use
 | 3. Sweep orphaned concepts | `services/orphan_concepts.py` | `ORPHANS_PER_NIGHT` = 500; a concept stands at least `ORPHAN_MIN_AGE` = 7 days | `AuditLog` action `upkeep.orphans_reported` with the ids reported |
 | 3a. Remove abandoned MCP client registrations | `services/upkeep_clients.py` | `ABANDONED_CLIENTS_PER_NIGHT` = 1,000, oldest first; a client is abandoned `ABANDONED_CLIENT_AGE` = 30 days after registering | the `OAuthClient` rows deleted (their unexchanged codes go with them) |
 | 3b. Delete old allowance buckets | `services/upkeep_allowances.py`, `core/allowances.delete_old_buckets` | the allowance and rate-limit buckets (decision 0139) whose window started more than `KEPT_HOURS` = 24 hours before the current hour | the `AllowanceBucket` rows deleted |
+| 3c. Add the cost settled after an answer finished | `services/upkeep_costs.settle_late_costs` | the answers of the last `LATE_COST_WINDOW` = 7 days with a `requestId`, against that request's `UsageEvent` rows from `REQUEST_SPAN` = 1 hour before (decision 0146) | `Answer.costUsd` set to its request's summed `UsageEvent.costUsd` where they differ |
 | 4. Reload monographs | `services/upkeep_pages.py` through `services/monograph_load.py` | `MONOGRAPHS_PER_NIGHT` = 20, a window that rotates by night | `ArticleSection`, `KnowledgePiece` (only what changed) |
 | 5. Rebuild stale craft pages | `services/upkeep_pages.py` through `services/craft_page_snapshots.py` | `PAGES_PER_NIGHT` = 60, oldest snapshot first | `CraftPageSnapshot` |
 | 5a. Refresh the field work | `services/open_work_refresh.py` | every subject, once | `TaskReservation.ending` `COMPLETED` for a live reservation of a `MISSING_FIELD` or `THIN_FIELD` task no longer open (`open-work.md`) |
@@ -219,6 +220,7 @@ The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
  pages {monographs[load report], pagesStale, pagesRebuilt, pagesChanged, pagesFailed[]},
  fieldWork {subjects, tasks {MISSING_FIELD, THIN_FIELD}, priorities {HIGH, MEDIUM, LOW}, reservationsClosed},
  allowances {bucketsDeleted},
+ lateCosts {answersUpdated},
  answerGaps {questions, dropped, embedded, embeddingError, joined, opened, answered, lapsed, open, reservationsClosed},
  sharedTerms {terms, crafts},
  refresh {ok, pages, refreshed, unrefreshed[], reason?}}

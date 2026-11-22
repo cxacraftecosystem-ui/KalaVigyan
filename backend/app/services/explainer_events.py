@@ -12,6 +12,7 @@ from app.research.stream import Emit, StatusStep
 from app.research.vocabulary import ANSWER_LANGUAGE_SPECS
 
 from .answer_events import OPEN_HEADING, OPEN_SECTION_ID
+from .answer_steps import StepLog
 from .answer_trail import TrailLog
 from .claim_ledger import ClaimLedger
 from .gap_routing import gap_block, open_question, routed_gaps
@@ -30,7 +31,6 @@ InLanguage = Callable[[Block], Awaitable[Block]]
 
 def status_message(step: StatusStep, count: int = 0, craft: str = "", *, language: str = "") -> str:
     messages = {
-        "RESOLVING": "Finding the craft",
         "PLANNING": f"Planning the research on {craft}" if craft else "Planning the research",
         "SEARCHING_STORED": "Searching stored findings",
         "RESEARCHING": f"Searching {_counted(count, 'live query', 'live queries')}",
@@ -49,8 +49,9 @@ def shown_title(spec: SectionSpec, titles: Mapping[str, str]) -> dict[str, str]:
 
 class ExplainerStream:
     def __init__(self, emit: Emit, *, language: str) -> None:
-        self.emit = emit
-        self.trail = TrailLog(emit)
+        self.steps = StepLog()
+        self.emit = self.steps.traced(emit)
+        self.trail = TrailLog(self.emit)
         self.language = language
         self.ledger = ClaimLedger()
         self._lock = asyncio.Lock()

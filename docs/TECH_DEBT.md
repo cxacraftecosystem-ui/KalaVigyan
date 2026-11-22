@@ -57,48 +57,6 @@ Last reviewed: 2026-11-22.
   `tools/hygiene_check.py --update-baseline` after each clean-up. The initial migration stays
   one file (migrations are not rewritten).
 
-### Answer stream: gaps left on 2026-11-16 (decision 0012)
-
-- **What:** (1) Cleared by decision 0016: the write-back runs as shielded work and finishes
-  when the learner leaves; only a write-back still running 8 s into a shutdown is lost (logged).
-  (2) `AnswerSentence`, `AnswerCitation`, `AnswerTrace` and `LiveCandidate` rows are not
-  written; the `Answer` row has the plan, tiers and cited claim ids but no `costUsd`,
-  `latencyMs` or `payload`. `VERIFIED` answers write no `Answer` row (`answerId` null).
-  (3) The planner's stored search reads `PUBLIC` chunks only; the `RESEARCHER` ACL of
-  researchers is not passed through. (4) `Citation.context` is always null (the passage around
-  a quote is not stored with the citation). (5) The resolver holds its session while it embeds
-  the question for the semantic step. (6) A researched answer is shown only after write-back,
-  so the learner waits for the whole pipeline before the first sentence.
-- **Why left:** the trace and answer-sentence tables, cost settlement per answer and chunk
-  citations each widen the contract; this change wires the flow first.
-- **Clears it:** write the answer rows and trace from the events already produced, with spend from the
-  request id's `UsageEvent` rows; pass `RESEARCHER` to the stored search when the asker may
-  read it; store the quote's surrounding passage on `ClaimSource`; embed before opening the
-  resolver's session; send stored-claim sentences before write-back once the client can
-  replace a sentence's citations.
-
-### Figure post-check covers digits and formulas only
-
-- **What:** `research/quotes.unsupported_figures` checks numbers written in digits and
-  formula-like tokens with a digit. Number words ("three"), units (a sentence may say °F where
-  the quote says °C), unit conversions and element-only formulas (`NaCl`) are not compared.
-  PLAN 3.1 asks for numbers, units and formulas.
-- **Why left:** the contract needed a deterministic rule before the composer lanes start; unit
-  handling belongs with the pint normalisation of PLAN 3.1 step 5.
-- **Clears it:** parse quantities with pint on both sides and compare values and dimensions;
-  match number words; treat element-symbol sequences as formulas.
-
-### The model catalogue's old path re-exports `AiTask` (decision 0139)
-
-- **What:** `backend/app/services/ai_providers.py` re-exports `AiTask` from `providers/catalogue`
-  for the voice lane's files that still import it there (`voice/artisan_wiring.py`,
-  `voice/film_score.py`, `voice/wiring.py`, `tests/voice/score_fakes.py`,
-  `tests/voice/test_film_score.py`); two import paths for one name.
-- **Why left:** those files belonged to the voice lane of round 7, which ran beside the sources and
-  providers lane that moved the catalogue down.
-- **Clears it:** in the next round, import `AiTask` from `app.providers.catalogue` in those files
-  and delete `services/ai_providers.py`.
-
 ### Scholarly adapters: what waits on keys and the planner (decisions 0005, 0139)
 
 - **What:**
@@ -162,21 +120,18 @@ Last reviewed: 2026-11-22.
 
 ### Planner and tiered research: gaps left on 2026-11-16 (decision 0009)
 
-- **What:** (1) `LiveCandidate`, `WebFetch` and
-  `AnswerTrace` rows (queries and providers per answer, PLAN section 6) are not written; the
-  answering service (`services/answering.py`) stores only the `Answer` row and its claims.
-  (2) The pack holds documents, not quotes: the `WEB_READ` reader that extracts verbatim quotes
-  for the composer is not built. (3) Coverage runs one stored search per facet, each embedding
-  its target (up to eight embedding calls per question). (4) References are followed only as
-  DOIs written in the text, through Crossref, which returns abstracts only; links in pages and
-  reference lists without DOIs are not followed. (5) Facet coverage counts claims that share a
-  word with the target; it does not judge whether they answer it. (6) Every query runs on every
-  source of its tier, including Commons and PubChem for questions they cannot serve (each
-  answers quickly with no hits).
-- **Why left:** the `WEB_READ` reader and the trace tables are the next lanes; a better coverage
-  judgement needs the known-answer checks to calibrate against.
-- **Clears it:** the answering service writes the trace and candidate rows; the reader turns
-  documents into quoted evidence; embed the facet targets in
+- **What:** (1) The pack holds documents, not quotes: the `WEB_READ` reader that extracts
+  verbatim quotes for the composer is not built. (2) Coverage runs one stored search per facet,
+  each embedding its target (up to eight embedding calls per question). (3) References are
+  followed only as DOIs written in the text, through Crossref, which returns abstracts only; links
+  in pages and reference lists without DOIs are not followed. (4) Facet coverage counts claims
+  that share a word with the target; it does not judge whether they answer it. (5) Every query
+  runs on every source of its tier, including Commons and PubChem for questions they cannot serve
+  (each answers quickly with no hits). Every answer writes its `AnswerTrace` rows since decision
+  0146.
+- **Why left:** the `WEB_READ` reader is the next lane; a better coverage judgement needs the
+  known-answer checks to calibrate against.
+- **Clears it:** the reader turns documents into quoted evidence; embed the facet targets in
   one batch; follow reference lists through OpenAlex `referenced_works` when that adapter
   exposes them; route facet types to the sources that can serve them once the checks show
   which do.
@@ -586,19 +541,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** Backend checks green on the batch, then after the deploy add a password in
   Settings from a Google-only account (and a Yahoo one once Yahoo is registered).
 
-## Explainer contract (decision 0030)
-
-### The answer stream re-exports the citation shapes
-
-- **What:** `SourceRef`, `Citation` and `AnswerSentence` live in `research/citations.py`;
-  `research/stream.py` re-exports them so `geo/`, `science/records.py`, `schemas/region.py`,
-  `schemas/voice.py`, `services/craft_process.py`, `services/region_records.py` and two test
-  helpers keep importing them from the stream: two import paths for one home.
-- **Why left:** those files belong to other lanes working in the tree at the same time; the move
-  was needed only to break the stream-to-explainer cycle.
-- **Clears it:** switch each importer to `research.citations` when it is next touched, then drop
-  the three names from `stream.__all__`.
-
 ## Understanding and depth (decision 0031)
 
 ### Comparison questions research the lead craft only
@@ -620,53 +562,6 @@ Last reviewed: 2026-11-22.
   them in every craft answer would mix crafts.
 - **Clears it:** link shared concepts to the crafts they concern (through the concept graph of
   feature 7 or a reviewer's link), and let the craft scope read linked shared concepts.
-
-### The answer cap follows the asked depth
-
-- **What:** `AnswerSpend` is made for the depth the reader asked for; when the understanding step
-  degrades Expert to Detailed past the degrade mark, the answer is still held to Expert's cap.
-- **Why left:** the pipeline is built before the understanding runs; a degraded answer plans
-  Hybrid and spends less anyway.
-- **Clears it:** let the understanding step set the effective depth on the answer's
-  `AnswerSpend` before research starts.
-
-### A hold is not released when a call raises something unexpected
-
-- **What:** the router releases an answer's hold on every provider failure, but an exception
-  outside `ProviderError` (a bug, a cancellation) leaves the estimate held, so that answer has
-  less room under its cap; the `UsageEvent` stays `RESERVED` and stops counting after the
-  15-minute reservation window, as before.
-- **Why left:** the call loop of `router.run` (181 lines, in the baseline) needs splitting before
-  a `finally` can be added cleanly.
-- **Clears it:** split `router.run` into reserve, call and settle steps and release the hold in a
-  `finally`.
-
-### Retired stream vocabulary still listed
-
-- **What:** the answering flow no longer sends the `RESOLVING` status or the `match`, `section`
-  and `sentence` events; all four stay in `research/stream.py` (and `RESOLVING` in the client's
-  `lib/answerShapes.answerStatusShape`) for the contract golden `shared/answer-stream.golden.sse`,
-  which only the backend reads now that the web client reads the explainer stream (decision 0037).
-- **Why left:** dead vocabulary, harmless to readers; removing it rewrites the golden and its
-  tests, outside the review fixes of 0038.
-- **Clears it:** drop `RESOLVING`, `match`, `section`, `sentence` and their golden from
-  `research/stream.py` and `answerStatusShape`.
-
-### The AI budget is edited only through the API
-
-- **What:** no AI cap is set for now (decision 0093), and the Settings hub has no AI budget
-  screen, so a Master Admin who brings a cap back (a ceiling, a role's daily cap, a depth's answer
-  cap, the degrade mark) does it only through `PUT /settings/ai-budget`.
-- **Why left:** the owner set no caps for now on 2026-11-18; the budget screen was never built.
-- **Clears it:** add the AI budget to the Settings hub, with "No cap" as each field's empty state.
-
-### The understanding call shares the PLAN route
-
-- **What:** the understanding call runs on the `PLAN` route, so Usage counts it as planning and
-  the Settings hub cannot route it apart from the plan call.
-- **Why left:** the `PLAN` route is already "Plan and craft choice" with Gemini Flash Lite first,
-  as the plan asks; a separate task needs an `AiTask` value, a migration and its routes.
-- **Clears it:** add an `UNDERSTAND` task if the owner wants it routed or reported apart.
 
 ## Asking screen (decision 0036)
 
@@ -1811,18 +1706,6 @@ Last reviewed: 2026-11-22.
   and `VoiceTranscript`, then delete `components/answer/SourceDialog.tsx` and
   `e2e/source-dialog-unit.spec.ts`.
 
-## No caps for now (decision 0093)
-
-### Daily allowances are a code table, not a setting
-
-- **What:** the daily voice seconds and media units are `core/roles.DAILY_ALLOWANCES`, unlimited
-  for every role; bringing one back is a code change and a deploy, unlike the money caps in the AI
-  budget. `QuotaPolicy` rows exist but no code reads them (`backend/app/core/roles.py`).
-- **Why left:** the table was code before this change; the owner asked for no caps, not for a new
-  setting.
-- **Clears it:** read the allowances from `QuotaPolicy` (one loader, `None` unlimited) and drop the
-  code table, or drop `QuotaPolicy`.
-
 ## Public transcripts and share links (decision 0097)
 
 ### The `SIGNED_IN` chunk ACL is read by everyone
@@ -2313,27 +2196,6 @@ Last reviewed: 2026-11-22.
   the queue anyway.
 - **Clears it:** when a filed write-back meets its held twin, move it to the switch's status with a
   `ReviewEvent` by `live_research`.
-
-### An answer's cost is what was settled when it finished
-
-- **What:** `Answer.costUsd` sums the settled `UsageEvent` cost of the answer's request id when the
-  answer finishes (decision 0135), so work that outlives the finish is left out, and an answer run
-  outside a request id records no cost.
-- **Why left:** the row is written once, at the finish.
-- **Clears it:** let the nightly upkeep add the request's later settled cost to the answer row, and
-  give every answer path a request id.
-
-### An Expert answer on the box slowed sign-in past a minute
-
-- **What:** while answer 504968ea-49cc-469c-88f9-205a2ea90e8a ran at Expert depth on the one API
-  box, the post-deploy check's sign-in took more than 60 s and failed (run 45004523731, attempt 1);
-  the rerun after the answer finished passed. One long answer's seats, readers and builders share
-  the process and pool that serve every other request.
-- **Why left:** answers and sign-in are served by the same API process (`API_WORKERS` 1, in
-  `docs/contracts/infra.md`), and the check's rerun showed no lasting fault.
-- **Clears it:** bound the concurrent research work one answer may hold (seats, fetches and builders
-  under one semaphore sized from the pool), keep a share of the database pool for short requests,
-  and add a probe of sign-in latency while an Expert answer runs to the release check.
 
 ## How this document is kept true
 

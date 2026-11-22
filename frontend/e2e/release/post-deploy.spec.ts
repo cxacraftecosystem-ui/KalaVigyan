@@ -20,10 +20,13 @@ import { challengeProblems } from "./mcpChallenge";
 import { answerResult, callTool, getJson, rpc, type Answer } from "./mcpWire";
 import { visitKeyPage } from "./pageVisit";
 import { checkRecord, keepRecord } from "./report";
+import { probeSignInBesideExpert } from "./signInProbe";
 import { apiOrigin, bypassToken, servedSiteOrigin, siteOrigin } from "./site";
 
 const PAGE_CHECK = "page";
 const MCP_CHECK = "mcp";
+const SIGN_IN_CHECK = "sign-in";
+const PROBE_TIMEOUT_MS = 6 * 60_000;
 const CLIENT_INFO = { name: "kalavigyan-post-deploy", version: "1.0.0" };
 
 type Json = Record<string, unknown>;
@@ -59,6 +62,17 @@ test.describe("key pages", () => {
       settle(PAGE_CHECK, `${keyPage.name} (${keyPage.path})`, pageProblems(keyPage, seen));
     });
   }
+});
+
+test.describe("sign-in beside an Expert answer", () => {
+  test("signing in stays quick while an Expert answer researches", async () => {
+    const email = process.env.E2E_EMAIL ?? "";
+    const password = process.env.E2E_PASSWORD ?? "";
+    test.skip(process.env.E2E_SIGN_IN_PROBE !== "1", "The probe spends an Expert answer, so it runs after a deploy only (E2E_SIGN_IN_PROBE=1).");
+    test.skip(!email || !password, "Set E2E_EMAIL and E2E_PASSWORD to sign in.");
+    test.setTimeout(PROBE_TIMEOUT_MS);
+    settle(SIGN_IN_CHECK, "sign-in while an Expert answer runs", await probeSignInBesideExpert(apiOrigin(), { email, password }));
+  });
 });
 
 test.describe("public MCP tools", () => {

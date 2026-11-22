@@ -40,8 +40,8 @@ flowchart LR
 | [0009](0009-planner-and-tiered-research.md) | Planner and tiered research | · |
 | [0010](0010-composer.md) | Composer | [0138](0138-answers-composed-from-the-asked-fields.md) and [0144](0144-stored-passages-as-evidence.md) |
 | [0011](0011-claim-write-back-and-coverage-enrichment.md) | Claim write-back and the coverage enrichment job | · |
-| [0012](0012-answer-stream-end-to-end.md) | The answer stream end to end | · |
-| [0013](0013-review-fixes-quotes-licences-scope.md) | Quote strength, open licences, one craft scope and scoped embedding | · |
+| [0012](0012-answer-stream-end-to-end.md) | The answer stream end to end | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
+| [0013](0013-review-fixes-quotes-licences-scope.md) | Quote strength, open licences, one craft scope and scoped embedding | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0014](0014-science-region-voice-media-contracts.md) | Contracts for process science, region profile, voice and media | · |
 | [0015](0015-science-engine.md) | Science engine: balancing, units, envelopes, the science seed and the process route | · |
 | [0016](0016-region-profile.md) | Region profile and map layers from the stored district statistics | · |
@@ -64,7 +64,7 @@ flowchart LR
 | Decision | What was decided | Later changed by |
 |---|---|---|
 | [0030](0030-explainer-contract.md) | The explainer contract | · |
-| [0031](0031-understanding-and-depth.md) | Understanding the question, and depth by role | [0093](0093-no-caps-for-now.md) |
+| [0031](0031-understanding-and-depth.md) | Understanding the question, and depth by role | [0093](0093-no-caps-for-now.md) and [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0032](0032-sectioned-composition.md) | Sectioned composition: research per field, blocks per section | [0138](0138-answers-composed-from-the-asked-fields.md) |
 | [0033](0033-knowledge-pieces-and-reuse.md) | Stored knowledge pieces and reuse | [0096](0096-reader-question-pieces-join-their-craft-page.md), [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0034](0034-images-and-terms.md) | Pictures and tappable terms | · |
@@ -129,7 +129,7 @@ flowchart LR
 | [0090](0090-reused-and-curated-sections-enriched.md) | Reused and curated sections are enriched like researched ones | [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0091](0091-field-voices-kalavigyan-side.md) | Field voices v2 in KalaVigyan: storage, citation, the craft page and the reading view | [0097](0097-public-reading-everywhere-but-asking.md) and [0112](0112-reviewed-field-photographs.md) |
 | [0092](0092-design-system.md) | The KalaVigyan design system: Alum & Indigo | [0114](0114-kinds-and-datasets.md) and [0141](0141-design-system-and-answer-screens-without-debt.md) |
-| [0093](0093-no-caps-for-now.md) | No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output | · |
+| [0093](0093-no-caps-for-now.md) | No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0094](0094-design-primitives.md) | The design primitives: one citation cluster, one motion owner, the editorial folder | · |
 | [0095](0095-craft-page-chapters.md) | The craft page becomes a monograph in chapters, public to read, built without a question | [0097](0097-public-reading-everywhere-but-asking.md) and [0100](0100-ajrakh-monograph-served-as-built.md) |
 | [0096](0096-reader-question-pieces-join-their-craft-page.md) | Every piece built for a reader's question joins its craft's page, whoever asked | · |
@@ -175,16 +175,17 @@ flowchart LR
 | [0132](0132-a-ranking-votes-with-its-first-thirty.md) | A ranking votes with its first thirty; deeper finds only fill the rerank pool | · |
 | [0133](0133-the-evaluation-scores-what-answers-read.md) | The evaluation scores what answers read | · |
 | [0134](0134-each-sentence-once-in-a-block.md) | A block says each sentence once, and the judge reads it as a reader does | [0147](0147-time-market-and-figures-kept-true.md) |
-| [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | [0136](0136-write-backs-filed-by-their-source.md) |
+| [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | [0136](0136-write-backs-filed-by-their-source.md) and [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0136](0136-write-backs-filed-by-their-source.md) | A write-back is filed by what its source says around it, and what nothing names waits for a reviewer | [0144](0144-stored-passages-as-evidence.md) |
 | [0137](0137-limits-kept-by-choice.md) | Nine limits are kept by choice and leave the debt register | · |
 | [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | · |
-| [0139](0139-sources-and-providers-reach-outside-services-once.md) | Sources and providers reach outside services once, at the pace and spend every process shares | · |
+| [0139](0139-sources-and-providers-reach-outside-services-once.md) | Sources and providers reach outside services once, at the pace and spend every process shares | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | [0144](0144-stored-passages-as-evidence.md) |
 | [0141](0141-design-system-and-answer-screens-without-debt.md) | The design system holds no migration alias, and the answer screens number their figures, read every caption from the server and keep only what is stored | · |
 | [0142](0142-curated-crafts-read-only-curated-rows.md) | A curated craft reads only its curated rows, stored pieces keep one curated rule, and the generated explainer works within a budget | · |
 | [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | · |
 | [0144](0144-stored-passages-as-evidence.md) | A stored passage is evidence an answer and a voice turn may cite, kept as a fact of its own source | · |
+| [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | · |
 | [0147](0147-time-market-and-figures-kept-true.md) | Quantities in prose are also a table, the timeline lists undated history and places what the register holds, and market and measure readers read what sources state | · |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
 

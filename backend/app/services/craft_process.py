@@ -26,9 +26,9 @@ from app.models import (
     StageMaterial,
 )
 from app.models.science import live_process
+from app.research.citations import Citation, SourceRef
 from app.research.crafts import CraftRef
 from app.research.retrieval import OPEN_CHUNK_ACLS, VISIBLE_SENSITIVITY
-from app.research.stream import Citation, SourceRef
 from app.science.records import (
     CompoundRecord,
     ConditionRecord,

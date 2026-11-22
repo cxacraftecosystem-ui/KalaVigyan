@@ -80,7 +80,7 @@ checked by its year only and a price date not at all, and "1500 people" was offe
 
 ## Consequences
 
-- Migration `0072_quantities_kind` (down revision `0067_seed_rows_retired`) only widens two
+- Migration `0072_quantities_kind` (down revision `0071_understand_and_answer_rows`) only widens two
   check constraints; its downgrade deletes quantities pieces.
 - A history answer's timeline may now arrive as version 2; clients read both versions.
 - The quantities table repeats sentences the section's prose already says, as `measure` does; the

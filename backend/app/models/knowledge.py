@@ -253,36 +253,6 @@ class ReviewEvent(Base):
     __table_args__ = (Index(None, "claimId", "createdAt"), Index(None, "actorId"))
 
 
-class LiveCandidate(Base):
-    __tablename__ = "LiveCandidate"
-
-    id: Mapped[uuid.UUID] = uuid_pk()
-    answerId: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("Answer.id", ondelete="CASCADE")
-    )
-    userId: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("User.id", ondelete="CASCADE")
-    )
-    tier: Mapped[str] = mapped_column(e.LiveTier, nullable=False)
-    url: Mapped[str] = mapped_column(Text, nullable=False)
-    webFetchId: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("WebFetch.id", ondelete="SET NULL")
-    )
-    sourceLabel: Mapped[str | None] = mapped_column(String(300))
-    quote: Mapped[str] = mapped_column(String(QUOTE_MAX_CHARS), nullable=False)
-    quoteCheck: Mapped[str] = mapped_column(e.QuoteCheck, nullable=False, server_default="NA")
-    facet: Mapped[str | None] = mapped_column(String(120))
-    writtenBackClaimId: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("Claim.id", ondelete="SET NULL")
-    )
-    expiresAt: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=sql_text("now() + interval '30 days'")
-    )
-    createdAt: Mapped[datetime] = created_at()
-
-    __table_args__ = (Index(None, "answerId"), Index(None, "userId"), Index(None, "expiresAt"))
-
-
 class EnrichmentJob(Base):
     __tablename__ = "EnrichmentJob"
 

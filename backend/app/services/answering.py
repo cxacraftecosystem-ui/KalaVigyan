@@ -8,7 +8,9 @@ from datetime import UTC, datetime
 from typing import Protocol
 
 from app.core.errors import AppError, spend_refusal
+from app.core.logging import kept_request_id
 from app.planner.policy import request_limits
+from app.research.answer_models import DepthFollower
 from app.research.composition import ComposedAnswer, ComposeRequest
 from app.research.crafts import CraftRef
 from app.research.depth import depth_policy
@@ -28,6 +30,7 @@ from .answer_events import CitedClaims
 from .answer_gaps import FieldReading
 from .answer_lede import AnswerOpening, LedeTools, LedeWriting, Opening, lede_plan
 from .answer_sections import run_sections
+from .answer_steps import TracedStep
 from .answer_translation import AnswerTranslation, Segment, translate_segments, with_english_question
 from .block_builders import BlockBuilders
 from .explainer_document import explainer_document
@@ -64,6 +67,7 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
+ANSWER_REQUEST_PREFIX = "answer"
 NOT_FOUND_DETAIL = "No craft has that address."
 RESOLVER_FAILED_DETAIL = "Finding the craft failed just now. Try again."
 RESEARCH_FAILED_DETAIL = "Research failed just now. Try again."
@@ -109,6 +113,7 @@ class AnswerStore(Protocol):
         explainer: Explainer | None,
         version: VersionMark | None = None,
         readings: Sequence[FieldReading] = (),
+        steps: Sequence[TracedStep] = (),
     ) -> None: ...
 
     async def latest(
@@ -129,6 +134,7 @@ class AnswerPipeline:
     lede: LedeTools = field(default_factory=LedeTools)
     catalogue: CatalogueLookup = no_catalogue
     names: NameLookup | None = None
+    follow_depth: DepthFollower | None = None
 
 
 @dataclass(frozen=True)
@@ -148,7 +154,8 @@ class _Run:
 async def answer_question(ask: AnswerAsk, pipeline: AnswerPipeline, emit: Emit) -> None:
     answer_id: uuid.UUID | None = None
     try:
-        answer_id = await _answer(ask, pipeline, emit)
+        with kept_request_id(ANSWER_REQUEST_PREFIX):
+            answer_id = await _answer(ask, pipeline, emit)
     except StaleVersion as stale:
         logger.warning("the follow-up was not kept: %s", stale)
         await emit("error", {"message": STALE_VERSION_DETAIL})
@@ -164,9 +171,10 @@ async def answer_question(ask: AnswerAsk, pipeline: AnswerPipeline, emit: Emit) 
 async def answer_understood(
     ask: AnswerAsk, understanding: Understanding, pipeline: AnswerPipeline, emit: Emit
 ) -> uuid.UUID:
-    return await _researched_answer(
-        ask, understanding, pipeline, ExplainerStream(emit, language=_language(ask))
-    )
+    with kept_request_id(ANSWER_REQUEST_PREFIX):
+        return await _researched_answer(
+            ask, understanding, pipeline, ExplainerStream(emit, language=_language(ask))
+        )
 
 
 async def _answer(ask: AnswerAsk, pipeline: AnswerPipeline, emit: Emit) -> uuid.UUID | None:
@@ -223,6 +231,8 @@ async def _researched_answer(
     ask: AnswerAsk, understanding: Understanding, pipeline: AnswerPipeline, stream: ExplainerStream
 ) -> uuid.UUID:
     craft = understanding.craft
+    if pipeline.follow_depth is not None:
+        pipeline.follow_depth(understanding.depth)
     await stream.status("PLANNING", craft=craft.name if craft else "")
     understanding = await _prepared(ask, understanding, pipeline, stream.language)
     layout = answer_layout(understanding, ask.builds_on, question=ask.question)
@@ -340,7 +350,7 @@ async def _finish(
         lede_sources=opened.sources,
     )
     led = [uuid.UUID(citation.claim_id) for citation in opened.lede.citations()] if opened.lede else []
-    race = VersionRace(run.pipeline.store, run.answer_id, run.ask, outcomes)
+    race = VersionRace(run.pipeline.store, run.answer_id, run.ask, outcomes, run.stream.steps.steps)
     stored = await race.kept(run.layout, document, [*led, *(c for o in outcomes for c in o.claim_ids)])
     if stored.version is not None:
         await run.stream.emit("version", stored.version)

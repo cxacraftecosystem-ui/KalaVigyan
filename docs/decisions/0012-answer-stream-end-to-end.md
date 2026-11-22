@@ -12,6 +12,7 @@ Date: 2026-11-16. Status: accepted.
 | The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
 | The review that fixed it | [0013 Quote strength, open licences, one craft scope and scoped embedding](0013-review-fixes-quotes-licences-scope.md) |
 | The contracts it names | [research.md](../contracts/research.md) |
+| The answer rows, the trace and the retired events (amends the gaps it left) | [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

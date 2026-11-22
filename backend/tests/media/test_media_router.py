@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from app.providers import media_router
+from app.providers import media_router, router as provider_router
 from app.providers.base import Adapter, MediaPoll, MediaRequest, MediaResult, ProviderError
 from app.providers.budget import BudgetDecision
 from app.providers.catalogue import AiTask
@@ -68,6 +68,7 @@ def ledger(monkeypatch: pytest.MonkeyPatch) -> Ledger:
     monkeypatch.setattr(media_router, "load_routes", load_routes)
     monkeypatch.setattr(media_router, "reserve", reserve)
     monkeypatch.setattr(media_router, "settle", settle)
+    monkeypatch.setattr(provider_router, "settle", settle)
     monkeypatch.setattr(media_router.spend_settings, "load_spend_settings", nothing)
     monkeypatch.setattr(media_router.managed_keys, "refresh_if_stale", nothing)
     monkeypatch.setattr(media_router.managed_keys, "peek_secret", lambda name: "test-only-key")

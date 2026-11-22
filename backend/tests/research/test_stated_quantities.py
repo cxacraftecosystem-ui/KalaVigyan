@@ -3,7 +3,8 @@ from decimal import Decimal
 import pytest
 from pint.errors import DimensionalityError
 
-from app.research.measures import DEFINED_UNITS, LOCAL_UNITS
+from app.research.local_units import LOCAL_UNITS
+from app.research.measures import DEFINED_UNITS
 from app.research.stated_quantities import UNIT_WORDS, stated_factors, stated_quantities
 from app.research.unit_registry import PINT_NAMES, measures_alike, metric_unit_named, unit_registry
 

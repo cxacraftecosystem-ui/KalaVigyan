@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routes.secrets import require_step_up
+from app.core import daily_allowances
 from app.core.db import get_session
 from app.core.deps import require
 from app.core.errors import InvalidInput
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 
 routing_manager = require(Capability.MANAGE_ROUTING)
 ceiling_manager = require(Capability.MANAGE_CEILINGS)
+DAILY_ALLOWANCES_KEY = "QuotaPolicy.perDay"
 
 
 def _task_or_404(task: str) -> AiTask:
@@ -149,11 +151,19 @@ async def update_voice(
     return app_settings.voice_view(await app_settings.load_all(session))
 
 
+async def _budget_view(session: AsyncSession) -> dict[str, Any]:
+    allowances = await daily_allowances.load_daily_allowances(session)
+    return {
+        **app_settings.public_view(await app_settings.load_all(session)),
+        "dailyAllowances": allowances.view(),
+    }
+
+
 @router.get("/ai-budget")
 async def get_budget(
     _: User = Depends(ceiling_manager), session: AsyncSession = Depends(get_session)
 ) -> dict[str, Any]:
-    return app_settings.public_view(await app_settings.load_all(session))
+    return await _budget_view(session)
 
 
 @router.put("/ai-budget")
@@ -163,20 +173,29 @@ async def update_budget(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     await require_step_up(session, actor, payload.twoFactorCode)
-    update = app_settings.sent_budget_fields(payload.model_dump(), payload.model_fields_set)
     try:
-        changes = app_settings.budget_changes(update, await app_settings.load_all(session))
+        changed = await _saved_budget(session, payload, actor)
     except InvalidInput as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(error)) from None
-    for key, value in changes.items():
-        await app_settings.set_value(session, key, value, actor.id)
-    if changes:
+    if changed:
         await audit.record(
             session,
             action="settings.ai_budget_updated",
             actor=actor,
             target_type="AppSetting",
-            detail={"keys": sorted(changes)},
+            detail={"keys": changed},
         )
     await session.commit()
-    return app_settings.public_view(await app_settings.load_all(session))
+    daily_allowances.invalidate()
+    return await _budget_view(session)
+
+
+async def _saved_budget(session: AsyncSession, payload: AppSettingsUpdate, actor: User) -> list[str]:
+    update = app_settings.sent_budget_fields(payload.model_dump(), payload.model_fields_set)
+    changes = app_settings.budget_changes(update, await app_settings.load_all(session))
+    if payload.dailyAllowances is not None:
+        await daily_allowances.save_daily_allowances(session, payload.dailyAllowances)
+    for key, value in changes.items():
+        await app_settings.set_value(session, key, value, actor.id)
+    allowances = [DAILY_ALLOWANCES_KEY] if payload.dailyAllowances is not None else []
+    return sorted([*changes, *allowances])

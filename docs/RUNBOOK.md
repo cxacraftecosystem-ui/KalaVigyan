@@ -379,8 +379,8 @@ rows:
   Until the switch the old release reads the missing rows as its own capped defaults and keeps
   answering.
 - `QuotaPolicy`: `perDay` and `perMonth` to NULL on every row (the seeded seconds, images and
-  videos per role). No code reads this table; `core/roles.DAILY_ALLOWANCES` is what counts, and it
-  is unlimited for every role.
+  videos per role). Since decision 0146 this table is the daily allowances' one home, read by
+  `core/daily_allowances`; every row is unlimited.
 - `RoutePolicy`: `maxOutputTokens` to NULL on every row (seeded as 8192 for `TRANSLATE` and 2048
   for `SUMMARISE`, plus any set in AI routing), so each call asks for its model's documented
   maximum: 128,000 for the Claude models, 65,536 for the Gemini text models, 16,384 for Gemini
@@ -391,11 +391,13 @@ After the deploy: `GET /api/settings/ai-budget` as the Master Admin answers `nul
 ceiling, the media cap, the degrade mark, every role's daily cap and every depth's answer cap, and
 `/admin/usage` shows "This month" with "No monthly ceiling".
 
-To bring a cap back: `PUT /api/settings/ai-budget` with a step-up code and the values
-(`monthlyCeilingUsd`, `mediaCapUsd`, `roleDailyUsd`, `degradeAtFraction`, `answerCapUsd`; an
-explicit `null` lifts one again). A per-route output cap is `maxOutputTokens` in AI routing
-(never above the model's maximum). Daily seconds and media units are the table
-`core/roles.DAILY_ALLOWANCES`, a code change and a deploy. The deploy does not reset any of these.
+To bring a cap back: the AI budget screen (`/admin/budget`, Master Admin, a two-step code to
+save; an empty field is no cap), or `PUT /api/settings/ai-budget` with a step-up code and the
+values (`monthlyCeilingUsd`, `mediaCapUsd`, `roleDailyUsd`, `degradeAtFraction`, `answerCapUsd`,
+`dailyAllowances`; an explicit `null` lifts one again). Daily seconds and media units are
+`QuotaPolicy.perDay`, which every process reads within 30 s (decision 0146). A per-route output
+cap is `maxOutputTokens` in AI routing (never above the model's maximum). The deploy does not
+reset any of these.
 
 To undo the data step: `alembic downgrade 0028_roles_and_contributions` from this release puts
 back the seeded `QuotaPolicy.perDay` values and the `TRANSLATE` and `SUMMARISE` route caps; it does
@@ -530,7 +532,10 @@ fixture or the category page (`docs/contracts/category-page.md`).
   UTC, and by hand: `gh workflow run post-deploy.yml -R cxacraftecosystem-ui/KalaVigyan -f
   commit=<sha>`. It reads 20 key pages and the public MCP tools, and keeps two issues: `Production is
   not serving main` and `Production pages or MCP tools are failing`, each closed when its check
-  passes.
+  passes. After Deploy backend only (`E2E_SIGN_IN_PROBE`), it also starts one Expert answer with the
+  E2E account, waits for its research to begin, signs in twice beside it and fails when a sign-in
+  takes more than 10 s (`frontend/e2e/release/signInProbe.ts`, decision 0146); it then closes the
+  answer, so the probe spends one partly researched Expert answer per backend deploy.
 - **`/api/version`**: `curl -s https://kalavigyan.vercel.app/api/version` names the commit production
   was built from.
 - **MCP client** (`mcp-client.yml`): the official MCP TypeScript SDK signs in through OAuth (dynamic

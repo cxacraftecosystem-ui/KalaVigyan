@@ -14,6 +14,7 @@ code paths stand.
 | What it supersedes in part | [0046 The expert panel](0046-expert-panel.md): its cap values; the code paths stand |
 | What it supersedes in part | [0089 Expert answers research and write more, compose on Opus at high effort, and cost more; Hindi terms survive translation](0089-expert-depth-caps-and-answer-routes.md): item 3's output tokens and item 4's caps |
 | What it supersedes in part | the daily allowances of [PLAN.md](../PLAN.md), section 12; their code paths stand |
+| Daily allowances become a setting with a screen | [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -7,7 +7,7 @@ from decimal import Decimal
 from functools import lru_cache
 from types import MappingProxyType
 
-from .measures import LOCAL_UNITS
+from .local_units import LOCAL_UNITS
 from .stated_quantities import NUMBER_PATTERN, stated_decimal
 
 __all__ = [

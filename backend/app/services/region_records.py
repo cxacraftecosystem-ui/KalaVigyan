@@ -51,9 +51,9 @@ from app.models import (
     EnvDataset,
     Source,
 )
+from app.research.citations import SourceRef
 from app.research.crafts import CraftRef
 from app.research.retrieval import RESTRICTED_SENSITIVITY
-from app.research.stream import SourceRef
 from app.services.dataset_registry import dataset_record
 from app.services.knowledge_view import craft_ref, source_ref
 

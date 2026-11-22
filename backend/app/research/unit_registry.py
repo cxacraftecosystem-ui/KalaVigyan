@@ -7,7 +7,7 @@ from types import MappingProxyType
 from pint import UnitRegistry
 from pint.errors import PintError
 
-from .measures import LOCAL_UNITS
+from .local_units import LOCAL_UNITS
 
 __all__ = [
     "INFORMAL_METRIC_WORDS",

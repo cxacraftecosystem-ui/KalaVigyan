@@ -215,6 +215,7 @@ class FakeStore:
         explainer: Explainer | None,
         version: VersionMark | None = None,
         readings: Sequence[Any] = (),
+        steps: Sequence[Any] = (),
     ) -> None:
         self.finished.append(
             {
@@ -223,6 +224,7 @@ class FakeStore:
                 "claim_ids": claim_ids,
                 "explainer": explainer,
                 "version": version,
+                "steps": list(steps),
             }
         )
 

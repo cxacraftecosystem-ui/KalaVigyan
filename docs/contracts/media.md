@@ -191,8 +191,9 @@ shows on Usage. The official reference was read on 2026-11-18 (decision 0058 lis
 
 ## Quotas, spend and refunds
 
-- Units per day by role (`core/roles.DAILY_ALLOWANCES`): none for now, for every role (decision
-  0093); `remainingToday` is then `null` and no job is refused for units. A table set again there
+- Units per day by role (`QuotaPolicy.perDay`, read by `core/daily_allowances`, set on the AI
+  budget screen, decision 0146): none for now, for every role (decision 0093); `remainingToday` is
+  then `null` and no job is refused for units. An allowance set again there
   (PLAN 12 had images student 5, researcher 30, professor 50; videos 0, 5, 10) is enforced by the
   same code.
 - One unit is recorded when the job is created (`QuotaLedger` key `media:<jobId>`); dollars are

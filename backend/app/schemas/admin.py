@@ -90,4 +90,5 @@ class AppSettingsUpdate(APIModel):
     domainAllowlist: list[str] | None = Field(default=None, max_length=200)
     degradeAtFraction: float | None = Field(default=None, gt=0, le=1)
     answerCapUsd: dict[Depth, Annotated[float, Field(ge=0, le=1_000)] | None] | None = None
+    dailyAllowances: dict[str, dict[str, Annotated[int, Field(ge=0, le=1_000_000)] | None]] | None = None
     twoFactorCode: str | None = Field(default=None, max_length=64)

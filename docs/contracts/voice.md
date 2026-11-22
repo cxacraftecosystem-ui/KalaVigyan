@@ -251,7 +251,8 @@ recorded at the session's `audioBitsPerSecond` and sent as soon as it reaches ni
 
 ## Quota in seconds
 
-- `VOICE_SECONDS` per day by role (`core/roles.DAILY_ALLOWANCES`): unlimited for every role for
+- `VOICE_SECONDS` per day by role (`QuotaPolicy.perDay` through `core/daily_allowances`, set on
+  the AI budget screen, decision 0146): unlimited for every role for
   now (decision 0093), so `remainingSeconds` is `null` and no call, turn or Listen press is refused
   for time; the seconds are still written to `QuotaLedger` on Asia/Kolkata days and shown on Usage.
   A table set again there (PLAN 12 had student 600, researcher and professor 1800) is enforced by

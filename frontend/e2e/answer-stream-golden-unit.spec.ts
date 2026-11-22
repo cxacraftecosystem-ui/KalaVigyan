@@ -3,12 +3,11 @@ import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { sseFields, splitSseBuffer } from "@/lib/answerStream";
+import { splitSseBuffer } from "@/lib/answerStream";
 import { askingExplainer, reduceExplainer, type ExplainerState } from "@/lib/explainerState";
 import { explainerEventOf, type ExplainerEvent } from "@/lib/explainerStream";
 
 const SHARED = join(__dirname, "..", "..", "shared");
-const RETIRED_EVENTS = new Set(["match", "section", "sentence"]);
 
 function blocksOf(name: string): string[] {
   const { blocks, rest } = splitSseBuffer(readFileSync(join(SHARED, name), "utf8"));
@@ -43,7 +42,7 @@ test("the buffer splitter keeps an unfinished block for the next chunk", () => {
   expect(rest).toBe("event: sec");
 });
 
-test("multi-line data is joined, and comments, unknown and retired events are skipped", () => {
+test("multi-line data is joined, and comments and unknown events are skipped", () => {
   expect(explainerEventOf('event: follow_ups\ndata: {"items":\ndata: ["Why?"]}')).toEqual({ type: "follow_ups", data: { items: ["Why?"] } });
   expect(explainerEventOf(": keep-alive")).toBeNull();
   expect(explainerEventOf("event: ping\ndata: {}")).toBeNull();
@@ -53,9 +52,9 @@ test("multi-line data is joined, and comments, unknown and retired events are sk
   expect(String(broken.logged[0])).toContain("follow_ups");
 });
 
-test("the backend's researched stream parses, skipping only retired events, and settles with its answer id", () => {
+test("the backend's researched stream parses every event and settles with its answer id", () => {
   const skipped = blocksOf("answer-stream.research.golden.sse").filter((block) => explainerEventOf(block) === null);
-  for (const block of skipped) expect(RETIRED_EVENTS.has(sseFields(block).name)).toBe(true);
+  expect(skipped).toEqual([]);
   const events = eventsOf("answer-stream.research.golden.sse");
   expect(events[0]).toEqual({
     type: "understood",

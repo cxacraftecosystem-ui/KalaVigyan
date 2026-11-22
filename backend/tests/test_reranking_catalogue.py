@@ -76,7 +76,7 @@ def test_the_migration_adds_the_two_values_the_models_hold_and_seeds_the_default
     held = constants()
     assert (held["revision"], held["down_revision"]) == ("0060_reranking", "0059_page_translations")
     assert held["ENUM_ADDITIONS"] == (("AiProvider", ("VOYAGE",)), ("AiTask", ("RERANK",)))
-    assert AI_PROVIDERS[-1] == "VOYAGE" and AI_TASKS[-1] == "RERANK"
+    assert AI_PROVIDERS[-1] == "VOYAGE" and AI_TASKS[-2:] == ("RERANK", "UNDERSTAND")
     route = held["RERANK_ROUTE"]
     assert isinstance(route, dict)
     assert ((AiProvider(route["provider"]), route["model"]),) == DEFAULT_ROUTES[AiTask.RERANK]

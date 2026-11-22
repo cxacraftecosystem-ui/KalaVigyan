@@ -680,7 +680,9 @@ evidence[PackedEvidence], documents[SourceDocument], failures[ResearchFailure], 
 
 - `stored` is the question's stored search (limit `STORED_PACK_LIMIT` 20, or the depth's
   `stored_claims`: 40 at Expert, decision 0089) for the plan's craft
-  and mode; `coverage` lists every facet once, in facet order.
+  and mode; `coverage` lists every facet once, in facet order. It reads `PUBLIC` passages only,
+  whoever asks: an answer is kept as pieces, shared by link and read by others, so a
+  researcher-only passage never enters one (decision 0146).
 - `PackedEvidence {item, facetIndexes (at least one, each a plan facet), foundBy (searcher
   names), hits >= 1, bestRank >= 1, followedFrom?}`; ids and source keys are unique, and
   `followedFrom` names packed evidence.
@@ -1004,11 +1006,8 @@ fields that were set.
 
 | Event | Payload | Notes |
 |---|---|---|
-| `match` | `{status:"RESOLVED", craft}` / `{status:"AMBIGUOUS", candidates (1-5)}` / `{status:"NONE"}` | kept in the vocabulary; the answering flow sends `understood` instead (decision 0031) |
-| `status` | `{step, message}` | new; progress while research runs. `step` one of `RESOLVING`, `PLANNING`, `SEARCHING_STORED`, `RESEARCHING`, `READING`, `COMPOSING`, `WRITING_BACK`, `TRANSLATING`; `message` a short user-facing sentence. A step's count is the sum over the sections that reached it, sent again as it grows while that step is the latest shown; a step already passed adds to its sum silently (decision 0138) |
+| `status` | `{step, message}` | new; progress while research runs. `step` one of `PLANNING`, `SEARCHING_STORED`, `RESEARCHING`, `READING`, `COMPOSING`, `WRITING_BACK`, `TRANSLATING`; `message` a short user-facing sentence. A step's count is the sum over the sections that reached it, sent again as it grows while that step is the latest shown; a step already passed adds to its sum silently (decision 0138) |
 | `source` | `SourceRef {id, kind, title, authors[], year, doi, url, publisher, licence, attribution, reliability, containerTitle?}` | before the first citation naming it; `url` https or null; `containerTitle` (the journal) only when stored (decision 0143) |
-| `section` | `{id, heading, original?}` | kept in the vocabulary; the answering flow sends `section_started` instead (decision 0032) |
-| `sentence` | `{sectionId, sentence: AnswerSentence}` | kept in the vocabulary; sentences now arrive inside `prose` and `process_ladder` blocks (decision 0032) |
 | `open_question` | `{sectionId, heading?, sentence}` | hypothesis-level sentences |
 | `reaction` | `{id, label, equation, balanced, level, conditions, citations (at least one)}` | |
 | `follow_ups` | `{items[]}` | |
@@ -1017,12 +1016,20 @@ fields that were set.
 | `error` | `{message}` | shown verbatim; never internal detail |
 | `understood`, `trail`, `paced`, `section_started`, `section_state`, `block`, `section_done` | `docs/contracts/explainer.md` | the explainer stream (decision 0030); how the events above map onto it is in that page |
 
+The `RESOLVING` step and the `match`, `section` and `sentence` events left the vocabulary in
+decision 0146: the flow sends `understood`, `section_started` and blocks instead, and the wire
+refuses the old names as unknown.
+
 `SourceRef`, `Citation` and `AnswerSentence` live in `research/citations.py` (with
-`cited_source_ids`, the first-citation walk) and are re-exported here.
+`cited_source_ids`, the first-citation walk) and are imported from there only.
 `AnswerSentence {id, text, level, citations (at least one), translated?, original?}`: a
 translated sentence, and only one, carries `translated: true` and its English `original`;
 `Citation {id, claimId, sourceId, quote (at most 300) | null, locator, context, evidence
-(QUOTED or INFERRED), level}`. Levels are `ShownLevel`.
+(QUOTED or INFERRED), level}`. Levels are `ShownLevel`. In an answer, a quoted citation's
+`context` is the stored passage holding its quote (`ClaimSource.chunkId`) when that passage is
+`PUBLIC` and not restricted, else null (`services/citation_contexts.with_contexts`, decision
+0146): an answer is kept and shown beyond its asker, so it never carries a researcher-only
+passage.
 
 Heartbeat: while no event has been sent for `HEARTBEAT_SECONDS` (60), the server sends the SSE
 comment `HEARTBEAT_FRAME` (`: keep-alive` and a blank line). `event_stream(produce, *,
@@ -1034,13 +1041,10 @@ cancels the producer, and a producer failure is raised after the frames sent bef
 `infra/terraform` and fails if either drops to 60 s or less.
 
 Compatibility: the web client reads only the explainer stream (`frontend/lib/explainerStream.ts`,
-decision 0037): it skips comment lines, event names it does not know and the retired `match`,
-`section` and `sentence`, logs and drops a frame off the contract, shows `status` as the
-progress line and `not_enough_evidence` as the empty state. Shared fixtures, each parsed and
-reduced by `e2e/answer-stream-golden-unit.spec.ts` (the flow's two) or read by the backend only
-(`answer-stream.golden.sse`):
-`shared/answer-stream.golden.sse` (every event kind; the backend validates each event against
-these models), `shared/answer-stream.research.golden.sse` and
+decision 0037): it skips comment lines and event names it does not know, logs and drops a
+frame off the contract, shows `status` as the progress line and `not_enough_evidence` as the
+empty state. Shared fixtures, each parsed and reduced by `e2e/answer-stream-golden-unit.spec.ts`:
+`shared/answer-stream.research.golden.sse` and
 `shared/answer-stream.not-enough.golden.sse` (written by hand; the backend answering flow must
 produce them byte for byte, `tests/answering/test_answer_flow.py`; the researched one runs with a
 fake glossary and two fake picture sources, so it carries term spans and an `images` block,
@@ -1103,7 +1107,10 @@ ModelUnderstander(model=StructuredModel, resolve=)` implements it with the craft
   first of them leads (`craft`) and the next three at most are `compared`; a craft the reader
   picked leads instead, and only when it is among them. The others stay offers. `PlanRequest.compared` carries
   them to the block builders (`compare`); research and composition still run for the lead craft.
-- The depth is `effective_depth(asked, role, past_degrade=reply.degraded)`.
+- The depth is `effective_depth(asked, role, past_degrade=reply.degraded)`; the call runs on the
+  `UNDERSTAND` route, apart from `PLAN` in routing and usage (decision 0146). Before research the
+  answer's `AnswerSpend` follows that depth (`AnswerPipeline.follow_depth`), so a degraded Expert
+  answer is held to Detailed's cap.
 - The fields (`understanding.asked_fields`, `sections.answer_fields`, decision 0123): the
   reply's disciplines, else the fields the question's words name (`sections.question_fields`:
   `research/question_cues.py` over every field, the chosen craft's own name left out, read from
@@ -1129,24 +1136,31 @@ glossary and `section_images`).
 already known and raises instead of sending `error` (the nightly rebuild uses it); `AnswerStore {stored_claims (slug, question,
 mode), begin(ask, understanding) -> answer id, keep(answer_id, pack, composed) -> claims of each
 composed sentence, cited(claim_ids), process(slug) -> science.records.ProcessRecords | None,
-finish(answer_id, *, asked_at, plans: AnswerPlans, claim_ids, explainer: Explainer | None),
+finish(answer_id, *, asked_at, plans: AnswerPlans, claim_ids, explainer: Explainer | None,
+steps),
 latest(explainer_id, user_id) -> the latest stored version (a follow-up that lost its version
 merges again onto it, `services/version_race`)}`, the reads
-returning `answer_events.CitedClaims {views, sources}`. `begin` writes the `Answer` row (its
-understanding and the depth's mode), `keep` one section's write-back, and `finish` the plans, the
-claims shown, the tiers used, `latencyMs` (from `AnswerAsk.asked_at`, set when the question is
-received, to the finish) and `costUsd` (the summed `UsageEvent.costUsd` of the request id the
-answer ran under: the HTTP request's, or the evaluation's per-question tag; outside a request
-id the cost is not recorded and a warning is logged; `services/answer_cost`, decision 0135)
-and, when a section is ready, the explainer document in
+returning `answer_events.CitedClaims {views, sources}`. Every answer runs under a request id
+(`core/logging.kept_request_id`: the HTTP request's, the rebuild's or evaluation's tag, else
+`answer-<id>`, decision 0146). `begin` writes the `Answer` row (its understanding, the depth's
+mode and `requestId`), `keep` one section's write-back, and `finish` the plans, the claims
+shown, the tiers used, `latencyMs` (from `AnswerAsk.asked_at`, set when the question is
+received, to the finish) and `costUsd` (the summed `UsageEvent.costUsd` of the answer's request
+id; `services/answer_cost`, decision 0135; the nightly upkeep adds what settles later,
+`services/upkeep_costs`, decision 0146), one `AnswerSentence` row per shown sentence (the
+lede as section 0, each section by its order, open questions marked) with its `AnswerCitation`
+rows, and one `AnswerTrace` row per `status`, `trail` and `paced` event the stream sent, with
+its milliseconds since the stream opened (`services/answer_rows`, `services/answer_steps`,
+decision 0146), and, when a section is ready, the explainer document in
 `Answer.payload.explainer` (`answer_store.EXPLAINER_PAYLOAD_KEY`); each runs on
 `core/shielded.ShieldedWork`.
-`answer_store.build_answer_pipeline(sessions=, index=, live=, plan_model=, compose_model=,
-translate_model=, embed=, shield=)` wires the `ModelUnderstander` over the database resolver and
-`plan_model`, `ResearchPlanner` over `retrieval.hybrid.SessionScopedSearch` and the process-held
+`answer_store.build_answer_pipeline(sessions=, index=, live=, models=, embed=, shield=)` wires the
+`ModelUnderstander` over the database resolver and `models.understand`, `ResearchPlanner` over `retrieval.hybrid.SessionScopedSearch` and the process-held
 `live_sources.LiveSourcesStore` (rebuilt every `LIVE_SOURCES_TTL_SECONDS` 600 on one HTTP client),
 `ModelComposer` and `SqlAnswerStore`. No database session is held across a model call or the
-stream: each step opens its own.
+stream: each step opens its own, from `core/db.research_sessionmaker()` on the asking routes, so
+research holds at most the pool less two connections and a sign-in always finds one (decision
+0146).
 
 1. Understand. A resolver failure never blocks a question: without a given slug the question is
    understood without the resolver's candidates (decision 0038). A spend refusal is `error` in the

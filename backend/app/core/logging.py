@@ -86,6 +86,16 @@ def request_id_scope(request_id: str) -> Iterator[str]:
         _request_id.reset(token)
 
 
+@contextmanager
+def kept_request_id(prefix: str) -> Iterator[str]:
+    found = current_request_id()
+    if found is not None:
+        yield found
+        return
+    with request_id_scope(f"{prefix}-{new_request_id()}") as made:
+        yield made
+
+
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         payload: dict[str, Any] = {

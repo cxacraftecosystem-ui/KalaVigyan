@@ -15,10 +15,10 @@ from app.data.district_register import load_district_codes
 from app.models import Source
 from app.research.blocks_insight import MarketGiBlock
 from app.research.blocks_people import ExpertViewBlock
+from app.research.citations import Citation, SourceRef
 from app.research.expert_panel import speaking_seats
 from app.research.explainer import Block, BlockEvent, with_payload_sentences
 from app.research.knowledge_pieces import KnowledgePiece
-from app.research.stream import Citation, SourceRef
 from app.research.structured import StructuredReply
 from app.research.term_marking import GlossaryEntry
 from app.science.records import KnownClaim, ProcessRecords

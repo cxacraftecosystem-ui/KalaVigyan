@@ -14,13 +14,11 @@ from .quotes import numbers_in
 __all__ = [
     "CONVERSION_BASES",
     "DEFINED_UNITS",
-    "LOCAL_UNITS",
     "METRIC_SIGNIFICANT_FIGURES",
     "METRIC_UNITS",
     "UNIT_DEFINITIONS",
     "UNIT_KEY_PATTERN",
     "DefinedUnit",
-    "LocalUnit",
     "MetricUnit",
     "UnitKey",
     "metric_value",
@@ -43,12 +41,6 @@ class DefinedUnit:
     words: tuple[str, ...] = ()
 
 
-@dataclass(frozen=True)
-class LocalUnit:
-    measures: str
-    words: tuple[str, ...]
-
-
 DEFINED_UNITS: Mapping[str, DefinedUnit] = MappingProxyType(
     {
         "inch": DefinedUnit("cm", Decimal("2.54"), ("inch", "inches")),
@@ -58,26 +50,6 @@ DEFINED_UNITS: Mapping[str, DefinedUnit] = MappingProxyType(
         "square-foot": DefinedUnit(
             "m2", Decimal("0.09290304"), ("square foot", "square feet", "sq ft", "sq. ft.", "sq.ft.")
         ),
-    }
-)
-
-LOCAL_UNITS: Mapping[str, LocalUnit] = MappingProxyType(
-    {
-        "seer": LocalUnit("kg", ("seer", "seers", "ser", "sers")),
-        "maund": LocalUnit("kg", ("maund", "maunds")),
-        "tola": LocalUnit("g", ("tola", "tolas", "tolah", "tolahs")),
-        "chhatak": LocalUnit("g", ("chhatak", "chhataks", "chhatank", "chhatanks", "chattak", "chattaks")),
-        "masha": LocalUnit("g", ("masha", "mashas")),
-        "ratti": LocalUnit("g", ("ratti", "rattis")),
-        "pao": LocalUnit("g", ("pao", "paos")),
-        "gaj": LocalUnit("m", ("gaj", "gaz", "guz")),
-        "hath": LocalUnit("m", ("hath", "haath")),
-        "bigha": LocalUnit("m2", ("bigha", "bighas")),
-        "biswa": LocalUnit("m2", ("biswa", "biswas")),
-        "kanal": LocalUnit("m2", ("kanal", "kanals")),
-        "marla": LocalUnit("m2", ("marla", "marlas")),
-        "guntha": LocalUnit("m2", ("guntha", "gunthas", "gunta", "guntas")),
-        "katha": LocalUnit("m2", ("katha", "kathas", "kattha", "katthas", "cottah", "cottahs")),
     }
 )
 

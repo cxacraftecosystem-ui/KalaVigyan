@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.composer.composer import ModelComposer
 from app.composer.translation import ModelTranslator
 from app.core.errors import InvalidInput
+from app.core.logging import current_request_id
 from app.core.shielded import ShieldedWork
 from app.models import Answer
 from app.planner.orchestrator import ResearchPlanner
@@ -46,11 +47,14 @@ from .answer_cost import answer_measures
 from .answer_events import CitedClaims, cited_claims
 from .answer_gaps import FieldReading, record_verdict
 from .answer_lede import LedeTools
+from .answer_rows import write_answer_rows
+from .answer_steps import TracedStep
 from .answer_translation import AnswerTranslation, english_question
 from .answering import AnswerAsk, AnswerPipeline, NameLookup
 from .block_builders import BlockBuilders
 from .builder_interface import BuilderTools
 from .builder_record import answer_build_record
+from .citation_contexts import with_contexts
 from .coverage import held_field_lookup
 from .craft_process import process_records
 from .craft_resolver import CraftIndexStore, DatabaseCraftResolver
@@ -105,7 +109,7 @@ class SqlAnswerStore:
             views, sources = await knowledge_view.claims_for(
                 session, craft, mode=mode, question=question, acls=EVERY_CHUNK_ACLS
             )
-        return cited_claims(views, sources)
+            return await with_contexts(session, cited_claims(views, sources))
 
     async def begin(self, ask: AnswerAsk, understanding: Understanding) -> uuid.UUID:
         return await self._shield.run(self._begun(ask, understanding), name="answer record")
@@ -123,10 +127,13 @@ class SqlAnswerStore:
         explainer: Explainer | None,
         version: VersionMark | None = None,
         readings: Sequence[FieldReading] = (),
+        steps: Sequence[TracedStep] = (),
     ) -> None:
         stored = _StoredExplainer(explainer, version) if explainer is not None else None
-        finished = self._finished(answer_id, plans, claim_ids, stored, asked_at=asked_at, readings=readings)
-        await self._shield.run(finished, name="answer record")
+        kept = _Kept(plans, claim_ids, readings, steps)
+        await self._shield.run(
+            self._finished(answer_id, kept, stored, asked_at=asked_at), name="answer record"
+        )
 
     async def process(self, craft_slug: str) -> ProcessRecords | None:
         async with self._sessions() as session:
@@ -154,6 +161,7 @@ class SqlAnswerStore:
                     craftId=row.id if row else None,
                     understanding=understanding.model_dump(mode="json", by_alias=True),
                     plan={READING_STYLE_KEY: ask.reading_style},
+                    requestId=current_request_id(),
                 )
             )
             await session.commit()
@@ -177,32 +185,17 @@ class SqlAnswerStore:
         return sentence_claim_ids(composed, stored)
 
     async def _finished(
-        self,
-        answer_id: uuid.UUID,
-        plans: AnswerPlans,
-        claim_ids: Sequence[uuid.UUID],
-        stored: _StoredExplainer | None,
-        *,
-        asked_at: datetime,
-        readings: Sequence[FieldReading] = (),
+        self, answer_id: uuid.UUID, kept: _Kept, stored: _StoredExplainer | None, *, asked_at: datetime
     ) -> None:
-        tiers = dict.fromkeys(tier for section in plans.sections for tier in section.plan.tiers)
-        values = {
-            "plan": func.coalesce(Answer.plan, literal({}, JSONB)).op("||")(
-                literal(plans.model_dump(mode="json", by_alias=True), JSONB)
-            ),
-            "claimIds": list(claim_ids),
-            "tiersUsed": list(tiers),
-        }
-        if plans.sections:
-            values["mode"] = plans.sections[0].plan.mode
+        values = kept.values()
         if stored is not None:
             values |= stored.values(answer_id)
         try:
             async with self._sessions() as session:
                 values |= await answer_measures(session, asked_at=asked_at, finished_at=datetime.now(UTC))
                 await session.execute(update(Answer).where(Answer.id == answer_id).values(**values))
-                await record_verdict(session, answer_id, readings)
+                await record_verdict(session, answer_id, kept.readings)
+                await write_answer_rows(session, answer_id, stored.explainer if stored else None, kept.steps)
                 await session.commit()
         except IntegrityError as error:
             if stored is None or stored.version is None:
@@ -213,7 +206,29 @@ class SqlAnswerStore:
     async def cited(self, claim_ids: Iterable[uuid.UUID]) -> CitedClaims:
         async with self._sessions() as session:
             views, sources = await knowledge_view.claims_by_id(session, claim_ids, acls=EVERY_CHUNK_ACLS)
-        return cited_claims(list(views.values()), sources)
+            return await with_contexts(session, cited_claims(list(views.values()), sources))
+
+
+@dataclass(frozen=True)
+class _Kept:
+    plans: AnswerPlans
+    claim_ids: Sequence[uuid.UUID]
+    readings: Sequence[FieldReading]
+    steps: Sequence[TracedStep]
+
+    def values(self) -> dict[str, Any]:
+        plans = self.plans
+        tiers = dict.fromkeys(tier for section in plans.sections for tier in section.plan.tiers)
+        values: dict[str, Any] = {
+            "plan": func.coalesce(Answer.plan, literal({}, JSONB)).op("||")(
+                literal(plans.model_dump(mode="json", by_alias=True), JSONB)
+            ),
+            "claimIds": list(self.claim_ids),
+            "tiersUsed": list(tiers),
+        }
+        if plans.sections:
+            values["mode"] = plans.sections[0].plan.mode
+        return values
 
 
 @dataclass(frozen=True)
@@ -256,7 +271,7 @@ def build_answer_pipeline(
     )
     composer = ModelComposer(model=models.compose)
     return AnswerPipeline(
-        understand=answer_understander(sessions, index, embed=embed, model=models.plan).understand,
+        understand=answer_understander(sessions, index, embed=embed, model=models.understand).understand,
         research=research,
         compose=composer.compose,
         store=SqlAnswerStore(sessions, embed=embed, shield=shield, index=index, judge=models.judge),
@@ -267,6 +282,7 @@ def build_answer_pipeline(
         lede=LedeTools(compose=composer.lede, figures=signature_figures(sessions), retriever=retriever),
         catalogue=catalogue_lookup(sessions),
         names=answer_names(sessions, index),
+        follow_depth=models.follow_depth,
     )
 
 
