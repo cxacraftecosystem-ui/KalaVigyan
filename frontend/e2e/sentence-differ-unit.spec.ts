@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { createElement } from "react";
 
-import { ExplainerSentence } from "@/components/answer/ExplainerSentence";
+import { differingReadings, ExplainerSentence } from "@/components/answer/ExplainerSentence";
 import { explainerSentenceShape } from "@/lib/explainerBlockBase";
 import { ShapeError } from "@/lib/shape";
 
@@ -40,4 +40,22 @@ test("a sentence whose cited claim is marked sources differ draws the Sources di
   expect(flagged).toContain("Sources differ");
   const plain = withReading(createElement(ExplainerSentence, { sentence }));
   expect(attribute(plain, "evidence-tag", "data-level")).toEqual([]);
+});
+
+test("a flagged sentence citing two quoted sources opens both readings, quoted and cited, under the sentence", () => {
+  const sentence = explainerSentenceShape.parse(PAYLOAD, "sentence");
+  const [first] = sentence.citations;
+  const second = { ...first, id: "c0000000-0000-4000-8000-000000000002", sourceId: "1a2b3c4d-0000-4000-8000-000000000002", quote: "Alum alone fixes the red" };
+  const repeat = { ...first, id: "c0000000-0000-4000-8000-000000000003", quote: "Alum again" };
+  const citations = [first, second, repeat];
+  expect(differingReadings(citations).map((citation) => citation.quote)).toEqual(["Alum is the mordant", "Alum alone fixes the red"]);
+  const html = withReading(createElement(ExplainerSentence, { sentence: { ...sentence, citations, sourcesDiffer: true } }));
+  expect(html).toMatch(/<button type="button" aria-expanded="false" aria-controls="[^"]+" class="inline cursor-pointer"><span class="kv-ev-tag" data-level="differ"/);
+  expect(html).toMatch(/<span id="[^"]+" hidden="" class="mt-1\.5 block border-s-2 border-madder[^"]*" data-testid="sources-differ-readings">/);
+  expect(html).toContain('<span class="italic">Alum is the mordant</span>');
+  expect(html).toContain('<span class="italic">Alum alone fixes the red</span>');
+  expect(html).not.toContain("Alum again");
+  expect(html).not.toContain("<details");
+  const single = withReading(createElement(ExplainerSentence, { sentence: { ...sentence, sourcesDiffer: true } }));
+  expect(single).not.toContain("aria-expanded");
 });

@@ -30,7 +30,7 @@ export type ShownSource = { number: number; title: string };
 export type HeldMark = MonographMark;
 export type HeldNode = MonographNode;
 export type PictureFocal = { x: number; y: number; width: number; height: number };
-export type Picture = { src: string; width: number; height: number; alt: string; loading: "eager" | "lazy" | null; fetchPriority: "high" | null; decoding: "sync" | "async" | null; focal?: PictureFocal };
+export type Picture = { src: string; width: number; height: number; alt: string; loading: "eager" | "lazy" | null; fetchPriority: "high" | null; decoding: "sync" | "async" | null; focal?: PictureFocal; themed?: boolean };
 export type ArtFrame = { symbol: string; viewBox: string; width: number; height: number };
 
 export const unitRef = matching(/^u\d{4}$/, "a unit id");
@@ -57,7 +57,8 @@ export const pictureShape = object<Picture>({
   loading: nullable(oneOf(["eager", "lazy"] as const)),
   fetchPriority: nullable(oneOf(["high"] as const)),
   decoding: nullable(oneOf(["sync", "async"] as const)),
-  focal: optional(object<PictureFocal>({ x: fraction, y: fraction, width: fraction, height: fraction }))
+  focal: optional(object<PictureFocal>({ x: fraction, y: fraction, width: fraction, height: fraction })),
+  themed: optional(boolean)
 });
 export const artFrameShape = object<ArtFrame>({ symbol: domId, viewBox, width: integer, height: integer });
 

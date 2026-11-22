@@ -56,9 +56,9 @@ def test_the_opening_chapter_is_the_generated_document_s_masthead() -> None:
 
 def test_every_rule_is_reported_and_the_machine_checks_give_their_verdicts() -> None:
     found = verdicts(given(page_document()))
-    assert sorted(found) == list(range(1, 27))
+    assert sorted(found) == list(range(1, 28))
     assert [n for n, v in found.items() if v == "FAIL"] == [4, 20, 21, 23, 24]
-    assert [n for n, v in found.items() if v == "PASS"] == [1, 2, 3, 6, 7, 9, 10, 14, 15, 17, 25, 26]
+    assert [n for n, v in found.items() if v == "PASS"] == [1, 2, 3, 6, 7, 9, 10, 14, 15, 17, 25, 26, 27]
     assert [n for n, v in found.items() if v == "JUDGE"] == [5, 8, 11, 12, 13, 16, 18, 19, 22]
 
 
@@ -127,7 +127,7 @@ def test_a_signature_told_twice_or_missing_fails_and_a_category_masthead_is_judg
 
 def test_the_report_counts_fields_figures_sources_and_pictures() -> None:
     report = page_report(given(page_document()), {4: "One count, and it is true"})
-    assert (report.passed, report.failed, report.judged) == (12, 5, 9)
+    assert (report.passed, report.failed, report.judged) == (13, 5, 9)
     assert report.rules[3].title == "One count, and it is true" and report.rules[0].title == "Rule 1"
     lines = {line.field: (line.sentences, line.figures, line.standing) for line in report.fields}
     assert lines["CHEMISTRY"] == (3, 1, "DENSE")
@@ -156,7 +156,8 @@ def test_a_picture_s_licence_is_read_from_its_credit(credit: str, licence: str) 
 
 def test_the_rule_titles_come_from_the_checklist_reference() -> None:
     titles = checklist_titles()
-    assert sorted(titles) == list(range(1, 27))
+    assert sorted(titles) == list(range(1, 28))
     assert titles[1] == "A short headline, never a raw question"
     assert titles[4] == "One count, and it is true"
     assert titles[26] == "A missing field is research, not a hole"
+    assert titles[27] == "Every figure speaks the design's vocabulary"

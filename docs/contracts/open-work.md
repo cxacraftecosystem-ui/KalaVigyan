@@ -747,7 +747,7 @@ tokens resource equal to the design skill's `tokens.json`. After editing the ski
 served place; the tokens are regenerated into both places by `tools/design_tokens.py`.
 
 **One source per rule (round 7).** The rules every contributor follows, over MCP or in the
-repository, are six references in `data/contributor/references/`: the page checklist (its 26
+repository, are six references in `data/contributor/references/`: the page checklist (its 27
 rules), what counts as a source (grades and licences), quotes and locators (with one fact per
 sentence), the fields, authoring a component, and datasets. The contributor skill, the curation
 skill (`.claude/skills/kalavigyan-craft-pages`) and the datasets skill

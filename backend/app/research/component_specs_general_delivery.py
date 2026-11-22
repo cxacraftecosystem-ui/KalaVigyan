@@ -26,6 +26,7 @@ from .component_specs_general import (
     GeneralTimelineSpec,
 )
 from .component_specs_tools import spec_unit_refs
+from .drawing_spec_rules import THEMES_KEY, spec_design_problems
 from .quotes import numbers_in, unsupported_figures
 
 __all__ = [
@@ -63,6 +64,7 @@ UNIT_PREFIX = "u"
 CITE_MARK = "cite"
 DELIVERED_KEY = "delivered"
 PROBLEMS_SHOWN = 6
+THEMES_SENT = "the server draws a drawing in each of the four themes from its svg, so a spec sends no themes"
 
 UnitKey = Annotated[str, Field(pattern=UNIT_KEY_PATTERN)]
 NO_ROWS: Mapping[str, Sequence[str]] = MappingProxyType({})
@@ -115,6 +117,9 @@ def spec_problems(kind: str, spec: Mapping[str, Any], units: Mapping[str, Delive
         )
     if not delivered_claim_ids(units) and cited_dataset(checked) is None and kind not in CONTAINER_KINDS:
         problems.append("the component cites no fact: at least one unit names the facts it rests on")
+    if THEMES_KEY in spec:
+        problems.append(THEMES_SENT)
+    problems += spec_design_problems(checked.model_dump(mode="json"))
     return problems + _value_problems(kind, checked, units)
 
 

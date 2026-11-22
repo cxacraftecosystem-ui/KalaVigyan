@@ -43,7 +43,7 @@ SHINGLE_WORDS = 8
 WORD = re.compile(r"[a-z0-9]+")
 HEADING = re.compile(r"^#{1,3} (?P<title>.+)$", re.MULTILINE)
 RULE = re.compile(r"^(?P<number>\d+)\. \*\*", re.MULTILINE)
-CHECKLIST_RULES = 26
+CHECKLIST_RULES = 27
 DATASET_REFERENCES = ("datasets", "components", "sources", "quotes", "page-checklist")
 CURATION_TOOLS = (
     "get_page",

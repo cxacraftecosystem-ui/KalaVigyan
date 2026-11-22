@@ -92,7 +92,7 @@ def test_a_drawing_keeps_its_shapes_and_drops_its_fixed_size() -> None:
     cleaned = checked_spec("drawing", DRAWING).model_dump(mode="json")["svg"]
     assert cleaned == (
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60">'
-        '<rect x="1" y="1" width="20" height="10" fill="#1C1815" /></svg>'
+        '<rect x="1" y="1" width="20" height="10" fill="var(--ink-1)" /></svg>'
     )
     assert cleaned != SVG
 
@@ -117,11 +117,11 @@ def test_event_handlers_and_outside_references_are_removed_and_local_ones_kept()
     markup = (
         f"{SVG_OPEN}<rect onclick='steal()' onload='x()' fill='url(https://example.org/p)' width='3'/>"
         "<use href='#mark'/><use href='https://example.org/s.svg#mark'/>"
-        "<circle style='fill: red' r='1'/><circle style='behaviour: url(evil.htc)' r='2'/></svg>"
+        "<circle style='fill: var(--ink-2)' r='1'/><circle style='behaviour: url(evil.htc)' r='2'/></svg>"
     )
     assert cleaned_svg(markup) == (
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="3" />'
-        '<use href="#mark" /><use /><circle style="fill: red" r="1" /><circle r="2" /></svg>'
+        '<use href="#mark" /><use /><circle style="fill: var(--ink-2)" r="1" /><circle r="2" /></svg>'
     )
 
 

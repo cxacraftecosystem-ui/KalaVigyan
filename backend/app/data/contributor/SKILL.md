@@ -239,6 +239,19 @@ Two kinds of task are completed by a component, each named as the proposal's `ta
   `fact_table` or `map_layer` then names the dataset's code as `dataset` and each value's `cell`
   (its row and column), and the gates check every value against its stored row.
 
+## Drawing in KalaVigyan's design
+
+Whatever your client draws looks like the site, whether it stays in your chat or reaches a page.
+
+- Rendering KalaVigyan's facts, answers or pages for your user, as a figure or a whole view: read
+  `kalavigyan://design/drawing.md`, put `kalavigyan://design/tokens.css` in what you render and
+  write every colour as `var(--ink-1)` or another role it names. Light, dark and high contrast
+  then follow your user's setting, and the type, the floor, captions and credits match the site.
+  An answer keeps the order of `kalavigyan://design/answer-kit.md`.
+- Delivering a `drawing`, a science drawing or an SVG picture: use those same roles. The server
+  refuses a typed colour, a font, small text or words in outlines and names the element, serves
+  each drawing in all four themes, and the preview's report checks every figure on rule 27.
+
 ## Pages
 
 - A page built over more than one call goes in a draft (Drafts, below); a page given in one call

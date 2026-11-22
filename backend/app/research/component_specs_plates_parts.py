@@ -7,7 +7,7 @@ from typing import Annotated, Any, Literal, Self
 
 from pydantic import AfterValidator, ConfigDict, Field, model_validator
 
-from .base import ContractModel, empty
+from .base import ContractModel, absent, empty
 from .craft_parts import Focal
 from .depicted_materials import DEPICTED_MATERIALS
 from .monograph_page import COMPONENT_LABEL_PATTERN, ITALIC_ROLES, MARK_TAGS
@@ -114,6 +114,7 @@ class Picture(ContractModel):
     fetch_priority: Literal["high"] | None = None
     decoding: Literal["sync", "async"] | None = None
     focal: Focal | None = Field(default=None, exclude_if=empty)
+    themed: bool | None = Field(default=None, exclude_if=absent)
 
 
 class ArtFrame(ContractModel):

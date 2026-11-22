@@ -38,7 +38,7 @@ PREVIEW_DESCRIPTION = (
     "components, layout and pictures, without proposing anything: a private link for this account for 24 hours, "
     "drawn exactly as the site draws its pages. Each part says whether it is shown, listed or would be refused "
     "by the checks that run without fetching sources; the gates read the sources on propose_page. With it comes "
-    "the page checklist report: each of the 26 rules that can be checked mechanically passed or failed with its "
+    "the page checklist report: each of the 27 rules that can be checked mechanically passed or failed with its "
     "evidence, the rest listed for you to judge on the link, coverage by field, figures, sources by grade and "
     "pictures by licence, drawn by ui://kalavigyan/page-preview.html in clients that show MCP Apps. A "
     "translation draws the page in its language, authored pages too."

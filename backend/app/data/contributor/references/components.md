@@ -189,14 +189,26 @@ stated by their units.
   bars and lines in the chart series colour with the one mark the title names emphasised, places as
   numbered paper discs on India's outline in the map colours, tables in tabular figures. A spec
   carries no colour, font or size.
-- **Tokens, never typed colours**, in the drawings of the authored forms: a fill, stroke or stop colour
-  is a token (`var(--ink-1)`, a depicted `--dye-*`, a `--chart-*` or `--map-*` token, a surface), a
-  mix of two tokens, an in-drawing reference, `none` or `currentColor`; plain white or black only
-  for a mask or a highlight.
-- **A declared drawing** is shown as an image on the cloth-white specimen mat in every theme, so it
-  cannot read the page's tokens: draw its lines and text in the light theme's ink values from the
-  tokens resource, and a depicted material in its specimen `--dye-*` value, named in the caption or
-  `alt`.
+- **Colours by role, never typed.** Every colour in a drawing, a declared `svg` or a science drawing
+  node alike, in an attribute or a style, is `var(--role)` or a `color-mix(in srgb, ...)` of two
+  roles. The roles: `--ink-1` to `--ink-3`, `--rule`, `--rule-strong`, `--ground`, `--raised` and
+  `--sunk` for lines, words and grounds; `--chart-*`, `--series-*`, a ramp step (`--rain-1` to
+  `--rain-6`, `--heat-*`, `--density-*`, `--ph-*`, `--elevation-*`, `--earth-*`, `--cover-*`,
+  `--mineral-*`) and `--map-*` for data and maps; a depicted `--dye-*` or `--dip-*` material;
+  `--terracotta` only for place and `--madder` only for a hazard; in a science drawing also the
+  molecule kit's `--mol-*` and `--atom-*`. `none`, `transparent`, `currentColor` and an in-drawing
+  `url(#id)` are kept, and plain white or black only inside a mask or clip. A hex, rgb, hsl or
+  named colour, indigo (it means a control) and any other token are refused with the element named.
+- **A declared drawing follows the reader's theme.** It stays an image, so it cannot read the page's
+  tokens; the server draws it once per theme (light, dark and both high contrasts), putting each
+  role's value from the tokens in its place and setting its text in the UI face, and the page shows
+  the variant its reader's theme asks for. A contributed SVG picture is served the same way. Send
+  `svg` alone; a spec that sends `themes` is refused.
+- **Type in the design's faces.** A drawing names no font (`font-family`, `font`) and sizes text in
+  drawing units; words are `<text>`, never outlines or glyph symbols.
+- **Flat ink on paper.** No gradient blends two roles (one may fade a single role, step through
+  one ramp or pass between depicted materials), no text sits in a gradient, and nothing blurs or
+  casts a shadow.
 - **Identity colours never on data.** Indigo means a reader can press it; madder is emphasis, a
   disagreement between sources or a real hazard; terracotta is place; turmeric only highlights. No
   bar, line, area, class or series takes any of them. Area fills (classes on a map, relief) take a
@@ -210,7 +222,11 @@ stated by their units.
 - **Words in units, not in the drawing.** Text inside an SVG shrinks with it, so names, values and
   keys belong in units (the caption, `alt`, a table). A drawing that must carry a key letter sizes it
   to stay 12 px or more at its narrowest: a font size of at least 12 times the viewBox width divided
-  by 320.
+  by 320, with any scale on its groups counted. Text without a size counts as 16 units.
+- **Seen in your own chat too.** When your client draws a chart, a diagram or a page of KalaVigyan's
+  knowledge itself, it uses `kalavigyan://design/tokens.css` (every role in the four themes, with
+  the type sizes) and the guide `kalavigyan://design/drawing.md`, so what the reader sees before you
+  deliver matches what the site draws.
 - **Complete at rest.** The figure reads whole at first paint, with nothing to hover, play or step
   through, and every value is also in its table ("All N values") or the map's numbered list.
 - **No executable code.** Never a script, an event handler, a `foreignObject`, an embedded image, a
@@ -226,6 +242,8 @@ stated by their units.
 | The kinds in each group and their counts, against the server's own lists | `test_reference_limits.py` in `backend/tests/mcp`, reading `models/component_kinds` and `research/component_specs` |
 | Every delivery limit it states | that test again, reading each bound from the spec and delivery modules |
 | The colours a drawing may use | `test_interactives_skill.py` in `backend/tests/mcp`, against the drawings' colour pattern |
+| The design's roles, fonts, the text floor and gradients, at intake and in the preview's report | `test_drawing_vocabulary.py` and `test_page_report_design.py` in `backend/tests/research` |
+| The four themes a drawing is served in, the tokens as CSS and the drawing guide | `test_design_kit.py` in `backend/tests/mcp` |
 | This text, as every prompt and the site serve it | `test_skill_references.py` in `backend/tests/mcp` |
 
 Read it again whenever a kind is added or retired, a bound changes, or the design system changes a colour's role.

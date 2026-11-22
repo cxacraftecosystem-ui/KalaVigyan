@@ -31,7 +31,7 @@ WORDS = "Yes, I took these photographs and the Centre may publish them without m
 DRAWING = {"origin": "DRAWING", "generator": None, "prompt": None}
 SVG = (
     b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480"><script>alert(1)</script>'
-    b'<rect width="640" height="480" fill="blue"/></svg>'
+    b'<rect width="640" height="480" fill="var(--sunk)"/></svg>'
 )
 
 

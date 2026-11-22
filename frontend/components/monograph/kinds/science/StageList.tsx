@@ -63,7 +63,7 @@ export function StageRibbon({ player }: { player: StagePlayerSpec }) {
             aria-pressed={stage === rest}
             tabIndex={stage === rest ? 0 : -1}
             aria-controls={`${player.key}-st-${stage}`}
-            aria-label={`Stage ${stage}, ${entry.name}`}
+            aria-label={`${stage} ${entry.name}`}
           >
             <StageTile stage={stage} style="rb-svg" viewBox="0 0 100 150" swatch={entry.swatch} />
             <span className="rb-l">

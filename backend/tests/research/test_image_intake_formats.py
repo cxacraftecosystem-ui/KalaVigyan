@@ -22,7 +22,7 @@ SVG_IN = (
     b'xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 640 480" onload="alert(1)" '
     b'inkscape:export-filename="C:/Users/meera/vat.png">'
     b"<metadata><rdf>Meera Rao</rdf></metadata><script>alert(1)</script>"
-    b'<defs><linearGradient id="g"><stop offset="0" stop-color="red"/></linearGradient></defs>'
+    b'<defs><linearGradient id="g"><stop offset="0" stop-color="var(--ink-1)"/></linearGradient></defs>'
     b'<rect width="640" height="480" fill="url(#g)" onclick="steal()"/>'
     b'<use href="#g"/><use xlink:href="https://evil.example/x.svg#a"/>'
     b'<image href="https://evil.example/p.png"/><foreignObject><p>x</p></foreignObject>'

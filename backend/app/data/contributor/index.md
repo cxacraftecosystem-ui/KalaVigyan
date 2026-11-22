@@ -52,7 +52,7 @@ as `spec`; `resources/templates/list` gives them as `kalavigyan://components/{ki
 - `kalavigyan://skills/kalavigyan-interactives/SKILL.md`: the interactives skill, for a craft family's flagship interactive.
 - `kalavigyan://skills/kalavigyan-interactives/references/flagships.md`: the nine families' candidate flagships and the facts each holds.
 - `kalavigyan://skills/kalavigyan-interactives/references/storyboard.md`: the storyboard a flagship is planned in before it is drawn.
-- `kalavigyan://skills/references/page-checklist.md`: the 26 rules every page meets.
+- `kalavigyan://skills/references/page-checklist.md`: the 27 rules every page meets.
 - `kalavigyan://skills/references/sources.md`: what counts as a source, its grade and its licence.
 - `kalavigyan://skills/references/quotes.md`: verbatim quotes, locators and one fact per sentence.
 - `kalavigyan://skills/references/fields.md`: the sixteen fields and what each holds.
@@ -65,6 +65,8 @@ as `spec`; `resources/templates/list` gives them as `kalavigyan://components/{ki
 - `kalavigyan://contracts/mcp-ask-and-upload.md`: the ask tool, `give_pictures` and its upload links.
 - `kalavigyan://design/tokens.json`: the design system's tokens, for agents that draw KalaVigyan content.
 - `kalavigyan://design/answer-kit.md`: how an answer is drawn, for agents that draw one themselves.
+- `kalavigyan://design/tokens.css`: the tokens as CSS in light, dark and high contrast, for agents that draw in their own chat.
+- `kalavigyan://design/drawing.md`: drawing for KalaVigyan: colour roles, type, the 12 px floor and figures.
 - `ui://kalavigyan/answer.html`: the app that draws an `ask` result in KalaVigyan's design.
 - `ui://kalavigyan/page-preview.html`: the app that draws a page preview's checklist report in the chat.
 

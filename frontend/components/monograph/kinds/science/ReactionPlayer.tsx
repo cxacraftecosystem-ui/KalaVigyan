@@ -15,7 +15,7 @@ function Rail({ player }: { player: ReactionPlayerSpec }) {
         {player.steps.map((step, index) => {
           const pressed = index + 1 === player.current;
           return (
-            <button key={step.name} type="button" aria-pressed={pressed} tabIndex={pressed ? 0 : -1} aria-label={`Step ${index + 1}, ${step.name}`}>
+            <button key={step.name} type="button" aria-pressed={pressed} tabIndex={pressed ? 0 : -1} aria-label={`${index + 1} ${step.name}`}>
               <b>{index + 1}</b> <span aria-hidden="true">{step.name}</span>
             </button>
           );

@@ -11,7 +11,7 @@ import { SCIENCE_KINDS, SPEC_SHAPES_SCIENCE, type ScienceKind } from "../lib/com
 import { svgNodeShape } from "../lib/componentSpecsScienceParts";
 import type { MonographComponent, MonographContent } from "../lib/monographDocument";
 import { parseShape, ShapeError } from "../lib/shape";
-import { AJRAKH_DIR, subtrees, tokenize, type Open, type Token } from "./monographMarkup";
+import { AJRAKH_DIR, fragmentFile, subtrees, tokenize, type Open, type Token } from "./monographMarkup";
 
 const content = JSON.parse(readFileSync(join(AJRAKH_DIR, "content.json"), "utf8")) as MonographContent;
 const byLabel = new Map(content.components.map((component) => [component.label, component]));
@@ -38,11 +38,31 @@ function texts(tokens: Token[], tag: string, name?: string): string[] {
   );
 }
 
+const NUMBERED = /^\d+ /;
+const STEPPED = ["kutch-ajrakh/chemistry/red-alum-madder-player", "kutch-ajrakh/chemistry/iron-tannin-black-player", "kutch-ajrakh/chemistry/white-resist-player", "shared/chemistry/indigo-reduction-player", "kutch-ajrakh/process/cloth-after-each-stage"];
+
+function namedButtons(tokens: Token[]): { name: string; shown: string[] }[] {
+  return subtrees(tokens, (open) => open.tag === "button" && NUMBERED.test(open.attrs["aria-label"] ?? "")).map(([from, to]) => ({
+    name: (tokens[from] as Open).attrs["aria-label"] ?? "",
+    shown: tokens.slice(from, to).flatMap((token) => (token.kind === "text" ? token.text.split(/\s+/) : [])).filter(Boolean)
+  }));
+}
+
+test("each step and stage button is named by the words it shows, in the native view and the approved fragment alike", () => {
+  for (const label of STEPPED) {
+    const native = namedButtons(drawn(label));
+    const approved = namedButtons(tokenize(readFileSync(fragmentFile(label), "utf8")));
+    expect(native.length, label).toBeGreaterThan(0);
+    expect(native, label).toEqual(approved);
+    for (const button of native) expect(button.name.split(" "), label).toEqual(button.shown);
+  }
+});
+
 test("a reaction player rests on its step, presses it on the rail and links its species to PubChem", () => {
   const red = drawn("kutch-ajrakh/chemistry/red-alum-madder-player");
   expect(all(red, "figure")[0].attrs).toMatchObject({ class: "rp", id: "rp-red", "data-track": "red", "data-step": "5", "data-steps": "5" });
-  const rail = all(red, "button").filter((button) => button.attrs["aria-label"]?.startsWith("Step "));
-  expect(rail.map((button) => button.attrs["aria-label"])).toEqual(["Step 1, Tannin first", "Step 2, The mordant", "Step 3, Keep lime away", "Step 4, The madder bath", "Step 5, The lake"]);
+  const rail = all(red, "button").filter((button) => NUMBERED.test(button.attrs["aria-label"] ?? ""));
+  expect(rail.map((button) => button.attrs["aria-label"])).toEqual(["1 Tannin first", "2 The mordant", "3 Keep lime away", "4 The madder bath", "5 The lake"]);
   expect(rail.map((button) => button.attrs["aria-pressed"])).toEqual(["false", "false", "false", "false", "true"]);
   expect(all(red, "section", "rp-step").map((section) => "hidden" in section.attrs)).toEqual([true, true, true, true, false]);
   expect(all(red, "a", "cid")[0].attrs.href).toBe("https://pubchem.ncbi.nlm.nih.gov/compound/16129778");
@@ -68,7 +88,7 @@ test("the stage player rests on stage 11 of 11 and hands the page script its sta
   expect(texts(stages, "p", "lc-now")).toEqual(["Cloth afterbrighter red and blue"]);
   const ribbon = all(stages, "button", "rb");
   expect(ribbon).toHaveLength(11);
-  expect([ribbon[0].attrs["aria-label"], ribbon[3].attrs["aria-label"]]).toEqual(["Stage 1, saaj", "Stage 4, Drying"]);
+  expect([ribbon[0].attrs["aria-label"], ribbon[3].attrs["aria-label"]]).toEqual(["1 saaj", "4 Drying"]);
   expect(all(stages, "li", "lc-step")[10].attrs).toMatchObject({ id: "a-st-11", "aria-current": "step" });
 });
 

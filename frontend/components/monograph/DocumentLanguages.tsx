@@ -47,23 +47,25 @@ export function DocumentLanguages({ kind, slug, current, languages, translation 
   if (!read.length) return null;
   const shown = read.find((language) => language.code === current) ?? null;
   return (
-    <nav aria-label="Languages of this page" className="mx-auto w-full max-w-content px-4 pt-3 sm:px-6 md:px-10 rail:px-12 xl:px-16">
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-ui text-label text-ink-2">
-        <span className="text-ink-3" aria-hidden="true">
-          Read this page in
-        </span>
-        <ul className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <li>
-            <Choice kind={kind} slug={slug} current={current} language={null} />
-          </li>
-          {read.map((language) => (
-            <li key={language.code}>
-              <Choice kind={kind} slug={slug} current={current} language={language} />
+    <nav aria-label="Languages of this page" className="w-full px-4 pt-3 sm:px-6 md:px-10 rail:px-12 xl:px-16">
+      <div className="mx-auto w-full max-w-content">
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-ui text-label text-ink-2">
+          <span className="text-ink-3" aria-hidden="true">
+            Read this page in
+          </span>
+          <ul className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <li>
+              <Choice kind={kind} slug={slug} current={current} language={null} />
             </li>
-          ))}
-        </ul>
+            {read.map((language) => (
+              <li key={language.code}>
+                <Choice kind={kind} slug={slug} current={current} language={language} />
+              </li>
+            ))}
+          </ul>
+        </div>
+        {shown && translation ? <p className="mt-1 max-w-measure font-ui text-label text-ink-3">{translationNote(shown, translation)}</p> : null}
       </div>
-      {shown && translation ? <p className="mt-1 max-w-measure font-ui text-label text-ink-3">{translationNote(shown, translation)}</p> : null}
     </nav>
   );
 }

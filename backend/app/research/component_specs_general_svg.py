@@ -5,7 +5,16 @@ from collections.abc import Iterator
 from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 
-__all__ = ["DRAWING_MAX_CHARS", "KEPT_DRAWING_TAGS", "cleaned_svg", "drawing_tags", "svg_view_box"]
+from .drawing_rules import drawing_problems, listed
+
+__all__ = [
+    "DRAWING_MAX_CHARS",
+    "KEPT_DRAWING_TAGS",
+    "cleaned_svg",
+    "drawing_tags",
+    "sanitised_svg",
+    "svg_view_box",
+]
 
 DRAWING_MAX_CHARS = 200_000
 SVG_NS = "http://www.w3.org/2000/svg"
@@ -52,6 +61,16 @@ QUOTED = {'"': "&quot;"}
 
 
 def cleaned_svg(markup: str) -> str:
+    clean = sanitised_svg(markup)
+    root = ElementTree.fromstring(clean)
+    box = svg_view_box(root.get("viewBox"))
+    problems = drawing_problems(root, box[2] if box else 0.0)
+    if problems:
+        raise ValueError(f"A drawing speaks only the design's vocabulary: {listed(problems)}")
+    return clean
+
+
+def sanitised_svg(markup: str) -> str:
     if len(markup) > DRAWING_MAX_CHARS:
         raise ValueError(f"A drawing is at most {DRAWING_MAX_CHARS} characters of SVG")
     if DECLARATIONS.search(markup) or PROCESSING.search(markup):

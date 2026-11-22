@@ -5,11 +5,12 @@ from types import MappingProxyType
 from typing import Annotated, Any, Literal, Self
 
 from pydantic import AfterValidator, Field, model_validator
+from pydantic.json_schema import SkipJsonSchema
 
 from app.models.component_kinds import GENERAL_KINDS
 
 from .base import ContractModel, HttpsUrl, absent
-from .component_specs_general_svg import cleaned_svg
+from .component_specs_general_svg import cleaned_svg, sanitised_svg
 from .component_specs_plates_parts import UnitRef
 from .datasets import DATASET_CODE_PATTERN
 
@@ -28,6 +29,7 @@ __all__ = [
     "ChartSeries",
     "DataCell",
     "DatasetCite",
+    "DrawingThemes",
     "GeneralChartSpec",
     "GeneralDrawingSpec",
     "GeneralHead",
@@ -59,6 +61,7 @@ CREDIT_MAX = 600
 NEEDS_DATASET = "a value that names its cell names the dataset too, and a dataset is named only with cells"
 
 CleanSvg = Annotated[str, AfterValidator(cleaned_svg)]
+ThemedSvg = Annotated[str, AfterValidator(sanitised_svg)]
 
 
 class GeneralHead(ContractModel):
@@ -77,10 +80,18 @@ class DatasetCite(ContractModel):
     url: HttpsUrl | None = Field(default=None, exclude_if=absent)
 
 
+class DrawingThemes(ContractModel):
+    light: ThemedSvg
+    dark: ThemedSvg
+    hc_light: ThemedSvg
+    hc_dark: ThemedSvg
+
+
 class GeneralDrawingSpec(ContractModel):
     head: GeneralHead
     svg: CleanSvg
     alt: UnitRef
+    themes: SkipJsonSchema[DrawingThemes | None] = Field(default=None, exclude_if=absent)
 
 
 class ChartPoint(ContractModel):

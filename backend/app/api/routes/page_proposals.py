@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Awaitable
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +20,7 @@ from app.models import User
 from app.research.image_intake_svg import SVG_POLICY
 from app.research.page_proposals import PageBundle, PagePreviewResult, PageProposalResult
 from app.research.review_switch import CONTRIBUTION
+from app.services.drawing_themes import THEME_PATTERN, themed_picture
 from app.services.object_store import media_bucket
 from app.services.own_proposals import require_terms
 from app.services.page_preview import preview_page
@@ -69,6 +70,7 @@ async def read_preview(
 @router.get("/pictures/{contribution_id}")
 async def read_own_picture(
     contribution_id: uuid.UUID,
+    theme: str | None = Query(default=None, pattern=THEME_PATTERN),
     user: User = Depends(proposer),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
@@ -83,7 +85,8 @@ async def read_own_picture(
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, PICTURE_UNREAD) from None
     if data is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, NO_PICTURE, headers=PREVIEW_HEADERS)
-    return Response(data, media_type=found.mime, headers={**PREVIEW_HEADERS, **PICTURE_HEADERS})
+    themed = themed_picture(data, found.mime, theme)
+    return Response(themed, media_type=found.mime, headers={**PREVIEW_HEADERS, **PICTURE_HEADERS})
 
 
 async def _terms(session: AsyncSession, user: User) -> None:

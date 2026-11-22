@@ -10,6 +10,7 @@ from typing import Any
 
 from .contributor_kit import design_tokens
 from .craft_master_loader import DATA_DIR
+from .design_palette import THEMES, four_themes_css, type_css
 
 __all__ = [
     "ANSWER_KIT_PATH",
@@ -47,7 +48,6 @@ KIT_COLOURS = (
     "turmeric-wash",
 )
 KIT_FONTS = ("headline", "reading", "ui")
-THEMES = ("light", "dark", "hcLight", "hcDark")
 SCRIPT = re.compile(r"<script>(?P<body>.*?)</script>", re.DOTALL)
 
 
@@ -72,14 +72,8 @@ def script_hash(page: str) -> str:
 
 
 def theme_css(tokens: Mapping[str, Any]) -> str:
-    fonts = "".join(f"--font-{name}:{tokens['type']['families'][name]['stack']};" for name in KIT_FONTS)
-    light, dark, hc_light, hc_dark = (_colours(tokens, theme) for theme in THEMES)
-    return (
-        f":root{{color-scheme:light;{fonts}{light}}}"
-        f'@media (prefers-color-scheme: dark){{:root:not([data-theme="light"]){{color-scheme:dark;{dark}}}}}'
-        f':root[data-theme="dark"]{{color-scheme:dark;{dark}}}'
-        f'@media (prefers-contrast: more){{:root{{{hc_light}}}:root[data-theme="dark"]{{{hc_dark}}}}}'
-    )
+    colours = {theme: _colours(tokens, theme) for theme in THEMES}
+    return f":root{{{type_css(tokens)}}}" + four_themes_css(colours)
 
 
 def _tokens() -> dict[str, Any]:

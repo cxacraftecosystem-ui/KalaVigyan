@@ -19,7 +19,7 @@ contributor's agent reads this over MCP before it delivers one, and engineers be
 flowchart LR
   D["Delivery<br/>spec and units"] --> M{"Close match?"}
   M -->|a copy| X["Refused"]
-  M --> C["Seven checks"]
+  M --> C["Eight checks"]
   C -->|a problem| X
   C --> R["Approval<br/>queue or at once"]
   R --> REG["Registered<br/>KnowledgePiece"]
@@ -42,7 +42,7 @@ than Kutch Ajrakh in `frontend/lib/kindFixtures/`, checked by the gates in
 `backend/tests/research/test_kind_fixtures.py`, drawn by its view in
 `frontend/e2e/kind-fixtures-unit.spec.ts` and placed together on `/design/kinds`.
 
-Last reviewed: 2026-11-21.
+Last reviewed: 2026-11-22.
 
 | Side | File |
 |---|---|
@@ -84,7 +84,12 @@ and a count of the rest):
    unit citing nothing is a label of at most 80 characters and states no number;
 7. the general kinds' values: a chart point's value is a number its `reading` unit states, a
    timeline event's year (without its sign) is stated by its `when` unit, a map place's value by its
-   `reading` unit, and a numeric table column's cells state a number.
+   `reading` unit, and a numeric table column's cells state a number;
+8. the spec speaks the design's vocabulary (`drawing_spec_rules.spec_design_problems`): every
+   drawing node of a science kind (`SvgNode`), every swatch, dip and colour token and a drawing's
+   SVG name colours only by design role, name no font, keep text at 12 px or more and blend no two
+   roles in a gradient (The design's vocabulary, below); a swatch or dip names a depicted material;
+   and a spec sends no `themes`, which the server draws.
 
 The close-match search of `open-work.md` runs first: a copy of a registered component is refused
 before its spec is read.
@@ -122,7 +127,7 @@ drawing, map, timeline, table), the caption is a cited sentence under it. Every 
 
 | Kind | Spec | View |
 |---|---|---|
-| `drawing` | `head`, `svg` (one SVG, cleaned at intake), `alt` (what it shows) | the drawing as an image (`img` of a `data:image/svg+xml` URI at its viewBox's size) on the cloth white of a specimen mat in every theme, `alt` as its description |
+| `drawing` | `head`, `svg` (one SVG in the design's roles, cleaned at intake), `alt` (what it shows) | the drawing in the reader's theme: generated documents serve `themes {light, dark, hcLight, hcDark}` (`services/drawing_themes.themed_spec`), each the SVG with every role's value from the tokens and its text in the UI face, and the view shows the variant the page's theme asks for as an image (`img` of a `data:image/svg+xml` URI at its viewBox's size), following `data-theme`, `data-high-contrast` and the system preference as the tokens do; `alt` as its description |
 | `chart` | `head`, `form` (`bars` or `line`), `valueLabel` (what is measured, with its unit), `series` 1 to 3 `{name, points [{label, value, reading, cell?}]}`, `dataset?` (1 to 60, the same count in each), `emphasis` (the first series' point the title names) | one small multiple per series: bars as rows (label, bar at its share of the largest from zero, the cited reading), a line on a plot with three ticks and its first and last label, every value behind "All N values"; `--chart-series`, the emphasised mark `--chart-emph` |
 | `fact_table` | `head`, `columns` 1 to 8 `{label, numeric, column?}`, `rows` 1 to 100 `{cells, row?}` (one per column), `dataset?` | a table with the first cell of a row as its header, numeric columns at the end in tabular figures |
 | `timeline` | `head`, `events` 2 to 40 `{year, when, title, text}` in year order (-3000 to 2100) | a dated axis marking each event, its first and last year (BCE for negative years), then one row per event: the date as written, the title, the cited sentence |
@@ -156,12 +161,44 @@ another namespace, every `href` that is not a local `#` reference, every value w
 stored spec holds the cleaned markup, and the web app only ever draws it as an image, which runs no
 script and loads nothing.
 
+### The design's vocabulary (`drawing_roles`, `drawing_rules`)
+
+An image cannot read the page's tokens, so a drawing names its colours by role and the server
+paints each theme (owner, 2026-11-21). After cleaning, a drawing is refused with a reason that
+names the element and the allowed roles when it:
+
+- names a colour other than `var(--role)` or a `color-mix` of two roles, where a role is one of
+  `ink-1` to `ink-3`, `rule`, `rule-strong`, `ground`, `raised`, `sunk`, the `chart-*` and
+  `series-*` tokens, a ramp step (`rain-1` to `rain-6` and the other ramps), the `map-*` tokens,
+  a depicted `dye-*` or `dip-*` material, `terracotta` (place) or `madder` (a hazard), in a paint
+  attribute or a style declaration; `none`, `transparent`, `currentColor`, a local `url(#id)` and,
+  inside a mask or clip, white and black are kept; indigo, which means a control, is refused;
+- names a font (`font-family`, `font`), or sizes text other than in drawing units;
+- sets text that would draw under 12 px when the drawing is 320 px wide (its font size, with its
+  groups' scales, under 12 times the viewBox width divided by 320; unsized text counts as 16);
+- blends two roles in a gradient (a gradient fades one role, steps through one ramp or passes
+  between depicted materials), fills text with a gradient, blurs or casts a shadow; or
+- draws words as outlines (a labelled group of paths carrying type settings, glyph symbols).
+
+Contributed SVG pictures (`image_intake_svg.clean_svg`, `give_pictures`) meet the same rule;
+they are stored in roles and served by `?theme=light|dark|hcLight|hcDark`, and a plate marks
+them `themed`, so the page shows the variant its reader's theme asks for. Inline science
+drawings (`SvgNode`) and colour tokens are drawn with the page's tokens, so the delivery check
+holds them to the roles (and the molecule kit's `mol-*` and `atom-*`) without variants. The
+preview's report fails a delivered figure off the vocabulary, a drawing without its four
+variants and a figure or picture without its alt text (checklist rule 27). Agents that draw
+KalaVigyan's knowledge themselves read `kalavigyan://design/tokens.css` and
+`kalavigyan://design/drawing.md`.
+
 ## How this document is kept true
 
 | Claim | Kept true by |
 |---|---|
 | The general kinds' specs, bounds and the SVG intake | `backend/tests/research/test_component_specs_general.py` |
-| A delivery's units and its seven checks | `backend/tests/research/test_component_specs_general_delivery.py` |
+| A delivery's units and its eight checks | `backend/tests/research/test_component_specs_general_delivery.py` |
+| The design's vocabulary for drawings, pictures and science specs | `backend/tests/research/test_drawing_vocabulary.py` |
+| The four themes, the tokens as CSS and the drawing guide | `backend/tests/mcp/test_design_kit.py` |
+| The report's design rule | `backend/tests/research/test_page_report_design.py` |
 | Registration and drawing on generated pages | `backend/tests/db/test_delivered_components_db.py` |
 | Each kind's fixture for a craft other than Kutch Ajrakh | `backend/tests/research/test_kind_fixtures.py` and `frontend/e2e/kind-fixtures-unit.spec.ts` |
 | The views | `frontend/e2e/monograph-kinds-general-unit.spec.ts` |

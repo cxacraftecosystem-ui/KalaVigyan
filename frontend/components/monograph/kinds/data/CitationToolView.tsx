@@ -1,8 +1,17 @@
+import { CraftReleaseDoi } from "@/components/openData/CraftReleaseDoi";
 import { citationToolShape, type CitePanel } from "@/lib/componentSpecsData";
 import type { ComponentViewProps } from "@/lib/componentViewContract";
 import { parseShape } from "@/lib/shape";
 
-function PanelView({ panel, shown, renderUnit }: { panel: CitePanel; shown: boolean; renderUnit: ComponentViewProps["renderUnit"] }) {
+const CRAFT_SUBJECT = "craft:";
+const MONOGRAPH_PANEL = "monograph";
+
+export function craftOfSubjects(subjects: readonly string[]): string | null {
+  const found = subjects.find((subject) => subject.startsWith(CRAFT_SUBJECT));
+  return found ? found.slice(CRAFT_SUBJECT.length) : null;
+}
+
+function PanelView({ panel, shown, craft, renderUnit }: { panel: CitePanel; shown: boolean; craft: string | null; renderUnit: ComponentViewProps["renderUnit"] }) {
   const texts = Object.fromEntries(panel.styles.map((style) => [`data-${style.value}`, style.text]));
   return (
     <div className="kv-cp" id={panel.panelId} role="tabpanel" aria-labelledby={panel.tabId} hidden={!shown}>
@@ -26,6 +35,7 @@ function PanelView({ panel, shown, renderUnit }: { panel: CitePanel; shown: bool
                   {panel.copyLabel}
                 </button>
               </div>
+              {craft && panel.key === MONOGRAPH_PANEL ? <CraftReleaseDoi pageUrl={`/crafts/${craft}`} /> : null}
             </div>
           </div>
         </section>
@@ -34,8 +44,9 @@ function PanelView({ panel, shown, renderUnit }: { panel: CitePanel; shown: bool
   );
 }
 
-export function CitationToolView({ spec, renderUnit }: ComponentViewProps) {
+export function CitationToolView({ component, spec, renderUnit }: ComponentViewProps) {
   const tool = parseShape(citationToolShape, spec);
+  const craft = craftOfSubjects(component.subjects);
   return (
     <section className="kv-cite" id="kv-cite" aria-labelledby={tool.titleId}>
       <div className="kv-cite-top">
@@ -60,7 +71,7 @@ export function CitationToolView({ spec, renderUnit }: ComponentViewProps) {
         </div>
       </div>
       {tool.panels.map((panel, index) => (
-        <PanelView key={panel.key} panel={panel} shown={index === 0} renderUnit={renderUnit} />
+        <PanelView key={panel.key} panel={panel} shown={index === 0} craft={craft} renderUnit={renderUnit} />
       ))}
     </section>
   );

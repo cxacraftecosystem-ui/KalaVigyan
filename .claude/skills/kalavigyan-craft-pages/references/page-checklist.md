@@ -1,6 +1,6 @@
 # The page checklist
 
-Every craft, family, category and answer page of KalaVigyan meets these 26 rules, whoever works on
+Every craft, family, category and answer page of KalaVigyan meets these 27 rules, whoever works on
 it: a contributor delivering facts, structure, components, pictures or a whole page bundle over the
 MCP server, a curator deepening a page, an engineer building a screen, or a critic scoring the
 result. Each rule is written for any craft; an example shows how one craft met a rule and is never
@@ -129,6 +129,16 @@ The rules below refer to them.
 26. **A missing field is research, not a hole.** It never appears as an empty heading or a "not
     yet" note; it appears as a question that starts cited research, and as open work on the MCP
     server.
+
+## Drawn in the design (owner, 2026-11-21)
+
+27. **Every figure speaks the design's vocabulary.** A drawing names each colour by its design role
+    (inks, rules and surfaces, the chart, series, ramp and map roles, a depicted material,
+    terracotta for place, madder for a hazard), never a typed colour and never indigo; it names no
+    font, sets no text under 12 px at its narrowest width, draws its words as text and blends no two
+    roles in a gradient. The server draws every drawing in the light, dark and high-contrast themes,
+    and every figure and picture says in its alt text what it shows. The preview's report fails a
+    delivered figure that breaks this and names the element.
 
 ## How a page is checked
 

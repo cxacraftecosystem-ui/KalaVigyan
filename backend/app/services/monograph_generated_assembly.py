@@ -27,6 +27,7 @@ from .document_components_data import (
     unit_sentences,
 )
 from .document_components_homes import home_scopes
+from .drawing_themes import themed_spec
 from .knowledge_view import ClaimView
 from .monograph_generated_drawings import Drawings, spec_unit_keys
 from .monograph_generated_grids import StatedValue, fact_grid
@@ -236,7 +237,7 @@ def _drawn(parts: GeneratedParts, page: _Page, drawings: Drawings, component: Re
         drawn = drawn_delivery(component.delivered, place=place, visible=parts.visible, taken=taken)
         if drawn is None:
             return False
-        page.specs[component.label] = drawn.spec
+        page.specs[component.label] = themed_spec(component.kind, drawn.spec)
         page.drafts.update(drawn.drafts)
         page.held[component.label] = list(drawn.drafts)
         return True

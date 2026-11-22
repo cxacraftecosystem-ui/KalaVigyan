@@ -18,6 +18,7 @@ from app.research.component_specs import checked_spec
 from app.research.coverage_chapters import field_chapter
 from app.research.craft_contributed import contributed_credit, contributed_url
 from app.research.image_contributions import AI_GENERATED
+from app.research.image_intake_svg import SVG
 from app.research.media_refs import MediaRef
 from app.research.monograph_page import TextUnit
 from app.research.page_layout import HERO_CHAPTER, PICTURE_ROLES, PageLayoutEntry
@@ -68,6 +69,7 @@ class PlateSource:
     attribution: str | None
     focal: Mapping[str, Any] | None = None
     facts: tuple[uuid.UUID, ...] = ()
+    themed: bool = False
 
     def shown_with(self, visible: Collection[uuid.UUID]) -> bool:
         return all(fact in visible for fact in self.facts)
@@ -92,6 +94,8 @@ def plate_spec(
     }
     if crop is not None:
         shown["focal"] = dict(crop)
+    if source.themed:
+        shown["themed"] = True
     spec = {
         "setting": "figure",
         "picture": shown,
@@ -161,6 +165,7 @@ def contributed_plate(
         credit=credit,
         attribution=credit,
         facts=tuple(row.claimIds) if ai else (),
+        themed=asset.mime == SVG,
     )
 
 

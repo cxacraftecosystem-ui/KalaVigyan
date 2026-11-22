@@ -19,12 +19,17 @@ export const GENERAL_KICKERS: Readonly<Record<GeneralKind, string>> = {
 export const MAP_BOUNDS = { west: 68, east: 97.5, south: 6.5, north: 37.5 } as const;
 
 const SVG_ROOT = /^<svg[\s>]/;
+const ROLE = /var\(\s*--[a-z0-9-]+\s*\)/;
+const ROLE_ALL = /var\(\s*--([a-z0-9-]+)\s*\)/g;
 const VIEW_BOX = /viewBox="\s*(-?\d+(?:\.\d+)?)[\s,]+(-?\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)\s*"/;
 
 export type GeneralHead = { title: string; caption: string | null };
 export type DataCell = { row: number; column: string };
 export type DatasetCite = { code: string; credit?: string; url?: string };
-export type DrawingSpec = { head: GeneralHead; svg: string; alt: string };
+export const THEME_VARIANTS = ["light", "dark", "hcLight", "hcDark"] as const;
+export type ThemeVariant = (typeof THEME_VARIANTS)[number];
+export type DrawingThemes = Record<ThemeVariant, string>;
+export type DrawingSpec = { head: GeneralHead; svg: string; alt: string; themes?: DrawingThemes };
 export type ChartPoint = { label: string; value: number; reading: string; cell?: DataCell };
 export type ChartSeries = { name: string; points: ChartPoint[] };
 export type ChartSpec = { head: GeneralHead; form: (typeof CHART_FORMS)[number]; valueLabel: string; series: ChartSeries[]; emphasis: number | null; dataset?: DatasetCite };
@@ -54,7 +59,9 @@ export function isDeclared(spec: unknown): boolean {
   return typeof spec === "object" && spec !== null && !Array.isArray(spec) && Object.hasOwn(spec, DECLARED_KEY);
 }
 
-export const drawingSpecShape = object<DrawingSpec>({ head: headShape, svg: matching(SVG_ROOT, "an svg drawing"), alt: unitRef });
+const svgMarkup = matching(SVG_ROOT, "an svg drawing");
+const themesShape = object<DrawingThemes>({ light: svgMarkup, dark: svgMarkup, hcLight: svgMarkup, hcDark: svgMarkup });
+export const drawingSpecShape = object<DrawingSpec>({ head: headShape, svg: svgMarkup, alt: unitRef, themes: optional(themesShape) });
 export const chartSpecShape = object<ChartSpec>({
   head: headShape,
   form: oneOf(CHART_FORMS),
@@ -104,6 +111,14 @@ export function drawingViewBox(svg: string): ViewBox | null {
   if (!found) return null;
   const [x, y, width, height] = found.slice(1).map(Number);
   return width > 0 && height > 0 ? { x, y, width, height } : null;
+}
+
+export function drawingRoles(svg: string): boolean {
+  return ROLE.test(svg);
+}
+
+export function resolvedDrawing(svg: string, value: (role: string) => string): string {
+  return svg.replace(ROLE_ALL, (found, role: string) => value(role).trim() || found);
 }
 
 export function drawingSource(svg: string): string {

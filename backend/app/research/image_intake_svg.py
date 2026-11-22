@@ -6,6 +6,8 @@ from xml.etree import ElementTree
 
 from app.core.errors import InvalidInput
 
+from .drawing_rules import drawing_problems, listed
+
 __all__ = [
     "SVG",
     "SVG_BYTES_MAX",
@@ -107,6 +109,9 @@ def clean_svg(data: bytes) -> CleanSvg:
         raise InvalidInput("The file is not an SVG drawing")
     _clean(root)
     width, height = _size(root)
+    problems = drawing_problems(root, float(width))
+    if problems:
+        raise InvalidInput(f"A contributed SVG speaks only the design's vocabulary: {listed(problems)}")
     return CleanSvg(ElementTree.tostring(root, encoding="utf-8", xml_declaration=False), width, height)
 
 

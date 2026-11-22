@@ -12,6 +12,7 @@ from .elements import ELEMENTS
 from .monograph_document import MonographDocument
 from .monograph_page import ComponentEntry
 from .page_drafts import PageLists
+from .page_report_design import DESIGN_RULE, design_evidence
 from .quotes import quote_key, unsupported_figures
 from .structure_proposals import ReactionItem
 
@@ -169,6 +170,7 @@ def checked_rules(given: ReportInput) -> dict[int, Verdict]:
         24: _dense,
         25: _no_repeats,
         26: _no_holes,
+        DESIGN_RULE: _designed,
     }
     found = {number: check(page, given) for number, check in checks.items()}
     found |= {number: (JUDGE, [hint]) for number, hint in JUDGE_HINTS.items()}
@@ -364,6 +366,14 @@ def _no_holes(page: ReadPage, given: ReportInput) -> Verdict:
         if unit.tag == HEADING_TAG and unit.field and not shown.get(unit.field)
     ]
     return _verdict(problems, "no empty heading and no admitted gap")
+
+
+def _designed(page: ReadPage, given: ReportInput) -> Verdict:
+    figures = [(figure.label, figure.kind) for figure in page.figures]
+    pictures = [picture.label for picture in page.pictures]
+    found = design_evidence(figures, page.document.specs, page.held, page.text, pictures)
+    passed = f"every delivered figure and {len(pictures)} pictures speak the design's vocabulary"
+    return _verdict(found, passed)
 
 
 def _naming(page: ReadPage, term: str) -> list[str]:

@@ -1,0 +1,88 @@
+:root {
+  --kv-shows-light: block;
+  --kv-shows-dark: none;
+  --kv-shows-hc-light: none;
+  --kv-shows-hc-dark: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --kv-shows-light: none;
+    --kv-shows-dark: block;
+  }
+}
+
+:root[data-theme="dark"] {
+  --kv-shows-light: none;
+  --kv-shows-dark: block;
+}
+
+@media (prefers-contrast: more) {
+  :root:not([data-high-contrast="false"]) {
+    --kv-shows-light: none;
+    --kv-shows-dark: none;
+    --kv-shows-hc-light: block;
+    --kv-shows-hc-dark: none;
+  }
+}
+
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root:not([data-high-contrast="false"]):not([data-theme="light"]) {
+    --kv-shows-hc-light: none;
+    --kv-shows-hc-dark: block;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root[data-theme="dark"]:not([data-high-contrast="false"]) {
+    --kv-shows-hc-light: none;
+    --kv-shows-hc-dark: block;
+  }
+}
+
+:root[data-high-contrast="true"] {
+  --kv-shows-light: none;
+  --kv-shows-dark: none;
+  --kv-shows-hc-light: block;
+  --kv-shows-hc-dark: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-high-contrast="true"]:not([data-theme="light"]) {
+    --kv-shows-hc-light: none;
+    --kv-shows-hc-dark: block;
+  }
+}
+
+:root[data-theme="dark"][data-high-contrast="true"] {
+  --kv-shows-hc-light: none;
+  --kv-shows-hc-dark: block;
+}
+
+.kv-themed[data-theme-variant="light"] {
+  display: var(--kv-shows-light);
+}
+
+.kv-themed[data-theme-variant="dark"] {
+  display: var(--kv-shows-dark);
+}
+
+.kv-themed[data-theme-variant="hcLight"] {
+  display: var(--kv-shows-hc-light);
+}
+
+.kv-themed[data-theme-variant="hcDark"] {
+  display: var(--kv-shows-hc-dark);
+}
+
+@media print {
+  .kv-themed[data-theme-variant="dark"],
+  .kv-themed[data-theme-variant="hcLight"],
+  .kv-themed[data-theme-variant="hcDark"] {
+    display: none;
+  }
+
+  .kv-themed[data-theme-variant="light"] {
+    display: block;
+  }
+}

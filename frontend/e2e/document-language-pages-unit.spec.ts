@@ -22,6 +22,7 @@ import { goldenDocument } from "./monographNative";
 const provided = (element: ReactElement) => renderToStaticMarkup(createElement(AuthProvider, null, createElement(ThemeProvider, null, element)));
 const ROUTES = join(__dirname, "..", "app", "(reading)");
 const STRIP = '<nav aria-label="Languages of this page"';
+const STRIP_ON_THE_PLATE = '<nav aria-label="Languages of this page" class="w-full px-4 pt-3 sm:px-6 md:px-10 rail:px-12 xl:px-16"><div class="mx-auto w-full max-w-content">';
 const HINDI_UNIT = 'lang="hi" dir="ltr" data-script="Deva"';
 const HINDI_LEDE = ["बाघ छपाई बाघिनी नदी के किनारे ठप्पों से छापी जाती ", "है।"];
 const HINDI_SHELL_WORD = "अजरख";
@@ -45,6 +46,7 @@ test("a translated document page draws the language strip, keeps its own frame E
   const document = hindiDocumentPage();
   const html = provided(createElement(MonographDocumentPage, { document, languages: previewLanguages(document) }));
   expect(html).toContain(STRIP);
+  expect(html).toContain(STRIP_ON_THE_PLATE);
   expect(ROOT(html)).toBe("en");
   expect(html).toMatch(new RegExp(`${HINDI_UNIT}>(?:<span class="s">)?${HINDI_LEDE[0]}`));
   expect(html).toContain('lang="en" dir="ltr" data-fallback="en"');

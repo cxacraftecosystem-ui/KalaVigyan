@@ -17,7 +17,7 @@ __all__ = [
 HEAD = {"title": "u0001", "caption": "u0002"}
 SVG = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" width="120" height="60">'
-    '<rect x="1" y="1" width="20" height="10" fill="#1C1815"/></svg>'
+    '<rect x="1" y="1" width="20" height="10" fill="var(--ink-1)"/></svg>'
 )
 DRAWING: dict[str, Any] = {"head": HEAD, "svg": SVG, "alt": "u0003"}
 CHART: dict[str, Any] = {
