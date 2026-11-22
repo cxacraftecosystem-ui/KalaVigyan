@@ -30,13 +30,16 @@ __all__ = [
     "WIDE_DEPTH",
     "EvalPace",
     "ExpectedFact",
+    "FactClaims",
     "GoldenQuestion",
     "Hit",
     "Measures",
     "QuestionResult",
     "RetrievalReport",
     "SetReport",
+    "eval_query",
     "evaluate_golden",
+    "expected_facts",
     "fact_alternatives",
     "hit_claims",
     "kept_fused_order",
@@ -279,7 +282,7 @@ async def evaluate_golden(
     present: Collection[uuid.UUID] | None = None,
     pace: EvalPace | None = None,
 ) -> SetReport:
-    asked, absent = _expected(golden, claim_id, present)
+    asked, absent = expected_facts(golden, claim_id, present)
     paced = pace or EvalPace()
     gate = asyncio.Semaphore(paced.concurrency)
 
@@ -298,7 +301,7 @@ async def evaluate_golden(
     return _set_report([pair for pair in found if pair is not None], absent, questions=len(found))
 
 
-def _expected(
+def expected_facts(
     golden: Sequence[GoldenQuestion],
     claim_id: Callable[[str], uuid.UUID],
     present: Collection[uuid.UUID] | None,
@@ -322,16 +325,20 @@ class _AskedTwice:
     fell_back: bool
 
 
-async def _asked(
-    retriever: KnowledgeRetriever, question: GoldenQuestion, facts: tuple[FactClaims, ...]
-) -> _AskedTwice:
-    query = KnowledgeQuery(
+def eval_query(question: GoldenQuestion) -> KnowledgeQuery:
+    return KnowledgeQuery(
         craft_slug=question.craft_slug,
         text=question.question,
         mode=EVAL_MODE,
         fields=question.fields,
         limit=EVAL_DEPTH,
     )
+
+
+async def _asked(
+    retriever: KnowledgeRetriever, question: GoldenQuestion, facts: tuple[FactClaims, ...]
+) -> _AskedTwice:
+    query = eval_query(question)
     fused = await retriever.search(query)
     reranked = await retriever.search(query.model_copy(update={"rerank": True}))
     return _AskedTwice(

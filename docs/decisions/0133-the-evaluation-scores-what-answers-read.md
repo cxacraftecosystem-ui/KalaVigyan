@@ -18,6 +18,7 @@ are `docs/contracts/retrieval.md`, Evaluation, and `docs/contracts/answer-eval.m
 | The fused order's voting depth | [decision 0132](0132-a-ranking-votes-with-its-first-thirty.md) |
 | Scoring, the floors and the release check | [retrieval.md](../contracts/retrieval.md), Evaluation |
 | The answer floors | [answer-eval.md](../contracts/answer-eval.md), The floors |
+| The fusion sweep and the question writer asking once more (amends the evaluation) | [decision 0151](0151-a-release-the-live-side-can-read.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

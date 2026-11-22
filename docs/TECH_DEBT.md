@@ -1960,57 +1960,80 @@ Last reviewed: 2026-11-22.
   `ExplainerSentence`; serve the kind preview's specs through the backend, which adds the four
   variants with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
 
-### A stopped release leaves the live code on the migrated database
-
-- **What:** a release migrates the shared database before its retrieval check, so when the check
-  stops it (2026-11-22, decision 0132) the live release runs on the new schema. That release's
-  models read the `AiProvider` and `AiTask` columns as closed lists and raise `LookupError` on a
-  value added after it ('VOYAGE', 'RERANK'), which broke the admin route-order save until the next
-  release; and the recipe stamp of migration 0061 hid every vector not yet renewed from its vector
-  search until the renewal finished. Found when the round 7 release was stopped; left because the
-  fix is a release discipline, not a change to one file.
-- **Clears it:** keep every migration readable by the release before it (an added enum value is
-  read as unknown rather than refused, a renamed stamp keeps the old one current until the switch),
-  with a database test that loads every table through the previous release's models after
-  `alembic upgrade head`; or run the retrieval check on the new tree before migrating where the
-  schema allows.
-
 ### The fused order is weak on paraphrased English questions
 
-- **What:** on the production knowledge base on 2026-11-22 (release db09b9e7) the fused first-stage
-  order scored recall at 5 of 0.414 and a mean reciprocal rank of 0.296 on the 58 generated English
-  questions, which reword their fact, against 1.000 and 0.855 reranked. The full-text and
-  named-concept rankings find words the question shares with many of the craft's facts and outvote
-  the vector ranking, which places the expected fact in its first three for 52 of 55 such questions.
-  Answers read the reranked order, but a failed rerank, and any search that does not ask for
-  reranking, gets the fused one; the floors (decision 0133) only hold it where it stands
-  (`releaseSample` fused recall at 5 0.38).
-- **Why left:** the evaluation had to measure what answers read first; changing the fusion is a
-  ranking change of its own, measured on the same sets.
-- **Clears it:** weight the vector ranking in the fusion, or fuse by weights learned on the
-  hand-written and generated sets, measured on the generated English questions in the fused order
-  without lowering the hand-written ones; then raise the fused floors.
+- **What:** on release db09b9e7 the fused first-stage order scored recall at 5 of 0.414 and a mean
+  reciprocal rank of 0.296 on the 58 generated English questions, against 1.000 and 0.855 reranked,
+  because the full-text and named-concept rankings outvote the vector ranking. Decision 0151 weighs
+  each claim ranking by `backend/app/data/eval/fusion.json` and adds `eval_retrieval --fusion`, which
+  scores 60 weightings read-only and picks the best on the generated English questions that does not
+  lower the hand-written ones; the committed file still weighs the three rankings equally, and the
+  fused floors stand where they were (`releaseSample` fused recall at 5 0.38).
+- **Why left:** the weights must be measured on the production knowledge base, which only the lead
+  reaches.
+- **Clears it:** after the release that carries decision 0151, the lead runs
+  `eval_retrieval --fusion --out /tmp/fusion.json` on the box (RUNBOOK, Fusion weights), commits the
+  picked file and raises the fused floors to its numbers less 0.05.
+
+### Kutch Ajrakh's approved page does not yet carry the ground figure
+
+- **What:** the API places the "why here" ground figure in Kutch Ajrakh's why chapter
+  (`services/monograph_generated_why_here.with_why_here`), and the owner approved it on 2026-11-23
+  (decision 0151), but the approved static page (`frontend/public/monographs/kutch-ajrakh`, built
+  from `backend/app/data/monographs/Kutch-Ajrakh`) does not carry it. The Monograph parity run, which
+  since decision 0151 compares the text and chapters after every deploy, reports the figure's 137
+  lines (run 45049769331) and the headings below it, which sit a fraction of a pixel lower.
+- **Why left:** the approved page draws a component from its fragment, and the figure's fragment
+  must be the markup the React view draws from production's ground data, captured in a browser,
+  then built with `build_monograph`; this lane's machine runs neither a browser nor the build.
+- **Clears it:** capture the drawn `.kv-why-here` figure from `/crafts/Kutch-Ajrakh/monograph` as
+  `fragments/kutch-ajrakh__geography__why-here.html`, add its component (kind `why_here`, its spec
+  from the served document) to `content.json` and its slot to the why chapter of the template, run
+  `python -m app.scripts.build_monograph` and `--document Kutch-Ajrakh --out
+  ../shared/monograph.document.golden.json`, and after the deploy `load_monograph` on the box; the
+  parity run then passes with the figure on both pages.
+
+### The MCP call's client name is filled by a trigger for the release before
+
+- **What:** migration `0075_mcp_call_name_filled` adds a `BEFORE INSERT` trigger on `McpToolCall`
+  that fills a missing `clientName` from the grant's client, because production's release records
+  MCP calls without it while migration 0074 made it required. The rule then has two homes:
+  `services/oauth_bearer.record_tool_call` and the trigger.
+- **Why left:** the trigger is needed only while the release before 0074 can still serve the
+  migrated database (decision 0151).
+- **Clears it:** in the first release after the one that carries 0074, drop the trigger and
+  `kv_fill_mcp_client_name()` in a migration; the release-before check passes once the release
+  before maps the column.
+
+### Goldens that do not yet show every field
+
+- **What:** 177 fields of 38 models the web is served (the craft page's field voices, field photos,
+  contributed plates, AI media and searched parts, the people and component blocks, groundwater,
+  monthly rain and dataset references, a source's journal name, a translated sentence's original,
+  a reaction step's ΔH)
+  appear in no golden in `shared/`, so the web's strict parse of the goldens does not test them.
+  `backend/tests/contracts/unshown_fields.json` lists them; `test_golden_fields.py` fails on any
+  other unshown field, so every field added since decision 0151 is shown (but for the step's ΔH of
+  decision 0152, which no source a golden is built from states), and on a listed field that is
+  shown, so the list only shrinks.
+- **Why left:** the craft page goldens are the Kutch Ajrakh dossier and Farrukhabad Prints as the
+  preview builds them, and neither has field voices, contributed or AI pictures, people blocks or a
+  journal paper; showing them needs inputs for those builders, a change of its own.
+- **Clears it:** give the preview builders inputs that carry each part (a recorded voice and field
+  photo in `craft.page.inputs.json`, a contributed and an AI plate, a journal source), add the
+  missing block kinds to the explainer fixtures, regenerate the goldens and empty the list.
 
 ### The question writer keeps few of the facts it samples
 
 - **What:** generation run 44993519051 sampled 727 facts and dropped 580 questions because they
-  reused their fact's distinctive words (more than `UNAVOIDABLE_MAX`, or terms not listed as
-  unavoidable), so the generated set holds 169 questions, 58 in English, where its sampling allows
-  several times more, and crafts with few facts are scored on very few questions.
-- **Why left:** the rule keeps the questions honest paraphrases, which is what makes the set
-  measure retrieval rather than word matching; loosening it was not part of making the evaluation
-  score what answers read.
-- **Clears it:** ask the writer again, once, for the facts whose question was dropped as copied,
-  naming the words it reused, or count a reused stem only when the fact has a synonym the writer
-  could have used; measure the kept share and the fused order's scores on the new questions.
-
-### The stuck-page unit spec can time out under load
-
-- **What:** `frontend/e2e/stuck-page-unit.spec.ts` ("a page whose script never yields is caught")
-  timed out once after 1.2 minutes on main at `098739f` and passed on the rerun; it had passed on
-  the same commit minutes before.
-- **Clears it:** give the spinning page's catch a bound of its own well inside the test timeout, or
-  run that spec alone in its project with a longer timeout.
+  reused their fact's distinctive words, so the generated set holds 169 questions, 58 in English.
+  Decision 0151 asks the writer once more for each such fact, naming the words it reused, and
+  reports `asked`, `keptEnglish`, `keptShare`, `askedAgain` and `rewritten`; the committed set was
+  written before it.
+- **Why left:** a generation run spends money on production and is the lead's to dispatch.
+- **Clears it:** dispatch `eval-questions.yml` after the release that carries decision 0151, commit
+  the set, compare its `keptShare` with run 44993519051's, and score the new questions in the fused
+  order with `eval_retrieval --fusion`.
 
 ### Numbers in prose without a table or figure
 
@@ -2087,8 +2110,9 @@ Last reviewed: 2026-11-22.
 - **What:** a held write-back (decision 0136) waits in the review queue as a `DRAFT` researched fact
   of its suggested craft. Its reason is only in its `ReviewEvent` note and the filing report, and the
   Review page cannot file it under another craft, though the approve route takes `craft`.
-- **Why left:** the web app's `FactReview` shape refuses unknown fields, so a new field in the queue
-  item would break the page, and frontend files were another lane's this round.
+- **Why left:** the web's unit specs parse the queue strictly (the production build ignores an
+  unknown field since decision 0151), so the field and its shape land together, and frontend files
+  were another lane's this round.
 - **Clears it:** add `held {reason, suggestedCraft}` to `FactReview` and to `lib/reviewQueueContract.ts`
   in one change, and a craft picker beside Approve that sends `craft`.
 

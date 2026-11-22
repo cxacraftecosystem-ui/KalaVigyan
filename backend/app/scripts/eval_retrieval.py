@@ -23,6 +23,8 @@ from app.retrieval.deadline import Deadline
 from app.retrieval.eval_floors import eval_floors
 from app.retrieval.eval_runs import EVAL_CONCURRENCY, EvalTools, QuestionSets, release_run, weekly_run
 from app.retrieval.evaluation import GoldenQuestion
+from app.retrieval.fusion_settings import fusion_settings, settings_text
+from app.retrieval.fusion_sweep import fusion_sweep, picked_settings
 from app.retrieval.golden import generated_set, golden_questions
 from app.retrieval.miss_judging import MISS_JUDGE_CAP_USD, MISS_JUDGE_TAG, JudgeTools
 from app.retrieval.release_check import RELEASE_SECONDS
@@ -112,12 +114,26 @@ async def crafts() -> dict[str, Any]:
     return {"ok": True, "cases": len(outcomes), "byKind": case_report(outcomes)}
 
 
+async def fusion(out: Path | None) -> dict[str, Any]:
+    current = fusion_settings()
+    swept = await fusion_sweep(
+        eval_tools(), QuestionSets(golden_questions(), generated_set()), current=current
+    )
+    written = None
+    if out is not None:
+        out.write_text(settings_text(picked_settings(swept, at=datetime.now(UTC))), encoding="utf-8")
+        written = str(out)
+    return {**swept.as_dict(), "out": written}
+
+
 async def run(arguments: argparse.Namespace) -> tuple[dict[str, Any], int]:
     try:
         if arguments.release:
             return await release(arguments.seconds)
         if arguments.crafts:
             return await crafts(), 0
+        if arguments.fusion:
+            return await fusion(arguments.out), 0
         return await weekly(min(arguments.cap, MISS_JUDGE_CAP_USD), arguments.out), 0
     except AppError as error:
         return {"ok": False, "error": str(error)}, EXIT_FAILED
@@ -130,11 +146,19 @@ def main(argv: list[str] | None = None) -> int:
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--release", action="store_true", help="score the release sample against the floors")
     mode.add_argument("--crafts", action="store_true", help="score the craft resolver on the matching cases")
+    mode.add_argument(
+        "--fusion", action="store_true", help="score each weighting of the first-stage fusion, read-only"
+    )
     parser.add_argument(
         "--seconds", type=float, default=RELEASE_SECONDS, help="the release check's time budget"
     )
     parser.add_argument("--cap", type=Decimal, default=MISS_JUDGE_CAP_USD, help="the judge's US dollar cap")
-    parser.add_argument("--out", type=Path, default=None, help="write the next generated set's revision here")
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="write the next generated set's revision, or the picked fusion, here",
+    )
     report, code = asyncio.run(run(parser.parse_args(argv)))
     print(json.dumps(report, ensure_ascii=False))
     return code

@@ -83,7 +83,7 @@ jobs:
         working-directory: frontend
     env:
       E2E_PARITY: "1"
-      E2E_PARITY_CHECK: ${{ inputs.check || 'borrowed' }}
+      E2E_PARITY_CHECK: ${{ inputs.check || 'all' }}
       E2E_BASE_URL: ${{ inputs.base_url || vars.WEB_ORIGIN || 'https://kalavigyan.vercel.app' }}
       E2E_VERCEL_BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
       E2E_REPORT_DIR: parity-run

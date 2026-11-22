@@ -74,10 +74,14 @@ and refused, and exits 2 only when a dossier does not parse).
 Each curated craft's first `PageLayout` comes from its dossier's picture placements: run
 `python -m app.scripts.backfill_layouts` on the box once after the deploy that adds migration 0042.
 
-The parity proof of decision 0106 is the **Monograph parity** workflow (Actions, run it by hand,
-optionally on a preview URL). It compares `/crafts/Kutch-Ajrakh/monograph` with the approved static
-page at 360, 834 and 1440 in light and dark and keeps `text.json`, `pixels.json`,
-`interactions.json` and the differing chapters' screenshots as its artifact.
+The parity proof of decision 0106 is the **Monograph parity** workflow, which runs after every
+deploy of main once production serves it, and by hand (optionally on a preview URL, or with
+`check` set to `monograph` or `borrowed` for one part). It compares `/crafts/Kutch-Ajrakh/monograph`
+with the approved static page at 360, 834 and 1440 in light and dark, text, chapters and the first
+citation and figure, then every component borrowed from Kutch Ajrakh on the pages that place it
+(decision 0151: the run after a deploy compares all of it, so a change to the approved page fails
+the release), and keeps `text.json`, `pixels.json`, `interactions.json` and the differing chapters'
+screenshots as its artifact.
 
 ## Connection budget
 
@@ -646,7 +650,17 @@ fixture or the category page (`docs/contracts/category-page.md`).
   3 by default). It writes a question for each sampled published fact on the box and keeps the set as
   the `eval-questions-<run id>` artifact; commit its `retrieval_questions.json` as
   `backend/app/data/eval/generated/retrieval_questions.json`. A later run reuses the kept questions
-  and pays only for new facts.
+  and pays only for new facts. A fact whose question reused its words is asked once more, naming the
+  words (decision 0151); the summary reports `asked`, `keptEnglish`, `keptShare`, `askedAgain` and
+  `rewritten`.
+- **Fusion weights** (decision 0151): read-only, on the box, after a release that carries the sweep:
+  `cd /opt/kalavigyan/current/backend && sudo -u kalavigyan bash -c 'set -a; . /opt/kalavigyan/.env; set +a; .venv/bin/python -m app.scripts.eval_retrieval --fusion --out /tmp/fusion.json'`.
+  It embeds every hand-written and generated question once (no rerank, no judge), reads each one's
+  three claim rankings and scores the 60 weightings of `FUSION_GRID` in the fused order per set; the
+  printed `picked` row is the weighting that scores the generated English questions best without
+  lowering the hand-written ones. Commit `/tmp/fusion.json` over `backend/app/data/eval/fusion.json`
+  when `changed` is true, and raise the fused floors in `floors.json` to the picked row's numbers
+  less 0.05 in the same change.
 - **Re-embed knowledge** (`embed-knowledge.yml`): by hand only, from main, once after a release that
   changes the embedding stamp's recipe (decision 0129):
   `gh workflow run embed-knowledge.yml -R cxacraftecosystem-ui/KalaVigyan --ref main` (`-f seconds=`,

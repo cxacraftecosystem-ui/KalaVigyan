@@ -1,3 +1,4 @@
+import enum
 import uuid
 from datetime import datetime
 
@@ -18,8 +19,15 @@ class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
 
-def pg_enum(name: str, values: tuple[str, ...]) -> ENUM:
-    return ENUM(*values, name=name, create_type=False)
+class OpenEnum(ENUM):
+    def _object_value_for_elem(self, elem: str) -> str | enum.Enum:
+        if elem in self._object_lookup:
+            return super()._object_value_for_elem(elem)
+        return elem
+
+
+def pg_enum(name: str, values: tuple[str, ...]) -> OpenEnum:
+    return OpenEnum(*values, name=name, create_type=False)
 
 
 def one_of(column: str, values: tuple[str, ...]) -> str:

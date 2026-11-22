@@ -100,4 +100,5 @@ adds its `document.body` and `window` listeners as fresh `bind` results it keeps
   story's own read, the crafts still without a cited reaction or temperature, curated
   alternatives, condition and water inputs, and out-of-envelope readings in the review queue.
 - A source stating a reaction's ΔH can now reach the player through the reaction's
-  `deltaHKjMol` and `deltaHClaimId`; none is stored yet.
+  `deltaHKjMol` and `deltaHClaimId`; none is stored yet, so no golden shows `deltaH` and its three
+  fields join `backend/tests/contracts/unshown_fields.json` (decision 0151) until one does.
