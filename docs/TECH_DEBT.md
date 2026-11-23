@@ -1148,19 +1148,27 @@ Last reviewed: 2026-11-22.
   photo in `craft.page.inputs.json`, a contributed and an AI plate, a journal source), add the
   missing block kinds to the explainer fixtures, regenerate the goldens and empty the list.
 
-### The quantities table has not been measured by the judge
+### The quantities table is dropped where its rows repeat a sentence the section says
 
-- **What:** in run 44994632550 the judge's figures part averaged 2.8 of 5 (36 of 65); the Ajrakh
-  indigo (bed43e9f), Jaipur safe-handling (af3f7ac2) and Bandhani tie-and-dye (4978c466) answers
-  scored 1 because dip times, kiln temperatures, tying days and lengths were only in prose.
-  Decision 0147 built the `quantities` table for a section whose facts state three or more
-  quantities and names each figure's kind and quantities in the judge's message, and re-based the
-  rubric floor to the lowest mean the shown-sentence count can give (0.82); no run has measured
-  either since.
-- **Why left:** answer-quality spends money and only the lead dispatches it (owner rule).
-- **Clears it:** the lead runs answer-quality on the same questions after the release, records the
-  figures part of those three answers, and raises `rubricMean` in
-  `backend/app/data/eval/floors.json` to the run's mean less 0.05, rounded down.
+- **What:** run 45112746194 (release 1ab422fe, 2026-11-23) measured decision 0147's table on two
+  Kutch Ajrakh answers. The indigo answer (85f14b90) built none: no section's cited facts state
+  three quantities in digits (PROCESS states "10 to 15 minutes", GEOGRAPHY "40 km"; "about one
+  month", "four hours" and "one percent" are number words, which `research/stated_amounts` does not
+  read). The water and climate answer (ea19b016) built one in PROCESS (`ADDED` in
+  `Answer.plan.builds`) that the claim ledger then dropped: each row's sentence is the text of a
+  ladder stage sentence the section had already shown, and a story block never repeats a sentence
+  said word for word (`claim_ledger._anchored_repeat`, in every pass). The judge's figures part was
+  2 and 3 of 5, and no run has yet shown a table, so `rubricMean` in
+  `backend/app/data/eval/floors.json` is still the 0.82 decision 0147 set.
+- **Why left:** showing the table means either letting it repeat the section's sentences, which the
+  judge marks down as repetition, or drawing its rows under a sentence the section already says
+  without saying it again, a change to the ledger, the quantities view and the judge's reading
+  together; decision 0165 records the choice as the lead's after the next run.
+- **Clears it:** the claim ledger admits a `quantities` table whose row sentences were already shown,
+  the quantities view draws such a row group with its citation and without the sentence text, and
+  `coverage_answers.shown_field_sentences` skips the same sentences; then the lead runs
+  answer-quality on the same questions and raises `rubricMean` to the run's mean less 0.05, rounded
+  down.
 
 ### Leftovers of the sentence-once lane
 

@@ -79,7 +79,7 @@ async def off_question(found: Explainer, craft_slug: str) -> int:
 
 async def spent_since(request_id_prefix: str, since: datetime) -> Decimal:
     async with session_scope() as session:
-        return await router.tagged_spend(session, request_id_prefix=request_id_prefix, since=since)
+        return await router.tagged_settled_spend(session, request_id_prefix=request_id_prefix, since=since)
 
 
 async def run(*, only: list[str], limit: int | None, cap: Decimal) -> dict[str, Any]:

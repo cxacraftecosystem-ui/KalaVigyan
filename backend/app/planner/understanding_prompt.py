@@ -49,7 +49,9 @@ UNDERSTAND_SYSTEM_PROMPT = (
     "Sections line gives: the fields the question asks about, then those that explain them. GEOGRAPHY "
     "covers geography and water, GEOLOGY covers geology and soil, PROCESS how the craft is made, "
     "OVERVIEW what the craft is, SOCIETY the communities and livelihoods behind it, POLICY its GI, law "
-    "and public schemes.\n"
+    "and public schemes, ECOLOGY the pollution, effluent and waste it leaves and how sustainable it is.\n"
+    "- asked: the fields among disciplines that the question itself asks about, most important first; "
+    "leave out every field listed only to explain them.\n"
     "- seats: the experts whose view the answer needs, most relevant first, within the number the "
     "Experts line gives. ARTISAN is the voice of the makers.\n"
     "- englishQuestion: the learner's question in English, faithful to its meaning, whatever language "
@@ -66,6 +68,7 @@ class UnderstandReply(ContractModel):
     craft_names: list[str] = Field(default_factory=list)
     compare: list[str] = Field(default_factory=list)
     disciplines: list[Discipline] = Field(default_factory=list)
+    asked: list[Discipline] = Field(default_factory=list)
     seats: list[ExpertSeat] = Field(default_factory=list)
     english_question: str | None = Field(
         default=None, min_length=ENGLISH_QUESTION_MIN_CHARS, max_length=QUESTION_MAX_CHARS
@@ -76,7 +79,7 @@ class UnderstandReply(ContractModel):
     def _named_crafts(cls, names: list[str]) -> list[str]:
         return list(dict.fromkeys(names))[:MAX_CRAFT_NAMES]
 
-    @field_validator("compare", "disciplines", "seats")
+    @field_validator("compare", "disciplines", "asked", "seats")
     @classmethod
     def _listed_once(cls, values: list[str]) -> list[str]:
         return list(dict.fromkeys(values))
@@ -115,6 +118,7 @@ def understand_schema(offered: Sequence[CraftRef]) -> dict[str, Any]:
         craftNames={"type": "array", "items": {"type": "string"}},
         compare={"type": "array", "items": {"type": "string"}},
         disciplines={"type": "array", "items": {"type": "string", "enum": list(DISCIPLINES)}},
+        asked={"type": "array", "items": {"type": "string", "enum": list(DISCIPLINES)}},
         seats={"type": "array", "items": {"type": "string", "enum": list(EXPERT_SEATS)}},
         englishQuestion={"type": "string"},
     )
@@ -143,6 +147,7 @@ def parsed_reply(reply: StructuredReply, offered: Sequence[CraftRef]) -> Underst
         "craftNames": names,
         "compare": _each(raw.get("compare"), _compared_item(slugs, names.value)),
         "disciplines": _each(raw.get("disciplines"), _among(DISCIPLINES)),
+        "asked": _each(raw.get("asked"), _among(DISCIPLINES)),
         "seats": _each(raw.get("seats"), _among(EXPERT_SEATS)),
         "englishQuestion": _one(raw.get("englishQuestion"), _english_question),
     }

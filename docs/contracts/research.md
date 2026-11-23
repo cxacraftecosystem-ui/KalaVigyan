@@ -1073,16 +1073,18 @@ ModelUnderstander(model=StructuredModel, resolve=)` implements it with the craft
   at least one discipline; `RESOLVER` (the model call failed or its reply held nothing usable)
   carries the fields the question's words name and their seats (below); only `RESOLVER` carries a
   `refusal`, the router's own words when spend was refused. `asked` are the fields the question
-  itself asks (the reply's, else the fields its words name), each once and each among
+  itself asks: the reply's `asked` that it also lists among its disciplines, else every field it
+  lists (a `RESOLVER` understanding's are the fields its words name), each once and each among
   `disciplines`, before the depth's floor adds held fields; without it every field is asked
-  (decision 0138). `englishQuestion` is the question in
+  (decisions 0138 and 0165). `englishQuestion` is the question in
   English that every search of the answer reads (decision 0123). `understood()` is the stream's
   `Understood` event, its `crafts` the craft then the compared ones.
 - The call: system `UNDERSTAND_SYSTEM_PROMPT`; user `understand_message` (depth label, the
   depth's expert range, its section range `Sections: <min> to <max>`, the listed crafts each in a
   `craft_block`, the question in an untrusted block); schema `understand_schema(offered)` `{craft:
   enum of the listed slugs and "", craftNames [string], compare [string: a listed slug, or a name
-  as given in craftNames], disciplines[DISCIPLINES], seats[EXPERT_SEATS], englishQuestion: string}`
+  as given in craftNames], disciplines[DISCIPLINES], asked[DISCIPLINES], seats[EXPERT_SEATS],
+  englishQuestion: string}`
   with only `type`,
   `enum`, `items`, `properties`, `required` and `additionalProperties: false`.
 - The reply (`understanding_prompt.parsed_reply`, decision 0123) is read field by field: a value

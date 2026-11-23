@@ -26,6 +26,7 @@ __all__ = [
     "persist_learned",
     "reserved_event",
     "settle",
+    "tagged_settled_spend",
     "tagged_spend",
 ]
 
@@ -90,18 +91,23 @@ async def current_spend(
 
 
 async def tagged_spend(session: AsyncSession, *, request_id_prefix: str, since: datetime) -> Decimal:
+    total = (
+        await session.execute(select(_spend_sum()).where(*_tagged(request_id_prefix, since)))
+    ).scalar_one()
+    return budget.usd(total)
+
+
+async def tagged_settled_spend(session: AsyncSession, *, request_id_prefix: str, since: datetime) -> Decimal:
+    settled = func.coalesce(func.sum(UsageEvent.costUsd), 0)
+    total = (await session.execute(select(settled).where(*_tagged(request_id_prefix, since)))).scalar_one()
+    return budget.usd(total)
+
+
+def _tagged(request_id_prefix: str, since: datetime) -> tuple[Any, ...]:
     if not request_id_prefix:
         raise ValueError("A tagged spend needs a request id prefix")
     escaped = request_id_prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    total = (
-        await session.execute(
-            select(_spend_sum()).where(
-                UsageEvent.createdAt >= since,
-                UsageEvent.requestId.like(f"{escaped}%", escape="\\"),
-            )
-        )
-    ).scalar_one()
-    return budget.usd(total)
+    return UsageEvent.createdAt >= since, UsageEvent.requestId.like(f"{escaped}%", escape="\\")
 
 
 def reserved_event(

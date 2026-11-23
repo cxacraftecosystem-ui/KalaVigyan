@@ -8,10 +8,12 @@ from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core import managed_keys
 from app.core.errors import SPEND_REFUSAL_KIND, STOP_KINDS
+from app.core.pooler import POOLER_RETRY_WAITS, pooler_full
 from app.providers.catalogue import MEDIA_TASKS, AiTask, task_of
 
 from . import budget, spend_settings
@@ -40,6 +42,7 @@ from .route_store import (
     persist_learned,
     reserved_event,
     settle,
+    tagged_settled_spend,
     tagged_spend,
 )
 
@@ -65,6 +68,7 @@ __all__ = [
     "run",
     "settle",
     "settle_abandoned",
+    "tagged_settled_spend",
     "tagged_spend",
 ]
 
@@ -292,20 +296,16 @@ async def _succeeded(
     cost = call_cost(plan, choice, outcome)
     if attempt.who.answer is not None:
         attempt.who.answer.settle(attempt.estimate_usd, cost)
-    async with attempt.sessions() as session:
-        await settle(
-            session,
-            event_id,
-            outcome="OK",
-            cost_usd=cost,
-            input_tokens=outcome.input_tokens,
-            output_tokens=outcome.output_tokens,
-            cached_tokens=outcome.cached_tokens,
-            latency_ms=outcome.latency_ms,
-            detail={"servedModel": outcome.meta.get("served_model"), "degraded": plan.degrade},
-        )
-        if called.adapter is not None:
-            await persist_learned(session, choice, called.adapter)
+    values = {
+        "outcome": "OK",
+        "cost_usd": cost,
+        "input_tokens": outcome.input_tokens,
+        "output_tokens": outcome.output_tokens,
+        "cached_tokens": outcome.cached_tokens,
+        "latency_ms": outcome.latency_ms,
+        "detail": {"servedModel": outcome.meta.get("served_model"), "degraded": plan.degrade},
+    }
+    await asyncio.shield(_settled_answered(attempt, event_id, called.adapter, values))
     attempt.noted("OK")
     return RouterResult(
         task=plan.ask.task.value,
@@ -322,6 +322,23 @@ async def _succeeded(
         output_tokens=outcome.output_tokens,
         meta=outcome.meta,
     )
+
+
+async def _settled_answered(
+    attempt: _Attempt, event_id: uuid.UUID, adapter: Adapter | None, values: dict[str, Any]
+) -> None:
+    for wait in (*POOLER_RETRY_WAITS, None):
+        try:
+            async with attempt.sessions() as session:
+                await settle(session, event_id, **values)
+                if adapter is not None:
+                    await persist_learned(session, attempt.choice, adapter)
+            return
+        except SQLAlchemyError as error:
+            if wait is None or not pooler_full(error):
+                raise
+            logger.warning("the pooler refused an answered call's settlement; trying again in %.1f s", wait)
+            await asyncio.sleep(wait)
 
 
 async def _failed(attempt: _Attempt, event_id: uuid.UUID, called: Called, failure: ProviderError) -> None:

@@ -1,6 +1,7 @@
 from typing import Any
 
 from app.research.blocks_insight import MeasureBlock
+from app.research.blocks_people import ExpertViewBlock
 from app.research.blocks_place import SupplyMapBlock
 from app.research.coverage_answers import field_figures, shown_field_sentences
 from app.research.coverage_eval import answer_measures, judge_message
@@ -98,3 +99,17 @@ def test_the_judge_reads_each_figure_s_kind_and_the_quantities_it_shows() -> Non
     assert "[GEOGRAPHY] supply_map: no quantities" in figures
     assert "[GEOGRAPHY] measure: 200 feet; 450 feet" in figures
     assert len(field_figures(explainer)) == 2 + 2
+
+
+def test_two_seats_that_differ_are_read_once_as_the_reader_s_differ_card_shows_them() -> None:
+    historian = ExpertViewBlock.model_validate(phase_b_blocks()["s5.b1"])
+    anthropologist = ExpertViewBlock.model_validate(phase_b_blocks()["s5.b2"])
+    difference = historian.differs[0]
+    explainer = with_blocks(historian, anthropologist)
+    texts = [one.sentence.text for one in shown_field_sentences(explainer)]
+    assert len(texts) == 12 + 1 + 2 + 1
+    assert (texts.count(difference.this_view.text), texts.count(difference.other_view.text)) == (1, 1)
+    geography = next(
+        field for field in answer_measures(explainer, ASKED).fields if field.field == "GEOGRAPHY"
+    )
+    assert geography.sentences == 3 + 1 + 2 + 1
