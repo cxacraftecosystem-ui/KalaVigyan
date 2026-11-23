@@ -695,8 +695,10 @@ fixture or the category page (`docs/contracts/category-page.md`).
   craft page show it to a signed-out reader without the quote, retracts it and checks it is gone.
 - **Lead scripts for contributions** (on the box, as `kalavigyan` with the box's `.env`):
   `python -m app.scripts.rejudge_differing` re-judges every live pair flagged sources differ and
-  writes nothing; `python -m app.scripts.retitle_sources` lists sources whose title is a file name or
-  under three words, and `--set <id> --title "<the work's title>"` replaces one with an audit row.
+  writes nothing; `python -m app.scripts.retitle_sources` prints `{titles, authors}`: the sources whose title is a
+  file name or under three words, and those whose authors hold a PDF producer's word such as `sys`
+  (`research/front_page.producer_token`), each with its id, title, url and citations, for the lead
+  to correct by hand; `--set <id> --title "<the work's title>"` replaces a title with an audit row.
 - **Generated retrieval questions** (`eval-questions.yml`): by hand only, from main:
   `gh workflow run eval-questions.yml -R cxacraftecosystem-ui/KalaVigyan --ref main` (`-f cap=<USD>`,
   3 by default). It writes a question for each sampled published fact on the box and keeps the set as

@@ -122,9 +122,20 @@ A refusal stops the run; every gate that ran is stored as one `CandidateCheck` r
    fetched page takes the grade the research pipeline gives a web page (C). A fact resting only on
    D sources is refused, except an ECONOMICS fact stating a price (the curation rule). A source
    stored as RESTRICTED is refused. A source whose title is a file name or has fewer than three
-   words of letters takes the proposal's title, else the document's first such heading
-   (`research/source_titles.usable_title`); one with none of them is refused, asking for the
-   work's title, and a stored source with such a title takes the next proposal's usable title. A licence declared open (CC BY, CC0, public domain) that the
+   words of letters takes the proposal's title, else, for a PDF, the title its first page states,
+   else the document's first such heading (`research/source_titles.usable_title`); one with none of
+   them is refused, asking for the work's title, and a stored source with such a title takes the
+   next proposal's usable title. A PDF, contributed or fetched by research, is described by its
+   first page beside its file's metadata (`research/front_page`, `sources/web/page.page_item`):
+   among its first 15 lines, a journal line (a name holding Journal, Bulletin, Proceedings,
+   Transactions, Annals, Review, Letters, Quarterly or Magazine, then a month and a year) makes it
+   kind `PAPER` with that journal as its `containerTitle` and dates it to that month, since a PDF's
+   own date is only its file's creation; an author that is a producer's word (sys, user, admin, a
+   software name such as Microsoft or PScript, or one word with no capital letter) is dropped, and
+   with none left the first page's authors line (names of two to five words or initials, after a
+   title line) gives the authors, the lines between it and the journal line the title. A DOI the
+   page prints is not taken, because a DOI changes the key a source is stored under; a stored
+   source is never re-described. A licence declared open (CC BY, CC0, public domain) that the
    page itself contradicts is refused. Otherwise the licence passes and is recorded; it decides
    only whether quotes are public: a fetched page's full text is stored for researchers
    (`chunk_acl`), so its quotes are withheld from public views and exports, whether or not a
@@ -789,7 +800,7 @@ field, or changes its meaning, is a new schema version.
 
 | Claim | Kept true by |
 |---|---|
-| The gates, their order, reasons and the judge's replies | `backend/tests/knowledge_writes/test_candidate_gates.py`, `test_gate_orchestration.py`, `test_judge_and_contract.py` and `backend/tests/write_back/test_novelty_failure.py` (a failed novelty call) |
+| The gates, their order, reasons and the judge's replies | `backend/tests/knowledge_writes/test_candidate_gates.py`, `test_gate_orchestration.py`, `test_judge_and_contract.py`, `backend/tests/write_back/test_novelty_failure.py` (a failed novelty call), and a PDF described by its first page: `backend/tests/research/test_front_page.py`, `backend/tests/sources/test_pdf_front_page.py` and `backend/tests/db/test_producer_authors_db.py` |
 | The review switch and placement | `backend/tests/knowledge_writes/test_review_switch.py` |
 | A proposal's task key | `backend/tests/knowledge_writes/test_fact_task_key.py` |
 | The routes, refusals and the reply | `backend/tests/knowledge_writes/test_knowledge_writes_routes.py` and `backend/tests/db/test_fact_proposals_db.py` |

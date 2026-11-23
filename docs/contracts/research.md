@@ -336,8 +336,9 @@ the four T3 reference adapters; none needs a key.
   most 20 results.
 - `fetch` sends a `FetchRequest` for the URL in the id and returns the page text with the item
   rebuilt from the page: `url` is the final URL, title (else the final URL), authors,
-  published, licence and site name (as `publisher`) from the page metadata, `retrievedAt` the
-  fetch time, `externalIds.sha256` the raw body's hash. `truncated` carries the fetcher's.
+  published, licence and site name (as `publisher`) from the page metadata (a PDF's also from its
+  first page, knowledge-writes.md gate 2), `retrievedAt` the fetch time, `externalIds.sha256` the
+  raw body's hash. `truncated` carries the fetcher's.
 - `sources.web.fallback.WebSearch` (`name` `web`, `T4`) is the one web search the planner
   calls: SearXNG first; when it returns fewer than `min(WEB_FALLBACK_MIN_HITS, k)` hits (3) or
   fails, Brave (if configured) is asked and its hits new by `source_key` are appended, at most

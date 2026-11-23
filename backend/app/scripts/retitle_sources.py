@@ -9,13 +9,16 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.core.db import dispose_engine, session_scope
 from app.models import User
-from app.services.source_titles import junk_titled, retitle_source
+from app.services.source_titles import junk_titled, producer_authored, retitle_source
 
 
-async def listed() -> list[dict[str, Any]]:
+async def listed() -> dict[str, list[dict[str, Any]]]:
     try:
         async with session_scope() as session:
-            return [found.as_dict() for found in await junk_titled(session)]
+            return {
+                "titles": [found.as_dict() for found in await junk_titled(session)],
+                "authors": [found.as_dict() for found in await producer_authored(session)],
+            }
     finally:
         await dispose_engine()
 
