@@ -10,6 +10,7 @@ from typing import Any
 from common import read_json, write_json
 
 from app.data.craft_master_loader import MASTER_FILE, SEED_CLAIMS_FILE, parse_master
+from source_authors import split_authors
 
 from traditions import (
     IMMERSIVE_ROOT,
@@ -117,12 +118,6 @@ def stage_type(*texts: str) -> str:
         if re.search(r"(?<![a-z])" + re.escape(needle), blob):
             return kind
     return "OTHER"
-
-
-def split_authors(author: str | None) -> list[str]:
-    if not author:
-        return []
-    return [a.strip() for a in re.split(r";|\band\b(?![^()]*\))", author) if a.strip()]
 
 
 def publication_kind(src: dict[str, Any]) -> str:
