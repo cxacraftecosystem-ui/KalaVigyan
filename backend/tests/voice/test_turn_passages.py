@@ -149,6 +149,7 @@ async def test_a_hybrid_turn_asks_for_passages_its_reader_may_read() -> None:
     await spoken_turn(ask(mode="VERIFIED"), passage_tools(FakePassages(), search, FakeModel([])))
     student, researcher, verified = search.asked
     assert (student.passages, student.chunk_acls) == (True, ("PUBLIC", "SIGNED_IN"))
+    assert student.chunk_kinds == researcher.chunk_kinds == ("PASSAGE", "WINDOW")
     assert researcher.passages and set(researcher.chunk_acls) == {"PUBLIC", "SIGNED_IN", "RESEARCHER"}
     assert verified.passages is False
 

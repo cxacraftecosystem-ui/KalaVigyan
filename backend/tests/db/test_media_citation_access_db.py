@@ -8,7 +8,7 @@ from app.core.db import get_engine
 from app.media.claim_set import claim_set
 from app.media.rows import stage_claims
 from app.models import Claim, ClaimSource, Concept, Craft, Process, ProcessStage, Source
-from app.research.retrieval import EVERY_CHUNK_ACLS, RESEARCHER_CHUNK_ACL, SIGNED_IN_CHUNK_ACLS
+from app.research.retrieval import EVERY_CHUNK_ACLS, OPEN_CHUNK_ACLS, RESEARCHER_CHUNK_ACL
 from app.retrieval.indexing import replace_source_chunks
 
 pytestmark = pytest.mark.db
@@ -97,5 +97,5 @@ async def test_a_closed_licence_quote_with_no_passage_is_left_out_of_a_readers_m
         CLOSED: [RESEARCHER_CHUNK_ACL],
         OPEN: ["PUBLIC"],
     }
-    assert [claim.id for claim in claim_set(found, acls=SIGNED_IN_CHUNK_ACLS)] == [OPEN]
+    assert [claim.id for claim in claim_set(found, acls=OPEN_CHUNK_ACLS)] == [OPEN]
     assert {claim.id for claim in claim_set(found, acls=EVERY_CHUNK_ACLS)} == {CLOSED, OPEN}

@@ -77,8 +77,15 @@ class Recorder:
             )
         )
 
-    def last(self, path_end: str) -> Recorded | None:
-        return next((reply for reply in reversed(self.replies) if reply.path.endswith(path_end)), None)
+    def last(self, path_end: str, *, method: str | None = None) -> Recorded | None:
+        return next(
+            (
+                reply
+                for reply in reversed(self.replies)
+                if reply.path.endswith(path_end) and method in (None, reply.method)
+            ),
+            None,
+        )
 
 
 def written_fixture(folder: Path, name: str, body: bytes) -> str:

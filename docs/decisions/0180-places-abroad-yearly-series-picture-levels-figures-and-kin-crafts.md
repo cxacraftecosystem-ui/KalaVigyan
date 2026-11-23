@@ -74,7 +74,7 @@ form of an existing one; and the page's film score could be built now or later.
 
 ## Consequences
 
-- The release carries migration `0098_term_zoom_levels` (parent `0093_staged_reviews_refreshes`);
+- The release carries migration `0098_term_zoom_levels` (parent `0097_chunk_kinds`);
   the deploy's glossary seed and curated import fill the tags. A page's stamp moves once, as its
   glossary terms changed.
 - A fibre picture may now be a paper figure whose page is a DOI; once research stores that paper,

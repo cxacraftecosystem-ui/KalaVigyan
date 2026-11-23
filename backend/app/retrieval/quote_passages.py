@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Chunk
 from app.research.quotes import occurs_in_key, quote_key
+from app.research.retrieval import PASSAGE_CHUNK_KIND
 
 __all__ = [
     "PASSAGE_JOIN",
@@ -32,6 +33,7 @@ class Passage:
     locator: str | None
     text: str
     acl: str
+    kind: str = PASSAGE_CHUNK_KIND
 
 
 @dataclass(frozen=True)
@@ -68,11 +70,13 @@ class QuotePassages:
 
 async def source_passages(session: AsyncSession, source_id: uuid.UUID) -> QuotePassages:
     rows = await session.execute(
-        select(Chunk.id, Chunk.ordinal, Chunk.locator, Chunk.text, Chunk.acl)
+        select(Chunk.id, Chunk.ordinal, Chunk.locator, Chunk.text, Chunk.acl, Chunk.kind)
         .where(Chunk.sourceId == source_id)
         .order_by(Chunk.ordinal)
     )
-    return QuotePassages([Passage(row.id, row.ordinal, row.locator, row.text, row.acl) for row in rows])
+    return QuotePassages(
+        [Passage(row.id, row.ordinal, row.locator, row.text, row.acl, row.kind) for row in rows]
+    )
 
 
 def spanned_locator(first: str | None, last: str | None) -> str | None:
@@ -92,4 +96,4 @@ def _paragraphs(locator: str | None) -> tuple[int, int] | None:
 
 
 def _adjacent(first: Passage, second: Passage) -> bool:
-    return second.ordinal == first.ordinal + 1 and second.acl == first.acl
+    return second.ordinal == first.ordinal + 1 and (second.acl, second.kind) == (first.acl, first.kind)

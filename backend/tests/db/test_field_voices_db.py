@@ -14,7 +14,7 @@ from app.models import (
     MediaRef,
     Source,
 )
-from app.research.retrieval import OPEN_CHUNK_ACLS, SIGNED_IN_CHUNK_ACLS
+from app.research.retrieval import EVERY_CHUNK_KINDS, OPEN_CHUNK_ACLS, PASSAGE_CHUNK_KINDS
 from app.retrieval.statements import CraftScope, chunk_conditions
 from app.services.field_voices_held import held_image_list, set_artisan_image_visibility
 from app.services.field_voices_reader import field_voices_reader
@@ -47,7 +47,7 @@ from tests.field_voices.fixtures import (
 pytestmark = pytest.mark.db
 
 
-async def test_a_recording_is_stored_as_a_cited_field_interview_with_quote_and_signed_in_chunks() -> None:
+async def test_a_recording_is_stored_as_a_cited_field_interview_with_public_quotes_and_windows() -> None:
     async with rolled_back() as session:
         report = await synced(session, KeptStore())
         assert report["ok"], report
@@ -64,8 +64,10 @@ async def test_a_recording_is_stored_as_a_cited_field_interview_with_quote_and_s
         )
         assert (source.evidenceKind, source.publisher) == ("FIELD_INTERVIEW", "Field Repository")
         assert source.url == f"{WEB}/voices/{recording.id}"
-        acls = set((await session.scalars(select(Chunk.acl).where(Chunk.sourceId == source.id))).all())
-        assert acls == {"PUBLIC", "SIGNED_IN"}
+        marks = (
+            await session.execute(select(Chunk.acl, Chunk.kind).where(Chunk.sourceId == source.id))
+        ).all()
+        assert {tuple(mark) for mark in marks} == {("PUBLIC", "PASSAGE"), ("PUBLIC", "WINDOW")}
         sensitivities = set(
             (await session.scalars(select(Chunk.sensitivity).where(Chunk.sourceId == source.id))).all()
         )
@@ -105,21 +107,21 @@ async def test_a_second_run_changes_nothing() -> None:
         assert kept == chunks
 
 
-async def test_anonymous_retrieval_reads_quotes_only_and_a_signed_in_reader_reads_the_transcript() -> None:
+async def test_retrieval_reads_the_quotes_unless_it_asks_for_the_transcript_windows_too() -> None:
     async with rolled_back() as session:
         await synced(session, KeptStore())
         craft = await ajrakh(session)
         scope = CraftScope(craft_id=craft.id, sub_category_id=craft.subCategoryId)
 
-        async def readable(acls: tuple[str, ...]) -> set[str]:
-            conditions = chunk_conditions(scope, mode="HYBRID", acls=acls)
+        async def readable(kinds: tuple[str, ...]) -> set[str]:
+            conditions = chunk_conditions(scope, mode="HYBRID", acls=OPEN_CHUNK_ACLS, kinds=kinds)
             rows = await session.scalars(
-                select(Chunk.acl).join(Source).where(*conditions, Source.kind == "FIELD_TESTIMONY")
+                select(Chunk.kind).join(Source).where(*conditions, Source.kind == "FIELD_TESTIMONY")
             )
             return set(rows.all())
 
-        assert await readable(OPEN_CHUNK_ACLS) == {"PUBLIC"}
-        assert await readable(SIGNED_IN_CHUNK_ACLS) == {"PUBLIC", "SIGNED_IN"}
+        assert await readable(PASSAGE_CHUNK_KINDS) == {"PASSAGE"}
+        assert await readable(EVERY_CHUNK_KINDS) == {"PASSAGE", "WINDOW"}
 
 
 async def test_the_craft_page_shows_the_quotes_and_photographs_and_the_reading_view_the_whole_transcript() -> (

@@ -27,6 +27,8 @@ __all__ = [
     "music_check",
     "narration_check",
     "narration_estimate",
+    "recorded_reply",
+    "refused_reply",
     "speech_check",
 ]
 
@@ -76,7 +78,7 @@ async def narration_check(
     try:
         speech = await eleven.narration(text, voice_id=voice_id, language=language)
     except AppError as error:
-        return _refused(recorder, "/with-timestamps", f"narration_{language}_refused.json", error)
+        return refused_reply(recorder, "/with-timestamps", f"narration_{language}_refused.json", error)
     seconds = audio_seconds(len(speech.audio))
     findings = {
         "model": NARRATION_MODEL,
@@ -87,14 +89,14 @@ async def narration_check(
         "lastCharacterEndsAt": speech.ends[-1] if speech.ends else None,
         "parenthesisedSeconds": round(speech.ends[text.index(")")] - speech.starts[text.index("(")], 3),
     }
-    return CheckResult(findings, _recorded(recorder, "/with-timestamps", f"narration_{language}.json"))
+    return CheckResult(findings, recorded_reply(recorder, "/with-timestamps", f"narration_{language}.json"))
 
 
 async def music_check(eleven: ElevenLabs, recorder: Recorder) -> CheckResult:
     try:
         audio = await eleven.music(SCORE_MUSIC_PROMPT, seconds=MUSIC_SECONDS, model=MUSIC_MODEL)
     except AppError as error:
-        return _refused(recorder, "/v1/music", "music_bed_refused.json", error)
+        return refused_reply(recorder, "/v1/music", "music_bed_refused.json", error)
     findings = {
         "model": MUSIC_MODEL,
         "askedSeconds": MUSIC_SECONDS,
@@ -109,7 +111,7 @@ async def image_check(gemini: GeminiMediaWire, recorder: Recorder) -> CheckResul
     try:
         result = await gemini.generate_image(request)
     except AppError as error:
-        return _refused(recorder, "/interactions", "image_refused.json", error)
+        return refused_reply(recorder, "/interactions", "image_refused.json", error)
     findings = {
         "model": IMAGE_MODEL,
         "servedModel": result.served_model,
@@ -123,7 +125,7 @@ async def image_check(gemini: GeminiMediaWire, recorder: Recorder) -> CheckResul
         None if result.output_tokens is None else Decimal(result.output_tokens) * IMAGE_OUTPUT_USD_PER_TOKEN
     )
     return CheckResult(
-        findings, _recorded(recorder, "/interactions", "image_completed_recorded.json"), actual
+        findings, recorded_reply(recorder, "/interactions", "image_completed_recorded.json"), actual
     )
 
 
@@ -132,7 +134,7 @@ async def speech_check(gemini: GeminiMediaWire, recorder: Recorder) -> CheckResu
         audio = await gemini.read_aloud(SPEECH_TEXT)
         read = wav_frames(audio)
     except AppError as error:
-        return _refused(recorder, "/interactions", "speech_refused.json", error)
+        return refused_reply(recorder, "/interactions", "speech_refused.json", error)
     findings = {
         "model": SPEECH_MODEL,
         "characters": len(SPEECH_TEXT),
@@ -140,14 +142,14 @@ async def speech_check(gemini: GeminiMediaWire, recorder: Recorder) -> CheckResu
         "audioSeconds": round(read.count / read.rate, 3),
         "bytes": len(audio),
     }
-    files = {"gemini_speech.wav": audio, **_recorded(recorder, "/interactions", "speech_completed.json")}
+    files = {"gemini_speech.wav": audio, **recorded_reply(recorder, "/interactions", "speech_completed.json")}
     return CheckResult(findings, files, None)
 
 
-def _recorded(recorder: Recorder, path_end: str, name: str) -> dict[str, bytes]:
+def recorded_reply(recorder: Recorder, path_end: str, name: str) -> dict[str, bytes]:
     reply = recorder.last(path_end)
     return {} if reply is None else {name: reply.fixture()}
 
 
-def _refused(recorder: Recorder, path_end: str, name: str, error: AppError) -> CheckResult:
-    return CheckResult({"refused": str(error)[:500]}, _recorded(recorder, path_end, name))
+def refused_reply(recorder: Recorder, path_end: str, name: str, error: AppError) -> CheckResult:
+    return CheckResult({"refused": str(error)[:500]}, recorded_reply(recorder, path_end, name))

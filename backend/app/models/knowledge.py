@@ -28,6 +28,7 @@ from app.models.crafts import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL_CHARS
 QUOTE_MAX_CHARS = 300
 CONTAINER_TITLE_CHARS = 300
 FIELD_COLUMN_CHARS = 16
+CHUNK_KIND_CHARS = 16
 DIFFERS_ON_CHARS = 300
 
 
@@ -88,12 +89,14 @@ class Chunk(Base):
     embeddingModel: Mapped[str | None] = mapped_column(String(EMBEDDING_MODEL_CHARS))
     lang: Mapped[str] = mapped_column(String(16), nullable=False, server_default="en")
     acl: Mapped[str] = mapped_column(e.ChunkAcl, nullable=False, server_default="PUBLIC")
+    kind: Mapped[str] = mapped_column(String(CHUNK_KIND_CHARS), nullable=False, server_default="PASSAGE")
     sensitivity: Mapped[str] = mapped_column(e.Sensitivity, nullable=False, server_default="OPEN")
     createdAt: Mapped[datetime] = created_at()
     updatedAt: Mapped[datetime] = updated_at()
 
     __table_args__ = (
         UniqueConstraint("sourceId", "ordinal"),
+        CheckConstraint(one_of("kind", e.CHUNK_KINDS), name="kind"),
         Index("Chunk_tsv_gin_idx", "tsv", postgresql_using="gin"),
         Index(
             "Chunk_embedding_hnsw_idx",

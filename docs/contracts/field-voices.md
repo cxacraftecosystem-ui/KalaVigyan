@@ -67,7 +67,7 @@ reader, its models and its recorded answers are gone. Where the build differs fr
 | Paging | per-craft index, per-craft pages, a digest per craft, withdrawal by absence | two global streams (transcripts, images) paged by an `updatedAt` cursor, with **tombstones** for deletions, withdrawals, replacements and merges; a stream digest for reconciliation |
 | Under 18 | not sent | sent: the owner states that every artisan in both portals is an adult; no age rule remains and no date of birth is read |
 | Never sent | documentation portal fields | both portals' fields, extended (designer contact details, Aadhaar verification, signatures, identity photographs, bank details, consent evidence images, credentials) |
-| Chunk ACL | quotes `PUBLIC` | quotes `PUBLIC`; full transcript `SIGNED_IN` (a new ACL, read by every reader since decision 0097) |
+| Chunk ACL | quotes `PUBLIC` | quotes and the full transcript `PUBLIC`, the transcript's windows marked by their kind `WINDOW` (decision 0179; written `SIGNED_IN` until then, an ACL every reader has read since decision 0097) |
 
 Kept from version 1 and restated below: the signed peer mechanism and its headers, the gate
 default off, the access log, the 600-calls-in-10-minutes limit, the echoed request, revisions,
@@ -831,20 +831,30 @@ still never cite `FIELD_TESTIMONY` (`CURATED_SOURCE_KINDS`).
 
 ### Chunks and their ACL
 
-- **Quotes (`PUBLIC`):** one chunk per quotable segment (its speaker maps to an `ARTISAN` or
+- **Quotes (`PUBLIC`, kind `PASSAGE`):** one chunk per quotable segment (its speaker maps to an `ARTISAN` or
   `DESIGNER` person; at least 40 characters after trimming), split at sentence ends past 1,500
   characters; the original with `lang` its language, and the English as a second chunk with `lang`
   `en`. These may appear on public craft pages.
-- **Full transcript (`SIGNED_IN`):** windows of consecutive segments up to 1,500 characters, each
-  line "<speaker>: <text>", original and English as separate chunks. Researchers', other and
-  unmapped speakers, and `TEXT` and `TYPED` transcripts, are only here.
+- **Full transcript (`PUBLIC`, kind `WINDOW`):** windows of consecutive segments up to 1,500
+  characters, each line "<speaker>: <text>", original and English as separate chunks. Researchers',
+  other and unmapped speakers, and `TEXT` and `TYPED` transcripts, are only here. The kind, not the
+  ACL, keeps a window apart from the quotes (decision 0179): the quote recheck after an edit
+  (`field_voices_store.recheck_quoted_claims`) and the passage around a quoted citation
+  (`citation_contexts`) read `PASSAGE` chunks only, two passages join for a quote only when their
+  ACL and kind agree (`retrieval/quote_passages`), and a search reads windows only when its
+  `KnowledgeQuery.chunk_kinds` names `WINDOW` (the artisan seat and the voice turn do; the answer's
+  stored pack, the lede and the evaluation read passages only). Windows written before decision
+  0179 keep `SIGNED_IN` until the migration that folds the label into `PUBLIC`
+  (`docs/TECH_DEBT.md`); migration `0097_chunk_kinds` marked them `WINDOW`, and its insert trigger
+  marks a `SIGNED_IN` chunk the release before writes the same way.
 - Every chunk: `sensitivity` `ATTRIBUTE_REQUIRED`; `locator` `m:ss–m:ss` (`h:mm:ss` past an hour)
   from the segment or window times, or "paragraphs <a>–<b>" when untimed.
 - **Who reads what:** `research/retrieval.chunk_acls_for(reader)`: every reader, anonymous or
-  signed in, `PUBLIC` and `SIGNED_IN`; a `READ_RESEARCHER_QUOTES` holder every ACL. Since decision
-  0097 the full transcript is public, so an anonymous reader reads exactly what a signed-in
-  Student reads again (decision 0079 point 3 as first written); the ACL keeps its name until a
-  migration folds it into `PUBLIC` (`docs/TECH_DEBT.md`). `citation_access.reader_citations` hides the words of a
+  signed in, `OPEN_CHUNK_ACLS` (`PUBLIC`, and `SIGNED_IN` until the windows written with it are
+  folded into `PUBLIC`); a `READ_RESEARCHER_QUOTES` holder every ACL. Since decision 0097 the full
+  transcript is public, so an anonymous reader reads exactly what a signed-in Student reads again
+  (decision 0079 point 3 as first written), and since decision 0179 a loader that names no reader
+  reads the same set. `citation_access.reader_citations` hides the words of a
   citation of a chunk the viewer may not read, wherever the explainer is shown (decision 0149).
 
 ### Citations
@@ -894,8 +904,9 @@ machine translation, and the original text is always shown beside it. Exports
   and credited exactly as before; the web page `/voices/<id>` shows it, and every public quote
   links to it with "Read the full interview".
 - **The expert panel's artisan seat** (`services/artisan_seat.py`, decision 0156) searches the
-  craft's quote chunks and full-transcript chunks with the public reading ACLs
-  (`FIELD_READING_ACLS`: `PUBLIC` and `SIGNED_IN`), never the asker's own: its sentence carries the
+  craft's quote chunks and full-transcript windows with the public reading ACLs
+  (`FIELD_READING_ACLS`, `OPEN_CHUNK_ACLS`, and `FIELD_READING_KINDS`, both kinds), never the
+  asker's own: its sentence carries the
   artisan's words in its text, and expert views are stored as knowledge pieces, reused for other
   askers and served through share links, so a `RESEARCHER` chunk quoted for one asker would reach
   readers without that access. It quotes the stored claims whose citation links a chunk it found
@@ -1115,7 +1126,7 @@ answers 404 and its streams are skipped.
 | Reader | `services/field_voices_feed.py` (state and page envelopes, tombstones, revision, digest), `field_voices_items.py` (the item models; `scrubbing.replaced` is a list of `{kind, count}`, each kind once), `field_voices_never_sent.py` (the extended key scan, no exemption), `field_voices_placements.py` (the legal floor's never stage fields and caption pattern, refusing the page), `field_voices_screen.py` (KalaVigyan's own screen, counted as `portalScrubMisses`), `field_voices_reader.py`; `ImageItem.artisan_linked` is required, so an image page without `artisanLinked` is refused | the order of changes is checked within a page, across the pages of one view in a run, and across runs: the ledger keeps the last change's (`updatedAt`, `id`) of each view beside its cursor (`FieldVoiceStream.lastAt`/`lastId`, `goneLastAt`/`goneLastId`, written only when the cursor moves past a page with changes, cleared with the cursor when a stream is read again), and a run's first page is refused when it starts at or before it |
 | Recorded answers | `backend/tests/field_voices/recorded/`: hand-written pages of both portals, `portal-built-designer-transcripts.json` and `portal-built-designer-images.json` (made on 2026-11-18, after the loosening, by the designer portal's own `transcripts.build`, `images.build` and `pages.page` over in-memory rows, so the shape a portal really sends is pinned: a stage recording that names its village, a take that answers "Your phone number" with the number scrubbed, a prototype photograph, a portrait filed on its artisan sent `artisanLinked` and an event photograph; KalaVigyan's own screen finds nothing in them), and `field-voices-scrub-vectors.json` (the portals' shared vectors, byte for byte, its hash pinned to the line of the portals' `shared/field-voices.sha256`; the pattern-only cases are run through `field_voices_screen.without_field_personal_data` and the `identityImage` cases through `field_voices_placements.IDENTITY_CAPTION`) | none |
 | Sync | `services/field_voices_sync.py` (the run over both views, retries, 20-minute budget, reconciliation), `field_voices_ledger.py` (database writes), `field_voices_run.py`, `app/scripts/sync_field_voices.py`, `.github/workflows/field-voices-sync.yml` (daily 22:17 UTC and dispatch) | none |
-| Storage | migration `0027_field_voices` (the six tables, `ChunkAcl` `SIGNED_IN`, `MediaRef.objectKey`, `FieldImage.artisanLinked` with its index), and `0080_stream_stamps_differs_on` (each view's last stamp on `FieldVoiceStream`); `services/field_voices_store.py`, `field_voices_records.py`, `field_voices_image_store.py`, `field_voices_images.py`, `field_voices_photos.py`, `field_voices_credit.py` | `FieldVoiceStream.rereadFrom` and `seenAt` on both item tables mark a re-read after a digest mismatch, so items that read does not list are withdrawn at its end |
+| Storage | migration `0027_field_voices` (the six tables, `ChunkAcl` `SIGNED_IN`, `MediaRef.objectKey`, `FieldImage.artisanLinked` with its index), `0080_stream_stamps_differs_on` (each view's last stamp on `FieldVoiceStream`), and `0097_chunk_kinds` (`Chunk.kind`, the windows marked `WINDOW`, decision 0179); `services/field_voices_store.py`, `field_voices_records.py`, `field_voices_image_store.py`, `field_voices_images.py`, `field_voices_photos.py`, `field_voices_credit.py` | `FieldVoiceStream.rereadFrom` and `seenAt` on both item tables mark a re-read after a digest mismatch, so items that read does not list are withdrawn at its end |
 | Images | the neutral copy is made again in KalaVigyan (orientation applied, re-encoded, no metadata) and stored at `naming.field_voice_key` | `MediaRef.imageUrl` and `pageUrl` are the stable `/api/field-voices/images/{id}` route, which answers 302 to a fresh 15-minute presigned URL; reads never presign. `objectKey` names the stored copy for the cascade. `services/field_voices_illustrations.py` links each applied image to the claims its caption and labels name (above); `media_ref_store.unshown_field_media` keeps a field image not shown away from every sentence, and `field_media` keeps every field image out of the craft page's own pictures |
 | Retrieval | `retrieval/field_scope.py` adds the chunks of shown field recordings of the craft to stored-knowledge chunk retrieval, and `withheld_field_sources` (recordings hidden, stale or linked to no craft) is left out of `claim_conditions` (through `citation_access.reader_fact`), `citation_access.reader_citations` and `chunk_conditions`; `composer/candidates.field_candidate` offers each as an `EVIDENCE` candidate labelled "field interview: …"; `services/field_voices_citations.py` turns a cited passage into the write-back's document (`field_hit_documents`, shared by the answer's write-back and the artisan seat's), so the sentence becomes a `PROVISIONAL` claim citing the recording's `Source` and chunk | answers read `PUBLIC` quote chunks only (the stored pack is read with `OPEN_CHUNK_ACLS`). The rubric's limit is enforced by `write_back_plan`, which cannot tell which facet a sentence is about: a sentence citing only field interviews is written back only when every facet the section planned is `PROCESS`, `MATERIALS`, `DESIGN` or `ECONOMICS` (by `CONCEPT_TYPE_DISCIPLINES`), filed under the first such facet; a sentence citing field interviews beside other sources is filed under the facet of its first other source and, when that facet is of another discipline, written back only when an other source is A or B |
 | Withdrawal | `field_voices_store.withdraw_recording` and `recheck_quoted_claims`; `services/field_voices_readback.py` (`current_field_voices`), applied wherever a stored explainer is read: the explainer versions and their exports and lesson packs, the quiz, Listen and film mode | a stored explainer is filtered when it is read, not rewritten: a citation of a portal interview is shown only while its recording is shown and its claim still cites it; a prose sentence carrying such a citation is dropped, any other block carrying one is dropped, images left illustrating no cited claim go, the sources are renumbered, and a section left with nothing is shown `EMPTY` with "A field interview this section quoted is no longer shown."; an explainer left with no ready section is not shown. A section only partly affected carries `withdrawn`, the count of sentences and artisan quotes taken out of it, and the reader sees "A field interview this section quoted is no longer shown, so one passage was taken out." (or "N passages") under it (`docs/contracts/explainer.md`, decision 0156) |

@@ -719,8 +719,8 @@ speaking or voiced seat.
   `SessionScopedSearch`, `BuilderTools.retriever`) scoped to the craft, in the answer's mode,
   whose text is the question, the craft name, the seat's label and its fields' descriptions.
   `seat_findings` keeps, in rank order, up to 6 fact-level stored claims the section's blocks do not
-  cite and that cite a source of one of the seat's `sourceKinds` (claims read with the `PUBLIC`
-  and `SIGNED_IN` chunk ACLs). A failed search leaves the seat the section's evidence only.
+  cite and that cite a source of one of the seat's `sourceKinds` (claims read with the open chunk
+  ACLs, `OPEN_CHUNK_ACLS`). A failed search leaves the seat the section's evidence only.
 - **Offer.** A seat is offered its own claims first, then the section's fact-level stored claims
   (`panel_candidates`: those the blocks do not yet cite, then those they do), each as its claim
   text and its citations' quotes inside an untrusted block. A seat whose offer holds no claim the
@@ -758,8 +758,8 @@ speaking or voiced seat.
   claim's own text, level and citations (`services/expert_view_blocks.difference_refusal` names
   why a pair is refused).
 - **The artisan's voice.** When `ARTISAN` is a voiced seat of the section, `FIELD_VOICES_ENABLED`
-  is on and the craft's field transcript chunks (`FIELD_TESTIMONY` sources, chunk ACLs `PUBLIC`
-  and `SIGNED_IN`, never the asker's own, recordings shown for the craft) answer the question,
+  is on and the craft's field transcript chunks (`FIELD_TESTIMONY` sources, quotes and windows,
+  the open chunk ACLs, never the asker's own, recordings shown for the craft) answer the question,
   the seat quotes up to 3 stored claims that quote those chunks, spoken by a speaker recorded as
   an artisan (`services/artisan_seat.py`); in a `PROCESS`, `MATERIALS`, `DESIGN`, `ECONOMICS` or
   `SOCIETY` section a quotable artisan turn no claim quotes yet is first written back as one
