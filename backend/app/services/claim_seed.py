@@ -28,6 +28,7 @@ from app.services.craft_seed import ids_by_slug
 
 BATCH = 500
 SYSTEM_ACTOR = "import"
+IMPORT_ORIGIN = "IMPORT"
 SEED_PROCESS_NAME = "Seed process"
 SEED_PROCESS_VARIANT = "seed_claims"
 IMPORT_NOTE = "seed import"
@@ -206,6 +207,23 @@ async def _insert_new(session: AsyncSession, model: Any, rows: list[dict[str, An
     return inserted
 
 
+async def _restamped_authors(session: AsyncSession, sources: list[dict[str, Any]]) -> None:
+    table = Source.__table__
+    authors = bindparam("seedAuthors", type_=table.c.authors.type)
+    rows = [{"sourceId": row["id"], "seedAuthors": row["authors"]} for row in sources]
+    if rows:
+        await session.execute(
+            update(table)
+            .where(
+                table.c.id == bindparam("sourceId"),
+                table.c.origin == IMPORT_ORIGIN,
+                table.c.authors.is_distinct_from(authors),
+            )
+            .values(authors=authors),
+            rows,
+        )
+
+
 async def _seed_processes(
     session: AsyncSession, stages: list[dict[str, Any]], craft_ids: dict[str, uuid.UUID]
 ) -> tuple[int, int]:
@@ -259,6 +277,7 @@ async def seed_claims(session: AsyncSession, data: dict[str, Any] | None = None)
         values["subCategoryId"] = sub_ids.get(sub_slug) if sub_slug else None
         concept_values.append(values)
 
+    await _restamped_authors(session, plan["sources"])
     inserted = {
         "sources": await _insert_new(session, Source, plan["sources"]),
         "concepts": await _insert_new(session, Concept, concept_values),

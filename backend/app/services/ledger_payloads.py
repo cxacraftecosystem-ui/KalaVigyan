@@ -23,6 +23,7 @@ __all__ = [
     "kept_sentences",
     "leveled_stages",
     "picture_keys",
+    "quantity_rows",
     "sentence_keys",
     "zoomed_levels",
 ]
@@ -66,6 +67,18 @@ def compared_rows(payload: Mapping[str, Any], repeat: Repeat) -> Payload:
         cells = [None if cell is None or repeat(cell["sentence"]) else cell for cell in row["cells"]]
         if sum(cell is not None for cell in cells) >= COMPARE_CRAFTS_MIN:
             rows.append({**row, "cells": cells})
+    return {**payload, "rows": rows}
+
+
+def quantity_rows(payload: Mapping[str, Any], shown: Mapping[str, str], repeat: Repeat) -> Payload:
+    rows = []
+    for row in payload["rows"]:
+        kept = {name: value for name, value in row.items() if name != "shownIn"}
+        shown_in = _shown_in(row["sentence"], shown)
+        if shown_in is not None:
+            rows.append({**kept, "shownIn": shown_in})
+        elif not repeat(row["sentence"]):
+            rows.append(kept)
     return {**payload, "rows": rows}
 
 
@@ -119,6 +132,11 @@ def _kept_part(value: Any, node: Any, repeat: Repeat) -> Any:
 def _viable(node: Mapping[str, Any], focus: str | None) -> bool:
     slugs = [entry["craft"]["slug"] for entry in node["crafts"]]
     return len(slugs) >= COMPARE_CRAFTS_MIN and (focus is None or focus in slugs)
+
+
+def _shown_in(sentence: Mapping[str, Any], shown: Mapping[str, str]) -> str | None:
+    keys = sorted(sentence_keys(sentence["text"], sentence.get("original")))
+    return next((shown[key] for key in keys if key in shown), None)
 
 
 def _bare_url(url: str) -> str:

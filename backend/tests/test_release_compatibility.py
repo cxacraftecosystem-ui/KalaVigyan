@@ -7,8 +7,10 @@ from app.models import Base
 from app.models.base import pg_enum
 
 from .db.previous_release_probe import (
+    RETIRED_TABLES,
     engine_url,
     labels_it_refuses,
+    probed_tables,
     reads_later_labels,
     trigger_filled,
     unwritable_columns,
@@ -21,6 +23,15 @@ def read(kind: Enum, value: str) -> object:
     processor = kind.result_processor(postgresql.dialect(), None)
     assert processor is not None
     return processor(value)
+
+
+def test_a_table_this_release_retired_is_left_unread_once_dropped_and_no_other_is() -> None:
+    mapped = ["CraftPage", "CraftPageArchive", "CraftPageSnapshot"]
+    assert probed_tables(mapped, ["CraftPage", "CraftPageSnapshot"]) == ["CraftPage", "CraftPageSnapshot"]
+    assert probed_tables(mapped, mapped) == mapped
+    assert probed_tables(mapped, ["CraftPageArchive"]) == mapped
+    assert {"CraftPageArchive"} == RETIRED_TABLES
+    assert "CraftPageArchive" not in {mapper.local_table.name for mapper in Base.registry.mappers}
 
 
 def test_a_label_a_later_release_adds_is_read_as_its_own_text() -> None:

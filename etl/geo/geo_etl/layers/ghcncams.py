@@ -157,8 +157,8 @@ def add_district(rows: Rows, district: pd.Series, annual: dict[int, pd.DataFrame
         record = table.loc[lgd]
         value = float(pick(record, "mean"))
         yearly.append(value)
-        rows.add(district, TEMPERATURE, str(year), "DISTRICT_MEAN", value, UNIT, pixels=float(record["pixels"]))
+        rows.add(district, TEMPERATURE, str(year), "DISTRICT_MEAN", value, unit=UNIT, pixels=float(record["pixels"]))
     series = AnnualSeries(TEMPERATURE, years[0], tuple(yearly))
     if series.complete:
-        rows.add(district, TEMPERATURE, series.period, "NORMAL", float(np.mean(series.values)), UNIT)
+        rows.add(district, TEMPERATURE, series.period, "NORMAL", float(np.mean(series.values)), unit=UNIT)
         add_trend_rows(rows, district, series)

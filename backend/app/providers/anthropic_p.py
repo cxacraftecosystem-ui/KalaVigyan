@@ -49,6 +49,38 @@ def _family(model: str) -> str:
     return "adaptive"
 
 
+def _apply_budget_thinking(req: ChatRequest, params: dict, meta: dict) -> None:
+    if not req.reasoning:
+        meta["thinking"] = "off"
+        return
+    budget = max(1024, req.reasoning_budget or 4096)
+    params["thinking"] = {"type": "enabled", "budget_tokens": budget}
+    params["max_tokens"] = max(req.max_tokens, budget + 1024)
+    params.pop("temperature", None)
+    meta["thinking"] = f"budget:{budget}"
+
+
+def _chat_result(msg, meta: dict, latency: int) -> ChatResult:
+    meta["stop_reason"] = msg.stop_reason
+    meta["served_model"] = msg.model
+    meta["request_id"] = getattr(msg, "_request_id", None)
+    if msg.stop_reason == "refusal":
+        details = getattr(msg, "stop_details", None)
+        cat = getattr(details, "category", None) if details else None
+        raise ProviderError(f"Claude declined the request (category: {cat})", kind="refusal")
+    text = "".join(b.text for b in msg.content if b.type == "text")
+    u = anthropic_usage(msg.usage)
+    return ChatResult(
+        text=text,
+        input_tokens=u.input_tokens,
+        output_tokens=u.output_tokens,
+        latency_ms=latency,
+        meta=meta,
+        cached_input_tokens=u.cached_input_tokens,
+        cache_write_tokens=u.cache_write_tokens,
+    )
+
+
 class AnthropicAdapter(Adapter):
     def __init__(self, **kw):
         super().__init__(**kw)
@@ -78,44 +110,50 @@ class AnthropicAdapter(Adapter):
             "system": req.system,
             "messages": [{"role": "user", "content": req.user}],
         }
-        sampling_ok = model.startswith(_SAMPLING_OK) and not model.startswith(_NO_SAMPLING)
-        if req.temperature is not None:
-            if sampling_ok and not self.rejects(model, "temperature"):
-                params["temperature"] = req.temperature
-            else:
-                meta["dropped"].append("temperature")
-        output_config: dict = {}
-        if fam == "always":
-            meta["thinking"] = "forced_on"
-            output_config["effort"] = req.reasoning_effort or ("high" if req.reasoning else "low")
-        elif fam == "budget":
-            if req.reasoning:
-                budget = max(1024, req.reasoning_budget or 4096)
-                params["thinking"] = {"type": "enabled", "budget_tokens": budget}
-                params["max_tokens"] = max(req.max_tokens, budget + 1024)
-                params.pop("temperature", None)
-                meta["thinking"] = f"budget:{budget}"
-            else:
-                meta["thinking"] = "off"
-        else:
-            if req.reasoning:
-                params["thinking"] = {"type": "adaptive"}
-                if not self.rejects(model, "effort"):
-                    output_config["effort"] = req.reasoning_effort or "high"
-                meta["thinking"] = "adaptive"
-            elif not self.rejects(model, "thinking_disabled"):
-                params["thinking"] = {"type": "disabled"}
-                meta["thinking"] = "off"
-            else:
-                meta["thinking"] = "forced_on"
-                if not self.rejects(model, "effort"):
-                    output_config["effort"] = "low"
+        self._apply_temperature(req, params, meta)
+        output_config = self._apply_thinking(req, fam, params, meta)
         if req.json_schema:
             output_config["format"] = {"type": "json_schema", "schema": req.json_schema}
             meta["structured"] = True
         if output_config:
             params["output_config"] = output_config
         return params, meta
+
+    def _apply_temperature(self, req: ChatRequest, params: dict, meta: dict) -> None:
+        if req.temperature is None:
+            return
+        model = req.model
+        sampling_ok = model.startswith(_SAMPLING_OK) and not model.startswith(_NO_SAMPLING)
+        if sampling_ok and not self.rejects(model, "temperature"):
+            params["temperature"] = req.temperature
+        else:
+            meta["dropped"].append("temperature")
+
+    def _apply_thinking(self, req: ChatRequest, fam: str, params: dict, meta: dict) -> dict:
+        if fam == "always":
+            meta["thinking"] = "forced_on"
+            return {"effort": req.reasoning_effort or ("high" if req.reasoning else "low")}
+        if fam == "budget":
+            _apply_budget_thinking(req, params, meta)
+            return {}
+        return self._apply_adaptive_thinking(req, params, meta)
+
+    def _apply_adaptive_thinking(self, req: ChatRequest, params: dict, meta: dict) -> dict:
+        model = req.model
+        output_config: dict = {}
+        if req.reasoning:
+            params["thinking"] = {"type": "adaptive"}
+            if not self.rejects(model, "effort"):
+                output_config["effort"] = req.reasoning_effort or "high"
+            meta["thinking"] = "adaptive"
+        elif not self.rejects(model, "thinking_disabled"):
+            params["thinking"] = {"type": "disabled"}
+            meta["thinking"] = "off"
+        else:
+            meta["thinking"] = "forced_on"
+            if not self.rejects(model, "effort"):
+                output_config["effort"] = "low"
+        return output_config
 
     def _adapt(self, model: str, message: str) -> bool:
         low = message.lower()
@@ -144,65 +182,50 @@ class AnthropicAdapter(Adapter):
                 async with self.client.messages.stream(**params) as stream:
                     msg = await stream.get_final_message()
             except a.BadRequestError as e:
-                if req.json_schema and names_the_format(str(e.message), _FORMAT_NEEDLES):
-                    logger.warning(
-                        "Anthropic's reason for refusing the format: %s", str(e.message)[:REASON_CHARS]
-                    )
-                    raise format_refused("Anthropic", req.model) from e
-                if self._adapt(req.model, str(e.message)):
+                failure = self._bad_request_failure(req, e)
+                if failure is None:
                     continue
-                raise ProviderError(
-                    f"Anthropic rejected the request: {e.message}", status=400, kind="bad_request"
-                ) from e
-            except a.AuthenticationError as e:
-                raise ProviderError("Anthropic API key is invalid", status=401, kind="auth") from e
-            except a.PermissionDeniedError as e:
-                raise ProviderError(
-                    f"Anthropic permission denied: {e.message}", status=403, kind="auth"
-                ) from e
-            except a.NotFoundError as e:
-                raise ProviderError(
-                    f"Unknown Claude model '{req.model}'", status=404, kind="not_found"
-                ) from e
-            except a.RateLimitError as e:
-                raise ProviderError(
-                    "Anthropic rate limit",
-                    retryable=True,
-                    status=429,
-                    kind="rate_limit",
-                    retry_after=retry_after_of(e),
-                ) from e
-            except a.APIStatusError as e:
-                raise ProviderError(
-                    f"Anthropic error {e.status_code}: {e.message}",
-                    retryable=e.status_code >= 500,
-                    status=e.status_code,
-                    retry_after=retry_after_of(e),
-                ) from e
-            except a.APIConnectionError as e:
-                raise ProviderError(f"Cannot reach Anthropic: {e}", retryable=True, kind="unavailable") from e
+                raise failure from e
+            except (a.APIStatusError, a.APIConnectionError) as e:
+                raise self._call_failure(req.model, e) from e
             latency = int((time.perf_counter() - t0) * 1000)
-            meta["stop_reason"] = msg.stop_reason
-            meta["served_model"] = msg.model
-            meta["request_id"] = getattr(msg, "_request_id", None)
-            if msg.stop_reason == "refusal":
-                details = getattr(msg, "stop_details", None)
-                cat = getattr(details, "category", None) if details else None
-                raise ProviderError(f"Claude declined the request (category: {cat})", kind="refusal")
-            text = "".join(b.text for b in msg.content if b.type == "text")
-            u = anthropic_usage(msg.usage)
-            return ChatResult(
-                text=text,
-                input_tokens=u.input_tokens,
-                output_tokens=u.output_tokens,
-                latency_ms=latency,
-                meta=meta,
-                cached_input_tokens=u.cached_input_tokens,
-                cache_write_tokens=u.cache_write_tokens,
-            )
+            return _chat_result(msg, meta, latency)
         raise ProviderError(
             "Anthropic request could not be adapted to the model's accepted parameters", kind="bad_request"
         )
+
+    def _bad_request_failure(self, req: ChatRequest, e) -> ProviderError | None:
+        if req.json_schema and names_the_format(str(e.message), _FORMAT_NEEDLES):
+            logger.warning("Anthropic's reason for refusing the format: %s", str(e.message)[:REASON_CHARS])
+            return format_refused("Anthropic", req.model)
+        if self._adapt(req.model, str(e.message)):
+            return None
+        return ProviderError(f"Anthropic rejected the request: {e.message}", status=400, kind="bad_request")
+
+    def _call_failure(self, model: str, e) -> ProviderError:
+        a = self._mod
+        if isinstance(e, a.AuthenticationError):
+            return ProviderError("Anthropic API key is invalid", status=401, kind="auth")
+        if isinstance(e, a.PermissionDeniedError):
+            return ProviderError(f"Anthropic permission denied: {e.message}", status=403, kind="auth")
+        if isinstance(e, a.NotFoundError):
+            return ProviderError(f"Unknown Claude model '{model}'", status=404, kind="not_found")
+        if isinstance(e, a.RateLimitError):
+            return ProviderError(
+                "Anthropic rate limit",
+                retryable=True,
+                status=429,
+                kind="rate_limit",
+                retry_after=retry_after_of(e),
+            )
+        if isinstance(e, a.APIStatusError):
+            return ProviderError(
+                f"Anthropic error {e.status_code}: {e.message}",
+                retryable=e.status_code >= 500,
+                status=e.status_code,
+                retry_after=retry_after_of(e),
+            )
+        return ProviderError(f"Cannot reach Anthropic: {e}", retryable=True, kind="unavailable")
 
     async def list_models(self) -> list[dict]:
         a = self._mod

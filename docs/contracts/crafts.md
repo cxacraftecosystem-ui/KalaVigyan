@@ -33,7 +33,7 @@ flowchart LR
 | `backend/app/data/craft_vocabulary.txt` | DR's speech-to-text vocabulary (also feeds the Latin-to-Devanagari pass) | Vendored by hand |
 | `shared/craft-master.sha1` | `sha1sum` line for the master list. CI runs `sha1sum -c` on it | By hand when the list is re-vendored |
 | `backend/app/data/craft_text.py` | Text normalisation shared by the ETL and the matcher | Code |
-| `backend/app/data/craft_master_loader.py` | Pure port of DR `services/craft_master.py` (`load_master`, `master_categories`, `normalise`, `craft_aliases`, `with_alias`, a DB-free `build_catalogue`) and the seed plan | Code |
+| `backend/app/data/craft_master_loader.py` | Pure port of DR `services/craft_master.py` (`load_master`, `master_categories`, `normalise`, `craft_aliases`, `with_alias`) and the seed plan; the DB-free `build_catalogue` is in `craft_master_catalogue.py` | Code |
 | `backend/app/data/craft_wikidata.json` | Wikidata/Wikipedia links for the 455 crafts | `etl/crafts/wikidata_link.py`, weekly in CI as an artifact |
 | `backend/app/data/craft_aliases.json` | Every alias for every craft, deduplicated and normalised | `etl/crafts/aliases.py`, weekly in CI as an artifact |
 | `backend/app/data/craft_names.json` | Editorial reader names: `displayName` spelling and case fixes for master crafts (never a catch-all row, which takes its kind's other name) and `localName` overrides (`null` hides a wrong sourced name); loader `craft_names.py` refuses an unknown slug, field, repeated master name or outer space (decision 0082) | By hand |
@@ -128,7 +128,11 @@ list (`docs/contracts/portal-craft-feed.md`, decision 0003). Such a row has
 `portalSources` only and are otherwise untouched. Portal names are `CraftAlias` rows with
 source `DR_SYNC` (designer portal) or `FR_SYNC` (documentation portal, migration
 `0002_portal_alias_source`). `alias_norm`, `alias_lang` and `SCRIPT_LANG` now live in
-`backend/app/data/craft_text.py`; `etl/crafts/aliases.py` imports them.
+`backend/app/data/craft_text.py`; the alias merger imports them. The merger is `etl/crafts/aliases.py`
+(its sources and the merge), reading `alias_entries.py` (an alias entry, its trust order and
+deduplication), `alias_scripts.py` (romanisations and script-to-script transliteration) and
+`alias_codes.py` (cross-portal codes mapped to crafts, exactly or by a fuzzy score of at least 90
+leading its rival by 5; decision 0168).
 
 ## Matcher expectations (plan §5.2)
 

@@ -9,6 +9,7 @@ Date: 2026-11-17. Status: accepted.
 
 | For | Read |
 |---|---|
+| A section shows its claims' stored pictures before it searches, and every answer path marks and shows alike | [decision 0166](0166-pictures-terms-and-stored-pieces-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

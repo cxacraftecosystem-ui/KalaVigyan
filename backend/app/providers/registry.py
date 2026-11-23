@@ -25,14 +25,7 @@ def build_adapter(
     extra: dict[str, Any] | None = None,
     learned: dict[str, list[str]] | None = None,
 ) -> Adapter:
-    spec = BY_PRESET.get(preset)
-    if spec is None:
-        raise ProviderError(f"Unknown provider preset '{preset}'", kind="unavailable")
-    refused = key_name_refusal(api_key_name, spec.get("key_env"))
-    if refused:
-        raise ProviderError(refused, kind="auth")
-    if spec.get("needs_key") and not api_key:
-        raise ProviderError(f"{spec['label']} has no API key configured", kind="auth")
+    spec = _usable_spec(preset, api_key, api_key_name)
     base = base_url if base_url is not None else spec.get("base_url")
     kw: dict[str, Any] = {
         "api_key": api_key,
@@ -41,6 +34,22 @@ def build_adapter(
         "extra": extra or {},
         "learned": learned or {},
     }
+    return _make_adapter(kind, kw)
+
+
+def _usable_spec(preset: str, api_key: str | None, api_key_name: str | None) -> dict:
+    spec = BY_PRESET.get(preset)
+    if spec is None:
+        raise ProviderError(f"Unknown provider preset '{preset}'", kind="unavailable")
+    refused = key_name_refusal(api_key_name, spec.get("key_env"))
+    if refused:
+        raise ProviderError(refused, kind="auth")
+    if spec.get("needs_key") and not api_key:
+        raise ProviderError(f"{spec['label']} has no API key configured", kind="auth")
+    return spec
+
+
+def _make_adapter(kind: str, kw: dict[str, Any]) -> Adapter:
     if kind == "anthropic":
         from .anthropic_p import AnthropicAdapter
 
@@ -52,7 +61,7 @@ def build_adapter(
     if kind in {"openai", "openai_compatible"}:
         from .openai_p import OpenAICompatAdapter
 
-        if not base:
+        if not kw["base_url"]:
             raise ProviderError("This endpoint has no base URL configured", kind="unavailable")
         return OpenAICompatAdapter(native=kind == "openai", **kw)
     if kind == "elevenlabs":

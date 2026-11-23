@@ -9402,6 +9402,84 @@
           "pieceId": null
         },
         {
+          "block": {
+            "id": "people.voices",
+            "kind": "artisan_voice",
+            "version": 2,
+            "reuse": null,
+            "quotes": [
+              {
+                "itemId": "FIELD_REPOSITORY:fr-media-1:fr-turn-2",
+                "origin": "FIELD_REPOSITORY",
+                "speaker": {
+                  "name": "Asha Demo",
+                  "line": "Asha Demo",
+                  "role": "ARTISAN",
+                  "yearsInCraft": 31,
+                  "district": "Kachchh",
+                  "state": "Gujarat"
+                },
+                "quote": "અમે ફટકડીને આમલીના બીજ સાથે વાટીએ છીએ અને લેપ આખી રાત રહેવો જોઈએ.",
+                "language": "gu",
+                "english": "We grind the alum with tamarind seed, and the paste must rest overnight. Call me on [number].",
+                "englishSource": "MACHINE",
+                "sourceId": "7798e5f2-2746-5c12-b7f6-48f791d481b8",
+                "locator": "0:06–0:33",
+                "workshop": "Ajrakh documentation visit",
+                "recordedOn": "2026-03-14",
+                "corroboratedBy": []
+              }
+            ],
+            "removed": 0
+          },
+          "part": null,
+          "figure": null,
+          "origin": null,
+          "pieceId": null
+        },
+        {
+          "block": null,
+          "part": {
+            "kind": "field_photos",
+            "photos": [
+              {
+                "itemId": "FIELD_REPOSITORY:fr-img-1",
+                "origin": "FIELD_REPOSITORY",
+                "imageUrl": "https://kalavigyan.vercel.app/api/field-voices/images/ef69e370-15c5-58c8-8a6a-00a403a58bfb",
+                "width": 2400,
+                "height": 1600,
+                "caption": "Printing the first resist",
+                "alt": "Photograph of Ajrakh Print of Kutch: Printing the first resist",
+                "credit": "Asha Demo · Ajrakh documentation visit, 14 March 2026 · Field Repository",
+                "credited": [
+                  "Asha Demo"
+                ],
+                "workshop": "Ajrakh documentation visit",
+                "takenOn": "2026-03-14",
+                "groups": [
+                  {
+                    "kind": "PROCESS_STEP",
+                    "key": "step:fr-step-2",
+                    "label": "Ajrakh printing · First resist printing"
+                  },
+                  {
+                    "kind": "PRODUCT",
+                    "key": "product:fr-prod-1",
+                    "label": "Ajrakh stole"
+                  }
+                ],
+                "statement": "Shown on KalaVigyan with the consent of the people pictured. Not openly licensed: ask the rights holder before any other use.",
+                "rightsHolder": "Field Repository Demo Rights Holder",
+                "licence": null
+              }
+            ],
+            "total": 1
+          },
+          "figure": null,
+          "origin": null,
+          "pieceId": null
+        },
+        {
           "block": null,
           "part": {
             "kind": "plate",
@@ -9616,6 +9694,13 @@
                   "d550c915-c2d7-5c1b-9ab2-0dd6e1f7d443",
                   "295b4db6-e177-52a5-a03a-363f246dcb5e",
                   "a856bf7a-14f5-51e0-a552-14a87e2cd04e"
+                ]
+              },
+              {
+                "group": "FIELD",
+                "title": "Field interviews",
+                "sourceIds": [
+                  "7798e5f2-2746-5c12-b7f6-48f791d481b8"
                 ]
               },
               {
@@ -17304,6 +17389,24 @@
       "supports": 1
     },
     {
+      "id": "7798e5f2-2746-5c12-b7f6-48f791d481b8",
+      "kind": "FIELD_TESTIMONY",
+      "title": "Field interview, Ajrakh documentation visit, 14 March 2026",
+      "authors": [
+        "Asha Demo"
+      ],
+      "year": 2026,
+      "doi": null,
+      "url": "https://kalavigyan.vercel.app/voices/f87ce42b-49d4-5241-a935-3f60dcc84b6a",
+      "publisher": "Field Repository",
+      "licence": null,
+      "attribution": "Asha Demo · Ajrakh documentation visit, 14 March 2026 · Field Repository",
+      "reliability": "A",
+      "group": "FIELD",
+      "from": null,
+      "supports": 0
+    },
+    {
       "id": "a856bf7a-14f5-51e0-a552-14a87e2cd04e",
       "kind": "ENCYCLOPEDIA",
       "title": "Ajrak",
@@ -17373,8 +17476,8 @@
     }
   ],
   "fieldVoicesTotal": {
-    "quotes": 0,
-    "images": 0
+    "quotes": 1,
+    "images": 1
   },
   "tabs": {
     "process": true,
@@ -20081,6 +20184,66 @@
       "lede": null
     }
   ],
-  "voices": [],
-  "fieldPhotos": []
+  "voices": [
+    {
+      "itemId": "FIELD_REPOSITORY:fr-media-1:fr-turn-2",
+      "origin": "FIELD_REPOSITORY",
+      "speaker": {
+        "name": "Asha Demo",
+        "line": "Asha Demo",
+        "role": "ARTISAN",
+        "yearsInCraft": 31,
+        "district": "Kachchh",
+        "state": "Gujarat"
+      },
+      "quote": "અમે ફટકડીને આમલીના બીજ સાથે વાટીએ છીએ અને લેપ આખી રાત રહેવો જોઈએ.",
+      "language": "gu",
+      "english": "We grind the alum with tamarind seed, and the paste must rest overnight. Call me on [number].",
+      "englishSource": "MACHINE",
+      "sourceId": "7798e5f2-2746-5c12-b7f6-48f791d481b8",
+      "locator": "0:06–0:33",
+      "workshop": "Ajrakh documentation visit",
+      "recordedOn": "2026-03-14",
+      "corroboratedBy": [],
+      "stage": {
+        "kind": "QUESTION",
+        "key": "C-Q03",
+        "label": "How do you prepare the mordant paste?"
+      },
+      "citation": "Asha Demo, interview recorded 14 March 2026, Ajrakh documentation visit, Field Repository, 0:06–0:33",
+      "recordingId": "f87ce42b-49d4-5241-a935-3f60dcc84b6a"
+    }
+  ],
+  "fieldPhotos": [
+    {
+      "itemId": "FIELD_REPOSITORY:fr-img-1",
+      "origin": "FIELD_REPOSITORY",
+      "imageUrl": "https://kalavigyan.vercel.app/api/field-voices/images/ef69e370-15c5-58c8-8a6a-00a403a58bfb",
+      "width": 2400,
+      "height": 1600,
+      "caption": "Printing the first resist",
+      "alt": "Photograph of Ajrakh Print of Kutch: Printing the first resist",
+      "credit": "Asha Demo · Ajrakh documentation visit, 14 March 2026 · Field Repository",
+      "credited": [
+        "Asha Demo"
+      ],
+      "workshop": "Ajrakh documentation visit",
+      "takenOn": "2026-03-14",
+      "groups": [
+        {
+          "kind": "PROCESS_STEP",
+          "key": "step:fr-step-2",
+          "label": "Ajrakh printing · First resist printing"
+        },
+        {
+          "kind": "PRODUCT",
+          "key": "product:fr-prod-1",
+          "label": "Ajrakh stole"
+        }
+      ],
+      "statement": "Shown on KalaVigyan with the consent of the people pictured. Not openly licensed: ask the rights holder before any other use.",
+      "rightsHolder": "Field Repository Demo Rights Holder",
+      "licence": null
+    }
+  ]
 }

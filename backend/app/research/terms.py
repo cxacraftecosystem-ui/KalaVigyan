@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unicodedata
 from collections.abc import Mapping, Sequence
 from typing import Any, Literal, Self
 
@@ -20,6 +21,7 @@ __all__ = [
     "WIKIDATA_ID_PATTERN",
     "Term",
     "TermSpan",
+    "shown_as_word",
     "span_problems",
     "spans_still_shown",
 ]
@@ -28,6 +30,7 @@ TERM_SCHEMA_VERSION = 1
 TERM_LABEL_MAX_CHARS = 120
 TERM_SUMMARY_MAX_SENTENCES = 3
 WIKIDATA_ID_PATTERN = r"^Q[1-9]\d*$"
+WORD_CATEGORIES = frozenset({"L", "M", "N"})
 
 TermBasis = Literal[*TERM_BASES]
 
@@ -84,12 +87,15 @@ def span_problems(text: str, spans: list[TermSpan]) -> list[str]:
 
 
 def spans_still_shown(
-    text: str, spans: Sequence[Mapping[str, Any]], renderings: Mapping[str, str] | None = None
+    text: str,
+    spans: Sequence[Mapping[str, Any]],
+    renderings: Mapping[str, str] | None = None,
+    local_names: Mapping[str, Sequence[str]] | None = None,
 ) -> list[Mapping[str, Any]]:
     kept: list[Mapping[str, Any]] = []
     taken: list[tuple[int, int]] = []
     for span in spans:
-        shown = _shown_span(text, span, renderings or {})
+        shown = _shown_span(text, span, renderings or {}, local_names or {})
         if shown is None:
             continue
         start = text.find(shown["text"])
@@ -101,15 +107,33 @@ def spans_still_shown(
     return kept
 
 
+def shown_as_word(text: str, name: str) -> bool:
+    start = text.find(name)
+    if start < 0:
+        return False
+    end = start + len(name)
+    before = text[start - 1] if start > 0 else ""
+    after = text[end] if end < len(text) else ""
+    return not _in_word(before) and not _in_word(after)
+
+
 def _shown_span(
-    text: str, span: Mapping[str, Any], renderings: Mapping[str, str]
+    text: str,
+    span: Mapping[str, Any],
+    renderings: Mapping[str, str],
+    local_names: Mapping[str, Sequence[str]],
 ) -> Mapping[str, Any] | None:
     if span["text"] in text:
         return span
-    rendered = renderings.get(span["text"], "").strip()
-    if not rendered or rendered not in text or len(rendered) > TERM_LABEL_MAX_CHARS:
-        return None
-    return {**span, "text": rendered}
+    names = (renderings.get(span["text"], ""), *local_names.get(span["termKey"], ()))
+    for name in (" ".join(name.split()) for name in names):
+        if name and len(name) <= TERM_LABEL_MAX_CHARS and shown_as_word(text, name):
+            return {**span, "text": name}
+    return None
+
+
+def _in_word(character: str) -> bool:
+    return bool(character) and unicodedata.category(character)[0] in WORD_CATEGORIES
 
 
 def _overlaps(start: int, end: int, taken: Sequence[tuple[int, int]]) -> bool:

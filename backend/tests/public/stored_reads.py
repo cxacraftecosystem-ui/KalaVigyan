@@ -16,7 +16,7 @@ from app.api.routes import (
     terms,
 )
 from app.core.http_cache import body_version
-from app.data.craft_master_loader import build_catalogue
+from app.data.craft_master_catalogue import build_catalogue
 from app.research.craft_compare import CraftComparison
 from app.research.craft_page import CraftPage
 from app.research.field_voices import FieldTranscript, FieldVoicesList

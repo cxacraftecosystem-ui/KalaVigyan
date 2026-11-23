@@ -20,9 +20,13 @@ from app.sources.adapter import HttpSourceAdapter
 from app.sources.fetcher_client import FetcherClient
 from app.sources.http import source_client
 from app.sources.images.registry import image_sources
+from app.sources.images.web_images import with_web_image_fallback
 from app.sources.reference.registry import reference_sources
 from app.sources.scholarly.registry import scholarly_sources
+from app.sources.web.brave import BraveAdapter
+from app.sources.web.fallback import WebSearch
 from app.sources.web.registry import web_search
+from app.sources.web.searxng import SearxngAdapter
 
 __all__ = ["DOI_SOURCE", "LIVE_SOURCES_TTL_SECONDS", "LiveSourcesStore", "live_source_client", "live_sources"]
 
@@ -94,6 +98,14 @@ class LiveSourcesStore:
                 fetcher = FetcherClient(settings.fetcher_url, self._client)
                 self._images = image_sources(self._client, searxng_url=settings.searxng_url, fetcher=fetcher)
             return self._images
+
+    async def web_images(self, sessions: async_sessionmaker[AsyncSession]) -> tuple[ImageSource, ...]:
+        images = await self.images()
+        web = next((s for s in (await self.get(sessions)).searchers if isinstance(s, WebSearch)), None)
+        brave = (
+            next((a for a in web.adapters if isinstance(a, BraveAdapter)), None) if web is not None else None
+        )
+        return with_web_image_fallback(images, primary_name=SearxngAdapter.name, fallback=brave)
 
     async def aclose(self) -> None:
         client, self._client, self._sources, self._images = self._client, None, None, None

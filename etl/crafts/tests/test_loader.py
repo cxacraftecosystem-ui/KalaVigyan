@@ -1,6 +1,7 @@
 import json
 
 from app.data import craft_master_loader as loader
+from app.data.craft_master_catalogue import build_catalogue
 
 
 def test_vendored_master_has_455_crafts_9_categories_36_sub_categories():
@@ -67,7 +68,7 @@ def test_seed_plan_carries_aliases_from_the_alias_file():
 
 
 def test_catalogue_matches_designer_portal_shape():
-    catalogue = loader.build_catalogue(aliases={"crafts": {}})
+    catalogue = build_catalogue(aliases={"crafts": {}})
     assert set(catalogue) == {"version", "categories", "crafts"}
     row = catalogue["crafts"][0]
     assert set(row) == {
@@ -86,7 +87,7 @@ def test_catalogue_matches_designer_portal_shape():
         "aliases",
     }
     assert sum(sub["craftCount"] for cat in catalogue["categories"] for sub in cat["subCategories"]) == 455
-    assert catalogue == loader.build_catalogue(aliases={"crafts": {}})
+    assert catalogue == build_catalogue(aliases={"crafts": {}})
 
 
 def test_craft_aliases_reads_extra_metadata_like_designer_portal():

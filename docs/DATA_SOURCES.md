@@ -140,6 +140,16 @@ cultures are those two, with Gandhara's countries from its Wikidata description.
 `https://query.wikidata.org/` on 2026-11-23, is in the file's `source`. It is re-vendored by
 running the query again, never edited by hand.
 
+## Public Suffix List (decision 0166)
+
+`backend/app/research/public_suffix_list.dat` is the Public Suffix List (publicsuffix.org), both its ICANN and
+its private sections, read from `https://publicsuffix.org/list/public_suffix_list.dat` on 2026-11-23 (its header's
+`VERSION: 2026-11-21_04-33-45_UTC`, `COMMIT: 87a2c1b8de5886a133ff4da21b2aa6fec88d8739`). Nothing in it is shown to a
+reader: `research/public_suffixes.registrable_name` reads it to decide whether a web picture and its page share a
+registrable name (`research/images.site_of`, `same_site`), and which site a picture comes from. It is under the
+Mozilla Public License 2.0, whose notice the file's header carries; it is vendored unchanged and replaced whole by
+a newer copy, never edited by hand.
+
 ## Ordinary English words (decision 0144)
 
 `backend/app/data/english_words.scowl.txt` is a word list, not a dataset, and nothing in it is
@@ -273,6 +283,7 @@ builder.
 | `wikimedia_commons` | Wikimedia Commons file search (`imageinfo`, 960 px thumbnails) | Each file's own licence; shown inline only under CC0, CC BY, CC BY-SA or public domain with its author, credited author, licence (linked) and Wikimedia Commons; otherwise a link card |
 | `openverse` | Openverse image search (`api.openverse.org`, anonymous) | Only `by`, `by-sa`, `cc0` and `pdm` results with a creator; credited creator, licence and source site (Flickr, Wikimedia Commons, ...); the Openverse thumbnail is shown |
 | `searxng` | SearXNG image results | No licence is known, so always a link card: the source site's own image as thumbnail, the page title and site, opening the page |
+| `brave` | Brave Image Search API (`/res/v1/images/search`, only with `BRAVE_SEARCH_API_KEY`), asked for an answer's section when SearXNG finds fewer than two link cards or fails (decision 0166) | Brave Search API terms; no licence is known, so always a link card: the source site's own image (`properties.url`, never Brave's proxied `thumbnail`), the page title and site, opening the page |
 
 ## Vendored export assets (decision 0067)
 

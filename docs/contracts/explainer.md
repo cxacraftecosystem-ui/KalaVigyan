@@ -137,7 +137,10 @@ fewer sentences than the live page, never more.
   once: Each sentence once, under Block renderers). A
   `process_ladder` is the process's skeleton: a stage drops a sentence said word for word, and a
   restating sentence only while the stage keeps another, so a stage the question names is never
-  emptied by another section (decision 0127). **A restatement** (`services/restatements.restates`,
+  emptied by another section (decision 0127). A `quantities` row whose sentence was already said
+  word for word stays, carrying `shownIn`, the id of the sentence that said it first, so a table
+  whose every row restates a ladder stage is still shown (decision 0168); any other row follows
+  the story rule, and a stored table's `shownIn` is set afresh by each answer's ledger. **A restatement** (`services/restatements.restates`,
   decision 0127) is a sentence of at least `RESTATED_STEMS_MIN` (4) content stems
   (`quotes.content_stems`) that adds no number to a shown one and keeps its negation, and either
   shares its claim group (its claims, or its citations' source and folded quote, within the shown
@@ -850,7 +853,7 @@ the items one sentence backs are drawn together under it, in the order of the fi
 |---|---|
 | `supply_map` | materials that share a sentence, directly or through another material, are one row (`supplyView.materialRows`, `sentenceGroups.joinedBy`): its heading names them in order in sentence case, "a, b and c", a later name lowered where the sentences write it in lower case (`namesText`); its origins once each; its sentences once each. A material on sentences of its own keeps its own row. Each placed origin is one pin, numbered in reading order, the same number wherever the origin is listed; the pin names the materials it supplies |
 | `measure`, `market_gi` prices | the rows of one sentence sit in one item, the sentence beside them once (`bySentence`) |
-| `quantities` | the rows of one sentence are one table body, the sentence under them once (`bySentence`) |
+| `quantities` | the rows of one sentence are one table body, the sentence under them once (`bySentence`); rows whose sentence carries `shownIn` keep their quantities with the sentence's citation cluster glued to the last row's stated words and the sentence left to where it is said (decision 0168) |
 | `timeline_map` | a point and a route of one sentence are one entry (above) |
 | `firing` | the atmosphere and temperature facts of one sentence are one fact, their labels joined with " · " (`answerSignature.factsOnce`) |
 | `indigo_vat` | read in order: the dek (the first dip), the three frames, then the facts; a frame keeps its title without a sentence already said, and the contents and later dips of one sentence are one fact, left out when an earlier part said it (`answerVat.vatText`) |
@@ -1427,7 +1430,7 @@ The routes around them (versions, saved explainers, lessons, exports, the explor
   0066 reads the units from the sentence with fixed unit words). Rules as above; each stated
   quantity of a sentence once. **Piece:** the section's slot.
 - **`quantities`** (decision 0147) `{rows[QuantityRow] (3-12)}`, `QuantityRow {stated, low,
-  high?, unit, measures, sentence}`. The quantities a section's cited facts state, metric units
+  high?, unit, measures, sentence, shownIn?}`. The quantities a section's cited facts state, metric units
   included, as a table, so numbers given in prose are also shown as a figure. Server: `stated`
   (the words as the sentence states them, `named_in`), `low` and `high` (its numbers in order),
   `unit` (a key of `research/stated_amounts.AMOUNT_UNITS`: temperatures, times, masses, lengths,
@@ -1435,12 +1438,19 @@ The routes around them (versions, saved explainers, lessons, exports, the explor
   kind, `AMOUNT_KINDS`). Model: nothing. Rules: a row measures what its unit measures; each stated
   quantity of a sentence once; facts only; at least `QUANTITY_ROWS_MIN` (3) rows, so a section
   stating fewer numbers shows none. Feet, inches, yards, miles and square feet are left to
-  `measure`, which converts them. The client draws a table with a kicker caption, a row per
+  `measure`, which converts them. `shownIn` (decision 0168) is the id of the sentence that already
+  says the row's sentence in the answer, set only by the claim ledger and the same on every row of
+  one sentence; such a row's sentence is not among the block's shown sentences
+  (`QuantitiesBlock.shown_sentences`), so the judge, the rubric, the stored answer sentences and
+  Listen read it once, where it is said. The client draws a table with a kicker caption, a row per
   quantity (what it measures, the stated words in tabular figures) and the sentence of its rows
-  once under them (`components/answer/insight/QuantitiesView.tsx`). Migration
+  once under them, or, for rows with `shownIn`, the sentence's citation cluster glued to the last
+  row's stated words, its anchor there and the row group described by the sentence it points to
+  (`components/answer/insight/QuantitiesView.tsx`). Migration
   `0072_quantities_kind` widens the `KnowledgePiece` and `ComponentProposal` kind checks.
   **Piece:** the section's slot. Golden: `shared/explainer.quantities.golden.json` (the process
-  quantities of Bagh prints from GI Journal No. 75).
+  quantities of Bagh prints from GI Journal No. 75, as built and, in its second section, as the
+  ledger admits them after a prose sentence said the sanchara one).
 - **`market_gi`** `{craft, gi: GiStatus?, imitation[sentence], prices[PriceRange]}`.
   `GiStatus {status, applicationNumber?, certificateNumber?, filedOn?, registeredOn?,
   journalIssue?, proprietors[], authorisedUserCount?, sentences (1+)}` is the craft's registry
@@ -1680,9 +1690,12 @@ is written "sentence" below; every sentence is cited.
   English sentence where its `text` still occurs in the translation, or else where the term's
   own rendering does: each distinct span text is translated in the same call as its sentences
   (segments `term:<n>`, `answer_translation.TERM_SEGMENT_PREFIX`) and the span moves to that
-  rendering (saaj to साज) when the translated sentence shows it; a first occurrence that overlaps
-  a span kept before it is dropped (`research/terms.spans_still_shown`), and no other term is
-  marked anew (decisions 0039 and 0089).
+  rendering (saaj to साज) when the translated sentence shows it, or else to one of the glossary's
+  names for that term (its label, aliases and local names in any script, `Enrichment.term_names`);
+  a rendering or a name counts only as a whole word, with no letter, mark or digit beside it, so a
+  vowel sign never ends a word (`research/terms.shown_as_word`, decision 0166); a first occurrence
+  that overlaps a span kept before it is dropped (`research/terms.spans_still_shown`), and no other
+  term is marked anew (decisions 0039 and 0089).
 - **`Term {schemaVersion 1, key, label, language, localNames[], craftSlugs[], wikidataId?, basis,
   summary[AnswerSentence] (1-3), sources[SourceRef], checkedAt}`** is the glossary row a tap
   opens, cached per key and language. `basis` is `STORED` (cited claims already held), else
@@ -1690,7 +1703,9 @@ is written "sentence" below; every sentence is cited.
   ones in order of first citation. Local names and crafts are listed once each. `checkedAt` is,
   for `STORED`, the latest change of the cited claims and citations, else when the summary was
   researched. A kept summary is answered only while every citation it quotes is still shown to
-  the reader, chunk ACLs included (decision 0079).
+  the reader, chunk ACLs included (decision 0079); a `WIKIPEDIA` or `WEB_SEARCH` summary checked
+  more than 180 days ago (`term_summaries.RESEARCHED_SUMMARY_MAX_AGE`) is built again on the next
+  signed-in tap, and a `STORED` one is dated by its claims (decision 0166).
 - **`MediaRef {id, display, provider, pageUrl, imageUrl, width?, height?, title, alt, author?,
   site, credit?, licence?, licenceUrl?, sourceId?, retrievedAt}`** is one stored picture.
   `INLINE` needs an open licence (`licences.open_licence` of the licence or its URL) and the
@@ -1701,14 +1716,22 @@ is written "sentence" below; every sentence is cited.
 ### Pictures and terms as served (decision 0034)
 
 - **Image sources.** Wikimedia Commons, Openverse (open licences with a creator only) and SearXNG
-  image results, each an `ImageSource` (`research/images`). A SearXNG picture is kept only when
-  the page's own site serves it (`same_site`: the page and `img_src` share a registrable name),
-  never a search engine's thumbnail, never over http; it has no licence, so it is a link card.
+  image results, each an `ImageSource` (`research/images`); for an answer's sections Brave image
+  results (`BraveAdapter.images`, `/res/v1/images/search`) back SearXNG when it finds fewer than
+  two link cards or fails (`sources/images/web_images.WebImages`, decision 0166). A SearXNG or
+  Brave picture is kept only when the page's own site serves it (`same_site`: the page and the
+  image share a registrable name by the Public Suffix List, `research/public_suffixes` over the
+  snapshot `research/public_suffix_list.dat`, private domains included), never a search engine's
+  thumbnail (Brave's `thumbnail` and `placeholder` are never read), never over http; it has no
+  licence, so it is a link card.
 - **Choosing.** A picture illustrates the claims (cited by the section's other blocks) whose
   content stems it shares at least two of, craft-name words left out (`image_relevance`); a
   section shows at most 4, inline first, at most 2 link cards, each original image once; no
   relevant picture is no `images` block. Each picture is stored once as a `MediaRef` row with its
-  `MediaRefClaim` links.
+  `MediaRefClaim` links. A section whose claims already have stored pictures shows those, by the
+  same caps, inline first, and searches only when none is stored; a stored picture is shown while
+  its claim is visible, it is not a field photo nobody has reviewed, and it passes today's shop and
+  social rule (`section_images.stored_items`, decision 0166).
 - **Drawing.** Every picture loads with `referrerPolicy="no-referrer"`; a link card shows
   `imageUrl`, `title`, `site` and `credit` and opens `pageUrl`; an inline picture shows `alt`,
   `author`, `licence` (linked to `licenceUrl`) and `site`, and opens `pageUrl`. A picture that
@@ -1718,6 +1741,11 @@ is written "sentence" below; every sentence is cited.
 - **Glossary.** `Term` rows (seeded by `seed_claims`) hold the label, local names, the Latin
   spellings used to find the term, the matched Wikidata id and the crafts and concepts it belongs
   to. Spans are marked by the server (`research/term_marking.TermMarker`), never chosen by a model.
+  A local word listed beside a concept's other names is a term only with the meaning a seed claim
+  of that concept, or a quote of a named curated claim, states word for word
+  (`data/local_term_meanings.json`, checked by `services/local_term_meanings` on every seed). Each
+  seed removes the links its plan no longer makes, to crafts without a curated page and to seed
+  concepts, and the terms those removals leave with no link and no cached summary (decision 0166).
 - **In the stream** (decision 0039, `services/section_enrichment`). Once per answer the craft's
   glossary (`glossary_entries`, the craft's own names left out) becomes one `TermMarker`; an
   answer for any craft reads none and marks nothing, and a glossary that cannot be read leaves
@@ -1728,7 +1756,9 @@ is written "sentence" below; every sentence is cited.
   open questions and `section_done`. Each image service has 6 s (`IMAGE_SEARCH_SECONDS`), the
   whole step 8 s (`PICTURES_WAIT_SECONDS`); a failure, a timeout or no relevant picture sends no
   `images` block and the section is still `READY`. Reused sections get pictures the same way from
-  their placed blocks' claims. An `images` block is never stored as a piece. A fresh section
+  their placed blocks' claims, and the stored-only answer of a refused spend marks its prose and
+  shows its pictures the same way; the nightly piece rebuild marks terms but searches no picture
+  (`section_enrichment.without_pictures`). An `images` block is never stored as a piece. A fresh section
   searches from the blocks the claim ledger let through, a candidate from a shop, marketplace or
   social site is never chosen (`section_images.shown_candidates`), and the ledger keeps one
   picture per section (decision 0080).
@@ -1995,6 +2025,13 @@ each section's `section_heading`, sources, block and `section_done`, `follow_ups
 backend reproduces both byte for byte and holds the lede to the prose checks
 (`tests/contracts/test_explainer_lede_contract.py`); the client parses both and reduces the stream
 to the document (`e2e/explainer-contract-unit.spec.ts`, `e2e/explainer-view-unit.spec.ts`).
+
+`explainer.translated.golden.json` (decision 0168) is the document golden's water section as a
+Hindi answer gives it: the heading and two sentences translated, each keeping its English
+`original` and its citations, the third left in English, and an understanding in Hindi read by the
+model (`basis` `MODEL`, as the document golden's is). The backend reproduces it byte for byte and
+ties each original to the document's sentence (`tests/contracts/test_explainer_translated.py`); the
+client parses it and shows either text (`e2e/answer-languages-unit.spec.ts`).
 
 `explainer.phase-d.golden.json` (decision 0062) holds every phase D kind for Kutch Ajrakh,
 compared with Bagru Hand Block Print, in six sections: a quiz (three cloze questions on alum,

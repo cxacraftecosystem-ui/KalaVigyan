@@ -27,7 +27,7 @@ from app.models.conversation import (
     Message,
     VoiceSession,
 )
-from app.models.craft_pages import CraftPageArchive, CraftPageSnapshot, WikidataPoint
+from app.models.craft_pages import CraftPageSnapshot, WikidataPoint
 from app.models.crafts import (
     AdminDistrict,
     AdminState,
@@ -178,7 +178,6 @@ __all__ = [
     "CraftCode",
     "CraftGiRecord",
     "CraftLocation",
-    "CraftPageArchive",
     "CraftPageSnapshot",
     "CraftPrice",
     "CraftSpelling",

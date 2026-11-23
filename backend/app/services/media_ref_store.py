@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import uuid
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 
 from pydantic import ValidationError
@@ -24,6 +24,7 @@ from .field_photo_scope import shown_field_photos
 
 __all__ = [
     "INLINE_DISPLAY",
+    "LINK_CARD_DISPLAY",
     "TEXT_RELEVANCE",
     "SqlMediaStore",
     "StoredPicture",
@@ -41,6 +42,7 @@ logger = logging.getLogger(__name__)
 
 TEXT_RELEVANCE = "TEXT"
 INLINE_DISPLAY = "INLINE"
+LINK_CARD_DISPLAY = "LINK_CARD"
 KEY_SEPARATOR = "\x1f"
 
 
@@ -91,7 +93,12 @@ class StoredPicture:
     relevance: str
 
 
-async def stored_pictures(session: AsyncSession, claim_ids: Sequence[uuid.UUID]) -> list[StoredPicture]:
+async def stored_pictures(
+    session: AsyncSession,
+    claim_ids: Sequence[uuid.UUID],
+    *,
+    displays: Collection[str] = (INLINE_DISPLAY,),
+) -> list[StoredPicture]:
     order = {claim_id: n for n, claim_id in enumerate(dict.fromkeys(claim_ids))}
     if not order:
         return []
@@ -100,7 +107,7 @@ async def stored_pictures(session: AsyncSession, claim_ids: Sequence[uuid.UUID])
         .join(MediaRefClaim, MediaRefClaim.mediaRefId == MediaRefRow.id)
         .where(
             MediaRefClaim.claimId.in_(list(order)),
-            MediaRefRow.display == INLINE_DISPLAY,
+            MediaRefRow.display.in_(list(displays)),
             MediaRefRow.id.not_in(unshown_field_media()),
         )
         .order_by(MediaRefRow.retrievedAt, MediaRefRow.id)
@@ -126,6 +133,10 @@ class SqlMediaStore:
             for claim_id in claim_ids
             if claim_id in views
         ]
+
+    async def stored(self, claim_ids: Sequence[uuid.UUID]) -> list[StoredPicture]:
+        async with self._sessions() as session:
+            return await stored_pictures(session, claim_ids, displays=(INLINE_DISPLAY, LINK_CARD_DISPLAY))
 
     async def keep(self, chosen: Sequence[ChosenImage]) -> list[MediaRef]:
         async with self._sessions() as session:

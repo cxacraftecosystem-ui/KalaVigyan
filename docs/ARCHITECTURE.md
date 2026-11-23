@@ -168,7 +168,7 @@ is shown only as the artisan's own words. Contract: `docs/contracts/roles-and-co
 ## API surface
 
 All routes are under `/api` except `/health` and `/health/ready`. Route groups (`api/routes/`):
-`auth` (signing in, the session and the account's own Google link; it includes `auth_signup` and `password_links`, and reads `api/sign_in.py` for proving who signs in and `api/auth_session.py` for the session and access rules every auth route shares), `password_change` (change-password and the first-password nonce, decision 0028), `two_factor`, `me`, `access`, `users`, `crafts`, `film` (film mode's music and sound score, decision 0058), `knowledge`, `lessons` (lesson packs and their files, decision 0067), `explainer_exports` (an explainer version's PDF and citations, decision 0067), `listen` (an explainer read aloud, decision 0035), `map_districts` (ask the map, decision 0065), `map_layers`, `media`, `profile` (a student's and an artisan's first-entry profile, the artisan recording notice and its consent, and the public district list, decision 0083), `artisan_conversations` (an artisan's conversation with KalaVigyan, 404 while `ARTISAN_CONVERSATION_ENABLED` is off), `artisan_contributions` (an artisan's own conversations and contributions, and withdrawal), `testimony_review` (the review queue for artisan testimony), `public` (the landing's summary, decision 0079), `rivers` (a basin's river lines as TopoJSON, decision 0043), `secrets`,
+`auth` (signing in, the session and the account's own Google link; it includes `auth_signup` and `password_links`, and reads `api/sign_in.py` for proving who signs in and `api/auth_session.py` for the session and access rules every auth route shares), `password_change` (change-password and the first-password nonce, decision 0028), `two_factor`, `me`, `access` (its roster's filters and sorts in `api/access_filters.py`, decision 0168), `users`, `crafts`, `film` (film mode's music and sound score, decision 0058), `knowledge`, `lessons` (lesson packs and their files, decision 0067), `explainer_exports` (an explainer version's PDF and citations, decision 0067), `listen` (an explainer read aloud, decision 0035), `map_districts` (ask the map, decision 0065), `map_layers`, `media`, `profile` (a student's and an artisan's first-entry profile, the artisan recording notice and its consent, and the public district list, decision 0083), `artisan_conversations` (an artisan's conversation with KalaVigyan, 404 while `ARTISAN_CONVERSATION_ENABLED` is off), `artisan_contributions` (an artisan's own conversations and contributions, and withdrawal), `testimony_review` (the review queue for artisan testimony), `public` (the landing's summary, decision 0079), `rivers` (a basin's river lines as TopoJSON, decision 0043), `secrets`,
 `settings`, `terms` (a glossary term's cited summary, decision 0034), `usage`, `voice` (404 throughout while `VOICE_CALL_ENABLED` is off, decision 0035). Every route module and its operation count, these and the ones added since, is generated in `docs/REPO_FACTS.md`. Shapes, headers and error forms are in `docs/contracts/backend.md`; the web client's
 side is `docs/contracts/frontend.md`. `GET /api/crafts/{slug}/page` (in `crafts`) answers the whole craft page from stored rows: the
 curated overview and facts and All evidence (`docs/contracts/craft-page.md`, decision 0053);
@@ -519,12 +519,15 @@ sequenceDiagram
    (`research/image_relevance`), stores each once as a `MediaRef` with its claims
    (`services/media_ref_store`) and answers an `images` block: inline under an open licence with
    its author, else a credited link card whose thumbnail the page's own site serves. The answer
-   stream calls it for every section with blocks, researched or reused, after those blocks are
-   built (`services/section_enrichment`, decision 0039): each service has 6 s, the step 8 s, and a
-   failure or timeout sends no `images` block and leaves the section ready.
+   stream calls it for every section with blocks, researched or reused, and for the stored-only
+   answer, after those blocks are built (`services/section_enrichment`, decision 0039): the
+   pictures already stored for the cited claims first, a search only when none is (decision
+   0166); each service has 6 s, the step 8 s, and a failure or timeout sends no `images` block
+   and leaves the section ready.
 2. Terms: `seed_claims` also seeds the `Term` glossary (`services/term_glossary.seed_terms`) from
-   craft names, aliases and matched Wikidata labels, the seed's local names with what they mean,
-   and its compounds. `research/term_marking.TermMarker` marks term spans in sentences against an
+   craft names, aliases and matched Wikidata labels, the seed's local names with what they mean
+   (with the meanings `data/local_term_meanings.json` cites), and its compounds, and removes the
+   links its plan no longer makes (decision 0166). `research/term_marking.TermMarker` marks term spans in sentences against an
    answer's glossary (`glossary_entries`): every English sentence of a section's blocks, before
    translation; a translated sentence keeps the spans whose text it still shows (decision 0039). `GET /api/terms/{key}?language=` (`api/routes/terms.py`)
    answers `services/term_summaries.TermLookup.summary`: the cached summary while its claims are

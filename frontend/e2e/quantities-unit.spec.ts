@@ -21,6 +21,10 @@ function quantities(): QuantitiesBlock {
   return parseShape(BLOCK_SHAPES.quantities, structuredClone(GOLDEN.sections[0].blocks[0]));
 }
 
+function saidAbove(): QuantitiesBlock {
+  return parseShape(BLOCK_SHAPES.quantities, structuredClone(GOLDEN.sections[1].blocks[1]));
+}
+
 function count(html: string, needle: string): number {
   return html.split(needle).length - 1;
 }
@@ -47,4 +51,17 @@ test("each quantity shows what it measures and its stated words, and a sentence 
   expect(html).toContain("<caption");
   expect(html).toContain('scope="row"');
   expect(blockSentences(block)).toHaveLength(5);
+});
+
+test("rows whose sentence the answer already said keep their quantities and one citation, and point to where it is said", () => {
+  const block = saidAbove();
+  expect(block.rows.map((row) => row.shownIn ?? null)).toEqual(["s2.b1.1", "s2.b1.1", null, null, null]);
+  const html = withReading(createElement(QuantitiesView, { block }));
+  expect(attribute(html, "quantity-stated", "data-testid")).toHaveLength(5);
+  expect(count(html, SANCHARA)).toBe(0);
+  expect(attribute(html, "quantity-said", "id")).toEqual(["say-s2.b2.1"]);
+  expect(attribute(html, "quantity-sentence", "aria-describedby")).toEqual(["say-s2.b1.1", "", "", ""]);
+  expect(count(html, 'data-testid="citation-cluster"')).toBe(4);
+  expect(count(html, 'data-testid="answer-sentence"')).toBe(3);
+  expect(() => parseShape(BLOCK_SHAPES.quantities, { ...block, rows: [{ ...block.rows[0], shownIn: 7 }, ...block.rows.slice(1)] })).toThrow(ShapeError);
 });

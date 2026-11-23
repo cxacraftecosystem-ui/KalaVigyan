@@ -205,7 +205,9 @@ def key_match(key: list[str], not_null: set[str]) -> str:
     )
 
 
-def upsert(cur, table: str, frame: pd.DataFrame, key: list[str], columns: list[str], required: set[str], prune: bool):
+def upsert(
+    cur, table: str, frame: pd.DataFrame, *, key: list[str], columns: list[str], required: set[str], prune: bool
+):
     present = table_columns(cur, table)
     require(table, present, required)
     cols = [c for c in columns if c in present]
@@ -253,7 +255,7 @@ def refresh_state_values(cur, sql_path: Path = SHARED / STATE_SQL_NAME) -> int:
     return cur.rowcount
 
 
-def main(argv: list[str] | None = None) -> int:
+def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Upsert etl/geo/out into EnvDataset, DistrictEnvValue, DistrictGeology and refresh StateEnvValue"
     )
@@ -261,8 +263,51 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dsn-env", default="DATABASE_URL")
     parser.add_argument("--prune", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args(argv)
+    return parser.parse_args(argv)
 
+
+def attach_dataset_ids(
+    values: pd.DataFrame, geology: pd.DataFrame, ids: dict[str, str]
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    values = values.assign(datasetId=values["datasetCode"].map(ids))
+    if len(geology):
+        geology = geology.assign(datasetId=geology["datasetCode"].map(ids))
+    return values, geology
+
+
+def keep_known_districts(
+    values: pd.DataFrame, geology: pd.DataFrame, allowed: set[int]
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    skipped = sorted(set(values["districtLgd"]) - allowed)
+    if skipped:
+        print(f"skipping {len(skipped)} districts not in {DISTRICT_TABLE}: {skipped[:20]}", file=sys.stderr)
+    values = values[values["districtLgd"].isin(allowed)]
+    if len(geology):
+        geology = geology[geology["districtLgd"].isin(allowed)]
+    return values, geology
+
+
+def write_rows(cur, values: pd.DataFrame, geology: pd.DataFrame, *, prune: bool) -> None:
+    written, pruned = upsert(
+        cur, VALUE_TABLE, values, key=VALUE_KEY, columns=VALUE_COLUMNS, required=VALUE_REQUIRED, prune=prune
+    )
+    print(f"{VALUE_TABLE}: {written} upserted, {pruned} pruned")
+    if len(geology):
+        written, pruned = upsert(
+            cur,
+            GEOLOGY_TABLE,
+            geology,
+            key=GEOLOGY_KEY,
+            columns=GEOLOGY_COLUMNS,
+            required=GEOLOGY_REQUIRED,
+            prune=prune,
+        )
+        print(f"{GEOLOGY_TABLE}: {written} upserted, {pruned} pruned")
+    print(f"{STATE_TABLE}: {refresh_state_values(cur)} state series")
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     values, geology, summary = read_inputs(Path(args.out))
     datasets = dataset_rows(summary)
     problems = validate(values, geology, datasets)
@@ -291,24 +336,10 @@ def main(argv: list[str] | None = None) -> int:
             )
             conn.rollback()
             return 3
-        values = values.assign(datasetId=values["datasetCode"].map(ids))
-        if len(geology):
-            geology = geology.assign(datasetId=geology["datasetCode"].map(ids))
+        values, geology = attach_dataset_ids(values, geology, ids)
         if allowed is not None:
-            skipped = sorted(set(values["districtLgd"]) - allowed)
-            if skipped:
-                print(f"skipping {len(skipped)} districts not in {DISTRICT_TABLE}: {skipped[:20]}", file=sys.stderr)
-            values = values[values["districtLgd"].isin(allowed)]
-            if len(geology):
-                geology = geology[geology["districtLgd"].isin(allowed)]
-        written, pruned = upsert(cur, VALUE_TABLE, values, VALUE_KEY, VALUE_COLUMNS, VALUE_REQUIRED, args.prune)
-        print(f"{VALUE_TABLE}: {written} upserted, {pruned} pruned")
-        if len(geology):
-            written, pruned = upsert(
-                cur, GEOLOGY_TABLE, geology, GEOLOGY_KEY, GEOLOGY_COLUMNS, GEOLOGY_REQUIRED, args.prune
-            )
-            print(f"{GEOLOGY_TABLE}: {written} upserted, {pruned} pruned")
-        print(f"{STATE_TABLE}: {refresh_state_values(cur)} state series")
+            values, geology = keep_known_districts(values, geology, allowed)
+        write_rows(cur, values, geology, prune=args.prune)
         conn.commit()
     return 0
 

@@ -4,7 +4,8 @@ from typing import Any
 import pytest
 
 from app.core.http_cache import etag_matches, quoted_etag
-from app.data.craft_master_loader import MASTER_FILE, build_catalogue, seed_plan
+from app.data.craft_master_catalogue import build_catalogue
+from app.data.craft_master_loader import MASTER_FILE, seed_plan
 from app.data.district_register import REGISTER_FILE
 from app.services.craft_catalogue import assemble_catalogue, reference_tables
 

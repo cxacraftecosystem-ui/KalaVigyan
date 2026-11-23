@@ -59,9 +59,9 @@ def run(districts: gpd.GeoDataFrame, options: Options) -> Result:
                 district = lookup.loc[int(record["districtLgd"])].copy()
                 district["districtLgd"] = int(record["districtLgd"])
                 pixels = float(record["pixels"])
-                rows.add(district, variable, period, "NORMAL", pick(record, "mean"), unit, pixels=pixels)
-                rows.add(district, variable, period, "DISTRICT_P10", pick(record, "p10"), unit, pixels=pixels)
-                rows.add(district, variable, period, "DISTRICT_P90", pick(record, "p90"), unit, pixels=pixels)
+                rows.add(district, variable, period, "NORMAL", pick(record, "mean"), unit=unit, pixels=pixels)
+                rows.add(district, variable, period, "DISTRICT_P10", pick(record, "p10"), unit=unit, pixels=pixels)
+                rows.add(district, variable, period, "DISTRICT_P90", pick(record, "p90"), unit=unit, pixels=pixels)
         except Exception as error:
             failures.append(failure(districts, f"chelsa {variable} {period}", error))
             if isinstance(error, remote.Unreachable):

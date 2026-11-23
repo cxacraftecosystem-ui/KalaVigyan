@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.core.db import get_session
-from app.data.craft_master_loader import build_catalogue
+from app.data.craft_master_catalogue import build_catalogue
 from app.main import create_app
 from app.models import User
 from app.services import craft_catalogue

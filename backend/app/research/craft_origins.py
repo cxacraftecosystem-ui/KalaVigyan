@@ -15,10 +15,7 @@ __all__ = [
     "AI_MEDIA_KINDS",
     "DAY_PATTERN",
     "GENERATED_KINDS",
-    "MONTH_PATTERN",
     "ORIGIN_BASES",
-    "QUESTION_SHOWN_MAX_CHARS",
-    "AskedQuestion",
     "ItemOrigin",
     "PageAiMedia",
 ]
@@ -27,14 +24,7 @@ AI_MEDIA_KINDS = ("IMAGE", "VIDEO")
 ORIGIN_BASES = ("CURATED", "STORED", "READERS")
 GENERATED_KINDS = ("MODEL", "AI_IMAGE", "AI_VIDEO")
 AI_GENERATED: Mapping[str, str] = MappingProxyType({"IMAGE": "AI_IMAGE", "VIDEO": "AI_VIDEO"})
-QUESTION_SHOWN_MAX_CHARS = 160
-MONTH_PATTERN = r"^\d{4}-(0[1-9]|1[0-2])$"
 DAY_PATTERN = r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$"
-
-
-class AskedQuestion(ContractModel):
-    text: str | None = Field(min_length=1, max_length=QUESTION_SHOWN_MAX_CHARS)
-    asked_in: str = Field(pattern=MONTH_PATTERN)
 
 
 class ItemOrigin(ContractModel):
@@ -42,7 +32,6 @@ class ItemOrigin(ContractModel):
     generated: Literal[*GENERATED_KINDS] | None
     model: str | None = Field(min_length=1, max_length=120)
     generated_on: str | None = Field(pattern=DAY_PATTERN)
-    from_question: AskedQuestion | None
 
     @model_validator(mode="after")
     def _generated_with_its_model_and_day(self) -> Self:
@@ -50,8 +39,6 @@ class ItemOrigin(ContractModel):
             self.generated_on is None
         ):
             raise ValueError("a generated item names its model and day, and only a generated one")
-        if self.from_question is not None and self.basis != "READERS":
-            raise ValueError("only a reader's piece names the question it came from")
         return self
 
 

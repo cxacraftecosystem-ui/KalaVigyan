@@ -1,12 +1,14 @@
 from typing import Any
 
-from app.research.blocks_insight import MeasureBlock
+from app.research.blocks import ProseBlock
+from app.research.blocks_insight import MeasureBlock, QuantitiesBlock
 from app.research.blocks_people import ExpertViewBlock
 from app.research.blocks_place import SupplyMapBlock
 from app.research.coverage_answers import field_figures, shown_field_sentences
 from app.research.coverage_eval import answer_measures, judge_message
 from app.research.explainer import Explainer
 
+from ..contracts.blocks_golden import QUANTITIES
 from ..contracts.explainer_golden import DOCUMENT, golden_json
 from ..contracts.phase_b_golden import phase_b_blocks
 from ..contracts.phase_d_golden import phase_d_blocks
@@ -16,6 +18,9 @@ BLOCKS = "Blocks are carved from teak (sag); printers today buy blocks from bloc
 AJRAKHPUR = (
     "At Ajrakhpur water once rose at a depth of 200 feet, "
     "but an artisan's later private borewell had to reach 450 feet."
+)
+SANCHARA = (
+    "3 kg of sanchara (rock salt) is dissolved in 15 litres of water as one component of the mengni solution."
 )
 ASKED = ["PROCESS", "GEOGRAPHY", "CHEMISTRY"]
 
@@ -113,3 +118,14 @@ def test_two_seats_that_differ_are_read_once_as_the_reader_s_differ_card_shows_t
         field for field in answer_measures(explainer, ASKED).fields if field.field == "GEOGRAPHY"
     )
     assert geography.sentences == 3 + 1 + 2 + 1
+
+
+def test_the_judge_reads_a_sentence_a_table_draws_under_its_rows_once_where_it_was_said() -> None:
+    prose, table = golden_json(QUANTITIES)["sections"][1]["blocks"]
+    explainer = with_blocks(ProseBlock.model_validate(prose), QuantitiesBlock.model_validate(table))
+    message = judge_message("How is the mengni solution made?", explainer, ASKED)
+    assert message.count(SANCHARA) == 1
+    assert len(shown_field_sentences(explainer)) == 12 + 1 + 3
+    assert answer_measures(explainer, ASKED).sentences == 12 + 1 + 3
+    figures = message[message.index('ref="figures"') :]
+    assert "[GEOGRAPHY] quantities: 3 kg; 15 litres; 80–100 g; 15–20 days; 10 minutes" in figures

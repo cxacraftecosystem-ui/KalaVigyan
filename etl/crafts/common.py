@@ -19,6 +19,7 @@ if str(BACKEND) not in sys.path:
     sys.path.insert(0, str(BACKEND))
 
 USER_AGENT = "KalaVigyan-craft-etl/0.1 (open craft-science research data pipeline; httpx)"
+RETRY_STATUSES = (429, 500, 502, 503, 504)
 
 
 def read_json(path: Path) -> Any:
@@ -29,6 +30,13 @@ def write_json(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(data, ensure_ascii=False, indent=1, sort_keys=False)
     path.write_text(text + "\n", encoding="utf-8", newline="\n")
+
+
+class _Retry(Exception):
+    def __init__(self, cause: Exception, pause: float | None = None) -> None:
+        super().__init__(str(cause))
+        self.cause = cause
+        self.pause = pause
 
 
 class PoliteClient:
@@ -81,38 +89,53 @@ class PoliteClient:
         if cached is not None and cached.exists():
             self.cache_hits += 1
             return read_json(cached)
+        payload = self._fetch_json(url, params, data, headers)
+        if cached is not None:
+            write_json(cached, payload)
+        return payload
+
+    def _fetch_json(
+        self, url: str, params: dict[str, Any], data: dict[str, Any] | None, headers: dict[str, str] | None
+    ) -> Any:
         delay = 2.0
         last_error: Exception | None = None
         for _ in range(self.retries):
-            wait = self.min_interval - (time.monotonic() - self._last)
-            if wait > 0:
-                time.sleep(wait)
-            self._last = time.monotonic()
-            self.requests += 1
             try:
-                if data is not None:
-                    response = self._http.post(url, params=params, data=data, headers=headers)
-                else:
-                    response = self._http.get(url, params=params, headers=headers)
-            except httpx.HTTPError as error:
-                last_error = error
-                time.sleep(delay)
+                return self._attempt(url, params, data, headers)
+            except _Retry as retry:
+                last_error = retry.cause
+                time.sleep(delay if retry.pause is None else retry.pause)
                 delay = min(delay * 2, 60)
-                continue
-            if response.status_code in (429, 500, 502, 503, 504):
-                retry_after = response.headers.get("retry-after", "")
-                time.sleep(float(retry_after) if retry_after.isdigit() else delay)
-                delay = min(delay * 2, 60)
-                last_error = RuntimeError(f"HTTP {response.status_code} from {url}")
-                continue
-            response.raise_for_status()
-            payload = response.json()
-            if isinstance(payload, dict) and payload.get("error", {}).get("code") == "maxlag":
-                time.sleep(delay)
-                delay = min(delay * 2, 60)
-                last_error = RuntimeError("maxlag")
-                continue
-            if cached is not None:
-                write_json(cached, payload)
-            return payload
         raise RuntimeError(f"giving up on {url}") from last_error
+
+    def _attempt(
+        self, url: str, params: dict[str, Any], data: dict[str, Any] | None, headers: dict[str, str] | None
+    ) -> Any:
+        self._wait_turn()
+        try:
+            response = self._send(url, params, data, headers)
+        except httpx.HTTPError as error:
+            raise _Retry(error) from error
+        if response.status_code in RETRY_STATUSES:
+            retry_after = response.headers.get("retry-after", "")
+            pause = float(retry_after) if retry_after.isdigit() else None
+            raise _Retry(RuntimeError(f"HTTP {response.status_code} from {url}"), pause)
+        response.raise_for_status()
+        payload = response.json()
+        if isinstance(payload, dict) and payload.get("error", {}).get("code") == "maxlag":
+            raise _Retry(RuntimeError("maxlag"))
+        return payload
+
+    def _wait_turn(self) -> None:
+        wait = self.min_interval - (time.monotonic() - self._last)
+        if wait > 0:
+            time.sleep(wait)
+        self._last = time.monotonic()
+        self.requests += 1
+
+    def _send(
+        self, url: str, params: dict[str, Any], data: dict[str, Any] | None, headers: dict[str, str] | None
+    ) -> httpx.Response:
+        if data is not None:
+            return self._http.post(url, params=params, data=data, headers=headers)
+        return self._http.get(url, params=params, headers=headers)

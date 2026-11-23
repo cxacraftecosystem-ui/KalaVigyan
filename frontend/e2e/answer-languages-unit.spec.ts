@@ -18,6 +18,7 @@ import {
   type AnswerLanguage
 } from "@/lib/answerLanguages";
 import { answerSentenceShape, answerStatusShape } from "@/lib/answerShapes";
+import { explainerShape } from "@/lib/explainerContract";
 import { askingExplainer, reduceExplainer } from "@/lib/explainerState";
 import { hasTranslatedText } from "@/lib/explainerView";
 import { DEFAULT_PREFERENCES, normalizePreferences, PREFERENCES_KEY } from "@/lib/preferences";
@@ -196,4 +197,16 @@ test("translated sentences and headings keep their originals through the stream"
   expect(hasTranslatedText(state.sections)).toBe(true);
   expect(parseShape(answerSentenceShape, sentence("फिटकरी मॉर्डेंट है।", "Alum is the mordant.")).original).toBe("Alum is the mordant.");
   expect(parseShape(answerStatusShape, { step: "TRANSLATING", message: "Translating the answer into Hindi" }).step).toBe("TRANSLATING");
+});
+
+test("the translated golden answer parses with each translated sentence's English and its section's English heading", () => {
+  const explainer = parseShape(explainerShape, JSON.parse(read("shared", "explainer.translated.golden.json")));
+  const [section] = explainer.sections;
+  expect([explainer.understood.language, section.original]).toEqual(["hi", "Why the water matters"]);
+  const [prose] = section.blocks;
+  const sentences = prose.kind === "prose" ? prose.sentences : [];
+  expect(sentences.map((said) => said.translated)).toEqual([true, true, false]);
+  expect(sentenceView(sentences[0], HINDI, false)).toMatchObject({ text: sentences[0].text, lang: "hi" });
+  expect(sentenceView(sentences[0], HINDI, true).text).toBe("Presence of iron in the water supply dulls and darkens the final result; alum, tin or chrome deposits help brighten colours.");
+  expect(sentenceView(sentences[2], HINDI, false).text).toBe(sentences[2].text);
 });

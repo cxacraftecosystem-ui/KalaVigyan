@@ -48,6 +48,7 @@ from app.research.piece_topics import facet_topics
 from app.research.reading_style import ReadingStyle
 from app.research.retrieval import EVERY_CHUNK_ACLS
 from app.retrieval.indexing import embed_pieces
+from app.retrieval.stamps import made_by_current_model
 from app.retrieval.text import query_text
 from app.science.ladder import ladder_problems
 from app.science.reaction_player import reaction_player_problems
@@ -196,7 +197,9 @@ class SqlPieceStore:
         ids = [piece.id for group in groups for piece in group]
         async with self._sessions() as session:
             rows = await session.execute(
-                select(PieceRow.id, PieceRow.embedding.cosine_distance(vector)).where(PieceRow.id.in_(ids))
+                select(PieceRow.id, PieceRow.embedding.cosine_distance(vector)).where(
+                    PieceRow.id.in_(ids), made_by_current_model(PieceRow.embeddingModel)
+                )
             )
             distances = {row[0]: row[1] for row in rows if row[1] is not None}
         return min(groups, key=lambda group: min(distances.get(piece.id, NO_DISTANCE) for piece in group))

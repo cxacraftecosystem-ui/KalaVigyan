@@ -2,11 +2,11 @@ from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import select, update
+from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
-from app.models import Claim, Concept, Craft, CraftLocation, CraftPageArchive, CraftPageSnapshot, CuratedCraft
+from app.models import Claim, Concept, Craft, CraftLocation, CraftPageSnapshot, CuratedCraft
 from app.services import knowledge_view
 from app.services.craft_page_snapshots import rebuild_snapshots, served_page
 from app.services.craft_page_stamp import page_stamp
@@ -96,8 +96,7 @@ async def test_a_page_of_an_earlier_curation_version_is_rebuilt_and_never_archiv
     await session.flush()
     again = await served_page(session, craft, "OPEN")
     assert again.body["curation"]["version"] == version
-    archived = await session.scalars(select(CraftPageArchive).where(CraftPageArchive.craftId == craft.id))
-    assert archived.all() == []
+    assert await session.scalar(text("SELECT to_regclass('\"CraftPageArchive\"')")) is None
 
 
 async def test_a_nightly_rebuild_under_the_same_stamp_changes_nothing(session: AsyncSession) -> None:

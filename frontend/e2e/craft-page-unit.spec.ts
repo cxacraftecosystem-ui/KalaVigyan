@@ -49,7 +49,7 @@ test("the Kutch Ajrakh page parses as the backend wrote it, curated, with every 
   expect(page.overview.keyFacts.map((fact) => fact.label)).toEqual(["GI status", "Centres", "Makers and wearers", "Colours", "Dyes and mordants", "Stages", "Time per piece", "Resists"]);
   expect(page.overview.sections.map((section) => section.title)).toEqual(["History", "How it is made", "The chemistry", "Materials", "Geography and water", "Economics", "Design"]);
   expect([page.sourcesDiffer.length, page.places.length, page.communities.length, page.glossary.length, page.pictures.length, page.openQuestions.length]).toEqual([14, 12, 8, 17, 10, 4]);
-  expect([page.claims.length, page.sources.length, page.evidence.hypotheses.length]).toEqual([143 + 4, 24 + 5 + 7, 5]);
+  expect([page.claims.length, page.sources.length, page.evidence.hypotheses.length]).toEqual([143 + 4, 24 + 5 + 7 + 1, 5]);
 });
 
 test("the client refuses a page that names a claim or source it does not list", () => {
@@ -85,9 +85,9 @@ test("sources are numbered in reading order, every page source numbered once, re
   const extra = { ...page.sources[0], id: OUTSIDE, title: "District register" };
   const numbers = pageSourceNumbers(page, [extra]);
   expect([numbers.get(GI_JOURNAL), numbers.get(RHYTHM_OF_BLUES), numbers.get(CASTE_DRESS)]).toEqual([1, 2, 3]);
-  expect(numbers.size).toBe(37);
-  expect(numbers.get(OUTSIDE)).toBe(37);
-  expect(new Set(numbers.values()).size).toBe(37);
+  expect(numbers.size).toBe(38);
+  expect(numbers.get(OUTSIDE)).toBe(38);
+  expect(new Set(numbers.values()).size).toBe(38);
   expect(pageSourcesById(page, [extra]).get(OUTSIDE)?.title).toBe("District register");
 });
 
@@ -151,7 +151,7 @@ test("sources group by reliability A to D, each source in its own grade once", (
   const page = curatedPage();
   const groups = sourceGroups(page.sources, pageSourceNumbers(page, []));
   expect(groups.map((group) => [group.label, group.sources.length])).toEqual([
-    ["A · peer-reviewed or official", 21],
+    ["A · peer-reviewed or official", 22],
     ["B · reputable reference", 9],
     ["C · general web", 5],
     ["D · unknown", 1]

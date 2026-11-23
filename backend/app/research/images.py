@@ -11,6 +11,7 @@ from .base import ContractModel, HttpsUrl
 from .evidence import ADAPTER_NAME_PATTERN, SEARCH_QUERY_MAX_CHARS
 from .licences import open_licence
 from .media_refs import MediaRef
+from .public_suffixes import registrable_name
 
 __all__ = [
     "IMAGE_DESCRIPTION_MAX_CHARS",
@@ -31,9 +32,6 @@ MEDIA_TEXT_MAX_CHARS = 300
 IMAGE_DESCRIPTION_MAX_CHARS = 2000
 TRACKING_PREFIX = "utm_"
 ELLIPSIS = "…"
-SECOND_LEVEL_LABELS = frozenset(
-    {"ac", "co", "com", "edu", "gov", "net", "nic", "org", "res", "gen", "ind", "mil"}
-)
 
 
 class ImageQuery(ContractModel):
@@ -115,12 +113,9 @@ def media_ref_of(candidate: ImageCandidate, *, media_id: uuid.UUID, source_id: s
 
 def site_of(host: str) -> str | None:
     name = host.lower().rstrip(".").strip("[]")
-    labels = [label for label in name.split(".") if label]
-    if _is_address(name) or len(labels) < 2:
+    if not name or _is_address(name):
         return None
-    if len(labels) >= 3 and len(labels[-1]) == 2 and labels[-2] in SECOND_LEVEL_LABELS:
-        return ".".join(labels[-3:])
-    return ".".join(labels[-2:])
+    return registrable_name(name)
 
 
 def same_site(first_url: str, second_url: str) -> bool:
