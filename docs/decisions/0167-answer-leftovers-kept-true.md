@@ -17,8 +17,9 @@ debt-clearing programme). It amends [decision 0039](0039-pictures-and-terms-wire
 [decision 0138](0138-answers-composed-from-the-asked-fields.md) (one fact once across sections),
 [decision 0139](0139-sources-and-providers-reach-outside-services-once.md) (quote renderings and
 publisher full text), [decision 0143](0143-lessons-exports-and-follow-ups-kept-true.md) (the journal
-a paper is in) and [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) (the answer
-record). The contracts are `docs/contracts/research.md` (the composer, the planner, the answering
+a paper is in), [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) (the answer
+record) and [decision 0151](0151-a-release-the-live-side-can-read.md) (a review kind the live web does
+not know). The contracts are `docs/contracts/research.md` (the composer, the planner, the answering
 service), `docs/contracts/explainer.md` (term spans, the supply map, the market block),
 `docs/contracts/curation.md` (Market and GI, the glossary), `docs/contracts/craft-page.md` and
 `docs/contracts/review-queue.md` (the `STAGES` kind).
@@ -32,6 +33,7 @@ service), `docs/contracts/explainer.md` (term spans, the supply map, the market 
 | Quote renderings and publisher full text, built and not yet asked | [decision 0139](0139-sources-and-providers-reach-outside-services-once.md) |
 | The journal a source stores | [decision 0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | The answer row and its request id | [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) |
+| What the live web ignores | [decision 0151](0151-a-release-the-live-side-can-read.md) |
 | The answer regression this lane kept the cost line of | [decision 0165](0165-answers-counted-as-settled-asked-as-asked.md) |
 | Every decision, by group | [README.md](README.md) |
 
@@ -150,8 +152,12 @@ a glossary term's sentence-case name is found when no dossier states it.
   dumped payload), and the write-back's quote measures read them (`services/write_back_plan`), so a
   sentence kept by its rendering is written back `QUOTED` with its verbatim quote, and no second
   `TRANSLATE` call is made.
-- Migration 0090 also creates `StageReview`. The review page refuses a page that names a kind it
-  does not know, so the web app that reads `STAGES` ships with or before the API that lists it.
+- Migration 0090 also creates `StageReview`. A release ships the backend first, so for some minutes
+  the live web reads a review page that names `STAGES` before its own build knows the kind. As the
+  production build ignores an unknown field (decision 0151), it now skips a review kind it does not
+  know: `shape.knownOnly` drops from the page's `kinds` and `items` a kind, or a structure item's
+  kind, outside the build's vocabulary, and the page renders the rest; the unit specs and the
+  development server still refuse it, so the drift is caught. Either deploy order is safe.
 
 ## How this record is kept true
 
@@ -172,4 +178,5 @@ names this one, and the table above links the two both ways. It records the choi
 `backend/tests/answering/test_heading_once.py`, `backend/tests/composer/test_internal_words.py`,
 `backend/tests/planner/test_understanding_fields.py`, `backend/tests/review_queue/test_stage_place.py`,
 `backend/tests/db/test_stage_review_db.py` and the unit specs `frontend/e2e/sentence-once-unit.spec.ts`,
-`frontend/e2e/sentence-once-figures-unit.spec.ts` and `frontend/e2e/review-stages-unit.spec.ts`.
+`frontend/e2e/sentence-once-figures-unit.spec.ts`, `frontend/e2e/review-stages-unit.spec.ts` and
+`frontend/e2e/review-unknown-kinds-unit.spec.ts`.

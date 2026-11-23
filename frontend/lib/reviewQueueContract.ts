@@ -3,8 +3,9 @@ import { craftLinkShape, INSTANT, storedLevelShape, type CraftLink, type StoredL
 import { imageContributionShape, type ImageContribution } from "@/lib/imageContributionContract";
 import type { MonographDocument } from "@/lib/monographDocument";
 import { monographDocumentShape } from "@/lib/monographDocumentShape";
-import { boolean, dictionary, integer, list, nullable, number, object, oneOf, optional, parseShape, tagged, text, type Shape } from "@/lib/shape";
+import { boolean, dictionary, integer, knownOnly, list, nullable, number, object, oneOf, optional, parseShape, tagged, text, type Shape } from "@/lib/shape";
 import {
+  isKnownStructure,
   STRUCTURE_KINDS,
   structureCheckShape,
   structureEntryShape,
@@ -309,12 +310,22 @@ export const queueItemShape: Shape<QueueItem> = tagged<QueueItem>("kind", {
   STAGES: object<StageItem>({ ...base, kind: oneOf(["STAGES"] as const), stage: placingShape })
 });
 
+export function isQueueKind(value: unknown): value is QueueKind {
+  return QUEUE_KINDS.includes(value as QueueKind);
+}
+
+function isKnownItem(value: unknown): boolean {
+  if (typeof value !== "object" || value === null) return true;
+  const item = value as { kind?: unknown; structure?: unknown };
+  return isQueueKind(item.kind) && (item.kind !== "STRUCTURE" || isKnownStructure(item.structure));
+}
+
 export const reviewQueuePageShape: Shape<ReviewQueuePage> = object<ReviewQueuePage>({
   schemaVersion,
-  kinds: list(kindShape),
-  counts: dictionary(/^[A-Z]+$/, integer),
+  kinds: knownOnly(kindShape, isQueueKind),
+  counts: dictionary(/^[A-Z_]+$/, integer),
   total: integer,
-  items: list(queueItemShape),
+  items: knownOnly(queueItemShape, isKnownItem),
   nextCursor: nullable(text)
 });
 

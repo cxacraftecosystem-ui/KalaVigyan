@@ -325,6 +325,10 @@ kept in the address (`?kind=&origin=&craft=`). A card per item:
 - a picture: `PictureReviewCard.tsx`; testimony: the testimony `ReviewCard.tsx`, both reused with
   their own decision routes.
 
+The page parses its kinds and items with `shape.knownOnly`: the production build drops a kind it
+does not know (or a structure item of a kind it does not know) and renders the rest, since a release
+ships the API before the web; the unit specs refuse it (decision 0167).
+
 Facts, component, layout and structure proposals and stages decide through `QueueDecisionBar.tsx`: an `ActionGroup` of Approve, Approve as
 reviewed (facts), then Reject (waiting) or Retract (live) last as the destructive action, with a
 Reason field required for either. The client contract is `frontend/lib/reviewQueueContract.ts`;
@@ -340,6 +344,6 @@ stay, and list decided items.
 | Process stages answers found | `backend/tests/review_queue/test_stage_place.py`, `backend/tests/db/test_stage_review_db.py` and `frontend/e2e/review-stages-unit.spec.ts` |
 | Structure proposals | `backend/tests/structure/`, `backend/tests/db/test_structure_proposals_db.py`, `test_structure_writes_db.py` and `test_structure_export_db.py` |
 | Refreshing signed-out pages | `backend/tests/test_page_revalidation.py`, `backend/tests/db/test_page_revalidation_db.py` and `test_review_queue_refresh_db.py` |
-| The Review page | `frontend/e2e/review-queue-unit.spec.ts`, `review-layouts-unit.spec.ts`, `review-structure-unit.spec.ts` and `revalidate-unit.spec.ts` |
+| The Review page | `frontend/e2e/review-queue-unit.spec.ts`, `review-layouts-unit.spec.ts`, `review-structure-unit.spec.ts`, `review-unknown-kinds-unit.spec.ts` and `revalidate-unit.spec.ts` |
 
 Re-read it when a kind joins the queue, a decision is added, or a capability moves between roles.
