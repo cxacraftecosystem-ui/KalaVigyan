@@ -13,6 +13,7 @@ Date: 2026-11-18. Status: accepted.
 | The contract it was built to | [0054 Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode](0054-phase-c-contract.md) |
 | The review that fixed it | [0061 Phase C review fixes](0061-phase-c-review-fixes.md) |
 | What amended part of it | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md): One what-if per stage and pair of choices in an answer |
+| Two materials are alternatives by a curated contrast edge carrying its fact, not only by English words | [decision 0169](0169-mcp-follow-ups-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -14,6 +14,7 @@ the dossiers its export) and 0101 (contributions through the gates).
 | What amended it | [decision 0162](0162-unused-craft-page-chapters-retired.md): an approved glossary term's shared entry and an approved reaction's science row are written at approval |
 | What it builds on | [0053 Curated dossiers are imported on deploy and served as one craft page](0053-curated-dossier-import.md): the database as the source of truth and the dossiers as its export |
 | What it builds on | [0101 One knowledge architecture for every craft: facts, sections, components, monographs](0101-knowledge-architecture-for-every-craft.md): contributions through the gates |
+| A category page takes structure, and a material's alternative is a structure kind | [decision 0169](0169-mcp-follow-ups-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

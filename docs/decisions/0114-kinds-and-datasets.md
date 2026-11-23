@@ -16,6 +16,7 @@ components of round 7 (`component-specs-general.md`) and decision 0111 (the MCP 
 | What it amends | [0111 Twenty-one MCP tools in six groups, with small schemas](0111-fewer-mcp-tools.md): the MCP tools, which gain a 22nd, `propose_dataset` |
 | What it amends | the delivered components of round 7 ([component-specs-general.md](../contracts/component-specs-general.md)) |
 | Drawings held to the design's roles and served in four themes (amends this record) | [decision 0131](0131-drawings-in-the-design.md) |
+| A dataset for a new map layer is proposed over MCP and held for an Admin | [decision 0169](0169-mcp-follow-ups-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

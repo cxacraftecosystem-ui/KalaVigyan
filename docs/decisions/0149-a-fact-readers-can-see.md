@@ -26,6 +26,7 @@ section cites).
 | The reply, the gates and their evaluation | [knowledge-writes.md](../contracts/knowledge-writes.md) |
 | The nightly count | [nightly-upkeep.md](../contracts/nightly-upkeep.md) |
 | A curated craft lists its contributed facts under their fields, and a figure's fact is not listed (amends item 5) | [decision 0158](0158-a-curated-page-lists-the-facts-contributors-add.md) |
+| The write-back asks the same judge ladder, cheapest first, and a PDF is described by its first page (amends items 8 and 9) | [decision 0169](0169-mcp-follow-ups-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context
