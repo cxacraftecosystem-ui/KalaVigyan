@@ -765,6 +765,11 @@ evidence[PackedEvidence], documents[SourceDocument], failures[ResearchFailure], 
     `www.`, a bare `.com`, `.in`, `.org` ... name), a tag or a Markdown link, and
     `PERSONAL_DATA` for an email address or a phone-like or Aadhaar-like number
     (`evidence.personal_data_in`). A comparison sign or a reaction arrow is not markup.
+  - `INTERNAL_WORDS` (the composer's own check, `composer/drafts.sentence_problems` over
+    `research/internal_words.internal_words`, decision 0167): a reader sentence never names our
+    internals: "stored" statements, claims, passages, facts, evidence, sources, quotes, knowledge,
+    texts, records, findings or data, "untrusted", an evidence pack, "the given" or "offered"
+    statements, claims, passages, sources, quotes or candidates, or candidate statements.
 - After the post-checks the sectioned flow drops, alone, a sentence that names a month, a
   season, a regional month in month context (in any of its spellings in the supports; decision
   0160), or a state or district of the LGD register that none of its stored claims' texts or
@@ -1101,7 +1106,9 @@ ModelUnderstander(model=StructuredModel, resolve=)` implements it with the craft
   (decisions 0138 and 0165). `englishQuestion` is the question in
   English that every search of the answer reads (decision 0123). `understood()` is the stream's
   `Understood` event, its `crafts` the craft then the compared ones.
-- The call: system `UNDERSTAND_SYSTEM_PROMPT`; user `understand_message` (depth label, the
+- The call: system `UNDERSTAND_SYSTEM_PROMPT` (it describes GEOGRAPHY, GEOLOGY, MATERIALS, what
+  a craft's objects are made of, decision 0167, PROCESS, OVERVIEW, SOCIETY, POLICY and ECOLOGY);
+  user `understand_message` (depth label, the
   depth's expert range, its section range `Sections: <min> to <max>`, the listed crafts each in a
   `craft_block`, the question in an untrusted block); schema `understand_schema(offered)` `{craft:
   enum of the listed slugs and "", craftNames [string], compare [string: a listed slug, or a name

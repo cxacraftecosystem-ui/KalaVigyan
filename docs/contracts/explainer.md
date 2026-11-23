@@ -132,7 +132,9 @@ fewer sentences than the live page, never more.
   `climate_risk` and the rest) drop an item when its sentence's text is already shown or it
   restates a shown sentence; a story that would not stand without its restating items keeps the
   first of them (then, if it still does not stand, every one), so a figure is never lost to the
-  prose it draws. In one call they are let through before the restating blocks; a
+  prose it draws, except that a `timeline_map` or `region_story` whose every kept item is shown or
+  restated is left out (`claim_ledger.TOLD_STORY_KINDS`, decision 0167: the Ajrakhpur move told by
+  a section's prose and again by its timeline). In one call they are let through before the restating blocks; a
   story block may repeat a sentence within itself, one copy per item it backs (the client says it
   once: Each sentence once, under Block renderers). A
   `process_ladder` is the process's skeleton: a stage drops a sentence said word for word, and a
@@ -141,7 +143,10 @@ fewer sentences than the live page, never more.
   decision 0127) is a sentence of at least `RESTATED_STEMS_MIN` (4) content stems
   (`quotes.content_stems`) that adds no number to a shown one and keeps its negation, and either
   shares its claim group (its claims, or its citations' source and folded quote, within the shown
-  sentence's) with at least `SAME_GROUP_SHARE` (half) of their stems in common, or cites other
+  sentence's) with at least `SAME_GROUP_SHARE` (half) of their stems in common, or cites only
+  passages overlapping the shown sentence's of the same source with at least `SAME_PASSAGE_SHARE`
+  (three tenths) in common (decision 0138; a sentence of the same claim group short of half still
+  meets this rule, decision 0167), or cites other
   evidence with the same numbers and at least `NEAR_VERBATIM_SHARE` (0.8) of their stems in common:
   a story step that tells the prose's fact in nearly the prose's words, and one fact filed under
   two fields, are said once. An item left with no sentence goes, so a card whose every fact
@@ -151,8 +156,8 @@ fewer sentences than the live page, never more.
   are exempt from the repeat rule (decision 0120): an `expert_view` difference goes from both seats
   only when the same pair of claims was already shown as a difference or the page already said both
   its readings (each by its words or by every claim it cites, decision 0165), never because one
-  reading was already said in prose, and a seat whose every take sentence was shown stays, with its take,
-  while it carries a difference (it goes when its differences go). Kinds without
+  reading was already said in prose; a seat whose every take sentence was shown goes, and its
+  differences with it (decision 0167, which replaced keeping its whole take for a difference). Kinds without
   sentences pass whole. A block left empty or off its contract is not sent; a section left with
   nothing ends `EMPTY` with `COVERED_NOTE` ("Already covered in this answer."), which the client
   does not draw (`lib/explainerView.shownSections`).
@@ -1771,7 +1776,7 @@ validated by `event_frame` like every other: a payload off the contract never re
 | `builds_on` | `BuildsOnEvent {explainerId, version, sections[{id, order}]}` | a follow-up only, right after `understood`: the explainer and version it extends (decision 0062, `docs/contracts/learning.md`) |
 | `version` | `VersionMark {explainerId, version, answerId, basedOn, question, changes[], createdAt}` | a follow-up only, before `done`: the version it stored |
 | `lede` | `{block: LedeBlock}` | once at most, before the first `block`; every source it cites was sent as `source` first. Without a stored finding it comes after the sections, before `follow_ups` (decision 0077) |
-| `section_heading` | `{sectionId, title, original?}` | the heading written for a started section, before its first block; `original` is the English heading when `title` is a translation |
+| `section_heading` | `{sectionId, title, original?}` | the heading written for a started section, before its first block; `original` is the English heading when `title` is a translation; a heading is one section's within an answer: another section proposing it (folded) keeps its own title (`ExplainerStream.claim_heading`, decision 0167) |
 
 Order: `understood`; every researched section is started (`RESEARCHING`) and researches while the
 `lede` is written (decision 0077: blocks wait for it, and reused sections wait for their headings

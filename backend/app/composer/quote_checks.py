@@ -4,12 +4,12 @@ from collections.abc import Mapping, Sequence
 from dataclasses import replace
 from types import MappingProxyType
 
-from app.research.composition import ComposeCandidate, sentence_violations
+from app.research.composition import ComposeCandidate
 from app.research.quote_renderings import QuotedIn, english_renderings
 from app.research.translation import Translator, written_in
 from app.research.vocabulary import ANSWER_LANGUAGE_SPECS, CANONICAL_LANGUAGE
 
-from .drafts import DraftAnswer, DraftSection, DraftSentence
+from .drafts import DraftAnswer, DraftSection, DraftSentence, sentence_problems
 
 __all__ = ["LANGUAGES_BY_SCRIPT", "RENDERED_QUOTES_MAX", "foreign_quotes", "quote_language", "rendered_draft"]
 
@@ -66,6 +66,6 @@ def _rechecked(
 ) -> DraftSentence:
     if draft.passes or draft.sentence is None:
         return draft
-    if sentence_violations(draft.sentence, allowed, renderings=renderings):
+    if sentence_problems(draft.sentence, allowed, renderings):
         return draft
     return replace(draft, problems=())

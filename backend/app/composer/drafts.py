@@ -21,6 +21,8 @@ from app.research.composition import (
 )
 from app.research.evidence import personal_data_in
 from app.research.gap_admissions import without_source_gap
+from app.research.internal_words import INTERNAL_WORDS_KIND, internal_words
+from app.research.quote_renderings import NO_RENDERINGS
 from app.research.quotes import figures_in
 from app.research.sections import is_facet_label
 from app.research.sentence_support import NEGATION_CHANGED, negation_gap
@@ -43,6 +45,7 @@ __all__ = [
     "parsed_lede",
     "parsed_replacements",
     "parsed_section",
+    "sentence_problems",
 ]
 
 logger = logging.getLogger(__name__)
@@ -199,8 +202,17 @@ def checked_sentence(raw: Any, heading: str, allowed: Mapping[str, ComposeCandid
         sentence = _sentence(raw, allowed)
     except (ValidationError, TypeError, AttributeError, KeyError, ValueError) as error:
         return DraftSentence(heading, raw_text, None, (f"MALFORMED: {_reason(error)}",))
-    problems = tuple(f"{v.kind}: {v.detail}" for v in sentence_violations(sentence, allowed))
-    return DraftSentence(heading, raw_text, sentence, problems)
+    return DraftSentence(heading, raw_text, sentence, sentence_problems(sentence, allowed))
+
+
+def sentence_problems(
+    sentence: ComposedSentence,
+    allowed: Mapping[str, ComposeCandidate],
+    renderings: Mapping[str, str] = NO_RENDERINGS,
+) -> tuple[str, ...]:
+    found = [f"{v.kind}: {v.detail}" for v in sentence_violations(sentence, allowed, renderings=renderings)]
+    named = internal_words(sentence.text)
+    return tuple(found + ([f"{INTERNAL_WORDS_KIND}: {named}"] if named else []))
 
 
 def checked_block_sentence(raw: Any, heading: str, allowed: Mapping[str, ComposeCandidate]) -> DraftSentence:

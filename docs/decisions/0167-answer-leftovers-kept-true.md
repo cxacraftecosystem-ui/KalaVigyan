@@ -12,6 +12,8 @@ Date: 2026-11-23. Status: accepted (the lead's answer-leftovers lane brief of 20
 debt-clearing programme). It amends [decision 0039](0039-pictures-and-terms-wired.md) and
 [decision 0089](0089-expert-depth-caps-and-answer-routes.md) (term spans in a translation),
 [decision 0066](0066-local-measures-and-market-gi.md) (signs of imitation),
+[decision 0120](0120-grounded-sentences.md) (a seat kept for its difference),
+[decision 0138](0138-answers-composed-from-the-asked-fields.md) (one fact once across sections),
 [decision 0139](0139-sources-and-providers-reach-outside-services-once.md) (quote renderings and
 publisher full text), [decision 0143](0143-lessons-exports-and-follow-ups-kept-true.md) (the journal
 a paper is in) and [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) (the answer
@@ -23,6 +25,8 @@ service), `docs/contracts/explainer.md` (term spans, the supply map, the market 
 |---|---|
 | Term spans kept in a translation | [decision 0039](0039-pictures-and-terms-wired.md) and [decision 0089](0089-expert-depth-caps-and-answer-routes.md) |
 | The imitation word list | [decision 0066](0066-local-measures-and-market-gi.md) |
+| A seat kept for its difference | [decision 0120](0120-grounded-sentences.md) |
+| One fact once across sections | [decision 0138](0138-answers-composed-from-the-asked-fields.md) |
 | Quote renderings and publisher full text, built and not yet asked | [decision 0139](0139-sources-and-providers-reach-outside-services-once.md) |
 | The journal a source stores | [decision 0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | The answer row and its request id | [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) |
@@ -95,7 +99,24 @@ a glossary term's sentence-case name is found when no dossier states it.
    pigment or pottery its colour adds one query per tier the model used, naming its hues and the
    oxides of cobalt, copper, iron, manganese and chromium, inside the mode's query limit, so it adds
    no model call.
-8. **No rule orders the seed's four unordered stages.** The seed holds no `PRECEDES` edge joining
+8. **One fact is told once, one heading is shown once, and no sentence names our internals.** The
+   lead's comparison of Opus and Sonnet on release 987e94c5 found three faults. In Ajrakh's indigo
+   answer (a5af3bee) MATERIALS retold CHEMISTRY's leucoindigo sentence from the same passage:
+   `restates` returned early for a pair of one claim group short of half its stems, so decision
+   0138's three-tenths passage rule never ran; it now falls through. Two PROCESS expert seats whose
+   takes the earlier sections had said in full were kept whole for their difference; a seat left
+   with no take now goes, and its differences with it (amending decision 0120's keeping, at the
+   lead's word). The GEOGRAPHY timeline's only entry retold its prose (the 2001 move to Ajrakhpur)
+   and was spared to stand; a `timeline_map` or `region_story` left with nothing new now goes. Three
+   sections carried one composed heading; a heading is now one section's per answer
+   (`ExplainerStream.claim_heading`, folded), and a later section keeps its own title. In Bidri's
+   answer (cf252138) an overview sentence said "The stored statements say ..."; a composed sentence
+   naming our internals now fails the composer's check (`INTERNAL_WORDS`) and goes to the
+   regenerate. Bidri's MATERIALS had no section because the understanding never listed it, not for
+   want of facts (Bidriware holds 11 approved MATERIALS facts): its prompt now says what MATERIALS
+   covers, about 15 input tokens per answer. We left the lede's claims out of the repeat rule:
+   sections expand what the lede says in brief.
+9. **No rule orders the seed's four unordered stages.** The seed holds no `PRECEDES` edge joining
    them to their crafts' ladders (its only one among them says Akola's mud soaking precedes paste
    preparation), so a rule reading such edges would place nothing; a test holds the seed's edges as
    they are, and the register names the sources that would place them.
@@ -126,5 +147,8 @@ names this one, and the table above links the two both ways. It records the choi
 `backend/tests/sources/test_scholarly_journals.py`, `backend/tests/sources/test_source_journal_reads.py`,
 `backend/tests/db/test_source_journals_db.py`, `backend/tests/planner/test_publisher_reads.py`,
 `backend/tests/planner/test_colourant_search.py`, `backend/tests/science/test_seed_stage_order.py`,
-`backend/tests/voice/test_voice_compose.py`, `backend/tests/journey/test_zoom_story.py` and the
+`backend/tests/voice/test_voice_compose.py`, `backend/tests/journey/test_zoom_story.py`,
+`backend/tests/ledger/test_ajrakh_retold.py`, `backend/tests/ledger/test_ledger_rules.py`,
+`backend/tests/answering/test_heading_once.py`, `backend/tests/composer/test_internal_words.py`,
+`backend/tests/planner/test_understanding_fields.py` and the
 unit specs `frontend/e2e/sentence-once-unit.spec.ts` and `frontend/e2e/sentence-once-figures-unit.spec.ts`.

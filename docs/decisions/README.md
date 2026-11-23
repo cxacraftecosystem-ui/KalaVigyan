@@ -165,7 +165,7 @@ flowchart LR
 | [0117](0117-pages-in-other-languages.md) | A page in another language is the same page, translated passage by passage | · |
 | [0118](0118-python-3-15.md) | The backend runs on Python 3.15, and each release pins its interpreter | · |
 | [0119](0119-nightly-refresh-of-changed-pages.md) | The night refreshes only the pages that changed; it never rebuilds the site | · |
-| [0120](0120-grounded-sentences.md) | Every sentence says no more than the quotes it cites | [0165](0165-answers-counted-as-settled-asked-as-asked.md) |
+| [0120](0120-grounded-sentences.md) | Every sentence says no more than the quotes it cites | [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0121](0121-quote-visibility.md) | A quote is shown only where its page allows | [0149](0149-a-fact-readers-can-see.md) |
 | [0122](0122-evidence-reach.md) | Evidence the knowledge base holds reaches the answers that need it | · |
 | [0123](0123-question-understanding.md) | A question is understood honestly before any evidence is read | · |
@@ -182,7 +182,7 @@ flowchart LR
 | [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | [0136](0136-write-backs-filed-by-their-source.md) and [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0136](0136-write-backs-filed-by-their-source.md) | A write-back is filed by what its source says around it, and what nothing names waits for a reviewer | [0144](0144-stored-passages-as-evidence.md) |
 | [0137](0137-limits-kept-by-choice.md) | Nine limits are kept by choice and leave the debt register | · |
-| [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | [0165](0165-answers-counted-as-settled-asked-as-asked.md) |
+| [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0139](0139-sources-and-providers-reach-outside-services-once.md) | Sources and providers reach outside services once, at the pace and spend every process shares | [0146](0146-answers-recorded-and-bounded-on-the-box.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | [0144](0144-stored-passages-as-evidence.md) |
 | [0141](0141-design-system-and-answer-screens-without-debt.md) | The design system holds no migration alias, and the answer screens number their figures, read every caption from the server and keep only what is stored | [0156](0156-expert-panel-and-field-voices-kept-true.md) |
