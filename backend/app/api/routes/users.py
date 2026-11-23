@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import case, func, or_, select
+from sqlalchemy import String, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import guardian_hold
@@ -95,7 +95,7 @@ async def _listed(session: AsyncSession, rows: Any) -> list[dict[str, Any]]:
 
 def _sort_column(sort: str) -> Any:
     if sort == ROLE_SORT:
-        return case(ROLE_RANK, value=User.role)
+        return case(ROLE_RANK, value=User.role.cast(String))
     return getattr(User, USER_SORTS[sort])
 
 
