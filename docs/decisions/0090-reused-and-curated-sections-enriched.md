@@ -9,6 +9,7 @@ Date: 2026-11-18. Status: accepted.
 | For | Read |
 |---|---|
 | Which piece is curated, by its claims (amends item 2) | [decision 0142](0142-curated-crafts-read-only-curated-rows.md) |
+| The zoom story rebuilt on reuse in place of the stored one, and a section storing only the builds it showed | [decision 0175](0175-production-checks-read-what-the-page-shows.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

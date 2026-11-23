@@ -28,6 +28,7 @@ from .section_language import block_in_language
 from .stored_fields import FLOOR_DEPTH
 
 __all__ = [
+    "COMPOSED_KINDS",
     "CROSS_CRAFT_KINDS",
     "Floor",
     "Placed",
@@ -41,11 +42,13 @@ __all__ = [
     "placed_section",
     "process_sources",
     "reused_ladder",
+    "shown_builds",
 ]
 
 logger = logging.getLogger(__name__)
 
 CROSS_CRAFT_KINDS = frozenset({REGION_STORY_KIND, SIMULATION_KIND})
+COMPOSED_KINDS = frozenset({"prose", LADDER_KIND})
 
 
 @dataclass(frozen=True)
@@ -175,11 +178,15 @@ async def floor_sent(
     return tuple(shown)
 
 
-def kept_with_reuse(placed: Placed, rebuilt: Sequence[Block]) -> tuple[Block, ...]:
-    added = [block for block in rebuilt if block.reuse is None and storable(block)]
+def shown_builds(built: Sequence[Block], shown: Collection[str]) -> tuple[Block, ...]:
+    return tuple(block for block in built if block.kind in COMPOSED_KINDS or block.id in shown)
+
+
+def kept_with_reuse(placed: Placed, rebuilt: Sequence[Block], *, shown: Collection[str]) -> tuple[Block, ...]:
+    added = [block for block in shown_builds(rebuilt, shown) if block.reuse is None and storable(block)]
     if all(placed.stores(block) or not storable(block) for block in (*placed.built, *added)):
         return ()
-    return (*placed.built, *placed.copies, *added)
+    return (*placed.built, *shown_builds(placed.copies, shown), *added)
 
 
 def process_sources(records: ProcessRecords | None) -> dict[str, dict[str, Any]]:

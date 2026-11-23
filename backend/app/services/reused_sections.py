@@ -193,7 +193,7 @@ async def _closed(
         spec,
         shown_title=section.shown_title,
         blocks=tuple(sent),
-        built=kept_with_reuse(placed, rebuilt.blocks),
+        built=kept_with_reuse(placed, rebuilt.blocks, shown={block.id for block in sent}),
         searched=searched,
         claim_ids=tuple(dict.fromkeys(rested)),
         sources={**sources, **stream.shown_sources()},

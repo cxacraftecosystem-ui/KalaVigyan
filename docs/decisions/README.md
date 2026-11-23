@@ -128,7 +128,7 @@ flowchart LR
 | [0087](0087-generated-explainers-per-concept.md) | A generated explainer, or a picture, for every concept that needs one | · |
 | [0088](0088-reactions-step-by-step-and-molecules.md) | Reactions play step by step with their stage, conditions, colours and why; curated CIDs become compounds | [0095](0095-craft-page-chapters.md) |
 | [0089](0089-expert-depth-caps-and-answer-routes.md) | Expert answers research and write more, compose on Opus at high effort, and cost more; Hindi terms survive translation | [0093](0093-no-caps-for-now.md) and [0167](0167-answer-leftovers-kept-true.md) |
-| [0090](0090-reused-and-curated-sections-enriched.md) | Reused and curated sections are enriched like researched ones | [0142](0142-curated-crafts-read-only-curated-rows.md) |
+| [0090](0090-reused-and-curated-sections-enriched.md) | Reused and curated sections are enriched like researched ones | [0142](0142-curated-crafts-read-only-curated-rows.md) and [0175](0175-production-checks-read-what-the-page-shows.md) |
 | [0091](0091-field-voices-kalavigyan-side.md) | Field voices v2 in KalaVigyan: storage, citation, the craft page and the reading view | [0097](0097-public-reading-everywhere-but-asking.md), [0112](0112-reviewed-field-photographs.md) and [0156](0156-expert-panel-and-field-voices-kept-true.md) |
 | [0092](0092-design-system.md) | The KalaVigyan design system: Alum & Indigo | [0114](0114-kinds-and-datasets.md) and [0141](0141-design-system-and-answer-screens-without-debt.md) |
 | [0093](0093-no-caps-for-now.md) | No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
@@ -209,12 +209,13 @@ flowchart LR
 | [0162](0162-unused-craft-page-chapters-retired.md) | The craft page's chapters keep only what a page draws, and an approved structure writes its shared rows at once | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md) | Nine more limits are kept by choice, the debt register may only shrink, the database tests run in shards, and each process on the box keeps to its own connection budget | · |
 | [0165](0165-answers-counted-as-settled-asked-as-asked.md) | An answer's spend is counted as settled, its asked fields are the ones the question asks, and an expert difference is told once | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
-| [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) | Pictures are paired by the Public Suffix List and reused once stored, local words are terms only with a stated meaning, and stored vectors are compared within one model | · |
+| [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) | Pictures are paired by the Public Suffix List and reused once stored, local words are terms only with a stated meaning, and stored vectors are compared within one model | [0175](0175-production-checks-read-what-the-page-shows.md) |
 | [0167](0167-answer-leftovers-kept-true.md) | A stopped answer is marked, a quote in an Indian script is read in English, a term keeps its local name, and a page curates its signs of imitation | · |
 | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) | A quantities table is drawn under a sentence the answer already said, and the Python files are split along what they do | · |
 | [0169](0169-mcp-follow-ups-kept-true.md) | A write-back asks the cheap judge first, a reviewer decides readings, map layers and a category's structure, and a PDF is described by its first page | · |
 | [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) | An Admin's AI stages review decisions a person confirms, and an Admin refreshes changed pages now | · |
 | [0172](0172-a-rotated-session-taken-over-and-cached-pages-kept-whole.md) | The web takes over every session the API rotates, a cached reading page fails rather than drops a part, and sign-in and the shells settle once | · |
+| [0175](0175-production-checks-read-what-the-page-shows.md) | The production checks read what the page shows, the web parses every stream event, the answer control never asks again, and a section stores only what it showed | · |
 
 ## How this document is kept true
 

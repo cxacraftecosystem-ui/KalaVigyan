@@ -30,6 +30,7 @@ from .zoom_story import (
     Captions,
     ZoomGround,
     district_level,
+    figure_texts,
     molecule_level,
     picture_level_of,
     zoom_ground,
@@ -86,7 +87,7 @@ class ZoomStoryBuilder:
             ground = await zoom_ground(session, craft.slug, mode=ask.request.mode, offered=offered)
         if ground is None:
             return Built()
-        captions = Captions.of(facts, ground.claims, own)
+        captions = Captions.of(facts, ground.claims, own).without_said(figure_texts(ask.blocks))
         levels: list[ZoomLevel | None] = [district_level(ground, captions)]
         fibre = fibre_named(surface for material in fibres for surface in material.surfaces())
         pictures = await self._level_pictures(_pictures_ask(craft.name, captions, fibre, ground))

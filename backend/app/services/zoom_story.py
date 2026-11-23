@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence, Set
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -15,11 +15,13 @@ from app.research.blocks import ExplainerSentence, named_in
 from app.research.blocks_journey import ZOOM_LEVELS, ZoomCompound, ZoomLevel, ZoomStoryBlock
 from app.research.blocks_place import DistrictRef
 from app.research.datasets import BOUNDARY_CAPTION, BOUNDARY_DATASET_CODE, DatasetRef
+from app.research.explainer import Block
 from app.research.retrieval import EVERY_CHUNK_ACLS
 from app.science.records import KnownClaim
 
 from .builder_evidence import fact_sentence, known_fact
 from .knowledge_view import claims_for, resolve_craft, source_ref
+from .ledger_payloads import sentence_keys
 from .matter_builders import LinkedCompound
 from .media_ref_store import StoredPicture, stored_pictures
 from .place_offers import district_refs, mapped_districts
@@ -31,6 +33,7 @@ __all__ = [
     "Captions",
     "ZoomGround",
     "district_level",
+    "figure_texts",
     "molecule_level",
     "picture_level_of",
     "zoom_ground",
@@ -40,6 +43,17 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 ZOOM_DISTRICT_CLAIMS_MAX = 8
+COMPOSED_PROSE = "prose"
+
+
+def figure_texts(blocks: Iterable[Block]) -> set[str]:
+    return {
+        key
+        for block in blocks
+        if block.kind != COMPOSED_PROSE
+        for sentence in block.cited_sentences()
+        for key in sentence_keys(sentence.text, sentence.original)
+    }
 
 
 @dataclass(frozen=True)
@@ -59,6 +73,12 @@ class Captions:
     @classmethod
     def of(cls, *groups: Iterable[KnownClaim]) -> Captions:
         return cls({claim.id: claim for group in groups for claim in group})
+
+    def without_said(self, said: Set[str]) -> Captions:
+        self.used.update(
+            claim_id for claim_id, claim in self.claims.items() if sentence_keys(claim.text) & said
+        )
+        return self
 
     def first(self, candidates: Iterable[uuid.UUID], names: str | None = None) -> KnownClaim | None:
         claim = self._found(candidates, names)
