@@ -27,6 +27,7 @@ piece rebuild) and `docs/contracts/retrieval.md` (`facets`).
 | The curated-piece rule it replaces (item 2) | [decision 0090](0090-reused-and-curated-sections-enriched.md) |
 | The page merge that told curated pieces by their claims first | [decision 0096](0096-reader-question-pieces-join-their-craft-page.md) |
 | The debt it clears and what it leaves | [TECH_DEBT.md](../TECH_DEBT.md) |
+| A term whose retired seed claims defined it, read from the curated facts naming it | [decision 0175](0175-production-checks-read-what-the-page-shows.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

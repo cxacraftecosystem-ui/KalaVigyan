@@ -1787,9 +1787,13 @@ is written "sentence" below; every sentence is cited.
   for English one built from stored defining claims, never a search, model call, translation or
   write, else 401 "Sign in to look this term up."; signed in, 60 in 10 minutes, Master Admin unlimited)
   answers a `Term`: the cached summary while every claim it cites is visible, else `STORED`
-  (each concept's defining claim), else `WIKIPEDIA` (verbatim lead sentences of the article for
-  the term's Wikidata item or one of its names), else `WEB_SEARCH` (one search, up to 2 pages
-  read, one `SUMMARISE` call whose sentences quote the pages). What was found is stored as quoted
+  (each concept's defining claim, or, when none of them is visible, as after decision 0142 retired a
+  curated craft's seed claims, the curated facts of the term's crafts that name it as a whole word,
+  those opening with it first: `term_store.curated_naming`, decision 0175), else `WIKIPEDIA`
+  (verbatim lead sentences of the article for the term's Wikidata item or one of its names), else
+  `WEB_SEARCH` (one search, up to 2 pages read, one `SUMMARISE` call whose sentences quote the pages;
+  a sentence citing a page that does not back it keeps the pages that do,
+  `term_summary.without_unrelated`). What was found is stored as quoted
   claims first, so every sentence cites stored claims. `language` is an answer language (default
   `en`); other languages translate the English summary sentence by sentence (a sentence that fails
   stays English). 404 for an unknown key or no cited summary; the client then shows no underline

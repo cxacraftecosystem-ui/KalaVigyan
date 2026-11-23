@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { ANSWER_SCOPE } from "../production/gates";
 
-import { ASK_OPTIONS, pictureCredits, segmentedChoices } from "./answerControls";
+import { ASK_OPTIONS, FILM_READY_MS, filmState, filmStateProblems, pictureCredits, segmentedChoices } from "./answerControls";
 
 const PRESS = "for (const other of this.parentElement.querySelectorAll('button')) other.setAttribute('aria-pressed', String(other === this))";
 const ASK_AGAIN = "window.askedAgain = (window.askedAgain || 0) + 1";
@@ -37,4 +37,16 @@ test("the pictures read are the ones the reader sees in the answer, each credite
   expect(await pictureCredits(page)).toEqual(["The saved answer shows no pictures"]);
   await page.setContent(`<article data-testid="answer-view"><figure data-testid="media-plate"><p class="kv-credit">Photo: A</p></figure></article>`);
   expect(await pictureCredits(page)).toEqual(["Picture 1 shows no credit linked to its page"]);
+});
+
+test("the film is judged by the state it states, preparing, ready or failed with its reason, not by a clock", async ({ page }) => {
+  const player = (inner: string) => `<div data-testid="film-player">${inner}</div>`;
+  await page.setContent(player(`<div role="status" aria-label="Preparing the film"></div><button data-testid="film-play" aria-disabled="true" aria-label="Play">Play</button>`));
+  expect(await filmState(page)).toBe("loading");
+  expect(filmStateProblems(await filmState(page))).toEqual([`Film was still preparing its narration after ${FILM_READY_MS / 1000} s`]);
+  await page.setContent(player(`<button data-testid="film-play" aria-label="Play">Play</button>`));
+  expect(filmStateProblems(await filmState(page))).toEqual([]);
+  const failed = `<div role="alert"><span><svg aria-hidden="true"></svg><span>Couldn't start the film. Try again.</span></span><button type="button">Try again</button></div>`;
+  await page.setContent(player(`${failed}<button data-testid="film-play" aria-disabled="true" aria-label="Play">Play</button>`));
+  expect(filmStateProblems(await filmState(page))).toEqual(["Film did not start: Couldn't start the film. Try again."]);
 });

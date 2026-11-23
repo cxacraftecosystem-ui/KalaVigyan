@@ -4,20 +4,23 @@ The production checks judge a document's chapter rail once its rest is drawn, a 
 above where its sentence is said, a what-if one option at a time and an answer's actions as a reader
 hears them; the web parses the stream's `paced` event; the release control operates only the
 answer's own choices; a reused section rebuilds its zoom story rather than placing a stored one; a
-section stores only the built blocks its page showed; and stored pictures are read before the
-search's sources are built.
+section stores only the built blocks its page showed; stored pictures are read before the
+search's sources are built; a term whose defining claims were retired is read from the curated
+facts that name it; and the film control waits on the film's own state.
 
 Date: 2026-11-23. Status: accepted (the lead's production E2E brief of 2026-11-23, from run
 45161989142 on release da569eda and post-deploy run 45178938516 on main 4e1cecf7). It amends
 [decision 0090](0090-reused-and-curated-sections-enriched.md) (what a reused section rebuilds and
 stores) and [decision 0166](0166-pictures-terms-and-stored-pieces-kept-true.md) (item 3, stored
-pictures first). The contracts are `docs/contracts/explainer.md` (the builders, Stream events) and
-`docs/contracts/frontend.md` (the answer stream).
+pictures first) and [decision 0142](0142-curated-crafts-read-only-curated-rows.md) (what a term
+reads once its seed claims are retired). The contracts are `docs/contracts/explainer.md` (the
+builders, Stream events, the terms route) and `docs/contracts/frontend.md` (the answer stream).
 
 | For | Read |
 |---|---|
 | What a reused section rebuilds, which this amends | [decision 0090](0090-reused-and-curated-sections-enriched.md) |
 | Stored pictures first, which this amends | [decision 0166](0166-pictures-terms-and-stored-pieces-kept-true.md) |
+| The seed claims retired under a curated craft, which left terms undefined | [decision 0142](0142-curated-crafts-read-only-curated-rows.md) |
 | The quantities row said above (`shownIn`) the check now reads | [decision 0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | The scholarly pace the `paced` event reports | [decision 0139](0139-sources-and-providers-reach-outside-services-once.md) |
 | A monograph's rest loaded after its first chapter | [decision 0151](0151-a-release-the-live-side-can-read.md) |
@@ -99,6 +102,22 @@ Run 45161989142 failed 11 of 38 checks; its report and the box's rows showed wha
    workshop picture went to its images block only because the placed story had already been
    dropped for its repeated captions.
 
+9. **A term whose defining claims left is read from the curated facts that name it.** Alum's five
+   concepts each kept only seed claims, all retired by decision 0142 when Kutch Ajrakh's dossier
+   took over, and 0142 links no seed claim to a curated successor; alum then answered 404 to every
+   reader. When no defining claim is visible, the stored English summary reads the curated facts of
+   the term's crafts that name it as a whole word (label, aliases and local names, the glossary
+   marker's rule), those opening with it first, at most three shown (`term_store.curated_naming`).
+   It makes no model call and serves signed-out readers too. We chose this over pointing each
+   retired seed claim at a successor, a link 0142 never recorded and no dossier states.
+10. **A researched term sentence keeps the sources that back it.** The term summary dropped a
+    sentence when one of the pages it cited did not relate to it (`UNRELATED_SPAN`), though another
+    page backed it; it now drops only the unrelated page's quotes and checks the sentence again
+    (`term_summary.without_unrelated`). A sentence no page backs is still dropped.
+11. **The control waits on the film's stated state.** On 37c0f9bb, `GET /listen` answered 200 after
+    99.6 s, the time the first narration took. The control now waits until the film says it is ready
+    or shows its failure line, up to the API's own 300 s, and reports which it saw.
+
 ## Consequences
 
 - No migration, no model call and no token is added to an answer; a reused section with a zoom
@@ -107,6 +126,9 @@ Run 45161989142 failed 11 of 38 checks; its report and the box's rows showed wha
   longer places one, so they are harmless and leave as their groups are superseded.
 - The page's sideways scroll on three answers at phone width (3 to 6 px) was not reproduced from the
   report; the audit now names the outermost boxes past the screen, so the next run says which.
+- A reader who presses Listen or Film on a new answer still waits while every block is narrated at
+  once (about 100 s on a 63-sentence answer); playing the first block while the rest are made is
+  left to the voice work, since it changes the listen route's contract and the dock.
 
 ## How this record is kept true
 
@@ -117,5 +139,6 @@ names this one, and the table above links the two both ways. It records the choi
 `frontend/e2e/production-pages-unit.spec.ts`, `frontend/e2e/production-page-sentences-unit.spec.ts`,
 `frontend/e2e/production-checks-unit.spec.ts`, `frontend/e2e/page-audit-unit.spec.ts`,
 `frontend/e2e/release/answer-controls-unit.spec.ts`, `backend/tests/answering/test_reuse_enrichment.py`,
-`backend/tests/answering/test_block_builders.py`, `backend/tests/journey/test_zoom_story.py` and
-`backend/tests/images/test_section_images.py`.
+`backend/tests/answering/test_block_builders.py`, `backend/tests/journey/test_zoom_story.py`,
+`backend/tests/images/test_section_images.py`, `backend/tests/db/test_terms_db.py` and
+`backend/tests/terms/test_term_summary_spans.py`.

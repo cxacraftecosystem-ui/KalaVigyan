@@ -13,6 +13,10 @@ const SEGMENTED = ".kv-seg";
 const TERMS_TRIED = 3;
 export const ASK_OPTIONS = '[data-testid="ask-options"]';
 export const SHOWN_PLATES = '[data-testid="media-plate"]:visible';
+export const FILM_READY_MS = 300_000;
+const FILM_READY = "ready";
+const FILM_LOADING = "loading";
+const FILM_FAILED = "failed: ";
 
 async function pressedLabel(group: Locator): Promise<string> {
   const pressed = group.locator('button[aria-pressed="true"]');
@@ -85,10 +89,24 @@ async function film(page: Page): Promise<string[]> {
   return [...(shown ? [] : ["Film opens no player"]), ...played, ...(gone ? [] : ["Escape leaves the film open"])];
 }
 
+export async function filmState(page: Page): Promise<string> {
+  const failed = page.getByTestId("film-player").getByRole("alert");
+  if ((await failed.count()) > 0) return `${FILM_FAILED}${(await failed.first().locator("span").first().innerText()).trim()}`;
+  const play = page.getByTestId("film-play");
+  if ((await play.count()) === 0) return FILM_LOADING;
+  return (await play.getAttribute("aria-disabled")) === null ? FILM_READY : FILM_LOADING;
+}
+
+export function filmStateProblems(state: string): string[] {
+  if (state === FILM_READY) return [];
+  if (state === FILM_LOADING) return [`Film was still preparing its narration after ${FILM_READY_MS / 1000} s`];
+  return [`Film did not start: ${state.slice(FILM_FAILED.length)}`];
+}
+
 async function filmPlays(page: Page): Promise<string[]> {
   const play = page.getByTestId("film-play");
-  const ready = await reached(async () => String((await play.getAttribute("aria-disabled")) === null), "true", TIMEOUT_MS);
-  if (ready !== "true") return ["Film never became ready to play"];
+  const unready = filmStateProblems(await changedFrom(() => filmState(page), FILM_LOADING, FILM_READY_MS));
+  if (unready.length > 0) return unready;
   if ((await play.getAttribute("aria-label")) !== "Pause") await play.click();
   const bar = page.getByTestId("film-timing").getByRole("progressbar");
   const caption = page.getByTestId("film-caption");
