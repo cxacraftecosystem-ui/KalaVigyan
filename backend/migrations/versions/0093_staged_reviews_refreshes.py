@@ -4,7 +4,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision: str = "0093_staged_reviews_and_refreshes"
+revision: str = "0093_staged_reviews_refreshes"
 down_revision: str | Sequence[str] | None = "0092_readings_layers_categories"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

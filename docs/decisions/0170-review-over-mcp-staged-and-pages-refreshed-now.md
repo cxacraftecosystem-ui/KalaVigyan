@@ -46,7 +46,9 @@ contributors' `tools/list` held 61,316 of its 61,440 bytes of input.
    password change and a two-step change set (`Grantor.may_grant`). Fifteen minutes is long enough to
    sign in and then add the server in an AI client, and short enough that a session left open on a
    shared machine cannot give it. A Professor's connection keeps its other scopes and no longer
-   holds `review`; Professors review on the site as before.
+   holds `review`; Professors review on the site as before. A password, two-step or role change, a
+   suspension or Sign out everywhere ends the whole connection, `review` with it, and Connected apps
+   then no longer lists it; a listed connection shows the scopes its next token holds.
 2. **Review tokens are short.** An access token holding `review` lives 15 minutes, not an hour, and
    `review` ends 8 hours after the consent (a working day): a refresh after that leaves it out and
    the connection goes on with its other scopes (`live_scopes`, `access_token_seconds`).
@@ -113,7 +115,7 @@ contributors' `tools/list` held 61,316 of its 61,440 bytes of input.
 
 ## Consequences
 
-- Migration `0093_staged_reviews_and_refreshes` adds `StagedReview`, `StagedReviewItem` and
+- Migration `0093_staged_reviews_refreshes` adds `StagedReview`, `StagedReviewItem` and
   `PageRefreshJob`, row-level security on and no grants to `anon` or `authenticated`; its parent is
   round 7's head `0092_readings_layers_categories`.
 - A Professor who connected with `review` before this release loses only the review tasks of
