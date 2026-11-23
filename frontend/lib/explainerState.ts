@@ -28,6 +28,7 @@ export type ExplainerState = {
   notice: string | null;
   mark: VersionMark | null;
   basedOn: ExplainerRef | null;
+  reload: boolean;
   quizAvailable: boolean | null;
 };
 
@@ -52,6 +53,7 @@ export function emptyExplainer(question = "", language = "en"): ExplainerState {
     notice: null,
     mark: null,
     basedOn: null,
+    reload: false,
     quizAvailable: null
   };
 }

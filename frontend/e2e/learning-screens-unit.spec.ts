@@ -20,6 +20,7 @@ import {
   followingExplainer,
   followUpRequest,
   knownVersions,
+  lostRace,
   reduceAnswerEvent,
   STALE_FOLLOW_UP,
   versionChanges,
@@ -101,8 +102,23 @@ test("a follow-up keeps version 1 and builds the stored version 2 block for bloc
   expect(built.sections.every((section) => section.state === "READY")).toBe(true);
   expect(built.mark).toEqual(LATEST.mark);
   expect(built.basedOn).toBeNull();
+  expect(built.reload).toBe(false);
   expect(explainerRef(built)).toEqual({ explainerId: EXPLAINER_ID, version: 2 });
   expect(built.answerId).toBe("7a1c3e5f-2b4d-4f6a-8c9e-0b1d3f5a7c9e");
+});
+
+test("a follow-up merged onto a version saved meanwhile asks for the stored version instead of keeping its streamed numbers", () => {
+  const base = explainerStateOf(FIRST_DOCUMENT);
+  const asking = followingExplainer(base, { explainerId: EXPLAINER_ID, version: 1 }, LATEST.mark.question);
+  const raced = { ...LATEST.mark, version: 3, basedOn: 2 };
+  const events = followUpEvents().map((event): ExplainerEvent => (event.type === "version" ? { type: "version", data: raced } : event));
+  const merged = events.reduce(reduceAnswerEvent, asking);
+  expect(merged.reload).toBe(true);
+  expect(merged.phase).toBe("done");
+  expect(explainerRef(merged)).toEqual({ explainerId: EXPLAINER_ID, version: 3 });
+  expect([lostRace({ explainerId: EXPLAINER_ID, version: 1 }, raced), lostRace({ explainerId: EXPLAINER_ID, version: 2 }, raced), lostRace(null, raced)]).toEqual([true, false, false]);
+  expect(followingExplainer(merged, { explainerId: EXPLAINER_ID, version: 3 }, "Why?").reload).toBe(false);
+  expect(explainerStateOf(LATEST).reload).toBe(false);
 });
 
 test("a deepening block goes before the section's pictures, and a stale base fails loudly", () => {

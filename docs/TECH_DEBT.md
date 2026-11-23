@@ -1078,21 +1078,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** place-facet topic keys by LGD code (`water:lgd-449`, as region stories already
   use), with a piece rebuild.
 
-## Follow-ups, versions and alerts (decision 0063)
-
-### A follow-up that lost a race shows its old block numbers until a reload
-
-- **What:** a follow-up that finds a newer version saved meanwhile is merged onto it and stored
-  with its blocks renumbered (decision 0143), and its `version` event carries the new mark
-  (`basedOn` the newer version); the reader still sees the blocks under the numbers they streamed
-  with, beside the version they asked on, until the page is reloaded.
-- **Why left:** the stream has no event that renumbers shown blocks, and the client's version
-  reader (`frontend/lib/explainerVersions`) belonged to the design lane running at the same time
-  (2026-11-22).
-- **Clears it:** `reduceAnswerEvent` reloads the stored version when the `version` event's
-  `basedOn` differs from the `builds_on` version it followed, instead of keeping the streamed
-  sections.
-
 ## Learning block renderers (decision 0068)
 
 ### Quiz picks are kept in the page only

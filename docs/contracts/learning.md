@@ -97,7 +97,10 @@ the next version; earlier versions are never changed.
   its claims are written back either way. Both events are in `research/stream.STREAM_EVENTS`
   (`explainer_versions.VERSION_EVENTS`); the client reads them (`lib/explainerVersions`, decision
   0069): it keeps the base's sections, adds a deepened section's blocks before its pictures and
-  shows a deepened section that ended `EMPTY` as the base does.
+  shows a deepened section that ended `EMPTY` as the base does. A `version` whose `basedOn` is not
+  the version the follow-up built on (`lib/explainerVersions.lostRace`) marks the state `reload`,
+  and once the stream is `done` the client opens the stored version in place of what it streamed,
+  so the merged blocks show under their stored numbers (decision 0160).
 - **The stored version.** The follow-up's `Answer.payload.explainer` holds the whole merged
   explainer (`answerId` the follow-up's, `question` the follow-up's), so Listen and every reader
   keep working on one document; `payload.version` holds its `VersionMark`. `Answer.explainerId`
