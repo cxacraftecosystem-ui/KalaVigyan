@@ -139,6 +139,21 @@ def test_a_real_disagreement_on_one_thing_at_one_stage_is_kept_as_sources_differ
     assert found.reason.startswith(
         "the indigo vat, number of dips: the candidate says three, the held fact four."
     )
+    assert found.about == "The indigo vat, number of dips"
+
+
+def test_only_a_disagreement_names_what_its_facts_differ_on() -> None:
+    held = fact("four-dips", FOUR_DIPS)
+    named = {"subject": "the vat", "property": "dips", "candidateValue": "three", "heldValue": "four"}
+    clash = {"sameSubject": True, "sameProperty": True, "sameWhen": True, "bothTrue": False}
+    ask = JudgeAsk(Candidate(ref="c1", statement=THREE_DIPS, field="PROCESS"), (held,))
+    for reply, about in (
+        (answer(held, **clash, **named), "The vat, dips"),
+        (answer(held, **clash, **(named | {"subject": "  "})), "Dips"),
+        (answer(held, **clash | {"bothTrue": True}, **named), None),
+    ):
+        (found,) = parsed_comparisons({"comparisons": [reply]}, [ask])["c1"]
+        assert found.about == about
 
 
 def test_a_clash_the_judge_cannot_name_as_two_values_is_not_a_disagreement() -> None:

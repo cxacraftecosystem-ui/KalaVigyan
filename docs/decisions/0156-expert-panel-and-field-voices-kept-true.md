@@ -23,6 +23,7 @@ built, `expert_view`, the sentence and the section), `docs/contracts/field-voice
 | The field voices it draws, links and orders | [decision 0091](0091-field-voices-kalavigyan-side.md) |
 | The Sources differ drawing it finishes | [decision 0141](0141-design-system-and-answer-screens-without-debt.md) |
 | The approved Kutch Ajrakh page it leaves alone | [decision 0100](0100-ajrakh-monograph-served-as-built.md) |
+| A difference's subject from the judge's own answers, and on every answer sentence (amends item 10) | [decision 0177](0177-differences-named-and-the-monograph-shell-measured.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

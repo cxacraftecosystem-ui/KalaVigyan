@@ -152,8 +152,11 @@ A refusal stops the run; every gate that ran is stored as one `CandidateCheck` r
    from them (`research/candidate_verdicts.comparison_relation`): SAME when `same`; DIFFERS only
    when it is one subject, property and stage or time, both cannot be true and the two values
    differ; DISTINCT otherwise. SAME refuses; DIFFERS passes and is kept as sources differ, never
-   resolved, its reason naming the two values; DISTINCT passes. Held facts without a vector are
-   found only by the identical text.
+   resolved, its reason naming the two values; DISTINCT passes. A DIFFERS pair also names what the
+   facts differ on, from the judge's own `subject` and `property` ("The indigo vat, number of
+   dips", `candidate_verdicts.differs_about`), so no prompt or schema word is added to the call
+   (decision 0165); the outcome stores the first pair's in `CandidateCheck.differsOn` (decision
+   0177). Held facts without a vector are found only by the identical text.
 4. **NOVELTY.** The judge lists the details the fact states that the subject's 12 nearest held
    facts in the field do not (`newDetails`) and says whether it is specific to the craft; it adds
    exactly when the list is not empty and it is specific (`candidate_verdicts.novelty_adds`), and
@@ -222,10 +225,11 @@ refused (`REJECTED`, `RETRACTED`) and waiting (`DRAFT`, never counted for the ti
   review does). A fact refused at QUOTES is stored at `HYPOTHESIS`.
 - Sources differ: when a differing fact goes live, it and every held fact it differs from get
   `sourcesDiffer`: a proposal or a write-back that goes live calls
-  `services/candidate_writes.mark_sources_differ(session, claim_id, *, about=None)`, which reads the
-  stored DUPLICATE outcome; given `about`, it also stores what the facts differ on in
-  `Claim.differsOn` wherever none is stored yet (decision 0156). A waiting fact is flagged when it is
-  approved, by the review's settling below. The flag lasts only while a live
+  `services/candidate_writes.mark_sources_differ(session, claim_id)`, which reads the stored
+  DUPLICATE outcome and, when it names what the facts differ on, stores that in `Claim.differsOn`
+  wherever none is stored yet (decisions 0156, 0177). A waiting fact is flagged when it is
+  approved, by the review's settling below, which names a flagged fact's subject the same way from
+  the outcome of a live pair that holds it. The flag lasts only while a live
   pair or a curated conflict holds it (decision 0171): two facts differ live when a passed
   DUPLICATE outcome of one names the other, both are held, at least one is shown, and both rest on
   one craft's facts as the gate compares them (the same craft, a craft and its own family's facts,

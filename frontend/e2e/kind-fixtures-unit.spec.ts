@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { expect, test } from "@playwright/test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -8,13 +11,19 @@ import { knownColourToken } from "../lib/componentSpecsScienceParts";
 import { dipPlayerShape } from "../lib/componentSpecsSciencePlayers";
 import type { ComponentView } from "../lib/componentViewContract";
 import { DEPICTED_MATERIALS } from "../lib/depictedMaterials";
-import { KIND_FIXTURES, type KindFixture } from "../lib/kindFixtures";
+import { parseKindFixtures, type KindFixture } from "../lib/kindFixtures";
 import { KIND_PREVIEW_PATH, kindPreviewDocument, renamedRef, renamedSpec } from "../lib/kindPreview";
 import type { MonographComponent } from "../lib/monographDocument";
 import { parseMonographDocument } from "../lib/monographDocumentShape";
 import { parseShape, ShapeError } from "../lib/shape";
 
 const KUTCH = "Kutch-Ajrakh";
+const FIXTURES_DIR = join(__dirname, "..", "..", "backend", "app", "data", "kind_fixtures");
+const FILED = readdirSync(FIXTURES_DIR)
+  .filter((name) => name.endsWith(".json"))
+  .sort()
+  .map((name) => JSON.parse(readFileSync(join(FIXTURES_DIR, name), "utf8")) as unknown);
+const KIND_FIXTURES = parseKindFixtures({ fixtures: FILED });
 
 function component(fixture: KindFixture): MonographComponent {
   return { label: fixture.label, chapter: "k1", anchor: "#k", kind: fixture.kind, title: fixture.title, description: fixture.description, field: fixture.field, fields: [], subjects: [] };
@@ -84,6 +93,20 @@ test("a stage player says its own after label and paints each stage from a recor
 test("a map sequence card without a visual draws no empty frame", () => {
   const sequence = KIND_FIXTURES.find((fixture) => fixture.label === "blue-pottery-of-jaipur/history/journey-of-the-glaze") as KindFixture;
   expect(drawn(sequence).match(/class="ws-vis"/g)).toHaveLength(1);
+});
+
+test("the preview reads its fixtures as the server sends them, a drawing with its four themes", () => {
+  const drawing = KIND_FIXTURES.find((fixture) => fixture.kind === "drawing") as KindFixture;
+  const svg = drawing.spec.svg as string;
+  const themes = { light: svg, dark: svg, hcLight: svg, hcDark: svg };
+  const [served] = parseKindFixtures({ fixtures: [{ ...drawing, spec: { ...drawing.spec, themes } }] });
+  expect(served.spec.themes).toEqual(themes);
+  const html = drawn(served);
+  expect(html).toContain('data-drawing="themed"');
+  expect(html.match(/data-theme-variant=/g)).toHaveLength(4);
+  expect(drawn(drawing)).not.toContain('data-drawing="themed"');
+  expect(() => parseKindFixtures({ fixtures: [] })).toThrow(ShapeError);
+  expect(() => parseKindFixtures(FILED)).toThrow(ShapeError);
 });
 
 test("a dip player names its own phases and may show no equation", () => {

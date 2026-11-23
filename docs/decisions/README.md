@@ -159,7 +159,7 @@ flowchart LR
 | [0111](0111-fewer-mcp-tools.md) | Twenty-one MCP tools in six groups, with small schemas | [0114](0114-kinds-and-datasets.md), [0117](0117-pages-in-other-languages.md), [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) and [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | [0112](0112-reviewed-field-photographs.md) | Each field photograph filed on an artisan is reviewed by a person before it is shown | · |
 | [0113](0113-questions-become-work.md) | Questions KalaVigyan cannot answer well become open work | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
-| [0114](0114-kinds-and-datasets.md) | Component kinds any craft can use, and one dataset record | [0131](0131-drawings-in-the-design.md) and [0169](0169-mcp-follow-ups-kept-true.md) |
+| [0114](0114-kinds-and-datasets.md) | Component kinds any craft can use, and one dataset record | [0131](0131-drawings-in-the-design.md), [0169](0169-mcp-follow-ups-kept-true.md) and [0177](0177-differences-named-and-the-monograph-shell-measured.md) |
 | [0115](0115-client-id-metadata-documents.md) | MCP clients sign in with their published identity | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) |
 | [0116](0116-open-data-with-a-doi.md) | KalaVigyan's knowledge is an open dataset with a DOI | [0130](0130-a-craft-release.md) and [0149](0149-a-fact-readers-can-see.md) |
 | [0117](0117-pages-in-other-languages.md) | A page in another language is the same page, translated passage by passage | · |
@@ -200,7 +200,7 @@ flowchart LR
 | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) | Rivers are named from Wikidata then OpenStreetMap, groundwater comes from the India data portal, a region place shows its headline values, and the geo ETL fails every gap it can see | · |
 | [0154](0154-ai-media-and-film-scores-kept-true.md) | A film score is made once and timed by what was heard, AI pictures are shared on their craft page, and the paid checks run under a cap | · |
 | [0155](0155-accounts-and-sharing-kept-true.md) | The roster offers what its guards allow, a recovery code may add a first password, roles sort and cap by rank, and a stopped share's files leave the bucket | · |
-| [0156](0156-expert-panel-and-field-voices-kept-true.md) | The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run | · |
+| [0156](0156-expert-panel-and-field-voices-kept-true.md) | The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run | [0177](0177-differences-named-and-the-monograph-shell-measured.md) |
 | [0157](0157-translations-read-back-and-reviewed-interface-words.md) | A translation is read back before it is shown, and every fixed word in another language is sourced, reviewed data | · |
 | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) | A curated craft's monograph lists the facts contributors add under their own fields, and a fact a figure shows is not listed again | · |
 | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) | A place abroad refuses only practice there, a reviewer files any researched fact, and the MCP server describes its kinds once | · |
@@ -220,6 +220,7 @@ flowchart LR
 | [0173](0173-a-release-that-keeps-serving-and-its-way-back.md) | A release keeps the site serving and its way back open, a colour takes traffic only once it reaches its database, the web builds only on the API it calls, the fetcher runs as a user of its own, and every provider call ends and settles | · |
 | [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) | A production downgrade undoes one revision unless its count is confirmed, an answer fits its limits, repeats nothing its explainer shows and outlives a source that cannot be built, and the rubric's cited part is a share | · |
 | [0175](0175-production-checks-read-what-the-page-shows.md) | The production checks read what the page shows, the web parses every stream event, the answer control never asks again, and a section stores only what it showed | · |
+| [0177](0177-differences-named-and-the-monograph-shell-measured.md) | A difference is named from what the judge already answers, the kind preview is served its themes, and what holds Kutch Ajrakh's authored shell is measured | · |
 
 ## How this document is kept true
 

@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import Field
 
 from app.models.candidate_checks import CANDIDATE_GATES
+from app.models.knowledge import DIFFERS_ON_CHARS
 
 from .base import ContractModel, PartialDate
 from .licences import open_licence
@@ -78,6 +79,7 @@ class GateOutcome(ContractModel):
     reasons: list[str] = Field(min_length=1, max_length=REASONS_MAX)
     model: str | None = Field(default=None, max_length=MODEL_NAME_MAX_CHARS)
     related: list[uuid.UUID] = Field(default_factory=list)
+    about: str | None = Field(default=None, min_length=1, max_length=DIFFERS_ON_CHARS)
 
 
 class Candidate(ContractModel):
@@ -112,6 +114,7 @@ class FactComparison(ContractModel):
     held: uuid.UUID
     relation: Relation
     reason: str = Field(min_length=1, max_length=REASON_MAX_CHARS)
+    about: str | None = Field(default=None, min_length=1, max_length=DIFFERS_ON_CHARS)
 
 
 class NoveltyVerdict(ContractModel):
@@ -246,9 +249,11 @@ def _compared(comparisons: Sequence[FactComparison], model: str | None) -> GateO
         else f"distinct from fact {item.held}: {item.reason}"
         for item in comparisons
     ]
-    return _outcome(
+    about = next((item.about for item in differ if item.about), None)
+    kept = _outcome(
         DUPLICATE_GATE, passed=True, reasons=reasons, model=model, related=[i.held for i in differ]
     )
+    return kept.model_copy(update={"about": about})
 
 
 def _quote_problems(source: CitedSource) -> list[str]:
