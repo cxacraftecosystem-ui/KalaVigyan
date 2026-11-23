@@ -296,14 +296,17 @@ construct, and the builder that made it adds nothing.
   sentence}] (1+), layers[layer id], datasets[DatasetRef] (1+), boundaryCaption}`.
   `RiverPath {datasetCode "HYDRORIVERS_1_0", mainRiv, reachIds[] (source to outlet, once each,
   the last is `mainRiv`), districtLgds[] (districts reached, path order, once each), name?}`;
-  `DistrictRef {districtLgd, name, stateName}`. Server: the trace (`docs/contracts/region.md`,
+  `DistrictRef {districtLgd, name, stateName, otherNames[]?}` (`otherNames` the names sources
+  also use for the district, from the cited table `data/district_other_names.json`, left out when
+  none; decision 0160). Server: the trace (`docs/contracts/region.md`,
   Rivers), the districts (the river's first, in path order, then the story's others) with names
-  from the LGD register, the dataset rows (`DR_DISTRICT_SHAPES`, and `HYDRORIVERS_1_0` with a
+  from the LGD register and its other names, the dataset rows (`DR_DISTRICT_SHAPES`, and `HYDRORIVERS_1_0` with a
   river), the caption. Model: which offered basin (by `mainRiv`) or none, which claims become
   steps, their order and district, which offered layers. Rules: the caption is
   `BOUNDARY_CAPTION`; each district, layer and dataset once; steps narrate listed districts, and
-  a step names its district only when its sentence or quotes name it (`blocks.named_in`, decision
-  0050); the
+  a step names its district only when its sentence or quotes name it or one of its `otherNames`
+  (`blocks_place.district_named`, decisions 0050 and 0160), so a step about Kutch is placed in
+  Kachchh; the
   river's districts lead `districts` in path order; a river `name` is stated by a step sentence or
   its quote, or by a river names dataset row the block cites (`rivers.RIVER_NAME_DATASET_CODES`,
   decision 0153); the builder checks the trace against the stored reaches (`rivers.trace_problems`).

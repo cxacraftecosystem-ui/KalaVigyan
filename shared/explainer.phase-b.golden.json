@@ -40,7 +40,10 @@
             {
               "districtLgd": 449,
               "name": "Kachchh",
-              "stateName": "Gujarat"
+              "stateName": "Gujarat",
+              "otherNames": [
+                "Kutch"
+              ]
             }
           ],
           "steps": [

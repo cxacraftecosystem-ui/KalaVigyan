@@ -58,6 +58,9 @@ test("a region story carries references, never copied geometry", () => {
   expect(() => parsed("region_story", { ...story, river: { ...river, coordinates: [] } })).toThrow(ShapeError);
   expect(() => parsed("region_story", { ...story, river: { ...river, datasetCode: "OTHER" } })).toThrow(ShapeError);
   expect(parsed("region_story", story).river?.reachIds).toEqual([1, 2, 3]);
+  expect(parsed("region_story", story).districts.map((district) => [district.name, district.otherNames])).toEqual([["Kachchh", ["Kutch"]]]);
+  const districts = story.districts as Record<string, unknown>[];
+  expect(() => parsed("region_story", { ...story, districts: [{ ...districts[0], otherNames: "Kutch" }] })).toThrow(ShapeError);
 });
 
 test("season months are calendar months and a map layer cites two dataset rows", () => {

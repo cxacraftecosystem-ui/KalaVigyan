@@ -16,8 +16,8 @@ from app.composer.region_story import (
     StoryChoice,
     StoryItem,
 )
-from app.research.blocks import ExplainerSentence, named_in
-from app.research.blocks_place import DistrictRef, RegionStoryBlock, RiverPath, StoryStep
+from app.research.blocks import ExplainerSentence
+from app.research.blocks_place import DistrictRef, RegionStoryBlock, RiverPath, StoryStep, district_named
 from app.research.datasets import BOUNDARY_CAPTION, BOUNDARY_DATASET_CODE, DatasetRef
 from app.research.explainer import Block
 from app.research.rivers import HYDRORIVERS_DATASET_CODE, RiverTrace
@@ -181,7 +181,7 @@ def _steps(
             terms=[],
         )
         district = _district(chosen.district, listed)
-        if district is not None and not named_in(district.name, sentence):
+        if district is not None and not district_named(district, sentence):
             logger.info(
                 "the region story %s leaves a step unplaced: it does not name %s", block_id, district.name
             )

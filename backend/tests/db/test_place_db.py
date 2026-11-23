@@ -164,7 +164,9 @@ async def test_the_offer_ranks_rivers_by_stream_order_then_discharge_and_traces_
     assert rivers == [("r1", COAST, [COAST], 3, 0.6), ("r2", OUTLET, [HEAD, MIDDLE, OUTLET], 2, 1.2)]
     assert [river.trace.district_lgds for river in offer.rivers] == [[KACHCHH], [KACHCHH]]
     assert offer.districts == {
-        KACHCHH: DistrictRef(district_lgd=KACHCHH, name="Kachchh", state_name="Gujarat")
+        KACHCHH: DistrictRef(
+            district_lgd=KACHCHH, name="Kachchh", state_name="Gujarat", other_names=["Kutch"]
+        )
     }
     assert [layer.id for layer in offer.layers] == [
         "soil-ph-0-5cm",

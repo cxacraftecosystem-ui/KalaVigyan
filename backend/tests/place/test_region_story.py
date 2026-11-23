@@ -28,6 +28,7 @@ from .fixtures import (
     expected_story,
     golden_story,
     kachchh_offer,
+    kachchh_ref,
     place_ask,
     place_tools,
     story_model,
@@ -126,6 +127,24 @@ def test_a_step_is_placed_only_in_a_district_its_sentence_or_quotes_name() -> No
     assert [step.district_lgd for step in block.steps] == [KACHCHH, None]
     stored = block.model_dump(mode="json", by_alias=True)
     stored["steps"][1]["districtLgd"] = KACHCHH
+    with pytest.raises(ValidationError, match="only in a district its sentence or quotes name"):
+        RegionStoryBlock.model_validate(stored)
+
+
+def test_a_step_naming_its_district_by_another_name_the_register_lists_is_placed_there() -> None:
+    stated = story_statements(place_ask().blocks, cited_water())
+    aliased = dataclasses.replace(stated["c1"], text=f"In Kutch, {stated['c1'].text}")
+    choice = StoryChoice.model_validate(GOLDEN_REPLY)
+    block = region_story_block(
+        kachchh_offer(), {"c1": aliased, "c2": stated["c2"]}, choice, block_id=BLOCK_ID
+    )
+    assert kachchh_ref().other_names == ["Kutch"]
+    assert [step.district_lgd for step in block.steps] == [KACHCHH, None]
+    stored = block.model_dump(mode="json", by_alias=True)
+    assert stored["districts"] == [
+        {"districtLgd": KACHCHH, "name": "Kachchh", "stateName": "Gujarat", "otherNames": ["Kutch"]}
+    ]
+    del stored["districts"][0]["otherNames"]
     with pytest.raises(ValidationError, match="only in a district its sentence or quotes name"):
         RegionStoryBlock.model_validate(stored)
 

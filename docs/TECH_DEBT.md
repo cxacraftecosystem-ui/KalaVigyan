@@ -754,18 +754,6 @@ Last reviewed: 2026-11-22.
 
 ## Phase B review fixes (decision 0050)
 
-### Register place names are matched as written
-
-- **What:** the check reads every state and district name of the LGD register as written, whole
-  words: an alias (Kutch for Kachchh) is not read, so a story step naming Kutch stays unplaced and
-  a sentence naming Kutch is not checked, and a district name that is also a common word or a
-  person's name (Mon, Anand, Sagar, Korea) drops a sentence whose sources do not repeat it.
-  District names made only of compass words (Delhi's North, South West) are skipped.
-- **Why left:** the register has no aliases; failing closed drops a sentence rather than showing
-  an unstated place.
-- **Clears it:** a cited alias table for districts, read by `register_places_named` and by the
-  step district check.
-
 ### A negation within five words rules a timing out
 
 - **What:** `calendar.year_months` and `only_season` drop a month or season when a negating or

@@ -5,7 +5,7 @@ from typing import Annotated, ClassVar, Literal, Self
 
 from pydantic import Field, model_validator
 
-from .base import ContractModel
+from .base import ContractModel, empty
 from .blocks import (
     SENTENCE,
     BlockBase,
@@ -40,6 +40,7 @@ __all__ = [
     "StoryStep",
     "SupplyLink",
     "SupplyMapBlock",
+    "district_named",
 ]
 
 LAYER_KEY_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
@@ -55,6 +56,12 @@ class DistrictRef(ContractModel):
     district_lgd: DistrictLgd
     name: str = Field(min_length=1, max_length=200)
     state_name: str = Field(min_length=1, max_length=200)
+    other_names: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
+        default_factory=list, exclude_if=empty
+    )
+
+    def names(self) -> list[str]:
+        return [self.name, *self.other_names]
 
 
 class RiverPath(RiverTrace):
@@ -225,17 +232,21 @@ class SupplyMapBlock(BlockBase):
         return list(dict.fromkeys(text for link in self.links for text in (link.material, link.origin)))
 
 
+def district_named(district: DistrictRef, sentence: ExplainerSentence) -> bool:
+    return any(named_in(name, sentence) for name in district.names())
+
+
 def _require_caption(block_id: str, caption: str) -> None:
     if caption != BOUNDARY_CAPTION:
         raise ValueError(f"map {block_id} carries the boundary caption word for word")
 
 
 def _step_district_problems(block_id: str, districts: list[DistrictRef], steps: list[StoryStep]) -> list[str]:
-    names = {district.district_lgd: district.name for district in districts}
+    listed = {district.district_lgd: district for district in districts}
     placed = [step for step in steps if step.district_lgd is not None]
-    if any(step.district_lgd not in names for step in placed):
+    if any(step.district_lgd not in listed for step in placed):
         return [f"region story {block_id} narrates only districts it lists"]
-    if any(not named_in(names[step.district_lgd], step.sentence) for step in placed):
+    if any(not district_named(listed[step.district_lgd], step.sentence) for step in placed):
         return [f"region story {block_id} places a step only in a district its sentence or quotes name"]
     return []
 
