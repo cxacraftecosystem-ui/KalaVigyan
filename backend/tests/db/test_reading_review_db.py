@@ -82,7 +82,7 @@ async def _fact(session: AsyncSession, writer: User) -> None:
             subjectId=CONCEPT,
             predicate="states",
             text=STATEMENT,
-            evidenceLevel="QUOTED",
+            evidenceLevel="PROVISIONAL",
             origin="RESEARCHER",
             status="APPROVED",
             field="CHEMISTRY",
