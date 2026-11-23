@@ -22,6 +22,13 @@ const UNDER_RAIL = `<!doctype html><html><body style="margin:0">
 <div style="height:2000px"></div>
 </body></html>`;
 
+const SHORT = `<!doctype html><html><body style="margin:0">
+<div style="height:100px"></div>
+<nav style="position:sticky;top:0;z-index:1;height:40px;background:rgb(200,0,0)"></nav>
+<h2 id="head" style="margin:0;height:30px;background:rgb(0,160,0)">Head</h2>
+<div style="height:2000px"></div>
+</body></html>`;
+
 async function redPixels(image: Buffer): Promise<number> {
   const { data } = await sharp(image).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   let count = 0;
@@ -39,6 +46,7 @@ test("a capture scrolls its element up to the top, then down until the sticky an
   expect(place.over).toEqual(["badge"]);
   expect(place.scroll).toBe(0);
   expect(place.clip).toEqual({ x: 100, y: 40, width: 200, height: 600 });
+  expect(place.fits).toBe(false);
   expect(await figure.evaluate((element) => element.getBoundingClientRect().top)).toBe(40);
 });
 
@@ -55,4 +63,16 @@ test("a figure taller than the screen is captured without the sticky rail that l
   expect(await sharp(shot.image).metadata()).toMatchObject({ width: 400, height: 600 });
   expect(await redPixels(shot.image), "the rail's red in the figure's capture").toBe(0);
   expect(shot.place?.cleared).toEqual(["nav"]);
+});
+
+test("a heading that fits on the screen once cleared is taken from the screen, below the rail", async ({ page }) => {
+  await page.setViewportSize({ width: 400, height: 300 });
+  await page.setContent(SHORT);
+  const handle = await page.$("#head");
+  if (!handle) throw new Error("the page holds no heading");
+  const shot = await clearedShot(page, handle, { timeout: 5000, scale: "css" });
+  expect(shot.place).toMatchObject({ fits: true, scroll: 100, clip: { x: 0, y: 140, width: 400, height: 30 }, view: { x: 0, y: 40, width: 400, height: 30 }, cleared: ["nav"] });
+  if (!shot.image) throw new Error("the heading was not captured");
+  expect(await sharp(shot.image).metadata()).toMatchObject({ width: 400, height: 30 });
+  expect(await redPixels(shot.image)).toBe(0);
 });

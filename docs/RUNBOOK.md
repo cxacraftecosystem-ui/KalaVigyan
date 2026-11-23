@@ -95,7 +95,8 @@ the release), and keeps `text.json`, `pixels.json`, `interactions.json` and the 
 screenshots as its artifact. Each capture of a chapter, figure or borrowed component scrolls the
 page to the whole pixel at its top and back until the sticky and fixed bars over its top edge (the
 chapter rail, the menu bar) clear it, on both pages alike, so both pages draw it at the same
-fraction of a pixel, then takes its region of the page, so a rail
+fraction of a pixel, then takes its region from the screen (or from the page beyond it when it is
+taller than the screen), so a rail
 that lies over a figure at one width is not counted as the figure; `overlays.json` names what each
 capture cleared and what still lay over it.
 
