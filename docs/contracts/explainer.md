@@ -137,7 +137,10 @@ fewer sentences than the live page, never more.
   once: Each sentence once, under Block renderers). A
   `process_ladder` is the process's skeleton: a stage drops a sentence said word for word, and a
   restating sentence only while the stage keeps another, so a stage the question names is never
-  emptied by another section (decision 0127). **A restatement** (`services/restatements.restates`,
+  emptied by another section (decision 0127). A `quantities` row whose sentence was already said
+  word for word stays, carrying `shownIn`, the id of the sentence that said it first, so a table
+  whose every row restates a ladder stage is still shown (decision 0168); any other row follows
+  the story rule, and a stored table's `shownIn` is set afresh by each answer's ledger. **A restatement** (`services/restatements.restates`,
   decision 0127) is a sentence of at least `RESTATED_STEMS_MIN` (4) content stems
   (`quotes.content_stems`) that adds no number to a shown one and keeps its negation, and either
   shares its claim group (its claims, or its citations' source and folded quote, within the shown
@@ -850,7 +853,7 @@ the items one sentence backs are drawn together under it, in the order of the fi
 |---|---|
 | `supply_map` | materials that share a sentence, directly or through another material, are one row (`supplyView.materialRows`, `sentenceGroups.joinedBy`): its heading names them in order in sentence case, "a, b and c", a later name lowered where the sentences write it in lower case (`namesText`); its origins once each; its sentences once each. A material on sentences of its own keeps its own row. Each placed origin is one pin, numbered in reading order, the same number wherever the origin is listed; the pin names the materials it supplies |
 | `measure`, `market_gi` prices | the rows of one sentence sit in one item, the sentence beside them once (`bySentence`) |
-| `quantities` | the rows of one sentence are one table body, the sentence under them once (`bySentence`) |
+| `quantities` | the rows of one sentence are one table body, the sentence under them once (`bySentence`); rows whose sentence carries `shownIn` keep their quantities with the sentence's citation cluster glued to the last row's stated words and the sentence left to where it is said (decision 0168) |
 | `timeline_map` | a point and a route of one sentence are one entry (above) |
 | `firing` | the atmosphere and temperature facts of one sentence are one fact, their labels joined with " · " (`answerSignature.factsOnce`) |
 | `indigo_vat` | read in order: the dek (the first dip), the three frames, then the facts; a frame keeps its title without a sentence already said, and the contents and later dips of one sentence are one fact, left out when an earlier part said it (`answerVat.vatText`) |
@@ -1427,7 +1430,7 @@ The routes around them (versions, saved explainers, lessons, exports, the explor
   0066 reads the units from the sentence with fixed unit words). Rules as above; each stated
   quantity of a sentence once. **Piece:** the section's slot.
 - **`quantities`** (decision 0147) `{rows[QuantityRow] (3-12)}`, `QuantityRow {stated, low,
-  high?, unit, measures, sentence}`. The quantities a section's cited facts state, metric units
+  high?, unit, measures, sentence, shownIn?}`. The quantities a section's cited facts state, metric units
   included, as a table, so numbers given in prose are also shown as a figure. Server: `stated`
   (the words as the sentence states them, `named_in`), `low` and `high` (its numbers in order),
   `unit` (a key of `research/stated_amounts.AMOUNT_UNITS`: temperatures, times, masses, lengths,
@@ -1435,12 +1438,19 @@ The routes around them (versions, saved explainers, lessons, exports, the explor
   kind, `AMOUNT_KINDS`). Model: nothing. Rules: a row measures what its unit measures; each stated
   quantity of a sentence once; facts only; at least `QUANTITY_ROWS_MIN` (3) rows, so a section
   stating fewer numbers shows none. Feet, inches, yards, miles and square feet are left to
-  `measure`, which converts them. The client draws a table with a kicker caption, a row per
+  `measure`, which converts them. `shownIn` (decision 0168) is the id of the sentence that already
+  says the row's sentence in the answer, set only by the claim ledger and the same on every row of
+  one sentence; such a row's sentence is not among the block's shown sentences
+  (`QuantitiesBlock.shown_sentences`), so the judge, the rubric, the stored answer sentences and
+  Listen read it once, where it is said. The client draws a table with a kicker caption, a row per
   quantity (what it measures, the stated words in tabular figures) and the sentence of its rows
-  once under them (`components/answer/insight/QuantitiesView.tsx`). Migration
+  once under them, or, for rows with `shownIn`, the sentence's citation cluster glued to the last
+  row's stated words, its anchor there and the row group described by the sentence it points to
+  (`components/answer/insight/QuantitiesView.tsx`). Migration
   `0072_quantities_kind` widens the `KnowledgePiece` and `ComponentProposal` kind checks.
   **Piece:** the section's slot. Golden: `shared/explainer.quantities.golden.json` (the process
-  quantities of Bagh prints from GI Journal No. 75).
+  quantities of Bagh prints from GI Journal No. 75, as built and, in its second section, as the
+  ledger admits them after a prose sentence said the sanchara one).
 - **`market_gi`** `{craft, gi: GiStatus?, imitation[sentence], prices[PriceRange]}`.
   `GiStatus {status, applicationNumber?, certificateNumber?, filedOn?, registeredOn?,
   journalIssue?, proprietors[], authorisedUserCount?, sentences (1+)}` is the craft's registry

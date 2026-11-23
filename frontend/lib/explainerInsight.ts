@@ -36,7 +36,7 @@ export type MeasureRow = {
 };
 export type MeasureBlock = BlockEnvelope<"measure"> & { rows: MeasureRow[] };
 export type AmountKind = (typeof AMOUNT_KINDS)[number];
-export type QuantityRow = { stated: string; low: number; high: number | null; unit: string; measures: AmountKind; sentence: ExplainerSentence };
+export type QuantityRow = { stated: string; low: number; high: number | null; unit: string; measures: AmountKind; sentence: ExplainerSentence; shownIn?: string };
 export type QuantitiesBlock = BlockEnvelope<"quantities"> & { rows: QuantityRow[] };
 export type GiStatus = {
   status: (typeof GI_STATUSES)[number];
@@ -147,7 +147,8 @@ export const quantitiesBlockShape: Shape<QuantitiesBlock> = object<QuantitiesBlo
       high: nullable(number),
       unit: unitKey,
       measures: oneOf(AMOUNT_KINDS),
-      sentence: explainerSentenceShape
+      sentence: explainerSentenceShape,
+      shownIn: optional(text)
     }),
     QUANTITY_ROWS_MIN
   )

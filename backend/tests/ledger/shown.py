@@ -26,6 +26,8 @@ def rendered_sentences(blocks: Iterable[BlockBase]) -> Iterator[AnswerSentence]:
         elif block.kind == "expert_view":
             yield from block.take
             yield from _unpaired_views(block, paired)
+        elif block.kind == "quantities":
+            yield from block.shown_sentences()
         else:
             yield from block.cited_sentences()
 

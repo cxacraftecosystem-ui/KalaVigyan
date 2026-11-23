@@ -1148,27 +1148,18 @@ Last reviewed: 2026-11-22.
   photo in `craft.page.inputs.json`, a contributed and an AI plate, a journal source), add the
   missing block kinds to the explainer fixtures, regenerate the goldens and empty the list.
 
-### The quantities table is dropped where its rows repeat a sentence the section says
+### The rubric floor waits on a run that shows the quantities table
 
-- **What:** run 45112746194 (release 1ab422fe, 2026-11-23) measured decision 0147's table on two
-  Kutch Ajrakh answers. The indigo answer (85f14b90) built none: no section's cited facts state
-  three quantities in digits (PROCESS states "10 to 15 minutes", GEOGRAPHY "40 km"; "about one
-  month", "four hours" and "one percent" are number words, which `research/stated_amounts` does not
-  read). The water and climate answer (ea19b016) built one in PROCESS (`ADDED` in
-  `Answer.plan.builds`) that the claim ledger then dropped: each row's sentence is the text of a
-  ladder stage sentence the section had already shown, and a story block never repeats a sentence
-  said word for word (`claim_ledger._anchored_repeat`, in every pass). The judge's figures part was
-  2 and 3 of 5, and no run has yet shown a table, so `rubricMean` in
+- **What:** run 45112746194 (release 1ab422fe, 2026-11-23) found decision 0147's table built once
+  and dropped, since every row's sentence was a ladder stage sentence already shown. Decision 0168
+  shows such a table: the claim ledger keeps those rows with `shownIn`, the view draws them with
+  the sentence's citation and without saying it again, and the judge, the rubric and Listen read
+  the sentence once. No run has yet measured it, so `rubricMean` in
   `backend/app/data/eval/floors.json` is still the 0.82 decision 0147 set.
-- **Why left:** showing the table means either letting it repeat the section's sentences, which the
-  judge marks down as repetition, or drawing its rows under a sentence the section already says
-  without saying it again, a change to the ledger, the quantities view and the judge's reading
-  together; decision 0165 records the choice as the lead's after the next run.
-- **Clears it:** the claim ledger admits a `quantities` table whose row sentences were already shown,
-  the quantities view draws such a row group with its citation and without the sentence text, and
-  `coverage_answers.shown_field_sentences` skips the same sentences; then the lead runs
-  answer-quality on the same questions and raises `rubricMean` to the run's mean less 0.05, rounded
-  down.
+- **Why left:** the floor is re-based on a measured run, and answer-quality is a paid run only the
+  lead dispatches.
+- **Clears it:** the lead runs answer-quality on the same questions and raises `rubricMean` to the
+  run's mean less 0.05, rounded down.
 
 ### Leftovers of the sentence-once lane
 
