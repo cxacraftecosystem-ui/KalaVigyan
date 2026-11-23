@@ -15,7 +15,8 @@ from .blocks import (
     require_facts,
     stated_texts,
 )
-from .calendar import MONTHS, SEASONS, months_named, seasons_named
+from .calendar import MONTHS, months_named, seasons_named
+from .calendar_words import SEASONS
 from .datasets import (
     BOUNDARY_CAPTION,
     BOUNDARY_DATASET_CODE,

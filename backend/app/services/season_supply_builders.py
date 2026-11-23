@@ -24,6 +24,7 @@ from .builder_interface import BuildAsk, BuilderTools, Built
 from .craft_process import process_records
 from .knowledge_view import resolve_craft
 from .monthly_rain import district_rainfall
+from .place_claims import PlaceClaims, place_calendar_claims
 from .place_lookups import StoredPlaces
 from .place_offers import district_refs, mapped_districts
 from .place_points import ShownPlace
@@ -54,6 +55,7 @@ class _StoredSeasons:
     records: ProcessRecords
     rainfall: DistrictRainfall | None
     subjects: Mapping[uuid.UUID, str]
+    calendars: PlaceClaims
 
 
 class SeasonsBuilder:
@@ -67,13 +69,14 @@ class SeasonsBuilder:
         facts = section_facts(ask.blocks, ask.cited)
         concepts = {fact.id: view.concept_id for fact in facts if (view := ask.cited.views.get(fact.id))}
         async with self._tools.sessions() as session:
-            stored = await _stored_seasons(session, craft.slug, concepts)
+            stored = await _stored_seasons(session, craft.slug, concepts, mode=ask.request.mode)
         if stored is None:
             return Built()
         offer = SeasonOffer(
             stages=stage_claims(stored.records),
             facts=season_facts(facts, stored.subjects),
             rainfall=stored.rainfall,
+            calendars=stored.calendars.claims,
         )
         block_id = f"{ask.section.id}.seasons"
         block = seasons_block(offer, block_id=block_id)
@@ -81,7 +84,9 @@ class SeasonsBuilder:
             block = rain_only_block(stored.rainfall, block_id=block_id)
         if block is None:
             return Built()
-        return Built((block,), sources_beyond([block], stored.records.sources, ask.cited))
+        found = sources_beyond([block], stored.records.sources, ask.cited)
+        calendar = {sid: ref for sid, ref in stored.calendars.sources.items() if sid not in ask.cited.sources}
+        return Built((block,), {**calendar, **found})
 
 
 class SupplyMapBuilder:
@@ -152,7 +157,7 @@ async def craft_rainfall(session: AsyncSession, district_lgds: Sequence[int]) ->
 
 
 async def _stored_seasons(
-    session: AsyncSession, craft_slug: str, concepts: Mapping[uuid.UUID, uuid.UUID | None]
+    session: AsyncSession, craft_slug: str, concepts: Mapping[uuid.UUID, uuid.UUID | None], *, mode: str
 ) -> _StoredSeasons | None:
     craft = await resolve_craft(session, craft_slug)
     if craft is None:
@@ -161,7 +166,8 @@ async def _stored_seasons(
     rainfall = await craft_rainfall(session, await mapped_districts(session, craft))
     names = await _concept_names(session, {cid for cid in concepts.values() if cid is not None})
     subjects = {claim: names[cid] for claim, cid in concepts.items() if cid is not None and cid in names}
-    return _StoredSeasons(records, rainfall, subjects)
+    calendars = await place_calendar_claims(session, craft, mode=mode)
+    return _StoredSeasons(records, rainfall, subjects, calendars)
 
 
 async def _concept_names(session: AsyncSession, concept_ids: Collection[uuid.UUID]) -> dict[uuid.UUID, str]:

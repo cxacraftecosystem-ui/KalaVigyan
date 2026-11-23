@@ -395,8 +395,11 @@ construct, and the builder that made it adds nothing.
   MonthlyRain?, datasets[DatasetRef]}`, `MonthlyRain {district: DistrictRef, datasetCode, period,
   millimetres[12]}` (the district by its register name and state, decision 0050). Server: the label (the stored stage's name, else the claim's subject), the
   months and season read from the sentence and its quotes (`calendar.months_named`,
-  `seasons_named`: capitalised month names and ranges, `MONSOON`, `WINTER`, `SUMMER` from their
-  words), the rainfall from the CHIRPS monthly normals of the craft's district (decision 0043's
+  `seasons_named`: capitalised month names and ranges, `between` two months and two neighbouring
+  months joined by `and` or `or` included; `MONSOON`, `WINTER`, `SUMMER`, `SPRING`, `AUTUMN`,
+  `PRE_MONSOON` and `POST_MONSOON` from their words in `research/calendar_words.SEASON_WORDS`, the
+  longest first, a season followed by "of" and a year being a date and "spring" a season only after
+  a season's lead word, decision 0160), the rainfall from the CHIRPS monthly normals of the craft's district (decision 0043's
   rows, read by `services/monthly_rain.district_rainfall`) and its dataset row. Model: which
   claims become rows, their order. Rules: months 1-12 once each in order; a row has months or a
   season, each named by its sentence or quotes, unless it is a stored stage (`stageId`) listed
@@ -645,12 +648,22 @@ gets neither.
   concept's name. Timing is read from the claim's own text: `calendar.year_months` (a month beside
   a day or a year is a date, not a month of the year) and `only_season` (a text naming two seasons
   gives none); a month, range or season whose clause holds a negating or excluding word within
-  five words before it (`EXCLUDING_WORDS`: not, never, except, until, ...) times nothing, and Jan,
-  Mar or Dec before a capitalised word is a name (decision 0050). At most `SEASON_ROWS_MAX` (12) rows, timed first; no timed row is no block, except in a climate
+  five words before it (`EXCLUDING_WORDS`: not, never, except, until, ..., and "rather than",
+  "other than", "instead of"; a parenthesis does not end the clause) times nothing, a season a
+  point word stands just before ("after the rainy season") is a reference, not the row's season,
+  and Jan, Mar or Dec before a capitalised word is a name (decisions 0050 and 0160). A regional
+  month (`calendar_words.REGIONAL_MONTHS`, the national calendar's twelve months and their common
+  spellings) times a row only in month context ("the month of Kartik", "Kartik month";
+  `calendar.regional_month`), so a person or a Saka date spelled alike times nothing, and the table
+  holds no Gregorian months: like a local unit (owner O5), a regional month gets months only from a
+  quote that states them beside it ("Baisakh, in April and May"; `regional_month_months`). At most `SEASON_ROWS_MAX` (12) rows, timed first; no timed row is no block, except in a climate
   section, which then shows its district's CHIRPS rainfall alone (`season_rows.rain_only_block`,
   decision 0138); the climate section builds the block when the answer has one. A row
-  with a season and no month takes the months of the one mapping every offered quote agrees on
-  (`calendar.season_months`: a season word joined to one month range in a source's quote, with no
+  with a season or a regional month and no month takes the months of the one mapping every offered
+  quote agrees on, the offered claims being the section's, its stages' and the craft's stored
+  claims under its place headings whose quotes state such a mapping (`place_claims.
+  place_calendar_claims`, a region's season calendar entering as an ordinary cited claim; decision
+  0160) (`calendar.season_months`: a season word joined to one month range in a source's quote, with no
   sentence break, clause word or other month or season between; `season_mappings`), and its
   sentence cites that quote after its own, at the weaker level. `rainfall` is the first of the
   craft's mapped districts with twelve CHIRPS normals, with its dataset row; none leaves it null.

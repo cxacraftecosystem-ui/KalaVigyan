@@ -8,7 +8,8 @@ from types import MappingProxyType
 
 from app.data.district_register import load_district_codes, load_district_other_names, load_district_register
 from app.data.river_names import load_river_names
-from app.research.calendar import MONTH_NAMES, months_named, seasons_named
+from app.research.calendar import MONTH_NAMES, months_named, regional_months_named, seasons_named
+from app.research.calendar_words import REGIONAL_MONTHS
 from app.research.quotes import quote_occurs
 
 __all__ = [
@@ -33,6 +34,11 @@ class RegisterPlace:
 def unstated_names(text: str, supports: Sequence[str]) -> list[str]:
     months = sorted(months_named([text]) - months_named(supports))
     seasons = sorted(seasons_named([text]) - seasons_named(supports))
+    regional = [
+        month
+        for month in sorted(regional_months_named([text]))
+        if not any(_quoted(name, supports) for name in REGIONAL_MONTHS[month])
+    ]
     found = register_places(text)
     places = [
         place.written
@@ -44,6 +50,7 @@ def unstated_names(text: str, supports: Sequence[str]) -> list[str]:
     return [
         *(MONTH_NAMES[month - 1] for month in months),
         *(season.lower() for season in seasons),
+        *regional,
         *places,
         *rivers,
     ]

@@ -15,6 +15,7 @@ from app.research.blocks_climate import (
 )
 from app.research.blocks_place import MonthlyRain, SeasonRow, SeasonsBlock
 from app.research.calendar import MONTH_NAMES, MONTHS
+from app.research.calendar_words import SEASON_LABELS
 
 from .export_pdf_styles import (
     CELL,
@@ -30,7 +31,6 @@ from .export_pdf_text import measure_text, months_text, p_text, rain_text, sente
 from .pdf_writer import ACCENT, INK, MUTED, RULE, SUNK, Box, PdfWriter, Point, TextStyle
 
 __all__ = [
-    "SEASON_LABELS",
     "TREND_KEY",
     "TREND_METHOD_TEXT",
     "TREND_WORDS",
@@ -74,9 +74,6 @@ TREND_METHOD_TEXT = (
     f"Theil–Sen slope per decade; Mann–Kendall test, significant below p = {TREND_SIGNIFICANCE}"
 )
 TREND_KEY = "Solid bars are significant; outlined bars are not."
-SEASON_LABELS: Mapping[str, str] = MappingProxyType(
-    {"MONSOON": "Monsoon", "WINTER": "Winter", "SUMMER": "Summer"}
-)
 NICE_STEPS = (1.0, 2.0, 2.5, 5.0, 10.0)
 GUTTER_MM = 2.0
 TRACK_MM = 3.0

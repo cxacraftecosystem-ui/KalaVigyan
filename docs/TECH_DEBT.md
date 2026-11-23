@@ -559,17 +559,6 @@ Last reviewed: 2026-11-22.
 
 ## Phase B contract (decision 0042)
 
-### Months and seasons are read in English only
-
-- **What:** `research/calendar` reads capitalised English month names, their abbreviations and
-  ranges joined by `to`, `till`, `until`, `through` or a dash, and three season words. Indian
-  month names (Shravan, Kartik), `between June and September` (read as the two months only) and
-  other seasons (post-monsoon, spring) place nothing.
-- **Why left:** a season row shows only what a source names; reading less is safe, reading more
-  needs a cited calendar of regional months.
-- **Clears it:** a cited table of regional month names and seasons with their Gregorian months
-  (owner O5's rule, as for local units), read by `months_named`.
-
 ### The phase B fixture's river ids are placeholders
 
 - **What:** `shared/explainer.phase-b.golden.json` names reach ids 1, 2, 3 and outlet 3 under
@@ -657,29 +646,6 @@ Last reviewed: 2026-11-22.
 
 ## Seasons and supply (decision 0047)
 
-### A season gets months only from a quote the section offers
-
-- **What:** a season row is given months only by a quote among the section's cited claims and the
-  craft's stage claims that states the season's months; most climate sections cite none, so their
-  rows show the season chip alone. No regional season calendar is stored.
-- **Why left:** owner rule: a named Indian season maps to months only where a source states the
-  mapping, and no cited calendar is curated yet.
-- **Clears it:** cited regional season calendars per state or district (for example the India
-  Meteorological Department's season definitions), stored as claims on a district concept and
-  offered to the seasons builder with the section's claims.
-
-### The season mapping reads short English word lists
-
-- **What:** `calendar.season_months` maps a season only when the words between it and one month
-  range are on short lists (`SPAN_WORDS_AFTER`, `SPAN_WORDS_BEFORE`) and no reference word
-  (`POINT_WORDS`: after, before, end, onset, early ...) stands just before the season word; any
-  other phrasing maps nothing, and an enumeration whose items share those words (`the monsoon, the
-  summer months of June to September`) could still give a range to the wrong season.
-- **Why left:** reading less only leaves a row with its season chip; a parser would be a new
-  dependency for one rule.
-- **Clears it:** tests on the real climate quotes the curation run stores, widening or narrowing the
-  lists with each case found.
-
 ### The seasons and supply builders have not met production
 
 - **What:** both are tested on fixtures, recorded Wikidata answers and, on GitHub Actions, the
@@ -691,16 +657,6 @@ Last reviewed: 2026-11-22.
   each builder's time and the rows and pins shown.
 
 ## Phase B review fixes (decision 0050)
-
-### A negation within five words rules a timing out
-
-- **What:** `calendar.year_months` and `only_season` drop a month or season when a negating or
-  excluding word stands within five words before it in its clause, so a sentence about the
-  season that negates something else ("so they do not expand in the rainy season") places no row.
-- **Why left:** telling the negated verb apart needs a parser; a wrong month on screen is worse
-  than a missing row.
-- **Clears it:** a dependency parse of the claim (spaCy, a recorded decision) that drops only
-  mentions inside the negation's scope.
 
 ### The water question needs `rivers_loaded` set by hand
 

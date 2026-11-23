@@ -3,7 +3,7 @@ import { envelope, explainerSentenceShape, TERM_KEY, WIKIDATA_ID, type BlockEnve
 import { datasetShape, type RegionDataset } from "@/lib/regionContract";
 import { integer, list, matching, nullable, number, object, oneOf, optional, ShapeError, text, type Shape } from "@/lib/shape";
 
-export const SEASONS = ["MONSOON", "WINTER", "SUMMER"] as const;
+export const SEASONS = ["MONSOON", "WINTER", "SUMMER", "SPRING", "AUTUMN", "PRE_MONSOON", "POST_MONSOON"] as const;
 export const HYDRORIVERS_DATASET_CODE = "HYDRORIVERS_1_0";
 export const RIVER_BASIN_PATH = (mainRiv: number) => `/rivers/${mainRiv}`;
 export const RIVER_REACHES_OBJECT = "reaches";

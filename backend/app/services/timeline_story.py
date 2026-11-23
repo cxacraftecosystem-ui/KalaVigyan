@@ -60,7 +60,6 @@ REGISTER_VERSION = 2
 FIRST_VERSION = 1
 
 
-
 @dataclass(frozen=True)
 class DatedStatement:
     claim: KnownClaim

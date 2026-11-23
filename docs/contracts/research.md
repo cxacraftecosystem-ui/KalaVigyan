@@ -754,7 +754,8 @@ evidence[PackedEvidence], documents[SourceDocument], failures[ResearchFailure], 
     `PERSONAL_DATA` for an email address or a phone-like or Aadhaar-like number
     (`evidence.personal_data_in`). A comparison sign or a reaction arrow is not markup.
 - After the post-checks the sectioned flow drops, alone, a sentence that names a month, a
-  season, or a state or district of the LGD register that none of its stored claims' texts or
+  season, a regional month in month context (in any of its spellings in the supports; decision
+  0160), or a state or district of the LGD register that none of its stored claims' texts or
   quotes states (`services/stated_names.unstated_names`, decision 0050). A claim written back by
   this answer for the sentence (`KeptSentence.written`) states nothing for it: its text is the
   sentence itself, so only its quotes and the sentence's verified spans count (decision 0120).
