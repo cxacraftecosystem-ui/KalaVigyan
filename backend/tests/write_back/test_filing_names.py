@@ -61,6 +61,26 @@ def test_a_distinctive_one_word_alias_still_names_its_craft() -> None:
     assert KHURJA_NAMES.catalogued(["बांधनी"]) == [BANDHANI]
 
 
+def test_the_researched_craft_is_not_named_by_an_ordinary_english_word_of_its_own_name() -> None:
+    casting = craft_names(INDEX, METAL_CASTING)
+    assert casting.researched(["The vase was made by slip casting."]) == []
+    assert casting.researched(["Metal parts are joined."]) == []
+    assert casting.researched(["Metal casting uses lost wax."]) == [METAL_CASTING]
+    assert casting.researched(["Cast metal bells ring true."]) == [METAL_CASTING]
+    texts = FilingTexts("The vase was made by slip casting.", titles=(TITLE,))
+    assert craft_filing(texts, field="PROCESS", names=casting) == CraftFiling(
+        METAL_CASTING.slug, held=HELD_UNNAMED
+    )
+
+
+def test_the_researched_craft_keeps_its_distinctive_one_word_names() -> None:
+    bidri = craft_names(INDEX, BIDRIWARE)
+    assert bidri.researched(["Bidri inlay darkens with soil."]) == [BIDRIWARE]
+    assert bidri.researched(["Bidriware is cast from zinc."]) == [BIDRIWARE]
+    assert craft_names(INDEX, KHURJA).researched(["Khurja glazes are blue."]) == [KHURJA]
+    assert craft_names(INDEX, KHURJA).researched(["Pottery is fired."]) == []
+
+
 def test_a_one_word_alias_three_crafts_share_in_their_names_names_none_of_them() -> None:
     assert KHURJA_NAMES.catalogued(["Kalamkari is drawn with a pen."]) == []
     assert KHURJA_NAMES.catalogued(["Srikalahasthi Kalamkari is drawn with a pen."]) == [KALAMKARI]

@@ -6,9 +6,11 @@ import { decisionBody, DECISION_PATH, queueQuery, reviewQueuePageShape, testimon
 import {
   factActions,
   fieldsLine,
+  filingOf,
   filtersFromSearch,
   filtersSearch,
   gateLine,
+  heldLine,
   isFiltered,
   kindTabs,
   overlapLine,
@@ -176,4 +178,26 @@ test("Professors and above open the review page, and the admin menu points to it
   const review = NAV_ITEMS.find((item) => item.href === "/admin/review");
   expect(review && isNavItemVisible(review, person("ADMIN"), true)).toBe(true);
   expect(review && isNavItemVisible(review, person("RESEARCHER"), true)).toBe(false);
+});
+
+test("a held write-back is read with its reason, and a page without the field still reads", () => {
+  const held = { reason: "names Afghanistan but no craft of it", suggestedCraft: "Ajanta-Painting" };
+  const withHeld = parseShape(reviewQueuePageShape, { ...PAGE, items: [{ ...FACT, fact: { ...FACT.fact, held } }] });
+  const fact = withHeld.items[0] as Extract<QueueItem, { kind: "FACTS" }>;
+  expect(fact.fact.held).toEqual(held);
+  expect(heldLine(held)).toBe("Held for a reviewer: it names Afghanistan but no craft of it.");
+  const unheld = parseShape(reviewQueuePageShape, { ...PAGE, items: [{ ...FACT, fact: { ...FACT.fact, held: null } }] });
+  expect((unheld.items[0] as Extract<QueueItem, { kind: "FACTS" }>).fact.held).toBeNull();
+  expect((parsed().items[0] as Extract<QueueItem, { kind: "FACTS" }>).fact.held).toBeUndefined();
+  expect(() => parseShape(reviewQueuePageShape, { ...PAGE, items: [{ ...FACT, fact: { ...FACT.fact, held: { reason: "x" } } }] })).toThrow();
+});
+
+test("an approval files the fact under the craft or family the reviewer chose, and only an approval", () => {
+  expect(filingOf("craft:Khurja-Pottery")).toEqual({ craft: "Khurja-Pottery" });
+  expect(filingOf("family:Mud-Based-Craft-Category")).toEqual({ family: "Mud-Based-Craft-Category" });
+  expect(filingOf("")).toBeNull();
+  expect(decisionBody("approve", "Names Khurja.", { craft: "Khurja-Pottery" })).toEqual({ note: "Names Khurja.", craft: "Khurja-Pottery" });
+  expect(decisionBody("approve", "", { family: "Mud-Based-Craft-Category" })).toEqual({ note: null, family: "Mud-Based-Craft-Category" });
+  expect(decisionBody("reject", "Off topic.", { craft: "Khurja-Pottery" })).toEqual({ reason: "Off topic." });
+  expect(decisionBody("raise", "Checked.", { craft: "Khurja-Pottery" })).toEqual({ note: "Checked." });
 });

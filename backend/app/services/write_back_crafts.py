@@ -53,6 +53,9 @@ def craft_filing(said: FilingTexts, *, field: str | None, names: CraftNames) -> 
     context = _filed_by((said.passages, said.titles), names)
     if context is not None:
         return context
+    kept = names.kept_abroad_in([said.text, *said.quotes, *said.passages, *said.titles])
+    if kept:
+        return CraftFiling(names.lead_slug, held=HELD_OTHER_PLACE.format(places=", ".join(kept)))
     if field in MATERIAL_SCIENCE_FIELDS and names.family is not None:
         return CraftFiling(None, family=names.family)
     return CraftFiling(names.lead_slug, held=HELD_UNNAMED)

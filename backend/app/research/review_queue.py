@@ -50,6 +50,7 @@ __all__ = [
     "KIND_ACTIONS",
     "KIND_ORIGINS",
     "LAYOUTS",
+    "ONE_HOME",
     "PAGE_DEFAULT",
     "PAGE_MAX",
     "PAST_TENSE",
@@ -77,6 +78,7 @@ __all__ = [
     "FactReview",
     "FactSource",
     "GateCheck",
+    "HeldWriteBack",
     "LayoutItem",
     "PictureItem",
     "Proposer",
@@ -96,6 +98,7 @@ __all__ = [
     "TestimonyItem",
     "cursor_text",
     "decision_capability",
+    "fact_move",
     "fact_move_problem",
     "fact_origin",
     "newest_first",
@@ -138,6 +141,7 @@ REASON_MIN_CHARS = 3
 REASON_NOT_GIVEN = "a rejection gives its reason in words, or a testimony reason"
 REASON_IN_WORDS = "This item is rejected with its reason in words, at least three characters."
 REASON_MAX_CHARS = min(PICTURE_NOTE_MAX_CHARS, TESTIMONY_NOTE_MAX_CHARS)
+ONE_HOME = "A fact is filed under a craft or under a family's science, not both."
 CURSOR_MAX_CHARS = 60
 EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 MICROSECOND = timedelta(microseconds=1)
@@ -177,6 +181,7 @@ FACT_MOVES: Mapping[str, FactMove] = MappingProxyType(
         RETRACT: FactMove((LIVE_UNREVIEWED_STATUS, APPROVED_STATUS), RETRACTED_STATUS),
     }
 )
+REFILE_MOVE = FactMove((*PENDING_FACT_STATUSES, APPROVED_STATUS), APPROVED_STATUS)
 
 
 def reviewed_kinds(user: Any) -> tuple[str, ...]:
@@ -203,8 +208,12 @@ def decision_capability(kind: str, action: str) -> Capability:
     return REVIEW_QUEUES[kind]
 
 
-def fact_move_problem(action: str, status: str, level: str) -> str | None:
-    move = FACT_MOVES[action]
+def fact_move(action: str, *, refiled: bool) -> FactMove:
+    return REFILE_MOVE if refiled and action == APPROVE else FACT_MOVES[action]
+
+
+def fact_move_problem(action: str, status: str, level: str, *, refiled: bool = False) -> str | None:
+    move = fact_move(action, refiled=refiled)
     if status not in move.from_statuses:
         return f"A fact that is {status.lower()} cannot be {PAST_TENSE[action]}."
     if move.to_level is not None and level != RAISABLE_LEVEL:
@@ -254,6 +263,11 @@ class FactConcept(ContractModel):
     type: str
 
 
+class HeldWriteBack(ContractModel):
+    reason: str
+    suggested_craft: str
+
+
 class FactReview(ContractModel):
     statement: str
     field: Discipline | None
@@ -264,6 +278,7 @@ class FactReview(ContractModel):
     concept: FactConcept | None
     sources: list[FactSource]
     gates: list[GateCheck]
+    held: HeldWriteBack | None = None
 
 
 class _QueueItem(ContractModel):
@@ -324,9 +339,20 @@ class QueueApproval(ContractModel):
     version: int | None = Field(default=None, ge=1)
     english_checked: bool = False
     craft: str | None = Field(default=None, min_length=1, max_length=SLUG_MAX_CHARS)
+    family: str | None = Field(default=None, min_length=1, max_length=SLUG_MAX_CHARS)
     corroborating_claim_ids: list[uuid.UUID] = Field(
         default_factory=list, max_length=CORROBORATING_CLAIMS_MAX
     )
+
+    @model_validator(mode="after")
+    def _one_home(self) -> Self:
+        if self.craft is not None and self.family is not None:
+            raise ValueError(ONE_HOME)
+        return self
+
+    @property
+    def filed_under(self) -> str | None:
+        return self.craft or self.family
 
 
 class QueueRejection(ContractModel):

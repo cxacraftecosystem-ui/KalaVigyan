@@ -69,7 +69,7 @@ async def approve_item(
     session: AsyncSession, ref: ItemRef, reviewer: User, decision: QueueApproval, *, now: datetime
 ) -> QueueDecision:
     _allowed(reviewer, ref.kind, APPROVE)
-    problem = refiling_problem(ref.kind, decision.craft)
+    problem = refiling_problem(ref.kind, decision)
     if problem is not None:
         raise InvalidInput(problem)
     return await _APPROVERS[ref.kind](session, ref.item_id, reviewer, decision, now=now)
@@ -104,7 +104,7 @@ def _allowed(reviewer: User, kind: str, action: str) -> None:
 async def _approve_fact(
     session: AsyncSession, item_id: uuid.UUID, reviewer: User, decision: QueueApproval, *, now: datetime
 ) -> QueueDecision:
-    approval = FactDecision(APPROVE, decision.note, craft=decision.craft)
+    approval = FactDecision(APPROVE, decision.note, craft=decision.craft, family=decision.family)
     return await decide_fact(session, item_id, reviewer, approval, now=now)
 
 

@@ -1943,32 +1943,15 @@ Last reviewed: 2026-11-22.
   hold a fact for a reviewer instead of filing it are the LGD state and district names and the craft
   index's place labels. Since decision 0136 they are read in a quote's passage and its source's title
   too, so a district named like a common word in a paragraph holds a general fact that names nothing
-  else, and a region abroad missing from the list lets one through.
+  else, and a region abroad missing from the list lets one through. Since decision 0159 a place abroad
+  refuses a fact only when it is named as where the practice is: the words that mark a material's
+  origin or a trade destination (`data/abroad_cues.py`) are a word list too, so "techniques were found
+  in Uzbekistan" reads as a find, and the historical sites of undivided India are Wikidata's
+  (`places_abroad.historical_sites.json`), which lists only the sites it classes.
 - **Why left:** no open gazetteer of regions and cultures is vendored, and a model judging each
   sentence's places would cost a call per sentence.
 - **Clears it:** read the held and refused write-backs the filing report lists after each round of
   live research, and add places, other senses and left-out names from what it shows.
-
-### The review page does not show why a write-back is held
-
-- **What:** a held write-back (decision 0136) waits in the review queue as a `DRAFT` researched fact
-  of its suggested craft. Its reason is only in its `ReviewEvent` note and the filing report, and the
-  Review page cannot file it under another craft, though the approve route takes `craft`.
-- **Why left:** the web's unit specs parse the queue strictly (the production build ignores an
-  unknown field since decision 0151), so the field and its shape land together, and frontend files
-  were another lane's this round.
-- **Clears it:** add `held {reason, suggestedCraft}` to `FactReview` and to `lib/reviewQueueContract.ts`
-  in one change, and a craft picker beside Approve that sends `craft`.
-
-### A held write-back found again stays held
-
-- **What:** when research later files a sentence a reviewer has not yet decided, under the craft it
-  was held for, the write-back is re-found by its key and keeps its `DRAFT` status: it gains the new
-  citations but does not go live as a filed write-back would under the `AUTO` switch.
-- **Why left:** a re-found write-back never changes status (decision 0124), and a reviewer sees it in
-  the queue anyway.
-- **Clears it:** when a filed write-back meets its held twin, move it to the switch's status with a
-  `ReviewEvent` by `live_research`.
 
 ### The count of hidden facts has no admin screen
 

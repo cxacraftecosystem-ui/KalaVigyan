@@ -120,7 +120,9 @@ Each item has `id`, `kind`, `origin`, `submittedAt`, `craft {slug, name, path}` 
 - `fact`: `statement`, `field`, `fields`, `status`, `level`, `sourcesDiffer`, `concept {name,
   type}`, `sources [{title, url, licence, reliability, quotes [{text, locator}]}]` and `gates
   [{gate, passed, reasons, model, related [{id, text}]}]` in gate order (QUOTES, SOURCE,
-  DUPLICATE, NOVELTY); `related` are the held facts a gate compared it with.
+  DUPLICATE, NOVELTY); `related` are the held facts a gate compared it with; a held write-back
+  (decision 0136) also carries `held {reason, suggestedCraft}`, read from its `live_research_held`
+  event, else `held` is `null` (the web accepts it absent).
 - `component`: the proposal (`label`, `title`, `description`, `kind`, `field`, `fields`,
   `subjects`, `consideredLabels`, `extends`, `extension`, `taskKey`) and `closest`: up to three
   library components, most matching reasons first, then the most words shared (`overlap` 0 to 1),
@@ -153,7 +155,7 @@ filter or cursor.
 
 | Route | Body | For |
 |---|---|---|
-| `POST /api/review-queue/{kind}/{id}/approve` | `{note?, version?, englishChecked?, craft?, corroboratingClaimIds?}` | every kind; `craft` (a craft slug) for facts only; `corroboratingClaimIds` (0 to 5) for testimony only |
+| `POST /api/review-queue/{kind}/{id}/approve` | `{note?, version?, englishChecked?, craft?, family?, corroboratingClaimIds?}` | every kind; `craft` (a craft slug) or `family` (a category slug), never both, for facts only; `corroboratingClaimIds` (0 to 5) for testimony only |
 | `POST /api/review-queue/{kind}/{id}/reject` | `{reason?, version?, testimonyReason?}` | every kind; `reason` (3 to 500 characters) may be left out only by a testimony rejection that names its `testimonyReason` |
 | `POST /api/review-queue/FACTS/{id}/raise` | `{note?}` | facts |
 | `POST /api/review-queue/FACTS/{id}/retract` | `{reason}` | facts |
@@ -166,7 +168,7 @@ filter or cursor.
 
 | Action | From | To |
 |---|---|---|
-| approve | `DRAFT`, `IN_REVIEW` | `APPROVED` at its level |
+| approve | `DRAFT`, `IN_REVIEW`; with `craft` or `family` also `APPROVED` | `APPROVED` at its level |
 | reject | `DRAFT`, `IN_REVIEW` | `REJECTED`, the reason as the event's note |
 | raise | `DRAFT`, `IN_REVIEW`, `APPROVED` at `PROVISIONAL` | `APPROVED` at `REVIEWED`, `levelReason` "Reviewed against its quoted sources by a <role> on <day>" |
 | retract | `IN_REVIEW`, `APPROVED` | `RETRACTED`, the reason as the event's note |
@@ -184,6 +186,19 @@ reviewer files a held write-back (knowledge-writes.md, The research write-back) 
 filed before decision 0135; rejecting drops it. `craft` on any other kind, an unknown craft, or a
 fact not about a concept is refused (422). The route refreshes the signed-out pages the fact was
 on before the move as well as those it moves to.
+
+**Filing under a family's science** (decision 0159). Approving a chemistry, physics or materials
+fact with `family` (a category slug, any case) files it as the write-back files family science: its
+claim moves to the shared concept named as the category, of type
+`curation_keys.DISCIPLINE_CONCEPT_TYPES[field]` (found, else created), the event's note ends `filed
+under the family science of <slug>` and the audit detail carries `filedUnderFamily`. A fact of
+another field, an unknown category, or `craft` and `family` together are refused (422). Filing an
+already approved fact under another craft or family keeps it approved.
+
+**Researched facts** (decision 0159). A fact written back by live research (`Claim.origin`
+`LIVE_RESEARCH`) is decided by the queue whether or not it has gate checks, so the write-backs
+approved before the gates (2026-11-17 and earlier) can be retracted or re-filed by id; any other fact
+needs its gate checks or a hold, else 404 "No proposed or researched fact has the id".
 
 **Component proposals** (`review_queue_components.py`): approve records `APPROVED` with the
 reviewer, the time and the note: it waits for a builder to build and register it in the library;
@@ -262,8 +277,10 @@ from the menu and the settings hub. Tabs per kind with their counts; filters for
 kept in the address (`?kind=&origin=&craft=`). A card per item:
 
 - a fact (`components/review/FactReviewCard.tsx`): the statement, what is shown now, level, fields,
-  concept, "sources differ", sources with their verbatim quotes, and each automatic check with its
-  reasons and the facts it was compared with;
+  concept, "sources differ", sources with their verbatim quotes, each automatic check with its
+  reasons and the facts it was compared with, a held write-back's reason ("Held for a reviewer: it
+  ..."), and for a researched fact a File under picker (`FilingPicker.tsx`: every reader craft, then
+  each family's science) whose choice Approve sends as `craft` or `family`;
 - a component proposal (`ComponentReviewCard.tsx`): the proposal, the labels its proposer
   considered and the closest library components, and a delivered one drawn by its real view
   (`DeliveredComponentView.tsx`: `ComponentSlot` with `COMPONENT_VIEWS` and `BundleView`), its units
