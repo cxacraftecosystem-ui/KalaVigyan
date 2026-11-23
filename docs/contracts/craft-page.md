@@ -413,8 +413,8 @@ of the library. AI images and videos made from the craft's claims still join the
 
 - **Provenance on the item.** `ChapterItem` carries `origin: ItemOrigin | null` and `pieceId | null`.
   `ItemOrigin {basis (CURATED, STORED, READERS), generated (MODEL, AI_IMAGE, AI_VIDEO) | null, model
-  | null, generatedOn (YYYY-MM-DD) | null, fromQuestion}`; `fromQuestion` is always null since no
-  reader's piece joins, and leaves the payload in the release after decision 0162's. `basis` is
+  | null, generatedOn (YYYY-MM-DD) | null}`; `fromQuestion`, always null once no reader's piece
+  joined, left the payload in the release after decision 0162's (decision 0168). `basis` is
   `READERS` on an AI asset (it comes from an answer), `STORED` on a stored explainer. The masthead's
   provenance carries `updatedOn`, the IST day of the newest AI asset shown, null when none.
 - **AI media.** An AI image or video (`MediaAsset` of a succeeded `MediaJob`: a stage job's today,
@@ -444,8 +444,10 @@ of the library. AI images and videos made from the craft's claims still join the
   /api/crafts/{slug}/pieces/{pieceId}/hidden` (which also stops its reuse in answers and the
   library) and any AI asset with `PUT /api/crafts/{slug}/media/{assetId}/hidden` (`visibility` back
   to `PRIVATE`); each answers 404 for one not of this craft and is audited (`services/audit`).
-- **Tables** (in the chapters migration): `MediaAsset.pageKey`. `CraftPageArchive` is no longer
-  written or read; it is dropped in the release after decision 0162's (debt register).
+- **Tables** (in the chapters migration): `MediaAsset.pageKey`. `CraftPageArchive`, written and
+  read by nothing since decision 0162, is dropped by migration `0091_craft_page_archive_dropped`
+  (decision 0168); the release-before check leaves a table this release retired unread once it is
+  gone (`tests/db/previous_release_probe.RETIRED_TABLES`), since the release before only maps it.
 
 ## Generated explainers and lookups (the job)
 

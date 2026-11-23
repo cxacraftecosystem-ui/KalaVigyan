@@ -127,6 +127,17 @@ ties the rows to their sentence for assistive technology and lets a test check w
     voice and photo of Kutch Ajrakh, as the app's own conversion makes them from the recorded
     feed, so the craft page golden shows the page's voices and field photos.
 
+### The archive leaves with the release after decision 0162's
+
+11. With decision 0162's release live (987e94c5), migration `0091_craft_page_archive_dropped` drops
+    `CraftPageArchive` and its model, and `ItemOrigin` loses `fromQuestion` with `AskedQuestion`; the
+    web of that release drops the chapters before parsing, so it never reads the field. The release
+    before still maps the table but no code of it reads or writes it, so the release-before check
+    leaves a table this release retired unread once the database no longer holds it
+    (`previous_release_probe.RETIRED_TABLES`), and reads every other mapped table as before. We chose
+    a named list over skipping any table the database lacks, which would hide a dropped table the
+    release before still uses.
+
 ### The limit kept
 
 | Limit | Why it is kept | What would change it |
@@ -135,8 +146,10 @@ ties the rows to their sentence for assistive technology and lets a test check w
 
 ## Consequences
 
-- No migration. The quantities payload gains an optional field that only an answer's ledger sets;
-  pieces store the builder's table without it.
+- One migration, `0091_craft_page_archive_dropped` (down revision `0086_mcp_call_name_required`),
+  which drops a table nothing reads; its downgrade makes it again as decision 0098's migration did.
+  The quantities payload gains an optional field that only an answer's ledger sets; pieces store
+  the builder's table without it.
 - A table whose every row restates the ladder is now shown, so the judge's figures part can see
   the numbers it carries; `rubricMean` stays at 0.82 until the lead's next answer-quality run
   measures it (the register's entry says so).
@@ -151,6 +164,8 @@ on 2026-11-23; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.
 [contracts](../contracts/README.md). Its rules are tested by
 `backend/tests/contracts/test_explainer_quantities.py`, `backend/tests/ledger/test_ledger_kinds.py`,
 `backend/tests/research/test_shown_sentences.py`, `backend/tests/voice/test_narration.py`,
-`frontend/e2e/quantities-unit.spec.ts`, `backend/tests/contracts/test_golden_fields.py`,
+`frontend/e2e/quantities-unit.spec.ts`, `backend/tests/test_craft_page_archive_migration.py`,
+`backend/tests/test_release_compatibility.py`, `backend/tests/db/test_craft_page_snapshots_db.py`,
+`backend/tests/contracts/test_golden_fields.py`,
 `test_explainer_translated.py`, `test_craft_page_voices.py`, `frontend/e2e/answer-languages-unit.spec.ts`
 and, for the splits, the tests of each moved module, which are unchanged but for their imports.

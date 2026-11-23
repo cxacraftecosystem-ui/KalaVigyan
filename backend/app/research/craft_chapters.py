@@ -11,7 +11,7 @@ from pydantic import Field, model_validator
 from .base import ContractModel
 from .chapter_keys import CHAPTER_KEYS, CHAPTER_TITLES, DISCIPLINE_CHAPTERS
 from .citations import AnswerSentence, Citation
-from .craft_origins import GENERATED_KINDS, ORIGIN_BASES, AskedQuestion, ItemOrigin
+from .craft_origins import GENERATED_KINDS, ORIGIN_BASES, ItemOrigin
 from .craft_parts import PagePart, PagePlate
 from .explainer import BUILT_BLOCK_KINDS, BUILT_FIGURE_KINDS, Block
 from .media_refs import MediaRef
@@ -27,7 +27,6 @@ __all__ = [
     "KIN_ITEM_KINDS",
     "ORIGIN_BASES",
     "PAGE_BLOCK_KINDS",
-    "AskedQuestion",
     "Borrowed",
     "Chapter",
     "ChapterItem",

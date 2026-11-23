@@ -880,18 +880,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** a migration that sets every `SIGNED_IN` chunk to `PUBLIC` and drops the value,
   `field_voices_records` writing `PUBLIC`, and `SIGNED_IN_CHUNK_ACLS` removed.
 
-### The craft page's archive table and `fromQuestion` wait for the next release
-
-- **What:** decision 0162 retired the craft page's archive and a reader's pieces in its chapters,
-  but `CraftPageArchive` (table and model) stays, written and read by nothing, and every chapter
-  item's `origin.fromQuestion` is still sent, always null.
-- **Why left:** a release must be one the live side can read (decision 0151): the release before
-  decision 0162's still writes and reads the table, and its web requires `fromQuestion` on every
-  chapter item.
-- **Clears it:** in the release after decision 0162's is live, a migration dropping
-  `CraftPageArchive` with its model, and `ItemOrigin.from_question` with `AskedQuestion` removed
-  from `research/craft_origins.py`.
-
 ### Kutch Ajrakh's timeline pins and named river are not yet seen, and three why claims describe steps
 
 - **What:** job step 1 (`app.scripts.build_craft_chapters`, nightly from Coverage enrichment) stored
