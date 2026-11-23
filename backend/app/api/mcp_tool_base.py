@@ -9,14 +9,17 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput
-from app.core.mcp_scopes import READ_SCOPE
+from app.core.mcp_scopes import READ_SCOPE, REVIEW_SCOPE
 from app.core.roles import Capability, can
 from app.models import User
 from app.services.craft_resolver import CraftIndexStore
+from app.services.oauth_bearer import McpCaller
+from app.services.page_refresh_jobs import Background
 
 from .mcp_schemas import input_schema, output_schema
 
 __all__ = [
+    "ADMIN_GROUP",
     "DATA_NOTE",
     "GROUPS",
     "GROUP_KEY",
@@ -36,6 +39,7 @@ __all__ = [
     "Tool",
     "ToolContext",
     "contributor",
+    "listed_to",
     "scope_refusal",
     "signed_in",
 ]
@@ -56,6 +60,7 @@ READING, SOURCES, WORK, PROPOSING, PAGES, PICTURES = GROUPS = (
     "pages",
     "pictures",
 )
+ADMIN_GROUP = "admin"
 
 ScopeOf = Callable[[Mapping[str, Any]], str]
 
@@ -67,6 +72,8 @@ class ToolContext:
     site: str
     user: User | None = None
     scopes: frozenset[str] = field(default_factory=frozenset)
+    caller: McpCaller | None = None
+    background: Background | None = None
 
 
 class Arguments(BaseModel):
@@ -121,6 +128,10 @@ class Tool:
     @property
     def commits(self) -> bool:
         return self.records or not self.annotations.get("readOnlyHint", True)
+
+
+def listed_to(tool: Tool, scopes: frozenset[str]) -> bool:
+    return tool.scope != REVIEW_SCOPE or REVIEW_SCOPE in scopes
 
 
 def scope_refusal(tool: Tool, context: ToolContext, arguments: Any = None) -> str | None:

@@ -12,7 +12,7 @@ import { SITE_BUILD_PATH, parseSiteBuildState, siteBuildStatus, type SiteBuildSt
 
 const COPY = {
   title: "Site build",
-  lede: "Publishes every craft page from the database to the site. A build also starts each night after the upkeep.",
+  lede: "Publishes every craft page from the database to the site. The night starts no build; it refreshes only the pages that changed.",
   start: "Start a build",
   starting: "Starting",
   loadFailed: "Couldn't read the build status. Reload the page to try again.",

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from collections import defaultdict
-from collections.abc import Awaitable, Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Collection, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -40,6 +40,7 @@ from app.research.review_queue import (
 from . import image_contributions as images, knowledge_view
 from .object_store import ObjectStore
 from .review_queue_components import component_items
+from .review_queue_decisions import ItemRef
 from .review_queue_errors import UnknownCraft
 from .review_queue_fact_views import fact_items
 from .review_queue_layers import layer_items
@@ -50,7 +51,7 @@ from .review_queue_stages import stage_items
 from .review_queue_structure import structure_items
 from .testimony_views import Turns, review_item
 
-__all__ = ["QueueAdapters", "TurnsOf", "list_review_queue"]
+__all__ = ["QueueAdapters", "TurnsOf", "list_review_queue", "open_review_item"]
 
 PICTURE_ORIGIN = KIND_ORIGINS[IMAGES][0]
 
@@ -64,9 +65,15 @@ class QueueAdapters:
 
 
 async def list_review_queue(
-    session: AsyncSession, viewer: User, filters: ReviewFilters, *, adapters: QueueAdapters, now: datetime
+    session: AsyncSession,
+    viewer: User,
+    filters: ReviewFilters,
+    *,
+    adapters: QueueAdapters,
+    now: datetime,
+    within: Collection[str] | None = None,
 ) -> ReviewQueuePage:
-    kinds = reviewed_kinds(viewer)
+    kinds = tuple(kind for kind in reviewed_kinds(viewer) if within is None or kind in within)
     scope = QueueScope(
         viewer_id=viewer.id, craft=await _craft(session, filters.craft_slug), origin=filters.origin
     )
@@ -83,6 +90,18 @@ async def list_review_queue(
         items=await _items(session, viewer, kept, adapters=adapters, now=now),
         next_cursor=following,
     )
+
+
+async def open_review_item(
+    session: AsyncSession, viewer: User, ref: ItemRef, *, adapters: QueueAdapters, now: datetime
+) -> RenderedItem | None:
+    if ref.kind not in reviewed_kinds(viewer):
+        return None
+    found = await _rendered(session, ref.kind, [ref.item_id], adapters=adapters, now=now)
+    if not found:
+        return None
+    names = await _proposers(session, found) if sees_proposer(viewer) else {}
+    return _named(found[0], names)
 
 
 async def _count(session: AsyncSession, kind: str, scope: QueueScope) -> int:

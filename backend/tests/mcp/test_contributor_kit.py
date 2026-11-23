@@ -3,6 +3,7 @@ from pathlib import Path
 
 from app.api.mcp_tools import TOOLS
 from app.api.proposal_limits import LIMIT_NOUNS
+from app.core.mcp_scopes import REVIEW_SCOPE
 from app.core.rate_limit import FACT_PROPOSALS, LOOKUP_LIMITS, PROPOSAL_LIMITS
 from app.data.contributor_kit import (
     CONTRIBUTOR_SKILL_PATH,
@@ -39,6 +40,7 @@ CONTRIBUTOR_TOOLS = (
     "propose_page",
     "give_pictures",
 )
+ADMIN_TOOLS = ("review_queue", "stage_reviews", "refresh_pages", "admin_reports")
 RETIRED_TOOLS = (
     "list_fields",
     "get_section",
@@ -129,13 +131,17 @@ def test_the_skill_teaches_every_contributor_tool_by_its_name() -> None:
         assert f"`{name}`" in text, name
     for name in RETIRED_TOOLS:
         assert f"`{name}`" not in text and name not in TOOLS, name
-    assert set(CONTRIBUTOR_TOOLS) == set(TOOLS)
+    assert set(CONTRIBUTOR_TOOLS) | set(ADMIN_TOOLS) == set(TOOLS)
+    assert {name for name, tool in TOOLS.items() if tool.scope == REVIEW_SCOPE} == set(ADMIN_TOOLS)
+    assert [name for name in ADMIN_TOOLS if f"`{name}`" in text] == []
     assert "taskKey" not in text and "craftSlug" not in text and "claimId" not in text
 
 
 def test_the_skill_teaches_every_tool_the_server_offers() -> None:
     text = CONTRIBUTOR_SKILL_PATH.read_bytes().decode("utf-8")
-    untaught = sorted(name for name in TOOLS if f"`{name}`" not in text)
+    untaught = sorted(
+        name for name, tool in TOOLS.items() if tool.scope != REVIEW_SCOPE and f"`{name}`" not in text
+    )
     assert untaught == []
 
 

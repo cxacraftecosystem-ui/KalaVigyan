@@ -34,6 +34,7 @@ from app.research.oauth_rules import (
     INVALID_CLIENT,
     INVALID_REQUEST,
     MCP_TERMS_VERSION,
+    Grantor,
     OAuthError,
     redirect_uri_matches,
 )
@@ -93,8 +94,9 @@ async def terms_accepted_at(session: AsyncSession, user: User) -> datetime | Non
 
 
 async def review(
-    session: AsyncSession, user: User, request: AuthorizationRequest, *, endpoints: OAuthEndpoints
+    session: AsyncSession, grantor: Grantor, request: AuthorizationRequest, *, endpoints: OAuthEndpoints
 ) -> AuthorizationPrompt | AuthorizationRedirect:
+    user = grantor.user
     client = await _trusted_client(session, request)
     try:
         checked = checked_authorization(request, resource=endpoints.resource)
@@ -104,21 +106,22 @@ async def review(
         client_name=client.name,
         client_id_host=client.client_id_host,
         redirect_host=client_host(request.redirect_uri),
-        scopes=scope_choices(user, checked.scopes),
+        scopes=scope_choices(grantor, checked.scopes),
         terms=TermsStatus(version=MCP_TERMS_VERSION, accepted_at=await terms_accepted_at(session, user)),
     )
 
 
 async def approve(
-    session: AsyncSession, user: User, consent: Consent, *, endpoints: OAuthEndpoints, now: datetime
+    session: AsyncSession, grantor: Grantor, consent: Consent, *, endpoints: OAuthEndpoints
 ) -> AuthorizationRedirect:
+    user, now = grantor.user, grantor.now
     request = consent.request
     client = await _trusted_client(session, request)
     try:
         checked = checked_authorization(request, resource=endpoints.resource)
     except OAuthError as refused:
         return AuthorizationRedirect(redirect_to=error_redirect(request, refused, issuer=endpoints.issuer))
-    scopes = granted_scopes(user, checked.scopes, consent.scopes)
+    scopes = granted_scopes(grantor, checked.scopes, consent.scopes)
     await _accept_terms(session, user, consent.terms_version, now=now)
     client_id = await stored_client_id(session, client, now=now)
     code = new_secret(CODE_PREFIX)
