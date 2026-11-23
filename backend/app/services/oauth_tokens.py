@@ -17,7 +17,6 @@ from app.research.oauth_contract import TokenReply
 from app.research.oauth_metadata import AUTHORIZATION_CODE, REFRESH_TOKEN
 from app.research.oauth_rules import (
     ACCESS_TOKEN_PREFIX,
-    ACCESS_TOKEN_SECONDS,
     CODE_PREFIX,
     INVALID_CLIENT,
     INVALID_GRANT,
@@ -29,7 +28,9 @@ from app.research.oauth_rules import (
     SECRET_MAX_CHARS,
     UNSUPPORTED_GRANT_TYPE,
     OAuthError,
+    access_token_seconds,
     joined_scopes,
+    live_scopes,
     pkce_matches,
     requested_scopes,
 )
@@ -242,16 +243,18 @@ async def _issue(
 ) -> TokenReply:
     access = new_secret(ACCESS_TOKEN_PREFIX)
     refresh = new_secret(REFRESH_TOKEN_PREFIX)
+    scopes = live_scopes(scopes, granted_at=grant.createdAt, now=now)
+    seconds = access_token_seconds(scopes)
     session.add_all(
         [
-            _token_row(grant, ACCESS, access, scopes, now + timedelta(seconds=ACCESS_TOKEN_SECONDS)),
+            _token_row(grant, ACCESS, access, scopes, now + timedelta(seconds=seconds)),
             _token_row(grant, REFRESH, refresh, tuple(grant.scopes), grant.expiresAt),
         ]
     )
     await session.flush()
     return TokenReply(
         access_token=access,
-        expires_in=ACCESS_TOKEN_SECONDS,
+        expires_in=seconds,
         refresh_token=refresh,
         scope=joined_scopes(scopes),
     )

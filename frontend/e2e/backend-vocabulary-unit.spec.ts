@@ -34,6 +34,8 @@ import { MEDIA_JOB_STATUSES, MEDIA_KINDS } from "@/lib/mediaContract";
 import { UNIT_REF } from "@/lib/unitIds";
 import { AGGREGATIONS, ENV_STATS, PLACE_BASES, PLACE_SCOPES, REGION_FACETS } from "@/lib/regionContract";
 import { MATERIAL_KINDS, MATERIAL_ROLES, REACTION_KINDS, STAGE_TYPES } from "@/lib/scienceContract";
+import { REFRESH_ORIGINS, REFRESH_PHASES, REFRESH_SCOPES, REFRESH_STATUSES } from "@/lib/sitePagesContract";
+import { ITEM_STATES, SOURCE_KINDS, STAGED_ACTIONS, STAGED_KINDS } from "@/lib/stagedReviewContract";
 import { CLIENT_TOOL_NAMES, RELAY_AUDIO_TYPES, VOICE_MODES } from "@/lib/voiceContract";
 import { INTERVIEW_TOPICS } from "@/lib/conversationContract";
 import { AGE_BANDS, CREDIT_MODES, GENDERS } from "@/lib/profileContract";
@@ -125,7 +127,15 @@ const PAIRS: [string, string, readonly string[]][] = [
   ["models/people_vocabulary.py", "TESTIMONY_ENGLISH_SOURCES", TESTIMONY_ENGLISH_SOURCES],
   ["models/people_vocabulary.py", "TESTIMONY_REJECT_REASONS", TESTIMONY_REJECT_REASONS],
   ["models/people_vocabulary.py", "TESTIMONY_SCREENS", TESTIMONY_SCREENS],
-  ["models/people_vocabulary.py", "LOCATOR_PRECISIONS", LOCATOR_PRECISIONS]
+  ["models/people_vocabulary.py", "LOCATOR_PRECISIONS", LOCATOR_PRECISIONS],
+  ["models/admin_work.py", "STAGED_KIND_VALUES", STAGED_KINDS],
+  ["models/admin_work.py", "STAGED_ACTION_VALUES", STAGED_ACTIONS],
+  ["models/admin_work.py", "ITEM_STATES", ITEM_STATES],
+  ["models/enums.py", "SOURCE_KINDS", SOURCE_KINDS],
+  ["models/admin_work.py", "REFRESH_SCOPES", REFRESH_SCOPES],
+  ["models/admin_work.py", "REFRESH_ORIGINS", REFRESH_ORIGINS],
+  ["models/admin_work.py", "REFRESH_STATUSES", REFRESH_STATUSES],
+  ["models/admin_work.py", "REFRESH_PHASES", REFRESH_PHASES]
 ];
 
 for (const [file, name, client] of PAIRS) {

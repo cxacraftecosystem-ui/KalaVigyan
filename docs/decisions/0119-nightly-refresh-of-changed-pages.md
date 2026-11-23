@@ -12,6 +12,7 @@ happens for stale pages, right? No cost for the existing pages, right?"). The co
 |---|---|
 | The contract it changes | [nightly-upkeep.md](../contracts/nightly-upkeep.md) |
 | How pages are refreshed when a fact moves | [knowledge-writes.md](../contracts/knowledge-writes.md), Pages follow their facts |
+| Later changed by: an Admin refreshes the changed pages now, one job at a time with the night | [decision 0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -12,6 +12,7 @@ the people who connect a client.
 | The terms a person accepts | [legal/mcp-terms-of-use.md](../legal/mcp-terms-of-use.md) |
 | Abandoned registrations removed every night | [nightly-upkeep.md](nightly-upkeep.md), 3a |
 | What each call keeps, how long, and the MCP activity screen | [decision 0150](../decisions/0150-mcp-activity-and-box-logs.md); [nightly-upkeep.md](nightly-upkeep.md), 3d |
+| The review scope, its short tokens and the admin tools it lists | [decision 0170](../decisions/0170-review-over-mcp-staged-and-pages-refreshed-now.md); [review-queue.md](review-queue.md), Staged over MCP |
 
 ```mermaid
 %%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","noteBkgColor":"#FAEECD","noteTextColor":"#1E1B2E","noteBorderColor":"#CD9200","actorBkg":"#F2E9FE","actorBorder":"#9148D2","actorTextColor":"#1E1B2E","actorLineColor":"#AA69E9","signalColor":"#AA69E9","signalTextColor":"#857F9E","labelBoxBkgColor":"#F2E9FE","labelBoxBorderColor":"#9148D2","labelTextColor":"#1E1B2E","loopTextColor":"#857F9E","activationBkgColor":"#E7D5FE","activationBorderColor":"#9148D2","sequenceNumberColor":"#FFFFFF"}}}%%
@@ -164,10 +165,13 @@ The client sends the person to `<WEB>/oauth/authorize` with `response_type=code`
    identity ("Published at claude.ai" or "Registered by the app itself"), the host it returns to
    and the scopes it asks for, with a warning when it returns to a program on this computer
    (localhost, 127.x, [::1]). The person reads the scopes (read is always given; a scope their role cannot hold is shown
-   with what it needs and cannot be ticked), reads and accepts the MCP terms of use when this
+   with what it needs and cannot be ticked; `review` is given only by an Admin or Master Admin with
+   two-step verification on whose session proved them within the last 15 minutes, read from the
+   session token's `iat`, which a sign-in, a password change and a two-step change set), reads and accepts the MCP terms of use when this
    version is not yet accepted, and presses Approve or Cancel (an `ActionGroup`).
 4. Approve posts `POST /api/oauth/authorize/approve {request, scopes, termsVersion}`. The request
-   is checked again; a scope not asked for or not held by the role is 422, a terms version that
+   is checked again; a scope not asked for or not held by the role, or `review` without two-step
+   verification or a sign-in within 15 minutes, is 422, a terms version that
    is not the current one 409. The acceptance is recorded, a code is stored and the reply is
    `{kind: "redirect", redirectTo: <redirect_uri>?code&state&iss}`, which the page opens.
    Cancel posts `POST /api/oauth/authorize/deny {request}` and returns `error=access_denied`.
@@ -192,7 +196,10 @@ it equals its `iss` (the assertion is otherwise not read; decision 0148).
   spent, and presenting a spent one revokes the whole connection.
 - The reply is `{access_token, token_type: "Bearer", expires_in: 3600, refresh_token, scope}`
   with `Cache-Control: no-store` and `Pragma: no-cache`. Access tokens live an hour, refresh
-  tokens 30 days from their issue, so a connection used at least monthly stays.
+  tokens 30 days from their issue, so a connection used at least monthly stays. An access token
+  holding `review` lives 15 minutes (`expires_in: 900`), and `review` lasts 8 hours from the
+  connection's grant: a token issued after that leaves it out, and the connection goes on with its
+  other scopes (`research/oauth_rules.live_scopes`, `access_token_seconds`).
 - Errors are RFC 6749 JSON: `invalid_request`, `invalid_client` (401), `invalid_grant`,
   `unsupported_grant_type`, `invalid_scope`, `invalid_target`.
 - A second connection of the same app by the same person revokes the first, so Settings lists one
@@ -229,9 +236,14 @@ connection, an access token only itself. An unknown token, or one of another cli
 | `read` | everyone, always given | read what a signed-out reader sees |
 | `ask` | `ASK_STANDARD` (every role) | ask and receive cited answers in the person's name |
 | `contribute` | `PROPOSE_KNOWLEDGE` (Researcher and above) | propose facts (one to 25 at once) and follow them (`get_proposal`), sources, structure, pages and their parts (`edit_draft`, `preview_page`, `propose_page`) and pictures (`give_pictures`); search and read sources (`search_sources`, `read_source`, `supply_source`); claim and release tasks (`reserve_tasks`) and list its own work (`my_work`); steward crafts (`steward_craft`) |
-| `review` | Professor, Admin, Master Admin | review proposals |
+| `review` | `REVIEW_CONTRIBUTIONS` (Admin and Master Admin) with two-step verification on, signed in within the last 15 minutes when it is given | the admin tools, listed in `tools/list` only to a token holding it: read the review queue and open one item (`review_queue`), stage review decisions and source corrections for a person to confirm on the Review page (`stage_reviews`), refresh the pages that changed (`refresh_pages`) and read the admin reports (`admin_reports`); the review tasks of `list_open_work` |
 
-The rule is `research/oauth_rules.may_hold`; the words shown are `research/oauth_contract.SCOPE_TEXT`.
+The rule is `research/oauth_rules.may_hold` (what a token holds on every call: the role and
+two-step verification) and `Grantor.may_grant` (what a person may give: that, and for `review` the
+recent sign-in); the words shown are `research/oauth_contract.SCOPE_TEXT`. A Professor's connection
+made before decision 0170 keeps its other scopes and no longer holds `review`. Nothing a review
+tool stages is applied by the server: a person confirms it on the Review page
+([review-queue.md](review-queue.md), Staged over MCP).
 
 ## Terms of use
 
@@ -245,7 +257,10 @@ The rule is `research/oauth_rules.may_hold`; the words shown are `research/oauth
 ## Settings
 
 `GET /api/oauth/connections` answers `{serverUrl, connections[{id, clientName, clientHost,
-scopes, connectedAt, lastUsedAt}]}`, the person's unrevoked, unexpired connections, newest first
+scopes, connectedAt, lastUsedAt}]}`, the person's unrevoked, unexpired connections that the server
+still serves (a password, two-step or role change, a suspension and Sign out everywhere end every
+connection made before them, `oauth_tokens.grant_matches_user`, and with it `review`), each with the
+scopes its next token holds (`held_scopes`, then `live_scopes`), newest first
 (`clientHost` is the `client_id` host of a published identity, else the first redirect URI's host);
 `serverUrl` is the MCP server's URL while it is on and null otherwise.
 `DELETE /api/oauth/connections/{id}` revokes one of the person's own (204), else 404. The card
@@ -358,6 +373,8 @@ SHA-256; they are never logged, and `redact_secrets` masks their shape in any lo
 | Published identities, on hand-written documents, through the fetcher and end to end | `backend/tests/mcp/test_oauth_client_documents.py`, `backend/tests/fetcher/test_client_documents.py`, `backend/tests/mcp/test_oauth_client_document_reads.py` and `backend/tests/db/test_oauth_metadata_clients_db.py` |
 | The terms of use as the consent screen shows them | `backend/tests/mcp/test_mcp_terms_copy.py` |
 | The consent screen | `frontend/e2e/oauth-consent-unit.spec.ts` |
+| Who may give `review`, its short tokens and its eight hours; Connected apps listing only live connections with the scopes they hold | `backend/tests/mcp/test_oauth_rules.py` and `backend/tests/db/test_review_scope_db.py` |
+| The admin tools hidden from a token without `review`, and both lists' budgets | `backend/tests/mcp/test_review_tools.py` and `backend/tests/mcp/test_tool_budget.py` |
 | A real client signing in | `.github/workflows/mcp-client.yml` |
 
 Re-read it when the MCP authorization specification gains a revision, a scope is added, or a token lifetime changes.

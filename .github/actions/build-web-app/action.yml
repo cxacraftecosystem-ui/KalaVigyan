@@ -25,5 +25,5 @@ runs:
         echo "the Vercel deploy hook answered $code"
         case "$code" in
           200|201) ;;
-          *) echo "::error::the web app build was not started; start it from Build pages now in admin settings"; exit 1 ;;
+          *) echo "::error::the web app build was not started; start it from Start a build in admin settings"; exit 1 ;;
         esac
