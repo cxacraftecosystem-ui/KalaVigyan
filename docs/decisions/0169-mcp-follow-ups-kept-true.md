@@ -28,6 +28,7 @@ reference (Map layers over MCP).
 | The dataset record a map layer carries | [decision 0114](0114-kinds-and-datasets.md) |
 | The stage envelopes a reading is checked against | [decision 0015](0015-science-engine.md) |
 | The what-if inputs that read alternatives | [decision 0056](0056-what-if-lab.md) |
+| The review page's rule for a kind it does not know | [decision 0167](0167-answer-leftovers-kept-true.md) |
 | The queue's kinds and decisions as they stand | [review-queue.md](../contracts/review-queue.md) |
 | Every decision, by group | [README.md](README.md) |
 
@@ -87,8 +88,10 @@ what-if read alternatives only from English words standing between two names.
    states each, and `propose_structure` takes an `ALTERNATIVE`; both become a `CONTRASTS_WITH` edge
    carrying the claim, which the what-if reads beside stated contrasts. The word-based reading stays
    for what no curator has recorded.
-8. **The review page tolerates a kind it does not know.** A kind or item kind the web app does not
-   know yet is left out instead of failing the page, since the API is released first.
+8. **The new kinds join the review page's unknown-kind rule.** The production build leaves out a
+   kind or structure item it does not know ([decision 0167](0167-answer-leftovers-kept-true.md),
+   `shape.knownOnly`), so `READINGS`, `LAYERS` and `ALTERNATIVE` reach a web app released before
+   them as absent, never as a broken page.
 
 ## Consequences
 
