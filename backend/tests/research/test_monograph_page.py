@@ -196,7 +196,9 @@ def test_kutch_ajrakhs_chapter_names_are_its_approved_rail_and_chapter_menu() ->
 
 def test_kutch_ajrakhs_reader_data_names_the_gi_journal_s_author_whole_as_the_seed_does() -> None:
     listed = monograph_content("Kutch-Ajrakh").data["kv-data"]["sources"].values()
-    (journal,) = [source for source in listed if source["kind"] == "GI_JOURNAL"]
+    (journal,) = [
+        source for source in listed if source["kind"] == "GI_JOURNAL" and "Kutch Ajrakh" in source["t"]
+    ]
     seeded = json.loads(SEED_CLAIMS_FILE.read_text(encoding="utf-8"))["sources"]
     (seed,) = [
         source
