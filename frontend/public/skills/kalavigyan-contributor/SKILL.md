@@ -202,12 +202,14 @@ callers share one allowance between them.
 
 ## Structure and sources
 
-- `propose_structure` gives one piece of a curated craft page's structure with the fact and the
-  verbatim quotes that state it: a stage's after (`STAGE_AFTER`, what the work looks like and its
-  colours) or why (`STAGE_WHY`), a native name (`NATIVE_NAME`), a reaction (`REACTION`), a
-  material's botanical name (`BOTANICAL_NAME`), a glossary term (`GLOSSARY_TERM`), an open question
-  (`OPEN_QUESTION`), parts of the GI record (`GI_RECORD`), or held facts of the page that disagree
-  (`CONFLICT`, by their ids as `claim_ids`, with no new fact).
+- `propose_structure` gives one piece of a curated craft or category page's structure with the fact
+  and the verbatim quotes that state it: a stage's after (`STAGE_AFTER`, what the work looks like and
+  its colours) or why (`STAGE_WHY`), a native name (`NATIVE_NAME`), a reaction (`REACTION`), a
+  material's botanical name (`BOTANICAL_NAME`) or another material of the page that can stand in for
+  it (`ALTERNATIVE`), a glossary term (`GLOSSARY_TERM`), an open question (`OPEN_QUESTION`), parts of
+  the GI record (`GI_RECORD`), or held facts of the page that disagree (`CONFLICT`, by their ids as
+  `claim_ids`, with no new fact). A category page (`subject {kind category, slug}`) takes a reaction
+  without a stage, a term, an open question or a conflict.
 - Stage and material keys are the page's own: read them with `get_facts` and `get_page`. The
   item's fact follows `quotes.md` like any other. It waits in the review queue, and approval writes
   it into the page.
