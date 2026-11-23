@@ -21,11 +21,12 @@ export async function clearOverlays(target: ElementHandle<Element>): Promise<Cle
       const classes = typeof other.className === "string" ? other.className.trim().split(/\s+/).filter(Boolean).slice(0, 2).join(".") : "";
       return `${other.id || other.tagName.toLowerCase()}${classes ? `.${classes}` : ""}`;
     };
-    element.scrollIntoView({ block: "start", inline: "nearest", behavior: "instant" });
+    const base = Math.floor(element.getBoundingClientRect().top + window.scrollY + edge);
+    window.scrollTo({ top: base, behavior: "instant" });
     const start = element.getBoundingClientRect();
     const covering = overlays(start).filter((other) => other.getBoundingClientRect().top <= start.top);
-    const clear = Math.max(0, ...covering.map((other) => other.getBoundingClientRect().bottom - start.top));
-    window.scrollBy({ top: -clear, behavior: "instant" });
+    const clear = Math.ceil(Math.max(0, ...covering.map((other) => other.getBoundingClientRect().bottom - start.top)) - edge);
+    window.scrollTo({ top: base - Math.max(0, clear), behavior: "instant" });
     const box = element.getBoundingClientRect();
     const x = box.left + window.scrollX;
     const y = box.top + window.scrollY;
