@@ -632,8 +632,12 @@ document is read), which the answer stream turns into `trail` events.
   language without a Wikipedia (`WIKIPEDIA_LANGUAGES`). An unusable reply is retried once (`PLAN_DRAFT_RETRIES`), then raised. A
   `degraded` reply turns `DEEP` into `HYBRID` (`DEGRADED_MODES`).
 - **Plan**: coverage per facet (above), then queries: the first query of each open facet
-  (the craft name and the facet target when the model gave none, on `T3`), then the model's
-  others, in order; a query not naming the craft gets the craft name in front; queries with
+  (the craft name and the facet target when the model gave none, on `T3`), then, when the English
+  question asks what gives a glaze, glass, enamel, pigment or pottery its colour
+  (`colourants.asks_what_gives_a_colour`), one colourant query on each tier the model used, on its
+  first open `MATERIAL` facet (else the first open facet): the hues it names, `glaze colourant` and
+  the oxides of `COLOURANT_ELEMENTS` (cobalt, copper, iron, manganese, chromium; decision 0167),
+  then the model's others, in order; a query not naming the craft gets the craft name in front; queries with
   personal data or a withheld term are left out; duplicates (tier and case-folded text) are
   dropped; at most the mode's limit. `tiers` are the mode's stored tiers plus the live tiers
   the queries use; `maxFetches` is the mode's when there are queries, else 0.

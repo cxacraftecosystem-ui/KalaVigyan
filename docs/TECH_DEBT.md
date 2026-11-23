@@ -1154,10 +1154,11 @@ Last reviewed: 2026-11-22.
   is about Jaipur blue pottery.
 - **Why left:** the colourant must come from a source that names it for Khurja and can be cited, and
   Khurja Pottery's facts are written through the MCP server, not a dossier.
-- **Clears it:** open the two statement-of-case PDFs of application 178 at search.ipindia.gov.in in a
-  browser, read the glaze and colour section, and propose its sentence (cobalt, copper, or whatever it
-  names) through `propose_facts` with `supply_source` for the PDF; let the planner search for the
-  colourant by its element names when a question asks what gives a colour.
+  The planner now searches the colourant oxides when a question asks what gives a glaze its colour
+  (decision 0167), so a citable source that names them is found once one is open to the fetcher.
+- **Clears it:** a person opens the two statement-of-case PDFs of application 178 at
+  search.ipindia.gov.in in a browser, reads the glaze and colour section, and proposes its sentence
+  (cobalt, copper, or whatever it names) through `propose_facts` with `supply_source` for the PDF.
 
 ### Write-backs filed before decision 0135
 
