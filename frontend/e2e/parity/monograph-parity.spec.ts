@@ -9,6 +9,7 @@ import { passPreviewProtection } from "../production/preview";
 import { borrowedCases, pagesToVisit, subjectPages } from "./parityBorrowed";
 import { driftSteps, heightDifferences, sectionHeights, type DriftReport } from "./parityDrift";
 import { chapterIds, lineDiff, pixelDifference, type PixelDifference } from "./parityMeasure";
+import { overlayFreeShot } from "./parityOverlays";
 import { alignPhase } from "./parityPhase";
 import { fullSizePictures } from "./parityPictures";
 import { placeBorrows, placeFacts, strayBorrows } from "./parityPlaces";
@@ -107,9 +108,9 @@ test("every chapter of the React page looks as the approved page does", async ({
       continue;
     }
     if (!(await approved.locator(selector).first().isVisible())) continue;
-    const before = await approved.locator(selector).first().screenshot({ animations: "disabled", timeout: SHOT_TIMEOUT_MS }).catch(() => null);
+    const before = await overlayFreeShot(approved.locator(selector).first(), SHOT_TIMEOUT_MS);
     if (!before) continue;
-    const after = await rendered.locator(selector).first().screenshot({ animations: "disabled", timeout: SHOT_TIMEOUT_MS }).catch(() => null);
+    const after = await overlayFreeShot(rendered.locator(selector).first(), SHOT_TIMEOUT_MS);
     if (!after) {
       differences[id] = "missing";
       continue;

@@ -3,6 +3,7 @@ import type { BrowserContext, ElementHandle, Page } from "@playwright/test";
 import { AUTHORED_PATH, pageKind, type BorrowedCase, type SubjectPage } from "./parityBorrowed";
 import { authoredRoot, drawing, gatedDifferences, generatedRoot, sanityProblems, widthAs, type SanityProblem } from "./parityComponent";
 import { pixelDifference } from "./parityMeasure";
+import { withoutOverlays } from "./parityOverlays";
 import { fullSizePictures } from "./parityPictures";
 import { playersAtRest } from "./parityRest";
 import type { StyleDifference } from "./parityStyles";
@@ -56,7 +57,7 @@ function fileName(label: string): string {
 async function shot(root: ElementHandle<Element>, type: "png" | "jpeg" = "png"): Promise<Buffer | null> {
   await root.scrollIntoViewIfNeeded().catch(() => undefined);
   const quality = type === "jpeg" ? CHAPTER_QUALITY : undefined;
-  return root.screenshot({ animations: "disabled", timeout: SHOT_TIMEOUT_MS, scale: "css", type, quality }).catch(() => null);
+  return withoutOverlays(root, () => root.screenshot({ animations: "disabled", timeout: SHOT_TIMEOUT_MS, scale: "css", type, quality }).catch(() => null));
 }
 
 async function pixels(approved: ElementHandle<Element>, rendered: ElementHandle<Element>, name: string, save: Shots): Promise<number | null> {
