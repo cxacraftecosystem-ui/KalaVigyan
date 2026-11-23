@@ -97,7 +97,7 @@ async def seed_terms(session: AsyncSession) -> dict[str, int]:
         "conceptLinks": len(concept_links),
         "newLinks": linked,
         "removedLinks": len(removed),
-        "removedTerms": await _removed_unlinked_terms(session, removed),
+        "removedTerms": await _removed_unlinked_terms(session, {term for term, _ in removed}),
     }
 
 
@@ -106,7 +106,7 @@ async def removed_unplanned_links(
     craft_links: Sequence[dict[str, uuid.UUID]],
     concept_links: Sequence[dict[str, uuid.UUID]],
     seed_concepts: Sequence[uuid.UUID],
-) -> set[uuid.UUID]:
+) -> list[tuple[uuid.UUID, uuid.UUID]]:
     crafts = select(TermCraft.termId, TermCraft.craftId).where(
         TermCraft.craftId.not_in(select(CuratedCraft.craftId))
     )
@@ -121,7 +121,7 @@ async def removed_unplanned_links(
         seeded.extend((await session.execute(found)).tuples().all())
     planned = {(link["termId"], link["conceptId"]) for link in concept_links}
     concept_pair = (TermConcept.termId, TermConcept.conceptId)
-    return removed | await _removed_links(session, concept_pair, seeded, planned)
+    return [*removed, *await _removed_links(session, concept_pair, seeded, planned)]
 
 
 async def _removed_links(
@@ -129,11 +129,11 @@ async def _removed_links(
     pair: tuple[Any, Any],
     stored: Sequence[tuple[uuid.UUID, uuid.UUID]],
     planned: set[tuple[uuid.UUID, uuid.UUID]],
-) -> set[uuid.UUID]:
+) -> list[tuple[uuid.UUID, uuid.UUID]]:
     stale = sorted(link for link in set(stored) if link not in planned)
     for chunk in batched(stale, BATCH, strict=False):
         await session.execute(delete(pair[0].class_).where(tuple_(*pair).in_(list(chunk))))
-    return {term for term, _ in stale}
+    return stale
 
 
 async def _removed_unlinked_terms(session: AsyncSession, term_ids: set[uuid.UUID]) -> int:
