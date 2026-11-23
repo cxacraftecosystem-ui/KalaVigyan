@@ -109,11 +109,15 @@ class OpenAICompatAdapter(Adapter):
             return True
         return False
 
-    def batch_params(self, req: ChatRequest) -> tuple[dict, dict]:
+    def _sendable(self, req: ChatRequest) -> tuple[dict, dict]:
         params, meta = self._build(req)
         if self.rejects(req.model, "reasoning_extra"):
             params.pop("extra_body", None)
             meta["thinking"] = "unsupported"
+        return params, meta
+
+    def batch_params(self, req: ChatRequest) -> tuple[dict, dict]:
+        params, meta = self._sendable(req)
         body = {k: v for k, v in params.items() if k != "extra_body"}
         body.update(params.get("extra_body") or {})
         return body, meta
@@ -125,77 +129,81 @@ class OpenAICompatAdapter(Adapter):
     async def chat(self, req: ChatRequest) -> ChatResult:
         o = self._mod
         for _ in range(6):
-            params, meta = self._build(req)
-            if self.rejects(req.model, "reasoning_extra"):
-                params.pop("extra_body", None)
-                meta["thinking"] = "unsupported"
+            params, meta = self._sendable(req)
             t0 = time.perf_counter()
             try:
                 resp = await self.client.chat.completions.create(**params)
             except o.BadRequestError as e:
-                if req.json_schema and names_the_format(str(e), _FORMAT_NEEDLES):
-                    raise format_refused(self.preset, req.model) from e
-                if self._adapt(req.model, str(e), params):
+                failure = self._bad_request_failure(req, params, e)
+                if failure is None:
                     continue
-                raise ProviderError(
-                    f"{self.preset} rejected the request: {e}", status=400, kind="bad_request"
-                ) from e
-            except o.AuthenticationError as e:
-                raise ProviderError(
-                    f"{self.preset}: API key is invalid or missing", status=401, kind="auth"
-                ) from e
-            except o.PermissionDeniedError as e:
-                raise ProviderError(f"{self.preset}: permission denied: {e}", status=403, kind="auth") from e
-            except o.NotFoundError as e:
-                raise ProviderError(
-                    f"{self.preset}: unknown model '{req.model}'", status=404, kind="not_found"
-                ) from e
-            except o.RateLimitError as e:
-                raise ProviderError(
-                    f"{self.preset}: rate limited",
-                    retryable=True,
-                    status=429,
-                    kind="rate_limit",
-                    retry_after=retry_after_of(e),
-                ) from e
-            except o.APIStatusError as e:
-                raise ProviderError(
-                    f"{self.preset} error {e.status_code}: {e}",
-                    retryable=e.status_code >= 500,
-                    status=e.status_code,
-                    retry_after=retry_after_of(e),
-                ) from e
-            except o.APIConnectionError as e:
-                raise ProviderError(
-                    f"Cannot reach {self.preset} at {self.base_url}: {e}", retryable=True, kind="unavailable"
-                ) from e
+                raise failure from e
+            except (o.APIStatusError, o.APIConnectionError) as e:
+                raise self._call_failure(req.model, e) from e
             latency = int((time.perf_counter() - t0) * 1000)
-            if not resp.choices:
-                raise ProviderError(f"{self.preset} returned no choices", retryable=True)
-            choice = resp.choices[0]
-            msg = choice.message
-            meta["stop_reason"] = choice.finish_reason
-            meta["served_model"] = getattr(resp, "model", req.model)
-            rc = getattr(msg, "reasoning_content", None) or getattr(msg, "reasoning", None)
-            if rc:
-                meta["reasoning_chars"] = len(rc) if isinstance(rc, str) else None
-            if getattr(msg, "refusal", None):
-                raise ProviderError(f"{self.preset} refused: {msg.refusal}", kind="refusal")
-            if choice.finish_reason == "content_filter":
-                raise ProviderError(f"{self.preset} content filter stopped the response", kind="refusal")
-            u = openai_usage(resp.usage)
-            return ChatResult(
-                text=msg.content or "",
-                input_tokens=u.input_tokens,
-                output_tokens=u.output_tokens,
-                latency_ms=latency,
-                meta=meta,
-                cached_input_tokens=u.cached_input_tokens,
-                cache_write_tokens=u.cache_write_tokens,
-            )
+            return self._chat_result(req, resp, meta, latency)
         raise ProviderError(
             f"{self.preset}: request could not be adapted to the model's accepted parameters",
             kind="bad_request",
+        )
+
+    def _bad_request_failure(self, req: ChatRequest, params: dict, e) -> ProviderError | None:
+        if req.json_schema and names_the_format(str(e), _FORMAT_NEEDLES):
+            return format_refused(self.preset, req.model)
+        if self._adapt(req.model, str(e), params):
+            return None
+        return ProviderError(f"{self.preset} rejected the request: {e}", status=400, kind="bad_request")
+
+    def _call_failure(self, model: str, e) -> ProviderError:
+        o = self._mod
+        if isinstance(e, o.AuthenticationError):
+            return ProviderError(f"{self.preset}: API key is invalid or missing", status=401, kind="auth")
+        if isinstance(e, o.PermissionDeniedError):
+            return ProviderError(f"{self.preset}: permission denied: {e}", status=403, kind="auth")
+        if isinstance(e, o.NotFoundError):
+            return ProviderError(f"{self.preset}: unknown model '{model}'", status=404, kind="not_found")
+        if isinstance(e, o.RateLimitError):
+            return ProviderError(
+                f"{self.preset}: rate limited",
+                retryable=True,
+                status=429,
+                kind="rate_limit",
+                retry_after=retry_after_of(e),
+            )
+        if isinstance(e, o.APIStatusError):
+            return ProviderError(
+                f"{self.preset} error {e.status_code}: {e}",
+                retryable=e.status_code >= 500,
+                status=e.status_code,
+                retry_after=retry_after_of(e),
+            )
+        return ProviderError(
+            f"Cannot reach {self.preset} at {self.base_url}: {e}", retryable=True, kind="unavailable"
+        )
+
+    def _chat_result(self, req: ChatRequest, resp, meta: dict, latency: int) -> ChatResult:
+        if not resp.choices:
+            raise ProviderError(f"{self.preset} returned no choices", retryable=True)
+        choice = resp.choices[0]
+        msg = choice.message
+        meta["stop_reason"] = choice.finish_reason
+        meta["served_model"] = getattr(resp, "model", req.model)
+        rc = getattr(msg, "reasoning_content", None) or getattr(msg, "reasoning", None)
+        if rc:
+            meta["reasoning_chars"] = len(rc) if isinstance(rc, str) else None
+        if getattr(msg, "refusal", None):
+            raise ProviderError(f"{self.preset} refused: {msg.refusal}", kind="refusal")
+        if choice.finish_reason == "content_filter":
+            raise ProviderError(f"{self.preset} content filter stopped the response", kind="refusal")
+        u = openai_usage(resp.usage)
+        return ChatResult(
+            text=msg.content or "",
+            input_tokens=u.input_tokens,
+            output_tokens=u.output_tokens,
+            latency_ms=latency,
+            meta=meta,
+            cached_input_tokens=u.cached_input_tokens,
+            cache_write_tokens=u.cache_write_tokens,
         )
 
     async def list_models(self) -> list[dict]:

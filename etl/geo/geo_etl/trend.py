@@ -83,5 +83,5 @@ def add_trend_rows(rows: Rows, district: pd.Series, series: AnnualSeries) -> Non
         return
     variable, period = series.variable, series.period
     slope_unit = TREND_UNITS[variable][1]
-    rows.add(district, variable, period, SLOPE_STAT, trend.slope_per_decade, slope_unit, method=TREND_METHOD)
-    rows.add(district, variable, period, P_VALUE_STAT, trend.p_value, P_VALUE_UNIT, method=TREND_METHOD)
+    rows.add(district, variable, period, SLOPE_STAT, trend.slope_per_decade, unit=slope_unit, method=TREND_METHOD)
+    rows.add(district, variable, period, P_VALUE_STAT, trend.p_value, unit=P_VALUE_UNIT, method=TREND_METHOD)

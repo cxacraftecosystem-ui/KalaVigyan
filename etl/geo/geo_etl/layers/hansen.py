@@ -94,17 +94,17 @@ def add_forest(rows: Rows, district: pd.Series, record: pd.Series, treecover: fl
     classes = np.asarray(pick(record, "classes"), dtype=float)
     found = {int(c): float(s) for c, s in zip(classes, np.asarray(pick(record, "shares")), strict=True)}
     forest_share = sum(s for c, s in found.items() if c >= 1)
-    rows.add(district, "treecover2000", "2000", "DISTRICT_MEAN", treecover, "%", pixels=pixels)
-    rows.add(district, f"forest_canopy{CANOPY}", "2000", "SHARE", forest_share, "fraction of land", pixels=pixels)
+    rows.add(district, "treecover2000", "2000", "DISTRICT_MEAN", treecover, unit="%", pixels=pixels)
+    rows.add(district, f"forest_canopy{CANOPY}", "2000", "SHARE", forest_share, unit="fraction of land", pixels=pixels)
     forest_km2 = forest_share * land_km2
-    rows.add(district, f"forest_canopy{CANOPY}_area", "2000", "TOTAL", forest_km2, "km2", pixels=pixels)
+    rows.add(district, f"forest_canopy{CANOPY}_area", "2000", "TOTAL", forest_km2, unit="km2", pixels=pixels)
     total_loss = 0.0
     for year in range(2001, LAST_YEAR + 1):
         loss = found.get(100 + year - 2000, 0.0) * land_km2
         total_loss += loss
-        rows.add(district, f"forest_loss_canopy{CANOPY}", str(year), "TOTAL", loss, "km2", pixels=pixels)
+        rows.add(district, f"forest_loss_canopy{CANOPY}", str(year), "TOTAL", loss, unit="km2", pixels=pixels)
     period = f"2001-{LAST_YEAR}"
-    rows.add(district, f"forest_loss_canopy{CANOPY}", period, "TOTAL", total_loss, "km2", pixels=pixels)
+    rows.add(district, f"forest_loss_canopy{CANOPY}", period, "TOTAL", total_loss, unit="km2", pixels=pixels)
     if forest_share > 0:
         share = total_loss / forest_km2
         rows.add(
@@ -113,6 +113,6 @@ def add_forest(rows: Rows, district: pd.Series, record: pd.Series, treecover: fl
             period,
             "SHARE",
             share,
-            "fraction of 2000 forest",
+            unit="fraction of 2000 forest",
             pixels=pixels,
         )

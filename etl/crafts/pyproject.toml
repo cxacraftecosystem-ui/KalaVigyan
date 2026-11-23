@@ -33,6 +33,9 @@ combine-as-imports = true
 known-first-party = ["app"]
 known-local-folder = [
     "traditions",
+    "alias_codes",
+    "alias_entries",
+    "alias_scripts",
     "aliases",
     "seed_claims",
     "wikidata_families",

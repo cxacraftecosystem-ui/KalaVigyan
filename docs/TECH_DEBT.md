@@ -43,18 +43,21 @@ Last reviewed: 2026-11-22.
 
 ### Python code over budget
 
-- **What:** the counts are in `tools/hygiene_baseline.json`: 6 files over 400 lines, 36 functions
-  over 40 lines and 9 functions with more than 5 positional parameters on 2026-11-23 (12, 54 and 9
-  on 2026-11-16). The files: `backend/migrations/versions/0001_initial_schema.py` (2853),
-  `backend/app/services/two_factor.py` (703), `etl/crafts/seed_claims.py` (642),
-  `etl/crafts/aliases.py` (535), `backend/tests/db/test_db_flows.py` (473) and
-  `backend/app/data/craft_master_loader.py` (433). The sign-in routes, the AI router and the
-  Wikidata linker were split on 2026-11-23 and are no longer among them.
-- **Why left:** most were ported from the designer portal with the same shapes so the portals
-  stay mergeable; splitting them is a separate restructuring change.
-- **Clears it:** split along responsibilities when a file is next changed; run
-  `tools/hygiene_check.py --update-baseline` after each clean-up. The initial migration stays
-  one file (migrations are not rewritten).
+- **What:** the counts are in `tools/hygiene_baseline.json`. Besides the initial migration, which
+  stays one file by choice (decision 0168), what is left on 2026-11-23 is the seed claims and one
+  knowledge reader: `etl/crafts/seed_claims.py` (642 lines; `convert_immersive` 132,
+  `convert_inferential` 158 and `build` 76 lines, `claim` 9 positional parameters),
+  `backend/app/services/claim_seed.seed_claims` (46 lines) with its database test
+  `test_seed_claims_is_idempotent_on_the_seed_id` (51), and
+  `backend/app/services/knowledge_view.map_points` (63). Decision 0168 split two-step
+  verification, the alias merger, the flows' database tests and the master-list loader, and cut
+  the other long and wide functions into named steps (6 files, 36 long and 9 wide functions
+  before it; 12, 54 and 9 on 2026-11-16).
+- **Why left:** the seed claims were the pictures, terms and planning lane's files and the
+  knowledge reader the contributors' lanes' while decision 0168 ran, so another lane's change
+  would have met a split of the same lines.
+- **Clears it:** split them along their steps, behaviour unchanged, once those lanes have merged;
+  run `tools/hygiene_check.py --update-baseline` and delete this entry.
 
 ### Scholarly adapters: what waits on keys and the planner (decisions 0005, 0139)
 

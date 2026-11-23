@@ -55,16 +55,9 @@ def share(part, whole):
     return part / whole if whole else 0.0
 
 
-def report(path):
-    d = json.loads(path.read_text(encoding="utf-8"))
-    category = path.parent.name == "categories"
-    pictures = d.get("pictures") or []
-    placed = [p for p in pictures if p.get("placement")]
+def picture_gaps(pictures, placed):
     roles = [p["placement"].get("role") for p in placed]
     chapters = {p["placement"].get("chapter") for p in placed}
-    stages = d.get("stages") or []
-    materials = d.get("materials") or []
-    sources = d.get("sources") or []
     gaps = []
     if len(pictures) < BAR["pictures"]:
         gaps.append(f"pictures {len(pictures)}/{BAR['pictures']}+")
@@ -74,21 +67,45 @@ def report(path):
         gaps.append("no MASTHEAD")
     if len(chapters) < BAR["chaptersWithPictures"]:
         gaps.append(f"chapters with pictures {len(chapters)}/{BAR['chaptersWithPictures']}+")
-    if not category and stages:
-        after = sum(1 for s in stages if s.get("after"))
-        why = sum(1 for s in stages if s.get("whyClaimId"))
-        if share(after, len(stages)) < BAR["afterShare"]:
-            gaps.append(f"stage after {after}/{len(stages)}")
-        if share(why, len(stages)) < BAR["whyShare"]:
-            gaps.append(f"stage why {why}/{len(stages)}")
-    if not category and len(d.get("nativeNames") or []) < BAR["nativeNames"]:
+    return gaps
+
+
+def stage_gaps(stages):
+    after = sum(1 for s in stages if s.get("after"))
+    why = sum(1 for s in stages if s.get("whyClaimId"))
+    gaps = []
+    if share(after, len(stages)) < BAR["afterShare"]:
+        gaps.append(f"stage after {after}/{len(stages)}")
+    if share(why, len(stages)) < BAR["whyShare"]:
+        gaps.append(f"stage why {why}/{len(stages)}")
+    return gaps
+
+
+def craft_gaps(d, stages):
+    gaps = stage_gaps(stages) if stages else []
+    if len(d.get("nativeNames") or []) < BAR["nativeNames"]:
         gaps.append("no native name")
-    if not category and d.get("scope", "CRAFT") == "CRAFT" and not (d.get("market") or {}).get("gi"):
+    if d.get("scope", "CRAFT") == "CRAFT" and not (d.get("market") or {}).get("gi"):
         gaps.append("no GI record (only if GI-registered)")
+    return gaps
+
+
+def material_gaps(materials):
     maybe_plants = [m for m in materials if m.get("kind") in {"DYE", "FIBRE", "WOOD", "RESIN", "MORDANT"}]
     unnamed = [m["id"] for m in maybe_plants if not m.get("botanicalName")]
-    if unnamed:
-        gaps.append(f"check for plants without botanicalName: {', '.join(unnamed)}")
+    return [f"check for plants without botanicalName: {', '.join(unnamed)}"] if unnamed else []
+
+
+def report(path):
+    d = json.loads(path.read_text(encoding="utf-8"))
+    pictures = d.get("pictures") or []
+    placed = [p for p in pictures if p.get("placement")]
+    stages = d.get("stages") or []
+    sources = d.get("sources") or []
+    gaps = picture_gaps(pictures, placed)
+    if path.parent.name != "categories":
+        gaps.extend(craft_gaps(d, stages))
+    gaps.extend(material_gaps(d.get("materials") or []))
     counts = field_counts(d)
     gaps.extend(field_gaps(counts))
     ab = sum(1 for s in sources if s.get("reliability") in {"A", "B"})

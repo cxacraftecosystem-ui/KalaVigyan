@@ -108,6 +108,7 @@ async def _with_access(session: AsyncSession, user: User) -> dict[str, Any]:
 
 @router.get("")
 async def list_users(
+    *,
     search: str | None = Query(default=None, max_length=200),
     role: str | None = None,
     access: str | None = Query(default=None, pattern="^(ACTIVE|PENDING|REJECTED|SUSPENDED|NOT_LISTED)$"),
@@ -153,15 +154,7 @@ async def get_user(
     return await _with_access(session, await _target(session, user_id))
 
 
-@router.patch("/{user_id}")
-async def update_user(
-    user_id: uuid.UUID,
-    payload: UserUpdate,
-    actor: User = Depends(lister),
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    target = await _target(session, user_id)
-    data = payload.model_dump(exclude_unset=True)
+def _refuse_update(actor: User, target: User, data: dict[str, Any]) -> None:
     is_self = target.id == actor.id
     if "role" in data:
         if not can(actor, Capability.CHANGE_ROLES):
@@ -174,29 +167,50 @@ async def update_user(
         refuse_unless_manageable(actor, target)
     if data.get("mustChangePassword") is True and target.passwordHash is None:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "This account has no password to change.")
+
+
+def _copy_fields(target: User, data: dict[str, Any]) -> list[str]:
     changed: list[str] = []
     for field in ("name", "affiliation", "mustChangePassword"):
         if field in data and data[field] is not None and getattr(target, field) != data[field]:
             setattr(target, field, data[field])
             changed.append(field)
+    return changed
+
+
+async def _change_role(session: AsyncSession, actor: User, target: User, role: str) -> None:
+    before = target.role
+    await reader_profiles.apply_role_change(session, target, role, objects=media_bucket())
+    target.role = role
+    target.tokenVersion += 1
+    await credential_links.revoke_outstanding(session, target.id)
+    row = await access_roster.access_row(session, target.email)
+    if row is not None:
+        row.admitRole = role
+    await audit.record(
+        session,
+        action="users.role_changed",
+        actor=actor,
+        target_type="User",
+        target_id=target.id,
+        detail={"before": before, "after": role, "via": "users"},
+    )
+
+
+@router.patch("/{user_id}")
+async def update_user(
+    user_id: uuid.UUID,
+    payload: UserUpdate,
+    actor: User = Depends(lister),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    target = await _target(session, user_id)
+    data = payload.model_dump(exclude_unset=True)
+    _refuse_update(actor, target, data)
+    changed = _copy_fields(target, data)
     if "role" in data and data["role"] != target.role:
-        before = target.role
-        await reader_profiles.apply_role_change(session, target, data["role"], objects=media_bucket())
-        target.role = data["role"]
-        target.tokenVersion += 1
+        await _change_role(session, actor, target, data["role"])
         changed.append("role")
-        await credential_links.revoke_outstanding(session, target.id)
-        row = await access_roster.access_row(session, target.email)
-        if row is not None:
-            row.admitRole = data["role"]
-        await audit.record(
-            session,
-            action="users.role_changed",
-            actor=actor,
-            target_type="User",
-            target_id=target.id,
-            detail={"before": before, "after": data["role"], "via": "users"},
-        )
     if "mustChangePassword" in changed and target.mustChangePassword:
         target.tokenVersion += 1
     if changed:

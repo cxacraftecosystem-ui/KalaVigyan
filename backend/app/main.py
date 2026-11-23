@@ -20,7 +20,7 @@ from app.api.router import api_router
 from app.api.routes.oauth_well_known import router as oauth_well_known_router
 from app.api.routes.password_change import CONFIRM_PROVIDER_HEADER
 from app.api.voice_deps import voice_stored_search
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.db import dispose_engine, ping
 from app.core.deps import PASSWORD_CHANGE_REQUIRED_HEADER, TWO_FACTOR_SETUP_REQUIRED_HEADER
 from app.core.logging import (
@@ -101,6 +101,16 @@ def create_app() -> FastAPI:
         redoc_url=None,
         openapi_url="/openapi.json" if settings.backend_expose_docs else None,
     )
+    _attach_state(app)
+    app.add_exception_handler(Exception, _unhandled)
+    _add_middleware(app, settings)
+    _add_health_routes(app, settings)
+    app.include_router(api_router)
+    app.include_router(oauth_well_known_router)
+    return app
+
+
+def _attach_state(app: FastAPI) -> None:
     app.state.craft_index = CraftIndexStore()
     app.state.live_sources = LiveSourcesStore()
     app.state.shielded_work = ShieldedWork()
@@ -110,14 +120,16 @@ def create_app() -> FastAPI:
     app.state.craft_catalogue = new_catalogue_cache()
     app.state.craft_pages = PageCache()
 
-    @app.exception_handler(Exception)
-    async def unhandled(_: Request, exc: Exception) -> JSONResponse:
-        logger.exception("unhandled error", exc_info=exc)
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"detail": "Something went wrong. Try again.", "requestId": current_request_id()},
-        )
 
+async def _unhandled(_: Request, exc: Exception) -> JSONResponse:
+    logger.exception("unhandled error", exc_info=exc)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Something went wrong. Try again.", "requestId": current_request_id()},
+    )
+
+
+def _add_middleware(app: FastAPI, settings: Settings) -> None:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -151,6 +163,8 @@ def create_app() -> FastAPI:
     app.add_middleware(SecurityHeadersMiddleware, hsts=settings.is_production)
     app.add_middleware(RequestContextMiddleware)
 
+
+def _add_health_routes(app: FastAPI, settings: Settings) -> None:
     @app.get("/health", tags=["health"])
     async def health() -> dict[str, str]:
         return {"status": "ok", "release": settings.release, "version": API_VERSION}
@@ -174,10 +188,6 @@ def create_app() -> FastAPI:
             },
             headers={"cache-control": "no-store"},
         )
-
-    app.include_router(api_router)
-    app.include_router(oauth_well_known_router)
-    return app
 
 
 app = create_app()

@@ -15,6 +15,7 @@ once) and `docs/contracts/answer-eval.md` (The judge).
 | The evaluation that found it | [answer-eval.md](../contracts/answer-eval.md) |
 | The rubric counts each shown sentence once, and the judge reads each figure's quantities | [decision 0147](0147-time-market-and-figures-kept-true.md) |
 | The judge reads an expert panel's mirrored difference once per pair of seats | [decision 0165](0165-answers-counted-as-settled-asked-as-asked.md) |
+| A quantities row said elsewhere in the answer, read once where it is said | [decision 0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -98,42 +98,58 @@ def provider_rows_for_routing(
 async def task_state(
     session: AsyncSession, task: AiTask, *, normalised: bool = False, note: str | None = None
 ) -> dict[str, Any]:
-    rows = (
-        await session.execute(
-            select(RoutePolicy, Provider)
-            .join(Provider, Provider.id == RoutePolicy.providerId)
-            .where(RoutePolicy.task == task.value)
-            .order_by(RoutePolicy.ordinal)
-        )
-    ).all()
+    rows = await _task_routes(session, task)
     states = await key_states(session)
-    routes = []
-    for route, provider in rows:
-        spec = spec_for(provider.name)
-        model = model_for(provider.name, route.model)
-        state = states.get(provider.name, {})
-        routes.append(
-            {
-                "ordinal": route.ordinal,
-                "provider": provider.name,
-                "providerLabel": spec.label if spec else provider.name,
-                "model": route.model,
-                "modelLabel": model.label if model else route.model,
-                "enabled": route.enabled and provider.enabled,
-                "maxOutputTokens": route.maxOutputTokens,
-                "temperature": route.temperature,
-                "supported": supports(provider.name, route.model, task),
-                "dataClass": provider.dataClass,
-                **state,
-            }
-        )
-    effective = [
-        f"{r['provider']}:{r['model']}" for r in routes if r["enabled"] and r["supported"] and r["configured"]
-    ]
-    verified = [
-        f"{r['provider']}:{r['model']}" for r in routes if r["enabled"] and r["supported"] and r["rankable"]
-    ]
-    available = [
+    routes = [_route_entry(route, provider, task, states) for route, provider in rows]
+    return {
+        "task": task.value,
+        "label": TASK_LABELS.get(task, task.value),
+        "publicText": task in PUBLIC_TEXT_TASKS,
+        "routes": routes,
+        "effectiveChain": _chain(routes, "configured"),
+        "verifiedChain": _chain(routes, "rankable"),
+        "normalised": normalised,
+        "normalisedNote": note,
+        "availableModels": _available_models(task),
+    }
+
+
+async def _task_routes(session: AsyncSession, task: AiTask) -> list[Any]:
+    query = (
+        select(RoutePolicy, Provider)
+        .join(Provider, Provider.id == RoutePolicy.providerId)
+        .where(RoutePolicy.task == task.value)
+        .order_by(RoutePolicy.ordinal)
+    )
+    return list((await session.execute(query)).all())
+
+
+def _route_entry(
+    route: RoutePolicy, provider: Provider, task: AiTask, states: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
+    spec = spec_for(provider.name)
+    model = model_for(provider.name, route.model)
+    return {
+        "ordinal": route.ordinal,
+        "provider": provider.name,
+        "providerLabel": spec.label if spec else provider.name,
+        "model": route.model,
+        "modelLabel": model.label if model else route.model,
+        "enabled": route.enabled and provider.enabled,
+        "maxOutputTokens": route.maxOutputTokens,
+        "temperature": route.temperature,
+        "supported": supports(provider.name, route.model, task),
+        "dataClass": provider.dataClass,
+        **states.get(provider.name, {}),
+    }
+
+
+def _chain(routes: list[dict[str, Any]], ready: str) -> list[str]:
+    return [f"{r['provider']}:{r['model']}" for r in routes if r["enabled"] and r["supported"] and r[ready]]
+
+
+def _available_models(task: AiTask) -> list[dict[str, Any]]:
+    return [
         {
             "provider": spec.provider.value,
             "model": model.id,
@@ -144,17 +160,6 @@ async def task_state(
         for model in models_for(spec.provider, task)
         if supports(spec.provider, model.id, task)
     ]
-    return {
-        "task": task.value,
-        "label": TASK_LABELS.get(task, task.value),
-        "publicText": task in PUBLIC_TEXT_TASKS,
-        "routes": routes,
-        "effectiveChain": effective,
-        "verifiedChain": verified,
-        "normalised": normalised,
-        "normalisedNote": note,
-        "availableModels": available,
-    }
 
 
 def validate_entries(task: AiTask, entries: list[dict[str, Any]]) -> str | None:

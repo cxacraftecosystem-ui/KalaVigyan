@@ -66,11 +66,11 @@ def run(districts: gpd.GeoDataFrame, options: Options) -> Result:
             ("DISTRICT_MIN", "low"),
             ("DISTRICT_MAX", "high"),
         ):
-            rows.add(district, "elevation", "", stat, pick(record, key), "m", pixels=pixels, resolution=effective)
+            rows.add(district, "elevation", "", stat, pick(record, key), unit="m", pixels=pixels, resolution=effective)
         slope = raster.Grid(slope_degrees(grid.values, grid.transform), grid.transform, grid.crs)
         record = raster.zonal(slope, group, raster.continuous_ops(slope)).iloc[0]
         for stat, key in (("DISTRICT_MEAN", "mean"), ("DISTRICT_P10", "p10"), ("DISTRICT_P90", "p90")):
-            rows.add(district, "slope", "", stat, pick(record, key), "degree", pixels=pixels, resolution=effective)
+            rows.add(district, "slope", "", stat, pick(record, key), unit="degree", pixels=pixels, resolution=effective)
 
     failures = each_district(districts, "copdem", measure)
     return Result(COPDEM, rows.frame(), failures=failures, districts_without_cells=measured.without_cells())

@@ -141,10 +141,10 @@ def run_mrds(districts: gpd.GeoDataFrame, options: Options) -> Result:
             inside = assign_points(group, points)
             for _, district in group.iterrows():
                 found = sorted(inside.get(int(district["districtLgd"]), []), key=lambda p: p["depId"])
-                rows.add(district, "mineral_occurrences", "", "COUNT", float(len(found)), "sites")
+                rows.add(district, "mineral_occurrences", "", "COUNT", float(len(found)), unit="sites")
                 commodities = Counter(c for p in found for c in p["commodities"])
                 for code, count in sorted(commodities.items()):
-                    rows.add(district, f"mineral_occurrences_{code.lower()}", "", "COUNT", float(count), "sites")
+                    rows.add(district, f"mineral_occurrences_{code.lower()}", "", "COUNT", float(count), unit="sites")
                 geology.append(
                     geology_row(
                         district,
@@ -184,12 +184,13 @@ def run_glim(districts: gpd.GeoDataFrame, options: Options) -> Result:
             district["districtLgd"] = int(record["districtLgd"])
             classes = np.asarray(pick(record, "classes"), dtype=float)
             shares = np.asarray(pick(record, "shares"), dtype=float)
+            pixels = record["pixels"]
             for value, share in sorted(zip(classes, shares, strict=True), key=lambda p: -p[1]):
                 code, name = GLIM_CLASSES.get(int(value), (str(int(value)), "Unknown class"))
                 geology.append(
                     geology_row(district, GLIM, method, lithology=code, lithologyName=name, areaShare=float(share))
                 )
-                rows.add(district, f"lithology_{code}", "", "SHARE", float(share), "fraction", pixels=record["pixels"])
+                rows.add(district, f"lithology_{code}", "", "SHARE", float(share), unit="fraction", pixels=pixels)
     except Exception as error:
         failures.append(failure(districts, "glim", error))
     return Result(

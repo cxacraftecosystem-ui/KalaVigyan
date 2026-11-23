@@ -23,6 +23,7 @@ blocks and builders) and `docs/contracts/answer-eval.md` (the rubric, the judge 
 | A sentence once in a block | [decision 0134](0134-each-sentence-once-in-a-block.md) |
 | The evaluation and its floors | [decision 0133](0133-the-evaluation-scores-what-answers-read.md) |
 | The blocks as built | [explainer.md](../contracts/explainer.md) |
+| A table whose rows the answer already said, drawn under that sentence with its citation (amends item 1) | [decision 0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

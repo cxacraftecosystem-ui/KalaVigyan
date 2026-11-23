@@ -76,7 +76,7 @@ def add_shares(rows: Rows, district: pd.Series, record: pd.Series, effective: st
             "2021",
             "SHARE",
             found.get(code, 0.0),
-            "fraction",
+            unit="fraction",
             pixels=pixels,
             resolution=effective,
         )
