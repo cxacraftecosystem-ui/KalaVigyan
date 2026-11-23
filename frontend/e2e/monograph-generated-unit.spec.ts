@@ -3,9 +3,9 @@ import { createElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { AuthProvider } from "../components/AuthProvider";
-import { DocumentMasthead } from "../components/monograph/DocumentMasthead";
+import { KitMasthead } from "../components/monograph/KitMasthead";
 import { MonographPage } from "../components/monograph/MonographPage";
-import { MonographSources, sourceGroups, UNGRADED_GROUP } from "../components/monograph/MonographSources";
+import { MonographSources } from "../components/monograph/MonographSources";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { commonsThumb } from "../lib/commonsPicture";
 import { citationBibtex, citationText, citeKey, versionedUrl } from "../lib/monographCite";
@@ -13,6 +13,7 @@ import { parseMonographDocument, versionedDocumentPath } from "../lib/monographD
 import { monographMetadata } from "../lib/monographMetadata";
 import { pagePlan, railChapters } from "../lib/monographRenderLayout";
 import { componentPlace } from "../lib/monographScopes";
+import { sourceGroups, sourceSplit, UNGRADED_GROUP } from "../lib/monographSources";
 
 import { CAPTION, COMMONS_FILE, CREDIT, generatedDocument, HERO, LEDE, MASTHEAD_UNITS } from "./generatedMonographFixture";
 
@@ -31,22 +32,22 @@ test("a generated document opens with its label: kicker, name, place, GI, the pi
   expect(railChapters(plan).map((chapter) => chapter.key)).toEqual(["chem", "sources"]);
 });
 
-test("the label lies over the photograph cropped from its focal box, with caption and credit under it, then the lede beside its sources", () => {
+test("the masthead is the approved page's: the name over the cited lede, its tools and counts, and the label on the photograph", () => {
   const document = generatedDocument();
-  const html = markup(createElement(DocumentMasthead, { document, label: pagePlan(document).label! }));
+  const html = markup(createElement(KitMasthead, { document, label: pagePlan(document).label! }));
   expect(html.match(/<h1/g)).toHaveLength(1);
-  expect(html).toMatch(/<h1[^>]*><span class="kv-name">Bagh Print<\/span><\/h1>/);
-  expect(html).toContain('<p class="kv-label-kicker kicker"><span>Monograph</span><span>Textiles · Hand block printing</span></p>');
-  expect(html).toContain("Registered geographical indication");
-  expect(html).toContain("<span>Madhya Pradesh</span>");
-  expect(html).toContain("<span>Drawn from 2 sources</span>");
+  expect(html).toContain('<header class="kv-open"><div class="kv-wrap kv-open-grid"><div class="kv-open-q"><p class="kicker kv-open-k"><span>Monograph</span></p><h1 class="kv-q">Bagh Print</h1></div>');
+  expect(html).toContain('<p class="kicker">The monograph</p><p class="t-lede ans-lede"><span class="s">Bagh print is block printed on the Baghini <span class="nw">river.');
+  expect(html).toContain('<div class="kv-open-act"><a class="btn" href="#kv-cite-this">Cite this monograph</a></div>');
+  expect(html).toContain('<p class="kv-open-prov"><span class="kv-prov-n">Drawn from 2 sources</span>');
   expect(html).toContain('aria-label="Reliability of the 2 sources: 1 graded A, 1 graded B"');
-  expect(html).toContain("--focal-wide-box:inset(20% 20% 20% 20%)");
+  expect(html).not.toContain("more for the kin crafts");
+  expect(html).toContain('<div class="label-card mast-label on-photo kv-open-label" data-size="title"><p class="lc-k"><span>Monograph</span><span>Textiles · Hand block printing</span></p><p class="lc-title">Bagh Print</p>');
+  expect(html).toContain("<span>Registered geographical indication</span></span><span>Madhya Pradesh</span></div>");
   expect(html).toContain("/thumb/a/ab/I02.jpg/960px-I02.jpg");
-  expect(html).toMatch(/<img [^>]*alt="Picture I02" width="1600" height="1200" loading="eager" fetchPriority="high"/);
-  expect(html).toContain(`<figcaption class="kv-masthead-caption"><p class="kv-caption">${CAPTION}</p><p class="kv-credit">${CREDIT}</p></figcaption>`);
-  expect(html).toContain('<p class="lede-k">The monograph</p>');
-  expect(html).toContain('<li data-g="g1"><b>1</b><span>Bagh survey, 2020</span></li>');
+  expect(html).toMatch(/<img [^>]*width="1600" height="1200" alt="Picture I02" loading="eager" fetchPriority="high"/);
+  expect(html).toContain('style="object-position:50% 50%"');
+  expect(html).toContain(`<figcaption><p class="cap">${CAPTION}</p><p class="credit">${CREDIT}</p></figcaption>`);
   expect(html).not.toContain('data-testid="typographic-plate"');
 });
 
@@ -57,9 +58,11 @@ test("a generated document without a licensed photograph shows its typographic p
   document.specs = {};
   const label = pagePlan(document).label!;
   expect(label.picture).toBeNull();
-  const html = markup(createElement(DocumentMasthead, { document, label }));
+  const html = markup(createElement(KitMasthead, { document, label }));
+  expect(html).toContain('<div class="plate kv-open-photo"><div class="kv-open-stage"><div class="ph" data-app="">');
   expect(html).toContain('data-testid="typographic-plate"');
   expect(html).toContain("g-textile");
+  expect(html).toContain('<div class="label-card mast-label on-photo kv-open-label" data-size="title">');
   expect(html).not.toContain("<figure");
 });
 
@@ -84,7 +87,7 @@ test("the generated page draws one h1, a rail of numbered chapters without the o
 test("sources group by reliability, the best first, and a source without a grade closes the list", () => {
   const document = generatedDocument();
   document.content.sources.g2 = { ...document.content.sources.g2, grade: null };
-  expect(sourceGroups(document)).toEqual([
+  expect(sourceGroups(document, sourceSplit(document).own)).toEqual([
     { title: "Peer-reviewed or official", keys: ["g1"] },
     { title: UNGRADED_GROUP, keys: ["g2"] }
   ]);

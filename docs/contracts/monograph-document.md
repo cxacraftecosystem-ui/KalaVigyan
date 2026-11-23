@@ -159,6 +159,15 @@ cited from the facts they rest on, so its numerals are the page's like every sen
 A picture's spec is the full `PicturePlateSpec` (`checked_spec`, every field written); a picture
 whose file is off the picture contract is left out.
 
+Each of its sources carries the stored source's `kind` (`Source.kind`, one of `SOURCE_KINDS`,
+written by `monograph_generated_units.stored_source`; decision 0183), the page's own and its kin
+crafts' alike, so the renderer draws the sources chapter in the approved page's groups
+(`monograph-renderer.md`, Sources). The field is optional and left out when absent: an authored
+document's sources carry none, so Kutch Ajrakh's stored document is unchanged, and a generated
+document stored before the field carries none until its stored copy is rebuilt, which the page
+code's fingerprint in its stamp brings about. The schema version stays 1, as it did when
+`chapters` and a unit's `lang` were added: an older reader of the document loses nothing it read.
+
 ### Facts no section cites
 
 A field's facts that a reader can see (`retrieval.md`, A fact a reader can see) and that no published

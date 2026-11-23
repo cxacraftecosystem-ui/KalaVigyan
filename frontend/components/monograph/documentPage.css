@@ -1,0 +1,7 @@
+.kv-monograph .spread.kv-run + .spread.kv-run {
+  margin-block-start: var(--space-stack);
+}
+
+.kv-monograph .kv-open-photo .ph > .kv-plate {
+  block-size: 100%;
+}

@@ -80,17 +80,18 @@ test("a chapter's heading stays in the reading column and each group takes its o
 test("the curated page draws the board's fact grid, record strip, cited disagreements and entries", () => {
   const html = provided(createElement(MonographPage, { document: groupedDocument() }));
   expect(html).toContain('<div class="kv-group" data-group="facts"><dl class="glance"><div><dt>Centres</dt><dd>');
-  expect(html).toContain('<h3 class="kv-group-h">In the record</h3><ol class="rec-list"><li><p class="rec-when">1962</p><p class="rec-text">');
+  expect(html).toContain('<h3 class="kv-group-h" id="glance-record-h">In the record</h3><ol class="rec-list"><li><p class="rec-when">1962</p><p class="rec-text">');
   expect(html).toContain('<div class="kv-differs"><section class="kv-differ-item"><h4 class="kv-differ-topic">Whether the river water matters to the red</h4>');
   expect(html.match(/class="kv-differ-item"[\s\S]*?<\/section>/)?.[0].match(/<p>/g)).toHaveLength(2);
   expect(html).toContain('<section class="kv-entry"><h4 class="kv-entry-name">Khatri</h4>');
   expect(html).not.toContain("kv-terms");
 });
 
-test("a curated page's rail follows its masthead and lede, and the masthead keeps the app's own styles", () => {
+test("a curated page's rail follows its masthead, its lede and its table of contents", () => {
   const html = provided(createElement(MonographPage, { document: groupedDocument() }));
-  expect(html.indexOf('class="kv-rail"')).toBeGreaterThan(html.indexOf('class="kv-page kv-doc-open" data-app=""'));
+  expect(html.indexOf('class="kv-rail"')).toBeGreaterThan(html.indexOf('<header class="kv-open">'));
   expect(html.indexOf('class="kv-rail"')).toBeLessThan(html.indexOf('id="glance"'));
+  expect(html.indexOf('class="kv-rail"')).toBeGreaterThan(html.indexOf('<nav class="toc kv-toc" aria-label="Chapters of this monograph">'));
   expect(html.indexOf('class="kv-rail"')).toBeGreaterThan(html.indexOf('id="kv-main"'));
   expect(html.match(/class="kv-rail"/g)).toHaveLength(1);
 });

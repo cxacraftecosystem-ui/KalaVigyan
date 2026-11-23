@@ -151,7 +151,7 @@ flowchart LR
 | [0103](0103-mcp-server-read-slice.md) | The MCP server, slice 1: public read tools over our own JSON-RPC framing | [0111](0111-fewer-mcp-tools.md) |
 | [0104](0104-image-contributions-intake.md) | Image contributions: declared, read byte by byte, private until approved | [0109](0109-image-formats-and-screens.md) |
 | [0105](0105-ajrakh-page-as-structured-content.md) | The Ajrakh page as structured content, rebuilt by a static build | · |
-| [0106](0106-one-monograph-template-for-every-page.md) | One monograph template for every page, reached through fragments | [0145](0145-monograph-pages-and-speed-without-debt.md) and [0164](0164-every-cited-sentence-a-unit-and-chapter-names-in-the-content.md) |
+| [0106](0106-one-monograph-template-for-every-page.md) | One monograph template for every page, reached through fragments | [0145](0145-monograph-pages-and-speed-without-debt.md), [0164](0164-every-cited-sentence-a-unit-and-chapter-names-in-the-content.md) and [0183](0183-the-shared-template-draws-the-approved-page.md) |
 | [0107](0107-craft-articles-in-english-with-room-for-translation.md) | Craft articles are written in English, with room for translations | [0117](0117-pages-in-other-languages.md) |
 | [0108](0108-structure-proposals-become-curated-facts.md) | An approved structure proposal becomes a curated fact of its dossier | [0111](0111-fewer-mcp-tools.md), [0162](0162-unused-craft-page-chapters-retired.md), [0169](0169-mcp-follow-ups-kept-true.md), [0171](0171-imports-keep-approvals-and-differences-settle.md) |
 | [0109](0109-image-formats-and-screens.md) | Pictures in every common format, given from the chat and screened before review | · |
@@ -221,11 +221,12 @@ flowchart LR
 | [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) | A production downgrade undoes one revision unless its count is confirmed, an answer fits its limits, repeats nothing its explainer shows and outlives a source that cannot be built, and the rubric's cited part is a share | · |
 | [0175](0175-production-checks-read-what-the-page-shows.md) | The production checks read what the page shows, the web parses every stream event, the answer control never asks again, and a section stores only what it showed | · |
 | [0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) | Listen plays as it narrates, the admin build waits for the API main needs, evaluation runs are kept, and the Gemini voice is a fixture | · |
-| [0177](0177-differences-named-and-the-monograph-shell-measured.md) | A difference is named from what the judge already answers, the kind preview is served its themes, and what holds Kutch Ajrakh's authored shell is measured | · |
+| [0177](0177-differences-named-and-the-monograph-shell-measured.md) | A difference is named from what the judge already answers, the kind preview is served its themes, and what holds Kutch Ajrakh's authored shell is measured | [0183](0183-the-shared-template-draws-the-approved-page.md) |
 | [0178](0178-seed-authors-whole-and-goldens-from-recorded-data.md) | The seed names an organisation as one author, Kutch Ajrakh's fixture market shows its curated price, and the goldens show recorded rain, a placed component and a craft's own names | · |
 | [0179](0179-transcript-windows-a-chunk-kind-linked-shared-concepts-and-one-paid-clip.md) | A transcript window is a chunk kind, a craft reads the shared concepts the graph links to it, and the paid checks make one Gemini clip when asked | · |
 | [0180](0180-places-abroad-yearly-series-picture-levels-figures-and-kin-crafts.md) | A place abroad sits in its own inset, a yearly series is one row, picture levels come from glossary tags, the fibre asks paper figures, and a generated page shows its kin crafts | · |
 | [0181](0181-names-kept-out-of-pictures-reference-lists-and-the-wood-handbook.md) | A craft's community and person names stay out of AI pictures, Expert research follows OpenAlex reference lists, and the Wood Handbook's cited chapters are its passages | · |
+| [0183](0183-the-shared-template-draws-the-approved-page.md) | The shared template draws the approved page's masthead, contents, margin notes, sub-rail and source groups for every generated page | · |
 
 ## How this document is kept true
 

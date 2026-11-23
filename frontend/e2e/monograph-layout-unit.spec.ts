@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 import { gradeTally, kitCites, scriptJson, sentenceCounts } from "../lib/monographRenderKit";
-import { chapterOrder, citedSources, componentBundles, nestedComponents, pagePlan, placedComponents, type Passage } from "../lib/monographRenderLayout";
+import { chapterOrder, componentBundles, nestedComponents, pagePlan, placedComponents, type Passage } from "../lib/monographRenderLayout";
+import { sourceSplit } from "../lib/monographSources";
 
 import { ASK, fixtureDocument, LIST, PICTURE, QUIZ } from "./monographFixture";
 
@@ -53,9 +54,9 @@ test("the sources chapter lists every cited source in number order in place of i
   const document = fixtureDocument();
   const [, , last] = pagePlan(document).chapters[2].blocks;
   expect(last).toEqual({ kind: "sources", replaces: ["u0020", "u0021"] });
-  expect(citedSources(document)).toEqual(["g1", "g2"]);
+  expect(sourceSplit(document)).toEqual({ own: ["g1", "g2"], kin: [] });
   expect(sentenceCounts(document).get("g1")).toBe(2);
-  expect(gradeTally(document, citedSources(document))).toEqual({ total: 2, grades: [{ grade: "A", count: 1 }, { grade: "B", count: 1 }] });
+  expect(gradeTally(document, sourceSplit(document).own)).toEqual({ total: 2, grades: [{ grade: "A", count: 1 }, { grade: "B", count: 1 }] });
 });
 
 test("a generated document with one chapter, no masthead picture and no head reads without empty chapters", () => {

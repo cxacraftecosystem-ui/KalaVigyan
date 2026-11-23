@@ -9,6 +9,7 @@ from pydantic import Field, model_validator
 
 from .base import ContractModel
 from .monograph_page import COMPONENT_LABEL_PATTERN
+from .spec_strings import spec_strings
 from .unit_ids import UNIT_REF_PATTERN
 
 __all__ = [
@@ -247,19 +248,9 @@ SPEC_MODELS_TOOLS: Mapping[str, type[ContractModel]] = MappingProxyType(
 
 def spec_unit_refs(spec: ContractModel) -> list[str]:
     return [
-        value for value in _strings(spec.model_dump(mode="json")) if re.fullmatch(UNIT_REF_PATTERN, value)
+        value for value in spec_strings(spec.model_dump(mode="json")) if re.fullmatch(UNIT_REF_PATTERN, value)
     ]
 
 
 def spec_component_labels(spec: ContractModel, labels: set[str]) -> list[str]:
-    return [value for value in _strings(spec.model_dump(mode="json")) if value in labels]
-
-
-def _strings(value: Any) -> list[str]:
-    if isinstance(value, str):
-        return [value]
-    if isinstance(value, list):
-        return [found for item in value for found in _strings(item)]
-    if isinstance(value, dict):
-        return [found for item in value.values() for found in _strings(item)]
-    return []
+    return [value for value in spec_strings(spec.model_dump(mode="json")) if value in labels]

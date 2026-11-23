@@ -13,6 +13,7 @@ from pydantic import Field, model_validator
 
 from app.core.errors import InvalidInput
 from app.models.component_kinds import DOCUMENT_KINDS
+from app.models.enums import SOURCE_KINDS
 
 from .base import ContractModel, absent, empty
 from .vocabulary import ANSWER_LANGUAGE_SPECS, CANONICAL_LANGUAGE, Discipline, PieceKind, text_direction
@@ -86,6 +87,7 @@ class CitedSource(ContractModel):
     url: str | None
     extra: str | None
     dossier_source_id: str | None
+    kind: Literal[*SOURCE_KINDS] | None = Field(default=None, exclude_if=absent)
 
 
 class Quote(ContractModel):

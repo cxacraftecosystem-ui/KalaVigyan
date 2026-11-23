@@ -7,7 +7,7 @@ now (decision 0106, round 3c); curated crafts too since round 6, whose documents
 structure, so the tabbed craft screen is retired. Engineers changing the renderer, a native view or
 a page tool read it.
 
-Last reviewed: 2026-11-23.
+Last reviewed: 2026-11-24.
 
 | For | Read |
 |---|---|
@@ -41,7 +41,10 @@ flowchart LR
 | The page plan | `lib/monographRenderLayout.ts` |
 | What the kit's script reads | `lib/monographRenderKit.ts` |
 | The server fetch and the preview metadata | `lib/monographRenderServer.ts` |
-| The generated label masthead | `lib/monographMasthead.ts` |
+| The generated label masthead | `lib/monographMasthead.ts`, `components/monograph/KitMasthead.tsx` and `MastheadPlateView.tsx` |
+| The page's own sources and the kin crafts', and the source groups | `lib/monographSources.ts` |
+| Margin notes, spreads and a chapter's sections | `lib/monographNotes.ts`, `components/monograph/NoteList.tsx`, `ChapterSubrail.tsx` |
+| The table of contents | `components/monograph/MonographContents.tsx` |
 | The kit scope of each kind | `lib/monographScopes.ts` |
 | Cite this | `lib/monographCite.ts`, `components/craft/CiteThis.tsx` |
 | A craft page's metadata | `lib/monographMetadata.ts` |
@@ -119,7 +122,9 @@ The plan (`pagePlan`) is pure and tested:
   is the kicker over the `h1` (the document's title), the others the standfirst, the cited one the
   lede (`p.t-lede.ans-lede`); a `picture_plate` component right after them is the masthead
   picture, drawn in `.kv-open-grid`. Then "Drawn from N sources" and the A to D strip, counted from
-  the sources the units cite; a Listen button when the document has an `audio_player`, and a link
+  the page's own sources (`sourceSplit`: every source the sources chapter lists, less those only a
+  kin crafts component's sentences cite), "N more for the kin crafts" linking to `#kv-src-kin` when
+  there are such sources; a Listen button when the document has an `audio_player`, and a link
   to the `citation_tool` component's anchor. A document without a picture keeps the masthead text.
 - **Passages**: runs of top-level units (layout `within` null) between components, each in
   `div.bx.bx-pt > div.screen`. The first passage holding the chapter's `h2` or numeral is the head:
@@ -130,16 +135,40 @@ The plan (`pagePlan`) is pure and tested:
   one cited list (`CitedList`: `ul.kv-list` under a hairline, each item a hairline row in reading
   text at body-sm with its sentence's citation cluster, as a field's listed facts are drawn,
   `monograph-document.md`); `dt`/`dd` runs `dl.kv-terms`. An `li` that starts with a bold source number is a
-  margin note: `aside.margin.note > ul > li[data-g=<source key>]`.
+  margin note: `aside.margin.note > ul > li[data-g=<source key>]`, and such a passage keeps one
+  spread.
+- **Margin notes beside their sentences** (decision 0183): any other passage's column is cut into
+  runs (`spreadRuns`): an `h3` opens a run and a paragraph, list or other body unit closes it, so a
+  run is a heading or two and the text after them. Each run is its own `div.spread.kv-run` (the
+  head run `div.spread.railed.sec-head.kv-run`), with `aside.margin.note` listing, as
+  `li[data-g] > b + span` ("title, year"), the sources its sentences cite that no earlier run of
+  the chapter has listed, in number order (`chapterNotes`). From 1200px they stand in the margin
+  column beside the run; below it the kit folds them away, as on the approved page.
+- **A chapter's sections**: each `h3` (a heading unit or a group's heading) carries the id
+  `<chapter>-<unit id>`; a chapter of two or more such sections draws the approved sub-rail after
+  its head (`div.bx.bx-chem > nav.subrail` named "In this chapter: <chapter>", one link per
+  section); a chapter without a head passage draws it first, inside `div.wrap`. The sub-rail
+  draws no swatch, since the document gives a section no colour.
 - **Label masthead** (`labelMasthead`, a generated document): when the first chapter holds an
   `h1` unit, the `p` before it is the kicker, the `dt`/`dd` run after it the place and GI, the
   cited `p` run after those the lede, and the first `picture_plate` the photograph.
-  `DocumentMasthead` draws it with the editorial `Masthead`: the `SpecimenLabel` (masthead variant,
-  the name as `h1`, "Drawn from N sources" with the A to D strip) over the 16:7.4 photograph cropped
-  from its focal box with its caption and credit under it, the 4:3 photograph first and the label
-  after on paper below 1024px; the typographic plate on the family's ground when there is no
-  photograph. The lede follows in the reading column (`div.spread.mast-lede`, "The monograph" in
-  the rail, its sources as margin notes).
+  `KitMasthead` draws it in the approved page's form (decision 0183): `div.bx.bx-mb >
+  section.screen > header.kv-open > div.kv-wrap.kv-open-grid` with the kicker's first part over
+  the name as `h1.kv-q`, then "The monograph" over the lede as `p.t-lede.ans-lede`, the tools
+  (`div.kv-open-act`: Listen with an `audio_player`, Cite this monograph to the `citation_tool`'s
+  anchor or else to the page's citation, `#kv-cite-this`) and the counts (`p.kv-open-prov`, as the
+  masthead above), and the photograph as `figure.plate.kv-open-photo` (`div.kv-open-stage >
+  div.ph > img` at the standard Commons widths, its focal box as `object-position`) with the label
+  card on it (`div.label-card.mast-label.on-photo.kv-open-label`, `data-size` `title` for a name of
+  18 characters or fewer, else `h1`: the kicker's parts, the name as `p.lc-title`, the GI line with
+  its seal and the place) and the caption units and credit under it (`p.cap`, `p.cap.kv-look`,
+  `p.credit`). Without a photograph the label card lies on the family's typographic plate in the
+  same stage. No date is drawn, since the document carries none.
+- **Table of contents** (a labelled page with its masthead): `MonographContents` follows the
+  masthead in the opening chapter, `div.bx.bx-chem > div.screen > div.wrap > div.spread > div.main >
+  nav.toc.kv-toc` ("Chapters of this monograph"): "The monograph in N chapters", one
+  line saying what a row opens, and each numbered chapter as `a[href="#<key>"] > b + span`, its
+  number and name.
 - **Components** keep their layout place, except one another component places (layout `within`,
   a label named anywhere in a spec, or a `<kv-slot component="<label>"></kv-slot>` in a fragment),
   which its owner draws. A top-level component drawn from its spec sits in the frame its kind has
@@ -147,13 +176,21 @@ The plan (`pagePlan`) is pure and tested:
   the template has them, a plate in the reading column); a fragment brings its own.
 - **Sources**: the chapter keyed `sources` draws every source a unit cites, in number order
   (`div.sources.kv-sources`, rows `li.kv-src-li` with `button.src[data-g][aria-pressed]`, byline,
-  grade in words, "Supports N sentences here", "Open the source"). The document does not say which
-  group a source belongs to, so a passage of bare headings in that chapter (Ajrakh's five group
-  names) is replaced by the one list. A generated document's list (`MonographSources`) groups its
-  sources by reliability, A first, those without a grade last, under a line counting them, with
-  `#kv-src-status` for the kit's lighting; then Cite this monograph (`CiteThis`: Text or BibTeX, the
-  lower-case versioned address `/crafts/<slug>/v<N>`, one Copy citation button, the access date of
-  the reader's day).
+  grade in words, "Supports N sentences here", "Open the source"). An authored document does not
+  say which group a source belongs to, so a passage of bare headings in that chapter (Ajrakh's five
+  group names) is replaced by the one list. A generated document's list (`MonographSources`) draws
+  the page's own sources under a line counting them, `#kv-src-status` for the kit's lighting, then
+  the groups: when every own source carries its stored `kind` (`monograph-document.md`), the
+  approved page's five (`kindGroup`): Government records (`GI_JOURNAL`, `GOVERNMENT_REPORT`),
+  Compound records (`COMPOUND_RECORD`), Museums and references (a publisher naming a museum,
+  archive or gallery, or an `ENCYCLOPEDIA`), Scholarship (`PAPER`, `BOOK`, `BOOK_CHAPTER`,
+  `DATASET`, or a publisher naming a university or institute) and Community and press (the rest);
+  a document stored before sources carried their kind groups them by reliability, A first, those
+  without a grade last. The kin crafts' sources follow apart, as on the approved page
+  (`div.kv-src-kin#kv-src-kin`: "For the kin crafts", how many and in which chapter, counted apart
+  from the page's own, and the rows in a closed `details.kv-more.kv-src-more`). Then Cite this
+  monograph (`CiteThis` in `#kv-cite-this`: Text or BibTeX, the lower-case versioned address
+  `/crafts/<slug>/v<N>`, one Copy citation button, the access date of the reader's day).
 - **A head passage** without a numeral unit gets `p.chapter-no.in-main` with the chapter number.
 
 ## A craft without a monograph
@@ -338,6 +375,7 @@ when any of them changes (`kv-prefs`). The menu's display tools change the app's
 | The rail and chapter menu, and Kutch Ajrakh's chapter names as the approved page gives them | `frontend/e2e/monograph-rail-unit.spec.ts` |
 | A craft's route draws its document or its record | `frontend/e2e/craft-monograph-unit.spec.ts` and `craft-without-monograph-unit.spec.ts` |
 | Generated documents and the answer block kind | `frontend/e2e/monograph-generated-unit.spec.ts` and `monograph-blocks-unit.spec.ts` |
+| The approved page's masthead, contents, margin notes, sub-rail and source groups on a generated page, at 360, 768 and 1440 in light and dark | `frontend/e2e/monograph-template-unit.spec.ts`, and `monograph-template.smoke.spec.ts` against the built site |
 | A chapter's listed facts drawn as one cited list after its prose | `frontend/e2e/cited-list-unit.spec.ts` |
 | Native views and the whole shell | `frontend/e2e/monograph-native-unit.spec.ts`, and `monograph-native.smoke.spec.ts` against the built site |
 | The page tools | `frontend/e2e/monograph-tools-unit.spec.ts` and `backend/tests/research/test_component_specs_tools.py` |

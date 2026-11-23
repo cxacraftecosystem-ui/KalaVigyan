@@ -24,6 +24,7 @@ left of the authored shell. The contracts are `docs/contracts/knowledge-writes.m
 | The approved page, served as built | [decision 0100](0100-ajrakh-monograph-served-as-built.md) |
 | The gates, the judge and the flag | [knowledge-writes.md](../contracts/knowledge-writes.md) |
 | The general kinds and the kind fixtures | [component-specs-general.md](../contracts/component-specs-general.md) |
+| The shared template drawing the parts the shell held for every generated page (amends item 5) | [decision 0183](0183-the-shared-template-draws-the-approved-page.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

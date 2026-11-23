@@ -16,6 +16,7 @@ decision 0101 build step 2's second half and item 14; builds on decision 0105.
 | What built on it | [0107 Craft articles are written in English, with room for translations](0107-craft-articles-in-english-with-room-for-translation.md): one monograph template |
 | Every spec names its units by one pattern, with generated picture units in a named range | [decision 0145](0145-monograph-pages-and-speed-without-debt.md) |
 | Every cited sentence of Kutch Ajrakh a unit, 73 native views on the authored page, and an authored page's chapter names in its content | [decision 0164](0164-every-cited-sentence-a-unit-and-chapter-names-in-the-content.md) |
+| The approved page's masthead, contents, margin notes, sub-rail and source groups drawn by the template (amends item 3) | [decision 0183](0183-the-shared-template-draws-the-approved-page.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

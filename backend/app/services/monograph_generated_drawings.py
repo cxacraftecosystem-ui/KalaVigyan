@@ -11,6 +11,7 @@ from app.core.errors import InvalidInput
 from app.research.monograph_document import FILE_SEPARATOR, LABEL_SEPARATOR, spec_file_name
 from app.research.monograph_page import SLOT_PATTERN, MonographContent, Quote, TextUnit, render_page
 from app.research.page_report_rules import node_text
+from app.research.spec_strings import spec_strings
 
 from .monograph_generated_units import SourceBook
 from .open_work_pages import CONTENT_FILE, MONOGRAPHS_DIR
@@ -42,7 +43,7 @@ def fragment_file_name(label: str) -> str:
 
 
 def spec_unit_keys(spec: Mapping[str, Any]) -> set[str]:
-    return {value for value in _strings(spec) if UNIT_NAME.fullmatch(value)}
+    return {value for value in spec_strings(spec) if UNIT_NAME.fullmatch(value)}
 
 
 @dataclass(frozen=True)
@@ -242,13 +243,3 @@ def _cite_keys(nodes: Sequence[Any]) -> list[str]:
                 found.append(str(node["key"]))
             found += _cite_keys(node.get("c", []))
     return found
-
-
-def _strings(value: Any) -> list[str]:
-    if isinstance(value, str):
-        return [value]
-    if isinstance(value, Mapping):
-        return [found for item in value.values() for found in _strings(item)]
-    if isinstance(value, list | tuple):
-        return [found for item in value for found in _strings(item)]
-    return []

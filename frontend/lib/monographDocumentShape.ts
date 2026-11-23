@@ -66,7 +66,8 @@ const sourceShape: Shape<MonographSource> = object<MonographSource>({
   grade: nullable(text),
   url: nullable(text),
   extra: nullable(text),
-  dossierSourceId: nullable(text)
+  dossierSourceId: nullable(text),
+  kind: optional(text)
 });
 
 const quoteShape: Shape<MonographQuote> = object<MonographQuote>({ source: text, locator: nullable(text), quote: nullable(text) });

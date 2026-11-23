@@ -103,6 +103,7 @@ def stored_source(ref: Mapping[str, Any]) -> CitedSource:
         url=ref.get("url"),
         extra=None,
         dossier_source_id=None,
+        kind=ref.get("kind"),
     )
 
 

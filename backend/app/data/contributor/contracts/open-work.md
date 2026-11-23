@@ -702,7 +702,8 @@ is the sentences of the opening; a picture is a `picture_plate`.
 | 24 | every field on the page has 3 or more sentences |
 | 25 | no sentence is told twice, and no figure's unit of 40 characters or more repeats one |
 | 26 | no text admits a gap ("not yet", "coming soon", "no data") and no field heading stands without a sentence |
-| 5, 8, 11, 12, 13, 16, 19, 22 | judged, each with what to look at |
+| 5 | judged, with the counts the masthead draws: the sources of the page's own sentences and, apart, those only a `related_crafts` component's sentences cite (`research/page_report_sources.py`) |
+| 8, 11, 12, 13, 16, 19, 22 | judged, each with what to look at |
 
 ## Drafts (decision 0110)
 

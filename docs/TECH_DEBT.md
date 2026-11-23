@@ -621,33 +621,35 @@ Last reviewed: 2026-11-22.
 ### Kutch Ajrakh's React page draws the authored shell
 
 - **What:** `MonographDocument.shell` carries the approved page's main markup with its units filled
-  and the seven components "Fragments are a bridge" names inlined from their fragments, so the
-  React page matches the approved one by construction (decision 0106, the first parity run); 73
-  components are native views inside it and the rail takes the content's chapter names (decision
-  0164). Measured on 2026-11-23 (decision 0177), the shell's own markup outside units and
-  components is 1,633 elements and 365 runs of hand-written text in 13 chapters, which
-  `MonographDocumentPage` does not draw: the masthead with its tools and counts (44 sources plus 24
-  for the kin crafts, where the React masthead counts every cited source, 64), the answer's table
-  of contents (two of its seven entries are not units), margin notes with fixed entries, each
-  chapter's own wrappers (screens, articles, spreads, the chemistry sub-rail, the colour key) and
-  the sources chapter's five groups, 44 hand-made entries holding 320 of those text runs. The
-  `source-list` component is only the list's live status line (`setting: "status"`), because the
-  approved markup gives the groups no element an anchor (`#id` or `[attribute="value"]`) selects
-  once: the list's wrapper repeats in the kin crafts' list. Stored versions are never changed
-  (`monograph-document.md`, Versions), so every edition stored with a shell keeps it, and
-  `/crafts/<slug>/v<N>` serves them.
-- **Clears it:** the React page drawing the masthead and its counts (the kin crafts' sources are
-  the ones the `kin-craft-sources` component lists), the table of contents, the margin notes, the
-  sources chapter's groups (from a `source-list` spec that carries them, once an anchor can select
-  them or the owner gives them an element) and each chapter's wrappers, proven by the native unit
-  spec and the smoke on the golden document and by Monograph parity (`check=all`) after the release
-  that loads it; then the shell retired for new editions, and for the stored ones either kept
-  readable or stored again with the owner's leave. The wrappers are hand-made per chapter, so this
-  needs either structure the page plan draws for any authored page (each chapter's frames named, as
-  `componentPlace` names a component's), into which the template's main markup is ported, or the
-  owner's leave to let a React drawing become the approved reference, as the ground figure's capture
-  did (decision 0151). The template's main carried as a tree of elements was weighed and refused
-  (decision 0177): it is the same hand-made markup under another name.
+  and the seven components "Fragments are a bridge" names inlined from their fragments, so Kutch
+  Ajrakh's React page matches the approved one by construction (decision 0106, the first parity
+  run); 73 components are native views inside it and the rail takes the content's chapter names
+  (decision 0164). Since decision 0183 the shared template (`MonographDocumentPage`) draws the
+  approved page's parts for every generated page and every page an MCP draft builds: the masthead
+  with the label on the photograph, its tools and the page's own sources counted apart from the kin
+  crafts', the table of contents, margin notes beside each paragraph from 1200px, the sub-rail of a
+  chapter's sections, and the sources chapter's five groups with the kin crafts' sources apart.
+  Kutch Ajrakh's own document is not drawn that way yet, because what its page shows is not all in
+  its content: the shell's 365 runs of hand-written text in 13 chapters (decision 0177; the
+  masthead's name, its answer and curation dates and its second count, two table of contents
+  entries, chapter heads, the five group names and 44 hand-made source entries) are not units; its
+  opening has no `h1` unit, so the template draws it as an authored masthead, not the label on the
+  photograph; its sources carry no `kind`, so they would be grouped by reliability; and its
+  chapter-specific frames (the cloth chapter's four colours and colour key, the what-if, people and
+  reading tools screens) have no structure the template draws for any page. Stored versions are
+  never changed (`monograph-document.md`, Versions), so every edition stored with a shell keeps it,
+  and `/crafts/<slug>/v<N>` serves them.
+- **Clears it:** Kutch Ajrakh's content carrying what its shell writes by hand (its opening's label
+  units, each source's `kind` from its dossier source, its hand-written heads and entries as units
+  or as the sources themselves), and its frames either given structure the template draws for any
+  page (a material's depicted colour on the section it colours, for the colour key) or, with the
+  owner's leave, the template's drawing let stand for them, as the ground figure's capture did
+  (decision 0151); then its document drawn by the shared template compared with the approved page
+  by Monograph parity (`check=all`) on a preview after the release that loads it, the owner's
+  sight of the two side by side, and only then its route switched from `MonographShellPage` to
+  `MonographDocumentPage`, the shell retired for new editions and the stored ones kept readable or
+  stored again with the owner's leave. The template's main carried as a tree of elements was
+  weighed and refused (decision 0177): it is the same hand-made markup under another name.
 
 ### The authored shell keeps the app's CSS out by name
 

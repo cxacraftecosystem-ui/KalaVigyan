@@ -203,10 +203,6 @@
     }
   }
 
-  .kv-doc-open {
-    padding-top: 1.75rem;
-  }
-
   .kv-unc-head {
     padding-top: 0.25rem;
   }
@@ -215,27 +211,6 @@
     .kv-unc-head {
       padding-top: 0;
     }
-  }
-
-  .kv-prov {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.375rem 0.875rem;
-    color: var(--ink-3);
-  }
-
-  .kv-rel-strip {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 0.625rem;
-    font-variant-numeric: lining-nums tabular-nums;
-  }
-
-  .kv-rel-count {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3125rem;
   }
 
   .kv-unc-body {

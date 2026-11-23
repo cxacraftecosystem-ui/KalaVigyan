@@ -9,6 +9,7 @@ from types import MappingProxyType
 from typing import Any
 
 from app.research.monograph_page import COMPONENT_SLOT, SLOT_PATTERN
+from app.research.spec_strings import spec_strings
 
 from .monograph_document import (
     MONOGRAPHS_DIR,
@@ -194,7 +195,7 @@ def _last(chain: list[tuple[str, ...]], name: str) -> int | None:
 
 def _parent(source: HomeSource, label: str, homes: Mapping[str, ComponentHome]) -> str | None:
     for parent in homes:
-        named = _strings(source.specs.get(parent))
+        named = spec_strings(source.specs.get(parent))
         slotted = SLOT_PATTERN.findall(source.fragments.get(parent, ""))
         if label in named or (COMPONENT_SLOT, label) in slotted:
             return parent
@@ -204,16 +205,6 @@ def _parent(source: HomeSource, label: str, homes: Mapping[str, ComponentHome]) 
 def _nested(source: HomeSource, label: str, parent: ComponentHome, within: str) -> ComponentHome:
     root = _root(source.fragments.get(label))
     return ComponentHome(kind=source.kinds[label], scope=parent.scope, frame=(), root=root, within=within)
-
-
-def _strings(value: Any) -> set[str]:
-    if isinstance(value, str):
-        return {value}
-    if isinstance(value, Mapping):
-        return {found for item in value.values() for found in _strings(item)}
-    if isinstance(value, list):
-        return {found for item in value for found in _strings(item)}
-    return set()
 
 
 def _root(fragment: str | None) -> str | None:

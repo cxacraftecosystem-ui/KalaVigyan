@@ -15,7 +15,7 @@ export function supportLine(count: number): string {
   return count === 1 ? "Supports 1 sentence here" : `Supports ${count} sentences here`;
 }
 
-function SourceRow({ sourceKey, source, count }: { sourceKey: string; source: MonographSource; count: number }) {
+export function SourceRow({ sourceKey, source, count }: { sourceKey: string; source: MonographSource; count: number }) {
   const byline = sourceByline(source);
   const grade = source.grade && GRADES.has(source.grade) ? (source.grade as SourceReliability) : null;
   return (

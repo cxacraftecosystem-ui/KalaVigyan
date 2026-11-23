@@ -20,6 +20,7 @@ export type MonographSource = {
   url: string | null;
   extra: string | null;
   dossierSourceId: string | null;
+  kind?: string;
 };
 export type MonographQuote = { source: string; locator: string | null; quote: string | null };
 export type MonographUnit = { chapter: string; tag: string; field: string | null; nodes: MonographNode[]; claimIds: string[]; lang?: string };

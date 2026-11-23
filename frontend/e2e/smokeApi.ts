@@ -8,11 +8,13 @@ import { MONOGRAPH_DOCUMENT_PATH } from "../lib/monographDocument";
 
 import { fragmentDocumentText, goldenText } from "./monographNative";
 import { nativeDocumentPath } from "./monographNativeBrowser";
+import { templateDocument } from "./templateMonographFixture";
 import { withUnknownFields } from "./unknownFields";
 
 export const FRAGMENT_VERSION = 2;
 export const LATER_BACKEND_CRAFT = "Farrukhabad-Prints";
 export const LATER_BACKEND_NAME = "Farrukhabad Prints";
+export const TEMPLATE_CRAFT = "Bagh-Print";
 
 const LOCAL_API = /^http:\/\/(127\.0\.0\.1|localhost):\d+$/;
 const REGISTER_GOLDEN = join(__dirname, "..", "..", "shared", "craft.page.register.golden.json");
@@ -40,10 +42,12 @@ function answers(): Map<string, Route> {
   const native = goldenText();
   const fragments = fragmentDocumentText(FRAGMENT_VERSION);
   const laterPage = laterBackendPage();
+  const template = JSON.stringify(templateDocument());
   return new Map<string, Route>([
     [nativeDocumentPath(), (query) => ({ status: 200, body: query.get("version") === String(FRAGMENT_VERSION) ? fragments : native })],
     [`/api${MONOGRAPH_DOCUMENT_PATH(LATER_BACKEND_CRAFT)}`, () => ({ status: 404, body: JSON.stringify({ detail: "No monograph" }) })],
     [`/api${CRAFT_PAGE_PATH(LATER_BACKEND_CRAFT)}`, () => ({ status: 200, body: laterPage })],
+    [`/api${MONOGRAPH_DOCUMENT_PATH(TEMPLATE_CRAFT)}`, () => ({ status: 200, body: template })],
     [`/api${FIELD_VOICES_PATH(LATER_BACKEND_CRAFT, "quotes", null).split("?")[0]}`, noFieldVoices]
   ]);
 }

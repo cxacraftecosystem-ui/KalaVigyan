@@ -1,6 +1,6 @@
 import type { MonographChapterName, MonographComponent, MonographDocument, MonographLayoutEntry, MonographUnit } from "@/lib/monographDocument";
 import { placedMastheadPicture } from "@/lib/monographPlacement";
-import { citedSourceKeys, hasSentence, nodesText, type MonographSources } from "@/lib/monographRender";
+import { hasSentence, nodesText, type MonographSources } from "@/lib/monographRender";
 
 export const COMPONENT_SLOT_PATTERN = /<kv-slot component="([^"]+)"><\/kv-slot>/g;
 export const MASTHEAD_PICTURE_KIND = "picture_plate";
@@ -291,14 +291,6 @@ export function pageSources(document: MonographDocument): string[] {
   const listed = listedByComponents(document);
   return Object.entries(document.content.sources)
     .filter(([key]) => !listed.has(key))
-    .sort(([, a], [, b]) => a.number - b.number)
-    .map(([key]) => key);
-}
-
-export function citedSources(document: MonographDocument): string[] {
-  const keys = new Set(Object.values(document.content.units).flatMap((unit) => citedSourceKeys(unit.nodes)));
-  return Object.entries(document.content.sources)
-    .filter(([key]) => keys.has(key))
     .sort(([, a], [, b]) => a.number - b.number)
     .map(([key]) => key);
 }

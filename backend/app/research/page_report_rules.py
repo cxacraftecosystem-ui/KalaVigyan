@@ -13,6 +13,7 @@ from .monograph_document import MonographDocument
 from .monograph_page import ComponentEntry
 from .page_drafts import PageLists
 from .page_report_design import DESIGN_RULE, design_evidence
+from .page_report_sources import counted_apart
 from .quotes import quote_key, unsupported_figures
 from .structure_proposals import ReactionItem
 
@@ -56,7 +57,6 @@ GAP = re.compile(
 )
 SYMBOL = re.compile(r"[A-Z][a-z]?")
 JUDGE_HINTS: Mapping[int, str] = {
-    5: "count the sources that number this page's own sentences apart from borrowed ones",
     8: "look at the media chapter as a gallery keyed to the section titles",
     11: "the site draws toasts and announcements; check them on the private link",
     12: "the site draws the bars and the chapter rail; check them on the private link",
@@ -156,6 +156,7 @@ def checked_rules(given: ReportInput) -> dict[int, Verdict]:
         2: _masthead_picture,
         3: _one_masthead,
         4: _true_counts,
+        5: _counted_apart,
         6: _signature,
         7: _pictures_once,
         9: _figures_cite,
@@ -219,6 +220,10 @@ def _true_counts(page: ReadPage, given: ReportInput) -> Verdict:
         if missing:
             problems.append(f"{sentence.unit_id} states {', '.join(missing)}, which no quote it cites holds")
     return _verdict(problems, f"every number in {len(page.sentences)} sentences is in a quote they cite")
+
+
+def _counted_apart(page: ReadPage, given: ReportInput) -> Verdict:
+    return JUDGE, [counted_apart(page.document)]
 
 
 def _signature(page: ReadPage, given: ReportInput) -> Verdict:

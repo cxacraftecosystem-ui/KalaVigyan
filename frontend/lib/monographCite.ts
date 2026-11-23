@@ -1,3 +1,5 @@
+import type { MonographDocument } from "@/lib/monographDocument";
+
 export const CITE_PUBLISHER = "IIT Kharagpur, Centre of Excellence for Unified AI-Enabled Craft Ecosystem Platform";
 export const CITE_STYLES = [
   { value: "text", label: "Text" },
@@ -8,6 +10,7 @@ export type CiteKind = "monograph" | "answer";
 export type CiteStyle = (typeof CITE_STYLES)[number]["value"];
 export type Citable = { kind: CiteKind; title: string; version: number; url: string; key: string };
 
+const CITED_SUBJECT = "craft";
 const KIND_WORDS: Readonly<Record<CiteKind, string>> = { monograph: "Monograph", answer: "Answer" };
 const DAY = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
@@ -18,6 +21,11 @@ export function versionedUrl(pageUrl: string, version: number): string {
 
 export function citeKey(slug: string, version: number): string {
   return `kalavigyan_${slug.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_v${version}`;
+}
+
+export function documentCitation(document: MonographDocument): Citable | null {
+  if (document.subjectKind !== CITED_SUBJECT) return null;
+  return { kind: "monograph", title: document.title, version: document.version, url: versionedUrl(document.pageUrl, document.version), key: citeKey(document.subjectSlug, document.version) };
 }
 
 export function accessDay(day: Date): string {

@@ -2,6 +2,7 @@ import { Fragment, type ReactNode } from "react";
 
 import { unitNodes, UnitView } from "@/components/monograph/UnitView";
 import type { MonographNode, MonographUnit } from "@/lib/monographDocument";
+import { sectionId } from "@/lib/monographNotes";
 import type { MonographSources } from "@/lib/monographRender";
 import { nodeElements } from "@/lib/monographRenderElements";
 import { termRows, type TermGroup, type TermRow, type TermsPiece } from "@/lib/monographRenderLayout";
@@ -93,11 +94,14 @@ const GROUP_VIEWS: Readonly<Record<TermGroup, (props: GroupProps) => ReactNode>>
   entries: EntryList
 };
 
-export function TermGroupView({ units, sources, piece }: { units: Units; sources: MonographSources; piece: TermsPiece }) {
+type TermGroupProps = { units: Units; sources: MonographSources; piece: TermsPiece; chapter?: string };
+
+export function TermGroupView({ units, sources, piece, chapter }: TermGroupProps) {
   const View = GROUP_VIEWS[piece.group];
+  const id = piece.heading && chapter ? sectionId(chapter, piece.heading) : undefined;
   return (
     <div className="kv-group" data-group={piece.group}>
-      {piece.heading ? <UnitView unit={units[piece.heading]} sources={sources} as="h3" className="kv-group-h" /> : null}
+      {piece.heading ? <UnitView unit={units[piece.heading]} sources={sources} as="h3" className="kv-group-h" id={id} /> : null}
       <View units={units} sources={sources} rows={termRows(units, piece.refs)} />
     </div>
   );
