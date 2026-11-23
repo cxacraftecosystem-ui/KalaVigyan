@@ -528,7 +528,8 @@ boundaryCaption}`, read with no model call:
   by name. A state of practice alone does not place a craft in a district.
 - **Land** (why the land suits them): `LandStory {blocks[Block] (0-4), facets[RegionFacet]}`.
   Blocks are stored pieces placed with their reuse mark, never built on the tap: the current
-  cross-craft region story of the district (`water:lgd-<code>` or a basin crossing it) and the
+  cross-craft region story of the district (one told over districts that include it, or a basin
+  crossing it) and the
   `GEOGRAPHY`, `GEOLOGY` and `CLIMATE` prose pieces of the crafts listed whose topic names the
   district, at most four, each passing the reuse rule. Facets are the district's own values of
   the land facets (`LAND_FACETS`: `SOIL`, `CLIMATE`, `WATER`, `TERRAIN`), exactly as the region route
@@ -555,10 +556,11 @@ else 404 `{detail}`. Crafts: `ACTIVE`, not catch-all crafts with a `DISTRICT` or
 located_places`: a point by the polygon covering it, lowest LGD first, else its stored district)
 whose source is visible; curated places are such rows (decision 0053). Each craft once by name,
 its roles in `PLACE_ROLES` order, its basis the strongest location (level, then id). Land blocks,
-at most four: the newest current region story with no craft keyed `water:lgd-<code>` or a basin
-crossing the district (`region_pieces.district_story_pieces`, its river still stored), then for
-each listed craft and each of `GEOGRAPHY`, `GEOLOGY`, `CLIMATE` the newest English `prose` piece
-whose topic key's subjects include the district's name slug, by craft name then facet; every
+at most four: the newest current region story with no craft whose `districtLgds` include the
+district or keyed by a basin crossing it (`region_pieces.district_story_pieces`, its river still
+stored), then for each listed craft and each of `GEOGRAPHY`, `GEOLOGY`, `CLIMATE` the newest English
+`prose` piece whose topic key's subjects include the district's code (`lgd-<code>`, decision 0160),
+so a district named alike in two states never lends its pieces, by craft name then facet; every
 piece passes the reuse rule at any depth (`reuse_refusal` with `BASIC`) and cites only visible
 sources. Blocks are `land.b<n>` with sentences `land.b<n>.<m>` and their reuse marks. Facets are
 the district's stored values of `SOIL`, `CLIMATE`, `WATER` and `TERRAIN` built by

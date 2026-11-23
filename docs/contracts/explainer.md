@@ -312,7 +312,9 @@ construct, and the builder that made it adds nothing.
   decision 0153); the builder checks the trace against the stored reaches (`rivers.trace_problems`).
   Cites the steps' claims and the dataset rows. **Piece:** cross-craft (`craftId` null), the
   section's facet, topic `<facet namespace>:basin-<mainRiv>`, else `<namespace>:lgd-<code>` for
-  each district (`knowledge_pieces.piece_slot`).
+  each district, or `<namespace>:lgd-set-<first 16 hex of the SHA-256 of the sorted codes>` when
+  that is longer than a key (`knowledge_pieces.piece_slot`, `piece_topics.district_topic`); a story
+  without a river also keeps its districts in `KnowledgePiece.districtLgds` (decision 0160).
 - **`map_layer`** `{layer, layerVersion, title, datasets[DatasetRef] (exactly 2), highlighted[]
   (district LGD codes, 1+), boundaryCaption}`. Server: everything, from `geo/layers.MAP_LAYERS`
   and the layer route (`GET /api/map/layers/{layer}`: id, the version it answered, title, its
@@ -602,9 +604,11 @@ route's district places), gets neither.
   names first; the first with a value in a craft district becomes the block, built from
   `map_layer(layer_values(...))` exactly as the layer route answers it, highlighting the craft's
   districts with a value.
-- **Pieces.** A story is stored in `piece_slot`'s cross-craft slot (`region_topic`; a key past
-  `TOPIC_KEY_MAX_CHARS` is not stored). A reused facet section also gets the current story keyed
-  by a basin crossing the craft's districts or by those districts
+- **Pieces.** A story is stored in `piece_slot`'s cross-craft slot (`region_topic`; a district
+  set too long for a key is keyed by its digest, so every story is stored), and a story without a
+  river keeps its district codes in `districtLgds` (GIN, migration `0083_piece_districts_and_places`).
+  A reused facet section also gets the current story keyed by a basin crossing the craft's
+  districts or told over exactly those districts (`districtLgds` holding them and no other)
   (`services/region_pieces.region_story_pieces`, looked up only when a geography section is asked,
   `REGION_STORY_FACETS`) when it passes the reuse rule as a craft-less
   piece and its river still follows the stored reaches (`river_store.stored_trace_problems`);
@@ -1795,7 +1799,7 @@ table also holds `embedding` (1536 dimensions, filled like claims, never sent) a
   `compound`, `water`, `soil`, `climate`, `region`, `history`, `design`, `economy`, `health`,
   `ecology`, `concept`); each subject NFKD-decomposed, marks dropped, case-folded, every run of
   anything but `a-z0-9` one hyphen, ends trimmed; subjects deduplicated, sorted and joined by
-  `+` (`water:kachchh`, `reaction:alizarin+alum`). A subject with no Latin letter or digit is
+  `+` (`water:lgd-449`, `reaction:alizarin+alum`). A subject with no Latin letter or digit is
   refused. `term_key(label)` is the same slug without a namespace (`iron-acetate`).
 - **Reuse rule** (`reuse_refusal(piece, ask, visible_claim_ids)`): a piece is reused for
   `ReuseAsk {craftId, facet, topicKey, depth}` when craft, facet and topic match, its depth is at
@@ -1824,8 +1828,11 @@ table also holds `embedding` (1536 dimensions, filled like claims, never sent) a
   to each subject it shows, exactly one column per kind, once per piece.
 - **Topic keys** (`research/piece_topics`): the facet's namespace (`FACET_NAMESPACES`) and as
   subjects the glossary terms the question names (`TermMarker` over the craft's glossary), else for
-  `GEOGRAPHY`, `GEOLOGY` and `CLIMATE` the craft's districts, else the craft's slug. A key longer
-  than `TOPIC_KEY_MAX_CHARS` is no key: that facet neither reuses nor stores.
+  `GEOGRAPHY`, `GEOLOGY` and `CLIMATE` the craft's districts by LGD code (`lgd-<code>`, or the
+  district set's digest past `TOPIC_KEY_MAX_CHARS`; `piece_topics.district_topic`, decision 0160),
+  else the craft's slug. Question terms longer than a key are no key: that facet neither reuses nor
+  stores. Migration `0083_piece_districts_and_places` rekeyed the place pieces stored under district
+  name slugs (`water:kachchh` is `water:lgd-449`).
 - **Storing** (`services/piece_store.SqlPieceStore.keep`, shielded): every English block of a
   researched section that cites claims and sources (`prose`, `process_ladder` and the blocks its
   builders added; an `images` block rests on illustrated claims and is not a piece), id `uuid5("knowledge-piece:<answer>:<block>")`,

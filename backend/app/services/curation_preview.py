@@ -129,7 +129,7 @@ def preview_records(
     views, sources = plan_views(plan)
     cited = cited_claims(list(views.values()), sources)
     districts = sorted(
-        {str(place.district) for place in plan.index.places if place.location_id and place.district}
+        {place.district_lgd for place in plan.index.places if place.location_id and place.district_lgd}
     )
     overview = overview_pieces(plan.dossier, cited, craft_id=plan.craft.id, districts=districts)
     refs = {str(key): SourceRef.model_validate(source_ref(row)) for key, row in sources.items()}

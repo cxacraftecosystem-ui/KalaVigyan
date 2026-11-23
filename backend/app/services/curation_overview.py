@@ -50,13 +50,13 @@ def curated_glossary(dossier: Dossier) -> list[GlossaryEntry]:
     return list(entries.values())
 
 
-def piece_topic(facet: str, slug: str, districts: Sequence[str]) -> str:
+def piece_topic(facet: str, slug: str, districts: Sequence[int]) -> str:
     found = facet_topic(facet, TopicSubjects(craft_slug=slug, districts=tuple(districts)))
     return found or topic_key(FACET_NAMESPACES[facet], slug)
 
 
 def overview_pieces(
-    dossier: Dossier, cited: CitedClaims, *, craft_id: uuid.UUID | None, districts: Sequence[str]
+    dossier: Dossier, cited: CitedClaims, *, craft_id: uuid.UUID | None, districts: Sequence[int]
 ) -> OverviewPieces:
     marker = TermMarker(curated_glossary(dossier))
     pieces: list[KnowledgePiece] = []

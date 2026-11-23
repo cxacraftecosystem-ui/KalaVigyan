@@ -676,16 +676,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** glossary terms linked to layers (a `Term` per registry layer with its local
   names), marked by the existing `TermMarker` instead of a word list.
 
-### Many-district stories are not stored
-
-- **What:** a story without a river is keyed by every district (`lgd-<code>` joined by `+`); past
-  `TOPIC_KEY_MAX_CHARS` (about 23 districts) the key is refused, the story is shown but not kept,
-  and the lookup offers no district key for such a craft.
-- **Why left:** crafts practised in more than 20 mapped districts are rare, and a key per district
-  would let one story answer for another district's craft.
-- **Clears it:** a stored district list on the piece (a `districtLgds` column with a GIN index)
-  looked up by overlap instead of an exact key.
-
 ### The place builders have not run against loaded rivers
 
 - **What:** the builders are tested on fixture reaches and, on GitHub Actions, on a hand-made
@@ -1045,17 +1035,6 @@ Last reviewed: 2026-11-22.
   screen choice.
 - **Clears it:** the map screen folds a yearly series into one row with a sparkline (each year a
   dataset value), or a contract change that leaves yearly rows out of its facets.
-
-### Ask the map matches a prose piece by the district's name
-
-- **What:** a place-facet prose piece's topic names its craft's districts by name slug
-  (`water:kachchh`); only crafts placed in the tapped district are read, so a piece is shown for
-  the wrong district only when one craft is placed in two districts sharing a name (Bilaspur in
-  Himachal Pradesh and in Chhattisgarh).
-- **Why left:** the topic keys of decision 0033 name districts by name; changing them is a piece
-  contract change.
-- **Clears it:** place-facet topic keys by LGD code (`water:lgd-449`, as region stories already
-  use), with a piece rebuild.
 
 ## Learning block renderers (decision 0068)
 

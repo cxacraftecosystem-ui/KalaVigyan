@@ -298,7 +298,7 @@ def test_the_experts_differ_pair_is_stated_by_both_seats_from_different_sources(
 
 def test_each_block_is_stored_as_the_fixture_says() -> None:
     craft_id = seed_uuid("c", "Kutch-Ajrakh")
-    subjects = TopicSubjects(craft_slug="Kutch-Ajrakh", districts=("Kachchh",))
+    subjects = TopicSubjects(craft_slug="Kutch-Ajrakh", districts=(449,))
     expected = []
     for section in fixture().sections:
         for block in section.blocks:
@@ -343,7 +343,7 @@ def test_a_phase_b_piece_is_refused_until_built() -> None:
 
 def test_a_built_region_story_is_stored_as_a_cross_craft_basin_piece() -> None:
     story = blocks()["s1.b1"]
-    section = PieceSlot(seed_uuid("c", "Kutch-Ajrakh"), "GEOGRAPHY", "water:kachchh", "EXPERT")
+    section = PieceSlot(seed_uuid("c", "Kutch-Ajrakh"), "GEOGRAPHY", "water:lgd-449", "EXPERT")
     piece = knowledge_piece(
         story, piece_slot(story, section), piece_id=seed_id("piece", "x"), answer_id=None, created_at=AT
     )

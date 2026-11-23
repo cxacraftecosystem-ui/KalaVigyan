@@ -252,7 +252,7 @@ def _sentence_words(timeline: Any) -> dict[str, set[str]]:
 
 def test_each_block_is_stored_as_the_fixture_says() -> None:
     craft_id = seed_uuid("c", "Kutch-Ajrakh")
-    subjects = TopicSubjects(craft_slug="Kutch-Ajrakh", districts=("Kachchh",))
+    subjects = TopicSubjects(craft_slug="Kutch-Ajrakh", districts=(449,))
     expected = []
     for section in fixture().sections:
         for block in section.blocks:
