@@ -47,7 +47,10 @@ The golden values are real Geo ETL output. `backend/tests/geo/geo_district_env_e
 small extract of the production runs' `geo-district-env` artifacts (runs 43884310432, 43946257669,
 43955687762, 44204618054 and 44302045906, 2026-11-16 to 2026-11-18, each dataset from the latest
 run holding its rows): Kachchh's rows (district 449) and the SoilGrids pH of the eight other
-districts the layer file draws, with each run's id, date, files and dataset periods. The values are
+districts the layer file draws, with each run's id, date, files and dataset periods. Its
+`monthlyRain` holds Kachchh's twelve CHIRPS `monthly_precipitation` normals from run 44204618054,
+which `values` leaves out; the phase B seasons fixture's rainfall is those rows
+(`golden_region.kachchh_rainfall`, decision 0178). The values are
 the CSV's; `backend/tests/geo/golden_region.py` rounds them half up to the 6 decimals the database
 keeps (`DistrictEnvValue.value`, `DistrictGeology.areaShare`). The dataset rows are the registry's
 (`backend/app/data/datasets/registry.json`) with each run's period. The layer file's `classes` and

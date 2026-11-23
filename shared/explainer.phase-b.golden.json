@@ -280,8 +280,45 @@
               }
             }
           ],
-          "rainfall": null,
-          "datasets": []
+          "rainfall": {
+            "district": {
+              "districtLgd": 449,
+              "name": "Kachchh",
+              "stateName": "Gujarat"
+            },
+            "datasetCode": "CHIRPS_3_0",
+            "period": "1981-2025",
+            "millimetres": [
+              0.448288,
+              0.892637,
+              0.453903,
+              0.285612,
+              3.060923,
+              46.744229,
+              181.45751,
+              114.80377,
+              88.778059,
+              8.367467,
+              3.716204,
+              0.338162
+            ]
+          },
+          "datasets": [
+            {
+              "code": "CHIRPS_3_0",
+              "title": "Climate Hazards Center InfraRed Precipitation with Stations v3.0",
+              "publisher": "Climate Hazards Center, UC Santa Barbara",
+              "edition": "3.0",
+              "period": "1981-2025",
+              "nativeResolution": "0.05 degree",
+              "licence": "CC BY 4.0",
+              "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+              "attribution": "Climate Hazards Center, UC Santa Barbara (CHIRPS3)",
+              "citation": "Climate Hazards Center InfraRed Precipitation with Stations version 3 (CHIRPS3) Data Repository (2025). https://doi.org/10.15780/G2JQ0P",
+              "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/",
+              "doi": "10.15780/G2JQ0P"
+            }
+          ]
         }
       ]
     },
@@ -1408,8 +1445,7 @@
       "kind": "GI_JOURNAL",
       "title": "Geographical Indications Journal No. 188 (19 Dec 2023), G.I. Application No. 1050 - Kutch Ajrakh (journal copy)",
       "authors": [
-        "Office of the Controller General of Patents, Designs & Trade Marks (applicant: Ajarakhpur Hastkala Vikas Sangathan",
-        "facilitated by Textiles Committee, Ministry of Textiles)"
+        "Office of the Controller General of Patents, Designs & Trade Marks (applicant: Ajarakhpur Hastkala Vikas Sangathan; facilitated by Textiles Committee, Ministry of Textiles)"
       ],
       "year": 2023,
       "doi": null,

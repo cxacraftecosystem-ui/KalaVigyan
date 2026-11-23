@@ -106,8 +106,11 @@ def test_an_answer_with_a_policy_section_files_the_gi_record_there_and_prices_un
 
 def test_the_economics_part_of_a_market_block_leaves_the_gi_record_to_policy() -> None:
     offers = golden_offers("s5.b1")
-    assert shown(market_block(offers, block_id=BLOCK, parts=GI_PARTS))["gi"]["status"] == "REGISTERED"
-    assert market_block(offers, block_id=BLOCK, parts=PRICE_PARTS) is None
+    policy = shown(market_block(offers, block_id=BLOCK, parts=GI_PARTS))
+    assert (policy["gi"]["status"], policy["prices"]) == ("REGISTERED", [])
+    economics = shown(market_block(offers, block_id=BLOCK, parts=PRICE_PARTS))
+    assert (economics["gi"], [price["stated"] for price in economics["prices"]]) == (None, ["Rs. 7"])
+    assert market_block(golden_offers("s5.b2"), block_id=BLOCK, parts=PRICE_PARTS) is None
 
 
 def test_the_seasons_block_is_built_by_the_climate_section_when_the_answer_has_one() -> None:

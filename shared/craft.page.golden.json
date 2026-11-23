@@ -7,7 +7,24 @@
     "id": "54081f83-8396-5a46-a3bc-a467984eebc2",
     "displayName": "Kutch Ajrakh",
     "localName": null,
-    "localNames": [],
+    "localNames": [
+      {
+        "name": "اجرڪ",
+        "language": "sd",
+        "script": "Arab",
+        "claimIds": [
+          "7c5039d8-a4c7-5641-a365-ad136ab072d2"
+        ]
+      },
+      {
+        "name": "ajrak",
+        "language": "sd",
+        "script": "Latn",
+        "claimIds": [
+          "7c5039d8-a4c7-5641-a365-ad136ab072d2"
+        ]
+      }
+    ],
     "categoryName": "Textiles based Craft Category",
     "subCategoryName": "Hand Block Printing",
     "familyLabel": "Textiles",

@@ -28,6 +28,7 @@ contracts are `docs/contracts/explainer.md` (One claim, one rendering; Each sent
 | A reading that points to the sentence already showing it (`DifferRead.shownIn`) | [decision 0098](0098-craft-page-chapters-build.md) |
 | The earlier records of limits kept by choice, and the earlier splits with their import paths kept | [decision 0137](0137-limits-kept-by-choice.md), [decision 0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md) |
 | Every served field in a golden, and the chapters the web drops | [decision 0151](0151-a-release-the-live-side-can-read.md), [decision 0162](0162-unused-craft-page-chapters-retired.md) |
+| The seed's authors, the phase D price and the goldens shown from recorded data, and the last Python over budget split | [decision 0178](0178-seed-authors-whole-and-goldens-from-recorded-data.md) |
 | What is still below standard | [TECH_DEBT.md](../TECH_DEBT.md) |
 | Every decision, by group | [README.md](README.md) |
 
