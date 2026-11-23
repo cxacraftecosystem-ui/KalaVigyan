@@ -293,7 +293,7 @@ def test_season_rows_name_the_season_their_claim_names_and_carry_its_subject() -
     for row in seasons.rows:
         assert row.label == subject_of(row.sentence.citations[0].claim_id)
         assert (row.months, row.season) == ([], "MONSOON")
-    assert (seasons.rainfall, seasons.datasets) == (None, [])
+    assert seasons.rainfall is not None and [dataset.code for dataset in seasons.datasets] == ["CHIRPS_3_0"]
 
 
 def test_supply_links_name_seeded_materials_and_the_origins_their_sentence_states() -> None:

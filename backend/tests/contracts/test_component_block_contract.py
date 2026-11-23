@@ -9,11 +9,16 @@ from pydantic import TypeAdapter, ValidationError
 from app.models import block_kinds, enums
 from app.models.component_kinds import COMPONENT_KINDS
 from app.research.blocks_component import ComponentBlock, component_href, stood_for
+from app.research.citations import SourceRef
 from app.research.explainer import BLOCK_PHASES, BUILT_BLOCK_KINDS, Block, BlockEvent
 from app.research.knowledge_pieces import UNSTORED_BLOCK_KINDS
+from app.services.answer_catalogue import CatalogueEntry
+from app.services.monograph_document import monograph_content
 from app.services.piece_store import storable
 
 from ..research.fixtures import AJRAKH
+from .blocks_golden import COMPONENT, BlocksFixture
+from .golden import golden_json, reproduces
 
 VERSIONS = Path(__file__).resolve().parents[2] / "migrations" / "versions"
 SOURCE = "1a2b3c4d-0000-4000-8000-000000000001"
@@ -133,3 +138,35 @@ def test_migration_0072_widens_both_kind_checks_by_the_quantities_table_only() -
 def test_a_component_cites_the_sources_it_rests_on_in_their_order() -> None:
     block = BLOCKS.validate_python(wire(sources=[{"sourceId": str(uuid.UUID(int=7))}, {"sourceId": SOURCE}]))
     assert block.cited_source_ids() == [str(uuid.UUID(int=7)), SOURCE]
+
+
+def recorded() -> tuple[ComponentBlock, list[SourceRef]]:
+    fixture = BlocksFixture.model_validate(golden_json(COMPONENT))
+    (block,) = fixture.sections[0].blocks
+    assert isinstance(block, ComponentBlock)
+    return block, fixture.sources
+
+
+def test_the_recorded_red_player_is_reproduced_byte_for_byte() -> None:
+    assert reproduces(BlocksFixture, COMPONENT)
+
+
+def test_the_recorded_red_player_is_the_block_the_catalogue_places_from_the_monograph() -> None:
+    block, sources = recorded()
+    component = next(c for c in monograph_content(AJRAKH.slug).components if c.label == block.label)
+    entry = CatalogueEntry(
+        label=component.label,
+        kind=component.kind,
+        title=component.title,
+        description=component.description,
+        craft=AJRAKH,
+        anchor=component.anchor,
+        sources={source.id: source.model_dump(mode="json", by_alias=True) for source in sources},
+    )
+    assert entry.block(block.id) == block
+    assert (block.label, block.component_kind, block.href) == (
+        "kutch-ajrakh/chemistry/red-alum-madder-player",
+        "reaction_player",
+        "/crafts/Kutch-Ajrakh#rp-red",
+    )
+    assert block.cited_source_ids() == [source.id for source in sources] == sorted(s.id for s in sources)

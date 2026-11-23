@@ -157,6 +157,7 @@ The resolver is built: `docs/contracts/research.md` (The resolver) and decision 
 | Aliases, `norm`, `latin` and collisions | `etl/crafts/tests/test_aliases.py` and `test_text.py` |
 | Wikidata scoring and its caps | `etl/crafts/tests/test_wikidata_scoring.py` |
 | The seed claims' rows | `etl/crafts/tests/test_seed_claims.py`, and `backend/tests/db/test_claim_seed.py` and `test_craft_seed.py` on Postgres |
+| The seed's stored authors, an organisation whole and people split outside brackets | `etl/crafts/tests/test_source_authors.py` and `test_seed_authors.py`, which reads the committed `seed_claims.json` |
 | Editorial names and state languages | their loaders, `craft_names.py` and `state_languages.py`, which refuse the rows named above |
 
 Re-read it when the master list is re-vendored, an alias source or a seed file is added, or the

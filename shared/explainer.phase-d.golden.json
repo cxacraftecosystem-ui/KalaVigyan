@@ -1314,7 +1314,48 @@
             ]
           },
           "imitation": [],
-          "prices": []
+          "prices": [
+            {
+              "stated": "Rs. 7",
+              "low": 7.0,
+              "high": null,
+              "currency": "INR",
+              "scale": null,
+              "per": null,
+              "pricedOn": "1975",
+              "place": "Barmer",
+              "districtLgd": 90,
+              "sentence": {
+                "id": "s5.b1.2",
+                "text": "In Barmer an ajrakh piece was valued at Rs. 7 in 1975.",
+                "level": "PROVISIONAL",
+                "citations": [
+                  {
+                    "id": "00400ee6-7077-5def-9961-6b595e6ce2ee",
+                    "claimId": "e2371390-0a9e-5240-bb26-90705e3981e5",
+                    "sourceId": "6adb6cbb-4fdb-5704-b90f-128dec6da755",
+                    "quote": "While in 1975 the value of an Ajrakh piece was Rs. 7",
+                    "locator": "paragraph 14",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  },
+                  {
+                    "id": "65faa584-dd9e-528b-8805-baecfeb2d379",
+                    "claimId": "e2371390-0a9e-5240-bb26-90705e3981e5",
+                    "sourceId": "6adb6cbb-4fdb-5704-b90f-128dec6da755",
+                    "quote": "Ajrakh production using screen-printing is taking place in Barmer, Rajasthan as well, but here the traditional production method still partly survives.",
+                    "locator": "paragraph 14",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  }
+                ],
+                "translated": false,
+                "terms": []
+              }
+            }
+          ]
         },
         {
           "id": "s5.b2",
@@ -1552,8 +1593,7 @@
       "kind": "GI_JOURNAL",
       "title": "Geographical Indications Journal No. 188 (19 Dec 2023), G.I. Application No. 1050 - Kutch Ajrakh (journal copy)",
       "authors": [
-        "Office of the Controller General of Patents, Designs & Trade Marks (applicant: Ajarakhpur Hastkala Vikas Sangathan",
-        "facilitated by Textiles Committee, Ministry of Textiles)"
+        "Office of the Controller General of Patents, Designs & Trade Marks (applicant: Ajarakhpur Hastkala Vikas Sangathan; facilitated by Textiles Committee, Ministry of Textiles)"
       ],
       "year": 2023,
       "doi": null,
@@ -1694,6 +1734,21 @@
       "doi": null,
       "url": "https://exhibitions-khamir.org/ajrakh/adapting",
       "publisher": "Khamir",
+      "licence": null,
+      "attribution": null,
+      "reliability": "B"
+    },
+    {
+      "id": "6adb6cbb-4fdb-5704-b90f-128dec6da755",
+      "kind": "WEB_PAGE",
+      "title": "Ajrakh: An Introduction",
+      "authors": [
+        "Mushtak Khan"
+      ],
+      "year": null,
+      "doi": null,
+      "url": "https://www.sahapedia.org/ajrakh-introduction-0",
+      "publisher": "Sahapedia",
       "licence": null,
       "attribution": null,
       "reliability": "B"

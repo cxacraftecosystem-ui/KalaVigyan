@@ -18,6 +18,7 @@ from app.services.place_claims import PlaceClaims
 from app.services.season_rows import SeasonFact, SeasonOffer, seasons_block
 from app.services.season_supply_builders import SeasonsBuilder
 
+from ..geo.golden_region import kachchh_rainfall
 from ..geo.test_rainfall import CHIRPS, KACHCHH, KACHCHH_MM, KACHCHH_REF, months
 from ..science.golden_process import PA, PROCESS_ID, STAGE_CLAIMS, claim_id, golden_records, stage_id
 from .season_supply_fixtures import (
@@ -152,9 +153,10 @@ def rain_only(block_id: str) -> SeasonsBlock:
     )
 
 
-def test_the_fixture_s_seasons_are_its_monsoon_claim_with_no_month() -> None:
+def test_the_fixture_s_seasons_are_its_monsoon_claim_with_no_month_and_kachchh_s_recorded_rainfall() -> None:
     facts = tuple(SeasonFact(claim, MONSOON_HUMIDITY) for claim in season_claims())
-    block = seasons_block(SeasonOffer(stages=(), facts=facts, rainfall=None), block_id=SEASONS)
+    offer = SeasonOffer(stages=(), facts=facts, rainfall=kachchh_rainfall())
+    block = seasons_block(offer, block_id=SEASONS)
     assert block is not None
     assert block.model_dump(mode="json", by_alias=True) == golden_seasons()
 

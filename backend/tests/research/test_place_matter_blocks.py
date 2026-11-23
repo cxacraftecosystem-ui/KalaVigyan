@@ -124,12 +124,8 @@ def test_a_season_row_shows_only_what_its_claim_names(change: Any, message: str)
 
 def test_rainfall_comes_with_its_dataset_row_and_only_then() -> None:
     body = fixture_block("s3.b1")
-    body["rainfall"] = {
-        "district": {"districtLgd": 449, "name": "Kachchh", "stateName": "Gujarat"},
-        "datasetCode": "CHIRPS_3_0",
-        "period": "1991-2020",
-        "millimetres": [0.0] * 12,
-    }
+    assert BLOCK.validate_python(body).rainfall is not None
+    body["datasets"] = []
     refused(body, "rainfall's dataset row, and only it")
     body["rainfall"] = None
     body["datasets"] = [fixture_block("s2.b1")["datasets"][1]]

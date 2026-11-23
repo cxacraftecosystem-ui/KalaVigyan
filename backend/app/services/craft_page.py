@@ -15,11 +15,13 @@ from app.research.craft_page import (
     KeyFact,
     OverviewSection,
     PageClaim,
+    PageCraft,
     PageOverview,
     PageSentence,
     SearchedFor,
     SubjectRef,
 )
+from app.research.craft_page_context import LocalName
 from app.research.knowledge_pieces import KnowledgePiece
 from app.research.sections import DISCIPLINE_TITLES
 from app.research.vocabulary import CONCEPT_TYPE_DISCIPLINES, LEVEL_ORDER, weakest_level
@@ -87,7 +89,7 @@ def craft_page(records: CraftPageRecords, rows: ChapterRows | None = None) -> Cr
     claims = page_claims(records)
     visible = _visible(claims)
     curated = records.curated
-    craft = records.craft
+    craft = _named_in_its_scripts(records.craft, curated, visible)
     parts = _parts(records, claims, visible)
     process, pictures = parts["process"], parts["pictures"]
     sources = _sources(claims, records.sources)
@@ -117,6 +119,15 @@ def craft_page(records: CraftPageRecords, rows: ChapterRows | None = None) -> Cr
         field_photos=list(records.field_voices.photos),
         **parts,
     )
+
+
+def _named_in_its_scripts(craft: PageCraft, curated: CuratedPage | None, visible: Visible) -> PageCraft:
+    names = [
+        LocalName(name=name.text, language=name.language, script=name.script, claim_ids=[name.claim_id])
+        for name in (curated.native_names if curated else [])
+        if visible.all_shown([name.claim_id])
+    ]
+    return craft.model_copy(update={"local_names": names}) if names else craft
 
 
 def _visible(claims: Sequence[PageClaim]) -> Visible:

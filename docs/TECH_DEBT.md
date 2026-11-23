@@ -41,24 +41,6 @@ Last reviewed: 2026-11-22.
 
 ## Backend structure
 
-### Python code over budget
-
-- **What:** the counts are in `tools/hygiene_baseline.json`. Besides the initial migration, which
-  stays one file by choice (decision 0168), what is left on 2026-11-23 is the seed claims and one
-  knowledge reader: `etl/crafts/seed_claims.py` (642 lines; `convert_immersive` 132,
-  `convert_inferential` 158 and `build` 76 lines, `claim` 9 positional parameters),
-  `backend/app/services/claim_seed.seed_claims` (46 lines) with its database test
-  `test_seed_claims_is_idempotent_on_the_seed_id` (51), and
-  `backend/app/services/knowledge_view.map_points` (63). Decision 0168 split two-step
-  verification, the alias merger, the flows' database tests and the master-list loader, and cut
-  the other long and wide functions into named steps (6 files, 36 long and 9 wide functions
-  before it; 12, 54 and 9 on 2026-11-16).
-- **Why left:** the seed claims were the pictures, terms and planning lane's files and the
-  knowledge reader the contributors' lanes' while decision 0168 ran, so another lane's change
-  would have met a split of the same lines.
-- **Clears it:** split them along their steps, behaviour unchanged, once those lanes have merged;
-  run `tools/hygiene_check.py --update-baseline` and delete this entry.
-
 ### Scholarly adapters: what waits on keys and Wiley's token (decisions 0005, 0139)
 
 - **What:**
@@ -540,37 +522,6 @@ Last reviewed: 2026-11-22.
   specs check the detection and the levels; the production E2E's Chromium never takes that path.
 - **Waits on:** a person playing a film with music on an iPhone or iPad and moving both sliders.
 
-## Phase D contract (decision 0062)
-
-### The phase D fixture shows no price and no Kutch Ajrakh sign of imitation
-
-- **What:** the market blocks show Kutch Ajrakh's GI record and Bagru's GI record with its GI
-  journal imitation sign; no seed claim states an Ajrakh price or Ajrakh imitation from GI journal
-  text. The curated dossier holds the 1975 Barmer price (C049), which the builder shows
-  (`tests/answering/test_market_builder.py` reads it from the dossier); its screen-printing claims
-  (C047, C138, C141) cite papers and a web page, not GI journal text, so they are not signs of
-  imitation under decision 0066.
-- **Why left:** the versions, lesson, quiz and citation goldens of both sides are built from the
-  Ajrakh market block, so the price adds a source and renumbers every file built from them; the
-  review (0070) fixed its findings and left this fixture refresh whole for one change.
-- **Clears it:** add C049's price to `s5.b1` by `curation_keys.curated_id` and regenerate the
-  goldens built from it, with the APA text of the new source checked by hand.
-
-### Author names are cited as stored
-
-- **What:** citation exports write each stored author as written, so seed sources split on commas
-  read oddly (the V&A as "Victoria", "Albert Museum"; the GI journal's applicant note as two
-  authors). The seed conversion now keeps an organisation author whole and splits people only
-  outside brackets (`etl/crafts/source_authors.split_authors`), and the seed restamps a stored
-  import source's authors when they change (`claim_seed._restamped_authors`, decision 0166), but
-  `backend/app/data/seed_claims.json` and the goldens built from it still hold the split names.
-- **Why left:** the conversion reads the immersive-episteme and inferential-system checkouts beside
-  the repository, which the lane's machine may not run, and the goldens are the final clean-up
-  lane's.
-- **Waits on:** a run of `python etl/crafts/seed_claims.py` against those checkouts and the refresh
-  of the goldens built from the seed's sources (`shared/learning.citations.golden.json` and the
-  other files that cite the V&A); the next seed after the release restamps the stored sources.
-
 ## Climate and risk, and ask the map (decision 0065)
 
 ### Groundwater values only for Rajasthan, and not yet loaded
@@ -857,26 +808,27 @@ Last reviewed: 2026-11-22.
   (`test_golden_fields.py` fails on any other unshown field and on a listed one that is shown, so
   the list only shrinks; decision 0168 left out what the web never parses and showed the DOI, the
   understanding's basis, a translated answer and the craft page's voices and field photos):
-  - `GroundwaterValue` and `MonthlyRain`: the only geo ETL extract recorded here
-    (`backend/tests/geo/geo_district_env_extract.json`, run 44204618054) predates the groundwater
-    load and the monthly rainfall normals.
+  - `GroundwaterValue`: the climate fixtures are Kachchh's, and groundwater is stored only for
+    Rajasthan's districts and not loaded yet ("Groundwater values only for Rajasthan, and not yet
+    loaded"); no Geo ETL run has recorded a groundwater row (decision 0178 recorded Kachchh's CHIRPS
+    monthly normals from run 44204618054 for the seasons fixture).
   - `MeasureRegion`, `ReactionStep.delta_h` and `StepEnergy`: no stored claim states a regional
     factor (decision 0163's kept limit) or a step's ΔH (decision 0152).
   - `ReactionStep.formula_basis` and `formula_sources`: only the craft page's chapters infer
-    formulas, and the web drops the chapters; an answer's reaction player never sets them.
-  - `ComponentBlock` and `ComponentSource`: a placed component's sources are its units' stored
-    claims' sources, read from the database when its monograph is loaded.
+    formulas (`services/chapter_balance`), and the web drops the chapters; an answer's reaction
+    player never sets them.
   - `SourceRef.container_title`, `PageSource.container_title` and `NumberedSource.container_title`:
-    no seeded or curated source carries a journal name; only live research stores one.
+    only live research stores a journal name (a dossier writes its journal into `publisher`), and no
+    live-research answer with a paper is recorded here; recording one is a paid answer run, which
+    decision 0165 keeps from adding calls while answers are measured.
   - `AnswerSentence.original`: only the category page's lede is a plain answer sentence, and
     category pages are not translated.
-  - `LocalName`: nothing fills `PageCraft.local_names`.
 - **Why left:** a golden shows recorded or stated data, never a value made up for the test.
-- **Clears it:** record a later geo ETL run's Kachchh extract with its groundwater and monthly
-  normals and give the climate and seasons fixtures those rows; a curated quote stating a regional
-  factor or a ΔH; a test that records the Kutch Ajrakh red player's sources from the monograph load;
-  a live-research source with its journal in a fixture; and an owner decision on a craft's own names
-  in scripts (fill `local_names` or retire it) and on translated category pages. Empty the list.
+- **Waits on:** a Geo ETL run that loads groundwater for a fixture's district; a curated quote
+  stating a regional factor or a ΔH; an answer's reaction player that infers a step's formula from a
+  stored compound record, or the owner's choice to keep those two fields to the chapters; a recorded
+  live-research answer citing a paper with its journal, from a run the lead pays for after the
+  measurement; and the owner's decision on translated category pages. Then empty the list.
 
 ### The rubric floor waits on a run that shows the quantities table
 

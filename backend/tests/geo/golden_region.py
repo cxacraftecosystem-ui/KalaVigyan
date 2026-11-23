@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import ROUND_HALF_UP, Decimal
 from functools import cache
 from pathlib import Path
@@ -7,6 +7,7 @@ from typing import Any
 
 from app.geo.layers import LAYERS_BY_ID
 from app.geo.places import region_places
+from app.geo.rainfall import RAINFALL_DATASET_CODE, DistrictRainfall, MonthValue, rainfall_from
 from app.geo.records import (
     GEOLOGY_STAT,
     GEOLOGY_UNIT,
@@ -23,13 +24,14 @@ from app.geo.records import (
     ValueRecord,
 )
 from app.models import DistrictEnvValue, DistrictGeology
+from app.research.blocks_place import DistrictRef
 from app.research.citations import SourceRef
 from app.research.crafts import CraftRef
 from app.research.datasets import BOUNDARY_DATASET_CODE
 from app.services.claim_seed import seed_id
 
 from ..contracts.golden import golden_json
-from ..contracts.phase_b_golden import catalog_dataset
+from ..contracts.phase_b_golden import catalog_dataset, geo_etl_datasets
 
 GOLDEN_CRAFT = "region.craft.golden.json"
 GOLDEN_LAYERS = "region.layers.golden.json"
@@ -39,6 +41,7 @@ EXTRACT = Path(__file__).with_name("geo_district_env_extract.json")
 AJRAKH = CraftRef(slug="Kutch-Ajrakh", name="Kutch Ajrakh", path="/crafts/Kutch-Ajrakh")
 GUJARAT = StateRecord(24, "Gujarat")
 KACHCHH = 449
+KACHCHH_DISTRICT = DistrictRef(district_lgd=KACHCHH, name="Kachchh", state_name="Gujarat")
 VAV_THARAD = 789
 GI_JOURNAL = str(seed_id("source", "ie:ajrakh:S1"))
 GI_JOURNAL_TITLE = (
@@ -141,6 +144,24 @@ def stored_row(district: int, series: tuple[str, str, str, str]) -> ValueRecord:
 
 def kachchh_values() -> tuple[ValueRecord, ...]:
     return region_rows(KACHCHH)
+
+
+def kachchh_monthly_rain() -> tuple[MonthValue, ...]:
+    rows = extract()["monthlyRain"]["rows"]
+    return tuple(
+        MonthValue(depth_or_period=period, value=stored(value), unit=unit)
+        for lgd, _code, _variable, period, _stat, value, _text, unit, _method, _grid in rows
+        if lgd == KACHCHH
+    )
+
+
+def kachchh_rainfall() -> DistrictRainfall:
+    chirps = replace(
+        golden_datasets()[RAINFALL_DATASET_CODE], doi=geo_etl_datasets()[RAINFALL_DATASET_CODE]["doi"]
+    )
+    found = rainfall_from(KACHCHH_DISTRICT, chirps, kachchh_monthly_rain())
+    assert found is not None
+    return found
 
 
 def layer_rows() -> tuple[ValueRecord, ...]:

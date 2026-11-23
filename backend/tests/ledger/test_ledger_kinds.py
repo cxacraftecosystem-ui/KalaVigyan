@@ -4,6 +4,7 @@ import pytest
 from pydantic import TypeAdapter
 
 from app.research.blocks import BlockBase
+from app.research.blocks_place import SeasonsBlock
 from app.research.explainer import Block, with_payload_sentences
 from app.services.claim_ledger import ClaimLedger
 
@@ -121,12 +122,18 @@ def test_a_picture_a_zoom_showed_is_not_shown_again() -> None:
 
 def test_any_other_story_block_leaves_out_an_item_already_said_word_for_word() -> None:
     seasons = phase_b_blocks()["s3.b1"]
+    rowless = {**seasons, "rainfall": None, "datasets": []}
     (row,) = BLOCK.validate_python(seasons).rows
     ledger = ClaimLedger()
     shown = admitted(ledger, "s1", said("s1.b1", row.sentence))
-    assert admitted(ledger, "s3", seasons) == []
-    assert [block.kind for block in admitted(ClaimLedger(), "s3", seasons)] == ["seasons"]
+    assert admitted(ledger, "s3", rowless) == []
+    assert [block.kind for block in admitted(ClaimLedger(), "s3", rowless)] == ["seasons"]
     assert repeated_sentences(shown) == 0
+    rained = ClaimLedger()
+    admitted(rained, "s1", said("s1.b1", row.sentence))
+    (rain,) = admitted(rained, "s3", seasons)
+    assert isinstance(rain, SeasonsBlock) and rain.rows == []
+    assert rain.rainfall == BLOCK.validate_python(seasons).rainfall
 
 
 def test_a_compare_row_left_with_one_craft_goes_and_the_others_stay_in_their_columns() -> None:

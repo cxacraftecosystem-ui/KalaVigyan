@@ -329,5 +329,23 @@
     [449, "GLIM_1_0_05DEG", "su", "Unconsolidated sediments", 0.6963620960302337, 5, null],
     [449, "GLIM_1_0_05DEG", "vb", "Basic volcanic rocks", 0.09382952932055683, 5, null],
     [449, "USGS_MRDS", "mineral_occurrences", "Mineral occurrences", null, 0, []]
-  ]
+  ],
+  "monthlyRain": {
+    "about": "The twelve CHIRPS monthly_precipitation NORMAL rows of district 449 (Kachchh), which values leaves out, read from run 44204618054's geo-district-env artifact (KalaVigyan_Dataset_2026-11-18_CHIRPS-3-0_District-Stats.csv, downloaded on 2026-11-23) with Python's csv module, in the columns of values; the seasons fixture's rainfall is these values as the database keeps them.",
+    "run": 44204618054,
+    "rows": [
+      [449, "CHIRPS_3_0", "monthly_precipitation", "1981-2025-01", "NORMAL", 0.44828833218381, null, "mm/month", 6, "0.05 degree"],
+      [449, "CHIRPS_3_0", "monthly_precipitation", "1981-2025-02", "NORMAL", 0.8926374290570654, null, "mm/month", 6, "0.05 degree"],
+      [449, "CHIRPS_3_0", "monthly_precipitation", "1981-2025-03", "NORMAL", 0.45390271014490174, null, "mm/month", 6, "0.05 degree"],
+      [449, "CHIRPS_3_0", "monthly_precipitation", "1981-2025-04", "NORMAL", 0.28561197206846317, null, "mm/month", 6, "0.05 degree"],
+      [449, "CHIRPS_3_0", "monthly_precipitation", "1981-2025-05", "NORMAL", 3.0609231292215573, null, "mm/month", 6, "0.05 degree"],
+      [449, "CHIRPS_3_0", "monthly_precipitation", "1981-2025-06", "NORMAL", 46.744229148935574, null, "mm/month", 6, "0.05 degree"],
+      [449, "CHIRPS_3_0", "monthly_precipitation", "1981-2025-07", "NORMAL", 181.45750962466167, null, "mm/month", 6, "0.05 degree"],
+      [449, "CHIRPS_3_0", "monthly_precipitation", "1981-2025-08", "NORMAL", 114.80377004188043, null, "mm/month", 6, "0.05 degree"],
+      [449, "CHIRPS_3_0", "monthly_precipitation", "1981-2025-09", "NORMAL", 88.77805942187123, null, "mm/month", 6, "0.05 degree"],
+      [449, "CHIRPS_3_0", "monthly_precipitation", "1981-2025-10", "NORMAL", 8.367467257752326, null, "mm/month", 6, "0.05 degree"],
+      [449, "CHIRPS_3_0", "monthly_precipitation", "1981-2025-11", "NORMAL", 3.716203981078247, null, "mm/month", 6, "0.05 degree"],
+      [449, "CHIRPS_3_0", "monthly_precipitation", "1981-2025-12", "NORMAL", 0.3381622910163252, null, "mm/month", 6, "0.05 degree"]
+    ]
+  }
 }

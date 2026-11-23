@@ -11,6 +11,7 @@ import { blockSourceIds } from "@/lib/explainerView";
 import { parseShape, ShapeError } from "@/lib/shape";
 
 import { shownText } from "./explainerRender";
+import { readRepo } from "./phaseBFixture";
 
 const BOOK = "1a2b3c4d-0000-4000-8000-000000000001";
 const MADDER = "1a2b3c4d-0000-4000-8000-000000000009";
@@ -66,6 +67,13 @@ test("a component links only its own craft's page, at most with an anchor naming
 
 test("a component's sources are the ones the answer numbers for it", () => {
   expect(blockSourceIds(component())).toEqual([BOOK, MADDER]);
+});
+
+test("Kutch Ajrakh's red player parses as the server places it, resting on the sources its monograph load records", () => {
+  const recorded = JSON.parse(readRepo("shared", "explainer.component.golden.json")) as { sections: { blocks: Record<string, unknown>[] }[]; sources: { id: string }[] };
+  const [placed] = recorded.sections[0].blocks;
+  expect(parseShape(explainerBlockShape, placed)).toEqual(placed);
+  expect(blockSourceIds(component(placed))).toEqual(recorded.sources.map((source) => source.id));
 });
 
 test("the card names the monograph, titles the figure and offers one indigo link to it", () => {
