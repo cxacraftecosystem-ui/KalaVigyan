@@ -698,7 +698,8 @@ The transcripts and craft images of both portals come the same way, through the 
 routes (`docs/contracts/field-voices.md`, decisions 0084 and 0091): `app/scripts/sync_field_voices`
 (daily, `.github/workflows/field-voices-sync.yml`, behind `FIELD_VOICES_ENABLED`) reads each
 portal's two streams by cursor, applies tombstones, stores each recording as a `FIELD_TESTIMONY`
-source with `PUBLIC` quote chunks and `SIGNED_IN` transcript chunks, and each image as a credited
+source with `PUBLIC` quote chunks and `PUBLIC` transcript windows of kind `WINDOW` (decision 0179),
+and each image as a credited
 `MediaRef` over a metadata-free copy in the media bucket, linked to the claims its caption and
 labels name, never beside a sentence while held. Field quote chunks join stored-knowledge
 retrieval and can be cited as field interviews; the craft page carries them as `voices` and

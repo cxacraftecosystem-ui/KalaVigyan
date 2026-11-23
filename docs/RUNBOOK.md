@@ -784,9 +784,14 @@ fixture or the category page (`docs/contracts/category-page.md`).
 - **Paid voice and media checks** (`paid-checks.yml`, decision 0154): by hand only, from main, once
   the owner has approved the spend (US$5 on 2026-11-22):
   `gh workflow run paid-checks.yml -R cxacraftecosystem-ui/KalaVigyan --ref main -f cap=5`. On the box
-  it makes one English and one Hindi narration, a 10 s music bed, a Gemini image and one agent turn
-  (a Master Admin voice session bound to the conversation it opens, ended and deleted after one
-  question), each estimated first and skipped when the total would pass the cap. The
+  it makes one English and one Hindi narration, a 10 s music bed, a Gemini image, a Gemini voice
+  reading and one agent turn (a Master Admin voice session bound to the conversation it opens,
+  ended and deleted after one question), each estimated first and skipped when the total would pass
+  the cap. Each is a boolean input (`narration`, `music`, `image`, `speech`, `agent`, on by
+  default); `video` (off by default) makes one 8 s Gemini clip, estimated at US$0.56, polled for up
+  to 15 minutes and deleted after (decision 0179). The owner approved one clip on 2026-11-23; make
+  it alone with `-f video=true -f narration=false -f music=false -f image=false -f speech=false
+  -f agent=false`. The
   `paid-checks-<run id>` artifact holds every reply and `paid_checks_report.json` (the spend and
   each finding); commit the replies as the fixtures `docs/TECH_DEBT.md` names.
 - **Re-embed knowledge** (`embed-knowledge.yml`): by hand only, from main, once after a release that

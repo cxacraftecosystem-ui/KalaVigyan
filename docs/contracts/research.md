@@ -487,9 +487,12 @@ chunks) tiers. `retrieval.hybrid.StoredKnowledgeSearch(session, embed=TextEmbedd
 it; the answer flow passes `providers/embedding.router_embedder(principal)`.
 
 - `KnowledgeQuery {craftSlug | null, text (1-1000), mode, facets[FacetType] (distinct),
-  fields[Discipline] (distinct, default none), chunkAcls (distinct, default ["PUBLIC"]), limit
-  (1-50, default 12)}`. The caller passes the ACLs the
-  reader may see (`RESEARCHER` for researchers and above); nothing widens them. An unknown slug
+  fields[Discipline] (distinct, default none), chunkAcls (distinct, default `OPEN_CHUNK_ACLS`:
+  `PUBLIC`, and the field transcripts' `SIGNED_IN` until it is folded into `PUBLIC`), chunkKinds
+  (distinct, default ["PASSAGE"]), limit (1-50, default 12)}`. The caller passes the ACLs the
+  reader may see (`RESEARCHER` for researchers and above); nothing widens them. A chunk's kind is
+  `PASSAGE` (a source's text, a field quote) or `WINDOW` (a field transcript's speaker-labelled
+  window); only a search naming `WINDOW` reads windows (decision 0179). An unknown slug
   is `InvalidInput`; a null slug (any craft) reads every visible concept
   (`retrieval/statements.EVERY_CRAFT`), and the hits carry a null `craftSlug`.
 - `KnowledgeHits {craftSlug, claims[ClaimHit], chunks[ChunkHit]}`, each at most `limit`, best
@@ -503,8 +506,16 @@ it; the answer flow passes `providers/embedding.router_embedder(principal)`.
   `RETRACTED`, `SUPERSEDED`, `WITHDRAWN`; decision 0053), and chunks (the modes whose `MODE_POLICIES` tiers include `T2`).
 - Scope, in SQL before any limit: claims on the craft's concepts and its sub-category's shared
   concepts, or on concept edges touching them; concept and claim `OPEN`
-  (`VISIBLE_SENSITIVITY`), cited by at least one source that is not `RESTRICTED`. Chunks: of
-  the sources those claims cite, within `chunkAcls`, chunk and source not `RESTRICTED`.
+  (`VISIBLE_SENSITIVITY`), cited by at least one source that is not `RESTRICTED`. The stored
+  search's scope (`hybrid.craft_scope`) also reads the craft's family science and merged crafts
+  (decision 0122) and the shared concepts (no craft, no sub-category) linked to the craft or a
+  craft merged into it (`retrieval/shared_links.linked_shared_concepts`, decision 0179): a
+  glossary term that names the shared concept is a term of the craft (`TermConcept` and
+  `TermCraft`, the concept graph of the shared-science explorer), or a concept edge joins it to
+  one of the craft's own concepts. A shared concept that is a family's science (a subject of a
+  `CuratedCategoryClaim` or named as a category) is read only by its family; an unlinked shared
+  concept only by a search for any craft. Chunks: of the sources those claims cite, within
+  `chunkAcls` and `chunkKinds`, chunk and source not `RESTRICTED`.
   `facets` keeps concepts of those types (and so the chunks of their sources). `fields` keeps
   the claims filed under one of those fields as their field or a secondary field, and claims
   with no field yet, which a field never hides (decision 0101 item 10); chunks follow the claims
@@ -884,7 +895,8 @@ faster.
   claim to that craft's concept of that type and name, creating it when absent, so the stored
   answer path (`knowledge_view.claims_for`, which reads `retrieval/statements.claim_conditions`)
   finds it. A null `craftSlug` (research for any craft) attaches it to a shared concept, owned by
-  no craft and no sub-category, and the dedupe key takes an empty craft (decision 0031).
+  no craft and no sub-category, and the dedupe key takes an empty craft (decision 0031); a craft's
+  stored search reads it once the concept graph links that concept to the craft (decision 0179).
 - `WriteBackCitation {evidence: EvidenceItem, quote: Quote?, quoteCheck, relation}`: the
   source row is found or created by `evidence.source_key` with `origin=LIVE_RESEARCH`; the
   quote must be one of `evidence.quotes` (already matched against the document); no quote

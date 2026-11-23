@@ -17,6 +17,7 @@ item 3.
 | The source kinds each seat reads | [answer-eval.md](../contracts/answer-eval.md), Seats by field |
 | When a reader's question closes | [open-work.md](../contracts/open-work.md), the nightly gap check |
 | The expert panel and its reading order | [0046](0046-expert-panel.md) and [0099](0099-wider-expert-panel.md) |
+| A craft's scope also reads the shared concepts its glossary terms or concept edges link to it | [decision 0179](0179-transcript-windows-a-chunk-kind-linked-shared-concepts-and-one-paid-clip.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -17,6 +17,7 @@ and 0095 (item 7).
 | The contracts it names | [field-voices.md](../contracts/field-voices.md), [craft-page.md](../contracts/craft-page.md) |
 | Shared answers read their language from a public list of the answer languages | [decision 0145](0145-monograph-pages-and-speed-without-debt.md) |
 | A share's files recorded and deleted from the bucket when it stops | [decision 0155](0155-accounts-and-sharing-kept-true.md) |
+| The transcripts' windows written `PUBLIC` and marked by a chunk kind, `SIGNED_IN` read as open until it is folded away | [decision 0179](0179-transcript-windows-a-chunk-kind-linked-shared-concepts-and-one-paid-clip.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

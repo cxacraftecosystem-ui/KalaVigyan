@@ -126,7 +126,7 @@ Imports in `backend/app` point one way. The allowed edges, enforced by `tools/hy
 ```
 main      -> api, voice, providers, services, core, models
 api       -> voice, media, providers, services, science, geo, retrieval, research, schemas, core, models, data
-scripts   -> voice, providers, services, planner, composer, retrieval, research, core, models, data
+scripts   -> voice, media, providers, services, planner, composer, retrieval, research, core, models, data
 voice     -> providers, services, composer, schemas, research, core, models
 media     -> providers, services, schemas, research, core, models
 worker    -> media, voice, core

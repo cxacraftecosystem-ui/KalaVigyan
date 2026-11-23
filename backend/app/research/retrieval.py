@@ -8,27 +8,30 @@ from typing import Any, Literal, Protocol, runtime_checkable
 from pydantic import Field, field_validator
 
 from app.core.roles import Capability, can
-from app.models.enums import CHUNK_ACLS, CLAIM_STATUSES, EVIDENCE_LEVELS
+from app.models.enums import CHUNK_ACLS, CHUNK_KINDS, CLAIM_STATUSES, EVIDENCE_LEVELS
 
 from .base import ContractModel
 from .crafts import QUESTION_MAX_CHARS
-from .vocabulary import AnswerMode, ChunkAcl, Discipline, EvidenceLevel, FacetType, SourceType
+from .vocabulary import AnswerMode, ChunkAcl, ChunkKind, Discipline, EvidenceLevel, FacetType, SourceType
 
 __all__ = [
     "BROAD_FIELDS",
     "CLAIM_SUBJECT_TYPES",
     "EVERY_CHUNK_ACLS",
+    "EVERY_CHUNK_KINDS",
     "HIDDEN_CLAIM_STATUSES",
     "KNOWLEDGE_RESULT_MAX",
     "MODE_CLAIM_LEVELS",
     "MODE_CLAIM_STATUSES",
     "OPEN_CHUNK_ACLS",
+    "PASSAGE_CHUNK_KIND",
+    "PASSAGE_CHUNK_KINDS",
     "PUBLIC_CHUNK_ACL",
     "RESEARCHER_CHUNK_ACL",
     "RESTRICTED_SENSITIVITY",
     "SIGNED_IN_CHUNK_ACL",
-    "SIGNED_IN_CHUNK_ACLS",
     "VISIBLE_SENSITIVITY",
+    "WINDOW_CHUNK_KIND",
     "BatchedRetriever",
     "ChunkHit",
     "ClaimHit",
@@ -52,9 +55,12 @@ SHOWN_CLAIM_STATUSES = tuple(status for status in CLAIM_STATUSES if status not i
 PUBLIC_CHUNK_ACL: ChunkAcl = "PUBLIC"
 RESEARCHER_CHUNK_ACL: ChunkAcl = "RESEARCHER"
 SIGNED_IN_CHUNK_ACL: ChunkAcl = "SIGNED_IN"
-OPEN_CHUNK_ACLS: tuple[ChunkAcl, ...] = (PUBLIC_CHUNK_ACL,)
-SIGNED_IN_CHUNK_ACLS: tuple[ChunkAcl, ...] = (PUBLIC_CHUNK_ACL, SIGNED_IN_CHUNK_ACL)
+OPEN_CHUNK_ACLS: tuple[ChunkAcl, ...] = (PUBLIC_CHUNK_ACL, SIGNED_IN_CHUNK_ACL)
 EVERY_CHUNK_ACLS: tuple[str, ...] = CHUNK_ACLS
+PASSAGE_CHUNK_KIND: ChunkKind = "PASSAGE"
+WINDOW_CHUNK_KIND: ChunkKind = "WINDOW"
+PASSAGE_CHUNK_KINDS: tuple[ChunkKind, ...] = (PASSAGE_CHUNK_KIND,)
+EVERY_CHUNK_KINDS: tuple[str, ...] = CHUNK_KINDS
 
 MODE_CLAIM_LEVELS: Mapping[str, tuple[str, ...]] = MappingProxyType(
     {"VERIFIED": VERIFIED_MODE_LEVELS, "HYBRID": EVIDENCE_LEVELS, "DEEP": EVIDENCE_LEVELS}
@@ -73,12 +79,13 @@ class KnowledgeQuery(ContractModel):
     facets: tuple[FacetType, ...] = ()
     fields: tuple[Discipline, ...] = ()
     chunk_acls: tuple[ChunkAcl, ...] = OPEN_CHUNK_ACLS
+    chunk_kinds: tuple[ChunkKind, ...] = PASSAGE_CHUNK_KINDS
     limit: int = Field(default=KNOWLEDGE_RESULT_DEFAULT, ge=1, le=KNOWLEDGE_RESULT_MAX)
     source_kinds: tuple[SourceType, ...] = ()
     passages: bool = True
     rerank: bool = False
 
-    @field_validator("facets", "fields", "chunk_acls", "source_kinds")
+    @field_validator("facets", "fields", "chunk_acls", "chunk_kinds", "source_kinds")
     @classmethod
     def _distinct(cls, values: tuple[str, ...]) -> tuple[str, ...]:
         if len(set(values)) != len(values):
@@ -142,4 +149,4 @@ def searched_fields(focus: str | None) -> tuple[str, ...]:
 def chunk_acls_for(reader: Any) -> tuple[str, ...]:
     if reader is not None and can(reader, Capability.READ_RESEARCHER_QUOTES):
         return EVERY_CHUNK_ACLS
-    return SIGNED_IN_CHUNK_ACLS
+    return OPEN_CHUNK_ACLS
