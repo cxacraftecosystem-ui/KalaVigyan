@@ -76,14 +76,32 @@ export function auditPage(options: AuditOptions): PageAudit {
 
   const pageOverflowPx = Math.max(root.scrollWidth, document.body.scrollWidth) - viewportWidth;
   const past = (element: Element) => Math.round(element.getBoundingClientRect().right - viewportWidth);
-  const widest =
-    pageOverflowPx > 1
-      ? Array.from(document.body.querySelectorAll("*"))
-          .filter((element) => past(element) > 1 && !(element.parentElement && past(element.parentElement) > 1) && !scrolledOrClipped(element.parentElement ?? element))
-          .sort((one, other) => past(other) - past(one))
-          .slice(0, WIDEST_NAMED)
-          .map((element) => `${name(element)} (${past(element)}px past the screen)`)
-      : [];
+  const holderLeft = (element: Element) => {
+    for (let node: Element | null = element; node; node = node.parentElement) {
+      if (getComputedStyle(node).position !== "static") return node.getBoundingClientRect().left + node.clientLeft;
+    }
+    return 0;
+  };
+  const pseudoPast = (element: Element, which: string) => {
+    const style = getComputedStyle(element, which);
+    const placed = style.position === "absolute" || style.position === "fixed";
+    if (!placed || style.content === "none" || style.content === "normal" || style.display === "none") return 0;
+    const origin = style.position === "fixed" ? 0 : holderLeft(element);
+    return Math.round(origin + parseFloat(style.left) + parseFloat(style.width) - viewportWidth) || 0;
+  };
+  const elements = pageOverflowPx > 1 ? Array.from(document.body.querySelectorAll("*")) : [];
+  const boxes = elements
+    .filter((element) => past(element) > 1 && !(element.parentElement && past(element.parentElement) > 1) && !scrolledOrClipped(element.parentElement ?? element))
+    .map((element) => ({ named: name(element), px: past(element) }));
+  const pseudos = elements
+    .filter((element) => past(element) <= 1)
+    .flatMap((element) => ["::before", "::after"].map((which) => ({ element, which, px: pseudoPast(element, which) })))
+    .filter((pseudo) => pseudo.px > 1 && !scrolledOrClipped(pseudo.element))
+    .map((pseudo) => ({ named: `${name(pseudo.element)}${pseudo.which}`, px: pseudo.px }));
+  const widest = [...boxes, ...pseudos]
+    .sort((one, other) => other.px - one.px)
+    .slice(0, WIDEST_NAMED)
+    .map((box) => `${box.named} (${box.px}px past the screen)`);
 
   return {
     pageOverflowPx,

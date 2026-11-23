@@ -25,6 +25,7 @@ from app.research.explainer_versions import (
     block_number,
     version_problems,
 )
+from app.research.section_pictures import pictures_of_cited
 from app.research.sections import block_id
 
 from .explainer_payload import version_document
@@ -125,7 +126,7 @@ def _moved_onto(newer: Explainer, follow_up: Explainer) -> Explainer | None:
 def _deepening_of(held: ExplainerSection, section: ExplainerSection) -> ExplainerSection | None:
     last = max((block_number(block.id, held.id) for block in held.blocks), default=0)
     shown = shown_deepening(held.blocks, first_block=last + 1, claims=frozenset())
-    blocks = [block for block in section.blocks if not shown.repeats(block)]
+    blocks = pictures_of_cited([block for block in section.blocks if not shown.repeats(block)])
     if not blocks:
         return None
     placed = [_renumbered(block, block_id(held.id, shown.number(n))) for n, block in enumerate(blocks, 1)]
@@ -137,7 +138,7 @@ def _added_as(section: ExplainerSection, section_id: str) -> ExplainerSection:
     return ExplainerSection(**{**dict(section), "id": section_id, "blocks": placed})
 
 
-def _renumbered(block: Block, new_id: str) -> Block:
+def _renumbered(block: BlockBase, new_id: str) -> Block:
     prefix = f"{block.id}."
     payload = with_payload_sentences(
         block.model_dump(mode="json", by_alias=True),

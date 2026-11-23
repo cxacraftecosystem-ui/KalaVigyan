@@ -25,6 +25,7 @@ type BlockMark = { id: string; kind: string };
 export const STEPPED_BLOCK_KINDS: ReadonlySet<string> = new Set(["zoom_story", "concept_graph", "what_if"]);
 
 const NAMED_IDS_MAX = 8;
+const EXPERT_KIND = "expert_view";
 
 export function sentenceRecord(kind: SentenceRecord["kind"], sectionId: string, sentence: AnswerSentence, block: BlockMark | null = null, shownIn: string | null = null): SentenceRecord {
   return {
@@ -54,6 +55,11 @@ export function blockSentenceRecords(sectionId: string, block: TypedBlock): Sent
   return blockSentences(block).map((sentence) => sentenceRecord("sentence", sectionId, sentence, block, said.get(sentence.id) ?? null));
 }
 
+function drawnText(sentence: SentenceRecord): string {
+  const drawnIn = sentence.blockKind === EXPERT_KIND ? `${sentence.sectionId}\u0000${EXPERT_KIND}` : sentence.blockId;
+  return `${drawnIn}\u0000${sentence.text}`;
+}
+
 function named(ids: readonly string[]): string {
   return ids.length > NAMED_IDS_MAX ? `${ids.slice(0, NAMED_IDS_MAX).join(", ")} and ${ids.length - NAMED_IDS_MAX} more` : ids.join(", ");
 }
@@ -74,9 +80,8 @@ export function pageSentenceProblems(record: PageRead): string[] {
     return record.pageSentences === shown ? [] : [`the page shows ${record.pageSentences} sentences; the stream sent ${shown}`];
   }
   const onPage = new Set(record.pageSentenceIds);
-  const shownTexts = new Set(cited.filter((sentence) => onPage.has(sentence.id)).map((sentence) => `${sentence.blockId}\u0000${sentence.text}`));
-  const shown = (sentence: SentenceRecord) =>
-    onPage.has(sentence.id) || (sentence.shownIn !== null && onPage.has(sentence.shownIn)) || shownTexts.has(`${sentence.blockId}\u0000${sentence.text}`);
+  const shownTexts = new Set(cited.filter((sentence) => onPage.has(sentence.id)).map(drawnText));
+  const shown = (sentence: SentenceRecord) => onPage.has(sentence.id) || (sentence.shownIn !== null && onPage.has(sentence.shownIn)) || shownTexts.has(drawnText(sentence));
   const missing = [...new Set(cited.filter((sentence) => !STEPPED_BLOCK_KINDS.has(sentence.blockKind ?? "") && !shown(sentence)).map((sentence) => sentence.id))];
   const problems = missing.length > 0 ? [`${missing.length} streamed sentences are not on the page: ${named(missing)}`] : [];
   const sent = new Set(cited.map((sentence) => sentence.id));

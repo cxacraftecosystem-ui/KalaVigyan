@@ -8,6 +8,7 @@ Date: 2026-11-18. Status: accepted.
 
 | For | Read |
 |---|---|
+| The ledger hears only of blocks the stream can send, and a section's pictures meet its final blocks | [decision 0182](0182-pictures-of-shown-claims-a-hit-area-on-the-page-and-our-own-frames.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

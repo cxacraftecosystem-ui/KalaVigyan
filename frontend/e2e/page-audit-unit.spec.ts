@@ -67,3 +67,13 @@ test("a page that scrolls sideways names the outermost box past the screen, not 
   expect(sidewaysProblems(audited)).toEqual([`the page scrolls sideways by ${audited.pageOverflowPx}px: ${audited.widest[0]}`]);
   expect(sidewaysProblems({ pageOverflowPx: 1, widest: [] })).toEqual([]);
 });
+
+test("a page carried sideways by a pseudo-element names the element whose ::after reaches past the screen", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const tap = `<span data-testid="tap" style="position:relative;display:inline-block;width:10px;height:10px"></span>`;
+  const styles = "body{margin:0} main{padding:0 16px} [data-testid=tap]::after{content:'';position:absolute;left:0;top:0;width:40px;height:10px}";
+  await page.setContent(`<!doctype html><html><head><style>${styles}</style></head><body><main><p style="margin:0;text-align:end">${tap}</p></main></body></html>`);
+  const audited = await page.evaluate(auditPage, OPTIONS);
+  expect(audited.pageOverflowPx).toBe(14);
+  expect(audited.widest).toEqual(['main > p > span[data-testid="tap"]::after (14px past the screen)']);
+});

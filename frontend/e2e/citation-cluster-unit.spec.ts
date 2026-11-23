@@ -181,3 +181,21 @@ test("the numerals never change a line's height, keep a 24px hit area and read a
   expect(style.hit).toBe("24px");
   expect(style.colour).toBe("rgb(36, 59, 156)");
 });
+
+test.describe("on a touch screen", () => {
+  test.use({ hasTouch: true });
+
+  for (const width of [360, 390]) {
+    test(`a numeral ending a line at ${width}px keeps its 44px hit area and never carries the page sideways`, async ({ page }) => {
+      const cluster = renderToStaticMarkup(createElement(Cite, { citations: SENTENCE.slice(0, 1), numbers: NUMBERS, sourcesById: SOURCES }));
+      await page.setViewportSize({ width, height: 800 });
+      await page.setContent(primitivesPage(`<main style="padding-inline:16px"><p style="margin:0;text-align:end;font:17px/1.63 serif">The dyed cloth emerges a bright green.${cluster}</p></main>`));
+      expect(await page.evaluate(() => matchMedia("(pointer: coarse)").matches)).toBe(true);
+      const numeral = page.getByTestId("citation-chip");
+      const box = await numeral.boundingBox();
+      expect(Math.abs((box?.x ?? 0) + (box?.width ?? 0) - (width - 16))).toBeLessThanOrEqual(1);
+      expect(await numeral.evaluate((node) => parseFloat(getComputedStyle(node, "::after").width))).toBeGreaterThanOrEqual(44);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+    });
+  }
+});

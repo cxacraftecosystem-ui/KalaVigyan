@@ -6,7 +6,7 @@ import { NetworkQuiet, captureScreen, readyForCapture, settle, sightProblems } f
 import { CITED_CONTENT, OVERFLOW_LIMIT, abortedRequest, clip, errorHeadline, gapCopyFindings, webkitLeavingNoise } from "./checks";
 import type { Scheme } from "./matrix";
 import { auditPage, sidewaysProblems } from "./pageAudit";
-import { isPreview, previewConsoleNoise } from "./preview";
+import { PageConsole } from "./pageConsole";
 import type { ScreenOutcome, ScreensReport } from "./report";
 import { SCREENSHOT_DIR, baseUrl, runFileName, runId, runStartedAt, writeReport } from "./run";
 import { answersScript, stuckStack, watchScript } from "./stuckPage";
@@ -21,7 +21,6 @@ export type RunOptions = { scheme?: Scheme | null };
 
 const STEP_LIMIT_MS = 180_000;
 const ANSWER_WAIT_MS = 5_000;
-const UNKNOWN_WEBRTC_DIRECTIVE = "Unrecognized Content-Security-Policy directive 'webrtc'.";
 
 export class ScreenRun {
   readonly screens: ScreenOutcome[] = [];
@@ -29,9 +28,9 @@ export class ScreenRun {
   private readonly label: string;
   private readonly scheme: Scheme | null;
   private readonly origin: string;
-  private readonly preview: boolean;
   private readonly webkit: boolean;
   private readonly network: NetworkQuiet;
+  private readonly consoleErrors: PageConsole;
   private signedIn = false;
   private expected: VisitOptions = {};
   private current: ScreenOutcome | null = null;
@@ -45,9 +44,9 @@ export class ScreenRun {
     this.label = label;
     this.scheme = options.scheme ?? null;
     this.origin = new URL(baseUrl()).origin;
-    this.preview = isPreview(baseUrl());
     this.webkit = page.context().browser()?.browserType().name() === "webkit";
     this.network = new NetworkQuiet(page);
+    this.consoleErrors = new PageConsole(page, this.origin);
     page.on("console", (message) => this.onConsole(message));
     page.on("pageerror", (error) => this.onPageError(error));
     page.on("requestfailed", (request) => this.onRequestFailed(request));
@@ -215,14 +214,8 @@ export class ScreenRun {
   }
 
   private onConsole(message: ConsoleMessage): void {
-    if (message.type() !== "error") return;
-    const text = message.text();
-    const from = message.location().url;
-    if (text.startsWith("Failed to load resource") && from && this.sameOrigin(from)) return;
-    if (text === UNKNOWN_WEBRTC_DIRECTIVE && from.startsWith("about:srcdoc")) return;
-    if (this.webkit && webkitLeavingNoise(text, this.origin)) return;
-    if (this.preview && previewConsoleNoise(text, from)) return;
-    this.flag(`console error: ${clip(text)}`);
+    const problem = this.consoleErrors.problem(message);
+    if (problem) this.flag(problem);
   }
 
   private onRequestFailed(request: Request): void {

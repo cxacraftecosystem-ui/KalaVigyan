@@ -123,18 +123,30 @@ class ExplainerStream:
         await self._lede_settled.wait()
         routed = routed_gaps(blocks)
         async with self._lock:
-            admitted = self.ledger.admit(section_id, routed.blocks, sources)
+            sendable = [block for block in routed.blocks if self._sendable(section_id, block, sources)]
+            admitted = self.ledger.admit(section_id, sendable, sources)
         shown = list(await asyncio.gather(*map(in_language, admitted))) if in_language else admitted
         async with self._lock:
             known = {**sources, **self.ledger.sources.refs()}
-            sent = [block for block in shown if _sourced(section_id, block, known)]
-            for block in sent:
+            for block in shown:
                 await self._sources(block.cited_source_ids(), known)
                 await self._found_piece(section_id, block)
                 await self.emit("block", {"sectionId": section_id, "block": block})
         if routed.gaps:
             await self.open_questions(await _asked(section_id, routed.gaps, in_language), sources)
-        return sent
+        return shown
+
+    def _sendable(self, section_id: str, block: Block, sources: Mapping[str, Mapping[str, Any]]) -> bool:
+        known = self.ledger.sources
+        missing = [sid for sid in block.cited_source_ids() if sid not in sources and not known.knows(sid)]
+        if missing:
+            logger.warning(
+                "block %s of section %s is left out: it cites sources not sent with it (%s)",
+                block.id,
+                section_id,
+                ", ".join(missing),
+            )
+        return not missing
 
     async def _found_piece(self, section_id: str, block: Block) -> None:
         marker = block.reuse
@@ -189,17 +201,5 @@ def _asks_from_known(sentence: Mapping[str, Any], known: Mapping[str, Mapping[st
     if missing:
         logger.warning(
             "an open question is left out: it cites sources not sent with it (%s)", ", ".join(missing)
-        )
-    return not missing
-
-
-def _sourced(section_id: str, block: Block, known: Mapping[str, Mapping[str, Any]]) -> bool:
-    missing = [source_id for source_id in block.cited_source_ids() if source_id not in known]
-    if missing:
-        logger.warning(
-            "block %s of section %s is left out: it cites sources not sent with it (%s)",
-            block.id,
-            section_id,
-            ", ".join(missing),
         )
     return not missing

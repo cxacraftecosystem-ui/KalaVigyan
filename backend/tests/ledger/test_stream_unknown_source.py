@@ -2,12 +2,14 @@ from typing import Any
 
 import pytest
 
+from app.research.blocks import ProseBlock
 from app.research.explainer import ExplainerSection
 from app.services.claim_ledger import admission_batches
 from app.services.explainer_events import ExplainerStream
 
 from .indigo_answer import recorded_sections
-from .indigo_claims import SOURCES
+from .indigo_blocks import prose
+from .indigo_claims import GI_COPY, IJTK, NAAND, SOURCES, Claim
 
 ORDER = ("s1", "s2", "s3", "s4", "s5")
 
@@ -83,3 +85,16 @@ async def test_a_block_admitted_with_a_citation_to_a_source_not_sent_is_left_out
     assert {block.id for block in returned} == every - citing
     assert {block.id for block in recorded.blocks()} == every - citing
     assert withheld not in recorded.source_ids()
+
+
+async def test_a_block_left_out_for_a_source_not_sent_marks_nothing_it_says_as_shown() -> None:
+    unsendable = Claim(NAAND.key, NAAND.text, (IJTK,))
+    sendable = Claim(NAAND.key, NAAND.text, (GI_COPY,))
+    refs = {ref["id"]: ref for ref in SOURCES if ref["id"] != IJTK["id"]}
+    recorded = Recorded()
+    stream = ExplainerStream(recorded, language="en")
+    first = ProseBlock.model_validate(prose("s1.b1", (NAAND.text, (unsendable,))))
+    later = ProseBlock.model_validate(prose("s1.b2", (NAAND.text, (sendable,))))
+    assert await stream.blocks("s1", [first], refs) == []
+    assert [block.id for block in await stream.blocks("s1", [later], refs)] == ["s1.b2"]
+    assert [block.id for block in recorded.blocks()] == ["s1.b2"]

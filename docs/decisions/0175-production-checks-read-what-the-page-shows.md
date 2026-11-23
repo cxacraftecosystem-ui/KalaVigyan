@@ -25,6 +25,7 @@ builders, Stream events, the terms route) and `docs/contracts/frontend.md` (the 
 | The scholarly pace the `paced` event reports | [decision 0139](0139-sources-and-providers-reach-outside-services-once.md) |
 | A monograph's rest loaded after its first chapter | [decision 0151](0151-a-release-the-live-side-can-read.md) |
 | The E2E production run | [decision 0029](0029-e2e-production-run.md) |
+| The sideways audit names pseudo-elements, an expert difference is read as drawn once, and only our own frames' console errors count | [decision 0182](0182-pictures-of-shown-claims-a-hit-area-on-the-page-and-our-own-frames.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

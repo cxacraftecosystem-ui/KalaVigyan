@@ -118,7 +118,7 @@ flowchart LR
 | [0077](0077-lede-headings-and-question-order.md) | Every answer opens with a lede, its sections carry headings shaped by the question | [0140](0140-voice-and-listen-kept-true.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0078](0078-category-dossiers-in-the-app.md) | Category dossiers are imported keyed to their category and served as public category pages | · |
 | [0079](0079-public-reading.md) | Craft, category, map and science pages read without signing in | [0084](0084-field-voices-v2.md), [0091](0091-field-voices-kalavigyan-side.md) and [0095](0095-craft-page-chapters.md) |
-| [0080](0080-claim-ledger.md) | An answer renders each claim once: the claim ledger | · |
+| [0080](0080-claim-ledger.md) | An answer renders each claim once: the claim ledger | [0182](0182-pictures-of-shown-claims-a-hit-area-on-the-page-and-our-own-frames.md) |
 | [0081](0081-craft-page-contract-v2.md) | Craft page contract version 2: a page whose structure is final at first paint | [0095](0095-craft-page-chapters.md) |
 | [0082](0082-catalogue-v2-and-server-fetch.md) | Catalogue v2: reader names, depth, concepts and one count, and server fetch | [0172](0172-a-rotated-session-taken-over-and-cached-pages-kept-whole.md) |
 | [0083](0083-students-and-artisans.md) | Students and artisans: profiles at first entry, the Artisan role, conversations and testimony | · |
@@ -219,13 +219,14 @@ flowchart LR
 | [0172](0172-a-rotated-session-taken-over-and-cached-pages-kept-whole.md) | The web takes over every session the API rotates, a cached reading page fails rather than drops a part, and sign-in and the shells settle once | · |
 | [0173](0173-a-release-that-keeps-serving-and-its-way-back.md) | A release keeps the site serving and its way back open, a colour takes traffic only once it reaches its database, the web builds only on the API it calls, the fetcher runs as a user of its own, and every provider call ends and settles | [0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) |
 | [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) | A production downgrade undoes one revision unless its count is confirmed, an answer fits its limits, repeats nothing its explainer shows and outlives a source that cannot be built, and the rubric's cited part is a share | · |
-| [0175](0175-production-checks-read-what-the-page-shows.md) | The production checks read what the page shows, the web parses every stream event, the answer control never asks again, and a section stores only what it showed | · |
+| [0175](0175-production-checks-read-what-the-page-shows.md) | The production checks read what the page shows, the web parses every stream event, the answer control never asks again, and a section stores only what it showed | [0182](0182-pictures-of-shown-claims-a-hit-area-on-the-page-and-our-own-frames.md) |
 | [0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) | Listen plays as it narrates, the admin build waits for the API main needs, evaluation runs are kept, and the Gemini voice is a fixture | · |
 | [0177](0177-differences-named-and-the-monograph-shell-measured.md) | A difference is named from what the judge already answers, the kind preview is served its themes, and what holds Kutch Ajrakh's authored shell is measured | [0183](0183-the-shared-template-draws-the-approved-page.md) |
 | [0178](0178-seed-authors-whole-and-goldens-from-recorded-data.md) | The seed names an organisation as one author, Kutch Ajrakh's fixture market shows its curated price, and the goldens show recorded rain, a placed component and a craft's own names | · |
 | [0179](0179-transcript-windows-a-chunk-kind-linked-shared-concepts-and-one-paid-clip.md) | A transcript window is a chunk kind, a craft reads the shared concepts the graph links to it, and the paid checks make one Gemini clip when asked | · |
 | [0180](0180-places-abroad-yearly-series-picture-levels-figures-and-kin-crafts.md) | A place abroad sits in its own inset, a yearly series is one row, picture levels come from glossary tags, the fibre asks paper figures, and a generated page shows its kin crafts | · |
 | [0181](0181-names-kept-out-of-pictures-reference-lists-and-the-wood-handbook.md) | A craft's community and person names stay out of AI pictures, Expert research follows OpenAlex reference lists, and the Wood Handbook's cited chapters are its passages | · |
+| [0182](0182-pictures-of-shown-claims-a-hit-area-on-the-page-and-our-own-frames.md) | A section's pictures illustrate only what it shows and never end an answer, the citation numeral's touch area stays on the page, and the production checks read only our own frames | · |
 | [0183](0183-the-shared-template-draws-the-approved-page.md) | The shared template draws the approved page's masthead, contents, margin notes, sub-rail and source groups for every generated page | · |
 
 ## How this document is kept true
