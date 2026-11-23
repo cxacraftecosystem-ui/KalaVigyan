@@ -29,9 +29,10 @@ flowchart LR
   class E accent
 ```
 
-The server offers 22 tools in six groups (decision 0111; decision 0114 added `propose_dataset`);
-each tool names its group in `tools/list` as `_meta["kalavigyan/group"]`, so a screen can group them
-without a list of names:
+The server offers 22 tools in six groups to every connection (decision 0111; decision 0114 added
+`propose_dataset`), and four more in a seventh group, `admin`, listed only to a token holding the
+`review` scope (decision 0170); each tool names its group in `tools/list` as
+`_meta["kalavigyan/group"]`, so a screen can group them without a list of names:
 
 | Group | Tools | Scope | Contract |
 |---|---|---|---|
@@ -42,6 +43,7 @@ without a list of names:
 | proposing | `propose_facts`, `propose_structure`, `propose_source`, `propose_dataset` | contribute | `knowledge-writes.md`, decision 0108; decision 0114 for `propose_dataset`, the datasets reference for its `layer` and `review-queue.md` for `LAYERS` |
 | pages | `edit_draft`, `preview_page`, `propose_page` | contribute | `open-work.md` |
 | pictures | `give_pictures` | contribute | `mcp-ask-and-upload.md` |
+| admin | `review_queue`, `stage_reviews`, `refresh_pages`, `admin_reports` | review (Admin and Master Admin, `mcp-oauth.md`) | `review-queue.md`, Staged over MCP; `nightly-upkeep.md`, Refresh pages now; Admin reports below |
 
 ## The endpoint
 
@@ -287,7 +289,29 @@ string the server checks against the library, `list_components` describes it by 
 never grows the list; output schemas are compact and listed only where a client reads the result.
 `tests/mcp/test_tool_budget.py` fails when the list grows past 22 tools, 60 KB of input schemas and
 descriptions (decision 0147 raised it to 62 KB for a release; decision 0159 restored it), or 120 KB
-in all.
+in all; on 2026-11-23 it held 61,316 bytes of input and 68,737 in all. The admin tools are left out
+of every list a token without `review` sees (`mcp_tool_base.listed_to`), so the contributors' list
+does not grow; an Admin's list has its own budget, 26 tools and 68 KB of input (66,576 bytes and
+74,893 in all on 2026-11-23), and no admin tool lists an output schema.
+
+## Admin reports (decision 0170)
+
+`admin_reports {report, craft_slug?, since?, answer_id?, days?, cursor?, limit?}` (the `review` scope,
+Admin and Master Admin) reads one report, read-only, a page at a time (`limit` 1 to 50, default 25,
+`cursor` the previous reply's `next_cursor`), each reply capped (a list inside a row stops at 20
+and says how long it was, a text at 300 characters, a reply at 48 KB); a filter the report does not
+take is refused. `coverage`: each craft's field standings (`services/coverage`); `hidden_facts`: the
+night's count of facts readers cannot see, by craft and reason (`upkeep_hidden.last_hidden_facts`);
+`filing`: where each live-research fact is filed against where today's rule files it
+(`write_back_filing_store.filing_report`, by `since` or `answer_id`, as `scripts/write_back_filing`);
+`sources`: sources whose title is not a work's title or whose author is a file's producer
+(`source_titles.junk_titled` and `producer_authored`, as `scripts/retitle_sources`), which
+`stage_reviews` can correct; `mcp_activity`: calls by tool and client and the newest failures
+(`mcp_activity.read_activity`, decision 0150, without the per-connection rows that name accounts);
+`spend`: settled AI spend by India day and task from `UsageEvent` (`services/admin_spend`);
+`evaluations`: the floors of `app/data/eval/floors.json` with the last stored result, which is
+`measured: null` while the evaluation workflows store no run the server can read. The code is
+`api/mcp_report_tools.py`, `mcp_report_reads.py` and `mcp_report_pages.py`.
 
 ## Coverage
 
@@ -326,7 +350,8 @@ not break (decision 0101, item 15). `serverInfo.version` is `1.0.0`.
 
 | Claim | Kept true by |
 |---|---|
-| The tools, their groups and the list's budget | `backend/tests/mcp/test_tool_budget.py`: 22 tools in the six groups, 60 KB of input with no component kind enumerated, 120 KB in all |
+| The tools, their groups and the list's budget | `backend/tests/mcp/test_tool_budget.py`: 22 tools in the six groups, 60 KB of input with no component kind enumerated, 120 KB in all; an Admin's list 26 tools and 68 KB of input |
+| The admin reports | `backend/tests/mcp/test_admin_reports.py` and `backend/tests/db/test_admin_reports_db.py` |
 | The protocol, framing and the event stream | `backend/tests/mcp/test_mcp_protocol.py`, `test_mcp_route.py` and `test_mcp_stream.py` |
 | Browser clients | `backend/tests/mcp/test_mcp_cors.py` |
 | The read tools | `backend/tests/mcp/test_mcp_page_read.py`, `test_mcp_fact_tools.py`, `backend/tests/contribution_scale/test_craft_finding.py` and `backend/tests/db/test_craft_finder_db.py` |

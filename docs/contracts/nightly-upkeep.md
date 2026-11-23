@@ -12,11 +12,12 @@ moved are refreshed on the CDN; a night that changed nothing sends nothing. Answ
 constant, so a night's work and its load on other sites are known in advance.
 Operators and the engineers who add a step read it.
 
-Last reviewed: 2026-11-23 (step 3d, decision 0150).
+Last reviewed: 2026-11-23 (step 3d, decision 0150; Refresh pages now, decision 0170).
 
 | For | Read |
 |---|---|
 | Why the knowledge heals itself every night | [decision 0101](../decisions/0101-knowledge-architecture-for-every-craft.md), items 5 and 11 |
+| Refreshing the changed pages now, from the settings hub or over MCP, one job at a time with the night | [decision 0170](../decisions/0170-review-over-mcp-staged-and-pages-refreshed-now.md) and Refresh pages now below |
 | The healing tasks open work computes from these verdicts | [open-work.md](open-work.md) |
 | How a fact repaired by a new source returns to its pages | [knowledge-writes.md](knowledge-writes.md), Source proposals and Pages follow their facts |
 | Why answers leave a held fact out | [decision 0121](../decisions/0121-quote-visibility.md) |
@@ -192,6 +193,9 @@ rest (`mcp-oauth.md`, MCP activity).
   schema or a stamp other than the current one (`craft_page_stamp.page_stamp`, which moves with
   the craft's facts, pictures, places and the code that builds a page, not with each release).
   The oldest stale pages are rebuilt.
+- Steps 4 and 5 hold the one page refresh lock (Refresh pages now below): the night inserts its
+  `PageRefreshJob` (origin `NIGHT`) before step 4 and finishes it after step 5. When an Admin's
+  refresh is running, the night leaves steps 4 and 5 to it and reports `pagesSkipped`.
 
 ### 6. The page refresh
 
@@ -209,6 +213,38 @@ same way. Signed-in readers still load their own variant in the browser, and ans
 cached. A change that must reach readers who are not signed in at once (a hidden piece, a
 retracted claim) refreshes its pages when it is written, and an Admin's Start a build remains for
 anything else; the admin control refuses a second build within 10 minutes (429 with `Retry-After`).
+
+### Refresh pages now
+
+An Admin need not wait for the night: Refresh pages now on the settings hub
+(`components/admin/PageRefreshCard.tsx`, beside Start a build) and the `refresh_pages` MCP tool
+(the `review` scope) start one background job in the API process (`services/page_refresh_run`,
+`core/shielded.ShieldedWork.start`) that does steps 5 and 6 for what changed: it rebuilds the stale
+craft page snapshots (at most `PAGES_PER_NIGHT`, 60) and stored documents (at most 200), then
+refreshes on the site the pages whose content moved, within 8 minutes (`JOB_SECONDS`); what is left
+waits for the night. Monographs are reloaded only by the night and a release, since their content
+changes only with a release.
+
+- **One job at a time**, the night's included: a `PageRefreshJob` row (`scope` `CHANGED`, `EVERY`
+  or `NAMED`; `origin` `WEB`, `MCP`, `NIGHT` or `REVIEW`; who, the MCP client, the named pages, the
+  `phase` `PAGES`, `DOCUMENTS`, `REFRESHING` then `FINISHED`, `progress`, `note`) is inserted
+  `RUNNING`, and a partial unique index allows one running row. A second start is 409 ("The
+  night's refresh is running" when it is the night's). A row still running 15 minutes after it
+  started (90 for the night's, whose run is bounded by its 60-minute workflow) stopped without
+  finishing and is marked `FAILED` by the next start.
+- **Cooldown**: 10 minutes after the last refresh an Admin started, from the web or over MCP
+  (429 with `Retry-After`); every page, once in 24 hours.
+- **Every page** (`EVERY`), the Master Admin's only, asked for again in a dialog on the web and not
+  offered over MCP: every stale snapshot and document without the night's bounds, then every page
+  `GET /api/site/pages` lists refreshed on the site.
+- **Named pages** (`NAMED`, origin `REVIEW`): confirming a staged review batch (`review-queue.md`,
+  Staged over MCP) starts one for the crafts, families and categories its items touched, with no
+  cooldown; while another job runs those pages are sent to `/api/revalidate` at once instead.
+- **No model is called.** A snapshot is built from stored rows (`craft_page_snapshots`), a stored
+  document from published sections (`stored_documents`), and a refresh is an HTTP call to the web:
+  the model cost of a page is nothing. On Vercel each refreshed page is rendered again on its next
+  visit, which is why the default refreshes only the pages that changed.
+- **Audit**: `site.pages_refresh_started {scope, origin, client}` with the job as target.
 
 ### 5d. Facts readers cannot see
 
@@ -232,9 +268,14 @@ stored in `AppSetting` `upkeep.hiddenFacts` and read by an Admin at `GET /api/co
 | GET | `/api/site/build` | Admin, Master Admin | `SiteBuildState {configured, lastTriggeredAt, nextAllowedAt}` |
 | POST | `/api/site/build` | Admin, Master Admin | 202 `SiteBuildState`; 503 when the hook is not set, 429 within 10 minutes of the last build, 502 when the hook refuses |
 | GET | `/api/coverage/hidden-facts` | Admin, Master Admin | `{report}`: the last night's `hiddenFacts` (step 5d), or null |
+| GET | `/api/site/refresh` | Admin, Master Admin | `PageRefreshState {schemaVersion 1, configured, running, last, nextAllowedAt, everyAllowedAt, mayRefreshEvery}`, each job `{id, scope, origin, status, phase, startedBy, clientName, startedAt, finishedAt, progress {pagesStale, pagesRebuilt, pagesChanged, documentsStale, documentsRebuilt, pagesToRefresh, pagesRefreshed, unrefreshed[], failed[]}, note}`; golden `shared/site.refresh.golden.json` |
+| POST | `/api/site/refresh` | Admin, Master Admin | `{every}`: 202 `PageRefreshState`; 409 while a refresh runs, 429 within the cooldown, 403 for `every` from anyone but the Master Admin |
 
 The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
-`frontend/e2e/site-pages-unit.spec.ts`); the control is `components/admin/SiteBuildCard.tsx`. The
+`frontend/e2e/site-pages-unit.spec.ts` and `page-refresh-unit.spec.ts`); the controls are
+`components/admin/SiteBuildCard.tsx` and `components/admin/PageRefreshCard.tsx` (with
+`PageRefreshJob.tsx`, `usePageRefresh.ts` and `lib/pageRefreshView.ts`, which reads the state again
+every 5 seconds while a job runs). The
 Settings hub's Facts readers cannot see card (`components/admin/HiddenFactsCard.tsx`, Admin and
 Master Admin) reads `GET /api/coverage/hidden-facts` through `frontend/lib/hiddenFacts.ts` and
 lists each craft's hidden facts by reason, the crafts with unexplained facts first and then the
@@ -252,7 +293,7 @@ and how many are unexplained (spec `frontend/e2e/hidden-facts-unit.spec.ts`).
  archive {archived, archiveFailed},
  orphans {orphansFound, orphansRemoved, orphansReported, orphans[{id, name, type, craftId}]},
  clients {abandonedRemoved},
- pages {monographs[load report], pagesStale, pagesRebuilt, pagesChanged, pagesFailed[]},
+ pages {monographs[load report], pagesStale, pagesRebuilt, pagesChanged, pagesFailed[], pagesSkipped?},
  fieldWork {subjects, tasks {MISSING_FIELD, THIN_FIELD}, priorities {HIGH, MEDIUM, LOW}, reservationsClosed},
  allowances {bucketsDeleted},
  lateCosts {answersUpdated},
@@ -290,6 +331,7 @@ the build as not triggered, and the admin control says so.
 | Run the upkeep now, with the page refresh | `gh workflow run nightly-upkeep.yml` |
 | Run the upkeep on the box without the refresh | the box command above with `--no-refresh` in place of `--dry-run` |
 | Start only the build | Start a build on `/admin` (Admin), or `POST /api/site/build` with an Admin's token |
+| Rebuild and refresh what changed now | Refresh pages now on `/admin` (Admin), `POST /api/site/refresh`, or `refresh_pages {start: true}` over MCP |
 
 ## Not covered yet
 
@@ -313,6 +355,7 @@ the build as not triggered, and the admin control says so.
 | Counting and pruning MCP calls, and their bounds | `backend/tests/db/test_mcp_activity_db.py` |
 | The rotating monograph window and stale page rebuilds | `backend/tests/upkeep/test_rotation.py` and `test_page_rebuilds.py` |
 | The build route and its throttle | `backend/tests/upkeep/test_site_build_routes.py` |
+| Refresh pages now: one job with the night, the cooldowns, every page, a stopped job and a named refresh | `backend/tests/db/test_page_refresh_db.py`, `backend/tests/mcp/test_staged_contract.py` and `frontend/e2e/page-refresh-unit.spec.ts` |
 | The changed pages and their refresh | `backend/tests/upkeep/test_page_rebuilds.py` and `backend/tests/test_page_batches.py` |
 | The shared terms' summary | `backend/tests/learning/test_shared_term_crafts.py`, `backend/tests/db/test_learning_views_db.py` and `backend/tests/test_deploy_page_order.py` |
 | The whole run and its report on Postgres | `backend/tests/db/test_nightly_upkeep_db.py` |

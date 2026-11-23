@@ -22,6 +22,7 @@ Date: 2026-11-19. Status: accepted (owner direction, 2026-11-19).
 | What built on it | [0117 A page in another language is the same page, translated passage by passage](0117-pages-in-other-languages.md): item 15's open work, which gains the `TRANSLATE` task kind |
 | The contracts it names | [knowledge-api.md](../contracts/knowledge-api.md), [research.md](../contracts/research.md), [knowledge-writes.md](../contracts/knowledge-writes.md), [nightly-upkeep.md](../contracts/nightly-upkeep.md), [review-queue.md](../contracts/review-queue.md), [mcp-oauth.md](../contracts/mcp-oauth.md), [open-work.md](../contracts/open-work.md), [mcp-ask-and-upload.md](../contracts/mcp-ask-and-upload.md), [dossier-export.md](../contracts/dossier-export.md), [contribution-screens.md](../contracts/contribution-screens.md) |
 | Pictures and testimony are decided only on the review queue | [decision 0145](0145-monograph-pages-and-speed-without-debt.md) |
+| `review` held only by Admins with two-step verification, given fresh, and what it lets an AI stage | [decision 0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

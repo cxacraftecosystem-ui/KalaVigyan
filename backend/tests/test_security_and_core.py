@@ -1,9 +1,12 @@
 import base64
 import time
+from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 
 import jwt
 import pytest
 
+from app.core import security
 from app.core.config import get_settings, with_explicit_sslmode
 from app.core.db import build_runtime_database_url
 from app.core.deps import token_matches_user
@@ -68,7 +71,7 @@ class FakeUser:
     def __init__(self, version: int, deleted: bool = False) -> None:
         self.tokenVersion = version
         self.deletedAt = object() if deleted else None
-        self.sessionsValidFrom = None
+        self.sessionsValidFrom: datetime | None = None
 
 
 def test_token_version_bump_ends_sessions() -> None:
@@ -76,6 +79,21 @@ def test_token_version_bump_ends_sessions() -> None:
     assert token_matches_user(claims, FakeUser(1))
     assert not token_matches_user(claims, FakeUser(2))
     assert not token_matches_user(claims, FakeUser(1, deleted=True))
+
+
+def _token_issued_at(monkeypatch: pytest.MonkeyPatch, moment: datetime) -> dict[str, object]:
+    monkeypatch.setattr(security, "datetime", SimpleNamespace(now=lambda _zone: moment))
+    return decode_access_token(create_access_token("abc", token_version=1))
+
+
+def test_a_token_issued_after_sessions_end_in_the_same_second_is_live_and_one_before_is_not(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ended = datetime.now(UTC).replace(microsecond=500_000)
+    user = FakeUser(1)
+    user.sessionsValidFrom = ended
+    assert token_matches_user(_token_issued_at(monkeypatch, ended + timedelta(milliseconds=23)), user)
+    assert not token_matches_user(_token_issued_at(monkeypatch, ended - timedelta(milliseconds=100)), user)
 
 
 def test_runtime_url_for_session_pooler() -> None:

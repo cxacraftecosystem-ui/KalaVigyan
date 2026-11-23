@@ -3,7 +3,9 @@ import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
 
+import { craftFieldVoices, FIELD_VOICES_UNAVAILABLE } from "@/app/(reading)/crafts/[slug]/craftFieldVoices";
 import type { MonographDocument } from "@/lib/monographDocument";
+import { PAGE_LANGUAGES_UNAVAILABLE, serverPageLanguages } from "@/lib/monographLanguagesServer";
 import { documentOrAbsent, DOCUMENT_UNAVAILABLE, shellParams } from "@/lib/monographRenderServer";
 import { documentDigest } from "@/lib/monographRenderShell";
 import { PRERENDERED_PAGES, prerenderedParams } from "@/lib/server/readingPages";
@@ -54,4 +56,34 @@ test("a monograph the server does not hold is absent, and any other failed read 
   expect(() => documentOrAbsent({ ok: false, failure: "timeout", status: null })).toThrow(`${DOCUMENT_UNAVAILABLE}: timeout`);
   expect(() => documentOrAbsent({ ok: false, failure: "failed", status: 503 })).toThrow(DOCUMENT_UNAVAILABLE);
   expect(route("categories", "[slug]")).toContain("requiredCraftCatalogue()");
+});
+
+async function withApiAnswering<T>(status: number | "timeout", run: () => Promise<T>): Promise<T> {
+  const holder = globalThis as unknown as { fetch: typeof fetch };
+  const saved = { fetch: holder.fetch, origin: process.env.API_ORIGIN };
+  process.env.API_ORIGIN = "https://api.kalavigyan.example";
+  holder.fetch = async () => {
+    if (status === "timeout") throw new DOMException("The operation timed out.", "TimeoutError");
+    return new Response(JSON.stringify({ detail: "Not available" }), { status, headers: { "content-type": "application/json" } });
+  };
+  try {
+    return await run();
+  } finally {
+    holder.fetch = saved.fetch;
+    if (saved.origin === undefined) delete process.env.API_ORIGIN;
+    else process.env.API_ORIGIN = saved.origin;
+  }
+}
+
+test("a craft's field voices and a page's languages are absent only when the server holds none, and any other failed read fails the render so the last good page is kept", async () => {
+  for (const failure of [503, 500, "timeout"] as const) {
+    await withApiAnswering(failure, async () => {
+      await expect(craftFieldVoices("Kutch-Ajrakh")).rejects.toThrow(FIELD_VOICES_UNAVAILABLE);
+      await expect(serverPageLanguages("craft", "Kutch-Ajrakh")).rejects.toThrow(PAGE_LANGUAGES_UNAVAILABLE);
+    });
+  }
+  await withApiAnswering(404, async () => {
+    expect(await craftFieldVoices("No-Such-Craft")).toBeNull();
+    expect(await serverPageLanguages("category", "No-Such-Category")).toBeNull();
+  });
 });

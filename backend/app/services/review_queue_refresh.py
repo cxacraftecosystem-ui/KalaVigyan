@@ -36,7 +36,7 @@ from app.research.structure_proposals import APPROVED_STATUS
 from .page_revalidation import claim_owners, craft_owners, merged_owners, refresh_pages
 from .review_queue_readings import reading_craft
 
-__all__ = ["refresh_after_decision"]
+__all__ = ["decision_owners", "refresh_after_decision"]
 
 REJECTED_TESTIMONY = "REJECTED"
 APPROVED = "APPROVED"
@@ -45,10 +45,10 @@ CONCEPT_SUBJECT = "CONCEPT"
 
 
 async def refresh_after_decision(session: AsyncSession, decided: QueueDecision) -> bool:
-    return await refresh_pages(await _owners(session, decided))
+    return await refresh_pages(await decision_owners(session, decided))
 
 
-async def _owners(session: AsyncSession, decided: QueueDecision) -> PageOwners:
+async def decision_owners(session: AsyncSession, decided: QueueDecision) -> PageOwners:
     if decided.kind == FACTS:
         return await claim_owners(session, [decided.id])
     if decided.kind == COMPONENTS and decided.status == APPROVED:

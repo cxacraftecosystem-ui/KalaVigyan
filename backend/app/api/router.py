@@ -53,6 +53,7 @@ from app.api.routes import (
     shared,
     simulations,
     site_build,
+    staged_reviews,
     structure_proposals,
     supplied_sources,
     terms,
@@ -112,6 +113,7 @@ api_router.include_router(page_translations.router)
 api_router.include_router(place_ground.router)
 api_router.include_router(profile.router)
 api_router.include_router(public.router)
+api_router.include_router(staged_reviews.router)
 api_router.include_router(review_queue.router)
 api_router.include_router(rivers.router)
 api_router.include_router(saved_explainers.router)

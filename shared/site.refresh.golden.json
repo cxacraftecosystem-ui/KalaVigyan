@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "configured": true,
+  "running": {
+    "id": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e31",
+    "scope": "CHANGED",
+    "origin": "MCP",
+    "status": "RUNNING",
+    "phase": "DOCUMENTS",
+    "startedBy": "Admin Reviewer",
+    "clientName": "Claude",
+    "startedAt": "2026-11-23T06:40:00Z",
+    "finishedAt": null,
+    "progress": {
+      "pagesStale": 7,
+      "pagesRebuilt": 7,
+      "pagesChanged": 5,
+      "documentsStale": 3,
+      "documentsRebuilt": 0,
+      "pagesToRefresh": 0,
+      "pagesRefreshed": 0,
+      "unrefreshed": [],
+      "failed": []
+    },
+    "note": null
+  },
+  "last": {
+    "id": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e32",
+    "scope": "NAMED",
+    "origin": "REVIEW",
+    "status": "DONE",
+    "phase": "FINISHED",
+    "startedBy": null,
+    "clientName": null,
+    "startedAt": "2026-11-22T23:50:00Z",
+    "finishedAt": "2026-11-22T23:51:10Z",
+    "progress": {
+      "pagesStale": 2,
+      "pagesRebuilt": 2,
+      "pagesChanged": 2,
+      "documentsStale": 1,
+      "documentsRebuilt": 1,
+      "pagesToRefresh": 3,
+      "pagesRefreshed": 2,
+      "unrefreshed": ["Bagh-Print"],
+      "failed": ["document:craft:Bidri-Ware"]
+    },
+    "note": "The refresh stopped at its time limit; the night rebuilds what is left."
+  },
+  "nextAllowedAt": "2026-11-23T06:50:00Z",
+  "everyAllowedAt": null,
+  "mayRefreshEvery": false
+}

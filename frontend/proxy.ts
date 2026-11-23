@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   apiOrigin,
   csrfRefusal,
+  isAccountWrite,
   isMachineRoute,
   MACHINE_RESPONSE_HEADERS,
   refuseCrossSite,
@@ -13,20 +14,15 @@ import {
 } from "@/lib/server/apiProxy";
 import { REVALIDATE_ROUTE } from "@/lib/server/revalidation";
 
-const SESSION_ROUTES = new Set([
-  "/api/auth/login",
-  "/api/auth/two-factor/verify",
-  "/api/auth/change-password",
-  "/api/auth/logout",
-  "/api/session/adopt",
-  "/api/session/end",
-  "/api/version",
-  REVALIDATE_ROUTE
-]);
+const WEB_ROUTES = new Set(["/api/session/adopt", "/api/session/end", "/api/version", REVALIDATE_ROUTE]);
+
+function answeredByTheWeb(path: string, method: string): boolean {
+  return WEB_ROUTES.has(path) || isAccountWrite(path, method);
+}
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  if (SESSION_ROUTES.has(path)) return NextResponse.next();
+  if (answeredByTheWeb(path, request.method)) return NextResponse.next();
   const machine = isMachineRoute(path);
   if (!machine && csrfRefusal(request)) return refuseCrossSite();
   const origin = apiOrigin();

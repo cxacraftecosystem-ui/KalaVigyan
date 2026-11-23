@@ -15,7 +15,7 @@ from app.services import oauth_bearer, oauth_client_documents, oauth_clients, oa
 from app.services.oauth_client_documents import ClientDocuments, FetchedDocument
 
 from ..mcp.client_documents import CLAUDE_DOCUMENT, CLAUDE_ID, CLAUDE_RETURN, document_bytes
-from .test_oauth_db import API, ENDPOINTS, NOW, RESOURCE, asked, exchanged, person, refreshed
+from .test_oauth_db import API, ENDPOINTS, NOW, RESOURCE, asked, exchanged, grantor, person, refreshed
 from .testimony_seed import rolled_back_session
 
 pytestmark = pytest.mark.db
@@ -47,7 +47,7 @@ async def approve(session: AsyncSession, user: Any, client_id: str, **changes: s
     consent = Consent(
         request=asked(client_id, **changes), scopes=["read", "contribute"], terms_version=MCP_TERMS_VERSION
     )
-    sent = await oauth_consent.approve(session, user, consent, endpoints=ENDPOINTS, now=NOW)
+    sent = await oauth_consent.approve(session, grantor(user), consent, endpoints=ENDPOINTS)
     query = parse_qs(urlsplit(sent.redirect_to).query)
     assert sent.redirect_to.startswith(f"{CLAUDE_RETURN}?") and query["iss"] == [API]
     return query["code"][0]
@@ -58,7 +58,7 @@ async def test_claude_signs_in_with_its_published_identity_and_its_token_reaches
 ) -> None:
     reads = publish(monkeypatch, {CLAUDE_ID: CLAUDE_DOCUMENT})
     user = await person(session)
-    prompt = await oauth_consent.review(session, user, asked(CLAUDE_ID), endpoints=ENDPOINTS)
+    prompt = await oauth_consent.review(session, grantor(user), asked(CLAUDE_ID), endpoints=ENDPOINTS)
     assert isinstance(prompt, AuthorizationPrompt)
     assert (prompt.client_name, prompt.client_id_host, prompt.redirect_host) == (
         "Claude",
@@ -87,7 +87,10 @@ async def test_a_return_address_the_document_does_not_list_stops_the_sign_in(
     user = await person(session)
     with pytest.raises(oauth_consent.UntrustedRequest) as stopped:
         await oauth_consent.review(
-            session, user, asked(address, redirect_uri="https://evil.example/cb"), endpoints=ENDPOINTS
+            session,
+            grantor(user),
+            asked(address, redirect_uri="https://evil.example/cb"),
+            endpoints=ENDPOINTS,
         )
     assert (stopped.value.error, stopped.value.status) == ("invalid_request", 400)
     with pytest.raises(oauth_consent.UntrustedRequest):
@@ -102,7 +105,7 @@ async def test_a_document_naming_another_client_stops_the_sign_in_as_an_invalid_
     publish(monkeypatch, {address: document | {"client_id": "https://apps.example.org/someone-else.json"}})
     user = await person(session)
     with pytest.raises(oauth_consent.UntrustedRequest) as stopped:
-        await oauth_consent.review(session, user, asked(address), endpoints=ENDPOINTS)
+        await oauth_consent.review(session, grantor(user), asked(address), endpoints=ENDPOINTS)
     assert (stopped.value.error, stopped.value.status) == ("invalid_client", 400)
 
 
@@ -132,7 +135,9 @@ async def test_dynamic_registration_still_signs_in_beside_published_identities(
         session, ClientRegistration(redirect_uris=[CLAUDE_RETURN], client_name="Claude"), now=NOW
     )
     assert uuid.UUID(registered.client_id).version == 4
-    prompt = await oauth_consent.review(session, user, asked(registered.client_id), endpoints=ENDPOINTS)
+    prompt = await oauth_consent.review(
+        session, grantor(user), asked(registered.client_id), endpoints=ENDPOINTS
+    )
     assert isinstance(prompt, AuthorizationPrompt)
     assert (prompt.client_name, prompt.client_id_host) == ("Claude", None)
     reply = await exchanged(session, registered.client_id, await approve(session, user, registered.client_id))

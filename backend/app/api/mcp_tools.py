@@ -27,11 +27,13 @@ from .mcp_protocol import (
     tool_result,
 )
 from .mcp_read_tools import READ_TOOLS
+from .mcp_report_tools import REPORT_TOOLS
 from .mcp_resources import resource_list, resource_read, resource_templates
+from .mcp_review_tools import REVIEW_TOOLS
 from .mcp_source_tools import SOURCE_TOOLS
 from .mcp_structure_tools import STRUCTURE_TOOLS
 from .mcp_studio_sources import STUDIO_SOURCE_TOOLS
-from .mcp_tool_base import Tool, ToolContext, scope_refusal
+from .mcp_tool_base import Tool, ToolContext, listed_to, scope_refusal
 from .mcp_work_tools import WORK_TOOLS
 
 __all__ = ["TOOLS", "ToolContext", "answer", "tool_list"]
@@ -51,13 +53,15 @@ TOOLS: Mapping[str, Tool] = MappingProxyType(
             *DATASET_TOOLS,
             *PAGE_TOOLS,
             *PICTURE_TOOLS,
+            *REVIEW_TOOLS,
+            *REPORT_TOOLS,
         )
     }
 )
 
 
-def tool_list() -> list[dict[str, Any]]:
-    return [tool.listed() for tool in TOOLS.values()]
+def tool_list(scopes: frozenset[str] = frozenset()) -> list[dict[str, Any]]:
+    return [tool.listed() for tool in TOOLS.values() if listed_to(tool, scopes)]
 
 
 async def answer(message: Any, context: ToolContext) -> dict[str, Any] | None:
@@ -79,7 +83,7 @@ async def _dispatch(method: str, params: dict[str, Any], context: ToolContext) -
     if method == "ping":
         return {}
     if method == "tools/list":
-        return {"tools": tool_list()}
+        return {"tools": tool_list(context.scopes)}
     if method == "tools/call":
         return await _call(params, context)
     return _catalogue(method, params, context)

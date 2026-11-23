@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, type ReactElement, type ReactNode } from "react";
 import { Lock } from "lucide-react";
 
 import {
@@ -33,7 +33,19 @@ export function drawsBeforeAccount(pathname: string | null): boolean {
   return FIRST_PAINT_PATHS.includes(pathname ?? "");
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export type AppFrameState = { user: User | null; loading: boolean; firstPaint: boolean; onRetry: (() => void) | null };
+
+export function appFrame({ user, loading, firstPaint, onRetry }: AppFrameState, children: ReactNode): ReactElement {
+  return (
+    <AccountGate user={user}>
+      <ShellFrame nav={loading ? <Appbar brandHref="/ask" /> : <DynamicIslandNav />} onRetry={loading ? null : onRetry}>
+        {loading && !firstPaint ? <Skeleton shape="lede" label="Opening your account" /> : <GuardedRoute user={user}>{children}</GuardedRoute>}
+      </ShellFrame>
+    </AccountGate>
+  );
+}
+
+export function AppShell({ children }: { children: ReactNode }) {
   const { user, loading, reach, retryMe } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -42,28 +54,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (!loading && !user && reach === "ok") router.replace(signInHref(`${window.location.pathname}${window.location.search}`));
   }, [loading, reach, router, user]);
 
-  if (loading) {
-    return (
-      <ShellFrame nav={<Appbar brandHref="/ask" />} onRetry={null}>
-        {drawsBeforeAccount(pathname) ? children : <Skeleton shape="lede" label="Opening your account" />}
-      </ShellFrame>
-    );
-  }
+  if (!loading && !user) return reach === "retrying" ? <Unreachable onRetry={retryMe} /> : null;
 
-  if (!user && reach === "retrying") return <Unreachable onRetry={retryMe} />;
-
-  if (!user) return null;
-
-  return (
-    <AccountGate user={user}>
-      <ShellFrame nav={<DynamicIslandNav />} onRetry={reach === "retrying" ? retryMe : null}>
-        <GuardedRoute user={user}>{children}</GuardedRoute>
-      </ShellFrame>
-    </AccountGate>
-  );
+  return appFrame({ user, loading, firstPaint: drawsBeforeAccount(pathname), onRetry: reach === "retrying" ? retryMe : null }, children);
 }
 
-function GuardedRoute({ user, children }: { user: User; children: React.ReactNode }) {
+function GuardedRoute({ user, children }: { user: User | null; children: ReactNode }) {
   const { adminMode, adminViewResolved, setAdminView } = useAdminView();
   const pathname = usePathname();
   const guard = routeGuardFor(pathname);

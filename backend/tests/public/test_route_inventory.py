@@ -215,6 +215,8 @@ ADMIN_ROUTES = {
     ("GET", "/api/knowledge/contribution-costs"),
     ("GET", "/api/site/build"),
     ("POST", "/api/site/build"),
+    ("GET", "/api/site/refresh"),
+    ("POST", "/api/site/refresh"),
     ("GET", "/api/coverage/hidden-facts"),
     ("PUT", "/api/pages/{kind}/{slug}/layout"),
     ("PUT", "/api/contributions/images/{contribution_id}/file"),
@@ -226,6 +228,9 @@ ADMIN_ROUTES = {
     ("POST", "/api/review-queue/{kind}/{item_id}/reject"),
     ("POST", "/api/review-queue/FACTS/{claim_id}/raise"),
     ("POST", "/api/review-queue/FACTS/{claim_id}/retract"),
+    ("GET", "/api/review-queue/staged"),
+    ("POST", "/api/review-queue/staged/{batch_id}/confirm"),
+    ("POST", "/api/review-queue/staged/{batch_id}/discard"),
     ("GET", "/api/upload-links/{token}"),
     ("POST", "/api/upload-links/{token}/picture"),
     ("POST", "/api/upload-links/{token}/renew"),
@@ -310,15 +315,8 @@ PATH_VALUES = {
     "block_id": "simulation-1",
 }
 A_UUID = "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e5f"
-GROUPS = (
-    PUBLIC_ROUTES,
-    SIGN_IN_ROUTES,
-    SERVICE_ROUTES,
-    ASKING_ROUTES,
-    OWN_RECORD_ROUTES,
-    ADMIN_ROUTES,
-    CONSENT_ROUTES,
-)
+OPEN_GROUPS = (PUBLIC_ROUTES, SIGN_IN_ROUTES, SERVICE_ROUTES)
+GROUPS = (*OPEN_GROUPS, ASKING_ROUTES, OWN_RECORD_ROUTES, ADMIN_ROUTES, CONSENT_ROUTES)
 
 
 def _calls(dependant: Any) -> set[Any]:
