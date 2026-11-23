@@ -557,18 +557,6 @@ Last reviewed: 2026-11-22.
   writing the `ProcessStage` with the review's note. It waits on that screen (design and answer UI
   lane) and its review-queue item being scheduled together.
 
-## Phase B contract (decision 0042)
-
-### The phase B fixture's river ids are placeholders
-
-- **What:** `shared/explainer.phase-b.golden.json` names reach ids 1, 2, 3 and outlet 3 under
-  `placeholders`; every other id resolves.
-- **Why left:** the river lines are built (decision 0043) but load only on GitHub Actions after
-  the deploy; the real ids come from that load.
-- **Clears it:** after the first `riverlines` load (decision 0043), take the Kachchh river from
-  `river_store.rivers_crossing(session, [449])` and `trace_river`, write its reach ids and outlet
-  into the fixture, and remove `placeholders` from the fixture and its model.
-
 ## Reaction player, material cards and 3D molecules (decision 0045)
 
 ### The zoom story reads the craft's matter on its own

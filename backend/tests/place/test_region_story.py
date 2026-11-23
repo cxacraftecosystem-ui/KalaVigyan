@@ -82,7 +82,10 @@ async def test_kachchh_s_story_follows_the_fixture_reaches_with_cited_steps(stor
     built = await RegionStoryBuilder(place_tools(model)).build(place_ask())
     (block,) = built.blocks
     assert block.model_dump(mode="json", by_alias=True) == expected_story(BLOCK_ID)
-    assert (block.river.reach_ids, block.river.district_lgds) == ([1, 2, 3], [KACHCHH])
+    assert block.river.reach_ids == golden_story()["river"]["reachIds"] and block.river.district_lgds == [
+        KACHCHH
+    ]
+    assert block.river.reach_ids[-1] == block.river.main_riv == 41063203
     assert built.sources == {}
     assert stored["asked"] == ["Kutch-Ajrakh"]
     (call,) = model.calls

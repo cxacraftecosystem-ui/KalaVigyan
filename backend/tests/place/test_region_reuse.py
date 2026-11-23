@@ -49,7 +49,7 @@ KEPT_AT = datetime(2026, 11, 17, 9, 0, tzinfo=UTC)
 FIRST_ANSWER = uuid.UUID(int=10)
 OTHER_ANSWER = uuid.UUID(int=11)
 WATER = "water:kachchh"
-BASIN = "water:basin-3"
+BASIN = "water:basin-41063203"
 STORY_REPLY = {
     "river": "r1",
     "steps": [{"claim": "c1", "district": f"d{KACHCHH}"}],

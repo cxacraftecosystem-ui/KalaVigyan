@@ -95,7 +95,7 @@ def test_a_map_layer_draws_its_district_over_its_state_with_the_boundary_caption
 
 def test_a_region_story_draws_its_districts_and_names_its_river() -> None:
     text, data = figure_of(PHASE_B, "s1.b1")
-    assert "Kachchh, Gujarat" in text and "River: Saran" in text
+    assert "Kachchh, Gujarat" in text and "River: Khari" in text
     assert BOUNDARY_CAPTION in text
     assert line_ops(data) > MAP_POINTS_MIN
 

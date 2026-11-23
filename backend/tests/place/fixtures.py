@@ -16,7 +16,7 @@ from app.research.blocks_place import DistrictRef
 from app.research.datasets import DatasetRef
 from app.research.piece_reuse import ClaimState
 from app.research.planning import PlanRequest
-from app.research.rivers import RiverTrace
+from app.research.rivers import RIVER_NAME_DATASET_CODES, RiverTrace
 from app.research.sections import SectionSpec
 from app.services import place_builders
 from app.services.answer_events import CitedClaims
@@ -25,12 +25,14 @@ from app.services.knowledge_view import ClaimView
 from app.services.place_claims import PlaceClaims
 from app.services.region_story import LayerOffer, OfferedRiver, RegionOffer
 
+from ..contracts.golden import golden_json
 from ..contracts.phase_b_golden import phase_b, phase_b_blocks
 from ..planner.fakes import FakeModel
 from ..research.fixtures import AJRAKH
 
 KACHCHH = 449
-HEADWATER, MIDDLE, OUTLET, SIDE = 1, 2, 3, 4
+KACHCHH_BASIN = "river.kachchh.golden.json"
+OUTLET = 41063203
 STORY = "s1.b1"
 LAYER = "s2.b1"
 GOLDEN_REPLY = {
@@ -50,23 +52,30 @@ def golden_layer() -> dict[str, Any]:
 
 def dataset_rows() -> dict[str, DatasetRef]:
     rows = [*golden_story()["datasets"], *golden_layer()["datasets"]]
-    return {row["code"]: DatasetRef.model_validate(row) for row in rows}
+    return {
+        row["code"]: DatasetRef.model_validate(row)
+        for row in rows
+        if row["code"] not in RIVER_NAME_DATASET_CODES
+    }
 
 
 def fixture_reaches() -> dict[int, ReachLink]:
-    reaches = [
-        ReachLink(hyriv_id=HEADWATER, next_down=MIDDLE, main_riv=OUTLET, upland_skm=120.0),
-        ReachLink(hyriv_id=MIDDLE, next_down=OUTLET, main_riv=OUTLET, upland_skm=260.0),
-        ReachLink(hyriv_id=SIDE, next_down=OUTLET, main_riv=OUTLET, upland_skm=150.0),
-        ReachLink(hyriv_id=OUTLET, next_down=0, main_riv=OUTLET, upland_skm=410.0),
-    ]
-    return {reach.hyriv_id: reach for reach in reaches}
+    reaches = golden_json(KACHCHH_BASIN)["objects"]["reaches"]["geometries"]
+    return {
+        reach["id"]: ReachLink(
+            hyriv_id=reach["id"],
+            next_down=reach["properties"]["nextDown"],
+            main_riv=OUTLET,
+            upland_skm=100.0 * reach["properties"]["ordStra"],
+        )
+        for reach in reaches
+    }
 
 
 def kachchh_trace() -> RiverTrace:
     links = fixture_reaches()
-    path = traced_reach_ids(OUTLET, links)
-    hits = [DistrictHit(position=position, district_lgd=KACHCHH, entry=0.25) for position in (2, 3)]
+    path = traced_reach_ids(OUTLET, links, named=golden_story()["river"]["reachIds"])
+    hits = [DistrictHit(position=position, district_lgd=KACHCHH, entry=0.0) for position in range(len(path))]
     return river_trace(path, links, districts_in_path_order(hits))
 
 
@@ -195,7 +204,9 @@ def expected_story(block_id: str, **changes: Any) -> dict[str, Any]:
         {**step, "sentence": {**step["sentence"], "id": f"{block_id}.{n}"}}
         for n, step in enumerate(story["steps"], start=1)
     ]
-    return {**story, "id": block_id, "river": {**story["river"], "name": None}, "steps": steps, **changes}
+    datasets = [row for row in story["datasets"] if row["code"] not in RIVER_NAME_DATASET_CODES]
+    river = {**story["river"], "name": None}
+    return {**story, "id": block_id, "river": river, "steps": steps, "datasets": datasets, **changes}
 
 
 def codes(rows: Sequence[Any]) -> list[str]:

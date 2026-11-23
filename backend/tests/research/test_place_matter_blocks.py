@@ -47,10 +47,10 @@ def test_every_fixture_block_validates() -> None:
         (lambda b: b["steps"][0].update(districtLgd=90), "only districts it lists"),
         (lambda b: b["river"].update(districtLgds=[90]), "river's districts first"),
         (
-            lambda b: b["river"].update(name="Indus Delta"),
+            lambda b: (b["river"].update(name="Indus Delta"), b.update(datasets=b["datasets"][:2])),
             "names the river only as a cited step or a river names dataset row states it",
         ),
-        (lambda b: b["river"].update(reachIds=[1, 3, 2]), "source to its outlet"),
+        (lambda b: b["river"].update(reachIds=b["river"]["reachIds"][::-1]), "source to its outlet"),
         (lambda b: b.update(layers=["river-density", "river-density"]), "each district and layer once"),
         (
             lambda b: b["steps"][0]["sentence"].update(id=b["steps"][1]["sentence"]["id"]),
@@ -67,6 +67,7 @@ def test_a_region_story_fails_closed(change: Any, message: str) -> None:
 def test_a_river_name_no_step_states_stands_on_its_river_names_dataset_row() -> None:
     body = fixture_block("s1.b1")
     body["river"]["name"] = "Indus Delta"
+    body["datasets"] = body["datasets"][:2]
     names = {
         "code": "WIKIDATA_RIVER_NAMES",
         "title": "Wikidata river items: English names, mouths and sources",

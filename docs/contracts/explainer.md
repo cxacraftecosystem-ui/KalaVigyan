@@ -1944,8 +1944,11 @@ adapter response gives it, its record source `record_source_id(6293)`), two expe
 (Historian and Anthropologist, who differ on when the Khatris came to Kutch: the GI journal's
 400 years against Khamir's seventh century) and a supply map (indigo from Shikarpur and Dhamadka,
 blocks from Pethapur, unplaced). It also lists how each block is stored (`pieces`; map layer and
-molecule are none) and its sources in order of first citation. The river's `reachIds` and
-`mainRiv` are placeholders, named under `placeholders`, until lane 0043 loads HydroRIVERS; every
+molecule are none) and its sources in order of first citation. The river is the loaded Khari
+(`mainRiv` 41063203), traced from its headwater to its outlet through the reaches OpenStreetMap
+names Khari and named from `OSM_RIVER_NAMES`, whose row the story cites; its basin file is
+`shared/river.kachchh.golden.json`, the production file `GET /api/rivers/41063203` answered on
+2026-11-23 with each reach's districts as the decision 0153 load writes them (decision 0160). Every
 other id resolves to a seed row, a seeded science row, the LGD register, a golden or the recorded
 PubChem response (`tests/contracts/test_explainer_phase_b.py`). The client parses each block with
 its kind's shape and refuses it in the built-only parser and the stream
