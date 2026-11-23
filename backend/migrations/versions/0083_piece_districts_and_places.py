@@ -95,6 +95,8 @@ def rekeyed(topic_key: str, districts: Sequence[Mapping[str, object]]) -> str | 
 
 
 def _rekey_place_pieces() -> None:
+    if op.get_context().as_sql:
+        return
     bind = op.get_bind()
     for row in bind.execute(sa.text(PLACE_PIECES)).mappings().all():
         key = rekeyed(row["topic_key"], row["districts"])
