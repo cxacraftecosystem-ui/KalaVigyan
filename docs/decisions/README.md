@@ -46,7 +46,7 @@ flowchart LR
 | [0015](0015-science-engine.md) | Science engine: balancing, units, envelopes, the science seed and the process route | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
 | [0016](0016-region-profile.md) | Region profile and map layers from the stored district statistics | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
 | [0017](0017-voice-backend.md) | Voice backend: sessions, the custom LLM, the relay path and upkeep | [0025](0025-multilingual-voice.md) and [0140](0140-voice-and-listen-kept-true.md) |
-| [0018](0018-media-backend.md) | Media backend: stage illustrations and clips through the router, the job queue and S3 | [0154](0154-ai-media-and-film-scores-kept-true.md) |
+| [0018](0018-media-backend.md) | Media backend: stage illustrations and clips through the router, the job queue and S3 | [0154](0154-ai-media-and-film-scores-kept-true.md) and [0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md) |
 | [0019](0019-craft-page-and-region-panel.md) | Craft page process timeline, region panel and map choropleths | [0092](0092-design-system.md) |
 | [0020](0020-voice-ui.md) | Voice UI: the voice dock on /ask and the craft page | [0140](0140-voice-and-listen-kept-true.md) |
 | [0021](0021-media-ui.md) | Media UI: Image and Video on the craft page's process stages | [0092](0092-design-system.md) |

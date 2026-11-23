@@ -1,3 +1,4 @@
+import base64
 import json
 from collections.abc import Callable
 from pathlib import Path
@@ -5,9 +6,10 @@ from pathlib import Path
 import httpx
 import pytest
 
+from app.core.errors import InvalidInput
 from app.media.output import checked_output
 from app.media.prompt import REQUESTED_OUTPUT
-from app.providers.base import MediaRequest, ProviderError
+from app.providers.base import MediaRequest, MediaResult, ProviderError
 from app.providers.gemini_media import GeminiMediaWire
 from app.providers.gemini_p import GeminiAdapter
 
@@ -66,16 +68,25 @@ async def test_an_image_is_one_synchronous_unstored_interaction() -> None:
         "background": False,
         "store": False,
     }
-    assert result.data == png_bytes(1024, 1024)
+    recorded = json.loads(fixture("image_completed.json"))
+    assert result.data == base64.b64decode(recorded["steps"][1]["content"][0]["data"])
     assert (result.mime, result.input_tokens, result.output_tokens, result.media_tokens) == (
-        "image/png",
-        312,
-        1180,
+        "image/jpeg",
+        57,
+        1389,
         1120,
     )
-    assert result.provider_ref == "v1_ChdpbWFnZS1pbnRlcmFjdGlvbi0wMDAx"
+    assert (result.provider_ref, result.served_model) == (None, "gemini-3.1-flash-image")
     stored = checked_output("IMAGE", result)
-    assert (stored.width, stored.height, stored.duration_seconds) == (1024, 1024, None)
+    assert (stored.mime, stored.width, stored.height, stored.duration_seconds) == ("image/png", 32, 32, None)
+    assert stored.data.startswith(b"\x89PNG")
+
+
+def test_a_png_is_stored_as_it_came_and_any_other_picture_type_is_refused() -> None:
+    png = MediaResult(png_bytes(1024, 1024), "image/png", None, None, None, None, None)
+    assert checked_output("IMAGE", png).data == png.data
+    with pytest.raises(InvalidInput, match="made from a PNG or a JPEG"):
+        checked_output("IMAGE", MediaResult(b"GIF89a", "image/gif", None, None, None, None, None))
 
 
 async def test_a_video_starts_in_the_background_and_is_polled_until_done() -> None:
@@ -156,5 +167,5 @@ async def test_the_gemini_adapter_reaches_the_wire_with_its_key() -> None:
     )
     result = await adapter.generate_image(IMAGE)
     await adapter.aclose()
-    assert result.mime == "image/png"
+    assert result.mime == "image/jpeg"
     assert recorder.requests[0].headers["x-goog-api-key"] == KEY

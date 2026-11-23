@@ -165,11 +165,14 @@ Last reviewed: 2026-11-22.
   `end_call` and client tools, Hindi in agents, CSP hosts and the plan's retention minimum
   (`docs/contracts/voice.md`). Relay text to speech cannot run with zero retention
   (`enable_logging=false` is enterprise only).
-- **Waits on:** waits on the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154): its agent turn binds a session to the conversation it opens and asks one
-  question, so a reply in `agent_turn_events.json` settles the header, the bearer and the suffix;
-  commit it as `backend/tests/voice/fixtures/agent_turn_events.json`; `voice.transport` stays
-  `RELAY` until it passes. Tool calls, Hindi in agents, the CSP hosts and retention still need a
-  browser call on the box; retention also needs an enterprise plan or the Gemini voice.
+- **Waits on:** the agent spike, which is the switched-off voice call (decision 0035), not another
+  paid run: the paid check of 2026-11-23 (run 45112123057) refused its agent turn because no
+  ElevenLabs agent, agent key or voice session key is provisioned. Once the spike provisions them,
+  the paid check's agent turn settles the header, the bearer and the suffix (commit its
+  `agent_turn_events.json` as `backend/tests/voice/fixtures/agent_turn_events.json`;
+  `voice.transport` stays `RELAY` until it passes). Tool calls, Hindi in agents, the CSP hosts and
+  retention need a browser call on the box; retention also needs an enterprise plan or the Gemini
+  voice.
 
 ## Voice backend (decision 0017)
 
@@ -295,19 +298,17 @@ Last reviewed: 2026-11-22.
 
 ## Media backend (decision 0018)
 
-### Gemini media behaviour not yet seen live
+### Gemini video not yet seen live
 
-- **What:** how a safety block reads on the Interactions API, the image output type when none is
-  asked for (PNG assumed), the image's token breakdown and the interaction id alphabet are
-  unverified for images; for video also `DELETE /v1beta/interactions/{id}`, the clip's exact
-  duration, and the shape of an `image` input that would make the requester's stage image the
-  clip's first frame (PLAN 11 allows it; videos are `text_to_video` until the shape is seen, because
-  a wrong input fails every clip). The fixtures in `backend/tests/media/fixtures/` follow the
-  documented shapes, not captured traffic.
-- **Waits on:** images waits on the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154): commit its `image_completed_recorded.json` as
-  `backend/tests/media/fixtures/image_completed.json` and adjust `providers/gemini_media.py` where
-  the shapes differ. Video and the first frame wait on the owner approving one paid Gemini clip,
-  which the approval of 2026-11-22 does not include.
+- **What:** the paid check of 2026-11-23 saw an image made live (an unstored interaction with no id,
+  a thought step, `image/jpeg` output, usage by modality; `backend/tests/media/fixtures/image_completed.json`,
+  decision 0161). Video is still unseen: `DELETE /v1beta/interactions/{id}`, the clip's exact
+  duration, the shape of an `image` input that would make the requester's stage image the clip's
+  first frame (PLAN 11 allows it; videos are `text_to_video` until the shape is seen, because a wrong
+  input fails every clip), and how a safety block reads, which no paid call can be made to show.
+  The video fixtures follow the documented shapes, not captured traffic.
+- **Waits on:** the owner approving one paid Gemini clip, which the approval of 2026-11-22 does not
+  include.
 
 ### Community and caste names caught by group words only
 
@@ -319,13 +320,6 @@ Last reviewed: 2026-11-22.
   cited sources.
 - **Waits on:** the owner's and the governance lane's decision to keep the named practitioners per
   craft as cited data; the claim set and the named-cluster flag then check against it.
-
-### Media image output priced at one rate
-
-- **What:** a media call's text and thinking tokens are priced at the media output rate, which
-  overstates the cost of an image slightly.
-- **Waits on:** waits on the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154): its `image_completed_recorded.json` shows the
-  `output_tokens_by_modality` breakdown; then price each modality at its own rate.
 
 ## Yahoo sign-in (decision 0026)
 
@@ -513,16 +507,17 @@ Last reviewed: 2026-11-22.
 
 ## Listen and the switched-off call (decision 0035)
 
-### Narration not yet heard from ElevenLabs
+### Narration heard in English and Hindi only
 
-- **What:** `ElevenLabs.narration` follows the documented `/with-timestamps` shape; no request has
-  reached ElevenLabs, so `eleven_v4` on that endpoint, the alignment spelling the text in every
-  language, bracketed text read as text rather than as a v4 audio tag, and the real speaking rate
-  behind the 1,000-characters-a-minute hold are unverified (decision 0035, Unverified).
-- **Waits on:** waits on the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154): commit its `narration_en.json` and `narration_hi.json` as
-  `backend/tests/voice/fixtures/narration_with_timestamps.json` and a Hindi sibling; its report
-  gives each reply's characters a minute and whether the alignment spells the text. If `eleven_v4`
-  is refused, set `NARRATION_MODEL` to `eleven_v4_turbo`.
+- **What:** the paid check of 2026-11-23 heard `eleven_v4` on `/with-timestamps` in English and
+  Hindi: accepted, the alignment spelling the text code point for code point, 882 and 765 characters
+  a minute (`backend/tests/voice/fixtures/narration_with_timestamps.json` and its Hindi sibling,
+  decision 0161). It also showed Hindi skipping square-bracketed words as an audio tag, so Listen now
+  sends them as parentheses; that a parenthesis is read in Hindi, and the alignment in the eleven
+  other languages, are unheard. A mismatch fails loudly, and Listen then reads with the Gemini voice.
+- **Waits on:** the next paid check, whose narration step now sends the text as Listen does and
+  reports `parenthesisedSeconds`; the other languages wait on a reviewed sentence in each for
+  `paid_check_steps.NARRATIONS`, as interface words are reviewed (decision 0157).
 
 ### The Gemini read-aloud has not reached Gemini
 

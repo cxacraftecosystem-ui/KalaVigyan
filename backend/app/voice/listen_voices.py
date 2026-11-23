@@ -28,7 +28,10 @@ __all__ = [
     "ReadAloud",
     "SpokenPart",
     "listen_offer",
+    "untagged",
 ]
+
+NARRATION_TAG_BRACKETS = str.maketrans("[]", "()")
 
 
 class Narrator(Protocol):
@@ -90,11 +93,11 @@ class ElevenLabsVoice:
     async def spoken(self, parts: Sequence[NarrationPart], index: int) -> SpokenPart:
         part = parts[index]
         speech = await self.narrator.narration(
-            part.text,
+            untagged(part.text),
             voice_id=self.voice_id,
             language=part.language,
-            previous_text=parts[index - 1].text if index else "",
-            next_text=parts[index + 1].text if index + 1 < len(parts) else "",
+            previous_text=untagged(parts[index - 1].text) if index else "",
+            next_text=untagged(parts[index + 1].text) if index + 1 < len(parts) else "",
         )
         return SpokenPart(
             audio=speech.audio,
@@ -135,3 +138,7 @@ class GeminiVoice:
 def listen_offer(voices: Sequence[ListenVoice]) -> ListenOffer:
     languages = [code for code in ANSWER_LANGUAGES if any(voice.speaks(code) for voice in voices)]
     return ListenOffer(languages=languages, voice=voices[0].name if languages else None)
+
+
+def untagged(text: str) -> str:
+    return text.translate(NARRATION_TAG_BRACKETS)

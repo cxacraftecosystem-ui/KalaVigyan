@@ -3,13 +3,17 @@
 When ElevenLabs cannot read, Listen reads with the Gemini voice and highlights the sentence being
 read; the script says which voice read it. A shared-science node says how many crafts share its
 term and a route pages on through them. The Settings hub shows the night's count of facts readers
-cannot see. The browser smoke records a dock turn and checks its bit rate lets a minute fit.
+cannot see. The browser smoke records a dock turn and checks its bit rate lets a minute fit. The
+first paid check's replies become fixtures: ElevenLabs is sent no square brackets, a Gemini JPEG is
+stored as the PNG every reader expects, and an image's tokens are priced by modality.
 
 Date: 2026-11-23. Status: accepted (the lead's debt-clearing brief, screens and stream lane; the
 Listen fallback approved by the owner on 2026-11-22: "when ElevenLabs is down or refuses, Listen
 reads aloud with the Gemini voice and highlights by sentence only"). It amends
 [decision 0035](0035-listen-and-voice-switched-off.md) (who reads Listen, its offer, its cache id
-and its ledger keys) and [decision 0064](0064-quiz-compare-and-shared-science.md) (a node's crafts).
+and its ledger keys, what ElevenLabs is sent), [decision 0064](0064-quiz-compare-and-shared-science.md)
+(a node's crafts) and [decision 0018](0018-media-backend.md) (the image a job stores and its cost),
+on the lead's add-on of 2026-11-23 after the paid check (run 45112123057).
 The contracts are `docs/contracts/voice.md` (Listen; Relay turns), `docs/contracts/explainer.md`
 (Listen; concept graph), `docs/contracts/learning.md` (Shared-science explorer) and
 `docs/contracts/nightly-upkeep.md` (Routes).
@@ -22,6 +26,7 @@ The contracts are `docs/contracts/voice.md` (Listen; Relay turns), `docs/contrac
 | The count of hidden facts | [decision 0149](0149-a-fact-readers-can-see.md) |
 | The dock and how it is checked | [decision 0020](0020-voice-ui.md) |
 | The paid check that will see the Gemini voice run | [decision 0154](0154-ai-media-and-film-scores-kept-true.md) |
+| The media backend whose stored image and cost it changes | [decision 0018](0018-media-backend.md) |
 | Who reads, and how | [voice.md](../contracts/voice.md), Listen |
 | Every decision, by group | [README.md](README.md) |
 
@@ -102,6 +107,36 @@ not Urdu. It gives no timings.
    asked 32,000 (2026-11-23). The production voice check runs only after a release, so it was not
    the place to measure.
 
+8. **The paid check's replies are fixtures.** The recorded English and Hindi narrations (their
+   audio cut to its first 4,096 base64 characters, as no test plays it) replace the hand-written
+   narration fixture, the recorded image interaction (its thought signature cut, its 1K JPEG
+   replaced by a 32 pixel JPEG) replaces the hand-written image fixture, and the run's
+   `paid_checks_report.json` sits beside the voice fixtures. `eleven_v4` is kept: it was accepted and
+   its alignment spelled both texts. It spoke 882 and 765 characters a minute; the hold keeps the
+   documented 1,000 and the settle adds the rest within what is left, since the rate differs by
+   language and the settle already bills the audio.
+9. **ElevenLabs is sent no square brackets.** In Hindi, `eleven_v4` gave `[कई चरणों में]` 0.075 s, five
+   milliseconds a character, while English spoke `[in several stages]` in 1.44 s: Hindi read the
+   brackets as an audio tag and skipped the cited words the page highlights. `ElevenLabsVoice`
+   sends each square bracket as a parenthesis, one character for one, so the alignment still
+   indexes the shown text; `NARRATION_VERSION` becomes 3 so no narration made with brackets is
+   served again. Dropping bracketed text was refused: it is cited. The paid check now narrates the
+   text as Listen sends it and reports the parenthesised words' seconds.
+10. **A Gemini image is stored as PNG.** Gemini answered `image/jpeg` where the job, its file names
+    and the web's media shape expect `image/png`, so every job would have failed its output check.
+    `media/output.checked_output` converts a JPEG to PNG from its pixels
+    (`research/image_intake_pixels.converted`, metadata dropped) and refuses any other type.
+    Storing JPEG was refused: the web refuses any media type but PNG and MP4, and a backend
+    sending JPEG before the web accepted it would break every media view for the release's
+    minutes. Asking the API for PNG was refused: no documented request field was seen.
+11. **An image's tokens are priced by modality.** The reply gives `output_tokens_by_modality`
+    (1,120 image tokens of 1,389 output tokens). `AiModel.media_price_per_mtok` holds the media rate
+    (Gemini 3.1 Flash Image $60, Nano Banana 2.1 $30 a million) and `price_per_mtok` the text and
+    thinking rate ($3 and $7.50), from the Gemini pricing page read on 2026-11-23;
+    `budget.token_cost(..., media_tokens)` bills the image tokens at the media rate and the rest at the
+    text rate, every output token at the media rate when the reply gives no breakdown, and an admin
+    override may set `media`. The recorded call costs $0.068036, not $0.08334.
+
 ## Unverified
 
 1. That the Interactions API serves `gemini-3.8-flash-tts` speech in the documented shape when a
@@ -110,6 +145,8 @@ not Urdu. It gives no timings.
 2. That angle brackets in a cited sentence are read as text and not as an inline speech tag
    (the page documents tags such as `<short pause>`).
 3. Safari's recorded rate for `audio/mp4`; no runner has Safari.
+4. That `eleven_v4` reads a parenthesis in Hindi as text, and its alignment in the eleven other
+   answer languages.
 
 ## Consequences
 
@@ -122,6 +159,9 @@ not Urdu. It gives no timings.
 - The goldens `shared/listen.script.golden.json` (now with `voice`),
   `shared/listen.script-sentences.golden.json` (new) and `shared/naming-golden.json` (a WAV
   narration name) changed with this record.
+- Every narration is made again once, under version 3.
+- A stored stage illustration is a PNG converted from Gemini's JPEG, larger than the JPEG.
+- An image job's recorded cost falls by the text tokens' share (about a fifth for the recorded call).
 - No migration, no new table, no new dependency.
 
 ## How this record is kept true
@@ -137,4 +177,6 @@ names this one, and the table above links the two both ways. It records the choi
 `backend/tests/learning/test_learning_routes.py`, `backend/tests/db/test_learning_views_db.py`,
 `frontend/e2e/listen-contract-unit.spec.ts`, `listen-marks-unit.spec.ts`, `film-mode-unit.spec.ts`,
 `learning-renderers-unit.spec.ts`, `learning-contract-unit.spec.ts`, `hidden-facts-unit.spec.ts`,
-`voice-rate-unit.spec.ts` and `voice-rate.smoke.spec.ts`.
+`voice-rate-unit.spec.ts` and `voice-rate.smoke.spec.ts`, and for the paid check's replies
+`backend/tests/voice/test_recorded_narration.py`, `test_elevenlabs.py`,
+`backend/tests/media/test_gemini_media.py` and `test_views.py`.

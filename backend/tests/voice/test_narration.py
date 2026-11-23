@@ -64,8 +64,8 @@ def test_a_hypothesis_outcome_is_not_read_aloud() -> None:
     assert [s.sentence_id for s in what_if.sentences] == ["s2.b1.1", "s2.b1.3", "s2.b1.4"]
 
 
-def test_the_cache_id_is_version_two_since_hypotheses_left_listen() -> None:
-    parts = ("kalavigyan-narration", "2", "eleven_v4", "voice_1", "en", HASH)
+def test_the_cache_id_is_version_three_since_listen_sent_elevenlabs_no_square_brackets() -> None:
+    parts = ("kalavigyan-narration", "3", "eleven_v4", "voice_1", "en", HASH)
     by_hand = hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
     assert narration_cache_id(HASH, language="en", voice_id="voice_1", model="eleven_v4") == by_hand
 

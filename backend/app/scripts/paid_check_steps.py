@@ -9,6 +9,7 @@ from app.core.errors import AppError
 from app.providers.base import MediaRequest
 from app.providers.elevenlabs import NARRATION_MODEL, ElevenLabs, audio_seconds
 from app.providers.gemini_media import SPEECH_MODEL, GeminiMediaWire
+from app.voice.listen_voices import untagged
 from app.voice.read_aloud import wav_frames
 from app.voice.score_prompts import SCORE_MUSIC_PROMPT
 
@@ -71,7 +72,7 @@ def narration_estimate(language: str) -> Decimal:
 async def narration_check(
     eleven: ElevenLabs, recorder: Recorder, *, voice_id: str, language: str
 ) -> CheckResult:
-    text = NARRATIONS[language]
+    text = untagged(NARRATIONS[language])
     try:
         speech = await eleven.narration(text, voice_id=voice_id, language=language)
     except AppError as error:
@@ -84,6 +85,7 @@ async def narration_check(
         "charactersPerMinute": round(len(text) * 60 / seconds) if seconds else None,
         "alignmentSpellsTheText": len(speech.starts) == len(text),
         "lastCharacterEndsAt": speech.ends[-1] if speech.ends else None,
+        "parenthesisedSeconds": round(speech.ends[text.index(")")] - speech.starts[text.index("(")], 3),
     }
     return CheckResult(findings, _recorded(recorder, "/with-timestamps", f"narration_{language}.json"))
 
