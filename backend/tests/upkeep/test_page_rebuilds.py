@@ -83,7 +83,9 @@ async def test_the_oldest_stale_pages_are_rebuilt_up_to_the_bound(monkeypatch: p
     ]
     skipped: list[frozenset[str]] = []
 
-    async def stale_crafts(session: Any, *, skip: frozenset[str]) -> list[tuple[uuid.UUID, str]]:
+    async def stale_crafts(
+        session: Any, *, skip: frozenset[str], within: Any = None
+    ) -> list[tuple[uuid.UUID, str]]:
         skipped.append(skip)
         return stale
 
@@ -115,7 +117,7 @@ async def test_the_oldest_stale_pages_are_rebuilt_up_to_the_bound(monkeypatch: p
 async def test_stored_documents_rebuilt_after_the_pages_report_their_failures_as_the_pages_do(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def rebuild_stale_documents(session: Any, *, report: Any, limit: int) -> None:
+    async def rebuild_stale_documents(session: Any, *, report: Any, limit: int, within: Any = None) -> None:
         report.stale = 3
         report.rebuilt.extend(["craft:Bagh-Print", "category:Metal-Craft-Category"])
         report.changed = 1

@@ -5,13 +5,15 @@ import hashlib
 import hmac
 import re
 from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from ipaddress import ip_address
 from typing import Any
 from urllib.parse import SplitResult, urlencode, urlsplit, urlunsplit
 
 from app.core.errors import AppError
 from app.core.mcp_scopes import ASK_SCOPE, CONTRIBUTE_SCOPE, MCP_SCOPES, READ_SCOPE, REVIEW_SCOPE
-from app.core.roles import PROFESSOR, Capability, can, has_rank
+from app.core.roles import Capability, can
 
 __all__ = [
     "ACCESS_DENIED",
@@ -31,17 +33,23 @@ __all__ = [
     "REDIRECT_URIS_MAX",
     "REFRESH_TOKEN_PREFIX",
     "REFRESH_TOKEN_SECONDS",
+    "REVIEW_ACCESS_TOKEN_SECONDS",
+    "REVIEW_GRANT_SECONDS",
+    "REVIEW_SIGN_IN_SECONDS",
     "SCOPE_MAX_CHARS",
     "SECRET_MAX_CHARS",
     "STATE_MAX_CHARS",
     "TEMPORARILY_UNAVAILABLE",
     "UNSUPPORTED_GRANT_TYPE",
     "UNSUPPORTED_RESPONSE_TYPE",
+    "Grantor",
     "OAuthError",
+    "access_token_seconds",
     "challenge_is_valid",
     "held_scopes",
     "is_loopback_host",
     "joined_scopes",
+    "live_scopes",
     "may_hold",
     "ordered_scopes",
     "pkce_matches",
@@ -68,7 +76,10 @@ STATE_MAX_CHARS = 1024
 SCOPE_MAX_CHARS = 200
 REDIRECT_URI_MAX_CHARS = 2048
 REDIRECT_URIS_MAX = 10
-REVIEW_MIN_ROLE = PROFESSOR
+REVIEW_SIGN_IN_SECONDS = 15 * 60
+REVIEW_ACCESS_TOKEN_SECONDS = 15 * 60
+REVIEW_GRANT_SECONDS = 8 * 60 * 60
+CLOCK_SKEW = timedelta(minutes=1)
 LOOPBACK_NAMES = frozenset({"localhost"})
 REFUSED_SCHEMES = frozenset({"javascript", "data", "file", "vbscript", "about", "blob", "filesystem", "ftp"})
 
@@ -189,8 +200,38 @@ def may_hold(user_or_role: Any, scope: str) -> bool:
     if scope == CONTRIBUTE_SCOPE:
         return can(user_or_role, Capability.PROPOSE_KNOWLEDGE)
     if scope == REVIEW_SCOPE:
-        return has_rank(user_or_role, REVIEW_MIN_ROLE)
+        return can(user_or_role, Capability.REVIEW_CONTRIBUTIONS) and _two_step_on(user_or_role)
     return False
+
+
+@dataclass(frozen=True)
+class Grantor:
+    user: Any
+    signed_in_at: datetime | None
+    now: datetime
+
+    def may_grant(self, scope: str) -> bool:
+        if not may_hold(self.user, scope):
+            return False
+        return scope != REVIEW_SCOPE or self.signed_in_recently
+
+    @property
+    def signed_in_recently(self) -> bool:
+        if self.signed_in_at is None:
+            return False
+        earliest = self.now - timedelta(seconds=REVIEW_SIGN_IN_SECONDS)
+        return earliest <= self.signed_in_at <= self.now + CLOCK_SKEW
+
+
+def live_scopes(scopes: Iterable[str], *, granted_at: datetime, now: datetime) -> tuple[str, ...]:
+    held = set(scopes)
+    if now >= granted_at + timedelta(seconds=REVIEW_GRANT_SECONDS):
+        held.discard(REVIEW_SCOPE)
+    return ordered_scopes(held)
+
+
+def access_token_seconds(scopes: Iterable[str]) -> int:
+    return REVIEW_ACCESS_TOKEN_SECONDS if REVIEW_SCOPE in set(scopes) else ACCESS_TOKEN_SECONDS
 
 
 def held_scopes(user_or_role: Any, scopes: Iterable[str]) -> tuple[str, ...]:
@@ -204,6 +245,10 @@ def joined_scopes(scopes: Iterable[str]) -> str:
 def ordered_scopes(scopes: Iterable[str]) -> tuple[str, ...]:
     present = set(scopes)
     return tuple(scope for scope in MCP_SCOPES if scope in present)
+
+
+def _two_step_on(user_or_role: Any) -> bool:
+    return getattr(user_or_role, "twoFactorEnabled", False) is True
 
 
 def _without_port(parts: SplitResult) -> tuple[str, str | None, str, str, str]:

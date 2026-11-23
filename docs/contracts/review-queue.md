@@ -15,6 +15,7 @@ route per action. Reviewers and the engineers who add a kind or a decision read 
 | Component proposals | [open-work.md](open-work.md) |
 | Artisans' testimony | [roles-and-contributions.md](roles-and-contributions.md) |
 | Map layer proposals | the datasets reference (`backend/app/data/contributor/references/datasets.md`), Map layers over MCP |
+| Decisions an Admin's AI stages over MCP for a person to confirm | [decision 0170](../decisions/0170-review-over-mcp-staged-and-pages-refreshed-now.md) and Staged over MCP below |
 
 A reviewer's own contribution is approved at once by its own write path (`knowledge-writes.md`,
 `image-contributions.md`, `open-work.md`) and never enters the queue; the queue also leaves out
@@ -326,6 +327,66 @@ the secret on the API nothing is sent; a refusal or an unreachable web app is lo
 the change stays, the pages refreshing on their daily schedule. The secret lives in Parameter Store
 and the Vercel env (`docs/RUNBOOK.md`, Secrets).
 
+## Staged over MCP
+
+An Admin's or Master Admin's AI client, signed in with the `review` scope (`mcp-oauth.md`, Scopes
+and roles), reads the queue and stages decisions; nothing it stages changes a record or reaches a
+reader until a person confirms it here. The server never applies what an app proposes, so an
+instruction hidden in a quote or a contributed statement that the app reads and follows can at
+most put a decision in front of a person, who sees it with its reason and the app that proposed it
+(decision 0170).
+
+- **Kinds.** `FACTS`, `COMPONENTS`, `LAYOUTS`, `STRUCTURE`, `READINGS`, `LAYERS` and `STAGES`, with
+  the actions the routes above allow; `TESTIMONY` and `IMAGES` stay on the site, because they carry
+  people's own voices, words and pictures, whose consent covers KalaVigyan's reviewers and not a
+  third party's model. Two corrections are staged the same way: `SOURCES` (`correct` a source's
+  `title`, `authors`, `year`, `containerTitle` or `kind`; a title must be a work's title and an
+  author never a file's producer, `research/source_titles`, `research/front_page.producer_token`)
+  and `SOURCES_DIFFER` (`clear` a fact's sources-differ mark).
+- **Reading** (`review_queue`): the queue as `GET /api/review-queue` lists it, narrowed to those
+  kinds and filtered by `kinds`, `craft_slug` and `origin`, each item summarised by its kind, id, origin,
+  craft and label; `open {kind, id}` gives one item whole, as its card has it (quotes, sources, gate
+  checks, filing verdict, held reason and suggested craft). A source is re-read with its quotes by
+  `read_source`, the contributors' tool.
+- **Staging** (`stage_reviews`): 1 to 20 decisions `{kind, id, action, reason (12 to 500
+  characters), craft_slug?, family_slug?, source?}` a call (`craft_slug` or `family_slug` re-files
+  an approved fact, as `craft` or `family` does on the route). Each is checked by running the decision itself,
+  as the Review page's route would for this account (`approve_item`, `reject_item`, `raise_fact`,
+  `retract_fact`; `fact_move_problem`, one's own item, the kind's actions, re-filing), inside a
+  savepoint that is rolled back (`staged_review_apply.dry_run`); a source correction and a cleared
+  mark are run the same way. A decision refused, or one naming an item already decided earlier in
+  the call, is listed with its reason; the rest are stored as one `StagedReview` (proposer,
+  connection, token and `clientName` as `McpToolCall` keeps them, created, expires three days
+  later) with its `StagedReviewItem` rows (position, kind, item, action, the decision, a label of at
+  most 300 characters). An Admin stages at most 100 items an India day
+  (`research/staged_reviews.day_allowance_problem`); a call that would pass it is refused whole.
+- **`GET /api/review-queue/staged`** (Admins, `REVIEW_CONTRIBUTIONS`) answers `StagedBatchList
+  {schemaVersion 1, batches[{id, status, clientName, proposedBy, createdAt, expiresAt, decidedBy,
+  decidedAt, refresh, items[{id, position, label, decision, state, applied, outcome}]}]}`, the open
+  batches that have not expired, newest first, at most 20; golden `shared/review.staged.golden.json`.
+- **`POST /api/review-queue/staged/{batchId}/confirm`** `{items[{id, action, reason, craft?,
+  family?, source?}]}` (1 to 20) confirms the batch in one request, by any Admin: an item not sent
+  is `SKIPPED`; each item sent is the staged decision as the person left it (its kind and target
+  never change), checked again and applied through the same decision services the routes above use,
+  in its own savepoint, so one refused item (`REFUSED`, with its reason as `outcome`) leaves the
+  others `APPLIED`; `applied` keeps the decision when the person changed it. Each applied item writes
+  the decision's own audit (`review.fact_approved`, `source.retitled`, `source.corrected`,
+  `review.sources_differ_cleared` and so on) with the confirming person as actor, and
+  `review.staged_applied {batch, client, proposedBy, action, changed}`. After the commit the pages
+  of the crafts, families and categories its items touched are refreshed at once through the page
+  refresh (`nightly-upkeep.md`, Refresh pages now: a `NAMED` job), or, while another refresh runs, sent to the site
+  directly as a single decision's are; `refresh` says which. A batch expired, confirmed or discarded
+  is 409.
+- **`POST /api/review-queue/staged/{batchId}/discard`** closes a batch unapplied
+  (`review.staged_discarded`).
+- **On the Review page** the open batches stand above the queue for Admins
+  (`components/review/StagedBatches.tsx`, `StagedBatchCard.tsx`, `StagedItemRow.tsx`,
+  `StagedSourceFields.tsx`; `app/(protected)/admin/review/useStagedReviews.ts`;
+  `lib/stagedReviewContract.ts`, `lib/stagedReviewView.ts`): each item selected by default, its
+  action, reason, filing and source fields open to change, one Confirm selected and a Discard batch
+  behind a confirmation; a staged item of a kind the web does not know is left out of the
+  production build (decision 0167).
+
 ## Erased testimony takes its orphaned concepts
 
 When an artisan withdraws testimony or deletes a conversation, its claims are erased
@@ -399,6 +460,7 @@ stay, and list decided items.
 | Readings outside their range | `backend/tests/science/test_reading_checks.py`, `backend/tests/db/test_reading_review_db.py` and `frontend/e2e/review-readings-unit.spec.ts` |
 | Map layer proposals | `backend/tests/research/test_map_layer_proposals.py` and `backend/tests/db/test_map_layer_proposals_db.py` |
 | Refreshing signed-out pages | `backend/tests/test_page_revalidation.py`, `backend/tests/db/test_page_revalidation_db.py` and `test_review_queue_refresh_db.py` |
+| Staged over MCP: staging, confirming, expiry, the allowance and the corrections | `backend/tests/db/test_staged_reviews_db.py`, `backend/tests/mcp/test_staged_contract.py`, `backend/tests/mcp/test_review_tools.py` and `frontend/e2e/staged-reviews-unit.spec.ts` |
 | The Review page | `frontend/e2e/review-queue-unit.spec.ts`, `review-layers-unit.spec.ts`, `review-layouts-unit.spec.ts`, `review-readings-unit.spec.ts`, `review-structure-unit.spec.ts`, `review-unknown-kinds-unit.spec.ts` and `revalidate-unit.spec.ts` |
 
 Re-read it when a kind joins the queue, a decision is added, or a capability moves between roles.

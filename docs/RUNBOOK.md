@@ -405,7 +405,7 @@ Vercel deploy hook (`/kalavigyan/env/VERCEL_DEPLOY_HOOK_URL`) by the action
 - A push that changes only the web app (`frontend/**`): **Deploy web app** starts the build at once. A push that changes only the specs under `frontend/e2e/**` builds nothing; Frontend checks still run them.
   It reads the Backend checks push paths from that workflow and leaves the build to Deploy backend
   when the push touches any of them.
-- By hand: run **Deploy web app** from Actions, or **Build pages now** in admin settings.
+- By hand: run **Deploy web app** from Actions, or **Start a build** in admin settings.
 
 No watcher or manual promote is needed. The nightly upkeep does not build the site: it refreshes only the pages whose content changed (decision 0119).
 
@@ -428,6 +428,25 @@ origins; the issuer is the API origin and the consent page is `<PUBLIC_WEB_URL>/
 2. Check: `curl -s -X POST <PUBLIC_API_URL>/api/mcp -H 'content-type: application/json' -d
    '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'` lists the read, proposal and open-work tools.
 3. Switch off: `MCP_SERVER_ENABLED=false` and re-render; the route answers 404.
+
+### Reviewing over MCP (decision 0170)
+
+An Admin or Master Admin with two-step verification on can review from their AI client.
+
+1. Sign in on the site (or sign out and in again: `review` is given only within 15 minutes of a
+   sign-in), then add or reconnect the server in the AI client and tick Review on the consent page.
+   A review token lives 15 minutes and the client renews it; `review` itself ends 8 hours after the
+   consent, and the connection goes on without it.
+2. The client lists four more tools: `review_queue` (the queue and one item whole), `stage_reviews`
+   (up to 20 decisions or source corrections a call, at most 100 a day), `refresh_pages` and
+   `admin_reports`. A contributor's connection never sees them.
+3. Nothing the AI stages is published. Open Review in admin settings: each open batch says "Proposed
+   through <client> by <admin>"; untick what to skip, change an action or reason, and Confirm
+   selected. Each item is checked again and applied as the Review page applies a decision, audited
+   with the client and the person who confirmed it, and the pages it touched are refreshed. A batch
+   expires after three days; Discard batch closes one unapplied.
+4. Who staged what: `StagedReview` and `StagedReviewItem` (who, which client, when, each decision),
+   and the audit actions `review.staged_applied`, `review.staged_discarded` and each decision's own.
 
 ### Open data with a DOI (decisions 0116 and 0130)
 
@@ -477,9 +496,20 @@ A craft release (decision 0130): give `craft` its exact slug, for Kutch Ajrakh `
 workflow runs `app.scripts.nightly_upkeep` on the box over SSM, which rebuilds stale snapshots and
 documents and then refreshes only the pages whose content moved through the web's `/api/revalidate`
 (`WEB_REVALIDATE_SECRET`); a night that changed nothing sends nothing and no site build runs
-(decision 0119). Releases and "Build pages now" in admin settings still build through the Vercel
+(decision 0119). Releases and "Start a build" in admin settings still build through the Vercel
 deploy hook, read from `/kalavigyan/env/VERCEL_DEPLOY_HOOK_URL` (SecureString; never printed);
-without it "Build pages now" answers 503.
+without it "Start a build" answers 503.
+
+To publish without waiting for the night (decision 0170), an Admin presses Refresh pages now in admin
+settings, or an AI client with the `review` scope calls `refresh_pages {start: true}`: one
+background job in the API rebuilds the stale snapshots and documents (the night's bounds, 8
+minutes at most) and refreshes the pages that changed. One job runs at a time, the night's
+included (a running refresh makes the night skip its page steps, reported as `pagesSkipped`); a
+second start within 10 minutes is refused. The Master Admin's Refresh every page, once a day and
+after a confirmation, refreshes every page the site lists. No model is called. A job that stopped
+without finishing (a restart) is marked failed by the next start, 15 minutes after it began;
+`PageRefreshJob` holds each job's progress and outcome, and `site.pages_refresh_started` who
+started it.
 
 ## Bulk export
 

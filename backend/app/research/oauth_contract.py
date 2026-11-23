@@ -17,8 +17,10 @@ from .oauth_rules import (
     INVALID_CLIENT_METADATA,
     INVALID_REDIRECT_URI,
     REDIRECT_URIS_MAX,
+    REVIEW_GRANT_SECONDS,
+    REVIEW_SIGN_IN_SECONDS,
+    Grantor,
     OAuthError,
-    may_hold,
     redirect_uri_problem,
 )
 
@@ -83,8 +85,12 @@ SCOPE_TEXT = MappingProxyType(
         ),
         REVIEW_SCOPE: ScopeText(
             "Review",
-            "Review proposals in your name.",
-            "Reviewing needs a Professor, Admin or Master Admin account.",
+            "Read the review queue and admin reports, stage review decisions and source corrections, and "
+            f"refresh pages, for {REVIEW_GRANT_SECONDS // 3600} hours. Nothing the app stages reaches "
+            "readers until a person confirms it on the Review page.",
+            "Reviewing over MCP needs an Admin or Master Admin account with two-step verification on, "
+            f"signed in within the last {REVIEW_SIGN_IN_SECONDS // 60} minutes. Sign out and in again to "
+            "give it.",
         ),
     }
 )
@@ -201,11 +207,11 @@ def client_host(redirect_uri: str) -> str:
     return f"{parts.scheme}:"
 
 
-def scope_choices(user: Any, asked: tuple[str, ...]) -> list[ScopeChoice]:
+def scope_choices(grantor: Grantor, asked: tuple[str, ...]) -> list[ScopeChoice]:
     choices = []
     for scope in asked:
         text = SCOPE_TEXT[scope]
-        allowed = may_hold(user, scope)
+        allowed = grantor.may_grant(scope)
         choices.append(
             ScopeChoice(
                 scope=scope,

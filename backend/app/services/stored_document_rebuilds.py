@@ -67,10 +67,13 @@ async def rebuilds_here(session: AsyncSession) -> bool:
     return code is None or code == page_code_fingerprint()
 
 
-async def rebuild_stale_documents(session: AsyncSession, *, report: DocumentsReport, limit: int) -> None:
+async def rebuild_stale_documents(
+    session: AsyncSession, *, report: DocumentsReport, limit: int, within: PageOwners | None = None
+) -> None:
     await mark_rebuild_code(session)
     await session.commit()
-    stale = [subject for subject in await generated_subjects(session) if await _stale(session, subject)]
+    subjects = [subject for subject in await generated_subjects(session) if _named_in(subject, within)]
+    stale = [subject for subject in subjects if await _stale(session, subject)]
     report.stale = len(stale)
     for subject in stale[:limit]:
         named = f"{subject.kind}:{subject.slug}"
@@ -123,6 +126,12 @@ async def generated_subjects(session: AsyncSession) -> list[WorkSubject]:
         *[await subject_by_key(session, CATEGORY, slug) for slug in sorted(categories.all())],
     ]
     return sorted(found, key=lambda subject: (not subject.curated, subject.kind != CATEGORY, subject.slug))
+
+
+def _named_in(subject: WorkSubject, within: PageOwners | None) -> bool:
+    if within is None:
+        return True
+    return subject.slug in (within.categories if subject.kind == CATEGORY else within.crafts)
 
 
 async def _stale(session: AsyncSession, subject: WorkSubject) -> bool:

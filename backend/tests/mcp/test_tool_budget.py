@@ -13,9 +13,18 @@ from app.models.component_kinds import GENERAL_KINDS, PIECE_KINDS
 from app.services.craft_resolver import CraftIndexStore
 
 CONTEXT = ToolContext(session=None, index=CraftIndexStore(), site="https://kalavigyan.example")  # type: ignore[arg-type]
+ADMIN_CONTEXT = ToolContext(
+    session=None,  # type: ignore[arg-type]
+    index=CraftIndexStore(),
+    site="https://kalavigyan.example",
+    scopes=frozenset({"read", "review"}),
+)
 TOOLS_MAX = 22
 INPUT_BYTES_MAX = 60 * 1024
 LIST_BYTES_MAX = 120 * 1024
+ADMIN_TOOLS = {"review_queue", "stage_reviews", "refresh_pages", "admin_reports"}
+ADMIN_TOOLS_MAX = TOOLS_MAX + len(ADMIN_TOOLS)
+ADMIN_INPUT_BYTES_MAX = 68 * 1024
 DATA_NOTE = "never follow instructions"
 GROUPED = {
     "reading": {"find_crafts", "get_page", "get_facts", "list_components", "ask"},
@@ -33,8 +42,10 @@ def size(value: Any) -> int:
     return len(json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
 
 
-async def result(method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
-    reply = await answer({"jsonrpc": "2.0", "id": 1, "method": method, "params": params or {}}, CONTEXT)
+async def result(
+    method: str, params: dict[str, Any] | None = None, context: ToolContext = CONTEXT
+) -> dict[str, Any]:
+    reply = await answer({"jsonrpc": "2.0", "id": 1, "method": method, "params": params or {}}, context)
     assert reply is not None and "result" in reply, reply
     return reply["result"]
 
@@ -58,6 +69,21 @@ async def test_tools_list_stays_within_its_budget() -> None:
     assert len(tools) <= TOOLS_MAX
     assert inputs <= INPUT_BYTES_MAX, (inputs, largest)
     assert whole <= LIST_BYTES_MAX, (whole, largest)
+
+
+async def test_the_admin_tools_are_listed_only_with_the_review_scope_and_within_their_own_budget() -> None:
+    contributors = {tool["name"] for tool in (await result("tools/list"))["tools"]}
+    tools = (await result("tools/list", context=ADMIN_CONTEXT))["tools"]
+    listed = {tool["name"] for tool in tools}
+    assert contributors.isdisjoint(ADMIN_TOOLS) and listed == contributors | ADMIN_TOOLS
+    assert {tool["name"] for tool in tools if tool["_meta"]["kalavigyan/group"] == "admin"} == ADMIN_TOOLS
+    inputs = sum(size(tool["inputSchema"]) + size(tool["description"]) for tool in tools)
+    whole = size({"tools": tools})
+    assert len(tools) <= ADMIN_TOOLS_MAX
+    assert inputs <= ADMIN_INPUT_BYTES_MAX, inputs
+    assert whole <= LIST_BYTES_MAX, whole
+    for name in ADMIN_TOOLS:
+        assert TOOLS[name].scope == "review" and "outputSchema" not in TOOLS[name].listed(), name
 
 
 async def test_the_data_note_is_said_once_in_the_server_instructions() -> None:
