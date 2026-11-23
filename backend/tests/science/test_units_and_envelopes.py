@@ -106,17 +106,32 @@ def test_boiling_water_caps_the_aqueous_baths() -> None:
     assert envelope_for("MORDANT", "TEMPERATURE").max == water.max
 
 
-def test_firing_and_casting_envelopes_hold_their_constants() -> None:
+def test_a_firing_reaches_the_top_of_its_constants_and_casting_holds_brass() -> None:
     fire, cast = envelope_for("FIRE", "TEMPERATURE"), envelope_for("CAST", "TEMPERATURE")
     for key in ("kaolinite-dehydroxylation", "quartz-inversion"):
         constant = PHYSICAL_CONSTANTS[key]
-        assert fire.min <= constant.min <= constant.max <= fire.max
+        assert fire.min <= constant.max <= fire.max
     brass = PHYSICAL_CONSTANTS["brass-melting-range"]
     assert cast.min <= brass.min <= brass.max <= cast.max
 
 
+def test_kaolinite_dehydroxylation_is_the_range_its_thermal_analysis_paper_states() -> None:
+    kaolinite = PHYSICAL_CONSTANTS["kaolinite-dehydroxylation"]
+    assert (kaolinite.min, kaolinite.max) == (400.0, 700.0)
+    claims = {claim["id"]: claim for claim in load_science_seed()["constants"]["claims"]}
+    [cite] = claims[kaolinite.claim_key]["sources"]
+    assert (cite["sourceId"], cite["quote"]) == (
+        "sci:doi:10.1007/s42860-020-00082-w",
+        "Dehydroxylation of kaolinite commonly occurs between 400 and 700°C",
+    )
+    section = plan_text().split("## 7. Science engine", 1)[1].split("\n## ", 1)[0]
+    assert "kaolinite dehydroxylation 400–700 °C" in section
+
+
 def test_each_constant_is_its_own_cited_claim_stating_its_value() -> None:
     claims = {claim["id"]: claim for claim in load_science_seed()["constants"]["claims"]}
+    named = sorted(claim["constant"] for claim in claims.values() if "constant" in claim)
+    assert named == sorted(PHYSICAL_CONSTANTS)
     for constant in PHYSICAL_CONSTANTS.values():
         claim = claims[constant.claim_key]
         assert claim["constant"] == constant.key

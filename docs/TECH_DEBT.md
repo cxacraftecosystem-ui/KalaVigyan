@@ -235,47 +235,31 @@ Last reviewed: 2026-11-22.
 
 ## Science engine (decision 0015)
 
-### Reactions and readings cover three crafts
+### Seeded crafts without a cited reaction, a firing stage or a stated temperature
 
-- **What:** the science seed has reactions and condition readings for Kutch Ajrakh, Bagh and
-  Machilipatnam only; Bagru, Sanganeri and Akola stages get materials but no reactions or
-  readings. Nothing proposes species for new claims (no researcher form, no enrichment step),
-  so reactions grow only through `app/data/science_seed.json`. Kaolinite dehydroxylation has
-  no reaction: the terracotta seed is sub-category mechanism chains, not a craft process with
-  a `FIRE` stage. Stage concepts without an upstream ordinal (Akola mud soaking and paste
-  preparation, Machilipatnam and Sanganeri block carving) get no stage, although `PRECEDES`
-  edges could place them. No seed claim states a temperature or pH, so no seeded reading is
-  checked against an envelope yet.
-- **Why left:** each reaction and reading is curated against its quote; a model proposal path
-  needs the review queue and a writer that calls `science/reactions.check_reaction`.
-- **Clears it:** a writer for proposed species (researcher form and enrichment), balanced only
-  through `check_reaction`; a terracotta craft process; ordering stages by `PRECEDES`.
+- **What:** reactions now come from the science seed (Kutch Ajrakh, Bagh, Machilipatnam) and
+  from the curated dossiers of nine crafts (those three, Bagru, Sanganeri, Bastar Dhokra, Agates
+  of Cambay, Firozabad Glass, Cane and Bamboo, through `services/curation_structure`). What is
+  left: Dabu (its dossier holds no reaction) and Akola stages have materials and tools but no
+  reaction, because no source the seed or a dossier holds states one; no craft has a process with a `FIRE` stage, so kaolinite dehydroxylation has no
+  reaction (the terracotta seed is sub-category mechanism chains); stage concepts without an
+  upstream ordinal (Akola mud soaking and paste preparation, Machilipatnam and Sanganeri block
+  carving) get no stage although `PRECEDES` edges could place them; and no seed claim states a
+  temperature or pH, so no seeded reading is checked against an envelope.
+- **Why left:** reactions and readings are written only as a cited quote states them; the
+  sources still to find are a GI application or a chemistry paper on Dabu mud resist and on
+  Akola's mud and indigo work, a curated clay craft's firing schedule, and a dyeing source
+  stating a bath temperature or pH. Finding them is research through the KalaVigyan MCP server
+  (`search_sources`, `read_source`, then `propose_structure` for a reaction).
+- **Clears it:** a dossier or seed reaction for Dabu and Akola from such a source, a curated clay
+  craft with a `FIRE` stage and its stated temperature, and `claim_seed.stage_rows` ordering a
+  stage by its `PRECEDES` edges when no ordinal is stated.
 
 ### Out-of-envelope readings are not in a review queue
 
 - **What:** the contract lists every `OUTSIDE` reading in the review queue; no review queue
   exists, so they are only shown with their status.
 - **Clears it:** the review-queue lane lists readings whose `envelope_check` is `OUTSIDE`.
-
-### The science seed never deletes
-
-- **What:** science rows are upserted by derived id, so a reaction, condition or reading removed
-  from `science_seed.json` stays in the database.
-- **Clears it:** delete seeded science rows whose derived id is no longer in the plan, in the
-  same transaction as the upsert.
-
-### One kind and role per material
-
-- **What:** a seeded material has one curated `MaterialKind` and one `MaterialRole` for every
-  stage that uses it, and tools (`TOOL` concepts) are not stage materials.
-- **Clears it:** take the role per stage from the source when a stage uses a material
-  differently, and show tools once the contract has a place for them.
-
-### Kaolinite constant differs from PLAN 7
-
-- **What:** PLAN 7 gives kaolinite dehydroxylation as 450–600 °C; the cited revision says it
-  begins at 550–600 °C, which is the constant.
-- **Clears it:** cite a scholarly thermal-analysis source and set the constant to what it says.
 
 ## Answers in Indian languages (decision 0023)
 
@@ -682,63 +666,17 @@ Last reviewed: 2026-11-22.
 
 ## Reaction player, material cards and 3D molecules (decision 0045)
 
-### The reaction player shows no conditions or reaction energies
+### The zoom story reads the craft's matter on its own
 
-- **What:** version 1 of `ReactionStep` (decision 0042) has no conditions or ΔH, so the player
-  shows species, equations and levels only; the Process tab still shows each reaction's cited
-  conditions and ΔH.
-- **Why left:** the kind's fields were fixed by decision 0042 and the matter renderers are built
-  against them in parallel; a field change is a new version.
-- **Clears it:** a version 2 step carrying the reaction view's cited conditions and `deltaH`, with
-  its renderer, fixture and both sides' tests.
-
-### A material card cites no PubChem record for its formula
-
-- **What:** a card shows a formula and CID only from a compound linked to its PubChem record, but
-  version 1 of `MaterialCardBlock` has no source field, so the record is not in the explainer's
-  sources; the CID itself is the reader's link to the record.
-- **Why left:** the kind's fields are fixed (decision 0042).
-- **Clears it:** a version 2 card with the compound's record `sourceId`, cited like the molecule.
-
-### Each matter builder reads the craft's matter again
-
-- **What:** the reaction, card and molecule builders each call `craft_matter`, so a chemistry
-  section reads the craft's process rows three times and a materials section twice.
-- **Why left:** builders share nothing but `BuilderTools`; the reads are short and need no lock.
-- **Clears it:** a per-answer matter read held by the builder tools and shared by the builders.
-
-### Cards and molecules can repeat across a chemistry and a materials section
-
-- **What:** a builder sees one section, so an answer with both a `CHEMISTRY` and a `MATERIALS`
-  section can show the same material's card or the same molecule in both.
-- **Why left:** the registry contract gives a builder its own section only.
-- **Clears it:** `BuildAsk` carrying the blocks earlier sections were given, or a per-answer
-  record of shown materials and compounds.
-
-### A missing 3D conformer is never asked again
-
-- **What:** `ConformerCache` keeps PubChem's "no 3D conformer" for good, so a conformer PubChem
-  adds later is not seen until the object is deleted.
-- **Why left:** PubChem computes conformers only for small, rigid, single-component molecules;
-  a compound refused once is very unlikely to gain one.
-- **Clears it:** re-ask a kept miss whose `checkedAt` is older than a few months.
-
-### The compound lookup holds its session across PubChem calls
-
-- **What:** `link_compounds` keeps one database session open while it asks PubChem for each
-  pending compound (decision 0040's rule is never to wait on HTTP with a connection held).
-- **Why left:** it is a nightly script with its own engine and a handful of compounds, not the
-  answer path; its database test drives it with one transaction.
-- **Clears it:** read the pending compounds, look them up with no session open, then write the
-  links in a second short session; adapt `tests/db/test_compound_lookup_db.py`.
-
-### Card local names come from the glossary only
-
-- **What:** a card's `localNames` are its term's; a local name a cited claim states (for example
-  "locally known as kachika") but the glossary lacks is not shown.
-- **Why left:** the glossary is the one home of names; a name read from free text needs the same
-  checks the glossary seed applies.
-- **Clears it:** the glossary seed adding local names stated in claims about the term's concept.
+- **What:** the reaction, card, molecule, what-if, supply-map and generated-explainer builders
+  share one read of the craft's matter per answer (`BuildAsk.matter`, decision 0152); the zoom
+  story builder (`services/journey_builders.ZoomStoryBuilder`) still calls `craft_matter` itself,
+  so an answer whose chemistry or materials section shows a zoom reads the rows once more.
+- **Why left:** `journey_builders.py` belonged to the time, market and figures lane in round 7's
+  debt round, so this lane left it.
+- **Clears it:** `ZoomStoryBuilder.build` reading `await ask.matter.read(self._tools.sessions,
+  craft)`, with `tests/journey/test_zoom_story.py` patching `app.services.craft_matter` as
+  `tests/matter/test_matter_reads.py` does.
 
 ## Expert panel (decision 0046)
 
@@ -762,27 +700,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the production questions run dispatched with `questions=true`: its Expert answer
   carries a note of the panel's views and Experts differ pairs (`e2e/production/expertPanel.ts`),
   read with the `COMPOSE` spend of that answer in Usage.
-
-## Matter and expert renderers (decision 0049)
-
-### Matter renderers not yet seen running
-
-- **What:** typecheck, lint and server-rendered unit specs check the player, the cards, the panel
-  and the molecule's frame, not a browser: the 3Dmol.js chunk under a Next build, its first draw,
-  the reveal turn, Explore on touch screens, the transparent canvas in dark mode, and the cast's
-  `archive` tone in dark mode are unverified.
-- **Clears it:** once the kinds are built, the production E2E asks a Kutch Ajrakh chemistry
-  question at 1440, 834 and 390 px, with screenshots of the player playing and paused, a card, the
-  molecule before and after Explore, and reduced motion on.
-
-### 3Dmol.js keeps two listeners after a molecule is gone
-
-- **What:** a 3Dmol.js viewer adds a `mouseup` and `touchend` listener on `document.body` and a
-  `resize` listener on `window` that it never removes; disposing a scene clears the models, loses
-  the WebGL context and removes the canvas, but those listeners stay until the page unloads.
-- **Why left:** the library has no teardown for them, and an explainer draws at most one molecule
-  per section.
-- **Clears it:** a 3Dmol.js release with a viewer teardown, called from `MoleculeScene.dispose`.
 
 ## Curation tooling (decision 0051)
 
@@ -1062,14 +979,6 @@ Last reviewed: 2026-11-22.
   outcome; a what-if over them would need numbers or outcomes a model would have to supply.
 - **Clears it:** curation storing condition ranges with the outcomes a source ties to each, or
   water sources as materials with their relations; then an input kind over them in a version 2.
-
-### One answer can show the same what-if in two sections
-
-- **What:** builders see only their own section, so a process and a chemistry section that both
-  name madder can each show the red-dye what-if.
-- **Why left:** the registry has no answer-wide view of what other sections built.
-- **Clears it:** an answer-level set of inputs already shown passed to the builders, or the
-  what-if kept to the first section that names its stage.
 
 ## Zoom story and timeline map (decision 0057)
 
@@ -1799,13 +1708,15 @@ Last reviewed: 2026-11-22.
 
 ### Goldens that do not yet show every field
 
-- **What:** 174 fields of 37 models the web is served (the craft page's field voices, field photos,
+- **What:** 177 fields of 38 models the web is served (the craft page's field voices, field photos,
   contributed plates, AI media and searched parts, the people and component blocks, groundwater,
-  monthly rain and dataset references, a source's journal name, a translated sentence's original)
+  monthly rain and dataset references, a source's journal name, a translated sentence's original,
+  a reaction step's ΔH)
   appear in no golden in `shared/`, so the web's strict parse of the goldens does not test them.
   `backend/tests/contracts/unshown_fields.json` lists them; `test_golden_fields.py` fails on any
-  other unshown field, so every field added since decision 0151 is shown, and on a listed field that
-  is shown, so the list only shrinks.
+  other unshown field, so every field added since decision 0151 is shown (but for the step's ΔH of
+  decision 0152, which no source a golden is built from states), and on a listed field that is
+  shown, so the list only shrinks.
 - **Why left:** the craft page goldens are the Kutch Ajrakh dossier and Farrukhabad Prints as the
   preview builds them, and neither has field voices, contributed or AI pictures, people blocks or a
   journal paper; showing them needs inputs for those builders, a change of its own.

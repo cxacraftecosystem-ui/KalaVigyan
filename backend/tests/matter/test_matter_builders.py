@@ -4,9 +4,11 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from app.core.errors import ExternalFailure
-from app.services import matter_builders
+from app.research.blocks_matter import MaterialCardBlock
+from app.services import craft_matter as craft_matter_module, matter_builders
 from app.services.block_builders import BLOCK_BUILDERS, BlockBuilders
 from app.services.builder_interface import BuilderTools
 from app.services.matter_builders import (
@@ -18,16 +20,19 @@ from app.services.matter_builders import (
 )
 from app.sources.reference.pubchem import PubChemAdapter
 
+from ..contracts.phase_b_golden import phase_b_blocks
 from ..science.golden_process import ALIZARIN, claim_id, known_claim
 from ..sources.recorded import Recorder, Reply, fixed_clock, source_http
 from ..voice.listen_fakes import MemoryObjects
 from .fixtures import (
     ALIZARIN_RECORD,
     ALUM_OWN_CLAIM,
+    ALUM_RECORD,
     PA_CLAIM,
     POTASSIUM_ALUM,
     CardModel,
     alizarin_record_source,
+    alum_record_source,
     chemistry_ask,
     matter,
 )
@@ -52,7 +57,7 @@ def stored(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     async def load(sessions: Any, craft: Any) -> Any:
         return found["matter"]
 
-    monkeypatch.setattr(matter_builders, "craft_matter", load)
+    monkeypatch.setattr(craft_matter_module, "craft_matter", load)
     return found
 
 
@@ -123,8 +128,27 @@ async def test_a_card_shows_the_stored_material_its_term_and_the_claims_its_pros
 
 async def test_a_card_shows_a_formula_and_cid_only_from_its_pubchem_record(stored: dict[str, Any]) -> None:
     stored["matter"] = matter(alum_linked=True)
-    (card,) = (await MaterialCardBuilder(tools()).build(chemistry_ask())).blocks
+    built = await MaterialCardBuilder(tools()).build(chemistry_ask())
+    (card,) = built.blocks
     assert (card.formula, card.pubchem_cid) == ("KAl(SO4)2·12H2O", 24856)
+    assert card.source_id == ALUM_RECORD
+    assert card.model_dump(mode="json", by_alias=True)["sourceId"] == ALUM_RECORD
+    assert ALUM_RECORD in card.cited_source_ids()
+    assert built.sources == {ALUM_RECORD: alum_record_source()}
+
+
+async def test_a_card_cites_only_a_record_its_builder_holds(stored: dict[str, Any]) -> None:
+    linked = matter(alum_linked=True)
+    stored["matter"] = replace(linked, record_sources={ALIZARIN_RECORD: alizarin_record_source()})
+    built = await MaterialCardBuilder(tools()).build(chemistry_ask())
+    (card,) = built.blocks
+    assert (card.pubchem_cid, card.source_id, built.sources) == (24856, None, {})
+
+
+async def test_a_card_without_a_linked_record_cites_none(stored: dict[str, Any]) -> None:
+    (card,) = (await MaterialCardBuilder(tools()).build(chemistry_ask())).blocks
+    assert (card.pubchem_cid, card.source_id) == (None, None)
+    assert "sourceId" not in card.model_dump(mode="json", by_alias=True)
 
 
 async def test_a_card_fact_without_a_claim_is_dropped(stored: dict[str, Any]) -> None:
@@ -238,3 +262,12 @@ async def test_a_chemistry_section_also_draws_the_compounds_of_the_reactions_it_
 
 def test_a_section_draws_at_most_three_molecules() -> None:
     assert (MOLECULES_PER_SECTION, MOLECULE_CANDIDATES_MAX) == (3, 6)
+
+
+def test_a_card_cites_a_compound_record_only_with_its_pubchem_id() -> None:
+    payload = {**phase_b_blocks()["s4.b2"], "sourceId": ALIZARIN_RECORD}
+    assert payload["pubchemCid"] is None
+    with pytest.raises(ValidationError, match="cites a compound record only with its PubChem id"):
+        MaterialCardBlock.model_validate(payload)
+    linked = {**payload, "formula": "C14H8O4", "pubchemCid": 6293}
+    assert list(MaterialCardBlock.model_validate(linked).direct_source_ids()) == [ALIZARIN_RECORD]

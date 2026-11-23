@@ -175,7 +175,12 @@ fewer sentences than the live page, never more.
   folded name), a `molecule_3d` per CID, a concept-graph node per term (a node that loses the
   focus craft or falls below two crafts goes), one each of the craft-level stories
   (`ONCE_PER_ANSWER_KINDS`: `region_story`, `seasons`, `supply_map`, `zoom_story`), one generated
-  explainer (`simulation`) per folded concept (decision 0090).
+  explainer (`simulation`) per folded concept (decision 0090), and one `what_if` per choice: a
+  what-if at the stage of one already shown that sets `WHAT_IF_SHARED_OPTIONS` (2) of the same
+  options side by side (each option by its material id, term key or folded label) is left out,
+  while another input of that stage, or the same options at another stage, is shown (decision
+  0152). A chemistry and a materials section of one answer therefore never show one material's
+  card, one molecule or one what-if twice, whichever section's builders finish first.
 - **Experts:** a seat whose take adds no sentence and no claim not yet shown is not shown; the
   others stop agreeing or differing with it, and a difference whose two views share a claim or a
   source goes.
@@ -313,13 +318,16 @@ construct, and the builder that made it adds nothing.
   claim); rebuilt each time.
 - **`reaction_player`** `{steps[ReactionStep] (1+), notes[ReactionNote]?}`, `ReactionStep {reactionId, stageId?,
   kind, label, species[ReactionSpecies] (2+), equation?, balanced, level, citations (1+), stage?,
-  conditions[LadderCondition]?, colours[StepColour]?}`, `StepColour {side (BEFORE, AFTER), colour
+  conditions[LadderCondition]?, colours[StepColour]?, deltaH?}`, `StepColour {side (BEFORE, AFTER), colour
   (RED, BLUE, BLACK, WHITE, GREEN, YELLOW, BROWN, GREY, PINK, PURPLE, ORANGE, MAROON), stated,
-  citations (1+)}`, `ReactionNote {reactionId, sentence}` (decision 0088; the optional fields are
+  citations (1+)}`, `StepEnergy {kjPerMol, claimId}` (`deltaH`, decision 0152),
+  `ReactionNote {reactionId, sentence}` (decision 0088; the optional fields are
   left out of the JSON when empty, so a player stored before them keeps its content hash).
   Server: every value from the stored `Reaction` rows and their citations (the Process tab's
   reaction view): `stage` is the stage's stored name, `conditions` the reaction's and its stage's
-  stated readings (the ladder's rule, at most `STEP_CONDITIONS_MAX` 4), `colours` only a cited
+  stated readings (the ladder's rule, at most `STEP_CONDITIONS_MAX` 4), `deltaH` the reaction's
+  stored enthalpy (`deltaHKjMol`) with the claim it rests on, only when the view shows it (that
+  claim is one of the step's citations' claims), `colours` only a cited
   quote's own words (`science/reaction_colours`: "at first green ... becomes blue" gives both
   sides, "develops a deep fast chocolate-black colour" the after side by the compound's last colour
   word; a denied or naming use such as "indigo white" gives none), and `notes` the reaction's
@@ -328,20 +336,23 @@ construct, and the builder that made it adds nothing.
   `equation` is `mhchem_equation(species)`; balanced only with every formula; `level` is
   `reaction_level` of the citations (an unbalanced reaction with every formula is capped at
   `HYPOTHESIS`); each reaction once; each colour side once, its colour named in `stated` and
-  `stated` in one of its citations' quotes; a note only for a reaction the player plays, facts
+  `stated` in one of its citations' quotes; `deltaH` only from a claim the step cites; a note only for a reaction the player plays, facts
   only. `SENTENCES` is the notes' sentences, so the ledger drops a repeated note and keeps every
   step, and translation and term marking walk the notes. The builder re-checks steps and notes
   against the process rows, as ladders are (`reaction_player_problems`, decision 0045): a stage,
-  condition or colour list a stored step holds must equal the rows', a note must be a stored claim
+  condition or colour list or a `deltaH` a stored step holds must equal the rows', a note must be a stored claim
   of its reaction. Replaces the stream's `reaction` event,
   which no server path emits and which stays declared until removed (`docs/TECH_DEBT.md`). **Piece:** the section's slot; reuse re-checks against the process rows.
 - **`material_card`** `{materialId?, compoundId?, termKey?, name, materialKind?, role?, formula?,
-  pubchemCid?, wikidataId?, localNames[], facts[sentence] (1+), handling[sentence]}`. Server: name,
+  pubchemCid?, wikidataId?, localNames[], facts[sentence] (1+), handling[sentence], sourceId?}`. Server: name,
   kind and role from the stored `Material` (and its stage role), formula and CID from its
-  `Compound` (CID filled by `link_compounds`), local names and Wikidata id from the glossary
+  `Compound` (CID filled by `link_compounds`), `sourceId` that compound's PubChem record
+  (`COMPOUND_RECORD`, cited directly as the molecule cites it, so the record joins the
+  explainer's sources; decision 0152), local names and Wikidata id from the glossary
   `Term`. Model: which claims are facts and which are handling. Rules: kind or role only with a
-  material id, formula or CID only with a compound id, local names or Wikidata only with a term
-  key; local names once each. **Piece:** the section's slot.
+  material id, formula or CID only with a compound id, `sourceId` only with a CID, local names or Wikidata only with a term
+  key; local names once each; `sourceId` is left out of the JSON when absent, so a card stored before
+  it keeps its content hash. **Piece:** the section's slot.
 - **`molecule_3d`** `{compoundId, pubchemCid, name, formula?, sourceId}`. Server: everything from
   the stored `Compound` and its `COMPOUND_RECORD` source (`compound_lookup.record_source_id`).
   A curated dossier's PubChem CID becomes a `Compound` row at import when none holds it
@@ -503,10 +514,14 @@ the curated import of 2026-11-18) never showed a story, since only a fresh secti
 
 ### Matter builders as built (decision 0045)
 
-Registered in `BLOCK_BUILDERS` from `services/matter_builders.py`; each reads the craft's matter
-in one short session first (`services/craft_matter.craft_matter`: the Process tab's rows, the
-glossary terms of each material's concept, the compounds of its materials and reaction species,
-their PubChem record sources), and an answer for any craft gets none.
+Registered in `BLOCK_BUILDERS` from `services/matter_builders.py`; they read the craft's matter
+once per answer (`services/craft_matter.craft_matter`: the Process tab's rows, the glossary terms
+of each material's concept, the compounds of its materials and reaction species, their PubChem
+record sources) through `BuildAsk.matter`, a `craft_matter.MatterReads` the answer's registry holds
+(`BlockBuilders.for_answer`, decision 0152): the first builder to ask reads it in one short session
+and every other builder of the answer, in any section, shares that read (the what-if, supply map
+and generated explainer builders read through it too); a cut-off read is read again by the next to
+ask. An answer for any craft gets none.
 
 - **`reaction_player`** (`CHEMISTRY`, 8 s): the craft's shown reactions in process order, each
   step the Process tab's reaction view (`science/reaction_player`) with its stage, stated
@@ -524,7 +539,10 @@ their PubChem record sources), and an answer for any craft gets none.
   them into facts and handling by ref; an unknown ref is dropped and a card without a fact is not
   shown. `role` only when every stage use agrees; `termKey`, `localNames` and `wikidataId` from
   the linked term whose label the material's name contains; `formula` and `pubchemCid` only from
-  a compound the compound lookup linked to its PubChem record.
+  a compound the compound lookup linked to its PubChem record, and `sourceId` that record when the
+  compound holds it and the craft's matter read holds the record (the builder returns its reference
+  with the card, as the molecule builder does; a craft page's chemistry chapter cites it only from
+  its chapter rows' record sources, so a page built without them cites none).
 - **`molecule_3d`** (`CHEMISTRY`, `MATERIALS`, 8 s): the compounds, in order of first mention and
   then (in `CHEMISTRY`, `PLAYED_FIELDS`) those of every stored reaction of the craft, with a
   CID, a stored record source and a 3D conformer, one per CID; at most `MOLECULES_PER_SECTION` (3)
@@ -538,12 +556,15 @@ answers the compound's 3D SDF
 `public, max-age=300` without, `Vary: Authorization`, and an `ETag` of the SDF that a matching
 `If-None-Match` turns into a 304, decision 0079) for a CID a stored `Compound`
 holds; 404 `{detail}` for any other CID or a compound PubChem has no 3D conformer for, 503 when
-the media bucket or PubChem fails, 422 for a CID below 1. The SDF comes from
+the media bucket fails or PubChem fails for a CID with no kept record, 422 for a CID below 1. The SDF comes from
 `PubChemAdapter.conformer` (PUG REST `compound/cid/<cid>/record/SDF?record_type=3d`, paced at
 one call per 0.25 s, refused unless it is that CID's terminated 3D molfile of at most 256 KiB)
 and is kept with a miss in the private bucket at `media/molecules/<cid>/conformer.json`
-(`ConformerRecord {schemaVersion 1, pubchemCid, sdf | null, checkedAt}`); a kept record answers
-without calling PubChem.
+(`ConformerRecord {schemaVersion 1, pubchemCid, sdf | null, checkedAt}`); a kept conformer answers
+without calling PubChem, and so does a kept miss until its `checkedAt` is more than
+`CONFORMER_MISS_RECHECK_DAYS` (90) days old; then PubChem is asked again and the record rewritten
+with the new `checkedAt`, and if that ask fails the kept miss stands (404) and the next request asks
+again (decision 0152).
 
 ### Place builders as built (decision 0044)
 

@@ -8,7 +8,7 @@ from app.core.errors import ExternalFailure
 from app.research.blocks_play import WhatIfBlock
 from app.research.crafts import CraftRef
 from app.research.explainer import BUILT_BLOCK_KINDS
-from app.services import what_if_builder
+from app.services import craft_matter as craft_matter_module, what_if_builder
 from app.services.block_builders import BLOCK_BUILDERS
 from app.services.builder_interface import Built
 from app.services.craft_matter import CraftMatter
@@ -51,7 +51,7 @@ def stored(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         found["asked"].append(set(concept_ids))
         return found["evidence"]
 
-    monkeypatch.setattr(what_if_builder, "craft_matter", matter)
+    monkeypatch.setattr(craft_matter_module, "craft_matter", matter)
     monkeypatch.setattr(what_if_builder, "what_if_evidence", loaded)
     return found
 

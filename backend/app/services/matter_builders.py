@@ -11,8 +11,8 @@ from app.science.reaction_player import reaction_player, reaction_player_problem
 from app.science.records import CompoundRecord
 
 from .builder_evidence import sources_beyond
-from .builder_interface import BuildAsk, BuilderTools, Built
-from .craft_matter import CraftMatter, MaterialRows, craft_matter, first_naming, section_sentences
+from .builder_interface import BuildAsk, BuilderTools, Built, SourceRefs
+from .craft_matter import CraftMatter, MaterialRows, first_naming, section_sentences
 from .material_cards import card_offers, material_card
 from .molecule_conformers import ConformerCache, ConformerObjects, ConformerSource, live_pubchem
 from .object_store import media_bucket
@@ -76,10 +76,19 @@ class MaterialCardBuilder:
         cards: list[Block] = []
         for choice in choices:
             offer = by_ref.pop(choice.material, None)
-            card = None if offer is None else material_card(offer, choice, block_id=_card_id(ask, len(cards)))
+            card = (
+                None
+                if offer is None
+                else material_card(
+                    offer, choice, block_id=_card_id(ask, len(cards)), records=matter.record_sources
+                )
+            )
             if card is not None:
                 cards.append(card)
-        return Built(tuple(cards), sources_beyond(cards, matter.records.sources, ask.cited))
+        return Built(
+            tuple(cards),
+            {**sources_beyond(cards, matter.records.sources, ask.cited), **_records(cards, matter)},
+        )
 
 
 class MoleculeBuilder:
@@ -153,7 +162,7 @@ def _distinct(linked: Sequence[LinkedCompound]) -> list[LinkedCompound]:
 async def _matter(tools: BuilderTools, ask: BuildAsk) -> CraftMatter | None:
     if ask.request.craft is None:
         return None
-    return await craft_matter(tools.sessions, ask.request.craft)
+    return await ask.matter.read(tools.sessions, ask.request.craft)
 
 
 def _molecules(ask: BuildAsk, drawn: Sequence[LinkedCompound], matter: CraftMatter) -> Built:
@@ -171,7 +180,16 @@ def _molecules(ask: BuildAsk, drawn: Sequence[LinkedCompound], matter: CraftMatt
         )
         for number, linked in enumerate(drawn, start=1)
     )
-    return Built(blocks, {linked.source_id: matter.record_sources[linked.source_id] for linked in drawn})
+    return Built(blocks, _records(blocks, matter))
+
+
+def _records(blocks: Sequence[Block], matter: CraftMatter) -> SourceRefs:
+    return {
+        source_id: matter.record_sources[source_id]
+        for block in blocks
+        for source_id in block.direct_source_ids()
+        if source_id in matter.record_sources
+    }
 
 
 def _compound_surfaces(compound: CompoundRecord, matter: CraftMatter) -> list[str]:

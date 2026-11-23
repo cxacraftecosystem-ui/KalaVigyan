@@ -161,16 +161,26 @@ whose file is off the picture contract is left out.
 
 A field's facts that a reader can see (`retrieval.md`, A fact a reader can see) and that no published
 section or curated structure of the page cites are listed in the field's chapter until a
-section is written (`services/craft_page_unwritten.py`, decision 0149): after the field's written
-sentences and fact grid, or under the field's `h3` title when it has no section, up to twelve facts
-(`UNWRITTEN_PER_FIELD`, the strongest level first, then by text), each an `li` unit `fact-<field>-<id>`
-whose text is the fact's statement, carrying its claim id and cited like every sentence (a closed
-page's quote is left out, as everywhere). The renderer draws consecutive `li` units as a list. The
-facts are the subject's own fact-level facts filed under the field (`open_work_counts.owned_facts`, the
-facts coverage counts), so a field the coverage counts is never empty on the page. A field with only
-listed facts is carried as a section of version 0, so the document's version still sums its written
-sections. A fact stops being listed when a section cites it. A curated craft's page already draws every fact it shows as a sentence of its field (`monograph_generated_structure.with_page_claims`), so its list holds only what that page leaves out. The authored Kutch Ajrakh page lists
-none: its chapters are written by hand.
+section is written (`services/craft_page_unwritten.py`, decisions 0149 and 0158): after the field's
+written sentences and fact grid, or under the field's `h3` title when it has no section, up to twelve
+facts (`UNWRITTEN_PER_FIELD`, the strongest level first, then by text), each an `li` unit
+`fact-<field>-<id>` whose text is the fact's statement, carrying its claim id and cited like every
+sentence (a closed page's quote is left out, as everywhere). The chapter is the one the field belongs
+to (`coverage_chapters.FIELD_CHAPTERS`, the map coverage and the landing read), whatever concept the
+fact is about. The renderer draws consecutive `li` units as one cited list (`CitedList`,
+`monograph-renderer.md`). The facts are the subject's own fact-level facts filed under the field
+(`open_work_counts.owned_facts`, the facts coverage counts), so a field the coverage counts is never
+empty on the page. A field with only listed facts is carried as a section of version 0, so the
+document's version still sums its written sections. A fact is not listed while a section's sentence,
+a curated text item or a curated figure cites it (`monograph_generated_structure.shown_claim_ids`), so
+a fact a figure shows is shown once, and it leaves the list once a section or the curated structure
+cites it.
+
+A curated craft lists the same way: a fact its dossier does not hold (a contributor's, or one an
+answer wrote back) that no curated sentence and no curated figure cites is listed under its own field,
+and is not also written into the prose of the discipline its concept gives
+(`with_page_claims(..., listed=...)`, below). The authored Kutch Ajrakh page lists none: its chapters
+are written by hand.
 
 ### A curated craft's sections
 
@@ -217,9 +227,10 @@ contribution brought (`origin`) are left out.
 - **No repetition**: a section sentence whose claims a figure or record already shows is not
   repeated in its field's prose (the lede keeps its three); a picture a figure shows is not placed
   again as a plate, unless it is the masthead photograph.
-- **Every claim the page shows**: a cited claim of the page that no section and no structure
-  shows is added to its field's text (`with_page_claims`), so the document shows every cited claim
-  the tabbed page showed.
+- **Every claim the page shows**: a cited claim of the page that no section, no structure and no
+  field's list (Facts no section cites, above) shows is added to the text of its discipline
+  (`with_page_claims`): a claim filed under no field, or one past its field's twelve. So the document
+  shows every cited claim the tabbed page showed, each once.
 
 ## Pages in other languages (decision 0117)
 
@@ -411,6 +422,7 @@ to `specs`).
 | Parts, their budget and their tag | `tests/test_document_parts.py` and `tests/layouts/test_page_document_routes.py` |
 | A generated document stored, served and rebuilt, and a variant drawn from its stored English copy | `tests/db/test_stored_documents_db.py` and `tests/db/test_translated_documents_db.py` |
 | The documents of a craft, a family and a category | `tests/db/test_generated_documents_db.py` |
+| A field's facts no section cites, listed in its chapter; on a curated craft one contributed fact per field in that field's chapter, after its curated sentences, a closed source cited unquoted, a fact a figure shows never listed | `tests/db/test_unwritten_facts_db.py`, `tests/db/test_curated_listed_facts_db.py` and `tests/layouts/test_generated_structure.py` |
 | The generated layout, chapter titles, the lede, the section minimum, the picture specs | `tests/layouts/test_generated_document.py` and `tests/layouts/test_generated_chapters.py` |
 | Texts, fixed and cited, the hash | `tests/research/test_translation_passages.py` |
 | Each gate | `tests/research/test_page_translation_gates.py` |

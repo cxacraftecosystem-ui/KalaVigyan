@@ -12,6 +12,7 @@ Date: 2026-11-16. Status: accepted.
 | The contract it was built to | [0014 Contracts for process science, region profile, voice and media](0014-science-region-voice-media-contracts.md) |
 | The review that fixed it | [0022 Voice spend fails closed, a filtered style hint, region sources and one home per rule](0022-batch-3-review-fixes.md) |
 | The contracts it names | [science.md](../contracts/science.md) |
+| What amended part of it | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md): The seed's deletions, tools and stage roles, and the kaolinite constant cited to a thermal-analysis paper |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

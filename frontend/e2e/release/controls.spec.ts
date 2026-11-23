@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type BrowserContextOptions, type Page } from "@playwright/test";
 
-import { DESKTOP, SMALL_PHONE, contextOptions } from "../production/matrix";
+import { DESKTOP, PHONE, SMALL_PHONE, contextOptions } from "../production/matrix";
 import { passPreviewProtection } from "../production/preview";
 
 import { answerSession } from "./answerControls";
@@ -8,7 +8,7 @@ import { ControlWatch } from "./controlWatch";
 import { documentSession, phoneDocumentSession } from "./documentControls";
 import { walkMapLayers } from "./mapControls";
 import { darkStillSession } from "./placeControls";
-import { playerSession, whatIf } from "./playerControls";
+import { darkTouchSession, playerSession, whatIf } from "./playerControls";
 import { atlasControls, compareControls, landingControls, readingLink } from "./readingControls";
 import { bypassToken, siteOrigin } from "./site";
 
@@ -35,6 +35,7 @@ async function opened(page: Page, target: string, path: string): Promise<Control
 }
 
 const ON_PHONE: BrowserContextOptions = contextOptions(SMALL_PHONE, "light");
+const DARK_TOUCH_PHONE: BrowserContextOptions = contextOptions(PHONE, "dark");
 const DARK_AND_STILL: BrowserContextOptions = { ...contextOptions(DESKTOP, "dark"), reducedMotion: "reduce" };
 
 async function inContext(browser: Browser, options: BrowserContextOptions, visit: Visit, session: Session): Promise<string[]> {
@@ -86,6 +87,11 @@ test.describe("a reader operates every control", () => {
 
   test("on a phone: the theme toggle, the chapter menu and citation sheets", async ({ browser }) => {
     const problems = await bothDocuments(browser, ON_PHONE, "on a phone", phoneDocumentSession);
+    expect(problems, problems.join("\n")).toEqual([]);
+  });
+
+  test("on a dark touch phone: the species cast's contrast, the figure molecule's clear canvas and Explore by touch", async ({ browser }) => {
+    const problems = await bothDocuments(browser, DARK_TOUCH_PHONE, "on a dark touch phone", darkTouchSession);
     expect(problems, problems.join("\n")).toEqual([]);
   });
 

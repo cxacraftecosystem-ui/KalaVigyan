@@ -7,7 +7,7 @@ from app.science.what_if_check import what_if_problems
 
 from .builder_evidence import sources_beyond
 from .builder_interface import BuildAsk, BuilderTools, Built
-from .craft_matter import craft_matter, section_sentences
+from .craft_matter import section_sentences
 from .what_if_block import what_if_block
 from .what_if_evidence import what_if_evidence
 from .what_if_offers import group_concepts, named_groups, what_if_brief, what_if_inputs
@@ -27,7 +27,7 @@ class WhatIfBuilder:
     async def build(self, ask: BuildAsk) -> Built:
         if ask.request.craft is None:
             return Built()
-        matter = await craft_matter(self._tools.sessions, ask.request.craft)
+        matter = await ask.matter.read(self._tools.sessions, ask.request.craft)
         if matter is None:
             return Built()
         groups = named_groups(matter, section_sentences(ask.blocks))
