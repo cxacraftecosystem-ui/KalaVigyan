@@ -833,18 +833,6 @@ Last reviewed: 2026-11-22.
 
 ## Region story and map layers (decision 0044)
 
-### Rivers are drawn unnamed
-
-- **What:** HydroRIVERS names no river, so the region story builder always sends `river.name` null
-  and the client labels the course generically, even when a step's claim names the river ("the
-  river Saran in Dhamadka"). The contract allows a name stated by a step, but matching a claim's
-  name to a traced path would be a model's identity claim about a path.
-- **Why left:** no open, linked river-name dataset is loaded; owner rule: paths and places come
-  from claims or datasets, never a model.
-- **Clears it:** an open dataset that names reaches or basins (Wikidata rivers matched by mouth and
-  source coordinates, or OpenStreetMap waterway names under ODbL after a licence decision), loaded
-  by the geo ETL and offered to the builder as a dataset row the name cites.
-
 ### A researched geography section rebuilds a stored story
 
 - **What:** a stored region story is reused only together with its facet's reused section; a
@@ -953,15 +941,6 @@ Last reviewed: 2026-11-22.
   each builder's time and the rows and pins shown.
 
 ## Phase B review fixes (decision 0050)
-
-### Prose and takes are not checked for river names
-
-- **What:** `stated_names.unstated_names` refuses months, seasons and register states and districts
-  a sentence names and no cited claim or quote states; a river name ("the Narmada") is not
-  checked, because nothing lists river names.
-- **Why left:** no open river-name dataset is loaded (entry "Rivers are drawn unnamed"); a
-  hand-written list would be names without a source.
-- **Clears it:** the river-name dataset of that entry, its names joined to `register_places_named`.
 
 ### Register place names are matched as written
 
@@ -1457,21 +1436,6 @@ Last reviewed: 2026-11-22.
   otherwise never shows as a sentence.
 - **Clears it:** an owner decision; if wanted, `description` on `PageCraft` (model, contract,
   fixture) drawn beside the register facts and marked as the register's.
-
-### Places abroad and rivers are listed, not drawn
-
-- **What:** the tabbed craft screen's Region map is retired; a craft's places are now drawn by its
-  document's ground figure (`services/place_ground`, from the craft's located `CraftLocation`
-  rows) and its timeline map. A place abroad (Sindh) or a river (Dhamadka River) that a dossier
-  names has no located row, so it is listed in `GET /crafts/{slug}/page` (`PagePlace`, with its
-  `wikidataId`) but has no mark of its own on any map of the document.
-- **Why left:** the ground figure places only points inside India's district outlines; a place
-  abroad needs the stored Wikidata point (job step 1, run on production) and a frame that reaches
-  past the outline, and a river needs a HydroRIVERS id or a named-river dataset (see the timeline
-  map entry below).
-- **Clears it:** the stored Wikidata point carried to the ground figure as a pin outside the
-  outline, and a river line from a named-river dataset, with a capture of Kutch Ajrakh's
-  generated and authored maps.
 
 ## Lesson packs and exports (decision 0067)
 

@@ -54,8 +54,11 @@ headline set per facet. The production Geo ETL runs' artifacts (runs 43884310432
    the reach's upstream area, or takes the one basin outlet near its mouth), carries a tributary
    that ends short of the river its mouth names down to where it joins it (within 10 km of the
    mouth) and refuses one that does not join it; a reach two rivers claim takes the shorter river's
-   name. Read against the production river lines on 2026-11-23, 147 of the 513 Wikidata rivers with
-   a qualified mouth in the river lines' box were matched (14,250 reaches). A reach no Wikidata river names takes the one OpenStreetMap
+   name. The run of 2026-11-23 (run 45088759547) matched 147 of the 513 Wikidata rivers with a
+   qualified mouth in the river lines' box (14,250 reaches) and named 4,303 more rivers from
+   OpenStreetMap (36,626 reaches) of the 128,756 reaches drawn. Prose is checked for every name
+   of several words and for a Wikidata river's one-word name; an OpenStreetMap name's one-word form
+   is too often a person's or a god's name to be checked alone. A reach no Wikidata river names takes the one OpenStreetMap
    `waterway=river` name that at least 80% of points every 500 m along it lie within 1 km of. The
    two are written to separate files and dataset rows (`WIKIDATA_RIVER_NAMES`, CC0;
    `OSM_RIVER_NAMES`, ODbL, credited "© OpenStreetMap contributors"), never merged.
@@ -85,7 +88,8 @@ headline set per facet. The production Geo ETL runs' artifacts (runs 43884310432
 5. **Basin files are compressed, not split.** The production rivers job (run 44154095333,
    2026-11-17) wrote 410 basins; the largest, the Ganga-Brahmaputra (`mainRiv` 41067217, 42,650
    reaches), is 5,412,393 bytes, the next 2,145,168, and gzip at level 9 makes them 736,058 and
-   308,964 bytes. `GET /api/rivers/{mainRiv}` answers gzip to a reader that accepts it, compressed
+   308,964 bytes; with each reach's districts (run 45088759547) the largest is 6,347,825 bytes,
+   813,603 compressed. `GET /api/rivers/{mainRiv}` answers gzip to a reader that accepts it, compressed
    once per file and kept with it in the topology cache, under its own ETag (`<sha256>-gzip`) and
    `Vary: Authorization, Accept-Encoding`. A per-path topology would change the contract and the
    client's one fetch per basin for a gain gzip already gives.

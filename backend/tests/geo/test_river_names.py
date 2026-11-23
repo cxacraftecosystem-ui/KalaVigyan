@@ -3,6 +3,7 @@ from typing import Any
 
 import pytest
 
+from app.data import river_names as river_names_module
 from app.data.river_names import RiverNames, checkable, name_forms, parse_river_names
 from app.geo.datasets import registry_row_ref
 from app.services import stated_names
@@ -49,6 +50,7 @@ OSM = name_file(
         river("Suran River", ["way/1001"], [3], [449]),
         river("Son River", ["way/1002"], [4], [450]),
         river("Lime", ["way/1003"], [5], [451]),
+        river("Devi", ["way/1004"], [6], [452]),
     ],
 )
 
@@ -94,11 +96,12 @@ def test_only_names_unlike_ordinary_words_are_checked_in_prose() -> None:
     assert (
         not checkable("Son", ENGLISH) and not checkable("Lime", ENGLISH) and not checkable("O'Neil", ENGLISH)
     )
+    assert names().named_in("Devi saw the Indus.") == []
     assert names().named_in("The Son River meets the Narmada near Suran; Lime is ground.") == [
         "Son River",
         "Narmada",
-        "Suran",
     ]
+    assert names().named_in("Dyers rinse in the Suran River.") == ["Suran River"]
 
 
 def test_a_river_name_no_cited_claim_or_quote_states_is_unstated(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -118,3 +121,13 @@ def test_a_names_file_s_dataset_row_is_cited_with_its_reading_date() -> None:
         "2026-11-23",
         "c" * 64,
     )
+
+
+def test_the_vendored_names_load_with_their_dataset_rows() -> None:
+    river_names_module.load_river_names.cache_clear()
+    loaded = river_names_module.load_river_names()
+    assert [names_set.code for names_set in loaded.sets] == ["WIKIDATA_RIVER_NAMES", "OSM_RIVER_NAMES"]
+    assert loaded.dataset("OSM_RIVER_NAMES")["attribution"] == "© OpenStreetMap contributors"
+    assert loaded.dataset("OSM_RIVER_NAMES")["licence"] == "ODbL 1.0"
+    assert loaded.dataset("WIKIDATA_RIVER_NAMES")["licence"] == "CC0 1.0"
+    assert all(river.reach_ids and river.name for names_set in loaded.sets for river in names_set.rivers)

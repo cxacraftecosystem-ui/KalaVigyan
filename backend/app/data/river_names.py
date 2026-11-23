@@ -19,6 +19,7 @@ __all__ = [
     "RiverNameSet",
     "RiverNames",
     "checkable",
+    "checked_forms",
     "load_river_names",
     "name_forms",
     "parse_river_names",
@@ -32,6 +33,7 @@ GENERIC_WORDS = frozenset({"river", "nadi", "nala", "nallah", "nullah"})
 BRACKETED = re.compile(r"\s*\(([^()]+)\)\s*")
 WORD = re.compile(r"[A-Za-z][A-Za-z-]*")
 NAME_WORDS_MAX = 6
+ITEM_REF = re.compile(r"^Q[1-9][0-9]*$")
 ONE_WORD_CHARS_MIN = 4
 
 
@@ -113,13 +115,14 @@ def parse_river_names(bodies: Iterable[Mapping[str, Any]], english: frozenset[st
                     )
                 by_reach[reach] = river
     checked = frozenset(
-        form
-        for names in sets
-        for river in names.rivers
-        for form in name_forms(river.name)
-        if checkable(form, english)
+        form for names in sets for river in names.rivers for form in checked_forms(river, english)
     )
     return RiverNames(sets=sets, by_reach=MappingProxyType(by_reach), checked=checked)
+
+
+def checked_forms(river: NamedRiver, english: frozenset[str]) -> list[str]:
+    item = all(ITEM_REF.match(ref) for ref in river.refs)
+    return [form for form in name_forms(river.name) if checkable(form, english) and (" " in form or item)]
 
 
 def checkable(form: str, english: frozenset[str]) -> bool:
