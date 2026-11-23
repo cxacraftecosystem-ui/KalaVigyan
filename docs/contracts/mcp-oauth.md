@@ -257,7 +257,10 @@ tool stages is applied by the server: a person confirms it on the Review page
 ## Settings
 
 `GET /api/oauth/connections` answers `{serverUrl, connections[{id, clientName, clientHost,
-scopes, connectedAt, lastUsedAt}]}`, the person's unrevoked, unexpired connections, newest first
+scopes, connectedAt, lastUsedAt}]}`, the person's unrevoked, unexpired connections that the server
+still serves (a password, two-step or role change, a suspension and Sign out everywhere end every
+connection made before them, `oauth_tokens.grant_matches_user`, and with it `review`), each with the
+scopes its next token holds (`held_scopes`, then `live_scopes`), newest first
 (`clientHost` is the `client_id` host of a published identity, else the first redirect URI's host);
 `serverUrl` is the MCP server's URL while it is on and null otherwise.
 `DELETE /api/oauth/connections/{id}` revokes one of the person's own (204), else 404. The card
@@ -370,7 +373,7 @@ SHA-256; they are never logged, and `redact_secrets` masks their shape in any lo
 | Published identities, on hand-written documents, through the fetcher and end to end | `backend/tests/mcp/test_oauth_client_documents.py`, `backend/tests/fetcher/test_client_documents.py`, `backend/tests/mcp/test_oauth_client_document_reads.py` and `backend/tests/db/test_oauth_metadata_clients_db.py` |
 | The terms of use as the consent screen shows them | `backend/tests/mcp/test_mcp_terms_copy.py` |
 | The consent screen | `frontend/e2e/oauth-consent-unit.spec.ts` |
-| Who may give `review`, its short tokens and its eight hours | `backend/tests/mcp/test_oauth_rules.py` and `backend/tests/db/test_review_scope_db.py` |
+| Who may give `review`, its short tokens and its eight hours; Connected apps listing only live connections with the scopes they hold | `backend/tests/mcp/test_oauth_rules.py` and `backend/tests/db/test_review_scope_db.py` |
 | The admin tools hidden from a token without `review`, and both lists' budgets | `backend/tests/mcp/test_review_tools.py` and `backend/tests/mcp/test_tool_budget.py` |
 | A real client signing in | `.github/workflows/mcp-client.yml` |
 

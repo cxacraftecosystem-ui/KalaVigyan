@@ -9,9 +9,10 @@ from app.core.errors import InvalidInput
 from app.models import User
 from app.research.oauth_contract import AuthorizationPrompt, Consent
 from app.research.oauth_rules import MCP_TERMS_VERSION
-from app.services import oauth_bearer, oauth_consent, oauth_tokens
+from app.services import oauth_bearer, oauth_connections, oauth_consent, oauth_tokens
+from app.services.oauth_bearer import BearerRefused
 
-from .test_oauth_db import ENDPOINTS, NOW, RESOURCE, asked, exchanged, grantor, person, registered
+from .test_oauth_db import ENDPOINTS, NOW, RESOURCE, asked, connected, exchanged, grantor, person, registered
 from .testimony_seed import rolled_back_session
 
 pytestmark = pytest.mark.db
@@ -88,3 +89,38 @@ async def test_review_is_refused_without_admin_two_step_and_a_recent_sign_in(
     assert review.needs is not None and "two-step verification" in review.needs
     with pytest.raises(InvalidInput):
         await review_code(session, user, client_id, minutes_ago=minutes_ago)
+
+
+async def test_connected_apps_lists_only_connections_the_server_still_serves(session: AsyncSession) -> None:
+    user, _client_id, _reply = await connected(session)
+    assert len(await oauth_connections.connections(session, user, now=NOW)) == 1
+    user.role = "STUDENT"
+    await session.flush()
+    [demoted] = await oauth_connections.connections(session, user, now=NOW)
+    assert demoted.scopes == ["read"]
+    user.tokenVersion += 1
+    await session.flush()
+    assert await oauth_connections.connections(session, user, now=NOW) == []
+    other, _other_client, _other_reply = await connected(session)
+    other.sessionsValidFrom = NOW + timedelta(seconds=30)
+    await session.flush()
+    assert await oauth_connections.connections(session, other, now=NOW + timedelta(minutes=1)) == []
+
+
+async def test_review_ends_with_the_connection_when_two_step_changes_and_lists_as_it_holds(
+    session: AsyncSession,
+) -> None:
+    admin = await account(session, "ADMIN", two_step=True)
+    client_id = await registered(session)
+    reply = await exchanged(session, client_id, await review_code(session, admin, client_id))
+    [listed] = await oauth_connections.connections(session, admin, now=NOW)
+    assert listed.scopes == ["read", "review"]
+    [later] = await oauth_connections.connections(session, admin, now=NOW + timedelta(hours=8))
+    assert later.scopes == ["read"]
+    admin.twoFactorEnabled = False
+    admin.tokenVersion += 1
+    await session.flush()
+    with pytest.raises(BearerRefused) as ended:
+        await oauth_bearer.caller_for(session, reply.access_token, resource=RESOURCE, now=NOW)
+    assert ended.value.description == oauth_bearer.ENDED
+    assert await oauth_connections.connections(session, admin, now=NOW) == []
