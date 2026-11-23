@@ -272,7 +272,10 @@ stored in `AppSetting` `upkeep.hiddenFacts` and read by an Admin at `GET /api/co
 | POST | `/api/site/refresh` | Admin, Master Admin | `{every}`: 202 `PageRefreshState`; 409 while a refresh runs, 429 within the cooldown, 403 for `every` from anyone but the Master Admin |
 
 The web client parses both shapes with `frontend/lib/sitePagesContract.ts` (spec
-`frontend/e2e/site-pages-unit.spec.ts`); the control is `components/admin/SiteBuildCard.tsx`. The
+`frontend/e2e/site-pages-unit.spec.ts` and `page-refresh-unit.spec.ts`); the controls are
+`components/admin/SiteBuildCard.tsx` and `components/admin/PageRefreshCard.tsx` (with
+`PageRefreshJob.tsx`, `usePageRefresh.ts` and `lib/pageRefreshView.ts`, which reads the state again
+every 5 seconds while a job runs). The
 Settings hub's Facts readers cannot see card (`components/admin/HiddenFactsCard.tsx`, Admin and
 Master Admin) reads `GET /api/coverage/hidden-facts` through `frontend/lib/hiddenFacts.ts` and
 lists each craft's hidden facts by reason, the crafts with unexplained facts first and then the
@@ -352,7 +355,7 @@ the build as not triggered, and the admin control says so.
 | Counting and pruning MCP calls, and their bounds | `backend/tests/db/test_mcp_activity_db.py` |
 | The rotating monograph window and stale page rebuilds | `backend/tests/upkeep/test_rotation.py` and `test_page_rebuilds.py` |
 | The build route and its throttle | `backend/tests/upkeep/test_site_build_routes.py` |
-| Refresh pages now: one job with the night, the cooldowns, every page, a stopped job and a named refresh | `backend/tests/db/test_page_refresh_db.py`, `backend/tests/mcp/test_staged_contract.py` and the card's unit spec |
+| Refresh pages now: one job with the night, the cooldowns, every page, a stopped job and a named refresh | `backend/tests/db/test_page_refresh_db.py`, `backend/tests/mcp/test_staged_contract.py` and `frontend/e2e/page-refresh-unit.spec.ts` |
 | The changed pages and their refresh | `backend/tests/upkeep/test_page_rebuilds.py` and `backend/tests/test_page_batches.py` |
 | The shared terms' summary | `backend/tests/learning/test_shared_term_crafts.py`, `backend/tests/db/test_learning_views_db.py` and `backend/tests/test_deploy_page_order.py` |
 | The whole run and its report on Postgres | `backend/tests/db/test_nightly_upkeep_db.py` |

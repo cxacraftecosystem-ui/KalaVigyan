@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { HiddenFactsCard } from "@/components/admin/HiddenFactsCard";
+import { PageRefreshCard } from "@/components/admin/PageRefreshCard";
 import { ReviewSwitchCard } from "@/components/admin/ReviewSwitchCard";
 import { SiteBuildCard } from "@/components/admin/SiteBuildCard";
 import { VoiceSettingsCard } from "@/components/admin/VoiceSettingsCard";
@@ -64,6 +65,7 @@ export default function SettingsHubPage() {
       <ReviewSwitchCard />
       <VoiceSettingsCard />
       <SiteBuildCard />
+      <PageRefreshCard />
       <HiddenFactsCard />
     </>
   );

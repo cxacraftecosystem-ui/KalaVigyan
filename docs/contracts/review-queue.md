@@ -379,6 +379,13 @@ most put a decision in front of a person, who sees it with its reason and the ap
   is 409.
 - **`POST /api/review-queue/staged/{batchId}/discard`** closes a batch unapplied
   (`review.staged_discarded`).
+- **On the Review page** the open batches stand above the queue for Admins
+  (`components/review/StagedBatches.tsx`, `StagedBatchCard.tsx`, `StagedItemRow.tsx`,
+  `StagedSourceFields.tsx`; `app/(protected)/admin/review/useStagedReviews.ts`;
+  `lib/stagedReviewContract.ts`, `lib/stagedReviewView.ts`): each item selected by default, its
+  action, reason, filing and source fields open to change, one Confirm selected and a Discard batch
+  behind a confirmation; a staged item of a kind the web does not know is left out of the
+  production build (decision 0167).
 
 ## Erased testimony takes its orphaned concepts
 
@@ -453,7 +460,7 @@ stay, and list decided items.
 | Readings outside their range | `backend/tests/science/test_reading_checks.py`, `backend/tests/db/test_reading_review_db.py` and `frontend/e2e/review-readings-unit.spec.ts` |
 | Map layer proposals | `backend/tests/research/test_map_layer_proposals.py` and `backend/tests/db/test_map_layer_proposals_db.py` |
 | Refreshing signed-out pages | `backend/tests/test_page_revalidation.py`, `backend/tests/db/test_page_revalidation_db.py` and `test_review_queue_refresh_db.py` |
-| Staged over MCP: staging, confirming, expiry, the allowance and the corrections | `backend/tests/db/test_staged_reviews_db.py`, `backend/tests/mcp/test_staged_contract.py` and `backend/tests/mcp/test_review_tools.py` |
+| Staged over MCP: staging, confirming, expiry, the allowance and the corrections | `backend/tests/db/test_staged_reviews_db.py`, `backend/tests/mcp/test_staged_contract.py`, `backend/tests/mcp/test_review_tools.py` and `frontend/e2e/staged-reviews-unit.spec.ts` |
 | The Review page | `frontend/e2e/review-queue-unit.spec.ts`, `review-layers-unit.spec.ts`, `review-layouts-unit.spec.ts`, `review-readings-unit.spec.ts`, `review-structure-unit.spec.ts`, `review-unknown-kinds-unit.spec.ts` and `revalidate-unit.spec.ts` |
 
 Re-read it when a kind joins the queue, a decision is added, or a capability moves between roles.
