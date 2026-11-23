@@ -101,7 +101,7 @@ def with_place_claims(
     section: Mapping[str, KnownClaim], place: tuple[KnownClaim, ...]
 ) -> dict[str, KnownClaim]:
     held = {claim.id for claim in section.values()}
-    added = [claim for claim in place if claim.id not in held]
+    added = list({claim.id: claim for claim in place if claim.id not in held}.values())
     return {**section, **{f"c{n}": claim for n, claim in enumerate(added, start=len(section) + 1)}}
 
 

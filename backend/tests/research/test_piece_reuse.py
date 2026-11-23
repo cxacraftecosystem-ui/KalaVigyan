@@ -30,6 +30,7 @@ from app.research.piece_topics import (
 )
 from app.research.retrieval import HIDDEN_CLAIM_STATUSES
 from app.research.subject_keys import TOPIC_NAMESPACES
+from app.services.curation_overview import piece_id_topic, piece_topic
 from app.services.piece_store import piece_id, storable
 
 from ..contracts.explainer_golden import DOCUMENT, PIECE, golden_json
@@ -130,6 +131,13 @@ def test_the_migration_rekeys_a_place_piece_named_by_districts_to_the_key_the_st
     assert rekeyed(f"climate:{subjects}", named) == facet_topic(
         "CLIMATE", TopicSubjects("x", districts=tuple(range(1, 31)))
     )
+
+
+def test_a_curated_place_piece_keeps_the_id_its_district_name_gave_it_while_its_key_moves_to_codes() -> None:
+    assert piece_topic("GEOGRAPHY", "Kutch-Ajrakh", [449]) == "water:lgd-449"
+    assert piece_id_topic("GEOGRAPHY", "Kutch-Ajrakh", [449]) == "water:kachchh"
+    assert piece_id_topic("CLIMATE", "Kutch-Ajrakh", []) == "climate:kutch-ajrakh"
+    assert piece_id_topic("PROCESS", "Kutch-Ajrakh", [449]) == "process:kutch-ajrakh"
 
 
 def test_a_topic_longer_than_a_key_is_not_kept() -> None:

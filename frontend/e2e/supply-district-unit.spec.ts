@@ -45,7 +45,7 @@ test("an origin the register holds is pinned at its district and credits the dis
 test("a map a backend a release behind sends, without districts or datasets, still parses and pins nothing it cannot place", () => {
   const body = block();
   const [link] = body.links as Record<string, unknown>[];
-  const older = { ...body, links: [{ ...link, districtLgd: undefined, latitude: null, longitude: null }] };
+  const older: Record<string, unknown> = { ...body, links: [{ ...link, districtLgd: undefined, latitude: null, longitude: null }] };
   delete older.datasets;
   const map = parsed(JSON.parse(JSON.stringify(older)) as Record<string, unknown>);
   expect(supplyLayout(map, INDIA_BOX).pins).toEqual([]);
