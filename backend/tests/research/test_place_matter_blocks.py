@@ -147,7 +147,7 @@ def test_rainfall_comes_with_its_dataset_row_and_only_then() -> None:
         ("Warm afternoon water may dissolve some of the alum.", set()),
         ("Printers rest in May.", {5}),
         ("Barmer and Marwar share designs; markets peak in March.", {3}),
-        ("between June and September", {6, 9}),
+        ("between June and September", {6, 7, 8, 9}),
     ],
 )
 def test_months_are_read_only_where_named(text: str, expected: set[int]) -> None:
@@ -165,7 +165,7 @@ def test_seasons_are_read_from_their_words() -> None:
     ("change", "message"),
     [
         (lambda link: link.update(origin="Bhuj"), "not what its sentence states"),
-        (lambda link: link.update(latitude=23.2, longitude=69.8), "Wikidata coordinates"),
+        (lambda link: link.update(latitude=23.2, longitude=69.8), "by Wikidata or by its register district"),
         (
             lambda link: link.update(materialId=None, termKey=None, material="Madder"),
             "neither stored nor stated",
