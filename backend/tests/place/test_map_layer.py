@@ -1,9 +1,13 @@
 import dataclasses
+import json
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
-from app.geo.section_layers import section_layer_order
+from app.geo.layer_terms import LAYER_TERMS_FILE, LayerTerms, layer_terms
+from app.geo.layers import MAP_LAYERS
+from app.geo.section_layers import named_layers, section_layer_order
 from app.services import place_builders
 from app.services.block_builders import BLOCK_BUILDERS, BlockBuilders
 from app.services.place_builders import MapLayerBuilder
@@ -69,6 +73,27 @@ def test_a_section_s_words_choose_its_layer_first() -> None:
         "clay-0-5cm",
         "soil-ph-0-5cm",
     ]
+
+
+def test_every_registry_layer_has_one_glossary_term_whose_words_choose_it() -> None:
+    terms = layer_terms()
+    assert sorted(term.layer for term in terms.terms) == sorted(spec.id for spec in MAP_LAYERS)
+    assert terms.layer_of()["soil-organic-carbon"] == "soil-organic-carbon-0-5cm"
+    assert named_layers(["Humus-rich Organic Matter feeds the vats.", "pH stays near 8."]) == {
+        "soil-organic-carbon-0-5cm": 0,
+        "soil-ph-0-5cm": 1,
+    }
+    assert section_layer_order("CLIMATE", ["Cloth dries in the summer heat."])[0] == "warmest-month-maximum"
+
+
+def test_a_layer_term_list_that_misses_a_layer_or_names_an_unknown_one_is_refused() -> None:
+    plain = json.loads(LAYER_TERMS_FILE.read_text(encoding="utf-8"))
+    missing = {**plain, "terms": plain["terms"][1:]}
+    with pytest.raises(ValidationError, match="exactly one term"):
+        LayerTerms.model_validate(missing)
+    unknown = {**plain, "terms": [*plain["terms"], {**plain["terms"][0], "key": "x", "layer": "humidity"}]}
+    with pytest.raises(ValidationError, match="registry does not hold: humidity"):
+        LayerTerms.model_validate(unknown)
 
 
 def test_a_word_inside_another_word_chooses_nothing() -> None:

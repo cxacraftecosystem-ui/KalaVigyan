@@ -645,16 +645,6 @@ Last reviewed: 2026-11-22.
 
 ## Region story and map layers (decision 0044)
 
-### Map layer subjects are a fixed English word list
-
-- **What:** `geo/section_layers.LAYER_SUBJECTS` picks a section's layer by whole English words in
-  its sentences (rain, monsoon, clay, pH ...); a subject the list lacks falls back to registry
-  order, so a climate section about humidity shows the annual mean temperature.
-- **Why left:** builders see English sentences, and a deterministic list keeps the model out of a
-  value the server chooses.
-- **Clears it:** glossary terms linked to layers (a `Term` per registry layer with its local
-  names), marked by the existing `TermMarker` instead of a word list.
-
 ### The place builders have not run against loaded rivers
 
 - **What:** the builders are tested on fixture reaches and, on GitHub Actions, on a hand-made

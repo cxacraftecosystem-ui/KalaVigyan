@@ -121,8 +121,12 @@ def test_the_region_story_draws_registered_districts_and_real_dataset_rows() -> 
     )
     district = next(d for d in register["districts"] if d["lgd"] == 449)
     state = next(s for s in register["states"] if s["lgd"] == district["stateLgd"])
+    others = json.loads(
+        (REPO / "backend" / "app" / "data" / "district_other_names.json").read_text(encoding="utf-8")
+    )
+    other = next(row["otherNames"] for row in others["districts"] if row["lgd"] == 449)
     assert [d.model_dump(by_alias=True) for d in story.districts] == [
-        {"districtLgd": 449, "name": district["name"], "stateName": state["name"]}
+        {"districtLgd": 449, "name": district["name"], "stateName": state["name"], "otherNames": other}
     ]
     layer = golden_json("region.layer.golden.json")
     assert [d.model_dump(mode="json", by_alias=True) for d in story.datasets] == [

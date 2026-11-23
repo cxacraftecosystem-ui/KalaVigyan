@@ -610,8 +610,10 @@ route's district places), gets neither.
   or null for a river neither dataset names (decision 0153). No chosen step is no story.
 - **`map_layer`** (`GEOLOGY`, `CLIMATE`, 8 s, no model): the facet's registry layers
   (`geo/section_layers`: soil, geology and terrain for `GEOLOGY`, climate for `CLIMATE`) in
-  registry order, those whose subject words (`LAYER_SUBJECTS`, whole words) a section sentence
-  names first; the first with a value in a craft district becomes the block, built from
+  registry order, those whose glossary term a section sentence names first (`geo/layer_terms.json`:
+  one term per registry layer, its label, aliases and any sourced local names, marked by
+  `research/term_marking.TermMarker` as answer terms are, so a multi-word term and the longest
+  surface win and a surface two terms share chooses neither; decision 0160); the first with a value in a craft district becomes the block, built from
   `map_layer(layer_values(...))` exactly as the layer route answers it, highlighting the craft's
   districts with a value.
 - **Pieces.** A story is stored in `piece_slot`'s cross-craft slot (`region_topic`; a district
