@@ -19,6 +19,7 @@ __all__ = [
     "CraftNames",
     "SeedCompound",
     "SeedConcept",
+    "StatedMeaning",
     "TermSeed",
     "WikidataLink",
     "compounds_of",
@@ -76,6 +77,13 @@ class SeedConcept:
 
 
 @dataclass(frozen=True)
+class StatedMeaning:
+    concept_key: str
+    term: str
+    meaning: str
+
+
+@dataclass(frozen=True)
 class SeedCompound:
     name: str
     material_keys: tuple[str, ...]
@@ -106,6 +114,7 @@ def glossary_plan(
     wikidata: Mapping[str, WikidataLink],
     concepts: Sequence[SeedConcept],
     compounds: Sequence[SeedCompound],
+    meanings: Sequence[StatedMeaning] = (),
 ) -> list[TermSeed]:
     by_key: dict[str, TermSeed] = {}
     concept_crafts = {concept.key: concept.craft_slug for concept in concepts if concept.craft_slug}
@@ -118,6 +127,7 @@ def glossary_plan(
         *(_craft_term(craft, wikidata.get(craft.slug), traditions.get(craft.slug, [])) for craft in ordered),
         *(_concept_term(concept) for concept in concepts),
         *(_compound_term(compound, concept_crafts) for compound in compounds),
+        *(_meaning_term(meaning, concept_crafts) for meaning in meanings),
     ]
     for seed in found:
         if seed is None or not seed.craft_slugs:
@@ -241,6 +251,14 @@ def _compound_term(compound: SeedCompound, concept_crafts: Mapping[str, str]) ->
     crafts = [concept_crafts[key] for key in compound.material_keys if key in concept_crafts]
     keys = [key for key in compound.material_keys if key in concept_crafts]
     return _seed(compound.name, craft_slugs=list(dict.fromkeys(crafts)), concept_keys=keys)
+
+
+def _meaning_term(meaning: StatedMeaning, concept_crafts: Mapping[str, str]) -> TermSeed | None:
+    craft = concept_crafts.get(meaning.concept_key)
+    seed = _seed(meaning.term, craft_slugs=[craft] if craft else [], concept_keys=[meaning.concept_key])
+    if seed is not None:
+        seed.meaning = meaning.meaning
+    return seed
 
 
 def _seed(label: str, *, craft_slugs: list[str], concept_keys: list[str] | None = None) -> TermSeed | None:

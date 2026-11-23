@@ -36,6 +36,7 @@ from .glossary_plan import (
     glossary_plan,
     wikidata_links,
 )
+from .local_term_meanings import checked_meanings, dossier_quotes
 from .science_seed import load_science_seed
 
 __all__ = [
@@ -60,7 +61,8 @@ def term_id(key: str) -> uuid.UUID:
 
 def glossary_seed(crafts: Sequence[CraftNames], concepts: Sequence[SeedConcept]) -> list[TermSeed]:
     wikidata = wikidata_links(json.loads(CRAFT_WIKIDATA_FILE.read_text(encoding="utf-8")))
-    return glossary_plan(crafts, wikidata, concepts, compounds_of(load_science_seed()))
+    meanings = checked_meanings(concepts, dossier_quotes)
+    return glossary_plan(crafts, wikidata, concepts, compounds_of(load_science_seed()), meanings)
 
 
 async def seed_terms(session: AsyncSession) -> dict[str, int]:
