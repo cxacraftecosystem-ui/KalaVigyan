@@ -23,13 +23,18 @@ async def block_in_language(
     stream: ExplainerStream,
     translation: AnswerTranslation,
     claim_texts: Mapping[uuid.UUID, str],
+    term_names: Mapping[str, Sequence[str]] | None = None,
 ) -> Block:
     if stream.language == CANONICAL_LANGUAGE:
         return block
     await stream.status("TRANSLATING")
     payload = block.model_dump(mode="json", by_alias=True, exclude_unset=True)
     shown = await translated_block(
-        payload, language=stream.language, translation=translation, claim_texts=claim_texts
+        payload,
+        language=stream.language,
+        translation=translation,
+        claim_texts=claim_texts,
+        term_names=term_names,
     )
     return BLOCKS.validate_python(shown)
 

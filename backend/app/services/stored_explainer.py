@@ -121,7 +121,11 @@ async def _stored_section(showing: _StoredShowing, spec: SectionSpec, views: Seq
     if stream.language != CANONICAL_LANGUAGE:
         payload = block.model_dump(mode="json", by_alias=True)
         shown = await translated_block(
-            payload, language=stream.language, translation=showing.translation, claim_texts=_texts(cited)
+            payload,
+            language=stream.language,
+            translation=showing.translation,
+            claim_texts=_texts(cited),
+            term_names=showing.enrichment.term_names,
         )
         block = type(block).model_validate(shown)
     sent = await stream.blocks(spec.id, [block], cited.sources)

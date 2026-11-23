@@ -36,7 +36,7 @@ flowchart LR
 | [0005](0005-scholarly-source-adapters.md) | Scholarly source adapters | · |
 | [0006](0006-reference-source-adapters.md) | Reference source adapters: Wikipedia, Wikidata, PubChem, Wikimedia Commons | · |
 | [0007](0007-web-search-and-fetcher.md) | Web search adapters and the fetcher sandbox | · |
-| [0008](0008-stored-knowledge-retrieval.md) | Stored-knowledge retrieval | · |
+| [0008](0008-stored-knowledge-retrieval.md) | Stored-knowledge retrieval | [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) |
 | [0009](0009-planner-and-tiered-research.md) | Planner and tiered research | · |
 | [0010](0010-composer.md) | Composer | [0138](0138-answers-composed-from-the-asked-fields.md) and [0144](0144-stored-passages-as-evidence.md) |
 | [0011](0011-claim-write-back-and-coverage-enrichment.md) | Claim write-back and the coverage enrichment job | · |
@@ -67,12 +67,12 @@ flowchart LR
 | [0031](0031-understanding-and-depth.md) | Understanding the question, and depth by role | [0093](0093-no-caps-for-now.md) and [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0032](0032-sectioned-composition.md) | Sectioned composition: research per field, blocks per section | [0138](0138-answers-composed-from-the-asked-fields.md) |
 | [0033](0033-knowledge-pieces-and-reuse.md) | Stored knowledge pieces and reuse | [0096](0096-reader-question-pieces-join-their-craft-page.md), [0142](0142-curated-crafts-read-only-curated-rows.md), [0160](0160-place-builders-kept-true.md) |
-| [0034](0034-images-and-terms.md) | Pictures and tappable terms | · |
+| [0034](0034-images-and-terms.md) | Pictures and tappable terms | [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) |
 | [0035](0035-listen-and-voice-switched-off.md) | Listen, and the live voice call switched off | [0140](0140-voice-and-listen-kept-true.md) and [0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md) |
 | [0036](0036-asking-screen.md) | The asking screen: dictation, an optional craft, depth by role | · |
 | [0037](0037-explainer-ui.md) | The explainer view | [0140](0140-voice-and-listen-kept-true.md) |
 | [0038](0038-phase-a-review-fixes.md) | Phase A review fixes | · |
-| [0039](0039-pictures-and-terms-wired.md) | Pictures and terms in the answer stream | · |
+| [0039](0039-pictures-and-terms-wired.md) | Pictures and terms in the answer stream | [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) |
 | [0040](0040-no-connection-held-across-a-model-call.md) | No connection held across a model call | · |
 | [0041](0041-one-gemini-content-per-embedded-text.md) | One Gemini content per embedded text | · |
 | [0042](0042-phase-b-contract.md) | Phase B contract: place, matter and the expert panel | · |
@@ -208,6 +208,7 @@ flowchart LR
 | [0162](0162-unused-craft-page-chapters-retired.md) | The craft page's chapters keep only what a page draws, and an approved structure writes its shared rows at once | · |
 | [0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md) | Nine more limits are kept by choice, the debt register may only shrink, the database tests run in shards, and each process on the box keeps to its own connection budget | · |
 | [0165](0165-answers-counted-as-settled-asked-as-asked.md) | An answer's spend is counted as settled, its asked fields are the ones the question asks, and an expert difference is told once | · |
+| [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) | Pictures are paired by the Public Suffix List and reused once stored, local words are terms only with a stated meaning, and stored vectors are compared within one model | · |
 
 ## How this document is kept true
 

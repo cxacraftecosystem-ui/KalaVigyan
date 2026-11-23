@@ -10,6 +10,7 @@ Date: 2026-11-17. Status: accepted.
 |---|---|
 | The contract it was built to | [0030 The explainer contract](0030-explainer-contract.md) |
 | The review that fixed it | [0038 Phase A review fixes](0038-phase-a-review-fixes.md) |
+| Sites are judged by the Public Suffix List, Brave backs SearXNG, and local words are terms only with a stated meaning | [decision 0166](0166-pictures-terms-and-stored-pieces-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

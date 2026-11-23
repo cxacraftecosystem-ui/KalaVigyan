@@ -519,12 +519,15 @@ sequenceDiagram
    (`research/image_relevance`), stores each once as a `MediaRef` with its claims
    (`services/media_ref_store`) and answers an `images` block: inline under an open licence with
    its author, else a credited link card whose thumbnail the page's own site serves. The answer
-   stream calls it for every section with blocks, researched or reused, after those blocks are
-   built (`services/section_enrichment`, decision 0039): each service has 6 s, the step 8 s, and a
-   failure or timeout sends no `images` block and leaves the section ready.
+   stream calls it for every section with blocks, researched or reused, and for the stored-only
+   answer, after those blocks are built (`services/section_enrichment`, decision 0039): the
+   pictures already stored for the cited claims first, a search only when none is (decision
+   0166); each service has 6 s, the step 8 s, and a failure or timeout sends no `images` block
+   and leaves the section ready.
 2. Terms: `seed_claims` also seeds the `Term` glossary (`services/term_glossary.seed_terms`) from
-   craft names, aliases and matched Wikidata labels, the seed's local names with what they mean,
-   and its compounds. `research/term_marking.TermMarker` marks term spans in sentences against an
+   craft names, aliases and matched Wikidata labels, the seed's local names with what they mean
+   (with the meanings `data/local_term_meanings.json` cites), and its compounds, and removes the
+   links its plan no longer makes (decision 0166). `research/term_marking.TermMarker` marks term spans in sentences against an
    answer's glossary (`glossary_entries`): every English sentence of a section's blocks, before
    translation; a translated sentence keeps the spans whose text it still shows (decision 0039). `GET /api/terms/{key}?language=` (`api/routes/terms.py`)
    answers `services/term_summaries.TermLookup.summary`: the cached summary while its claims are

@@ -209,7 +209,11 @@ async def _sent(
 ) -> list[Block]:
     texts = claim_texts(showing.builds.process, section.reused.cited)
     in_language = partial(
-        block_in_language, stream=showing.stream, translation=showing.translation, claim_texts=texts
+        block_in_language,
+        stream=showing.stream,
+        translation=showing.translation,
+        claim_texts=texts,
+        term_names=showing.enrichment.term_names,
     )
     return await showing.stream.blocks(section.spec.id, blocks, sources, in_language=in_language)
 

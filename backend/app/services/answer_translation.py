@@ -99,12 +99,13 @@ async def translated_sentences(
     language: str,
     translation: AnswerTranslation,
     claim_texts: Mapping[uuid.UUID, str],
+    term_names: Mapping[str, Sequence[str]] | None = None,
 ) -> list[dict[str, Any]]:
     found = await translate_segments(
         _sentence_segments(sentences, claim_texts), language=language, translation=translation
     )
     renderings = _renderings(found, _term_surfaces(sentences))
-    return [_translated_sentence(sentence, found, renderings) for sentence in sentences]
+    return [_translated_sentence(sentence, found, renderings, term_names or {}) for sentence in sentences]
 
 
 async def translated_block(
@@ -113,6 +114,7 @@ async def translated_block(
     language: str,
     translation: AnswerTranslation,
     claim_texts: Mapping[uuid.UUID, str],
+    term_names: Mapping[str, Sequence[str]] | None = None,
 ) -> dict[str, Any]:
     sentences = payload_sentences(block)
     if not sentences:
@@ -121,7 +123,10 @@ async def translated_block(
         _sentence_segments(sentences, claim_texts), language=language, translation=translation
     )
     renderings = _renderings(found, _term_surfaces(sentences))
-    return with_payload_sentences(block, lambda sentence: _translated_sentence(sentence, found, renderings))
+    names = term_names or {}
+    return with_payload_sentences(
+        block, lambda sentence: _translated_sentence(sentence, found, renderings, names)
+    )
 
 
 async def translate_segments(
@@ -185,12 +190,15 @@ def _claim_of(sentence: Mapping[str, Any], claim_texts: Mapping[uuid.UUID, str])
 
 
 def _translated_sentence(
-    sentence: Mapping[str, Any], found: Mapping[str, str], renderings: Mapping[str, str]
+    sentence: Mapping[str, Any],
+    found: Mapping[str, str],
+    renderings: Mapping[str, str],
+    term_names: Mapping[str, Sequence[str]],
 ) -> dict[str, Any]:
     text = found.get(sentence["id"])
     if text is None:
         return dict(sentence)
     shown = {**sentence, "text": text, "translated": True, "original": sentence["text"]}
     if "terms" in sentence:
-        shown["terms"] = spans_still_shown(text, sentence["terms"], renderings)
+        shown["terms"] = spans_still_shown(text, sentence["terms"], renderings, term_names)
     return shown
