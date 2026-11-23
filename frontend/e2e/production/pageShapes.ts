@@ -1,10 +1,15 @@
+import { DEFERRED_ATTRIBUTE } from "@/components/monograph/kitGate";
+
 export type DocumentShape = {
   heading: string;
   chapters: string[];
   railTargets: string[];
   missingTargets: string[];
   citedSentences: number;
+  restWaiting: boolean;
 };
+
+export type DocumentRead = { root: string; rail: string; rest: string };
 
 export type RecordShape = {
   heading: string;
@@ -36,8 +41,10 @@ export const RECORD_ROOT = '[data-testid="craft-without-monograph"]';
 export const HUB_ROOT = '[data-testid="category-hub"]';
 export const ESSAY_ROOT = '[data-testid="answer-view"]';
 export const RAIL_LINKS = 'nav[aria-label="Chapters"] a[href^="#"]';
+export const REST_HOLDER = `[${DEFERRED_ATTRIBUTE}]`;
+export const DOCUMENT_READ: DocumentRead = { root: DOCUMENT_ROOT, rail: RAIL_LINKS, rest: REST_HOLDER };
 
-export function documentShape(options: { root: string; rail: string }): DocumentShape | null {
+export function documentShape(options: DocumentRead): DocumentShape | null {
   const root = document.querySelector(options.root);
   if (!root) return null;
   const text = (node: Element | null) => (node?.textContent ?? "").replace(/\s+/g, " ").trim();
@@ -48,7 +55,8 @@ export function documentShape(options: { root: string; rail: string }): Document
     chapters: Array.from(root.querySelectorAll("section.kv-ch")).map((chapter) => chapter.getAttribute("data-label") ?? ""),
     railTargets,
     missingTargets: railTargets.filter((target) => !target || document.getElementById(target) === null),
-    citedSentences: root.querySelectorAll(".s[data-src], .s:has(.kcite)").length
+    citedSentences: root.querySelectorAll(".s[data-src], .s:has(.kcite)").length,
+    restWaiting: document.querySelector(options.rest) !== null
   };
 }
 
@@ -85,10 +93,15 @@ export function essayShape(rootSelector: string): EssayShape | null {
   if (!root) return null;
   const lede = Array.from(root.querySelectorAll('[data-testid="answer-lede"] [data-testid="answer-sentence"]'));
   const actions = Array.from(root.querySelectorAll('[data-testid="answer-actions"] button'));
+  const said = (button: Element) => {
+    const copy = button.cloneNode(true) as Element;
+    copy.querySelectorAll('[aria-hidden="true"]').forEach((hidden) => hidden.remove());
+    return (copy.textContent ?? "").replace(/\s+/g, " ").trim();
+  };
   return {
     question: (root.querySelector("h1")?.textContent ?? "").replace(/\s+/g, " ").trim(),
     lede: lede.length,
     ledeCited: lede.filter((sentence) => sentence.querySelector('[data-testid="citation-chip"]') !== null).length,
-    actions: actions.map((button) => (button.textContent ?? "").replace(/\s+/g, " ").trim())
+    actions: actions.map(said)
   };
 }

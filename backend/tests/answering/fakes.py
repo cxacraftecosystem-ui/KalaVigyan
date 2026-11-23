@@ -36,7 +36,7 @@ from app.services.section_enrichment import PICTURES_WAIT_SECONDS, EnrichmentToo
 from app.services.section_images import IMAGE_SEARCH_SECONDS, SectionImages, SectionImagesAsk
 
 from ..composer.fixtures import ALUM_CLAIM_ID, GUESS_CLAIM_ID, pack
-from ..images.fakes import FakeMediaStore, FakeSource, candidate
+from ..images.fakes import FakeMediaStore, FakeSource, candidate, searched_by
 from ..planner.fakes import FakeModel
 from ..research.fixtures import AJRAKH
 from .piece_fakes import MemoryPieces
@@ -342,7 +342,7 @@ class FakeEnrichment:
     async def pictures(self, ask: SectionImagesAsk) -> ImagesBlock | None:
         self.asks.append(ask)
         images = SectionImages(
-            sources=tuple(self.sources), store=self.media, search_seconds=self.search_seconds
+            sources=searched_by(*self.sources), store=self.media, search_seconds=self.search_seconds
         )
         return await images.block(ask)
 

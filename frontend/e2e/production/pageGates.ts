@@ -4,6 +4,8 @@ export const START_PREFIX = "Start the research on ";
 export const RECORD_QUESTIONS = 3;
 export const ESSAY_ACTIONS = [/^Saved?$/, /^Cite this answer$/] as const;
 export const NO_FAMILY_SCIENCE_NOTE = "the hub draws no family science chapters: its family monograph is not served";
+export const REST_WAIT_MS = 30_000;
+export const REST_NOT_DRAWN = `the rest of the document did not draw in ${REST_WAIT_MS / 1000} s`;
 
 const LISTED_MAX = 6;
 
@@ -25,7 +27,8 @@ export function documentProblems(shape: DocumentShape | null): string[] {
   const twice = repeatedLabels(shape.chapters);
   if (twice.length > 0) problems.push(`the document draws a chapter twice: ${listed(twice)}`);
   if (shape.railTargets.length === 0) problems.push("the chapter rail lists no chapter");
-  if (shape.missingTargets.length > 0) problems.push(`the chapter rail links to chapters the page does not draw: ${listed(shape.missingTargets)}`);
+  if (shape.restWaiting) problems.push(REST_NOT_DRAWN);
+  else if (shape.missingTargets.length > 0) problems.push(`the chapter rail links to chapters the page does not draw: ${listed(shape.missingTargets)}`);
   if (shape.citedSentences === 0) problems.push("the document draws no cited sentence");
   return problems;
 }

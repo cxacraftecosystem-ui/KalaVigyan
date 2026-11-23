@@ -13,12 +13,12 @@ import {
   answerRecord,
   knownAnswerOutcome,
   ledeProblems,
-  pageSentenceProblems,
   parseTappedStream,
   savedLedeProblems,
   scriptProblems,
   type KnownAnswerQuestion
 } from "./production/answers";
+import { pageSentenceProblems } from "./production/pageSentences";
 import { NetworkQuiet, captureScreen, judgeCapture, readyForCapture, sightProblems } from "./production/capture";
 import { CITED_CONTENT, NAV_BY_ROLE, errorHeadline, gapCopyFindings, labelProblems } from "./production/checks";
 import {
@@ -110,7 +110,7 @@ test("a tapped stream parses the same in any chunking, counting heartbeats and s
     const parsed = parseTappedStream(chunked(GOLDEN, size), 1_000);
     expect(parsed.events.map(({ event }) => event)).toEqual(whole);
     expect(parsed.heartbeats).toBe(1);
-    expect(parsed.unparsed).toBe(0);
+    expect(parsed.refused).toEqual([]);
   }
   const silent = parseTappedStream([{ at: 1_500, text: ": keep-alive\n\n" }, { at: 61_500, text: block("done", { answerId: null }) }], 1_000);
   expect(silent.longestSilenceMs).toBe(60_000);
@@ -149,9 +149,9 @@ test("an answer without done, with an uncited sentence or opened twice fails", (
   const cut = recordOf([block("source", SOURCE), sentence("e1", "Alum is the mordant.")].join(""), ENGLISH);
   expect(answerProblems(cut, ENGLISH)).toContain("the stream ended with closed, not done");
   const uncited = recordOf([sentence("e2", "Alum is the mordant.", {}, []), block("done", { answerId: null })].join(""), ENGLISH);
-  expect(answerProblems(uncited, ENGLISH)).toEqual(expect.arrayContaining(["no cited sentence arrived", "1 stream frames broke the explainer contract"]));
+  expect(answerProblems(uncited, ENGLISH)).toEqual(expect.arrayContaining(["no cited sentence arrived", "1 stream frames broke the explainer contract: block"]));
   const retired = recordOf([block("source", SOURCE), block("sentence", { sectionId: "a", sentence: {} }), sentence("e6", "Alum is the mordant."), block("done", { answerId: null })].join(""), ENGLISH);
-  expect(answerProblems(retired, ENGLISH)).toEqual(["1 stream frames broke the explainer contract"]);
+  expect(answerProblems(retired, ENGLISH)).toEqual(["1 stream frames broke the explainer contract: sentence"]);
   const twice = recordOf([block("source", SOURCE), sentence("e3", "Alum is the mordant."), block("done", { answerId: null })].join(""), ENGLISH, 2);
   expect(answerProblems(twice, ENGLISH)).toEqual(["the question opened 2 answer streams, not 1"]);
   const orphan = recordOf([sentence("e4", "Alum is the mordant."), block("done", { answerId: null })].join(""), ENGLISH);

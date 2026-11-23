@@ -1,12 +1,12 @@
 import asyncio
 import uuid
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from app.core.errors import ExternalFailure
 from app.research.image_relevance import ChosenImage, ClaimText
-from app.research.images import ImageCandidate, ImageQuery, media_ref_of
+from app.research.images import ImageCandidate, ImageQuery, ImageSource, media_ref_of
 from app.research.media_refs import MediaRef
 from app.services.media_ref_store import StoredPicture, media_ref_id, media_url_key
 
@@ -51,6 +51,13 @@ class FakeSource:
         if self.hanging:
             await asyncio.Event().wait()
         return self.found
+
+
+def searched_by(*sources: ImageSource) -> Callable[[], Awaitable[Sequence[ImageSource]]]:
+    async def built() -> Sequence[ImageSource]:
+        return sources
+
+    return built
 
 
 @dataclass
