@@ -332,6 +332,7 @@ when any of them changes (`kv-prefs`). The menu's display tools change the app's
 |---|---|
 | The document's runtime shape refuses what the backend refuses | `frontend/e2e/monograph-document-shape-unit.spec.ts` |
 | Marks, units, slots and the page plan | `frontend/e2e/monograph-render-unit.spec.ts`, `monograph-units-unit.spec.ts`, `monograph-slot-unit.spec.ts` and `monograph-layout-unit.spec.ts` |
+| The rail and chapter menu, and Kutch Ajrakh's chapter names as the approved page gives them | `frontend/e2e/monograph-rail-unit.spec.ts` |
 | A craft's route draws its document or its record | `frontend/e2e/craft-monograph-unit.spec.ts` and `craft-without-monograph-unit.spec.ts` |
 | Generated documents and the answer block kind | `frontend/e2e/monograph-generated-unit.spec.ts` and `monograph-blocks-unit.spec.ts` |
 | A chapter's listed facts drawn as one cited list after its prose | `frontend/e2e/cited-list-unit.spec.ts` |
