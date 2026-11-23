@@ -36,7 +36,7 @@ async def session() -> AsyncIterator[AsyncSession]:
         opened.add_all(
             [
                 Concept(id=alum, type="MATERIAL", name="Alum"),
-                Concept(id=kutch, type="PLACE", name="Kutch"),
+                Concept(id=kutch, type="TRADITION", name="Kutch"),
                 Term(id=key("term/alum"), key="test-sentence-alum", label="Alum"),
                 Term(id=key("term/kutch"), key="test-sentence-kutch", label="Kutch"),
                 Term(id=key("term/named"), key="test-sentence-named", label="Iron", sentenceName="Iron"),
