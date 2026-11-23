@@ -508,16 +508,6 @@ Last reviewed: 2026-11-22.
 
 ## Zoom, timeline and film renderers (decision 0060)
 
-### A place beyond the India frame is a signpost, not a pin
-
-- **What:** the timeline draws a placed point outside the India frame (Fustat in the fixture) as
-  a signpost at the frame's edge pointing toward it, so the reader sees its direction and its
-  Wikidata item but not its distance or neighbourhood.
-- **Why left:** the frame is fixed by `components/map/projection.ts`; widening it for one point
-  would shrink India on every timeline, and drawing other countries is refused.
-- **Clears it:** an inset frame for points abroad (the same projection, its own bounds, the plain
-  ground only), chosen by the timeline when it places a point outside the India frame.
-
 ### Film volumes on iPhones and iPads not yet heard
 
 - **What:** where a browser fixes `HTMLMediaElement.volume` (iOS Safari), the bed and the cues now

@@ -87,6 +87,10 @@ export function routeLines(entries: readonly TimelineEntry[], placed: readonly P
   });
 }
 
+export function abroadSummary(places: readonly PlacedPlace[]): string {
+  return `Beyond the map of India: ${places.map((place) => `${place.pin} ${place.name}`).join(", ")}`;
+}
+
 export function timelineSummary(block: TimelineMapBlock, entries: readonly TimelineEntry[]): string {
   const stops = timelineStops(entries);
   if (stops.length === 0) return "";

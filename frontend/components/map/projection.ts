@@ -5,22 +5,31 @@ const VIEW_WIDTH = 1000;
 
 const PADDING = 24;
 
-const MID_LATITUDE = (INDIA_BOUNDS.minLatitude + INDIA_BOUNDS.maxLatitude) / 2;
-const LONGITUDE_SCALE = Math.cos((MID_LATITUDE * Math.PI) / 180);
+export type FrameBounds = { minLongitude: number; maxLongitude: number; minLatitude: number; maxLatitude: number };
+export type ViewBox = { width: number; height: number };
+export type Projected = { x: number; y: number };
+export type FrameProjection = { viewBox: ViewBox; project: (longitude: number, latitude: number) => Projected };
 
-const SPAN_X = (INDIA_BOUNDS.maxLongitude - INDIA_BOUNDS.minLongitude) * LONGITUDE_SCALE;
-const SPAN_Y = INDIA_BOUNDS.maxLatitude - INDIA_BOUNDS.minLatitude;
-
-const UNITS_PER_DEGREE = (VIEW_WIDTH - PADDING * 2) / SPAN_X;
-const VIEW_HEIGHT = SPAN_Y * UNITS_PER_DEGREE + PADDING * 2;
-
-export const VIEW_BOX = { width: VIEW_WIDTH, height: VIEW_HEIGHT } as const;
-
-export function project(longitude: number, latitude: number): { x: number; y: number } {
+export function frameProjection(bounds: FrameBounds, width: number = VIEW_WIDTH, padding: number = PADDING): FrameProjection {
+  const longitudeScale = Math.cos((((bounds.minLatitude + bounds.maxLatitude) / 2) * Math.PI) / 180);
+  const spanX = (bounds.maxLongitude - bounds.minLongitude) * longitudeScale;
+  const spanY = bounds.maxLatitude - bounds.minLatitude;
+  const unitsPerDegree = (width - padding * 2) / spanX;
   return {
-    x: PADDING + (longitude - INDIA_BOUNDS.minLongitude) * LONGITUDE_SCALE * UNITS_PER_DEGREE,
-    y: PADDING + (INDIA_BOUNDS.maxLatitude - latitude) * UNITS_PER_DEGREE
+    viewBox: { width, height: spanY * unitsPerDegree + padding * 2 },
+    project: (longitude, latitude) => ({
+      x: padding + (longitude - bounds.minLongitude) * longitudeScale * unitsPerDegree,
+      y: padding + (bounds.maxLatitude - latitude) * unitsPerDegree
+    })
   };
+}
+
+const INDIA_FRAME = frameProjection(INDIA_BOUNDS);
+
+export const VIEW_BOX = INDIA_FRAME.viewBox;
+
+export function project(longitude: number, latitude: number): Projected {
+  return INDIA_FRAME.project(longitude, latitude);
 }
 
 export function bordersToPath(lines: Array<Array<[number, number]>>): string {
@@ -45,22 +54,25 @@ export function bordersToPath(lines: Array<Array<[number, number]>>): string {
   return parts.join("");
 }
 
-let outline: string | null = null;
-
-export function indiaOutlinePath(): string {
-  if (outline) return outline;
+export function outlinePath(frame: FrameProjection): string {
   const parts: string[] = [];
   for (const polygon of indiaRings() as Polygon[]) {
     for (const ring of polygon) {
       let command = "M";
       for (const [longitude, latitude] of ring) {
-        const { x, y } = project(longitude, latitude);
+        const { x, y } = frame.project(longitude, latitude);
         parts.push(`${command}${x.toFixed(1)} ${y.toFixed(1)}`);
         command = "L";
       }
       parts.push("Z");
     }
   }
-  outline = parts.join("");
+  return parts.join("");
+}
+
+let outline: string | null = null;
+
+export function indiaOutlinePath(): string {
+  outline ??= outlinePath(INDIA_FRAME);
   return outline;
 }

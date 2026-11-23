@@ -853,9 +853,13 @@ order, each with its span as the texts state it (`lib/timelineView.yearSpanText`
 point and a route one sentence states are one entry with both their lines, past, current or later
 over their joint span, `entryGroups`, `groupState`), beside a slider over the distinct first years (opening at the last, so everything shows; an entry
 is past, current or later at the chosen year). Placed places are numbered in order of first use
-and link their Wikidata item; a place inside the India frame is a pin, one outside it a signpost
-at the frame's edge pointing toward it with its number and name, never another country's outline;
-a route is a line between two placed ends once its year is reached; the map carries the boundary
+and link their Wikidata item; a place inside the India frame is a pin, one outside it a pin with
+its number and name in an inset frame under the map (`components/map/AbroadInset`), drawn in the
+same projection (`projection.frameProjection`) over its own bounds (India's and every place abroad,
+4 degrees round, `abroadFrame.abroadBounds`) on the plain ground (`--sunk`) with India's outline
+only, never another country's outline, while India's frame keeps its bounds (decision 0180); a
+route is a line between two placed ends once its year is reached, also drawn in the inset when an
+end lies abroad; the map carries the boundary
 caption and the shapes row, and with nothing placed there is no map. `blockSentences` reads a
 zoom's levels and a timeline's points, then routes; `blockSourceIds` adds a zoom compound's record
 after its citations, so both join the one numbering.
