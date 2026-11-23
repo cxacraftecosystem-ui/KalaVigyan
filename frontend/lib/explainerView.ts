@@ -123,6 +123,11 @@ export function trailCounts(trail: readonly TrailEntry[]): TrailCount[] {
 
 export const COVERED_NOTE = "Already covered in this answer.";
 
+export function withdrawnNote(count: number): string {
+  const taken = count === 1 ? "one passage was taken out" : `${count} passages were taken out`;
+  return `A field interview this section quoted is no longer shown, so ${taken}.`;
+}
+
 export function shownSections(sections: readonly SectionView[], streaming: boolean): SectionView[] {
   return sections.filter((section) => {
     if (section.blocks.length > 0) return true;

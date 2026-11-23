@@ -11,7 +11,9 @@ from app.research.expert_panel import EXPERT_PANEL, speaking_seats
 from app.research.structured import schema_problems
 from app.research.untrusted import untrusted_block
 from app.services.block_builders import BLOCK_BUILDERS, BUILDER_WAIT_MAX_SECONDS, BlockBuilders
-from app.services.expert_views import ExpertPanelBuilder, difference_refusal, panel_candidates
+from app.services.expert_subjects import Subjects
+from app.services.expert_view_blocks import PanelClaims, difference_refusal
+from app.services.expert_views import ExpertPanelBuilder, panel_candidates
 
 from ..answering.fakes import SpentModel
 from .fixtures import (
@@ -47,6 +49,10 @@ MATERIALS_SEATED = (
     "TOXICOLOGIST",
 )
 HISTORY_SEATED = ("HISTORIAN", "ECONOMIST", "ANTHROPOLOGIST", "DESIGN_HISTORIAN", "POLICY_EXPERT")
+
+
+def unlinked() -> PanelClaims:
+    return PanelClaims(cited(), Subjects())
 
 
 async def built(ask_seats: tuple[str, ...], model: object, **changes: object) -> list:
@@ -163,7 +169,7 @@ async def test_experts_differ_shows_both_stored_claims_with_their_own_citations(
 async def test_a_difference_citing_one_source_on_both_sides_is_refused() -> None:
     proposal = ProposedDifference("HISTORIAN", str(FOUR_HUNDRED.id), "ANTHROPOLOGIST", str(DHAMADKA.id))
     assert (
-        difference_refusal(proposal, {"HISTORIAN", "ANTHROPOLOGIST"}, cited())
+        difference_refusal(proposal, {"HISTORIAN", "ANTHROPOLOGIST"}, unlinked())
         == f"both statements cite {GI.id}"
     )
     model = panel_model(
@@ -176,7 +182,7 @@ async def test_a_difference_citing_one_source_on_both_sides_is_refused() -> None
 
 async def test_a_difference_about_two_subjects_is_refused() -> None:
     proposal = ProposedDifference("HISTORIAN", str(FOUR_HUNDRED.id), "ANTHROPOLOGIST", str(CLIENTS.id))
-    refusal = difference_refusal(proposal, {"HISTORIAN", "ANTHROPOLOGIST"}, cited())
+    refusal = difference_refusal(proposal, {"HISTORIAN", "ANTHROPOLOGIST"}, unlinked())
     assert refusal == "the statements concern different subjects"
     model = panel_model(
         [take("HISTORIAN", said(BHARMALJI)), take("ANTHROPOLOGIST", said(CLIENTS))],
@@ -201,7 +207,7 @@ def test_a_difference_is_kept_only_between_two_views_on_two_stored_facts(
     found = difference_refusal(
         ProposedDifference(seat, str(mine.id), other_seat, str(theirs.id)),
         {"HISTORIAN", "ANTHROPOLOGIST"},
-        cited(),
+        unlinked(),
     )
     assert found is not None and refusal in found
 

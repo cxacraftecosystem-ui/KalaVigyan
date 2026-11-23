@@ -25,7 +25,7 @@ export const IMAGE_RELEVANCE = ["TEXT", "VISION"] as const;
 
 export type Discipline = (typeof DISCIPLINES)[number];
 export type TermSpan = { text: string; termKey: string };
-export type ExplainerSentence = AnswerSentence & { terms: TermSpan[]; sourcesDiffer?: boolean };
+export type ExplainerSentence = AnswerSentence & { terms: TermSpan[]; sourcesDiffer?: boolean; differsOn?: string };
 export type ReuseMarker = { pieceId: string; storedAt: string };
 export type LadderCondition = { label: string; stated: string; citations: Citation[] };
 export type BlockEnvelope<K extends string> = { id: string; kind: K; version: 1; reuse: ReuseMarker | null };
@@ -78,10 +78,14 @@ export const explainerSentenceShape: Shape<ExplainerSentence> = {
   expected: "a cited sentence with its marked terms",
   parse(value, path) {
     if (typeof value !== "object" || value === null || Array.isArray(value)) throw new ShapeError(path, "an object");
-    const { terms, sourcesDiffer, ...sentence } = value as Record<string, unknown>;
-    const differs = optional(boolean).parse(sourcesDiffer, path ? `${path}.sourcesDiffer` : "sourcesDiffer");
-    const parsed = { ...answerSentenceShape.parse(sentence, path), terms: list(termSpanShape).parse(terms, path ? `${path}.terms` : "terms") };
-    return differs === undefined ? parsed : { ...parsed, sourcesDiffer: differs };
+    const { terms, sourcesDiffer, differsOn, ...sentence } = value as Record<string, unknown>;
+    const at = (name: string) => (path ? `${path}.${name}` : name);
+    const differs = optional(boolean).parse(sourcesDiffer, at("sourcesDiffer"));
+    const about = optional(text).parse(differsOn, at("differsOn"));
+    if (about !== undefined && differs !== true) throw new ShapeError(at("differsOn"), "only on a sentence whose sources differ");
+    const parsed = { ...answerSentenceShape.parse(sentence, path), terms: list(termSpanShape).parse(terms, at("terms")) };
+    const flagged = differs === undefined ? parsed : { ...parsed, sourcesDiffer: differs };
+    return about === undefined ? flagged : { ...flagged, differsOn: about };
   }
 };
 

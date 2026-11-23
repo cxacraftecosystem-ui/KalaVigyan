@@ -907,30 +907,6 @@ Last reviewed: 2026-11-22.
 
 ## Expert panel (decision 0046)
 
-### One failing take sentence drops the view, with no regenerate
-
-- **What:** prose gets one regenerate for failing sentences; a panel take does not, so a view with
-  one unquoted or unsupported sentence is not shown at all.
-- **Why left:** the panel is optional work inside a 90 s wait (decision 0099).
-- **Clears it:** one regenerate of the failing seats' takes when the wait and the headroom allow.
-
-### Experts differ only on claims stored on one concept
-
-- **What:** "one subject" is the claims' stored concept, so two claims on different concepts that
-  disagree about one fact (or a claim about a concept edge) are never shown as a difference.
-- **Why left:** the concept is the only stored subject; a model's word that two claims concern one
-  thing is not evidence.
-- **Clears it:** the concept graph of feature 7 (shared-science explorer) linking concepts that
-  name one thing, read as one subject.
-
-### Reused expert views keep the seats that stored them
-
-- **What:** a stored panel is reused with its section (one reuse set), so a later question that
-  seated other experts sees the earlier answer's seats.
-- **Why left:** dropping a view would break its mirrored difference; the set is reused whole.
-- **Clears it:** reuse a set's views only for seats the new understanding seats, removing the
-  differences and agreements that name a dropped seat.
-
 ### The reading share does not steer queries
 
 - **What:** each seat's preferred kinds take every other early read of what was found, but which
@@ -943,11 +919,14 @@ Last reviewed: 2026-11-22.
 
 ### The panel call has not met Claude Sonnet yet
 
-- **What:** the prompt and schema were checked against the portable schema rules and recorded
-  replies only.
-- **Why left:** nothing runs against production models from the laptop.
-- **Clears it:** the phase B known-answer question in production (Kutch Ajrakh, Expert, history)
-  showing an "Experts differ" card, and Usage showing the panel's spend per answer.
+- **What:** the seat, retake and difference calls are tested on their route (the builder compose
+  model, `answer_routes.BUILDER_TUNING`, Claude Sonnet 5.5 on the answer's headroom;
+  `tests/experts/test_panel_retakes.py`) and against recorded replies, but no production answer
+  has been read for its views and an "Experts differ" card.
+- **Why left:** it needs a paid production run, which only the lead dispatches.
+- **Clears it:** the production questions run dispatched with `questions=true`: its Expert answer
+  carries a note of the panel's views and Experts differ pairs (`e2e/production/expertPanel.ts`),
+  read with the `COMPOSE` spend of that answer in Usage.
 
 ## Matter and expert renderers (decision 0049)
 
@@ -1608,86 +1587,6 @@ Last reviewed: 2026-11-22.
   Semantic Scholar too, which retires `JOURNAL_AS_PUBLISHER_ADAPTERS`); sources stored before keep
   no journal until a script reads their DOIs again.
 
-## Frontend audit exceptions
-
-### Field voices are stored and served, but not drawn on the craft page
-
-- **What:** the craft page carries `voices`, `fieldPhotos` and `fieldVoicesTotal`, and the list
-  route pages them (decision 0091), but no component draws "In the artisan's words" or "From the
-  workshops" yet; only the signed-in reading page `/voices/<id>` exists.
-- **Why left:** the answer and craft components were being edited by another lane in the same
-  batch.
-- **Clears it:** a Voices part and a gallery on the craft page, each with its first page and
-  "Show all N" through `fetchFieldVoices`, and "Read the full interview" linking `/voices/<id>`.
-
-### The expert panel's artisan seat quotes only transcript chunks that back a stored claim
-
-- **What:** since decision 0099 the artisan seat speaks from field transcript chunks (`PUBLIC` and
-  `SIGNED_IN`), but only through a stored claim whose citation quotes the chunk; a chunk no claim
-  cites is not quoted. It reads with the public reading ACLs, not the asker's own (a researcher's
-  `RESEARCHER` chunks are not read), and it does not read KalaVigyan testimony (decision 0083).
-- **Why left:** an `expert_view` sentence cites stored claims only, and the builder writes no
-  claims; field quotes become claims through the live write-back.
-- **Clears it:** the builder writing back a quoted claim for each chunk it would quote, and the
-  asker's ACLs on `BuildAsk`.
-
-### The seat search and the artisan's transcript read have no database test
-
-- **What:** `seat_search.stored_seat_search` and `artisan_seat.stored_voices` past the retriever
-  (the `ClaimSource`, `FieldSegment` and `FieldRecording` reads) are covered by unit tests with
-  injected searches only; no test runs them against Postgres.
-- **Why left:** the change was bounded to unit tests; database tests run only on GitHub Actions.
-- **Clears it:** a `tests/db` test that stores a field recording, its chunks and a quoting claim,
-  and checks the artisan's sentence, name, craft and district.
-
-### Field images are not illustration candidates of their crafts' claims
-
-- **What:** the field voices contract makes each stored field image an illustration candidate of
-  its crafts' claims (`MediaRefClaim`, relevance `TEXT` from its caption and labels). No field voices
-  module writes `MediaRefClaim` rows, so field images show only in the craft page's gallery, never
-  beside a sentence (decision 0091, point 12).
-- **Why left:** choosing which claims a photograph illustrates needs the caption-to-claim matching
-  of the media lane, and the gallery already shows every image credited.
-- **Clears it:** `field_voices_image_store` links each image's `MediaRef` to the visible claims of
-  its crafts whose text its caption or labels match, and the cascade deletes those rows with it.
-
-### A partly withdrawn explainer section shows no "quote withdrawn" note
-
-- **What:** `services/field_voices_readback.py` drops the sentences and blocks of a stored explainer
-  that cite a withdrawn or stale field interview when the explainer is read. A section left empty
-  says so ("A field interview this section quoted is no longer shown."), but a section that keeps
-  other sentences shows no note that one was taken out, as the contract asks.
-- **Why left:** the explainer contract has a count of removed quotes only on `artisan_voice`, which
-  is not a built section block; a note on any section is a new field in `docs/contracts/explainer.md`
-  and its web shape, owned by the answer lane.
-- **Clears it:** a `withdrawn` count on `ExplainerSection` (and the web shape), set by the readback
-  and shown under the section.
-
-### The field voices order check does not span runs
-
-- **What:** `field_voices_sync` refuses a page whose first change is not after the last change of
-  the page before it in the same view and run, but keeps no last (`updatedAt`, `id`) between runs;
-  the first page of a run is checked only within itself.
-- **Why left:** a run resumes at the portal's signed cursor, which already names the last change
-  read; storing the stamp beside it needs two more columns per view and a reset on every re-read.
-- **Clears it:** `FieldVoiceStream` keeps the last stamp and id of each view, cleared with the cursor,
-  and `_read` starts from them.
-
-## The design system migration (decision 0092)
-
-### The voice call screen still mounts the retired source dialog
-
-- **What:** citation clusters open their own popover or sheet (`editorial/SourcePanel.tsx`), so no
-  citation opens `components/answer/SourceDialog` any more. Only the voice call screen still wires
-  it: `components/voice/VoiceCallBody.tsx` mounts `SourceDialog` and builds `openedSource` in an
-  `onOpen` it hands `VoiceTranscript`, which no citation calls.
-- **Why left:** the voice screens were another lane's files while decision 0141 cleared the rest
-  (the evidence badge folded into `EvidenceTag`, `CitationLookup.onOpen` and `TermSheet`'s
-  `onOpenCitation` deleted).
-- **Clears it:** drop the `onOpen`, `openedSource` and `SourceDialog` wiring from `VoiceCallBody`
-  and `VoiceTranscript`, then delete `components/answer/SourceDialog.tsx` and
-  `e2e/source-dialog-unit.spec.ts`.
-
 ## Public transcripts and share links (decision 0097)
 
 ### The `SIGNED_IN` chunk ACL is read by everyone
@@ -1982,22 +1881,24 @@ Last reviewed: 2026-11-22.
 
 ### Leftovers of the design-conformance lane
 
-- **What:** an answer sentence flagged Sources differ opens both readings under the sentence, not in
-  a details element after its paragraph as SYSTEM.md draws it, and its summary cannot name what the
-  sources differ on, because the payload carries only `sourcesDiffer` and the citations (a flagged
-  claim stores no "about"). A drawing stored without server variants (the kind fixtures on
-  `/design/kinds`) shows a sunk placeholder until it hydrates. Decision 0141 renamed the board's
-  ribbon buttons, put the token set's hash in the themed picture ETag and added high contrast to
-  the capture run.
-- **Why left:** the sentence's own drawing is `components/answer/ExplainerSentence.tsx`, the voice
-  lane's file while decision 0141 ran, and a flagged claim has no stored subject to name; the
-  fixtures are delivered specs, which may not carry `themes` (`component_specs_general_delivery`),
-  and the page bundles them instead of asking the server, which adds the variants.
-- **Clears it:** store what two readings differ on with the flag (the write-back marks it), carry
-  it with the readings on the sentence, draw `SourcesDifferNote` after the paragraph in the host
-  components (`LadderStageCard`, `CitedText` and the other callers) and only the tag in
-  `ExplainerSentence`; serve the kind preview's specs through the backend, which adds the four
-  variants with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
+- **What:** the Sources differ readings open in a `<details>` after their paragraph and the claim
+  stores what they differ on (`Claim.differsOn`, decision 0156), but three seams are open. An
+  answer sentence never receives it, because `knowledge_view.ClaimView` carries no `differs_on`
+  (`section_blocks.explainer_sentence` reads it through `DIFFERS_ON_FIELD`), so answers show a plain
+  "Sources differ" summary; a flag the write-back's duplicate judge sets stores no subject, because
+  the judge names none; and the matter and what-if hosts (`components/answer/matter/
+  ReactionStepList.tsx`, `StepDetail.tsx`, `components/answer/play/WhatIfLab.tsx`) draw a flagged
+  sentence's tag without its readings. A drawing stored without server variants (the kind fixtures
+  on `/design/kinds`) shows a sunk placeholder until it hydrates.
+- **Why left:** `knowledge_view.py`, the gates and judges and the matter hosts were other lanes'
+  files while decision 0156 ran; the fixtures are delivered specs, which may not carry `themes`
+  (`component_specs_general_delivery`), and the page bundles them instead of asking the server,
+  which adds the variants.
+- **Clears it:** `ClaimView.differs_on: str | None` filled from `Claim.differsOn` in `cited_view`;
+  the duplicate judge naming what two facts differ on and passing it as
+  `candidate_writes.mark_sources_differ(..., about=)`; `SentencesDiffer` after the paragraph in the
+  three hosts; serve the kind preview's specs through the backend, which adds the four variants
+  with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
 
 ### The fused order is weak on paraphrased English questions
 

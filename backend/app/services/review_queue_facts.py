@@ -58,7 +58,7 @@ class FactDecision:
 async def decide_fact(
     session: AsyncSession, claim_id: uuid.UUID, reviewer: User, decision: FactDecision, *, now: datetime
 ) -> QueueDecision:
-    claim = await _gated_claim(session, claim_id, reviewer)
+    claim = await _gated_claim(session, claim_id, reviewer, own_allowed=decision.action == RETRACT)
     problem = fact_move_problem(decision.action, claim.status, claim.evidenceLevel)
     if problem is not None:
         raise DecisionConflict(problem)
@@ -84,13 +84,15 @@ async def decide_fact(
     )
 
 
-async def _gated_claim(session: AsyncSession, claim_id: uuid.UUID, reviewer: User) -> Claim:
+async def _gated_claim(
+    session: AsyncSession, claim_id: uuid.UUID, reviewer: User, *, own_allowed: bool
+) -> Claim:
     claim = await session.get(Claim, claim_id, with_for_update=True)
     gated = await session.scalar(select(exists().where(CandidateCheck.claimId == claim_id)))
     if claim is None or not (gated or await is_held(session, claim_id)):
         raise UnknownItem(f"No proposed or researched fact has the id {claim_id}.")
-    if claim.createdById == reviewer.id:
-        raise OwnItem("A reviewer does not decide their own fact.")
+    if claim.createdById == reviewer.id and not own_allowed:
+        raise OwnItem("A reviewer does not decide their own fact; they may only retract it.")
     return claim
 
 

@@ -80,7 +80,7 @@ checked by its year only and a price date not at all, and "1500 people" was offe
 
 ## Consequences
 
-- Migration `0072_quantities_kind` (down revision `0075_mcp_call_name_filled`) only widens two
+- Migration `0072_quantities_kind` (down revision `0080_stream_stamps_differs_on`) only widens two
   check constraints; its downgrade deletes quantities pieces.
 - A history answer's timeline may now arrive as version 2; clients read both versions.
 - The new kind joins the piece-kind enums of two MCP tools (`list_components`, `edit_draft`),

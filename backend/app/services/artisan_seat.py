@@ -3,24 +3,24 @@ from __future__ import annotations
 import uuid
 from collections.abc import Awaitable, Callable, Collection, Sequence
 from dataclasses import dataclass, field
-from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.composer.expert_takes import TAKE_SENTENCES_MAX
 from app.core.config import get_settings
-from app.models import ClaimSource, FieldRecording, FieldSegment
+from app.models import ClaimSource, Craft, FieldRecording, FieldSegment
 from app.research.field_voices import FIELD_SOURCE_KIND
-from app.research.quotes import quote_occurs
-from app.research.retrieval import SIGNED_IN_CHUNK_ACLS, KnowledgeQuery
+from app.research.retrieval import SIGNED_IN_CHUNK_ACLS, ChunkHit, KnowledgeQuery
 from app.research.vocabulary import FACT_LEVELS
 from app.retrieval.field_scope import shown_recordings
 
 from . import knowledge_view
-from .answer_events import CitedClaims, cited_claims
+from .answer_events import CitedClaims, cited_claims, joined_claims
+from .artisan_turns import ARTISAN_ROLE, FieldTurn, TurnCite, artisan_turn, backing_rank, says, unquoted_turns
+from .artisan_write_back import TurnFiling, written_turns
 from .builder_interface import BuildAsk, BuilderTools
-from .field_voices_view import craft_name_of, field_voice
+from .field_voices_view import craft_name_of
 from .section_blocks import KeptSentence, prose_problems
 
 __all__ = [
@@ -35,7 +35,6 @@ __all__ = [
     "stored_voices",
 ]
 
-ARTISAN_ROLE = "ARTISAN"
 ARTISAN_SEARCH_LIMIT = 12
 FIELD_READING_ACLS = SIGNED_IN_CHUNK_ACLS
 
@@ -44,7 +43,7 @@ FIELD_READING_ACLS = SIGNED_IN_CHUNK_ACLS
 class HeardQuote:
     claim_id: uuid.UUID
     quote: str
-    name: str
+    name: str | None
     craft: str
     district: str | None
 
@@ -55,13 +54,33 @@ class Heard:
     cited: CitedClaims = field(default_factory=CitedClaims)
 
 
+@dataclass(frozen=True)
+class _Transcript:
+    hits: tuple[ChunkHit, ...]
+    cites: tuple[TurnCite, ...]
+    rows: tuple[tuple[FieldSegment, FieldRecording], ...]
+
+
 VoiceSearch = Callable[[BuildAsk], Awaitable[Heard]]
 
 
 def attributed(heard: HeardQuote) -> str:
     place = f" in {heard.district} district" if heard.district else ""
     said = heard.quote.strip()
+    if heard.name is None:
+        return f"In one account from an artisan who practises {heard.craft}{place}: “{said}”"
     return f"In one artisan's account, {heard.name}, who practises {heard.craft}{place}, said: “{said}”"
+
+
+def _heard_quote(claim_id: uuid.UUID, quote: str, turn: FieldTurn) -> HeardQuote:
+    speaker = turn.voice.speaker
+    return HeardQuote(
+        claim_id=claim_id,
+        quote=quote,
+        name=speaker.name,
+        craft=craft_name_of(turn.recording.context or {}),
+        district=speaker.district,
+    )
 
 
 def artisan_take(heard: Heard, shown: Collection[str]) -> tuple[KeptSentence, ...]:
@@ -95,63 +114,80 @@ def stored_voices(tools: BuilderTools, *, enabled: Callable[[], bool] = _field_v
             limit=ARTISAN_SEARCH_LIMIT,
         )
         hits = await retriever.search(query)
-        chunks = [hit.chunk_id for hit in hits.chunks if hit.source_kind == FIELD_SOURCE_KIND]
-        if not chunks:
+        found = tuple(hit for hit in hits.chunks if hit.source_kind == FIELD_SOURCE_KIND)
+        if not found:
             return Heard()
         async with tools.sessions() as session:
-            return await _heard_in(session, craft.slug, chunks)
+            return await _heard_in(session, ask, craft.slug, found)
 
     return heard
 
 
-async def _heard_in(session: AsyncSession, craft_slug: str, chunks: Sequence[uuid.UUID]) -> Heard:
-    craft = await knowledge_view.resolve_craft(session, craft_slug)
+async def _heard_in(session: AsyncSession, ask: BuildAsk, slug: str, hits: tuple[ChunkHit, ...]) -> Heard:
+    craft = await knowledge_view.resolve_craft(session, slug)
     if craft is None:
         return Heard()
+    transcript = await _transcript(session, craft, hits)
+    backed = await _read(session, _backed_quotes(transcript))
+    turns = unquoted_turns(transcript.hits, transcript.cites, transcript.rows, limit=_room(backed))
+    filing = TurnFiling(craft.slug, craft.name, ask.section.discipline, ask.answer_id)
+    written = await written_turns(session, filing, turns)
+    added = await _read(
+        session, [_heard_quote(one.claim_id, one.unquoted.quote, one.unquoted.turn) for one in written]
+    )
+    return Heard((*backed.quotes, *added.quotes), joined_claims(backed.cited, added.cited))
+
+
+def _room(backed: Heard) -> int:
+    shown = {quote.claim_id for quote in backed.quotes if quote.claim_id in backed.cited.views}
+    return TAKE_SENTENCES_MAX - len(shown)
+
+
+async def _transcript(session: AsyncSession, craft: Craft, hits: tuple[ChunkHit, ...]) -> _Transcript:
+    sources = list({hit.source_id for hit in hits})
     cites = (
         await session.execute(
             select(ClaimSource.claimId, ClaimSource.sourceId, ClaimSource.chunkId, ClaimSource.quote).where(
-                ClaimSource.chunkId.in_(list(chunks)), ClaimSource.quote.is_not(None)
+                ClaimSource.sourceId.in_(sources), ClaimSource.quote.is_not(None)
             )
         )
     ).all()
-    if not cites:
-        return Heard()
-    views, sources = await knowledge_view.claims_by_id(
-        session, [cite.claimId for cite in cites], acls=FIELD_READING_ACLS
-    )
     rows = (
         await session.execute(
             select(FieldSegment, FieldRecording)
             .join(FieldRecording, FieldRecording.id == FieldSegment.recordingId)
-            .where(
-                FieldRecording.sourceId.in_({cite.sourceId for cite in cites}), *shown_recordings(craft.id)
-            )
+            .where(FieldRecording.sourceId.in_(sources), *shown_recordings(craft.id))
             .order_by(FieldSegment.position)
         )
     ).all()
-    order = {chunk: rank for rank, chunk in enumerate(chunks)}
-    ranked = sorted(cites, key=lambda cite: order.get(cite.chunkId, len(order)))
-    quotes = [found for cite in ranked if (found := _spoken(cite, rows)) is not None]
+    return _Transcript(
+        hits=hits,
+        cites=tuple(TurnCite(row.claimId, row.sourceId, row.chunkId, row.quote) for row in cites),
+        rows=tuple((segment, recording) for segment, recording in rows),
+    )
+
+
+def _backed_quotes(transcript: _Transcript) -> list[HeardQuote]:
+    ranked = [
+        (rank, cite) for cite in transcript.cites if (rank := backing_rank(cite, transcript.hits)) is not None
+    ]
+    ranked.sort(key=lambda entry: entry[0])
+    return [found for _, cite in ranked if (found := _spoken(cite, transcript.rows)) is not None]
+
+
+async def _read(session: AsyncSession, quotes: Sequence[HeardQuote]) -> Heard:
+    if not quotes:
+        return Heard()
+    views, sources = await knowledge_view.claims_by_id(
+        session, [quote.claim_id for quote in quotes], acls=FIELD_READING_ACLS
+    )
     return Heard(tuple(quotes), cited_claims(list(views.values()), sources))
 
 
-def _spoken(cite: Any, rows: Sequence[Any]) -> HeardQuote | None:
+def _spoken(cite: TurnCite, rows: Sequence[tuple[FieldSegment, FieldRecording]]) -> HeardQuote | None:
     for segment, recording in rows:
-        if recording.sourceId != cite.sourceId or not _says(segment, cite.quote):
+        if recording.sourceId != cite.source_id or not says(segment, cite.quote):
             continue
-        voice = field_voice(segment, recording)
-        if voice is None or voice.speaker.role != ARTISAN_ROLE:
-            return None
-        return HeardQuote(
-            claim_id=cite.claimId,
-            quote=cite.quote,
-            name=voice.speaker.name,
-            craft=craft_name_of(recording.context or {}),
-            district=voice.speaker.district,
-        )
+        turn = artisan_turn(segment, recording)
+        return None if turn is None else _heard_quote(cite.claim_id, cite.quote, turn)
     return None
-
-
-def _says(segment: FieldSegment, quote: str) -> bool:
-    return quote_occurs(quote, segment.text) or bool(segment.english and quote_occurs(quote, segment.english))

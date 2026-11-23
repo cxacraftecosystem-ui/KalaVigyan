@@ -557,9 +557,12 @@ sequenceDiagram
    (`services/expert_views`, decision 0046) makes one `COMPOSE` call per section for the seats
    speaking to its field (`research/expert_panel.speaking_seats`), over the stored facts the
    section's checked sentences rest on; a take passes the prose checks (which also refuse a month,
-   season, state or district no source states, `services/stated_names`) or is not shown, "Experts
-   differ" is kept only for two stored facts about one concept from two sources, and the call
-   spends only from the answer's headroom (`providers/budget.AnswerHeadroom`).
+   season, state or district no source states, `services/stated_names`), after one retake of a
+   failing take while the wait allows (`services/expert_seat_takes`, decision 0156), or is not
+   shown, "Experts differ" is kept only for two stored facts about one subject (one concept, or two
+   concepts one glossary term links, `services/expert_subjects`) from two sources, a reused panel
+   keeps only the seats the new answer seats (`research/piece_reuse.seated_pieces`), and the calls
+   spend only from the answer's headroom (`providers/budget.AnswerHeadroom`).
    Sections of the mechanism fields also get a generated explainer (`services/simulation_builder`,
    decision 0055; built since the review, decision 0061): every figure
    the section's cited quotes state is offered with its own words; a stored explainer whose claims
@@ -629,7 +632,8 @@ routes (`docs/contracts/field-voices.md`, decisions 0084 and 0091): `app/scripts
 (daily, `.github/workflows/field-voices-sync.yml`, behind `FIELD_VOICES_ENABLED`) reads each
 portal's two streams by cursor, applies tombstones, stores each recording as a `FIELD_TESTIMONY`
 source with `PUBLIC` quote chunks and `SIGNED_IN` transcript chunks, and each image as a credited
-`MediaRef` over a metadata-free copy in the media bucket. Field quote chunks join stored-knowledge
+`MediaRef` over a metadata-free copy in the media bucket, linked to the claims its caption and
+labels name, never beside a sentence while held. Field quote chunks join stored-knowledge
 retrieval and can be cited as field interviews; the craft page carries them as `voices` and
 `fieldPhotos`. A recording that is withdrawn, hidden or not heard from in 7 days leaves every read
 at once: its chunks, the claims that rest on it alone (`retrieval/field_scope`), and the sentences

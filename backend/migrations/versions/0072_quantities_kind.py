@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from alembic import op
 
 revision: str = "0072_quantities_kind"
-down_revision: str | Sequence[str] | None = "0075_mcp_call_name_filled"
+down_revision: str | Sequence[str] | None = "0080_stream_stamps_differs_on"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
