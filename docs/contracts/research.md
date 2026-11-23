@@ -920,9 +920,20 @@ faster.
   their names, so slip casting names no craft and Bidri, Ajrakh and Bandhani still do; decision
   0144) files it
   there and several skip it; else a place outside India or another culture (`data/places_abroad`)
-  refuses it (`SKIP_ABROAD`). The researched and compared crafts are named by a word of four
-  letters or more of the name that no other of them shares and fewer than three master-list crafts
-  use (`COMMON_NAME_USES`), by a name, alias or spelling of the craft index, or by a place of
+  named as where the fact's practice is refuses it (`SKIP_ABROAD`). A place abroad named only as a
+  material's origin (within three words after from, imported, mined, quarried, sourced, brought,
+  obtained or procured), as where goods went or were found (after exported, traded, shipped, sold,
+  reached, excavated, unearthed, or been, was or were found), or as the present country of a
+  historical site or culture of undivided India the same text names
+  (`data/places_abroad.historical_sites.json`: Indus Valley Civilization and Gandhara sites and the
+  archaeological sites and ancient cities of Pakistan and Bangladesh, from Wikidata) refuses nothing
+  (`PlacesAbroad.read`, `data/abroad_cues.py`; decision 0159), so the level names nothing and the
+  next is read; a clause word (that, which, because and the like) between the cue and the place
+  ends the cue. The researched and compared crafts are named by a word of four letters or more of
+  the name that no other of them shares, is not an ordinary English word and fewer than three
+  master-list crafts use (`COMMON_NAME_USES`), by a name, alias or spelling of the craft index (a
+  one-word alias only when it names its craft as for any other craft, so casting does not name
+  Metal Casting and Bidri still names Bidriware; decision 0159), or by a place of
   theirs below a state (the GI place: a district, a place label, a district's other name, or a
   place word of the craft's own name, as Kutch for Kutch Ajrakh); a word two of them share names
   neither. When the text and quotes name nothing but a place of India, a state included, the
@@ -931,8 +942,9 @@ faster.
   chemistry, physics or materials (`MATERIAL_SCIENCE_FIELDS`) goes to its craft family's science:
   no craft, `categorySlug` the family's category, the subject the shared concept named as the
   category (type `curation_keys.DISCIPLINE_CONCEPT_TYPES[field]`), which the craft scope of
-  decision 0122 reads; in a comparison only when every compared craft shares that category. Any
-  other is held (`HELD_UNNAMED`). A held write-back is filed under the craft researched with
+  decision 0122 reads; in a comparison only when every compared craft shares that category, and
+  never when a level named a place abroad that refused nothing: that sentence is held
+  (`HELD_OTHER_PLACE`, naming the place). Any other is held (`HELD_UNNAMED`). A held write-back is filed under the craft researched with
   `heldBecause` set to the reason: it is written hidden (`DRAFT`) for a reviewer whatever the
   review switch (knowledge-writes.md, The research write-back). A sentence resting on field
   interviews alone stays with the craft researched (`researched_craft`). Research for no craft
@@ -946,7 +958,10 @@ faster.
   craft or its sub-category, same type, else `InvalidInput`), else the craft's
   `ProcessStage` of that name for `PROCESS_STAGE`, else the craft's (then the sub-category's)
   concept of that type and folded name, else a new craft concept. A quoted write raises a
-  `HYPOTHESIS` claim to `PROVISIONAL` unless it is rejected or retracted, with a `ReviewEvent`.
+  `HYPOTHESIS` claim to `PROVISIONAL` unless it is rejected or retracted, with a `ReviewEvent`. A
+  write that is filed (not held) and meets its held twin, a `DRAFT` live-research claim of the same
+  dedupe id, moves it to the switch's status with a `ReviewEvent` by `live_research` whose note ends
+  "filed again under the craft it was held for, so it leaves the hold" (decision 0159).
 - `ClaimSource` carries the provenance of each citation: `foundBy`, `answerId` (the question),
   `retrievedAt`, and `checkedAt` when a quote was checked; `chunkId` and `locator` point at the
   stored chunk holding the quote.
@@ -1073,16 +1088,18 @@ ModelUnderstander(model=StructuredModel, resolve=)` implements it with the craft
   at least one discipline; `RESOLVER` (the model call failed or its reply held nothing usable)
   carries the fields the question's words name and their seats (below); only `RESOLVER` carries a
   `refusal`, the router's own words when spend was refused. `asked` are the fields the question
-  itself asks (the reply's, else the fields its words name), each once and each among
+  itself asks: the reply's `asked` that it also lists among its disciplines, else every field it
+  lists (a `RESOLVER` understanding's are the fields its words name), each once and each among
   `disciplines`, before the depth's floor adds held fields; without it every field is asked
-  (decision 0138). `englishQuestion` is the question in
+  (decisions 0138 and 0165). `englishQuestion` is the question in
   English that every search of the answer reads (decision 0123). `understood()` is the stream's
   `Understood` event, its `crafts` the craft then the compared ones.
 - The call: system `UNDERSTAND_SYSTEM_PROMPT`; user `understand_message` (depth label, the
   depth's expert range, its section range `Sections: <min> to <max>`, the listed crafts each in a
   `craft_block`, the question in an untrusted block); schema `understand_schema(offered)` `{craft:
   enum of the listed slugs and "", craftNames [string], compare [string: a listed slug, or a name
-  as given in craftNames], disciplines[DISCIPLINES], seats[EXPERT_SEATS], englishQuestion: string}`
+  as given in craftNames], disciplines[DISCIPLINES], asked[DISCIPLINES], seats[EXPERT_SEATS],
+  englishQuestion: string}`
   with only `type`,
   `enum`, `items`, `properties`, `required` and `additionalProperties: false`.
 - The reply (`understanding_prompt.parsed_reply`, decision 0123) is read field by field: a value
@@ -1366,7 +1383,7 @@ tier and the reader that takes verbatim quotes from the pack's documents (`WEB_R
 | The source adapters, against recorded answers | `backend/tests/sources/` |
 | The fetcher service | `backend/tests/fetcher/` |
 | The planner, the composer and the answering service | `backend/tests/planner/`, `backend/tests/composer/`, `backend/tests/answering/test_answer_flow.py`, `test_answer_cost.py` and `backend/tests/db/test_answer_cost_db.py` (an answer's cost and latency) |
-| Write-back and the coverage job | `backend/tests/write_back/` (the craft a fact names: `test_write_back_names.py`, `test_write_back_filing.py`, `test_write_back_context.py` and `test_write_back_passages.py`; stored passages: `test_stored_passages.py`; the words that name another craft: `test_filing_names.py`), `backend/tests/research/test_composition_and_write_back.py`, `backend/tests/db/test_claim_writer_db.py`, `test_stored_passages_db.py`, `test_held_write_backs_db.py`, `test_write_back_closed_db.py`, `test_storable_text_db.py` and `test_coverage_backoff_db.py` |
+| Write-back and the coverage job | `backend/tests/write_back/` (the craft a fact names: `test_write_back_names.py`, `test_write_back_filing.py`, `test_write_back_context.py` and `test_write_back_passages.py`; stored passages: `test_stored_passages.py`; the words that name another craft: `test_filing_names.py`; places abroad kept: `test_places_abroad_kept.py`), `backend/tests/research/test_composition_and_write_back.py`, `backend/tests/db/test_claim_writer_db.py`, `test_stored_passages_db.py`, `test_held_write_backs_db.py`, `test_write_back_closed_db.py`, `test_storable_text_db.py` and `test_coverage_backoff_db.py` |
 | The stance, per-source and screen checks of a sentence, the names a live sentence must quote, a sentence dropped alone | `backend/tests/research/test_grounded_sentences.py`, `backend/tests/composer/test_grounded_compose.py` and `backend/tests/answering/test_grounded_blocks.py` |
 | Passages of long documents and the copy read | `backend/tests/composer/test_passages.py` and `backend/tests/planner/test_research_run.py` |
 | The stream as the client reads it | `frontend/e2e/answer-stream-golden-unit.spec.ts`, against `shared/answer-stream*.golden.sse` |

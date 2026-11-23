@@ -6,7 +6,7 @@ import httpx
 import pytest
 from sqlalchemy import select, update
 
-from app.api.routes.auth import session_token
+from app.api.auth_session import session_token
 from app.core.config import get_settings
 from app.core.db import session_scope
 from app.core.security import verify_password

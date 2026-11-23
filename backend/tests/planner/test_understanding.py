@@ -362,7 +362,16 @@ def keywords(schema: Any) -> set[str]:
 def test_the_schema_uses_only_widely_supported_keywords_and_the_registered_vocabulary() -> None:
     schema = understand_schema([AJRAKH])
     assert keywords(schema) <= SCHEMA_KEYWORDS
-    assert schema["required"] == ["craft", "craftNames", "compare", "disciplines", "seats", "englishQuestion"]
+    assert schema["required"] == [
+        "craft",
+        "craftNames",
+        "compare",
+        "disciplines",
+        "asked",
+        "seats",
+        "englishQuestion",
+    ]
+    assert schema["properties"]["asked"]["items"]["enum"] == list(DISCIPLINES)
     assert schema["properties"]["englishQuestion"] == {"type": "string"}
     assert schema["properties"]["compare"]["items"] == {"type": "string"}
     assert schema["additionalProperties"] is False

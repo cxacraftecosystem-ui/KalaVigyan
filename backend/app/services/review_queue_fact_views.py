@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import CandidateCheck, Claim, ClaimSource, Concept, Craft, Source
+from app.models import CandidateCheck, Claim, ClaimSource, Concept, Craft, ReviewEvent, Source
 from app.research.candidate_gates import GATES
 from app.research.crafts import CraftRef
 from app.research.review_queue import (
@@ -17,6 +17,7 @@ from app.research.review_queue import (
     FactReview,
     FactSource,
     GateCheck,
+    HeldWriteBack,
     RelatedFact,
     SourceQuote,
     fact_origin,
@@ -24,6 +25,7 @@ from app.research.review_queue import (
 from app.research.supplied_sources import SuppliedProvenance
 
 from .claim_holds_review import hold_evidence, with_hold_evidence
+from .claim_writer import HELD_WRITE_BACK_ACTOR, HELD_WRITE_BACK_STATUS, held_note
 from .knowledge_view import craft_ref
 from .review_queue_select import Rendered, rows_by_id
 from .supplied_sources_review import supplied_provenance
@@ -40,6 +42,7 @@ class _Context:
     sources: Mapping[uuid.UUID, list[FactSource]]
     found_by: Mapping[uuid.UUID, set[str | None]]
     checks: Mapping[uuid.UUID, list[GateCheck]]
+    held: Mapping[uuid.UUID, HeldWriteBack]
 
 
 async def fact_items(session: AsyncSession, ids: Sequence[uuid.UUID]) -> list[Rendered]:
@@ -53,6 +56,7 @@ async def fact_items(session: AsyncSession, ids: Sequence[uuid.UUID]) -> list[Re
         sources=await fact_sources(session, ids),
         found_by=await _found_by(session, ids),
         checks=with_hold_evidence(await _checks(session, ids), await hold_evidence(session, ids)),
+        held=await _held(session, [claim.id for claim in claims if claim.status == HELD_WRITE_BACK_STATUS]),
     )
     return [Rendered(_item(claim, context), claim.createdById) for claim in claims]
 
@@ -75,6 +79,7 @@ def _item(claim: Claim, context: _Context) -> FactItem:
             concept=FactConcept(name=concept.name, type=concept.type) if concept is not None else None,
             sources=context.sources.get(claim.id, []),
             gates=context.checks.get(claim.id, []),
+            held=context.held.get(claim.id) if claim.status == HELD_WRITE_BACK_STATUS else None,
         ),
     )
 
@@ -120,6 +125,22 @@ async def _found_by(session: AsyncSession, ids: Sequence[uuid.UUID]) -> dict[uui
     for claim_id, found_by in rows.all():
         found[claim_id].add(found_by)
     return found
+
+
+async def _held(session: AsyncSession, ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, HeldWriteBack]:
+    if not ids:
+        return {}
+    rows = await session.execute(
+        select(ReviewEvent.claimId, ReviewEvent.note)
+        .where(ReviewEvent.claimId.in_(list(ids)), ReviewEvent.systemActor == HELD_WRITE_BACK_ACTOR)
+        .order_by(ReviewEvent.createdAt, ReviewEvent.id)
+    )
+    held: dict[uuid.UUID, HeldWriteBack] = {}
+    for claim_id, note in rows.tuples().all():
+        parts = held_note(note)
+        if parts is not None:
+            held[claim_id] = HeldWriteBack(reason=parts[0], suggested_craft=parts[1])
+    return held
 
 
 async def _checks(session: AsyncSession, ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, list[GateCheck]]:

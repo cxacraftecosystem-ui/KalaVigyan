@@ -1178,6 +1178,33 @@ Last updated: 2026-11-20.
 5. The `WEB_READ` reader for long documents.
 6. Clear debt as files are touched (`docs/TECH_DEBT.md`), lowering the hygiene baseline.
 
+## Curation targets
+
+Each target below waits on curated content only: its code path is built and tested, and what it
+lacks must come from a source a curator verifies (decision 0163). A dossier that meets a target
+narrows or removes its line.
+
+- **A regional measure.** No stored claim states a regional unit's factor, so only exactly defined
+  units convert (decision 0066). For Kutch Ajrakh: a dossier claim quoting the weights and measures
+  table of the Kutch district gazetteer (Gujarat State Gazetteers, Kutch District, 1971, or the
+  Gazetteer of the Bombay Presidency, Cutch, 1880) as an equality ("a seer ... weighs ... kg", "a
+  gaj is ... m"); then the review adds a `REGIONAL` row to the phase D fixture from that claim. The
+  region may be named by any name `data/district_other_names.json` lists.
+- **Districts for the GI crafts placed by state alone.** Ask the map lists a craft for a district
+  only from a cited district or point location. For each GI craft the master list places by state
+  alone, a dossier place naming its district from the GI journal's "geographical area" passage or
+  the district gazetteer, starting with the GI crafts no dossier covers yet (Tharu embroidery,
+  Kutch embroidery, Kasuti embroidery and the other GI rows of `craft_master_list.json` without a
+  dossier).
+- **Prices stated with several years, places or prices.** Such a claim shows no price without a
+  curated row (`services/market_store.stated_price_offer`, decision 0147). `market.prices` rows for
+  those claims, each naming its date and place, starting with the crafts whose GI journal or
+  gazetteer prices state several items (Kutch Bandhani, Tikuli Painting, Uttarakhand Ringal Craft).
+- **GI records.** Without a curated `market.gi` record the registry fields are read from labelled
+  words in claims. A `market.gi` record for each GI craft, read from its GI journal and registry
+  pages, starting with Tharu Embroidery, Kutch Embroidery, Kasuti Embroidery, Sandur Lambani
+  Embroidery and Toda Embroidery.
+
 ## Waiting on the owner
 
 - Weekly alert digest (decisions 0062, 0063): verify a sender identity in SES (`MAIL_FROM_ADDRESS`,
@@ -1217,5 +1244,6 @@ Last updated: 2026-11-20.
 | A piece of work finishes | its entry under Done, in the same change, with its decision and contract |
 | A round is integrated | one entry naming its lanes and what each made work |
 | The owner has a step to take | an entry under Waiting on the owner, removed when it is done |
+| A dossier meets a curation target | narrow or remove its line under Curation targets in the same change |
 
 Re-read Next and Waiting on the owner at every release; "Last updated" says when it was last done.

@@ -213,7 +213,7 @@ and put project facts in the bindings, so the skill stays true when the project 
 
 | What | Kept true by |
 |---|---|
-| Size, nesting, parameter and comment budgets, and the import direction | `tools/hygiene_check.py` against `tools/hygiene_baseline.json`, in the Hygiene workflow |
+| Size, nesting, parameter and comment budgets, the import direction, and a debt register that only shrinks | `tools/hygiene_check.py` against `tools/hygiene_baseline.json`, in the Hygiene workflow |
 | Tests with independently derived expected values | review of each change, and the test suites that run on every pull request |
 | The project facts it leaves to the bindings | `references/project-bindings.md` and its own closing section |
 

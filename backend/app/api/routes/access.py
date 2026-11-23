@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.routes.auth import role_for_email
+from app.api.auth_session import role_for_email
 from app.core.db import get_session
 from app.core.deps import refuse_unless_assignable, require
 from app.core.roles import (

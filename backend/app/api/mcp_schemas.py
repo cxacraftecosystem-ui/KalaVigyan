@@ -7,12 +7,15 @@ from typing import Any
 
 from pydantic import BaseModel
 
-__all__ = ["compact", "input_schema", "output_schema", "schema_types"]
+from app.models.component_kinds import PIECE_KINDS
+
+__all__ = ["KINDS_LISTED_ONCE", "compact", "input_schema", "output_schema", "schema_types"]
 
 DATA_KEYS = frozenset({"default", "const", "enum", "examples"})
 MAP_KEYS = frozenset({"properties", "$defs", "patternProperties"})
 NULL: Mapping[str, str] = {"type": "null"}
 JSON_TYPES = ((bool, "boolean"), (int, "integer"), (float, "number"), (str, "string"))
+KINDS_LISTED_ONCE = frozenset(PIECE_KINDS)
 
 
 def input_schema(model: type[BaseModel]) -> dict[str, Any]:
@@ -54,7 +57,7 @@ def compact(node: Any) -> Any:
             kept[key] = value
         else:
             kept[key] = compact(value)
-    return _nullable(kept)
+    return _kinds_unlisted(_nullable(kept))
 
 
 def schema_types(node: Mapping[str, Any], defs: Mapping[str, Any]) -> list[str]:
@@ -84,6 +87,13 @@ def _value_type(value: Any) -> str:
     if value is None:
         return "null"
     return next((name for kind, name in JSON_TYPES if isinstance(value, kind)), "object")
+
+
+def _kinds_unlisted(node: dict[str, Any]) -> dict[str, Any]:
+    values = node.get("enum")
+    if not isinstance(values, list) or {value for value in values if value is not None} != KINDS_LISTED_ONCE:
+        return node
+    return {key: value for key, value in node.items() if key != "enum"}
 
 
 def _nullable(node: dict[str, Any]) -> dict[str, Any]:

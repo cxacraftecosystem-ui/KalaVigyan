@@ -6,13 +6,14 @@ from pathlib import Path
 
 from hygiene.baseline import BaselineError
 from hygiene.check import project_files, render, run_check
+from hygiene.register import RegisterError
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Import direction, text encoding and ratcheted size budgets."
+        description="Import direction, text encoding, ratcheted size budgets and the debt register's entry count."
     )
     parser.add_argument("--root", type=Path, default=REPO_ROOT, help="repository root to check")
     parser.add_argument(
@@ -22,7 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     root = options.root.resolve()
     try:
         report = run_check(root, project_files(root), update_baseline=options.update_baseline)
-    except BaselineError as error:
+    except (BaselineError, RegisterError) as error:
         print(f"hygiene check FAILED: {error}", file=sys.stderr)
         return 1
     for line in render(report):

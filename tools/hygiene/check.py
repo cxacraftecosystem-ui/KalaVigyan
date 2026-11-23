@@ -6,7 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 from hygiene.baseline import (
+    BUDGET_COUNTS,
     RATCHETED_COUNTS,
+    REGISTER_COUNT,
     BaselineError,
     RatchetStep,
     compare,
@@ -17,6 +19,7 @@ from hygiene.budgets import BudgetFindings, Overrun, measure_budgets
 from hygiene.comments import CommentViolation, comment_language, comment_violations
 from hygiene.fonts import FontViolation, font_violations
 from hygiene.layers import BACKEND_APP, ImportViolation, import_violations
+from hygiene.register import REGISTER_RISE, register_entries
 from hygiene.text_files import EncodingViolation, encoding_violations
 
 __all__ = ["BASELINE_FILE", "HygieneReport", "project_files", "render", "run_check"]
@@ -36,7 +39,7 @@ class HygieneReport:
 
     @property
     def passed(self) -> bool:
-        ratchet_held = self.baseline_written or not any(step.rose or step.fell for step in self.steps)
+        ratchet_held = self.baseline_written or all(step.holds for step in self.steps)
         return not (self.imports or self.encodings or self.comments or self.fonts) and ratchet_held
 
 
@@ -65,7 +68,7 @@ def run_check(root: Path, files: Sequence[PurePosixPath], *, update_baseline: bo
     comments = comment_violations(texts)
     fonts = font_violations(contents.items())
     budgets = measure_budgets(python)
-    counts = _counts(budgets)
+    counts = {**_counts(budgets), REGISTER_COUNT: register_entries(contents)}
     baseline_path = root / BASELINE_FILE
     if update_baseline:
         steps = _steps_for_update(baseline_path, counts)
@@ -88,16 +91,23 @@ def render(report: HygieneReport) -> list[str]:
     lines += [f"text encoding: {violation.describe()}" for violation in report.encodings]
     lines += [f"code comment: {violation.describe()}" for violation in report.comments]
     lines += [f"web font: {violation.describe()}" for violation in report.fonts]
-    for step, overruns in zip(report.steps, _overruns(report.budgets), strict=True):
+    overruns = dict(zip(BUDGET_COUNTS, _overruns(report.budgets), strict=True))
+    for step in report.steps:
         lines.append(_step_line(step, written=report.baseline_written))
         if step.rose:
-            lines += [f"  {overrun.describe()}" for overrun in overruns]
+            lines += _rise_details(step.name, overruns)
     lines.append("hygiene check passed" if report.passed else "hygiene check FAILED")
     return lines
 
 
+def _rise_details(name: str, overruns: dict[str, tuple[Overrun, ...]]) -> list[str]:
+    if name == REGISTER_COUNT:
+        return [f"  {REGISTER_RISE}"]
+    return [f"  {overrun.describe()}" for overrun in overruns[name]]
+
+
 def _counts(budgets: BudgetFindings) -> dict[str, int]:
-    return dict(zip(RATCHETED_COUNTS, (len(group) for group in _overruns(budgets)), strict=True))
+    return dict(zip(BUDGET_COUNTS, (len(group) for group in _overruns(budgets)), strict=True))
 
 
 def _overruns(budgets: BudgetFindings) -> tuple[tuple[Overrun, ...], ...]:
@@ -119,6 +129,10 @@ def _step_line(step: RatchetStep, *, written: bool) -> str:
         return f"{step.name}: baseline {step.baseline} -> {step.current} (written)"
     if step.rose:
         return f"{step.name}: {step.current}, above the baseline of {step.baseline}"
+    if step.fell and step.holds:
+        return (
+            f"{step.name}: {step.current}, below the baseline of {step.baseline}; --update-baseline lowers it"
+        )
     if step.fell:
         return f"{step.name}: {step.current}, below the baseline of {step.baseline}; run --update-baseline"
     return f"{step.name}: {step.current} (baseline {step.baseline})"

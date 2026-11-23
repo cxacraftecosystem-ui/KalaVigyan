@@ -15,6 +15,7 @@ allowances and contracts stand.
 | What it amends | [0103 The MCP server, slice 1: public read tools over our own JSON-RPC framing](0103-mcp-server-read-slice.md): the tools it names; its services and contracts stand |
 | What it amends | [0108 An approved structure proposal becomes a curated fact of its dossier](0108-structure-proposals-become-curated-facts.md): the tools it names; its gates and contracts stand |
 | What it amends | [0110 Sources a contributor's AI can read and we cannot, and a studio to build a page in](0110-contributor-supplied-sources.md): the tools it names; its services, allowances and contracts stand |
+| The component kinds are described once, and the index is written from the registry | [decision 0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

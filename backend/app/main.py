@@ -9,14 +9,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.api.mcp_cors import OpenCorsMiddleware
-from app.api.router import api_router
-from app.api.routes.auth import (
+from app.api.auth_session import (
     ACCESS_STATUS_HEADER,
     SESSION_TOKEN_HEADER,
     SIGN_IN_HINT_HEADER,
     TWO_FACTOR_REQUIRED_HEADER,
 )
+from app.api.mcp_cors import OpenCorsMiddleware
+from app.api.router import api_router
 from app.api.routes.oauth_well_known import router as oauth_well_known_router
 from app.api.routes.password_change import CONFIRM_PROVIDER_HEADER
 from app.api.voice_deps import voice_stored_search

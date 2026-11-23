@@ -32,6 +32,7 @@ __all__ = [
     "chosen_craft",
     "compared_choice",
     "named_choice",
+    "question_asked",
     "understood_seats",
 ]
 
@@ -195,6 +196,12 @@ def asked_fields(question: str, craft: CraftRef | None, reply: UnderstandReply |
     return question_fields(words, craft.name if craft else None)
 
 
+def question_asked(listed: Sequence[str], reply: UnderstandReply | None) -> list[str]:
+    fields = [discipline for discipline in dict.fromkeys(listed) if discipline in DISCIPLINES]
+    marked = [discipline for discipline in reply.asked if discipline in fields] if reply is not None else []
+    return marked or fields
+
+
 def _understanding(
     ask: UnderstandAsk, choice: CraftChoice, reading: Reading, held: Sequence[str] | None = None
 ) -> Understanding:
@@ -206,7 +213,7 @@ def _understanding(
         candidates=list(choice.others[:MAX_CANDIDATES]),
         compared=list(choice.compared) if reply else [],
         disciplines=answer_fields(asked, depth, held or ()),
-        asked=[discipline for discipline in dict.fromkeys(asked) if discipline in DISCIPLINES],
+        asked=question_asked(asked, reply),
         seats=understood_seats(asked, reply.seats if reply else (), depth=depth, held=held),
         depth=depth,
         language=ask.language,

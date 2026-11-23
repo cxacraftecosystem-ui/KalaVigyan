@@ -95,14 +95,19 @@ the same five parts 0 to 5 with a note, reading the question and the answer's se
 untrusted data (`JUDGE_SYSTEM_PROMPT`, `judge_message`, `judge_schema`); its share is the sum over 25.
 It reads what a reader sees: each block's sentences once by their English words
 (`BlockBase.shown_sentences`, `coverage_answers.shown_field_sentences`), as the client draws a
-sentence several items share once (decision 0134), and the rubric counts the same sentences
-(decision 0147). A third untrusted block lists each figure by field with its kind and the
+sentence several items share once (decision 0134), and an expert panel's two mirrored views of one
+difference once per pair of seats, as the panel's differ card shows them (decision 0165); the rubric
+counts the same sentences (decision 0147). A third untrusted block lists each figure by field with its kind and the
 quantities it shows, the labels of the figure that state a number (`coverage_answers.field_figures`,
 at most 40 lines), so the judge sees which numbers a table or figure carries and which stay in
 prose. A judge that fails leaves the measures and says so.
 
-**Spend.** The run stops before a question when the spend so far (`router.tagged_spend` on the run's
-request id prefix) leaves less than `EVAL_QUESTION_RESERVE_USD` (2.50) of the cap. The cap is
+**Spend.** The run stops before a question when the spend so far leaves less than
+`EVAL_QUESTION_RESERVE_USD` (2.50) of the cap. The spend, of the run and of each question, is what
+its calls settled (`router.tagged_settled_spend` on the request id prefix: the `costUsd` of its
+`UsageEvent` rows), never a reservation's estimate: a call the router never settled is not spend
+the run can stop on, as in run 45112746194 where one reserved row's 128,000-token estimate (1.28)
+more than doubled its first question's 1.05 (decision 0165). The cap is
 `services/coverage_eval.EVAL_SPEND_CAP_USD` (30.00 US dollars); `--cap` may lower it, never raise
 it. Each answer has the MCP ask's limit, `ASK_TIMEOUT_SECONDS` (600).
 
@@ -137,7 +142,7 @@ run passes, left as it is after a partial run.
 | A relevant field with stored claims always has a speaking seat | `backend/tests/planner/test_field_seats.py` |
 | The rubric, the judge's share and the report | `backend/tests/research/test_coverage_eval.py` |
 | The judge reads each block's sentences once | `backend/tests/research/test_shown_sentences.py` |
-| The run, its spend cap and the consulted fields | `backend/tests/answering/test_answer_eval.py` |
+| The run, its spend cap and the consulted fields | `backend/tests/answering/test_answer_eval.py` and `backend/tests/db/test_eval_spend_db.py` (the settled spend) |
 | The answer floors and when they are compared | `backend/tests/answering/test_answer_floors.py` and `backend/tests/retrieval/test_eval_workflows.py` |
 | The questions | `backend/app/data/eval/answer_questions.json`, read by the script as it runs |
 

@@ -6,11 +6,12 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.data.craft_master_loader import DATA_DIR
+from app.data.district_register import REGISTER_FILE, load_district_codes
+
 from .state_values import refresh_state_values
 
-DATA = Path(__file__).resolve().parents[1] / "data"
-SHAPES_PATH = DATA / "district-shapes.json"
-REGISTER_PATH = DATA / "lgd_register.json"
+SHAPES_PATH = DATA_DIR / "district-shapes.json"
 SHAPES_SHA256 = "5432b41d6d6bc55d8fcae5030178a4ceaefab5d46f5770461552216cb802bc6c"
 REGISTER_SHA256 = "2ff0acab5446b7d0710a10b372ab7f71055454a8155c5c82fb08dc997fd1cd21"
 
@@ -56,7 +57,7 @@ def _sha256(path: Path) -> str:
 
 
 def verify_inputs() -> None:
-    for path, expected in ((SHAPES_PATH, SHAPES_SHA256), (REGISTER_PATH, REGISTER_SHA256)):
+    for path, expected in ((SHAPES_PATH, SHAPES_SHA256), (REGISTER_FILE, REGISTER_SHA256)):
         actual = _sha256(path)
         if actual != expected:
             raise RuntimeError(f"{path.name}: sha256 {actual} does not match the vendored {expected}")
@@ -107,34 +108,31 @@ def rings_wkt(encoded_rings: list[str]) -> str | None:
 
 def district_seed_plan() -> dict[str, list[dict[str, Any]]]:
     verify_inputs()
-    register = json.loads(REGISTER_PATH.read_text(encoding="utf-8"))
+    codes = load_district_codes()
     shapes = json.loads(SHAPES_PATH.read_text(encoding="utf-8"))
-    states = [{"lgd": int(s["lgd"]), "name": s["name"]} for s in register["states"]]
-    known_states = {row["lgd"] for row in states}
+    states = [{"lgd": lgd, "name": name} for name, lgd in codes.states.items()]
     drawn = {int(row["lgd"]): row for row in shapes["districts"]}
-    districts: list[dict[str, Any]] = []
-    for entry in register["districts"]:
-        lgd = int(entry["lgd"])
-        state_lgd = int(entry["stateLgd"])
-        if state_lgd not in known_states:
-            raise RuntimeError(f"District {lgd} names state {state_lgd}, which the register does not list")
-        shape = drawn.get(lgd)
-        centroid = shape.get("centroid") if shape else None
-        districts.append(
-            {
-                "lgd": lgd,
-                "state_lgd": state_lgd,
-                "name": entry["name"],
-                "lines": rings_wkt(shape["rings"]) if shape else None,
-                "lon": float(centroid[0]) if centroid else None,
-                "lat": float(centroid[1]) if centroid else None,
-            }
-        )
+    districts = [
+        _district_row(lgd, codes.states[state], name, drawn.get(lgd))
+        for (state, name), lgd in codes.districts.items()
+    ]
     unregistered = sorted(set(drawn) - {row["lgd"] for row in districts})
     if unregistered:
         raise RuntimeError(f"Shapes without a register entry: {unregistered[:10]}")
     districts.sort(key=lambda row: row["lgd"])
     return {"states": sorted(states, key=lambda row: row["lgd"]), "districts": districts}
+
+
+def _district_row(lgd: int, state_lgd: int, name: str, shape: dict[str, Any] | None) -> dict[str, Any]:
+    centroid = shape.get("centroid") if shape else None
+    return {
+        "lgd": lgd,
+        "state_lgd": state_lgd,
+        "name": name,
+        "lines": rings_wkt(shape["rings"]) if shape else None,
+        "lon": float(centroid[0]) if centroid else None,
+        "lat": float(centroid[1]) if centroid else None,
+    }
 
 
 async def seed_districts(session: AsyncSession) -> dict[str, int]:

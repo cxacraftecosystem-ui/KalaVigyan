@@ -18,6 +18,7 @@ contracts are `docs/contracts/research.md` (Composer, the answer's sections, Tra
 | The ledger, the expert panel and the lede | [explainer.md](../contracts/explainer.md) |
 | Where components stand beside the prose | [answer-components.md](../contracts/answer-components.md) |
 | The quote overlap this builds on | [0013](0013-review-fixes-quotes-licences-scope.md) |
+| An expert difference whose two readings the page already said is not shown again | [decision 0165](0165-answers-counted-as-settled-asked-as-asked.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

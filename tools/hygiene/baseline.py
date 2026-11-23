@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+from atomic_write import write_text_atomically
+
 __all__ = [
     "BASELINE_SCHEMA_VERSION",
+    "BUDGET_COUNTS",
+    "FALL_PASSES",
     "RATCHETED_COUNTS",
+    "REGISTER_COUNT",
     "BaselineError",
     "RatchetStep",
     "compare",
@@ -17,8 +20,11 @@ __all__ = [
     "write_baseline",
 ]
 
-BASELINE_SCHEMA_VERSION = 1
-RATCHETED_COUNTS = ("oversizedFiles", "longFunctions", "wideFunctions")
+BASELINE_SCHEMA_VERSION = 2
+BUDGET_COUNTS = ("oversizedFiles", "longFunctions", "wideFunctions")
+REGISTER_COUNT = "registerEntries"
+RATCHETED_COUNTS = (*BUDGET_COUNTS, REGISTER_COUNT)
+FALL_PASSES = frozenset({REGISTER_COUNT})
 
 
 class BaselineError(ValueError):
@@ -38,6 +44,10 @@ class RatchetStep:
     @property
     def fell(self) -> bool:
         return self.current < self.baseline
+
+    @property
+    def holds(self) -> bool:
+        return not self.rose and (not self.fell or self.name in FALL_PASSES)
 
 
 def read_baseline(path: Path) -> dict[str, int]:
@@ -64,13 +74,4 @@ def write_baseline(path: Path, counts: Mapping[str, int]) -> None:
         "schemaVersion": BASELINE_SCHEMA_VERSION,
         "counts": {name: counts[name] for name in RATCHETED_COUNTS},
     }
-    text = json.dumps(payload, indent=2) + "\n"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    handle, temporary = tempfile.mkstemp(dir=path.parent, prefix=path.name, suffix=".tmp")
-    try:
-        with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as stream:
-            stream.write(text)
-        os.replace(temporary, path)
-    except BaseException:
-        Path(temporary).unlink(missing_ok=True)
-        raise
+    write_text_atomically(path, json.dumps(payload, indent=2) + "\n")

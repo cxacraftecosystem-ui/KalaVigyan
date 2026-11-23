@@ -86,11 +86,17 @@ def load_district_register() -> DistrictRegister:
 
 def parse_district_codes(raw: Mapping[str, Any]) -> DistrictCodes:
     states = {int(row["lgd"]): str(row["name"]) for row in raw["states"]}
-    districts = {
-        (states[int(row["stateLgd"])], str(row["name"])): int(row["lgd"])
-        for row in raw["districts"]
-        if int(row["stateLgd"]) in states
-    }
+    districts: dict[tuple[str, str], int] = {}
+    for row in raw["districts"]:
+        state_lgd = int(row["stateLgd"])
+        if state_lgd not in states:
+            raise ValueError(
+                f"district {row['lgd']} names state {state_lgd}, which the register does not list"
+            )
+        named = (states[state_lgd], str(row["name"]))
+        if named in districts:
+            raise ValueError(f"district {row['lgd']} repeats {named[1]!r} of {named[0]}")
+        districts[named] = int(row["lgd"])
     return DistrictCodes(
         states=MappingProxyType({name: lgd for lgd, name in states.items()}),
         districts=MappingProxyType(districts),

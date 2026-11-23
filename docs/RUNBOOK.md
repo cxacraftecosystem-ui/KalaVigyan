@@ -23,7 +23,7 @@ This page lists what is provisioned, how to deploy, and how to roll back. It hol
 | IAM | user `kalavigyan-media` (API's S3 key), role + instance profile `kalavigyan-box`, role `kalavigyan-deploy` (GitHub OIDC, `repo:cxacraftecosystem-ui/KalaVigyan:ref:refs/heads/main` only) |
 | Parameter Store | `/kalavigyan/env/*` (SecureString, one parameter per env key, the box's source of truth). `/kalavigyan/db-password` (Supabase DB password backup) |
 | CloudWatch Logs | `/kalavigyan/kv-api`, `kv-worker`, `kv-fetcher`, `kv-contributions`, `nginx-access`, `nginx-error`, each kept 30 days; the box role may write them (inline policy `kalavigyan-box-logs`). See Logs |
-| Database | Supabase project `science-behind-craft`, ref `inqbqiqspgvhfamupwuc`, org `pifvglrcqwrizapmooik`, ap-south-1, Postgres 17.11 on Small compute (`max_connections` 90). Session pooler `aws-1-ap-south-1.pooler.supabase.com:5432`, user `postgres.inqbqiqspgvhfamupwuc`, pool size 30 (`max_client_conn` 400); see Connection budget |
+| Database | Supabase project `science-behind-craft`, ref `inqbqiqspgvhfamupwuc`, org `pifvglrcqwrizapmooik`, ap-south-1, Postgres 17.11 on Small compute (`max_connections` 90). Session pooler `aws-1-ap-south-1.pooler.supabase.com:5432`, user `postgres.inqbqiqspgvhfamupwuc`, pool size 45 (raised by the owner from 30 on 2026-11-23; `max_client_conn` 400); see Connection budget |
 | Web | Vercel project `kalavigyan` (`prj_5hRNy7S9CS4fkhVVBRW5mbmAAUSd`), team `team_pcTf4Alb2DCIwq2IZcdu00dS`, root `frontend`, Node 26.x, no Git link, `https://kalavigyan.vercel.app` |
 | Repository | `github.com/cxacraftecosystem-ui/KalaVigyan` (deploys); mirror `github.com/ankits1802/science-behind-craft` (public, no deploys) |
 
@@ -103,22 +103,38 @@ capture cleared and what still lay over it.
 ## Connection budget
 
 Every process on the box reaches Postgres through the Supabase session pooler, which holds at most
-30 server connections for our user (the dashboard's Database → Settings → Connection pooling;
+45 server connections for our user (30 until the owner raised it on 2026-11-23) (the dashboard's Database → Settings → Connection pooling;
 read with `supabase config pull --remote=inqbqiqspgvhfamupwuc`, and only the dashboard can
-change it). Each process's SQLAlchemy pool opens connections as it needs them, up to
-`DATABASE_CONNECTION_LIMIT`, and keeps them.
+change it). Each process has its own budget (`backend/app/core/connection_budget.py`, decision
+0163): a main pool that keeps a few connections and opens the rest only for a burst, closing them
+when they are returned, and one small counting pool shared by the allowances and the source paces.
+The unit names the process in `KV_PROCESS`; a process on the box that names none, such as anything
+run over SSM or by the deploy, is a script. `DATABASE_CONNECTION_LIMIT` and
+`DATABASE_MAX_OVERFLOW` no longer size any pool on the box; they size an unnamed process off it.
 
-- **Holders:** the serving API slot (up to the limit), the worker (its peak, a few), and a script
-  run over SSM (one or two). A deploy stops the worker before the swap, so the old and new slots
-  briefly share the budget.
-- **The limit is 12** (2026-11-19: 5, then 8, then 12 once the owner raised the pooler from 15 to
-  30). During a deploy the old and new slots can hold 24 between them, plus the worker and a
-  script, which stays under 30.
-- **To go further,** raise the pool size in the dashboard first (Small compute has 90 connections
-  in all, and Supabase's own services use some), then `DATABASE_CONNECTION_LIMIT` at
-  `/kalavigyan/env/`, then `sudo kv-render-env && sudo kv-blue-green restart`. Never raise the
-  limit past what the pooler holds: a slot that cannot connect fails its health check and the
-  deploy rolls back.
+| Process (`KV_PROCESS`) | Main pool, kept + burst | Counting pool | At most |
+|---|---|---|---|
+| `kv-api@` (`api`), two slots during a deploy | 2 + 8 | 1 + 1 | 12 each |
+| `kv-contributions` (`contributions`), 4 gate runs at once | 1 + 7 | 1 + 0 | 9 |
+| `kv-worker` (`worker`) | 1 + 1 | 1 + 0 | 3 |
+| one script over SSM or from the deploy (`script`) | 1 + 2 | 1 + 0 | 4 |
+| `kv-fetcher` (`fetcher`) | no database | | 0 |
+
+- **The sum is 40** with both API slots, the queue, the worker and one script, leaving 5 of the 45
+  for a person's `psql` or the dashboard. `backend/tests/test_connection_budget.py` reads
+  `infra/deploy/units` and fails when a unit or a limit would pass it. The research gate of an API
+  slot holds 8 of its 10 main connections (decision 0146).
+- **A refused connect.** When the pooler answers `EMAXCONNSESSION` (max clients reached), the
+  allowance and pace counts open their session again after 0.2, 0.5 and 1 s
+  (`core/pooler.connected_session`) and refuse only if it is still full, so a reader sees a 429
+  only when the pooler stays full.
+- **Two scripts at once** may pass the sum by one script's 4; run long scripts one after another,
+  or after the owner raises the pooler.
+- **To go further,** the owner raises the pool size in the dashboard first (Small compute has 90
+  connections in all, and Supabase's own services use some), then one change raises
+  `POOLER_SESSIONS` and the budgets in `core/connection_budget.py` together, and the next release
+  carries them; `kv-render-env` writes no limit. Never raise a budget past what the pooler holds: a
+  slot that cannot connect fails its health check and the deploy rolls back.
 
 ## Shell on the box
 
@@ -433,7 +449,8 @@ A craft release (decision 0130): give `craft` its exact slug, for Kutch Ajrakh `
 - **The contribution worker** `kv-contributions` (a systemd unit beside `kv-worker` and `kv-fetcher`,
   restarted by every deploy) takes queued proposals and runs their gates off the request
   (`docs/contracts/knowledge-writes.md`). Read it with `journalctl -u kv-contributions`. Its
-  concurrency is `CONTRIBUTION_WORKERS` in `/opt/kalavigyan/.env` (optional). To drain the queue by
+  concurrency is `CONTRIBUTION_WORKERS` (2 in the unit; a larger number runs only as many as its
+  connection budget carries, decision 0163). To drain the queue by
   hand: `python -m app.scripts.contribution_worker --once` (Shell on the box).
 - **Picture screens** need an enabled CAPTION route (a vision model, Settings, Routing). Without
   one, every picture waits for a person as `UNSCREENED`. After the deploy that adds them, run
@@ -447,6 +464,12 @@ A craft release (decision 0130): give `craft` its exact slug, for Kutch Ajrakh `
   against where it is, plus the facts with no gate checks. It never writes. A reviewer acts on it in
   the review queue: approve (optionally with `craft` to file a held fact under another craft) or
   reject. Held facts are `DRAFT`, which no reader or search sees.
+- **After each round of live research** (decision 0163): run the filing report with `--since` the
+  round's first day and read the facts it lists as held or refused. The places that hold or refuse
+  a fact are word lists, so extend them from what it shows: a region or culture abroad that let a
+  fact through, another sense of a place word that held one, or a name left out, each in
+  `backend/app/data/places_abroad.json` (`regions`, `cultures`, `otherSenses`, `leftOut`; its
+  countries stay Natural Earth's sovereign states, which a test holds), in a change of its own.
 
 ## Nightly upkeep and page builds
 
@@ -704,7 +727,9 @@ fixture or the category page (`docs/contracts/category-page.md`).
   60 to 3300, 1800 by default). It runs `embed_craft_descriptors` and then `embed_knowledge` on the box
   until every claim and passage vector carries the current stamp or the time is spent; the daily
   Coverage enrichment embeds what is left. About 2.6 million tokens (0.52 US dollars) on 2026-11-22.
-- **Answer quality** (`answer-quality.yml`): by hand, from main (`-f limit=`, `-f only=`, `-f cap=`).
+- **Answer quality** (`answer-quality.yml`): by hand, from main (`-f limit=`, `-f only=`, `-f cap=`;
+  `-f fresh=true` answers each question afresh, reusing no stored section, so two routes compare on
+  equal terms).
   A run that asks every question compares the judge and rubric means with the answer floors and
   keeps the issue `Answers fell below their floor`.
 - **Floors**: raise a floor in `backend/app/data/eval/floors.json` (version 2: per question set,

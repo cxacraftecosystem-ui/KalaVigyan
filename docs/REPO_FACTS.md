@@ -7,9 +7,9 @@ Every count that changes with the code, generated from the working tree by `tool
 | What | Count |
 | --- | ---: |
 | Tables (`__tablename__` in `backend/app/models/`) | 149 |
-| Migrations (`backend/migrations/versions/`) | 73 |
+| Migrations (`backend/migrations/versions/`) | 74 |
 
-Newest migration: `0083_piece_districts_and_places`.
+Newest migration: `0086_mcp_call_name_required`.
 
 Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `AllowanceBucket`, `Answer`, `AnswerCitation`, `AnswerGap`, `AnswerSentence`, `AnswerTrace`, `AnswerVerdict`, `AppSetting`, `ArticleSection`, `ArtisanContribution`, `ArtisanConversation`, `ArtisanConversationAudio`, `ArtisanCraft`, `ArtisanProfile`, `AuditLog`, `AuthNonce`, `CandidateCheck`, `Chunk`, `Claim`, `ClaimSource`, `ClaimTranslation`, `ComponentProposal`, `Compound`, `Concept`, `ConceptEdge`, `ConditionReading`, `ConsentRecord`, `Conversation`, `Craft`, `CraftAlias`, `CraftCategory`, `CraftCode`, `CraftGiRecord`, `CraftLocation`, `CraftPageArchive`, `CraftPageSnapshot`, `CraftPrice`, `CraftSpelling`, `CraftSteward`, `CraftSubCategory`, `CraftWorkforce`, `CuratedCategory`, `CuratedCategoryClaim`, `CuratedClaim`, `CuratedCraft`, `CxaCraftMap`, `DataRequest`, `DatasetTable`, `DatasetUpload`, `DistrictEnvValue`, `DistrictGeology`, `EnrichmentJob`, `EnrichmentProposal`, `EnvDataset`, `EvalCase`, `EvalResult`, `EvalRun`, `FieldImage`, `FieldImageCraft`, `FieldPhotoReview`, `FieldPhotoScreen`, `FieldRecording`, `FieldRecordingCraft`, `FieldSegment`, `FieldVoiceStream`, `ImageContribution`, `ImageFingerprint`, `ImageScreen`, `Invite`, `Job`, `KnowledgePiece`, `KnowledgePieceSubject`, `LayoutProposal`, `LessonPack`, `ManagedSecret`, `Material`, `McpTermsAcceptance`, `McpToolCall`, `McpToolCallDay`, `MediaAsset`, `MediaJob`, `MediaRef`, `MediaRefClaim`, `Message`, `MonographDocument`, `Notification`, `OAuthClient`, `OAuthCode`, `OAuthGrant`, `OAuthToken`, `Objection`, `OpenDataRelease`, `PageDraft`, `PageLayout`, `PagePreview`, `PageTextUnit`, `PageTranslation`, `PasswordResetRequest`, `PasswordResetToken`, `PictureDeclaration`, `PlaceLookup`, `Process`, `ProcessCondition`, `ProcessStage`, `Provider`, `QueuedProposal`, `QuotaLedger`, `QuotaPolicy`, `Reaction`, `ReactionCitation`, `ReviewEvent`, `RiverBasin`, `RiverReach`, `RiverReachDistrict`, `RoleRequest`, `RoutePolicy`, `SavedItem`, `SecretTestResult`, `SharedExportFile`, `SharedTermCraft`, `Source`, `SourceLease`, `SourcePace`, `SourceUpkeep`, `StageMaterial`, `StateEnvValue`, `StoredDocument`, `StructureProposal`, `StudentProfile`, `SuppliedSource`, `TaskReservation`, `Term`, `TermConcept`, `TermCraft`, `TermSummary`, `TranslationReader`, `TrustTierOverride`, `TwoFactorChallenge`, `UploadLink`, `UsageEvent`, `User`, `UserPreference`, `VoiceSession`, `WebFetch`, `WikidataPoint`.
 
@@ -19,8 +19,8 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 | Module | Operations |
 | --- | ---: |
-| `auth.py` | 16 |
 | `contribution_streams.py` | 12 |
+| `auth.py` | 9 |
 | `settings.py` | 9 |
 | `users.py` | 9 |
 | `lessons.py` | 8 |
@@ -35,6 +35,7 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 | `explainers.py` | 6 |
 | `image_contributions.py` | 6 |
 | `oauth_consent.py` | 6 |
+| `password_links.py` | 6 |
 | `shared.py` | 6 |
 | `artisan_conversations.py` | 5 |
 | `knowledge.py` | 5 |
@@ -66,6 +67,7 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 | `password_change.py` | 2 |
 | `place_ground.py` | 2 |
 | `supplied_sources.py` | 2 |
+| `auth_signup.py` | 1 |
 | `contributed_pictures.py` | 1 |
 | `craft_media.py` | 1 |
 | `craft_monograph.py` | 1 |
@@ -107,15 +109,15 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 | Python suite | Files | Tests |
 | --- | ---: | ---: |
-| Backend, without a database | 690 | 5246 |
-| Backend, on Postgres | 186 | 866 |
-| Tools | 23 | 188 |
+| Backend, without a database | 698 | 5304 |
+| Backend, on Postgres | 187 | 874 |
+| Tools | 25 | 202 |
 | Craft data ETL | 5 | 46 |
 | Geo ETL | 21 | 223 |
 
 | Frontend (`frontend/e2e/`) | Files | Tests |
 | --- | ---: | ---: |
-| Unit specs (`*-unit.spec.ts`) | 182 | 1316 |
+| Unit specs (`*-unit.spec.ts`) | 182 | 1318 |
 | Browser and release specs | 18 | 60 |
 
 A Python test is a `test_` function in a `test_` file; a frontend test is a `test(` call at the start of a line. Every suite runs on GitHub Actions, never on a development machine.
@@ -124,7 +126,7 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | What | Count |
 | --- | ---: |
-| Decision records (`docs/decisions/`) | 159 |
+| Decision records (`docs/decisions/`) | 162 |
 | Contracts (`docs/contracts/`) | 40 |
 | Workflows (`.github/workflows/`) | 28 |
 | Curated craft dossiers | 32 |
@@ -134,15 +136,15 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | Area | Files | Lines |
 | --- | ---: | ---: |
-| `backend/app` | 1355 | 191,800 |
-| `backend/tests` | 1030 | 135,427 |
-| `backend/migrations` | 74 | 10,482 |
+| `backend/app` | 1369 | 192,952 |
+| `backend/tests` | 1040 | 136,621 |
+| `backend/migrations` | 75 | 10,520 |
 | `frontend/app` | 110 | 10,011 |
-| `frontend/components` | 614 | 42,042 |
-| `frontend/lib` | 255 | 25,810 |
-| `frontend/e2e` | 299 | 32,469 |
-| `etl` | 66 | 10,978 |
-| `tools` | 96 | 8,232 |
+| `frontend/components` | 615 | 42,086 |
+| `frontend/lib` | 255 | 25,845 |
+| `frontend/e2e` | 299 | 32,493 |
+| `etl` | 71 | 11,142 |
+| `tools` | 101 | 8,490 |
 | `infra` | 17 | 2,194 |
 
 Code files are `.py`, `.ts`, `.tsx`, `.mjs`, `.css`, `.sh`, `.tf` and `.sql`; lines are newlines.

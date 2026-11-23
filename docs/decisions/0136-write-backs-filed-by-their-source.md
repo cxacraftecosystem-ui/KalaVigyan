@@ -24,6 +24,7 @@ write-back) and `docs/contracts/review-queue.md` (Decisions).
 | Held write-backs, family keys and the filing report | [knowledge-writes.md](../contracts/knowledge-writes.md), The research write-back |
 | Filing a fact under another craft | [review-queue.md](../contracts/review-queue.md), Decisions |
 | A one-word alias that is an ordinary English word or shared by three crafts' names names no other craft (amends item 1) | [decision 0144](0144-stored-passages-as-evidence.md) |
+| A place abroad refuses only practice there, the craft researched is not named by an English word of its name, a held write-back found again leaves the hold, and the queue files a family's science (amends items 1, 3 and 4) | [decision 0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

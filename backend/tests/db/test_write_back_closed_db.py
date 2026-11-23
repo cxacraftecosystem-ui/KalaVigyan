@@ -126,7 +126,7 @@ async def test_a_sentence_naming_the_compared_craft_is_filed_under_it(session: A
     )
     await session.flush()
     assert [craft.slug for craft in await compared_crafts(session, asked)] == ["Zelvar-Quiet"]
-    text = "Quiet printers saw the red withstand 20 washes."
+    text = "Zelvar Quiet printers saw the red withstand 20 washes."
     stored = await write(session, answer(said(text, PAGE_ID, WASH_QUOTE)), answer_id=asked)
     claim_id = expected_claim_id(text.casefold().rstrip("."), craft_slug="Zelvar-Quiet")
     assert [(result.claim_id, result.created) for result in stored.results] == [(claim_id, True)]

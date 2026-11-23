@@ -12,6 +12,7 @@ contributors; today the two halves don't connect."). Adds a task kind to decisio
 | For | Read |
 |---|---|
 | What it builds on | [0101 One knowledge architecture for every craft: facts, sections, components, monographs](0101-knowledge-architecture-for-every-craft.md): item 15's open work, which gains a task kind |
+| The questions the rules keep are screened for names at night | [decision 0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

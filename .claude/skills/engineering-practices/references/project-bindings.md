@@ -13,7 +13,7 @@ change, and update the date. Every engineer and agent changing code here reads i
 | The design system every screen follows | [kalavigyan-design](../../kalavigyan-design/SKILL.md) |
 
 Last reviewed: 2026-11-18; version control, the review rule, the commands' note and the living
-documents checked on 2026-11-21.
+documents checked on 2026-11-21; the hygiene check's register count added on 2026-11-23.
 
 ## What this repository is
 
@@ -242,7 +242,11 @@ and may only shrink.
 ## Commands
 
 Run from the repository root. Nothing heavy runs on the laptop: no Docker, no local database,
-no dev servers. Database tests, migrations and seeds run on GitHub Actions (Backend checks). Since
+no dev servers. Database tests, migrations and seeds run on GitHub Actions (Backend checks), in
+three shards that each migrate and seed their own Postgres and run every third test in collection
+order (`backend/tests/db/shards.py`, `DB_TEST_SHARD=<index>/<total>`), so no database test may
+lean on another having run first; the migration round trip, the dossier import and the
+release-before check run in the first. Since
 the owner's rule of 2026-11-20 a development machine runs only the formatters and linters below,
 and the hygiene check; the tests, type checks and builds run on GitHub, on the pull request.
 
@@ -265,7 +269,9 @@ The hygiene check enforces what a tool can decide: import direction in `backend/
 without a byte-order mark and LF line endings for every tracked or new text file, and the
 ratcheted counts of Python files over 400 lines, functions over 40 lines and functions with more
 than 5 positional parameters. Every count must equal its baseline: a rise fails, and a fall
-fails until `--update-baseline` records it, so the baseline only moves down.
+fails until `--update-baseline` records it, so the baseline only moves down. The same baseline
+holds the number of entries (`### ` headings) in `docs/TECH_DEBT.md`, which may only fall: a rise
+fails, a fall passes, and `--update-baseline` lowers it (decision 0163).
 
 The frontend's size and import-boundary rules are not yet automated (see `docs/TECH_DEBT.md`).
 

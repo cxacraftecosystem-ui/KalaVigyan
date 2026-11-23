@@ -28,6 +28,7 @@ and the coverage job), `docs/contracts/knowledge-writes.md` (The research write-
 | The composer's candidates and the writer | [research.md](../contracts/research.md), The composer and The writer and the coverage job |
 | Stored passages in the write-back | [knowledge-writes.md](../contracts/knowledge-writes.md), The research write-back |
 | The voice turn | [voice.md](../contracts/voice.md), Languages |
+| The one-word English rule also binds the craft researched | [decision 0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

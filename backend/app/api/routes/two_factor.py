@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.routes.auth import (
+from app.api.auth_session import (
     SESSION_TOKEN_HEADER,
     assert_access_admits,
     open_session,

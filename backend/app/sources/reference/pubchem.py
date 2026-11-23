@@ -21,6 +21,7 @@ __all__ = [
     "PUBCHEM_LICENCE",
     "PUBCHEM_PUBLISHER",
     "PUBCHEM_RATE",
+    "SYNONYMS_MAX",
     "PubChemAdapter",
     "PubChemCompound",
     "compound_url",
@@ -45,6 +46,7 @@ FORMULA_PART = re.compile(r"([A-Z][a-z]?)\d*")
 NATIVE_ID = re.compile(r"^([1-9]\d{0,11})(:ghs)?$")
 GHS_HEADING = "GHS Classification"
 CONFORMER_MAX_BYTES = 256 * 1024
+SYNONYMS_MAX = 12
 CONFORMER_PARAMS = {"record_type": "3d"}
 SDF_END = "$$$$"
 MOLFILE_VERSIONS = ("V2000", "V3000")
@@ -82,6 +84,15 @@ class PubChemAdapter(HttpSourceAdapter):
             raise InvalidInput(f"PubChem CID {cid} is not a record number")
         row = (await self._properties([str(cid)])).get(str(cid))
         return _compound(row) if row is not None else None
+
+    async def synonyms(self, cid: int, limit: int = SYNONYMS_MAX) -> list[str]:
+        if cid < 1:
+            raise InvalidInput(f"PubChem CID {cid} is not a record number")
+        payload = await self._get_or_none(f"{PUG_REST}/compound/cid/{cid}/synonyms/JSON", params={})
+        listed = ((payload or {}).get("InformationList") or {}).get("Information") or []
+        found = next((entry for entry in listed if entry.get("CID") == cid), {})
+        names = (clean_text(str(name)) for name in found.get("Synonym") or [])
+        return list(dict.fromkeys(name for name in names if name))[:limit]
 
     async def conformer(self, cid: int) -> str | None:
         if cid < 1:

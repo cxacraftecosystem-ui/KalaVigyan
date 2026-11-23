@@ -5,6 +5,7 @@ from typing import Any
 from app.planner.understanding import ModelUnderstander
 from app.planner.understanding_prompt import UNDERSTAND_SYSTEM_PROMPT
 from app.research.understanding import UnderstandAsk, Understanding
+from app.services.section_fields import SectionFields
 
 from .fakes import FakeModel
 from .test_field_seats import Held, resolved
@@ -16,6 +17,8 @@ ROMANISED = "Ajrakh mein phitkari kyun dalte hain?"
 RENDERED = "Why is alum added in Ajrakh?"
 HELD = ("OVERVIEW", "PROCESS", "CHEMISTRY", "MATERIALS", "HISTORY", "SOCIETY")
 ONE_FIELD = json.dumps({**READ, "disciplines": ["CHEMISTRY"], "seats": ["CHEMIST"]})
+WATER = "How do the water, rivers and climate of Kachchh shape where and when Ajrakh is printed?"
+WATER_LISTED = ["GEOGRAPHY", "CLIMATE", "PROCESS", "OVERVIEW", "SOCIETY"]
 
 
 async def understood(
@@ -67,3 +70,24 @@ async def test_fields_a_reply_leaves_out_are_read_from_its_english_rendering() -
     assert found.disciplines[:2] == ["CHEMISTRY", "MATERIALS"]
     raw = await understood(json.dumps({"craft": ""}), question=HINDI)
     assert raw.disciplines[:2] == ["CHEMISTRY", "OVERVIEW"]
+
+
+async def test_only_the_fields_the_reply_marks_as_asked_are_asked_and_the_rest_explain_them() -> None:
+    found = await understood(
+        with_reply(disciplines=WATER_LISTED, asked=["GEOGRAPHY", "CLIMATE"]), question=WATER
+    )
+    assert (found.disciplines, found.asked) == (WATER_LISTED, ["GEOGRAPHY", "CLIMATE"])
+    fields = SectionFields.of(found.asked, (), [])
+    assert [fields.sentences_max(field, 8) for field in WATER_LISTED] == [8, 8, 4, 4, 4]
+    assert "- asked:" in UNDERSTAND_SYSTEM_PROMPT and "ECOLOGY the pollution" in UNDERSTAND_SYSTEM_PROMPT
+
+
+async def test_an_asked_field_the_reply_does_not_list_is_left_out_and_none_marked_leaves_every_one_asked() -> (
+    None
+):
+    marked = await understood(
+        with_reply(disciplines=WATER_LISTED, asked=["ECOLOGY", "CLIMATE"]), question=WATER
+    )
+    assert marked.asked == ["CLIMATE"]
+    unmarked = await understood(with_reply(disciplines=WATER_LISTED), question=WATER)
+    assert unmarked.asked == WATER_LISTED

@@ -12,6 +12,7 @@ __all__ = [
     "PHONE_MARK",
     "WORDS_MIN",
     "anonymised",
+    "kept_question",
     "known_words",
 ]
 
@@ -77,7 +78,7 @@ def anonymised(question: str, known: frozenset[str] = frozenset()) -> str | None
     text = _without_contacts(_without_self(question))
     if _names_someone(text, known) and PERSONAL_ASKS.search(text):
         return None
-    return _kept(_without_names(text, known))
+    return kept_question(_without_names(text, known))
 
 
 def _without_self(text: str) -> str:
@@ -134,7 +135,7 @@ def _phone(found: re.Match[str]) -> str:
     return PHONE_MARK if digits >= wanted else found.group(0)
 
 
-def _kept(text: str) -> str | None:
+def kept_question(text: str) -> str | None:
     cleaned = " ".join(text.split())
     left = cleaned
     for mark in MARKS:

@@ -2,15 +2,16 @@ import argparse
 import asyncio
 import json
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from dataclasses import replace
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import select
 
-from app.core.db import dispose_engine, session_scope, sessionmaker
+from app.core.db import dispose_engine, research_sessionmaker, session_scope
 from app.core.shielded import ShieldedWork
 from app.models import Answer
 from app.providers import router
@@ -37,6 +38,7 @@ from app.services.live_sources import LiveSourcesStore
 from app.services.off_question import explainer_off_question
 
 TIMED_OUT = "the answer did not finish within {seconds} seconds"
+Answering = Callable[[AnswerAsk], Awaitable[AnswerRun]]
 INDEX = CraftIndexStore()
 
 
@@ -46,7 +48,7 @@ async def eval_pipeline(depth: str) -> AsyncIterator[AnswerPipeline]:
     system = Principal()
     try:
         yield build_answer_pipeline(
-            sessions=sessionmaker(),
+            sessions=research_sessionmaker(),
             index=INDEX,
             live=live,
             models=answer_models(depth, principal=system, optional=system),
@@ -66,6 +68,10 @@ async def answer(ask: AnswerAsk) -> AnswerRun:
         return AnswerRun(answer_id=None, problem=TIMED_OUT.format(seconds=ASK_TIMEOUT_SECONDS))
 
 
+async def fresh_answer(ask: AnswerAsk) -> AnswerRun:
+    return await answer(replace(ask, fresh=True))
+
+
 async def explainer(answer_id: uuid.UUID) -> Explainer | None:
     async with session_scope() as session:
         payload = await session.scalar(select(Answer.payload).where(Answer.id == answer_id))
@@ -79,14 +85,16 @@ async def off_question(found: Explainer, craft_slug: str) -> int:
 
 async def spent_since(request_id_prefix: str, since: datetime) -> Decimal:
     async with session_scope() as session:
-        return await router.tagged_spend(session, request_id_prefix=request_id_prefix, since=since)
+        return await router.tagged_settled_spend(session, request_id_prefix=request_id_prefix, since=since)
 
 
-async def run(*, only: list[str], limit: int | None, cap: Decimal) -> dict[str, Any]:
+async def run(
+    *, only: list[str], limit: int | None, cap: Decimal, answering: Answering = answer
+) -> dict[str, Any]:
     every = load_questions().questions
     questions = [q for q in every if not only or q.id in only][:limit]
     tools = EvalTools(
-        answer=answer,
+        answer=answering,
         explainer=explainer,
         judge=router_structured_model(AiTask.EVAL_JUDGE),
         spent=spent_since,
@@ -97,7 +105,8 @@ async def run(*, only: list[str], limit: int | None, cap: Decimal) -> dict[str, 
     finally:
         await dispose_engine()
     whole = len(questions) == len(every)
-    return {**report.model_dump(mode="json", by_alias=True), **floor_report(report, whole=whole)}
+    fresh = {"fresh": answering is fresh_answer}
+    return {**report.model_dump(mode="json", by_alias=True), **fresh, **floor_report(report, whole=whole)}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -110,8 +119,14 @@ def main(argv: list[str] | None = None) -> int:
         default=EVAL_SPEND_CAP_USD,
         help="spend at most this many US dollars, never above the cap",
     )
+    parser.add_argument(
+        "--fresh",
+        action="store_true",
+        help="answer each question afresh, reusing no stored section, as an owner's ask-again does",
+    )
     args = parser.parse_args(argv)
-    report = asyncio.run(run(only=list(args.only), limit=args.limit, cap=args.cap))
+    answering = fresh_answer if args.fresh else answer
+    report = asyncio.run(run(only=list(args.only), limit=args.limit, cap=args.cap, answering=answering))
     print(json.dumps(report, ensure_ascii=False))
     return 0 if report["answered"] else 1
 

@@ -127,6 +127,19 @@ listed at `https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-a
 on 2026-11-22. A later release is vendored the same way, never edited by hand, and the test then
 names any country `places_abroad.json` lacks.
 
+`backend/app/data/places_abroad.historical_sites.json` (decision 0159) lists the historical sites
+and cultures of undivided India that lie outside India today, so a write-back naming Chanhu-daro
+with Pakistan is read as the subcontinent's history, not as practice abroad. It is not shown to a
+reader. Its sites are the Wikidata items that are part of, or of the culture of, the Indus Valley
+Civilization (Q42534) or Gandhara (Q213651) in Pakistan, Afghanistan or Bangladesh, and the
+archaeological sites (Q839954) and ancient cities (Q15661340) of Pakistan and Bangladesh, with
+their English labels and aliases and their country (202 sites, 329 names); a name under four
+letters, made only of ordinary English words, already listed, or only an item id is left out. Its
+cultures are those two, with Gandhara's countries from its Wikidata description. Wikidata is
+[CC0](https://creativecommons.org/publicdomain/zero/1.0/); the SPARQL query, run at
+`https://query.wikidata.org/` on 2026-11-23, is in the file's `source`. It is re-vendored by
+running the query again, never edited by hand.
+
 ## Ordinary English words (decision 0144)
 
 `backend/app/data/english_words.scowl.txt` is a word list, not a dataset, and nothing in it is

@@ -90,3 +90,30 @@ async def test_a_cid_is_a_positive_number() -> None:
     with pytest.raises(InvalidInput):
         await adapter.conformer(0)
     assert recorder.requests == []
+
+
+SYNONYMS_PATH = "pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/6293/synonyms/JSON"
+
+
+async def test_a_compound_s_synonyms_are_read_from_pubchem_in_its_order_up_to_the_limit() -> None:
+    adapter, recorder = pubchem({SYNONYMS_PATH: Reply("pubchem_synonyms.json")})
+    names = await adapter.synonyms(6293, limit=8)
+    assert names == [
+        "Alizarin",
+        "72-48-0",
+        "1,2-dihydroxyanthracene-9,10-dione",
+        "1,2-Dihydroxyanthraquinone",
+        "Mordant Red 11",
+        "1,2-Dihydroxy-9,10-anthracenedione",
+        "ALIZARINE",
+        "Turkey Red",
+    ]
+    (request,) = recorder.requests
+    assert request.url.path == "/rest/pug/compound/cid/6293/synonyms/JSON"
+
+
+async def test_a_compound_pubchem_has_no_synonyms_for_has_none() -> None:
+    adapter, _ = pubchem({SYNONYMS_PATH: Reply("pubchem_not_found.json", status=404)})
+    assert await adapter.synonyms(6293) == []
+    with pytest.raises(InvalidInput):
+        await adapter.synonyms(0)

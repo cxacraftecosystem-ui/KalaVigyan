@@ -68,6 +68,21 @@ def test_two_seats_keep_differing_when_one_reading_was_already_said_in_prose() -
     assert repeated_sentences(shown) == 1
 
 
+def test_two_seats_do_not_differ_again_over_two_readings_the_page_already_said() -> None:
+    historian, anthropologist = phase_b_blocks()["s5.b1"], phase_b_blocks()["s5.b2"]
+    difference = BLOCK.validate_python(historian).differs[0]
+    ledger = ClaimLedger()
+    shown = admitted(ledger, "s1", said("s1.b1", difference.this_view), said("s1.b2", difference.other_view))
+    shown += admitted(ledger, "s5", historian, anthropologist)
+    assert [(block.kind, [d.seat for d in getattr(block, "differs", [])]) for block in shown] == [
+        ("prose", []),
+        ("prose", []),
+        ("expert_view", []),
+        ("expert_view", []),
+    ]
+    assert repeated_sentences(shown) == 0
+
+
 def test_a_zoom_never_shows_a_picture_an_earlier_section_showed() -> None:
     story = zoom("s3.b1")
     story["levels"][0]["media"] = ZAVERI

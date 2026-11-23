@@ -141,6 +141,26 @@ def test_sections_keep_the_most_important_fields_and_put_the_full_process_last()
     ]
 
 
+async def test_a_component_card_s_title_is_shown_in_the_answer_s_language() -> None:
+    card = {
+        "id": "s1.b2",
+        "kind": "component",
+        "version": 1,
+        "label": "kutch-ajrakh/chemistry/mordant-baths",
+        "componentKind": "fact_table",
+        "title": "Mordant baths and their temperatures",
+        "craft": {"slug": "Kutch-Ajrakh", "name": "Kutch Ajrakh", "path": "/crafts/Kutch-Ajrakh"},
+        "href": "/crafts/Kutch-Ajrakh#mordant",
+        "sources": [{"sourceId": "openalex:W1"}],
+    }
+    hindi = "रंगबंधक स्नान और उनके तापमान"
+    model = FakeModel([reply(**{"s1.b2.title": hindi})])
+    shown = await translated_block(card, language="hi", translation=translation(model), claim_texts={})
+    assert shown == card | {"title": hindi}
+    english = await translated_block(card, language="en", translation=translation(), claim_texts={})
+    assert english == card
+
+
 def test_a_research_budget_splits_with_the_remainder_to_the_first_sections() -> None:
     total = ResearchShare(queries=8, native_queries=3, fetches=20)
     shares = [(s.queries, s.native_queries, s.fetches) for s in split_share(total, 3)]

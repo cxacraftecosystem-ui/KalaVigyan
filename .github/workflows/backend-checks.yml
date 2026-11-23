@@ -81,10 +81,14 @@ jobs:
           uv run alembic upgrade head --sql > /dev/null
 
   database:
-    name: Migrations and database tests
+    name: Migrations and database tests (shard ${{ matrix.shard }} of 3)
     runs-on: ubuntu-26.04
-    timeout-minutes: 60
+    timeout-minutes: 40
     needs: lint-and-unit
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     services:
       postgres:
         image: postgis/postgis:17-3.7
@@ -142,6 +146,7 @@ jobs:
       - name: Alembic upgrade head
         run: uv run alembic upgrade head
       - name: Alembic downgrade and upgrade again
+        if: matrix.shard == 1
         run: |
           uv run alembic downgrade base
           uv run alembic upgrade head
@@ -152,10 +157,14 @@ jobs:
       - name: Seed states and districts
         run: uv run python -m app.scripts.seed_districts
       - name: Database tests
-        run: uv run pytest -q -m db tests/db
+        env:
+          DB_TEST_SHARD: ${{ matrix.shard }}/3
+        run: uv run pytest -q -m db tests/db --durations=20
       - name: Import the curated dossiers as the deploy does
+        if: matrix.shard == 1
         run: uv run python -m app.scripts.import_curation
       - name: The release before reads and writes the migrated database
+        if: matrix.shard == 1
         env:
           PREVIOUS_REF: ${{ github.event_name == 'push' && github.ref_name == 'main' && github.event.before || 'main' }}
         run: |

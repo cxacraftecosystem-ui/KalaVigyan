@@ -149,8 +149,9 @@ fewer sentences than the live page, never more.
   sentences it keeps; a compare cell already shown is left `null` and a row with fewer than two
   crafts goes; a block whose own sentence (an indigo vat's lift) was shown is not sent. Differences
   are exempt from the repeat rule (decision 0120): an `expert_view` difference goes from both seats
-  only when the same pair of claims was already shown as a difference, never because one reading
-  was already said in prose, and a seat whose every take sentence was shown stays, with its take,
+  only when the same pair of claims was already shown as a difference or the page already said both
+  its readings (each by its words or by every claim it cites, decision 0165), never because one
+  reading was already said in prose, and a seat whose every take sentence was shown stays, with its take,
   while it carries a difference (it goes when its differences go). Kinds without
   sentences pass whole. A block left empty or off its contract is not sent; a section left with
   nothing ends `EMPTY` with `COVERED_NOTE` ("Already covered in this answer."), which the client

@@ -35,6 +35,8 @@ export type FactSource = { title: string; url: string | null; licence: string | 
 export type RelatedFact = { id: string; text: string };
 export type GateCheck = { gate: string; passed: boolean; reasons: string[]; model: string | null; related: RelatedFact[] };
 export type FactConcept = { name: string; type: string };
+export type HeldWriteBack = { reason: string; suggestedCraft: string };
+export type Filing = { craft: string } | { family: string };
 
 export type FactReview = {
   statement: string;
@@ -46,6 +48,7 @@ export type FactReview = {
   concept: FactConcept | null;
   sources: FactSource[];
   gates: GateCheck[];
+  held?: HeldWriteBack | null;
 };
 
 export type LibrarySubject = { kind: string; key: string; name: string };
@@ -192,7 +195,8 @@ const factShape: Shape<FactReview> = object<FactReview>({
   sourcesDiffer: boolean,
   concept: nullable(object<FactConcept>({ name: text, type: text })),
   sources: list(sourceShape),
-  gates: list(gateShape)
+  gates: list(gateShape),
+  held: optional(nullable(object<HeldWriteBack>({ reason: text, suggestedCraft: text })))
 });
 
 const libraryShape: Shape<LibraryComponent> = object<LibraryComponent>({
@@ -320,9 +324,10 @@ export function queueQuery(filters: ReviewFilters, cursor: string | null, limit:
   return query.toString();
 }
 
-export function decisionBody(action: QueueAction, words: string): Record<string, string | null> {
+export function decisionBody(action: QueueAction, words: string, filing: Filing | null = null): Record<string, string | null> {
   const trimmed = words.trim();
   if (action === "reject" || action === "retract") return { reason: trimmed };
+  if (action === "approve" && filing) return { note: trimmed || null, ...filing };
   return { note: trimmed || null };
 }
 
@@ -347,8 +352,8 @@ async function decided(kind: QueueKind, id: string, action: QueueAction, body: R
   return parseShape(queueDecisionShape, await apiFetch<unknown>(DECISION_PATH(kind, id, action), { method: "POST", body: JSON.stringify(body) }));
 }
 
-export async function decideQueueItem(kind: QueueKind, id: string, action: QueueAction, words: string): Promise<QueueDecision> {
-  return decided(kind, id, action, decisionBody(action, words));
+export async function decideQueueItem(kind: QueueKind, id: string, action: QueueAction, words: string, filing: Filing | null = null): Promise<QueueDecision> {
+  return decided(kind, id, action, decisionBody(action, words, filing));
 }
 
 export async function decideTestimony(item: ReviewItem, decision: TestimonyDecision): Promise<QueueDecision> {

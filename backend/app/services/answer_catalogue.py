@@ -8,6 +8,7 @@ from typing import Any
 
 from pydantic import ValidationError
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.models import KnowledgePiece, Source
@@ -110,7 +111,7 @@ def catalogue_lookup(sessions: async_sessionmaker[AsyncSession]) -> CatalogueLoo
         try:
             async with sessions() as session:
                 return await section_catalogue(session, craft_slug=craft.slug, field=field, question=words)
-        except Exception:
+        except SQLAlchemyError, OSError:
             logger.warning(
                 "the component catalogue of %s for %s failed; the section offers none",
                 craft.slug,

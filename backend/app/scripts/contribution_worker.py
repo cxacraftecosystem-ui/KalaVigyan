@@ -6,7 +6,8 @@ import logging
 import signal
 
 from app.core.config import get_settings
-from app.core.db import dispose_engine, sessionmaker
+from app.core.connection_budget import most_runs
+from app.core.db import dispose_engine, process_pools, sessionmaker
 from app.core.logging import configure_logging
 from app.models import User
 from app.providers.embedding import router_embedder
@@ -18,7 +19,7 @@ from app.services.candidate_sources import proposal_fetcher
 from app.services.contribution_queue_worker import ContributionWorker, WorkerSettings, drain
 from app.services.fact_proposals import ProposalAdapters
 
-__all__ = ["main", "serve", "thrifty_adapters"]
+__all__ = ["main", "runs_at_once", "serve", "thrifty_adapters"]
 
 logger = logging.getLogger("kalavigyan.contributions")
 
@@ -33,6 +34,17 @@ def thrifty_adapters(user: User, fetcher: Fetcher) -> ProposalAdapters:
         escalate=(strong,),
         thrift=GateThrift(),
     )
+
+
+def runs_at_once(asked: int, allowed: int) -> int:
+    if asked <= allowed:
+        return max(1, asked)
+    logger.warning(
+        "--concurrency %s needs more connections than this process's budget holds; running %s at once",
+        asked,
+        allowed,
+    )
+    return allowed
 
 
 async def serve(settings: WorkerSettings, *, once: bool) -> int:
@@ -64,7 +76,9 @@ def main() -> int:
     parser.add_argument("--concurrency", type=int, default=WorkerSettings.concurrency)
     parser.add_argument("--once", action="store_true", help="check what is queued now, then stop")
     arguments = parser.parse_args()
-    asyncio.run(serve(WorkerSettings(concurrency=max(1, arguments.concurrency)), once=arguments.once))
+    allowed = most_runs(process_pools(get_settings()).main)
+    concurrency = runs_at_once(arguments.concurrency, allowed)
+    asyncio.run(serve(WorkerSettings(concurrency=concurrency), once=arguments.once))
     return 0
 
 

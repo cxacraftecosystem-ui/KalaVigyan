@@ -100,7 +100,7 @@ def test_a_fact_naming_another_indian_place_but_no_craft_is_held() -> None:
 def test_a_place_word_in_another_sense_names_no_place_abroad() -> None:
     assert filed("China clay is kaolinite, which fires white.") == CraftFiling(None, family=MUD_FAMILY)
     assert filed("Turkey red is an alizarin lake on oiled cotton.").family == MUD_FAMILY
-    assert filed("Porcelain from China is fired hard.").refused == SKIP_ABROAD.format(places="China")
+    assert filed("Porcelain in China is fired hard.").refused == SKIP_ABROAD.format(places="China")
 
 
 def test_names_match_as_whole_words() -> None:

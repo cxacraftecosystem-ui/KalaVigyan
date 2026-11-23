@@ -268,8 +268,16 @@ class ClaimLedger:
             frozenset({payload["seat"], difference["seat"]})
             for payload in payloads
             for difference in payload["differs"]
-            if _difference_key(difference) in self._differences
+            if _difference_key(difference) in self._differences or self._said_already(difference)
         }
+
+    def _said_already(self, difference: Mapping[str, Any]) -> bool:
+        sides = (difference["thisView"], difference["otherView"])
+        return all(
+            sentence_keys(side["text"], side.get("original")) & self._texts
+            or (claims_of(side) and claims_of(side) <= self._claims)
+            for side in sides
+        )
 
     def _picture(self, section_id: str, payload: Payload) -> Block | None:
         cited = self._section_claims.get(section_id, set())

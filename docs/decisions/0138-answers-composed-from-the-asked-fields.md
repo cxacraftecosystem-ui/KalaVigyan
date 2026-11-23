@@ -22,6 +22,7 @@ dropped block) and [decision 0010](0010-composer.md) (the composer's candidates)
 | The composer whose candidates it fills | [decision 0010](0010-composer.md) |
 | The naming rule it reuses | [decision 0135](0135-write-backs-filed-under-the-craft-they-name.md) |
 | The evaluation that found the faults | [answer-eval.md](../contracts/answer-eval.md) |
+| The asked fields are the ones the understanding's reply marks as asked | [decision 0165](0165-answers-counted-as-settled-asked-as-asked.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

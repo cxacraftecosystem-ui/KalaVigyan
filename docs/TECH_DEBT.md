@@ -2,13 +2,14 @@
 
 What is knowingly below standard, why it was left, and what clears it. Add an entry in the same
 change that takes the shortcut; delete it in the change that clears it. Engineers and reviewers read
-it before changing an area.
+it before changing an area. The number of entries may only fall: `tools/hygiene_check.py` fails a
+change that leaves more `### ` entries than `tools/hygiene_baseline.json` records (decision 0163).
 
 | For | Read |
 |---|---|
 | Why an area is built the way it is | [decisions/README.md](decisions/README.md) |
 | Where the work stands | [PROGRESS.md](PROGRESS.md) |
-| The hygiene baseline of files and functions over budget | `tools/hygiene_baseline.json` |
+| The hygiene baseline of files and functions over budget, and of this register's entries | `tools/hygiene_baseline.json` |
 
 ```mermaid
 %%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
@@ -42,15 +43,13 @@ Last reviewed: 2026-11-22.
 
 ### Python code over budget
 
-- **What:** recorded in `tools/hygiene_baseline.json`, 9 files over 400 lines, 46 functions over
-  40 lines and 9 functions with more than 5 positional parameters on 2026-11-22 (12, 54 and 9 on
-  2026-11-16). The largest files:
-  `backend/migrations/versions/0001_initial_schema.py` (2853), `etl/crafts/wikidata_link.py`
-  (1121), `backend/app/api/routes/auth.py` (784), `backend/app/services/two_factor.py` (703),
-  `etl/crafts/seed_claims.py` (642), `backend/app/providers/router.py` (566),
-  `etl/crafts/aliases.py` (543),
-  `backend/tests/db/test_db_flows.py` (464), `backend/app/services/knowledge_view.py` (502),
-  `backend/app/data/craft_master_loader.py` (433).
+- **What:** the counts are in `tools/hygiene_baseline.json`: 6 files over 400 lines, 36 functions
+  over 40 lines and 9 functions with more than 5 positional parameters on 2026-11-23 (12, 54 and 9
+  on 2026-11-16). The files: `backend/migrations/versions/0001_initial_schema.py` (2853),
+  `backend/app/services/two_factor.py` (703), `etl/crafts/seed_claims.py` (642),
+  `etl/crafts/aliases.py` (535), `backend/tests/db/test_db_flows.py` (473) and
+  `backend/app/data/craft_master_loader.py` (433). The sign-in routes, the AI router and the
+  Wikidata linker were split on 2026-11-23 and are no longer among them.
 - **Why left:** most were ported from the designer portal with the same shapes so the portals
   stay mergeable; splitting them is a separate restructuring change.
 - **Clears it:** split along responsibilities when a file is next changed; run
@@ -605,32 +604,6 @@ Last reviewed: 2026-11-22.
   carries a note of the panel's views and Experts differ pairs (`e2e/production/expertPanel.ts`),
   read with the `COMPOSE` spend of that answer in Usage.
 
-## Curation tooling (decision 0051)
-
-### The LGD register is read in two places
-
-- **What:** `services/district_seed.py` reads `lgd_register.json` itself to seed states and
-  districts; `data/district_register.py` reads it for the curation checker's name lookup.
-- **Why left:** the seed also builds geometry and is proven only by the database job; changing it
-  was outside the curation lane.
-- **Clears it:** `district_seed` taking its state and district names from
-  `data/district_register`.
-
-### Two atomic text writers in tools
-
-- **What:** `tools/hygiene/baseline.write_baseline` and `tools/curation/output.write_text_atomically`
-  both write through a temporary file and replace.
-- **Why left:** `tools/` has no shared module, and the hygiene package should not import curation.
-- **Clears it:** one `tools` module both import, when a third writer appears.
-
-### Long HTML and plain-text sources are cut at 200,000 characters
-
-- **What:** `tools/curation/reading.source_text` reuses `app.fetcher.extract`, which caps HTML and
-  plain text at `FETCH_TEXT_MAX_CHARS`; a quote past the cap fails and the check file marks the
-  source `truncated`. PDFs use curation's own caps (2,000 pages).
-- **Why left:** one HTML reader for the live fetcher and curation; long books usually come as PDFs.
-- **Clears it:** a cap option on `extract` that curation passes.
-
 ## Phase C contract (decision 0054)
 
 ### Numbers the explainer computes are not checked
@@ -649,19 +622,6 @@ Last reviewed: 2026-11-22.
   an input step the data object names), then that runtime guard in `lib/sandboxFrame`'s prelude
   posting a refusal that `SandboxFrame` turns into hiding the block. Waits on the owner's rule
   (checked again on 2026-11-22: the static check covers code numerals since decision 0061).
-
-### Chromium ignores the frame policy's webrtc directive
-
-- **What:** `SANDBOX_CSP` ends with `webrtc 'block'` (decision 0061), but Chromium 158 logs
-  "Unrecognized Content-Security-Policy directive 'webrtc'." as a console error in every generated
-  explainer and lets a peer connection reach a STUN server; there the client's `FRAME_GUARD` is
-  what stops it (no constructor, no nested window, no nested frame), proved by
-  `e2e/sandbox-frame-unit.spec.ts`. The production screens walk ignores exactly that console
-  error from `about:srcdoc`.
-- **Why left:** browsers that read the directive enforce it, and the guard covers the rest; the
-  directive's support is the browsers'.
-- **Clears it:** nothing in this repository; drop the screens walk's exception once Chromium
-  recognises the directive.
 
 ## Generated explainers (decision 0055)
 
@@ -783,21 +743,6 @@ Last reviewed: 2026-11-22.
 
 ## Phase D contract (decision 0062)
 
-### No stored source states a regional unit conversion yet
-
-- **What:** a `REGIONAL` measure needs a stored claim whose quote states the factor for a region
-  (owner O5); no seed or curated claim does, so until one is curated only exactly defined units
-  (inch, foot, yard, mile, square foot) convert, and the fixture's measure is a feet value. The
-  regional path is built and tested on hand-written quotes (decision 0066).
-- **Why left:** a regional value has to come from a source a curator verifies; inventing one would
-  break O5.
-- **Clears it:** curation only; the code path is built, and since decision 0147 the region may
-  be named by its register spelling or any other name `data/district_other_names.json` lists
-  ("a seer of Kutch" now names Kachchh). For Kutch Ajrakh: a dossier claim quoting the weights and
-  measures table of the Kutch district gazetteer (Gujarat State Gazetteers, Kutch District, 1971,
-  or the Gazetteer of the Bombay Presidency, Cutch, 1880) as an equality ("a seer ... weighs ...
-  kg", "a gaj is ... m"); then the review adds a `REGIONAL` row to the fixture from that claim.
-
 ### The phase D fixture shows no price and no Kutch Ajrakh sign of imitation
 
 - **What:** the market blocks show Kutch Ajrakh's GI record and Bagru's GI record with its GI
@@ -830,42 +775,7 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the seed and curated sources store organisation authors whole (the curation
   checker already keeps them whole); the export needs no change.
 
-### Ask the map lists only crafts placed in the district by a cited location
-
-- **What:** a district answers only crafts with a cited district or point location there; a craft
-  the master list knows only by its state of practice is not listed for any district.
-- **Why left:** placing a state-level craft in every district of the state would be a claim no
-  source makes.
-- **Clears it:** curation only; the code path reads any cited district or point location. For
-  each GI craft the master list places by state alone, a dossier place naming its district from
-  the GI journal's "geographical area" passage or the district gazetteer, starting with the GI
-  crafts no dossier covers yet (Tharu embroidery, Kutch embroidery, Kasuti embroidery and the
-  other GI rows of `craft_master_list.json` without a dossier).
-
 ## Local measures, and market and GI (decision 0066)
-
-### A price stated with several years, places or prices needs a curated row
-
-- **What:** without curated rows, a price is read from a cited claim of the craft only when the
-  claim states exactly one price, one year and one LGD district (decision 0147,
-  `market_store.stated_price_offer`); a claim stating two prices, a range of years or two places
-  ("a cotton bandhani cost Rs. 10 to Rs. 50 and a georgette one Rs. 50 to Rs. 250") shows none.
-  19 prices in 12 dossiers are curated today.
-- **Why left:** choosing among several dates or places in one sentence would be a guess.
-- **Clears it:** curation only: `market.prices` rows for those claims, starting with the crafts
-  whose GI journal or gazetteer prices state several items (Kutch Bandhani, Tikuli Painting,
-  Uttarakhand Ringal Craft), each row naming its date and place.
-
-### GI fields are read by their labels
-
-- **What:** without a curated record, the registry fields come from labelled words in GI journal
-  and government claims ("application 183", "Certificate Date 11-05-2011", "Journal Number 37");
-  a claim phrased otherwise adds nothing, and two claims stating different values give no status.
-- **Why left:** the registry offers no open API, and a curated record replaces the reading.
-- **Clears it:** curation only: a `market.gi` record for each GI craft (21 of the master list's
-  209 GI crafts have one), read from its GI journal and registry pages as the 21 are, starting with
-  Tharu Embroidery, Kutch Embroidery, Kasuti Embroidery, Sandur Lambani Embroidery and Toda
-  Embroidery; the label reader then serves only crafts without a dossier.
 
 ### Imitation is a fixed word list
 
@@ -910,27 +820,6 @@ Last reviewed: 2026-11-22.
   screen choice.
 - **Clears it:** the map screen folds a yearly series into one row with a sparkline (each year a
   dataset value), or a contract change that leaves yearly rows out of its facets.
-
-## Learning block renderers (decision 0068)
-
-### Quiz picks are kept in the page only
-
-- **What:** a reload or a new visit clears the reader's answers and score.
-- **Why left:** no route stores quiz attempts, and decision 0062 makes a quiz a rebuilt block.
-- **Clears it:** an attempts route if the owner wants scores kept (for a class, with the lesson
-  builder).
-
-## Craft page rebuild (decision 0071)
-
-### The register's description is no longer shown
-
-- **What:** the old page showed the craft register's `description` above the claims. `PageCraft`
-  has no description, so a craft without a dossier or claims shows only its register facts
-  (category, kind, GI status, states).
-- **Why left:** the field is not in the contract, and it is uncited register text, which the page
-  otherwise never shows as a sentence.
-- **Clears it:** an owner decision; if wanted, `description` on `PageCraft` (model, contract,
-  fixture) drawn beside the register facts and marked as the register's.
 
 ## Lesson packs and exports (decision 0067)
 
@@ -1002,25 +891,23 @@ Last reviewed: 2026-11-22.
 
 ## Track 1, round 1 (decision 0101, 2026-11-19)
 
-### Contributed quotes from web pages are researcher-only
-
-- **What:** a fact quoted from a fetched web page keeps the T4 page's researcher-only chunk access,
-  so it is withheld from signed-out pages and `get_facts` even once approved.
-- **Why left:** it is today's research write-back rule; changing it is a licence decision.
-- **Clears it:** a public chunk access for a quote the gates verified from an openly licensed page.
-
 ### Gate thresholds are first guesses
 
 - **What:** the duplicate gate's 0.8 cosine floor and its neighbour counts (8 compared, 12 for
   novelty) were chosen without data; facts with no embedding are matched only by identical text.
 - **Clears it:** tune them on the first month of proposals and record the values in a decision.
 
-### Small gaps in the MCP slices
+### A component card's kicker stays English in non-English answers
 
-- **What:** a component card's kicker and title stay English in non-English answers; a failing
-  catalogue lookup is caught broadly and offers nothing, like a failing builder. (Browser CORS and
-  the clean-up of abandoned registrations were built in round 4.)
-- **Clears it:** each in the change that next touches its file.
+- **What:** a component card's title is translated with the answer's sentences (decision 0159), but
+  its kicker ("Figure from the <craft> monograph" on the site, the kind's words in the MCP answer
+  view) and its link ("Open the figure") are English chrome, not interface words.
+- **Why left:** interface words are shown in another language only from a cited source a reader has
+  reviewed (decision 0157), none holds these words yet, and the site's block renderers are not given
+  the answer's language.
+- **Clears it:** an interface word group for the card (kicker and link) with sourced, reviewed
+  words, the answer's language passed to `components/answer/blockRenderers.ts`, and the answer view
+  reading the same words from the ask result.
 
 ## Track 1, round 3 (decision 0106, 2026-11-19)
 
@@ -1171,16 +1058,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the owner's or lead's choice of the faces to preload and of a kit stylesheet split
   by chapter, then the change proven by Monograph parity and Lighthouse at 360.
 
-### Source tools: what they do not cover yet
-
-- **What:** the production `LookupStore` (`source_lookup_store.from_live`) has no test, since every
-  tool test uses fake adapters. PubChem synonyms come only from a stored Compound, because the
-  PubChem adapter has no synonyms call. `kalavigyan://index.md` and the contributor skill are
-  written by hand and must name every tool, which the tests enforce; the five contract copies in
-  `backend/app/data/contributor/contracts` must stay byte-identical to `docs/contracts`.
-- **Clears it:** a contract test of the live store against recorded adapter responses; a synonyms
-  call on the PubChem adapter; the index generated from the server's registry.
-
 ### No MCP path for a new map layer's dataset
 
 - **What:** a contributor can deliver a `general_map_layer` for one page, but a new layer of the
@@ -1188,11 +1065,6 @@ Last reviewed: 2026-11-22.
   repository, as the datasets skill says.
 - **Clears it:** a dataset proposal over MCP that carries the source, licence, version and the
   simplified geometry, checked by the same rules before an engineer ships it.
-
-### Question anonymising is rules-based
-
-- **What:** questions that become open work (decision 0113) are anonymised by rules with no model, so a lone first name with no honorific or self-introduction is not detected; the rules lean the other way elsewhere (a place outside the gazetteer written in capitals becomes [name], and a title-cased question may be dropped).
-- **Clears it:** a named-entity pass with the cheapest model route on the few questions that survive the rules, run in the nightly step, never at request time.
 
 ### The geo ETL stays on Python 3.14
 
@@ -1224,18 +1096,6 @@ Last reviewed: 2026-11-22.
   three hosts; serve the kind preview's specs through the backend, which adds the four variants
   with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
 
-### The MCP call's client name is filled by a trigger for the release before
-
-- **What:** migration `0075_mcp_call_name_filled` adds a `BEFORE INSERT` trigger on `McpToolCall`
-  that fills a missing `clientName` from the grant's client, because production's release records
-  MCP calls without it while migration 0074 made it required. The rule then has two homes:
-  `services/oauth_bearer.record_tool_call` and the trigger.
-- **Why left:** the trigger is needed only while the release before 0074 can still serve the
-  migrated database (decision 0151).
-- **Clears it:** in the first release after the one that carries 0074, drop the trigger and
-  `kv_fill_mcp_client_name()` in a migration; the release-before check passes once the release
-  before maps the column.
-
 ### Goldens that do not yet show every field
 
 - **What:** 177 fields of 38 models the web is served (the craft page's field voices, field photos,
@@ -1254,19 +1114,27 @@ Last reviewed: 2026-11-22.
   photo in `craft.page.inputs.json`, a contributed and an AI plate, a journal source), add the
   missing block kinds to the explainer fixtures, regenerate the goldens and empty the list.
 
-### The quantities table has not been measured by the judge
+### The quantities table is dropped where its rows repeat a sentence the section says
 
-- **What:** in run 44994632550 the judge's figures part averaged 2.8 of 5 (36 of 65); the Ajrakh
-  indigo (bed43e9f), Jaipur safe-handling (af3f7ac2) and Bandhani tie-and-dye (4978c466) answers
-  scored 1 because dip times, kiln temperatures, tying days and lengths were only in prose.
-  Decision 0147 built the `quantities` table for a section whose facts state three or more
-  quantities and names each figure's kind and quantities in the judge's message, and re-based the
-  rubric floor to the lowest mean the shown-sentence count can give (0.82); no run has measured
-  either since.
-- **Why left:** answer-quality spends money and only the lead dispatches it (owner rule).
-- **Clears it:** the lead runs answer-quality on the same questions after the release, records the
-  figures part of those three answers, and raises `rubricMean` in
-  `backend/app/data/eval/floors.json` to the run's mean less 0.05, rounded down.
+- **What:** run 45112746194 (release 1ab422fe, 2026-11-23) measured decision 0147's table on two
+  Kutch Ajrakh answers. The indigo answer (85f14b90) built none: no section's cited facts state
+  three quantities in digits (PROCESS states "10 to 15 minutes", GEOGRAPHY "40 km"; "about one
+  month", "four hours" and "one percent" are number words, which `research/stated_amounts` does not
+  read). The water and climate answer (ea19b016) built one in PROCESS (`ADDED` in
+  `Answer.plan.builds`) that the claim ledger then dropped: each row's sentence is the text of a
+  ladder stage sentence the section had already shown, and a story block never repeats a sentence
+  said word for word (`claim_ledger._anchored_repeat`, in every pass). The judge's figures part was
+  2 and 3 of 5, and no run has yet shown a table, so `rubricMean` in
+  `backend/app/data/eval/floors.json` is still the 0.82 decision 0147 set.
+- **Why left:** showing the table means either letting it repeat the section's sentences, which the
+  judge marks down as repetition, or drawing its rows under a sentence the section already says
+  without saying it again, a change to the ledger, the quantities view and the judge's reading
+  together; decision 0165 records the choice as the lead's after the next run.
+- **Clears it:** the claim ledger admits a `quantities` table whose row sentences were already shown,
+  the quantities view draws such a row group with its citation and without the sentence text, and
+  `coverage_answers.shown_field_sentences` skips the same sentences; then the lead runs
+  answer-quality on the same questions and raises `rubricMean` to the run's mean less 0.05, rounded
+  down.
 
 ### Leftovers of the sentence-once lane
 
@@ -1308,47 +1176,14 @@ Last reviewed: 2026-11-22.
   fact is against where today's rule files it (decision 0136), and approves each under the craft it
   names (approve with `craft`), approves it where it is, or rejects it.
 
-### The places that block filing are word lists
-
-- **What:** the regions and cultures abroad in `data/places_abroad.json` are kept by hand (its
-  countries are now held to Natural Earth's sovereign states by a test), and the places of India that
-  hold a fact for a reviewer instead of filing it are the LGD state and district names and the craft
-  index's place labels. Since decision 0136 they are read in a quote's passage and its source's title
-  too, so a district named like a common word in a paragraph holds a general fact that names nothing
-  else, and a region abroad missing from the list lets one through.
-- **Why left:** no open gazetteer of regions and cultures is vendored, and a model judging each
-  sentence's places would cost a call per sentence.
-- **Clears it:** read the held and refused write-backs the filing report lists after each round of
-  live research, and add places, other senses and left-out names from what it shows.
-
-### The review page does not show why a write-back is held
-
-- **What:** a held write-back (decision 0136) waits in the review queue as a `DRAFT` researched fact
-  of its suggested craft. Its reason is only in its `ReviewEvent` note and the filing report, and the
-  Review page cannot file it under another craft, though the approve route takes `craft`.
-- **Why left:** the web's unit specs parse the queue strictly (the production build ignores an
-  unknown field since decision 0151), so the field and its shape land together, and frontend files
-  were another lane's this round.
-- **Clears it:** add `held {reason, suggestedCraft}` to `FactReview` and to `lib/reviewQueueContract.ts`
-  in one change, and a craft picker beside Approve that sends `craft`.
-
-### A held write-back found again stays held
-
-- **What:** when research later files a sentence a reviewer has not yet decided, under the craft it
-  was held for, the write-back is re-found by its key and keeps its `DRAFT` status: it gains the new
-  citations but does not go live as a filed write-back would under the `AUTO` switch.
-- **Why left:** a re-found write-back never changes status (decision 0124), and a reviewer sees it in
-  the queue anyway.
-- **Clears it:** when a filed write-back meets its held twin, move it to the switch's status with a
-  `ReviewEvent` by `live_research`.
-
 ## How this document is kept true
 
 | Change | What to do here |
 |---|---|
-| A shortcut is taken | add its entry, with what is wrong, why it was left and what clears it, in the same change |
+| A shortcut is taken | add its entry, with what is wrong, why it was left and what clears it, in the same change, and clear another entry there so the count does not rise; when none can be cleared, that change's decision record says why and raises `registerEntries` in `tools/hygiene_baseline.json` by hand (the check never raises it) |
 | A shortcut is cleared | delete its entry in the change that clears it |
-| A round ends | the lead re-reads the round's entries and updates "Last reviewed" |
+| A limit is kept on purpose | move it to a decision record of limits kept by choice (decisions 0137, 0163) |
+| A round ends | the lead re-reads the round's entries, updates "Last reviewed" and lowers the recorded count with `tools/hygiene_check.py --update-baseline` |
 
 An entry is true only while its "What" still describes the code; when a change makes it untrue,
 rewrite or delete the entry in that change.

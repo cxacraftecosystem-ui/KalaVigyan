@@ -15,6 +15,10 @@ on:
         description: "Spend at most this many US dollars; never above the cap in services/coverage_eval.py"
         type: string
         default: ""
+      fresh:
+        description: "Answer each question afresh, reusing no stored section (to compare routes on equal terms)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -40,6 +44,7 @@ jobs:
       LIMIT: ${{ inputs.limit }}
       ONLY: ${{ inputs.only }}
       CAP: ${{ inputs.cap }}
+      FRESH: ${{ inputs.fresh }}
     steps:
       - name: Check the repository variables and the inputs
         run: |
@@ -54,6 +59,7 @@ jobs:
           [ -z "$LIMIT" ] || args="$args --limit $LIMIT"
           [ -z "$ONLY" ] || args="$args --only $ONLY"
           [ -z "$CAP" ] || args="$args --cap $CAP"
+          [ "$FRESH" != "true" ] || args="$args --fresh"
           echo "EVAL_ARGS=$args" >> "$GITHUB_ENV"
 
       - name: Assume the deploy role

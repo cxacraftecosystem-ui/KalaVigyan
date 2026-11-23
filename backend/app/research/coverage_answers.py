@@ -75,8 +75,7 @@ def shown_field_sentences(explainer: Explainer) -> list[FieldSentence]:
         FieldSentence(section.discipline, sentence)
         for section in explainer.sections
         if section.state == READY
-        for block in section.blocks
-        for sentence in block.shown_sentences()
+        for sentence in _sentences(section)
     ]
 
 
@@ -94,8 +93,20 @@ def _consulted(discipline: str, sections: Sequence[ExplainerSection]) -> Consult
 
 
 def _sentences(section: ExplainerSection) -> Iterator[AnswerSentence]:
+    paired: set[frozenset[str]] = set()
     for block in section.blocks:
-        yield from block.shown_sentences()
+        told = _told_differences(block, paired) if isinstance(block, ExpertViewBlock) else set()
+        yield from (sentence for sentence in block.shown_sentences() if sentence.id not in told)
+
+
+def _told_differences(view: ExpertViewBlock, paired: set[frozenset[str]]) -> set[str]:
+    told: set[str] = set()
+    for difference in view.differs:
+        pair = frozenset({view.seat, difference.seat})
+        if pair in paired:
+            told |= {difference.this_view.id, difference.other_view.id}
+        paired.add(pair)
+    return told
 
 
 def _quantities(labels: Sequence[str]) -> tuple[str, ...]:
