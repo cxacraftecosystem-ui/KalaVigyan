@@ -27,6 +27,7 @@ CARD = {
     "id": "s1.b2",
     "kind": "component",
     "version": 1,
+    "reuse": None,
     "label": "kutch-ajrakh/chemistry/mordant-baths",
     "componentKind": "fact_table",
     "title": "Mordant baths and their temperatures",
