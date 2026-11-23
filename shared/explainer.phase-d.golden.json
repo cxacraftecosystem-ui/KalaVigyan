@@ -541,7 +541,8 @@
                     ]
                   }
                 }
-              ]
+              ],
+              "craftCount": 4
             },
             {
               "termKey": "indigo",
@@ -731,7 +732,8 @@
                     ]
                   }
                 }
-              ]
+              ],
+              "craftCount": 5
             }
           ]
         }

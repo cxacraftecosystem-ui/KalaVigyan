@@ -1112,21 +1112,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** an attempts route if the owner wants scores kept (for a class, with the lesson
   builder).
 
-## Quiz, compare and the shared-science explorer (decision 0064)
-
-### A shared-science node lists at most 100 of the crafts sharing its term
-
-- **What:** the explorer and the concept graph now read every craft whose claims name a term, with
-  all its naming claims (`SharedTermCraft`, rebuilt by `refresh_shared_terms` at each release and
-  each night, decision 0143), but a node (`ConceptNode.crafts`, `CONCEPT_CRAFTS_MAX` in the
-  contract) still lists at most 100 of them, the focus craft first and then by name, and does not
-  say how many share the term.
-- **Why left:** a term such as cotton or indigo can be shared by hundreds of crafts and a craft's
-  explorer answers up to 24 nodes; a longer list or a count changes the shape the client draws
-  (`frontend/lib`), which belonged to the design lane at the time (2026-11-22).
-- **Clears it:** a node carries how many crafts share its term and the route pages a node's crafts,
-  in the contract, the backend and the client together.
-
 ## Craft page rebuild (decision 0071)
 
 ### The register's description is no longer shown

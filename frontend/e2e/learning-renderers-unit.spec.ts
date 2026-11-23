@@ -6,8 +6,9 @@ import { CompareTable } from "@/components/answer/learning/CompareTable";
 import { ConceptGraphView } from "@/components/answer/learning/ConceptGraphView";
 import { QuizView } from "@/components/answer/learning/QuizView";
 import { compareLayout, rowTitle } from "@/lib/compareView";
-import { graphLayout, graphSummary, LABEL_GAP_PX, ringPoints, separatedLabels } from "@/lib/conceptGraph";
+import { graphLayout, graphSummary, joinedCrafts, LABEL_GAP_PX, nodeChoiceLabel, nodeCraftCount, restOfCrafts, ringPoints, separatedLabels } from "@/lib/conceptGraph";
 import type { ConceptNode } from "@/lib/explainerLearning";
+import type { ConceptCraftsPage } from "@/lib/sharedScienceContract";
 import type { SectionView } from "@/lib/explainerState";
 import { explainerSourceNumbers } from "@/lib/explainerView";
 import { optionOrder, picked, promptParts, quizScore, scoreText } from "@/lib/quizView";
@@ -199,6 +200,27 @@ test("a concept shared by many crafts draws seven and a count, and lists six wit
   expect(attribute(html, "concept-list-craft", "data-testid")).toHaveLength(6);
   expect(text(html)).toContain("Show all 10");
   expect(withReading(createElement(ConceptGraphView, { focus: null, nodes: [], reduce: true }))).toBe("");
+});
+
+test("a node shared by more crafts than it lists counts them all and reads the rest page by page", async () => {
+  const every = widened(graph().nodes[0], 230).crafts;
+  const node: ConceptNode = { ...graph().nodes[0], crafts: every.slice(0, 100), craftCount: 230 };
+  expect(nodeCraftCount(node)).toBe(230);
+  expect(nodeChoiceLabel(node)).toBe("Alum · 230");
+  expect(graphLayout(node, null).more?.count).toBe(223);
+  expect(graphSummary(node)).toMatch(/^Alum is shared by 230 crafts, among them Craft 1, Craft 2, /);
+  expect(text(withReading(createElement(ConceptGraphView, { focus: null, nodes: [node], reduce: true })))).toContain("Show all 230");
+  const asked: number[] = [];
+  const page = async (offset: number): Promise<ConceptCraftsPage> => {
+    asked.push(offset);
+    return { schemaVersion: 1, termKey: "alum", label: "Alum", craftCount: 230, offset, crafts: every.slice(offset, offset + 100), sources: PHASE_D.sources.slice(0, 1) };
+  };
+  const rest = await restOfCrafts(node, page);
+  expect(asked).toEqual([100, 200]);
+  expect(rest.crafts.map((entry) => entry.craft.slug)).toEqual(Array.from({ length: 130 }, (_, index) => `Craft-${index + 101}`));
+  expect(rest.sources.map((source) => source.id)).toEqual([PHASE_D.sources[0].id]);
+  await expect(restOfCrafts(node, async (offset) => ({ ...(await page(offset)), offset: 0 }))).rejects.toThrow("do not move past 100");
+  expect(joinedCrafts(every.slice(0, 2), every.slice(1, 3)).map((entry) => entry.craft.slug)).toEqual(["Craft-1", "Craft-2", "Craft-3"]);
 });
 
 test("every phase D block joins the answer's one numbering in the order the server lists its sources", () => {

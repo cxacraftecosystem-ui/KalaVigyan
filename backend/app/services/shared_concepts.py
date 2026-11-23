@@ -16,10 +16,12 @@ from app.research.offered_facts import OfferedFact
 from app.research.retrieval import OPEN_CHUNK_ACLS
 from app.research.shared_science import (
     SHARED_SCIENCE_NODES_MAX,
+    ConceptCraftsPage,
     SharedConcept,
     SharedScience,
     TermCraftOffer,
     TermOffer,
+    concept_crafts_page,
     shared_concept,
     shared_science,
 )
@@ -32,6 +34,7 @@ __all__ = [
     "SHARED_TERMS_SCANNED",
     "TermOffers",
     "craft_shared_science",
+    "shared_concept_crafts",
     "shared_concept_of",
     "term_ids_of",
     "term_offers",
@@ -59,13 +62,26 @@ async def craft_shared_science(
 async def shared_concept_of(
     session: AsyncSession, term_key: str, focus: Craft | None, *, acls: Sequence[str] = OPEN_CHUNK_ACLS
 ) -> SharedConcept | None:
-    term_ids = await term_ids_of(session, [term_key])
-    if not term_ids:
-        return None
-    found = await term_offers(session, term_ids, acls=acls)
-    if not found.offers:
+    found = await _term_offer(session, term_key, acls)
+    if found is None:
         return None
     return shared_concept(found.offers[0], found.sources, focus=focus.slug if focus is not None else None)
+
+
+async def shared_concept_crafts(
+    session: AsyncSession,
+    term_key: str,
+    focus: Craft | None,
+    *,
+    offset: int,
+    acls: Sequence[str] = OPEN_CHUNK_ACLS,
+) -> ConceptCraftsPage | None:
+    found = await _term_offer(session, term_key, acls)
+    if found is None:
+        return None
+    return concept_crafts_page(
+        found.offers[0], found.sources, focus=focus.slug if focus is not None else None, offset=offset
+    )
 
 
 async def term_ids_of(session: AsyncSession, keys: Sequence[str]) -> list[uuid.UUID]:
@@ -122,6 +138,14 @@ def _offer(
         surfaces=(term.label, *term.aliases, *term.localNames),
         crafts=tuple(entries),
     )
+
+
+async def _term_offer(session: AsyncSession, term_key: str, acls: Sequence[str]) -> TermOffers | None:
+    term_ids = await term_ids_of(session, [term_key])
+    if not term_ids:
+        return None
+    found = await term_offers(session, term_ids, acls=acls)
+    return found if found.offers else None
 
 
 async def _shared_term_ids(session: AsyncSession, craft_id: uuid.UUID) -> list[uuid.UUID]:

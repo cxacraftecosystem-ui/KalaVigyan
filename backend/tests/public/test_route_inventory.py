@@ -62,6 +62,7 @@ PUBLIC_ROUTES = {
     ("GET", "/api/public/summary"),
     ("GET", "/api/rivers/{main_riv}"),
     ("GET", "/api/shared-science/{term_key}"),
+    ("GET", "/api/shared-science/{term_key}/crafts"),
     ("GET", "/api/answers/languages"),
     ("GET", "/api/shared/answers/{token}"),
     ("GET", "/api/shared/answers/{token}/citations"),

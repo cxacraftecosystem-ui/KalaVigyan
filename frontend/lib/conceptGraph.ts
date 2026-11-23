@@ -1,6 +1,8 @@
 import type { CraftLink } from "@/lib/answerShapes";
 import type { ConceptCraft, ConceptNode } from "@/lib/explainerLearning";
 import { listText } from "@/lib/format";
+import type { ConceptCraftsPage } from "@/lib/sharedScienceContract";
+import type { SourceRef } from "@/lib/types";
 
 export const GRAPH_CRAFTS_MAX = 8;
 export const LIST_CRAFTS_START = 6;
@@ -8,6 +10,7 @@ export const LIST_CRAFTS_START = 6;
 export type GraphPoint = { x: number; y: number };
 export type GraphCraft = { entry: ConceptCraft; at: GraphPoint; focus: boolean };
 export type ConceptGraphLayout = { crafts: GraphCraft[]; more: { count: number; at: GraphPoint } | null };
+export type MoreCrafts = { crafts: ConceptCraft[]; sources: SourceRef[] };
 
 export const GRAPH_CENTRE: GraphPoint = { x: 50, y: 50 };
 const RADIUS_X = 34;
@@ -24,26 +27,60 @@ function round(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+export function nodeCraftCount(node: ConceptNode): number {
+  return Math.max(node.craftCount ?? 0, node.crafts.length);
+}
+
 export function graphLayout(node: ConceptNode, focus: CraftLink | null): ConceptGraphLayout {
-  const overflow = node.crafts.length > GRAPH_CRAFTS_MAX;
+  const total = nodeCraftCount(node);
+  const overflow = total > GRAPH_CRAFTS_MAX;
   const drawn = overflow ? node.crafts.slice(0, GRAPH_CRAFTS_MAX - 1) : node.crafts;
   const points = ringPoints(drawn.length + (overflow ? 1 : 0));
   return {
     crafts: drawn.map((entry, index) => ({ entry, at: points[index], focus: entry.craft.slug === focus?.slug })),
-    more: overflow ? { count: node.crafts.length - drawn.length, at: points[drawn.length] } : null
+    more: overflow ? { count: total - drawn.length, at: points[drawn.length] } : null
   };
 }
 
 export function graphSummary(node: ConceptNode): string {
-  return `${node.label} is shared by ${listText(node.crafts.map((entry) => entry.craft.name))}`;
+  const names = listText(node.crafts.map((entry) => entry.craft.name));
+  const total = nodeCraftCount(node);
+  return total > node.crafts.length ? `${node.label} is shared by ${total} crafts, among them ${names}` : `${node.label} is shared by ${names}`;
 }
 
 export function nodeChoiceLabel(node: ConceptNode): string {
-  return `${node.label} · ${node.crafts.length}`;
+  return `${node.label} · ${nodeCraftCount(node)}`;
 }
 
-export function shownCrafts(node: ConceptNode, all: boolean): ConceptCraft[] {
-  return all ? node.crafts : node.crafts.slice(0, LIST_CRAFTS_START);
+export function shownCrafts(crafts: readonly ConceptCraft[], all: boolean): ConceptCraft[] {
+  return all ? [...crafts] : crafts.slice(0, LIST_CRAFTS_START);
+}
+
+export function joinedCrafts(first: readonly ConceptCraft[], more: readonly ConceptCraft[]): ConceptCraft[] {
+  const seen = new Set(first.map((entry) => entry.craft.slug));
+  const joined = [...first];
+  for (const entry of more) {
+    if (seen.has(entry.craft.slug)) continue;
+    seen.add(entry.craft.slug);
+    joined.push(entry);
+  }
+  return joined;
+}
+
+export async function restOfCrafts(node: ConceptNode, page: (offset: number) => Promise<ConceptCraftsPage>): Promise<MoreCrafts> {
+  const crafts: ConceptCraft[] = [];
+  const sources = new Map<string, SourceRef>();
+  let offset = node.crafts.length;
+  let total = nodeCraftCount(node);
+  while (offset < total) {
+    const next = await page(offset);
+    if (next.offset !== offset || next.crafts.length === 0) throw new Error(`the crafts sharing ${node.termKey} do not move past ${offset}`);
+    crafts.push(...next.crafts);
+    next.sources.forEach((source) => sources.set(source.id, source));
+    offset += next.crafts.length;
+    total = next.craftCount;
+  }
+  return { crafts: joinedCrafts(node.crafts, crafts).slice(node.crafts.length), sources: [...sources.values()] };
 }
 
 export function chosenNode(nodes: readonly ConceptNode[], termKey: string | null): ConceptNode {

@@ -1353,7 +1353,9 @@ The routes around them (versions, saved explainers, lessons, exports, the explor
   (facet, term) once; no two cells of a row rest on one claim; facts only. A comparison answer has
   several crafts in `Understood.crafts`. **Piece:** never.
 - **`concept_graph`** `{focus: CraftRef?, nodes[ConceptNode] (1-8)}`, `ConceptNode {termKey,
-  label, crafts[ConceptCraft] (2-100)}`, `ConceptCraft {craft, conceptIds[] (1+), sentence}`. The
+  label, crafts[ConceptCraft] (2-100), craftCount?}`, `ConceptCraft {craft, conceptIds[] (1+),
+  sentence}`; `craftCount` (decision 0161) is how many crafts' own claims name the term, at least
+  the crafts listed, and is left out only by a node stored before it existed. The
   shared-science explorer's unit: a glossary term (`Term`) shared by at least two crafts
   (`TermCraft`), each craft with its own `Concept` rows of that term (`TermConcept`) and one cited
   fact-level claim on one of them that names the term (`named_in(label, sentence)`), linked to the

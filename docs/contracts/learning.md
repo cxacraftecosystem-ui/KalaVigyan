@@ -426,18 +426,28 @@ craft's own entry first in each node, the others by name. 404 for an
 unknown slug; a `MERGED` slug answers for its target. `GET /api/shared-science/{termKey}`
 (public) answers `SharedConcept {schemaVersion 1, node, sources}` for one term across every craft,
 the crafts by name, or with `?craft=<slug>` that craft first (404 when it does not share the
-term); 404 for an unknown term or one fewer than two crafts share. Sentence ids are
-`<termKey>.<n>`. Both routes quote only chunks the reader may read (decision 0079) and answer
+term); 404 for an unknown term or one fewer than two crafts share. Each node carries `craftCount`,
+how many crafts' own claims name the term, and lists the first 100 of them; `GET
+/api/shared-science/{termKey}/crafts?craft=&offset=` (public, decision 0161) pages on in the same
+order: `ConceptCraftsPage {schemaVersion 1, termKey, label, craftCount, offset, crafts[ConceptCraft]
+(1-100), sources}` from `offset` (0 or more), its sentences numbered on from the node's; 404 for an
+unknown term, one fewer than two crafts share, a focus craft that does not share it or an offset at
+or past `craftCount`, 422 for a negative offset. Sentence ids are `<termKey>.<n>`. The routes quote
+only chunks the reader may read (decision 0079) and answer
 `Cache-Control: private, no-cache` with a token and `public, max-age=300` without, with
 `Vary: Authorization` and an `ETag` of the body that a matching `If-None-Match` turns into a 304.
 Fixture:
 `shared/learning.shared-science.golden.json` (`craft` for Kutch Ajrakh, `concept` for alum seen
-from Kutch Ajrakh), the nodes of the phase D concept graph.
+from Kutch Ajrakh, `crafts` the page of alum's crafts from offset 2), the nodes of the phase D
+concept graph.
 
 The craft page drew the craft route as its Shared science tab (decision 0070) until the tabbed
 craft screen and `components/craft/CraftSharedScience.tsx` were retired (round 6); the atlas's
-search reads the concept route (`lib/atlasSearch.ts`). The craft route's nodes already list every
-sharing craft the term route lists, so a view of them needs no second read.
+search reads the concept route (`lib/atlasSearch.ts`) and says how many crafts name the term from
+its `craftCount`. A concept graph's Show all N (`components/answer/learning/useConceptCrafts.ts`,
+`lib/conceptGraph.restOfCrafts`) counts N from `craftCount`, reads every later page of the crafts
+route in order when the node lists fewer, refuses a page that does not move on, and numbers the
+pages' sources after the answer's own.
 
 **As built (decision 0064, `services/shared_concepts.py`, `research/shared_science.py`).** Read
 on the request's one session, no model call. Both routes read the stored per-term summary
@@ -454,9 +464,10 @@ through `knowledge_view.claims_by_id` with the reader's chunks. A craft's senten
 those claims that still name the label in what the reader may read (`blocks.named_in`): the
 strongest level, then the most reliable source, then the most distinct sources, then the text
 (`offered_facts.fact_rank`). Limits: the craft route looks at the first `SHARED_TERMS_SCANNED`
-(48) of its stored shared terms by label and keeps at most 24 nodes; a node shows at most
+(48) of its stored shared terms by label and keeps at most 24 nodes; a node lists at most
 `CONCEPT_CRAFTS_MAX` (100) crafts (the focus craft first, then by name), chosen among every
-stored craft. A craft with no such claim has no edge; a term left with fewer than two crafts is
+stored craft, and counts them all; a page of the crafts route holds at most 100
+(`research/shared_science.concept_crafts_page`). A craft with no such claim has no edge; a term left with fewer than two crafts is
 no node.
 
 ## Quiz of an explainer (decision 0064)

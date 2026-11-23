@@ -6,6 +6,7 @@ from pydantic import ValidationError
 
 from app.research.citation_export import CitationExport
 from app.research.datasets import BOUNDARY_CAPTION
+from app.research.shared_science import ConceptCraftsPage
 from app.schemas.district_crafts import DistrictCrafts
 
 from .golden import golden_json, reproduces
@@ -116,6 +117,25 @@ def test_shared_science_is_the_concept_graph_s_nodes_for_the_craft() -> None:
             f"{node.term_key}.{n}" for n in range(1, len(node.crafts) + 1)
         ]
     assert fixture.concept.node == fixture.craft.nodes[0]
+    assert [node.craft_count for node in fixture.craft.nodes] == [
+        len(node.crafts) for node in fixture.craft.nodes
+    ]
+
+
+def test_a_page_of_a_node_s_crafts_continues_its_order_and_its_sentence_numbers() -> None:
+    fixture = SharedScienceFixture.model_validate(learning(SHARED_SCIENCE))
+    page, node = fixture.crafts, fixture.craft.nodes[0]
+    assert (page.term_key, page.craft_count, page.offset) == (node.term_key, node.craft_count, 2)
+    assert page.crafts == node.crafts[2:4]
+    assert [entry.sentence.id for entry in page.crafts] == ["alum.3", "alum.4"]
+    payload = copy.deepcopy(learning(SHARED_SCIENCE))["crafts"]
+    payload["offset"] = 3
+    with pytest.raises(ValidationError, match="ends within the crafts it counts"):
+        ConceptCraftsPage.model_validate(payload)
+    payload = copy.deepcopy(learning(SHARED_SCIENCE))["crafts"]
+    payload["sources"].reverse()
+    with pytest.raises(ValidationError, match="every cited source once"):
+        ConceptCraftsPage.model_validate(payload)
 
 
 def test_a_tapped_district_lists_its_cited_crafts_and_the_land_s_stored_story() -> None:

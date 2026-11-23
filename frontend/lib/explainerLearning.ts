@@ -8,7 +8,7 @@ import {
   type Discipline,
   type ExplainerSentence
 } from "@/lib/explainerBlockBase";
-import { integer, list, nullable, object, oneOf, text, type Shape } from "@/lib/shape";
+import { integer, list, nullable, object, oneOf, optional, positive, text, type Shape } from "@/lib/shape";
 
 export const QUIZ_BLANK = "_____";
 
@@ -20,7 +20,7 @@ export type CompareCell = { sentence: ExplainerSentence; pieceId: string | null 
 export type CompareRow = { facet: Discipline; term: CompareTerm | null; cells: (CompareCell | null)[] };
 export type CompareBlock = BlockEnvelope<"compare"> & { crafts: CraftLink[]; rows: CompareRow[] };
 export type ConceptCraft = { craft: CraftLink; conceptIds: string[]; sentence: ExplainerSentence };
-export type ConceptNode = { termKey: string; label: string; crafts: ConceptCraft[] };
+export type ConceptNode = { termKey: string; label: string; crafts: ConceptCraft[]; craftCount?: number };
 export type ConceptGraphBlock = BlockEnvelope<"concept_graph"> & { focus: CraftLink | null; nodes: ConceptNode[] };
 
 const quizOptionShape: Shape<QuizOption> = object<QuizOption>({ termKey: TERM_KEY, text, sentence: explainerSentenceShape });
@@ -43,10 +43,13 @@ export const compareBlockShape: Shape<CompareBlock> = object<CompareBlock>({
   )
 });
 
+export const conceptCraftShape: Shape<ConceptCraft> = object<ConceptCraft>({ craft: craftLinkShape, conceptIds: list(UUID, 1), sentence: explainerSentenceShape });
+
 export const conceptNodeShape: Shape<ConceptNode> = object<ConceptNode>({
   termKey: TERM_KEY,
   label: text,
-  crafts: list(object<ConceptCraft>({ craft: craftLinkShape, conceptIds: list(UUID, 1), sentence: explainerSentenceShape }), 2)
+  crafts: list(conceptCraftShape, 2),
+  craftCount: optional(positive)
 });
 
 export const conceptGraphBlockShape: Shape<ConceptGraphBlock> = object<ConceptGraphBlock>({
