@@ -1156,7 +1156,7 @@ composed sentence, cited(claim_ids), process(slug) -> science.records.ProcessRec
 finish(answer_id, *, asked_at, plans: AnswerPlans, claim_ids, explainer: Explainer | None,
 steps),
 latest(explainer_id, user_id) -> the latest stored version (a follow-up that lost its version
-merges again onto it, `services/version_race`)}`, the reads
+merges again onto it, `services/version_race`), stop(request_id)}`, the reads
 returning `answer_events.CitedClaims {views, sources}`. Every answer runs under a request id
 (`core/logging.kept_request_id`: the HTTP request's, the rebuild's or evaluation's tag, else
 `answer-<id>`, decision 0146). `begin` writes the `Answer` row (its understanding, the depth's
@@ -1170,7 +1170,12 @@ rows, and one `AnswerTrace` row per `status`, `trail` and `paced` event the stre
 its milliseconds since the stream opened (`services/answer_rows`, `services/answer_steps`,
 decision 0146), and, when a section is ready, the explainer document in
 `Answer.payload.explainer` (`answer_store.EXPLAINER_PAYLOAD_KEY`); each runs on
-`core/shielded.ShieldedWork`.
+`core/shielded.ShieldedWork`. An answer that stops before `finish` (the learner's stream closed,
+its research failed, its version lost) is marked `stop(request_id)`: the request's rows with no
+`latencyMs` get `Answer.stoppedAt` (`answer_stops.stopped_unless_finished`, decision 0167), and
+`finish` clears it. A stopped row keeps its cost (the nightly upkeep still settles it) but never
+an explainer, so the history leaves it out, and the open-work demand and the piece rebuild's
+asks do not count it.
 `answer_store.build_answer_pipeline(sessions=, index=, live=, models=, embed=, shield=)` wires the
 `ModelUnderstander` over the database resolver and `models.understand`, `ResearchPlanner` over `retrieval.hybrid.SessionScopedSearch` and the process-held
 `live_sources.LiveSourcesStore` (rebuilt every `LIVE_SOURCES_TTL_SECONDS` 600 on one HTTP client),

@@ -81,6 +81,7 @@ class Answer(SharedByLink, Base):
     requestId: Mapped[str | None] = mapped_column(String(REQUEST_ID_MAX_CHARS))
     route: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     staleSince: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    stoppedAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     explainerId: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("Answer.id", ondelete="CASCADE")
     )

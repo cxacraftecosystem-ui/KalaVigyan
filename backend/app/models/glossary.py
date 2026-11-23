@@ -18,6 +18,7 @@ class Term(Base):
     id: Mapped[uuid.UUID] = uuid_pk()
     key: Mapped[str] = mapped_column(String(TERM_TEXT_COLUMN_CHARS), nullable=False, unique=True)
     label: Mapped[str] = mapped_column(String(TERM_TEXT_COLUMN_CHARS), nullable=False)
+    sentenceName: Mapped[str | None] = mapped_column(String(TERM_TEXT_COLUMN_CHARS))
     meaning: Mapped[str | None] = mapped_column(Text)
     localNames: Mapped[list[str]] = mapped_column(
         ARRAY(Text), nullable=False, server_default=text("ARRAY[]::text[]")

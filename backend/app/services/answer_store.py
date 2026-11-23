@@ -136,6 +136,9 @@ class SqlAnswerStore:
             self._finished(answer_id, kept, stored, asked_at=asked_at), name="answer record"
         )
 
+    async def stop(self, request_id: str) -> None:
+        await self._shield.run(self._stopped(request_id), name="answer record")
+
     async def process(self, craft_slug: str) -> ProcessRecords | None:
         async with self._sessions() as session:
             craft = await knowledge_view.resolve_craft(session, craft_slug)
@@ -204,6 +207,15 @@ class SqlAnswerStore:
             mark = stored.version
             raise StaleVersion(mark.explainer_id, mark.version - 1, mark.version) from error
 
+    async def _stopped(self, request_id: str) -> None:
+        async with self._sessions() as session:
+            await session.execute(
+                update(Answer)
+                .where(Answer.requestId == request_id, Answer.latencyMs.is_(None), Answer.stoppedAt.is_(None))
+                .values(stoppedAt=datetime.now(UTC))
+            )
+            await session.commit()
+
     async def cited(self, claim_ids: Iterable[uuid.UUID]) -> CitedClaims:
         async with self._sessions() as session:
             views, sources = await knowledge_view.claims_by_id(session, claim_ids, acls=EVERY_CHUNK_ACLS)
@@ -226,6 +238,7 @@ class _Kept:
             ),
             "claimIds": list(self.claim_ids),
             "tiersUsed": list(tiers),
+            "stoppedAt": None,
         }
         if plans.sections:
             values["mode"] = plans.sections[0].plan.mode
