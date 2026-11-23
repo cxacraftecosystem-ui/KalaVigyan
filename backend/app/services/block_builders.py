@@ -121,6 +121,7 @@ BLOCK_BUILDERS: tuple[BuilderEntry, ...] = (
         RegionStoryBuilder,
         REGION_STORY_WAIT_SECONDS,
         rebuilt_on_reuse=True,
+        places_pieces=True,
     ),
     BuilderEntry("map_layer", frozenset({"GEOLOGY", "CLIMATE"}), MapLayerBuilder, rebuilt_on_reuse=True),
     BuilderEntry("seasons", SEASONS_FIELDS, SeasonsBuilder, prefers="CLIMATE"),

@@ -4,18 +4,25 @@ import json
 import uuid
 from collections.abc import AsyncIterator, Mapping, Sequence
 from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
+from types import SimpleNamespace
 from typing import Any
+
+import pytest
 
 from app.geo.river_trace import DistrictHit, ReachLink, districts_in_path_order, river_trace, traced_reach_ids
 from app.research.blocks import ExplainerSentence, ProseBlock
 from app.research.blocks_place import DistrictRef
 from app.research.datasets import DatasetRef
+from app.research.piece_reuse import ClaimState
 from app.research.planning import PlanRequest
 from app.research.rivers import RiverTrace
 from app.research.sections import SectionSpec
+from app.services import place_builders
 from app.services.answer_events import CitedClaims
 from app.services.builder_interface import BuildAsk, BuilderTools
 from app.services.knowledge_view import ClaimView
+from app.services.place_claims import PlaceClaims
 from app.services.region_story import LayerOffer, OfferedRiver, RegionOffer
 
 from ..contracts.phase_b_golden import phase_b, phase_b_blocks
@@ -126,6 +133,52 @@ def place_ask(discipline: str = "GEOGRAPHY", *, craft: bool = True, section_id: 
 @asynccontextmanager
 async def no_session() -> AsyncIterator[None]:
     yield None
+
+
+def visible(*pieces: Any) -> dict[uuid.UUID, ClaimState]:
+    found: dict[uuid.UUID, ClaimState] = {}
+    for piece in pieces:
+        for citation in piece.payload.citations():
+            claim = uuid.UUID(citation.claim_id)
+            held = found.get(claim, ClaimState(citation.level, frozenset()))
+            found[claim] = ClaimState(citation.level, held.citation_ids | {citation.id})
+    return found
+
+
+@dataclass
+class StoryReads:
+    stories: list[Any] = field(default_factory=list)
+    states: dict[uuid.UUID, Any] = field(default_factory=dict)
+    cited: CitedClaims = field(default_factory=CitedClaims)
+    place: PlaceClaims = field(default_factory=PlaceClaims)
+    asked: list[dict[str, Any]] = field(default_factory=list)
+
+
+def patch_story_reads(monkeypatch: pytest.MonkeyPatch, reads: StoryReads | None = None) -> StoryReads:
+    found = reads or StoryReads()
+
+    async def craft(session: Any, slug: str) -> Any:
+        return SimpleNamespace(id=uuid.UUID(int=7), slug=slug)
+
+    async def stories(session: Any, craft: Any, facets: Sequence[str]) -> list[Any]:
+        found.asked.append({"stories": list(facets)})
+        return list(found.stories)
+
+    async def states(session: Any, pieces: Any, **_kwargs: Any) -> tuple[dict[uuid.UUID, Any], CitedClaims]:
+        return found.states, found.cited
+
+    async def place(session: Any, craft: Any, districts: Sequence[DistrictRef], ask: Any) -> PlaceClaims:
+        found.asked.append({"districts": [d.district_lgd for d in districts], "held": list(ask.held)})
+        return found.place
+
+    for name, fake in (
+        ("resolve_craft", craft),
+        ("region_story_pieces", stories),
+        ("claim_states", states),
+        ("district_place_claims", place),
+    ):
+        monkeypatch.setattr(place_builders, name, fake)
+    return found
 
 
 def story_model(*replies: Mapping[str, Any]) -> FakeModel:

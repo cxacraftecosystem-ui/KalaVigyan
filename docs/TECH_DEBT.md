@@ -645,27 +645,6 @@ Last reviewed: 2026-11-22.
 
 ## Region story and map layers (decision 0044)
 
-### A researched geography section rebuilds a stored story
-
-- **What:** a stored region story is reused only together with its facet's reused section; a
-  researched geography section (a new craft in the same district, or a stale craft set) makes one
-  plan-model call for a new story, which supersedes the stored one of its basin, even when the
-  stored story still passes the reuse rule.
-- **Why left:** the registry refuses a builder block with a reuse mark (decision 0042 point 9), and
-  a stored block shown without its mark would hide that it is earlier research.
-- **Clears it:** a registry path that places a reusable stored piece with its mark (the entry names
-  the piece slot it reads), so the builder spends nothing when a current story exists.
-
-### Story steps are only the section's own claims
-
-- **What:** steps are chosen from the fact-level stored claims the section's checked blocks cite
-  (at most 12), so a story never adds a stored place or water claim the prose did not use, and its
-  steps repeat sentences of the section's prose.
-- **Why left:** those claims are already checked and cited for this question; searching place
-  claims per district is a retrieval change.
-- **Clears it:** an offer of the district's stored place claims (by `CraftLocation` district and
-  the GEOGRAPHY concept headings) beside the section's, ranked by the question.
-
 ### Map layer subjects are a fixed English word list
 
 - **What:** `geo/section_layers.LAYER_SUBJECTS` picks a section's layer by whole English words in

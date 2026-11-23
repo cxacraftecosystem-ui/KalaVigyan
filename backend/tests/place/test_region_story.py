@@ -1,6 +1,8 @@
 import dataclasses
 import logging
-from collections.abc import Sequence
+import uuid
+from collections.abc import Iterable, Sequence
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -10,18 +12,25 @@ from app.composer.region_story import StoryChoice, StoryStepChoice
 from app.core.errors import ExternalFailure
 from app.research import explainer
 from app.research.blocks_place import RegionStoryBlock
+from app.research.citations import Citation
 from app.research.datasets import BOUNDARY_DATASET_CODE, DatasetRef
+from app.research.knowledge_pieces import KnowledgePiece, PieceSlot, knowledge_piece, piece_slot
 from app.research.rivers import HYDRORIVERS_DATASET_CODE
 from app.research.structured import schema_problems
+from app.science.records import KnownClaim
 from app.services import place_builders
-from app.services.block_builders import BLOCK_BUILDERS
+from app.services.answer_events import CitedClaims
+from app.services.block_builders import BLOCK_BUILDERS, BlockBuilders
 from app.services.chapter_why import story_choice
-from app.services.place_builders import RegionStoryBuilder
+from app.services.place_builders import RegionStoryBuilder, with_place_claims
+from app.services.place_claims import PlaceClaims
 from app.services.region_story import RegionOffer, region_story_block, story_statements
 
+from ..contracts.phase_b_golden import phase_b
 from .fixtures import (
     GOLDEN_REPLY,
     KACHCHH,
+    StoryReads,
     cited_water,
     codes,
     dataset_rows,
@@ -29,12 +38,17 @@ from .fixtures import (
     golden_story,
     kachchh_offer,
     kachchh_ref,
+    patch_story_reads,
     place_ask,
     place_tools,
     story_model,
+    visible,
 )
 
 BLOCK_ID = "s1.region"
+KEPT_AT = datetime(2026, 11, 17, 9, 0, tzinfo=UTC)
+KACHCHH_TEXT = "In Kachchh, printers drew water from wells near Dhamadka."
+KACHCHH_QUOTE = "printers drew water from wells near Dhamadka in Kachchh"
 
 
 @pytest.fixture
@@ -50,6 +64,7 @@ def stored(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
 
     monkeypatch.setattr(place_builders, "rivers_loaded", loaded)
     monkeypatch.setattr(place_builders, "region_offer", offer)
+    found["reads"] = patch_story_reads(monkeypatch, StoryReads())
     return found
 
 
@@ -249,3 +264,83 @@ def test_a_page_story_over_many_places_and_factors_stays_within_the_choice_s_lim
     choice = story_choice(steps, layers)
     assert (len(choice.steps), len(choice.layers)) == (20, 10)
     assert (choice.steps, choice.layers) == (steps[:20], layers[:10])
+
+
+def stored_story(*, depth: str = "EXPERT") -> KnowledgePiece:
+    block = RegionStoryBlock.model_validate(golden_story())
+    slot = PieceSlot(None, "GEOGRAPHY", f"water:lgd-{KACHCHH}", depth)
+    return knowledge_piece(
+        block,
+        piece_slot(block, slot),
+        piece_id=uuid.UUID(int=41),
+        answer_id=uuid.UUID(int=42),
+        created_at=KEPT_AT,
+    )
+
+
+def golden_sources(source_ids: Iterable[str]) -> dict[str, dict[str, Any]]:
+    sources = {source["id"]: source for source in phase_b()["sources"]}
+    return {source_id: sources[source_id] for source_id in source_ids}
+
+
+async def test_a_current_stored_story_is_placed_with_its_mark_and_asks_no_model(
+    stored: dict[str, Any],
+) -> None:
+    piece = stored_story()
+    reads = stored["reads"]
+    reads.stories, reads.states = [piece], visible(piece)
+    reads.cited = CitedClaims(sources=golden_sources(piece.payload.cited_source_ids()))
+    model = story_model()
+    built = await RegionStoryBuilder(place_tools(model)).build(place_ask())
+    (block,) = built.blocks
+    assert (block.id, block.reuse.piece_id, block.reuse.stored_at) == (BLOCK_ID, piece.id, KEPT_AT)
+    assert block.steps == piece.payload.steps
+    assert model.calls == [] and stored["asked"] == []
+    assert sorted(built.sources) == sorted(set(piece.payload.cited_source_ids()))
+    (entry,) = [entry for entry in BLOCK_BUILDERS if entry.kind == "region_story"]
+    added = await BlockBuilders([(entry, RegionStoryBuilder(place_tools(story_model())))]).added(place_ask())
+    assert [(block.kind, block.reuse.piece_id) for block in added.blocks] == [("region_story", piece.id)]
+
+
+async def test_a_stored_story_that_fails_the_reuse_rule_is_told_again(stored: dict[str, Any]) -> None:
+    piece = stored_story(depth="BASIC")
+    reads = stored["reads"]
+    reads.stories, reads.states = [piece], visible(piece)
+    model = story_model()
+    built = await RegionStoryBuilder(place_tools(model)).build(place_ask())
+    (block,) = built.blocks
+    assert block.reuse is None and len(model.calls) == 1
+    assert reads.asked[0] == {"stories": ["GEOGRAPHY"]}
+
+
+def place_fact() -> KnownClaim:
+    first = golden_story()["steps"][0]["sentence"]["citations"][0]
+    citation = Citation.model_validate(
+        {**first, "id": str(uuid.UUID(int=98)), "claimId": str(uuid.UUID(int=99)), "quote": KACHCHH_QUOTE}
+    )
+    return KnownClaim(uuid.UUID(int=99), KACHCHH_TEXT, "PROVISIONAL", (citation,))
+
+
+async def test_the_district_s_place_claims_are_offered_after_the_section_s(stored: dict[str, Any]) -> None:
+    fact = place_fact()
+    source_id = fact.citations[0].source_id
+    reads = stored["reads"]
+    reads.place = PlaceClaims((fact,), golden_sources([source_id]))
+    model = story_model(reply(steps=[{"claim": "c5", "district": f"d{KACHCHH}"}]))
+    built = await RegionStoryBuilder(place_tools(model)).build(place_ask())
+    (block,) = built.blocks
+    assert [(step.district_lgd, step.sentence.text) for step in block.steps] == [(KACHCHH, KACHCHH_TEXT)]
+    assert built.sources == golden_sources([source_id])
+    (call,) = model.calls
+    assert call["user"].count('label="statement">') == 5
+    assert f'<untrusted_source ref="c5" label="statement">\n{KACHCHH_TEXT}' in call["user"]
+    held = [claim.id for claim in story_statements(place_ask().blocks, cited_water()).values()]
+    assert reads.asked[-1] == {"districts": [KACHCHH], "held": held}
+
+
+def test_place_claims_join_the_statements_once_each_after_the_section_s() -> None:
+    section = story_statements(place_ask().blocks, cited_water())
+    fact = place_fact()
+    joined = with_place_claims(section, (fact, section["c2"], fact))
+    assert list(joined) == ["c1", "c2", "c3", "c4", "c5"]
+    assert joined["c5"] == fact

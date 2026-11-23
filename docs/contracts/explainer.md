@@ -578,7 +578,13 @@ Registered in `BLOCK_BUILDERS` from `services/place_builders.py`; an answer for 
 craft with no cited district that has a polygon (`place_offers.mapped_districts`, the region
 route's district places), gets neither.
 
-- **`region_story`** (`GEOGRAPHY`, 20 s). Nothing until the river lines are loaded
+- **`region_story`** (`GEOGRAPHY`, 20 s). A current stored story comes first: the session reads
+  the craft-less stories keyed by a basin crossing the craft's districts or told over exactly
+  those districts (`region_pieces.region_story_pieces`), and the newest that passes the reuse rule
+  as a craft-less piece at the asked depth (`piece_reuse.usable_region_stories`, its claims' states
+  read through `piece_lookup.claim_states`) is placed with its reuse mark
+  (`knowledge_pieces.placed_block`, the registry entry's `places_pieces`), with no model call and no
+  river read (decision 0160). Otherwise nothing until the river lines are loaded
   (`river_store.rivers_loaded`; logged once per answer). One short session reads the offer
   (`place_offers.region_offer`): the craft's districts; at most 3 rivers crossing them, first those
   of the river names datasets whose names the statements name (`stated_crossings`, decision 0153),
@@ -590,8 +596,12 @@ route's district places), gets neither.
   dataset rows. Then one plan-model call (`composer/region_story`, every river, district, layer
   and statement in its own untrusted block) answers refs: a river or `none`, at most 8 steps
   `{claim, district | none}` and at most 4 layers. The statements are the fact-level stored claims
-  the section's blocks cite, in order of first citation, at most 12, each a step as stored with
-  its visible citations; an unknown claim ref drops its step, a district the story does not list
+  the section's blocks cite, in order of first citation, at most 12, then at most 6
+  (`place_claims.PLACE_CLAIMS_MAX`) of the craft's stored claims under its place headings
+  (`ENVIRONMENTAL_CONDITION`, the `GEOGRAPHY` concept type), those naming a craft district (by its
+  register or other name, in the text or a quote) first, then by the question's lexical rank, none
+  the section already cites (`place_claims.district_place_claims`, decision 0160), each a step as
+  stored with its visible citations, the place claims' sources returned with the block; an unknown claim ref drops its step, a district the story does not list
   or the step's sentence and quotes do not name leaves the step unplaced (shown as "Step n" with no
   map focus, decision 0050), an unoffered layer or one whose dataset row is missing is left out.
   `datasets` is `DR_DISTRICT_SHAPES` (no row, no story), `HYDRORIVERS_1_0` with a river (no row,
