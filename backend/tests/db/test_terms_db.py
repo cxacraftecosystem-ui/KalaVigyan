@@ -171,7 +171,7 @@ async def test_a_term_whose_defining_claim_left_is_read_from_the_curated_facts_n
     craft_id = await session.scalar(select(Craft.id).where(Craft.slug == "Kutch-Ajrakh"))
     await session.execute(
         insert(CuratedClaim)
-        .values(claimId=chosen, craftId=craft_id, key="test-kut-named", discipline="MATERIALS")
+        .values(claimId=chosen, craftId=craft_id, key="kutnamed", discipline="MATERIALS")
         .on_conflict_do_nothing()
     )
     await session.execute(update(Claim).where(Claim.id == KUT_CLAIM).values(status="SUPERSEDED"))
