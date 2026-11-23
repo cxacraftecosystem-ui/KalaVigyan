@@ -1,0 +1,47 @@
+{
+  "type": "images",
+  "query": {"original": "ajrakh block printing", "spellcheck_off": true},
+  "results": [
+    {
+      "type": "image_result",
+      "title": "Ajrakh printing at Dhamadka",
+      "url": "https://www.dsource.in/resource/ajrakh/making",
+      "source": "dsource.in",
+      "page_fetched": "2026-10-02T08:11:00Z",
+      "thumbnail": {"src": "https://imgs.search.brave.com/synthetic-thumbnail-1"},
+      "properties": {
+        "url": "https://www.dsource.in/sites/default/files/ajrakh-1.jpg",
+        "placeholder": "https://imgs.search.brave.com/synthetic-placeholder-1",
+        "width": 1200,
+        "height": 800
+      },
+      "meta_url": {"scheme": "https", "netloc": "dsource.in", "hostname": "www.dsource.in", "path": "› resource › ajrakh"},
+      "confidence": "high"
+    },
+    {
+      "type": "image_result",
+      "title": "Ajrakh stole",
+      "url": "https://store.example.com/ajrakh-stole",
+      "source": "store.example.com",
+      "thumbnail": {"src": "https://imgs.search.brave.com/synthetic-thumbnail-2"},
+      "properties": {"url": "https://images.cdn-example.net/stole.jpg", "width": 600, "height": 600},
+      "confidence": "medium"
+    },
+    {
+      "type": "image_result",
+      "title": "Ajrakh blocks",
+      "url": "https://www.example.org/ajrakh-blocks",
+      "thumbnail": {"src": "https://imgs.search.brave.com/synthetic-thumbnail-3"},
+      "confidence": "low"
+    },
+    {
+      "type": "image_result",
+      "title": "Ajrakh: cloth resist-printed and dyed",
+      "url": "https://www.vam.ac.uk/articles/ajrakh",
+      "source": "vam.ac.uk",
+      "thumbnail": {"src": "https://imgs.search.brave.com/synthetic-thumbnail-4"},
+      "properties": {"url": "https://media.vam.ac.uk/media/thira/ajrakh.jpg"},
+      "confidence": "high"
+    }
+  ]
+}

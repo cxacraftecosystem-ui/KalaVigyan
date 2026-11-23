@@ -4,7 +4,7 @@ import asyncio
 import logging
 import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Self
 
 from app.research.blocks import BlockBase, ImagesBlock
@@ -23,6 +23,8 @@ __all__ = [
     "GlossaryOf",
     "PictureSearches",
     "PicturesOf",
+    "no_pictures",
+    "without_pictures",
 ]
 
 logger = logging.getLogger(__name__)
@@ -53,6 +55,14 @@ class EnrichmentTools:
                 "the glossary of %s was not read; sentences carry no terms", craft.slug, exc_info=True
             )
             return ()
+
+
+async def no_pictures(ask: SectionImagesAsk) -> ImagesBlock | None:
+    return None
+
+
+def without_pictures(tools: EnrichmentTools) -> EnrichmentTools:
+    return replace(tools, pictures=no_pictures)
 
 
 @dataclass(frozen=True)

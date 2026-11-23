@@ -11,12 +11,20 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.errors import ExternalFailure
 from app.research.blocks import ImageItem, ImagesBlock
-from app.research.image_relevance import ChosenImage, ClaimText, choose_images, topic_words
+from app.research.image_relevance import (
+    CLAIMS_PER_IMAGE_MAX,
+    SECTION_IMAGES_MAX,
+    SECTION_LINK_CARDS_MAX,
+    ChosenImage,
+    ClaimText,
+    choose_images,
+    topic_words,
+)
 from app.research.images import ImageCandidate, ImageQuery, ImageSource
 from app.research.media_refs import MediaRef
 
 from .live_sources import LiveSourcesStore
-from .media_ref_store import TEXT_RELEVANCE, SqlMediaStore
+from .media_ref_store import INLINE_DISPLAY, TEXT_RELEVANCE, SqlMediaStore, StoredPicture
 from .picture_sites import blocked_picture
 
 __all__ = [
@@ -30,16 +38,20 @@ __all__ = [
     "searched_images",
     "section_images",
     "shown_candidates",
+    "stored_items",
 ]
 
 logger = logging.getLogger(__name__)
 
 CANDIDATES_PER_SOURCE = 10
 IMAGE_SEARCH_SECONDS = 6.0
+VISION_RELEVANCE = "VISION"
 
 
 class MediaStore(Protocol):
     async def claim_texts(self, claim_ids: Sequence[uuid.UUID]) -> list[ClaimText]: ...
+
+    async def stored(self, claim_ids: Sequence[uuid.UUID]) -> list[StoredPicture]: ...
 
     async def keep(self, chosen: Sequence[ChosenImage]) -> list[MediaRef]: ...
 
@@ -62,6 +74,9 @@ class SectionImages:
         claims = await self.store.claim_texts(ask.claim_ids)
         if not claims:
             return None
+        stored = stored_items(await self.store.stored([claim.claim_id for claim in claims]))
+        if stored:
+            return ImagesBlock(id=ask.block_id, kind="images", version=1, reuse=None, items=stored)
         named = ask.craft_name or ""
         texts = search_texts(ask, claims)
         found = await asyncio.gather(*(self._candidates(source, texts) for source in self.sources))
@@ -110,6 +125,33 @@ def shown_candidates(candidates: Iterable[ImageCandidate]) -> list[ImageCandidat
     return kept
 
 
+def stored_items(pictures: Iterable[StoredPicture]) -> list[ImageItem]:
+    linked: dict[uuid.UUID, list[StoredPicture]] = {}
+    for picture in pictures:
+        media = picture.media
+        if blocked_picture(page_url=media.page_url, image_url=media.image_url, title=media.title):
+            continue
+        linked.setdefault(media.id, []).append(picture)
+    ordered = sorted(linked.values(), key=lambda links: links[0].media.display != INLINE_DISPLAY)
+    items: list[ImageItem] = []
+    cards = 0
+    for links in ordered:
+        card = links[0].media.display != INLINE_DISPLAY
+        if card and cards >= SECTION_LINK_CARDS_MAX:
+            continue
+        cards += card
+        items.append(_stored_item(links))
+    return items[:SECTION_IMAGES_MAX]
+
+
+def _stored_item(links: Sequence[StoredPicture]) -> ImageItem:
+    shown = list(dict.fromkeys(link.claim_id for link in links))[:CLAIMS_PER_IMAGE_MAX]
+    seen = all(link.relevance == VISION_RELEVANCE for link in links if link.claim_id in shown)
+    return ImageItem(
+        media=links[0].media, claim_ids=shown, relevance=VISION_RELEVANCE if seen else TEXT_RELEVANCE
+    )
+
+
 def search_texts(ask: SectionImagesAsk, claims: Sequence[ClaimText]) -> tuple[str, ...]:
     named = ask.craft_name or ""
     if ask.topic:
@@ -123,4 +165,4 @@ def image_search_text(craft_name: str, claims: Sequence[ClaimText]) -> str:
 
 
 async def section_images(sessions: async_sessionmaker[AsyncSession], live: LiveSourcesStore) -> SectionImages:
-    return SectionImages(sources=await live.images(), store=SqlMediaStore(sessions))
+    return SectionImages(sources=await live.web_images(sessions), store=SqlMediaStore(sessions))

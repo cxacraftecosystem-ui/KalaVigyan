@@ -11,7 +11,7 @@ from app.models import Claim, MediaRef, MediaRefClaim
 from app.research.image_relevance import ChosenImage, Illustration
 from app.research.images import ImageCandidate
 from app.services.claim_seed import seed_id
-from app.services.media_ref_store import SqlMediaStore, media_ref_id, media_url_key
+from app.services.media_ref_store import SqlMediaStore, media_ref_id, media_url_key, stored_pictures
 
 pytestmark = pytest.mark.db
 
@@ -83,3 +83,14 @@ async def test_only_visible_claims_are_illustrated(session: AsyncSession) -> Non
     assert found[0].text.startswith("Kut is made from jaggery or molasses")
     await session.execute(update(Claim).where(Claim.id == KUT_CLAIM).values(status="RETRACTED"))
     assert await store.claim_texts([KUT_CLAIM]) == []
+
+
+async def test_a_stored_link_card_is_read_back_for_its_claim_but_not_as_an_inline_picture(
+    session: AsyncSession,
+) -> None:
+    store = store_for(session)
+    kept = (await store.keep([vam_card()]))[0]
+    read = await store.stored([KUT_CLAIM, uuid.uuid4()])
+    assert (kept.id, KUT_CLAIM, "TEXT") in [(p.media.id, p.claim_id, p.relevance) for p in read]
+    assert {picture.claim_id for picture in read} == {KUT_CLAIM}
+    assert kept.id not in {picture.media.id for picture in await stored_pictures(session, [KUT_CLAIM])}

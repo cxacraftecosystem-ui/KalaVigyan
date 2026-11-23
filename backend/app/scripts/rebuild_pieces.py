@@ -1,6 +1,6 @@
 import asyncio
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
@@ -27,6 +27,7 @@ from app.services.piece_rebuild import (
     run_piece_rebuild,
     stale_groups,
 )
+from app.services.section_enrichment import without_pictures
 
 
 @dataclass(eq=False)
@@ -51,7 +52,7 @@ def rebuild_pipeline(
     spend = DayHeldSpend(depth=depth, day_left_usd=day_left_usd)
     principal = Principal(answer=spend)
     optional = Principal(answer=spend.headroom())
-    return build_answer_pipeline(
+    pipeline = build_answer_pipeline(
         sessions=sessions,
         index=index,
         live=live,
@@ -59,6 +60,7 @@ def rebuild_pipeline(
         embed=router_embedder(principal),
         shield=shield,
     )
+    return replace(pipeline, enrichment=without_pictures(pipeline.enrichment))
 
 
 async def run() -> dict[str, Any]:
