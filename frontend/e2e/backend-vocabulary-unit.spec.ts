@@ -12,7 +12,7 @@ import { IMAGE_RELEVANCE, MEDIA_DISPLAYS } from "@/lib/explainerBlockBase";
 import { BLOCK_KINDS, BUILT_BLOCK_KINDS, BUILT_FIGURE_KINDS, DEPTHS, DISCIPLINES, FINAL_SECTION_STATES, TERM_BASES, WORKING_SECTION_STATES } from "@/lib/explainerContract";
 import { EXPERT_SEATS } from "@/lib/explainerExperts";
 import { FIRING_ATMOSPHERES, INDIGO_FORMS, LOST_WAX_STEPS, SIGNATURE_KINDS, VAT_KINDS } from "@/lib/explainerSignature";
-import { CONVERSION_BASES, CURRENCIES, GI_STATUSES, METRIC_UNITS, PRICE_SCALES, TREND_VARIABLES } from "@/lib/explainerInsight";
+import { AMOUNT_KINDS, CONVERSION_BASES, CURRENCIES, GI_STATUSES, METRIC_UNITS, PRICE_SCALES, TREND_VARIABLES } from "@/lib/explainerInsight";
 import { SEASONS } from "@/lib/explainerPlace";
 import { ZOOM_LEVELS } from "@/lib/explainerPlay";
 import { TRAIL_GROUPS, TRAIL_STAGES } from "@/lib/explainerStream";
@@ -81,6 +81,7 @@ const PAIRS: [string, string, readonly string[]][] = [
   ["research/blocks_insight.py", "GI_STATUSES", GI_STATUSES],
   ["research/blocks_insight.py", "CURRENCIES", CURRENCIES],
   ["research/blocks_insight.py", "PRICE_SCALES", PRICE_SCALES],
+  ["research/stated_amounts.py", "AMOUNT_KINDS", AMOUNT_KINDS],
   ["research/blocks_climate.py", "TREND_VARIABLES", TREND_VARIABLES],
   ["research/explainer_versions.py", "SECTION_CHANGES", SECTION_CHANGES],
   ["research/lessons.py", "SLIDE_KINDS", SLIDE_KINDS],

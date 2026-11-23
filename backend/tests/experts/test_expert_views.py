@@ -135,7 +135,7 @@ async def test_an_uncited_or_unsupported_expert_sentence_drops_the_view(bad: dic
     "text",
     [
         "The technique came to Kutch from Sindh in March, at the behest of the King of Kutch.",
-        "The technique came to Kachchh from Sindh at the behest of the King of Kutch.",
+        "The technique came to Barmer from Sindh at the behest of the King of Kutch.",
         "The technique came to Kutch from Sindh in the monsoon, at the behest of the King of Kutch.",
     ],
     ids=["a month", "a district", "a season"],

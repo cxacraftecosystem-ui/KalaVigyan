@@ -14,6 +14,7 @@ from app.services import knowledge_view
 from app.services.curation_import import import_curation
 from app.services.market_builder import market_block
 from app.services.market_store import market_offers
+from app.services.measure_regions import stated_region
 from app.services.measure_store import craft_places, regional_factors
 
 pytestmark = pytest.mark.db
@@ -22,6 +23,7 @@ AJRAKH = CraftRef(slug="Kutch-Ajrakh", name="Kutch Ajrakh", path="/crafts/Kutch-
 DHOKRA = CraftRef(slug="Bastar-Dhokra", name="Bastar Dhokra", path="/crafts/Bastar-Dhokra")
 TIKULI = CraftRef(slug="Tikuli-Painting", name="Tikuli Painting", path="/crafts/Tikuli-Painting")
 KACHCHH, GUJARAT, BARMER = 449, 24, 90
+SEER_QUOTE = "In Kachchh a seer weighed 0.933 kg."
 
 
 @pytest.fixture
@@ -70,11 +72,18 @@ async def test_a_seer_converts_only_once_a_stored_quote_states_its_value_for_kac
     candidates = await session.scalars(
         select(Claim.id).where(Claim.id.in_(curated), Claim.evidenceLevel == "PROVISIONAL").order_by(Claim.id)
     )
-    views, _ = await knowledge_view.claims_by_id(session, list(candidates), acls=EVERY_CHUNK_ACLS)
-    shown = next(view for view in views.values() if view.citations)
+    ordered = list(candidates)
+    views, _ = await knowledge_view.claims_by_id(session, ordered, acls=EVERY_CHUNK_ACLS)
+    shown = next(
+        views[claim_id]
+        for claim_id in ordered
+        if claim_id in views
+        and views[claim_id].citations
+        and stated_region([SEER_QUOTE, views[claim_id].text]) is not None
+    )
     cite = await session.get(ClaimSource, uuid.UUID(shown.citations[0]["id"]))
     assert cite is not None
-    cite.quote = "In Kachchh a seer weighed 0.933 kg."
+    cite.quote = SEER_QUOTE
     await session.flush()
     found = await regional_factors(session, AJRAKH.slug, {"seer"})
     factor = found.factors["seer"]

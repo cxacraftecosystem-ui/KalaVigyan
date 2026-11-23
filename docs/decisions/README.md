@@ -51,9 +51,9 @@ flowchart LR
 | [0020](0020-voice-ui.md) | Voice UI: the voice dock on /ask and the craft page | [0140](0140-voice-and-listen-kept-true.md) |
 | [0021](0021-media-ui.md) | Media UI: Image and Video on the craft page's process stages | [0092](0092-design-system.md) |
 | [0022](0022-batch-3-review-fixes.md) | Voice spend fails closed, a filtered style hint, region sources and one home per rule | · |
-| [0023](0023-multilingual-answers.md) | Answers in Indian languages | [0117](0117-pages-in-other-languages.md) |
+| [0023](0023-multilingual-answers.md) | Answers in Indian languages | [0117](0117-pages-in-other-languages.md) and [0157](0157-translations-read-back-and-reviewed-interface-words.md) |
 | [0024](0024-admin-role.md) | Admin role | · |
-| [0025](0025-multilingual-voice.md) | Voice in every answer language | · |
+| [0025](0025-multilingual-voice.md) | Voice in every answer language | [0157](0157-translations-read-back-and-reviewed-interface-words.md) |
 | [0026](0026-yahoo-sign-in.md) | Yahoo sign-in (and Microsoft, off): DR's OpenID Connect module, ported | · |
 | [0027](0027-geo-etl-state-gaps.md) | Geo ETL: district shapes are polygons only, and a part that loses a state fails | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
 | [0028](0028-first-password-provider-proof.md) | A first password needs a fresh provider proof: DR's rule, ported | · |
@@ -89,19 +89,21 @@ flowchart LR
 | [0051](0051-curation-tooling.md) | Curation tooling: the dossier model, fetch, verify and check | · |
 | [0052](0052-opus-composes-at-medium-effort.md) | Opus 5.5 composes answers, at medium effort | · |
 | [0053](0053-curated-dossier-import.md) | Curated dossiers are imported on deploy and served as one craft page | [0142](0142-curated-crafts-read-only-curated-rows.md) |
-| [0054](0054-phase-c-contract.md) | Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode | · |
+| [0054](0054-phase-c-contract.md) | Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode | [0147](0147-time-market-and-figures-kept-true.md) |
 | [0055](0055-generated-explainers.md) | Generated explainers: built from cited figures, checked, stored, reused and hidden | [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0056](0056-what-if-lab.md) | The what-if lab's builder | [0140](0140-voice-and-listen-kept-true.md), [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
 | [0057](0057-zoom-story-and-timeline-map.md) | Zoom story and timeline map builders | · |
+| [0056](0056-what-if-lab.md) | The what-if lab's builder | [0140](0140-voice-and-listen-kept-true.md) |
+| [0057](0057-zoom-story-and-timeline-map.md) | Zoom story and timeline map builders | [0147](0147-time-market-and-figures-kept-true.md) |
 | [0058](0058-elevenlabs-music-sound-image-video.md) | ElevenLabs music, sound effects, image and video | · |
 | [0059](0059-sandbox-and-what-if-renderers.md) | Sandbox and what-if renderers | · |
 | [0060](0060-zoom-timeline-and-film-renderers.md) | Zoom, timeline and film mode renderers | · |
 | [0061](0061-phase-c-review-fixes.md) | Phase C review fixes | · |
-| [0062](0062-phase-d-contract.md) | Phase D contract: learning blocks, versions, alerts, lessons, exports and the map | [0067](0067-lessons-and-exports.md) |
+| [0062](0062-phase-d-contract.md) | Phase D contract: learning blocks, versions, alerts, lessons, exports and the map | [0067](0067-lessons-and-exports.md) and [0147](0147-time-market-and-figures-kept-true.md) |
 | [0063](0063-follow-ups-versions-and-alerts.md) | Follow-ups that build, version history, saved explainers and alerts | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0064](0064-quiz-compare-and-shared-science.md) | Quiz, compare and the shared-science explorer | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0065](0065-climate-risk-and-ask-the-map.md) | Climate and risk, and ask the map | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
-| [0066](0066-local-measures-and-market-gi.md) | Local measures, and market and GI | [0070](0070-phase-d-review-fixes.md) |
+| [0066](0066-local-measures-and-market-gi.md) | Local measures, and market and GI | [0070](0070-phase-d-review-fixes.md) and [0147](0147-time-market-and-figures-kept-true.md) |
 | [0067](0067-lessons-and-exports.md) | Lesson packs, the explainer PDF and citation export | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0068](0068-learning-block-renderers.md) | Learning block renderers | · |
 | [0069](0069-learning-screens.md) | Learning screens: follow-ups, saved answers, notes, lessons, exports, the map and compare | [0070](0070-phase-d-review-fixes.md), [0067](0067-lessons-and-exports.md) and [0141](0141-design-system-and-answer-screens-without-debt.md) |
@@ -178,7 +180,7 @@ flowchart LR
 | [0131](0131-drawings-in-the-design.md) | Whatever an AI draws for KalaVigyan speaks the design and follows the reader's theme | [0141](0141-design-system-and-answer-screens-without-debt.md) |
 | [0132](0132-a-ranking-votes-with-its-first-thirty.md) | A ranking votes with its first thirty; deeper finds only fill the rerank pool | [0151](0151-a-release-the-live-side-can-read.md) |
 | [0133](0133-the-evaluation-scores-what-answers-read.md) | The evaluation scores what answers read | [0151](0151-a-release-the-live-side-can-read.md) |
-| [0134](0134-each-sentence-once-in-a-block.md) | A block says each sentence once, and the judge reads it as a reader does | · |
+| [0134](0134-each-sentence-once-in-a-block.md) | A block says each sentence once, and the judge reads it as a reader does | [0147](0147-time-market-and-figures-kept-true.md) |
 | [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | [0136](0136-write-backs-filed-by-their-source.md) and [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0136](0136-write-backs-filed-by-their-source.md) | A write-back is filed by what its source says around it, and what nothing names waits for a reviewer | [0144](0144-stored-passages-as-evidence.md) |
 | [0137](0137-limits-kept-by-choice.md) | Nine limits are kept by choice and leave the debt register | · |
@@ -191,6 +193,7 @@ flowchart LR
 | [0144](0144-stored-passages-as-evidence.md) | A stored passage is evidence an answer and a voice turn may cite, kept as a fact of its own source | · |
 | [0145](0145-monograph-pages-and-speed-without-debt.md) | Pages read what their screens draw: one coverage read, one decision route, one unit pattern, and renderers loaded when placed | · |
 | [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | · |
+| [0147](0147-time-market-and-figures-kept-true.md) | Quantities in prose are also a table, the timeline lists undated history and places what the register holds, and market and measure readers read what sources state | · |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
 | [0149](0149-a-fact-readers-can-see.md) | A fact is shown to every reader with its citation, and only its quote follows its page | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) |
 | [0150](0150-mcp-activity-and-box-logs.md) | Each MCP call keeps its client and its reason for 180 days and its count for good, and the box ships its logs to CloudWatch | · |
@@ -198,6 +201,7 @@ flowchart LR
 | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) | An answer reads a craft's matter once and shows each card, molecule and what-if once, matter blocks cite every value they show, and the science seed deletes what it no longer plans | · |
 | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) | Rivers are named from Wikidata then OpenStreetMap, groundwater comes from the India data portal, a region place shows its headline values, and the geo ETL fails every gap it can see | · |
 | [0156](0156-expert-panel-and-field-voices-kept-true.md) | The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run | · |
+| [0157](0157-translations-read-back-and-reviewed-interface-words.md) | A translation is read back before it is shown, and every fixed word in another language is sourced, reviewed data | · |
 | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) | A curated craft's monograph lists the facts contributors add under their own fields, and a fact a figure shows is not listed again | · |
 
 ## How this document is kept true

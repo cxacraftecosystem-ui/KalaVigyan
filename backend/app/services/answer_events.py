@@ -4,6 +4,7 @@ import logging
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import Any
 
 from app.core.errors import InvalidInput
@@ -12,13 +13,16 @@ from app.research.composition import ComposedAnswer
 from app.research.planning import OPEN_QUESTION_LEVEL
 from app.research.vocabulary import weakest_level
 
+from .interface_words import ENGLISH_WORDS, InterfaceWords
 from .knowledge_view import ClaimView, source_ref
 from .write_back_plan import composed_sentences
 
 __all__ = [
+    "FOLLOW_UP_WORDS_KEY",
     "OPEN_HEADING",
     "OPEN_SECTION_ID",
     "STORED_ANSWER_LIMIT",
+    "STORED_FOLLOW_UP_QUESTIONS",
     "STORED_OPEN_QUESTION_LIMIT",
     "CitedClaims",
     "StreamEvent",
@@ -35,6 +39,17 @@ STORED_OPEN_QUESTION_LIMIT = 4
 STORED_FOLLOW_UPS = 3
 OPEN_SECTION_ID = "open"
 OPEN_HEADING = "Open questions"
+FOLLOW_UP_WORDS_KEY = "stream.followUp"
+STORED_FOLLOW_UP_QUESTIONS: Mapping[str, str] = MappingProxyType(
+    {
+        "Materials and tools": "Which materials does {craft} depend on, and why?",
+        "Process": "What happens at each step of {craft}?",
+        "How it works": "What is the chemistry or physics behind {craft}?",
+        "Place and climate": "How do local water, soil and climate shape {craft}?",
+        "The artisan's judgement": "How do artisans judge when a step of {craft} is done?",
+        "History": "Where did {craft} come from?",
+    }
+)
 
 StreamEvent = tuple[str, dict[str, Any]]
 
@@ -104,16 +119,11 @@ class _Answer:
         return self._sections[heading]
 
 
-def stored_follow_ups(craft_name: str, headings: list[str]) -> list[str]:
-    prompts = {
-        "Materials and tools": f"Which materials does {craft_name} depend on, and why?",
-        "Process": f"What happens at each step of {craft_name}?",
-        "How it works": f"What is the chemistry or physics behind {craft_name}?",
-        "Place and climate": f"How do local water, soil and climate shape {craft_name}?",
-        "The artisan's judgement": f"How do artisans judge when a step of {craft_name} is done?",
-        "History": f"Where did {craft_name} come from?",
-    }
-    return [prompts[h] for h in prompts if h not in headings][:STORED_FOLLOW_UPS]
+def stored_follow_ups(
+    craft_name: str, headings: list[str], words: InterfaceWords = ENGLISH_WORDS
+) -> list[str]:
+    asked = [prompt for heading, prompt in STORED_FOLLOW_UP_QUESTIONS.items() if heading not in headings]
+    return [words.said(FOLLOW_UP_WORDS_KEY, prompt, craft=craft_name) for prompt in asked[:STORED_FOLLOW_UPS]]
 
 
 def composed_answer_events(

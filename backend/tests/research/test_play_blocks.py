@@ -90,8 +90,11 @@ ZOOM_RULES: list[tuple[Change, str]] = [
     (lambda b: level(b, 2, compound=b["levels"][2]["compound"] | {"name": "Indigo"}), "does not name"),
 ]
 TIMELINE_RULES: list[tuple[Change, str]] = [
-    (lambda b: b["places"][1].update(latitude=23.4, longitude=69.6), "both Wikidata coordinates"),
-    (lambda b: b["places"][0].update(longitude=None), "both Wikidata coordinates"),
+    (
+        lambda b: b["places"][1].update(latitude=23.4, longitude=69.6),
+        "both coordinates of its item or district",
+    ),
+    (lambda b: b["places"][0].update(longitude=None), "both coordinates of its item or district"),
     (lambda b: b["points"][1].update(yearFrom=1587, yearTo=1587), "not stated"),
     (lambda b: (b["places"][3].update(name="Kutch"), b["places"][4].update(name="Sindh")), "states the move"),
     (lambda b: b["routes"][0].update(end=3), "two different places"),

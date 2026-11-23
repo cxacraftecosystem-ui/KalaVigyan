@@ -11,6 +11,7 @@ Date: 2026-11-18. Status: accepted.
 |---|---|
 | The lanes built to it | [0055](0055-generated-explainers.md), [0056](0056-what-if-lab.md), [0057](0057-zoom-story-and-timeline-map.md), [0058](0058-elevenlabs-music-sound-image-video.md), [0059](0059-sandbox-and-what-if-renderers.md) and [0060](0060-zoom-timeline-and-film-renderers.md) |
 | The contracts it names | [explainer.md](../contracts/explainer.md), [media.md](../contracts/media.md) |
+| The timeline's version 2 (undated sentences, register places) and years not read from counts | [decision 0147](0147-time-market-and-figures-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

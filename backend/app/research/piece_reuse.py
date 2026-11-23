@@ -41,6 +41,7 @@ PIECE_BLOCK_ORDER = (
     "climate_risk",
     "supply_map",
     "measure",
+    "quantities",
     "market_gi",
     "reaction_player",
     "material_card",

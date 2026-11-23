@@ -12,6 +12,7 @@ Date: 2026-11-18. Status: accepted.
 | What amended it | [0067 Lesson packs, the explainer PDF and citation export](0067-lessons-and-exports.md): item 10, with APA written by citeproc-py while BibTeX and RIS keep the stated rules |
 | The lanes built to it | [0063](0063-follow-ups-versions-and-alerts.md), [0064](0064-quiz-compare-and-shared-science.md), [0065](0065-climate-risk-and-ask-the-map.md), [0066](0066-local-measures-and-market-gi.md), [0067](0067-lessons-and-exports.md), [0068](0068-learning-block-renderers.md) and [0069](0069-learning-screens.md) |
 | The contracts it names | [learning.md](../contracts/learning.md), [explainer.md](../contracts/explainer.md) |
+| The phase D `quantities` table | [decision 0147](0147-time-market-and-figures-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

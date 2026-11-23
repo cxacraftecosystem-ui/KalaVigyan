@@ -7,7 +7,7 @@ Every count that changes with the code, generated from the working tree by `tool
 | What | Count |
 | --- | ---: |
 | Tables (`__tablename__` in `backend/app/models/`) | 147 |
-| Migrations (`backend/migrations/versions/`) | 69 |
+| Migrations (`backend/migrations/versions/`) | 70 |
 
 Newest migration: `0080_stream_stamps_differs_on`.
 
@@ -106,15 +106,15 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 | Python suite | Files | Tests |
 | --- | ---: | ---: |
-| Backend, without a database | 670 | 5102 |
-| Backend, on Postgres | 181 | 842 |
+| Backend, without a database | 680 | 5160 |
+| Backend, on Postgres | 181 | 844 |
 | Tools | 23 | 188 |
 | Craft data ETL | 5 | 46 |
 | Geo ETL | 21 | 221 |
 
 | Frontend (`frontend/e2e/`) | Files | Tests |
 | --- | ---: | ---: |
-| Unit specs (`*-unit.spec.ts`) | 174 | 1275 |
+| Unit specs (`*-unit.spec.ts`) | 179 | 1293 |
 | Browser and release specs | 16 | 55 |
 
 A Python test is a `test_` function in a `test_` file; a frontend test is a `test(` call at the start of a line. Every suite runs on GitHub Actions, never on a development machine.
@@ -123,7 +123,7 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | What | Count |
 | --- | ---: |
-| Decision records (`docs/decisions/`) | 151 |
+| Decision records (`docs/decisions/`) | 153 |
 | Contracts (`docs/contracts/`) | 40 |
 | Workflows (`.github/workflows/`) | 27 |
 | Curated craft dossiers | 32 |
@@ -133,13 +133,13 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | Area | Files | Lines |
 | --- | ---: | ---: |
-| `backend/app` | 1324 | 188,039 |
-| `backend/tests` | 1004 | 132,111 |
-| `backend/migrations` | 70 | 10,196 |
+| `backend/app` | 1333 | 189,082 |
+| `backend/tests` | 1015 | 133,020 |
+| `backend/migrations` | 71 | 10,299 |
 | `frontend/app` | 110 | 10,009 |
-| `frontend/components` | 611 | 41,707 |
-| `frontend/lib` | 257 | 26,070 |
-| `frontend/e2e` | 279 | 31,051 |
+| `frontend/components` | 612 | 41,823 |
+| `frontend/lib` | 258 | 26,172 |
+| `frontend/e2e` | 285 | 31,412 |
 | `etl` | 66 | 10,894 |
 | `tools` | 96 | 8,232 |
 | `infra` | 17 | 2,188 |

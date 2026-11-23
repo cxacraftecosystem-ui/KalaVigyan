@@ -3396,15 +3396,6 @@
       ]
     }
   ],
-  "market": {
-    "prices": [
-      {
-        "claimId": "C069",
-        "date": "2018",
-        "placeId": "L03"
-      }
-    ]
-  },
   "glossary": [
     {
       "id": "W01",

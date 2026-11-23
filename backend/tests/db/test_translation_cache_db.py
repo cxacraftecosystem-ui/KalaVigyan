@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Claim, ClaimTranslation
-from app.services.translation_cache import SqlTranslationCache, source_sha256
+from app.services.translation_cache import SqlTranslationCache, checked_source_sha256, source_sha256
 
 from .write_back_seed import ALUM_CONCEPT, key, seeded_session
 
@@ -59,7 +59,19 @@ async def test_a_claim_translation_is_found_again_for_the_same_text_and_language
     stored = (
         await session.execute(select(ClaimTranslation).where(ClaimTranslation.claimId == claim_id))
     ).scalar_one()
-    assert (stored.language, stored.sourceSha256) == ("hi", source_sha256(ENGLISH))
+    assert (stored.language, stored.sourceSha256) == ("hi", checked_source_sha256(ENGLISH))
+
+
+async def test_a_translation_cached_before_the_read_back_check_is_made_again(session: AsyncSession) -> None:
+    claim_id = await translated_claim(session)
+    session.add(
+        ClaimTranslation(claimId=claim_id, language="hi", sourceSha256=source_sha256(ENGLISH), text=HINDI)
+    )
+    await session.flush()
+    cache = cache_for(session)
+    assert await cache.known("hi", {claim_id: ENGLISH}) == {}
+    await cache.remember("hi", {claim_id: (ENGLISH, HINDI_CHANGED)})
+    assert await cache.known("hi", {claim_id: ENGLISH}) == {claim_id: HINDI_CHANGED}
 
 
 async def test_a_changed_claim_text_misses_the_cache_and_is_replaced(session: AsyncSession) -> None:
@@ -75,3 +87,8 @@ async def test_a_changed_claim_text_misses_the_cache_and_is_replaced(session: As
 
 def test_the_source_hash_is_the_sha256_of_the_utf8_text() -> None:
     assert source_sha256("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+
+
+def test_the_cache_key_is_the_hash_of_the_checks_edition_and_the_text() -> None:
+    assert checked_source_sha256("abc") == source_sha256("read-back-1\nabc")
+    assert checked_source_sha256("abc") != source_sha256("abc")

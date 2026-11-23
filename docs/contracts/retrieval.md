@@ -583,8 +583,9 @@ numbers of release db09b9e7 less 0.05, rounded down to two places (decision 0133
 | `generated` (169) | 0.94 / 0.86 | 0.73 / 0.65 |
 | `releaseSample` (41) | 0.95 / 0.80 | 0.38 / 0.24 |
 
-Answers: judge 0.76 and rubric 0.91, re-based on 2026-11-22 to the Claude judge. The lead raises
-them as the numbers improve.
+Answers: judge 0.76, re-based on 2026-11-22 to the Claude judge, and rubric 0.82, re-based the same
+day when the rubric began to count each shown sentence once (decision 0147). The lead raises them
+as the numbers improve.
 
 `.github/workflows/retrieval-eval.yml` (weekly on Monday at 04:11 UTC and by hand, input `cap`) runs
 the script on the box over SSM, keeps `report.json`, `stdout.txt` and the judged revision

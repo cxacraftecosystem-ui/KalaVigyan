@@ -298,9 +298,13 @@ sequenceDiagram
    `section_state`, `block` and `section_done` mark each section; `status` the overall step.
 5. Another answer language (decision 0023): each block is still composed and checked in
    English; `services/answer_translation.translated_block` then translates it in one `TRANSLATE`
-   call, keeps a translation only when its numbers, formulas, units and script check out (else the
-   sentence stays English), copies the citations, and caches claim translations in
-   `ClaimTranslation`. The planner adds native-language Wikipedia and Wikidata queries and
+   call, keeps a translation only when its numbers, formulas, units and script check out and its
+   English reading (one more `TRANSLATE` call, `composer/translation_meaning`) still says what the
+   English says (else the sentence stays English), copies the citations, and caches claim
+   translations in `ClaimTranslation` (decision 0157). The fixed words around it (a stored answer's
+   headings and follow-ups, the status lines, the essay's rail and actions, voice's phrases) come
+   from the reviewed entries of `backend/app/data/interface_words/` and are English where none is
+   reviewed. The planner adds native-language Wikipedia and Wikidata queries and
    searches stored claims with an English rendering of the question.
 6. Follow-ups are the questions the lede and the sections say the sources leave open, then one
    per field the question touched that the answer did not show (`follow_ups.left_open`).
@@ -725,13 +729,15 @@ their rows through `services/shared_concepts.py` (from the per-term summary that
 `services/shared_term_crafts.py` rebuilds on release and nightly) and `services/craft_compare.py`, and reach answers
 through `services/learning_builders.py` (decision 0064). Local measures and market and GI
 follow fixed rules too: stated quantities, regional factors and prices in
-`research/stated_quantities.py` and `research/stated_prices.py` over the one Pint registry
+`research/stated_quantities.py`, `research/stated_amounts.py` (decision 0147) and
+`research/stated_prices.py` over the one Pint registry
 (`research/unit_registry.py`, shared with the science engine), GI registry fields in
 `research/gi_registry.py`, read through `services/measure_store.py` and
-`services/market_store.py` and built by `services/measure_builder.py` and
-`services/market_builder.py` (decision 0066). The six kinds are drawn
+`services/market_store.py` and built by `services/measure_builder.py`,
+`services/quantities_builder.py` and `services/market_builder.py` (decisions 0066 and 0147). The
+seven kinds are drawn
 by `components/answer/learning/` (the quiz, compare and the concept graph) and
-`components/answer/insight/` (measures, market and GI, climate trends), with their rules in
+`components/answer/insight/` (measures, quantities, market and GI, climate trends), with their rules in
 `lib/quizView.ts`, `lib/compareView.ts`, `lib/conceptGraph.ts`, `lib/insightView.ts` and
 `lib/climateView.ts` (decision 0068). The screens around the learning routes (decision 0069) are
 `components/learn/` and `components/map/DistrictPanel.tsx` over `lib/learningApi.ts` and
@@ -789,7 +795,7 @@ from opening nested windows, because Chromium ignores the policy's `webrtc 'bloc
 | Craft data | master-list sha1, lint and tests of `etl/crafts`; weekly regeneration |
 | Geo ETL | `etl/geo` tests and the district statistics build |
 | Deploy backend | after Backend checks succeed on a push to `main` of `cxacraftecosystem-ui/KalaVigyan` |
-| E2E production | on dispatch only: Playwright against the deployed site (`frontend/e2e/production/matrix.ts`), every screen signed in as the E2E Researcher at 1920, 1440, 834, 390 and 360 px wide in light and dark, and with `questions=true` four known-answer questions asked at 1440 px in light: at Detailed depth the mordant in English and Hindi, and Kachchh's water, which needs a region story with a traced river once `rivers_loaded` is set, and at Expert depth indigo's generated explainer; each must show a lede with a cited sentence, live and in its saved explainer, which is checked again at 834 and 390 px in light and dark (decisions 0029, 0050, 0061 and 0077) |
+| E2E production | on dispatch only: Playwright against the deployed site (`frontend/e2e/production/matrix.ts`), every screen signed in as the E2E Researcher at 1920, 1440, 834, 390 and 360 px wide in light and dark, and with `questions=true` seven known-answer questions asked at 1440 px in light: at Detailed depth the mordant in English, Hindi and Urdu, Kachchh's water, which needs a region story with a traced river once `rivers_loaded` is set, what the cloth is made of and its history, and at Expert depth indigo's generated explainer; each must show a lede with a cited sentence, live and in its saved explainer, which is checked again at 834 and 390 px in light and dark; the Hindi and Urdu answers must also carry a translated sentence and paragraphs in their script, and the Urdu one must read right to left with its prose in a loaded Noto Nastaliq Urdu face (decisions 0029, 0050, 0061, 0077 and 0157) |
 
 Scheduled and dispatched runs (craft sync, field voices, coverage enrichment, nightly upkeep, the
 alert digest, the release gate, captures, Monograph parity, open data and the Geo ETL) are in

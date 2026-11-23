@@ -76,6 +76,21 @@ def test_a_place_a_quote_states_or_a_compass_word_is_no_problem() -> None:
     ]
 
 
+def test_a_district_written_by_its_other_name_is_read_as_its_register_place() -> None:
+    assert register_places_named("Ajrakh of Kutch, Gujarat, as Kachchh's printers make it.") == [
+        "Kachchh",
+        "Gujarat",
+    ]
+    assert (
+        unstated_names("Dyers in Kutch work in winter.", ["dyers of kachchh work in the cold season"]) == []
+    )
+    assert (
+        unstated_names("Dyers in Kachchh work in winter.", ["dyers of kutch work in the cold season"]) == []
+    )
+    assert unstated_names("Dyers in Kachchh print.", ["dyers of barmer print"]) == ["Kachchh"]
+    assert unstated_names("Kutch Ajrakh is printed in Barmer.", ["ajrakh is printed in barmer"]) == []
+
+
 def test_a_sentence_naming_what_its_sources_do_not_is_dropped_alone() -> None:
     sentences = [
         kept("Alum is the mordant.", ALUM_CLAIM_ID),

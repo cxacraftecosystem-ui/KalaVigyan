@@ -50,5 +50,5 @@ def test_a_run_the_judge_never_scored_breaks_the_judge_floor() -> None:
 
 def test_the_kept_floors_are_those_answer_quality_compares() -> None:
     found = floor_report(report(judge=0.8, rubric=0.92), whole=True)
-    assert [check["floor"] for check in found["floors"]] == [0.76, 0.91]
+    assert [check["floor"] for check in found["floors"]] == [0.76, 0.82]
     assert found["floorsApplied"] and not found["belowFloor"]

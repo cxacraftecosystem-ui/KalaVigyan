@@ -34,7 +34,7 @@ from .answer_steps import TracedStep
 from .answer_translation import AnswerTranslation, Segment, translate_segments, with_english_question
 from .block_builders import BlockBuilders
 from .explainer_document import explainer_document
-from .explainer_events import ExplainerStream, status_message
+from .explainer_events import ExplainerStream
 from .explainer_history import STALE_VERSION_DETAIL, StaleVersion
 from .follow_ups import AnswerLayout, FollowUp, answer_layout, closed_answer, left_open, understood_for
 from .piece_lookup import PieceAsk, PieceLookup, ReusedSection
@@ -45,6 +45,7 @@ from .reused_sections import ReuseBuilds, ReusedShowing, stream_reused_beside
 from .section_context import ClaimsOf, Research, SectionContext, SectionOutcome, SectionTools
 from .section_enrichment import Enrichment, EnrichmentTools
 from .section_fields import SectionFields
+from .status_lines import status_message
 from .stored_fields import with_stored_fields
 from .stored_only_answer import STORED_ONLY_MODE, stored_only_answer
 from .version_race import VersionRace

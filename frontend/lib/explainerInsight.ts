@@ -11,6 +11,8 @@ export const GI_STATUSES = ["APPLIED", "REGISTERED", "WITHDRAWN"] as const;
 export const CURRENCIES = ["INR", "USD"] as const;
 export const PRICE_SCALES = ["THOUSAND", "LAKH", "CRORE"] as const;
 export const TREND_VARIABLES = ["annual_precipitation", "annual_mean_temperature"] as const;
+export const AMOUNT_KINDS = ["TEMPERATURE", "TIME", "MASS", "LENGTH", "AREA", "VOLUME", "CONCENTRATION", "SHARE", "ACIDITY"] as const;
+export const QUANTITY_ROWS_MIN = 3;
 
 export type MeasureRegion = { stateLgd: number; stateName: string; districtLgd: number | null; districtName: string | null };
 export type UnitConversion = {
@@ -33,6 +35,9 @@ export type MeasureRow = {
   sentence: ExplainerSentence;
 };
 export type MeasureBlock = BlockEnvelope<"measure"> & { rows: MeasureRow[] };
+export type AmountKind = (typeof AMOUNT_KINDS)[number];
+export type QuantityRow = { stated: string; low: number; high: number | null; unit: string; measures: AmountKind; sentence: ExplainerSentence };
+export type QuantitiesBlock = BlockEnvelope<"quantities"> & { rows: QuantityRow[] };
 export type GiStatus = {
   status: (typeof GI_STATUSES)[number];
   applicationNumber: string | null;
@@ -103,9 +108,10 @@ export type ClimateRiskBlock = BlockEnvelope<"climate_risk"> & {
 
 export const PARTIAL_DATE = matching(/^\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?)?$/, "a partial date");
 const metricUnit = oneOf(METRIC_UNITS);
+const unitKey = matching(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/, "a unit key");
 
 const conversionShape: Shape<UnitConversion> = object<UnitConversion>({
-  unit: matching(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/, "a unit key"),
+  unit: unitKey,
   metricUnit,
   factor: number,
   basis: oneOf(CONVERSION_BASES),
@@ -129,6 +135,21 @@ export const measureBlockShape: Shape<MeasureBlock> = object<MeasureBlock>({
       sentence: explainerSentenceShape
     }),
     1
+  )
+});
+
+export const quantitiesBlockShape: Shape<QuantitiesBlock> = object<QuantitiesBlock>({
+  ...envelope("quantities"),
+  rows: list(
+    object<QuantityRow>({
+      stated: text,
+      low: number,
+      high: nullable(number),
+      unit: unitKey,
+      measures: oneOf(AMOUNT_KINDS),
+      sentence: explainerSentenceShape
+    }),
+    QUANTITY_ROWS_MIN
   )
 });
 

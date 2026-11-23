@@ -100,7 +100,11 @@ MEASURED = re.compile(
 )
 PRICED = re.compile(r"(?:₹|\brs\b\.?|\binr\b)\s*\d[\d,.]*", re.IGNORECASE)
 WORD = re.compile(r"[^\W\d_]+")
-COUNTED = re.compile(r"\s+([a-z]{2,}s)\b")
+COUNTED = re.compile(r"\s+([a-z]{2,})\b")
+PLURAL_MIN_CHARS = 3
+IRREGULAR_COUNTED = frozenset(
+    {"cattle", "children", "feet", "folk", "geese", "men", "people", "sheep", "teeth", "women", "workmen"}
+)
 NOT_COUNTED = frozenset(
     {
         "across",
@@ -174,8 +178,14 @@ def _singles(text: str) -> Iterator[tuple[YearSpan, str]]:
 def _dated_singles(text: str) -> Iterator[int]:
     for match in SINGLE.finditer(text):
         counted = COUNTED.match(text, match.end())
-        if counted is None or counted.group(1) in NOT_COUNTED:
+        if counted is None or not _counts(counted.group(1)):
             yield int(match.group(1))
+
+
+def _counts(word: str) -> bool:
+    if word in IRREGULAR_COUNTED:
+        return True
+    return len(word) >= PLURAL_MIN_CHARS and word.endswith("s") and word not in NOT_COUNTED
 
 
 def _decades(text: str) -> Iterator[tuple[YearSpan, str]]:
