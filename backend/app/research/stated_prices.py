@@ -19,7 +19,25 @@ SUFFIXED = re.compile(
     rf"(?<![\w.,])(?P<low>{NUMBER_PATTERN})(?:{RANGE_JOIN}(?P<high>{NUMBER_PATTERN}))?{SCALE}"
     r"\s+(?P<mark>(?i:rupees?|dollars?))(?![\w])"
 )
-PER = re.compile(r"\s*(?:(?i:per)\s+|/\s*)(?P<per>[^\W\d_]+)")
+PER = re.compile(
+    r"\s*(?:(?i:per|an?)\s+|/\s*)(?P<per>[^\W\d_]+)(?![^\W\d_])(?!\s+(?i:ago|back|before|earlier|later)(?!\w))"
+)
+NOT_PER = frozenset(
+    {
+        "bit",
+        "couple",
+        "few",
+        "further",
+        "little",
+        "lot",
+        "maximum",
+        "mere",
+        "minimum",
+        "number",
+        "total",
+        "while",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -47,15 +65,21 @@ def _price(match: re.Match[str], text: str) -> StatedPrice | None:
     currency = _currency(match.group("mark"))
     if low is None or currency is None or (match.group("high") and (high is None or high <= low)):
         return None
-    per = PER.match(text, match.end())
     return StatedPrice(
         stated=match.group(0),
         low=low,
         high=high,
         currency=currency,
         scale=_scale(match.group("scale")),
-        per=per.group("per") if per else None,
+        per=_per(text, match.end()),
     )
+
+
+def _per(text: str, end: int) -> str | None:
+    found = PER.match(text, end)
+    if found is None or found.group("per").casefold() in NOT_PER:
+        return None
+    return found.group("per")
 
 
 def _currency(mark: str) -> str | None:

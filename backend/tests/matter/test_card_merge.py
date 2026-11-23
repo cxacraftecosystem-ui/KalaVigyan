@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from app.services import matter_builders
+from app.services import craft_matter as craft_matter_module, matter_builders
 from app.services.craft_matter import CraftMatter, MaterialRows
 from app.services.material_cards import card_offers, merged_materials
 
@@ -81,7 +81,7 @@ def stored_twins(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     async def load(sessions: Any, craft: Any) -> CraftMatter:
         return found
 
-    monkeypatch.setattr(matter_builders, "craft_matter", load)
+    monkeypatch.setattr(craft_matter_module, "craft_matter", load)
     return {"spare": spare}
 
 

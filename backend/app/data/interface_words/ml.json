@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "language": "ml",
+  "words": [
+    {
+      "key": "voice.filler",
+      "english": "Let me check the sources... ",
+      "text": "ഒരു നിമിഷം, സ്രോതസ്സുകൾ നോക്കട്ടെ... ",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.noEvidence",
+      "english": "I found no cited answer to that about {craft} yet.",
+      "text": "{craft} സംബന്ധിച്ച് ഇതിന് സ്രോതസ്സുള്ള ഉത്തരം ഇതുവരെ ലഭിച്ചില്ല.",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.noCraft",
+      "english": "Which craft do you mean? Name it and ask again.",
+      "text": "ഏത് കരകൗശലത്തെക്കുറിച്ചാണ് ചോദിക്കുന്നത്? അതിന്റെ പേര് പറയൂ.",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.unsaid",
+      "english": "I could not prepare that answer just now. Please ask again.",
+      "text": "ഇപ്പോൾ ഈ ഉത്തരം തയ്യാറാക്കാനായില്ല. വീണ്ടും ചോദിക്കൂ.",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.endCall",
+      "english": "That is all the voice time for today.",
+      "text": "ഇന്നത്തെ സംസാര സമയം കഴിഞ്ഞു.",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.endCall",
+      "english": "That is the end of this call.",
+      "text": "ഈ സംഭാഷണം ഇവിടെ അവസാനിക്കുന്നു.",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.sourceWord",
+      "english": "Source",
+      "text": "സ്രോതസ്സ്",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    },
+    {
+      "key": "voice.sourceWord",
+      "english": "Sources",
+      "text": "സ്രോതസ്സുകൾ",
+      "source": "Written by the voice lane for decision 0025 on 2026-11-16; no native speaker has read it",
+      "review": null
+    }
+  ]
+}

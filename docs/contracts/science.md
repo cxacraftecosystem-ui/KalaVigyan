@@ -126,7 +126,7 @@ Vocabulary: `stageType` is `StageType`, `kind` of a material `MaterialKind`, `ro
 - **Envelope.** The stage-type envelopes live in `science/envelopes.py` (decision 0015) with
   PLAN 7's values: `DYE` 20-100 °C and pH 2-12, `MORDANT` 15-100 °C, `FIRE` 500-1300 °C,
   `CAST` 700-1200 °C. Each physical constant used there (quartz α→β 573 °C, kaolinite
-  dehydroxylation 450-600 °C, water 100 °C at 1 atm, beeswax 62-64 °C, brass liquidus about
+  dehydroxylation 400-700 °C, water 100 °C at 1 atm, beeswax 62-64 °C, brass liquidus about
   900-940 °C) is its own cited claim. `envelope_status`: `NONE` when the stage type has no
   envelope for the quantity, else `OUTSIDE` when any stated bound falls below the envelope's
   minimum or above its maximum, else `WITHIN`. An `OUTSIDE` reading is shown with its status and
@@ -154,7 +154,18 @@ and `science/process_view.craft_process` builds the view.
 - Materials: `StageMaterial` joined to `Material` (and `Compound`); their claims are the
   `StageMaterial.claimId` claim and the visible claims on `Material.conceptId`. A material's
   `id` is its `StageMaterial` id. The seed makes one `Material` per material concept, and the
-  stage's `USES` edge claim is its `StageMaterial.claimId`.
+  stage's `USES` edge claim is its `StageMaterial.claimId`. A material has one kind and one
+  role (`backend/app/data/science_seed.json` `materials`), and a stage the material's entry
+  names in `stageRoles` takes that role instead, only where that stage's cited quote states it
+  (an unknown role, or a stage with no `USES` edge to the material, is refused). A `USES` edge
+  from a seeded stage to a tool concept is a `StageMaterial` with role `TOOL` on a `Material` of
+  kind `OTHER`, as a curated dossier stores its tools (`services/curation_keys`); a tool is
+  never listed in `materials`. Each seed run deletes, in the same transaction, the seeded rows
+  no longer in its plan: stage materials, reactions and conditions on the seed's own stages,
+  citations of its reactions and readings of its conditions, materials of its material and tool
+  concepts that nothing uses any more, and compounds whose id is the seed id of their name's
+  slug (a compound's key is that slug) that no material, reaction or knowledge piece names
+  (`services/science_seed_prune`).
 - Reactions: `Reaction` rows of the stage, by `ordinal` then `label`; `species` (a list of
   `{role, formula, name, compoundId}`) and `coefficients` from those columns; coefficients are
   read only when `balanced`, and only `science/reactions.check_reaction` writes them. A
@@ -170,9 +181,12 @@ and `science/process_view.craft_process` builds the view.
   first, then by id (as the profile); readings by their claim's place, then the stated phrase;
   conditions by quantity (`CONDITION_QUANTITIES` order), label, key; materials by name.
 - Envelopes and constants: `science/envelopes.py`; the constants are the claims
-  `sci-constant-*` of `backend/app/data/science_seed.json`, each quoting a pinned Wikipedia
-  revision. The cited source puts the start of kaolinite dehydroxylation at 550–600 °C, so
-  that is the constant (PLAN 7 says 450–600 °C).
+  `sci-constant-*` of `backend/app/data/science_seed.json` that name a `constant`, each quoting
+  a pinned Wikipedia revision, except kaolinite dehydroxylation, which quotes a thermal-analysis
+  paper (Izadifar et al. 2020, Clays and Clay Minerals, CC BY 4.0): "commonly occurs between 400
+  and 700°C", so the constant is 400–700 °C, as PLAN 7 says. The earlier claim
+  `sci-constant-kaolinite-dehydroxylation`, quoting Wikipedia's 550–600 °C onset, stays a seeded
+  claim of its own and is no constant.
 
 ## How this document is kept true
 
@@ -182,6 +196,7 @@ and `science/process_view.craft_process` builds the view.
 | The client's shapes refuse unknown fields and values | `frontend/e2e/contracts-unit.spec.ts` |
 | The producer builds and serves the golden answer | `backend/tests/science/test_process_view.py`, `test_process_route.py` and `backend/tests/db/test_craft_process_db.py` |
 | Balancing, units, envelopes, the seed plan and the compound lookup | `backend/tests/science/` |
+| The seed's deletions, and the rows another writer owns that it keeps | `backend/tests/db/test_science_seed_db.py` |
 
 Re-read it when a stage, condition or reaction field changes, or a seeded constant is re-cited.
 

@@ -1,10 +1,12 @@
 import { TextLink } from "@/components/ui/TextLink";
-import { answerProvenance } from "@/lib/answerEssay";
+import { answeredOn, answerProvenance } from "@/lib/answerEssay";
+import type { AnswerLanguage } from "@/lib/answerLanguages";
 import type { CraftLink } from "@/lib/answerShapes";
+import { PROVENANCE_ENGLISH, PROVENANCE_KEY, wordAttributes, wordedIn } from "@/lib/interfaceWords";
 import type { SourceRef } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export type ProvenanceFacts = { sources: readonly SourceRef[]; craft: CraftLink | null; answered: string | null };
+export type ProvenanceFacts = { sources: readonly SourceRef[]; craft: CraftLink | null; answeredAt: string | null; language: AnswerLanguage | null };
 
 function ReliabilityStrip({ sources }: { sources: readonly SourceRef[] }) {
   const provenance = answerProvenance(sources);
@@ -15,7 +17,7 @@ function ReliabilityStrip({ sources }: { sources: readonly SourceRef[] }) {
         {provenance.grades.map((grade) => (
           <span key={grade.grade} className="inline-flex items-center gap-1 lining-nums tabular-nums">
             <span aria-hidden className="kv-rel" data-grade={grade.grade} />
-            {`${grade.grade} ${grade.count}`}
+            {`${grade.grade} ${grade.count}`}
           </span>
         ))}
       </span>
@@ -24,6 +26,8 @@ function ReliabilityStrip({ sources }: { sources: readonly SourceRef[] }) {
 }
 
 export function AnswerProvenance({ facts, inline = false, className }: { facts: ProvenanceFacts; inline?: boolean; className?: string }) {
+  const worded = wordedIn(facts.language, PROVENANCE_KEY, PROVENANCE_ENGLISH);
+  const answered = answeredOn(facts.answeredAt, worded);
   return (
     <p
       className={cn(
@@ -33,11 +37,11 @@ export function AnswerProvenance({ facts, inline = false, className }: { facts: 
       )}
       data-testid="answer-provenance"
     >
-      <span className="kicker text-ink-1">Answer</span>
-      {facts.sources.length > 0 ? <span>{answerProvenance(facts.sources).sources}</span> : null}
+      <span {...wordAttributes(worded.language, "kicker text-ink-1")}>{worded.words.answer}</span>
+      {facts.sources.length > 0 ? <span {...wordAttributes(worded.language)}>{answerProvenance(facts.sources, worded.words).sources}</span> : null}
       <ReliabilityStrip sources={facts.sources} />
       {facts.craft ? <TextLink href={facts.craft.path}>{facts.craft.name}</TextLink> : null}
-      {facts.answered ? <span>{facts.answered}</span> : null}
+      {answered ? <span {...wordAttributes(worded.language)}>{answered}</span> : null}
     </p>
   );
 }

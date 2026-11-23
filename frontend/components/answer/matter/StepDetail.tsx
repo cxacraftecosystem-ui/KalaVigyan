@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { ChemEquation } from "@/components/answer/ChemEquation";
 import { CitationChips } from "@/components/answer/CitationContext";
 import { StepColours } from "@/components/answer/matter/StepColours";
@@ -8,24 +10,37 @@ import { SpeciesRow } from "@/components/answer/SpeciesRow";
 import { EvidenceTag } from "@/components/editorial/EvidenceMark";
 import { levelMark, signalMark } from "@/lib/citationCluster";
 import type { ExplainerSentence } from "@/lib/explainerBlockBase";
-import type { ReactionStep } from "@/lib/explainerMatter";
+import { REACTION_ENERGY_LABEL, stepEnergy, type ReactionStep } from "@/lib/explainerMatter";
 import { reactionSpoken, speciesNamesLine } from "@/lib/processView";
 import { stepSignal } from "@/lib/reactionPlayer";
 
+function ConditionRow({ label, testId, children }: { label: string; testId: string; children: ReactNode }) {
+  return (
+    <div className="contents" data-testid={testId}>
+      <dt className="pt-2 font-semibold text-ink-1 sm:border-b sm:border-rule sm:pb-2">{label}</dt>
+      <dd className="border-b border-rule pb-2 text-ink-2 sm:pt-2">{children}</dd>
+    </div>
+  );
+}
+
 function StepConditions({ step }: { step: ReactionStep }) {
   const conditions = step.conditions ?? [];
-  if (conditions.length === 0) return null;
+  const energy = stepEnergy(step);
+  if (conditions.length === 0 && !energy) return null;
   return (
     <dl className="grid min-w-0 grid-cols-[minmax(0,1fr)] border-t border-rule font-ui text-label font-normal sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]" aria-label="Conditions">
       {conditions.map((condition, index) => (
-        <div key={`${condition.label}:${index}`} className="contents" data-testid="step-condition">
-          <dt className="pt-2 font-semibold text-ink-1 sm:border-b sm:border-rule sm:pb-2">{condition.label}</dt>
-          <dd className="border-b border-rule pb-2 text-ink-2 sm:pt-2">
-            {condition.stated}
-            <CitationChips citations={condition.citations} />
-          </dd>
-        </div>
+        <ConditionRow key={`${condition.label}:${index}`} label={condition.label} testId="step-condition">
+          {condition.stated}
+          <CitationChips citations={condition.citations} />
+        </ConditionRow>
       ))}
+      {energy ? (
+        <ConditionRow label={REACTION_ENERGY_LABEL} testId="step-energy">
+          <span className="lining-nums tabular-nums">{energy.text}</span>
+          <CitationChips citations={energy.citations} />
+        </ConditionRow>
+      ) : null}
     </dl>
   );
 }

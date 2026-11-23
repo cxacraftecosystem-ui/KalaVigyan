@@ -31,7 +31,8 @@ PACKS_HELD = 64
 REQUEST_WORDS = "tell explain describe know please something anything more give talk craft crafts"
 REQUEST_STEMS = frozenset(content_stems(REQUEST_WORDS))
 
-PackLoader = Callable[[CraftRef, str], Awaitable["VoicePack"]]
+Acls = tuple[str, ...]
+PackLoader = Callable[[CraftRef, str, Acls], Awaitable["VoicePack"]]
 
 
 @dataclass(frozen=True)
@@ -70,16 +71,16 @@ class VoicePackStore:
     def __init__(self, *, ttl_seconds: float = PACK_TTL_SECONDS, held: int = PACKS_HELD) -> None:
         self._ttl = ttl_seconds
         self._held = held
-        self._packs: OrderedDict[tuple[str, str], tuple[float, VoicePack]] = OrderedDict()
+        self._packs: OrderedDict[tuple[str, str, Acls], tuple[float, VoicePack]] = OrderedDict()
 
-    async def get(self, craft: CraftRef, mode: str, load: PackLoader) -> VoicePack:
-        key = (craft.slug, mode)
+    async def get(self, craft: CraftRef, mode: str, acls: Acls, load: PackLoader) -> VoicePack:
+        key = (craft.slug, mode, tuple(sorted(acls)))
         found = self._packs.get(key)
         now = time.monotonic()
         if found is not None and now - found[0] < self._ttl:
             self._packs.move_to_end(key)
             return found[1]
-        pack = await load(craft, mode)
+        pack = await load(craft, mode, acls)
         self._packs[key] = (now, pack)
         self._packs.move_to_end(key)
         while len(self._packs) > self._held:

@@ -8,12 +8,12 @@ from app.research.component_specs import checked_spec
 from app.research.component_specs_blocks import ANSWER_BLOCK_KIND, AnswerBlockSpec
 from app.research.craft_page import CraftPage
 from app.research.monograph_document import MonographDocument
-from app.services.document_components import document_structure
+from app.services.document_components import DocumentStructure, document_structure
 from app.services.knowledge_view import ClaimView
 from app.services.monograph_generated_assembly import GeneratedParts, assembled_document
 from app.services.monograph_generated_drawings import Drawings
 from app.services.monograph_generated_parts import StoredSection
-from app.services.monograph_generated_structure import with_page_claims
+from app.services.monograph_generated_structure import shown_claim_ids, with_page_claims
 from app.services.monograph_generated_units import SubjectRecord, stored_source
 
 from ..contracts.golden import golden_json
@@ -149,3 +149,27 @@ def test_the_document_numbers_its_chapters_from_the_page_and_lists_its_sources(
     assert sorted(source.number for source in document.content.sources.values()) == list(
         range(1, len(document.content.sources) + 1)
     )
+
+
+def test_a_claim_a_curated_figure_shows_is_shown_so_its_field_never_lists_it_again(page: CraftPage) -> None:
+    (seasons,) = [
+        item.block
+        for chapter in page.chapters
+        for item in chapter.items
+        if item.block is not None and item.block.kind == "seasons"
+    ]
+    figured = {uuid.UUID(cite["claimId"]) for cite in _citations(seasons.model_dump(mode="json"))}
+    assert figured
+    assert figured <= shown_claim_ids([], document_structure(page))
+
+
+def test_a_listed_fact_joins_no_prose_and_a_claim_no_list_holds_still_does(page: CraftPage) -> None:
+    base = next(claim for claim in page.claims if claim.level != HYPOTHESIS)
+    listed, loose = (
+        base.model_copy(update={"id": uuid.uuid5(uuid.NAMESPACE_URL, f"listed-fact/{name}"), "text": name})
+        for name in ("A listed fact.", "A loose claim.")
+    )
+    sections = with_page_claims([], DocumentStructure(claims=(listed, loose)), listed={listed.id})
+    assert [(s.field, s.version, s.sentences) for s in sections] == [
+        (base.discipline, 0, ({"text": "A loose claim.", "claimIds": [str(loose.id)]},))
+    ]

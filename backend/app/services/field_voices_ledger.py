@@ -17,6 +17,7 @@ from app.models import FieldImage, FieldImageCraft, FieldRecording, FieldRecordi
 from app.research.embedding import TextEmbedder
 from app.retrieval.indexing import embed_written
 from app.services.field_voices_feed import IMAGES, TRANSCRIPTS, VIEW_GONE, FieldVoicesPage, Live, StreamState
+from app.services.field_voices_illustrations import relink_photo_claims
 from app.services.field_voices_image_store import (
     apply_image,
     delete_orphaned_copy,
@@ -34,7 +35,7 @@ from app.services.field_voices_store import (
     stream_row,
     withdraw_recording,
 )
-from app.services.field_voices_sync import AppliedPage, StreamCursors
+from app.services.field_voices_sync import AppliedPage, Stamp, StreamCursors
 from app.services.object_store import ObjectStore
 
 __all__ = ["OpenSession", "SqlFieldVoicesLedger", "rekey_people", "rekeyed"]
@@ -84,7 +85,11 @@ class SqlFieldVoicesLedger:
             row = await stream_row(session, portal, stream)
             await session.commit()
             return StreamCursors(
-                cursor=row.cursor, gone_cursor=row.goneCursor, rereading=row.rereadFrom is not None
+                cursor=row.cursor,
+                gone_cursor=row.goneCursor,
+                rereading=row.rereadFrom is not None,
+                last=_change_stamp(row.lastAt, row.lastId),
+                gone_last=_change_stamp(row.goneLastAt, row.goneLastId),
             )
 
     async def needs_copy(self, portal: str, change: Live) -> bool:
@@ -131,7 +136,7 @@ class SqlFieldVoicesLedger:
             return same
 
     async def restart(self, portal: str, stream: str) -> None:
-        await self._stamp(portal, stream, cursor=None, rereadFrom=datetime.now(UTC))
+        await self._stamp(portal, stream, cursor=None, lastAt=None, lastId=None, rereadFrom=datetime.now(UTC))
 
     async def finish_reread(self, portal: str, stream: str) -> int:
         model = MODELS[stream]
@@ -199,10 +204,16 @@ class SqlFieldVoicesLedger:
         row = await stream_row(session, page.portal, page.stream)
         if page.next_cursor is None:
             return
+        moved = page.next_cursor != page.cursor and bool(page.changes)
+        last = page.changes[-1] if moved else None
         if page.view == VIEW_GONE:
             row.goneCursor = page.next_cursor
+            if last is not None:
+                row.goneLastAt, row.goneLastId = last.updated_at, last.id
         else:
             row.cursor = page.next_cursor
+            if last is not None:
+                row.lastAt, row.lastId = last.updated_at, last.id
 
     async def _stamp(self, portal: str, stream: str, **values: Any) -> None:
         async with self._open() as session:
@@ -245,6 +256,10 @@ async def rekey_people(session: AsyncSession, model: Any, portal: str, person: F
         )
 
 
+def _change_stamp(at: datetime | None, change_id: str | None) -> Stamp | None:
+    return None if at is None or change_id is None else (at, change_id)
+
+
 def rekeyed(entries: list[Any], key: str, old: str, new: str) -> list[Any]:
     return [{**each, key: new} if each.get(key) == old else each for each in entries]
 
@@ -257,6 +272,8 @@ async def _relink_unresolved(session: AsyncSession, stream: str, model: Any, por
         if crafts.craft_ids:
             values = [{key: row.id, "craftId": craft_id} for craft_id in crafts.craft_ids]
             await session.execute(insert(link).values(values).on_conflict_do_nothing())
+            if model is FieldImage:
+                await relink_photo_claims(session, row)
         row.unresolvedCrafts = list(crafts.unresolved)
 
 

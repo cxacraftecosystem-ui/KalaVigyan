@@ -30,5 +30,6 @@ BLOCK_KINDS = (
     "mordant_bath",
     "lost_wax",
     "firing",
+    "quantities",
     "component",
 )

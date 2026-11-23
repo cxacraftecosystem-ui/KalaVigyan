@@ -10,6 +10,7 @@ Date: 2026-11-16. Status: accepted.
 |---|---|
 | What built on it | [0107 Craft articles are written in English, with room for translations](0107-craft-articles-in-english-with-room-for-translation.md): answers in Indian languages, which keep their languages |
 | What built on it | [0117 A page in another language is the same page, translated passage by passage](0117-pages-in-other-languages.md): answers in Indian languages and their verified translation |
+| What amended it | [0157 A translation is read back before it is shown, and every fixed word in another language is sourced, reviewed data](0157-translations-read-back-and-reviewed-interface-words.md): items 3 and 4, the meaning check and the app's labels in other languages |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 
+import { FieldVoicesPart } from "@/components/craft/FieldVoicesPart";
 import { DeferredShellSlot } from "@/components/monograph/DeferredShellSlot";
 import { KitDefs } from "@/components/monograph/KitDefs";
 import { ChapterRun, PageCitation } from "@/components/monograph/MonographChapters";
 import { MonographFrame, type MonographPageProps } from "@/components/monograph/MonographFrame";
 import { MonographRail } from "@/components/monograph/MonographRail";
+import type { FieldVoicesFirst } from "@/lib/fieldVoicesView";
 import type { MonographDocument } from "@/lib/monographDocument";
 import { deferredRest, railAfterMasthead } from "@/lib/monographDeferred";
 import { railChapters, type PagePlan } from "@/lib/monographRenderLayout";
@@ -22,7 +24,7 @@ function DocumentChapters({ document, plan, masthead, rail, rest }: ChaptersProp
   );
 }
 
-export function MonographDocumentPage({ document: given, masthead = true, deferred = false, languages = null }: MonographPageProps) {
+export function MonographDocumentPage({ document: given, masthead = true, deferred = false, languages = null, voices = null }: MonographPageProps & { voices?: FieldVoicesFirst | null }) {
   const { document, plan } = shownPage(given);
   const rail = <MonographRail chapters={railChapters(plan)} />;
   const later = railAfterMasthead(document, plan, masthead);
@@ -31,6 +33,7 @@ export function MonographDocumentPage({ document: given, masthead = true, deferr
     <MonographFrame document={document} given={given} dataDeferred={rest !== null} languages={languages}>
       {later ? null : rail}
       <DocumentChapters document={document} plan={plan} masthead={masthead} rail={later ? rail : null} rest={rest} />
+      <FieldVoicesPart first={voices} className="kv-page pb-24" />
       <KitDefs document={given} />
     </MonographFrame>
   );

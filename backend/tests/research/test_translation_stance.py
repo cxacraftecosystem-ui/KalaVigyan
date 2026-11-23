@@ -1,4 +1,4 @@
-from app.research.stance_markers import HEDGE_MARKERS, NEGATION_MARKERS
+from app.research.stance_marker_words import HEDGE_MARKERS, NEGATION_MARKERS
 from app.research.translation import translation_problems
 from app.research.vocabulary import ANSWER_LANGUAGES, CANONICAL_LANGUAGE
 

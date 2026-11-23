@@ -184,7 +184,9 @@ missing bearer each get 401.
   temperature?, max_tokens?, tools[]}`; anything else is ignored. A request that does not stream,
   or carries no user message, is 400 (`bad_request`).
 - Pipeline (PLAN 10.3): the session's claim pack, prefetched at session start (T0 and T1 for the
-  craft) plus T2; no planner, no craft match when the session has a craft, no live web; one
+  craft) plus T2, read and kept per reader access (`VoicePackStore.get(craft, mode, acls, load)`,
+  `chunk_acls_for(role)`), so a student's turn cites a researcher-only page without its words
+  (decision 0149); no planner, no craft match when the session has a craft, no live web; one
   `VOICE_TURN` call through the AI router as the session's user; the per-sentence claim-id and
   figure checks of the composer before anything streams.
 - Reply: `LlmChunk {id: "chatcmpl-<turn id hex>", object: "chat.completion.chunk", created,
@@ -316,8 +318,13 @@ checks), and caps the spoken text at 60 words in the session language. Source la
 word before them is in the session language. A sentence whose translation fails twice is left out;
 when none translates the reply is `UNSAID_REPLIES` and the turn has no answer. Speech to text gets
 the session's Scribe code and speech its ISO 639-1 code. Every fixed phrase (filler, refusals,
-`end_call` messages) comes from `voice/phrases.py` in the session language. Translation runs within
-the call's hard end.
+`end_call` messages, the source word) comes from `voice/phrases.py` in the session language: the
+English is kept there and each other language's phrase is its `voice.*` entry in
+`backend/app/data/interface_words/`, spoken before review because a call cannot switch to English
+(decision 0157); voice offers only a language whose every phrase is written
+(`phrases.phrased_languages`). The relay's `SEARCHING_STORED` status line is in the session
+language from a reviewed `stream.status` entry, else in English. Translation runs within the
+call's hard end.
 
 ## Built by lane 0017 (decision 0017)
 

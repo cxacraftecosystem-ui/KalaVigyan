@@ -8,7 +8,7 @@ from pydantic import Field, model_validator
 
 from app.models.enums import IMAGE_RELEVANCE
 
-from .base import ContractModel
+from .base import ContractModel, absent
 from .blocks import (
     SENTENCE,
     BlockBase,
@@ -27,11 +27,13 @@ from .timeline import states_movement, years_named
 
 __all__ = [
     "IMAGE_ZOOM_LEVELS",
+    "TIMELINE_UNDATED_MAX",
     "ZOOM_LEVELS",
     "TimelineMapBlock",
     "TimelinePlace",
     "TimelinePoint",
     "TimelineRoute",
+    "TimelineUndated",
     "ZoomCompound",
     "ZoomLevel",
     "ZoomStoryBlock",
@@ -39,6 +41,7 @@ __all__ = [
 
 ZOOM_LEVELS = ("DISTRICT", "WORKSHOP", "CLOTH", "FIBRE", "MOLECULE")
 IMAGE_ZOOM_LEVELS = ("WORKSHOP", "CLOTH", "FIBRE")
+TIMELINE_UNDATED_MAX = 6
 
 ZoomLevelName = Literal[*ZOOM_LEVELS]
 ImageRelevance = Literal[*IMAGE_RELEVANCE]
@@ -122,13 +125,22 @@ class TimelinePlace(ContractModel):
     wikidata_id: str | None = Field(pattern=WIKIDATA_ID_PATTERN)
     latitude: float | None = Field(ge=-90, le=90)
     longitude: float | None = Field(ge=-180, le=180)
+    district_lgd: int | None = Field(default=None, ge=1, exclude_if=absent)
 
     @model_validator(mode="after")
-    def _placed_only_from_wikidata(self) -> Self:
+    def _placed_from_wikidata_or_the_register(self) -> Self:
         placed = (self.latitude is not None, self.longitude is not None)
-        if placed[0] != placed[1] or (placed[0] and self.wikidata_id is None):
-            raise ValueError(f"place {self.name!r} is placed only with both Wikidata coordinates")
+        named = self.wikidata_id is not None or self.district_lgd is not None
+        if placed[0] != placed[1] or (placed[0] and not named):
+            raise ValueError(
+                f"place {self.name!r} is placed only with both coordinates of its item or district"
+            )
         return self
+
+
+class TimelineUndated(ContractModel):
+    place: int | None = Field(ge=0)
+    sentence: ExplainerSentence
 
 
 class TimelinePoint(ContractModel):
@@ -158,17 +170,25 @@ class TimelineRoute(ContractModel):
         return self
 
 
+def _none_listed(value: list[TimelineUndated]) -> bool:
+    return not value
+
+
 class TimelineMapBlock(BlockBase):
     SENTENCES: ClassVar[SentenceSpec] = (
         ("points", [(("sentence", SENTENCE),)]),
         ("routes", [(("sentence", SENTENCE),)]),
+        ("undated", [(("sentence", SENTENCE),)]),
     )
 
     kind: Literal["timeline_map"]
-    version: Literal[1]
+    version: Literal[1, 2]
     places: list[TimelinePlace] = Field(min_length=1)
     points: list[TimelinePoint]
     routes: list[TimelineRoute]
+    undated: list[TimelineUndated] = Field(
+        default_factory=list, max_length=TIMELINE_UNDATED_MAX, exclude_if=_none_listed
+    )
     datasets: list[DatasetRef] = Field(min_length=1, max_length=1)
     boundary_caption: str
 
@@ -177,12 +197,19 @@ class TimelineMapBlock(BlockBase):
         require_facts(f"timeline {self.id}", list(self.cited_sentences()))
         if self.boundary_caption != BOUNDARY_CAPTION or self.datasets[0].code != BOUNDARY_DATASET_CODE:
             raise ValueError(f"timeline {self.id} draws {BOUNDARY_DATASET_CODE} under the boundary caption")
-        problems = _place_problems(self.id, self.places, self.points, self.routes)
+        problems = _version_problems(self) + _place_problems(
+            self.id, self.places, self.points, self.routes, self.undated
+        )
         if problems:
             raise ValueError("; ".join(problems))
         names = [place.name for place in self.places]
         if any(not named_in(names[point.place], point.sentence) for point in self.points):
             raise ValueError(f"timeline {self.id} dates only places a point's sentence names")
+        if any(
+            entry.place is not None and not named_in(names[entry.place], entry.sentence)
+            for entry in self.undated
+        ):
+            raise ValueError(f"timeline {self.id} places an undated sentence only where it names the place")
         for route in self.routes:
             if not states_movement(stated_texts(route.sentence), names[route.start], names[route.end]):
                 raise ValueError(f"timeline {self.id} draws a route only where a cited text states the move")
@@ -218,8 +245,19 @@ def _require_stated_years(year_from: int, year_to: int, sentence: AnswerSentence
         )
 
 
+def _version_problems(block: TimelineMapBlock) -> list[str]:
+    registered = any(place.district_lgd is not None for place in block.places)
+    if block.version == 1 and (block.undated or registered):
+        return [f"timeline {block.id} lists undated sentences and register places from version 2"]
+    return []
+
+
 def _place_problems(
-    block_id: str, places: list[TimelinePlace], points: list[TimelinePoint], routes: list[TimelineRoute]
+    block_id: str,
+    places: list[TimelinePlace],
+    points: list[TimelinePoint],
+    routes: list[TimelineRoute],
+    undated: list[TimelineUndated],
 ) -> list[str]:
     names = [place.name.casefold() for place in places]
     items = [wikidata for place in places if (wikidata := place.wikidata_id)]
@@ -227,6 +265,7 @@ def _place_problems(
     if len(set(names)) != len(names) or len(set(items)) != len(items):
         problems.append(f"timeline {block_id} lists each place once")
     used = [point.place for point in points] + [i for route in routes for i in (route.start, route.end)]
+    used += [entry.place for entry in undated if entry.place is not None]
     if any(index >= len(places) for index in used):
         return [*problems, f"timeline {block_id} dates and joins only listed places"]
     if list(dict.fromkeys(used)) != list(range(len(places))):

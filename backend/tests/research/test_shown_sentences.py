@@ -2,7 +2,7 @@ from typing import Any
 
 from app.research.blocks_insight import MeasureBlock
 from app.research.blocks_place import SupplyMapBlock
-from app.research.coverage_answers import field_sentences, shown_field_sentences
+from app.research.coverage_answers import field_figures, shown_field_sentences
 from app.research.coverage_eval import answer_measures, judge_message
 from app.research.explainer import Explainer
 
@@ -83,7 +83,18 @@ def test_the_judge_reads_each_block_sentence_once_as_the_views_show_it() -> None
     assert len(shown_field_sentences(explainer)) == 12 + 3
 
 
-def test_the_rubric_still_counts_the_sentences_the_blocks_carry() -> None:
+def test_the_rubric_counts_each_block_sentence_once_as_the_judge_reads_it() -> None:
     explainer = with_blocks(supply_map(), borewell_measure())
-    assert len(field_sentences(explainer)) == 12 + 5
-    assert answer_measures(explainer, ASKED).sentences == 12 + 5
+    measures = answer_measures(explainer, ASKED)
+    assert measures.sentences == 12 + 3
+    geography = next(field for field in measures.fields if field.field == "GEOGRAPHY")
+    assert geography.sentences == 3 + 3
+
+
+def test_the_judge_reads_each_figure_s_kind_and_the_quantities_it_shows() -> None:
+    explainer = with_blocks(supply_map(), borewell_measure())
+    message = judge_message("Where did the indigo come from?", explainer, ASKED)
+    figures = message[message.index('ref="figures"') :]
+    assert "[GEOGRAPHY] supply_map: no quantities" in figures
+    assert "[GEOGRAPHY] measure: 200 feet; 450 feet" in figures
+    assert len(field_figures(explainer)) == 2 + 2

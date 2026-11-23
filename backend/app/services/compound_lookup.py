@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -9,7 +10,7 @@ from typing import Any, Protocol
 
 import httpx
 from sqlalchemy import or_, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.errors import ExternalFailure, InvalidInput
 from app.data.craft_master_loader import ID_NAMESPACE
@@ -56,6 +57,32 @@ class LinkReport:
         }
 
 
+@dataclass(frozen=True)
+class _StoredCompound:
+    id: uuid.UUID
+    name: str
+    formula: str | None
+    pubchem_cid: int | None
+    source_id: uuid.UUID | None
+
+    def pending_formula(self) -> str | None:
+        return self.formula if self.pubchem_cid is None else None
+
+    def unfilled_cid(self) -> int | None:
+        if self.formula is not None and self.source_id is not None:
+            return None
+        return self.pubchem_cid
+
+    def unchanged_in(self, row: Compound) -> bool:
+        return (row.pubchemCid, row.formula, row.sourceId) == (self.pubchem_cid, self.formula, self.source_id)
+
+
+@dataclass(frozen=True)
+class _FoundRecord:
+    compound: _StoredCompound
+    record: PubChemCompound
+
+
 def pubchem_finder(client: httpx.AsyncClient) -> PubChemAdapter:
     return next(adapter for adapter in reference_sources(client) if isinstance(adapter, PubChemAdapter))
 
@@ -71,21 +98,42 @@ async def find_compound(finder: CompoundFinder, *, name: str, formula: str) -> P
     return None
 
 
-async def link_compounds(session: AsyncSession, finder: CompoundFinder, *, now: datetime) -> LinkReport:
+async def link_compounds(
+    sessions: async_sessionmaker[AsyncSession], finder: CompoundFinder, *, now: datetime
+) -> LinkReport:
+    async with sessions() as session:
+        stored = await _stored_compounds(session)
     report = LinkReport()
-    pending = (
-        await session.scalars(
-            select(Compound)
-            .where(Compound.pubchemCid.is_(None), Compound.formula.is_not(None))
-            .order_by(Compound.name)
-        )
-    ).all()
-    taken = set(
-        (await session.scalars(select(Compound.pubchemCid).where(Compound.pubchemCid.is_not(None)))).all()
+    links = await _look_up_pending(finder, stored, report)
+    fills = await _look_up_unfilled(finder, stored, report)
+    if links or fills:
+        async with sessions() as session:
+            report.linked.extend(await _written(session, links, now=now))
+            report.filled.extend(await _written(session, fills, now=now))
+            await session.commit()
+    return report
+
+
+async def _stored_compounds(session: AsyncSession) -> list[_StoredCompound]:
+    rows = await session.execute(
+        select(Compound.id, Compound.name, Compound.formula, Compound.pubchemCid, Compound.sourceId)
+        .where(or_(Compound.pubchemCid.is_not(None), Compound.formula.is_not(None)))
+        .order_by(Compound.name, Compound.id)
     )
-    for compound in pending:
+    return [_StoredCompound(*row) for row in rows.all()]
+
+
+async def _look_up_pending(
+    finder: CompoundFinder, stored: Sequence[_StoredCompound], report: LinkReport
+) -> list[_FoundRecord]:
+    taken = {compound.pubchem_cid for compound in stored if compound.pubchem_cid is not None}
+    links: list[_FoundRecord] = []
+    for compound in stored:
+        formula = compound.pending_formula()
+        if formula is None:
+            continue
         try:
-            found = await find_compound(finder, name=compound.name, formula=str(compound.formula))
+            found = await find_compound(finder, name=compound.name, formula=formula)
         except ExternalFailure as failure:
             logger.warning("compound lookup failed for %s: %s", compound.name, failure)
             report.failed.append(compound.name)
@@ -94,47 +142,62 @@ async def link_compounds(session: AsyncSession, finder: CompoundFinder, *, now: 
             report.not_found.append(compound.name)
             continue
         taken.add(found.cid)
-        _fill(compound, found, await _record_source(session, found, now))
-        report.linked.append(compound.name)
-    await _fill_known_records(session, finder, report, now=now)
-    await session.flush()
-    return report
+        links.append(_FoundRecord(compound, found))
+    return links
 
 
-async def _fill_known_records(
-    session: AsyncSession, finder: CompoundFinder, report: LinkReport, *, now: datetime
-) -> None:
-    unfilled = (
-        await session.scalars(
-            select(Compound)
-            .where(
-                Compound.pubchemCid.is_not(None), or_(Compound.formula.is_(None), Compound.sourceId.is_(None))
-            )
-            .order_by(Compound.name)
-        )
-    ).all()
-    for compound in unfilled:
+async def _look_up_unfilled(
+    finder: CompoundFinder, stored: Sequence[_StoredCompound], report: LinkReport
+) -> list[_FoundRecord]:
+    fills: list[_FoundRecord] = []
+    for compound in stored:
+        cid = compound.unfilled_cid()
+        if cid is None:
+            continue
         try:
-            found = await finder.compound(int(compound.pubchemCid or 0))
+            found = await finder.compound(cid)
         except ExternalFailure as failure:
             logger.warning("compound record lookup failed for %s: %s", compound.name, failure)
             report.failed.append(compound.name)
             continue
-        if found is None or found.cid != compound.pubchemCid or not _record_of(compound, found):
+        if found is None or found.cid != cid or not _record_of(compound.formula, found):
             report.not_found.append(compound.name)
             continue
-        compound.formula = compound.formula or found.formula
-        _fill(compound, found, await _record_source(session, found, now))
-        report.filled.append(compound.name)
+        fills.append(_FoundRecord(compound, found))
+    return fills
 
 
-def _record_of(compound: Compound, found: PubChemCompound) -> bool:
+async def _written(session: AsyncSession, found: Sequence[_FoundRecord], *, now: datetime) -> list[str]:
+    written: list[str] = []
+    for each in found:
+        row = await session.get(Compound, each.compound.id, with_for_update=True)
+        if row is None or not each.compound.unchanged_in(row) or await _held_elsewhere(session, each):
+            logger.warning(
+                "compound %s changed while PubChem was asked; it is left for the next run", each.compound.name
+            )
+            continue
+        row.formula = row.formula or each.record.formula
+        _fill(row, each.record, await _record_source(session, each.record, now))
+        written.append(each.compound.name)
+    return written
+
+
+async def _held_elsewhere(session: AsyncSession, found: _FoundRecord) -> bool:
+    holder = await session.scalar(
+        select(Compound.id)
+        .where(Compound.pubchemCid == found.record.cid, Compound.id != found.compound.id)
+        .limit(1)
+    )
+    return holder is not None
+
+
+def _record_of(formula: str | None, found: PubChemCompound) -> bool:
     if not found.formula:
         return False
-    if not compound.formula:
+    if not formula:
         return True
     try:
-        return _same_composition(found, dict(parse_formula(compound.formula).counts))
+        return _same_composition(found, dict(parse_formula(formula).counts))
     except InvalidInput:
         return False
 

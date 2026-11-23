@@ -17,6 +17,7 @@ passage that holds a quote, Re-reading a source, Stamps), `docs/contracts/knowle
 | How a quote is linked when a fact is written | [knowledge-writes.md](../contracts/knowledge-writes.md), Citations and their passages |
 | What a held fact is and how it heals | [nightly-upkeep.md](../contracts/nightly-upkeep.md), 1a |
 | What the open data leaves out | [open-data.md](../contracts/open-data.md) and [decision 0116](0116-open-data-with-a-doi.md) |
+| A fact whose quotes are closed stays for every reader, unquoted, and one rule names the facts a reader sees (amends items 1 and 6 and the open-data consequence) | [decision 0149](0149-a-fact-readers-can-see.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

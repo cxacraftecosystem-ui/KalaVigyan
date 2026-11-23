@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { CitationChips } from "@/components/answer/CitationContext";
 import { useExplainerReading, useSentenceListening } from "@/components/answer/ExplainerReading";
@@ -10,7 +10,6 @@ import { sentenceView } from "@/lib/answerLanguages";
 import type { ExplainerSentence as Sentence } from "@/lib/explainerBlockBase";
 import { sentenceSegments, type TextPart } from "@/lib/explainerView";
 import { wordRanges } from "@/lib/listen";
-import type { Citation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export const TERM_CLASS = "font-medium text-ink-1 underline decoration-indigo decoration-dotted decoration-1 underline-offset-[3px] hover:decoration-solid";
@@ -32,41 +31,6 @@ function Marked({ sentence, children }: { sentence: Sentence; children: ReactNod
   if (mark === "hypothesis") return <HypothesisText>{children}</HypothesisText>;
   if (mark === "inferred") return <InferredText>{children}</InferredText>;
   return <>{children}</>;
-}
-
-export function differingReadings(citations: readonly Citation[]): Citation[] {
-  const quoted = citations.filter((citation) => (citation.quote ?? "").trim().length > 0);
-  return quoted.filter((citation, at) => quoted.findIndex((other) => other.sourceId === citation.sourceId) === at);
-}
-
-function SourcesDiffer({ sentence }: { sentence: Sentence }) {
-  const readings = differingReadings(sentence.citations);
-  const [open, setOpen] = useState(false);
-  const bodyId = useId();
-  if (readings.length < 2) {
-    return (
-      <span>
-        {" "}
-        <EvidenceTag state="differ" />
-      </span>
-    );
-  }
-  return (
-    <span data-testid="sentence-differ">
-      {" "}
-      <button type="button" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen(!open)} className="inline cursor-pointer">
-        <EvidenceTag state="differ" />
-      </button>
-      <span id={bodyId} hidden={!open} className="mt-1.5 block border-s-2 border-madder py-0.5 ps-3.5 text-ink-2" data-testid="sources-differ-readings">
-        {readings.map((citation) => (
-          <span key={citation.sourceId} className="block py-0.5">
-            <span className="italic">{citation.quote}</span>
-            <CitationChips citations={[citation]} />
-          </span>
-        ))}
-      </span>
-    </span>
-  );
 }
 
 export function ExplainerSentence({ sentence }: { sentence: Sentence }) {
@@ -108,7 +72,12 @@ export function ExplainerSentence({ sentence }: { sentence: Sentence }) {
           <EvidenceTag state={evidence} />
         </span>
       ) : null}
-      {sentence.sourcesDiffer ? <SourcesDiffer sentence={sentence} /> : null}{" "}
+      {sentence.sourcesDiffer ? (
+        <span data-testid="sentence-differ">
+          {" "}
+          <EvidenceTag state="differ" />
+        </span>
+      ) : null}{" "}
     </span>
   );
 }

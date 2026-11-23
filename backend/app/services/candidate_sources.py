@@ -18,6 +18,7 @@ from app.research.evidence import SourceDocument, canonical_url
 from app.research.fetcher import FetchedPage, Fetcher, FetchRefused, FetchRequest
 from app.research.knowledge_writes import FactProposal, ProposedSource
 from app.research.retrieval import RESTRICTED_SENSITIVITY
+from app.research.source_titles import first_heading, junk_title, usable_title
 from app.sources.adapter import build_document
 from app.sources.fetcher_client import FetcherClient
 from app.sources.web.page import page_item
@@ -96,6 +97,8 @@ async def read_source(
         stated_licence=fetched.page.metadata.licence if fetched.page is not None else None,
         restricted=stored is not None and stored.sensitivity == RESTRICTED_SENSITIVITY,
         supplied=supplied.note if supplied else None,
+        published=_published(stored, document),
+        untitled=document.item.title if document is not None and junk_title(document.item.title) else None,
     )
     return ReadSource(
         proposed=proposed, cited=cited, document=document, stored=stored, supplied=bool(supplied)
@@ -117,7 +120,8 @@ def _document(proposed: ProposedSource, page: FetchedPage) -> SourceDocument | N
     if not page.text.strip():
         return None
     item = page_item(PROPOSAL_ADAPTER, proposed.url, page)
-    titled = item if page.metadata.title else item.model_copy(update={"title": proposed.title})
+    title = usable_title(page.metadata.title, proposed.title, first_heading(page.text))
+    titled = item if title is None else item.model_copy(update={"title": title})
     licensed = titled if titled.licence else titled.model_copy(update={"licence": proposed.licence})
     return build_document(licensed, page.text, FULL_TEXT, truncated=page.truncated)
 
@@ -126,3 +130,9 @@ def _grade(stored: Source | None, document: SourceDocument | None) -> str | None
     if stored is not None:
         return stored.reliability
     return document.item.trust if document is not None else None
+
+
+def _published(stored: Source | None, document: SourceDocument | None) -> str | None:
+    if document is not None and document.item.published:
+        return document.item.published
+    return f"{stored.year:04d}" if stored is not None and stored.year else None

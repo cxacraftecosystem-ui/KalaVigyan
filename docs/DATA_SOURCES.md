@@ -189,22 +189,32 @@ for Kachchh (449) follows Wikidata's Kutch district item (Q1063417, CC0 1.0), wh
 ## Seeded reference passages (science engine)
 
 The physical constants behind the stage envelopes (decision 0015) are claims in
-`backend/app/data/science_seed.json`, each quoting one pinned Wikipedia revision (retrieved
-2026-11-16; CC BY-SA 4.0, attributed "Wikipedia contributors" with title and revision).
+`backend/app/data/science_seed.json`. Four quote one pinned Wikipedia revision each (retrieved
+2026-11-16; CC BY-SA 4.0, attributed "Wikipedia contributors" with title and revision);
+kaolinite dehydroxylation quotes a thermal-analysis paper (retrieved 2026-11-23): Izadifar, M.,
+Thissen, P., Steudel, A., Kleeberg, R., Kaufhold, S., Kaltenbach, J., Schuhmann, R., Dehn, F.
+and Emmerich, K. (2020), "Comprehensive Examination of Dehydroxylation of Kaolinite,
+Disordered Kaolinite, and Dickite: Experimental Studies and Density Functional Theory", Clays
+and Clay Minerals 68(4), 319–333, doi:10.1007/s42860-020-00082-w, open access under CC BY 4.0
+(copyright 2020 the authors), read at its Cambridge University Press page.
 
-| Constant | Article and revision | Value cited |
+| Constant | Source and passage | Value cited |
 |---|---|---|
 | Water boils at one atmosphere | Water, 1385775442 (Phase transitions) | 100 °C |
 | Quartz α to β inversion | Quartz, 1383182792 (Crystal habit and structure) | 573 °C |
-| Kaolinite dehydroxylation begins | Kaolinite, 1383311141 (Metakaolin) | 550–600 °C |
+| Kaolinite dehydroxylation commonly occurs | Izadifar et al. 2020 (Introduction, paragraph 4) | 400 and 700 °C |
 | Beeswax melts | Beeswax, 1382937264 (Physical characteristics) | 62 to 64 °C |
 | Brass melts | Brass, 1382181158 (Properties) | 900 to 940 °C |
+
+The Kaolinite article, revision 1383311141 (Metakaolin), stays the source of a seeded claim of its
+own that dehydroxylation begins at 550–600 °C; it is no longer a constant.
 
 Seeded compounds are matched to PubChem records by `app/scripts/link_compounds` through the
 `pubchem` adapter (terms above); each linked compound cites its PubChem record. It runs nightly
 in the Coverage enrichment job. A linked compound's 3D conformer (PubChem's computed 3D record,
-`record/SDF?record_type=3d`, same terms) is fetched once through the same adapter, at most one
-call per 0.25 s, kept in the private bucket and drawn in the explainer citing the compound's
+`record/SDF?record_type=3d`, same terms) is fetched once through the same adapter (a CID PubChem
+has no 3D record for is asked again once its kept miss is over 90 days old, decision 0152), at most
+one call per 0.25 s, kept in the private bucket and drawn in the explainer citing the compound's
 record (decision 0045).
 
 ## Live web sources

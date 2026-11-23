@@ -4,7 +4,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
-from dataclasses import KW_ONLY, dataclass, field
+from dataclasses import KW_ONLY, dataclass, field, replace
 from typing import Any, Self
 
 from app.core.errors import InvalidInput
@@ -28,6 +28,7 @@ from .builder_record import (
 )
 from .claim_ledger import ONCE_PER_ANSWER_KINDS
 from .climate_risk import CLIMATE_RISK_WAIT_SECONDS, ClimateRiskBuilder
+from .craft_matter import MatterReads
 from .expert_views import EXPERT_VIEW_WAIT_SECONDS, ExpertPanelBuilder
 from .journey_builders import (
     TIMELINE_MAP_WAIT_SECONDS,
@@ -46,6 +47,7 @@ from .matter_builders import (
 )
 from .measure_builder import MEASURE_FIELDS, MeasureBuilder
 from .place_builders import REGION_STORY_WAIT_SECONDS, MapLayerBuilder, RegionStoryBuilder
+from .quantities_builder import QUANTITY_FIELDS, QuantitiesBuilder
 from .season_supply_builders import SUPPLY_MAP_WAIT_SECONDS, SeasonsBuilder, SupplyMapBuilder
 from .simulation_builder import SIMULATION_WAIT_SECONDS, SimulationBuilder
 from .what_if_builder import WHAT_IF_FIELDS, WHAT_IF_WAIT_SECONDS, WhatIfBuilder
@@ -131,6 +133,7 @@ BLOCK_BUILDERS: tuple[BuilderEntry, ...] = (
     ),
     BuilderEntry("supply_map", SUPPLY_MAP_FIELDS, SupplyMapBuilder, SUPPLY_MAP_WAIT_SECONDS),
     BuilderEntry("measure", MEASURE_FIELDS, MeasureBuilder),
+    BuilderEntry("quantities", QUANTITY_FIELDS, QuantitiesBuilder),
     BuilderEntry("market_gi", MARKET_FIELDS, MarketGiBuilder, rebuilt_on_reuse=True),
     BuilderEntry(
         "reaction_player", PLAYED_FIELDS, ReactionPlayerBuilder, rebuilt_on_reuse=True, replaces_stored=True
@@ -181,11 +184,13 @@ class BlockBuilders:
         taken: set[str] | None = None,
         shown: Collection[str] = (),
         record: BuildRecord | None = None,
+        matter: MatterReads | None = None,
     ) -> None:
         self._builders = tuple(builders)
         self._taken = taken
         self._shown = frozenset(shown)
         self._record = record
+        self._matter = matter
 
     @classmethod
     def from_registry(
@@ -199,7 +204,7 @@ class BlockBuilders:
         return cls(made, record=record)
 
     def for_answer(self) -> BlockBuilders:
-        return BlockBuilders(self._builders, taken=set(), record=self._record)
+        return BlockBuilders(self._builders, taken=set(), record=self._record, matter=MatterReads())
 
     def for_section(self, discipline: str) -> tuple[Pair, ...]:
         return tuple(pair for pair in self._builders if discipline in pair[0].disciplines)
@@ -217,7 +222,7 @@ class BlockBuilders:
 
     def without(self, kinds: Collection[str], *, shown: Collection[str] = ()) -> BlockBuilders:
         kept = (pair for pair in self._builders if pair[0].kind not in kinds)
-        return BlockBuilders(kept, taken=self._taken, shown=shown, record=self._record)
+        return BlockBuilders(kept, taken=self._taken, shown=shown, record=self._record, matter=self._matter)
 
     def note_shown(self, kinds: Iterable[str]) -> None:
         if self._taken is not None:
@@ -227,6 +232,8 @@ class BlockBuilders:
         return SectionBuilds(self)
 
     async def added(self, ask: BuildAsk) -> AddedBlocks:
+        if self._matter is not None:
+            ask = replace(ask, matter=self._matter)
         field = ask.section.discipline
         chosen = [
             pair
@@ -252,7 +259,9 @@ class BlockBuilders:
         return AddedBlocks(tuple(blocks), sources)
 
     def _kept(self, pairs: Iterable[Pair]) -> BlockBuilders:
-        return BlockBuilders(pairs, taken=self._taken, shown=self._shown, record=self._record)
+        return BlockBuilders(
+            pairs, taken=self._taken, shown=self._shown, record=self._record, matter=self._matter
+        )
 
     def _repeats(self, block: Block, ask: BuildAsk) -> bool:
         if not repeats_shown(block, self._shown):

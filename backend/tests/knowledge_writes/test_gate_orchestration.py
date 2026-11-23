@@ -25,7 +25,9 @@ from .fakes import (
     held,
     page,
 )
+from .judge_replies import added_reason, compared, verdict
 
+DECLARED_TITLE = "Indigo dyeing in Ajrakh"
 VECTOR = [1.0] + [0.0] * (EMBEDDING_DIMENSIONS - 1)
 FIRST = Candidate(ref="c1", statement=STATEMENT, field="PROCESS")
 SECOND = Candidate(ref="c2", statement="Ajrakh printers wash the cloth in running water.", field="PROCESS")
@@ -41,18 +43,13 @@ class StoredSession:
 
 
 def proposal(licence: str | None = None) -> FactProposal:
-    source = {"url": PAGE_URL, "title": "Declared title", "licence": licence, "quotes": [{"text": QUOTE}]}
+    source = {"url": PAGE_URL, "title": DECLARED_TITLE, "licence": licence, "quotes": [{"text": QUOTE}]}
     body = {"subject": {"kind": "craft", "slug": "Kutch-Ajrakh"}, "field": "PROCESS", "statement": STATEMENT}
     return FactProposal.model_validate(body | {"sources": [source]})
 
 
 def comparison(candidate: str, relation: str) -> dict[str, Any]:
-    return {
-        "candidate": candidate,
-        "held": str(NEAR.id),
-        "relation": relation,
-        "reason": f"{relation} reason.",
-    }
+    return compared(candidate, NEAR.id, relation)
 
 
 def test_the_first_gates_stop_at_a_failed_quote_check() -> None:
@@ -92,7 +89,7 @@ async def test_one_judge_call_compares_a_batch_and_a_differing_fact_skips_the_no
 
 
 async def test_a_distinct_fact_goes_to_the_novelty_judge_with_its_nearest_facts() -> None:
-    covering = {"candidate": "c1", "adds": False, "coveredBy": [str(NEAR.id)], "reason": "Already said."}
+    covering = verdict("c1", adds=False, covered=[NEAR.id], reason="Already said.")
     judge = FakeJudge({"comparisons": [comparison("c1", "DISTINCT")]}, {"verdicts": [covering]})
     later = await later_gates(FakeHeldFacts(nearest=[NEAR]), [FIRST], embed=FakeEmbedder(VECTOR), judge=judge)
     run = gate_run(FIRST, (), later["c1"])
@@ -118,14 +115,13 @@ async def test_without_an_embedder_only_identical_texts_are_refused_and_novelty_
 
 async def test_a_far_neighbour_skips_the_comparison_but_not_the_novelty_judgement() -> None:
     far = held("far", "Ajrakh carries geometric patterns.", 0.4)
-    verdict = {"candidate": "c1", "adds": True, "coveredBy": [], "reason": "It counts the dips."}
-    judge = FakeJudge({"verdicts": [verdict]})
+    judge = FakeJudge({"verdicts": [verdict("c1", adds=True, reason="It counts the dips.")]})
     later = await later_gates(FakeHeldFacts(nearest=[far]), [FIRST], embed=FakeEmbedder(VECTOR), judge=judge)
     duplicate, novelty = later["c1"].outcomes
     assert (duplicate.passed, novelty.passed, novelty.reasons, len(judge.calls)) == (
         True,
         True,
-        ["It counts the dips."],
+        [added_reason("It counts the dips.")],
         1,
     )
 
@@ -135,7 +131,7 @@ async def test_a_read_page_is_graded_as_the_research_pipeline_grades_a_web_page(
     (read,) = await read_sources(StoredSession(), fetcher, proposal(licence="CC BY 4.0"))  # type: ignore[arg-type]
     assert (read.cited.grade, read.cited.text, read.cited.declared_licence) == ("C", PAGE_TEXT, "CC BY 4.0")
     assert read.document is not None
-    assert (read.document.item.title, read.document.item.licence) == ("Declared title", "CC BY 4.0")
+    assert (read.document.item.title, read.document.item.licence) == (DECLARED_TITLE, "CC BY 4.0")
 
 
 async def test_a_stored_source_keeps_its_own_grade_and_restriction() -> None:

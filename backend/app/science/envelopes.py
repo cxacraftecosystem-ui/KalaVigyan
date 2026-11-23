@@ -57,11 +57,11 @@ PHYSICAL_CONSTANTS: Mapping[str, PhysicalConstant] = MappingProxyType(
             ),
             PhysicalConstant(
                 "kaolinite-dehydroxylation",
-                "Kaolinite dehydroxylation begins",
+                "Kaolinite dehydroxylation commonly occurs",
                 "TEMPERATURE",
-                550.0,
-                600.0,
-                "sci-constant-kaolinite-dehydroxylation",
+                400.0,
+                700.0,
+                "sci-constant-kaolinite-dehydroxylation-range",
             ),
             PhysicalConstant(
                 "beeswax-melting-range",

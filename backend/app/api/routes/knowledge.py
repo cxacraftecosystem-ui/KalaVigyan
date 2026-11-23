@@ -35,7 +35,7 @@ from app.research.explainer_versions import BuildsOn
 from app.research.planning import withheld_name
 from app.research.reading_style import ReadingStyle
 from app.research.stream import event_stream
-from app.research.vocabulary import AnswerLanguage, Depth, answer_language_options
+from app.research.vocabulary import AnswerLanguage, Depth
 from app.schemas.common import APIModel
 from app.services import knowledge_view
 from app.services.answer_quiz import answer_offers_quiz, with_quiz_offer
@@ -49,6 +49,7 @@ from app.services.explainer_history import (
     follow_up_of,
 )
 from app.services.follow_ups import FollowUp
+from app.services.interface_words import language_options_with_words
 from app.voice.availability import HIDDEN_VOICE, voice_availability
 from app.voice.runtime import VoiceRuntime, VoiceSettings
 from app.voice.store import SqlVoiceStore
@@ -130,7 +131,7 @@ async def answers_config(
         "listen": listen,
         "film": film,
         "conversation": conversation,
-        "languages": answer_language_options(),
+        "languages": language_options_with_words(),
     }
 
 
@@ -138,7 +139,7 @@ async def answers_config(
 async def answers_languages(
     request: Request, response: Response, reader: User | None = Depends(public_reader)
 ) -> Any:
-    return cached_read(request, response, reader, {"languages": answer_language_options()})
+    return cached_read(request, response, reader, {"languages": language_options_with_words()})
 
 
 class AskRequest(APIModel):

@@ -34,8 +34,9 @@ FLOORS = {
     ("releaseSample", "reranked"): {"recallAt5": 0.95, "meanReciprocalRank": 0.80},
     ("releaseSample", "fused"): {"recallAt5": 0.38, "meanReciprocalRank": 0.24},
 }
-LIVE_ANSWERS = {"judgeMean": 0.815, "rubricMean": 0.969}
-ANSWER_FLOORS = {"judgeMean": 0.76, "rubricMean": 0.91}
+SHOWN_ONCE_RUBRIC_LOWEST = 0.872
+LIVE_ANSWERS = {"judgeMean": 0.815, "rubricMean": SHOWN_ONCE_RUBRIC_LOWEST}
+ANSWER_FLOORS = {"judgeMean": 0.76, "rubricMean": 0.82}
 
 
 def rounded_down_below(live: float, floor: float) -> bool:

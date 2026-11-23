@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { CitationChips } from "@/components/answer/CitationContext";
 import { ExplainerSentence } from "@/components/answer/ExplainerSentence";
+import { SentencesDiffer } from "@/components/answer/SentencesDiffer";
 import { EvidenceTag, SourcesDifferNote } from "@/components/editorial/EvidenceMark";
 import { TextLink } from "@/components/ui/TextLink";
 import type { CraftLink } from "@/lib/answerShapes";
@@ -104,6 +105,7 @@ export function LadderStageCard({ stage, craft, reached }: { stage: LadderStage;
             {stage.why ? <ExplainerSentence sentence={stage.why} /> : null}
           </p>
         ) : null}
+        <SentencesDiffer sentences={stage.why ? [...stage.sentences, stage.why] : stage.sentences} />
         <Differs stage={stage} />
         {stage.after ? (
           <p className="mt-2 font-reading text-body-sm text-ink-2" data-cite-host="">

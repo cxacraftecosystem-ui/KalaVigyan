@@ -323,7 +323,7 @@ Prompt-injection containment (security-audit `AI-AND-LLM.md:9-65`):
 
 Rules:
 - `process` and `ProcessStage` seeded from immersive `process_stage` concepts plus `PRECEDES` edges, and from inferential chains.
-- Stage envelopes in `science/envelopes.py` (DYE 20–100 °C, pH 2–12; FIRE 500–1300 °C; CAST 700–1200 °C; MORDANT 15–100 °C). Each constant (quartz α→β 573 °C, kaolinite dehydroxylation 450–600 °C, water 100 °C at 1 atm, beeswax 62–64 °C, brass liquidus ~900–940 °C) is its own cited claim.
+- Stage envelopes in `science/envelopes.py` (DYE 20–100 °C, pH 2–12; FIRE 500–1300 °C; CAST 700–1200 °C; MORDANT 15–100 °C). Each constant (quartz α→β 573 °C, kaolinite dehydroxylation 400–700 °C, water 100 °C at 1 atm, beeswax 62–64 °C, brass liquidus ~900–940 °C) is its own cited claim.
 - `science/balance.py`: species proposed by model or researcher; coefficients never accepted from a model; integer null space with `sympy` rationals; `balanced=true` only for a unique smallest positive integer solution. Unbalanced reactions cap their claims at hypothesis with reason `unbalanced`. A balanced reaction's level is the minimum of its input claims (§1).
 - Rendering KaTeX plus mhchem, `trust:false`.
 - Seeds: `Fe + 2 CH3COOH → Fe(CH3COO)2 + H2`; alum `KAl(SO4)2·12H2O`; `Al2Si2O5(OH)4 → Al2Si2O7 + 2 H2O`; indigo reduction/oxidation; alizarin–Al lake as COMPLEXATION with species and conditions only.

@@ -214,7 +214,8 @@ pictures page and the testimony page decide through them, and the old decision r
 (`/api/contributions/images/review/{id}/...`, `/api/testimony/review/{id}/approve` and `/reject`)
 retired with decision 0145.
 
-Refusals: 403 for a kind the account does not review or for one's own item, 404 for an unknown item
+Refusals: 403 for a kind the account does not review or for one's own item (a contributor may still
+retract their own published fact: retracting only removes it, so it is never a self-review), 404 for an unknown item
 (and for a fact that never went through the gates), 409 for a decision the item's state does not
 allow or a stale testimony version, 422 for a bad body or an action a kind does not have (only a
 fact is raised or retracted). Every refusal rolls the session back.

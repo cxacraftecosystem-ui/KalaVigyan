@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 
 import { PIN_DISC, READING_PROSE } from "@/components/answer/place/figureMarks";
 import { CitedText } from "@/components/answer/ProseBlockView";
-import type { TimelineMapBlock } from "@/lib/explainerPlay";
+import type { TimelineMapBlock, TimelineUndated } from "@/lib/explainerPlay";
 import { entryGroups, groupState, stopLabel, yearSpanText, type PlacedPlace, type TimelineEntry, type TimelineEntryState } from "@/lib/timelineView";
 import { cn } from "@/lib/utils";
 
@@ -87,6 +87,27 @@ function EntryLine({ block, entry, pins, state }: { block: TimelineMapBlock; ent
       </span>
       <EntryPlaces block={block} entry={entry} pins={pins} />
     </div>
+  );
+}
+
+export function TimelineUndatedList({ block, undated, placed }: { block: TimelineMapBlock; undated: readonly TimelineUndated[]; placed: readonly PlacedPlace[] }) {
+  const pins = new Map(placed.map((place) => [place.index, place.pin]));
+  return (
+    <section className="grid min-w-0 gap-2" aria-label="Without a date" data-testid="timeline-undated">
+      <h4 className="kicker">Without a date</h4>
+      <ul className="grid min-w-0 grid-cols-[minmax(0,1fr)] border-t border-rule">
+        {undated.map((entry) => (
+          <li key={entry.sentence.id} className="grid min-w-0 gap-y-1 border-b border-rule py-3" data-testid="timeline-undated-entry">
+            {entry.place === null ? null : (
+              <span className="font-ui text-label text-ink-2">
+                <PlaceName name={block.places[entry.place]?.name ?? ""} pin={pins.get(entry.place) ?? null} />
+              </span>
+            )}
+            <CitedText id={entry.sentence.id} sentences={[entry.sentence]} className={READING_PROSE} />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
