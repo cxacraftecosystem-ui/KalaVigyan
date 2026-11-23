@@ -5,7 +5,7 @@ import uuid
 from collections.abc import Sequence
 
 from app.research.planning import COVERING_LEVELS, Facet, FacetCoverage
-from app.research.retrieval import KnowledgeHits, KnowledgeQuery, KnowledgeRetriever
+from app.research.retrieval import BatchedRetriever, KnowledgeHits, KnowledgeQuery, KnowledgeRetriever
 
 from .policy import COVERAGE_QUERY_LIMIT, STORED_PACK_LIMIT
 
@@ -15,6 +15,8 @@ __all__ = ["covering_claims", "facet_coverage", "facet_query", "stored_knowledge
 async def facet_coverage(
     retriever: KnowledgeRetriever, *, craft_slug: str | None, mode: str, facets: Sequence[Facet]
 ) -> tuple[FacetCoverage, ...]:
+    if isinstance(retriever, BatchedRetriever) and facets:
+        await retriever.prepare([facet.target for facet in facets])
     found = await asyncio.gather(
         *(retriever.search(facet_query(craft_slug, mode, facet)) for facet in facets)
     )

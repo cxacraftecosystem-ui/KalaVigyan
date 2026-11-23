@@ -589,6 +589,9 @@ it; the answer flow passes `providers/embedding.router_embedder(principal)`.
   facet's target, filtered to its concept type, ranks it by full text (`lexicalRank` set) and
   its level is in `COVERING_LEVELS[mode]` (the mode's `MODE_CLAIM_LEVELS` without
   `HYPOTHESIS`). `HYBRID` sends live queries only for uncovered facets; `DEEP` for every facet.
+  The facets' targets are embedded in one call before their searches run
+  (`research/retrieval.BatchedRetriever.prepare`, the answer's embeddings cache), so a question's
+  coverage costs one embedding call however many facets it has (decision 0166).
 
 ### Model calls (`research/structured.py`)
 
@@ -1235,8 +1238,10 @@ research holds at most the pool less two connections and a sign-in always finds 
    craft the refusal is the `error`.
    `services/stored_explainer.stream_stored_answer` sends one section per concept heading
    (`HEADING_DISCIPLINES` gives its discipline, else `OVERVIEW`), each `section_started` (state
-   `CHECKING`), its sources, one `prose` block of the claims and `section_done READY`; then the
-   hypotheses as `open_question` and the app's `follow_ups`.
+   `CHECKING`), its sources, one `prose` block of the claims marked with the craft's glossary
+   terms, the `images` block of the pictures of those claims (stored first, else searched, as
+   the explainer's sections get them) and `section_done READY`; then the hypotheses as
+   `open_question` and the app's `follow_ups` (decision 0166).
 3. Otherwise the explainer (`services/answer_sections`, decision 0032): `status PLANNING`;
    `begin`; the sections are `research/sections.section_specs(understanding.disciplines, depth)`:
    the fields most important first, at most the depth's `max_sections`, `OVERVIEW` when none,
@@ -1374,8 +1379,9 @@ no reading keeps its English.
   `answer_events.stored_follow_ups(..., words)`, decision 0157) and else in English. A translated sentence keeps its citations and gains
   `translated: true` and `original`; an item that fails twice stays English. Its term spans are
   kept only where their text or its rendering still occurs in the translation, first occurrences
-  not overlapping (`research/terms.spans_still_shown`, decision 0039), else where one of the term's
-  stored local names does (`research/term_marking.local_name_spans`, decision 0167).
+  not overlapping (`research/terms.spans_still_shown`, decision 0039), else where one of the glossary's
+  names for the term does as a whole word (`Enrichment.term_names`, `research/terms.shown_as_word`,
+  decision 0166), so a Hindi answer keeps the quiz questions whose terms have Hindi names (decision 0167).
 - **Voice**: `translated_sentences(sentences, *, language, translation, claim_texts)` takes
   verified English `AnswerSentence` payloads and returns them in the session language by the same
   rules; build `translation` with `answer_store.build_answer_translation(sessions,

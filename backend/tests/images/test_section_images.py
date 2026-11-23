@@ -7,7 +7,7 @@ from app.research.image_relevance import ClaimText
 from app.services.live_sources import LiveSourcesStore
 from app.services.section_images import SectionImages, SectionImagesAsk, image_search_text
 
-from .fakes import FakeMediaStore, FakeSource, candidate
+from .fakes import FakeMediaStore, FakeSource, candidate, stored_picture
 
 STICKY = ClaimText(uuid.UUID(int=11), "Printing with sticky gums takes skill.")
 WASHED = ClaimText(uuid.UUID(int=12), "The cloth is washed in the river.")
@@ -89,3 +89,50 @@ async def test_the_live_store_builds_the_three_image_sources_once() -> None:
         assert await store.images() is first
     finally:
         await store.aclose()
+
+
+async def test_a_section_whose_claims_have_stored_pictures_shows_them_and_searches_nothing() -> None:
+    commons = FakeSource(
+        "wikimedia_commons", [candidate("commons", 9, "Sticky gums", licence="CC0", author="A")]
+    )
+    gums = candidate("commons", 1, "Sticky gums for printing", licence="CC BY-SA 4.0", author="SMarndi")
+    store = FakeMediaStore(
+        {STICKY.claim_id: STICKY, WASHED.claim_id: WASHED},
+        pictures=[stored_picture(gums, STICKY.claim_id), stored_picture(gums, WASHED.claim_id)],
+    )
+    block = await SectionImages(sources=(commons,), store=store).block(ask(STICKY, WASHED))
+    assert isinstance(block, ImagesBlock)
+    assert [(item.media.title, item.claim_ids, item.relevance) for item in block.items] == [
+        ("Sticky gums for printing", [STICKY.claim_id, WASHED.claim_id], "TEXT")
+    ]
+    assert (commons.queries, store.kept, store.asked) == ([], [], [[STICKY.claim_id, WASHED.claim_id]])
+
+
+async def test_stored_pictures_show_open_ones_first_and_at_most_two_link_cards() -> None:
+    cards = [candidate("searxng", n, f"Sticky gums {n}", licence=None, author=None) for n in (11, 12, 13)]
+    gums = candidate("commons", 1, "Sticky gums for printing", licence="CC0", author="A")
+    store = FakeMediaStore(
+        {STICKY.claim_id: STICKY},
+        pictures=[
+            *(stored_picture(c, STICKY.claim_id) for c in cards),
+            stored_picture(gums, STICKY.claim_id, "VISION"),
+        ],
+    )
+    block = await SectionImages(sources=(), store=store).block(ask(STICKY))
+    assert block is not None
+    assert [(item.media.title, item.media.display, item.relevance) for item in block.items] == [
+        ("Sticky gums for printing", "INLINE", "VISION"),
+        ("Sticky gums 11", "LINK_CARD", "TEXT"),
+        ("Sticky gums 12", "LINK_CARD", "TEXT"),
+    ]
+
+
+async def test_a_stored_shop_picture_is_not_shown_and_the_section_searches_instead() -> None:
+    shop = candidate("searxng", 5, "Buy sticky gum stoles", licence=None, author=None)
+    found = candidate("commons", 6, "Sticky gums for printing", licence="CC0", author="A")
+    commons = FakeSource("wikimedia_commons", [found])
+    store = FakeMediaStore({STICKY.claim_id: STICKY}, pictures=[stored_picture(shop, STICKY.claim_id)])
+    block = await SectionImages(sources=(commons,), store=store).block(ask(STICKY))
+    assert block is not None
+    assert [item.media.title for item in block.items] == ["Sticky gums for printing"]
+    assert commons.queries == ["Kutch Ajrakh printing sticky"]

@@ -2,18 +2,15 @@ from __future__ import annotations
 
 import logging
 import uuid
-from collections.abc import Awaitable, Callable, Collection, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Protocol
-
-from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.errors import AppError
 from app.data.craft_text import script_of
 from app.research.blocks_component import COMPONENT_KIND
 from app.research.crafts import QUESTION_MAX_CHARS
 from app.research.explainer import payload_sentences, with_payload_sentences
-from app.research.term_marking import local_name_spans
 from app.research.terms import spans_still_shown
 from app.research.translation import (
     TRANSLATION_ITEM_MAX_CHARS,
@@ -28,7 +25,6 @@ __all__ = [
     "ENGLISH_SCRIPTS",
     "TERM_SEGMENT_PREFIX",
     "AnswerTranslation",
-    "LocalNames",
     "Segment",
     "TranslationCache",
     "english_question",
@@ -41,8 +37,6 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
-
-LocalNames = Callable[[Collection[str]], Awaitable[Mapping[str, Sequence[str]]]]
 
 ENGLISH_SCRIPTS = frozenset({"Latn", "Zyyy"})
 QUESTION_KEY = "question"
@@ -59,7 +53,6 @@ class TranslationCache(Protocol):
 class AnswerTranslation:
     translator: Translator
     cache: TranslationCache
-    local_names: LocalNames | None = None
 
 
 TITLE_KEY_SUFFIX = ".title"
@@ -110,13 +103,13 @@ async def translated_sentences(
     language: str,
     translation: AnswerTranslation,
     claim_texts: Mapping[uuid.UUID, str],
+    term_names: Mapping[str, Sequence[str]] | None = None,
 ) -> list[dict[str, Any]]:
     found = await translate_segments(
         _sentence_segments(sentences, claim_texts), language=language, translation=translation
     )
     renderings = _renderings(found, _term_surfaces(sentences))
-    names = await _local_names(translation, sentences, found)
-    return [_translated_sentence(sentence, found, renderings, names) for sentence in sentences]
+    return [_translated_sentence(sentence, found, renderings, term_names or {}) for sentence in sentences]
 
 
 async def translated_block(
@@ -125,6 +118,7 @@ async def translated_block(
     language: str,
     translation: AnswerTranslation,
     claim_texts: Mapping[uuid.UUID, str],
+    term_names: Mapping[str, Sequence[str]] | None = None,
 ) -> dict[str, Any]:
     titled = await _translated_title(block, language=language, translation=translation)
     sentences = payload_sentences(titled)
@@ -134,7 +128,7 @@ async def translated_block(
         _sentence_segments(sentences, claim_texts), language=language, translation=translation
     )
     renderings = _renderings(found, _term_surfaces(sentences))
-    names = await _local_names(translation, sentences, found)
+    names = term_names or {}
     return with_payload_sentences(
         titled, lambda sentence: _translated_sentence(sentence, found, renderings, names)
     )
@@ -212,32 +206,16 @@ def _claim_of(sentence: Mapping[str, Any], claim_texts: Mapping[uuid.UUID, str])
     return claim_id if claim_texts.get(claim_id) == sentence["text"] else None
 
 
-async def _local_names(
-    translation: AnswerTranslation, sentences: Sequence[Mapping[str, Any]], found: Mapping[str, str]
-) -> Mapping[str, Sequence[str]]:
-    keys = {span["termKey"] for s in sentences if s["id"] in found for span in s.get("terms", ())}
-    if translation.local_names is None or not keys:
-        return {}
-    try:
-        return await translation.local_names(keys)
-    except SQLAlchemyError as error:
-        logger.warning(
-            "the local names of %d terms were not read, so they mark nothing: %s", len(keys), error
-        )
-        return {}
-
-
 def _translated_sentence(
     sentence: Mapping[str, Any],
     found: Mapping[str, str],
     renderings: Mapping[str, str],
-    names: Mapping[str, Sequence[str]],
+    term_names: Mapping[str, Sequence[str]],
 ) -> dict[str, Any]:
     text = found.get(sentence["id"])
     if text is None:
         return dict(sentence)
     shown = {**sentence, "text": text, "translated": True, "original": sentence["text"]}
     if "terms" in sentence:
-        kept = spans_still_shown(text, sentence["terms"], renderings)
-        shown["terms"] = [*kept, *local_name_spans(text, sentence["terms"], kept, names)]
+        shown["terms"] = spans_still_shown(text, sentence["terms"], renderings, term_names)
     return shown

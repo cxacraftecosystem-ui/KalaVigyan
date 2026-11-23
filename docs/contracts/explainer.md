@@ -1701,14 +1701,13 @@ is written "sentence" below; every sentence is cited.
   English sentence where its `text` still occurs in the translation, or else where the term's
   own rendering does: each distinct span text is translated in the same call as its sentences
   (segments `term:<n>`, `answer_translation.TERM_SEGMENT_PREFIX`) and the span moves to that
-  rendering (saaj to साज) when the translated sentence shows it; a first occurrence that overlaps
-  a span kept before it is dropped (`research/terms.spans_still_shown`). A span neither keeps is
-  marked by one of its term's stored local names (`Term.localNames`, read once per translated block
-  by `AnswerTranslation.local_names`, `services/glossary_local_names`) where the translation shows
-  it as a whole word of its script, a vowel sign or virama after it continuing the word
-  (`research/term_marking.local_name_spans`, `WORD_CHARS`; decision 0167), so a Hindi answer keeps
-  the quiz questions whose terms have Hindi names; no other term is marked anew (decisions 0039
-  and 0089).
+  rendering (saaj to साज) when the translated sentence shows it, or else to one of the glossary's
+  names for that term (its label, aliases and local names in any script, `Enrichment.term_names`);
+  a rendering or a name counts only as a whole word, with no letter, mark or digit beside it, so a
+  vowel sign never ends a word (`research/terms.shown_as_word`, decision 0166); a first occurrence
+  that overlaps a span kept before it is dropped (`research/terms.spans_still_shown`), and no other
+  term is marked anew (decisions 0039 and 0089), so a Hindi answer keeps the
+  quiz questions whose terms have Hindi names (decision 0167).
 - **`Term {schemaVersion 1, key, label, language, localNames[], craftSlugs[], wikidataId?, basis,
   summary[AnswerSentence] (1-3), sources[SourceRef], checkedAt}`** is the glossary row a tap
   opens, cached per key and language. `basis` is `STORED` (cited claims already held), else
@@ -1716,7 +1715,9 @@ is written "sentence" below; every sentence is cited.
   ones in order of first citation. Local names and crafts are listed once each. `checkedAt` is,
   for `STORED`, the latest change of the cited claims and citations, else when the summary was
   researched. A kept summary is answered only while every citation it quotes is still shown to
-  the reader, chunk ACLs included (decision 0079).
+  the reader, chunk ACLs included (decision 0079); a `WIKIPEDIA` or `WEB_SEARCH` summary checked
+  more than 180 days ago (`term_summaries.RESEARCHED_SUMMARY_MAX_AGE`) is built again on the next
+  signed-in tap, and a `STORED` one is dated by its claims (decision 0166).
 - **`MediaRef {id, display, provider, pageUrl, imageUrl, width?, height?, title, alt, author?,
   site, credit?, licence?, licenceUrl?, sourceId?, retrievedAt}`** is one stored picture.
   `INLINE` needs an open licence (`licences.open_licence` of the licence or its URL) and the
@@ -1727,14 +1728,22 @@ is written "sentence" below; every sentence is cited.
 ### Pictures and terms as served (decision 0034)
 
 - **Image sources.** Wikimedia Commons, Openverse (open licences with a creator only) and SearXNG
-  image results, each an `ImageSource` (`research/images`). A SearXNG picture is kept only when
-  the page's own site serves it (`same_site`: the page and `img_src` share a registrable name),
-  never a search engine's thumbnail, never over http; it has no licence, so it is a link card.
+  image results, each an `ImageSource` (`research/images`); for an answer's sections Brave image
+  results (`BraveAdapter.images`, `/res/v1/images/search`) back SearXNG when it finds fewer than
+  two link cards or fails (`sources/images/web_images.WebImages`, decision 0166). A SearXNG or
+  Brave picture is kept only when the page's own site serves it (`same_site`: the page and the
+  image share a registrable name by the Public Suffix List, `research/public_suffixes` over the
+  snapshot `research/public_suffix_list.dat`, private domains included), never a search engine's
+  thumbnail (Brave's `thumbnail` and `placeholder` are never read), never over http; it has no
+  licence, so it is a link card.
 - **Choosing.** A picture illustrates the claims (cited by the section's other blocks) whose
   content stems it shares at least two of, craft-name words left out (`image_relevance`); a
   section shows at most 4, inline first, at most 2 link cards, each original image once; no
   relevant picture is no `images` block. Each picture is stored once as a `MediaRef` row with its
-  `MediaRefClaim` links.
+  `MediaRefClaim` links. A section whose claims already have stored pictures shows those, by the
+  same caps, inline first, and searches only when none is stored; a stored picture is shown while
+  its claim is visible, it is not a field photo nobody has reviewed, and it passes today's shop and
+  social rule (`section_images.stored_items`, decision 0166).
 - **Drawing.** Every picture loads with `referrerPolicy="no-referrer"`; a link card shows
   `imageUrl`, `title`, `site` and `credit` and opens `pageUrl`; an inline picture shows `alt`,
   `author`, `licence` (linked to `licenceUrl`) and `site`, and opens `pageUrl`. A picture that
@@ -1744,6 +1753,11 @@ is written "sentence" below; every sentence is cited.
 - **Glossary.** `Term` rows (seeded by `seed_claims`) hold the label, local names, the Latin
   spellings used to find the term, the matched Wikidata id and the crafts and concepts it belongs
   to. Spans are marked by the server (`research/term_marking.TermMarker`), never chosen by a model.
+  A local word listed beside a concept's other names is a term only with the meaning a seed claim
+  of that concept, or a quote of a named curated claim, states word for word
+  (`data/local_term_meanings.json`, checked by `services/local_term_meanings` on every seed). Each
+  seed removes the links its plan no longer makes, to crafts without a curated page and to seed
+  concepts, and the terms those removals leave with no link and no cached summary (decision 0166).
 - **In the stream** (decision 0039, `services/section_enrichment`). Once per answer the craft's
   glossary (`glossary_entries`, the craft's own names left out) becomes one `TermMarker`; an
   answer for any craft reads none and marks nothing, and a glossary that cannot be read leaves
@@ -1754,7 +1768,9 @@ is written "sentence" below; every sentence is cited.
   open questions and `section_done`. Each image service has 6 s (`IMAGE_SEARCH_SECONDS`), the
   whole step 8 s (`PICTURES_WAIT_SECONDS`); a failure, a timeout or no relevant picture sends no
   `images` block and the section is still `READY`. Reused sections get pictures the same way from
-  their placed blocks' claims. An `images` block is never stored as a piece. A fresh section
+  their placed blocks' claims, and the stored-only answer of a refused spend marks its prose and
+  shows its pictures the same way; the nightly piece rebuild marks terms but searches no picture
+  (`section_enrichment.without_pictures`). An `images` block is never stored as a piece. A fresh section
   searches from the blocks the claim ledger let through, a candidate from a shop, marketplace or
   social site is never chosen (`section_images.shown_candidates`), and the ledger keeps one
   picture per section (decision 0080).

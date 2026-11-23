@@ -98,13 +98,11 @@ Last reviewed: 2026-11-22.
 
 - **What:** round 4 cleared stamps per embedding model with re-embedding, cleared vectors on a text
   change, embedding after the seeds on every release, the Indic text ranking and the seed import's
-  passages (`docs/contracts/retrieval.md`). Left: knowledge pieces carry no stamp, and the
-  candidate gates' neighbour search and the piece store's reuse distance compare vectors without
-  it; the Wood Handbook import has no passages, because the repository holds no text of the cited
-  edition (FPL-GTR-190).
-- **Clears it:** stamp pieces and filter the gates' and the piece store's neighbours on the current
-  model; vendor the pages of FPL-GTR-190, or give FPL-GTR-282 its own source and re-cite the wood
-  claims after a quote check.
+  passages (`docs/contracts/retrieval.md`); decision 0166 stamped knowledge pieces and made the
+  gates and the piece store compare vectors of one model. Left: the Wood Handbook import has no
+  passages, because the repository holds no text of the cited edition (FPL-GTR-190).
+- **Clears it:** vendor the pages of FPL-GTR-190 (a US government work), or give FPL-GTR-282 its
+  own source and re-cite the wood claims after a quote check.
 
 ## Checks not automated yet
 
@@ -122,20 +120,20 @@ Last reviewed: 2026-11-22.
 ### Planner and tiered research: gaps left on 2026-11-16 (decision 0009)
 
 - **What:** (1) The pack holds documents, not quotes: the `WEB_READ` reader that extracts
-  verbatim quotes for the composer is not built. (2) Coverage runs one stored search per facet,
-  each embedding its target (up to eight embedding calls per question). (3) References are
-  followed only as DOIs written in the text, through Crossref, which returns abstracts only; links
-  in pages and reference lists without DOIs are not followed. (4) Facet coverage counts claims
-  that share a word with the target; it does not judge whether they answer it. (5) Every query
-  runs on every source of its tier, including Commons and PubChem for questions they cannot serve
-  (each answers quickly with no hits). Every answer writes its `AnswerTrace` rows since decision
-  0146.
-- **Why left:** the `WEB_READ` reader is the next lane; a better coverage judgement needs the
-  known-answer checks to calibrate against.
-- **Clears it:** the reader turns documents into quoted evidence; embed the facet targets in
-  one batch; follow reference lists through OpenAlex `referenced_works` when that adapter
-  exposes them; route facet types to the sources that can serve them once the checks show
-  which do.
+  verbatim quotes for the composer is not built. (2) References are followed only as DOIs written
+  in the text, through Crossref, which returns abstracts only; links in pages and reference lists
+  without DOIs are not followed. (3) Facet coverage counts claims that share a word with the
+  target; it does not judge whether they answer it. (4) Every query runs on every source of its
+  tier, including Commons and PubChem for questions they cannot serve (each answers quickly with
+  no hits). Every answer writes its `AnswerTrace` rows since decision 0146, and a question's facet
+  targets are embedded in one call since decision 0166.
+- **Why left:** the `WEB_READ` reader is a model call per document read, and the owner's rule of
+  2026-11-23 keeps each answer's model calls at today's while answers are measured (decision
+  0165); a better coverage judgement and the routing need the known-answer checks to calibrate
+  against; the OpenAlex adapter does not read `referenced_works` yet.
+- **Clears it:** the reader turns documents into quoted evidence once the owner allows its calls;
+  follow reference lists through OpenAlex `referenced_works`; route facet types to the sources that
+  can serve them once the checks show which do.
 
 ## Science, region, voice and media contracts (decision 0014)
 
@@ -383,118 +381,16 @@ Last reviewed: 2026-11-22.
 - **What:** plan 2.7 asks for one cheap vision call on the top candidates; every picture is
   chosen by its words against the claim text (`relevance: TEXT`), so a picture whose title and
   description happen to share two words with a claim is shown even if it depicts something else.
-- **Why left:** the vision call needs an image route and per-answer spend; text relevance came
-  first.
-- **Clears it:** a `CAPTION` route call on the top two candidates per section, recorded as
-  `VISION` on `MediaRefClaim`, dropping a picture the model says does not show the claim.
-
-### Link cards need the page's own site to serve the picture
-
-- **What:** a SearXNG image result is kept only when its image and page share a registrable name
-  (`research/images.same_site`), judged by a short list of second-level labels (`ac`, `co`,
-  `gov`, `org`, ...) instead of the Public Suffix List. Sites that serve pictures from a CDN on
-  another name are left out, and a public suffix outside the list could pair two unrelated sites.
-- **Why left:** owner O2 asks for the thumbnail from the source site; no dependency carries the
-  Public Suffix List today.
-- **Clears it:** vendor the Public Suffix List (or `tldextract` with a pinned snapshot) and use it
-  in `site_of`.
-
-### Brave image results are not used
-
-- **What:** web image results come from SearXNG only; plan section 7 names Brave for image results
-  too, and the Brave key already backs web search.
-- **Why left:** one image search per service was enough for phase A.
-- **Clears it:** an `images` method on `BraveAdapter` (`/res/v1/images/search`) used when SearXNG
-  answers fewer than two link cards.
-
-### Local words without a stated meaning are not terms
-
-- **What:** the glossary takes a seed concept's local word only when the concept's name states
-  what it means (`Kut (iron-water black paste)`, `Alum (fatakdi)`). Local words listed beside
-  other names (`lokhand`, `gud`, `datla`, `mavi`, `gudh`) are not terms, and two spellings of
-  one word become one term only when they are at least 80 % alike (`harde`, `harda`).
-- **Why left:** the seed records those words without their meaning, and a guessed meaning would
-  be an uncited fact.
-- **Clears it:** a curated `localTerms` meaning in `etl/crafts` (or claims that define them), then
-  the glossary plan reads it.
-
-### The glossary seed never removes a term or link
-
-- **What:** `seed_terms` upserts terms by key and adds craft and concept links; a term or link
-  that a later seed no longer produces stays.
-- **Why left:** the claim and science seeds behave the same way (see "The science seed never
-  deletes"); no removal has been needed yet.
-- **Clears it:** a seed step that deletes links the plan no longer has, and terms with no links
-  and no cached summary.
-
-### Term summaries never expire while their claims stand
-
-- **What:** a cached `TermSummary` is served until a claim it rests on is hidden, retracted or
-  rejected; a better stored claim, or a newer Wikipedia revision, does not replace it.
-- **Why left:** plan 2.8 asks for a cache per term and language; claim visibility is the guard
-  that matters for accuracy.
-- **Clears it:** an age limit (or a stored claim newer than `checkedAt`) after which the next tap
-  builds the summary again.
-
-### Image and term enums are check constraints
-
-- **What:** `MediaRef.display`, `MediaRefClaim.relevance` and `TermSummary.basis` are strings with
-  `CHECK` constraints built from `models/enums.py`, not Postgres enum types like the other
-  vocabularies.
-- **Why left:** the schema tests only know enum types the first migration declares, and lanes
-  adding tables in the same batch would each have had to change that test machinery.
-- **Clears it:** once the tests accept enum types created by later migrations, turn the three
-  columns into `pg_enum` types in one migration.
-
-## Pictures and terms in the stream (decision 0039)
-
-### Translated sentences lose the spans the translation rewrites
-
-- **What:** a translated sentence keeps a span only where the English span's text survives
-  (`research/terms.spans_still_shown`). A term the translation renders in its own script (alum as
-  फिटकरी) is not underlined, although the glossary may hold that local name.
-- **Why left:** marking translated text needs word boundaries that hold in Indian scripts (their
-  vowel signs are not word characters to Python's `re`) and a check that the local name is the
-  translation's word for that term.
-- **Clears it:** after translation, mark the glossary's local names in the answer's script with
-  grapheme-aware boundaries, next to the spans kept, and check them like English spans.
-
-### Reused sections search for pictures again
-
-- **What:** each reuse of a stored section searches the image services anew, although the
-  pictures chosen for the same claims are already stored as `MediaRef` rows with `MediaRefClaim`
-  links.
-- **Why left:** reading stored pictures needs a lookup by claim and a rule for when a stored
-  picture is still current; a search costs no AI spend and is bounded by the 8 s wait.
-- **Clears it:** read the `MediaRefClaim` rows of the cited claims first and search only when none
-  are stored.
-
-### The stored-only answer shows no pictures or terms
-
-- **What:** when spend is refused, `services/stored_explainer` streams prose blocks with no spans
-  and no `images` block.
-- **Why left:** step 7 was wired into the sectioned flow; the stored-only answer is its fallback.
-- **Clears it:** pass the answer's `Enrichment` to `stream_stored_answer` and mark and search as
-  the sectioned flow does.
-
-### The nightly rebuild searches pictures nobody sees
-
-- **What:** `app/scripts/rebuild_pieces` answers through `build_answer_pipeline`, so each rebuilt
-  section also searches pictures and stores them as `MediaRef` rows, though its stream is
-  discarded.
-- **Why left:** the rebuild needs the same term marking so its pieces carry spans; pictures cost
-  no AI spend and stored ones serve the craft page later.
-- **Clears it:** build the rebuild's pipeline with enrichment tools whose picture step answers
-  nothing.
-
-### Pictures and terms in the stream not yet seen running
-
-- **What:** production answers stream pictures (each researched or reused section of the Kutch
-  Ajrakh known-answer questions carried an `images` block on 2026-11-17); no browser has yet shown
-  the credits, the underlined terms or the term sheet.
-- **Why left:** nothing runs on the laptop.
-- **Clears it:** after the deploy, load `/ask`, ask the Kutch Ajrakh known-answer questions and
-  see each section's pictures with their credits and underlined terms that open their summary.
+  A picture stored for a claim is now reused rather than searched again (decision 0166), so a
+  vision verdict would be paid once per picture, not once per answer.
+- **Why left:** a `CAPTION` call on the top two candidates of every section adds two model calls
+  and their image tokens to every answer, and the owner's rule of 2026-11-23 keeps each answer's
+  model calls and input tokens at or below today's while answers are measured against Opus and
+  Sonnet (decision 0165).
+- **Waits on:** the owner's choice after that measurement; then a `CAPTION` route call on the top
+  two candidates per section, recorded as `VISION` on `MediaRefClaim`, dropping a picture the model
+  says does not show the claim (`section_images.stored_items` already serves a stored `VISION`
+  verdict).
 
 ## Listen and the switched-off call (decision 0035)
 
@@ -703,11 +599,17 @@ Last reviewed: 2026-11-22.
 ### Author names are cited as stored
 
 - **What:** citation exports write each stored author as written, so seed sources split on commas
-  read oddly (the V&A as "Victoria, & Albert Museum"; the GI journal's applicant note as two
-  authors).
-- **Why left:** inverting or joining names would guess; the stored values are the seed's.
-- **Clears it:** the seed and curated sources store organisation authors whole (the curation
-  checker already keeps them whole); the export needs no change.
+  read oddly (the V&A as "Victoria", "Albert Museum"; the GI journal's applicant note as two
+  authors). The seed conversion now keeps an organisation author whole and splits people only
+  outside brackets (`etl/crafts/source_authors.split_authors`), and the seed restamps a stored
+  import source's authors when they change (`claim_seed._restamped_authors`, decision 0166), but
+  `backend/app/data/seed_claims.json` and the goldens built from it still hold the split names.
+- **Why left:** the conversion reads the immersive-episteme and inferential-system checkouts beside
+  the repository, which the lane's machine may not run, and the goldens are the final clean-up
+  lane's.
+- **Waits on:** a run of `python etl/crafts/seed_claims.py` against those checkouts and the refresh
+  of the goldens built from the seed's sources (`shared/learning.citations.golden.json` and the
+  other files that cite the V&A); the next seed after the release restamps the stored sources.
 
 ## Climate and risk, and ask the map (decision 0065)
 
@@ -748,11 +650,17 @@ Last reviewed: 2026-11-22.
 - **What:** since the full field transcripts became public, `research/retrieval.chunk_acls_for`
   gives every reader `PUBLIC` and `SIGNED_IN`, so the `SIGNED_IN` value of `ChunkAcl` (migration
   `0027_field_voices`, written by `services/field_voices_records.py`) no longer means signed in.
-  `OPEN_CHUNK_ACLS`, the loaders' default when no reader is named, still holds `PUBLIC` only.
-- **Why left:** folding the value into `PUBLIC` needs a migration of the stored transcript chunks,
-  the field voices writer and its tests, and the field voices lane was finishing its own changes.
-- **Clears it:** a migration that sets every `SIGNED_IN` chunk to `PUBLIC` and drops the value,
-  `field_voices_records` writing `PUBLIC`, and `SIGNED_IN_CHUNK_ACLS` removed.
+  `OPEN_CHUNK_ACLS`, the loaders' default when no reader is named, still holds `PUBLIC` only. The
+  value now does a second job: it marks a transcript's speaker-labelled windows, apart from its
+  one-sentence quote passages (`PUBLIC`), and `field_voices_store.recheck_quoted_claims` and the
+  citation contexts (`citation_contexts.CONTEXT_ACLS`) read the sentences only by that mark.
+- **Why left:** folding the value into `PUBLIC` first needs another mark for the windows, or the
+  quote recheck and the contexts would read them; and a label is dropped only after a release that
+  no longer writes it is live (`docs/contracts/infra.md`, decision 0151).
+- **Clears it:** a chunk kind (or the windows' own locator rule) that the recheck and the contexts
+  read instead of the ACL, `field_voices_records` writing `PUBLIC`, `SIGNED_IN_CHUNK_ACLS` removed;
+  then, after that release, a migration that sets every `SIGNED_IN` chunk to `PUBLIC` and drops the
+  value.
 
 ### Kutch Ajrakh's timeline pins and named river are not yet seen, and three why claims describe steps
 
@@ -971,18 +879,22 @@ Last reviewed: 2026-11-22.
   answer sentence never receives it, because `knowledge_view.ClaimView` carries no `differs_on`
   (`section_blocks.explainer_sentence` reads it through `DIFFERS_ON_FIELD`), so answers show a plain
   "Sources differ" summary; a flag the write-back's duplicate judge sets stores no subject, because
-  the judge names none; and the matter and what-if hosts (`components/answer/matter/
-  ReactionStepList.tsx`, `StepDetail.tsx`, `components/answer/play/WhatIfLab.tsx`) draw a flagged
-  sentence's tag without its readings. A drawing stored without server variants (the kind fixtures
-  on `/design/kinds`) shows a sunk placeholder until it hydrates.
-- **Why left:** `knowledge_view.py`, the gates and judges and the matter hosts were other lanes'
-  files while decision 0156 ran; the fixtures are delivered specs, which may not carry `themes`
-  (`component_specs_general_delivery`), and the page bundles them instead of asking the server,
-  which adds the variants.
-- **Clears it:** `ClaimView.differs_on: str | None` filled from `Claim.differsOn` in `cited_view`;
-  the duplicate judge naming what two facts differ on and passing it as
-  `candidate_writes.mark_sources_differ(..., about=)`; `SentencesDiffer` after the paragraph in the
-  three hosts; serve the kind preview's specs through the backend, which adds the four variants
+  the judge names none; and the matter and what-if hosts
+  (`components/answer/matter/ReactionStepList.tsx`, `StepDetail.tsx`,
+  `components/answer/play/WhatIfLab.tsx`) draw a flagged sentence's tag without its readings. A
+  drawing stored without server variants (the kind fixtures on `/design/kinds`) shows a sunk
+  placeholder until it hydrates.
+- **Why left:** filling `ClaimView.differs_on` also gives the craft page's sentences their
+  `differsOn` (the Kutch Ajrakh page gains three, renumbering its paragraphs), so it lands with the
+  refresh of `shared/craft.page.golden.json` and a re-baseline of the approved page's parity, which
+  the final clean-up and monograph lanes held while decision 0166 ran; the judges and their callers
+  (`write_back_gates`, `fact_proposals`) and the matter hosts were other lanes' files; the
+  fixtures are delivered specs, which may not carry `themes` (`component_specs_general_delivery`),
+  and the page bundles them instead of asking the server, which adds the variants.
+- **Clears it:** `ClaimView.differs_on: str | None` filled from `Claim.differsOn` in `cited_view`,
+  with the craft page golden regenerated and the parity re-baselined; the duplicate judge naming
+  what two facts differ on and passing it as `candidate_writes.mark_sources_differ(..., about=)`;
+  `SentencesDiffer` after the paragraph in the three hosts; serve the kind preview's specs through the backend, which adds the four variants
   with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
 
 ### Goldens that do not yet show every field

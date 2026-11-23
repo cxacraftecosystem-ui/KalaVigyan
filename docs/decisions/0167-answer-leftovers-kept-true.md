@@ -2,8 +2,8 @@
 
 An answer whose stream stops before it finishes is marked stopped instead of left empty; the
 composer reads a failing sentence's quotes in an Indian script through one bounded English
-rendering; a translated sentence keeps a glossary term by its stored local name, so a Hindi answer
-keeps its quiz; a glossary term carries the casing its texts write it in; a dossier lists its signs
+rendering; a Hindi answer keeps its quiz on its terms' Hindi names, and a name in an Indian script
+is marked only as a whole word; a glossary term carries the casing its texts write it in; a dossier lists its signs
 of imitation; every scholarly adapter names a paper's journal; the planner reads a closed DOI from
 the publisher that holds it and searches the colourant oxides when a question asks what gives a
 glaze its colour; and a Professor places a process stage answers found into its craft's process from the review
@@ -69,15 +69,15 @@ a glossary term's sentence-case name is found when no dossier states it.
    `TRANSLATE` call (two with its translator's retry) per draft with such a failing quote, at most
    8 quotes of at most 300 characters, about 2,400 input tokens with the prompt and about 700 output
    tokens; an English answer on English sources makes none.
-3. **A translated sentence keeps a term by its local name.** When neither a span's English text nor
-   its rendering shows in the translation, one of the term's stored `Term.localNames` that the
-   translation shows as a whole word keeps the span (`term_marking.local_name_spans`, read once per
-   translated block by `AnswerTranslation.local_names`). We chose occurrence over a language field
-   on each local name: a name the translated sentence shows is in that sentence's language, so no
-   new field or source is needed, and the quiz, built from the translated spans, keeps the
-   questions whose terms have such names. A word of an Indic or Arabic script runs through its
-   vowel signs and marks (`term_marking.WORD_CHARS`), so नील is not marked inside नीला. No model
-   call is added.
+3. **A Hindi answer keeps its quiz on its terms' Hindi names.** This lane first kept a translated
+   span by a term's stored local name through a glossary read of its own; the pictures lane
+   ([decision 0166](0166-pictures-terms-and-stored-pieces-kept-true.md)) shipped the same rule on
+   the answer's glossary (`Enrichment.term_names`: label, aliases and local names, a whole word in
+   any script), so we dropped ours and hold that the quiz, built from the translated spans, keeps
+   the questions whose terms have Hindi names. We chose occurrence over a language field on each
+   local name: a name the translated sentence shows is in that sentence's language. The term
+   marker reads a word of an Indic or Arabic script through its vowel signs and marks
+   (`term_marking.WORD_CHARS`), so नील is not marked inside नीला. No model call or read is added.
 4. **A glossary term carries the casing its texts write it in.** `Term.sentenceName` is the casing
    its meaning and its concepts' claims write it in most often away from a sentence's start
    (`research/sentence_names.sentence_name`), filled after every curated import for each term that

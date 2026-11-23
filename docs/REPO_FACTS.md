@@ -7,7 +7,7 @@ Every count that changes with the code, generated from the working tree by `tool
 | What | Count |
 | --- | ---: |
 | Tables (`__tablename__` in `backend/app/models/`) | 149 |
-| Migrations (`backend/migrations/versions/`) | 76 |
+| Migrations (`backend/migrations/versions/`) | 77 |
 
 Newest migration: `0091_craft_page_archive_dropped`.
 
@@ -109,10 +109,10 @@ Tables: `AccessRoster`, `AdminDistrict`, `AdminState`, `AlertDigestSend`, `Allow
 
 | Python suite | Files | Tests |
 | --- | ---: | ---: |
-| Backend, without a database | 719 | 5379 |
-| Backend, on Postgres | 193 | 884 |
+| Backend, without a database | 727 | 5411 |
+| Backend, on Postgres | 196 | 891 |
 | Tools | 25 | 202 |
-| Craft data ETL | 5 | 46 |
+| Craft data ETL | 6 | 47 |
 | Geo ETL | 21 | 223 |
 
 | Frontend (`frontend/e2e/`) | Files | Tests |
@@ -126,7 +126,7 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | What | Count |
 | --- | ---: |
-| Decision records (`docs/decisions/`) | 163 |
+| Decision records (`docs/decisions/`) | 164 |
 | Contracts (`docs/contracts/`) | 40 |
 | Workflows (`.github/workflows/`) | 28 |
 | Curated craft dossiers | 32 |
@@ -136,14 +136,14 @@ A Python test is a `test_` function in a `test_` file; a frontend test is a `tes
 
 | Area | Files | Lines |
 | --- | ---: | ---: |
-| `backend/app` | 1386 | 194,455 |
-| `backend/tests` | 1067 | 138,374 |
-| `backend/migrations` | 77 | 10,654 |
+| `backend/app` | 1388 | 194,960 |
+| `backend/tests` | 1078 | 139,225 |
+| `backend/migrations` | 78 | 10,676 |
 | `frontend/app` | 110 | 10,011 |
 | `frontend/components` | 616 | 42,183 |
 | `frontend/lib` | 256 | 25,911 |
-| `frontend/e2e` | 300 | 32,620 |
-| `etl` | 74 | 11,309 |
+| `frontend/e2e` | 300 | 32,667 |
+| `etl` | 76 | 11,392 |
 | `tools` | 101 | 8,490 |
 | `infra` | 17 | 2,216 |
 

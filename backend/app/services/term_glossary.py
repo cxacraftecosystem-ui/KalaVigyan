@@ -6,21 +6,47 @@ from collections.abc import Iterable, Sequence
 from itertools import batched
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, tuple_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput
 from app.data.craft_master_loader import CRAFT_WIKIDATA_FILE, ID_NAMESPACE
-from app.models import Concept, Craft, CraftAlias, Term, TermConcept, TermCraft
+from app.models import (
+    Concept,
+    Craft,
+    CraftAlias,
+    CuratedCraft,
+    SharedTermCraft,
+    Term,
+    TermConcept,
+    TermCraft,
+    TermSummary,
+)
 from app.research.subject_keys import term_key
 from app.research.term_marking import GlossaryEntry
 
 from .claim_seed import load_seed_claims, seed_id
-from .glossary_plan import CraftNames, TermSeed, compounds_of, concepts_of, glossary_plan, wikidata_links
+from .glossary_plan import (
+    CraftNames,
+    SeedConcept,
+    TermSeed,
+    compounds_of,
+    concepts_of,
+    glossary_plan,
+    wikidata_links,
+)
+from .local_term_meanings import checked_meanings, dossier_quotes
 from .science_seed import load_science_seed
 
-__all__ = ["LATIN_SCRIPT", "glossary_entries", "glossary_seed", "seed_terms", "term_id"]
+__all__ = [
+    "LATIN_SCRIPT",
+    "glossary_entries",
+    "glossary_seed",
+    "removed_unplanned_links",
+    "seed_terms",
+    "term_id",
+]
 
 BATCH = 500
 LATIN_SCRIPT = "Latn"
@@ -33,14 +59,16 @@ def term_id(key: str) -> uuid.UUID:
     return uuid.uuid5(ID_NAMESPACE, f"term:{key}")
 
 
-def glossary_seed(crafts: Sequence[CraftNames]) -> list[TermSeed]:
+def glossary_seed(crafts: Sequence[CraftNames], concepts: Sequence[SeedConcept]) -> list[TermSeed]:
     wikidata = wikidata_links(json.loads(CRAFT_WIKIDATA_FILE.read_text(encoding="utf-8")))
-    return glossary_plan(crafts, wikidata, concepts_of(load_seed_claims()), compounds_of(load_science_seed()))
+    meanings = checked_meanings(concepts, dossier_quotes)
+    return glossary_plan(crafts, wikidata, concepts, compounds_of(load_science_seed()), meanings)
 
 
 async def seed_terms(session: AsyncSession) -> dict[str, int]:
     craft_ids, crafts = await _craft_names(session)
-    plan = glossary_seed(crafts)
+    concepts = concepts_of(load_seed_claims())
+    plan = glossary_seed(crafts, concepts)
     present = await _present_concepts(
         session, [seed_id("concept", k) for seed in plan for k in seed.concept_keys]
     )
@@ -60,13 +88,60 @@ async def seed_terms(session: AsyncSession) -> dict[str, int]:
     ]
     linked = await _insert_links(session, TermCraft, craft_links)
     linked += await _insert_links(session, TermConcept, concept_links)
+    seed_concepts = [seed_id("concept", concept.key) for concept in concepts]
+    removed = await removed_unplanned_links(session, craft_links, concept_links, seed_concepts)
     await session.flush()
     return {
         "terms": len(plan),
         "craftLinks": len(craft_links),
         "conceptLinks": len(concept_links),
         "newLinks": linked,
+        "removedLinks": len(removed),
+        "removedTerms": await _removed_unlinked_terms(session, {term for term, _ in removed}),
     }
+
+
+async def removed_unplanned_links(
+    session: AsyncSession,
+    craft_links: Sequence[dict[str, uuid.UUID]],
+    concept_links: Sequence[dict[str, uuid.UUID]],
+    seed_concepts: Sequence[uuid.UUID],
+) -> list[tuple[uuid.UUID, uuid.UUID]]:
+    crafts = select(TermCraft.termId, TermCraft.craftId).where(
+        TermCraft.craftId.not_in(select(CuratedCraft.craftId))
+    )
+    planned = {(link["termId"], link["craftId"]) for link in craft_links}
+    craft_pair = (TermCraft.termId, TermCraft.craftId)
+    removed = await _removed_links(
+        session, craft_pair, (await session.execute(crafts)).tuples().all(), planned
+    )
+    seeded: list[tuple[uuid.UUID, uuid.UUID]] = []
+    for chunk in batched(seed_concepts, BATCH, strict=False):
+        found = select(TermConcept.termId, TermConcept.conceptId).where(TermConcept.conceptId.in_(chunk))
+        seeded.extend((await session.execute(found)).tuples().all())
+    planned = {(link["termId"], link["conceptId"]) for link in concept_links}
+    concept_pair = (TermConcept.termId, TermConcept.conceptId)
+    return [*removed, *await _removed_links(session, concept_pair, seeded, planned)]
+
+
+async def _removed_links(
+    session: AsyncSession,
+    pair: tuple[Any, Any],
+    stored: Sequence[tuple[uuid.UUID, uuid.UUID]],
+    planned: set[tuple[uuid.UUID, uuid.UUID]],
+) -> list[tuple[uuid.UUID, uuid.UUID]]:
+    stale = sorted(link for link in set(stored) if link not in planned)
+    for chunk in batched(stale, BATCH, strict=False):
+        await session.execute(delete(pair[0].class_).where(tuple_(*pair).in_(list(chunk))))
+    return stale
+
+
+async def _removed_unlinked_terms(session: AsyncSession, term_ids: set[uuid.UUID]) -> int:
+    if not term_ids:
+        return 0
+    held = [select(model.termId) for model in (TermCraft, TermConcept, SharedTermCraft, TermSummary)]
+    unlinked = delete(Term).where(Term.id.in_(sorted(term_ids)), *(Term.id.not_in(ids) for ids in held))
+    return len((await session.execute(unlinked.returning(Term.id))).all())
 
 
 async def _upsert_terms(session: AsyncSession, plan: Sequence[TermSeed]) -> None:

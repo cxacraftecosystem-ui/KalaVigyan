@@ -67,6 +67,7 @@ class Placed:
 class Floor:
     placed: Placed = field(default_factory=Placed)
     cited: CitedClaims = field(default_factory=CitedClaims)
+    term_names: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
 
 
 def curated_section(section: ReusedSection) -> bool:
@@ -92,7 +93,9 @@ def floors_by_section(
 ) -> dict[str, Floor]:
     return {
         spec.id: Floor(
-            placed_section(spec, floors[spec.discipline], enrichment, process), floors[spec.discipline].cited
+            placed_section(spec, floors[spec.discipline], enrichment, process),
+            floors[spec.discipline].cited,
+            enrichment.term_names,
         )
         for spec in specs
         if spec.discipline in floors
@@ -157,7 +160,13 @@ async def floor_sent(
 ) -> tuple[Block, ...]:
     sources = {**process_sources(process), **floor.cited.sources}
     texts = claim_texts(process, floor.cited)
-    in_language = partial(block_in_language, stream=stream, translation=translation, claim_texts=texts)
+    in_language = partial(
+        block_in_language,
+        stream=stream,
+        translation=translation,
+        claim_texts=texts,
+        term_names=floor.term_names,
+    )
     for marker in (block.reuse for block in floor.placed.blocks if block.reuse is not None):
         await stream.trail.found_piece(marker.piece_id, title=spec.title, stored_at=marker.stored_at)
     shown: list[Block] = []

@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
 from app.core.errors import InvalidInput, Refused
@@ -19,6 +19,7 @@ __all__ = [
     "NEEDS_LOOKUP_MESSAGE",
     "NEEDS_LOOKUP_REASON",
     "NO_SUMMARY_REASON",
+    "RESEARCHED_SUMMARY_MAX_AGE",
     "UNKNOWN_TERM_REASON",
     "StoredClaims",
     "StoredTermLookup",
@@ -37,6 +38,7 @@ UNKNOWN_TERM_MESSAGE = "No term has that address."
 NO_SUMMARY_MESSAGE = "This term has no cited summary yet."
 NEEDS_LOOKUP_MESSAGE = "Sign in to look this term up."
 STORED_BASIS = "STORED"
+RESEARCHED_SUMMARY_MAX_AGE = timedelta(days=180)
 
 
 @dataclass(frozen=True)
@@ -81,12 +83,12 @@ class TermLookup:
 
     async def summary(self, key: str, language: str) -> Term:
         term = await _known_term(self.store, key)
-        found = await self.store.cached(term.id, language)
+        found = await self._current(term.id, language)
         if found is not None:
             return found
         english = None
         if language != CANONICAL_LANGUAGE:
-            english = await self.store.cached(term.id, CANONICAL_LANGUAGE)
+            english = await self._current(term.id, CANONICAL_LANGUAGE)
         if english is None:
             english = await self._english(term)
             await self.store.remember(term.id, english)
@@ -95,6 +97,12 @@ class TermLookup:
         translated = await self._translated(english, language)
         await self.store.remember(term.id, translated)
         return translated
+
+    async def _current(self, term_id: uuid.UUID, language: str) -> Term | None:
+        found = await self.store.cached(term_id, language)
+        if found is None or found.basis == STORED_BASIS:
+            return found
+        return found if self.clock() - found.checked_at <= RESEARCHED_SUMMARY_MAX_AGE else None
 
     async def _english(self, term: GlossaryTerm) -> Term:
         stored = await _stored_english(self.store, term)

@@ -9,6 +9,7 @@ import { changedFrom, reached, type ControlWatch } from "./controlWatch";
 const TIMEOUT_MS = 60_000;
 const QUICK_MS = 5_000;
 const SEGMENTED = ".kv-seg";
+const TERMS_TRIED = 3;
 
 async function pressedLabel(group: Locator): Promise<string> {
   const pressed = group.locator('button[aria-pressed="true"]');
@@ -101,6 +102,51 @@ async function filmPlays(page: Page): Promise<string[]> {
   return [...unchangedProblems("The film's played bar", barBefore, barAfter), ...unchangedProblems("The film's caption", wordBefore, wordAfter)];
 }
 
+async function pictureCredits(page: Page): Promise<string[]> {
+  const plates = page.getByTestId("image-strip").getByTestId("media-plate");
+  const count = await plates.count();
+  if (count === 0) return ["The saved answer shows no pictures"];
+  const problems: string[] = [];
+  for (let at = 0; at < count; at += 1) {
+    const credit = plates.nth(at).locator(".kv-credit");
+    const said = (await credit.innerText()).trim();
+    const linked = await credit.locator('a[href^="https://"]').count();
+    if (!said || linked === 0) problems.push(`Picture ${at + 1} shows no credit linked to its page`);
+  }
+  return problems;
+}
+
+async function termSheet(page: Page): Promise<string[]> {
+  const spans = page.getByTestId("term-span");
+  const tried = Math.min(await spans.count(), TERMS_TRIED);
+  if (tried === 0) return ["The saved answer underlines no term"];
+  const summary = page.getByTestId("term-summary");
+  for (let at = 0; at < tried; at += 1) {
+    const span = spans.nth(at);
+    const term = (await span.innerText()).trim();
+    await span.click();
+    const opened = await summary.waitFor({ state: "visible", timeout: TIMEOUT_MS }).then(
+      () => true,
+      () => false
+    );
+    if (!opened) {
+      await page.keyboard.press("Escape");
+      continue;
+    }
+    await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+    const closed = await summary.waitFor({ state: "hidden", timeout: QUICK_MS }).then(
+      () => true,
+      () => false
+    );
+    return closed ? [] : [`Close leaves the sheet of ${term} open`];
+  }
+  return [`None of the first ${tried} underlined terms opens a cited summary`];
+}
+
+async function picturesAndTerms(page: Page): Promise<string[]> {
+  return [...(await pictureCredits(page)), ...(await termSheet(page))];
+}
+
 async function saveToggle(page: Page): Promise<string[]> {
   const save = page.getByTestId("save-answer");
   if ((await save.count()) === 0) return [];
@@ -143,6 +189,7 @@ export async function answerSession(watch: ControlWatch, page: Page, account: Cr
   });
   if (!opened.answer) return;
   await watch.step("Answer choices", () => segmentedChoices(page, "main"));
+  await watch.step("Answer pictures and terms", () => picturesAndTerms(page));
   await watch.step("Answer Listen", () => listen(page));
   await watch.step("Answer Film", () => film(page));
   await watch.step("Answer Save", () => saveToggle(page));

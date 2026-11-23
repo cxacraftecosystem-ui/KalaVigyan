@@ -61,7 +61,6 @@ from .craft_process import process_records
 from .craft_resolver import CraftIndexStore, DatabaseCraftResolver
 from .explainer_history import StaleVersion, UnknownExplainer, latest_stored
 from .explainer_payload import EXPLAINER_PAYLOAD_KEY, FIRST_VERSION, stored_payload
-from .glossary_local_names import glossary_local_names
 from .live_sources import LiveSourcesStore
 from .piece_store import SqlPieceStore
 from .research_write_back import sentence_claim_ids, store_live_research, writes_back
@@ -341,6 +340,4 @@ def build_answer_translation(
     sessions: async_sessionmaker[AsyncSession], *, model: StructuredModel
 ) -> AnswerTranslation:
     translator = ReadBackTranslator(translator=ModelTranslator(model=model), model=model)
-    return AnswerTranslation(
-        translator=translator, cache=SqlTranslationCache(sessions), local_names=glossary_local_names(sessions)
-    )
+    return AnswerTranslation(translator=translator, cache=SqlTranslationCache(sessions))

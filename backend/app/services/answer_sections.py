@@ -140,7 +140,11 @@ async def _shown(
     sources = _section_sources(attempt.cited, context.process)
     texts = claim_texts(context.process, attempt.cited)
     in_language = partial(
-        block_in_language, stream=context.stream, translation=context.tools.translation, claim_texts=texts
+        block_in_language,
+        stream=context.stream,
+        translation=context.tools.translation,
+        claim_texts=texts,
+        term_names=context.enrichment.term_names,
     )
     shown: list[Block] = list(attempt.floored)
     for block in attempt.blocks:

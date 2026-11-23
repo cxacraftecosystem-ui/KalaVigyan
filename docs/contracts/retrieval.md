@@ -299,7 +299,9 @@ Every stored vector carries the model that made it and the recipe of the text it
 
 - Columns (migration `0043_embedding_stamps`): `Claim.embeddingModel`, `Chunk.embeddingModel`,
   `Craft.embeddingModel` (for `descriptorEmbedding`), `varchar(120)` like `RoutePolicy.model`,
-  and `Craft.descriptorHash` (SHA-256 hex of the descriptor text the vector was made from).
+  and `Craft.descriptorHash` (SHA-256 hex of the descriptor text the vector was made from);
+  `KnowledgePiece.embeddingModel` (migration `0089_piece_embedding_stamps`, decision 0166), whose
+  vectors stored before it took the route's stamp at that moment.
 - The current stamp is `kv_embedding_model()`: the model of the first enabled `EMBED` route
   (by ordinal) whose provider is enabled, then `#` and the recipe, `ctx1` (migration
   `0061_embedding_recipe`), so `gemini-embedding-2#ctx1`. Python reads it as
@@ -308,9 +310,12 @@ Every stored vector carries the model that made it and the recipe of the text it
   another recipe is one embedded before it.
 - A vector is read by the rankings when the model part of its stamp (`split_part(stamp, '#', 1)`,
   `stamps.made_by_current_model`) is the route's model, whatever its recipe, so the rankings never
-  go blind while vectors are renewed.
-- Every writer stamps. The writers in `retrieval/indexing` and the descriptor fill set the full
-  stamp explicitly; triggers (`Claim_embedding_stamp`, `Chunk_embedding_stamp`,
+  go blind while vectors are renewed. The candidate gates' neighbour search
+  (`services/candidate_store.SqlHeldFacts.nearest`) and the piece store's reuse distance
+  (`services/piece_store.SqlPieceStore._closest`) read the same rule, so a question vector is never
+  measured against another model's vector (decision 0166).
+- Every writer stamps. The writers in `retrieval/indexing` (claims, passages and knowledge
+  pieces) and the descriptor fill set the full stamp explicitly; triggers (`Claim_embedding_stamp`, `Chunk_embedding_stamp`,
   `Craft_descriptor_stamp`) stamp any other write (the write-back gates, proposals, tests): a claim
   or passage vector written without a stamp, or changed while its stamp stayed, takes the model
   alone (no recipe), since only `retrieval/indexing` writes the recipe's text; a descriptor takes
@@ -333,7 +338,8 @@ Every stored vector carries the model that made it and the recipe of the text it
 - `embed_pending(session, embed, *, batch_size=50, deadline=None)` embeds the visible claims and
   unrestricted passages whose stamp is not the current one (`stamps.needs_vector`), in the order
   of `stamps.renewal_order`: no vector first, then another model's vector, then an older recipe of
-  the current model, oldest `updatedAt` first, then id; then the knowledge pieces with no vector.
+  the current model, oldest `updatedAt` first, then id; then the knowledge pieces whose stamp is
+  not the current one.
   It works in batches of `EMBED_BATCH` (50), at most `EMBED_RUN_ROWS` (20,000) rows of each kind a
   run. With a `Deadline` it starts no batch once the time is spent; each batch is committed, so a
   stopped run keeps what it did. It returns `EmbeddedCounts {claims, chunks, pieces, complete}`.
@@ -652,9 +658,6 @@ route, so the misspelt and partial names that need the semantic step are scored 
 
 ## Not built
 
-- Knowledge pieces carry no stamp; a piece's vector is filled when missing only.
-- The candidate gates' neighbour search (`services/candidate_store`) and the piece store's reuse
-  distance compare vectors without reading the stamp.
 - Wood Handbook passages wait for the cited edition's text.
 - Generated questions in another language are searched as asked, with no English rendering, and
   the report does not split the generated set by language.

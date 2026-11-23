@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 
-from app.models import Chunk, Claim, KnowledgePiece
+from app.models import Chunk, Claim
 from app.models.crafts import EMBEDDING_DIMENSIONS
 from app.retrieval.indexing import _vector_values
 from app.retrieval.stamps import (
@@ -98,10 +98,8 @@ def test_runs_renew_missing_vectors_then_other_models_then_old_recipes_oldest_fi
     assert sql.endswith('"Claim"."updatedAt", "Claim".id')
 
 
-def test_claims_and_chunks_are_stamped_as_they_are_written_and_pieces_are_not() -> None:
+def test_claims_chunks_and_pieces_are_stamped_as_they_are_written() -> None:
     vector = [1.0] * 3
-    claim = _vector_values(Claim, vector)
-    assert set(claim) == {"embedding", "embeddingModel"} and claim["embedding"] == vector
-    assert "SELECT kv_embedding_model()" in sql_of(claim["embeddingModel"])
-    assert set(_vector_values(Chunk, vector)) == {"embedding", "embeddingModel"}
-    assert _vector_values(KnowledgePiece, vector) == {"embedding": vector}
+    written = _vector_values(vector)
+    assert set(written) == {"embedding", "embeddingModel"} and written["embedding"] == vector
+    assert "SELECT kv_embedding_model()" in sql_of(written["embeddingModel"])
