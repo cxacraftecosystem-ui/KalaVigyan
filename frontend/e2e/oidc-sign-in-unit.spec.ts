@@ -21,6 +21,7 @@ import {
   takePendingSignIn,
   type PendingSignIn
 } from "@/lib/oidcSignIn";
+import { rememberSignInReturn, signInReturnOnce, takeSignInReturn } from "@/lib/sessionReturn";
 import { CONTENT_SECURITY_POLICY } from "../next.config";
 
 const read = (...parts: string[]) => readFileSync(join(__dirname, "..", ...parts), "utf8");
@@ -45,6 +46,17 @@ class MemoryStorage {
 }
 
 const pendingIn = (storage: MemoryStorage) => JSON.parse(storage.getItem(PENDING_KEY) ?? "{}") as PendingSignIn;
+
+function onLoginPage<T>(search: string, sessionStorage: MemoryStorage, run: () => T): T {
+  const holder = globalThis as unknown as { window?: unknown };
+  const before = holder.window;
+  holder.window = { location: { search }, sessionStorage };
+  try {
+    return run();
+  } finally {
+    holder.window = before;
+  }
+}
 
 test("no client ID, no button", () => {
   expect(configuredOidcProviders({})).toEqual([]);
@@ -201,4 +213,20 @@ test("the page strips the answer off the address bar before using it", () => {
 
 test("the browser never talks to Yahoo, so the policy names no Yahoo host", () => {
   expect(CONTENT_SECURITY_POLICY).not.toMatch(/yahoo/i);
+});
+
+test("a Yahoo or Microsoft sign-in lands on the page it was asked from, however often the login page asks where to go", () => {
+  const asked = "/oauth/authorize?client_id=claude&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fmcp%2Fauth_callback";
+  const storage = new MemoryStorage();
+  onLoginPage(`?next=${encodeURIComponent(asked)}`, storage, () => rememberSignInReturn(`?next=${encodeURIComponent(asked)}`));
+  const stored = new Map(storage.values);
+  const landings = onLoginPage("", storage, () => {
+    const landing = signInReturnOnce();
+    return [landing(), landing()];
+  });
+  expect(landings).toEqual([asked, asked]);
+  storage.values = stored;
+  expect(onLoginPage("", storage, () => [takeSignInReturn(), takeSignInReturn()])).toEqual([asked, "/ask"]);
+  expect(LOGIN).not.toContain("takeSignInReturn(");
+  expect(LOGIN.match(/router\.replace\(landing\(\)\)/g)).toHaveLength(4);
 });

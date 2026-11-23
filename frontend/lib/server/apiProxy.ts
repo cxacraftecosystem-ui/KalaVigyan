@@ -22,6 +22,8 @@ export const CROSS_SITE_DETAIL = "This request didn't come from this site, so it
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 const MACHINE_ROUTES = new Set(["/api/mcp"]);
+const ACCOUNT_PREFIX = "/api/auth/";
+const BODILESS_STATUSES = new Set([101, 204, 205, 304]);
 
 export const MACHINE_RESPONSE_HEADERS: Readonly<Record<string, string>> = {
   "cache-control": "no-store, no-transform",
@@ -130,6 +132,10 @@ export function sessionMarkerOf(request: Request): string | null {
 
 export function isMachineRoute(path: string): boolean {
   return MACHINE_ROUTES.has(path);
+}
+
+export function isAccountWrite(path: string, method: string): boolean {
+  return path.startsWith(ACCOUNT_PREFIX) && !SAFE_METHODS.has(method.toUpperCase());
 }
 
 export function csrfRefusal(request: Request): string | null {
@@ -260,43 +266,64 @@ async function relay(request: Request, path: string, token: string | null, body?
   });
 }
 
+type JsonRecord = Record<string, unknown>;
+
+function jsonRecordOf(upstream: Response, raw: ArrayBuffer | null): JsonRecord | null {
+  if (!raw || !(upstream.headers.get("content-type") ?? "").includes("application/json")) return null;
+  try {
+    const parsed: unknown = JSON.parse(new TextDecoder().decode(raw));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as JsonRecord) : null;
+  } catch {
+    return null;
+  }
+}
+
+function sessionTokenIn(upstream: Response, body: JsonRecord | null): string {
+  if (!upstream.ok) return "";
+  const header = (upstream.headers.get(API_SESSION_TOKEN_HEADER) ?? "").trim();
+  if (header) return header;
+  return typeof body?.accessToken === "string" ? body.accessToken.trim() : "";
+}
+
+function withoutToken(body: JsonRecord): JsonRecord {
+  const rest = { ...body };
+  delete rest.accessToken;
+  delete rest.tokenType;
+  return rest;
+}
+
+async function takeOverSession(request: Request, upstream: Response): Promise<Response> {
+  const headers = downstreamHeaders(upstream.headers);
+  const raw = BODILESS_STATUSES.has(upstream.status) ? null : await upstream.arrayBuffer();
+  const body = jsonRecordOf(upstream, raw);
+  const token = sessionTokenIn(upstream, body);
+  if (token) {
+    for (const line of sessionCookieLines(token, isSecureContext(request))) headers.append("set-cookie", line);
+    headers.set(SESSION_ROTATED_HEADER, "1");
+  }
+  if (!body || !("accessToken" in body)) return new Response(raw, { status: upstream.status, headers });
+  headers.set("content-type", "application/json");
+  return new Response(JSON.stringify(withoutToken(body)), { status: upstream.status, headers });
+}
+
 export async function handleSignIn(request: Request, path: string): Promise<Response> {
   if (csrfRefusal(request)) return refuseCrossSite();
   const upstream = await relay(request, path, null);
   if (!upstream) return refuseUnconfigured();
-  const headers = downstreamHeaders(upstream.headers);
-  const text = await upstream.text();
-  if (upstream.ok && (upstream.headers.get("content-type") ?? "").includes("application/json")) {
-    let parsed: unknown = null;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      parsed = null;
-    }
-    if (parsed && typeof parsed === "object" && typeof (parsed as { accessToken?: unknown }).accessToken === "string") {
-      const answer = { ...(parsed as Record<string, unknown>) };
-      const token = answer.accessToken as string;
-      delete answer.accessToken;
-      delete answer.tokenType;
-      for (const line of sessionCookieLines(token, isSecureContext(request))) headers.append("set-cookie", line);
-      headers.set("content-type", "application/json");
-      return new Response(JSON.stringify(answer), { status: upstream.status, headers });
-    }
-  }
-  return new Response(text, { status: upstream.status, headers });
+  return takeOverSession(request, upstream);
 }
 
-export async function handleChangePassword(request: Request, path: string): Promise<Response> {
+export async function handleAccountWrite(request: Request): Promise<Response> {
   if (csrfRefusal(request)) return refuseCrossSite();
-  const upstream = await relay(request, path, sessionTokenOf(request));
-  if (!upstream) return refuseUnconfigured();
-  const headers = downstreamHeaders(upstream.headers);
-  const fresh = (upstream.headers.get(API_SESSION_TOKEN_HEADER) ?? "").trim();
-  if (upstream.ok && fresh) {
-    for (const line of sessionCookieLines(fresh, isSecureContext(request))) headers.append("set-cookie", line);
-    headers.set(SESSION_ROTATED_HEADER, "1");
+  const url = new URL(request.url);
+  let upstream: Response | null;
+  try {
+    upstream = await relay(request, `${url.pathname}${url.search}`, sessionTokenOf(request));
+  } catch {
+    return json(502, { detail: UNCONFIGURED_DETAIL });
   }
-  return new Response(upstream.status === 204 ? null : await upstream.arrayBuffer(), { status: upstream.status, headers });
+  if (!upstream) return refuseUnconfigured();
+  return takeOverSession(request, upstream);
 }
 
 export async function handleLogout(request: Request, path: string): Promise<Response> {

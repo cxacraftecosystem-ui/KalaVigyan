@@ -8,6 +8,7 @@ Date: 2026-11-18. Status: accepted.
 
 | For | Read |
 |---|---|
+| A week-cached reading page's reads are absent only on a 404, and any other failure fails the render (narrows item 8) | [decision 0172](0172-a-rotated-session-taken-over-and-cached-pages-kept-whole.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

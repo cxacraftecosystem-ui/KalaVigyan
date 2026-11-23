@@ -64,7 +64,11 @@ async def _closed(
         record = await upkeep.artisans.by_id(conversation_id)
         if record is None:
             continue
-        spoke = bool(artisan_turns(open_transcript(cipher, record.transcript)))
+        try:
+            spoke = bool(artisan_turns(open_transcript(cipher, record.transcript)))
+        except AppError as error:
+            report.failures.append(f"{conversation_id}: {error}")
+            continue
         await upkeep.artisans.finish(conversation_id, now, spoke=spoke)
         report.closed += 1
 

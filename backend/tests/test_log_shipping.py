@@ -126,7 +126,11 @@ def test_the_shipped_nginx_lines_carry_no_query_string_address_referrer_or_body(
 
 def test_every_release_installs_the_log_files_after_the_environment_and_before_the_switch() -> None:
     release = read(DEPLOY / "release.sh")
-    steps = ("\n/usr/local/sbin/kv-render-env\n", 'bash "$HERE/ship_logs.sh"', "build_release\n  /usr")
+    steps = (
+        "\n/usr/local/sbin/kv-render-env\n",
+        'bash "$HERE/ship_logs.sh"',
+        "build_release\n  name_release\n",
+    )
     order = [release.index(step) for step in steps]
     assert order == sorted(order)
     script = read(DEPLOY / "ship_logs.sh")

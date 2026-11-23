@@ -4,6 +4,10 @@ set -euo pipefail
 SHA="${1:?release needs the commit sha}"
 TARBALL="${2:?release needs the tarball path}"
 KEEP="${KEEP_RELEASES:-5}"
+SSM_SECONDS="${SSM_SECONDS:-2700}"
+CLEANUP_MARGIN=300
+RELEASE_FLOOR=600
+STARTED="$(date +%s)"
 . /etc/kalavigyan/box.env
 APP="${KV_APP:-/opt/kalavigyan}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -107,6 +111,26 @@ build_release() {
   touch "$REL/.complete"
 }
 
+name_release() {
+  printf 'RELEASE=%s\n' "$SHA" > "$REL/release.env"
+  chown root:kalavigyan "$REL/release.env"
+  chmod 0644 "$REL/release.env"
+}
+
+switch_within_time() {
+  local left rc=0
+  left=$(( STARTED + SSM_SECONDS - CLEANUP_MARGIN - $(date +%s) ))
+  [ "$left" -ge "$RELEASE_FLOOR" ] || die "only ${left}s of the ${SSM_SECONDS}s SSM gives this run are left after the build; nothing was switched"
+  /usr/local/sbin/kv-blue-green release "$SHA" --within "$left" || rc=$?
+  case "$rc" in
+    0) ;;
+    124|137)
+      /usr/local/sbin/kv-blue-green status || true
+      die "the release did not finish within its ${left}s and stopped itself; unless it had already switched, nginx serves the release before and the workers run again (status above)" ;;
+    *) exit "$rc" ;;
+  esac
+}
+
 prune() {
   local keep=() r n=0
   for r in current slot-8000 slot-8001; do
@@ -125,14 +149,16 @@ install_units
 /usr/local/sbin/kv-render-env
 bash "$HERE/ship_logs.sh" || say "::warning::the box's logs are not shipped to CloudWatch Logs this release; read the error above"
 if [ -f "$REL/.complete" ] && [ "$(readlink -f "$APP/current" 2>/dev/null || true)" = "$(readlink -f "$REL")" ]; then
-  say "$SHA is already live; restarting it so it reads the current environment"
+  say "$SHA is already live; starting it on the other colour so it reads the current environment"
+  name_release
   /usr/local/sbin/kv-blue-green restart
 else
   build_release
-  /usr/local/sbin/kv-blue-green release "$SHA"
+  name_release
+  switch_within_time
   prune
 fi
-curl -fsS -m 10 -o /dev/null http://127.0.0.1/health || die "nginx does not answer /health after the release"
+curl -fsS -m 10 -o /dev/null http://127.0.0.1/health/ready || die "nginx does not answer /health/ready after the release: the API does not reach its database"
 /usr/local/sbin/kv-blue-green status
 rm -f "$TARBALL"
 say "release $SHA is live"

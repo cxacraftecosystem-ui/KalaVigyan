@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import String, case, func, or_, select
+from sqlalchemy import String, case, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import guardian_hold
@@ -76,20 +76,24 @@ async def _guardian_marks(
     return [item for _, item in pairs]
 
 
-async def _listed(session: AsyncSession, rows: Any) -> list[dict[str, Any]]:
+def _access_label() -> Any:
     master_email = get_settings().master_admin_email.strip().lower()
-    pairs = [
-        (
-            user,
-            serialize_user(
-                user,
-                access_status="ACTIVE"
-                if user.email.lower() == master_email
-                else (row_status or "NOT_LISTED"),
-            ),
-        )
-        for user, row_status in rows
-    ]
+    return case(
+        (func.lower(User.email) == master_email, "ACTIVE"),
+        else_=func.coalesce(cast(AccessRoster.status, String), "NOT_LISTED"),
+    )
+
+
+def _with_roster(*columns: Any) -> Any:
+    return (
+        select(*columns)
+        .select_from(User)
+        .outerjoin(AccessRoster, func.lower(User.email) == AccessRoster.email)
+    )
+
+
+async def _listed(session: AsyncSession, rows: Any) -> list[dict[str, Any]]:
+    pairs = [(user, serialize_user(user, access_status=access)) for user, access in rows]
     return await _guardian_marks(session, pairs)
 
 
@@ -100,8 +104,7 @@ def _sort_column(sort: str) -> Any:
 
 
 async def _with_access(session: AsyncSession, user: User) -> dict[str, Any]:
-    row = await access_roster.access_row(session, user.email)
-    access = "ACTIVE" if is_configured_master_admin(user) else (access_roster.status_of(row) or "NOT_LISTED")
+    access = (await session.execute(_with_roster(_access_label()).where(User.id == user.id))).scalar_one()
     (item,) = await _guardian_marks(session, [(user, serialize_user(user, access_status=access))])
     return item
 
@@ -126,20 +129,15 @@ async def list_users(
             status.HTTP_422_UNPROCESSABLE_ENTITY, f"sort must be one of {', '.join(USER_SORTS)}"
         )
     clean_page, clean_size, skip = normalize_pagination(page, pageSize)
-    joined = (
-        select(User, AccessRoster.status)
-        .outerjoin(AccessRoster, func.lower(User.email) == AccessRoster.email)
-        .where(User.deletedAt.is_(None))
-    )
+    access_label = _access_label()
+    joined = _with_roster(User, access_label).where(User.deletedAt.is_(None))
     if role:
         joined = joined.where(User.role == role)
     if search and search.strip():
         like = f"%{search.strip()}%"
         joined = joined.where(or_(User.name.ilike(like), User.email.ilike(like)))
-    if access == "NOT_LISTED":
-        joined = joined.where(AccessRoster.id.is_(None))
-    elif access:
-        joined = joined.where(AccessRoster.status == access)
+    if access:
+        joined = joined.where(access_label == access)
     total = int((await session.execute(select(func.count()).select_from(joined.subquery()))).scalar_one())
     column = _sort_column(sort)
     ordering = column.asc().nulls_last() if dir == "asc" else column.desc().nulls_last()

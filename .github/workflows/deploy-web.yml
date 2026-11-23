@@ -28,35 +28,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Leave the build to Deploy backend when the push changes the API
-        id: order
-        if: github.event_name == 'push'
-        env:
-          BEFORE: ${{ github.event.before }}
-        run: |
-          set -euo pipefail
-          command -v yq > /dev/null || { echo "::error::yq is not on the runner; cannot read the Backend checks paths"; exit 1; }
-          git cat-file -e "$BEFORE^{commit}" 2> /dev/null || { echo "::error::the commit before this push ($BEFORE) is not in the history; run this workflow by hand once the API is live"; exit 1; }
-          mapfile -t globs < <(yq -r '.on.push.paths[]' .github/workflows/backend-checks.yml)
-          [ "${#globs[@]}" -gt 0 ] || { echo "::error::Backend checks lists no push paths"; exit 1; }
-          specs=()
-          for glob in "${globs[@]}"; do specs+=(":(glob)$glob"); done
-          if git diff --quiet "$BEFORE" "$GITHUB_SHA" -- "${specs[@]}"; then
-            echo "api=unchanged" >> "$GITHUB_OUTPUT"
-            echo "this push leaves the API as it is; the web app builds now"
-          else
-            echo "api=changed" >> "$GITHUB_OUTPUT"
-            echo "this push changes the API; Deploy backend builds the web app once the API answers"
-          fi
-
       - name: Assume the deploy role
-        if: steps.order.outputs.api != 'changed'
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           role-session-name: deploy-web-${{ github.run_id }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Build the web app
-        if: steps.order.outputs.api != 'changed'
+      - name: Build the web app once the API it needs is live
         uses: ./.github/actions/build-web-app
+        with:
+          api-base-url: ${{ vars.API_BASE_URL }}
