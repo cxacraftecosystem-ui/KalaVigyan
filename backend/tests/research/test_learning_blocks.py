@@ -152,6 +152,8 @@ def test_a_gi_record_states_only_what_its_sentences_state() -> None:
     refused(market, "APPLIED GI record carries what makes it so")
     market = block("s5.b1")
     market["gi"] = None
+    assert [price.stated for price in BLOCK.validate_python(market).prices] == ["Rs. 7"]
+    market["prices"] = []
     refused(market, "cites nothing")
 
 

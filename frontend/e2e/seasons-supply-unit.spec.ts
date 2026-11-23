@@ -58,6 +58,15 @@ test("a stage with no dated claim is listed without months, and a mapped season 
   for (const row of strip.rows) expect(html).toContain(row.sentence.text);
 });
 
+test("the fixture's seasons draw Kachchh's recorded CHIRPS monthly normals with the wettest month read out", () => {
+  const block = parseShape(BLOCK_SHAPES.seasons, fixtureBlock("s3.b1"));
+  expect(block.rainfall?.millimetres).toHaveLength(12);
+  expect(block.datasets).toEqual([chirpsRow()]);
+  const html = withReading(createElement(SeasonsStrip, { block }));
+  expect(html).toContain('data-testid="rainfall-bars"');
+  expect(html).toContain(">July is the wettest month in Kachchh: 181 mm of a 449 mm year<");
+});
+
 test("a seasons block may show its district's rainfall with no season rows, and never neither", () => {
   const block = parseShape(BLOCK_SHAPES.seasons, rainOnly());
   expect([block.rows, blockSentences(block)]).toEqual([[], []]);

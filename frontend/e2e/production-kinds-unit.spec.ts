@@ -65,9 +65,11 @@ test("the climate question passes only with a seasons block, and each built bloc
   );
   expect(knownAnswerOutcome(record, CLIMATE).problems).toEqual([]);
   expect(builtBlockNotes(record.builtBlocks)).toEqual([
-    "The seasons block of section s1 arrived 3.2 s after its section's first block: 1 row (1 timed), no rainfall.",
+    "The seasons block of section s1 arrived 3.2 s after its section's first block: 1 row (1 timed), rainfall shown.",
     "The supply map of section s6 arrived 0.0 s after its section's first block: 3 links, 0 origins pinned."
   ]);
+  const dry = recordAt([{ at: 1_500, text: prose() }, { at: 4_700, text: frame("block", { sectionId: "s1", block: { ...phaseB("s3.b1"), id: "s1.b2", rainfall: null, datasets: [] } }) }], CLIMATE);
+  expect(builtBlockNotes(dry.builtBlocks)).toEqual(["The seasons block of section s1 arrived 3.2 s after its section's first block: 1 row (1 timed), no rainfall."]);
 });
 
 test("the Ganga question asks for a Varanasi craft and only notes a missing river story, timing the one that arrives", () => {

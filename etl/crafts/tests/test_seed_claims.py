@@ -1,4 +1,6 @@
-from seed_claims import QUOTE_MAX, clip_quote, convert_immersive, convert_inferential, stage_type
+from seed_immersive import QUOTE_MAX, clip_quote, convert_immersive
+from seed_inferential import convert_inferential
+from seed_terms import stage_type
 
 TRADITION = {
     "format_version": 1,

@@ -57,7 +57,15 @@ test("the client refuses a page whose new parts do not agree", () => {
   expect(() => curatedPage((body) => (body.environment[0] = { ...body.environment[0], factor: "WIND" as never }))).toThrow(ShapeError);
 });
 
-test("a craft page lists no local names until a dossier states the craft's own", () => {
-  expect(curatedPage().craft.localNames).toEqual([]);
+test("a craft page lists the local names its dossier states, each on a claim it lists, and none without a dossier", () => {
+  const page = curatedPage();
+  expect(page.craft.localNames.map((name) => [name.name, name.language, name.script])).toEqual([
+    ["اجرڪ", "sd", "Arab"],
+    ["ajrak", "sd", "Latn"]
+  ]);
+  const listed = new Set(page.claims.map((claim) => claim.id));
+  expect(page.craft.localNames.flatMap((name) => name.claimIds).every((id) => listed.has(id))).toBe(true);
+  const unlisted = "00000000-0000-4000-8000-000000000000";
+  expect(() => curatedPage((body) => (body.craft = { ...body.craft, localNames: [{ ...body.craft.localNames[0], claimIds: [unlisted] }] }))).toThrow(/a claim the page lists/);
   expect(registerPage().craft.localNames).toEqual([]);
 });

@@ -322,62 +322,57 @@ async def state_points(session: AsyncSession) -> dict[str, dict[str, Any]]:
 
 async def map_points(session: AsyncSession) -> list[dict[str, Any]]:
     states = await state_points(session)
-    crafts = (
-        await session.execute(
-            select(Craft.slug, Craft.name, Craft.stateOfPractice).where(
-                Craft.status == "ACTIVE", Craft.isCatchAll.is_(False)
-            )
-        )
-    ).all()
     points: dict[str, dict[str, Any]] = {}
-    for slug, name, practice in crafts:
+    for slug, name, practice in await _practised_crafts(session):
         for state in practice or []:
             point = states.get(str(state).casefold())
             if point is None or point["latitude"] is None:
                 continue
-            key = f"state-{point['lgd']}"
-            entry = points.setdefault(
-                key,
-                {
-                    "key": key,
-                    "name": point["name"],
-                    "latitude": point["latitude"],
-                    "longitude": point["longitude"],
-                    "crafts": {},
-                },
-            )
-            entry["crafts"][slug] = {"slug": slug, "name": name, "path": f"/crafts/{slug}"}
-    located = (
-        await session.execute(
-            select(
-                Craft.slug,
-                Craft.name,
-                CraftLocation.placeLabel,
-                AdminDistrict.lgd,
-                AdminDistrict.name,
-                func.ST_Y(func.coalesce(func.geometry(CraftLocation.geom), AdminDistrict.centroid)),
-                func.ST_X(func.coalesce(func.geometry(CraftLocation.geom), AdminDistrict.centroid)),
-            )
-            .join(Craft, Craft.id == CraftLocation.craftId)
-            .outerjoin(AdminDistrict, AdminDistrict.lgd == CraftLocation.districtLgd)
-            .where(Craft.status == "ACTIVE", CraftLocation.precision.in_(("DISTRICT", "POINT")))
-        )
-    ).all()
-    for slug, name, label, district_lgd, district_name, lat, lon in located:
+            place = _map_place(f"state-{point['lgd']}", point["name"], point["latitude"], point["longitude"])
+            _with_craft(points, place, slug, name)
+    for slug, name, label, district_lgd, district_name, lat, lon in await _located_crafts(session):
         if lat is None or lon is None:
             continue
         key = f"district-{district_lgd}" if district_lgd else f"point-{lat:.3f},{lon:.3f}"
-        entry = points.setdefault(
-            key,
-            {
-                "key": key,
-                "name": label or district_name or name,
-                "latitude": lat,
-                "longitude": lon,
-                "crafts": {},
-            },
+        _with_craft(points, _map_place(key, label or district_name or name, lat, lon), slug, name)
+    return _listed_points(points)
+
+
+async def _practised_crafts(session: AsyncSession) -> Sequence[Any]:
+    query = select(Craft.slug, Craft.name, Craft.stateOfPractice).where(
+        Craft.status == "ACTIVE", Craft.isCatchAll.is_(False)
+    )
+    return (await session.execute(query)).all()
+
+
+async def _located_crafts(session: AsyncSession) -> Sequence[Any]:
+    query = (
+        select(
+            Craft.slug,
+            Craft.name,
+            CraftLocation.placeLabel,
+            AdminDistrict.lgd,
+            AdminDistrict.name,
+            func.ST_Y(func.coalesce(func.geometry(CraftLocation.geom), AdminDistrict.centroid)),
+            func.ST_X(func.coalesce(func.geometry(CraftLocation.geom), AdminDistrict.centroid)),
         )
-        entry["crafts"][slug] = {"slug": slug, "name": name, "path": f"/crafts/{slug}"}
+        .join(Craft, Craft.id == CraftLocation.craftId)
+        .outerjoin(AdminDistrict, AdminDistrict.lgd == CraftLocation.districtLgd)
+        .where(Craft.status == "ACTIVE", CraftLocation.precision.in_(("DISTRICT", "POINT")))
+    )
+    return (await session.execute(query)).all()
+
+
+def _map_place(key: str, name: str, latitude: float, longitude: float) -> dict[str, Any]:
+    return {"key": key, "name": name, "latitude": latitude, "longitude": longitude, "crafts": {}}
+
+
+def _with_craft(points: dict[str, dict[str, Any]], place: dict[str, Any], slug: str, name: str) -> None:
+    entry = points.setdefault(place["key"], place)
+    entry["crafts"][slug] = {"slug": slug, "name": name, "path": f"/crafts/{slug}"}
+
+
+def _listed_points(points: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     out = []
     for entry in points.values():
         listed = sorted(entry["crafts"].values(), key=lambda c: c["name"].casefold())

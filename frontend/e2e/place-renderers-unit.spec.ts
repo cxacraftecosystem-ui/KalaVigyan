@@ -283,7 +283,7 @@ const CHIRPS: RegionDataset = {
 };
 
 test("a seasons block without rainfall shows its season rows and no month strip", () => {
-  const html = withReading(createElement(SeasonsStrip, { block: seasons() }));
+  const html = withReading(createElement(SeasonsStrip, { block: { ...seasons(), rainfall: null, datasets: [] } }));
   expect(html).not.toContain('data-testid="rainfall-bars"');
   expect(html).not.toContain('data-testid="month-header"');
   expect(html).not.toContain('data-testid="dataset-credit"');

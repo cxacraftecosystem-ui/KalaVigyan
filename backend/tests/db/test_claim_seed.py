@@ -113,54 +113,50 @@ async def _counts(session: AsyncSession) -> dict[str, int]:
     }
 
 
+async def _count_where(session: AsyncSession, model: Any, condition: Any) -> int:
+    return (await session.execute(select(func.count()).select_from(model).where(condition))).scalar_one()
+
+
+async def _with_only_the_seeded_crafts(session: AsyncSession) -> None:
+    quoted = ", ".join(f'"{name}"' for name in (*KNOWLEDGE_TABLES, *CRAFT_TABLES))
+    await session.execute(text(f"TRUNCATE {quoted} CASCADE"))
+    await seed_crafts(session, seed_plan())
+
+
+async def _totals_after_seeding_twice(session: AsyncSession, data: dict[str, Any]) -> dict[str, int]:
+    first = await seed_claims(session, data)
+    assert first["unresolvedSlugs"] == []
+    plan_total = first["total"]
+    inserted = first["inserted"]
+    for key in ("sources", "concepts", "edges", "claims", "claimSources", "reviewEvents", "stages"):
+        assert inserted[key] == plan_total[key], key
+    after_first = await _counts(session)
+    assert after_first == inserted
+
+    second = await seed_claims(session, data)
+    assert set(second["inserted"].values()) == {0}
+    assert await _counts(session) == after_first
+    return plan_total
+
+
+async def _review_event_actors(session: AsyncSession) -> list[Any]:
+    actors = (ReviewEvent.actorKind, ReviewEvent.systemActor)
+    return list((await session.execute(select(*actors, func.count()).group_by(*actors))).all())
+
+
 @pytest.mark.db
 async def test_seed_claims_is_idempotent_on_the_seed_id(data: dict[str, Any]) -> None:
     async with get_engine().connect() as connection:
         transaction = await connection.begin()
         try:
             session = AsyncSession(bind=connection, expire_on_commit=False, autoflush=False)
-            quoted = ", ".join(f'"{name}"' for name in (*KNOWLEDGE_TABLES, *CRAFT_TABLES))
-            await session.execute(text(f"TRUNCATE {quoted} CASCADE"))
-            await seed_crafts(session, seed_plan())
-
-            first = await seed_claims(session, data)
-            assert first["unresolvedSlugs"] == []
-            plan_total = first["total"]
-            inserted = first["inserted"]
-            for key in ("sources", "concepts", "edges", "claims", "claimSources", "reviewEvents", "stages"):
-                assert inserted[key] == plan_total[key], key
-            after_first = await _counts(session)
-            assert after_first == inserted
-
-            second = await seed_claims(session, data)
-            assert set(second["inserted"].values()) == {0}
-            assert await _counts(session) == after_first
-
-            evidence_kinds = (
-                await session.execute(
-                    select(func.count()).select_from(Source).where(Source.evidenceKind.is_(None))
-                )
-            ).scalar_one()
-            assert evidence_kinds == 0
-            events = (
-                await session.execute(
-                    select(ReviewEvent.actorKind, ReviewEvent.systemActor, func.count()).group_by(
-                        ReviewEvent.actorKind, ReviewEvent.systemActor
-                    )
-                )
-            ).all()
-            assert events == [("SYSTEM", "import", plan_total["claims"])]
-            linked = (
-                await session.execute(
-                    select(func.count()).select_from(ConceptEdge).where(ConceptEdge.claimId.is_not(None))
-                )
-            ).scalar_one()
+            await _with_only_the_seeded_crafts(session)
+            plan_total = await _totals_after_seeding_twice(session, data)
+            assert await _count_where(session, Source, Source.evidenceKind.is_(None)) == 0
+            assert await _review_event_actors(session) == [("SYSTEM", "import", plan_total["claims"])]
+            linked = await _count_where(session, ConceptEdge, ConceptEdge.claimId.is_not(None))
             assert linked == sum(1 for row in claim_seed_plan(data)["edges"] if row["claimId"])
-            crafted = (
-                await session.execute(
-                    select(func.count()).select_from(Concept).where(Concept.craftId.is_not(None))
-                )
-            ).scalar_one()
+            crafted = await _count_where(session, Concept, Concept.craftId.is_not(None))
             assert crafted == sum(1 for row in data["concepts"] if row["craftSlug"])
             await session.close()
         finally:

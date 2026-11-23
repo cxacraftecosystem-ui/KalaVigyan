@@ -107,7 +107,7 @@ test("a regional conversion names its region and cites the source that states th
   expect(blockCitations(block).at(-1)?.quote).toBe("A seer of Kutch weighs 0.933 kg.");
 });
 
-test("a GI record shows its status, registry facts, proprietors and cited sentences", () => {
+test("a GI record shows its status, registry facts, proprietors and cited sentences, with the craft's dated price beside it", () => {
   expect([partialDateText("2023-01-31"), partialDateText("2023-01"), partialDateText("2023")]).toEqual(["31 Jan 2023", "Jan 2023", "2023"]);
   expect(() => partialDateText("31-01-2023")).toThrow(RangeError);
   expect(giFacts(ajrakhMarket().gi!)).toEqual([
@@ -123,10 +123,13 @@ test("a GI record shows its status, registry facts, proprietors and cited senten
   expect(html).toContain('href="/crafts/Kutch-Ajrakh"');
   expect(text(html)).toContain(ajrakhMarket().gi!.sentences[0].text);
   expect(html).not.toContain('data-testid="gi-imitation"');
-  expect(html).not.toContain('data-testid="price-range"');
+  expect(attribute(html, "price-range", "data-testid")).toHaveLength(1);
+  expect(text(html)).toContain("Rs. 7");
+  expect(text(html)).toContain("Barmer · 1975");
+  expect(text(html)).toContain(ajrakhMarket().prices[0].sentence.text);
   const clusters = attribute(html, "citation-chip", "data-numbers");
-  expect(clusters).toHaveLength(ajrakhMarket().gi!.sentences.length);
-  expect(clusters.flatMap((numbers) => numbers.split(","))).toHaveLength(2);
+  expect(clusters).toHaveLength(ajrakhMarket().gi!.sentences.length + ajrakhMarket().prices.length);
+  expect(clusters.flatMap((numbers) => numbers.split(","))).toHaveLength(3);
 });
 
 test("signs of imitation stand apart, and a certificate is listed when the registry states one", () => {

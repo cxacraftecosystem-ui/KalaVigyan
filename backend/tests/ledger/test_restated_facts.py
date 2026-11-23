@@ -3,6 +3,7 @@ from typing import Any
 from pydantic import TypeAdapter
 
 from app.research.blocks import BlockBase
+from app.research.blocks_place import SeasonsBlock
 from app.research.explainer import Block
 from app.services.claim_ledger import ClaimLedger, admission_batches
 from app.services.ledgered_explainer import ledgered_explainer
@@ -82,10 +83,15 @@ def test_a_figure_whose_every_item_retells_the_prose_keeps_its_first_item() -> N
         "text": "Monsoon humidity slows the production of Ajrakh.",
         "terms": [],
     }
+    rowless = {**seasons, "rainfall": None, "datasets": []}
     ledger = ClaimLedger()
     ledger.admit("s1", [BLOCK.validate_python(block("s1.b1", "prose", sentences=[told]))], REFS)
-    (kept,) = ledger.admit("s3", [BLOCK.validate_python(seasons)], REFS)
+    (kept,) = ledger.admit("s3", [BLOCK.validate_python(rowless)], REFS)
     assert [shown.sentence.text for shown in kept.rows] == [row.sentence.text]
+    rained = ClaimLedger()
+    rained.admit("s1", [BLOCK.validate_python(block("s1.b1", "prose", sentences=[told]))], REFS)
+    (rain,) = rained.admit("s3", [BLOCK.validate_python(seasons)], REFS)
+    assert isinstance(rain, SeasonsBlock) and (rain.rows, rain.rainfall is not None) == ([], True)
 
 
 def test_the_same_fact_filed_under_two_fields_is_said_once() -> None:
