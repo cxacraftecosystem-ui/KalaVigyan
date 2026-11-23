@@ -10,7 +10,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import InvalidInput
 from app.curation.files import CURATION_DIR, dossier_paths
-from app.models import Craft, CuratedCraft, KnowledgePiece as PieceRow, Process
+from app.models import (
+    Craft,
+    CraftGiRecord,
+    CraftLocation,
+    CraftPrice,
+    CraftWorkforce,
+    CuratedCraft,
+    KnowledgePiece as PieceRow,
+    Process,
+)
 from app.models.science import live_process
 
 from .curated_index import CuratedPage, stored_curated_page
@@ -30,6 +39,7 @@ class RetiredDossier:
     pieces: int
     processes: int
     seed_rows: SeedRetirement
+    records: int = 0
 
     def summary(self) -> dict[str, Any]:
         return {
@@ -37,6 +47,7 @@ class RetiredDossier:
             "claims": self.claims,
             "pieces": self.pieces,
             "processes": self.processes,
+            "records": self.records,
             "restoredSeedRows": self.seed_rows.summary(),
         }
 
@@ -55,12 +66,30 @@ async def retire_dossier(
     if craft is None or stored is None:
         raise InvalidInput(f"{craft_slug} has no imported dossier to retire")
     page = stored_curated_page(craft.id, stored)
+    records = await _removed_records(session, craft.id, page)
     claims = await write_claims(session, craft_curated_claims(craft.id), [], DOSSIER_RETIRED_NOTE)
     pieces = await _stale_pieces(session, page)
     processes = await _archived_process(session, page)
     await delete_rows(session, CuratedCraft, CuratedCraft.craftId == craft.id)
     restored = await restore_seed_rows(session, craft.id)
-    return RetiredDossier(craft_slug, claims, pieces, processes, restored)
+    return RetiredDossier(craft_slug, claims, pieces, processes, restored, records)
+
+
+async def _removed_records(session: AsyncSession, craft_id: uuid.UUID, page: CuratedPage | None) -> int:
+    curated = list(await session.scalars(craft_curated_claims(craft_id)))
+    locations = list(page.location_ids()) if page else []
+    removed = await delete_rows(session, CraftLocation, CraftLocation.id.in_(locations)) if locations else 0
+    if not curated:
+        return removed
+    removed += await delete_rows(
+        session, CraftPrice, CraftPrice.craftId == craft_id, CraftPrice.claimId.in_(curated)
+    )
+    removed += await delete_rows(
+        session, CraftWorkforce, CraftWorkforce.craftId == craft_id, CraftWorkforce.claimId.in_(curated)
+    )
+    return removed + await delete_rows(
+        session, CraftGiRecord, CraftGiRecord.craftId == craft_id, CraftGiRecord.claimIds.overlap(curated)
+    )
 
 
 async def _stale_pieces(session: AsyncSession, page: CuratedPage | None) -> int:

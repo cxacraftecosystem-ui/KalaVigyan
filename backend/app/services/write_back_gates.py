@@ -31,6 +31,7 @@ from .candidate_gates import (
 )
 from .candidate_store import CLOSED_STATUSES, FactSubject, SqlHeldFacts, subject_title
 from .candidate_writes import mark_sources_differ, record_checks
+from .sources_differ import settle_sources_differ
 from .write_back_closed import (
     KeptVectors,
     Owner,
@@ -138,6 +139,8 @@ async def record_write_back_runs(
             vectored += 1
         if live:
             await mark_sources_differ(session, result.claim_id)
+    if live:
+        await settle_sources_differ(session, [result.claim_id for result in results if not result.created])
     return vectored
 
 

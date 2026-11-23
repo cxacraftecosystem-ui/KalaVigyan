@@ -62,8 +62,9 @@ take yet (picture placements, a stage's `after` or why, native names, reactions,
 conflicts, open questions, the GI record) and a new craft's first dossier still come in as a new
 dossier version, checked as below and imported on deploy. `app.scripts.export_dossiers` writes the
 dossiers back from the database and reports what differs from git; the export, its guarantee and
-the client are `docs/contracts/dossier-export.md`. The rules on this page apply to every dossier,
-exported or written by hand.
+the client are `docs/contracts/dossier-export.md`. A new version is built on that export, since the
+import does not take a file that lacks structure a reviewer approved in the database (The import,
+below). The rules on this page apply to every dossier, exported or written by hand.
 
 ## Shape conventions
 
@@ -608,18 +609,19 @@ or their edges, not hidden) become `SUPERSEDED` with a review event (`systemActo
 status it had kept as `fromStatus`), and its `Seed process` is archived (`Process.archivedAt`), so
 no page, search or answer reads them and nothing is deleted. `seed_claims` runs the same step after
 it seeds, so a later seed never brings them back. It prints one JSON report
-(`withdrawnEdgeSentences`, `retiredSeedRows`, `termSummaries`, `imported`, `refused`, `waiting`, and per dossier its `status`,
+(`withdrawnEdgeSentences`, `retiredSeedRows`, `termSummaries`, `imported`, `refused`, `waiting`, `behind`, and per dossier its `status`,
 `changed` row counts, `problems` and the overview sentences the prose validator dropped) and
 exits 2 when a dossier is refused. The craft is found by slug in the database; a portal-added
 craft (above) the database does not hold yet is `WAITING`, not refused, until the portal craft
-sync stores it. Ids are `uuid5(ID_NAMESPACE, "curation:<slug>:<id>")` for claims and sources and
+sync stores it. A file that lacks structure a reviewer approved is `BEHIND`, not imported (below).
+Ids are `uuid5(ID_NAMESPACE, "curation:<slug>:<id>")` for claims and sources and
 `curation:<slug>:<kind>:<id>` for the rest; a second run writes nothing. The code is
 `backend/app/services/curation_*.py` (the plan is pure: `curation_plan.curation_plan`).
 
 | Dossier part | Stored as |
 |---|---|
 | sources | `Source`: `origin` `IMPORT`, `storage` `EXCERPT`, `reliability` kept, `externalIds` `{systemActor: "curation", curation: "<slug>:<id>", language, access, archivedUrl?}`, `sha256` the verifier's text hash, `evidenceKind` the `subKind`; a DOI another row already holds is cited through that row |
-| claims | `Claim` (`subjectType` `CONCEPT`, `PROVISIONAL` or `HYPOTHESIS`, `APPROVED`, `version` the dossier version that last changed it, `sourcesDiffer` when in a conflict and `differsOn` the `about` of its first conflict, carried to every answer sentence that cites it, decision 0156) and `CuratedClaim {claimId, craftId, key, discipline}`, the marker of a curated claim; every change writes a `ReviewEvent` with `systemActor` `curation` |
+| claims | `Claim` (`subjectType` `CONCEPT`, `PROVISIONAL` or `HYPOTHESIS`, `APPROVED`, `version` the dossier version that last changed it, `sourcesDiffer` when in a conflict and `differsOn` the `about` of its first conflict, carried to every answer sentence that cites it, decision 0156; a flag and `differsOn` a live differing fact holds on the claim are kept, decision 0171) and `CuratedClaim {claimId, craftId, key, discipline}`, the marker of a curated claim; every change writes a `ReviewEvent` with `systemActor` `curation` |
 | quotes | `ClaimSource` (`quoteCheck` `PASS`, `checkedAt` the check file's, `foundBy` `curation`) |
 | subjects | `Concept` rows owned by the craft: stages, materials, tools, places (one per place, whatever its roles), communities, terms, and one per discipline for claims about the craft itself (`services/curation_keys.py` names the concept types) |
 | places | `CraftLocation` with `role` for places in India where the craft is made (`PRACTISED`, `ORIGIN`, `HISTORIC_CENTRE`, `MIGRATED_FROM`, `MIGRATED_TO`): `DISTRICT` precision with the district and state LGD codes (a village or town in its district), or `STATE` for a state; material sources, markets, pending districts and places abroad are page facts only |
@@ -636,7 +638,21 @@ sync stores it. Ids are `uuid5(ID_NAMESPACE, "curation:<slug>:<id>")` for claims
 A new version supersedes the old: a curated claim it no longer holds becomes `SUPERSEDED` and
 keeps its citations; a level a person raised or a retraction is never undone; replaced overview
 pieces are superseded, dropped ones marked stale; curated locations, stage structure, market rows
-and dropped quotes of kept claims are replaced. Claims written by answers are never touched.
+and dropped quotes of kept claims are replaced. Claims written by answers are never touched, and
+the facts that differed from a superseded claim keep `sourcesDiffer` only while another live
+differing fact or a conflict holds it (`sources_differ.settle_sources_differ`, decision 0171).
+
+**Approved structure is never undone (decision 0171).** Before it writes anything, the import reads
+every `APPROVED` structure proposal of the craft or category whose fact is still shown
+(`services/curation_approvals.unheld_approvals`). The file must hold each proposal's fact under its
+key with the wording the database holds, and each approved conflict with all of its shown facts in a
+conflict. A file that misses one is `BEHIND`: nothing is written, the page stays as the database
+holds it, and the outcome's `problems` give one line saying to export the dossier
+(`export_dossiers --out`) and build any new version on that export, then one line per missing
+approval (`C161 (native name, approved 2026-11-20) is held by the database and not by this file`,
+`... is worded otherwise in this file than the database holds it`, or `the conflict between C012
+and C014 (approved ...) is held by the database and not by this file`). A `BEHIND` dossier does not
+stop the release. An approved fact leaves its dossier only through review (a retraction).
 Imported claims and pieces get their vectors from the nightly `embed_knowledge`. The craft page
 that reads all this is `docs/contracts/craft-page.md`.
 
@@ -645,7 +661,9 @@ waits in the database for its export (`docs/contracts/dossier-export.md`). It is
 explicitly: `python -m app.scripts.import_curation --retire <craftSlug>` refuses while
 `<craftSlug>.json` is still in the folder or the craft has no imported dossier, then supersedes the
 craft's curated claims (review note `curated dossier retired, its file left the curation folder`),
-marks its overview pieces stale, archives its curated process, deletes its `CuratedCraft` row and
+marks its overview pieces stale, archives its curated process, deletes its curated places
+(`CraftLocation`) and the `CraftGiRecord`, `CraftPrice` and `CraftWorkforce` rows that cite its
+curated claims (`records` in its summary, decision 0171), deletes its `CuratedCraft` row and
 restores the seed rows the dossier had retired (`curation_retire.retire_dossier`, decision 0142).
 Importing the dossier again restores its claims (`SUPERSEDED` curated claims return to `APPROVED`)
 and its process (the planned process row sets `archivedAt` back to null).
@@ -655,7 +673,8 @@ and its process (the planned process row sets `archivedAt` back to null).
 The same script imports every dossier of `categories/` right after the craft dossiers, each whole
 or not at all, under the same checks; its report adds `categories` (`imported`, `refused`, and per
 dossier `file` `categories/<slug>.json`, `status`, `categorySlug`, `version`, `changed`,
-`problems`, `droppedSentences`), and a refused category dossier also exits 2. The category is
+`problems`, `droppedSentences`, and `behind`), and a refused category dossier also exits 2; a
+category file that lacks structure approved for the category is `BEHIND` under the craft rule. The category is
 found by `categorySlug` in `CraftCategory` (the seeds hold all nine). Its sources, claims, quotes,
 pictures and glossary are stored as a craft's are, with ids `curation:<categorySlug>:...`; claims
 are marked by `CuratedCategoryClaim {claimId, categoryId, key, discipline}`; subjects are
@@ -687,6 +706,8 @@ The critic's brief (plan section 7).
 | Migrating a dossier and its pictures | `tools/tests/test_curation_migrate_and_pictures.py` |
 | Every committed dossier passes | `tools/curation/check.py --check-index`, run in Backend checks |
 | The import, superseding and idempotence | `backend/tests/curation/test_curation_import_plan.py` and `backend/tests/db/test_curation_import_db.py` |
+| A file behind approved structure is not imported, and a live differing fact's flag is kept | `backend/tests/curation/test_curation_approvals.py`, `backend/tests/db/test_structure_export_db.py` and `backend/tests/db/test_sources_differ_db.py` |
+| A retired dossier leaves no places, GI, price or workforce rows | `backend/tests/db/test_seed_retirement_db.py` |
 | Category dossiers | `backend/tests/curation/test_category_dossiers.py` and `backend/tests/db/test_category_import_db.py` |
 
 Re-read it when the dossier schema version changes, a check is added, or a kind of structure stops entering by bulk import.

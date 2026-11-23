@@ -49,7 +49,7 @@ route queue the fact first (The contribution queue, below).
 | Fetching and grading the sources | `services/candidate_sources.py` |
 | The subject's held facts | `services/candidate_store.py` |
 | Running the gates with the adapters | `services/candidate_gates.py` |
-| The stored outcomes and sources differ | `services/candidate_writes.py` |
+| The stored outcomes and sources differ | `services/candidate_writes.py`; the flag settled from live pairs in `services/sources_differ.py` |
 | `propose_fact` | `services/proposal_writes.py` and `services/fact_proposals.py` |
 | The research write-back | `services/write_back_gates.py`; where a fact is filed in `services/write_back_crafts.py` and `write_back_passages.py`; the filing report in `services/write_back_filing.py` and `write_back_filing_store.py` |
 | Routes and tools | `api/routes/knowledge_writes.py`, `api/mcp_fact_tools.py`, `api/proposal_deps.py` |
@@ -221,10 +221,21 @@ refused (`REJECTED`, `RETRACTED`) and waiting (`DRAFT`, never counted for the ti
 - A quoted fact is stored at `PROVISIONAL`; approval at once does not raise the level (only a
   review does). A fact refused at QUOTES is stored at `HYPOTHESIS`.
 - Sources differ: when a differing fact goes live, it and every held fact it differs from get
-  `sourcesDiffer`. A waiting fact is flagged when it is approved: the approving review calls
+  `sourcesDiffer`: a proposal or a write-back that goes live calls
   `services/candidate_writes.mark_sources_differ(session, claim_id, *, about=None)`, which reads the
   stored DUPLICATE outcome; given `about`, it also stores what the facts differ on in
-  `Claim.differsOn` wherever none is stored yet (decision 0156).
+  `Claim.differsOn` wherever none is stored yet (decision 0156). A waiting fact is flagged when it is
+  approved, by the review's settling below. The flag lasts only while a live
+  pair or a curated conflict holds it (decision 0171): two facts differ live when a passed
+  DUPLICATE outcome of one names the other, both are held, at least one is shown, and both rest on
+  one craft's facts as the gate compares them (the same craft, a craft and its own family's facts,
+  or two shared or family facts of one family). `services/sources_differ.settle_sources_differ`
+  works the flag out again for a fact and every fact it was paired with after each review decision
+  (approve, raise, reject, retract, refile), after a write-back files a stored fact again (a
+  release from hold among them) and after an import or a retirement supersedes curated facts, and
+  clears `differsOn` with the flag. So a retracted fact leaves its rival unflagged unless another
+  live fact still differs from it, a fact approved under another craft is flagged against neither
+  craft, and a dossier import keeps the flag a live fact holds on a curated one.
 - Who proposed it is kept privately: `Claim.createdById`, a `ReviewEvent` by the proposer whose
   note names the origin and the placement, and `ClaimSource.foundBy` (`CONTRIBUTION` or `AGENT`).
   A proposed claim's `origin` is `CONTRIBUTION` (`services/proposal_writes.PROPOSAL_CLAIM_ORIGIN`),
@@ -820,6 +831,7 @@ field, or changes its meaning, is a new schema version.
 | The review switch and placement | `backend/tests/knowledge_writes/test_review_switch.py` |
 | A proposal's task key | `backend/tests/knowledge_writes/test_fact_task_key.py` |
 | The routes, refusals and the reply | `backend/tests/knowledge_writes/test_knowledge_writes_routes.py` and `backend/tests/db/test_fact_proposals_db.py` |
+| Sources differ, set and settled | `backend/tests/knowledge_writes/test_sources_differ.py`, `backend/tests/db/test_review_queue_decisions_db.py`, `test_sources_differ_db.py` and `test_held_write_backs_db.py` |
 | Trust tiers | `backend/tests/contribution_scale/test_trust_tiers.py` and `backend/tests/db/test_trust_tiers_db.py` |
 | The queue, its keys, states and retries | `backend/tests/contribution_scale/test_queue_rules.py`, `test_contribution_routes.py` and `backend/tests/db/test_contribution_queue_db.py` |
 | The thrifty gates and the cost ledger | `backend/tests/contribution_scale/test_gate_thrift.py` and `backend/tests/db/test_cost_ledger_db.py` |

@@ -635,7 +635,8 @@ environment data come from open datasets (`docs/contracts/geo.md`, `docs/DATA_SO
 Seeds (`app/scripts/seed_crafts`, `seed_claims`, `seed_districts`) run on every deploy and are
 idempotent; right after them `app/scripts/import_curation` imports every checked dossier of
 `backend/app/data/curation/` into the same tables, withdraws the seed's edge sentences,
-supersedes claims a new dossier version drops (decision 0053) and retires the seed claims and seed
+supersedes claims a new dossier version drops (decision 0053), leaves alone a craft whose file
+lacks structure a reviewer approved in the database (`BEHIND`, decision 0171) and retires the seed claims and seed
 process of every curated craft (superseded and archived, never deleted; `seed_claims` retires them
 too, decision 0142), then every checked category
 dossier of `curation/categories/`, keyed to its category (decision 0078). `seed_claims` also runs the science seed (`app/data/science_seed.json`: constants,

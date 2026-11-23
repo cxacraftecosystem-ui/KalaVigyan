@@ -26,6 +26,7 @@ piece rebuild) and `docs/contracts/retrieval.md` (`facets`).
 | The generated explainer it amends | [decision 0055](0055-generated-explainers.md) |
 | The curated-piece rule it replaces (item 2) | [decision 0090](0090-reused-and-curated-sections-enriched.md) |
 | The page merge that told curated pieces by their claims first | [decision 0096](0096-reader-question-pieces-join-their-craft-page.md) |
+| Retiring a dossier also removes its places, GI record, prices and workforce rows (amends item 2) | [decision 0171](0171-imports-keep-approvals-and-differences-settle.md) |
 | The debt it clears and what it leaves | [TECH_DEBT.md](../TECH_DEBT.md) |
 | Every decision, by group | [README.md](README.md) |
 

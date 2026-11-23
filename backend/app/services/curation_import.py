@@ -26,6 +26,7 @@ from app.models import Craft, CuratedCraft, KnowledgePiece as PieceRow
 from . import knowledge_view
 from .answer_events import cited_claims
 from .curated_index import CuratedPage
+from .curation_approvals import craft_approvals, unheld_approvals
 from .curation_claims import craft_curated_claims, withdraw_seed_edges, write_claims
 from .curation_overview import OverviewPieces, indexed_overview, overview_pieces
 from .curation_plan import CurationPlan, curation_plan
@@ -41,6 +42,7 @@ from .piece_store import piece_values
 from .term_sentence_names import fill_sentence_names
 
 __all__ = [
+    "BEHIND",
     "IMPORTED",
     "REFUSED",
     "WAITING",
@@ -55,6 +57,7 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
+BEHIND = "BEHIND"
 IMPORTED = "IMPORTED"
 REFUSED = "REFUSED"
 WAITING = "WAITING"
@@ -103,6 +106,7 @@ class ImportReport:
             "imported": sum(1 for outcome in self.dossiers if outcome.status == IMPORTED),
             "refused": len(self.refused),
             "waiting": sum(1 for outcome in self.dossiers if outcome.status == WAITING),
+            "behind": sum(1 for outcome in self.dossiers if outcome.status == BEHIND),
             "dossiers": [outcome.summary() for outcome in self.dossiers],
         }
 
@@ -166,6 +170,9 @@ async def import_dossier(
     stored = await stored_values(session, CuratedCraft, [craft.id], ["digest", "page"], key="craftId")
     previous = _previous_index(stored.get(craft.id))
     plan = curation_plan(dossier, check, target, load_district_codes())
+    behind = await unheld_approvals(session, craft_approvals(craft.id), plan)
+    if behind:
+        return DossierOutcome(f"{craft.slug}.json", BEHIND, craft.slug, dossier.version, problems=behind)
     plan = plan.with_sources(await source_aliases(session, plan))
     note = f"curation import {dossier.craft_slug} v{dossier.version}"
     marked = craft_curated_claims(craft.id)

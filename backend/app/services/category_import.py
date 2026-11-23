@@ -23,8 +23,9 @@ from . import knowledge_view
 from .answer_events import cited_claims
 from .category_plan import CategoryPlan, CategoryTarget, category_plan
 from .curated_category_index import CuratedCategoryPage, indexed_category_overview, stored_category_page
+from .curation_approvals import category_approvals, unheld_approvals
 from .curation_claims import write_claims
-from .curation_import import IMPORTED, REFUSED, dossier_digest, write_pieces
+from .curation_import import BEHIND, IMPORTED, REFUSED, dossier_digest, write_pieces
 from .curation_overview import OverviewPieces, overview_pieces
 from .curation_sections import publish_dossier_sections
 from .curation_store import source_aliases, write_evidence, write_media_and_terms
@@ -77,6 +78,7 @@ class CategoryImportReport:
         return {
             "imported": sum(1 for outcome in self.outcomes if outcome.status == IMPORTED),
             "refused": len(self.refused),
+            "behind": sum(1 for outcome in self.outcomes if outcome.status == BEHIND),
             "dossiers": [outcome.summary() for outcome in self.outcomes],
         }
 
@@ -119,6 +121,9 @@ async def import_category(
     )
     previous = stored_category_page(category.id, (stored.get(category.id) or {}).get("page"))
     plan = category_plan(dossier, check, category)
+    behind = await unheld_approvals(session, category_approvals(category.id), plan)
+    if behind:
+        return CategoryOutcome(_file(dossier.slug), BEHIND, dossier.slug, dossier.version, problems=behind)
     plan = plan.with_sources(await source_aliases(session, plan))
     marked = category_curated_claims(category.id)
     note = f"curation import {dossier.slug} v{dossier.version}"
@@ -133,13 +138,17 @@ async def import_category(
     index = indexed_category_overview(plan.index, overview)
     changed["curatedCategory"] = await _write_page(session, plan, index, (digest, stored.get(category.id)))
     return CategoryOutcome(
-        file=f"{CATEGORIES_DIR_NAME}/{dossier.slug}.json",
+        file=_file(dossier.slug),
         status=IMPORTED,
         category_slug=dossier.slug,
         version=dossier.version,
         changed={key: value for key, value in changed.items() if value},
         dropped_sentences=overview.dropped,
     )
+
+
+def _file(slug: str | None) -> str:
+    return f"{CATEGORIES_DIR_NAME}/{slug}.json"
 
 
 async def _category(session: AsyncSession, slug: str) -> CategoryTarget:

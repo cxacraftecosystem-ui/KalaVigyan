@@ -88,7 +88,7 @@ flowchart LR
 | [0050](0050-phase-b-review-fixes.md) | Phase B review fixes | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) and [0160](0160-place-builders-kept-true.md) |
 | [0051](0051-curation-tooling.md) | Curation tooling: the dossier model, fetch, verify and check | · |
 | [0052](0052-opus-composes-at-medium-effort.md) | Opus 5.5 composes answers, at medium effort | · |
-| [0053](0053-curated-dossier-import.md) | Curated dossiers are imported on deploy and served as one craft page | [0142](0142-curated-crafts-read-only-curated-rows.md) |
+| [0053](0053-curated-dossier-import.md) | Curated dossiers are imported on deploy and served as one craft page | [0142](0142-curated-crafts-read-only-curated-rows.md) and [0171](0171-imports-keep-approvals-and-differences-settle.md) |
 | [0054](0054-phase-c-contract.md) | Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode | [0147](0147-time-market-and-figures-kept-true.md) |
 | [0055](0055-generated-explainers.md) | Generated explainers: built from cited figures, checked, stored, reused and hidden | [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0056](0056-what-if-lab.md) | The what-if lab's builder | [0140](0140-voice-and-listen-kept-true.md), [0152](0152-matter-read-once-and-the-science-seed-kept-true.md), [0169](0169-mcp-follow-ups-kept-true.md) |
@@ -153,7 +153,7 @@ flowchart LR
 | [0105](0105-ajrakh-page-as-structured-content.md) | The Ajrakh page as structured content, rebuilt by a static build | · |
 | [0106](0106-one-monograph-template-for-every-page.md) | One monograph template for every page, reached through fragments | [0145](0145-monograph-pages-and-speed-without-debt.md) |
 | [0107](0107-craft-articles-in-english-with-room-for-translation.md) | Craft articles are written in English, with room for translations | [0117](0117-pages-in-other-languages.md) |
-| [0108](0108-structure-proposals-become-curated-facts.md) | An approved structure proposal becomes a curated fact of its dossier | [0111](0111-fewer-mcp-tools.md), [0162](0162-unused-craft-page-chapters-retired.md), [0169](0169-mcp-follow-ups-kept-true.md) |
+| [0108](0108-structure-proposals-become-curated-facts.md) | An approved structure proposal becomes a curated fact of its dossier | [0111](0111-fewer-mcp-tools.md), [0162](0162-unused-craft-page-chapters-retired.md), [0169](0169-mcp-follow-ups-kept-true.md), [0171](0171-imports-keep-approvals-and-differences-settle.md) |
 | [0109](0109-image-formats-and-screens.md) | Pictures in every common format, given from the chat and screened before review | · |
 | [0110](0110-contributor-supplied-sources.md) | Sources a contributor's AI can read and we cannot, and a studio to build a page in | [0111](0111-fewer-mcp-tools.md) |
 | [0111](0111-fewer-mcp-tools.md) | Twenty-one MCP tools in six groups, with small schemas | [0114](0114-kinds-and-datasets.md), [0117](0117-pages-in-other-languages.md) and [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
@@ -186,7 +186,7 @@ flowchart LR
 | [0139](0139-sources-and-providers-reach-outside-services-once.md) | Sources and providers reach outside services once, at the pace and spend every process shares | [0146](0146-answers-recorded-and-bounded-on-the-box.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | [0144](0144-stored-passages-as-evidence.md) |
 | [0141](0141-design-system-and-answer-screens-without-debt.md) | The design system holds no migration alias, and the answer screens number their figures, read every caption from the server and keep only what is stored | [0156](0156-expert-panel-and-field-voices-kept-true.md) |
-| [0142](0142-curated-crafts-read-only-curated-rows.md) | A curated craft reads only its curated rows, stored pieces keep one curated rule, and the generated explainer works within a budget | · |
+| [0142](0142-curated-crafts-read-only-curated-rows.md) | A curated craft reads only its curated rows, stored pieces keep one curated rule, and the generated explainer works within a budget | [0171](0171-imports-keep-approvals-and-differences-settle.md) |
 | [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | [0167](0167-answer-leftovers-kept-true.md) |
 | [0144](0144-stored-passages-as-evidence.md) | A stored passage is evidence an answer and a voice turn may cite, kept as a fact of its own source | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | [0145](0145-monograph-pages-and-speed-without-debt.md) | Pages read what their screens draw: one coverage read, one decision route, one unit pattern, and renderers loaded when placed | · |
@@ -213,6 +213,7 @@ flowchart LR
 | [0167](0167-answer-leftovers-kept-true.md) | A stopped answer is marked, a quote in an Indian script is read in English, a term keeps its local name, and a page curates its signs of imitation | · |
 | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) | A quantities table is drawn under a sentence the answer already said, and the Python files are split along what they do | · |
 | [0169](0169-mcp-follow-ups-kept-true.md) | A write-back asks the cheap judge first, a reviewer decides readings, map layers and a category's structure, and a PDF is described by its first page | · |
+| [0171](0171-imports-keep-approvals-and-differences-settle.md) | An import never undoes approved structure, a sources-differ flag lasts while a live pair holds it, and a retired dossier leaves no records | · |
 
 ## How this document is kept true
 
