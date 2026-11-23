@@ -10,6 +10,7 @@ Date: 2026-11-17. Status: accepted.
 |---|---|
 | The contract it was built to | [0042 Phase B contract: place, matter and the expert panel](0042-phase-b-contract.md) |
 | The review that fixed it | [0050 Phase B review fixes](0050-phase-b-review-fixes.md) |
+| Season months from a craft's stored calendar claims, regional months and new seasons, register pins and kept place lookups | [decision 0160](0160-place-builders-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

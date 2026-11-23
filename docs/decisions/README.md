@@ -66,7 +66,7 @@ flowchart LR
 | [0030](0030-explainer-contract.md) | The explainer contract | · |
 | [0031](0031-understanding-and-depth.md) | Understanding the question, and depth by role | [0093](0093-no-caps-for-now.md) and [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0032](0032-sectioned-composition.md) | Sectioned composition: research per field, blocks per section | [0138](0138-answers-composed-from-the-asked-fields.md) |
-| [0033](0033-knowledge-pieces-and-reuse.md) | Stored knowledge pieces and reuse | [0096](0096-reader-question-pieces-join-their-craft-page.md), [0142](0142-curated-crafts-read-only-curated-rows.md) |
+| [0033](0033-knowledge-pieces-and-reuse.md) | Stored knowledge pieces and reuse | [0096](0096-reader-question-pieces-join-their-craft-page.md), [0142](0142-curated-crafts-read-only-curated-rows.md), [0160](0160-place-builders-kept-true.md) |
 | [0034](0034-images-and-terms.md) | Pictures and tappable terms | · |
 | [0035](0035-listen-and-voice-switched-off.md) | Listen, and the live voice call switched off | [0140](0140-voice-and-listen-kept-true.md) |
 | [0036](0036-asking-screen.md) | The asking screen: dictation, an optional craft, depth by role | · |
@@ -77,15 +77,15 @@ flowchart LR
 | [0041](0041-one-gemini-content-per-embedded-text.md) | One Gemini content per embedded text | · |
 | [0042](0042-phase-b-contract.md) | Phase B contract: place, matter and the expert panel | · |
 | [0043](0043-river-lines-tracer-and-monthly-rain.md) | River lines, the tracer and monthly rainfall | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
-| [0044](0044-region-story-and-map-layers.md) | Region story and map layers | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
+| [0044](0044-region-story-and-map-layers.md) | Region story and map layers | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) and [0160](0160-place-builders-kept-true.md) |
 | [0045](0045-reactions-materials-molecules.md) | Reaction player, material cards and 3D molecules | · |
 | [0046](0046-expert-panel.md) | The expert panel | [0093](0093-no-caps-for-now.md) and [0156](0156-expert-panel-and-field-voices-kept-true.md) |
 | [0045](0045-reactions-materials-molecules.md) | Reaction player, material cards and 3D molecules | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
 | [0046](0046-expert-panel.md) | The expert panel | [0093](0093-no-caps-for-now.md) |
-| [0047](0047-seasons-and-supply.md) | Seasons and supply | · |
+| [0047](0047-seasons-and-supply.md) | Seasons and supply | [0160](0160-place-builders-kept-true.md) |
 | [0048](0048-place-renderers.md) | Place renderers: region story, map layer, seasons and supply | [0092](0092-design-system.md) and [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
 | [0049](0049-matter-and-expert-renderers.md) | Matter and expert renderers | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
-| [0050](0050-phase-b-review-fixes.md) | Phase B review fixes | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
+| [0050](0050-phase-b-review-fixes.md) | Phase B review fixes | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) and [0160](0160-place-builders-kept-true.md) |
 | [0051](0051-curation-tooling.md) | Curation tooling: the dossier model, fetch, verify and check | · |
 | [0052](0052-opus-composes-at-medium-effort.md) | Opus 5.5 composes answers, at medium effort | · |
 | [0053](0053-curated-dossier-import.md) | Curated dossiers are imported on deploy and served as one craft page | [0142](0142-curated-crafts-read-only-curated-rows.md) |
@@ -98,7 +98,7 @@ flowchart LR
 | [0060](0060-zoom-timeline-and-film-renderers.md) | Zoom, timeline and film mode renderers | [0154](0154-ai-media-and-film-scores-kept-true.md) |
 | [0061](0061-phase-c-review-fixes.md) | Phase C review fixes | · |
 | [0062](0062-phase-d-contract.md) | Phase D contract: learning blocks, versions, alerts, lessons, exports and the map | [0067](0067-lessons-and-exports.md) and [0147](0147-time-market-and-figures-kept-true.md) |
-| [0063](0063-follow-ups-versions-and-alerts.md) | Follow-ups that build, version history, saved explainers and alerts | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
+| [0063](0063-follow-ups-versions-and-alerts.md) | Follow-ups that build, version history, saved explainers and alerts | [0070](0070-phase-d-review-fixes.md), [0143](0143-lessons-exports-and-follow-ups-kept-true.md) and [0160](0160-place-builders-kept-true.md) |
 | [0064](0064-quiz-compare-and-shared-science.md) | Quiz, compare and the shared-science explorer | [0070](0070-phase-d-review-fixes.md) and [0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | [0065](0065-climate-risk-and-ask-the-map.md) | Climate and risk, and ask the map | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
 | [0066](0066-local-measures-and-market-gi.md) | Local measures, and market and GI | [0070](0070-phase-d-review-fixes.md) and [0147](0147-time-market-and-figures-kept-true.md) |
@@ -203,6 +203,7 @@ flowchart LR
 | [0156](0156-expert-panel-and-field-voices-kept-true.md) | The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run | · |
 | [0157](0157-translations-read-back-and-reviewed-interface-words.md) | A translation is read back before it is shown, and every fixed word in another language is sourced, reviewed data | · |
 | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) | A curated craft's monograph lists the facts contributors add under their own fields, and a fact a figure shows is not listed again | · |
+| [0160](0160-place-builders-kept-true.md) | A geography section reuses a current story, places are keyed and pinned by the register, seasons read what a source states, and the place proofs run on production | · |
 
 ## How this document is kept true
 

@@ -249,9 +249,14 @@ Last reviewed: 2026-11-22.
 
 ### Out-of-envelope readings are not in a review queue
 
-- **What:** the contract lists every `OUTSIDE` reading in the review queue; no review queue
-  exists, so they are only shown with their status.
-- **Clears it:** the review-queue lane lists readings whose `envelope_check` is `OUTSIDE`.
+- **What:** the contract lists every `OUTSIDE` reading in the review queue; the review queue
+  (`services/review_queue*`) now exists but has no readings kind, so an out-of-envelope reading is
+  only shown with its status. No stored reading is checked against an envelope yet (the entry
+  above), so the queue would list nothing today.
+- **Why left:** the review queue's kinds, routes and screen belonged to the MCP and contributors
+  lane in round 7's debt round; the place builders lane (decision 0160) did not touch them.
+- **Clears it:** a readings kind in the review queue listing the `ConditionReading` rows whose
+  `envelope_check` is `OUTSIDE`, decided on the review screen like the other kinds.
 
 ## Answers in Indian languages (decision 0023)
 
@@ -680,9 +685,13 @@ Last reviewed: 2026-11-22.
   is not named by a plain "madder".
 - **Why left:** a wider gap joins co-ingredients ("clay, millet flour, gum and alum or lime"),
   which must never be offered as alternatives; the seed's contrast relations and the curated
-  dossiers' "madder or al root" cover the crafts held.
-- **Clears it:** curation storing alternatives as `CONTRASTS_WITH` relations (or a material's
-  alternatives) so no text has to be read.
+  dossiers' "madder or al root" cover the crafts held. The what-if inputs already read stored
+  `CONTRASTS_WITH` relations (`what_if_offers._contrasted`); what is missing is a curated way to
+  write them: the dossier schema and its generator (`tools/curation`) and structure proposals
+  belonged to the MCP and monograph lanes in round 7's debt round (checked 2026-11-23, decision
+  0160).
+- **Clears it:** a material's alternatives in the dossier (and in `propose_structure`), imported
+  as `CONTRASTS_WITH` concept edges with their cited claim, so no text has to be read.
 
 ### Temperatures and water sources are not offered as inputs
 
@@ -692,6 +701,9 @@ Last reviewed: 2026-11-22.
   waters are stored materials with alternatives.
 - **Why left:** no stored row relates a condition's stated range, or one water source, to an
   outcome; a what-if over them would need numbers or outcomes a model would have to supply.
+  Checked 2026-11-23 (decision 0160): the dossier model holds no stage conditions and the science
+  seed's conditions carry readings and no outcome; it waits on condition ranges a source ties to
+  outcomes, found and cited through the KalaVigyan MCP research tools and curated.
 - **Clears it:** curation storing condition ranges with the outcomes a source ties to each, or
   water sources as materials with their relations; then an input kind over them in a version 2.
 
