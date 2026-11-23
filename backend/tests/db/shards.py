@@ -1,7 +1,7 @@
-from collections.abc import Mapping
+from collections.abc import Sequence
 from dataclasses import dataclass
 
-__all__ = ["SHARD_VARIABLE", "Shard", "module_of", "parse_shard", "split_modules"]
+__all__ = ["SHARD_VARIABLE", "Shard", "dealt", "parse_shard"]
 
 SHARD_VARIABLE = "DB_TEST_SHARD"
 
@@ -22,15 +22,5 @@ def parse_shard(value: str) -> Shard:
     return shard
 
 
-def module_of(node_id: str) -> str:
-    return node_id.split("::", 1)[0]
-
-
-def split_modules(weights: Mapping[str, int], total: int) -> list[list[str]]:
-    shards: list[list[str]] = [[] for _ in range(total)]
-    loads = [0] * total
-    for module in sorted(weights, key=lambda name: (-weights[name], name)):
-        lightest = min(range(total), key=lambda position: (loads[position], position))
-        shards[lightest].append(module)
-        loads[lightest] += weights[module]
-    return [sorted(shard) for shard in shards]
+def dealt[T](items: Sequence[T], shard: Shard) -> list[T]:
+    return list(items[shard.index - 1 :: shard.total])

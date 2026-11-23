@@ -70,12 +70,15 @@ count by hand there, where review sees it.
 
 Backend checks runs the migrations and database tests as three jobs, each with its own Postgres
 that it migrates and seeds, under a 40-minute limit. `backend/tests/db/conftest.py` reads
-`DB_TEST_SHARD=<index>/<total>` and keeps the test files of that shard: files are dealt heaviest
-first (by the number of tests collected in each) to the lightest shard, ties by name
-(`backend/tests/db/shards.py`), so every shard computes the same split from the same collection.
-A hash of the path would split unevenly, and a committed list would go stale as files are added.
-Every shard seeds, because the tests read the seeded crafts, claims and districts; the migration
-round trip, the dossier import and the release-before check run in the first.
+`DB_TEST_SHARD=<index>/<total>` and keeps every third test of the collection, starting at its
+index (`backend/tests/db/shards.py`), so every shard deals the same collection the same way. The
+time sits in a few files whose tests rebuild craft pages or import dossiers at 20 to 40 seconds
+each: the first run, which dealt whole files by their test count, took 19, 10 and 7 minutes.
+Dealing tests one by one spreads each slow file over every shard with no weights to keep; whole
+files by measured seconds would need a weights file that goes stale. A database test therefore
+may not lean on another having run first, as the house rules already ask. Every shard seeds,
+because the tests read the seeded crafts, claims and districts; the migration round trip, the
+dossier import and the release-before check run in the first.
 
 ### Files split with their import paths kept
 
@@ -92,8 +95,8 @@ none in another lane's area, import them from there.
 - The debt register holds only work that is open or blocked on something outside the repository,
   and the hygiene check keeps its count from rising.
 - The lead lowers the recorded count after a round's merges with `--update-baseline`.
-- The slowest database tests show in each shard's `--durations=20` list; a shard nearing its
-  limit is rebalanced by changing the weight or the number of shards, not by moving files by hand.
+- The slowest database tests show in each shard's `--durations=20` list; when the shards near
+  their limit, the number of shards grows.
 - A change that meets a row's condition removes the limit and marks the row superseded here.
 
 ## How this record is kept true

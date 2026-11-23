@@ -1,25 +1,27 @@
 import pytest
 
-from tests.db.shards import Shard, module_of, parse_shard, split_modules
+from tests.db.shards import Shard, dealt, parse_shard
+
+COLLECTED = ["a", "b", "c", "d", "e", "f", "g"]
 
 
-def test_the_heaviest_module_goes_to_the_lightest_shard_first() -> None:
-    weights = {"a": 5, "b": 4, "c": 3, "d": 3, "e": 1}
-    assert split_modules(weights, 2) == [["a", "d"], ["b", "c", "e"]]
+@pytest.mark.parametrize(
+    ("index", "expected"),
+    [(1, ["a", "d", "g"]), (2, ["b", "e"]), (3, ["c", "f"])],
+)
+def test_tests_are_dealt_in_turn_to_each_shard(index: int, expected: list[str]) -> None:
+    assert dealt(COLLECTED, Shard(index, 3)) == expected
 
 
-def test_every_module_lands_in_exactly_one_shard() -> None:
-    weights = {f"tests/db/test_{index:02d}.py": index % 7 + 1 for index in range(40)}
-    shards = split_modules(weights, 3)
-    placed = [module for shard in shards for module in shard]
-    assert sorted(placed) == sorted(weights)
+def test_every_test_lands_in_exactly_one_shard() -> None:
+    collected = [f"tests/db/test_{index:02d}.py::test_case" for index in range(40)]
+    placed = [test for index in (1, 2, 3) for test in dealt(collected, Shard(index, 3))]
+    assert sorted(placed) == sorted(collected)
     assert len(placed) == len(set(placed))
 
 
-def test_the_split_does_not_depend_on_the_order_modules_were_collected() -> None:
-    weights = {"x": 2, "y": 2, "z": 2, "w": 1}
-    reordered = dict(reversed(list(weights.items())))
-    assert split_modules(weights, 3) == split_modules(reordered, 3) == [["w", "x"], ["y"], ["z"]]
+def test_one_shard_keeps_every_test() -> None:
+    assert dealt(COLLECTED, Shard(1, 1)) == COLLECTED
 
 
 def test_a_shard_is_named_by_its_index_and_the_total() -> None:
@@ -30,7 +32,3 @@ def test_a_shard_is_named_by_its_index_and_the_total() -> None:
 def test_a_shard_outside_the_split_is_refused(value: str) -> None:
     with pytest.raises(ValueError, match="DB_TEST_SHARD"):
         parse_shard(value)
-
-
-def test_a_test_belongs_to_the_file_before_its_first_separator() -> None:
-    assert module_of("tests/db/test_flows.py::TestA::test_b[1::2]") == "tests/db/test_flows.py"
