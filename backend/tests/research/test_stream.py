@@ -44,10 +44,6 @@ WIRE = {
     ),
     "status": ({"step", "message"}, {"step", "message"}),
     "open_question": ({"sectionId", "heading", "sentence"}, {"sectionId", "sentence"}),
-    "reaction": (
-        {"id", "label", "equation", "balanced", "level", "conditions", "citations"},
-        {"id", "label", "equation", "balanced", "level", "conditions", "citations"},
-    ),
     "follow_ups": ({"items"}, {"items"}),
     "not_enough_evidence": ({"message"}, {"message"}),
     "done": ({"answerId", "quizAvailable"}, {"answerId"}),
@@ -66,7 +62,6 @@ def test_the_event_names_are_the_frontend_set_plus_status_and_the_explainer_even
         "not_enough_evidence",
         "source",
         "open_question",
-        "reaction",
         "follow_ups",
         "done",
         "error",
@@ -128,7 +123,7 @@ def test_the_wire_refuses_uncited_sentences_and_unknown_events() -> None:
         stream.event_frame("ping", {})
 
 
-@pytest.mark.parametrize("name", ["match", "section", "sentence"])
+@pytest.mark.parametrize("name", ["match", "section", "sentence", "reaction"])
 def test_the_retired_events_are_no_longer_on_the_wire(name: str) -> None:
     assert name not in stream.STREAM_EVENTS
     with pytest.raises(InvalidInput):

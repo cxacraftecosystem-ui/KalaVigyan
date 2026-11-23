@@ -88,6 +88,8 @@ test("unknown fields and events are refused or skipped", () => {
   const section = golden("explainer.document.golden.json").sections as Record<string, unknown>[];
   expect(() => parseShape(explainerSectionShape, { ...section[0], heading: "x" })).toThrow(ShapeError);
   expect(parseExplainerStreamBlock("event: match\ndata: {}")).toBeNull();
+  const reaction = { id: "r1", label: "Alum", equation: "A -> B", balanced: true, level: "VERIFIED", conditions: null, citations: [] };
+  expect(parseExplainerStreamBlock(`event: reaction\ndata: ${JSON.stringify(reaction)}`)).toBeNull();
   expect(() => parseExplainerStreamBlock('event: section_state\ndata: {"sectionId":"s1","state":"READY"}')).toThrow(ShapeError);
   expect(() => parseExplainerStreamBlock("event: trail\ndata: not json")).toThrow(ShapeError);
 });

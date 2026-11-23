@@ -1,4 +1,4 @@
-import { answerSentenceShape, answerStatusShape, citationShape, HTTPS_URL, INSTANT, shownLevelShape, sourceRefShape, UUID } from "@/lib/answerShapes";
+import { answerSentenceShape, answerStatusShape, HTTPS_URL, INSTANT, sourceRefShape, UUID } from "@/lib/answerShapes";
 import { ANSWER_STREAM_PATH, openEventStream, readSseBlocks, sseFields, type AskRequest } from "@/lib/answerStream";
 import {
   DISCIPLINES,
@@ -17,7 +17,7 @@ import {
 } from "@/lib/explainerContract";
 import { buildsOnEventShape, versionMarkShape, type BuildsOnEvent, type VersionMark } from "@/lib/learningContract";
 import { boolean, integer, list, matching, nullable, object, oneOf, optional, ShapeError, text, type Shape } from "@/lib/shape";
-import type { AnswerReaction, AnswerSentence, AnswerStatus, SourceRef } from "@/lib/types";
+import type { AnswerSentence, AnswerStatus, SourceRef } from "@/lib/types";
 
 export const TRAIL_STAGES = ["FOUND", "READ", "QUOTED"] as const;
 export const TRAIL_GROUPS = ["PAPERS", "ENCYCLOPAEDIA", "DATASETS", "WEB", "STORED"] as const;
@@ -56,7 +56,6 @@ export type ExplainerEvent =
   | { type: "status"; data: AnswerStatus }
   | { type: "source"; data: SourceRef }
   | { type: "open_question"; data: { sectionId: string; heading?: string; sentence: AnswerSentence } }
-  | { type: "reaction"; data: AnswerReaction }
   | { type: "follow_ups"; data: { items: string[] } }
   | { type: "not_enough_evidence"; data: { message: string } }
   | { type: "done"; data: StreamDone }
@@ -96,15 +95,6 @@ const EVENTS: { [K in ExplainerEvent["type"]]: Shape<Extract<ExplainerEvent, { t
     sectionId: text,
     heading: optional(text),
     sentence: answerSentenceShape
-  }),
-  reaction: object<AnswerReaction>({
-    id: text,
-    label: text,
-    equation: text,
-    balanced: boolean,
-    level: shownLevelShape,
-    conditions: nullable(text),
-    citations: list(citationShape, 1)
   }),
   follow_ups: object<{ items: string[] }>({ items: list(text) }),
   not_enough_evidence: object<{ message: string }>({ message: text }),

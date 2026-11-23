@@ -45,8 +45,8 @@ const FilmPlayer = lazyBlock(() => import("@/components/answer/film/FilmPlayer")
 function useCitationLookup(state: ExplainerState): CitationLookup {
   const sourcesById = useMemo(() => new Map(state.sources.map((source) => [source.id, source])), [state.sources]);
   const numbers = useMemo(
-    () => essaySourceNumbers(explainerSourceNumbers(state.sections, state.openQuestions, state.reactions, state.lede), state.sections),
-    [state.sections, state.openQuestions, state.reactions, state.lede]
+    () => essaySourceNumbers(explainerSourceNumbers(state.sections, state.openQuestions, state.lede), state.sections),
+    [state.sections, state.openQuestions, state.lede]
   );
   return useMemo(() => ({ numbers, sourcesById }), [numbers, sourcesById]);
 }

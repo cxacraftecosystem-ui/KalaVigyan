@@ -272,7 +272,7 @@ test("the lede stream reduces to the lede document: the lede first, then section
   expect(state.lede).toEqual(expected.lede);
   expect(state.sections).toEqual(expected.sections);
   expect(state.followUps).toEqual(expected.followUps);
-  expect([...explainerSourceNumbers(state.sections, [], [], state.lede).keys()]).toEqual(expected.sources.map((source) => source.id));
+  expect([...explainerSourceNumbers(state.sections, [], state.lede).keys()]).toEqual(expected.sources.map((source) => source.id));
   const opened = reduced(upTo(events, (event) => event.type === "lede"), askingExplainer(expected.question, "en"));
   expect(opened.lede?.headline).toBe(expected.question);
   expect(opened.sections.map((section) => [section.id, section.title, section.blocks.length])).toEqual([

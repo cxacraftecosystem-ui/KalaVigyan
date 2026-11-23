@@ -785,16 +785,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** a lifecycle rule on `media/rivers/` expiring objects no `RiverBasin` row names,
   or a delete step in the load with `s3:DeleteObject` on that prefix.
 
-### The stream's reaction event outlives the reaction player
-
-- **What:** `research/stream.py` still declares the `reaction` event and the client still parses
-  it into `ReactionsPanel`, although no server path emits it since the explainer (decision 0030)
-  and reactions now arrive as `reaction_player` blocks.
-- **Why left:** removing an event changes the stream contract on both sides and the frontend
-  state; it shows nothing today.
-- **Clears it:** drop `ReactionEvent`, the client's `reaction` event, `reactions` state and
-  `ReactionsPanel` in one change with `docs/contracts/research.md`.
-
 ### The water question needs `rivers_loaded` set by hand
 
 - **What:** the production E2E's water question fails a missing region story only when dispatched

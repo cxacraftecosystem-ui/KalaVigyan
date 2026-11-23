@@ -6,7 +6,6 @@ import { useCitations } from "@/components/answer/CitationContext";
 import { useExplainerReading } from "@/components/answer/ExplainerReading";
 import { ExplainerSectionView } from "@/components/answer/ExplainerSectionView";
 import { NumberedFigures } from "@/components/answer/place/AnswerFigure";
-import { ReactionsPanel } from "@/components/answer/ReactionsPanel";
 import { ResearchTrail } from "@/components/answer/ResearchTrail";
 import { SectionBar } from "@/components/answer/SectionBar";
 import { SourcesList, type NumberedSource } from "@/components/answer/SourcesList";
@@ -69,7 +68,7 @@ export function ExplainerBody({ state, sections, streaming, reduce, active, onAc
   const numbered = numberedSources(numbers, sourcesById);
   const writing = sections.some((section) => section.blocks.length > 0);
   const asking = !streaming && state.followUps.length > 0 && onFollowUp !== null;
-  const closing = state.reactions.length > 0 || state.openQuestions.length > 0 || numbered.length > 0 || asking;
+  const closing = state.openQuestions.length > 0 || numbered.length > 0 || asking;
   return (
     <>
       {streaming ? <ResearchTrail trail={state.trail} /> : null}
@@ -87,7 +86,6 @@ export function ExplainerBody({ state, sections, streaming, reduce, active, onAc
       {closing ? (
         <Spread className="border-t border-ink-1 pt-12">
           <div className="grid min-w-0 gap-12">
-            {state.reactions.length > 0 ? <ReactionsPanel reactions={state.reactions} numbers={numbers} sourcesById={sourcesById} /> : null}
             <OpenQuestions state={state} />
             {numbered.length > 0 ? <SourcesList entries={numbered} /> : null}
             {asking && onFollowUp ? <FollowUps items={state.followUps} onFollowUp={onFollowUp} /> : null}

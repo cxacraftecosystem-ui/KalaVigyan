@@ -342,8 +342,8 @@ construct, and the builder that made it adds nothing.
   step, and translation and term marking walk the notes. The builder re-checks steps and notes
   against the process rows, as ladders are (`reaction_player_problems`, decision 0045): a stage,
   condition or colour list or a `deltaH` a stored step holds must equal the rows', a note must be a stored claim
-  of its reaction. Replaces the stream's `reaction` event,
-  which no server path emits and which stays declared until removed (`docs/TECH_DEBT.md`). **Piece:** the section's slot; reuse re-checks against the process rows.
+  of its reaction. It replaced the stream's `reaction` event, which left both sides of the wire
+  with the client's reactions panel (decision 0160). **Piece:** the section's slot; reuse re-checks against the process rows.
 - **`material_card`** `{materialId?, compoundId?, termKey?, name, materialKind?, role?, formula?,
   pubchemCid?, wikidataId?, localNames[], facts[sentence] (1+), handling[sentence], sourceId?}`. Server: name,
   kind and role from the stored `Material` (and its stage role), formula and CID from its
@@ -1739,7 +1739,7 @@ How today's events map:
 | `section` | `section_started` |
 | `sentence` | a sentence inside a `prose` or `process_ladder` block |
 | `open_question` | kept until `open_questions` is built (phase D) |
-| `reaction` | kept until `reaction_player` is built (phase B) |
+| `reaction` | retired: reactions arrive as `reaction_player` blocks, and the wire refuses the name as unknown (decision 0160) |
 | `follow_ups`, `not_enough_evidence`, `done`, `error` | kept |
 
 ## Depth by role (`research/depth.py`)

@@ -1,6 +1,6 @@
-import type { AnswerReaction, AnswerSection, Citation, SourceReliability, SourceRef } from "@/lib/types";
+import type { AnswerSection, Citation, SourceReliability, SourceRef } from "@/lib/types";
 
-export function sourceNumbers(sections: readonly AnswerSection[], reactions: readonly AnswerReaction[] = []): Map<string, number> {
+export function sourceNumbers(sections: readonly AnswerSection[]): Map<string, number> {
   const numbers = new Map<string, number>();
   const take = (citations: readonly Citation[]) => {
     for (const citation of citations) {
@@ -8,7 +8,6 @@ export function sourceNumbers(sections: readonly AnswerSection[], reactions: rea
     }
   };
   for (const section of sections) for (const sentence of section.sentences) take(sentence.citations);
-  for (const reaction of reactions) take(reaction.citations);
   return numbers;
 }
 

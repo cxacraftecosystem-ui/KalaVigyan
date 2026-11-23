@@ -89,16 +89,6 @@ export type AnswerSection = {
   sentences: AnswerSentence[];
 };
 
-export type AnswerReaction = {
-  id: string;
-  label: string;
-  equation: string;
-  balanced: boolean;
-  level: EvidenceLevel;
-  conditions: string | null;
-  citations: Citation[];
-};
-
 export type CraftRef = {
   slug: string;
   name: string;

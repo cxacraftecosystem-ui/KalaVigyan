@@ -22,7 +22,6 @@ export function explainerStateOf(document: ExplainerVersionDocument): ExplainerS
     sections: explainer.sections.map((section) => ({ ...section, blocks: [...section.blocks] })),
     sources: [...explainer.sources],
     openQuestions: [],
-    reactions: [],
     followUps: [...explainer.followUps],
     error: null,
     notice: null,
