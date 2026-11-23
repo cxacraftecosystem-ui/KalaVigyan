@@ -100,13 +100,19 @@ class ProposedSubject(ContractModel):
     key: str = Field(min_length=1, max_length=SUBJECT_KEY_MAX_CHARS)
 
 
+KIND_DESCRIPTION = (
+    "A component kind that takes a spec: one of kalavigyan://components/{kind}.schema.json, which "
+    "resources/templates/list names"
+)
+
+
 class ComponentProposalDraft(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
 
     label: str = Field(max_length=TITLE_COLUMN_CHARS, pattern=LABEL_PATTERN)
     title: str = Field(min_length=3, max_length=TITLE_COLUMN_CHARS)
     description: str = Field(min_length=DESCRIPTION_MIN_CHARS, max_length=DESCRIPTION_MAX_CHARS)
-    kind: PieceKind
+    kind: PieceKind = Field(description=KIND_DESCRIPTION)
     field: Discipline
     fields: list[Discipline] = Field(default_factory=list)
     craft_slug: str | None = Field(default=None, min_length=1, max_length=SLUG_MAX_CHARS)

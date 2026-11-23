@@ -771,7 +771,7 @@ Each group's rules are in its contract; this table says where the code lives.
 | `curation/verifying.verify_dossier(dossier, read, *, now)` | Reads every source (hosts in parallel, each host in turn) and returns the `CheckFile`. |
 | `curation/commons`: `commons_picture(http, page_url) -> CommonsPicture`, `imageinfo_url`, `picture_lines`, `PictureFailed` | A Commons file page's original address (query dropped), size and credit from the API's imageinfo, for `fetch.py --picture`. |
 | `curation/migrating`: `migrated_text(text)`, `migrate_files(paths) -> Migrated`, `MigrationFailed` | Rewrites a dossier of the previous schema version by its `schemaVersion` alone, every other byte kept; writes nothing when any file is refused. |
-| `curation/output.write_text_atomically(path, text)` | UTF-8, LF, written through a temporary file and replaced, so parallel runs never leave a half-written file. |
+| `atomic_write.write_text_atomically(path, text)` (`tools/atomic_write.py`, re-exported by `curation/output`) | UTF-8, LF, written through a temporary file and replaced, so parallel runs never leave a half-written file; the curation tools and the hygiene baseline both write through it. |
 
 ## How this document is kept true
 

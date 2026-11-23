@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import AnswerGap
 from app.research.embedding import TextEmbedder
+from app.research.structured import StructuredModel
 
 from .answer_gap_checks import answered_gaps, end_closed_reservations, recount_gaps
 from .answer_gap_groups import Grouped, group_questions
@@ -29,6 +30,8 @@ class AnswerGapsReport:
         return {
             "questions": self.grouped.candidates,
             "dropped": self.grouped.dropped,
+            "held": self.grouped.held,
+            "namesError": self.grouped.names_error,
             "embedded": self.grouped.embedded,
             "embeddingError": self.grouped.embedding_error,
             "joined": self.grouped.joined,
@@ -41,9 +44,9 @@ class AnswerGapsReport:
 
 
 async def refresh_answer_gaps(
-    session: AsyncSession, embed: TextEmbedder | None, *, now: datetime
+    session: AsyncSession, embed: TextEmbedder | None, *, now: datetime, names: StructuredModel | None = None
 ) -> AnswerGapsReport:
-    report = AnswerGapsReport(grouped=await group_questions(session, embed, now=now))
+    report = AnswerGapsReport(grouped=await group_questions(session, embed, now=now, names=names))
     report.lapsed = len(await recount_gaps(session, now=now))
     report.answered = len(await answered_gaps(session, now=now))
     report.reservations_closed = len(await end_closed_reservations(session, now=now))

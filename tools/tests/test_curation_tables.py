@@ -7,7 +7,6 @@ from app.research.quotes import normalise_quote_lines
 from app.research.untrusted import clean_untrusted_text
 from curation_support import SOURCES, fetched
 
-from curation import tables
 from curation.reading import source_text
 from curation.tables import missing_table_rows, table_rows, with_table_rows
 
@@ -97,11 +96,10 @@ def test_rows_already_in_the_text_are_not_repeated() -> None:
     assert missing_table_rows(body, "Class 160 and Goods") == ["| Class | 16 |", "| Goods | Handicraft |"]
 
 
-def test_added_rows_keep_the_text_cap(monkeypatch: pytest.MonkeyPatch) -> None:
-    assert with_table_rows(TWO_ROWS, "main text", False) == (
+def test_added_rows_keep_the_text_cap() -> None:
+    assert with_table_rows(TWO_ROWS, "main text", False, max_chars=1000) == (
         "main text\n| Class | 16 |\n| Goods | Handicraft |",
         False,
     )
-    monkeypatch.setattr(tables, "FETCH_TEXT_MAX_CHARS", 12)
-    assert with_table_rows(TWO_ROWS, "main text", False) == ("main text\n| ", True)
-    assert with_table_rows(b"<p>no table</p>", "main text", True) == ("main text", True)
+    assert with_table_rows(TWO_ROWS, "main text", False, max_chars=12) == ("main text\n| ", True)
+    assert with_table_rows(b"<p>no table</p>", "main text", True, max_chars=12) == ("main text", True)

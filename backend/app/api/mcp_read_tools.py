@@ -88,7 +88,10 @@ class ListComponents(Arguments):
         description="A slug from find_crafts; also brings the shared components of its concepts, compounds and districts",
     )
     field: Discipline | None = Field(default=None, description="One of the sixteen fields")
-    kind: PieceKind | None = Field(default=None, description="One kind of component")
+    kind: PieceKind | None = Field(
+        default=None,
+        description="One component kind, as the library's components name it (fact_table, chart)",
+    )
 
 
 async def _find_crafts(context: ToolContext, arguments: FindCrafts) -> FoundCrafts:

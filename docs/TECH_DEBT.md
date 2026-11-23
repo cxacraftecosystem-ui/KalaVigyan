@@ -874,32 +874,6 @@ Last reviewed: 2026-11-22.
   carries a note of the panel's views and Experts differ pairs (`e2e/production/expertPanel.ts`),
   read with the `COMPOSE` spend of that answer in Usage.
 
-## Curation tooling (decision 0051)
-
-### The LGD register is read in two places
-
-- **What:** `services/district_seed.py` reads `lgd_register.json` itself to seed states and
-  districts; `data/district_register.py` reads it for the curation checker's name lookup.
-- **Why left:** the seed also builds geometry and is proven only by the database job; changing it
-  was outside the curation lane.
-- **Clears it:** `district_seed` taking its state and district names from
-  `data/district_register`.
-
-### Two atomic text writers in tools
-
-- **What:** `tools/hygiene/baseline.write_baseline` and `tools/curation/output.write_text_atomically`
-  both write through a temporary file and replace.
-- **Why left:** `tools/` has no shared module, and the hygiene package should not import curation.
-- **Clears it:** one `tools` module both import, when a third writer appears.
-
-### Long HTML and plain-text sources are cut at 200,000 characters
-
-- **What:** `tools/curation/reading.source_text` reuses `app.fetcher.extract`, which caps HTML and
-  plain text at `FETCH_TEXT_MAX_CHARS`; a quote past the cap fails and the check file marks the
-  source `truncated`. PDFs use curation's own caps (2,000 pages).
-- **Why left:** one HTML reader for the live fetcher and curation; long books usually come as PDFs.
-- **Clears it:** a cap option on `extract` that curation passes.
-
 ## Region story and map layers (decision 0044)
 
 ### Rivers are drawn unnamed
@@ -1617,12 +1591,17 @@ Last reviewed: 2026-11-22.
   novelty) were chosen without data; facts with no embedding are matched only by identical text.
 - **Clears it:** tune them on the first month of proposals and record the values in a decision.
 
-### Small gaps in the MCP slices
+### A component card's kicker stays English in non-English answers
 
-- **What:** a component card's kicker and title stay English in non-English answers; a failing
-  catalogue lookup is caught broadly and offers nothing, like a failing builder. (Browser CORS and
-  the clean-up of abandoned registrations were built in round 4.)
-- **Clears it:** each in the change that next touches its file.
+- **What:** a component card's title is translated with the answer's sentences (decision 0159), but
+  its kicker ("Figure from the <craft> monograph" on the site, the kind's words in the MCP answer
+  view) and its link ("Open the figure") are English chrome, not interface words.
+- **Why left:** interface words are shown in another language only from a cited source a reader has
+  reviewed (decision 0157), none holds these words yet, and the site's block renderers are not given
+  the answer's language.
+- **Clears it:** an interface word group for the card (kicker and link) with sourced, reviewed
+  words, the answer's language passed to `components/answer/blockRenderers.ts`, and the answer view
+  reading the same words from the ask result.
 
 ## Track 1, round 3 (decision 0106, 2026-11-19)
 
@@ -1754,16 +1733,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the owner's or lead's choice of the faces to preload and of a kit stylesheet split
   by chapter, then the change proven by Monograph parity and Lighthouse at 360.
 
-### Source tools: what they do not cover yet
-
-- **What:** the production `LookupStore` (`source_lookup_store.from_live`) has no test, since every
-  tool test uses fake adapters. PubChem synonyms come only from a stored Compound, because the
-  PubChem adapter has no synonyms call. `kalavigyan://index.md` and the contributor skill are
-  written by hand and must name every tool, which the tests enforce; the five contract copies in
-  `backend/app/data/contributor/contracts` must stay byte-identical to `docs/contracts`.
-- **Clears it:** a contract test of the live store against recorded adapter responses; a synonyms
-  call on the PubChem adapter; the index generated from the server's registry.
-
 ### No MCP path for a new map layer's dataset
 
 - **What:** a contributor can deliver a `general_map_layer` for one page, but a new layer of the
@@ -1771,11 +1740,6 @@ Last reviewed: 2026-11-22.
   repository, as the datasets skill says.
 - **Clears it:** a dataset proposal over MCP that carries the source, licence, version and the
   simplified geometry, checked by the same rules before an engineer ships it.
-
-### Question anonymising is rules-based
-
-- **What:** questions that become open work (decision 0113) are anonymised by rules with no model, so a lone first name with no honorific or self-introduction is not detected; the rules lean the other way elsewhere (a place outside the gazetteer written in capitals becomes [name], and a title-cased question may be dropped).
-- **Clears it:** a named-entity pass with the cheapest model route on the few questions that survive the rules, run in the nightly step, never at request time.
 
 ### The geo ETL stays on Python 3.14
 

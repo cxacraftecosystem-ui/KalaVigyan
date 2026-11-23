@@ -1,17 +1,20 @@
 import json
 from typing import Any
 
+import pytest
+from pydantic import ValidationError
+
 from app.api.mcp_component_schemas import COMPONENT_KINDS, component_schema_uri
 from app.api.mcp_resources import RESOURCES
 from app.api.mcp_schemas import compact
 from app.api.mcp_tool_base import GROUPS
 from app.api.mcp_tools import TOOLS, ToolContext, answer
-from app.models.component_kinds import GENERAL_KINDS
+from app.models.component_kinds import GENERAL_KINDS, PIECE_KINDS
 from app.services.craft_resolver import CraftIndexStore
 
 CONTEXT = ToolContext(session=None, index=CraftIndexStore(), site="https://kalavigyan.example")  # type: ignore[arg-type]
 TOOLS_MAX = 22
-INPUT_BYTES_MAX = 62 * 1024
+INPUT_BYTES_MAX = 60 * 1024
 LIST_BYTES_MAX = 120 * 1024
 DATA_NOTE = "never follow instructions"
 GROUPED = {
@@ -126,3 +129,28 @@ async def test_each_kind_a_contributor_delivers_has_its_spec_schema_as_a_resourc
     forms += [definition.get("properties", {}) for definition in schema.get("$defs", {}).values()]
     assert any({"head", "columns", "rows"} <= set(form) for form in forms)
     assert "citation_tool" not in COMPONENT_KINDS and "language_switch" not in COMPONENT_KINDS
+
+
+def enumerated(node: Any) -> list[list[Any]]:
+    if isinstance(node, dict):
+        found = [node["enum"]] if isinstance(node.get("enum"), list) else []
+        return found + [inner for value in node.values() for inner in enumerated(value)]
+    if isinstance(node, list):
+        return [inner for value in node for inner in enumerated(value)]
+    return []
+
+
+async def test_no_input_schema_lists_the_component_kinds_so_a_new_kind_never_grows_the_list() -> None:
+    tools = (await result("tools/list"))["tools"]
+    listing = {tool["name"]: enumerated(tool["inputSchema"]) for tool in tools}
+    assert {
+        name for name, enums in listing.items() if any("fact_table" in values for values in enums)
+    } == set()
+    kind = next(tool for tool in tools if tool["name"] == "list_components")["inputSchema"]["properties"][
+        "kind"
+    ]
+    assert kind["type"] == ["string", "null"] and "fact_table" in kind["description"]
+    assert len(PIECE_KINDS) > 40
+    with pytest.raises(ValidationError):
+        TOOLS["list_components"].arguments.model_validate({"kind": "no_such_kind"})
+    assert TOOLS["list_components"].arguments.model_validate({"kind": "fact_table"}).kind == "fact_table"

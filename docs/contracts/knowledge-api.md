@@ -173,7 +173,7 @@ twice.
 |---|---|---|---|
 | `search_sources` | contribute; read when `kinds` is `pictures` alone | `query` (2 to 300 characters), `craft_slug?`, `kinds?` (any of `scholarly`, `reference`, `web` and `pictures`; the first three when absent) | `SourceSearch {schemaVersion 1, query, kinds[], sources[{title, url, doi, kind, foundBy[], published, authors[], publisher, grade, held, licence, openLicence, openCopy? {status, url, landingUrl, pdfUrl, licence, openLicence, version}, excerpts[]}], pictures[{provider, pageUrl, imageUrl, originalUrl, width, height, title, description, author, site, licence, licenceUrl, openLicence, credit, widths[{width, url}]}], searched[], unavailable[], notices[]}` |
 | `read_source` | contribute | `url` or `doi`, `around?` (2 to 200 characters), `start?` (1 on), `quotes?` (up to 6, each `{text, locator?}`), `archive?` (needs `url`) | `SourceReading {schemaVersion 1, text: SourceText or null, quotes[QuoteCheck], archive: ArchivedSource or null, notices[]}`; `SourceText {schemaVersion 1, url, doi, readable, unread, title, authors[], published, publisher, licence, openLicence, grade, held, restricted, truncated, archivedUrl, lines, around, found, passages[{locator, start, text, cut}], nextStart}`; `QuoteCheck {schemaVersion 1, url, doi, quote, locator, passed, reasons[], foundAt[], nearest? {locator, text, shared}, grade, held, licence, openLicence}`; `ArchivedSource {schemaVersion 1, url, archivedUrl, message}` |
-| `lookup` | read (anyone) | `kind` (`compound` or `entity`), `name` or `id` (a PubChem CID, or a Wikidata qid) | `LookupReply {schemaVersion 1, kind, query, compounds[{cid, title, formula, molecularWeight, iupacName, inchikey, smiles, url, licence, grade, held, heldName, synonyms[], hazards? {title, url, publisher, licence, openLicence, attribution, lines[]}}], entities[{qid, label, url, licence, openLicence, grade, taxonName, pubchemCid, lines[]}], subjects[{kind, key, name, record, craftSlug?}], notices[]}`; `subjects` gives, for each record (`record` its CID or qid), what KalaVigyan holds by the key a component proposal names it with: a held compound's id, the open concepts linked to it as a material or named by its name or a synonym (shared ones first, at most 10, a craft's with its `craftSlug`), and for an entity the open concepts named by its label or taxon name, the active crafts of its name and the districts of its name (a trailing " district" dropped) as `lgd:<code>` |
+| `lookup` | read (anyone) | `kind` (`compound` or `entity`), `name` or `id` (a PubChem CID, or a Wikidata qid) | `LookupReply {schemaVersion 1, kind, query, compounds[{cid, title, formula, molecularWeight, iupacName, inchikey, smiles, url, licence, grade, held, heldName, synonyms[], pubchemSynonyms[], hazards? {title, url, publisher, licence, openLicence, attribution, lines[]}}], entities[{qid, label, url, licence, openLicence, grade, taxonName, pubchemCid, lines[]}], subjects[{kind, key, name, record, craftSlug?}], notices[]}`; `subjects` gives, for each record (`record` its CID or qid), what KalaVigyan holds by the key a component proposal names it with: a held compound's id, the open concepts linked to it as a material or named by its name or a synonym (shared ones first, at most 10, a craft's with its `craftSlug`), and for an entity the open concepts named by its label or taxon name, the active crafts of its name and the districts of its name (a trailing " district" dropped) as `lgd:<code>` |
 
 - **Who.** `search_sources` (but a pictures-only search) and `read_source` need a signed-in account
   of Researcher or above (`PROPOSE_KNOWLEDGE`): they spend the Centre's keys, its fetcher and the
@@ -231,8 +231,9 @@ twice.
   text, the window of the quote's length sharing most of its words, with the share it holds.
 - **Compounds and entities.** `lookup` of a compound uses `PubChemAdapter.compounds` (a name, synonym or
   formula; up to 3) or `.compound` (a CID), the attributed GHS document (`pubchem:<cid>:ghs`) for
-  `hazards`, and KalaVigyan's `Compound` row for `heldName` and `synonyms`, as the science engine
-  holds them; hazards that could not be read are a notice. `lookup` of an entity uses `WikidataAdapter`'s
+  `hazards`, PubChem's own synonyms for `pubchemSynonyms` (`PubChemAdapter.synonyms`, the first 12 in
+  PubChem's order, decision 0159), and KalaVigyan's `Compound` row for `heldName` and `synonyms`, as the
+  science engine holds them; hazards or synonyms that could not be read are a notice. `lookup` of an entity uses `WikidataAdapter`'s
   search (up to 3 items) or the `qid`, each item's document (label, description, aliases and
   statements) as `lines`, a plant's `taxon name` statement as `taxonName`.
 - **Pictures.** A pictures search runs the Commons and Openverse image sources (12 each), keeps only
@@ -279,10 +280,14 @@ before; a component's spec is an object in the input schemas,
 validated on the server by its kind's spec model, whose JSON schema is served as the resource
 `kalavigyan://components/<kind>.schema.json` (listed in `resources/list`, in
 `resources/templates/list` as `kalavigyan://components/{kind}.schema.json`, and in
-`kalavigyan://index.md`); output schemas are compact and listed only where a client reads the
-result. `tests/mcp/test_tool_budget.py` fails when the list grows past 22 tools, 62 KB of input
-schemas and descriptions (60 KB until decision 0147's `quantities` kind joined the piece kinds two
-tools enumerate), or 120 KB in all.
+`kalavigyan://index.md`); the component kinds are never enumerated in an input schema
+(`mcp_schemas.compact` drops an `enum` that is exactly the piece kinds, decision 0159): a `kind` is a
+string the server checks against the library, `list_components` describes it by example and
+`edit_draft`'s component points to the kind schemas `resources/templates/list` names, so a new kind
+never grows the list; output schemas are compact and listed only where a client reads the result.
+`tests/mcp/test_tool_budget.py` fails when the list grows past 22 tools, 60 KB of input schemas and
+descriptions (decision 0147 raised it to 62 KB for a release; decision 0159 restored it), or 120 KB
+in all.
 
 ## Coverage
 
@@ -321,7 +326,7 @@ not break (decision 0101, item 15). `serverInfo.version` is `1.0.0`.
 
 | Claim | Kept true by |
 |---|---|
-| The tools, their groups and the list's budget | `backend/tests/mcp/test_tool_budget.py`: 22 tools in the six groups, 62 KB of input, 120 KB in all |
+| The tools, their groups and the list's budget | `backend/tests/mcp/test_tool_budget.py`: 22 tools in the six groups, 60 KB of input with no component kind enumerated, 120 KB in all |
 | The protocol, framing and the event stream | `backend/tests/mcp/test_mcp_protocol.py`, `test_mcp_route.py` and `test_mcp_stream.py` |
 | Browser clients | `backend/tests/mcp/test_mcp_cors.py` |
 | The read tools | `backend/tests/mcp/test_mcp_page_read.py`, `test_mcp_fact_tools.py`, `backend/tests/contribution_scale/test_craft_finding.py` and `backend/tests/db/test_craft_finder_db.py` |
