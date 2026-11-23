@@ -41,24 +41,6 @@ Last reviewed: 2026-11-22.
 
 ## Backend structure
 
-### Python code over budget
-
-- **What:** the counts are in `tools/hygiene_baseline.json`. Besides the initial migration, which
-  stays one file by choice (decision 0168), what is left on 2026-11-23 is the seed claims and one
-  knowledge reader: `etl/crafts/seed_claims.py` (642 lines; `convert_immersive` 132,
-  `convert_inferential` 158 and `build` 76 lines, `claim` 9 positional parameters),
-  `backend/app/services/claim_seed.seed_claims` (46 lines) with its database test
-  `test_seed_claims_is_idempotent_on_the_seed_id` (51), and
-  `backend/app/services/knowledge_view.map_points` (63). Decision 0168 split two-step
-  verification, the alias merger, the flows' database tests and the master-list loader, and cut
-  the other long and wide functions into named steps (6 files, 36 long and 9 wide functions
-  before it; 12, 54 and 9 on 2026-11-16).
-- **Why left:** the seed claims were the pictures, terms and planning lane's files and the
-  knowledge reader the contributors' lanes' while decision 0168 ran, so another lane's change
-  would have met a split of the same lines.
-- **Clears it:** split them along their steps, behaviour unchanged, once those lanes have merged;
-  run `tools/hygiene_check.py --update-baseline` and delete this entry.
-
 ### Scholarly adapters: what waits on keys and Wiley's token (decisions 0005, 0139)
 
 - **What:**
@@ -550,37 +532,6 @@ Last reviewed: 2026-11-22.
   loaded with CORS from the media bucket (`cors_allowed_origins` holds the site's origin). The unit
   specs check the detection and the levels; the production E2E's Chromium never takes that path.
 - **Waits on:** a person playing a film with music on an iPhone or iPad and moving both sliders.
-
-## Phase D contract (decision 0062)
-
-### The phase D fixture shows no price and no Kutch Ajrakh sign of imitation
-
-- **What:** the market blocks show Kutch Ajrakh's GI record and Bagru's GI record with its GI
-  journal imitation sign; no seed claim states an Ajrakh price or Ajrakh imitation from GI journal
-  text. The curated dossier holds the 1975 Barmer price (C049), which the builder shows
-  (`tests/answering/test_market_builder.py` reads it from the dossier); its screen-printing claims
-  (C047, C138, C141) cite papers and a web page, not GI journal text, so they are not signs of
-  imitation under decision 0066.
-- **Why left:** the versions, lesson, quiz and citation goldens of both sides are built from the
-  Ajrakh market block, so the price adds a source and renumbers every file built from them; the
-  review (0070) fixed its findings and left this fixture refresh whole for one change.
-- **Clears it:** add C049's price to `s5.b1` by `curation_keys.curated_id` and regenerate the
-  goldens built from it, with the APA text of the new source checked by hand.
-
-### Author names are cited as stored
-
-- **What:** citation exports write each stored author as written, so seed sources split on commas
-  read oddly (the V&A as "Victoria", "Albert Museum"; the GI journal's applicant note as two
-  authors). The seed conversion now keeps an organisation author whole and splits people only
-  outside brackets (`etl/crafts/source_authors.split_authors`), and the seed restamps a stored
-  import source's authors when they change (`claim_seed._restamped_authors`, decision 0166), but
-  `backend/app/data/seed_claims.json` and the goldens built from it still hold the split names.
-- **Why left:** the conversion reads the immersive-episteme and inferential-system checkouts beside
-  the repository, which the lane's machine may not run, and the goldens are the final clean-up
-  lane's.
-- **Waits on:** a run of `python etl/crafts/seed_claims.py` against those checkouts and the refresh
-  of the goldens built from the seed's sources (`shared/learning.citations.golden.json` and the
-  other files that cite the V&A); the next seed after the release restamps the stored sources.
 
 ## Climate and risk, and ask the map (decision 0065)
 

@@ -39,7 +39,24 @@ def golden_market(block_id: str) -> dict[str, Any]:
 
 def golden_claims(block_id: str) -> list[KnownClaim]:
     block = golden_market(block_id)
-    return claims_of([*block["gi"]["sentences"], *block["imitation"]])
+    priced = [price["sentence"] for price in block["prices"]]
+    return claims_of([*block["gi"]["sentences"], *block["imitation"], *priced])
+
+
+def golden_prices(block_id: str) -> list[PriceOffer]:
+    return [
+        PriceOffer(
+            uuid.UUID(price["sentence"]["citations"][0]["claimId"]),
+            price["pricedOn"],
+            price["place"],
+            price["districtLgd"],
+        )
+        for price in golden_market(block_id)["prices"]
+    ]
+
+
+def unnumbered(prices: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [{**price, "sentence": price["sentence"]["text"]} for price in prices]
 
 
 def golden_sources(kind: str | None = None) -> dict[str, SourceRef]:
@@ -65,7 +82,7 @@ def offers_of(
 
 def golden_offers(block_id: str, kind: str | None = None) -> MarketOffers:
     craft = CraftRef.model_validate(golden_market(block_id)["craft"])
-    return offers_of(craft, golden_claims(block_id), golden_sources(kind))
+    return offers_of(craft, golden_claims(block_id), golden_sources(kind), golden_prices(block_id))
 
 
 def shown(block: MarketGiBlock | None) -> dict[str, Any]:
@@ -82,7 +99,13 @@ def test_the_stored_registry_claims_give_the_fixture_s_market_blocks(block_id: s
     gi = {**golden["gi"], "sentences": [s["text"] for s in golden["gi"]["sentences"]]}
     assert built["gi"] == gi
     assert built["imitation"] == [s["text"] for s in golden["imitation"]]
-    assert (built["craft"], built["prices"]) == (golden["craft"], [])
+    assert (built["craft"], unnumbered(built["prices"])) == (golden["craft"], unnumbered(golden["prices"]))
+
+
+def test_kutch_ajrakh_s_fixture_market_is_its_registry_record_and_its_curated_barmer_price() -> None:
+    (price,) = golden_prices("s5.b1")
+    assert price == PriceOffer(curated_id("Kutch-Ajrakh", "C049"), "1975", "Barmer", 90)
+    assert golden_prices("s5.b2") == []
 
 
 def test_signs_of_imitation_come_only_from_gi_journal_text() -> None:

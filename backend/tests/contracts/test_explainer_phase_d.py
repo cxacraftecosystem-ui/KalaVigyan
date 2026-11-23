@@ -1,7 +1,7 @@
 import copy
 import json
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 import pytest
@@ -10,11 +10,14 @@ from pydantic.alias_generators import to_camel
 
 from app.data.craft_master_loader import seed_uuid
 from app.research import knowledge_pieces
+from app.research.citation_formats import citation_entries
 from app.research.explainer import BUILT_BLOCK_KINDS, BlockEvent, payload_sentences, with_payload_sentences
 from app.research.knowledge_pieces import UNSTORED_BLOCK_KINDS, PieceSlot, knowledge_piece
 from app.research.measures import DEFINED_UNITS, UNIT_DEFINITIONS
 from app.research.piece_topics import TopicSubjects, facet_topic
+from app.services.apa_references import apa_references
 from app.services.claim_seed import load_seed_claims, seed_id
+from app.services.curation_keys import curated_id
 from app.services.glossary_plan import compounds_of, concepts_of, glossary_plan
 from app.services.piece_store import storable
 from app.services.science_seed import load_science_seed
@@ -22,12 +25,15 @@ from app.services.science_seed import load_science_seed
 from .explainer_golden import PIECE, citations_in, golden_json, seed_citations, seed_claims, seed_sources
 from .golden import REPO, reproduces
 from .phase_b_golden import catalog_dataset, geo_etl_datasets
-from .phase_d_golden import PHASE_D, PhaseDFixture, phase_d, phase_d_blocks
+from .phase_d_golden import PHASE_D, PhaseDFixture, curated_sources, curated_views, phase_d, phase_d_blocks
 
 AT = datetime(2026, 11, 18, 10, 30, tzinfo=UTC)
 AJRAKH = "Kutch-Ajrakh"
 BAGRU = "Bagru-Hand-Block-Print"
 GI_JOURNAL = "GI_JOURNAL"
+BARMER_PRICE = "C049"
+BARMER_PRICE_SOURCE = "S13"
+BARMER_PRICE_READ_ON = date(2026, 11, 17)
 
 
 def fixture() -> PhaseDFixture:
@@ -38,10 +44,14 @@ def blocks() -> dict[str, Any]:
     return {block.id: block for section in fixture().sections for block in section.blocks}
 
 
-def claim_of(sentence: Any) -> dict[str, Any]:
+def claim_id_of(sentence: Any) -> str:
     claim_ids = {citation.claim_id for citation in sentence.citations}
     assert len(claim_ids) == 1
-    return seed_claims()[claim_ids.pop()]
+    return claim_ids.pop()
+
+
+def claim_of(sentence: Any) -> dict[str, Any]:
+    return seed_claims()[claim_id_of(sentence)]
 
 
 def source_kinds(sentence: Any) -> set[str]:
@@ -52,11 +62,16 @@ def test_the_phase_d_fixture_is_reproduced_byte_for_byte() -> None:
     assert reproduces(PhaseDFixture, PHASE_D)
 
 
-def test_every_citation_resolves_to_a_seeded_claim_source() -> None:
+def test_every_citation_resolves_to_a_seeded_or_curated_claim_source() -> None:
     seeded = seed_citations()
+    curated = {cite["id"]: cite for view in curated_views().values() for cite in view.citations}
     found = list(citations_in(phase_d()))
-    assert len(found) == 64
+    assert len(found) == 66
+    assert len([cite for cite in found if cite["id"] in curated]) == 2
     for cite in found:
+        if cite["id"] in curated:
+            assert cite == curated[cite["id"]]
+            continue
         row = seeded[cite["id"]]
         assert (cite["claimId"], cite["sourceId"], cite["quote"], cite["locator"], cite["level"]) == (
             row["claimId"],
@@ -67,10 +82,15 @@ def test_every_citation_resolves_to_a_seeded_claim_source() -> None:
         )
 
 
-def test_every_sentence_is_its_seeded_claim_word_for_word() -> None:
+def test_every_sentence_is_its_seeded_or_curated_claim_word_for_word() -> None:
+    views = curated_views()
     for block in blocks().values():
         for sentence in block.cited_sentences():
-            claim = claim_of(sentence)
+            claim_id = claim_id_of(sentence)
+            if claim_id in views:
+                assert (sentence.text, sentence.level) == (views[claim_id].text, views[claim_id].level)
+                continue
+            claim = seed_claims()[claim_id]
             assert (sentence.text, sentence.level) == (claim["text"], claim["evidenceLevel"])
 
 
@@ -78,7 +98,11 @@ def test_sources_are_every_cited_source_once_in_order_of_first_citation() -> Non
     body = fixture()
     ordered = dict.fromkeys(sid for block in blocks().values() for sid in block.cited_source_ids())
     assert [source.id for source in body.sources] == list(ordered)
+    curated = curated_sources()
     for source in body.sources:
+        if source.id in curated:
+            assert source == curated[source.id]
+            continue
         row = seed_sources()[source.id]
         assert (source.kind, source.title, source.reliability) == (
             row["kind"],
@@ -86,6 +110,33 @@ def test_sources_are_every_cited_source_once_in_order_of_first_citation() -> Non
             row["reliability"],
         )
         assert source.url == (row["url"] if row["url"] and row["url"].startswith("https://") else None)
+
+
+def test_kutch_ajrakh_s_market_shows_the_curated_barmer_price_of_1975() -> None:
+    market = blocks()["s5.b1"]
+    (price,) = market.prices
+    assert (price.stated, price.low, price.high, price.currency, price.scale, price.per) == (
+        "Rs. 7",
+        7.0,
+        None,
+        "INR",
+        None,
+        None,
+    )
+    assert (price.priced_on, price.place, price.district_lgd) == ("1975", "Barmer", 90)
+    assert price.sentence.text == "In Barmer an ajrakh piece was valued at Rs. 7 in 1975."
+    assert {c.claim_id for c in price.sentence.citations} == {str(curated_id(AJRAKH, BARMER_PRICE))}
+    assert {c.source_id for c in price.sentence.citations} == {str(curated_id(AJRAKH, BARMER_PRICE_SOURCE))}
+    assert market.imitation == []
+
+
+def test_the_barmer_price_s_source_reads_in_apa_as_an_undated_web_page() -> None:
+    source = next(s for s in fixture().sources if s.id == str(curated_id(AJRAKH, BARMER_PRICE_SOURCE)))
+    (entry,) = citation_entries([source], accessed={source.id: BARMER_PRICE_READ_ON}, apa=apa_references)
+    assert entry.apa == (
+        "Mushtak Khan. (n.d.). Ajrakh: An Introduction. Sahapedia. Retrieved November 17, 2026, from "
+        "https://www.sahapedia.org/ajrakh-introduction-0"
+    )
 
 
 def test_quiz_questions_blank_a_cited_claim_and_offer_terms_of_other_claims() -> None:

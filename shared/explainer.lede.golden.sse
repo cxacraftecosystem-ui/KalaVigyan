@@ -14,7 +14,7 @@ event: section_started
 data: {"id":"s3","discipline":"PROCESS","title":"How Kutch Ajrakh is made","order":3,"state":"RESEARCHING"}
 
 event: source
-data: {"id":"d0f53ee9-4b97-5df7-a367-686957bdb7c8","kind":"GI_JOURNAL","title":"Geographical Indications Journal No. 188 (19 Dec 2023), G.I. Application No. 1050 - Kutch Ajrakh (journal copy)","authors":["Office of the Controller General of Patents, Designs & Trade Marks (applicant: Ajarakhpur Hastkala Vikas Sangathan","facilitated by Textiles Committee, Ministry of Textiles)"],"year":2023,"doi":null,"url":"https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/1050","publisher":"Geographical Indications Registry, Chennai (IP India)","licence":null,"attribution":null,"reliability":"A"}
+data: {"id":"d0f53ee9-4b97-5df7-a367-686957bdb7c8","kind":"GI_JOURNAL","title":"Geographical Indications Journal No. 188 (19 Dec 2023), G.I. Application No. 1050 - Kutch Ajrakh (journal copy)","authors":["Office of the Controller General of Patents, Designs & Trade Marks (applicant: Ajarakhpur Hastkala Vikas Sangathan; facilitated by Textiles Committee, Ministry of Textiles)"],"year":2023,"doi":null,"url":"https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/1050","publisher":"Geographical Indications Registry, Chennai (IP India)","licence":null,"attribution":null,"reliability":"A"}
 
 event: source
 data: {"id":"907e2c52-14e7-5e41-9b27-9c10f70906a9","kind":"WEB_PAGE","title":"Water woes: Kutch's age-old Ajrakh craft faces its nemesis, once again","authors":["Azera Parveen Rahman"],"year":2019,"doi":null,"url":"https://india.mongabay.com/2019/10/water-woes-kutchs-age-old-ajrakh-craft-faces-its-nemesis-once-again/","publisher":"Mongabay India","licence":null,"attribution":null,"reliability":"B"}

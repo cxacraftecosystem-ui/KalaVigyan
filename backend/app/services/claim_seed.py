@@ -258,25 +258,49 @@ async def _seed_processes(
     )
 
 
+def _concept_values(
+    concepts: list[dict[str, Any]], craft_ids: dict[str, uuid.UUID], sub_ids: dict[str, uuid.UUID]
+) -> list[dict[str, Any]]:
+    values = []
+    for row in concepts:
+        craft_slug = row["craftSlug"]
+        sub_slug = row["subCategorySlug"]
+        kept = {k: v for k, v in row.items() if k not in ("craftSlug", "subCategorySlug")}
+        kept["craftId"] = craft_ids.get(craft_slug) if craft_slug else None
+        kept["subCategoryId"] = sub_ids.get(sub_slug) if sub_slug else None
+        values.append(kept)
+    return values
+
+
+def _unresolved_slugs(
+    concepts: list[dict[str, Any]], craft_ids: dict[str, uuid.UUID], sub_ids: dict[str, uuid.UUID]
+) -> list[str]:
+    crafts = {row["craftSlug"] for row in concepts if row["craftSlug"] and row["craftSlug"] not in craft_ids}
+    subs = {
+        row["subCategorySlug"]
+        for row in concepts
+        if row["subCategorySlug"] and row["subCategorySlug"] not in sub_ids
+    }
+    return sorted(crafts | subs)
+
+
+async def _linked_edge_claims(session: AsyncSession, edges: list[dict[str, Any]]) -> None:
+    links = [{"edgeId": row["id"], "linkClaimId": row["claimId"]} for row in edges if row["claimId"]]
+    if links:
+        table = ConceptEdge.__table__
+        await session.execute(
+            update(table)
+            .where(table.c.id == bindparam("edgeId"), table.c.claimId.is_(None))
+            .values(claimId=bindparam("linkClaimId")),
+            links,
+        )
+
+
 async def seed_claims(session: AsyncSession, data: dict[str, Any] | None = None) -> dict[str, Any]:
     plan = claim_seed_plan(data if data is not None else load_seed_claims())
     craft_ids = await ids_by_slug(session, Craft)
     sub_ids = await ids_by_slug(session, CraftSubCategory)
-
-    unresolved: set[str] = set()
-    concept_values = []
-    for row in plan["concepts"]:
-        craft_slug = row["craftSlug"]
-        sub_slug = row["subCategorySlug"]
-        if craft_slug and craft_slug not in craft_ids:
-            unresolved.add(craft_slug)
-        if sub_slug and sub_slug not in sub_ids:
-            unresolved.add(sub_slug)
-        values = {k: v for k, v in row.items() if k not in ("craftSlug", "subCategorySlug")}
-        values["craftId"] = craft_ids.get(craft_slug) if craft_slug else None
-        values["subCategoryId"] = sub_ids.get(sub_slug) if sub_slug else None
-        concept_values.append(values)
-
+    concept_values = _concept_values(plan["concepts"], craft_ids, sub_ids)
     await _restamped_authors(session, plan["sources"])
     inserted = {
         "sources": await _insert_new(session, Source, plan["sources"]),
@@ -289,19 +313,10 @@ async def seed_claims(session: AsyncSession, data: dict[str, Any] | None = None)
     inserted["claims"] = await _insert_new(session, Claim, plan["claims"])
     inserted["claimSources"] = await _insert_new(session, ClaimSource, plan["claimSources"])
     inserted["reviewEvents"] = await _insert_new(session, ReviewEvent, plan["reviewEvents"])
-
-    links = [{"edgeId": row["id"], "linkClaimId": row["claimId"]} for row in plan["edges"] if row["claimId"]]
-    if links:
-        table = ConceptEdge.__table__
-        await session.execute(
-            update(table)
-            .where(table.c.id == bindparam("edgeId"), table.c.claimId.is_(None))
-            .values(claimId=bindparam("linkClaimId")),
-            links,
-        )
+    await _linked_edge_claims(session, plan["edges"])
     await session.flush()
     return {
         "total": {key: len(rows) for key, rows in plan.items()},
         "inserted": inserted,
-        "unresolvedSlugs": sorted(unresolved),
+        "unresolvedSlugs": _unresolved_slugs(plan["concepts"], craft_ids, sub_ids),
     }
