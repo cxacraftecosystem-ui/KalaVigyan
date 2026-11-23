@@ -216,7 +216,9 @@ def test_a_glossary_term_is_never_taken_for_the_crafts_own_name() -> None:
     named = term.model_copy(update={"names": ["ajrakh", "અજરખ"], "script": None})
     curated = records.curated.model_copy(update={"glossary": [named, *records.curated.glossary[1:]]})
     page = craft_page(replace(records, curated=curated))
-    assert page.craft.local_names == []
+    stated = [name["text"] for name in raw(AJRAKH)["nativeNames"]]
+    assert [name.name for name in page.craft.local_names] == stated
+    assert not {"ajrakh", "અજરખ"} & set(stated)
     assert page.glossary[0].names == ["ajrakh", "અજરખ"]
 
 

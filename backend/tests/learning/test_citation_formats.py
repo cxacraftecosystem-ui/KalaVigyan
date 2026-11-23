@@ -23,6 +23,7 @@ from app.services.apa_references import apa_references
 from ..contracts.learning_golden import CITATIONS, VERSIONS, learning
 
 SEED_RETRIEVED = date(2026, 10, 14)
+BIBTEX_AND = " and "
 CHIRPS = DatasetRef.model_validate(
     {
         "code": "CHIRPS_3_0",
@@ -69,6 +70,25 @@ def test_an_undated_web_page_is_retrieved_on_the_day_its_source_was_read() -> No
     )
 
 
+def bibtex_names(value: str) -> list[str]:
+    names: list[str] = []
+    depth, start, index = 0, 0, 0
+    while index < len(value):
+        depth += (value[index] == "{") - (value[index] == "}")
+        if depth == 0 and value.startswith(BIBTEX_AND, index):
+            names.append(value[start:index])
+            index += len(BIBTEX_AND)
+            start = index
+            continue
+        index += 1
+    return [*names, value[start:]]
+
+
+def test_a_bibtex_name_list_splits_on_and_only_outside_braces() -> None:
+    assert bibtex_names("{Victoria and Albert Museum}") == ["{Victoria and Albert Museum}"]
+    assert bibtex_names("{Gauri Kathju} and {Radha Kashyap}") == ["{Gauri Kathju}", "{Radha Kashyap}"]
+
+
 def test_bibtex_parses_back_to_the_fields_it_was_written_from() -> None:
     sources = latest_sources()
     text = "\n".join(bibtex_entry(n, s) for n, s in enumerate(sources, 1))
@@ -81,7 +101,7 @@ def test_bibtex_parses_back_to_the_fields_it_was_written_from() -> None:
         assert fields.get("year") == (str(source.year) if source.year else None)
         assert fields["howpublished"] == source.publisher.replace("&", "\\&")
         assert fields["title"] == "{" + source.title + "}"
-        names = fields["author"].split(" and ")
+        names = bibtex_names(fields["author"])
         assert [name.strip("{}").replace("\\&", "&") for name in names] == source.authors
 
 
