@@ -197,11 +197,18 @@ def rubric_score(measures: AnswerMeasures) -> float:
     parts = (
         reached,
         density,
-        1.0 if measures.sentences and not measures.unresolved and not measures.off_question else 0.0,
+        _cited_share(measures),
         1.0 if measures.figures else 0.0,
         0.0 if measures.gaps else 1.0,
     )
     return round(sum(parts) / len(RUBRIC), 3)
+
+
+def _cited_share(measures: AnswerMeasures) -> float:
+    if not measures.sentences:
+        return 0.0
+    kept = measures.sentences - measures.unresolved - measures.off_question
+    return max(0, kept) / measures.sentences
 
 
 def judge_message(question: str, explainer: Explainer, expected: Sequence[str]) -> str:

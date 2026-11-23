@@ -6,7 +6,7 @@ __all__ = ["UNSTORABLE_CONTROLS", "storable_text"]
 
 UNSTORABLE_CONTROLS = r"\x00-\x08\x0b\x0c\x0e-\x1f"
 LINE_SEPARATING = re.compile(r"[\x0b\x0c\x1c-\x1f]")
-DROPPED = re.compile(r"[\x00-\x08\x0e-\x1b]")
+DROPPED = re.compile(r"[\x00-\x08\x0e-\x1b\ud800-\udfff]")
 LINE_BREAK = "\n"
 
 

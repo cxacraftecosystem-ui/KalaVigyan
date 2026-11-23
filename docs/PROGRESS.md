@@ -11,7 +11,7 @@ section 17. Everyone building KalaVigyan reads it; a new session starts at [NEXT
 | What was left below standard | [TECH_DEBT.md](TECH_DEBT.md) |
 | The rounds at a glance | [README.md](../README.md#status) |
 
-Last updated: 2026-11-20.
+Last updated: 2026-11-23.
 
 ## Done
 
@@ -1153,6 +1153,77 @@ Last updated: 2026-11-20.
     spec names, and each deploy rebuilds stale page snapshots (curated crafts first) before the web
     build.
 
+- **Debt round (2026-11-22 to 2026-11-23): the register cleared lane by lane.** On the owner's
+  go-ahead of 2026-11-22 to clear `docs/TECH_DEBT.md` for good, each lane closed its area's entries
+  under its own record.
+  - **Geo, region and rivers (decision 0153):** rivers named from Wikidata, then OpenStreetMap, and
+    vendored for the prose checks; the districts each reach crosses computed once in the ETL; basin
+    files served gzip; a groundwater layer that reads Rajasthan's district table from the India data
+    portal; a region place shows its headline values, and each load stores the state series; the geo
+    ETL fails an unreachable file, a silent district and an unreviewed district without cells.
+  - **AI media and film (decision 0154):** a score made once under a lease, answered 202 while it is
+    made, timed by the narration heard and cued by stored facets; unnamed clips swept from the
+    bucket; the worker's heartbeat and watchdog; AI pictures copied for their craft page and shared
+    there, a named cluster's after two professors' sign-off; paid checks from one job under a US$5
+    cap.
+  - **Accounts and sharing (decision 0155):** the roster offers only what its guards allow; a
+    recovery code may add a first password; users sort by rank and a stored cap map lies over every
+    role's default; a stopped share's files leave the bucket.
+  - **Expert panel and field voices (decision 0156):** one retake of a failing take; differences
+    across concepts one glossary term links; a reused panel keeps only the seats it seats; field
+    voices on every craft page but the authored Kutch Ajrakh one; field photographs illustrating the
+    claims they show; Sources differ opening after its paragraph and naming its subject.
+  - **Languages (decision 0157):** a translation read back into English before it is shown; the
+    fixed words of other languages kept as sourced data and shown once a reader of the language has
+    reviewed them; an Urdu answer among the production E2E's questions.
+  - **Contributed facts (decision 0158):** a curated craft's monograph lists the facts contributors
+    add under their own fields, a figure's fact once, as one cited list.
+  - **MCP and contributors (decision 0159):** a place abroad refuses a write-back only when the
+    practice is there; a reviewer files any researched fact under a craft or a family's science, and
+    the Review page says why it was held; the tool list back within its budget; the MCP index written
+    from the registry; PubChem's synonyms as their own field; open-work questions screened for names
+    at night.
+  - **Place builders (decision 0160):** a current stored region story placed with no model call;
+    story steps from the craft's place claims; map layers chosen by their glossary terms; place
+    pieces keyed by district code; districts found by the other names sources use and pinned by the
+    register; seasons timed only by what a source states; a follow-up that lost a race reloads the
+    stored version; the production E2E asks the questions that show each place builder.
+  - **Screens and stream (decision 0161):** Listen reads with the Gemini voice when ElevenLabs
+    cannot, highlighting by sentence; a shared-science node counts its crafts and pages through
+    them; Admins see the night's count of facts readers cannot see on the Settings hub; the browser
+    smoke measures the dock's bit rate; the paid check's replies became fixtures.
+  - **Craft page chapters (decision 0162):** the chapter parts no page draws retired, and the web
+    reads the page's head and lists; an approved glossary term or reaction writes its shared rows at
+    once.
+  - **Limits and the register (decision 0163):** more limits kept by choice, the ones waiting on
+    content as the curation targets below; the hygiene check fails a register that grows; database
+    tests in shards; each process on the box within its own connection budget.
+  - **Answer regression (decision 0165):** the evaluation stops on settled spend; an answered call
+    settles at its cost even when its caller is cut off or the pooler is briefly full; the
+    understanding says which fields the question asks; a difference already said is not told again;
+    Claude Sonnet kept first on the compose route after the owner's measurement.
+  - **Pictures, terms and pieces (decision 0166):** sites told apart by the Public Suffix List; Brave
+    backing SearXNG; a section's stored pictures shown before any search; every answer path marking
+    terms; a local word a term only with a stated meaning; researched summaries renewed after half a
+    year; pieces stamped with their embedding model.
+  - **Answer leftovers (decision 0167):** a stopped answer marked, not deleted; a failing sentence's
+    quotes in an Indian script read once in English; a Hindi quiz kept on its terms' Hindi names; a
+    dossier's signs of imitation; every scholarly adapter naming the journal; closed DOIs read from
+    their publisher; a fact and a heading told once; a Professor placing a process stage answers
+    found.
+  - **Final clean-up (decision 0168):** a quantities row whose sentence the answer already said
+    drawn under that sentence and read once; the Python files over budget split along what they do;
+    the golden check held to what the web parses; the craft page archive dropped.
+  - **MCP follow-ups (decision 0169):** the research write-back asks the cheapest judge first; a
+    district named by any of its names when filing; a contributed PDF described by its first page; a
+    reading outside its range, a proposed map layer and a category page's structure decided in the
+    review queue; a material's alternatives curated.
+  - **Review fixes, answers and docs (decision 0174):** a production downgrade undoes one revision
+    unless `CONFIRM_DOWNGRADE_STEPS` confirms its count; a translated title longer than its field
+    keeps the English; a follow-up repeats nothing its explainer shows; an empty section's note
+    fits `section_done`; a source whose document cannot be built is skipped, not the answer; the
+    rubric's everyCited part is a share of the shown sentences.
+
 ## Next
 
 0. The redesign, owner-approved 2026-11-18: Direction A "Alum & Indigo" as the system with
@@ -1169,14 +1240,11 @@ Last updated: 2026-11-20.
    them. Further curation only for crafts the owner names.
 2. The first live media jobs to confirm decision 0018's unverified items; the ElevenLabs spike of
    PLAN 10.1 on GitHub Actions (lane 0017's open item), which also records a relay turn's real
-   billing; the governance lane serves the sharing route of `docs/contracts/media.md`. Science
-   engine follow-ups are in `docs/TECH_DEBT.md` (decision 0015).
-3. Clear the answer stream gaps in `docs/TECH_DEBT.md` (answer and trace rows, researcher chunk
-   access).
-4. The phase D proof of a professor building a lesson pack from one explainer needs the owner's
+   billing. Science engine follow-ups are in `docs/TECH_DEBT.md` (decision 0015).
+3. The phase D proof of a professor building a lesson pack from one explainer needs the owner's
    E2E choice below; the owner verifies an SES sender before `ALERT_DIGEST_ENABLED` is set.
-5. The `WEB_READ` reader for long documents.
-6. Clear debt as files are touched (`docs/TECH_DEBT.md`), lowering the hygiene baseline.
+4. The `WEB_READ` reader for long documents.
+5. Clear debt as files are touched (`docs/TECH_DEBT.md`), lowering the hygiene baseline.
 
 ## Curation targets
 

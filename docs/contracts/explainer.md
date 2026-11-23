@@ -109,7 +109,8 @@ when 0) is set only by the field voices readback above; the stream never sends i
 `shared/explainer.withdrawn.golden.json`, the document golden as read after a withdrawal, its
 `s3` carrying `withdrawn` 1 and its sentence `s3.b1.3` a named difference (`sourcesDiffer`,
 `differsOn`), so both fields stand in a golden (decision 0151). `original` is the English title when
-`title` is a translation. An image block may illustrate only claims another block of the same
+`title` is a translation; a translation longer than the title's limit is not shown, and the English
+stays (decision 0174). An image block may illustrate only claims another block of the same
 section cites. Disciplines (`models/enums.DISCIPLINES`): `OVERVIEW`, `PROCESS`, `CHEMISTRY`,
 `PHYSICS`, `MATERIALS`, `GEOGRAPHY` (geography and water), `GEOLOGY` (geology and soil),
 `CLIMATE`, `ECOLOGY`, `BOTANY`, `HISTORY`, `ECONOMICS`, `DESIGN`, `HEALTH`.

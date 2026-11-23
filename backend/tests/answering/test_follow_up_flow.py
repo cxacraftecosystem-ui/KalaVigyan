@@ -123,3 +123,22 @@ async def test_a_follow_up_that_finds_nothing_new_makes_no_version() -> None:
     (finished,) = store.finished
     assert (finished["explainer"], finished["version"]) == (None, None)
     assert found[-1] == ("done", {"answerId": str(SECOND_ID)})
+
+
+async def test_a_follow_up_s_new_section_leaves_out_what_the_explainer_already_says() -> None:
+    first = await first_version()
+    found, store = await asked_again(follow_up_of(first, "HISTORY"), ALUM, KUTCH_BATH)
+    blocks = [payload["block"] for name, payload in found if name == "block"]
+    assert [[s["text"] for s in block["sentences"]] for block in blocks] == [[KUTCH_BATH_TEXT]]
+    (finished,) = store.finished
+    merged = finished["explainer"]
+    said = [s.text for section in merged.sections for b in section.blocks for s in b.cited_sentences()]
+    assert said.count(ALUM["text"]) == 1
+
+
+async def test_a_follow_up_s_new_section_that_only_repeats_the_explainer_makes_no_version() -> None:
+    first = await first_version()
+    found, store = await asked_again(follow_up_of(first, "HISTORY"), ALUM)
+    assert "block" not in [name for name, _ in found]
+    (finished,) = store.finished
+    assert (finished["explainer"], finished["version"]) == (None, None)

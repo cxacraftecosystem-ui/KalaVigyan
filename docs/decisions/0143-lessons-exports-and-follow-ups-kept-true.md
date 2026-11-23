@@ -23,6 +23,7 @@ The contracts are `docs/contracts/learning.md` and `docs/contracts/research.md`.
 | The lede it puts on the title slide | [decision 0077](0077-lede-headings-and-question-order.md) |
 | The shapes and files | [learning.md](../contracts/learning.md), Lesson packs and Exports |
 | Every scholarly adapter names the journal, and stored DOIs' journals are read again | [decision 0167](0167-answer-leftovers-kept-true.md) |
+| A follow-up held to what its whole explainer shows, so a region story is once per explainer (amends item 9) | [decision 0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import zip_longest
 from types import MappingProxyType
 
-from app.research.evidence import EvidenceItem, OpenAccessLocator, SourceAdapter, SourceDocument
+from app.core.errors import ExternalFailure
+from app.research.evidence import (
+    EvidenceItem,
+    OpenAccessLocation,
+    OpenAccessLocator,
+    SourceAdapter,
+    SourceDocument,
+)
 from app.research.evidence_pack import PackedEvidence
-from app.research.fetcher import Fetcher, FetchRequest
+from app.research.fetcher import FetchedPage, Fetcher, FetchRequest
 from app.sources.adapter import build_document
 from app.sources.fetcher_client import FETCHER_SERVICE
 from app.sources.scholarly.publishers import PublisherFullText
@@ -28,6 +36,8 @@ __all__ = [
     "reading_order",
     "with_abstract",
 ]
+
+logger = logging.getLogger(__name__)
 
 FETCH_STAGE = "FETCH"
 LOCATE_STAGE = "LOCATE"
@@ -188,18 +198,12 @@ class DocumentReader:
         )
         if page is None or not page.text.strip():
             return None
-        opened = item.model_copy(
-            update={
-                "licence": location.licence,
-                "external_ids": {
-                    **item.external_ids,
-                    "open_access_url": page.final_url,
-                    "sha256": page.sha256,
-                },
-            }
+        return await self._log.guarded(
+            _copy_document(item, location, page),
+            stage=FETCH_STAGE,
+            service=FETCHER_SERVICE,
+            target=page.final_url,
         )
-        copy = copy_read(opened, location.version, page.final_url)
-        return build_document(copy, page.text, "FULL_TEXT", truncated=page.truncated)
 
     async def _publisher_document(self, item: EvidenceItem) -> SourceDocument | None:
         publisher = self._sources.publisher
@@ -237,6 +241,22 @@ def with_abstract(opened: SourceDocument, abstract: SourceDocument | None) -> So
     manuscript = opened.item.external_ids.get(VERSION_KEY) in MANUSCRIPT_VERSIONS
     if abstract is None or manuscript or abstract.text in opened.text:
         return opened
-    return build_document(
-        opened.item, f"{abstract.text}\n\n{opened.text}", "FULL_TEXT", truncated=opened.truncated
+    joined = f"{abstract.text}\n\n{opened.text}"
+    try:
+        return build_document(opened.item, joined, "FULL_TEXT", truncated=opened.truncated)
+    except ExternalFailure as failure:
+        logger.warning("the abstract was not joined to %s: %s", opened.item.id, failure)
+        return opened
+
+
+async def _copy_document(
+    item: EvidenceItem, location: OpenAccessLocation, page: FetchedPage
+) -> SourceDocument:
+    opened = item.model_copy(
+        update={
+            "licence": location.licence,
+            "external_ids": {**item.external_ids, "open_access_url": page.final_url, "sha256": page.sha256},
+        }
     )
+    copy = copy_read(opened, location.version, page.final_url)
+    return build_document(copy, page.text, "FULL_TEXT", truncated=page.truncated)

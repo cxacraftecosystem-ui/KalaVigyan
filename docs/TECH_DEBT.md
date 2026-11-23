@@ -893,7 +893,9 @@ Last reviewed: 2026-11-22.
   shows such a table: the claim ledger keeps those rows with `shownIn`, the view draws them with
   the sentence's citation and without saying it again, and the judge, the rubric and Listen read
   the sentence once. No run has yet measured it, so `rubricMean` in
-  `backend/app/data/eval/floors.json` is still the 0.82 decision 0147 set.
+  `backend/app/data/eval/floors.json` is still the 0.82 decision 0147 set. Decision 0174 made the
+  rubric's everyCited part a share of the shown sentences; run 45161982883 scores 0.920 under it
+  (0.754 as run), so the next run's mean is measured under the share.
 - **Why left:** the floor is re-based on a measured run, and answer-quality is a paid run only the
   lead dispatches.
 - **Clears it:** the lead runs answer-quality on the same questions and raises `rubricMean` to the

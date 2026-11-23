@@ -46,8 +46,8 @@ flowchart LR
 | Edge | CloudFront `d89rsltpszebp.cloudfront.net` | HTTPS ends here |
 | Origin | nginx `:80` on EC2 `kalavigyan-api` (ap-south-1) | 403 without `X-Origin-Verify` |
 | API | `uvicorn app.main:app` | blue/green on 8000/8001 |
-| Database | Postgres 17 on Supabase | session pooler `:5432`; vector, postgis, pg_trgm, unaccent, citext |
-| Workers on the box | `kv-worker`, `kv-fetcher` and `kv-contributions` | the media queue (decision 0018) and the daily voice upkeep (decision 0140), the fetcher sandbox (decision 0007) and the contribution queue's gates (round 7), as `docs/RUNBOOK.md` lists them under On the box |
+| Database | Postgres 17 on Supabase | session pooler `:5432`, each process on the box within its own connection budget (`core/connection_budget`, decision 0163); vector, postgis, pg_trgm, unaccent, citext |
+| Workers on the box | `kv-worker`, `kv-fetcher` and `kv-contributions` | the media queue (decision 0018), the daily voice upkeep (decision 0140), the daily sweep of score clips no manifest names and a heartbeat the media routes read (decision 0154), the fetcher sandbox (decision 0007) and the contribution queue's gates (round 7), as `docs/RUNBOOK.md` lists them under On the box |
 | Logs | the CloudWatch agent on the box | each service's journal lines and nginx's access and error logs, shipped to the CloudWatch Logs groups `/kalavigyan/<service>` and kept 30 days (decision 0150, `docs/RUNBOOK.md` Logs) |
 
 Media goes to the private S3 bucket through presigned URLs. Ids, names and the deploy sequence
@@ -106,8 +106,8 @@ The diagram is the stack from the top down; the edges that may really be importe
 | Layer | Package | What it holds |
 |---|---|---|
 | entry points | `main.py`, `api/` (`router.py`, `routes/<area>.py`), `scripts/` | the app, the HTTP routes, and the scripts (seeds, sync, coverage job) |
-| voice | `voice/` | voice sessions, the custom-LLM turn, relay turns, the encrypted transcript, daily upkeep, agent provisioning (decision 0017; the call is switched off, decision 0035); Listen: narration of finished explainers with word timings, cached in the media bucket (0035), read by the Gemini voice by sentence when ElevenLabs cannot (0161); film mode's score: scenes, fixed prompts, content-addressed clips and a manifest per explainer and language (0058) |
-| media | `media/` | stage illustrations and clips: claim set, prompt, bundle, MP4 and PNG checks, the job routes' steps, the kv-worker queue and its SQL; `worker.py` runs it as kv-worker (decision 0018) |
+| voice | `voice/` | voice sessions, the custom-LLM turn, relay turns, the encrypted transcript, daily upkeep, agent provisioning (decision 0017; the call is switched off, decision 0035); Listen: narration of finished explainers with word timings, cached in the media bucket (0035), read by the Gemini voice by sentence when ElevenLabs cannot (0161); film mode's score: scenes, fixed prompts, content-addressed clips and a manifest per explainer and language (0058), made once under a lease and timed by the narration heard (0154) |
+| media | `media/` | stage illustrations and clips: claim set, prompt, bundle, MP4 and PNG checks (a Gemini JPEG is converted to PNG, decision 0161), the job routes' steps, the kv-worker queue and its SQL, the page copy a shared asset is read from and the worker's heartbeat (decision 0154); `worker.py` runs it as kv-worker (decision 0018) |
 | adapters | `providers/` | model adapters and their key checks, the model catalogue, AI router, spend rules and settings, the quota ledger, ElevenLabs |
 | domain | `services/` | crafts, knowledge view, access roster, credentials, keys, routing, live-research write-back and the coverage job (decision 0011) |
 | domain | `schemas/` | request and response bodies, and the science, region, voice and media contracts (decision 0014), which reuse `research/`'s shapes |
@@ -120,7 +120,7 @@ The diagram is the stack from the top down; the edges that may really be importe
 | fetcher | `fetcher/` | the separate kv-fetcher process: address-pinned https fetch (one client per host and address per fetch), RFC 9309 robots.txt, caps, trafilatura and pypdf extraction in killable parser processes (no DB, no AWS) |
 | curation | `curation/` | curated craft dossiers: the model, the offline rules, the check file and the index, read by `tools/curation` and the importer; imports `research/`, `models/` and `data/` only (decision 0051) |
 | contracts | `research/` | research and answering types, protocols, post-check rules; the explainer document, blocks, stored pieces and depth by role (decision 0030); dataset rows, rivers, the calendar words, reaction rules and the expert panel (decision 0042) |
-| shared | `core/` | settings, db, security (passwords, tokens, secret keys), the managed key store, roles, deps, logging, rate limits and allowances shared by every process, India time, HTTP revalidation, work shielded from a leaving caller |
+| shared | `core/` | settings, db, security (passwords, tokens, secret keys), the managed key store, roles, deps, logging, rate limits and allowances shared by every process, each process's connection budget and the retries of a full pooler (decision 0163), India time, HTTP revalidation, work shielded from a leaving caller |
 | foundation | `models/`, `data/` | ORM tables; vendored datasets and pure loaders |
 
 The allowed import edges are the table `LAYER_IMPORTS` in `tools/hygiene/layers.py`, listed in
@@ -150,7 +150,9 @@ the model's choices, passed through one page ledger (`chapter_ledger`), and cach
 variant under a stamp read in one statement (`craft_page_stamp`, `craft_page_snapshots`). No screen
 draws the chapters: a curated craft's monograph document takes them as its structure
 (`document_components.document_structure`), and the web reads the page's masthead, lede, record and
-lists (decision 0162).
+lists (decision 0162). A curated craft's document also lists, under each fact's own field, the facts
+its dossier does not hold that no curated sentence or figure cites (`craft_page_unwritten.unwritten_facts`,
+decision 0158).
 
 ## Students and artisans (decision 0083)
 
@@ -167,7 +169,11 @@ is shown only as the artisan's own words. Contract: `docs/contracts/roles-and-co
 
 ## API surface
 
-All routes are under `/api` except `/health` and `/health/ready`. Route groups (`api/routes/`):
+All routes are under `/api` except `/health`, `/health/ready` and the OAuth discovery documents an
+MCP client reads at the root (`oauth_well_known`: `/.well-known/oauth-protected-resource`, the same
+with `/api/mcp` after it, and `/.well-known/oauth-authorization-server`; 404 while
+`MCP_SERVER_ENABLED` is off; `docs/contracts/mcp-oauth.md`), so a proxy rule that passes only
+`/api/*` and `/health` breaks every AI client's sign-in. Route groups (`api/routes/`):
 `auth` (signing in, the session and the account's own Google link; it includes `auth_signup` and `password_links`, and reads `api/sign_in.py` for proving who signs in and `api/auth_session.py` for the session and access rules every auth route shares), `password_change` (change-password and the first-password nonce, decision 0028), `two_factor`, `me`, `access` (its roster's filters and sorts in `api/access_filters.py`, decision 0168), `users`, `crafts`, `film` (film mode's music and sound score, decision 0058), `knowledge`, `lessons` (lesson packs and their files, decision 0067), `explainer_exports` (an explainer version's PDF and citations, decision 0067), `listen` (an explainer read aloud, decision 0035), `map_districts` (ask the map, decision 0065), `map_layers`, `media`, `profile` (a student's and an artisan's first-entry profile, the artisan recording notice and its consent, and the public district list, decision 0083), `artisan_conversations` (an artisan's conversation with KalaVigyan, 404 while `ARTISAN_CONVERSATION_ENABLED` is off), `artisan_contributions` (an artisan's own conversations and contributions, and withdrawal), `testimony_review` (the review queue for artisan testimony), `public` (the landing's summary, decision 0079), `rivers` (a basin's river lines as TopoJSON, decision 0043), `secrets`,
 `settings`, `terms` (a glossary term's cited summary, decision 0034), `usage`, `voice` (404 throughout while `VOICE_CALL_ENABLED` is off, decision 0035). Every route module and its operation count, these and the ones added since, is generated in `docs/REPO_FACTS.md`. Shapes, headers and error forms are in `docs/contracts/backend.md`; the web client's
 side is `docs/contracts/frontend.md`. `GET /api/crafts/{slug}/page` (in `crafts`) answers the whole craft page from stored rows: the
@@ -176,7 +182,7 @@ curated overview and facts and All evidence (`docs/contracts/craft-page.md`, dec
 nine categories and a category's curated master page (`docs/contracts/category-page.md`, decision
 0078); a craft's stages, materials, conditions and reactions are the process view the answer
 builders read from stored rows (`docs/contracts/science.md`), served by no route since decision 0145;
-`GET /api/crafts/{slug}/region` its places and their environment, and `GET /api/map/layers` and
+`GET /api/crafts/{slug}/region` its places and each place's headline values (decision 0153), and `GET /api/map/layers` and
 `/api/map/layers/{layer}` (in `map_layers`) the district choropleths, all from the stored
 district statistics (`docs/contracts/region.md`). `GET /api/map/districts/{districtLgd}` (in
 `map_districts`, ask the map, decision 0065) answers a tapped district's located crafts, its
@@ -205,7 +211,13 @@ DUPLICATE, NOVELTY) off the request. The review switch (`knowledge.review_switch
 the contributor's trust tier decide whether a fact that passed goes live at once or waits in the
 review queue for a Professor or Admin (`docs/contracts/review-queue.md`). An agent signs in with
 OAuth 2.1 (`docs/contracts/mcp-oauth.md`); open work, reservations and the method served over MCP
-are `docs/contracts/open-work.md`.
+are `docs/contracts/open-work.md`. The research write-back asks the worker's judge ladder, cheapest
+model first (`providers/judge_routes.thrifty_judges`, decision 0169), and a write-back the filing
+ladder cannot place waits for a reviewer, who may file it under a craft or a family's science
+(decision 0159). Beside facts the queue holds a process stage an answer found (`STAGES`, decision
+0167), a reading outside its stage's usual range (`READINGS`) and a proposed map layer (`LAYERS`,
+decision 0169); an approved glossary term or reaction writes its shared `Term` or `Reaction` row at
+once (decision 0162).
 
 ```mermaid
 %%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","lineColor":"#AA69E9","textColor":"#857F9E","transitionColor":"#AA69E9","transitionLabelColor":"#857F9E","stateLabelColor":"#1E1B2E","stateBkg":"#F2E9FE","compositeBackground":"#F9F5FF","compositeTitleBackground":"#F2E9FE"}}}%%
@@ -255,7 +267,8 @@ sequenceDiagram
    the reader picked one, otherwise exact, fuzzy, family and region matching over every craft's
    names, aliases and spellings, and pgvector neighbours when that leaves no clear winner), then
    one call on the `UNDERSTAND` route (decision 0146) for the choice among ambiguous candidates, crafts named but not matched, the
-   fields the question touches and the experts to seat. A craft is never required: the best match
+   fields the question touches, which of them it asks itself (`asked`, decision 0165), and the
+   experts to seat. A craft is never required: the best match
    proceeds and the others are offered, nothing found is any craft, and a resolver failure leaves
    the choice to the model's reply (decision 0038). `understood` is the first event; past a set degrade mark Expert runs as Detailed for every role but Master Admin (no mark is set for now, decision 0093).
 3. When that call is refused for spend, the chosen craft's verified and reviewed claims are
@@ -285,10 +298,13 @@ sequenceDiagram
    per document per answer (`planner/reading.ReadCache`): the planner (decision 0009) plans facets and queries for that field and its
    experts (each seat speaking to the field is named with the kinds of source it reads, and those
    kinds take every other early read; decision 0046), searches stored claims (every craft's, for any craft) and, for what they do not cover
-   (every facet in `DEEP`), scholarly, reference and web sources, and reads the best documents,
+   (every facet in `DEEP`), scholarly, reference and web sources, and reads the best documents (a
+   closed DOI from the publisher that holds it, decision 0167),
    streaming each source to the trail as it is found and read. The composer (decision 0010) writes
    the section's cited sentences from stored claims, stored passages (decision 0144) and read
-   documents and chooses process stages (Claude Sonnet first, Gemini next); what was found is kept
+   documents and chooses process stages (Claude Sonnet first, Gemini next); before its regenerate,
+   a failing sentence's quotes in an Indian script are read once in English, and a sentence naming
+   KalaVigyan's internals fails (decision 0167); what was found is kept
    (`store_live_research`, decision 0011, run as shielded work that finishes even when the learner
    leaves; a sentence citing a stored passage becomes a fact of that passage's source); the server then builds the section's blocks from stored rows and
    stored citations (a process ladder from the science tables, `science/ladder`; a prose block),
@@ -313,7 +329,9 @@ sequenceDiagram
    per field the question touched that the answer did not show (`follow_ups.left_open`).
    Nothing cited: each section says what it searched and `not_enough_evidence` sums it up; any
    failure of the whole answer is one `error`; `done` always ends the stream. The explainer
-   document is kept in `Answer.payload.explainer` and the plans in `Answer.plan`.
+   document is kept in `Answer.payload.explainer` and the plans in `Answer.plan`; an answer that
+   stops before it finishes (a cancelled stream, a failed research, a lost version) keeps its row,
+   marked `Answer.stoppedAt` (decision 0167).
 7. A follow-up (`buildsOn`, decision 0063) is the same flow with a layout
    (`services/follow_ups`): the explainer's crafts, depth and language are kept, a field it has
    deepens that section (blocks numbered after its own, already-cited sentences left out, a
@@ -323,7 +341,8 @@ sequenceDiagram
    `version_problems` must hold, and the merged document is kept on the follow-up's answer with
    its `VersionMark` (`Answer.explainerId`, `explainerVersion`); `version` precedes `done`. A
    follow-up that finds the version taken meanwhile is merged again onto the newer one, its
-   blocks renumbered (`services/version_race`). Earlier versions are never rewritten.
+   blocks renumbered (`services/version_race`), and the web opens that stored version once the
+   stream is done (decision 0160). Earlier versions are never rewritten.
 
 ## How a saved explainer gets better (decision 0063)
 
@@ -361,7 +380,9 @@ flowchart LR
    (reveal.js, python-pptx, fpdf2 with HarfBuzz and the Noto fonts), and stored. The export
    libraries are imported on the first file a process makes, never at start-up, and a version is
    read with its hidden generated explainers left out (decision 0070). The answer is a five-minute
-   signed link; citation files are answered directly.
+   signed link; citation files are answered directly. The files a share link's readers are given
+   are recorded against its token (`SharedExportFile`) and deleted from the bucket when the share
+   stops (`services/shared_files`, decision 0155).
 
 ## How stored pieces stay current (decision 0033)
 
@@ -378,8 +399,11 @@ stateDiagram-v2
 1. When an answer finishes, every English block of each researched section that cites claims and
    sources is kept as a `KnowledgePiece` (its facet, topic, depth, claims, sources, content hash,
    vector), superseding the earlier pieces of that topic and kind at the same or a lower depth.
-   Stage concepts a `PROCESS` section cites stay concepts: no answer writes process rows, since
-   no source states their order (decision 0038).
+   Its vector carries the embedding model's stamp (`KnowledgePiece.embeddingModel`); a piece of
+   another stamp is embedded again, and reuse compares only vectors of the route's model (decision
+   0166). Stage concepts a `PROCESS` section cites stay concepts: no answer writes process rows,
+   since no source states their order (decision 0038); a Professor may place such a stage into its
+   craft's process from the review queue (`STAGES`, decision 0167).
 2. A trigger on `Claim` (`kv_stale_resting_pieces`) marks every piece resting on a claim stale when
    it is retracted, hidden, deleted, or changes level or text; the next answer for that topic
    researches the section again and its new pieces supersede the stale ones.
@@ -409,13 +433,15 @@ sequenceDiagram
 1. `GET /api/answers/{answerId}/listen` (`api/routes/listen.py`) checks `VOICE` and the 30-press
    limit, and reads the reader's own explainer from `Answer.payload.explainer`
    (`voice/listen_store.py`).
-2. `voice/narration.py` picks each block's cited sentences, in reading order and each in its own
-   language, and the cache id per block (piece content hash, model, voice, language).
+2. `voice/narration.py` picks each block's shown sentences, hypotheses left unread, in reading
+   order and each in its own language, so a quantities sentence the answer already said is read
+   once (decision 0168), and the cache id per block (piece content hash, model, voice, language).
    `voice/narration_cache.py` reads each block's manifest from `media/narration/<cacheId>/`.
 3. For the misses only, `voice/listen.py` takes each block's lease in the bucket
    (`voice/object_lease.py`, shared with the film score; a block another request is making is waited for, not paid again),
    holds the estimated `VOICE_SECONDS` under the reader's `User` row lock (429 when too few are left), asks `ElevenLabs.narration`
-   (`/with-timestamps`, `eleven_v4`) for each part of at most 2,000 characters, stores the audio
+   (`/with-timestamps`, `eleven_v4`, each square bracket sent as a parenthesis, decision 0161) for
+   each part of at most 2,000 characters, stores the audio
    and then the manifest, and settles the hold to the audio's seconds.
 4. The answer is one track per part: a one-hour presigned link and the words with their times,
    which the explainer UI highlights (`frontend/lib/listen.ts`).
@@ -431,10 +457,15 @@ sequenceDiagram
    the 10-ask limit (Master Admin unlimited) and reads the reader's own explainer with hidden
    simulations marked, in one short session (`voice/film_store.py`).
 2. `voice/film_scenes.py` makes the scenes (the lede first when the answer has one, then the drawn
-   blocks in reading order, timed by their narration estimate or `FILM_SCENE_SECONDS`), their hash, the bed length and the cues the
-   fixed table of `voice/score_prompts.py` names. A manifest at
-   `media/score/<answerId>/<language>/score.json` whose hash matches is served at once.
-3. Otherwise `voice/film_score.py` looks up each clip by its content address
+   blocks in reading order, timed by the narration Listen stored for the reader's voice and
+   language when every spoken block has one, else by their narration estimate or
+   `FILM_SCENE_SECONDS`), their hash, the bed length and the cues the fixed table of
+   `voice/score_prompts.py` names for each scene's stored facet (`film-score/v2`, decision 0154). A
+   manifest at `media/score/<answerId>/<language>/score.json` whose hash matches is served at once.
+3. Otherwise the score is made once, under a lease in the bucket (`voice/object_lease.py`, 600 s):
+   the route waits 45 s and answers 202 `FilmScoreMaking` while the making runs or another ask holds
+   it, and the client asks again (decision 0154). `voice/film_score.py` looks up each clip by its
+   content address
    (`media/score/<cacheId>/clip.json`) and makes only the missing ones, three at a time, through
    `providers/media_router.MediaRouter` (`MUSIC`, `SOUND_EFFECT`: reserve, ElevenLabs through
    `providers/elevenlabs_media.py`, settle), checks each MP3's length, stores clip and record,
@@ -505,20 +536,29 @@ sequenceDiagram
 2. `kv-worker` (`app/worker.py`, `media/queue.py`) claims `Job` rows per queue (4 images, 2 videos)
    with `SKIP LOCKED`; `media/runner.py` opens the HMAC bundle, releases the hold, calls Gemini
    through the media router (one reservation per call, the Interactions API in
-   `providers/gemini_media.py`), checks the PNG or strips the MP4's audio, names the file
+   `providers/gemini_media.py`), checks the PNG (a JPEG is converted to PNG, decision 0161) or strips
+   the MP4's audio, names the file
    (`services/naming.py`), uploads it to the private bucket (`services/object_store.py`) and stores
    the labelled asset, or retries, or ends the job with a refund.
 3. `GET /api/media/jobs/{id}` answers the requester with a fresh 900 s presigned URL.
+4. On success the worker also writes a copy free of the requester (`media/craft/<sha256>/<fileName>`,
+   `MediaAsset.pageKey`) and shares the asset unless it depicts a named cluster, which the craft
+   page shows only after two professors' sign-off; shared assets join their craft's chapters as
+   `ai_media` and are read at `GET /api/crafts/media/{assetId}`. The worker writes its heartbeat
+   every minute, and the media routes offer no kind and queue no job once it has been silent more
+   than five minutes (decision 0154).
 
 ## How pictures and terms are found
 
 1. Pictures (decision 0034): `services/section_images.SectionImages` takes a section's block id,
    its craft and the claims its other blocks cite, searches Wikimedia Commons, Openverse (open
    licences only) and SearXNG images (`sources/images/registry.image_sources`, held by
-   `LiveSourcesStore.images()`), keeps the pictures whose words meet a claim's
+   `LiveSourcesStore.images()`), with Brave's image search when SearXNG finds fewer than two cards
+   or fails (`LiveSourcesStore.web_images`), keeps the pictures whose words meet a claim's
    (`research/image_relevance`), stores each once as a `MediaRef` with its claims
    (`services/media_ref_store`) and answers an `images` block: inline under an open licence with
-   its author, else a credited link card whose thumbnail the page's own site serves. The answer
+   its author, else a credited link card whose thumbnail the page's own site serves, a site being
+   a registrable name by the vendored Public Suffix List (decision 0166). The answer
    stream calls it for every section with blocks, researched or reused, and for the stored-only
    answer, after those blocks are built (`services/section_enrichment`, decision 0039): the
    pictures already stored for the cited claims first, a search only when none is (decision
@@ -529,9 +569,12 @@ sequenceDiagram
    (with the meanings `data/local_term_meanings.json` cites), and its compounds, and removes the
    links its plan no longer makes (decision 0166). `research/term_marking.TermMarker` marks term spans in sentences against an
    answer's glossary (`glossary_entries`): every English sentence of a section's blocks, before
-   translation; a translated sentence keeps the spans whose text it still shows (decision 0039). `GET /api/terms/{key}?language=` (`api/routes/terms.py`)
+   translation; a translated sentence keeps a span where it shows the span's text, the term's
+   rendering or another of its names in any script as a whole word (decisions 0039, 0166 and
+   0167). `GET /api/terms/{key}?language=` (`api/routes/terms.py`)
    answers `services/term_summaries.TermLookup.summary`: the cached summary while its claims are
-   visible, else the defining stored claims, the Wikipedia lead or one web search with a
+   visible (a researched one for 180 days, decision 0166), else the defining stored claims, the
+   Wikipedia lead or one web search with a
    `SUMMARISE` call, kept as quoted claims and cached per term and language.
 3. Later blocks (decision 0042): `services/block_builders.BLOCK_BUILDERS` maps a block kind to the
    fields it may be added to, listed in the order a section reads its blocks (`PIECE_BLOCK_ORDER`).
@@ -558,17 +601,22 @@ sequenceDiagram
    (those its statements name first, then by stream order and discharge, traced through the stored
    network and named from the vendored river names, decision 0153), the districts and the
    layers with values there, and one plan-model call chooses a river, the stored claims for its
-   steps and their order by ref, a step keeping its district only when its sentence names it; it
-   is kept as a cross-craft piece by basin or districts and reused with its geography section
-   (`services/region_pieces`). Geology and climate sections get the
-   registry layer their sentences name, built as the layer route answers it. Climate sections also
+   steps (the section's, and a few of the craft's own place claims) and their order by ref, a step
+   keeping its district only when its sentence names it by its register name or another name
+   sources use; it is kept as a cross-craft piece by basin or by its districts' codes
+   (`KnowledgePiece.districtLgds`) and reused with its geography section
+   (`services/region_pieces`), and the builder first places the newest current story of the
+   craft's basins or districts with no model call (`piece_reuse.usable_region_stories`, decision
+   0160). Geology and climate sections get the registry layer whose glossary term their sentences
+   carry (`geo/layer_terms.json`, decision 0160), built as the layer route answers it. Climate sections also
    get a seasons strip (their district's CHIRPS rainfall alone when no fact names a month,
    decision 0138), the trends of the craft's districts with the section's cited claims on
    what they mean (`services/climate_risk`, decision 0065), and materials sections a supply map (`services/season_supply_builders`,
    decision 0047): the craft's stages and the section's claims placed only on the months or season
    their own text names, a season given months only by a cited quote that states them, the CHIRPS
    rainfall of the first craft district with twelve normals; supply links whose material and
-   origin words one plan-model call chose and the sentence states, placed only with Wikidata
+   origin words one plan-model call chose and the sentence states, an origin that is one register
+   district pinned by the register (decision 0160) and any other placed only with Wikidata
    coordinates the Wikidata adapter reads. The expert panel
    (`services/expert_views`, decision 0046) makes one `COMPOSE` call per section for the seats
    speaking to its field (`research/expert_panel.speaking_seats`), over the stored facts the
@@ -576,7 +624,8 @@ sequenceDiagram
    season, state or district no source states, `services/stated_names`), after one retake of a
    failing take while the wait allows (`services/expert_seat_takes`, decision 0156), or is not
    shown, "Experts differ" is kept only for two stored facts about one subject (one concept, or two
-   concepts one glossary term links, `services/expert_subjects`) from two sources, a reused panel
+   concepts one glossary term links, `services/expert_subjects`) from two sources and not when the
+   page already said both readings (decision 0165), a reused panel
    keeps only the seats the new answer seats (`research/piece_reuse.seated_pieces`), and the calls
    spend only from the answer's headroom (`providers/budget.AnswerHeadroom`).
    Sections of the mechanism fields also get a generated explainer (`services/simulation_builder`,
@@ -594,7 +643,8 @@ sequenceDiagram
    being served or built again; every route that reads a stored explainer back marks it hidden.
    Process, chemistry and water sections also get a what-if (`services/what_if_builder`, decision
    0056; built since decision 0061): a stage's materials that a
-   stored contrast relation or a stored text ("madder or al root") relates as alternatives, once a
+   stored contrast relation (a curated alternative is one, decision 0169) or a stored text
+   ("madder or al root") relates as alternatives, once a
    section sentence names one, each offered the relation claims on its concept (a hypothesis
    marked and later labelled), its own fact claims and the claims of reactions of its compound;
    after the process rows and one short read of those claims, one plan-model call chooses the
@@ -653,7 +703,8 @@ labels name, never beside a sentence while held. Field quote chunks join stored-
 retrieval and can be cited as field interviews; the craft page carries them as `voices` and
 `fieldPhotos`. A recording that is withdrawn, hidden or not heard from in 7 days leaves every read
 at once: its chunks, the claims that rest on it alone (`retrieval/field_scope`), and the sentences
-of stored explainers that cite it (`services/field_voices_readback`).
+of stored explainers that cite it (`services/field_voices_readback`), and a section cut short this
+way says so (decision 0156).
 Then `app/scripts/embed_craft_descriptors` fills missing craft name-and-alias vectors for the
 resolver; the daily Coverage enrichment run fills them first too (decision 0016). The region
 routes read the geo ETL's per-district statistics and the state series every geo load and
@@ -662,7 +713,7 @@ environmental is queried live (decisions 0016 and 0153). River lines (decision 0
 HydroRIVERS reaches the geo ETL loads into `RiverReach`, `RiverBasin` and `RiverReachDistrict`
 (the districts each reach crosses and where it enters them, computed once in the ETL) and writes
 as one TopoJSON per basin, each reach carrying its districts, to the media bucket (`riverlines` in
-the Geo ETL run); `services/river_store` traces a river through a reach (`geo/river_trace`: a named
+the Geo ETL run), deleting the files no basin of the load names (decision 0160); `services/river_store` traces a river through a reach (`geo/river_trace`: a named
 river's own reaches, else the largest upstream branch, to the source, `NEXT_DOWN` to the mouth) and
 orders the districts it crosses from `RiverReachDistrict`, and `GET /api/rivers/{mainRiv}` serves
 the basin's file, gzip-compressed to a reader that accepts it. River names come from Wikidata, then
@@ -695,7 +746,10 @@ state. Practice rules are `frontend-practices`.
 Who sees what is decided in `lib/permissions.ts`: the six roles' ranks and labels (checked
 against `shared/roles.json`) and one route guard per admin area. The nav and the settings hub
 show an admin area only when its guard admits the viewer, so the two cannot disagree; the
-server checks every request again with `core/roles.py` (decision 0024).
+server checks every request again with `core/roles.py` (decision 0024). The access roster draws
+exactly the actions each row's `offers` carry, computed by the server's own guards
+(`services/access_guards`, decision 0155), and the hub's Facts readers cannot see card shows
+Admins the night's count of hidden facts (`components/admin/HiddenFactsCard.tsx`, decision 0161).
 
 `/ask` (decision 0036) is one container hook, `components/ask/useAskScreen.ts`, over pure rules:
 the craft pick and what was detected (`lib/askCraft.ts`), the depth from `/answers/config`
@@ -708,8 +762,11 @@ draws the understood line, the lede (`LedeBlock`, decision 0077), the research t
 bar and the sections, one component per built block kind (`ProseBlockView`, `ProcessLadder`,
 `ImageStrip`), over two contexts: the citation numbering (`CitationContext`, the lede's sources
 first) and the reading (`ExplainerReading`: language, original text, hidden terms, the term
-sheet and the word Listen is reading). Pure rules are in
-`lib/explainerView.ts`, `lib/termSummary.ts` and `lib/listen.ts`. The place kinds (decision 0048)
+sheet and the word Listen is reading, or the sentence when the Gemini voice reads, decision 0161).
+Pure rules are in
+`lib/explainerView.ts`, `lib/termSummary.ts` and `lib/listen.ts`. A sentence the sources differ on
+carries only its tag, and both readings open after its paragraph
+(`components/answer/SentencesDiffer.tsx`, decision 0156). The place kinds (decision 0048)
 are `components/answer/place/`: the region story (a river from the served basin TopoJSON flowing
 across the real district polygons, `lib/riverTopology.ts`, `lib/riverGeometry.ts`,
 `lib/regionStory.ts`), the map layer on `IndiaMap`, the seasons strip (`lib/seasonsView.ts`) and
@@ -727,7 +784,9 @@ loaded on demand (`lib/zoomView.ts`, `lib/timelineView.ts`, decision 0060). Film
 `components/answer/film/`, loaded only when a film starts: one clock over the lede and the drawn
 blocks (`lib/filmScenes.ts`), the Listen script and audio for narration and captions, each block's own
 animation driven through `components/answer/FilmScene.tsx`, and the optional score mixed by
-`lib/filmSound.ts`.
+`lib/filmSound.ts`; `lib/filmScore.ts` asks again while the score is being made, and
+`components/answer/film/FilmSound.tsx` plays it through a Web Audio gain where the element volume
+is fixed, as on iPhones and iPads (decision 0154).
 The phase D kinds (the cloze quiz, compare, the concept graph, local measures, market and GI,
 climate and risk) have their client shapes in `lib/explainerLearning.ts` and
 `lib/explainerInsight.ts`, and the learning routes (versions and follow-ups, saved explainers
@@ -738,7 +797,9 @@ theirs in `lib/learningContract.ts`, `lib/lessonContract.ts`, `lib/sharedScience
 rules in `research/quiz.py`, `research/craft_compare.py` and `research/shared_science.py`, read
 their rows through `services/shared_concepts.py` (from the per-term summary that
 `services/shared_term_crafts.py` rebuilds on release and nightly) and `services/craft_compare.py`, and reach answers
-through `services/learning_builders.py` (decision 0064). Local measures and market and GI
+through `services/learning_builders.py` (decision 0064); a shared-science node counts the crafts
+whose claims name its term, and `GET /api/shared-science/{termKey}/crafts` pages on through them
+(decision 0161). Local measures and market and GI
 follow fixed rules too: stated quantities, regional factors and prices in
 `research/stated_quantities.py`, `research/stated_amounts.py` (decision 0147) and
 `research/stated_prices.py` over the one Pint registry
@@ -750,7 +811,9 @@ seven kinds are drawn
 by `components/answer/learning/` (the quiz, compare and the concept graph) and
 `components/answer/insight/` (measures, quantities, market and GI, climate trends), with their rules in
 `lib/quizView.ts`, `lib/compareView.ts`, `lib/conceptGraph.ts`, `lib/insightView.ts` and
-`lib/climateView.ts` (decision 0068). The screens around the learning routes (decision 0069) are
+`lib/climateView.ts` (decision 0068); a quantities row whose sentence the answer already said
+points to it (`shownIn`) and is drawn with that sentence's citation, the sentence not written
+again (decision 0168). The screens around the learning routes (decision 0069) are
 `components/learn/` and `components/map/DistrictPanel.tsx` over `lib/learningApi.ts` and
 `lib/lessonApi.ts`: follow-ups stream on top of the shown explainer through
 `lib/explainerVersions.reduceAnswerEvent` (which wraps `reduceExplainer`), stored versions open at
@@ -764,11 +827,16 @@ The craft page (`app/(reading)/crafts/[slug]/page.tsx`) draws the craft's monogr
 the server has one (`lib/monographRenderServer.serverCraftDocument`, `components/monograph/MonographPage.tsx`;
 every curated craft since round 6, decisions 0106 and 0108), and otherwise the craft's record
 (`lib/craftRecord.ts`, `components/craft/CraftWithoutMonograph.tsx`); it is revalidated daily and
-pre-rendered for the pages `lib/server/readingPages.ts` lists. The tabbed reference page of
+pre-rendered for the pages `lib/server/readingPages.ts` lists. A monograph document without an
+authored shell (after the document) and a craft without a monograph draw the craft's field voices, read on the
+server from the public list route (`components/craft/FieldVoicesPart.tsx`, decision 0156); the
+authored Kutch Ajrakh page draws none. A document draws every list as one cited list
+(`components/monograph/CitedList.tsx`, decision 0158). The tabbed reference page of
 decision 0071 (`components/craft/CraftReference.tsx` and its claim index `CraftClaims.tsx`) was
-retired in round 6. The page and region routes are still parsed by their contract shapes and
-cross-checked at the boundary (`lib/craftPageContract.ts`, `lib/craftRegion.ts` with
-`lib/regionView.ts`), with pure rules in `lib/craftPageView.ts` and `lib/craftPlaces.ts`; one
+retired in round 6. The page route is parsed by its contract shape and cross-checked at the
+boundary (`lib/craftPageContract.ts`), and so is the region route, which no screen reads since the
+tabbed page went (`lib/craftRegion.ts` with `lib/regionView.ts`, decision 0153), with pure rules
+in `lib/craftPageView.ts` and `lib/craftPlaces.ts`; one
 citation numbering per page reaches every chip through `components/answer/CitationContext.tsx`, and
 sentences and terms are the explainer's (`ExplainerSentence`, `TermSheet`). `/map` draws craft places as pins and the environment
 layers as district choropleths on `public/boundaries/district-shapes.json`, clipped to the
@@ -799,9 +867,9 @@ from opening nested windows, because Chromium ignores the policy's `webrtc 'bloc
 
 | Workflow | Runs |
 |---|---|
-| Backend checks | ruff, DB-free pytest, tools tests (hygiene, curation), hygiene check, the curation check of every dossier and the index (`tools/curation/check.py --check-index`, no network), offline migration render; then migrations, seeds and DB tests against PostGIS with pgvector, then the curated dossier import (decision 0053) |
-| Frontend checks | typecheck, lint and unit specs (after the lockfile audit and the no-comments check); the production build; the smoke specs against that build in a browser |
-| Hygiene | the hygiene check over the whole repository on every push to `main` and every pull request, whatever the paths, since Backend checks runs only for backend paths |
+| Backend checks | ruff, DB-free pytest, tools tests (hygiene, curation), hygiene check, the curation check of every dossier and the index (`tools/curation/check.py --check-index`, no network), offline migration render; then migrations, seeds and DB tests against PostGIS with pgvector in three shards, each with its own database (`DB_TEST_SHARD`, decision 0163), then the curated dossier import (decision 0053) |
+| Frontend checks | typecheck, lint and unit specs (after the lockfile audit and the no-comments check); the production build; the smoke specs against that build in a browser, among them the voice dock's recorded bit rate (decision 0161) |
+| Hygiene | the hygiene check over the whole repository on every push to `main` and every pull request, whatever the paths, since Backend checks runs only for backend paths; it also fails a change that leaves `docs/TECH_DEBT.md` with more entries than its baseline (decision 0163) |
 | README check | on a pull request, or a push to `main` or a round branch, that changes `README.md`, a Markdown file under `docs/` or `.claude/skills/`, the README kit or its workflow: the kit rebuilt and diffed, every SVG checked, every mermaid block drawn by mermaid-cli and on github.com, every page rendered by GitHub (`docs/readme-kit/README_STYLE.md`, CI) |
 | Craft data | master-list sha1, lint and tests of `etl/crafts`; weekly regeneration |
 | Geo ETL | `etl/geo` tests and the district statistics build |
@@ -809,8 +877,8 @@ from opening nested windows, because Chromium ignores the policy's `webrtc 'bloc
 | E2E production | on dispatch only: Playwright against the deployed site (`frontend/e2e/production/matrix.ts`), every screen signed in as the E2E Researcher at 1920, 1440, 834, 390 and 360 px wide in light and dark, and with `questions=true` nine known-answer questions asked at 1440 px in light: at Detailed depth the mordant in English, Hindi and Urdu, Kachchh's water, which needs a region story with a traced river once the run reads the river lines as loaded from the Khari's basin file, what the cloth is made of, its history, its seasons (a seasons block) and the Ganga for a Varanasi craft (its region story timed), and at Expert depth indigo's generated explainer, every region story, seasons block and supply map noted with its time and what it shows; each must show a lede with a cited sentence, live and in its saved explainer, which is checked again at 834 and 390 px in light and dark; the Hindi and Urdu answers must also carry a translated sentence and paragraphs in their script, and the Urdu one must read right to left with its prose in a loaded Noto Nastaliq Urdu face (decisions 0029, 0050, 0061, 0077, 0157 and 0160) |
 
 Scheduled and dispatched runs (craft sync, field voices, coverage enrichment, nightly upkeep, the
-alert digest, the release gate, captures, Monograph parity, open data and the Geo ETL) are in
-`docs/RUNBOOK.md`.
+alert digest, the release gate, captures, Monograph parity, open data, the Geo ETL and decision
+0154's paid checks under a US$5 cap) are in `docs/RUNBOOK.md`.
 
 ## How this document is kept true
 
@@ -822,6 +890,7 @@ alert digest, the release gate, captures, Monograph parity, open data and the Ge
 | Each flow's steps | the contract each section names, changed in the same change as the code |
 | Every path named here | it exists in the tree: on 2026-11-21 every backticked file name was checked against it and the stale ones fixed |
 
-Last reviewed: 2026-11-18, and its paths checked on 2026-11-21. Re-read it when a package is added
+Last reviewed: 2026-11-18, its paths checked on 2026-11-21, and its flows brought up to decisions
+0153 to 0169 on 2026-11-23. Re-read it when a package is added
 under `backend/app` (it needs a `LAYER_IMPORTS` row), a process is added to the box, an answer step
 or block kind changes, or what reads without signing in changes.

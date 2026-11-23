@@ -104,12 +104,18 @@ def native_id(adapter: str, item_id: str) -> str:
 def build_document(
     item: EvidenceItem, text: str, content: DocumentContent, *, truncated: bool = False
 ) -> SourceDocument:
-    storable = storable_text(text)
-    kept = storable[:FETCH_TEXT_MAX_CHARS]
-    return SourceDocument(
-        item=item,
-        text=kept,
-        text_sha256=hashlib.sha256(kept.encode("utf-8")).hexdigest(),
-        truncated=truncated or len(storable) > FETCH_TEXT_MAX_CHARS,
-        content=content,
-    )
+    storable = storable_text(text).strip()
+    kept = storable[:FETCH_TEXT_MAX_CHARS].rstrip()
+    try:
+        return SourceDocument(
+            item=item,
+            text=kept,
+            text_sha256=hashlib.sha256(kept.encode("utf-8")).hexdigest(),
+            truncated=truncated or len(storable) > FETCH_TEXT_MAX_CHARS,
+            content=content,
+        )
+    except ValidationError as error:
+        problems = "; ".join(problem["msg"] for problem in error.errors())
+        raise ExternalFailure(
+            f"{item.id} gives no usable document: {problems}", service=item.adapter
+        ) from error

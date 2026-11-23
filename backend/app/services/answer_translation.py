@@ -8,6 +8,7 @@ from typing import Any, Protocol
 
 from app.core.errors import AppError
 from app.data.craft_text import script_of
+from app.models.knowledge_pieces import TITLE_COLUMN_CHARS
 from app.research.blocks_component import COMPONENT_KIND
 from app.research.crafts import QUESTION_MAX_CHARS
 from app.research.explainer import payload_sentences, with_payload_sentences
@@ -142,12 +143,18 @@ async def _translated_title(
     if shown.get("kind") != COMPONENT_KIND or not isinstance(title, str):
         return shown
     key = f"{shown.get('id')}{TITLE_KEY_SUFFIX}"
-    found = await translate_segments([Segment(key, title)], language=language, translation=translation)
+    found = await translate_segments(
+        [Segment(key, title)], language=language, translation=translation, longest=TITLE_COLUMN_CHARS
+    )
     return shown | {"title": found[key]} if key in found else shown
 
 
 async def translate_segments(
-    segments: Sequence[Segment], *, language: str, translation: AnswerTranslation
+    segments: Sequence[Segment],
+    *,
+    language: str,
+    translation: AnswerTranslation,
+    longest: int = TRANSLATION_ITEM_MAX_CHARS,
 ) -> dict[str, str]:
     if language == CANONICAL_LANGUAGE or not segments:
         return {}
@@ -156,14 +163,25 @@ async def translate_segments(
     found = {s.key: cached[s.claim_id] for s in segments if s.claim_id is not None and s.claim_id in cached}
     pending = [segment for segment in segments if segment.key not in found]
     if not pending:
-        return found
-    fresh = await _translated(pending, language, translation.translator)
+        return _fitting(found, longest)
+    fresh = _fitting(await _translated(pending, language, translation.translator), longest)
     learned = {
         s.claim_id: (s.text, fresh[s.key]) for s in pending if s.claim_id is not None and s.key in fresh
     }
     if learned:
         await translation.cache.remember(language, learned)
-    return found | fresh
+    return _fitting(found, longest) | fresh
+
+
+def _fitting(found: Mapping[str, str], longest: int) -> dict[str, str]:
+    kept = {key: text for key, text in found.items() if len(text) <= longest}
+    if len(kept) < len(found):
+        logger.warning(
+            "%d translations are longer than %d characters; their originals stay",
+            len(found) - len(kept),
+            longest,
+        )
+    return kept
 
 
 async def _translated(segments: Sequence[Segment], language: str, translator: Translator) -> dict[str, str]:

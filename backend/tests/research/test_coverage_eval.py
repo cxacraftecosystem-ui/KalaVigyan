@@ -57,6 +57,18 @@ def test_the_rubric_scores_fields_reached_density_citations_figures_and_no_gaps(
     assert rubric_score(gapped) == pytest.approx((0.75 + 0.75 + 1 + 0 + 0) / 5)
 
 
+def test_the_cited_part_is_the_share_of_shown_sentences_on_the_question_and_resolved() -> None:
+    measures = answer_measures(golden(), ASKED)
+    three_off = measures.model_copy(update={"off_question": 3})
+    assert rubric_score(three_off) == pytest.approx((0.75 + 0.75 + 9 / 12 + 1 + 1) / 5)
+    two_off_one_bare = measures.model_copy(update={"off_question": 2, "unresolved": 1})
+    assert rubric_score(two_off_one_bare) == pytest.approx((0.75 + 0.75 + 9 / 12 + 1 + 1) / 5)
+    every_one_off = measures.model_copy(update={"off_question": 12})
+    assert rubric_score(every_one_off) == pytest.approx((0.75 + 0.75 + 0 + 1 + 1) / 5)
+    silent = measures.model_copy(update={"sentences": 0})
+    assert rubric_score(silent) == pytest.approx((0.75 + 0.75 + 0 + 1 + 1) / 5)
+
+
 @pytest.mark.parametrize(
     ("text", "admits"),
     [

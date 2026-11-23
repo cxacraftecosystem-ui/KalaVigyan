@@ -189,10 +189,14 @@ class SourceAdapter(Protocol):
   trailing slash removed except the root).
 - `fetch(item_id)` returns `SourceDocument {item, text, textSha256, truncated, content}`:
   `text` is the cleaned plain text the quotes were taken from, made storable by
-  `adapter.build_document` (`research/storable.storable_text`: no NUL and no C0 control but tab,
-  line feed and carriage return, decision 0135), `textSha256` its SHA-256 in UTF-8, `content`
-  one of `FULL_TEXT`, `ABSTRACT`, `EXCERPT`. Construction fails unless every
-  quote in `item.quotes` occurs in `text` (`quotes.quote_occurs`). Only `T4` adapters and
+  `adapter.build_document` (`research/storable.storable_text`: no NUL, no C0 control but tab,
+  line feed and carriage return, and no lone surrogate, decision 0135; then stripped at both ends
+  and after the cut at `FETCH_TEXT_MAX_CHARS`, so the text hashed is the text held, decision
+  0174), `textSha256` its SHA-256 in UTF-8, `content` one of `FULL_TEXT`, `ABSTRACT`,
+  `EXCERPT`. Construction fails unless every quote in `item.quotes` occurs in `text`
+  (`quotes.quote_occurs`) and the text is not empty; `build_document` raises that failure as an
+  `ExternalFailure` naming the item, so research records it as a `FETCH` failure of that source
+  and reads on. Only `T4` adapters and
   full-text fetches go through the fetcher sandbox; API adapters fetch their own JSON.
 - Failures: `ExternalFailure` with a kind (an unknown id is `not_found`), `NotConfigured` for a
   missing key, `Refused` for a guard. Adapters never log keys or raw responses.
@@ -511,7 +515,7 @@ it; the answer flow passes `providers/embedding.router_embedder(principal)`.
   terms it names, ORed through `websearch_to_tsquery('english')`, ordered by `ts_rank_cd`, then
   id) and vector (cosine distance to the embedded question over the scoped rows, exact for a
   craft's scope and through the HNSW index for no single craft, then id), each the best
-  `RANKING_DEPTH` (30). Claims have a third ranking, entities: the claims on scoped concepts (or
+  `RANKING_DEPTH` (60). Claims have a third ranking, entities: the claims on scoped concepts (or
   on edges touching them) whose name of 4 or more characters (`ENTITY_NAME_MIN_CHARS`) appears in
   the question, case-insensitive, the longest name first, then id. Fused by reciprocal rank fusion, `score = sum(weight / (RRF_K + rank))` with
   `RRF_K` 60; equal scores order by the best single rank, then id. Chunk rankings weigh the same; the
@@ -675,8 +679,8 @@ document is read), which the answer stream turns into `trail` events.
   text-mining licence; a failure is logged as a `FETCH` failure of `publisher_full_text`); without a
   publisher key nothing more is read.
 - **Follow references** (`DEEP`, with a `doi_source`): the same part of the plan's fetches as
-  `DEEP_REFERENCE_RESERVE` (6) is of `DEEP`'s 20 (`policy.reference_reserve`: 6 of 20, 1 of 4,
-  none of 3; decision 0046) wait while the primary items are read; then DOIs cited in
+  `DEEP_REFERENCE_RESERVE` (15) is of `DEEP`'s 48 (`policy.reference_reserve`: 15 of 48, 6 of 20,
+  1 of 4, none of 3; decisions 0046 and 0089) wait while the primary items are read; then DOIs cited in
   documents whose tier `follows_references` (at most `REFERENCES_PER_DOCUMENT` 5 new per document, in text order)
   are fetched as `<doi_source>:<doi>` and opened like any scholarly item, the fetched abstract
   beside an open published copy. They join the
@@ -729,7 +733,10 @@ evidence[PackedEvidence], documents[SourceDocument], failures[ResearchFailure], 
 - `ResearchSummary {craft, mode, storedClaims, storedPassages, queries[SearchedQuery {tier,
   text}], services[], evidenceFound, documentsRead, failures}` (`research/research_summary.py`):
   what was searched for the question. `not_enough_evidence_message(summary)` is the one
-  user-facing sentence that lists it, and `searched_note(summary)` a section's.
+  user-facing sentence that lists it, and `searched_note(summary)` a section's, which always fits
+  `SEARCHED_MAX_CHARS` (2,000, the `searched` of `section_done` and of a stored section): it lists
+  as many queries as fit, in order, and counts the rest ("; and 4 more"), or only counts them
+  when none fits (decision 0174).
 - `ComposedAnswer {sections[{heading (1-120), sentences[ComposedSentence] (at least one)}],
   openQuestions[ComposedSentence], followUps[] (at most 5), notEnoughEvidence?}`: either cited
   sentences (sections or open questions) or `notEnoughEvidence`, never both, never neither.
@@ -1024,8 +1031,8 @@ faster.
   sentence has none. `sentence_claim_ids(answer, stored)` gives each composed sentence its stored
   claim ids, then the claim written for it (`stored` None: stored claims only); keys that do not
   match the answer's sentences are `InvalidInput`.
-- The coverage job (`python -m app.scripts.enrich_coverage`, daily by
-  `.github/workflows/coverage-enrichment.yml`): `services/coverage_selection.least_covered_crafts`
+- The coverage job (`python -m app.scripts.enrich_coverage`; no workflow runs it since commit
+  fdf478c, when Coverage enrichment stopped paid research, so it runs only by hand on the box): `services/coverage_selection.least_covered_crafts`
   picks active, non-catch-all crafts of every source without a job in the last 7 days, fewest
   visible claims first; `STANDARD_QUESTIONS` (one per facet) run while the question's field
   (`StandardQuestion.field`, its facet's) holds fewer than `FACET_COVERED_MIN_CLAIMS` of the craft's
@@ -1036,8 +1043,8 @@ faster.
   `ENRICHMENT_DAILY_BUDGET_USD` (2.50) bounds the day, measured from `UsageEvent` rows tagged
   with the request id `enrichment-<job id>` (`providers/router.tagged_spend`); each craft gets an
   `EnrichmentJob` row. The report is one JSON object; any failed craft exits 1.
-- The nightly piece rebuild (`python -m app.scripts.rebuild_pieces`, in the same workflow before
-  the coverage job, decision 0033): `services/piece_rebuild.stale_groups` lists the stale,
+- The piece rebuild (`python -m app.scripts.rebuild_pieces`, decision 0033; like the coverage job,
+  run only by hand on the box since commit fdf478c): `services/piece_rebuild.stale_groups` lists the stale,
   unsuperseded pieces of the 10 crafts most asked about by signed-in readers in 30 days, one group
   per facet, depth and stored question with the ids of its pieces; each is answered again through
   `answer_understood` with `fresh`, for that facet only, at its depth, as a principal held to the
@@ -1310,7 +1317,11 @@ research holds at most the pool less two connections and a sign-in always finds 
    `fresh` and the budget left (at least one query, `FRESH_MIN_FETCHES` 2 documents), going back
    to `RESEARCHING` (finding 8a.2).
 4. In another language the section titles are translated in one call before the sections start
-   (`title` translated, `original` English), and the follow-ups in one call at the end.
+   (`title` translated, `original` English), and the follow-ups in one call at the end. A
+   translated section title or composed heading longer than `HEADING_MAX_CHARS` (120), or a
+   component's translated title longer than its 200-character column, is not used: the English
+   stays (`answer_translation.translate_segments(longest=...)`, decision 0174), so a long
+   translation never fails an event or the stored document and costs no further call.
 5. A section whose research or composition fails ends `EMPTY` with `SECTION_STOPPED_NOTE`; when
    every section failed, the first failure is the answer's. A spend refusal in any section stops
    every section and is the `error`.

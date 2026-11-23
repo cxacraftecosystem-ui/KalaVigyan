@@ -104,6 +104,7 @@ class Settings(BaseSettings):
     backend_expose_docs: bool = Field(default=False, alias="BACKEND_EXPOSE_DOCS")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     release: str = Field(default="dev", alias="RELEASE")
+    confirm_downgrade_steps: int | None = Field(default=None, ge=1, alias="CONFIRM_DOWNGRADE_STEPS")
 
     master_admin_email: str = Field(alias="MASTER_ADMIN_EMAIL")
     master_admin_name: str = Field(default="Master Admin", alias="MASTER_ADMIN_NAME")

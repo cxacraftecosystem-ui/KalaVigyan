@@ -7,6 +7,7 @@ import httpx
 
 from app.core.key_checks import KeyVerdict, checked_get
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
+from app.research.storable import storable_text
 
 from ..adapter import Clock, HttpSourceAdapter, build_document, utc_now
 from ..http import SourceHttp
@@ -81,8 +82,9 @@ class CoreAdapter(HttpSourceAdapter):
         record = response.json(self.name)
         item = self._item(record, retrieved_at)
         full_text = record.get("fullText")
-        if isinstance(full_text, str) and full_text.strip():
-            return build_document(item, full_text.strip(), "FULL_TEXT")
+        stored = storable_text(full_text).strip() if isinstance(full_text, str) else ""
+        if stored:
+            return build_document(item, stored, "FULL_TEXT")
         abstract = markup_text(record.get("abstract"))
         if abstract is None:
             raise self._not_found(native, "no full text or abstract")

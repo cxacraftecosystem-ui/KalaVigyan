@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from app.research.blocks import BlockBase
+from app.research.composition import HEADING_MAX_CHARS
 from app.research.quotes import content_stems
 from app.research.sections import SectionSpec, is_facet_label
 
@@ -77,7 +78,9 @@ async def headed_specs(
         if (heading := shown_heading(proposed.get(spec.id), supports)) is not None and claim(spec.id, heading)
     }
     segments = [Segment(f"heading:{section_id}", heading) for section_id, heading in accepted.items()]
-    found = await translate_segments(segments, language=language, translation=translation)
+    found = await translate_segments(
+        segments, language=language, translation=translation, longest=HEADING_MAX_CHARS
+    )
     return [_headed(spec, accepted.get(spec.id), found.get(f"heading:{spec.id}")) for spec, _ in shown]
 
 
