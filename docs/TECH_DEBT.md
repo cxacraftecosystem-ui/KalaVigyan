@@ -760,15 +760,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** add C049's price to `s5.b1` by `curation_keys.curated_id` and regenerate the
   goldens built from it, with the APA text of the new source checked by hand.
 
-### Quizzes mostly vanish in other languages
-
-- **What:** a quiz option is a glossary term marked in its sentence; a translated sentence keeps a
-  span only where the English term still occurs, so most questions are dropped outside English.
-- **Why left:** translating option terms and re-marking them needs term translations the glossary
-  does not hold.
-- **Clears it:** local-language names of glossary terms (`Term.localNames` by language) marked in
-  translated sentences, then the quiz rebuilt from them.
-
 ### Author names are cited as stored
 
 - **What:** citation exports write each stored author as written, so seed sources split on commas

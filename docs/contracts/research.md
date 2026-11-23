@@ -1338,8 +1338,9 @@ no reading keeps its English.
   `stream.followUp` entry of its interface words (`stored_explainer.shown_stored_heading`,
   `answer_events.stored_follow_ups(..., words)`, decision 0157) and else in English. A translated sentence keeps its citations and gains
   `translated: true` and `original`; an item that fails twice stays English. Its term spans are
-  kept only where their text still occurs in the translation, first occurrences not overlapping
-  (`research/terms.spans_still_shown`, decision 0039).
+  kept only where their text or its rendering still occurs in the translation, first occurrences
+  not overlapping (`research/terms.spans_still_shown`, decision 0039), else where one of the term's
+  stored local names does (`research/term_marking.local_name_spans`, decision 0167).
 - **Voice**: `translated_sentences(sentences, *, language, translation, claim_texts)` takes
   verified English `AnswerSentence` payloads and returns them in the session language by the same
   rules; build `translation` with `answer_store.build_answer_translation(sessions,

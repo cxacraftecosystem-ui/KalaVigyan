@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from typing import Any
 
 from .terms import TERM_LABEL_MAX_CHARS, TermSpan
 
-__all__ = ["SURFACE_MIN_CHARS", "GlossaryEntry", "TermMarker"]
+__all__ = ["SURFACE_MIN_CHARS", "WORD_CHARS", "GlossaryEntry", "TermMarker", "local_name_spans"]
 
 SURFACE_MIN_CHARS = 2
+WORD_CHARS = r"\w\u064B-\u065F\u0670\u0900-\u0963\u0966-\u0D7F"
 
 
 @dataclass(frozen=True)
@@ -22,7 +24,8 @@ class TermMarker:
         self._keys = _surface_keys(glossary)
         ordered = sorted(self._keys, key=lambda surface: (-len(surface), surface))
         alternatives = "|".join(re.escape(surface) for surface in ordered)
-        self._pattern = re.compile(rf"(?<!\w)(?:{alternatives})(?!\w)", re.IGNORECASE) if ordered else None
+        bounded = rf"(?<![{WORD_CHARS}])(?:{alternatives})(?![{WORD_CHARS}])"
+        self._pattern = re.compile(bounded, re.IGNORECASE) if ordered else None
 
     def spans(self, text: str) -> list[TermSpan]:
         if self._pattern is None:
@@ -37,6 +40,34 @@ class TermMarker:
             marked.add(key)
             spans.append(TermSpan(text=shown, term_key=key))
         return spans
+
+
+def local_name_spans(
+    text: str,
+    spans: Sequence[Mapping[str, Any]],
+    kept: Sequence[Mapping[str, Any]],
+    names: Mapping[str, Sequence[str]],
+) -> list[dict[str, str]]:
+    shown = {span["termKey"] for span in kept}
+    wanted = [
+        GlossaryEntry(key, tuple(names[key]))
+        for key in dict.fromkeys(span["termKey"] for span in spans)
+        if key not in shown and names.get(key)
+    ]
+    taken = [_place(text, span["text"]) for span in kept]
+    found: list[dict[str, str]] = []
+    for span in TermMarker(wanted).spans(text):
+        start, end = _place(text, span.text)
+        if any(start < other_end and other_start < end for other_start, other_end in taken):
+            continue
+        taken.append((start, end))
+        found.append({"text": span.text, "termKey": span.term_key})
+    return found
+
+
+def _place(text: str, shown: str) -> tuple[int, int]:
+    start = text.find(shown)
+    return start, start + len(shown)
 
 
 def _surface_keys(glossary: Iterable[GlossaryEntry]) -> dict[str, str]:

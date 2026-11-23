@@ -1686,8 +1686,13 @@ is written "sentence" below; every sentence is cited.
   own rendering does: each distinct span text is translated in the same call as its sentences
   (segments `term:<n>`, `answer_translation.TERM_SEGMENT_PREFIX`) and the span moves to that
   rendering (saaj to साज) when the translated sentence shows it; a first occurrence that overlaps
-  a span kept before it is dropped (`research/terms.spans_still_shown`), and no other term is
-  marked anew (decisions 0039 and 0089).
+  a span kept before it is dropped (`research/terms.spans_still_shown`). A span neither keeps is
+  marked by one of its term's stored local names (`Term.localNames`, read once per translated block
+  by `AnswerTranslation.local_names`, `services/glossary_local_names`) where the translation shows
+  it as a whole word of its script, a vowel sign or virama after it continuing the word
+  (`research/term_marking.local_name_spans`, `WORD_CHARS`; decision 0167), so a Hindi answer keeps
+  the quiz questions whose terms have Hindi names; no other term is marked anew (decisions 0039
+  and 0089).
 - **`Term {schemaVersion 1, key, label, language, localNames[], craftSlugs[], wikidataId?, basis,
   summary[AnswerSentence] (1-3), sources[SourceRef], checkedAt}`** is the glossary row a tap
   opens, cached per key and language. `basis` is `STORED` (cited claims already held), else
