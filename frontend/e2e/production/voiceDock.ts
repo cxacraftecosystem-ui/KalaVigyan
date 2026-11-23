@@ -6,7 +6,7 @@ import type { Page } from "@playwright/test";
 import { VOICE_BOARD_NOTICE_VERSION } from "../../lib/voiceBoard";
 import { FRONTEND } from "../moduleGraph";
 
-export type SentTurn = { contentType: string; bytes: number };
+export type SentTurn = { contentType: string; bytes: number; body: Buffer };
 
 const SHARED = join(FRONTEND, "..", "shared");
 const SPEECH_RATE = 8_000;
@@ -16,7 +16,9 @@ function golden(name: string): string {
   return readFileSync(join(SHARED, name), "utf8");
 }
 
-export const RELAY_STARTED = JSON.parse(golden("voice.session-relay.golden.json")) as { voiceSessionId: string };
+export type RelayStarted = { voiceSessionId: string; maxTurnSeconds: number; maxAudioBytes: number; audioBitsPerSecond: number };
+
+export const RELAY_STARTED = JSON.parse(golden("voice.session-relay.golden.json")) as RelayStarted;
 export const RELAY_TURN = golden("voice.turn.golden.sse");
 export const HEARD_SENTENCE = "Alum is used as a mordant to fasten the colours.";
 const SPEECH_PATH = /\/api\/voice\/session\/[^/]+\/turns\/[^/]+\/speech$/;
@@ -47,7 +49,8 @@ export async function routeRelayCall(page: Page, sent: SentTurn[]): Promise<void
   await page.route("**/api/voice/session", (route) => route.fulfill({ status: 201, json: RELAY_STARTED }));
   await page.route(`${session}/turns`, async (route) => {
     const request = route.request();
-    sent.push({ contentType: request.headers()["content-type"] ?? "", bytes: request.postDataBuffer()?.length ?? 0 });
+    const body = request.postDataBuffer() ?? Buffer.alloc(0);
+    sent.push({ contentType: request.headers()["content-type"] ?? "", bytes: body.length, body });
     await route.fulfill({ status: 200, contentType: "text/event-stream", body: RELAY_TURN });
   });
   await page.route(SPEECH_PATH, (route) => route.fulfill({ status: 200, contentType: "audio/wav", body: silentWav() }));
