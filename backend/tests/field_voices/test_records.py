@@ -90,7 +90,7 @@ def test_a_design_workshop_recording_is_titled_and_quotes_the_designer() -> None
     plan = recording_plan(item("designer-transcripts-all-1", DR).item, portal=DR)
     assert plan.title == "Design workshop recording, a workshop in Jaipur, Rajasthan, June 2026, 24 June 2026"
     assert [(s.role, s.quotable) for s in plan.segments] == [("DESIGNER", True), ("ARTISAN", True)]
-    public = [(chunk.lang, chunk.locator) for chunk in plan.chunks if chunk.acl == PUBLIC]
+    public = [(chunk.lang, chunk.locator) for chunk in plan.chunks if chunk.kind == PASSAGE]
     assert public == [("en", "0:00–0:20"), ("hi", "0:21–1:01"), ("en", "0:21–1:01")]
 
 

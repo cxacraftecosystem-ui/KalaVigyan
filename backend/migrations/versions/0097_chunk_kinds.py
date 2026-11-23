@@ -36,7 +36,7 @@ MARK_WINDOWS = f"""UPDATE "{TABLE}" SET "kind" = '{WINDOW}' WHERE "acl" = '{WIND
 
 def upgrade() -> None:
     op.add_column(
-        TABLE,
+        "Chunk",
         sa.Column("kind", sa.String(length=KIND_CHARS), nullable=False, server_default=CHUNK_KINDS[0]),
     )
     listed = ", ".join(f"'{kind}'" for kind in CHUNK_KINDS)
@@ -50,4 +50,4 @@ def downgrade() -> None:
     op.execute(f'DROP TRIGGER IF EXISTS "{MARK_TRIGGER}" ON "{TABLE}"')
     op.execute("DROP FUNCTION IF EXISTS kv_mark_window_chunk()")
     op.drop_constraint(op.f(KIND_CHECK), TABLE, type_="check")
-    op.drop_column(TABLE, "kind")
+    op.drop_column("Chunk", "kind")
