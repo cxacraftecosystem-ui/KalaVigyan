@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -11,17 +11,15 @@ from typing import Any, Protocol
 from sqlalchemy import Float, Integer, cast, delete, func, literal, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import aliased
 
-from app.core.config import get_settings
-from app.core.db import build_runtime_database_url
+from app.core.db import counting_sessionmaker, dispose_counting_engine
+from app.core.pooler import POOLER_RETRY_WAITS, connected_session
 from app.models import AllowanceBucket
 
 __all__ = [
     "ALLOWANCE_UNREAD",
-    "COUNTING_POOL_OVERFLOW",
-    "COUNTING_POOL_SIZE",
     "COUNT_SECONDS",
     "HOUR_SECONDS",
     "KEPT_HOURS",
@@ -34,7 +32,6 @@ __all__ = [
     "SharedCounter",
     "Taken",
     "bucket_of",
-    "counting_engine",
     "delete_old_buckets",
     "earlier_share",
     "give_back",
@@ -51,9 +48,6 @@ WINDOWS_FROM = datetime(1970, 1, 1, tzinfo=UTC)
 COUNT_SECONDS = 5.0
 UNREAD_WAIT_SECONDS = 60.0
 KEPT_HOURS = 24
-COUNTING_POOL_SIZE = 2
-COUNTING_POOL_OVERFLOW = 6
-COUNTING_POOL_RECYCLE_SECONDS = 1800
 ALLOWANCE_UNREAD = (
     "KalaVigyan could not count this call against the account's hourly allowance just now, "
     "so nothing was done. Try again in a minute."
@@ -113,11 +107,16 @@ class AllowanceCounter(Protocol):
 
 
 class SharedCounter:
-    def __init__(self, sessions: Sessions | None = None, *, seconds: float = COUNT_SECONDS) -> None:
+    def __init__(
+        self,
+        sessions: Sessions | None = None,
+        *,
+        seconds: float = COUNT_SECONDS,
+        waits: Sequence[float] = POOLER_RETRY_WAITS,
+    ) -> None:
         self._given = sessions
-        self._own: AsyncEngine | None = None
-        self._made: Sessions | None = None
         self._seconds = seconds
+        self._waits = waits
 
     async def take(self, bucket: Bucket, ask: Ask) -> Counted:
         async with self._counting(bucket, "counted") as session:
@@ -129,39 +128,22 @@ class SharedCounter:
             await session.execute(_giving_back(bucket))
 
     async def dispose(self) -> None:
-        if self._own is not None:
-            await self._own.dispose()
-        self._own, self._made = None, None
+        if self._given is None:
+            await dispose_counting_engine()
 
     @asynccontextmanager
     async def _counting(self, bucket: Bucket, done: str) -> AsyncIterator[AsyncSession]:
         try:
-            async with asyncio.timeout(self._seconds), self._sessions()() as session:
-                yield session
-                await session.commit()
+            async with asyncio.timeout(self._seconds):
+                session = await connected_session(self._sessions(), waits=self._waits)
+                async with session:
+                    yield session
+                    await session.commit()
         except (SQLAlchemyError, OSError, TimeoutError) as error:
             raise AllowanceUnread(f"the {bucket.kind} allowance of {bucket.holder} was not {done}") from error
 
     def _sessions(self) -> Sessions:
-        if self._given is not None:
-            return self._given
-        if self._made is None:
-            self._own = counting_engine(self._seconds)
-            self._made = async_sessionmaker(self._own, expire_on_commit=False, autoflush=False)
-        return self._made
-
-
-def counting_engine(seconds: float) -> AsyncEngine:
-    runtime = build_runtime_database_url(get_settings().database_url)
-    return create_async_engine(
-        runtime.url,
-        connect_args=runtime.connect_args,
-        pool_size=COUNTING_POOL_SIZE,
-        max_overflow=COUNTING_POOL_OVERFLOW,
-        pool_timeout=seconds,
-        pool_pre_ping=True,
-        pool_recycle=COUNTING_POOL_RECYCLE_SECONDS,
-    )
+        return self._given if self._given is not None else counting_sessionmaker()
 
 
 counter: AllowanceCounter = SharedCounter()

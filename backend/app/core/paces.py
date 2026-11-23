@@ -12,9 +12,10 @@ from typing import Any, Protocol
 from sqlalchemy import DateTime, Float, String, and_, cast, delete, extract, func, literal, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.core.allowances import counting_engine
+from app.core.db import counting_sessionmaker, dispose_counting_engine
+from app.core.pooler import POOLER_RETRY_WAITS, connected_session
 from app.models import SourceLease, SourcePace
 
 __all__ = [
@@ -132,11 +133,16 @@ class MemoryPaces:
 
 
 class SharedPaces:
-    def __init__(self, sessions: Sessions | None = None, *, seconds: float = PACE_SECONDS) -> None:
+    def __init__(
+        self,
+        sessions: Sessions | None = None,
+        *,
+        seconds: float = PACE_SECONDS,
+        waits: Sequence[float] = POOLER_RETRY_WAITS,
+    ) -> None:
         self._given = sessions
-        self._own: AsyncEngine | None = None
-        self._made: Sessions | None = None
         self._seconds = seconds
+        self._waits = waits
 
     async def reserve(self, lane: PaceLane, ask: PaceAsk) -> PaceSlot:
         async with self._transaction(f"the {lane.lane} pace of {lane.service}") as session:
@@ -163,26 +169,22 @@ class SharedPaces:
             await session.execute(_releasing(lease))
 
     async def dispose(self) -> None:
-        if self._own is not None:
-            await self._own.dispose()
-        self._own, self._made = None, None
+        if self._given is None:
+            await dispose_counting_engine()
 
     @asynccontextmanager
     async def _transaction(self, what: str) -> AsyncIterator[AsyncSession]:
         try:
-            async with asyncio.timeout(self._seconds), self._sessions()() as session:
-                yield session
-                await session.commit()
+            async with asyncio.timeout(self._seconds):
+                session = await connected_session(self._sessions(), waits=self._waits)
+                async with session:
+                    yield session
+                    await session.commit()
         except (SQLAlchemyError, OSError, TimeoutError) as error:
             raise PaceUnread(f"{what} could not be read or written") from error
 
     def _sessions(self) -> Sessions:
-        if self._given is not None:
-            return self._given
-        if self._made is None:
-            self._own = counting_engine(self._seconds)
-            self._made = async_sessionmaker(self._own, expire_on_commit=False, autoflush=False)
-        return self._made
+        return self._given if self._given is not None else counting_sessionmaker()
 
 
 def _reserving(lane: PaceLane, ask: PaceAsk) -> Any:

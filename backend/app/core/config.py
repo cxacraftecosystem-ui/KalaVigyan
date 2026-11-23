@@ -76,6 +76,7 @@ class Settings(BaseSettings):
     database_pool_timeout: int = Field(default=30, ge=1, alias="DATABASE_POOL_TIMEOUT")
     database_connect_timeout: int = Field(default=30, ge=1, alias="DATABASE_CONNECT_TIMEOUT")
     database_require_ssl: bool | None = Field(default=None, alias="DATABASE_REQUIRE_SSL")
+    process_name: str | None = Field(default=None, alias="KV_PROCESS")
 
     jwt_secret: str = Field(alias="JWT_SECRET")
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")

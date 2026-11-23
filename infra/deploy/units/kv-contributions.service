@@ -13,7 +13,7 @@ Environment=PYTHONUNBUFFERED=1
 EnvironmentFile=/opt/kalavigyan/.env
 Environment=KV_PROCESS=contributions
 SyslogIdentifier=kv-contributions
-Environment=CONTRIBUTION_WORKERS=4
+Environment=CONTRIBUTION_WORKERS=2
 ExecStart=/opt/kalavigyan/current/backend/.venv/bin/python -m app.scripts.contribution_worker --concurrency ${CONTRIBUTION_WORKERS}
 MemoryAccounting=yes
 MemoryHigh=900M

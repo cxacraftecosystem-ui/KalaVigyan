@@ -105,20 +105,36 @@ capture cleared and what still lay over it.
 Every process on the box reaches Postgres through the Supabase session pooler, which holds at most
 30 server connections for our user (the dashboard's Database → Settings → Connection pooling;
 read with `supabase config pull --remote=inqbqiqspgvhfamupwuc`, and only the dashboard can
-change it). Each process's SQLAlchemy pool opens connections as it needs them, up to
-`DATABASE_CONNECTION_LIMIT`, and keeps them.
+change it). Each process has its own budget (`backend/app/core/connection_budget.py`, decision
+0163): a main pool that keeps a few connections and opens the rest only for a burst, closing them
+when they are returned, and one small counting pool shared by the allowances and the source paces.
+The unit names the process in `KV_PROCESS`; a process on the box that names none, such as anything
+run over SSM or by the deploy, is a script. `DATABASE_CONNECTION_LIMIT` and
+`DATABASE_MAX_OVERFLOW` no longer size any pool on the box; they size an unnamed process off it.
 
-- **Holders:** the serving API slot (up to the limit), the worker (its peak, a few), and a script
-  run over SSM (one or two). A deploy stops the worker before the swap, so the old and new slots
-  briefly share the budget.
-- **The limit is 12** (2026-11-19: 5, then 8, then 12 once the owner raised the pooler from 15 to
-  30). During a deploy the old and new slots can hold 24 between them, plus the worker and a
-  script, which stays under 30.
-- **To go further,** raise the pool size in the dashboard first (Small compute has 90 connections
-  in all, and Supabase's own services use some), then `DATABASE_CONNECTION_LIMIT` at
-  `/kalavigyan/env/`, then `sudo kv-render-env && sudo kv-blue-green restart`. Never raise the
-  limit past what the pooler holds: a slot that cannot connect fails its health check and the
-  deploy rolls back.
+| Process (`KV_PROCESS`) | Main pool, kept + burst | Counting pool | At most |
+|---|---|---|---|
+| `kv-api@` (`api`), two slots during a deploy | 2 + 3 | 1 + 1 | 7 each |
+| `kv-contributions` (`contributions`), 2 gate runs at once | 1 + 3 | 1 + 0 | 5 |
+| `kv-worker` (`worker`) | 1 + 1 | 1 + 0 | 3 |
+| one script over SSM or from the deploy (`script`) | 1 + 2 | 1 + 0 | 4 |
+| `kv-fetcher` (`fetcher`) | no database | | 0 |
+
+- **The sum is 26** with both API slots, the queue, the worker and one script, leaving 4 of the 30
+  for a person's `psql` or the dashboard. `backend/tests/test_connection_budget.py` reads
+  `infra/deploy/units` and fails when a unit or a limit would pass it. The research gate of an API
+  slot holds 3 of its 5 main connections (decision 0146).
+- **A refused connect.** When the pooler answers `EMAXCONNSESSION` (max clients reached), the
+  allowance and pace counts open their session again after 0.2, 0.5 and 1 s
+  (`core/pooler.connected_session`) and refuse only if it is still full, so a reader sees a 429
+  only when the pooler stays full.
+- **Two scripts at once** may pass the sum by one script's 4; run long scripts one after another,
+  or after the owner raises the pooler.
+- **To go further,** the owner raises the pool size in the dashboard first (Small compute has 90
+  connections in all, and Supabase's own services use some), then one change raises
+  `POOLER_SESSIONS` and the budgets in `core/connection_budget.py` together, and the next release
+  carries them; `kv-render-env` writes no limit. Never raise a budget past what the pooler holds: a
+  slot that cannot connect fails its health check and the deploy rolls back.
 
 ## Shell on the box
 
@@ -433,7 +449,8 @@ A craft release (decision 0130): give `craft` its exact slug, for Kutch Ajrakh `
 - **The contribution worker** `kv-contributions` (a systemd unit beside `kv-worker` and `kv-fetcher`,
   restarted by every deploy) takes queued proposals and runs their gates off the request
   (`docs/contracts/knowledge-writes.md`). Read it with `journalctl -u kv-contributions`. Its
-  concurrency is `CONTRIBUTION_WORKERS` in `/opt/kalavigyan/.env` (optional). To drain the queue by
+  concurrency is `CONTRIBUTION_WORKERS` (2 in the unit; a larger number runs only as many as its
+  connection budget carries, decision 0163). To drain the queue by
   hand: `python -m app.scripts.contribution_worker --once` (Shell on the box).
 - **Picture screens** need an enabled CAPTION route (a vision model, Settings, Routing). Without
   one, every picture waits for a person as `UNSCREENED`. After the deploy that adds them, run

@@ -340,8 +340,8 @@ or the judge down) is queued again after 30 seconds, doubling each try up to 30 
 
 **The worker** (`kv-contributions`, started and stopped with the other workers by
 `infra/deploy/blue_green.sh`) claims one proposal at a time (`SELECT ... FOR UPDATE SKIP LOCKED`,
-oldest first; the facts of one call keep their order) and checks up to `--concurrency` (4,
-`CONTRIBUTION_WORKERS` in the box's `.env`) at once, never two of the same subject together, so the
+oldest first; the facts of one call keep their order) and checks up to `--concurrency` (2,
+`CONTRIBUTION_WORKERS`, no more than its connection budget carries, decision 0163) at once, never two of the same subject together, so the
 duplicate gate sees the first before the second. Each check is `services/fact_proposals.propose_fact_run`
 in a savepoint, under the request id `contribution-<proposal id hex>`; the kept sources' passages are embedded once the outcome is stored (`embed_sources`, which commits as it goes);
 `python -m app.scripts.contribution_worker --once` checks what is queued and stops.

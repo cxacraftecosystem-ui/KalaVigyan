@@ -1,9 +1,10 @@
-# 0163. Nine more limits are kept by choice, the debt register may only shrink, and the database tests run in shards
+# 0163. Nine more limits are kept by choice, the debt register may only shrink, the database tests run in shards, and each process on the box keeps to its own connection budget
 
 Nine more limits leave the debt register for this record, four of them as curation targets and one
 as a routine; the hygiene check fails any change that leaves the register with more entries than
-its baseline records; the database tests run in three shards; and the files over budget that this
-lane owned are split with their callers' import paths kept.
+its baseline records; the database tests run in three shards; the files over budget that this
+lane owned are split with their callers' import paths kept; and every process on the box takes a
+connection budget whose sum stays inside the Supabase session pooler.
 
 Date: 2026-11-23. Status: accepted (the lead's clean-up lane brief of 2026-11-23, within the
 owner's go-ahead of 2026-11-22 to clear the register "not just for this round, also for all
@@ -20,6 +21,8 @@ and names it; it amends none.
 | Regional measures, prices and GI fields | [decision 0066](0066-local-measures-and-market-gi.md), [decision 0147](0147-time-market-and-figures-kept-true.md) |
 | The sandboxed explainer frame | [decision 0061](0061-phase-c-review-fixes.md) |
 | Filing by what the source says around a fact | [decision 0136](0136-write-backs-filed-by-their-source.md) |
+| The research gate the API's pool is shared with | [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) |
+| The connection budget on the box | [RUNBOOK.md](../RUNBOOK.md), Connection budget |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context
@@ -90,6 +93,43 @@ and tests import from it, several in other lanes' areas, and the tests replace `
 is seen. The sign-in routes' shared helpers moved to `api/auth_session`, and their few callers,
 none in another lane's area, import them from there.
 
+### Each process on the box keeps to its own connection budget
+
+At 04:36 UTC on 2026-11-23, on release 1ab422fe, the session pooler refused new sessions
+(`EMAXCONNSESSION`, 30 clients) while 29 idle sessions had been held for up to 11 minutes, and
+4 of 10 public field-voice picture reads that second were refused as uncounted allowances. Every
+process read `DATABASE_CONNECTION_LIMIT=12` as a pool it kept, with no overflow, and each also
+built two counting engines of 2 kept and 6 overflow (the allowances' and the source paces'):
+about a hundred possible sessions against thirty.
+
+Each process now names its role, and the role's budget in `core/connection_budget.BUDGETS` sizes
+both of its pools: a main pool that keeps one or two connections and opens the rest only for a
+burst, closing them when they are returned, and one counting pool that the allowances and the
+paces share. The role is the `KV_PROCESS` every unit already set; a process on the box that
+names none, which is how the deploy and SSM run scripts, takes the script budget; off the box an
+unnamed process keeps its settings, so tests and laptops are unchanged. The other way, a pool
+size in each unit's `Environment=` lines, would leave scripts on the shared `.env`'s figure and
+the counting pools unsized. The counting pool stays apart from the main pool because a count
+that waits behind long research sessions refuses a reader; sharing one of the two counting
+engines was safe, as both run one short statement in their own transaction.
+
+The budgets add up as the lead asked: both API slots of a deploy, the queue, the worker and one
+script, at most 26 of the pooler's 30, which leaves 4 for a person's `psql` or the dashboard.
+`backend/tests/test_connection_budget.py` reads the units and fails when a unit or a limit would
+pass that. The deploy stops the queue and the worker before the slots overlap, so the sum is
+above any real peak. The contribution queue runs two gate runs at once, as many as its four main
+connections carry at two each (its session and a router call's), and a larger
+`CONTRIBUTION_WORKERS` runs only that many, with a warning. An API slot's research gate holds 3 of
+its 5 main connections, where it held 10 of 12, and the answer evaluation now builds its answers
+through the research gate as the API does, so its parallel sections wait for a slot instead of
+for a connection of the script's three.
+
+A connect the pooler refuses for want of room is tried again after 0.2, 0.5 and 1 s
+(`core/pooler.connected_session`) by the allowance and pace counts, inside their 5-second limit;
+any other failure, and the last refusal, still refuse the call. The lasting cure is the owner's to
+give: Small compute holds 90 connections, and raising the pooler in the dashboard lets one change
+raise `POOLER_SESSIONS` and the budgets together.
+
 ## Consequences
 
 - The debt register holds only work that is open or blocked on something outside the repository,
@@ -98,6 +138,8 @@ none in another lane's area, import them from there.
 - The slowest database tests show in each shard's `--durations=20` list; when the shards near
   their limit, the number of shards grows.
 - A change that meets a row's condition removes the limit and marks the row superseded here.
+- A new unit on the box names its `KV_PROCESS` and a budget, or the connection budget test fails;
+  two long scripts run one after another.
 
 ## How this record is kept true
 
