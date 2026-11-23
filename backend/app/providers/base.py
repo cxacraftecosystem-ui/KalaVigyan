@@ -10,6 +10,7 @@ from app.core.errors import ExternalFailure
 logger = logging.getLogger(__name__)
 
 FORMAT_REFUSAL_KIND = "error"
+CALL_SECONDS = 600.0
 
 
 @dataclass

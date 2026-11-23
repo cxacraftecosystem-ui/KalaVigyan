@@ -10,10 +10,17 @@ import {
 
 export const SERVER_FETCH_TIMEOUT_MS = 4_000;
 export const PUBLIC_REVALIDATE_SECONDS = 3_600;
+const NOT_FOUND = 404;
 
 export type ServerFetchFailure = "unconfigured" | "timeout" | "unreachable" | "refused" | "failed" | "invalid";
 
 export type ServerFetchResult<T> = { ok: true; body: T } | { ok: false; failure: ServerFetchFailure; status: number | null };
+
+export function bodyOrAbsent<T>(result: ServerFetchResult<T>, unavailable: string): T | null {
+  if (result.ok) return result.body;
+  if (result.status === NOT_FOUND) return null;
+  throw new Error(`${unavailable}: ${result.failure}`);
+}
 
 type Env = Record<string, string | undefined>;
 

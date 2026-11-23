@@ -45,7 +45,7 @@ Errors are `{"detail": "<sentence>"}` (FastAPI); validation errors are FastAPI's
 | `X-Password-Change-Required: 1` | 401 from any route except `/auth/me`, `/me`, `/auth/change-password`, `/auth/logout` | `mustChangePassword` is set. |
 | `X-Two-Factor-Required: 1` | 401 from key or budget changes; 400 from change-password without a password | Ask for a TOTP code and resend. |
 | `X-Confirm-Provider` | 400 from `/auth/change-password` for an account without a password | `GOOGLE`, `MICROSOFT` or `YAHOO`: the account's provider. Sign in with it again (`POST /auth/first-password/nonce`) and resend with the proof (decision 0028). |
-| `X-Session-Token` | 200 from `/auth/change-password`, `/auth/two-factor/enable`, `/auth/two-factor/disable` | Replace the stored token with this one. |
+| `X-Session-Token` | 200 from `/auth/change-password`, `/auth/two-factor/enable`, `/auth/two-factor/disable` | Replace the stored token with this one. Only a write under `/auth` sends it, which the web relays (`tests/test_session_rotation_routes.py`, decision 0172). |
 | `X-Sign-In-Hint: PASSWORD_NOT_SET` | 401 from password login | Account exists without a password. |
 | `X-Sign-In-Hint: EMAIL_UNVERIFIED` | 401 from password login | The address was never confirmed (no emailed link opened, no Google sign-in, no admin-issued password, never signed in). |
 | `Retry-After` | 429 | Seconds. |
@@ -132,7 +132,7 @@ List and view: LIST_USERS (PROFESSOR+). Role changes: CHANGE_ROLES; suspend, res
 
 | Method | Path | Body / query | Response |
 |---|---|---|---|
-| GET | `/users` | `search, role, access (ACTIVE, PENDING, REJECTED, SUSPENDED, NOT_LISTED), sort (created, name, email, role, lastLogin), dir, page, pageSize (<=100)` | `{items: user[], total, page, pageSize, pages}`; each item has `accessStatus`; `sort=role` orders by rank, `dir=desc` from Master Admin down to Student (decision 0155) |
+| GET | `/users` | `search, role, access (ACTIVE, PENDING, REJECTED, SUSPENDED, NOT_LISTED), sort (created, name, email, role, lastLogin), dir, page, pageSize (<=100)` | `{items: user[], total, page, pageSize, pages}`; each item has `accessStatus`, and `access` filters on that same value (the configured Master Admin is `ACTIVE` with or without a roster row); `sort=role` orders by rank, `dir=desc` from Master Admin down to Student (decision 0155) |
 | GET | `/users/{id}` | | user |
 | PATCH | `/users/{id}` | `{name?, role?, affiliation?, mustChangePassword?}` | user |
 | POST | `/users/{id}/suspend` | `{reason?}` (optional body) | user with `accessStatus:"SUSPENDED"`; sessions end |

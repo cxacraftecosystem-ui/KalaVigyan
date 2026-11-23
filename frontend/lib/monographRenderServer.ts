@@ -7,13 +7,12 @@ import { monographDocumentPath, type MonographPreviewSubject } from "@/lib/monog
 import { parseNamedDocument } from "@/lib/monographRenderCitations";
 import { documentDigest } from "@/lib/monographRenderShell";
 import { prerenderedPages, STATIC_FETCH_TIMEOUT_MS } from "@/lib/server/readingPages";
-import { publicFetch, type ServerFetchResult } from "@/lib/server/serverFetch";
+import { bodyOrAbsent, publicFetch, type ServerFetchResult } from "@/lib/server/serverFetch";
 import { STATIC_PAGE_REVALIDATE_SECONDS, type CraftParams } from "@/lib/sitePagesContract";
 
 export const PREVIEW_ROBOTS = { index: false, follow: false } as const;
 export const PREVIEW_TITLE = "Monograph";
 export const DOCUMENT_UNAVAILABLE = "The monograph could not be read";
-const NOT_FOUND = 404;
 
 export async function previewStaticParams(subject: MonographPreviewSubject): Promise<CraftParams[]> {
   return prerenderedPages(subject === "craft" ? "crafts" : "categories");
@@ -27,9 +26,7 @@ export async function previewMetadata(subject: MonographPreviewSubject, slug: st
 export const monographDocumentTag = (subject: MonographPreviewSubject, slug: string) => `monograph-document:${subject}:${slug}`;
 
 export function documentOrAbsent<T>(result: ServerFetchResult<T>): T | null {
-  if (result.ok) return result.body;
-  if (result.status === NOT_FOUND) return null;
-  throw new Error(`${DOCUMENT_UNAVAILABLE}: ${result.failure}`);
+  return bodyOrAbsent(result, DOCUMENT_UNAVAILABLE);
 }
 
 async function partRead(path: string, tag: string): Promise<ServerFetchResult<DocumentPart>> {

@@ -867,8 +867,9 @@ machine translation, and the original text is always shown beside it. Exports
   `GET /api/crafts/{slug}/field-voices?kind=quotes|images&cursor=` (public reading, 25 a page,
   newest recording or image first), so the last record is always reachable. As built: the
   craft route reads the first page of each kind on the server (`app/(reading)/crafts/[slug]/
-  craftFieldVoices.ts`, revalidated with the craft page; a read that fails draws no part, as the
-  page's languages do, so the page never fails for its voices) and `components/craft/FieldVoicesPart.tsx`
+  craftFieldVoices.ts`, revalidated with the craft page; a craft the API does not know draws no
+  part, and any other failed read fails the render so the last good page stays, decision 0172)
+  and `components/craft/FieldVoicesPart.tsx`
   draws the first 6 quotes and 12 photographs of it (`lib/fieldVoicesView`: `FIRST_QUOTES`,
   `FIRST_PHOTOS`, the backend's `FIELD_VOICES_SHOWN` and `FIELD_PHOTOS_SHOWN`) after a generated
   monograph's chapters, or before "Start the research" on a craft without one; "Show all N" is a
