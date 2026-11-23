@@ -17,6 +17,7 @@ from ..records import (
     clean_text,
     doi_of,
     doi_url,
+    journal_of,
     partial_date_of,
     title_of,
 )
@@ -30,6 +31,7 @@ OPENALEX_KEYED_LIMITS = ServiceLimits(search=SourceLimit(requests=30))
 WORK_FIELDS = (
     "id,doi,display_name,publication_date,publication_year,type,authorships,primary_location,best_oa_location"
 )
+CONTAINER_SOURCE_TYPES = frozenset({"journal", "conference", "book series"})
 TYPE_KINDS = {
     "article": "article",
     "review": "article",
@@ -77,6 +79,7 @@ class OpenAlexAdapter(HttpSourceAdapter):
             licence=clean_text(best.get("license") or primary.get("license")),
             doi=doi,
             publisher=clean_text((primary.get("source") or {}).get("host_organization_name")),
+            container_title=_container(primary.get("source") or {}),
             trust=trust,
             external_ids={"openalex": work_id},
         )
@@ -102,6 +105,12 @@ def abstract_from_index(index: Any) -> str | None:
         return None
     placed = sorted((position, word) for word, positions in index.items() for position in positions)
     return clean_text(" ".join(word for _position, word in placed))
+
+
+def _container(source: dict[str, Any]) -> str | None:
+    if source.get("type") not in CONTAINER_SOURCE_TYPES:
+        return None
+    return journal_of(source.get("display_name"))
 
 
 def _work_id(value: Any) -> str:

@@ -35,13 +35,10 @@ def take_said_first(historian: Block) -> ClaimLedger:
     return ledger
 
 
-def test_a_seat_whose_take_was_shown_stays_for_its_difference_and_keeps_it() -> None:
+def test_a_seat_whose_take_was_shown_leaves_and_takes_its_difference_with_it() -> None:
     historian, anthropologist = golden("s5.b1"), golden("s5.b2")
     shown = take_said_first(historian).admit("s5", [historian, anthropologist], GOLDEN_SOURCES)
-    assert [(view.seat, [d.seat for d in view.differs]) for view in shown] == [
-        ("HISTORIAN", ["ANTHROPOLOGIST"]),
-        ("ANTHROPOLOGIST", ["HISTORIAN"]),
-    ]
+    assert [(view.seat, [d.seat for d in view.differs]) for view in shown] == [("ANTHROPOLOGIST", [])]
 
 
 def test_a_seat_with_nothing_new_and_no_difference_leaves() -> None:

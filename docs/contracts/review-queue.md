@@ -2,7 +2,7 @@
 
 One review path for everything other people give: proposed and researched facts, artisans'
 testimony, contributed pictures, component proposals, page layout proposals and page structure
-proposals, whatever their origin (the site, the Knowledge API, the MCP server, an artisan's
+proposals, and the process stages answers found, whatever their origin (the site, the Knowledge API, the MCP server, an artisan's
 conversation). Reviewers see one page of pending items, newest first, and decide each through one
 route per action. Reviewers and the engineers who add a kind or a decision read it.
 
@@ -28,6 +28,7 @@ flowchart LR
     CO["COMPONENTS"]
     LA["LAYOUTS"]
     ST["STRUCTURE"]
+    SG["STAGES"]
   end
   Kinds --> Q["GET review-queue<br/>one page, newest first"]
   Q --> D{"Decision"}
@@ -43,15 +44,17 @@ flowchart LR
 
 Contract: `backend/app/research/review_queue.py`, with the component body in
 `research/review_queue_components.py`, the layout body in `research/layout_proposals.py`, the
-structure body in `research/review_queue_structure.py` and the shared source and check parts in
-`research/review_queue_parts.py`.
+structure body in `research/review_queue_structure.py`, the stage body and its placing rule in
+`research/review_queue_stages.py`, the shared source and check parts in
+`research/review_queue_parts.py` and the cursor in `research/review_queue_cursor.py`.
 Services: `services/review_queue.py` (the page), `review_queue_select.py` (what is pending, per kind),
-`review_queue_fact_views.py`, `review_queue_components.py`, `review_queue_layouts.py` and
-`review_queue_structure.py` (what a reviewer needs to judge an item, and the component, layout and
-structure decisions), `review_queue_decisions.py`, `review_queue_facts.py` (decisions),
+`review_queue_fact_views.py`, `review_queue_components.py`, `review_queue_layouts.py`,
+`review_queue_structure.py` and `review_queue_stages.py` (what a reviewer needs to judge an item, and the component, layout,
+structure and stage decisions), `review_queue_decisions.py`, `review_queue_facts.py` (decisions),
 `review_queue_refresh.py` (the signed-out pages a decision refreshes) and `review_queue_errors.py`.
-Route: `api/routes/review_queue.py`. No table or column of its own: the queue reads the rows each kind
-already keeps.
+Route: `api/routes/review_queue.py`. The queue reads the rows each kind already keeps; its one table is
+`StageReview` (decision 0167): one row per decided stage concept, `status` `PLACED` or `REJECTED`, the
+note or reason, the reviewer, the time and the `ProcessStage` a placing wrote.
 
 ## Who sees which kind
 
@@ -65,9 +68,10 @@ Each kind follows the capability its queue names in `research/open_work.py` (`RE
 | `COMPONENTS` | `REVIEW_CONTRIBUTIONS` | Admin and above |
 | `LAYOUTS` | `REVIEW_CONTRIBUTIONS` | Admin and above |
 | `STRUCTURE` | `MARK_CLAIM_LEVEL` | Professor and above |
+| `STAGES` | `MARK_CLAIM_LEVEL` | Professor and above |
 
-So an Admin or Master Admin sees every kind (item 12); a Professor sees facts, testimony and
-structure. An
+So an Admin or Master Admin sees every kind (item 12); a Professor sees facts, testimony,
+structure and stages. An
 account that reviews no kind is refused the route (403).
 
 **Who proposed it is kept privately** (item 13). An item carries `proposer {name, role}` only when
@@ -86,21 +90,23 @@ review already shows.
 | `COMPONENTS` | `ComponentProposal` | `status` `PENDING`, not the viewer's |
 | `LAYOUTS` | `LayoutProposal` | `status` `PENDING`, not the viewer's |
 | `STRUCTURE` | `StructureProposal` | `status` `PENDING` (it passed its checks; a refused one is `REFUSED`), not the viewer's |
+| `STAGES` | `Concept` | a `PROCESS_STAGE` concept the write-back made for a craft (`originRef` `live_research`), with a shown fact about it, no `ProcessStage` naming it and no `StageReview`, whose craft has a live process with stages that is not the curated one (`review_queue_select.waiting_stage`) |
 
 **Origins.** A fact's origin is `RESEARCH` when it was written back from an answer's research
 (`Claim.origin` `LIVE_RESEARCH`), `AGENT` when a source was found by an agent
 (`ClaimSource.foundBy` `AGENT`), else `CONTRIBUTION`. Testimony is `TESTIMONY`, a picture
 `CONTRIBUTION`, a component proposal `AGENT`, a layout proposal its own `origin` (`CONTRIBUTION`
-from the site or the Knowledge API, `AGENT` from the MCP server), a structure proposal likewise.
+from the site or the Knowledge API, `AGENT` from the MCP server), a structure proposal likewise, a
+stage `RESEARCH`.
 
 **Craft.** A fact belongs to a craft through its concept (the craft's own concepts and edges, as
 retrieval scopes them); testimony and pictures by `craftId`; a component proposal by `craftId` or a
 `CRAFT` subject naming the craft's slug; a layout proposal by `craftId` (a craft's or family's page;
-a category's page has no craft); a structure proposal by `craftId`.
+a category's page has no craft); a structure proposal and a stage by `craftId`.
 
 ## `GET /api/review-queue`
 
-Query: `kind` (`FACTS`, `TESTIMONY`, `IMAGES`, `COMPONENTS`, `LAYOUTS`, `STRUCTURE`), `craft` (a craft slug), `origin`
+Query: `kind` (`FACTS`, `TESTIMONY`, `IMAGES`, `COMPONENTS`, `LAYOUTS`, `STRUCTURE`, `STAGES`), `craft` (a craft slug), `origin`
 (`RESEARCH`, `CONTRIBUTION`, `AGENT`, `TESTIMONY`), `cursor`, `limit` (1 to 50, default 25).
 
 Answer `ReviewQueuePage`:
@@ -145,6 +151,10 @@ Each item has `id`, `kind`, `origin`, `submittedAt`, `craft {slug, name, path}` 
   the kept source), `checks [{check, passed, reasons}]` (STATED, QUOTES, SOURCE), `conflicting [{id,
   text}]` (a conflict's facts) and `stale`: why approval would be refused now (the page moved on), or
   `null`.
+- `stage`: `name`, `description`, `processes [{id, name, stages [{id, ordinal, name}]}]` (the craft's
+  live processes that are not curated, by name, each with its stages in order; a curated process is
+  the dossier's and changes through structure proposals) and `facts [{id, text, sources}]`, up to 12
+  shown facts about the stage, oldest first, with their sources and quotes.
 - `picture`: the `ImageContributionView` of `image-contributions.md`.
 - `testimony`: the review item of the testimony review (`/api/testimony/review/{id}`).
 
@@ -155,7 +165,7 @@ filter or cursor.
 
 | Route | Body | For |
 |---|---|---|
-| `POST /api/review-queue/{kind}/{id}/approve` | `{note?, version?, englishChecked?, craft?, family?, corroboratingClaimIds?}` | every kind; `craft` (a craft slug) or `family` (a category slug), never both, for facts only; `corroboratingClaimIds` (0 to 5) for testimony only |
+| `POST /api/review-queue/{kind}/{id}/approve` | `{note?, version?, englishChecked?, craft?, family?, processId?, afterStageId?, corroboratingClaimIds?}` | every kind; `craft` (a craft slug) or `family` (a category slug), never both, for facts only; `processId` and `afterStageId` for stages only; `corroboratingClaimIds` (0 to 5) for testimony only |
 | `POST /api/review-queue/{kind}/{id}/reject` | `{reason?, version?, testimonyReason?}` | every kind; `reason` (3 to 500 characters) may be left out only by a testimony rejection that names its `testimonyReason` |
 | `POST /api/review-queue/FACTS/{id}/raise` | `{note?}` | facts |
 | `POST /api/review-queue/FACTS/{id}/retract` | `{reason}` | facts |
@@ -218,6 +228,16 @@ has moved on (the stage or material is gone, the name or conflict is already the
 (409) and the proposal can only be rejected. Reject records `REJECTED` with the reason; nothing is
 written. Audit `review.structure_<approved|rejected>` with the kind and the fact.
 
+**Process stages answers found** (decision 0167, `review_queue_stages.py`): approve takes `processId`
+(one of the item's processes) and `afterStageId` (a stage of that process, or none to place it first),
+moves every stage from that place on down by one ordinal (`research/review_queue_stages.stage_place`),
+writes a `ProcessStage` named as the concept with `conceptId` set at the place, and records `StageReview`
+`PLACED` with the note and the stage written. Without `processId`, or with a stage of another
+process, it is refused (422); a process that is curated, archived or of another craft is refused
+(409). Reject records `StageReview` `REJECTED` with the reason; nothing is written. A decided stage
+is decided once (409). Audit `review.stage_<placed|rejected>` with the stage written. The Process
+tab and the craft's pages show the placed stage after the refresh below.
+
 **Pictures** go through `image_contributions.approve` and `.reject` (the reason is the note), with
 an audit entry `review.image_<...>`. **Testimony** goes through `testimony_writes.approve` and
 `.reject`: a testimony decision names the `version` it was read at (422 without it; 409 when the
@@ -240,7 +260,7 @@ fact is raised or retracted). Every refusal rolls the session back.
 Once a decision is committed, the route asks the web app to refresh the signed-out pages it changed
 (`review_queue_refresh.refresh_after_decision`, `services/page_revalidation.py`): every fact decision
 (approved, raised, rejected or retracted: each changes what the page shows; round 7), testimony rejected (approved words are retracted with it), a
-structure proposal approved, and (round 7) a component approved (its craft, the crafts its CRAFT
+structure proposal approved, a stage placed (its craft), and (round 7) a component approved (its craft, the crafts its CRAFT
 subjects name, the crafts and sub-category members of its CONCEPT subjects, and the pages of the
 facts its units rest on), a layout approved (its craft or family, or its category alone) and a
 picture approved (its craft). The pages are those of the fact's concept, or of the item's craft: the
@@ -297,10 +317,19 @@ kept in the address (`?kind=&origin=&craft=`). A card per item:
   script), what the page holds now, the field, the statement, the facts that disagree for a
   conflict, the sources with their quotes and the checks, and what approving writes; a stale proposal
   offers Reject only;
+- a process stage answers found (`StageReviewCard.tsx`, rules in `frontend/lib/stageReviewView.ts`):
+  the stage's name, the facts answers found about it, their sources once each with every quote, each
+  process with its stages in order, and a Place it picker (first, or after a numbered stage of a
+  process) whose choice Approve sends as `processId` and `afterStageId`; Approve without a place
+  says to choose one;
 - a picture: `PictureReviewCard.tsx`; testimony: the testimony `ReviewCard.tsx`, both reused with
   their own decision routes.
 
-Facts, component, layout and structure proposals decide through `QueueDecisionBar.tsx`: an `ActionGroup` of Approve, Approve as
+The page parses its kinds and items with `shape.knownOnly`: the production build drops a kind it
+does not know (or a structure item of a kind it does not know) and renders the rest, since a release
+ships the API before the web; the unit specs refuse it (decision 0167).
+
+Facts, component, layout and structure proposals and stages decide through `QueueDecisionBar.tsx`: an `ActionGroup` of Approve, Approve as
 reviewed (facts), then Reject (waiting) or Retract (live) last as the destructive action, with a
 Reason field required for either. The client contract is `frontend/lib/reviewQueueContract.ts`;
 pure rules are in `frontend/lib/reviewQueueView.ts`. `/admin/pictures` and `/admin/testimony`
@@ -312,8 +341,9 @@ stay, and list decided items.
 |---|---|
 | Who sees which kind, what is pending, the page and the decisions | `backend/tests/review_queue/` (rules and routes), `backend/tests/db/test_review_queue_db.py`, `test_review_queue_decisions_db.py` and `test_review_queue_refile_db.py` (filing under another craft) |
 | Layout proposals | `backend/tests/db/test_layout_proposals_db.py` and `backend/tests/layouts/` (layout proposal rules and routes) |
+| Process stages answers found | `backend/tests/review_queue/test_stage_place.py`, `backend/tests/db/test_stage_review_db.py` and `frontend/e2e/review-stages-unit.spec.ts` |
 | Structure proposals | `backend/tests/structure/`, `backend/tests/db/test_structure_proposals_db.py`, `test_structure_writes_db.py` and `test_structure_export_db.py` |
 | Refreshing signed-out pages | `backend/tests/test_page_revalidation.py`, `backend/tests/db/test_page_revalidation_db.py` and `test_review_queue_refresh_db.py` |
-| The Review page | `frontend/e2e/review-queue-unit.spec.ts`, `review-layouts-unit.spec.ts`, `review-structure-unit.spec.ts` and `revalidate-unit.spec.ts` |
+| The Review page | `frontend/e2e/review-queue-unit.spec.ts`, `review-layouts-unit.spec.ts`, `review-structure-unit.spec.ts`, `review-unknown-kinds-unit.spec.ts` and `revalidate-unit.spec.ts` |
 
 Re-read it when a kind joins the queue, a decision is added, or a capability moves between roles.

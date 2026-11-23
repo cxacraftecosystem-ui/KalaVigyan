@@ -52,6 +52,7 @@ async def live_sources(session: AsyncSession, client: httpx.AsyncClient) -> Live
         fetcher=fetcher,
         locator=scholarly.locator,
         doi_source=doi_source,
+        publisher=scholarly.publisher,
     )
 
 

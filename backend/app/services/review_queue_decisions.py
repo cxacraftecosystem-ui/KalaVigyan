@@ -23,6 +23,7 @@ from app.research.review_queue import (
     RAISE,
     REJECT,
     RETRACT,
+    STAGES,
     STRUCTURE,
     TESTIMONY,
     FactLevelRaise,
@@ -39,6 +40,7 @@ from .review_queue_errors import DecisionConflict, NotYourQueue, OwnItem, Unknow
 from .review_queue_facts import FactDecision, decide_fact
 from .review_queue_layouts import approve_layout, reject_layout
 from .review_queue_refile import refiling_problem
+from .review_queue_stages import approve_stage_item, reject_stage_item
 from .review_queue_structure import approve_structure_item, reject_structure_item
 from .testimony_store import MoveRefused, OwnContribution, StaleContribution, UnknownContribution
 
@@ -264,6 +266,7 @@ _APPROVERS: Mapping[str, Decide] = MappingProxyType(
         COMPONENTS: _approve_component,
         LAYOUTS: _approve_layout,
         STRUCTURE: _approve_structure,
+        STAGES: approve_stage_item,
     }
 )
 _REJECTERS: Mapping[str, Decide] = MappingProxyType(
@@ -274,5 +277,6 @@ _REJECTERS: Mapping[str, Decide] = MappingProxyType(
         COMPONENTS: _reject_component,
         LAYOUTS: _reject_layout,
         STRUCTURE: _reject_structure,
+        STAGES: reject_stage_item,
     }
 )

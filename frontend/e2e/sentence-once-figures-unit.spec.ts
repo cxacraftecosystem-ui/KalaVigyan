@@ -93,6 +93,23 @@ test("a ladder stage leaves out a sentence an earlier stage already said, and ke
   expect(count(html, second.sentences[0].text)).toBe(1);
 });
 
+test("a ladder stage's Sources differ leaves out a reading a stage sentence already says, and a difference with nothing left", () => {
+  const block = ladder();
+  const [first, second, ...rest] = block.stages;
+  const said = { ...first.sentences[0], id: "s1.b1.20" };
+  const other = { ...first.sentences[0], id: "s1.b1.21", text: "A later account prints the outlines with a different block." };
+  const repeated = { key: "d1", about: "The outline block", weight: 2 as const, readings: [{ sentence: said, shownIn: null }, { sentence: other, shownIn: null }] };
+  const spent = { key: "d2", about: "The black paste", weight: 1 as const, readings: [{ sentence: { ...second.sentences[0], id: "s1.b1.22" }, shownIn: null }] };
+  const differing: ProcessLadderBlock = { ...block, stages: [first, { ...second, differs: [repeated, spent] }, ...rest] };
+  const stages = stagesSaidOnce(differing.stages);
+  expect(stages[1].differs?.map((differ) => [differ.key, differ.readings.map((reading) => reading.sentence?.id ?? null)])).toEqual([["d1", [null, "s1.b1.21"]]]);
+  expect(stages.map((stage) => stage.differs ?? null)).toEqual([null, stages[1].differs, null, null]);
+  const html = withApp(createElement(ProcessLadder, { block: differing }));
+  expect(count(html, first.sentences[0].text)).toBe(1);
+  expect(count(html, second.sentences[0].text)).toBe(1);
+  expect(count(html, other.text)).toBe(1);
+});
+
 test("expert differences that share a seat's sentence are one card with every side once", () => {
   const historian = phaseBBlock("expert_view", "s5.b1");
   const anthropologist = phaseBBlock("expert_view", "s5.b2");

@@ -54,6 +54,7 @@ SIMULATION_KIND = "simulation"
 WHAT_IF_KIND = "what_if"
 WHAT_IF_SHARED_OPTIONS = 2
 SINGLE_BLOCK_KINDS = frozenset({"prose", "process_ladder", "images"})
+TOLD_STORY_KINDS = frozenset({"timeline_map"})
 ONCE_PER_ANSWER_KINDS = frozenset({"region_story", "seasons", "supply_map", "zoom_story"})
 
 WhatIfKey = tuple[str | None, frozenset[str]]
@@ -173,7 +174,13 @@ class ClaimLedger:
         )
         for repeat in repeats:
             kept = self._without_repeats(kind, payload, repeat)
-            yield _validated(kind, kept) if kept is not None else None
+            block = _validated(kind, kept) if kept is not None else None
+            yield None if block is not None and kind in TOLD_STORY_KINDS and self._all_told(block) else block
+
+    def _all_told(self, block: Block) -> bool:
+        exact, shown = self._anchored_repeat(), tuple(self._said)
+        sentences = [sentence.model_dump(mode="json", by_alias=True) for sentence in block.cited_sentences()]
+        return all(exact(sentence) or restates_any(said(sentence), shown) for sentence in sentences)
 
     def _without_repeats(self, kind: str, payload: Payload, repeat: Repeat) -> Payload | None:
         if kind == "compare":
@@ -236,35 +243,24 @@ class ClaimLedger:
         return repeat
 
     def _experts(self, section_id: str, payloads: Mapping[int, Payload]) -> dict[int, Block]:
-        kept, differing = self._new_takes(payloads)
-        views = self._paired_views(kept, differing)
+        views = self._paired_views(self._new_takes(payloads))
         for view in views.values():
             self._record(section_id, view)
         return views
 
-    def _new_takes(self, payloads: Mapping[int, Payload]) -> tuple[dict[int, Payload], set[int]]:
+    def _new_takes(self, payloads: Mapping[int, Payload]) -> dict[int, Payload]:
         kept: dict[int, Payload] = {}
-        differing: set[int] = set()
         for n, payload in payloads.items():
             stripped = kept_sentences(payload, RESTATING_KINDS[EXPERT_KIND], self._restating_repeat())
             if stripped is not None and stripped["take"]:
                 kept[n] = stripped
                 self._record_sentences(stripped["take"])
-            elif payload["differs"]:
-                kept[n] = payload
-                differing.add(n)
-        return kept, differing
+        return kept
 
-    def _paired_views(self, kept: Mapping[int, Payload], differing: set[int]) -> dict[int, Block]:
-        repeated = self._repeated_pairs(kept.values())
-        paired = _paired(kept, repeated)
-        idle = {n for n in differing if not paired[n]["differs"]}
-        if idle:
-            paired = _paired({n: p for n, p in kept.items() if n not in idle}, repeated)
-        views = _expert_views(paired)
+    def _paired_views(self, kept: Mapping[int, Payload]) -> dict[int, Block]:
+        views = _expert_views(_paired(kept, self._repeated_pairs(kept.values())))
         if expert_pairing_problems(list(views.values())):
-            plain = {n: p for n, p in kept.items() if n not in differing}
-            views = _expert_views({n: _paired_within(p, set(), set()) for n, p in plain.items()})
+            views = _expert_views({n: _paired_within(p, set(), set()) for n, p in kept.items()})
         return views
 
     def _repeated_pairs(self, payloads: Iterable[Payload]) -> set[frozenset[str]]:

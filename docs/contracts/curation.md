@@ -206,6 +206,11 @@ neither: order is set only when a source states the sequence, and no two stages 
 - `prices[{claimId, date, placeId}]`: a price only with its date, place and source.
 - `workforce[{claimId, year}]`: numbers of artisans or households only with the year the
   source states, which appears in that claim's quotes.
+- `imitation[claimId]`: the claims that state a sign of imitation (a fake, a copy, a duplicate, a
+  substitute sold as the craft), in the order the page shows them. Each cites a `GI_JOURNAL`
+  source, and the list is kept with the GI record, so `gi` is given (decision 0167). The answer's
+  market block shows these first, then the claims the imitation word list finds
+  (`research/gi_registry.states_imitation`), at most three in all.
 
 ### Glossary (`glossary`, `W..`; `curation/records.Term`)
 
@@ -616,8 +621,8 @@ sync stores it. Ids are `uuid5(ID_NAMESPACE, "curation:<slug>:<id>")` for claims
 | stages | `Process` (variant `curation`) and `ProcessStage` (`ordered` false and an ordinal after the ordered stages when no source states the order; `durationText`); materials and tools are `Material` rows, their uses `StageMaterial` (tools with role `TOOL`) |
 | reactions | `Reaction` balanced by the science engine and `ReactionCitation` to every quote of its claims; no formula, no equation; a reaction without a stage is a page fact |
 | pictures | `MediaRef` (provider `curation`, `INLINE` under an open licence with its author, `width` and `height` the dossier's) and `MediaRefClaim`; a stored row of the same file with no size gets the dossier's size, and nothing else of a stored row changes |
-| glossary | `Term` (key from the first spelling of a comma list, the rest aliases; inserted only when the key is new), `TermCraft`, `TermConcept`, and the English `TermSummary` with basis `STORED`, written once per import after the dossiers, built from the curated claims every dossier's glossary names for that key (in craft slug order, the fact-level cited ones, `curation_terms.write_curated_term_summaries`, decision 0142), so `GET /terms/{key}` serves the curated meaning; its other languages are dropped when the English changes and translated again on the next ask |
-| GI record | `CraftGiRecord {craftId, applicationNumber, certificateNumber, filedOn, registeredOn, journalIssue, proprietors[], authorisedUserCount, claimIds[]}`, one per craft; dates are partial (`YYYY`, `YYYY-MM`, `YYYY-MM-DD`) as the dossier gives them |
+| glossary | `Term` (key from the first spelling of a comma list, the rest aliases; inserted only when the key is new; its `sentenceName`, the casing its meaning and its concepts' claims write it in away from a sentence's start, filled after every import for each term that has none, `services/term_sentence_names`, decision 0167), `TermCraft`, `TermConcept`, and the English `TermSummary` with basis `STORED`, written once per import after the dossiers, built from the curated claims every dossier's glossary names for that key (in craft slug order, the fact-level cited ones, `curation_terms.write_curated_term_summaries`, decision 0142), so `GET /terms/{key}` serves the curated meaning; its other languages are dropped when the English changes and translated again on the next ask |
+| GI record | `CraftGiRecord {craftId, applicationNumber, certificateNumber, filedOn, registeredOn, journalIssue, proprietors[], authorisedUserCount, claimIds[], imitationClaimIds[]}`, one per craft (`imitationClaimIds` from `market.imitation`); dates are partial (`YYYY`, `YYYY-MM`, `YYYY-MM-DD`) as the dossier gives them |
 | prices | `CraftPrice {id, craftId, claimId, pricedOn (partial date), placeName, stateLgd, districtLgd}` |
 | workforce | `CraftWorkforce {id, craftId, claimId, year}` |
 | overview | `KnowledgePiece` `prose` blocks, `EXPERT`, no answer id: the lede (facet `OVERVIEW`) and one per section, topic as answers compute it, sentences checked by the answer engine's prose validator (a failing one is dropped) and marked with the dossier's glossary |

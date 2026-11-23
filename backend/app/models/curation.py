@@ -130,6 +130,9 @@ class CraftGiRecord(Base):
     )
     authorisedUserCount: Mapped[int | None] = mapped_column(Integer)
     claimIds: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), nullable=False)
+    imitationClaimIds: Mapped[list[uuid.UUID]] = mapped_column(
+        ARRAY(UUID(as_uuid=True)), nullable=False, server_default=text("ARRAY[]::uuid[]")
+    )
     createdAt: Mapped[datetime] = created_at()
     updatedAt: Mapped[datetime] = updated_at()
 

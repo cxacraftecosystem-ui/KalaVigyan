@@ -4,6 +4,7 @@ import { LayoutReviewCard } from "@/components/review/LayoutReviewCard";
 import { PictureReviewCard } from "@/components/review/PictureReviewCard";
 import { QueueItemHeader } from "@/components/review/QueueItemHeader";
 import { ReviewCard } from "@/components/review/ReviewCard";
+import { StageReviewCard } from "@/components/review/StageReviewCard";
 import { StructureReviewCard } from "@/components/review/StructureReviewCard";
 import type { Filing, QueueAction, QueueItem } from "@/lib/reviewQueueContract";
 import { isOpenItem, STATUS_LABELS } from "@/lib/testimonyContract";
@@ -17,6 +18,7 @@ export function QueueItemView({ item, handlers }: { item: QueueItem; handlers: Q
   if (item.kind === "FACTS") return <FactReviewCard item={item} onDecide={(action, words, filing) => handlers.decide(item, action, words, filing)} />;
   if (item.kind === "COMPONENTS") return <ComponentReviewCard item={item} onDecide={(action, words) => handlers.decide(item, action, words)} />;
   if (item.kind === "LAYOUTS") return <LayoutReviewCard item={item} onDecide={(action, words) => handlers.decide(item, action, words)} />;
+  if (item.kind === "STAGES") return <StageReviewCard item={item} onDecide={(action, words, placement) => handlers.decide(item, action, words, placement)} />;
   if (item.kind === "STRUCTURE") return <StructureReviewCard item={item} onDecide={(action, words) => handlers.decide(item, action, words)} />;
   return (
     <div className="grid gap-3">

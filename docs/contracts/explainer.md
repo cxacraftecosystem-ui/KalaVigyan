@@ -132,7 +132,10 @@ fewer sentences than the live page, never more.
   `climate_risk` and the rest) drop an item when its sentence's text is already shown or it
   restates a shown sentence; a story that would not stand without its restating items keeps the
   first of them (then, if it still does not stand, every one), so a figure is never lost to the
-  prose it draws. In one call they are let through before the restating blocks; a
+  prose it draws, except that a `timeline_map` whose every kept item is shown or restated is left
+  out (`claim_ledger.TOLD_STORY_KINDS`, decision 0167: the Ajrakhpur move told by a section's prose
+  and again by its timeline); a `region_story` stays, since its map draws the rivers and districts
+  the prose does not. In one call they are let through before the restating blocks; a
   story block may repeat a sentence within itself, one copy per item it backs (the client says it
   once: Each sentence once, under Block renderers). A
   `process_ladder` is the process's skeleton: a stage drops a sentence said word for word, and a
@@ -144,7 +147,10 @@ fewer sentences than the live page, never more.
   decision 0127) is a sentence of at least `RESTATED_STEMS_MIN` (4) content stems
   (`quotes.content_stems`) that adds no number to a shown one and keeps its negation, and either
   shares its claim group (its claims, or its citations' source and folded quote, within the shown
-  sentence's) with at least `SAME_GROUP_SHARE` (half) of their stems in common, or cites other
+  sentence's) with at least `SAME_GROUP_SHARE` (half) of their stems in common, or cites only
+  passages overlapping the shown sentence's of the same source with at least `SAME_PASSAGE_SHARE`
+  (three tenths) in common (decision 0138; a sentence of the same claim group short of half still
+  meets this rule, decision 0167), or cites other
   evidence with the same numbers and at least `NEAR_VERBATIM_SHARE` (0.8) of their stems in common:
   a story step that tells the prose's fact in nearly the prose's words, and one fact filed under
   two fields, are said once. An item left with no sentence goes, so a card whose every fact
@@ -154,8 +160,8 @@ fewer sentences than the live page, never more.
   are exempt from the repeat rule (decision 0120): an `expert_view` difference goes from both seats
   only when the same pair of claims was already shown as a difference or the page already said both
   its readings (each by its words or by every claim it cites, decision 0165), never because one
-  reading was already said in prose, and a seat whose every take sentence was shown stays, with its take,
-  while it carries a difference (it goes when its differences go). Kinds without
+  reading was already said in prose; a seat whose every take sentence was shown goes, and its
+  differences with it (decision 0167, which replaced keeping its whole take for a difference). Kinds without
   sentences pass whole. A block left empty or off its contract is not sent; a section left with
   nothing ends `EMPTY` with `COVERED_NOTE` ("Already covered in this answer."), which the client
   does not draw (`lib/explainerView.shownSections`).
@@ -411,7 +417,8 @@ construct, and the builder that made it adds nothing.
   rainfall. **Piece:** the section's slot.
 - **`supply_map`** `{links[{material, materialId?, termKey?, origin, wikidataId?, latitude?,
   longitude?, districtLgd?, sentence}] (1+), datasets[DatasetRef]?}`. Server: `material` is the
-  glossary term's label or the stored material's name, else words the sentence states;
+  glossary term's sentence-case name (`Term.sentenceName`, decision 0167), else its label, else the
+  stored material's name, else words the sentence states;
   coordinates are the register district's stored centroid when the origin is one LGD district by
   its register or other name (`districtLgd`, the block then citing `DR_DISTRICT_SHAPES` in
   `datasets`), else the Wikidata item's (P625). Model: which claims, which material and origin
@@ -679,7 +686,9 @@ gets neither.
   offered, whose origin or unstored material its sentence and quotes do not state, whose stored
   material's own use claims do not include the statement and whose sentence and quotes name none
   of the material's surfaces (decision 0050), or whose material is its own origin is dropped, each pair once, at most 12. A stored material is shown by
-  its glossary term's label, else its name. An origin that is one LGD district by its register or
+  its glossary term's sentence-case name, else its label, else its name; the web writes the first
+  name of a list with a capital and keeps a later one as carried, lowering a title-case one only
+  where the sentences write it in lower case (`sentenceGroups.namesText`). An origin that is one LGD district by its register or
   other name is placed at that district's stored centroid (`place_register.register_points`),
   citing the `DR_DISTRICT_SHAPES` row (no row, no district placement). The other origins are
   placed through the Wikidata adapter: `place_candidates` (`wbsearchentities`, the hits whose
@@ -1559,8 +1568,10 @@ Neither builder asks a model, so neither spends; both read stored rows in one sh
   fields `research/gi_registry.gi_fields` reads by label from each registry claim's text and
   quotes (different values across claims give none); the status by `gi_status_name`, none when a
   sentence says registered without a certificate or date. Imitation: up to `IMITATION_MAX` (3)
-  fact-level claims citing a GI journal whose text names imitation or passing off
-  (`states_imitation`; "substitute" alone is not a sign). Prices: the curated rows; a craft with
+  fact-level claims citing a GI journal: first the curated record's signs
+  (`CraftGiRecord.imitationClaimIds`, the dossier's `market.imitation`, in its order; decision
+  0167), then those whose text names imitation or passing off (`states_imitation`; "substitute"
+  alone is not a sign). Prices: the curated rows; a craft with
   none reads up to 40 of its claims naming a price (`market_store.stated_price_offer`, decision
   0147) and keeps a claim stating exactly one price, one year and one LGD district (by its register
   spelling or another name). Each
@@ -1695,7 +1706,8 @@ is written "sentence" below; every sentence is cited.
   a rendering or a name counts only as a whole word, with no letter, mark or digit beside it, so a
   vowel sign never ends a word (`research/terms.shown_as_word`, decision 0166); a first occurrence
   that overlaps a span kept before it is dropped (`research/terms.spans_still_shown`), and no other
-  term is marked anew (decisions 0039 and 0089).
+  term is marked anew (decisions 0039 and 0089), so a Hindi answer keeps the
+  quiz questions whose terms have Hindi names (decision 0167).
 - **`Term {schemaVersion 1, key, label, language, localNames[], craftSlugs[], wikidataId?, basis,
   summary[AnswerSentence] (1-3), sources[SourceRef], checkedAt}`** is the glossary row a tap
   opens, cached per key and language. `basis` is `STORED` (cited claims already held), else
@@ -1791,7 +1803,7 @@ validated by `event_frame` like every other: a payload off the contract never re
 | `builds_on` | `BuildsOnEvent {explainerId, version, sections[{id, order}]}` | a follow-up only, right after `understood`: the explainer and version it extends (decision 0062, `docs/contracts/learning.md`) |
 | `version` | `VersionMark {explainerId, version, answerId, basedOn, question, changes[], createdAt}` | a follow-up only, before `done`: the version it stored |
 | `lede` | `{block: LedeBlock}` | once at most, before the first `block`; every source it cites was sent as `source` first. Without a stored finding it comes after the sections, before `follow_ups` (decision 0077) |
-| `section_heading` | `{sectionId, title, original?}` | the heading written for a started section, before its first block; `original` is the English heading when `title` is a translation |
+| `section_heading` | `{sectionId, title, original?}` | the heading written for a started section, before its first block; `original` is the English heading when `title` is a translation; a heading is one section's within an answer: another section proposing it (folded) keeps its own title (`ExplainerStream.claim_heading`, decision 0167) |
 
 Order: `understood`; every researched section is started (`RESEARCHING`) and researches while the
 `lede` is written (decision 0077: blocks wait for it, and reused sections wait for their headings

@@ -25,6 +25,7 @@ from app.research.composition import (
 from app.research.planning import OPEN_QUESTION_LEVEL
 from app.research.reading_style import ReadingStyle
 from app.research.structured import StructuredModel, reply_object
+from app.research.translation import Translator
 
 from .drafts import (
     DraftAnswer,
@@ -50,6 +51,7 @@ from .prompt import (
     section_system_prompt,
     styled,
 )
+from .quote_checks import rendered_draft
 
 __all__ = [
     "ModelComposer",
@@ -93,8 +95,9 @@ def lede_form(request: LedeRequest) -> ReplyForm:
 
 
 class ModelComposer:
-    def __init__(self, *, model: StructuredModel) -> None:
+    def __init__(self, *, model: StructuredModel, translator: Translator | None = None) -> None:
         self._model = model
+        self._translator = translator
 
     async def compose(self, request: ComposeRequest) -> ComposedAnswer:
         if not request.candidates:
@@ -114,6 +117,7 @@ class ModelComposer:
         self, form: ReplyForm, message: str, allowed: Mapping[str, ComposeCandidate]
     ) -> DraftAnswer:
         draft, retries_left = await self._first_draft(form, message, allowed)
+        draft = await rendered_draft(draft, allowed, self._translator)
         if draft.failed and retries_left:
             draft = await self._regenerated(message, draft, allowed, form.style)
         _log_dropped(draft)
@@ -181,6 +185,7 @@ def assembled_answer(draft: DraftAnswer, request: ComposeRequest) -> ComposedAns
         follow_ups=list(draft.follow_ups),
         heading=draft.heading if sections else None,
         component_labels=list(draft.component_labels),
+        renderings=dict(draft.renderings),
     )
 
 

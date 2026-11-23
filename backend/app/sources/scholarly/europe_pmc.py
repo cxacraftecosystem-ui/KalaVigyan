@@ -16,6 +16,7 @@ from ..records import (
     clean_text,
     doi_of,
     doi_url,
+    journal_of,
     markup_text,
     partial_date_of,
     title_of,
@@ -62,6 +63,7 @@ class EuropePmcAdapter(HttpSourceAdapter):
             licence=clean_text(record.get("license")),
             doi=doi,
             publisher=clean_text(journal.get("title")),
+            container_title=journal_of(journal.get("title")),
             trust=trust,
             external_ids={"europe_pmc": f"{source}:{record_id}"},
         )

@@ -2,7 +2,7 @@ import { isReaderCraft } from "@/lib/craftCatalogue";
 import type { CraftCatalogue } from "@/lib/craftCatalogueContract";
 import { roleLabel } from "@/lib/permissions";
 import {
-  QUEUE_KINDS,
+  isQueueKind,
   REASON_MAX,
   REASON_MIN,
   REVIEW_ORIGINS,
@@ -31,7 +31,8 @@ export const KIND_LABELS: Record<QueueKind, string> = {
   IMAGES: "Pictures",
   COMPONENTS: "Components",
   LAYOUTS: "Layouts",
-  STRUCTURE: "Structure"
+  STRUCTURE: "Structure",
+  STAGES: "Process stages"
 };
 
 export const KIND_NOUNS: Record<QueueKind, string> = {
@@ -40,7 +41,8 @@ export const KIND_NOUNS: Record<QueueKind, string> = {
   IMAGES: "Picture",
   COMPONENTS: "Component proposal",
   LAYOUTS: "Layout proposal",
-  STRUCTURE: "Structure proposal"
+  STRUCTURE: "Structure proposal",
+  STAGES: "Process stage"
 };
 
 export const ORIGIN_LABELS: Record<ReviewOrigin, string> = {
@@ -96,10 +98,6 @@ export function reasonProblem(action: QueueAction, words: string): string | null
   return null;
 }
 
-function isKind(value: string | null): value is QueueKind {
-  return QUEUE_KINDS.includes(value as QueueKind);
-}
-
 function isOrigin(value: string | null): value is ReviewOrigin {
   return REVIEW_ORIGINS.includes(value as ReviewOrigin);
 }
@@ -108,7 +106,7 @@ export function filtersFromSearch(params: URLSearchParams): ReviewFilters {
   const kind = params.get("kind");
   const origin = params.get("origin");
   const craft = params.get("craft")?.trim() ?? "";
-  return { kind: isKind(kind) ? kind : null, craft: craft || null, origin: isOrigin(origin) ? origin : null };
+  return { kind: isQueueKind(kind) ? kind : null, craft: craft || null, origin: isOrigin(origin) ? origin : null };
 }
 
 export function filtersSearch(filters: ReviewFilters): string {

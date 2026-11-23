@@ -142,6 +142,7 @@ def _record_references(dossier: Dossier) -> Iterator[Reference]:
         yield Reference(f"market.prices.{index}", "place", price.place_id)
     for index, workforce in enumerate(dossier.market.workforce):
         yield Reference(f"market.workforce.{index}", "claim", workforce.claim_id)
+    yield from _claims("market.imitation", dossier.market.imitation)
     for picture in dossier.pictures:
         yield from _claims(picture.id, picture.claim_ids)
         if picture.stage_id is not None:

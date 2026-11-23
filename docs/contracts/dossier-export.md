@@ -64,7 +64,7 @@ digest of a dossier laid out by hand).
 | reactions | the page index (a category's keep the stage git gives them) |
 | pictures | the page index (caption, claims, placement, focal box, size, stand-in) with `MediaRef` address, page, author and licence |
 | overview | the stored `KnowledgePiece` prose of the lede and each section |
-| market | `CraftGiRecord`, `CraftPrice` (its place found by name and id) and `CraftWorkforce` |
+| market | `CraftGiRecord` (with `market.imitation` from its `imitationClaimIds`), `CraftPrice` (its place found by name and id) and `CraftWorkforce` |
 
 ## What the dossier in git still gives
 

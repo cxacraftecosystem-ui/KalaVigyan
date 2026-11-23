@@ -5,7 +5,7 @@ import pytest
 
 from app.research.image_relevance import ClaimText
 from app.research.images import ImageCandidate
-from app.services import journey_builders
+from app.services import craft_matter as craft_matter_module, journey_builders
 from app.services.block_builders import BLOCK_BUILDERS
 from app.services.journey_builders import ZoomStoryBuilder
 from app.services.matter_builders import molecule_candidates
@@ -110,16 +110,17 @@ def zoom_builder(pictures: tuple[Any, FakeSource], *, sdf: Reply = ALIZARIN_SDF)
 
 @pytest.fixture
 def stored(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
-    found: dict[str, Any] = {"matter": zoom_matter(), "ground": zoom_ground_of(), "asked": []}
+    found: dict[str, Any] = {"matter": zoom_matter(), "ground": zoom_ground_of(), "asked": [], "read": []}
 
     async def load(sessions: Any, craft: Any) -> Any:
+        found["read"].append(craft.slug)
         return found["matter"]
 
     async def ground(session: Any, slug: str, *, mode: str, offered: Any) -> Any:
         found["asked"].append((slug, mode, list(offered)))
         return found["ground"]
 
-    monkeypatch.setattr(journey_builders, "craft_matter", load)
+    monkeypatch.setattr(craft_matter_module, "craft_matter", load)
     monkeypatch.setattr(journey_builders, "zoom_ground", ground)
     return found
 
@@ -202,6 +203,15 @@ async def test_an_answer_for_any_craft_or_without_a_bucket_gets_what_it_can(stor
     builder = ZoomStoryBuilder(journey_tools(), bucket=lambda: None, pictures=pictures_of()[0])
     (block,) = (await builder.build(materials_ask())).blocks
     assert [level.level for level in block.levels] == ["DISTRICT", "WORKSHOP"]
+
+
+async def test_the_zoom_shares_the_answer_s_one_read_of_the_craft_s_matter(stored: dict[str, Any]) -> None:
+    ask = materials_ask()
+    shared = await ask.matter.read(None, ask.request.craft)
+    (block,) = (await zoom_builder(pictures_of()).build(ask)).blocks
+    assert [level.level for level in block.levels][-1] == "MOLECULE"
+    assert stored["read"] == ["Kutch-Ajrakh"]
+    assert shared is stored["matter"]
 
 
 def test_each_level_carries_its_own_caption_named_by_its_matter() -> None:

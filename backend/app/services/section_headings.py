@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -16,6 +16,7 @@ from .stated_names import unstated_names
 
 __all__ = [
     "Headed",
+    "HeadingClaim",
     "WrittenSection",
     "composed_heading",
     "headed_specs",
@@ -24,6 +25,8 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
+
+HeadingClaim = Callable[[str, str], bool]
 
 
 class WrittenSection(Protocol):
@@ -66,11 +69,12 @@ async def headed_specs(
     *,
     language: str,
     translation: AnswerTranslation,
+    claim: HeadingClaim,
 ) -> list[Headed]:
     accepted = {
         spec.id: heading
         for spec, supports in shown
-        if (heading := shown_heading(proposed.get(spec.id), supports)) is not None
+        if (heading := shown_heading(proposed.get(spec.id), supports)) is not None and claim(spec.id, heading)
     }
     segments = [Segment(f"heading:{section_id}", heading) for section_id, heading in accepted.items()]
     found = await translate_segments(segments, language=language, translation=translation)
@@ -89,7 +93,11 @@ async def composed_heading(
     supports = heading_supports(written.blocks, written.cited)
     proposals = {spec.id: proposed}
     (headed,) = await headed_specs(
-        proposals, [(spec, supports)], language=stream.language, translation=translation
+        proposals,
+        [(spec, supports)],
+        language=stream.language,
+        translation=translation,
+        claim=stream.claim_heading,
     )
     if headed.shown is not None:
         original = headed.spec.title if headed.shown != headed.spec.title else None

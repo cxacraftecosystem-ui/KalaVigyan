@@ -31,6 +31,7 @@ from .answer_gaps import FieldReading
 from .answer_lede import AnswerOpening, LedeTools, LedeWriting, Opening, lede_plan
 from .answer_sections import run_sections
 from .answer_steps import TracedStep
+from .answer_stops import stopped_unless_finished
 from .answer_translation import AnswerTranslation, Segment, translate_segments, with_english_question
 from .block_builders import BlockBuilders
 from .explainer_document import explainer_document
@@ -121,6 +122,8 @@ class AnswerStore(Protocol):
         self, explainer_id: uuid.UUID, user_id: uuid.UUID | None
     ) -> ExplainerVersionDocument: ...
 
+    async def stop(self, request_id: str) -> None: ...
+
 
 @dataclass(frozen=True)
 class AnswerPipeline:
@@ -156,13 +159,13 @@ async def answer_question(ask: AnswerAsk, pipeline: AnswerPipeline, emit: Emit) 
     answer_id: uuid.UUID | None = None
     try:
         with kept_request_id(ANSWER_REQUEST_PREFIX):
-            answer_id = await _answer(ask, pipeline, emit)
+            answer_id = await stopped_unless_finished(_answer(ask, pipeline, emit), pipeline.store.stop)
     except StaleVersion as stale:
         logger.warning("the follow-up was not kept: %s", stale)
         await emit("error", {"message": STALE_VERSION_DETAIL})
     except AppError as error:
         logger.warning("answering stopped: %s", error, exc_info=True)
-        await emit("error", {"message": _user_message(error, RESEARCH_FAILED_DETAIL)})
+        await emit("error", {"message": spend_refusal(error) or RESEARCH_FAILED_DETAIL})
     except Exception:
         logger.exception("answering failed")
         await emit("error", {"message": UNEXPECTED_DETAIL})
@@ -205,7 +208,7 @@ async def _understood(ask: AnswerAsk, pipeline: AnswerPipeline, emit: Emit) -> U
         return None
     except AppError as error:
         logger.warning("understanding the question failed", exc_info=True)
-        await emit("error", {"message": _user_message(error, RESOLVER_FAILED_DETAIL)})
+        await emit("error", {"message": spend_refusal(error) or RESOLVER_FAILED_DETAIL})
         return None
     await emit("understood", understood_for(understanding, ask.builds_on))
     if ask.builds_on is not None:
@@ -387,7 +390,3 @@ def _plan_request(ask: AnswerAsk, understanding: Understanding) -> PlanRequest:
 
 def _language(ask: AnswerAsk) -> str:
     return ask.language or CANONICAL_LANGUAGE
-
-
-def _user_message(error: AppError, otherwise: str) -> str:
-    return spend_refusal(error) or otherwise

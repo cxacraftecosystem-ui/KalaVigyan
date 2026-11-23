@@ -127,6 +127,7 @@ from app.models.science import (
     Reaction,
     ReactionCitation,
     StageMaterial,
+    StageReview,
 )
 from app.models.sharing import SharedExportFile
 from app.models.source_upkeep import SourceUpkeep
@@ -268,6 +269,7 @@ __all__ = [
     "SourcePace",
     "SourceUpkeep",
     "StageMaterial",
+    "StageReview",
     "StateEnvValue",
     "StoredDocument",
     "StructureProposal",

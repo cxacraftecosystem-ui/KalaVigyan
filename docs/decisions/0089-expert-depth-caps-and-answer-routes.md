@@ -10,6 +10,7 @@ decision 0093 (no caps for now; every call asks for its model's documented maxim
 | For | Read |
 |---|---|
 | What superseded part of it | [0093 No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output](0093-no-caps-for-now.md): item 3's output tokens and item 4's caps |
+| A Hindi answer keeps its quiz on its terms' Hindi names | [decision 0167](0167-answer-leftovers-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

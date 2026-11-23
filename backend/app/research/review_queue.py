@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import re
 import uuid
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from types import MappingProxyType
 from typing import Annotated, Any, Literal, Self
 
@@ -19,7 +18,16 @@ from .image_contributions import REVIEW_NOTE_MAX_CHARS as PICTURE_NOTE_MAX_CHARS
 from .layout_proposals import LayoutReview
 from .open_work import REVIEW_QUEUES
 from .review_queue_components import ComponentReview
+from .review_queue_cursor import (
+    CURSOR_MAX_CHARS,
+    QueueEntry,
+    QueueKey,
+    cursor_text,
+    newest_first,
+    parsed_cursor,
+)
 from .review_queue_parts import FactSource, GateCheck, RelatedFact, SourceQuote
+from .review_queue_stages import StagePlacing
 from .review_queue_structure import StructureReview
 from .review_switch import (
     AGENT,
@@ -66,6 +74,7 @@ __all__ = [
     "REVIEWED_LEVEL",
     "REVIEW_ORIGINS",
     "REVIEW_QUEUE_SCHEMA_VERSION",
+    "STAGES",
     "STRUCTURE",
     "TESTIMONY",
     "TESTIMONY_ORIGIN",
@@ -94,6 +103,7 @@ __all__ = [
     "ReviewOrigin",
     "ReviewQueuePage",
     "SourceQuote",
+    "StageQueueItem",
     "StructureQueueItem",
     "TestimonyItem",
     "cursor_text",
@@ -110,7 +120,7 @@ __all__ = [
 
 REVIEW_QUEUE_SCHEMA_VERSION = 1
 QUEUE_KINDS: tuple[str, ...] = tuple(REVIEW_QUEUES)
-FACTS, TESTIMONY, IMAGES, COMPONENTS, LAYOUTS, STRUCTURE = QUEUE_KINDS
+FACTS, TESTIMONY, IMAGES, COMPONENTS, LAYOUTS, STRUCTURE, STAGES = QUEUE_KINDS
 TESTIMONY_ORIGIN = "TESTIMONY"
 REVIEW_ORIGINS: tuple[str, ...] = (*PROPOSAL_ORIGINS, TESTIMONY_ORIGIN)
 KIND_ORIGINS: Mapping[str, tuple[str, ...]] = MappingProxyType(
@@ -121,6 +131,7 @@ KIND_ORIGINS: Mapping[str, tuple[str, ...]] = MappingProxyType(
         COMPONENTS: (AGENT,),
         LAYOUTS: (CONTRIBUTION, AGENT),
         STRUCTURE: (CONTRIBUTION, AGENT),
+        STAGES: (RESEARCH,),
     }
 )
 APPROVE, REJECT, RAISE, RETRACT = "approve", "reject", "raise", "retract"
@@ -142,28 +153,12 @@ REASON_NOT_GIVEN = "a rejection gives its reason in words, or a testimony reason
 REASON_IN_WORDS = "This item is rejected with its reason in words, at least three characters."
 REASON_MAX_CHARS = min(PICTURE_NOTE_MAX_CHARS, TESTIMONY_NOTE_MAX_CHARS)
 ONE_HOME = "A fact is filed under a craft or under a family's science, not both."
-CURSOR_MAX_CHARS = 60
-EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
-MICROSECOND = timedelta(microseconds=1)
-CURSOR_PATTERN = re.compile(r"^(\d{1,19})~([0-9a-f]{32})$")
 
 QueueKind = Literal[*QUEUE_KINDS]
 ReviewOrigin = Literal[*REVIEW_ORIGINS]
 TestimonyReason = Literal[*TESTIMONY_REJECT_REASONS]
 Reason = Annotated[str, Field(min_length=REASON_MIN_CHARS, max_length=REASON_MAX_CHARS)]
 Note = Annotated[str, Field(min_length=1, max_length=REASON_MAX_CHARS)]
-
-
-@dataclass(frozen=True, order=True)
-class QueueKey:
-    created_at: datetime
-    item_id: uuid.UUID
-
-
-@dataclass(frozen=True)
-class QueueEntry:
-    key: QueueKey
-    kind: str
 
 
 @dataclass(frozen=True)
@@ -225,24 +220,6 @@ def fact_origin(claim_origin: str, found_by: Iterable[str | None]) -> str:
     if claim_origin == WRITE_BACK_ORIGIN:
         return RESEARCH
     return AGENT if AGENT in set(found_by) else CONTRIBUTION
-
-
-def cursor_text(key: QueueKey) -> str:
-    return f"{(key.created_at - EPOCH) // MICROSECOND}~{key.item_id.hex}"
-
-
-def parsed_cursor(text: str) -> QueueKey:
-    found = CURSOR_PATTERN.match(text)
-    if found is None:
-        raise InvalidInput("Unknown cursor.")
-    return QueueKey(EPOCH + int(found.group(1)) * MICROSECOND, uuid.UUID(hex=found.group(2)))
-
-
-def newest_first(groups: Iterable[Sequence[QueueEntry]], limit: int) -> tuple[list[QueueEntry], str | None]:
-    merged = sorted((entry for group in groups for entry in group), key=lambda entry: entry.key, reverse=True)
-    kept = merged[:limit]
-    following = cursor_text(kept[-1].key) if len(merged) > limit else None
-    return kept, following
 
 
 class ReviewFilters(ContractModel):
@@ -319,8 +296,13 @@ class StructureQueueItem(_QueueItem):
     structure: StructureReview
 
 
+class StageQueueItem(_QueueItem):
+    kind: Literal["STAGES"] = "STAGES"
+    stage: StagePlacing
+
+
 QueueItem = Annotated[
-    FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem | StructureQueueItem,
+    FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem | StructureQueueItem | StageQueueItem,
     Field(discriminator="kind"),
 ]
 
@@ -340,6 +322,8 @@ class QueueApproval(ContractModel):
     english_checked: bool = False
     craft: str | None = Field(default=None, min_length=1, max_length=SLUG_MAX_CHARS)
     family: str | None = Field(default=None, min_length=1, max_length=SLUG_MAX_CHARS)
+    process_id: uuid.UUID | None = None
+    after_stage_id: uuid.UUID | None = None
     corroborating_claim_ids: list[uuid.UUID] = Field(
         default_factory=list, max_length=CORROBORATING_CLAIMS_MAX
     )

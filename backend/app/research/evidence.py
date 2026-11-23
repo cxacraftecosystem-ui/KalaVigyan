@@ -18,7 +18,6 @@ __all__ = [
     "ADAPTER_NAME_PATTERN",
     "DOI_PATTERN",
     "EVIDENCE_ID_MAX_CHARS",
-    "JOURNAL_AS_PUBLISHER_ADAPTERS",
     "OPEN_ACCESS_STATUSES",
     "SEARCH_MAX_K",
     "SEARCH_QUERY_MAX_CHARS",
@@ -40,7 +39,6 @@ SEARCH_QUERY_MAX_CHARS = 300
 ADAPTER_NAME_PATTERN = r"^[a-z][a-z0-9_]{1,39}$"
 DOI_PATTERN = r"^10\.\d{4,9}/\S+$"
 OPEN_ACCESS_STATUSES = ("GOLD", "DIAMOND", "HYBRID", "BRONZE", "GREEN", "CLOSED")
-JOURNAL_AS_PUBLISHER_ADAPTERS = frozenset({"europe_pmc", "semantic_scholar"})
 PERSONAL_DATA = {
     "email address": re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+"),
     "spoken email address": re.compile(r"\b[\w.+-]+\s+at\s+[\w-]+(?:\s+dot\s+[a-z]{2,})+\b", re.IGNORECASE),
@@ -84,12 +82,6 @@ class EvidenceItem(ContractModel):
         if not self.id.startswith(f"{self.adapter}:") or self.id == f"{self.adapter}:":
             raise ValueError("an evidence id is '<adapter>:<id at the service>'")
         return self
-
-    @property
-    def journal(self) -> str | None:
-        if self.container_title is not None:
-            return self.container_title
-        return self.publisher if self.adapter in JOURNAL_AS_PUBLISHER_ADAPTERS else None
 
     @property
     def source_key(self) -> str:

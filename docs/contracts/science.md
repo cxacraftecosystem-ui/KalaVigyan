@@ -145,7 +145,10 @@ and `science/process_view.craft_process` builds the view.
 - Processes and stages: the live `Process` rows of the craft (`archivedAt` null,
   `models.science.live_process`) and their `ProcessStage` rows (the seed has one `Seed process`
   per craft, its stages from the immersive stage concepts with an ordinal; a craft with a curated
-  dossier has its seed process archived, decision 0142). `ordered` is `false` for a stage no
+  dossier has its seed process archived, decision 0142). A stage concept an answer found joins a
+  live process that is not curated when a Professor places it from the review queue (decision 0167,
+  `review-queue.md`): a `ProcessStage` named as the concept, at the place chosen, the later stages
+  moved down by one. `ordered` is `false` for a stage no
   source orders (`ProcessStage.ordered`, a curated stage placed after the ordered ones) and left
   out when a source orders it; a process ladder (`science/ladder`) offers the composer only ordered
   stages, marks an unordered stage it holds `unnumbered` (as the craft page's ladder does), and a

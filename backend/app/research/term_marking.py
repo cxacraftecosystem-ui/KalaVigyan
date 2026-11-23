@@ -6,9 +6,10 @@ from dataclasses import dataclass
 
 from .terms import TERM_LABEL_MAX_CHARS, TermSpan
 
-__all__ = ["SURFACE_MIN_CHARS", "GlossaryEntry", "TermMarker"]
+__all__ = ["SURFACE_MIN_CHARS", "WORD_CHARS", "GlossaryEntry", "TermMarker"]
 
 SURFACE_MIN_CHARS = 2
+WORD_CHARS = r"\w\u064B-\u065F\u0670\u0900-\u0963\u0966-\u0D7F"
 
 
 @dataclass(frozen=True)
@@ -22,7 +23,8 @@ class TermMarker:
         self._keys = _surface_keys(glossary)
         ordered = sorted(self._keys, key=lambda surface: (-len(surface), surface))
         alternatives = "|".join(re.escape(surface) for surface in ordered)
-        self._pattern = re.compile(rf"(?<!\w)(?:{alternatives})(?!\w)", re.IGNORECASE) if ordered else None
+        bounded = rf"(?<![{WORD_CHARS}])(?:{alternatives})(?![{WORD_CHARS}])"
+        self._pattern = re.compile(bounded, re.IGNORECASE) if ordered else None
 
     def spans(self, text: str) -> list[TermSpan]:
         if self._pattern is None:

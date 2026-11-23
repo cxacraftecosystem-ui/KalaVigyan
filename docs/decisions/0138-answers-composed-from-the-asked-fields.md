@@ -23,6 +23,7 @@ dropped block) and [decision 0010](0010-composer.md) (the composer's candidates)
 | The naming rule it reuses | [decision 0135](0135-write-backs-filed-under-the-craft-they-name.md) |
 | The evaluation that found the faults | [answer-eval.md](../contracts/answer-eval.md) |
 | The asked fields are the ones the understanding's reply marks as asked | [decision 0165](0165-answers-counted-as-settled-asked-as-asked.md) |
+| A sentence of one claim group short of half its stems meets the passage rule | [decision 0167](0167-answer-leftovers-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

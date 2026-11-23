@@ -102,15 +102,10 @@ def test_ris_files_the_journal_as_the_secondary_title() -> None:
     assert same["secondary_title"] == JOURNAL and "publisher" not in same
 
 
-def test_the_journal_comes_from_the_adapters_that_name_it_as_the_publisher() -> None:
-    assert evidence("europe_pmc", JOURNAL).journal == JOURNAL
-    assert evidence("semantic_scholar", JOURNAL).journal == JOURNAL
-    assert evidence("crossref", "Informa UK Limited").journal is None
-    assert evidence("crossref", "Informa UK Limited", JOURNAL).journal == JOURNAL
-
-
-def test_a_live_source_is_stored_with_its_journal() -> None:
-    assert source_values(evidence("europe_pmc", JOURNAL))["containerTitle"] == JOURNAL
+def test_a_live_source_is_stored_with_the_journal_its_adapter_names() -> None:
+    assert source_values(evidence("europe_pmc", JOURNAL, JOURNAL))["containerTitle"] == JOURNAL
+    assert source_values(evidence("crossref", "Informa UK Limited", JOURNAL))["containerTitle"] == JOURNAL
+    assert source_values(evidence("europe_pmc", JOURNAL))["containerTitle"] is None
     assert source_values(evidence("crossref", "Informa UK Limited"))["containerTitle"] is None
 
 

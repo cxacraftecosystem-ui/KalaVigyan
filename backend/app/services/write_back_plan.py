@@ -11,6 +11,7 @@ from app.core.errors import InvalidInput
 from app.research.composition import ComposedAnswer, ComposedSentence
 from app.research.evidence import Quote, SourceDocument
 from app.research.evidence_pack import EvidencePack, PackedEvidence
+from app.research.quote_renderings import NO_RENDERINGS, read_as
 from app.research.quotes import QUOTE_OVERLAP_MIN, quote_occurs, quote_overlap, trivial_quote
 from app.research.sections import DISCIPLINE_TITLES
 from app.research.vocabulary import CONCEPT_TYPE_DISCIPLINES
@@ -77,6 +78,7 @@ class _Context:
     packed: Mapping[str, PackedEvidence]
     names: CraftNames
     field_ids: frozenset[str] = frozenset()
+    renderings: Mapping[str, str] = NO_RENDERINGS
 
 
 @dataclass(frozen=True)
@@ -110,6 +112,7 @@ def write_back_plan(
         fields=dict(field_documents or {}),
         stored=dict(stored_documents or {}),
     )
+    context = replace(context, renderings=dict(answer.renderings))
     claims: list[ClaimWriteBack] = []
     skipped: list[SkippedSentence] = []
     keys: list[str | None] = []
@@ -226,10 +229,13 @@ def _claim(
     citations = [
         citation
         for ref in cited
-        for citation in _citations(sentence, context.documents[ref], inferred=inferred)
+        for citation in _citations(sentence, context.documents[ref], context.renderings, inferred=inferred)
     ]
     passing = [citation.quote.text for citation in citations if citation.quote is not None]
-    quoted = not inferred and quote_overlap(sentence.text, passing) >= QUOTE_OVERLAP_MIN
+    quoted = (
+        not inferred
+        and quote_overlap(sentence.text, read_as(passing, context.renderings)) >= QUOTE_OVERLAP_MIN
+    )
     return ClaimWriteBack(
         craft_slug=filing.craft_slug,
         category_slug=filing.category_slug,
@@ -247,7 +253,7 @@ def _claim(
 
 
 def _citations(
-    sentence: ComposedSentence, document: SourceDocument, *, inferred: bool
+    sentence: ComposedSentence, document: SourceDocument, renderings: Mapping[str, str], *, inferred: bool
 ) -> list[WriteBackCitation]:
     item = document.item
     quotes = _passing_quotes(sentence, document)
@@ -261,14 +267,16 @@ def _citations(
             evidence=evidence,
             quote=quote,
             quote_check="PASS",
-            relation="DIRECT" if not inferred and quote_carries(sentence.text, quote) else "CONTEXTUAL",
+            relation="DIRECT"
+            if not inferred and quote_carries(sentence.text, quote, renderings)
+            else "CONTEXTUAL",
         )
         for quote in quotes
     ]
 
 
-def quote_carries(text: str, quote: Quote) -> bool:
-    return quote_overlap(text, [quote.text]) >= QUOTE_OVERLAP_MIN
+def quote_carries(text: str, quote: Quote, renderings: Mapping[str, str] = NO_RENDERINGS) -> bool:
+    return quote_overlap(text, read_as([quote.text], renderings)) >= QUOTE_OVERLAP_MIN
 
 
 def _passing_quotes(sentence: ComposedSentence, document: SourceDocument) -> list[Quote]:

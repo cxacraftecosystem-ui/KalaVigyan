@@ -131,10 +131,7 @@ VIEWS = (
         (3, WEB, "the lake withstood 20 washes", None),
     ),
     stored_view(
-        GUESS_CLAIM_ID,
-        "Lime in the wash water may brighten the red.",
-        "HYPOTHESIS",
-        (4, BOOK, None, None),
+        GUESS_CLAIM_ID, "Lime in the wash water may brighten the red.", "HYPOTHESIS", (4, BOOK, None, None)
     ),
 )
 SOURCES = {BOOK_ID: BOOK, LAKE_ID: LAKE, WEB_ID: WEB}
@@ -171,6 +168,7 @@ class FakeStore:
     begun: list[tuple[AnswerAsk, Understanding]] = field(default_factory=list)
     kept: list[tuple[uuid.UUID, EvidencePack, ComposedAnswer]] = field(default_factory=list)
     finished: list[dict[str, Any]] = field(default_factory=list)
+    stopped: list[str] = field(default_factory=list)
     asked_for: list[list[uuid.UUID]] = field(default_factory=list)
     questions: list[str] = field(default_factory=list)
     modes: list[str] = field(default_factory=list)
@@ -204,6 +202,9 @@ class FakeStore:
 
     async def process(self, craft_slug: str) -> ProcessRecords | None:
         return self.records
+
+    async def stop(self, request_id: str) -> None:
+        self.stopped.append(request_id)
 
     async def finish(
         self,

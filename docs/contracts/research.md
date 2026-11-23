@@ -175,9 +175,12 @@ class SourceAdapter(Protocol):
 - `EvidenceItem {id, adapter, tier, sourceType, url, title, authors[], published?, retrievedAt,
   licence?, attribution?, doi?, publisher?, containerTitle?, trust, quotes[Quote], externalIds{}}`.
   `id` is `<adapter>:<id at the service>` (`openalex:W2741809807`). `containerTitle` is the
-  journal or book a work is in; `item.journal` is it, or the `publisher` of an adapter that puts
-  the journal there (`JOURNAL_AS_PUBLISHER_ADAPTERS`: Europe PMC and Semantic Scholar), and is
-  stored as `Source.containerTitle` (decision 0143). `trust` is the reliability
+  journal or book a work is in, filled by every scholarly adapter that names one (Crossref
+  `container-title`, OpenAlex a journal, conference or book series source's `display_name`, DOAJ
+  `bibjson.journal.title`, Springer Nature `publicationName`, Elsevier `prism:publicationName`, CORE
+  `journals[].title`, Europe PMC `journalInfo.journal.title`, Semantic Scholar `journal.name` or
+  `venue`; `sources/records.journal_of`), and is stored as `Source.containerTitle` (decision 0143).
+  `trust` is the reliability
   tier the adapter assigns (A peer-reviewed or official, B reputable reference, C general web,
   D unknown). `quotes` are verbatim passages (`Quote {text (1-300), locator?}`; locator such as
   `p. 12`, `section 3.2`, `para 4`); a search hit may have none.
@@ -632,8 +635,12 @@ document is read), which the answer stream turns into `trail` events.
   language without a Wikipedia (`WIKIPEDIA_LANGUAGES`). An unusable reply is retried once (`PLAN_DRAFT_RETRIES`), then raised. A
   `degraded` reply turns `DEEP` into `HYBRID` (`DEGRADED_MODES`).
 - **Plan**: coverage per facet (above), then queries: the first query of each open facet
-  (the craft name and the facet target when the model gave none, on `T3`), then the model's
-  others, in order; a query not naming the craft gets the craft name in front; queries with
+  (the craft name and the facet target when the model gave none, on `T3`), then, when the English
+  question asks what gives a glaze, glass, enamel, pigment or pottery its colour
+  (`colourants.asks_what_gives_a_colour`), one colourant query on each tier the model used, on its
+  first open `MATERIAL` facet (else the first open facet): the hues it names, `glaze colourant` and
+  the oxides of `COLOURANT_ELEMENTS` (cobalt, copper, iron, manganese, chromium; decision 0167),
+  then the model's others, in order; a query not naming the craft gets the craft name in front; queries with
   personal data or a withheld term are left out; duplicates (tier and case-folded text) are
   dropped; at most the mode's limit. `tiers` are the mode's stored tiers plus the live tiers
   the queries use; `maxFetches` is the mode's when there are queries, else 0.
@@ -661,7 +668,11 @@ document is read), which the answer stream turns into `trail` events.
   its title ends `(submitted manuscript, before peer review)` or `(author's accepted manuscript)`,
   its URL is the copy's and it has no DOI, so it is a source of its own; `externalIds.doi` keeps
   the published work's DOI and `externalIds.open_access_version` the version. A manuscript takes
-  no abstract beside it.
+  no abstract beside it. A DOI the locator calls closed is read from its publisher when
+  `LiveSources.publisher` holds its prefix (`DocumentReader._publisher_document`, the Elsevier or
+  Springer Nature full text of `PublisherFullText.read`, with `externalIds.full_text_from` and the
+  text-mining licence; a failure is logged as a `FETCH` failure of `publisher_full_text`); without a
+  publisher key nothing more is read.
 - **Follow references** (`DEEP`, with a `doi_source`): the same part of the plan's fetches as
   `DEEP_REFERENCE_RESERVE` (6) is of `DEEP`'s 20 (`policy.reference_reserve`: 6 of 20, 1 of 4,
   none of 3; decision 0046) wait while the primary items are read; then DOIs cited in
@@ -670,10 +681,11 @@ document is read), which the answer stream turns into `trail` events.
   beside an open published copy. They join the
   evidence after the searched items with `followedFrom` set and the parent's facets.
 
-`LiveSources {searchers (distinct names), fetcher?, locator?, doi_source?}` (a dataclass);
+`LiveSources {searchers (distinct names), fetcher?, locator?, doi_source?, publisher?}` (a dataclass);
 `services.live_sources.live_sources(session, client)` builds it from every scholarly adapter,
 the reference adapters and `WebSearch` (one `FetcherClient` shared by the web adapters and the
-open-access reads), the Unpaywall locator and `crossref` as the DOI source. Hold it for the
+open-access reads), the Unpaywall locator, `crossref` as the DOI source and the registry's
+`ScholarlySources.publisher`. Hold it for the
 process: each adapter paces and caches itself.
 
 ### Evidence pack (`research/evidence_pack.py`)
@@ -756,6 +768,11 @@ evidence[PackedEvidence], documents[SourceDocument], failures[ResearchFailure], 
     `www.`, a bare `.com`, `.in`, `.org` ... name), a tag or a Markdown link, and
     `PERSONAL_DATA` for an email address or a phone-like or Aadhaar-like number
     (`evidence.personal_data_in`). A comparison sign or a reaction arrow is not markup.
+  - `INTERNAL_WORDS` (the composer's own check, `composer/drafts.sentence_problems` over
+    `research/internal_words.internal_words`, decision 0167): a reader sentence never names our
+    internals: "stored" statements, claims, passages, facts, evidence, sources, quotes, knowledge,
+    texts, records, findings or data, "untrusted", an evidence pack, "the given" or "offered"
+    statements, claims, passages, sources, quotes or candidates, or candidate statements.
 - After the post-checks the sectioned flow drops, alone, a sentence that names a month, a
   season, a regional month in month context (in any of its spellings in the supports; decision
   0160), or a state or district of the LGD register that none of its stored claims' texts or
@@ -808,12 +825,22 @@ Gemini).
   list; a heading empty, over 120 characters, or carrying a figure, a link, markup or personal
   data): asked again once, then `ExternalFailure` (service `model`). Follow-ups with a link,
   markup or personal data are dropped.
+- **Quotes in another language** (decision 0167): before any regenerate, the failing sentences'
+  quotes written in an Indian script are rendered into English in one `TRANSLATE` call
+  (`composer/quote_checks.rendered_draft` over `quote_renderings.english_renderings`, the
+  composer's `ModelTranslator`), at most `RENDERED_QUOTES_MAX` (8) per draft; a quote's language
+  is its script's (`gu` for Gujarati), or for a script two answer languages share (Devanagari,
+  Bengali) the language its source id names (`wikipedia:hi:<page>`), else it is not rendered. A
+  sentence that passes `sentence_violations(..., renderings=)` is kept, citing the verbatim quote;
+  one that still fails goes on to the regenerate. The renderings ride on `ComposedAnswer.renderings`
+  (quote to English, never in a dumped payload) for the write-back.
 - **Regenerate**: when a usable reply has failing sentences (a violation, or a sentence that
   does not construct, `MALFORMED`) and no retry was spent, one call with
   `REGENERATE_SYSTEM_PROMPT`, `regenerate_message` (each failed sentence numbered, with its
   problems, its text inside a block) and `regenerate_schema(n)` (`sentences[{index, text,
   quotes}]`). A replacement takes the failed sentence's place if it passes; an omitted or
-  failing one is dropped; an unusable reply drops them all. At most two model calls per answer.
+  failing one is dropped; an unusable reply drops them all. At most two `COMPOSE` calls per answer,
+  and the one `TRANSLATE` call (with its translator's one retry) above.
 - **Result**: passing sentences by section, hypothesis-level ones to `openQuestions`, empty
   sections dropped. No candidates: no call, `notEnoughEvidence`. Nothing passing:
   `notEnoughEvidence`.
@@ -901,6 +928,9 @@ faster.
   alone at `QUOTE_OVERLAP_MIN`), else `CONTEXTUAL`, and a cited document with no passing span is a
   `CONTEXTUAL` citation with no quote. A section sentence is `QUOTED` when its passing quotes
   together carry it, else `INFERRED`; open questions are `INFERRED` with `CONTEXTUAL` citations.
+  Both measures read a quote in another language through the English rendering the composer kept
+  for it (`ComposedAnswer.renderings`, `quote_renderings.read_as`, decision 0167), while the
+  citation keeps the verbatim quote; no rendering is asked for here.
   The section's discipline is its heading (`section_discipline`: a focused section's heading is
   `DISCIPLINE_TITLES[discipline]`): the claim's `field` is that discipline and its subject the
   first facet a cited document was found by whose type is of that field, else the first; with no
@@ -1097,7 +1127,9 @@ ModelUnderstander(model=StructuredModel, resolve=)` implements it with the craft
   (decisions 0138 and 0165). `englishQuestion` is the question in
   English that every search of the answer reads (decision 0123). `understood()` is the stream's
   `Understood` event, its `crafts` the craft then the compared ones.
-- The call: system `UNDERSTAND_SYSTEM_PROMPT`; user `understand_message` (depth label, the
+- The call: system `UNDERSTAND_SYSTEM_PROMPT` (it describes GEOGRAPHY, GEOLOGY, MATERIALS, what
+  a craft's objects are made of, decision 0167, PROCESS, OVERVIEW, SOCIETY, POLICY and ECOLOGY);
+  user `understand_message` (depth label, the
   depth's expert range, its section range `Sections: <min> to <max>`, the listed crafts each in a
   `craft_block`, the question in an untrusted block); schema `understand_schema(offered)` `{craft:
   enum of the listed slugs and "", craftNames [string], compare [string: a listed slug, or a name
@@ -1162,7 +1194,7 @@ composed sentence, cited(claim_ids), process(slug) -> science.records.ProcessRec
 finish(answer_id, *, asked_at, plans: AnswerPlans, claim_ids, explainer: Explainer | None,
 steps),
 latest(explainer_id, user_id) -> the latest stored version (a follow-up that lost its version
-merges again onto it, `services/version_race`)}`, the reads
+merges again onto it, `services/version_race`), stop(request_id)}`, the reads
 returning `answer_events.CitedClaims {views, sources}`. Every answer runs under a request id
 (`core/logging.kept_request_id`: the HTTP request's, the rebuild's or evaluation's tag, else
 `answer-<id>`, decision 0146). `begin` writes the `Answer` row (its understanding, the depth's
@@ -1176,7 +1208,12 @@ rows, and one `AnswerTrace` row per `status`, `trail` and `paced` event the stre
 its milliseconds since the stream opened (`services/answer_rows`, `services/answer_steps`,
 decision 0146), and, when a section is ready, the explainer document in
 `Answer.payload.explainer` (`answer_store.EXPLAINER_PAYLOAD_KEY`); each runs on
-`core/shielded.ShieldedWork`.
+`core/shielded.ShieldedWork`. An answer that stops before `finish` (the learner's stream closed,
+its research failed, its version lost) is marked `stop(request_id)`: the request's rows with no
+`latencyMs` get `Answer.stoppedAt` (`answer_stops.stopped_unless_finished`, decision 0167), and
+`finish` clears it. A stopped row keeps its cost (the nightly upkeep still settles it) but never
+an explainer, so the history leaves it out, and the open-work demand and the piece rebuild's
+asks do not count it.
 `answer_store.build_answer_pipeline(sessions=, index=, live=, models=, embed=, shield=)` wires the
 `ModelUnderstander` over the database resolver and `models.understand`, `ResearchPlanner` over `retrieval.hybrid.SessionScopedSearch` and the process-held
 `live_sources.LiveSourcesStore` (rebuilt every `LIVE_SOURCES_TTL_SECONDS` 600 on one HTTP client),
@@ -1341,8 +1378,10 @@ no reading keeps its English.
   `stream.followUp` entry of its interface words (`stored_explainer.shown_stored_heading`,
   `answer_events.stored_follow_ups(..., words)`, decision 0157) and else in English. A translated sentence keeps its citations and gains
   `translated: true` and `original`; an item that fails twice stays English. Its term spans are
-  kept only where their text still occurs in the translation, first occurrences not overlapping
-  (`research/terms.spans_still_shown`, decision 0039).
+  kept only where their text or its rendering still occurs in the translation, first occurrences
+  not overlapping (`research/terms.spans_still_shown`, decision 0039), else where one of the glossary's
+  names for the term does as a whole word (`Enrichment.term_names`, `research/terms.shown_as_word`,
+  decision 0166), so a Hindi answer keeps the quiz questions whose terms have Hindi names (decision 0167).
 - **Voice**: `translated_sentences(sentences, *, language, translation, claim_texts)` takes
   verified English `AnswerSentence` payloads and returns them in the session language by the same
   rules; build `translation` with `answer_store.build_answer_translation(sessions,

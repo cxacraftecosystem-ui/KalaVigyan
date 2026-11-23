@@ -20,6 +20,7 @@ question writer). The contracts are `docs/contracts/frontend.md`, `docs/contract
 | How a release migrates, seeds, checks and switches | [infra.md](../contracts/infra.md), Migrations and Seeds |
 | How the web parses a response | [frontend.md](../contracts/frontend.md) |
 | The golden field check leaving out what the web never parses | [decision 0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
+| The review page skipping a review kind it does not know | [decision 0167](0167-answer-leftovers-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

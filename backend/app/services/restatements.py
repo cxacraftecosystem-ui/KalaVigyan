@@ -67,8 +67,8 @@ def restates(later: Said, earlier: Said) -> bool:
     if not later.numbers <= earlier.numbers:
         return False
     share = _share(later.stems, earlier.stems)
-    if _same_group(later, earlier):
-        return share >= SAME_GROUP_SHARE
+    if _same_group(later, earlier) and share >= SAME_GROUP_SHARE:
+        return True
     if _same_passage(later, earlier) and share >= SAME_PASSAGE_SHARE:
         return True
     if _same_figures(later, earlier) and _share(later.subject, earlier.subject) >= SAME_FIGURES_SHARE:

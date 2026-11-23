@@ -72,6 +72,7 @@ class Market(ContractModel):
     gi: GiRecord | None = None
     prices: list[Price] = Field(default_factory=list)
     workforce: list[Workforce] = Field(default_factory=list)
+    imitation: Annotated[list[ClaimId], AfterValidator(distinct)] = Field(default_factory=list)
 
 
 class Term(ContractModel):

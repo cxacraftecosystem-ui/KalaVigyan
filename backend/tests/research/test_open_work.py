@@ -335,6 +335,9 @@ def test_a_malformed_task_key_is_refused(key: str) -> None:
         parse_task_key(key)
 
 
+ALL_QUEUES = ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE", "STAGES")
+
+
 @pytest.mark.parametrize(
     ("role", "queues"),
     [
@@ -342,9 +345,9 @@ def test_a_malformed_task_key_is_refused(key: str) -> None:
         ("STUDENT", ()),
         ("ARTISAN", ()),
         ("RESEARCHER", ()),
-        ("PROFESSOR", ("FACTS", "TESTIMONY", "STRUCTURE")),
-        ("ADMIN", ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE")),
-        ("MASTER_ADMIN", ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE")),
+        ("PROFESSOR", ("FACTS", "TESTIMONY", "STRUCTURE", "STAGES")),
+        ("ADMIN", ALL_QUEUES),
+        ("MASTER_ADMIN", ALL_QUEUES),
     ],
 )
 def test_each_role_reviews_the_queues_its_capabilities_allow(
