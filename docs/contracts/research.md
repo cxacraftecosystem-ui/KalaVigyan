@@ -934,9 +934,10 @@ faster.
   master-list crafts use (`COMMON_NAME_USES`), by a name, alias or spelling of the craft index (a
   one-word alias only when it names its craft as for any other craft, so casting does not name
   Metal Casting and Bidri still names Bidriware; decision 0159), or by a place of
-  theirs below a state (the GI place: a district, a place label, a district's other name, or a
-  place word of the craft's own name, as Kutch for Kutch Ajrakh); a word two of them share names
-  neither. When the text and quotes name nothing but a place of India, a state included, the
+  theirs below a state (the GI place: a district, a place label, any name of a district it is
+  placed in, the register's or another its sources use (`data/district_other_names.json`), so
+  Kutch names a craft placed in Kachchh and Kachchh one placed under Kutch, or a place word of the
+  craft's own name, as Kutch for Kutch Ajrakh); a word two of them share names neither. When the text and quotes name nothing but a place of India, a state included, the
   sentence is held (`HELD_OTHER_PLACE`) before its context is read; a place of India in the
   passage or title alone holds it only when no level names a craft. After every level, a fact in
   chemistry, physics or materials (`MATERIAL_SCIENCE_FIELDS`) goes to its craft family's science:
