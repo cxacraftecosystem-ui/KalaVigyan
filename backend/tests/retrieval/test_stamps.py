@@ -60,7 +60,11 @@ def test_the_claim_vector_ranking_reads_every_recipe_of_the_routes_current_model
 
 
 def test_the_chunk_vector_ranking_reads_every_recipe_of_the_routes_current_model() -> None:
-    sql = sql_of(chunk_vector_ranking(chunk_conditions(SCOPE, mode="HYBRID", acls=("PUBLIC",)), VECTOR))
+    sql = sql_of(
+        chunk_vector_ranking(
+            chunk_conditions(SCOPE, mode="HYBRID", acls=("PUBLIC",), kinds=("PASSAGE",)), VECTOR
+        )
+    )
     assert 'split_part("Chunk"."embeddingModel", ' in sql
     assert f"= split_part({CURRENT}, " in sql
 

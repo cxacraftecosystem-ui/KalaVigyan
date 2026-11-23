@@ -278,15 +278,29 @@ Last reviewed: 2026-11-22.
 
 ### Gemini video not yet seen live
 
-- **What:** the paid check of 2026-11-23 saw an image made live (an unstored interaction with no id,
-  a thought step, `image/jpeg` output, usage by modality; `backend/tests/media/fixtures/image_completed.json`,
-  decision 0161). Video is still unseen: `DELETE /v1beta/interactions/{id}`, the clip's exact
-  duration, the shape of an `image` input that would make the requester's stage image the clip's
-  first frame (PLAN 11 allows it; videos are `text_to_video` until the shape is seen, because a wrong
-  input fails every clip), and how a safety block reads, which no paid call can be made to show.
-  The video fixtures follow the documented shapes, not captured traffic.
-- **Waits on:** the owner approving one paid Gemini clip, which the approval of 2026-11-22 does not
-  include.
+- **What:** the paid check of 2026-11-23 saw an image made live
+  (`backend/tests/media/fixtures/image_completed.json`, decision 0161); no clip has been made yet,
+  so the video fixtures follow the documented shapes, not captured traffic. The paid checks' `gemini_video` step (`scripts/paid_check_video.py`, decision
+  0179) makes one 8 s `gemini-omni-1.2-flash` clip through `GeminiMediaWire` with the job's
+  requested output and keeps, as fixtures to be, the start, the first open poll and the finished
+  interaction (`video_started_recorded.json`, `video_polling_recorded.json`,
+  `video_completed_recorded.json`), the `DELETE /v1beta/interactions/{id}` reply
+  (`video_deleted_recorded.json` and its status), the clip (`gemini_video.mp4`) with its exact
+  duration, size and whether it came silent (`silentAsAsked`), how long it took
+  (`secondsToFinish`, against the job's 240 s attempt) and whether `media/output.checked_output`
+  would store it. Still unseen after that run: the shape of an `image` input that would make the
+  requester's stage image the clip's first frame, because the documented shape is ambiguous (an
+  `image` block before the text in `input`, with `generation_config.video_config.task`
+  `image_to_video` shown only as an optional fallback; no field names the first frame, which the
+  position and the prompt imply; and the examples wrap `input` both as a plain list of blocks and
+  in a `user_input` step), so videos stay `text_to_video`, since a wrong input fails every clip;
+  and how a safety block reads, which no paid call can be made to show.
+- **Waits on:** the lead dispatching the step once, after this release is on the box, with only the
+  clip (`gh workflow run paid-checks.yml -R cxacraftecosystem-ui/KalaVigyan --ref main -f video=true
+  -f narration=false -f music=false -f image=false -f speech=false -f agent=false`, the owner's
+  approval of 2026-11-23), then committing the recorded replies over the documented fixtures in
+  `backend/tests/media/fixtures` (the clip's base64 cut to a small MP4, as the image's was) and
+  correcting `gemini_media` and `MEDIA_OUTPUT` where they differ.
 
 ### Community and caste names caught by group words only
 
@@ -335,16 +349,6 @@ Last reviewed: 2026-11-22.
   fills the stored claims each craft's cells read.
 - **Clears it:** a per-craft research share inside the answer's budget for compared crafts with
   few stored claims in the section's field.
-
-### Any-craft claims are read only by any-craft questions
-
-- **What:** research for any craft writes its claims on shared concepts (no craft, no
-  sub-category). A later question about a particular craft does not read them, because the craft
-  scope reads the craft's and its family's concepts only.
-- **Why left:** which shared findings apply to which craft is a curation choice; reading all of
-  them in every craft answer would mix crafts.
-- **Clears it:** link shared concepts to the crafts they concern (through the concept graph of
-  feature 7 or a reviewer's link), and let the craft scope read linked shared concepts.
 
 ## Asking screen (decision 0036)
 
@@ -618,20 +622,21 @@ Last reviewed: 2026-11-22.
 
 ### The `SIGNED_IN` chunk ACL is read by everyone
 
-- **What:** since the full field transcripts became public, `research/retrieval.chunk_acls_for`
-  gives every reader `PUBLIC` and `SIGNED_IN`, so the `SIGNED_IN` value of `ChunkAcl` (migration
-  `0027_field_voices`, written by `services/field_voices_records.py`) no longer means signed in.
-  `OPEN_CHUNK_ACLS`, the loaders' default when no reader is named, still holds `PUBLIC` only. The
-  value now does a second job: it marks a transcript's speaker-labelled windows, apart from its
-  one-sentence quote passages (`PUBLIC`), and `field_voices_store.recheck_quoted_claims` and the
-  citation contexts (`citation_contexts.CONTEXT_ACLS`) read the sentences only by that mark.
-- **Why left:** folding the value into `PUBLIC` first needs another mark for the windows, or the
-  quote recheck and the contexts would read them; and a label is dropped only after a release that
-  no longer writes it is live (`docs/contracts/infra.md`, decision 0151).
-- **Clears it:** a chunk kind (or the windows' own locator rule) that the recheck and the contexts
-  read instead of the ACL, `field_voices_records` writing `PUBLIC`, `SIGNED_IN_CHUNK_ACLS` removed;
-  then, after that release, a migration that sets every `SIGNED_IN` chunk to `PUBLIC` and drops the
-  value.
+- **What:** since decision 0179 a field transcript's speaker-labelled windows are written `PUBLIC`
+  with the chunk kind `WINDOW` (`Chunk.kind`, migration `0097_chunk_kinds`), the quote recheck and
+  the citation contexts read `PASSAGE` chunks only, a search reads windows only when it names
+  `WINDOW` in `KnowledgeQuery.chunk_kinds`, and `SIGNED_IN_CHUNK_ACLS` is gone. The windows
+  written before that release still carry `SIGNED_IN`, so `OPEN_CHUNK_ACLS` (what every reader and
+  every loader that names no reader reads) still holds `PUBLIC` and `SIGNED_IN`, and the
+  migration's insert trigger (`Chunk_kind_window_mark`) marks a `SIGNED_IN` chunk the release
+  before writes as a window.
+- **Why left:** a label is dropped only after a release that no longer writes it is live
+  (`docs/contracts/infra.md`, decision 0151), and the release before decision 0179 still writes
+  `SIGNED_IN`.
+- **Clears it:** once the release carrying decision 0179 is live, a migration that sets every
+  `SIGNED_IN` chunk to `PUBLIC`, drops the trigger and its function, and drops the `SIGNED_IN`
+  label from `ChunkAcl`, with `OPEN_CHUNK_ACLS` back to `PUBLIC` alone, `SIGNED_IN_CHUNK_ACL` and
+  `CHUNK_ACLS`' third value removed in the same change.
 
 ### Kutch Ajrakh's timeline pins and named river are not yet seen, and three why claims describe steps
 

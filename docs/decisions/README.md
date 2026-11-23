@@ -137,7 +137,7 @@ flowchart LR
 | [0094](0094-design-primitives.md) | The design primitives: one citation cluster, one motion owner, the editorial folder | · |
 | [0095](0095-craft-page-chapters.md) | The craft page becomes a monograph in chapters, public to read, built without a question | [0097](0097-public-reading-everywhere-but-asking.md) and [0100](0100-ajrakh-monograph-served-as-built.md) |
 | [0096](0096-reader-question-pieces-join-their-craft-page.md) | Every piece built for a reader's question joins its craft's page, whoever asked | [0154](0154-ai-media-and-film-scores-kept-true.md), [0162](0162-unused-craft-page-chapters-retired.md) |
-| [0097](0097-public-reading-everywhere-but-asking.md) | Everything reads without signing in except asking | [0145](0145-monograph-pages-and-speed-without-debt.md) and [0155](0155-accounts-and-sharing-kept-true.md) |
+| [0097](0097-public-reading-everywhere-but-asking.md) | Everything reads without signing in except asking | [0145](0145-monograph-pages-and-speed-without-debt.md), [0155](0155-accounts-and-sharing-kept-true.md) and [0179](0179-transcript-windows-a-chunk-kind-linked-shared-concepts-and-one-paid-clip.md) |
 | [0098](0098-craft-page-chapters-build.md) | How the craft page chapters were built: the readings taken where the contract was open | [0100](0100-ajrakh-monograph-served-as-built.md), [0162](0162-unused-craft-page-chapters-retired.md) |
 | [0099](0099-wider-expert-panel.md) | The expert panel searches its own fields, calls each seat on its own, seats up to 12 at Expert, and hears the artisan from field transcripts | [0156](0156-expert-panel-and-field-voices-kept-true.md) |
 | [0100](0100-ajrakh-monograph-served-as-built.md) | The Kutch Ajrakh craft page is the hand-built monograph, served as built | [0106](0106-one-monograph-template-for-every-page.md) |
@@ -167,7 +167,7 @@ flowchart LR
 | [0119](0119-nightly-refresh-of-changed-pages.md) | The night refreshes only the pages that changed; it never rebuilds the site | [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | [0120](0120-grounded-sentences.md) | Every sentence says no more than the quotes it cites | [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0121](0121-quote-visibility.md) | A quote is shown only where its page allows | [0149](0149-a-fact-readers-can-see.md) |
-| [0122](0122-evidence-reach.md) | Evidence the knowledge base holds reaches the answers that need it | · |
+| [0122](0122-evidence-reach.md) | Evidence the knowledge base holds reaches the answers that need it | [0179](0179-transcript-windows-a-chunk-kind-linked-shared-concepts-and-one-paid-clip.md) |
 | [0123](0123-question-understanding.md) | A question is understood honestly before any evidence is read | · |
 | [0124](0124-live-research-write-back.md) | Live research writes back only what its sources say | [0135](0135-write-backs-filed-under-the-craft-they-name.md) and [0144](0144-stored-passages-as-evidence.md) |
 | [0125](0125-reranking.md) | Stored facts are reranked, and relevance decides when stored knowledge is enough | [0132](0132-a-ranking-votes-with-its-first-thirty.md) and [0133](0133-the-evaluation-scores-what-answers-read.md) |
@@ -198,7 +198,7 @@ flowchart LR
 | [0151](0151-a-release-the-live-side-can-read.md) | A release is one the live side can read: the web ignores a field it does not know, every migration reads under the release before, and the first stage's fusion is measured before it is weighted | [0167](0167-answer-leftovers-kept-true.md) and [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) | An answer reads a craft's matter once and shows each card, molecule and what-if once, matter blocks cite every value they show, and the science seed deletes what it no longer plans | · |
 | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) | Rivers are named from Wikidata then OpenStreetMap, groundwater comes from the India data portal, a region place shows its headline values, and the geo ETL fails every gap it can see | · |
-| [0154](0154-ai-media-and-film-scores-kept-true.md) | A film score is made once and timed by what was heard, AI pictures are shared on their craft page, and the paid checks run under a cap | · |
+| [0154](0154-ai-media-and-film-scores-kept-true.md) | A film score is made once and timed by what was heard, AI pictures are shared on their craft page, and the paid checks run under a cap | [0179](0179-transcript-windows-a-chunk-kind-linked-shared-concepts-and-one-paid-clip.md) |
 | [0155](0155-accounts-and-sharing-kept-true.md) | The roster offers what its guards allow, a recovery code may add a first password, roles sort and cap by rank, and a stopped share's files leave the bucket | · |
 | [0156](0156-expert-panel-and-field-voices-kept-true.md) | The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run | · |
 | [0157](0157-translations-read-back-and-reviewed-interface-words.md) | A translation is read back before it is shown, and every fixed word in another language is sourced, reviewed data | · |
@@ -220,6 +220,7 @@ flowchart LR
 | [0173](0173-a-release-that-keeps-serving-and-its-way-back.md) | A release keeps the site serving and its way back open, a colour takes traffic only once it reaches its database, the web builds only on the API it calls, the fetcher runs as a user of its own, and every provider call ends and settles | · |
 | [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) | A production downgrade undoes one revision unless its count is confirmed, an answer fits its limits, repeats nothing its explainer shows and outlives a source that cannot be built, and the rubric's cited part is a share | · |
 | [0175](0175-production-checks-read-what-the-page-shows.md) | The production checks read what the page shows, the web parses every stream event, the answer control never asks again, and a section stores only what it showed | · |
+| [0179](0179-transcript-windows-a-chunk-kind-linked-shared-concepts-and-one-paid-clip.md) | A transcript window is a chunk kind, a craft reads the shared concepts the graph links to it, and the paid checks make one Gemini clip when asked | · |
 
 ## How this document is kept true
 

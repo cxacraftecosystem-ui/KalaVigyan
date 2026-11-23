@@ -1,5 +1,5 @@
 from app.research.crafts import CraftRef
-from app.research.retrieval import EVERY_CHUNK_ACLS, SIGNED_IN_CHUNK_ACLS, chunk_acls_for
+from app.research.retrieval import EVERY_CHUNK_ACLS, OPEN_CHUNK_ACLS, chunk_acls_for
 from app.voice.pack import Acls, VoicePack, VoicePackStore
 
 from .fakes import CRAFT, alum_pack
@@ -20,6 +20,6 @@ async def test_a_pack_is_kept_per_reader_access_so_a_student_never_reads_a_resea
     assert again is student and researcher is not student
 
 
-def test_a_student_reads_signed_in_passages_and_a_researcher_every_passage() -> None:
-    assert chunk_acls_for("STUDENT") == SIGNED_IN_CHUNK_ACLS == ("PUBLIC", "SIGNED_IN")
+def test_a_student_reads_the_open_passages_and_a_researcher_every_passage() -> None:
+    assert chunk_acls_for("STUDENT") == OPEN_CHUNK_ACLS == ("PUBLIC", "SIGNED_IN")
     assert chunk_acls_for("RESEARCHER") == EVERY_CHUNK_ACLS

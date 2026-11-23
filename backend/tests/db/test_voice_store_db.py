@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.db import get_engine
 from app.models import Answer, Claim, ConsentRecord, Conversation, QuotaLedger, User
 from app.research.crafts import CraftRef
-from app.research.retrieval import SIGNED_IN_CHUNK_ACLS, chunk_acls_for
+from app.research.retrieval import OPEN_CHUNK_ACLS, chunk_acls_for
 from app.services.claim_seed import seed_id
 from app.voice.records import AnswerRecord, SessionRecord, TurnHold, TurnSave
 from app.voice.seconds import ledger_entry, refund_key
@@ -216,7 +216,7 @@ async def test_consent_is_read_by_version(store: Stores) -> None:
 
 async def test_the_claim_pack_holds_the_seeded_cited_claims(store: Stores) -> None:
     voice, _ = store
-    pack = await voice.pack(AJRAKH, "HYBRID", SIGNED_IN_CHUNK_ACLS)
+    pack = await voice.pack(AJRAKH, "HYBRID", OPEN_CHUNK_ACLS)
     alum = [view for view in pack.cited.views.values() if view.text == ALUM]
     assert alum and alum[0].citations
     assert all(cite["sourceId"] in pack.cited.sources for view in alum for cite in view.citations)

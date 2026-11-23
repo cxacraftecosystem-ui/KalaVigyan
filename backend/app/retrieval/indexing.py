@@ -18,6 +18,7 @@ from app.research.explainer import Block
 from app.research.knowledge_pieces import piece_text
 from app.research.retrieval import (
     HIDDEN_CLAIM_STATUSES,
+    PASSAGE_CHUNK_KIND,
     PUBLIC_CHUNK_ACL,
     RESTRICTED_SENSITIVITY,
     VISIBLE_SENSITIVITY,
@@ -62,6 +63,14 @@ class SourceChunk:
     locator: str
     lang: str
     acl: str
+    kind: str = PASSAGE_CHUNK_KIND
+
+
+@dataclass(frozen=True)
+class _Marks:
+    lang: str
+    acl: str
+    kind: str
 
 
 @dataclass(frozen=True)
@@ -93,8 +102,9 @@ async def replace_source_chunks(
         chunk.ordinal: chunk
         for chunk in (await session.scalars(select(Chunk).where(Chunk.sourceId == source_id))).all()
     }
+    marks = _Marks(lang=lang, acl=acl, kind=PASSAGE_CHUNK_KIND)
     for piece in pieces:
-        _apply(session, stored.get(piece.ordinal), piece, source=source, lang=lang, acl=acl)
+        _apply(session, stored.get(piece.ordinal), piece, source=source, marks=marks)
     await session.execute(delete(Chunk).where(Chunk.sourceId == source_id, Chunk.ordinal >= len(pieces)))
     await session.flush()
     return len(pieces) + await relink_quotes(session, source, cited, lang=lang)
@@ -114,7 +124,8 @@ async def replace_planned_chunks(
     }
     for ordinal, planned in enumerate(chunks):
         piece = TextChunk(ordinal=ordinal, text=planned.text, locator=planned.locator)
-        _apply(session, stored.get(ordinal), piece, source=source, lang=planned.lang, acl=planned.acl)
+        marks = _Marks(lang=planned.lang, acl=planned.acl, kind=planned.kind)
+        _apply(session, stored.get(ordinal), piece, source=source, marks=marks)
     await session.execute(delete(Chunk).where(Chunk.sourceId == source_id, Chunk.ordinal >= len(chunks)))
     await session.flush()
     return len(chunks)
@@ -195,7 +206,7 @@ def _over(deadline: Deadline | None) -> bool:
 
 
 def _apply(
-    session: AsyncSession, chunk: Chunk | None, piece: TextChunk, *, source: Source, lang: str, acl: str
+    session: AsyncSession, chunk: Chunk | None, piece: TextChunk, *, source: Source, marks: _Marks
 ) -> None:
     text = storable_text(piece.text)
     if chunk is None:
@@ -205,8 +216,9 @@ def _apply(
                 ordinal=piece.ordinal,
                 locator=piece.locator,
                 text=text,
-                lang=lang,
-                acl=acl,
+                lang=marks.lang,
+                acl=marks.acl,
+                kind=marks.kind,
                 sensitivity=source.sensitivity,
             )
         )
@@ -215,8 +227,9 @@ def _apply(
         chunk.text = text
         chunk.embedding = None
     chunk.locator = piece.locator
-    chunk.lang = lang
-    chunk.acl = acl
+    chunk.lang = marks.lang
+    chunk.acl = marks.acl
+    chunk.kind = marks.kind
     chunk.sensitivity = source.sensitivity
 
 

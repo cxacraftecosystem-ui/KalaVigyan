@@ -13,7 +13,7 @@ from app.research.field_voices import (
     PORTAL_EXTERNAL_KEYS,
     PORTAL_PUBLISHERS,
 )
-from app.research.retrieval import PUBLIC_CHUNK_ACL, SIGNED_IN_CHUNK_ACL
+from app.research.retrieval import PUBLIC_CHUNK_ACL, WINDOW_CHUNK_KIND
 from app.retrieval.indexing import SourceChunk
 from app.services.field_voices_credit import (
     Credited,
@@ -263,7 +263,8 @@ def _parts(line: _Line) -> list[_Line]:
 
 def _window_chunk(window: Sequence[_Line], lang: str) -> SourceChunk:
     text = "\n".join(line.text for line in window)
-    return SourceChunk(text, _locator(window[0].first, window[-1].last), lang, SIGNED_IN_CHUNK_ACL)
+    locator = _locator(window[0].first, window[-1].last)
+    return SourceChunk(text, locator, lang, PUBLIC_CHUNK_ACL, kind=WINDOW_CHUNK_KIND)
 
 
 def _locator(first: PlannedSegment, last: PlannedSegment) -> str:
