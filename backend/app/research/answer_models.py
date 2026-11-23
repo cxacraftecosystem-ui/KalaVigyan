@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from .judge_ladder import JudgeLadder
 from .reranking import Reranker
 from .structured import StructuredModel
 
@@ -20,6 +21,6 @@ class AnswerModels:
     builder_compose: StructuredModel
     explainer: StructuredModel
     translate: StructuredModel
-    judge: StructuredModel | None = None
+    judge: JudgeLadder | None = None
     rerank: Reranker | None = None
     follow_depth: DepthFollower | None = None

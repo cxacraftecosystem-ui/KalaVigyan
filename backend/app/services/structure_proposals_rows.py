@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.curation.entities import Reaction as DossierReaction, Species
 from app.models import (
     ClaimSource,
-    Craft,
+    ConceptEdge,
     CuratedClaim,
     Reaction,
     ReactionCitation,
@@ -18,39 +18,56 @@ from app.models import (
     TermConcept,
     TermCraft,
 )
-from app.research.structure_proposals import GLOSSARY_TERM, REACTION, GlossaryTermItem, ReactionItem
+from app.research.structure_proposals import (
+    ALTERNATIVE,
+    GLOSSARY_TERM,
+    REACTION,
+    AlternativeItem,
+    GlossaryTermItem,
+    ReactionItem,
+)
 
 from .curated_index import CuratedPage
 from .curation_keys import curated_id
 from .curation_records import label_key
-from .curation_structure import reaction_row
-from .structure_proposals_page import PlacedEntry, stage_of
+from .curation_structure import CONTRAST_RELATION, alternative_edge_id, reaction_row
+from .structure_proposals_owner import StructureOwner
+from .structure_proposals_page import OwnerPage, PlacedEntry, material_of, stage_of
 from .term_glossary import term_id
 
 __all__ = ["StoredRows", "stored_rows"]
 
 UNSTORED_REACTION = "an approved reaction is stored under its key and the fact that states it"
+UNSTORED_ALTERNATIVE = (
+    "an approved alternative joins two materials of the page through the fact that states it"
+)
 
 
 @dataclass(frozen=True)
 class StoredRows:
-    page: CuratedPage
+    page: OwnerPage
     term_keys: tuple[str, ...] = ()
 
 
 async def stored_rows(
-    session: AsyncSession, craft: Craft, page: CuratedPage, placed: tuple[Any, PlacedEntry]
+    session: AsyncSession, owner: StructureOwner, page: OwnerPage, placed: tuple[Any, PlacedEntry]
 ) -> StoredRows:
     item, entry = placed
     if item.kind == GLOSSARY_TERM:
-        return await _glossary_rows(session, craft, page, (item, entry))
-    if item.kind == REACTION and item.stage_key is not None:
-        return StoredRows(await _reaction_rows(session, craft, page, (item, entry)))
+        return await _glossary_rows(session, owner, page, (item, entry))
+    if item.kind == ALTERNATIVE:
+        await _alternative_row(session, owner, page, (item, entry))
+        return StoredRows(page)
+    if item.kind == REACTION and item.stage_key is not None and isinstance(page, CuratedPage):
+        return StoredRows(await _reaction_rows(session, owner, page, (item, entry)))
     return StoredRows(page)
 
 
 async def _glossary_rows(
-    session: AsyncSession, craft: Craft, page: CuratedPage, placed: tuple[GlossaryTermItem, PlacedEntry]
+    session: AsyncSession,
+    owner: StructureOwner,
+    page: OwnerPage,
+    placed: tuple[GlossaryTermItem, PlacedEntry],
 ) -> StoredRows:
     item, entry = placed
     key = label_key(item.term)
@@ -59,7 +76,8 @@ async def _glossary_rows(
     term = term_id(key)
     values = {"id": term, "key": key, "label": item.term, "meaning": item.meaning}
     await _insert(session, Term, {**values, "localNames": [], "aliases": [], "wikidataId": None})
-    await _insert(session, TermCraft, {"termId": term, "craftId": craft.id})
+    if not owner.is_category:
+        await _insert(session, TermCraft, {"termId": term, "craftId": owner.id})
     await _insert(session, TermConcept, {"termId": term, "conceptId": entry.concept_id})
     glossary = [
         found.model_copy(update={"term_key": key}) if found.key == entry.key else found
@@ -68,8 +86,27 @@ async def _glossary_rows(
     return StoredRows(page.model_copy(update={"glossary": glossary}), (key,))
 
 
+async def _alternative_row(
+    session: AsyncSession, owner: StructureOwner, page: OwnerPage, placed: tuple[AlternativeItem, PlacedEntry]
+) -> None:
+    item, entry = placed
+    material = material_of(page, item.material_key)
+    other = material_of(page, item.alternative_key)
+    if material is None or other is None or entry.claim_id is None:
+        raise ValueError(UNSTORED_ALTERNATIVE)
+    values = {
+        "id": alternative_edge_id(owner.slug, item.material_key, item.alternative_key),
+        "srcId": material.concept_id,
+        "dstId": other.concept_id,
+        "relation": CONTRAST_RELATION,
+        "sourceRelation": None,
+        "claimId": entry.claim_id,
+    }
+    await _insert(session, ConceptEdge, values)
+
+
 async def _reaction_rows(
-    session: AsyncSession, craft: Craft, page: CuratedPage, placed: tuple[ReactionItem, PlacedEntry]
+    session: AsyncSession, owner: StructureOwner, page: CuratedPage, placed: tuple[ReactionItem, PlacedEntry]
 ) -> CuratedPage:
     item, entry = placed
     stage = stage_of(page, item.stage_key)
@@ -87,11 +124,11 @@ async def _reaction_rows(
         claim_ids=[claim_key],
     )
     ordinal = sum(1 for held in page.reactions if held.stage_key == item.stage_key and held.key != entry.key)
-    row = {**reaction_row(craft.slug, reaction, ordinal), "stageId": stage.stage_id}
+    row = {**reaction_row(owner.slug, reaction, ordinal), "stageId": stage.stage_id}
     await _insert(session, Reaction, row)
     cited = await session.scalars(select(ClaimSource.id).where(ClaimSource.claimId == entry.claim_id))
     for claim_source_id in cited.all():
-        citation = curated_id(craft.slug, "reaction-citation", entry.key, str(claim_source_id))
+        citation = curated_id(owner.slug, "reaction-citation", entry.key, str(claim_source_id))
         values = {"id": citation, "reactionId": row["id"], "claimSourceId": claim_source_id}
         await _insert(session, ReactionCitation, values)
     reactions = [

@@ -36,6 +36,9 @@ class ShieldedWork:
             task.add_done_callback(_report_unattended)
             raise
 
+    def start(self, work: Coroutine[Any, Any, Any], *, name: str) -> None:
+        self._started(work, name).add_done_callback(_report_unattended)
+
     def _started[T](self, work: Coroutine[Any, Any, T], name: str) -> asyncio.Task[T]:
         task = asyncio.create_task(work, name=name)
         self._running.add(task)

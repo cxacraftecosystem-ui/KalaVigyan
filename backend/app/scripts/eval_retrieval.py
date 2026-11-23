@@ -13,9 +13,9 @@ from app.core.errors import AppError
 from app.core.logging import request_id_scope
 from app.providers import router
 from app.providers.embedding import router_embedder
+from app.providers.judge_routes import thrifty_judges
 from app.providers.rerank_router import router_reranker
-from app.providers.router import Principal, RouteTuning
-from app.providers.structured import router_structured_model
+from app.providers.router import Principal
 from app.research.crafts import CraftQuery
 from app.research.structured import StructuredModel
 from app.retrieval.craft_cases import CaseOutcome, CraftCase, case_report, craft_cases_file, outcome_of
@@ -28,7 +28,6 @@ from app.retrieval.fusion_sweep import fusion_sweep, picked_settings
 from app.retrieval.golden import generated_set, golden_questions
 from app.retrieval.miss_judging import MISS_JUDGE_CAP_USD, MISS_JUDGE_TAG, JudgeTools
 from app.retrieval.release_check import RELEASE_SECONDS
-from app.services.candidate_judge_routes import JUDGE_TASK, cheapest_judge_models
 from app.services.claim_seed import seed_id
 from app.services.craft_resolver import CraftIndexStore, DatabaseCraftResolver
 
@@ -57,8 +56,7 @@ def run_tag(prefix: str) -> str:
 
 
 def cheapest_judge() -> StructuredModel:
-    tuning = RouteTuning(models=dict(cheapest_judge_models()))
-    return router_structured_model(JUDGE_TASK, Principal(), tuning=tuning)
+    return thrifty_judges(Principal()).first
 
 
 async def spent_since(tag: str, since: datetime) -> Decimal:

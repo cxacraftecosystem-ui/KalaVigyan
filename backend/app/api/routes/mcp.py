@@ -111,6 +111,8 @@ def _context(request: Request, caller: McpCaller | None, session: AsyncSession) 
         site=get_settings().public_web_url.rstrip("/"),
         user=None if caller is None else caller.user,
         scopes=frozenset() if caller is None else caller.scopes,
+        caller=caller,
+        background=request.app.state.shielded_work,
     )
 
 

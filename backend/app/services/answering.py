@@ -32,7 +32,7 @@ from .answer_lede import AnswerOpening, LedeTools, LedeWriting, Opening, lede_pl
 from .answer_sections import run_sections
 from .answer_steps import TracedStep
 from .answer_stops import stopped_unless_finished
-from .answer_translation import AnswerTranslation, Segment, translate_segments, with_english_question
+from .answer_translation import AnswerTranslation, with_english_question
 from .block_builders import BlockBuilders
 from .explainer_document import explainer_document
 from .explainer_events import ExplainerStream
@@ -237,16 +237,14 @@ async def _researched_answer(
     layout = answer_layout(understanding, ask.builds_on, question=ask.question)
     specs = layout.specs
     answer_id = await pipeline.store.begin(ask, understanding)
-    segments = [Segment(spec.id, spec.title) for spec in layout.untitled]
-    translated = await translate_segments(
-        segments, language=stream.language, translation=pipeline.translation
-    )
-    titles = {**translated, **layout.titles}
+    titles = await layout.translated_titles(language=stream.language, translation=pipeline.translation)
     looked = await pipeline.pieces.reusable(_piece_ask(ask, understanding, layout.reusable))
     lookup, floors = (looked, {}) if ask.builds_on else expert_floors(understanding.depth, looked)
     enrichment = await pipeline.enrichment.for_answer(craft)
     process = await _process(craft, specs, pipeline.store)
     builders = pipeline.builders.for_answer()
+    builders.note_shown(layout.shown_kinds)
+    stream.shown_before(layout.shown_sections)
     run = _Run(ask, understanding, pipeline, stream, answer_id, enrichment, layout, process, floors, builders)
     writing = LedeWriting(stream, pipeline.translation, enrichment)
     plan = lede_plan(ask.question, understanding, layout.untitled, lookup, style=ask.reading_style)

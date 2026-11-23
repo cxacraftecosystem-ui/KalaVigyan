@@ -25,7 +25,7 @@ from app.models import (
     ReactionCitation,
     StageMaterial,
 )
-from app.models.science import live_process
+from app.models.science import live_process, shown_reading
 from app.research.citations import Citation, SourceRef
 from app.research.crafts import CraftRef
 from app.research.retrieval import OPEN_CHUNK_ACLS, VISIBLE_SENSITIVITY
@@ -157,7 +157,7 @@ async def _readings(session: AsyncSession, condition_ids: list[uuid.UUID]) -> Se
     statement = (
         select(ConditionReading, ClaimSource.claimId)
         .join(ClaimSource, ClaimSource.id == ConditionReading.claimSourceId)
-        .where(ConditionReading.conditionId.in_(condition_ids))
+        .where(ConditionReading.conditionId.in_(condition_ids), shown_reading())
         .order_by(ConditionReading.conditionId, ConditionReading.id)
     )
     return (await session.execute(statement)).all()

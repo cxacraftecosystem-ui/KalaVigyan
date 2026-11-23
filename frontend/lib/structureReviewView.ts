@@ -13,7 +13,8 @@ export const STRUCTURE_KIND_LABELS: Record<StructureKind, string> = {
   GLOSSARY_TERM: "Glossary term",
   CONFLICT: "Facts that disagree",
   OPEN_QUESTION: "Open question",
-  GI_RECORD: "GI record"
+  GI_RECORD: "GI record",
+  ALTERNATIVE: "Alternative material"
 };
 
 const GI_PARTS: [keyof GiRecordEntry, string][] = [
@@ -57,6 +58,11 @@ export function entryLines(entry: StructureEntry): EntryLine[] {
       return [{ term: "Question", value: entry.question }, ...listed("Settled by", entry.settledBy ? [entry.settledBy] : [])];
     case "GI_RECORD":
       return giLines(entry);
+    case "ALTERNATIVE":
+      return [
+        { term: "Material", value: entry.materialKey },
+        { term: "Its alternative", value: entry.alternativeKey }
+      ];
   }
 }
 

@@ -73,7 +73,9 @@ and `kalavigyan://index.md`, one line for each tool, prompt and resource.
 
 The dossiers in `backend/app/data/curation` (a category's under `categories/`), each with its
 `.check.json`, are the database's versioned export: a backup, a diff and the bulk import. They are
-edited by hand only to prepare a bulk import, and then only in a working copy (the dossier route).
+edited by hand only to prepare a bulk import, and then only in a working copy (the dossier route)
+of the export the lead makes first, since the import does not take a file that lacks structure a
+reviewer approved in the database (decision 0171).
 
 ## The bar (Kutch Ajrakh, version 3)
 

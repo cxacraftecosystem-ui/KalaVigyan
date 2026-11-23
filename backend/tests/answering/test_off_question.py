@@ -145,9 +145,10 @@ def test_the_evaluation_counts_shown_sentences_resting_on_a_passage_about_anothe
     assert off_question_sentences(shifted, names_of_ajrakh) == 1
 
 
-def test_an_off_question_citation_costs_the_rubric_its_every_cited_part() -> None:
+def test_an_off_question_sentence_costs_the_rubric_its_share_of_the_cited_part() -> None:
     explainer = golden_with_quote("Bagru printers dye with indigo")
     measures = answer_measures(explainer, ["GEOGRAPHY"], off_question=1)
-    assert measures.off_question == 1
+    assert (measures.off_question, measures.sentences) == (1, 12)
     clean = measures.model_copy(update={"off_question": 0})
-    assert rubric_score(clean) - rubric_score(measures) == pytest.approx(1 / 5)
+    assert rubric_score(clean) == 1.0
+    assert rubric_score(measures) == pytest.approx((4 + 11 / 12) / 5, abs=0.0005)

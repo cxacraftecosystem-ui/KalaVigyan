@@ -18,14 +18,12 @@ import { exportFilename } from "@/lib/naming";
 import {
   beginTwoFactorSetup,
   cancelTwoFactorSetup,
-  disableTwoFactor,
-  enableTwoFactor,
   fetchTwoFactorStatus,
-  makeNewRecoveryCodes,
   recoveryCodesFileText,
   type TwoFactorSetup,
   type TwoFactorStatus
 } from "@/lib/twoFactor";
+import { answerTwoStepCode, readsAccountNow } from "@/lib/twoStepFlow";
 import { leavingSetupDiscards, twoStepSwitchView, type TwoStepPhase } from "@/lib/twoStepSwitch";
 
 type Step =
@@ -172,19 +170,15 @@ export function TwoStepVerificationCard() {
   }
 
   async function check(typed: string) {
-    if (step.kind === "setup") {
-      const codes = await enableTwoFactor(typed);
-      settingUpRef.current = false;
-      go({ kind: "codes", codes });
-      void refreshMe();
-    } else if (step.kind === "regenerate") {
-      go({ kind: "codes", codes: await makeNewRecoveryCodes(typed) });
-    } else if (step.kind === "disable") {
-      await disableTwoFactor(typed);
+    if (step.kind !== "setup" && step.kind !== "regenerate" && step.kind !== "disable") return;
+    const answer = await answerTwoStepCode(step.kind, typed);
+    settingUpRef.current = false;
+    if (answer.kind === "codes") go({ kind: "codes", codes: answer.codes });
+    else {
       go({ kind: "idle" });
       setNotice("Two-step verification is off.");
-      void refreshMe();
     }
+    if (readsAccountNow(answer)) void refreshMe();
   }
 
   async function submit(entered: string) {
@@ -266,6 +260,7 @@ export function TwoStepVerificationCard() {
           onDone={() => {
             go({ kind: "idle" });
             setNotice(null);
+            void refreshMe();
           }}
         />
       ) : null}

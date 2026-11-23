@@ -6,8 +6,8 @@ import json
 from typing import Any
 
 from app.core.db import dispose_engine
+from app.providers.judge_routes import thrifty_judges
 from app.providers.router import Principal
-from app.services.candidate_judge_routes import thrifty_judges
 from app.services.judge_eval import judge_cases, judge_report
 
 __all__ = ["BELOW_FLOOR_EXIT", "FAILED_EXIT", "main"]
@@ -18,7 +18,7 @@ FAILED_EXIT = 1
 
 async def run() -> dict[str, Any]:
     try:
-        return await judge_report(judge_cases(), thrifty_judges(Principal()))
+        return await judge_report(judge_cases(), thrifty_judges(Principal()).models)
     finally:
         await dispose_engine()
 

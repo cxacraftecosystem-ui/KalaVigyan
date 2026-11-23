@@ -7,12 +7,13 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from app.curation.entities import After, Reaction as DossierReaction, Species
+from app.curation.entities import After, MaterialAlternative, Reaction as DossierReaction, Species
 from app.curation.limits import SENTENCE_MAX_CHARS
 from app.curation.parts import LANGUAGE_PATTERN, Conflict, OpenQuestion
 from app.curation.records import GiRecord, NativeName, Term
 from app.curation.vocabulary import WHY_DISCIPLINES
 from app.research.structure_proposals import (
+    ALTERNATIVE,
     CONFLICT,
     GI_RECORD,
     GLOSSARY_TERM,
@@ -21,6 +22,7 @@ from app.research.structure_proposals import (
     REACTION,
     STAGE_AFTER,
     STAGE_WHY,
+    AlternativeItem,
     ConflictItem,
     GiRecordItem,
     GlossaryTermItem,
@@ -111,6 +113,10 @@ def _question(item: OpenQuestionItem) -> object:
     )
 
 
+def _alternative(item: AlternativeItem) -> object:
+    return MaterialAlternative(material_id=item.alternative_key, claim_id=PLACEHOLDER_CLAIM)
+
+
 def _gi(item: GiRecordItem) -> object:
     fields = item.model_dump(exclude={"kind"})
     return GiRecord.model_validate({**fields, "claimIds": [PLACEHOLDER_CLAIM]})
@@ -125,5 +131,6 @@ _PARTS: Mapping[str, Callable[[Any], object]] = MappingProxyType(
         CONFLICT: _conflict,
         OPEN_QUESTION: _question,
         GI_RECORD: _gi,
+        ALTERNATIVE: _alternative,
     }
 )

@@ -58,6 +58,7 @@ class PagesReport:
     failed: list[str] = field(default_factory=list)
     documents: DocumentsReport = field(default_factory=DocumentsReport)
     changed_crafts: list[str] = field(default_factory=list)
+    skipped: str | None = None
 
     def changed_owners(self) -> PageOwners:
         documents = [subject_owners(*named.split(":", 1)) for named in self.documents.moved]
@@ -71,6 +72,7 @@ class PagesReport:
             "pagesChanged": self.pages_changed,
             "pagesFailed": self.failed,
             **self.documents.as_dict(),
+            **({"pagesSkipped": self.skipped} if self.skipped else {}),
         }
 
 
@@ -105,11 +107,13 @@ async def rebuild_monographs(
             report.changed_crafts.append(loaded.craft_slug)
 
 
-async def stale_crafts(session: AsyncSession, *, skip: Collection[str]) -> list[tuple[uuid.UUID, str]]:
+async def stale_crafts(
+    session: AsyncSession, *, skip: Collection[str], within: PageOwners | None = None
+) -> list[tuple[uuid.UUID, str]]:
     curated = set((await session.scalars(select(CuratedCraft.craftId))).all())
     found: list[StalePage] = []
     for craft in await chapter_crafts(session, None):
-        if craft.slug in skip:
+        if craft.slug in skip or (within is not None and craft.slug not in within.crafts):
             continue
         built = await _stale_since(session, craft)
         if built is not None:
@@ -130,9 +134,14 @@ def rebuild_order(pages: Sequence[StalePage]) -> list[StalePage]:
 
 
 async def rebuild_stale_pages(
-    session: AsyncSession, *, skip: Collection[str], report: PagesReport, limit: int = PAGES_PER_NIGHT
+    session: AsyncSession,
+    *,
+    skip: Collection[str],
+    report: PagesReport,
+    limit: int = PAGES_PER_NIGHT,
+    within: PageOwners | None = None,
 ) -> None:
-    stale = await stale_crafts(session, skip=skip)
+    stale = await stale_crafts(session, skip=skip, within=within)
     report.pages_stale = len(stale)
     for craft_id, slug in stale[:limit]:
         craft = await session.get(Craft, craft_id)
@@ -153,9 +162,13 @@ async def rebuild_stale_pages(
 
 
 async def rebuild_documents(
-    session: AsyncSession, *, report: PagesReport, limit: int = DOCUMENTS_PER_NIGHT
+    session: AsyncSession,
+    *,
+    report: PagesReport,
+    limit: int = DOCUMENTS_PER_NIGHT,
+    within: PageOwners | None = None,
 ) -> None:
-    await rebuild_stale_documents(session, report=report.documents, limit=limit)
+    await rebuild_stale_documents(session, report=report.documents, limit=limit, within=within)
     report.failed.extend(f"document:{named}" for named in report.documents.failed)
 
 

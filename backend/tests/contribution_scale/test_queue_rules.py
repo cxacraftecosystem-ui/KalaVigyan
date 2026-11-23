@@ -8,6 +8,7 @@ import pytest
 from app.core.allowances import Taken
 from app.core.rate_limit import FACT_PROPOSALS, proposal_attempt, proposal_slots
 from app.models import User
+from app.providers.judge_routes import cheapest_judge_models
 from app.research.contribution_queue import (
     IDEMPOTENCY_KEY_PATTERN,
     content_key,
@@ -17,7 +18,6 @@ from app.research.contribution_queue import (
     subject_key,
 )
 from app.research.knowledge_writes import FactProposal
-from app.services.candidate_judge_routes import cheapest_judge_models
 
 REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{8,64}$")
 REPO = Path(__file__).resolve().parents[3]

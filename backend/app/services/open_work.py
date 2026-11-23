@@ -18,6 +18,7 @@ from app.models import (
     Concept,
     ImageContribution,
     LayoutProposal,
+    MapLayerProposal,
     StructureProposal,
     TaskReservation,
 )
@@ -44,6 +45,7 @@ from app.research.open_work import (
 from app.research.open_work_gap_tasks import OpenGap
 from app.research.open_work_links import DEAD_SOURCE, UNARCHIVED_SOURCE, sources_in_state
 from app.research.open_work_tasks import chosen_tasks, open_tasks, reviewed_queues, subject_tasks
+from app.research.review_queue import READINGS
 
 from .claim_holds import held_in_queue
 from .coverage import owners_of, subject_coverage
@@ -56,6 +58,7 @@ from .open_work_pages import monograph_layouts
 from .open_work_pictures import picture_tasks
 from .open_work_subjects import CATEGORY, WorkSubject, subject_by_key, work_subjects
 from .open_work_translations import translation_tasks
+from .review_queue_readings import reading_standing
 from .review_queue_select import waiting_stage
 
 __all__ = [
@@ -167,9 +170,15 @@ async def review_queues(session: AsyncSession, queues: Sequence[str]) -> dict[st
         "COMPONENTS": (ComponentProposal.createdAt, ComponentProposal.status == PENDING),
         "LAYOUTS": (LayoutProposal.createdAt, LayoutProposal.status == PENDING),
         "STRUCTURE": (StructureProposal.createdAt, StructureProposal.status == PENDING),
+        "LAYERS": (MapLayerProposal.createdAt, MapLayerProposal.status == PENDING),
         "STAGES": (Concept.createdAt, waiting_stage()),
     }
-    return {queue: await _queue(session, *waiting[queue]) for queue in queues}
+    return {
+        queue: await reading_standing(session)
+        if queue == READINGS
+        else await _queue(session, *waiting[queue])
+        for queue in queues
+    }
 
 
 async def live_holds(session: AsyncSession, *, now: datetime) -> dict[str, Hold]:

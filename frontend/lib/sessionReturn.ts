@@ -61,3 +61,11 @@ export function takeSignInReturn(fallback = "/ask"): string {
   }
   return nextFromSearch(window.location.search) ?? safeNext(stored) ?? fallback;
 }
+
+export function signInReturnOnce(take: () => string = () => takeSignInReturn()): () => string {
+  let target: string | null = null;
+  return () => {
+    target ??= take();
+    return target;
+  };
+}

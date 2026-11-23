@@ -9,7 +9,8 @@ export const STRUCTURE_KINDS = [
   "GLOSSARY_TERM",
   "CONFLICT",
   "OPEN_QUESTION",
-  "GI_RECORD"
+  "GI_RECORD",
+  "ALTERNATIVE"
 ] as const;
 
 export type StructureKind = (typeof STRUCTURE_KINDS)[number];
@@ -46,6 +47,7 @@ export type GiRecordEntry = {
   proprietors: string[];
   authorisedUserCount: number | null;
 };
+export type AlternativeEntry = { kind: "ALTERNATIVE"; materialKey: string; alternativeKey: string };
 export type StructureEntry =
   | StageAfterEntry
   | StageWhyEntry
@@ -55,7 +57,8 @@ export type StructureEntry =
   | GlossaryTermEntry
   | ConflictEntry
   | OpenQuestionEntry
-  | GiRecordEntry;
+  | GiRecordEntry
+  | AlternativeEntry;
 
 const tag = <K extends StructureKind>(kind: K) => oneOf([kind] as const);
 const species: Shape<StructureSpecies> = object<StructureSpecies>({ name: text, formula: nullable(text) });
@@ -97,7 +100,8 @@ export const structureEntryShape: Shape<StructureEntry> = tagged<StructureEntry>
     journalIssue: maybe,
     proprietors: list(text),
     authorisedUserCount: nullable(integer)
-  })
+  }),
+  ALTERNATIVE: object<AlternativeEntry>({ kind: tag("ALTERNATIVE"), materialKey: text, alternativeKey: text })
 });
 
 function kindOf(value: unknown): unknown {

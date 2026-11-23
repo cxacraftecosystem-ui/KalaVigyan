@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 
 from app.composer.candidates import research_summary
-from app.research.composition import FOLLOW_UPS_MAX
+from app.research.composition import FOLLOW_UPS_MAX, HEADING_MAX_CHARS
 from app.research.explainer import Explainer, ExplainerSection, Understood, explainer_blocks
 from app.research.explainer_versions import (
     BuildsOnEvent,
@@ -108,6 +108,21 @@ class AnswerLayout:
     @property
     def untitled(self) -> list[SectionSpec]:
         return [spec for spec in self.specs if spec.id not in self.titles]
+
+    @property
+    def shown_sections(self) -> Sequence[ExplainerSection]:
+        return self.follow_up.explainer.sections if self.follow_up is not None else ()
+
+    @property
+    def shown_kinds(self) -> frozenset[str]:
+        return frozenset(block.kind for section in self.shown_sections for block in section.blocks)
+
+    async def translated_titles(self, *, language: str, translation: AnswerTranslation) -> dict[str, str]:
+        segments = [Segment(spec.id, spec.title) for spec in self.untitled]
+        found = await translate_segments(
+            segments, language=language, translation=translation, longest=HEADING_MAX_CHARS
+        )
+        return {**found, **self.titles}
 
     @property
     def reusable(self) -> list[SectionSpec]:

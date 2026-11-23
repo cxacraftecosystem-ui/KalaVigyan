@@ -3,7 +3,6 @@ from __future__ import annotations
 import uuid
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from datetime import datetime
 from types import MappingProxyType
 from typing import Annotated, Any, Literal, Self
 
@@ -13,11 +12,9 @@ from app.core.errors import InvalidInput
 from app.core.roles import Capability, can
 
 from .base import ContractModel
-from .crafts import SLUG_MAX_CHARS, CraftRef
-from .image_contributions import REVIEW_NOTE_MAX_CHARS as PICTURE_NOTE_MAX_CHARS, ImageContributionView
-from .layout_proposals import LayoutReview
+from .crafts import SLUG_MAX_CHARS
+from .image_contributions import REVIEW_NOTE_MAX_CHARS as PICTURE_NOTE_MAX_CHARS
 from .open_work import REVIEW_QUEUES
-from .review_queue_components import ComponentReview
 from .review_queue_cursor import (
     CURSOR_MAX_CHARS,
     QueueEntry,
@@ -26,9 +23,26 @@ from .review_queue_cursor import (
     newest_first,
     parsed_cursor,
 )
+from .review_queue_items import (
+    REVIEW_ORIGINS,
+    TESTIMONY_ORIGIN,
+    ComponentItem,
+    FactConcept,
+    FactItem,
+    FactReview,
+    HeldWriteBack,
+    LayerQueueItem,
+    LayoutItem,
+    PictureItem,
+    Proposer,
+    QueueItem,
+    ReadingQueueItem,
+    ReviewOrigin,
+    StageQueueItem,
+    StructureQueueItem,
+    TestimonyItem,
+)
 from .review_queue_parts import FactSource, GateCheck, RelatedFact, SourceQuote
-from .review_queue_stages import StagePlacing
-from .review_queue_structure import StructureReview
 from .review_switch import (
     AGENT,
     APPROVED_STATUS,
@@ -44,7 +58,7 @@ from .testimony import (
     REVIEW_NOTE_MAX as TESTIMONY_NOTE_MAX_CHARS,
     TESTIMONY_REJECT_REASONS,
 )
-from .vocabulary import LABEL_LEVELS, Discipline, EvidenceLevel
+from .vocabulary import LABEL_LEVELS, EvidenceLevel
 from .write_back import WRITE_BACK_ORIGIN
 
 __all__ = [
@@ -57,6 +71,7 @@ __all__ = [
     "IMAGES",
     "KIND_ACTIONS",
     "KIND_ORIGINS",
+    "LAYERS",
     "LAYOUTS",
     "ONE_HOME",
     "PAGE_DEFAULT",
@@ -65,6 +80,7 @@ __all__ = [
     "PENDING_FACT_STATUSES",
     "QUEUE_KINDS",
     "RAISE",
+    "READINGS",
     "REASON_IN_WORDS",
     "REASON_MAX_CHARS",
     "REASON_MIN_CHARS",
@@ -88,6 +104,7 @@ __all__ = [
     "FactSource",
     "GateCheck",
     "HeldWriteBack",
+    "LayerQueueItem",
     "LayoutItem",
     "PictureItem",
     "Proposer",
@@ -98,6 +115,7 @@ __all__ = [
     "QueueKey",
     "QueueKind",
     "QueueRejection",
+    "ReadingQueueItem",
     "RelatedFact",
     "ReviewFilters",
     "ReviewOrigin",
@@ -120,9 +138,7 @@ __all__ = [
 
 REVIEW_QUEUE_SCHEMA_VERSION = 1
 QUEUE_KINDS: tuple[str, ...] = tuple(REVIEW_QUEUES)
-FACTS, TESTIMONY, IMAGES, COMPONENTS, LAYOUTS, STRUCTURE, STAGES = QUEUE_KINDS
-TESTIMONY_ORIGIN = "TESTIMONY"
-REVIEW_ORIGINS: tuple[str, ...] = (*PROPOSAL_ORIGINS, TESTIMONY_ORIGIN)
+FACTS, TESTIMONY, IMAGES, COMPONENTS, LAYOUTS, STRUCTURE, READINGS, LAYERS, STAGES = QUEUE_KINDS
 KIND_ORIGINS: Mapping[str, tuple[str, ...]] = MappingProxyType(
     {
         FACTS: PROPOSAL_ORIGINS,
@@ -131,6 +147,8 @@ KIND_ORIGINS: Mapping[str, tuple[str, ...]] = MappingProxyType(
         COMPONENTS: (AGENT,),
         LAYOUTS: (CONTRIBUTION, AGENT),
         STRUCTURE: (CONTRIBUTION, AGENT),
+        READINGS: PROPOSAL_ORIGINS,
+        LAYERS: (CONTRIBUTION,),
         STAGES: (RESEARCH,),
     }
 )
@@ -155,7 +173,6 @@ REASON_MAX_CHARS = min(PICTURE_NOTE_MAX_CHARS, TESTIMONY_NOTE_MAX_CHARS)
 ONE_HOME = "A fact is filed under a craft or under a family's science, not both."
 
 QueueKind = Literal[*QUEUE_KINDS]
-ReviewOrigin = Literal[*REVIEW_ORIGINS]
 TestimonyReason = Literal[*TESTIMONY_REJECT_REASONS]
 Reason = Annotated[str, Field(min_length=REASON_MIN_CHARS, max_length=REASON_MAX_CHARS)]
 Note = Annotated[str, Field(min_length=1, max_length=REASON_MAX_CHARS)]
@@ -228,83 +245,6 @@ class ReviewFilters(ContractModel):
     origin: ReviewOrigin | None = None
     cursor: str | None = Field(default=None, min_length=1, max_length=CURSOR_MAX_CHARS)
     limit: int = Field(default=PAGE_DEFAULT, ge=1, le=PAGE_MAX)
-
-
-class Proposer(ContractModel):
-    name: str
-    role: str
-
-
-class FactConcept(ContractModel):
-    name: str
-    type: str
-
-
-class HeldWriteBack(ContractModel):
-    reason: str
-    suggested_craft: str
-
-
-class FactReview(ContractModel):
-    statement: str
-    field: Discipline | None
-    fields: list[Discipline]
-    status: str
-    level: EvidenceLevel
-    sources_differ: bool
-    concept: FactConcept | None
-    sources: list[FactSource]
-    gates: list[GateCheck]
-    held: HeldWriteBack | None = None
-
-
-class _QueueItem(ContractModel):
-    id: uuid.UUID
-    origin: ReviewOrigin
-    submitted_at: datetime
-    craft: CraftRef | None
-    proposer: Proposer | None = None
-
-
-class FactItem(_QueueItem):
-    kind: Literal["FACTS"] = "FACTS"
-    fact: FactReview
-
-
-class TestimonyItem(_QueueItem):
-    kind: Literal["TESTIMONY"] = "TESTIMONY"
-    testimony: dict[str, Any]
-
-
-class PictureItem(_QueueItem):
-    kind: Literal["IMAGES"] = "IMAGES"
-    picture: ImageContributionView
-
-
-class ComponentItem(_QueueItem):
-    kind: Literal["COMPONENTS"] = "COMPONENTS"
-    component: ComponentReview
-
-
-class LayoutItem(_QueueItem):
-    kind: Literal["LAYOUTS"] = "LAYOUTS"
-    layout: LayoutReview
-
-
-class StructureQueueItem(_QueueItem):
-    kind: Literal["STRUCTURE"] = "STRUCTURE"
-    structure: StructureReview
-
-
-class StageQueueItem(_QueueItem):
-    kind: Literal["STAGES"] = "STAGES"
-    stage: StagePlacing
-
-
-QueueItem = Annotated[
-    FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem | StructureQueueItem | StageQueueItem,
-    Field(discriminator="kind"),
-]
 
 
 class ReviewQueuePage(ContractModel):

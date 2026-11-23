@@ -108,7 +108,8 @@ test("each role is told plainly what its AI may do", () => {
   expect(heldScopes(account("STUDENT", learner))).toEqual(["read", "ask"]);
   expect(abilitySentence(account("STUDENT", learner))).toBe("Your Student account lets your AI read and ask in your name. Contributing needs a Researcher account or above.");
   expect(abilitySentence(account("RESEARCHER", researcher))).toBe("Your Researcher account lets your AI read, ask and contribute in your name.");
-  expect(abilitySentence(account("PROFESSOR", researcher))).toBe("Your Professor account lets your AI read, ask, contribute and review in your name.");
+  expect(abilitySentence(account("PROFESSOR", researcher))).toBe("Your Professor account lets your AI read, ask and contribute in your name.");
+  expect(abilitySentence(account("ADMIN", researcher))).toBe("Your Admin account lets your AI read, ask, contribute and review in your name.");
   expect(abilitySentence(account("MASTER_ADMIN", researcher))).toBe("Your Master Admin account lets your AI read, ask, contribute and review in your name.");
 });
 

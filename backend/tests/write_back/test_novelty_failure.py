@@ -6,6 +6,7 @@ import pytest
 from app.core.errors import ExternalFailure
 from app.models.crafts import EMBEDDING_DIMENSIONS
 from app.research.candidate_gates import Candidate
+from app.research.judge_ladder import JudgeLadder
 from app.research.structured import StructuredReply
 from app.services.candidate_gates import later_gates
 from app.services.write_back_gates import write_back_later_gates
@@ -36,7 +37,7 @@ class NoveltyFails(FakeJudge):
 async def test_a_failed_novelty_call_leaves_novelty_unjudged_and_keeps_the_duplicate_verdicts() -> None:
     judge = NoveltyFails(COMPARED)
     later = await write_back_later_gates(
-        FakeHeldFacts(nearest=[NEAR]), [KNOWN, NEW], embed=FakeEmbedder(VECTOR), judge=judge
+        FakeHeldFacts(nearest=[NEAR]), [KNOWN, NEW], embed=FakeEmbedder(VECTOR), judge=JudgeLadder(judge)
     )
     assert len(judge.calls) == 2
     (refused,) = later["c1"].outcomes

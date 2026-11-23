@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from collections import defaultdict
-from collections.abc import Awaitable, Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Collection, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -16,7 +16,9 @@ from app.research.review_queue import (
     FACTS,
     IMAGES,
     KIND_ORIGINS,
+    LAYERS,
     LAYOUTS,
+    READINGS,
     STAGES,
     STRUCTURE,
     TESTIMONY,
@@ -24,6 +26,7 @@ from app.research.review_queue import (
     PictureItem,
     Proposer,
     QueueEntry,
+    QueueKey,
     ReviewFilters,
     ReviewQueuePage,
     TestimonyItem,
@@ -37,15 +40,18 @@ from app.research.review_queue import (
 from . import image_contributions as images, knowledge_view
 from .object_store import ObjectStore
 from .review_queue_components import component_items
+from .review_queue_decisions import ItemRef
 from .review_queue_errors import UnknownCraft
 from .review_queue_fact_views import fact_items
+from .review_queue_layers import layer_items
 from .review_queue_layouts import layout_items
+from .review_queue_readings import ReadingScope, reading_count, reading_entries, reading_items
 from .review_queue_select import QueueScope, Rendered, RenderedItem, queue_count, queue_entries, rows_by_id
 from .review_queue_stages import stage_items
 from .review_queue_structure import structure_items
 from .testimony_views import Turns, review_item
 
-__all__ = ["QueueAdapters", "TurnsOf", "list_review_queue"]
+__all__ = ["QueueAdapters", "TurnsOf", "list_review_queue", "open_review_item"]
 
 PICTURE_ORIGIN = KIND_ORIGINS[IMAGES][0]
 
@@ -59,19 +65,23 @@ class QueueAdapters:
 
 
 async def list_review_queue(
-    session: AsyncSession, viewer: User, filters: ReviewFilters, *, adapters: QueueAdapters, now: datetime
+    session: AsyncSession,
+    viewer: User,
+    filters: ReviewFilters,
+    *,
+    adapters: QueueAdapters,
+    now: datetime,
+    within: Collection[str] | None = None,
 ) -> ReviewQueuePage:
-    kinds = reviewed_kinds(viewer)
+    kinds = tuple(kind for kind in reviewed_kinds(viewer) if within is None or kind in within)
     scope = QueueScope(
         viewer_id=viewer.id, craft=await _craft(session, filters.craft_slug), origin=filters.origin
     )
     counted = selected_kinds(kinds, kind=None, origin=filters.origin)
-    counts = {kind: await queue_count(session, kind, scope) if kind in counted else 0 for kind in kinds}
+    counts = {kind: await _count(session, kind, scope) if kind in counted else 0 for kind in kinds}
     chosen = selected_kinds(kinds, kind=filters.kind, origin=filters.origin)
     before = parsed_cursor(filters.cursor) if filters.cursor is not None else None
-    groups = [
-        await queue_entries(session, kind, scope, before=before, limit=filters.limit + 1) for kind in chosen
-    ]
+    groups = [await _entries(session, kind, scope, before=before, limit=filters.limit + 1) for kind in chosen]
     kept, following = newest_first(groups, filters.limit)
     return ReviewQueuePage(
         kinds=list(kinds),
@@ -80,6 +90,37 @@ async def list_review_queue(
         items=await _items(session, viewer, kept, adapters=adapters, now=now),
         next_cursor=following,
     )
+
+
+async def open_review_item(
+    session: AsyncSession, viewer: User, ref: ItemRef, *, adapters: QueueAdapters, now: datetime
+) -> RenderedItem | None:
+    if ref.kind not in reviewed_kinds(viewer):
+        return None
+    found = await _rendered(session, ref.kind, [ref.item_id], adapters=adapters, now=now)
+    if not found:
+        return None
+    names = await _proposers(session, found) if sees_proposer(viewer) else {}
+    return _named(found[0], names)
+
+
+async def _count(session: AsyncSession, kind: str, scope: QueueScope) -> int:
+    if kind == READINGS:
+        return await reading_count(session, _reading_scope(scope))
+    return await queue_count(session, kind, scope)
+
+
+async def _entries(
+    session: AsyncSession, kind: str, scope: QueueScope, *, before: QueueKey | None, limit: int
+) -> list[QueueEntry]:
+    if kind == READINGS:
+        return await reading_entries(session, _reading_scope(scope), before=before, limit=limit)
+    return await queue_entries(session, kind, scope, before=before, limit=limit)
+
+
+def _reading_scope(scope: QueueScope) -> ReadingScope:
+    craft_id = scope.craft.id if scope.craft is not None else None
+    return ReadingScope(viewer_id=scope.viewer_id, craft_id=craft_id, origin=scope.origin)
 
 
 async def _craft(session: AsyncSession, slug: str | None) -> Craft | None:
@@ -121,6 +162,10 @@ async def _rendered(
         return await layout_items(session, ids)
     if kind == STRUCTURE:
         return await structure_items(session, ids)
+    if kind == READINGS:
+        return await reading_items(session, ids)
+    if kind == LAYERS:
+        return await layer_items(session, ids)
     if kind == STAGES:
         return await stage_items(session, ids)
     if kind == TESTIMONY:

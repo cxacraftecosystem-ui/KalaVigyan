@@ -35,7 +35,7 @@ This page lists what is provisioned, how to deploy, and how to roll back. It hol
 | `/opt/kalavigyan/slot-8000`, `slot-8001`, `current` | Symlinks used by blue/green. nginx proxies to exactly one port. |
 | `/opt/kalavigyan/.env`, `fetcher.env` | Rendered from Parameter Store by `kv-render-env` (0640 root:kalavigyan) |
 | `kv-api@8000`, `kv-api@8001` | The two API colours (user `kalavigyan`, MemoryMax 3000M, Restart=always) |
-| `kv-worker`, `kv-fetcher` | Started only once a release ships `app.worker` / `app.fetcher`. `app/worker.py` (the media queue, decision 0018) ships with the media backend; `journalctl -u kv-worker` shows its jobs. |
+| `kv-worker`, `kv-fetcher` | Started only once a release ships `app.worker` / `app.fetcher`. `app/worker.py` (the media queue, decision 0018) ships with the media backend and runs as user `kalavigyan`; `journalctl -u kv-worker` shows its jobs. `kv-fetcher` runs as a user of its own that systemd makes at each start (`DynamicUser=yes`, outside the `kalavigyan` group, so it cannot read `.env`; `ProtectProc=invisible`, so it sees no other user's processes), with only `fetcher.env`, which systemd reads as root (decision 0173). |
 | `api-watchdog.timer` | Restarts a running colour after 2 failed `/health` checks a minute apart (`journalctl -t api-watchdog`) |
 | nginx site `kalavigyan` | `:80`. The snippet `kalavigyan-origin-verify.conf` returns 403 without CloudFront's header; loopback is exempt. |
 | `redis-server` | `127.0.0.1:6379`, 256 MB LRU |
@@ -338,13 +338,14 @@ flowchart TD
     BC{Backend checks}
     DB["Deploy backend<br/>OIDC, secrets to SSM"]
     SM["Smoke test<br/>through CloudFront"]
+    G{"Is the API main needs<br/>the one answering?"}
     V["Web build<br/>Vercel deploy hook"]
   end
   subgraph Box["The box, over SSM"]
     R["release.sh"]
     M["Migrate, seed, import<br/>while the old colour serves"]
     S["Start the other colour"]
-    H{"/health answers?"}
+    H{"/health/ready answers?"}
     N["nginx switches"]
     K["The deploy rolls back"]
     W["Old colour stops,<br/>workers restart"]
@@ -359,30 +360,39 @@ flowchart TD
   H -->|no| K
   N --> W
   W --> SM
-  SM --> V
+  SM --> G
+  G -->|yes| V
   classDef accent fill:#762CB1,stroke:#5F1C93,color:#FFFFFF
   class N accent
 ```
 
-Automatic: a push to `main` that touches `backend/**`, `shared/**`, `infra/deploy/**`, `backend-checks.yml` or `deploy-backend.yml` → **Backend checks** → **Deploy backend**. Vercel builds the web app from `main` on its own.
+Automatic: a push to `main` that touches `backend/**`, `shared/**`, `infra/deploy/**`, `backend-checks.yml` or `deploy-backend.yml` → **Backend checks** → **Deploy backend**. The web app follows the API (Frontend, below).
 
 Deploy backend (`.github/workflows/deploy-backend.yml`):
 
 1. Assumes `kalavigyan-deploy` through GitHub OIDC (no static AWS keys in GitHub).
 2. Copies changed secrets into `/kalavigyan/env`.
 3. Uploads `git archive HEAD backend infra/deploy` to `s3://kalavigyan-media-626159998512/deploy/backend/<sha>/KalaVigyan_API_Release-Build_<sha12>.tar.gz`.
-4. Runs `infra/deploy/release.sh <sha>` on the box over SSM `AWS-RunShellScript`, logging to `deploy/logs/<sha>/`. The script installs units, renders the env, installs the CPython that `infra/deploy/python.pin` names into `/opt/cpython/<version>+<build>` unless it is there (over https, checksum checked before it is unpacked, staged then moved, root-owned; decision 0118), builds the venv with uv on that interpreter, then `blue_green.sh release <sha>`:
-   1. migrate (`alembic upgrade head`), seed (`seed_crafts`, `seed_claims`, `seed_districts`) and import the curated dossiers (`import_curation`, decision 0053; a refused dossier exits 2 and stops the release like a failed seed), then rebuild the shared-science explorer's per-term summary (`refresh_shared_terms`, `docs/contracts/learning.md`) while the old colour serves, then sync crafts from both portals (`sync_portal_crafts`; a failure is a warning, the release goes on) and embed what the seeds and the import wrote (`embed_craft_descriptors`, then `embed_knowledge`, each bounded to 240 seconds; a failure is a warning too);
+4. Runs `infra/deploy/release.sh <sha>` on the box over SSM `AWS-RunShellScript`, logging to `deploy/logs/<sha>/`. The script installs units, renders the env, installs the CPython that `infra/deploy/python.pin` names into `/opt/cpython/<version>+<build>` unless it is there (over https, checksum checked before it is unpacked, staged then moved, root-owned; decision 0118), builds the venv with uv on that interpreter, writes `RELEASE=<sha>` to the release's `release.env` (the API colour reads it, so `/health` names the commit it runs), then `blue_green.sh release <sha> --within <seconds>`:
+   1. migrate (`alembic upgrade head`; after three failed tries the live colour is stopped to free its pooler sessions, five more tries follow, and the live colour starts again as soon as one passes, so it serves through the seeds and the checks), seed (`seed_crafts`, `seed_claims`, `seed_districts`), bring the stored dataset records up to the registry (`sync_dataset_registry`, decision 0114) and import the curated dossiers (`import_curation`, decision 0053; a refused dossier exits 2 and stops the release like a failed seed), then rebuild the shared-science explorer's per-term summary (`refresh_shared_terms`, `docs/contracts/learning.md`) while the old colour serves; a non-zero exit of any of these six stops the release with "seeding failed" and nginx keeps the live colour, then sync crafts from both portals (`sync_portal_crafts`; a failure is a warning, the release goes on) and embed what the seeds and the import wrote (`embed_craft_descriptors`, then `embed_knowledge`, each bounded to 240 seconds; a failure is a warning too);
    2. start the other colour;
-   3. wait for `/health`;
+   3. wait for `/health/ready`: the new colour must start and reach its database, or it is stopped and nginx stays where it was;
    4. switch nginx;
    5. stop the old colour;
    6. restart the worker and fetcher.
 
    It keeps the newest 5 releases.
 
+   A release that stops before the switch (a failed migration, seed or retrieval floor, a colour
+   that never becomes ready) points the idle slot back at the release it held, starts the workers
+   again, and leaves nginx where it was. A release never outlives the SSM command that runs it:
+   `release.sh` gives `blue_green.sh` what is left of `RELEASE_SECONDS` (2700, the command's
+   `executionTimeout`) less 300 seconds, refuses to switch with less than 600 left, and a release
+   still running at its limit is sent SIGTERM, which runs the same clean-up, and SIGKILL 240
+   seconds later, a minute before SSM's own limit (decision 0173).
+
    Pages (round 7): after the embeds, `rebuild_stale_pages` (bounded by `PAGES_SECONDS` = 480) rebuilds only the page snapshots whose stamp moved. A stamp hashes the page's data and a fingerprint of the code that builds pages (`services/page_code.py`), not the release, so a deploy that changes no page code rebuilds nothing; the report carries `pageCode`. The first deploy after a change to page code restales every page once.
-5. Smoke-tests `https://d89rsltpszebp.cloudfront.net/health`.
+5. Smoke-tests `https://d89rsltpszebp.cloudfront.net/health/ready` and waits until `/health` names the deployed commit.
 
 Craft sync (`.github/workflows/craft-sync.yml`): daily at 21:37 UTC and on dispatch, runs `app.scripts.sync_portal_crafts` in `/opt/kalavigyan/current/backend` on the box over SSM, logging to `deploy/logs/craft-sync/<run id>/`. It prints one JSON report and fails when a portal did not answer (`docs/contracts/portal-craft-feed.md`).
 
@@ -392,20 +402,32 @@ Alert digest (`.github/workflows/alert-digest.yml`): Mondays at 03:30 UTC (09:00
 
 Coverage enrichment (`.github/workflows/coverage-enrichment.yml`): daily at 22:17 UTC and on dispatch, runs `app.scripts.embed_craft_descriptors` (missing craft name-and-alias vectors for the resolver, decision 0016), `app.scripts.embed_knowledge` (fills every missing claim, chunk and knowledge-piece vector, so the backlog is never embedded inside a learner's request, decision 0013), `app.scripts.link_compounds` (links every unlinked compound with a formula to its PubChem record, fills the formula and the PubChem record source of a compound whose CID a curated dossier or the science seed gave, when PubChem holds the same composition, and prints `{linked, filled, notFound, failed, ok}`, decisions 0045 and 0088), `app.scripts.build_craft_chapters` (keeps the 3D conformers of the curated and read crafts' compounds in the media bucket and `Compound.conformerKeptAt`, stores the Wikidata points of dossier places, rebuilds both page snapshots of every curated craft and every craft with a snapshot, logs an error naming a craft whose page changed under an unchanged stamp, and prints `{crafts, conformersKept, conformersWithout3d, pointsKept, pagesRebuilt, pagesChanged, failed, ok}`, decision 0098) and last `app.scripts.recheck_saved` (re-checks every saved explainer for new cited claims in its fields, writes "This answer got better" notes, no model call, prints `{checked, notified, ok}`, decision 0063) in `/opt/kalavigyan/current/backend` on the box over SSM, logging to `deploy/logs/coverage-enrichment/<run id>/`; the step fails when any of them fails. Since commit fdf478c it no longer researches crafts or rebuilds pieces (`app.scripts.rebuild_pieces` and `app.scripts.enrich_coverage` are not run; the dataset is curated by Claude Code, `docs/plans/dataset-curation.md`).
 
-Running the same sha again re-renders the env and restarts the live colour.
+Running the same sha again re-renders the env and restarts the live release blue/green
+(`kv-blue-green restart`, also the command after `kv-render-env`): it starts the release on the
+other colour, waits for `/health/ready`, switches nginx, restarts the workers and points the idle
+slot at the release it held before, so a rollback still finds it. A colour that cannot reach the
+database on the new environment is never switched to; the run fails and the old colour serves on.
 
 Frontend: the API goes first, then the web app. Vercel never builds from Git
 (`frontend/vercel.json` turns Git deployments off for every branch); the production build is started through the
 Vercel deploy hook (`/kalavigyan/env/VERCEL_DEPLOY_HOOK_URL`) by the action
-`.github/actions/build-web-app`, which builds `main` and takes the domain when it is ready.
+`.github/actions/build-web-app`, which builds the head of `main` and takes the domain when it is ready.
+Because the hook builds the head of `main`, not the commit that called it, the action first asks
+the API which release it runs (`/health` names its commit) and diffs that commit against the head
+of `main` over the **Backend checks** push paths (`api_ready.sh`). It calls the hook only when
+nothing in those paths changed since, so a web build never ships ahead of the API it calls.
 
 - A push that changes the API (any of the **Backend checks** push paths): the last step of
-  **Deploy backend**, once the API answers through CloudFront, starts the build. A failed backend
-  deploy leaves the web app as it is.
-- A push that changes only the web app (`frontend/**`): **Deploy web app** starts the build at once. A push that changes only the specs under `frontend/e2e/**` builds nothing; Frontend checks still run them.
-  It reads the Backend checks push paths from that workflow and leaves the build to Deploy backend
-  when the push touches any of them.
-- By hand: run **Deploy web app** from Actions, or **Build pages now** in admin settings.
+  **Deploy backend**, once the API answers ready through CloudFront and names the commit, starts
+  the build, unless `main` has meanwhile gained an API change that is not live yet, whose own
+  Deploy backend then builds. A failed backend deploy leaves the web app as it is.
+- A push that changes only the web app (`frontend/**`): **Deploy web app** starts the build at once
+  when the API that `main` needs is the one answering. While an earlier API push is still in
+  Backend checks or Deploy backend, or failed there, it builds nothing and says so in a warning;
+  the next Deploy backend that ships builds. A push that changes only the specs under
+  `frontend/e2e/**` builds nothing; Frontend checks still run them.
+- By hand: run **Deploy web app** from Actions (it goes through the same check), or **Start a build** in admin
+  settings.
 
 No watcher or manual promote is needed. The nightly upkeep does not build the site: it refreshes only the pages whose content changed (decision 0119).
 
@@ -429,6 +451,25 @@ origins; the issuer is the API origin and the consent page is `<PUBLIC_WEB_URL>/
    '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'` lists the read, proposal and open-work tools.
 3. Switch off: `MCP_SERVER_ENABLED=false` and re-render; the route answers 404.
 
+### Reviewing over MCP (decision 0170)
+
+An Admin or Master Admin with two-step verification on can review from their AI client.
+
+1. Sign in on the site (or sign out and in again: `review` is given only within 15 minutes of a
+   sign-in), then add or reconnect the server in the AI client and tick Review on the consent page.
+   A review token lives 15 minutes and the client renews it; `review` itself ends 8 hours after the
+   consent, and the connection goes on without it.
+2. The client lists four more tools: `review_queue` (the queue and one item whole), `stage_reviews`
+   (up to 20 decisions or source corrections a call, at most 100 a day), `refresh_pages` and
+   `admin_reports`. A contributor's connection never sees them.
+3. Nothing the AI stages is published. Open Review in admin settings: each open batch says "Proposed
+   through <client> by <admin>"; untick what to skip, change an action or reason, and Confirm
+   selected. Each item is checked again and applied as the Review page applies a decision, audited
+   with the client and the person who confirmed it, and the pages it touched are refreshed. A batch
+   expires after three days; Discard batch closes one unapplied.
+4. Who staged what: `StagedReview` and `StagedReviewItem` (who, which client, when, each decision),
+   and the audit actions `review.staged_applied`, `review.staged_discarded` and each decision's own.
+
 ### Open data with a DOI (decisions 0116 and 0130)
 
 `.github/workflows/open-data.yml` (dispatch only, from `main`) builds a release of KalaVigyan's open knowledge on the box (`app.scripts.build_open_data`), deposits it on Zenodo from the runner and records it (`OpenDataRelease`); `/data` and `GET /api/open-data` show it. Before the first release the owner, once:
@@ -449,8 +490,8 @@ A craft release (decision 0130): give `craft` its exact slug, for Kutch Ajrakh `
 - **The contribution worker** `kv-contributions` (a systemd unit beside `kv-worker` and `kv-fetcher`,
   restarted by every deploy) takes queued proposals and runs their gates off the request
   (`docs/contracts/knowledge-writes.md`). Read it with `journalctl -u kv-contributions`. Its
-  concurrency is `CONTRIBUTION_WORKERS` (2 in the unit; a larger number runs only as many as its
-  connection budget carries, decision 0163). To drain the queue by
+  concurrency is `CONTRIBUTION_WORKERS` (4 in the unit since the pooler went to 45; a larger number
+  runs only as many gates as its connection budget carries, 4 today, decision 0163). To drain the queue by
   hand: `python -m app.scripts.contribution_worker --once` (Shell on the box).
 - **Picture screens** need an enabled CAPTION route (a vision model, Settings, Routing). Without
   one, every picture waits for a person as `UNSCREENED`. After the deploy that adds them, run
@@ -477,9 +518,20 @@ A craft release (decision 0130): give `craft` its exact slug, for Kutch Ajrakh `
 workflow runs `app.scripts.nightly_upkeep` on the box over SSM, which rebuilds stale snapshots and
 documents and then refreshes only the pages whose content moved through the web's `/api/revalidate`
 (`WEB_REVALIDATE_SECRET`); a night that changed nothing sends nothing and no site build runs
-(decision 0119). Releases and "Build pages now" in admin settings still build through the Vercel
+(decision 0119). Releases and "Start a build" in admin settings still build through the Vercel
 deploy hook, read from `/kalavigyan/env/VERCEL_DEPLOY_HOOK_URL` (SecureString; never printed);
-without it "Build pages now" answers 503.
+without it "Start a build" answers 503.
+
+To publish without waiting for the night (decision 0170), an Admin presses Refresh pages now in admin
+settings, or an AI client with the `review` scope calls `refresh_pages {start: true}`: one
+background job in the API rebuilds the stale snapshots and documents (the night's bounds, 8
+minutes at most) and refreshes the pages that changed. One job runs at a time, the night's
+included (a running refresh makes the night skip its page steps, reported as `pagesSkipped`); a
+second start within 10 minutes is refused. The Master Admin's Refresh every page, once a day and
+after a confirmation, refreshes every page the site lists. No model is called. A job that stopped
+without finishing (a restart) is marked failed by the next start, 15 minutes after it began;
+`PageRefreshJob` holds each job's progress and outcome, and `site.pages_refresh_started` who
+started it.
 
 ## Bulk export
 
@@ -525,9 +577,16 @@ values (`monthlyCeilingUsd`, `mediaCapUsd`, `roleDailyUsd`, `degradeAtFraction`,
 cap is `maxOutputTokens` in AI routing (never above the model's maximum). The deploy does not
 reset any of these.
 
-To undo the data step: `alembic downgrade 0028_roles_and_contributions` from this release puts
-back the seeded `QuotaPolicy.perDay` values and the `TRANSLATE` and `SUMMARISE` route caps; it does
-not write the AI budget rows back (an earlier release then uses its own capped defaults).
+To put back what the data step cleared, set each value where it now lives, as above. The seeded
+daily allowances were, per role and day, Student 600 voice seconds, 5 images and no video,
+Researcher 1,800, 30 and 5, Professor 1,800, 50 and 10, and Admin 3,600, 100 and 20
+(`EARLIER_QUOTAS` in `backend/migrations/versions/0029_unlimited_ai_use.py`): enter them as
+`dailyAllowances` on the AI budget screen. The `TRANSLATE` and `SUMMARISE` output caps were 8192 and
+2048: set `maxOutputTokens` on those two routes in AI routing. Never undo the data step with
+`alembic downgrade`: the head is far past `0029_unlimited_ai_use`, so a downgrade to
+`0028_roles_and_contributions` would undo every later migration in turn, each committed on its own,
+and drop the tables they added with their rows. In production `backend/migrations/env.py` refuses it
+(Roll back, decision 0174).
 
 ## Geo ETL
 
@@ -695,8 +754,10 @@ fixture or the category page (`docs/contracts/category-page.md`).
   craft page show it to a signed-out reader without the quote, retracts it and checks it is gone.
 - **Lead scripts for contributions** (on the box, as `kalavigyan` with the box's `.env`):
   `python -m app.scripts.rejudge_differing` re-judges every live pair flagged sources differ and
-  writes nothing; `python -m app.scripts.retitle_sources` lists sources whose title is a file name or
-  under three words, and `--set <id> --title "<the work's title>"` replaces one with an audit row;
+  writes nothing; `python -m app.scripts.retitle_sources` prints `{titles, authors}`: the sources whose title is a
+  file name or under three words, and those whose authors hold a PDF producer's word such as `sys`
+  (`research/front_page.producer_token`), each with its id, title, url and citations, for the lead
+  to correct by hand; `--set <id> --title "<the work's title>"` replaces a title with an audit row;
   `python -m app.scripts.source_journals` reads the journal of every stored source with a DOI and no
   journal from Crossref and prints it (`--limit <n>` to read fewer), and `--write` stores each one found.
 - **Generated retrieval questions** (`eval-questions.yml`): by hand only, from main:
@@ -751,15 +812,22 @@ fixture or the category page (`docs/contracts/category-page.md`).
 
 ## Roll back
 
-Backend, on the box. This is instant: the previous release is still in the other slot.
+Backend, on the box. This is instant: the previous release is still in the other slot, because a
+release that stops before its switch points that slot back at the release it held.
 
 ```bash
 sudo kv-blue-green status
-sudo kv-blue-green rollback            # back to whatever the idle slot holds
+sudo kv-blue-green rollback            # back to the release the idle slot holds, if it has served
 sudo kv-blue-green rollback <sha>      # or any kept release: ls -t /opt/kalavigyan/releases
 ```
 
-A rollback does not reverse migrations. If a migration has to be undone, run `alembic downgrade` from the release that added it before rolling back.
+A plain `rollback` promotes the idle slot only when its release has served before (it carries
+`.released`, which every switch writes); otherwise it names what the slot holds and changes
+nothing, so a release that stopped before its switch is never promoted by accident. Name the
+release to go back to instead. Either way the new colour must answer `/health/ready` before nginx
+switches.
+
+A rollback does not reverse migrations. If a migration has to be undone, run `alembic downgrade -1` from the release that added it, while that migration is still the head, before rolling back; it undoes that one revision. In production (`APP_ENV=production`) `backend/migrations/env.py` refuses any downgrade that would undo more than one revision, before any step runs, and names how many it would undo; each step commits on its own and may drop a table with its rows. To undo more on purpose, run the same command again with `CONFIRM_DOWNGRADE_STEPS` set to that exact number (decision 0174).
 
 A rollback keeps each release on the interpreter it was built with: its `.venv` points into its own `/opt/cpython/<version>+<build>`, and no release removes one. To go back to an older Python for new releases, revert `infra/deploy/python.pin`, `requires-python` and `backend/uv.lock` together and deploy; the release finds that interpreter installed and builds on it (decision 0118). `readlink -f /opt/kalavigyan/releases/*/backend/.venv/bin/python` shows which interpreter each kept release runs on.
 

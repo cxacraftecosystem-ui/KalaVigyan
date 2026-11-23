@@ -4,12 +4,13 @@ import uuid
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import Select, select, tuple_
+from sqlalchemy import Select, and_, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
     ClaimSource,
     Concept,
+    ConceptEdge,
     CraftGiRecord,
     CraftLocation,
     CraftPrice,
@@ -34,6 +35,7 @@ from .curated_compounds import linked_compounds
 from .curated_index import CuratedPage
 from .curation_claims import craft_curated_claims
 from .curation_plan import CurationPlan, PlanParts
+from .curation_structure import CONTRAST_RELATION
 from .curation_writes import delete_rows, insert_missing, keep_only, stored_values, sync_rows, update_rows
 
 __all__ = [
@@ -103,6 +105,13 @@ async def write_structure(
         ReactionCitation,
         plan.part("reactionCitations"),
         ReactionCitation.reactionId.in_(reaction_ids),
+    )
+    claim_ids = [row["id"] for row in plan.part("claims")]
+    changed["alternatives"] = await _synced(
+        session,
+        ConceptEdge,
+        plan.part("alternatives"),
+        and_(ConceptEdge.relation == CONTRAST_RELATION, ConceptEdge.claimId.in_(claim_ids)),
     )
     return changed
 

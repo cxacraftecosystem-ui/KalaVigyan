@@ -11,10 +11,10 @@ from app.core.db import dispose_engine, process_pools, sessionmaker
 from app.core.logging import configure_logging
 from app.models import User
 from app.providers.embedding import router_embedder
+from app.providers.judge_routes import thrifty_judges
 from app.providers.router import Principal
 from app.research.fetcher import Fetcher
 from app.research.gate_thrift import GateThrift
-from app.services.candidate_judge_routes import thrifty_judges
 from app.services.candidate_sources import proposal_fetcher
 from app.services.contribution_queue_worker import ContributionWorker, WorkerSettings, drain
 from app.services.fact_proposals import ProposalAdapters
@@ -26,12 +26,12 @@ logger = logging.getLogger("kalavigyan.contributions")
 
 def thrifty_adapters(user: User, fetcher: Fetcher) -> ProposalAdapters:
     principal = Principal(user_id=user.id, role=user.role)
-    cheap, strong = thrifty_judges(principal)
+    judges = thrifty_judges(principal)
     return ProposalAdapters(
         fetcher=fetcher,
         embed=router_embedder(principal),
-        judge=cheap,
-        escalate=(strong,),
+        judge=judges.first,
+        escalate=judges.escalate,
         thrift=GateThrift(),
     )
 

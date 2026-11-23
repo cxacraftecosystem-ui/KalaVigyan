@@ -5,9 +5,10 @@ import uuid
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any
+from typing import Any, overload
 
 from app.research.structure_proposals import (
+    ALTERNATIVE,
     BOTANICAL_NAME,
     CONFLICT,
     GLOSSARY_TERM,
@@ -16,6 +17,7 @@ from app.research.structure_proposals import (
     REACTION,
     STAGE_AFTER,
     STAGE_WHY,
+    AlternativeItem,
     BotanicalNameItem,
     ConflictItem,
     GlossaryTermItem,
@@ -26,9 +28,11 @@ from app.research.structure_proposals import (
     StageWhyItem,
 )
 
+from .curated_category_index import CuratedCategoryPage, IndexCategoryQuestion
 from .curated_index import (
     CuratedPage,
     IndexAfter,
+    IndexAlternative,
     IndexConflict,
     IndexMaterial,
     IndexNativeName,
@@ -40,6 +44,7 @@ from .curated_index import (
 )
 
 __all__ = [
+    "OwnerPage",
     "PlacedEntry",
     "current_value",
     "entry_keys",
@@ -53,6 +58,7 @@ __all__ = [
 ]
 
 KEY_NUMBER = re.compile(r"^([A-Z])(\d+)$")
+OwnerPage = CuratedPage | CuratedCategoryPage
 TERM_PREFIX, QUESTION_PREFIX, REACTION_PREFIX = "W", "O", "R"
 ENTRY_WIDTH = 2
 
@@ -68,7 +74,7 @@ def stage_of(page: CuratedPage, key: str | None) -> IndexStage | None:
     return next((stage for stage in page.stages if stage.key == key), None)
 
 
-def material_of(page: CuratedPage, key: str) -> IndexMaterial | None:
+def material_of(page: OwnerPage, key: str) -> IndexMaterial | None:
     return next((material for material in page.materials if material.key == key), None)
 
 
@@ -83,7 +89,7 @@ def entry_prefix(kind: str) -> str | None:
     return {GLOSSARY_TERM: TERM_PREFIX, OPEN_QUESTION: QUESTION_PREFIX, REACTION: REACTION_PREFIX}.get(kind)
 
 
-def entry_keys(page: CuratedPage, kind: str) -> list[str]:
+def entry_keys(page: OwnerPage, kind: str) -> list[str]:
     if kind == GLOSSARY_TERM:
         return [term.key for term in page.glossary]
     if kind == OPEN_QUESTION:
@@ -91,24 +97,32 @@ def entry_keys(page: CuratedPage, kind: str) -> list[str]:
     return [reaction.key for reaction in page.reactions]
 
 
-def target_problem(page: CuratedPage, item: Any) -> str | None:
+def target_problem(page: OwnerPage, item: Any, *, held: frozenset[uuid.UUID] | None = None) -> str | None:
+    if item.kind == CONFLICT:
+        return _conflict_problem(page, item, held)
     check = _TARGETS.get(item.kind)
     return None if check is None else check(page, item)
 
 
-def subject_concept(page: CuratedPage, item: Any, field: str | None) -> uuid.UUID | None:
-    if item.kind in (STAGE_AFTER, STAGE_WHY) or (item.kind == REACTION and item.stage_key is not None):
+def subject_concept(page: OwnerPage, item: Any, field: str | None) -> uuid.UUID | None:
+    if isinstance(page, CuratedPage) and (
+        item.kind in (STAGE_AFTER, STAGE_WHY) or (item.kind == REACTION and item.stage_key is not None)
+    ):
         stage = stage_of(page, item.stage_key)
         return stage.concept_id if stage is not None else None
-    if item.kind == BOTANICAL_NAME:
+    if item.kind in (BOTANICAL_NAME, ALTERNATIVE):
         material = material_of(page, item.material_key)
         return material.concept_id if material is not None else None
-    if item.kind == GLOSSARY_TERM or field is None:
+    if item.kind == GLOSSARY_TERM or field is None or not isinstance(page, CuratedPage):
         return None
     return page.craft_concepts.get(field)
 
 
-def current_value(page: CuratedPage, item: Any) -> str | None:
+def current_value(page: OwnerPage, item: Any) -> str | None:
+    if item.kind == ALTERNATIVE:
+        return _alternatives_now(page, item)
+    if not isinstance(page, CuratedPage):
+        return None
     if item.kind == STAGE_AFTER:
         stage = stage_of(page, item.stage_key)
         return stage.after.text if stage is not None and stage.after is not None else None
@@ -118,10 +132,26 @@ def current_value(page: CuratedPage, item: Any) -> str | None:
     return None
 
 
-def placed_page(page: CuratedPage, item: Any, entry: PlacedEntry) -> CuratedPage:
+@overload
+def placed_page(page: CuratedPage, item: Any, entry: PlacedEntry) -> CuratedPage: ...
+
+
+@overload
+def placed_page(page: CuratedCategoryPage, item: Any, entry: PlacedEntry) -> CuratedCategoryPage: ...
+
+
+@overload
+def placed_page(page: OwnerPage, item: Any, entry: PlacedEntry) -> OwnerPage: ...
+
+
+def placed_page(page: OwnerPage, item: Any, entry: PlacedEntry) -> OwnerPage:
     place = _PLACES.get(item.kind)
     changed: dict[str, Any] = {} if place is None else place(page, item, entry)
-    if entry.claim_id is not None and entry.claim_id not in page.claim_order:
+    if (
+        isinstance(page, CuratedPage)
+        and entry.claim_id is not None
+        and entry.claim_id not in page.claim_order
+    ):
         changed["claim_order"] = [*page.claim_order, entry.claim_id]
     return page.model_copy(update=changed)
 
@@ -134,6 +164,22 @@ def _reaction_problem(page: CuratedPage, item: ReactionItem) -> str | None:
     if item.stage_key is None or stage_of(page, item.stage_key):
         return None
     return f"{item.stage_key} is not a stage of this page"
+
+
+def _alternative_problem(page: OwnerPage, item: AlternativeItem) -> str | None:
+    material = material_of(page, item.material_key)
+    missing = [key for key in (item.material_key, item.alternative_key) if material_of(page, key) is None]
+    if missing or material is None:
+        return f"{', '.join(missing)} is not a material of this page"
+    if item.alternative_key in {other.key for other in material.alternatives}:
+        return f"the page already gives {item.alternative_key} as an alternative to {item.material_key}"
+    return None
+
+
+def _alternatives_now(page: OwnerPage, item: AlternativeItem) -> str | None:
+    material = material_of(page, item.material_key)
+    named = [material_of(page, other.key) for other in (material.alternatives if material else [])]
+    return ", ".join(found.name for found in named if found is not None) or None
 
 
 def _material_problem(page: CuratedPage, item: BotanicalNameItem) -> str | None:
@@ -163,9 +209,9 @@ def _question_problem(page: CuratedPage, item: OpenQuestionItem) -> str | None:
     return None
 
 
-def _conflict_problem(page: CuratedPage, item: ConflictItem) -> str | None:
-    held = set(page.claim_order)
-    unknown = [str(claim_id) for claim_id in item.claim_ids if claim_id not in held]
+def _conflict_problem(page: OwnerPage, item: ConflictItem, held: frozenset[uuid.UUID] | None) -> str | None:
+    owned = held if held is not None else frozenset(page.claim_order if isinstance(page, CuratedPage) else ())
+    unknown = [str(claim_id) for claim_id in item.claim_ids if claim_id not in owned]
     if unknown:
         return f"a conflict names facts of this page's dossier; these are not: {', '.join(unknown)}"
     if set(item.claim_ids) in [set(conflict.claim_ids) for conflict in page.conflicts]:
@@ -198,6 +244,17 @@ def _reaction(page: CuratedPage, item: ReactionItem, entry: PlacedEntry) -> dict
         claim_ids=[_claim(entry)],
     )
     return {"reactions": [*page.reactions, reaction]}
+
+
+def _alternative(page: OwnerPage, item: AlternativeItem, entry: PlacedEntry) -> dict[str, Any]:
+    added = IndexAlternative(key=item.alternative_key, claim_id=_claim(entry))
+    materials = [
+        material.model_copy(update={"alternatives": [*material.alternatives, added]})
+        if material.key == item.material_key
+        else material
+        for material in page.materials
+    ]
+    return {"materials": materials}
 
 
 def _botanical(page: CuratedPage, item: BotanicalNameItem, entry: PlacedEntry) -> dict[str, Any]:
@@ -234,10 +291,12 @@ def _conflict(page: CuratedPage, item: ConflictItem, _entry: PlacedEntry) -> dic
     return {"conflicts": [*page.conflicts, IndexConflict(about=item.about, claim_ids=list(item.claim_ids))]}
 
 
-def _question(page: CuratedPage, item: OpenQuestionItem, entry: PlacedEntry) -> dict[str, Any]:
-    question = IndexQuestion(
-        key=_key(entry), question=item.question, settled_by=item.settled_by, claim_ids=[_claim(entry)]
-    )
+def _question(page: OwnerPage, item: OpenQuestionItem, entry: PlacedEntry) -> dict[str, Any]:
+    parts = {"key": _key(entry), "question": item.question, "settled_by": item.settled_by}
+    if isinstance(page, CuratedCategoryPage):
+        asked = IndexCategoryQuestion(**parts, claim_ids=[_claim(entry)], sub_categories=[])
+        return {"open_questions": [*page.open_questions, asked]}
+    question = IndexQuestion(**parts, claim_ids=[_claim(entry)])
     return {"open_questions": [*page.open_questions, question]}
 
 
@@ -257,7 +316,7 @@ def _key(entry: PlacedEntry) -> str:
     return entry.key
 
 
-_TARGETS: Mapping[str, Callable[[CuratedPage, Any], str | None]] = MappingProxyType(
+_TARGETS: Mapping[str, Callable[[Any, Any], str | None]] = MappingProxyType(
     {
         STAGE_AFTER: _stage_problem,
         STAGE_WHY: _stage_problem,
@@ -266,10 +325,10 @@ _TARGETS: Mapping[str, Callable[[CuratedPage, Any], str | None]] = MappingProxyT
         NATIVE_NAME: _name_problem,
         GLOSSARY_TERM: _term_problem,
         OPEN_QUESTION: _question_problem,
-        CONFLICT: _conflict_problem,
+        ALTERNATIVE: _alternative_problem,
     }
 )
-_PLACES: Mapping[str, Callable[[CuratedPage, Any, PlacedEntry], dict[str, Any]]] = MappingProxyType(
+_PLACES: Mapping[str, Callable[[Any, Any, PlacedEntry], dict[str, Any]]] = MappingProxyType(
     {
         STAGE_AFTER: _after,
         STAGE_WHY: _why,
@@ -279,5 +338,6 @@ _PLACES: Mapping[str, Callable[[CuratedPage, Any, PlacedEntry], dict[str, Any]]]
         GLOSSARY_TERM: _term,
         CONFLICT: _conflict,
         OPEN_QUESTION: _question,
+        ALTERNATIVE: _alternative,
     }
 )

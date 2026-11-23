@@ -68,7 +68,7 @@ source.
 | Answers | `/ask`: a lede and one section per field the question touches, at Basic, Detailed or Expert depth, in English or twelve Indian languages; a sentence without a source is not shown | [explainer.md](docs/contracts/explainer.md), [research.md](docs/contracts/research.md) |
 | Atlas and map | `/map`: craft places and district layers on the Survey of India outline, with the Natural Earth base, relief, rivers and minerals | [region.md](docs/contracts/region.md), [DATA_SOURCES.md](docs/DATA_SOURCES.md) |
 | The MCP studio | `POST /api/mcp`: tools in six groups for a contributor's AI, signed in with OAuth 2.1 | [knowledge-api.md](docs/contracts/knowledge-api.md), [open-work.md](docs/contracts/open-work.md), [mcp-oauth.md](docs/contracts/mcp-oauth.md) |
-| Lessons and voice | lesson packs, the explainer PDF and citation files; a finished explainer read aloud with its words timed | [learning.md](docs/contracts/learning.md), [voice.md](docs/contracts/voice.md) |
+| Lessons and voice | lesson packs, the explainer PDF and citation files; a finished explainer read aloud, each word or sentence marked as it is read | [learning.md](docs/contracts/learning.md), [voice.md](docs/contracts/voice.md) |
 | Open data | `/data`: a reproducible release of the open knowledge under CC BY 4.0, deposited on Zenodo with a DOI | [open-data.md](docs/contracts/open-data.md) |
 | Access | six roles from Student to Master Admin; only accounts on the access roster sign in, and only Researchers and above propose knowledge | [roles-and-contributions.md](docs/contracts/roles-and-contributions.md), [ARCHITECTURE.md](docs/ARCHITECTURE.md#students-and-artisans-decision-0083) |
 
@@ -264,7 +264,8 @@ November 2026 ([PROGRESS.md](docs/PROGRESS.md#done)). Decision 0101's track of r
 | 4 | 20 Nov 2026 | MCP and retrieval finished, every craft as its English document, redesign wave 1B |
 | 5 | 20 Nov 2026 | the answer page and every signed-in screen, every field everywhere |
 | 6 | 20 Nov 2026 | curated crafts as documents, native Kutch Ajrakh views, the boards matched, the structure write path |
-| 7 | 20 Nov 2026 | MCP as the place knowledge is created, the landing and the map rebuilt; its fix lanes are running |
+| 7 | 20 Nov 2026 | MCP as the place knowledge is created, the landing and the map rebuilt; its fix lanes then held every answer sentence to the quotes it cites, filed write-backs by what their sources say and made every release one the live side can read |
+| Debt round | 22–23 Nov 2026 | the debt register cleared lane by lane, and kept so it can only shrink: rivers named from open datasets, film scores made once, Listen read by the Gemini voice when ElevenLabs cannot, translations read back, contributed facts on curated pages, write-backs judged cheapest first |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme-kit/assets/divider-dark.svg">

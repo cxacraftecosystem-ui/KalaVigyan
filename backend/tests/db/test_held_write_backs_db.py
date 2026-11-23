@@ -1,7 +1,8 @@
+import uuid
 from collections.abc import AsyncIterator
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import CandidateCheck, Claim, Concept, Craft, CraftCategory, CraftSubCategory, ReviewEvent
@@ -45,6 +46,8 @@ ZELVAR_NOTES = evidence_item(
 )
 ZELVAR_NOTES_TEXT = f"Zelvar Dye workshops keep one rule. {AGED} before it is wedged."
 CLAY_CATEGORY, CLAY_FAMILY, QORVEL = key("clay-category"), key("clay-family"), key("qorvel")
+RIVAL = key("rival")
+RIVAL_TEXT = "The body is aged for a week before it is wedged."
 QORVEL_REF = CraftRef(slug="Qorvel-Clay", name="Qorvel Clay", path="/crafts/Qorvel-Clay")
 
 
@@ -171,3 +174,50 @@ async def test_a_held_sentence_filed_again_under_its_craft_leaves_the_hold_at_th
     assert released.note.endswith("filed again under the craft it was held for, so it leaves the hold")
     (shown,) = await fact_items(session, [claim.id])
     assert shown.item.fact.held is None
+
+
+async def test_a_held_sentence_released_live_is_flagged_with_the_fact_it_differs_from(
+    session: AsyncSession,
+) -> None:
+    (held,) = (await written(session, ZELVAR, under("PROCESS", f"{AGED}.", AGED))).held
+    await judged_differing(session, held.claim_id)
+    await written(
+        session,
+        ZELVAR,
+        under("PROCESS", f"{AGED}.", AGED, ref=ZELVAR_NOTES.id),
+        notes_pack(ZELVAR, ZELVAR_NOTES, ZELVAR_NOTES_TEXT),
+    )
+    rows = await session.execute(
+        select(Claim.id, Claim.status, Claim.sourcesDiffer)
+        .where(Claim.id.in_([held.claim_id, RIVAL]))
+        .execution_options(populate_existing=True)
+    )
+    status = (await research_placement(session)).status
+    assert {row[0]: tuple(row[1:]) for row in rows.tuples().all()} == {
+        held.claim_id: (status, True),
+        RIVAL: ("APPROVED", True),
+    }
+
+
+async def judged_differing(session: AsyncSession, claim_id: uuid.UUID) -> None:
+    claim = await session.get(Claim, claim_id)
+    assert claim is not None
+    session.add(
+        Claim(
+            id=RIVAL,
+            subjectType="CONCEPT",
+            subjectId=claim.subjectId,
+            predicate="states",
+            text=RIVAL_TEXT,
+            evidenceLevel="PROVISIONAL",
+            origin="IMPORT",
+            status="APPROVED",
+            field="PROCESS",
+        )
+    )
+    await session.flush()
+    await session.execute(
+        update(CandidateCheck)
+        .where(CandidateCheck.claimId == claim_id, CandidateCheck.gate == "DUPLICATE")
+        .values(passed=True, relatedClaimIds=[RIVAL])
+    )

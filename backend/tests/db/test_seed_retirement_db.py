@@ -9,9 +9,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
 from app.core.errors import InvalidInput
+from app.curation.checks import default_context
+from app.curation.files import CURATION_DIR
 from app.models import (
     Claim,
     Concept,
+    CraftGiRecord,
+    CraftLocation,
+    CraftPrice,
+    CraftWorkforce,
     CuratedClaim,
     CuratedCraft,
     KnowledgePiece,
@@ -28,7 +34,7 @@ from app.services.craft_page import craft_page
 from app.services.craft_page_records import craft_page_records
 from app.services.craft_process import process_records
 from app.services.curated_index import CuratedPage
-from app.services.curation_import import import_curation
+from app.services.curation_import import import_curation, import_path
 from app.services.curation_keys import CURATED_PROCESS_VARIANT, curated_id
 from app.services.curation_retire import retire_dossier
 from app.services.curation_seed_rows import (
@@ -50,6 +56,7 @@ SEEDED_AND_CURATED = (
     "Machilipatnam-Kalamkari",
     "Sanganeri-Hand-Block-Printing",
 )
+AJRAKH_GI_RECORDS, AJRAKH_PRICES, AJRAKH_WORKFORCE = 1, 1, 5
 KASANU = "kasanu"
 KASANU_CLAIM = "C067"
 
@@ -166,6 +173,39 @@ async def test_a_retired_dossier_leaves_its_claims_superseded_and_its_seed_rows_
     )
     assert (await session.execute(curated_process)).scalar_one() == 0
     assert await shown_seed_rows(session, AJRAKH) == before
+
+
+async def test_a_retired_dossier_leaves_no_gi_record_place_price_or_workforce_row(
+    session: AsyncSession, tmp_path: Path
+) -> None:
+    outcome = await import_path(session, CURATION_DIR / f"{AJRAKH}.json", default_context())
+    assert outcome.status == "IMPORTED", outcome.problems
+    owner = await craft_id(session, AJRAKH)
+    page = CuratedPage.model_validate(
+        await session.scalar(select(CuratedCraft.page).where(CuratedCraft.craftId == owner))
+    )
+    places = list(page.location_ids())
+    assert places
+    before = await curated_records(session, owner, places)
+    assert before == (AJRAKH_GI_RECORDS, len(places), AJRAKH_PRICES, AJRAKH_WORKFORCE)
+    retired = await retire_dossier(session, AJRAKH, directory=tmp_path)
+    assert retired.records == sum(before)
+    assert await curated_records(session, owner, places) == (0, 0, 0, 0)
+
+
+async def curated_records(
+    session: AsyncSession, owner: uuid.UUID, places: list[uuid.UUID]
+) -> tuple[int, int, int, int]:
+    counted = [
+        (await session.execute(select(func.count()).select_from(model).where(condition))).scalar_one()
+        for model, condition in (
+            (CraftGiRecord, CraftGiRecord.craftId == owner),
+            (CraftLocation, CraftLocation.id.in_(places)),
+            (CraftPrice, CraftPrice.craftId == owner),
+            (CraftWorkforce, CraftWorkforce.craftId == owner),
+        )
+    ]
+    return counted[0], counted[1], counted[2], counted[3]
 
 
 async def test_a_curated_glossary_meaning_reaches_the_term_route_as_a_stored_summary(

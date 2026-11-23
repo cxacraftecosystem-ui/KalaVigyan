@@ -11,7 +11,7 @@ from app.core.deps import token_matches_user
 from app.core.errors import ExternalFailure, InvalidInput
 from app.core.roles import Capability, can
 from app.core.security import TOKEN_VERSION_CLAIM
-from app.models import DatasetTable, DatasetUpload, EnvDataset, User
+from app.models import DatasetTable, DatasetUpload, EnvDataset, MapLayerProposal, User
 from app.research.dataset_proposals import (
     DATASET_UPLOAD_LIFETIME,
     SLOT_PREFIX,
@@ -22,6 +22,7 @@ from app.research.dataset_proposals import (
     record_problems,
 )
 from app.research.fetcher import Fetcher, FetchRefused, FetchRequest
+from app.research.map_layer_geojson import LayerRefused, ParsedLayer, parsed_layer
 
 from .dataset_registry import CONTRIBUTED, dataset_registry
 from .oauth_tokens import new_secret, stored_secret
@@ -43,6 +44,7 @@ USED = "This upload slot was used already. Call propose_dataset again for a new 
 EXPIRED = "This upload slot has expired. Call propose_dataset again for a new one."
 ACCOUNT_CHANGED = "This upload slot no longer works: its account signed out or changed."
 WRONG_FILE = "the file's SHA-256 is {found}, not the {declared} the proposal declared"
+PENDING_LAYER = "PENDING"
 
 
 class UnknownSlot(Exception):
@@ -64,7 +66,8 @@ class IssuedSlot:
 @dataclass(frozen=True)
 class StoredDataset:
     dataset: EnvDataset
-    table: ParsedTable
+    table: ParsedTable | None = None
+    layer: ParsedLayer | None = None
 
 
 async def proposal_problems(session: AsyncSession, fetcher: Fetcher, proposal: DatasetProposal) -> list[str]:
@@ -114,21 +117,40 @@ async def fill_dataset_slot(
     found = hashlib.sha256(data).hexdigest()
     if found != row.sha256:
         raise InvalidInput(WRONG_FILE.format(found=found, declared=row.sha256))
-    try:
-        table = parsed_table(data)
-    except TableRefused as refused:
-        raise InvalidInput(f"The table was not stored: {refused}") from None
     proposal = DatasetProposal.model_validate(row.record)
+    parsed = _parsed(data, proposal)
     if await session.scalar(select(EnvDataset.id).where(EnvDataset.code == proposal.code)) is not None:
         raise InvalidInput(TAKEN.format(code=proposal.code))
     dataset = _dataset_row(proposal, user, now)
     session.add(dataset)
     await session.flush()
-    session.add(_table_row(dataset, table, data))
+    stored = _with_file(session, dataset, proposal, (parsed, data))
     row.usedAt = now
     row.datasetId = dataset.id
     await session.flush()
-    return StoredDataset(dataset=dataset, table=table)
+    return stored
+
+
+def _with_file(
+    session: AsyncSession,
+    dataset: EnvDataset,
+    proposal: DatasetProposal,
+    read: tuple[ParsedTable | ParsedLayer, bytes],
+) -> StoredDataset:
+    parsed, data = read
+    if isinstance(parsed, ParsedLayer):
+        session.add(_layer_row(dataset, proposal, parsed, data))
+        return StoredDataset(dataset=dataset, layer=parsed)
+    session.add(_table_row(dataset, parsed, data))
+    return StoredDataset(dataset=dataset, table=parsed)
+
+
+def _parsed(data: bytes, proposal: DatasetProposal) -> ParsedTable | ParsedLayer:
+    try:
+        return parsed_table(data) if proposal.layer is None else parsed_layer(data, proposal.layer)
+    except (TableRefused, LayerRefused) as refused:
+        what = "table" if proposal.layer is None else "layer"
+        raise InvalidInput(f"The {what} was not stored: {refused}") from None
 
 
 async def _slot(session: AsyncSession, digest: str) -> DatasetUpload | None:
@@ -181,4 +203,20 @@ def _table_row(dataset: EnvDataset, table: ParsedTable, data: bytes) -> DatasetT
         rowCount=len(table.rows),
         byteSize=len(data),
         sha256=hashlib.sha256(data).hexdigest(),
+    )
+
+
+def _layer_row(
+    dataset: EnvDataset, proposal: DatasetProposal, layer: ParsedLayer, data: bytes
+) -> MapLayerProposal:
+    plan = proposal.layer.model_dump(mode="json", by_alias=True) if proposal.layer is not None else {}
+    return MapLayerProposal(
+        datasetId=dataset.id,
+        proposerId=dataset.proposedById,
+        plan=plan,
+        layer=layer.layer,
+        featureCount=layer.features,
+        byteSize=len(data),
+        sha256=hashlib.sha256(data).hexdigest(),
+        status=PENDING_LAYER,
     )

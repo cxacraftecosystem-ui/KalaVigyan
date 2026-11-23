@@ -16,6 +16,7 @@ allowances and contracts stand.
 | What it amends | [0108 An approved structure proposal becomes a curated fact of its dossier](0108-structure-proposals-become-curated-facts.md): the tools it names; its gates and contracts stand |
 | What it amends | [0110 Sources a contributor's AI can read and we cannot, and a studio to build a page in](0110-contributor-supplied-sources.md): the tools it names; its services, allowances and contracts stand |
 | The component kinds are described once, and the index is written from the registry | [decision 0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
+| A seventh group, `admin`, listed only to a token holding `review`, with its own budget | [decision 0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

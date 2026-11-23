@@ -1,3 +1,4 @@
+from app.models.admin_work import PageRefreshJob, StagedReview, StagedReviewItem
 from app.models.ai import (
     AppSetting,
     Job,
@@ -52,7 +53,7 @@ from app.models.curation import (
     CuratedClaim,
     CuratedCraft,
 )
-from app.models.datasets import DatasetTable, DatasetUpload
+from app.models.datasets import DatasetTable, DatasetUpload, MapLayerProposal
 from app.models.evaluation import EvalCase, EvalResult, EvalRun
 from app.models.field_photo_reviews import FieldPhotoReview, FieldPhotoScreen
 from app.models.field_voices import (
@@ -219,6 +220,7 @@ __all__ = [
     "LayoutProposal",
     "LessonPack",
     "ManagedSecret",
+    "MapLayerProposal",
     "Material",
     "McpTermsAcceptance",
     "McpToolCall",
@@ -239,6 +241,7 @@ __all__ = [
     "PageDraft",
     "PageLayout",
     "PagePreview",
+    "PageRefreshJob",
     "PageTextUnit",
     "PageTranslation",
     "PasswordResetRequest",
@@ -270,6 +273,8 @@ __all__ = [
     "SourceUpkeep",
     "StageMaterial",
     "StageReview",
+    "StagedReview",
+    "StagedReviewItem",
     "StateEnvValue",
     "StoredDocument",
     "StructureProposal",

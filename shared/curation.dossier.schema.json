@@ -599,6 +599,13 @@
           "minItems": 1,
           "title": "Claimids",
           "type": "array"
+        },
+        "alternatives": {
+          "items": {
+            "$ref": "#/$defs/MaterialAlternative"
+          },
+          "title": "Alternatives",
+          "type": "array"
         }
       },
       "required": [
@@ -609,6 +616,27 @@
         "claimIds"
       ],
       "title": "Material",
+      "type": "object"
+    },
+    "MaterialAlternative": {
+      "additionalProperties": false,
+      "properties": {
+        "materialId": {
+          "pattern": "^M\\d{2,3}$",
+          "title": "Materialid",
+          "type": "string"
+        },
+        "claimId": {
+          "pattern": "^C\\d{3,4}$",
+          "title": "Claimid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "materialId",
+        "claimId"
+      ],
+      "title": "MaterialAlternative",
       "type": "object"
     },
     "MaterialUse": {

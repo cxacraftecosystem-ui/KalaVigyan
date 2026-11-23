@@ -35,7 +35,7 @@ flowchart LR
 | [0004](0004-craft-resolver.md) | The craft resolver | · |
 | [0005](0005-scholarly-source-adapters.md) | Scholarly source adapters | · |
 | [0006](0006-reference-source-adapters.md) | Reference source adapters: Wikipedia, Wikidata, PubChem, Wikimedia Commons | · |
-| [0007](0007-web-search-and-fetcher.md) | Web search adapters and the fetcher sandbox | · |
+| [0007](0007-web-search-and-fetcher.md) | Web search adapters and the fetcher sandbox | [0173](0173-a-release-that-keeps-serving-and-its-way-back.md) |
 | [0008](0008-stored-knowledge-retrieval.md) | Stored-knowledge retrieval | [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) |
 | [0009](0009-planner-and-tiered-research.md) | Planner and tiered research | · |
 | [0010](0010-composer.md) | Composer | [0138](0138-answers-composed-from-the-asked-fields.md) and [0144](0144-stored-passages-as-evidence.md) |
@@ -43,7 +43,7 @@ flowchart LR
 | [0012](0012-answer-stream-end-to-end.md) | The answer stream end to end | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0013](0013-review-fixes-quotes-licences-scope.md) | Quote strength, open licences, one craft scope and scoped embedding | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0014](0014-science-region-voice-media-contracts.md) | Contracts for process science, region profile, voice and media | · |
-| [0015](0015-science-engine.md) | Science engine: balancing, units, envelopes, the science seed and the process route | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
+| [0015](0015-science-engine.md) | Science engine: balancing, units, envelopes, the science seed and the process route | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) and [0169](0169-mcp-follow-ups-kept-true.md) |
 | [0016](0016-region-profile.md) | Region profile and map layers from the stored district statistics | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) |
 | [0017](0017-voice-backend.md) | Voice backend: sessions, the custom LLM, the relay path and upkeep | [0025](0025-multilingual-voice.md) and [0140](0140-voice-and-listen-kept-true.md) |
 | [0018](0018-media-backend.md) | Media backend: stage illustrations and clips through the router, the job queue and S3 | [0154](0154-ai-media-and-film-scores-kept-true.md) and [0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md) |
@@ -88,10 +88,10 @@ flowchart LR
 | [0050](0050-phase-b-review-fixes.md) | Phase B review fixes | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) and [0160](0160-place-builders-kept-true.md) |
 | [0051](0051-curation-tooling.md) | Curation tooling: the dossier model, fetch, verify and check | · |
 | [0052](0052-opus-composes-at-medium-effort.md) | Opus 5.5 composes answers, at medium effort | · |
-| [0053](0053-curated-dossier-import.md) | Curated dossiers are imported on deploy and served as one craft page | [0142](0142-curated-crafts-read-only-curated-rows.md) |
+| [0053](0053-curated-dossier-import.md) | Curated dossiers are imported on deploy and served as one craft page | [0142](0142-curated-crafts-read-only-curated-rows.md) and [0171](0171-imports-keep-approvals-and-differences-settle.md) |
 | [0054](0054-phase-c-contract.md) | Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode | [0147](0147-time-market-and-figures-kept-true.md) |
 | [0055](0055-generated-explainers.md) | Generated explainers: built from cited figures, checked, stored, reused and hidden | [0142](0142-curated-crafts-read-only-curated-rows.md) |
-| [0056](0056-what-if-lab.md) | The what-if lab's builder | [0140](0140-voice-and-listen-kept-true.md), [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
+| [0056](0056-what-if-lab.md) | The what-if lab's builder | [0140](0140-voice-and-listen-kept-true.md), [0152](0152-matter-read-once-and-the-science-seed-kept-true.md), [0169](0169-mcp-follow-ups-kept-true.md) |
 | [0057](0057-zoom-story-and-timeline-map.md) | Zoom story and timeline map builders | [0147](0147-time-market-and-figures-kept-true.md) |
 | [0058](0058-elevenlabs-music-sound-image-video.md) | ElevenLabs music, sound effects, image and video | [0154](0154-ai-media-and-film-scores-kept-true.md) |
 | [0059](0059-sandbox-and-what-if-renderers.md) | Sandbox and what-if renderers | · |
@@ -120,7 +120,7 @@ flowchart LR
 | [0079](0079-public-reading.md) | Craft, category, map and science pages read without signing in | [0084](0084-field-voices-v2.md), [0091](0091-field-voices-kalavigyan-side.md) and [0095](0095-craft-page-chapters.md) |
 | [0080](0080-claim-ledger.md) | An answer renders each claim once: the claim ledger | · |
 | [0081](0081-craft-page-contract-v2.md) | Craft page contract version 2: a page whose structure is final at first paint | [0095](0095-craft-page-chapters.md) |
-| [0082](0082-catalogue-v2-and-server-fetch.md) | Catalogue v2: reader names, depth, concepts and one count, and server fetch | · |
+| [0082](0082-catalogue-v2-and-server-fetch.md) | Catalogue v2: reader names, depth, concepts and one count, and server fetch | [0172](0172-a-rotated-session-taken-over-and-cached-pages-kept-whole.md) |
 | [0083](0083-students-and-artisans.md) | Students and artisans: profiles at first entry, the Artisan role, conversations and testimony | · |
 | [0084](0084-field-voices-v2.md) | Field voices v2: both portals, full transcripts and craft images, by cursor with tombstones | [0097](0097-public-reading-everywhere-but-asking.md) and [0112](0112-reviewed-field-photographs.md) |
 | [0085](0085-answer-map-switch-and-locator.md) | The story map's layers redraw what it shows, and zoomed answer maps carry an India locator | · |
@@ -146,25 +146,25 @@ flowchart LR
 
 | Decision | What was decided | Later changed by |
 |---|---|---|
-| [0101](0101-knowledge-architecture-for-every-craft.md) | One knowledge architecture for every craft: facts, sections, components, monographs | [0115](0115-client-id-metadata-documents.md), [0117](0117-pages-in-other-languages.md), [0145](0145-monograph-pages-and-speed-without-debt.md) and [0149](0149-a-fact-readers-can-see.md) |
+| [0101](0101-knowledge-architecture-for-every-craft.md) | One knowledge architecture for every craft: facts, sections, components, monographs | [0115](0115-client-id-metadata-documents.md), [0117](0117-pages-in-other-languages.md), [0145](0145-monograph-pages-and-speed-without-debt.md), [0149](0149-a-fact-readers-can-see.md) and [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | [0102](0102-knowledge-fields-schema-as-built.md) | Fields on facts, section records and the component registry: step 1 as built | · |
 | [0103](0103-mcp-server-read-slice.md) | The MCP server, slice 1: public read tools over our own JSON-RPC framing | [0111](0111-fewer-mcp-tools.md) |
 | [0104](0104-image-contributions-intake.md) | Image contributions: declared, read byte by byte, private until approved | [0109](0109-image-formats-and-screens.md) |
 | [0105](0105-ajrakh-page-as-structured-content.md) | The Ajrakh page as structured content, rebuilt by a static build | · |
 | [0106](0106-one-monograph-template-for-every-page.md) | One monograph template for every page, reached through fragments | [0145](0145-monograph-pages-and-speed-without-debt.md) and [0164](0164-every-cited-sentence-a-unit-and-chapter-names-in-the-content.md) |
 | [0107](0107-craft-articles-in-english-with-room-for-translation.md) | Craft articles are written in English, with room for translations | [0117](0117-pages-in-other-languages.md) |
-| [0108](0108-structure-proposals-become-curated-facts.md) | An approved structure proposal becomes a curated fact of its dossier | [0111](0111-fewer-mcp-tools.md), [0162](0162-unused-craft-page-chapters-retired.md) |
+| [0108](0108-structure-proposals-become-curated-facts.md) | An approved structure proposal becomes a curated fact of its dossier | [0111](0111-fewer-mcp-tools.md), [0162](0162-unused-craft-page-chapters-retired.md), [0169](0169-mcp-follow-ups-kept-true.md), [0171](0171-imports-keep-approvals-and-differences-settle.md) |
 | [0109](0109-image-formats-and-screens.md) | Pictures in every common format, given from the chat and screened before review | · |
 | [0110](0110-contributor-supplied-sources.md) | Sources a contributor's AI can read and we cannot, and a studio to build a page in | [0111](0111-fewer-mcp-tools.md) |
-| [0111](0111-fewer-mcp-tools.md) | Twenty-one MCP tools in six groups, with small schemas | [0114](0114-kinds-and-datasets.md), [0117](0117-pages-in-other-languages.md) and [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
+| [0111](0111-fewer-mcp-tools.md) | Twenty-one MCP tools in six groups, with small schemas | [0114](0114-kinds-and-datasets.md), [0117](0117-pages-in-other-languages.md), [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) and [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | [0112](0112-reviewed-field-photographs.md) | Each field photograph filed on an artisan is reviewed by a person before it is shown | · |
 | [0113](0113-questions-become-work.md) | Questions KalaVigyan cannot answer well become open work | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
-| [0114](0114-kinds-and-datasets.md) | Component kinds any craft can use, and one dataset record | [0131](0131-drawings-in-the-design.md) |
+| [0114](0114-kinds-and-datasets.md) | Component kinds any craft can use, and one dataset record | [0131](0131-drawings-in-the-design.md) and [0169](0169-mcp-follow-ups-kept-true.md) |
 | [0115](0115-client-id-metadata-documents.md) | MCP clients sign in with their published identity | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) |
 | [0116](0116-open-data-with-a-doi.md) | KalaVigyan's knowledge is an open dataset with a DOI | [0130](0130-a-craft-release.md) and [0149](0149-a-fact-readers-can-see.md) |
 | [0117](0117-pages-in-other-languages.md) | A page in another language is the same page, translated passage by passage | · |
 | [0118](0118-python-3-15.md) | The backend runs on Python 3.15, and each release pins its interpreter | · |
-| [0119](0119-nightly-refresh-of-changed-pages.md) | The night refreshes only the pages that changed; it never rebuilds the site | · |
+| [0119](0119-nightly-refresh-of-changed-pages.md) | The night refreshes only the pages that changed; it never rebuilds the site | [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | [0120](0120-grounded-sentences.md) | Every sentence says no more than the quotes it cites | [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0121](0121-quote-visibility.md) | A quote is shown only where its page allows | [0149](0149-a-fact-readers-can-see.md) |
 | [0122](0122-evidence-reach.md) | Evidence the knowledge base holds reaches the answers that need it | · |
@@ -182,18 +182,18 @@ flowchart LR
 | [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | [0136](0136-write-backs-filed-by-their-source.md) and [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0136](0136-write-backs-filed-by-their-source.md) | A write-back is filed by what its source says around it, and what nothing names waits for a reviewer | [0144](0144-stored-passages-as-evidence.md) and [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | [0137](0137-limits-kept-by-choice.md) | Nine limits are kept by choice and leave the debt register | · |
-| [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0167](0167-answer-leftovers-kept-true.md) |
+| [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | [0165](0165-answers-counted-as-settled-asked-as-asked.md), [0167](0167-answer-leftovers-kept-true.md) and [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) |
 | [0139](0139-sources-and-providers-reach-outside-services-once.md) | Sources and providers reach outside services once, at the pace and spend every process shares | [0146](0146-answers-recorded-and-bounded-on-the-box.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | [0144](0144-stored-passages-as-evidence.md) |
 | [0141](0141-design-system-and-answer-screens-without-debt.md) | The design system holds no migration alias, and the answer screens number their figures, read every caption from the server and keep only what is stored | [0156](0156-expert-panel-and-field-voices-kept-true.md) |
-| [0142](0142-curated-crafts-read-only-curated-rows.md) | A curated craft reads only its curated rows, stored pieces keep one curated rule, and the generated explainer works within a budget | · |
-| [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | [0167](0167-answer-leftovers-kept-true.md) |
+| [0142](0142-curated-crafts-read-only-curated-rows.md) | A curated craft reads only its curated rows, stored pieces keep one curated rule, and the generated explainer works within a budget | [0171](0171-imports-keep-approvals-and-differences-settle.md) |
+| [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | [0167](0167-answer-leftovers-kept-true.md) and [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) |
 | [0144](0144-stored-passages-as-evidence.md) | A stored passage is evidence an answer and a voice turn may cite, kept as a fact of its own source | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | [0145](0145-monograph-pages-and-speed-without-debt.md) | Pages read what their screens draw: one coverage read, one decision route, one unit pattern, and renderers loaded when placed | · |
 | [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0167](0167-answer-leftovers-kept-true.md) |
-| [0147](0147-time-market-and-figures-kept-true.md) | Quantities in prose are also a table, the timeline lists undated history and places what the register holds, and market and measure readers read what sources state | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) and [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
+| [0147](0147-time-market-and-figures-kept-true.md) | Quantities in prose are also a table, the timeline lists undated history and places what the register holds, and market and measure readers read what sources state | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md), [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) and [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
-| [0149](0149-a-fact-readers-can-see.md) | A fact is shown to every reader with its citation, and only its quote follows its page | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) |
+| [0149](0149-a-fact-readers-can-see.md) | A fact is shown to every reader with its citation, and only its quote follows its page | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) and [0169](0169-mcp-follow-ups-kept-true.md) |
 | [0150](0150-mcp-activity-and-box-logs.md) | Each MCP call keeps its client and its reason for 180 days and its count for good, and the box ships its logs to CloudWatch | · |
 | [0151](0151-a-release-the-live-side-can-read.md) | A release is one the live side can read: the web ignores a field it does not know, every migration reads under the release before, and the first stage's fusion is measured before it is weighted | [0167](0167-answer-leftovers-kept-true.md) and [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) | An answer reads a craft's matter once and shows each card, molecule and what-if once, matter blocks cite every value they show, and the science seed deletes what it no longer plans | · |
@@ -209,10 +209,16 @@ flowchart LR
 | [0162](0162-unused-craft-page-chapters-retired.md) | The craft page's chapters keep only what a page draws, and an approved structure writes its shared rows at once | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md) | Nine more limits are kept by choice, the debt register may only shrink, the database tests run in shards, and each process on the box keeps to its own connection budget | · |
 | [0164](0164-every-cited-sentence-a-unit-and-chapter-names-in-the-content.md) | Every cited sentence of Kutch Ajrakh is a text unit, 73 of its components draw natively, and its content names its chapters | · |
-| [0165](0165-answers-counted-as-settled-asked-as-asked.md) | An answer's spend is counted as settled, its asked fields are the ones the question asks, and an expert difference is told once | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
+| [0165](0165-answers-counted-as-settled-asked-as-asked.md) | An answer's spend is counted as settled, its asked fields are the ones the question asks, and an expert difference is told once | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) and [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) |
 | [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) | Pictures are paired by the Public Suffix List and reused once stored, local words are terms only with a stated meaning, and stored vectors are compared within one model | · |
 | [0167](0167-answer-leftovers-kept-true.md) | A stopped answer is marked, a quote in an Indian script is read in English, a term keeps its local name, and a page curates its signs of imitation | · |
 | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) | A quantities table is drawn under a sentence the answer already said, and the Python files are split along what they do | · |
+| [0169](0169-mcp-follow-ups-kept-true.md) | A write-back asks the cheap judge first, a reviewer decides readings, map layers and a category's structure, and a PDF is described by its first page | · |
+| [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) | An Admin's AI stages review decisions a person confirms, and an Admin refreshes changed pages now | · |
+| [0171](0171-imports-keep-approvals-and-differences-settle.md) | An import never undoes approved structure, a sources-differ flag lasts while a live pair holds it, and a retired dossier leaves no records | · |
+| [0172](0172-a-rotated-session-taken-over-and-cached-pages-kept-whole.md) | The web takes over every session the API rotates, a cached reading page fails rather than drops a part, and sign-in and the shells settle once | · |
+| [0173](0173-a-release-that-keeps-serving-and-its-way-back.md) | A release keeps the site serving and its way back open, a colour takes traffic only once it reaches its database, the web builds only on the API it calls, the fetcher runs as a user of its own, and every provider call ends and settles | · |
+| [0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) | A production downgrade undoes one revision unless its count is confirmed, an answer fits its limits, repeats nothing its explainer shows and outlives a source that cannot be built, and the rubric's cited part is a share | · |
 
 ## How this document is kept true
 

@@ -115,6 +115,10 @@ class ClaimLedger:
                 admitted.update(self._experts(section_id, experts))
         return [admitted[n] for n in sorted(admitted)]
 
+    def note_shown(self, blocks: Iterable[Block]) -> None:
+        for block in blocks:
+            self._noted(block)
+
     def admit_lede[Opening: BlockBase](
         self, block: Opening, sources: Mapping[str, Mapping[str, Any]]
     ) -> Opening:
@@ -294,11 +298,14 @@ class ClaimLedger:
         return None
 
     def _record(self, section_id: str, block: Block) -> None:
+        self._section_claims.setdefault(section_id, set()).update(block.cited_claim_ids())
+        self._noted(block)
+
+    def _noted(self, block: Block) -> None:
         payload = block.model_dump(mode="json", by_alias=True)
         self._record_sentences(
             sentence.model_dump(mode="json", by_alias=True) for sentence in block.cited_sentences()
         )
-        self._section_claims.setdefault(section_id, set()).update(block.cited_claim_ids())
         if block.kind in ONCE_PER_ANSWER_KINDS:
             self._once.add(block.kind)
         if block.kind == "material_card":
@@ -317,6 +324,8 @@ class ClaimLedger:
             self._pictures.update(
                 key for level in payload["levels"] if level["media"] for key in picture_keys(level["media"])
             )
+        elif block.kind == "images":
+            self._pictures.update(key for item in payload["items"] for key in picture_keys(item["media"]))
 
     def _record_sentences(self, sentences: Any) -> None:
         for sentence in sentences:

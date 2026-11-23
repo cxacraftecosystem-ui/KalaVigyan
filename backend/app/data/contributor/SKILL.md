@@ -202,12 +202,14 @@ callers share one allowance between them.
 
 ## Structure and sources
 
-- `propose_structure` gives one piece of a curated craft page's structure with the fact and the
-  verbatim quotes that state it: a stage's after (`STAGE_AFTER`, what the work looks like and its
-  colours) or why (`STAGE_WHY`), a native name (`NATIVE_NAME`), a reaction (`REACTION`), a
-  material's botanical name (`BOTANICAL_NAME`), a glossary term (`GLOSSARY_TERM`), an open question
-  (`OPEN_QUESTION`), parts of the GI record (`GI_RECORD`), or held facts of the page that disagree
-  (`CONFLICT`, by their ids as `claim_ids`, with no new fact).
+- `propose_structure` gives one piece of a curated craft or category page's structure with the fact
+  and the verbatim quotes that state it: a stage's after (`STAGE_AFTER`, what the work looks like and
+  its colours) or why (`STAGE_WHY`), a native name (`NATIVE_NAME`), a reaction (`REACTION`), a
+  material's botanical name (`BOTANICAL_NAME`) or another material of the page that can stand in for
+  it (`ALTERNATIVE`), a glossary term (`GLOSSARY_TERM`), an open question (`OPEN_QUESTION`), parts of
+  the GI record (`GI_RECORD`), or held facts of the page that disagree (`CONFLICT`, by their ids as
+  `claim_ids`, with no new fact). A category page (`subject {kind category, slug}`) takes a reaction
+  without a stage, a term, an open question or a conflict.
 - Stage and material keys are the page's own: read them with `get_facts` and `get_page`. The
   item's fact follows `quotes.md` like any other. It waits in the review queue, and approval writes
   it into the page.
@@ -238,6 +240,9 @@ Two kinds of task are completed by a component, each named as the proposal's `ta
   single-use upload slot for its CSV file, checked against the SHA-256 you declare. A `chart`,
   `fact_table` or `map_layer` then names the dataset's code as `dataset` and each value's `cell`
   (its row and column), and the gates check every value against its stored row.
+- A new layer for the site's own maps goes the same way with a `layer` and a GeoJSON file in
+  place of the CSV (`datasets.md`, Map layers over MCP). It is drawn nowhere until an Admin
+  approves it and an engineer ships it.
 
 ## Drawing in KalaVigyan's design
 

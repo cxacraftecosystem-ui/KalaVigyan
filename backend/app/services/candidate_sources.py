@@ -21,7 +21,7 @@ from app.research.retrieval import RESTRICTED_SENSITIVITY
 from app.research.source_titles import first_heading, junk_title, usable_title
 from app.sources.adapter import build_document
 from app.sources.fetcher_client import FetcherClient
-from app.sources.web.page import page_item
+from app.sources.web.page import page_item, stated_front
 
 from .supplied_sources_gate import supplied_read
 from .web_fetches import web_fetch_recorder
@@ -120,7 +120,10 @@ def _document(proposed: ProposedSource, page: FetchedPage) -> SourceDocument | N
     if not page.text.strip():
         return None
     item = page_item(PROPOSAL_ADAPTER, proposed.url, page)
-    title = usable_title(page.metadata.title, proposed.title, first_heading(page.text))
+    front = stated_front(page)
+    title = usable_title(
+        page.metadata.title, proposed.title, front.title if front else None, first_heading(page.text)
+    )
     titled = item if title is None else item.model_copy(update={"title": title})
     licensed = titled if titled.licence else titled.model_copy(update={"licence": proposed.licence})
     return build_document(licensed, page.text, FULL_TEXT, truncated=page.truncated)

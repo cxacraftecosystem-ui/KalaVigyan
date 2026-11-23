@@ -132,7 +132,7 @@ def create_access_token(
     minutes = settings.jwt_expires_minutes if expires_minutes is None else expires_minutes
     payload: dict[str, Any] = {
         "sub": subject,
-        "iat": int(now.timestamp()),
+        "iat": now.timestamp(),
         "exp": now + timedelta(minutes=minutes),
         TOKEN_VERSION_CLAIM: int(token_version),
     }

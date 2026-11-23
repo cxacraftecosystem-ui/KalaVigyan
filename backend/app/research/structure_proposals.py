@@ -22,8 +22,11 @@ from .review_switch import AGENT, CONTRIBUTION
 from .vocabulary import Discipline, ReactionKind
 
 __all__ = [
+    "ALTERNATIVE",
     "APPROVED_STATUS",
     "BOTANICAL_NAME",
+    "CATEGORY_KINDS",
+    "CATEGORY_SUBJECT",
     "CHECK_KINDS",
     "CONFLICT",
     "CONFLICT_CLAIMS_MAX",
@@ -45,6 +48,7 @@ __all__ = [
     "STRUCTURE_SCHEMA_VERSION",
     "STRUCTURE_STATUSES",
     "WRITTEN",
+    "AlternativeItem",
     "BotanicalNameItem",
     "ConflictItem",
     "GiRecordItem",
@@ -76,6 +80,7 @@ STRUCTURE_KINDS = (
     "CONFLICT",
     "OPEN_QUESTION",
     "GI_RECORD",
+    "ALTERNATIVE",
 )
 (
     STAGE_AFTER,
@@ -87,7 +92,14 @@ STRUCTURE_KINDS = (
     CONFLICT,
     OPEN_QUESTION,
     GI_RECORD,
+    ALTERNATIVE,
 ) = STRUCTURE_KINDS
+CRAFT_SUBJECT, CATEGORY_SUBJECT = "craft", "category"
+CATEGORY_KINDS = (REACTION, GLOSSARY_TERM, CONFLICT, OPEN_QUESTION)
+CATEGORY_HOLDS = (
+    "a category page keeps no stages, materials, native names or GI record of its own: it takes a reaction "
+    "without a stage, a glossary term, an open question or a conflict"
+)
 STRUCTURE_ORIGINS = (CONTRIBUTION, AGENT)
 STRUCTURE_STATUSES = ("PENDING", "APPROVED", "REJECTED", "REFUSED")
 PENDING_STATUS, APPROVED_STATUS, REJECTED_STATUS, REFUSED_STATUS = STRUCTURE_STATUSES
@@ -115,7 +127,7 @@ Script = Annotated[str, Field(min_length=SCRIPT_CHARS, max_length=SCRIPT_CHARS)]
 
 
 class StructureSubject(ContractModel):
-    kind: Literal["craft"] = "craft"
+    kind: Literal["craft", "category"] = "craft"
     slug: str = Field(min_length=1, max_length=SLUG_MAX_CHARS, pattern=r"^[A-Za-z0-9-]+$")
 
 
@@ -211,6 +223,18 @@ class GiRecordItem(ContractModel):
         return self
 
 
+class AlternativeItem(ContractModel):
+    kind: Literal["ALTERNATIVE"] = ALTERNATIVE
+    material_key: EntryKey
+    alternative_key: EntryKey
+
+    @model_validator(mode="after")
+    def _two_materials(self) -> Self:
+        if self.material_key == self.alternative_key:
+            raise ValueError("an alternative is another material of the page than the one it stands in for")
+        return self
+
+
 StructureItem = Annotated[
     StageAfterItem
     | StageWhyItem
@@ -220,7 +244,8 @@ StructureItem = Annotated[
     | GlossaryTermItem
     | ConflictItem
     | OpenQuestionItem
-    | GiRecordItem,
+    | GiRecordItem
+    | AlternativeItem,
     Field(discriminator="kind"),
 ]
 
@@ -285,9 +310,18 @@ class StructureProposal(ContractModel):
         return self
 
     @model_validator(mode="after")
+    def _fits_its_page(self) -> Self:
+        if self.subject.kind != CATEGORY_SUBJECT:
+            return self
+        staged = isinstance(self.item, ReactionItem) and self.item.stage_key is not None
+        if self.item.kind not in CATEGORY_KINDS or staged:
+            raise ValueError(CATEGORY_HOLDS)
+        return self
+
+    @model_validator(mode="after")
     def _task_is_this_fact_s(self) -> Self:
         if self.task_key is not None and self.field is not None:
-            subject = ProposalSubject(kind="craft", slug=self.subject.slug)
+            subject = ProposalSubject(kind=self.subject.kind, slug=self.subject.slug)
             problem = fact_task_problem(self.task_key, subject, (self.field,))
             if problem is not None:
                 raise ValueError(problem)

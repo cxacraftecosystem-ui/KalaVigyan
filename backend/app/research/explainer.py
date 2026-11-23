@@ -39,6 +39,7 @@ from .blocks_signature import FiringBlock, IndigoVatBlock, LostWaxBlock, Mordant
 from .citations import SourceRef
 from .composition import FOLLOW_UPS_MAX, HEADING_MAX_CHARS
 from .crafts import MAX_CANDIDATES, QUESTION_MAX_CHARS, CraftRef
+from .research_summary import SEARCHED_MAX_CHARS
 from .trail import PacedEvent, TrailEvent
 from .vocabulary import AnswerLanguage, Depth, Discipline
 
@@ -50,7 +51,6 @@ __all__ = [
     "EXPLAINER_EVENTS",
     "EXPLAINER_SCHEMA_VERSION",
     "FINAL_SECTION_STATES",
-    "SEARCHED_MAX_CHARS",
     "SECTION_ID_PATTERN",
     "SECTION_STATES",
     "SIGNATURE_PHASE",
@@ -77,7 +77,6 @@ UNDERSTANDING_BASES = ("MODEL", "RESOLVER")
 
 UnderstandingBasis = Literal[*UNDERSTANDING_BASES]
 SECTION_ID_PATTERN = r"^s[1-9]\d{0,2}$"
-SEARCHED_MAX_CHARS = 2000
 WORKING_SECTION_STATES = ("RESEARCHING", "WRITING", "CHECKING")
 FINAL_SECTION_STATES = ("READY", "EMPTY")
 SECTION_STATES = (*WORKING_SECTION_STATES, *FINAL_SECTION_STATES)

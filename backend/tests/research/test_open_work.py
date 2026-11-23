@@ -335,7 +335,17 @@ def test_a_malformed_task_key_is_refused(key: str) -> None:
         parse_task_key(key)
 
 
-ALL_QUEUES = ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE", "STAGES")
+ALL_QUEUES = (
+    "FACTS",
+    "TESTIMONY",
+    "IMAGES",
+    "COMPONENTS",
+    "LAYOUTS",
+    "STRUCTURE",
+    "READINGS",
+    "LAYERS",
+    "STAGES",
+)
 
 
 @pytest.mark.parametrize(
@@ -345,7 +355,7 @@ ALL_QUEUES = ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTUR
         ("STUDENT", ()),
         ("ARTISAN", ()),
         ("RESEARCHER", ()),
-        ("PROFESSOR", ("FACTS", "TESTIMONY", "STRUCTURE", "STAGES")),
+        ("PROFESSOR", ("FACTS", "TESTIMONY", "STRUCTURE", "READINGS", "STAGES")),
         ("ADMIN", ALL_QUEUES),
         ("MASTER_ADMIN", ALL_QUEUES),
     ],

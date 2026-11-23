@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "batches": [
+    {
+      "id": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e01",
+      "status": "OPEN",
+      "clientName": "Claude",
+      "proposedBy": "Admin Reviewer",
+      "createdAt": "2026-11-23T06:30:00Z",
+      "expiresAt": "2026-11-26T06:30:00Z",
+      "decidedBy": null,
+      "decidedAt": null,
+      "refresh": null,
+      "items": [
+        {
+          "id": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e11",
+          "position": 0,
+          "label": "Indigo is reduced to leucoindigo in the vat.",
+          "decision": {
+            "action": "approve",
+            "reason": "Both quotes state the reduction in the vat.",
+            "craft": "Kutch-Ajrakh",
+            "family": null,
+            "source": null,
+            "kind": "FACTS",
+            "id": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e21"
+          },
+          "state": "STAGED",
+          "applied": null,
+          "outcome": null
+        },
+        {
+          "id": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e12",
+          "position": 1,
+          "label": "Source: aa.MDI",
+          "decision": {
+            "action": "correct",
+            "reason": "The first page names the journal and the issue year.",
+            "craft": null,
+            "family": null,
+            "source": {
+              "title": "Sanganer dyes and their effluents",
+              "authors": ["A. Sharma", "R. Gupta"],
+              "year": 2007,
+              "containerTitle": "Journal of Environmental Biology",
+              "kind": "PAPER"
+            },
+            "kind": "SOURCES",
+            "id": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e22"
+          },
+          "state": "STAGED",
+          "applied": null,
+          "outcome": null
+        },
+        {
+          "id": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e13",
+          "position": 2,
+          "label": "Sources differ: Lime keeps the indigo vat alkaline.",
+          "decision": {
+            "action": "clear",
+            "reason": "The two values are for different stages of the vat.",
+            "craft": null,
+            "family": null,
+            "source": null,
+            "kind": "SOURCES_DIFFER",
+            "id": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e23"
+          },
+          "state": "REFUSED",
+          "applied": {
+            "action": "clear",
+            "reason": "The two values are for different stages, so both hold.",
+            "craft": null,
+            "family": null,
+            "source": null,
+            "kind": "SOURCES_DIFFER",
+            "id": "6f1c2a4e-8d3b-4c5a-9e7f-0a1b2c3d4e23"
+          },
+          "outcome": "This fact is not marked as one whose sources differ."
+        }
+      ]
+    }
+  ]
+}

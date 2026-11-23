@@ -1,9 +1,21 @@
 name: Build the web app
-description: Starts the Vercel production build of main through the deploy hook kept in Parameter Store.
+description: Starts the Vercel production build of main through the deploy hook kept in Parameter Store, only once the API that main's head needs is the one answering.
+inputs:
+  api-base-url:
+    description: The API's public origin; its /health names the release commit it runs.
+    required: true
 runs:
   using: composite
   steps:
+    - name: Check that the API main needs is live
+      id: ready
+      shell: bash
+      env:
+        API_BASE_URL: ${{ inputs.api-base-url }}
+      run: bash "$GITHUB_ACTION_PATH/api_ready.sh"
+
     - name: Call the Vercel deploy hook
+      if: steps.ready.outputs.api == 'live'
       shell: bash
       run: |
         set -euo pipefail
@@ -13,5 +25,5 @@ runs:
         echo "the Vercel deploy hook answered $code"
         case "$code" in
           200|201) ;;
-          *) echo "::error::the web app build was not started; start it from Build pages now in admin settings"; exit 1 ;;
+          *) echo "::error::the web app build was not started; start it from Start a build in admin settings"; exit 1 ;;
         esac

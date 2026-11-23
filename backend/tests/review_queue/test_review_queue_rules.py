@@ -42,7 +42,17 @@ from app.research.review_queue_components import closest_components
 from app.services.claim_writer import HELD_NOTE, held_note
 from app.services.write_back_crafts import HELD_OTHER_PLACE
 
-ALL_KINDS = ("FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE", "STAGES")
+ALL_KINDS = (
+    "FACTS",
+    "TESTIMONY",
+    "IMAGES",
+    "COMPONENTS",
+    "LAYOUTS",
+    "STRUCTURE",
+    "READINGS",
+    "LAYERS",
+    "STAGES",
+)
 NOON = datetime(2026, 11, 19, 12, 0, 0, 123456, tzinfo=UTC)
 
 
@@ -52,7 +62,7 @@ NOON = datetime(2026, 11, 19, 12, 0, 0, 123456, tzinfo=UTC)
         ("STUDENT", ()),
         ("ARTISAN", ()),
         ("RESEARCHER", ()),
-        ("PROFESSOR", ("FACTS", "TESTIMONY", "STRUCTURE", "STAGES")),
+        ("PROFESSOR", ("FACTS", "TESTIMONY", "STRUCTURE", "READINGS", "STAGES")),
         ("ADMIN", ALL_KINDS),
         ("MASTER_ADMIN", ALL_KINDS),
     ],
@@ -69,9 +79,9 @@ def test_only_admins_and_master_admins_see_who_proposed(role: str, shown: bool) 
 @pytest.mark.parametrize(
     ("origin", "kinds"),
     [
-        ("RESEARCH", ("FACTS", "STAGES")),
-        ("CONTRIBUTION", ("FACTS", "IMAGES", "LAYOUTS", "STRUCTURE")),
-        ("AGENT", ("FACTS", "COMPONENTS", "LAYOUTS", "STRUCTURE")),
+        ("RESEARCH", ("FACTS", "READINGS", "STAGES")),
+        ("CONTRIBUTION", ("FACTS", "IMAGES", "LAYOUTS", "STRUCTURE", "READINGS", "LAYERS")),
+        ("AGENT", ("FACTS", "COMPONENTS", "LAYOUTS", "STRUCTURE", "READINGS")),
         ("TESTIMONY", ("TESTIMONY",)),
         (None, ALL_KINDS),
     ],
@@ -98,6 +108,8 @@ def test_a_kind_filter_never_reaches_past_the_viewers_kinds() -> None:
         (COMPONENTS, APPROVE, Capability.REVIEW_CONTRIBUTIONS),
         (LAYOUTS, APPROVE, Capability.REVIEW_CONTRIBUTIONS),
         (LAYOUTS, REJECT, Capability.REVIEW_CONTRIBUTIONS),
+        ("LAYERS", APPROVE, Capability.REVIEW_CONTRIBUTIONS),
+        ("LAYERS", REJECT, Capability.REVIEW_CONTRIBUTIONS),
         (STRUCTURE, APPROVE, Capability.MARK_CLAIM_LEVEL),
         (STRUCTURE, REJECT, Capability.MARK_CLAIM_LEVEL),
         (STAGES, APPROVE, Capability.MARK_CLAIM_LEVEL),
@@ -302,6 +314,8 @@ def test_each_item_names_its_kind_by_the_queue_it_belongs_to() -> None:
             contract.ComponentItem,
             contract.LayoutItem,
             contract.StructureQueueItem,
+            contract.ReadingQueueItem,
+            contract.LayerQueueItem,
             contract.StageQueueItem,
         )
     ]

@@ -53,3 +53,10 @@ def test_a_new_answer_lays_out_the_sections_its_question_asks() -> None:
     ]
     assert (layout.titles, layout.deepening, layout.follow_up) == ({}, {}, None)
     assert layout.keeps_pieces_of(layout.specs[0])
+    assert (tuple(layout.shown_sections), layout.shown_kinds) == ((), frozenset())
+
+
+def test_a_follow_up_names_every_section_and_kind_its_explainer_already_shows() -> None:
+    layout = answer_layout(understanding("PROCESS"), FollowUp(base=base_version(), facets=("HISTORY",)))
+    assert [section.id for section in layout.shown_sections] == ["s1", "s2", "s3"]
+    assert layout.shown_kinds == frozenset({"process_ladder", "images", "prose"})

@@ -7,7 +7,13 @@ from pydantic import Field
 from app.core.errors import ExternalFailure, InvalidInput
 from app.core.mcp_scopes import CONTRIBUTE_SCOPE
 from app.core.rate_limit import COMPONENT_PROPOSALS
-from app.research.dataset_proposals import DatasetProposal, DatasetReply, DatasetUploadStart, upload_url
+from app.research.dataset_proposals import (
+    DatasetProposal,
+    DatasetReply,
+    DatasetUploadStart,
+    upload_types,
+    upload_url,
+)
 from app.services.candidate_sources import proposal_fetcher
 from app.services.dataset_proposals import issue_dataset_slot, proposal_problems
 
@@ -25,13 +31,17 @@ DESCRIPTION = (
     "the code is new and the landing page is reachable, then return a single-use upload slot: PUT the CSV file "
     "(UTF-8, a header row, at most 20000 rows) to upload_url within 30 minutes and its SHA-256 is checked before "
     "the table is stored. A chart, fact_table or map_layer then names the dataset's code as dataset and each "
-    "value's row and column as its cell, and the gates check every value against its stored row."
+    "value's row and column as its cell, and the gates check every value against its stored row. A new map "
+    "layer adds layer and PUTs WGS 84 GeoJSON, held for a reviewer (datasets guide, Map layers over MCP)."
 )
 UPLOADS_OFF = "Dataset uploads are not open on this server right now."
 CHECKS_UNAVAILABLE = (
     "The checks could not run just now and nothing was stored; call propose_dataset again later."
 )
 UPLOAD_STEP = "PUT the CSV file to upload_url (curl -T file.csv <upload_url>) before the slot expires."
+LAYER_UPLOAD_STEP = (
+    "PUT the GeoJSON file to upload_url (curl -T layer.geojson <upload_url>) before the slot expires."
+)
 REFUSED = "The dataset was not taken: {problems}."
 
 
@@ -57,9 +67,12 @@ async def _propose(context: ToolContext, arguments: ProposeDataset) -> DatasetRe
         )
     issued = await issue_dataset_slot(context.session, user, proposal, now=datetime.now(UTC))
     upload = DatasetUploadStart(
-        upload_url=upload_url(endpoints.issuer, issued.token), expires_at=issued.expires_at
+        upload_url=upload_url(endpoints.issuer, issued.token),
+        upload_types=upload_types(proposal),
+        expires_at=issued.expires_at,
     )
-    return DatasetReply(code=proposal.code, outcome="UPLOAD", message=UPLOAD_STEP, upload=upload)
+    step = UPLOAD_STEP if proposal.layer is None else LAYER_UPLOAD_STEP
+    return DatasetReply(code=proposal.code, outcome="UPLOAD", message=step, upload=upload)
 
 
 PROPOSE_DATASET = Tool(

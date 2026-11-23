@@ -1,12 +1,14 @@
+import base64
 import json
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 import pytest
 
 from app.voice import artisan_upkeep
 from app.voice.artisan_upkeep import ArtisanUpkeep, run_artisan_upkeep
+from app.voice.privacy import TranscriptCipher
 
 from .artisan_fakes import (
     CONVERSATION_ID,
@@ -20,6 +22,12 @@ from .fakes import START, FakeModel, cipher
 
 NOW = START + timedelta(days=1)
 SOAK = "We soak the cloth in camel dung and castor oil before printing"
+EARLIER_KEY = base64.urlsafe_b64encode(b"another-voice-transcript-key-32b").decode("ascii")
+
+
+class LapsedStore(MemoryArtisanStore):
+    async def unfinished(self, now: datetime, limit: int) -> list[uuid.UUID]:
+        return [c.id for c in self.conversations.values() if c.ended_at is None][:limit]
 
 
 class Session:
@@ -110,3 +118,23 @@ async def test_without_a_transcript_key_only_the_database_steps_run(database_ste
         ArtisanUpkeep(chosen.artisans, chosen.sessions, chosen.objects, None, chosen.model_for), now=NOW
     )
     assert report.extracted == 0 and database_steps == ["purge", "clear"]
+
+
+async def test_a_transcript_that_does_not_open_is_reported_and_the_rest_of_the_upkeep_still_runs(
+    database_steps: list[str],
+) -> None:
+    store = LapsedStore()
+    unreadable, quiet = uuid.UUID(int=41), uuid.UUID(int=42)
+    store.conversations[unreadable] = conversation(
+        id=unreadable,
+        transcript=sealed(asked(0, "How do you begin?"), said(1, SOAK), key=TranscriptCipher(EARLIER_KEY)),
+    )
+    store.conversations[quiet] = conversation(id=quiet, transcript=sealed(asked(0, "How do you begin?")))
+    report = await run_artisan_upkeep(upkeep(store, FakeModel([])), now=NOW)
+    assert report.failures == [
+        f"{unreadable}: The stored voice transcript does not open with the current key"
+    ]
+    assert (report.closed, report.purged, report.cleared) == (1, 2, 1)
+    assert (store.conversations[quiet].ended_at, store.conversations[quiet].extraction) == (NOW, "NONE")
+    assert store.conversations[unreadable].ended_at is None
+    assert database_steps == ["purge", "clear"]

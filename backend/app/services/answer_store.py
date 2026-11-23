@@ -30,6 +30,7 @@ from app.research.embedding import TextEmbedder
 from app.research.evidence_pack import EvidencePack, ResearchTrail
 from app.research.explainer import Explainer
 from app.research.explainer_versions import ExplainerVersionDocument, VersionMark
+from app.research.judge_ladder import JudgeLadder
 from app.research.planning import PlanRequest
 from app.research.retrieval import EVERY_CHUNK_ACLS
 from app.research.sections import AnswerPlans
@@ -94,7 +95,7 @@ class SqlAnswerStore:
         embed: TextEmbedder,
         shield: ShieldedWork,
         index: CraftIndexStore,
-        judge: StructuredModel | None = None,
+        judge: JudgeLadder | None = None,
     ) -> None:
         self._sessions = sessions
         self._embed = embed

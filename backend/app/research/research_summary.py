@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from pydantic import Field
 
 from .base import ContractModel
@@ -7,7 +9,15 @@ from .crafts import CraftRef
 from .evidence import SEARCH_QUERY_MAX_CHARS
 from .vocabulary import AnswerMode, LiveTier
 
-__all__ = ["ResearchSummary", "SearchedQuery", "not_enough_evidence_message", "searched_note"]
+__all__ = [
+    "SEARCHED_MAX_CHARS",
+    "ResearchSummary",
+    "SearchedQuery",
+    "not_enough_evidence_message",
+    "searched_note",
+]
+
+SEARCHED_MAX_CHARS = 2000
 
 
 class SearchedQuery(ContractModel):
@@ -33,17 +43,20 @@ def not_enough_evidence_message(summary: ResearchSummary) -> str:
 
 
 def searched_note(summary: ResearchSummary) -> str:
-    return " ".join(_searched(summary))
+    for listed in range(len(summary.queries), 0, -1):
+        note = " ".join(_searched(summary, listed))
+        if len(note) <= SEARCHED_MAX_CHARS:
+            return note
+    return " ".join(_searched(summary, 0))
 
 
-def _searched(summary: ResearchSummary) -> list[str]:
+def _searched(summary: ResearchSummary, listed: int | None = None) -> list[str]:
     parts = [
         f"Searched {_count(summary.stored_claims, 'stored claim')} and "
         f"{_count(summary.stored_passages, 'stored source passage')}.",
     ]
     if summary.queries:
-        listed = "; ".join(f'{query.tier} "{query.text}"' for query in summary.queries)
-        parts.append(f"Live research ran {_count(len(summary.queries), 'query', 'queries')}: {listed}.")
+        parts.append(_live(summary.queries, len(summary.queries) if listed is None else listed))
     else:
         parts.append("No live research ran.")
     if summary.services:
@@ -53,6 +66,15 @@ def _searched(summary: ResearchSummary) -> list[str]:
         f" and recorded {_count(summary.failures, 'failed request')}."
     )
     return parts
+
+
+def _live(queries: Sequence[SearchedQuery], listed: int) -> str:
+    ran = f"Live research ran {_count(len(queries), 'query', 'queries')}"
+    if listed == 0:
+        return f"{ran}."
+    shown = "; ".join(f'{query.tier} "{query.text}"' for query in queries[:listed])
+    rest = len(queries) - listed
+    return f"{ran}: {shown}; and {rest} more." if rest else f"{ran}: {shown}."
 
 
 def _count(n: int, singular: str, plural: str | None = None) -> str:

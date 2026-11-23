@@ -129,8 +129,11 @@ Vocabulary: `stageType` is `StageType`, `kind` of a material `MaterialKind`, `ro
   dehydroxylation 400-700 °C, water 100 °C at 1 atm, beeswax 62-64 °C, brass liquidus about
   900-940 °C) is its own cited claim. `envelope_status`: `NONE` when the stage type has no
   envelope for the quantity, else `OUTSIDE` when any stated bound falls below the envelope's
-  minimum or above its maximum, else `WITHIN`. An `OUTSIDE` reading is shown with its status and
-  listed in the review queue; it is never hidden (PLAN 0).
+  minimum or above its maximum, else `WITHIN` (`science/reading_checks.reading_check`, which the
+  review queue reads too). An `OUTSIDE` reading is shown with its status and waits in the review
+  queue's `READINGS` kind (`review-queue.md`); it is never hidden for being outside (PLAN 0). Only a
+  reviewer who rejects it as a misreading of its source takes it off the view
+  (`ConditionReading.reviewStatus` `REJECTED`, `models.science.shown_reading`).
 - **Sources differ** (`sources_differ`): readings are compared by their midpoint (or their one
   bound). Temperatures differ when two readings are more than 25 °C apart
   (`SOURCES_DIFFER_CELSIUS`); any other quantity when the gap exceeds 15 % of the larger value

@@ -144,8 +144,9 @@ A declared `chart`, `fact_table` or `map_layer` may rest on a contributed datase
 each value's `cell {row, column}`, a table's `row` and `column`): `services/dataset_cells.checked_cells`
 reads each cell from the stored `DatasetTable`, refuses a cell the table does not hold or a value
 that is not the number it states, lets a unit state the figures of its cells without a fact, and
-replaces the spec's `dataset` with the stored record's credit and address. A component citing a
-dataset needs no fact of its own; an `experiment_lab` rests on its toggles' facts
+replaces the spec's `dataset` with the stored record's credit and address. A dataset proposed with
+a `layer` (a map layer of the site's own, the datasets reference's Map layers over MCP) stores no
+table, so no component cites its cells. A component citing a dataset needs no fact of its own; an `experiment_lab` rests on its toggles' facts
 (`CONTAINER_KINDS`).
 
 ### The SVG intake (`cleaned_svg`)

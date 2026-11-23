@@ -1,8 +1,10 @@
 import { ComponentReviewCard } from "@/components/review/ComponentReviewCard";
 import { FactReviewCard } from "@/components/review/FactReviewCard";
+import { LayerReviewCard } from "@/components/review/LayerReviewCard";
 import { LayoutReviewCard } from "@/components/review/LayoutReviewCard";
 import { PictureReviewCard } from "@/components/review/PictureReviewCard";
 import { QueueItemHeader } from "@/components/review/QueueItemHeader";
+import { ReadingReviewCard } from "@/components/review/ReadingReviewCard";
 import { ReviewCard } from "@/components/review/ReviewCard";
 import { StageReviewCard } from "@/components/review/StageReviewCard";
 import { StructureReviewCard } from "@/components/review/StructureReviewCard";
@@ -20,6 +22,8 @@ export function QueueItemView({ item, handlers }: { item: QueueItem; handlers: Q
   if (item.kind === "LAYOUTS") return <LayoutReviewCard item={item} onDecide={(action, words) => handlers.decide(item, action, words)} />;
   if (item.kind === "STAGES") return <StageReviewCard item={item} onDecide={(action, words, placement) => handlers.decide(item, action, words, placement)} />;
   if (item.kind === "STRUCTURE") return <StructureReviewCard item={item} onDecide={(action, words) => handlers.decide(item, action, words)} />;
+  if (item.kind === "READINGS") return <ReadingReviewCard item={item} onDecide={(action, words) => handlers.decide(item, action, words)} />;
+  if (item.kind === "LAYERS") return <LayerReviewCard item={item} onDecide={(action, words) => handlers.decide(item, action, words)} />;
   return (
     <div className="grid gap-3">
       <QueueItemHeader item={item} />

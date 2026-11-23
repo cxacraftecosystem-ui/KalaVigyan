@@ -75,18 +75,25 @@ async def what_if_evidence(
 
 
 async def _relationships(session: AsyncSession, concept_ids: list[uuid.UUID]) -> list[Relationship]:
-    statement = (
+    touching = (
+        ConceptEdge.relation.in_(OUTCOME_RELATIONS),
+        or_(ConceptEdge.srcId.in_(concept_ids), ConceptEdge.dstId.in_(concept_ids)),
+    )
+    stated = (
         select(Claim.id, ConceptEdge.relation, ConceptEdge.srcId, ConceptEdge.dstId)
         .join(ConceptEdge, ConceptEdge.id == Claim.subjectId)
-        .where(
-            Claim.subjectType == EDGE_SUBJECT,
-            ConceptEdge.relation.in_(OUTCOME_RELATIONS),
-            or_(ConceptEdge.srcId.in_(concept_ids), ConceptEdge.dstId.in_(concept_ids)),
-        )
-        .order_by(Claim.id)
+        .where(Claim.subjectType == EDGE_SUBJECT, *touching)
     )
-    rows = (await session.execute(statement)).tuples().all()
-    return [Relationship(claim_id, relation, frozenset({src, dst})) for claim_id, relation, src, dst in rows]
+    curated = select(ConceptEdge.claimId, ConceptEdge.relation, ConceptEdge.srcId, ConceptEdge.dstId).where(
+        ConceptEdge.claimId.is_not(None), *touching
+    )
+    rows = [*(await session.execute(stated)).tuples().all(), *(await session.execute(curated)).tuples().all()]
+    found = {
+        Relationship(claim_id, relation, frozenset({src, dst}))
+        for claim_id, relation, src, dst in rows
+        if claim_id is not None
+    }
+    return sorted(found, key=lambda each: (str(each.claim_id), each.relation))
 
 
 async def _concept_claims(

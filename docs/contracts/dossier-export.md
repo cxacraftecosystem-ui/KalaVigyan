@@ -5,7 +5,7 @@ The database is the source of truth for curated knowledge. The dossiers in
 database holds, and the way to bulk import. New facts are written through the Knowledge API, where
 they pass the four gates. Curators and the engineers who run an export or a bulk import read it.
 
-Last reviewed: 2026-11-19.
+Last reviewed: 2026-11-23.
 
 | For | Read |
 |---|---|
@@ -50,6 +50,11 @@ import's own plan (`tests/curation/test_dossier_export.py`) and through the data
 (`tests/db/test_dossier_export_db.py`: Kutch Ajrakh exports as its file; exporting every dossier
 and importing the export changes no row and writes no review event, apart from the stored file
 digest of a dossier laid out by hand).
+
+The import keeps the other direction: it never takes a file that lacks a fact or conflict a reviewer
+approved in the database (decision 0171). Such a file is `BEHIND`, nothing of it is written, and the
+deploy log names each approval it lacks; exporting with `--out` and committing the export clears it,
+and a bulk import is built on that export (`curation.md`, The import).
 
 ## What it reads
 
@@ -151,8 +156,8 @@ native names, reactions, botanical names, glossary, conflicts, open questions, t
 sources for held facts (`propose_source`), components and whole page bundles (`knowledge-writes.md`,
 `open-work.md`), and the curation skill sends every change it can that way. The placements of
 open-licence pictures from elsewhere and a new craft's first dossier still enter through a bulk
-import: a new dossier version, verified and checked, committed by the lead and imported on deploy,
-after which `--diff` reports `SAME` for it.
+import: a new dossier version built on the export, verified and checked, committed by the lead and
+imported on deploy, after which `--diff` reports `SAME` for it.
 
 ## Versioning
 
@@ -167,7 +172,7 @@ page in the same change.
 | Export then import changes nothing, on every curated dossier | `backend/tests/curation/test_dossier_export.py`, through the import's own plan |
 | Kutch Ajrakh exports as its file, and a full round trip writes no row | `backend/tests/db/test_dossier_export_db.py` |
 | What differs from git | `backend/tests/curation/test_dossier_diff.py` |
-| Approved structure exports under its keys | `backend/tests/db/test_structure_export_db.py` |
+| Approved structure exports under its keys, and an older file never undoes it | `backend/tests/db/test_structure_export_db.py` |
 | The proposing client | `tools/tests/test_curation_propose.py` |
 
 Re-read it when the dossier schema version changes, or a kind of structure moves from bulk import to MCP.

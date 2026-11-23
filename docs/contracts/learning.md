@@ -82,10 +82,18 @@ the next version; earlier versions are never changed.
   built again: a block of a kind with an identity (`research/block_identity.block_keys`: a map
   layer's layer, a region story's river or else its districts, a reaction player's reactions, a
   molecule's compound, a material card's material, compound, term or name) is dropped only when
-  everything it shows is shown already, so a second layer or a story of another river is added;
-  any other kind it shows (a ladder, a picture strip, a seasons strip, an expert view) is not built
-  again (`services/section_deepening.Deepening`). One that finds nothing new ends `EMPTY` in the
-  stream and stays as the base shows it. Before `done`: `version` `VersionMark` of the stored
+  everything it shows is shown already, so a second layer is added; any other kind it shows (a
+  ladder, a picture strip, a seasons strip, an expert view) is not built again
+  (`services/section_deepening.Deepening`). One that finds nothing new ends `EMPTY` in the
+  stream and stays as the base shows it. Every section of a follow-up, new or deepened, is also
+  held to what the whole explainer shows, as a later section of a first answer is (decision 0174):
+  the stream's claim ledger starts from the base's blocks (`ExplainerStream.shown_before`) and the
+  answer's builders from the kinds they show, so a sentence whose claims are all shown or that
+  restates a shown one, a material, molecule or picture already shown, and a craft-level story the
+  base shows (a region story, seasons strip, supply map or zoom story,
+  `claim_ledger.ONCE_PER_ANSWER_KINDS`, never built again) are left out, and a composed heading
+  never takes a base section's title. A new section whose every block is left out ends `EMPTY` as
+  already covered, with no further research. Before `done`: `version` `VersionMark` of the stored
   version; a follow-up that added nothing stores no version and sends no `version`. When another
   follow-up stored that version meanwhile, the follow-up is merged again onto the newer version
   (`version_merge.remerged_version`, `services/version_race`, up to three tries): each section goes

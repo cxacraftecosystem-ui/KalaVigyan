@@ -25,6 +25,7 @@ understanding), `docs/contracts/explainer.md` (One claim, one rendering) and
 | The quantities table this run measured | [decision 0147](0147-time-market-and-figures-kept-true.md) |
 | The per-process connection budget that keeps the pooler from filling | [decision 0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md) |
 | The quantities table's way, which this record left to the lead | [decision 0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
+| The off-question part this record left to the lead, made a share | [decision 0174](0174-a-confirmed-downgrade-and-answers-that-fit-and-repeat-nothing.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

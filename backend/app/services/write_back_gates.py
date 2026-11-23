@@ -13,8 +13,9 @@ from app.models import Claim
 from app.research.candidate_gates import Candidate, CitedSource
 from app.research.embedding import TextEmbedder
 from app.research.evidence import SourceDocument
+from app.research.gate_thrift import GateThrift
+from app.research.judge_ladder import JudgeLadder
 from app.research.review_switch import RESEARCH, Placement, placement
-from app.research.structured import StructuredModel
 from app.research.write_back import ClaimWriteBack, WriteBackCitation, WriteBackResult
 
 from . import app_settings
@@ -30,6 +31,7 @@ from .candidate_gates import (
 )
 from .candidate_store import CLOSED_STATUSES, FactSubject, SqlHeldFacts, subject_title
 from .candidate_writes import mark_sources_differ, record_checks
+from .sources_differ import settle_sources_differ
 from .write_back_closed import (
     KeptVectors,
     Owner,
@@ -68,7 +70,7 @@ class GatedWriteBack:
 class _Gating:
     documents: Mapping[str, SourceDocument]
     embed: TextEmbedder | None
-    judge: StructuredModel | None
+    judge: JudgeLadder | None
 
 
 @dataclass(frozen=True)
@@ -89,7 +91,7 @@ async def gate_write_back(
     documents: Mapping[str, SourceDocument],
     *,
     embed: TextEmbedder | None,
-    judge: StructuredModel | None,
+    judge: JudgeLadder | None,
 ) -> GatedWriteBack:
     stored = await stored_statuses(session, claims)
     reopened = {key for key, status in stored.items() if status in CLOSED_STATUSES}
@@ -137,6 +139,8 @@ async def record_write_back_runs(
             vectored += 1
         if live:
             await mark_sources_differ(session, result.claim_id)
+    if live:
+        await settle_sources_differ(session, [result.claim_id for result in results if not result.created])
     return vectored
 
 
@@ -174,7 +178,7 @@ async def _vectors(embed: TextEmbedder | None, candidates: Sequence[Candidate]) 
 
 
 async def _later(
-    session: AsyncSession, batch: _Batch, vectors: KeptVectors, judge: StructuredModel | None
+    session: AsyncSession, batch: _Batch, vectors: KeptVectors, judge: JudgeLadder | None
 ) -> dict[str, LaterGates]:
     embed = vectors if vectors.by_text else None
     found: dict[str, LaterGates] = {}
@@ -190,11 +194,17 @@ async def write_back_later_gates(
     candidates: Sequence[Candidate],
     *,
     embed: TextEmbedder | None,
-    judge: StructuredModel | None,
+    judge: JudgeLadder | None,
 ) -> dict[str, LaterGates]:
     try:
         return await later_gates(
-            store, candidates, embed=embed, judge=judge, novelty_failure=NOVELTY_LEFT_UNJUDGED
+            store,
+            candidates,
+            embed=embed,
+            judge=judge.first if judge is not None else None,
+            escalate=judge.escalate if judge is not None else (),
+            thrift=GateThrift(),
+            novelty_failure=NOVELTY_LEFT_UNJUDGED,
         )
     except AppError as error:
         logger.warning("write-back gates fell back to identical texts only: %s", error)

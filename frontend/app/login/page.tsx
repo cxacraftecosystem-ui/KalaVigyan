@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/Toast";
 import { ApiError } from "@/lib/api";
 import { ACCESS_STATUS_HEADER, accessRefusalKind, type AccessRefusalKind } from "@/lib/accessRoster";
-import { rememberSignInReturn, takeSignInReturn } from "@/lib/sessionReturn";
+import { rememberSignInReturn, signInReturnOnce } from "@/lib/sessionReturn";
 import { SIGN_IN_HINT_HEADER, mustChangePassword, signInHintOf, type SignInHint } from "@/lib/signIn";
 import { isTwoFactorChallenge, type TwoFactorChallenge } from "@/lib/twoFactor";
 import type { User } from "@/lib/types";
@@ -97,6 +97,7 @@ export default function LoginPage() {
   const [failure, setFailure] = useState<Failure | null>(null);
   const [loading, setLoading] = useState(false);
   const signingIn = useRef(false);
+  const [landing] = useState(() => signInReturnOnce());
   const passwordGate = mustChangePassword(user) ? user : null;
 
   useEffect(() => {
@@ -104,8 +105,8 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    if (user && !signingIn.current && !passwordGate && !challenge) router.replace(takeSignInReturn());
-  }, [challenge, passwordGate, router, user]);
+    if (user && !signingIn.current && !passwordGate && !challenge) router.replace(landing());
+  }, [challenge, landing, passwordGate, router, user]);
 
   const describeFailure = useCallback((err: unknown) => setFailure(failureOf(err)), []);
 
@@ -116,9 +117,9 @@ export default function LoginPage() {
         return;
       }
       if (mustChangePassword(outcome)) return;
-      router.replace(takeSignInReturn());
+      router.replace(landing());
     },
-    [router]
+    [landing, router]
   );
 
   const oidc = useOidcSignIn({
@@ -178,7 +179,7 @@ export default function LoginPage() {
           onDone={() => {
             setDoorPassword("");
             markPasswordChanged();
-            router.replace(takeSignInReturn());
+            router.replace(landing());
           }}
           onSignOut={() => {
             setDoorPassword("");
@@ -190,7 +191,7 @@ export default function LoginPage() {
           challengeToken={challenge}
           onSignedIn={(account) => {
             setChallenge(null);
-            if (!mustChangePassword(account)) router.replace(takeSignInReturn());
+            if (!mustChangePassword(account)) router.replace(landing());
           }}
           onCancel={() => {
             setChallenge(null);

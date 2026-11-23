@@ -7,7 +7,7 @@ from typing import Any
 
 from app.data.craft_text import fold
 from app.research.blocks_lede import LedeBlock
-from app.research.explainer import Block
+from app.research.explainer import Block, ExplainerSection
 from app.research.sections import SectionSpec
 from app.research.stream import Emit, StatusStep
 
@@ -68,6 +68,11 @@ class ExplainerStream:
 
     def claim_heading(self, section_id: str, heading: str) -> bool:
         return self._headings.setdefault(fold(heading), section_id) == section_id
+
+    def shown_before(self, sections: Iterable[ExplainerSection]) -> None:
+        for section in sections:
+            self.claim_heading(section.id, section.original or section.title)
+            self.ledger.note_shown(section.blocks)
 
     async def section_heading(self, section_id: str, *, title: str, original: str | None) -> None:
         shown = {"title": title, **({"original": original} if original else {})}

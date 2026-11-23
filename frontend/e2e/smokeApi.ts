@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { join } from "node:path";
 
 import { CRAFT_PAGE_PATH } from "../lib/craftPageContract";
+import { FIELD_VOICES_PATH } from "../lib/fieldVoicesContract";
 import { MONOGRAPH_DOCUMENT_PATH } from "../lib/monographDocument";
 
 import { fragmentDocumentText, goldenText } from "./monographNative";
@@ -29,6 +30,12 @@ function laterBackendPage(): string {
   return JSON.stringify(withUnknownFields(JSON.parse(readFileSync(REGISTER_GOLDEN, "utf8"))));
 }
 
+function noFieldVoices(query: URLSearchParams): Answer {
+  const craft = { slug: LATER_BACKEND_CRAFT, name: LATER_BACKEND_NAME, path: `/crafts/${LATER_BACKEND_CRAFT}` };
+  const page = { schemaVersion: 1, craft, kind: query.get("kind"), total: 0, cursor: null, nextCursor: null, quotes: [], images: [] };
+  return { status: 200, body: JSON.stringify(page) };
+}
+
 function answers(): Map<string, Route> {
   const native = goldenText();
   const fragments = fragmentDocumentText(FRAGMENT_VERSION);
@@ -36,7 +43,8 @@ function answers(): Map<string, Route> {
   return new Map<string, Route>([
     [nativeDocumentPath(), (query) => ({ status: 200, body: query.get("version") === String(FRAGMENT_VERSION) ? fragments : native })],
     [`/api${MONOGRAPH_DOCUMENT_PATH(LATER_BACKEND_CRAFT)}`, () => ({ status: 404, body: JSON.stringify({ detail: "No monograph" }) })],
-    [`/api${CRAFT_PAGE_PATH(LATER_BACKEND_CRAFT)}`, () => ({ status: 200, body: laterPage })]
+    [`/api${CRAFT_PAGE_PATH(LATER_BACKEND_CRAFT)}`, () => ({ status: 200, body: laterPage })],
+    [`/api${FIELD_VOICES_PATH(LATER_BACKEND_CRAFT, "quotes", null).split("?")[0]}`, noFieldVoices]
   ]);
 }
 

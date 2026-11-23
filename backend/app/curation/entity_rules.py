@@ -19,6 +19,7 @@ from .records import GiRecord
 from .vocabulary import GI_RECORD_SOURCE_KINDS, INDIA, INDIAN_DISTRICT_PLACE_KINDS
 
 __all__ = [
+    "alternative_problems",
     "claim_quotes",
     "community_problems",
     "market_problems",
@@ -70,6 +71,20 @@ def stage_problems(dossier: Dossier) -> list[Problem]:
                         stage.id, f"the {label} {timing.text!r} is not stated by {claim.id} or its quotes"
                     )
                 )
+    return found
+
+
+def alternative_problems(dossier: Dossier) -> list[Problem]:
+    found = []
+    for material in dossier.materials:
+        named = Counter(alternative.material_id for alternative in material.alternatives)
+        if material.id in named:
+            found.append(Problem(material.id, "a material is never its own alternative"))
+        found += [
+            Problem(material.id, f"{other} is listed as its alternative more than once")
+            for other, n in named.items()
+            if n > 1
+        ]
     return found
 
 

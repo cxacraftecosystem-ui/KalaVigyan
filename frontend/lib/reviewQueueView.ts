@@ -32,6 +32,8 @@ export const KIND_LABELS: Record<QueueKind, string> = {
   COMPONENTS: "Components",
   LAYOUTS: "Layouts",
   STRUCTURE: "Structure",
+  READINGS: "Readings",
+  LAYERS: "Map layers",
   STAGES: "Process stages"
 };
 
@@ -42,6 +44,8 @@ export const KIND_NOUNS: Record<QueueKind, string> = {
   COMPONENTS: "Component proposal",
   LAYOUTS: "Layout proposal",
   STRUCTURE: "Structure proposal",
+  READINGS: "Reading outside its range",
+  LAYERS: "Map layer proposal",
   STAGES: "Process stage"
 };
 

@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.clock import INDIA_TZ
 from app.core.roles import ROLE_LABELS, role_value
 from app.models import CandidateCheck, Claim, ReviewEvent, User
-from app.research.retrieval import SHOWN_CLAIM_STATUSES
 from app.research.review_queue import (
     APPROVE,
     FACTS,
@@ -22,14 +21,13 @@ from app.research.review_queue import (
     fact_move,
     fact_move_problem,
 )
-from app.research.review_switch import WAITING_STATUS
 from app.research.write_back import WRITE_BACK_ORIGIN
 
 from . import audit
-from .candidate_writes import mark_sources_differ
 from .claim_holds import is_held
 from .review_queue_errors import DecisionConflict, OwnItem, UnknownItem
 from .review_queue_refile import REFILED_FAMILY_NOTE, REFILED_NOTE, refile_fact, refile_family
+from .sources_differ import settle_sources_differ
 
 __all__ = ["FactDecision", "decide_fact"]
 
@@ -86,7 +84,7 @@ async def decide_fact(
         claim.levelReason = _reviewed_reason(reviewer, now)
     session.add(_event(claim, reviewer, decision.noted, was_status=was_status, was_level=was_level))
     await session.flush()
-    differ = await _published(session, claim, was_status)
+    differ = await _settled_differences(session, claim)
     await _record(session, reviewer, claim, decision, was_status)
     return QueueDecision(
         kind=FACTS,
@@ -123,10 +121,9 @@ async def _refile(session: AsyncSession, claim: Claim, decision: FactDecision) -
         await refile_family(session, claim, decision.family)
 
 
-async def _published(session: AsyncSession, claim: Claim, was_status: str) -> list[uuid.UUID]:
-    if was_status != WAITING_STATUS or claim.status not in SHOWN_CLAIM_STATUSES:
-        return []
-    return await mark_sources_differ(session, claim.id)
+async def _settled_differences(session: AsyncSession, claim: Claim) -> list[uuid.UUID]:
+    rivals = await settle_sources_differ(session, [claim.id])
+    return sorted(rivals[claim.id])
 
 
 def _event(claim: Claim, reviewer: User, note: str | None, *, was_status: str, was_level: str) -> ReviewEvent:

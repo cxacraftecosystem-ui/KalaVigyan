@@ -111,6 +111,7 @@ async def test_a_filled_slot_stores_the_record_and_its_table_once(session: Async
         "CONTRIBUTED",
         "CC BY 4.0",
     )
+    assert made.table is not None and made.layer is None
     assert made.table.rows == (("Kachchh", "1200"), ("Bidar", "640"))
     table = await session.scalar(select(DatasetTable).where(DatasetTable.datasetId == made.dataset.id))
     assert table is not None and (table.rowCount, table.columns) == (2, ["district", "artisans"])

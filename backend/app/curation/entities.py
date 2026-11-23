@@ -29,6 +29,7 @@ __all__ = [
     "After",
     "Community",
     "Material",
+    "MaterialAlternative",
     "MaterialUse",
     "Place",
     "Reaction",
@@ -115,6 +116,11 @@ class Stage(ContractModel):
         return self
 
 
+class MaterialAlternative(ContractModel):
+    material_id: MaterialId
+    claim_id: ClaimId
+
+
 class Material(ContractModel):
     id: MaterialId
     name: NameText
@@ -124,6 +130,7 @@ class Material(ContractModel):
     botanical_name: str | None = Field(default=None, min_length=1, max_length=200)
     pubchem_cid: int | None = Field(default=None, ge=1)
     claim_ids: ClaimIds
+    alternatives: list[MaterialAlternative] = Field(default_factory=list)
 
 
 class Tool(ContractModel):

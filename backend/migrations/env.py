@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.config import get_settings
 from app.core.db import build_runtime_database_url
+from app.core.downgrade_guard import planned_downgrade, refuse_long_downgrade
 from app.models import Base
 
 config = context.config
@@ -41,6 +42,12 @@ def do_run_migrations(connection) -> None:
         include_object=include_object,
         compare_type=True,
         transaction_per_migration=True,
+    )
+    settings = get_settings()
+    refuse_long_downgrade(
+        planned_downgrade(context.get_context()),
+        production=settings.is_production,
+        confirmed_steps=settings.confirm_downgrade_steps,
     )
     with context.begin_transaction():
         context.run_migrations()
