@@ -47,7 +47,7 @@ from .section_enrichment import Enrichment, EnrichmentTools
 from .section_fields import SectionFields
 from .status_lines import status_message
 from .stored_fields import with_stored_fields
-from .stored_only_answer import STORED_ONLY_MODE, stored_only_answer
+from .stored_only_answer import STORED_ONLY_MODE, StoredOnlyTools, stored_only_answer
 from .version_race import VersionRace
 from .write_back_names import CraftNames
 
@@ -219,13 +219,8 @@ async def _refused_answer(
     if understanding.craft is None or ask.builds_on is not None:
         await stream.emit("error", {"message": understanding.refusal})
         return
-    await stored_only_answer(
-        ask.question,
-        understanding.craft,
-        stored=pipeline.store.stored_claims,
-        stream=stream,
-        translation=pipeline.translation,
-    )
+    tools = StoredOnlyTools(pipeline.store.stored_claims, pipeline.translation, pipeline.enrichment)
+    await stored_only_answer(ask.question, understanding.craft, stream=stream, tools=tools)
 
 
 async def _researched_answer(

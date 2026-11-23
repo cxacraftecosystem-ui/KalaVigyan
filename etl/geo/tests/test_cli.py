@@ -73,7 +73,7 @@ def test_select_shard_more_shards_than_states_leaves_some_empty():
 def fake_layer(districts, options):
     rows = Rows(SOILGRIDS, "fake")
     for _, district in districts.iterrows():
-        rows.add(district, "clay", "0-5cm", "DISTRICT_MEAN", 250.0, "g/kg", pixels=12)
+        rows.add(district, "clay", "0-5cm", "DISTRICT_MEAN", 250.0, unit="g/kg", pixels=12)
     return Result(SOILGRIDS, rows.frame(), notes={"fake": True})
 
 
@@ -248,7 +248,7 @@ def test_combine_rejects_duplicate_keys(tmp_path):
     parts.mkdir()
     district = pd.Series({"districtLgd": 599, "stateLgd": 34, "districtName": "Mahe"})
     rows = Rows(SOILGRIDS, "fake")
-    rows.add(district, "clay", "0-5cm", "DISTRICT_MEAN", 1.0, "g/kg")
+    rows.add(district, "clay", "0-5cm", "DISTRICT_MEAN", 1.0, unit="g/kg")
     for stem in ("a", "b"):
         rows.frame().to_parquet(parts / f"{stem}.parquet", index=False)
         meta = {"stem": stem, "dataset": SOILGRIDS.as_row(), "retrievedAt": "2026-11-16T00:00:00+00:00"}
@@ -262,7 +262,9 @@ def test_combine_refuses_parts_of_one_dataset_read_over_different_periods(tmp_pa
     for stem, lgd, period in (("chirps-shard1of2", 599, "1981-2024"), ("chirps-shard2of2", 553, "1981-2025")):
         dataset = dataclasses.replace(CHIRPS, period=period)
         rows = Rows(dataset, "fake")
-        rows.add(pd.Series({"districtLgd": lgd, "stateLgd": 34, "districtName": "d"}), "x", period, "NORMAL", 1.0, "mm")
+        rows.add(
+            pd.Series({"districtLgd": lgd, "stateLgd": 34, "districtName": "d"}), "x", period, "NORMAL", 1.0, unit="mm"
+        )
         rows.frame().to_parquet(parts / f"{stem}.parquet", index=False)
         meta = {"stem": stem, "dataset": dataset.as_row(), "retrievedAt": "2026-11-16T00:00:00+00:00"}
         (parts / f"{stem}.json").write_text(json.dumps(meta), encoding="utf-8")

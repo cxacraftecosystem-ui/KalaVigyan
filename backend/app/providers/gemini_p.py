@@ -22,6 +22,34 @@ from .gemini_media import GEMINI_API, GeminiMediaWire
 from .usage import gemini_cached_tokens
 
 _SCHEMA_NEEDLES = ("response_json_schema", "schema")
+_BLOCKED_FINISHES = ("SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "RECITATION")
+
+
+def _chat_result(req: ChatRequest, resp, meta: dict, latency: int) -> ChatResult:
+    cand = (resp.candidates or [None])[0]
+    finish = getattr(cand, "finish_reason", None) if cand else None
+    meta["stop_reason"] = str(finish) if finish else None
+    meta["served_model"] = getattr(resp, "model_version", None) or req.model
+    if cand is None or (finish and str(finish).endswith(_BLOCKED_FINISHES)):
+        fb = getattr(resp, "prompt_feedback", None)
+        raise ProviderError(
+            f"Gemini blocked the response ({finish or getattr(fb, 'block_reason', 'no candidate')})",
+            kind="refusal",
+        )
+    u = resp.usage_metadata
+    if u is not None and getattr(u, "thoughts_token_count", None):
+        meta["thought_tokens"] = u.thoughts_token_count
+    out_tokens = None
+    if u is not None:
+        out_tokens = (u.candidates_token_count or 0) + (u.thoughts_token_count or 0)
+    return ChatResult(
+        text=resp.text or "",
+        input_tokens=getattr(u, "prompt_token_count", None),
+        output_tokens=out_tokens,
+        latency_ms=latency,
+        meta=meta,
+        cached_input_tokens=gemini_cached_tokens(u),
+    )
 
 
 class GeminiAdapter(Adapter):
@@ -74,13 +102,16 @@ class GeminiAdapter(Adapter):
         meta: dict = {"dropped": []}
         return {"model": req.model, "contents": req.user, "config": self._config(req, meta)}, meta
 
-    def batch_adapt(self, model: str, message: str) -> bool:
+    def _adapt(self, model: str, message: str) -> bool:
         low = message.lower()
         for needle, param in (("thinking", "thinking"), ("temperature", "temperature")):
             if needle in low and not self.rejects(model, param):
                 self.learn(model, param)
                 return True
         return False
+
+    def batch_adapt(self, model: str, message: str) -> bool:
+        return self._adapt(model, message)
 
     async def chat(self, req: ChatRequest) -> ChatResult:
         err = self._errors
@@ -93,36 +124,10 @@ class GeminiAdapter(Adapter):
                     model=req.model, contents=req.user, config=config
                 )
             except err.ClientError as e:
-                msg = str(e).lower()
-                if e.code == 400 and req.json_schema and names_the_format(msg, _SCHEMA_NEEDLES):
-                    raise format_refused("Gemini", req.model) from e
-                if e.code == 400:
-                    for needle, param in (("thinking", "thinking"), ("temperature", "temperature")):
-                        if needle in msg and not self.rejects(req.model, param):
-                            self.learn(req.model, param)
-                            break
-                    else:
-                        raise ProviderError(
-                            f"Gemini rejected the request: {e}", status=400, kind="bad_request"
-                        ) from e
+                failure = self._client_failure(req, e)
+                if failure is None:
                     continue
-                if e.code in (401, 403):
-                    raise ProviderError(
-                        "Gemini API key is invalid or lacks access", status=e.code, kind="auth"
-                    ) from e
-                if e.code == 404:
-                    raise ProviderError(
-                        f"Unknown Gemini model '{req.model}'", status=404, kind="not_found"
-                    ) from e
-                if e.code == 429:
-                    raise ProviderError(
-                        "Gemini rate limit / quota",
-                        retryable=True,
-                        status=429,
-                        kind="rate_limit",
-                        retry_after=retry_after_of(e),
-                    ) from e
-                raise ProviderError(f"Gemini error {e.code}: {e}", status=e.code) from e
+                raise failure from e
             except err.ServerError as e:
                 raise ProviderError(
                     f"Gemini server error {e.code}: {e}",
@@ -133,35 +138,32 @@ class GeminiAdapter(Adapter):
             except (OSError, TimeoutError) as e:
                 raise ProviderError(f"Cannot reach Gemini: {e}", retryable=True, kind="unavailable") from e
             latency = int((time.perf_counter() - t0) * 1000)
-            cand = (resp.candidates or [None])[0]
-            finish = getattr(cand, "finish_reason", None) if cand else None
-            meta["stop_reason"] = str(finish) if finish else None
-            meta["served_model"] = getattr(resp, "model_version", None) or req.model
-            if cand is None or (
-                finish and str(finish).endswith(("SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "RECITATION"))
-            ):
-                fb = getattr(resp, "prompt_feedback", None)
-                raise ProviderError(
-                    f"Gemini blocked the response ({finish or getattr(fb, 'block_reason', 'no candidate')})",
-                    kind="refusal",
-                )
-            u = resp.usage_metadata
-            if u is not None and getattr(u, "thoughts_token_count", None):
-                meta["thought_tokens"] = u.thoughts_token_count
-            out_tokens = None
-            if u is not None:
-                out_tokens = (u.candidates_token_count or 0) + (u.thoughts_token_count or 0)
-            return ChatResult(
-                text=resp.text or "",
-                input_tokens=getattr(u, "prompt_token_count", None),
-                output_tokens=out_tokens,
-                latency_ms=latency,
-                meta=meta,
-                cached_input_tokens=gemini_cached_tokens(u),
-            )
+            return _chat_result(req, resp, meta, latency)
         raise ProviderError(
             "Gemini request could not be adapted to the model's accepted parameters", kind="bad_request"
         )
+
+    def _client_failure(self, req: ChatRequest, e) -> ProviderError | None:
+        msg = str(e).lower()
+        if e.code == 400 and req.json_schema and names_the_format(msg, _SCHEMA_NEEDLES):
+            return format_refused("Gemini", req.model)
+        if e.code == 400:
+            if self._adapt(req.model, msg):
+                return None
+            return ProviderError(f"Gemini rejected the request: {e}", status=400, kind="bad_request")
+        if e.code in (401, 403):
+            return ProviderError("Gemini API key is invalid or lacks access", status=e.code, kind="auth")
+        if e.code == 404:
+            return ProviderError(f"Unknown Gemini model '{req.model}'", status=404, kind="not_found")
+        if e.code == 429:
+            return ProviderError(
+                "Gemini rate limit / quota",
+                retryable=True,
+                status=429,
+                kind="rate_limit",
+                retry_after=retry_after_of(e),
+            )
+        return ProviderError(f"Gemini error {e.code}: {e}", status=e.code)
 
     async def list_models(self) -> list[dict]:
         err = self._errors

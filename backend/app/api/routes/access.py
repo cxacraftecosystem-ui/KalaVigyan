@@ -4,14 +4,14 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import Select, and_, func, or_, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.access_filters import roster_filter, roster_ordering
 from app.api.auth_session import role_for_email
 from app.core.db import get_session
 from app.core.deps import refuse_unless_assignable, require
 from app.core.roles import (
-    ROLE_RANK,
     Capability,
     assignable_roles,
     is_master_admin,
@@ -28,64 +28,11 @@ from app.services.object_store import media_bucket
 
 router = APIRouter(prefix="/access", tags=["access"])
 
-ACCESS_ROLE_FILTER_TOKENS = frozenset(ROLE_RANK) | {"default"}
-
-ACCESS_DATE_COLUMNS = {
-    "added": "createdAt",
-    "requested": "requestedAt",
-    "decided": "decidedAt",
-    "joined": "joinedAt",
-    "firstSeen": "firstSeenAt",
-}
-
-ACCESS_SORT_COLUMNS = {
-    "added": "createdAt",
-    "email": "email",
-    "name": "fullName",
-    "standing": "status",
-    "joined": "joinedAt",
-    "requested": "requestedAt",
-    "decided": "decidedAt",
-    "firstSeen": "firstSeenAt",
-    "attempts": "attemptCount",
-}
-
-ACCESS_SORT_DEFAULT_DIR = {
-    "added": "desc",
-    "email": "asc",
-    "name": "asc",
-    "standing": "asc",
-    "joined": "desc",
-    "requested": "desc",
-    "decided": "desc",
-    "firstSeen": "desc",
-    "attempts": "desc",
-}
-
-ACCESS_DEFAULT_SORT = "added"
-
 manager = require(Capability.MANAGE_ACCESS)
 
 
 def _clean(value: Any) -> Any:
     return (value.strip() or None) if isinstance(value, str) else value
-
-
-def _bad_filter(field: str, value: Any, allowed: frozenset[str]) -> HTTPException:
-    return HTTPException(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
-        f"{field} {value!r} is not one of: {', '.join(sorted(allowed))}",
-    )
-
-
-def _tokens(values: list[str] | None, allowed: frozenset[str], field: str) -> set[str] | None:
-    if not values:
-        return None
-    tokens = {part.strip() for value in values for part in value.split(",") if part.strip()}
-    unknown = tokens - allowed
-    if unknown:
-        raise _bad_filter(field, sorted(unknown)[0], allowed)
-    return tokens or None
 
 
 async def _row_or_404(session: AsyncSession, row_id: uuid.UUID) -> AccessRoster:
@@ -148,8 +95,31 @@ async def pending_request_count(
     return {"pending": waiting, "capacity": cap, "capReached": waiting >= cap}
 
 
+async def _roster_page(
+    session: AsyncSession, where: Any, ordering: Any, skip: int, size: int
+) -> tuple[int, list[AccessRoster]]:
+    count_query: Select[Any] = select(func.count()).select_from(AccessRoster)
+    rows_query = select(AccessRoster).order_by(ordering, AccessRoster.id).offset(skip).limit(size)
+    if where is not None:
+        count_query = count_query.where(where)
+        rows_query = rows_query.where(where)
+    total = int((await session.execute(count_query)).scalar_one())
+    return total, list((await session.execute(rows_query)).scalars().all())
+
+
+async def _roster_items(session: AsyncSession, actor: User, rows: list[AccessRoster]) -> list[dict[str, Any]]:
+    people = await people_for(session, rows)
+    accounts = await access_guards.accounts_at(session, rows)
+    return [
+        access_payload(r, people)
+        | {"offers": access_guards.entry_offers(actor, r, accounts.get(normalise_email(r.email)))}
+        for r in rows
+    ]
+
+
 @router.get("/roster")
 async def list_access_roster(
+    *,
     page: int = Query(1, ge=1),
     pageSize: int = Query(50, ge=1, le=200),
     search: str | None = Query(default=None, max_length=200),
@@ -163,64 +133,47 @@ async def list_access_roster(
     _: User = Depends(manager),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
-    conditions: list[Any] = []
-    statuses = _tokens(status_filter, frozenset(access_roster.STATUSES), "status")
-    if statuses:
-        conditions.append(AccessRoster.status.in_(sorted(statuses)))
-    if search and search.strip():
-        like = f"%{search.strip()}%"
-        conditions.append(
-            or_(
-                AccessRoster.email.ilike(like),
-                AccessRoster.fullName.ilike(like),
-                AccessRoster.notes.ilike(like),
-            )
-        )
-    wanted = _tokens(roles, ACCESS_ROLE_FILTER_TOKENS, "roles")
-    if wanted:
-        arms: list[Any] = []
-        named = sorted(wanted - {"default"})
-        if named:
-            arms.append(AccessRoster.admitRole.in_(named))
-        if "default" in wanted:
-            arms.append(AccessRoster.admitRole.is_(None))
-        conditions.append(or_(*arms))
-    if dateField:
-        if dateField not in ACCESS_DATE_COLUMNS:
-            raise _bad_filter("dateField", dateField, frozenset(ACCESS_DATE_COLUMNS))
-        column = getattr(AccessRoster, ACCESS_DATE_COLUMNS[dateField])
-        if dateFrom:
-            conditions.append(column >= dateFrom)
-        if dateTo:
-            conditions.append(column <= dateTo)
-    sort_token = sort or ACCESS_DEFAULT_SORT
-    if sort_token not in ACCESS_SORT_COLUMNS:
-        raise _bad_filter("sort", sort_token, frozenset(ACCESS_SORT_COLUMNS))
-    dir_token = dir or ACCESS_SORT_DEFAULT_DIR[sort_token]
-    if dir_token not in {"asc", "desc"}:
-        raise _bad_filter("dir", dir_token, frozenset({"asc", "desc"}))
-    column = getattr(AccessRoster, ACCESS_SORT_COLUMNS[sort_token])
-    ordering = column.asc().nulls_last() if dir_token == "asc" else column.desc().nulls_last()
+    where = roster_filter(
+        status_filter, search, roles, date_field=dateField, date_from=dateFrom, date_to=dateTo
+    )
+    ordering = roster_ordering(sort, dir)
     clean_page, clean_size, skip = normalize_pagination(page, pageSize)
-    where = and_(*conditions) if conditions else None
-    count_query: Select[Any] = select(func.count()).select_from(AccessRoster)
-    rows_query = select(AccessRoster).order_by(ordering, AccessRoster.id).offset(skip).limit(clean_size)
-    if where is not None:
-        count_query = count_query.where(where)
-        rows_query = rows_query.where(where)
-    total = int((await session.execute(count_query)).scalar_one())
-    rows = list((await session.execute(rows_query)).scalars().all())
-    people = await people_for(session, rows)
-    accounts = await access_guards.accounts_at(session, rows)
-    items = [
-        access_payload(r, people)
-        | {"offers": access_guards.entry_offers(_, r, accounts.get(normalise_email(r.email)))}
-        for r in rows
-    ]
+    total, rows = await _roster_page(session, where, ordering, skip, clean_size)
+    items = await _roster_items(session, _, rows)
     return page_payload(items, total, clean_page, clean_size) | {
         "roleMatchTruncated": False,
         "assignableRoles": assignable_roles(_),
     }
+
+
+async def _refuse_listed(session: AsyncSession, email: str) -> None:
+    existing = await access_roster.access_row(session, email)
+    if existing is not None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"{existing.email} is already on the access roster as {existing.status}. Decide or update that entry.",
+        )
+
+
+async def _create_account(session: AsyncSession, email: str, payload: AccessRosterCreate) -> bool:
+    if payload.password is None:
+        return False
+    if await _account_at(session, email) is not None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "An account already exists for this address.")
+    now = datetime.now(UTC)
+    session.add(
+        User(
+            email=email,
+            name=(_clean(payload.fullName) or email.split("@")[0])[:160],
+            passwordHash=await asyncio.to_thread(hash_password, payload.password),
+            passwordSetAt=now,
+            passwordIssuerKnown=True,
+            mustChangePassword=payload.mustChangePassword,
+            role=payload.role or role_for_email(email),
+            affiliation=_clean(payload.affiliation),
+        )
+    )
+    return True
 
 
 @router.post("/roster", status_code=status.HTTP_201_CREATED)
@@ -229,12 +182,7 @@ async def add_to_access_roster(
 ) -> dict[str, Any]:
     email = normalise_email(payload.email)
     refuse_unless_assignable(actor, payload.role or role_for_email(email))
-    existing = await access_roster.access_row(session, email)
-    if existing is not None:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            f"{existing.email} is already on the access roster as {existing.status}. Decide or update that entry.",
-        )
+    await _refuse_listed(session, email)
     row = await access_roster.admit(
         session,
         email,
@@ -244,24 +192,7 @@ async def add_to_access_roster(
         note=_clean(payload.notes),
     )
     row.affiliation = _clean(payload.affiliation)
-    account_created = False
-    if payload.password is not None:
-        if await _account_at(session, email) is not None:
-            raise HTTPException(status.HTTP_409_CONFLICT, "An account already exists for this address.")
-        now = datetime.now(UTC)
-        session.add(
-            User(
-                email=email,
-                name=(_clean(payload.fullName) or email.split("@")[0])[:160],
-                passwordHash=await asyncio.to_thread(hash_password, payload.password),
-                passwordSetAt=now,
-                passwordIssuerKnown=True,
-                mustChangePassword=payload.mustChangePassword,
-                role=payload.role or role_for_email(email),
-                affiliation=_clean(payload.affiliation),
-            )
-        )
-        account_created = True
+    account_created = await _create_account(session, email, payload)
     held = await _apply_role_to_account(session, actor, email, payload.role)
     await audit.record(
         session,
@@ -275,29 +206,28 @@ async def add_to_access_roster(
     return await _payload(session, row, accountPromotionHeld=held, accountCreated=account_created)
 
 
-@router.post("/roster/{row_id}/decision")
-async def decide_access_request(
-    row_id: uuid.UUID,
-    payload: AccessDecision,
-    actor: User = Depends(manager),
-    session: AsyncSession = Depends(get_session),
+async def _reject_request(
+    session: AsyncSession, actor: User, row: AccessRoster, payload: AccessDecision
 ) -> dict[str, Any]:
-    row = await _row_or_404(session, row_id)
-    if payload.decision == "REJECT":
-        await _refuse_when(session, actor, row, access_guards.bar_refusal)
-        row.status = access_roster.REJECTED
-        row.decidedAt = datetime.now(UTC)
-        row.decidedById = actor.id
-        if payload.notes is not None:
-            row.notes = _clean(payload.notes)
-        await access_roster.bar_account(
-            session, row.email, actor=actor, cause="access.rejected", objects=media_bucket()
-        )
-        await audit.record(
-            session, action="access.rejected", actor=actor, target_type="AccessRoster", target_id=row.id
-        )
-        await session.commit()
-        return await _payload(session, row, accountPromotionHeld=None)
+    await _refuse_when(session, actor, row, access_guards.bar_refusal)
+    row.status = access_roster.REJECTED
+    row.decidedAt = datetime.now(UTC)
+    row.decidedById = actor.id
+    if payload.notes is not None:
+        row.notes = _clean(payload.notes)
+    await access_roster.bar_account(
+        session, row.email, actor=actor, cause="access.rejected", objects=media_bucket()
+    )
+    await audit.record(
+        session, action="access.rejected", actor=actor, target_type="AccessRoster", target_id=row.id
+    )
+    await session.commit()
+    return await _payload(session, row, accountPromotionHeld=None)
+
+
+async def _approve_request(
+    session: AsyncSession, actor: User, row: AccessRoster, payload: AccessDecision
+) -> dict[str, Any]:
     await _refuse_when(session, actor, row, access_guards.reinstate_refusal)
     granted = payload.role or access_roster.role_of(row) or role_for_email(row.email)
     refuse_unless_assignable(actor, granted)
@@ -319,6 +249,19 @@ async def decide_access_request(
     )
     await session.commit()
     return await _payload(session, row, accountPromotionHeld=held)
+
+
+@router.post("/roster/{row_id}/decision")
+async def decide_access_request(
+    row_id: uuid.UUID,
+    payload: AccessDecision,
+    actor: User = Depends(manager),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    row = await _row_or_404(session, row_id)
+    if payload.decision == "REJECT":
+        return await _reject_request(session, actor, row, payload)
+    return await _approve_request(session, actor, row, payload)
 
 
 @router.patch("/roster/{row_id}")

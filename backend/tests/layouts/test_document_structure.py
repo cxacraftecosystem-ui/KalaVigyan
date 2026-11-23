@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from app.research.craft_origins import AskedQuestion, ItemOrigin
+from app.research.craft_origins import ItemOrigin
 from app.research.craft_page import CraftPage
 from app.research.craft_parts import SourcesDifferPart
 from app.services.document_components import StructureBlock, document_structure
@@ -172,7 +172,6 @@ def test_an_item_a_reader_s_answer_brought_is_left_to_the_answer_it_came_from(pa
         generated=None,
         model=None,
         generated_on=None,
-        from_question=AskedQuestion(text="Who holds the GI?", asked_in="2026-11"),
     )
     chapters = [
         chapter.model_copy(

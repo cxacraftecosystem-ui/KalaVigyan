@@ -23,6 +23,7 @@ from .ledger_payloads import (
     kept_sentences,
     leveled_stages,
     picture_keys,
+    quantity_rows,
     sentence_keys,
     zoomed_levels,
 )
@@ -48,6 +49,7 @@ logger = logging.getLogger(__name__)
 COVERED_NOTE = "Already covered in this answer."
 EXPERT_KIND = "expert_view"
 LADDER_KIND = "process_ladder"
+QUANTITIES_KIND = "quantities"
 SIMULATION_KIND = "simulation"
 WHAT_IF_KIND = "what_if"
 WHAT_IF_SHARED_OPTIONS = 2
@@ -85,7 +87,7 @@ def admission_batches(blocks: Sequence[Block]) -> Iterator[list[Block]]:
 class ClaimLedger:
     def __init__(self) -> None:
         self.sources = SourceMerge()
-        self._texts: set[str] = set()
+        self._texts: dict[str, str] = {}
         self._claims: set[str] = set()
         self._said: list[Said] = []
         self._materials: set[str] = set()
@@ -118,7 +120,7 @@ class ClaimLedger:
         (payload,) = self._merged([block], sources)
         lede = type(block).model_validate(payload)
         for sentence in lede.cited_sentences():
-            self._texts.update(sentence_keys(sentence.text, sentence.original))
+            self._shown(sentence.id, sentence_keys(sentence.text, sentence.original))
         return lede
 
     def merged_sentence(
@@ -176,6 +178,8 @@ class ClaimLedger:
     def _without_repeats(self, kind: str, payload: Payload, repeat: Repeat) -> Payload | None:
         if kind == "compare":
             return compared_rows(payload, repeat)
+        if kind == QUANTITIES_KIND:
+            return quantity_rows(payload, self._texts, repeat)
         kept = kept_sentences(payload, BLOCK_MODELS[kind].SENTENCES, repeat)
         return None if kept is None else self._repaired(kind, kept)
 
@@ -274,7 +278,7 @@ class ClaimLedger:
     def _said_already(self, difference: Mapping[str, Any]) -> bool:
         sides = (difference["thisView"], difference["otherView"])
         return all(
-            sentence_keys(side["text"], side.get("original")) & self._texts
+            sentence_keys(side["text"], side.get("original")) & self._texts.keys()
             or (claims_of(side) and claims_of(side) <= self._claims)
             for side in sides
         )
@@ -320,9 +324,13 @@ class ClaimLedger:
 
     def _record_sentences(self, sentences: Any) -> None:
         for sentence in sentences:
-            self._texts.update(sentence_keys(sentence["text"], sentence.get("original")))
+            self._shown(sentence["id"], sentence_keys(sentence["text"], sentence.get("original")))
             self._claims.update(claims_of(sentence))
             self._said.append(said(sentence))
+
+    def _shown(self, sentence_id: str, keys: Iterable[str]) -> None:
+        for key in keys:
+            self._texts.setdefault(key, sentence_id)
 
 
 def _validated(kind: str, payload: Payload) -> Block | None:

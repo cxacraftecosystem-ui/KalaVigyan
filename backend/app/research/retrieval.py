@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 from typing import Any, Literal, Protocol, runtime_checkable
 
@@ -29,6 +29,7 @@ __all__ = [
     "SIGNED_IN_CHUNK_ACL",
     "SIGNED_IN_CHUNK_ACLS",
     "VISIBLE_SENSITIVITY",
+    "BatchedRetriever",
     "ChunkHit",
     "ClaimHit",
     "EnglishRendering",
@@ -121,6 +122,11 @@ class KnowledgeHits(ContractModel):
 @runtime_checkable
 class KnowledgeRetriever(Protocol):
     async def search(self, query: KnowledgeQuery) -> KnowledgeHits: ...
+
+
+@runtime_checkable
+class BatchedRetriever(KnowledgeRetriever, Protocol):
+    async def prepare(self, texts: Sequence[str]) -> None: ...
 
 
 class EnglishRendering(Protocol):

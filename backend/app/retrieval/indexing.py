@@ -250,7 +250,7 @@ async def _pending_chunks(session: AsyncSession, wanted: _Wanted) -> list[_Pendi
 
 async def _pending_pieces(session: AsyncSession, scope: ColumnElement[bool] | None) -> list[_Pending]:
     statement = select(KnowledgePiece.id, KnowledgePiece.payload).where(
-        KnowledgePiece.embedding.is_(None),
+        needs_vector(KnowledgePiece.embedding, KnowledgePiece.embeddingModel),
         KnowledgePiece.supersededById.is_(None),
         KnowledgePiece.label.is_(None),
     )
@@ -285,7 +285,7 @@ async def _fill(
             written = await session.execute(
                 update(model)
                 .where(model.id == item.id, _unchanged(model, item.read))
-                .values(_vector_values(model, vector))
+                .values(_vector_values(vector))
             )
             done += int(written.rowcount or 0)
         await session.commit()
@@ -300,9 +300,5 @@ def _unchanged(model: type[Claim] | type[Chunk] | type[KnowledgePiece], read: An
     return Chunk.text == read
 
 
-def _vector_values(
-    model: type[Claim] | type[Chunk] | type[KnowledgePiece], vector: list[float]
-) -> dict[str, Any]:
-    if model is KnowledgePiece:
-        return {"embedding": vector}
+def _vector_values(vector: list[float]) -> dict[str, Any]:
     return {"embedding": vector, "embeddingModel": current_embedding_model()}

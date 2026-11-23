@@ -12,6 +12,7 @@ from sqlalchemy.orm import Mapper, Session
 from sqlalchemy.sql.sqltypes import Enum
 
 LATER_LABEL = "A_LABEL_A_LATER_RELEASE_ADDS"
+RETIRED_TABLES = frozenset({"CraftPageArchive"})
 DRIVER = "postgresql+psycopg"
 ENUM_LABELS = text("SELECT t.typname, e.enumlabel FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid")
 ROW_BEFORE_INSERT = 7
@@ -52,6 +53,13 @@ def unwritable_columns(
     )
 
 
+def probed_tables(
+    mapped: Iterable[str], present: Iterable[str], *, retired: Iterable[str] = RETIRED_TABLES
+) -> list[str]:
+    gone = set(retired) - set(present)
+    return sorted(name for name in mapped if name not in gone)
+
+
 def engine_url(url: str) -> str:
     scheme, rest = url.split("://", 1)
     return f"{DRIVER}://{rest}" if scheme in {"postgres", "postgresql"} else url
@@ -61,7 +69,9 @@ def probe(engine: Engine, mappers: Iterable[Mapper[Any]]) -> dict[str, Any]:
     labels = _stored_labels(engine)
     schema = inspect(engine)
     report: dict[str, Any] = {"tables": 0, "unreadable": [], "refusedLabels": [], "unwritable": []}
-    for mapper in sorted(mappers, key=lambda found: _table(found).name):
+    by_table = {_table(mapper).name: mapper for mapper in mappers}
+    for name in probed_tables(by_table, schema.get_table_names()):
+        mapper = by_table[name]
         table = _table(mapper)
         report["tables"] += 1
         report["unreadable"] += _unreadable(engine, mapper)

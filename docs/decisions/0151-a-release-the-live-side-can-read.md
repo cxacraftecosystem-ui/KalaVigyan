@@ -19,6 +19,7 @@ question writer). The contracts are `docs/contracts/frontend.md`, `docs/contract
 | The journal name whose arrival broke the pages | [decision 0143](0143-lessons-exports-and-follow-ups-kept-true.md) |
 | How a release migrates, seeds, checks and switches | [infra.md](../contracts/infra.md), Migrations and Seeds |
 | How the web parses a response | [frontend.md](../contracts/frontend.md) |
+| The golden field check leaving out what the web never parses | [decision 0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

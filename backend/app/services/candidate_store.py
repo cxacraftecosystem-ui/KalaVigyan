@@ -13,6 +13,7 @@ from app.models.enums import CLAIM_STATUSES
 from app.research.candidate_gates import HeldFact
 from app.research.knowledge_writes import ProposalSubject
 from app.research.retrieval import VISIBLE_SENSITIVITY
+from app.retrieval.stamps import made_by_current_model
 from app.retrieval.statements import CraftScope, scope_claims
 from app.retrieval.text import context_title
 
@@ -100,7 +101,11 @@ class SqlHeldFacts:
         distance = Claim.embedding.cosine_distance(list(vector))
         rows = await self._session.execute(
             select(Claim.id, Claim.text, Claim.status, (1 - distance).label("similarity"))
-            .where(*self._conditions(field), Claim.embedding.is_not(None))
+            .where(
+                *self._conditions(field),
+                Claim.embedding.is_not(None),
+                made_by_current_model(Claim.embeddingModel),
+            )
             .order_by(distance, Claim.id)
             .limit(limit)
         )

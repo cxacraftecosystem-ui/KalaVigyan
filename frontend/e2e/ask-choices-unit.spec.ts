@@ -112,7 +112,7 @@ test("the craft is optional: before an answer the picker says Any craft and the 
 
 test("after the understood event the detected craft is named, Any craft is offered and the candidates are one tap away", () => {
   const state = goldenUnderstoodState();
-  expect(state.understood).toEqual(understood([AJRAKH], [BAGRU]));
+  expect(state.understood).toEqual({ ...understood([AJRAKH], [BAGRU]), basis: "MODEL" });
   const offer = craftOffer(state.understood, DETECT_CRAFT);
   expect(offer.noneLabel).toBe("Kutch Ajrakh · detected");
   expect(offer.candidates).toEqual([BAGRU]);

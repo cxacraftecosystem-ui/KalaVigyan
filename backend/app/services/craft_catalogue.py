@@ -5,7 +5,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.http_cache import PUBLIC_READ_MAX_AGE_SECONDS, body_version
@@ -324,7 +324,42 @@ async def reference_counts(session: AsyncSession, craft_ids: list[str]) -> dict[
 
 
 async def load_catalogue(session: AsyncSession, *, include_inactive: bool = False) -> dict[str, Any]:
-    craft_query = select(
+    categories = _rows(await session.execute(_category_query()))
+    subs = _rows(await session.execute(_sub_category_query()))
+    crafts = _rows(await session.execute(_craft_query(include_inactive)))
+    spellings = _rows(await session.execute(select(CraftSpelling.spelling, CraftSpelling.craftCode)))
+    aliases = _rows(await session.execute(_alias_query()))
+    references: dict[str, int] = {}
+    if include_inactive:
+        references = await reference_counts(session, [str(c["id"]) for c in crafts if _status(c) != ACTIVE])
+    return assemble_catalogue(
+        categories,
+        subs,
+        crafts,
+        spellings,
+        aliases,
+        include_inactive=include_inactive,
+        references=references,
+        extras=await load_catalogue_extras(session),
+    )
+
+
+def _category_query() -> Select[Any]:
+    return select(CraftCategory.id, CraftCategory.slug, CraftCategory.name, CraftCategory.sortOrder)
+
+
+def _sub_category_query() -> Select[Any]:
+    return select(
+        CraftSubCategory.id,
+        CraftSubCategory.slug,
+        CraftSubCategory.name,
+        CraftSubCategory.categoryId,
+        CraftSubCategory.sortOrder,
+    )
+
+
+def _craft_query(include_inactive: bool) -> Select[Any]:
+    query = select(
         Craft.id,
         Craft.slug,
         Craft.name,
@@ -339,52 +374,19 @@ async def load_catalogue(session: AsyncSession, *, include_inactive: bool = Fals
         Craft.status,
         Craft.mergedIntoId,
     )
-    if not include_inactive:
-        craft_query = craft_query.where(Craft.status == ACTIVE)
-    categories = _rows(
-        await session.execute(
-            select(CraftCategory.id, CraftCategory.slug, CraftCategory.name, CraftCategory.sortOrder)
-        )
-    )
-    subs = _rows(
-        await session.execute(
-            select(
-                CraftSubCategory.id,
-                CraftSubCategory.slug,
-                CraftSubCategory.name,
-                CraftSubCategory.categoryId,
-                CraftSubCategory.sortOrder,
-            )
-        )
-    )
-    crafts = _rows(await session.execute(craft_query))
-    spellings = _rows(await session.execute(select(CraftSpelling.spelling, CraftSpelling.craftCode)))
-    aliases = _rows(
-        await session.execute(
-            select(
-                CraftAlias.craftId,
-                CraftAlias.alias,
-                CraftAlias.aliasNorm,
-                CraftAlias.script,
-                CraftAlias.lang,
-                CraftAlias.source,
-                CraftAlias.status,
-            ).where(CraftAlias.status == ACTIVE)
-        )
-    )
-    references: dict[str, int] = {}
-    if include_inactive:
-        references = await reference_counts(session, [str(c["id"]) for c in crafts if _status(c) != ACTIVE])
-    return assemble_catalogue(
-        categories,
-        subs,
-        crafts,
-        spellings,
-        aliases,
-        include_inactive=include_inactive,
-        references=references,
-        extras=await load_catalogue_extras(session),
-    )
+    return query if include_inactive else query.where(Craft.status == ACTIVE)
+
+
+def _alias_query() -> Select[Any]:
+    return select(
+        CraftAlias.craftId,
+        CraftAlias.alias,
+        CraftAlias.aliasNorm,
+        CraftAlias.script,
+        CraftAlias.lang,
+        CraftAlias.source,
+        CraftAlias.status,
+    ).where(CraftAlias.status == ACTIVE)
 
 
 def new_catalogue_cache() -> KeptValue[dict[str, Any]]:

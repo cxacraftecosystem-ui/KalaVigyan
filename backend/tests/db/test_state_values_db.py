@@ -64,53 +64,29 @@ async def store_two_districts(session: AsyncSession) -> None:
     await session.flush()
 
 
+def expected_series(kachchh: float, ahmedabad: float) -> dict[tuple[str, str, str], tuple[object, ...]]:
+    both = kachchh + ahmedabad
+    approx = pytest.approx
+    mean_ph = approx(kachchh * 8.1 + ahmedabad * 7.8)
+    soil = ("0-5cm", "pH", 2, mean_ph, approx(both), approx(15.9), 7.8, 8.1, 2, approx(both))
+    minerals = ("", "sites", 2, 2 * kachchh, both, 2.0, 0.0, 2.0, 2, both)
+    gold = ("", "sites", 1, 2 * kachchh, kachchh, 2.0, 2.0, 2.0, 2, both)
+    rock = ("", "fraction", 1, kachchh, kachchh, 1.0, 1.0, 1.0, 1, kachchh)
+    return {
+        ("SOILGRIDS_2_0", "phh2o", "DISTRICT_MEAN"): soil,
+        ("USGS_MRDS", "mineral_occurrences", "COUNT"): minerals,
+        ("USGS_MRDS", "mineral_occurrences_au", "COUNT"): gold,
+        (GLIM, "lithology", "SHARE"): rock,
+    }
+
+
 async def test_the_load_s_refresh_stores_each_state_series_with_its_dataset_s_coverage(
     session: AsyncSession,
 ) -> None:
     await store_two_districts(session)
     await refresh_states(session)
     weights = await areas(session, [KACHCHH, AHMEDABAD])
-    kachchh, ahmedabad = weights[KACHCHH], weights[AHMEDABAD]
-    both = kachchh + ahmedabad
-    assert await stored_series(session) == {
-        ("SOILGRIDS_2_0", "phh2o", "DISTRICT_MEAN"): (
-            "0-5cm",
-            "pH",
-            2,
-            pytest.approx(kachchh * 8.1 + ahmedabad * 7.8),
-            pytest.approx(both),
-            pytest.approx(15.9),
-            7.8,
-            8.1,
-            2,
-            pytest.approx(both),
-        ),
-        ("USGS_MRDS", "mineral_occurrences", "COUNT"): (
-            "",
-            "sites",
-            2,
-            2 * kachchh,
-            both,
-            2.0,
-            0.0,
-            2.0,
-            2,
-            both,
-        ),
-        ("USGS_MRDS", "mineral_occurrences_au", "COUNT"): (
-            "",
-            "sites",
-            1,
-            2 * kachchh,
-            kachchh,
-            2.0,
-            2.0,
-            2.0,
-            2,
-            both,
-        ),
-        (GLIM, "lithology", "SHARE"): ("", "fraction", 1, kachchh, kachchh, 1.0, 1.0, 1.0, 1, kachchh),
-    }
+    assert await stored_series(session) == expected_series(weights[KACHCHH], weights[AHMEDABAD])
 
 
 async def test_a_second_refresh_replaces_the_series_instead_of_adding_to_them(session: AsyncSession) -> None:

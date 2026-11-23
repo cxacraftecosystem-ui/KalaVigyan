@@ -1,21 +1,12 @@
 from app.data.craft_master_loader import parse_codes, parse_master
+from app.data.craft_text import alias_norm
 
-import aliases
-from aliases import (
-    ACTIVE,
-    PROPOSED,
-    alias_norm,
-    common_romanisations,
-    dedupe,
-    entry,
-    latin_forms,
-    merge,
-    name_variants,
-    vocabulary_tokens,
-)
+from alias_entries import ACTIVE, PROPOSED, TRUST, dedupe, entry, name_variants
+from alias_scripts import common_romanisations, cross_script, latin_forms, pure_script, vocabulary_tokens
+from aliases import merge
 
 
-def master_row(serial, name, slug, sub="Hand-Block-Printing", states=("Rajasthan",), notes=()):
+def master_row(serial, name, slug, *, sub="Hand-Block-Printing", states=("Rajasthan",), notes=()):
     return {
         "category": "Textiles based Craft Category",
         "categorySlug": "Textiles-Based-Craft-Category",
@@ -95,7 +86,9 @@ IMMERSIVE = {"Kutch-Ajrakh": ["Ajrakh resist block printing (Kutch Ajrakh)", "Aj
 
 
 def run():
-    return merge(CRAFTS, CODES, CURATED, WIKIDATA, IMMERSIVE, frozenset({"bagru", "ajrakh"}))
+    return merge(
+        CRAFTS, CODES, CURATED, wikidata=WIKIDATA, immersive=IMMERSIVE, vocabulary=frozenset({"bagru", "ajrakh"})
+    )
 
 
 def norms(result, slug, status=None):
@@ -184,8 +177,7 @@ def test_collisions_list_norms_shared_by_crafts():
         CRAFTS,
         CODES,
         CURATED,
-        None,
-        {"Bagru-Hand-Block-Print": ["Syahi Begar"], "Sanganeri-Hand-Block-Printing": ["Syahi Begar"]},
+        immersive={"Bagru-Hand-Block-Print": ["Syahi Begar"], "Sanganeri-Hand-Block-Printing": ["Syahi Begar"]},
     )
     assert {"norm": "syahi begar", "slugs": ["Bagru-Hand-Block-Print", "Sanganeri-Hand-Block-Printing"]} in result[
         "collisions"
@@ -214,12 +206,10 @@ def test_romanisation_helpers():
 
 def test_merge_is_deterministic():
     assert run() == run()
-    assert aliases.TRUST["MASTER"] < aliases.TRUST["TRANSLITERATION"]
+    assert TRUST["MASTER"] < TRUST["TRANSLITERATION"]
 
 
 def test_cross_script_output_is_pure_or_dropped():
-    from aliases import cross_script, pure_script
-
     assert cross_script("बगरू", "Gujr") == "બગરૂ"
     assert cross_script("ওয়ারলি", "Gujr") is None
     assert pure_script("બગરૂ છાપ", "Gujr")

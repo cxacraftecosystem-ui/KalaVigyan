@@ -16,13 +16,23 @@ from app.research.blocks_place import DistrictRef, MonthlyRain
 from app.research.blocks_play import SimulationBlock
 from app.research.citations import SourceRef
 from app.research.datasets import DatasetRef
+from app.research.field_voices import FieldVoicesTotals, PageFieldPhoto, PageVoice
 
 from .chapter_context import ChapterRows, PlacePoint, StoredExplainer
+from .craft_page_records import CraftPageRecords
+from .field_voices_view import FieldVoicesPart
 from .region_story import LayerOffer, RegionOffer
 
-__all__ = ["CHAPTER_INPUTS_SCHEMA_VERSION", "ChapterInputs", "chapter_inputs", "inputs_rows"]
+__all__ = [
+    "CHAPTER_INPUTS_SCHEMA_VERSION",
+    "ChapterInputs",
+    "InputFieldVoices",
+    "chapter_inputs",
+    "inputs_records",
+    "inputs_rows",
+]
 
-CHAPTER_INPUTS_SCHEMA_VERSION = 1
+CHAPTER_INPUTS_SCHEMA_VERSION = 2
 
 
 class InputLayer(ContractModel):
@@ -48,8 +58,15 @@ class InputExplainer(ContractModel):
     golden: str = Field(pattern=r"^explainer\.[a-z0-9.-]+\.golden\.json$")
 
 
+class InputFieldVoices(ContractModel):
+    voices: list[PageVoice]
+    photos: list[PageFieldPhoto]
+    totals: FieldVoicesTotals
+    sources: list[SourceRef]
+
+
 class ChapterInputs(ContractModel):
-    schema_version: Literal[1]
+    schema_version: Literal[2]
     districts: list[DistrictRef]
     craft_districts: list[int]
     datasets: list[DatasetRef]
@@ -60,6 +77,7 @@ class ChapterInputs(ContractModel):
     conformers: list[int]
     points: list[InputPoint]
     explainers: list[InputExplainer]
+    field_voices: InputFieldVoices
 
 
 def chapter_inputs(path: Path) -> ChapterInputs:
@@ -90,6 +108,17 @@ def inputs_rows(inputs: ChapterInputs, rows: ChapterRows, *, goldens: Path) -> C
         explainers=tuple(_explainer(item, goldens) for item in inputs.explainers),
         datasets={**rows.datasets, **datasets},
     )
+
+
+def inputs_records(inputs: ChapterInputs, records: CraftPageRecords) -> CraftPageRecords:
+    held = inputs.field_voices
+    part = FieldVoicesPart(
+        voices=tuple(held.voices),
+        photos=tuple(held.photos),
+        totals=held.totals,
+        sources={source.id: source for source in held.sources},
+    )
+    return replace(records, field_voices=part)
 
 
 def _explainer(item: InputExplainer, goldens: Path) -> StoredExplainer:

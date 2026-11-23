@@ -586,6 +586,9 @@ it; the answer flow passes `providers/embedding.router_embedder(principal)`.
   facet's target, filtered to its concept type, ranks it by full text (`lexicalRank` set) and
   its level is in `COVERING_LEVELS[mode]` (the mode's `MODE_CLAIM_LEVELS` without
   `HYPOTHESIS`). `HYBRID` sends live queries only for uncovered facets; `DEEP` for every facet.
+  The facets' targets are embedded in one call before their searches run
+  (`research/retrieval.BatchedRetriever.prepare`, the answer's embeddings cache), so a question's
+  coverage costs one embedding call however many facets it has (decision 0166).
 
 ### Model calls (`research/structured.py`)
 
@@ -1198,8 +1201,10 @@ research holds at most the pool less two connections and a sign-in always finds 
    craft the refusal is the `error`.
    `services/stored_explainer.stream_stored_answer` sends one section per concept heading
    (`HEADING_DISCIPLINES` gives its discipline, else `OVERVIEW`), each `section_started` (state
-   `CHECKING`), its sources, one `prose` block of the claims and `section_done READY`; then the
-   hypotheses as `open_question` and the app's `follow_ups`.
+   `CHECKING`), its sources, one `prose` block of the claims marked with the craft's glossary
+   terms, the `images` block of the pictures of those claims (stored first, else searched, as
+   the explainer's sections get them) and `section_done READY`; then the hypotheses as
+   `open_question` and the app's `follow_ups` (decision 0166).
 3. Otherwise the explainer (`services/answer_sections`, decision 0032): `status PLANNING`;
    `begin`; the sections are `research/sections.section_specs(understanding.disciplines, depth)`:
    the fields most important first, at most the depth's `max_sections`, `OVERVIEW` when none,

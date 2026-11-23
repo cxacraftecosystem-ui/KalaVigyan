@@ -15,6 +15,7 @@ from app.research.planning import MODE_POLICIES
 from app.research.reranking import Reranker
 from app.research.retrieval import ChunkHit, ClaimHit, EnglishRendering, KnowledgeHits, KnowledgeQuery
 
+from .answer_embeddings import AnswerEmbeddings
 from .fusion import FusedItem, fused_order, reciprocal_rank_fusion
 from .fusion_settings import FusionSettings, fusion_settings
 from .rerank import RerankCandidates, collapsed, pool_size, rerank_candidates, reranked
@@ -72,6 +73,10 @@ class SessionScopedSearch:
                 session, embed=self._embed, english=self._english, rerank=self._rerank
             )
             return await stored.search(query)
+
+    async def prepare(self, texts: Sequence[str]) -> None:
+        if isinstance(self._embed, AnswerEmbeddings):
+            await self._embed([query_text(text) for text in texts])
 
     async def rankings(self, query: KnowledgeQuery) -> ClaimRankings:
         async with self._sessions() as session:

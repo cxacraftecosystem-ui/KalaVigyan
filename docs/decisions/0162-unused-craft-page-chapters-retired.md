@@ -22,6 +22,7 @@ reader's pieces into the chapters), and [decision 0108](0108-structure-proposals
 | The AI media still joining the chapters | [decision 0154](0154-ai-media-and-film-scores-kept-true.md) |
 | What approval of a structure proposal writes, which item 5 amends | [decision 0108](0108-structure-proposals-become-curated-facts.md) |
 | The page's chapters, parts and job | [craft-page.md](../contracts/craft-page.md) |
+| The archive table and `fromQuestion` dropped in the release after this one | [decision 0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

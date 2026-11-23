@@ -9,6 +9,7 @@ Date: 2026-11-16. Status: accepted.
 | For | Read |
 |---|---|
 | The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| Knowledge pieces carry their stamp, and the gates and the piece store compare vectors of one model | [decision 0166](0166-pictures-terms-and-stored-pieces-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

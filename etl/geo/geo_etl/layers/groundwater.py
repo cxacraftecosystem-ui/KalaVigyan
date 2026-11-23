@@ -250,7 +250,7 @@ def add_district(rows: Rows, district: pd.Series, record: dict, *, spelled: str 
             error = f"{name} of {district['districtName']} reads {record.get(name)!r}, not a number"
             failures.append(row_failure([int(district["districtLgd"])], error))
             continue
-        rows.add(district, variable, PERIOD, stat, value, unit, method=method)
+        rows.add(district, variable, PERIOD, stat, value, unit=unit, method=method)
     return failures
 
 

@@ -24,6 +24,7 @@ blocks and builders) and `docs/contracts/answer-eval.md` (the rubric, the judge 
 | The evaluation and its floors | [decision 0133](0133-the-evaluation-scores-what-answers-read.md) |
 | The blocks as built | [explainer.md](../contracts/explainer.md) |
 | The component kinds are no longer enumerated in the tools, and the 60 KB budget is restored | [decision 0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
+| A table whose rows the answer already said, drawn under that sentence with its citation (amends item 1) | [decision 0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

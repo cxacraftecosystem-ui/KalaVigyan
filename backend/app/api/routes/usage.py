@@ -49,6 +49,104 @@ def _cap(value: Any) -> float | None:
     return None if value is None else _money(value)
 
 
+def _cost() -> Any:
+    return func.coalesce(func.sum(UsageEvent.costUsd), 0)
+
+
+def _failures() -> Any:
+    return func.sum(case((UsageEvent.outcome == "ERROR", 1), else_=0))
+
+
+async def _grouped_spend(session: AsyncSession, column: Any, where: tuple[Any, ...]) -> list[dict[str, Any]]:
+    rows = (
+        await session.execute(
+            select(
+                column,
+                _cost(),
+                func.count(),
+                func.coalesce(func.sum(UsageEvent.inputTokens), 0),
+                func.coalesce(func.sum(UsageEvent.outputTokens), 0),
+                func.sum(case((UsageEvent.outcome == "OK", 1), else_=0)),
+            )
+            .where(*where)
+            .group_by(column)
+            .order_by(func.sum(UsageEvent.costUsd).desc())
+        )
+    ).all()
+    return [
+        {
+            "key": key,
+            "costUsd": _money(cost),
+            "calls": calls,
+            "inputTokens": int(tin),
+            "outputTokens": int(tout),
+            "ok": int(ok or 0),
+        }
+        for key, cost, calls, tin, tout, ok in rows
+    ]
+
+
+async def _summary_totals(session: AsyncSession, where: tuple[Any, ...]) -> Any:
+    media_cost = case((UsageEvent.isMedia.is_(True), UsageEvent.costUsd), else_=0)
+    refused = func.sum(case((UsageEvent.outcome == "REFUSED_CEILING", 1), else_=0))
+    query = select(_cost(), func.coalesce(func.sum(media_cost), 0), refused, _failures(), func.count())
+    return (await session.execute(query.where(*where))).one()
+
+
+async def _reserved_spend(session: AsyncSession, window: tuple[Any, ...]) -> Any:
+    reserved = func.coalesce(func.sum(UsageEvent.estimatedCostUsd), 0)
+    query = select(reserved).where(*window, UsageEvent.outcome == "RESERVED")
+    return (await session.execute(query)).scalar_one()
+
+
+async def _daily_spend(session: AsyncSession, where: tuple[Any, ...]) -> list[Any]:
+    day = func.date_trunc("day", func.timezone(INDIA_TZ_NAME, UsageEvent.createdAt))
+    query = select(day, _cost(), func.count()).where(*where).group_by(day).order_by(day)
+    return list((await session.execute(query)).all())
+
+
+async def _top_spenders(session: AsyncSession, where: tuple[Any, ...]) -> list[dict[str, Any]]:
+    rows = (
+        await session.execute(
+            select(User.id, User.name, User.email, User.role, func.sum(UsageEvent.costUsd), func.count())
+            .join(User, User.id == UsageEvent.userId)
+            .where(*where)
+            .group_by(User.id, User.name, User.email, User.role)
+            .order_by(func.sum(UsageEvent.costUsd).desc())
+            .limit(20)
+        )
+    ).all()
+    return [
+        {
+            "userId": str(uid),
+            "name": name,
+            "email": email,
+            "role": role,
+            "costUsd": _money(cost),
+            "calls": calls,
+        }
+        for uid, name, email, role, cost, calls in rows
+    ]
+
+
+def _budget_fields(ceilings: budget.Ceilings, totals: Any, reserved: Any) -> dict[str, Any]:
+    spent = budget.usd(totals[0])
+    state = budget.SpendState(month_usd=spent)
+    fraction = budget.month_fraction(ceilings, state)
+    return {
+        "monthlyCeilingUsd": _cap(ceilings.monthly_usd),
+        "mediaCapUsd": _cap(ceilings.media_usd),
+        "spentUsd": float(spent),
+        "mediaSpentUsd": _money(totals[1]),
+        "reservedUsd": _money(reserved),
+        "fraction": None if fraction is None else round(float(fraction), 4),
+        "degraded": budget.past_degrade_mark(ceilings, state),
+        "calls": int(totals[4] or 0),
+        "refusedCalls": int(totals[2] or 0),
+        "failedCalls": int(totals[3] or 0),
+    }
+
+
 @router.get("/summary")
 async def usage_summary(
     month: str | None = Query(default=None),
@@ -57,108 +155,24 @@ async def usage_summary(
 ) -> dict[str, Any]:
     label, start, end = _month_bounds(month)
     window = (UsageEvent.createdAt >= start, UsageEvent.createdAt < end)
-    settled = UsageEvent.outcome != "RESERVED"
-    settings_values = await app_settings.load_all(session)
-    ceilings = budget.Ceilings.from_settings(settings_values)
-
-    async def grouped(column: Any) -> list[dict[str, Any]]:
-        rows = (
-            await session.execute(
-                select(
-                    column,
-                    func.coalesce(func.sum(UsageEvent.costUsd), 0),
-                    func.count(),
-                    func.coalesce(func.sum(UsageEvent.inputTokens), 0),
-                    func.coalesce(func.sum(UsageEvent.outputTokens), 0),
-                    func.sum(case((UsageEvent.outcome == "OK", 1), else_=0)),
-                )
-                .where(*window, settled)
-                .group_by(column)
-                .order_by(func.sum(UsageEvent.costUsd).desc())
-            )
-        ).all()
-        return [
-            {
-                "key": key,
-                "costUsd": _money(cost),
-                "calls": calls,
-                "inputTokens": int(tin),
-                "outputTokens": int(tout),
-                "ok": int(ok or 0),
-            }
-            for key, cost, calls, tin, tout, ok in rows
-        ]
-
-    totals = (
-        await session.execute(
-            select(
-                func.coalesce(func.sum(UsageEvent.costUsd), 0),
-                func.coalesce(func.sum(case((UsageEvent.isMedia.is_(True), UsageEvent.costUsd), else_=0)), 0),
-                func.sum(case((UsageEvent.outcome == "REFUSED_CEILING", 1), else_=0)),
-                func.sum(case((UsageEvent.outcome == "ERROR", 1), else_=0)),
-                func.count(),
-            ).where(*window, settled)
-        )
-    ).one()
-    reserved = (
-        await session.execute(
-            select(func.coalesce(func.sum(UsageEvent.estimatedCostUsd), 0)).where(
-                *window, UsageEvent.outcome == "RESERVED"
-            )
-        )
-    ).scalar_one()
-    day = func.date_trunc("day", func.timezone(INDIA_TZ_NAME, UsageEvent.createdAt))
-    by_day = (
-        await session.execute(
-            select(day, func.coalesce(func.sum(UsageEvent.costUsd), 0), func.count())
-            .where(*window, settled)
-            .group_by(day)
-            .order_by(day)
-        )
-    ).all()
-    spent = budget.usd(totals[0])
-    fraction = budget.month_fraction(ceilings, budget.SpendState(month_usd=spent))
-    top_users = (
-        await session.execute(
-            select(User.id, User.name, User.email, User.role, func.sum(UsageEvent.costUsd), func.count())
-            .join(User, User.id == UsageEvent.userId)
-            .where(*window, settled)
-            .group_by(User.id, User.name, User.email, User.role)
-            .order_by(func.sum(UsageEvent.costUsd).desc())
-            .limit(20)
-        )
-    ).all()
+    settled = (*window, UsageEvent.outcome != "RESERVED")
+    ceilings = budget.Ceilings.from_settings(await app_settings.load_all(session))
+    totals = await _summary_totals(session, settled)
+    reserved = await _reserved_spend(session, window)
+    by_day = await _daily_spend(session, settled)
+    top_users = await _top_spenders(session, settled)
     return {
         "month": label,
-        "monthlyCeilingUsd": _cap(ceilings.monthly_usd),
-        "mediaCapUsd": _cap(ceilings.media_usd),
-        "spentUsd": float(spent),
-        "mediaSpentUsd": _money(totals[1]),
-        "reservedUsd": _money(reserved),
-        "fraction": None if fraction is None else round(float(fraction), 4),
-        "degraded": budget.past_degrade_mark(ceilings, budget.SpendState(month_usd=spent)),
-        "calls": int(totals[4] or 0),
-        "refusedCalls": int(totals[2] or 0),
-        "failedCalls": int(totals[3] or 0),
-        "byTask": await grouped(UsageEvent.task),
-        "byProvider": await grouped(UsageEvent.provider),
-        "byModel": await grouped(UsageEvent.model),
-        "byRole": await grouped(UsageEvent.role),
+        **_budget_fields(ceilings, totals, reserved),
+        "byTask": await _grouped_spend(session, UsageEvent.task, settled),
+        "byProvider": await _grouped_spend(session, UsageEvent.provider, settled),
+        "byModel": await _grouped_spend(session, UsageEvent.model, settled),
+        "byRole": await _grouped_spend(session, UsageEvent.role, settled),
         "byDay": [
             {"day": d.date().isoformat(), "costUsd": _money(cost), "calls": calls}
             for d, cost, calls in by_day
         ],
-        "topUsers": [
-            {
-                "userId": str(uid),
-                "name": name,
-                "email": email,
-                "role": role,
-                "costUsd": _money(cost),
-                "calls": calls,
-            }
-            for uid, name, email, role, cost, calls in top_users
-        ],
+        "topUsers": top_users,
     }
 
 
@@ -179,6 +193,56 @@ def _task_label(task: str) -> str:
     return TASK_LABELS.get(resolved, task) if resolved is not None else task
 
 
+def _provider_name(provider: str | None) -> str:
+    spec = spec_for(provider) if provider else None
+    return spec.label if spec else (provider or "Unknown")
+
+
+async def _task_breakdown(session: AsyncSession, where: tuple[Any, ...]) -> list[dict[str, Any]]:
+    cost = _cost()
+    tokens_in = func.coalesce(func.sum(UsageEvent.inputTokens), 0)
+    tokens_out = func.coalesce(func.sum(UsageEvent.outputTokens), 0)
+    query = select(UsageEvent.task, func.count(), _failures(), tokens_in, tokens_out, cost)
+    rows = (await session.execute(query.where(*where).group_by(UsageEvent.task).order_by(cost.desc()))).all()
+    return [
+        {
+            "task": task,
+            "label": _task_label(task),
+            "calls": int(calls),
+            "failures": int(fails or 0),
+            "inputTokens": int(tin),
+            "outputTokens": int(tout),
+            "costUsd": _money(spent),
+        }
+        for task, calls, fails, tin, tout, spent in rows
+    ]
+
+
+async def _provider_breakdown(session: AsyncSession, where: tuple[Any, ...]) -> list[dict[str, Any]]:
+    cost = _cost()
+    p95 = func.percentile_cont(0.95).within_group(UsageEvent.latencyMs)
+    query = select(UsageEvent.provider, UsageEvent.model, func.count(), _failures(), cost, p95).where(*where)
+    rows = (
+        await session.execute(query.group_by(UsageEvent.provider, UsageEvent.model).order_by(cost.desc()))
+    ).all()
+    return [
+        {
+            "provider": provider or "UNKNOWN",
+            "name": _provider_name(provider),
+            "model": model or "",
+            "calls": int(calls),
+            "failures": int(fails or 0),
+            "costUsd": _money(spent),
+            "p95LatencyMs": round(latency) if latency is not None else None,
+        }
+        for provider, model, calls, fails, spent, latency in rows
+    ]
+
+
+async def _spend_total(session: AsyncSession, where: tuple[Any, ...]) -> Any:
+    return (await session.execute(select(_cost()).where(*where))).scalar_one()
+
+
 @router.get("/report")
 async def usage_report(
     date_from: str | None = Query(default=None, alias="from", max_length=40),
@@ -194,48 +258,14 @@ async def usage_report(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "to must be after from")
     settled = UsageEvent.outcome != "RESERVED"
     window = (UsageEvent.createdAt >= start, UsageEvent.createdAt <= end, settled)
-    failed = func.sum(case((UsageEvent.outcome == "ERROR", 1), else_=0))
-    cost = func.coalesce(func.sum(UsageEvent.costUsd), 0)
     ceilings = budget.Ceilings.from_settings(await app_settings.load_all(session))
-    month_spent = (
-        await session.execute(
-            select(cost).where(UsageEvent.createdAt >= month_start, UsageEvent.createdAt <= now, settled)
-        )
-    ).scalar_one()
-    totals = (await session.execute(select(cost, func.count(), failed).where(*window))).one()
-    by_task = (
-        await session.execute(
-            select(
-                UsageEvent.task,
-                func.count(),
-                failed,
-                func.coalesce(func.sum(UsageEvent.inputTokens), 0),
-                func.coalesce(func.sum(UsageEvent.outputTokens), 0),
-                cost,
-            )
-            .where(*window)
-            .group_by(UsageEvent.task)
-            .order_by(cost.desc())
-        )
-    ).all()
-    p95 = func.percentile_cont(0.95).within_group(UsageEvent.latencyMs)
-    by_provider = (
-        await session.execute(
-            select(UsageEvent.provider, UsageEvent.model, func.count(), failed, cost, p95)
-            .where(*window)
-            .group_by(UsageEvent.provider, UsageEvent.model)
-            .order_by(cost.desc())
-        )
-    ).all()
-    day = func.date_trunc("day", func.timezone(INDIA_TZ_NAME, UsageEvent.createdAt))
-    by_day = (
-        await session.execute(select(day, func.count(), cost).where(*window).group_by(day).order_by(day))
-    ).all()
-
-    def provider_name(provider: str | None) -> str:
-        spec = spec_for(provider) if provider else None
-        return spec.label if spec else (provider or "Unknown")
-
+    month_spent = await _spend_total(
+        session, (UsageEvent.createdAt >= month_start, UsageEvent.createdAt <= now, settled)
+    )
+    totals = (await session.execute(select(_cost(), func.count(), _failures()).where(*window))).one()
+    by_task = await _task_breakdown(session, window)
+    by_provider = await _provider_breakdown(session, window)
+    by_day = await _daily_spend(session, window)
     return {
         "from": start.isoformat(),
         "to": end.isoformat(),
@@ -244,33 +274,11 @@ async def usage_report(
         "spentUsd": _money(totals[0]),
         "calls": int(totals[1] or 0),
         "failures": int(totals[2] or 0),
-        "byTask": [
-            {
-                "task": task,
-                "label": _task_label(task),
-                "calls": int(calls),
-                "failures": int(fails or 0),
-                "inputTokens": int(tin),
-                "outputTokens": int(tout),
-                "costUsd": _money(spent),
-            }
-            for task, calls, fails, tin, tout, spent in by_task
-        ],
-        "byProvider": [
-            {
-                "provider": provider or "UNKNOWN",
-                "name": provider_name(provider),
-                "model": model or "",
-                "calls": int(calls),
-                "failures": int(fails or 0),
-                "costUsd": _money(spent),
-                "p95LatencyMs": round(latency) if latency is not None else None,
-            }
-            for provider, model, calls, fails, spent, latency in by_provider
-        ],
+        "byTask": by_task,
+        "byProvider": by_provider,
         "byDay": [
             {"day": d.date().isoformat(), "calls": int(calls), "costUsd": _money(spent)}
-            for d, calls, spent in by_day
+            for d, spent, calls in by_day
         ],
     }
 

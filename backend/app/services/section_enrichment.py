@@ -4,7 +4,7 @@ import asyncio
 import logging
 import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from typing import Any, Self
 
 from app.research.blocks import BlockBase, ImagesBlock
@@ -23,6 +23,8 @@ __all__ = [
     "GlossaryOf",
     "PictureSearches",
     "PicturesOf",
+    "no_pictures",
+    "without_pictures",
 ]
 
 logger = logging.getLogger(__name__)
@@ -42,7 +44,10 @@ class EnrichmentTools:
     async def for_answer(self, craft: CraftRef | None) -> Enrichment:
         entries = await self._entries(craft) if craft is not None else ()
         return Enrichment(
-            marker=TermMarker(entries), tools=self, craft_name=craft.name if craft is not None else None
+            marker=TermMarker(entries),
+            tools=self,
+            craft_name=craft.name if craft is not None else None,
+            term_names={entry.key: entry.surfaces for entry in entries},
         )
 
     async def _entries(self, craft: CraftRef) -> Sequence[GlossaryEntry]:
@@ -55,11 +60,20 @@ class EnrichmentTools:
             return ()
 
 
+async def no_pictures(ask: SectionImagesAsk) -> ImagesBlock | None:
+    return None
+
+
+def without_pictures(tools: EnrichmentTools) -> EnrichmentTools:
+    return replace(tools, pictures=no_pictures)
+
+
 @dataclass(frozen=True)
 class Enrichment:
     marker: TermMarker
     tools: EnrichmentTools
     craft_name: str | None
+    term_names: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
 
     def marked[Marked: BlockBase](self, block: Marked) -> Marked:
         payload = block.model_dump(mode="json", by_alias=True, exclude_unset=True)

@@ -24,7 +24,7 @@ def craft(name, slug, states=("Rajasthan",), gi="GI"):
 LABELS = {"Q1": "textile printing technique", "Q2": "village", "Q668": "India", "Q3": "embroidery"}
 
 
-def candidate(qid, label, types, description="", country=("Q668",), gi=False, enwiki=None, categories=()):
+def candidate(qid, label, types, description="", *, country=("Q668",), gi=False, enwiki=None, categories=()):
     return Candidate(
         qid=qid,
         labels={"en": label},

@@ -139,12 +139,7 @@ async def test_a_second_live_conversation_is_refused_by_the_one_live_session_rul
     assert not await artisans.start(new_conversation(user, craft, consent))
 
 
-async def test_turns_audio_answers_and_contributions_are_written_once_each(store: Stores) -> None:
-    artisans, session = store
-    user, craft, consent = await artisan(session)
-    new = new_conversation(user, craft, consent)
-    await artisans.start(new)
-    turn_id, answer_id = uuid.uuid4(), uuid.uuid4()
+def spoken_turn(user: User, craft: Craft, turn_id: uuid.UUID, answer_id: uuid.UUID) -> TurnWrite:
     audio = AudioWrite(
         turn_id=turn_id,
         ordinal=1,
@@ -155,27 +150,16 @@ async def test_turns_audio_answers_and_contributions_are_written_once_each(store
         start_ms=1_000,
     )
     answer = AnswerRecord(id=answer_id, craft_slug=craft.slug, claim_ids=(), sentences=(), latency_ms=0)
-    write = TurnWrite(
+    return TurnWrite(
         merge=lambda sealed: f"{sealed}+turn",
         topics_asked=("PROCESS", "MATERIALS"),
         answer=answer,
         audio=audio,
     )
-    await artisans.save_turn(new.conversation_id, write)
-    row = await session.get(ArtisanConversation, new.conversation_id, populate_existing=True)
-    assert (
-        row is not None
-        and row.transcriptEnc == "sealed-opening+turn"
-        and row.topicsAsked == ["PROCESS", "MATERIALS"]
-    )
-    assert (await session.scalars(select(ArtisanConversationAudio.turnId))).all() == [turn_id]
-    assert (await session.get(Answer, answer_id)) is not None
-    finished = await artisans.finish(new.conversation_id, NOW, spoke=True)
-    assert finished is not None and finished.extraction == "PENDING"
-    claimed = await artisans.claim_extraction(new.conversation_id, NOW)
-    assert claimed is not None and (claimed.extraction, claimed.attempts) == ("RUNNING", 1)
-    assert await artisans.claim_extraction(new.conversation_id, NOW) is None
-    item = ContributionWrite(
+
+
+def soaking(turn_id: uuid.UUID) -> ContributionWrite:
+    return ContributionWrite(
         turn_id=turn_id,
         ordinal=1,
         quote="We soak the cloth in camel dung first",
@@ -189,7 +173,29 @@ async def test_turns_audio_answers_and_contributions_are_written_once_each(store
         end_ms=5_000,
         precision="TURN",
     )
-    await artisans.save_extraction(new.conversation_id, "DONE", [item], NOW)
+
+
+async def test_turns_audio_answers_and_contributions_are_written_once_each(store: Stores) -> None:
+    artisans, session = store
+    user, craft, consent = await artisan(session)
+    new = new_conversation(user, craft, consent)
+    await artisans.start(new)
+    turn_id, answer_id = uuid.uuid4(), uuid.uuid4()
+    await artisans.save_turn(new.conversation_id, spoken_turn(user, craft, turn_id, answer_id))
+    row = await session.get(ArtisanConversation, new.conversation_id, populate_existing=True)
+    assert (
+        row is not None
+        and row.transcriptEnc == "sealed-opening+turn"
+        and row.topicsAsked == ["PROCESS", "MATERIALS"]
+    )
+    assert (await session.scalars(select(ArtisanConversationAudio.turnId))).all() == [turn_id]
+    assert (await session.get(Answer, answer_id)) is not None
+    finished = await artisans.finish(new.conversation_id, NOW, spoke=True)
+    assert finished is not None and finished.extraction == "PENDING"
+    claimed = await artisans.claim_extraction(new.conversation_id, NOW)
+    assert claimed is not None and (claimed.extraction, claimed.attempts) == ("RUNNING", 1)
+    assert await artisans.claim_extraction(new.conversation_id, NOW) is None
+    await artisans.save_extraction(new.conversation_id, "DONE", [soaking(turn_id)], NOW)
     [written] = (
         await session.scalars(
             select(ArtisanContribution).where(ArtisanContribution.conversationId == new.conversation_id)

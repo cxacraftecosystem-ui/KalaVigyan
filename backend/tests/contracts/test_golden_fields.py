@@ -12,7 +12,7 @@ from app.research.category_page import CategoryList, CategoryPage
 from app.research.craft_catalogue import CraftCatalogue
 from app.research.craft_compare import CraftComparison
 from app.research.craft_page import CraftPage
-from app.research.explainer import Explainer
+from app.research.explainer import BLOCK_MODELS, BUILT_BLOCK_KINDS, BUILT_FIGURE_KINDS, Explainer
 from app.research.knowledge_pieces import KnowledgePiece
 from app.research.quiz import ExplainerQuiz
 from app.research.terms import Term
@@ -36,6 +36,7 @@ GOLDEN_MODELS: dict[str, Any] = {
     "explainer.document.golden.json": Explainer,
     "explainer.lede.golden.json": Explainer,
     "explainer.withdrawn.golden.json": Explainer,
+    "explainer.translated.golden.json": Explainer,
     "explainer.phase-b.golden.json": PhaseBFixture,
     "explainer.phase-c.golden.json": PhaseCFixture,
     "explainer.phase-d.golden.json": PhaseDFixture,
@@ -55,6 +56,18 @@ SERVED = (CraftPage, CategoryPage, CategoryList, CraftCatalogue, CraftComparison
 NOT_SERVED_TO_THE_WEB = {
     "app.research.craft_catalogue.CatalogueCraftRecord": "the catalogue's records, served only to the MCP tools"
 }
+NEVER_SERVED = {
+    f"{model.__module__}.{model.__qualname__}": f"a {kind} block, which a served explainer refuses as not built"
+    for kind, model in BLOCK_MODELS.items()
+    if kind not in {*BUILT_BLOCK_KINDS, *BUILT_FIGURE_KINDS}
+}
+UNREAD_BY_THE_WEB = {
+    (
+        "app.research.craft_page.CraftPage",
+        "chapters",
+    ): "the craft page's chapters, which the web drops before it "
+    "parses the page (decision 0162), so a model only they hold is never parsed",
+}
 UNSHOWN_FILE = Path(__file__).with_name("unshown_fields.json")
 
 
@@ -65,6 +78,11 @@ class Cited(ContractModel):
 
 class Listing(ContractModel):
     sources: list[Cited]
+
+
+class Shelf(ContractModel):
+    listing: Listing
+    kept: list[Cited]
 
 
 @cache
@@ -82,6 +100,31 @@ def test_a_field_the_payload_leaves_out_is_unshown_until_a_golden_carries_it() -
     assert reachable_models([list[Listing]]) == {Listing, Cited}
 
 
+def test_a_field_the_web_drops_unread_hides_only_what_nothing_else_holds() -> None:
+    module = __name__
+    unread = {(f"{module}.Shelf", "listing")}
+    assert reachable_models([Shelf], unread=unread) == {Shelf, Cited}
+    assert unshown_fields([Shelf], set(), unread=unread) == [
+        f"{module}.Cited.container_title",
+        f"{module}.Cited.title",
+        f"{module}.Shelf.kept",
+        f"{module}.Shelf.listing",
+    ]
+    assert reachable_models([Shelf, Listing], unread=unread) == {Shelf, Listing, Cited}
+    assert reachable_models([Shelf], unserved={f"{module}.Listing"}) == {Shelf, Cited}
+
+
+def test_the_blocks_a_served_explainer_refuses_are_the_unbuilt_kinds() -> None:
+    refused = {name.rsplit(".", 1)[1] for name in NEVER_SERVED}
+    assert refused == {
+        "InPracticeBlock",
+        "OpenQuestionsBlock",
+        "ArtisanVoiceBlock",
+        "DesignsBlock",
+        "QuizBlock",
+    }
+
+
 def test_every_golden_file_of_a_served_payload_is_listed() -> None:
     listed = set(GOLDEN_MODELS)
     for prefix in ("craft.page", "category.", "craft.catalogue", "learning.compare", "explainer.document"):
@@ -89,7 +132,9 @@ def test_every_golden_file_of_a_served_payload_is_listed() -> None:
 
 
 def served_unshown() -> set[str]:
-    unshown = set(unshown_fields(SERVED, set(every_shown())))
+    unshown = unshown_fields(
+        SERVED, set(every_shown()), unread=set(UNREAD_BY_THE_WEB), unserved=set(NEVER_SERVED)
+    )
     return {name for name in unshown if name.rsplit(".", 1)[0] not in NOT_SERVED_TO_THE_WEB}
 
 
@@ -105,3 +150,4 @@ def test_every_field_a_served_payload_can_carry_appears_in_a_golden_or_in_the_sh
 def test_a_model_kept_out_of_the_web_s_payloads_is_one_they_can_hold() -> None:
     reachable = {f"{model.__module__}.{model.__qualname__}" for model in reachable_models(SERVED)}
     assert set(NOT_SERVED_TO_THE_WEB) <= reachable
+    assert set(NEVER_SERVED) <= reachable

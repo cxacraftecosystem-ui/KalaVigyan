@@ -31,7 +31,7 @@ def result_with_values(
     rows = Rows(dataset, "fixture")
     frame = selection(state_of).set_index("districtLgd", drop=False)
     for lgd in lgds:
-        rows.add(frame.loc[lgd], "clay", "0-5cm", "DISTRICT_MEAN", 20.0, "%")
+        rows.add(frame.loc[lgd], "clay", "0-5cm", "DISTRICT_MEAN", 20.0, unit="%")
     return Result(dataset, rows.frame(), failures=failures or [], districts_without_cells=without_cells or [])
 
 
