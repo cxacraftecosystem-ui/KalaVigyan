@@ -11,6 +11,7 @@ from typing import Any
 
 from sqlalchemy import select
 
+from app.core.config import get_settings
 from app.core.db import dispose_engine, research_sessionmaker, session_scope
 from app.core.shielded import ShieldedWork
 from app.models import Answer
@@ -33,6 +34,7 @@ from app.services.coverage_eval import (
     run_answer_eval,
 )
 from app.services.craft_resolver import CraftIndexStore
+from app.services.eval_run_store import RunTimes, answers_record, keep_run, release_commit
 from app.services.explainer_payload import stored_explainer
 from app.services.live_sources import LiveSourcesStore
 from app.services.off_question import explainer_off_question
@@ -100,13 +102,15 @@ async def run(
         spent=spent_since,
         off_question=off_question,
     )
+    whole, fresh = len(questions) == len(every), answering is fresh_answer
     try:
         report = await run_answer_eval(questions, tools, started_at=datetime.now(UTC), cap_usd=cap)
+        times = RunTimes(report.started_at, datetime.now(UTC), release_commit(get_settings().release))
+        kept = await keep_run(answers_record(report, times, whole=whole, fresh=fresh))
     finally:
         await dispose_engine()
-    whole = len(questions) == len(every)
-    fresh = {"fresh": answering is fresh_answer}
-    return {**report.model_dump(mode="json", by_alias=True), **fresh, **floor_report(report, whole=whole)}
+    floors = floor_report(report, whole=whole)
+    return {**report.model_dump(mode="json", by_alias=True), "fresh": fresh, **floors, **kept}
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -26,12 +26,20 @@ from app.services.site_build import (
     trigger_site_build,
 )
 from app.services.static_pages import static_pages
+from app.services.web_build_gate import (
+    GATE_SERVICE,
+    ApiCommits,
+    ApiNotLive,
+    github_commits,
+    refuse_ahead_of_api,
+)
 
 router = APIRouter(prefix="/site", tags=["site"])
 
 ADMIN_ONLY_DETAIL = "Starting a site build is for admins."
 NOT_CONFIGURED_DETAIL = "The site build is not set up on the server yet. The owner sets its deploy hook."
 HOOK_FAILED_DETAIL = "The build service did not take the request. Try again in a few minutes."
+GATE_FAILED_DETAIL = "Couldn't check that the API the site needs is live. Try again in a few minutes."
 ADMIN_ORIGIN = "admin"
 REFRESH_STATUS = {BUSY: status.HTTP_409_CONFLICT, TOO_SOON: status.HTTP_429_TOO_MANY_REQUESTS}
 
@@ -45,6 +53,11 @@ async def site_admin(user: User = Depends(get_current_user)) -> User:
 async def site_build_hook() -> AsyncIterator[SiteBuildHook | None]:
     async with httpx.AsyncClient(follow_redirects=False) as client:
         yield deploy_hook(get_settings().vercel_deploy_hook_url, client)
+
+
+async def api_commits() -> AsyncIterator[ApiCommits]:
+    async with github_commits() as commits:
+        yield commits
 
 
 @router.get("/pages")
@@ -71,16 +84,23 @@ async def post_site_build(
     user: User = Depends(site_admin),
     session: AsyncSession = Depends(get_session),
     hook: SiteBuildHook | None = Depends(site_build_hook),
+    commits: ApiCommits = Depends(api_commits),
 ) -> dict[str, Any]:
+    if hook is None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, NOT_CONFIGURED_DETAIL)
     try:
         await refuse_early_build(session, now=datetime.now(UTC))
+        await refuse_ahead_of_api(commits, release=get_settings().release)
         await trigger_site_build(session, hook, actor=user, origin=ADMIN_ORIGIN)
     except NotConfigured:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, NOT_CONFIGURED_DETAIL) from None
     except BuildTooSoon as early:
         raise too_many_requests(early.message, early.retry_after) from None
-    except ExternalFailure:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, HOOK_FAILED_DETAIL) from None
+    except ApiNotLive as ahead:
+        raise HTTPException(status.HTTP_409_CONFLICT, ahead.message) from None
+    except ExternalFailure as failure:
+        detail = GATE_FAILED_DETAIL if failure.service == GATE_SERVICE else HOOK_FAILED_DETAIL
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail) from None
     return (await site_build_state(session, configured=True, now=datetime.now(UTC))).as_dict()
 
 

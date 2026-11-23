@@ -26,6 +26,7 @@ being read reaches a sentence), [decision 0056](0056-what-if-lab.md) (a hypothes
 | The lede | [decision 0077](0077-lede-headings-and-question-order.md) |
 | What Listen reads and how it is cached | [voice.md](../contracts/voice.md), Listen |
 | Passages a hybrid turn offers and writes back before it speaks them | [decision 0144](0144-stored-passages-as-evidence.md) |
+| The lease renewed while a block waits or is read | [decision 0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

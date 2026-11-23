@@ -21,6 +21,7 @@ __all__ = [
     "ObjectLease",
     "held_lease",
     "release_lease",
+    "renew_lease",
     "take_lease",
     "waited",
 ]
@@ -65,7 +66,7 @@ async def take_lease(
     objects: LeasedObjects, key: str, cache_id: str, *, now: datetime, seconds: float = LEASE_SECONDS
 ) -> LeaseTry:
     lease = ObjectLease(schema_version=1, cache_id=cache_id, taken_at=now)
-    body = lease.model_dump_json(by_alias=True).encode("utf-8")
+    body = _lease_body(lease)
     if await objects.put_if_absent(key, body, content_type=LEASE_TYPE):
         return LeaseTry(ours=True, lease=lease, seconds=seconds)
     held = await held_lease(objects, key)
@@ -87,6 +88,11 @@ async def waited[T](
     return await found()
 
 
+async def renew_lease(objects: LeasedObjects, key: str, cache_id: str, *, now: datetime) -> None:
+    lease = ObjectLease(schema_version=1, cache_id=cache_id, taken_at=now)
+    await objects.put(key, _lease_body(lease), content_type=LEASE_TYPE)
+
+
 async def release_lease(objects: LeasedObjects, key: str) -> None:
     await objects.delete(key)
 
@@ -100,3 +106,7 @@ async def held_lease(objects: NarrationObjects, key: str) -> ObjectLease | None:
     except ValidationError as error:
         logger.error("%s holds an unreadable lease, which is taken over: %s", key, error)
         return None
+
+
+def _lease_body(lease: ObjectLease) -> bytes:
+    return lease.model_dump_json(by_alias=True).encode("utf-8")

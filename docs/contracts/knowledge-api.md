@@ -309,8 +309,12 @@ night's count of facts readers cannot see, by craft and reason (`upkeep_hidden.l
 `stage_reviews` can correct; `mcp_activity`: calls by tool and client and the newest failures
 (`mcp_activity.read_activity`, decision 0150, without the per-connection rows that name accounts);
 `spend`: settled AI spend by India day and task from `UsageEvent` (`services/admin_spend`);
-`evaluations`: the floors of `app/data/eval/floors.json` with the last stored result, which is
-`measured: null` while the evaluation workflows store no run the server can read. The code is
+`evaluations`: the latest stored run of each kind (`ANSWERS` from answer-quality, `RETRIEVAL` from
+the weekly retrieval-eval, `RELEASE_CHECK` from each release's retrieval check: started, finished,
+release commit, settled spend, cap, fresh or not, floors held and the mean of each measure), then
+each floor of `app/data/eval/floors.json` with the value the latest run measuring it found
+(`measuredBy`), `measured: null` where none has (`services/eval_run_store`, the `EvalRun` table,
+decision 0176); a run's full report stays its workflow's artifact. The code is
 `api/mcp_report_tools.py`, `mcp_report_reads.py` and `mcp_report_pages.py`.
 
 ## Coverage

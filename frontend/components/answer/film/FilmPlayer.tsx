@@ -47,6 +47,11 @@ function FilmBody({ film, language }: { film: Film; language: AnswerLanguage }) 
     <>
       <FilmStage scene={scene} progress={film.progress} mark={mark} />
       <FilmCaption caption={filmCaption(scene, clock.time, language)} />
+      {film.waiting ? (
+        <p role="status" className="font-ui text-caption text-ink-3" data-testid="film-waiting">
+          Preparing the narration of this scene…
+        </p>
+      ) : null}
     </>
   );
 }

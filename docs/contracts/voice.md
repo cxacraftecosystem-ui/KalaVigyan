@@ -354,9 +354,13 @@ call's hard end.
 
 ## Listen (decision 0035)
 
-`GET /api/answers/{answerId}/listen?language=&section=` (the `VOICE` capability; 30 in 10 minutes,
-Master Admin unlimited) reads aloud the reader's own explainer (`Answer.payload.explainer`, the `Explainer`
-document), or one section of it, in one voice, which the script names (`voice`, decision 0161):
+`GET /api/answers/{answerId}/listen?language=&section=&voice=` (the `VOICE` capability; at most 30
+asks in 10 minutes that start a making, Master Admin unlimited, decision 0176) reads aloud the reader's
+own explainer (`Answer.payload.explainer`, the `Explainer` document), or one section of it, in one
+voice, which the script names (`voice`, decision 0161). It answers once the script's first block, the
+lede of a whole answer, is narrated; every later block not yet stored is made in the API process
+after the answer (`ShieldedWork`) and listed as `pending`, and the client asks again with the
+script's `voice` every `pollAfterSeconds` (decision 0176):
 
 | Voice | When | Reads | Timed by |
 |---|---|---|---|
@@ -364,8 +368,10 @@ document), or one section of it, in one voice, which the script names (`voice`, 
 | `GEMINI` | ElevenLabs is not offered, or it fails while making the audio, and `GEMINI_API_KEY` is set | `GeminiMediaWire.read_aloud`, `gemini-3.8-flash-tts` on the Interactions API, a sentence per request, voice `Kore`, each sentence's 24 kHz mono 16-bit WAV joined into one WAV per part | each sentence, from the samples before it |
 
 The voices are tried in that order (`voice/listen_voices.py`); an `ExternalFailure` of the voice's
-own service moves the request to the next voice, any other failure (the bucket, a refused hold)
-ends it. A voice reads only the languages it speaks: ElevenLabs all thirteen answer languages,
+own service while the first block is made moves the request to the next voice, any other failure
+(the bucket, a refused hold) ends it, and either stops the rest of that voice's making. An ask that
+names a `voice` is read by that voice alone (503 when it is not offered), so a poll never mixes
+voices; a later block that fails is left unstored and made again by the next ask. A voice reads only the languages it speaks: ElevenLabs all thirteen answer languages,
 Gemini the twelve its documented table lists (no Urdu), and a language no offered voice reads is
 503. Both read exactly the sentences below, the lede first, and bill the same day's `VOICE_SECONDS`.
 
@@ -375,21 +381,27 @@ Gemini the twelve its documented table lists (no Urdu), and a language no offere
 | Parts | whole sentences, at most `PART_CHARACTERS` (2,000) characters and one language each; neighbours' text as `previous_text` and `next_text`; one track per part. ElevenLabs is sent each square bracket as a parenthesis (`listen_voices.untagged`, one character for one, so the timings still index the shown text): the paid check of 2026-11-23 heard `eleven_v4` speak `[in several stages]` in English (1.44 s) and skip `[कई चरणों में]` in Hindi (0.075 s), reading it as an audio tag |
 | Words | (ElevenLabs) runs of non-space characters of a sentence; `start` the first character's start, `end` the last character's end, seconds to the millisecond, never earlier than the previous word |
 | Sentences | (Gemini) each sentence read alone; `start` its first sample's time in the part, `end` its last, seconds to the millisecond; the part lasts its samples' time; a sentence read at another sample rate than its part's, or audio that is not mono 16-bit WAV, is off the shape and fails |
-| One maker | a request that misses a block puts `media/narration/<cacheId>/lease.json` (`NarrationLease {schemaVersion 1, cacheId, takenAt}`) only where none is (`If-None-Match: *`); a second request that finds a live lease holds no seconds and polls for the manifest each second until the lease lapses at 120 s, then makes the block itself, taking the lapsed lease over; the maker deletes the lease once the manifest is stored or the making fails (decision 0140) |
+| One maker | a request that misses a block puts `media/narration/<cacheId>/lease.json` (`NarrationLease {schemaVersion 1, cacheId, takenAt}`) only where none is (`If-None-Match: *`) and renews it every 30 s while that block waits or is read (`listen_making.LEASE_RENEW_SECONDS`, a quarter of the 120 s lease); a request that finds a live lease on a later block lists it as `pending` and holds nothing; one that finds it on the first block polls for the manifest each second until the lease it saw lapses at 120 s, then takes the lapsed lease over and makes the block, or answers 503 while a renewed lease still covers it; the maker deletes each lease once its manifest is stored or its making fails (decisions 0140, 0176) |
 | Cache | per block and voice: SHA-256 of `kalavigyan-narration`, `NARRATION_VERSION` (3 since ElevenLabs is sent no square brackets), the voice's model, voice id, explainer language and piece content hash (U+001F between); parts at `media/narration/<cacheId>/KalaVigyan_Explainer_<date>_<HHMM>_Narration_Part-NN.mp3` (`.wav` for Gemini), then `narration.json` (the `NarrationManifest`, its parts timed by `words` or by `sentences`) last; presigned GET links of 3,600 s |
-| Seconds | a cache hit is free; misses hold `ceil(characters × 60 / 1000)` (the documented rate; the paid check measured `eleven_v4` at 882 characters a minute in English and 765 in Hindi, so the hold runs short and the settle adds the rest within what is left) `VOICE_SECONDS` under `listen:<requestId>:<voice>:hold` (`elevenlabs` or `gemini`; 429 + `Retry-After` until midnight IST when less is left, and no voice speaks), then `listen-refund:<requestId>:<voice>` or `listen-settle:<requestId>:<voice>` settle to the audio (MP3 bytes at 128 kbit/s, a WAV part's seconds rounded up); a voice that fails bills only the audio it made before the next voice holds its own; Master Admin never refused |
-| Answers | 200 `ListenScript {schemaVersion 1, answerId, language, voice (ELEVENLABS or GEMINI), tracks[{blockId, audioUrl, durationSeconds, words[{sentenceId, text, start, end}], sentences?[{sentenceId, start, end}]}]}`, a track timed by its words or, with `words` empty, by its `sentences` (`schemas/listen.py`, `shared/listen.script.golden.json` and `listen.script-sentences.golden.json`, `frontend/lib/listen.ts`); 404 another reader's answer, no explainer, another language or nothing to read; 422 a malformed `language` or `section`; 503 the bucket failing, no voice offered for the language, or every voice failing |
+| Seconds | a cache hit is free; the blocks an ask makes, the first and every later one it leased, hold `ceil(characters × 60 / 1000)` at once (the documented rate; the paid checks measured `eleven_v4` at 882 characters a minute in English and 765 in Hindi, and `gemini-3.8-flash-tts` at 893 in English, so the hold runs short and the settle adds the rest within what is left), settled once they are all made or failed `VOICE_SECONDS` under `listen:<requestId>:<voice>:hold` (`elevenlabs` or `gemini`; 429 + `Retry-After` until midnight IST when less is left, and no voice speaks), then `listen-refund:<requestId>:<voice>` or `listen-settle:<requestId>:<voice>` settle to the audio (MP3 bytes at 128 kbit/s, a WAV part's seconds rounded up); a voice that fails bills only the audio it made before the next voice holds its own; Master Admin never refused |
+| Answers | 200 `ListenScript {schemaVersion 1, answerId, language, voice (ELEVENLABS or GEMINI), tracks[{blockId, audioUrl, durationSeconds, words[{sentenceId, text, start, end}], sentences?[{sentenceId, start, end}]}], pending?[blockId], pollAfterSeconds?}`, a track timed by its words or, with `words` empty, by its `sentences`; `tracks` are the blocks narrated from the first up to the first one not yet stored, `pending` every block from there on in reading order, and `pollAfterSeconds` (3) is sent exactly when `pending` is (`schemas/listen.py`, `shared/listen.script.golden.json`, `listen.script-sentences.golden.json` and `listen.script-pending.golden.json`, `frontend/lib/listen.ts`); 404 another reader's answer, no explainer, another language or nothing to read; 422 a malformed `language`, `section` or `voice`; 429 a making past the 30 in 10 minutes, or seconds left too few; 503 the bucket failing, no voice offered for the language or the named voice, every voice failing on the first block, or the first block still being made by another ask after 120 s |
 
 `/answers/config` carries `listen {languages, voice?}`: the answer languages the offered voices read,
 in answer order, and the first voice's name, when the bucket is set and at least one voice is
 offered (the ElevenLabs key and its probe, or the Gemini key), else `{languages: []}`, and the
-client draws no Listen control. The web accepts `voice` and `sentences` as optional, so a script
-from an older backend still plays; it highlights the sentence being read and, when the track has
-words, the word.
+client draws no Listen control. The web accepts `voice`, `sentences`, `pending` and
+`pollAfterSeconds` as optional, so a script from an older backend still plays; it highlights the
+sentence being read and, when the track has words, the word. The dock and the film share one feed
+(`components/answer/useListenScript.ts`): it asks again with the script's voice every
+`pollAfterSeconds` while blocks are pending, at most 100 times, keeps the tracks it holds and adds
+the new ones (`lib/listen.extendedScript`); the dock plays on and, at the end of what is narrated,
+says "Preparing the next part…" until the next part arrives (`lib/listen.afterTrack`), and a poll
+that fails ends the dock there with Try again.
 
 Film mode (decision 0054, `docs/contracts/explainer.md`) plays the same script: its scenes are
 timed by these tracks and captioned with these words, or with the sentence alone when the Gemini
-voice read them; its optional score is ElevenLabs music and
+voice read them; a scene whose block is pending holds at its start, saying it is preparing its
+narration, until its tracks arrive (`lib/filmScenes.filmWaits`); its optional score is ElevenLabs music and
 sound effects through the media router (`docs/contracts/media.md`), not narration seconds.
 
 ## Secrets (names only)
@@ -409,6 +421,7 @@ in GitHub Actions secrets and the box `.env` (PLAN 15).
 | Passages a hybrid turn offers, under its reader's access, and writes back before it speaks them | `backend/tests/voice/test_turn_passages.py` and `backend/tests/db/test_stored_passages_db.py` |
 | Quota, consent, retention and languages | `backend/tests/voice/test_privacy.py`, `test_upkeep.py`, `test_languages.py` and `test_turn_languages.py` |
 | Listen and the film's score | `backend/tests/voice/test_listen.py`, `test_listen_routes.py`, `test_narration.py`, `test_film_score.py` and `test_film_routes.py` |
+| The first block first, the rest made after the answer, the renewed leases and the makings counted | `backend/tests/voice/test_listen_progressive.py`, `test_narration_lease.py`, and `frontend/e2e/listen-pending-unit.spec.ts` against `shared/listen.script-pending.golden.json` |
 | The Gemini fallback, its sentence timings and its wire | `backend/tests/voice/test_listen_fallback.py`, `test_read_aloud.py`, `backend/tests/media/test_gemini_speech.py`, and `frontend/e2e/listen-contract-unit.spec.ts`, `listen-marks-unit.spec.ts` and `film-mode-unit.spec.ts` against `shared/listen.script-sentences.golden.json` |
 | A dock turn's recorded bit rate | `frontend/e2e/voice-rate.smoke.spec.ts` (Chromium's fake microphone) and `voice-rate-unit.spec.ts` |
 | The store on Postgres | `backend/tests/db/test_voice_store_db.py` and `test_listen_db.py` |

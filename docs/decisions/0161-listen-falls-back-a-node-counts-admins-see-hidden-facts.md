@@ -28,6 +28,7 @@ The contracts are `docs/contracts/voice.md` (Listen; Relay turns), `docs/contrac
 | The paid check that will see the Gemini voice run | [decision 0154](0154-ai-media-and-film-scores-kept-true.md) |
 | The media backend whose stored image and cost it changes | [decision 0018](0018-media-backend.md) |
 | Who reads, and how | [voice.md](../contracts/voice.md), Listen |
+| The fallback decided on the first block, and the Gemini voice heard | [decision 0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

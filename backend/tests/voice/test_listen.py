@@ -7,7 +7,8 @@ from app.core.errors import ExternalFailure
 from app.providers.elevenlabs import NARRATION_MAX_CHARACTERS, NARRATION_MODEL
 from app.schemas.listen import ListenScript
 from app.services.explainer_payload import stored_explainer
-from app.voice.listen import NARRATION_LINK_SECONDS, ListenRefused, listen_script
+from app.voice.listen import NARRATION_LINK_SECONDS, listen_script
+from app.voice.listen_ask import ListenRefused
 from app.voice.narration import PART_CHARACTERS
 
 from ..contracts.golden import dumped, golden_json, golden_text
@@ -21,17 +22,19 @@ LADDER_CHARACTERS = 643
 async def test_a_cache_hit_makes_no_second_text_to_speech_call() -> None:
     listening = Listening()
     first = await listen_script(ask(golden_explainer(), request=1), listening.deps())
+    await listening.shield.drain()
     assert len(listening.narrator.calls) == 3
     rows = list(listening.ledger.rows)
     again = await listen_script(ask(golden_explainer(), request=2), listening.deps())
     assert len(listening.narrator.calls) == 3
     assert listening.ledger.rows == rows
-    assert again == first
+    assert (first.tracks, first.pending) == (again.tracks[:1], ["s2.b1", "s3.b1"])
+    assert (again.pending, again.poll_after_seconds) == ([], None)
 
 
 async def test_every_spoken_block_becomes_a_track_with_a_private_link() -> None:
     listening = Listening()
-    script = await listen_script(ask(golden_explainer()), listening.deps())
+    script = await listening.whole(ask(golden_explainer()))
     assert [track.block_id for track in script.tracks] == ["s1.b1", "s2.b1", "s3.b1"]
     for track in script.tracks:
         assert track.audio_url.startswith(f"{BUCKET_HOST}/media/narration/")
@@ -54,6 +57,7 @@ async def test_the_narration_is_asked_for_in_the_explainer_s_language_with_the_n
 async def test_a_miss_holds_the_estimate_then_refunds_what_the_audio_did_not_use() -> None:
     listening = Listening()
     await listen_script(ask(golden_explainer(), "s3", request=7), listening.deps())
+    await listening.shield.drain()
     held, refund = listening.ledger.rows
     assert (held.key, held.units, held.resource) == (
         "listen:00000000-0000-0000-0000-000000000007:elevenlabs:hold",
@@ -68,6 +72,7 @@ async def test_audio_longer_than_its_estimate_is_settled_within_what_is_left() -
     listening = Listening(ledger=MemoryLedger(allowance=40, used=0))
     listening.narrator.seconds_per_character = 0.1
     await listen_script(ask(golden_explainer(), "s3", request=8), listening.deps())
+    await listening.shield.drain()
     held, settled = listening.ledger.rows
     assert (held.units, settled.key, settled.units) == (
         19,
@@ -86,7 +91,7 @@ async def test_not_enough_seconds_left_refuses_before_any_speech_until_midnight(
 
 async def test_a_master_admin_is_never_capped() -> None:
     listening = Listening(ledger=MemoryLedger(allowance=None, used=10**9))
-    script = await listen_script(ask(golden_explainer()), listening.deps())
+    script = await listening.whole(ask(golden_explainer()))
     assert len(script.tracks) == 3
     assert WATER_CHARACTERS + CHEMISTRY_CHARACTERS + LADDER_CHARACTERS == 1249
     assert listening.ledger.rows[0].units == 75
@@ -133,22 +138,40 @@ async def test_a_section_with_nothing_to_read_is_refused() -> None:
     assert refused.value.reason == "nothing"
 
 
-async def test_a_failed_narration_bills_only_the_audio_made_and_keeps_it() -> None:
+async def test_a_later_block_that_fails_bills_only_the_audio_made_and_is_made_by_the_next_ask() -> None:
     listening = Listening()
     listening.narrator.failing = "Ajrakh colours come from indigo"
-    with pytest.raises(ExternalFailure):
-        await listen_script(ask(golden_explainer(), None, request=3), listening.deps())
+    heard = await listen_script(ask(golden_explainer(), None, request=3), listening.deps())
+    await listening.shield.drain()
+    assert ([track.block_id for track in heard.tracks], heard.pending) == (["s1.b1"], ["s2.b1", "s3.b1"])
     billed = sum(row.units for row in listening.ledger.rows)
     assert billed == 33 + 15
     retried = Listening(objects=listening.objects)
-    await listen_script(ask(golden_explainer(), None, request=4), retried.deps())
+    again = await listen_script(ask(golden_explainer(), None, request=4), retried.deps())
+    await retried.shield.drain()
+    assert [track.block_id for track in again.tracks] == ["s1.b1", "s2.b1"] and again.pending == ["s3.b1"]
     assert [call["text"][:30] for call in retried.narrator.calls] == ["Ajrakh colours come from indig"]
+
+
+async def test_a_first_block_that_fails_fails_the_ask_bills_the_audio_made_and_frees_every_lease() -> None:
+    listening = Listening()
+    listening.narrator.failing = "Outlines where white is required"
+    with pytest.raises(ExternalFailure):
+        await listen_script(ask(golden_explainer(), None, request=5), listening.deps())
+    assert sum(row.units for row in listening.ledger.rows) == 15 + 16
+    assert not any(key.endswith("lease.json") for key in listening.objects.stored)
 
 
 async def test_the_listen_golden_is_reproduced_from_the_explainer_golden() -> None:
     script = await listen_script(ask(golden_explainer(), "s2"), Listening().deps())
     assert dumped(ListenScript, script) == golden_text("listen.script.golden.json")
     assert json.loads(golden_text("listen.script.golden.json"))["tracks"][0]["blockId"] == "s2.b1"
+
+
+async def test_the_pending_golden_is_a_whole_answer_s_first_ask() -> None:
+    script = await listen_script(ask(golden_explainer(), None, request=9), Listening().deps())
+    assert dumped(ListenScript, script) == golden_text("listen.script-pending.golden.json")
+    assert (script.pending, script.poll_after_seconds) == (["s2.b1", "s3.b1"], 3)
 
 
 def test_only_the_answer_s_own_explainer_is_read_from_its_payload() -> None:

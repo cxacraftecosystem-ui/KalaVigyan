@@ -8,12 +8,15 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.core.errors import ExternalFailure
+from app.core.shielded import ShieldedWork
 from app.providers.base import ProviderError
 from app.providers.elevenlabs import TTS_BITS_PER_SECOND, TimedSpeech
 from app.providers.quota import LedgerEntry
 from app.research.explainer import Explainer
+from app.schemas.listen import ListenScript, ListenVoiceName
 from app.services.object_store import PresignedGet
-from app.voice.listen import ListenAsk, ListenDeps, ListenHold
+from app.voice.listen import listen_script
+from app.voice.listen_ask import ListenAsk, ListenDeps, ListenHold
 from app.voice.listen_voices import ElevenLabsVoice, GeminiVoice, ListenVoice
 
 from ..contracts.golden import golden_json
@@ -142,6 +145,7 @@ class Listening:
     narrator: Narrations = field(default_factory=Narrations)
     reader: Readings = field(default_factory=Readings)
     ledger: MemoryLedger = field(default_factory=MemoryLedger)
+    shield: ShieldedWork = field(default_factory=ShieldedWork)
 
     def elevenlabs(self) -> ElevenLabsVoice:
         return ElevenLabsVoice(narrator=self.narrator, voice_id=VOICE_ID)
@@ -155,10 +159,26 @@ class Listening:
             objects=self.objects,
             voices=voices or (self.elevenlabs(),),
             clock=lambda: LISTENED_AT,
+            shield=self.shield,
         )
 
+    async def whole(self, asked: ListenAsk, deps: ListenDeps | None = None) -> ListenScript:
+        await listen_script(asked, deps or self.deps())
+        await self.shield.drain()
+        return await listen_script(asked, deps or self.deps())
 
-def ask(explainer: Explainer, section_id: str | None = None, *, request: int = 1) -> ListenAsk:
+
+def ask(
+    explainer: Explainer,
+    section_id: str | None = None,
+    *,
+    request: int = 1,
+    voice: ListenVoiceName | None = None,
+) -> ListenAsk:
     return ListenAsk(
-        user_id=LEARNER, explainer=explainer, section_id=section_id, request_id=uuid.UUID(int=request)
+        user_id=LEARNER,
+        explainer=explainer,
+        section_id=section_id,
+        voice=voice,
+        request_id=uuid.UUID(int=request),
     )

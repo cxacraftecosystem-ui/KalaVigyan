@@ -49,6 +49,7 @@ async def test_a_second_reader_missing_the_same_block_waits_for_the_first_and_pa
     second = replace(listening.deps(), sleep=wait_for_the_first)
     heard = await listen_script(ask(golden_explainer(), "s2", request=2), second)
     assert heard == await first
+    await listening.shield.drain()
     assert (len(narrator.calls), waits) == (1, [1.0])
     assert {row.key for row in listening.ledger.rows} == {
         "listen:00000000-0000-0000-0000-000000000001:elevenlabs:hold",

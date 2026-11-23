@@ -8,6 +8,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+from app.core.config import get_settings
 from app.core.db import dispose_engine, session_scope, sessionmaker
 from app.core.errors import AppError
 from app.core.logging import request_id_scope
@@ -30,6 +31,13 @@ from app.retrieval.miss_judging import MISS_JUDGE_CAP_USD, MISS_JUDGE_TAG, Judge
 from app.retrieval.release_check import RELEASE_SECONDS
 from app.services.claim_seed import seed_id
 from app.services.craft_resolver import CraftIndexStore, DatabaseCraftResolver
+from app.services.eval_run_store import (
+    RunTimes,
+    keep_run,
+    release_check_record,
+    release_commit,
+    weekly_record,
+)
 
 SEED_PREFIX = "seed-"
 SEARCH_TAG = "eval-search-"
@@ -79,23 +87,35 @@ async def weekly(cap: Decimal, out: Path | None) -> dict[str, Any]:
     if out is not None and run.revised is not None:
         out.write_text(run.revised.model_dump_json(by_alias=True, indent=1) + "\n", encoding="utf-8")
         written = str(out)
+    search_spent = (await spent_since(searches, started)).quantize(SPEND_PLACES)
+    judge_spent = (await spent()).quantize(SPEND_PLACES)
+    record = weekly_record(run, run_times(started), spent_usd=search_spent + judge_spent, cap_usd=cap)
     return {
         **run.as_dict(),
-        "searchSpentUsd": str((await spent_since(searches, started)).quantize(SPEND_PLACES)),
-        "judgeSpentUsd": str((await spent()).quantize(SPEND_PLACES)),
+        "searchSpentUsd": str(search_spent),
+        "judgeSpentUsd": str(judge_spent),
         "judgeCapUsd": str(cap),
         "out": written,
+        **await keep_run(record),
     }
 
 
 async def release(seconds: float) -> tuple[dict[str, Any], int]:
-    check = await release_run(
-        eval_tools(),
-        QuestionSets(golden_questions(), generated_set()),
-        floors=eval_floors(),
-        deadline=Deadline.after(seconds),
-    )
-    return check.as_dict(), check.exit_code
+    started, searches = datetime.now(UTC), run_tag(SEARCH_TAG)
+    with request_id_scope(searches):
+        check = await release_run(
+            eval_tools(),
+            QuestionSets(golden_questions(), generated_set()),
+            floors=eval_floors(),
+            deadline=Deadline.after(seconds),
+        )
+    spent = (await spent_since(searches, started)).quantize(SPEND_PLACES)
+    kept = await keep_run(release_check_record(check, run_times(started), spent_usd=spent))
+    return {**check.as_dict(), "searchSpentUsd": str(spent), **kept}, check.exit_code
+
+
+def run_times(started: datetime) -> RunTimes:
+    return RunTimes(started, datetime.now(UTC), release_commit(get_settings().release))
 
 
 async def crafts() -> dict[str, Any]:

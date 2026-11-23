@@ -31,15 +31,23 @@ function Timing({ listen }: { listen: Listen }) {
   );
 }
 
+const PREPARING: Partial<Record<Listen["status"], string>> = { loading: "Preparing the audio…", waiting: "Preparing the next part…" };
+
 function Player({ listen }: { listen: Listen }) {
   const playing = listen.status === "playing";
-  const loading = listen.status === "loading";
+  const preparing = PREPARING[listen.status];
   return (
     <div className="flex items-center gap-3">
-      <button type="button" className={PLAY_BUTTON} aria-label={playing ? "Pause" : "Play"} disabled={loading} onClick={listen.toggle}>
-        {loading ? <span className="kv-spin" aria-hidden /> : playing ? <Pause className="h-5 w-5" aria-hidden /> : <Play className="h-5 w-5" aria-hidden />}
+      <button type="button" className={PLAY_BUTTON} aria-label={playing ? "Pause" : "Play"} disabled={preparing !== undefined} onClick={listen.toggle}>
+        {preparing ? <span className="kv-spin" aria-hidden /> : playing ? <Pause className="h-5 w-5" aria-hidden /> : <Play className="h-5 w-5" aria-hidden />}
       </button>
-      {loading ? <span className="flex-1 font-ui text-ui text-ink-3">Preparing the audio…</span> : <Timing listen={listen} />}
+      {preparing ? (
+        <span role="status" className="flex-1 font-ui text-ui text-ink-3">
+          {preparing}
+        </span>
+      ) : (
+        <Timing listen={listen} />
+      )}
       <Button variant="quiet" size="sm" aria-label={`Speed ${listen.rate} times`} onClick={listen.cycleRate}>
         {listen.rate}×
       </Button>

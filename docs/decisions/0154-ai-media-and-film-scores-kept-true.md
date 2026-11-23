@@ -22,6 +22,7 @@ debt register of 2026-11-22). It amends [decision 0018](0018-media-backend.md),
 | The AI media on the craft page it builds | [decision 0096](0096-reader-question-pieces-join-their-craft-page.md) |
 | No connection held across a model call | [decision 0040](0040-no-connection-held-across-a-model-call.md) |
 | The paid checks chosen one by one, and one Gemini clip made when a run names it | [decision 0179](0179-transcript-windows-a-chunk-kind-linked-shared-concepts-and-one-paid-clip.md) |
+| The film playing before its narration is whole | [decision 0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

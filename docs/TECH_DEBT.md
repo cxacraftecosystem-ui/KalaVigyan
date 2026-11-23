@@ -369,31 +369,23 @@ Last reviewed: 2026-11-22.
 
 ## Listen and the switched-off call (decision 0035)
 
-### Narration heard in English and Hindi only
+### Listen's voices heard in English and Hindi only
 
-- **What:** the paid check of 2026-11-23 heard `eleven_v4` on `/with-timestamps` in English and
-  Hindi: accepted, the alignment spelling the text code point for code point, 882 and 765 characters
-  a minute (`backend/tests/voice/fixtures/narration_with_timestamps.json` and its Hindi sibling,
-  decision 0161). It also showed Hindi skipping square-bracketed words as an audio tag, so Listen now
-  sends them as parentheses; that a parenthesis is read in Hindi, and the alignment in the eleven
-  other languages, are unheard. A mismatch fails loudly, and Listen then reads with the Gemini voice.
-- **Waits on:** the next paid check, whose narration step now sends the text as Listen does and
-  reports `parenthesisedSeconds`; the other languages wait on a reviewed sentence in each for
-  `paid_check_steps.NARRATIONS`, as interface words are reviewed (decision 0157).
-
-### The Gemini read-aloud has not reached Gemini
-
-- **What:** Listen's fallback voice (`GeminiMediaWire.read_aloud`, decision 0161) follows the
-  speech page of the Gemini documentation read on 2026-11-23: `POST /v1beta/interactions` with
-  `gemini-3.8-flash-tts`, the voice in `generation_config.speech_config`, and a RIFF WAV of 24 kHz
-  mono 16-bit PCM in the last `audio` block of the `model_output` step. No request has reached
-  Gemini, so that shape, whether the `Api-Revision` header the media wire sends is accepted, the
-  real speaking rate behind the 1,000-characters-a-minute hold, and whether a cited sentence's
-  angle brackets are read as text rather than as an inline speech tag are unverified.
-- **Waits on:** the paid check run by the lead (`.github/workflows/paid-checks.yml`, decision 0154),
-  whose `gemini_speech` step reads one sentence and parses it as Listen does; commit its
-  `speech_completed.json` as a fixture of `backend/tests/media/test_gemini_speech.py`. A refusal
-  there names what to change in `providers/gemini_media.py`.
+- **What:** the paid checks of 2026-11-23 heard both voices. `eleven_v4` on `/with-timestamps`
+  (runs 45112123057 and 45164894170) was accepted in English and Hindi, its alignment spelling the
+  text code point for code point, and speaks the parenthesised words Listen now sends for square
+  brackets in both (1.32 s and 1.12 s; `backend/tests/voice/fixtures/narration_parenthesised.json`
+  and its Hindi sibling, `test_recorded_narration.py`). `gemini-3.8-flash-tts` (run 45164894170)
+  answered the documented interaction with the media wire's `Api-Revision` header: a 24 kHz mono
+  16-bit WAV in the last `audio` block, 5.44 s for 81 English characters, 893 a minute, under the
+  1,000 the hold assumes (`backend/tests/media/fixtures/speech_completed.json`,
+  `test_gemini_speech.py`). Unheard: the ElevenLabs alignment in the eleven other answer languages,
+  the Gemini voice in any language but English, and whether Gemini reads a cited sentence's angle
+  brackets as text or as an inline speech tag. A mismatch fails loudly; ElevenLabs then falls back
+  to Gemini.
+- **Waits on:** a reviewed sentence in each other language for `paid_check_steps.NARRATIONS` and
+  `SPEECH_TEXT`, as interface words are reviewed (decision 0157), one with angle brackets among
+  them, and a paid check the lead runs with them.
 
 ## Expert panel (decision 0046)
 

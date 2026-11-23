@@ -15,7 +15,7 @@ from app.providers.quota import LedgerEntry
 from app.research.explainer import Explainer
 from app.schemas.listen import ListenScript
 from app.voice.availability import HIDDEN_VOICE
-from app.voice.listen import ListenHold
+from app.voice.listen_ask import ListenHold
 from app.voice.listen_voices import ElevenLabsVoice, GeminiVoice, ListenVoice
 from app.voice.runtime import VoiceRuntime, VoiceSettings
 
@@ -73,12 +73,17 @@ class Client:
         self.http = TestClient(app)
 
 
-def test_the_reader_s_own_explainer_is_read_aloud_with_its_timings() -> None:
-    response = Client().http.get(PATH, params={"language": "en"})
+def test_the_reader_s_own_explainer_is_read_aloud_first_block_first() -> None:
+    client = Client()
+    response = client.http.get(PATH, params={"language": "en"})
     assert response.status_code == 200
     script = ListenScript.model_validate(response.json())
     assert (script.answer_id, script.language) == (ANSWER, "en")
-    assert [track.block_id for track in script.tracks] == ["s1.b1", "s2.b1", "s3.b1"]
+    assert [track.block_id for track in script.tracks] == ["s1.b1"]
+    assert (response.json()["pending"], response.json()["pollAfterSeconds"]) == (["s2.b1", "s3.b1"], 3)
+    polled = client.http.get(PATH, params={"language": "en", "voice": "ELEVENLABS"}).json()
+    assert [track["blockId"] for track in polled["tracks"]] == ["s1.b1", "s2.b1", "s3.b1"]
+    assert "pending" not in polled and "pollAfterSeconds" not in polled
 
 
 def test_one_section_can_be_read_alone() -> None:
@@ -96,6 +101,7 @@ def test_one_section_can_be_read_alone() -> None:
         (PATH, {"section": "s9"}, 404),
         (PATH, {"section": "intro"}, 422),
         (PATH, {"language": "es"}, 422),
+        (PATH, {"voice": "SPEAKER"}, 422),
     ],
     ids=[
         "another language",
@@ -103,6 +109,7 @@ def test_one_section_can_be_read_alone() -> None:
         "unknown section",
         "malformed section",
         "unknown language",
+        "unknown voice",
     ],
 )
 def test_nothing_to_read_is_404_and_a_malformed_ask_422(path: str, params: dict, status: int) -> None:
@@ -117,8 +124,8 @@ def test_no_seconds_left_is_429_until_midnight() -> None:
     assert response.json()["detail"] == "Not enough listening time is left today."
 
 
-def test_a_provider_failure_is_503_without_its_details() -> None:
-    response = Client(failing="Presence of iron").http.get(PATH)
+def test_a_provider_failure_on_the_first_block_is_503_without_its_details() -> None:
+    response = Client(failing="Presence of iron").http.get(PATH, params={"section": "s2"})
     assert response.status_code == 503
     assert response.json()["detail"] == "Listening isn't available right now. Try again later."
 
@@ -133,11 +140,20 @@ def test_when_elevenlabs_fails_the_route_answers_in_the_gemini_voice_by_sentence
     assert len(reader.calls) == 3
 
 
-def test_listen_is_limited_to_thirty_presses_in_ten_minutes_except_for_a_master_admin() -> None:
-    student, master = Client(), Client(role="MASTER_ADMIN", ledger=MemoryLedger(allowance=None))
-    assert {student.http.get(PATH, params={"section": "s2"}).status_code for _ in range(30)} == {200}
-    assert student.http.get(PATH, params={"section": "s2"}).status_code == 429
-    assert {master.http.get(PATH, params={"section": "s2"}).status_code for _ in range(31)} == {200}
+def test_a_cached_reading_and_a_poll_are_never_throttled() -> None:
+    student = Client()
+    assert {student.http.get(PATH, params={"section": "s2"}).status_code for _ in range(31)} == {200}
+    assert len(student.narrator.calls) == 1
+
+
+def test_listen_starts_at_most_thirty_makings_in_ten_minutes_except_for_a_master_admin() -> None:
+    student = Client(failing="Presence of iron")
+    master = Client(role="MASTER_ADMIN", ledger=MemoryLedger(allowance=None), failing="Presence of iron")
+    assert {student.http.get(PATH, params={"section": "s2"}).status_code for _ in range(30)} == {503}
+    refused = student.http.get(PATH, params={"section": "s2"})
+    assert refused.status_code == 429 and refused.json()["detail"] == listen_deps.THROTTLED_DETAIL
+    assert len(student.narrator.calls) == 30
+    assert {master.http.get(PATH, params={"section": "s2"}).status_code for _ in range(31)} == {503}
 
 
 def config_client(

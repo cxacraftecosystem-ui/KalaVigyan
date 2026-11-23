@@ -1,0 +1,99 @@
+{
+  "ok": false,
+  "capUsd": "3",
+  "spentUsd": "1.707993333333333333333333333",
+  "spend": [
+    {
+      "check": "narration_en",
+      "estimateUsd": "0.0303",
+      "countedUsd": "0.0303"
+    },
+    {
+      "check": "narration_hi",
+      "estimateUsd": "0.0309",
+      "countedUsd": "0.0309"
+    },
+    {
+      "check": "music_bed",
+      "estimateUsd": "0.046",
+      "countedUsd": "0.04583333333333333333333333333"
+    },
+    {
+      "check": "gemini_image",
+      "estimateUsd": "0.067",
+      "countedUsd": "0.09096"
+    },
+    {
+      "check": "gemini_speech",
+      "estimateUsd": "0.01",
+      "countedUsd": "0.01"
+    },
+    {
+      "check": "agent_turn",
+      "estimateUsd": "1.50",
+      "countedUsd": "1.50"
+    }
+  ],
+  "checks": {
+    "narration_en": {
+      "model": "eleven_v4",
+      "characters": 101,
+      "audioSeconds": 6.951,
+      "charactersPerMinute": 872,
+      "alignmentSpellsTheText": true,
+      "lastCharacterEndsAt": 6.96,
+      "parenthesisedSeconds": 1.32,
+      "fixtures": [
+        "narration_en.json"
+      ]
+    },
+    "narration_hi": {
+      "model": "eleven_v4",
+      "characters": 103,
+      "audioSeconds": 8.937,
+      "charactersPerMinute": 692,
+      "alignmentSpellsTheText": true,
+      "lastCharacterEndsAt": 8.96,
+      "parenthesisedSeconds": 1.12,
+      "fixtures": [
+        "narration_hi.json"
+      ]
+    },
+    "music_bed": {
+      "model": "music_v2_5",
+      "askedSeconds": 10.0,
+      "heardSeconds": 10.034,
+      "bytes": 160540,
+      "fixtures": [
+        "music_bed.mp3"
+      ]
+    },
+    "gemini_image": {
+      "model": "gemini-3.1-flash-image",
+      "servedModel": "gemini-3.1-flash-image",
+      "mime": "image/jpeg",
+      "bytes": 1004591,
+      "inputTokens": 57,
+      "outputTokens": 1516,
+      "imageTokens": 1120,
+      "fixtures": [
+        "image_completed_recorded.json"
+      ]
+    },
+    "gemini_speech": {
+      "model": "gemini-3.8-flash-tts",
+      "characters": 81,
+      "sampleRate": 24000,
+      "audioSeconds": 5.44,
+      "bytes": 268828,
+      "fixtures": [
+        "gemini_speech.wav",
+        "speech_completed.json"
+      ]
+    },
+    "agent_turn": {
+      "refused": "the agent, its key, the session key or the Master Admin is missing",
+      "fixtures": []
+    }
+  }
+}
