@@ -195,6 +195,10 @@ async def test_an_unconfirmed_password_account_is_cleared_and_audited_as_google_
     user = response.json()["user"]
     assert (user["hasPassword"], user["authProvider"], user["role"]) == (False, "YAHOO", "STUDENT")
     assert user["emailVerifiedAt"]
+    me = await client.get(
+        "/api/auth/me", headers={"Authorization": f"Bearer {response.json()['accessToken']}"}
+    )
+    assert me.status_code == 200, me.text
     async with session_scope() as session:
         actions = await session.execute(select(AuditLog.action).where(AuditLog.targetId == str(user_id)))
         assert "auth.unverified_credentials_cleared" in set(actions.scalars())
