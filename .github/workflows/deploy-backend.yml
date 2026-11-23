@@ -230,6 +230,11 @@ jobs:
           exit 1
 
       - name: Build the web app now that the API is live
+        id: build
         uses: ./.github/actions/build-web-app
         with:
           api-base-url: ${{ vars.API_BASE_URL }}
+
+      - name: Hand the web build to Deploy backend
+        if: steps.build.outputs.api == 'waiting'
+        run: echo "::notice::the API that main's head needs is not live yet; the Deploy backend that ships it builds the web app, and its own post-deploy check reads the pages"
