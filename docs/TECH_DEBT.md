@@ -134,19 +134,6 @@ Last reviewed: 2026-11-22.
   exposes them; route facet types to the sources that can serve them once the checks show
   which do.
 
-## Live research write-back (decision 0011)
-
-### The write-back's quote gate does not read quote renderings (decisions 0013, 0023, 0139)
-
-- **What:** the composer renders a failing sentence's non-English quotes into English and keeps a
-  sentence its rendering supports, citing the verbatim quote (`composer/quote_checks`, decision
-  0167), but the write-back's quote gate (`services/write_back_plan`) still measures the overlap
-  on the raw quote, so such a sentence is shown and not written back.
-- **Why left:** `services/write_back_plan.py` belongs to the MCP and contributors lane, running at
-  the same time (2026-11-23).
-- **Clears it:** `write_back_plan`'s overlap reads the renderings the composer kept for the
-  sentence (`read_as`), once that lane has merged.
-
 ## Science, region, voice and media contracts (decision 0014)
 
 ### ElevenLabs behaviour not yet verified

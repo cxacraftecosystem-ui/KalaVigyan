@@ -130,8 +130,10 @@ a glossary term's sentence-case name is found when no dossier states it.
   `voice/compose.VOICE_FORM`, and the zoom story reads the answer's one read of the craft's matter.
 - `fill_sentence_names` runs over every term without a name, seeded ones included, at each curated
   import; the seed itself fills none.
-- The write-back's quote gate still reads raw quotes, so a sentence kept by its rendering is shown
-  and not written back until `services/write_back_plan` reads the renderings; the register says so.
+- The composer hands its renderings on with its answer (`ComposedAnswer.renderings`, never in a
+  dumped payload), and the write-back's quote measures read them (`services/write_back_plan`), so a
+  sentence kept by its rendering is written back `QUOTED` with its verbatim quote, and no second
+  `TRANSLATE` call is made.
 
 ## How this record is kept true
 
@@ -148,7 +150,7 @@ names this one, and the table above links the two both ways. It records the choi
 `backend/tests/db/test_source_journals_db.py`, `backend/tests/planner/test_publisher_reads.py`,
 `backend/tests/planner/test_colourant_search.py`, `backend/tests/science/test_seed_stage_order.py`,
 `backend/tests/voice/test_voice_compose.py`, `backend/tests/journey/test_zoom_story.py`,
-`backend/tests/ledger/test_ajrakh_retold.py`, `backend/tests/ledger/test_ledger_rules.py`,
+`backend/tests/ledger/test_ajrakh_retold.py`, `backend/tests/write_back/test_rendered_quotes.py`, `backend/tests/ledger/test_ledger_rules.py`,
 `backend/tests/answering/test_heading_once.py`, `backend/tests/composer/test_internal_words.py`,
 `backend/tests/planner/test_understanding_fields.py` and the
 unit specs `frontend/e2e/sentence-once-unit.spec.ts` and `frontend/e2e/sentence-once-figures-unit.spec.ts`.

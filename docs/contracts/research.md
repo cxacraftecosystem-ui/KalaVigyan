@@ -925,6 +925,9 @@ faster.
   alone at `QUOTE_OVERLAP_MIN`), else `CONTEXTUAL`, and a cited document with no passing span is a
   `CONTEXTUAL` citation with no quote. A section sentence is `QUOTED` when its passing quotes
   together carry it, else `INFERRED`; open questions are `INFERRED` with `CONTEXTUAL` citations.
+  Both measures read a quote in another language through the English rendering the composer kept
+  for it (`ComposedAnswer.renderings`, `quote_renderings.read_as`, decision 0167), while the
+  citation keeps the verbatim quote; no rendering is asked for here.
   The section's discipline is its heading (`section_discipline`: a focused section's heading is
   `DISCIPLINE_TITLES[discipline]`): the claim's `field` is that discipline and its subject the
   first facet a cited document was found by whose type is of that field, else the first; with no
