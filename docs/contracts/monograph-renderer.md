@@ -7,7 +7,7 @@ now (decision 0106, round 3c); curated crafts too since round 6, whose documents
 structure, so the tabbed craft screen is retired. Engineers changing the renderer, a native view or
 a page tool read it.
 
-Last reviewed: 2026-11-20.
+Last reviewed: 2026-11-23.
 
 | For | Read |
 |---|---|
@@ -262,29 +262,39 @@ each one stands (one placed by another native view has no slot: its owner draws 
   line of `#kv-main`), that the first citation's popover and Fig. 1 answer as there, and that each
   native view looks as its fragment does on the same React page. A Vercel preview cannot show a
   branch's `native.json`, because it reads the production API's stored document.
-- **Native (70 of 79, 2026-11-20).** All except: the stage player
-  `kutch-ajrakh/process/cloth-after-each-stage` (one "Why" line, stage 11, is still held text); the
-  two structure diagrams (their cited descriptions are the answer's held sentences); and the six
-  page tools (`explainer`, `quiz`, `ask_next`, `language_switch`, `reading_level`, `generator`), whose
-  views draw their own markup and behaviour on purpose.
+- **Native (73 of 80, 2026-11-23).** All except the ground figure
+  `kutch-ajrakh/geography/why-here`, whose fragment is the React page's drawing captured in a
+  browser (decision 0151), and the six page tools (`explainer`, `quiz`, `ask_next`,
+  `language_switch`, `reading_level`, `generator`), whose views draw their own markup, behaviour and
+  legacy scope for the React shell, so inside the authored shell they would nest a second scope and
+  differ from the approved markup on purpose. The stage player and the two structure diagrams joined
+  on 2026-11-23, once the stage player's stage 11 "Why" became a unit (decision 0164).
 - **To serve it**, after the deploy that carries `native.json` and the content, run
   `python -m app.scripts.load_monograph` on the box (RUNBOOK, Monographs), then run **Monograph
   parity** on production.
 
-### Cited passages held outside text units
+### Every cited sentence of the page is a text unit
 
-28 of the cited sentences the template held outside text units are text units now (27 units, ids
+Every cited sentence of the approved page is a text unit. Round 6 made 28 of them units (27 units,
 `u1087` to `u1113`): each stage's "Cloth after" line and the stage player's sources-differ notes,
 the what-if vat's differs note, the six comic captions, the masthead's GI line, the Suran card's
-differs note, and the two quote attributions. The specs name them (`afterSentence`, `differs.body`,
+differs note, and the two quote attributions. The last 16, whose page text writes an apostrophe as
+`&#x27;`, became 15 units on 2026-11-23 (`u1114` to `u1128`), since a unit now writes an apostrophe
+and a straight quote as entities, as the approved page does (decision 0164): the stage player's
+stage 11 "Why", the timeline's four card lines, the shared-science atlas's three sentences, two
+lines of the Suran cards, the climate map's side line, and five in the shell (the colour key's
+sources-differ note, the black passage's opening paragraph of two sentences, and two of the market
+chapter's lines). The specs name them (`afterSentence`, `why`, `differs.body`, a text line's `unit`,
 and `caption`, `registration`, `attribution` and `body` as a unit id or held text), the database
 loads them with the other units, and the sources chapter's "Supports N sentences" counts
-(`sentenceCounts`) take them in (`e2e/monograph-units-unit.spec.ts`). Still held: 16 sentences whose
-page text writes an apostrophe as `&#x27;` (a unit renders it as `'`, so making them units would
-change the approved page's bytes; the stage player's stage 11 "Why", the timeline's four card
-lines, the shared-science atlas's three sentences, two lines of the Suran cards, the climate map's
-side line, and five in the shell), and the answer's own sentences in the language panels, the
-generator and the structure diagrams.
+(`sentenceCounts`) take them in (`e2e/monograph-units-unit.spec.ts`).
+
+Held text by design, not units: the answer's own sentences in the language panels and the generator,
+which belong to the answer (cited by its own sentence ids, `rm:`) and would otherwise be published a
+second time into the page's sections, in English and in Hindi and Urdu; and the PubChem record
+citation of each structure, which cites a record, not a sentence. `backend/tests/research/test_science_spec_files.py`
+holds that no science component keeps a cited passage outside a unit, and
+`e2e/monograph-units-unit.spec.ts` that only these are held.
 
 ## The page-tool kinds
 

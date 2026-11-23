@@ -1231,41 +1231,25 @@ Last reviewed: 2026-11-22.
 
 ## Track 1, round 3 (decision 0106, 2026-11-19)
 
-### Cited passages held outside text units
-
-- **What:** 16 cited sentences of the Ajrakh page still sit outside any text unit (round 6 made 28
-  of the 43 into units `u1087` to `u1113`). Their page text writes an apostrophe as `&#x27;` while a
-  unit renders `'`, so a unit would change the approved page's bytes: the stage player's stage 11
-  "Why", four timeline card lines, the shared-science atlas's three sentences, two Suran card lines,
-  the climate map's side line and five in the shell. The answer's own sentences in the language
-  panels, the generator and the structure diagrams are held too.
-- **Clears it:** render a unit's apostrophe as the approved page writes it (or rebuild the approved
-  page with plain apostrophes), then make the 16 units and reload.
-
 ### Fragments are a bridge
 
-- **What:** 10 of Kutch Ajrakh's 80 components still draw from their fragments (70 are native since
-  round 6, `monographs/Kutch-Ajrakh/native.json`): the stage player (its stage 11 "Why" is held
-  text), the two structure diagrams (their descriptions are the answer's held sentences), the six
-  page tools, whose views draw their own markup on purpose, and the ground figure
-  (`kutch-ajrakh/geography/why-here`, decision 0151). The ground figure's fragment is the React
-  page's drawing with the app rules that draw it, captured by **Capture screens** with `figure`,
-  because its map fills the neighbouring countries and sizes its pins only after it is drawn in
-  the browser, so its view's first drawing is not the figure readers see; once the stored document
-  carries it, a change to the ground data reaches the page only through a new capture. The kit's
-  script still drives the native views' behaviour by ids and classes, and a generated page reuses
-  another monograph's fragment for a shared component without a spec.
-- **Clears it:** the stage player's held line as a unit, science specs that carry held text, the
-  ground map drawing its neighbours and pins in its first drawing (then the figure listed in
-  `native.json`), then the kit's behaviour moved into the views and the fragments retired.
-
-### What the document does not carry yet
-
-- **What:** the React page takes chapter names from each chapter's kicker or heading (three differ
-  from the approved rail), shows the page's sources as one numbered list (no source groups), and its
-  masthead counts every cited source (64) where the approved page says 44 plus 24 for the kin crafts.
-- **Clears it:** chapter names, source groups and the masthead counts in the `PageLayout` record or
-  the document, found by the parity proof.
+- **What:** 7 of Kutch Ajrakh's 80 components still draw from their fragments (73 are native since
+  decision 0164, `monographs/Kutch-Ajrakh/native.json`). The ground figure
+  (`kutch-ajrakh/geography/why-here`, decision 0151) is the React page's drawing with the app rules
+  that draw it, captured by **Capture screens** with `figure`, because its map
+  (`components/map/place-context/GroundFigure`) fills the neighbouring countries and sizes its pins
+  only after it is drawn in the browser, so its view's first drawing is not the figure readers see;
+  once the stored document carries it, a change to the ground data reaches the page only through a
+  new capture. The six page tools' views draw their own markup, behaviour and legacy scope for the
+  React shell, so inside the authored shell they would nest a second `div.bx` scope and differ from
+  the approved markup the native proof compares element for element. The kit's script still drives
+  the native views' behaviour by ids and classes, and a generated page still reuses a borrowed
+  component's fragment when it has no spec (every Kutch Ajrakh component has one, so the path
+  serves only a future authored monograph).
+- **Clears it:** the ground map drawing its neighbours and pins in its first drawing (the map is the
+  place builders' `components/map`), then the figure listed in `native.json`; the six tools drawn
+  natively once the React shell draws the page (the next entry but one); then the kit's behaviour
+  moved into the views and the fragments and the generated pages' fragment reuse retired.
 
 ### A plate's crop is a class or a focal box
 
@@ -1274,20 +1258,37 @@ Last reviewed: 2026-11-22.
   the frame's aspect ratio (3 / 4, 3 / 2, 4 / 3, `.ph.tall`, `.ph.r32`, `.ph.r43`); a generated plate
   carries the layout's focal box, which `SpecPicture.focalPosition` draws as `object-position` only
   and which sets no frame. Two ways to say one thing, and a focal box cannot yet say what a class
-  says (checked 2026-11-23, monograph follow-up lane).
-- **Clears it:** a focal box that also sets its frame's aspect ratio (the box's width and height
-  times the picture's), the three crops written as such boxes and `crop` dropped from
-  `component_specs_plates` and `PicturePlateView`, proven by Monograph parity (`check=all`) and a
-  generated page's capture, since every generated plate with a focal box would then be framed by it.
+  says. It cannot be cleared while the authored shell holds (checked 2026-11-23, monograph shell
+  lane): the native proof (`e2e/monograph-native-unit.spec.ts`) needs each native plate to draw the
+  approved markup element for element, and the approved page writes `div.ph.tall`, `.ph.r32` and
+  `.ph.r43`, so a frame set by a style fails it; and stored document versions are never changed
+  (`monograph-document.md`, Versions), so the editions stored before the change keep `crop`.
+- **Clears it:** once the shell retires (the next entry), a focal box that also sets its frame's
+  aspect ratio (the box's width and height times the picture's), the three crops written as such
+  boxes (each picture's own ratio is its class's: 1280 by 1707, 853 and 960, so each box is the
+  whole picture) and `crop` dropped from `component_specs_plates` and `PicturePlateView`, proven by
+  Monograph parity (`check=all`) and a generated page's capture, since every generated plate with a
+  focal box would then be framed by it; the web keeps drawing `crop` for the stored editions that
+  carry it unless the owner lets them be stored again.
 
 ### Kutch Ajrakh's React page draws the authored shell
 
-- **What:** `MonographDocument.shell` carries the approved page's main markup with every component
-  inlined from its fragment, so the React page matches the approved one by construction while the
-  React shell and the native views catch up (decision 0106, the first parity run).
-- **Clears it:** a component joins `monographs/Kutch-Ajrakh/native.json` when its view passes the
-  parity run; the shell retires when the React shell reproduces the masthead, the table of contents,
-  the margin notes and the sources chapter.
+- **What:** `MonographDocument.shell` carries the approved page's main markup with its units filled
+  and the seven components "Fragments are a bridge" names inlined from their fragments, so the
+  React page matches the approved one by construction (decision 0106, the first parity run); 73
+  components are native views inside it and the rail takes the content's chapter names (decision
+  0164). Besides components the shell holds hand-made markup that `MonographDocumentPage` does not
+  draw: the masthead with its tools and counts (44 sources plus 24 for the kin crafts, where the React
+  masthead counts every cited source, 64), the answer's table of contents, margin notes with fixed
+  entries, the sources chapter's five groups (the React shell draws one numbered list), and each
+  chapter's own wrappers (screens, articles, spreads, the chemistry sub-rail, the colour key).
+- **Clears it:** the React shell drawing the masthead and its counts (the kin crafts' sources are
+  the ones the `kin-craft-sources` component lists), the table of contents, the margin notes, the
+  sources chapter through the page's own `source-list` and `kin-craft-sources` components (whose
+  specs carry the groups) and each chapter's wrappers, proven by Monograph parity (`check=all`),
+  then the shell retired. The wrappers are hand-made per chapter, so this needs either a port of
+  the template's main markup into structure the document carries, or the owner's leave to let a
+  React drawing become the approved reference, as the ground figure's capture did (decision 0151).
 
 ### The authored shell keeps the app's CSS out by name
 
@@ -1298,8 +1299,9 @@ Last reviewed: 2026-11-22.
   in the base layer and gives the colliding names `all: revert` in a layer above the utilities,
   outside native views (`[data-kind]`). A new app class with a name the shell uses would leak
   again; the parity run's drift finder names it.
-- **Clears it:** retire the shell (round 3c: every component a native view, the kit's styles in the
-  views), or prefix the kit's classes so no name can collide.
+- **Clears it:** retire the shell (the previous entry: every component a native view, the kit's
+  styles in the views), or prefix the kit's classes so no name can collide, which renames classes in
+  the approved page's markup and so needs the owner's leave (decision 0100 serves it as built).
 
 ### Curated craft documents: what they do not carry yet
 

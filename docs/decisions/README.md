@@ -151,7 +151,7 @@ flowchart LR
 | [0103](0103-mcp-server-read-slice.md) | The MCP server, slice 1: public read tools over our own JSON-RPC framing | [0111](0111-fewer-mcp-tools.md) |
 | [0104](0104-image-contributions-intake.md) | Image contributions: declared, read byte by byte, private until approved | [0109](0109-image-formats-and-screens.md) |
 | [0105](0105-ajrakh-page-as-structured-content.md) | The Ajrakh page as structured content, rebuilt by a static build | · |
-| [0106](0106-one-monograph-template-for-every-page.md) | One monograph template for every page, reached through fragments | [0145](0145-monograph-pages-and-speed-without-debt.md) |
+| [0106](0106-one-monograph-template-for-every-page.md) | One monograph template for every page, reached through fragments | [0145](0145-monograph-pages-and-speed-without-debt.md) and [0164](0164-every-cited-sentence-a-unit-and-chapter-names-in-the-content.md) |
 | [0107](0107-craft-articles-in-english-with-room-for-translation.md) | Craft articles are written in English, with room for translations | [0117](0117-pages-in-other-languages.md) |
 | [0108](0108-structure-proposals-become-curated-facts.md) | An approved structure proposal becomes a curated fact of its dossier | [0111](0111-fewer-mcp-tools.md), [0162](0162-unused-craft-page-chapters-retired.md) |
 | [0109](0109-image-formats-and-screens.md) | Pictures in every common format, given from the chat and screened before review | · |
@@ -204,6 +204,7 @@ flowchart LR
 | [0157](0157-translations-read-back-and-reviewed-interface-words.md) | A translation is read back before it is shown, and every fixed word in another language is sourced, reviewed data | · |
 | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) | A curated craft's monograph lists the facts contributors add under their own fields, and a fact a figure shows is not listed again | · |
 | [0162](0162-unused-craft-page-chapters-retired.md) | The craft page's chapters keep only what a page draws, and an approved structure writes its shared rows at once | · |
+| [0164](0164-every-cited-sentence-a-unit-and-chapter-names-in-the-content.md) | Every cited sentence of Kutch Ajrakh is a text unit, 73 of its components draw natively, and its content names its chapters | · |
 
 ## How this document is kept true
 
