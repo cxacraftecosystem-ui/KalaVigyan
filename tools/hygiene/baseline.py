@@ -9,7 +9,10 @@ from pathlib import Path
 
 __all__ = [
     "BASELINE_SCHEMA_VERSION",
+    "BUDGET_COUNTS",
+    "FALL_PASSES",
     "RATCHETED_COUNTS",
+    "REGISTER_COUNT",
     "BaselineError",
     "RatchetStep",
     "compare",
@@ -17,8 +20,11 @@ __all__ = [
     "write_baseline",
 ]
 
-BASELINE_SCHEMA_VERSION = 1
-RATCHETED_COUNTS = ("oversizedFiles", "longFunctions", "wideFunctions")
+BASELINE_SCHEMA_VERSION = 2
+BUDGET_COUNTS = ("oversizedFiles", "longFunctions", "wideFunctions")
+REGISTER_COUNT = "registerEntries"
+RATCHETED_COUNTS = (*BUDGET_COUNTS, REGISTER_COUNT)
+FALL_PASSES = frozenset({REGISTER_COUNT})
 
 
 class BaselineError(ValueError):
@@ -38,6 +44,10 @@ class RatchetStep:
     @property
     def fell(self) -> bool:
         return self.current < self.baseline
+
+    @property
+    def holds(self) -> bool:
+        return not self.rose and (not self.fell or self.name in FALL_PASSES)
 
 
 def read_baseline(path: Path) -> dict[str, int]:

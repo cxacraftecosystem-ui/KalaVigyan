@@ -2,13 +2,14 @@
 
 What is knowingly below standard, why it was left, and what clears it. Add an entry in the same
 change that takes the shortcut; delete it in the change that clears it. Engineers and reviewers read
-it before changing an area.
+it before changing an area. The number of entries may only fall: `tools/hygiene_check.py` fails a
+change that leaves more `### ` entries than `tools/hygiene_baseline.json` records (decision 0163).
 
 | For | Read |
 |---|---|
 | Why an area is built the way it is | [decisions/README.md](decisions/README.md) |
 | Where the work stands | [PROGRESS.md](PROGRESS.md) |
-| The hygiene baseline of files and functions over budget | `tools/hygiene_baseline.json` |
+| The hygiene baseline of files and functions over budget, and of this register's entries | `tools/hygiene_baseline.json` |
 
 ```mermaid
 %%{init: {"theme":"base","fontFamily":"Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif","themeVariables":{"fontSize":"15px","primaryColor":"#F2E9FE","primaryTextColor":"#1E1B2E","primaryBorderColor":"#9148D2","secondaryColor":"#FAEECD","secondaryTextColor":"#1E1B2E","secondaryBorderColor":"#CD9200","tertiaryColor":"#F3F1FA","tertiaryTextColor":"#1E1B2E","tertiaryBorderColor":"#A7A3BC","mainBkg":"#F2E9FE","nodeBorder":"#9148D2","nodeTextColor":"#1E1B2E","lineColor":"#AA69E9","textColor":"#857F9E","edgeLabelBackground":"#F9F5FF","clusterBkg":"#F9F5FF","clusterBorder":"#D6B6FB","titleColor":"#762CB1"}}}%%
@@ -1602,9 +1603,10 @@ Last reviewed: 2026-11-22.
 
 | Change | What to do here |
 |---|---|
-| A shortcut is taken | add its entry, with what is wrong, why it was left and what clears it, in the same change |
+| A shortcut is taken | add its entry, with what is wrong, why it was left and what clears it, in the same change, and clear another entry there so the count does not rise; when none can be cleared, that change's decision record says why and raises `registerEntries` in `tools/hygiene_baseline.json` by hand (the check never raises it) |
 | A shortcut is cleared | delete its entry in the change that clears it |
-| A round ends | the lead re-reads the round's entries and updates "Last reviewed" |
+| A limit is kept on purpose | move it to a decision record of limits kept by choice (decisions 0137, 0163) |
+| A round ends | the lead re-reads the round's entries, updates "Last reviewed" and lowers the recorded count with `tools/hygiene_check.py --update-baseline` |
 
 An entry is true only while its "What" still describes the code; when a change makes it untrue,
 rewrite or delete the entry in that change.

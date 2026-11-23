@@ -13,7 +13,7 @@ change, and update the date. Every engineer and agent changing code here reads i
 | The design system every screen follows | [kalavigyan-design](../../kalavigyan-design/SKILL.md) |
 
 Last reviewed: 2026-11-18; version control, the review rule, the commands' note and the living
-documents checked on 2026-11-21.
+documents checked on 2026-11-21; the hygiene check's register count added on 2026-11-23.
 
 ## What this repository is
 
@@ -265,7 +265,9 @@ The hygiene check enforces what a tool can decide: import direction in `backend/
 without a byte-order mark and LF line endings for every tracked or new text file, and the
 ratcheted counts of Python files over 400 lines, functions over 40 lines and functions with more
 than 5 positional parameters. Every count must equal its baseline: a rise fails, and a fall
-fails until `--update-baseline` records it, so the baseline only moves down.
+fails until `--update-baseline` records it, so the baseline only moves down. The same baseline
+holds the number of entries (`### ` headings) in `docs/TECH_DEBT.md`, which may only fall: a rise
+fails, a fall passes, and `--update-baseline` lowers it (decision 0163).
 
 The frontend's size and import-boundary rules are not yet automated (see `docs/TECH_DEBT.md`).
 
