@@ -20,7 +20,7 @@ from app.research.composition import (
     sentence_violations,
 )
 from app.research.evidence import personal_data_in
-from app.research.gap_admissions import without_source_gap
+from app.research.gap_admissions import admits_gap, without_source_gap
 from app.research.internal_words import INTERNAL_WORDS_KIND, internal_words
 from app.research.quote_renderings import NO_RENDERINGS
 from app.research.quotes import figures_in
@@ -211,7 +211,7 @@ def sentence_problems(
     renderings: Mapping[str, str] = NO_RENDERINGS,
 ) -> tuple[str, ...]:
     found = [f"{v.kind}: {v.detail}" for v in sentence_violations(sentence, allowed, renderings=renderings)]
-    named = internal_words(sentence.text)
+    named = None if admits_gap(sentence.text) else internal_words(sentence.text)
     return tuple(found + ([f"{INTERNAL_WORDS_KIND}: {named}"] if named else []))
 
 

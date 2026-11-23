@@ -52,7 +52,7 @@ def test_a_timeline_whose_every_entry_the_prose_already_said_is_left_out() -> No
     told["sentences"] = [retold(sentence, n) for n, sentence in enumerate(sentences, start=1)]
     ledger = ClaimLedger()
     (shown,) = ledger.admit("s4", [BLOCK.validate_python(told)], REFS)
-    assert len(shown.cited_sentences()) == len(sentences)
+    assert len(list(shown.cited_sentences())) == len(sentences)
     assert ledger.admit("s4", [BLOCK.validate_python(timeline)], REFS) == []
     assert [block.kind for block in ClaimLedger().admit("s4", [BLOCK.validate_python(timeline)], REFS)] == [
         "timeline_map"

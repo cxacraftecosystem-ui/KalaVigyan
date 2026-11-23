@@ -132,9 +132,10 @@ fewer sentences than the live page, never more.
   `climate_risk` and the rest) drop an item when its sentence's text is already shown or it
   restates a shown sentence; a story that would not stand without its restating items keeps the
   first of them (then, if it still does not stand, every one), so a figure is never lost to the
-  prose it draws, except that a `timeline_map` or `region_story` whose every kept item is shown or
-  restated is left out (`claim_ledger.TOLD_STORY_KINDS`, decision 0167: the Ajrakhpur move told by
-  a section's prose and again by its timeline). In one call they are let through before the restating blocks; a
+  prose it draws, except that a `timeline_map` whose every kept item is shown or restated is left
+  out (`claim_ledger.TOLD_STORY_KINDS`, decision 0167: the Ajrakhpur move told by a section's prose
+  and again by its timeline); a `region_story` stays, since its map draws the rivers and districts
+  the prose does not. In one call they are let through before the restating blocks; a
   story block may repeat a sentence within itself, one copy per item it backs (the client says it
   once: Each sentence once, under Block renderers). A
   `process_ladder` is the process's skeleton: a stage drops a sentence said word for word, and a

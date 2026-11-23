@@ -109,7 +109,8 @@ a glossary term's sentence-case name is found when no dossier states it.
    takes the earlier sections had said in full were kept whole for their difference; a seat left
    with no take now goes, and its differences with it (amending decision 0120's keeping, at the
    lead's word). The GEOGRAPHY timeline's only entry retold its prose (the 2001 move to Ajrakhpur)
-   and was spared to stand; a `timeline_map` or `region_story` left with nothing new now goes. Three
+   and was spared to stand; a `timeline_map` left with nothing new now goes, while a `region_story`
+   stays for the rivers and districts its map draws. Three
    sections carried one composed heading; a heading is now one section's per answer
    (`ExplainerStream.claim_heading`, folded), and a later section keeps its own title. In Bidri's
    answer (cf252138) an overview sentence said "The stored statements say ..."; a composed sentence

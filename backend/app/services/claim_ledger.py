@@ -54,7 +54,7 @@ SIMULATION_KIND = "simulation"
 WHAT_IF_KIND = "what_if"
 WHAT_IF_SHARED_OPTIONS = 2
 SINGLE_BLOCK_KINDS = frozenset({"prose", "process_ladder", "images"})
-TOLD_STORY_KINDS = frozenset({"timeline_map", "region_story"})
+TOLD_STORY_KINDS = frozenset({"timeline_map"})
 ONCE_PER_ANSWER_KINDS = frozenset({"region_story", "seasons", "supply_map", "zoom_story"})
 
 WhatIfKey = tuple[str | None, frozenset[str]]
