@@ -41,7 +41,7 @@ function Abroad({ places, routes }: { places: readonly PlacedPlace[]; routes: re
   );
   const summary = abroadSummary(places);
   return (
-    <div className="mt-3 grid min-w-0 gap-1.5 lg:max-w-md" data-testid="timeline-abroad-frame">
+    <div className="mt-3 grid min-w-0 gap-1.5 lg:max-w-md" dir="ltr" data-testid="timeline-abroad-frame">
       <AbroadInset pins={pins} routes={lines} label={summary} />
       <p className="font-ui text-caption text-ink-3">{summary}</p>
     </div>

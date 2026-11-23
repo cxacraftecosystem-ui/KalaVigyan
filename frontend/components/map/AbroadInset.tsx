@@ -64,7 +64,7 @@ export function AbroadInset({ pins, routes, label }: { pins: readonly InsetPin[]
   const scale = useFitScale(box, INSET_WIDTH);
   const { width, height } = frame.viewBox;
   return (
-    <svg ref={box} viewBox={`0 0 ${width} ${height.toFixed(1)}`} role="img" aria-label={label} dir="ltr" className="block h-auto w-full rounded-plate border border-rule [forced-color-adjust:none]" data-fit="" style={fitStyle(scale)} data-testid="timeline-abroad">
+    <svg ref={box} viewBox={`0 0 ${width} ${height.toFixed(1)}`} role="img" aria-label={label} className="block h-auto w-full rounded-plate border border-rule [forced-color-adjust:none]" data-fit="" style={fitStyle(scale)} data-testid="timeline-abroad">
       <rect width={width} height={height} fill="var(--sunk)" />
       <path d={outline} fillRule="evenodd" fill="var(--map-land)" stroke="var(--map-coast)" strokeWidth={0.75} strokeLinejoin="round" vectorEffect="non-scaling-stroke" data-testid="timeline-abroad-india" />
       <Routes routes={routes} frame={frame} />

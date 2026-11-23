@@ -15,7 +15,7 @@ function Sparkline({ series }: { series: YearlySeries }) {
   const { lowest, highest } = extremes(series);
   const named = marks.filter((mark) => mark.year === lowest.year || mark.year === highest.year);
   return (
-    <svg viewBox={`0 0 ${SPARK_VIEW.width} ${SPARK_VIEW.height}`} className="block h-10 w-full max-w-60 [forced-color-adjust:none]" aria-hidden="true" focusable="false" dir="ltr" data-testid="yearly-sparkline">
+    <svg viewBox={`0 0 ${SPARK_VIEW.width} ${SPARK_VIEW.height}`} className="block h-10 w-full max-w-60 [forced-color-adjust:none]" aria-hidden="true" focusable="false" data-testid="yearly-sparkline">
       <path d={sparkPath(marks)} fill="none" stroke={seriesColour(series)} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       {named.map((mark) => (
         <circle key={mark.year} cx={mark.x} cy={mark.y} r={3} fill="var(--chart-emph)" stroke="var(--ground)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" data-testid="yearly-extreme" data-year={mark.year} />
