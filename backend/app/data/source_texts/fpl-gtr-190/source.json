@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "seedSource": "inf:f388592d6a73",
+  "title": "Wood Handbook: Wood as an Engineering Material, General Technical Report FPL-GTR-190",
+  "publisher": "Forest Products Laboratory, USDA Forest Service",
+  "year": 2010,
+  "licence": "Public domain: a work of the United States Government",
+  "language": "en",
+  "chapters": [
+    {
+      "chapter": 3,
+      "title": "Structure and Function of Wood",
+      "file": "chapter_03.txt",
+      "url": "https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_03.pdf",
+      "archivedUrl": "https://web.archive.org/web/20260406203547id_/https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_03.pdf",
+      "retrievedAt": "2026-11-23",
+      "textSha256": "5a41b8f1fce139ddab933132e352ff9935d227c05ea5529e1e52ce55c7d4c26e"
+    },
+    {
+      "chapter": 4,
+      "title": "Moisture Relations and Physical Properties of Wood",
+      "file": "chapter_04.txt",
+      "url": "https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_04.pdf",
+      "archivedUrl": "https://web.archive.org/web/20260406202252id_/https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_04.pdf",
+      "retrievedAt": "2026-11-23",
+      "textSha256": "d1b80c830fb9677cb588dc5eec024dbc84c0d2637774e951fd07e000a45e5b51"
+    },
+    {
+      "chapter": 5,
+      "title": "Mechanical Properties of Wood",
+      "file": "chapter_05.txt",
+      "url": "https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_05.pdf",
+      "archivedUrl": "https://web.archive.org/web/20260728054917id_/https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_05.pdf",
+      "retrievedAt": "2026-11-23",
+      "textSha256": "a701c7fe1b4467f35462b0fc44e8cd7ecc088bf67cdd4591f6081e30818aa05e"
+    },
+    {
+      "chapter": 13,
+      "title": "Drying and Control of Moisture Content and Dimensional Changes",
+      "file": "chapter_13.txt",
+      "url": "https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_13.pdf",
+      "archivedUrl": "https://web.archive.org/web/20260406161644id_/https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_13.pdf",
+      "retrievedAt": "2026-11-23",
+      "textSha256": "5e45105e340fe9af61b428040487bc3355f91590d2c6f9f769c5131e3e90a4a9"
+    },
+    {
+      "chapter": 16,
+      "title": "Finishing of Wood",
+      "file": "chapter_16.txt",
+      "url": "https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_16.pdf",
+      "archivedUrl": "https://web.archive.org/web/20260411142400id_/https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_16.pdf",
+      "retrievedAt": "2026-11-23",
+      "textSha256": "6069d7de39a682e1826f9c5296db7b66995797bc5cb93fb05e3acc4e44e324e7"
+    }
+  ]
+}

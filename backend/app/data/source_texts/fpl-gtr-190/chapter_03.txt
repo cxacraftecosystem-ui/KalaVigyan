@@ -1,0 +1,1277 @@
+CHAPTER 3
+Structure and Function of Wood
+Alex Wiedenhoeft, Botanist
+3-1
+Wood is a complex biological structure, a composite of
+many chemistries and cell types acting together to serve the
+needs of a living plant. Attempting to understand wood in
+the context of wood technology, we have often overlooked
+the key and basic fact that wood evolved over the course of
+millions of years to serve three main functions in plants―
+conduction of water from the roots to the leaves, mechanical support of the plant body, and storage of biochemicals.
+There is no property of wood-physical, mechanical, chemical, biological, or technological-that is not fundamentally
+derived from the fact that wood is formed to meet the needs
+of the living tree. To accomplish any of these functions,
+wood must have cells that are designed and interconnected
+in ways sufficient to perform these functions. These three
+functions have influenced the evolution of approximately
+20,000 different species of woody plants, each with unique
+properties, uses, and capabilities, in both plant and human
+contexts. Understanding the basic requirements dictated by
+these three functions and identifying the structures in wood
+that perform them allow insight to the realm of wood as an
+engineering material (Hoadley 2000). A scientist who understands the interrelationships between form and function
+can predict the utility of a specific wood in a new context.
+The objective of this chapter is to review the basic biological structure of wood and provide a basis for interpreting its
+properties in an engineering context. By understanding the
+function of wood in the living tree, we can better understand
+the strengths and limitations it presents as a material.
+The component parts of wood must be defined and delimited at a variety of scales. The wood anatomical expertise
+necessary for a researcher who is using a solid wood beam
+is different from that necessary for an engineer designing
+a glued-laminated beam, which in turn is different from
+that required for making a wood-resin composite with
+wood flour. Differences in the kinds of knowledge required
+in these three cases are related to the scale at which one
+intends to interact with wood, and in all three cases the
+properties of these materials are derived from the biological
+needs of the living tree. For this reason, this chapter explains
+the structure of wood at decreasing scales and in ways that
+demonstrate the biological rationale for a plant to produce
+wood with such features. This background will permit the
+reader to understand the biological bases for the properties
+presented in subsequent chapters.
+Although shrubs and many vines form wood, the remainder
+of this chapter will focus on wood from trees, which are the
+Contents
+Biological Structure of Wood at Decreasing
+Scales 3-2
+The Tree 3-2
+Softwoods and Hardwoods 3-2
+Sapwood and Heartwood 3-2
+Axial and Radial Systems 3-3
+Planes of Section 3-3
+Vascular Cambium 3-4
+Growth Rings 3-4
+Cells in Wood 3-6
+Cell Walls 3-7
+Pits 3-8
+Microscopic Structure of Softwoods and
+Hardwoods 3-9
+Softwoods 3-9
+Hardwoods 3-10
+Wood Technology 3-12
+Moisture Relations 3-12
+Density 3-12
+Juvenile Wood and Reaction Wood 3-13
+Appearance of Wood as Sawn Lumber 3-13
+Color and Luster 3-13
+Grain and Texture 3-13
+Plainsawn and Quartersawn 3-14
+Slope of Grain: Straight, Diagonal,
+Spiral, and Interlocked Grain 3-14
+Knots 3-15
+Decorative Features 3-15
+Wood Identification 3-16
+Literature Cited 3-16
+3-2
+predominant source of wood for commercial and engineering applications and provide examples of virtually all features that merit discussion.
+Biological Structure of Wood
+at Decreasing Scales
+The Tree
+A living, growing tree has two main domains, the shoot and
+the roots. Roots are the subterranean structures responsible
+for water and mineral nutrient uptake, mechanical anchoring of the shoot, and storage of biochemicals. The shoot is
+made up of the trunk or bole, branches, and leaves (Raven
+and others 1999). The remainder of the chapter will be concerned with the trunk of the tree.
+If one cuts down a tree and looks at the stump, several
+gross observations can be made. The trunk is composed of
+various materials present in concentric bands. From
+the outside of the tree to the inside are outer bark, inner
+bark, vascular cambium, sapwood, heartwood, and the pith
+(Fig. 3-1). Outer bark provides mechanical protection to the
+softer inner bark and also helps to limit evaporative water
+loss. Inner bark is the tissue through which sugars (food)
+produced by photosynthesis are translocated from the leaves
+to the roots or growing portions of the tree. The vascular
+cambium is the layer between the bark and the wood that
+produces both these tissues each year. The sapwood is the
+active, "living" wood that conducts the water (or sap) from
+the roots to the leaves. It has not yet accumulated the oftencolored chemicals that set apart the non-conductive heartwood found as a core of darker-colored wood in the middle
+of most trees. The pith at the very center of the trunk is the
+remnant of the early growth of the trunk, before wood was
+formed.
+Softwoods and Hardwoods
+Despite what one might think based on the names, not all
+softwoods have soft, lightweight wood, nor do all hardwoods have hard, heavy wood. To define them botanically,
+softwoods are those woods that come from gymnosperms
+(mostly conifers), and hardwoods are woods that come
+from angiosperms (flowering plants). In the temperate portion of the northern hemisphere, softwoods are generally
+needle-leaved evergreen trees such as pine (Pinus) and
+spruce (Picea), whereas hardwoods are typically broadleaf,
+deciduous trees such as maple (Acer), birch (Betula), and
+oak (Quercus). Softwoods and hardwoods not only differ in
+terms of the types of trees from which they are derived, but
+they also differ in terms of their component cells. Softwoods
+have a simpler basic structure than do hardwoods because
+they have only two cell types and relatively little variation
+in structure within these cell types. Hardwoods have greater
+structural complexity because they have both a greater number of basic cell types and a far greater degree of variability
+within the cell types. The single most important distinction
+between the two general kinds of wood is that hardwoods
+have a characteristic type of cell called a vessel element (or
+pore) whereas softwoods lack these (Fig. 3-2). An important
+cellular similarity between softwoods and hardwoods is that
+in both kinds of wood, most of the cells are dead at maturity,
+even in the sapwood. The cells that are alive at maturity are
+known as parenchyma cells and can be found in both softwoods and hardwoods.
+Sapwood and Heartwood
+In both softwoods and hardwoods, the wood in the trunk of
+the tree is typically divided into two zones, each of which
+serves an important function distinct from the other. The actively conducting portion of the stem in which parenchyma
+cells are still alive and metabolically active is referred to as
+sapwood. A looser, more broadly applied definition is that
+sapwood is the band of lighter colored wood adjacent to the
+bark. Heartwood is the darker colored wood found to the
+interior of the sapwood (Fig. 3-1).
+In the living tree, sapwood is responsible not only for
+conduction of sap but also for storage and synthesis of biochemicals. An important storage function is the long-term
+storage of photosynthate. Carbon that must be expended to
+form a new flush of leaves or needles must be stored somewhere in the tree, and parenchyma cells of the sapwood
+are often where this material is stored. The primary storage
+forms of photosynthate are starch and lipids. Starch grains
+are stored in the parenchyma cells and can be easily seen
+with a microscope. The starch content of sapwood can have
+important ramifications in the wood industry. For example,
+in the tropical tree ceiba (Ceiba pentandra), an abundance
+Figure 3-1. Macroscopic view of a transverse section
+of a Quercus alba trunk. Beginning at the outside of
+the tree is the outer bark (ob). Next is the inner bark
+(ib) and then the vascular cambium (vc), which is too
+narrow to see at this magnification. Interior toward the
+vascular cambium is the sapwood, which is easily differentiated from the heartwood that lies toward the interior. At the center of the trunk is the pith (p), which is
+barely discernible in the center of the heartwood.
+General Technical Report FPL-GTR-190
+3-3
+Chapter 3 Structure and Function of Wood
+of starch can lead to growth of anaerobic bacteria that produce ill-smelling compounds that can make the wood commercially unusable (Chudnoff 1984). In southern yellow
+pines of the United States, a high starch content encourages
+growth of sap-stain fungi that, though they do not affect the
+strength of the wood, can nonetheless decrease the lumber
+value for aesthetic reasons (Simpson 1991).
+Living cells of the sapwood are also the agents of heartwood
+formation. Biochemicals must be actively synthesized and
+translocated by living cells. For this reason, living cells at
+the border between heartwood and sapwood are responsible
+for the formation and deposition of heartwood chemicals,
+one important step leading to heartwood formation
+(Hillis 1996). Heartwood functions in long-term storage of
+biochemicals of many varieties depending on the species in
+question. These chemicals are known collectively as extractives. In the past, heartwood was thought to be a disposal
+site for harmful byproducts of cellular metabolism, the
+so-called secondary metabolites. This led to the concept of
+the heartwood as a dumping ground for chemicals that, to a
+greater or lesser degree, would harm living cells if not sequestered in a safe place. We now know that extractives are
+a normal part of the plant's system of protecting its wood.
+Extractives are formed by parenchyma cells at the heartwood-sapwood boundary and are then exuded through pits
+into adjacent cells (Hillis 1996). In this way, dead cells can
+become occluded or infiltrated with extractives despite the
+fact that these cells lack the ability to synthesize or accumulate these compounds on their own.
+Extractives are responsible for imparting several larger-scale
+characteristics to wood. For example, extractives provide
+natural durability to timbers that have a resistance to decay
+fungi. In the case of a wood like teak (Tectona grandis),
+known for its stability and water resistance, these properties
+are conferred in large part by the waxes and oils formed and
+deposited in the heartwood. Many woods valued for their
+colors, such as mahogany (Swietenia mahagoni), African
+blackwood (Diospyros melanoxylon), Brazilian rosewood
+(Dalbergia nigra), and others, owe their value to the type
+and quantity of extractives in the heartwood. For these
+species, the sapwood has little or no value, because the desirable properties are imparted by heartwood extractives.
+Gharu wood, or eagle wood (Aquilaria malaccensis), has
+been driven to endangered status due to human harvest of
+the wood to extract valuable resins used in perfume making (Lagenheim 2003). Sandalwood (Santalum spicatum), a
+wood famed for its use in incenses and perfumes, is valuable
+only if the heartwood is rich with the desired scented extractives. The utility of a wood for a technological application
+can be directly affected by extractives. For example, if a
+wood like western redcedar, high in hydrophilic extractives,
+is finished with a water-based paint without a stain blocker,
+extractives may bleed through the paint, ruining the product
+(Chap. 16).
+Axial and Radial Systems
+The distinction between sapwood and heartwood, though
+important, is a gross feature that is often fairly easily observed. More detailed inquiry into the structure of wood
+shows that wood is composed of discrete cells connected
+and interconnected in an intricate and predictable fashion
+to form an integrated system that is continuous from root
+to twig. The cells of wood are typically many times longer
+than wide and are specifically oriented in two separate systems of cells: the axial system and the radial system. Cells
+of the axial system have their long axes running parallel to
+the long axis of the organ (up and down the trunk). Cells of
+the radial system are elongated perpendicularly to the long
+axis of the organ and are oriented like radii in a circle or
+spokes in a bicycle wheel, from the pith to the bark. In the
+trunk of a tree, the axial system runs up and down, functions
+in long-distance water movement, and provides the bulk
+of the mechanical strength of the tree. The radial system
+runs in a pith to bark direction, provides lateral transport
+for biochemicals, and in many cases performs a large fraction of the storage function in wood. These two systems are
+interpenetrating and interconnected, and their presence is a
+defining characteristic of wood as a tissue.
+Planes of Section
+Although wood can be cut in any direction for examination,
+the organization and interrelationship between the axial and
+radial systems give rise to three main perspectives from
+which they can be viewed to glean the most information.
+These three perspectives are the transverse plane of section (the cross section), the radial plane of section, and the
+Figure 3-2. A, the general form of a generic softwood tree.
+B, the general form of a generic hardwood tree. C, transverse section of Pseudotsuga mensiezii, a typical softwood; the thirteen round white spaces are resin canals.
+D, transverse section of Betula allegheniensis, a typical
+hardwood; the many large, round white structures are
+vessels or pores, the characteristic feature of a hardwood.
+Scale bars = 780 μm.
+3-4
+tangential plane of section. Radial and tangential sections
+are referred to as longitudinal sections because they extend
+parallel to the axial system (along the grain).
+The transverse plane of section is the face that is exposed
+when a tree is cut down. Looking down at the stump one
+sees the transverse section (as in Fig. 3-3H); cutting a board
+across the grain exposes the transverse section. The transverse plane of section provides information about features
+that vary both in the pith to bark direction (called the radial
+direction) and also those that vary in the circumferential direction (called the tangential direction). It does not provide
+information about variations up and down the trunk.
+The radial plane of section runs in a pith-to-bark direction
+(Fig. 3-3A, top), and it is parallel to the axial system, so it
+provides information about longitudinal changes in the stem
+and from pith to bark along the radial system. To describe
+it geometrically, it is parallel to the radius of a cylinder, and
+extending up and down the length of the cylinder. In a practical sense, it is the face or plane that is exposed when a log
+is split exactly from pith to bark. It does not provide any information about features that vary in a tangential direction.
+The tangential plane is at a right angle to the radial plane
+(Fig. 3-3A, top). Geometrically, it is parallel to any tangent
+line that would touch the cylinder, and it extends along the
+length of the cylinder. One way in which the tangential
+plane would be exposed is if the bark were peeled from a
+log; the exposed face is the tangential plane. The tangential
+plane of section does not provide any information about
+features that vary in the radial direction, but it does provide
+information about the tangential dimensions of features.
+All three planes of section are important to the proper observation of wood, and only by looking at each can a holistic
+and accurate understanding of the three-dimensional structure of wood be gleaned. The three planes of section are
+determined by the structure of wood and the way in which
+the cells in wood are arrayed. The topology of wood and the
+distribution of the cells are accomplished by a specific part
+of the tree stem.
+Vascular Cambium
+The axial and radial systems and their component cells are
+derived from a part of the tree called the vascular cambium.
+The vascular cambium is a thin layer of cells that exists
+between the inner bark and the wood (Figs. 3-1, 3-4) that
+produces, by means of many cell divisions, wood (or secondary xylem) to the inside and bark (or secondary phloem)
+to the outside, both of which are vascular conducting tissues (Larson 1994). As the vascular cambium adds cells to
+the layers of wood and bark around a tree, the girth of the
+tree increases, and thus the total surface area of the vascular
+cambium itself must increase, and this is accomplished by
+cell division as well.
+The axial and radial systems are generated in the vascular
+cambium by two component cells: fusiform initials and
+ray initials. Fusiform initials, named to describe their long,
+slender shape, give rise to cells of the axial system, and ray
+initials give rise to the radial system. For this reason, there
+is a direct and continuous link between the most recently
+formed wood, the vascular cambium, and the inner bark.
+In most cases, the radial system in the wood is continuous
+into the inner bark, through the vascular cambium. In this
+way wood, the water-conducting tissue, stays connected to
+the inner bark, the photosynthate-conducting tissue. They
+are interdependent tissues because the living cells in wood
+require photosynthate for respiration and cell growth and the
+inner bark requires water in which to dissolve and transport
+the photosynthate. The vascular cambium is an integral feature that not only gives rise to these tissue systems but also
+links them so that they may function in the living tree.
+Growth Rings
+Wood is produced by the vascular cambium one layer of cell
+divisions at a time, but we know from general experience
+that in many woods large groups of cells are produced more
+or less together in time, and these groups act together to
+serve the tree. These collections of cells produced together
+over a discrete time interval are known as growth increments or growth rings. Cells formed at the beginning of
+the growth increment are called earlywood cells, and cells
+formed in the latter portion of the growth increment are
+called latewood cells (Fig. 3-3D,E). Springwood and summerwood were terms formerly used to refer to earlywood
+and latewood, respectively, but their use is no longer recommended (IAWA 1989).
+In temperate portions of the world and anywhere else with
+distinct, regular seasonality, trees form their wood in annual
+growth increments; that is, all the wood produced in one
+growing season is organized together into a recognizable,
+functional entity that many sources refer to as annual rings.
+Such terminology reflects this temperate bias, so a preferred
+term is growth increment, or growth ring (IAWA 1989). In
+many woods in the tropics, growth rings are not evident.
+However, continuing research in this area has uncovered
+several characteristics whereby growth rings can be correlated with seasonality changes in some tropical species
+(Worbes 1995, 1999; Callado and others 2001).
+Woods that form distinct growth rings, and this includes
+most woods that are likely to be used as engineering
+materials in North America, show three fundamental patterns within a growth ring: no change in cell pattern across
+the ring; a gradual reduction of the inner diameter of conducting elements from the earlywood to the latewood; and
+a sudden and distinct change in the inner diameter of the
+conducting elements across the ring (Fig. 3-5). These patterns appear in both softwoods and hardwoods but differ in
+General Technical Report FPL-GTR-190
+3-5
+Chapter 3 Structure and Function of Wood
+Figure 3-3. A, illustration of a cut-away tree at various magnifications, corresponding roughly with the images to its right; at the top, at an approximate magnification
+of 100×, a softwood cell and several hardwood cells are illustrated, to give a sense
+of scale between the two; one tier lower, at an approximate magnification of 50×, is
+a single growth ring of a softwood (left) and a hardwood (right), and an indication of
+the radial and tangential planes; the next tier, at approximately 5× magnification, illustrates many growth rings together and how one might produce a straight-grained
+rather than a diagonal-grained board; the lowest tier includes an illustration of the
+relative position of juvenile and mature wood in the tree, at 1× magnification. B,C, light
+microscopic views of the lumina (L) and cell walls (arrowheads) of a softwood (B) and
+a hardwood (C). D,E, hand-lens views of growth rings, each composed of earlywood
+(ew) and latewood (lw), in a softwood (D) and a hardwood (E). F, a straight-grained
+board; note that the line along the edge of the board is parallel to the line along the
+grain of the board. G, a diagonal-grained board; note that the two lines are markedly
+not parallel; this board has a slope of grain of about 1 in 7. H, the gross anatomy of a
+tree trunk, showing bark, sapwood, and heartwood.
+each because of the distinct anatomical differences between
+the two.
+Non-porous woods (or softwoods, woods without vessels)
+can exhibit any of these three general patterns. Some
+softwoods such as Western redcedar (Thuja plicata), northern white-cedar (Thuja occidentalis), and species of spruce
+(Picea) and true fir (Abies) have growth increments that
+undergo a gradual transition from the thin-walled widelumined earlywood cells to the thicker-walled, narrowerlumined latewood cells (Fig. 3-5B). Other woods undergo
+an abrupt transition from earlywood to latewood, such as
+southern yellow pine (Pinus), larch (Larix), Douglas-fir
+(Pseudotsuga menziesii), baldcypress (Taxodium disticum),
+and redwood (Sequoia sempervirens) (Fig. 3-5C). Because
+most softwoods are native to the north temperate regions,
+growth rings are clearly evident. Only in species such as araucaria (Araucaria) and some podocarps (Podocarpus) does
+one find no transition within the growth ring (Fig. 3-5A).
+Some authors report this state as growth rings being absent
+or only barely evident (Phillips 1948, Kukachka 1960).
+Porous woods (or hardwoods, woods with vessels) have two
+main types of growth rings and one intermediate form. In
+diffuse-porous woods, vessels either do not markedly differ
+in size and distribution from the earlywood to the latewood,
+or the change in size and distribution is gradual and no
+clear distinction between earlywood and latewood can be
+found (Fig. 3-5D). Maple (Acer), birch (Betula), aspen/cottonwood (Populus), and yellow-poplar (Liriodendron tulipifera) are examples of diffuse porous species.
+This pattern is in contrast to ring-porous woods wherein the
+transition from earlywood to latewood is abrupt, with vessel diameters decreasing substantially (often by an order or
+magnitude or more); this change in vessel size is often accompanied by a change in the pattern of vessel distribution
+as well. This creates a ring pattern of large earlywood vessels around the inner portion of the growth increment, and
+then denser, more fibrous tissue in the latewood, as is found
+in hackberry (Celtis occidentalis), white ash (Fraxinus
+americana), shagbark hickory (Carya ovata), and northern
+red oak (Quercus rubra) (Fig. 3-5F).
+Sometimes the vessel size and distribution pattern falls more
+or less between these two definitions, and this condition is
+referred to as semi-ring-porous (Fig. 3-5E). Black walnut
+(Juglans nigra) is a temperate-zone semi-ring-porous wood.
+Most tropical hardwoods are diffuse-porous; the bestknown commercial exceptions to this are the Spanish-cedars
+(Cedrela spp.) and teak (Tectona grandis), which are generally semi-ring-porous and ring-porous, respectively.
+Few distinctly ring-porous species grow in the tropics and
+comparatively few grow in the southern hemisphere. In genera that span temperate and tropical zones, it is common to
+have ring-porous species in the temperate zone and diffuseporous species in the tropics. The oaks (Quercus), ashes
+(Fraxinus), and hackberries (Celtis) native to the tropics
+are diffuse-porous, whereas their temperate congeners are
+ring-porous. Numerous detailed texts provide more information on growth increments in wood, a few of which are of
+particular note (Panshin and deZeeuw 1980, Dickison 2000,
+Carlquist 2001).
+Cells in Wood
+Understanding a growth ring in greater detail requires some
+familiarity with the structure, function, and variability of
+3-6
+Figure 3-4. Light microscopic view of the vascular
+cambium. Transverse section showing vascular cambium (vc) and bark (b) in Croton macrobothrys. The
+tissue above the vascular cambium is wood. Scale
+bar = 390 μm.
+Figure 3-5. Transverse sections of woods showing types
+of growth rings. Arrows delimit growth rings, when present. A-C, softwoods. A, no transition within the growth
+ring (growth ring absent) in Podocarpus imbricata.
+B, gradual transition from earlywood to latewood in Picea
+glauca. C, abrupt transition from earlywood to latewood
+in Pseudotsuga mensiezii. D-F, hardwoods. D, diffuseporous wood (no transition) in Acer saccharum. E, semiring-porous wood (gradual transition) in Diospyros virginiana. F, ring-porous wood (abrupt transition) in Fraxinus
+americana. Scale bars = 300 μm.
+General Technical Report FPL-GTR-190
+cells that make up the ring. A living plant cell consists of
+two primary domains: the protoplast and the cell wall. The
+protoplast is the sum of the living contents that are bounded
+by the cell membrane. The cell wall is a non-living, largely
+carbohydrate matrix extruded by the protoplast to the exterior of the cell membrane. The plant cell wall protects the
+protoplast from osmotic lysis and often provides mechanical
+support to the plant at large (Esau 1977, Raven and others
+1999, Dickison 2000).
+For cells in wood, the situation is somewhat more complicated than this highly generalized case. In many cases in
+wood, the ultimate function of the cell is borne solely by the
+cell wall. This means that many mature wood cells not only
+do not require their protoplasts, but indeed must completely
+remove their protoplasts prior to achieving functional maturity. For this reason, a common convention in wood literature is to refer to a cell wall without a protoplast as a cell.
+Although this is technically incorrect from a cell biological
+standpoint, this convention is common in the literature and
+will be observed throughout the remainder of the chapter.
+In the case of a mature cell in wood in which there is no
+protoplast, the open portion of the cell where the protoplast
+would have existed is known as the lumen (plural: lumina).
+Thus, in most cells in wood there are two domains; the cell
+wall and the lumen (Fig. 3-3B,C). The lumen is a critical
+component of many cells, whether in the context of the
+amount of space available for water conduction or in the
+context of a ratio between the width of the lumen and the
+thickness of the cell wall. The lumen has no structure per se,
+as it is the void space in the interior of the cell. Thus, wood
+is a substance that has two basic domains; air space (mostly
+in the lumina of the cells) and the cell walls of the component cells.
+Cell Walls
+Cell walls in wood give wood the majority of its properties
+discussed in later chapters. Unlike the lumen, which is a
+void space, the cell wall itself is a highly regular structure,
+from one cell type to another, between species, and even
+when comparing softwoods and hardwoods. The cell wall
+consists of three main regions: the middle lamella, the
+primary wall, and the secondary wall (Fig. 3-6). In each
+region, the cell wall has three major components: cellulose
+microfibrils (with characteristic distributions and organization), hemicelluloses, and a matrix or encrusting material,
+typically pectin in primary walls and lignin in secondary
+walls (Panshin and deZeeuw 1980). In a general sense, cellulose can be understood as a long string-like molecule with
+high tensile strength; microfibrils are collections of cellulose
+molecules into even longer, stronger thread-like macromolecules. Lignin is a brittle matrix material. The hemicelluloses
+are smaller, branched molecules thought to help link the
+lignin and cellulose into a unified whole in each layer of the
+cell wall.
+To understand these wall layers and their interrelationships,
+it is necessary to remember that plant cells generally do not
+exist singly in nature; instead they are adjacent to many
+other cells, and this association of thousands of cells,
+taken together, forms an organ, such as a leaf. Each of the
+individual cells must adhere to one another in a coherent
+way to ensure that the cells can act as a unified whole. This
+means they must be interconnected to permit the movement
+of biochemicals (such as photosynthate, hormones, cellsignaling agents) and water. This adhesion is provided by
+the middle lamella, the layer of cell wall material between
+two or more cells, a part of which is contributed by each of
+the individual cells (Fig. 3-6). This layer is the outermost
+layer of the cell wall continuum and in a non-woody organ
+is pectin rich. In the case of wood, the middle lamella is
+lignified.
+The next layer formed by the protoplast just interior to the
+middle lamella is the primary wall (Fig. 3-6). The primary
+wall is characterized by a largely random orientation of
+cellulose microfibrils; like thin threads wound round and
+round a balloon in no particular order, where any microfibril
+angle from 0° to 90° relative to the long axis of the cell may
+3-7
+Chapter 3 Structure and Function of Wood
+Figure 3-6. Cut-away drawing of the cell wall, including
+the structural details of a bordered pit. The various layers of the cell wall are detailed at the top of the drawing,
+beginning with the middle lamella (ML). The next layer is
+the primary wall (P), and on the surface of this layer the
+random orientation of the cellulose microfibrils is detailed. Interior to the primary wall is the secondary wall
+in its three layers: S1, S2, and S3. The microfibril angle
+of each layer is illustrated, as well as the relative thickness of the layers. The lower portion of the illustration
+shows bordered pits in both sectional and face view.
+be present. In cells in wood, the primary wall is thin and is
+generally indistinguishable from the middle lamella. For this
+reason, the term compound middle lamella is used to denote
+the primary cell wall of a cell, the middle lamella, and the
+primary cell wall of the adjacent cell. Even when viewed
+with transmission electron microscopy, the compound middle lamella often cannot be separated unequivocally into its
+component layers.
+The remaining cell wall domain, found in virtually all cells
+in wood (and in many cells in non-woody plants or plant
+parts), is the secondary cell wall. The secondary cell wall is
+composed of three layers (Fig. 3-6). As the protoplast lays
+down the cell wall layers, it progressively reduces the lumen
+volume. The first-formed secondary cell wall layer is the S1
+(Fig. 3-6), which is adjacent to compound middle lamella
+(or technically, the primary wall). This layer is a thin layer
+and is characterized by a large microfibril angle. That is to
+say, the cellulose microfibrils are laid down in a helical fashion, and the angle between the mean microfibril direction
+and the long axis of the cell is large (50° to 70°).
+The next wall layer is arguably the most important cell wall
+layer in determining the properties of the cell and, thus,
+the wood properties at a macroscopic level (Panshin and
+deZeeuw 1980). This layer, formed interior to the S1 layer,
+is the S2 layer (Fig. 3-6). This is the thickest secondary cell
+wall layer and it makes the greatest contribution to the overall properties of the cell wall. It is characterized by a lower
+lignin percentage and a low microfibril angle (5° to 30°).
+The microfibril angle of the S2 layer of the wall has a strong
+but not fully understood relationship with wood properties
+at a macroscopic level (Kretschmann and others 1998), and
+this is an area of active research.
+Interior to the S2 layer is the S3 layer, a relatively thin wall
+layer (Fig. 3-6). The microfibril angle of this layer is relatively high and similar to the S1 (>70°). This layer has the
+lowest percentage of lignin of any of the secondary wall
+layers. The explanation of this phenomenon is related
+directly to the physiology of the living tree. In brief, for water to move up the plant (transpiration), there must be adhesion between the water molecules and the cell walls of the
+water conduits. Lignin is a hydrophobic macromolecule, so
+it must be in low concentration in the S3 to permit adhesion
+of water to the cell wall and thus facilitate transpiration. For
+more detail on these wall components and information on
+transpiration and the role of the cell wall, see any collegelevel plant physiology textbook (for example, Kozlowski
+and Pallardy 1997, Taiz and Zeiger 1991).
+Pits
+Any discussion of cell walls in wood must be accompanied
+by a discussion of the ways in which cell walls are modified
+to allow communication and transport between the cells in
+the living plant. These wall modifications, called pit-pairs
+(or more commonly just pits), are thin areas in the cell walls
+between two cells and are a critical aspect of wood structure
+too often overlooked in wood technological treatments. Pits
+have three domains: the pit membrane, the pit aperture, and
+the pit chamber. The pit membrane (Fig. 3-6) is the thin
+semi-porous remnant of the primary wall; it is a carbohydrate and not a phospholipid membrane. The pit aperture
+is the opening or hole leading into the open area of the pit,
+which is called the pit chamber (Fig. 3-6). The type, number, size, and relative proportion of pits can be characteristic
+of certain types of wood and furthermore can directly affect
+how wood behaves in a variety of situations, such as how
+wood interacts with surface coatings (DeMeijer and others
+1998, Rijkaert and others 2001).
+Pits of predictable types occur between different types of
+cells. In the cell walls of two adjacent cells, pits will form in
+the wall of each cell separately but in a coordinated location
+so that the pitting of one cell will match up with the pitting
+of the adjacent cell (thus a pit-pair). When this coordination
+is lacking and a pit is formed only in one of the two cells, it
+is called a blind pit. Blind pits are fairly rare in wood. Understanding the type of pit can permit one to determine what
+type of cell is being examined in the absence of other information. It can also allow one to make a prediction about
+how the cell might behave, particularly in contexts that involve fluid flow. Pits occur in three varieties: bordered, simple, and half-bordered (Esau 1977, Raven and others 1999).
+Bordered pits are thus named because the secondary wall
+overarches the pit chamber and the aperture is generally
+smaller or differently shaped than the pit chamber, or both.
+The portion of the cell wall that is overarching the pit chamber is called the border (Figs. 3-6, 3-7A,D). When seen in
+face view, bordered pits often are round in appearance and
+look somewhat like a doughnut (Fig. 3-6). When seen in
+sectional view, the pit often looks like a pair of V's with
+the open ends of the V's facing each other (Fig. 3-7A,D).
+In this case, the long stems of the V represent the borders,
+the secondary walls that are overarching the pit chamber.
+Bordered pits always occur between two conducting cells,
+and sometimes between other cells, typically those with
+thick cell walls. The structure and function of bordered pits,
+particularly those in softwoods (see following section), are
+much-studied and considered to be well-suited to the safe
+and efficient conduction of sap. The status of the bordered
+pit (whether it is open or closed) has great importance in the
+field of wood preservation and can affect wood finishing and
+adhesive bonding.
+Simple pits lack any sort of border (Fig. 3-7C,F). The pit
+chamber is straight-walled, and the pits are uniform in size
+and shape in each of the partner cells. Simple pits are typical
+between parenchyma cells and in face view merely look like
+clear areas in the walls.
+3-8
+General Technical Report FPL-GTR-190
+Half-bordered pits occur between a conducting cell and a
+parenchyma cell. In this case, each cell forms the kind of pit
+that would be typical of its type (bordered in the case of a
+conducting cell and simple in the case of a parenchyma cell)
+and thus half of the pit pair is simple and half is bordered
+(Fig. 3-7B,E). In the living tree, these pits are of great importance because they represent the communication between
+conducting cells and biochemically active parenchyma cells.
+Microscopic Structure of
+Softwoods and Hardwoods
+As discussed previously, the fundamental differences between woods are founded on the types, sizes, proportions,
+pits, and arrangements of different cells that comprise the
+wood. These fine details of structure can affect the use of a
+wood.
+Softwoods
+The structure of a typical softwood is relatively simple.
+The axial or vertical system is composed mostly of axial
+tracheids, and the radial or horizontal system is the rays,
+which are composed mostly of ray parenchyma cells.
+Tracheids
+Tracheids are long cells that are often more than 100 times
+longer (1 to 10 mm) than wide and they are the major component of softwoods, making up over 90% of the volume of
+the wood. They serve both the conductive and mechanical
+needs of softwoods. On the transverse view or section
+(Fig. 3-8A), tracheids appear as square or slightly rectangular cells in radial rows. Within one growth ring they are
+typically thin-walled in the earlywood and thicker-walled in
+the latewood. For water to flow between tracheids, it must
+pass through circular bordered pits that are concentrated in
+the long, tapered ends of the cells. Tracheids overlap with
+adjacent cells across both the top and bottom 20% to 30% of
+their length. Water flow thus must take a slightly zigzag path
+as it goes from one cell to the next through the pits. Because
+the pits have a pit membrane, resistance to flow is substantial. The resistance of the pit membrane coupled with the
+narrow diameter of the lumina makes tracheids relatively
+inefficient conduits compared with the conducting cells of
+hardwoods. Detailed treatments of the structure of wood in
+relation to its conductive functions can be found in the literature (Zimmermann 1983, Kozlowski and Pallardy 1997).
+Axial Parenchyma and Resin Canal Complexes
+Another cell type that is sometimes present in softwoods is
+axial parenchyma. Axial parenchyma cells are similar in size
+and shape to ray parenchyma cells, but they are vertically
+oriented and stacked one on top of the other to form a parenchyma strand. In transverse section they often look like
+axial tracheids but can be differentiated when they contain
+dark colored organic substances in the lumina of the cells.
+In the radial or tangential section they appear as long strands
+of cells generally containing dark-colored substances. Axial
+parenchyma is most common in redwood, juniper, cypress,
+baldcypress, and some species of Podocarpus but never
+makes up even 1% of the volume of a block of wood. Axial
+parenchyma is generally absent in pine, spruce, larch, hemlock, and species of Araucaria and Agathis.
+In species of pine, spruce, Douglas-fir, and larch, structures
+commonly called resin ducts or resin canals are present axially (Fig. 3-9) and radially (Fig. 3-9C). These structures are
+voids or spaces in the wood and are not cells. Specialized
+parenchyma cells that function in resin production surround
+resin canals. When referring to the resin canal and all the
+associated parenchyma cells, the correct term is axial or
+radial resin canal complex (Wiedenhoeft and Miller 2002).
+In pine, resin canal complexes are often visible on the transverse section to the naked eye, but they are much smaller
+in spruce, larch, and Douglas-fir, and a hand lens is needed
+to see them. Radial resin canal complexes are embedded in
+specialized rays called fusiform rays (Figs. 3-8C, 3-9C).
+These rays are typically taller and wider than normal rays.
+Resin canal complexes are absent in the normal wood of
+other softwoods, but some species can form large tangential
+clusters of traumatic axial resin canals in response to substantial injury.
+Rays
+The other cells in Figure 3-8A are ray parenchyma cells
+that are barely visible and appear as dark lines running in
+a top-to-bottom direction. Ray parenchyma cells are
+3-9
+Chapter 3 Structure and Function of Wood
+Figure 3-7. Light micrographs and sketches of the three
+types of pits. A,D, longitudinal section of bordered pits in
+Xanthocyparis vietnamensis; the pits look like a vertical
+stack of thick-walled letter Vs. B,E, half-bordered pits in
+Pseudotsuga mensiezii; the arrow shows one halfbordered pit. C,F, simple pits on an end-wall in Pseudotsuga mensiezii; the arrow indicates one of five simple
+pits on the end wall. Scale bars = 20 μm.
+rectangular prisms or brick-shaped cells. Typically they
+are approximately 15 μm high by 10 μm wide by 150
+to 250 μm long in the radial or horizontal direction
+(Fig. 3-8B). These brick-like cells form the rays, which
+function primarily in synthesis, storage, and lateral transport
+of biochemicals and, to a lesser degree, water. In radial view
+or section (Fig. 3-8B), the rays look like brick walls and the
+ray parenchyma cells are sometimes filled with dark-colored
+substances. In tangential section (Fig. 3-8C), the rays are
+stacks of ray parenchyma cells one on top of the other forming a ray that is only one cell in width, called a uniseriate
+ray.
+When ray parenchyma cells intersect with axial tracheids,
+specialized pits are formed to connect the axial and radial
+systems. The area of contact between the tracheid wall and
+the wall of the ray parenchyma cells is called a cross-field.
+The type, shape, and size and number of pits in the
+cross-field are generally consistent within a species and can
+be diagnostic for wood identification.
+Species that have resin canal complexes also have ray tracheids, which are specialized horizontal tracheids that normally are situated at the margins of the rays. These ray tracheids have bordered pits like axial tracheids but are much
+shorter and narrower. Ray tracheids also occur in a few
+species that do not have resin canals. Alaska yellow-cedar,
+(Chamaecyparis nootkatensis), hemlock (Tsuga), and
+rarely some species of true fir (Abies) have ray tracheids.
+Additional detail regarding the microscopic structure of
+softwoods can be found in the literature (Phillips 1948,
+Kukachka 1960, Panshin and deZeeuw 1980, IAWA 2004).
+Hardwoods
+The structure of a typical hardwood is much more complicated than that of a softwood. The axial system is composed
+of fibrous elements of various kinds, vessel elements in various sizes and arrangements, and axial parenchyma in various patterns and abundance. As in softwoods, rays comprise
+the radial system and are composed of ray parenchyma cells,
+but hardwoods show greater variety in cell sizes and shapes.
+Vessels
+Vessel elements are the specialized water-conducting cells
+of hardwoods. They are stacked one on top of the other to
+form vessels. Where the ends of the vessel elements come
+in contact with one another, a hole is formed called a
+3-10
+Figure 3-8. Microscopic structure of Picea glauca, a typical
+softwood. A, transverse section, scale bar = 390 μm; the
+bulk of the wood is made of tracheids, the small rectangles
+of various thicknesses; the three large, round structures
+are resin canals and their associated cells; the dark lines
+running from the top to the bottom of the photo are the
+ray cells of the rays. B, radial section showing two rays
+(arrows) running from left to right; each cell in the ray is a
+ray cell, and they are low, rectangular cells; the rays begin
+on the right in the earlywood (thin-walled tracheids) and
+continue into and through the latewood (thick-walled tracheids) and into the earlywood of the next growth ring, on
+the left side of the photo; scale bar = 195 μm. C, tangential
+section; rays seen in end-view, mostly only one cell wide;
+two rays are fusiform rays; there are radial resin canals
+embedded in the rays, causing them to bulge; scale bar =
+195 μm.
+Figure 3-9. Resin canal complexes in Pseudotsuga mensiezii. A, transverse section showing a single axial resin
+canal complex. In this view the tangential and radial diameters of the canal can be measured accurately. Scale bar
+= 100 μm. B, radial section showing an axial resin canal
+complex embedded in the latewood. It is crossed by a ray
+that also extends into the earlywood on either side of the
+latewood. Scale bar = 195 μm. C, tangential section showing the anastomosis between an axial and a radial resin
+canal complex. The fusiform ray bearing the radial resin
+canal complex is in contact with the axial resin canal complex. Scale bar = 195 μm.
+General Technical Report FPL-GTR-190
+perforation plate. Thus hardwoods have perforated tracheary
+elements (vessels elements) for water conduction, whereas
+softwoods have imperforate tracheary elements (tracheids).
+On the transverse section, vessels appear as large openings
+and are often referred to as pores (Fig. 3-2D).
+Vessel diameters may be small (<30 μm) or quite large
+(>300 μm), but typically range from 50 to 200 μm. They
+are much shorter than tracheids and range from 100 to
+1,200 μm, or 0.1 to 1.2 mm. Vessels can be arranged in various patterns. If all the vessels are the same size and more or
+less scattered throughout the growth ring, the wood is diffuse-porous (Fig. 3-5D). If the earlywood vessels are much
+larger than the latewood vessels, the wood is ring-porous
+(Fig. 3-5F). Vessels can also be arranged in a tangential or
+oblique arrangement in a radial arrangement, in clusters, or
+in many combinations of these types (IAWA 1989). In addition, individual vessels may occur alone (solitary arrangement) or in pairs or radial multiples of up to five or more
+vessels in a row. At the end of the vessel element is a hole
+or perforation plate. If there are no obstructions across the
+perforation plate, it is called a simple perforation plate. If
+bars are present, the perforation plate is called a scalariform
+perforation plate.
+Where vessel elements come in contact with each other
+tangentially, intervessel or intervascular bordered pits are
+formed. These pits range in size from 2 to >16 μm in height
+and are arranged on the vessel walls in three basic ways.
+The most common arrangement is alternate, where the pits
+are offset by half the diameter of a pit from one row to the
+next. In the opposite arrangement, the pits are in files with
+their apertures aligned vertically and horizontally. In the
+scalariform arrangement, the pits are much wider than high.
+Combinations of these arrangements can also be observed in
+some species. Where vessel elements come in contact with
+ray cells, often half-bordered pits are formed called vessel-
+ray pits. These pits can be the same size and shape as the
+intervessel pits or much larger.
+Fibers
+Fibers in hardwoods function almost exclusively as mechanical supporting cells. They are shorter than softwood
+tracheids (0.2 to 1.2 mm), average about half the width of
+softwood tracheids, but are usually two to ten times longer
+than vessel elements (Fig. 3-10B). The thickness of the fiber
+cell wall is the major factor governing density and mechanical strength of hardwood timbers. Species with thin-walled
+fibers, such as cottonwood (Populus deltoides), basswood
+(Tilia americana), ceiba, and balsa (Ochroma pyramidale),
+have low density and strength; species with thick-walled
+fibers, such as hard maple, black locust (Robinia pseudoacacia), ipe (Tabebuia serratifolia), and bulletwood (Manilkara
+bidentata), have high density and strength. Pits between fibers are generally inconspicuous and may be simple or bordered. In some woods such as oak (Quercus) and meranti/
+lauan (Shorea), vascular or vasicentric tracheids are present,
+especially near or surrounding the vessels. These specialized
+fibrous elements in hardwoods typically have bordered pits,
+are thin-walled, and are shorter than the fibers of the species; they should not be confused with the tracheids in softwoods, which are much longer than hardwood fibers.
+Axial Parenchyma
+Axial parenchyma in softwoods is absent or only occasionally present as scattered cells, but hardwoods have a wide
+variety of axial parenchyma patterns (Fig. 3-11). The axial
+parenchyma cells in hardwoods and softwoods are roughly
+the same size and shape, and they also function in the same
+manner. The difference comes in the abundance and specific
+patterns in hardwoods. Two major types of axial parenchyma are found in hardwoods. Paratracheal parenchyma is associated with the vessels, and apotracheal parenchyma is not
+associated with the vessels. Paratracheal parenchyma is further divided into vasicentric (surrounding the vessels, Fig.
+3-11A), aliform (surrounding the vessel and with wing-like
+extensions, Fig. 3-11C), and confluent (several connecting
+patches of paratracheal parenchyma sometimes forming a
+band, Fig. 3-11E). Apotracheal parenchyma is divided into
+diffuse (scattered), diffuse-in-aggregate (short bands, Fig.
+3-11B), and banded, whether at the beginning or end of the
+growth ring (marginal, Fig. 3-11F) or within a growth ring
+(Fig. 3-11D). Each species has a particular pattern of
+axial parenchyma, which is more or less consistent from
+specimen to specimen, and these cell patterns are important
+in wood identification.
+Rays
+The rays in hardwoods are structurally more diverse than
+those found in softwoods. In some species such as willow
+(Salix), cottonwood, and koa (Acacia koa), the rays are
+exclusively uniseriate and are much like softwood rays. In
+hardwoods, most species have rays that are more than one
+cell wide. In oak and hard maple, the rays are two-sized,
+uniseriate and more than eight cells wide and in oak several
+3-11
+Chapter 3 Structure and Function of Wood
+Figure 3-10. Fibers in Quercus rubra. A, transverse section showing thick-walled, narrow-lumined fibers; three
+rays are passing vertically through the photo, and there
+are a number of axial parenchyma cells, the thin-walled,
+wide-lumined cells, in the photo; scale bar = 50 μm. B,
+macerated wood; there are several fibers (f), two of which
+are marked; also easily observed are parenchyma cells
+(arrows), both individually and in small groups; note the
+thin walls and small rectangular shape compared to the
+fibers; scale bar = 300 μm.
+centimeters high (Fig. 3-12A). In most species the rays
+are one to five cells wide and <1 mm high (Fig. 3-12B).
+Rays in hardwoods are composed of ray parenchyma cells
+that are either procumbent or upright. As the name implies,
+procumbent ray cells are horizontal and are similar in shape
+and size to the softwood ray parenchyma cells (Fig. 3-12C).
+Upright ray cells have their long axis oriented axially
+(Fig. 3-12D). Upright ray cells are generally shorter than
+procumbent cells are long, and sometimes they are nearly
+square. Rays that have only one type of ray cell, typically
+only procumbent cells, are called homocellular rays. Those
+that have procumbent and upright cells are called heterocellular rays. The number of rows of upright ray cells, when
+present, varies from one to many and can be diagnostic in
+wood identification.
+The great diversity of hardwood anatomy is treated in many
+sources throughout the literature (Metcalfe and Chalk 1950,
+1979, 1987; Panshin and deZeeuw 1980; IAWA 1989;
+Gregory 1994; Cutler and Gregory 1998; Dickison 2000;
+Carlquist 2001).
+Wood Technology
+Though briefly discussing each kind of cell in isolation is
+necessary, the beauty and complexity of wood are found in
+the interrelationship between many cells at a much larger
+scale. The macroscopic properties of wood such as density,
+hardness, bending strength, and others are properties derived
+from the cells that make up the wood. Such larger-scale
+properties are based on chemical and anatomical details
+of wood structure (Panshin and deZeeuw 1980).
+Moisture Relations
+The cell wall is largely made up of cellulose and hemicellulose, and the hydroxyl groups on these chemicals make
+the cell wall hygroscopic. Lignin, the agent cementing cells
+together, is a comparatively hydrophobic molecule. This
+means that the cell walls in wood have a great affinity for
+water, but the ability of the walls to take up water is limited
+in part by the presence of lignin. Water in wood has a strong
+effect on wood properties, and wood-water relations greatly
+affect the industrial use of wood in wood products. Additional information regarding dimensional changes of wood
+with changing moisture content can be found in Chapters 4
+and 13.
+Density
+Density (or specific gravity) is one of the most important
+physical properties of wood (Desch and Dinwoodie 1996,
+Bowyer and others 2003). Density is the weight or mass
+of wood divided by the volume of the specimen at a given
+moisture content. Thus, units for density are typically expressed as pounds per cubic foot (lb ft-3) or kilograms per
+cubic meter (kg m-3). When density values are reported in
+the literature, the moisture content of the wood must also
+be given. Specific gravity is the density of the sample normalized to the density of water. (This topic is addressed in
+greater detail in Chap. 4, including a detailed explanation of
+wood specific gravity.)
+Wood structure determines wood density; in softwoods
+where latewood is abundant (Fig. 3-3D) in proportion to
+earlywood, density is higher (for example, 0.59 specific
+gravity in longleaf pine, Pinus palustris). The reverse is true
+when there is much more earlywood than latewood (Fig.
+3-5B) (for example, 0.35 specific gravity in eastern white
+pine, Pinus strobus). To say it another way, density increases
+as the proportion of cells with thick cell walls increases.
+In hardwoods, density is dependent not only on fiber wall
+thickness, but also on the amount of void space occupied by
+vessels and parenchyma. In balsa, vessels are large (typically >250 μm in tangential diameter) and there is an abundance of axial and ray parenchyma. Fibers that are present
+are thin walled, and the specific gravity may be <0.20. In
+dense woods, the fibers are thick walled, lumina are virtually absent, and fibers are abundant in relation to vessels and
+3-12
+Figure 3-11. Transverse sections of various woods showing a range of hardwood axial parenchyma patterns. A, C,
+and E are woods with paratracheal types of parenchyma.
+A, vasicentric parenchyma in Enterolobium maximum;
+note that two vessels in the middle of the view are connected by parenchyma, which is the feature also shown
+in E; the other vessels in the image present vasicentric
+parenchyma only. C, aliform parenchyma in Afzelia africana; the parenchyma cells are the light-colored, thinwalled cells, and are easily visible. E, confluent parenchyma in Afzelia cuazensis. B, D, and F are woods with
+apotracheal types of parenchyma. B, diffuse-in-aggregate
+parenchyma in Dalbergia stevensonii. D, banded parenchyma in Micropholis guyanensis. F, marginal parenchyma in Juglans nigra; in this case, the parenchyma
+cells are darker in color, and they delimit the growth rings
+(arrows). Scale bars = 780 μm.
+General Technical Report FPL-GTR-190
+parenchyma. Some tropical hardwoods have specific gravities >1.0. In all woods, density is related to the proportion of
+the volume of cell wall material to the volume of lumina of
+those cells in a given bulk volume.
+Juvenile Wood and Reaction Wood
+Two key examples of the biology of the tree affecting the
+quality of wood can be seen in the formation of juvenile
+wood and reaction wood. They are grouped together because they share several common cellular, chemical, and
+tree physiological characteristics, and each may or may not
+be present in a certain piece of wood.
+Juvenile wood is the first-formed wood of the young tree-
+the rings closest to the pith (Fig. 3-3A, bottom). Juvenile
+wood in softwoods is in part characterized by the production
+of axial tracheids that have a higher microfibril angle in the
+S2 wall layer (Larson and others 2001). A higher microfibril
+angle in the S2 is correlated with drastic longitudinal shrinkage of the cells when the wood is dried for human use, resulting in a piece of wood that has a tendency to warp, cup,
+and check. The morphology of the cells themselves is often
+altered so that the cells, instead of being long and straight,
+are often shorter and angled, twisted, or bent. The precise
+functions of juvenile wood in the living tree are not fully
+understood but are thought to confer little-understood mechanical advantages.
+Reaction wood is similar to juvenile wood in several respects but is formed by the tree for different reasons. Most
+any tree of any age will form reaction wood when the
+woody organ (whether a twig, branch, or the trunk) is deflected from the vertical by more than one or two degrees.
+This means that all non-vertical branches form considerable quantities of reaction wood. The type of reaction wood
+formed by a tree differs in softwoods and hardwoods. In
+softwoods, the reaction wood is formed on the underside
+of the leaning organ and is called compression wood
+(Fig. 3-13A) (Timmel 1986). In hardwoods, the reaction
+wood forms on the top side of the leaning organ and is
+called tension wood (Fig. 3-13B) (Desch and Dinwoodie
+1996, Bowyer and others 2003). As mentioned above, the
+various features of juvenile wood and reaction wood are
+similar. In compression wood, the tracheids are shorter, misshapen cells with a large S2 microfibril angle, a high degree
+of longitudinal shrinkage, and high lignin content (Timmel
+1986). They also take on a distinctly rounded outline
+(Fig. 3-13C). In tension wood, the fibers fail to form a proper secondary wall and instead form a highly cellulosic wall
+layer called the G layer, or gelatinous layer (Fig. 3-13D).
+Appearance of Wood as Sawn
+Lumber
+Color and Luster
+As mentioned previously when discussing heartwood and
+sapwood, the sapwood color of most species is in the white
+range. The color of heartwood depends on the presence,
+characteristics, and concentrations of extractives in the
+wood. The heartwood color of a given species can vary
+greatly, depending on growth history and health of the tree,
+genetic differences between trees, and other factors. Heartwood formation, particularly as it relates to final timber
+color, is not fully understood. Description of color in wood
+is highly dependent on the particular author; assertions that
+a particular wood is exactly one color are spurious.
+Luster is a somewhat subjective characteristic of some
+woods and refers to the way in which light reflecting from
+the wood appears to penetrate into and then shine from the
+surface of the board. Genuine mahogany (Swietenia sp.) is
+one of the better-known woods with distinct luster.
+Grain and Texture
+The terms grain and texture are commonly used rather
+loosely in connection with wood. Grain is often used in
+reference to the relative sizes and distributions of cells, as
+in fine grain and coarse grain; this use of grain is roughly
+synonymous with texture (below). Grain is also used to indicate the orientation of the cells of the axial system ("fiber
+direction"), as in "along the grain," straight grain, spiral
+grain, and interlocked grain, and this use of the term is preferred. Grain, as a synonym for fiber direction, is discussed
+in detail relative to mechanical properties in Chapter 5.
+3-13
+Chapter 3 Structure and Function of Wood
+Figure 3-12. Rays in longitudinal sections. A and B show
+tangential sections, scale bars = 300 μm. A, Quercus falcata showing a wide multiseriate ray (arrow) and many
+uniseriate rays. B, Swietenia macrophylla showing numerous rays ranging from 1 to 4 cells wide; note that in this
+wood the rays are arranged roughly in rows from side to
+side. C and D show radial sections, scale bars = 200 μm.
+C, homocellular ray in Tilia americana; all cells in the ray
+are procumbent cells; they are longer radially than they
+are tall. D, two heterocellular rays in Khaya ivorensis; the
+central portion of the ray is composed of procumbent
+cells, but the margins of the ray, both top and bottom,
+have two rows of upright cells (arrows), which are as tall
+as or taller than they are wide.
+Wood finishers refer to wood as open grained and close (or
+closed) grained, which are terms reflecting the relative size
+of the cells and the need for fillers prior to finishing. Texture
+is another word used to describe a macroscopic summary
+of the relative sizes of cells in wood. Fine-textured woods
+have uniform structure with typically small cells. Coarsetextured woods generally have structure with concentrations
+of large diameter cells (such as the earlywood in ring porous
+hardwoods, Fig. 3-5F) that produce areas of clearly different appearance to the naked eye. Even-textured woods may
+have uniformly large or small cells, but their distribution
+is not concentrated in particular areas, such as in diffuse
+porous hardwoods. Even if terms used for describing the
+appearance of wood were universally agreed upon (and they
+are not), variations in wood structure within a tree, between
+trees of the same species, and between two or more species
+would defy complete characterization using these terms.
+For this reason, when discussing wood, reference should be
+made to specific properties when possible. At a minimum, it
+is desirable to ensure that the same operating definitions of
+terms like "open grained" or "coarse textured" are used by
+all parties.
+Plainsawn and Quartersawn
+When boards are cut from logs, a sawyer makes decisions
+about how to orient to the log with respect to the saw blade
+and in this way produces boards with different cuts. Specific
+nomenclature for these angles of cutting exists but is not
+precisely the same for hardwood lumber and softwood lumber; this unfortunate fact results in a parallel set of terms for
+hardwoods and softwoods. The sawyer can cut boards from
+a log in two distinct ways: (a) tangential to the growth rings,
+producing flatsawn or plainsawn lumber in hardwoods
+and flatsawn or slash-grained lumber in softwoods, and
+(b) radially from the pith or parallel to the rays, producing
+quartersawn lumber in hardwoods and edge-grained or vertical-grained lumber in softwoods (Fig. 3-14). In plainsawn
+boards, the surfaces next to the edges are often far from tangential to the rings, and quartersawn lumber is not usually
+cut strictly parallel with the rays. In commercial practice,
+lumber with rings at angles of 0° to 45° to the wide surface
+is called plainsawn and lumber with rings at angles of 45°
+to 90° to the wide surface is called quartersawn. Hardwood
+lumber in which annual rings form angles of 30° to 60° to
+the wide face is sometimes called bastard sawn. For many
+purposes, either plainsawn or quartersawn lumber is satisfactory, but each type has certain advantages that can be important for a particular use. Some advantages of plainsawn
+and quartersawn lumber are given in Table 3-1.
+Slope of Grain: Straight, Diagonal,
+Spiral, and Interlocked Grain
+The slope of grain of a board is determined by the way in
+which the sawyer cuts the board and the basic biological
+characteristics of the log from which the board is cut, but it
+is distinct from the type of cut (plainsawn or quartersawn).
+In an idealized saw log, the cells of the axial system in the
+wood are parallel to the length of the log; they run straight
+up and down the trunk. When this is the case, the grain angle of a board cut from the log is wholly a function of how
+the sawyer cuts the board. It is assumed that when a board is
+cut from the log, the long edge of the board will be parallel
+(or nearly so) with the cells of the axial system, or parallel
+with the grain (middle of Fig. 3-3A, 3-3F). Boards prepared
+in this way are straight-grained boards. When the long edge
+of the board is not parallel with the grain, the board has
+what is called diagonal grain (middle of Fig. 3-3A, 3-3F).
+Boards with diagonal grain will show atypical shrinking and
+swelling with changes in moisture content (Chap. 4), and
+altered mechanical properties (Chap. 5) depending on the
+slope of grain. The degree to which the long edge of a board
+is not parallel to the grain is referred to as slope of grain and
+is addressed in Chapter 5.
+Not all logs have grain that runs perfectly straight up and
+down the length of the log. In some logs, the grain runs in a
+helical manner up the trunk, like the stripes on a barber pole
+or the lines on a candy cane. Such logs produce boards with
+spiral grain, and there is no way to cut long boards from
+3-14
+Figure 3-13. Macroscopic and microscopic views of reaction wood in a softwood and a hardwood. A, compression
+wood in Pinus sp.; note that the pith is not in the center
+of the trunk, and the growth rings are much wider in the
+compression wood zone. B, tension wood in Juglans nigra; the pith is nearly centered in the trunk, but the growth
+rings are wider in the tension wood zone. C, transverse
+section of compression wood in Picea engelmannii; the
+tracheids are thick-walled and round in outline, giving
+rise to prominent intercellular spaces in the cell corners
+(arrow). D, tension wood fibers showing prominent gelatinous layers in Croton gossypiifolius; the gelatinous layers in the fibers are most pronounced across the top of
+the image on either side of and just below the vessel; the
+fibers in the lower half of the image show thinner gelatinous layers. Scale bars = 50 μm.
+General Technical Report FPL-GTR-190
+such a log to produce straight-grained lumber. In other logs,
+the angle of helical growth of the wood cells will change
+over time, such that the grain may curve in a right-handed
+helix (e.g., 5°) for a few years and then over the course
+of a few years change to a left-handed 5° helix, and so on
+over the life of the tree. This growth produces wood with
+interlocked grain. There is no way to saw a board from
+such a log to produce uniformly straight grain. Therefore,
+a straight-grained board can be cut only from a straightgrained log; a log with spiral or interlocked grain can never
+produce truly straight-grained lumber, regardless of the skill
+of the sawyer.
+Knots
+Knots are remnants of branches in the tree appearing in a
+board. In a flatwsawn board, knots appear as round and typically brown pieces of wood perpendicular to the grain of
+the board. In a quartersawn board, knots can be cut along
+their length and are referred to as spike knots. Independent
+of the cut of the board, knots occur in two basic varieties:
+intergrown knots and encased knots. These terms refer to
+the continuity, or lack thereof, of stem wood with wood
+of the branch. If the branch was alive at the time when the
+growth rings making up the board were formed, the wood
+of the trunk of the tree and that branch is continuous; the
+growth rings continue uninterrupted out along the branch,
+forming an intergrown knot. If the branch was dead at the
+time when growth rings of the board were formed, the stem
+wood curves around the branch without continuing up the
+branch, giving rise to a knot that is not continuous with the
+stem wood; this produces an encased knot. With intergrown
+knots, the grain angle of the trunk wood in the vicinity of
+the knot is typically more disturbed than in encased knots,
+and this influences wood properties (Chap. 5). Encased
+knots generally disturb the grain angle less than intergrown
+knots.
+Decorative Features
+The decorative value of wood depends upon its color, figure, luster, and the way in which it bleaches or takes fillers,
+stains, and transparent finishes. In addition to quantifiable
+or explicable characteristics, decorative value is also determined by the individual preferences of the end user.
+The structure of a given wood, in conjunction with how
+the final wood product was cut from a log, gives rise to the
+majority of the patterns seen in wood. A general term for the
+pattern of wood is figure, which can refer to mundane features, such as the appearance of growth rings in a plainsawn
+board or the appearance of ray fleck on a quartersawn board,
+3-15
+Chapter 3 Structure and Function of Wood
+Table 3-1. Some advantages of plainsawn and quartersawn lumber
+Plainsawn Quartersawn
+Shrinks and swells less in thickness
+Surface appearance less affected by round or oval knots
+compared to effect of spike knots in quartersawn boards;
+boards with round or oval knots not as weak as boards
+with spike knots
+Shakes and pitch pockets, when present, extend through
+fewer boards
+Figure patterns resulting from annual rings and some
+other types of figure brought out more conspicuously
+Is less susceptible to collapse in drying
+Costs less because it is easy to obtain
+Shrinks and swells less in width
+Cups, surface-checks, and splits less in seasoning and in use
+Raised grain caused by separation in annual rings does not
+become as pronounced
+Figure patterns resulting from pronounced rays, interlocked
+grain, and wavy grain are brought out more conspicuously
+Does not allow liquids to pass through readily in some
+species
+Holds paint better in some species
+Sapwood appears in boards at edges and its width is limited
+by the width of the log
+Figure 3-14. Quartersawn (A) and plainsawn (B) boards
+cut from a log.
+or more exotic patterns determined by anomalous growth,
+such as birdseye, wavy grain, or wood burls.
+Wood Identification
+The identification of wood can be of critical importance to
+the primary and secondary wood using industry, government agencies, museums, law enforcement, and scientists
+in the fields of botany, ecology, anthropology, forestry, and
+wood technology. Wood identification is the recognition of
+characteristic cell patterns and wood features and is generally accurate only to the generic level. Because woods of
+different species from the same genus often have different
+properties and perform differently under various conditions,
+serious problems can develop if species or genera are mixed
+during the manufacturing process and in use. Because foreign woods are imported to the U.S. market, both buyers
+and sellers must have access to correct identifications and
+information about properties and uses.
+Lumber graders, furniture workers, those working in the industry, and hobbyists often identify wood without laboratory
+tools. Features often used are color, odor, grain patterns,
+density, and hardness. With experience, these features can
+be used to identify many different woods, but the accuracy
+of the identification is dependent on the experience of the
+person and the quality of the unknown wood. If the unknown wood specimen is atypical, decayed, or small, often
+the identification is incorrect. Examining woods, especially
+hardwoods, with a 10× to 20× hand lens, greatly improves
+the accuracy of the identification (Panshin and deZeeuw
+1980, Hoadley 1990, Brunner and others 1994). Some
+foresters and wood technologists armed with a hand lens
+and sharp knife can accurately identify lumber in the field.
+They make a cut on the transverse surface and examine all
+patterns to make an identification.
+Scientifically rigorous, accurate identifications require that
+the wood be sectioned and examined with a light microscope. With the light microscope, even with only a 10× objective, many more features are available for use in making
+a determination. Equally important as the light microscope
+in wood identification is the reference collection of correctly
+identified specimens to which unknown samples can be
+compared (Wheeler and Baas 1998). If a reference collection is not available, books of photomicrographs or books
+or journal articles with anatomical descriptions and dichotomous keys can be used (Miles 1978, Schweingruber 1978,
+Core and others 1979, Gregory 1980, Ilic 1991, Miller and
+Détienne 2001). In addition to these resources, several computer-assisted wood identification packages are available
+and are suitable for people with a robust wood anatomical
+background, such as the on-line searchable resource InsideWood (http://insidewood.lib.ncsu.edu/).
+Wood identification by means of molecular biological techniques is a field that is still in its infancy. Substantial population-biological effects limit the statistical likelihood of a
+robust and certain identification for routine work (Canadian
+Forest Service 1999). In highly limited cases of great financial or criminal import and a narrowly defined context, the
+cost and labor associated with rigorous evaluation of DNA
+from wood can be warranted (Hipkins 2001). For example,
+if the question were "Did this piece of wood come from
+this individual tree?" or "Of the 15 species present in this
+limited geographical area, which one produced this root?"
+it is feasible to analyze the specimens with molecular techniques (Brunner and others 2001). If, however, the question
+were "What kind of wood is this, and from which forest did
+it come?" it would not be feasible at this time to analyze
+the specimen. Workers have shown that specific identification can be accomplished using DNA among six species
+of Japanese white oak (Ohyama and others 2001), but the
+routine application of their methods is not likely for some
+time. As technological advances improve the quality, quantity, and speed with which molecular data can be collected,
+the difficulty and cost of molecular wood identification
+will decrease. We can reasonably expect that at some point
+in the future molecular tools will be employed in routine
+identification of wood and that such techniques will greatly
+increase the specificity and accuracy of identification. For
+now, routine scientific wood identification is based on microscopic evaluation of wood anatomical features.
+Literature Cited
+Bowyer, J.; Shmulsky, R.; Haygreen, J.G. 2003. Forest
+products and wood science: an introduction. 4th ed. Iowa
+City, IA: Iowa State Press. 554 p.
+Brunner, I.; Brodbeck, S.; Buchler, U.; Sperisen, C. 2001.
+Molecular identification of fine roots from trees from the
+Alps: reliable and fast DNA extraction and PCR-RFLP analyses of plastid DNA. Molecular Ecology. 10: 2079-2087.
+Brunner, M.; Kucera, L.J.; Zürcher, E. 1994. Major timber
+trees of Guyana: a lens key. Tropenbos Series 10. Wageningen, The Netherlands: The Tropenbos Foundation. 224 p.
+Callado, C.H.; da Silva Neto, S.J.; Scarano, F.R.; Costa,
+C.G. 2001. Periodicity of growth rings in some flood-prone
+trees of the Atlantic rain forest in Rio de Janeiro, Brazil.
+Trees 15: 492-497.
+Canadian Forest Service, Pacific Forestry Centre. 1999.
+Combating tree theft using DNA technology. Breakout session consensus. Victoria, BC.
+Carlquist, S. 2001. Comparative Wood Anatomy. 2nd ed.
+Berlin: Springer. 448 p.
+Chudnoff, M. 1984. Tropical timbers of the world. Agric.
+Handb. 607. Madison, WI: U.S. Department of Agriculture,
+Forest Service, Forest Products Laboratory. 464 p.
+Core, H.A.; Côte, W.A.; Day, A.C. 1979. Wood structure
+and identification. 2nd ed. Syracuse, NY: Syracuse University Press. 182 p.
+3-16
+General Technical Report FPL-GTR-190
+Cutler, D.F.; Gregory, M. 1998. Anatomy of the dicotyledons. 2nd ed. New York: NY: Oxford University Press.
+304 p. Vol. IV.
+DeMeijer, M.; Thurich, K.; Militz, H. 1998. Comparative
+study on penetration characteristics of modern wood coatings. Wood Science and Technology. 32: 347-365.
+Desch, H.E.; Dinwoodie, J.M. 1996. Timber structure, properties, conversion and use. 7th ed. London, UK: Macmillan
+Press. 306 p.
+Dickison, W. 2000. Integrative plant anatomy. New York,
+NY: Academic Press. 533 p.
+Esau, K. 1977. Anatomy of the seed plants. 2nd ed. New
+York, NY: John Wiley and Sons. 550 p.
+Gregory, M. 1980. Wood identification: an annotated bibliography. IAWA Bull. 1. ISSN: New Series. 1(1): 3-41.
+Gregory, M. 1994. Bibliography of systematic wood anatomy of dicotyledons. IAWA Journal. Supplement 1.
+Hillis, W.E. 1996. Formation of robinetin crystals in vessels
+of Intsia species. IAWA Journal. 17(4): 405-419.
+Hipkins, V. 2001. DNA profiling and identity analysis of
+ponderosa pine evidence samples. In: NFGEL Annual
+Report.
+Hoadley, R.B. 1990. Identifying wood: accurate results with
+simple tools. Newtown, CT: Taunton Press. 223 p.
+Hoadley, R.B. 2000. Understanding wood: a craftsman's
+guide to wood technology. 2nd ed. Newtown, CT: Taunton
+Press. 280 p.
+IAWA Committee. 1989. IAWA list of microscopic features
+for hardwood identification. In: Wheeler, E.A.; Baas, P.;
+Gasson, P., eds. IAWA Bull. 10. ISSN: New Series
+10(3): 219-332.
+IAWA Committee. 2004. IAWA list of microscopic features
+of softwood identification. In: Richter, H.G.; Grosser, D.;
+Heinz, I.; Gasson, P., eds. IAWA Journal. 25(1): 1-70.
+Ilic, J. 1991. CSIRO atlas of hardwoods. Bathurst, Australia:
+Crawford House Press. 525 p.
+Kozlowksi, T.T.; Pallardy, S.G. 1997. Physiology of
+woody plants. 2nd ed. San Diego, CA: Academic Press.
+Chapters 11, 12.
+Kretschmann, D.E.; Alden, H.A.; Verrill, S. 1998. Variations
+of microfibril angle in loblolly pine: comparison of iodine
+crystallization and X-ray diffraction techniques. In: Butterfield, B.G., ed. Microfibril angle in wood. New Zealand:
+University of Canterbury. 157-176.
+Kukachka, B.F. 1960. Identification of coniferous woods.
+Tappi Journal. 43(11): 887-896.
+Lagenheim, J.H. 2003. Plant resins: chemistry, evolution,
+ecology, and ethnobotany. Portland, OR: Timber Press.
+448 p.
+Larson, P.R. 1994. The vascular cambium, development and
+structure. Berlin: Springer-Verlag. 725 p.
+Larson, P.R.; Kretschmann, D.E.; Clark, A., III; Isenbrands,
+J.G. 2001. Formation and properties of juvenile wood in
+southern pines: a synopsis. Gen. Tech. Rep. FPL-GTR-129.
+Madison, WI: U.S. Department of Agriculture, Forest Service, Forest Products Laboratory.
+Metcalfe, C.R.; Chalk, L. 1950. Anatomy of the Dicotyledons. Oxford, UK: Clarendon Press. 2 vols. 1,500 p.
+Metcalfe, C.R.; Chalk, L. 1979. Anatomy of the Dicotyledons. 2nd ed. New York: Oxford University Press. Vol. I.
+276 p.
+Metcalfe, C.R.; Chalk, L. 1987. Anatomy of the Dicotyledons. 2nd ed. New York: Oxford University Press. Vol. III.
+224 p.
+Miles, A. 1978. Photomicrographs of world woods. Building
+Research Establishment, Princes Risborough Laboratory;
+London: Her Majesty's Stationery Office. 233 p.
+Miller, R.B.; Détienne, P. 2001. Major timber trees of Guyana: wood anatomy. Tropenbos Series 20. Wageningen, The
+Netherlands: The Tropenbos Foundation. 218 p.
+Ohyama, M.; Baba, K.; Itoh, T. 2001. Wood identification
+of Japanese Cyclobalanopsis species (Fagaceae) based on
+DNA polymorphism of the intergenic spacer between trnT
+and trnL 5' exon. Journal of Wood Science. 47: 81-86.
+Panshin, A.J.; deZeeuw, C. 1980. Textbook of wood technology. 4th ed. New York: McGraw-Hill. 722 p.
+Phillips, E.W.J. 1948. Identification of softwoods by microscopic structure. Forest Products Res. Bull. 22.
+Raven, P.; Evert, R.; Eichhorn, S. 1999. Biology of plants.
+6th ed. New York, NY: W.H. Freeman & Company. 944 p.
+Rijkaert, V.; Stevens, M.; de Meijer, M.; Militz, H. 2001.
+Quantitative assessment of the penetration of water-borne
+and solvent-borne wood coatings in Scots pine sapwood.
+Holz als Roh-und Werkstoff. 59: 278-287.
+Schweingruber, F. 1978. Microscopic wood anatomy.
+Birmensdorf: Swiss Federal Institute for Foreign Research.
+800 p.
+Simpson, W.T., ed. 1991. Dry kiln operator's manual. Agric.
+Handb. AH-188. Madison, WI: U.S. Department of Agriculture, Forest Service, Forest Products Laboratory. 274 p.
+Taiz, L.; Zeiger, E. 1991. Plant physiology. Upper Saddle
+River, NJ: Benjamin-Cummings Publishing Company.
+Chapter 4.
+3-17
+Chapter 3 Structure and Function of Wood
+Timmel, T.E. 1986. Compression wood in gymnosperms.
+Heidelberg: Springer. 2,150 p.
+Wheeler, E.A.; Baas, P. 1998. Wood identification: a review.
+IAWA Journal. 19(3): 241-264.
+Wiedenhoeft, A.C.; Miller, R.B. 2002. Brief comments on
+the nomenclature of softwood axial resin canals and their
+associated cells. IAWA Journal. 23(3): 299-303.
+Worbes, M. 1995. How to measure growth dynamics in
+tropical trees: a review. IAWA Journal. 16(4): 337-351.
+Worbes, M. 1999. Annual growth rings, rainfall-dependent
+growth and long-term growth patterns of tropical trees in
+the Capar Forest Reserve in Venezuela. Journal of Ecology.
+87: 391-403.
+Zimmermann, M.H. 1983. Xylem structure and the ascent
+of sap. New York: Springer-Verlag. 143 p.
+3-18
+General Technical Report FPL-GTR-190
