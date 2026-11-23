@@ -26,7 +26,7 @@ $do$
 
 
 def upgrade() -> None:
-    op.drop_table(ARCHIVE)
+    op.drop_table("CraftPageArchive")
 
 
 def downgrade() -> None:

@@ -85,7 +85,8 @@
           }
         ],
         "depth": "EXPERT",
-        "language": "en"
+        "language": "en",
+        "basis": "MODEL"
       },
       "sections": [
         {
