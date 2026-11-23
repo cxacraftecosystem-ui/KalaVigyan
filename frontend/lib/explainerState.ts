@@ -7,7 +7,7 @@ export type ExplainerPhase = "idle" | "asking" | "streaming" | "done" | "empty" 
 
 export type SectionState = WorkingSectionState | FinalSectionState;
 
-export type SectionView = Omit<SectionStarted, "state"> & { state: SectionState; blocks: ExplainerBlock[]; searched: string | null; added?: true };
+export type SectionView = Omit<SectionStarted, "state"> & { state: SectionState; blocks: ExplainerBlock[]; searched: string | null; withdrawn?: number; added?: true };
 
 export type ExplainerRef = { explainerId: string; version: number };
 

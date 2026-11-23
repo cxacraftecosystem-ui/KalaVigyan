@@ -31,6 +31,7 @@ FIELD_IMAGE_TYPES = ("image/jpeg", "image/png")
 EMPTY_LIST = sql_text("'[]'::jsonb")
 EMPTY_OBJECT = sql_text("'{}'::jsonb")
 SHA256_CHECK = "~ '^[0-9a-f]{64}$'"
+FIELD_CHANGE_ID_CHARS = 64
 
 
 class FieldVoiceStream(Base):
@@ -40,6 +41,10 @@ class FieldVoiceStream(Base):
     stream: Mapped[str] = mapped_column(String(12), nullable=False)
     cursor: Mapped[str | None] = mapped_column(Text)
     goneCursor: Mapped[str | None] = mapped_column(Text)
+    lastAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    lastId: Mapped[str | None] = mapped_column(String(FIELD_CHANGE_ID_CHARS))
+    goneLastAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    goneLastId: Mapped[str | None] = mapped_column(String(FIELD_CHANGE_ID_CHARS))
     rereadFrom: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     lastContactAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     lastCaughtUpAt: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -53,6 +58,8 @@ class FieldVoiceStream(Base):
         PrimaryKeyConstraint("portal", "stream"),
         CheckConstraint(one_of("portal", FIELD_VOICE_PORTALS), name="portal"),
         CheckConstraint(one_of("stream", FIELD_VOICE_STREAMS), name="stream"),
+        CheckConstraint('num_nonnulls("lastAt", "lastId") <> 1', name="last"),
+        CheckConstraint('num_nonnulls("goneLastAt", "goneLastId") <> 1', name="gone_last"),
     )
 
 

@@ -43,7 +43,7 @@ flowchart LR
 | [0012](0012-answer-stream-end-to-end.md) | The answer stream end to end | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0013](0013-review-fixes-quotes-licences-scope.md) | Quote strength, open licences, one craft scope and scoped embedding | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0014](0014-science-region-voice-media-contracts.md) | Contracts for process science, region profile, voice and media | · |
-| [0015](0015-science-engine.md) | Science engine: balancing, units, envelopes, the science seed and the process route | · |
+| [0015](0015-science-engine.md) | Science engine: balancing, units, envelopes, the science seed and the process route | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
 | [0016](0016-region-profile.md) | Region profile and map layers from the stored district statistics | · |
 | [0017](0017-voice-backend.md) | Voice backend: sessions, the custom LLM, the relay path and upkeep | [0025](0025-multilingual-voice.md) and [0140](0140-voice-and-listen-kept-true.md) |
 | [0018](0018-media-backend.md) | Media backend: stage illustrations and clips through the router, the job queue and S3 | · |
@@ -79,17 +79,19 @@ flowchart LR
 | [0043](0043-river-lines-tracer-and-monthly-rain.md) | River lines, the tracer and monthly rainfall | · |
 | [0044](0044-region-story-and-map-layers.md) | Region story and map layers | · |
 | [0045](0045-reactions-materials-molecules.md) | Reaction player, material cards and 3D molecules | · |
+| [0046](0046-expert-panel.md) | The expert panel | [0093](0093-no-caps-for-now.md) and [0156](0156-expert-panel-and-field-voices-kept-true.md) |
+| [0045](0045-reactions-materials-molecules.md) | Reaction player, material cards and 3D molecules | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
 | [0046](0046-expert-panel.md) | The expert panel | [0093](0093-no-caps-for-now.md) |
 | [0047](0047-seasons-and-supply.md) | Seasons and supply | · |
 | [0048](0048-place-renderers.md) | Place renderers: region story, map layer, seasons and supply | [0092](0092-design-system.md) |
-| [0049](0049-matter-and-expert-renderers.md) | Matter and expert renderers | · |
+| [0049](0049-matter-and-expert-renderers.md) | Matter and expert renderers | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
 | [0050](0050-phase-b-review-fixes.md) | Phase B review fixes | · |
 | [0051](0051-curation-tooling.md) | Curation tooling: the dossier model, fetch, verify and check | · |
 | [0052](0052-opus-composes-at-medium-effort.md) | Opus 5.5 composes answers, at medium effort | · |
 | [0053](0053-curated-dossier-import.md) | Curated dossiers are imported on deploy and served as one craft page | [0142](0142-curated-crafts-read-only-curated-rows.md) |
 | [0054](0054-phase-c-contract.md) | Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode | · |
 | [0055](0055-generated-explainers.md) | Generated explainers: built from cited figures, checked, stored, reused and hidden | [0142](0142-curated-crafts-read-only-curated-rows.md) |
-| [0056](0056-what-if-lab.md) | The what-if lab's builder | [0140](0140-voice-and-listen-kept-true.md) |
+| [0056](0056-what-if-lab.md) | The what-if lab's builder | [0140](0140-voice-and-listen-kept-true.md), [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) |
 | [0057](0057-zoom-story-and-timeline-map.md) | Zoom story and timeline map builders | · |
 | [0058](0058-elevenlabs-music-sound-image-video.md) | ElevenLabs music, sound effects, image and video | · |
 | [0059](0059-sandbox-and-what-if-renderers.md) | Sandbox and what-if renderers | · |
@@ -127,7 +129,7 @@ flowchart LR
 | [0088](0088-reactions-step-by-step-and-molecules.md) | Reactions play step by step with their stage, conditions, colours and why; curated CIDs become compounds | [0095](0095-craft-page-chapters.md) |
 | [0089](0089-expert-depth-caps-and-answer-routes.md) | Expert answers research and write more, compose on Opus at high effort, and cost more; Hindi terms survive translation | [0093](0093-no-caps-for-now.md) |
 | [0090](0090-reused-and-curated-sections-enriched.md) | Reused and curated sections are enriched like researched ones | [0142](0142-curated-crafts-read-only-curated-rows.md) |
-| [0091](0091-field-voices-kalavigyan-side.md) | Field voices v2 in KalaVigyan: storage, citation, the craft page and the reading view | [0097](0097-public-reading-everywhere-but-asking.md) and [0112](0112-reviewed-field-photographs.md) |
+| [0091](0091-field-voices-kalavigyan-side.md) | Field voices v2 in KalaVigyan: storage, citation, the craft page and the reading view | [0097](0097-public-reading-everywhere-but-asking.md), [0112](0112-reviewed-field-photographs.md) and [0156](0156-expert-panel-and-field-voices-kept-true.md) |
 | [0092](0092-design-system.md) | The KalaVigyan design system: Alum & Indigo | [0114](0114-kinds-and-datasets.md) and [0141](0141-design-system-and-answer-screens-without-debt.md) |
 | [0093](0093-no-caps-for-now.md) | No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0092](0092-design-system.md) | The KalaVigyan design system: Alum & Indigo | [0114](0114-kinds-and-datasets.md), [0141](0141-design-system-and-answer-screens-without-debt.md) and [0145](0145-monograph-pages-and-speed-without-debt.md) |
@@ -137,7 +139,7 @@ flowchart LR
 | [0096](0096-reader-question-pieces-join-their-craft-page.md) | Every piece built for a reader's question joins its craft's page, whoever asked | · |
 | [0097](0097-public-reading-everywhere-but-asking.md) | Everything reads without signing in except asking | [0145](0145-monograph-pages-and-speed-without-debt.md) |
 | [0098](0098-craft-page-chapters-build.md) | How the craft page chapters were built: the readings taken where the contract was open | [0100](0100-ajrakh-monograph-served-as-built.md) |
-| [0099](0099-wider-expert-panel.md) | The expert panel searches its own fields, calls each seat on its own, seats up to 12 at Expert, and hears the artisan from field transcripts | · |
+| [0099](0099-wider-expert-panel.md) | The expert panel searches its own fields, calls each seat on its own, seats up to 12 at Expert, and hears the artisan from field transcripts | [0156](0156-expert-panel-and-field-voices-kept-true.md) |
 | [0100](0100-ajrakh-monograph-served-as-built.md) | The Kutch Ajrakh craft page is the hand-built monograph, served as built | [0106](0106-one-monograph-template-for-every-page.md) |
 
 ## One knowledge architecture and the MCP server
@@ -183,16 +185,19 @@ flowchart LR
 | [0138](0138-answers-composed-from-the-asked-fields.md) | An answer researches the fields it is asked first, tells one fact once across sections, and cites only passages about its craft | · |
 | [0139](0139-sources-and-providers-reach-outside-services-once.md) | Sources and providers reach outside services once, at the pace and spend every process shares | [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0140](0140-voice-and-listen-kept-true.md) | Voice and Listen hold their state in the bucket, bill what they hear and read the lede first | [0144](0144-stored-passages-as-evidence.md) |
-| [0141](0141-design-system-and-answer-screens-without-debt.md) | The design system holds no migration alias, and the answer screens number their figures, read every caption from the server and keep only what is stored | · |
+| [0141](0141-design-system-and-answer-screens-without-debt.md) | The design system holds no migration alias, and the answer screens number their figures, read every caption from the server and keep only what is stored | [0156](0156-expert-panel-and-field-voices-kept-true.md) |
 | [0142](0142-curated-crafts-read-only-curated-rows.md) | A curated craft reads only its curated rows, stored pieces keep one curated rule, and the generated explainer works within a budget | · |
 | [0143](0143-lessons-exports-and-follow-ups-kept-true.md) | Lesson packs open with the lede, exports name the journal and measure their slides, and follow-ups survive a race | · |
 | [0144](0144-stored-passages-as-evidence.md) | A stored passage is evidence an answer and a voice turn may cite, kept as a fact of its own source | · |
 | [0145](0145-monograph-pages-and-speed-without-debt.md) | Pages read what their screens draw: one coverage read, one decision route, one unit pattern, and renderers loaded when placed | · |
 | [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | · |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
-| [0149](0149-a-fact-readers-can-see.md) | A fact is shown to every reader with its citation, and only its quote follows its page | · |
+| [0149](0149-a-fact-readers-can-see.md) | A fact is shown to every reader with its citation, and only its quote follows its page | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) |
 | [0150](0150-mcp-activity-and-box-logs.md) | Each MCP call keeps its client and its reason for 180 days and its count for good, and the box ships its logs to CloudWatch | · |
 | [0151](0151-a-release-the-live-side-can-read.md) | A release is one the live side can read: the web ignores a field it does not know, every migration reads under the release before, and the first stage's fusion is measured before it is weighted | · |
+| [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) | An answer reads a craft's matter once and shows each card, molecule and what-if once, matter blocks cite every value they show, and the science seed deletes what it no longer plans | · |
+| [0156](0156-expert-panel-and-field-voices-kept-true.md) | The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run | · |
+| [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) | A curated craft's monograph lists the facts contributors add under their own fields, and a fact a figure shows is not listed again | · |
 
 ## How this document is kept true
 

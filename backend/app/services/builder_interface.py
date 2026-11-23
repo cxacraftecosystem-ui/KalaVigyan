@@ -15,6 +15,7 @@ from app.research.sections import SectionSpec
 from app.research.structured import StructuredModel
 
 from .answer_events import CitedClaims
+from .craft_matter import MatterReads
 from .live_sources import LiveSourcesStore
 
 __all__ = ["BlockBuilder", "BuildAsk", "BuilderTools", "Built", "SeatResearch", "SourceRefs"]
@@ -45,6 +46,7 @@ class BuildAsk:
     cited: CitedClaims
     research: SeatResearch | None = None
     answer_fields: frozenset[str] = frozenset()
+    matter: MatterReads = field(default_factory=MatterReads)
 
 
 @dataclass(frozen=True)

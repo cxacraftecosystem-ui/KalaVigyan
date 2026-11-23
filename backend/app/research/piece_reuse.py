@@ -5,7 +5,8 @@ import uuid
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 
-from .knowledge_pieces import KnowledgePiece, ReuseAsk, reuse_refusal
+from .blocks_people import ExpertViewBlock
+from .knowledge_pieces import KnowledgePiece, ReuseAsk, piece_content_hash, reuse_refusal
 
 __all__ = [
     "PIECE_BLOCK_ORDER",
@@ -19,6 +20,7 @@ __all__ = [
     "piece_group_key",
     "reusable_groups",
     "reusable_simulation",
+    "seated_pieces",
     "visible_as_cited",
     "with_region_story",
     "with_simulation",
@@ -178,6 +180,57 @@ def with_simulation(
     if chosen is None or chosen in group:
         return tuple(group)
     return tuple(sorted([*group, chosen], key=_reading_order))
+
+
+def seated_pieces(pieces: Sequence[KnowledgePiece], seats: Collection[str]) -> tuple[KnowledgePiece, ...]:
+    dropped = {view.seat for view in _views(pieces) if view.seat not in seats}
+    if not dropped:
+        return tuple(pieces)
+    shown = {
+        claim
+        for piece in pieces
+        if not isinstance(piece.payload, ExpertViewBlock)
+        for claim in piece.payload.cited_claim_ids()
+    }
+    kept: list[KnowledgePiece] = []
+    for piece in pieces:
+        view = piece.payload
+        if not isinstance(view, ExpertViewBlock):
+            kept.append(piece)
+        elif view.seat not in dropped:
+            seated = _seated_view(view, dropped)
+            if seated is view:
+                kept.append(piece)
+            elif seated.differs or _adds_a_claim(seated, shown):
+                kept.append(_with_view(piece, seated))
+    return tuple(kept)
+
+
+def _views(pieces: Sequence[KnowledgePiece]) -> list[ExpertViewBlock]:
+    return [piece.payload for piece in pieces if isinstance(piece.payload, ExpertViewBlock)]
+
+
+def _seated_view(view: ExpertViewBlock, dropped: Collection[str]) -> ExpertViewBlock:
+    agrees = [seat for seat in view.agrees_with if seat not in dropped]
+    differs = [difference for difference in view.differs if difference.seat not in dropped]
+    if len(agrees) == len(view.agrees_with) and len(differs) == len(view.differs):
+        return view
+    return view.model_copy(update={"agrees_with": agrees, "differs": differs})
+
+
+def _adds_a_claim(view: ExpertViewBlock, shown: Collection[str]) -> bool:
+    return any(citation.claim_id not in shown for sentence in view.take for citation in sentence.citations)
+
+
+def _with_view(piece: KnowledgePiece, view: ExpertViewBlock) -> KnowledgePiece:
+    return piece.model_copy(
+        update={
+            "payload": view,
+            "claim_ids": sorted({uuid.UUID(claim) for claim in view.cited_claim_ids()}),
+            "source_ids": sorted(view.cited_source_ids()),
+            "content_hash": piece_content_hash(view),
+        }
+    )
 
 
 def _reading_order(piece: KnowledgePiece) -> tuple[int, list[tuple[int, int, str]]]:

@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.db import get_engine
 from app.models import Compound, Material, Source
@@ -29,15 +29,24 @@ SODA_ASH_RECORD = PubChemCompound(
 
 
 @pytest.fixture
-async def session() -> AsyncIterator[AsyncSession]:
+async def sessions() -> AsyncIterator[async_sessionmaker[AsyncSession]]:
     async with get_engine().connect() as connection:
         transaction = await connection.begin()
         try:
-            session = AsyncSession(bind=connection, expire_on_commit=False, autoflush=False)
-            yield session
-            await session.close()
+            yield async_sessionmaker(
+                bind=connection,
+                expire_on_commit=False,
+                autoflush=False,
+                join_transaction_mode="create_savepoint",
+            )
         finally:
             await transaction.rollback()
+
+
+@pytest.fixture
+async def session(sessions: async_sessionmaker[AsyncSession]) -> AsyncIterator[AsyncSession]:
+    async with sessions() as session:
+        yield session
 
 
 async def compounds(session: AsyncSession) -> dict[int, Compound]:
@@ -70,12 +79,15 @@ async def test_a_second_import_writes_no_compound_again(session: AsyncSession) -
 
 
 async def test_the_compound_lookup_fills_the_formula_of_a_curated_record_from_pubchem(
-    session: AsyncSession,
+    sessions: async_sessionmaker[AsyncSession],
 ) -> None:
-    await import_curation(session)
-    report = await link_compounds(session, FakeFinder({}, {10340: SODA_ASH_RECORD}), now=NOW)
-    soda = (await compounds(session))[10340]
+    async with sessions() as session:
+        await import_curation(session)
+        await session.commit()
+    report = await link_compounds(sessions, FakeFinder({}, {10340: SODA_ASH_RECORD}), now=NOW)
+    async with sessions() as session:
+        soda = (await compounds(session))[10340]
+        sources = (await session.scalars(select(Source).where(Source.url == SODA_ASH_RECORD.url))).all()
     assert soda.name in report.filled
     assert (soda.formula, soda.sourceId) == ("CNa2O3", record_source_id(10340))
-    sources = (await session.scalars(select(Source).where(Source.url == SODA_ASH_RECORD.url))).all()
     assert len(sources) == 1

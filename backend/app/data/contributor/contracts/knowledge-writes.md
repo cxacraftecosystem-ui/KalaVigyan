@@ -211,8 +211,9 @@ refused (`REJECTED`, `RETRACTED`) and waiting (`DRAFT`, never counted for the ti
   review does). A fact refused at QUOTES is stored at `HYPOTHESIS`.
 - Sources differ: when a differing fact goes live, it and every held fact it differs from get
   `sourcesDiffer`. A waiting fact is flagged when it is approved: the approving review calls
-  `services/candidate_writes.mark_sources_differ(session, claim_id)`, which reads the stored
-  DUPLICATE outcome.
+  `services/candidate_writes.mark_sources_differ(session, claim_id, *, about=None)`, which reads the
+  stored DUPLICATE outcome; given `about`, it also stores what the facts differ on in
+  `Claim.differsOn` wherever none is stored yet (decision 0156).
 - Who proposed it is kept privately: `Claim.createdById`, a `ReviewEvent` by the proposer whose
   note names the origin and the placement, and `ClaimSource.foundBy` (`CONTRIBUTION` or `AGENT`).
   A proposed claim's `origin` is `CONTRIBUTION` (`services/proposal_writes.PROPOSAL_CLAIM_ORIGIN`),
@@ -483,7 +484,7 @@ the item still fits the page (409 otherwise, and the proposal can only be reject
 - the item joins the page index under the next key of its letter (`R`, `W`, `O`, two digits): a stage's
   `after` or `whyClaimId` (replacing what was there), a native name, a reaction (no stored science row),
   a botanical name with its fact added to the material's, a glossary term (no shared glossary entry), a
-  conflict (both facts marked `sourcesDiffer`), an open question; a GI record writes `CraftGiRecord`
+  conflict (both facts marked `sourcesDiffer`, with its `about` as their `differsOn`), an open question; a GI record writes `CraftGiRecord`
   (the parts given replace, proprietors and facts are added); a concept missing for the fact is created
   as the import would (`curation:<slug>:craft:<FIELD>` or `curation:<slug>:W<nn>`);
 - the proposal is `APPROVED` with the reviewer, the time, the note and `claimId`, audited

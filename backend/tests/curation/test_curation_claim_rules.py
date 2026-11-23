@@ -6,6 +6,7 @@ from typing import Any
 from app.curation.entities import Reaction, Species
 from app.services.answer_events import CitedClaims
 from app.services.curation_claims import StoredClaim, claim_writes, superseded_claims
+from app.services.curation_keys import curated_id
 from app.services.curation_overview import overview_pieces
 from app.services.curation_structure import reaction_label
 
@@ -32,6 +33,7 @@ def planned(claim_id: uuid.UUID, **changes: Any) -> dict[str, Any]:
         "createdByKind": "SYSTEM",
         "sensitivity": "OPEN",
         "sourcesDiffer": False,
+        "differsOn": None,
         "field": "PROCESS",
     }
     return row | changes
@@ -49,6 +51,7 @@ def stored(claim_id: uuid.UUID, **changes: Any) -> StoredClaim:
         sensitivity=row["sensitivity"],
         sources_differ=row["sourcesDiffer"],
         field=row["field"],
+        differs_on=row["differsOn"],
     )
 
 
@@ -77,6 +80,31 @@ def test_a_changed_text_updates_the_row_and_its_version() -> None:
     )
     (update,) = written.updates
     assert (update["text"], update["version"]) == ("A new sentence about the cloth in Kutch.", 2)
+
+
+def test_a_conflict_s_subject_is_stored_with_the_flag_and_the_first_conflict_names_a_claim() -> None:
+    rows = {row["id"]: row for row in plan_of(AJRAKH).part("claims")}
+
+    def flag(key: str) -> tuple[bool, str | None]:
+        row = rows[curated_id(AJRAKH, key)]
+        return row["sourcesDiffer"], row["differsOn"]
+
+    assert flag("C064") == (True, "How many times the saaj soaking is repeated")
+    assert flag("C076") == (True, "How long the iron mixture for kut ferments")
+    assert flag("C090") == (True, "How long the red dye bath lasts")
+    assert flag("C001") == (False, None)
+
+
+def test_a_named_conflict_updates_the_stored_claim_that_was_only_flagged() -> None:
+    claim = uuid.UUID(int=11)
+    about = "How long the red dye bath lasts"
+    written = claim_writes(
+        [planned(claim, sourcesDiffer=True, differsOn=about)],
+        {claim: stored(claim, sourcesDiffer=True)},
+        NOTE,
+    )
+    (update,) = written.updates
+    assert (update["sourcesDiffer"], update["differsOn"]) == (True, about)
 
 
 def test_a_level_people_raised_and_a_retraction_are_never_undone() -> None:

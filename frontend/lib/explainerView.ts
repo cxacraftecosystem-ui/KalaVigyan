@@ -84,6 +84,7 @@ export function blockSourceIds(block: TypedBlock): string[] {
   if (block.kind === "indigo_vat") return [...cited, ...signatureSourceIds(block)];
   if (block.kind === "zoom_story") return [...cited, ...block.levels.flatMap((level) => (level.compound ? [level.compound.sourceId] : []))];
   if (block.kind === "component") return componentSourceIds(block);
+  if (block.kind === "material_card") return block.sourceId ? [...cited, block.sourceId] : cited;
   return block.kind === "molecule_3d" ? [...cited, block.sourceId] : cited;
 }
 
@@ -122,6 +123,11 @@ export function trailCounts(trail: readonly TrailEntry[]): TrailCount[] {
 }
 
 export const COVERED_NOTE = "Already covered in this answer.";
+
+export function withdrawnNote(count: number): string {
+  const taken = count === 1 ? "one passage was taken out" : `${count} passages were taken out`;
+  return `A field interview this section quoted is no longer shown, so ${taken}.`;
+}
 
 export function shownSections(sections: readonly SectionView[], streaming: boolean): SectionView[] {
   return sections.filter((section) => {

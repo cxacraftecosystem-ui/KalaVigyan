@@ -12,6 +12,7 @@ Date: 2026-11-18. Status: accepted.
 | What amended part of it | [0140 Voice and Listen hold their state in the bucket, bill what they hear and read the lede first](0140-voice-and-listen-kept-true.md): a hypothesis outcome is not read aloud |
 | The contract it was built to | [0054 Phase C contract: generated explainers, the what-if lab, zoom, timelines and film mode](0054-phase-c-contract.md) |
 | The review that fixed it | [0061 Phase C review fixes](0061-phase-c-review-fixes.md) |
+| What amended part of it | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md): One what-if per stage and pair of choices in an answer |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

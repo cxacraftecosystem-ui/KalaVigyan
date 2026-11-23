@@ -1,3 +1,5 @@
+import copy
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -15,8 +17,11 @@ from tests.field_voices.fixtures import (
     empty_page,
     enabled_settings,
     portal_transport,
+    recorded,
     resigned,
 )
+
+LAST_OF_FIRST_RUN = (datetime(2026, 11, 17, 12, 0, 0, 3, tzinfo=UTC), "fr-media-2")
 
 
 async def run(
@@ -181,3 +186,58 @@ async def test_a_page_that_starts_before_the_page_it_follows_is_refused() -> Non
     assert "before the page it follows" in shown["transcripts"]["error"]
     assert "fr-media-2" not in ledger.stream(FR, "transcripts").items
     assert ledger.stream(FR, "transcripts").cursor == "fr-t-2"
+
+
+def next_run_page(answers: Answers, updated_at: str, *, duration_ms: int) -> dict[str, Any]:
+    change = copy.deepcopy(recorded("field-transcripts-all-1")["changes"][0])
+    change["durationMs"] = duration_ms
+    resigned(change)
+    change["updatedAt"] = updated_at
+    page = empty_page(FR, "transcripts", "all", "fr-t-3") | {"nextCursor": "fr-t-4", "changes": [change]}
+    answers[(f"{STATE}/transcripts", "all", "fr-t-3")] = page
+    answers[(f"{STATE}/transcripts", "all", "fr-t-4")] = empty_page(FR, "transcripts", "all", "fr-t-4")
+    return change
+
+
+async def test_a_run_keeps_the_last_change_it_read_of_each_view() -> None:
+    ledger = FakeLedger()
+    await run(FR, caught_up(FR), ledger)
+    row = ledger.stream(FR, "transcripts")
+    assert (row.cursor, row.last) == ("fr-t-3", LAST_OF_FIRST_RUN)
+    assert row.gone_last == (datetime(2026, 11, 17, 12, 0, 0, 2, tzinfo=UTC), "fr-media-0")
+
+
+async def test_a_run_s_first_page_starting_at_the_last_run_s_last_change_is_refused() -> None:
+    ledger = FakeLedger()
+    answers = caught_up(FR)
+    await run(FR, answers, ledger)
+    next_run_page(answers, "2026-11-17T12:00:00.000003Z", duration_ms=1833000)
+    shown = streams(await run(FR, answers, ledger))
+    assert (shown["transcripts"]["ok"], shown["transcripts"]["refusedPages"]) == (False, 1)
+    assert "before the page it follows" in shown["transcripts"]["error"]
+    row = ledger.stream(FR, "transcripts")
+    assert (row.cursor, row.last) == ("fr-t-3", LAST_OF_FIRST_RUN)
+
+
+async def test_a_run_s_first_page_after_the_last_run_s_last_change_is_applied() -> None:
+    ledger = FakeLedger()
+    answers = caught_up(FR)
+    await run(FR, answers, ledger)
+    change = next_run_page(answers, "2026-11-17T12:00:00.000004Z", duration_ms=1833000)
+    shown = streams(await run(FR, answers, ledger))
+    assert (shown["transcripts"]["ok"], shown["transcripts"]["liveApplied"]) == (True, 1)
+    row = ledger.stream(FR, "transcripts")
+    assert row.items["fr-media-1"] == change["revision"]
+    assert (row.cursor, row.last) == (
+        "fr-t-4",
+        (datetime(2026, 11, 17, 12, 0, 0, 4, tzinfo=UTC), "fr-media-1"),
+    )
+
+
+async def test_a_reread_starts_again_from_no_stamp() -> None:
+    ledger = FakeLedger()
+    ledger.stream(FR, "transcripts").items["fr-media-stale"] = "0" * 32
+    await run(FR, caught_up(FR), ledger)
+    row = ledger.stream(FR, "transcripts")
+    assert (row.cursor, row.last, row.rereading) == (None, None, True)
+    assert row.gone_last is not None

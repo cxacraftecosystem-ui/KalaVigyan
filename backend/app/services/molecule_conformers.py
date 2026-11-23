@@ -3,13 +3,14 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Literal, Protocol
 
 from pydantic import AwareDatetime, Field, ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core.errors import ExternalFailure
 from app.models import Compound
 from app.research.base import ContractModel
 from app.sources.reference.pubchem import CONFORMER_MAX_BYTES, PubChemAdapter
@@ -19,6 +20,7 @@ from .naming import molecule_key
 
 __all__ = [
     "CONFORMER_LEAF",
+    "CONFORMER_MISS_RECHECK_DAYS",
     "CONFORMER_SCHEMA_VERSION",
     "CONFORMER_TYPE",
     "ConformerCache",
@@ -35,6 +37,7 @@ CONFORMER_SCHEMA_VERSION = 1
 CONFORMER_LEAF = "conformer.json"
 CONFORMER_TYPE = "chemical/x-mdl-sdfile"
 RECORD_TYPE = "application/json"
+CONFORMER_MISS_RECHECK_DAYS = 90
 
 
 class ConformerObjects(Protocol):
@@ -67,13 +70,20 @@ class ConformerCache:
     async def conformer(self, cid: int) -> str | None:
         key = molecule_key(cid, CONFORMER_LEAF)
         kept = _kept_record(cid, await self.objects.get(key))
-        if kept is not None:
+        now = self.clock()
+        if kept is not None and not _miss_to_ask_again(kept, now):
+            return kept.sdf
+        try:
+            sdf = await self.source.conformer(cid)
+        except ExternalFailure as failure:
+            if kept is None:
+                raise
+            logger.warning(
+                "PubChem could not be asked again; the kept miss of CID %s stands: %s", cid, failure
+            )
             return kept.sdf
         record = ConformerRecord(
-            schema_version=CONFORMER_SCHEMA_VERSION,
-            pubchem_cid=cid,
-            sdf=await self.source.conformer(cid),
-            checked_at=self.clock(),
+            schema_version=CONFORMER_SCHEMA_VERSION, pubchem_cid=cid, sdf=sdf, checked_at=now
         )
         await self.objects.put(key, record.model_dump_json().encode("utf-8"), content_type=RECORD_TYPE)
         return record.sdf
@@ -86,6 +96,10 @@ async def stored_compound_cid(session: AsyncSession, cid: int) -> bool:
 
 async def live_pubchem(live: LiveSourcesStore, sessions: async_sessionmaker[AsyncSession]) -> PubChemAdapter:
     return await live.reference(sessions, PubChemAdapter)
+
+
+def _miss_to_ask_again(record: ConformerRecord, now: datetime) -> bool:
+    return record.sdf is None and now - record.checked_at > timedelta(days=CONFORMER_MISS_RECHECK_DAYS)
 
 
 def _kept_record(cid: int, raw: bytes | None) -> ConformerRecord | None:

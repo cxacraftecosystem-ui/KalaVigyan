@@ -7,13 +7,15 @@ from app.core.errors import ExternalFailure
 from app.services.field_voices_feed import VIEW_GONE, FieldVoicesPage, Live, StreamState, stream_digest
 from app.services.field_voices_images import StoredCopy
 from app.services.field_voices_items import ImageItem
-from app.services.field_voices_sync import AppliedPage, StreamCursors, SyncClock
+from app.services.field_voices_sync import AppliedPage, Stamp, StreamCursors, SyncClock
 
 
 @dataclass
 class FakeStream:
     cursor: str | None = None
     gone_cursor: str | None = None
+    last: Stamp | None = None
+    gone_last: Stamp | None = None
     rereading: bool = False
     contacted: int = 0
     hidden: bool = False
@@ -33,7 +35,13 @@ class FakeLedger:
 
     async def cursors(self, portal: str, stream: str) -> StreamCursors:
         row = self.stream(portal, stream)
-        return StreamCursors(cursor=row.cursor, gone_cursor=row.gone_cursor, rereading=row.rereading)
+        return StreamCursors(
+            cursor=row.cursor,
+            gone_cursor=row.gone_cursor,
+            rereading=row.rereading,
+            last=row.last,
+            gone_last=row.gone_last,
+        )
 
     async def apply_page(self, page: FieldVoicesPage, copies: Mapping[str, StoredCopy]) -> AppliedPage:
         row = self.stream(page.portal, page.stream)
@@ -50,12 +58,18 @@ class FakeLedger:
                 row.items.pop(change.id, None)
                 row.withdrawn.append(change.id)
                 gone += 1
-        if page.next_cursor is not None:
-            if page.view == VIEW_GONE:
-                row.gone_cursor = page.next_cursor
-            else:
-                row.cursor = page.next_cursor
+        self._advance(row, page)
         return AppliedPage(live=live, gone=gone, images=len(copies))
+
+    def _advance(self, row: FakeStream, page: FieldVoicesPage) -> None:
+        if page.next_cursor is None:
+            return
+        final = page.changes[-1] if page.changes and page.next_cursor != page.cursor else None
+        stamp = (final.updated_at, final.id) if final is not None else None
+        if page.view == VIEW_GONE:
+            row.gone_cursor, row.gone_last = page.next_cursor, stamp or row.gone_last
+        else:
+            row.cursor, row.last = page.next_cursor, stamp or row.last
 
     async def needs_copy(self, portal: str, change: Live) -> bool:
         item = change.item
@@ -70,7 +84,7 @@ class FakeLedger:
 
     async def restart(self, portal: str, stream: str) -> None:
         row = self.stream(portal, stream)
-        row.cursor, row.rereading, row.seen = None, True, set()
+        row.cursor, row.last, row.rereading, row.seen = None, None, True, set()
 
     async def finish_reread(self, portal: str, stream: str) -> int:
         row = self.stream(portal, stream)

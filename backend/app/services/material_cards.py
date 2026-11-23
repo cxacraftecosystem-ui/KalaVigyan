@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 
 from pydantic import ValidationError
@@ -14,7 +14,7 @@ from app.research.citations import Citation
 from app.research.explainer import Block
 from app.research.quotes import quote_occurs
 from app.research.vocabulary import FACT_LEVELS
-from app.science.records import KnownClaim
+from app.science.records import CompoundRecord, KnownClaim
 
 from .answer_events import CitedClaims
 from .craft_matter import CraftMatter, GlossaryTerm, MaterialRows, first_naming, section_sentences
@@ -72,7 +72,9 @@ def card_offers(matter: CraftMatter, blocks: Sequence[Block], cited: CitedClaims
     return offers
 
 
-def material_card(offer: CardOffer, choice: CardChoice, *, block_id: str) -> MaterialCardBlock | None:
+def material_card(
+    offer: CardOffer, choice: CardChoice, *, block_id: str, records: Collection[str]
+) -> MaterialCardBlock | None:
     facts = _chosen(offer, choice.facts, taken=set())
     handling = _chosen(offer, choice.handling, taken={claim.id for claim in facts})
     if not facts:
@@ -100,10 +102,18 @@ def material_card(offer: CardOffer, choice: CardChoice, *, block_id: str) -> Mat
             local_names=list(_local_names(term)),
             facts=sentences[: len(facts)],
             handling=sentences[len(facts) :],
+            source_id=_record_of(linked, records),
         )
     except ValidationError as refused:
         logger.warning("the %s card is refused: %s", offer.material.name, refused)
         return None
+
+
+def _record_of(linked: CompoundRecord | None, records: Collection[str]) -> str | None:
+    if linked is None or linked.source_id is None:
+        return None
+    source_id = str(linked.source_id)
+    return source_id if source_id in records else None
 
 
 def material_term(material: MaterialRows) -> GlossaryTerm | None:

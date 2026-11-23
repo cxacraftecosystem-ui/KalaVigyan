@@ -34,6 +34,7 @@ GOLDEN_MODELS: dict[str, Any] = {
     "learning.compare.golden.json": CraftComparison,
     "explainer.document.golden.json": Explainer,
     "explainer.lede.golden.json": Explainer,
+    "explainer.withdrawn.golden.json": Explainer,
     "explainer.phase-b.golden.json": PhaseBFixture,
     "explainer.phase-c.golden.json": PhaseCFixture,
     "explainer.phase-d.golden.json": PhaseDFixture,

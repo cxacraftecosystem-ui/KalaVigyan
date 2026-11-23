@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 
 import { CitedText } from "@/components/answer/ProseBlockView";
 import { ExplainerSentence } from "@/components/answer/ExplainerSentence";
+import { SentencesDiffer, SentenceWithReadings } from "@/components/answer/SentencesDiffer";
 import { VatArt, type VatArtRefs } from "@/components/answer/VatArt";
 import { VatEquationView } from "@/components/answer/VatEquation";
 import { FactGrid } from "@/components/editorial/FactGrid";
@@ -55,7 +56,7 @@ function Frames({ frames, current, dip, dipRef, airRef }: VatArtRefs & { frames:
 }
 
 function VatFacts({ block, said }: { block: IndigoVatBlock; said: readonly SaidFact[] }) {
-  const facts = said.map((fact) => ({ label: fact.label, value: <ExplainerSentence sentence={fact.sentence} /> }));
+  const facts = said.map((fact) => ({ label: fact.label, value: <SentenceWithReadings sentence={fact.sentence} /> }));
   if (facts.length === 0) return null;
   return (
     <section className="mt-6" aria-label={block.vat === "FERMENTED" ? "What the fermented vat holds" : "What the vat holds"}>
@@ -86,6 +87,7 @@ export function VatFigure({ block, number }: { block: IndigoVatBlock; number: nu
   const dek = text.dek ? <ExplainerSentence sentence={text.dek} /> : undefined;
   return (
     <Figure number={number} kind="diagram" title="One dip, three states" dek={dek} className="kv-vat" id="fig-vat">
+      {text.dek ? <SentencesDiffer sentences={[text.dek]} /> : null}
       <div className="grid grid-cols-1 gap-7 rail:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] rail:items-start rail:gap-12" data-testid="vat-figure" data-dip={dip} data-phase={vat.phase}>
         <Frames frames={text.frames} current={currentFrame(vat.phase)} dip={dip} dipRef={dipRef} airRef={airRef} />
         <div className="min-w-0">

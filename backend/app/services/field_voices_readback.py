@@ -39,10 +39,18 @@ class Withdrawn:
         return bool(self.citations or self.sources)
 
     def out(self, citation: Citation) -> bool:
+        return self.interview_out(citation)
+
+    def interview_out(self, citation: Citation) -> bool:
         return citation.source_id in self.sources or (citation.claim_id, citation.source_id) in self.citations
 
     def cites(self, block: BlockBase) -> bool:
         return any(self.out(citation) for citation in block.citations())
+
+    def takes_interview_from(self, block: BlockBase) -> bool:
+        if isinstance(block, ArtisanVoiceBlock) and any(q.source_id in self.sources for q in block.quotes):
+            return True
+        return any(self.interview_out(citation) for citation in block.citations())
 
 
 def portal_field_source(source: SourceRef) -> bool:
@@ -111,12 +119,28 @@ def _section(section: ExplainerSection, withdrawn: Withdrawn) -> ExplainerSectio
         return section
     blocks = _illustrating_cited([block for block in kept if block is not None])
     if blocks:
+        lost = sum(
+            _lost(before, after, withdrawn) for before, after in zip(section.blocks, kept, strict=True)
+        )
         try:
-            changed = section.model_copy(update={"blocks": blocks})
+            changed = section.model_copy(update={"blocks": blocks, "withdrawn": section.withdrawn + lost})
             return ExplainerSection.model_validate(changed.model_dump(mode="json", by_alias=True))
         except ValidationError:
             pass
     return section.model_copy(update={"state": EMPTY, "blocks": [], "searched": WITHDRAWN_SEARCHED})
+
+
+def _lost(before: BlockBase, after: BlockBase | None, withdrawn: Withdrawn) -> int:
+    if after is before or not withdrawn.takes_interview_from(before):
+        return 0
+    return _shown(before) - _shown(after)
+
+
+def _shown(block: BlockBase | None) -> int:
+    if block is None:
+        return 0
+    quotes = len(block.quotes) if isinstance(block, ArtisanVoiceBlock) else 0
+    return quotes + sum(1 for _ in block.cited_sentences())
 
 
 def _kept(block: BlockBase, withdrawn: Withdrawn) -> BlockBase | None:

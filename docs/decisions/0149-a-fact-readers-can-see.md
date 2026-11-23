@@ -25,6 +25,7 @@ section cites).
 | The rule as it stands | [retrieval.md](../contracts/retrieval.md), Who may read a citation |
 | The reply, the gates and their evaluation | [knowledge-writes.md](../contracts/knowledge-writes.md) |
 | The nightly count | [nightly-upkeep.md](../contracts/nightly-upkeep.md) |
+| A curated craft lists its contributed facts under their fields, and a figure's fact is not listed (amends item 5) | [decision 0158](0158-a-curated-page-lists-the-facts-contributors-add.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

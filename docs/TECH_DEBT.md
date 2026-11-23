@@ -345,47 +345,31 @@ Last reviewed: 2026-11-22.
 
 ## Science engine (decision 0015)
 
-### Reactions and readings cover three crafts
+### Seeded crafts without a cited reaction, a firing stage or a stated temperature
 
-- **What:** the science seed has reactions and condition readings for Kutch Ajrakh, Bagh and
-  Machilipatnam only; Bagru, Sanganeri and Akola stages get materials but no reactions or
-  readings. Nothing proposes species for new claims (no researcher form, no enrichment step),
-  so reactions grow only through `app/data/science_seed.json`. Kaolinite dehydroxylation has
-  no reaction: the terracotta seed is sub-category mechanism chains, not a craft process with
-  a `FIRE` stage. Stage concepts without an upstream ordinal (Akola mud soaking and paste
-  preparation, Machilipatnam and Sanganeri block carving) get no stage, although `PRECEDES`
-  edges could place them. No seed claim states a temperature or pH, so no seeded reading is
-  checked against an envelope yet.
-- **Why left:** each reaction and reading is curated against its quote; a model proposal path
-  needs the review queue and a writer that calls `science/reactions.check_reaction`.
-- **Clears it:** a writer for proposed species (researcher form and enrichment), balanced only
-  through `check_reaction`; a terracotta craft process; ordering stages by `PRECEDES`.
+- **What:** reactions now come from the science seed (Kutch Ajrakh, Bagh, Machilipatnam) and
+  from the curated dossiers of nine crafts (those three, Bagru, Sanganeri, Bastar Dhokra, Agates
+  of Cambay, Firozabad Glass, Cane and Bamboo, through `services/curation_structure`). What is
+  left: Dabu (its dossier holds no reaction) and Akola stages have materials and tools but no
+  reaction, because no source the seed or a dossier holds states one; no craft has a process with a `FIRE` stage, so kaolinite dehydroxylation has no
+  reaction (the terracotta seed is sub-category mechanism chains); stage concepts without an
+  upstream ordinal (Akola mud soaking and paste preparation, Machilipatnam and Sanganeri block
+  carving) get no stage although `PRECEDES` edges could place them; and no seed claim states a
+  temperature or pH, so no seeded reading is checked against an envelope.
+- **Why left:** reactions and readings are written only as a cited quote states them; the
+  sources still to find are a GI application or a chemistry paper on Dabu mud resist and on
+  Akola's mud and indigo work, a curated clay craft's firing schedule, and a dyeing source
+  stating a bath temperature or pH. Finding them is research through the KalaVigyan MCP server
+  (`search_sources`, `read_source`, then `propose_structure` for a reaction).
+- **Clears it:** a dossier or seed reaction for Dabu and Akola from such a source, a curated clay
+  craft with a `FIRE` stage and its stated temperature, and `claim_seed.stage_rows` ordering a
+  stage by its `PRECEDES` edges when no ordinal is stated.
 
 ### Out-of-envelope readings are not in a review queue
 
 - **What:** the contract lists every `OUTSIDE` reading in the review queue; no review queue
   exists, so they are only shown with their status.
 - **Clears it:** the review-queue lane lists readings whose `envelope_check` is `OUTSIDE`.
-
-### The science seed never deletes
-
-- **What:** science rows are upserted by derived id, so a reaction, condition or reading removed
-  from `science_seed.json` stays in the database.
-- **Clears it:** delete seeded science rows whose derived id is no longer in the plan, in the
-  same transaction as the upsert.
-
-### One kind and role per material
-
-- **What:** a seeded material has one curated `MaterialKind` and one `MaterialRole` for every
-  stage that uses it, and tools (`TOOL` concepts) are not stage materials.
-- **Clears it:** take the role per stage from the source when a stage uses a material
-  differently, and show tools once the contract has a place for them.
-
-### Kaolinite constant differs from PLAN 7
-
-- **What:** PLAN 7 gives kaolinite dehydroxylation as 450–600 °C; the cited revision says it
-  begins at 550–600 °C, which is the constant.
-- **Clears it:** cite a scholarly thermal-analysis source and set the constant to what it says.
 
 ## Answers in Indian languages (decision 0023)
 
@@ -847,89 +831,19 @@ Last reviewed: 2026-11-22.
 
 ## Reaction player, material cards and 3D molecules (decision 0045)
 
-### The reaction player shows no conditions or reaction energies
+### The zoom story reads the craft's matter on its own
 
-- **What:** version 1 of `ReactionStep` (decision 0042) has no conditions or ΔH, so the player
-  shows species, equations and levels only; the Process tab still shows each reaction's cited
-  conditions and ΔH.
-- **Why left:** the kind's fields were fixed by decision 0042 and the matter renderers are built
-  against them in parallel; a field change is a new version.
-- **Clears it:** a version 2 step carrying the reaction view's cited conditions and `deltaH`, with
-  its renderer, fixture and both sides' tests.
-
-### A material card cites no PubChem record for its formula
-
-- **What:** a card shows a formula and CID only from a compound linked to its PubChem record, but
-  version 1 of `MaterialCardBlock` has no source field, so the record is not in the explainer's
-  sources; the CID itself is the reader's link to the record.
-- **Why left:** the kind's fields are fixed (decision 0042).
-- **Clears it:** a version 2 card with the compound's record `sourceId`, cited like the molecule.
-
-### Each matter builder reads the craft's matter again
-
-- **What:** the reaction, card and molecule builders each call `craft_matter`, so a chemistry
-  section reads the craft's process rows three times and a materials section twice.
-- **Why left:** builders share nothing but `BuilderTools`; the reads are short and need no lock.
-- **Clears it:** a per-answer matter read held by the builder tools and shared by the builders.
-
-### Cards and molecules can repeat across a chemistry and a materials section
-
-- **What:** a builder sees one section, so an answer with both a `CHEMISTRY` and a `MATERIALS`
-  section can show the same material's card or the same molecule in both.
-- **Why left:** the registry contract gives a builder its own section only.
-- **Clears it:** `BuildAsk` carrying the blocks earlier sections were given, or a per-answer
-  record of shown materials and compounds.
-
-### A missing 3D conformer is never asked again
-
-- **What:** `ConformerCache` keeps PubChem's "no 3D conformer" for good, so a conformer PubChem
-  adds later is not seen until the object is deleted.
-- **Why left:** PubChem computes conformers only for small, rigid, single-component molecules;
-  a compound refused once is very unlikely to gain one.
-- **Clears it:** re-ask a kept miss whose `checkedAt` is older than a few months.
-
-### The compound lookup holds its session across PubChem calls
-
-- **What:** `link_compounds` keeps one database session open while it asks PubChem for each
-  pending compound (decision 0040's rule is never to wait on HTTP with a connection held).
-- **Why left:** it is a nightly script with its own engine and a handful of compounds, not the
-  answer path; its database test drives it with one transaction.
-- **Clears it:** read the pending compounds, look them up with no session open, then write the
-  links in a second short session; adapt `tests/db/test_compound_lookup_db.py`.
-
-### Card local names come from the glossary only
-
-- **What:** a card's `localNames` are its term's; a local name a cited claim states (for example
-  "locally known as kachika") but the glossary lacks is not shown.
-- **Why left:** the glossary is the one home of names; a name read from free text needs the same
-  checks the glossary seed applies.
-- **Clears it:** the glossary seed adding local names stated in claims about the term's concept.
+- **What:** the reaction, card, molecule, what-if, supply-map and generated-explainer builders
+  share one read of the craft's matter per answer (`BuildAsk.matter`, decision 0152); the zoom
+  story builder (`services/journey_builders.ZoomStoryBuilder`) still calls `craft_matter` itself,
+  so an answer whose chemistry or materials section shows a zoom reads the rows once more.
+- **Why left:** `journey_builders.py` belonged to the time, market and figures lane in round 7's
+  debt round, so this lane left it.
+- **Clears it:** `ZoomStoryBuilder.build` reading `await ask.matter.read(self._tools.sessions,
+  craft)`, with `tests/journey/test_zoom_story.py` patching `app.services.craft_matter` as
+  `tests/matter/test_matter_reads.py` does.
 
 ## Expert panel (decision 0046)
-
-### One failing take sentence drops the view, with no regenerate
-
-- **What:** prose gets one regenerate for failing sentences; a panel take does not, so a view with
-  one unquoted or unsupported sentence is not shown at all.
-- **Why left:** the panel is optional work inside a 90 s wait (decision 0099).
-- **Clears it:** one regenerate of the failing seats' takes when the wait and the headroom allow.
-
-### Experts differ only on claims stored on one concept
-
-- **What:** "one subject" is the claims' stored concept, so two claims on different concepts that
-  disagree about one fact (or a claim about a concept edge) are never shown as a difference.
-- **Why left:** the concept is the only stored subject; a model's word that two claims concern one
-  thing is not evidence.
-- **Clears it:** the concept graph of feature 7 (shared-science explorer) linking concepts that
-  name one thing, read as one subject.
-
-### Reused expert views keep the seats that stored them
-
-- **What:** a stored panel is reused with its section (one reuse set), so a later question that
-  seated other experts sees the earlier answer's seats.
-- **Why left:** dropping a view would break its mirrored difference; the set is reused whole.
-- **Clears it:** reuse a set's views only for seats the new understanding seats, removing the
-  differences and agreements that name a dropped seat.
 
 ### The reading share does not steer queries
 
@@ -943,32 +857,14 @@ Last reviewed: 2026-11-22.
 
 ### The panel call has not met Claude Sonnet yet
 
-- **What:** the prompt and schema were checked against the portable schema rules and recorded
-  replies only.
-- **Why left:** nothing runs against production models from the laptop.
-- **Clears it:** the phase B known-answer question in production (Kutch Ajrakh, Expert, history)
-  showing an "Experts differ" card, and Usage showing the panel's spend per answer.
-
-## Matter and expert renderers (decision 0049)
-
-### Matter renderers not yet seen running
-
-- **What:** typecheck, lint and server-rendered unit specs check the player, the cards, the panel
-  and the molecule's frame, not a browser: the 3Dmol.js chunk under a Next build, its first draw,
-  the reveal turn, Explore on touch screens, the transparent canvas in dark mode, and the cast's
-  `archive` tone in dark mode are unverified.
-- **Clears it:** once the kinds are built, the production E2E asks a Kutch Ajrakh chemistry
-  question at 1440, 834 and 390 px, with screenshots of the player playing and paused, a card, the
-  molecule before and after Explore, and reduced motion on.
-
-### 3Dmol.js keeps two listeners after a molecule is gone
-
-- **What:** a 3Dmol.js viewer adds a `mouseup` and `touchend` listener on `document.body` and a
-  `resize` listener on `window` that it never removes; disposing a scene clears the models, loses
-  the WebGL context and removes the canvas, but those listeners stay until the page unloads.
-- **Why left:** the library has no teardown for them, and an explainer draws at most one molecule
-  per section.
-- **Clears it:** a 3Dmol.js release with a viewer teardown, called from `MoleculeScene.dispose`.
+- **What:** the seat, retake and difference calls are tested on their route (the builder compose
+  model, `answer_routes.BUILDER_TUNING`, Claude Sonnet 5.5 on the answer's headroom;
+  `tests/experts/test_panel_retakes.py`) and against recorded replies, but no production answer
+  has been read for its views and an "Experts differ" card.
+- **Why left:** it needs a paid production run, which only the lead dispatches.
+- **Clears it:** the production questions run dispatched with `questions=true`: its Expert answer
+  carries a note of the panel's views and Experts differ pairs (`e2e/production/expertPanel.ts`),
+  read with the `COMPOSE` spend of that answer in Usage.
 
 ## Curation tooling (decision 0051)
 
@@ -1269,14 +1165,6 @@ Last reviewed: 2026-11-22.
   outcome; a what-if over them would need numbers or outcomes a model would have to supply.
 - **Clears it:** curation storing condition ranges with the outcomes a source ties to each, or
   water sources as materials with their relations; then an input kind over them in a version 2.
-
-### One answer can show the same what-if in two sections
-
-- **What:** builders see only their own section, so a process and a chemistry section that both
-  name madder can each show the red-dye what-if.
-- **Why left:** the registry has no answer-wide view of what other sections built.
-- **Clears it:** an answer-level set of inputs already shown passed to the builders, or the
-  what-if kept to the first section that names its stage.
 
 ## Zoom story and timeline map (decision 0057)
 
@@ -1660,86 +1548,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the curation rules check each GI and price date with `stated_dates.states_date`
   at its own precision and report a record whose day, month or year no quote states.
 
-## Frontend audit exceptions
-
-### Field voices are stored and served, but not drawn on the craft page
-
-- **What:** the craft page carries `voices`, `fieldPhotos` and `fieldVoicesTotal`, and the list
-  route pages them (decision 0091), but no component draws "In the artisan's words" or "From the
-  workshops" yet; only the signed-in reading page `/voices/<id>` exists.
-- **Why left:** the answer and craft components were being edited by another lane in the same
-  batch.
-- **Clears it:** a Voices part and a gallery on the craft page, each with its first page and
-  "Show all N" through `fetchFieldVoices`, and "Read the full interview" linking `/voices/<id>`.
-
-### The expert panel's artisan seat quotes only transcript chunks that back a stored claim
-
-- **What:** since decision 0099 the artisan seat speaks from field transcript chunks (`PUBLIC` and
-  `SIGNED_IN`), but only through a stored claim whose citation quotes the chunk; a chunk no claim
-  cites is not quoted. It reads with the public reading ACLs, not the asker's own (a researcher's
-  `RESEARCHER` chunks are not read), and it does not read KalaVigyan testimony (decision 0083).
-- **Why left:** an `expert_view` sentence cites stored claims only, and the builder writes no
-  claims; field quotes become claims through the live write-back.
-- **Clears it:** the builder writing back a quoted claim for each chunk it would quote, and the
-  asker's ACLs on `BuildAsk`.
-
-### The seat search and the artisan's transcript read have no database test
-
-- **What:** `seat_search.stored_seat_search` and `artisan_seat.stored_voices` past the retriever
-  (the `ClaimSource`, `FieldSegment` and `FieldRecording` reads) are covered by unit tests with
-  injected searches only; no test runs them against Postgres.
-- **Why left:** the change was bounded to unit tests; database tests run only on GitHub Actions.
-- **Clears it:** a `tests/db` test that stores a field recording, its chunks and a quoting claim,
-  and checks the artisan's sentence, name, craft and district.
-
-### Field images are not illustration candidates of their crafts' claims
-
-- **What:** the field voices contract makes each stored field image an illustration candidate of
-  its crafts' claims (`MediaRefClaim`, relevance `TEXT` from its caption and labels). No field voices
-  module writes `MediaRefClaim` rows, so field images show only in the craft page's gallery, never
-  beside a sentence (decision 0091, point 12).
-- **Why left:** choosing which claims a photograph illustrates needs the caption-to-claim matching
-  of the media lane, and the gallery already shows every image credited.
-- **Clears it:** `field_voices_image_store` links each image's `MediaRef` to the visible claims of
-  its crafts whose text its caption or labels match, and the cascade deletes those rows with it.
-
-### A partly withdrawn explainer section shows no "quote withdrawn" note
-
-- **What:** `services/field_voices_readback.py` drops the sentences and blocks of a stored explainer
-  that cite a withdrawn or stale field interview when the explainer is read. A section left empty
-  says so ("A field interview this section quoted is no longer shown."), but a section that keeps
-  other sentences shows no note that one was taken out, as the contract asks.
-- **Why left:** the explainer contract has a count of removed quotes only on `artisan_voice`, which
-  is not a built section block; a note on any section is a new field in `docs/contracts/explainer.md`
-  and its web shape, owned by the answer lane.
-- **Clears it:** a `withdrawn` count on `ExplainerSection` (and the web shape), set by the readback
-  and shown under the section.
-
-### The field voices order check does not span runs
-
-- **What:** `field_voices_sync` refuses a page whose first change is not after the last change of
-  the page before it in the same view and run, but keeps no last (`updatedAt`, `id`) between runs;
-  the first page of a run is checked only within itself.
-- **Why left:** a run resumes at the portal's signed cursor, which already names the last change
-  read; storing the stamp beside it needs two more columns per view and a reset on every re-read.
-- **Clears it:** `FieldVoiceStream` keeps the last stamp and id of each view, cleared with the cursor,
-  and `_read` starts from them.
-
-## The design system migration (decision 0092)
-
-### The voice call screen still mounts the retired source dialog
-
-- **What:** citation clusters open their own popover or sheet (`editorial/SourcePanel.tsx`), so no
-  citation opens `components/answer/SourceDialog` any more. Only the voice call screen still wires
-  it: `components/voice/VoiceCallBody.tsx` mounts `SourceDialog` and builds `openedSource` in an
-  `onOpen` it hands `VoiceTranscript`, which no citation calls.
-- **Why left:** the voice screens were another lane's files while decision 0141 cleared the rest
-  (the evidence badge folded into `EvidenceTag`, `CitationLookup.onOpen` and `TermSheet`'s
-  `onOpenCitation` deleted).
-- **Clears it:** drop the `onOpen`, `openedSource` and `SourceDialog` wiring from `VoiceCallBody`
-  and `VoiceTranscript`, then delete `components/answer/SourceDialog.tsx` and
-  `e2e/source-dialog-unit.spec.ts`.
-
 ## Public transcripts and share links (decision 0097)
 
 ### The `SIGNED_IN` chunk ACL is read by everyone
@@ -2040,22 +1848,24 @@ Last reviewed: 2026-11-22.
 
 ### Leftovers of the design-conformance lane
 
-- **What:** an answer sentence flagged Sources differ opens both readings under the sentence, not in
-  a details element after its paragraph as SYSTEM.md draws it, and its summary cannot name what the
-  sources differ on, because the payload carries only `sourcesDiffer` and the citations (a flagged
-  claim stores no "about"). A drawing stored without server variants (the kind fixtures on
-  `/design/kinds`) shows a sunk placeholder until it hydrates. Decision 0141 renamed the board's
-  ribbon buttons, put the token set's hash in the themed picture ETag and added high contrast to
-  the capture run.
-- **Why left:** the sentence's own drawing is `components/answer/ExplainerSentence.tsx`, the voice
-  lane's file while decision 0141 ran, and a flagged claim has no stored subject to name; the
-  fixtures are delivered specs, which may not carry `themes` (`component_specs_general_delivery`),
-  and the page bundles them instead of asking the server, which adds the variants.
-- **Clears it:** store what two readings differ on with the flag (the write-back marks it), carry
-  it with the readings on the sentence, draw `SourcesDifferNote` after the paragraph in the host
-  components (`LadderStageCard`, `CitedText` and the other callers) and only the tag in
-  `ExplainerSentence`; serve the kind preview's specs through the backend, which adds the four
-  variants with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
+- **What:** the Sources differ readings open in a `<details>` after their paragraph and the claim
+  stores what they differ on (`Claim.differsOn`, decision 0156), but three seams are open. An
+  answer sentence never receives it, because `knowledge_view.ClaimView` carries no `differs_on`
+  (`section_blocks.explainer_sentence` reads it through `DIFFERS_ON_FIELD`), so answers show a plain
+  "Sources differ" summary; a flag the write-back's duplicate judge sets stores no subject, because
+  the judge names none; and the matter and what-if hosts (`components/answer/matter/
+  ReactionStepList.tsx`, `StepDetail.tsx`, `components/answer/play/WhatIfLab.tsx`) draw a flagged
+  sentence's tag without its readings. A drawing stored without server variants (the kind fixtures
+  on `/design/kinds`) shows a sunk placeholder until it hydrates.
+- **Why left:** `knowledge_view.py`, the gates and judges and the matter hosts were other lanes'
+  files while decision 0156 ran; the fixtures are delivered specs, which may not carry `themes`
+  (`component_specs_general_delivery`), and the page bundles them instead of asking the server,
+  which adds the variants.
+- **Clears it:** `ClaimView.differs_on: str | None` filled from `Claim.differsOn` in `cited_view`;
+  the duplicate judge naming what two facts differ on and passing it as
+  `candidate_writes.mark_sources_differ(..., about=)`; `SentencesDiffer` after the paragraph in the
+  three hosts; serve the kind preview's specs through the backend, which adds the four variants
+  with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
 
 ### The fused order is weak on paraphrased English questions
 
@@ -2086,13 +1896,15 @@ Last reviewed: 2026-11-22.
 
 ### Goldens that do not yet show every field
 
-- **What:** 174 fields of 37 models the web is served (the craft page's field voices, field photos,
+- **What:** 177 fields of 38 models the web is served (the craft page's field voices, field photos,
   contributed plates, AI media and searched parts, the people and component blocks, groundwater,
-  monthly rain and dataset references, a source's journal name, a translated sentence's original)
+  monthly rain and dataset references, a source's journal name, a translated sentence's original,
+  a reaction step's ΔH)
   appear in no golden in `shared/`, so the web's strict parse of the goldens does not test them.
   `backend/tests/contracts/unshown_fields.json` lists them; `test_golden_fields.py` fails on any
-  other unshown field, so every field added since decision 0151 is shown, and on a listed field that
-  is shown, so the list only shrinks.
+  other unshown field, so every field added since decision 0151 is shown (but for the step's ΔH of
+  decision 0152, which no source a golden is built from states), and on a listed field that is
+  shown, so the list only shrinks.
 - **Why left:** the craft page goldens are the Kutch Ajrakh dossier and Farrukhabad Prints as the
   preview builds them, and neither has field voices, contributed or AI pictures, people blocks or a
   journal paper; showing them needs inputs for those builders, a change of its own.

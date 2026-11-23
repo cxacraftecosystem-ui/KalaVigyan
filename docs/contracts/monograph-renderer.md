@@ -124,7 +124,9 @@ The plan (`pagePlan`) is pure and tested:
   numeral `p` (its text is the chapter number) `p.chapter-no.in-main`; the kicker
   `p.kicker.sec-kicker`; the first `h2` `h2.t-h2#<chapter>-h`; cited `p` right after it
   `p.t-lede`; an uncited `p` of 60 characters or fewer `p.kicker`; other `p` `p.t-body`; `li` runs
-  `ul.kv-list`; `dt`/`dd` runs `dl.kv-terms`. An `li` that starts with a bold source number is a
+  one cited list (`CitedList`: `ul.kv-list` under a hairline, each item a hairline row in reading
+  text at body-sm with its sentence's citation cluster, as a field's listed facts are drawn,
+  `monograph-document.md`); `dt`/`dd` runs `dl.kv-terms`. An `li` that starts with a bold source number is a
   margin note: `aside.margin.note > ul > li[data-g=<source key>]`.
 - **Label masthead** (`labelMasthead`, a generated document): when the first chapter holds an
   `h1` unit, the `p` before it is the kicker, the `dt`/`dd` run after it the place and GI, the
@@ -318,6 +320,7 @@ when any of them changes (`kv-prefs`). The menu's display tools change the app's
 | Marks, units, slots and the page plan | `frontend/e2e/monograph-render-unit.spec.ts`, `monograph-units-unit.spec.ts`, `monograph-slot-unit.spec.ts` and `monograph-layout-unit.spec.ts` |
 | A craft's route draws its document or its record | `frontend/e2e/craft-monograph-unit.spec.ts` and `craft-without-monograph-unit.spec.ts` |
 | Generated documents and the answer block kind | `frontend/e2e/monograph-generated-unit.spec.ts` and `monograph-blocks-unit.spec.ts` |
+| A chapter's listed facts drawn as one cited list after its prose | `frontend/e2e/cited-list-unit.spec.ts` |
 | Native views and the whole shell | `frontend/e2e/monograph-native-unit.spec.ts`, and `monograph-native.smoke.spec.ts` against the built site |
 | The page tools | `frontend/e2e/monograph-tools-unit.spec.ts` and `backend/tests/research/test_component_specs_tools.py` |
 | The served page against the approved board | the Monograph parity run (`.github/workflows/monograph-parity.yml`) |

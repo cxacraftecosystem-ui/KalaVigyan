@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { openedSource, SourceDialog, type OpenCitation } from "@/components/answer/SourceDialog";
 import { SourcesList } from "@/components/answer/SourcesList";
 import { FormAlert } from "@/components/auth/FormAlert";
 import { useRevealRow } from "@/components/hooks/useRevealRow";
@@ -11,7 +10,6 @@ import { VoiceOrb } from "@/components/voice/VoiceOrb";
 import { VoiceTranscript } from "@/components/voice/VoiceTranscript";
 import { VoiceTurnActions, type TurnActionContext } from "@/components/voice/VoiceTurnActions";
 import type { AnswerLanguage } from "@/lib/answerLanguages";
-import type { Citation } from "@/lib/types";
 import type { VoiceCall, VoiceCallState } from "@/lib/voiceCall";
 import { conversationSourceNumbers, sourcesOfAnswer } from "@/lib/voiceConversation";
 
@@ -21,7 +19,6 @@ export type HostActions = Omit<TurnActionContext, "craftSlug" | "showSources">;
 
 export function VoiceCallBody({ call, state, language, host }: { call: VoiceCall; state: VoiceCallState; language: AnswerLanguage | null; host: HostActions }) {
   const { conversation, session, activity } = state;
-  const [citation, setCitation] = useState<OpenCitation | null>(null);
   const [revealed, setRevealed] = useState<Reveal | null>(null);
   const { registerRow, containerRef, reveal, flashKey } = useRevealRow();
   const numbers = useMemo(() => conversationSourceNumbers(conversation), [conversation]);
@@ -31,10 +28,6 @@ export function VoiceCallBody({ call, state, language, host }: { call: VoiceCall
     [numbers, sourcesById]
   );
   const showSources = useCallback((answerId: string) => setRevealed((previous) => ({ answerId, nonce: (previous?.nonce ?? 0) + 1 })), []);
-  const onOpen = useCallback(
-    (cited: readonly Citation[]) => setCitation(openedSource(cited, numbers, sourcesById)),
-    [numbers, sourcesById]
-  );
   const level = useCallback(() => call.level(), [call]);
 
   useEffect(() => {
@@ -63,13 +56,12 @@ export function VoiceCallBody({ call, state, language, host }: { call: VoiceCall
       {state.phase === "failed" && state.message ? <FormAlert>{state.message}</FormAlert> : null}
       {state.phase === "ended" && state.message ? <p className="text-center font-ui text-ui text-ink-2">{state.message}</p> : null}
       {conversation.problem ? <FormAlert>{conversation.problem}</FormAlert> : null}
-      <VoiceTranscript conversation={conversation} language={language} citing={{ numbers, sourcesById, onOpen }} actions={(turn) => <VoiceTurnActions turn={turn} context={context} />} />
+      <VoiceTranscript conversation={conversation} language={language} citing={{ numbers, sourcesById }} actions={(turn) => <VoiceTurnActions turn={turn} context={context} />} />
       {entries.length > 0 ? (
         <div ref={registerRow("sources")}>
           <SourcesList entries={entries} idPrefix="voice-source" compact flashIds={flashIds} />
         </div>
       ) : null}
-      <SourceDialog open={citation} onClose={() => setCitation(null)} />
     </div>
   );
 }

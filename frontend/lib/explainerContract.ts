@@ -77,7 +77,7 @@ import {
   type MordantBathBlock,
   type SignatureBlock
 } from "@/lib/explainerSignature";
-import { boolean, integer, list, matching, nullable, object, oneOf, optional, ShapeError, tagged, text, type Shape } from "@/lib/shape";
+import { boolean, integer, list, matching, nullable, object, oneOf, optional, positive, ShapeError, tagged, text, type Shape } from "@/lib/shape";
 import type { AnswerSentence, Citation, EvidenceLevel, SourceRef } from "@/lib/types";
 
 export { DISCIPLINES, type Discipline };
@@ -205,6 +205,7 @@ export type ExplainerSection = {
   state: FinalSectionState;
   blocks: ExplainerBlock[];
   searched: string | null;
+  withdrawn?: number;
 };
 export type Understood = { crafts: CraftLink[]; candidates: CraftLink[]; depth: Depth; language: string; basis?: UnderstandingBasis };
 export type LedeBlock = BlockEnvelope<"lede"> & { headline: string; sentences: ExplainerSentence[]; figure: SignatureBlock | null };
@@ -347,7 +348,8 @@ export const explainerSectionShape: Shape<ExplainerSection> = object<ExplainerSe
   order: integer,
   state: oneOf(FINAL_SECTION_STATES),
   blocks: list(explainerBlockShape),
-  searched: nullable(text)
+  searched: nullable(text),
+  withdrawn: optional(positive)
 });
 
 export const explainerShape: Shape<Explainer> = object<Explainer>({

@@ -27,7 +27,7 @@ from .monograph_generated_parts import (
     subject_record,
     subject_sections,
 )
-from .monograph_generated_structure import structure_claim_ids, with_page_claims
+from .monograph_generated_structure import shown_claim_ids, structure_claim_ids, with_page_claims
 from .monograph_generated_units import stored_source
 from .open_work_subjects import WorkSubject, subject_by_key
 from .page_layouts import layout_of, subject_path
@@ -67,12 +67,12 @@ async def generated_parts(
     if not enough_sections(subject.kind, len(stored)):
         return None
     structure = await subject_structure(session, subject)
-    sections = with_page_claims(stored, structure)
+    unwritten = await unwritten_facts(session, subject, shown_claim_ids(stored, structure))
+    sections = with_page_claims(stored, structure, listed=unwritten.views().keys())
     written = [*_sentence_claims(sections), *structure_claim_ids(structure)]
     found = await _written_views(session, sections, written, additions)
     if found is None:
         return None
-    unwritten = await unwritten_facts(session, subject, written)
     components = additions.components(await subject_components(session, subject, list(found[0])))
     visible, rows = await with_delivered_claims(session, components, *found)
     visible, rows = {**visible, **unwritten.views()}, {**rows, **unwritten.sources}
