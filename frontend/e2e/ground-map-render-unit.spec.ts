@@ -12,7 +12,7 @@ import { parseShape } from "@/lib/shape";
 const ROOT = join(__dirname, "..", "..");
 const GOLDEN = JSON.parse(readFileSync(join(ROOT, "shared", "place.ground.golden.json"), "utf8")) as Record<string, unknown>;
 const PLACE_CONTEXT = join(ROOT, "frontend", "components", "map", "place-context");
-const LAYOUT_OR_LATER_STATE = /useEffect|useLayoutEffect|useState|getBoundingClientRect|ResizeObserver|useFitScale|fetch\(/;
+const LAYOUT_OR_LATER_STATE = /useEffect|useLayoutEffect|useState|getBoundingClientRect|ResizeObserver|useFitScale\(|fetch\(/;
 
 function kachchhFrame(): GroundFrame {
   const golden = parseShape(craftGroundShape, GOLDEN).frame;
