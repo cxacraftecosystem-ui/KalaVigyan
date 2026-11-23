@@ -72,6 +72,6 @@ function gradeGroups(sources: MonographDocument["content"]["sources"], keys: rea
 export function sourceGroups(document: MonographDocument, keys: readonly string[]): SourceGroup[] {
   const sources = document.content.sources;
   const kinded = keys.length > 0 && keys.every((key) => Boolean(sources[key].kind));
-  const groups = kinded ? KIND_GROUPS.map((title) => ({ title, keys: keys.filter((key) => kindGroup(sources[key]) === title) })) : gradeGroups(sources, keys);
+  const groups: SourceGroup[] = kinded ? KIND_GROUPS.map((title) => ({ title, keys: keys.filter((key) => kindGroup(sources[key]) === title) })) : gradeGroups(sources, keys);
   return groups.filter((group) => group.keys.length > 0);
 }
