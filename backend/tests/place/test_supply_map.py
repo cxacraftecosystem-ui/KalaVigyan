@@ -2,6 +2,7 @@ import dataclasses
 import json
 import uuid
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -10,16 +11,20 @@ from app.composer.supply_map import SupplyLinkChoice, choose_supply_links, suppl
 from app.core.errors import ExternalFailure
 from app.research.knowledge_pieces import PieceSlot, knowledge_piece
 from app.research.structured import schema_problems
-from app.services import craft_matter as craft_matter_module
+from app.services import craft_matter as craft_matter_module, season_supply_builders
 from app.services.block_builders import BLOCK_BUILDERS, BlockBuilders
 from app.services.craft_matter import CraftMatter
+from app.services.place_points import OriginPlace, RegisterPoint
 from app.services.season_supply_builders import SupplyMapBuilder
-from app.services.supply_links import OriginPlace, SupplyOffer, supply_links, supply_map_block
+from app.services.supply_links import SupplyOffer, supply_links, supply_map_block
 from app.services.supply_places import chosen_candidate, context_words, origin_places
 from app.sources.reference.wikidata_places import PlaceCandidate
 
+from ..contracts.blocks_golden import SUPPLY_DISTRICT
+from ..contracts.golden import golden_json
 from ..science.golden_process import golden_records
 from ..sources.recorded import WIKIDATA_API, WIKIDATA_SPARQL, Reply, wikidata_adapter
+from .fixtures import dataset_rows
 from .season_supply_fixtures import (
     GOLDEN_LINKS,
     SUPPLY,
@@ -221,3 +226,57 @@ async def test_a_placed_supply_map_is_kept_as_a_piece_with_its_coordinates() -> 
         ("Pethapur", 23.2908),
     ]
     assert piece.source_ids == sorted(block.cited_source_ids())
+
+
+GANDHINAGAR = RegisterPoint(446, 23.175, 72.689)
+TO_GANDHINAGAR = {"statement": "c2", "material": "none", "materialWords": "Blocks", "origin": "Gandhinagar"}
+
+
+def test_an_origin_the_register_holds_is_pinned_at_its_district_citing_the_boundary_row() -> None:
+    (link,) = supply_links(golden_offer(), choices(TO_GANDHINAGAR), block_id="s6.b1")
+    boundary = dataset_rows()["DR_DISTRICT_SHAPES"]
+    block = supply_map_block([link], {"gandhinagar": GANDHINAGAR}, block_id="s6.b1", boundary=boundary)
+    expected = golden_json(SUPPLY_DISTRICT)["sections"][0]["blocks"][0]
+    assert block.model_dump(mode="json", by_alias=True) == expected
+    unbound = supply_map_block([link], {"gandhinagar": GANDHINAGAR}, block_id="s6.b1")
+    assert ([(found.latitude, found.district_lgd) for found in unbound.links], unbound.datasets) == (
+        [(None, None)],
+        [],
+    )
+
+
+async def test_the_builder_places_register_districts_itself_and_asks_wikidata_for_the_rest(
+    stored: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    asked: list[set[str]] = []
+
+    async def registered(session: Any, names: Any) -> dict[str, RegisterPoint]:
+        asked.append(set(names))
+        return {"gandhinagar": GANDHINAGAR}
+
+    async def records(session: Any, codes: Any) -> dict[str, Any]:
+        return {"DR_DISTRICT_SHAPES": SimpleNamespace(code="DR_DISTRICT_SHAPES")}
+
+    monkeypatch.setattr(season_supply_builders, "register_points", registered)
+    monkeypatch.setattr(season_supply_builders, "dataset_records", records)
+    monkeypatch.setattr(season_supply_builders, "region_dataset", lambda record: dataset_rows()[record.code])
+    searched: list[list[str]] = []
+
+    async def wikidata(finder: Any, links: Any) -> dict[str, OriginPlace]:
+        searched.append([link.origin for link in links])
+        return {"pethapur": PETHAPUR}
+
+    monkeypatch.setattr(season_supply_builders, "origin_places", wikidata)
+    model = links_model({"links": [*GOLDEN_LINKS["links"], TO_GANDHINAGAR]})
+    ask = section_ask(supply_claims(), discipline="MATERIALS", section_id="s6")
+    (block,) = (await SupplyMapBuilder(season_tools(model), places=_returning(None)).build(ask)).blocks
+    shown = [(link.origin, link.wikidata_id, link.district_lgd) for link in block.links]
+    assert shown == [
+        ("Shikarpur", None, None),
+        ("Dhamadka", None, None),
+        ("Pethapur", "Q2764770", None),
+        ("Gandhinagar", None, 446),
+    ]
+    assert asked == [{"Shikarpur", "Dhamadka", "Pethapur", "Gandhinagar"}]
+    assert searched == [["Shikarpur", "Dhamadka", "Pethapur"]]
+    assert [row.code for row in block.datasets] == ["DR_DISTRICT_SHAPES"]

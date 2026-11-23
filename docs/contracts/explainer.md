@@ -403,11 +403,17 @@ construct, and the builder that made it adds nothing.
   without them (decision 0047); `datasets` is the rainfall's dataset row exactly when there is
   rainfall. **Piece:** the section's slot.
 - **`supply_map`** `{links[{material, materialId?, termKey?, origin, wikidataId?, latitude?,
-  longitude?, sentence}] (1+)}`. Server: `material` is the glossary term's label or the stored
-  material's name, else words the sentence states; coordinates are the Wikidata item's (P625) for
-  the origin. Model: which claims, which material and origin words. Rules: the origin is stated
-  by the sentence or its quotes; an unstored material too; an origin is placed only with a
-  Wikidata id and both coordinates; each origin of a material once. **Piece:** the section's slot.
+  longitude?, districtLgd?, sentence}] (1+), datasets[DatasetRef]?}`. Server: `material` is the
+  glossary term's label or the stored material's name, else words the sentence states;
+  coordinates are the register district's stored centroid when the origin is one LGD district by
+  its register or other name (`districtLgd`, the block then citing `DR_DISTRICT_SHAPES` in
+  `datasets`), else the Wikidata item's (P625). Model: which claims, which material and origin
+  words. Rules: the origin is stated by the sentence or its quotes; an unstored material too; an
+  origin is placed only with both coordinates and either a Wikidata id or its district, never both;
+  `datasets` is `DR_DISTRICT_SHAPES` exactly when a link is placed by district; each origin of a
+  material once. `districtLgd` and `datasets` are left out of the JSON when empty, so a map a
+  release behind reads lists a district origin without its pin (decision 0160). **Piece:** the
+  section's slot.
 
 Pieces of one answer never supersede each other: a section may store several pieces of one kind
 (material cards, expert views), and only pieces from earlier answers are superseded
@@ -656,12 +662,19 @@ gets neither.
   offered, whose origin or unstored material its sentence and quotes do not state, whose stored
   material's own use claims do not include the statement and whose sentence and quotes name none
   of the material's surfaces (decision 0050), or whose material is its own origin is dropped, each pair once, at most 12. A stored material is shown by
-  its glossary term's label, else its name. Origins are placed through the Wikidata adapter:
-  `place_candidates` (`wbsearchentities`, the hits whose matched label or alias is the origin) and
-  one `place_points` SPARQL query for P625 (Earth points, preferred over normal rank, none when one
-  rank holds two points). One matching item is used; of several, only the one whose description
+  its glossary term's label, else its name. An origin that is one LGD district by its register or
+  other name is placed at that district's stored centroid (`place_register.register_points`),
+  citing the `DR_DISTRICT_SHAPES` row (no row, no district placement). The other origins are
+  placed through the Wikidata adapter: `place_candidates` (`wbsearchentities`, the hits whose
+  matched label or alias is the origin) and one `place_points` SPARQL query for P625 (Earth
+  points, preferred over normal rank, none when one rank holds two points), both answered first
+  from the stored lookups (`services/place_lookups.StoredPlaces` over `PlaceLookup`, keyed
+  `name:<folded name>` and `item:<id>`, an answer and its absence kept, asked again after 30 days,
+  `PLACE_LOOKUP_REFRESH`; migration `0083_piece_districts_and_places`, decision 0160), so a repeat
+  map asks Wikidata nothing. One matching item is used; of several, only the one whose description
   names a capitalised word of the link's sentence or quotes. Otherwise, or when Wikidata fails, the
-  origin is listed without a place.
+  origin is listed without a place. The section's builders share one read of the craft's matter
+  (`BuildAsk.matter`, decision 0152).
 
 ### Expert panel as built (decisions 0046, 0099)
 

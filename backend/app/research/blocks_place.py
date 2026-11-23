@@ -5,7 +5,7 @@ from typing import Annotated, ClassVar, Literal, Self
 
 from pydantic import Field, model_validator
 
-from .base import ContractModel, empty
+from .base import ContractModel, absent, empty
 from .blocks import (
     SENTENCE,
     BlockBase,
@@ -198,13 +198,21 @@ class SupplyLink(ContractModel):
     wikidata_id: str | None = Field(pattern=WIKIDATA_ID_PATTERN)
     latitude: float | None = Field(ge=-90, le=90)
     longitude: float | None = Field(ge=-180, le=180)
+    district_lgd: DistrictLgd | None = Field(default=None, exclude_if=absent)
     sentence: ExplainerSentence
 
     @model_validator(mode="after")
-    def _origin_as_stated_and_placed_from_wikidata(self) -> Self:
+    def _origin_as_stated_and_placed_from_wikidata_or_the_register(self) -> Self:
         placed = self.latitude is not None or self.longitude is not None
-        if placed and (self.latitude is None or self.longitude is None or self.wikidata_id is None):
-            raise ValueError(f"supply origin {self.origin!r} is placed only with Wikidata coordinates")
+        by_district = self.district_lgd is not None
+        if placed and (self.latitude is None or self.longitude is None):
+            raise ValueError(f"supply origin {self.origin!r} is placed with both coordinates")
+        if placed and by_district == (self.wikidata_id is not None):
+            raise ValueError(
+                f"supply origin {self.origin!r} is placed by Wikidata or by its register district"
+            )
+        if by_district and not placed:
+            raise ValueError(f"supply origin {self.origin!r} names its district only where it is placed")
         if not named_in(self.origin, self.sentence):
             raise ValueError(f"supply origin {self.origin!r} is not what its sentence states")
         stored = self.material_id is not None or self.term_key is not None
@@ -219,6 +227,7 @@ class SupplyMapBlock(BlockBase):
     kind: Literal["supply_map"]
     version: Literal[1]
     links: list[SupplyLink] = Field(min_length=1)
+    datasets: list[DatasetRef] = Field(default_factory=list, exclude_if=empty)
 
     @model_validator(mode="after")
     def _each_origin_of_each_material_once(self) -> Self:
@@ -226,7 +235,15 @@ class SupplyMapBlock(BlockBase):
         pairs = [(link.material.casefold(), link.origin.casefold()) for link in self.links]
         if len(set(pairs)) != len(pairs):
             raise ValueError(f"supply map {self.id} lists each origin of a material once")
+        districted = any(link.district_lgd is not None for link in self.links)
+        if [dataset.code for dataset in self.datasets] != ([BOUNDARY_DATASET_CODE] if districted else []):
+            raise ValueError(
+                f"supply map {self.id} cites {BOUNDARY_DATASET_CODE} exactly when it places by district"
+            )
         return self
+
+    def cites_datasets(self) -> bool:
+        return bool(self.datasets)
 
     def shown_labels(self) -> list[str]:
         return list(dict.fromkeys(text for link in self.links for text in (link.material, link.origin)))

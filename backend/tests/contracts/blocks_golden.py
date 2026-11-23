@@ -7,10 +7,11 @@ from app.research.citations import SourceRef
 
 from .phase_b_golden import FixtureSection
 
-__all__ = ["QUANTITIES", "TIMELINE_UNDATED", "BlocksFixture"]
+__all__ = ["QUANTITIES", "SUPPLY_DISTRICT", "TIMELINE_UNDATED", "BlocksFixture"]
 
 QUANTITIES = "explainer.quantities.golden.json"
 TIMELINE_UNDATED = "explainer.timeline-undated.golden.json"
+SUPPLY_DISTRICT = "explainer.supply-district.golden.json"
 
 
 class BlocksFixture(ContractModel):

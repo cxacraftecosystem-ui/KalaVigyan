@@ -39,9 +39,10 @@ export type SupplyLink = {
   wikidataId: string | null;
   latitude: number | null;
   longitude: number | null;
+  districtLgd?: number | null;
   sentence: ExplainerSentence;
 };
-export type SupplyMapBlock = BlockEnvelope<"supply_map"> & { links: SupplyLink[] };
+export type SupplyMapBlock = BlockEnvelope<"supply_map"> & { links: SupplyLink[]; datasets?: RegionDataset[] };
 
 const LAYER_ID = matching(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "a layer id");
 const month = oneOf([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const);
@@ -103,8 +104,10 @@ export const supplyMapBlockShape: Shape<SupplyMapBlock> = object<SupplyMapBlock>
       wikidataId: nullable(WIKIDATA_ID),
       latitude: nullable(number),
       longitude: nullable(number),
+      districtLgd: optional(nullable(integer)),
       sentence: explainerSentenceShape
     }),
     1
-  )
+  ),
+  datasets: optional(list(datasetShape))
 });

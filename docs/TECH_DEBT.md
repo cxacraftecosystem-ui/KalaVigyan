@@ -680,27 +680,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** tests on the real climate quotes the curation run stores, widening or narrowing the
   lists with each case found.
 
-### Supply origins are placed through Wikidata only
-
-- **What:** an origin is pinned only with a Wikidata item's P625; a district the register holds
-  (with its polygon) whose name finds no single Wikidata item is listed without a pin, and a
-  village with namesakes is pinned only when its sentence names a word of the right item's
-  description.
-- **Why left:** version 1 of `SupplyLink` has no field that cites a district row, and the client
-  links every pin to its Wikidata item (decision 0047).
-- **Clears it:** a version 2 link with `districtLgd`, placed at the register district's centroid and
-  citing `DR_DISTRICT_SHAPES`, on both sides.
-
-### Place lookups are asked again for every supply map
-
-- **What:** each supply map searches Wikidata for every origin again (the source HTTP cache keeps an
-  answer ten minutes per process); only a stored piece keeps its coordinates. The supply builder
-  also reads the craft's matter again, after the material card and molecule builders of the same
-  section (as in "Each matter builder reads the craft's matter again").
-- **Why left:** a section has few origins, and stored pieces answer repeat questions.
-- **Clears it:** a stored place table keyed by origin and context words with the item, its
-  coordinates and revision, refreshed monthly; one matter read shared by a section's builders.
-
 ### The seasons and supply builders have not met production
 
 - **What:** both are tested on fixtures, recorded Wikidata answers and, on GitHub Actions, the
