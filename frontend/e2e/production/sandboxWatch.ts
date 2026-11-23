@@ -2,6 +2,7 @@ import type { ConsoleMessage, Frame, Page, Route } from "@playwright/test";
 
 import { clip } from "./checks";
 import { FRAME_DOCUMENT_START, type FrameSeen } from "./generatedExplainer";
+import { requestFrame } from "./pageConsole";
 
 const SRCDOC = "about:srcdoc";
 const REFUSED = /\bRefused to\b/;
@@ -17,18 +18,10 @@ function insideSandbox(frame: Frame | null): boolean {
   return false;
 }
 
-function requestFrame(route: Route): Frame | null {
-  try {
-    return route.request().frame();
-  } catch {
-    return null;
-  }
-}
-
 export async function watchSandboxFrames(page: Page): Promise<SandboxWatch> {
   const watch: SandboxWatch = { requests: [], refusals: [], stop: async () => undefined };
   const handler = async (route: Route) => {
-    if (!insideSandbox(requestFrame(route))) return route.fallback();
+    if (!insideSandbox(requestFrame(route.request()))) return route.fallback();
     watch.requests.push(clip(route.request().url()));
     return route.abort("blockedbyclient");
   };

@@ -627,6 +627,10 @@ theme themselves). The full table with counts is SYSTEM.md section 6.
   (`entryRights`); a new source view does the same (DATA_SOURCES.md).
 - **A citation cluster repeating a source number**, or two clusters in one sentence: the release
   gate fails it; de-duplicate and sort.
+- **A hit area that grows past its control's end**: a 44px `::after` round a one-digit numeral
+  that ends a line reaches past the 16px phone margin, and the page scrolls sideways though no
+  element is wide. The numeral's area is anchored at its end and grows toward the word it is
+  glued to (`.kv-cite::after`, decision 0182); grow any wider target the same way.
 - **Sources differ inside a `<p>`**: `<details>` is invalid there; it follows the paragraph.
 - **`dark:` overrides of themed tokens**: `dark:` compiles to `[data-theme="dark"]`, and tokens
   already theme; such overrides fight high contrast. `class="dark"` on a container does nothing.

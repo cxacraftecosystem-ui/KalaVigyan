@@ -1,7 +1,7 @@
 import type { ConsoleMessage, Page, Request, Response } from "@playwright/test";
 
-import { abortedRequest, clip, errorHeadline } from "../production/checks";
-import { isPreview, previewConsoleNoise } from "../production/preview";
+import { abortedRequest, errorHeadline } from "../production/checks";
+import { PageConsole } from "../production/pageConsole";
 
 import { checkRecord, keepRecord } from "./report";
 
@@ -14,8 +14,6 @@ export type DesignedAnswer = { pathPrefix: string; status: number };
 
 export const DESIGNED_ANSWERS: readonly DesignedAnswer[] = [{ pathPrefix: "/api/shared-science/", status: 404 }];
 
-const SAME_ORIGIN_RESOURCE = "Failed to load resource";
-const UNKNOWN_WEBRTC_DIRECTIVE = "Unrecognized Content-Security-Policy directive 'webrtc'.";
 const CHANGE_POLL_MS = 100;
 
 export async function changedFrom(read: () => Promise<string>, before: string, timeoutMs: number): Promise<string> {
@@ -42,7 +40,7 @@ export function designedAnswer(path: string, status: number): boolean {
 
 export class ControlWatch {
   readonly steps: ControlStep[] = [];
-  private readonly preview: boolean;
+  private readonly consoleErrors: PageConsole;
   private signedIn = false;
 
   constructor(
@@ -50,7 +48,7 @@ export class ControlWatch {
     private readonly target: string,
     private readonly origin: string
   ) {
-    this.preview = isPreview(origin);
+    this.consoleErrors = new PageConsole(page, origin);
     page.on("console", (message) => this.onConsole(message));
     page.on("pageerror", (error) => this.flag(`uncaught error: ${errorHeadline(error)}`));
     page.on("requestfailed", (request) => this.onRequestFailed(request));
@@ -100,13 +98,8 @@ export class ControlWatch {
   }
 
   private onConsole(message: ConsoleMessage): void {
-    if (message.type() !== "error") return;
-    const text = message.text();
-    const from = message.location().url;
-    if (text.startsWith(SAME_ORIGIN_RESOURCE) && from && this.sameOrigin(from)) return;
-    if (text === UNKNOWN_WEBRTC_DIRECTIVE && from.startsWith("about:srcdoc")) return;
-    if (this.preview && previewConsoleNoise(text, from)) return;
-    this.flag(`console error: ${clip(text)}`);
+    const problem = this.consoleErrors.problem(message);
+    if (problem) this.flag(problem);
   }
 
   private onRequestFailed(request: Request): void {

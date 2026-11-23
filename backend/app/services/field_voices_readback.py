@@ -9,11 +9,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ClaimSource, FieldRecording
-from app.research.blocks import BlockBase, ImagesBlock, ProseBlock
+from app.research.blocks import BlockBase, ProseBlock
 from app.research.blocks_people import ArtisanVoiceBlock
 from app.research.citations import Citation, SourceRef
 from app.research.explainer import Explainer, ExplainerSection, explainer_blocks
 from app.research.field_voices import FIELD_SOURCE_KIND, PORTAL_PUBLISHERS
+from app.research.section_pictures import pictures_of_cited
 from app.retrieval.field_scope import shown_recordings, withheld_field_sources
 
 __all__ = [
@@ -117,7 +118,7 @@ def _section(section: ExplainerSection, withdrawn: Withdrawn) -> ExplainerSectio
     kept = [_kept(block, withdrawn) for block in section.blocks]
     if all(after is before for after, before in zip(kept, section.blocks, strict=True)):
         return section
-    blocks = _illustrating_cited([block for block in kept if block is not None])
+    blocks = pictures_of_cited([block for block in kept if block is not None])
     if blocks:
         lost = sum(
             _lost(before, after, withdrawn) for before, after in zip(section.blocks, kept, strict=True)
@@ -167,21 +168,6 @@ def _voice(block: ArtisanVoiceBlock, withdrawn: Withdrawn) -> ArtisanVoiceBlock:
         return block
     removed = block.removed + len(block.quotes) - len(quotes)
     return block.model_copy(update={"quotes": quotes, "removed": removed})
-
-
-def _illustrating_cited(blocks: list[BlockBase]) -> list[BlockBase]:
-    cited = set().union(*(block.cited_claim_ids() for block in blocks))
-    kept: list[BlockBase] = []
-    for block in blocks:
-        if not isinstance(block, ImagesBlock):
-            kept.append(block)
-            continue
-        items = [item for item in block.items if {str(claim) for claim in item.claim_ids} <= cited]
-        if len(items) == len(block.items):
-            kept.append(block)
-        elif items:
-            kept.append(block.model_copy(update={"items": items}))
-    return kept
 
 
 def _uuids(ids: Iterable[str]) -> list[uuid.UUID]:

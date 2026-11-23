@@ -70,6 +70,9 @@ class SourceMerge:
     def canonical(self, source_id: str) -> str:
         return self._canonical.get(source_id, source_id)
 
+    def knows(self, source_id: str) -> bool:
+        return self.canonical(source_id) in self._refs
+
     def refs(self) -> dict[str, dict[str, Any]]:
         return {source_id: dict(ref) for source_id, ref in self._refs.items()}
 

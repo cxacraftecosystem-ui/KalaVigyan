@@ -111,7 +111,12 @@ when 0) is set only by the field voices readback above; the stream never sends i
 `differsOn`), so both fields stand in a golden (decision 0151). `original` is the English title when
 `title` is a translation; a translation longer than the title's limit is not shown, and the English
 stays (decision 0174). An image block may illustrate only claims another block of the same
-section cites. Disciplines (`models/enums.DISCIPLINES`): `OVERVIEW`, `PROCESS`, `CHEMISTRY`,
+section cites. The rule is applied where a section's pictures meet its final blocks, never by
+refusing the document (`research/section_pictures.pictures_of_cited`, decision 0182): an image
+keeps the claims the section's other blocks cite, an image left with none goes, and an images block
+left with no image goes; the answer's assembly (`services/explainer_document`), a follow-up moved
+onto a newer version (`services/version_merge`) and the field voices readback all call it.
+Disciplines (`models/enums.DISCIPLINES`): `OVERVIEW`, `PROCESS`, `CHEMISTRY`,
 `PHYSICS`, `MATERIALS`, `GEOGRAPHY` (geography and water), `GEOLOGY` (geology and soil),
 `CLIMATE`, `ECOLOGY`, `BOTANY`, `HISTORY`, `ECONOMICS`, `DESIGN`, `HEALTH`.
 
@@ -202,7 +207,10 @@ fewer sentences than the live page, never more.
   (`services/picture_sites.blocked_picture`: the maintained `BLOCKED_PICTURE_SITES`, a
   `SHOP_PATH_SEGMENTS` path segment, a `/collections/<name>` store listing
   (`SHOP_LISTING_SEGMENTS`), or a title starting "Buy" or "Shop"). A zoom level whose picture was
-  already shown or is blocked is left out of the zoom.
+  already shown or is blocked is left out of the zoom. A section's shown blocks are the ones the
+  stream sends: a block citing a source the answer cannot send (a reused card's compound record the
+  reuse lookup does not carry, say) is left out before the ledger hears of it, so its claims never
+  become the section's and its sentences never count as said (decision 0182).
 - **Sources** merge (`services/source_merge.SourceMerge`) by DOI (the field or a doi.org link), by
   address (host without `www.`, path without its last slash, query without `utm_`) or by title
   (asides in brackets left out, at least `TITLE_KEY_WORDS_MIN` distinct words, in any order), never

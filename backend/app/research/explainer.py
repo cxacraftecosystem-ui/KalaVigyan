@@ -40,6 +40,7 @@ from .citations import SourceRef
 from .composition import FOLLOW_UPS_MAX, HEADING_MAX_CHARS
 from .crafts import MAX_CANDIDATES, QUESTION_MAX_CHARS, CraftRef
 from .research_summary import SEARCHED_MAX_CHARS
+from .section_pictures import illustrates_uncited
 from .trail import PacedEvent, TrailEvent
 from .vocabulary import AnswerLanguage, Depth, Discipline
 
@@ -298,8 +299,7 @@ class ExplainerSection(ContractModel):
             raise ValueError(f"section {self.id} is READY exactly when it holds blocks")
         for block in self.blocks:
             _require_built(block)
-        cited = set().union(*(block.cited_claim_ids() for block in self.blocks))
-        if any(not block.illustrated_claim_ids() <= cited for block in self.blocks):
+        if illustrates_uncited(self.blocks):
             raise ValueError(f"section {self.id} shows images only for claims it cites")
         pairing = expert_pairing_problems(self.blocks)
         if pairing:

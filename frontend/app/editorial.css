@@ -38,9 +38,10 @@
   .kv-cite::after {
     content: "";
     position: absolute;
-    inset-inline: -5px;
+    inset-inline: auto -5px;
     top: -7px;
     bottom: -5px;
+    width: calc(100% + 10px);
     min-width: 24px;
   }
 
@@ -65,9 +66,10 @@
 
   @media (pointer: coarse) {
     .kv-cite::after {
-      inset-inline: -12px;
+      inset-inline: auto -12px;
       top: -9px;
       bottom: -6px;
+      width: calc(100% + 24px);
       min-width: 44px;
     }
   }

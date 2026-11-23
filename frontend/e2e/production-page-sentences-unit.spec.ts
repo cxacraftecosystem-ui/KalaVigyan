@@ -6,7 +6,7 @@ import { parseExplainerStreamBlock } from "@/lib/explainerStream";
 import { KNOWN_ANSWER_QUESTIONS, answerProblems, answerRecord, parseTappedStream } from "./production/answers";
 import { STEPPED_BLOCK_KINDS, pageSentenceProblems } from "./production/pageSentences";
 import type { TappedStream } from "./production/streamTap";
-import { readRepo } from "./phaseBFixture";
+import { PHASE_B, readRepo } from "./phaseBFixture";
 import { PHASE_C } from "./playFixture";
 
 type Fixture = { sections: { id: string; blocks: unknown[] }[]; sources: unknown[] };
@@ -52,6 +52,13 @@ test("a quantities row said above is on the page where its sentence is said, and
   ]);
   expect(pageSentenceProblems(record)).toEqual([]);
   expect(pageSentenceProblems({ ...record, pageSentenceIds: ["s2.b2.3", "s2.b2.4", "s2.b2.5"] })).toEqual(["3 streamed sentences are not on the page: s2.b1.1, s2.b2.1, s2.b2.2"]);
+});
+
+test("an expert difference both views state is drawn once, so the mirror's sentences count as shown where the pair is", () => {
+  const record = recordOf(sectionFrames(PHASE_B, "s5"), ["s5.b1.1", "s5.b1.2", "s5.b1.3", "s5.b2.1"]);
+  expect(record.sentences.map((sentence) => sentence.id)).toEqual(["s5.b1.1", "s5.b1.2", "s5.b1.3", "s5.b2.1", "s5.b2.2", "s5.b2.3"]);
+  expect(pageSentenceProblems(record)).toEqual([]);
+  expect(pageSentenceProblems({ ...record, pageSentenceIds: ["s5.b1.1", "s5.b2.1"] })).toEqual(["4 streamed sentences are not on the page: s5.b1.2, s5.b1.3, s5.b2.2, s5.b2.3"]);
 });
 
 test("a what-if shows one option's outcomes at a time, so it needs one of its sentences on the page", () => {
