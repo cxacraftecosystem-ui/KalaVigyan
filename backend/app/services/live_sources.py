@@ -19,7 +19,7 @@ from app.services.web_sources import web_search_config
 from app.sources.adapter import HttpSourceAdapter
 from app.sources.fetcher_client import FetcherClient
 from app.sources.http import source_client
-from app.sources.images.registry import image_sources
+from app.sources.images.registry import figure_source, image_sources
 from app.sources.images.web_images import with_web_image_fallback
 from app.sources.reference.registry import reference_sources
 from app.sources.scholarly.registry import scholarly_sources
@@ -70,6 +70,7 @@ class LiveSourcesStore:
         self._client: httpx.AsyncClient | None = None
         self._sources: LiveSources | None = None
         self._images: tuple[ImageSource, ...] | None = None
+        self._figures: ImageSource | None = None
         self._built_at = 0.0
         self._lock = asyncio.Lock()
 
@@ -100,6 +101,14 @@ class LiveSourcesStore:
                 self._images = image_sources(self._client, searxng_url=settings.searxng_url, fetcher=fetcher)
             return self._images
 
+    async def figures(self) -> ImageSource:
+        async with self._lock:
+            if self._client is None:
+                self._client = self._client_factory()
+            if self._figures is None:
+                self._figures = figure_source(self._client)
+            return self._figures
+
     async def web_images(self, sessions: async_sessionmaker[AsyncSession]) -> tuple[ImageSource, ...]:
         images = await self.images()
         web = next((s for s in (await self.get(sessions)).searchers if isinstance(s, WebSearch)), None)
@@ -110,5 +119,6 @@ class LiveSourcesStore:
 
     async def aclose(self) -> None:
         client, self._client, self._sources, self._images = self._client, None, None, None
+        self._figures = None
         if client is not None:
             await client.aclose()

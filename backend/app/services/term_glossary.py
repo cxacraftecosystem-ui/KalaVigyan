@@ -52,7 +52,7 @@ BATCH = 500
 LATIN_SCRIPT = "Latn"
 ACTIVE = "ACTIVE"
 MERGED = "MERGED"
-TERM_SEEDED_COLUMNS = ("label", "meaning", "localNames", "aliases", "wikidataId")
+TERM_SEEDED_COLUMNS = ("label", "meaning", "localNames", "aliases", "wikidataId", "zoomLevel")
 
 
 def term_id(key: str) -> uuid.UUID:
@@ -238,4 +238,5 @@ def _term_values(seed: TermSeed) -> dict[str, Any]:
         "localNames": seed.local_names,
         "aliases": seed.aliases,
         "wikidataId": seed.wikidata_id,
+        "zoomLevel": seed.zoom_level,
     }

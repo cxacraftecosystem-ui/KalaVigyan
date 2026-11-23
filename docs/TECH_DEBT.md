@@ -483,31 +483,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** curation storing condition ranges with the outcomes a source ties to each, or
   water sources as materials with their relations; then an input kind over them in a version 2.
 
-## Zoom story and timeline map (decision 0057)
-
-### No open-access paper figure is searched for the fibre level
-
-- **What:** the fibre level comes only from Commons and Openverse micrographs; the contract's
-  "open-access figure whose `sourceId` is the stored paper" has no adapter (no figure search in
-  Europe PMC or a publisher's open figures), so most crafts show no fibre level.
-- **Why left:** no figure source exists to reuse, and a new adapter needs its own recorded tests
-  and licence reading per figure.
-- **Clears it:** one figures adapter over an open-access full-text source (for example the
-  figures of Europe PMC's open-access articles, each with its article's licence), checked on
-  recorded responses, and the fibre search asking it after Commons and Openverse.
-
-### Picture levels are read from English words
-
-- **What:** a picture's level is read from its title and description against short English word
-  lists (`zoom_pictures.LEVEL_WORDS`), and the craft's fibre from a list of fibre names
-  (`FIBRE_NAMES`); a picture titled in another language or with an unlisted word ("hand block
-  print", "karigar") finds no level, and a fibre material named only by a local word ("kora")
-  gives no fibre level.
-- **Why left:** a vision call per candidate would spend from the answer for a picture the reader
-  may never open; the lists hold the words the stored pictures use.
-- **Clears it:** the glossary's terms tagged with a zoom level, or a vision check of the top
-  candidate per level within the answer's headroom.
-
 ## ElevenLabs music, sound effects, image and video (decision 0058)
 
 ### ElevenLabs prices are unverified

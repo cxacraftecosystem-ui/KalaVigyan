@@ -126,3 +126,28 @@ def test_only_matched_wikidata_rows_are_links() -> None:
         ]
     }
     assert wikidata_links(document) == {"A": WikidataLink(qid="Q1", description="d", labels=("ए",))}
+
+
+def test_a_term_is_tagged_with_the_zoom_level_its_definition_or_its_source_states() -> None:
+    craft = CraftNames(slug="Kutch-Embroidery", name="Kutch Embroidery")
+    link = WikidataLink(
+        qid="Q6448245",
+        description="handicraft and textile art tradition of Kutch, Gujarat, India",
+        labels=("કચ્છ ભરતકામ",),
+    )
+    found = planned(
+        concept("ie:kantan", "Kantan (jute cloth)", "kantan", kind="TOOL"),
+        concept("ie:kut", "Kut (iron-water black paste)", "kut"),
+        concept("ie:ajrakh.material.synthetic-alizarin", "Synthetic alizarin"),
+        crafts=[craft],
+        wikidata={"Kutch-Embroidery": link},
+        compounds=[SeedCompound("Alizarin", ("ie:ajrakh.material.synthetic-alizarin",))],
+    )
+    assert found["kantan"].zoom_level == "CLOTH"
+    assert (found["kutch-embroidery"].zoom_level, found["kutch-embroidery"].local_names) == (
+        "CLOTH",
+        ["કચ્છ ભરતકામ"],
+    )
+    assert found["alizarin"].zoom_level == "MOLECULE"
+    assert found["kut"].zoom_level is None
+    assert found["synthetic-alizarin"].zoom_level is None

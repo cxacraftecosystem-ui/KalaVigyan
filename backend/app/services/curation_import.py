@@ -39,6 +39,7 @@ from .curation_writes import insert_missing, stored_values, sync_rows
 from .monograph_generated_sections import SectionOwner
 from .piece_lookup import craft_districts
 from .piece_store import piece_values
+from .term_scales import fill_zoom_levels
 from .term_sentence_names import fill_sentence_names
 
 __all__ = [
@@ -92,6 +93,7 @@ class ImportReport:
     retired_seed_rows: SeedRetirement = field(default_factory=SeedRetirement)
     term_summaries: int = 0
     sentence_names: int = 0
+    zoom_levels: int = 0
 
     @property
     def refused(self) -> list[DossierOutcome]:
@@ -103,6 +105,7 @@ class ImportReport:
             "retiredSeedRows": self.retired_seed_rows.summary(),
             "termSummaries": self.term_summaries,
             "sentenceNames": self.sentence_names,
+            "zoomLevels": self.zoom_levels,
             "imported": sum(1 for outcome in self.dossiers if outcome.status == IMPORTED),
             "refused": len(self.refused),
             "waiting": sum(1 for outcome in self.dossiers if outcome.status == WAITING),
@@ -131,6 +134,7 @@ async def import_curation(
         retired_seed_rows=retired,
         term_summaries=await write_curated_term_summaries(session),
         sentence_names=await fill_sentence_names(session),
+        zoom_levels=await fill_zoom_levels(session),
     )
 
 
