@@ -52,9 +52,9 @@ def english(sentence_id: str, text: str, term: str, claim: str) -> dict[str, Any
 
 
 SENTENCES = [
-    english("q.1", "Alum fixes the red.", "Alum", "c1"),
-    english("q.2", "Madder gives the red.", "Madder", "c2"),
-    english("q.3", "Indigo gives the blue.", "Indigo", "c3"),
+    english("q.1", "Alum fixes the red.", "Alum", "00000000-0000-4000-8000-000000000001"),
+    english("q.2", "Madder gives the red.", "Madder", "00000000-0000-4000-8000-000000000002"),
+    english("q.3", "Indigo gives the blue.", "Indigo", "00000000-0000-4000-8000-000000000003"),
 ]
 
 
