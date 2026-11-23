@@ -101,6 +101,7 @@ test("every chapter of the React page looks as the approved page does", async ({
   report("offsets.json", offsets);
   report("drift.json", await driftReports(approved, rendered, offsets));
   const layers: Record<string, { approved: string[]; rendered: string[] }> = {};
+  const overlays: Record<string, { approved: string[]; rendered: string[] }> = {};
   for (const id of ids) {
     const selector = `[id="${id}"]`;
     if (!(await rendered.locator(selector).count())) {
@@ -108,9 +109,12 @@ test("every chapter of the React page looks as the approved page does", async ({
       continue;
     }
     if (!(await approved.locator(selector).first().isVisible())) continue;
-    const before = await overlayFreeShot(approved.locator(selector).first(), SHOT_TIMEOUT_MS);
+    const shotBefore = await overlayFreeShot(approved.locator(selector).first(), SHOT_TIMEOUT_MS);
+    const before = shotBefore.image;
     if (!before) continue;
-    const after = await overlayFreeShot(rendered.locator(selector).first(), SHOT_TIMEOUT_MS);
+    const shotAfter = await overlayFreeShot(rendered.locator(selector).first(), SHOT_TIMEOUT_MS);
+    const after = shotAfter.image;
+    overlays[id] = { approved: [shotBefore.place, ...shotBefore.hidden], rendered: [shotAfter.place, ...shotAfter.hidden] };
     if (!after) {
       differences[id] = "missing";
       continue;
@@ -127,6 +131,7 @@ test("every chapter of the React page looks as the approved page does", async ({
   report("pixels.json", differences);
   report("styles.json", styles);
   report("layers.json", layers);
+  report("overlays.json", overlays);
   const failing = Object.entries(differences).filter(([, found]) => found === "missing" || found.ratio > PIXEL_TOLERANCE);
   expect(failing.map(([id]) => id), "chapters that differ (see pixels.json)").toEqual([]);
 });

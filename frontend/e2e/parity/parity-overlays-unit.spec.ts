@@ -39,7 +39,7 @@ test("a capture hides the sticky and fixed elements that lie over the figure, ke
   await page.evaluate(() => window.scrollTo(0, 100));
   const figure = await page.$("#fig");
   if (!figure) throw new Error("the page holds no figure");
-  expect(await hideOverlays(figure)).toEqual(["rail", "badge"]);
+  expect((await hideOverlays(figure)).hidden.map((found) => found.split(" ")[0])).toEqual(["rail", "badge"]);
   expect(await Promise.all(["rail", "aside", "badge", "holder", "inner"].map((id) => visibility(page, id)))).toEqual(["hidden", "visible", "hidden", "visible", "visible"]);
   await showOverlays(figure);
   expect(await Promise.all(["rail", "badge"].map((id) => visibility(page, id)))).toEqual(["visible", "visible"]);
@@ -52,6 +52,7 @@ test("a figure taller than the screen is captured without the sticky rail that l
   const plain = await figure.screenshot({ animations: "disabled" });
   expect(await redPixels(plain), "the rail lies over the plain capture").toBeGreaterThan(0);
   const shot = await overlayFreeShot(figure, 5000);
-  if (!shot) throw new Error("the figure was not captured");
-  expect(await redPixels(shot), "the rail's red in the figure's capture").toBe(0);
+  if (!shot.image) throw new Error("the figure was not captured");
+  expect(await redPixels(shot.image), "the rail's red in the figure's capture").toBe(0);
+  expect(shot.hidden.map((found) => found.split(" ")[0])).toEqual(["nav"]);
 });
