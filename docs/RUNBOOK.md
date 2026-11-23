@@ -93,8 +93,9 @@ citation and figure, then every component borrowed from Kutch Ajrakh on the page
 (decision 0151: the run after a deploy compares all of it, so a change to the approved page fails
 the release), and keeps `text.json`, `pixels.json`, `interactions.json` and the differing chapters'
 screenshots as its artifact. Each capture of a chapter, figure or borrowed component hides, on both
-pages alike, the sticky and fixed elements that neither hold it nor sit in it (the chapter rail, the
-app bar), so a rail that lies over a figure at one width is not counted as the figure.
+pages alike, the sticky and fixed elements that lie over it once it is scrolled into view without
+holding it or sitting in it (the chapter rail, the app bar), so a rail that lies over a figure at
+one width is not counted as the figure.
 
 ## Connection budget
 

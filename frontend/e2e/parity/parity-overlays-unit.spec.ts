@@ -4,13 +4,15 @@ import sharp from "sharp";
 import { hideOverlays, overlayFreeShot, showOverlays } from "./parityOverlays";
 
 const HELD = `<!doctype html><html><body style="margin:0">
-<nav id="rail" style="position:sticky;top:0;height:40px">Rail</nav>
-<div id="badge" style="position:fixed;top:0;right:0;width:20px;height:20px"></div>
-<div id="holder" style="position:sticky;top:0">
+<nav id="rail" style="position:sticky;top:0;z-index:1;height:40px">Rail</nav>
+<div id="aside" style="position:fixed;top:0;left:0;width:50px;height:50px"></div>
+<div id="badge" style="position:fixed;bottom:0;left:150px;width:20px;height:20px"></div>
+<div id="holder" style="position:sticky;top:0;margin-left:100px;width:200px">
   <figure id="fig" style="margin:0;height:600px">
     <header id="inner" style="position:sticky;top:0;height:20px">Inner</header>
   </figure>
 </div>
+<div style="height:2000px"></div>
 </body></html>`;
 
 const UNDER_RAIL = `<!doctype html><html><body style="margin:0">
@@ -31,12 +33,14 @@ async function redPixels(image: Buffer): Promise<number> {
   return count;
 }
 
-test("a capture hides the sticky and fixed elements that only lie over the figure, keeps its own and those that hold it, and gives them back", async ({ page }) => {
+test("a capture hides the sticky and fixed elements that lie over the figure, keeps those beside it, its own and those that hold it, and gives them back", async ({ page }) => {
+  await page.setViewportSize({ width: 400, height: 300 });
   await page.setContent(HELD);
+  await page.evaluate(() => window.scrollTo(0, 100));
   const figure = await page.$("#fig");
   if (!figure) throw new Error("the page holds no figure");
   expect(await hideOverlays(figure)).toEqual(["rail", "badge"]);
-  expect(await Promise.all(["rail", "badge", "holder", "inner"].map((id) => visibility(page, id)))).toEqual(["hidden", "hidden", "visible", "visible"]);
+  expect(await Promise.all(["rail", "aside", "badge", "holder", "inner"].map((id) => visibility(page, id)))).toEqual(["hidden", "visible", "hidden", "visible", "visible"]);
   await showOverlays(figure);
   expect(await Promise.all(["rail", "badge"].map((id) => visibility(page, id)))).toEqual(["visible", "visible"]);
 });

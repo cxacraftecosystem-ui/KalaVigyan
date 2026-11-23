@@ -10,10 +10,13 @@ export async function hideOverlays(target: ElementHandle<Element>): Promise<stri
       style.textContent = `[${mark}], [${mark}] * { visibility: hidden !important; }`;
       document.head.append(style);
     }
+    const box = element.getBoundingClientRect();
     const overlays = [...document.body.querySelectorAll("*")].filter((other) => {
       if (element.contains(other) || other.contains(element)) return false;
       const position = getComputedStyle(other).position;
-      return position === "sticky" || position === "fixed";
+      if (position !== "sticky" && position !== "fixed") return false;
+      const rect = other.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && rect.left < box.right && rect.right > box.left && rect.top < box.bottom && rect.bottom > box.top;
     });
     for (const overlay of overlays) overlay.setAttribute(mark, "");
     return overlays.map((overlay) => overlay.id || overlay.tagName.toLowerCase());
@@ -36,6 +39,7 @@ export async function withoutOverlays<T>(target: ElementHandle<Element>, capture
 }
 
 export async function overlayFreeShot(target: Locator, timeout: number): Promise<Buffer | null> {
+  await target.scrollIntoViewIfNeeded({ timeout }).catch(() => undefined);
   const element = await target.elementHandle({ timeout }).catch(() => null);
   if (!element) return null;
   return withoutOverlays(element, () => target.screenshot({ animations: "disabled", timeout }).catch(() => null));
