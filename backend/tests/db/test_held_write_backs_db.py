@@ -43,7 +43,7 @@ ZELVAR_NOTES = evidence_item(
     title="Notes on a workshop",
     quotes=[],
 )
-ZELVAR_NOTES_TEXT = f"Zelvar Dye workshops keep one rule for their clay pots. {AGED} before it is wedged."
+ZELVAR_NOTES_TEXT = f"Zelvar Dye workshops keep one rule. {AGED} before it is wedged."
 CLAY_CATEGORY, CLAY_FAMILY, QORVEL = key("clay-category"), key("clay-family"), key("qorvel")
 QORVEL_REF = CraftRef(slug="Qorvel-Clay", name="Qorvel Clay", path="/crafts/Qorvel-Clay")
 
