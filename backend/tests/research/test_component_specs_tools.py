@@ -62,13 +62,11 @@ def test_the_quiz_asks_the_three_words_the_page_blanks(specs: dict[str, dict]) -
     assert questions[0]["cite"] == {"key": "rm:p0b399a40611b.2", "sources": ["g1", "g3"]}
 
 
-def test_each_quiz_sentence_renders_back_to_the_page_markup_save_its_escaped_apostrophes(
-    specs: dict[str, dict], content
-) -> None:
+def test_each_quiz_sentence_renders_back_to_the_page_markup(specs: dict[str, dict], content) -> None:
     page = content.data["kv-data"]["quiz"]
     for question, original in zip(specs[QUIZ]["questions"], page, strict=True):
         for choice, option in zip(question["choices"], original["opts"], strict=True):
-            assert render_nodes(choice["sentence"], content.sources) == option["html"].replace("&#x27;", "'")
+            assert render_nodes(choice["sentence"], content.sources) == option["html"]
 
 
 def test_ask_next_asks_six_questions_about_the_craft(specs: dict[str, dict]) -> None:

@@ -606,7 +606,7 @@ export const PARITY = {
           ]
         }
       ],
-      "html": "<span class=\"s\" data-sid=\"x.1\" data-pair=\"a\">Fe<sup>3+</sup> &amp; &lt;ions&gt; \"quoted\" <span class=\"nw\">end.<button class=\"kcite\" type=\"button\" data-c=\"k:1\" data-g=\"g2 g1 g2\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Sources 1, 2\" aria-description=\"GI Journal No. 188: Kutch Ajrakh; Ajrakh: Rhythm of Blues\">1,2</button></span></span> <a href=\"/ask?q=a&amp;craft=b\" rel=\"noopener\" target=\"_blank\" data-ask=\"Why &quot;lime&quot;?\" lang=\"hi\">Ask</a><span class=\"s dim\" data-src=\"a1\"><mark>kut</mark></span>"
+      "html": "<span class=\"s\" data-sid=\"x.1\" data-pair=\"a\">Fe<sup>3+</sup> &amp; &lt;ions&gt; &quot;quoted&quot; <span class=\"nw\">end.<button class=\"kcite\" type=\"button\" data-c=\"k:1\" data-g=\"g2 g1 g2\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-label=\"Sources 1, 2\" aria-description=\"GI Journal No. 188: Kutch Ajrakh; Ajrakh: Rhythm of Blues\">1,2</button></span></span> <a href=\"/ask?q=a&amp;craft=b\" rel=\"noopener\" target=\"_blank\" data-ask=\"Why &quot;lime&quot;?\" lang=\"hi\">Ask</a><span class=\"s dim\" data-src=\"a1\"><mark>kut</mark></span>"
     }
   }
 } as const;

@@ -106,7 +106,7 @@ tag of at most 16 characters) and `version` (optional, from 1).
 | `language` | the document's language, a BCP 47 tag (`LANGUAGE_TAG`), `en` unless written otherwise |
 | `title` | the subject's name (`Craft.name`; the master list's name offline) |
 | `version` | the stored version, from 1; a document built but not stored is version 1 |
-| `content` | the page's `MonographContent` (decision 0105): sources, citations, citation facts, data, text units, components and layout |
+| `content` | the page's `MonographContent` (decision 0105): sources, citations, citation facts, data, text units, components and layout, and on an authored page its chapter names (`chapters`, decision 0164): one `{key, title, rail}` for each chapter of the layout, once and in its order, `title` the name its chapter menu and section give it and `rail` the shorter name its rail gives it; left out when absent, as in a generated document |
 | `specs` | for each component whose spec file exists, that spec (a JSON object) |
 | `fragments` | for every other component, its markup with its unit and data slots filled |
 | `pageUrl` | `<site>/crafts/<slug>`; the site is `PUBLIC_WEB_URL` when stored, `PREVIEW_SITE` offline |
@@ -115,7 +115,9 @@ tag of at most 16 characters) and `version` (optional, from 1).
 Every component is drawn exactly once, from its spec or its fragment; a spec or fragment for a
 component the content lacks is refused (`MonographDocument`'s validator). A fragment's unit slots
 hold exactly the markup `render_nodes` writes (sentences, citation buttons, marks), so the
-renderer's text units and the fragments agree.
+renderer's text units and the fragments agree. A unit's text writes `&`, `<`, `>`, `"` and `'` as
+entities (`&#x27;` for the apostrophe), as React's server render writes them and as the approved
+page spells them where it was drawn that way (decision 0164).
 
 **Components inside components.** A component whose element lies inside another component's
 element stays inside the outer fragment as its own slot, `<kv-slot component="<label>"></kv-slot>`,
@@ -137,7 +139,7 @@ downgrade keeps only the English rows.
 | `store_document(session, document)` | the one writer. `contentHash` is the SHA-256 of the document's JSON (by alias, keys sorted, compact) without `version` and `language`, the row's key. When it equals the latest row's of that language, nothing is stored and it returns `None`; otherwise it stores the next version of that language and returns its number |
 | `stored_document(session, subject_kind, slug, language="en")` | the latest version as a `MonographDocument`, or `None` |
 | `document_row(session, kind, slug, language=, version=)` | the latest row, or that version's (the route serves its JSON without validating it again); `latest_document_row` is the latest |
-| `load_monograph` (`python -m app.scripts.load_monograph`, and the nightly reload) | stores the document of a craft with authored content after its sections and components; its report's `documentVersion` is the version it stored, or `null` when the document was unchanged or the craft has no authored folder. A folder named by another slug than the craft's is refused |
+| `load_monograph` (`python -m app.scripts.load_monograph`, each deploy's `rebuild_stale_pages` before the page snapshots, and the nightly reload) | stores the document of a craft with authored content after its sections and components; its report's `documentVersion` is the version it stored, or `null` when the document was unchanged or the craft has no authored folder. A folder named by another slug than the craft's is refused |
 
 ## The generated document
 
@@ -415,7 +417,7 @@ to `specs`).
 | The slots and the kit format | `tests/research/test_monograph_slots.py` |
 | The split's rules, its round trip on Ajrakh, one fragment per component that is the element its anchor selects, every slot where the layout puts it, the kit equal in the page and the served files | `tests/research/test_monograph_split.py` |
 | The builder, specs over fragments, the hash, the golden | `tests/research/test_monograph_authored.py` |
-| The static build byte for byte | `tests/research/test_monograph_page.py` |
+| The static build byte for byte, a unit's entities, Kutch Ajrakh's chapter names as its rail and menu give them | `tests/research/test_monograph_page.py` |
 | The route | `tests/public/test_craft_monograph_route.py` |
 | A new version stored, an unchanged one not, each language its own versions, the load | `tests/db/test_monograph_document_db.py` |
 | The key | `tests/test_document_language_migration.py` |

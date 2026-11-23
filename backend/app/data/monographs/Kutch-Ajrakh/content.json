@@ -31676,6 +31676,453 @@
    "claimIds": [
     "C035"
    ]
+  },
+  "u1114": {
+   "chapter": "cloth",
+   "tag": "div",
+   "field": "DESIGN",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "aj:S01",
+     "c": [
+      "The GI application reads ajrakh's palette as the universe, with red for the earth, black for darkness, white for clouds and blue for the ",
+      {
+       "m": "cite",
+       "key": "mb:aj:C114",
+       "g": [
+        "g1"
+       ],
+       "c": [
+        "universe."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C114"
+   ]
+  },
+  "u1115": {
+   "chapter": "made",
+   "tag": "p",
+   "field": "DESIGN",
+   "nodes": [
+    {
+     "m": "span",
+     "cls": "lk",
+     "c": [
+      "Why"
+     ]
+    },
+    {
+     "m": "s",
+     "src": "S09",
+     "c": [
+      "Printing and dyeing both sides twice gives deeper indigo and madder, extends the cloth's life and leaves no reverse side showing on a turban or shoulder ",
+      {
+       "m": "cite",
+       "key": "pt:C131",
+       "g": [
+        "g13"
+       ],
+       "c": [
+        "cloth."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C131"
+   ]
+  },
+  "u1116": {
+   "chapter": "chemistry",
+   "tag": "p",
+   "field": "CHEMISTRY",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "tx:S01",
+     "c": [
+      "Myrobalan, or harde, a strong tannin from the fruit of the chebulic myrobalan tree, has traditionally been used as a mordant in ",
+      {
+       "m": "cite",
+       "key": "chem:q79",
+       "g": [
+        "g10"
+       ],
+       "c": [
+        "India."
+       ]
+      }
+     ]
+    },
+    " ",
+    {
+     "m": "s",
+     "sid": "f2.frater",
+     "c": [
+      "Frater names the dyes of ajrakh's colours as indigo, madder and iron ",
+      {
+       "m": "cite",
+       "key": "rm:f2.frater",
+       "g": [
+        "g13"
+       ],
+       "c": [
+        "acetate."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C153"
+   ]
+  },
+  "u1117": {
+   "chapter": "why-kachchh",
+   "tag": "p",
+   "field": "GEOGRAPHY",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S01 S13",
+     "c": [
+      "Ajrakh is printed in Kachchh and in Barmer, and the Kachchh cloths are finer, with a wider range of block designs than ",
+      {
+       "m": "cite",
+       "key": "pt:C046",
+       "g": [
+        "g1",
+        "g6"
+       ],
+       "c": [
+        "Barmer's."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C046"
+   ]
+  },
+  "u1118": {
+   "chapter": "why-kachchh",
+   "tag": "p",
+   "field": "HISTORY",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S05",
+     "c": [
+      "Ajrakhpur was established in May 2001 as the Khatri community's model of best craft practice after the Gujarat ",
+      {
+       "m": "cite",
+       "key": "pt:C024",
+       "g": [
+        "g11"
+       ],
+       "c": [
+        "earthquake."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C024"
+   ]
+  },
+  "u1119": {
+   "chapter": "why-kachchh",
+   "tag": "p",
+   "field": "ECONOMICS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S07",
+     "c": [
+      "Bilgrami's two-year survey of Lower Sindh, published as a book in 1990, recorded 21 stages, 15 centres and 78 master craftsmen of ",
+      {
+       "m": "cite",
+       "key": "pt:C027",
+       "g": [
+        "g40"
+       ],
+       "c": [
+        "ajrak."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C027"
+   ]
+  },
+  "u1120": {
+   "chapter": "history",
+   "tag": "p",
+   "field": "HISTORY",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S06",
+     "c": [
+      "Khatri Mohammed Siddik, who had practised chemical dyeing since it entered ajrakh in 1950, began experimenting with natural dyes in 1975 from memory of his father's ",
+      {
+       "m": "cite",
+       "key": "pt:C019",
+       "g": [
+        "g15"
+       ],
+       "c": [
+        "practice."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C019"
+   ]
+  },
+  "u1121": {
+   "chapter": "history",
+   "tag": "p",
+   "field": "ECONOMICS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S05",
+     "c": [
+      "In 2014 Abduljabbar M. Khatri's workshop made 70,000 m of cotton running yardage for Fabindia, which with Maiwa Handprints is his largest ",
+      {
+       "m": "cite",
+       "key": "pt:C140",
+       "g": [
+        "g11"
+       ],
+       "c": [
+        "client."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C140"
+   ]
+  },
+  "u1122": {
+   "chapter": "history",
+   "tag": "p",
+   "field": "HISTORY",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S06",
+     "c": [
+      "Khatri Mohammed Siddik, who had practised chemical dyeing since it entered ajrakh in 1950, began experimenting with natural dyes in 1975 from memory of his father's ",
+      {
+       "m": "cite",
+       "key": "pt:C019",
+       "g": [
+        "g15"
+       ],
+       "c": [
+        "practice."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C019"
+   ]
+  },
+  "u1123": {
+   "chapter": "history",
+   "tag": "p",
+   "field": "ECONOMICS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S05",
+     "c": [
+      "In 2014 Abduljabbar M. Khatri's workshop made 70,000 m of cotton running yardage for Fabindia, which with Maiwa Handprints is his largest ",
+      {
+       "m": "cite",
+       "key": "pt:C140",
+       "g": [
+        "g11"
+       ],
+       "c": [
+        "client."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C140"
+   ]
+  },
+  "u1124": {
+   "chapter": "market",
+   "tag": "p",
+   "field": "HISTORY",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S08 S01",
+     "c": [
+      "Dr Ismail Mohamed Khatri, credited with much of ajrakh's revival, was awarded an honorary doctorate by De Montfort ",
+      {
+       "m": "cite",
+       "key": "pt:C029",
+       "g": [
+        "g12",
+        "g1"
+       ],
+       "c": [
+        "University."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C029"
+   ]
+  },
+  "u1125": {
+   "chapter": "market",
+   "tag": "p",
+   "field": "ECONOMICS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "S05",
+     "c": [
+      "Edwards writes that ajrakh's popularity brings threats from the screen-printing industry centred on Jaipur, which reproduces traditional block prints for a fraction of the ",
+      {
+       "m": "cite",
+       "key": "pt:C141",
+       "g": [
+        "g11"
+       ],
+       "c": [
+        "cost."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": [
+    "C141"
+   ]
+  },
+  "u1126": {
+   "chapter": "kin",
+   "tag": "p",
+   "field": "MATERIALS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "m17:S04",
+     "c": [
+      "Paintings of Kayastha families feature hues such as brown, yellow-ochre, turmeric, harada, red ",
+      {
+       "m": "mark",
+       "c": [
+        "madder"
+       ]
+      },
+      " and black, blended with goat's ",
+      {
+       "m": "cite",
+       "key": "mb:m17:C121",
+       "g": [
+        "g60"
+       ],
+       "c": [
+        "milk."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": []
+  },
+  "u1127": {
+   "chapter": "kin",
+   "tag": "p",
+   "field": "MATERIALS",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "mk:S01",
+     "c": [
+      "For the GI method's indigo, 6 kilograms of crushed Atta or Annetto seeds called tandipa ginjalu go into the tank, then a paste of 700 grams of indigo cakes, and ",
+      {
+       "m": "mark",
+       "c": [
+        "lime"
+       ]
+      },
+      " ",
+      {
+       "m": "cite",
+       "key": "mb:mk:C094",
+       "g": [
+        "g56"
+       ],
+       "c": [
+        "last."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": []
+  },
+  "u1128": {
+   "chapter": "kin",
+   "tag": "p",
+   "field": "HISTORY",
+   "nodes": [
+    {
+     "m": "s",
+     "src": "bg:S07",
+     "c": [
+      "A mid-to-late 19th-century cotton from Bagru in the Penn Museum, meant for a woman's kagra, is block printed, mud resisted, resist dyed and ",
+      {
+       "m": "mark",
+       "c": [
+        "mordant"
+       ]
+      },
+      " ",
+      {
+       "m": "cite",
+       "key": "mb:bg:C049",
+       "g": [
+        "g65"
+       ],
+       "c": [
+        "dyed."
+       ]
+      }
+     ]
+    }
+   ],
+   "claimIds": []
   }
  },
  "components": [
@@ -33704,6 +34151,12 @@
    "within": null
   },
   {
+   "chapter": "cloth",
+   "kind": "unit",
+   "ref": "u1114",
+   "within": null
+  },
+  {
    "chapter": "made",
    "kind": "unit",
    "ref": "u0107",
@@ -34199,6 +34652,12 @@
    "chapter": "made",
    "kind": "unit",
    "ref": "u0173",
+   "within": "kutch-ajrakh/process/cloth-after-each-stage"
+  },
+  {
+   "chapter": "made",
+   "kind": "unit",
+   "ref": "u1115",
    "within": "kutch-ajrakh/process/cloth-after-each-stage"
   },
   {
@@ -35638,6 +36097,12 @@
   {
    "chapter": "chemistry",
    "kind": "unit",
+   "ref": "u1116",
+   "within": null
+  },
+  {
+   "chapter": "chemistry",
+   "kind": "unit",
    "ref": "u0404",
    "within": null
   },
@@ -36868,6 +37333,12 @@
   {
    "chapter": "why-kachchh",
    "kind": "unit",
+   "ref": "u1117",
+   "within": "shared/climate/kachchh-district-climate-map"
+  },
+  {
+   "chapter": "why-kachchh",
+   "kind": "unit",
    "ref": "u0600",
    "within": "shared/climate/kachchh-district-climate-map"
   },
@@ -37030,6 +37501,12 @@
   {
    "chapter": "why-kachchh",
    "kind": "unit",
+   "ref": "u1118",
+   "within": "kutch-ajrakh/geography/suran-earthquake-ajrakhpur-cards"
+  },
+  {
+   "chapter": "why-kachchh",
+   "kind": "unit",
    "ref": "u0622",
    "within": "kutch-ajrakh/geography/suran-earthquake-ajrakhpur-cards"
   },
@@ -37151,6 +37628,12 @@
    "chapter": "why-kachchh",
    "kind": "unit",
    "ref": "u0638",
+   "within": "kutch-ajrakh/geography/suran-earthquake-ajrakhpur-cards"
+  },
+  {
+   "chapter": "why-kachchh",
+   "kind": "unit",
+   "ref": "u1119",
    "within": "kutch-ajrakh/geography/suran-earthquake-ajrakhpur-cards"
   },
   {
@@ -37954,6 +38437,12 @@
   {
    "chapter": "history",
    "kind": "unit",
+   "ref": "u1120",
+   "within": "kutch-ajrakh/history/dated-record-timeline-map"
+  },
+  {
+   "chapter": "history",
+   "kind": "unit",
    "ref": "u0763",
    "within": "kutch-ajrakh/history/dated-record-timeline-map"
   },
@@ -38039,6 +38528,12 @@
    "chapter": "history",
    "kind": "unit",
    "ref": "u0777",
+   "within": "kutch-ajrakh/history/dated-record-timeline-map"
+  },
+  {
+   "chapter": "history",
+   "kind": "unit",
+   "ref": "u1121",
    "within": "kutch-ajrakh/history/dated-record-timeline-map"
   },
   {
@@ -38212,6 +38707,12 @@
   {
    "chapter": "history",
    "kind": "unit",
+   "ref": "u1122",
+   "within": "kutch-ajrakh/history/dated-record-timeline-map"
+  },
+  {
+   "chapter": "history",
+   "kind": "unit",
    "ref": "u0806",
    "within": "kutch-ajrakh/history/dated-record-timeline-map"
   },
@@ -38297,6 +38798,12 @@
    "chapter": "history",
    "kind": "unit",
    "ref": "u0820",
+   "within": "kutch-ajrakh/history/dated-record-timeline-map"
+  },
+  {
+   "chapter": "history",
+   "kind": "unit",
+   "ref": "u1123",
    "within": "kutch-ajrakh/history/dated-record-timeline-map"
   },
   {
@@ -38434,6 +38941,12 @@
   {
    "chapter": "market",
    "kind": "unit",
+   "ref": "u1124",
+   "within": null
+  },
+  {
+   "chapter": "market",
+   "kind": "unit",
    "ref": "u0842",
    "within": null
   },
@@ -38441,6 +38954,12 @@
    "chapter": "market",
    "kind": "unit",
    "ref": "u0843",
+   "within": null
+  },
+  {
+   "chapter": "market",
+   "kind": "unit",
+   "ref": "u1125",
    "within": null
   },
   {
@@ -39136,6 +39655,12 @@
   {
    "chapter": "kin",
    "kind": "unit",
+   "ref": "u1126",
+   "within": "kutch-ajrakh/overview/shared-science-atlas"
+  },
+  {
+   "chapter": "kin",
+   "kind": "unit",
    "ref": "u0944",
    "within": "kutch-ajrakh/overview/shared-science-atlas"
   },
@@ -39202,6 +39727,12 @@
   {
    "chapter": "kin",
    "kind": "unit",
+   "ref": "u1127",
+   "within": "kutch-ajrakh/overview/shared-science-atlas"
+  },
+  {
+   "chapter": "kin",
+   "kind": "unit",
    "ref": "u0955",
    "within": "kutch-ajrakh/overview/shared-science-atlas"
   },
@@ -39227,6 +39758,12 @@
    "chapter": "kin",
    "kind": "unit",
    "ref": "u0959",
+   "within": "kutch-ajrakh/overview/shared-science-atlas"
+  },
+  {
+   "chapter": "kin",
+   "kind": "unit",
+   "ref": "u1128",
    "within": "kutch-ajrakh/overview/shared-science-atlas"
   },
   {
@@ -40146,6 +40683,73 @@
    "kind": "unit",
    "ref": "u1086",
    "within": "kutch-ajrakh/overview/picture-and-data-credits"
+  }
+ ],
+ "chapters": [
+  {
+   "key": "answer",
+   "title": "The answer",
+   "rail": "Answer"
+  },
+  {
+   "key": "cloth",
+   "title": "The cloth",
+   "rail": "The cloth"
+  },
+  {
+   "key": "made",
+   "title": "How it is made",
+   "rail": "Making"
+  },
+  {
+   "key": "chemistry",
+   "title": "The chemistry",
+   "rail": "Chemistry"
+  },
+  {
+   "key": "why-kachchh",
+   "title": "Why Kachchh",
+   "rail": "Why Kachchh"
+  },
+  {
+   "key": "history",
+   "title": "History and trade",
+   "rail": "History"
+  },
+  {
+   "key": "market",
+   "title": "Market and GI",
+   "rail": "Market and GI"
+  },
+  {
+   "key": "what-if",
+   "title": "What if",
+   "rail": "What if"
+  },
+  {
+   "key": "people",
+   "title": "People and voices",
+   "rail": "People"
+  },
+  {
+   "key": "kin",
+   "title": "Kin crafts",
+   "rail": "Kin crafts"
+  },
+  {
+   "key": "reading",
+   "title": "Reading tools",
+   "rail": "Reading"
+  },
+  {
+   "key": "media",
+   "title": "Pictures, video and film",
+   "rail": "Media"
+  },
+  {
+   "key": "sources",
+   "title": "Sources",
+   "rail": "Sources"
   }
  ]
 }

@@ -129,32 +129,8 @@
       "classes": [
        "ws-t"
       ],
-      "unit": null,
-      "text": [
-       {
-        "m": "s",
-        "src": "S05",
-        "c": [
-         "Ajrakhpur was established in May 2001 as the Khatri community's model of best craft practice after the Gujarat ",
-         {
-          "m": "cite",
-          "key": "pt:C024",
-          "g": [
-           "g11"
-          ],
-          "shown": [
-           {
-            "number": 11,
-            "title": "Ajrakh: From Caste Dress to Catwalk"
-           }
-          ],
-          "c": [
-           "earthquake."
-          ]
-         }
-        ]
-       }
-      ]
+      "unit": "u1118",
+      "text": null
      },
      {
       "tag": "p",
@@ -247,32 +223,8 @@
       "classes": [
        "ws-t"
       ],
-      "unit": null,
-      "text": [
-       {
-        "m": "s",
-        "src": "S07",
-        "c": [
-         "Bilgrami's two-year survey of Lower Sindh, published as a book in 1990, recorded 21 stages, 15 centres and 78 master craftsmen of ",
-         {
-          "m": "cite",
-          "key": "pt:C027",
-          "g": [
-           "g40"
-          ],
-          "shown": [
-           {
-            "number": 40,
-            "title": "Ajrak: Cloth from the Soil of Sindh"
-           }
-          ],
-          "c": [
-           "ajrak."
-          ]
-         }
-        ]
-       }
-      ]
+      "unit": "u1119",
+      "text": null
      },
      {
       "tag": "p",

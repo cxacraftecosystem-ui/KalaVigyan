@@ -13,20 +13,6 @@ import { tokenize, type Open } from "./monographMarkup";
 import { goldenDocument, servedMain } from "./monographNative";
 
 const STILL_HELD: Readonly<Record<string, number>> = {
-  "chem:q79": 1,
-  "mb:aj:C114": 1,
-  "mb:bg:C049": 1,
-  "mb:m17:C121": 1,
-  "mb:mk:C094": 1,
-  "pt:C019": 2,
-  "pt:C024": 1,
-  "pt:C027": 1,
-  "pt:C029": 1,
-  "pt:C046": 1,
-  "pt:C131": 1,
-  "pt:C140": 2,
-  "pt:C141": 1,
-  "rm:f2.frater": 1,
   "rm:lede.1": 2,
   "rm:lede.2": 2,
   "rm:lede.3": 2,
@@ -76,7 +62,7 @@ function tally(keys: readonly string[]): Map<string, number> {
   return counts;
 }
 
-test("every cited sentence of the approved page is a text unit, except the answer's own and those whose page text spells an apostrophe as an entity", () => {
+test("every cited sentence of the approved page is a text unit, except the answer's own sentences and the PubChem records of its structures", () => {
   const onPage = tally(approvedCitations().map((button) => button.attrs["data-c"]));
   const inUnits = tally(Object.values(goldenDocument().content.units).flatMap((unit) => citeKeys(unit.nodes)));
   const held: Record<string, number> = {};
@@ -92,7 +78,7 @@ test("each source's count of supported sentences takes in the passages that beca
   const held = tally(Object.entries(STILL_HELD).flatMap(([key, count]) => Array.from({ length: count }, () => sourcesOf.get(key) ?? []).flat()));
   const counts = sentenceCounts(goldenDocument());
   for (const [source, count] of onPage) expect(counts.get(source) ?? 0, source).toBe(count - (held.get(source) ?? 0));
-  expect(counts.get("g1")).toBe(157);
+  expect(counts.get("g1")).toBe(160);
 });
 
 test("each structure's PubChem record carries the citation numeral the approved page gives it", () => {

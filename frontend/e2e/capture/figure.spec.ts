@@ -57,7 +57,7 @@ async function frameResidue(page: Page, markup: string, css: string): Promise<Re
   const parent = await page.evaluate(elementProps, `#${host}`);
   const approved = await page.context().newPage();
   await approved.goto(APPROVED, { waitUntil: "load" });
-  const placed = await approved.evaluate(placeProbe, { host: `#${host}`, markup: emptyFrame(markup, css), probe: PROBE });
+  const placed = await approved.evaluate(placeProbe, { host: `#${host}`, markup: emptyFrame(markup, css), probe: PROBE, scope: SCOPE });
   const probe = placed ? await approved.evaluate(elementProps, `[${PROBE}]`) : null;
   await approved.close();
   if (!drawn || !parent || !probe) throw new Error(`The figure's frame could not be read in #${host} on both pages`);

@@ -67,6 +67,13 @@ def test_a_cited_sentence_renders_its_last_word_and_button_unbroken() -> None:
     )
 
 
+def test_a_unit_writes_an_apostrophe_and_a_straight_quote_as_entities_as_the_approved_page_does() -> None:
+    nodes = [{"m": "s", "c": ['Finer than Barmer\'s "block" prints & <dyes>']}]
+    assert render_nodes(nodes, SOURCES) == (
+        '<span class="s">Finer than Barmer&#x27;s &quot;block&quot; prints &amp; &lt;dyes&gt;</span>'
+    )
+
+
 def test_a_citation_numbers_its_sources_in_order_but_keeps_their_given_order_in_data() -> None:
     nodes = [{"m": "cite", "key": "mb:aj:C001", "g": ["g2", "g1", "g11"], "c": ["catwalk."]}]
     rendered = render_nodes(nodes, SOURCES)
@@ -149,3 +156,37 @@ def test_the_content_holds_no_markup_and_every_unit_has_one_slot(slug: str) -> N
 
     markup = [t for unit in content.units.values() for t in texts(unit.nodes) if re.search(r"<[a-zA-Z/!]", t)]
     assert markup == []
+
+
+def test_chapter_names_name_each_chapter_of_the_layout_once_in_its_order() -> None:
+    unit = TextUnit(chapter="cloth", tag="p", field="OVERVIEW", nodes=["Ajrakh"], claim_ids=[])
+    content = _content({"u0001": unit, "u0002": unit.model_copy(update={"chapter": "made"})})
+    layout = [
+        {"chapter": "cloth", "kind": "unit", "ref": "u0001"},
+        {"chapter": "made", "kind": "unit", "ref": "u0002"},
+    ]
+    body = content.model_dump(mode="json", by_alias=True) | {"layout": layout}
+    named = [
+        {"key": "cloth", "title": "The cloth", "rail": "The cloth"},
+        {"key": "made", "title": "How it is made", "rail": "Making"},
+    ]
+    shown = MonographContent.model_validate(body | {"chapters": named})
+    assert [(c.title, c.rail) for c in shown.chapters] == [
+        ("The cloth", "The cloth"),
+        ("How it is made", "Making"),
+    ]
+    assert "chapters" not in MonographContent.model_validate(body).model_dump(by_alias=True)
+    with pytest.raises(ValueError, match="once, in its order"):
+        MonographContent.model_validate(body | {"chapters": named[::-1]})
+
+
+def test_kutch_ajrakhs_chapter_names_are_its_approved_rail_and_chapter_menu() -> None:
+    template = monograph_shell("Kutch-Ajrakh")
+    item = re.compile(r'<a href="#([a-z-]+)"[^>]*>(?:<b>[^<]*</b>)?<span>([^<]*)</span></a>')
+    rail = item.findall(re.search(r'<ol id="kv-rail-list">(.*?)</ol>', template, re.S).group(1))
+    menu = item.findall(re.search(r'id="kv-menu".*?<ol>(.*?)</ol>', template, re.S).group(1))
+    labels = re.findall(r'<section class="kv-ch" id="([a-z-]+)" data-ch="\d+" data-label="([^"]+)"', template)
+    named = monograph_content("Kutch-Ajrakh").chapters
+    assert [(c.key, c.rail) for c in named] == rail
+    assert [(c.key, c.title) for c in named] == menu == labels
+    assert ("made", "Making") in rail and ("made", "How it is made") in menu

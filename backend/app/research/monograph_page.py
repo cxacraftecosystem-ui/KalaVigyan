@@ -7,14 +7,14 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import partial
 from types import MappingProxyType
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from app.core.errors import InvalidInput
 from app.models.component_kinds import DOCUMENT_KINDS
 
-from .base import ContractModel, absent
+from .base import ContractModel, absent, empty
 from .vocabulary import ANSWER_LANGUAGE_SPECS, CANONICAL_LANGUAGE, Discipline, PieceKind, text_direction
 
 __all__ = [
@@ -27,6 +27,7 @@ __all__ = [
     "NO_PARTS",
     "SLOT_PATTERN",
     "UNIT_SLOT",
+    "ChapterName",
     "CitedSource",
     "ComponentEntry",
     "LayoutEntry",
@@ -69,6 +70,7 @@ SENTENCE_ATTRS = (("src", "data-src"), ("sid", "data-sid"), ("pair", "data-pair"
 LINK_ATTRS = (("rel", "rel"), ("target", "target"), ("ask", "data-ask"), ("lang", "lang"))
 LANGUAGE_TAG = r"^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
 UNIT_LANGUAGE_MAX_CHARS = 16
+CHAPTER_NAME_MAX_CHARS = 80
 TEXT_SCRIPTS = MappingProxyType({"ur": "Aran"})
 
 Node = str | dict[str, Any]
@@ -122,6 +124,12 @@ class LayoutEntry(ContractModel):
     within: str | None = None
 
 
+class ChapterName(ContractModel):
+    key: str
+    title: str = Field(min_length=1, max_length=CHAPTER_NAME_MAX_CHARS)
+    rail: str = Field(min_length=1, max_length=CHAPTER_NAME_MAX_CHARS)
+
+
 class MonographContent(ContractModel):
     schema_version: Literal[1] = MONOGRAPH_SCHEMA_VERSION
     craft_slug: str
@@ -132,6 +140,14 @@ class MonographContent(ContractModel):
     units: dict[str, TextUnit]
     components: list[ComponentEntry]
     layout: list[LayoutEntry]
+    chapters: list[ChapterName] = Field(default_factory=list, exclude_if=empty)
+
+    @model_validator(mode="after")
+    def _names_each_chapter_in_order(self) -> Self:
+        order = list(dict.fromkeys(entry.chapter for entry in self.layout))
+        if self.chapters and [chapter.key for chapter in self.chapters] != order:
+            raise ValueError("The chapter names name each chapter of the layout once, in its order")
+        return self
 
 
 NOTHING: Mapping[str, str] = MappingProxyType({})
@@ -300,7 +316,7 @@ def render_nodes(nodes: Sequence[Node], sources: Mapping[str, CitedSource]) -> s
 
 def _node(node: Node, sources: Mapping[str, CitedSource]) -> str:
     if isinstance(node, str):
-        return html.escape(node, quote=False)
+        return html.escape(node)
     mark = node.get("m")
     inner = render_nodes(node.get("c", []), sources)
     if mark == "s":
