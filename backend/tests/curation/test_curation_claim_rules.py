@@ -111,7 +111,7 @@ def test_a_flag_a_live_differing_fact_holds_is_kept_with_what_it_differs_on() ->
     flagged, plain = uuid.UUID(int=21), uuid.UUID(int=22)
     about = "How many sides of the cloth are printed"
     current = {flagged: stored(flagged, sourcesDiffer=True, differsOn=about), plain: stored(plain)}
-    rows = kept_differences([planned(flagged), planned(plain)], current, {flagged})
+    rows = kept_differences([planned(flagged), planned(plain)], current, {flagged}, set())
     assert [(row["sourcesDiffer"], row["differsOn"]) for row in rows] == [(True, about), (False, None)]
     assert claim_writes(rows, current, NOTE).updates == ()
 
@@ -120,8 +120,17 @@ def test_a_claim_its_dossier_puts_in_a_conflict_keeps_the_dossier_s_wording() ->
     claim = uuid.UUID(int=23)
     row = planned(claim, sourcesDiffer=True, differsOn="How long the red dye bath lasts")
     current = {claim: stored(claim, sourcesDiffer=True, differsOn="How many dips the cloth takes")}
-    (kept,) = kept_differences([row], current, {claim})
+    (kept,) = kept_differences([row], current, {claim}, set())
     assert (kept["sourcesDiffer"], kept["differsOn"]) == (True, "How long the red dye bath lasts")
+
+
+def test_a_flag_a_person_cleared_stays_cleared_against_the_dossier_s_conflict() -> None:
+    claim = uuid.UUID(int=24)
+    row = planned(claim, sourcesDiffer=True, differsOn="How long the red dye bath lasts")
+    current = {claim: stored(claim)}
+    (kept,) = kept_differences([row], current, set(), {claim})
+    assert (kept["sourcesDiffer"], kept["differsOn"]) == (False, None)
+    assert claim_writes([kept], current, NOTE).updates == ()
 
 
 def test_a_level_people_raised_and_a_retraction_are_never_undone() -> None:

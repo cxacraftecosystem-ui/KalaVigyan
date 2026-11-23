@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Collection
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from pydantic import TypeAdapter
@@ -24,11 +25,13 @@ from app.research.retrieval import SHOWN_CLAIM_STATUSES
 
 from .candidate_store import HELD_STATUSES
 from .curated_index import IndexConflict
+from .differ_clearances import clearances, cleared_claims
 
 __all__ = [
     "HeldScope",
     "conflicted_claims",
     "differing_claims",
+    "dismissed",
     "live_pair",
     "live_rivals",
     "settle_sources_differ",
@@ -64,7 +67,8 @@ async def settle_sources_differ(
     given = set(claim_ids)
     touched = given | {claim for pair in await _pairs(session, given) for claim in pair}
     rivals = await live_rivals(session, touched)
-    flagged = {claim for claim in touched if rivals.get(claim)} | await conflicted_claims(session, touched)
+    curated = await conflicted_claims(session, touched) - await cleared_claims(session, touched)
+    flagged = {claim for claim in touched if rivals.get(claim)} | curated
     await _flag(session, flagged & touched, touched - flagged)
     return {claim: rivals.get(claim, frozenset()) for claim in given}
 
@@ -78,14 +82,31 @@ async def live_rivals(
     session: AsyncSession, claim_ids: Collection[uuid.UUID]
 ) -> dict[uuid.UUID, frozenset[uuid.UUID]]:
     pairs = await _pairs(session, claim_ids)
-    scopes = await _scopes(session, {claim for pair in pairs for claim in pair})
+    ends = {claim for pair in pairs for claim in pair}
+    scopes = await _scopes(session, ends)
+    cleared = await clearances(session, ends)
     found: dict[uuid.UUID, set[uuid.UUID]] = {}
-    for pair in pairs:
+    for pair, judged in pairs.items():
         one, other = tuple(pair)
-        if one in scopes and other in scopes and live_pair(scopes[one], scopes[other]):
+        if _counted(pair, judged, scopes, cleared):
             found.setdefault(one, set()).add(other)
             found.setdefault(other, set()).add(one)
     return {claim: frozenset(rivals) for claim, rivals in found.items()}
+
+
+def dismissed(pair: frozenset[uuid.UUID], judged: datetime, cleared: dict[uuid.UUID, datetime]) -> bool:
+    return any(claim in cleared and cleared[claim] >= judged for claim in pair)
+
+
+def _counted(
+    pair: frozenset[uuid.UUID],
+    judged: datetime,
+    scopes: dict[uuid.UUID, HeldScope],
+    cleared: dict[uuid.UUID, datetime],
+) -> bool:
+    one, other = tuple(pair)
+    in_scope = one in scopes and other in scopes and live_pair(scopes[one], scopes[other])
+    return in_scope and not dismissed(pair, judged, cleared)
 
 
 async def conflicted_claims(session: AsyncSession, claim_ids: Collection[uuid.UUID]) -> set[uuid.UUID]:
@@ -117,20 +138,24 @@ def _one_scope(one: HeldScope, other: HeldScope) -> bool:
     return one.family_id is not None and one.family_id == other.family_id
 
 
-async def _pairs(session: AsyncSession, claim_ids: Collection[uuid.UUID]) -> set[frozenset[uuid.UUID]]:
+async def _pairs(
+    session: AsyncSession, claim_ids: Collection[uuid.UUID]
+) -> dict[frozenset[uuid.UUID], datetime]:
     ids = list(claim_ids)
     if not ids:
-        return set()
+        return {}
     rows = await session.execute(
-        select(CandidateCheck.claimId, CandidateCheck.relatedClaimIds).where(
+        select(CandidateCheck.claimId, CandidateCheck.relatedClaimIds, CandidateCheck.checkedAt).where(
             CandidateCheck.gate == DUPLICATE_GATE,
             CandidateCheck.passed.is_(True),
             or_(CandidateCheck.claimId.in_(ids), CandidateCheck.relatedClaimIds.overlap(ids)),
         )
     )
-    return {
-        frozenset((claim, other)) for claim, related in rows.tuples() for other in related if other != claim
-    }
+    judged: dict[frozenset[uuid.UUID], datetime] = {}
+    for claim, related, checked in rows.tuples():
+        for pair in (frozenset((claim, other)) for other in related if other != claim):
+            judged[pair] = max(checked, judged.get(pair, checked))
+    return judged
 
 
 async def _scopes(session: AsyncSession, claim_ids: set[uuid.UUID]) -> dict[uuid.UUID, HeldScope]:

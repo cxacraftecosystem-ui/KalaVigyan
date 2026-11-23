@@ -23,6 +23,7 @@ contracts are `docs/contracts/curation.md` (The import), `docs/contracts/dossier
 | The import and its report | [curation.md](../contracts/curation.md), The import |
 | The export a new version is built on | [dossier-export.md](../contracts/dossier-export.md) |
 | The gates and the sources-differ rule | [knowledge-writes.md](../contracts/knowledge-writes.md) |
+| A person clearing a fact's sources-differ mark, which settling keeps | [decision 0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context
@@ -71,8 +72,12 @@ left its GI year and places on the catalogue and the map.
    refile, so a fact filed under another craft keeps no flag against the craft it was held for), after
    a write-back files a stored claim again (a release from hold among them), and after an import or a
    retirement supersedes curated facts. The import keeps the flag and `differsOn` of a curated fact a
-   live pair holds (`curation_claims.kept_differences`), so a second import still writes nothing. The
-   go-live mark (`mark_sources_differ`) stays as it was. Clearing a refiled fact's recorded outcome
+   live pair holds (`curation_claims.kept_differences`), so a second import still writes nothing. A
+   mark a person cleared (decision 0170, audited `review.sources_differ_cleared`) is a review and
+   stays cleared: it dismisses every pair judged at or before the clearance and every curated
+   conflict naming the fact that was not approved after it, for settling and for the import alike
+   (`services/differ_clearances`); only a pair judged later, or a conflict approved later, flags the
+   fact again. The go-live mark (`mark_sources_differ`) stays as it was. Clearing a refiled fact's recorded outcome
    was refused, since it rewrites the gate's record; a column naming the subject an outcome was judged
    under was refused, since the fact's concept already says it.
 3. **Retiring a dossier removes its records.** `retire_dossier` also deletes the curated

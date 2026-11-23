@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
-from app.services.sources_differ import HeldScope, live_pair
+from app.services.sources_differ import HeldScope, dismissed, live_pair
 
 CRAFT, OTHER_CRAFT, FAMILY = uuid.UUID(int=1), uuid.UUID(int=2), uuid.UUID(int=3)
+LIVE, HELD, OTHER = uuid.UUID(int=11), uuid.UUID(int=12), uuid.UUID(int=13)
+JUDGED = datetime(2026, 11, 20, 10, tzinfo=UTC)
 
 
 def on_craft(status: str, craft: uuid.UUID = CRAFT) -> HeldScope:
@@ -42,3 +45,12 @@ def test_a_craft_s_fact_differs_live_from_its_family_s_fact_but_not_from_a_share
         live_pair(shared("APPROVED"), on_craft("APPROVED")),
         live_pair(shared("APPROVED"), shared("PROPOSED")),
     ) == (True, False, True)
+
+
+def test_a_person_s_clearance_dismisses_a_pair_judged_before_it_but_not_one_judged_after() -> None:
+    cleared = {HELD: datetime(2026, 11, 21, 9, tzinfo=UTC)}
+    assert (
+        dismissed(frozenset((LIVE, HELD)), JUDGED, cleared),
+        dismissed(frozenset((LIVE, HELD)), datetime(2026, 11, 22, 9, tzinfo=UTC), cleared),
+        dismissed(frozenset((LIVE, OTHER)), JUDGED, cleared),
+    ) == (True, False, False)

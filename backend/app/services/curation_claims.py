@@ -21,6 +21,7 @@ from .curation_keys import (
     WITHDRAWN_STATUS,
 )
 from .curation_writes import BATCH, update_rows
+from .differ_clearances import cleared_claims
 from .sources_differ import differing_claims, settle_sources_differ
 
 __all__ = [
@@ -150,16 +151,22 @@ def kept_differences(
     planned: Sequence[dict[str, Any]],
     stored: Mapping[uuid.UUID, StoredClaim],
     differing: Collection[uuid.UUID],
+    cleared: Collection[uuid.UUID],
 ) -> list[dict[str, Any]]:
-    return [
-        _kept_difference(row, stored.get(row["id"])) if row["id"] in differing else row for row in planned
-    ]
+    return [_kept_difference(row, stored.get(row["id"]), differing, cleared) for row in planned]
 
 
-def _kept_difference(row: dict[str, Any], current: StoredClaim | None) -> dict[str, Any]:
-    if row["sourcesDiffer"]:
-        return row
-    return {**row, "sourcesDiffer": True, "differsOn": current.differs_on if current else None}
+def _kept_difference(
+    row: dict[str, Any],
+    current: StoredClaim | None,
+    differing: Collection[uuid.UUID],
+    cleared: Collection[uuid.UUID],
+) -> dict[str, Any]:
+    if row["id"] in differing and not row["sourcesDiffer"]:
+        return {**row, "sourcesDiffer": True, "differsOn": current.differs_on if current else None}
+    if row["id"] in cleared and row["id"] not in differing:
+        return {**row, "sourcesDiffer": False, "differsOn": None}
+    return row
 
 
 def _respecting_people(row: dict[str, Any], current: StoredClaim) -> dict[str, Any]:
@@ -209,7 +216,8 @@ async def write_claims(
     planned_ids = {row["id"] for row in planned}
     stored.update(await _stored_by_id(session, planned_ids - set(stored)))
     differing = await differing_claims(session, planned_ids)
-    written = claim_writes(kept_differences(planned, stored, differing), stored, note)
+    cleared = await cleared_claims(session, planned_ids)
+    written = claim_writes(kept_differences(planned, stored, differing, cleared), stored, note)
     dropped = superseded_claims(stored, planned_ids, note)
     for chunk in batched(written.inserts, BATCH, strict=False):
         await session.execute(insert(Claim.__table__).values(list(chunk)))

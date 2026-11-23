@@ -235,7 +235,10 @@ refused (`REJECTED`, `RETRACTED`) and waiting (`DRAFT`, never counted for the ti
   release from hold among them) and after an import or a retirement supersedes curated facts, and
   clears `differsOn` with the flag. So a retracted fact leaves its rival unflagged unless another
   live fact still differs from it, a fact approved under another craft is flagged against neither
-  craft, and a dossier import keeps the flag a live fact holds on a curated one.
+  craft, and a dossier import keeps the flag a live fact holds on a curated one. A mark a person
+  cleared (`review.sources_differ_cleared`, decision 0170) stays cleared: it dismisses every pair
+  judged at or before the clearance and every curated conflict naming the fact that was not
+  approved after it, for settling and for the import (`services/differ_clearances.py`).
 - Who proposed it is kept privately: `Claim.createdById`, a `ReviewEvent` by the proposer whose
   note names the origin and the placement, and `ClaimSource.foundBy` (`CONTRIBUTION` or `AGENT`).
   A proposed claim's `origin` is `CONTRIBUTION` (`services/proposal_writes.PROPOSAL_CLAIM_ORIGIN`),
