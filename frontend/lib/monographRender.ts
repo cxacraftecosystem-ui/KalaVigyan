@@ -20,12 +20,8 @@ export class MonographMarkError extends Error {
   }
 }
 
-export function escapeText(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-export function escapeAttribute(value: string): string {
-  return escapeText(value).replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
+export function escapeMarkup(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
 }
 
 export function renderNodes(nodes: readonly MonographNode[], sources: MonographSources): string {
@@ -33,11 +29,11 @@ export function renderNodes(nodes: readonly MonographNode[], sources: MonographS
 }
 
 export function markupHtml(parts: readonly Markup[]): string {
-  return parts.map((part) => (typeof part === "string" ? escapeText(part) : partHtml(part))).join("");
+  return parts.map((part) => (typeof part === "string" ? escapeMarkup(part) : partHtml(part))).join("");
 }
 
 function partHtml(part: MarkupPart): string {
-  const attrs = part.attrs.map(([name, value]) => ` ${name}="${escapeAttribute(value)}"`).join("");
+  const attrs = part.attrs.map(([name, value]) => ` ${name}="${escapeMarkup(value)}"`).join("");
   return `<${part.tag}${attrs}>${markupHtml(part.children)}</${part.tag}>`;
 }
 

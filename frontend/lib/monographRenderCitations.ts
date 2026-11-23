@@ -1,14 +1,14 @@
 import { clusterName, shownNumbers } from "@/lib/citationCluster";
 import type { MonographDocument } from "@/lib/monographDocument";
 import { parseMonographDocument } from "@/lib/monographDocumentShape";
-import { escapeAttribute } from "@/lib/monographRender";
+import { escapeMarkup } from "@/lib/monographRender";
 
 const CITATION_CLASS = 'class="kcite"';
 const CITATION_BUTTON = /(<button class="kcite"[^>]*? aria-label=")[^"]*("[^>]*>)([^<]*)(<\/button>)/g;
 
 export function namedCitations(html: string): string {
   if (!html.includes(CITATION_CLASS)) return html;
-  return html.replace(CITATION_BUTTON, (_, open: string, close: string, shown: string, end: string) => `${open}${escapeAttribute(clusterName(shownNumbers(shown)))}${close}${shown}${end}`);
+  return html.replace(CITATION_BUTTON, (_, open: string, close: string, shown: string, end: string) => `${open}${escapeMarkup(clusterName(shownNumbers(shown)))}${close}${shown}${end}`);
 }
 
 export function withNamedStrings<T>(value: T): T {

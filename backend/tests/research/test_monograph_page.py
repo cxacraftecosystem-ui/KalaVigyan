@@ -67,6 +67,13 @@ def test_a_cited_sentence_renders_its_last_word_and_button_unbroken() -> None:
     )
 
 
+def test_a_unit_writes_an_apostrophe_and_a_straight_quote_as_entities_as_the_approved_page_does() -> None:
+    nodes = [{"m": "s", "c": ['Finer than Barmer\'s "block" prints & <dyes>']}]
+    assert render_nodes(nodes, SOURCES) == (
+        '<span class="s">Finer than Barmer&#x27;s &quot;block&quot; prints &amp; &lt;dyes&gt;</span>'
+    )
+
+
 def test_a_citation_numbers_its_sources_in_order_but_keeps_their_given_order_in_data() -> None:
     nodes = [{"m": "cite", "key": "mb:aj:C001", "g": ["g2", "g1", "g11"], "c": ["catwalk."]}]
     rendered = render_nodes(nodes, SOURCES)

@@ -184,39 +184,8 @@
       "classes": [
        "res-s"
       ],
-      "unit": null,
-      "text": [
-       {
-        "m": "s",
-        "src": "m17:S04",
-        "c": [
-         "Paintings of Kayastha families feature hues such as brown, yellow-ochre, turmeric, harada, red ",
-         {
-          "m": "mark",
-          "c": [
-           "madder"
-          ]
-         },
-         " and black, blended with goat's ",
-         {
-          "m": "cite",
-          "key": "mb:m17:C121",
-          "g": [
-           "g60"
-          ],
-          "shown": [
-           {
-            "number": 60,
-            "title": "Revitalizing Mithila painting for sustainable development: A case study of indigenous communities in the Madhubani region, Bihar, India"
-           }
-          ],
-          "c": [
-           "milk."
-          ]
-         }
-        ]
-       }
-      ]
+      "unit": "u1126",
+      "text": null
      }
     }
    ]
@@ -319,39 +288,8 @@
       "classes": [
        "res-s"
       ],
-      "unit": null,
-      "text": [
-       {
-        "m": "s",
-        "src": "mk:S01",
-        "c": [
-         "For the GI method's indigo, 6 kilograms of crushed Atta or Annetto seeds called tandipa ginjalu go into the tank, then a paste of 700 grams of indigo cakes, and ",
-         {
-          "m": "mark",
-          "c": [
-           "lime"
-          ]
-         },
-         " ",
-         {
-          "m": "cite",
-          "key": "mb:mk:C094",
-          "g": [
-           "g56"
-          ],
-          "shown": [
-           {
-            "number": 56,
-            "title": "Geographical Indications Journal (Supplementary - 1), 24 March 2008: G.I. Application Number 90, Machilipatnam Kalamkari"
-           }
-          ],
-          "c": [
-           "last."
-          ]
-         }
-        ]
-       }
-      ]
+      "unit": "u1127",
+      "text": null
      }
     },
     {
@@ -402,39 +340,8 @@
       "classes": [
        "res-s"
       ],
-      "unit": null,
-      "text": [
-       {
-        "m": "s",
-        "src": "bg:S07",
-        "c": [
-         "A mid-to-late 19th-century cotton from Bagru in the Penn Museum, meant for a woman's kagra, is block printed, mud resisted, resist dyed and ",
-         {
-          "m": "mark",
-          "c": [
-           "mordant"
-          ]
-         },
-         " ",
-         {
-          "m": "cite",
-          "key": "mb:bg:C049",
-          "g": [
-           "g65"
-          ],
-          "shown": [
-           {
-            "number": 65,
-            "title": "Textile, object number 88-16-37 (Bagru, Rajasthan)"
-           }
-          ],
-          "c": [
-           "dyed."
-          ]
-         }
-        ]
-       }
-      ]
+      "unit": "u1128",
+      "text": null
      }
     },
     {

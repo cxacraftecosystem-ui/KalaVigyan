@@ -300,7 +300,7 @@ def render_nodes(nodes: Sequence[Node], sources: Mapping[str, CitedSource]) -> s
 
 def _node(node: Node, sources: Mapping[str, CitedSource]) -> str:
     if isinstance(node, str):
-        return html.escape(node, quote=False)
+        return html.escape(node)
     mark = node.get("m")
     inner = render_nodes(node.get("c", []), sources)
     if mark == "s":

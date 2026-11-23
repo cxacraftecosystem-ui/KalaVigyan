@@ -17,9 +17,12 @@ test("every hand-picked unit renders exactly as the backend's render_nodes wrote
   for (const [ref, found] of cases) expect(renderNodes(nodesOf(found.nodes), sources), ref).toBe(found.html);
 });
 
-test("the unit view draws the same markup in the unit's own element, for every page unit without a straight quote in its text", () => {
+test("a unit's text writes an apostrophe and a straight quote as the approved page writes them", () => {
+  expect(renderNodes(["Finer than Barmer's \"block\" prints & <dyes>"], sources)).toBe("Finer than Barmer&#x27;s &quot;block&quot; prints &amp; &lt;dyes&gt;");
+});
+
+test("the unit view draws the same markup in the unit's own element, straight quotes and apostrophes written as entities as render_nodes writes them", () => {
   for (const [ref, found] of cases) {
-    if (ref === "hand") continue;
     const unit: MonographUnit = { chapter: "c", tag: found.tag, field: null, nodes: nodesOf(found.nodes), claimIds: [] };
     expect(renderToStaticMarkup(createElement(UnitView, { unit, sources })), ref).toBe(`<${found.tag}>${found.html}</${found.tag}>`);
   }
