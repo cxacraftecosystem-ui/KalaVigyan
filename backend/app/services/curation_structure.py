@@ -32,6 +32,7 @@ __all__ = [
     "process_row",
     "reaction_citation_rows",
     "reaction_label",
+    "reaction_row",
     "reaction_rows",
     "species_label",
     "stage_material_rows",
@@ -191,7 +192,6 @@ def species_label(kind: str, reactants: Sequence[str], products: Sequence[str]) 
 
 
 def reaction_rows(dossier: Dossier) -> list[dict[str, Any]]:
-    slug = dossier.craft_slug
     seen: dict[str, int] = {}
     rows = []
     for reaction in dossier.reactions:
@@ -199,24 +199,28 @@ def reaction_rows(dossier: Dossier) -> list[dict[str, Any]]:
             continue
         ordinal = seen.get(reaction.stage_id, 0)
         seen[reaction.stage_id] = ordinal + 1
-        species = [*_species("REACTANT", reaction.reactants), *_species("PRODUCT", reaction.products)]
-        checked = check_reaction([SpeciesProposal(s["role"], s["formula"], s["name"]) for s in species])
-        rows.append(
-            {
-                "id": curated_id(slug, "reaction", reaction.id),
-                "stageId": curated_id(slug, "stage", reaction.stage_id),
-                "ordinal": ordinal,
-                "kind": reaction.kind,
-                "label": reaction_label(reaction),
-                "species": species,
-                "equationInput": checked.equation_input,
-                "equationBalanced": checked.equation_balanced,
-                "coefficients": list(checked.coefficients) if checked.coefficients else None,
-                "balanced": checked.balanced,
-                "checkerVersion": checked.checker_version,
-            }
-        )
+        rows.append(reaction_row(dossier.craft_slug, reaction, ordinal))
     return rows
+
+
+def reaction_row(slug: str, reaction: DossierReaction, ordinal: int) -> dict[str, Any]:
+    if reaction.stage_id is None:
+        raise ValueError(f"reaction {reaction.id} has no stage, so it has no stored row")
+    species = [*_species("REACTANT", reaction.reactants), *_species("PRODUCT", reaction.products)]
+    checked = check_reaction([SpeciesProposal(s["role"], s["formula"], s["name"]) for s in species])
+    return {
+        "id": curated_id(slug, "reaction", reaction.id),
+        "stageId": curated_id(slug, "stage", reaction.stage_id),
+        "ordinal": ordinal,
+        "kind": reaction.kind,
+        "label": reaction_label(reaction),
+        "species": species,
+        "equationInput": checked.equation_input,
+        "equationBalanced": checked.equation_balanced,
+        "coefficients": list(checked.coefficients) if checked.coefficients else None,
+        "balanced": checked.balanced,
+        "checkerVersion": checked.checker_version,
+    }
 
 
 def _species(role: str, species: list[Species]) -> list[dict[str, Any]]:

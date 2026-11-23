@@ -1,15 +1,18 @@
-# 0162. The craft page's chapters keep only what a page draws
+# 0162. The craft page's chapters keep only what a page draws, and an approved structure writes its shared rows at once
 
 The pieces of the version 3 craft page that were never built are retired rather than built, and so
 are the parts no page draws: a reader's answer pieces joining the chapters, the archive of earlier
 versions, the concept pictures and job steps 2 and 3. The web stops parsing the chapters, since no
 screen draws them; the chapters stay as the structure a curated craft's monograph document takes.
+An approved glossary term or reaction writes its shared glossary entry or science row at approval.
 
 Date: 2026-11-23. Status: accepted (the owner, 2026-11-23: "retire the unused v3 craft page
 chapters"; the lead's monograph follow-up brief). It amends
 [decision 0098](0098-craft-page-chapters-build.md) (items 6, 8, 13 and 14 and its list of what was
 not built) and [decision 0096](0096-reader-question-pieces-join-their-craft-page.md) (the merge of a
-reader's pieces into the chapters). The contract is `docs/contracts/craft-page.md`.
+reader's pieces into the chapters), and [decision 0108](0108-structure-proposals-become-curated-facts.md)
+(what approval writes). The contracts are `docs/contracts/craft-page.md` and
+`docs/contracts/knowledge-writes.md`.
 
 | For | Read |
 |---|---|
@@ -17,6 +20,7 @@ reader's pieces into the chapters). The contract is `docs/contracts/craft-page.m
 | The reader's pieces it stops joining | [decision 0096](0096-reader-question-pieces-join-their-craft-page.md) |
 | A release the live side can read, which orders the payload's changes | [decision 0151](0151-a-release-the-live-side-can-read.md) |
 | The AI media still joining the chapters | [decision 0154](0154-ai-media-and-film-scores-kept-true.md) |
+| What approval of a structure proposal writes, which item 5 amends | [decision 0108](0108-structure-proposals-become-curated-facts.md) |
 | The page's chapters, parts and job | [craft-page.md](../contracts/craft-page.md) |
 | Every decision, by group | [README.md](README.md) |
 
@@ -63,6 +67,16 @@ them would empty every generated document.
    with its spec (`answerBlockSpec.PAGE_BLOCK_KINDS`). The backend keeps sending `chapters`, valid as
    before, so the web of the release before still reads the page while the backend ships first.
    `ItemOrigin.fromQuestion` stays in the payload, always null, for the same reason.
+5. **An approved structure proposal writes its shared rows at once** (amending decision 0108's
+   consequences). A glossary term writes the shared `Term` the import would write for it (keyed by the
+   term's slug, `curation_records.label_key`), its `TermCraft` and `TermConcept` links, the entry's
+   `termKey` and the term's stored English summary (`write_curated_term_summaries` for that key); a
+   reaction on a stage writes its `Reaction` row through the import's own `curation_structure.reaction_row`
+   under the page's stage, a `ReactionCitation` per quote of its fact, and the entry's `reactionId`
+   (`services/structure_proposals_rows.py`). Waiting for the next export and import was the
+   alternative; until then the shared glossary and the science players did not know the approved item.
+   Every row is inserted only when missing, so the next import of the exported dossier writes the same
+   rows under the same ids.
 
 ## Consequences
 
@@ -81,5 +95,5 @@ names this one, and the table above links the two both ways. It records the choi
 2026-11-23; what the code does today is in [ARCHITECTURE.md](../ARCHITECTURE.md) and the
 [contracts](../contracts/README.md). Its rules are tested by
 `backend/tests/curation/test_craft_page_route.py`, `backend/tests/curation/test_craft_page.py`,
-`backend/tests/db/test_craft_page_snapshots_db.py`, `frontend/e2e/craft-page-unit.spec.ts` and
-`frontend/e2e/monograph-blocks-unit.spec.ts`.
+`backend/tests/db/test_craft_page_snapshots_db.py`, `backend/tests/db/test_structure_writes_db.py`,
+`frontend/e2e/craft-page-unit.spec.ts` and `frontend/e2e/monograph-blocks-unit.spec.ts`.

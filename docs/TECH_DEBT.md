@@ -1312,12 +1312,16 @@ Last reviewed: 2026-11-22.
 
 ### Structure proposals: what they do not reach yet
 
-- **What:** a category page takes no structure proposals (crafts and families only), an approved
-  glossary term has no shared glossary entry (`termKey` stays null) and an approved reaction gets
-  no stored science row until the dossier is exported and imported again (decision 0108). The
-  STRUCTURE review card has not been seen in a browser.
-- **Clears it:** category structure, glossary and science rows written at approval, and a signed-in
-  capture of the review screen.
+- **What:** a category page takes no structure proposals (crafts and families only; decision 0108),
+  and the STRUCTURE review card has not been seen in a browser. (An approved glossary term's shared
+  entry and an approved reaction's science row are written at approval since decision 0162.)
+- **Why left:** a category proposal needs a subject kind and a nullable craft beside a category on
+  `StructureProposal` (a migration), the category page's own placing and claim markers
+  (`CuratedCategoryClaim`), and the review queue's STRUCTURE listing and MCP `propose_structure`, which
+  were the MCP and contributors lane's files while the monograph follow-up lane ran; the capture needs a
+  signed-in browser on a release carrying that lane's review card.
+- **Clears it:** category structure end to end (contract, migration, writer, export, queue, tool) and
+  a signed-in capture of the review screen.
 
 ### Defects the production E2E suite found in round 6
 

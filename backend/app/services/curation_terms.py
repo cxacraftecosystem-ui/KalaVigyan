@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from datetime import datetime
 from typing import Any
 
@@ -30,8 +30,10 @@ GLOSSARY_KEY = CuratedPage.model_fields["glossary"].alias or "glossary"
 GLOSSARY = TypeAdapter(list[IndexTerm])
 
 
-async def write_curated_term_summaries(session: AsyncSession) -> int:
+async def write_curated_term_summaries(session: AsyncSession, *, keys: Collection[str] | None = None) -> int:
     claims = await curated_term_claims(session)
+    if keys is not None:
+        claims = {key: claim_ids for key, claim_ids in claims.items() if key in keys}
     if not claims:
         return 0
     terms = await glossary_terms(session, sorted(claims))
