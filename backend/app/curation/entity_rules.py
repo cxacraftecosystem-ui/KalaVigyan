@@ -7,6 +7,7 @@ from difflib import get_close_matches
 from app.data.district_register import DistrictRegister
 from app.research.licences import open_licence
 from app.research.quotes import quote_occurs
+from app.research.stated_dates import states_date
 
 from .dossier import Dossier
 from .entities import Place, Reaction
@@ -81,6 +82,11 @@ def reaction_problems(dossier: Dossier) -> list[Problem]:
 def market_problems(dossier: Dossier) -> list[Problem]:
     gi = dossier.market.gi
     found = [] if gi is None else [Problem("market.gi", message) for message in _gi_messages(dossier, gi)]
+    for index, price in enumerate(dossier.market.prices):
+        if not states_date(price.date, claim_quotes(dossier, [price.claim_id])):
+            found.append(
+                Problem(f"market.prices.{index}", _unstated_date("date", price.date, price.claim_id))
+            )
     for index, workforce in enumerate(dossier.market.workforce):
         if figure_gaps(str(workforce.year), claim_quotes(dossier, [workforce.claim_id])):
             found.append(
@@ -153,7 +159,15 @@ def _gi_messages(dossier: Dossier, gi: GiRecord) -> list[str]:
     )
     count = None if gi.authorised_user_count is None else str(gi.authorised_user_count)
     figures = [gi.application_number, gi.certificate_number, gi.journal_issue, count]
-    years = [day[:4] for day in (gi.filed_on, gi.registered_on) if day is not None]
     quotes = claim_quotes(dossier, gi.claim_ids)
-    gaps = [gap for figure in (*figures, *years) if figure is not None for gap in figure_gaps(figure, quotes)]
-    return messages + [f"{gap} appears in none of its claims' quotes" for gap in dict.fromkeys(gaps)]
+    gaps = [gap for figure in figures if figure is not None for gap in figure_gaps(figure, quotes)]
+    dates = [
+        _unstated_date(label, day, "its claims")
+        for label, day in (("filedOn", gi.filed_on), ("registeredOn", gi.registered_on))
+        if day is not None and not states_date(day, quotes)
+    ]
+    return messages + [f"{gap} appears in none of its claims' quotes" for gap in dict.fromkeys(gaps)] + dates
+
+
+def _unstated_date(label: str, day: str, cited: str) -> str:
+    return f"the {label} {day} is not stated to that precision by any quote of {cited}"

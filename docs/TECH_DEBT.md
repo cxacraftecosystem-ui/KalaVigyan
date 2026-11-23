@@ -1090,7 +1090,8 @@ Last reviewed: 2026-11-22.
   run time needs a rule the plan does not have.
 - **Clears it:** an owner rule for derived figures (for example, only products of a data value and
   an input step the data object names), then that runtime guard in `lib/sandboxFrame`'s prelude
-  posting a refusal that `SandboxFrame` turns into hiding the block.
+  posting a refusal that `SandboxFrame` turns into hiding the block. Waits on the owner's rule
+  (checked again on 2026-11-22: the static check covers code numerals since decision 0061).
 
 ### Chromium ignores the frame policy's webrtc directive
 
@@ -1104,26 +1105,6 @@ Last reviewed: 2026-11-22.
   directive's support is the browsers'.
 - **Clears it:** nothing in this repository; drop the screens walk's exception once Chromium
   recognises the directive.
-
-### Years are read by pattern
-
-- **What:** `research/timeline.years_named` reads any four-digit numeral from 1000 to 2099 as a
-  year; the timeline builder offers `years_offered`, which drops a numeral followed by a plural
-  lowercase noun ("1500 artisans", decision 0057), but a count before a singular or irregular
-  noun ("1500 people", "1200 men") is still offered. Relative dates ("400 years ago") name none,
-  so such claims never date a point.
-- **Why left:** the history claims held state dates as years, ranges and centuries.
-- **Clears it:** a short list of irregular counted nouns, or curation storing a claim's dates.
-
-### Timeline places are placed by exact Wikidata label only
-
-- **What:** places are placed with the supply origins' rule (decision 0047), so a spelling that is
-  no item's label or alias stays unplaced (Ajrakhpur, Dhamadka), "Sindh" has three exact items none
-  described by the claim's words, and "Kutch" matches only a family name, which has no
-  coordinates. The fixture places only Fustat.
-- **Why left:** a wrong pin is worse than none, and the rule is shared with supply maps.
-- **Clears it:** the place register (decision 0047's entry) or a Wikidata id stored on the
-  claim's place by curation.
 
 ## Generated explainers (decision 0055)
 
@@ -1190,15 +1171,6 @@ Last reviewed: 2026-11-22.
   may never open; the lists hold the words the stored pictures use.
 - **Clears it:** the glossary's terms tagged with a zoom level, or a vision check of the top
   candidate per level within the answer's headroom.
-
-### Undated history claims are not on the timeline
-
-- **What:** the plan lists undated or unplaced claims without a point; version 1 of the timeline
-  (decision 0054) gives every point and route a span of years, so an undated history claim is not
-  offered at all. Unplaced places are listed without a pin.
-- **Why left:** the version-1 fields are fixed and a reinterpretation is not allowed.
-- **Clears it:** a version 2 of `timeline_map` with an `undated` list of cited sentences and
-  their place, built with lane 0060's renderer.
 
 ## ElevenLabs music, sound effects, image and video (decision 0058)
 
@@ -1310,18 +1282,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** a step in the production E2E that opens Film on a known-answer question, checks
   the caption and the played bar advance, and closes it with Escape; then delete this entry.
 
-## Phase C review fixes (decision 0061)
-
-### The phase C kinds have not met production
-
-- **What:** `simulation`, `what_if`, `zoom_story` and `timeline_map` joined the built kinds on
-  both sides; no production answer has built one yet, and the first generated explainer will be
-  the production E2E's indigo question.
-- **Why left:** nothing is deployed from a lane (owner rule).
-- **Clears it:** after the deploy, dispatch E2E production with `questions=true`; the Indigo row
-  passing (or noting that no concept was chosen) and a materials and a history answer showing a
-  zoom and a timeline clear this entry.
-
 ## Phase D contract (decision 0062)
 
 ### No stored source states a regional unit conversion yet
@@ -1332,10 +1292,12 @@ Last reviewed: 2026-11-22.
   regional path is built and tested on hand-written quotes (decision 0066).
 - **Why left:** a regional value has to come from a source a curator verifies; inventing one would
   break O5.
-- **Clears it:** a dossier claim quoting a regional table (a district gazetteer or a state's
-  weights-and-measures record) as an equality ("a seer of Kachchh weighs ... kg") that names the
-  district or state by its LGD register spelling; then the review adds a `REGIONAL` row to the
-  fixture from that claim.
+- **Clears it:** curation only; the code path is built, and since decision 0147 the region may
+  be named by its register spelling or any other name `data/district_other_names.json` lists
+  ("a seer of Kutch" now names Kachchh). For Kutch Ajrakh: a dossier claim quoting the weights and
+  measures table of the Kutch district gazetteer (Gujarat State Gazetteers, Kutch District, 1971,
+  or the Gazetteer of the Bombay Presidency, Cutch, 1880) as an equality ("a seer ... weighs ...
+  kg", "a gaj is ... m"); then the review adds a `REGIONAL` row to the fixture from that claim.
 
 ### The phase D fixture shows no price and no Kutch Ajrakh sign of imitation
 
@@ -1375,27 +1337,25 @@ Last reviewed: 2026-11-22.
   the master list knows only by its state of practice is not listed for any district.
 - **Why left:** placing a state-level craft in every district of the state would be a claim no
   source makes.
-- **Clears it:** cited locations for more crafts (curation adds them district by district).
+- **Clears it:** curation only; the code path reads any cited district or point location. For
+  each GI craft the master list places by state alone, a dossier place naming its district from
+  the GI journal's "geographical area" passage or the district gazetteer, starting with the GI
+  crafts no dossier covers yet (Tharu embroidery, Kutch embroidery, Kasuti embroidery and the
+  other GI rows of `craft_master_list.json` without a dossier).
 
 ## Local measures, and market and GI (decision 0066)
 
-### A region is named only by its register spelling
+### A price stated with several years, places or prices needs a curated row
 
-- **What:** a regional factor holds only where its quote or claim names an LGD register district
-  or state as the register spells it, so "a seer of Kutch" gives no region and converts nothing.
-- **Why left:** no alias table of district names exists; guessing that "Kutch" is Kachchh would
-  be a place no source names in the register's terms.
-- **Clears it:** a reviewed alias list per district in `app/data` (Kutch, Kachchh), read by
-  `stated_names.register_places_named` for every region reader at once.
-
-### Prices come only from curated rows
-
-- **What:** a price is shown only from a `CraftPrice` row (a curated dossier's `market.prices`);
-  seed and answer claims that state a price are not shown, because nothing records their date and
-  place apart from the text.
-- **Why left:** reading a date and a place out of free text would choose among several; the
-  contract names the curated rows as the source.
-- **Clears it:** the curation run adds `market.prices` for each craft whose sources state one.
+- **What:** without curated rows, a price is read from a cited claim of the craft only when the
+  claim states exactly one price, one year and one LGD district (decision 0147,
+  `market_store.stated_price_offer`); a claim stating two prices, a range of years or two places
+  ("a cotton bandhani cost Rs. 10 to Rs. 50 and a georgette one Rs. 50 to Rs. 250") shows none.
+  19 prices in 12 dossiers are curated today.
+- **Why left:** choosing among several dates or places in one sentence would be a guess.
+- **Clears it:** curation only: `market.prices` rows for those claims, starting with the crafts
+  whose GI journal or gazetteer prices state several items (Kutch Bandhani, Tikuli Painting,
+  Uttarakhand Ringal Craft), each row naming its date and place.
 
 ### GI fields are read by their labels
 
@@ -1403,19 +1363,22 @@ Last reviewed: 2026-11-22.
   and government claims ("application 183", "Certificate Date 11-05-2011", "Journal Number 37");
   a claim phrased otherwise adds nothing, and two claims stating different values give no status.
 - **Why left:** the registry offers no open API, and a curated record replaces the reading.
-- **Clears it:** curated GI records for every GI craft (the curation run), after which the label
-  reader serves only crafts without a dossier.
+- **Clears it:** curation only: a `market.gi` record for each GI craft (21 of the master list's
+  209 GI crafts have one), read from its GI journal and registry pages as the 21 are, starting with
+  Tharu Embroidery, Kutch Embroidery, Kasuti Embroidery, Sandur Lambani Embroidery and Toda
+  Embroidery; the label reader then serves only crafts without a dossier.
 
-### Imitation and per are fixed word lists
+### Imitation is a fixed word list
 
 - **What:** a sign of imitation must name one of the listed words (fake, imitation, counterfeit,
   spurious, knock-off, passed off, screen-printed, machine-made, power loom, mill-made);
-  "duplicate", "copies" and "substitute" are left out because they also name other things. A
-  price's `per` is read only after "per" or "/", so "Rs 1,500 a metre" shows no per.
-- **Why left:** a model choosing either would spend on every economics section; the lists err
-  toward showing less.
-- **Clears it:** a dossier field naming the claims that are signs of imitation, read first, and
-  a reviewed list of per words.
+  "duplicate", "copies" and "substitute" are left out because they also name other things. (A
+  price's `per` is read after "per", "a", "an" or "/" since decision 0147.)
+- **Why left:** a model choosing would spend on every economics section; the list errs toward
+  showing less; a dossier field needs a stored column the curated import writes, and the import
+  belongs to the curated-import lane, which was running in the same tree.
+- **Clears it:** a dossier `market.imitation` list of claim ids (each citing a GI journal), stored
+  by the curated import and read before the word list by `services/market_builder`.
 
 ## Climate and risk, and ask the map (decision 0065)
 
@@ -1532,21 +1495,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** each scholarly adapter fills `container_title` from the field above (Europe PMC and
   Semantic Scholar too, which retires `JOURNAL_AS_PUBLISHER_ADAPTERS`); sources stored before keep
   no journal until a script reads their DOIs again.
-
-## Phase D review (decision 0070)
-
-### The curation checks a curated GI date only by its year, and a price's date not at all
-
-- **What:** `curation/entity_rules._gi_messages` (decision 0053) accepts a curated `filedOn` or
-  `registeredOn` whose year a quote states, even when no quote states its day or month, and a
-  curated price's `date` (`curation/records.Price`) is not checked against its claim's quotes. The
-  market builder cuts such a date to the precision its quotes state before showing it, and drops
-  a price whose quotes state none (`research/stated_dates.stated_precision`), so no unstated day
-  reaches a screen, but the curation check does not report the record.
-- **Why left:** the curation and importer files belong to lane 0053, which was running in the same
-  tree.
-- **Clears it:** the curation rules check each GI and price date with `stated_dates.states_date`
-  at its own precision and report a record whose day, month or year no quote states.
 
 ## Public transcripts and share links (decision 0097)
 
@@ -1924,35 +1872,32 @@ Last reviewed: 2026-11-22.
   the set, compare its `keptShare` with run 44993519051's, and score the new questions in the fused
   order with `eval_retrieval --fusion`.
 
-### Numbers in prose without a table or figure
+### The quantities table has not been measured by the judge
 
-- **What:** in run 44994632550 the judge's figures part averaged 2.8 of 5 (36 of 65). The Ajrakh
-  indigo answer (bed43e9f), the Jaipur safe-handling answer (af3f7ac2) and the Bandhani tie-and-dye
-  answer (4978c466) each scored 1: dip times, kiln temperatures, tying days and lengths are given
-  only in prose, though the rubric counted 6 to 18 figure blocks in them. The measure block converts
-  only local units, and the judge's message gives a count of figures per field, not which numbers
-  they show.
-- **Why left:** a new table kind and the judge's wording of figures are changes of their own; the
-  sentence-once lane changes neither the blocks built nor the judge's criteria.
-- **Clears it:** build a cited quantities table for a section whose facts state three or more
-  numbers (metric units too, each row its stated words, the sentence said once as decision 0134
-  draws it), and name each figure's kind and the quantities it shows in the judge's message;
-  measure the figures part on the same questions.
+- **What:** in run 44994632550 the judge's figures part averaged 2.8 of 5 (36 of 65); the Ajrakh
+  indigo (bed43e9f), Jaipur safe-handling (af3f7ac2) and Bandhani tie-and-dye (4978c466) answers
+  scored 1 because dip times, kiln temperatures, tying days and lengths were only in prose.
+  Decision 0147 built the `quantities` table for a section whose facts state three or more
+  quantities and names each figure's kind and quantities in the judge's message, and re-based the
+  rubric floor to the lowest mean the shown-sentence count can give (0.82); no run has measured
+  either since.
+- **Why left:** answer-quality spends money and only the lead dispatches it (owner rule).
+- **Clears it:** the lead runs answer-quality on the same questions after the release, records the
+  figures part of those three answers, and raises `rubricMean` in
+  `backend/app/data/eval/floors.json` to the run's mean less 0.05, rounded down.
 
 ### Leftovers of the sentence-once lane
 
-- **What:** the rubric's `cited` part counts every copy of a sentence a block carries
-  (`field_sentences`), so a supply map whose five links share a sentence counts five cited
-  sentences for its field while the judge reads one (decision 0134). A market block can show one
-  claim in its GI record and again beside a price. A ladder stage's Sources differ readings are not
-  checked against the stage sentences. The supply heading lowers a later material name only when a
-  block sentence writes its first word in lower case, so a name met only at a sentence's start
-  keeps its capital.
-- **Why left:** the lane kept the judge's criteria and scores unchanged; the others are rare, and
-  the case rule needs the payload to say which names are proper names.
-- **Clears it:** count `shown_field_sentences` in `answer_measures` and `consulted_fields` and
-  re-base the rubric floor in the same change; keep price claims out of the GI sentences in
-  `services/market_builder`; carry each material's sentence-case name from the glossary.
+- **What:** a ladder stage's Sources differ readings are not checked against the stage
+  sentences, so a reading may repeat a sentence the stage says. The supply heading lowers a later
+  material name only when a block sentence writes its first word in lower case, so a name met only
+  at a sentence's start keeps its capital ("Indigo and Alum"). (The rubric's shown-sentence count
+  and the market block's GI and price sentences were cleared by decision 0147.)
+- **Why left:** both are rare; the glossary holds no sentence-case name (its labels are title case
+  for seeded and curated terms alike), so the payload cannot yet say which names are proper names.
+- **Clears it:** `explainerView.stagesSaidOnce` leaves out a differ reading a stage sentence says;
+  curation gives each glossary term its sentence-case name (a `Term` field the import fills), the
+  supply builder carries it on `SupplyLink.material`, and `namesText` keeps a later name as carried.
 
 ### The answer did not name the oxides behind Khurja's blue and turquoise glazes
 

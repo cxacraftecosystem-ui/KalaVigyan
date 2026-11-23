@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "sections": [
+    {
+      "id": "s1",
+      "discipline": "PROCESS",
+      "blocks": [
+        {
+          "id": "s1.b1",
+          "kind": "quantities",
+          "version": 1,
+          "reuse": null,
+          "rows": [
+            {
+              "stated": "3 kg",
+              "low": 3.0,
+              "high": null,
+              "unit": "kilogram",
+              "measures": "MASS",
+              "sentence": {
+                "id": "s1.b1.1",
+                "text": "3 kg of sanchara (rock salt) is dissolved in 15 litres of water as one component of the mengni solution.",
+                "level": "PROVISIONAL",
+                "citations": [
+                  {
+                    "id": "40ff638b-d528-5bdd-ab35-dab988e1c48a",
+                    "claimId": "d9210908-1007-593c-b813-4f39e6e13cdd",
+                    "sourceId": "5e7001f9-3e1b-599a-8772-7149c14b1d3a",
+                    "quote": "This involves three items: a. solution of 3 kg of sanchara (rock salt) soaked in 15 litres of water, stirred till it melts. b. 10 kg of mengni soaked in 10-15 litres of water.",
+                    "locator": "PDF p. 11",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  }
+                ],
+                "translated": false,
+                "terms": []
+              }
+            },
+            {
+              "stated": "15 litres",
+              "low": 15.0,
+              "high": null,
+              "unit": "litre",
+              "measures": "VOLUME",
+              "sentence": {
+                "id": "s1.b1.2",
+                "text": "3 kg of sanchara (rock salt) is dissolved in 15 litres of water as one component of the mengni solution.",
+                "level": "PROVISIONAL",
+                "citations": [
+                  {
+                    "id": "40ff638b-d528-5bdd-ab35-dab988e1c48a",
+                    "claimId": "d9210908-1007-593c-b813-4f39e6e13cdd",
+                    "sourceId": "5e7001f9-3e1b-599a-8772-7149c14b1d3a",
+                    "quote": "This involves three items: a. solution of 3 kg of sanchara (rock salt) soaked in 15 litres of water, stirred till it melts. b. 10 kg of mengni soaked in 10-15 litres of water.",
+                    "locator": "PDF p. 11",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  }
+                ],
+                "translated": false,
+                "terms": []
+              }
+            },
+            {
+              "stated": "80–100 g",
+              "low": 80.0,
+              "high": 100.0,
+              "unit": "gram",
+              "measures": "MASS",
+              "sentence": {
+                "id": "s1.b1.3",
+                "text": "Red printing paste uses about 80–100 g of alum per litre of water.",
+                "level": "PROVISIONAL",
+                "citations": [
+                  {
+                    "id": "d0d7832a-7659-5cce-95c0-8335b0f2c322",
+                    "claimId": "b6e9fb76-aae9-5cae-9814-02b0fba2ace6",
+                    "sourceId": "5e7001f9-3e1b-599a-8772-7149c14b1d3a",
+                    "quote": "The details of preparing the colours are as given below: Red color printing paste: 80-100gms. Fitkari (alum) is added to 1 liter of water and 20kg.alum 200liter water is taken.",
+                    "locator": "PDF p. 13",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  }
+                ],
+                "translated": false,
+                "terms": []
+              }
+            },
+            {
+              "stated": "15–20 days",
+              "low": 15.0,
+              "high": 20.0,
+              "unit": "day",
+              "measures": "TIME",
+              "sentence": {
+                "id": "s1.b1.4",
+                "text": "For black paste, hirakasish (iron sulphate) or iron filings are put in an earthen pot with jaggery and water and left for 15–20 days.",
+                "level": "PROVISIONAL",
+                "citations": [
+                  {
+                    "id": "14e4002d-178b-58eb-8c89-dce26b15e401",
+                    "claimId": "a7b81a99-f946-5c1a-b707-e8d32ebacf6c",
+                    "sourceId": "5e7001f9-3e1b-599a-8772-7149c14b1d3a",
+                    "quote": "Black color printing paste Hirakasish or iron sulphate or iron filings are filled in earthen pot where jaggery and water are added to the pot and left aside for 15-20 days.",
+                    "locator": "PDF p. 13",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  }
+                ],
+                "translated": false,
+                "terms": []
+              }
+            },
+            {
+              "stated": "10 minutes",
+              "low": 10.0,
+              "high": null,
+              "unit": "minute",
+              "measures": "TIME",
+              "sentence": {
+                "id": "s1.b1.5",
+                "text": "The day after mengni karna, the fabric is dyed in harara solution for about 10 minutes per lot and dried, turning yellowish.",
+                "level": "PROVISIONAL",
+                "citations": [
+                  {
+                    "id": "9eed5e2c-264f-5bb2-80f1-96b338ea33db",
+                    "claimId": "26fd698b-713d-50f2-9a25-68d19a5ce371",
+                    "sourceId": "5e7001f9-3e1b-599a-8772-7149c14b1d3a",
+                    "quote": "Then about 20 litres of plain water is mixed with 10 mugs of harara-water solution, 15-20 kg of harara is soaked in 20 litres of water. The fabric is dyed by keeping it in this mixed solution for 10 minutes, after which it is dried.",
+                    "locator": "PDF p. 12",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  },
+                  {
+                    "id": "cf0f0692-b9f2-5666-9bc8-fc7b3a451be7",
+                    "claimId": "26fd698b-713d-50f2-9a25-68d19a5ce371",
+                    "sourceId": "5e7001f9-3e1b-599a-8772-7149c14b1d3a",
+                    "quote": "On the day after mengnikarna the fabric has to be treated with a solution of harara powder",
+                    "locator": "PDF p. 12",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  },
+                  {
+                    "id": "85f74d21-6513-5646-868a-88e3290e8084",
+                    "claimId": "26fd698b-713d-50f2-9a25-68d19a5ce371",
+                    "sourceId": "5e7001f9-3e1b-599a-8772-7149c14b1d3a",
+                    "quote": "Thus the total quantity of the fabric is dyed in about ten lots, repeating the same process each time when dried, the fabric turns yellowish.",
+                    "locator": "PDF p. 12",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  }
+                ],
+                "translated": false,
+                "terms": []
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "5e7001f9-3e1b-599a-8772-7149c14b1d3a",
+      "kind": "GI_JOURNAL",
+      "title": "Geographical Indications Journal No. 75 — Bagh Prints of Madhya Pradesh (Logo), GI Application No. 505 (pp. 6–18)",
+      "authors": [
+        "Geographical Indications Registry (applicant: Development Commissioner (Handicrafts), Ministry of Textiles)"
+      ],
+      "year": 2015,
+      "doi": null,
+      "url": "https://web.archive.org/web/20160204105330/http://ipindia.nic.in/girindia/journal/Journal_75.pdf",
+      "publisher": "Government of India, Intellectual Property India",
+      "licence": null,
+      "attribution": null,
+      "reliability": "A"
+    }
+  ]
+}

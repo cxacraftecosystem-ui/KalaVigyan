@@ -203,6 +203,23 @@ def test_stage_timings_and_orders_rest_on_their_claims() -> None:
     assert not [where for where, _ in problems if where == "P02"]
 
 
+def test_a_gi_or_price_date_is_checked_at_its_own_precision() -> None:
+    def date_the_market(plain: dict[str, Any]) -> None:
+        plain["market"] = {
+            "gi": {"filedOn": "2001-05-11", "registeredOn": "2001", "claimIds": ["C002"]},
+            "prices": [
+                {"claimId": "C006", "date": "2001-03", "placeId": "L01"},
+                {"claimId": "C002", "date": "2001", "placeId": "L01"},
+            ],
+        }
+
+    problems = found(content_problems(changed_dossier(date_the_market), default_context()))
+    assert [(where, message) for where, message in problems if "precision" in message] == [
+        ("market.gi", "the filedOn 2001-05-11 is not stated to that precision by any quote of its claims"),
+        ("market.prices.0", "the date 2001-03 is not stated to that precision by any quote of C006"),
+    ]
+
+
 def test_coverage_targets_of_the_thin_fixture() -> None:
     dossier = passing_dossier()
     assert thin_shortfalls(dossier) == []

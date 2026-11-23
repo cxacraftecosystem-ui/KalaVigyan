@@ -718,13 +718,15 @@ their rows through `services/shared_concepts.py` (from the per-term summary that
 `services/shared_term_crafts.py` rebuilds on release and nightly) and `services/craft_compare.py`, and reach answers
 through `services/learning_builders.py` (decision 0064). Local measures and market and GI
 follow fixed rules too: stated quantities, regional factors and prices in
-`research/stated_quantities.py` and `research/stated_prices.py` over the one Pint registry
+`research/stated_quantities.py`, `research/stated_amounts.py` (decision 0147) and
+`research/stated_prices.py` over the one Pint registry
 (`research/unit_registry.py`, shared with the science engine), GI registry fields in
 `research/gi_registry.py`, read through `services/measure_store.py` and
-`services/market_store.py` and built by `services/measure_builder.py` and
-`services/market_builder.py` (decision 0066). The six kinds are drawn
+`services/market_store.py` and built by `services/measure_builder.py`,
+`services/quantities_builder.py` and `services/market_builder.py` (decisions 0066 and 0147). The
+seven kinds are drawn
 by `components/answer/learning/` (the quiz, compare and the concept graph) and
-`components/answer/insight/` (measures, market and GI, climate trends), with their rules in
+`components/answer/insight/` (measures, quantities, market and GI, climate trends), with their rules in
 `lib/quizView.ts`, `lib/compareView.ts`, `lib/conceptGraph.ts`, `lib/insightView.ts` and
 `lib/climateView.ts` (decision 0068). The screens around the learning routes (decision 0069) are
 `components/learn/` and `components/map/DistrictPanel.tsx` over `lib/learningApi.ts` and

@@ -47,6 +47,7 @@ from .matter_builders import (
 )
 from .measure_builder import MEASURE_FIELDS, MeasureBuilder
 from .place_builders import REGION_STORY_WAIT_SECONDS, MapLayerBuilder, RegionStoryBuilder
+from .quantities_builder import QUANTITY_FIELDS, QuantitiesBuilder
 from .season_supply_builders import SUPPLY_MAP_WAIT_SECONDS, SeasonsBuilder, SupplyMapBuilder
 from .simulation_builder import SIMULATION_WAIT_SECONDS, SimulationBuilder
 from .what_if_builder import WHAT_IF_FIELDS, WHAT_IF_WAIT_SECONDS, WhatIfBuilder
@@ -132,6 +133,7 @@ BLOCK_BUILDERS: tuple[BuilderEntry, ...] = (
     ),
     BuilderEntry("supply_map", SUPPLY_MAP_FIELDS, SupplyMapBuilder, SUPPLY_MAP_WAIT_SECONDS),
     BuilderEntry("measure", MEASURE_FIELDS, MeasureBuilder),
+    BuilderEntry("quantities", QUANTITY_FIELDS, QuantitiesBuilder),
     BuilderEntry("market_gi", MARKET_FIELDS, MarketGiBuilder, rebuilt_on_reuse=True),
     BuilderEntry(
         "reaction_player", PLAYED_FIELDS, ReactionPlayerBuilder, rebuilt_on_reuse=True, replaces_stored=True

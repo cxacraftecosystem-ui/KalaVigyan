@@ -100,7 +100,7 @@ def test_a_placed_component_stands_for_the_builder_of_the_same_purpose() -> None
 def test_the_block_kinds_moved_home_and_every_old_import_still_reads_them() -> None:
     assert enums.BLOCK_KINDS is block_kinds.BLOCK_KINDS
     assert block_kinds.BLOCK_KINDS[-1] == "component"
-    assert len(block_kinds.BLOCK_KINDS) == len(set(block_kinds.BLOCK_KINDS)) == 30
+    assert len(block_kinds.BLOCK_KINDS) == len(set(block_kinds.BLOCK_KINDS)) == 31
 
 
 def test_migration_0035_widens_the_piece_kinds_by_the_component_kind_only() -> None:
@@ -113,9 +113,21 @@ def test_migration_0035_widens_the_piece_kinds_by_the_component_kind_only() -> N
         == load("0056_datasets_and_materials").COMPONENT_KINDS_BEFORE
     )
     assert set(COMPONENT_KINDS) - set(before.COMPONENT_KINDS) == {"drawing"}
-    assert after.BLOCK_KINDS == enums.BLOCK_KINDS
+    assert after.BLOCK_KINDS == load("0072_quantities_kind").BLOCK_KINDS_BEFORE
     assert set(after.BLOCK_KINDS) - set(before.BLOCK_KINDS) == {"component"}
     assert after.CONSTRAINT == before.CONSTRAINT == "KnowledgePiece_kind_check"
+
+
+def test_migration_0072_widens_both_kind_checks_by_the_quantities_table_only() -> None:
+    migration = load("0072_quantities_kind")
+    assert (migration.revision, migration.down_revision) == (
+        "0072_quantities_kind",
+        "0080_stream_stamps_differs_on",
+    )
+    assert migration.BLOCK_KINDS == enums.BLOCK_KINDS
+    assert set(migration.BLOCK_KINDS) - set(migration.BLOCK_KINDS_BEFORE) == {"quantities"}
+    assert migration.COMPONENT_KINDS == COMPONENT_KINDS
+    assert migration.KIND_CHECKS == ("KnowledgePiece", "ComponentProposal")
 
 
 def test_a_component_cites_the_sources_it_rests_on_in_their_order() -> None:

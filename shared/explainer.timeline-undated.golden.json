@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "sections": [
+    {
+      "id": "s4",
+      "discipline": "HISTORY",
+      "blocks": [
+        {
+          "id": "s4.b1",
+          "kind": "timeline_map",
+          "version": 2,
+          "reuse": null,
+          "places": [
+            {
+              "name": "Fustat",
+              "wikidataId": "Q839456",
+              "latitude": 30.005,
+              "longitude": 31.2375
+            },
+            {
+              "name": "Dhamadka",
+              "wikidataId": null,
+              "latitude": null,
+              "longitude": null
+            },
+            {
+              "name": "Ajrakhpur",
+              "wikidataId": null,
+              "latitude": null,
+              "longitude": null
+            },
+            {
+              "name": "Sindh",
+              "wikidataId": null,
+              "latitude": null,
+              "longitude": null
+            },
+            {
+              "name": "Kutch",
+              "wikidataId": null,
+              "latitude": 23.25,
+              "longitude": 69.67,
+              "districtLgd": 449
+            }
+          ],
+          "points": [
+            {
+              "place": 0,
+              "yearFrom": 1401,
+              "yearTo": 1500,
+              "sentence": {
+                "id": "s4.b1.1",
+                "text": "15th-century resist-printed fragments from Gujarat were found at Fustat in Egypt.",
+                "level": "PROVISIONAL",
+                "citations": [
+                  {
+                    "id": "a8fba274-8398-5e67-84fc-7af01f82c336",
+                    "claimId": "c11f4137-eabe-5a86-91f5-a2a42aba85f2",
+                    "sourceId": "f60ab91b-7057-56fe-a4c0-17664472b776",
+                    "quote": "Early evidence of Gujarat's involvement in international trade of colourful block printed textiles comes from the fragments found at the Fostat excavations in Egypt. These have been dated back to the fifteenth century and have been printed by the resist printing technique.",
+                    "locator": "§ \"Abstract\"",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  }
+                ],
+                "translated": false,
+                "terms": []
+              }
+            },
+            {
+              "place": 1,
+              "yearFrom": 1586,
+              "yearTo": 1586,
+              "sentence": {
+                "id": "s4.b1.2",
+                "text": "A legend links the craft to Dhamadka following a 16th-century migration.",
+                "level": "PROVISIONAL",
+                "citations": [
+                  {
+                    "id": "e3248188-5709-5f16-a717-25796fedea4a",
+                    "claimId": "77b4e851-c1cd-5561-81a9-018e6e5086a6",
+                    "sourceId": "f60ab91b-7057-56fe-a4c0-17664472b776",
+                    "quote": "According to popular legend, this textile tradition was started in the family of late Mohammad Siddiki when in the year 1586, Raja Bharmal I, invited his forefathers, to migrate from Sind and settle in Dhamadka, Kachchh.",
+                    "locator": "§ \"Abstract\"",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  }
+                ],
+                "translated": false,
+                "terms": []
+              }
+            },
+            {
+              "place": 2,
+              "yearFrom": 2001,
+              "yearTo": 2001,
+              "sentence": {
+                "id": "s4.b1.3",
+                "text": "After a massive earthquake in 2001 the block printers were forced to relocate and settled in Ajrakhpur; over 100 families live there with 30 official workshops.",
+                "level": "PROVISIONAL",
+                "citations": [
+                  {
+                    "id": "f3e38295-2a1b-5e12-8c1a-49897c72c260",
+                    "claimId": "bc976cc1-204e-52e8-9b26-f1a91d33b7b3",
+                    "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                    "quote": "After a massive earthquake in Kutch in 2001, the block printers were forced to relocate. They settled in Ajrakhpur village.",
+                    "locator": "GI Journal No. 188 copy (application 1050), PDF p. 3",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  },
+                  {
+                    "id": "9c5a26b8-9106-52eb-8704-2ebfd15db95a",
+                    "claimId": "bc976cc1-204e-52e8-9b26-f1a91d33b7b3",
+                    "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                    "quote": "There are over one hundred families living in Ajrakhpur, and 30 official block printing workshops; almost all of the families in Ajrakhpur generate their primary income from Ajrakh.",
+                    "locator": "GI Journal No. 188 copy (application 1050), PDF p. 3",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  }
+                ],
+                "translated": false,
+                "terms": []
+              }
+            }
+          ],
+          "routes": [
+            {
+              "start": 3,
+              "end": 4,
+              "yearFrom": 1586,
+              "yearTo": 1631,
+              "sentence": {
+                "id": "s4.b1.4",
+                "text": "Rao Bharmalji I (1586-1631) invited Khatri printers from Sindh and gave them land and tax exemptions.",
+                "level": "PROVISIONAL",
+                "citations": [
+                  {
+                    "id": "11b06c87-706e-57e1-9634-5fe424f7cd77",
+                    "claimId": "66c8488c-11fe-5f1b-8653-dddbdaef2393",
+                    "sourceId": "56c24809-a5fd-5d90-b6db-e55d7be09c07",
+                    "quote": "The erstwhile ruler of Kutch Rao Bharmalji - I (1586-1631), invited the cloth-printing Khatri artisans from Sindh and gave them permission to settle and earn their livelihoods anywhere in Kutch. They were given land by the state as well spared any taxation on their produce.",
+                    "locator": "§ \"Mushtak Khan\"",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  }
+                ],
+                "translated": false,
+                "terms": []
+              }
+            }
+          ],
+          "undated": [
+            {
+              "place": 1,
+              "sentence": {
+                "id": "s4.b1.5",
+                "text": "Dhamadka is located approximately 50 km east of Bhuj.",
+                "level": "PROVISIONAL",
+                "citations": [
+                  {
+                    "id": "0cd2705e-5d4a-54cb-afdd-62872832712d",
+                    "claimId": "72063fd2-94e0-58f5-927a-b17169edc9af",
+                    "sourceId": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+                    "quote": "The village is located approximately 50 km east of Bhuj. It is believed that 400 years ago, a group of Khatris settled in Dhamadka and started practicing their craft.",
+                    "locator": "GI Journal No. 188 copy (application 1050), PDF p. 3",
+                    "context": null,
+                    "evidence": "QUOTED",
+                    "level": "PROVISIONAL"
+                  }
+                ],
+                "translated": false,
+                "terms": []
+              }
+            }
+          ],
+          "datasets": [
+            {
+              "code": "DR_DISTRICT_SHAPES",
+              "title": "Indian district boundaries, matched to LGD codes",
+              "publisher": "Indian districts GeoJSON on Kaggle",
+              "edition": "2026",
+              "period": "2026",
+              "nativeResolution": "simplified to 0.01 degree, 0.001 degree coordinate grid",
+              "licence": "For reference only",
+              "licenceUrl": null,
+              "attribution": "District boundaries are indicative.",
+              "citation": null,
+              "url": "https://www.kaggle.com/datasets/adityaradha007/indian-districts-geojson"
+            }
+          ],
+          "boundaryCaption": "External boundaries of India as depicted by Survey of India. District boundaries are indicative."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "f60ab91b-7057-56fe-a4c0-17664472b776",
+      "kind": "WEB_PAGE",
+      "title": "AJRAKH: A Textile Tradition in Transition (Textile Society of America Symposium Proceedings 955)",
+      "authors": [
+        "Sharmila J. Dua"
+      ],
+      "year": 2016,
+      "doi": null,
+      "url": "https://digitalcommons.unl.edu/tsaconf/955",
+      "publisher": "Textile Society of America / DigitalCommons@University of Nebraska-Lincoln",
+      "licence": null,
+      "attribution": null,
+      "reliability": "B"
+    },
+    {
+      "id": "d0f53ee9-4b97-5df7-a367-686957bdb7c8",
+      "kind": "GI_JOURNAL",
+      "title": "Geographical Indications Journal No. 188 (19 Dec 2023), G.I. Application No. 1050 - Kutch Ajrakh (journal copy)",
+      "authors": [
+        "Office of the Controller General of Patents, Designs & Trade Marks (applicant: Ajarakhpur Hastkala Vikas Sangathan",
+        "facilitated by Textiles Committee, Ministry of Textiles)"
+      ],
+      "year": 2023,
+      "doi": null,
+      "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/1050",
+      "publisher": "Geographical Indications Registry, Chennai (IP India)",
+      "licence": null,
+      "attribution": null,
+      "reliability": "A"
+    },
+    {
+      "id": "56c24809-a5fd-5d90-b6db-e55d7be09c07",
+      "kind": "WEB_PAGE",
+      "title": "Ajrakh: An Introduction",
+      "authors": [
+        "Mushtak Khan (former Deputy Director, Crafts Museum, Delhi)"
+      ],
+      "year": null,
+      "doi": null,
+      "url": "https://www.sahapedia.org/ajrakh-introduction-0",
+      "publisher": "Sahapedia",
+      "licence": null,
+      "attribution": null,
+      "reliability": "B"
+    }
+  ]
+}

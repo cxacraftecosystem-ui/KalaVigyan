@@ -16,12 +16,13 @@ export const DEPTH_LABELS = { DETAILED: "Detailed", EXPERT: "Expert" } as const;
 export const KNOWN_ANSWER = /\balum\b|फिटकरी|फिटकिरी|फ़िटकरी/i;
 export const LATIN = "Latn";
 
-export type KnownAnswerCheck = "MORDANT" | "WATER_STORY" | "GENERATED_EXPLAINER";
+export type KnownAnswerCheck = "MORDANT" | "WATER_STORY" | "GENERATED_EXPLAINER" | "ZOOM_STORY" | "TIMELINE_MAP";
 export type AskedDepth = keyof typeof DEPTH_LABELS;
 export type KnownAnswerQuestion = { label: string; language: string; script: string; depth: AskedDepth; question: string; check: KnownAnswerCheck };
 export type KnownAnswerOptions = { riversLoaded: boolean };
 
 export const RIVERS_NOT_LOADED: KnownAnswerOptions = { riversLoaded: false };
+export const BUILT_KIND_CHECKS: Partial<Record<KnownAnswerCheck, string>> = { ZOOM_STORY: "zoom_story", TIMELINE_MAP: "timeline_map" };
 export const KNOWN_ANSWER_QUESTIONS: readonly KnownAnswerQuestion[] = [
   { label: "English", language: "en", script: LATIN, depth: "DETAILED", check: "MORDANT", question: "Which mordant fixes the red in Kutch Ajrakh block printing?" },
   {
@@ -33,7 +34,9 @@ export const KNOWN_ANSWER_QUESTIONS: readonly KnownAnswerQuestion[] = [
     question: "कच्छ की अजरख छपाई में लाल रंग पक्का करने के लिए कौन सा मॉर्डेंट इस्तेमाल होता है?"
   },
   { label: "Water", language: "en", script: LATIN, depth: "DETAILED", check: "WATER_STORY", question: "How does the water of Kachchh shape Kutch Ajrakh?" },
-  { label: "Indigo", language: "en", script: LATIN, depth: "EXPERT", check: "GENERATED_EXPLAINER", question: "How does indigo turn blue on Kutch Ajrakh cloth?" }
+  { label: "Indigo", language: "en", script: LATIN, depth: "EXPERT", check: "GENERATED_EXPLAINER", question: "How does indigo turn blue on Kutch Ajrakh cloth?" },
+  { label: "Materials", language: "en", script: LATIN, depth: "DETAILED", check: "ZOOM_STORY", question: "What is Kutch Ajrakh cloth made of, from the workshop down to the cotton fibre and the dye molecule?" },
+  { label: "History", language: "en", script: LATIN, depth: "DETAILED", check: "TIMELINE_MAP", question: "How did Ajrakh printing come from Sindh to Kutch over the centuries?" }
 ];
 
 export type WaitOutcome = "stalled" | "timeout" | "never-started";
@@ -204,6 +207,7 @@ export function answerRecord(input: AnswerInput): AnswerRecord {
   let generatedExplainer = NO_GENERATED_EXPLAINER;
   let expertPanel = NO_EXPERT_PANEL;
   let lede = NO_LEDE;
+  const kinds = new Set<string>();
   for (const { at, event } of parsed.events) {
     if (event.type === "lede") {
       const opening = ledeRecords(event.data.block);
@@ -211,6 +215,7 @@ export function answerRecord(input: AnswerInput): AnswerRecord {
       lede = opening.record;
     } else if (event.type === "block") {
       sentences.push(...blockSentences(event.data.block).map((sentence) => sentenceRecord("sentence", event.data.sectionId, sentence, event.data.block)));
+      kinds.add(event.data.block.kind);
       regionStory = withRegionStory(regionStory, event.data.block);
       generatedExplainer = withGeneratedExplainer(generatedExplainer, event.data.block);
       expertPanel = withExpertPanel(expertPanel, event.data.block);
@@ -259,7 +264,7 @@ export function answerRecord(input: AnswerInput): AnswerRecord {
     sentences,
     followUps,
     scripts: scriptCounts(sentences, question.script),
-    knownAnswerFound: knownAnswerFound(question, sentences, regionStory, generatedExplainer),
+    knownAnswerFound: knownAnswerFound(question, sentences, regionStory, generatedExplainer, kinds),
     regionStory,
     generatedExplainer,
     lede,
@@ -271,7 +276,9 @@ export function answerRecord(input: AnswerInput): AnswerRecord {
   };
 }
 
-function knownAnswerFound(question: KnownAnswerQuestion, sentences: readonly SentenceRecord[], story: RegionStoryRecord, generated: GeneratedExplainerRecord): boolean {
+function knownAnswerFound(question: KnownAnswerQuestion, sentences: readonly SentenceRecord[], story: RegionStoryRecord, generated: GeneratedExplainerRecord, kinds: ReadonlySet<string>): boolean {
+  const kind = BUILT_KIND_CHECKS[question.check];
+  if (kind) return kinds.has(kind);
   if (question.check === "WATER_STORY") return waterStoryFound(story);
   if (question.check === "GENERATED_EXPLAINER") return generatedExplainerFound(generated);
   return sentences.some((sentence) => KNOWN_ANSWER.test(`${sentence.text} ${sentence.original ?? ""}`));
@@ -291,6 +298,8 @@ export function scriptProblems(sentences: readonly SentenceRecord[], script: str
 export function knownAnswerOutcome(record: AnswerRecord, question: KnownAnswerQuestion, options: KnownAnswerOptions = RIVERS_NOT_LOADED): CheckOutcome {
   if (question.check === "WATER_STORY") return waterStoryOutcome(record.regionStory, options.riversLoaded);
   if (question.check === "GENERATED_EXPLAINER") return generatedExplainerOutcome(record.generatedExplainer);
+  const kind = BUILT_KIND_CHECKS[question.check];
+  if (kind) return { problems: record.knownAnswerFound ? [] : [`no ${kind} block arrived`], notes: [] };
   return { problems: record.knownAnswerFound ? [] : ["no sentence names alum, the known mordant"], notes: [] };
 }
 

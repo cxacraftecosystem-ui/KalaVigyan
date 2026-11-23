@@ -85,7 +85,7 @@ id (`answer-eval-<run>-q<NNN>`), then scores the stored explainer.
 | Part | Measured |
 |---|---|
 | fields | the share of the question's fields the answer consulted (a ready section in the field) |
-| cited | per question field, cited sentences over 3 (at most 1), averaged over the question's fields |
+| cited | per question field, cited sentences over 3 (at most 1), averaged over the question's fields; a sentence several items of one block share counts once, as it is shown |
 | everyCited | 1 when every sentence's citations name sources the answer lists and no shown sentence rests on a passage about another catalogued craft or a place abroad (`offQuestion`, counted with the write-back's naming rule, `services/off_question.explainer_off_question`, decision 0138) |
 | figures | 1 when the answer shows a figure (any block that is not text) |
 | noGaps | 1 when no sentence admits a gap (`research/gap_admissions.GAP_ADMISSION`, the one home the composer's routing also reads: no source or evidence, not enough evidence, could not find, no ... detail, not known or documented, little is known, sources, statements, records, texts, passages, studies or findings do not say, name or give, we do not know, is, are or remains unknown or unclear, and has, have or had not or never been identified, established, determined, documented, recorded or studied) |
@@ -95,8 +95,11 @@ the same five parts 0 to 5 with a note, reading the question and the answer's se
 untrusted data (`JUDGE_SYSTEM_PROMPT`, `judge_message`, `judge_schema`); its share is the sum over 25.
 It reads what a reader sees: each block's sentences once by their English words
 (`BlockBase.shown_sentences`, `coverage_answers.shown_field_sentences`), as the client draws a
-sentence several items share once (decision 0134); the rubric's counts still read every sentence
-the blocks carry (`field_sentences`). A judge that fails leaves the measures and says so.
+sentence several items share once (decision 0134), and the rubric counts the same sentences
+(decision 0147). A third untrusted block lists each figure by field with its kind and the
+quantities it shows, the labels of the figure that state a number (`coverage_answers.field_figures`,
+at most 40 lines), so the judge sees which numbers a table or figure carries and which stay in
+prose. A judge that fails leaves the measures and says so.
 
 **Spend.** The run stops before a question when the spend so far (`router.tagged_spend` on the run's
 request id prefix) leaves less than `EVAL_QUESTION_RESERVE_USD` (2.50) of the cap. The cap is
@@ -116,10 +119,12 @@ and writes the asked, answered, means and spend into the run summary.
 
 **The floors.** The printed line also carries `{floorsApplied, floors[{measure, floor, value, held}],
 belowFloor}` (`services/coverage_eval.floor_report`): the judge's and rubric means compared with the
-answer floors of `backend/app/data/eval/floors.json` (judge 0.76 and rubric 0.91, re-based on
+answer floors of `backend/app/data/eval/floors.json` (judge 0.76 and rubric 0.82, re-based on
 2026-11-22 when the judge changed from Gemini 4 Argon to Claude Opus 5.5, a stricter judge: run
-44994632550 scored judge 0.815 and rubric 0.969, each less 0.05 and rounded down; decisions 0126 and
-0133 and [retrieval.md](retrieval.md), Floors). They are compared only for a run that asked every
+44994632550 scored judge 0.815 and rubric 0.969, each less 0.05 and rounded down; the rubric floor
+was re-based again the same day when the rubric began to count each shown sentence once, to the
+lowest mean that count can give on that run's answers, 0.872, less 0.05 and rounded down;
+decisions 0126, 0133 and 0147 and [retrieval.md](retrieval.md), Floors). They are compared only for a run that asked every
 question and was not stopped by the cap; a mean that is missing breaks its floor. The workflow then fails
 when a floor is broken and keeps one issue, `Answers fell below their floor`, through
 `.github/actions/release-issue`: opened or commented on while a floor is broken, closed when a whole

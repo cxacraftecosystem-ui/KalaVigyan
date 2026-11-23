@@ -5,6 +5,7 @@ from app.models.crafts import DATASET_ORIGINS
 from .migration_scripts import migration
 
 STEP = migration("0056_datasets_and_materials")
+QUANTITIES_STEP = migration("0072_quantities_kind")
 RETIRED = {"general_drawing", "general_chart", "general_table", "general_timeline", "general_map_layer"}
 
 
@@ -20,9 +21,10 @@ def test_it_renames_each_general_kind_to_the_one_kind_of_its_job() -> None:
         "general_timeline": "timeline",
         "general_map_layer": "map_layer",
     }
-    assert STEP.PIECE_KINDS == PIECE_KINDS
+    assert (*QUANTITIES_STEP.BLOCK_KINDS_BEFORE, *QUANTITIES_STEP.COMPONENT_KINDS) == STEP.PIECE_KINDS
+    assert (*QUANTITIES_STEP.BLOCK_KINDS, *QUANTITIES_STEP.COMPONENT_KINDS) == PIECE_KINDS
     assert set(STEP.PIECE_KINDS_BEFORE) - set(PIECE_KINDS) == RETIRED
-    assert set(PIECE_KINDS) - set(STEP.PIECE_KINDS_BEFORE) == {"drawing"}
+    assert set(STEP.PIECE_KINDS) - set(STEP.PIECE_KINDS_BEFORE) == {"drawing"}
     assert set(COMPONENT_KINDS) - set(STEP.COMPONENT_KINDS_BEFORE) == {"drawing"}
     assert set(GENERAL_KINDS) == {new for _, new in STEP.RENAMED_KINDS}
     assert (KnowledgePiece.__tablename__, ComponentProposal.__tablename__) == STEP.KIND_CHECKS

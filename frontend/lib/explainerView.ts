@@ -228,7 +228,7 @@ export function blockSentences(block: TypedBlock): ExplainerSentence[] {
   if (block.kind === "expert_view") return [...block.take, ...block.differs.flatMap((difference) => [difference.thisView, difference.otherView])];
   if (block.kind === "what_if") return block.options.flatMap((option) => option.outcomes.map((outcome) => outcome.sentence));
   if (block.kind === "zoom_story") return block.levels.map((level) => level.sentence);
-  if (block.kind === "timeline_map") return [...block.points.map((point) => point.sentence), ...block.routes.map((route) => route.sentence)];
+  if (block.kind === "timeline_map") return [...block.points.map((point) => point.sentence), ...block.routes.map((route) => route.sentence), ...(block.undated ?? []).map((entry) => entry.sentence)];
   if (block.kind === "indigo_vat" || block.kind === "mordant_bath" || block.kind === "lost_wax" || block.kind === "firing") return signatureSentences(block);
   return learningSentences(block);
 }
@@ -237,7 +237,7 @@ function learningSentences(block: TypedBlock): ExplainerSentence[] {
   if (block.kind === "quiz") return block.questions.flatMap((question) => question.options.map((option) => option.sentence));
   if (block.kind === "compare") return block.rows.flatMap((row) => row.cells.flatMap((cell) => (cell ? [cell.sentence] : [])));
   if (block.kind === "concept_graph") return block.nodes.flatMap((node) => node.crafts.map((entry) => entry.sentence));
-  if (block.kind === "measure") return block.rows.map((row) => row.sentence);
+  if (block.kind === "measure" || block.kind === "quantities") return block.rows.map((row) => row.sentence);
   if (block.kind === "market_gi") return [...(block.gi?.sentences ?? []), ...block.imitation, ...block.prices.map((price) => price.sentence)];
   if (block.kind === "climate_risk") return block.meaning;
   return [];

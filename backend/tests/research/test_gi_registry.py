@@ -132,6 +132,20 @@ def test_imitation_is_read_from_its_own_words(text: str, imitation: bool) -> Non
         ),
         ("A saree fetched 2 lakh rupees.", [("2 lakh rupees", Decimal(2), None, "INR", "LAKH", None)]),
         ("Exports sold at USD 15 per yard.", [("USD 15", Decimal(15), None, "USD", None, "yard")]),
+        (
+            "Kalamkari sold at Rs 1,500 a metre and Rs. 90 an hour of work.",
+            [
+                ("Rs 1,500", Decimal(1500), None, "INR", None, "metre"),
+                ("Rs. 90", Decimal(90), None, "INR", None, "hour"),
+            ],
+        ),
+        (
+            "A basket cost Rs 50 a few years back and Rs 70 a year ago.",
+            [
+                ("Rs 50", Decimal(50), None, "INR", None, None),
+                ("Rs 70", Decimal(70), None, "INR", None, None),
+            ],
+        ),
         ("It took 5 hours to print.", []),
         ("Prices fell from Rs 900 to 400.", []),
     ],

@@ -13,6 +13,7 @@ once) and `docs/contracts/answer-eval.md` (The judge).
 |---|---|
 | The ledger rule that lets a story block repeat a sentence within itself | [0127-coherent-answers.md](0127-coherent-answers.md) and [explainer.md](../contracts/explainer.md), One claim, one rendering |
 | The evaluation that found it | [answer-eval.md](../contracts/answer-eval.md) |
+| The rubric counts each shown sentence once, and the judge reads each figure's quantities | [decision 0147](0147-time-market-and-figures-kept-true.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

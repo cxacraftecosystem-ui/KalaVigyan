@@ -55,7 +55,7 @@ import { PHASE_C, phaseCBlock } from "./playFixture";
 const SHARED = join(__dirname, "..", "..", "shared");
 const GOLDEN = readFileSync(join(SHARED, "explainer.stream.golden.sse"), "utf8");
 const LEDE_GOLDEN = readFileSync(join(SHARED, "explainer.lede.golden.sse"), "utf8");
-const [ENGLISH, HINDI, WATER, INDIGO] = KNOWN_ANSWER_QUESTIONS;
+const [ENGLISH, HINDI, WATER, INDIGO, MATERIALS, HISTORY] = KNOWN_ANSWER_QUESTIONS;
 const PHASE_B = JSON.parse(readFileSync(join(SHARED, "explainer.phase-b.golden.json"), "utf8")) as {
   sections: { blocks: Record<string, unknown>[] }[];
   sources: Record<string, unknown>[];
@@ -351,7 +351,9 @@ test("the four known-answer questions ask the mordant, the water and indigo at t
     ["English", "DETAILED", "MORDANT"],
     ["Hindi", "DETAILED", "MORDANT"],
     ["Water", "DETAILED", "WATER_STORY"],
-    ["Indigo", "EXPERT", "GENERATED_EXPLAINER"]
+    ["Indigo", "EXPERT", "GENERATED_EXPLAINER"],
+    ["Materials", "DETAILED", "ZOOM_STORY"],
+    ["History", "DETAILED", "TIMELINE_MAP"]
   ]);
   expect(INDIGO.question).toBe("How does indigo turn blue on Kutch Ajrakh cloth?");
   expect(FRAME_DOCUMENT_START).toContain("webrtc 'block'");
