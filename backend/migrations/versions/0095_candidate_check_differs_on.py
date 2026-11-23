@@ -8,13 +8,12 @@ down_revision: str | Sequence[str] | None = "0093_staged_reviews_refreshes"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-CHECKS = "CandidateCheck"
 DIFFERS_ON_CHARS = 300
 
 
 def upgrade() -> None:
-    op.add_column(CHECKS, sa.Column("differsOn", sa.String(length=DIFFERS_ON_CHARS), nullable=True))
+    op.add_column("CandidateCheck", sa.Column("differsOn", sa.String(length=DIFFERS_ON_CHARS), nullable=True))
 
 
 def downgrade() -> None:
-    op.drop_column(CHECKS, "differsOn")
+    op.drop_column("CandidateCheck", "differsOn")
