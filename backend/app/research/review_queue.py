@@ -19,6 +19,7 @@ from .image_contributions import REVIEW_NOTE_MAX_CHARS as PICTURE_NOTE_MAX_CHARS
 from .layout_proposals import LayoutReview
 from .open_work import REVIEW_QUEUES
 from .review_queue_components import ComponentReview
+from .review_queue_layers import LayerReview
 from .review_queue_parts import FactSource, GateCheck, RelatedFact, SourceQuote
 from .review_queue_structure import StructureReview
 from .review_switch import (
@@ -49,6 +50,7 @@ __all__ = [
     "IMAGES",
     "KIND_ACTIONS",
     "KIND_ORIGINS",
+    "LAYERS",
     "LAYOUTS",
     "ONE_HOME",
     "PAGE_DEFAULT",
@@ -79,6 +81,7 @@ __all__ = [
     "FactSource",
     "GateCheck",
     "HeldWriteBack",
+    "LayerQueueItem",
     "LayoutItem",
     "PictureItem",
     "Proposer",
@@ -110,7 +113,7 @@ __all__ = [
 
 REVIEW_QUEUE_SCHEMA_VERSION = 1
 QUEUE_KINDS: tuple[str, ...] = tuple(REVIEW_QUEUES)
-FACTS, TESTIMONY, IMAGES, COMPONENTS, LAYOUTS, STRUCTURE = QUEUE_KINDS
+FACTS, TESTIMONY, IMAGES, COMPONENTS, LAYOUTS, STRUCTURE, LAYERS = QUEUE_KINDS
 TESTIMONY_ORIGIN = "TESTIMONY"
 REVIEW_ORIGINS: tuple[str, ...] = (*PROPOSAL_ORIGINS, TESTIMONY_ORIGIN)
 KIND_ORIGINS: Mapping[str, tuple[str, ...]] = MappingProxyType(
@@ -121,6 +124,7 @@ KIND_ORIGINS: Mapping[str, tuple[str, ...]] = MappingProxyType(
         COMPONENTS: (AGENT,),
         LAYOUTS: (CONTRIBUTION, AGENT),
         STRUCTURE: (CONTRIBUTION, AGENT),
+        LAYERS: (CONTRIBUTION,),
     }
 )
 APPROVE, REJECT, RAISE, RETRACT = "approve", "reject", "raise", "retract"
@@ -319,8 +323,13 @@ class StructureQueueItem(_QueueItem):
     structure: StructureReview
 
 
+class LayerQueueItem(_QueueItem):
+    kind: Literal["LAYERS"] = "LAYERS"
+    layer: LayerReview
+
+
 QueueItem = Annotated[
-    FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem | StructureQueueItem,
+    FactItem | TestimonyItem | PictureItem | ComponentItem | LayoutItem | StructureQueueItem | LayerQueueItem,
     Field(discriminator="kind"),
 ]
 

@@ -1,8 +1,8 @@
 # Review queue
 
 One review path for everything other people give: proposed and researched facts, artisans'
-testimony, contributed pictures, component proposals, page layout proposals and page structure
-proposals, whatever their origin (the site, the Knowledge API, the MCP server, an artisan's
+testimony, contributed pictures, component proposals, page layout proposals, page structure
+proposals and map layer proposals, whatever their origin (the site, the Knowledge API, the MCP server, an artisan's
 conversation). Reviewers see one page of pending items, newest first, and decide each through one
 route per action. Reviewers and the engineers who add a kind or a decision read it.
 
@@ -13,6 +13,7 @@ route per action. Reviewers and the engineers who add a kind or a decision read 
 | Pictures | [image-contributions.md](image-contributions.md) |
 | Component proposals | [open-work.md](open-work.md) |
 | Artisans' testimony | [roles-and-contributions.md](roles-and-contributions.md) |
+| Map layer proposals | the datasets reference (`backend/app/data/contributor/references/datasets.md`), Map layers over MCP |
 
 A reviewer's own contribution is approved at once by its own write path (`knowledge-writes.md`,
 `image-contributions.md`, `open-work.md`) and never enters the queue; the queue also leaves out
@@ -28,6 +29,7 @@ flowchart LR
     CO["COMPONENTS"]
     LA["LAYOUTS"]
     ST["STRUCTURE"]
+    LY["LAYERS"]
   end
   Kinds --> Q["GET review-queue<br/>one page, newest first"]
   Q --> D{"Decision"}
@@ -43,12 +45,13 @@ flowchart LR
 
 Contract: `backend/app/research/review_queue.py`, with the component body in
 `research/review_queue_components.py`, the layout body in `research/layout_proposals.py`, the
-structure body in `research/review_queue_structure.py` and the shared source and check parts in
+structure body in `research/review_queue_structure.py`, the map layer body in
+`research/review_queue_layers.py` and the shared source and check parts in
 `research/review_queue_parts.py`.
 Services: `services/review_queue.py` (the page), `review_queue_select.py` (what is pending, per kind),
-`review_queue_fact_views.py`, `review_queue_components.py`, `review_queue_layouts.py` and
-`review_queue_structure.py` (what a reviewer needs to judge an item, and the component, layout and
-structure decisions), `review_queue_decisions.py`, `review_queue_facts.py` (decisions),
+`review_queue_fact_views.py`, `review_queue_components.py`, `review_queue_layouts.py`,
+`review_queue_structure.py` and `review_queue_layers.py` (what a reviewer needs to judge an item, and
+the component, layout, structure and map layer decisions), `review_queue_decisions.py`, `review_queue_facts.py` (decisions),
 `review_queue_refresh.py` (the signed-out pages a decision refreshes) and `review_queue_errors.py`.
 Route: `api/routes/review_queue.py`. No table or column of its own: the queue reads the rows each kind
 already keeps.
@@ -65,6 +68,7 @@ Each kind follows the capability its queue names in `research/open_work.py` (`RE
 | `COMPONENTS` | `REVIEW_CONTRIBUTIONS` | Admin and above |
 | `LAYOUTS` | `REVIEW_CONTRIBUTIONS` | Admin and above |
 | `STRUCTURE` | `MARK_CLAIM_LEVEL` | Professor and above |
+| `LAYERS` | `REVIEW_CONTRIBUTIONS` | Admin and above |
 
 So an Admin or Master Admin sees every kind (item 12); a Professor sees facts, testimony and
 structure. An
@@ -86,21 +90,24 @@ review already shows.
 | `COMPONENTS` | `ComponentProposal` | `status` `PENDING`, not the viewer's |
 | `LAYOUTS` | `LayoutProposal` | `status` `PENDING`, not the viewer's |
 | `STRUCTURE` | `StructureProposal` | `status` `PENDING` (it passed its checks; a refused one is `REFUSED`), not the viewer's |
+| `LAYERS` | `MapLayerProposal` | `status` `PENDING` (its file passed the layer checks when it was uploaded), not the viewer's |
 
 **Origins.** A fact's origin is `RESEARCH` when it was written back from an answer's research
 (`Claim.origin` `LIVE_RESEARCH`), `AGENT` when a source was found by an agent
 (`ClaimSource.foundBy` `AGENT`), else `CONTRIBUTION`. Testimony is `TESTIMONY`, a picture
 `CONTRIBUTION`, a component proposal `AGENT`, a layout proposal its own `origin` (`CONTRIBUTION`
-from the site or the Knowledge API, `AGENT` from the MCP server), a structure proposal likewise.
+from the site or the Knowledge API, `AGENT` from the MCP server), a structure proposal likewise,
+and a map layer proposal `CONTRIBUTION`.
 
 **Craft.** A fact belongs to a craft through its concept (the craft's own concepts and edges, as
 retrieval scopes them); testimony and pictures by `craftId`; a component proposal by `craftId` or a
 `CRAFT` subject naming the craft's slug; a layout proposal by `craftId` (a craft's or family's page;
-a category's page has no craft); a structure proposal by `craftId`.
+a category's page has no craft); a structure proposal by `craftId`. A map layer proposal belongs to
+no craft, so a craft filter selects none.
 
 ## `GET /api/review-queue`
 
-Query: `kind` (`FACTS`, `TESTIMONY`, `IMAGES`, `COMPONENTS`, `LAYOUTS`, `STRUCTURE`), `craft` (a craft slug), `origin`
+Query: `kind` (`FACTS`, `TESTIMONY`, `IMAGES`, `COMPONENTS`, `LAYOUTS`, `STRUCTURE`, `LAYERS`), `craft` (a craft slug), `origin`
 (`RESEARCH`, `CONTRIBUTION`, `AGENT`, `TESTIMONY`), `cursor`, `limit` (1 to 50, default 25).
 
 Answer `ReviewQueuePage`:
@@ -145,6 +152,13 @@ Each item has `id`, `kind`, `origin`, `submittedAt`, `craft {slug, name, path}` 
   the kept source), `checks [{check, passed, reasons}]` (STATED, QUOTES, SOURCE), `conflicting [{id,
   text}]` (a conflict's facts) and `stale`: why approval would be refused now (the page moved on), or
   `null`.
+- `layer` (`research/review_queue_layers.py`): `dataset`, the stored record as a `DatasetRef`
+  (code, title, publisher, edition, period, native resolution, licence and its address,
+  attribution, citation, url, version, crs, redistributable, DOI, landing page, the day read and
+  the file's SHA-256); `plan`, the `MapLayerPlan` as proposed (`layerClass`, `simplifiedTo`,
+  `valueProperty`, `variable`, `unit`, `method`); `geometry` (`POINT`, `LINE` or `SHAPE`, from the
+  class); `features`; `byteSize`; `bounds {west, south, east, north}` of every coordinate; and
+  `checks`, the checks the file passed, in words.
 - `picture`: the `ImageContributionView` of `image-contributions.md`.
 - `testimony`: the review item of the testimony review (`/api/testimony/review/{id}`).
 
@@ -217,6 +231,12 @@ proposals) and records `APPROVED` with the reviewer, the time, the note and `cla
 has moved on (the stage or material is gone, the name or conflict is already there) it is refused
 (409) and the proposal can only be rejected. Reject records `REJECTED` with the reason; nothing is
 written. Audit `review.structure_<approved|rejected>` with the kind and the fact.
+
+**Map layer proposals** (`review_queue_layers.py`): approve records `APPROVED` with the reviewer,
+the time and the note: the layer is fit to ship, and an engineer adds it to `tools/maplayers` from
+the stored file and its record; nothing is drawn by the decision. Reject records `REJECTED` with
+the reason, and the layer stays private. Audit `review.layer_<approved|rejected>` with the dataset.
+No page is refreshed.
 
 **Pictures** go through `image_contributions.approve` and `.reject` (the reason is the note), with
 an audit entry `review.image_<...>`. **Testimony** goes through `testimony_writes.approve` and
@@ -297,10 +317,15 @@ kept in the address (`?kind=&origin=&craft=`). A card per item:
   script), what the page holds now, the field, the statement, the facts that disagree for a
   conflict, the sources with their quotes and the checks, and what approving writes; a stale proposal
   offers Reject only;
+- a map layer proposal (`LayerReviewCard.tsx`, lines in `frontend/lib/layerReviewView.ts`): the
+  dataset's title, code and publisher with its landing page, its edition, version, period,
+  resolution, licence, attribution and citation, the layer's class, geometry, simplification,
+  value and unit, method, its features, size and the box its coordinates span, the checks it
+  passed, and what approving does;
 - a picture: `PictureReviewCard.tsx`; testimony: the testimony `ReviewCard.tsx`, both reused with
   their own decision routes.
 
-Facts, component, layout and structure proposals decide through `QueueDecisionBar.tsx`: an `ActionGroup` of Approve, Approve as
+Facts, component, layout, structure and map layer proposals decide through `QueueDecisionBar.tsx`: an `ActionGroup` of Approve, Approve as
 reviewed (facts), then Reject (waiting) or Retract (live) last as the destructive action, with a
 Reason field required for either. The client contract is `frontend/lib/reviewQueueContract.ts`;
 pure rules are in `frontend/lib/reviewQueueView.ts`. `/admin/pictures` and `/admin/testimony`
@@ -313,7 +338,8 @@ stay, and list decided items.
 | Who sees which kind, what is pending, the page and the decisions | `backend/tests/review_queue/` (rules and routes), `backend/tests/db/test_review_queue_db.py`, `test_review_queue_decisions_db.py` and `test_review_queue_refile_db.py` (filing under another craft) |
 | Layout proposals | `backend/tests/db/test_layout_proposals_db.py` and `backend/tests/layouts/` (layout proposal rules and routes) |
 | Structure proposals | `backend/tests/structure/`, `backend/tests/db/test_structure_proposals_db.py`, `test_structure_writes_db.py` and `test_structure_export_db.py` |
+| Map layer proposals | `backend/tests/research/test_map_layer_proposals.py` and `backend/tests/db/test_map_layer_proposals_db.py` |
 | Refreshing signed-out pages | `backend/tests/test_page_revalidation.py`, `backend/tests/db/test_page_revalidation_db.py` and `test_review_queue_refresh_db.py` |
-| The Review page | `frontend/e2e/review-queue-unit.spec.ts`, `review-layouts-unit.spec.ts`, `review-structure-unit.spec.ts` and `revalidate-unit.spec.ts` |
+| The Review page | `frontend/e2e/review-queue-unit.spec.ts`, `review-layers-unit.spec.ts`, `review-layouts-unit.spec.ts`, `review-structure-unit.spec.ts` and `revalidate-unit.spec.ts` |
 
 Re-read it when a kind joins the queue, a decision is added, or a capability moves between roles.

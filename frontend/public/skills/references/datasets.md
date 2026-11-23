@@ -142,12 +142,38 @@ not as one fact per value:
    cited cell needs no fact of its own. The site writes the dataset's credit and link under the
    figure.
 
-A district table proposed this way serves a delivered figure; the site's own map layers still
-enter in the repository.
+A district table proposed this way serves a delivered figure; a new layer of the site's own maps
+is proposed as the next part says.
 - Environment values by district (rainfall, temperature, soil, forest and land cover, elevation,
   geology, rivers) are the site's own layers, built from its open datasets: never propose them as
   facts and never redraw them in a delivered component. The page shows them through its own maps
   and region panel.
+
+## Map layers over MCP
+
+A new layer of the site's own maps (mineral sites, a soil series, groundwater) is proposed once, as
+a dataset whose file is the layer itself. It is checked by the rules of this guide and waits for a
+reviewer; nothing of it is drawn until an engineer ships it.
+
+1. Call `propose_dataset` with the record as above, its `crs` WGS 84 (EPSG:4326), and a `layer`:
+   - `layer_class`, which sets the geometry and the tolerance of the Simplification table:
+     `RIVERS` and `BASIN_REACHES` are lines, `LAKES`, `COUNTRY_OUTLINES`, `RELIEF_BANDS` and
+     `DISTRICT_SHAPES` are shapes, `POINT_SITES` are points;
+   - `simplified_to`, the tolerance in degrees the shapes or lines were simplified to, never
+     coarser than their class allows, and left out for points;
+   - `value_property`, the feature property that holds each value (left out for a layer of
+     geometry alone), with its `variable` and the `unit` the dataset states;
+   - `method`, how the dataset reads each value. A method that interpolates, krigs, uses inverse
+     distance weighting, fits splines or smooths is refused.
+2. On a pass, PUT the GeoJSON FeatureCollection (UTF-8, at most 5 MB and 5000 features) to
+   `upload_url`; its SHA-256 must be the one declared. It is refused when its `crs` member names
+   another system, a feature's geometry is not its class's, a coordinate lies outside India's frame
+   or carries more than three decimals (four for a point), a ring is open, a lake is under the
+   least area its class keeps, or a feature leaves out its value (null where it has no reading,
+   never zero in its place).
+3. A file that passes is stored with its record and waits in the review queue for an Admin. An
+   approval says the layer is fit to ship: an engineer then adds it to `tools/maplayers` from the
+   stored file and its record, and only then is it drawn. A rejection keeps it private.
 
 In the repository:
 
@@ -181,6 +207,7 @@ In the repository:
 | The map's frame and the latitude its scale is taken at | `test_reference_limits.py` in `backend/tests/mcp`, against `frontend/components/map/indiaBounds.ts` |
 | Each layer's simplification tolerance | that test again, reading the constants of `tools/maplayers`, `tools/basemap` and `etl/geo` |
 | How many facts a bundle holds | that test again, against `research/page_proposals` |
+| A map layer's classes, limits and frame | `test_map_layer_proposals.py` in `backend/tests/research`, against `research/map_layer_proposals` and `research/map_layer_geojson` |
 | This text, as every prompt and the site serve it | `test_skill_references.py` in `backend/tests/mcp` |
 
 Read it again whenever a layer's tolerance, the map's frame or the dataset registry's rules change.

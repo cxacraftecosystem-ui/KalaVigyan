@@ -31,7 +31,8 @@ export const KIND_LABELS: Record<QueueKind, string> = {
   IMAGES: "Pictures",
   COMPONENTS: "Components",
   LAYOUTS: "Layouts",
-  STRUCTURE: "Structure"
+  STRUCTURE: "Structure",
+  LAYERS: "Map layers"
 };
 
 export const KIND_NOUNS: Record<QueueKind, string> = {
@@ -40,7 +41,8 @@ export const KIND_NOUNS: Record<QueueKind, string> = {
   IMAGES: "Picture",
   COMPONENTS: "Component proposal",
   LAYOUTS: "Layout proposal",
-  STRUCTURE: "Structure proposal"
+  STRUCTURE: "Structure proposal",
+  LAYERS: "Map layer proposal"
 };
 
 export const ORIGIN_LABELS: Record<ReviewOrigin, string> = {

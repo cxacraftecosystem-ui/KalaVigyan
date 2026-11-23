@@ -54,9 +54,9 @@ async def test_an_admin_sees_every_pending_kind_from_other_people_newest_first(
     page = await listed(session, people.admin)
     assert ids(page) == EVERY_PENDING
     assert [item.kind for item in page.items] == ["FACTS", "COMPONENTS", "FACTS", "IMAGES", "FACTS"]
-    assert page.kinds == ["FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE"]
+    assert page.kinds == ["FACTS", "TESTIMONY", "IMAGES", "COMPONENTS", "LAYOUTS", "STRUCTURE", "LAYERS"]
     assert (page.counts, page.total, page.next_cursor) == (
-        {"FACTS": 3, "TESTIMONY": 0, "IMAGES": 1, "COMPONENTS": 1, "LAYOUTS": 0, "STRUCTURE": 0},
+        {"FACTS": 3, "TESTIMONY": 0, "IMAGES": 1, "COMPONENTS": 1, "LAYOUTS": 0, "STRUCTURE": 0, "LAYERS": 0},
         5,
         None,
     )

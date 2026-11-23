@@ -238,6 +238,9 @@ Two kinds of task are completed by a component, each named as the proposal's `ta
   single-use upload slot for its CSV file, checked against the SHA-256 you declare. A `chart`,
   `fact_table` or `map_layer` then names the dataset's code as `dataset` and each value's `cell`
   (its row and column), and the gates check every value against its stored row.
+- A new layer for the site's own maps goes the same way with a `layer` and a GeoJSON file in
+  place of the CSV (`datasets.md`, Map layers over MCP). It is drawn nowhere until an Admin
+  approves it and an engineer ships it.
 
 ## Drawing in KalaVigyan's design
 
