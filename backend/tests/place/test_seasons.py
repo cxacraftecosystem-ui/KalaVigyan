@@ -67,6 +67,13 @@ SHADED_DRYING = written_claim(
 )
 
 
+def returning(found: dict[str, Any], key: str) -> Any:
+    async def read(*_args: Any, **_kwargs: Any) -> Any:
+        return found[key]
+
+    return read
+
+
 @pytest.fixture
 def stored(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     found: dict[str, Any] = {
@@ -92,9 +99,6 @@ def stored(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     async def rainfall(session: Any, district: DistrictRef) -> Any:
         return rainfall_from(district, CHIRPS, found["rain"].get(district.district_lgd, []))
 
-    async def calendars(session: Any, craft: Any, *, mode: str) -> PlaceClaims:
-        return found["calendars"]
-
     async def names(session: Any, concept_ids: Any) -> dict[uuid.UUID, str]:
         humidity = {concept_of(claim) for claim in season_claims()}
         return {cid: MONSOON_HUMIDITY if cid in humidity else KACHCHH_CLIMATE for cid in concept_ids}
@@ -106,7 +110,7 @@ def stored(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         ("district_refs", refs),
         ("district_rainfall", rainfall),
         ("_concept_names", names),
-        ("place_calendar_claims", calendars),
+        ("place_calendar_claims", returning(found, "calendars")),
     ):
         monkeypatch.setattr(season_supply_builders, name, fake)
     return found
