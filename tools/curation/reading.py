@@ -19,6 +19,7 @@ from .wayback import SNAPSHOT, latest_snapshot, latest_snapshot_query, raw_snaps
 __all__ = [
     "PDF_DECOMPRESSED_MAX_BYTES",
     "PDF_PAGES_MAX",
+    "TEXT_MAX_CHARS",
     "ReadFailed",
     "SourceText",
     "content_type_of",
@@ -27,6 +28,7 @@ __all__ = [
 ]
 
 PDF_PAGES_MAX = 2000
+TEXT_MAX_CHARS = 8_000_000
 PDF_DECOMPRESSED_MAX_BYTES = 400 * 1024 * 1024
 PDF_MAGIC = b"%PDF-"
 HTML_TYPE = "text/html"
@@ -69,10 +71,12 @@ def source_text(fetched: Fetched) -> tuple[str, str, bool]:
             max_decompressed=PDF_DECOMPRESSED_MAX_BYTES,
         )
     else:
-        page = extract(fetched.final_url, content_type, fetched.body, fetched.charset)
+        page = extract(
+            fetched.final_url, content_type, fetched.body, fetched.charset, max_chars=TEXT_MAX_CHARS
+        )
         raw, truncated = page.text, page.truncated
         if content_type == HTML_TYPE:
-            raw, truncated = with_table_rows(fetched.body, raw, truncated)
+            raw, truncated = with_table_rows(fetched.body, raw, truncated, max_chars=TEXT_MAX_CHARS)
     return content_type, "\n".join(normalise_quote_lines(clean_untrusted_text(raw))), truncated
 
 

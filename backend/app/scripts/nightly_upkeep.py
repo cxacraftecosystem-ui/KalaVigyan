@@ -6,7 +6,9 @@ from typing import Any
 
 from app.core.config import get_settings
 from app.core.db import dispose_engine, session_scope
+from app.providers.catalogue import AiTask
 from app.providers.embedding import router_embedder
+from app.providers.structured import router_structured_model
 from app.scripts.build_monograph import SERVED_FOLDERS, monograph_content
 from app.services.live_sources import live_source_client
 from app.services.nightly_upkeep import plan_nightly_upkeep, run_nightly_upkeep, upkeep_tools
@@ -31,6 +33,7 @@ async def run(*, refresh: bool) -> dict[str, Any]:
                 monographs=sorted(SERVED_FOLDERS),
                 load=monograph_content,
                 embed=router_embedder(),
+                names=router_structured_model(AiTask.UNDERSTAND),
             )
             upkept = await run_nightly_upkeep(session, tools, now=datetime.now(UTC))
             report = upkept.as_dict()

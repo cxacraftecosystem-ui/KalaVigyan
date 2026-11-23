@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { QueueHandlers } from "@/components/review/QueueItemView";
 import { apiErrorMessage } from "@/lib/api";
-import { decideQueueItem, fetchReviewQueue, type QueueAction, type QueueItem, type ReviewFilters, type ReviewQueuePage } from "@/lib/reviewQueueContract";
+import { decideQueueItem, fetchReviewQueue, type Filing, type QueueAction, type QueueItem, type ReviewFilters, type ReviewQueuePage } from "@/lib/reviewQueueContract";
 import { withNextPage, withoutItem } from "@/lib/reviewQueueView";
 
 const LOAD_FAILED = "Couldn't load the queue. Reload the page to try again.";
@@ -56,9 +56,9 @@ export function useReviewQueue(filters: ReviewFilters): ReviewQueueState {
   const [notice, setNotice] = useState<string | null>(null);
 
   const decide = useCallback(
-    async (item: QueueItem, action: QueueAction, words: string) => {
+    async (item: QueueItem, action: QueueAction, words: string, filing: Filing | null = null) => {
       try {
-        const decided = await decideQueueItem(item.kind, item.id, action, words);
+        const decided = await decideQueueItem(item.kind, item.id, action, words, filing);
         setPage((current) => (current ? withoutItem(current, item) : current));
         setNotice(decided.message);
         return null;

@@ -23,6 +23,7 @@ blocks and builders) and `docs/contracts/answer-eval.md` (the rubric, the judge 
 | A sentence once in a block | [decision 0134](0134-each-sentence-once-in-a-block.md) |
 | The evaluation and its floors | [decision 0133](0133-the-evaluation-scores-what-answers-read.md) |
 | The blocks as built | [explainer.md](../contracts/explainer.md) |
+| The component kinds are no longer enumerated in the tools, and the 60 KB budget is restored | [decision 0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

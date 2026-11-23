@@ -122,3 +122,7 @@ names this one, and the table above links the two both ways. It records the choi
 `backend/tests/test_router_settled.py`, `backend/tests/planner/test_understanding_fields.py`,
 `backend/tests/planner/test_understanding.py`, `backend/tests/ledger/test_ledger_kinds.py` and
 `backend/tests/research/test_shown_sentences.py`.
+
+## Later
+
+On 2026-11-23 the owner chose to measure the compose route before keeping it. On release 987e94c5, answer-quality answered two questions afresh (`-f fresh=true`) with each route first: Opus (runs 45133405581 and 45134057495) spent 1.1538 and 1.0591, rubric 0.80 and 0.60, judge 0.84 and 0.80; Sonnet (run 45134547828) spent 0.4523 and 0.5971, rubric 0.80 and 0.867, judge 0.84 and 0.72 (Ajrakh indigo, then Bidri's black and soil). Sonnet cost about half for the same judge mean within one question's spread, so production's COMPOSE route now lists Sonnet first and Opus second (AuditLog `routing.updated`, set through `route_policy.save_order` as the settings screen does), which is also the code's default. Both routes left figures without quantities and told some facts in more than one section; those go to the answer lanes, not to the route.

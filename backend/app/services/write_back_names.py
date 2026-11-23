@@ -73,7 +73,12 @@ class CraftNames:
         return sorted((self.index.refs[i] for i in found if i in self.index.refs), key=lambda ref: ref.slug)
 
     def abroad_in(self, texts: Sequence[str]) -> tuple[str, ...]:
-        return tuple(dict.fromkeys(name for text in texts for name in self.abroad.named_in(text)))
+        return tuple(dict.fromkeys(name for text in texts for name in self.abroad.read(text).practised))
+
+    def kept_abroad_in(self, texts: Sequence[str]) -> tuple[str, ...]:
+        practised = set(self.abroad_in(texts))
+        kept = (name for text in texts for name in self.abroad.read(text).kept)
+        return tuple(name for name in dict.fromkeys(kept) if name not in practised)
 
     def places_in(self, texts: Sequence[str]) -> list[str]:
         return sorted(self.places & _said(texts))
@@ -133,23 +138,26 @@ def _names_its_craft(key: str, entry: NameEntry, ordinary: frozenset[str]) -> bo
 
 
 def _keys(craft: CraftRef, crafts: Sequence[CraftRef], index: CraftIndex, local: frozenset[str]) -> set[str]:
-    keys = _anchors(craft, crafts, _common_name_words())
+    ordinary = _ordinary_words()
+    keys = _anchors(craft, crafts, ordinary)
     keys |= set(key_phrases(core_key(craft.name), MAX_NGRAM_TOKENS)) & local
     target = index.slugs.get(craft.slug)
     if target is None:
         return keys
     keys |= {
-        key for key, entries in index.entries.items() if any(e.craft_id == target.craft_id for e in entries)
+        key
+        for key, entries in index.entries.items()
+        if any(e.craft_id == target.craft_id and _names_its_craft(key, e, ordinary) for e in entries)
     }
     return keys | (index.craft_places.get(target.craft_id, frozenset()) & local)
 
 
-def _anchors(craft: CraftRef, crafts: Sequence[CraftRef], common: frozenset[str]) -> set[str]:
+def _anchors(craft: CraftRef, crafts: Sequence[CraftRef], ordinary: frozenset[str]) -> set[str]:
     shared = {word for other in crafts if other.slug != craft.slug for word in _words(other.name)}
     return {
         word
         for word in _words(craft.name)
-        if len(word) >= ANCHOR_MIN_CHARS and word not in STOP_TOKENS | common | shared
+        if len(word) >= ANCHOR_MIN_CHARS and word not in STOP_TOKENS | ordinary | shared
     }
 
 

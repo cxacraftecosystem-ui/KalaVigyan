@@ -25,11 +25,14 @@ from app.models import (
 from app.research.embedding import TextEmbedder, checked_vectors
 from app.research.open_work_gap_privacy import anonymised, known_words
 from app.research.open_work_gaps import ASKED_WINDOW, GAP_VERDICTS, nearest_gap
+from app.research.question_names import AskedQuestion
+from app.research.structured import StructuredModel
 from app.retrieval.indexing import EMBED_BATCH
 from app.retrieval.stamps import current_embedding_model, made_by_current_model, needs_vector
 from app.retrieval.text import query_text
 
 from .open_work_gaps import OPEN_GAP
+from .question_names import screen_names
 
 __all__ = ["CANDIDATES_PER_NIGHT", "Grouped", "group_questions", "place_names"]
 
@@ -57,20 +60,24 @@ class Grouped:
     embedded: int = 0
     joined: int = 0
     opened: int = 0
+    held: int = 0
     embedding_error: str | None = None
+    names_error: str | None = None
 
 
-async def group_questions(session: AsyncSession, embed: TextEmbedder | None, *, now: datetime) -> Grouped:
+async def group_questions(
+    session: AsyncSession,
+    embed: TextEmbedder | None,
+    *,
+    now: datetime,
+    names: StructuredModel | None = None,
+) -> Grouped:
     rows = await _candidates(session, now=now)
     known = known_words(await place_names(session))
     found = Grouped(candidates=len(rows))
-    questions: list[_Question] = []
-    for row in rows:
-        text = anonymised(row.question, known)
-        if text is None:
-            found.dropped += 1
-            continue
-        questions.append(_question(row, text))
+    kept = [(row, text) for row in rows if (text := anonymised(row.question, known)) is not None]
+    found.dropped = len(rows) - len(kept)
+    questions = await _screened(names, kept, found)
     questions = await _embedded(session, embed, questions, found)
     for question in questions:
         if question.vector is not None:
@@ -114,6 +121,26 @@ async def _candidates(session: AsyncSession, *, now: datetime) -> Sequence[Any]:
         .limit(CANDIDATES_PER_NIGHT)
     )
     return rows.all()
+
+
+async def _screened(
+    names: StructuredModel | None, kept: Sequence[tuple[Any, str]], found: Grouped
+) -> list[_Question]:
+    if names is None:
+        return [_question(row, text) for row, text in kept]
+    asked = [AskedQuestion(key=str(row.id), asked=row.question, kept=text) for row, text in kept]
+    screen = await screen_names(names, asked)
+    found.names_error = screen.error
+    questions: list[_Question] = []
+    for row, _ in kept:
+        key = str(row.id)
+        if key not in screen.screened:
+            found.held += 1
+        elif (text := screen.screened[key]) is None:
+            found.dropped += 1
+        else:
+            questions.append(_question(row, text))
+    return questions
 
 
 def _question(row: Any, text: str) -> _Question:

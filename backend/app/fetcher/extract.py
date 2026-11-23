@@ -55,16 +55,18 @@ def content_type_of(url: str, media_type: str, body: bytes) -> str:
     raise FetchRefused(url, "CONTENT_TYPE", f"{media_type or 'no content type'} is not fetched")
 
 
-def extract(url: str, content_type: str, body: bytes, charset: str | None) -> Extracted:
+def extract(
+    url: str, content_type: str, body: bytes, charset: str | None, *, max_chars: int = FETCH_TEXT_MAX_CHARS
+) -> Extracted:
     if content_type == PDF_TYPE:
         text, pages_left_out, metadata = pdf_text(url, body)
-        return _capped(text, metadata, truncated=pages_left_out)
+        return _capped(text, metadata, truncated=pages_left_out, max_chars=max_chars)
     if content_type == PLAIN_TYPE:
-        return _capped(_decoded(body, charset), PageMetadata(), truncated=False)
-    return _html(url, body)
+        return _capped(_decoded(body, charset), PageMetadata(), truncated=False, max_chars=max_chars)
+    return _html(url, body, max_chars=max_chars)
 
 
-def _html(url: str, body: bytes) -> Extracted:
+def _html(url: str, body: bytes, *, max_chars: int) -> Extracted:
     try:
         tree = trafilatura.load_html(body)
         if tree is None:
@@ -84,7 +86,8 @@ def _html(url: str, body: bytes) -> Extracted:
         raise FetchRefused(url, "PARSE_FAILED", f"HTML could not be read ({type(error).__name__})") from None
     if document is None or not (document.text or "").strip():
         raise FetchRefused(url, "PARSE_FAILED", "no main text found")
-    return _capped(document.text, _html_metadata(document, tree.get("lang")), truncated=False)
+    metadata = _html_metadata(document, tree.get("lang"))
+    return _capped(document.text, metadata, truncated=False, max_chars=max_chars)
 
 
 def _drop_hidden(tree: lxml_html.HtmlElement) -> None:
@@ -108,10 +111,10 @@ def _html_metadata(document: Any, declared_language: str | None) -> PageMetadata
     )
 
 
-def _capped(text: str, metadata: PageMetadata, *, truncated: bool) -> Extracted:
+def _capped(text: str, metadata: PageMetadata, *, truncated: bool, max_chars: int) -> Extracted:
     cleaned = clean_untrusted_text(text)
-    over = len(cleaned) > FETCH_TEXT_MAX_CHARS
-    return Extracted(cleaned[:FETCH_TEXT_MAX_CHARS], truncated or over, metadata)
+    over = len(cleaned) > max_chars
+    return Extracted(cleaned[:max_chars], truncated or over, metadata)
 
 
 def _decoded(body: bytes, charset: str | None) -> str:

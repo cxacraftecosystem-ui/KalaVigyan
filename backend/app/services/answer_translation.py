@@ -10,6 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.errors import AppError
 from app.data.craft_text import script_of
+from app.research.blocks_component import COMPONENT_KIND
 from app.research.crafts import QUESTION_MAX_CHARS
 from app.research.explainer import payload_sentences, with_payload_sentences
 from app.research.term_marking import local_name_spans
@@ -59,6 +60,9 @@ class AnswerTranslation:
     translator: Translator
     cache: TranslationCache
     local_names: LocalNames | None = None
+
+
+TITLE_KEY_SUFFIX = ".title"
 
 
 @dataclass(frozen=True)
@@ -122,17 +126,30 @@ async def translated_block(
     translation: AnswerTranslation,
     claim_texts: Mapping[uuid.UUID, str],
 ) -> dict[str, Any]:
-    sentences = payload_sentences(block)
+    titled = await _translated_title(block, language=language, translation=translation)
+    sentences = payload_sentences(titled)
     if not sentences:
-        return dict(block)
+        return titled
     found = await translate_segments(
         _sentence_segments(sentences, claim_texts), language=language, translation=translation
     )
     renderings = _renderings(found, _term_surfaces(sentences))
     names = await _local_names(translation, sentences, found)
     return with_payload_sentences(
-        block, lambda sentence: _translated_sentence(sentence, found, renderings, names)
+        titled, lambda sentence: _translated_sentence(sentence, found, renderings, names)
     )
+
+
+async def _translated_title(
+    block: Mapping[str, Any], *, language: str, translation: AnswerTranslation
+) -> dict[str, Any]:
+    shown = dict(block)
+    title = shown.get("title")
+    if shown.get("kind") != COMPONENT_KIND or not isinstance(title, str):
+        return shown
+    key = f"{shown.get('id')}{TITLE_KEY_SUFFIX}"
+    found = await translate_segments([Segment(key, title)], language=language, translation=translation)
+    return shown | {"title": found[key]} if key in found else shown
 
 
 async def translate_segments(

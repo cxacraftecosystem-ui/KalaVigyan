@@ -147,13 +147,16 @@ async def test_a_placed_component_stands_for_the_builder_of_its_purpose_and_no_o
 @dataclasses.dataclass
 class AwaySession:
     opened: list[str] = dataclasses.field(default_factory=list)
+    error: Exception = dataclasses.field(
+        default_factory=lambda: ConnectionRefusedError("the database is away")
+    )
 
     def __call__(self) -> AwaySession:
         return self
 
     async def __aenter__(self) -> None:
         self.opened.append("session")
-        raise RuntimeError("the database is away")
+        raise self.error
 
     async def __aexit__(self, *exc_info: object) -> bool:
         return False
@@ -170,6 +173,12 @@ async def test_a_failing_catalogue_offers_nothing_and_a_question_without_a_craft
     assert "the component catalogue of Kutch-Ajrakh for CHEMISTRY failed" in caplog.text
     assert await lookup(asked.model_copy(update={"craft": None}), "CHEMISTRY") is NO_CATALOGUE
     assert sessions.opened == ["session"]
+
+
+async def test_a_fault_in_the_catalogue_s_own_code_is_not_hidden_as_an_unavailable_database() -> None:
+    lookup = catalogue_lookup(AwaySession(error=KeyError("label")))
+    with pytest.raises(KeyError):
+        await lookup(PlanRequest(question=QUESTION, mode="HYBRID", craft=AJRAKH), "CHEMISTRY")
 
 
 async def test_a_component_of_another_purpose_leaves_every_builder_to_run() -> None:

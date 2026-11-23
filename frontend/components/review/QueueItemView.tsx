@@ -5,16 +5,16 @@ import { PictureReviewCard } from "@/components/review/PictureReviewCard";
 import { QueueItemHeader } from "@/components/review/QueueItemHeader";
 import { ReviewCard } from "@/components/review/ReviewCard";
 import { StructureReviewCard } from "@/components/review/StructureReviewCard";
-import type { QueueAction, QueueItem } from "@/lib/reviewQueueContract";
+import type { Filing, QueueAction, QueueItem } from "@/lib/reviewQueueContract";
 import { isOpenItem, STATUS_LABELS } from "@/lib/testimonyContract";
 
 export type QueueHandlers = {
-  decide: (item: QueueItem, action: QueueAction, words: string) => Promise<string | null>;
+  decide: (item: QueueItem, action: QueueAction, words: string, filing?: Filing | null) => Promise<string | null>;
   decidedElsewhere: () => void;
 };
 
 export function QueueItemView({ item, handlers }: { item: QueueItem; handlers: QueueHandlers }) {
-  if (item.kind === "FACTS") return <FactReviewCard item={item} onDecide={(action, words) => handlers.decide(item, action, words)} />;
+  if (item.kind === "FACTS") return <FactReviewCard item={item} onDecide={(action, words, filing) => handlers.decide(item, action, words, filing)} />;
   if (item.kind === "COMPONENTS") return <ComponentReviewCard item={item} onDecide={(action, words) => handlers.decide(item, action, words)} />;
   if (item.kind === "LAYOUTS") return <LayoutReviewCard item={item} onDecide={(action, words) => handlers.decide(item, action, words)} />;
   if (item.kind === "STRUCTURE") return <StructureReviewCard item={item} onDecide={(action, words) => handlers.decide(item, action, words)} />;

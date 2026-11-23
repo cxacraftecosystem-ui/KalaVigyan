@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+
+from atomic_write import write_text_atomically
 
 __all__ = [
     "BASELINE_SCHEMA_VERSION",
@@ -74,13 +74,4 @@ def write_baseline(path: Path, counts: Mapping[str, int]) -> None:
         "schemaVersion": BASELINE_SCHEMA_VERSION,
         "counts": {name: counts[name] for name in RATCHETED_COUNTS},
     }
-    text = json.dumps(payload, indent=2) + "\n"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    handle, temporary = tempfile.mkstemp(dir=path.parent, prefix=path.name, suffix=".tmp")
-    try:
-        with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as stream:
-            stream.write(text)
-        os.replace(temporary, path)
-    except BaseException:
-        Path(temporary).unlink(missing_ok=True)
-        raise
+    write_text_atomically(path, json.dumps(payload, indent=2) + "\n")

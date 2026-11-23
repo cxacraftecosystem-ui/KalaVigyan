@@ -5,7 +5,6 @@ import re
 import trafilatura
 from app.curation.matching import match_key, quote_found
 from app.fetcher.extract import HIDDEN_STYLE, HIDDEN_XPATH
-from app.research.fetcher import FETCH_TEXT_MAX_CHARS
 from lxml import html as lxml_html
 
 __all__ = [
@@ -44,12 +43,12 @@ BREAKING_TAGS = frozenset(
 WHITESPACE = re.compile(r"\s+")
 
 
-def with_table_rows(body: bytes, text: str, truncated: bool) -> tuple[str, bool]:
+def with_table_rows(body: bytes, text: str, truncated: bool, *, max_chars: int) -> tuple[str, bool]:
     rows = missing_table_rows(body, text)
     if not rows:
         return text, truncated
     joined = "\n".join([text, *rows])
-    return joined[:FETCH_TEXT_MAX_CHARS], truncated or len(joined) > FETCH_TEXT_MAX_CHARS
+    return joined[:max_chars], truncated or len(joined) > max_chars
 
 
 def missing_table_rows(body: bytes, text: str) -> list[str]:

@@ -27,6 +27,9 @@ PUBCHEM_GRADE = "A"
 TAXON_NAME = "taxon name: "
 NOT_FOUND = "not_found"
 NO_COMPOUND = "PubChem holds no compound for {query}; try its IUPAC name, a synonym or its formula."
+SYNONYMS_UNREAD = (
+    "PubChem's synonyms for CID {cid} could not be read just now; its record is shown without them."
+)
 NO_ENTITY = "Wikidata holds no item for {query}; try another name or the item's Q number."
 HAZARDS_UNREAD = "PubChem's hazards for CID {cid} could not be read just now; ask again later."
 
@@ -79,8 +82,17 @@ async def _record(
         held=held is not None,
         held_name=held.name if held is not None else None,
         synonyms=list(held.synonyms) if held is not None else [],
+        pubchem_synonyms=await _pubchem_synonyms(source, compound.cid, notices),
         hazards=await _hazards(source, compound.cid, notices),
     )
+
+
+async def _pubchem_synonyms(source: CompoundSource, cid: int, notices: list[str]) -> list[str]:
+    try:
+        return await source.synonyms(cid)
+    except ExternalFailure:
+        notices.append(SYNONYMS_UNREAD.format(cid=cid))
+        return []
 
 
 async def _hazards(source: CompoundSource, cid: int, notices: list[str]) -> Hazards | None:

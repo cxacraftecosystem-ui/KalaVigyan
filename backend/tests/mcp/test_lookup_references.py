@@ -47,6 +47,7 @@ class FakeCompounds:
     hazards: dict[str, SourceDocument | Exception] = field(default_factory=dict)
     name: str = "pubchem"
     asked: list[Any] = field(default_factory=list)
+    named: dict[int, list[str] | Exception] = field(default_factory=dict)
 
     async def compounds(self, text: str, k: int) -> list[PubChemCompound]:
         self.asked.append(text)
@@ -55,6 +56,12 @@ class FakeCompounds:
     async def compound(self, cid: int) -> PubChemCompound | None:
         self.asked.append(cid)
         return next((found for found in self.found if found.cid == cid), None)
+
+    async def synonyms(self, cid: int) -> list[str]:
+        found = self.named.get(cid, [])
+        if isinstance(found, Exception):
+            raise found
+        return found
 
     async def fetch(self, item_id: str) -> SourceDocument:
         found = self.hazards.get(item_id)
@@ -89,7 +96,9 @@ def content(result: dict[str, Any]) -> dict[str, Any]:
 async def test_a_compound_comes_with_its_record_hazards_and_the_synonyms_kalavigyan_holds(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    compounds = FakeCompounds([INDIGO], {"pubchem:10215:ghs": hazards()})
+    compounds = FakeCompounds(
+        [INDIGO], {"pubchem:10215:ghs": hazards()}, named={10215: ["Indigo", "Indigotin"]}
+    )
     serve(monkeypatch, looked_up(compounds))
     held = Compound(name="indigo", pubchemCid=10215, synonyms=["indigotin", "C.I. Vat Blue 1"])
     context = tool_context(None, FakeSession(scalar=held))
@@ -107,6 +116,7 @@ async def test_a_compound_comes_with_its_record_hazards_and_the_synonyms_kalavig
         "indigo",
     )
     assert record["synonyms"] == ["indigotin", "C.I. Vat Blue 1"]
+    assert record["pubchemSynonyms"] == ["Indigo", "Indigotin"]
     assert record["hazards"]["lines"] == HAZARD_TEXT.split("\n")
     assert (record["hazards"]["url"], record["hazards"]["openLicence"]) == (HAZARD_URL, False)
     assert result["notices"] == [] and compounds.asked == ["indigo"]
@@ -191,3 +201,17 @@ async def test_a_plant_comes_with_its_taxon_name_and_statements(monkeypatch: pyt
     assert [entity["qid"] for entity in by_qid["entities"]] == ["Q2085556"]
     missing = await call("lookup", {"kind": "entity", "id": "Q999"}, tool_context(None))
     assert missing["content"][0]["text"].startswith("Wikidata holds no item for Q999")
+
+
+async def test_pubchem_s_synonyms_that_cannot_be_read_leave_the_record_with_a_notice(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    down = ExternalFailure("pubchem answered 503", kind="unavailable", service="pubchem")
+    compounds = FakeCompounds([INDIGO], named={10215: down})
+    serve(monkeypatch, looked_up(compounds))
+    result = content(
+        await call("lookup", {"kind": "compound", "id": 10215}, tool_context(person(RESEARCHER)))
+    )
+    [record] = result["compounds"]
+    assert record["pubchemSynonyms"] == []
+    assert any("synonyms for CID 10215" in notice for notice in result["notices"])

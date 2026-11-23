@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -27,6 +28,7 @@ from app.research.write_back import (
 from .live_source_store import chunk_for_quote, source_for
 
 __all__ = [
+    "HELD_NOTE",
     "HELD_WRITE_BACK_ACTOR",
     "HELD_WRITE_BACK_STATUS",
     "LIVE_CONCEPT_ORIGIN",
@@ -37,6 +39,7 @@ __all__ = [
     "citation_id",
     "concept_id_for",
     "craft_keys",
+    "held_note",
     "write_back_claim_id",
 ]
 
@@ -46,6 +49,13 @@ HELD_WRITE_BACK_STATUS = WAITING_STATUS
 HELD_NOTE = (
     "; held for a reviewer: it {reason}; approving files it under {craft} or the craft the reviewer names"
 )
+HELD_NOTE_PATTERN = re.compile(
+    re.escape(HELD_NOTE)
+    .replace(re.escape("{reason}"), "(?P<reason>.+?)")
+    .replace(re.escape("{craft}"), r"(?P<craft>\S+)")
+    + "$"
+)
+RELEASED_NOTE = "; filed again under the craft it was held for, so it leaves the hold"
 LIVE_CONCEPT_ORIGIN = "live_research"
 STAGE_CONCEPT_TYPE = "PROCESS_STAGE"
 RAISABLE_LEVEL = "HYPOTHESIS"
@@ -65,6 +75,11 @@ SHARED_CONCEPT_KEYS = CraftKeys(craft_id=None, sub_category_id=None)
 
 def write_back_claim_id(dedupe_key: str) -> uuid.UUID:
     return uuid.uuid5(ID_NAMESPACE, f"claim-write-back:{dedupe_key}")
+
+
+def held_note(note: str | None) -> tuple[str, str] | None:
+    found = HELD_NOTE_PATTERN.search(note or "")
+    return (found["reason"], found["craft"]) if found else None
 
 
 def citation_id(claim_id: uuid.UUID, source_key: str, quote: str | None) -> uuid.UUID:
@@ -88,6 +103,7 @@ class SqlClaimWriter:
         created = await self._insert_claim(claim_id, concept_id, claim)
         if not created:
             await self._raise_level(claim_id, claim)
+            await self._release_held(claim_id, claim)
         for citation in claim.citations:
             await self._cite(claim_id, citation, claim)
         return WriteBackResult(dedupe_key=claim.dedupe_key, claim_id=claim_id, created=created)
@@ -137,6 +153,32 @@ class SqlClaimWriter:
         )
         if raised is not None:
             self._session.add(_event(claim_id, claim, from_level=RAISABLE_LEVEL, to_status=None))
+
+    async def _release_held(self, claim_id: uuid.UUID, claim: ClaimWriteBack) -> None:
+        if claim.held_because is not None or self._status == HELD_WRITE_BACK_STATUS:
+            return
+        released = await self._session.scalar(
+            update(Claim)
+            .where(
+                Claim.id == claim_id,
+                Claim.status == HELD_WRITE_BACK_STATUS,
+                Claim.origin == WRITE_BACK_ORIGIN,
+            )
+            .values(status=self._status)
+            .returning(Claim.id)
+        )
+        if released is None:
+            return
+        self._session.add(
+            ReviewEvent(
+                claimId=claim_id,
+                actorKind="SYSTEM",
+                systemActor=WRITE_BACK_ACTOR,
+                toStatus=self._status,
+                toLevel=claim.evidence_level,
+                note=_note(claim, held=False) + RELEASED_NOTE,
+            )
+        )
 
     async def _cite(self, claim_id: uuid.UUID, citation: WriteBackCitation, claim: ClaimWriteBack) -> None:
         item = citation.evidence

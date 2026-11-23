@@ -160,3 +160,13 @@ def test_an_image_text_extraction_never_decodes_is_not_counted() -> None:
     body = pdf_with_resources("Alum fixes the red dye.", image=bytes(5000))
     text, truncated, _ = pdf_text(PDF_URL, body, max_decompressed=1000)
     assert (text.strip(), truncated) == ("Alum fixes the red dye.", False)
+
+
+def test_text_is_cut_at_the_fetcher_cap_unless_the_caller_names_a_larger_one() -> None:
+    body = b"a" * (FETCH_TEXT_MAX_CHARS + 1)
+    cut = extract("https://example.org/long.txt", "text/plain", body, "utf-8")
+    assert (len(cut.text), cut.truncated) == (FETCH_TEXT_MAX_CHARS, True)
+    whole = extract(
+        "https://example.org/long.txt", "text/plain", body, "utf-8", max_chars=FETCH_TEXT_MAX_CHARS + 1
+    )
+    assert (len(whole.text), whole.truncated) == (FETCH_TEXT_MAX_CHARS + 1, False)
