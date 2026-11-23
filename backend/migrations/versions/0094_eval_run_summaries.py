@@ -15,8 +15,10 @@ FINISHED_INDEX = "EvalRun_suite_finishedAt_idx"
 
 
 def upgrade() -> None:
-    op.add_column(RUNS, sa.Column("floorsHeld", sa.Boolean(), nullable=True))
-    op.add_column(RUNS, sa.Column("fresh", sa.Boolean(), server_default=sa.text("false"), nullable=False))
+    op.add_column("EvalRun", sa.Column("floorsHeld", sa.Boolean(), nullable=True))
+    op.add_column(
+        "EvalRun", sa.Column("fresh", sa.Boolean(), server_default=sa.text("false"), nullable=False)
+    )
     op.create_check_constraint(op.f(KIND_CHECK), RUNS, f'"suite" IN ({_listed(KINDS)})')
     op.create_index(op.f(FINISHED_INDEX), RUNS, ["suite", "finishedAt"])
 
