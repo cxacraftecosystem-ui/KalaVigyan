@@ -11,6 +11,7 @@ from app.planner.orchestrator import ResearchPlanner
 from app.providers import budget, router
 from app.providers.catalogue import AiTask
 from app.providers.embedding import router_embedder
+from app.providers.judge_routes import thrifty_judges
 from app.providers.structured import router_structured_model
 from app.research.composition import ComposedAnswer
 from app.research.evidence_pack import EvidencePack
@@ -47,7 +48,7 @@ async def run() -> dict[str, Any]:
                 embed=embed,
                 spent=spent_since,
                 index=CraftIndexStore(),
-                judge=router_structured_model(AiTask.EVAL_JUDGE, request_budget_usd=left),
+                judge=thrifty_judges(request_budget_usd=left),
             )
             report = await run_coverage_enrichment(writer, pipeline, day_started_at=day_started_at)
     finally:

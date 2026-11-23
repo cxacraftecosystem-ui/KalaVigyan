@@ -18,7 +18,7 @@ from app.research.crafts import CraftRef
 from app.research.embedding import TextEmbedder
 from app.research.evidence import SourceDocument
 from app.research.evidence_pack import EvidencePack
-from app.research.structured import StructuredModel
+from app.research.judge_ladder import JudgeLadder
 from app.research.write_back import ClaimWriteBack, FoundBy, WriteBackResult
 from app.retrieval.indexing import EmbeddedCounts, embed_written
 
@@ -104,7 +104,7 @@ async def store_live_research(
     found_by: FoundBy,
     index: CraftIndexStore,
     answer_id: uuid.UUID | None = None,
-    judge: StructuredModel | None = None,
+    judge: JudgeLadder | None = None,
 ) -> StoredResearch:
     kept = {document.item.id: await keep_document(session, document) for document in pack.documents}
     planned = await _planned(session, pack, answer, found_by=found_by, answer_id=answer_id, index=index)
@@ -167,7 +167,7 @@ async def write_through_gates(
     documents: Mapping[str, SourceDocument],
     *,
     embed: TextEmbedder | None,
-    judge: StructuredModel | None,
+    judge: JudgeLadder | None,
 ) -> GatedWrite:
     gated = await gate_write_back(session, claims, documents, embed=embed, judge=judge)
     placed = await research_placement(session)

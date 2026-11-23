@@ -346,8 +346,9 @@ duplicate gate sees the first before the second. Each check is `services/fact_pr
 in a savepoint, under the request id `contribution-<proposal id hex>`; the kept sources' passages are embedded once the outcome is stored (`embed_sources`, which commits as it goes);
 `python -m app.scripts.contribution_worker --once` checks what is queued and stops.
 
-**Cost at the centre.** The worker's gates are thrifty (`research/gate_thrift.py`): the deterministic
-gates decide first, and the judge is asked only when they cannot.
+**Cost at the centre.** The worker's gates, and the research write-back's (below), are thrifty
+(`research/gate_thrift.py`): the deterministic gates decide first, and the judge is asked only when
+they cannot.
 - QUOTES and SOURCE as above; a refusal there spends no model call.
 - DUPLICATE: the identical text as above; a held fact at cosine similarity 0.97 or more
   (`VECTOR_TWIN_SIMILARITY`) with the same figures, the same negations and 80 % of the same content
@@ -356,10 +357,12 @@ gates decide first, and the judge is asked only when they cannot.
 - NOVELTY: when every held fact of the field is below 0.75 (`NOVELTY_JUDGE_SIMILARITY`), the fact adds
   to the section without the judge.
 - The judge runs first on the cheapest route that may judge: each provider's least priced verified
-  model for `EVAL_JUDGE` (`services/candidate_judge_routes.cheapest_judge_models`: OpenAI `gpt-6-luna`,
+  model for `EVAL_JUDGE` (`providers/judge_routes.cheapest_judge_models`: OpenAI `gpt-6-luna`,
   Gemini `gemini-3.5-flash-lite`, Anthropic `claude-haiku-5-5`, through `RouteTuning.models`), and only
   when its reply fails the judge's checks (not JSON, off its schema, a pair or candidate left
-  unanswered) on the configured route (`later_gates(..., escalate=...)`).
+  unanswered) on the configured route (`later_gates(..., escalate=...)`). The two are one
+  `research/judge_ladder.JudgeLadder` (`first`, `escalate`), built by
+  `providers/judge_routes.thrifty_judges(principal, request_budget_usd=...)`.
 - The site's single form (`POST /api/knowledge/facts`) keeps the gates as they were.
 
 **The cost ledger** (`research/cost_ledger.py`, `services/cost_ledger.py`). Every model call a queued
@@ -667,7 +670,12 @@ Without the secret nothing is sent and the pages refresh on their daily schedule
 `services/research_write_back.store_live_research(..., judge=None)` runs each new claim (one
 whose dedupe id is not yet stored) through the same gates with origin `RESEARCH`, using the
 documents the research already fetched for gate 1 and the evidence items' grades and licences
-for gate 2. A claim already held is re-found as before (new citations, a level raised from
+for gate 2. Its `judge` is the worker's `JudgeLadder`, and its later gates are the worker's thrifty
+ones (`write_back_gates.write_back_later_gates`, with `GateThrift()`): an answer's write-back
+(`answer_routes.answer_models`, on the optional principal) and the coverage job's (under its day
+budget) ask the cheapest judge first and the configured `EVAL_JUDGE` route only for a question
+the cheap reply leaves unusable; a voice turn's and a term's write-back have no judge, so their
+duplicate gate refuses identical texts only. A claim already held is re-found as before (new citations, a level raised from
 hypothesis), with no gates. A refused claim is not written, and its sentence keeps no claim: the
 write-back's `skipped` list carries the gate and its first reason, and an answer never cites a held
 fact under the writer's wording (decision 0124). Only the glossary's term summary, which shows a
@@ -795,7 +803,7 @@ field, or changes its meaning, is a new schema version.
 | Supplied sources | `backend/tests/db/test_supplied_sources_db.py` |
 | Citations and their passages | `backend/tests/db/test_quote_relinks_db.py` and `test_quote_visibility_db.py` |
 | Pages follow their facts | `backend/tests/db/test_review_queue_refresh_db.py` and `test_page_revalidation_db.py` |
-| The research write-back, and the craft a fact is filed under | `backend/tests/write_back/` (`test_write_back_names.py`, `test_write_back_context.py`, `test_write_back_passages.py`, `test_candidate_titles.py`, `test_write_back_filing_report.py`, `test_stored_passages.py` and `test_filing_names.py`), `backend/tests/voice/test_turn_passages.py`, `backend/tests/db/test_stored_passages_db.py`, `test_write_back_audit_db.py`, `test_write_back_report_db.py`, `test_term_write_back_gates_db.py`, `test_write_back_closed_db.py`, `test_held_write_backs_db.py` and `test_write_back_filing_report_db.py` |
+| The research write-back, and the craft a fact is filed under | `backend/tests/write_back/` (`test_write_back_names.py`, `test_write_back_judges.py`, `test_district_other_names.py`, `test_write_back_context.py`, `test_write_back_passages.py`, `test_candidate_titles.py`, `test_write_back_filing_report.py`, `test_stored_passages.py` and `test_filing_names.py`), `backend/tests/voice/test_turn_passages.py`, `backend/tests/db/test_stored_passages_db.py`, `test_write_back_audit_db.py`, `test_write_back_report_db.py`, `test_term_write_back_gates_db.py`, `test_write_back_closed_db.py`, `test_held_write_backs_db.py` and `test_write_back_filing_report_db.py` |
 | The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/knowledge-writes.md` byte for byte equal to this file |
 
 Re-read it when a gate, a trust tier, a limit or a proposal kind is added or changed, and copy it to

@@ -6,8 +6,8 @@ import json
 from typing import Any
 
 from app.core.db import dispose_engine, session_scope
+from app.providers.judge_routes import thrifty_judges
 from app.providers.router import Principal
-from app.services.candidate_judge_routes import thrifty_judges
 from app.services.differ_rejudge import flagged_pairs, rejudged_pairs
 
 __all__ = ["main"]
@@ -18,7 +18,7 @@ async def run() -> list[dict[str, Any]]:
         async with session_scope() as session:
             pairs = await flagged_pairs(session)
             await session.rollback()
-        return await rejudged_pairs(pairs, thrifty_judges(Principal()))
+        return await rejudged_pairs(pairs, thrifty_judges(Principal()).models)
     finally:
         await dispose_engine()
 

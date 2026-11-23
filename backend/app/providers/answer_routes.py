@@ -7,6 +7,7 @@ from app.providers.catalogue import AiProvider, AiTask
 from app.research.answer_models import AnswerModels, DepthFollower
 
 from .budget import AnswerSpend
+from .judge_routes import thrifty_judges
 from .rerank_router import router_reranker
 from .router import Principal, RouteTuning
 from .structured import router_structured_model
@@ -52,7 +53,7 @@ def answer_models(depth: str, *, principal: Principal, optional: Principal) -> A
         builder_compose=router_structured_model(AiTask.COMPOSE, optional, tuning=BUILDER_TUNING),
         explainer=router_structured_model(AiTask.COMPOSE, optional, tuning=EXPLAINER_TUNINGS[depth]),
         translate=router_structured_model(AiTask.TRANSLATE, principal),
-        judge=router_structured_model(AiTask.EVAL_JUDGE, optional),
+        judge=thrifty_judges(optional),
         rerank=router_reranker(principal),
         follow_depth=depth_follower(principal),
     )
