@@ -242,7 +242,10 @@ and may only shrink.
 ## Commands
 
 Run from the repository root. Nothing heavy runs on the laptop: no Docker, no local database,
-no dev servers. Database tests, migrations and seeds run on GitHub Actions (Backend checks). Since
+no dev servers. Database tests, migrations and seeds run on GitHub Actions (Backend checks), in
+three shards that each migrate and seed their own Postgres and run a third of the test files,
+balanced by test count (`backend/tests/db/shards.py`, `DB_TEST_SHARD=<index>/<total>`); the
+migration round trip, the dossier import and the release-before check run in the first. Since
 the owner's rule of 2026-11-20 a development machine runs only the formatters and linters below,
 and the hygiene check; the tests, type checks and builds run on GitHub, on the pull request.
 

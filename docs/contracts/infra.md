@@ -26,7 +26,7 @@ flowchart LR
 
 ## CI
 
-- `Backend checks` (`.github/workflows/backend-checks.yml`) runs on `push` to `main` and the round branches when `backend/**`, `shared/**`, `infra/deploy/**`, `backend-checks.yml` or `deploy-backend.yml` changes. `Deploy backend` starts from its `workflow_run`, only for a `push` on `main` of this repository that concluded `success`. A push that changes only `infra/deploy/**` therefore still deploys.
+- `Backend checks` (`.github/workflows/backend-checks.yml`) runs on `push` to `main` and the round branches when `backend/**`, `shared/**`, `infra/deploy/**`, `backend-checks.yml` or `deploy-backend.yml` changes. `Deploy backend` starts from its `workflow_run`, only for a `push` on `main` of this repository that concluded `success`, so every one of its three database shards must pass. A push that changes only `infra/deploy/**` therefore still deploys.
 - Vercel never builds from Git (`frontend/vercel.json` turns Git deployments off for every branch). The production build is started through the Vercel deploy hook by `.github/actions/build-web-app`: from the last step of `Deploy backend`, or from `Deploy web app` (`.github/workflows/deploy-web.yml`) for a push that changes only `frontend/**`; a push that changes only `frontend/e2e/**` starts no build.
 
 ## Backend
