@@ -16,8 +16,8 @@ from app.models import EnrichmentJob
 from app.research.composition import ComposedAnswer
 from app.research.embedding import TextEmbedder
 from app.research.evidence_pack import EvidencePack
+from app.research.judge_ladder import JudgeLadder
 from app.research.planning import PlanRequest
-from app.research.structured import StructuredModel
 
 from .coverage_selection import CraftToEnrich, least_covered_crafts, open_questions
 from .craft_resolver import CraftIndexStore
@@ -68,7 +68,7 @@ class EnrichmentPipeline:
     embed: TextEmbedder
     spent: SpentSince
     index: CraftIndexStore
-    judge: StructuredModel | None = None
+    judge: JudgeLadder | None = None
 
 
 @dataclass

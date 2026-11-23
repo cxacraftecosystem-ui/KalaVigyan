@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.data.craft_master_loader import load_master
 from app.data.craft_text import STOP_TOKENS, ascii_key, core_key, key_phrases, script_of
-from app.data.district_register import load_district_other_names, load_district_register
+from app.data.district_register import load_district_codes, load_district_other_names, load_district_register
 from app.data.english_words import load_english_words
 from app.data.places_abroad import PlacesAbroad, load_places_abroad
 from app.models import Craft, CraftCategory, CraftSubCategory
@@ -149,7 +149,9 @@ def _keys(craft: CraftRef, crafts: Sequence[CraftRef], index: CraftIndex, local:
         for key, entries in index.entries.items()
         if any(e.craft_id == target.craft_id and _names_its_craft(key, e, ordinary) for e in entries)
     }
-    return keys | (index.craft_places.get(target.craft_id, frozenset()) & local)
+    placed = index.craft_places.get(target.craft_id, frozenset())
+    aliases = _district_aliases()
+    return keys | ((placed | {alias for key in placed for alias in aliases.get(key, ())}) & local)
 
 
 def _anchors(craft: CraftRef, crafts: Sequence[CraftRef], ordinary: frozenset[str]) -> set[str]:
@@ -181,6 +183,17 @@ def _register_places() -> tuple[frozenset[str], frozenset[str]]:
         key for names in load_district_other_names().values() for name in names for key in keys_of(name)
     }
     return states, frozenset(states | districts | others)
+
+
+@lru_cache(maxsize=1)
+def _district_aliases() -> Mapping[str, frozenset[str]]:
+    registered = {lgd: name for (_, name), lgd in load_district_codes().districts.items()}
+    aliases: dict[str, frozenset[str]] = {}
+    for lgd, others in load_district_other_names().items():
+        keys = frozenset(key for name in (registered[lgd], *others) for key in keys_of(name))
+        for key in keys:
+            aliases[key] = aliases.get(key, frozenset()) | keys
+    return aliases
 
 
 def _said(texts: Sequence[str]) -> set[str]:

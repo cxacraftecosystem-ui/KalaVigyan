@@ -3,21 +3,27 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from types import MappingProxyType
 
-from app.providers.catalogue import PROVIDERS, AiModel, AiTask, ProviderSpec, supports
-from app.providers.router import Principal, RouteTuning
-from app.providers.structured import router_structured_model
-from app.research.structured import StructuredModel
+from app.research.judge_ladder import JudgeLadder
+
+from .budget import RequestBudget
+from .catalogue import PROVIDERS, AiModel, AiTask, ProviderSpec, supports
+from .router import Principal, RouteTuning
+from .structured import router_structured_model
 
 __all__ = ["JUDGE_TASK", "cheapest_judge_models", "cheapest_model", "thrifty_judges"]
 
 JUDGE_TASK = AiTask.EVAL_JUDGE
 
 
-def thrifty_judges(principal: Principal) -> tuple[StructuredModel, StructuredModel]:
+def thrifty_judges(
+    principal: Principal | None = None, *, request_budget_usd: RequestBudget | None = None
+) -> JudgeLadder:
     cheapest = RouteTuning(models=dict(cheapest_judge_models()))
-    return (
-        router_structured_model(JUDGE_TASK, principal, tuning=cheapest),
-        router_structured_model(JUDGE_TASK, principal),
+    return JudgeLadder(
+        first=router_structured_model(
+            JUDGE_TASK, principal, tuning=cheapest, request_budget_usd=request_budget_usd
+        ),
+        escalate=(router_structured_model(JUDGE_TASK, principal, request_budget_usd=request_budget_usd),),
     )
 
 

@@ -472,7 +472,7 @@ it from the live database:
   accepts (the same figures and negations, the stems overlapping). Any one of them counts as found.
 - **Writing.** One call per batch of at most `WRITING_BATCH` (25) facts of one craft, at most
   `WRITING_CONCURRENCY` (4) at once, to the cheapest structured route: the `EVAL_JUDGE` task tuned to
-  each provider's least priced model (`candidate_judge_routes.cheapest_judge_models`), under the
+  each provider's least priced model (`providers/judge_routes.cheapest_judge_models`), under the
   request id `eval-questions-<run>-b<NNNNN>`. The prompt (`WRITER_SYSTEM_PROMPT`) asks for one
   question a reader would ask that the fact answers, reads the craft's names and the facts as
   untrusted data, and takes `{questions[{ref, question, unavoidable[], translated}]}`.
