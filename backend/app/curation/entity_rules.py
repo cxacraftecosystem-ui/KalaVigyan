@@ -5,6 +5,7 @@ from collections.abc import Iterable
 from difflib import get_close_matches
 
 from app.data.district_register import DistrictRegister
+from app.research.gi_registry import IMITATION_SOURCE_KINDS
 from app.research.licences import open_licence
 from app.research.quotes import quote_occurs
 from app.research.stated_dates import states_date
@@ -95,7 +96,7 @@ def market_problems(dossier: Dossier) -> list[Problem]:
                     f"the year {workforce.year} is in none of {workforce.claim_id}'s quotes",
                 )
             )
-    return found
+    return found + [Problem("market.imitation", message) for message in _imitation_messages(dossier)]
 
 
 def picture_problems(dossier: Dossier) -> list[Problem]:
@@ -167,6 +168,21 @@ def _gi_messages(dossier: Dossier, gi: GiRecord) -> list[str]:
         if day is not None and not states_date(day, quotes)
     ]
     return messages + [f"{gap} appears in none of its claims' quotes" for gap in dict.fromkeys(gaps)] + dates
+
+
+def _imitation_messages(dossier: Dossier) -> list[str]:
+    imitation = dossier.market.imitation
+    unkept = imitation and dossier.market.gi is None
+    messages = ["a sign of imitation is kept with the GI record, so market.gi is given"] if unkept else []
+    return messages + [
+        f"{claim_id} cites no GI journal, so it is no sign of imitation"
+        for claim_id in imitation
+        if not _cites_kind(dossier, claim_id, IMITATION_SOURCE_KINDS)
+    ]
+
+
+def _cites_kind(dossier: Dossier, claim_id: str, kinds: Iterable[str]) -> bool:
+    return any(dossier.source(quote.source_id).kind in kinds for quote in dossier.claim(claim_id).quotes)
 
 
 def _unstated_date(label: str, day: str, cited: str) -> str:

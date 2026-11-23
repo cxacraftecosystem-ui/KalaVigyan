@@ -1549,8 +1549,10 @@ Neither builder asks a model, so neither spends; both read stored rows in one sh
   fields `research/gi_registry.gi_fields` reads by label from each registry claim's text and
   quotes (different values across claims give none); the status by `gi_status_name`, none when a
   sentence says registered without a certificate or date. Imitation: up to `IMITATION_MAX` (3)
-  fact-level claims citing a GI journal whose text names imitation or passing off
-  (`states_imitation`; "substitute" alone is not a sign). Prices: the curated rows; a craft with
+  fact-level claims citing a GI journal: first the curated record's signs
+  (`CraftGiRecord.imitationClaimIds`, the dossier's `market.imitation`, in its order; decision
+  0167), then those whose text names imitation or passing off (`states_imitation`; "substitute"
+  alone is not a sign). Prices: the curated rows; a craft with
   none reads up to 40 of its claims naming a price (`market_store.stated_price_offer`, decision
   0147) and keeps a claim stating exactly one price, one year and one LGD district (by its register
   spelling or another name). Each

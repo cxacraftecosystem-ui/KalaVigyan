@@ -778,20 +778,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** the seed and curated sources store organisation authors whole (the curation
   checker already keeps them whole); the export needs no change.
 
-## Local measures, and market and GI (decision 0066)
-
-### Imitation is a fixed word list
-
-- **What:** a sign of imitation must name one of the listed words (fake, imitation, counterfeit,
-  spurious, knock-off, passed off, screen-printed, machine-made, power loom, mill-made);
-  "duplicate", "copies" and "substitute" are left out because they also name other things. (A
-  price's `per` is read after "per", "a", "an" or "/" since decision 0147.)
-- **Why left:** a model choosing would spend on every economics section; the list errs toward
-  showing less; a dossier field needs a stored column the curated import writes, and the import
-  belongs to the curated-import lane, which was running in the same tree.
-- **Clears it:** a dossier `market.imitation` list of claim ids (each citing a GI journal), stored
-  by the curated import and read before the word list by `services/market_builder`.
-
 ## Climate and risk, and ask the map (decision 0065)
 
 ### Groundwater values only for Rajasthan, and not yet loaded

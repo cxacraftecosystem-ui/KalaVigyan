@@ -69,6 +69,7 @@ GI_COLUMNS = (
     "proprietors",
     "authorisedUserCount",
     "claimIds",
+    "imitationClaimIds",
 )
 PRICE_COLUMNS = ("id", "claimId", "pricedOn", "placeName")
 WORKFORCE_COLUMNS = ("claimId", "year")

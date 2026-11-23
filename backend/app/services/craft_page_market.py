@@ -25,6 +25,7 @@ class GiFacts:
     proprietors: tuple[str, ...]
     authorised_user_count: int | None
     claim_ids: tuple[uuid.UUID, ...]
+    imitation_claim_ids: tuple[uuid.UUID, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -87,4 +88,5 @@ def _gi(row: Row) -> GiFacts:
         proprietors=tuple(row["proprietors"]),
         authorised_user_count=row["authorisedUserCount"],
         claim_ids=tuple(row["claimIds"]),
+        imitation_claim_ids=tuple(row.get("imitationClaimIds") or ()),
     )

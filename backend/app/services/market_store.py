@@ -41,6 +41,7 @@ CONCEPT_SUBJECT = "CONCEPT"
 class GiRecordOffer:
     fields: GiFields
     claim_ids: tuple[uuid.UUID, ...]
+    imitation: tuple[uuid.UUID, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -77,6 +78,7 @@ async def _craft_offers(session: AsyncSession, craft: Craft) -> MarketOffers:
     priced = () if prices else await _price_claims(session, craft.id)
     wanted = [
         *(record.claim_ids if record else ()),
+        *(record.imitation if record else ()),
         *(price.claim_id for price in prices),
         *candidates,
         *priced,
@@ -106,7 +108,7 @@ async def _gi_record(session: AsyncSession, craft_id: uuid.UUID) -> GiRecordOffe
         proprietors=tuple(row.proprietors),
         authorised_user_count=row.authorisedUserCount,
     )
-    return GiRecordOffer(fields=fields, claim_ids=tuple(row.claimIds))
+    return GiRecordOffer(fields=fields, claim_ids=tuple(row.claimIds), imitation=tuple(row.imitationClaimIds))
 
 
 async def _prices(session: AsyncSession, craft_id: uuid.UUID) -> tuple[PriceOffer, ...]:
