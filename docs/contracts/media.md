@@ -98,8 +98,14 @@ counts a citation only when that ACL is among the asker's (`chunk_acls_for`); a 
 source or linked chunk counts as a restricted source. A claim
 using a group word (community, caste, jati, samaj, tribe, tribal, clan, gotra, biradari, adivasi) is left
 out (PLAN 13a, decision 0018); the list is `schemas/media.NAMED_GROUP_WORDS`, matched in the
-singular or plural (`names_a_group`, decision 0022). Hypotheses never enter a prompt. At most `MEDIA_MAX_CLAIMS` (8), strongest level first, then the stage's own claims,
-then id. The ids are stored on the job (`MediaJob.claimIds`) and returned as `claimIds`.
+singular or plural (`names_a_group`, decision 0022). So is a claim naming a community or person on
+the craft's own list (`CraftGroupName`, decision 0181): each name a quote of the craft's dossier
+states for one of its `COMMUNITY` or `PERSON` groups, written by the dossier import
+(`services/group_names.keep_dossier_group_names`), and each name a reviewer approved as a `GROUP_NAME`
+structure proposal (`knowledge-writes.md`). Readers never see the list. A name is matched case-folded,
+as whole words with its spaces collapsed, in the singular or plural (`research/named_groups.names_a_listed_group`).
+Hypotheses never enter a prompt. At most `MEDIA_MAX_CLAIMS` (8), strongest level first, then the
+stage's own claims, then id. The ids are stored on the job (`MediaJob.claimIds`) and returned as `claimIds`.
 
 ## Prompt
 
@@ -111,7 +117,12 @@ then id. The ids are stored on the job (`MediaJob.claimIds`) and returned as `cl
 - Fixed bans (`MEDIA_PROMPT_BANS`): no text, letters or numbers; no logos or brand marks; no faces
   of real people; no maps, borders or flags; no ceremonial or sacred objects; no depiction of a
   community or caste as a group; no stereotyped dress or skin tone. Community and caste names never
-  enter a prompt (PLAN 13a).
+  enter a prompt (PLAN 13a): a stage name naming a group word or a listed name is left out, a style
+  hint naming a listed name is refused (422, `prompt.NAMED_HINT`), and a prompt whose facts name one
+  is refused as a last guard (`prompt.NAMED_CLAIM`). The worker checks the queued prompt against the
+  craft's list again before it calls a model and ends a job naming a name listed since as `BLOCKED`
+  (`runner.NAMED_GROUP_REASON`, refunded), so no generated asset depicts a listed name; the
+  `depictsNamedCluster` flag below therefore still compares the craft's located place names only.
 - References: only a generated image of the same stage (the video's first frame) in v1; no
   archive photos.
 - `promptHash` is the SHA-256 of the canonical JSON (sorted keys, no spaces) of the template

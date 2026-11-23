@@ -94,16 +94,6 @@ Last reviewed: 2026-11-22.
   processes staying under the 768 MB cap and the `WebFetch` row an answer writes; then record one
   SearXNG and one Brave answer to replace the synthetic fixtures.
 
-### Stored-knowledge retrieval: what is left (decision 0008, round 4)
-
-- **What:** round 4 cleared stamps per embedding model with re-embedding, cleared vectors on a text
-  change, embedding after the seeds on every release, the Indic text ranking and the seed import's
-  passages (`docs/contracts/retrieval.md`); decision 0166 stamped knowledge pieces and made the
-  gates and the piece store compare vectors of one model. Left: the Wood Handbook import has no
-  passages, because the repository holds no text of the cited edition (FPL-GTR-190).
-- **Clears it:** vendor the pages of FPL-GTR-190 (a US government work), or give FPL-GTR-282 its
-  own source and re-cite the wood claims after a quote check.
-
 ## Checks not automated yet
 
 - **Nesting depth** (budget 3) is not measured by the hygiene check.
@@ -117,23 +107,23 @@ Last reviewed: 2026-11-22.
 - Clears it: a lint rule set for size and boundaries with a baseline for the existing files, a
   nesting count in `tools/hygiene/budgets.py`, and a push-triggered test job for `etl/geo`.
 
-### Planner and tiered research: gaps left on 2026-11-16 (decision 0009)
+### Planner and tiered research: the reader and the facet routing (decisions 0009, 0181)
 
-- **What:** (1) The pack holds documents, not quotes: the `WEB_READ` reader that extracts
-  verbatim quotes for the composer is not built. (2) References are followed only as DOIs written
-  in the text, through Crossref, which returns abstracts only; links in pages and reference lists
-  without DOIs are not followed. (3) Facet coverage counts claims that share a word with the
-  target; it does not judge whether they answer it. (4) Every query runs on every source of its
-  tier, including Commons and PubChem for questions they cannot serve (each answers quickly with
-  no hits). Every answer writes its `AnswerTrace` rows since decision 0146, and a question's facet
-  targets are embedded in one call since decision 0166.
-- **Why left:** the `WEB_READ` reader is a model call per document read, and the owner's rule of
-  2026-11-23 keeps each answer's model calls at today's while answers are measured (decision
+- **What:** (1) The pack holds documents, not quotes: the `WEB_READ` reader that extracts verbatim
+  quotes for the composer is not built, and the links inside a fetched page are not followed.
+  (2) Facet coverage counts claims that share a word with the target; it does not judge whether they
+  answer it. (3) Every query runs on every source of its tier, including Commons and PubChem for
+  questions they cannot serve (each answers quickly with no hits). Expert research follows cited DOIs
+  and, since decision 0181, OpenAlex reference lists.
+- **Why left:** the reader is a model call per document read, and the owner's rule of 2026-11-23
+  keeps each answer's model calls and input tokens at today's while answers are measured (decision
   0165); a better coverage judgement and the routing need the known-answer checks to calibrate
-  against; the OpenAlex adapter does not read `referenced_works` yet.
-- **Clears it:** the reader turns documents into quoted evidence once the owner allows its calls;
-  follow reference lists through OpenAlex `referenced_works`; route facet types to the sources that
-  can serve them once the checks show which do.
+  against.
+- **Waits on:** the owner allowing the reader's calls, and measurements of which facet types each
+  source serves.
+- **Clears it:** the reader turns documents, and the links in them, into quoted evidence once its
+  calls are allowed; coverage is judged and facet types are routed to the sources the measurements
+  show can serve them.
 
 ## Science, region, voice and media contracts (decision 0014)
 
@@ -215,29 +205,35 @@ Last reviewed: 2026-11-22.
 
 ## Science engine (decision 0015)
 
-### Seeded crafts without a cited reaction, a firing stage or a stated temperature
+### Seeded crafts without a cited reaction, a stage's place or a checked reading
 
-- **What:** reactions now come from the science seed (Kutch Ajrakh, Bagh, Machilipatnam) and
-  from the curated dossiers of nine crafts (those three, Bagru, Sanganeri, Bastar Dhokra, Agates
-  of Cambay, Firozabad Glass, Cane and Bamboo, through `services/curation_structure`). What is
-  left: Dabu (its dossier holds no reaction) and Akola stages have materials and tools but no
-  reaction, because no source the seed or a dossier holds states one; no craft has a process with a `FIRE` stage, so kaolinite dehydroxylation has no
-  reaction (the terracotta seed is sub-category mechanism chains); four stage concepts state no
-  ordinal (Akola mud soaking and paste preparation, Machilipatnam and Sanganeri block carving) and
-  get no stage, since no `PRECEDES` edge joins them to their craft's ladder: the seed's only one
-  among them says mud soaking precedes paste preparation (`tests/science/test_seed_stage_order.py`);
-  and no seed claim states a temperature or pH, so no seeded reading is checked against an
+- **What:** reactions come from the science seed (Kutch Ajrakh, Bagh, Machilipatnam) and from the
+  curated dossiers of ten crafts (those three, Bagru, Sanganeri, Dabu since decision 0181, Bastar
+  Dhokra, Agates of Cambay, Firozabad Glass, Cane and Bamboo). Left: Akola's stages have materials
+  and tools but no reaction; Akola's mud soaking and paste preparation, and Machilipatnam's and
+  Sanganeri's block carving, state no place in their ladders (seed concepts with no ordinal and no
+  `PRECEDES` edge, `tests/science/test_seed_stage_order.py`; the dossier stages Machilipatnam P11 and
+  Sanganeri P13 have no order either); the curated clay crafts have `FIRE` stages with stated temperatures (Ghurni P04,
+  Krishnanagar P03, Nizamabad P08; Blue Pottery's body is quartz) but none of their sources states
+  kaolinite dehydroxylation, so it is no reaction of theirs, and their temperatures are claim text,
+  not readings; no seed claim states a temperature or pH, so no seeded reading is checked against an
   envelope.
-- **Why left:** reactions, readings and a stage's place are written only as a cited quote states
-  them; the sources still to find are a GI application or a chemistry paper on Dabu mud resist and
-  on Akola's mud and indigo work (and where its mud stages fall), a source placing block carving in
-  the Machilipatnam and Sanganeri processes, a curated clay craft's firing schedule, and a dyeing
-  source stating a bath temperature or pH. Finding them is research through the KalaVigyan MCP
-  server (`search_sources`, `read_source`, then `propose_structure` for a reaction or a stage).
-- **Clears it:** a dossier or seed reaction for Dabu and Akola from such a source, a curated clay
-  craft with a `FIRE` stage and its stated temperature, and each unordered stage's place written
-  from a source that states it (its ordinal, or a stated `PRECEDES` edge to a ladder stage, which
-  `claim_seed.stage_rows` would then be taught to read).
+- **Why left (searched 2026-11-23, decision 0181):** Akola's GI application 845 (Aakola Dabu Prints)
+  puts the overnight mud soaking and the resist, prepared before every printing, ahead of step 12,
+  block printing (statement of case, p. 5, section 6), but the registry serves it only by POST, so
+  the reader cannot fetch it, and Akola's stages are seed concepts (`etl/crafts`, `claim_seed.stage_rows`);
+  no Akola source states a reaction. Machilipatnam's GI journal (application 90, method of production)
+  names block making first and fibre2fashion's Sanganer article (the dossier's S08) puts carving
+  before printing, but both dossiers hold the 150 claims a dossier may. No clay dossier's source
+  states the kaolinite reaction. No dyeing source stating a bath temperature or pH was searched.
+- **Waits on:** someone who can open GI application 845 supplying it (`supply_source`) and a seed
+  change for Akola's stages in `etl/crafts`; a curator choosing which claim Machilipatnam and
+  Sanganeri drop for an order claim, or seed `PRECEDES` edges `claim_seed.stage_rows` learns to read;
+  a source on a curated clay craft's firing that states the reaction; a dyeing source stating a bath
+  temperature or pH.
+- **Clears it:** Akola's reaction and stage places from such a source, each unordered stage's place
+  written from a source that states it, a curated clay craft's kaolinite reaction cited to its own
+  source, and a reading checked against its stage envelope.
 
 ## Answers in Indian languages (decision 0023)
 
@@ -287,17 +283,6 @@ Last reviewed: 2026-11-22.
   The video fixtures follow the documented shapes, not captured traffic.
 - **Waits on:** the owner approving one paid Gemini clip, which the approval of 2026-11-22 does not
   include.
-
-### Community and caste names caught by group words only
-
-- **What:** a claim, stage name or style hint is kept out of a prompt when it uses a group word in
-  the singular or plural (`schemas/media.NAMED_GROUP_WORDS`, decision 0022); a community named
-  without one (a surname or cluster name alone) still passes, and
-  `depictsNamedCluster` compares only the craft's located place names.
-- **Why left:** no register of community and caste names exists; PLAN 13a names them only from
-  cited sources.
-- **Waits on:** the owner's and the governance lane's decision to keep the named practitioners per
-  craft as cited data; the claim set and the named-cluster flag then check against it.
 
 ## Yahoo sign-in (decision 0026)
 

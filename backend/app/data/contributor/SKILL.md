@@ -210,6 +210,9 @@ callers share one allowance between them.
   the GI record (`GI_RECORD`), or held facts of the page that disagree (`CONFLICT`, by their ids as
   `claim_ids`, with no new fact). A category page (`subject {kind category, slug}`) takes a reaction
   without a stage, a term, an open question or a conflict.
+- A community or person a source names in connection with a craft goes in as `GROUP_NAME` (`name`,
+  `group_kind` `COMMUNITY` or `PERSON`, the sources whose quotes state it, no field, statement or
+  task), on any craft: approved, it only keeps that name out of AI pictures and is never shown.
 - Stage and material keys are the page's own: read them with `get_facts` and `get_page`. The
   item's fact follows `quotes.md` like any other. It waits in the review queue, and approval writes
   it into the page.

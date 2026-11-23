@@ -9,6 +9,7 @@ Date: 2026-11-16. Status: accepted.
 | For | Read |
 |---|---|
 | The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| Reference lists followed through OpenAlex in the reserve the cited DOIs leave | [decision 0181](0181-names-kept-out-of-pictures-reference-lists-and-the-wood-handbook.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

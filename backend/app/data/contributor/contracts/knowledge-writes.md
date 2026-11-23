@@ -451,7 +451,8 @@ at a time, each with the fact that states it, and pass the same gates; they wait
 as kind `STRUCTURE`, and approval writes them into the page index (`CuratedCraft.page`, or
 `CuratedCategory.page` for a category) and the rows the page, the generated documents and the dossier
 export read. A craft or category without a curated page is refused (422): its structure arrives with
-its first dossier.
+its first dossier. The one exception is `GROUP_NAME` (decision 0181): a community or person a source
+names, kept only to keep that name out of AI pictures, which any craft takes and which writes no page.
 
 `StructureProposal` (schema version 1, camelCase): `subject {kind craft | category, slug}` (a craft or
 family by slug, merges followed, or a category by slug; decision 0169), `item` (one of the kinds below, by `kind`), `field`, `statement` (20 characters
@@ -459,7 +460,7 @@ and up, at most 600 because it becomes a dossier sentence; no personal data), `s
 named once: `{url, title, licence?, language (a language tag such as en or gu-Gujr), quotes [{text,
 locator}]}`, every quote with its locator), `taskKey?` (a field or corroboration task of the same page
 naming `field`, as for a fact), `note?` (1 to 500 characters). A `CONFLICT` item gives no field,
-statement, sources or task.
+statement, sources or task. A `GROUP_NAME` item gives its sources and no field, statement or task.
 
 | Item `kind` | Parts | The fact is about |
 |---|---|---|
@@ -473,6 +474,7 @@ statement, sources or task.
 | `OPEN_QUESTION` | `question`, `settledBy?` | the craft's concept for `field` |
 | `GI_RECORD` | any of `applicationNumber`, `certificateNumber`, `filedOn`, `registeredOn`, `journalIssue`, `proprietors`, `authorisedUserCount` (at least one) | the craft's concept for `field` |
 | `ALTERNATIVE` | `materialKey`, `alternativeKey` (another material of the page that can stand in for it) | the material's concept |
+| `GROUP_NAME` | `name`, `groupKind` (`COMMUNITY` or `PERSON`) | none: no fact; the name joins the craft's `CraftGroupName` list |
 
 **A category page** keeps no stages, materials, native names or GI record of its own (the category
 import stores none), so a category subject takes `REACTION` without a `stageKey`, `GLOSSARY_TERM`,
@@ -482,7 +484,7 @@ concepts carry no craft, a glossary term writes no `TermCraft`, an open question
 sub-categories, and a conflict names facts the category's dossier holds.
 
 **Refused before any check (422, or a tool error):** a malformed body; an unknown craft or category or
-one with no curated page; an item the dossier's own models refuse (`services/structure_proposals_dossier.py` builds
+one with no curated page (a `GROUP_NAME` needs only the craft); an item the dossier's own models refuse (`services/structure_proposals_dossier.py` builds
 the dossier part: language and script patterns, sentence and name lengths, the why fields); an item that
 does not fit the page (`structure_proposals_page.target_problem`): an unknown stage or material, a native
 name the page already gives in that language, a glossary term or an open question it already holds, a
@@ -494,8 +496,10 @@ already shows, an alternative naming a material the page does not hold or one it
 1. `STATED`: every name, colour and number the item gives is in one of the proposal's own quotes (case
    folded, whole words): the native name, the term, the botanical name, each reactant and product by
    name or formula, each colour word, and of a GI record its numbers, journal issue, proprietors, the
-   count of authorised users and the year of each date. Nothing is fetched when it fails.
-2. `QUOTES` and 3. `SOURCE`: the fact gates of the same name, on the statement and the sources.
+   count of authorised users and the year of each date, and a group name. Nothing is fetched when it
+   fails.
+2. `QUOTES` and 3. `SOURCE`: the fact gates of the same name, on the statement and the sources (a group
+   name is gated as its own statement).
 
 The duplicate and novelty gates do not run: the item, not the sentence, is what is new. A `CONFLICT`
 has no checks.
@@ -534,6 +538,12 @@ the item still fits the page (409 otherwise, and the proposal can only be reject
 - the proposal is `APPROVED` with the reviewer, the time, the note and `claimId`, audited
   `review.structure_approved`; a rejection keeps the reason, audited `review.structure_rejected`.
 
+A `GROUP_NAME` is approved without the page: it writes one `CraftGroupName` row (origin `PROPOSAL`, the
+proposal's id, the first quote that states the name with its source's title and address, `nameKey` the
+case-folded name; a name the craft already lists is kept once), no fact, no page entry and no export,
+refreshes no page, and the import's held-approval check passes over it since it holds no fact. The list
+is read only by the AI picture checks (`media.md`, The claim set and prompt) and by reviewers.
+
 Exporting the dossier afterwards gives the new fact, its quote and its source under their keys, and the
 item under its key (`tests/db/test_structure_export_db.py`); importing that export again moves the
 fact's quotes to the dossier's own source rows.
@@ -542,7 +552,8 @@ fact's quotes to the dossier's own source rows.
 kind, subject, claimId, checks[], pageUrl, message}`. A refused proposal is a 200 whose checks say why.
 
 Table `StructureProposal` (migration `0047_structure_proposals`; `categoryId` and a nullable `craftId`,
-exactly one set, and the `ALTERNATIVE` kind since `0092_readings_layers_categories`): `proposerId`,
+exactly one set, the `ALTERNATIVE` kind since `0092_readings_layers_categories` and `GROUP_NAME` since
+`0099_craft_group_names`): `proposerId`,
 `craftId`, `categoryId`, `kind`,
 `item` (JSONB), `field`, `statement`, `sources` (JSONB: each with its quotes, language and the kept
 `sourceId`), `checks` (JSONB), `taskKey`, `note`, `origin` (`CONTRIBUTION`, `AGENT`), `status`

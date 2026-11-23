@@ -171,7 +171,7 @@ work by DOI or the service's record URL; what is kept of what it reads is below 
 
 | Adapter | Service | Terms that bind us |
 |---|---|---|
-| `openalex` | OpenAlex works API | Metadata CC0; daily allowance per key or per IP |
+| `openalex` | OpenAlex works API: search, a work's abstract, and in Expert research a read work's reference list (`cited_by`, decision 0181) | Metadata CC0; daily allowance per key or per IP |
 | `crossref` | Crossref REST API, polite pool (`mailto`) | Metadata free to reuse; abstracts remain the publishers' |
 | `semantic_scholar` | Semantic Scholar Academic Graph | API licence; publishers may elide abstracts |
 | `core` | CORE API v3 | Key required; full texts keep their own licences |
@@ -248,6 +248,19 @@ in the Coverage enrichment job. A linked compound's 3D conformer (PubChem's comp
 has no 3D record for is asked again once its kept miss is over 90 days old, decision 0152), at most
 one call per 0.25 s, kept in the private bucket and drawn in the explainer citing the compound's
 record (decision 0045).
+
+## Vendored source texts (decision 0181)
+
+The Wood Handbook the seed's wood claims cite: Forest Products Laboratory (2010), *Wood Handbook:
+Wood as an Engineering Material*, General Technical Report FPL-GTR-190, USDA Forest Service, Madison,
+Wisconsin. It is a work of the United States Government, so it is in the public domain and its text
+may be stored and shown whole. The five chapters the claims cite (3, Structure and Function of Wood;
+4, Moisture Relations and Physical Properties of Wood; 5, Mechanical Properties of Wood; 13, Drying
+and Control of Moisture Content and Dimensional Changes; 16, Finishing of Wood) are kept in
+`backend/app/data/source_texts/fpl-gtr-190/` exactly as `tools/curation/fetch.py` read them on
+2026-11-23 from `https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_<nn>.pdf`, through
+their Wayback Machine copies (each named in `source.json` with the SHA-256 of its text), and are
+stored as the source's public passages, cited by chapter and printed page.
 
 ## Live web sources
 
