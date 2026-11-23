@@ -16,7 +16,6 @@ from app.research.retrieval import EVERY_CHUNK_ACLS, chunk_acls_for
 
 from .chapter_records import chapter_rows
 from .craft_page import craft_page
-from .craft_page_archive import archive_superseded
 from .craft_page_cache import PageCache, PageKey, ServedPage, served_content
 from .craft_page_records import craft_page_records
 from .craft_page_stamp import PAGE_VARIANTS, page_stamp
@@ -67,7 +66,7 @@ async def rebuild_snapshots(session: AsyncSession, craft: Craft) -> bool:
         stamp = await page_stamp(session, craft, variant)
         stored = await session.get(CraftPageSnapshot, (craft.id, variant), populate_existing=True)
         before = (stored.etag, stored.stamp) if stored is not None else None
-        served = await _stored(session, craft, variant, (stamp, stored))
+        served = await _stored(session, craft, variant, stamp)
         if before is not None and before[0] != served.etag:
             changed = True
             if before[1] == stamp:
@@ -89,8 +88,7 @@ async def _snapshot(session: AsyncSession, craft: Craft, variant: str, stamp: st
     if stored is not None:
         await session.commit()
         return stored
-    found = await session.get(CraftPageSnapshot, (craft.id, variant), populate_existing=True)
-    return await _stored(session, craft, variant, (stamp, found))
+    return await _stored(session, craft, variant, stamp)
 
 
 async def _current(session: AsyncSession, craft: Craft, variant: str, stamp: str) -> ServedPage | None:
@@ -100,17 +98,11 @@ async def _current(session: AsyncSession, craft: Craft, variant: str, stamp: str
     return ServedPage(served_content(stored.body), stored.etag, stamp)
 
 
-async def _stored(
-    session: AsyncSession, craft: Craft, variant: str, found: tuple[str, CraftPageSnapshot | None]
-) -> ServedPage:
-    stamp, stored = found
+async def _stored(session: AsyncSession, craft: Craft, variant: str, stamp: str) -> ServedPage:
     page = await built_page(session, craft, variant)
     body = page.model_dump(mode="json", by_alias=True)
     etag = body_version(body)
     now = utc_now()
-    if stored is not None:
-        version = page.curation.version if page.curation is not None else None
-        await archive_superseded(session, stored, version, at=now)
     values = {
         "craftId": craft.id,
         "variant": variant,

@@ -1084,26 +1084,17 @@ Last reviewed: 2026-11-22.
 - **Clears it:** a migration that sets every `SIGNED_IN` chunk to `PUBLIC` and drops the value,
   `field_voices_records` writing `PUBLIC`, and `SIGNED_IN_CHUNK_ACLS` removed.
 
-### Craft page chapters not built yet (decision 0098)
+### The craft page's archive table and `fromQuestion` wait for the next release
 
-- **What:** the version 3 page (`services/chapter_*.py`) doesn't build `what_if`, `concept_graph`,
-  `zoom_story`, `supply_map` or `measure` for a chapter. One reaction player holds every step
-  instead of one per mechanism. `services/chapter_records.py` loads no concept pictures. The
-  chapters job (`app.scripts.build_craft_chapters`) runs steps 1 (conformers and Wikidata points)
-  and 6 (pages and the nightly holes check) only: no generated explainers, concept pictures, AI
-  media copies or film score, and it runs nightly from Coverage enrichment, not after each
-  deploy's import. Until its first run keeps conformers, live pages show no `molecule_3d`; the
-  golden's seven molecules are the inputs fixture's kept conformers. An archived version
-  (`?version=N`) is served without any field voice or testimony (decision 0098 item 14), so a
-  still-consented quote is missing from it too.
-- **Why left:** what-if and concept-graph offers need the relationship and shared-term rows that
-  only answer builders load today, and a page builder may not search. Per-mechanism players wait
-  on `science/mechanisms.craft_concepts`, which the CURATION lane didn't land. Steps 2 to 5 spend
-  on models and media and need their own budgets and tests.
-- **Clears it:** a rows loader for what-if evidence and shared terms in `chapter_records.py` and
-  their pure builders. Cut `chapter_chem._player` by `craft_concepts`. Build job steps 2 to 5 and
-  run the job after the deploy's import. Read archived bodies back through the live field-voice
-  filters instead of stripping them.
+- **What:** decision 0162 retired the craft page's archive and a reader's pieces in its chapters,
+  but `CraftPageArchive` (table and model) stays, written and read by nothing, and every chapter
+  item's `origin.fromQuestion` is still sent, always null.
+- **Why left:** a release must be one the live side can read (decision 0151): the release before
+  decision 0162's still writes and reads the table, and its web requires `fromQuestion` on every
+  chapter item.
+- **Clears it:** in the release after decision 0162's is live, a migration dropping
+  `CraftPageArchive` with its model, and `ItemOrigin.from_question` with `AskedQuestion` removed
+  from `research/craft_origins.py`.
 
 ### Kutch Ajrakh's timeline pins and named river are not yet seen, and three why claims describe steps
 
@@ -1120,23 +1111,6 @@ Last reviewed: 2026-11-22.
   content a reviewer rewrites (the curation lane, one agent per dossier).
 - **Clears it:** the production E2E's capture of the timeline map and the water story after the
   river reload; the three why claims reviewed in the dossier.
-
-### The decision 0096 merge is the minimal novelty rule
-
-- **What:** `services/craft_page_answer_assets.py` joins only pieces whose `craftId` is the craft
-  and that came from an answer. A piece joins its chapter when every claim it cites is listed on
-  the page and it adds something: its kind isn't in that chapter yet, or it cites a claim the
-  chapter drafts don't show. Kinds the page rebuilds from rows keep the page's own. Within a slot
-  (chapter, kind, topic) the piece showing more claims wins, then the newer one. Left out of
-  decision 0096: cross-craft pieces and pieces of any-craft answers; a curated reading of a piece
-  with no answer id; the evidence-floor comparison between a curated item and an answer piece; the
-  question screen (`research/question_screen`), so `fromQuestion.text` is always null; and the
-  `CraftPiece` table and `KnowledgePiece.origin`. The stamp reads the craft's pieces (count, latest
-  `updatedAt`, stale, hidden and superseded marks).
-- **Why left:** the CURATION lane, which owned the merge, stopped at 23:11 on 2026-11-18. The
-  coordinator asked for a minimal rule with targeted tests only.
-- **Clears it:** the rest of decision 0096's items 1 to 4 in the same module, with the question
-  screen and its tests.
 
 ### The craft page's film score and its AI media on the monograph
 
@@ -1203,9 +1177,16 @@ Last reviewed: 2026-11-22.
 
 ### A plate's crop is a class or a focal box
 
-- **What:** Ajrakh's plates crop with CSS classes; a generated plate carries the layout's focal box,
-  drawn as `object-position`. Two ways to say one thing.
-- **Clears it:** express Ajrakh's crops as focal boxes and drop the crop classes.
+- **What:** three of Ajrakh's plate specs carry a crop class (`natural-dye-materials-photo` `tall`,
+  `banni-grasslands-photo` `r32`, `madder-roots-and-dyed-silk-photo` `r43`), which the kit draws as
+  the frame's aspect ratio (3 / 4, 3 / 2, 4 / 3, `.ph.tall`, `.ph.r32`, `.ph.r43`); a generated plate
+  carries the layout's focal box, which `SpecPicture.focalPosition` draws as `object-position` only
+  and which sets no frame. Two ways to say one thing, and a focal box cannot yet say what a class
+  says (checked 2026-11-23, monograph follow-up lane).
+- **Clears it:** a focal box that also sets its frame's aspect ratio (the box's width and height
+  times the picture's), the three crops written as such boxes and `crop` dropped from
+  `component_specs_plates` and `PicturePlateView`, proven by Monograph parity (`check=all`) and a
+  generated page's capture, since every generated plate with a focal box would then be framed by it.
 
 ### Kutch Ajrakh's React page draws the authored shell
 
@@ -1231,27 +1212,31 @@ Last reviewed: 2026-11-22.
 ### Curated craft documents: what they do not carry yet
 
 - **What:** a generated craft document draws its curated plates, its contributed plates and its
-  record (key facts as the fact grid, the record strip), but not the craft page's reviewed field
-  photographs (decision 0112) or its kin crafts (`relatives`), which `GET /crafts/{slug}/page`
-  still carries in its chapters. AI images and videos made from a craft's claims are not carried
-  either.
-- **Why left:** field photographs and kin crafts need a placement each in the document's layout
-  (a `picture_plate` per reviewed photograph with its consent credit, a `related_crafts` component
-  in the kin chapter) and a parity check of the generated pages; AI imagery on a page waits on the
-  owner's ruling on principle 9 (see the production E2E defects below).
-- **Clears it:** both as generated document components with their tests and a capture of a
-  generated page; the owner's ruling for AI media.
+  record (key facts as the fact grid, the record strip), and its page draws the reviewed field
+  photographs and quotes after the chapters (`FieldVoicesPart`, decision 0156), but not its kin
+  crafts (`relatives`), which `GET /crafts/{slug}/page` still carries in its chapters. AI images and
+  videos made from a craft's claims are not carried either.
+- **Why left:** a `related_crafts` spec per generated document needs each kin craft's swatch, shared
+  materials and cited sentence from stored rows (Kutch Ajrakh's are authored), and a capture of a
+  generated page; AI imagery on a page waits on the owner's ruling on principle 9 (see the production
+  E2E defects below).
+- **Clears it:** a `related_crafts` component in the kin chapter of a generated document, from the
+  page's relatives, with its tests and a capture; the owner's ruling for AI media.
 
 ## Round 6 (2026-11-20)
 
 ### Structure proposals: what they do not reach yet
 
-- **What:** a category page takes no structure proposals (crafts and families only), an approved
-  glossary term has no shared glossary entry (`termKey` stays null) and an approved reaction gets
-  no stored science row until the dossier is exported and imported again (decision 0108). The
-  STRUCTURE review card has not been seen in a browser.
-- **Clears it:** category structure, glossary and science rows written at approval, and a signed-in
-  capture of the review screen.
+- **What:** a category page takes no structure proposals (crafts and families only; decision 0108),
+  and the STRUCTURE review card has not been seen in a browser. (An approved glossary term's shared
+  entry and an approved reaction's science row are written at approval since decision 0162.)
+- **Why left:** a category proposal needs a subject kind and a nullable craft beside a category on
+  `StructureProposal` (a migration), the category page's own placing and claim markers
+  (`CuratedCategoryClaim`), and the review queue's STRUCTURE listing and MCP `propose_structure`, which
+  were the MCP and contributors lane's files while the monograph follow-up lane ran; the capture needs a
+  signed-in browser on a release carrying that lane's review card.
+- **Clears it:** category structure end to end (contract, migration, writer, export, queue, tool) and
+  a signed-in capture of the review screen.
 
 ### Defects the production E2E suite found in round 6
 
@@ -1351,21 +1336,6 @@ Last reviewed: 2026-11-22.
   `candidate_writes.mark_sources_differ(..., about=)`; `SentencesDiffer` after the paragraph in the
   three hosts; serve the kind preview's specs through the backend, which adds the four variants
   with `services/drawing_themes.themed_spec` as it does for a delivered drawing.
-
-### The fused order is weak on paraphrased English questions
-
-- **What:** on release db09b9e7 the fused first-stage order scored recall at 5 of 0.414 and a mean
-  reciprocal rank of 0.296 on the 58 generated English questions, against 1.000 and 0.855 reranked,
-  because the full-text and named-concept rankings outvote the vector ranking. Decision 0151 weighs
-  each claim ranking by `backend/app/data/eval/fusion.json` and adds `eval_retrieval --fusion`, which
-  scores 60 weightings read-only and picks the best on the generated English questions that does not
-  lower the hand-written ones; the committed file still weighs the three rankings equally, and the
-  fused floors stand where they were (`releaseSample` fused recall at 5 0.38).
-- **Why left:** the weights must be measured on the production knowledge base, which only the lead
-  reaches.
-- **Clears it:** after the release that carries decision 0151, the lead runs
-  `eval_retrieval --fusion --out /tmp/fusion.json` on the box (RUNBOOK, Fusion weights), commits the
-  picked file and raises the fused floors to its numbers less 0.05.
 
 ### Goldens that do not yet show every field
 

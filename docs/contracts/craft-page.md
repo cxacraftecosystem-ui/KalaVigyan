@@ -7,7 +7,7 @@ a chapter builder, the snapshot or the client's parser read it.
 
 | For | Read |
 |---|---|
-| Why the page is built this way | [decisions 0053](../decisions/0053-curated-dossier-import.md), [0081](../decisions/0081-craft-page-contract-v2.md), [0095](../decisions/0095-craft-page-chapters.md), [0096](../decisions/0096-reader-question-pieces-join-their-craft-page.md) and [0098](../decisions/0098-craft-page-chapters-build.md) |
+| Why the page is built this way | [decisions 0053](../decisions/0053-curated-dossier-import.md), [0081](../decisions/0081-craft-page-contract-v2.md), [0095](../decisions/0095-craft-page-chapters.md), [0096](../decisions/0096-reader-question-pieces-join-their-craft-page.md), [0098](../decisions/0098-craft-page-chapters-build.md) and [0162](../decisions/0162-unused-craft-page-chapters-retired.md) |
 | The plan | [plans/dataset-curation.md](../plans/dataset-curation.md), section 9 |
 | The dossier it reads | [curation.md](curation.md) |
 | How the web app draws a craft | [monograph-renderer.md](monograph-renderer.md) |
@@ -29,32 +29,34 @@ flowchart LR
 
 What `GET /api/crafts/{slug}/page` answers: the whole craft page, a monograph in chapters, built
 from stored rows only (plan `docs/plans/dataset-curation.md` section 9). Schema version 3
-(decision 0095) adds the chapters of the approved monograph: every piece the answer engine builds
+(decision 0095) adds the chapters of the approved monograph: the pieces the answer engine builds
 for an answer, built for the craft without a question by fixed rules, beside the parts only a page
-has, and every piece an answer builds for the craft joins it too, whoever asked (decision 0096).
-Version 3 adds fields only. Every version 2 field keeps its meaning so today's screen still
+has. No screen draws the chapters themselves: a curated craft's monograph document takes them as
+its structure (`services/document_components.document_structure`, `monograph-document.md`), and
+the web reads the masthead, the lede, the record and the lists (decision 0162). Version 3 adds
+fields only. Every version 2 field keeps its meaning so today's screen still
 draws; the flat parts the chapters now carry are deprecated and leave in schema version 4, in the
 change that moves the screen to chapters and no later than 2026-12-18 ("Version 2 parts", below).
 
-**Build status (2026-11-19).** The route answers version 3. Built: the masthead, the lede, nine of the ten
-chapter builders (What if is not built), the claim ledger over the page, source numbering and groups, Cite this
-(absolute, with the web route `/crafts/<slug>/v<N>`), the stamp, the per-variant snapshot with its process cache,
-single-flight builds, its lazy archive and `?version=N` (archived versions carry no field voice or testimony), the
-three hide routes, job steps 1 and 6 (nightly), and both goldens. In the golden, the chapters hold `prose`,
-`key_facts` and `register_facts`, plates, `process_ladder` with the stage fields, the signature figures,
-`reaction_player` (the family's steps marked borrowed), the stored `simulation`, `molecule_3d`, `material_card`,
-`region_story`, `climate_risk` with `series`, `seasons`, `places`, `record`, `sources_differ`, `timeline_map`,
-`market_gi`, `communities`, `artisan_voice`, `field_photos`, `relatives`, `source_list`, `open_questions`,
-`searched` and `start_research`. A reader's answer pieces join by the minimal rule of
-`services/craft_page_answer_assets.py` (debt register). Live pages show `molecule_3d` only once the job has kept
-conformers, and a timeline place is pinned once the job has stored the Wikidata point of its `wikidataId` (Kutch
-Ajrakh's Khavda, Barmer, Sindh and Pethapur carry one since 2026-11-22; Ajrakhpur and Dhamadka have no Wikidata
-item that names them). Not built yet (decision
-0098 and `docs/TECH_DEBT.md`): `what_if`, `concept_graph`, `zoom_story`, `supply_map` and `measure` on the page;
-reaction players cut per mechanism (one player holds every step until `science/mechanisms.craft_concepts` lands);
-concept pictures in the database loader; a river in the region story (basins carry no name); the rest of the 0096
-merge (cross-craft pieces, the question screen); the film-score route;
-and job steps 2 to 5. The goldens are generated as follows.
+**Build status (2026-11-23).** The route answers version 3. Built: the masthead, the lede, nine
+chapter builders, the claim ledger over the page, source numbering and groups, Cite this (absolute,
+with the web route `/crafts/<slug>/v<N>`, which reads the monograph document of that version), the
+stamp, the per-variant snapshot with its process cache, single-flight builds, the three hide routes,
+job steps 1, 4 and 6 (nightly), and both goldens. In the golden, the chapters hold `prose`,
+`key_facts` and `register_facts`, plates, `process_ladder` with the stage fields, the signature
+figures, one `reaction_player` of every step (the family's steps marked borrowed), the stored
+`simulation`, `molecule_3d`, `material_card`, `region_story`, `climate_risk` with `series`,
+`seasons`, `places`, `record`, `sources_differ`, `timeline_map`, `market_gi`, `communities`,
+`artisan_voice`, `field_photos`, `relatives`, `source_list`, `open_questions`, `searched` and
+`start_research`. Live pages show `molecule_3d` only once the job has kept conformers, and a
+timeline place is pinned once the job has stored the Wikidata point of its `wikidataId` (Kutch
+Ajrakh's Khavda, Barmer, Sindh and Pethapur carry one since 2026-11-22; Ajrakhpur and Dhamadka have
+no Wikidata item that names them). Retired rather than built (decision 0162, amending 0098): the
+`what_if`, `concept_graph`, `zoom_story`, `supply_map` and `measure` chapter pieces and the What if
+chapter's own builder, players cut per mechanism, concept pictures, a reader's answer pieces joining
+the chapters (decision 0096's merge), the archive of earlier versions and `?version=N`, and job
+steps 2 and 3. The film-score route and job step 5 are not built (debt register). The goldens are
+generated as follows.
 
 Modules. Models: `backend/app/research/craft_page.py` (the page), `research/craft_chapters.py`
 (chapters, items, figure heads and the rules' constants), `research/craft_parts.py` (the page-only
@@ -91,23 +93,24 @@ Two golden fixtures, both reproduced byte for byte by the backend and parsed by 
 Both commands run from `backend/`. Change the models, this page, the fixtures and both sides'
 tests together. The web client parses the page with `frontend/lib/craftPageContract.ts` and
 checks it with `frontend/lib/craftPageChecks.ts` (the version 2 parts with
-`frontend/lib/craftPageContext.ts` and `craftPageProcess.ts`, the chapters with
-`frontend/lib/craftChapters.ts` and what they show with `craftChapterReads.ts`, the blocks with
-the explainer's own parser); its specs are
-`frontend/e2e/craft-page-unit.spec.ts`, `craft-page-context-unit.spec.ts` and
-`craft-chapters-unit.spec.ts`, and the vocabularies are
-pinned in `frontend/e2e/backend-vocabulary-unit.spec.ts`. The contract test also holds the served
-Kutch Ajrakh page to 250 KB gzipped.
+`frontend/lib/craftPageContext.ts` and `craftPageProcess.ts`). It drops `chapters`, which no
+screen draws, before parsing (`craftPageContract.UNREAD_CHAPTERS`), so it reads a page with or
+without them (decision 0162); the monograph's answer blocks parse with the explainer's own parser
+(`components/monograph/kinds/blocks/answerBlockSpec.ts`). Its specs are
+`frontend/e2e/craft-page-unit.spec.ts` and `craft-page-context-unit.spec.ts`, the golden's drawn
+blocks are read by `monograph-blocks-unit.spec.ts`, and the vocabularies are pinned in
+`frontend/e2e/backend-vocabulary-unit.spec.ts`. The contract test also holds the served Kutch
+Ajrakh page to 250 KB gzipped.
 
-Last reviewed: 2026-11-19 (schema version 3 served; build status above).
+Last reviewed: 2026-11-23 (schema version 3 served; build status above).
 
 ## The routes
 
 | Method | Path | Auth | Response |
 |---|---|---|---|
-| GET | `/api/crafts/{slug}/page` | public reading (`api/public_deps.public_reader`) | `CraftPage`, the snapshot of the craft's current stamp for the reader's variant (Caching, below), sent as stored with its `ETag` (the SHA-256 of the page as built) and `Vary: Authorization`; a request whose `If-None-Match` names the current tag gets `304` with no body. `Cache-Control` is `public, max-age=300` without a session and `private, no-cache` with one. `?version=N` answers the archived page of curation version `N`, read without its field voices and testimony (404 `{detail}` for a version the craft never had; `N` is compared with the stored curation version first, and the current version answers the live page). The slug matches exactly, else case-insensitively. A MERGED slug answers with its target's page; an unknown slug is 404 `{detail}`. No model, search or HTTP call is made, on a cache hit or a miss. |
+| GET | `/api/crafts/{slug}/page` | public reading (`api/public_deps.public_reader`) | `CraftPage`, the snapshot of the craft's current stamp for the reader's variant (Caching, below), sent as stored with its `ETag` (the SHA-256 of the page as built) and `Vary: Authorization`; a request whose `If-None-Match` names the current tag gets `304` with no body. `Cache-Control` is `public, max-age=300` without a session and `private, no-cache` with one. The page keeps no earlier version: an edition (`/crafts/<slug>/v<N>`) is the monograph document of that version (decision 0162). The slug matches exactly, else case-insensitively. A MERGED slug answers with its target's page; an unknown slug is 404 `{detail}`. No model, search or HTTP call is made, on a cache hit or a miss. |
 | PUT | `/api/crafts/{slug}/explainers/{pieceId}/hidden` | `HIDE_GENERATED` (Professor and above) | `{hidden}` body; hides or shows a generated explainer the job stored for this craft (`KnowledgePiece.hiddenAt`). A hidden explainer is placed on no page and reused by no answer. |
-| PUT | `/api/crafts/{slug}/pieces/{pieceId}/hidden`, `/api/crafts/{slug}/media/{assetId}/hidden` | `HIDE_GENERATED` | `{hidden}` body; hides or shows a piece from a reader's question or an AI asset on this page (decision 0096). |
+| PUT | `/api/crafts/{slug}/pieces/{pieceId}/hidden`, `/api/crafts/{slug}/media/{assetId}/hidden` | `HIDE_GENERATED` | `{hidden}` body; hides or shows a piece of this craft (`KnowledgePiece.hiddenAt`, which also stops its reuse in answers and in the component library) or an AI asset on this page. |
 | GET | `/api/crafts/media/{assetId}` | public reading | 302 to a 15-minute presigned GET of the AI asset's page copy (`MediaAsset.pageKey`), as the field image route does; 404 unless the asset is `CRAFT_SHARED` with a page copy; 503 `{detail}` without the bucket. |
 | GET | `/api/crafts/contributed/{contributionId}` | public asset (`public_asset_reader`) | The picture of an approved image contribution (`docs/contracts/image-contributions.md`), its bytes with its stored MIME type, `Cache-Control: private, max-age=300`, an `ETag` of the cleaned file's SHA-256 (304 on a match, without reading the bucket) and `X-Content-Type-Options: nosniff`, as the field image route does. 404 `{detail}` for anything not `APPROVED` and shared, or a file the bucket no longer holds; 503 `{detail}` without the bucket or when it fails. Never names the contributor. |
 | GET | `/api/crafts/{slug}/film-score` | public reading | The `FilmScore` (`schemas/film.py`) the job stored for the page's current film scenes, with fresh one-hour links; 404 when there is none. Never makes one. |
@@ -136,8 +139,8 @@ decision 0084) is public since decision 0097, scrubbed and credited as the porta
 the page and still signed in, because they are personal data under their own consent terms:
 artisan conversation recordings (decision 0083), testimony waiting for review (decision 0083 item
 16) and a reader's own records. An answer stays its asker's unless the asker shares a version by
-link (decision 0097); what an answer built for the craft joins the page without its asker
-(decision 0096).
+link (decision 0097); what an answer built for the craft reaches the page only as a registered
+component of the library or an AI asset, never with its asker.
 
 ## Shape conventions
 
@@ -146,7 +149,7 @@ camelCase JSON, unknown fields refused, ids are UUID strings, instants carry a z
 (`research/blocks.py`): text, level, `terms[TermSpan]` and their `citations[Citation]` inline, as
 in answers, so one citation cluster serves both (decision 0094). `claims` is the index of every
 claim of this craft and of its borrowed family science that the page cites or All evidence files;
-another craft's claim in a kin piece (`concept_graph`, `relatives`) is cited inline only. The
+another craft's claim in a kin piece (`relatives`) is cited inline only. The
 version 2 parts still name claims by `claimIds` into `claims`. Every citation's source is listed
 once in `sources`.
 
@@ -231,16 +234,17 @@ monograph").
 | Key | Title | Items, in this order |
 |---|---|---|
 | `glance` | At a glance | `prose` (OVERVIEW, DESIGN sections), `key_facts` or `register_facts`, plates placed here, `start_research` (REGISTER basis only) |
-| `made` | How it is made | `prose` (PROCESS, HEALTH), `process_ladder`, `measure`, process `sources_differ` rows no stage holds |
-| `chem` | The chemistry | `prose` (CHEMISTRY, PHYSICS, MATERIALS, BOTANY), signature figures, `zoom_story`, then per mechanism its `reaction_player`, its `simulation` or concept `images`, its `molecule_3d` blocks; then the other molecules, `material_card` blocks, chemistry `sources_differ` rows, material plates |
-| `why` | Why <place> | `prose` (GEOGRAPHY, GEOLOGY, CLIMATE, ECOLOGY), `record` (the environment links), `region_story`, `climate_risk`, `seasons`, `supply_map`, `measure`, `places`, geography `sources_differ` rows |
+| `made` | How it is made | `prose` (PROCESS, HEALTH), `process_ladder`, process `sources_differ` rows no stage holds |
+| `chem` | The chemistry | `prose` (CHEMISTRY, PHYSICS, MATERIALS, BOTANY), signature figures, the `reaction_player` of every step, the stored `simulation` explainers, the `molecule_3d` blocks, `material_card` blocks, chemistry `sources_differ` rows, material plates |
+| `why` | Why <place> | `prose` (GEOGRAPHY, GEOLOGY, CLIMATE, ECOLOGY), `record` (the environment links), `region_story`, `climate_risk`, `seasons`, `places`, geography `sources_differ` rows |
 | `history` | History and trade | `prose` (HISTORY), `timeline_map`, `record` (dated facts the map does not place), record plates |
-| `market` | Market and GI | `prose` (ECONOMICS), `market_gi`, `record` (prices and workforce), `measure` |
-| `whatif` | What if | `what_if` blocks |
+| `market` | Market and GI | `prose` (ECONOMICS), `market_gi`, `record` (prices and workforce) |
 | `people` | People and voices | `communities`, `artisan_voice`, `field_photos` |
-| `kin` | Kin crafts and shared science | `concept_graph`, `relatives` |
+| `kin` | Kin crafts and shared science | `relatives` |
 | `sources` | Sources | `source_list`, `open_questions`, `searched` (THIN dossier only); All evidence and Cite this are drawn here from `evidence` and `cite` |
 
+- `whatif` ("What if") stays a key for the monograph layouts, whose authored pages hold a What if
+  chapter; the page builds no item for it (decision 0162).
 - A chapter is present only when it holds an item, and an item only when its builder returns a
   valid piece; nothing is shown to say a chapter or piece is missing. Chapters keep this order and
   are numbered by position among those present. The keys are the anchors (`#chem`); version 2's
@@ -272,27 +276,24 @@ lookups).
 |---|---|---|
 | `prose` | by discipline | the curated section's sentences, or a `STORED_CLAIMS` section of up to eight of the discipline's strongest claims |
 | `process_ladder` | `made` | the displayed process (the curated one, else the stored one with most stages), stages in reading order with the fields added below |
-| `reaction_player` | `chem` | one per mechanism: every stored reaction of the craft (its curated process and every other stored process of the craft, the seed's included) and each family-dossier reaction a species of which names a material or compound of the craft, grouped as `science/mechanisms` groups them (a shared compound or species word), steps by their stage's reading order, then stageless reactions in stored order, each reaction once |
+| `reaction_player` | `chem` | one player of every step: every stored reaction of the craft (its curated process and every other stored process of the craft, the seed's included) and each family-dossier reaction a species of which names a material or compound of the craft, grouped as `science/mechanisms` groups them (a shared compound or species word), steps by their stage's reading order, then stageless reactions in stored order, each reaction once |
 | signature figures (`indigo_vat`, `mordant_bath`, `lost_wax`, `firing`) | `chem` | every kind whose rules (decision 0086) build from the craft's claims, chosen over the dossier glossary's term keys in order instead of a question's, at most one of each |
-| `zoom_story` | `chem` | levels only from kept pictures and stored compounds (no search), each captioned by the first fact no earlier level uses; two levels or none |
-| `simulation` | `chem` | the stored explainer the job built for the mechanism, unless hidden |
-| `images` | `chem` | the concept pictures the job kept for a mechanism without an explainer, one block per mechanism |
+| `simulation` | `chem` | each stored explainer of a concept of the craft (a `simulation` piece in a `concept:<term key>` slot) whose claims the page lists, unless hidden |
 | `molecule_3d` | `chem` | every compound with a CID, a record source and a kept conformer (`Compound.conformerKeptAt`) that a shown reaction, material or figure names, in order of first mention, each once |
 | `material_card` | `chem` | each material with a role of `DYE`, `MORDANT`, `RESIST`, `BINDER` or `FLUX`, or with a compound or a botanical name, that has a fact claim, in dossier order; facts: its own fact claims, curated first, then by level and citations, at most 3; handling: its `HEALTH` facts |
 | `region_story` | `why` | steps: the dossier's places that resolve to an LGD district, by role (`PRACTISED`, `ORIGIN`, `HISTORIC_CENTRE`, `MIGRATED_FROM`, `MIGRATED_TO`, `MATERIAL_SOURCE`, `MARKET`) then dossier order, each with its first claim; river: an offered basin whose name a step's sentence or quote states, else none (HydroRIVERS basins carry no name, so none today); layers: every registered layer of the factors the environment links name (`FACTOR_LAYERS`), drawn with the view's own classes (decision 0085) |
 | `climate_risk` | `why` | trends of the masthead's district and up to three more mapped districts, with `series`; meaning: environment and place claims whose text names `MEANING_WORDS`, dossier order, at most 6 |
 | `seasons` | `why` | each stage with a `SEASON` timing in stage order, labelled by the stage; then the craft's own fact claims naming a month or season (`calendar.months_named`, `seasons_named`) in dossier order (`CuratedPage.claimOrder`), labelled by the stage, material or tool they are about, else the season they name first ("Monsoon"), else their months; a row's season is the one its texts name first (`calendar.first_season`); rainfall from the masthead district's monthly normals |
-| `supply_map` | `why` | each `MATERIAL_SOURCE` place with a claim naming one of the craft's materials: the material's stored name, the place's name as origin, placed from the place's stored point |
-| `measure` | `made`, `why`, `market` | the stated non-metric quantities of the chapter's shown sentences, by decision 0066's rules |
 | `timeline_map` | `history` | points: each dated fact (`timeline.years_offered`) whose text or quotes name a stored place, at its earliest span; routes: a dated fact stating a move between two named places (`timeline.states_movement`); in time order; the names are each place's name, its district's and the district's other names (`data/district_other_names.json`, Kutch for Kachchh); a place is pinned from the Wikidata point the job stored for its `wikidataId` (`WikidataPoint`), else unpinned |
 | `market_gi` | `market` | imitation: every claim `gi_registry.states_imitation` reads, by level then dossier order, at most `IMITATION_MAX` |
-| `what_if` | `whatif` | inputs and outcomes offered as in decision 0056 (`research/alternatives.alternatives_named` over each stage's material groups; `what_if_evidence.OUTCOME_RELATIONS` order, facts before hypotheses); each option takes its first 3 offered outcomes; `changed` is the group's role word and stage name; a block only with two options and a known one; one per input, at most 4 |
 | `artisan_voice` | `people` | version 2: the portals' quotes and approved testimony (`voices`, newest first, at most 6) |
-| `concept_graph` | `kin` | focus this craft; nodes: its glossary terms shared with at least one other craft, glossary order, at most 8 |
 
 The page builds no `expert_view` (model-composed takes), `quiz` (made per answer), `compare` (its
-own route) or `map_layer` (the region story carries the layers), nor the declared kinds; an
-answer's kept expert seats join through "Pieces built for readers' questions" (decision 0096).
+own route), `map_layer` (the region story carries the layers), `what_if`, `concept_graph`,
+`zoom_story`, `supply_map` or `measure` (retired rather than built, decision 0162), nor the
+declared kinds. An answer's pieces do not join the chapters: a piece registered as a library
+component reaches a monograph document through the component library
+(`services/component_library`).
 
 ### Fields added to answer blocks
 
@@ -343,7 +344,7 @@ answers may fill them too.
 | `open_questions` | `questions[{key, question, settledBy, sentences[] (hypotheses)}]` | the dossier's open questions; each opens Ask with its question |
 | `searched` | `searched[{query, site}]` | a THIN dossier's searches |
 | `start_research` | `questions[] (three)` | `suggestedQuestions`, for a craft with no stored claim |
-| `ai_media` | `media[PageAiMedia] (1+)` | AI images and videos made from the craft's claims (decision 0096) |
+| `ai_media` | `media[PageAiMedia] (1+)` | AI images and videos made from the craft's claims (AI media on the page, below) |
 | `contributed` | `pictures[ContributedPlate] (1 to 6)` | the craft's approved image contributions placed in this chapter (Contributed pictures, below) |
 
 `SOURCE_GROUPS`: `GOVERNMENT`, `SCHOLARSHIP`, `MUSEUM`, `WEB_AND_PRESS` (the craft's own sources by
@@ -384,101 +385,27 @@ an AI image always "Illustration, made with <madeWith>", its tool as declared; `
 exactly when an AI made the picture. The models refuse any other credit, a plate whose address is
 not its own, a hypothesis among its sentences, and a picture shown twice on a page.
 
-Schema note: the page stays at schema version 3. `contributed` is a new part kind, added beside
-the others; a page with no approved picture has no such part and is byte for byte what it was, so
-neither golden changed. A client that does not know the kind refuses the page, as for any part.
+Schema note: the page stays at schema version 3. `contributed` is a part kind beside the others;
+a page with no approved picture has no such part and is byte for byte what it was, so neither
+golden changed.
 
-The web client reads the part in `frontend/lib/craftContributed.ts` (shape, credit rule, and
-`contributedPlacement`, which sends a stage's plate to its stage card on Process, `why` and
-`people` plates to Region and the rest to Overview, or to Overview when the page offers no
-Process). The tabbed screen's `components/craft/ContributedPlates.tsx` was retired with it (round
-6); a craft's document draws an approved picture as a `picture_plate` (`image-contributions.md`, On
-craft pages). Specs: `frontend/e2e/craft-contributed-unit.spec.ts`.
+No screen reads the part: the web client stopped parsing the chapters (decision 0162), and a
+craft's document draws an approved picture as a `picture_plate` from the contributions themselves
+(`image-contributions.md`, On craft pages).
 
-## Pieces built for readers' questions (decision 0096)
+## AI media on the page
 
-The owner, 2026-11-18: "all the assets and information that is built for each and every question
-should be added to their respective craft, no matter who looks it up". Every piece an answer builds
-for a craft joins that craft's page, in its chapter, whoever asked and whatever their role, merged
-with the chapters' own pieces without repeats, with its provenance shown. The asker is never shown
-or stored on the page.
+A reader's answer pieces joined the chapters by decision 0096's merge until decision 0162 retired
+it: no screen drew the chapters, and the monograph document, which takes them as its structure,
+skips every item with an `origin`. What an answer builds reaches a page as a registered component
+of the library. AI images and videos made from the craft's claims still join the chapters:
 
-- **What joins.** Every block an answer keeps as a knowledge piece: `prose`, `process_ladder`,
-  `reaction_player`, `molecule_3d`, `material_card`, `expert_view`, `region_story`, `seasons`,
-  `supply_map`, `zoom_story`, `timeline_map`, `what_if`, `measure`, `market_gi`, `simulation`
-  (generated explainers) and `artisan_voice`; the pictures an answer kept (`MediaRef` rows linked to
-  claims, concept pictures included); and every AI image and AI video made from the craft's claims
-  (AI media, below). Kinds an answer never keeps (`map_layer`, `climate_risk`, `concept_graph`,
-  `compare`, `quiz`, the lede and its signature figure) have nothing to join: the page builds its
-  own `region_story` layers, `climate_risk`, `concept_graph` and signature figures from rows. A
-  student-style piece (`reading_style` set) never joins; the page reads in the standard style.
-- **One home.** The whole merge is one async function of `services/craft_page_answer_assets.py`:
-  given a session, the craft's id and the page's chapters as the chapter builders made them, it
-  answers the chapters with every answer-built piece and AI asset of that craft merged in by the
-  rules of this section. `services/craft_chapters.py` calls it before the claim ledger and source
-  numbering; the exact signature is recorded here when the build fixes it. No other module reads
-  answers' pieces for the page, and the function writes nothing.
-- **Which pieces belong to a craft,** decided when the page is built, never stored: a piece whose
-  `craftId` is the craft; a cross-craft piece (`craftId` null: a region story, a generated
-  explainer) whose answer (`createdFromAnswerId`) was about the craft; and a piece of an answer
-  about no craft (any-craft answers) when a claim it cites is about one of the craft's own concepts
-  and every claim it cites is one this page lists, else it belongs to no craft. A rebuilt successor
-  belongs where its original did (the module's DB test checks that the nightly rebuild keeps its
-  craft and answer id). An answer's kept pictures belong to the craft whose page lists a claim they
-  illustrate.
-- **Readers' or curated.** One rule, shared with supersession and reuse
-  (`research/piece_reuse.curated_piece`, decision 0142): a piece is curated when it has no answer id
-  and every claim it cites is curated (`CuratedClaim` or `CuratedCategoryClaim`); any other piece
-  that is not a registered component (`label` null) is a reader's, including one whose answer was
-  deleted (the answer id is set null on delete), which joins the page as a reader's piece.
-- **Which show.** A current piece of the craft (`staleSince`, `supersededById` and `hiddenAt` null),
-  English, whose every claim is visible as cited for the variant
-  (`research/piece_reuse.visible_as_cited`) and is a claim this page lists, and which passes its
-  kind's row check when it has one (ladders against the process rows, decision 0045's reaction
-  check, decision 0056's what-if check). Anything else leaves the page at its next build.
-- **Where.** Kinds with a chapter of their own go there (`process_ladder` and `lost_wax`/`firing`
-  to `made`; `reaction_player`, `molecule_3d`, `material_card`, `zoom_story` to `chem`;
-  `region_story`, `seasons`, `supply_map` to `why`; `timeline_map` to `history`; `market_gi` to
-  `market`; `what_if` to `whatif`; `artisan_voice` to `people`); every other kind, `simulation`,
-  `expert_view` and `measure` included, by its piece's facet through `DISCIPLINE_CHAPTERS`. In its
-  chapter a reader-question piece follows the page's own items of the same kind, in
-  `piece_reuse.PIECE_BLOCK_ORDER`, newest first; a `chem` piece joins the mechanism whose claims it
-  shares. An answer's kept pictures become one `images` block per chapter, in the chapter of the
-  claims they illustrate, at most 8, after that chapter's plates.
-- **One per slot, the best one** (pure functions of the same module). Before the ledger, items of
-  a kind are reduced to one per slot: a `reaction_player` per mechanism, a `molecule_3d` per CID, a
-  `material_card` per material (the ledger's key), a `simulation` per concept (`term_key`), one
-  `process_ladder`, `region_story`, `seasons`, `supply_map`, `zoom_story`, `timeline_map` and
-  `market_gi` per page, a `what_if` per input (stage and option set), an `expert_view` set per
-  facet (a section's seats move together), a `prose` or `measure` per facet and topic key. Among a
-  slot's items: a kind the page rebuilds from rows on every build (`PAGE_REBUILT_KINDS`:
-  `process_ladder`, `reaction_player`, `molecule_3d`, `region_story`, `market_gi`, `artisan_voice`,
-  the kinds answers rebuild on reuse) keeps the page's own build, since an answer's copy shows the
-  same rows, older; otherwise the higher evidence floor wins (the weakest level among the item's
-  shown sentences), so a curated piece is never displaced by an answer piece of lower evidence;
-  then the item showing more distinct visible claims; then the newer; then the lower piece id. A
-  newer or richer answer piece of equal evidence replaces an older one, the curated one included.
-  The claim ledger then runs as above, so a sentence or claim already shown leaves the answer piece,
-  and a piece left with nothing is not placed.
-- **Provenance on the item.** `ChapterItem` gains `origin: ItemOrigin | null` and `pieceId | null`.
+- **Provenance on the item.** `ChapterItem` carries `origin: ItemOrigin | null` and `pieceId | null`.
   `ItemOrigin {basis (CURATED, STORED, READERS), generated (MODEL, AI_IMAGE, AI_VIDEO) | null, model
-  | null, generatedOn (YYYY-MM-DD) | null, fromQuestion {text | null, askedIn (YYYY-MM)} | null}`.
-  `basis` is `CURATED` when every claim the item shows is curated, `READERS` when it came from an
-  answer or shows a claim answers wrote back, else `STORED`. The client's labels
-  (`lib/craftChapters.originLabel`, one home): none for `CURATED` (the masthead states the norm
-  once); "From earlier research" for `STORED`; "From a reader's question, November 2026" with the
-  question beneath when `fromQuestion.text` is set, else "From a reader's question"; "Model-built
-  from cited claims" for `MODEL`; "AI illustration" for `AI_IMAGE` and "AI video" for `AI_VIDEO`,
-  each with its model and day. Levels stay as built: write-back claims are `PROVISIONAL`, marked
-  only where a sentence differs from the page's norm. The masthead's provenance gains `updatedOn`,
-  the IST day of the newest reader-question item or AI asset shown, null when none.
-- **The question.** `fromQuestion.askedIn` is the month the answer was made; `text` is the question
-  as asked only when the module's question screen passes it, read at build time through
-  `KnowledgePiece.createdFromAnswerId` and never copied: English in Latin script, at most
-  160 characters, no first- or second-person word, none of `research/evidence`'s personal-data
-  patterns, no address, handle, URL or run of six digits; otherwise null. A deleted answer leaves
-  `{text: null, askedIn}` from the piece's own `createdAt`. No user id, answer id, role, depth or
-  reading style is read for the page or sent.
+  | null, generatedOn (YYYY-MM-DD) | null, fromQuestion}`; `fromQuestion` is always null since no
+  reader's piece joins, and leaves the payload in the release after decision 0162's. `basis` is
+  `READERS` on an AI asset (it comes from an answer), `STORED` on a stored explainer. The masthead's
+  provenance carries `updatedOn`, the IST day of the newest AI asset shown, null when none.
 - **AI media.** An AI image or video (`MediaAsset` of a succeeded `MediaJob`: a stage job's today,
   an answer's illustration once built) joins the page of the job's craft while every claim of its
   claim set is visible as cited, it is `CRAFT_SHARED`, and it has a page copy. On success the media
@@ -491,79 +418,49 @@ or stored on the page.
   height, durationSeconds | null, altText, sentences[ExplainerSentence] (the claims it illustrates),
   stageId | null, origin: ItemOrigin}`: in `made` right after the ladder, each drawn in the stage
   its `stageId` names, else in the chapter most of its claims' disciplines belong to; at most one
-  image and one video per stage and three items in any other chapter, newest first. Drawn on a sunk
-  mat with its label, model and day and a caption naming what it illustrates; never the masthead or
-  an opener, never a plate, never an OG image, never captioned as a photograph, never in the
-  evidence column, never twice on the page. Its prompt and style hint are not sent.
-- **Films.** An answer's film plays its blocks; the page's film plays its chapters' items the same
-  way (decision 0058's scenes, English). `film` on the page is true when the job has stored a score
-  for the page's current scenes, which `GET /api/crafts/{slug}/film-score` answers; the client plays
-  the film without music otherwise.
-- **Withdrawal and staleness follow the sources.** A piece whose claims are retracted, hidden or
-  stale (the `kv_stale_resting_pieces` trigger), a superseded or hidden piece, an asset whose claims
-  leave the page or that is hidden, and a field quote or testimony withdrawn or past 7 days leave
-  the page at its next build; an archived version (`?version=N`) is read back through the same
-  filters, dropping such items and renumbering sources and figures, as stored explainers are
-  (decision 0091 item 10), so a withdrawal reaches every version.
-- **Incremental.** The craft's pieces as the rule above finds them, with their stale, superseded
-  and hidden marks, and the craft's AI assets with their visibility and page copy, are terms of the
-  stamp, so keeping pieces for a craft moves that craft's stamp: its next read rebuilds its page
-  (each variant as read), its ETag changes, and no job, model call or other craft's page is
-  involved.
-- **Hiding.** A Professor or above (`HIDE_GENERATED`) may hide any piece on a page with `PUT
-  /api/crafts/{slug}/pieces/{pieceId}/hidden` (which also stops its reuse in answers) and any AI
-  asset with `PUT /api/crafts/{slug}/media/{assetId}/hidden` (`visibility` back to `PRIVATE`); each
-  answers 404 for one not on this craft's page and is audited (`services/audit`).
-- **Fixtures.** The Kutch Ajrakh golden adds, from `shared/craft.page.inputs.json`, the pieces one
-  recorded Expert answer on the craft keeps (built by the real builders from the dossier rows with
-  recorded model choices, one expert seat among them, its question passing the screen) and one AI
-  image with its claim set; the Farrukhabad Prints golden adds the claims and pieces one recorded
-  answer about it wrote back and kept, its question failing the screen, so every chapter it shows
-  comes from that answer. Both sides check the slots, the labels and that no golden carries a user
-  or answer id.
-- **Tables** (in the chapters migration): `MediaAsset.pageKey` only; which pieces belong to a craft
-  is decided at build time, so no link table is kept.
-- **Who builds it.** The merge module and its tests (`tests/curation/test_craft_page_answer_assets.py`
-  and a DB test) are one build unit that edits no other file; the CHAPTERS build calls it from
-  `services/craft_chapters.py`, adds `origin`, `pieceId`, `ai_media` and `updatedOn` to the payload,
-  the stamp terms, the AI media copy and route, the film score route, the hide routes and the
-  goldens' inputs.
+  image and one video per stage and three items in any other chapter, newest first. Its prompt and
+  style hint are not sent. No monograph document draws it yet (debt register).
+- **Films.** An answer's film plays its blocks; the page's film would play its chapters' items the
+  same way (decision 0058's scenes, English), with a score the job stores and
+  `GET /api/crafts/{slug}/film-score` answers (debt register).
+- **Withdrawal follows the sources.** An asset whose claims leave the page or that is hidden, and a
+  field quote or testimony withdrawn or past 7 days, leave the page at its next build.
+- **Incremental.** The craft's pieces with their stale, superseded and hidden marks, and its AI
+  assets with their visibility and page copy, are terms of the stamp, so a change moves that
+  craft's stamp: its next read rebuilds its page (each variant as read), its ETag changes, and no
+  job, model call or other craft's page is involved.
+- **Hiding.** A Professor or above (`HIDE_GENERATED`) may hide a piece of the craft with `PUT
+  /api/crafts/{slug}/pieces/{pieceId}/hidden` (which also stops its reuse in answers and the
+  library) and any AI asset with `PUT /api/crafts/{slug}/media/{assetId}/hidden` (`visibility` back
+  to `PRIVATE`); each answers 404 for one not of this craft and is audited (`services/audit`).
+- **Tables** (in the chapters migration): `MediaAsset.pageKey`. `CraftPageArchive` is no longer
+  written or read; it is dropped in the release after decision 0162's (debt register).
 
 ## Generated explainers and lookups (the job)
 
-`python -m app.scripts.build_craft_chapters [--craft <slug>]` runs from its own workflow after each
-deploy's import and nightly, never from a route. Each step is idempotent and keyed, so a rerun does
+`python -m app.scripts.build_craft_chapters [--craft <slug>]` runs nightly from the Coverage
+enrichment workflow, never from a route. Each step is idempotent and keyed, so a rerun does
 only what changed.
 
 1. **Lookups, no model (built).** Keeps the 3D conformer of every CID of the crafts' compounds
    with none kept (PubChem adapter through the conformer cache, `Compound.conformerKeptAt`; a CID
    with no 3D record stays unkept) and stores the P625 point of every dossier place's Wikidata id
    with none stored (`WikidataPoint`, one row per item).
-2. **Generated explainers, the one model use.** The concepts are
-   `science/mechanisms.craft_concepts(records)`: decision 0087's candidates over the whole craft
-   (reaction groups whose claims are facts, each stage's resist materials), not placed by
-   sentences. One draft per concept that has no current explainer for its claim set, on the Expert
-   explainer route (`providers/answer_routes.answer_models("EXPERT", ...)`), with the concept's
-   claims as `grounds` and its reactions, through the static check and sealed frame of decision
-   0055 unchanged; stored as a knowledge piece in the concept's slot (`concept:<term key>`), so
-   answers reuse it too. Built per curation version for a curated craft and per stored claim set
-   for another. Spend is recorded under the system principal `craft-chapters`, with no cap
-   (decision 0093).
-3. **Concept pictures, no model.** A concept left without an explainer (none drafted, or the
-   draft declined or failing twice) keeps up to three concept pictures
-   (`services/concept_pictures`) as `MediaRef` rows linked to the concept's claims.
+2. **Generated explainers** and 3. **concept pictures** were retired rather than built
+   (decision 0162): an explainer an answer stores in a concept's slot (`concept:<term key>`) still
+   joins `chem`.
 4. **AI media copies, no model.** Copies each succeeded AI asset of the craft that has no page copy
-   yet (the media worker copies new ones itself; decision 0096).
+   yet (the media worker copies new ones itself; decision 0154).
 5. **Film score.** When the music route has a key, makes the score for the page's film scenes
    (decision 0058's rules over the chapters' items in reading order, English) through the media
    router, cached by scenes hash at `media/score/craft/<craftId>/<scenesHash>/score.json`, clips
    content-addressed as for answers, so most clips are reused.
 6. **Pages, pure (built).** Rebuilds both snapshots of every curated craft and every craft with a
-   snapshot, logging a body that changed under its stamp. Steps 2 to 5 are not built; the job runs
-   nightly from the Coverage enrichment workflow, not yet after a deploy's import.
+   snapshot, logging a body that changed under its stamp. Step 5 is not built (debt register); the
+   job runs nightly from the Coverage enrichment workflow.
 
-A page built before steps 1 to 3 shows what is stored and gains the rest when the job writes it,
-because the stamp moves.
+A page built before step 1 shows what is stored and gains the rest when the job writes it, because
+the stamp moves.
 
 ## Caching
 
@@ -602,15 +499,12 @@ because the stamp moves.
 - **Holes are loud.** The nightly run (`build_craft_chapters`, from Coverage enrichment) rebuilds every snapshot under its stamp and compares; a
   different body under the same stamp is logged as an error naming the craft (an input the stamp
   misses), and the new body replaces the old.
-- **Versions for Cite this.** When an import supersedes curation version `N`, the last snapshot
-  under `N` is copied to `CraftPageArchive {craftId, curationVersion, variant, body, etag,
-  frozenAt}` and is answered by `?version=N` from then on. An archived body carries no field voice
-  or testimony: `craft_page_archive.without_field_voices` drops `artisan_voice` and `field_photos`
-  items, `voices`, `fieldPhotos` and the sources only they cite, and zeroes the totals, when it is
-  archived and again when it is read, so a withdrawal or a hold never reaches a frozen version.
+- **Versions for Cite this.** The page keeps no earlier version: an edition is the monograph
+  document of that version (`monograph-document.md`), which the web app reads at
+  `/crafts/<slug>/v<N>` (decision 0162 retired the archive and `?version=N`).
 
 `CiteThis {url, version, curatedOn, text, bibtex}`: the lower-case versioned path
-(`/crafts/<slug>/v<N>`, which the web app reads with `?version=N`; for a craft without a dossier its
+(`/crafts/<slug>/v<N>`, the monograph document of that version; for a craft without a dossier its
 plain path, with `version` and `curatedOn` null), the curation version and date, and the citation as
 text and as BibTeX `@misc` (`howpublished = {\url{...}}`), both with the absolute address on the
 site (`PUBLIC_WEB_URL`);
@@ -753,9 +647,8 @@ EvidenceEntry {claimId, foldedIds[]}
 | Both goldens, byte for byte, and the served Kutch Ajrakh page under 250 KB gzipped | `backend/tests/contracts/test_craft_page_contract.py` |
 | The chapters, their order and rules | `backend/tests/curation/test_craft_chapters.py`, `test_chapter_rules.py`, `test_chapter_balance.py` and `test_craft_page.py` |
 | Contributed pictures | `backend/tests/curation/test_contributed_plates.py`, `test_contributed_placement.py` and `backend/tests/db/test_contributed_plates_db.py` |
-| Readers' answer pieces joining the page | `backend/tests/curation/test_craft_page_answer_assets.py` |
-| Caching, the stamp and snapshots | `backend/tests/curation/test_craft_page_route.py`, `backend/tests/db/test_craft_page_stamp_db.py` and `test_craft_page_snapshots_db.py` |
-| The client parses the page | `frontend/e2e/craft-page-unit.spec.ts`, `craft-page-context-unit.spec.ts`, `craft-chapters-unit.spec.ts` and `craft-contributed-unit.spec.ts`; vocabularies in `backend-vocabulary-unit.spec.ts` |
+| Caching, the stamp and snapshots, and no archived version | `backend/tests/curation/test_craft_page_route.py`, `backend/tests/db/test_craft_page_stamp_db.py` and `test_craft_page_snapshots_db.py` |
+| The client parses the page without its chapters | `frontend/e2e/craft-page-unit.spec.ts` and `craft-page-context-unit.spec.ts`; the golden's drawn blocks in `monograph-blocks-unit.spec.ts`; vocabularies in `backend-vocabulary-unit.spec.ts` |
 
 Re-read it when a chapter is built or retired, the schema version moves (version 2 parts leave by
 2026-12-18), or a new part kind is added.

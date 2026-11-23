@@ -20,7 +20,6 @@ from .category_records import category_page_records
 from .chapter_context import ChapterRows, PlacePoint, StoredExplainer
 from .chapter_family import family_science, family_slug
 from .climate_store import craft_climate
-from .craft_page_answer_assets import answer_pieces
 from .craft_page_records import CraftPageRecords
 from .knowledge_view import source_ref
 from .piece_lookup import stored_piece
@@ -57,7 +56,6 @@ async def chapter_rows(session: AsyncSession, craft: Craft, records: CraftPageRe
         points=await place_points(session, _wikidata_ids(records)),
         explainers=await _explainers(session, craft.id),
         datasets={BOUNDARY_DATASET_CODE: region_dataset(boundary)} if boundary else {},
-        answers=await answer_pieces(session, craft.id),
         site=get_settings().public_web_url,
     )
 

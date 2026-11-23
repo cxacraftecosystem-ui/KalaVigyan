@@ -205,6 +205,15 @@ def test_every_reader_gets_all_the_evidence() -> None:
     assert sorted(map(str, [*filed, *folded])) == sorted(str(claim.id) for claim in page.claims)
 
 
+def test_each_listed_source_counts_the_shown_sentences_that_cite_it() -> None:
+    page = golden_page()
+    head = list(page.masthead.picture.sentences) if page.masthead.picture else []
+    shown = [*head, *page.lede, *(s for chapter in page.chapters for s in chapter.sentences())]
+    for source in page.sources:
+        citing = [s for s in shown if any(c.source_id == source.id for c in s.citations)]
+        assert (source.id, source.supports) == (source.id, len(citing))
+
+
 def test_a_page_without_its_evidence_is_refused() -> None:
     plain = golden_page().model_dump(mode="json", by_alias=True)
     plain["evidence"] = None

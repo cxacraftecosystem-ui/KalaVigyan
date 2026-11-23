@@ -136,9 +136,9 @@ flowchart LR
 | [0093](0093-no-caps-for-now.md) | No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output | · |
 | [0094](0094-design-primitives.md) | The design primitives: one citation cluster, one motion owner, the editorial folder | · |
 | [0095](0095-craft-page-chapters.md) | The craft page becomes a monograph in chapters, public to read, built without a question | [0097](0097-public-reading-everywhere-but-asking.md) and [0100](0100-ajrakh-monograph-served-as-built.md) |
-| [0096](0096-reader-question-pieces-join-their-craft-page.md) | Every piece built for a reader's question joins its craft's page, whoever asked | [0154](0154-ai-media-and-film-scores-kept-true.md) |
+| [0096](0096-reader-question-pieces-join-their-craft-page.md) | Every piece built for a reader's question joins its craft's page, whoever asked | [0154](0154-ai-media-and-film-scores-kept-true.md), [0162](0162-unused-craft-page-chapters-retired.md) |
 | [0097](0097-public-reading-everywhere-but-asking.md) | Everything reads without signing in except asking | [0145](0145-monograph-pages-and-speed-without-debt.md) and [0155](0155-accounts-and-sharing-kept-true.md) |
-| [0098](0098-craft-page-chapters-build.md) | How the craft page chapters were built: the readings taken where the contract was open | [0100](0100-ajrakh-monograph-served-as-built.md) |
+| [0098](0098-craft-page-chapters-build.md) | How the craft page chapters were built: the readings taken where the contract was open | [0100](0100-ajrakh-monograph-served-as-built.md), [0162](0162-unused-craft-page-chapters-retired.md) |
 | [0099](0099-wider-expert-panel.md) | The expert panel searches its own fields, calls each seat on its own, seats up to 12 at Expert, and hears the artisan from field transcripts | [0156](0156-expert-panel-and-field-voices-kept-true.md) |
 | [0100](0100-ajrakh-monograph-served-as-built.md) | The Kutch Ajrakh craft page is the hand-built monograph, served as built | [0106](0106-one-monograph-template-for-every-page.md) |
 
@@ -153,7 +153,7 @@ flowchart LR
 | [0105](0105-ajrakh-page-as-structured-content.md) | The Ajrakh page as structured content, rebuilt by a static build | · |
 | [0106](0106-one-monograph-template-for-every-page.md) | One monograph template for every page, reached through fragments | [0145](0145-monograph-pages-and-speed-without-debt.md) |
 | [0107](0107-craft-articles-in-english-with-room-for-translation.md) | Craft articles are written in English, with room for translations | [0117](0117-pages-in-other-languages.md) |
-| [0108](0108-structure-proposals-become-curated-facts.md) | An approved structure proposal becomes a curated fact of its dossier | [0111](0111-fewer-mcp-tools.md) |
+| [0108](0108-structure-proposals-become-curated-facts.md) | An approved structure proposal becomes a curated fact of its dossier | [0111](0111-fewer-mcp-tools.md), [0162](0162-unused-craft-page-chapters-retired.md) |
 | [0109](0109-image-formats-and-screens.md) | Pictures in every common format, given from the chat and screened before review | · |
 | [0110](0110-contributor-supplied-sources.md) | Sources a contributor's AI can read and we cannot, and a studio to build a page in | [0111](0111-fewer-mcp-tools.md) |
 | [0111](0111-fewer-mcp-tools.md) | Twenty-one MCP tools in six groups, with small schemas | [0114](0114-kinds-and-datasets.md) and [0117](0117-pages-in-other-languages.md) |
@@ -203,6 +203,7 @@ flowchart LR
 | [0156](0156-expert-panel-and-field-voices-kept-true.md) | The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run | · |
 | [0157](0157-translations-read-back-and-reviewed-interface-words.md) | A translation is read back before it is shown, and every fixed word in another language is sourced, reviewed data | · |
 | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) | A curated craft's monograph lists the facts contributors add under their own fields, and a fact a figure shows is not listed again | · |
+| [0162](0162-unused-craft-page-chapters-retired.md) | The craft page's chapters keep only what a page draws, and an approved structure writes its shared rows at once | · |
 | [0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md) | Nine more limits are kept by choice, the debt register may only shrink, the database tests run in shards, and each process on the box keeps to its own connection budget | · |
 
 ## How this document is kept true

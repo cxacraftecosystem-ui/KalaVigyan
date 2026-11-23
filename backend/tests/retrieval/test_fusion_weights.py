@@ -52,9 +52,9 @@ def test_weights_that_do_not_fit_the_rankings_are_refused(weights: tuple[float, 
         reciprocal_rank_fusion(PARAPHRASE, weights=weights)
 
 
-def test_the_committed_fusion_is_the_equal_weighting_written_as_the_sweep_writes_it() -> None:
+def test_the_committed_fusion_is_the_weighting_the_production_sweep_picked_written_as_it_writes_it() -> None:
     settings = fusion_settings()
-    assert (settings.k, settings.claims.ordered()) == (60, (1.0, 1.0, 1.0))
+    assert (settings.k, settings.claims.ordered()) == (20, (0.5, 5.0, 0.25))
     assert settings_text(settings) == FUSION_FILE.read_text(encoding="utf-8")
 
 

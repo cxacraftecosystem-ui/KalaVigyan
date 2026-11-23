@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import type { PageBlock } from "@/components/monograph/kinds/blocks/answerBlockSpec";
 import { checkedCraftPage } from "@/lib/craftPageChecks";
 import { craftPageShape, type CraftPage, type OverviewSection, type PageClaim, type PageEvidence } from "@/lib/craftPageContract";
 import type { PageGi } from "@/lib/craftPageContext";
@@ -10,8 +11,16 @@ export const CRAFT_PAGE_GOLDEN = join(__dirname, "..", "..", "shared", "craft.pa
 export const REGISTER_PAGE_GOLDEN = join(__dirname, "..", "..", "shared", "craft.page.register.golden.json");
 export const STORED_SECTION_LIMIT = 8;
 
+type GoldenStructure = { chapters: { items: { block: PageBlock | null }[] }[] };
+
 export function rawPage(): CraftPage {
   return JSON.parse(readFileSync(CRAFT_PAGE_GOLDEN, "utf8")) as CraftPage;
+}
+
+export function goldenBlock(kind: string): PageBlock {
+  const golden = JSON.parse(readFileSync(CRAFT_PAGE_GOLDEN, "utf8")) as GoldenStructure;
+  for (const chapter of golden.chapters) for (const item of chapter.items) if (item.block && item.block.kind === kind) return item.block;
+  throw new Error(`the golden page's structure draws no ${kind}`);
 }
 
 export function registerPage(edit: (body: CraftPage) => void = () => undefined): CraftPage {
@@ -90,8 +99,5 @@ export function emptyPage(): CraftPage {
     body.lede = [];
     body.cite = null;
     body.masthead = { ...body.masthead, nativeName: null, gi: null, picture: null, provenance: { basis: "REGISTER", sources: 0, reliability: { a: 0, b: 0, c: 0, d: 0 }, curatedOn: null, updatedOn: null } };
-    body.chapters = [
-      { key: "glance", title: "At a glance", opener: null, items: [{ block: null, part: { kind: "start_research", questions: body.suggestedQuestions.slice(0, 3) }, figure: null, origin: null, pieceId: null }] }
-    ];
   });
 }

@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_engine
 from app.models import Claim, Concept, Craft, CraftLocation, CraftPageArchive, CraftPageSnapshot, CuratedCraft
 from app.services import knowledge_view
-from app.services.craft_page_archive import archived_page
 from app.services.craft_page_snapshots import rebuild_snapshots, served_page
 from app.services.craft_page_stamp import page_stamp
 from app.services.curation_import import import_curation
@@ -84,7 +83,7 @@ async def test_the_stamp_moves_when_a_place_of_the_craft_changes(session: AsyncS
     assert await page_stamp(session, craft, "OPEN") != before
 
 
-async def test_the_stamp_moves_with_the_curation_version_and_the_old_page_is_archived(
+async def test_a_page_of_an_earlier_curation_version_is_rebuilt_and_never_archived(
     session: AsyncSession,
 ) -> None:
     craft = await ajrakh(session)
@@ -92,15 +91,13 @@ async def test_the_stamp_moves_with_the_curation_version_and_the_old_page_is_arc
     version = first.body["curation"]["version"]
     stored = await session.get(CraftPageSnapshot, (craft.id, "OPEN"))
     assert stored is not None
-    older = {**first.body, "curation": {**first.body["curation"], "version": version - 1}}
-    stored.body = older
+    stored.body = {**first.body, "curation": {**first.body["curation"], "version": version - 1}}
     stored.stamp = "an older stamp"
     await session.flush()
-    await served_page(session, craft, "OPEN")
-    archived = await session.get(CraftPageArchive, (craft.id, version - 1, "OPEN"))
-    assert archived is not None and archived.body == older
-    assert await archived_page(session, craft, "OPEN", version - 1) == older
-    assert await archived_page(session, craft, "OPEN", version + 7) is None
+    again = await served_page(session, craft, "OPEN")
+    assert again.body["curation"]["version"] == version
+    archived = await session.scalars(select(CraftPageArchive).where(CraftPageArchive.craftId == craft.id))
+    assert archived.all() == []
 
 
 async def test_a_nightly_rebuild_under_the_same_stamp_changes_nothing(session: AsyncSession) -> None:

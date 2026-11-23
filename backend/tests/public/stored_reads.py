@@ -122,7 +122,6 @@ def _craft_reads(asked: Asked) -> dict[Any, dict[str, Any]]:
         craft_catalogue: {"load_catalogue": returning(build_catalogue())},
         crafts: {
             "served_page": served,
-            "archived_page": nothing,
             "region_records": returning(golden_region_records()),
         },
     }

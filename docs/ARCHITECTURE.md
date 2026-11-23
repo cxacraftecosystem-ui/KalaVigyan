@@ -147,7 +147,10 @@ decision 0081). The page (schema version 3, decisions 0095 and 0098) is read onc
 (`craft_page_records`, `chapter_records.chapter_rows`), built purely by one module per chapter
 (`services/chapter_<key>.py`) that reuses the answer builders' pure halves with fixed rules for
 the model's choices, passed through one page ledger (`chapter_ledger`), and cached per craft and
-variant under a stamp read in one statement (`craft_page_stamp`, `craft_page_snapshots`).
+variant under a stamp read in one statement (`craft_page_stamp`, `craft_page_snapshots`). No screen
+draws the chapters: a curated craft's monograph document takes them as its structure
+(`document_components.document_structure`), and the web reads the page's masthead, lede, record and
+lists (decision 0162).
 
 ## Students and artisans (decision 0083)
 

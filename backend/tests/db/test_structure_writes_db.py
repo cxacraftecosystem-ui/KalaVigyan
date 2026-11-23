@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -5,11 +6,38 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Claim, ClaimSource, Concept, CraftGiRecord, CuratedClaim, StructureProposal
+from app.data.craft_master_loader import ID_NAMESPACE
+from app.models import (
+    Claim,
+    ClaimSource,
+    Concept,
+    CraftGiRecord,
+    CuratedClaim,
+    Process,
+    ProcessStage,
+    Reaction,
+    ReactionCitation,
+    StructureProposal,
+    Term,
+    TermConcept,
+    TermCraft,
+)
 from app.research.review_queue import STRUCTURE, QueueApproval
 from app.services import review_queue_decisions as decisions
 
-from ..structure.pages import BOTANY_QUOTE, GI_QUOTE, HELD_A, HELD_B, HELD_C, NAME_QUOTE, SLUG, source
+from ..structure.pages import (
+    BOTANY_QUOTE,
+    FORMULA_QUOTE,
+    GI_QUOTE,
+    HELD_A,
+    HELD_B,
+    HELD_C,
+    NAME_QUOTE,
+    SLUG,
+    STAGE_ID,
+    key,
+    source,
+)
 from .structure_seed import CRAFT, NOW, People, curated_key, proposed, seeded_session, stored_page
 
 pytestmark = pytest.mark.db
@@ -24,6 +52,15 @@ CONFLICT = {
     "claimIds": [str(HELD_A), str(HELD_B)],
 }
 NAME = {"kind": "NATIVE_NAME", "text": "Ajrak", "language": "sd"}
+REACTION = {
+    "kind": "REACTION",
+    "reactionKind": "COMPLEXATION",
+    "stageKey": "P01",
+    "reactants": [{"name": "alum", "formula": "KAl(SO4)2"}, {"name": "alizarin"}],
+    "products": [{"name": "Lake pigment", "formula": "KAl(SO4)2"}],
+}
+REACTION_FACT = "Alum, potassium aluminium sulfate, binds the dye alizarin to the cotton."
+PROCESS = key("process")
 
 
 @pytest.fixture
@@ -138,3 +175,47 @@ async def test_a_second_proposal_citing_the_same_page_keeps_its_source_key(
     (material,) = page.materials
     assert (material.botanical_name, material.claim_ids[-1]) == ("Indigofera tinctoria", second.claimId)
     assert NAME_QUOTE in [quote["text"] for quote in first.sources[0]["quotes"]]
+
+
+async def test_an_approved_glossary_term_is_a_shared_glossary_entry_at_once(
+    seeded: tuple[AsyncSession, People],
+) -> None:
+    session, people = seeded
+    await approved(session, people, TERM)
+    (term,) = (await stored_page(session)).glossary
+    assert term.term_key == "ajrak"
+    shared = await session.get(Term, uuid.uuid5(ID_NAMESPACE, "term:ajrak"))
+    assert shared is not None
+    assert (shared.key, shared.label, shared.meaning) == (
+        "ajrak",
+        "Ajrak",
+        "The printed cloth, named for its blue.",
+    )
+    assert await session.get(TermCraft, (shared.id, CRAFT)) is not None
+    assert await session.get(TermConcept, (shared.id, term.concept_id)) is not None
+
+
+async def test_an_approved_reaction_on_a_stage_is_a_stored_science_row_at_once(
+    seeded: tuple[AsyncSession, People],
+) -> None:
+    session, people = seeded
+    session.add(Process(id=PROCESS, craftId=CRAFT, name="Curated process"))
+    await session.flush()
+    session.add(ProcessStage(id=STAGE_ID, processId=PROCESS, ordinal=0, name="Second wash"))
+    await session.flush()
+    row = await approved(
+        session, people, REACTION, quote=FORMULA_QUOTE, field="CHEMISTRY", statement=REACTION_FACT
+    )
+    (reaction,) = (await stored_page(session)).reactions
+    stored_id = uuid.uuid5(ID_NAMESPACE, f"curation:{SLUG}:reaction:R01")
+    assert (reaction.key, reaction.reaction_id) == ("R01", stored_id)
+    stored = await session.get(Reaction, stored_id)
+    assert stored is not None
+    assert (stored.stageId, stored.ordinal, stored.kind) == (STAGE_ID, 0, "COMPLEXATION")
+    assert stored.label == "alum + alizarin → Lake pigment"
+    cited = (await session.scalars(select(ClaimSource.id).where(ClaimSource.claimId == row.claimId))).all()
+    citations = await session.scalars(
+        select(ReactionCitation.claimSourceId).where(ReactionCitation.reactionId == stored_id)
+    )
+    assert len(cited) == 1
+    assert citations.all() == list(cited)

@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 
 import { commonsThumb, isCommonsFile } from "@/lib/commonsPicture";
 import type { CraftCatalogue } from "@/lib/craftCatalogueContract";
-import type { PagePlate } from "@/lib/craftChapters";
-import type { CraftPage } from "@/lib/craftPageContract";
+import type { CraftPage, PagePlate } from "@/lib/craftPageContract";
 import { craftSubtitle } from "@/lib/craftPageView";
 import { photoCredit } from "@/lib/editorialText";
 

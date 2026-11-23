@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 
 import { splitSseBuffer } from "@/lib/answerStream";
-import { craftPageShape } from "@/lib/craftPageContract";
+import { craftPageShape, UNREAD_CHAPTERS } from "@/lib/craftPageContract";
 import { mediaJobShape, mediaOptionsShape } from "@/lib/mediaContract";
 import { craftRegionShape, layerClassOf, mapLayerListShape, mapLayerShape } from "@/lib/regionContract";
 import { parseShape, ShapeError, type Shape } from "@/lib/shape";
@@ -42,9 +42,20 @@ const GOLDEN: [string, Shape<unknown>][] = [
   ["media.options.golden.json", mediaOptionsShape]
 ];
 
+const UNREAD: Readonly<Record<string, readonly string[]>> = {
+  "craft.page.golden.json": [UNREAD_CHAPTERS],
+  "craft.page.register.golden.json": [UNREAD_CHAPTERS]
+};
+
+function withoutUnread(name: string): unknown {
+  const body = { ...(golden(name) as Record<string, unknown>) };
+  for (const field of UNREAD[name] ?? []) delete body[field];
+  return body;
+}
+
 for (const [name, shape] of GOLDEN) {
-  test(`the client parses ${name} as the backend writes it`, () => {
-    expect(parseShape(shape, golden(name))).toEqual(golden(name));
+  test(`the client parses ${name} as the backend writes it, keeping every field it reads`, () => {
+    expect(parseShape(shape, golden(name))).toEqual(withoutUnread(name));
   });
 }
 
