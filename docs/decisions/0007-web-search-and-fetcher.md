@@ -9,6 +9,7 @@ Date: 2026-11-16. Status: accepted.
 | For | Read |
 |---|---|
 | The contract it was built to | [0002 One contract package for research and answering](0002-research-and-answering-contracts.md) |
+| The fetcher's process runs as a user of its own that sees no other user's processes | [decision 0173](0173-a-release-that-keeps-serving-and-its-way-back.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

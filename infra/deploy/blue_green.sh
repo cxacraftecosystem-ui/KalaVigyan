@@ -9,6 +9,8 @@ DRAIN="${DRAIN:-5}"
 UNIT=kv-api
 WORKERS=(kv-worker kv-fetcher kv-contributions)
 RUN_AS=kalavigyan
+ALIVE=/health
+READY=/health/ready
 
 say() { printf '%s\n' "$*" >&2; }
 die() { say "::error::$*"; exit 1; }
@@ -19,6 +21,7 @@ CHECK_SECONDS="${CHECK_SECONDS:-180}"
 PAGES_SECONDS="${PAGES_SECONDS:-480}"
 DOCUMENTS_SECONDS="${DOCUMENTS_SECONDS:-420}"
 REFRESH_SECONDS="${REFRESH_SECONDS:-300}"
+CLEANUP_SECONDS="${CLEANUP_SECONDS:-240}"
 STATE="${STATE_DIR:-$APP/state}"
 
 other() { if [ "$1" = 8000 ]; then echo 8001; else echo 8000; fi; }
@@ -117,17 +120,17 @@ check_retrieval() {
   esac
 }
 
-wait_healthy() {
-  local port="$1" start now next_note
+wait_answering() {
+  local port="$1" path="$2" start now next_note
   start="$(date +%s)"; next_note=$((start + 20))
   while :; do
-    if curl -fsS -m 5 "http://127.0.0.1:$port/health" >/dev/null 2>&1; then
-      say "port $port answered /health after $(( $(date +%s) - start ))s"; return 0
+    if curl -fsS -m 5 "http://127.0.0.1:$port$path" >/dev/null 2>&1; then
+      say "port $port answered $path after $(( $(date +%s) - start ))s"; return 0
     fi
     now="$(date +%s)"
     if [ "$now" -ge $((start + HEALTH_LIMIT)) ]; then return 1; fi
     if [ "$now" -ge "$next_note" ]; then
-      say "waiting for /health on $port: $((now - start))s of ${HEALTH_LIMIT}s; $UNIT@$port is $(systemctl is-active "$UNIT@$port" 2>/dev/null || true)"
+      say "waiting for $path on $port: $((now - start))s of ${HEALTH_LIMIT}s; $UNIT@$port is $(systemctl is-active "$UNIT@$port" 2>/dev/null || true)"
       next_note=$((now + 20))
     fi
     sleep 2
@@ -200,19 +203,31 @@ start_and_promote() {
   systemctl reset-failed "$UNIT@$cand" 2>/dev/null || true
   systemctl start "$UNIT@$cand"
   cand_started=yes
-  if ! wait_healthy "$cand"; then
-    say "$UNIT@$cand did not answer /health within ${HEALTH_LIMIT}s:"
+  if ! wait_answering "$cand" "$READY"; then
+    say "$UNIT@$cand did not answer $READY within ${HEALTH_LIMIT}s:"
     journalctl -u "$UNIT@$cand" -n 80 --no-pager || true
-    die "the new release did not start. nginx still proxies to $(other "$cand")."
+    die "$UNIT@$cand did not become ready: it must start and reach its database. nginx still proxies to $(other "$cand")."
   fi
   promote "$cand" "$old_unit"
   start_workers
+}
+
+put_slot_back() {
+  if [ "$(readlink "$APP/slot-$cand" 2>/dev/null || true)" = "$slot_was" ]; then return 0; fi
+  if [ -z "$slot_was" ]; then
+    rm -f "$APP/slot-$cand"
+  elif point "$APP/slot-$cand" "$slot_was"; then
+    say "slot-$cand points at $slot_was again, the release it held before"
+  else
+    say "::warning::slot-$cand could not be pointed back at $slot_was"
+  fi
 }
 
 on_exit() {
   local rc=$? w
   if [ "$handed_over" != yes ]; then
     if [ "$cand_started" = yes ]; then systemctl stop "$UNIT@$cand" 2>/dev/null || true; fi
+    put_slot_back
     if [ "$old_stopped" = yes ] && [ -n "$old_unit" ]; then
       say "restarting $old_unit, which was stopped for the migration"
       systemctl start "$old_unit" || true
@@ -226,7 +241,33 @@ on_exit() {
 
 begin() {
   workers_were=(); old_stopped=no; cand_started=no; handed_over=no; workers_restarted=no
+  slot_was="$(readlink "$APP/slot-$cand" 2>/dev/null || true)"
   trap 'on_exit' EXIT
+}
+
+serve_again() {
+  local port="$1"
+  [ "$old_stopped" = yes ] || return 0
+  say "migrations passed; starting $old_unit again so it serves while the release seeds and checks"
+  systemctl start "$old_unit" || true
+  if wait_answering "$port" "$ALIVE"; then
+    old_stopped=no
+  else
+    say "::warning::$old_unit did not answer $ALIVE after the migration; nginx proxies to a stopped port until this release is promoted"
+  fi
+}
+
+migrate_serving() {
+  local tree="$1" live="$2"
+  if migrate "$tree" 3; then return 0; fi
+  if [ -n "$old_unit" ]; then
+    say "::warning::migrations failed three times with $old_unit serving; stopping it to free its pooler sessions and trying again"
+    systemctl stop "$old_unit" || true
+    old_stopped=yes
+    sleep 5
+  fi
+  migrate "$tree" 5 || die "migrations failed. nginx still proxies to $live."
+  serve_again "$live"
 }
 
 cmd_release() {
@@ -245,19 +286,11 @@ cmd_release() {
     say "stopping $UNIT@$cand: it is running but nginx does not send it traffic"
     systemctl stop "$UNIT@$cand"
   fi
+  begin
   point "$APP/slot-$cand" "$rel"
   say "live port $live ($(readlink -f "$APP/current" 2>/dev/null || echo nothing)); this release goes to $cand"
-  begin
   stop_workers
-  if ! migrate "$tree" 3; then
-    if [ -n "$old_unit" ]; then
-      say "::warning::migrations failed three times with $old_unit serving; stopping it to free its pooler sessions and trying again"
-      systemctl stop "$old_unit" || true
-      old_stopped=yes
-      sleep 5
-    fi
-    migrate "$tree" 5 || die "migrations failed. nginx still proxies to $live."
-  fi
+  migrate_serving "$tree" "$live"
   seed "$tree" || die "seeding failed. nginx still proxies to $live."
   check_retrieval "$tree" || die "retrieval fell below its floor. nginx still proxies to $live."
   start_and_promote
@@ -266,17 +299,18 @@ cmd_release() {
 }
 
 cmd_rollback() {
-  local live target
+  local live target named="${1:-}"
   live="$(live_port)"; cand="$(other "$live")"
-  if [ -n "${1:-}" ]; then
-    target="$APP/releases/$1"
-    [ -d "$target" ] || die "no release $1 under $APP/releases"
+  old_unit="$(live_unit "$live")"
+  begin
+  if [ -n "$named" ]; then
+    target="$APP/releases/$named"
+    [ -d "$target" ] || die "no release $named under $APP/releases"
     point "$APP/slot-$cand" "$target"
   fi
   target="$(readlink -f "$APP/slot-$cand" 2>/dev/null || true)"
   [ -x "$target/backend/.venv/bin/python" ] || die "port $cand has no runnable release behind it (${target:-none}); name one: rollback <release>"
-  old_unit="$(live_unit "$live")"
-  begin
+  [ -n "$named" ] || [ -f "$target/.released" ] || die "port $cand holds $target, which has never served (a release that stopped before its switch); name the release to go back to: rollback <release>"
   stop_workers
   if active "$UNIT@$cand"; then systemctl stop "$UNIT@$cand"; fi
   start_and_promote
@@ -285,12 +319,24 @@ cmd_rollback() {
 }
 
 cmd_restart() {
-  local live unit
-  live="$(live_port)"; unit="$(live_unit "$live")"
-  [ -n "$unit" ] || unit="$UNIT@$live"
-  systemctl restart "$unit"
-  wait_healthy "$live" || die "$unit did not answer /health within ${HEALTH_LIMIT}s"
-  for w in "${WORKERS[@]}"; do systemctl restart "$w" 2>/dev/null || true; done
+  local live rel
+  live="$(live_port)"; cand="$(other "$live")"
+  rel="$(readlink -f "$APP/slot-$live" 2>/dev/null || true)"
+  [ -x "$rel/backend/.venv/bin/python" ] || die "port $live has no runnable release behind it (${rel:-none})"
+  old_unit="$(live_unit "$live")"
+  if active "$UNIT@$cand"; then systemctl stop "$UNIT@$cand"; fi
+  begin
+  point "$APP/slot-$cand" "$rel"
+  start_and_promote
+  if [ -n "$slot_was" ]; then point "$APP/slot-$live" "$slot_was"; fi
+  say "restarted $rel on port $cand with the environment as rendered now; port $live holds $(readlink -f "$APP/slot-$live" 2>/dev/null || echo 'no release')"
+}
+
+release_within() {
+  local id="$1" seconds="$2"
+  [[ "$seconds" =~ ^[1-9][0-9]*$ ]] || die "--within takes whole seconds, not '$seconds'"
+  say "this release stops itself after ${seconds}s and puts the box back as it was"
+  exec timeout --signal=TERM --kill-after="$CLEANUP_SECONDS" "$seconds" "$BASH" "$0" release "$id"
 }
 
 cmd_status() {
@@ -307,9 +353,12 @@ cmd_status() {
 
 [ "$(id -u)" = 0 ] || die "run as root (SSM runs commands as root)"
 case "${1:-}" in
-  release) shift; cmd_release "$@" ;;
+  release)
+    shift
+    if [ "${2:-}" = --within ]; then release_within "$1" "${3:-}"; fi
+    cmd_release "$@" ;;
   rollback) shift; cmd_rollback "$@" ;;
   restart) cmd_restart ;;
   status) cmd_status ;;
-  *) die "usage: blue_green.sh release <id> | rollback [release] | restart | status" ;;
+  *) die "usage: blue_green.sh release <id> [--within <seconds>] | rollback [release] | restart | status" ;;
 esac

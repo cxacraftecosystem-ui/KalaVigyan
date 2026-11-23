@@ -8,7 +8,15 @@ import httpx
 from app.core.key_checks import KeyVerdict, checked_get
 from app.core.retry_after import retry_after_of
 
-from .base import Adapter, ChatRequest, ChatResult, ProviderError, format_refused, names_the_format
+from .base import (
+    CALL_SECONDS,
+    Adapter,
+    ChatRequest,
+    ChatResult,
+    ProviderError,
+    format_refused,
+    names_the_format,
+)
 from .usage import anthropic_usage
 
 _FORMAT_NEEDLES = ("output_config.format", "json_schema", "schema")
@@ -93,7 +101,7 @@ class AnthropicAdapter(Adapter):
         import anthropic
 
         self._mod = anthropic
-        args = {"max_retries": 2, "timeout": 600.0}
+        args = {"max_retries": 2, "timeout": CALL_SECONDS}
         if self.api_key:
             args["api_key"] = self.api_key
         if self.base_url:

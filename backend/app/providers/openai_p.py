@@ -7,7 +7,15 @@ import httpx
 from app.core.key_checks import KeyCheck, KeyVerdict, checked_get
 from app.core.retry_after import retry_after_of
 
-from .base import Adapter, ChatRequest, ChatResult, ProviderError, format_refused, names_the_format
+from .base import (
+    CALL_SECONDS,
+    Adapter,
+    ChatRequest,
+    ChatResult,
+    ProviderError,
+    format_refused,
+    names_the_format,
+)
 from .usage import openai_usage
 
 _LOCAL_PLACEHOLDER_KEY = "not-required"
@@ -29,7 +37,7 @@ class OpenAICompatAdapter(Adapter):
             api_key=self.api_key or _LOCAL_PLACEHOLDER_KEY,
             base_url=self.base_url or None,
             max_retries=2,
-            timeout=600.0,
+            timeout=CALL_SECONDS,
         )
 
     def _reasoning(self, req: ChatRequest, params: dict, extra_body: dict, meta: dict) -> None:

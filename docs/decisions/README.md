@@ -35,7 +35,7 @@ flowchart LR
 | [0004](0004-craft-resolver.md) | The craft resolver | · |
 | [0005](0005-scholarly-source-adapters.md) | Scholarly source adapters | · |
 | [0006](0006-reference-source-adapters.md) | Reference source adapters: Wikipedia, Wikidata, PubChem, Wikimedia Commons | · |
-| [0007](0007-web-search-and-fetcher.md) | Web search adapters and the fetcher sandbox | · |
+| [0007](0007-web-search-and-fetcher.md) | Web search adapters and the fetcher sandbox | [0173](0173-a-release-that-keeps-serving-and-its-way-back.md) |
 | [0008](0008-stored-knowledge-retrieval.md) | Stored-knowledge retrieval | [0166](0166-pictures-terms-and-stored-pieces-kept-true.md) |
 | [0009](0009-planner-and-tiered-research.md) | Planner and tiered research | · |
 | [0010](0010-composer.md) | Composer | [0138](0138-answers-composed-from-the-asked-fields.md) and [0144](0144-stored-passages-as-evidence.md) |
@@ -215,6 +215,7 @@ flowchart LR
 | [0169](0169-mcp-follow-ups-kept-true.md) | A write-back asks the cheap judge first, a reviewer decides readings, map layers and a category's structure, and a PDF is described by its first page | · |
 | [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) | An Admin's AI stages review decisions a person confirms, and an Admin refreshes changed pages now | · |
 | [0172](0172-a-rotated-session-taken-over-and-cached-pages-kept-whole.md) | The web takes over every session the API rotates, a cached reading page fails rather than drops a part, and sign-in and the shells settle once | · |
+| [0173](0173-a-release-that-keeps-serving-and-its-way-back.md) | A release keeps the site serving and its way back open, a colour takes traffic only once it reaches its database, the web builds only on the API it calls, the fetcher runs as a user of its own, and every provider call ends and settles | · |
 | [0175](0175-production-checks-read-what-the-page-shows.md) | The production checks read what the page shows, the web parses every stream event, the answer control never asks again, and a section stores only what it showed | · |
 
 ## How this document is kept true

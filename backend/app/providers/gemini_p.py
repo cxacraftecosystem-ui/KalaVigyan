@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import time
+from collections.abc import Awaitable
 
 import httpx
 
@@ -8,6 +10,7 @@ from app.core.key_checks import KeyVerdict, checked_get
 from app.core.retry_after import retry_after_of
 
 from .base import (
+    CALL_SECONDS,
     Adapter,
     ChatRequest,
     ChatResult,
@@ -23,6 +26,20 @@ from .usage import gemini_cached_tokens
 
 _SCHEMA_NEEDLES = ("response_json_schema", "schema")
 _BLOCKED_FINISHES = ("SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "RECITATION")
+EMBED_SECONDS = 120.0
+
+
+async def _answered[T](call: Awaitable[T], seconds: float) -> T:
+    bound = asyncio.timeout(seconds)
+    try:
+        async with bound:
+            return await call
+    except TimeoutError as stalled:
+        if not bound.expired():
+            raise
+        raise ProviderError(
+            f"Gemini did not answer within {seconds:g} s", retryable=True, kind="unavailable"
+        ) from stalled
 
 
 def _chat_result(req: ChatRequest, resp, meta: dict, latency: int) -> ChatResult:
@@ -53,6 +70,9 @@ def _chat_result(req: ChatRequest, resp, meta: dict, latency: int) -> ChatResult
 
 
 class GeminiAdapter(Adapter):
+    chat_seconds: float = CALL_SECONDS
+    embed_seconds: float = EMBED_SECONDS
+
     def __init__(self, *, media_client: httpx.AsyncClient | None = None, **kw):
         super().__init__(**kw)
         self._media_client = media_client
@@ -120,8 +140,11 @@ class GeminiAdapter(Adapter):
             config = self._config(req, meta)
             t0 = time.perf_counter()
             try:
-                resp = await self.client.aio.models.generate_content(
-                    model=req.model, contents=req.user, config=config
+                resp = await _answered(
+                    self.client.aio.models.generate_content(
+                        model=req.model, contents=req.user, config=config
+                    ),
+                    self.chat_seconds,
                 )
             except err.ClientError as e:
                 failure = self._client_failure(req, e)
@@ -194,7 +217,10 @@ class GeminiAdapter(Adapter):
         config = self._types.EmbedContentConfig(output_dimensionality=dimensions) if dimensions else None
         contents = [self._types.Content(parts=[self._types.Part(text=text)]) for text in texts]
         try:
-            resp = await self.client.aio.models.embed_content(model=model, contents=contents, config=config)
+            resp = await _answered(
+                self.client.aio.models.embed_content(model=model, contents=contents, config=config),
+                self.embed_seconds,
+            )
         except err.APIError as e:
             raise ProviderError(
                 f"Gemini embeddings error {e.code}: {e}", retryable=e.code in (429, 500, 503), status=e.code
