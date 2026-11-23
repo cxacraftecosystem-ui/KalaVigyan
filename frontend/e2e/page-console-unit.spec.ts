@@ -27,8 +27,8 @@ function turnstileFrame(route: Route) {
 }
 
 test("the console check counts our own page's errors and none from Cloudflare Turnstile's frame", async ({ page }) => {
-  await page.route(`${OURS}/**`, ourPage);
-  await page.route(`${CHALLENGES}/**`, turnstileFrame);
+  await page.route((url) => url.origin === OURS, ourPage);
+  await page.route((url) => url.origin === CHALLENGES, turnstileFrame);
   const watch = new PageConsole(page, OURS);
   const seen: string[] = [];
   const problems: string[] = [];
