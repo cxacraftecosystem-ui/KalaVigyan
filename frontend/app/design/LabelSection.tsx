@@ -4,9 +4,10 @@ import { Demo, Grid, Section } from "@/app/design/DesignParts";
 import { AJRAK_CLOTH, AJRAK_PRINT, GREEN_TO_BLUE, KASUTI_NAME, NUMBERS, SOURCES_BY_ID } from "@/app/design/fixtures";
 import { Cite } from "@/components/editorial/CitationCluster";
 import { Masthead } from "@/components/editorial/Masthead";
-import { pictureSources, PlatePicture } from "@/components/editorial/Plate";
+import { PlatePicture } from "@/components/editorial/Plate";
 import { SpecimenLabel } from "@/components/editorial/SpecimenLabel";
 import { TextLink } from "@/components/ui/TextLink";
+import { pictureSources } from "@/lib/pictureSources";
 
 function Credit({ picture }: { picture: { credit: string; page: string } }) {
   return (

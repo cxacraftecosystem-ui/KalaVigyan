@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Demo, FORCED_FOCUS, Grid, Section, State, States } from "@/app/design/DesignParts";
 import { PRIEST_KING } from "@/app/design/fixtures";
 import { BrandLockup, BrandMark } from "@/components/BrandMark";
-import { pictureSources } from "@/components/editorial/Plate";
+import { pictureSources } from "@/lib/pictureSources";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/Chip";

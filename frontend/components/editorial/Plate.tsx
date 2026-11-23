@@ -3,8 +3,9 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 
 import { Lightbox } from "@/components/ui/Lightbox";
-import { COMMONS_WIDTHS, commonsSrcSet, commonsThumb, focalPosition, focalViewBox, isCommonsFile, PICTURE_SIZES, PICTURE_WIDTHS, type FocalBox, type PictureRole } from "@/lib/commonsPicture";
+import { focalPosition, focalViewBox, isCommonsFile, type FocalBox, type PictureRole } from "@/lib/commonsPicture";
 import { isLocalRaster, LOCAL_PICTURE_SIZES, localSrcSet } from "@/lib/localPicture";
+import { pictureSources, type PictureSources } from "@/lib/pictureSources";
 import { cn } from "@/lib/utils";
 
 export type PlateProps = {
@@ -21,21 +22,6 @@ export type PlateProps = {
   className?: string;
   pictureClassName?: string;
 };
-
-export type PictureSources = { src: string; srcSet?: string; sizes?: string; largest: string };
-
-export function pictureSources(src: string, role: PictureRole, originalWidth?: number): PictureSources {
-  if (isLocalRaster(src)) return { src, srcSet: localSrcSet(src, originalWidth), sizes: PICTURE_SIZES[role], largest: src };
-  if (!isCommonsFile(src)) return { src, largest: src };
-  const widths = PICTURE_WIDTHS[role];
-  const largest = [...COMMONS_WIDTHS].reverse().find((width) => !originalWidth || width < originalWidth) ?? COMMONS_WIDTHS[0];
-  return {
-    src: commonsThumb(src, widths[Math.min(1, widths.length - 1)]),
-    srcSet: commonsSrcSet(src, widths, originalWidth),
-    sizes: PICTURE_SIZES[role],
-    largest: commonsThumb(src, largest)
-  };
-}
 
 export function focalStyle(focal: FocalBox | undefined): CSSProperties | undefined {
   if (!focal) return undefined;

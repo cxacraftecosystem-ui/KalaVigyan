@@ -69,7 +69,8 @@ test("each paragraph is its own spread with the sources it cites first in the ch
   const html = pageHtml();
   expect(html).toContain('<aside class="margin note" aria-label="Sources in this passage"><ul><li data-g="g3"><b>3</b><span>A chapter on printed cloth, 2003</span></li><li data-g="g4"><b>4</b><span>A printers&#x27; page, 2004</span></li></ul></aside>');
   expect(html).toContain('<li data-g="g5"><b>5</b><span>A compound record, 2005</span></li></ul></aside>');
-  expect(html.match(/class="spread kv-run"/g)?.length).toBeGreaterThanOrEqual(3);
+  expect(html.match(/class="spread kv-run"/g)).toHaveLength(2);
+  expect(html).toContain('<div class="spread railed sec-head kv-run"><div class="rail"><span class="numeral">2</span></div>');
 });
 
 test("a chapter of two or more sections opens with the approved sub-rail to its headings", () => {

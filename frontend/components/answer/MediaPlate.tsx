@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { pictureSources } from "@/components/editorial/Plate";
+import { pictureSources } from "@/lib/pictureSources";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { creditParts } from "@/lib/answerEssay";
 import type { PictureRole } from "@/lib/commonsPicture";

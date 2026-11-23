@@ -1,9 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
 
-import { pictureSources, PlatePicture } from "@/components/editorial/Plate";
+import { PlatePicture } from "@/components/editorial/Plate";
 import { SpecimenLabel, type SpecimenLabelProps } from "@/components/editorial/SpecimenLabel";
 import { TypographicPlate, type PlateMaterial } from "@/components/editorial/TypographicPlate";
 import { focalPosition, focalViewBox, type FocalBox } from "@/lib/commonsPicture";
+import { pictureSources } from "@/lib/pictureSources";
 
 export type MastheadPicture = {
   src: string;

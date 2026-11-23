@@ -1,10 +1,11 @@
 import Link from "next/link";
 
-import { pictureSources, PlatePicture } from "@/components/editorial/Plate";
+import { PlatePicture } from "@/components/editorial/Plate";
 import { PlateTags } from "@/components/crafts/CollectionPlate";
 import type { AtlasPlate } from "@/lib/atlasCollection";
 import type { CatalogueHero } from "@/lib/craftCatalogueContract";
 import { photoCredit } from "@/lib/editorialText";
+import { pictureSources } from "@/lib/pictureSources";
 import { cn } from "@/lib/utils";
 
 const COMMONS_SITE = /commons\.wikimedia\.org|wikimedia commons/i;

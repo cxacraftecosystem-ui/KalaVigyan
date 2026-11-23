@@ -1,7 +1,7 @@
 "use client";
 
 import { MediaCredit, MediaPlate } from "@/components/answer/MediaPlate";
-import { pictureSources } from "@/components/editorial/Plate";
+import { pictureSources } from "@/lib/pictureSources";
 import type { MediaRef } from "@/lib/explainerBlockBase";
 import type { ImagesBlock } from "@/lib/explainerContract";
 

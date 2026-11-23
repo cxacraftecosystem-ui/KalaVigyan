@@ -1,10 +1,10 @@
-import { pictureSources } from "@/components/editorial/Plate";
 import { TypographicPlate } from "@/components/editorial/TypographicPlate";
 import { focalPosition } from "@/components/monograph/kinds/plates/SpecPicture";
 import { unitNodes } from "@/components/monograph/UnitView";
 import { isCommonsFile } from "@/lib/commonsPicture";
 import type { MonographDocument } from "@/lib/monographDocument";
 import { titleSize, type DocumentLabel, type MastheadPlate } from "@/lib/monographMasthead";
+import { pictureSources } from "@/lib/pictureSources";
 
 const SEAL_PATH = "M16.00 1.58 L20.23 5.80 L26.20 5.80 L26.20 11.77 L30.42 16.00 L26.20 20.23 L26.20 26.20 L20.23 26.20 L16.00 30.42 L11.77 26.20 L5.80 26.20 L5.80 20.23 L1.58 16.00 L5.80 11.77 L5.80 5.80 L11.77 5.80 Z";
 

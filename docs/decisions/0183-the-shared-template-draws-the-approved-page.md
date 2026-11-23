@@ -101,7 +101,9 @@ item 3 (the one renderer). The contracts are `docs/contracts/monograph-renderer.
   template.
 - `DocumentMasthead`, its lede spread and the app's `.kv-doc-open`, `.kv-prov`, `.kv-rel-strip` and
   `.kv-rel-count` rules are gone; `citedSources` is replaced by `sourceSplit`; the three copies of a
-  spec's string walker are one, `research/spec_strings.py`.
+  spec's string walker are one, `research/spec_strings.py`; `pictureSources` moved from the
+  client module `components/editorial/Plate.tsx` to `lib/pictureSources.ts`, so a server component
+  (the masthead) can work out a photograph's widths.
 
 ## How this record is kept true
 
