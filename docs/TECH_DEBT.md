@@ -537,18 +537,6 @@ Last reviewed: 2026-11-22.
   `speech_completed.json` as a fixture of `backend/tests/media/test_gemini_speech.py`. A refusal
   there names what to change in `providers/gemini_media.py`.
 
-## Sectioned composition (decision 0032)
-
-### The voice turn's reply limits are prompt lines
-
-- **What:** the voice turn's one section of three sentences and no follow-ups are lines of its
-  prompt only: `voice/compose.voice_composed` calls `parsed_answer` without a form, so a longer
-  reply is trimmed to the whole answer's six sections of eight sentences instead. The
-  whole-answer composer and the translation are trimmed and checked on our side (decision 0138).
-- **Why left:** `backend/app/voice/**` is the voice lane's, and the voice call is switched off.
-- **Clears it:** `voice_composed` passes `form=AnswerForm(sections=1, sentences=VOICE_MAX_SENTENCES,
-  follow_ups=0)`, with a unit test.
-
 ## Stored knowledge pieces (decision 0033)
 
 ### Answers never grow the Process tab
@@ -566,20 +554,6 @@ Last reviewed: 2026-11-22.
   concept and a review screen where a Professor places it in the craft's process or rejects it,
   writing the `ProcessStage` with the review's note. It waits on that screen (design and answer UI
   lane) and its review-queue item being scheduled together.
-
-## Reaction player, material cards and 3D molecules (decision 0045)
-
-### The zoom story reads the craft's matter on its own
-
-- **What:** the reaction, card, molecule, what-if, supply-map and generated-explainer builders
-  share one read of the craft's matter per answer (`BuildAsk.matter`, decision 0152); the zoom
-  story builder (`services/journey_builders.ZoomStoryBuilder`) still calls `craft_matter` itself,
-  so an answer whose chemistry or materials section shows a zoom reads the rows once more.
-- **Why left:** `journey_builders.py` belonged to the time, market and figures lane in round 7's
-  debt round, so this lane left it.
-- **Clears it:** `ZoomStoryBuilder.build` reading `await ask.matter.read(self._tools.sessions,
-  craft)`, with `tests/journey/test_zoom_story.py` patching `app.services.craft_matter` as
-  `tests/matter/test_matter_reads.py` does.
 
 ## Expert panel (decision 0046)
 
@@ -846,23 +820,6 @@ Last reviewed: 2026-11-22.
   screen choice.
 - **Clears it:** the map screen folds a yearly series into one row with a sparkline (each year a
   dataset value), or a contract change that leaves yearly rows out of its facets.
-
-## Lesson packs and exports (decision 0067)
-
-### Papers from six adapters still name no journal
-
-- **What:** a source now stores the journal it is in (`Source.containerTitle`, decision 0143), and
-  a paper's APA, CSL, BibTeX and RIS name it; but only Europe PMC and Semantic Scholar papers carry
-  one (their `publisher` is the journal, `JOURNAL_AS_PUBLISHER_ADAPTERS`). Crossref
-  (`container-title`, already requested), OpenAlex (`primary_location.source.display_name`), DOAJ
-  (`bibjson.journal.title`), Springer Nature (`publicationName`), Elsevier
-  (`prism:publicationName`, which it now uses as a fallback publisher) and CORE (`journals[].title`)
-  do not fill `EvidenceItem.container_title`, so their papers' references still end without it.
-- **Why left:** the adapters (`backend/app/sources/scholarly/`) belonged to the sources lane
-  running at the same time (2026-11-22).
-- **Clears it:** each scholarly adapter fills `container_title` from the field above (Europe PMC and
-  Semantic Scholar too, which retires `JOURNAL_AS_PUBLISHER_ADAPTERS`); sources stored before keep
-  no journal until a script reads their DOIs again.
 
 ## Public transcripts and share links (decision 0097)
 

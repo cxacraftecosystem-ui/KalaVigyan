@@ -4,19 +4,26 @@ import logging
 from typing import Any
 
 from app.composer.composer import assembled_answer
-from app.composer.drafts import parsed_answer
+from app.composer.drafts import AnswerForm, parsed_answer
 from app.composer.prompt import SOURCE_RULES, compose_message, compose_schema
 from app.core.errors import ExternalFailure
 from app.research.composition import ComposedAnswer, ComposeRequest
 from app.research.structured import StructuredModel, reply_object
 from app.schemas.voice import MAX_SPOKEN_WORDS
 
-__all__ = ["VOICE_MAX_SENTENCES", "VOICE_TURN_SCHEMA", "VOICE_TURN_SYSTEM_PROMPT", "voice_composed"]
+__all__ = [
+    "VOICE_FORM",
+    "VOICE_MAX_SENTENCES",
+    "VOICE_TURN_SCHEMA",
+    "VOICE_TURN_SYSTEM_PROMPT",
+    "voice_composed",
+]
 
 logger = logging.getLogger(__name__)
 
 VOICE_MAX_SENTENCES = 3
 VOICE_DRAFT_WORDS = MAX_SPOKEN_WORDS * 3 // 4
+VOICE_FORM = AnswerForm(sections=1, sentences=VOICE_MAX_SENTENCES, follow_ups=0)
 
 VOICE_TURN_SYSTEM_PROMPT = (
     "You answer a learner's spoken question about an Indian craft and the science behind it, to be read "
@@ -39,7 +46,7 @@ async def voice_composed(model: StructuredModel, request: ComposeRequest) -> Com
         system=VOICE_TURN_SYSTEM_PROMPT, user=compose_message(request), schema=VOICE_TURN_SCHEMA
     )
     try:
-        draft = parsed_answer(reply_object(reply), request.allowed)
+        draft = parsed_answer(reply_object(reply), request.allowed, form=VOICE_FORM)
     except ExternalFailure as error:
         logger.warning("voice turn reply unusable: %s", error)
         return ComposedAnswer(not_enough_evidence=request.searched)

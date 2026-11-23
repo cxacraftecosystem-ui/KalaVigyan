@@ -15,6 +15,7 @@ from ..records import (
     clean_text,
     doi_of,
     doi_url,
+    journal_of,
     markup_text,
     partial_date_of,
     query_terms,
@@ -47,6 +48,7 @@ class DoajAdapter(HttpSourceAdapter):
         if not ARTICLE_ID.match(article_id):
             raise UnusableRecord("no DOAJ article id")
         bibjson = record.get("bibjson") or {}
+        journal = bibjson.get("journal") or {}
         doi = _doi(bibjson)
         source_type, trust = classify("article")
         return EvidenceItem(
@@ -62,7 +64,8 @@ class DoajAdapter(HttpSourceAdapter):
             published=_published(bibjson),
             retrieved_at=retrieved_at,
             doi=doi,
-            publisher=clean_text((bibjson.get("journal") or {}).get("publisher")),
+            publisher=clean_text(journal.get("publisher")),
+            container_title=journal_of(journal.get("title")),
             trust=trust,
             external_ids={"doaj": article_id},
         )

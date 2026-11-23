@@ -17,6 +17,7 @@ from ..records import (
     clean_text,
     doi_of,
     doi_url,
+    journal_of,
     markup_text,
     partial_date_of,
     title_of,
@@ -66,6 +67,9 @@ class CoreAdapter(HttpSourceAdapter):
             retrieved_at=retrieved_at,
             doi=doi,
             publisher=clean_text(record.get("publisher")),
+            container_title=journal_of(
+                [j.get("title") for j in record.get("journals") or [] if isinstance(j, dict)]
+            ),
             trust=trust,
             external_ids={"core": str(work_id)},
         )

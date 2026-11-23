@@ -15,6 +15,7 @@ from ..records import (
     clean_text,
     doi_of,
     doi_url,
+    journal_of,
     markup_text,
     partial_date_of,
     title_of,
@@ -83,13 +84,20 @@ class CrossrefAdapter(HttpSourceAdapter):
             licence=clean_text(licences[0].get("URL")),
             doi=doi,
             publisher=clean_text(record.get("publisher")),
+            container_title=journal_of(record.get("container-title")),
             trust=trust,
             external_ids={"doi": doi},
         )
 
+    async def container_title(self, doi: str) -> str | None:
+        return journal_of((await self._work(doi)).get("container-title"))
+
+    async def _work(self, doi: str) -> dict[str, Any]:
+        response = await self.http.get(f"{CROSSREF_API}/works/{quote(doi, safe='/')}", params=self._polite)
+        return response.json(self.name).get("message") or {}
+
     async def _fetch_document(self, native: str, retrieved_at: datetime) -> SourceDocument:
-        response = await self.http.get(f"{CROSSREF_API}/works/{quote(native, safe='/')}", params=self._polite)
-        record = response.json(self.name).get("message") or {}
+        record = await self._work(native)
         abstract = markup_text(record.get("abstract"))
         if abstract is None:
             raise self._not_found(native, "no abstract")

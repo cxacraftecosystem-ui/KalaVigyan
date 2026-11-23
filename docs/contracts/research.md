@@ -175,9 +175,12 @@ class SourceAdapter(Protocol):
 - `EvidenceItem {id, adapter, tier, sourceType, url, title, authors[], published?, retrievedAt,
   licence?, attribution?, doi?, publisher?, containerTitle?, trust, quotes[Quote], externalIds{}}`.
   `id` is `<adapter>:<id at the service>` (`openalex:W2741809807`). `containerTitle` is the
-  journal or book a work is in; `item.journal` is it, or the `publisher` of an adapter that puts
-  the journal there (`JOURNAL_AS_PUBLISHER_ADAPTERS`: Europe PMC and Semantic Scholar), and is
-  stored as `Source.containerTitle` (decision 0143). `trust` is the reliability
+  journal or book a work is in, filled by every scholarly adapter that names one (Crossref
+  `container-title`, OpenAlex a journal, conference or book series source's `display_name`, DOAJ
+  `bibjson.journal.title`, Springer Nature `publicationName`, Elsevier `prism:publicationName`, CORE
+  `journals[].title`, Europe PMC `journalInfo.journal.title`, Semantic Scholar `journal.name` or
+  `venue`; `sources/records.journal_of`), and is stored as `Source.containerTitle` (decision 0143).
+  `trust` is the reliability
   tier the adapter assigns (A peer-reviewed or official, B reputable reference, C general web,
   D unknown). `quotes` are verbatim passages (`Quote {text (1-300), locator?}`; locator such as
   `p. 12`, `section 3.2`, `para 4`); a search hit may have none.
