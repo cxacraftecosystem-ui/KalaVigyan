@@ -38,7 +38,7 @@ export async function firstScreen(page: Page): Promise<FirstScreen> {
         if (!(rule instanceof CSSFontFaceRule)) continue;
         const declared = rule.style;
         const url = /url\(["']?([^"')]+)["']?\)/.exec(declared.getPropertyValue("src"))?.[1] ?? "";
-        rules.push({ family: declared.getPropertyValue("font-family").replace(/["']/g, "").trim(), style: declared.getPropertyValue("font-style") || "normal", weight: declared.getPropertyValue("font-weight") || "400", range: declared.getPropertyValue("unicode-range") || "U+0-10FFFF", url: new URL(url, location.href).pathname });
+        rules.push({ family: declared.getPropertyValue("font-family").replace(/["']/g, "").trim(), style: declared.getPropertyValue("font-style") || "normal", weight: declared.getPropertyValue("font-weight") || "400", range: declared.getPropertyValue("unicode-range") || "U+0-10FFFF", url: new URL(url, sheet.href ?? location.href).pathname });
       }
     }
     const preloaded = [...document.querySelectorAll('link[rel="preload"][as="font"]')].map((link) => new URL((link as HTMLLinkElement).href).pathname);

@@ -828,22 +828,25 @@ Last reviewed: 2026-11-22.
 
 ### Speed left after the quality lane
 
-- **What:** on a phone (Lighthouse at 360, median of three, 2026-11-22) Kutch Ajrakh scores 78 with
-  an LCP of 5.7 s against the 2.5 s target: about 1 MB is requested before its masthead picture
-  paints, namely the six first-screen font files the layout preloads (364 KB, Newsreader italic
-  143 KB and roman 128 KB among them), the kit stylesheet (78 KB, render-blocking) and about
-  400 KB of scripts. Signed out, `/ask` lands on the sign-in page (83, LCP 4.7 s), whose photograph
-  shares the first round with Google's sign-in script (104 KB). The Textiles hub scores 100 (LCP
-  1.5 s).
-- **Why left:** what the entry named is in: Newsreader subset to weights 300 to 600 and its kept
-  features (`tools/webfonts`), the arrow on Plex's symbols face, the uncurated page and (decision
-  0145) the answer renderers loaded on demand, curated documents split like Ajrakh's shell, and
-  `/ask` drawn before its scripts. Before and after this lane Ajrakh measured 78 and 5.7 s on the
-  phone (TBT 112 ms to 83 ms, 1.39 MB to 1.35 MB). What is left is a choice of which first-screen
-  bytes wait: the first-screen faces are preloaded by choice (round 7, so the first screen never
-  swaps its type), and the kit stylesheet is the owner-approved page's.
-- **Clears it:** the owner's or lead's choice of the faces to preload and of a kit stylesheet split
-  by chapter, then the change proven by Monograph parity and Lighthouse at 360.
+- **What:** on a phone (Lighthouse at 360, median of three, 2026-11-22) Kutch Ajrakh scored 78 with
+  an LCP of 5.7 s against the 2.5 s target, with about 1 MB requested before its masthead picture
+  paints (the preloaded first-screen faces, the kit stylesheet and about 400 KB of scripts); signed
+  out, `/ask` lands on the sign-in page (83, LCP 4.7 s). Decision 0177 measured, from the computed
+  styles of the text each first screen at 360 shows (`e2e/first-screen-fonts.smoke.spec.ts`), which
+  faces they draw: Kutch Ajrakh's Newsreader roman and italic (its standfirst) and Plex Sans 400,
+  500 and 600; the landing's Newsreader roman and italic (the hero title's emphasis) and Plex Sans
+  500; the sign-in page's the same with Plex Sans 400. None draws Plex Sans italic, which is no
+  longer preloaded (23,096 bytes off every page's first round, 359,276 to 336,180 bytes of
+  preloaded faces); every face still preloaded is drawn on Kutch Ajrakh's first screen, so none can
+  wait without its type swapping. The kit stylesheet (526,637 bytes, 84,108 gzipped,
+  render-blocking) stays one file: its rules are grouped by kit scope (`bx-mb`, `bx-chem`, `bx-pt`,
+  `bx-rm`, `bx-sa`, `bx-ask`), not by chapter, every chapter mixes scopes, and a later rule decides
+  over an earlier one, so a split by chapter would reorder the cascade the approved page is built
+  from (decision 0100) and parity could not stay exact.
+- **Why left:** Lighthouse is not run in CI, so the effect is measured on production.
+- **Clears it:** the lead's Lighthouse at 360 on Kutch Ajrakh and the sign-in page after the
+  release that carries decision 0177 (expected: about 23 KB fewer bytes before the masthead
+  paints); the entry is deleted with that measurement, or rewritten to what it shows is left.
 
 ### The geo ETL stays on Python 3.14
 

@@ -2,8 +2,9 @@
 
 An answer sentence names what its sources differ on from its claim, the duplicate judge's own
 subject and property name a difference it finds and are stored with its outcome, every host draws a
-flagged sentence's readings after it, and `/design/kinds` reads its fixtures from the API with each
-drawing's four themes.
+flagged sentence's readings after it, `/design/kinds` reads its fixtures from the API with each
+drawing's four themes, Kutch Ajrakh's authored shell is measured and its register entries say what
+is left, and the layout preloads only the Latin faces the first screens at 360 draw.
 
 Date: 2026-11-23. Status: accepted (the lead's debt brief of 2026-11-23 evening, monograph shell
 lane). It amends [decision 0156](0156-expert-panel-and-field-voices-kept-true.md), item 10 (where a
@@ -56,6 +57,9 @@ left of the authored shell. The contracts are `docs/contracts/knowledge-writes.m
   (the list's wrapper repeats in the kin crafts' list), which is why `source-list` is only its
   status line. The ground figure's native drawing waits on the map in `components/map`, the place
   builders' area, drawing its neighbours and pins at first paint.
+- **The first screen's faces were preloaded by choice.** The layout preloaded six font files
+  (359,276 bytes) on every page so that no first screen swaps its type, chosen by hand in round 7;
+  nothing checked which faces a first screen draws.
 
 ## Decision
 
@@ -93,13 +97,29 @@ left of the authored shell. The contracts are `docs/contracts/knowledge-writes.m
    preview could not show it before its release. Drawing the six page tools natively inside the
    shell was the other; their views carry React behaviour for generated pages, so in the shell they
    would nest a second kit scope and be driven twice by the kit's script, as decision 0164 found.
+6. **The layout preloads the faces the first screens draw, found from their computed styles.** The
+   smoke (`e2e/first-screen-fonts.smoke.spec.ts`) opens Kutch Ajrakh, the landing and the sign-in
+   page at 360 by 800, reads the computed family, style and weight of every text the first screen
+   shows, matches each character to the page's own `@font-face` rule as the browser does (family,
+   style, nearest weight, range, the last rule winning) and checks that each face drawn is
+   preloaded and that no face is preloaded that none of them draws. Plex Sans italic is drawn by
+   none, so it loads when a page draws it (23,096 bytes off every page's first round); the other
+   five files are drawn on Kutch Ajrakh's first screen, Newsreader italic by its standfirst. A
+   preload per route was the alternative for the italic; it would not help Kutch Ajrakh, whose
+   first screen draws it.
+7. **The kit stylesheet is not split by chapter.** Its rules are grouped by kit scope, every chapter
+   mixes scopes, and a later rule decides over an earlier one, so a split by chapter would reorder
+   the cascade the approved page is built from and parity could not stay exact. What the release
+   gains is measured by the lead's Lighthouse at 360, which CI does not run; the register's speed
+   entry waits on it.
 
 ## Consequences
 
 - The register entry "Leftovers of the design-conformance lane" is cleared; the four shell entries
   are rewritten to what is left (item 5).
 - Kutch Ajrakh's page is unchanged by this record, so the parity run on the branch's preview reads
-  the production document as before.
+  the production document as before; only Plex Sans italic waits until a page draws it.
+- The speed entry is rewritten to the Lighthouse measurement it waits on.
 - After the deploy, the migration adds the column; outcomes stored before it name no subject, so a
   flag they raise keeps the plain summary until its pair is judged again.
 
@@ -112,4 +132,5 @@ names this one, and the table above links the two both ways. It records the choi
 `backend/tests/answering/test_grounded_blocks.py`, `backend/tests/knowledge_writes/test_structural_verdicts.py`,
 `backend/tests/knowledge_writes/test_candidate_gates.py`, `backend/tests/db/test_sources_differ_db.py`,
 `backend/tests/research/test_kind_fixtures.py`, `frontend/e2e/what-if-unit.spec.ts`,
-`frontend/e2e/matter-cited-values-unit.spec.ts` and `frontend/e2e/kind-fixtures-unit.spec.ts`.
+`frontend/e2e/matter-cited-values-unit.spec.ts`, `frontend/e2e/kind-fixtures-unit.spec.ts`,
+`frontend/e2e/first-screen-fonts-unit.spec.ts` and `frontend/e2e/first-screen-fonts.smoke.spec.ts`.
