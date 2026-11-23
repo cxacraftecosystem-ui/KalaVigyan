@@ -6,7 +6,7 @@ from app.services.field_voices_photos import photo_plan
 from app.services.field_voices_records import recording_plan, sentences_within, source_values
 from tests.field_voices.fixtures import DR, FR, recorded
 
-PUBLIC, SIGNED_IN = "PUBLIC", "SIGNED_IN"
+PUBLIC, PASSAGE, WINDOW = "PUBLIC", "PASSAGE", "WINDOW"
 
 
 def item(name: str, portal: str, index: int = 0) -> Any:
@@ -34,27 +34,30 @@ def test_only_artisan_and_designer_turns_of_forty_characters_are_quotes() -> Non
     ]
 
 
-def test_quotes_are_public_and_the_full_transcript_is_for_signed_in_readers() -> None:
+def test_quotes_are_passages_and_the_full_transcript_is_windows_and_both_are_public() -> None:
     plan = recording_plan(fr_recording(), portal=FR)
-    public = [chunk for chunk in plan.chunks if chunk.acl == PUBLIC]
+    public = [chunk for chunk in plan.chunks if chunk.kind == PASSAGE]
     assert [(chunk.lang, chunk.locator) for chunk in public] == [("gu", "0:06–0:33"), ("en", "0:06–0:33")]
     assert public[1].text.endswith("Call me on [number].")
-    windows = [chunk for chunk in plan.chunks if chunk.acl == SIGNED_IN]
+    windows = [chunk for chunk in plan.chunks if chunk.kind == WINDOW]
     assert [chunk.lang for chunk in windows] == ["und", "en"]
     original = windows[0].text.splitlines()
     assert original[0].startswith("Field Researcher Demo: ")
     assert original[1].startswith("Asha Demo: ")
     assert original[3].startswith("Speaker 3: ")
     assert windows[0].locator == "0:00–13:10"
-    assert all(chunk.acl in (PUBLIC, SIGNED_IN) for chunk in plan.chunks)
+    assert all(chunk.acl == PUBLIC for chunk in plan.chunks)
+    assert {chunk.kind for chunk in plan.chunks} == {PASSAGE, WINDOW}
     assert plan.chunks.index(public[0]) == 0
 
 
-def test_a_text_transcript_is_only_in_the_signed_in_reading() -> None:
+def test_a_text_transcript_is_only_a_window() -> None:
     change = item("field-transcripts-all-2", FR)
     plan = recording_plan(change.item, portal=FR)
     assert not any(segment.quotable for segment in plan.segments)
-    assert [(chunk.acl, chunk.locator) for chunk in plan.chunks] == [(SIGNED_IN, "paragraph 1")]
+    assert [(chunk.acl, chunk.kind, chunk.locator) for chunk in plan.chunks] == [
+        (PUBLIC, WINDOW, "paragraph 1")
+    ]
 
 
 def test_the_source_is_a_field_interview_credited_by_name_workshop_and_date() -> None:
@@ -87,7 +90,7 @@ def test_a_design_workshop_recording_is_titled_and_quotes_the_designer() -> None
     plan = recording_plan(item("designer-transcripts-all-1", DR).item, portal=DR)
     assert plan.title == "Design workshop recording, a workshop in Jaipur, Rajasthan, June 2026, 24 June 2026"
     assert [(s.role, s.quotable) for s in plan.segments] == [("DESIGNER", True), ("ARTISAN", True)]
-    public = [(chunk.lang, chunk.locator) for chunk in plan.chunks if chunk.acl == PUBLIC]
+    public = [(chunk.lang, chunk.locator) for chunk in plan.chunks if chunk.kind == PASSAGE]
     assert public == [("en", "0:00–0:20"), ("hi", "0:21–1:01"), ("en", "0:21–1:01")]
 
 

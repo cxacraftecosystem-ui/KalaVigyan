@@ -57,7 +57,7 @@ search. Searches sharing one `StoredKnowledgeSearch` take turns on its session o
 and vector are made, and call the reranker after their turn; searches through
 `SessionScopedSearch` run at once.
 
-- `KnowledgeQuery {craftSlug | null, text, mode, facets[], fields[], chunkAcls, limit,
+- `KnowledgeQuery {craftSlug | null, text, mode, facets[], fields[], chunkAcls, chunkKinds, limit,
   sourceKinds[], passages, rerank}`. `craftSlug` null reads every visible concept. A craft's scope
   (`hybrid.craft_scope`) reads:
   - the craft's own concepts and the shared concepts of its sub-category;
@@ -68,10 +68,21 @@ and vector are made, and call the reranker after their turn; searches through
     category dossiers' 2,029 facts reach the answers of every craft of their family;
   - the concepts of every craft merged into it, followed through `Craft.mergedIntoId` for up to
     `MERGE_HOPS_MAX` (5) hops (`hybrid.merged_into`), so a merged craft's knowledge stays in the
-    surviving craft's answers.
+    surviving craft's answers;
+  - the **linked shared concepts** (`CraftScope.linked_ids`, `shared_links.linked_shared_concepts`,
+    decision 0179): concepts of no craft and no sub-category, where any-craft research files its
+    facts, that the concept graph links to the craft or a craft merged into it: a glossary term of
+    the craft (`TermCraft`) names the concept (`TermConcept`), the graph the shared-science
+    explorer draws, or a concept edge joins it to one of the craft's own concepts. A reviewer
+    links one fact by filing it under the craft in the review queue (decision 0136). Links are
+    stored rows, never inferred by a model. A family's science (a concept a `CuratedCategoryClaim`
+    fact is about, or one named as a category) is never linked, so another family's facts stay
+    out; an unlinked shared concept is read only by a search for any craft. The linked claims
+    rank inside the search's `limit` like any other, so a section's evidence share and its input
+    stay the same size.
 
   The page stamp, the review queue, the candidate gates and `knowledge_view` build `CraftScope`
-  with neither, and read as before. Modes set the statuses and levels read
+  with none of these, and read as before. Modes set the statuses and levels read
   (`MODE_CLAIM_STATUSES`, `MODE_CLAIM_LEVELS`); only the modes whose policy holds tier `T2` read
   passages.
 - A held fact (every quote it cites failed its check, `nightly-upkeep.md` 1a) is never searched,
@@ -97,7 +108,10 @@ and vector are made, and call the reranker after their turn; searches through
   (`seat_query`) and the stored pack (`planner/coverage.stored_knowledge`) ask for it. The facet
   coverage does not: it reads which facts the full-text ranking found, not their order.
 - `chunkAcls` is the reader's passage access (`chunk_acls_for(reader)`); restricted chunks and
-  sources and withheld field recordings are never read.
+  sources and withheld field recordings are never read. `chunkKinds` (default `PASSAGE`) names the
+  kinds of chunk read: a field transcript's speaker-labelled windows (`WINDOW`) only when asked,
+  by the artisan seat and the voice turn, so the stored pack, the lede and the evaluation read
+  the passages they read before the windows became `PUBLIC` (decision 0179).
 
 ### A fact a reader can see
 
@@ -143,7 +157,7 @@ a readable citation of the same fact and source carries the same quote (compared
 `quote_passages.QuotePassages(passages).holding(quote)` (read by
 `live_source_store.chunk_for_quote`, so by every writer that links a quote) finds the first
 passage, by ordinal, whose text holds the quote by `quotes.quote_occurs`; failing that, the first
-two neighbouring passages of the same `acl` whose joined text holds it, linked to the first with
+two neighbouring passages of the same `acl` and kind whose joined text holds it, linked to the first with
 the paragraph range of both (`para 4` and `paras 5-6` become `paras 4-6`; any other locator keeps
 the first). A quote that crosses one passage boundary is so linked, whether or not the chunker
 carried the last paragraph over; one no passage or pair holds stays unlinked and is read by the

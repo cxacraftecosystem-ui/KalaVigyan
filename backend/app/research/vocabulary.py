@@ -11,6 +11,7 @@ from app.models.enums import (
     ANSWER_MODES,
     BLOCK_KINDS,
     CHUNK_ACLS,
+    CHUNK_KINDS,
     CONCEPT_TYPES,
     DISCIPLINES,
     ENV_STATS,
@@ -49,6 +50,7 @@ __all__ = [
     "AnswerMode",
     "BlockKind",
     "ChunkAcl",
+    "ChunkKind",
     "Depth",
     "Discipline",
     "EnvStat",
@@ -139,6 +141,7 @@ AnswerLanguage = Literal[*ANSWER_LANGUAGES]
 TextDirection = Literal[*TEXT_DIRECTIONS]
 AnswerMode = Literal[*ANSWER_MODES]
 ChunkAcl = Literal[*CHUNK_ACLS]
+ChunkKind = Literal[*CHUNK_KINDS]
 EvidenceLevel = Literal[*EVIDENCE_LEVELS]
 ShownLevel = Literal[*SHOWN_LEVELS]
 RetrievalTier = Literal[*RETRIEVAL_TIERS]

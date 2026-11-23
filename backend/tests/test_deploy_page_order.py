@@ -5,7 +5,6 @@ from app.services.served_pages import BUILD_READ_SECONDS
 
 REPO = Path(__file__).resolve().parents[2]
 SWITCH = REPO / "infra" / "deploy" / "blue_green.sh"
-HAND_OFF = "Hand the web build to Deploy backend"
 
 
 def shell_function(name: str) -> str:
@@ -35,7 +34,8 @@ def test_the_web_build_starts_only_after_the_release_has_refreshed_the_pages() -
     names = re.findall(r"^      - name: (.+)$", workflow, re.MULTILINE)
     release = names.index("Release on the box (blue/green through SSM)")
     build = names.index("Build the web app now that the API is live")
-    assert release < build and names[build + 1 :] == [HAND_OFF]
+    assert release < build
+    assert names[build + 1 :] == ["Hand the web build to Deploy backend"]
 
 
 def test_a_build_time_read_waits_as_long_as_the_slowest_document_the_release_warns_about() -> None:

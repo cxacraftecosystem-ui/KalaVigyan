@@ -19,6 +19,7 @@ from .answer_embeddings import AnswerEmbeddings
 from .fusion import FusedItem, fused_order, reciprocal_rank_fusion
 from .fusion_settings import FusionSettings, fusion_settings
 from .rerank import RerankCandidates, collapsed, pool_size, rerank_candidates, reranked
+from .shared_links import linked_shared_concepts
 from .statements import (
     EVERY_CRAFT,
     CraftScope,
@@ -165,7 +166,12 @@ class StoredKnowledgeSearch:
         self, query: KnowledgeQuery, scope: CraftScope, tsquery: str | None, vector: list[float]
     ) -> list[FusedItem[uuid.UUID]]:
         conditions = chunk_conditions(
-            scope, mode=query.mode, facets=query.facets, fields=query.fields, acls=query.chunk_acls
+            scope,
+            mode=query.mode,
+            facets=query.facets,
+            fields=query.fields,
+            acls=query.chunk_acls,
+            kinds=query.chunk_kinds,
         )
         found: list[FusedItem[uuid.UUID]] = []
         for kind in (not_(field_passages()), field_passages()):
@@ -261,11 +267,13 @@ async def craft_scope(session: AsyncSession, slug: str | None) -> CraftScope:
     ).first()
     if row is None:
         raise InvalidInput(f"No craft has the slug {slug!r}")
+    merged = await merged_into(session, row.id)
     return CraftScope(
         craft_id=row.id,
         sub_category_id=row.subCategoryId,
         category_id=row.categoryId,
-        merged_ids=await merged_into(session, row.id),
+        merged_ids=merged,
+        linked_ids=await linked_shared_concepts(session, (row.id, *merged)),
     )
 
 

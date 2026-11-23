@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Chunk, ClaimSource
-from app.research.retrieval import OPEN_CHUNK_ACLS, RESTRICTED_SENSITIVITY
+from app.research.retrieval import OPEN_CHUNK_ACLS, PASSAGE_CHUNK_KIND, RESTRICTED_SENSITIVITY
 
 from .answer_events import CitedClaims
 
@@ -39,6 +39,7 @@ async def _passages(session: AsyncSession, cite_ids: set[uuid.UUID]) -> dict[str
         .where(
             ClaimSource.id.in_(cite_ids),
             Chunk.acl.in_(CONTEXT_ACLS),
+            Chunk.kind == PASSAGE_CHUNK_KIND,
             Chunk.sensitivity != RESTRICTED_SENSITIVITY,
         )
     )

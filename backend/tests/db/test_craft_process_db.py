@@ -19,7 +19,7 @@ from app.models import (
     ReactionCitation,
     StageMaterial,
 )
-from app.research.retrieval import SIGNED_IN_CHUNK_ACLS
+from app.research.retrieval import OPEN_CHUNK_ACLS
 from app.schemas.science import CraftProcess
 from app.science.process_view import craft_process
 from app.services.craft_process import process_records
@@ -77,7 +77,7 @@ async def store_the_golden_excerpt(session: AsyncSession) -> None:
 async def test_the_stored_rows_reproduce_the_golden_process(session: AsyncSession) -> None:
     await store_the_golden_excerpt(session)
     ajrakh = await craft(session, "Kutch-Ajrakh")
-    process = craft_process(await process_records(session, ajrakh, acls=SIGNED_IN_CHUNK_ACLS))
+    process = craft_process(await process_records(session, ajrakh, acls=OPEN_CHUNK_ACLS))
     assert dumped(CraftProcess, process) == golden_text(GOLDEN)
 
 

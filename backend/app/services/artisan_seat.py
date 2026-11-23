@@ -11,7 +11,7 @@ from app.composer.expert_takes import TAKE_SENTENCES_MAX
 from app.core.config import get_settings
 from app.models import ClaimSource, Craft, FieldRecording, FieldSegment
 from app.research.field_voices import FIELD_SOURCE_KIND
-from app.research.retrieval import SIGNED_IN_CHUNK_ACLS, ChunkHit, KnowledgeQuery
+from app.research.retrieval import EVERY_CHUNK_KINDS, OPEN_CHUNK_ACLS, ChunkHit, KnowledgeQuery
 from app.research.vocabulary import FACT_LEVELS
 from app.retrieval.field_scope import shown_recordings
 
@@ -27,6 +27,7 @@ __all__ = [
     "ARTISAN_ROLE",
     "ARTISAN_SEARCH_LIMIT",
     "FIELD_READING_ACLS",
+    "FIELD_READING_KINDS",
     "Heard",
     "HeardQuote",
     "VoiceSearch",
@@ -36,7 +37,8 @@ __all__ = [
 ]
 
 ARTISAN_SEARCH_LIMIT = 12
-FIELD_READING_ACLS = SIGNED_IN_CHUNK_ACLS
+FIELD_READING_ACLS = OPEN_CHUNK_ACLS
+FIELD_READING_KINDS = EVERY_CHUNK_KINDS
 
 
 @dataclass(frozen=True)
@@ -111,6 +113,7 @@ def stored_voices(tools: BuilderTools, *, enabled: Callable[[], bool] = _field_v
             text=ask.request.question,
             mode=ask.request.mode,
             chunk_acls=FIELD_READING_ACLS,
+            chunk_kinds=FIELD_READING_KINDS,
             limit=ARTISAN_SEARCH_LIMIT,
         )
         hits = await retriever.search(query)

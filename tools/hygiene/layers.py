@@ -68,6 +68,7 @@ LAYER_IMPORTS: dict[str, frozenset[str]] = {
         {
             "scripts",
             "voice",
+            "media",
             "providers",
             "services",
             "planner",

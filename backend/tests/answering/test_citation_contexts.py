@@ -1,6 +1,8 @@
 import uuid
 from typing import Any
 
+from sqlalchemy.dialects import postgresql
+
 from app.services.answer_events import CitedClaims
 from app.services.citation_contexts import CONTEXT_ACLS, with_contexts
 from app.services.knowledge_view import ClaimView
@@ -51,7 +53,15 @@ async def test_a_quoted_citation_carries_the_public_passage_around_its_quote() -
     found = await with_contexts(session, claims())
     (view,) = found.views.values()
     assert [citation["context"] for citation in view.citations] == [PASSAGE, None, None]
-    assert CONTEXT_ACLS == ("PUBLIC",)
+    assert CONTEXT_ACLS == ("PUBLIC", "SIGNED_IN") and "RESEARCHER" not in CONTEXT_ACLS
+
+
+async def test_a_context_is_a_passage_and_never_a_transcript_window() -> None:
+    session: Any = Rows([(QUOTED, PASSAGE)])
+    await with_contexts(session, claims())
+    compiled = session.statements[0].compile(dialect=postgresql.dialect())
+    assert '"Chunk".kind = %(kind_1)s' in str(compiled)
+    assert compiled.params["kind_1"] == "PASSAGE"
 
 
 async def test_citations_without_a_quote_ask_nothing() -> None:
