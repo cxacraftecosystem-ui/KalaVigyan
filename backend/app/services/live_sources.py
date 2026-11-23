@@ -12,6 +12,7 @@ from app.core.config import get_settings
 from app.core.db import session_scope
 from app.core.errors import NotConfigured
 from app.planner.reading import LiveSources
+from app.research.evidence import ReferenceLister
 from app.research.images import ImageSource
 from app.services.scholarly_keys import scholarly_keys
 from app.services.web_fetches import web_fetch_recorder
@@ -47,12 +48,14 @@ async def live_sources(session: AsyncSession, client: httpx.AsyncClient) -> Live
     doi_source = next((adapter for adapter in scholarly.adapters if adapter.name == DOI_SOURCE), None)
     if doi_source is None:
         raise NotConfigured(DOI_SOURCE, f"The {DOI_SOURCE} adapter follows cited DOIs and must be built")
+    lister = next((adapter for adapter in scholarly.adapters if isinstance(adapter, ReferenceLister)), None)
     return LiveSources(
         searchers=(*scholarly.adapters, *reference_sources(client), web),
         fetcher=fetcher,
         locator=scholarly.locator,
         doi_source=doi_source,
         publisher=scholarly.publisher,
+        reference_source=lister,
     )
 
 

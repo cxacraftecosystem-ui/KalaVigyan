@@ -98,5 +98,6 @@ async def test_live_sources_join_every_adapter_with_one_fetcher(monkeypatch: pyt
     assert {searcher.tier for searcher in sources.searchers[:-1]} == {"T3"}
     assert sources.searchers[-1].tier == "T4"
     assert sources.doi_source is not None and sources.doi_source.name == "crossref"
+    assert sources.reference_source is sources.searchers[0]
     assert sources.locator is not None and sources.locator.name == "open_access"
     assert sources.searchers[-1].primary.fetcher is sources.fetcher

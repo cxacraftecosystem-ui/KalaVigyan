@@ -5,10 +5,11 @@ from typing import Any
 
 import httpx
 
+from app.core.errors import ExternalFailure
 from app.core.key_checks import KeyVerdict, checked_get
 from app.research.evidence import EvidenceItem, SearchQuery, SourceDocument
 
-from ..adapter import Clock, HttpSourceAdapter, build_document, utc_now
+from ..adapter import Clock, HttpSourceAdapter, build_document, checked_k, usable_records, utc_now
 from ..http import SourceHttp
 from ..records import (
     AUTHORS_MAX,
@@ -23,7 +24,14 @@ from ..records import (
 )
 from .pacing import ServiceLimits, SourceLimit
 
-__all__ = ["OPENALEX_KEYED_LIMITS", "OPENALEX_LIMITS", "OpenAlexAdapter", "abstract_from_index", "check_key"]
+__all__ = [
+    "OPENALEX_KEYED_LIMITS",
+    "OPENALEX_LIMITS",
+    "REFERENCE_ORDER",
+    "OpenAlexAdapter",
+    "abstract_from_index",
+    "check_key",
+]
 
 OPENALEX_API = "https://api.openalex.org"
 OPENALEX_LIMITS = ServiceLimits(search=SourceLimit(requests=10))
@@ -31,6 +39,8 @@ OPENALEX_KEYED_LIMITS = ServiceLimits(search=SourceLimit(requests=30))
 WORK_FIELDS = (
     "id,doi,display_name,publication_date,publication_year,type,authorships,primary_location,best_oa_location"
 )
+DOCUMENT_FIELDS = f"{WORK_FIELDS},abstract_inverted_index"
+REFERENCE_ORDER = "cited_by_count:desc"
 CONTAINER_SOURCE_TYPES = frozenset({"journal", "conference", "book series"})
 TYPE_KINDS = {
     "article": "article",
@@ -84,8 +94,36 @@ class OpenAlexAdapter(HttpSourceAdapter):
             external_ids={"openalex": work_id},
         )
 
+    def lists(self, item: EvidenceItem) -> bool:
+        return bool(item.external_ids.get(self.name))
+
+    async def references(self, item: EvidenceItem, k: int) -> list[SourceDocument]:
+        work_id = item.external_ids.get(self.name)
+        if not work_id:
+            return []
+        wanted = checked_k(k)
+        params = self._params | {
+            "filter": f"cited_by:{work_id},has_abstract:true",
+            "sort": REFERENCE_ORDER,
+            "per-page": str(wanted),
+            "select": DOCUMENT_FIELDS,
+        }
+        response = await self.http.get(f"{OPENALEX_API}/works", params=params, secret_params=self._secret)
+        records = list(response.json(self.name).get("results") or [])
+        retrieved_at = self.clock()
+        return usable_records(self.name, records, lambda record: self._listed(record, retrieved_at))[:wanted]
+
+    def _listed(self, record: Any, retrieved_at: datetime) -> SourceDocument:
+        abstract = abstract_from_index(record.get("abstract_inverted_index"))
+        if abstract is None:
+            raise UnusableRecord("no abstract")
+        try:
+            return build_document(self._item(record, retrieved_at), abstract, "ABSTRACT")
+        except ExternalFailure as failure:
+            raise UnusableRecord(str(failure)) from failure
+
     async def _fetch_document(self, native: str, retrieved_at: datetime) -> SourceDocument:
-        params = self._params | {"select": f"{WORK_FIELDS},abstract_inverted_index"}
+        params = self._params | {"select": DOCUMENT_FIELDS}
         response = await self.http.get(
             f"{OPENALEX_API}/works/{native}", params=params, secret_params=self._secret
         )

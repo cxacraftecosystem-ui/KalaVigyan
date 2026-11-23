@@ -1,0 +1,2193 @@
+{
+ "meta": {
+  "notice": "No API key, so this request shares one free daily budget ($0.10) with everyone on your network's IP address. Get a free key with its own $1/day at https://openalex.org/settings/api and add api_key=YOUR_KEY to your requests. An AI agent can get one for its user in one call: POST https://api.openalex.org/api-keys with {\"email\": \"<your user's email>\"}; we email them a link, and the key works once they click it. Docs for agents: https://help.openalex.org/llms.txt",
+  "count": 9,
+  "db_response_time_ms": 40,
+  "page": 1,
+  "per_page": 5,
+  "groups_count": null,
+  "x_query": {
+   "oql": "get works cited by (W2625322139) where it has an abstract, most cited first",
+   "x_new_oql": "get works cited by (W2625322139) where it has an abstract, most cited first",
+   "oqo": {
+    "get_rows": "works",
+    "filter_rows": [
+     {
+      "column_id": "cited_by",
+      "value": "W2625322139"
+     },
+     {
+      "column_id": "has_abstract",
+      "value": true
+     }
+    ],
+    "sort_by": [
+     {
+      "column_id": "cited_by_count",
+      "direction": "desc"
+     }
+    ]
+   },
+   "url": "/works?filter=cited_by:W2625322139,has_abstract:true&sort=cited_by_count:desc&per_page=5",
+   "order": "most cited first",
+   "order_default": false
+  },
+  "cost_usd": 0.0001
+ },
+ "results": [
+  {
+   "id": "https://openalex.org/W587291236",
+   "doi": null,
+   "display_name": "Natural Dyes: Sources, Tradition, Technology and Science",
+   "publication_date": "2007-06-22",
+   "publication_year": 2007,
+   "type": "book",
+   "authorships": [
+    {
+     "author_position": "first",
+     "author": {
+      "id": "https://openalex.org/A5027803088",
+      "display_name": "Dominique Cardon",
+      "type": null,
+      "orcid": "https://orcid.org/0000-0002-2384-5677",
+      "observed_orcids": [
+       "https://orcid.org/0000-0002-2384-5677"
+      ]
+     },
+     "acted_on_behalf_of": [],
+     "institutions": [
+      {
+       "id": "https://openalex.org/I4210156974",
+       "display_name": "Histoire, Archéologie, Littératures des Mondes Chrétiens et Musulmans Médiévaux",
+       "ror": "https://ror.org/05mqwtr17",
+       "country_code": "FR",
+       "type": "facility",
+       "lineage": [
+        "https://openalex.org/I113428412",
+        "https://openalex.org/I1294671590",
+        "https://openalex.org/I188626449",
+        "https://openalex.org/I198415970",
+        "https://openalex.org/I203339264",
+        "https://openalex.org/I4210156974",
+        "https://openalex.org/I874609350",
+        "https://openalex.org/I90669466"
+       ]
+      }
+     ],
+     "countries": [
+      "FR"
+     ],
+     "is_corresponding": true,
+     "contributor_roles": [],
+     "raw_author_name": "Dominique Cardon",
+     "raw_affiliation_strings": [
+      "Histoire, Archéologie et Littératures des mondes chrétiens et musulmans médiévaux"
+     ],
+     "raw_orcid": null,
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Histoire, Archéologie et Littératures des mondes chrétiens et musulmans médiévaux",
+       "institution_ids": [
+        "https://openalex.org/I4210156974"
+       ]
+      }
+     ]
+    }
+   ],
+   "primary_location": {
+    "id": "pmh:oai:HAL:halshs-00142640v1",
+    "doi": null,
+    "is_oa": false,
+    "landing_page_url": "https://shs.hal.science/halshs-00142640",
+    "pdf_url": null,
+    "source": {
+     "id": "https://openalex.org/S4306402512",
+     "display_name": "HAL",
+     "issn_l": null,
+     "issn": null,
+     "is_oa": false,
+     "is_in_doaj": false,
+     "is_core": false,
+     "listed_in": [],
+     "host_organization": "https://openalex.org/I4405252976",
+     "host_organization_name": "Centre pour la Communication Scientifique Directe",
+     "host_organization_lineage": [
+      "https://openalex.org/I4405252976"
+     ],
+     "host_organization_lineage_names": [],
+     "type": "repository"
+    },
+    "license": null,
+    "license_id": null,
+    "version": "submittedVersion",
+    "is_accepted": false,
+    "is_published": false,
+    "raw_source_name": "Archetype Publications, 790 p; 600 illustrations couleur, 2007",
+    "raw_type": "info:eu-repo/semantics/book"
+   },
+   "best_oa_location": null,
+   "abstract_inverted_index": {
+    "At": [
+     0
+    ],
+    "a": [
+     1,
+     181,
+     218
+    ],
+    "time": [
+     2
+    ],
+    "when": [
+     3
+    ],
+    "more": [
+     4,
+     6
+    ],
+    "and": [
+     5,
+     8,
+     24,
+     39,
+     44,
+     49,
+     65,
+     78,
+     89,
+     108,
+     112,
+     123,
+     140,
+     143,
+     172,
+     184
+    ],
+    "plants": [
+     7,
+     38
+    ],
+    "animals": [
+     9,
+     41
+    ],
+    "are": [
+     10,
+     47,
+     84,
+     106,
+     121,
+     145,
+     196
+    ],
+    "threatened": [
+     11
+    ],
+    "with": [
+     12,
+     59
+    ],
+    "extinction,": [
+     13
+    ],
+    "this": [
+     14,
+     213,
+     222
+    ],
+    "book": [
+     15,
+     214
+    ],
+    "sets": [
+     16
+    ],
+    "out": [
+     17
+    ],
+    "to": [
+     18,
+     180,
+     216
+    ],
+    "record": [
+     19
+    ],
+    "sources": [
+     20,
+     77
+    ],
+    "of": [
+     21,
+     62,
+     75,
+     115,
+     128,
+     134,
+     161,
+     165,
+     174,
+     200,
+     204,
+     212
+    ],
+    "colorants": [
+     22,
+     177
+    ],
+    "discovered": [
+     23
+    ],
+    "used": [
+     25
+    ],
+    "on": [
+     26
+    ],
+    "all": [
+     27
+    ],
+    "the": [
+     28,
+     33,
+     52,
+     71,
+     90,
+     126,
+     162,
+     166,
+     170,
+     201
+    ],
+    "continents": [
+     29
+    ],
+    "from": [
+     30,
+     169
+    ],
+    "antiquity": [
+     31
+    ],
+    "until": [
+     32
+    ],
+    "present": [
+     34
+    ],
+    "day.": [
+     35
+    ],
+    "Some": [
+     36
+    ],
+    "300": [
+     37
+    ],
+    "30": [
+     40
+    ],
+    "(marine": [
+     42
+    ],
+    "molluscs": [
+     43
+    ],
+    "scale": [
+     45
+    ],
+    "insects)": [
+     46
+    ],
+    "illustrated": [
+     48,
+     107
+    ],
+    "discussed": [
+     50
+    ],
+    "by": [
+     51,
+     99,
+     103,
+     118,
+     155
+    ],
+    "author,": [
+     53
+    ],
+    "whose": [
+     54
+    ],
+    "passion": [
+     55
+    ],
+    "for": [
+     56,
+     86,
+     94,
+     141,
+     221
+    ],
+    "natural": [
+     57,
+     149,
+     188,
+     194
+    ],
+    "dyes,": [
+     58,
+     157
+    ],
+    "their": [
+     60
+    ],
+    "colours": [
+     61
+    ],
+    "unequalled": [
+     63
+    ],
+    "richness": [
+     64
+    ],
+    "subtlety,": [
+     66
+    ],
+    "has": [
+     67,
+     178
+    ],
+    "taken": [
+     68
+    ],
+    "her": [
+     69
+    ],
+    "across": [
+     70
+    ],
+    "globe": [
+     72
+    ],
+    "in": [
+     73,
+     125,
+     138,
+     187
+    ],
+    "search": [
+     74
+    ],
+    "dye": [
+     76,
+     104
+    ],
+    "dyers.": [
+     79
+    ],
+    "Botanical": [
+     80
+    ],
+    "or": [
+     81
+    ],
+    "zoological": [
+     82
+    ],
+    "details": [
+     83
+    ],
+    "given": [
+     85
+    ],
+    "each": [
+     87,
+     95
+    ],
+    "source": [
+     88
+    ],
+    "chemical": [
+     91
+    ],
+    "structures": [
+     92
+    ],
+    "shown": [
+     93
+    ],
+    "dye.": [
+     96
+    ],
+    "Dyes": [
+     97
+    ],
+    "employed": [
+     98
+    ],
+    "different": [
+     100
+    ],
+    "civilisations,": [
+     101
+    ],
+    "identified": [
+     102
+    ],
+    "analyses,": [
+     105
+    ],
+    "relevant": [
+     109
+    ],
+    "historical": [
+     110
+    ],
+    "recipes": [
+     111
+    ],
+    "detailed": [
+     113
+    ],
+    "descriptions": [
+     114
+    ],
+    "dyeing": [
+     116
+    ],
+    "processes": [
+     117
+    ],
+    "traditional": [
+     119
+    ],
+    "dyers": [
+     120
+    ],
+    "quoted": [
+     122
+    ],
+    "explained": [
+     124
+    ],
+    "light": [
+     127
+    ],
+    "modern": [
+     129
+    ],
+    "science.": [
+     130
+    ],
+    "Other": [
+     131
+    ],
+    "current": [
+     132
+    ],
+    "uses": [
+     133
+    ],
+    "such": [
+     135
+    ],
+    "colorants,": [
+     136
+    ],
+    "e.g.": [
+     137
+    ],
+    "medicine": [
+     139
+    ],
+    "food": [
+     142
+    ],
+    "cosmetics,": [
+     144
+    ],
+    "also": [
+     146
+    ],
+    "noted.": [
+     147
+    ],
+    "Although": [
+     148
+    ],
+    "dyes": [
+     150,
+     195
+    ],
+    "have": [
+     151
+    ],
+    "been": [
+     152
+    ],
+    "replaced": [
+     153
+    ],
+    "largely": [
+     154
+    ],
+    "synthetic": [
+     156,
+     176
+    ],
+    "increasing": [
+     158
+    ],
+    "worldwide": [
+     159
+    ],
+    "awareness": [
+     160
+    ],
+    "harmful": [
+     163
+    ],
+    "consequences": [
+     164
+    ],
+    "pollution": [
+     167
+    ],
+    "resulting": [
+     168
+    ],
+    "production": [
+     171
+    ],
+    "use": [
+     173
+    ],
+    "some": [
+     175
+    ],
+    "led": [
+     179
+    ],
+    "significant": [
+     182
+    ],
+    "revival": [
+     183
+    ],
+    "renewed": [
+     185
+    ],
+    "interest": [
+     186
+    ],
+    "colorants.": [
+     189
+    ],
+    "As": [
+     190
+    ],
+    "potential": [
+     191
+    ],
+    "renewable": [
+     192
+    ],
+    "resources,": [
+     193
+    ],
+    "an": [
+     197
+    ],
+    "integral": [
+     198
+    ],
+    "part": [
+     199
+    ],
+    "major": [
+     202
+    ],
+    "issue": [
+     203
+    ],
+    "our": [
+     205
+    ],
+    "time,": [
+     206
+    ],
+    "namely": [
+     207
+    ],
+    "sustainable": [
+     208
+    ],
+    "development.": [
+     209
+    ],
+    "The": [
+     210
+    ],
+    "aim": [
+     211
+    ],
+    "is": [
+     215
+    ],
+    "provide": [
+     217
+    ],
+    "scientific": [
+     219
+    ],
+    "background": [
+     220
+    ],
+    "important": [
+     223
+    ],
+    "debate.": [
+     224
+    ]
+   }
+  },
+  {
+   "id": "https://openalex.org/W1977865695",
+   "doi": "https://doi.org/10.1039/b109896a",
+   "display_name": "Application of olefin metathesis in oleochemistry: an example of green chemistry",
+   "publication_date": "2002-02-01",
+   "publication_year": 2002,
+   "type": "article",
+   "authorships": [
+    {
+     "author_position": "first",
+     "author": {
+      "id": "https://openalex.org/A5040030480",
+      "display_name": "Johannes C. Mol",
+      "type": null,
+      "orcid": null,
+      "observed_orcids": []
+     },
+     "acted_on_behalf_of": [],
+     "institutions": [
+      {
+       "id": "https://openalex.org/I887064364",
+       "display_name": "University of Amsterdam",
+       "ror": "https://ror.org/04dkp9463",
+       "country_code": "NL",
+       "type": "education",
+       "lineage": [
+        "https://openalex.org/I887064364"
+       ]
+      }
+     ],
+     "countries": [
+      "NL"
+     ],
+     "is_corresponding": true,
+     "contributor_roles": [],
+     "raw_author_name": "J. C. Mol",
+     "raw_affiliation_strings": [
+      "Institute of Molecular Chemistry, Faculty of Science, Universiteit van Amsterdam, Nieuwe Achtergracht 166, Amsterdam, The Netherlands"
+     ],
+     "raw_orcid": null,
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Institute of Molecular Chemistry, Faculty of Science, Universiteit van Amsterdam, Nieuwe Achtergracht 166, Amsterdam, The Netherlands",
+       "institution_ids": [
+        "https://openalex.org/I887064364"
+       ]
+      }
+     ]
+    }
+   ],
+   "primary_location": {
+    "id": "doi:10.1039/b109896a",
+    "doi": "https://doi.org/10.1039/b109896a",
+    "is_oa": false,
+    "landing_page_url": "https://doi.org/10.1039/b109896a",
+    "pdf_url": null,
+    "source": {
+     "id": "https://openalex.org/S55009144",
+     "display_name": "Green Chemistry",
+     "issn_l": "1463-9262",
+     "issn": [
+      "1463-9262",
+      "1463-9270"
+     ],
+     "is_oa": false,
+     "is_in_doaj": false,
+     "is_core": true,
+     "listed_in": [
+      "cwts-core",
+      "dongbi-b",
+      "jufo-3",
+      "ki-jl-1",
+      "norway-1",
+      "poland-200",
+      "russia-white-list-1",
+      "vabb-shw"
+     ],
+     "host_organization": "https://openalex.org/P4310320556",
+     "host_organization_name": "Royal Society of Chemistry",
+     "host_organization_lineage": [
+      "https://openalex.org/P4310320556"
+     ],
+     "host_organization_lineage_names": [
+      "Royal Society of Chemistry"
+     ],
+     "type": "journal"
+    },
+    "license": null,
+    "license_id": null,
+    "version": "publishedVersion",
+    "is_accepted": true,
+    "is_published": true,
+    "raw_source_name": "Green Chemistry",
+    "raw_type": "journal-article"
+   },
+   "best_oa_location": null,
+   "abstract_inverted_index": {
+    "The": [
+     0
+    ],
+    "metathesis": [
+     1,
+     69
+    ],
+    "of": [
+     2,
+     22,
+     48,
+     67
+    ],
+    "natural": [
+     3
+    ],
+    "oils": [
+     4
+    ],
+    "and": [
+     5,
+     7,
+     53
+    ],
+    "fats": [
+     6
+    ],
+    "their": [
+     8
+    ],
+    "derivatives": [
+     9
+    ],
+    "is": [
+     10
+    ],
+    "a": [
+     11,
+     41
+    ],
+    "clean": [
+     12
+    ],
+    "catalytic": [
+     13
+    ],
+    "reaction": [
+     14,
+     43,
+     58,
+     70
+    ],
+    "that": [
+     15,
+     50
+    ],
+    "can": [
+     16,
+     30
+    ],
+    "be": [
+     17,
+     31
+    ],
+    "considered": [
+     18
+    ],
+    "as": [
+     19
+    ],
+    "an": [
+     20
+    ],
+    "example": [
+     21
+    ],
+    "green": [
+     23
+    ],
+    "chemistry.": [
+     24
+    ],
+    "Using": [
+     25
+    ],
+    "this": [
+     26
+    ],
+    "reaction,": [
+     27
+    ],
+    "oleochemical": [
+     28,
+     73
+    ],
+    "feedstocks": [
+     29
+    ],
+    "converted": [
+     32
+    ],
+    "into": [
+     33
+    ],
+    "valuable": [
+     34
+    ],
+    "chemical": [
+     35
+    ],
+    "products,": [
+     36
+    ],
+    "directly": [
+     37
+    ],
+    "or": [
+     38
+    ],
+    "in": [
+     39,
+     71
+    ],
+    "only": [
+     40
+    ],
+    "few": [
+     42
+    ],
+    "steps.": [
+     44
+    ],
+    "With": [
+     45
+    ],
+    "the": [
+     46,
+     65,
+     68,
+     72
+    ],
+    "development": [
+     47
+    ],
+    "catalysts": [
+     49
+    ],
+    "are": [
+     51,
+     61
+    ],
+    "active": [
+     52
+    ],
+    "highly": [
+     54
+    ],
+    "selective": [
+     55
+    ],
+    "under": [
+     56
+    ],
+    "mild": [
+     57
+    ],
+    "conditions,": [
+     59
+    ],
+    "there": [
+     60
+    ],
+    "favourable": [
+     62
+    ],
+    "perspectives": [
+     63
+    ],
+    "for": [
+     64
+    ],
+    "application": [
+     66
+    ],
+    "industry.": [
+     74
+    ]
+   }
+  },
+  {
+   "id": "https://openalex.org/W2017409477",
+   "doi": "https://doi.org/10.1111/j.1478-4408.2004.tb00223.x",
+   "display_name": "Colorimetric properties of wool dyed with natural dyes after treatment with ammonia",
+   "publication_date": "2004-07-01",
+   "publication_year": 2004,
+   "type": "article",
+   "authorships": [
+    {
+     "author_position": "first",
+     "author": {
+      "id": "https://openalex.org/A5063164384",
+      "display_name": "Majid Montazer",
+      "type": null,
+      "orcid": "https://orcid.org/0000-0002-1983-6735",
+      "observed_orcids": [
+       "https://orcid.org/0000-0002-1983-6735"
+      ]
+     },
+     "acted_on_behalf_of": [],
+     "institutions": [
+      {
+       "id": "https://openalex.org/I158248296",
+       "display_name": "Amirkabir University of Technology",
+       "ror": "https://ror.org/04gzbav43",
+       "country_code": "IR",
+       "type": "education",
+       "lineage": [
+        "https://openalex.org/I158248296"
+       ]
+      }
+     ],
+     "countries": [
+      "IR"
+     ],
+     "is_corresponding": true,
+     "contributor_roles": [],
+     "raw_author_name": "Majid Montazer",
+     "raw_affiliation_strings": [
+      "Textile Department, Center of Excellence in Textile Engineering, Amirkabir University, Tehran, Iran. Email: tex5mm@cic.aut.ac.ir"
+     ],
+     "raw_orcid": null,
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Textile Department, Center of Excellence in Textile Engineering, Amirkabir University, Tehran, Iran. Email: tex5mm@cic.aut.ac.ir",
+       "institution_ids": [
+        "https://openalex.org/I158248296"
+       ]
+      }
+     ]
+    },
+    {
+     "author_position": "middle",
+     "author": {
+      "id": "https://openalex.org/A5110028571",
+      "display_name": "Maziar Parvinzadeh",
+      "type": null,
+      "orcid": null,
+      "observed_orcids": []
+     },
+     "acted_on_behalf_of": [],
+     "institutions": [],
+     "countries": [],
+     "is_corresponding": false,
+     "contributor_roles": [],
+     "raw_author_name": "Maziar Parvinzadeh",
+     "raw_affiliation_strings": [
+      "Iran Color Research Centre, P O Box 16765-1753, Tehran, Iran"
+     ],
+     "raw_orcid": null,
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Iran Color Research Centre, P O Box 16765-1753, Tehran, Iran",
+       "institution_ids": []
+      }
+     ]
+    },
+    {
+     "author_position": "last",
+     "author": {
+      "id": "https://openalex.org/A5014200617",
+      "display_name": "Amir Kiumarsi",
+      "type": null,
+      "orcid": null,
+      "observed_orcids": []
+     },
+     "acted_on_behalf_of": [],
+     "institutions": [],
+     "countries": [],
+     "is_corresponding": false,
+     "contributor_roles": [],
+     "raw_author_name": "Amir Kiumarsi",
+     "raw_affiliation_strings": [
+      "Iran Color Research Centre, P O Box 16765-1753, Tehran, Iran"
+     ],
+     "raw_orcid": null,
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Iran Color Research Centre, P O Box 16765-1753, Tehran, Iran",
+       "institution_ids": []
+      }
+     ]
+    }
+   ],
+   "primary_location": {
+    "id": "doi:10.1111/j.1478-4408.2004.tb00223.x",
+    "doi": "https://doi.org/10.1111/j.1478-4408.2004.tb00223.x",
+    "is_oa": false,
+    "landing_page_url": "https://doi.org/10.1111/j.1478-4408.2004.tb00223.x",
+    "pdf_url": null,
+    "source": {
+     "id": "https://openalex.org/S78419349",
+     "display_name": "Coloration Technology",
+     "issn_l": "1472-3581",
+     "issn": [
+      "1472-3581",
+      "1478-4408"
+     ],
+     "is_oa": false,
+     "is_in_doaj": false,
+     "is_core": true,
+     "listed_in": [
+      "cwts-core",
+      "dongbi-c",
+      "jufo-1",
+      "norway-1",
+      "poland-40",
+      "russia-white-list-2"
+     ],
+     "host_organization": "https://openalex.org/P4310320595",
+     "host_organization_name": "Wiley",
+     "host_organization_lineage": [
+      "https://openalex.org/P4310320595"
+     ],
+     "host_organization_lineage_names": [
+      "Wiley"
+     ],
+     "type": "journal"
+    },
+    "license": null,
+    "license_id": null,
+    "version": "publishedVersion",
+    "is_accepted": true,
+    "is_published": true,
+    "raw_source_name": "Coloration Technology",
+    "raw_type": "journal-article"
+   },
+   "best_oa_location": null,
+   "abstract_inverted_index": {
+    "An": [
+     0
+    ],
+    "evaluation": [
+     1
+    ],
+    "has": [
+     2
+    ],
+    "been": [
+     3
+    ],
+    "carried": [
+     4
+    ],
+    "out": [
+     5
+    ],
+    "of": [
+     6,
+     9,
+     15,
+     21
+    ],
+    "the": [
+     7,
+     12,
+     45,
+     57,
+     60
+    ],
+    "effect": [
+     8
+    ],
+    "ammonia": [
+     10,
+     40
+    ],
+    "on": [
+     11,
+     66
+    ],
+    "colouristic": [
+     13
+    ],
+    "properties": [
+     14
+    ],
+    "wool": [
+     16
+    ],
+    "dyed": [
+     17
+    ],
+    "with": [
+     18,
+     39,
+     69
+    ],
+    "a": [
+     19,
+     42
+    ],
+    "range": [
+     20
+    ],
+    "natural": [
+     22
+    ],
+    "dyes": [
+     23
+    ],
+    "containing": [
+     24
+    ],
+    "anthraquinone,": [
+     25
+    ],
+    "naphthaquinone,": [
+     26
+    ],
+    "flavone": [
+     27
+    ],
+    "and": [
+     28
+    ],
+    "tannin": [
+     29
+    ],
+    "structures.": [
+     30
+    ],
+    "It": [
+     31
+    ],
+    "was": [
+     32
+    ],
+    "found": [
+     33
+    ],
+    "in": [
+     34,
+     44
+    ],
+    "all": [
+     35
+    ],
+    "cases": [
+     36
+    ],
+    "that": [
+     37,
+     59
+    ],
+    "after‐treatment": [
+     38
+    ],
+    "caused": [
+     41
+    ],
+    "decrease": [
+     43
+    ],
+    "lightness": [
+     46
+    ],
+    "(L*)": [
+     47
+    ],
+    "values.": [
+     48
+    ],
+    "The": [
+     49
+    ],
+    "reasons": [
+     50
+    ],
+    "for": [
+     51
+    ],
+    "this": [
+     52
+    ],
+    "are": [
+     53
+    ],
+    "discussed,": [
+     54
+    ],
+    "as": [
+     55
+    ],
+    "is": [
+     56,
+     63
+    ],
+    "fact": [
+     58
+    ],
+    "colour": [
+     61
+    ],
+    "change": [
+     62
+    ],
+    "not": [
+     64
+    ],
+    "reversible": [
+     65
+    ],
+    "subsequent": [
+     67
+    ],
+    "treatment": [
+     68
+    ],
+    "acid.": [
+     70
+    ]
+   }
+  },
+  {
+   "id": "https://openalex.org/W2061113524",
+   "doi": "https://doi.org/10.1080/15440478.2011.627114",
+   "display_name": "Eco-friendly Dyeing of Wool with a Mixture of Natural Dyes",
+   "publication_date": "2011-10-01",
+   "publication_year": 2011,
+   "type": "article",
+   "authorships": [
+    {
+     "author_position": "first",
+     "author": {
+      "id": "https://openalex.org/A5041291484",
+      "display_name": "M. M. Kamel",
+      "type": null,
+      "orcid": "https://orcid.org/0000-0002-1795-2177",
+      "observed_orcids": [
+       "https://orcid.org/0000-0002-1795-2177"
+      ]
+     },
+     "acted_on_behalf_of": [],
+     "institutions": [
+      {
+       "id": "https://openalex.org/I4210131959",
+       "display_name": "National Research Centre",
+       "ror": "https://ror.org/02n85j827",
+       "country_code": "EG",
+       "type": "facility",
+       "lineage": [
+        "https://openalex.org/I4210131959"
+       ]
+      }
+     ],
+     "countries": [
+      "EG"
+     ],
+     "is_corresponding": false,
+     "contributor_roles": [],
+     "raw_author_name": "M. M. Kamel",
+     "raw_affiliation_strings": [
+      "Textile Research Division, National Research Centre, Cairo, Egypt"
+     ],
+     "raw_orcid": null,
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Textile Research Division, National Research Centre, Cairo, Egypt",
+       "institution_ids": [
+        "https://openalex.org/I4210131959"
+       ]
+      }
+     ]
+    },
+    {
+     "author_position": "middle",
+     "author": {
+      "id": "https://openalex.org/A5037224892",
+      "display_name": "Fatma Abdelghaffar",
+      "type": null,
+      "orcid": "https://orcid.org/0000-0002-6022-0238",
+      "observed_orcids": [
+       "https://orcid.org/0000-0002-6022-0238"
+      ]
+     },
+     "acted_on_behalf_of": [],
+     "institutions": [
+      {
+       "id": "https://openalex.org/I4210131959",
+       "display_name": "National Research Centre",
+       "ror": "https://ror.org/02n85j827",
+       "country_code": "EG",
+       "type": "facility",
+       "lineage": [
+        "https://openalex.org/I4210131959"
+       ]
+      }
+     ],
+     "countries": [
+      "EG"
+     ],
+     "is_corresponding": true,
+     "contributor_roles": [],
+     "raw_author_name": "F. Abdelghaffar",
+     "raw_affiliation_strings": [
+      "Textile Research Division, National Research Centre, Cairo, Egypt"
+     ],
+     "raw_orcid": null,
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Textile Research Division, National Research Centre, Cairo, Egypt",
+       "institution_ids": [
+        "https://openalex.org/I4210131959"
+       ]
+      }
+     ]
+    },
+    {
+     "author_position": "last",
+     "author": {
+      "id": "https://openalex.org/A5088772469",
+      "display_name": "Manal M. El-Zawahry",
+      "type": null,
+      "orcid": "https://orcid.org/0000-0002-9043-9919",
+      "observed_orcids": [
+       "https://orcid.org/0000-0002-9043-9919"
+      ]
+     },
+     "acted_on_behalf_of": [],
+     "institutions": [
+      {
+       "id": "https://openalex.org/I4210131959",
+       "display_name": "National Research Centre",
+       "ror": "https://ror.org/02n85j827",
+       "country_code": "EG",
+       "type": "facility",
+       "lineage": [
+        "https://openalex.org/I4210131959"
+       ]
+      }
+     ],
+     "countries": [
+      "EG"
+     ],
+     "is_corresponding": false,
+     "contributor_roles": [],
+     "raw_author_name": "M. M. El-Zawahry",
+     "raw_affiliation_strings": [
+      "Textile Research Division, National Research Centre, Cairo, Egypt"
+     ],
+     "raw_orcid": null,
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Textile Research Division, National Research Centre, Cairo, Egypt",
+       "institution_ids": [
+        "https://openalex.org/I4210131959"
+       ]
+      }
+     ]
+    }
+   ],
+   "primary_location": {
+    "id": "doi:10.1080/15440478.2011.627114",
+    "doi": "https://doi.org/10.1080/15440478.2011.627114",
+    "is_oa": false,
+    "landing_page_url": "https://doi.org/10.1080/15440478.2011.627114",
+    "pdf_url": null,
+    "source": {
+     "id": "https://openalex.org/S29409266",
+     "display_name": "Journal of Natural Fibers",
+     "issn_l": "1544-046X",
+     "issn": [
+      "1544-046X",
+      "1544-0478"
+     ],
+     "is_oa": false,
+     "is_in_doaj": true,
+     "is_core": true,
+     "listed_in": [
+      "cwts-core",
+      "doaj",
+      "dongbi-a",
+      "jufo-2",
+      "norway-1",
+      "oarl",
+      "poland-140",
+      "russia-white-list-1"
+     ],
+     "host_organization": "https://openalex.org/P4310320547",
+     "host_organization_name": "Taylor & Francis",
+     "host_organization_lineage": [
+      "https://openalex.org/P4310320547",
+      "https://openalex.org/P4310320449"
+     ],
+     "host_organization_lineage_names": [
+      "Taylor & Francis",
+      "Informa"
+     ],
+     "type": "journal"
+    },
+    "license": null,
+    "license_id": null,
+    "version": "publishedVersion",
+    "is_accepted": true,
+    "is_published": true,
+    "raw_source_name": "Journal of Natural Fibers",
+    "raw_type": "journal-article"
+   },
+   "best_oa_location": null,
+   "abstract_inverted_index": {
+    "The": [
+     0,
+     41,
+     82
+    ],
+    "extraction": [
+     1
+    ],
+    "of": [
+     2,
+     8,
+     43,
+     79,
+     85,
+     90,
+     112,
+     150,
+     162
+    ],
+    "natural": [
+     3
+    ],
+    "dye": [
+     4
+    ],
+    "from": [
+     5,
+     118,
+     137
+    ],
+    "a": [
+     6,
+     124,
+     131
+    ],
+    "mixture": [
+     7,
+     117
+    ],
+    "Terminalia": [
+     9
+    ],
+    "arjuna": [
+     10
+    ],
+    "fruits": [
+     11
+    ],
+    "and": [
+     12,
+     20,
+     24,
+     54,
+     77,
+     88,
+     102,
+     122,
+     130,
+     148
+    ],
+    "Madder": [
+     13,
+     113
+    ],
+    "with": [
+     14,
+     64,
+     67,
+     95,
+     146,
+     165
+    ],
+    "different": [
+     15,
+     70,
+     86
+    ],
+    "percentage": [
+     16,
+     111
+    ],
+    "w/w": [
+     17
+    ],
+    "(80:20%,": [
+     18
+    ],
+    "70:30%": [
+     19
+    ],
+    "50:50%)": [
+     21
+    ],
+    "was": [
+     22,
+     28,
+     62,
+     106,
+     128,
+     134
+    ],
+    "optimized": [
+     23
+    ],
+    "the": [
+     25,
+     68,
+     110,
+     116,
+     160
+    ],
+    "resulting": [
+     26
+    ],
+    "extract": [
+     27
+    ],
+    "used": [
+     29
+    ],
+    "to": [
+     30,
+     47,
+     97,
+     140,
+     154
+    ],
+    "further": [
+     31
+    ],
+    "optimize": [
+     32
+    ],
+    "its": [
+     33
+    ],
+    "dyeing": [
+     34,
+     52,
+     83,
+     145
+    ],
+    "conditions": [
+     35
+    ],
+    "on": [
+     36,
+     100
+    ],
+    "wool": [
+     37,
+     166
+    ],
+    "by": [
+     38
+    ],
+    "exhaust": [
+     39
+    ],
+    "method.": [
+     40
+    ],
+    "purpose": [
+     42
+    ],
+    "this": [
+     44
+    ],
+    "study": [
+     45
+    ],
+    "is": [
+     46
+    ],
+    "develop": [
+     48
+    ],
+    "an": [
+     49
+    ],
+    "environmentally": [
+     50
+    ],
+    "friendly": [
+     51
+    ],
+    "process": [
+     53
+    ],
+    "good": [
+     55,
+     156
+    ],
+    "fastness": [
+     56,
+     103,
+     157
+    ],
+    "properties.": [
+     57,
+     104,
+     158
+    ],
+    "Dyeing": [
+     58
+    ],
+    "without": [
+     59
+    ],
+    "any": [
+     60
+    ],
+    "mordant": [
+     61,
+     163
+    ],
+    "compared": [
+     63
+    ],
+    "those": [
+     65
+    ],
+    "obtained": [
+     66,
+     129,
+     136
+    ],
+    "three": [
+     69
+    ],
+    "mordanting": [
+     71
+    ],
+    "methods": [
+     72
+    ],
+    "using": [
+     73
+    ],
+    "various": [
+     74
+    ],
+    "metal": [
+     75
+    ],
+    "salts": [
+     76
+    ],
+    "combination": [
+     78,
+     89,
+     149
+    ],
+    "these": [
+     80
+    ],
+    "salts.": [
+     81
+    ],
+    "behaviors": [
+     84
+    ],
+    "mordants": [
+     87,
+     91,
+     147,
+     151
+    ],
+    "have": [
+     92,
+     168
+    ],
+    "been": [
+     93,
+     169
+    ],
+    "studied": [
+     94
+    ],
+    "respect": [
+     96
+    ],
+    "their": [
+     98
+    ],
+    "influence": [
+     99
+    ],
+    "color": [
+     101,
+     126
+    ],
+    "It": [
+     105
+    ],
+    "found": [
+     107
+    ],
+    "that": [
+     108
+    ],
+    "as": [
+     109
+    ],
+    "increased": [
+     114
+    ],
+    "in": [
+     115
+    ],
+    "0,": [
+     119
+    ],
+    "20%,": [
+     120
+    ],
+    "30%,": [
+     121
+    ],
+    "50%,": [
+     123
+    ],
+    "better": [
+     125
+    ],
+    "strength": [
+     127
+    ],
+    "bathochromic": [
+     132
+    ],
+    "shift": [
+     133
+    ],
+    "also": [
+     135
+    ],
+    "mustard": [
+     138
+    ],
+    "brown": [
+     139,
+     142
+    ],
+    "reddish": [
+     141
+    ],
+    "shades.": [
+     143
+    ],
+    "Furthermore,": [
+     144
+    ],
+    "has": [
+     152
+    ],
+    "moderate": [
+     153
+    ],
+    "very": [
+     155
+    ],
+    "Finally,": [
+     159
+    ],
+    "mechanisms": [
+     161
+    ],
+    "interaction": [
+     164
+    ],
+    "fiber": [
+     167
+    ],
+    "briefly": [
+     170
+    ],
+    "considered.": [
+     171
+    ]
+   }
+  },
+  {
+   "id": "https://openalex.org/W2026402964",
+   "doi": "https://doi.org/10.1080/15440478.2011.651830",
+   "display_name": "Environmentally Friendly Natural Dyeing of Organic Cotton",
+   "publication_date": "2012-01-01",
+   "publication_year": 2012,
+   "type": "article",
+   "authorships": [
+    {
+     "author_position": "first",
+     "author": {
+      "id": "https://openalex.org/A5013615673",
+      "display_name": "Mustafa Tutak",
+      "type": null,
+      "orcid": null,
+      "observed_orcids": []
+     },
+     "acted_on_behalf_of": [],
+     "institutions": [
+      {
+       "id": "https://openalex.org/I87673952",
+       "display_name": "Erciyes University",
+       "ror": "https://ror.org/047g8vk19",
+       "country_code": "TR",
+       "type": "education",
+       "lineage": [
+        "https://openalex.org/I87673952"
+       ]
+      }
+     ],
+     "countries": [
+      "TR"
+     ],
+     "is_corresponding": true,
+     "contributor_roles": [],
+     "raw_author_name": "Mustafa Tutak",
+     "raw_affiliation_strings": [
+      "Department of Textile Engineering, Erciyes University, Kayseri, Turkey"
+     ],
+     "raw_orcid": null,
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Department of Textile Engineering, Erciyes University, Kayseri, Turkey",
+       "institution_ids": [
+        "https://openalex.org/I87673952"
+       ]
+      }
+     ]
+    },
+    {
+     "author_position": "last",
+     "author": {
+      "id": null,
+      "display_name": "N. Ebru Korkmaz",
+      "type": null,
+      "orcid": null,
+      "observed_orcids": []
+     },
+     "acted_on_behalf_of": [],
+     "institutions": [],
+     "countries": [],
+     "is_corresponding": false,
+     "contributor_roles": [],
+     "raw_author_name": "N. Ebru Korkmaz",
+     "raw_affiliation_strings": [
+      "Planning Department, Saray Carpet Factory, Kayseri, Turkey"
+     ],
+     "raw_orcid": null,
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Planning Department, Saray Carpet Factory, Kayseri, Turkey",
+       "institution_ids": []
+      }
+     ]
+    }
+   ],
+   "primary_location": {
+    "id": "doi:10.1080/15440478.2011.651830",
+    "doi": "https://doi.org/10.1080/15440478.2011.651830",
+    "is_oa": false,
+    "landing_page_url": "https://doi.org/10.1080/15440478.2011.651830",
+    "pdf_url": null,
+    "source": {
+     "id": "https://openalex.org/S29409266",
+     "display_name": "Journal of Natural Fibers",
+     "issn_l": "1544-046X",
+     "issn": [
+      "1544-046X",
+      "1544-0478"
+     ],
+     "is_oa": false,
+     "is_in_doaj": true,
+     "is_core": true,
+     "listed_in": [
+      "cwts-core",
+      "doaj",
+      "dongbi-a",
+      "jufo-2",
+      "norway-1",
+      "oarl",
+      "poland-140",
+      "russia-white-list-1"
+     ],
+     "host_organization": "https://openalex.org/P4310320547",
+     "host_organization_name": "Taylor & Francis",
+     "host_organization_lineage": [
+      "https://openalex.org/P4310320547",
+      "https://openalex.org/P4310320449"
+     ],
+     "host_organization_lineage_names": [
+      "Taylor & Francis",
+      "Informa"
+     ],
+     "type": "journal"
+    },
+    "license": null,
+    "license_id": null,
+    "version": "publishedVersion",
+    "is_accepted": true,
+    "is_published": true,
+    "raw_source_name": "Journal of Natural Fibers",
+    "raw_type": "journal-article"
+   },
+   "best_oa_location": null,
+   "abstract_inverted_index": {
+    "In": [
+     0
+    ],
+    "this": [
+     1
+    ],
+    "study,": [
+     2
+    ],
+    "organic": [
+     3,
+     82
+    ],
+    "cotton": [
+     4,
+     83
+    ],
+    "fabrics": [
+     5,
+     55,
+     84
+    ],
+    "were": [
+     6,
+     85
+    ],
+    "dyed": [
+     7,
+     81
+    ],
+    "with": [
+     8,
+     34
+    ],
+    "different": [
+     9,
+     35
+    ],
+    "natural": [
+     10
+    ],
+    "dye": [
+     11
+    ],
+    "sources": [
+     12
+    ],
+    "(madder": [
+     13
+    ],
+    "root,": [
+     14,
+     24
+    ],
+    "walnut": [
+     15
+    ],
+    "shell,": [
+     16
+    ],
+    "henna,": [
+     17
+    ],
+    "horse": [
+     18
+    ],
+    "chestnut,": [
+     19
+    ],
+    "pomegranate": [
+     20
+    ],
+    "peel,": [
+     21
+    ],
+    "berberis": [
+     22
+    ],
+    "vulgaris": [
+     23
+    ],
+    "thyme,": [
+     25
+    ],
+    "and": [
+     26,
+     44,
+     64,
+     71,
+     75
+    ],
+    "sage": [
+     27
+    ],
+    "tea).": [
+     28
+    ],
+    "The": [
+     29,
+     51,
+     73
+    ],
+    "dyeing": [
+     30,
+     49
+    ],
+    "was": [
+     31,
+     56
+    ],
+    "carried": [
+     32
+    ],
+    "out": [
+     33
+    ],
+    "mordants": [
+     36
+    ],
+    "(copper": [
+     37
+    ],
+    "sulphate,": [
+     38,
+     41
+    ],
+    "potassium": [
+     39,
+     42
+    ],
+    "aluminum": [
+     40
+    ],
+    "tartrate,": [
+     43
+    ],
+    "citric": [
+     45
+    ],
+    "acid),": [
+     46
+    ],
+    "using": [
+     47
+    ],
+    "pre-mordanting": [
+     48
+    ],
+    "methods.": [
+     50
+    ],
+    "color": [
+     52,
+     61,
+     74
+    ],
+    "of": [
+     53,
+     60
+    ],
+    "the": [
+     54,
+     80
+    ],
+    "investigated": [
+     57
+    ],
+    "in": [
+     58
+    ],
+    "terms": [
+     59
+    ],
+    "strength": [
+     62
+    ],
+    "(K/S)": [
+     63
+    ],
+    "fastness": [
+     65,
+     76
+    ],
+    "properties": [
+     66,
+     77
+    ],
+    "against": [
+     67
+    ],
+    "light,": [
+     68
+    ],
+    "washing,": [
+     69
+    ],
+    "rubbing,": [
+     70
+    ],
+    "perspiration.": [
+     72
+    ],
+    "obtained": [
+     78
+    ],
+    "from": [
+     79
+    ],
+    "between": [
+     86
+    ],
+    "good": [
+     87
+    ],
+    "to": [
+     88
+    ],
+    "excellent.": [
+     89
+    ]
+   }
+  }
+ ],
+ "group_by": []
+}

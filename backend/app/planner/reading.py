@@ -12,6 +12,7 @@ from app.research.evidence import (
     EvidenceItem,
     OpenAccessLocation,
     OpenAccessLocator,
+    ReferenceLister,
     SourceAdapter,
     SourceDocument,
 )
@@ -59,6 +60,7 @@ class LiveSources:
     locator: OpenAccessLocator | None = None
     doi_source: SourceAdapter | None = None
     publisher: PublisherFullText | None = None
+    reference_source: ReferenceLister | None = None
 
     def __post_init__(self) -> None:
         names = [searcher.name for searcher in self.searchers]

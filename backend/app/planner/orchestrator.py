@@ -17,7 +17,7 @@ from .live_search import asked_searchers, merged_evidence, run_searches
 from .plans import effective_mode, retrieval_plan, search_question
 from .policy import LIVE_BUDGETS, reference_reserve, seat_reading_kinds, stored_pack_limit
 from .reading import DocumentReader, LiveSources, ReadCache, reading_order
-from .references import cited_dois, follow_references
+from .references import Following, follow_cited
 
 __all__ = ["PlannedQuestion", "ResearchPlanner"]
 
@@ -123,8 +123,9 @@ class ResearchPlanner:
             return LiveFindings(tuple(evidence), tuple(documents))
         primary_limit = plan.max_fetches - reference_reserve(plan.max_fetches)
         documents = await reader.read_best(ordered, limit=primary_limit)
-        cited = cited_dois(evidence, documents, mode=plan.mode, limit=plan.max_fetches - len(documents))
-        followed = await follow_references(cited, source=source, reader=reader, log=log)
+        following = Following(source, self._sources.reference_source, reader, log)
+        room = plan.max_fetches - len(documents)
+        followed = await follow_cited(evidence, documents, mode=plan.mode, limit=room, following=following)
         known = {entry.item.source_key for entry in evidence} | {entry.item.id for entry in evidence}
         fresh = [ref for ref in followed if not {ref.entry.item.source_key, ref.entry.item.id} & known]
         return LiveFindings(
