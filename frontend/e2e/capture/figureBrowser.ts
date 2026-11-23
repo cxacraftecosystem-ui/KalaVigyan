@@ -98,12 +98,13 @@ export function elementProps(selector: string): Record<string, string> | null {
   return Object.fromEntries([...style].filter((name) => !name.startsWith("--")).map((name) => [name, style.getPropertyValue(name)]));
 }
 
-export function placeProbe({ host, markup, probe }: { host: string; markup: string; probe: string }): boolean {
+export function placeProbe({ host, markup, probe, scope }: { host: string; markup: string; probe: string; scope: string }): boolean {
   const parent = document.querySelector(host);
   const holder = document.createElement("template");
   holder.innerHTML = markup;
   const element = holder.content.firstElementChild;
   if (!parent || !element) return false;
+  document.querySelectorAll(scope).forEach((earlier) => earlier.remove());
   element.setAttribute(probe, "");
   parent.append(element);
   return true;
