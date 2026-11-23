@@ -5,7 +5,7 @@ export const LATIN_FONTS = join(__dirname, "..", "app", "latinFonts.ts");
 
 export type FaceVariant = { style: string; weights: [number, number] };
 export type LatinFace = { name: string; family: string; files: string[]; preloaded: boolean; variants: FaceVariant[]; ranges: [number, number][] };
-export type DrawnText = { family: string; style: string; weight: number; text: string };
+export type DrawnText = { family: string; style: string; weight: number; text: string; where?: string };
 
 function weights(value: string): [number, number] {
   const [low, high = low] = value.trim().split(/\s+/).map(Number);
@@ -54,13 +54,20 @@ export function faceFor(faces: readonly LatinFace[], drawn: Omit<DrawnText, "tex
   return styled[0]?.face ?? null;
 }
 
-export function facesDrawn(faces: readonly LatinFace[], texts: readonly DrawnText[]): Set<string> {
-  const drawn = new Set<string>();
+export function drawnBy(faces: readonly LatinFace[], texts: readonly DrawnText[]): Map<string, DrawnText[]> {
+  const drawn = new Map<string, DrawnText[]>();
   for (const text of texts) {
     for (const character of text.text.replace(/\s/g, "")) {
       const face = faceFor(faces, text, character.codePointAt(0) ?? 0);
-      if (face) drawn.add(face.name);
+      if (!face) continue;
+      const found = drawn.get(face.name) ?? [];
+      if (!found.includes(text)) found.push(text);
+      drawn.set(face.name, found);
     }
   }
   return drawn;
+}
+
+export function facesDrawn(faces: readonly LatinFace[], texts: readonly DrawnText[]): Set<string> {
+  return new Set(drawnBy(faces, texts).keys());
 }

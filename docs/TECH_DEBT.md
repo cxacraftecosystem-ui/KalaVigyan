@@ -690,16 +690,22 @@ Last reviewed: 2026-11-22.
   (`components/map/place-context/GroundFigure`) fills the neighbouring countries and sizes its pins
   only after it is drawn in the browser, so its view's first drawing is not the figure readers see;
   once the stored document carries it, a change to the ground data reaches the page only through a
-  new capture. The six page tools' views draw their own markup, behaviour and legacy scope for the
-  React shell, so inside the authored shell they would nest a second `div.bx` scope and differ from
-  the approved markup the native proof compares element for element. The kit's script still drives
-  the native views' behaviour by ids and classes, and a generated page still reuses a borrowed
-  component's fragment when it has no spec (every Kutch Ajrakh component has one, so the path
-  serves only a future authored monograph).
+  new capture. The six page tools' views (`kinds/tools`) draw their own markup, React behaviour and
+  legacy scope (`LegacyScope`) for generated pages, while the approved page's tools are markup the
+  kit's script drives through ids (`#quiz*`, `#lang-*`, `#gen*`), so inside the authored shell a
+  tool view would nest a second `div.bx` scope, differ from the approved markup the native proof
+  compares element for element, and be driven twice. The kit's script still drives the native
+  views' behaviour by ids and classes, and a generated page still reuses a borrowed component's
+  fragment when it has no spec (every Kutch Ajrakh component has one, so the path serves only a
+  future authored monograph). A Vercel preview reads the production API's stored document, so a
+  branch's `native.json` is proven by `e2e/monograph-native-unit.spec.ts` and the smoke on the
+  golden document and seen only after its release's `load_monograph` (checked 2026-11-23, decision
+  0177).
 - **Clears it:** the ground map drawing its neighbours and pins in its first drawing (the map is the
   place builders' `components/map`), then the figure listed in `native.json`; the six tools drawn
-  natively once the React shell draws the page (the next entry but one); then the kit's behaviour
-  moved into the views and the fragments and the generated pages' fragment reuse retired.
+  natively once the React page draws Kutch Ajrakh without its authored shell (the next entry but
+  one), each drawing the approved markup; then the kit's behaviour moved into the views and the
+  fragments and the generated pages' fragment reuse retired.
 
 ### A plate's crop is a class or a focal box
 
@@ -708,11 +714,12 @@ Last reviewed: 2026-11-22.
   the frame's aspect ratio (3 / 4, 3 / 2, 4 / 3, `.ph.tall`, `.ph.r32`, `.ph.r43`); a generated plate
   carries the layout's focal box, which `SpecPicture.focalPosition` draws as `object-position` only
   and which sets no frame. Two ways to say one thing, and a focal box cannot yet say what a class
-  says. It cannot be cleared while the authored shell holds (checked 2026-11-23, monograph shell
-  lane): the native proof (`e2e/monograph-native-unit.spec.ts`) needs each native plate to draw the
-  approved markup element for element, and the approved page writes `div.ph.tall`, `.ph.r32` and
-  `.ph.r43`, so a frame set by a style fails it; and stored document versions are never changed
-  (`monograph-document.md`, Versions), so the editions stored before the change keep `crop`.
+  says. It cannot be cleared while the authored shell holds (checked 2026-11-23, decisions 0164
+  and 0177): the native proof (`e2e/monograph-native-unit.spec.ts`) needs each native plate to
+  draw the approved markup element for element, and the approved page writes `div.ph.tall`,
+  `.ph.r32` and `.ph.r43`, so a frame set by a style fails it; and stored document versions are
+  never changed (`monograph-document.md`, Versions), so the editions stored before the change keep
+  `crop`.
 - **Clears it:** once the shell retires (the next entry), a focal box that also sets its frame's
   aspect ratio (the box's width and height times the picture's), the three crops written as such
   boxes (each picture's own ratio is its class's: 1280 by 1707, 853 and 960, so each box is the
@@ -727,18 +734,30 @@ Last reviewed: 2026-11-22.
   and the seven components "Fragments are a bridge" names inlined from their fragments, so the
   React page matches the approved one by construction (decision 0106, the first parity run); 73
   components are native views inside it and the rail takes the content's chapter names (decision
-  0164). Besides components the shell holds hand-made markup that `MonographDocumentPage` does not
-  draw: the masthead with its tools and counts (44 sources plus 24 for the kin crafts, where the React
-  masthead counts every cited source, 64), the answer's table of contents, margin notes with fixed
-  entries, the sources chapter's five groups (the React shell draws one numbered list), and each
-  chapter's own wrappers (screens, articles, spreads, the chemistry sub-rail, the colour key).
-- **Clears it:** the React shell drawing the masthead and its counts (the kin crafts' sources are
+  0164). Measured on 2026-11-23 (decision 0177), the shell's own markup outside units and
+  components is 1,633 elements and 365 runs of hand-written text in 13 chapters, which
+  `MonographDocumentPage` does not draw: the masthead with its tools and counts (44 sources plus 24
+  for the kin crafts, where the React masthead counts every cited source, 64), the answer's table
+  of contents (two of its seven entries are not units), margin notes with fixed entries, each
+  chapter's own wrappers (screens, articles, spreads, the chemistry sub-rail, the colour key) and
+  the sources chapter's five groups, 44 hand-made entries holding 320 of those text runs. The
+  `source-list` component is only the list's live status line (`setting: "status"`), because the
+  approved markup gives the groups no element an anchor (`#id` or `[attribute="value"]`) selects
+  once: the list's wrapper repeats in the kin crafts' list. Stored versions are never changed
+  (`monograph-document.md`, Versions), so every edition stored with a shell keeps it, and
+  `/crafts/<slug>/v<N>` serves them.
+- **Clears it:** the React page drawing the masthead and its counts (the kin crafts' sources are
   the ones the `kin-craft-sources` component lists), the table of contents, the margin notes, the
-  sources chapter through the page's own `source-list` and `kin-craft-sources` components (whose
-  specs carry the groups) and each chapter's wrappers, proven by Monograph parity (`check=all`),
-  then the shell retired. The wrappers are hand-made per chapter, so this needs either a port of
-  the template's main markup into structure the document carries, or the owner's leave to let a
-  React drawing become the approved reference, as the ground figure's capture did (decision 0151).
+  sources chapter's groups (from a `source-list` spec that carries them, once an anchor can select
+  them or the owner gives them an element) and each chapter's wrappers, proven by the native unit
+  spec and the smoke on the golden document and by Monograph parity (`check=all`) after the release
+  that loads it; then the shell retired for new editions, and for the stored ones either kept
+  readable or stored again with the owner's leave. The wrappers are hand-made per chapter, so this
+  needs either structure the page plan draws for any authored page (each chapter's frames named, as
+  `componentPlace` names a component's), into which the template's main markup is ported, or the
+  owner's leave to let a React drawing become the approved reference, as the ground figure's capture
+  did (decision 0151). The template's main carried as a tree of elements was weighed and refused
+  (decision 0177): it is the same hand-made markup under another name.
 
 ### The authored shell keeps the app's CSS out by name
 

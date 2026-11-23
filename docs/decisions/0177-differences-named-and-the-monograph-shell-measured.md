@@ -8,7 +8,8 @@ drawing's four themes.
 Date: 2026-11-23. Status: accepted (the lead's debt brief of 2026-11-23 evening, monograph shell
 lane). It amends [decision 0156](0156-expert-panel-and-field-voices-kept-true.md), item 10 (where a
 difference's subject comes from), and [decision 0114](0114-kinds-and-datasets.md) (where the kind
-fixtures live). The contracts are `docs/contracts/knowledge-writes.md` and
+fixtures live), and measures what [decision 0164](0164-every-cited-sentence-a-unit-and-chapter-names-in-the-content.md)
+left of the authored shell. The contracts are `docs/contracts/knowledge-writes.md` and
 `docs/contracts/component-specs-general.md`.
 
 | For | Read |
@@ -18,6 +19,8 @@ fixtures live). The contracts are `docs/contracts/knowledge-writes.md` and
 | No added model call or input token while answers are measured | [decision 0165](0165-answers-counted-as-settled-asked-as-asked.md) |
 | One kind per job, and its fixture on another craft | [decision 0114](0114-kinds-and-datasets.md) |
 | A drawing in the design's vocabulary, served in four themes | [decision 0131](0131-drawings-in-the-design.md) |
+| What decision 0164 left of the authored shell, measured here | [decision 0164](0164-every-cited-sentence-a-unit-and-chapter-names-in-the-content.md) |
+| The approved page, served as built | [decision 0100](0100-ajrakh-monograph-served-as-built.md) |
 | The gates, the judge and the flag | [knowledge-writes.md](../contracts/knowledge-writes.md) |
 | The general kinds and the kind fixtures | [component-specs-general.md](../contracts/component-specs-general.md) |
 | Every decision, by group | [README.md](README.md) |
@@ -39,6 +42,20 @@ fixtures live). The contracts are `docs/contracts/knowledge-writes.md` and
 - **The kind preview drew its drawing late.** `/design/kinds` bundled its fixtures in the web, and
   a delivered spec may not carry `themes`, so its drawing showed a sunk placeholder until the
   browser resolved its roles.
+- **The brief asked to retire Kutch Ajrakh's authored shell.** Every remaining component native,
+  the React page drawing the masthead and its counts, the table of contents, the margin notes, the
+  sources chapter and each chapter's wrappers, then plate crops as focal boxes and the shell's CSS
+  isolation removed, all proven by Monograph parity on the branch's preview with the approved page
+  unchanged and its classes kept (decision 0100). Measured against the code on 2026-11-23, four
+  things stand in the way. A Vercel preview reads the production API's stored document, so no
+  change to the document (its `native.json`, its content, its specs) can be seen on a preview
+  before its release loads it. Stored versions are never changed, so every edition stored with a
+  shell keeps it and `/crafts/<slug>/v<N>` serves it. The shell's own markup outside units and
+  components is 1,633 elements and 365 runs of hand-written text in 13 chapters, 320 of them in the
+  sources chapter's 44 hand-made entries, whose groups no anchor of the split's form selects once
+  (the list's wrapper repeats in the kin crafts' list), which is why `source-list` is only its
+  status line. The ground figure's native drawing waits on the map in `components/map`, the place
+  builders' area, drawing its neighbours and pins at first paint.
 
 ## Decision
 
@@ -65,10 +82,24 @@ fixtures live). The contracts are `docs/contracts/knowledge-writes.md` and
    a delivered drawing is served; the page reads them on each request through the data cache. A
    generated file of the themed variants beside the web's fixtures was the alternative; it would be a
    second copy of what the server works out.
+5. **The authored shell is measured, not ported.** The register's four shell entries ("Fragments
+   are a bridge", "A plate's crop is a class or a focal box", "Kutch Ajrakh's React page draws the
+   authored shell", "The authored shell keeps the app's CSS out by name") are rewritten to what the
+   measurement leaves and what each waits on. Carrying the template's main markup in the document as
+   a tree of elements, drawn by React instead of as a string, was the alternative: it would retire
+   the string and every `dangerouslySetInnerHTML` of the shell, but it carries the same 1,633
+   hand-made elements and 365 text runs under another name, computes no count, gives the sources'
+   groups no spec, keeps every stored edition's shell and still needs the CSS isolation, and the
+   preview could not show it before its release. Drawing the six page tools natively inside the
+   shell was the other; their views carry React behaviour for generated pages, so in the shell they
+   would nest a second kit scope and be driven twice by the kit's script, as decision 0164 found.
 
 ## Consequences
 
-- The register entry "Leftovers of the design-conformance lane" is cleared.
+- The register entry "Leftovers of the design-conformance lane" is cleared; the four shell entries
+  are rewritten to what is left (item 5).
+- Kutch Ajrakh's page is unchanged by this record, so the parity run on the branch's preview reads
+  the production document as before.
 - After the deploy, the migration adds the column; outcomes stored before it name no subject, so a
   flag they raise keeps the plain summary until its pair is judged again.
 

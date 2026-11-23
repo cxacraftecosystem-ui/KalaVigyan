@@ -4,20 +4,13 @@ import { codeRanges, faceFor, facesDrawn, latinFaces } from "./latinFaces";
 
 test("a monograph's and the landing's first screen find every Latin face they draw in the first request round", () => {
   const preloaded = latinFaces().filter((face) => face.preloaded);
-  expect(preloaded.map((face) => face.name)).toEqual(["newsreader", "newsreaderItalic", "plexSans", "plexSansWeights", "plexSansItalic"]);
-  expect(preloaded.flatMap((face) => face.files)).toEqual([
-    "newsreader-latin-var.woff2",
-    "newsreader-italic-latin-var.woff2",
-    "ibm-plex-sans-regular-latin1.woff2",
-    "ibm-plex-sans-medium-latin1.woff2",
-    "ibm-plex-sans-semibold-latin1.woff2",
-    "ibm-plex-sans-italic-latin1.woff2"
-  ]);
+  expect(preloaded.map((face) => face.name)).toEqual(["newsreader", "newsreaderItalic", "plexSans", "plexSansWeights"]);
+  expect(preloaded.flatMap((face) => face.files)).toEqual(["newsreader-latin-var.woff2", "newsreader-italic-latin-var.woff2", "ibm-plex-sans-regular-latin1.woff2", "ibm-plex-sans-medium-latin1.woff2", "ibm-plex-sans-semibold-latin1.woff2"]);
 });
 
 test("the extended ranges, symbols and code faces still load only when a page draws them", () => {
   const deferred = latinFaces().filter((face) => !face.preloaded);
-  expect(deferred.map((face) => face.name)).toEqual(["newsreaderExtended", "newsreaderArrows", "plexSansLatin2", "plexSansLatin3", "plexSansSymbols", "plexMono"]);
+  expect(deferred.map((face) => face.name)).toEqual(["newsreaderExtended", "newsreaderArrows", "plexSansItalic", "plexSansLatin2", "plexSansLatin3", "plexSansSymbols", "plexMono"]);
 });
 
 test("a drawn character is matched to the face whose family, style, nearest weight and range cover it", () => {

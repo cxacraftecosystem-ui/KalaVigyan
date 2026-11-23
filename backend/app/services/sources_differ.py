@@ -192,7 +192,7 @@ async def _rival_subjects(
     for claim, related, about in rows.tuples():
         ends = [pair for held in related for pair in ((claim, held), (held, claim))]
         for one, other in ends:
-            if other in rivals.get(one, frozenset()):
+            if about and other in rivals.get(one, frozenset()):
                 named.setdefault(one, about)
     return named
 
