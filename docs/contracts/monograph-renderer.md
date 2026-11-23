@@ -260,7 +260,8 @@ each one stands (one placed by another native view has no slot: its owner draws 
   that serves the golden document, and as edition 2 the same document drawn entirely from fragments.
   At 360, 834 and 1440 in light and dark it checks that the page reads as the approved page (every
   line of `#kv-main`), that the first citation's popover and Fig. 1 answer as there, and that each
-  native view looks as its fragment does on the same React page. A Vercel preview cannot show a
+  native view looks as its fragment does on the same React page, every sticky or fixed bar hidden in
+  both captures so a bar's place cannot differ between them (decision 0177). A Vercel preview cannot show a
   branch's `native.json`, because it reads the production API's stored document.
 - **Native (73 of 80, 2026-11-23).** All except the ground figure
   `kutch-ajrakh/geography/why-here`, whose fragment is the React page's drawing captured in a

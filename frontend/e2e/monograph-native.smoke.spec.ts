@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
 import { nativeComponents } from "./monographNative";
-import { anchorPlans, mainLines, markAnchors, openedPage, pageAnswers, type AnchorPlan } from "./monographNativeBrowser";
+import { anchorPlans, mainLines, markAnchors, markOverlays, openedPage, OVERLAYS_HIDDEN, pageAnswers, type AnchorPlan } from "./monographNativeBrowser";
 import { lineDiff, pixelDifference, type PixelDifference } from "./parity/parityMeasure";
 import { alignPhase } from "./parity/parityPhase";
 import { restingVat } from "./parity/parityRest";
@@ -42,8 +42,9 @@ async function componentShot(pages: Pages, plan: AnchorPlan, run: Run): Promise<
   const selector = `[data-native-parity="${plan.index}"]`;
   const before = pages.fragments.locator(selector);
   if (!(await before.count()) || !(await before.isVisible())) return "hidden";
-  const left = await before.screenshot({ animations: "disabled", timeout: SHOT_TIMEOUT_MS }).catch(() => null);
-  const right = await pages.native.locator(selector).screenshot({ animations: "disabled", timeout: SHOT_TIMEOUT_MS }).catch(() => null);
+  const capture = { animations: "disabled" as const, timeout: SHOT_TIMEOUT_MS, style: OVERLAYS_HIDDEN };
+  const left = await before.screenshot(capture).catch(() => null);
+  const right = await pages.native.locator(selector).screenshot(capture).catch(() => null);
   if (!left || !right) return "missing";
   const shot = await pixelDifference(left, right);
   if (differs(shot)) {
@@ -81,6 +82,8 @@ async function componentShots(pages: Pages, run: Run): Promise<Record<string, Sh
   const plans = anchorPlans(nativeComponents());
   await markAnchors(pages.fragments, plans);
   await markAnchors(pages.native, plans);
+  await markOverlays(pages.fragments);
+  await markOverlays(pages.native);
   const shots: Record<string, Shot> = {};
   for (const plan of plans) shots[`${plan.index} ${plan.label}`] = await componentShot(pages, plan, run);
   return shots;

@@ -117,8 +117,11 @@ left of the authored shell. The contracts are `docs/contracts/knowledge-writes.m
 
 - The register entry "Leftovers of the design-conformance lane" is cleared; the four shell entries
   are rewritten to what is left (item 5).
-- Kutch Ajrakh's page is unchanged by this record, so the parity run on the branch's preview reads
-  the production document as before; only Plex Sans italic waits until a page draws it.
+- Kutch Ajrakh's page draws as before; only Plex Sans italic waits until a page draws it. Its
+  reader data names the GI journal's author whole, as the seed does since decision 0178
+  (`content.json`, the rebuilt approved page's data block and the golden document), which the
+  production document takes at the release's `load_monograph`. The native smoke hides sticky and
+  fixed bars in its component captures, so a bar's place no longer fails it.
 - The speed entry is rewritten to the Lighthouse measurement it waits on.
 - After the deploy, the migration adds the column; outcomes stored before it name no subject, so a
   flag they raise keeps the plain summary until its pair is judged again.

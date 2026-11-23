@@ -80,6 +80,17 @@ export async function mainLines(page: Page): Promise<string[]> {
     .filter(Boolean);
 }
 
+export const OVERLAY_ATTRIBUTE = "data-native-overlay";
+export const OVERLAYS_HIDDEN = `[${OVERLAY_ATTRIBUTE}] { visibility: hidden !important; }`;
+
+export async function markOverlays(page: Page): Promise<number> {
+  return page.evaluate((attribute) => {
+    const pinned = [...document.body.querySelectorAll("*")].filter((element) => ["sticky", "fixed"].includes(getComputedStyle(element).position));
+    for (const element of pinned) element.setAttribute(attribute, "");
+    return pinned.length;
+  }, OVERLAY_ATTRIBUTE);
+}
+
 export type PageAnswers = { quote: string | null; dipsBefore: string | null; dipsAfter: string | null };
 
 export async function pageAnswers(page: Page): Promise<PageAnswers> {
