@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Protocol
 
-from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy import and_, func, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -63,6 +63,7 @@ TOO_SOON_MESSAGE = "A refresh started in the last {minutes} minutes; the next ca
 EVERY_MESSAGE = "Refreshing every page is for the Master Admin, once a day."
 STOPPED = "The refresh stopped without finishing; the next one starts afresh."
 MANUAL_ORIGINS = (WEB_ORIGIN, MCP_ORIGIN)
+RUNNING_ONLY = text(f"\"status\" = '{RUNNING}'")
 
 
 class Background(Protocol):
@@ -209,7 +210,7 @@ async def _claimed(session: AsyncSession, ask: RefreshAsk, *, now: datetime) -> 
             status=RUNNING,
             startedAt=now,
         )
-        .on_conflict_do_nothing(index_elements=["status"], index_where=PageRefreshJob.status == RUNNING)
+        .on_conflict_do_nothing(index_elements=["status"], index_where=RUNNING_ONLY)
         .returning(PageRefreshJob.id)
     )
     found: uuid.UUID | None = (await session.execute(statement)).scalar_one_or_none()
