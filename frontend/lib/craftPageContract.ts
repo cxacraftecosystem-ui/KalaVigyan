@@ -1,4 +1,3 @@
-import { BORROWED_SCOPES, chapterShape, pagePlateShape, SOURCE_GROUPS, type Borrowed, type Chapter, type PagePlate } from "@/lib/craftChapters";
 import { citationShape, CRAFT_PATH, INSTANT, sourceRefShape, storedLevelShape, UUID, type CraftLink, type StoredLevel } from "@/lib/answerShapes";
 import {
   COVERAGE_CLASSES,
@@ -28,12 +27,12 @@ import { PLACE_ROLES } from "@/lib/districtCraftsContract";
 import { fieldVoicesTotalsShape, pageFieldPhotoShape, pageVoiceShape, type FieldVoicesTotals, type PageFieldPhoto, type PageVoice } from "@/lib/fieldVoicesContract";
 import { DISCIPLINES, type Discipline } from "@/lib/explainerContract";
 import { pageProcessShape, type PageProcess } from "@/lib/craftPageProcess";
-import { boolean, count, integer, list, matching, nullable, object, oneOf, positive, ruled, ShapeError, text, type Shape } from "@/lib/shape";
+import { boolean, count, integer, list, matching, nullable, number, object, oneOf, positive, ruled, ShapeError, text, type Shape } from "@/lib/shape";
 import type { Citation, SourceRef } from "@/lib/types";
 
-export const CRAFT_PAGE_PATH = (slug: string, version?: number) =>
-  `/crafts/${encodeURIComponent(slug)}/page${version === undefined ? "" : `?version=${version}`}`;
+export const CRAFT_PAGE_PATH = (slug: string) => `/crafts/${encodeURIComponent(slug)}/page`;
 export const CRAFT_EDITION = /^v([1-9]\d{0,5})$/;
+export const UNREAD_CHAPTERS = "chapters";
 
 export function craftEdition(segment: string): number | null {
   const found = CRAFT_EDITION.exec(segment);
@@ -47,10 +46,15 @@ export { COVERAGE_CLASSES, CRAFT_GI_STATUSES };
 export const CRAFT_PAGE_SCHEMA_VERSION = 3;
 export const GI_SHOWN = ["REGISTERED", "APPLIED"] as const;
 export const NATIVE_NAME_SOURCES = ["DOSSIER", "WIKIDATA"] as const;
+export const BORROWED_SCOPES = ["FAMILY", "KIN"] as const;
+export const SOURCE_GROUPS = ["GOVERNMENT", "SCHOLARSHIP", "MUSEUM", "WEB_AND_PRESS", "FIELD", "FAMILY", "KIN", "LIBRARY", "COMPOUND_RECORDS"] as const;
 export const BORROWED_GROUPS = ["FAMILY", "KIN"] as const;
 export const PLACE_KINDS = ["VILLAGE", "TOWN", "DISTRICT", "STATE", "COUNTRY", "REGION", "RIVER"] as const;
 export const GROUP_KINDS = ["COMMUNITY", "PERSON", "ORGANISATION"] as const;
 
+export type Borrowed = { scope: (typeof BORROWED_SCOPES)[number]; slug: string; label: string };
+export type Focal = { x: number; y: number; width: number; height: number };
+export type PagePlate = { media: MediaRef; caption: string; standIn: string | null; focal: Focal | null; sentences: ExplainerSentence[] };
 export type Provenance = (typeof PROVENANCES)[number];
 export type SubjectKind = (typeof SUBJECT_KINDS)[number];
 export type PlaceRole = (typeof PLACE_ROLES)[number];
@@ -134,7 +138,6 @@ export type CraftPage = {
   suggestedQuestions: string[];
   masthead: Masthead;
   lede: ExplainerSentence[];
-  chapters: Chapter[];
   cite: CiteThis | null;
   tabs: PageTabs;
   overview: PageOverview;
@@ -160,6 +163,22 @@ export type CraftPage = {
 const CLAIM_IDS = list(UUID, 1);
 
 const DAY = matching(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, "a day, YYYY-MM-DD");
+
+const fraction = ruled(number, "a fraction from 0 to 1", (value) => value >= 0 && value <= 1);
+
+const focalShape: Shape<Focal> = ruled(
+  object<Focal>({ x: fraction, y: fraction, width: fraction, height: fraction }),
+  "a focal box inside its picture",
+  (box) => box.width > 0 && box.height > 0 && box.x + box.width <= 1 && box.y + box.height <= 1
+);
+
+const facts = ruled(list(explainerSentenceShape), "facts only; a hypothesis is an open question", (shown) => shown.every((sentence) => sentence.level !== "HYPOTHESIS"));
+
+export const pagePlateShape: Shape<PagePlate> = ruled(
+  object<PagePlate>({ media: mediaRefShape, caption: text, standIn: nullable(text), focal: nullable(focalShape), sentences: facts }),
+  "a plate drawn inline",
+  (plate) => plate.media.display === "INLINE"
+);
 
 const mastheadShape: Shape<Masthead> = object<Masthead>({
   kicker: object<Kicker>({ family: nullable(text), kind: nullable(text) }),
@@ -254,7 +273,7 @@ const claimShape: Shape<PageClaim> = object<PageClaim>({
   citations: list(citationShape, 1)
 });
 
-export const craftPageShape: Shape<CraftPage> = object<CraftPage>({
+const pageFieldsShape: Shape<CraftPage> = object<CraftPage>({
   schemaVersion: oneOf([CRAFT_PAGE_SCHEMA_VERSION] as const),
   craft: object<PageCraft>({
     slug: text,
@@ -275,7 +294,6 @@ export const craftPageShape: Shape<CraftPage> = object<CraftPage>({
   curated: boolean,
   masthead: mastheadShape,
   lede: list(explainerSentenceShape),
-  chapters: list(chapterShape, 1),
   cite: nullable(citeShape),
   curation: nullable(
     object<CurationHeader>({
@@ -312,4 +330,14 @@ export const craftPageShape: Shape<CraftPage> = object<CraftPage>({
   claims: list(claimShape),
   sources: list(pageSourceShape)
 });
+
+export const craftPageShape: Shape<CraftPage> = {
+  expected: pageFieldsShape.expected,
+  parse(value, path) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) throw new ShapeError(path, "an object");
+    const page: Record<string, unknown> = { ...value };
+    delete page[UNREAD_CHAPTERS];
+    return pageFieldsShape.parse(page, path);
+  }
+};
 

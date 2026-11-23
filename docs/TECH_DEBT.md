@@ -1169,26 +1169,17 @@ Last reviewed: 2026-11-22.
 - **Clears it:** a migration that sets every `SIGNED_IN` chunk to `PUBLIC` and drops the value,
   `field_voices_records` writing `PUBLIC`, and `SIGNED_IN_CHUNK_ACLS` removed.
 
-### Craft page chapters not built yet (decision 0098)
+### The craft page's archive table and `fromQuestion` wait for the next release
 
-- **What:** the version 3 page (`services/chapter_*.py`) doesn't build `what_if`, `concept_graph`,
-  `zoom_story`, `supply_map` or `measure` for a chapter. One reaction player holds every step
-  instead of one per mechanism. `services/chapter_records.py` loads no concept pictures. The
-  chapters job (`app.scripts.build_craft_chapters`) runs steps 1 (conformers and Wikidata points)
-  and 6 (pages and the nightly holes check) only: no generated explainers, concept pictures, AI
-  media copies or film score, and it runs nightly from Coverage enrichment, not after each
-  deploy's import. Until its first run keeps conformers, live pages show no `molecule_3d`; the
-  golden's seven molecules are the inputs fixture's kept conformers. An archived version
-  (`?version=N`) is served without any field voice or testimony (decision 0098 item 14), so a
-  still-consented quote is missing from it too.
-- **Why left:** what-if and concept-graph offers need the relationship and shared-term rows that
-  only answer builders load today, and a page builder may not search. Per-mechanism players wait
-  on `science/mechanisms.craft_concepts`, which the CURATION lane didn't land. Steps 2 to 5 spend
-  on models and media and need their own budgets and tests.
-- **Clears it:** a rows loader for what-if evidence and shared terms in `chapter_records.py` and
-  their pure builders. Cut `chapter_chem._player` by `craft_concepts`. Build job steps 2 to 5 and
-  run the job after the deploy's import. Read archived bodies back through the live field-voice
-  filters instead of stripping them.
+- **What:** decision 0162 retired the craft page's archive and a reader's pieces in its chapters,
+  but `CraftPageArchive` (table and model) stays, written and read by nothing, and every chapter
+  item's `origin.fromQuestion` is still sent, always null.
+- **Why left:** a release must be one the live side can read (decision 0151): the release before
+  decision 0162's still writes and reads the table, and its web requires `fromQuestion` on every
+  chapter item.
+- **Clears it:** in the release after decision 0162's is live, a migration dropping
+  `CraftPageArchive` with its model, and `ItemOrigin.from_question` with `AskedQuestion` removed
+  from `research/craft_origins.py`.
 
 ### Kutch Ajrakh's timeline pins and named river are not yet seen, and three why claims describe steps
 
@@ -1205,23 +1196,6 @@ Last reviewed: 2026-11-22.
   content a reviewer rewrites (the curation lane, one agent per dossier).
 - **Clears it:** the production E2E's capture of the timeline map and the water story after the
   river reload; the three why claims reviewed in the dossier.
-
-### The decision 0096 merge is the minimal novelty rule
-
-- **What:** `services/craft_page_answer_assets.py` joins only pieces whose `craftId` is the craft
-  and that came from an answer. A piece joins its chapter when every claim it cites is listed on
-  the page and it adds something: its kind isn't in that chapter yet, or it cites a claim the
-  chapter drafts don't show. Kinds the page rebuilds from rows keep the page's own. Within a slot
-  (chapter, kind, topic) the piece showing more claims wins, then the newer one. Left out of
-  decision 0096: cross-craft pieces and pieces of any-craft answers; a curated reading of a piece
-  with no answer id; the evidence-floor comparison between a curated item and an answer piece; the
-  question screen (`research/question_screen`), so `fromQuestion.text` is always null; and the
-  `CraftPiece` table and `KnowledgePiece.origin`. The stamp reads the craft's pieces (count, latest
-  `updatedAt`, stale, hidden and superseded marks).
-- **Why left:** the CURATION lane, which owned the merge, stopped at 23:11 on 2026-11-18. The
-  coordinator asked for a minimal rule with targeted tests only.
-- **Clears it:** the rest of decision 0096's items 1 to 4 in the same module, with the question
-  screen and its tests.
 
 ### The craft page's film score and its AI media on the monograph
 

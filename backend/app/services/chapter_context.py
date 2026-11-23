@@ -6,7 +6,7 @@ from dataclasses import dataclass, field, replace
 
 from app.geo.climate import ClimateTrends
 from app.geo.rainfall import DistrictRainfall
-from app.research.blocks import ExplainerSentence, ImageItem
+from app.research.blocks import ExplainerSentence
 from app.research.blocks_climate import ClimateSeries
 from app.research.blocks_play import SimulationBlock
 from app.research.citations import SourceRef
@@ -16,7 +16,6 @@ from app.research.vocabulary import FACT_LEVELS
 from app.science.records import CompoundRecord, KnownClaim, MaterialRecord, ProcessRecords, StageRecord
 
 from .craft_matter import CraftMatter, material_rows
-from .craft_page_answer_assets import AnswerPieces
 from .craft_page_parts import Visible
 from .craft_page_records import CraftPageRecords
 from .curated_category_index import CuratedCategoryPage
@@ -69,9 +68,7 @@ class ChapterRows:
     rainfall: DistrictRainfall | None = None
     points: Mapping[str, PlacePoint] = field(default_factory=dict)
     explainers: tuple[StoredExplainer, ...] = ()
-    concept_pictures: Mapping[str, tuple[ImageItem, ...]] = field(default_factory=dict)
     datasets: Mapping[str, DatasetRef] = field(default_factory=dict)
-    answers: AnswerPieces = field(default_factory=AnswerPieces)
     site: str = ""
 
 

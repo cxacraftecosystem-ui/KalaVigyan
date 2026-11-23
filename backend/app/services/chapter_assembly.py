@@ -30,7 +30,6 @@ from .chapter_prose import piece_sentences
 from .chapter_sources import SourceOrigins, page_sources, source_list, sources_chapter
 from .chapter_why import why_chapter
 from .craft_chapters import admitted_chapters, chapter_title
-from .craft_page_answer_assets import with_answer_pieces
 from .craft_page_masthead import cite_this, masthead, masthead_place
 
 __all__ = ["PageChapters", "page_chapters"]
@@ -99,7 +98,6 @@ def _drafts(
     drafts = with_loose_differ(ctx, drafts, (parts["process"], parts["sources_differ"]))
     drafts = with_contributed(ctx, drafts)
     drafts = with_ai_media(ctx, drafts)
-    drafts = with_answer_pieces(drafts, ctx.rows.answers.pieces, ctx.claims)
     return [*drafts, sources_chapter(ctx, parts["open_questions"])]
 
 
@@ -144,7 +142,6 @@ def _refs(ctx: ChapterContext) -> dict[str, SourceRef]:
     refs.update({sid: ref for sid, ref in ctx.records.field_voices.sources.items() if sid not in refs})
     for stored in ctx.rows.explainers:
         refs.update({sid: ref for sid, ref in stored.sources.items() if sid not in refs})
-    refs.update({sid: ref for sid, ref in ctx.rows.answers.sources.items() if sid not in refs})
     for relative in ctx.records.relatives:
         if relative.lede is not None:
             refs.update({ref.id: ref for ref in relative.lede.sources if ref.id not in refs})

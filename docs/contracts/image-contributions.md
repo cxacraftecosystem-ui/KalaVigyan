@@ -192,7 +192,7 @@ CC0, Public domain), or `NAMED_IN_CREDIT`.
 | Placement in generated documents and the public picture route | `backend/tests/db/test_contributed_pictures_db.py` and `backend/tests/public/test_contributed_picture_route.py` |
 | `MISSING_PICTURE` tasks | `backend/tests/db/test_open_work_pictures_db.py` |
 | Pictures from MCP | `backend/tests/mcp/test_give_pictures.py` and `backend/tests/db/test_given_pictures_db.py` |
-| The screens and the plates' credit | `frontend/e2e/image-contributions-unit.spec.ts` and `craft-contributed-unit.spec.ts` |
+| The screens and the plates' credit | `frontend/e2e/image-contributions-unit.spec.ts` and `backend/tests/curation/test_contributed_plates.py` |
 | The copy a contributor's agent reads | `backend/tests/mcp/test_skill_references.py` holds `backend/app/data/contributor/contracts/image-contributions.md` byte for byte equal to this file |
 
 Re-read it when a format, a screen, a size limit or the declaration's version changes; copy it to

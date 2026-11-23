@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 
 import { checkedCraftPage, readingSourceIds, shownSentences } from "@/lib/craftPageChecks";
-import { craftPageShape, type CraftPage } from "@/lib/craftPageContract";
+import { CRAFT_PAGE_PATH, craftEdition, craftPageShape, UNREAD_CHAPTERS, type CraftPage } from "@/lib/craftPageContract";
 import {
   claimIndex,
   craftTabs,
@@ -23,7 +23,7 @@ import { citationsBySource } from "@/lib/citations";
 import { placeDistricts, placeRows } from "@/lib/craftPlaces";
 import { parseShape, ShapeError } from "@/lib/shape";
 
-import { curatedPage, emptyPage, pageEvidence, rawPage, uncuratedPage } from "./craftPageFixture";
+import { CRAFT_PAGE_GOLDEN, curatedPage, emptyPage, pageEvidence, rawPage, REGISTER_PAGE_GOLDEN, uncuratedPage } from "./craftPageFixture";
 import { eagerModules, FRONTEND } from "./moduleGraph";
 import { curatedOverviewProblems, overviewNote } from "./production/checks";
 
@@ -31,6 +31,7 @@ const GI_JOURNAL = "c1fa6a39-5386-5d7d-8623-393e1e61f6db";
 const RHYTHM_OF_BLUES = "def6894b-e67b-552b-bd8c-bfc980cf3bb0";
 const CASTE_DRESS = "29ff4c54-3b6b-55b3-94d8-4bf24abb1190";
 const OUTSIDE = "00000000-0000-4000-8000-000000000001";
+const PERSONAL_KEYS = /"(userId|answerId|createdFromAnswerId|requestedById|askedBy|email)":/;
 
 function refused(edit: (body: CraftPage) => void): () => CraftPage {
   return () => {
@@ -210,12 +211,11 @@ test("Cite this names the lower-case versioned address of the curation the page 
   expect(refused((body) => body.cite && (body.cite.url = "/crafts/kutch-ajrakh"))).toThrow(/versioned/);
 });
 
-test("sources are listed once in reading order, grouped, borrowed ones naming their monograph, each counting the sentences it supports", () => {
+test("sources are listed once in reading order, grouped, borrowed ones naming their monograph, each supporting a sentence the page shows", () => {
   const page = curatedPage();
-  const sentences = shownSentences(page);
+  const head = new Set(shownSentences(page).flatMap((sentence) => sentence.citations.map((citation) => citation.sourceId)));
   for (const source of page.sources) {
-    const supports = sentences.filter((sentence) => sentence.citations.some((citation) => citation.sourceId === source.id)).length;
-    expect([source.id, source.supports]).toEqual([source.id, supports]);
+    expect(source.supports >= (head.has(source.id) ? 1 : 0)).toBe(true);
     expect(source.from !== null).toBe(source.group === "FAMILY" || source.group === "KIN");
   }
   const order = readingSourceIds(page);
@@ -271,4 +271,27 @@ test("the craft page loads the monograph or the craft list's record only when it
   expect(graph.filter((file) => /kinds\/blocks\/AnswerBlockView|components\/answer\/blockRenderers/.test(file))).toEqual([]);
   expect(graph.filter((file) => /CraftScreen|CraftTabs|CraftReference|craftMedia|StageMedia|mediaContract/.test(file))).toEqual([]);
   expect(texts.filter((text) => /\/(profile|process)`/.test(text))).toEqual([]);
+});
+
+test("the client drops the chapters no screen draws, and reads a page with or without them (decision 0162)", () => {
+  const sent = rawPage() as CraftPage & { chapters?: unknown };
+  expect(Array.isArray(sent.chapters)).toBe(true);
+  const read = curatedPage();
+  expect(UNREAD_CHAPTERS in read).toBe(false);
+  const without: Record<string, unknown> = { ...sent };
+  delete without[UNREAD_CHAPTERS];
+  expect(checkedCraftPage(parseShape(craftPageShape, without))).toEqual(read);
+});
+
+test("a versioned address is a monograph edition, and the page route takes no version", () => {
+  expect([craftEdition("v2"), craftEdition("v0"), craftEdition("2"), craftEdition("v2x")]).toEqual([2, null, null, null]);
+  expect(CRAFT_PAGE_PATH("Kutch-Ajrakh")).toBe("/crafts/Kutch-Ajrakh/page");
+  const page = curatedPage();
+  const edition = page.cite?.url.split("/").pop() ?? "";
+  expect(craftEdition(edition)).toBe(page.curation?.version);
+  expect(page.cite?.text.endsWith(page.cite.url)).toBe(true);
+});
+
+test("no golden carries a user or an answer id", () => {
+  for (const golden of [CRAFT_PAGE_GOLDEN, REGISTER_PAGE_GOLDEN]) expect(readFileSync(golden, "utf8")).not.toMatch(PERSONAL_KEYS);
 });

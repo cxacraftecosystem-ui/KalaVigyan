@@ -5,13 +5,23 @@ import { prerender } from "react-dom/static";
 import { AuthProvider } from "../components/AuthProvider";
 import { ComponentSlot, slotDrawing } from "../components/monograph/ComponentSlot";
 import { COMPONENT_VIEWS } from "../components/monograph/componentViews";
-import { ANSWER_BLOCK_KIND, blockColumn, blockFrame, parseAnswerBlockSpec, sourceNumbers, type AnswerBlockSpec } from "../components/monograph/kinds/blocks/answerBlockSpec";
+import {
+  ANSWER_BLOCK_KIND,
+  blockColumn,
+  blockFrame,
+  PAGE_BLOCK_KINDS,
+  parseAnswerBlockSpec,
+  sourceNumbers,
+  type AnswerBlockSpec,
+  type PageBlock
+} from "../components/monograph/kinds/blocks/answerBlockSpec";
 import { ThemeProvider } from "../components/ThemeProvider";
-import type { PageBlock } from "../lib/craftChapters";
+import { BLOCK_SHAPES, type LadderStage } from "../lib/explainerContract";
 import type { MonographDocument, MonographSource } from "../lib/monographDocument";
+import { ShapeError } from "../lib/shape";
 import type { SourceRef } from "../lib/types";
 
-import { rawPage } from "./craftPageFixture";
+import { goldenBlock, rawPage } from "./craftPageFixture";
 import { eagerModules } from "./moduleGraph";
 
 const LABEL = "kutch-ajrakh/blocks/made-ladder";
@@ -23,10 +33,7 @@ async function provided(element: ReactElement): Promise<string> {
   return (await new Response(prelude).text()).replaceAll("<!-- -->", "");
 }
 
-function pageBlock(kind: string): PageBlock {
-  for (const chapter of rawPage().chapters) for (const item of chapter.items) if (item.block && item.block.kind === kind) return item.block;
-  throw new Error(`the golden page draws no ${kind}`);
-}
+const OUTSIDE = "00000000-0000-4000-8000-000000000001";
 
 function citedSources(node: unknown, found: Set<string> = new Set()): Set<string> {
   if (Array.isArray(node)) node.forEach((value) => citedSources(value, found));
@@ -46,7 +53,7 @@ function refs(block: PageBlock): SourceRef[] {
 }
 
 function spec(kind: string, figure: AnswerBlockSpec["figure"]): Record<string, unknown> {
-  const block = pageBlock(kind);
+  const block = goldenBlock(kind);
   return { block, figure, sources: refs(block).map((ref, at) => ({ key: `g${at + 1}`, ref })) };
 }
 
@@ -85,9 +92,9 @@ test("an answer block spec reads the page block, its figure head and every sourc
   const parsed = parseAnswerBlockSpec(spec("process_ladder", { kind: "FIGURE", number: 1, title: "How Kutch Ajrakh is made, in 14 stages" }));
   expect(parsed).not.toBeNull();
   expect(parsed!.block.kind).toBe("process_ladder");
-  expect(parsed!.sources.map((listed) => listed.key)).toEqual(refs(pageBlock("process_ladder")).map((_, at) => `g${at + 1}`));
+  expect(parsed!.sources.map((listed) => listed.key)).toEqual(refs(goldenBlock("process_ladder")).map((_, at) => `g${at + 1}`));
   expect(parseAnswerBlockSpec({ ...spec("process_ladder", null), extra: true })).toBeNull();
-  expect(parseAnswerBlockSpec({ ...spec("process_ladder", null), sources: [{ key: "s1", ref: refs(pageBlock("process_ladder"))[0] }] })).toBeNull();
+  expect(parseAnswerBlockSpec({ ...spec("process_ladder", null), sources: [{ key: "s1", ref: refs(goldenBlock("process_ladder"))[0] }] })).toBeNull();
 });
 
 test("a figure is framed by its kind: a signature figure by its own, a self-titled one by its numeral, any other by the figure frame", () => {
@@ -129,4 +136,42 @@ test("the document draws an answer block natively, as the answer's own ladder in
   expect(html).toContain("How Kutch Ajrakh is made, in 14 stages");
   expect(html).toContain('data-testid="process-ladder"');
   expect(html.match(/<li[^>]*data-testid="ladder-stage"/g)).toHaveLength(LADDER_STAGES);
+});
+
+test("an answer block holds every block kind a page may show and none it may not", () => {
+  expect(PAGE_BLOCK_KINDS).not.toContain("quiz");
+  expect(PAGE_BLOCK_KINDS).not.toContain("compare");
+  expect(PAGE_BLOCK_KINDS).not.toContain("map_layer");
+  expect(PAGE_BLOCK_KINDS).toEqual(expect.arrayContaining(["prose", "process_ladder", "reaction_player", "simulation", "what_if", "indigo_vat", "firing", "artisan_voice"]));
+});
+
+test("a drawn block's fields parse beside the answer's: a ladder stage's added parts, a step's formula basis, a climate series", () => {
+  const ladder = goldenBlock("process_ladder");
+  if (ladder.kind !== "process_ladder") throw new Error("no ladder");
+  const stage = ladder.stages[0];
+  const citation = stage.sentences[0].citations[0];
+  const added: LadderStage = {
+    ...stage,
+    localName: "saaj",
+    unnumbered: true,
+    after: { text: "red cloth", colours: ["RED"], citations: [citation] },
+    why: stage.sentences[0],
+    tools: [{ toolId: OUTSIDE, name: "Block", localNames: ["bibu"], citations: [citation] }],
+    differs: [{ key: "d1", about: "Days", weight: 3, readings: [{ sentence: stage.sentences[0], shownIn: null }, { sentence: null, shownIn: stage.sentences[0].id }] }],
+    pictures: []
+  };
+  const parsed = BLOCK_SHAPES.process_ladder.parse({ ...ladder, stages: [{ ...added, pictures: undefined }] }, "ladder");
+  expect(parsed.stages[0].after?.colours).toEqual(["RED"]);
+  expect(() => BLOCK_SHAPES.process_ladder.parse({ ...ladder, stages: [{ ...added, pictures: undefined, after: { ...added.after, colours: ["TEAL"] } }] }, "ladder")).toThrow(ShapeError);
+  const player = goldenBlock("reaction_player");
+  if (player.kind !== "reaction_player") throw new Error("no reaction player");
+  const step = { ...player.steps[0], formulaBasis: "COMPOUND_RECORD", formulaSources: [OUTSIDE] };
+  expect(BLOCK_SHAPES.reaction_player.parse({ ...player, steps: [step] }, "player").steps[0].formulaBasis).toBe("COMPOUND_RECORD");
+  expect(() => BLOCK_SHAPES.reaction_player.parse({ ...player, steps: [{ ...step, formulaBasis: "GUESSED" }] }, "player")).toThrow(ShapeError);
+  const climate = goldenBlock("climate_risk");
+  if (climate.kind !== "climate_risk") throw new Error("no climate block");
+  const trend = climate.trends[0];
+  const series = { district: trend.district, variable: trend.variable, datasetCode: trend.datasetCode, unit: "mm/year", firstYear: 1981, values: [512.5, null, 430] };
+  expect(BLOCK_SHAPES.climate_risk.parse({ ...climate, series: [series] }, "climate").series?.[0].values).toEqual([512.5, null, 430]);
+  expect(() => BLOCK_SHAPES.climate_risk.parse({ ...climate, series: [{ ...series, values: ["dry"] }] }, "climate")).toThrow(ShapeError);
 });

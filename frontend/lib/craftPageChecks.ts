@@ -1,41 +1,26 @@
 import { apiFetch } from "@/lib/api";
-import { chapterCitations, chapterMedia, chapterSentences, chapterSourceIds, isKinItem, itemCitations, itemSourceIds } from "@/lib/craftChapterReads";
-import { checkChapters } from "@/lib/craftChapters";
-import { checkContributed } from "@/lib/craftContributed";
 import { CRAFT_PAGE_PATH, craftPageShape, type CraftPage, type EvidenceEntry, type PageEvidence } from "@/lib/craftPageContract";
 import { checkDepth, checkEvents, checkRelatives } from "@/lib/craftPageContext";
-import type { ExplainerSentence, MediaRef } from "@/lib/explainerBlockBase";
+import type { ExplainerSentence } from "@/lib/explainerBlockBase";
 import type { StoredLevel } from "@/lib/answerShapes";
 import { parseShape, ShapeError } from "@/lib/shape";
 import type { Citation } from "@/lib/types";
 
-export async function fetchCraftPage(slug: string, version?: number): Promise<CraftPage> {
-  return checkedCraftPage(parseShape(craftPageShape, await apiFetch<unknown>(CRAFT_PAGE_PATH(slug, version))));
+export async function fetchCraftPage(slug: string): Promise<CraftPage> {
+  return checkedCraftPage(parseShape(craftPageShape, await apiFetch<unknown>(CRAFT_PAGE_PATH(slug))));
 }
 
 function headCitations(page: CraftPage): Citation[] {
   const { masthead } = page;
-  return [...(masthead.gi?.citations ?? []), ...[...(masthead.picture?.sentences ?? []), ...page.lede].flatMap((sentence) => sentence.citations)];
-}
-
-export function shownCitations(page: CraftPage, { kin }: { kin: boolean }): Citation[] {
-  return [...headCitations(page), ...page.chapters.flatMap((chapter) => chapterCitations(chapter, { kin }))];
+  return [...(masthead.gi?.citations ?? []), ...shownSentences(page).flatMap((sentence) => sentence.citations)];
 }
 
 export function readingSourceIds(page: CraftPage): string[] {
-  return [...new Set([...headCitations(page).map((citation) => citation.sourceId), ...page.chapters.flatMap(chapterSourceIds)])];
-}
-
-export function chapterClaimIds(page: CraftPage): string[] {
-  return shownCitations(page, { kin: false }).map((citation) => citation.claimId);
+  return [...new Set(headCitations(page).map((citation) => citation.sourceId))];
 }
 
 export function shownSentences(page: CraftPage): ExplainerSentence[] {
-  return [...(page.masthead.picture?.sentences ?? []), ...page.lede, ...page.chapters.flatMap(chapterSentences)];
-}
-
-export function shownPictures(page: CraftPage): MediaRef[] {
-  return [...(page.masthead.picture ? [page.masthead.picture.media] : []), ...page.chapters.flatMap(chapterMedia)];
+  return [...(page.masthead.picture?.sentences ?? []), ...page.lede];
 }
 
 export function referencedClaimIds(page: CraftPage): string[] {
@@ -73,15 +58,15 @@ export function checkedCraftPage(page: CraftPage): CraftPage {
   if (page.curated !== (page.curation !== null)) throw new ShapeError("curation", "a header exactly when the page is curated");
   const levels = new Map(page.claims.map((claim) => [claim.id, claim.level]));
   if (levels.size !== page.claims.length) throw new ShapeError("claims", "each claim listed once");
-  for (const id of [...referencedClaimIds(page), ...chapterClaimIds(page)]) if (!levels.has(id)) throw new ShapeError(`claim ${id}`, "a claim the page lists");
+  const shownClaims = headCitations(page).map((citation) => citation.claimId);
+  for (const id of [...referencedClaimIds(page), ...shownClaims]) if (!levels.has(id)) throw new ShapeError(`claim ${id}`, "a claim the page lists");
   const sources = new Set(page.sources.map((source) => source.id));
   if (sources.size !== page.sources.length) throw new ShapeError("sources", "each source listed once");
   for (const claim of page.claims) {
     for (const citation of claim.citations) if (!sources.has(citation.sourceId)) throw new ShapeError(`claim ${claim.id}`, `source ${citation.sourceId} listed`);
   }
   for (const voice of page.voices) if (!sources.has(voice.sourceId)) throw new ShapeError(`voice ${voice.itemId}`, `source ${voice.sourceId} listed`);
-  const shown = [...shownCitations(page, { kin: true }).map((citation) => citation.sourceId), ...page.chapters.flatMap((chapter) => chapter.items.flatMap(itemSourceIds))];
-  for (const id of shown) if (!sources.has(id)) throw new ShapeError(`source ${id}`, "a source the page lists");
+  for (const id of readingSourceIds(page)) if (!sources.has(id)) throw new ShapeError(`source ${id}`, "a source the page lists");
   if (page.voices.length > page.fieldVoicesTotal.quotes || page.fieldPhotos.length > page.fieldVoicesTotal.images) {
     throw new ShapeError("fieldVoicesTotal", "no more field voices shown than counted");
   }
@@ -92,21 +77,8 @@ export function checkedCraftPage(page: CraftPage): CraftPage {
     if ((reaction.equation !== null) !== reaction.balanced) throw new ShapeError(`reaction ${reaction.label}`, "an equation only when balanced");
   }
   checkEvidence(page.evidence, levels);
-  checkChapters(page.chapters);
-  checkContributed(page.chapters);
-  checkPictures(page);
   checkParts(page);
   return page;
-}
-
-function checkPictures(page: CraftPage): void {
-  const seen = new Set<string>();
-  for (const media of shownPictures(page)) {
-    for (const key of [media.id, media.imageUrl]) {
-      if (seen.has(key)) throw new ShapeError(`picture ${media.title}`, "each picture shown once");
-      seen.add(key);
-    }
-  }
 }
 
 function checkParts(page: CraftPage): void {
