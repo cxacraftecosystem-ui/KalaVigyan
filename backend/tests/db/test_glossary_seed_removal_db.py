@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_engine
@@ -35,6 +36,14 @@ async def craft_id(session: AsyncSession, slug: str) -> uuid.UUID:
     return found
 
 
+async def uncurated_craft(session: AsyncSession) -> uuid.UUID:
+    found = await session.scalar(
+        select(Craft.id).where(Craft.id.not_in(select(CuratedCraft.craftId))).order_by(Craft.slug).limit(1)
+    )
+    assert found is not None
+    return found
+
+
 async def stale_term(session: AsyncSession, key: str, *, craft: uuid.UUID) -> uuid.UUID:
     term = term_id(key)
     session.add(Term(id=term, key=key, label=key.replace("-", " "), localNames=[], aliases=[]))
@@ -57,9 +66,9 @@ async def links_of(session: AsyncSession, term: uuid.UUID) -> tuple[list[uuid.UU
 async def test_a_seed_link_the_plan_no_longer_has_goes_and_its_unlinked_term_with_it(
     session: AsyncSession,
 ) -> None:
-    ajrakh = await craft_id(session, "Kutch-Ajrakh")
-    gone = await stale_term(session, "retired-seed-word", craft=ajrakh)
-    summarised = await stale_term(session, "retired-but-read-word", craft=ajrakh)
+    uncurated = await uncurated_craft(session)
+    gone = await stale_term(session, "retired-seed-word", craft=uncurated)
+    summarised = await stale_term(session, "retired-but-read-word", craft=uncurated)
     session.add(
         TermSummary(
             termId=summarised, language="en", basis="STORED", payload={}, claimIds=[], checkedAt=CHECKED_AT
@@ -72,19 +81,14 @@ async def test_a_seed_link_the_plan_no_longer_has_goes_and_its_unlinked_term_wit
     assert not await stored(session, gone)
     assert await stored(session, summarised)
     assert await links_of(session, summarised) == ([], [])
-    kut = term_id("kut")
-    crafts, concepts = await links_of(session, kut)
-    assert ajrakh in crafts and KUT_MATERIAL in concepts
+    crafts, concepts = await links_of(session, term_id("kut"))
+    assert await craft_id(session, "Kutch-Ajrakh") in crafts and KUT_MATERIAL in concepts
 
 
 async def test_a_link_to_a_curated_craft_is_left_to_the_curated_import(session: AsyncSession) -> None:
     bagru = await craft_id(session, "Bagru-Hand-Block-Print")
-    session.add(
-        CuratedCraft(
-            craftId=bagru, version=1, curatedAt=CHECKED_AT, coverage="THIN", digest="a" * 64, page={}
-        )
-    )
-    await session.flush()
+    curated = {"craftId": bagru, "version": 1, "curatedAt": CHECKED_AT, "coverage": "THIN", "page": {}}
+    await session.execute(insert(CuratedCraft).values(digest="a" * 64, **curated).on_conflict_do_nothing())
     kept = await stale_term(session, "curated-only-word", craft=bagru)
     await seed_terms(session)
     assert await links_of(session, kept) == ([bagru], [])
