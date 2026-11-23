@@ -6,14 +6,16 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.oauth_hosts import configured_endpoints, endpoints_or_none
 from app.api.routes.mcp import mcp_enabled
 from app.core.config import get_settings
 from app.core.db import get_session
-from app.core.deps import get_current_user
+from app.core.deps import bearer_scheme, get_current_user
 from app.core.errors import InvalidInput
+from app.core.security import decode_access_token
 from app.models import User
 from app.research.oauth_contract import (
     AuthorizationDecline,
@@ -24,6 +26,7 @@ from app.research.oauth_contract import (
     Consent,
     TermsOfUse,
 )
+from app.research.oauth_rules import Grantor
 from app.services import oauth_connections, oauth_consent
 
 router = APIRouter()
@@ -36,29 +39,45 @@ async def mcp_terms() -> TermsOfUse:
     return oauth_consent.terms_of_use()
 
 
+def session_signed_in_at(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> datetime | None:
+    if credentials is None or not credentials.credentials:
+        return None
+    try:
+        issued = decode_access_token(credentials.credentials).get("iat")
+    except ValueError:
+        return None
+    return datetime.fromtimestamp(issued, UTC) if isinstance(issued, int | float) else None
+
+
+def consent_grantor(
+    user: User = Depends(get_current_user), signed_in_at: datetime | None = Depends(session_signed_in_at)
+) -> Grantor:
+    return Grantor(user=user, signed_in_at=signed_in_at, now=_now())
+
+
 @router.get("/authorize/request")
 async def review_authorization(
     request: Annotated[AuthorizationRequest, Query()],
-    user: User = Depends(get_current_user),
+    grantor: Grantor = Depends(consent_grantor),
     _: None = Depends(mcp_enabled),
     session: AsyncSession = Depends(get_session),
 ) -> AuthorizationPrompt | AuthorizationRedirect:
     return await _answer(
-        session, oauth_consent.review(session, user, request, endpoints=configured_endpoints())
+        session, oauth_consent.review(session, grantor, request, endpoints=configured_endpoints())
     )
 
 
 @router.post("/authorize/approve")
 async def approve_authorization(
     consent: Consent,
-    user: User = Depends(get_current_user),
+    grantor: Grantor = Depends(consent_grantor),
     _: None = Depends(mcp_enabled),
     session: AsyncSession = Depends(get_session),
 ) -> AuthorizationRedirect:
     endpoints = configured_endpoints()
-    return await _answer(
-        session, oauth_consent.approve(session, user, consent, endpoints=endpoints, now=_now())
-    )
+    return await _answer(session, oauth_consent.approve(session, grantor, consent, endpoints=endpoints))
 
 
 @router.post("/authorize/deny")

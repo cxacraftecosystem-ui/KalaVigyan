@@ -146,7 +146,7 @@ flowchart LR
 
 | Decision | What was decided | Later changed by |
 |---|---|---|
-| [0101](0101-knowledge-architecture-for-every-craft.md) | One knowledge architecture for every craft: facts, sections, components, monographs | [0115](0115-client-id-metadata-documents.md), [0117](0117-pages-in-other-languages.md), [0145](0145-monograph-pages-and-speed-without-debt.md) and [0149](0149-a-fact-readers-can-see.md) |
+| [0101](0101-knowledge-architecture-for-every-craft.md) | One knowledge architecture for every craft: facts, sections, components, monographs | [0115](0115-client-id-metadata-documents.md), [0117](0117-pages-in-other-languages.md), [0145](0145-monograph-pages-and-speed-without-debt.md), [0149](0149-a-fact-readers-can-see.md) and [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | [0102](0102-knowledge-fields-schema-as-built.md) | Fields on facts, section records and the component registry: step 1 as built | · |
 | [0103](0103-mcp-server-read-slice.md) | The MCP server, slice 1: public read tools over our own JSON-RPC framing | [0111](0111-fewer-mcp-tools.md) |
 | [0104](0104-image-contributions-intake.md) | Image contributions: declared, read byte by byte, private until approved | [0109](0109-image-formats-and-screens.md) |
@@ -156,7 +156,7 @@ flowchart LR
 | [0108](0108-structure-proposals-become-curated-facts.md) | An approved structure proposal becomes a curated fact of its dossier | [0111](0111-fewer-mcp-tools.md), [0162](0162-unused-craft-page-chapters-retired.md), [0169](0169-mcp-follow-ups-kept-true.md) |
 | [0109](0109-image-formats-and-screens.md) | Pictures in every common format, given from the chat and screened before review | · |
 | [0110](0110-contributor-supplied-sources.md) | Sources a contributor's AI can read and we cannot, and a studio to build a page in | [0111](0111-fewer-mcp-tools.md) |
-| [0111](0111-fewer-mcp-tools.md) | Twenty-one MCP tools in six groups, with small schemas | [0114](0114-kinds-and-datasets.md), [0117](0117-pages-in-other-languages.md) and [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
+| [0111](0111-fewer-mcp-tools.md) | Twenty-one MCP tools in six groups, with small schemas | [0114](0114-kinds-and-datasets.md), [0117](0117-pages-in-other-languages.md), [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) and [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | [0112](0112-reviewed-field-photographs.md) | Each field photograph filed on an artisan is reviewed by a person before it is shown | · |
 | [0113](0113-questions-become-work.md) | Questions KalaVigyan cannot answer well become open work | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | [0114](0114-kinds-and-datasets.md) | Component kinds any craft can use, and one dataset record | [0131](0131-drawings-in-the-design.md) and [0169](0169-mcp-follow-ups-kept-true.md) |
@@ -164,7 +164,7 @@ flowchart LR
 | [0116](0116-open-data-with-a-doi.md) | KalaVigyan's knowledge is an open dataset with a DOI | [0130](0130-a-craft-release.md) and [0149](0149-a-fact-readers-can-see.md) |
 | [0117](0117-pages-in-other-languages.md) | A page in another language is the same page, translated passage by passage | · |
 | [0118](0118-python-3-15.md) | The backend runs on Python 3.15, and each release pins its interpreter | · |
-| [0119](0119-nightly-refresh-of-changed-pages.md) | The night refreshes only the pages that changed; it never rebuilds the site | · |
+| [0119](0119-nightly-refresh-of-changed-pages.md) | The night refreshes only the pages that changed; it never rebuilds the site | [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) |
 | [0120](0120-grounded-sentences.md) | Every sentence says no more than the quotes it cites | [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0167](0167-answer-leftovers-kept-true.md) |
 | [0121](0121-quote-visibility.md) | A quote is shown only where its page allows | [0149](0149-a-fact-readers-can-see.md) |
 | [0122](0122-evidence-reach.md) | Evidence the knowledge base holds reaches the answers that need it | · |
@@ -213,6 +213,7 @@ flowchart LR
 | [0167](0167-answer-leftovers-kept-true.md) | A stopped answer is marked, a quote in an Indian script is read in English, a term keeps its local name, and a page curates its signs of imitation | · |
 | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) | A quantities table is drawn under a sentence the answer already said, and the Python files are split along what they do | · |
 | [0169](0169-mcp-follow-ups-kept-true.md) | A write-back asks the cheap judge first, a reviewer decides readings, map layers and a category's structure, and a PDF is described by its first page | · |
+| [0170](0170-review-over-mcp-staged-and-pages-refreshed-now.md) | An Admin's AI stages review decisions a person confirms, and an Admin refreshes changed pages now | · |
 
 ## How this document is kept true
 

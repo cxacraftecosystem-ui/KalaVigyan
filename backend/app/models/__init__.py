@@ -1,3 +1,4 @@
+from app.models.admin_work import PageRefreshJob, StagedReview, StagedReviewItem
 from app.models.ai import (
     AppSetting,
     Job,
@@ -240,6 +241,7 @@ __all__ = [
     "PageDraft",
     "PageLayout",
     "PagePreview",
+    "PageRefreshJob",
     "PageTextUnit",
     "PageTranslation",
     "PasswordResetRequest",
@@ -271,6 +273,8 @@ __all__ = [
     "SourceUpkeep",
     "StageMaterial",
     "StageReview",
+    "StagedReview",
+    "StagedReviewItem",
     "StateEnvValue",
     "StoredDocument",
     "StructureProposal",

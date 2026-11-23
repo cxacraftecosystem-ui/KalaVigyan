@@ -19,7 +19,7 @@ from app.research.oauth_contract import (
     TokenReply,
 )
 from app.research.oauth_metadata import OAuthEndpoints
-from app.research.oauth_rules import MCP_TERMS_VERSION, OAuthError
+from app.research.oauth_rules import MCP_TERMS_VERSION, Grantor, OAuthError
 from app.services import oauth_bearer, oauth_clients, oauth_connections, oauth_consent, oauth_tokens
 from app.services.oauth_bearer import BearerRefused
 
@@ -42,6 +42,10 @@ ENDPOINTS = OAuthEndpoints(
 REDIRECT = "https://claude.ai/api/mcp/auth_callback"
 VERIFIER = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
 CHALLENGE = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+
+
+def grantor(user: User, *, signed_in_at: datetime | None = NOW) -> Grantor:
+    return Grantor(user=user, signed_in_at=signed_in_at, now=NOW)
 
 
 def sha256(raw: str) -> str:
@@ -94,7 +98,7 @@ async def approved(
     session: AsyncSession, user: User, client_id: str, scopes: tuple[str, ...] = ("read", "contribute")
 ) -> str:
     consent = Consent(request=asked(client_id), scopes=list(scopes), terms_version=MCP_TERMS_VERSION)
-    sent = await oauth_consent.approve(session, user, consent, endpoints=ENDPOINTS, now=NOW)
+    sent = await oauth_consent.approve(session, grantor(user), consent, endpoints=ENDPOINTS)
     query = parse_qs(urlsplit(sent.redirect_to).query)
     assert sent.redirect_to.startswith(f"{REDIRECT}?")
     assert (query["state"], query["iss"]) == (["xyz"], [API])
@@ -136,7 +140,7 @@ async def test_a_researcher_connects_an_agent_and_its_token_reaches_their_accoun
 ) -> None:
     user = await person(session)
     client_id = await registered(session)
-    prompt = await oauth_consent.review(session, user, asked(client_id), endpoints=ENDPOINTS)
+    prompt = await oauth_consent.review(session, grantor(user), asked(client_id), endpoints=ENDPOINTS)
     assert isinstance(prompt, AuthorizationPrompt)
     assert (prompt.client_name, prompt.redirect_host, prompt.terms.accepted_at) == (
         "Claude",
@@ -152,7 +156,7 @@ async def test_a_researcher_connects_an_agent_and_its_token_reaches_their_accoun
     assert [row.codeHash for row in stored if row.userId == user.id] == [sha256(code)]
     accepted = await session.execute(select(McpTermsAcceptance).where(McpTermsAcceptance.userId == user.id))
     assert [row.termsVersion for row in accepted.scalars()] == ["2026-11-19"]
-    again = await oauth_consent.review(session, user, asked(client_id), endpoints=ENDPOINTS)
+    again = await oauth_consent.review(session, grantor(user), asked(client_id), endpoints=ENDPOINTS)
     assert isinstance(again, AuthorizationPrompt) and again.terms.accepted_at == NOW
     reply = await exchanged(session, client_id, code)
     assert (reply.scope, reply.expires_in, reply.token_type) == ("read contribute", 3600, "Bearer")
@@ -297,7 +301,7 @@ async def test_a_changed_terms_version_asks_again(
     client_id = await registered(session)
     await approved(session, user, client_id)
     monkeypatch.setattr(oauth_consent, "MCP_TERMS_VERSION", "2027-01-01")
-    prompt = await oauth_consent.review(session, user, asked(client_id), endpoints=ENDPOINTS)
+    prompt = await oauth_consent.review(session, grantor(user), asked(client_id), endpoints=ENDPOINTS)
     assert isinstance(prompt, AuthorizationPrompt)
     assert (prompt.terms.version, prompt.terms.accepted_at) == ("2027-01-01", None)
     with pytest.raises(oauth_consent.TermsChanged):
@@ -308,13 +312,16 @@ async def test_untrusted_requests_stop_and_other_faults_return_to_the_app(sessio
     user = await person(session, "STUDENT")
     client_id = await registered(session)
     with pytest.raises(oauth_consent.UntrustedRequest):
-        await oauth_consent.review(session, user, asked(str(uuid.uuid4())), endpoints=ENDPOINTS)
+        await oauth_consent.review(session, grantor(user), asked(str(uuid.uuid4())), endpoints=ENDPOINTS)
     with pytest.raises(oauth_consent.UntrustedRequest):
         await oauth_consent.review(
-            session, user, asked(client_id, redirect_uri="https://evil.example/cb"), endpoints=ENDPOINTS
+            session,
+            grantor(user),
+            asked(client_id, redirect_uri="https://evil.example/cb"),
+            endpoints=ENDPOINTS,
         )
     wrong = await oauth_consent.review(
-        session, user, asked(client_id, response_type="token"), endpoints=ENDPOINTS
+        session, grantor(user), asked(client_id, response_type="token"), endpoints=ENDPOINTS
     )
     assert isinstance(wrong, AuthorizationRedirect)
     query = parse_qs(urlsplit(wrong.redirect_to).query)
