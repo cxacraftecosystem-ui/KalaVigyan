@@ -661,7 +661,11 @@ document is read), which the answer stream turns into `trail` events.
   its title ends `(submitted manuscript, before peer review)` or `(author's accepted manuscript)`,
   its URL is the copy's and it has no DOI, so it is a source of its own; `externalIds.doi` keeps
   the published work's DOI and `externalIds.open_access_version` the version. A manuscript takes
-  no abstract beside it.
+  no abstract beside it. A DOI the locator calls closed is read from its publisher when
+  `LiveSources.publisher` holds its prefix (`DocumentReader._publisher_document`, the Elsevier or
+  Springer Nature full text of `PublisherFullText.read`, with `externalIds.full_text_from` and the
+  text-mining licence; a failure is logged as a `FETCH` failure of `publisher_full_text`); without a
+  publisher key nothing more is read.
 - **Follow references** (`DEEP`, with a `doi_source`): the same part of the plan's fetches as
   `DEEP_REFERENCE_RESERVE` (6) is of `DEEP`'s 20 (`policy.reference_reserve`: 6 of 20, 1 of 4,
   none of 3; decision 0046) wait while the primary items are read; then DOIs cited in
@@ -670,10 +674,11 @@ document is read), which the answer stream turns into `trail` events.
   beside an open published copy. They join the
   evidence after the searched items with `followedFrom` set and the parent's facets.
 
-`LiveSources {searchers (distinct names), fetcher?, locator?, doi_source?}` (a dataclass);
+`LiveSources {searchers (distinct names), fetcher?, locator?, doi_source?, publisher?}` (a dataclass);
 `services.live_sources.live_sources(session, client)` builds it from every scholarly adapter,
 the reference adapters and `WebSearch` (one `FetcherClient` shared by the web adapters and the
-open-access reads), the Unpaywall locator and `crossref` as the DOI source. Hold it for the
+open-access reads), the Unpaywall locator, `crossref` as the DOI source and the registry's
+`ScholarlySources.publisher`. Hold it for the
 process: each adapter paces and caches itself.
 
 ### Evidence pack (`research/evidence_pack.py`)

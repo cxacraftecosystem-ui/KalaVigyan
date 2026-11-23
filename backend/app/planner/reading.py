@@ -11,6 +11,7 @@ from app.research.evidence_pack import PackedEvidence
 from app.research.fetcher import Fetcher, FetchRequest
 from app.sources.adapter import build_document
 from app.sources.fetcher_client import FETCHER_SERVICE
+from app.sources.scholarly.publishers import PublisherFullText
 
 from .failures import FailureLog
 from .policy import DOCUMENT_TIMEOUT_SECONDS, LIVE_BUDGETS, READ_ATTEMPT_FACTOR, READ_CONCURRENCY
@@ -47,6 +48,7 @@ class LiveSources:
     fetcher: Fetcher | None = None
     locator: OpenAccessLocator | None = None
     doi_source: SourceAdapter | None = None
+    publisher: PublisherFullText | None = None
 
     def __post_init__(self) -> None:
         names = [searcher.name for searcher in self.searchers]
@@ -171,8 +173,10 @@ class DocumentReader:
             service=locator.name,
             target=item.doi or item.id,
         )
-        if location is None or not location.is_open:
+        if location is None:
             return None
+        if not location.is_open:
+            return await self._publisher_document(item)
         url = location.pdf_url or location.landing_url
         if url is None:
             return None
@@ -196,6 +200,17 @@ class DocumentReader:
         )
         copy = copy_read(opened, location.version, page.final_url)
         return build_document(copy, page.text, "FULL_TEXT", truncated=page.truncated)
+
+    async def _publisher_document(self, item: EvidenceItem) -> SourceDocument | None:
+        publisher = self._sources.publisher
+        if publisher is None or item.doi is None or not publisher.holds(item.doi):
+            return None
+        return await self._log.guarded(
+            asyncio.wait_for(publisher.read(item), DOCUMENT_TIMEOUT_SECONDS),
+            stage=FETCH_STAGE,
+            service=publisher.name,
+            target=item.doi,
+        )
 
     def _opens(self, item: EvidenceItem) -> bool:
         if self._sources.locator is None or self._sources.fetcher is None:

@@ -56,30 +56,29 @@ Last reviewed: 2026-11-22.
   `tools/hygiene_check.py --update-baseline` after each clean-up. The initial migration stays
   one file (migrations are not rewritten).
 
-### Scholarly adapters: what waits on keys and the planner (decisions 0005, 0139)
+### Scholarly adapters: what waits on keys and Wiley's token (decisions 0005, 0139)
 
 - **What:**
   - Fixtures that are not recordings: `semantic_scholar_search.json` wraps two recorded paper
     records in the search envelope (search answered 429 without a key);
     `springer_nature_search.synthetic.json`, `springer_nature_jats.synthetic.xml`,
     `springer_nature_jats_none.synthetic.xml` and `elsevier_article.synthetic.xml` are hand-written
-    from the documented shapes (`backend/tests/sources/fixtures`).
+    from the documented shapes (`backend/tests/sources/fixtures`); CORE's `journals` is tested on the
+    recorded work with the documented field added, since the recording carries none.
   - The configured `ELSEVIER_API_KEY` may search Scopus but not read abstracts or full text
     without an institution token, so `elsevier` fetch is `not_found` for every record.
   - OpenAlex without `OPENALEX_API_KEY` allows $0.10 a day per address, about 100 searches; after
     that it answers 429 until midnight UTC and the shared hold pauses every process.
-  - Publisher full text (`ScholarlySources.publisher`, `sources/scholarly/publishers`) is built
-    but nothing asks it: the planner reads only the open-copy locator.
+  - The planner reads a closed DOI from its publisher (`LiveSources.publisher`, decision 0167), but
+    no publisher is built until `ELSEVIER_INSTTOKEN` or `SPRINGER_NATURE_API_KEY` is set.
   - Wiley TDM is not read: it serves PDF only, behind a redirect, with its token, and the fetcher
     sends no keys.
 - **Why left:** no `OPENALEX_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY` or `SPRINGER_NATURE_API_KEY` and
-  no Elsevier institution token exist yet; the planner belonged to the answer-composition lane of
-  round 7, which ran beside the sources and providers lane.
+  no Elsevier institution token exist yet (the owner's to obtain); Wiley's PDF needs the fetcher to
+  carry one host's token.
 - **Clears it:** the owner sets the three keys (Springer Nature's with text-mining terms) and
-  `ELSEVIER_INSTTOKEN`, each tested from the settings screen, and the fixtures are recorded then; give `planner/reading.LiveSources` a
-  `publisher` field, set it in `services/live_sources` from `scholarly.publisher`, and let
-  `DocumentReader.open_access_document` read a closed DOI the publisher holds; read Wiley's PDF
-  once the fetcher can carry one host's token.
+  `ELSEVIER_INSTTOKEN`, each tested from the settings screen, and the fixtures are recorded then
+  (CORE's with `journals`); read Wiley's PDF once the fetcher can carry one host's token.
 
 ### Web search and fetcher: recordings and the box (decisions 0007, 0139)
 
