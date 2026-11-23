@@ -21,9 +21,10 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models import enums as e
-from app.models.base import Base, created_at, updated_at, uuid_pk
+from app.models.base import Base, created_at, one_of, updated_at, uuid_pk
 
 CONDITION_KEY_MAX_CHARS = 40
+STAGE_REVIEW_STATUSES = ("PLACED", "REJECTED")
 
 
 class Process(Base):
@@ -70,6 +71,25 @@ class ProcessStage(Base):
     updatedAt: Mapped[datetime] = updated_at()
 
     __table_args__ = (UniqueConstraint("processId", "ordinal"),)
+
+
+class StageReview(Base):
+    __tablename__ = "StageReview"
+
+    conceptId: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("Concept.id", ondelete="CASCADE"), primary_key=True
+    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    note: Mapped[str | None] = mapped_column(Text)
+    reviewerId: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("User.id", ondelete="SET NULL")
+    )
+    processStageId: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("ProcessStage.id", ondelete="SET NULL")
+    )
+    createdAt: Mapped[datetime] = created_at()
+
+    __table_args__ = (CheckConstraint(one_of("status", STAGE_REVIEW_STATUSES), name="status"),)
 
 
 class Compound(Base):

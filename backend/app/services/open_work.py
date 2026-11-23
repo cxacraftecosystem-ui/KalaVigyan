@@ -15,6 +15,7 @@ from app.models import (
     ArtisanContribution,
     Claim,
     ComponentProposal,
+    Concept,
     ImageContribution,
     LayoutProposal,
     StructureProposal,
@@ -55,6 +56,7 @@ from .open_work_pages import monograph_layouts
 from .open_work_pictures import picture_tasks
 from .open_work_subjects import CATEGORY, WorkSubject, subject_by_key, work_subjects
 from .open_work_translations import translation_tasks
+from .review_queue_select import waiting_stage
 
 __all__ = [
     "RESERVATION_MINUTES",
@@ -165,6 +167,7 @@ async def review_queues(session: AsyncSession, queues: Sequence[str]) -> dict[st
         "COMPONENTS": (ComponentProposal.createdAt, ComponentProposal.status == PENDING),
         "LAYOUTS": (LayoutProposal.createdAt, LayoutProposal.status == PENDING),
         "STRUCTURE": (StructureProposal.createdAt, StructureProposal.status == PENDING),
+        "STAGES": (Concept.createdAt, waiting_stage()),
     }
     return {queue: await _queue(session, *waiting[queue]) for queue in queues}
 

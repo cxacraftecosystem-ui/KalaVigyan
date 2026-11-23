@@ -6,7 +6,8 @@ rendering; a translated sentence keeps a glossary term by its stored local name,
 keeps its quiz; a glossary term carries the casing its texts write it in; a dossier lists its signs
 of imitation; every scholarly adapter names a paper's journal; the planner reads a closed DOI from
 the publisher that holds it and searches the colourant oxides when a question asks what gives a
-glaze its colour.
+glaze its colour; and a Professor places a process stage answers found into its craft's process from the review
+queue.
 
 Date: 2026-11-23. Status: accepted (the lead's answer-leftovers lane brief of 2026-11-23, round 7's
 debt-clearing programme). It amends [decision 0039](0039-pictures-and-terms-wired.md) and
@@ -19,7 +20,8 @@ publisher full text), [decision 0143](0143-lessons-exports-and-follow-ups-kept-t
 a paper is in) and [decision 0146](0146-answers-recorded-and-bounded-on-the-box.md) (the answer
 record). The contracts are `docs/contracts/research.md` (the composer, the planner, the answering
 service), `docs/contracts/explainer.md` (term spans, the supply map, the market block),
-`docs/contracts/curation.md` (Market and GI, the glossary) and `docs/contracts/craft-page.md`.
+`docs/contracts/curation.md` (Market and GI, the glossary), `docs/contracts/craft-page.md` and
+`docs/contracts/review-queue.md` (the `STAGES` kind).
 
 | For | Read |
 |---|---|
@@ -120,6 +122,19 @@ a glossary term's sentence-case name is found when no dossier states it.
    them to their crafts' ladders (its only one among them says Akola's mud soaking precedes paste
    preparation), so a rule reading such edges would place nothing; a test holds the seed's edges as
    they are, and the register names the sources that would place them.
+10. **A Professor places a process stage answers found.** The write-back makes a `PROCESS_STAGE`
+   concept for a stage an answer names (`claim_writer.concept_id_for`), but no answer writes a
+   `Process` or `ProcessStage` row ([decision 0038](0038-phase-a-review-fixes.md)), and the cited-order
+   route the register named could place none. A `STAGES` review-queue item now lists such a concept
+   once a shown fact is about it and its craft has a live process with stages that is not curated;
+   a Professor places it first or after a stage of that process, which writes a `ProcessStage` named
+   as the concept and moves the later stages down by one, or rejects it with a reason, both kept in
+   `StageReview` (migration 0090). We chose a table of decisions over a status on `Concept`: the
+   concept is shared by facts, terms and edges the decision does not touch, and a rejected stage must
+   stay out of the queue without being removed. A curated process is never offered: the curated
+   import rewrites its stages from the dossier
+   ([decision 0142](0142-curated-crafts-read-only-curated-rows.md)), so a curated craft's stage goes
+   through its dossier. No model call is added.
 
 ## Consequences
 
@@ -134,6 +149,8 @@ a glossary term's sentence-case name is found when no dossier states it.
   dumped payload), and the write-back's quote measures read them (`services/write_back_plan`), so a
   sentence kept by its rendering is written back `QUOTED` with its verbatim quote, and no second
   `TRANSLATE` call is made.
+- Migration 0090 also creates `StageReview`. The review page refuses a page that names a kind it
+  does not know, so the web app that reads `STAGES` ships with or before the API that lists it.
 
 ## How this record is kept true
 
@@ -152,5 +169,6 @@ names this one, and the table above links the two both ways. It records the choi
 `backend/tests/voice/test_voice_compose.py`, `backend/tests/journey/test_zoom_story.py`,
 `backend/tests/ledger/test_ajrakh_retold.py`, `backend/tests/write_back/test_rendered_quotes.py`, `backend/tests/ledger/test_ledger_rules.py`,
 `backend/tests/answering/test_heading_once.py`, `backend/tests/composer/test_internal_words.py`,
-`backend/tests/planner/test_understanding_fields.py` and the
-unit specs `frontend/e2e/sentence-once-unit.spec.ts` and `frontend/e2e/sentence-once-figures-unit.spec.ts`.
+`backend/tests/planner/test_understanding_fields.py`, `backend/tests/review_queue/test_stage_place.py`,
+`backend/tests/db/test_stage_review_db.py` and the unit specs `frontend/e2e/sentence-once-unit.spec.ts`,
+`frontend/e2e/sentence-once-figures-unit.spec.ts` and `frontend/e2e/review-stages-unit.spec.ts`.

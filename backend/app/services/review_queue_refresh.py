@@ -18,7 +18,17 @@ from app.models import (
     StructureProposal,
 )
 from app.research.page_revalidation import PageOwners
-from app.research.review_queue import COMPONENTS, FACTS, IMAGES, LAYOUTS, STRUCTURE, TESTIMONY, QueueDecision
+from app.research.review_queue import (
+    COMPONENTS,
+    FACTS,
+    IMAGES,
+    LAYOUTS,
+    STAGES,
+    STRUCTURE,
+    TESTIMONY,
+    QueueDecision,
+)
+from app.research.review_queue_stages import PLACED_STATUS
 from app.research.structure_proposals import APPROVED_STATUS
 
 from .page_revalidation import claim_owners, craft_owners, merged_owners, refresh_pages
@@ -54,6 +64,8 @@ def _owning_craft(decided: QueueDecision) -> Select[Any] | None:
         return select(ArtisanContribution.craftId).where(ArtisanContribution.id == decided.id)
     if decided.kind == STRUCTURE and decided.status == APPROVED_STATUS:
         return select(StructureProposal.craftId).where(StructureProposal.id == decided.id)
+    if decided.kind == STAGES and decided.status == PLACED_STATUS:
+        return select(Concept.craftId).where(Concept.id == decided.id)
     if decided.kind == IMAGES and decided.status == APPROVED:
         return select(ImageContribution.craftId).where(ImageContribution.id == decided.id)
     return None

@@ -524,24 +524,6 @@ Last reviewed: 2026-11-22.
   `speech_completed.json` as a fixture of `backend/tests/media/test_gemini_speech.py`. A refusal
   there names what to change in `providers/gemini_media.py`.
 
-## Stored knowledge pieces (decision 0033)
-
-### Answers never grow the Process tab
-
-- **What:** plan 2.2 wants process stages answers find to land in the science tables. No answer
-  writes `Process` or `ProcessStage` rows (decision 0038). The cited-order route (order stages only
-  by `PRECEDES` edges from claims that state the sequence, names only from curated or seeded
-  concepts) can create nothing: every craft holding curated or seeded stage concepts already has
-  its process (checked 2026-11-22: the six seeded crafts with stage concepts each have a seed
-  process, every dossier with stages writes its curated process), and the stages answers find carry
-  the names a planner chose, which the route may not use.
-- **Why left:** an answer-found stage can only join a craft's existing process by a person's
-  placing it (decision 0142).
-- **Clears it:** the other route this entry named: a review-queue item for an answer-found stage
-  concept and a review screen where a Professor places it in the craft's process or rejects it,
-  writing the `ProcessStage` with the review's note. It waits on that screen (design and answer UI
-  lane) and its review-queue item being scheduled together.
-
 ## Expert panel (decision 0046)
 
 ### The reading share does not steer queries
