@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       questions:
-        description: Also ask the four known-answer questions (the mordant in English and Hindi and Kachchh's water at Detailed depth, indigo's generated explainer at Expert depth)
+        description: Also ask the seven known-answer questions (the mordant in English, Hindi and Urdu, Kachchh's water, what the cloth is made of and its history at Detailed depth, indigo's generated explainer at Expert depth)
         type: boolean
         default: false
       rivers_loaded:
@@ -31,7 +31,7 @@ jobs:
     name: Drive production at every width
     if: github.repository == 'cxacraftecosystem-ui/KalaVigyan'
     runs-on: ubuntu-26.04
-    timeout-minutes: 90
+    timeout-minutes: 110
     defaults:
       run:
         working-directory: frontend

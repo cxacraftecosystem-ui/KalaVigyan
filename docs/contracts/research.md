@@ -1261,12 +1261,15 @@ research holds at most the pool less two connections and a sign-in always finds 
    (`core/errors.spend_refusal`), anything else `RESEARCH_FAILED_DETAIL`; any other exception is
    logged and `UNEXPECTED_DETAIL`. `done {answerId}` always ends the stream.
 
-Status messages (`explainer_events.status_message(step, count, craft)`; the steps after `PLANNING`
-are sent once per answer, when the first section reaches them): `Finding the craft` (in the vocabulary,
-no longer sent), `Planning the research on <craft>` (`Planning the research` for any craft),
-`Searching stored findings`, `Searching <n> live queries`, `Reading the best of <n> sources
-found`, `Writing a cited answer from <n> passages`, `Saving <n> sources for the next question`
-(singular for one), `Translating the answer into <language>`.
+Status messages (`status_lines.status_message(step, count, craft, *, language, words)`; the steps
+after `PLANNING` are sent once per answer, when the first section reaches them): `Finding the craft`
+(in the vocabulary, no longer sent), `Planning the research on <craft>` (`Planning the research` for
+any craft), `Searching stored findings`, `Searching <n> live queries`, `Reading the best of <n>
+sources found`, `Writing a cited answer from <n> passages`, `Saving <n> sources for the next
+question` (singular for one), `Translating the answer into <language>`. In another language a line
+is sent in that language only from a reviewed `stream.status` entry of its interface words (the
+English template it translates, with the language named by its own name), else in English
+(decision 0157).
 
 Route (`api/routes/knowledge.py`): the body's `depth` (default `research/depth.default_depth` of
 the role) must be one of `selectable_depths` (every depth for a known role, none for an unknown
@@ -1292,19 +1295,28 @@ a number), compared after NFKC; prose (protected tokens removed) at least half i
 script; the English original's negation and hedge kept (decision 0120): an original with a
 negation (`gate_thrift.NEGATION`) needs one of the target language's negation words or endings,
 and an original with a hedge (`hedges.hedges_in`: a word of doubt, or about, around, some and the
-like before a figure) one of its hedge words or endings (`research/stance_markers`, a list for
+like before a figure) one of its hedge words or endings (`research/stance_marker_words`, a list for
 each answer language; a missing one names the problem, a negation or hedge the translation adds
 is not refused, since idioms such as "until ... नहीं" carry one); and
 (`composer/translation.checked_translation`) no link, markup or personal data the
 original did not carry. `ModelTranslator` sends every item in one `TRANSLATE` call, sends the
 failing ones back once with their problems (`TRANSLATION_ATTEMPTS` 2), and leaves out the rest;
-a router failure is raised to the caller, which keeps the English.
+a router failure is raised to the caller, which keeps the English. Every answer translation
+(`answer_store.build_answer_translation`) is then read back (`composer/translation_meaning.
+ReadBackTranslator`, decision 0157): the accepted translations into a language other than English
+go once more through the same model with `READ_BACK_SYSTEM_PROMPT`, which is not shown the
+English, and a translation is kept only when `research/translation_meaning.meaning_problems(english,
+reading)` finds nothing: `translation_problems` on the pair, no negation or hedge the English
+lacks, and at least half of the English's content stems back when it has three or more; one with
+no reading keeps its English.
 
 - `translated_block(block, language=, translation=, claim_texts=)`: one checked block at a time
   (decision 0032): the sentences of a `prose` block, or of every stage of a `process_ladder`, in
   one call; stage names, materials and a condition's `stated` (the source's own words) stay as
   stored. A section title gains `original`; the stored-only answer's titles and follow-ups are the
-  app's labels and stay English. A translated sentence keeps its citations and gains
+  app's labels, shown in the answer language only from a reviewed `stream.heading` or
+  `stream.followUp` entry of its interface words (`stored_explainer.shown_stored_heading`,
+  `answer_events.stored_follow_ups(..., words)`, decision 0157) and else in English. A translated sentence keeps its citations and gains
   `translated: true` and `original`; an item that fails twice stays English. Its term spans are
   kept only where their text still occurs in the translation, first occurrences not overlapping
   (`research/terms.spans_still_shown`, decision 0039).
@@ -1322,7 +1334,17 @@ a router failure is raised to the caller, which keeps the English.
 - Cache: `TranslationCache {known(language, {claimId: text}), remember(language, {claimId:
   (text, translation)})}`, `translation_cache.SqlTranslationCache` over `ClaimTranslation`. A
   sentence is cached when it cites one claim and its text is exactly that claim's text; a row is
-  used only while its `sourceSha256` is the SHA-256 of the claim's current text.
+  used only while its `sourceSha256` is the SHA-256 of the checks' edition and the claim's current
+  text (`translation_cache.checked_source_sha256`, `TRANSLATION_CHECKS_EDITION` `read-back-1`), so
+  a row made under older checks is made again when next asked for.
+- Interface words (`data/interface_words.py`, `services/interface_words.py`, decision 0157): one
+  file per answer language other than English in `backend/app/data/interface_words/`, schema 1,
+  each entry `{key, english, text, source, note?, review: {by, on} | null}`; `key` is where the
+  word shows and `english` the exact English the code shows, placeholders and all. A file is
+  refused when an entry repeats its key and English, its text holds other placeholders, its key is
+  not dotted or its review lacks a reader or a `YYYY-MM-DD` day. `reviewed_words(language)` is
+  what readers are shown (reviewed entries whose English is the code's); `written_words` every
+  entry, for voice alone.
 
 ## Not built yet
 

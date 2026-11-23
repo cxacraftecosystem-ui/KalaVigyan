@@ -295,20 +295,24 @@ Last reviewed: 2026-11-22.
 
 ## Voice backend (decision 0017)
 
-### Voice in other languages is checked by text only (decision 0025)
+### Voice in other languages is not yet heard or read by its speakers (decisions 0025, 0157)
 
-- **What:** voice offers all thirteen answer languages from the ElevenLabs documentation, not from
-  calls. Scribe's published accuracy is Scribe v2's, and Urdu's band is moderate (25-50% word error),
-  so an Urdu question may often be misheard. The fixed spoken phrases in `voice/phrases.py` were
-  written by the lane and not read by native speakers. In `AGENT` nothing yet tells the agent a
-  session's language: the token takes none and client overrides are off, so the agent hears in its
-  own language until `language_detection` switches; the presets are not provisioned.
-- **Why left:** no provider call with a real key from the laptop, and no native reviewers in reach.
-- **Clears it:** the spike records one relay turn per language and one agent call in Hindi; a
-  native reader per language signs off the phrase table; if Urdu misses too often, drop `ur` from
-  `STT_LANGUAGE_CODES` (voice then stops offering it) or try `scribe_v3` with Hindi as a
-  `secondary_language_codes` hint; the spike decides whether the agent gets an `agent.language`
-  override or one agent per language.
+- **What:** what a test can check is checked for every offered language: a relay turn sends Scribe
+  and speech their codes and speaks the language's source word, and every phrase whose English says
+  no carries its language's negation (decision 0157, item 7). No call with a real key has run in a
+  language other than English, and Scribe's published accuracy is Scribe v2's: Urdu's band is
+  moderate (25-50% word error), so an Urdu question may often be misheard. The spoken phrases (the
+  `voice.*` entries of `backend/app/data/interface_words/`) were written by the voice lane and no
+  native speaker has reviewed them. In `AGENT` nothing yet tells the agent a session's language: the
+  token takes none and client overrides are off, so the agent hears in its own language until
+  `language_detection` switches; the presets are not provisioned.
+- **Why left:** a recorded turn needs the owner's ElevenLabs key, and a review needs a reader of
+  each language.
+- **Clears it:** a reader of each language records a review on the `voice.*` entries of its file,
+  correcting any phrase first (decision 0157, item 5); the spike records one relay turn per language
+  and one agent call in Hindi; if Urdu misses too often, drop `ur` from `STT_LANGUAGE_CODES` (voice
+  then stops offering it) or try `scribe_v3` with Hindi as a `secondary_language_codes` hint; the
+  spike decides whether the agent gets an `agent.language` override or one agent per language.
 
 ### An agent call cannot be hung up from our side
 
@@ -373,34 +377,38 @@ Last reviewed: 2026-11-22.
 
 ## Answers in Indian languages (decision 0023)
 
-### Translations are checked for figures, not for meaning
+### The read-back check is not yet calibrated by readers
 
-- **What:** `research/translation.translation_problems` proves that numbers, formulas, mhchem,
-  units and the script survive a translation and that no link or personal data was added; it does
-  not prove the sentence still says the same thing. A unit or number written in words in the
-  target language fails the check and the sentence falls back to English.
-- **Why left:** a meaning check needs a second model call per answer and a judge to calibrate.
-- **Clears it:** run the known-answer questions of PLAN 0 in Hindi and Tamil on the box, have a
-  speaker of each read the answers, and add a back-translation check if they find drift.
+- **What:** a translation is read back into English and refused when its reading loses a figure,
+  a negation or a hedge, adds one, or keeps fewer than half the English's terms (decision 0157,
+  item 1). That half is the quote overlap floor, chosen without a reader: no speaker of Hindi or
+  Tamil has yet judged which sentences drifted, so the check may refuse a faithful sentence (it
+  then shows in English) or keep a drifted one whose reading happens to share the English words.
+- **Why left:** the calibration needs a reader of each language.
+- **Clears it:** a reader of Hindi and one of Tamil read a known-answer answer in their language
+  (the production E2E's Known Answers report gives each translated sentence beside its English;
+  the Tamil one is asked on the site), and for every sentence they record, as a case in
+  `backend/tests/research/test_translation_meaning.py`, the English, their own literal English of
+  the translation and whether it kept the meaning; `READ_BACK_TERMS_KEPT_MIN` is then set so the
+  check decides every recorded case as its reader did.
 
-### Verified headings and follow-ups stay English
+### Interface words in other languages wait for their readers
 
-- **What:** a Verified answer in another language translates only its claim sentences; the
-  section headings and the templated follow-ups are the app's English labels, and the
-  not-enough-evidence message, errors and status lines are English in every mode.
-- **Why left:** translating them would cost a model call on every Verified answer, including one
-  whose claims are all cached; UI strings stay English.
-- **Clears it:** keep translated labels per language as reviewed data (not model output) and send
-  them with the stream.
-
-### Multilingual answers not yet seen running
-
-- **What:** the language picker, the Noto Sans faces, right-to-left Urdu and the English toggle are
-  checked by typecheck, lint and unit specs; no browser has drawn them, and no TRANSLATE call has
-  run against a provider. Migration 0007 seeds the TRANSLATE routes and has run only offline.
-- **Why left:** nothing runs on the laptop; the batch deploys once.
-- **Clears it:** after the deploy, ask one Hindi and one Urdu question in each mode and look at the
-  answer on a phone and a laptop.
+- **What:** the fixed words of the answer screen (the provenance rail and the actions), a stored
+  answer's headings and follow-ups and the status lines are shown in an answer language only from
+  a reviewed entry of `backend/app/data/interface_words/` (decision 0157, items 3 to 6). The Hindi
+  and Urdu essay words are sourced from the Kutch Ajrakh monograph and the Urdu board (جواب, ماخذوں
+  سے, محفوظ کریں, اس جواب کا حوالہ دیں and the rest) but no entry is reviewed yet, "Saved",
+  "Saving", "Removing" and one source have no source, and the other languages, the headings, the
+  follow-ups and the status lines have no entries. The not-enough-evidence message and the errors
+  are composed in English and have no entries at all. A craft's name stays as it is written in
+  English, as the monograph writes it.
+- **Why left:** a reviewed word needs a reader of its language; approving a design is not
+  reviewing its words (the board and the monograph disagree on two Urdu words).
+- **Clears it:** a reader of each language supplies the missing words and records a review on
+  each entry they approve (decision 0157, item 5), the Urdu reader first, choosing between the
+  board's and the monograph's readings; then the templates of the not-enough-evidence message and
+  the errors join the lists the same way.
 
 ## Media backend (decision 0018)
 
@@ -717,23 +725,6 @@ Last reviewed: 2026-11-22.
   follow_ups=0)`, with a unit test.
 
 ## Stored knowledge pieces (decision 0033)
-
-### Topic keys match only the same glossary terms
-
-- **What:** a facet's topic is the glossary terms the question names (else the place or the
-  craft), so a rephrasing that names one more or one fewer term researches again, and a question
-  in an Indian script matches only the glossary's local names. Reusing a stored set whose terms are
-  a subset of the question's is safe only within a nearness of the question's vector to the
-  stored piece's, and nothing in the code can tell that nearness.
-- **Why left:** the nearness is a production measurement (checked 2026-11-22, decision 0142); a
-  guessed one would serve a narrower set for a broader question.
-- **Clears it:** the lead measures, over the answers of the last 30 days that researched a facet
-  (`Answer.tiersUsed` holding `T3` or `T4`), how many researched facets had a current stored piece
-  of the same craft and facet whose topic terms are a strict subset of the question's marked terms,
-  and the cosine distance between the question's vector and that piece's `embedding`. If such near
-  misses are common, accept a subset set within the distance below which those pieces' claims all
-  reappear in the fresh answer (`piece_store.reusable`, `research/piece_topics`); if they are rare,
-  delete this entry.
 
 ### Answers never grow the Process tab
 
@@ -1114,7 +1105,9 @@ Last reviewed: 2026-11-22.
   only when the time left is at least what the first draft took (decision 0142), so the registry's
   wait no longer cuts a redraft, but a slow route can still leave a section without its explainer:
   the builder then records `OUT_OF_TIME` or `NO_TIME_TO_REDRAFT` under `Answer.plan.builds`.
-- **Why left:** how often that happens is a production measurement.
+- **Why left:** how often that happens is a production measurement. Checked 2026-11-23: no
+  production answer has `plan.builds` yet, because the record shipped late on 2026-11-22 and no
+  answer has finished since (the two later rows are production checks stopped mid-stream).
 - **Clears it:** the lead reads `plan->'builds'` of a week of Expert answers on production. If
   `OUT_OF_TIME` and `NO_TIME_TO_REDRAFT` are a large share of the `simulation` outcomes, build the
   explainer after `section_done` as a late block, which needs a stream event the contract does not
@@ -1719,16 +1712,6 @@ Last reviewed: 2026-11-22.
   ruling; the paid run is the lead's.
 - **Clears it:** a kit fix shown to the owner at 360 and proven by Monograph parity; the owner's
   ruling on the illustrations' labels; the lead's paid run.
-
-### Small differences from the boards left after round 6
-
-- **What:** the Urdu answer keeps its interface words in English where the Urdu board shows Urdu.
-- **Why left:** the interface words of each answer language belong to the languages lane. The Urdu
-  board gives five of the essay's interface words (جواب, ماخذوں سے, مرتب, محفوظ کریں, اس جواب کا
-  حوالہ دیں) but not "Saved", the other answer languages or a craft's name in Urdu, which may not be
-  transliterated by us.
-- **Clears it:** the languages lane's sourced list of interface words for each answer language,
-  approved by the owner; then the copy table follows.
 
 ## Round 7 (2026-11-20)
 

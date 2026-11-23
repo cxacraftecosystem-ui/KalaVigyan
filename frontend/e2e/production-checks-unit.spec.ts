@@ -346,14 +346,15 @@ function indigoAnswer(...frames: string[]): string {
 
 const DRAWN_FRAME: FrameSeen = { sandbox: "allow-scripts", policyFirst: true, drawn: true, peerless: true };
 
-test("the four known-answer questions ask the mordant, the water and indigo at their depths", () => {
+test("the seven known-answer questions ask the mordant in three languages, the water, materials and history at Detailed depth and indigo at Expert", () => {
   expect(KNOWN_ANSWER_QUESTIONS.map((question) => [question.label, question.depth, question.check])).toEqual([
     ["English", "DETAILED", "MORDANT"],
     ["Hindi", "DETAILED", "MORDANT"],
     ["Water", "DETAILED", "WATER_STORY"],
     ["Indigo", "EXPERT", "GENERATED_EXPLAINER"],
     ["Materials", "DETAILED", "ZOOM_STORY"],
-    ["History", "DETAILED", "TIMELINE_MAP"]
+    ["History", "DETAILED", "TIMELINE_MAP"],
+    ["Urdu", "DETAILED", "MORDANT"]
   ]);
   expect(INDIGO.question).toBe("How does indigo turn blue on Kutch Ajrakh cloth?");
   expect(FRAME_DOCUMENT_START).toContain("webrtc 'block'");

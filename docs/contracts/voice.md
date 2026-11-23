@@ -318,8 +318,13 @@ checks), and caps the spoken text at 60 words in the session language. Source la
 word before them is in the session language. A sentence whose translation fails twice is left out;
 when none translates the reply is `UNSAID_REPLIES` and the turn has no answer. Speech to text gets
 the session's Scribe code and speech its ISO 639-1 code. Every fixed phrase (filler, refusals,
-`end_call` messages) comes from `voice/phrases.py` in the session language. Translation runs within
-the call's hard end.
+`end_call` messages, the source word) comes from `voice/phrases.py` in the session language: the
+English is kept there and each other language's phrase is its `voice.*` entry in
+`backend/app/data/interface_words/`, spoken before review because a call cannot switch to English
+(decision 0157); voice offers only a language whose every phrase is written
+(`phrases.phrased_languages`). The relay's `SEARCHING_STORED` status line is in the session
+language from a reviewed `stream.status` entry, else in English. Translation runs within the
+call's hard end.
 
 ## Built by lane 0017 (decision 0017)
 

@@ -13,7 +13,7 @@ import { NO_REGION_STORY, waterStoryFound, waterStoryOutcome, withRegionStory, t
 export const ANSWER_DEADLINE_MS = 10 * 60_000;
 export const STALL_LIMIT_MS = 150_000;
 export const DEPTH_LABELS = { DETAILED: "Detailed", EXPERT: "Expert" } as const;
-export const KNOWN_ANSWER = /\balum\b|फिटकरी|फिटकिरी|फ़िटकरी/i;
+export const KNOWN_ANSWER = /\balum\b|फिटकरी|फिटकिरी|फ़िटकरी|پھٹکری|پھٹکڑی/i;
 export const LATIN = "Latn";
 
 export type KnownAnswerCheck = "MORDANT" | "WATER_STORY" | "GENERATED_EXPLAINER" | "ZOOM_STORY" | "TIMELINE_MAP";
@@ -36,7 +36,8 @@ export const KNOWN_ANSWER_QUESTIONS: readonly KnownAnswerQuestion[] = [
   { label: "Water", language: "en", script: LATIN, depth: "DETAILED", check: "WATER_STORY", question: "How does the water of Kachchh shape Kutch Ajrakh?" },
   { label: "Indigo", language: "en", script: LATIN, depth: "EXPERT", check: "GENERATED_EXPLAINER", question: "How does indigo turn blue on Kutch Ajrakh cloth?" },
   { label: "Materials", language: "en", script: LATIN, depth: "DETAILED", check: "ZOOM_STORY", question: "What is Kutch Ajrakh cloth made of, from the workshop down to the cotton fibre and the dye molecule?" },
-  { label: "History", language: "en", script: LATIN, depth: "DETAILED", check: "TIMELINE_MAP", question: "How did Ajrakh printing come from Sindh to Kutch over the centuries?" }
+  { label: "History", language: "en", script: LATIN, depth: "DETAILED", check: "TIMELINE_MAP", question: "How did Ajrakh printing come from Sindh to Kutch over the centuries?" },
+  { label: "Urdu", language: "ur", script: "Arab", depth: "DETAILED", check: "MORDANT", question: "کچھ اجرک کی چھپائی میں سرخ رنگ پکا کرنے کے لیے کون سا مارڈنٹ استعمال ہوتا ہے؟" }
 ];
 
 export type WaitOutcome = "stalled" | "timeout" | "never-started";

@@ -298,9 +298,13 @@ sequenceDiagram
    `section_state`, `block` and `section_done` mark each section; `status` the overall step.
 5. Another answer language (decision 0023): each block is still composed and checked in
    English; `services/answer_translation.translated_block` then translates it in one `TRANSLATE`
-   call, keeps a translation only when its numbers, formulas, units and script check out (else the
-   sentence stays English), copies the citations, and caches claim translations in
-   `ClaimTranslation`. The planner adds native-language Wikipedia and Wikidata queries and
+   call, keeps a translation only when its numbers, formulas, units and script check out and its
+   English reading (one more `TRANSLATE` call, `composer/translation_meaning`) still says what the
+   English says (else the sentence stays English), copies the citations, and caches claim
+   translations in `ClaimTranslation` (decision 0157). The fixed words around it (a stored answer's
+   headings and follow-ups, the status lines, the essay's rail and actions, voice's phrases) come
+   from the reviewed entries of `backend/app/data/interface_words/` and are English where none is
+   reviewed. The planner adds native-language Wikipedia and Wikidata queries and
    searches stored claims with an English rendering of the question.
 6. Follow-ups are the questions the lede and the sections say the sources leave open, then one
    per field the question touched that the answer did not show (`follow_ups.left_open`).
@@ -784,7 +788,7 @@ from opening nested windows, because Chromium ignores the policy's `webrtc 'bloc
 | Craft data | master-list sha1, lint and tests of `etl/crafts`; weekly regeneration |
 | Geo ETL | `etl/geo` tests and the district statistics build |
 | Deploy backend | after Backend checks succeed on a push to `main` of `cxacraftecosystem-ui/KalaVigyan` |
-| E2E production | on dispatch only: Playwright against the deployed site (`frontend/e2e/production/matrix.ts`), every screen signed in as the E2E Researcher at 1920, 1440, 834, 390 and 360 px wide in light and dark, and with `questions=true` four known-answer questions asked at 1440 px in light: at Detailed depth the mordant in English and Hindi, and Kachchh's water, which needs a region story with a traced river once `rivers_loaded` is set, and at Expert depth indigo's generated explainer; each must show a lede with a cited sentence, live and in its saved explainer, which is checked again at 834 and 390 px in light and dark (decisions 0029, 0050, 0061 and 0077) |
+| E2E production | on dispatch only: Playwright against the deployed site (`frontend/e2e/production/matrix.ts`), every screen signed in as the E2E Researcher at 1920, 1440, 834, 390 and 360 px wide in light and dark, and with `questions=true` seven known-answer questions asked at 1440 px in light: at Detailed depth the mordant in English, Hindi and Urdu, Kachchh's water, which needs a region story with a traced river once `rivers_loaded` is set, what the cloth is made of and its history, and at Expert depth indigo's generated explainer; each must show a lede with a cited sentence, live and in its saved explainer, which is checked again at 834 and 390 px in light and dark; the Hindi and Urdu answers must also carry a translated sentence and paragraphs in their script, and the Urdu one must read right to left with its prose in a loaded Noto Nastaliq Urdu face (decisions 0029, 0050, 0061, 0077 and 0157) |
 
 Scheduled and dispatched runs (craft sync, field voices, coverage enrichment, nightly upkeep, the
 alert digest, the release gate, captures, Monograph parity, open data and the Geo ETL) are in

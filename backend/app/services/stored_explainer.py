@@ -4,18 +4,33 @@ import uuid
 from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 
+from app.research.composition import HEADING_MAX_CHARS
 from app.research.planning import OPEN_QUESTION_LEVEL
-from app.research.sections import FALLBACK_DISCIPLINE, SectionSpec, block_id, fallback_heading, is_facet_label
+from app.research.sections import (
+    FALLBACK_DISCIPLINE,
+    FALLBACK_HEADINGS,
+    SectionSpec,
+    block_id,
+    fallback_heading,
+    is_facet_label,
+)
 from app.research.vocabulary import CANONICAL_LANGUAGE, LEVEL_ORDER
 
 from .answer_events import STORED_ANSWER_LIMIT, STORED_OPEN_QUESTION_LIMIT, CitedClaims, stored_follow_ups
 from .answer_translation import AnswerTranslation, translated_block, translated_sentences
 from .claim_ledger import COVERED_NOTE
 from .explainer_events import ExplainerStream
+from .interface_words import InterfaceWords
 from .knowledge_view import ClaimView, order_claims, section_heading
 from .section_blocks import KeptSentence, cited_sentence, prose_block
 
-__all__ = ["HEADING_DISCIPLINES", "stored_heading", "stream_stored_answer"]
+__all__ = [
+    "HEADING_DISCIPLINES",
+    "HEADING_WORDS_KEY",
+    "shown_stored_heading",
+    "stored_heading",
+    "stream_stored_answer",
+]
 
 HEADING_DISCIPLINES: Mapping[str, str] = MappingProxyType(
     {
@@ -28,6 +43,7 @@ HEADING_DISCIPLINES: Mapping[str, str] = MappingProxyType(
         "Place and climate": "GEOGRAPHY",
     }
 )
+HEADING_WORDS_KEY = "stream.heading"
 STORED_SECTION_STATE = "CHECKING"
 
 
@@ -49,6 +65,8 @@ async def stream_stored_answer(
         spec = SectionSpec(
             id=f"s{order}", discipline=discipline, title=stored_heading(group, craft_name), order=order
         )
+        titles = {spec.id: shown_stored_heading(group, craft_name, stream.words)}
+        await stream.section_started(spec, titles=titles, state=STORED_SECTION_STATE)
         await _stored_section(stream, spec, views, cited, translation=translation)
     sentences = [cited_sentence(f"open.{n}", _kept(view), cited) for n, view in enumerate(open_questions, 1)]
     if stream.language != CANONICAL_LANGUAGE and sentences:
@@ -56,7 +74,7 @@ async def stream_stored_answer(
             sentences, language=stream.language, translation=translation, claim_texts=_texts(cited)
         )
     await stream.open_questions(sentences, cited.sources)
-    await stream.emit("follow_ups", {"items": stored_follow_ups(craft_name, list(groups))})
+    await stream.emit("follow_ups", {"items": stored_follow_ups(craft_name, list(groups), stream.words)})
     return True
 
 
@@ -64,6 +82,16 @@ def stored_heading(group: str, craft_name: str) -> str:
     if not is_facet_label(group):
         return group
     return fallback_heading(HEADING_DISCIPLINES.get(group, FALLBACK_DISCIPLINE), craft_name)
+
+
+def shown_stored_heading(group: str, craft_name: str, words: InterfaceWords) -> str:
+    english = stored_heading(group, craft_name)
+    if not is_facet_label(group):
+        return words.shown(HEADING_WORDS_KEY, group) or english
+    template = FALLBACK_HEADINGS[HEADING_DISCIPLINES.get(group, FALLBACK_DISCIPLINE)]
+    shown = words.shown(HEADING_WORDS_KEY, template)
+    heading = english if shown is None else shown.format(craft=craft_name)
+    return heading if len(heading) <= HEADING_MAX_CHARS else english
 
 
 async def _stored_section(
@@ -74,7 +102,6 @@ async def _stored_section(
     *,
     translation: AnswerTranslation,
 ) -> None:
-    await stream.section_started(spec, titles={}, state=STORED_SECTION_STATE)
     block = prose_block(block_id(spec.id, 1), [_kept(view) for view in views], cited)
     if stream.language != CANONICAL_LANGUAGE:
         payload = block.model_dump(mode="json", by_alias=True)
