@@ -12,6 +12,16 @@ export type Shape<T> = {
 
 type Fields<T> = { [K in keyof Required<T>]: Shape<T[K]> };
 
+export type UnknownFields = "refuse" | "ignore";
+
+export function unknownFieldsIn(environment: string | undefined): UnknownFields {
+  return environment === "production" ? "ignore" : "refuse";
+}
+
+export const BUILD_UNKNOWN_FIELDS: UnknownFields = unknownFieldsIn(process.env.NODE_ENV);
+
+let unknownFields: UnknownFields = BUILD_UNKNOWN_FIELDS;
+
 function shape<T>(expected: string, check: (value: unknown) => value is T): Shape<T> {
   return {
     expected,
@@ -110,7 +120,7 @@ export function object<T extends object>(fields: Fields<T>): Shape<T> {
     expected: `an object with ${known.join(", ")}`,
     parse(value, path) {
       if (!isRecord(value)) throw new ShapeError(path, "an object");
-      const unknown = Object.keys(value).filter((name) => !known.includes(name));
+      const unknown = unknownFields === "refuse" ? Object.keys(value).filter((name) => !known.includes(name)) : [];
       if (unknown.length) throw new ShapeError(`${path}.${unknown[0]}`, "no such field");
       const out: Record<string, unknown> = {};
       for (const name of known) {
@@ -135,6 +145,12 @@ export function tagged<T>(tag: string, variants: Record<string, Shape<T>>): Shap
   };
 }
 
-export function parseShape<T>(target: Shape<T>, value: unknown): T {
-  return target.parse(value, "");
+export function parseShape<T>(target: Shape<T>, value: unknown, policy: UnknownFields = unknownFields): T {
+  const outer = unknownFields;
+  unknownFields = policy;
+  try {
+    return target.parse(value, "");
+  } finally {
+    unknownFields = outer;
+  }
 }

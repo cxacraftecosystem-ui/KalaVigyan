@@ -75,7 +75,8 @@ test("a chapter draws its head in the spread: rail numeral, kicker, title, lede 
   expect(html).toContain('<div class="spread railed sec-head"><div class="rail"><span class="numeral">1</span></div>');
   expect(html).toContain('<p class="chapter-no in-main">1</p><p class="kicker sec-kicker">How it is made</p><h2 class="t-h2" id="made-h">Printed, then dyed</h2>');
   expect(html).toContain('<aside class="margin note" aria-label="Sources in this passage"><ul><li data-g="g1"><b>1</b><span>Test journal, 2023</span></li></ul></aside>');
-  expect(html).toContain('<ul class="kv-list"><li>Scour the cloth</li><li>Print the resist</li></ul>');
+  const item = '<li class="border-b border-rule py-3 font-reading text-body-sm text-ink-1">';
+  expect(html).toContain(`<div class="mt-4 mb-6"><ul class="kv-list border-t border-rule">${item}Scour the cloth</li>${item}Print the resist</li></ul></div>`);
 });
 
 test("the masthead names the subject once, with its kickers, cited lede, provenance and picture", () => {

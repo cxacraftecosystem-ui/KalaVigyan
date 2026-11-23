@@ -12,6 +12,7 @@ Date: 2026-11-17. Status: accepted.
 | What superseded part of it | [0093 No caps for now: every AI cap defaults to none, and every call asks for its model's documented maximum output](0093-no-caps-for-now.md): its cap values; the code paths stand |
 | What built on it | [0099 The expert panel searches its own fields, calls each seat on its own, seats up to 12 at Expert, and hears the artisan from field transcripts](0099-wider-expert-panel.md): the expert panel, widened |
 | The contract it was built to | [0042 Phase B contract: place, matter and the expert panel](0042-phase-b-contract.md) |
+| What amended it | [0156 The expert panel takes a failing view again, differs across linked concepts and reuses only the seats it seats, and field voices reach the craft page, their pictures and every run](0156-expert-panel-and-field-voices-kept-true.md): point 5 (one retake of a failing take) and point 6 (one subject includes two concepts one glossary term links) |
 | The review that fixed it | [0050 Phase B review fixes](0050-phase-b-review-fixes.md) |
 | Every decision, by group | [README.md](README.md) |
 

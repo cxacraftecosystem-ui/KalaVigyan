@@ -37,6 +37,7 @@ __all__ = [
     "ONCE_PER_ANSWER_KINDS",
     "RESTATING_KINDS",
     "SINGLE_BLOCK_KINDS",
+    "WHAT_IF_SHARED_OPTIONS",
     "ClaimLedger",
     "admission_batches",
     "sentence_keys",
@@ -48,8 +49,12 @@ COVERED_NOTE = "Already covered in this answer."
 EXPERT_KIND = "expert_view"
 LADDER_KIND = "process_ladder"
 SIMULATION_KIND = "simulation"
+WHAT_IF_KIND = "what_if"
+WHAT_IF_SHARED_OPTIONS = 2
 SINGLE_BLOCK_KINDS = frozenset({"prose", "process_ladder", "images"})
 ONCE_PER_ANSWER_KINDS = frozenset({"region_story", "seasons", "supply_map", "zoom_story"})
+
+WhatIfKey = tuple[str | None, frozenset[str]]
 
 RESTATING_KINDS: Mapping[str, SentenceSpec] = MappingProxyType(
     {
@@ -85,6 +90,7 @@ class ClaimLedger:
         self._said: list[Said] = []
         self._materials: set[str] = set()
         self._molecules: set[int] = set()
+        self._what_ifs: list[WhatIfKey] = []
         self._concepts: set[str] = set()
         self._pictures: set[str] = set()
         self._explained: set[str] = set()
@@ -149,6 +155,8 @@ class ClaimLedger:
             return payload["pubchemCid"] not in self._molecules
         if kind == SIMULATION_KIND:
             return fold(payload["concept"]) not in self._explained
+        if kind == WHAT_IF_KIND:
+            return not any(_same_what_if(_what_if_key(payload), shown) for shown in self._what_ifs)
         return kind not in self._once
 
     def _kept_forms(self, kind: str, payload: Payload) -> Iterator[Block | None]:
@@ -291,6 +299,8 @@ class ClaimLedger:
             self._molecules.add(payload["pubchemCid"])
         elif block.kind == SIMULATION_KIND:
             self._explained.add(fold(payload["concept"]))
+        elif block.kind == WHAT_IF_KIND:
+            self._what_ifs.append(_what_if_key(payload))
         elif block.kind == "concept_graph":
             self._concepts.update(node["termKey"] for node in payload["nodes"])
         elif block.kind == EXPERT_KIND:
@@ -336,6 +346,20 @@ def _paired_within(payload: Payload, seats: set[str], repeated: set[frozenset[st
 
 def _difference_key(difference: Mapping[str, Any]) -> frozenset[frozenset[str]]:
     return frozenset({claims_of(difference["thisView"]), claims_of(difference["otherView"])})
+
+
+def _what_if_key(payload: Mapping[str, Any]) -> WhatIfKey:
+    options = frozenset(_option_key(option) for option in payload["options"])
+    return payload.get("stageId"), options
+
+
+def _option_key(option: Mapping[str, Any]) -> str:
+    held = option.get("materialId") or option.get("termKey")
+    return f"held:{held}" if held else f"name:{fold(option['label'])}"
+
+
+def _same_what_if(one: WhatIfKey, other: WhatIfKey) -> bool:
+    return one[0] == other[0] and len(one[1] & other[1]) >= WHAT_IF_SHARED_OPTIONS
 
 
 def _material_keys(payload: Mapping[str, Any]) -> set[str]:

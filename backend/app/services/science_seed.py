@@ -25,9 +25,17 @@ from app.models import (
     ReactionCitation,
     StageMaterial,
 )
+from app.models.enums import MATERIAL_ROLES
 from app.science.reactions import SpeciesProposal, check_reaction
 from app.science.units import Bounds, normalised_bounds
 from app.services.claim_seed import load_seed_claims, seed_claims, seed_id, stage_rows
+from app.services.curation_keys import TOOL_MATERIAL_KIND, TOOL_ROLE
+from app.services.science_seed_prune import (
+    SeedScope,
+    compound_key,
+    delete_unplanned_matter,
+    delete_unplanned_stage_rows,
+)
 
 __all__ = [
     "SCIENCE_SEED_FILE",
@@ -51,6 +59,8 @@ SEED_ORDER = (
 )
 STAGE_BOUND = ("stageMaterials", "reactions", "conditions")
 KEPT_WHEN_UNSEEDED = {"compounds": ("pubchemCid",)}
+MATERIAL_CONCEPT = "MATERIAL"
+TOOL_CONCEPT = "TOOL"
 
 
 @dataclass(frozen=True)
@@ -60,6 +70,7 @@ class _SeedClaims:
     stages: Mapping[str, uuid.UUID]
     edge_claims: Mapping[str, str]
     uses: tuple[dict[str, Any], ...]
+    tool_uses: tuple[dict[str, Any], ...]
 
     @classmethod
     def of(cls, data: dict[str, Any]) -> _SeedClaims:
@@ -70,19 +81,16 @@ class _SeedClaims:
         for claim in data.get("claims") or []:
             if claim["subjectType"] == "EDGE":
                 edge_claims.setdefault(claim["subjectKey"], claim["id"])
-        uses = tuple(
-            edge
-            for edge in data.get("edges") or []
-            if edge["relation"] == "USES"
-            and edge["src"] in stages
-            and concepts.get(edge["dst"], {}).get("type") == "MATERIAL"
-        )
+        used = [
+            edge for edge in data.get("edges") or [] if edge["relation"] == "USES" and edge["src"] in stages
+        ]
         return cls(
             claims={claim["id"]: claim for claim in data.get("claims") or []},
             concepts=concepts,
             stages=stages,
             edge_claims=edge_claims,
-            uses=uses,
+            uses=tuple(e for e in used if concepts.get(e["dst"], {}).get("type") == MATERIAL_CONCEPT),
+            tool_uses=tuple(e for e in used if concepts.get(e["dst"], {}).get("type") == TOOL_CONCEPT),
         )
 
     def stage(self, key: str) -> uuid.UUID:
@@ -97,12 +105,27 @@ class _SeedClaims:
             raise InvalidInput(f"seed claim {claim_key} has no citation {index}")
         return cites[index]
 
+    def is_tool(self, key: str) -> bool:
+        return self.concepts.get(key, {}).get("type") == TOOL_CONCEPT
+
+    def scope(self) -> SeedScope:
+        kinds = (MATERIAL_CONCEPT, TOOL_CONCEPT)
+        materials = (key for key, concept in self.concepts.items() if concept.get("type") in kinds)
+        return SeedScope(
+            stages=frozenset(self.stages.values()),
+            materials=frozenset(seed_id("material", key) for key in materials),
+        )
+
+    def stages_using(self, material_key: str) -> set[str]:
+        return {edge["src"] for edge in self.uses if edge["dst"] == material_key}
+
 
 @dataclass
 class SciencePlan:
     rows: dict[str, list[dict[str, Any]]] = field(
         default_factory=lambda: {name: [] for name, _ in SEED_ORDER}
     )
+    scope: SeedScope = field(default_factory=SeedScope)
 
     def totals(self) -> dict[str, int]:
         return {name: len(rows) for name, rows in self.rows.items()}
@@ -124,8 +147,8 @@ def constants_data(science: dict[str, Any]) -> dict[str, Any]:
 
 def science_seed_plan(science: dict[str, Any], claims_data: dict[str, Any]) -> SciencePlan:
     seed = _SeedClaims.of(claims_data)
-    plan = SciencePlan()
-    compounds = {row["key"]: seed_id("compound", row["key"]) for row in science["compounds"]}
+    plan = SciencePlan(scope=seed.scope())
+    compounds = {_keyed_by_name(row): seed_id("compound", row["key"]) for row in science["compounds"]}
     plan.rows["compounds"] = [
         {
             "id": compounds[row["key"]],
@@ -135,7 +158,9 @@ def science_seed_plan(science: dict[str, Any], claims_data: dict[str, Any]) -> S
         }
         for row in science["compounds"]
     ]
+    _check_material_entries(seed, science["materials"])
     _plan_materials(plan, seed, science["materials"], compounds)
+    _plan_tools(plan, seed)
     for reaction in science["reactions"]:
         _plan_reaction(plan, seed, reaction, compounds)
     for condition in science["conditions"]:
@@ -151,12 +176,39 @@ async def seed_science(
     constants = await seed_claims(session, constants_data(science))
     present = set((await session.scalars(select(ProcessStage.id))).all())
     skipped = _drop_missing_stages(plan, present)
+    deleted = await delete_unplanned_stage_rows(session, plan.rows, plan.scope)
     written = {
         name: await _upsert(session, model, plan.rows[name], KEPT_WHEN_UNSEEDED.get(name, ()))
         for name, model in SEED_ORDER
     }
+    deleted |= await delete_unplanned_matter(session, plan.rows, plan.scope)
     await session.flush()
-    return {"constants": constants, "total": plan.totals(), "written": written, "skippedRows": skipped}
+    return {
+        "constants": constants,
+        "total": plan.totals(),
+        "written": written,
+        "deleted": deleted,
+        "skippedRows": skipped,
+    }
+
+
+def _keyed_by_name(compound: Mapping[str, Any]) -> str:
+    expected = compound_key(compound["name"])
+    if compound["key"] != expected:
+        raise InvalidInput(f"compound {compound['key']} must be keyed {expected}, the slug of its name")
+    return expected
+
+
+def _check_material_entries(seed: _SeedClaims, materials: Mapping[str, Any]) -> None:
+    for key, known in materials.items():
+        if seed.is_tool(key):
+            raise InvalidInput(f"tool {key} is listed among the materials; a tool's kind and role are fixed")
+        using = seed.stages_using(key)
+        for stage, role in (known.get("stageRoles") or {}).items():
+            if role not in MATERIAL_ROLES:
+                raise InvalidInput(f"material {key} has role {role} on {stage}, which is not a MaterialRole")
+            if stage not in using:
+                raise InvalidInput(f"material {key} has a role for {stage}, a stage with no USES edge to it")
 
 
 def _plan_materials(
@@ -167,36 +219,47 @@ def _plan_materials(
         if key not in kinds:
             raise InvalidInput(f"material {key} has no kind and role in the science seed")
         known = kinds[key]
-        material_id = seed_id("material", key)
-        if material_id not in {row["id"] for row in plan.rows["materials"]}:
-            plan.rows["materials"].append(_material_row(seed.concepts[key], known, compounds))
-        claim_key = seed.edge_claims.get(edge["key"])
-        plan.rows["stageMaterials"].append(
-            {
-                "id": seed_id("stage-material", edge["key"]),
-                "stageId": seed.stage(edge["src"]),
-                "materialId": material_id,
-                "role": known["role"],
-                "quantityText": None,
-                "claimId": seed_id("claim", claim_key) if claim_key else None,
-            }
-        )
+        compound = known.get("compound")
+        if compound is not None and compound not in compounds:
+            raise InvalidInput(f"material {key} names unknown compound {compound}")
+        compound_id = compounds[compound] if compound else None
+        _add_material(plan, _material_row(seed.concepts[key], known["kind"], compound_id))
+        role = (known.get("stageRoles") or {}).get(edge["src"], known["role"])
+        plan.rows["stageMaterials"].append(_stage_use(seed, edge, role))
 
 
-def _material_row(
-    concept: dict[str, Any], known: Mapping[str, Any], compounds: Mapping[str, uuid.UUID]
-) -> dict[str, Any]:
-    compound = known.get("compound")
-    if compound is not None and compound not in compounds:
-        raise InvalidInput(f"material {concept['key']} names unknown compound {compound}")
+def _plan_tools(plan: SciencePlan, seed: _SeedClaims) -> None:
+    for edge in seed.tool_uses:
+        _add_material(plan, _material_row(seed.concepts[edge["dst"]], TOOL_MATERIAL_KIND, None))
+        plan.rows["stageMaterials"].append(_stage_use(seed, edge, TOOL_ROLE))
+
+
+def _add_material(plan: SciencePlan, row: dict[str, Any]) -> None:
+    if row["id"] not in {planned["id"] for planned in plan.rows["materials"]}:
+        plan.rows["materials"].append(row)
+
+
+def _stage_use(seed: _SeedClaims, edge: Mapping[str, Any], role: str) -> dict[str, Any]:
+    claim_key = seed.edge_claims.get(edge["key"])
+    return {
+        "id": seed_id("stage-material", edge["key"]),
+        "stageId": seed.stage(edge["src"]),
+        "materialId": seed_id("material", edge["dst"]),
+        "role": role,
+        "quantityText": None,
+        "claimId": seed_id("claim", claim_key) if claim_key else None,
+    }
+
+
+def _material_row(concept: Mapping[str, Any], kind: str, compound_id: uuid.UUID | None) -> dict[str, Any]:
     name = str(concept["name"])[:300]
     return {
         "id": seed_id("material", concept["key"]),
         "name": name,
         "nameNorm": fold(name)[:300],
-        "kind": known["kind"],
+        "kind": kind,
         "conceptId": seed_id("concept", concept["key"]),
-        "compoundId": compounds[compound] if compound else None,
+        "compoundId": compound_id,
     }
 
 

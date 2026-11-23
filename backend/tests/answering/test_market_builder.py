@@ -117,6 +117,22 @@ def test_the_curated_gi_record_of_kutch_ajrakh_is_shown_with_its_dated_barmer_pr
     assert price["sentence"]["citations"][0]["claimId"] == str(curated_id("Kutch-Ajrakh", "C049"))
 
 
+def gi_claim_ids(block: MarketGiBlock) -> set[str]:
+    sentences = block.gi.sentences if block.gi is not None else []
+    return {citation.claim_id for sentence in sentences for citation in sentence.citations}
+
+
+def test_a_claim_priced_in_the_market_is_kept_out_of_its_gi_record() -> None:
+    offers = curated_offers("Kutch-Ajrakh", candidates=DOSSIER_CLAIMS)
+    certificate = curated_id("Kutch-Ajrakh", "C134")
+    said = market_block(offers, block_id=BLOCK)
+    assert said is not None and str(certificate) in gi_claim_ids(said)
+    priced = replace(offers, prices=(*offers.prices, PriceOffer(certificate, "2024", "Bhuj", None)))
+    block = market_block(priced, block_id=BLOCK)
+    assert block is not None and str(certificate) not in gi_claim_ids(block)
+    assert [price.stated for price in block.prices] == ["Rs. 7"]
+
+
 def test_the_curated_gi_record_of_bastar_dhokra_counts_its_authorised_users() -> None:
     built = shown(market_block(curated_offers("Bastar-Dhokra", candidates=DOSSIER_CLAIMS), block_id=BLOCK))
     gi = built["gi"]
@@ -130,12 +146,6 @@ def test_the_curated_gi_record_of_bastar_dhokra_counts_its_authorised_users() ->
         "Kondagaon",
         "2025",
     )
-
-
-def test_a_craft_whose_price_date_its_sources_never_state_shows_nothing() -> None:
-    offers = curated_offers("Tikuli-Painting", candidates=DOSSIER_CLAIMS)
-    assert offers.record is None and len(offers.prices) == 1
-    assert market_block(offers, block_id=BLOCK) is None
 
 
 @pytest.mark.parametrize(

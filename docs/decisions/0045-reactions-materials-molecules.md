@@ -10,6 +10,7 @@ Date: 2026-11-17. Status: accepted.
 |---|---|
 | The contract it was built to | [0042 Phase B contract: place, matter and the expert panel](0042-phase-b-contract.md) |
 | The review that fixed it | [0050 Phase B review fixes](0050-phase-b-review-fixes.md) |
+| What amended part of it | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md): One matter read per answer, a conformer miss asked again after 90 days, and optional fields instead of new versions |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

@@ -29,10 +29,15 @@ export function HypothesisText({ children }: { children: ReactNode }) {
   );
 }
 
-export function SourcesDifferNote({ summary, on = false, children }: { summary: string; on?: boolean; children?: ReactNode }) {
+function differSummary(summary: string | null, on: boolean): string {
+  if (summary === null) return "Sources differ";
+  return on ? `Sources differ on ${summary}` : `Sources differ: ${summary}`;
+}
+
+export function SourcesDifferNote({ summary, on = false, children }: { summary: string | null; on?: boolean; children?: ReactNode }) {
   return (
     <details className="kv-differ" data-testid="sources-differ">
-      <summary>{on ? `Sources differ on ${summary}` : `Sources differ: ${summary}`}</summary>
+      <summary>{differSummary(summary, on)}</summary>
       <div className="kv-differ-body">{children}</div>
     </details>
   );

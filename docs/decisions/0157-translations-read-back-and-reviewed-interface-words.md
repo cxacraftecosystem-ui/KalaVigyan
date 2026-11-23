@@ -109,7 +109,8 @@ the reviewers'.
   readers' parts.
 - The not-enough-evidence message and the errors stay English: they are composed sentences that
   carry what was searched.
-- The production questions run takes up to 72 minutes.
+- The production questions run, with the materials and history questions of the same round, takes up
+  to 92 minutes, and its job up to 110.
 
 ## How this record is kept true
 

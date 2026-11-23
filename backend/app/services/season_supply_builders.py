@@ -19,7 +19,6 @@ from app.sources.reference.wikidata import WikidataAdapter
 
 from .builder_evidence import section_facts, sources_beyond
 from .builder_interface import BuildAsk, BuilderTools, Built
-from .craft_matter import craft_matter
 from .craft_process import process_records
 from .knowledge_view import resolve_craft
 from .monthly_rain import district_rainfall
@@ -87,7 +86,7 @@ class SupplyMapBuilder:
     async def build(self, ask: BuildAsk) -> Built:
         if ask.request.craft is None:
             return Built()
-        matter = await craft_matter(self._tools.sessions, ask.request.craft)
+        matter = await ask.matter.read(self._tools.sessions, ask.request.craft)
         offer = supply_offer(matter, ask.blocks, ask.cited) if matter is not None else None
         if matter is None or offer is None:
             return Built()

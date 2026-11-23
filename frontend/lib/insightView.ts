@@ -1,4 +1,4 @@
-import type { GiStatus, MeasureRegion, MeasureRow, PriceRange, UnitConversion } from "@/lib/explainerInsight";
+import type { AmountKind, GiStatus, MeasureRegion, MeasureRow, PriceRange, UnitConversion } from "@/lib/explainerInsight";
 import { formatCalendarDay } from "@/lib/format";
 import { formatRange, measureParts } from "@/lib/measure";
 import type { RegionDataset } from "@/lib/regionContract";
@@ -9,6 +9,18 @@ export const GI_STATUS_LABEL: Record<GiStatus["status"], string> = {
   REGISTERED: "GI registered",
   APPLIED: "GI applied for",
   WITHDRAWN: "GI application withdrawn"
+};
+
+export const AMOUNT_KIND_LABEL: Record<AmountKind, string> = {
+  TEMPERATURE: "Temperature",
+  TIME: "Time",
+  MASS: "Mass",
+  LENGTH: "Length",
+  AREA: "Area",
+  VOLUME: "Volume",
+  CONCENTRATION: "Concentration",
+  SHARE: "Share",
+  ACIDITY: "Acidity (pH)"
 };
 
 const FACTOR_FORMAT = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 10 });

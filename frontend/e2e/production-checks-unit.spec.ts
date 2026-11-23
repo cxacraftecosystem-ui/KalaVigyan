@@ -55,7 +55,7 @@ import { PHASE_C, phaseCBlock } from "./playFixture";
 const SHARED = join(__dirname, "..", "..", "shared");
 const GOLDEN = readFileSync(join(SHARED, "explainer.stream.golden.sse"), "utf8");
 const LEDE_GOLDEN = readFileSync(join(SHARED, "explainer.lede.golden.sse"), "utf8");
-const [ENGLISH, HINDI, WATER, INDIGO] = KNOWN_ANSWER_QUESTIONS;
+const [ENGLISH, HINDI, WATER, INDIGO, MATERIALS, HISTORY] = KNOWN_ANSWER_QUESTIONS;
 const PHASE_B = JSON.parse(readFileSync(join(SHARED, "explainer.phase-b.golden.json"), "utf8")) as {
   sections: { blocks: Record<string, unknown>[] }[];
   sources: Record<string, unknown>[];
@@ -346,12 +346,14 @@ function indigoAnswer(...frames: string[]): string {
 
 const DRAWN_FRAME: FrameSeen = { sandbox: "allow-scripts", policyFirst: true, drawn: true, peerless: true };
 
-test("the five known-answer questions ask the mordant in three languages, the water and indigo at their depths", () => {
+test("the seven known-answer questions ask the mordant in three languages, the water, materials and history at Detailed depth and indigo at Expert", () => {
   expect(KNOWN_ANSWER_QUESTIONS.map((question) => [question.label, question.depth, question.check])).toEqual([
     ["English", "DETAILED", "MORDANT"],
     ["Hindi", "DETAILED", "MORDANT"],
     ["Water", "DETAILED", "WATER_STORY"],
     ["Indigo", "EXPERT", "GENERATED_EXPLAINER"],
+    ["Materials", "DETAILED", "ZOOM_STORY"],
+    ["History", "DETAILED", "TIMELINE_MAP"],
     ["Urdu", "DETAILED", "MORDANT"]
   ]);
   expect(INDIGO.question).toBe("How does indigo turn blue on Kutch Ajrakh cloth?");

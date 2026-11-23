@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Collection, Iterable, Mapping
 
 from app.research.blocks import ExplainerSentence, LadderCondition
-from app.research.blocks_matter import ReactionNote, ReactionPlayerBlock, ReactionStep
+from app.research.blocks_matter import ReactionNote, ReactionPlayerBlock, ReactionStep, StepEnergy
 from app.research.citations import Citation
 from app.research.vocabulary import FACT_LEVELS
 from app.schemas.science import CitedClaim, ProcessStageView, ReactionView
@@ -104,7 +104,14 @@ def _step(stage: ProcessStageView, view: ReactionView) -> ReactionStep:
         stage=stage.name,
         conditions=_conditions(stage, view),
         colours=step_colours(citations),
+        delta_h=_energy(view),
     )
+
+
+def _energy(view: ReactionView) -> StepEnergy | None:
+    if view.delta_h is None:
+        return None
+    return StepEnergy(kj_per_mol=view.delta_h.kj_per_mol, claim_id=str(view.delta_h.claim_id))
 
 
 def _conditions(stage: ProcessStageView, view: ReactionView) -> list[LadderCondition]:
@@ -152,7 +159,12 @@ def _shown(step: ReactionStep) -> tuple[object, ...]:
 
 
 def _details_match(step: ReactionStep, row: ReactionStep) -> bool:
-    shown = ((step.stage, row.stage), (step.conditions, row.conditions), (step.colours, row.colours))
+    shown = (
+        (step.stage, row.stage),
+        (step.conditions, row.conditions),
+        (step.colours, row.colours),
+        (step.delta_h, row.delta_h),
+    )
     return all(not mine or mine == stored for mine, stored in shown)
 
 

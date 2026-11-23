@@ -7,31 +7,34 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from pydantic import ValidationError
-from sqlalchemy import select
+from sqlalchemy import Select, and_, not_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.errors import InvalidInput
 from app.data.craft_master_loader import ID_NAMESPACE
-from app.models import MediaRef as MediaRefRow, MediaRefClaim, Source
+from app.models import FieldImage, MediaRef as MediaRefRow, MediaRefClaim, Source
 from app.research.image_relevance import ChosenImage, ClaimText
 from app.research.images import ImageCandidate, media_ref_of
 from app.research.media_refs import MediaRef
 from app.research.retrieval import EVERY_CHUNK_ACLS
 
 from . import knowledge_view
+from .field_photo_scope import shown_field_photos
 
 __all__ = [
     "INLINE_DISPLAY",
     "TEXT_RELEVANCE",
     "SqlMediaStore",
     "StoredPicture",
+    "field_media",
     "media_ref_id",
     "media_ref_values",
     "media_url_key",
     "stored_media_ref",
     "stored_media_refs",
     "stored_pictures",
+    "unshown_field_media",
 ]
 
 logger = logging.getLogger(__name__)
@@ -71,6 +74,16 @@ def stored_media_ref(row: MediaRefRow) -> MediaRef:
     )
 
 
+def field_media() -> Select[tuple[uuid.UUID | None]]:
+    return select(FieldImage.mediaRefId).where(FieldImage.mediaRefId.is_not(None))
+
+
+def unshown_field_media() -> Select[tuple[uuid.UUID | None]]:
+    return select(FieldImage.mediaRefId).where(
+        FieldImage.mediaRefId.is_not(None), not_(and_(*shown_field_photos()))
+    )
+
+
 @dataclass(frozen=True)
 class StoredPicture:
     media: MediaRef
@@ -85,7 +98,11 @@ async def stored_pictures(session: AsyncSession, claim_ids: Sequence[uuid.UUID])
     rows = await session.execute(
         select(MediaRefRow, MediaRefClaim.claimId, MediaRefClaim.relevance)
         .join(MediaRefClaim, MediaRefClaim.mediaRefId == MediaRefRow.id)
-        .where(MediaRefClaim.claimId.in_(list(order)), MediaRefRow.display == INLINE_DISPLAY)
+        .where(
+            MediaRefClaim.claimId.in_(list(order)),
+            MediaRefRow.display == INLINE_DISPLAY,
+            MediaRefRow.id.not_in(unshown_field_media()),
+        )
         .order_by(MediaRefRow.retrievedAt, MediaRefRow.id)
     )
     found: list[StoredPicture] = []

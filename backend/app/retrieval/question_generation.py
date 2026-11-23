@@ -13,18 +13,24 @@ from typing import Any
 from app.core.errors import AppError, spend_refusal
 from app.core.logging import request_id_scope
 from app.research.structured import StructuredModel
+from app.research.vocabulary import CANONICAL_LANGUAGE
 
 from .golden import GENERATED_VERSION, GeneratedQuestion, GeneratedSet
 from .question_writing import (
+    COPIED,
     FACTS_PER_CRAFT,
     GENERATION_SEED,
     NOT_TRANSLATED,
+    REWRITER_SYSTEM_PROMPT,
     WRITER_SYSTEM_PROMPT,
     WRITING_BATCH,
+    Copied,
     CraftFacts,
     EvalFact,
+    Written,
     WrittenQuestion,
     in_its_script,
+    rewriting_message,
     writing_message,
     writing_schema,
     written_questions,
@@ -51,6 +57,8 @@ WRITING_CONCURRENCY = 4
 SPEND_STOP = "the spend cap was reached"
 WRITER_FAILED = "the writer did not reply"
 UNWRITTEN = "the spend cap was reached before the fact was written"
+AGAIN_SUFFIX = "-again"
+SHARE_DIGITS = 4
 
 
 @dataclass(frozen=True)
@@ -76,9 +84,21 @@ class GenerationOutcome:
     facts: int = 0
     reused: int = 0
     batches: int = 0
+    asked: int = 0
+    kept_english: int = 0
+    retried: int = 0
+    rewritten: int = 0
     dropped: Counter[str] = field(default_factory=Counter)
     stopped: str | None = None
     model: str | None = None
+
+    @property
+    def kept_share(self) -> float | None:
+        return round(self.kept_english / self.asked, SHARE_DIGITS) if self.asked else None
+
+    def kept(self, craft_slug: str, written: Sequence[WrittenQuestion]) -> None:
+        self.questions += [generated_question(craft_slug, one) for one in written]
+        self.kept_english += sum(1 for one in written if one.language == CANONICAL_LANGUAGE)
 
     def generated(self, plan: GenerationPlan, *, revision: int, at: datetime) -> GeneratedSet:
         return GeneratedSet(
@@ -98,6 +118,11 @@ class GenerationOutcome:
             "questions": len(self.questions),
             "reused": self.reused,
             "batches": self.batches,
+            "asked": self.asked,
+            "keptEnglish": self.kept_english,
+            "keptShare": self.kept_share,
+            "askedAgain": self.retried,
+            "rewritten": self.rewritten,
             "dropped": dict(sorted(self.dropped.items())),
             "stopped": self.stopped,
             "model": self.model,
@@ -207,24 +232,54 @@ def _refreshed(question: GeneratedQuestion, fact: EvalFact) -> GeneratedQuestion
 
 
 async def _written(writing: _Writing, craft: CraftFacts, batch: Sequence[EvalFact]) -> None:
-    outcome, seed = writing.outcome, writing.plan.seed
+    outcome = writing.outcome
     outcome.batches += 1
+    request_id = f"{writing.tools.tag}-b{outcome.batches:05d}"
+    user = writing_message(craft, batch, seed=writing.plan.seed)
+    first = await _reply(writing, craft, batch, _Ask(WRITER_SYSTEM_PROMPT, user, request_id))
+    if isinstance(first, str):
+        outcome.dropped[first] += len(batch)
+        return
+    outcome.asked += len(batch)
+    outcome.kept(craft.slug, first.questions)
+    outcome.dropped.update(problem for problem in first.dropped if problem != COPIED)
+    if first.copied:
+        await _rewritten(writing, craft, first.copied, f"{request_id}{AGAIN_SUFFIX}")
+
+
+async def _rewritten(writing: _Writing, craft: CraftFacts, copied: Sequence[Copied], request_id: str) -> None:
+    outcome = writing.outcome
+    pairs = {(item.fact.id, item.language) for item in copied}
+    outcome.retried += len(pairs)
+    again: Written | str = UNWRITTEN
+    if await _affordable(writing):
+        user = rewriting_message(craft, copied, seed=writing.plan.seed)
+        facts = tuple(dict.fromkeys(item.fact for item in copied))
+        again = await _reply(writing, craft, facts, _Ask(REWRITER_SYSTEM_PROMPT, user, request_id))
+    found = [] if isinstance(again, str) else [q for q in again.questions if (q.fact.id, q.language) in pairs]
+    outcome.kept(craft.slug, found)
+    outcome.rewritten += len(found)
+    if missed := len(pairs) - len(found):
+        outcome.dropped[COPIED] += missed
+
+
+@dataclass(frozen=True)
+class _Ask:
+    system: str
+    user: str
+    request_id: str
+
+
+async def _reply(writing: _Writing, craft: CraftFacts, facts: Sequence[EvalFact], ask: _Ask) -> Written | str:
     try:
-        with request_id_scope(f"{writing.tools.tag}-b{outcome.batches:05d}"):
-            reply = await writing.tools.write(
-                system=WRITER_SYSTEM_PROMPT,
-                user=writing_message(craft, batch, seed=seed),
-                schema=writing_schema(),
-            )
-        written = written_questions(reply, craft, batch, seed=seed)
+        with request_id_scope(ask.request_id):
+            reply = await writing.tools.write(system=ask.system, user=ask.user, schema=writing_schema())
+        written = written_questions(reply, craft, facts, seed=writing.plan.seed)
     except AppError as error:
         if spend_refusal(error):
-            outcome.stopped = SPEND_STOP
-            outcome.dropped[UNWRITTEN] += len(batch)
-            return
+            writing.outcome.stopped = SPEND_STOP
+            return UNWRITTEN
         logger.warning("the questions of %s were not written: %s", craft.slug, error)
-        outcome.dropped[WRITER_FAILED] += len(batch)
-        return
-    outcome.model = reply.model or outcome.model
-    outcome.questions += [generated_question(craft.slug, one) for one in written.questions]
-    outcome.dropped.update(written.dropped)
+        return WRITER_FAILED
+    writing.outcome.model = reply.model or writing.outcome.model
+    return written

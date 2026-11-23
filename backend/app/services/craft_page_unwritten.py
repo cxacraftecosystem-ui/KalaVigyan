@@ -46,9 +46,9 @@ class UnwrittenFacts:
 
 
 async def unwritten_facts(
-    session: AsyncSession, subject: WorkSubject, written: Iterable[uuid.UUID]
+    session: AsyncSession, subject: WorkSubject, shown: Iterable[uuid.UUID]
 ) -> UnwrittenFacts:
-    cited = set(written)
+    cited = set(shown)
     filed = await _filed(session, subject)
     wanted = [claim_id for claim_id in filed if claim_id not in cited]
     views, sources = await knowledge_view.claims_by_id(session, wanted)

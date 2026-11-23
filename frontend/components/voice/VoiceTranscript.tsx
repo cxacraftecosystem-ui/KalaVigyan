@@ -5,11 +5,11 @@ import type { ReactNode } from "react";
 import { SectionBlock } from "@/components/answer/AnswerSectionBlock";
 import { useAppReducedMotion } from "@/components/guide/useAppReducedMotion";
 import { attributesForText, type AnswerLanguage } from "@/lib/answerLanguages";
-import type { AnswerSentence, Citation, SourceRef } from "@/lib/types";
+import type { AnswerSentence, SourceRef } from "@/lib/types";
 import type { VoiceConversation } from "@/lib/voiceConversation";
 import type { VoiceTurn } from "@/lib/voiceContract";
 
-type Citing = { numbers: Map<string, number>; sourcesById: Map<string, SourceRef>; onOpen: (citations: readonly Citation[]) => void };
+type Citing = { numbers: Map<string, number>; sourcesById: Map<string, SourceRef> };
 
 function Heard({ text, language }: { text: string; language: AnswerLanguage | null }) {
   const shown = attributesForText(text, language);

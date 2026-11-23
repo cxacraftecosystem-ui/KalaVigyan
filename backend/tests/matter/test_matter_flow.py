@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from app.services import matter_builders
+from app.services import craft_matter as craft_matter_module
 from app.services.block_builders import BLOCK_BUILDERS, BlockBuilders
 from app.services.builder_interface import BuilderTools
 from app.services.matter_builders import MaterialCardBuilder, MoleculeBuilder, ReactionPlayerBuilder
@@ -26,7 +26,7 @@ def stored_matter(monkeypatch: pytest.MonkeyPatch) -> None:
     async def load(sessions: Any, craft: Any) -> Any:
         return matter()
 
-    monkeypatch.setattr(matter_builders, "craft_matter", load)
+    monkeypatch.setattr(craft_matter_module, "craft_matter", load)
 
 
 def matter_builders_for_the_flow() -> BlockBuilders:

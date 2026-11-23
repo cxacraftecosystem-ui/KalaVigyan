@@ -84,7 +84,7 @@ async function answerViews(browser: Browser, page: Page, records: readonly Answe
   return problems;
 }
 
-test("five known-answer questions: the mordant in English, Hindi and Urdu and Kachchh's water at Detailed depth, and indigo's generated explainer at Expert depth", async ({ page, browser }) => {
+test("seven known-answer questions: the mordant in English, Hindi and Urdu, Kachchh's water, the cloth's materials and its history at Detailed depth, and indigo's generated explainer at Expert depth", async ({ page, browser }) => {
   test.skip(!questionsRequested(), "Dispatch with questions=true to ask the known-answer questions.");
   test.setTimeout(QUESTIONS_TIMEOUT_MS);
   await passPreviewProtection(page.context(), baseUrl(), previewBypassToken());

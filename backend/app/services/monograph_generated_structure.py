@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any
@@ -24,6 +24,7 @@ __all__ = [
     "BlockSpecs",
     "PlacedStructure",
     "placed_structure",
+    "shown_claim_ids",
     "structure_claim_ids",
     "with_page_claims",
 ]
@@ -68,13 +69,22 @@ class BlockSpecs:
         return checked_spec(ANSWER_BLOCK_KIND, spec).model_dump(mode="json")
 
 
+def shown_claim_ids(sections: Sequence[StoredSection], structure: DocumentStructure | None) -> set[uuid.UUID]:
+    shown = {uuid.UUID(str(c)) for s in sections for sentence in s.sentences for c in sentence["claimIds"]}
+    if structure is not None:
+        shown |= structure.claim_ids()
+    return shown
+
+
 def with_page_claims(
-    sections: Sequence[StoredSection], structure: DocumentStructure | None
+    sections: Sequence[StoredSection],
+    structure: DocumentStructure | None,
+    *,
+    listed: Collection[uuid.UUID] = frozenset(),
 ) -> list[StoredSection]:
     if structure is None:
         return list(sections)
-    shown = {uuid.UUID(str(c)) for s in sections for sentence in s.sentences for c in sentence["claimIds"]}
-    shown |= structure.claim_ids()
+    shown = shown_claim_ids(sections, structure) | set(listed)
     extra: dict[str, list[dict[str, Any]]] = {}
     for claim in structure.claims:
         if claim.level == HYPOTHESIS or claim.id in shown:

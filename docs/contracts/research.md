@@ -509,8 +509,10 @@ it; the answer flow passes `providers/embedding.router_embedder(principal)`.
   craft's scope and through the HNSW index for no single craft, then id), each the best
   `RANKING_DEPTH` (30). Claims have a third ranking, entities: the claims on scoped concepts (or
   on edges touching them) whose name of 4 or more characters (`ENTITY_NAME_MIN_CHARS`) appears in
-  the question, case-insensitive, the longest name first, then id. Fused by reciprocal rank fusion, `score = sum(1 / (RRF_K + rank))` with
-  `RRF_K` 60; equal scores order by the best single rank, then id. A question with no Latin
+  the question, case-insensitive, the longest name first, then id. Fused by reciprocal rank fusion, `score = sum(weight / (RRF_K + rank))` with
+  `RRF_K` 60; equal scores order by the best single rank, then id. Chunk rankings weigh the same; the
+  claim rankings' `k` and weights are `backend/app/data/eval/fusion.json`, equal until the lead
+  commits the weighting `eval_retrieval --fusion` picks (decision 0151). A question with no Latin
   word of 3 or more characters ranks full text and entities on its English rendering when the
   caller passes one (decision 0023; `docs/contracts/retrieval.md`), the vector on the question as
   asked. Vectors compare only within the current embedding model, whatever the stamp's recipe

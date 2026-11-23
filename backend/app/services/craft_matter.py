@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import uuid
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -22,6 +23,7 @@ __all__ = [
     "CraftMatter",
     "GlossaryTerm",
     "MaterialRows",
+    "MatterReads",
     "craft_matter",
     "first_naming",
     "material_rows",
@@ -87,6 +89,18 @@ async def craft_matter(sessions: async_sessionmaker[AsyncSession], craft: CraftR
         compounds=compounds,
         record_sources=sources,
     )
+
+
+class MatterReads:
+    def __init__(self) -> None:
+        self._read: dict[str, CraftMatter | None] = {}
+        self._lock = asyncio.Lock()
+
+    async def read(self, sessions: async_sessionmaker[AsyncSession], craft: CraftRef) -> CraftMatter | None:
+        async with self._lock:
+            if craft.slug not in self._read:
+                self._read[craft.slug] = await craft_matter(sessions, craft)
+            return self._read[craft.slug]
 
 
 def section_sentences(blocks: Iterable[Block]) -> list[ExplainerSentence]:
