@@ -240,18 +240,22 @@ Last reviewed: 2026-11-22.
   of Cambay, Firozabad Glass, Cane and Bamboo, through `services/curation_structure`). What is
   left: Dabu (its dossier holds no reaction) and Akola stages have materials and tools but no
   reaction, because no source the seed or a dossier holds states one; no craft has a process with a `FIRE` stage, so kaolinite dehydroxylation has no
-  reaction (the terracotta seed is sub-category mechanism chains); stage concepts without an
-  upstream ordinal (Akola mud soaking and paste preparation, Machilipatnam and Sanganeri block
-  carving) get no stage although `PRECEDES` edges could place them; and no seed claim states a
-  temperature or pH, so no seeded reading is checked against an envelope.
-- **Why left:** reactions and readings are written only as a cited quote states them; the
-  sources still to find are a GI application or a chemistry paper on Dabu mud resist and on
-  Akola's mud and indigo work, a curated clay craft's firing schedule, and a dyeing source
-  stating a bath temperature or pH. Finding them is research through the KalaVigyan MCP server
-  (`search_sources`, `read_source`, then `propose_structure` for a reaction).
+  reaction (the terracotta seed is sub-category mechanism chains); four stage concepts state no
+  ordinal (Akola mud soaking and paste preparation, Machilipatnam and Sanganeri block carving) and
+  get no stage, since no `PRECEDES` edge joins them to their craft's ladder: the seed's only one
+  among them says mud soaking precedes paste preparation (`tests/science/test_seed_stage_order.py`);
+  and no seed claim states a temperature or pH, so no seeded reading is checked against an
+  envelope.
+- **Why left:** reactions, readings and a stage's place are written only as a cited quote states
+  them; the sources still to find are a GI application or a chemistry paper on Dabu mud resist and
+  on Akola's mud and indigo work (and where its mud stages fall), a source placing block carving in
+  the Machilipatnam and Sanganeri processes, a curated clay craft's firing schedule, and a dyeing
+  source stating a bath temperature or pH. Finding them is research through the KalaVigyan MCP
+  server (`search_sources`, `read_source`, then `propose_structure` for a reaction or a stage).
 - **Clears it:** a dossier or seed reaction for Dabu and Akola from such a source, a curated clay
-  craft with a `FIRE` stage and its stated temperature, and `claim_seed.stage_rows` ordering a
-  stage by its `PRECEDES` edges when no ordinal is stated.
+  craft with a `FIRE` stage and its stated temperature, and each unordered stage's place written
+  from a source that states it (its ordinal, or a stated `PRECEDES` edge to a ladder stage, which
+  `claim_seed.stage_rows` would then be taught to read).
 
 ### Out-of-envelope readings are not in a review queue
 
