@@ -55,6 +55,7 @@ __all__ = [
     "release_run",
     "scored",
     "set_checks",
+    "set_measures",
     "visible_claims",
     "weekly_run",
 ]
@@ -163,11 +164,27 @@ def set_checks(reports: Mapping[str, SetReport], floors: EvalFloors) -> tuple[Fl
         for name, report in reports.items()
         for order, found in report.compared().items()
         for check in floor_checks(
-            {RECALL_AT_5: found.recall_at_depth, MEAN_RECIPROCAL_RANK: found.mean_reciprocal_rank},
-            floors.retrieval_floors(name, order),
-            prefix=f"{name}.{order}.",
+            _order_measures(found), floors.retrieval_floors(name, order), prefix=_prefix(name, order)
         )
     )
+
+
+def set_measures(reports: Mapping[str, SetReport]) -> dict[str, float]:
+    return {
+        f"{_prefix(name, order)}{measure}": value
+        for name, report in reports.items()
+        for order, found in report.compared().items()
+        for measure, value in _order_measures(found).items()
+        if value is not None
+    }
+
+
+def _order_measures(found: RetrievalReport) -> dict[str, float | None]:
+    return {RECALL_AT_5: found.recall_at_depth, MEAN_RECIPROCAL_RANK: found.mean_reciprocal_rank}
+
+
+def _prefix(name: str, order: str) -> str:
+    return f"{name}.{order}."
 
 
 async def weekly_run(

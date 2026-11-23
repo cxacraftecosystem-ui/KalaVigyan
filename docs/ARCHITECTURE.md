@@ -430,21 +430,26 @@ sequenceDiagram
   L-->>R: a track per part, words timed
 ```
 
-1. `GET /api/answers/{answerId}/listen` (`api/routes/listen.py`) checks `VOICE` and the 30-press
-   limit, and reads the reader's own explainer from `Answer.payload.explainer`
-   (`voice/listen_store.py`).
+1. `GET /api/answers/{answerId}/listen` (`api/routes/listen.py`) checks `VOICE` and reads the
+   reader's own explainer from `Answer.payload.explainer` (`voice/listen_store.py`); the limit of
+   30 in 10 minutes counts only asks that start a making (`api/listen_deps.making_admission`).
 2. `voice/narration.py` picks each block's shown sentences, hypotheses left unread, in reading
    order and each in its own language, so a quantities sentence the answer already said is read
    once (decision 0168), and the cache id per block (piece content hash, model, voice, language).
    `voice/narration_cache.py` reads each block's manifest from `media/narration/<cacheId>/`.
-3. For the misses only, `voice/listen.py` takes each block's lease in the bucket
-   (`voice/object_lease.py`, shared with the film score; a block another request is making is waited for, not paid again),
-   holds the estimated `VOICE_SECONDS` under the reader's `User` row lock (429 when too few are left), asks `ElevenLabs.narration`
-   (`/with-timestamps`, `eleven_v4`, each square bracket sent as a parenthesis, decision 0161) for
-   each part of at most 2,000 characters, stores the audio
-   and then the manifest, and settles the hold to the audio's seconds.
-4. The answer is one track per part: a one-hour presigned link and the words with their times,
-   which the explainer UI highlights (`frontend/lib/listen.ts`).
+3. For the misses only, `voice/listen_making.py` takes each block's lease in the bucket
+   (`voice/object_lease.py`, shared with the film score; a block another request is making is not
+   paid again), holds the estimated `VOICE_SECONDS` for every block it leased under the reader's
+   `User` row lock (429 when too few are left), and makes them three parts at a time in the API
+   process (`core/shielded.ShieldedWork`), the first block first, renewing each lease every 30 s:
+   it asks `ElevenLabs.narration` (`/with-timestamps`, `eleven_v4`, each square bracket sent as a
+   parenthesis, decision 0161) for each part of at most 2,000 characters, stores the audio and then
+   the manifest, and settles the hold to the audio's seconds once every block is made or failed.
+4. The request waits only for the first block (the lede of a whole answer): the answer is one track
+   per part of the blocks narrated so far, a one-hour presigned link and the words with their times,
+   and `pending`, the blocks still being made, with `pollAfterSeconds`; the dock and the film play
+   the first block while they ask again for the rest with the same voice
+   (`frontend/components/answer/useListenScript.ts`, `frontend/lib/listen.ts`; decision 0176).
 5. When ElevenLabs is not offered (no key, or its probe fails) or fails while making the audio,
    the same steps run with the Gemini voice (`voice/listen_voices.py`, `providers/gemini_media.py`
    `read_aloud`): a sentence per request, the WAVs joined per part and timed by sentence, its own

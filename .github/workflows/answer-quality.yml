@@ -75,7 +75,7 @@ jobs:
           script=$(cat <<EOF
           set -euo pipefail
           cd /opt/kalavigyan/current/backend
-          runuser -u kalavigyan -- bash -c "set -a; . /opt/kalavigyan/.env; set +a; exec ./.venv/bin/python -m app.scripts.eval_answers $EVAL_ARGS"
+          runuser -u kalavigyan -- bash -c "set -a; . /opt/kalavigyan/.env; [ ! -f ../release.env ] || . ../release.env; set +a; exec ./.venv/bin/python -m app.scripts.eval_answers $EVAL_ARGS"
           EOF
           )
           prefix="deploy/logs/answer-quality/$GITHUB_RUN_ID"

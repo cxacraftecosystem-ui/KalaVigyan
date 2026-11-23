@@ -24,6 +24,7 @@ reports).
 | The client and audit of each MCP call | [decision 0150](0150-mcp-activity-and-box-logs.md) |
 | How the web reads a field or kind it does not know | [decision 0151](0151-a-release-the-live-side-can-read.md) and [decision 0167](0167-answer-leftovers-kept-true.md) |
 | The queue's kinds and decisions | [decision 0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) and [decision 0169](0169-mcp-follow-ups-kept-true.md) |
+| The evaluation runs the report now reads | [decision 0176](0176-listen-plays-as-it-narrates-builds-wait-for-the-api-runs-are-kept.md) |
 | Every decision, by group | [README.md](README.md) |
 
 ## Context

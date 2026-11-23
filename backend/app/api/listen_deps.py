@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -9,33 +8,37 @@ from fastapi import Depends, HTTPException, Request, status
 
 from app.api.voice_deps import current_voice, voice_runtime
 from app.core.db import sessionmaker
-from app.core.deps import get_current_user, require
+from app.core.deps import get_current_user
 from app.core.errors import AppError
 from app.core.managed_keys import get_secret
+from app.core.rate_limit import listen_attempt
 from app.core.roles import Capability, can, is_uncapped
 from app.core.throttle_refusal import refuse_when_throttled
 from app.models import User
 from app.providers.gemini_media import GEMINI_KEY_NAME, GeminiMediaWire
 from app.services.object_store import media_bucket
+from app.voice.listen_ask import Admission
 from app.voice.listen_store import SqlListenStore
 from app.voice.listen_voices import ElevenLabsVoice, GeminiVoice, ListenVoice, listen_offer
 from app.voice.object_lease import LeasedObjects
 
 __all__ = [
     "NO_LISTEN",
+    "THROTTLED_DETAIL",
     "UNAVAILABLE_DETAIL",
     "ListenTools",
     "listen_store",
     "listen_tools",
     "listen_voices",
+    "making_admission",
     "offered_listen",
     "read_aloud_key",
-    "throttled_voice_user",
 ]
 
 logger = logging.getLogger(__name__)
 
 UNAVAILABLE_DETAIL = "Listening isn't available right now. Try again later."
+THROTTLED_DETAIL = "You have pressed Listen many times in a few minutes. Wait a little and try again."
 NO_LISTEN: dict[str, Any] = {"languages": []}
 
 
@@ -45,15 +48,12 @@ class ListenTools:
     voices: tuple[ListenVoice, ...]
 
 
-def throttled_voice_user(
-    attempt: Callable[[str], Awaitable[tuple[bool, float]]], detail: str
-) -> Callable[..., Awaitable[User]]:
-    async def throttle(user: User = Depends(require(Capability.VOICE))) -> User:
+def making_admission(user: User) -> Admission:
+    async def admitted() -> None:
         if not is_uncapped(user):
-            refuse_when_throttled(await attempt(str(user.id)), detail)
-        return user
+            refuse_when_throttled(await listen_attempt(str(user.id)), THROTTLED_DETAIL)
 
-    return throttle
+    return admitted
 
 
 def listen_store() -> SqlListenStore:

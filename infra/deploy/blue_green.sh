@@ -111,7 +111,7 @@ embed_seeded() {
 
 check_retrieval() {
   local tree="$1" report status=0
-  report="$(cd "$tree" && timeout "$((CHECK_SECONDS + EMBED_GRACE))" runuser -u "$RUN_AS" -- bash -c "set -a; . '$ENV_FILE'; set +a; exec ./.venv/bin/python -m app.scripts.eval_retrieval --release --seconds $CHECK_SECONDS")" || status=$?
+  report="$(cd "$tree" && timeout "$((CHECK_SECONDS + EMBED_GRACE))" runuser -u "$RUN_AS" -- bash -c "set -a; . '$ENV_FILE'; [ ! -f ../release.env ] || . ../release.env; set +a; exec ./.venv/bin/python -m app.scripts.eval_retrieval --release --seconds $CHECK_SECONDS")" || status=$?
   case "$status" in
     0) say "retrieval check passed: $report" ;;
     2) say "::warning::the retrieval check warned: $report; the release goes on." ;;

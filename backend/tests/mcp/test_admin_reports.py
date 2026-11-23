@@ -1,18 +1,21 @@
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 
 import pytest
 from pydantic import ValidationError
 
+from app.api import mcp_report_reads
 from app.api.mcp_report_pages import ReportAsk, ReportPage, bounded_row, fitting, page_rows, paged
 from app.api.mcp_report_reads import floor_rows
 from app.api.mcp_report_tools import NOT_ADMIN, REPORT_TOOLS, AdminReportArguments, report_ask
 from app.api.mcp_tools import ToolContext, answer
 from app.core.errors import InvalidInput
 from app.models import User
-from app.retrieval.eval_floors import parse_floors
+from app.retrieval.eval_floors import FloorCheck, parse_floors
 from app.services.craft_resolver import CraftIndexStore
+from app.services.eval_run_store import EvalKind, EvalRunRecord, RunTimes
 
 SITE = "https://kalavigyan.example"
 NO_SESSION: Any = None
@@ -23,6 +26,17 @@ ARGUMENT_NAMES = {"report", "craft_slug", "since", "answer_id", "days", "cursor"
 SEVEN = [{"n": n} for n in range(7)]
 CUT_SAID = " Lists longer than 20 are cut to their first 20; an item's cut gives each one's full length."
 PAGE_SAID = " This page stops at 8 rows to keep the reply small; next_cursor goes on from there."
+RELEASE = "1ab422fe" + "0" * 32
+
+
+def kept(kind: EvalKind, hours: int, means: dict[str, float], *, held: bool | None) -> EvalRunRecord:
+    times = RunTimes(NOW - timedelta(hours=hours, minutes=40), NOW - timedelta(hours=hours), RELEASE)
+    floors = tuple(FloorCheck(measure, 0.9, value) for measure, value in means.items())
+    return EvalRunRecord(kind, times, Decimal("1.2345"), None, means, floors, held)
+
+
+async def no_runs(session: Any) -> dict[str, EvalRunRecord]:
+    return {}
 
 
 def context(*scopes: str, role: str | None = None) -> ToolContext:
@@ -76,7 +90,10 @@ async def test_an_admin_without_the_review_scope_is_refused_before_the_tool_runs
 
 
 @pytest.mark.parametrize("role", ["ADMIN", "MASTER_ADMIN"])
-async def test_an_admin_reads_the_floors_with_nothing_measured(role: str) -> None:
+async def test_an_admin_reads_the_floors_with_nothing_measured(
+    role: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(mcp_report_reads, "latest_eval_runs", no_runs)
     result = await called({"report": "evaluations", "limit": 50}, context("read", "review", role=role))
     assert result["isError"] is False
     report = result["structuredContent"]
@@ -84,7 +101,33 @@ async def test_an_admin_reads_the_floors_with_nothing_measured(role: str) -> Non
     assert report["total"] == len(report["items"]) > 0
     assert report["items"][0]["suite"] == "answers" and report["items"][0]["measure"] == "judgeMean"
     assert all(item["measured"] is None and item["passes"] is None for item in report["items"])
-    assert report["message"].startswith("No answer-quality or retrieval-eval result is stored")
+    assert report["message"].startswith("No answer-quality or retrieval-eval run is stored yet")
+
+
+async def test_an_admin_reads_the_latest_run_of_each_kind_then_the_floors_it_measured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def runs(session: Any) -> dict[str, EvalRunRecord]:
+        return {"ANSWERS": kept("ANSWERS", 30, {"judgeMean": 0.8123}, held=True)}
+
+    monkeypatch.setattr(mcp_report_reads, "latest_eval_runs", runs)
+    result = await called({"report": "evaluations", "limit": 2}, context("read", "review", role="ADMIN"))
+    first, second = result["structuredContent"]["items"]
+    assert first == {
+        "run": "ANSWERS",
+        "startedAt": "2026-11-21T23:20:00+00:00",
+        "finishedAt": "2026-11-22T00:00:00+00:00",
+        "release": RELEASE,
+        "spentUsd": "1.2345",
+        "capUsd": None,
+        "fresh": False,
+        "floorsHeld": True,
+        "means": {"judgeMean": 0.8123},
+    }
+    assert (second["measure"], second["measured"], second["measuredBy"]) == ("judgeMean", 0.8123, "ANSWERS")
+    assert result["structuredContent"]["message"].startswith(
+        "The latest stored run of each kind (ANSWERS) first"
+    )
 
 
 async def test_an_unknown_report_and_a_filter_the_report_does_not_read_are_refused_by_name() -> None:
@@ -204,20 +247,37 @@ def test_each_floor_becomes_a_row_with_nothing_measured() -> None:
             "answers": {"judgeMean": 0.76, "rubricMean": None},
         }
     )
+    unmeasured = {"measured": None, "passes": None, "measuredBy": None}
     assert floor_rows(floors) == [
-        {"suite": "answers", "measure": "judgeMean", "floor": 0.76, "measured": None, "passes": None},
-        {
-            "suite": "retrieval",
-            "measure": "handWritten.reranked.recallAt5",
-            "floor": 0.93,
-            "measured": None,
-            "passes": None,
-        },
+        {"suite": "answers", "measure": "judgeMean", "floor": 0.76, **unmeasured},
+        {"suite": "retrieval", "measure": "handWritten.reranked.recallAt5", "floor": 0.93, **unmeasured},
         {
             "suite": "retrieval",
             "measure": "handWritten.fused.meanReciprocalRank",
             "floor": 0.88,
-            "measured": None,
-            "passes": None,
+            **unmeasured,
         },
+    ]
+
+
+def test_each_floor_reads_the_latest_run_that_measured_it() -> None:
+    floors = parse_floors(
+        {
+            "version": 2,
+            "retrieval": {
+                "handWritten": {"reranked": {"recallAt5": 0.93}, "fused": {"meanReciprocalRank": 0.88}}
+            },
+            "answers": {"judgeMean": 0.76},
+        }
+    )
+    runs = {
+        "ANSWERS": kept("ANSWERS", 50, {"judgeMean": 0.7012}, held=False),
+        "RETRIEVAL": kept("RETRIEVAL", 40, {"handWritten.reranked.recallAt5": 0.9123}, held=False),
+        "RELEASE_CHECK": kept("RELEASE_CHECK", 2, {"handWritten.reranked.recallAt5": 0.9737}, held=True),
+    }
+    rows = floor_rows(floors, runs)
+    assert [(row["measured"], row["passes"], row["measuredBy"]) for row in rows] == [
+        (0.7012, False, "ANSWERS"),
+        (0.9737, True, "RELEASE_CHECK"),
+        (None, None, None),
     ]

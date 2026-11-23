@@ -45,7 +45,7 @@ flowchart LR
 |---|---|---|
 | The upkeep and the page refresh | `.github/workflows/nightly-upkeep.yml` (GitHub Actions, run on the box through SSM like Coverage enrichment) | 23:45 UTC every day (05:15 IST), after Coverage enrichment (22:17 UTC, at most 67 minutes) |
 | The same run by hand | the workflow's Run workflow button, with `dry_run` to report only | any time |
-| The build alone | an Admin's Start a build on the admin settings page (`/admin`), or `POST /api/site/build` | any time, at most once in 10 minutes |
+| The build alone | an Admin's Start a build on the admin settings page (`/admin`), or `POST /api/site/build` | any time, at most once in 10 minutes, and only while the API runs every change main makes to it (decision 0176) |
 
 The workflow runs `python -m app.scripts.nightly_upkeep` as the `kalavigyan` user with the box's
 `.env`; the job fails when the report's `ok` is false, and the report is printed in the run's log.
@@ -212,7 +212,13 @@ release ships or an Admin starts one; any other craft renders on its first visit
 same way. Signed-in readers still load their own variant in the browser, and answers are never
 cached. A change that must reach readers who are not signed in at once (a hidden piece, a
 retracted claim) refreshes its pages when it is written, and an Admin's Start a build remains for
-anything else; the admin control refuses a second build within 10 minutes (429 with `Retry-After`).
+anything else; the admin control refuses a second build within 10 minutes (429 with `Retry-After`),
+and refuses (409, saying why) while `main` holds a change to the API that the live API does not run,
+as the deploy workflows' `api_ready.sh` does (decision 0173): it asks GitHub's public API, with no
+token, for the newest Backend checks run on a push to `main` (a run starts exactly when a push
+changes the Backend checks paths) and builds only when that run's commit is the API's own
+`RELEASE` or an ancestor of it (`services/web_build_gate.py`, decision 0176). GitHub not answering
+is 502 and starts nothing.
 
 ### Refresh pages now
 
@@ -266,7 +272,7 @@ stored in `AppSetting` `upkeep.hiddenFacts` and read by an Admin at `GET /api/co
 |---|---|---|---|
 | GET | `/api/site/pages` | anyone (public reading limits) | `StaticPages {schemaVersion 1, crafts[slug], categories[slug]}`: crafts with an `OPEN` snapshot by slug, categories in master order; golden `shared/site.pages.golden.json` |
 | GET | `/api/site/build` | Admin, Master Admin | `SiteBuildState {configured, lastTriggeredAt, nextAllowedAt}` |
-| POST | `/api/site/build` | Admin, Master Admin | 202 `SiteBuildState`; 503 when the hook is not set, 429 within 10 minutes of the last build, 502 when the hook refuses |
+| POST | `/api/site/build` | Admin, Master Admin | 202 `SiteBuildState`; 503 when the hook is not set, 429 within 10 minutes of the last build, 409 while main changes the API since the release the API runs (or the API names no release, or GitHub lists no Backend checks run on main), 502 when GitHub cannot be asked or the hook refuses |
 | GET | `/api/coverage/hidden-facts` | Admin, Master Admin | `{report}`: the last night's `hiddenFacts` (step 5d), or null |
 | GET | `/api/site/refresh` | Admin, Master Admin | `PageRefreshState {schemaVersion 1, configured, running, last, nextAllowedAt, everyAllowedAt, mayRefreshEvery}`, each job `{id, scope, origin, status, phase, startedBy, clientName, startedAt, finishedAt, progress {pagesStale, pagesRebuilt, pagesChanged, documentsStale, documentsRebuilt, pagesToRefresh, pagesRefreshed, unrefreshed[], failed[]}, note}`; golden `shared/site.refresh.golden.json` |
 | POST | `/api/site/refresh` | Admin, Master Admin | `{every}`: 202 `PageRefreshState`; 409 while a refresh runs, 429 within the cooldown, 403 for `every` from anyone but the Master Admin |
@@ -354,7 +360,7 @@ the build as not triggered, and the admin control says so.
 | Abandoned client registrations | `backend/tests/db/test_upkeep_clients_db.py` |
 | Counting and pruning MCP calls, and their bounds | `backend/tests/db/test_mcp_activity_db.py` |
 | The rotating monograph window and stale page rebuilds | `backend/tests/upkeep/test_rotation.py` and `test_page_rebuilds.py` |
-| The build route and its throttle | `backend/tests/upkeep/test_site_build_routes.py` |
+| The build route, its throttle and its wait for the API main needs | `backend/tests/upkeep/test_site_build_routes.py` and `test_site_build_gate.py` |
 | Refresh pages now: one job with the night, the cooldowns, every page, a stopped job and a named refresh | `backend/tests/db/test_page_refresh_db.py`, `backend/tests/mcp/test_staged_contract.py` and `frontend/e2e/page-refresh-unit.spec.ts` |
 | The changed pages and their refresh | `backend/tests/upkeep/test_page_rebuilds.py` and `backend/tests/test_page_batches.py` |
 | The shared terms' summary | `backend/tests/learning/test_shared_term_crafts.py`, `backend/tests/db/test_learning_views_db.py` and `backend/tests/test_deploy_page_order.py` |

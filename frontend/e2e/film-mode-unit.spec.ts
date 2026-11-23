@@ -89,6 +89,7 @@ function fakeFilm(clock: FilmClock, load: Film["load"] = "ready"): Film {
     total: filmDuration(all),
     elapsed: filmElapsed(all, clock),
     progress: sceneProgress(all[clock.scene], clock.time),
+    waiting: false,
     send: () => undefined,
     retry: () => undefined,
     broken: () => undefined
