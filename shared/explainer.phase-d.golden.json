@@ -1524,7 +1524,8 @@
               "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
               "attribution": "Climate Hazards Center, UC Santa Barbara (CHIRPS3)",
               "citation": "Climate Hazards Center InfraRed Precipitation with Stations version 3 (CHIRPS3) Data Repository (2025). https://doi.org/10.15780/G2JQ0P",
-              "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/"
+              "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/",
+              "doi": "10.15780/G2JQ0P"
             }
           ]
         }

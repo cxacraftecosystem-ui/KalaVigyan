@@ -122,21 +122,23 @@ def run(districts: gpd.GeoDataFrame, options: Options) -> Result:
                         if stat is not None:
                             ops = [ops[0], ops[-1]]
                         table = measured.add(raster.zonal(grid, group, ops))
-                        emit(rows, group, table, variable, depth, unit, stat)
+                        emit(rows, group, table, variable=variable, depth=depth, unit=unit, stat=stat)
                     except Exception as error:
                         failures.append(failure(group, f"{variable} {depth} {layer}", error))
     return Result(SOILGRIDS, rows.frame(), failures=failures, districts_without_cells=measured.without_cells())
 
 
-def emit(rows: Rows, group: gpd.GeoDataFrame, table: pd.DataFrame, variable, depth, unit, stat) -> None:
+def emit(
+    rows: Rows, group: gpd.GeoDataFrame, table: pd.DataFrame, *, variable: str, depth: str, unit: str, stat: str | None
+) -> None:
     lookup = group.set_index("districtLgd")
     for _, record in table.iterrows():
         district = lookup.loc[int(record["districtLgd"])].copy()
         district["districtLgd"] = int(record["districtLgd"])
         pixels = float(record["pixels"])
         if stat is None:
-            rows.add(district, variable, depth, "DISTRICT_MEAN", pick(record, "mean"), unit, pixels=pixels)
-            rows.add(district, variable, depth, "DISTRICT_P10", pick(record, "p10"), unit, pixels=pixels)
-            rows.add(district, variable, depth, "DISTRICT_P90", pick(record, "p90"), unit, pixels=pixels)
+            rows.add(district, variable, depth, "DISTRICT_MEAN", pick(record, "mean"), unit=unit, pixels=pixels)
+            rows.add(district, variable, depth, "DISTRICT_P10", pick(record, "p10"), unit=unit, pixels=pixels)
+            rows.add(district, variable, depth, "DISTRICT_P90", pick(record, "p90"), unit=unit, pixels=pixels)
         else:
-            rows.add(district, variable, depth, stat, pick(record, "mean"), unit, pixels=pixels)
+            rows.add(district, variable, depth, stat, pick(record, "mean"), unit=unit, pixels=pixels)

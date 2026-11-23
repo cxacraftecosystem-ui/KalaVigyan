@@ -1,5 +1,5 @@
 import json
-from collections.abc import Iterable
+from collections.abc import Iterable, Set
 from typing import Any, get_args
 
 from pydantic import BaseModel, TypeAdapter
@@ -9,21 +9,25 @@ from .golden import golden_text
 __all__ = ["FieldKey", "field_keys", "reachable_models", "shown_fields", "shown_in", "unshown_fields"]
 
 FieldKey = tuple[str, str]
+NOTHING_UNREAD: frozenset[FieldKey] = frozenset()
 
 
 def field_keys(model: type[BaseModel]) -> set[FieldKey]:
     return {(_named(model), name) for name, info in model.model_fields.items() if info.exclude is not True}
 
 
-def reachable_models(roots: Iterable[Any]) -> set[type[BaseModel]]:
+def reachable_models(
+    roots: Iterable[Any], *, unread: Set[FieldKey] = NOTHING_UNREAD, unserved: Set[str] = frozenset()
+) -> set[type[BaseModel]]:
     found: set[type[BaseModel]] = set()
     waiting = list(roots)
     while waiting:
         current = waiting.pop()
         if isinstance(current, type) and issubclass(current, BaseModel):
-            if current not in found:
+            if current not in found and _named(current) not in unserved:
                 found.add(current)
-                waiting += [info.annotation for info in current.model_fields.values()]
+                fields = current.model_fields.items()
+                waiting += [info.annotation for name, info in fields if (_named(current), name) not in unread]
             continue
         waiting += [arg for arg in get_args(current) if not isinstance(arg, (str, int, float, bool))]
     return found
@@ -39,8 +43,15 @@ def shown_in(root: Any, text: str) -> set[FieldKey]:
     return shown
 
 
-def unshown_fields(roots: Iterable[Any], shown: set[FieldKey]) -> list[str]:
-    wanted = {key for model in reachable_models(roots) for key in field_keys(model)}
+def unshown_fields(
+    roots: Iterable[Any],
+    shown: set[FieldKey],
+    *,
+    unread: Set[FieldKey] = NOTHING_UNREAD,
+    unserved: Set[str] = frozenset(),
+) -> list[str]:
+    reached = reachable_models(roots, unread=unread, unserved=unserved)
+    wanted = {key for model in reached for key in field_keys(model)}
     return sorted(f"{model}.{name}" for model, name in wanted - shown)
 
 

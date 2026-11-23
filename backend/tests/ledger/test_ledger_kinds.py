@@ -7,6 +7,8 @@ from app.research.blocks import BlockBase
 from app.research.explainer import Block, with_payload_sentences
 from app.services.claim_ledger import ClaimLedger
 
+from ..contracts.blocks_golden import QUANTITIES
+from ..contracts.explainer_golden import golden_json
 from ..contracts.phase_b_golden import phase_b, phase_b_blocks
 from ..contracts.phase_c_golden import phase_c, phase_c_blocks
 from ..contracts.phase_d_golden import phase_d, phase_d_blocks
@@ -188,3 +190,29 @@ def test_a_craft_level_story_is_shown_once_per_answer_even_when_told_in_other_wo
     again = admitted(ledger, "s4", retold(story, "s4.b9"))
     assert ([block.id for block in first], again) == (["s1.b9"], [])
     assert [block.id for block in admitted(ClaimLedger(), "s4", retold(story, "s4.b9"))] == ["s4.b9"]
+
+
+def quantities_sections() -> list[dict[str, Any]]:
+    return golden_json(QUANTITIES)["sections"]
+
+
+def test_a_table_whose_every_sentence_was_said_keeps_each_row_under_the_sentence_that_said_it() -> None:
+    (table,) = quantities_sections()[0]["blocks"]
+    sentences = list({row["sentence"]["text"]: row["sentence"] for row in table["rows"]}.values())
+    said = [{**sentence, "id": f"s1.b9.{n}"} for n, sentence in enumerate(sentences, start=1)]
+    ledger = ClaimLedger()
+    shown = admitted(
+        ledger, "s1", {"id": "s1.b9", "kind": "prose", "version": 1, "reuse": None, "sentences": said}
+    )
+    shown += admitted(ledger, "s1", table)
+    kept = shown[-1]
+    assert [row.shown_in for row in kept.rows] == ["s1.b9.1", "s1.b9.1", "s1.b9.2", "s1.b9.3", "s1.b9.4"]
+    assert list(kept.shown_sentences()) == []
+    assert repeated_sentences(shown) == 0
+
+
+def test_a_stored_table_names_where_a_sentence_is_said_only_when_this_answer_says_it() -> None:
+    _, table = quantities_sections()[1]["blocks"]
+    (kept,) = admitted(ClaimLedger(), "s2", table)
+    assert [row.shown_in for row in kept.rows] == [None, None, None, None, None]
+    assert len(list(kept.shown_sentences())) == 4

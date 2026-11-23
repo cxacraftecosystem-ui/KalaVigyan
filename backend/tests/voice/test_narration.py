@@ -88,6 +88,18 @@ def what_if_explainer(*, hypothesis: str) -> Explainer:
     return golden_explainer(sections=[section], sources=[sources[sid] for sid in dict.fromkeys(cited)])
 
 
+def test_listen_reads_a_sentence_once_where_the_page_says_it_and_not_again_under_a_table() -> None:
+    document = golden_json("explainer.document.golden.json")
+    fixture = golden_json("explainer.quantities.golden.json")
+    section = {**document["sections"][1], "order": 1, "blocks": fixture["sections"][1]["blocks"]}
+    explainer = golden_explainer(sections=[section], sources=fixture["sources"])
+    spoken = spoken_blocks(explainer, None)
+    assert [(b.block_id, [s.sentence_id for s in b.sentences]) for b in spoken] == [
+        ("s2.b1", ["s2.b1.1"]),
+        ("s2.b2", ["s2.b2.3", "s2.b2.4", "s2.b2.5"]),
+    ]
+
+
 def test_a_sentence_left_in_english_inside_a_hindi_explainer_is_spoken_in_english() -> None:
     document = golden_json("explainer.document.golden.json")
     first = document["sections"][1]["blocks"][0]["sentences"][0]

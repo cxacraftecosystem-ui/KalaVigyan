@@ -96,8 +96,10 @@ untrusted data (`JUDGE_SYSTEM_PROMPT`, `judge_message`, `judge_schema`); its sha
 It reads what a reader sees: each block's sentences once by their English words
 (`BlockBase.shown_sentences`, `coverage_answers.shown_field_sentences`), as the client draws a
 sentence several items share once (decision 0134), and an expert panel's two mirrored views of one
-difference once per pair of seats, as the panel's differ card shows them (decision 0165); the rubric
-counts the same sentences (decision 0147). A third untrusted block lists each figure by field with its kind and the
+difference once per pair of seats, as the panel's differ card shows them (decision 0165), and a
+quantities table's rows whose sentence the answer already said not again, since the table draws
+them under that sentence with its citation only (decision 0168); the rubric counts the same
+sentences (decision 0147). A third untrusted block lists each figure by field with its kind and the
 quantities it shows, the labels of the figure that state a number (`coverage_answers.field_figures`,
 at most 40 lines), so the judge sees which numbers a table or figure carries and which stay in
 prose. A judge that fails leaves the measures and says so.

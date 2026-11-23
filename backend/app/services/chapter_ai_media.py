@@ -40,7 +40,6 @@ def ai_media_item(ctx: ChapterContext, record: AiMediaRecord) -> PageAiMedia | N
         generated=AI_GENERATED[record.kind],
         model=record.model,
         generated_on=record.made_at.astimezone(INDIA_TZ).date().isoformat(),
-        from_question=None,
     )
     return PageAiMedia(
         asset_id=record.asset_id,

@@ -178,7 +178,7 @@ flowchart LR
 | [0131](0131-drawings-in-the-design.md) | Whatever an AI draws for KalaVigyan speaks the design and follows the reader's theme | [0141](0141-design-system-and-answer-screens-without-debt.md) |
 | [0132](0132-a-ranking-votes-with-its-first-thirty.md) | A ranking votes with its first thirty; deeper finds only fill the rerank pool | [0151](0151-a-release-the-live-side-can-read.md) |
 | [0133](0133-the-evaluation-scores-what-answers-read.md) | The evaluation scores what answers read | [0151](0151-a-release-the-live-side-can-read.md) |
-| [0134](0134-each-sentence-once-in-a-block.md) | A block says each sentence once, and the judge reads it as a reader does | [0147](0147-time-market-and-figures-kept-true.md) and [0165](0165-answers-counted-as-settled-asked-as-asked.md) |
+| [0134](0134-each-sentence-once-in-a-block.md) | A block says each sentence once, and the judge reads it as a reader does | [0147](0147-time-market-and-figures-kept-true.md), [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0135](0135-write-backs-filed-under-the-craft-they-name.md) | A write-back is filed under the craft it names, every stored text is storable, and an answer records its cost | [0136](0136-write-backs-filed-by-their-source.md) and [0146](0146-answers-recorded-and-bounded-on-the-box.md) |
 | [0136](0136-write-backs-filed-by-their-source.md) | A write-back is filed by what its source says around it, and what nothing names waits for a reviewer | [0144](0144-stored-passages-as-evidence.md) and [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | [0137](0137-limits-kept-by-choice.md) | Nine limits are kept by choice and leave the debt register | · |
@@ -191,11 +191,11 @@ flowchart LR
 | [0144](0144-stored-passages-as-evidence.md) | A stored passage is evidence an answer and a voice turn may cite, kept as a fact of its own source | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
 | [0145](0145-monograph-pages-and-speed-without-debt.md) | Pages read what their screens draw: one coverage read, one decision route, one unit pattern, and renderers loaded when placed | · |
 | [0146](0146-answers-recorded-and-bounded-on-the-box.md) | An answer is recorded whole, routed and capped by what it understood, and never crowds out a sign-in | [0165](0165-answers-counted-as-settled-asked-as-asked.md) and [0167](0167-answer-leftovers-kept-true.md) |
-| [0147](0147-time-market-and-figures-kept-true.md) | Quantities in prose are also a table, the timeline lists undated history and places what the register holds, and market and measure readers read what sources state | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) |
+| [0147](0147-time-market-and-figures-kept-true.md) | Quantities in prose are also a table, the timeline lists undated history and places what the register holds, and market and measure readers read what sources state | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) and [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0148](0148-a-client-that-can-sign-in-publicly-is-signed-in-publicly.md) | A client that can sign in publicly is signed in publicly | · |
 | [0149](0149-a-fact-readers-can-see.md) | A fact is shown to every reader with its citation, and only its quote follows its page | [0158](0158-a-curated-page-lists-the-facts-contributors-add.md) |
 | [0150](0150-mcp-activity-and-box-logs.md) | Each MCP call keeps its client and its reason for 180 days and its count for good, and the box ships its logs to CloudWatch | · |
-| [0151](0151-a-release-the-live-side-can-read.md) | A release is one the live side can read: the web ignores a field it does not know, every migration reads under the release before, and the first stage's fusion is measured before it is weighted | · |
+| [0151](0151-a-release-the-live-side-can-read.md) | A release is one the live side can read: the web ignores a field it does not know, every migration reads under the release before, and the first stage's fusion is measured before it is weighted | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0152](0152-matter-read-once-and-the-science-seed-kept-true.md) | An answer reads a craft's matter once and shows each card, molecule and what-if once, matter blocks cite every value they show, and the science seed deletes what it no longer plans | · |
 | [0153](0153-rivers-named-groundwater-loaded-and-region-values-chosen.md) | Rivers are named from Wikidata then OpenStreetMap, groundwater comes from the India data portal, a region place shows its headline values, and the geo ETL fails every gap it can see | · |
 | [0154](0154-ai-media-and-film-scores-kept-true.md) | A film score is made once and timed by what was heard, AI pictures are shared on their craft page, and the paid checks run under a cap | · |
@@ -206,10 +206,11 @@ flowchart LR
 | [0159](0159-places-kept-reviews-filed-and-mcp-kept-small.md) | A place abroad refuses only practice there, a reviewer files any researched fact, and the MCP server describes its kinds once | · |
 | [0160](0160-place-builders-kept-true.md) | A geography section reuses a current story, places are keyed and pinned by the register, seasons read what a source states, and the place proofs run on production | · |
 | [0161](0161-listen-falls-back-a-node-counts-admins-see-hidden-facts.md) | Listen falls back to the Gemini voice by sentence, a shared-science node counts and pages its crafts, admins see the hidden facts, and the smoke measures the dock's bit rate | · |
-| [0162](0162-unused-craft-page-chapters-retired.md) | The craft page's chapters keep only what a page draws, and an approved structure writes its shared rows at once | · |
+| [0162](0162-unused-craft-page-chapters-retired.md) | The craft page's chapters keep only what a page draws, and an approved structure writes its shared rows at once | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0163](0163-limits-kept-by-choice-and-a-register-that-only-shrinks.md) | Nine more limits are kept by choice, the debt register may only shrink, the database tests run in shards, and each process on the box keeps to its own connection budget | · |
-| [0165](0165-answers-counted-as-settled-asked-as-asked.md) | An answer's spend is counted as settled, its asked fields are the ones the question asks, and an expert difference is told once | · |
+| [0165](0165-answers-counted-as-settled-asked-as-asked.md) | An answer's spend is counted as settled, its asked fields are the ones the question asks, and an expert difference is told once | [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) |
 | [0167](0167-answer-leftovers-kept-true.md) | A stopped answer is marked, a quote in an Indian script is read in English, a term keeps its local name, and a page curates its signs of imitation | · |
+| [0168](0168-a-table-under-a-said-sentence-and-python-within-budget.md) | A quantities table is drawn under a sentence the answer already said, and the Python files are split along what they do | · |
 
 ## How this document is kept true
 

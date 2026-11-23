@@ -21,7 +21,7 @@ from app.services.science_seed import load_science_seed
 
 from .explainer_golden import PIECE, citations_in, golden_json, seed_citations, seed_claims, seed_sources
 from .golden import REPO, reproduces
-from .phase_b_golden import catalog_dataset
+from .phase_b_golden import catalog_dataset, geo_etl_datasets
 from .phase_d_golden import PHASE_D, PhaseDFixture, phase_d, phase_d_blocks
 
 AT = datetime(2026, 11, 18, 10, 30, tzinfo=UTC)
@@ -193,8 +193,10 @@ def test_the_climate_trend_reads_the_chirps_row_of_kachchh_over_its_period() -> 
     trend = climate.trends[0]
     assert (trend.district.district_lgd, trend.district.name) == (449, district["name"])
     assert [d.model_dump(mode="json", by_alias=True) for d in climate.datasets] == [
-        catalog_dataset("CHIRPS_3_0") | {"period": "1981-2025"}
+        catalog_dataset("CHIRPS_3_0")
+        | {"period": "1981-2025", "doi": geo_etl_datasets()["CHIRPS_3_0"]["doi"]}
     ]
+    assert climate.datasets[0].doi == "10.15780/G2JQ0P"
     assert (trend.period, trend.resolution) == ("1981-2025", "0.05 degree")
     assert (trend.mean, trend.slope_per_decade, trend.p_value, trend.significant) == (
         449.356389,

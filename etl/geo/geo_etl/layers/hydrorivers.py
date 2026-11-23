@@ -108,6 +108,12 @@ def run(districts: gpd.GeoDataFrame, options: Options) -> Result:
         for variable, (stat, unit) in units.items():
             value = record[variable]
             rows.add(
-                district, variable, "", stat, None if pd.isna(value) else float(value), unit, pixels=record["reaches"]
+                district,
+                variable,
+                "",
+                stat,
+                None if pd.isna(value) else float(value),
+                unit=unit,
+                pixels=record["reaches"],
             )
     return Result(HYDRORIVERS, rows.frame(), failures=failures)

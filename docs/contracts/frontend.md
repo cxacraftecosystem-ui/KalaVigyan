@@ -158,7 +158,7 @@ The voice routes, session shapes, client tools and the relay turn stream are `do
 
 | Claim | Kept true by |
 |---|---|
-| Every response is parsed by its shape, refusing unknown fields | `frontend/e2e/contracts-unit.spec.ts` and `backend-vocabulary-unit.spec.ts`, against the `shared/*.golden.*` files; `golden-files-unit.spec.ts` holds every golden the web reads to a unit spec, and `backend/tests/contracts/test_golden_fields.py` holds every field of the served payloads to a golden |
+| Every response is parsed by its shape, refusing unknown fields | `frontend/e2e/contracts-unit.spec.ts` and `backend-vocabulary-unit.spec.ts`, against the `shared/*.golden.*` files; `golden-files-unit.spec.ts` holds every golden the web reads to a unit spec, and `backend/tests/contracts/test_golden_fields.py` holds every field of the served payloads to a golden, but for what the web never parses: the craft page's chapters, which it drops, and the block kinds a served explainer refuses as not built (decision 0168) |
 | The production build ignores a field it does not know | `frontend/e2e/shape-unknown-fields-unit.spec.ts`, and `later-backend.smoke.spec.ts` against the built site with the API stub `e2e/smokeApi.ts` |
 | What the roles may see and do | `frontend/e2e/permissions-unit.spec.ts` and `backend/tests/test_roles.py`, both against `shared/roles.json` |
 | Reading without signing in | `frontend/e2e/public-reading-unit.spec.ts`, and `e2e/production/anonymous.spec.ts` on the live site |

@@ -147,9 +147,9 @@ def add_annual(rows: Rows, district: pd.Series, annual: dict[int, pd.DataFrame],
         value = float(pick(record, "mean"))
         yearly.append(value)
         pixels = float(record["pixels"])
-        rows.add(district, "annual_precipitation", str(year), "DISTRICT_MEAN", value, "mm/year", pixels=pixels)
-        rows.add(district, "annual_precipitation", str(year), "DISTRICT_P10", pick(record, "p10"), "mm/year")
-        rows.add(district, "annual_precipitation", str(year), "DISTRICT_P90", pick(record, "p90"), "mm/year")
+        rows.add(district, "annual_precipitation", str(year), "DISTRICT_MEAN", value, unit="mm/year", pixels=pixels)
+        rows.add(district, "annual_precipitation", str(year), "DISTRICT_P10", pick(record, "p10"), unit="mm/year")
+        rows.add(district, "annual_precipitation", str(year), "DISTRICT_P90", pick(record, "p90"), unit="mm/year")
     series = AnnualSeries("annual_precipitation", years[0], tuple(yearly))
     if series.complete:
         add_normals(rows, district, series)
@@ -157,10 +157,10 @@ def add_annual(rows: Rows, district: pd.Series, annual: dict[int, pd.DataFrame],
 
 def add_normals(rows: Rows, district: pd.Series, series: AnnualSeries) -> None:
     mean = float(np.mean(series.values))
-    rows.add(district, "annual_precipitation", series.period, "NORMAL", mean, "mm/year")
+    rows.add(district, "annual_precipitation", series.period, "NORMAL", mean, unit="mm/year")
     if len(series.values) >= 2 and mean > 0:
         spread = float(np.std(series.values) / mean)
-        rows.add(district, "annual_precipitation_cv", series.period, "NORMAL", spread, "fraction")
+        rows.add(district, "annual_precipitation_cv", series.period, "NORMAL", spread, unit="fraction")
     add_trend_rows(rows, district, series)
 
 
@@ -178,8 +178,8 @@ def add_monthly(
         return
     normals = {m: float(np.mean(by_month[m])) for m in range(1, 13)}
     for month, value in normals.items():
-        rows.add(district, "monthly_precipitation", f"{period}-{month:02d}", "NORMAL", value, "mm/month")
+        rows.add(district, "monthly_precipitation", f"{period}-{month:02d}", "NORMAL", value, unit="mm/month")
     total = sum(normals.values())
     if total > 0:
         share = sum(normals[m] for m in MONSOON) / total
-        rows.add(district, "monsoon_share_jjas", period, "NORMAL", share, "fraction of annual")
+        rows.add(district, "monsoon_share_jjas", period, "NORMAL", share, unit="fraction of annual")

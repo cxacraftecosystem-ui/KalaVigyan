@@ -137,7 +137,7 @@ def _spoken(block: BlockBase, language: str) -> SpokenBlock | None:
             text=sentence.text,
             language=language if sentence.translated else CANONICAL_LANGUAGE,
         )
-        for sentence in block.cited_sentences()
+        for sentence in block.shown_sentences()
         if sentence.level != HYPOTHESIS_LEVEL
     )
     if not sentences:

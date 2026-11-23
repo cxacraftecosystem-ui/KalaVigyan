@@ -239,7 +239,7 @@ def vercel(method, path, body=None):
         return e.code, e.read().decode()[:500]
 
 
-def main():
+def parse_args():
     ap = argparse.ArgumentParser(description="Seed the KalaVigyan environment into SSM, GitHub and Vercel.")
     ap.add_argument("--terraform", default="terraform")
     ap.add_argument("--copy-from-instance")
@@ -248,13 +248,10 @@ def main():
     ap.add_argument("--skip-vercel", action="store_true")
     ap.add_argument("--skip-box", action="store_true")
     ap.add_argument("--preview-cors", action="store_true")
-    a = ap.parse_args()
+    return ap.parse_args()
 
-    tf = tf_outputs(a.terraform)
-    params = Params()
-    current = params.all_env()
-    log(f"{len(current)} keys already under {ENV_PATH}")
 
+def standing_values(tf, params, current):
     wanted = {}
     for key in GENERATED:
         wanted[key] = current.get(key) or generated_value(key)
@@ -279,6 +276,11 @@ def main():
             "MAIL_FROM_NAME": "KalaVigyan",
         }
     )
+    return wanted
+
+
+def wanted_values(a, tf, params, current):
+    wanted = standing_values(tf, params, current)
     if a.preview_cors:
         wanted["BACKEND_CORS_PREVIEW_PROJECT"] = VERCEL_PROJECT
         wanted["BACKEND_CORS_PREVIEW_SCOPE"] = VERCEL_TEAM
@@ -289,74 +291,94 @@ def main():
         copied = copy_from_instance(a.copy_from_instance, a.copy_env_file, missing)
         log(f"copied from {a.copy_from_instance}: {', '.join(sorted(copied)) or 'nothing'}")
         wanted.update(copied)
+    return wanted
 
+
+def write_parameters(params, wanted, current):
     changed = [k for k, v in wanted.items() if params.put(k, v, current)]
     dropped = [k for k in STALE if params.drop(k, current)]
     log(f"Parameter Store: {len(changed)} written ({', '.join(sorted(changed)) or 'none'}), {len(current)} total")
     if dropped:
         log(f"Parameter Store: removed unused {', '.join(dropped)}")
-    still_missing = [k for k in COPYABLE if not current.get(k)]
 
-    if not a.skip_github:
-        for key in GITHUB_SECRETS:
-            if current.get(key):
-                gh(["secret", "set", key, "--repo", REPO], stdin=current[key])
-        variables = {
-            "AWS_REGION": REGION,
-            "AWS_DEPLOY_ROLE_ARN": tf["deploy_role_arn"],
-            "AWS_RIVER_LOAD_ROLE_ARN": tf["river_load_role_arn"],
-            "EC2_INSTANCE_ID": tf["instance_id"],
-            "MEDIA_BUCKET": tf["media_bucket"],
-            "API_BASE_URL": tf["api_base_url"],
-            "CLOUDFRONT_DISTRIBUTION_ID": tf["cloudfront_distribution_id"],
-            "WEB_ORIGIN": WEB_ORIGIN,
-        }
-        st, proj = vercel("GET", f"/v9/projects/{VERCEL_PROJECT}")
-        if st == 200:
-            variables["VERCEL_ORG_ID"] = proj["accountId"]
-            variables["VERCEL_PROJECT_ID"] = proj["id"]
-        for key, value in variables.items():
-            gh(["variable", "set", key, "--repo", REPO, "--body", value])
-        log(f"GitHub: {sum(1 for k in GITHUB_SECRETS if current.get(k))} secrets, {len(variables)} variables")
 
-    if not a.skip_vercel:
-        envs = {"NEXT_PUBLIC_API_URL": tf["api_base_url"], "NEXT_PUBLIC_APP_URL": WEB_ORIGIN}
-        for public, live_with in (
-            ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_ID"),
-            ("YAHOO_CLIENT_ID", "YAHOO_CLIENT_SECRET"),
-            ("MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET"),
-            ("MICROSOFT_TENANT", "MICROSOFT_CLIENT_SECRET"),
-        ):
-            if current.get(public) and current.get(live_with):
-                envs[f"NEXT_PUBLIC_{public}"] = current[public]
-        server_only = {key: current[key] for key in ("WEB_PROXY_SECRET", "WEB_REVALIDATE_SECRET")}
-        for key, value in {**envs, **server_only}.items():
-            kind = "sensitive" if key in server_only else "encrypted"
-            st, out = vercel(
-                "POST",
-                f"/v10/projects/{VERCEL_PROJECT}/env?upsert=true",
-                {"key": key, "value": value, "type": kind, "target": ["production", "preview"]},
-            )
-            if st not in (200, 201):
-                raise SystemExit(f"Vercel env {key} failed: {st} {out}")
-        log(f"Vercel: {', '.join([*envs, *server_only])}")
+def seed_github(tf, current):
+    for key in GITHUB_SECRETS:
+        if current.get(key):
+            gh(["secret", "set", key, "--repo", REPO], stdin=current[key])
+    variables = {
+        "AWS_REGION": REGION,
+        "AWS_DEPLOY_ROLE_ARN": tf["deploy_role_arn"],
+        "AWS_RIVER_LOAD_ROLE_ARN": tf["river_load_role_arn"],
+        "EC2_INSTANCE_ID": tf["instance_id"],
+        "MEDIA_BUCKET": tf["media_bucket"],
+        "API_BASE_URL": tf["api_base_url"],
+        "CLOUDFRONT_DISTRIBUTION_ID": tf["cloudfront_distribution_id"],
+        "WEB_ORIGIN": WEB_ORIGIN,
+    }
+    st, proj = vercel("GET", f"/v9/projects/{VERCEL_PROJECT}")
+    if st == 200:
+        variables["VERCEL_ORG_ID"] = proj["accountId"]
+        variables["VERCEL_PROJECT_ID"] = proj["id"]
+    for key, value in variables.items():
+        gh(["variable", "set", key, "--repo", REPO, "--body", value])
+    log(f"GitHub: {sum(1 for k in GITHUB_SECRETS if current.get(k))} secrets, {len(variables)} variables")
 
-    if not a.skip_box:
-        render = (INFRA / "deploy" / "render_env.sh").read_text(encoding="utf-8")
-        script = (
-            "set -eu\n"
-            "cat > /usr/local/sbin/kv-render-env.new <<'RENDER'\n"
-            f"{render}RENDER\n"
-            "install -m 0755 /usr/local/sbin/kv-render-env.new /usr/local/sbin/kv-render-env\n"
-            "rm -f /usr/local/sbin/kv-render-env.new\n"
-            "/usr/local/sbin/kv-render-env\n"
-            "grep -c . /opt/kalavigyan/.env\n"
+
+def seed_vercel(tf, current):
+    envs = {"NEXT_PUBLIC_API_URL": tf["api_base_url"], "NEXT_PUBLIC_APP_URL": WEB_ORIGIN}
+    for public, live_with in (
+        ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_ID"),
+        ("YAHOO_CLIENT_ID", "YAHOO_CLIENT_SECRET"),
+        ("MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET"),
+        ("MICROSOFT_TENANT", "MICROSOFT_CLIENT_SECRET"),
+    ):
+        if current.get(public) and current.get(live_with):
+            envs[f"NEXT_PUBLIC_{public}"] = current[public]
+    server_only = {key: current[key] for key in ("WEB_PROXY_SECRET", "WEB_REVALIDATE_SECRET")}
+    for key, value in {**envs, **server_only}.items():
+        kind = "sensitive" if key in server_only else "encrypted"
+        st, out = vercel(
+            "POST",
+            f"/v10/projects/{VERCEL_PROJECT}/env?upsert=true",
+            {"key": key, "value": value, "type": kind, "target": ["production", "preview"]},
         )
-        inv = ssm_run(tf["instance_id"], script)
-        log(f"box: {inv['Status']}\n{inv['StandardOutputContent'].strip()}\n{inv['StandardErrorContent'].strip()}")
-        if inv["Status"] != "Success":
-            raise SystemExit(1)
+        if st not in (200, 201):
+            raise SystemExit(f"Vercel env {key} failed: {st} {out}")
+    log(f"Vercel: {', '.join([*envs, *server_only])}")
 
+
+def seed_box(tf):
+    render = (INFRA / "deploy" / "render_env.sh").read_text(encoding="utf-8")
+    script = (
+        "set -eu\n"
+        "cat > /usr/local/sbin/kv-render-env.new <<'RENDER'\n"
+        f"{render}RENDER\n"
+        "install -m 0755 /usr/local/sbin/kv-render-env.new /usr/local/sbin/kv-render-env\n"
+        "rm -f /usr/local/sbin/kv-render-env.new\n"
+        "/usr/local/sbin/kv-render-env\n"
+        "grep -c . /opt/kalavigyan/.env\n"
+    )
+    inv = ssm_run(tf["instance_id"], script)
+    log(f"box: {inv['Status']}\n{inv['StandardOutputContent'].strip()}\n{inv['StandardErrorContent'].strip()}")
+    if inv["Status"] != "Success":
+        raise SystemExit(1)
+
+
+def main():
+    a = parse_args()
+    tf = tf_outputs(a.terraform)
+    params = Params()
+    current = params.all_env()
+    log(f"{len(current)} keys already under {ENV_PATH}")
+    write_parameters(params, wanted_values(a, tf, params, current), current)
+    still_missing = [k for k in COPYABLE if not current.get(k)]
+    if not a.skip_github:
+        seed_github(tf, current)
+    if not a.skip_vercel:
+        seed_vercel(tf, current)
+    if not a.skip_box:
+        seed_box(tf)
     log("keys: " + ", ".join(sorted(current)))
     if still_missing:
         log("owner must provide: " + ", ".join(still_missing))

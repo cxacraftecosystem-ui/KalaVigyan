@@ -8,7 +8,7 @@ from typing import Annotated, ClassVar, Literal, Self
 
 from pydantic import Field, model_validator
 
-from .base import ContractModel, PartialDate
+from .base import ContractModel, PartialDate, absent
 from .blocks import (
     SENTENCE,
     BlockBase,
@@ -18,7 +18,7 @@ from .blocks import (
     require_facts,
     stated_texts,
 )
-from .citations import Citation
+from .citations import AnswerSentence, Citation
 from .crafts import CraftRef
 from .datasets import DatasetRef
 from .measures import (
@@ -185,6 +185,7 @@ class QuantityRow(ContractModel):
     unit: UnitKey
     measures: AmountKind
     sentence: ExplainerSentence
+    shown_in: str | None = Field(default=None, min_length=1, exclude_if=absent)
 
     @model_validator(mode="after")
     def _a_quantity_as_its_sentence_states_it(self) -> Self:
@@ -212,6 +213,18 @@ class QuantitiesBlock(BlockBase):
         if len(set(stated)) != len(stated):
             raise ValueError(f"quantities {self.id} list each stated quantity of a sentence once")
         return self
+
+    @model_validator(mode="after")
+    def _the_rows_of_a_sentence_shown_above_together(self) -> Self:
+        shown: dict[str, str | None] = {}
+        for row in self.rows:
+            if shown.setdefault(row.sentence.original or row.sentence.text, row.shown_in) != row.shown_in:
+                raise ValueError(f"quantities {self.id} say where a sentence is shown for every row it backs")
+        return self
+
+    def shown_sentences(self) -> Iterator[AnswerSentence]:
+        said = {row.sentence.id for row in self.rows if row.shown_in is not None}
+        return (sentence for sentence in super().shown_sentences() if sentence.id not in said)
 
     def shown_labels(self) -> list[str]:
         return [row.stated for row in self.rows]

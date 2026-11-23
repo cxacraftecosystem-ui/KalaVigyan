@@ -43,18 +43,21 @@ Last reviewed: 2026-11-22.
 
 ### Python code over budget
 
-- **What:** the counts are in `tools/hygiene_baseline.json`: 6 files over 400 lines, 36 functions
-  over 40 lines and 9 functions with more than 5 positional parameters on 2026-11-23 (12, 54 and 9
-  on 2026-11-16). The files: `backend/migrations/versions/0001_initial_schema.py` (2853),
-  `backend/app/services/two_factor.py` (703), `etl/crafts/seed_claims.py` (642),
-  `etl/crafts/aliases.py` (535), `backend/tests/db/test_db_flows.py` (473) and
-  `backend/app/data/craft_master_loader.py` (433). The sign-in routes, the AI router and the
-  Wikidata linker were split on 2026-11-23 and are no longer among them.
-- **Why left:** most were ported from the designer portal with the same shapes so the portals
-  stay mergeable; splitting them is a separate restructuring change.
-- **Clears it:** split along responsibilities when a file is next changed; run
-  `tools/hygiene_check.py --update-baseline` after each clean-up. The initial migration stays
-  one file (migrations are not rewritten).
+- **What:** the counts are in `tools/hygiene_baseline.json`. Besides the initial migration, which
+  stays one file by choice (decision 0168), what is left on 2026-11-23 is the seed claims and one
+  knowledge reader: `etl/crafts/seed_claims.py` (642 lines; `convert_immersive` 132,
+  `convert_inferential` 158 and `build` 76 lines, `claim` 9 positional parameters),
+  `backend/app/services/claim_seed.seed_claims` (46 lines) with its database test
+  `test_seed_claims_is_idempotent_on_the_seed_id` (51), and
+  `backend/app/services/knowledge_view.map_points` (63). Decision 0168 split two-step
+  verification, the alias merger, the flows' database tests and the master-list loader, and cut
+  the other long and wide functions into named steps (6 files, 36 long and 9 wide functions
+  before it; 12, 54 and 9 on 2026-11-16).
+- **Why left:** the seed claims were the pictures, terms and planning lane's files and the
+  knowledge reader the contributors' lanes' while decision 0168 ran, so another lane's change
+  would have met a split of the same lines.
+- **Clears it:** split them along their steps, behaviour unchanged, once those lanes have merged;
+  run `tools/hygiene_check.py --update-baseline` and delete this entry.
 
 ### Scholarly adapters: what waits on keys and Wiley's token (decisions 0005, 0139)
 
@@ -769,18 +772,6 @@ Last reviewed: 2026-11-22.
 - **Clears it:** a migration that sets every `SIGNED_IN` chunk to `PUBLIC` and drops the value,
   `field_voices_records` writing `PUBLIC`, and `SIGNED_IN_CHUNK_ACLS` removed.
 
-### The craft page's archive table and `fromQuestion` wait for the next release
-
-- **What:** decision 0162 retired the craft page's archive and a reader's pieces in its chapters,
-  but `CraftPageArchive` (table and model) stays, written and read by nothing, and every chapter
-  item's `origin.fromQuestion` is still sent, always null.
-- **Why left:** a release must be one the live side can read (decision 0151): the release before
-  decision 0162's still writes and reads the table, and its web requires `fromQuestion` on every
-  chapter item.
-- **Clears it:** in the release after decision 0162's is live, a migration dropping
-  `CraftPageArchive` with its model, and `ItemOrigin.from_question` with `AskedQuestion` removed
-  from `research/craft_origins.py`.
-
 ### Kutch Ajrakh's timeline pins and named river are not yet seen, and three why claims describe steps
 
 - **What:** job step 1 (`app.scripts.build_craft_chapters`, nightly from Coverage enrichment) stored
@@ -1014,43 +1005,44 @@ Last reviewed: 2026-11-22.
 
 ### Goldens that do not yet show every field
 
-- **What:** 177 fields of 38 models the web is served (the craft page's field voices, field photos,
-  contributed plates, AI media and searched parts, the people and component blocks, groundwater,
-  monthly rain and dataset references, a source's journal name, a translated sentence's original,
-  a reaction step's ΔH)
-  appear in no golden in `shared/`, so the web's strict parse of the goldens does not test them.
-  `backend/tests/contracts/unshown_fields.json` lists them; `test_golden_fields.py` fails on any
-  other unshown field, so every field added since decision 0151 is shown (but for the step's ΔH of
-  decision 0152, which no source a golden is built from states), and on a listed field that is
-  shown, so the list only shrinks.
-- **Why left:** the craft page goldens are the Kutch Ajrakh dossier and Farrukhabad Prints as the
-  preview builds them, and neither has field voices, contributed or AI pictures, people blocks or a
-  journal paper; showing them needs inputs for those builders, a change of its own.
-- **Clears it:** give the preview builders inputs that carry each part (a recorded voice and field
-  photo in `craft.page.inputs.json`, a contributed and an AI plate, a journal source), add the
-  missing block kinds to the explainer fixtures, regenerate the goldens and empty the list.
+- **What:** `backend/tests/contracts/unshown_fields.json` still lists the fields of a served payload
+  that no golden in `shared/` shows, each waiting on data the repository does not hold
+  (`test_golden_fields.py` fails on any other unshown field and on a listed one that is shown, so
+  the list only shrinks; decision 0168 left out what the web never parses and showed the DOI, the
+  understanding's basis, a translated answer and the craft page's voices and field photos):
+  - `GroundwaterValue` and `MonthlyRain`: the only geo ETL extract recorded here
+    (`backend/tests/geo/geo_district_env_extract.json`, run 44204618054) predates the groundwater
+    load and the monthly rainfall normals.
+  - `MeasureRegion`, `ReactionStep.delta_h` and `StepEnergy`: no stored claim states a regional
+    factor (decision 0163's kept limit) or a step's ΔH (decision 0152).
+  - `ReactionStep.formula_basis` and `formula_sources`: only the craft page's chapters infer
+    formulas, and the web drops the chapters; an answer's reaction player never sets them.
+  - `ComponentBlock` and `ComponentSource`: a placed component's sources are its units' stored
+    claims' sources, read from the database when its monograph is loaded.
+  - `SourceRef.container_title`, `PageSource.container_title` and `NumberedSource.container_title`:
+    no seeded or curated source carries a journal name; only live research stores one.
+  - `AnswerSentence.original`: only the category page's lede is a plain answer sentence, and
+    category pages are not translated.
+  - `LocalName`: nothing fills `PageCraft.local_names`.
+- **Why left:** a golden shows recorded or stated data, never a value made up for the test.
+- **Clears it:** record a later geo ETL run's Kachchh extract with its groundwater and monthly
+  normals and give the climate and seasons fixtures those rows; a curated quote stating a regional
+  factor or a ΔH; a test that records the Kutch Ajrakh red player's sources from the monograph load;
+  a live-research source with its journal in a fixture; and an owner decision on a craft's own names
+  in scripts (fill `local_names` or retire it) and on translated category pages. Empty the list.
 
-### The quantities table is dropped where its rows repeat a sentence the section says
+### The rubric floor waits on a run that shows the quantities table
 
-- **What:** run 45112746194 (release 1ab422fe, 2026-11-23) measured decision 0147's table on two
-  Kutch Ajrakh answers. The indigo answer (85f14b90) built none: no section's cited facts state
-  three quantities in digits (PROCESS states "10 to 15 minutes", GEOGRAPHY "40 km"; "about one
-  month", "four hours" and "one percent" are number words, which `research/stated_amounts` does not
-  read). The water and climate answer (ea19b016) built one in PROCESS (`ADDED` in
-  `Answer.plan.builds`) that the claim ledger then dropped: each row's sentence is the text of a
-  ladder stage sentence the section had already shown, and a story block never repeats a sentence
-  said word for word (`claim_ledger._anchored_repeat`, in every pass). The judge's figures part was
-  2 and 3 of 5, and no run has yet shown a table, so `rubricMean` in
+- **What:** run 45112746194 (release 1ab422fe, 2026-11-23) found decision 0147's table built once
+  and dropped, since every row's sentence was a ladder stage sentence already shown. Decision 0168
+  shows such a table: the claim ledger keeps those rows with `shownIn`, the view draws them with
+  the sentence's citation and without saying it again, and the judge, the rubric and Listen read
+  the sentence once. No run has yet measured it, so `rubricMean` in
   `backend/app/data/eval/floors.json` is still the 0.82 decision 0147 set.
-- **Why left:** showing the table means either letting it repeat the section's sentences, which the
-  judge marks down as repetition, or drawing its rows under a sentence the section already says
-  without saying it again, a change to the ledger, the quantities view and the judge's reading
-  together; decision 0165 records the choice as the lead's after the next run.
-- **Clears it:** the claim ledger admits a `quantities` table whose row sentences were already shown,
-  the quantities view draws such a row group with its citation and without the sentence text, and
-  `coverage_answers.shown_field_sentences` skips the same sentences; then the lead runs
-  answer-quality on the same questions and raises `rubricMean` to the run's mean less 0.05, rounded
-  down.
+- **Why left:** the floor is re-based on a measured run, and answer-quality is a paid run only the
+  lead dispatches.
+- **Clears it:** the lead runs answer-quality on the same questions and raises `rubricMean` to the
+  run's mean less 0.05, rounded down.
 
 ### The answer did not name the oxides behind Khurja's blue and turquoise glazes
 

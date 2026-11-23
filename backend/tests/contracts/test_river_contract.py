@@ -78,7 +78,7 @@ def monthly_row_call() -> ast.Call:
             isinstance(node, ast.Call)
             and isinstance(node.func, ast.Attribute)
             and node.func.attr == "add"
-            and len(node.args) >= 6
+            and len(node.args) >= 5
             and isinstance(node.args[1], ast.Constant)
             and node.args[1].value == RAINFALL_VARIABLE
         ):
@@ -88,7 +88,8 @@ def monthly_row_call() -> ast.Call:
 
 def test_the_chirps_layer_writes_the_monthly_normals_the_seasons_reader_reads() -> None:
     call = monthly_row_call()
-    stat, unit = (ast.literal_eval(arg) for arg in (call.args[3], call.args[5]))
+    unit_given = next(keyword.value for keyword in call.keywords if keyword.arg == "unit")
+    stat, unit = (ast.literal_eval(arg) for arg in (call.args[3], unit_given))
     assert (stat, unit) == (RAINFALL_STAT, RAINFALL_UNIT)
     key = call.args[2]
     assert isinstance(key, ast.JoinedStr)

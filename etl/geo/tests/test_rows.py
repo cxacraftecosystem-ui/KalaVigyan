@@ -12,35 +12,35 @@ MAHE = pd.Series({"districtLgd": 599, "stateLgd": 34, "districtName": "Mahe"})
 def test_add_rejects_unknown_stat():
     rows = Rows(SOILGRIDS, "zonal mean")
     with pytest.raises(ValueError, match="unknown stat"):
-        rows.add(MAHE, "clay", "0-5cm", "MEDIAN", 1.0, "g/kg")
+        rows.add(MAHE, "clay", "0-5cm", "MEDIAN", 1.0, unit="g/kg")
     assert rows.items == []
 
 
 @pytest.mark.parametrize("stat", STATS)
 def test_add_accepts_every_known_stat(stat):
     rows = Rows(SOILGRIDS, "zonal mean")
-    rows.add(MAHE, "clay", "0-5cm", stat, 1.0, "g/kg")
+    rows.add(MAHE, "clay", "0-5cm", stat, 1.0, unit="g/kg")
     assert rows.items[0]["stat"] == stat
 
 
 @pytest.mark.parametrize("bad", [math.nan, math.inf, -math.inf, None])
 def test_add_drops_non_finite_without_text(bad):
     rows = Rows(SOILGRIDS, "zonal mean")
-    rows.add(MAHE, "clay", "0-5cm", "DISTRICT_MEAN", bad, "g/kg")
+    rows.add(MAHE, "clay", "0-5cm", "DISTRICT_MEAN", bad, unit="g/kg")
     assert rows.items == []
 
 
 def test_add_keeps_text_when_value_is_nan():
     rows = Rows(SOILGRIDS, "zonal mean")
-    rows.add(MAHE, "landform", "", "CLASS", math.nan, "", text="coastal plain")
+    rows.add(MAHE, "landform", "", "CLASS", math.nan, unit="", text="coastal plain")
     assert rows.items[0]["value"] is None
     assert rows.items[0]["valueText"] == "coastal plain"
 
 
 def test_add_fills_provenance_and_overrides():
     rows = Rows(SOILGRIDS, "zonal mean")
-    rows.add(MAHE, "clay", "0-5cm", "DISTRICT_MEAN", 312, "g/kg", pixels=96.4)
-    rows.add(MAHE, "sand", "0-5cm", "DISTRICT_P10", 1.5, "g/kg", method="other", resolution="1 km")
+    rows.add(MAHE, "clay", "0-5cm", "DISTRICT_MEAN", 312, unit="g/kg", pixels=96.4)
+    rows.add(MAHE, "sand", "0-5cm", "DISTRICT_P10", 1.5, unit="g/kg", method="other", resolution="1 km")
     first, second = rows.items
     assert first["districtLgd"] == 599 and first["stateLgd"] == 34 and first["districtName"] == "Mahe"
     assert first["value"] == 312.0 and isinstance(first["value"], float)
@@ -59,8 +59,8 @@ def test_add_fills_provenance_and_overrides():
 def test_frame_has_fixed_columns_even_when_empty():
     rows = Rows(SOILGRIDS, "zonal mean")
     assert list(rows.frame().columns) == COLUMNS
-    rows.add(MAHE, "clay", "0-5cm", "DISTRICT_MEAN", 1.0, "g/kg")
-    rows.add(MAHE, "clay", "0-5cm", "DISTRICT_MAX", math.nan, "g/kg")
+    rows.add(MAHE, "clay", "0-5cm", "DISTRICT_MEAN", 1.0, unit="g/kg")
+    rows.add(MAHE, "clay", "0-5cm", "DISTRICT_MAX", math.nan, unit="g/kg")
     frame = rows.frame()
     assert list(frame.columns) == COLUMNS
     assert len(frame) == 1

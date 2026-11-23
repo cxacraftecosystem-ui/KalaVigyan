@@ -274,11 +274,30 @@ def seed_plan(
     crafts = crafts if crafts is not None else load_master()
     codes = codes if codes is not None else shared_codes()
     aliases = aliases if aliases is not None else load_craft_aliases()
-    categories = categories_of(crafts)
+    category_rows, sub_rows = _category_rows(categories_of(crafts))
+    sub_ids = {row["slug"]: row["id"] for row in sub_rows}
+    by_slug = aliases.get("crafts", {}) if isinstance(aliases, dict) else {}
+    craft_rows = [_craft_row(craft, codes, sub_ids[craft.sub_category_slug]) for craft in crafts]
+    alias_rows = [
+        _alias_row(row["id"], alias)
+        for craft, row in zip(crafts, craft_rows, strict=True)
+        for alias in (by_slug.get(craft.slug) or {}).get("aliases", [])
+    ]
+    return {
+        "categories": category_rows,
+        "subCategories": sub_rows,
+        "crafts": craft_rows,
+        "codes": [{"code": c.code, "name": c.name} for c in codes.crafts],
+        "spellings": _spelling_rows(codes),
+        "aliases": alias_rows,
+    }
 
+
+def _category_rows(
+    categories: tuple[MasterCategory, ...],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     category_rows: list[dict[str, Any]] = []
     sub_rows: list[dict[str, Any]] = []
-    sub_ids: dict[str, str] = {}
     for category in categories:
         category_id = seed_uuid("k", category.slug)
         category_rows.append(
@@ -290,132 +309,58 @@ def seed_plan(
                 "sortOrder": category.sort_order,
             }
         )
-        for sub in category.sub_categories:
-            sub_ids[sub.slug] = seed_uuid("s", sub.slug)
-            sub_rows.append(
-                {
-                    "id": sub_ids[sub.slug],
-                    "masterId": master_id("s", sub.slug),
-                    "slug": sub.slug,
-                    "name": sub.name,
-                    "categoryId": category_id,
-                    "sortOrder": sub.sort_order,
-                }
-            )
+        sub_rows += [_sub_row(sub, category_id) for sub in category.sub_categories]
+    return category_rows, sub_rows
 
-    code_rows = [{"code": c.code, "name": c.name} for c in codes.crafts]
-    spelling_rows: list[dict[str, Any]] = []
-    seen_spellings: set[str] = set()
-    for entry in codes.crafts:
-        for label in (entry.name, *entry.spellings):
-            key = codes_normalise(label)
-            if key and key not in seen_spellings:
-                seen_spellings.add(key)
-                spelling_rows.append(
-                    {"spelling": key, "label": label, "craftCode": entry.code, "source": SOURCE_SHARED}
-                )
 
-    craft_rows: list[dict[str, Any]] = []
-    alias_rows: list[dict[str, Any]] = []
-    by_slug = aliases.get("crafts", {}) if isinstance(aliases, dict) else {}
-    for craft in crafts:
-        wanted = craft_columns(craft, sub_ids[craft.sub_category_slug])
-        craft_id = seed_uuid("c", craft.slug)
-        craft_rows.append(
-            {
-                "id": craft_id,
-                "masterId": master_id("c", craft.slug),
-                "slug": craft.slug,
-                **wanted,
-                "status": ACTIVE,
-                "craftCode": craft_code_for(craft, codes),
-                "extraMetadata": {MASTER_SEED_KEY: wanted},
-            }
-        )
-        for alias in (by_slug.get(craft.slug) or {}).get("aliases", []):
-            alias_rows.append(
-                {
-                    "craftId": craft_id,
-                    "alias": alias["alias"],
-                    "aliasNorm": alias["norm"],
-                    "script": alias.get("script"),
-                    "lang": alias.get("lang"),
-                    "source": alias["source"],
-                    "status": alias.get("status", ACTIVE),
-                }
-            )
+def _sub_row(sub: MasterSubCategory, category_id: str) -> dict[str, Any]:
     return {
-        "categories": category_rows,
-        "subCategories": sub_rows,
-        "crafts": craft_rows,
-        "codes": code_rows,
-        "spellings": spelling_rows,
-        "aliases": alias_rows,
+        "id": seed_uuid("s", sub.slug),
+        "masterId": master_id("s", sub.slug),
+        "slug": sub.slug,
+        "name": sub.name,
+        "categoryId": category_id,
+        "sortOrder": sub.sort_order,
     }
 
 
-def build_catalogue(
-    crafts: tuple[MasterCraft, ...] | None = None,
-    codes: SharedCodes | None = None,
-    aliases: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    plan = seed_plan(crafts, codes, aliases)
-    by_code: dict[str, set[str]] = {}
-    for row in plan["spellings"]:
-        by_code.setdefault(row["craftCode"], set()).add(row["spelling"])
-    extra: dict[str, set[str]] = {}
-    for row in plan["aliases"]:
-        if row["status"] == ACTIVE:
-            extra.setdefault(row["craftId"], set()).add(row["aliasNorm"])
-
-    count_by_sub: dict[str, int] = {}
-    for row in plan["crafts"]:
-        count_by_sub[row["subCategoryId"]] = count_by_sub.get(row["subCategoryId"], 0) + 1
-    category_payload = [
-        {
-            **{k: v for k, v in category.items() if k != "masterId"},
-            "subCategories": [
-                {
-                    "id": sub["id"],
-                    "slug": sub["slug"],
-                    "name": sub["name"],
-                    "sortOrder": sub["sortOrder"],
-                    "craftCount": count_by_sub.get(sub["id"], 0),
-                }
-                for sub in plan["subCategories"]
-                if sub["categoryId"] == category["id"]
-            ],
-        }
-        for category in plan["categories"]
-    ]
-    category_of = {sub["id"]: sub["categoryId"] for sub in plan["subCategories"]}
-
-    digest = hashlib.sha256()
+def _spelling_rows(codes: SharedCodes) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for craft in plan["crafts"]:
-        own = codes_normalise(craft["name"])
-        names = set(by_code.get(craft["craftCode"] or "", set())) | extra.get(craft["id"], set())
-        names.discard(own)
-        names.discard("")
-        digest.update(f"c{craft['id']}{craft['name']}{sorted(names)}".encode())
-        rows.append(
-            {
-                "id": craft["id"],
-                "slug": craft["slug"],
-                "name": craft["name"],
-                "localName": None,
-                "categoryId": category_of.get(craft["subCategoryId"]),
-                "subCategoryId": craft["subCategoryId"],
-                "sourceSerial": craft["sourceSerial"],
-                "stateOfOrigin": craft["stateOfOrigin"],
-                "stateOfPractice": craft["stateOfPractice"],
-                "giStatus": craft["giStatus"],
-                "isCatchAll": craft["isCatchAll"],
-                "craftCode": craft["craftCode"],
-                "aliases": sorted(names),
-            }
-        )
-    return {"version": digest.hexdigest(), "categories": category_payload, "crafts": rows}
+    seen: set[str] = set()
+    for entry in codes.crafts:
+        for label in (entry.name, *entry.spellings):
+            key = codes_normalise(label)
+            if key and key not in seen:
+                seen.add(key)
+                rows.append(
+                    {"spelling": key, "label": label, "craftCode": entry.code, "source": SOURCE_SHARED}
+                )
+    return rows
+
+
+def _craft_row(craft: MasterCraft, codes: SharedCodes, sub_category_id: str) -> dict[str, Any]:
+    wanted = craft_columns(craft, sub_category_id)
+    return {
+        "id": seed_uuid("c", craft.slug),
+        "masterId": master_id("c", craft.slug),
+        "slug": craft.slug,
+        **wanted,
+        "status": ACTIVE,
+        "craftCode": craft_code_for(craft, codes),
+        "extraMetadata": {MASTER_SEED_KEY: wanted},
+    }
+
+
+def _alias_row(craft_id: str, alias: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "craftId": craft_id,
+        "alias": alias["alias"],
+        "aliasNorm": alias["norm"],
+        "script": alias.get("script"),
+        "lang": alias.get("lang"),
+        "source": alias["source"],
+        "status": alias.get("status", ACTIVE),
+    }
 
 
 def master_sha1(path: Path = MASTER_FILE) -> str:
