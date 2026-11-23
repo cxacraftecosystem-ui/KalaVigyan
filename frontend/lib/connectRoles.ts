@@ -15,7 +15,7 @@ export const SCOPE_GUIDES: readonly ScopeGuide[] = [
   { scope: "read", title: "Read", allows: "Read crafts, facts with their quotes and sources, sections, layouts and components, as anyone signed out reads them.", who: "Everyone" },
   { scope: "ask", title: "Ask", allows: "Ask questions and receive cited answers in your name; each counts against your asks, as on the site.", who: "Every role" },
   { scope: "contribute", title: "Contribute", allows: "Propose facts, sources, structure, components, pages and pictures in your name, and claim open work; each proposal passes the same checks as one made on the site.", who: "Researcher, Professor, Admin and Master Admin" },
-  { scope: "review", title: "Review", allows: "Review proposals in your name.", who: "Professor, Admin and Master Admin" }
+  { scope: "review", title: "Review", allows: "Read the review queue and admin reports, stage decisions that a person confirms on the Review page, and refresh changed pages; nothing staged is published until it is confirmed.", who: "Admin and Master Admin, with two-step verification on, signed in within 15 minutes" }
 ];
 
 const VERBS: Record<McpScope, string> = { read: "read", ask: "ask", contribute: "contribute", review: "review" };
@@ -26,7 +26,7 @@ export function heldScopes(user: User): McpScope[] {
     read: true,
     ask: capabilities.has(ASK_CAPABILITY),
     contribute: capabilities.has(CONTRIBUTE_CAPABILITY),
-    review: hasRank(user, "PROFESSOR")
+    review: hasRank(user, "ADMIN")
   };
   return MCP_SCOPES.filter((scope) => held[scope]);
 }

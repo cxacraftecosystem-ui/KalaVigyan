@@ -7,6 +7,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { QueueFilterBar } from "@/components/review/QueueFilterBar";
 import { QueueItemView } from "@/components/review/QueueItemView";
+import { StagedBatches } from "@/components/review/StagedBatches";
 import { ActionGroup } from "@/components/ui/ActionGroup";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -17,6 +18,7 @@ import type { QueueKind, ReviewFilters } from "@/lib/reviewQueueContract";
 import { EVERY_KIND, filtersFromSearch, filtersSearch, isFiltered, kindTabs, NO_FILTERS } from "@/lib/reviewQueueView";
 
 import { useReviewQueue, type ReviewQueueState } from "./useReviewQueue";
+import { useStagedReviews } from "./useStagedReviews";
 
 const DESCRIPTION =
   "Everything other people have given that waits for a decision: facts, artisans' testimony, pictures, component proposals and page layouts, from the site, the Knowledge API and the MCP server. Your own contributions are approved at once and never wait here.";
@@ -35,6 +37,7 @@ function ReviewScreen() {
   const search = useSearchParams().toString();
   const filters = useMemo(() => filtersFromSearch(new URLSearchParams(search)), [search]);
   const queue = useReviewQueue(filters);
+  const staged = useStagedReviews(queue.handlers.decidedElsewhere);
   const change = (next: ReviewFilters) => {
     const query = filtersSearch(next);
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
@@ -44,6 +47,7 @@ function ReviewScreen() {
     <>
       <PageHeader title="Review" kicker="Admin" description={DESCRIPTION} />
       <div className="grid gap-6">
+        <StagedBatches batches={staged.batches} error={staged.error} onConfirm={staged.confirm} onDiscard={staged.discard} />
         <QueueFilterBar filters={filters} onChange={change} />
         {queue.page ? (
           <Tabs

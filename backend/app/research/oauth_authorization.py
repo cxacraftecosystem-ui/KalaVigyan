@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any
 
 from app.core.errors import InvalidInput
 from app.core.mcp_scopes import READ_SCOPE
@@ -15,10 +14,10 @@ from .oauth_rules import (
     PKCE_METHOD,
     STATE_MAX_CHARS,
     UNSUPPORTED_RESPONSE_TYPE,
+    Grantor,
     OAuthError,
     challenge_is_valid,
     held_scopes,
-    may_hold,
     redirect_with,
     requested_scopes,
 )
@@ -69,15 +68,15 @@ def checked_authorization(request: AuthorizationRequest, *, resource: str) -> Ch
     )
 
 
-def granted_scopes(user: Any, asked: Iterable[str], chosen: Iterable[str]) -> tuple[str, ...]:
+def granted_scopes(grantor: Grantor, asked: Iterable[str], chosen: Iterable[str]) -> tuple[str, ...]:
     chosen = set(chosen)
     unasked = sorted(chosen - set(asked))
     if unasked:
         raise InvalidInput(f"The app did not ask for {', '.join(unasked)}.")
-    refused = sorted(scope for scope in chosen if not may_hold(user, scope))
+    refused = sorted(scope for scope in chosen if not grantor.may_grant(scope))
     if refused:
-        raise InvalidInput(f"Your account may not give {', '.join(refused)}.")
-    return held_scopes(user, chosen | {READ_SCOPE})
+        raise InvalidInput(f"Your account may not give {', '.join(refused)} now.")
+    return held_scopes(grantor.user, chosen | {READ_SCOPE})
 
 
 def code_redirect(request: AuthorizationRequest, code: str, *, issuer: str) -> str:

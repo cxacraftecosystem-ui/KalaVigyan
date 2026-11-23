@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import session_scope
 from app.research.embedding import TextEmbedder
 from app.research.fetcher import Fetcher
+from app.research.page_refresh import DONE
 from app.research.structured import StructuredModel
 from app.sources.fetcher_client import FetcherClient
 from app.sources.wayback_save import WaybackSaver
@@ -20,6 +21,8 @@ from .claim_holds import shown_held_ids
 from .mcp_activity_upkeep import McpActivityReport, keep_mcp_activity, mcp_activity_plan
 from .open_work_refresh import FieldWorkReport, refresh_field_work
 from .orphan_concepts import OrphansReport, orphan_concepts, sweep_orphans
+from .page_refresh_jobs import claim_night, finish_job
+from .page_refresh_run import progress_of
 from .shared_term_crafts import SharedTermsReport, refresh_shared_terms
 from .upkeep_allowances import AllowancesReport, sweep_allowances
 from .upkeep_archive import (
@@ -48,6 +51,8 @@ from .upkeep_quotes import QUOTE_SOURCES_PER_NIGHT, QuotesReport, recheck_quotes
 from .web_fetches import web_fetch_recorder
 
 __all__ = ["UpkeepReport", "UpkeepTools", "plan_nightly_upkeep", "run_nightly_upkeep", "upkeep_tools"]
+
+NIGHT_SKIPPED = "An admin's page refresh was running, so the night left the pages to it."
 
 
 @dataclass(frozen=True)
@@ -129,14 +134,25 @@ async def run_nightly_upkeep(session: AsyncSession, tools: UpkeepTools, *, now: 
     report.allowances = await sweep_allowances(session, now=now)
     report.late_costs = await settle_late_costs(session, now=now)
     report.mcp_activity = await keep_mcp_activity(session, now=now)
-    await rebuild_monographs(session, tools.monographs, tools.load_monograph, now=now, report=report.pages)
-    await rebuild_stale_pages(session, skip=frozenset(tools.monographs), report=report.pages)
-    await rebuild_documents(session, report=report.pages)
+    await _rebuild_pages(session, tools, report=report.pages, now=now)
     report.field_work = await refresh_field_work(session, now=now)
     report.answer_gaps = await refresh_answer_gaps(session, tools.embed, now=now, names=tools.names)
     report.shared_terms = await refresh_shared_terms(session, now=now)
     report.hidden = await count_hidden_facts(session, now=now)
     return report
+
+
+async def _rebuild_pages(
+    session: AsyncSession, tools: UpkeepTools, *, report: PagesReport, now: datetime
+) -> None:
+    night = await claim_night(session, now=now)
+    if night is None:
+        report.skipped = NIGHT_SKIPPED
+        return
+    await rebuild_monographs(session, tools.monographs, tools.load_monograph, now=now, report=report)
+    await rebuild_stale_pages(session, skip=frozenset(tools.monographs), report=report)
+    await rebuild_documents(session, report=report)
+    await finish_job(session, night, status=DONE, progress=progress_of(report), note=None)
 
 
 async def plan_nightly_upkeep(
